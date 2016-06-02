@@ -1,0 +1,51 @@
+body{
+  margin:0;
+  border:0;
+  padding:0;
+}
+
+a {
+  font-weight: bolder;
+  text-decoration: none;
+}
+zs4-header{
+  background-color: lightgreen;
+  text-decoration: none;
+  align-items: center;
+}
+
+zs4-brand{
+  display:inline-block;
+  text-align:left;
+  width:20%;
+  align-items: center;
+}
+
+zs4-user{
+  display:inline-block;
+  text-align:justify;
+  width:60%;
+  align-items: center;
+}
+
+zs4-user-name{
+  font-size: 150%;
+}
+
+zs4-connect{
+  display:inline-block;
+  text-align:right;
+  font-size: 150%;
+  width:20%;
+  align-items: center;
+}
+
+img.zs4-logo{
+  height:3em;
+  align-self: center;
+}
+
+img.zs4-user{
+  height:3em;
+  align-self: center;
+}
