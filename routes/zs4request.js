@@ -1,6 +1,7 @@
 var express = require('express');
 var passport = require('passport');
 var zs4 = require('./zs4utils');
+var zs4db = require('./zs4mongoose');
 var router = express.Router();
 
 var env = {

@@ -39,6 +39,9 @@ zs4-connect{
   width:20%;
   align-items: center;
 }
+zs4-connect:hover{
+  color:red;
+}
 
 img.zs4-logo{
   height:3em;
