@@ -16,54 +16,63 @@ var zs4 = {
 		},
 	},
 	api:{
-		const:{
-			REFRESH:{
-				type:'refresh',
-				data:{},
-			},
+		REFRESH:function(){
+			this.type = 'refresh';
 		},
 		refresh:function(){
-			return zs4.request.post(this.const.REFRESH,function(o){
+			return zs4.request.post(new this.REFRESH(),function(o){
 				console.log(o);
+				// create header
+
+
 				if (o.zs4.user==null){
-					zs4.user.connect.textContent = 'login';
-					zs4.user.connect.onclick = (zs4.auth0.login)
+					zs4.user.eUser.textContent = 'login';
+					zs4.user.eUser.onclick = function(){window.location.href = '/login';};
 				}else{
-					zs4.user.connect.textContent = 'logout';
-					zs4.user.connect.onclick = function(){window.location.href = '/logout';};
-
-					zs4.user.name = zs4.ui.id('username');
-					zs4.user.name.textContent = o.zs4.user.name;
-
-					zs4.user.email = o.zs4.user.email;
-
-					if (o.zs4.user.pic){
-						zs4.user.pic = zs4.ui.id('userpic');
-						zs4.user.pic.src = o.zs4.user.pic;
-					}
+					zs4.user.eUser.textContent = o.zs4.user.name;
+					zs4.user.eLogout = zs4.user.eUserOptions.zs4.addOption('logout');
+					zs4.user.eLogout.onclick =  function(){window.location.href = '/logout';};
 				}
 			})
 		},
 	},
 	connect:function(){
-		//zs4.ui.id('connect');
-		zs4.user.connect = zs4.ui.z(zs4.ui.id('connect'));
-		zs4.user.connect.style.display = 'inline-block';
+
+		var conn  = zs4.user.refresh = zs4.ui.id('zs4-refresh');
+		conn.zs4 = {ui:zs4.ui,e:conn,c:[]};
+
+		var header = zs4.user.eHeader = zs4.ui.a(conn,'zs4-header');
+		var brand = zs4.user.eBrand = zs4.ui.a(header,'zs4-brand')
+				brand.textContent = 'zs4';
+		var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user')
+		var options = zs4.user.eUserOptions = zs4.ui.options(header,'user');
 
 		zs4.api.refresh();
 	},
 	ui:{
-		e:function(n){
+		a:function(p,n){
 			var e = document.createElement(n);
-			e.zs4 = {ui:zs4.ui,e:e};
-			return zs4.ui.z(e);
+			e.zs4 = {ui:zs4.ui,e:e,c:[]};
+			p.zs4.c.push(e);
+			p.appendChild(e);
+			e.zs4 = {ui:zs4.ui,e:e,c:[]};
+			return e;
+		},
+		options:function(p,n){
+			var en = 'zs4-o-'+n;
+			var r = this.a(p,en);
+			r.zs4.optEleName = en;
+			r.zs4.eOptRoot = this.a(r,en + '-r');
+			r.zs4.eOptions = this.a(r,en + '-c');
+			r.zs4.addOption = function(label){
+				var o = zs4.ui.a(r.zs4.eOptions,en + '-o');
+				o.textContent = label;
+				return o;
+			}
+			return r;
 		},
 		id:function(i){
 			return document.getElementById(i);
-		},
-		z:function(e){
-			e.zs4 = {ui:zs4.ui,e:e};
-			return e;
 		},
 
 	},

@@ -9,23 +9,17 @@ a {
   text-decoration: none;
 }
 zs4-header{
+  display:inline-block;
   background-color: lightgreen;
   text-decoration: none;
-  align-items: center;
 }
 
 zs4-brand{
   display:inline-block;
-  text-align:left;
-  width:20%;
-  align-items: center;
 }
 
 zs4-user{
   display:inline-block;
-  text-align:justify;
-  width:60%;
-  align-items: center;
 }
 
 zs4-user-name{
