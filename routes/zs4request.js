@@ -9,9 +9,10 @@ var env = {
 };
 
 router.post('/', function(req, res){
-  console.log("router.post('/zs4request', function(req, res)");
+  console.log('zs4request');
+  console.log(req.body);
 
-  var response = zs4.createResponseFrame(req,res);
+  var response = zs4.createResponseFrame(req);
 
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify(response));

@@ -6,7 +6,7 @@ var zs4db = module.exports;
 
 var SCHEMA_PLAIN = 0;
 var SCHEMA_DATED = 1;
-var SCHEMA_DOCUMENT = (2|SCHEMA_DATED);
+var SCHEMA_DOCUMENT = 2;
 
 zs4db.conn = mongoose.createConnection(process.env.ZS4_MONGODB_URL);;
 zs4db.conn.on('error', console.error.bind(console, 'connection error:'));
@@ -86,13 +86,13 @@ zs4db.schema.Identity = zs4db.createSchema({
 
 /////////////////////////////////////////
 // User Record.
-zs4db.schema.User = zs4db.createSchema({
+zs4db.schemaUser = zs4db.createSchema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, trim: true, minlength:5, maxlength:64, index: { unique: true }},
   pic: { type: String, required: true, trim: true },
   auth:[zs4db.schema.Identity],
 },SCHEMA_DATED);
-zs4db.model.User = zs4db.conn.model('User',zs4db.schema.User);
+zs4db.model.User = zs4db.conn.model('User',zs4db.schemaUser);
 
 zs4db.login = function(req,res){
 
@@ -130,21 +130,26 @@ zs4db.login = function(req,res){
     console.log('found: '+ dbUser);
 
     // return if provider exist for this email.
+    var nu_provider = true;
     for (var i = 0; i < dbUser.auth.length; i++)
-        if (dbUser.auth[i].identity == xu.identity)
-          return;
+        if (dbUser.auth[i].identity == xu.identity){
+          nu_provider = false;
+        }
 
+    if (nu_provider){
         console.log('adding '+ xu.identity + ' to ' + xu.email + '...');
         dbUser.auth.push({identity:xu.identity,provider:xu.provider});
-        dbUser.save(function(err) {
-          console.log('inside update callback');
-          if (err) {
-            console.log('ERROR: while db.update.user('+xu.name+'): '+xu.identity);
-            console.log(obj);
-            return;
-          }
-          console.log('User' + xu.email + ' updated!');
-        });
+    }
+
+    dbUser.save(function(err) {
+      console.log('inside update callback');
+      if (err) {
+        console.log('ERROR: while db.update.user('+xu.name+'): '+xu.identity);
+        console.log(obj);
+        return;
+      }
+      console.log('User' + xu.email + ' updated!');
+    });
 
   });
 

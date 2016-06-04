@@ -1,18 +1,27 @@
 var zs4 = module.exports;
 
 //zs4.dummy = 'asdf';
+zs4.debug = false;
 
-zs4.createResponseFrame = function(req,res){
-  var response = {zs4:{user:null,req:null,res:null,}};
+if ((process.env.ZS4_DEBUG.trim()) == 'true' ){
+  console.log('ZS4_DEBUG == true');
+  zs4.debug = true;
+}
+
+
+zs4.createResponseFrame = function(req){
+  var response = {zs4:{user:null,req:req.body,res:null,}};
+  if (zs4.debug) response.zs4.debug = {};
   if (req.user){
     response.zs4.user = {name:req.user.displayName,pic:req.user.picture, email:false};
     if (req.user.emails != null && req.user.emails.length > 0)
       response.zs4.user.email = true;
-      response.zs4.requser = req.user;
+      if (zs4.debug){
+        response.zs4.debug.user = req.user;
+      }
       response.zs4.account = req.account;
   }
 
-  //console.log(req);
   return response;
 }
 

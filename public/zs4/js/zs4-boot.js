@@ -16,8 +16,14 @@ var zs4 = {
 		},
 	},
 	api:{
+		const:{
+			REFRESH:{
+				type:'refresh',
+				data:{},
+			},
+		},
 		refresh:function(){
-			return zs4.request.post({},function(o){
+			return zs4.request.post(this.const.REFRESH,function(o){
 				console.log(o);
 				if (o.zs4.user==null){
 					zs4.user.connect.textContent = 'login';
