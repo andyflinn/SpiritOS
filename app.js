@@ -11,7 +11,7 @@ var Auth0Strategy = require('passport-auth0');
 dotenv.load();
 
 var routes = require('./routes/index');
-var zs4request = require('./zs4/routes/zs4request');
+var zs4 = require('./routes/zs4');
 
 // This will configure Passport to use Auth0
 var strategy = new Auth0Strategy({
@@ -44,7 +44,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
 // uncomment after placing your favicon in /public
-app.use(favicon(path.join(__dirname, 'zs4/public/zs4/img', 'favicon.ico')));
+app.use(favicon(path.join(__dirname, 'public/img', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -56,9 +56,9 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(express.static(path.join(__dirname, 'zs4/public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/zs4request', zs4request);
+app.use('/zs4', zs4);
 app.use('/', routes);
 
 // catch 404 and forward to error handler

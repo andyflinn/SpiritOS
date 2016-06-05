@@ -1,6 +1,6 @@
 var express = require('express');
 var passport = require('passport');
-var zs4db = require('../zs4/routes/zs4mongoose');
+var zs4db = require('./zs4mongoose');
 var router = express.Router();
 
 var env = {
@@ -18,7 +18,7 @@ router.get('/', function(req, res, next) {
 
 router.get('/login', function(req, res){
   console.log('try to render login page');
-  res.render('login', { title: 'zs4 login page', env: env });
+  res.render('login_auth0', { title: 'zs4 login', env: env });
 });
 
 router.get('/logout', function(req, res){

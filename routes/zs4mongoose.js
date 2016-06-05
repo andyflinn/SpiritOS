@@ -121,7 +121,7 @@ zs4db.login = function(req,res){
            console.log(obj);
            return;
          }
-         console.log('User' + xu.email + ' created!');
+         console.log('User ' + xu.email + ' created!');
        });
 
        return;
@@ -148,7 +148,7 @@ zs4db.login = function(req,res){
         console.log(obj);
         return;
       }
-      console.log('User' + xu.email + ' updated!');
+      console.log('User ' + xu.email + ' updated!');
     });
 
   });

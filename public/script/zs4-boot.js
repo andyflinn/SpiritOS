@@ -10,7 +10,7 @@ var zs4 = {
 			return ('this.ajax(\''+u+'\',cb)');
 		},
 		post:function(o,cb){
-			this.ajax('/zs4request',function(d){
+			this.ajax('/zs4',function(d){
 			if(cb!=null){cb(JSON.parse(d));}else{console.log("no data");}},JSON.stringify(o));
 			return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
 		},
