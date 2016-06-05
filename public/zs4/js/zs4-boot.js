@@ -16,11 +16,8 @@ var zs4 = {
 		},
 	},
 	api:{
-		REFRESH:function(){
-			this.type = 'refresh';
-		},
-		refresh:function(){
-			return zs4.request.post(new this.REFRESH(),function(o){
+			refresh:function(){
+				return zs4.request.post({type:'refresh'},function(o){
 				console.log(o);
 				// create header
 
@@ -30,8 +27,10 @@ var zs4 = {
 					zs4.user.eUser.onclick = function(){window.location.href = '/login';};
 				}else{
 					zs4.user.eUser.textContent = o.zs4.user.name;
-					zs4.user.eLogout = zs4.user.eUserOptions.zs4.addOption('logout');
-					zs4.user.eLogout.onclick =  function(){window.location.href = '/logout';};
+
+
+					zs4.user.eLogout = zs4.user.eUserOptions.zs4.addOption('logout').
+						onclick =  function(){window.location.href = '/logout';};
 				}
 			})
 		},
