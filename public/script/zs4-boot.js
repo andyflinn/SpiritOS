@@ -23,14 +23,17 @@ var zs4 = {
 
 
 				if (o.zs4.user==null){
-					zs4.user.eUser.textContent = 'login';
-					zs4.user.eUser.onclick = function(){window.location.href = '/login';};
+					zs4.user.eUser.textContent = 'welcomes you!';
+
+
+					zs4.user.eLogin = zs4.user.eUserOptions.zs4.addOption('login');
+					zs4.user.eLogin.onclick =  function(){window.location.href = '/login';};
 				}else{
 					zs4.user.eUser.textContent = o.zs4.user.name;
 
 
-					zs4.user.eLogout = zs4.user.eUserOptions.zs4.addOption('logout').
-						onclick =  function(){window.location.href = '/logout';};
+					zs4.user.eLogout = zs4.user.eUserOptions.zs4.addOption('logout');
+					zs4.user.eLogout.onclick =  function(){window.location.href = '/logout';};
 				}
 			})
 		},
@@ -38,7 +41,7 @@ var zs4 = {
 	connect:function(){
 
 		var conn  = zs4.user.refresh = zs4.ui.id('zs4-refresh');
-		conn.zs4 = {ui:zs4.ui,e:conn,c:[]};
+		conn.zs4 = zs4.ui.root = {ui:zs4.ui,e:conn,zc:[],uc:[]};
 
 		var header = zs4.user.eHeader = zs4.ui.a(conn,'zs4-header');
 		var brand = zs4.user.eBrand = zs4.ui.a(header,'zs4-brand')
@@ -46,29 +49,36 @@ var zs4 = {
 		var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user')
 		var options = zs4.user.eUserOptions = zs4.ui.options(header,'user');
 
+
 		zs4.api.refresh();
 	},
 	ui:{
 		a:function(p,n){
 			var e = document.createElement(n);
-			e.zs4 = {ui:zs4.ui,e:e,c:[]};
-			p.zs4.c.push(e);
+			e.zs4 = {ui:zs4.ui,e:e,zc:[],uc:[]};
+			p.zs4.uc.push(e);
+			p.zs4.zc.push(e.zs4);
 			p.appendChild(e);
-			e.zs4 = {ui:zs4.ui,e:e,c:[]};
 			return e;
 		},
 		options:function(p,n){
 			var en = 'zs4-o-'+n;
-			var r = this.a(p,en);
-			r.zs4.optEleName = en;
-			r.zs4.eOptRoot = this.a(r,en + '-r');
-			r.zs4.eOptions = this.a(r,en + '-c');
-			r.zs4.addOption = function(label){
-				var o = zs4.ui.a(r.zs4.eOptions,en + '-o');
-				o.textContent = label;
-				return o;
+			var o = zs4.ui.a(p,en);
+			var r = o.zs4.eOptRoot = zs4.ui.a(o,en + '-r');
+			r.textContent = '?';
+			var c = o.zs4.eOptions = zs4.ui.a(o,en + '-c');
+			c.style.display = 'none';
+			o.zs4.addOption = function(label){
+				var x = zs4.ui.a(c,en + '-o');
+				x.textContent = label;
+				return x;
 			}
-			return r;
+			r.onclick = function(){
+				if (c.style.display == 'none')c.style.display = 'inline-block';
+				else c.style.display = 'none';
+			};
+			r.onblur = function(){c.style.display = 'none';};
+			return o;
 		},
 		id:function(i){
 			return document.getElementById(i);

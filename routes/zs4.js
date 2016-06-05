@@ -9,7 +9,7 @@ var env = {
 };
 
 router.post('/', function(req, res){
-  console.log('zs4request');
+  console.log('zs4 post');
   console.log(req.body);
 
   var response = zs4.createResponseFrame(req);

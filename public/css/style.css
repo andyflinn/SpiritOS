@@ -27,42 +27,22 @@ zs4-user{
   margin: 0.5em;
   display:inline-block;
   align-self: auto;
-  margin-bottom: 0.2em;
 }
 zs4-o-user{
-  width:1em;
-  height:1em;
   background-color: green;
-  display:inline-block;
-  position: relative;
-  border: 0.3em solid green;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.4);
   cursor: pointer;
-}
-zs4-o-user:hover zs4-o-user-c {
-    display: block;
+  align-self: auto;
 }
 zs4-o-user-r{
+  margin: 0.5em;
   display:inline-block;
 }
 zs4-o-user-c{
-  display: none;
-  padding:0.2em;
-  position: absolute;
-  border: 0.1em solid darkgreen;
-  background-color: #f9f9f9;
-  min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-}
-zs4-o-user-c:hover zs4-o-user-r {
-    background-color: white;
+  display: inline-block;
 }
 zs4-o-user-o{
-  display:block;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  display:inline-block;
   cursor: pointer;
-}
-zs4-o-user-o:hover{
-  display:block;
-  cursor: pointer;
-  background-color: lightgreen;
 }
