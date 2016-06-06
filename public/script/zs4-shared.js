@@ -1,4 +1,4 @@
-var shared = module.exports;
+var shared = exports;
 
 shared.install = function(shared,target){for (var n in shared) if (n!='install')target[n]=shared[n];};
 

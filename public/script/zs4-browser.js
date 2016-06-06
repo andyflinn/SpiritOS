@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////"+"
-
+'use strict';
 var zs4 = {
 	request:{
 		ajax:function(u,cb){
@@ -178,4 +178,4 @@ var zs4 = {
 
 };
 
-module = {exports:{}};
+var exports = {};
