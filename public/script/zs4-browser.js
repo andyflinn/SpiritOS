@@ -16,8 +16,9 @@ var zs4 = {
 		},
 	},
 	api:{
-			refresh:function(){
-				return zs4.request.post({type:'refresh'},function(o){
+			initialize:function(){
+				shared.install(shared,zs4);
+				return zs4.request.post({type:'initialize'},function(o){
 				console.log(o);
 				// create header
 
@@ -43,9 +44,9 @@ var zs4 = {
 			})
 		},
 	},
-	connect:function(){
+	initialize:function(){
 
-		var conn  = zs4.user.refresh = zs4.ui.id('zs4-refresh');
+		var conn  = zs4.user.initialize = zs4.ui.id('zs4-initialize');
 		conn.zs4 = zs4.ui.root = {ui:zs4.ui,e:conn,zc:[],uc:[]};
 
 		var header = zs4.user.eHeader = zs4.ui.a(conn,'zs4-header');
@@ -56,7 +57,7 @@ var zs4 = {
 
 		var tabs = zs4.user.zTabs = zs4.ui.tabs(conn,'main');
 
-		zs4.api.refresh();
+		zs4.api.initialize();
 	},
 	ui:{
 		a:function(p,n){
@@ -152,7 +153,7 @@ var zs4 = {
 			t.zs4.selectTab = function(tab){
 				if (t.zs4.pane.indexOf(tab)== -1)
 					return;
-					
+
 				for (var i = 0; i < t.zs4.pane.length ;i++){
 					if (t.zs4.pane[i]==tab){
 						t.zs4.pane[i].h.className = 'active';
@@ -176,3 +177,5 @@ var zs4 = {
 	},
 
 };
+
+module = {exports:{}};

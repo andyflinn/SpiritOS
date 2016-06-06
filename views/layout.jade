@@ -3,6 +3,7 @@ html
   head
     title= title
     link(rel='stylesheet', href='/css/style.css')
-    script(src='/script/zs4-boot.js')
+    script(src='/script/zs4-browser.js')
+    script(src='/script/zs4-shared.js')
 
-  body(id='zs4-refresh', onload='zs4.connect()')
+  body(id='zs4-initialize', onload='zs4.initialize()')
