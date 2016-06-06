@@ -25,6 +25,11 @@ var zs4 = {
 				if (o.zs4.user==null){
 					zs4.user.eUser.textContent = 'welcomes you!';
 
+					var about = zs4.user.zTabs.zs4.addTab('about');
+					about.textContent = 'lorem ipsum... lorem ipsum... lorem ipsum... lorem ipsum... lorem ipsum... ';
+
+					var duck = zs4.user.zTabs.zs4.addTab('duck');
+					duck.textContent = 'duck, geese, dux, birdies, avian,';
 
 					zs4.user.eLogin = zs4.user.eUserOptions.zs4.addOption('login');
 					zs4.user.eLogin.onclick =  function(){window.location.href = '/login';};
@@ -44,22 +49,40 @@ var zs4 = {
 		conn.zs4 = zs4.ui.root = {ui:zs4.ui,e:conn,zc:[],uc:[]};
 
 		var header = zs4.user.eHeader = zs4.ui.a(conn,'zs4-header');
-		var brand = zs4.user.eBrand = zs4.ui.a(header,'zs4-brand')
-				brand.textContent = 'zs4';
-		var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user')
-		var options = zs4.user.eUserOptions = zs4.ui.options(header,'user');
+				var brand = zs4.user.eBrand = zs4.ui.a(header,'zs4-brand')
+						brand.textContent = 'zs4';
+				var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user')
+				var options = zs4.user.eUserOptions = zs4.ui.options(header,'user');
 
+		var tabs = zs4.user.zTabs = zs4.ui.tabs(conn,'main');
 
 		zs4.api.refresh();
 	},
 	ui:{
 		a:function(p,n){
 			var e = document.createElement(n);
-			e.zs4 = {ui:zs4.ui,e:e,zc:[],uc:[]};
+			e.zs4 = {ui:zs4.ui,e:e,eParent:p,zc:[],uc:[]};
 			p.zs4.uc.push(e);
 			p.zs4.zc.push(e.zs4);
 			p.appendChild(e);
 			return e;
+		},
+		r:function(e){
+			var p = e.zs4.eParent;
+			p.removeChild(e);
+			var found = false; var swap = null;
+			for (var i = 0; i < p.zs4.uc.length;i++){
+				if (p.zs4.uc[i]==e)found = true;
+				if (found && i < (p.zs4.uc.length-1))
+				{
+					swap = p.zs4.uc[i]; p.zs4.uc[i]=p.zs4.uc[i+1];p.zs4.uc[i+1]=swap;
+					swap = p.zs4.zc[i]; p.zs4.zc[i]=p.zs4.zc[i+1];p.zs4.zc[i+1]=swap;
+				}
+			}
+			if (found){
+					p.zs4.uc.pop();
+					p.zs4.zc.pop();
+			}
 		},
 		options:function(p,n){
 			var en = 'zs4-o-'+n;
@@ -79,6 +102,69 @@ var zs4 = {
 			};
 			r.onblur = function(){c.style.display = 'none';};
 			return o;
+		},
+		tabs:function(p,n){
+			var en = 'zs4-t-'+n;
+			var t = zs4.ui.a(p,en);
+			var arr = t.zs4.pane = [];
+			var th = t.zs4.eHeaders = zs4.ui.a(t,en + '-th');
+			var tp = t.zs4.ePanes = zs4.ui.a(t,en + '-tp');
+			t.zs4.addTab = function(label){
+				var tab = {
+					h:zs4.ui.a(th,en + '-h'),
+					p:zs4.ui.a(tp,en + '-p'),
+					name:label,
+					close:function(){
+						var found = false; found_idx = 0;
+						for (var i = 0 ; i < arr.length ; i++){
+							if (!found && arr[i] == this){
+								found = true; found_idx = i;
+							}
+
+							if (found && i < (arr.length-1)){
+								var swap = arr[i]; arr[i] = arr[i+1]; arr[i+1] = swap;
+							}
+						}
+						zs4.ui.r(tab.h);
+						zs4.ui.r(tab.p);
+						arr.pop();
+
+						if (found_idx >= arr.length)
+							found_idx = arr.length - 1;
+
+						if (found_idx >= 0)
+						 	t.zs4.selectTab(arr[found_idx]);
+					},
+				}
+
+				tab.h.onclick = function(){	t.zs4.selectTab(tab);	}
+
+				tab.eLabel = zs4.ui.a(tab.h,en + '-tl');
+				tab.eLabel.textContent = label;
+				tab.eClose = zs4.ui.a(tab.h,en + '-tx');
+				tab.eClose.textContent = 'x';
+				tab.eClose.onclick = function(){tab.close();}
+
+				t.zs4.pane.push(tab);
+				t.zs4.selectTab(tab);
+				return tab.p;
+			}
+			t.zs4.selectTab = function(tab){
+				if (t.zs4.pane.indexOf(tab)== -1)
+					return;
+					
+				for (var i = 0; i < t.zs4.pane.length ;i++){
+					if (t.zs4.pane[i]==tab){
+						t.zs4.pane[i].h.className = 'active';
+						t.zs4.pane[i].p.style.display = 'block';
+					}else{
+						t.zs4.pane[i].h.className = '';
+						t.zs4.pane[i].p.style.display = 'none';
+					}
+				}
+
+			};
+			return t;
 		},
 		id:function(i){
 			return document.getElementById(i);
