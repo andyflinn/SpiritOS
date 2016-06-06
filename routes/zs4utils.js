@@ -11,26 +11,12 @@ if ((process.env.ZS4_DEBUG.trim()) == 'true' ){
   zs4.debug = true;
 }
 
-zs4.createResponseFrame = function(req){
-  var response = {zs4:{user:null,req:req.body,res:null,}};
-  if (zs4.debug) response.zs4.debug = {};
-  if (req.user){
-    response.zs4.user = {name:req.user.displayName,pic:req.user.picture, email:false, admin:false,};
-    if (req.user.emails != null && req.user.emails.length > 0)
-      response.zs4.user.email = true;
-      if (zs4.debug){
-        response.zs4.debug.user = req.user;
-      }
-      response.zs4.account = req.account;
-
-      if ((process.env.ZS4_ADMIN_EMAIL.trim()) == req.user._json.email.trim() ){
-        response.zs4.user.admin = true;
-      }
-
+zs4.console = {
+  log:function(arg){
+    if (zs4.debug)
+      console.log(arg);
   }
-
-  return response;
-}
+};
 
 zs4.getRequestUser = function(req,res){
 

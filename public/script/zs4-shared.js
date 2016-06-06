@@ -64,3 +64,13 @@ shared.is = {
     return false;
   },
 };
+
+shared.create = {
+  error:function(text,data){
+    return {
+      type:'error',
+      text:text,
+      data:data,
+    }
+  }
+};

@@ -18,12 +18,12 @@ var zs4 = {
 	api:{
 			initialize:function(){
 				shared.install(shared,zs4);
-				return zs4.request.post({type:'initialize'},function(o){
+				return zs4.request.post({api:'initialize'},function(o){
 				console.log(o);
 				// create header
 
 
-				if (o.zs4.user==null){
+				if (o.user==null){
 					zs4.user.eUser.textContent = 'welcomes you!';
 
 					var about = zs4.user.zTabs.zs4.addTab('about');
@@ -35,7 +35,7 @@ var zs4 = {
 					zs4.user.eLogin = zs4.user.eUserOptions.zs4.addOption('login');
 					zs4.user.eLogin.onclick =  function(){window.location.href = '/login';};
 				}else{
-					zs4.user.eUser.textContent = o.zs4.user.name;
+					zs4.user.eUser.textContent = o.user.name;
 
 
 					zs4.user.eLogout = zs4.user.eUserOptions.zs4.addOption('logout');
