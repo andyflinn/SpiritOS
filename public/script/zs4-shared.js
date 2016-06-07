@@ -74,3 +74,52 @@ shared.create = {
     }
   }
 };
+
+shared.string = {
+  split:{
+    words:function(str){
+      arr = []; buf = '';
+      for (var i = 0; i < str.length ;i++){
+        var c = str.charAt(i);
+        if ((c >= 'a' && c <= 'z')||(c >= 'A' && c <= 'Z')){
+          buf+=c;
+        }else{
+          if (buf!=''){
+            arr.push(buf);
+            buf = '';
+          }
+        }
+      }
+      if (buf!=''){
+        arr.push(buf);
+      }
+      return arr;
+    },
+  },
+  array:{
+    hasString:function(arr,str){
+      var trimmed = str.trim();
+      for (var i = 0 ; i < arr.length ; i++){
+        if (arr[i].trim() == trimmed)return true;
+      }
+      return false;
+    },
+    addIfNew:function(arr,str){
+      if (this.hasString(arr,str))return arr;
+      arr.push(str.trim());
+      return arr;
+    },
+    trimToArray:function(arr,to){
+      for (var i = (arr.length-1) ; i >= 0 ; i--){
+        if (!this.hasString(to,arr[i].trim()))
+          arr.splice(i,1);
+      }
+    },
+    addToArray:function(arr,to){
+      for (var i = (arr.length-1) ; i >= 0 ; i--){
+        this.addIfNew(to,arr[i]);
+      }
+    },
+
+  }
+}

@@ -1,18 +1,34 @@
 var express = require('express');
 var passport = require('passport');
 var mongoose = require('mongoose');
+var pager = require('mongoose-paginate');
 var zs4 = require('./zs4utils');
 var zs4db = module.exports;
 
 var SCHEMA_PLAIN = 0;
 var SCHEMA_DATED = 1;
 var SCHEMA_DOCUMENT = 2;
+var SCHEMA_PAGED = 4;
 
 zs4db.conn = mongoose.createConnection(process.env.ZS4_MONGODB_URL);;
 zs4db.conn.on('error', console.error.bind(console, 'connection error:'));
 zs4db.conn.once('open', function() {
   console.log ('Connected to: ' + process.env.ZS4_MONGODB_URL);
 });
+
+if (zs4.debug){
+  pager.paginate.options = {
+      lean:  false,
+      limit: 3
+  };
+}else{
+  pager.paginate.options = {
+      lean:  true,
+      leanWithId:true,
+      limit: 3
+  };
+
+}
 
 zs4db.schema = {};
 zs4db.model = {};
@@ -46,6 +62,10 @@ zs4db.createSchema = function(object,mods){
     };
   }
 
+  if (mods&SCHEMA_PAGED){
+    object.tag = [String];
+  }
+
   var nu = new mongoose.Schema(object);
 
   if (mods&SCHEMA_DATED){
@@ -72,6 +92,9 @@ zs4db.createSchema = function(object,mods){
     });
   }
 
+  if (mods&SCHEMA_PAGED){
+    nu.plugin(pager);
+  }
   return nu;
 };
 
@@ -82,16 +105,28 @@ zs4db.createSchema = function(object,mods){
 zs4db.schema.Identity = zs4db.createSchema({
     identity: { type: String, required: true, trim: true },
     provider: { type: String, required: true, trim: true },
+    name: { type: String, required: true, trim: true },
+    pic: { type: String, required: true, trim: true },
 },SCHEMA_PLAIN)
 
 /////////////////////////////////////////
 // User Record.
 zs4db.schemaUser = zs4db.createSchema({
-  name: { type: String, required: true, trim: true },
   email: { type: String, required: true, trim: true, minlength:5, maxlength:64, index: { unique: true }},
-  pic: { type: String, required: true, trim: true },
   auth:[zs4db.schema.Identity],
-},SCHEMA_DATED);
+},SCHEMA_DATED|SCHEMA_PAGED);
+zs4db.schemaUser.pre('save', function(next) {
+  var work = this.email.split('@');
+  var tag = work[0].split('.');
+  for (var i = 0 ; i < this.auth.length ; i++){
+    work = zs4.string.split.words(this.auth[i].name);
+    zs4.string.array.addToArray(work,tag);
+  }
+  zs4.string.array.trimToArray(this.tag,tag);
+  zs4.string.array.addToArray(tag,this.tag);
+
+  next();
+});
 zs4db.model.User = zs4db.conn.model('User',zs4db.schemaUser);
 
 zs4db.login = function(req,res){
@@ -107,10 +142,8 @@ zs4db.login = function(req,res){
     if (err || dbUser==null){
        console.log(xu.email + ' not in db. creating....');
        var obj = {
-         name:xu.name,
          email:xu.email,
-         pic:xu.pic,
-         auth:[{identity:xu.identity,provider:xu.provider}],
+         auth:[{identity:xu.identity,provider:xu.provider,name:xu.name,pic:xu.pic}],
        };
        var nu = zs4db.model.User(obj);
 
@@ -138,7 +171,7 @@ zs4db.login = function(req,res){
 
     if (nu_provider){
         console.log('adding '+ xu.identity + ' to ' + xu.email + '...');
-        dbUser.auth.push({identity:xu.identity,provider:xu.provider});
+        dbUser.auth.push({identity:xu.identity,provider:xu.provider,name:xu.name,pic:xu.pic});
     }
 
     dbUser.save(function(err) {
@@ -165,7 +198,7 @@ zs4db.dumpAllUsers = function(){
 /////////////////////////////////////////
 // Document
 
-
+/*
 /////////////////////////////////////////
 // Musical Schemas.
 
@@ -205,3 +238,4 @@ zs4db.schema.Composition.post('init', function(next) {
   this.tpb = 3;
 });
 zs4db.model.Composition = zs4db.conn.model('Composition',zs4db.schema.Composition);
+*/

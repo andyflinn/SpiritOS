@@ -35,6 +35,7 @@ var zs4 = {
 					zs4.user.eLogin = zs4.user.eUserOptions.zs4.addOption('login');
 					zs4.user.eLogin.onclick =  function(){window.location.href = '/login';};
 				}else{
+					zs4.user.eUserImage.src=o.user.pic;
 					zs4.user.eUser.textContent = o.user.name;
 
 
@@ -50,9 +51,11 @@ var zs4 = {
 		conn.zs4 = zs4.ui.root = {ui:zs4.ui,e:conn,zc:[],uc:[]};
 
 		var header = zs4.user.eHeader = zs4.ui.a(conn,'zs4-header');
-				var brand = zs4.user.eBrand = zs4.ui.a(header,'zs4-brand')
+				var brand = zs4.user.eBrand = zs4.ui.a(header,'zs4-brand');
 						brand.textContent = 'zs4';
-				var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user')
+				var userImage = zs4.user.eUserImage = zs4.ui.a(header,'img');
+						userImage.className = 'zs4user';
+				var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user');
 				var options = zs4.user.eUserOptions = zs4.ui.options(header,'user');
 
 		var tabs = zs4.user.zTabs = zs4.ui.tabs(conn,'main');

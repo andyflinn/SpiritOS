@@ -6,7 +6,7 @@ body{
 
 zs4-header{
   display:block;
-  font-size: 125%;
+  font-size: 150%;
   font-weight: bold;
   background-color: lightgreen;
   text-decoration: none;
@@ -18,7 +18,12 @@ zs4-brand{
   align-self:auto;
   font-weight: bolder;
 }
-
+img.zs4user{
+  display:inline-block;
+  vertical-align:middle;
+  border-radius: 1em;
+  height: 2em;
+}
 zs4-user{
   margin: 0.5em;
   display:inline-block;
