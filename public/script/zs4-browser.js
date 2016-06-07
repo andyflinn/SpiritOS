@@ -16,32 +16,27 @@ var zs4 = {
 		},
 	},
 	api:{
+			initialized:false,
 			initialize:function(){
+				if (this.initialized){
+					zs4.user.eError.zs4.setError('already initialized');
+					return 'already initialized';
+				}
+				this.initialized = true;
 				shared.install(shared,zs4);
 				return zs4.request.post({api:'initialize'},function(o){
 				console.log(o);
 				// create header
 
-
-				if (o.user==null){
-					zs4.user.eUser.textContent = 'welcomes you!';
-
-					var about = zs4.user.zTabs.zs4.addTab('about');
-					about.textContent = 'lorem ipsum... lorem ipsum... lorem ipsum... lorem ipsum... lorem ipsum... ';
-
-					var duck = zs4.user.zTabs.zs4.addTab('duck');
-					duck.textContent = 'duck, geese, dux, birdies, avian,';
-
-					zs4.user.eLogin = zs4.user.eUserOptions.zs4.addOption('login');
-					zs4.user.eLogin.onclick =  function(){window.location.href = '/login';};
-				}else{
-					zs4.user.eUserImage.src=o.user.pic;
+				zs4.user.data = o.user;
+				if (o.user != null){
 					zs4.user.eUser.textContent = o.user.name;
-
-
-					zs4.user.eLogout = zs4.user.eUserOptions.zs4.addOption('logout');
-					zs4.user.eLogout.onclick =  function(){window.location.href = '/logout';};
+					zs4.user.eUserImage.src = o.user.pic;
+				}else{
+					zs4.user.eUser.textContent = 'musical productivity';
 				}
+
+				zs4.options();
 			})
 		},
 	},
@@ -56,11 +51,30 @@ var zs4 = {
 				var userImage = zs4.user.eUserImage = zs4.ui.a(header,'img');
 						userImage.className = 'zs4user';
 				var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user');
-				var options = zs4.user.eUserOptions = zs4.ui.options(header,'user');
+				var options = zs4.user.eUserOptions = zs4.ui.a(header,'zs4-user-options');
+						options.textContent = '?';
+						options.onclick = function(){zs4.options()};
+
+		var error = zs4.user.eError = zs4.ui.error(conn);
 
 		var tabs = zs4.user.zTabs = zs4.ui.tabs(conn,'main');
 
 		zs4.api.initialize();
+	},
+	options:function(){
+			var options = zs4.user.zTabs.zs4.addTab('options');
+
+			zs4.ui.text(options,'h3','Introduction');
+			zs4.ui.html(options,'p','You can get this information anytime by clicking on the question mark in the titlebar.');
+
+
+			zs4.ui.text(options,'h3','Account');
+			if (zs4.user.data == null)zs4.ui.html(options,'p','click <a href="/login">here</a> to log in.');
+			else zs4.ui.html(options,'p','click <a href="/logout">here</a> to log out.');
+
+
+			var h = zs4.ui.a(options,'h1');
+
 	},
 	ui:{
 		a:function(p,n){
@@ -69,6 +83,16 @@ var zs4 = {
 			p.zs4.uc.push(e);
 			p.zs4.zc.push(e.zs4);
 			p.appendChild(e);
+			return e;
+		},
+		html:function(p,t,h){
+			var e = zs4.ui.a(p,t);
+			e.innerHTML = h;
+			return e;
+		},
+		text:function(p,t,text){
+			var e = zs4.ui.a(p,t);
+			e.textContent = text;
 			return e;
 		},
 		r:function(e){
@@ -119,7 +143,7 @@ var zs4 = {
 					p:zs4.ui.a(tp,en + '-p'),
 					name:label,
 					close:function(){
-						var found = false; found_idx = 0;
+						var found = false; var found_idx = 0;
 						for (var i = 0 ; i < arr.length ; i++){
 							if (!found && arr[i] == this){
 								found = true; found_idx = i;
@@ -169,6 +193,24 @@ var zs4 = {
 
 			};
 			return t;
+		},
+		error:function(p){
+			var error = zs4.ui.a(p,'zs4-error');
+					error.onclick = function(){
+						this.zs4.clearError();
+					};
+					error.zs4.setError = function(text){
+						error.zs4.errorText.textContent = text;
+						error.className = 'zs4error';
+					};
+					error.zs4.clearError = function(text){
+						error.zs4.errorText.textContent = '';
+						error.className = '';
+					};
+					error.zs4.errorLabel = zs4.ui.a(error,'zs4-error-label');
+							error.zs4.errorLabel.textContent = 'Error: ';
+					error.zs4.errorText = zs4.ui.a(error,'zs4-error-text');
+			return error;
 		},
 		id:function(i){
 			return document.getElementById(i);

@@ -29,32 +29,22 @@ zs4-user{
   display:inline-block;
   align-self: auto;
 }
-zs4-o-user{
-  background-color: green;
-  cursor: pointer;
-  align-self: auto;
-}
-zs4-o-user:hover{
+zs4-user-options{
   background-color: white;
-}
-zs4-o-user-r{
-  margin: 0.5em;
   display:inline-block;
-}
-zs4-o-user-c{
-  display: inline-block;
-}
-zs4-o-user-c:hover{
-  background-color: white;
-}
-zs4-o-user-o{
-  margin-left: 0.5em;
-  margin-right: 0.5em;
-  display:inline-block;
+  //vertical-align:middle;
+  border-radius: 1em;
+  height: 1em;
+  width: 1em;
   cursor: pointer;
 }
-zs4-o-user-o:hover{
-  background-color: green;
+zs4-error{
+  background-color: red;
+  color:black;
+  display:none;
+}
+zs4-error.zs4error{
+  display:block;
 }
 
 zs4-t-main{
@@ -68,6 +58,9 @@ zs4-t-main-h{
 }
 zs4-t-main-h.active{
   background-color: white;
+}
+zs4-t-main-p{
+  margin: 1em;
 }
 zs4-t-main-th{
   display: block;

@@ -14,6 +14,7 @@ zs4api.register = function(name,module){
 };
 
 zs4api.register('initialize','./api/zs4initialize');
+zs4api.register('query','./api/zs4query');
 
 zs4api.createRequest = function(req,res){
   var object = {
@@ -33,7 +34,11 @@ zs4api.createRequest = function(req,res){
 
   if (zs4.debug) object.zs4.debug = {};
   if (req.user){
-    object.zs4.user = {name:req.user.displayName,pic:req.user.picture, email:false, admin:false,};
+    var nam = req.user.displayName;
+    var i = nam.indexOf('@');
+    if (i>0)nam = nam.substr(0,i);
+
+    object.zs4.user = {name:nam,pic:req.user.picture, email:false, admin:false,};
     if (req.user.emails != null && req.user.emails.length > 0)
       object.zs4.user.email = true;
       if (zs4.debug){

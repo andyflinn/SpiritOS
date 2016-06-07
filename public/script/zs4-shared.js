@@ -65,6 +65,12 @@ shared.is = {
   },
 };
 
+shared.copy = {
+    object:{
+      members:function(from,to){for (var n in from)to[n]=from[n];},
+    },
+}
+
 shared.create = {
   error:function(text,data){
     return {

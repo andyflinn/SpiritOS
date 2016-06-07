@@ -23,11 +23,13 @@ zs4.getRequestUser = function(req,res){
   if (req.user == null) return null;
   if (req.user._json == null) return null;
   if (req.user._json.email == null) return null;
-  //if (req.user.id == null) return null;
-  //if (req.user._json.email == null) return null;
+
+  var nam = req.user.displayName;
+  var i = nam.indexOf('@');
+  if (i>0)nam = nam.substr(0,i);
   return {
     email:req.user._json.email,
-    name:req.user.displayName,
+    name:nam,
     pic:req.user.picture,
     identity:req.user.id,
     provider:req.user.provider,
