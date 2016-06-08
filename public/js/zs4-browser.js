@@ -18,7 +18,7 @@ var zs4 = {
 				}
 			},JSON.stringify(o)
 			);
-			return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
+			//return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
 		},
 	},
 	api:{
@@ -35,7 +35,6 @@ var zs4 = {
 		var header = zs4.ui.root.eHeader = zs4.ui.a(conn,'zs4-header');
 				var brand = zs4.ui.a(header,'zs4-brand');
 				var slogan = zs4.ui.a(header,'zs4-slogan');
-				var userImage = zs4.ui.a(header,'img'); userImage.className = 'zs4user';
 				var user = zs4.ui.a(header,'zs4-user');
 				var options = zs4.ui.root.eUserOptions = zs4.ui.a(header,'zs4-user-options');
 						options.textContent = '?';
@@ -55,8 +54,7 @@ var zs4 = {
 			brand.textContent = o.server.public.name;
 			slogan.textContent = o.server.public.slogan;
 			if (o.user != null){
-				user.textContent = o.user.name;
-				userImage.src = o.user.pic;
+				user.textContent = o.user.email;
 			}
 
 			delete zs4.initialize;

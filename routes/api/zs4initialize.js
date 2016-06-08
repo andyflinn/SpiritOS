@@ -10,18 +10,29 @@ exports.respond = function(req){
     server:{public:zs4db.system.public},
   }
 
-  if (req.zs4.user != null){
-    reply.user = req.zs4.user;
-    if (reply.user.admin){
+  if (req.zs4.user==null){
+    zs4.console.log('serving public api.');
+    req.replyJSON(reply);
+  }else{
+    zs4db.model.User.findOne({ email:req.zs4.user.email }, function(err, user) {
+      if (err || user==null){
+        return req.replyJSON(reply);
+      }
+      zs4.console.log('serving user api.');
+      reply.user = user;
+      if (req.zs4.user.admin){
         zs4.console.log('serving admin api.');
         reply.server = zs4db.system;
         reply.admin = {
         }
-    }
-
+      }
+      req.replyJSON(reply);
+    });
   }
 
-  req.replyJSON(reply);
+
+
+  //req.replyJSON(reply);
 /*
   zs4db.model.User.paginate({}, { offset: 0 }, function(err, users) {
     if (err)  return console.error.err;

@@ -33,18 +33,9 @@ zs4api.createRequest = function(req,res){
   };
 
   if (zs4.debug) object.zs4.debug = {};
-  if (req.user){
-    var nam = req.user.displayName;
-    var i = nam.indexOf('@');
-    if (i>0)nam = nam.substr(0,i);
-
-    object.zs4.user = {name:nam,pic:req.user.picture, email:false, admin:false,};
-    if (req.user.emails != null && req.user.emails.length > 0)
-      object.zs4.user.email = true;
-      if (zs4.debug){
-        object.zs4.debug.user = req.user;
-      }
-      object.zs4.account = req.account;
+  var user = zs4.getRequestUser(req,res);
+  if (user != null){
+      object.zs4.user = {name:user.name,pic:user.pic, email:user.email, admin:false,};
 
       if ((process.env.ZS4_ADMIN_EMAIL.trim()) == req.user._json.email.trim() ){
         object.zs4.user.admin = true;

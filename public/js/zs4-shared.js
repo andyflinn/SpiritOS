@@ -2,6 +2,27 @@ var shared = exports;
 
 shared.install = function(shared,target){for (var n in shared) if (n!='install')target[n]=shared[n];};
 
+shared.mongoose = {
+  schema:{
+    zs4:{
+        number: { type: Number, required: true, min:0, max:1, default:0},
+        public:{
+          name: { type: String, required: true, trim: true, minlength:1, maxlength:16, default:'zs4' },
+          slogan: { type: String, required: true, trim: true, minlength:4, maxlength:32, default:'awesomeness!' },
+        },
+    },
+    User:{
+      email: { type: String, required: true, trim: true, minlength:5, maxlength:64, index: { unique: true }},
+      auth:[{
+          identity: { type: String, required: true, trim: true },
+          provider: { type: String, required: true, trim: true },
+          name: { type: String, required: true, trim: true },
+          pic: { type: String, required: true, trim: true },
+      }],
+    },
+  },
+};
+
 shared.is = {
   array:function(a){
     if	(a==null)return false;

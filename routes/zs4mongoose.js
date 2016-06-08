@@ -102,13 +102,7 @@ zs4db.createSchema = function(object,mods){
 /////////////////////////////////////////
 // system configuration.
 
-zs4db.schema.zs4 = zs4db.createSchema({
-    number: { type: Number, required: true, min:0, max:1, default:0},
-    public:{
-      name: { type: String, required: true, trim: true, minlength:1, maxlength:16, default:'zs4' },
-      slogan: { type: String, required: true, trim: true, minlength:4, maxlength:32, default:'awesomeness!' },
-    },
-},SCHEMA_DATED)
+zs4db.schema.zs4 = zs4db.createSchema(zs4.mongoose.schema.zs4,SCHEMA_DATED)
 zs4db.schema.zs4.pre('save', function(next) {
   if (this.number == null)this.number = 0;
   if (this.public.name == null)this.name='zs4';
@@ -140,22 +134,11 @@ zs4db.model.zs4.findOne({ 'number': 0 }, function (err, system) {
 
   }
 })
-/////////////////////////////////////////
-// identity schema
 
-zs4db.schema.Identity = zs4db.createSchema({
-    identity: { type: String, required: true, trim: true },
-    provider: { type: String, required: true, trim: true },
-    name: { type: String, required: true, trim: true },
-    pic: { type: String, required: true, trim: true },
-},SCHEMA_PLAIN)
 
 /////////////////////////////////////////
 // User Record.
-zs4db.schema.User = zs4db.createSchema({
-  email: { type: String, required: true, trim: true, minlength:5, maxlength:64, index: { unique: true }},
-  auth:[zs4db.schema.Identity],
-},SCHEMA_DATED|SCHEMA_PAGED);
+zs4db.schema.User = zs4db.createSchema(zs4.mongoose.schema.User,SCHEMA_DATED|SCHEMA_PAGED);
 zs4db.schema.User.pre('save', function(next) {
   var work = this.email.split('@');
   var tag = work[0].split('.');
