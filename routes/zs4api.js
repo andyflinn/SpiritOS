@@ -23,13 +23,12 @@ zs4api.createRequest = function(req,res){
     replyJSON:function(reply){
         this.zs4.res = reply;
         res.setHeader('Content-Type', 'application/json');
-        res.send(JSON.stringify(this.zs4));
+        res.send(JSON.stringify(this.zs4.res));
     },
     zs4:{
       user:null,
       req:req.body,
       res:null,
-      server:zs4db.system.public,
     },
   };
 

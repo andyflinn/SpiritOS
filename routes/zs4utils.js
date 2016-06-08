@@ -1,6 +1,6 @@
 var zs4 = module.exports;
 
-var shared = require('../public/script/zs4-shared');
+var shared = require('../public/js/zs4-shared');
 shared.install(shared,zs4);
 
 //zs4.dummy = 'asdf';

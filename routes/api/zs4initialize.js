@@ -3,10 +3,22 @@ var zs4db = require('../zs4mongoose');
 
 exports.respond = function(req){
   zs4.console.log({msg:'inside initialize api'})
+  zs4.console.log(req.zs4);
   //req.replyJSON({msg:'this api is avalable'});
 
   var reply = {
-    //system:zs4db.system,
+    server:{public:zs4db.system.public},
+  }
+
+  if (req.zs4.user != null){
+    reply.user = req.zs4.user;
+    if (reply.user.admin){
+        zs4.console.log('serving admin api.');
+        reply.server = zs4db.system;
+        reply.admin = {
+        }
+    }
+
   }
 
   req.replyJSON(reply);
