@@ -100,6 +100,47 @@ zs4db.createSchema = function(object,mods){
 
 
 /////////////////////////////////////////
+// system configuration.
+
+zs4db.schema.zs4 = zs4db.createSchema({
+    number: { type: Number, required: true, min:0, max:1, default:0},
+    public:{
+      name: { type: String, required: true, trim: true, minlength:1, maxlength:16, default:'zs4' },
+      slogan: { type: String, required: true, trim: true, minlength:4, maxlength:32, default:'awesomeness!' },
+    },
+},SCHEMA_DATED)
+zs4db.schema.zs4.pre('save', function(next) {
+  if (this.number == null)this.number = 0;
+  if (this.public.name == null)this.name='zs4';
+  if (this.public.slogan==null)this.slogan='awesomeness';
+  next();
+});
+
+zs4db.model.zs4 = zs4db.conn.model('zs4',zs4db.schema.zs4);
+
+zs4db.system = zs4db.model.zs4();
+
+zs4db.model.zs4.findOne({ 'number': 0 }, function (err, system) {
+  if (err || system == null ){
+    zs4db.system.save(function(err) {
+      console.log('inside zs4db.system.initialize()');
+      if (err) {
+        console.log('ERROR: while zs4db.system.initialize()');
+        console.log(zs4db.system);
+        return;
+      }
+      console.log('zs4db.system saved.');
+      console.log(zs4db.system);
+    });
+  }else{
+    zs4db.system = system;
+    console.log('zs4db.system loaded.');
+    console.log(zs4db.system);
+
+
+  }
+})
+/////////////////////////////////////////
 // identity schema
 
 zs4db.schema.Identity = zs4db.createSchema({
@@ -111,11 +152,11 @@ zs4db.schema.Identity = zs4db.createSchema({
 
 /////////////////////////////////////////
 // User Record.
-zs4db.schemaUser = zs4db.createSchema({
+zs4db.schema.User = zs4db.createSchema({
   email: { type: String, required: true, trim: true, minlength:5, maxlength:64, index: { unique: true }},
   auth:[zs4db.schema.Identity],
 },SCHEMA_DATED|SCHEMA_PAGED);
-zs4db.schemaUser.pre('save', function(next) {
+zs4db.schema.User.pre('save', function(next) {
   var work = this.email.split('@');
   var tag = work[0].split('.');
   for (var i = 0 ; i < this.auth.length ; i++){
@@ -127,7 +168,7 @@ zs4db.schemaUser.pre('save', function(next) {
 
   next();
 });
-zs4db.model.User = zs4db.conn.model('User',zs4db.schemaUser);
+zs4db.model.User = zs4db.conn.model('User',zs4db.schema.User);
 
 zs4db.login = function(req,res){
 

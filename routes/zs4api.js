@@ -1,5 +1,5 @@
 var zs4 = require('./zs4utils');
-//var zs4db = require('./zs4mongoose');
+var zs4db = require('./zs4mongoose');
 
 var zs4api = module.exports;
 
@@ -29,6 +29,7 @@ zs4api.createRequest = function(req,res){
       user:null,
       req:req.body,
       res:null,
+      server:zs4db.system.public,
     },
   };
 

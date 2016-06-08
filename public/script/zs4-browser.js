@@ -11,65 +11,68 @@ var zs4 = {
 		},
 		post:function(o,cb){
 			this.ajax('/zs4',function(d){
-			if(cb!=null){cb(JSON.parse(d));}else{console.log("no data");}},JSON.stringify(o));
+				if(cb!=null){
+					cb(JSON.parse(d));
+				}else{
+					console.log("no data");
+				}
+			},JSON.stringify(o)
+			);
 			return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
 		},
 	},
 	api:{
-			initialized:false,
-			initialize:function(){
-				if (this.initialized){
-					zs4.user.eError.zs4.setError('already initialized');
-					return 'already initialized';
-				}
-				this.initialized = true;
-				shared.install(shared,zs4);
-				return zs4.request.post({api:'initialize'},function(o){
-				console.log(o);
-				// create header
-
-				zs4.user.data = o.user;
-				if (o.user != null){
-					zs4.user.eUser.textContent = o.user.name;
-					zs4.user.eUserImage.src = o.user.pic;
-				}else{
-					zs4.user.eUser.textContent = 'musical productivity';
-				}
-
-				zs4.options();
-			})
-		},
 	},
 	initialize:function(){
+		// install stuff shared with server
+		shared.install(shared,zs4);
 
-		var conn  = zs4.user.initialize = zs4.ui.id('zs4-initialize');
+		// attach to the zs4-initialize element
+		var conn = zs4.ui.root = zs4.ui.id('zs4-initialize');
 		conn.zs4 = zs4.ui.root = {ui:zs4.ui,e:conn,zc:[],uc:[]};
 
-		var header = zs4.user.eHeader = zs4.ui.a(conn,'zs4-header');
-				var brand = zs4.user.eBrand = zs4.ui.a(header,'zs4-brand');
-						brand.textContent = 'zs4';
-				var userImage = zs4.user.eUserImage = zs4.ui.a(header,'img');
-						userImage.className = 'zs4user';
-				var user = zs4.user.eUser = zs4.ui.a(header,'zs4-user');
-				var options = zs4.user.eUserOptions = zs4.ui.a(header,'zs4-user-options');
+		// create header entities
+		var header = zs4.ui.root.eHeader = zs4.ui.a(conn,'zs4-header');
+				var brand = zs4.ui.a(header,'zs4-brand');
+				var slogan = zs4.ui.a(header,'zs4-slogan');
+				var userImage = zs4.ui.a(header,'img'); userImage.className = 'zs4user';
+				var user = zs4.ui.a(header,'zs4-user');
+				var options = zs4.ui.root.eUserOptions = zs4.ui.a(header,'zs4-user-options');
 						options.textContent = '?';
 						options.onclick = function(){zs4.options()};
 
-		var error = zs4.user.eError = zs4.ui.error(conn);
+		var error = zs4.ui.root.eError = zs4.ui.error(conn);
+		var tabs = zs4.ui.root.zTabs = zs4.ui.tabs(conn,'main');
 
-		var tabs = zs4.user.zTabs = zs4.ui.tabs(conn,'main');
+		// request more initialization data from server
+		zs4.request.post({api:'initialize'},function(o){
+			console.log(o);
 
-		zs4.api.initialize();
+			zs4.session.user = o.user;
+			zs4.session.server = o.server;
+
+			// populate header
+			brand.textContent = o.server.name;
+			slogan.textContent = o.server.slogan;
+			if (o.user != null){
+				user.textContent = o.user.name;
+				userImage.src = o.user.pic;
+			}
+
+			delete zs4.initialize;
+
+			zs4.options();
+		});
 	},
 	options:function(){
-			var options = zs4.user.zTabs.zs4.addTab('options');
+			var options = zs4.ui.root.zTabs.zs4.addTab('options');
 
 			zs4.ui.text(options,'h3','Introduction');
 			zs4.ui.html(options,'p','You can get this information anytime by clicking on the question mark in the titlebar.');
 
 
 			zs4.ui.text(options,'h3','Account');
-			if (zs4.user.data == null)zs4.ui.html(options,'p','click <a href="/login">here</a> to log in.');
+			if (zs4.session.user == null)zs4.ui.html(options,'p','click <a href="/login">here</a> to log in.');
 			else zs4.ui.html(options,'p','click <a href="/logout">here</a> to log out.');
 
 
@@ -217,7 +220,7 @@ var zs4 = {
 		},
 
 	},
-	user:{
+	session:{
 
 	},
 

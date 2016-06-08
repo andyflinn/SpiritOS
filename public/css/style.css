@@ -12,7 +12,7 @@ zs4-header{
   text-decoration: none;
 }
 
-zs4-brand{
+zs4-brand,zs4-slogan{
   margin: 0.5em;
   display:inline-block;
   align-self:auto;
