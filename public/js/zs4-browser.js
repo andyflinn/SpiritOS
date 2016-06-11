@@ -55,6 +55,8 @@ var zs4 = {
 			slogan.textContent = o.server.public.slogan;
 			if (o.user != null){
 				user.textContent = o.user.email;
+			}else{
+				zs4.ui.login(header);
 			}
 
 			delete zs4.initialize;
@@ -70,12 +72,23 @@ var zs4 = {
 
 
 			zs4.ui.text(options,'h3','Account');
-			if (zs4.session.user == null)zs4.ui.html(options,'p','click <a href="/login">here</a> to log in.');
-			else zs4.ui.html(options,'p','click <a href="/logout">here</a> to log out.');
+			if (zs4.session.user == null){
+				zs4.ui.html(options,'p','Click <a href="/login">here</a> to log in with a social network.');
+
+				var login_p = zs4.ui.a(options,'p');
+				zs4.ui.html(login_p,'span','You can also  ');
+				var login_button = zs4.ui.login(login_p);
+				zs4.ui.html(login_p,'span','.');
+			}else{
+				zs4.ui.html(options,'p','Click <a href="/logout">here</a> to log out.');
+			}
 
 
 			var h = zs4.ui.a(options,'h1');
 
+	},
+	login:function(){
+		var login = zs4.ui.root.zTabs.zs4.addTab('login');
 	},
 	ui:{
 		a:function(p,n){
@@ -113,23 +126,46 @@ var zs4 = {
 					p.zs4.zc.pop();
 			}
 		},
-		options:function(p,n){
+		toggle:function(p,n){
 			var en = 'zs4-o-'+n;
 			var o = zs4.ui.a(p,en);
-			var r = o.zs4.eOptRoot = zs4.ui.a(o,en + '-r');
-			r.textContent = '?';
-			var c = o.zs4.eOptions = zs4.ui.a(o,en + '-c');
+					o.zs4.styleDisplay = 'inline';
+					o.zs4.textClosed = '+';
+					o.zs4.textOpened = '-';
+			var r = o.zs4.eLabel = zs4.ui.text(o,en + '-r',o.zs4.textClosed);
+			r.onclick = function(){	o.zs4.toggle();};
+			var c = o.zs4.eContent = zs4.ui.a(o,en + '-c');
 			c.style.display = 'none';
-			o.zs4.addOption = function(label){
-				var x = zs4.ui.a(c,en + '-o');
-				x.textContent = label;
-				return x;
-			}
-			r.onclick = function(){
-				if (c.style.display == 'none')c.style.display = 'inline-block';
-				else c.style.display = 'none';
+			//r.onblur = function(){c.style.display = 'none';};
+			o.zs4.onopen = function(){};
+			o.zs4.onclose = function(){};
+			o.zs4.setLabelClosed = function(lbl){
+				o.zs4.textClosed = lbl;
+				if (c.style.display == 'none'){r.textContent=lbl;}
 			};
-			r.onblur = function(){c.style.display = 'none';};
+			o.zs4.setLabelOpened = function(lbl){
+				o.zs4.textOpened = lbl;
+				if (c.style.display != 'none'){r.textContent=lbl;}
+			};
+			o.zs4.setLabel = function(lbl){
+				o.zs4.setLabelOpened(lbl);
+				o.zs4.setLabelClosed(lbl);
+				o.zs4.eLabel.textContent = lbl;
+			};
+			o.zs4.toggle = function(){
+				if (c.style.display == 'none')this.open();
+				else this.close();
+			}
+			o.zs4.close = function(){
+					c.style.display = 'none';
+					o.zs4.eLabel.textContent = o.zs4.textClosed;
+			};
+			o.zs4.open = function(){
+					c.style.display = o.zs4.styleDisplay;
+					o.zs4.eLabel.textContent = o.zs4.textOpened;
+					o.zs4.onopen();
+			};
+			//o.zs4.close();
 			return o;
 		},
 		tabs:function(p,n){
@@ -187,7 +223,7 @@ var zs4 = {
 						t.zs4.pane[i].h.className = 'active';
 						t.zs4.pane[i].p.style.display = 'block';
 					}else{
-						t.zs4.pane[i].h.className = '';
+						t.zs4.pane[i].h.className = 'hidden';
 						t.zs4.pane[i].p.style.display = 'none';
 					}
 				}
@@ -216,7 +252,26 @@ var zs4 = {
 		id:function(i){
 			return document.getElementById(i);
 		},
+		login:function(p){
+			var o = zs4.ui.toggle(p,'login');
+					if (zs4.session.user){o.style.display='none';return o;}
+					o.zs4.setLabel('login');
+					var i = zs4.ui.a(o.zs4.eContent,'input');
+							i.placeholder = 'your.email@your.domain';
+					var b = zs4.ui.a(o.zs4.eContent,'button');
+							b.type = 'button';
+							b.textContent = 'login';
+							b.onclick = function(){
+								zs4.ui.root.eError.zs4.clearError();
+								if (!zs4.is.email(i.value)){
+										zs4.ui.root.eError.zs4.setError(i.value + ' is not a valid email address.');
+								}
+							}
 
+					o.zs4.onopen = function(){i.focus();};
+			//o.zs4.close();
+			return o;
+		},
 	},
 	session:{
 

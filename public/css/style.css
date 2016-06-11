@@ -29,10 +29,18 @@ zs4-user{
   display:inline-block;
   align-self: auto;
 }
+zs4-o-login{
+  margin: 0.5em;
+  align-self: auto;
+}
+zs4-o-login-r{
+  margin: 0.5em;
+  align-self: auto;
+  cursor: pointer;
+}
 zs4-user-options{
   background-color: white;
   display:inline-block;
-  //vertical-align:middle;
   border-radius: 1em;
   height: 1em;
   width: 1em;
@@ -56,8 +64,15 @@ zs4-t-main-h{
   padding-right: 0.5em;
   background-color: lightgreen;
 }
+zs4-t-main-h.active zs4-t-main-tx{
+  visibility: visible;
+  cursor: pointer;
+}
 zs4-t-main-h.active{
   background-color: white;
+}
+zs4-t-main-h.hidden{
+  cursor: pointer;
 }
 zs4-t-main-p{
   margin: 1em;
@@ -81,8 +96,4 @@ zs4-t-main-tx{
 }
 zs4-t-main-tx:hover{
   color: red;
-}
-zs4-t-main-h.active zs4-t-main-tx{
-  visibility: visible;
-  cursor: pointer;
 }

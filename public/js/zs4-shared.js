@@ -47,6 +47,18 @@ shared.is = {
     }
     return true;
   },
+  email:function(str){
+    if (!this.string(str)||str.length<5)return false;
+    var at = str.indexOf('@');
+    if (at < 1 || at > (str.length-4))return false;
+    var nam = str.substr(0,at);
+    var dom = str.substr((at+1),(str.length-at-1));
+    var dot = dom.indexOf('.');
+    if (dot < 1 || dot > (dom.length-2))return false;
+    dot = dom.lastIndexOf('.');
+    if (dot > (dom.length-2))return false;
+    return true;
+  },
   number:function(b){
     if	(b==null)return false;
     if	(typeof(b)!='number')return false;

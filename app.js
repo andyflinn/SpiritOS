@@ -8,6 +8,9 @@ var session = require('express-session');
 var dotenv = require('dotenv');
 var passport = require('passport');
 var Auth0Strategy = require('passport-auth0');
+var passwordless = require('passwordless');
+var MongoStore = require('passwordless-mongostore');
+var email   = require("emailjs");
 dotenv.load();
 
 var routes = require('./routes/index');
