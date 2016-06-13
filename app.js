@@ -5,31 +5,16 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var sessionStore = require('connect-mongo')(session);
 var dotenv = require('dotenv');
 var passport = require('passport');
-var Auth0Strategy = require('passport-auth0');
 var passwordless = require('passwordless');
-var MongoStore = require('passwordless-mongostore');
-var email   = require("emailjs");
+
 dotenv.load();
 
-var routes = require('./routes/index');
+
+//var routes = require('./routes/index');
 var zs4 = require('./routes/zs4');
-
-// This will configure Passport to use Auth0
-var strategy = new Auth0Strategy({
-    domain:       process.env.AUTH0_DOMAIN,
-    clientID:     process.env.AUTH0_CLIENT_ID,
-    clientSecret: process.env.AUTH0_CLIENT_SECRET,
-    callbackURL:  process.env.AUTH0_CALLBACK_URL || 'http://localhost:3000/callback'
-  }, function(accessToken, refreshToken, extraParams, profile, done) {
-    // accessToken is the token to call Auth0 API (not needed in the most cases)
-    // extraParams.id_token has the JSON Web Token
-    // profile has all the information from the user
-    return done(null, profile);
-  });
-
-passport.use(strategy);
 
 // you can use this section to keep a smaller payload
 passport.serializeUser(function(user, done) {
@@ -53,16 +38,17 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
-  secret: 'shhhhhhhhh',
+  secret: process.env.ZS4_SESSION_SECRET,
   resave: true,
-  saveUninitialized: true
+  saveUninitialized: true,
+  store: new sessionStore({ url: process.env.ZS4_SESSION_DB })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/zs4', zs4);
-app.use('/', routes);
+app.use(passwordless.sessionSupport());
+app.use('/', zs4);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

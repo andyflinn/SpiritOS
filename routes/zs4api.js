@@ -35,9 +35,9 @@ zs4api.createRequest = function(req,res){
   if (zs4.debug) object.zs4.debug = {};
   var user = zs4.getRequestUser(req,res);
   if (user != null){
-      object.zs4.user = {name:user.name,pic:user.pic, email:user.email, admin:false,};
+      object.zs4.user = {name:user.name,email:user.email, admin:false,};
 
-      if ((process.env.ZS4_ADMIN_EMAIL.trim()) == req.user._json.email.trim() ){
+      if ((process.env.ZS4_ADMIN_EMAIL.trim()) == user.email.trim() ){
         object.zs4.user.admin = true;
       }
   }

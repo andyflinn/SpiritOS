@@ -13,12 +13,6 @@ shared.mongoose = {
     },
     User:{
       email: { type: String, required: true, trim: true, minlength:5, maxlength:64, index: { unique: true }},
-      auth:[{
-          identity: { type: String, required: true, trim: true },
-          provider: { type: String, required: true, trim: true },
-          name: { type: String, required: true, trim: true },
-          pic: { type: String, required: true, trim: true },
-      }],
     },
   },
 };
@@ -50,7 +44,7 @@ shared.is = {
   email:function(str){
     if (!this.string(str)||str.length<5)return false;
     var at = str.indexOf('@');
-    if (at < 1 || at > (str.length-4))return false;
+    if (at < 1 || at > (str.length-4) || str.lastIndexOf('@') != at)return false;
     var nam = str.substr(0,at);
     var dom = str.substr((at+1),(str.length-at-1));
     var dot = dom.indexOf('.');
@@ -121,6 +115,24 @@ shared.string = {
       for (var i = 0; i < str.length ;i++){
         var c = str.charAt(i);
         if ((c >= 'a' && c <= 'z')||(c >= 'A' && c <= 'Z')){
+          buf+=c;
+        }else{
+          if (buf!=''){
+            arr.push(buf);
+            buf = '';
+          }
+        }
+      }
+      if (buf!=''){
+        arr.push(buf);
+      }
+      return arr;
+    },
+    separators:function(str,sep){
+      arr = []; buf = '';
+      for (var i = 0; i < str.length ;i++){
+        var c = str.charAt(i);
+        if (sep.indexOf(c)== -1){
           buf+=c;
         }else{
           if (buf!=''){

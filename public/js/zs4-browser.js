@@ -10,7 +10,7 @@ var zs4 = {
 			return ('this.ajax(\''+u+'\',cb)');
 		},
 		post:function(o,cb){
-			this.ajax('/zs4',function(d){
+			this.ajax('/zs4/post',function(d){
 				if(cb!=null){
 					cb(JSON.parse(d));
 				}else{
@@ -22,73 +22,6 @@ var zs4 = {
 		},
 	},
 	api:{
-	},
-	initialize:function(){
-		// install stuff shared with server
-		shared.install(shared,zs4);
-
-		// attach to the zs4-initialize element
-		var conn = zs4.ui.root = zs4.ui.id('zs4-initialize');
-		conn.zs4 = zs4.ui.root = {ui:zs4.ui,e:conn,zc:[],uc:[]};
-
-		// create header entities
-		var header = zs4.ui.root.eHeader = zs4.ui.a(conn,'zs4-header');
-				var brand = zs4.ui.a(header,'zs4-brand');
-				var slogan = zs4.ui.a(header,'zs4-slogan');
-				var user = zs4.ui.a(header,'zs4-user');
-				var options = zs4.ui.root.eUserOptions = zs4.ui.a(header,'zs4-user-options');
-						options.textContent = '?';
-						options.onclick = function(){zs4.options()};
-
-		var error = zs4.ui.root.eError = zs4.ui.error(conn);
-		var tabs = zs4.ui.root.zTabs = zs4.ui.tabs(conn,'main');
-
-		// request more initialization data from server
-		zs4.request.post({api:'initialize'},function(o){
-			console.log(o);
-
-			zs4.session.user = o.user;
-			zs4.session.server = o.server;
-
-			// populate header
-			brand.textContent = o.server.public.name;
-			slogan.textContent = o.server.public.slogan;
-			if (o.user != null){
-				user.textContent = o.user.email;
-			}else{
-				zs4.ui.login(header);
-			}
-
-			delete zs4.initialize;
-
-			zs4.options();
-		});
-	},
-	options:function(){
-			var options = zs4.ui.root.zTabs.zs4.addTab('options');
-
-			zs4.ui.text(options,'h3','Introduction');
-			zs4.ui.html(options,'p','You can get this information anytime by clicking on the question mark in the titlebar.');
-
-
-			zs4.ui.text(options,'h3','Account');
-			if (zs4.session.user == null){
-				zs4.ui.html(options,'p','Click <a href="/login">here</a> to log in with a social network.');
-
-				var login_p = zs4.ui.a(options,'p');
-				zs4.ui.html(login_p,'span','You can also  ');
-				var login_button = zs4.ui.login(login_p);
-				zs4.ui.html(login_p,'span','.');
-			}else{
-				zs4.ui.html(options,'p','Click <a href="/logout">here</a> to log out.');
-			}
-
-
-			var h = zs4.ui.a(options,'h1');
-
-	},
-	login:function(){
-		var login = zs4.ui.root.zTabs.zs4.addTab('login');
 	},
 	ui:{
 		a:function(p,n){
@@ -265,13 +198,84 @@ var zs4 = {
 								zs4.ui.root.eError.zs4.clearError();
 								if (!zs4.is.email(i.value)){
 										zs4.ui.root.eError.zs4.setError(i.value + ' is not a valid email address.');
+										return;
 								}
-							}
+
+								zs4.request.ajax('/zs4/token',function(d){
+										var r = JSON.parse(d);
+										console.log(r);
+								},JSON.stringify({user:i.value}));
+
+							};
 
 					o.zs4.onopen = function(){i.focus();};
 			//o.zs4.close();
 			return o;
 		},
+		initialize:function(zs4element){
+
+			var creatOptionsTab = function(){
+					var options = zs4.ui.root.zTabs.zs4.addTab('options');
+
+					zs4.ui.text(options,'h3','Introduction');
+					zs4.ui.html(options,'p','You can get this information anytime by clicking on the question mark in the titlebar.');
+
+
+					zs4.ui.text(options,'h3','Account');
+					if (zs4.session.user == null){
+						var login_p = zs4.ui.a(options,'p');
+						zs4.ui.html(login_p,'span','You can also  ');
+						var login_button = zs4.ui.login(login_p);
+						zs4.ui.html(login_p,'span','.');
+					}else{
+						zs4.ui.html(options,'p','Click <a href="/logout">here</a> to log out.');
+					}
+
+					var h = zs4.ui.a(options,'h1');
+
+			};
+
+		// attach to the zs4-initialize element
+			var conn = zs4.ui.root = zs4element;
+			conn.zs4 = zs4.ui.root = {ui:zs4.ui,e:conn,zc:[],uc:[]};
+
+			// create header entities
+			var header = zs4.ui.root.eHeader = zs4.ui.a(conn,'zs4-header');
+					var brand = zs4.ui.a(header,'zs4-brand');
+					var slogan = zs4.ui.a(header,'zs4-slogan');
+					var user = zs4.ui.a(header,'zs4-user');
+					var options = zs4.ui.root.eUserOptions = zs4.ui.a(header,'zs4-user-options');
+							options.textContent = '?';
+							options.onclick = function(){creatOptionsTab()};
+
+			var error = zs4.ui.root.eError = zs4.ui.error(conn);
+			var tabs = zs4.ui.root.zTabs = zs4.ui.tabs(conn,'main');
+
+			// request more initialization data from server
+			zs4.request.post({api:'initialize'},function(o){
+				console.log(o);
+
+				zs4.session.user = o.user;
+				zs4.session.server = o.server;
+
+				// populate header
+				brand.textContent = o.server.public.name;
+				slogan.textContent = o.server.public.slogan;
+				if (o.user != null){
+					user.textContent = o.user.email;
+				}else{
+					zs4.ui.login(header);
+				}
+
+				delete zs4.initialize;
+
+				creatOptionsTab();
+			});
+
+		},
+
+
+
 	},
 	session:{
 

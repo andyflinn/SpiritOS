@@ -136,23 +136,50 @@ zs4db.model.zs4.findOne({ 'number': 0 }, function (err, system) {
 })
 
 
+
 /////////////////////////////////////////
 // User Record.
 zs4db.schema.User = zs4db.createSchema(zs4.mongoose.schema.User,SCHEMA_DATED|SCHEMA_PAGED);
 zs4db.schema.User.pre('save', function(next) {
   var work = this.email.split('@');
   var tag = work[0].split('.');
-  for (var i = 0 ; i < this.auth.length ; i++){
-    work = zs4.string.split.words(this.auth[i].name);
-    zs4.string.array.addToArray(work,tag);
-  }
   zs4.string.array.trimToArray(this.tag,tag);
   zs4.string.array.addToArray(tag,this.tag);
 
   next();
 });
 zs4db.model.User = zs4db.conn.model('User',zs4db.schema.User);
+/////////////////////////////////////////
+// admin user.
 
+zs4db.admin = zs4db.model.User();
+zs4db.admin.email = process.env.ZS4_ADMIN_EMAIL;
+
+zs4db.model.User.findOne({ 'email': process.env.ZS4_ADMIN_EMAIL }, function (err, admin) {
+  if (err || admin == null ){
+    zs4db.admin.email = process.env.ZS4_ADMIN_EMAIL;
+    zs4db.admin.save(function(err) {
+      console.log('inside zs4db.admin.initialize()');
+      if (err) {
+        console.log('ERROR: while zs4db.admin.initialize()');
+        console.log(zs4db.admin);
+        return;
+      }
+      console.log('zs4db.admin saved.');
+      console.log(zs4db.admin);
+    });
+  }else{
+    zs4db.admin = admin;
+    console.log('zs4db.admin loaded.');
+    console.log(zs4db.admin);
+  }
+})
+
+
+
+/////////////////////////////////////////
+// zs4 user login action
+/*
 zs4db.login = function(req,res){
 
   var xu = zs4.getRequestUser(req,res);
@@ -211,13 +238,7 @@ zs4db.login = function(req,res){
   });
 
 }
-zs4db.dumpAllUsers = function(){
-  console.log('dumping all users:');
-  zs4db.model.User.find({}, function(err, users) {
-    if (err)  return console.error.err;
-    console.log(users);
-  });
-}
+*/
 
 /////////////////////////////////////////
 // Document

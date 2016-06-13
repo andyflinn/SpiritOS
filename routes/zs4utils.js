@@ -20,18 +20,20 @@ zs4.console = {
 
 zs4.getRequestUser = function(req,res){
 
-  if (req.user == null) return null;
-  if (req.user._json == null) return null;
-  if (req.user._json.email == null) return null;
+  if (req.user == null){
+    zs4.console.log('getRequestUser(): req.user ==null');
+    return null;
+  }
 
-  var nam = req.user.displayName;
+  zs4.console.log('getRequestUser()');
+  zs4.console.log(req.user);
+
+  var nam = req.user;
   var i = nam.indexOf('@');
   if (i>0)nam = nam.substr(0,i);
+
   return {
-    email:req.user._json.email,
+    email:req.user,
     name:nam,
-    pic:req.user.picture,
-    identity:req.user.id,
-    provider:req.user.provider,
   };
 }
