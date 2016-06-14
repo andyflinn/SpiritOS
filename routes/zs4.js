@@ -1,11 +1,11 @@
 var express = require('express');
-var passport = require('passport');
 var passwordless = require('passwordless');
 var MongoStore = require('passwordless-mongostore');
 var email   = require("emailjs");
 
 var zs4 = require('./zs4utils');
 var zs4api = require('./zs4api');
+var zs4db = require('./zs4mongoose');
 
 var smtpServer  = email.server.connect({
    user:    process.env.ZS4_SMTP_USER,
@@ -18,10 +18,12 @@ var loginDb = process.env.ZS4_TOKEN_DB;
 passwordless.init(new MongoStore(loginDb));
 passwordless.addDelivery(
     function(token, uid, recipient, callback) {
-        console.log('inside email deliver!!!!!!!!!!!');
+        console.log('inside email delivert!!!!!!!!!!!');
         var host = process.env.ZS4_HOST;
+        var port = parseInt(process.env.ZS4_PORT);
+        if (port != 443) host += (':' + port);
         smtpServer.send({
-            text:    'Hello!\nAccess your account here: http://'
+            text:    'Hello!\nAccess your account here: https://'
             + host + '/zs4/token?token=' + token + '&uid='
             + encodeURIComponent(uid),
             from:    process.env.ZS4_SMTP_USER,
@@ -81,16 +83,33 @@ router.post('/zs4/post', function(req, res){
   zs4api.respond(req, res);
 });
 
-
 router.post('/zs4/token',
     passwordless.requestToken(
         // Turn the email address into an user ID
-        function(user, delivery, callback, req) {
-            callback(null, user);
-        }),
+        function(email, delivery, callback, req) {
+
+          zs4db.model.User.findOne({ 'email': email }, function (err, user) {
+            if (err || user == null || user.email != email ){
+              callback(null, null);
+            }else{
+              callback(null, email);
+            }
+          });
+        },{failureRedirect:'/zs4/failure'}),
     function(req, res) {
-      res.setHeader('Content-Type', 'application/json');
-      res.send(JSON.stringify({msg:'sent'}));
+      //res.setHeader('Content-Type', 'application/json');
+      //res.send(JSON.stringify({msg:'Token sent to '+ zs4.getRequestUser().email}));
+      res.send({msg:'Token sent to '+req.body.user+'.'});
+});
+
+router.get('/zs4/logout', passwordless.logout(),
+    function(req, res) {
+        res.redirect('/');
+});
+
+router.get('/zs4/failure',
+    function(req, res) {
+        res.send({type:'error'});
 });
 
 module.exports = router;

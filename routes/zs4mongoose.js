@@ -1,5 +1,4 @@
 var express = require('express');
-var passport = require('passport');
 var mongoose = require('mongoose');
 var pager = require('mongoose-paginate');
 var zs4 = require('./zs4utils');

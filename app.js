@@ -7,7 +7,6 @@ var bodyParser = require('body-parser');
 var session = require('express-session');
 var sessionStore = require('connect-mongo')(session);
 var dotenv = require('dotenv');
-var passport = require('passport');
 var passwordless = require('passwordless');
 
 dotenv.load();
@@ -15,15 +14,6 @@ dotenv.load();
 
 //var routes = require('./routes/index');
 var zs4 = require('./routes/zs4');
-
-// you can use this section to keep a smaller payload
-passport.serializeUser(function(user, done) {
-  done(null, user);
-});
-
-passport.deserializeUser(function(user, done) {
-  done(null, user);
-});
 
 var app = express();
 
@@ -43,8 +33,7 @@ app.use(session({
   saveUninitialized: true,
   store: new sessionStore({ url: process.env.ZS4_SESSION_DB })
 }));
-app.use(passport.initialize());
-app.use(passport.session());
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(passwordless.sessionSupport());
@@ -83,4 +72,14 @@ app.use(function(err, req, res, next) {
 });
 
 
-module.exports = app;
+//module.exports = app;
+
+var   fs = require('fs'),
+      https = require('https');
+
+var key = fs.readFileSync(process.env.ZS4_KEY_FILE).toString();
+var cert = fs.readFileSync(process.env.ZS4_CERT_FILE).toString();
+
+var creds = {key: key, cert: cert};
+
+https.createServer(creds,app).listen(parseInt(process.env.ZS4_PORT));

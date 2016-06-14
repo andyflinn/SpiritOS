@@ -228,7 +228,7 @@ var zs4 = {
 						var login_button = zs4.ui.login(login_p);
 						zs4.ui.html(login_p,'span','.');
 					}else{
-						zs4.ui.html(options,'p','Click <a href="/logout">here</a> to log out.');
+						zs4.ui.html(options,'p','Click <a href="/zs4/logout">here</a> to log out.');
 					}
 
 					var h = zs4.ui.a(options,'h1');
