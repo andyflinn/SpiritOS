@@ -101,19 +101,19 @@ zs4db.createSchema = function(object,mods){
 /////////////////////////////////////////
 // system configuration.
 
-zs4db.schema.zs4 = zs4db.createSchema(zs4.mongoose.schema.zs4,SCHEMA_DATED)
-zs4db.schema.zs4.pre('save', function(next) {
+zs4db.schema.Server = zs4db.createSchema(zs4.type.Server.schema,SCHEMA_DATED)
+zs4db.schema.Server.pre('save', function(next) {
   if (this.number == null)this.number = 0;
   if (this.public.name == null)this.name='zs4';
   if (this.public.slogan==null)this.slogan='awesomeness';
   next();
 });
 
-zs4db.model.zs4 = zs4db.conn.model('zs4',zs4db.schema.zs4);
+zs4db.model.Server = zs4db.conn.model('zs4',zs4db.schema.Server);
 
-zs4db.system = zs4db.model.zs4();
+zs4db.system = zs4db.model.Server();
 
-zs4db.model.zs4.findOne({ 'number': 0 }, function (err, system) {
+zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
   if (err || system == null ){
     zs4db.system.save(function(err) {
       console.log('inside zs4db.system.initialize()');
@@ -138,7 +138,7 @@ zs4db.model.zs4.findOne({ 'number': 0 }, function (err, system) {
 
 /////////////////////////////////////////
 // User Record.
-zs4db.schema.User = zs4db.createSchema(zs4.mongoose.schema.User,SCHEMA_DATED|SCHEMA_PAGED);
+zs4db.schema.User = zs4db.createSchema(zs4.type.User.schema,SCHEMA_DATED|SCHEMA_PAGED);
 zs4db.schema.User.pre('save', function(next) {
   var work = this.email.split('@');
   var tag = work[0].split('.');
@@ -176,68 +176,6 @@ zs4db.model.User.findOne({ 'email': zs4.env.ZS4_ADMIN_EMAIL }, function (err, ad
 
 
 
-/////////////////////////////////////////
-// zs4 user login action
-/*
-zs4db.login = function(req,res){
-
-  var xu = zs4.getRequestUser(req,res);
-  if (xu == null){
-    console.log('zs4db.login() invalid express user.')
-    return;
-  }
-
-  zs4db.model.User.findOne({ email:xu.email }, function(err, dbUser) {
-    console.log('searching db for '+ xu.email);
-    if (err || dbUser==null){
-       console.log(xu.email + ' not in db. creating....');
-       var obj = {
-         email:xu.email,
-         auth:[{identity:xu.identity,provider:xu.provider,name:xu.name,pic:xu.pic}],
-       };
-       var nu = zs4db.model.User(obj);
-
-       nu.save(function(err) {
-         console.log('inside save callback');
-         if (err) {
-           console.log('ERROR: while db.save.user('+xu.name+'): '+err+obj);
-           console.log(obj);
-           return;
-         }
-         console.log('User ' + xu.email + ' created!');
-       });
-
-       return;
-     };
-
-    console.log('found: '+ dbUser);
-
-    // return if provider exist for this email.
-    var nu_provider = true;
-    for (var i = 0; i < dbUser.auth.length; i++)
-        if (dbUser.auth[i].identity == xu.identity){
-          nu_provider = false;
-        }
-
-    if (nu_provider){
-        console.log('adding '+ xu.identity + ' to ' + xu.email + '...');
-        dbUser.auth.push({identity:xu.identity,provider:xu.provider,name:xu.name,pic:xu.pic});
-    }
-
-    dbUser.save(function(err) {
-      console.log('inside update callback');
-      if (err) {
-        console.log('ERROR: while db.update.user('+xu.name+'): '+xu.identity);
-        console.log(obj);
-        return;
-      }
-      console.log('User ' + xu.email + ' updated!');
-    });
-
-  });
-
-}
-*/
 
 /////////////////////////////////////////
 // Document

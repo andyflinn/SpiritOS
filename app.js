@@ -27,7 +27,8 @@ app.use(session({
   secret: zs4.env.ZS4_SESSION_SECRET,
   resave: true,
   saveUninitialized: true,
-  store: new sessionStore({ url: zs4.env.ZS4_SESSION_DB })
+  store: new sessionStore({ url: zs4.env.ZS4_SESSION_DB }),
+  cookie: { secure: true },
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));

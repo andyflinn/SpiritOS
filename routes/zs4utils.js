@@ -23,6 +23,8 @@ zs4.console = {
   }
 };
 
+//zs4.console.log(process);
+
 // default-able environment variables....
 if (process.env.ZS4_HOST == null){zs4.env.ZS4_HOST='localhost'}
 else {zs4.env.ZS4_HOST=process.env.ZS4_HOST}

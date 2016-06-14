@@ -1,3 +1,5 @@
+var os = require('os');
+const v8 = require('v8');
 var zs4 = require('../zs4utils');
 var zs4db = require('../zs4mongoose');
 
@@ -24,6 +26,23 @@ exports.respond = function(req){
         zs4.console.log('serving admin api.');
         reply.server = zs4db.system;
         reply.admin = {
+          os:{
+            arch:os.arch(),
+            platform:os.platform(),
+            release:os.release(),
+            tmpdir:os.tmpdir(),
+            totalmem:os.totalmem(),
+            type:os.type(),
+            uptime:os.uptime(),
+            networkInterfaces:os.networkInterfaces(),
+            freemem:os.freemem(),
+            endianness:os.endianness(),
+            cpus:os.cpus(),
+            EOL:os.EOL,
+          },
+          v8:{
+            stats:v8.getHeapStatistics(),
+          },
         }
       }
       req.replyJSON(reply);

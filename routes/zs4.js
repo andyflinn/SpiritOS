@@ -57,9 +57,9 @@ router.get('/', function(req, res) {
       html += ' <head>\n';
         html += '  <base href="' + path + '">\n';
         html += '  <link rel="stylesheet" href="/css/style.css">\n';
-        html += '  <script src="/js/zs4-browser.js"></script>\n';
+        html += '  <script>var exports = {};</script>\n'
         html += '  <script src="/js/zs4-shared.js"></script>\n';
-        html += '  <script>shared.install(shared,zs4);</script>\n'
+        html += '  <script src="/js/zs4-browser.js"></script>\n';
       html += ' </head>\n';
       if (req.path==='/'){
         html += ' <body onload="zs4.ui.initialize(document.body)">\n';

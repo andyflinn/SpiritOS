@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////"+"
 'use strict';
-var zs4 = {
-	request:{
+
+zs4.request = {
 		ajax:function(u,cb){
 			this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
 		},
@@ -20,10 +20,11 @@ var zs4 = {
 			);
 			//return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
 		},
-	},
-	api:{
-	},
-	ui:{
+	};
+
+zs4.api={};
+
+zs4.ui = {
 		a:function(p,n){
 			var e = document.createElement(n);
 			e.zs4 = {ui:zs4.ui,e:e,eParent:p,zc:[],uc:[]};
@@ -216,7 +217,7 @@ var zs4 = {
 		},
 		initialize:function(zs4element){
 
-			var creatOptionsTab = function(){
+			function creatOptionsTab(){
 					var options = zs4.ui.root.zTabs.zs4.addTab('options');
 
 					zs4.ui.text(options,'h3','Introduction');
@@ -234,7 +235,6 @@ var zs4 = {
 					}
 
 					var h = zs4.ui.a(options,'h1');
-
 			};
 
 		// attach to the zs4-initialize element
@@ -278,11 +278,7 @@ var zs4 = {
 
 
 
-	},
-	session:{
+	};
 
-	},
 
-};
-
-var exports = {};
+zs4.session = {};

@@ -1,23 +1,32 @@
-var shared = exports;
+var zs4 = exports;
 
-shared.install = function(shared,target){for (var n in shared) if (n!='install')target[n]=shared[n];};
+zs4.install = function(shared,target){for (var n in shared) if (n!='install')target[n]=shared[n];};
 
-shared.mongoose = {
-  schema:{
-    zs4:{
-        number: { type: Number, required: true, min:0, max:1, default:0},
-        public:{
-          name: { type: String, required: true, trim: true, minlength:1, maxlength:16, default:'zs4' },
-          slogan: { type: String, required: true, trim: true, minlength:4, maxlength:32, default:'awesomeness!' },
-        },
+zs4.const = {
+  EMAIL:{
+    MINLENGTH:5,
+    MAXLENGTH:64,
+  },
+  SERVER:{
+    NAME:{
+      MINLENGTH:1,
+      MAXLENGTH:16,
     },
-    User:{
-      email: { type: String, required: true, trim: true, minlength:5, maxlength:64, index: { unique: true }},
+    SLOGAN:{
+      MINLENGTH:4,
+      MAXLENGTH:32,
     },
+  },
+  SYSTEM:{
+    EMAIL:'zs4@zs4.zs4',
+  },
+  TYPE:{
+    PLAIN:0,
+    COLLECTED:1,
   },
 };
 
-shared.is = {
+zs4.is = {
   array:function(a){
     if	(a==null)return false;
     return (a instanceof Array);
@@ -42,9 +51,9 @@ shared.is = {
     return true;
   },
   email:function(str){
-    if (!this.string(str)||str.length<5)return false;
+    if (!this.string(str)||str.length<zs4.const.EMAIL.MINLENGTH||str.length>zs4.const.EMAIL.MAXLENGTH)return false;
     var at = str.indexOf('@');
-    if (at < 1 || at > (str.length-4) || str.lastIndexOf('@') != at)return false;
+    if (at < 1 || at > (str.length-(zs4.const.EMAIL.MINLENGTH-1)) || str.lastIndexOf('@') != at)return false;
     var nam = str.substr(0,at);
     var dom = str.substr((at+1),(str.length-at-1));
     var dot = dom.indexOf('.');
@@ -92,13 +101,13 @@ shared.is = {
   },
 };
 
-shared.copy = {
+zs4.copy = {
     object:{
       members:function(from,to){for (var n in from)to[n]=from[n];},
     },
 }
 
-shared.create = {
+zs4.create = {
   error:function(text,data){
     return {
       type:'error',
@@ -108,7 +117,7 @@ shared.create = {
   }
 };
 
-shared.string = {
+zs4.string = {
   split:{
     words:function(str){
       arr = []; buf = '';
@@ -174,3 +183,74 @@ shared.string = {
 
   }
 }
+
+zs4.type = {
+  Meta:{
+    info:{
+      name:'Meta',
+      type:zs4.const.TYPE.PLAIN,
+    },
+    schema:{
+      created:{
+        type: Date,
+      },
+      updated:{
+        type: Date,
+      },
+      owner:{
+        type: String,
+        required: true,
+        trim: true,
+        minlength:zs4.const.EMAIL.MINLENGTH,
+        maxlength:zs4.const.EMAIL.MAXLENGTH,
+        index: { unique: true },
+        zs4:{
+          validate:zs4.is.email,
+        },
+      },
+    },
+  },
+  Server:{
+    info:{
+      name:'Server',
+      type:zs4.const.TYPE.COLLECTED,
+    },
+    schema:{
+        number: { type: Number, required: true, min:0, max:1, default:0},
+        public:{
+          name: {
+            type: String,
+            required: true,
+            trim: true,
+            minlength:zs4.const.SERVER.NAME.MINLENGTH,
+            maxlength:zs4.const.SERVER.NAME.MAXLENGTH,
+            default:'zs4'
+          },
+          slogan: {
+            type: String,
+            required: true,
+            trim: true,
+            minlength:zs4.const.SERVER.SLOGAN.MINLENGTH,
+            maxlength:zs4.const.SERVER.SLOGAN.MAXLENGTH,
+            default:'awesomeness!'
+          },
+        },
+    },
+  },
+  User:{
+    info:{
+      name:'User',
+      type:zs4.const.TYPE.COLLECTED,
+    },
+    schema:{
+      email: {
+        type: String,
+        required: true,
+        trim: true,
+        minlength:zs4.const.EMAIL.MINLENGTH,
+        maxlength:zs4.const.EMAIL.MAXLENGTH,
+        index: { unique: true },
+      },
+    },
+  },
+};
