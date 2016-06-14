@@ -187,26 +187,28 @@ var zs4 = {
 		},
 		login:function(p){
 			var o = zs4.ui.toggle(p,'login');
+					o.zs4.requestToken = function(){
+						zs4.ui.root.eError.zs4.clearError();
+						if (!zs4.is.email(i.value)){
+								zs4.ui.root.eError.zs4.setError(i.value + ' is not a valid email address.');
+								return;
+						}
+
+						zs4.request.ajax('/zs4/token',function(d){
+								var r = JSON.parse(d);
+								console.log(r);
+						},JSON.stringify({user:i.value}));
+
+					}
 					if (zs4.session.user){o.style.display='none';return o;}
 					o.zs4.setLabel('login');
 					var i = zs4.ui.a(o.zs4.eContent,'input');
 							i.placeholder = 'your.email@your.domain';
+							i.onchange = function(){o.zs4.requestToken();};
 					var b = zs4.ui.a(o.zs4.eContent,'button');
 							b.type = 'button';
 							b.textContent = 'login';
-							b.onclick = function(){
-								zs4.ui.root.eError.zs4.clearError();
-								if (!zs4.is.email(i.value)){
-										zs4.ui.root.eError.zs4.setError(i.value + ' is not a valid email address.');
-										return;
-								}
-
-								zs4.request.ajax('/zs4/token',function(d){
-										var r = JSON.parse(d);
-										console.log(r);
-								},JSON.stringify({user:i.value}));
-
-							};
+							b.onclick = function(){o.zs4.requestToken();};
 
 					o.zs4.onopen = function(){i.focus();};
 			//o.zs4.close();

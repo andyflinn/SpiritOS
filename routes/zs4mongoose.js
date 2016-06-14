@@ -9,13 +9,13 @@ var SCHEMA_DATED = 1;
 var SCHEMA_DOCUMENT = 2;
 var SCHEMA_PAGED = 4;
 
-zs4db.conn = mongoose.createConnection(process.env.ZS4_MONGODB_URL);;
+zs4db.conn = mongoose.createConnection(zs4.env.ZS4_DB);;
 zs4db.conn.on('error', console.error.bind(console, 'connection error:'));
 zs4db.conn.once('open', function() {
-  console.log ('Connected to: ' + process.env.ZS4_MONGODB_URL);
+  console.log ('Connected to: ' + zs4.env.ZS4_DB);
 });
 
-if (zs4.debug){
+if (zs4.env.debug){
   pager.paginate.options = {
       lean:  false,
       limit: 3
@@ -152,11 +152,11 @@ zs4db.model.User = zs4db.conn.model('User',zs4db.schema.User);
 // admin user.
 
 zs4db.admin = zs4db.model.User();
-zs4db.admin.email = process.env.ZS4_ADMIN_EMAIL;
+zs4db.admin.email = zs4.env.ZS4_ADMIN_EMAIL;
 
-zs4db.model.User.findOne({ 'email': process.env.ZS4_ADMIN_EMAIL }, function (err, admin) {
+zs4db.model.User.findOne({ 'email': zs4.env.ZS4_ADMIN_EMAIL }, function (err, admin) {
   if (err || admin == null ){
-    zs4db.admin.email = process.env.ZS4_ADMIN_EMAIL;
+    zs4db.admin.email = zs4.env.ZS4_ADMIN_EMAIL;
     zs4db.admin.save(function(err) {
       console.log('inside zs4db.admin.initialize()');
       if (err) {

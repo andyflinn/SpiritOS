@@ -8,13 +8,9 @@ var session = require('express-session');
 var sessionStore = require('connect-mongo')(session);
 var dotenv = require('dotenv');
 var passwordless = require('passwordless');
-
 dotenv.load();
 
-
-//var routes = require('./routes/index');
-var zs4 = require('./routes/zs4');
-
+var zs4 = require('./routes/zs4utils');
 var app = express();
 
 // view engine setup
@@ -28,16 +24,16 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(session({
-  secret: process.env.ZS4_SESSION_SECRET,
+  secret: zs4.env.ZS4_SESSION_SECRET,
   resave: true,
   saveUninitialized: true,
-  store: new sessionStore({ url: process.env.ZS4_SESSION_DB })
+  store: new sessionStore({ url: zs4.env.ZS4_SESSION_DB })
 }));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(passwordless.sessionSupport());
-app.use('/', zs4);
+app.use('/', require('./routes/zs4'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -50,7 +46,7 @@ app.use(function(req, res, next) {
 
 // development error handler
 // will print stacktrace
-if (app.get('env') === 'development') {
+if (zs4.env.debug) {
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
     res.render('error', {
@@ -77,9 +73,9 @@ app.use(function(err, req, res, next) {
 var   fs = require('fs'),
       https = require('https');
 
-var key = fs.readFileSync(process.env.ZS4_KEY_FILE).toString();
-var cert = fs.readFileSync(process.env.ZS4_CERT_FILE).toString();
+var key = fs.readFileSync(zs4.env.ZS4_KEY_FILE).toString();
+var cert = fs.readFileSync(zs4.env.ZS4_CERT_FILE).toString();
 
 var creds = {key: key, cert: cert};
 
-https.createServer(creds,app).listen(parseInt(process.env.ZS4_PORT));
+https.createServer(creds,app).listen(parseInt(zs4.env.ZS4_PORT));

@@ -8,27 +8,27 @@ var zs4api = require('./zs4api');
 var zs4db = require('./zs4mongoose');
 
 var smtpServer  = email.server.connect({
-   user:    process.env.ZS4_SMTP_USER,
-   password: process.env.ZS4_SMTP_PASS,
-   host:    process.env.ZS4_SMTP_SERVER,
-   port:    process.env.ZS4_SMTP_PORT,
+   user:    zs4.env.ZS4_SMTP_USER,
+   password: zs4.env.ZS4_SMTP_PASS,
+   host:    zs4.env.ZS4_SMTP_SERVER,
+   port:    zs4.env.ZS4_SMTP_PORT,
    ssl:     false
 });
-var loginDb = process.env.ZS4_TOKEN_DB;
+var loginDb = zs4.env.ZS4_TOKEN_DB;
 passwordless.init(new MongoStore(loginDb));
 passwordless.addDelivery(
     function(token, uid, recipient, callback) {
         console.log('inside email delivert!!!!!!!!!!!');
-        var host = process.env.ZS4_HOST;
-        var port = parseInt(process.env.ZS4_PORT);
+        var host = zs4.env.ZS4_HOST;
+        var port = parseInt(zs4.env.ZS4_PORT);
         if (port != 443) host += (':' + port);
         smtpServer.send({
             text:    'Hello!\nAccess your account here: https://'
             + host + '/zs4/token?token=' + token + '&uid='
             + encodeURIComponent(uid),
-            from:    process.env.ZS4_SMTP_USER,
+            from:    zs4.env.ZS4_SMTP_USER,
             to:      recipient,
-            subject: 'Token for ' + process.env.ZS4_HOST
+            subject: 'Token for ' + zs4.env.ZS4_HOST
         }, function(err, message) {
             if(err) {
                 console.log(err);
@@ -40,7 +40,7 @@ passwordless.addDelivery(
 var router = express.Router();
 
 var env = {
-  ZS4_ADMIN_EMAIL: process.env.ZS4_ADMIN_EMAIL,
+  ZS4_ADMIN_EMAIL: zs4.env.ZS4_ADMIN_EMAIL,
 };
 
 
@@ -54,20 +54,19 @@ router.get('/', function(req, res) {
 
   function html(path){
     var html = '<html>\n';
-      html += '<head>\n';
-        html += '<base href="' + path + '">';
-        html += '<link rel="stylesheet" href="/css/style.css">\n';
-        html += '<script src="/js/zs4-browser.js"></script>\n';
-        html += '<script src="/js/zs4-shared.js"></script>\n';
-        html += '<script>shared.install(shared,zs4);</script>'
-      html += '</head>\n';
+      html += ' <head>\n';
+        html += '  <base href="' + path + '">\n';
+        html += '  <link rel="stylesheet" href="/css/style.css">\n';
+        html += '  <script src="/js/zs4-browser.js"></script>\n';
+        html += '  <script src="/js/zs4-shared.js"></script>\n';
+        html += '  <script>shared.install(shared,zs4);</script>\n'
+      html += ' </head>\n';
       if (req.path==='/'){
-        html += '<body onload="zs4.ui.initialize(document.body)">';
+        html += ' <body onload="zs4.ui.initialize(document.body)">\n';
 
-        html += '</body>';
+        html += ' </body>\n';
       }
-    html += '</html>';
-    zs4.console.log(html);
+    html += '</html>\n';
     return(html);
   };
 
