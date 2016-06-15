@@ -1,9 +1,11 @@
-var os = require('os');
-const v8 = require('v8');
-var zs4 = require('../zs4utils');
-var zs4db = require('../zs4mongoose');
 
 exports.respond = function(req){
+
+  var os = require('os');
+  const v8 = require('v8');
+  var zs4 = require('../zs4utils');
+  var zs4db = require('../zs4mongoose');
+
   zs4.console.log({msg:'inside initialize api'})
   zs4.console.log(req.zs4);
   //req.replyJSON({msg:'this api is avalable'});

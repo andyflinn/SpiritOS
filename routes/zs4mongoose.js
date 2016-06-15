@@ -2,6 +2,7 @@ var express = require('express');
 var mongoose = require('mongoose');
 var pager = require('mongoose-paginate');
 var zs4 = require('./zs4utils');
+var zs4api = require('./zs4api');
 var zs4db = module.exports;
 
 var SCHEMA_PLAIN = 0;
@@ -33,67 +34,20 @@ zs4db.schema = {};
 zs4db.model = {};
 
 zs4db.createSchema = function(object,mods){
-  if (mods&SCHEMA_DATED){
-    object.created = Date;
-    object.updated = Date;
-  }
-
-  if (mods&SCHEMA_DOCUMENT){
-    object.doc_owner = {
-      type: String,
-      required: true,
-      trim: true,
-      minlength:5,
-      maxlength:64,
-      index:true,
-    };
-    object.doc_status = {
-      type: String,
-      enum: ['d','p','t','x'], //draft, public, trash, x-terminated
-      required: true,
-    };
-    object.doc_title = {
-      type: String,
-      minlength:1,
-      maxlength:128,
-      required: true,
-      trim: true,
-    };
-  }
-
-  if (mods&SCHEMA_PAGED){
-    object.tag = [String];
-  }
 
   var nu = new mongoose.Schema(object);
 
-  if (mods&SCHEMA_DATED){
-    nu.pre('save', function(next) {
-      // get the current date
-      var currentDate = new Date();
 
-      // change the updated_at field to current date
-      this.updated = currentDate;
+  nu.pre('save', function(next) {
+    // get the current date
+    var currentDate = new Date();
 
-      // if created_at doesn't exist, add to that field
-      if (!this.created)
-        this.created = currentDate;
+    // change the updated_at field to current date
+    this.meta.updated = currentDate;
 
-      next();
-    });
-  }
+    next();
+  });
 
-  if (mods&SCHEMA_DOCUMENT){
-    nu.post('init', function(next) {
-      // it's a DRAFT doc first!
-      this.doc_status = 'd';
-      this.doc_title = 'untitled';
-    });
-  }
-
-  if (mods&SCHEMA_PAGED){
-    nu.plugin(pager);
-  }
   return nu;
 };
 
@@ -101,53 +55,71 @@ zs4db.createSchema = function(object,mods){
 /////////////////////////////////////////
 // system configuration.
 
+for (var i = 0 ; i < zs4api.api.length ; i++){
+  zs4.type.Server.schema.api[zs4api.api[i].name]=[zs4.type.Auth.schema];
+}
+
+
 zs4db.schema.Server = zs4db.createSchema(zs4.type.Server.schema,SCHEMA_DATED)
-zs4db.schema.Server.pre('save', function(next) {
-  if (this.number == null)this.number = 0;
-  if (this.public.name == null)this.name='zs4';
-  if (this.public.slogan==null)this.slogan='awesomeness';
-  next();
-});
-
 zs4db.model.Server = zs4db.conn.model('zs4',zs4db.schema.Server);
-
 zs4db.system = zs4db.model.Server();
 
 zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
+  function populate(system){
+    zs4.console.log('populating server object');
+    zs4.type.Auth.method.set(system.meta.auth.read,{email:zs4.const.SYSTEM.ADMIN});
+    zs4.type.Auth.method.set(system.meta.auth.update,{email:zs4.const.SYSTEM.ADMIN});
+
+    //zs4.console.log('zs4api.api.length = '+zs4api.api.length);
+    for (var i = 0 ; i < zs4api.api.length ; i++){
+      //zs4.console.log('does server have '+zs4api.api[i].name+'?');
+      if (system.api[zs4api.api[i].name].length == 0){
+        if (zs4api.api[i].name == zs4.const.API.NAME.INITIALIZE)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
+        if (zs4api.api[i].name == zs4.const.API.NAME.QUERY)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
+      }
+    }
+    zs4.console.log(system);
+  };
+
   if (err || system == null ){
+    populate(zs4db.system);
     zs4db.system.save(function(err) {
-      console.log('inside zs4db.system.initialize()');
+      zs4.console.log('inside zs4db.system.initialize()');
       if (err) {
-        console.log('ERROR: while zs4db.system.initialize()');
-        console.log(zs4db.system);
+        zs4.console.log('ERROR: while zs4db.system.initialize()');
+        zs4.console.log(zs4db.system);
         return;
       }
-      console.log('zs4db.system saved.');
-      console.log(zs4db.system);
+      zs4.console.log('zs4db.system saved.');
+      zs4.console.log(zs4db.system);
     });
   }else{
     zs4db.system = system;
-    console.log('zs4db.system loaded.');
-    console.log(zs4db.system);
+    zs4.console.log('zs4db.system loaded.');
+    populate(zs4db.system);
+    zs4db.system.save(function(err) {
+      zs4.console.log('inside zs4db.system.update()');
+      if (err) {
+        zs4.console.log('ERROR: while zs4db.system.update()');
+        zs4.console.log(zs4db.system);
+        return;
+      }
+      zs4.console.log('zs4db.system updated.');
+      zs4.console.log(zs4db.system);
+    });
 
 
   }
 })
 
-
-
 /////////////////////////////////////////
 // User Record.
 zs4db.schema.User = zs4db.createSchema(zs4.type.User.schema,SCHEMA_DATED|SCHEMA_PAGED);
-zs4db.schema.User.pre('save', function(next) {
-  var work = this.email.split('@');
-  var tag = work[0].split('.');
-  zs4.string.array.trimToArray(this.tag,tag);
-  zs4.string.array.addToArray(tag,this.tag);
-
-  next();
-});
 zs4db.model.User = zs4db.conn.model('User',zs4db.schema.User);
+zs4.type.Auth.method.set(zs4.type.User.info.auth.create,{email:zs4.const.SYSTEM.ADMIN});
+zs4.console.log('updated who can create users');
+zs4.console.log(zs4.type.User.info.auth);
+
 /////////////////////////////////////////
 // admin user.
 
@@ -155,7 +127,13 @@ zs4db.admin = zs4db.model.User();
 zs4db.admin.email = zs4.env.ZS4_ADMIN_EMAIL;
 
 zs4db.model.User.findOne({ 'email': zs4.env.ZS4_ADMIN_EMAIL }, function (err, admin) {
+  function setAuths(admin){
+    zs4.type.Auth.method.set(admin.meta.auth.read,{email:zs4.const.SYSTEM.ADMIN});
+    zs4.type.Auth.method.set(admin.meta.auth.update,{email:zs4.const.SYSTEM.ADMIN});
+  };
+
   if (err || admin == null ){
+    setAuths(zs4db.admin);
     zs4db.admin.email = zs4.env.ZS4_ADMIN_EMAIL;
     zs4db.admin.save(function(err) {
       console.log('inside zs4db.admin.initialize()');

@@ -10,7 +10,7 @@ zs4.request = {
 			return ('this.ajax(\''+u+'\',cb)');
 		},
 		post:function(o,cb){
-			this.ajax('/zs4/post',function(d){
+			this.ajax('/zs4/api',function(d){
 				if(cb!=null){
 					cb(JSON.parse(d));
 				}else{

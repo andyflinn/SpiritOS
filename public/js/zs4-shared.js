@@ -3,9 +3,20 @@ var zs4 = exports;
 zs4.install = function(shared,target){for (var n in shared) if (n!='install')target[n]=shared[n];};
 
 zs4.const = {
+  API:{
+    NAME:{
+      MINLENGTH:3,
+      MAXLENGTH:32,
+      INITIALIZE:'initialize',
+      QUERY:'query',
+    },
+  },
   EMAIL:{
     MINLENGTH:5,
     MAXLENGTH:64,
+  },
+  OBJECT:{
+    OWNER:'owner@zs4.zs4',
   },
   SERVER:{
     NAME:{
@@ -18,7 +29,10 @@ zs4.const = {
     },
   },
   SYSTEM:{
-    EMAIL:'zs4@zs4.zs4',
+    ITSELF:'zs4@zs4.zs4',
+    USER:'user@zs4.zs4',
+    ADMIN:'admin@zs4.zs4',
+    PUBLIC:'public@zs4.zs4',
   },
   TYPE:{
     PLAIN:0,
@@ -99,6 +113,14 @@ zs4.is = {
     if (ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')return true;
     return false;
   },
+  schemaMember(o){
+    if (!zs4.is.object(o)
+      ||!o.hasOwnProperty('type')
+      ||!o.hasOwnProperty('default')
+      )return false;
+
+    return true;
+  }
 };
 
 zs4.copy = {
@@ -114,7 +136,22 @@ zs4.create = {
       text:text,
       data:data,
     }
-  }
+  },
+  type:function(schema,nu){
+
+    if (nu==null) nu = {};
+    for (var n in schema){
+      if (zs4.is.schemaMember(schema[n])){
+        nu[n]=schema[n].default;
+      }else if (zs4.is.array(schema[n])){
+        nu[n]=[];
+      }else if (zs4.is.object(schema[n])){
+        nu[n]={};
+        zs4.create.type(schema[n],nu[n]);
+      }
+    }
+    return nu;
+  },
 };
 
 zs4.string = {
@@ -181,11 +218,69 @@ zs4.string = {
       }
     },
 
-  }
+  },
+  to:{
+    lower:function(str){return str.toLowerCase();}
+  },
 }
 
-zs4.type = {
-  Meta:{
+zs4.type = {};
+
+zs4.type.Auth = {
+  info:{
+    name:'Auth',
+    type:zs4.const.TYPE.PLAIN,
+  },
+  method:{
+    add:function(arr,user){
+      for (var i = 0 ; i < arr.length ; i++){
+        if (arr[i].email == user)return arr[i];
+      }
+      var nu = {email:user};
+      arr.push(nu);
+      return nu;
+    },
+    remove:function(arr,user){
+      for (var i = (arr.length-1) ; i >= 0 ; i--){
+        if (arr[i].email == user){
+          var r = arr[i];
+          arr.splice(i,1);
+          return r;
+        }
+      }
+      return null;
+    },
+    set:function(arr,user){
+      console.log('setAuth('+user+')');
+      arr.splice(0,arr.length);
+      if (zs4.is.array(user)){
+        for (var i = 0 ; i < user.length ; i++)
+          zs4.type.Auth.method.add(user[i]);
+          return arr;
+      }else{
+        console.log('push('+user.email+')');
+        arr.push(user);
+        return arr;
+      }
+    },
+  },
+  schema:{
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength:zs4.const.EMAIL.MINLENGTH,
+      maxlength:zs4.const.EMAIL.MAXLENGTH,
+      default: zs4.const.SYSTEM.ITSELF,
+      set:zs4.string.to.lower,
+      zs4:{
+        validate:zs4.is.email,
+      },
+    },
+  },
+};
+
+zs4.type.Meta = {
     info:{
       name:'Meta',
       type:zs4.const.TYPE.PLAIN,
@@ -193,9 +288,11 @@ zs4.type = {
     schema:{
       created:{
         type: Date,
+        default: Date.now,
       },
       updated:{
         type: Date,
+        default: Date.now,
       },
       owner:{
         type: String,
@@ -203,19 +300,31 @@ zs4.type = {
         trim: true,
         minlength:zs4.const.EMAIL.MINLENGTH,
         maxlength:zs4.const.EMAIL.MAXLENGTH,
-        index: { unique: true },
+        index: true,
+        set:zs4.string.to.lower,
+        default:zs4.const.SYSTEM.ITSELF,
         zs4:{
           validate:zs4.is.email,
         },
       },
+      auth:{
+        read:[zs4.type.Auth.schema],
+        update:[zs4.type.Auth.schema],
+        delete:[zs4.type.Auth.schema],
+      },
     },
-  },
-  Server:{
+  };
+
+zs4.type.Server = {
     info:{
       name:'Server',
       type:zs4.const.TYPE.COLLECTED,
+      auth:{
+        create:[zs4.type.Auth.schema],
+      },
     },
     schema:{
+        meta:zs4.type.Meta.schema,
         number: { type: Number, required: true, min:0, max:1, default:0},
         public:{
           name: {
@@ -235,14 +344,20 @@ zs4.type = {
             default:'awesomeness!'
           },
         },
+        api:{},
     },
-  },
-  User:{
+  };
+
+zs4.type.User = {
     info:{
       name:'User',
       type:zs4.const.TYPE.COLLECTED,
+      auth:{
+        create:[zs4.type.Auth.schema],
+      },
     },
     schema:{
+      meta:zs4.type.Meta.schema,
       email: {
         type: String,
         required: true,
@@ -250,7 +365,11 @@ zs4.type = {
         minlength:zs4.const.EMAIL.MINLENGTH,
         maxlength:zs4.const.EMAIL.MAXLENGTH,
         index: { unique: true },
+        set:zs4.string.to.lower,
+        default:zs4.const.SYSTEM.PUBLIC,
+        zs4:{
+          validate:zs4.is.email,
+        },
       },
     },
-  },
-};
+  };

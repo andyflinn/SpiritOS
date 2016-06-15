@@ -18,7 +18,7 @@ var loginDb = zs4.env.ZS4_TOKEN_DB;
 passwordless.init(new MongoStore(loginDb));
 passwordless.addDelivery(
     function(token, uid, recipient, callback) {
-        console.log('inside email delivert!!!!!!!!!!!');
+        zs4.console.log('inside email delivery!');
         var host = zs4.env.ZS4_HOST;
         var port = parseInt(zs4.env.ZS4_PORT);
         if (port != 443) host += (':' + port);
@@ -78,7 +78,8 @@ router.get('/', function(req, res) {
 ////////////////////////////////////////////
 // POST responders
 
-router.post('/zs4/post', function(req, res){
+router.post('/zs4/api', function(req, res){
+  req.zs4 = {};
   zs4api.respond(req, res);
 });
 
@@ -96,8 +97,6 @@ router.post('/zs4/token',
           });
         },{failureRedirect:'/zs4/failure'}),
     function(req, res) {
-      //res.setHeader('Content-Type', 'application/json');
-      //res.send(JSON.stringify({msg:'Token sent to '+ zs4.getRequestUser().email}));
       res.send({msg:'Token sent to '+req.body.user+'.'});
 });
 
