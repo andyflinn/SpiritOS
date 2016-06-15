@@ -5,11 +5,6 @@ var zs4 = require('./zs4utils');
 var zs4api = require('./zs4api');
 var zs4db = module.exports;
 
-var SCHEMA_PLAIN = 0;
-var SCHEMA_DATED = 1;
-var SCHEMA_DOCUMENT = 2;
-var SCHEMA_PAGED = 4;
-
 zs4db.conn = mongoose.createConnection(zs4.env.ZS4_DB);;
 zs4db.conn.on('error', console.error.bind(console, 'connection error:'));
 zs4db.conn.once('open', function() {
@@ -33,7 +28,7 @@ if (zs4.env.debug){
 zs4db.schema = {};
 zs4db.model = {};
 
-zs4db.createSchema = function(object,mods){
+zs4db.createSchema = function(object){
 
   var nu = new mongoose.Schema(object);
 
@@ -60,7 +55,7 @@ for (var i = 0 ; i < zs4api.api.length ; i++){
 }
 
 
-zs4db.schema.Server = zs4db.createSchema(zs4.type.Server.schema,SCHEMA_DATED)
+zs4db.schema.Server = zs4db.createSchema(zs4.type.Server.schema)
 zs4db.model.Server = zs4db.conn.model('zs4',zs4db.schema.Server);
 zs4db.system = zs4db.model.Server();
 
@@ -114,7 +109,7 @@ zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
 
 /////////////////////////////////////////
 // User Record.
-zs4db.schema.User = zs4db.createSchema(zs4.type.User.schema,SCHEMA_DATED|SCHEMA_PAGED);
+zs4db.schema.User = zs4db.createSchema(zs4.type.User.schema);
 zs4db.model.User = zs4db.conn.model('User',zs4db.schema.User);
 zs4.type.Auth.method.set(zs4.type.User.info.auth.create,{email:zs4.const.SYSTEM.ADMIN});
 zs4.console.log('updated who can create users');
@@ -169,7 +164,7 @@ zs4db.schema.Chord = zs4db.createSchema({
   t: { type: Number, required: true, min: 0, max: (2<<24) },
   // bass note (indicates inversion)
   b: { type: Number, required: true, min: 0, max: 11 },
-},SCHEMA_PLAIN);
+});
 
 zs4db.schema.Event = zs4db.createSchema({
   // Events can have chords
@@ -182,14 +177,14 @@ zs4db.schema.Event = zs4db.createSchema({
   w: { type: String, minlength: 1, maxlength: 32, trim: true },
   // x-tras: stops, piano, forte, newline
   x: { type: String, enum: ['s','p','f','n'] },
-},SCHEMA_PLAIN);
+});
 
 zs4db.schema.Composition = zs4db.createSchema({
   key: { type: Number, required: true, min: 0, max: 11 },
   bpm: { type: Number, min: 30, max: 480, required: true },
   tpb: { type: Number, min: 1, max: 10, required: true },
   event:[zs4db.schema.Event],
-},SCHEMA_DOCUMENT);
+});
 
 zs4db.schema.Composition.post('init', function(next) {
   // it's a DRAFT doc first!

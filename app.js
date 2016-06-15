@@ -10,7 +10,7 @@ var dotenv = require('dotenv');
 var passwordless = require('passwordless');
 dotenv.load();
 
-var zs4 = require('./routes/zs4utils');
+var zs4 = require('./server/zs4utils');
 var app = express();
 
 // view engine setup
@@ -34,7 +34,7 @@ app.use(session({
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(passwordless.sessionSupport());
-app.use('/', require('./routes/zs4'));
+app.use('/', require('./server/zs4'));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

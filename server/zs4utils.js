@@ -61,8 +61,8 @@ else {if (process.env.ZS4_SMTP_SSL != null && process.env.ZS4_SMTP_SSL.trim() ==
 if (process.env.ZS4_ADMIN_EMAIL==null){console.log('.env.ZS4_ADMIN_EMAIL missing.');exit(1);}
 zs4.env.ZS4_ADMIN_EMAIL=process.env.ZS4_ADMIN_EMAIL;
 
-if (process.env.ZS4_SMTP_SERVER==null){console.log('.env.ZS4_SMTP_SERVER missing.');exit(1);}
-zs4.env.ZS4_SMTP_SERVER=process.env.ZS4_SMTP_SERVER;
+if (process.env.ZS4_SMTP_HOST==null){console.log('.env.ZS4_SMTP_HOST missing.');exit(1);}
+zs4.env.ZS4_SMTP_HOST=process.env.ZS4_SMTP_HOST;
 
 if (process.env.ZS4_SMTP_PORT==null){console.log('.env.ZS4_SMTP_PORT missing.');exit(1);}
 zs4.env.ZS4_SMTP_PORT=parseInt(process.env.ZS4_SMTP_PORT);
@@ -70,8 +70,8 @@ zs4.env.ZS4_SMTP_PORT=parseInt(process.env.ZS4_SMTP_PORT);
 if (process.env.ZS4_SMTP_USER==null){console.log('.env.ZS4_SMTP_USER missing.');exit(1);}
 zs4.env.ZS4_SMTP_USER=process.env.ZS4_SMTP_USER;
 
-if (process.env.ZS4_SMTP_PASS==null){console.log('.env.ZS4_SMTP_PASS missing.');exit(1);}
-zs4.env.ZS4_SMTP_PASS=process.env.ZS4_SMTP_PASS;
+if (process.env.ZS4_SMTP_PASSWORD==null){console.log('.env.ZS4_SMTP_PASSWORD missing.');exit(1);}
+zs4.env.ZS4_SMTP_PASSWORD=process.env.ZS4_SMTP_PASSWORD;
 
 zs4.console.log(zs4.env);
 

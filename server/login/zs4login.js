@@ -9,8 +9,8 @@ var zs4db = require('../zs4mongoose');
 
 var smtpServer  = email.server.connect({
    user:    zs4.env.ZS4_SMTP_USER,
-   password: zs4.env.ZS4_SMTP_PASS,
-   host:    zs4.env.ZS4_SMTP_SERVER,
+   password: zs4.env.ZS4_SMTP_PASSWORD,
+   host:    zs4.env.ZS4_SMTP_HOST,
    port:    zs4.env.ZS4_SMTP_PORT,
    ssl:     false
 });
