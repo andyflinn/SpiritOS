@@ -76,9 +76,12 @@ zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
       if (system.api[zs4api.api[i].name].length == 0){
         if (zs4api.api[i].name == zs4.const.API.NAME.INITIALIZE)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
         if (zs4api.api[i].name == zs4.const.API.NAME.QUERY)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
+        if (zs4api.api[i].name == zs4.const.API.NAME.ADMIN)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.ADMIN});
       }
+      zs4api.api[i].auth = system.api[zs4api.api[i].name];
     }
     zs4.console.log(system);
+    zs4.console.log(zs4api.api);
   };
 
   if (err || system == null ){
@@ -86,12 +89,11 @@ zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
     zs4db.system.save(function(err) {
       zs4.console.log('inside zs4db.system.initialize()');
       if (err) {
-        zs4.console.log('ERROR: while zs4db.system.initialize()');
+        console.log('ERROR: while zs4db.system.initialize()');
         zs4.console.log(zs4db.system);
         return;
       }
       zs4.console.log('zs4db.system saved.');
-      zs4.console.log(zs4db.system);
     });
   }else{
     zs4db.system = system;
@@ -100,12 +102,10 @@ zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
     zs4db.system.save(function(err) {
       zs4.console.log('inside zs4db.system.update()');
       if (err) {
-        zs4.console.log('ERROR: while zs4db.system.update()');
-        zs4.console.log(zs4db.system);
+        console.log('ERROR: while zs4db.system.update()');
         return;
       }
       zs4.console.log('zs4db.system updated.');
-      zs4.console.log(zs4db.system);
     });
 
 

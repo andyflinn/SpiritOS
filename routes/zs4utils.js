@@ -2,6 +2,8 @@ var dotenv = require('dotenv');
 
 var zs4 = module.exports;
 
+console.log('initializing module zs4utils');
+
 // load objects common to client and serve3r
 var shared = require('../public/js/zs4-shared');
 shared.install(shared,zs4);
@@ -73,22 +75,12 @@ zs4.env.ZS4_SMTP_PASS=process.env.ZS4_SMTP_PASS;
 
 zs4.console.log(zs4.env);
 
-zs4.getRequestUser = function(req,res){
-
-  if (req.user == null){
-    zs4.console.log('getRequestUser(): req.user ==null');
-    return null;
+zs4.authorized = function(arr,user){
+  if (user==null){
+    for (var i = 0 ; i < arr.length ; i++){if (arr[i].email == zs4.const.SYSTEM.PUBLIC)return true;}
+    return false;
   }
-
-  zs4.console.log('getRequestUser()');
-  zs4.console.log(req.user);
-
-  var nam = req.user;
-  var i = nam.indexOf('@');
-  if (i>0)nam = nam.substr(0,i);
-
-  return {
-    email:req.user,
-    name:nam,
-  };
-}
+  if (user==zs4.env.ZS4_ADMIN_EMAIL)return true;
+  for (var i = 0 ; i < arr.length ; i++){if (arr[i].email == user || arr[i].email == zs4.const.SYSTEM.USER)return true;}
+  return false;
+};

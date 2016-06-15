@@ -1,5 +1,5 @@
 
-exports.respond = function(req){
+exports.respond = function(req,res){
 
   var os = require('os');
   const v8 = require('v8');
@@ -7,24 +7,23 @@ exports.respond = function(req){
   var zs4db = require('../zs4mongoose');
 
   zs4.console.log({msg:'inside initialize api'})
-  zs4.console.log(req.zs4);
-  //req.replyJSON({msg:'this api is avalable'});
 
   var reply = {
     server:{public:zs4db.system.public},
   }
 
-  if (req.zs4.user==null){
+  if (req.user==null){
     zs4.console.log('serving public api.');
-    req.replyJSON(reply);
+    res.send(reply);
   }else{
-    zs4db.model.User.findOne({ email:req.zs4.user.email }, function(err, user) {
+    zs4db.model.User.findOne({ email:req.user }, function(err, user) {
       if (err || user==null){
-        return req.replyJSON(reply);
+        res.send(zs4.create.error('user '+req.user+' not found.'));
+        return;
       }
       zs4.console.log('serving user api.');
       reply.user = user;
-      if (req.zs4.user.admin){
+      if (req.user==zs4.env.ZS4_ADMIN_EMAIL){
         zs4.console.log('serving admin api.');
         reply.server = zs4db.system;
         reply.admin = {
@@ -47,7 +46,7 @@ exports.respond = function(req){
           },
         }
       }
-      req.replyJSON(reply);
+      res.send(reply);
     });
   }
 

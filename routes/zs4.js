@@ -46,10 +46,30 @@ var env = {
 
 router.get('/zs4/token', passwordless.acceptToken(),
     function(req, res) {
+
+      zs4db.model.User.findOne({ email:req.user }, function(err, user) {
+        if (!err && user){
+          user.stats.tokens_used++;
+          user.save();
+        }
+      });
+
+      res.redirect('/');
+});
+
+router.get('/zs4/logout', passwordless.logout(),
+    function(req, res) {
         res.redirect('/');
 });
 
-router.get('/', function(req, res) {
+router.get('/zs4/failure',
+    function(req, res) {
+        if (req.zs4 != null && zs4.is.error(req.zs4)) res.send(req.zs4);
+        else res.send(zs4.create.error('failure occurred on server side'));
+});
+
+
+router.get('*', function(req, res) {
   zs4.console.log('req.path = '+req.path);
 
   function html(path){
@@ -90,24 +110,20 @@ router.post('/zs4/token',
 
           zs4db.model.User.findOne({ 'email': email }, function (err, user) {
             if (err || user == null || user.email != email ){
+              req.zs4 = zs4.create.error('user '+email+' not found.');
+
               callback(null, null);
+
             }else{
+              user.stats.tokens_requested++; user.save();
+              req.zs4 = zs4.create.done('token sent to '+email+'.');
               callback(null, email);
             }
           });
         },{failureRedirect:'/zs4/failure'}),
     function(req, res) {
-      res.send({msg:'Token sent to '+req.body.user+'.'});
-});
-
-router.get('/zs4/logout', passwordless.logout(),
-    function(req, res) {
-        res.redirect('/');
-});
-
-router.get('/zs4/failure',
-    function(req, res) {
-        res.send({type:'error'});
+      if (req.zs4 != null && zs4.is.done(req.zs4)) res.send(req.zs4);
+      else res.send(zs4.create.done('token sent to your inbox'));
 });
 
 module.exports = router;

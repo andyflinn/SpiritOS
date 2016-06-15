@@ -55,6 +55,15 @@ zs4-error.zs4error{
   display:block;
 }
 
+zs4-response{
+  background-color: green;
+  color:black;
+  display:none;
+}
+zs4-response.zs4response{
+  display:block;
+}
+
 zs4-t-main{
   display:block;
 }

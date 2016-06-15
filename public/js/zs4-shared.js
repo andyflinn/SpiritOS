@@ -7,6 +7,7 @@ zs4.const = {
     NAME:{
       MINLENGTH:3,
       MAXLENGTH:32,
+      ADMIN:'admin',
       INITIALIZE:'initialize',
       QUERY:'query',
     },
@@ -88,6 +89,22 @@ zs4.is = {
     if	(o instanceof Object)return true;
     return false;
   },
+  error:function(e){
+    if (!zs4.is.object(e)
+        ||!e.hasOwnProperty('type')
+        ||e.type != 'error'
+        ||!e.hasOwnProperty('text')
+      )return false;
+      return true;
+  },
+  done:function(e){
+    if (!zs4.is.object(e)
+        ||!e.hasOwnProperty('type')
+        ||e.type != 'done'
+        ||!e.hasOwnProperty('text')
+      )return false;
+      return true;
+  },
   property:function(o,p){
     if(!this.object(o)||!this.string(p))return null;
     var a = p.split('.');
@@ -133,6 +150,13 @@ zs4.create = {
   error:function(text,data){
     return {
       type:'error',
+      text:text,
+      data:data,
+    }
+  },
+  done:function(text,data){
+    return {
+      type:'done',
       text:text,
       data:data,
     }
@@ -251,14 +275,14 @@ zs4.type.Auth = {
       return null;
     },
     set:function(arr,user){
-      console.log('setAuth('+user+')');
+      //console.log('setAuth('+user+')');
       arr.splice(0,arr.length);
       if (zs4.is.array(user)){
         for (var i = 0 ; i < user.length ; i++)
           zs4.type.Auth.method.add(user[i]);
           return arr;
       }else{
-        console.log('push('+user.email+')');
+        //console.log('push('+user.email+')');
         arr.push(user);
         return arr;
       }
@@ -369,6 +393,18 @@ zs4.type.User = {
         default:zs4.const.SYSTEM.PUBLIC,
         zs4:{
           validate:zs4.is.email,
+        },
+      },
+      stats:{
+        tokens_used:{
+          type: Number,
+          required: true,
+          default:0,
+        },
+        tokens_requested:{
+          type: Number,
+          required: true,
+          default:0,
         },
       },
     },
