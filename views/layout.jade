@@ -3,8 +3,9 @@ html
   head
     title= title
     link(rel='stylesheet', href='/css/style.css')
-    script(src='/js/zs4-browser.js')
+    script(src='/js/zs4-exports.js')
     script(src='/js/zs4-shared.js')
+    script(src='/js/zs4-browser.js')
     script(src='https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.min.js')
 
-  body(id='zs4', onload='zs4.ui.initialize(zs4.ui.id("zs4"))')
+  body(onload='zs4.ui.initialize(document.body)')
