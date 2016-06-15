@@ -84,3 +84,21 @@ zs4.authorized = function(arr,user){
   for (var i = 0 ; i < arr.length ; i++){if (arr[i].email == user || arr[i].email == zs4.const.SYSTEM.USER)return true;}
   return false;
 };
+
+zs4.html = function(path){
+  var html = '<html>\n';
+    html += ' <head>\n';
+      html += '  <base href="' + path + '">\n';
+      html += '  <link rel="stylesheet" href="/css/style.css">\n';
+      html += '  <script>var exports = {};</script>\n'
+      html += '  <script src="/js/zs4-shared.js"></script>\n';
+      html += '  <script src="/js/zs4-browser.js"></script>\n';
+    html += ' </head>\n';
+    if (req.path==='/'){
+      html += ' <body onload="zs4.ui.initialize(document.body)">\n';
+
+      html += ' </body>\n';
+    }
+  html += '</html>\n';
+  return(html);
+};

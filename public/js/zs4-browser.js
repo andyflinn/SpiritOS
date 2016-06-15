@@ -224,7 +224,7 @@ zs4.ui = {
 					}
 					o.zs4.close();
 
-					zs4.request.ajax('/zs4/token',function(d){
+					zs4.request.ajax('/zs4/login/request',function(d){
 							var r = JSON.parse(d);
 							if (zs4.is.error(r))zs4.ui.root.eError.zs4.setError(r.text);
 							else zs4.ui.root.eResponse.zs4.setResponse(r.text);
@@ -262,7 +262,7 @@ zs4.ui = {
 					var login_button = zs4.ui.login(login_p);
 					zs4.ui.html(login_p,'span','.');
 				}else{
-					zs4.ui.html(options,'p','Click <a href="/zs4/logout">here</a> to log out.');
+					zs4.ui.html(options,'p','Click <a href="/zs4/login/quit">here</a> to log out.');
 				}
 
 				var h = zs4.ui.a(options,'h1');
