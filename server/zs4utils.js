@@ -1,7 +1,7 @@
 var dotenv = require('dotenv');
 
 var zs4 = module.exports;
-
+zs4.instance = {server:true,client:false,};
 console.log('initializing module zs4utils');
 
 // load objects common to client and serve3r

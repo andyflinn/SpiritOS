@@ -15,6 +15,7 @@ zs4api.register = function(name,module){
 zs4api.register(zs4.const.API.NAME.INITIALIZE,'./api/zs4initialize');
 zs4api.register(zs4.const.API.NAME.QUERY,'./api/zs4query');
 zs4api.register(zs4.const.API.NAME.ADMIN,'./api/zs4admin');
+zs4api.register(zs4.const.API.NAME.FS,'./api/zs4fs');
 
 zs4api.respond = function(req,res){
   //var request = zs4api.createRequest(req,res);

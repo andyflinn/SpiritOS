@@ -7,7 +7,13 @@ var shared = require('../public/js/zs4-shared');
 shared.install(shared,zs4);
 
 zs4.admin = {
+  fs:{
+
+  }
   config:{
+    load:function(){
+
+    },
     mongoose:{
 
     },
@@ -26,14 +32,24 @@ zs4.admin = {
 
 var fs = require('fs');
 zs4.fs = {
-  readJsonFile:function(f){
-    var r = null;
-    try {
-      r = JSON.parse(fs.readFileSync(f).toString());
-    }
-    catch (err){
-      r = null;
-    }
-    return r;
+  
+  sync:{
+    exists:function(path){
+
+    },
+    info:function(f)
+    {
+      return fs.fstatSync(fd);
+    },
+    readJsonFile:function(f){
+      var r = null;
+      try {
+        r = JSON.parse(fs.readFileSync(f).toString());
+      }
+      catch (err){
+        r = null;
+      }
+      return r;
+    },
   },
 };

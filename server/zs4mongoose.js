@@ -72,6 +72,7 @@ zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
         if (zs4api.api[i].name == zs4.const.API.NAME.INITIALIZE)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
         if (zs4api.api[i].name == zs4.const.API.NAME.QUERY)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
         if (zs4api.api[i].name == zs4.const.API.NAME.ADMIN)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.ADMIN});
+        if (zs4api.api[i].name == zs4.const.API.NAME.FS)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.ADMIN});
       }
       zs4api.api[i].auth = system.api[zs4api.api[i].name];
     }

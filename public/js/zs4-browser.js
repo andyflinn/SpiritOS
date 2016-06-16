@@ -14,7 +14,7 @@ zs4.request = {
 			if(cb!=null){
 				cb(JSON.parse(d));
 			}else{
-				console.log("no data");
+				console.log(d);
 			}
 		},JSON.stringify(o)
 		);

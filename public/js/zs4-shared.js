@@ -5,9 +5,10 @@ zs4.install = function(shared,target){for (var n in shared) if (n!='install')tar
 zs4.const = {
   API:{
     NAME:{
-      MINLENGTH:3,
+      MINLENGTH:2,
       MAXLENGTH:32,
       ADMIN:'admin',
+      FS:'fs',
       INITIALIZE:'initialize',
       QUERY:'query',
     },
@@ -18,6 +19,10 @@ zs4.const = {
   },
   OBJECT:{
     OWNER:'owner@zs4.zs4',
+  },
+  PATH:{
+    MINLENGTH:1,
+    MAXLENGTH:256,
   },
   SERVER:{
     NAME:{
@@ -144,6 +149,21 @@ zs4.copy = {
     object:{
       members:function(from,to){for (var n in from)to[n]=from[n];},
     },
+    object:{
+      tree:function(s,d){
+        if (d==null)d={};
+        for (var n in s){
+          if(zs4.is.object(s[n])){
+            if(!d.hasOwnProperty(n)){d[n]={};}
+            zs4.copy.object.tree(s[n],d[n]);
+            continue;
+          }
+          d[n]=s[n];
+        }
+        return d;
+      },
+    },
+
 }
 
 zs4.create = {
@@ -161,22 +181,24 @@ zs4.create = {
       data:data,
     }
   },
-  type:function(schema,nu){
-
-    if (nu==null) nu = {};
-    for (var n in schema){
-      if (zs4.is.schemaMember(schema[n])){
-        nu[n]=schema[n].default;
-      }else if (zs4.is.array(schema[n])){
-        nu[n]=[];
-      }else if (zs4.is.object(schema[n])){
-        nu[n]={};
-        zs4.create.type(schema[n],nu[n]);
+  type:{
+    instance:function(type,nu){
+      if (nu==null) nu = {};
+      for (var n in type.schema){
+        if (zs4.is.schemaMember(type.schema[n])){
+          nu[n]=type.schema[n].default;
+        }else if (zs4.is.array(type.schema[n])){
+          nu[n]=[];
+        }else if (zs4.is.object(type.schema[n])){
+          nu[n]={};
+          zs4.create.type(type.schema[n],nu[n]);
+        }
       }
-    }
-    return nu;
+      if (zs4.instance.client){for (var n in type.method){nu.method[n] = type.method[n];}}
+      return nu;
+    },
   },
-};
+},
 
 zs4.string = {
   split:{
@@ -249,6 +271,20 @@ zs4.string = {
 }
 
 zs4.type = {};
+
+zs4.type.enherit = function(name,from){
+  var type = {
+    info:{
+      name:name,
+      parentType:from,
+      type:from.info.type,
+    },
+  };
+  type.schema = zs4.copy.object.tree(from.schema);
+  if (from.info.childType == null)from.info.childType = [];
+  from.info.childType.push(type);
+  return type;
+};
 
 zs4.type.Auth = {
   info:{
@@ -338,6 +374,39 @@ zs4.type.Meta = {
       },
     },
   };
+
+zs4.type.Hierarchy = {};
+zs4.type.Hierarchy.info={
+  name:'Hierarchy',
+  type:zs4.const.TYPE.PLAIN,
+  auth:{
+    create:[zs4.type.Auth.schema],
+  },
+
+};
+zs4.type.Hierarchy.method={
+  isContainer:function(){return !this.file;},
+  isContent:function(){return this.file;},
+  get:function(){return this},
+};
+zs4.type.Hierarchy.schema={
+  path: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength:zs4.const.PATH.MINLENGTH,
+    maxlength:zs4.const.PATH.MAXLENGTH,
+    default:'/',
+  },
+  file: {
+    type: Boolean,
+    required: true,
+    default:false,
+  },
+  list:[zs4.type.Hierarchy];
+};
+
+zs4.type.Folder = zs4.type.enherit('Folder',zs4.type.Hierarchy);
 
 zs4.type.Server = {
     info:{
