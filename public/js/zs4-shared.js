@@ -13,6 +13,13 @@ zs4.const = {
       QUERY:'query',
     },
   },
+  DEFAULT:{
+    MESSAGE:{
+      EXPIRY:{
+        MS:1000,
+      },
+    },
+  },
   EMAIL:{
     MINLENGTH:5,
     MAXLENGTH:64,
@@ -23,6 +30,14 @@ zs4.const = {
   PATH:{
     MINLENGTH:1,
     MAXLENGTH:256,
+  },
+  STRING:{
+    MINLENGTH:0,
+    MAXLENGTH:256,
+  },
+  TEXT:{
+    MINLENGTH:0,
+    MAXLENGTH:256*256,
   },
   SERVER:{
     NAME:{
@@ -148,11 +163,10 @@ zs4.is = {
 zs4.copy = {
     object:{
       members:function(from,to){for (var n in from)to[n]=from[n];},
-    },
-    object:{
       tree:function(s,d){
         if (d==null)d={};
         for (var n in s){
+          if (n=='zs4')continue;
           if(zs4.is.object(s[n])){
             if(!d.hasOwnProperty(n)){d[n]={};}
             zs4.copy.object.tree(s[n],d[n]);
@@ -163,7 +177,6 @@ zs4.copy = {
         return d;
       },
     },
-
 }
 
 zs4.create = {
@@ -183,19 +196,6 @@ zs4.create = {
   },
   type:{
     instance:function(type,nu){
-      if (nu==null) nu = {};
-      for (var n in type.schema){
-        if (zs4.is.schemaMember(type.schema[n])){
-          nu[n]=type.schema[n].default;
-        }else if (zs4.is.array(type.schema[n])){
-          nu[n]=[];
-        }else if (zs4.is.object(type.schema[n])){
-          nu[n]={};
-          zs4.create.type(type.schema[n],nu[n]);
-        }
-      }
-      if (zs4.instance.client){for (var n in type.method){nu.method[n] = type.method[n];}}
-      return nu;
     },
   },
 },
@@ -269,6 +269,174 @@ zs4.string = {
     lower:function(str){return str.toLowerCase();}
   },
 }
+
+zs4.name = {
+  _validate:function(n){return zs4.is.name(n);}
+};
+
+zs4.um = {
+  _convert:{
+    linear:function(quantity,from,to){
+      if (from==null || to == null
+      ||!this.hasOwnProperty(from)
+      || from.length < 1
+      || from.charAt(0)=='_'
+      ||!this.hasOwnProperty(to)
+      || to.length < 1
+      || to.charAt(0)=='_'
+      )return zs4.create.error('bad args');
+
+      return (quantity * this[from] / this[to]);
+    }
+  },
+  _quantifyable(arg){
+    if (arg == null || !zs4.is.name(arg)){
+      var ret = [];
+      for (var n in zs4.um){if (zs4.is.name(n))ret.push(n);}
+      return ret;
+    }
+    for (var n in zs4.um){if (n==arg)return true;}
+    return false;
+  },
+},
+zs4.um.unit = {
+  _convert:zs4.um._convert.linear,
+  one:1.0,
+  two:2.0,
+  three:3.0,
+  four:4.0,
+  five:5.0,
+  six:6.0,
+  seven:7.0,
+  eight:8.0,
+  nine:9.0,
+  ten:10.0,
+  eleven:11.0,
+  twelve:12.0,
+  thirteen:13.0,
+  fourteen:14.0,
+  fifteen:15.0,
+  sixteen:16.0,
+  seventeen:17.0,
+  eighteen:18.0,
+  nineteen:19.0,
+
+  teen:10.0,
+  twenty:20.0,
+  thirty:30.0,
+  fourty:40.0,
+  fifty:50.0,
+  sixty:60.0,
+  seventy:70.0,
+  eighty:80.0,
+  ninety:90.0,
+
+  hect:100.0,
+  hecto:100.0,
+  hundred:100.0,
+
+  kilo:1000.0,
+  thousand:1000.0,
+  myriad:10000.0,
+  mega:1000000,
+  million:1000000,
+  giga:1000000000,
+  tera:1000000000000,
+
+  uni:1.0,
+  unit:1.0,
+  solo:1.0,
+
+  semi:0.5,
+  hemi:0.5,
+  demi:0.5,
+  half:0.5,
+  third:0.3333333333,
+  quarter:0.25,
+  fifth:0.2,
+  sixth:0.1666666666,
+
+  deci:0.1,
+  Centi:0.01,
+  Milli:0.001,
+  Micro:0.000001,
+  Nano:0.000000001,
+  Pico:0.000000000001,
+  Femto:0.000000000000001,
+  Atto:0.000000000000000001,
+
+  pi:Math.PI,
+
+  couple:2.0,
+  pair:2.0,
+  duo:2.0,
+  duet:2.0,
+  twin:2.0,
+
+  try:3.0,
+  ter:3.0,
+  trio:3.0,
+  tri:3.0,
+  triplet:3.0,
+
+  quartet:4.0,
+  quad:4.0,
+  quint:5.0,
+  quintet:5.0,
+  sextet:6.0,
+  septet:7.0,
+  octet:8.0,
+
+  dozen:12.0,
+  score:20.0,
+
+  gross:144.0,
+};
+zs4.um.time = {
+  _convert:zs4.um._convert.linear,
+  second:1.0,
+  minute:60.0,
+  hour:(60.0*60.0),
+  day:(60.0*60.0*24.0),
+  millisecond:0.001,
+};
+zs4.um.information = {
+  _convert:zs4.um._convert.linear,
+  byte:1.0,
+  kilobyte:1024.0,
+  megabyte:1024.0*1024.0,
+  gigabyte:1024.0*1024.0*1024.0,
+  terabyte:1024.0*1024.0*1024.0*1024.0,
+
+  bit:0.125,
+  kilobit:0.125*1024.0,
+  megabit:0.125*1024.0*1024.0,
+  gigabit:0.125*1024.0*1024.0*1024.0,
+  terabit:0.125*1024.0*1024.0*1024.0*1024.0,
+};
+zs4.um.distance = {
+  _convert:zs4.um._convert.linear,
+  meter:1.0,
+  kilometer:1000.0,
+  decimeter:0.1,
+  centimeter:0.01,
+  millimeter:0.001,
+
+  inch:0.0254,
+  foot:12*0.0254,
+};
+zs4.unit = {
+  _exists:function(name){
+    if (name==null || !zs4.is.name(name) || !zs4['unit'].hasOwnProperty(name))false;
+    return true;
+  },
+  _create:function(name){
+    if (name==null || !zs4.is.name(name))return null;
+    if (zs4['unit'].hasOwnProperty(name))return zs4['unit'][name];
+    zs4['unit'][name] = {};
+  },
+
+};
 
 zs4.type = {};
 
@@ -375,39 +543,6 @@ zs4.type.Meta = {
     },
   };
 
-zs4.type.Hierarchy = {};
-zs4.type.Hierarchy.info={
-  name:'Hierarchy',
-  type:zs4.const.TYPE.PLAIN,
-  auth:{
-    create:[zs4.type.Auth.schema],
-  },
-
-};
-zs4.type.Hierarchy.method={
-  isContainer:function(){return !this.file;},
-  isContent:function(){return this.file;},
-  get:function(){return this},
-};
-zs4.type.Hierarchy.schema={
-  path: {
-    type: String,
-    required: true,
-    trim: true,
-    minlength:zs4.const.PATH.MINLENGTH,
-    maxlength:zs4.const.PATH.MAXLENGTH,
-    default:'/',
-  },
-  file: {
-    type: Boolean,
-    required: true,
-    default:false,
-  },
-  list:[zs4.type.Hierarchy];
-};
-
-zs4.type.Folder = zs4.type.enherit('Folder',zs4.type.Hierarchy);
-
 zs4.type.Server = {
     info:{
       name:'Server',
@@ -442,39 +577,192 @@ zs4.type.Server = {
   };
 
 zs4.type.User = {
-    info:{
-      name:'User',
-      type:zs4.const.TYPE.COLLECTED,
-      auth:{
-        create:[zs4.type.Auth.schema],
+  info:{
+    name:'User',
+    type:zs4.const.TYPE.COLLECTED,
+    auth:{
+      create:[zs4.type.Auth.schema],
+    },
+  },
+  schema:{
+    meta:zs4.type.Meta.schema,
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength:zs4.const.EMAIL.MINLENGTH,
+      maxlength:zs4.const.EMAIL.MAXLENGTH,
+      index: { unique: true },
+      set:zs4.string.to.lower,
+      default:zs4.const.SYSTEM.PUBLIC,
+      zs4:{
+        validate:zs4.is.email,
       },
     },
-    schema:{
-      meta:zs4.type.Meta.schema,
+    stats:{
+      tokens_used:{
+        type: Number,
+        required: true,
+        default:0,
+      },
+      tokens_requested:{
+        type: Number,
+        required: true,
+        default:0,
+      },
+    },
+  },
+};
+
+zs4.type.Cost = {
+  info:{
+    name:'Cost',
+    type:zs4.const.TYPE.PLAIN,
+  },
+  schema:{
+    um: {
+      type: String,
+      required: true,
+      enum: zs4.um._quantifyable(),
+      index: { unique: true },
+      set:zs4.string.to.lower,
+      default:'time',
+      zs4:{
+        validate:zs4.um._quantifyable,
+      },
+    },
+    q:{
+      type: Number,
+      required: true,
+      default:0,
+    },
+  },
+};
+
+zs4.type.Object = {
+  info:{
+    name:'Object',
+    type:zs4.const.TYPE.PLAIN,
+  },
+  method:{
+
+  },
+  schema:{
+    zs4:{
+      version:{
+        type:Number,
+        required: true,
+        set:parseInt,
+        default:0,
+      },
+      created:{
+        type:Date,
+        required: true,
+        default:new Date(),
+      },
+      updated:{
+        type:Date,
+        required: true,
+        default:new Date(),
+      },
+      expires:{
+        type:Date,
+        required: true,
+        default:new Date(),
+      },
+    },
+  },
+};
+
+zs4.type.Message = {
+  info:{
+    name:'Message',
+    type:zs4.const.TYPE.PLAIN,
+    auth:{
+      create:[zs4.type.Auth.schema],
+    },
+  },
+  schema:{
+    origin:{
+      cost:{
+        network:{
+          send:{
+            information:{},
+          },
+          receive:{
+            information:{},
+          },
+        },
+        processor:{
+          time:{},
+        },
+        storage:{
+          read:{
+            information:{},
+          },
+          write:{
+            information:{},
+          },
+        },
+      },
+      number:{
+        type:Number,
+        default:0,
+      },
+      expiry:{
+        ms:{
+          type:Number,
+          default:zs4.const.DEFAULT.MESSAGE.EXPIRY.MS,
+        }
+      },
       email: {
         type: String,
         required: true,
         trim: true,
         minlength:zs4.const.EMAIL.MINLENGTH,
         maxlength:zs4.const.EMAIL.MAXLENGTH,
-        index: { unique: true },
         set:zs4.string.to.lower,
         default:zs4.const.SYSTEM.PUBLIC,
         zs4:{
           validate:zs4.is.email,
         },
       },
-      stats:{
-        tokens_used:{
-          type: Number,
-          required: true,
-          default:0,
-        },
-        tokens_requested:{
-          type: Number,
-          required: true,
-          default:0,
-        },
+      expiry:{
+        ms:{
+          type:Number,
+          default:zs4.const.DEFAULT.MESSAGE.EXPIRY.MS,
+        }
       },
     },
-  };
+    format:{
+      type:String,
+      default:'Object',
+    },
+    data:{},
+  },
+};
+
+zs4.job = {
+
+};
+
+zs4.respond = function(message,callback){
+  var processor = {
+    countSend:0;
+    countReceive:0;
+    doneSending:false;
+    data:{},
+    call:function(function,args){
+
+    },
+    registerCallback:function(){
+
+    },
+    callback:function(){
+
+    },
+  }
+
+  var job = [];
+
+}

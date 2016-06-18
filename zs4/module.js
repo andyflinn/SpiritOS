@@ -9,30 +9,17 @@ shared.install(shared,zs4);
 zs4.admin = {
   fs:{
 
-  }
+  },
   config:{
     load:function(){
 
     },
-    mongoose:{
-
-    },
-    session:{
-
-    },
-    smpt:{
-
-    },
-    ssl:{
-
-    },
-
   },
 };
 
 var fs = require('fs');
 zs4.fs = {
-  
+
   sync:{
     exists:function(path){
 
