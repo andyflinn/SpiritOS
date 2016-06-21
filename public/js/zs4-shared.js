@@ -1,7 +1,5 @@
 var zs4 = exports;
 
-zs4.install = function(shared,target){for (var n in shared) if (n!='install')target[n]=shared[n];};
-
 zs4.const = {
   API:{
     NAME:{
@@ -351,10 +349,14 @@ zs4.um.unit = {
   hemi:0.5,
   demi:0.5,
   half:0.5,
-  third:0.3333333333,
+  third:(1.0/3.0),
   quarter:0.25,
   fifth:0.2,
-  sixth:0.1666666666,
+  sixth:(1.0/6.0),
+  seventh:(1.0/7.0),
+  eighth:0.125,
+  nineth:(1.0/9.0),
+  tenth:0.1,
 
   deci:0.1,
   Centi:0.01,
@@ -440,7 +442,7 @@ zs4.unit = {
 
 zs4.type = {};
 
-zs4.type.enherit = function(name,from){
+zs4.type._enherit = function(name,from){
   var type = {
     info:{
       name:name,
@@ -454,9 +456,9 @@ zs4.type.enherit = function(name,from){
   return type;
 };
 
-zs4.type.Auth = {
+zs4.type.auth = {
   info:{
-    name:'Auth',
+    name:'auth',
     type:zs4.const.TYPE.PLAIN,
   },
   method:{
@@ -479,11 +481,11 @@ zs4.type.Auth = {
       return null;
     },
     set:function(arr,user){
-      //console.log('setAuth('+user+')');
+      //console.log('setauth('+user+')');
       arr.splice(0,arr.length);
       if (zs4.is.array(user)){
         for (var i = 0 ; i < user.length ; i++)
-          zs4.type.Auth.method.add(user[i]);
+          zs4.type.auth.method.add(user[i]);
           return arr;
       }else{
         //console.log('push('+user.email+')');
@@ -508,9 +510,9 @@ zs4.type.Auth = {
   },
 };
 
-zs4.type.Meta = {
+zs4.type.meta = {
     info:{
-      name:'Meta',
+      name:'meta',
       type:zs4.const.TYPE.PLAIN,
     },
     schema:{
@@ -536,23 +538,23 @@ zs4.type.Meta = {
         },
       },
       auth:{
-        read:[zs4.type.Auth.schema],
-        update:[zs4.type.Auth.schema],
-        delete:[zs4.type.Auth.schema],
+        read:[zs4.type.auth.schema],
+        update:[zs4.type.auth.schema],
+        delete:[zs4.type.auth.schema],
       },
     },
   };
 
-zs4.type.Server = {
+zs4.type.server = {
     info:{
-      name:'Server',
+      name:'server',
       type:zs4.const.TYPE.COLLECTED,
       auth:{
-        create:[zs4.type.Auth.schema],
+        create:[zs4.type.auth.schema],
       },
     },
     schema:{
-        meta:zs4.type.Meta.schema,
+        meta:zs4.type.meta.schema,
         number: { type: Number, required: true, min:0, max:1, default:0},
         public:{
           name: {
@@ -576,16 +578,16 @@ zs4.type.Server = {
     },
   };
 
-zs4.type.User = {
+zs4.type.user = {
   info:{
-    name:'User',
+    name:'user',
     type:zs4.const.TYPE.COLLECTED,
     auth:{
-      create:[zs4.type.Auth.schema],
+      create:[zs4.type.auth.schema],
     },
   },
   schema:{
-    meta:zs4.type.Meta.schema,
+    meta:zs4.type.meta.schema,
     email: {
       type: String,
       required: true,
@@ -614,9 +616,9 @@ zs4.type.User = {
   },
 };
 
-zs4.type.Cost = {
+zs4.type.cost = {
   info:{
-    name:'Cost',
+    name:'cost',
     type:zs4.const.TYPE.PLAIN,
   },
   schema:{
@@ -639,9 +641,9 @@ zs4.type.Cost = {
   },
 };
 
-zs4.type.Object = {
+zs4.type.object = {
   info:{
-    name:'Object',
+    name:'object',
     type:zs4.const.TYPE.PLAIN,
   },
   method:{
@@ -674,12 +676,12 @@ zs4.type.Object = {
   },
 };
 
-zs4.type.Message = {
+zs4.type.message = {
   info:{
-    name:'Message',
+    name:'message',
     type:zs4.const.TYPE.PLAIN,
     auth:{
-      create:[zs4.type.Auth.schema],
+      create:[zs4.type.auth.schema],
     },
   },
   schema:{
@@ -705,7 +707,10 @@ zs4.type.Message = {
           },
         },
       },
-      number:{
+      from:{
+
+      },
+      time:{
         type:Number,
         default:0,
       },
@@ -742,27 +747,6 @@ zs4.type.Message = {
   },
 };
 
-zs4.job = {
-
-};
-
-zs4.respond = function(message,callback){
-  var processor = {
-    countSend:0;
-    countReceive:0;
-    doneSending:false;
-    data:{},
-    call:function(function,args){
-
-    },
-    registerCallback:function(){
-
-    },
-    callback:function(){
-
-    },
-  }
-
-  var job = [];
+zs4.do = function(message,callback){
 
 }

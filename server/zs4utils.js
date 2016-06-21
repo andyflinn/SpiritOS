@@ -6,7 +6,7 @@ console.log('initializing module zs4utils');
 
 // load objects common to client and serve3r
 var shared = require('../public/js/zs4-shared');
-shared.install(shared,zs4);
+shared.copy.object.members(shared,zs4);
 
 // load the environment
 dotenv.load();

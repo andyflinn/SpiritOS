@@ -51,28 +51,27 @@ zs4db.createSchema = function(object){
 // system configuration.
 
 for (var i = 0 ; i < zs4api.api.length ; i++){
-  zs4.type.Server.schema.api[zs4api.api[i].name]=[zs4.type.Auth.schema];
+  zs4.type.server.schema.api[zs4api.api[i].name]=[zs4.type.auth.schema];
 }
 
+zs4db.schema.server = zs4db.createSchema(zs4.type.server.schema)
+zs4db.model.server = zs4db.conn.model('zs4',zs4db.schema.server);
+zs4db.system = zs4db.model.server();
 
-zs4db.schema.Server = zs4db.createSchema(zs4.type.Server.schema)
-zs4db.model.Server = zs4db.conn.model('zs4',zs4db.schema.Server);
-zs4db.system = zs4db.model.Server();
-
-zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
+zs4db.model.server.findOne({ 'number': 0 }, function (err, system) {
   function populate(system){
     zs4.console.log('populating server object');
-    zs4.type.Auth.method.set(system.meta.auth.read,{email:zs4.const.SYSTEM.ADMIN});
-    zs4.type.Auth.method.set(system.meta.auth.update,{email:zs4.const.SYSTEM.ADMIN});
+    zs4.type.auth.method.set(system.meta.auth.read,{email:zs4.const.SYSTEM.ADMIN});
+    zs4.type.auth.method.set(system.meta.auth.update,{email:zs4.const.SYSTEM.ADMIN});
 
     //zs4.console.log('zs4api.api.length = '+zs4api.api.length);
     for (var i = 0 ; i < zs4api.api.length ; i++){
       //zs4.console.log('does server have '+zs4api.api[i].name+'?');
       if (system.api[zs4api.api[i].name].length == 0){
-        if (zs4api.api[i].name == zs4.const.API.NAME.INITIALIZE)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
-        if (zs4api.api[i].name == zs4.const.API.NAME.QUERY)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
-        if (zs4api.api[i].name == zs4.const.API.NAME.ADMIN)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.ADMIN});
-        if (zs4api.api[i].name == zs4.const.API.NAME.FS)zs4.type.Auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.ADMIN});
+        if (zs4api.api[i].name == zs4.const.API.NAME.INITIALIZE)zs4.type.auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
+        if (zs4api.api[i].name == zs4.const.API.NAME.QUERY)zs4.type.auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.PUBLIC});
+        if (zs4api.api[i].name == zs4.const.API.NAME.ADMIN)zs4.type.auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.ADMIN});
+        if (zs4api.api[i].name == zs4.const.API.NAME.FS)zs4.type.auth.method.set(system.api[zs4api.api[i].name],{email:zs4.const.SYSTEM.ADMIN});
       }
       zs4api.api[i].auth = system.api[zs4api.api[i].name];
     }
@@ -109,27 +108,27 @@ zs4db.model.Server.findOne({ 'number': 0 }, function (err, system) {
 })
 
 /////////////////////////////////////////
-// User Record.
-zs4db.schema.User = zs4db.createSchema(zs4.type.User.schema);
-zs4db.model.User = zs4db.conn.model('User',zs4db.schema.User);
-zs4.type.Auth.method.set(zs4.type.User.info.auth.create,{email:zs4.const.SYSTEM.ADMIN});
+// user Record.
+zs4db.schema.user = zs4db.createSchema(zs4.type.user.schema);
+zs4db.model.user = zs4db.conn.model('user',zs4db.schema.user);
+zs4.type.auth.method.set(zs4.type.user.info.auth.create,{email:zs4.const.SYSTEM.ADMIN});
 zs4.console.log('updated who can create users');
-zs4.console.log(zs4.type.User.info.auth);
+zs4.console.log(zs4.type.user.info.auth);
 
 /////////////////////////////////////////
 // admin user.
 
-zs4db.admin = zs4db.model.User();
+zs4db.admin = zs4db.model.user();
 zs4db.admin.email = zs4.env.ZS4_ADMIN_EMAIL;
 
-zs4db.model.User.findOne({ 'email': zs4.env.ZS4_ADMIN_EMAIL }, function (err, admin) {
-  function setAuths(admin){
-    zs4.type.Auth.method.set(admin.meta.auth.read,{email:zs4.const.SYSTEM.ADMIN});
-    zs4.type.Auth.method.set(admin.meta.auth.update,{email:zs4.const.SYSTEM.ADMIN});
+zs4db.model.user.findOne({ 'email': zs4.env.ZS4_ADMIN_EMAIL }, function (err, admin) {
+  function setauths(admin){
+    zs4.type.auth.method.set(admin.meta.auth.read,{email:zs4.const.SYSTEM.ADMIN});
+    zs4.type.auth.method.set(admin.meta.auth.update,{email:zs4.const.SYSTEM.ADMIN});
   };
 
   if (err || admin == null ){
-    setAuths(zs4db.admin);
+    setauths(zs4db.admin);
     zs4db.admin.email = zs4.env.ZS4_ADMIN_EMAIL;
     zs4db.admin.save(function(err) {
       console.log('inside zs4db.admin.initialize()');
