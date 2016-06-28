@@ -1,10 +1,14 @@
 console.log('running zs4');
+var fs = require('fs');
 
 const ZS4 = 'zs4';
+const DOT_ZS4 = '.'+ZS4;
 const OBJECT = 'object';
 const MAX_BYTE = 256;
 const MAX_WORD = (MAX_BYTE * MAX_BYTE);
 const SECOND = 1000;
+
+var I = null;
 
 // type checking utilities
 function isArray(a){
@@ -131,7 +135,6 @@ function StringArrayAddToArray(arr,to){
   }
 };
 
-
 // object scanners
 function scanObject(obj,foo,data){
   console.log('scanning....');
@@ -219,62 +222,60 @@ function pathResolve(path){
   return ret;
 }
 
-function error(t,d){
-  this.error = {text:t,data:d};
-  if (cb)cb(this.error,null);
-  return null;
-};
-function success(){
-  if (cb)cb(null,this);
-  return this;
-};
+function jsonParse(string,output){
+  try {
+    var r = JSON.parse(string);
+    if (isFunction(output))output(null,r);
+    return r;
+  }
+  catch(err) {
+      if (isFunction(output))output(err,null);
+      return null;
+  }
+}
 
 // REAL ZS4 FUNCTIONS
-function noop(){
-  console.log('function noop()');
-  var o = null;
-  var cb = null;
-  for (var i = 0 ; i < arguments.length ; i++){
-    if (isObject(arguments[i])&&o==null)o=arguments[i];
-    if (isFunction(arguments[i])&&cb==null)cb=arguments[i];
-  }
-  function error(t,d){
-    this.error = {text:t,data:d};
-    if (cb)cb(this.error,null);
+function call(input,output){
+  console.log('call()');
+  if (!isObject(input)){
+    if (isFunction(output))output({text:'no input'},null);
     return null;
-  };
-  function success(){
-    if (cb)cb(null,this);
-    return this;
-  };
-  if (o == null){error('no input');return null;}
-
-  // operation would go here
-  error('noop');
-  return null;
-};
-
-function string(){
-  console.log('function string()');
-  var o = null;
-  var cb = null;
-  for (var i = 0 ; i < arguments.length ; i++){
-    if (isObject(arguments[i])&&o==null)o=arguments[i];
-    if (isFunction(arguments[i])&&cb==null)cb=arguments[i];
   }
-  function error(t,d){
-    this.error = {text:t,data:d};
-    if (cb)cb(this.error,null);
-    return null;
-  };
-  function success(){
-    if (cb)cb(null,this);
-    return this;
-  };
-  if (o == null){error('no input');return null;}
 
-  error('string');
-  return null;
+  if (isFunction(output))output(null,this);
+}
+
+function string(input,output){
+  console.log('string()');
+  if (input == null || !isObject(input) || !isName(input.name)){
+    if (isFunction(output))output({text:'no input'},null);
+    return null;
+  }
+  console.log(input);
+
+  this.name = input.name;
+  this.type = String;
+  if (isBoolean(input.required))this.required = input.required; else this.required = true;
+
+  this.event = function(input,output){
+    console.log('string.event()');
+    if (!isObject(input)){
+      if (isFunction(output))output({text:'bad args'},null);
+      return null;
+    };
+
+    console.log('past common event initialization');
+
+    for (var n in input){
+      //console.log(o[n]);
+      if (console.log(input[n]))continue;
+    }
+
+    // operation would go here
+    if (isFunction(output))output(null,this);
+  };
+
+  if (isFunction(output))output(null,this);
 };
 
 function object(input,output){
@@ -324,7 +325,6 @@ function objectChild(input,output){
   if (isFunction(output))output(null,this);
 };
 
-// function object()
 function schema(input,output){
   console.log('schema()');
   console.log(input);
@@ -376,6 +376,32 @@ function schema(input,output){
   return this;
 };
 
+//if (!isObject(input)){if(isFunction(output))output({text:'no input'},null);return null;}
+
+
+fs.readFile(DOT_ZS4,'utf8', (err, data) => {
+  if (err) { I = new Object(); }
+  else { I = jsonParse(data);}
+  if (I == null) I = new Object();
+
+  //I.zs4 = {
+  //  this:new schema({name:'this'}),
+  //};
+
+  // SAVE OBJECT BACK TO DISK
+  var save = JSON.stringify(I);
+  fs.writeFile(DOT_ZS4,save, (err) => {
+    if (err){
+      if(isFunction(output))output({text:'failed to save object'},null);
+      return null;
+    }
+    if(isFunction(output))output(null,I);
+    return I;
+  });
+
+});
+
+/*
 if (this.object == null){
   var scan = null;
   if ( (input!=null)
@@ -399,4 +425,9 @@ if (this.object == null){
   }
 }
 
-return this;
+
+var call = new call();
+*/
+
+//if(isFunction(output))output(null,I)
+//return I;
