@@ -183,9 +183,8 @@ function scanObject(obj,foo,data){
   return scan;
 };
 function scanObjectForName(obj,name,type){
-
   console.log('scanObjectForName(' + obj + ',"' + name + '")');
-  if (!isName(name))return null;
+  if (!isObject(obj) || !isName(name))return null;
   var scan = scanObject(obj);
   //console.log(scan);
   for (var i = 0 ; i < scan.a.length ; i++){
@@ -220,6 +219,16 @@ function pathResolve(path){
   return ret;
 }
 
+function error(t,d){
+  this.error = {text:t,data:d};
+  if (cb)cb(this.error,null);
+  return null;
+};
+function success(){
+  if (cb)cb(null,this);
+  return this;
+};
+
 // REAL ZS4 FUNCTIONS
 function noop(){
   console.log('function noop()');
@@ -232,9 +241,11 @@ function noop(){
   function error(t,d){
     this.error = {text:t,data:d};
     if (cb)cb(this.error,null);
+    return null;
   };
   function success(){
     if (cb)cb(null,this);
+    return this;
   };
   if (o == null){error('no input');return null;}
 
@@ -254,9 +265,11 @@ function string(){
   function error(t,d){
     this.error = {text:t,data:d};
     if (cb)cb(this.error,null);
+    return null;
   };
   function success(){
     if (cb)cb(null,this);
+    return this;
   };
   if (o == null){error('no input');return null;}
 
@@ -264,153 +277,126 @@ function string(){
   return null;
 };
 
-function object(){
-  return objectChild();
+function object(input,output){
+  return objectChild.call(this,input,output);
 }
 
-function objectChild(){
+function objectChild(input,output){
   console.log('object()');
-  var o = null;
-  var cb = null;
-  for (var i = 0 ; i < arguments.length ; i++){
-    if (isObject(arguments[i])&&o==null)o=arguments[i];
-    if (isFunction(arguments[i])&&cb==null)cb=arguments[i];
+  if (input == null || !isObject(input) || !isName(input.name)){
+    if (isFunction(output))output({text:'no input'},null);
+    return null;
   }
-  function error(t,d){
-    this.error = {text:t,data:d};
-    if (cb)cb(this.error,null);
-  };
-  function success(){
-    if (cb)cb(null,this);
-  };
-  if (o == null){error('no input');return null;}
+  console.log(input);
+  //console.log('isName(\''+o.name+'\')');
 
-  if (isName(o.name)){
-    this.name = o.name;
-    this.type = Object;
-    if (isBoolean(o.required))this.required = o.required; else this.required = true;
-    this.object = object;
-    success(); return this;
-  }
 
-  error('object');
-  return null;
+  this.name = input.name;
+  this.type = Object;
+  if (isBoolean(input.required))this.required = input.required; else this.required = true;
+  this.object = object;
+  this.string = string;
+  this.event = function(input,output){
+    console.log('object.event()');
+    if (!isObject(input)){
+      if (isFunction(output))output({text:'bad args'},null);
+      return null;
+    };
+
+    console.log('past common event initialization');
+
+    for (var n in input){
+      //console.log(o[n]);
+      if (!isObject(input[n]))continue;
+      if (n=='object'&&isName(input[n].name)){
+        console.log(o.object);
+
+        this[input[n].name] = new object(input[n]);
+        this[input[n].name].parent = this.path;
+        this[input[n].name].path = this.path+'.'+input[n].name;
+      }
+    }
+
+    // operation would go here
+    if (isFunction(output))output(null,this);
+  };
+
+  if (isFunction(output))output(null,this);
 };
+
 // function object()
-function schema(){
-  console.log('function schema()');
-  var o = null;
-  var cb = null;
-  for (var i = 0 ; i < arguments.length ; i++){
-    if (isObject(arguments[i])&&o==null)o=arguments[i];
-    if (isFunction(arguments[i])&&cb==null)cb=arguments[i];
+function schema(input,output){
+  console.log('schema()');
+  console.log(input);
+
+  if (input == null || !isObject(input) || !isName(input.name)){
+    if (output)output({text:'no input'},null);
+    return null;
   }
-  function error(t,d){
-    this.error = {text:t,data:d};
-    if (cb)cb(this.error,null);
-  };
-  function success(){
-    if (cb)cb(null,this);
-  };
-  if (o == null){error('no input');return null;}
 
-  for (var n in o){
-    if (n=='create' && isObject(o[n])){
-      console.log('schema.create')
+  this.path = '';
+  this.name = input.name;
 
-      var create = o[n];
+  if (isBoolean(input.required))this.required = input.required; else this.required = true;
 
-      // handle name
-      console.log('schema.create.name');
-      if (!isName(create.name)){error('schema.name');return null;}
-      this.name = create.name;
+  // handle type
+  console.log('schema.new.type');
+  this.type = Object;
+  this.object = object;
+  this.string = string;
+  this.event = function(input,output){
+    console.log('schema.event()');
+    if (input == null || !isObject(input)){
+      if (isFunction(output)) output({text:'no input'},null);
+      return null;
+    };
+    console.log('past common event initialization');
 
-      // required property
-      console.log('schema.create.required');
-      if (isBoolean(create.required))this.required = create.required; else this.required = true;
+    for (var n in input){
+      //console.log(o[n]);
+      if (!isObject(input[n]))continue;
+      if (n=='object'&&isName(input[n].name)){
+        //console.log(o.object);
 
-      // handle type
-      console.log('schema.create.type');
-      if (create.type==Object){
-        this.type = create.type;
-        this.object = object;
-        this.event = function(){
-          console.log('function noop()');
-          var o = null;
-          var cb = null;
-          for (var i = 0 ; i < arguments.length ; i++){
-            if (isObject(arguments[i])&&o==null)o=arguments[i];
-            if (isFunction(arguments[i])&&cb==null)cb=arguments[i];
-          }
-          function error(t,d){
-            this.error = {text:t,data:d};
-            if (cb)cb(this.error,null);
-          };
-          function success(){
-            if (cb)cb(null,this);
-          };
-          if (o == null){error('no input');return null;}
-
-          if (isObject(o.object)){
-            if (!isName(o.object.name)||this.hasOwnProperty(o.object.name)){error('object.name'); return null;}
-            this[o.object.name] = new object(o.object,cb);
-          }
-          // operation would go here
-          error('event'); return null;
-
-        }
+        this[input[n].name] = new object(input[n]);
+        this[input[n].name].parent = this.path;
+        this[input[n].name].path = input[n].name;
       }
       else {
-        error('schema.create.type');
+        if (isFunction(output)) output({text:'schema.event: not supported.',data:input[n]},null);
         return null;
       }
-
-      success();
-      return this;
     }
+
+    if (isFunction(output)) output(null,this);
+    return this;
   }
 
-  error('schema');
-  return null;
+  if (isFunction(output)) output(null,this);
+  return this;
 };
-
-
-// scan for input object
-var inputObject = null;
-var inputFunction = null;
-for (var i = 0 ; i < arguments.length ; i++){
-  if (isObject(arguments[i])&&inputObject==null)inputObject=arguments[i];
-  if (isFunction(arguments[i])&&inputFunction==null)inputFunction=arguments[i];
-}
 
 if (this.object == null){
   var scan = null;
-  if ( (inputObject!=null)
-    && (scan = scanObjectForName(inputObject,OBJECT,Object))
+  if ( (input!=null)
+    && (scan = scanObjectForName(input,OBJECT,Object))
   ){
     this.object = scan;
     this.object.zs4 = this;
     //install.call(this);
 
-    console.log('this[\'this\'] = new schema({create:{name:\'this\',type:Object,}});');
-    this['this'] = new schema({create:{name:'this',type:Object,}});
-    console.log(this['this']);
+    console.log('this[\'this\'] = new schema({name:\'this\'});');
+    this['this'] = new schema({name:'this'});
     this['this'].event({object:{name:'zs4',type:Object,}});
+    console.log(this['this']);
 
-    if (inputFunction)inputFunction(null,this);
+    if (output)output(null,this);
     return this;
   }else{
     console.log('need zs4.event({object:{}})');
-    if (inputFunction)inputFunction(null,this);
+    if (output)output(null,this);
     return null;
   }
 }
-
-
-
-
-
-
-
 
 return this;

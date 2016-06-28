@@ -5,9 +5,9 @@ fs.readFile('zs4/object.js','utf8', (err, data) => {
     throw err;
   }
   console.log('constructing start function');
-  var f = new Function(data);
+  var f = new Function(['input','output'],data);
   console.log(f);
-  
+
   var zs4 = exports;
   zs4.event = f;
 });
