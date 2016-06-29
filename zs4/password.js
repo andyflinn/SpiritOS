@@ -1,4 +1,6 @@
 var zs4 = require('./object');
+var passhash = require('password-hash');
+
 console.log('password.js');
 var password = {};
 
@@ -9,8 +11,11 @@ if (typeof window === 'undefined') {
     window.zs4.password = password;
 }
 
-
 password.event = function(input,output){
+  const PASSWORD_ALGORITHM = 'sha1';
+  const PASSWORD_SALTLENGTH = 32;
+  const PASSWORD_ITERATIONS = 8;
+
   console.log('password.event()');
   if (input == null){
     if (isFunction(output))output({text:'no input'},null);

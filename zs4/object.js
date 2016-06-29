@@ -149,6 +149,17 @@ zs4.string = {
   },
 };
 
+zs4.count = {
+    object:{
+      properties:function(o){
+        if (!zs4.is.object(o))return 0;
+        var count = 0;
+        for (var n in o)count++;
+        return count;
+      },
+    },
+};
+
 zs4.scan = {
   object:function(obj,foo,data){
     console.log('scanning....');
@@ -240,438 +251,86 @@ zs4.path = {
   }
 };
 
-zs4.event = function(input,output){
-
-  console.log('zs4.event()');
-  var fs = require('fs');
-  var http = require('http');
-  var password = require('password-hash');
-  const PASSWORD_ALGORITHM = 'sha1';
-  const PASSWORD_SALTLENGTH = 32;
-  const PASSWORD_ITERATIONS = 8;
-
-  const ZS4 = 'zs4';
-  const DOT_ZS4 = '.'+ZS4;
-  const OBJECT = 'object';
-  const MAX_BYTE = 256;
-  const MAX_WORD = (MAX_BYTE * MAX_BYTE);
-  const SECOND = 1000;
-
-  // type checking utilities
-  function isArray(a){
-    if	(a==null)return false;
-    return (a instanceof Array);
-  };
-  function isBoolean(b){
-    if	(b==null)return false;
-    if	(typeof(b)!='boolean')return false;
-    return true;
-  };
-  function isFunction(f){
-    if (f==null)return false;
-    return (f instanceof Function);
-  };
-  function isString(s){
-    if	(s==null)return false;
-    if	(typeof(s)!='string')return false;
-    return true;
-  };
-  function isPassword(s){
-    if	(!isString(n) || s.trim()!=s || s.length < 4)return false;
-    return true;
-  };
-  function isNumber(b){
-    if	(b==null)return false;
-    if	(typeof(b)!='number')return false;
-    return true;
-  };
-  function isObject(o){
-    if	(o==null)return false;
-    if ((o instanceof Function)==true)return false;
-    if	((o instanceof Array)==true)return false;
-    if	(o instanceof Object)return true;
-    return false;
-  };
-  function isName(n){
-    if	(!isString(n))return false;
-    if	(n=="zs4")return true;
-    var l=n.length;
-    if	(l<1)return false;
-    for (var i=0;i<l;i++){
-      if(n.charAt(i)<'a'||n.charAt(i)>'z')return false;
-    }
-    return true;
-  };
-  function isObjectProperty(o,p){
-    if(!isObject(o)||!isString(p))return null;
-    var a = p.split('.');
-    var l = a.length;
-    var p = '';
-    if (l<1)return null;
-    if ((l>=2)&&(a[0]=='zs4')&&(a[1]=='zs4'))return null;
-
-    for (var i = 0 ; i < l ; i++){
-      if (p!='')p+='.'; p+=a[i];
-
-      if (!o.hasOwnProperty(a[i])){return null;}
-      o=o[a[i]];
-    }
-    return o;
-  };
-  function isSpace(ch){
-    if (ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')return true;
-    return false;
-  };
-
-  // string functions
-  function stringSplitWords(str){
-    arr = []; buf = '';
-    for (var i = 0; i < str.length ;i++){
-      var c = str.charAt(i);
-      if ((c >= 'a' && c <= 'z')||(c >= 'A' && c <= 'Z')){
-        buf+=c;
-      }else{
-        if (buf!=''){
-          arr.push(buf);
-          buf = '';
-        }
-      }
-    }
-    if (buf!=''){
-      arr.push(buf);
-    }
-    return arr;
-  };
-  function stringSplitSeparators(str,sep){
-    arr = []; buf = '';
-    for (var i = 0; i < str.length ;i++){
-      var c = str.charAt(i);
-      if (sep.indexOf(c)== -1){
-        buf+=c;
-      }else{
-        if (buf!=''){
-          arr.push(buf);
-          buf = '';
-        }
-      }
-    }
-    if (buf!=''){
-      arr.push(buf);
-    }
-    return arr;
-  };
-  function stringToLower(str){return str.toLowerCase();};
-
-  function stringArrayStringExists(arr,str){
-    var trimmed = str.trim();
-    for (var i = 0 ; i < arr.length ; i++){
-      if (arr[i].trim() == trimmed)return true;
-    }
-    return false;
-  };
-  function stringArrayAddStringIfNew(arr,str){
-    if (stringArrayStringExists(arr,str))return arr;
-    arr.push(str.trim());
-    return arr;
-  };
-  function StringArrayTrimToArray(arr,to){
-    for (var i = (arr.length-1) ; i >= 0 ; i--){
-      if (!stringArrayStringExists(to,arr[i].trim()))
-        arr.splice(i,1);
-    }
-  };
-  function StringArrayAddToArray(arr,to){
-    for (var i = (arr.length-1) ; i >= 0 ; i--){
-      stringArrayStringExists(to,arr[i]);
-    }
-  };
-
-  // object scanners
-  function scanObject(obj,foo,data){
-    console.log('scanning....');
-    var scan = {
-      o:obj,
-      a:[],
-      p:[],
-      path:function(){
-        var path = '';
-        for (var i = 0 ; i < this.p.length ; i++){
-          if (i>0)path+='.';
-          path+=this.p[i];
-        }
-        return path;
-      },
-      parentPath:function(){
-        var path = '';
-        for (var i = 0 ; i < (this.p.length-1) ; i++){
-          if (i>0)path+='.';
-          path+=this.p[i];
-        }
-        return path;
-      },
-    }
-
-    if (foo) scan.function = foo;
-    if (data) scan.data = data;
-
-    function item(path,name,item){var ret = {path:path,name:name,item:item}; scan.a.push(ret); return ret;}
-    function itemCircular(item){
-      for (var i = 0 ; i < scan.a.length ; i++)if (scan.a[i].item==item)return true;
-      return false;
-    }
-    function recurse(o){
-
-      for (var n in o){
-        scan.p.push(n);
-        var path = scan.path();
-
-        if (isObject(o[n])){
-          //console.log('Object: '+o[n])
-          if (itemCircular(o[n])){
-            //console.log('circular: '+o[n])
-          }
-          else{
-            var i = item(path,n,o[n]);
-            if (scan.function)scan.function(scan,i);
-            recurse(o[n]);
-          }
-        }else{
-          var i = item(path,n,o[n]);
-          if (scan.function)scan.function(scan,i);
-          item(path,n,o[n]);
-        }
-        scan.p.pop();
-      };
-    };
-
-    recurse(obj);
-    return scan;
-  };
-
-
-  function jsonParse(string,output){
-    try {
-      var r = JSON.parse(string);
-      if (isFunction(output))output(null,r);
-      return r;
-    }
-    catch(err) {
-        if (isFunction(output))output(err,null);
-        return null;
-    }
+zs4.error = function(o){
+  this.text='unknown error';
+  if (zs4.is.object(o)){
+    if (zs4.is.string(o.text)){this.text = o.text.trim();}
+    this.data = o.data;
   }
+}
 
-
-  // REAL ZS4 FUNCTIONS
-
-  function string(input,output){
-    console.log('string()');
-    if (input == null || !isObject(input) || !isName(input.name)){
-      if (isFunction(output))output({text:'no input'},null);
-      return null;
-    }
-    console.log(input);
-
-    this.name = input.name;
-    this.type = String;
-    if (isBoolean(input.required))this.required = input.required; else this.required = true;
-    if (isString(input.default))this.default = input.default;
-    if (isArray(input.enum)){
-      this.enum = input.enum;
-    }else{
-      if (isNumber(input.minlength))this.minlength = parseInt(input.minlength);
-      if (isNumber(input.maxlength))this.maxlength = parseInt(input.maxlength);
-    }
-
-    this.event = function(input,output){
-      console.log('string.event()');
-      if (!isObject(input)){
-        if (isFunction(output))output({text:'bad args'},null);
-        return null;
-      };
-
-      if (isObject(input.new)){
-        var res = new String();;
-        if (isString(this.default))res = new String(this.default);
-        if (isFunction(output))output(null,res);
-        return res;
-      }
-
-      for (var n in input){
-        //console.log(o[n]);
-        if (console.log(input[n]))continue;
-      }
-
-      // operation would go here
-      if (isFunction(output))output(null,this);
-    };
-
-    if (isFunction(output))output(null,this);
-  };
-
-  function integer(input,output){
-    console.log('integer()');
-    if (input == null || !isObject(input) || !isName(input.name)){
-      if (isFunction(output))output({text:'no input'},null);
-      return null;
-    }
-    console.log(input);
-
-    this.name = input.name;
-    this.type = Number;
-    if (isBoolean(input.required))this.required = input.required; else this.required = true;
-    if (isNumber(input.default))this.default = parseInt(input.default);
-    if (isArray(input.enum)){
-      this.enum = input.enum;
-    }else{
-      if (isNumber(input.min))this.min = parseInt(input.min);
-      if (isNumber(input.max))this.max = parseInt(input.max);
-    }
-
-    this.event = function(input,output){
-      console.log('integer.event()');
-      if (!isObject(input)){
-        if (isFunction(output))output({text:'bad args'},null);
-        return null;
-      };
-
-      if (isObject(input.new)){
-        var res = new Number();;
-        if (isNumber(this.default))res = new Number(parseInt(this.default));
-        if (isFunction(output))output(null,res);
-        return res;
-      }
-
-    };
-
-    if (isFunction(output))output(null,this);
-    return this;
-  };
-
-  function object(input,output){
-    return objectChild.call(this,input,output);
-  }
-
-  function objectChild(input,output){
-    console.log('object()');
-    if (input == null || !isObject(input) || !isName(input.name)){
-      if (isFunction(output))output({text:'no input'},null);
-      return null;
-    }
-    console.log(input);
-    //console.log('isName(\''+o.name+'\')');
-
-    this.name = input.name;
-    this.type = Object;
-    if (isBoolean(input.required))this.required = input.required; else this.required = true;
-    this.object = object;
-    this.string = string;
-    this.integer = integer;
-    this.event = function(input,output){
-      console.log('object.event()');
-      if (!isObject(input)){
-        if (isFunction(output))output({text:'bad args'},null);
-        return null;
-      };
-
-      if (isObject(input.new)){
-        var res = new Object();;
-        if (isFunction(output))output(null,res);
-        return res;
-      }
-
-      for (var n in input){
-        //console.log(o[n]);
-        if (!isObject(input[n]))continue;
-        console.log(input[n]);
-        if (n=='object'&&isName(input[n].name)){
-          this[input[n].name] = new object(input[n]);
-          this[input[n].name].path = this.path + '.' + input[n].name;
-        }
-        else if (n=='string'&&isName(input[n].name)){
-          this[input[n].name] = new string(input[n]);
-          this[input[n].name].path = this.path+'.'+input[n].name;
-        }
-        else if (n=='integer'&&isName(input[n].name)){
-          this[input[n].name] = new integer(input[n]);
-          this[input[n].name].path = this.path+'.'+input[n].name;
-        }
-      }
-
-      // operation would go here
-      if (isFunction(output))output(null,this);
-    };
-
-    if (isFunction(output))output(null,this);
-  };
-
-  function schema(input,output){
-    console.log('schema()');
-    console.log(input);
-
-    if (input == null || !isObject(input) || !isName(input.name)){
-      if (output)output({text:'no input'},null);
-      return null;
-    }
-
-    this.path = input.name;
-    this.name = input.name;
-
-    if (isBoolean(input.required))this.required = input.required; else this.required = true;
-
-    // handle type
-    console.log('schema.new.type');
-    this.type = Object;
-    this.object = object;
-    this.string = string;
-    this.integer = integer;
-    this.event = function(input,output){
-      console.log('schema.event()');
-      if (input == null || !isObject(input)){
-        if (isFunction(output)) output({text:'no input'},null);
-        return null;
-      };
-      console.log('past common event initialization');
-
-      for (var n in input){
-        //console.log(o[n]);
-        if (!isObject(input[n]))continue;
-        if (n=='object'&&isName(input[n].name)){
-          this[input[n].name] = new object(input[n]);
-          this[input[n].name].path = this.path + '.' + input[n].name;
-        }
-        else if (n=='string'&&isName(input[n].name)){
-          this[input[n].name] = new string(input[n]);
-          this[input[n].name].path = this.path+'.'+input[n].name;
-        }
-        else if (n=='integer'&&isName(input[n].name)){
-          this[input[n].name] = new integer(input[n]);
-          this[input[n].name].path = this.path+'.'+input[n].name;
-        }
-        else {
-          if (isFunction(output)) output({text:'schema.event: not supported.',data:input[n]},null);
+zs4.internal = {
+  new:{
+    schema:{
+      object:function(input,output){
+        console.log('object()');
+        if (input == null || !zs4.is.object(input) || !zs4.is.name(input.name)){
+          if (zs4.is.function(output))output({text:'no input'},null);
           return null;
         }
-      }
+        console.log(input);
+        //console.log('zs4.is.name(\''+o.name+'\')');
 
-      if (isFunction(output)) output(null,this);
-      return this;
-    }
+        this.name = input.name;
+        this.type = Object;
+        if (zs4.is.boolean(input.required))this.required = input.required; else this.required = true;
+        this.object = zs4.new.schema.object;
+        this.string = zs4.new.schema.string;
+        this.integer = zs4.new.schema.integer;
+        this.event = function(input,output){
+          console.log('object.event()');
+          if (!zs4.is.object(input)){
+            if (zs4.is.function(output))output({text:'bad args'},null);
+            return null;
+          };
 
-    if (isFunction(output)) output(null,this);
-    return this;
-  };
+          if (zs4.is.object(input.new)){
+            var res = new Object();;
+            if (zs4.is.function(output))output(null,res);
+            return res;
+          }
 
-  function instantiate(schema,output){
+          for (var n in input){
+            //console.log(o[n]);
+            if (!zs4.is.object(input[n]))continue;
+            console.log(input[n]);
+            if (n=='object'&&zs4.is.name(input[n].name)){
+              this[input[n].name] = new object(input[n]);
+              this[input[n].name].path = this.path + '.' + input[n].name;
+            }
+            else if (n=='string'&&zs4.is.name(input[n].name)){
+              this[input[n].name] = new string(input[n]);
+              this[input[n].name].path = this.path+'.'+input[n].name;
+            }
+            else if (n=='integer'&&zs4.is.name(input[n].name)){
+              this[input[n].name] = new integer(input[n]);
+              this[input[n].name].path = this.path+'.'+input[n].name;
+            }
+          }
+
+          // operation would go here
+          if (zs4.is.function(output))output(null,this);
+        };
+
+        if (zs4.is.function(output))output(null,this);
+      },
+    },
+  }
+
+
+};
+
+zs4.new = {
+  instance:function(schema,output){
     //console.log('instantiate()');
     //console.log(schema);
     function scanner(scan,item){
-      if (isObject(item.item) && item.item.required){
+      if (zs4.is.object(item.item) && item.item.required){
         //console.log('instantiating '+item.path);
         var pp = scan.parentPath();
         if (pp=='')pp='data';
         else pp = 'data.'+pp;
-        var parent = isObjectProperty(scan,pp)
+        var parent = zs4.is.objectProperty(scan,pp)
         if (parent){
           parent[item.name] = item.item.event({new:{}});
         }
@@ -680,112 +339,287 @@ zs4.event = function(input,output){
       }
     }
     var o = new Object();
-    scanObject(schema,scanner,o);
+    zs4.scan.object(schema,scanner,o);
     return (o);
-  }
-
-  var THIS = null;
-  //var zs4 = new Object();
-
-/*
-  zs4.http = new schema({name:'http',required:false,});
-  zs4.http.event({object:{name:'server',required:false,}});
-  zs4.http.server.event({integer:{name:'port',required:true,default:3000,}});
-  zs4.http.server.event({object:{name:'secure',required:false,}});
-  zs4.http.server.secure.event({integer:{name:'port',required:true,default:3443,}});
-  zs4.http.server.secure.event({string:{name:'key',required:true,}});
-  zs4.http.server.secure.event({string:{name:'cert',required:true,}});
-*/
-
-  console.log('reading '+DOT_ZS4);
-  fs.readFile(DOT_ZS4,'utf8', function(err, data){
-    //console.log('inside callback for: readFile(\''+DOT_ZS4+'\')');
-    if (err) {
-      console.log('creating new '+DOT_ZS4);
-      THIS = new Object();
-    }
-    else {
-      THIS = jsonParse(data);
-      if (THIS==null){
-        console.log('unable to parse '+DOT_ZS4);
-        console.log('creating new '+DOT_ZS4);
-        THIS = new Object();
-      }
-    }
-
-    console.log(input);
-
-    if (isObject(input)){
-      if (isObject(input.password)){
-        console.log('requiring(\'./password\')')
-        var password = require('./password');
-
-        /*
-        zs4.password = new schema({name:'password',required:true,});
-
-        function event(input,output){
-          console.log('password.event()');
-          if (input == null){
-            if (isFunction(output))output({text:'no input'},null);
-            return null;
-          };
-
-          if (isObject(input.initialized)){
-            console.log(THIS);
-            if (password.isHashed(THIS.password.hashed)){
-              if (isFunction(output)) output(null,true);
-              return true;
-            }else{
-              if (isFunction(output)) output(null,false);
-              return false;
-            }
-          }
-
-          if (isObject(input.set)){
-            if (!isPassword(input.set.new)){
-              if (isFunction(output)) output({text:'bad new password'},null);
-              return null;
-            }
-            if (!password.isHashed(THIS.password.hashed)){
-              THIS.password.hashed = password.generate(input.set,{algorithm:PASSWORD_ALGORITHM,saltLength:PASSWORD_SALTLENGTH,iterations:PASSWORD_ITERATIONS,});
-              if (isFunction(output)) output(null,true);
-              return true;
-            }
-            else {
-              if (!isPassword(input.set.old)||!password.verify(input.set.old,THIS.password.hashed)){
-                if (isFunction(output)) output({text:'old password incorrect'},null);
-                return null;
-              }
-              THIS.password.hashed = password.generate(input.set,{algorithm:PASSWORD_ALGORITHM,saltLength:PASSWORD_SALTLENGTH,iterations:PASSWORD_ITERATIONS,});
-              if (isFunction(output)) output(null,true);
-              return true;
-            }
-          }
-        };
-        zs4.password.event({string:{name:'hashed',required:true,}})
-        if (!THIS.hasOwnProperty('password')){THIS.password = instantiate(zs4.password);}
-        */
-
-      }
-      // must return message options
-      O = THIS;
-    }
-    else {
-      O = THIS;
-    }
-
-    // SAVE OBJECT BACK TO DISK
-    console.log('writing '+DOT_ZS4);
-    var save = JSON.stringify(THIS);
-    console.log(save);
-    fs.writeFile(DOT_ZS4,save, (err) => {
-      if (err){
-        if(isFunction(output))output({text:'failed to save object'},null);
+  },
+  schema:{
+    string:function(input,output){
+      console.log('string()');
+      if (input == null || !zs4.is.object(input) || !zs4.is.name(input.name)){
+        if (zs4.is.function(output))output({text:'no input'},null);
         return null;
       }
-      if(isFunction(output))output(null,O);
-      return O;
-    });
-  });
+      console.log(input);
+
+      this.name = input.name;
+      this.type = String;
+      if (zs4.is.boolean(input.required))this.required = input.required; else this.required = true;
+      if (zs4.is.string(input.default))this.default = input.default;
+      if (zs4.is.array(input.enum)){
+        this.enum = input.enum;
+      }else{
+        if (zs4.is.number(input.minlength))this.minlength = parseInt(input.minlength);
+        if (zs4.is.number(input.maxlength))this.maxlength = parseInt(input.maxlength);
+      }
+
+      this.event = function(input,output){
+        console.log('string.event()');
+        if (!zs4.is.object(input)){
+          if (zs4.is.function(output))output({text:'bad args'},null);
+          return null;
+        };
+
+        if (zs4.is.object(input.new)){
+          var res = new String();;
+          if (zs4.is.string(this.default))res = new String(this.default);
+          if (zs4.is.function(output))output(null,res);
+          return res;
+        }
+
+        for (var n in input){
+          //console.log(o[n]);
+          if (console.log(input[n]))continue;
+        }
+
+        // operation would go here
+        if (zs4.is.function(output))output(null,this);
+      };
+
+      if (zs4.is.function(output))output(null,this);
+    },
+    integer:function(input,output){
+      console.log('integer()');
+      if (input == null || !zs4.is.object(input) || !zs4.is.name(input.name)){
+        if (zs4.is.function(output))output({text:'no input'},null);
+        return null;
+      }
+      console.log(input);
+
+      this.name = input.name;
+      this.type = Number;
+      if (zs4.is.boolean(input.required))this.required = input.required; else this.required = true;
+      if (zs4.is.number(input.default))this.default = parseInt(input.default);
+      if (zs4.is.array(input.enum)){
+        this.enum = input.enum;
+      }else{
+        if (zs4.is.number(input.min))this.min = parseInt(input.min);
+        if (zs4.is.number(input.max))this.max = parseInt(input.max);
+      }
+
+      this.event = function(input,output){
+        console.log('integer.event()');
+        if (!zs4.is.object(input)){
+          if (zs4.is.function(output))output({text:'bad args'},null);
+          return null;
+        };
+
+        if (zs4.is.object(input.new)){
+          var res = new Number();;
+          if (zs4.is.number(this.default))res = new Number(parseInt(this.default));
+          if (zs4.is.function(output))output(null,res);
+          return res;
+        }
+
+      };
+
+      if (zs4.is.function(output))output(null,this);
+      return this;
+    },
+    object:function(input,output){
+      return zs4.internal.new.schema.object.call(this,input,output);
+    },
+
+    schema:function(input,output){
+      console.log('schema()');
+      console.log(input);
+
+      if (input == null || !zs4.is.object(input) || !zs4.is.name(input.name)){
+        if (output)output({text:'no input'},null);
+        return null;
+      }
+
+      this.path = input.name;
+      this.name = input.name;
+
+      if (zs4.is.boolean(input.required))this.required = input.required; else this.required = true;
+
+      // handle type
+      console.log('schema.new.type');
+      this.type = Object;
+      this.object = zs4.new.schema.object;
+      this.string = zs4.new.schema.string;
+      this.integer = zs4.new.schema.integer;
+      this.event = function(input,output){
+        console.log('schema.event()');
+        if (input == null || !zs4.is.object(input)){
+          if (zs4.is.function(output)) output({text:'no input'},null);
+          return null;
+        };
+        console.log('past common event initialization');
+
+        for (var n in input){
+          //console.log(o[n]);
+          if (!zs4.is.object(input[n]))continue;
+          if (n=='object'&&zs4.is.name(input[n].name)){
+            this[input[n].name] = new object(input[n]);
+            this[input[n].name].path = this.path + '.' + input[n].name;
+          }
+          else if (n=='string'&&zs4.is.name(input[n].name)){
+            this[input[n].name] = new string(input[n]);
+            this[input[n].name].path = this.path+'.'+input[n].name;
+          }
+          else if (n=='integer'&&zs4.is.name(input[n].name)){
+            this[input[n].name] = new integer(input[n]);
+            this[input[n].name].path = this.path+'.'+input[n].name;
+          }
+          else {
+            if (zs4.is.function(output)) output({text:'schema.event: not supported.',data:input[n]},null);
+            return null;
+          }
+        }
+
+        if (zs4.is.function(output)) output(null,this);
+        return this;
+      }
+
+      if (zs4.is.function(output)) output(null,this);
+      return this;
+    },
+  },
 
 };
+
+if (node){
+  zs4.module = {
+    require:function(str,output){
+      console.log('require(\'./'+str+'\')');
+      var r = null;
+      try{
+        r = require('./'+str);
+      }
+      catch(err){
+        if (zs4.is.function(output))output(err,null);
+        return null;
+      }
+      return r;
+    },
+
+  };
+
+  zs4.event = function(input,output){
+
+    console.log('zs4.event()');
+    var fs = require('fs');
+
+    const ZS4 = 'zs4';
+    const DOT_ZS4 = '.'+ZS4;
+    const OBJECT = 'object';
+    const MAX_BYTE = 256;
+    const MAX_WORD = (MAX_BYTE * MAX_BYTE);
+    const SECOND = 1000;
+
+
+    //var zs4 = new Object();
+
+  /*
+    zs4.http = new schema({name:'http',required:false,});
+    zs4.http.event({object:{name:'server',required:false,}});
+    zs4.http.server.event({integer:{name:'port',required:true,default:3000,}});
+    zs4.http.server.event({object:{name:'secure',required:false,}});
+    zs4.http.server.secure.event({integer:{name:'port',required:true,default:3443,}});
+    zs4.http.server.secure.event({string:{name:'key',required:true,}});
+    zs4.http.server.secure.event({string:{name:'cert',required:true,}});
+  */
+
+    var THIS = null;
+    fs.readFile(DOT_ZS4,'utf8', function(err, data){
+      console.log('readFile(\''+DOT_ZS4+'\')');
+      function save(){
+        var save = JSON.stringify(THIS);
+        console.log('writing '+DOT_ZS4+': '+save);
+        fs.writeFile(DOT_ZS4,save, (err) => {
+          if (err){
+            if(zs4.is.function(output))output({text:'failed to save object'},null);
+            return null;
+          }
+          if(zs4.is.function(output))output(null,true);
+          return true;
+        });
+      };
+      function respond(THIS,input,output){
+        var must_save = false;
+        console.log('respond(THIS)');
+
+        if (!zs4.is.object(input)){
+          var err = new zs4.error({text:'zs4.event(): no argument'});
+          if (zs4.is.function(output))output(err,null);
+          console.log(err);
+          return null;
+        }
+        else{
+          var pc = zs4.count.object.properties(input);
+          if (pc==0){
+            fs.readdir('./zs4',function(err,arr){
+              console.log('readdir(\'./zs4\')');
+              if (err){
+                input.error = new zs4.error({text:'can\'t readdir(\'./zs4\')'});
+                if (zs4.is.function(output))output(input.error,null);
+                console.log(input.error);
+                return null;
+              }
+
+              var api = {};
+              for (var i = 0 ; i < arr.length ; i++){
+                if (arr[i]=='object.js')continue;
+                var split = zs4.string.split.separators(arr[i],'.');
+                if (split.length==2&&zs4.is.name(split[0])&&split[1]=='js'){
+                  api[split[0]] = {};
+                }
+              }
+
+              if (zs4.is.function(output))output(null,api);
+              input.response = api;
+              console.log(api);
+              return api;
+            });
+          }
+          else if (pc == 1){
+            for (var n in input){
+              var module = zs4.module.require(n);
+              if (module == null){
+                input[n].error = new zs4.error({text:'can\'t zs4.module.require(\'./'+n+'\')'});
+                if (zs4.is.function(output))output(input[n].error,null);
+                console.log(input[n].error);
+                return null;
+              }
+              if (!THIS.hasOwnProperty(n)){
+                must_save = true;
+                THIS[n]=new Object();
+              }
+
+            }
+          }
+
+        }
+      };
+
+      //console.log('inside callback for: readFile(\''+DOT_ZS4+'\')');
+      if (err) {
+        console.log('creating new '+DOT_ZS4);
+        THIS = new Object();
+        respond(THIS,input,output)
+      }
+      else {
+        THIS = zs4.json.parse(data);
+        if (THIS==null){
+          console.log('unable to parse '+DOT_ZS4);
+          console.log('creating new '+DOT_ZS4);
+          THIS = new Object();
+        }
+        respond(THIS,input,output)
+      }
+
+    });
+
+  };
+}
