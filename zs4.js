@@ -1,5 +1,4 @@
-var zs4 = require('./zs4/object');
-
+var zs4 = require('./zs4/node');
 
 var msg = new Object();
 var path = msg;
@@ -17,7 +16,7 @@ for (var i = 2 ; i < process.argv.length ; i++){
 }
 console.log(msg);
 
-zs4.event(msg,function(err,data){
+zs4.transform(msg,function(err,data){
   if (err){
     console.log('error: '+err);
     exit(-1);
