@@ -1,4 +1,4 @@
-var zs4 = require('./node');
+var zs4 = require('./www/zs4');
 var passhash = require('password-hash');
 
 //console.log('password.js');

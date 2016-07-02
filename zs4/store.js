@@ -1,4 +1,4 @@
-var zs4 = require('./node');
+var zs4 = require('./www/zs4');
 
 //console.log('store.js');
 var store = {};

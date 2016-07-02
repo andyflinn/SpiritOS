@@ -11,13 +11,13 @@ exports.respond = function(req,res){
       return;
     }
     else if (zs4.is.array(list)){
-      var ret = 
+      var ret =
       zs4.console.log(list);
       res.send({list:list});
       return;
     }
     else{
-      res.sent(zs4.create.error('no data.'));
+      res.send(zs4.create.error('no data.'));
     }
 
   });

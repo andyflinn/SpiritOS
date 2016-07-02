@@ -1,36 +1,77 @@
-var zs4 = require('./node');
-var http = require('http');
+var zs4 = require('./www/zs4');
+var express = require('express');
+var logger = require('morgan');
+var path = require('path');
+var favicon = require('serve-favicon');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var session = require('express-session');
+var sessionStore = require('connect-mongo')(session);
 
-//console.log('www.js');
-var www = {};
+var fs = require('fs');
 
-if (zs4.is.node()) {
-    www = exports;
-} else {
-    zs4.www = www;
+www = exports;
+
+www.zs4 = zs4;
+
+www.html = function(path){
+  var html = '<html>\n';
+    html += ' <head>\n';
+      html += '  <base href="' + path + '">\n';
+
+      //html += '  <link rel="stylesheet" href="/css/style.css">\n';
+
+      html += '  <script src="/zs4.js"></script>\n';
+      //html += '  <script src="/js/zs4-shared.js"></script>\n';
+      //html += '  <script src="/js/zs4-browser.js"></script>\n';
+    html += ' </head>\n';
+    if (true){
+      //html += ' <body onload="zs4.ui.initialize(document.body)">\n';
+      html += ' <body>\n';
+
+      html += ' Here\'s some nonsense\n';
+
+      html += ' </body>\n';
+    }
+  html += '</html>\n';
+  return(html);
 }
 
+www.app = express();
+www.app.get('/', function (req, res) {
+  console.log(__dirname);
+  console.log(req.path);
+
+  res.write(www.html(req.path));
+  res.end();
+
+});
+
+www.app.post('/*', function (req, res) {
+    res.send({});
+});
+
+www.app.use(favicon(path.join(__dirname, 'www', 'favicon.ico')));
+www.app.use(logger('dev'));
+www.app.use(bodyParser.json());
+www.app.use(bodyParser.urlencoded({ extended: false }));
+www.app.use(cookieParser());
+// use session not implemented...
+www.app.use(express.static(path.join(__dirname, 'www')));
+
 www.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'www',required:true,}))
+  zs4.type.property(parent,new zs4.type.object({name:'www',required:true,onchange:function(){
+    console.log('____WWW_ONCHANGE___');
+    var port = this.value.port;
+    if (this.value.run == true){
+
+      www.app.listen(port, function () {
+        console.log('zs4 listening on port '+port+'!');
+      });
+    }
+  }}));
   zs4.type.property(parent.www,new zs4.type.integer({name:'port',required:true,default:3000,}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'autostart',required:true}));
-  zs4.type.property(parent.www,new zs4.type.boolean({name:'start',nostore:true}));
-  zs4.type.property(parent.www,new zs4.type.boolean({name:'stop',nostore:true}));
-
-  /*
-  parent.www.api = function(input,output){
-    console.log('www.api()');
-    console.log(www.value);
-    console.log(zs4.copy.noncircular(input));
-    if (www.value.start == true){
-      console.log('www.value.server.start == true');
-      www.value.start=false;
-      www.value.server = http.createServer(function(req,res){
-        response.end('It Works!! Path Hit: ' + request.url);
-      });
-      www.value.server.listen(www.value.port);
-    }
-  }
-  */
-
+  zs4.type.property(parent.www,new zs4.type.boolean({name:'run',nostore:true}));
+  zs4.type.property(parent.www,new zs4.type.boolean({name:'running',nostore:true}));
 }
