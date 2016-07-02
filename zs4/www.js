@@ -1,4 +1,5 @@
 var zs4 = require('./www/zs4');
+
 var express = require('express');
 var logger = require('morgan');
 var path = require('path');
@@ -39,8 +40,6 @@ www.html = function(path){
 
 www.app = express();
 www.app.get('/', function (req, res) {
-  console.log(__dirname);
-  console.log(req.path);
 
   res.write(www.html(req.path));
   res.end();
@@ -48,7 +47,8 @@ www.app.get('/', function (req, res) {
 });
 
 www.app.post('/*', function (req, res) {
-    res.send({});
+    console.log(zs4.THIS.value);
+    res.send(zs4.type.get.call(zs4.THIS));
 });
 
 www.app.use(favicon(path.join(__dirname, 'www', 'favicon.ico')));

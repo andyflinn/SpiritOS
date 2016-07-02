@@ -17,7 +17,7 @@ for (var i = 2 ; i < process.argv.length ; i++){
 }
 console.log(msg);
 
-node.transform(msg,function(err,data){
+node.configure(msg,function(err,data){
   if (err){
     console.log('error: '+err);
     exit(-1);

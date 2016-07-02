@@ -9,6 +9,18 @@ else {
     zs4 = new Object();
 }
 
+const ZS4_EMAIL_SYSTEM = 'zs4@zs4.zs4';
+const ZS4_EMAIL_USER = 'user@zs4.zs4';
+const ZS4_EMAIL_ADMIN = 'admin@zs4.zs4';
+const ZS4_EMAIL_PUBLIC = 'public@zs4.zs4';
+
+zs4.console = {
+  on:true,
+  log:function(v){
+    if (this.on)console.log(v);
+  },
+};
+
 zs4.is = {
       node:function(){if (typeof window === 'undefined')return true; return false;},
       array:function (a){
@@ -27,10 +39,6 @@ zs4.is = {
       string:function(s){
         if	(s==null)return false;
         if	(typeof(s)!='string')return false;
-        return true;
-      },
-      password:function(s){
-        if	(!zs4.is.string(n) || s.trim()!=s || s.length < 4)return false;
         return true;
       },
       number:function(b){
@@ -176,7 +184,7 @@ zs4.count = {
 
 zs4.scan = {
   object:function(obj,foo,data){
-    console.log('scanning....');
+    zs4.console.log('scanning....');
     var scan = {
       o:obj,
       a:[],
@@ -384,9 +392,7 @@ zs4.type = {
       console.log(ns);
       return null;
     }
-    //var debug = '   ';
     schema[ns.name] = ns;
-    //debug += 'ns.name'
 
     if (ns.type == Object){
         //debug += ' Object';
@@ -396,25 +402,21 @@ zs4.type = {
       schema.value[ns.name] = new ns.type();
       schema.value[ns.name] = ns.default;
       var d = schema.value[ns.name];
-      //debug += ' Property value ' + d;
     }
 
     if (schema.path.length>0)ns.path = schema.path +'.'+ns.name;
     else ns.path = ns.name;
-
-    //console.log('property('+zs4.json.stringify(ns)+')');
-    //console.log(debug+' >> ('+zs4.json.stringify(schema.value)+')');
   },
   get:function(cb){
-    console.log(this.path+'.get()');
+    zs4.console.log(this.path+'.get()');
     if (this.noget)return null;
     var get = new Object();
 
     for (var n in this){
 
-      if (!zs4.is.type(this[n])||this[n].noget==true)continue;
+      if (!zs4.is.type(this[n])||this[n].noget)continue;
 
-      console.log('storing '+n);
+      zs4.console.log('getting '+n);
 
       if (this[n].type == Object){
         var ret = zs4.type.get.call(this[n])
@@ -429,7 +431,7 @@ zs4.type = {
     if (cb)cb(get);
   },
   store:function(cb){
-    console.log(this.path+'.store()');
+    zs4.console.log(this.path+'.store()');
     if (this.nostore)return null;
     var store = new Object();
 
@@ -437,7 +439,7 @@ zs4.type = {
 
       if (!zs4.is.type(this[n])||this[n].nostore==true)continue;
 
-      console.log('storing '+n);
+      zs4.console.log('storing '+n);
 
       if (this[n].type == Object){
         var ret = zs4.type.store.call(this[n])
@@ -459,17 +461,17 @@ zs4.type = {
       if (this[n].type == Object){
          if (zs4.is.object(input[n])) zs4.type.load.call(this[n],input[n]);
       }else{
-        this[n].transform(this.value,input[n]);
+        this[n].load(this.value,input[n]);
       }
     }
-    if (this.type == Object)console.log(this.path+'.transform() done');
+    if (this.type == Object)zs4.console.log(this.path+'.load() done');
 
     if (cb)cb();
   },
   transform:function(input,cb){
     if (!zs4.is.object(input))return;
     for (var n in this){
-      if (!zs4.is.type(this[n]))continue;
+      if (!zs4.is.type(this[n])||input[n]==null)continue;
 
       if (this[n].type == Object){
          if (zs4.is.object(input[n])) zs4.type.transform.call(this[n],input[n]);
@@ -477,8 +479,7 @@ zs4.type = {
         this[n].transform(this.value,input[n]);
       }
     }
-    if (this.type == Object)console.log(this.path+'.transform() done');
-
+    if (this.type == Object)zs4.console.log(this.path+'.transform() done');
 
     if (zs4.is.function(this.onchange)){this.onchange.call(this);}
     if (cb)cb();
@@ -492,15 +493,15 @@ zs4.type = {
     if (zs4.is.string(input.default))this.default = input.default;
     if (zs4.is.array(input.enum)){
       this.enum = input.enum;
-    }else{
+    }
+    else{
       if (zs4.is.number(input.minlength))this.minlength = parseInt(input.minlength);
       if (zs4.is.number(input.maxlength))this.maxlength = parseInt(input.maxlength);
     }
 
-    this.transform = function(parent,input){
-      console.log(this.path+'.transform(\''+input+'\')');
-
-      if (input==null){
+    this.load = function(parent,input){
+      zs4.console.log(this.path+'.load(\''+input+'\')');
+      if (input==null||!zs4.is.string(input)){
         if (!this.required){
           return null;
         }
@@ -510,8 +511,13 @@ zs4.type = {
         }
         return this;
       }
+      parent[this.name]=input;
+    };
 
-      else if (zs4.is.string(input)){
+    this.transform = function(parent,input){
+      zs4.console.log(this.path+'.transform(\''+input+'\')');
+
+      if (zs4.is.string(input)){
         if (this.trim)parent[this.name]=input.trim();
         else parent[this.name]=input;
       }
@@ -519,8 +525,6 @@ zs4.type = {
         return new zs4.error({text:'bad input',data:{path:this.path,input:this.input}});
       }
     };
-
-    return this;
   },
   integer:function(input){
     zs4.type.unknown.call(this,input);
@@ -529,15 +533,16 @@ zs4.type = {
     if (zs4.is.number(input.default))this.default = parseInt(input.default);
     if (zs4.is.array(input.enum)){
       this.enum = input.enum;
-    }else{
+    }
+    else{
       if (zs4.is.number(input.min))this.min = parseInt(input.min);
       if (zs4.is.number(input.max))this.max = parseInt(input.max);
     }
 
-    this.transform = function(parent,input){
-      console.log(this.path+'.transform(\''+input+'\')');
+    this.load = function(parent,input){
+      zs4.console.log(this.path+'.load(\''+input+'\')');
 
-      if (input==null){
+      if (input==null || !zs4.is.number(input)){
         if (!this.required){
           return null;
         }
@@ -546,7 +551,15 @@ zs4.type = {
           else parent[this.name]=new Number(0);
         }
       }
-      else if (zs4.is.number(input)){
+      parent[this.name]=parseInt(input);
+    }
+
+    this.transform = function(parent,input){
+      zs4.console.log(this.path+'.transform(\''+input+'\')');
+
+      if (input==null)return null;
+
+      if (zs4.is.number(input)){
         parent[this.name]=parseInt(input);
       }
       else if (zs4.is.string(input)){
@@ -560,12 +573,7 @@ zs4.type = {
         if (input) parent[this.name]=1;
         else parent[this.name]=0;
       }
-      else{
-        return new zs4.error({text:'bad input',data:{path:this.path,input:this.input}});
-      }
-    };
-
-    return this;
+    }
   },
   boolean:function(input){
     zs4.type.unknown.call(this,input);
@@ -573,19 +581,26 @@ zs4.type = {
     this.default = new Boolean();
     if (zs4.is.boolean(input.default))this.default = input.default; else this.default = false;
 
-    this.transform = function(parent,input){
-      console.log(this.path+'.transform(\''+input+'\')');
-
-      if (input==null){
+    this.load = function(parent,input){
+      if (input==null||!zs4.is.boolean(input)){
         if (!this.required){
           return null;
         }
         else{
           if (zs4.is.boolean(this.default))parent[this.name]=this.default;
           else parent[this.name]=new Boolean(false);
+          return this;
         }
       }
-      else if (zs4.is.boolean(input)){
+      parent[this.name]=input;
+    }
+
+    this.transform = function(parent,input){
+      zs4.console.log(this.path+'.transform(\''+input+'\')');
+
+      if (input==null)return null;
+
+      if (zs4.is.boolean(input)){
         parent[this.name]=input;
       }
       else if (zs4.is.string(input)){
@@ -596,8 +611,6 @@ zs4.type = {
         return new zs4.error({text:'bad input',data:{path:this.path,input:this.input}});
       }
     };
-
-    return this;
   },
   object:function(input){
     zs4.type.unknown.call(this,input);
@@ -606,15 +619,13 @@ zs4.type = {
     this.value = new Object();
 
     this.path = '';
-
-    return this;
   },
 
   flags:function(input){
     zs4.type.integer.call(this,input);
 
     this.transform = function(THIS,parent,input){
-      console.log(this.path+'.transform(\''+input+'\')');
+      zs4.console.log(this.path+'.transform(\''+input+'\')');
 
       if (input==null){
         if (!this.required){
@@ -664,7 +675,7 @@ if (!zs4.is.node()){
     			if(cb!=null){
     				cb(JSON.parse(d));
     			}else{
-    				console.log(d);
+    				zs4.console.log(d);
     			}
     		},JSON.stringify(o)
     		);
