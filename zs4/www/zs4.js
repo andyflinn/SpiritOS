@@ -16,7 +16,6 @@ const ZS4_EMAIL_PUBLIC = 'public@zs4.zs4';
 const ZS4_EMAIL_MINLENGTH = 5;
 const ZS4_EMAIL_MAXLENGTH = 64;
 
-
 zs4.console = {
   on:true,
   log:function(v){
@@ -425,6 +424,25 @@ zs4.type = {
     if (schema.path.length>0)ns.path = schema.path +'.'+ns.name;
     else ns.path = ns.name;
   },
+  instance:function(schema){
+    var instance = new Object();
+
+    for (var n in schema){
+
+      if (!zs4.is.type(schema[n]))continue;
+
+      if (schema[n].type == Object){
+        var ret = zs4.type.instance(schema[n])
+        if (ret != null) instance[n] = ret;
+        continue;
+      }
+
+      instance[n] = schema.value[n];
+    }
+
+    return instance;
+  },
+
   get:function(cb){
     //zs4.console.log(this.path+'.get()');
     if (this.noget)return null;
@@ -544,6 +562,9 @@ zs4.type = {
       }
     };
   },
+  email:function(input){
+    zs4.type.string.call(this,input);
+  },
   integer:function(input){
     zs4.type.unknown.call(this,input);
     this.type = Number;
@@ -638,6 +659,8 @@ zs4.type = {
 
     this.path = '';
   },
+
+
 
   flags:function(input){
     zs4.type.integer.call(this,input);

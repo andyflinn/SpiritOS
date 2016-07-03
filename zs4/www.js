@@ -1,4 +1,5 @@
 var zs4 = require('./www/zs4');
+var token = require('./token');
 
 var express = require('express');
 var logger = require('morgan');
@@ -20,17 +21,18 @@ www.html = function(path){
     html += ' <head>\n';
       html += '  <base href="' + path + '">\n';
 
-      //html += '  <link rel="stylesheet" href="/css/style.css">\n';
+      html += '  <link rel="stylesheet" href="/style.css">\n';
 
       html += '  <script src="/zs4.js"></script>\n';
+      html += '  <script src="/html.js"></script>\n';
       //html += '  <script src="/js/zs4-shared.js"></script>\n';
       //html += '  <script src="/js/zs4-browser.js"></script>\n';
     html += ' </head>\n';
     if (true){
-      //html += ' <body onload="zs4.ui.initialize(document.body)">\n';
-      html += ' <body>\n';
+      html += ' <body onload="zs4.ui.initialize(document.body)">\n';
+      //html += ' <body>\n';
 
-      html += ' Here\'s some nonsense\n';
+      //html += ' Here\'s some nonsense\n';
 
       html += ' </body>\n';
     }
@@ -39,6 +41,16 @@ www.html = function(path){
 }
 
 www.app = express();
+www.app.use(favicon(path.join(__dirname, 'www', 'favicon.ico')));
+www.app.use(logger('dev'));
+www.app.use(bodyParser.json());
+www.app.use(bodyParser.urlencoded({ extended: false }));
+www.app.use(cookieParser());
+// use session not implemented...
+www.app.use(express.static(path.join(__dirname, 'www')));
+
+
+
 www.app.get('/', function (req, res) {
   zs4.console.log(req.query);
   res.write(www.html(req.path));
@@ -47,17 +59,21 @@ www.app.get('/', function (req, res) {
 });
 
 www.app.post('/*', function (req, res) {
-    console.log(zs4.THIS.value);
+  if (zs4.is.object(req.body.requesttoken)){
+    zs4.console.log('requesttoken!!!!!!');
+    token.requesttoken(req.body.requesttoken.email,function(ret){
+      zs4.console.log('requesttoken!!!!!! back at www');
+      if (zs4.is.object(ret))res.send(ret);
+      else res.send(new zs4.error());
+    });
+  }
+  else{
+    zs4.console.log(zs4.THIS.value);
+    zs4.console.log(req.body);
     res.send(zs4.type.get.call(zs4.THIS));
-});
 
-www.app.use(favicon(path.join(__dirname, 'www', 'favicon.ico')));
-www.app.use(logger('dev'));
-www.app.use(bodyParser.json());
-www.app.use(bodyParser.urlencoded({ extended: false }));
-www.app.use(cookieParser());
-// use session not implemented...
-www.app.use(express.static(path.join(__dirname, 'www')));
+  }
+});
 
 www.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'www',required:true,onchange:function(){

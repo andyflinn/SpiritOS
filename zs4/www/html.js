@@ -192,10 +192,10 @@ zs4.ui = {
 					}
 					o.zs4.close();
 
-					zs4.request.ajax('/zs4/login/request',function(d){
-							var r = JSON.parse(d);
+					var req = new Object(); req['requesttoken']={email:i.value};
+					zs4.server.request.post(req,function(r){
 							if (zs4.is.error(r))zs4.ui.root.eError.zs4.setError(r.text);
-							else zs4.ui.root.eResponse.zs4.setResponse(r.text);
+							else zs4.ui.root.eResponse.zs4.setResponse(r.done.text);
 							console.log(r);
 					},JSON.stringify({user:i.value}));
 
@@ -242,18 +242,18 @@ zs4.ui = {
 
 		// create header entities
 		var header = zs4.ui.root.eHeader = zs4.ui.a(conn,'zs4-header');
-				var brand = zs4.ui.a(header,'zs4-brand');
-				var slogan = zs4.ui.a(header,'zs4-slogan');
+				var brand = zs4.ui.a(header,'zs4-brand'); brand.textContent = 'zs4'
 				var user = zs4.ui.a(header,'zs4-user');
 				var options = zs4.ui.root.eUserOptions = zs4.ui.a(header,'zs4-user-options');
 						options.textContent = '?';
 						options.onclick = function(){creatOptionsTab()};
+				var login_button = zs4.ui.login(header);
 
 		var error = zs4.ui.root.eError = zs4.ui.error(conn);
 		var response = zs4.ui.root.eResponse = zs4.ui.response(conn);
 		var tabs = zs4.ui.root.zTabs = zs4.ui.tabs(conn,'main');
 
-		// request more initialization data from server
+		/*request more initialization data from server
 		zs4.api.initialize(function(o){
 			console.log(o);
 
@@ -271,7 +271,7 @@ zs4.ui = {
 			delete zs4.ui.initialize;
 
 		});
-
+		*/
 	},
 
 

@@ -20,15 +20,15 @@ email.schema = function(parent){
       && this.value.subject.length > 0
       && this.value.text.length > 0
       ){
-        zs4.THIS.zs4.email.send(this.valuen);
+        zs4.THIS.zs4.email.send(this.value);
       }
 
       this.value.from = this.value.to = this.value.subject = this.value.text = '';
     },
 
   }));
-  zs4.type.property(parent.email.message,new zs4.type.string({name:'from',required:true,}));
-  zs4.type.property(parent.email.message,new zs4.type.string({name:'to',required:true,}));
+  zs4.type.property(parent.email.message,new zs4.type.email({name:'from',required:true,}));
+  zs4.type.property(parent.email.message,new zs4.type.email({name:'to',required:true,}));
   zs4.type.property(parent.email.message,new zs4.type.string({name:'subject',required:true,}));
   zs4.type.property(parent.email.message,new zs4.type.string({name:'text',required:true,}));
 
@@ -42,14 +42,15 @@ email.schema = function(parent){
          ssl:     this.value.smtp.ssl,
       });
     }
+    zs4.console.log('inside email.send()');
     zs4.console.log(message);
-    this.smtpServer.send(message, function(err,message) {
+    this.smtpServer.send(message, function(err,abc) {
         if(err){
             console.log(err);
             if (cb)cb(new zs4.error({text:'smtp send failed',data:err}));
         }
         else{
-          if (cb)cb(new zs4.done());
+          if (cb)cb(new zs4.done({text:'email sent.'}));
         }
     });
   };

@@ -33,8 +33,10 @@ node.configure = function(input,output){
 
       zs4.console.log('___DEFINE___');
       var THIS = new zs4.type.object({name:'this',required:true,});
-      zs4.type.property(THIS,new zs4.type.string({name:'abc',required:true,default:'def'}));
       zs4.type.property(THIS,new zs4.type.object({name:'zs4',required:true,}));
+
+      var admin = require('./admin');
+      admin.schema(THIS.zs4);
 
       var password = require('./password');
       password.schema(THIS.zs4);
@@ -48,8 +50,6 @@ node.configure = function(input,output){
       var mongobase = require('./mongobase');
       mongobase.schema(THIS.zs4);
 
-      var store = require('./store');
-      store.schema(THIS.zs4);
 
       zs4.THIS = THIS;
       zs4.console.log(zs4.json.stringify(THIS.value));
