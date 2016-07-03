@@ -77,20 +77,25 @@ www.app.post('/*', function (req, res) {
 
 www.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'www',required:true,onchange:function(){
-    console.log('____WWW_ONCHANGE___');
+    //console.log('____WWW_ONCHANGE___');
     var port = this.value.port;
     if (this.value.run == true){
-
-      www.app.listen(port, function () {
-        console.log('zs4 listening on port '+port+'!');
-      });
+      this.start();
     }
   }}));
   zs4.type.property(parent.www,new zs4.type.string({name:'host',required:true,default:'localhost',}));
   zs4.type.property(parent.www,new zs4.type.integer({name:'port',required:true,default:3000,}));
-  zs4.type.property(parent.www,new zs4.type.boolean({name:'autostart',required:true}));
+  //zs4.type.property(parent.www,new zs4.type.boolean({name:'autostart',required:true}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'run',nostore:true}));
-  zs4.type.property(parent.www,new zs4.type.boolean({name:'running',nostore:true}));
+  //zs4.type.property(parent.www,new zs4.type.boolean({name:'running',nostore:true}));
 
-
+  parent.www.start = function(){
+    ///console.log('inside start');
+    var port = this.value.port;
+    zs4.boot.run(function(){
+      www.app.listen(port, function () {
+        console.log('zs4 listening on port '+port+'!');
+      });
+    });
+  }
 }

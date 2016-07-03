@@ -50,10 +50,14 @@ token.requesttoken = function(emailaddr,cb){
 
 // the section below should be inserted to a sequential boot procedure....
 
-token.conn = mongoose.createConnection(zs4.THIS.zs4.mongobase.getDataBaseUrl('token'));
-token.conn.on('error', console.error.bind(console, 'connection error:'));
-token.conn.once('open', function() {
-  console.log ('Connected to: ' + zs4.THIS.zs4.mongobase.getDataBaseUrl('token'));
-  token.model = token.conn.model('token',token.schema);
+token.boot = function(token,cb){
+  token.conn = mongoose.createConnection(zs4.THIS.zs4.mongobase.getDataBaseUrl('token'));
+  token.conn.on('error', console.error.bind(console, 'connection error:'));
+  token.conn.once('open', function() {
+    console.log ('Connected to: ' + zs4.THIS.zs4.mongobase.getDataBaseUrl('token'));
+    token.model = token.conn.model('token',token.schema);
+    cb();
+  });
+}
 
-});
+zs4.boot.call(token,token.boot,token);

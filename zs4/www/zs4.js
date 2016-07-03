@@ -566,7 +566,7 @@ zs4.type = {
         this[n].load(this.value,input[n]);
       }
     }
-    if (this.type == Object)zs4.console.log(this.path+'.load() done');
+    //if (this.type == Object)zs4.console.log(this.path+'.load() done');
 
     if (cb)cb();
   },
@@ -581,7 +581,7 @@ zs4.type = {
         this[n].transform(this.value,input[n]);
       }
     }
-    if (this.type == Object)zs4.console.log(this.path+'.transform() done');
+    //if (this.type == Object)zs4.console.log(this.path+'.transform() done');
 
     if (zs4.is.function(this.onchange)){this.onchange.call(this);}
     if (cb)cb();
