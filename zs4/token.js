@@ -1,13 +1,38 @@
 var zs4 = require('./www/zs4');
-var password = require('./password');
+var mongoose = require('mongoose');
 
 var token = exports;
 
 token.password = require('./password');
 
-token.schema = new zs4.type.object({name:'usertoken',required:true,});
-zs4.type.property(token.schema,new zs4.type.email({name:'email',required:true,}));
-password.schema(token.schema);
+token.schema = new mongoose.Schema({
+  email: {
+    type: String,
+    required: true,
+    trim: true,
+    minlength:zs4.const.EMAIL.MINLENGTH,
+    maxlength:zs4.const.EMAIL.MAXLENGTH,
+    index:true,
+    set:zs4.string.to.lower,
+  },
+  hashed: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength:zs4.const.STRING.MAXLENGTH,
+    index: { unique: true },
+  },
+  expires: {
+    type: Number,
+    required: true,
+    trim: true,
+  },
+});
+
+token.create = function(email){
+  var THIS = new zs4.type.object({name:'this',required:true,});
+  token.password.schema(THIS);
+}
 
 token.requesttoken = function(emailaddr,cb){
   //zs4.console.log(zs4.THIS);
@@ -22,3 +47,13 @@ token.requesttoken = function(emailaddr,cb){
 
   zs4.THIS.zs4.email.send(msg,cb);
 }
+
+// the section below should be inserted to a sequential boot procedure....
+
+token.conn = mongoose.createConnection(zs4.THIS.zs4.mongobase.getDataBaseUrl('token'));
+token.conn.on('error', console.error.bind(console, 'connection error:'));
+token.conn.once('open', function() {
+  console.log ('Connected to: ' + zs4.THIS.zs4.mongobase.getDataBaseUrl('token'));
+  token.model = token.conn.model('token',token.schema);
+
+});

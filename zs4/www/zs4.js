@@ -9,12 +9,73 @@ else {
     zs4 = new Object();
 }
 
-const ZS4_EMAIL_SYSTEM = 'zs4@zs4.zs4';
-const ZS4_EMAIL_USER = 'user@zs4.zs4';
-const ZS4_EMAIL_ADMIN = 'admin@zs4.zs4';
-const ZS4_EMAIL_PUBLIC = 'public@zs4.zs4';
-const ZS4_EMAIL_MINLENGTH = 5;
-const ZS4_EMAIL_MAXLENGTH = 64;
+zs4.const = {
+  API:{
+    NAME:{
+      MINLENGTH:2,
+      MAXLENGTH:32,
+      ADMIN:'admin',
+      FS:'fs',
+      INITIALIZE:'initialize',
+      QUERY:'query',
+    },
+  },
+  DEFAULT:{
+    MESSAGE:{
+      EXPIRY:{
+        MS:1000,
+      },
+    },
+  },
+  EMAIL:{
+    MINLENGTH:5,
+    MAXLENGTH:64,
+  },
+  MS:{
+    SECOND:1000,
+    MINUTE:(1000*60),
+    HOUR:(1000*60*60),
+    DAY:(1000*60*60*24),
+    WEEK:(1000*60*60*24*7),
+    YEAR:(1000*60*60*24*7*366),
+  },
+  OBJECT:{
+    OWNER:'owner@zs4.zs4',
+  },
+  PATH:{
+    MINLENGTH:1,
+    MAXLENGTH:256,
+  },
+  STRING:{
+    MINLENGTH:0,
+    MAXLENGTH:256,
+  },
+  TEXT:{
+    MINLENGTH:0,
+    MAXLENGTH:256*256,
+  },
+  SERVER:{
+    NAME:{
+      MINLENGTH:1,
+      MAXLENGTH:16,
+    },
+    SLOGAN:{
+      MINLENGTH:4,
+      MAXLENGTH:32,
+    },
+  },
+  SYSTEM:{
+    ITSELF:'zs4@zs4.zs4',
+    USER:'user@zs4.zs4',
+    ADMIN:'admin@zs4.zs4',
+    PUBLIC:'public@zs4.zs4',
+  },
+  TYPE:{
+    PLAIN:0,
+    COLLECTED:1,
+  },
+};
+
 
 zs4.console = {
   on:true,
@@ -44,9 +105,9 @@ zs4.is = {
         return true;
       },
       email:function(str){
-        if (!zs4.is.string(str)||str.length<ZS4_EMAIL_MINLENGTH||str.length>ZS4_EMAIL_MAXLENGTH)return false;
+        if (!zs4.is.string(str)||str.length<zs4.const.EMAIL.MINLENGTH||str.length>zs4.const.EMAIL.MAXLENGTH)return false;
         var at = str.indexOf('@');
-        if (at < 1 || at > (str.length-(ZS4_EMAIL_MINLENGTH-1)) || str.lastIndexOf('@') != at)return false;
+        if (at < 1 || at > (str.length-(zs4.const.EMAIL.MINLENGTH-1)) || str.lastIndexOf('@') != at)return false;
         var nam = str.substr(0,at);
         var dom = str.substr((at+1),(str.length-at-1));
         var dot = dom.indexOf('.');
@@ -400,7 +461,12 @@ zs4.type = {
     if (zs4.is.function(input.onchange)){
       this.onchange = input.onchange;
       //console.log('onchange installed for '+this.name);
-    }
+    };
+
+    // support mongoose
+    if (zs4.is.boolean(input.index) && input.index == true) this.index = true;
+    else if (zs4.is.object(input.index)&&zs4.is.boolean(input.index.unique)&&input.index.unique==true)this.index={unique:true};
+
   },
 
   property:function(schema,ns){
@@ -659,8 +725,6 @@ zs4.type = {
 
     this.path = '';
   },
-
-
 
   flags:function(input){
     zs4.type.integer.call(this,input);

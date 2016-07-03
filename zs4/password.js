@@ -28,7 +28,7 @@ password.schema = function(parent){
 
   }));
 
-  zs4.type.property(parent.password,new zs4.type.string({name:'hashed',required:true,noget:true,}));
+  zs4.type.property(parent.password,new zs4.type.string({name:'hashed',required:true,noget:true,index:{unique:true},}));
   zs4.type.property(parent.password,new zs4.type.string({name:'algorithm',required:true,default:'sha1',}));
   zs4.type.property(parent.password,new zs4.type.integer({name:'saltlength',required:true,min:32,max:256,default:32,}));
   zs4.type.property(parent.password,new zs4.type.integer({name:'iterations',required:true,min:1,max:128,default:1,}));

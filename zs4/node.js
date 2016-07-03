@@ -2,6 +2,7 @@ var zs4 = require('./www/zs4');
 
 var node = exports;
 zs4.node = node;
+
 node.configure = function(input,output){
   zs4.console.log('node.transform('+zs4.json.stringify(input)+')');
   var fs = require('fs');
@@ -32,7 +33,7 @@ node.configure = function(input,output){
       //zs4.console.log('node.transform.respond('+zs4.json.stringify(val)+','+zs4.json.stringify(input)+')');
 
       zs4.console.log('___DEFINE___');
-      var THIS = new zs4.type.object({name:'this',required:true,});
+      var THIS = zs4.THIS = new zs4.type.object({name:'this',required:true,});
       zs4.type.property(THIS,new zs4.type.object({name:'zs4',required:true,}));
 
       var admin = require('./admin');
@@ -41,17 +42,16 @@ node.configure = function(input,output){
       var password = require('./password');
       password.schema(THIS.zs4);
 
+      var mongobase = require('./mongobase');
+      mongobase.schema(THIS.zs4);
+
       var www = require('./www');
       www.schema(THIS.zs4);
 
       var email = require('./email');
       email.schema(THIS.zs4);
 
-      var mongobase = require('./mongobase');
-      mongobase.schema(THIS.zs4);
 
-
-      zs4.THIS = THIS;
       zs4.console.log(zs4.json.stringify(THIS.value));
 
       zs4.console.log('___PROC___');
