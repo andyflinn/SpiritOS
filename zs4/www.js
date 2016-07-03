@@ -40,7 +40,7 @@ www.html = function(path){
 
 www.app = express();
 www.app.get('/', function (req, res) {
-
+  zs4.console.log(req.query);
   res.write(www.html(req.path));
   res.end();
 
@@ -70,8 +70,11 @@ www.schema = function(parent){
       });
     }
   }}));
+  zs4.type.property(parent.www,new zs4.type.string({name:'host',required:true,default:'localhost',}));
   zs4.type.property(parent.www,new zs4.type.integer({name:'port',required:true,default:3000,}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'autostart',required:true}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'run',nostore:true}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'running',nostore:true}));
+
+
 }

@@ -3,7 +3,6 @@ var passhash = require('password-hash');
 
 var password = exports;
 
-
 password.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'password',required:true,
     onchange:function(){

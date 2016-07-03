@@ -45,6 +45,9 @@ node.configure = function(input,output){
       var email = require('./email');
       email.schema(THIS.zs4);
 
+      var mongobase = require('./mongobase');
+      mongobase.schema(THIS.zs4);
+
       var store = require('./store');
       store.schema(THIS.zs4);
 
@@ -58,26 +61,6 @@ node.configure = function(input,output){
       seq.run(function(){
         zs4.console.log('___END___');
       });
-
-      /*
-      zs4.console.log('___LOAD___');
-      zs4.console.log(zs4.json.stringify(val));
-      zs4.type.transform.call(THIS,val);
-      zs4.console.log(zs4.json.stringify(THIS.value));
-
-      var must_save = false;
-
-      if (!zs4.is.object(input)){
-        var err = new zs4.error({text:'zs4.transform(): no argument, use zs4.transform({})'});
-        if (zs4.is.function(output))output(err,null);
-        zs4.console.log(err);
-        return null;
-      }
-
-      zs4.console.log('___TRANSFORM___');
-      var ret = zs4.type.transform.call(THIS,input);
-      zs4.console.log(zs4.json.stringify(THIS.value));
-      */
 
       zs4.console.log('___SAVE___');
       var out = zs4.type.store.call(THIS);

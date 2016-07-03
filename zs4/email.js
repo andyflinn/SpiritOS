@@ -20,7 +20,7 @@ email.schema = function(parent){
       && this.value.subject.length > 0
       && this.value.text.length > 0
       ){
-        zs4.THIS.zs4.email.send(this.value);
+        zs4.THIS.zs4.email.send(this.valuen);
       }
 
       this.value.from = this.value.to = this.value.subject = this.value.text = '';
