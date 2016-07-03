@@ -4,7 +4,8 @@ var node = require('./zs4/node');
 var msg = new Object();
 var path = msg;
 
-new Object({path:{}});
+path['zs4'] = new Object();
+path = path['zs4'];
 
 for (var i = 2 ; i < process.argv.length ; i++){
     if (zs4.is.name(process.argv[i])){

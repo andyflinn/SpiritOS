@@ -13,6 +13,9 @@ const ZS4_EMAIL_SYSTEM = 'zs4@zs4.zs4';
 const ZS4_EMAIL_USER = 'user@zs4.zs4';
 const ZS4_EMAIL_ADMIN = 'admin@zs4.zs4';
 const ZS4_EMAIL_PUBLIC = 'public@zs4.zs4';
+const ZS4_EMAIL_MINLENGTH = 5;
+const ZS4_EMAIL_MAXLENGTH = 64;
+
 
 zs4.console = {
   on:true,
@@ -39,6 +42,22 @@ zs4.is = {
       string:function(s){
         if	(s==null)return false;
         if	(typeof(s)!='string')return false;
+        return true;
+      },
+      email:function(str){
+        if (!zs4.is.string(str)||str.length<ZS4_EMAIL_MINLENGTH||str.length>ZS4_EMAIL_MAXLENGTH)return false;
+        var at = str.indexOf('@');
+        if (at < 1 || at > (str.length-(ZS4_EMAIL_MINLENGTH-1)) || str.lastIndexOf('@') != at)return false;
+        var nam = str.substr(0,at);
+        var dom = str.substr((at+1),(str.length-at-1));
+        var dot = dom.indexOf('.');
+        if (dot < 1 || dot > (dom.length-2))return false;
+        dot = dom.lastIndexOf('.');
+        if (dot > (dom.length-2))return false;
+        return true;
+      },
+      password:function(s){
+        if	(!zs4.is.string(s) || s.trim()!=s || s.length < 4)return false;
         return true;
       },
       number:function(b){
@@ -94,7 +113,6 @@ zs4.is = {
         )return false;
         return true;
       },
-
 };
 
 zs4.string = {
@@ -408,7 +426,7 @@ zs4.type = {
     else ns.path = ns.name;
   },
   get:function(cb){
-    zs4.console.log(this.path+'.get()');
+    //zs4.console.log(this.path+'.get()');
     if (this.noget)return null;
     var get = new Object();
 
@@ -416,7 +434,7 @@ zs4.type = {
 
       if (!zs4.is.type(this[n])||this[n].noget)continue;
 
-      zs4.console.log('getting '+n);
+      //zs4.console.log('getting '+n);
 
       if (this[n].type == Object){
         var ret = zs4.type.get.call(this[n])
@@ -431,7 +449,7 @@ zs4.type = {
     if (cb)cb(get);
   },
   store:function(cb){
-    zs4.console.log(this.path+'.store()');
+    //zs4.console.log(this.path+'.store()');
     if (this.nostore)return null;
     var store = new Object();
 
@@ -439,7 +457,7 @@ zs4.type = {
 
       if (!zs4.is.type(this[n])||this[n].nostore==true)continue;
 
-      zs4.console.log('storing '+n);
+      //zs4.console.log('storing '+n);
 
       if (this[n].type == Object){
         var ret = zs4.type.store.call(this[n])
@@ -500,7 +518,7 @@ zs4.type = {
     }
 
     this.load = function(parent,input){
-      zs4.console.log(this.path+'.load(\''+input+'\')');
+      //zs4.console.log(this.path+'.load(\''+input+'\')');
       if (input==null||!zs4.is.string(input)){
         if (!this.required){
           return null;
@@ -515,7 +533,7 @@ zs4.type = {
     };
 
     this.transform = function(parent,input){
-      zs4.console.log(this.path+'.transform(\''+input+'\')');
+      //zs4.console.log(this.path+'.transform(\''+input+'\')');
 
       if (zs4.is.string(input)){
         if (this.trim)parent[this.name]=input.trim();
@@ -540,7 +558,7 @@ zs4.type = {
     }
 
     this.load = function(parent,input){
-      zs4.console.log(this.path+'.load(\''+input+'\')');
+      //zs4.console.log(this.path+'.load(\''+input+'\')');
 
       if (input==null || !zs4.is.number(input)){
         if (!this.required){
@@ -555,7 +573,7 @@ zs4.type = {
     }
 
     this.transform = function(parent,input){
-      zs4.console.log(this.path+'.transform(\''+input+'\')');
+      //zs4.console.log(this.path+'.transform(\''+input+'\')');
 
       if (input==null)return null;
 
@@ -596,7 +614,7 @@ zs4.type = {
     }
 
     this.transform = function(parent,input){
-      zs4.console.log(this.path+'.transform(\''+input+'\')');
+      //zs4.console.log(this.path+'.transform(\''+input+'\')');
 
       if (input==null)return null;
 

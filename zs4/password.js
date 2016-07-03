@@ -3,10 +3,6 @@ var passhash = require('password-hash');
 
 var password = exports;
 
-zs4.is.password = function(s){
-  if	(!zs4.is.string(s) || s.trim()!=s || s.length < 4)return false;
-  return true;
-},
 
 password.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'password',required:true,
@@ -32,7 +28,6 @@ password.schema = function(parent){
     },
 
   }));
-
 
   zs4.type.property(parent.password,new zs4.type.string({name:'hashed',required:true,noget:true,}));
   zs4.type.property(parent.password,new zs4.type.string({name:'algorithm',required:true,default:'sha1',}));

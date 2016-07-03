@@ -29,18 +29,21 @@ node.configure = function(input,output){
       });
     };
     function respond(val,input,output){
-      zs4.console.log('node.transform.respond('+zs4.json.stringify(val)+','+zs4.json.stringify(input)+')');
+      //zs4.console.log('node.transform.respond('+zs4.json.stringify(val)+','+zs4.json.stringify(input)+')');
 
       zs4.console.log('___DEFINE___');
       var THIS = new zs4.type.object({name:'this',required:true,});
       zs4.type.property(THIS,new zs4.type.string({name:'abc',required:true,default:'def'}));
-      zs4.type.property(THIS,new zs4.type.object({name:'zs4',required:true}));
+      zs4.type.property(THIS,new zs4.type.object({name:'zs4',required:true,}));
 
       var password = require('./password');
       password.schema(THIS.zs4);
 
       var www = require('./www');
       www.schema(THIS.zs4);
+
+      var email = require('./email');
+      email.schema(THIS.zs4);
 
       var store = require('./store');
       store.schema(THIS.zs4);
@@ -84,12 +87,12 @@ node.configure = function(input,output){
 
 
     if (err) {
-      zs4.console.log('creating new '+DOT_ZS4);
+      console.log('creating new '+DOT_ZS4);
       value = new Object();
       respond(value,input,output)
     }
     else {
-      zs4.console.log(data);
+      //zs4.console.log(data);
       value = zs4.json.parse(data);
       if (value==null){
         zs4.console.log('unable to parse '+DOT_ZS4);
