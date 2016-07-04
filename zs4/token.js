@@ -53,6 +53,36 @@ token.create = function(email){
 
   return new token.model(tokob);
 }
+
+token.renew = function(req,res,tokob,cb){
+  function onError(){
+    res.cookie('zs4' , '', {expire :0});
+  };
+
+  zs4.console.log('re-newing...token object');
+  zs4.console.log(tokob);
+  var THIS = new zs4.type.object({name:'this',required:true,});
+  token.password.schema(THIS);
+
+  tokob.salt = randomstring.generate(RANDOMLENGTH);
+  tokob.expires = Date.now()+(zs4.THIS.zs4.admin.value.tokenexpiry);
+  tokob.hashed = THIS.password.generate(tokob.email+tokob.salt);
+
+  tokob.save(function(err){
+    if (err){
+      onError();
+      cb(new zs4.error({text:'cannot renew'}));
+    }
+    else{
+      res.cookie('zs4' , tokob.hashed, {expire :tokob.expires});
+      req.zs4.email = tokob.email;
+      zs4.console.log(req.zs4.email);
+      cb(new zs4.done({text:'token renewed.',data:tokob.email}));
+    }
+  });
+}
+
+
 token.lastMopUp = 0;
 
 token.validate = function(req,res,cb){
@@ -70,7 +100,7 @@ token.validate = function(req,res,cb){
     cb(new zs4.error({text:'ERROR no return token'}));
   }
   token.model.findOne({ 'hashed': req.zs4.token },function(err,tokob){
-    if (err){
+    if (err||tokob==null){
       onError();
       cb(new zs4.error({text:'token not found',data:err}));
     }
@@ -89,7 +119,7 @@ token.validate = function(req,res,cb){
           res.cookie('zs4' , tokob.hashed, {expire :tokob.expires});
           req.zs4.email = tokob.email;
           zs4.console.log(req.zs4.email);
-          cb(new zs4.done({text:'token updated.',data:tokob.email}));
+          cb(tokob);
         }
       });
     }

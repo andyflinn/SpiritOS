@@ -16,7 +16,6 @@ for (var i = 2 ; i < process.argv.length ; i++){
       if (arr.length == 2 && zs4.is.name(arr[0])) path[arr[0]]=arr[1];
     }
 }
-//console.log('NODE '+JSON.stringify(msg));
 
 node.configure(msg,function(err,data){
   if (err){
@@ -24,5 +23,4 @@ node.configure(msg,function(err,data){
     exit(-1);
   }
 
-  //console.log(JSON.stringify(data));
 });

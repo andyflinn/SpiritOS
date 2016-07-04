@@ -51,7 +51,13 @@ www.app.use(function(req, res, next) {token.validate(req,res,function(ret){next(
 
 www.app.get('/returntoken', function (req, res) {
   token.validate(req,res,function(ret){
-    res.redirect('/');
+    if (zs4.is.error(ret)){
+
+      res.redirect('/');
+    }
+    else token.renew(req,res,ret,function(ret){
+      res.redirect('/');
+    });
   });
 });
 
