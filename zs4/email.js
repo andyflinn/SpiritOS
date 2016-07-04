@@ -5,7 +5,8 @@ var email = exports;
 
 email.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'email',required:true,}));
-
+  email.THIS = parent.email;
+  
   zs4.type.property(parent.email,new zs4.type.object({name:'smtp',required:true,}));
   zs4.type.property(parent.email.smtp,new zs4.type.string({name:'user',required:true,}));
   zs4.type.property(parent.email.smtp,new zs4.type.string({name:'password',required:true,}));

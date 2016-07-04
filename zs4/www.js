@@ -62,7 +62,7 @@ www.app.get('/returntoken', function (req, res) {
 });
 
 www.app.get('/', function (req, res) {
-  zs4.console.log(req.zs4);
+  //zs4.console.log(req.zs4);
   res.write(www.html(req.path));
   res.end();
 

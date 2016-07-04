@@ -5,6 +5,7 @@ var randomstring = require('randomstring');
 const RANDOMLENGTH = 8;
 
 var token = exports;
+token.lastMopUp = 0;
 
 token.password = require('./password');
 
@@ -49,7 +50,7 @@ token.create = function(email){
     expires:Date.now()+(15*zs4.const.MS.MINUTE),
   };
   tokob.hashed = THIS.password.generate(email+tokob.salt);
-  zs4.console.log(tokob);
+  //zs4.console.log(tokob);
 
   return new token.model(tokob);
 }
@@ -59,8 +60,8 @@ token.renew = function(req,res,tokob,cb){
     res.cookie('zs4' , '', {expire :0});
   };
 
-  zs4.console.log('re-newing...token object');
-  zs4.console.log(tokob);
+  //zs4.console.log('re-newing...token object');
+
   var THIS = new zs4.type.object({name:'this',required:true,});
   token.password.schema(THIS);
 
@@ -69,21 +70,18 @@ token.renew = function(req,res,tokob,cb){
   tokob.hashed = THIS.password.generate(tokob.email+tokob.salt);
 
   tokob.save(function(err){
-    if (err){
+    if (err!=null){
       onError();
       cb(new zs4.error({text:'cannot renew'}));
     }
     else{
       res.cookie('zs4' , tokob.hashed, {expire :tokob.expires});
       req.zs4.email = tokob.email;
-      zs4.console.log(req.zs4.email);
+      //zs4.console.log(req.zs4.email);
       cb(new zs4.done({text:'token renewed.',data:tokob.email}));
     }
   });
 }
-
-
-token.lastMopUp = 0;
 
 token.validate = function(req,res,cb){
   function onError(){
@@ -100,7 +98,7 @@ token.validate = function(req,res,cb){
     cb(new zs4.error({text:'ERROR no return token'}));
   }
   token.model.findOne({ 'hashed': req.zs4.token },function(err,tokob){
-    if (err||tokob==null){
+    if (err!=null||tokob==null){
       onError();
       cb(new zs4.error({text:'token not found',data:err}));
     }
@@ -111,14 +109,14 @@ token.validate = function(req,res,cb){
     else{
       tokob.expires = Date.now()+zs4.THIS.zs4.admin.value.tokenexpiry;
       tokob.save(function(err){
-        if (err){
+        if (err!=null){
           onError();
           cb(new zs4.error({text:'cannot save updated token'}));
         }
         else{
           res.cookie('zs4' , tokob.hashed, {expire :tokob.expires});
           req.zs4.email = tokob.email;
-          zs4.console.log(req.zs4.email);
+          zs4.console.log(req.zs4);
           cb(tokob);
         }
       });
@@ -134,13 +132,13 @@ token.requesttoken = function(emailaddr,cb){
 
   var tokob = token.create(emailaddr);
 
-  zs4.console.log('inside token.requesttoken()');
+  //zs4.console.log('inside token.requesttoken()');
   msg.from = zs4.THIS.zs4.admin.value.email;
   msg.to = emailaddr;
   msg.subject = 'zs4 token';
   msg.text = (zs4.THIS.zs4.www.getHostURL()+'/returntoken?token='+tokob.hashed);
 
-  zs4.console.log(msg);
+  //zs4.console.log(msg);
   tokob.save(function(err){
     if (err) cb(new zs4.error({text:'unable to save token.',data:err}));
     else zs4.THIS.zs4.email.send(msg,cb);
