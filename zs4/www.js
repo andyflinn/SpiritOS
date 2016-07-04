@@ -7,8 +7,6 @@ var path = require('path');
 var favicon = require('serve-favicon');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var session = require('express-session');
-var sessionStore = require('connect-mongo')(session);
 
 var fs = require('fs');
 
@@ -16,7 +14,7 @@ www = exports;
 
 www.zs4 = zs4;
 
-www.html = function(path){
+www.html = function(path,err){
   var html = '<html>\n';
     html += ' <head>\n';
       html += '  <base href="' + path + '">\n';
@@ -29,10 +27,10 @@ www.html = function(path){
       //html += '  <script src="/js/zs4-browser.js"></script>\n';
     html += ' </head>\n';
     if (true){
-      html += ' <body onload="zs4.ui.initialize(document.body)">\n';
+      if (err){html+=err;}
+      else {html += ' <body onload="zs4.ui.initialize(document.body)">\n';}
       //html += ' <body>\n';
 
-      //html += ' Here\'s some nonsense\n';
 
       html += ' </body>\n';
     }
@@ -49,20 +47,28 @@ www.app.use(cookieParser());
 // use session not implemented...
 www.app.use(express.static(path.join(__dirname, 'www')));
 
+www.app.use(function(req, res, next) {token.validate(req,res,function(ret){next();});});
 
+www.app.get('/returntoken', function (req, res) {
+  token.validate(req,res,function(ret){
+    res.redirect('/');
+  });
+});
 
 www.app.get('/', function (req, res) {
-  zs4.console.log(req.query);
+  zs4.console.log(req.zs4);
   res.write(www.html(req.path));
   res.end();
 
 });
 
+
 www.app.post('/*', function (req, res) {
+  if (req.email)zs4.console.log(req.email);
   if (zs4.is.object(req.body.requesttoken)){
-    zs4.console.log('requesttoken!!!!!!');
+    //zs4.console.log('requesttoken!!!!!!');
     token.requesttoken(req.body.requesttoken.email,function(ret){
-      zs4.console.log('requesttoken!!!!!! back at www');
+      //zs4.console.log('requesttoken!!!!!! back at www');
       if (zs4.is.object(ret))res.send(ret);
       else res.send(new zs4.error());
     });
@@ -85,9 +91,7 @@ www.schema = function(parent){
   }}));
   zs4.type.property(parent.www,new zs4.type.string({name:'host',required:true,default:'localhost',}));
   zs4.type.property(parent.www,new zs4.type.integer({name:'port',required:true,default:3000,}));
-  //zs4.type.property(parent.www,new zs4.type.boolean({name:'autostart',required:true}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'run',nostore:true}));
-  //zs4.type.property(parent.www,new zs4.type.boolean({name:'running',nostore:true}));
 
   parent.www.start = function(){
     ///console.log('inside start');
@@ -97,5 +101,8 @@ www.schema = function(parent){
         console.log('zs4 listening on port '+port+'!');
       });
     });
+  };
+  parent.www.getHostURL = function(){
+    return ('http://'+this.value.host+':'+this.value.port);
   }
 }

@@ -133,6 +133,7 @@ zs4.is = {
         return false;
       },
       error:function(o){if (!zs4.is.object(o) || !zs4.is.object(o.error))return false;return true;},
+      done:function(o){if (!zs4.is.object(o) || !zs4.is.object(o.done))return false;return true;},
       name:function(n){
         if	(!zs4.is.string(n))return false;
         if	(n=="zs4")return true;
@@ -354,7 +355,8 @@ zs4.copy = {
               recurse(f[n],nu,level+1);
               if (zs4.count.object.properties(nu)>0)t[n] = nu;
             }
-          }else{
+          }
+          else{
             t[n] = f[n];
           }
         }
@@ -362,7 +364,6 @@ zs4.copy = {
       };
       return recurse(from,new Object(),0);
     },
-
 };
 
 zs4.json =  {
