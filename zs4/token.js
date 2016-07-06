@@ -57,7 +57,7 @@ token.create = function(email){
 
 token.renew = function(req,res,tokob,cb){
   function onError(){
-    res.cookie('zs4' , '', {expire :0});
+    res.cookie('zs4' , '', {expires :0});
   };
 
   //zs4.console.log('re-newing...token object');
@@ -75,7 +75,7 @@ token.renew = function(req,res,tokob,cb){
       cb(new zs4.error({text:'cannot renew'}));
     }
     else{
-      res.cookie('zs4' , tokob.hashed, {expire :tokob.expires});
+      res.cookie('zs4' , tokob.hashed, {expires :new Date(tokob.expires)});
       req.zs4.email = tokob.email;
       //zs4.console.log(req.zs4.email);
       cb(new zs4.done({text:'token renewed.',data:tokob.email}));
@@ -95,7 +95,8 @@ token.validate = function(req,res,cb){
 
   if (req.zs4.token==null){
     onError();
-    cb(new zs4.error({text:'ERROR no return token'}));
+    cb(new zs4.error({text:'ERROR no token'}));
+    return;
   }
   token.model.findOne({ 'hashed': req.zs4.token },function(err,tokob){
     if (err!=null||tokob==null){
@@ -114,7 +115,8 @@ token.validate = function(req,res,cb){
           cb(new zs4.error({text:'cannot save updated token'}));
         }
         else{
-          res.cookie('zs4' , tokob.hashed, {expire :tokob.expires});
+          //var expires =
+          res.cookie('zs4' , tokob.hashed, {expires :new Date(tokob.expires)});
           req.zs4.email = tokob.email;
           zs4.console.log(req.zs4);
           cb(tokob);
