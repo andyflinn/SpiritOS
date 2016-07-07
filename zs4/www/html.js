@@ -182,37 +182,47 @@ zs4.ui = {
 		return document.getElementById(i);
 	},
 	login:function(p){
-		var o = zs4.ui.toggle(p,'login');
-				o.zs4.requestToken = function(){
-					zs4.ui.root.eError.zs4.clearError();
-					zs4.ui.root.eResponse.zs4.clearResponse();
-					if (!zs4.is.email(i.value)){
-							zs4.ui.root.eError.zs4.setError(i.value + ' is not a valid email address.');
-							return;
+		if (zs4.is.email(zs4.session.email)){
+			var o = zs4.ui.text(p,'zs4-logout','logout');
+			o.onclick = function(){
+				//window.alert('logging out....');
+				window.location = '/destroytoken';
+			}
+			return o;
+		}
+		else{
+			var o = zs4.ui.toggle(p,'login');
+					o.zs4.requestToken = function(){
+						zs4.ui.root.eError.zs4.clearError();
+						zs4.ui.root.eResponse.zs4.clearResponse();
+						if (!zs4.is.email(i.value)){
+								zs4.ui.root.eError.zs4.setError(i.value + ' is not a valid email address.');
+								return;
+						}
+						o.zs4.close();
+
+						var req = new Object(); req['requesttoken']={email:i.value};
+						zs4.server.request.post(req,function(r){
+								if (zs4.is.error(r))zs4.ui.root.eError.zs4.setError(r.text);
+								else zs4.ui.root.eResponse.zs4.setResponse(r.done.text);
+								console.log(r);
+						},JSON.stringify({user:i.value}));
+
 					}
-					o.zs4.close();
+					if (zs4.session.user){o.style.display='none';return o;}
+					o.zs4.setLabel('login');
+					var i = o.zs4.eInput = zs4.ui.a(o.zs4.eContent,'input');
+							i.placeholder = 'your.email@your.domain';
+							i.onchange = function(){o.zs4.requestToken();};
+					var b = o.zs4.eButton = zs4.ui.a(o.zs4.eContent,'button');
+							b.type = 'button';
+							b.textContent = 'login';
+							b.onclick = function(){o.zs4.requestToken();};
 
-					var req = new Object(); req['requesttoken']={email:i.value};
-					zs4.server.request.post(req,function(r){
-							if (zs4.is.error(r))zs4.ui.root.eError.zs4.setError(r.text);
-							else zs4.ui.root.eResponse.zs4.setResponse(r.done.text);
-							console.log(r);
-					},JSON.stringify({user:i.value}));
-
-				}
-				if (zs4.session.user){o.style.display='none';return o;}
-				o.zs4.setLabel('login');
-				var i = o.zs4.eInput = zs4.ui.a(o.zs4.eContent,'input');
-						i.placeholder = 'your.email@your.domain';
-						i.onchange = function(){o.zs4.requestToken();};
-				var b = o.zs4.eButton = zs4.ui.a(o.zs4.eContent,'button');
-						b.type = 'button';
-						b.textContent = 'login';
-						b.onclick = function(){o.zs4.requestToken();};
-
-				o.zs4.onopen = function(){i.style.display =   i.focus();};
-		//o.zs4.close();
-		return o;
+					o.zs4.onopen = function(){i.style.display =   i.focus();};
+			//o.zs4.close();
+			return o;
+		}
 	},
 	initialize:function(zs4element){
 
@@ -244,6 +254,9 @@ zs4.ui = {
 		var header = zs4.ui.root.eHeader = zs4.ui.a(conn,'zs4-header');
 				var brand = zs4.ui.a(header,'zs4-brand'); brand.textContent = 'zs4'
 				var user = zs4.ui.a(header,'zs4-user');
+				if (zs4.is.email(zs4.session.email)){
+					user.textContent = zs4.session.email;
+				}
 				var options = zs4.ui.root.eUserOptions = zs4.ui.a(header,'zs4-user-options');
 						options.textContent = '?';
 						options.onclick = function(){creatOptionsTab()};

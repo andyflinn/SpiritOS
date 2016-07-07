@@ -427,8 +427,6 @@ zs4.processor = {
 
       this[foo_this] = function(cb){foo.call(THIS,arg,cb);};
       this.count++;
-      //console.log(this);
-
     };
     this.run = function(cb){
       if (this.count==0){cb(this);return;}

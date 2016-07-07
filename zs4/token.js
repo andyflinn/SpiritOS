@@ -128,6 +128,15 @@ token.validate = function(req,res,cb){
 
 };
 
+token.destroy = function(req,res,cb){
+
+  res.cookie('zs4' , '', {expire :0});
+  if (req.zs4.token != null)req.zs4.token = null;
+  if (req.zs4.email != null)req.zs4.email = null;
+
+  cb(new zs4.done({text:'token revoked.'}))
+};
+
 token.requesttoken = function(emailaddr,cb){
   //zs4.console.log(zs4.THIS);
   var msg = zs4.type.instance(zs4.THIS.zs4.email.message);

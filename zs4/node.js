@@ -5,6 +5,7 @@ zs4.node = node;
 
 zs4.boot = new zs4.processor.sequential();
 
+
 node.configure = function(input,output){
   //zs4.console.log('node.transform('+zs4.json.stringify(input)+')');
   var fs = require('fs');

@@ -14,15 +14,16 @@ www = exports;
 
 www.zs4 = zs4;
 
-www.html = function(path,err){
+www.html = function(req,res,err){
   var html = '<html>\n';
     html += ' <head>\n';
-      html += '  <base href="' + path + '">\n';
+      html += '  <base href="' + req.path + '">\n';
 
       html += '  <link rel="stylesheet" href="/style.css">\n';
 
       html += '  <script src="/zs4.js"></script>\n';
       html += '  <script src="/html.js"></script>\n';
+      if (zs4.is.email(req.zs4.email))html += '  <script>zs4.session.email=\''+req.zs4.email+'\';</script>\n';
       //html += '  <script src="/js/zs4-shared.js"></script>\n';
       //html += '  <script src="/js/zs4-browser.js"></script>\n';
     html += ' </head>\n';
@@ -61,9 +62,15 @@ www.app.get('/returntoken', function (req, res) {
   });
 });
 
+www.app.get('/destroytoken', function (req, res) {
+  token.destroy(req,res,function(ret){
+    res.redirect('/');
+  });
+});
+
 www.app.get('/', function (req, res) {
   //zs4.console.log(req.zs4);
-  res.write(www.html(req.path));
+  res.write(www.html(req,res));
   res.end();
 
 });
