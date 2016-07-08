@@ -185,8 +185,9 @@ zs4.ui = {
 		if (zs4.is.email(zs4.session.email)){
 			var o = zs4.ui.text(p,'zs4-logout','logout');
 			o.onclick = function(){
-				//window.alert('logging out....');
-				window.location = '/destroytoken';
+				if (window.confirm("Click Ok if you really want to log out.")){
+					window.location = '/destroytoken';
+				}
 			}
 			return o;
 		}

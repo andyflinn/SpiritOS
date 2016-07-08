@@ -110,8 +110,9 @@ www.schema = function(parent){
     ///console.log('inside start');
     var port = this.value.port;
     zs4.boot.run(function(){
-      www.app.listen(port, function () {
-        console.log('zs4 listening on port '+port+'!');
+      www.app.listen(port, function (err) {
+        if (err!=null)console.log('failed to start server: '+zs4.json.stringify(err));
+        else console.log('zs4 listening on port '+port+'!');
       });
     });
   };

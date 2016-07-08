@@ -508,9 +508,10 @@ zs4.type = {
     return instance;
   },
 
-  get:function(cb){
+  get:function(){
     //zs4.console.log(this.path+'.get()');
-    if (this.noget)return null;
+    if (this.noget){return null;}
+
     var get = new Object();
 
     for (var n in this){
@@ -529,11 +530,10 @@ zs4.type = {
     }
 
     return get;
-    if (cb)cb(get);
   },
-  store:function(cb){
+  store:function(){
     //zs4.console.log(this.path+'.store()');
-    if (this.nostore)return null;
+    if (this.nostore){return null;}
     var store = new Object();
 
     for (var n in this){
@@ -552,9 +552,8 @@ zs4.type = {
     }
 
     return store;
-    if (cb)cb(store);
   },
-  load:function(input,cb){
+  load:function(input){
     if (!zs4.is.object(input))return;
     for (var n in this){
       if (!zs4.is.type(this[n]))continue;
@@ -565,9 +564,6 @@ zs4.type = {
         this[n].load(this.value,input[n]);
       }
     }
-    //if (this.type == Object)zs4.console.log(this.path+'.load() done');
-
-    if (cb)cb();
   },
   transform:function(input,cb){
     if (!zs4.is.object(input))return;

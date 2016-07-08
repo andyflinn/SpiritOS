@@ -9,6 +9,7 @@ password.schema = function(parent){
       //zs4.console.log('password.onchange()');
       //zs4.console.log(this.value);
       if (passhash.isHashed(this.value.hashed)){
+        //zs4.console.log('...have password already');
         if (zs4.is.password(this.value.set)&&this.verify(this.value.old)){
           //zs4.console.log('...pass change');
           var nu = this.generate(this.value.set);
