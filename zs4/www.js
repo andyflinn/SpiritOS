@@ -24,8 +24,7 @@ www.html = function(req,res,err){
       html += '  <script src="/zs4.js"></script>\n';
       html += '  <script src="/html.js"></script>\n';
       if (zs4.is.email(req.zs4.email))html += '  <script>zs4.session.email=\''+req.zs4.email+'\';</script>\n';
-      //html += '  <script src="/js/zs4-shared.js"></script>\n';
-      //html += '  <script src="/js/zs4-browser.js"></script>\n';
+
     html += ' </head>\n';
     if (true){
       if (err){html+=err;}
@@ -45,7 +44,6 @@ www.app.use(logger('dev'));
 www.app.use(bodyParser.json());
 www.app.use(bodyParser.urlencoded({ extended: false }));
 www.app.use(cookieParser());
-// use session not implemented...
 www.app.use(express.static(path.join(__dirname, 'www')));
 
 www.app.use(function(req, res, next) {token.validate(req,res,function(ret){next();});});
@@ -68,7 +66,11 @@ www.app.get('/destroytoken', function (req, res) {
   });
 });
 
-www.app.get('/', function (req, res) {
+www.app.get('/this.js',function(req,res){
+
+});
+
+www.app.get('/*', function (req, res) {
   //zs4.console.log(req.zs4);
   res.write(www.html(req,res));
   res.end();
@@ -87,27 +89,30 @@ www.app.post('/*', function (req, res) {
     });
   }
   else{
-    zs4.console.log(zs4.THIS.value);
+    zs4.console.log(req.zs4);
     zs4.console.log(req.body);
-    res.send(zs4.type.get.call(zs4.THIS));
+    res.send(zs4.type.get.call(zs4.THIS,req.zs4));
 
   }
 });
 
 www.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'www',required:true,onchange:function(){
-    //console.log('____WWW_ONCHANGE___');
+  zs4.type.property(parent,new zs4.type.object({name:'www',required:true,onchange:function(req,cb){
+    //zs4.console.log('____WWW_ONCHANGE___');
+    //zs4.console.log(this);
     var port = this.value.port;
     if (this.value.run == true){
       this.start();
     }
+    //zs4.console.log('cb is... '+cb);
+    cb();
   }}));
   zs4.type.property(parent.www,new zs4.type.string({name:'host',required:true,default:'localhost',}));
   zs4.type.property(parent.www,new zs4.type.integer({name:'port',required:true,default:3000,}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'run',nostore:true}));
 
   parent.www.start = function(){
-    ///console.log('inside start');
+    console.log('inside start');
     var port = this.value.port;
     zs4.boot.run(function(){
       www.app.listen(port, function (err) {

@@ -35,22 +35,10 @@ zs4.save = function(cb){
 
 zs4.define = function(){
 
-  //zs4.console.log('___DEFINE___');
-  var THIS = zs4.THIS = new zs4.type.object({name:'this',required:true,});
-  zs4.type.property(THIS,new zs4.type.object({name:'zs4',required:true,}));
+  require('./admin').schema(zs4.THIS.zs4);
+  require('./password').schema(zs4.THIS.zs4);
+  require('./mongobase').schema(zs4.THIS.zs4);
+  require('./www').schema(zs4.THIS.zs4);
+  require('./email').schema(zs4.THIS.zs4);
 
-  var admin = require('./admin');
-  admin.schema(THIS.zs4);
-
-  var password = require('./password');
-  password.schema(THIS.zs4);
-
-  var mongobase = require('./mongobase');
-  mongobase.schema(THIS.zs4);
-
-  var www = require('./www');
-  www.schema(THIS.zs4);
-
-  var email = require('./email');
-  email.schema(THIS.zs4);
 }

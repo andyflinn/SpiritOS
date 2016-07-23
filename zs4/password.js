@@ -5,7 +5,7 @@ var password = exports;
 
 password.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'password',required:true,
-    onchange:function(){
+    onchange:function(req,cb){
       //zs4.console.log('password.onchange()');
       //zs4.console.log(this.value);
       if (passhash.isHashed(this.value.hashed)){
@@ -25,6 +25,7 @@ password.schema = function(parent){
       }
       this.value.set='';
       this.value.old='';
+      cb();
     },
 
   }));
@@ -34,8 +35,8 @@ password.schema = function(parent){
   zs4.type.property(parent.password,new zs4.type.integer({name:'saltlength',required:true,min:32,max:256,default:32,}));
   zs4.type.property(parent.password,new zs4.type.integer({name:'iterations',required:true,min:1,max:128,default:1,}));
 
-  zs4.type.property(parent.password,new zs4.type.string({name:'set',required:true,nostore:true,noget:true,}));
-  zs4.type.property(parent.password,new zs4.type.string({name:'old',required:true,nostore:true,noget:true,}));
+  zs4.type.property(parent.password,new zs4.type.string({name:'set',required:true,nostore:true,}));
+  zs4.type.property(parent.password,new zs4.type.string({name:'old',required:true,nostore:true,}));
 
   parent.password.verify = function(pw){
     //zs4.console.log('verifying');

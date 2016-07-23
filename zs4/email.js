@@ -6,7 +6,7 @@ var email = exports;
 email.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'email',required:true,}));
   email.THIS = parent.email;
-  
+
   zs4.type.property(parent.email,new zs4.type.object({name:'smtp',required:true,}));
   zs4.type.property(parent.email.smtp,new zs4.type.string({name:'user',required:true,}));
   zs4.type.property(parent.email.smtp,new zs4.type.string({name:'password',required:true,}));
@@ -15,16 +15,24 @@ email.schema = function(parent){
   zs4.type.property(parent.email.smtp,new zs4.type.boolean({name:'ssl',required:true,default:false,}));
 
   zs4.type.property(parent.email,new zs4.type.object({name:'message',required:true,nostore:true,noget:true,
-    onchange:function(){
+    onchange:function(req,cb){
+      function clearValues(){this.value.from = this.value.to = this.value.subject = this.value.text = '';};
+
       if (zs4.is.email(this.value.from)
       && zs4.is.email(this.value.to)
       && this.value.subject.length > 0
       && this.value.text.length > 0
       ){
-        zs4.THIS.zs4.email.send(this.value);
+        zs4.THIS.zs4.email.send(this.value,function(){
+          clearValues();
+          cb();
+        });
+        return;
+      }
+      else{
+        clearValues();
       }
 
-      this.value.from = this.value.to = this.value.subject = this.value.text = '';
     },
 
   }));

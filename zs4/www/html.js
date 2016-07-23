@@ -290,5 +290,40 @@ zs4.ui = {
 
 };
 
+zs4.server ={
+	request:{
+		ajax:function(u,cb){
+			this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
+		},
+		get:function(u,cb){
+			this.ajax(u,function(d){if(cb!=null)cb(d);});
+			return ('this.ajax(\''+u+'\',cb)');
+		},
+		post:function(o,cb){
+			this.ajax('/',function(d){
+				if(cb!=null){
+					cb(JSON.parse(d));
+				}else{
+					zs4.console.log(d);
+				}
+			},JSON.stringify(o)
+			);
+			//return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
+		},
+		post:function(THIS,o,cb){
+			this.ajax('/',function(d){
+				if(cb!=null){
+					cb(JSON.parse(d));
+				}else{
+					zs4.console.log(d);
+				}
+			},JSON.stringify(o)
+			);
+			//return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
+		},
+	},
+};
+
+
 
 zs4.session = {};
