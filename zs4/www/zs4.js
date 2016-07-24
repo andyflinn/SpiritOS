@@ -30,6 +30,10 @@ zs4.const = {
   EMAIL:{
     MINLENGTH:5,
     MAXLENGTH:64,
+    SYSTEM:'zs4@zs4.zs4',
+    USER:'user@zs4.zs4',
+    ADMIN:'admin@zs4.zs4',
+    PUBLIC:'public@zs4.zs4',
   },
   MS:{
     SECOND:1000,
@@ -63,12 +67,6 @@ zs4.const = {
       MINLENGTH:4,
       MAXLENGTH:32,
     },
-  },
-  SYSTEM:{
-    ITSELF:'zs4@zs4.zs4',
-    USER:'user@zs4.zs4',
-    ADMIN:'admin@zs4.zs4',
-    PUBLIC:'public@zs4.zs4',
   },
   TYPE:{
     PLAIN:0,
@@ -410,6 +408,36 @@ zs4.done = function(o){
   else this.done={};
 }
 
+zs4.request = function(o){
+
+  if (zs4.is.object(o)){
+    if (zs4.is.object(o.request))this.request = o.request;
+    if (zs4.is.object(o.input))this.input = o.input;
+  }
+
+  if (!zs4.is.object(this.request))this.request = new Object();
+  if (!zs4.is.object(this.input))this.input = new Object();
+
+  if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
+
+  this.userIsRoot = function(){
+    if (zs4.is.email(this.request.email)&&zs4.THIS.zs4.admin.value.email==this.request.email)return true;
+    if (this.request.node) return true;
+    return false;
+  }
+
+  this.process = function(cb){
+    zs4.console.log(this.userIsRoot());
+    var THIS = this;
+    zs4.THIS.transform(this,function(){
+      //zs4.console.log(THIS);
+      var get = zs4.THIS.get(THIS);
+      if (get==null)get = new Object();
+      cb(get);
+    });
+  };
+};
+
 zs4.processor = {
   sequential:function(){
     this.count = 0;
@@ -515,24 +543,6 @@ zs4.type = {
     if (schema.path.length>0)ns.path = schema.path +'.'+ns.name;
     else ns.path = ns.name;
   },
-  instance:function(schema){
-    var instance = new Object();
-
-    for (var n in schema){
-
-      if (!zs4.is.type(schema[n]))continue;
-
-      if (schema[n].type == Object){
-        var ret = zs4.type.instance(schema[n])
-        if (ret != null) instance[n] = ret;
-        continue;
-      }
-
-      instance[n] = schema.value[n];
-    }
-
-    return instance;
-  },
 
   validate:function(input){
     if (!zs4.is.object(input))return false;
@@ -550,32 +560,6 @@ zs4.type = {
     }
 
     return true;
-  },
-  get:function(zs4id){
-    //zs4.console.log(this.path+'.get()');
-    if (this.noget){return null;}
-
-    var get = new Object();
-
-    for (var n in this){
-
-      if (!zs4.is.type(this[n])||this[n].noget)continue;
-
-      //zs4.console.log('getting '+n);
-
-      if (this[n].type == Object){
-        var ret;
-        if (zs4.is.function(this[n].get))ret = this[n].get(zs4id);
-        else ret = zs4.type.get.call(this[n],zs4id)
-
-        if (ret != null) get[n] = ret;
-        continue;
-      }
-
-      get[n] = this.value[n];
-    }
-
-    return get;
   },
   store:function(){
     //zs4.console.log(this.path+'.store()');
@@ -788,8 +772,31 @@ zs4.type = {
 
     this.type = Object;
     this.value = new Object();
-
     this.path = '';
+
+    this.get = function(args){
+      //zs4.console.log(this.path+'.get()');
+      if (this.noget){return null;}
+
+      var get = new Object();
+
+      for (var n in this){
+
+        if (!zs4.is.type(this[n])||args.input[n]==null||this[n].noget)continue;
+
+        //zs4.console.log('getting '+n);
+
+        if (this[n].type == Object){
+          var ret = this[n].get(args);
+          if (ret != null) get[n] = ret;
+          continue;
+        }
+
+        get[n] = this.value[n];
+      }
+
+      return get;
+    };
 
     this.transform = function(args,cb){
       //zs4.console.log('transforming '+this.path)
@@ -805,7 +812,7 @@ zs4.type = {
         if (!zs4.is.type(this[n])||args.input[n]==null)continue;
 
         if (this[n].type == Object){
-           if (zs4.is.object(args.input[n])) parallel.call(this[n],this[n].transform,{req:args.req,input:args.input[n]});
+          parallel.call(this[n],this[n].transform,{req:args.req,input:args.input[n]});
         }else{
           parallel.call(this[n],this[n].transform,{req:args.req,parent:this.value,input:args.input[n]});
         }
@@ -813,7 +820,7 @@ zs4.type = {
 
       var THIS = this;
       parallel.run(function(){
-        if (zs4.is.function(THIS.onchange)){THIS.onchange.call(THIS,args.req,cb);}
+        if (zs4.is.function(THIS.onchange)){THIS.onchange.call(THIS,args,cb);}
         else {cb();}
       });
       //if (this.type == Object)zs4.console.log(this.path+'.transform() done');

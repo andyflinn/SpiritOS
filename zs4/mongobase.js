@@ -1,6 +1,8 @@
 var zs4 = require('./www/zs4');
 var mongobase = exports;
 
+
+
 mongobase.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'mongobase',required:true,}));
   mongobase.THIS = parent.mongobase;

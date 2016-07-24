@@ -118,7 +118,7 @@ token.validate = function(req,res,cb){
           //var expires =
           res.cookie('zs4' , tokob.hashed, {expires :new Date(tokob.expires)});
           req.zs4.email = tokob.email;
-          zs4.console.log(req.zs4);
+          //zs4.console.log(req.zs4);
           cb(tokob);
         }
       });
@@ -139,10 +139,9 @@ token.destroy = function(req,res,cb){
 
 token.requesttoken = function(emailaddr,cb){
   //zs4.console.log(zs4.THIS);
-  var msg = zs4.type.instance(zs4.THIS.zs4.email.message);
-
   var tokob = token.create(emailaddr);
 
+  var msg = new Object();
   //zs4.console.log('inside token.requesttoken()');
   msg.from = zs4.THIS.zs4.admin.value.email;
   msg.to = emailaddr;

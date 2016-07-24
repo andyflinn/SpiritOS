@@ -42,3 +42,39 @@ zs4.define = function(){
   require('./email').schema(zs4.THIS.zs4);
 
 }
+
+zs4.request = function(o){
+
+  if (zs4.is.object(o)){
+    if (zs4.is.object(o.request))this.request = o.request;
+    if (zs4.is.object(o.input))this.input = o.input;
+  }
+
+  if (!zs4.is.object(this.request))this.request = new Object();
+  if (!zs4.is.object(this.input))this.input = new Object();
+
+  if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
+
+  this.needsSaving = false;
+  this.save = function(){this.needsSaving=true};
+
+  this.userIsRoot = function(){
+    if (zs4.is.email(this.request.email)&&zs4.THIS.zs4.admin.value.email==this.request.email)return true;
+    if (this.request.node) return true;
+    return false;
+  }
+
+  this.process = function(cb){
+    zs4.console.log(this.userIsRoot());
+    var THIS = this;
+    zs4.THIS.transform(this,function(){
+      //zs4.console.log(THIS);
+      var get = zs4.THIS.get(THIS);
+      if (get==null)get = new Object();
+      cb(get);
+      if (THIS.needsSaving){
+        zs4.save(function(){zs4.console.log('THIS was saved')});
+      }
+    });
+  };
+};

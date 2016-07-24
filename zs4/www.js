@@ -89,24 +89,29 @@ www.app.post('/*', function (req, res) {
     });
   }
   else{
-    zs4.console.log(req.zs4);
-    zs4.console.log(req.body);
-    res.send(zs4.type.get.call(zs4.THIS,req.zs4));
+    var zs4req = new zs4.request({request:req.zs4,input:req.body});
+    zs4req.process(function(ret){
+      res.send(ret);
+      zs4.console.log(zs4req);
+      zs4.console.log(ret);
+
+    });
 
   }
 });
 
 www.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'www',required:true,onchange:function(req,cb){
-    //zs4.console.log('____WWW_ONCHANGE___');
-    //zs4.console.log(this);
-    var port = this.value.port;
-    if (this.value.run == true){
-      this.start();
-    }
-    //zs4.console.log('cb is... '+cb);
-    cb();
-  }}));
+  zs4.type.property(parent,new zs4.type.object({name:'www',required:true,
+    onchange:function(req,cb){
+      //zs4.console.log('____WWW_ONCHANGE___');
+      //zs4.console.log(this);
+      var port = this.value.port;
+      if (this.value.run == true){
+        this.start();
+      }
+      cb();
+    },
+  }));
   zs4.type.property(parent.www,new zs4.type.string({name:'host',required:true,default:'localhost',}));
   zs4.type.property(parent.www,new zs4.type.integer({name:'port',required:true,default:3000,}));
   zs4.type.property(parent.www,new zs4.type.boolean({name:'run',nostore:true}));

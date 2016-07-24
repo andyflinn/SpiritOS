@@ -310,20 +310,11 @@ zs4.server ={
 			);
 			//return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
 		},
-		post:function(THIS,o,cb){
-			this.ajax('/',function(d){
-				if(cb!=null){
-					cb(JSON.parse(d));
-				}else{
-					zs4.console.log(d);
-				}
-			},JSON.stringify(o)
-			);
-			//return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
-		},
 	},
 };
 
-
+zs4.request = function(o,cb){
+	zs4.server.request.post(o,cb);
+};
 
 zs4.session = {};
