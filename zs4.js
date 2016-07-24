@@ -33,9 +33,15 @@ zs4.load(function(){
 
   zs4.THIS.transform(req,function(){
     zs4.console.log('transformed');
-    zs4.save(function(){
-      zs4.console.log('saved');
-      console.log(zs4.json.stringify(zs4.type.store.call(zs4.THIS)));
-    });
+    if (req.request.needsSaving){
+      zs4.console.log('req.request.needsSaving');
+      zs4.save(function(){
+        zs4.console.log('saved');
+        console.log(zs4.json.stringify(zs4.type.store.call(zs4.THIS)));
+      });
+    }
+    else{
+      //console.log(zs4.json.stringify(zs4.type.store.call(zs4.THIS)));      
+    }
   });
 });

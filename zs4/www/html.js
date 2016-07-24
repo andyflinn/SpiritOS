@@ -227,6 +227,14 @@ zs4.ui = {
 	},
 	initialize:function(zs4element){
 
+		function createAdminTab(){
+			var options = zs4.ui.root.zTabs.zs4.addTab('admin');
+
+			zs4.ui.text(options,'h3','Server Setup');
+			zs4.ui.html(options,'p','configure zs4 here.');
+
+		};
+
 		function creatOptionsTab(){
 				var options = zs4.ui.root.zTabs.zs4.addTab('options');
 
@@ -254,6 +262,8 @@ zs4.ui = {
 		// create header entities
 		var header = zs4.ui.root.eHeader = zs4.ui.a(conn,'zs4-header');
 				var brand = zs4.ui.a(header,'zs4-brand'); brand.textContent = 'zs4'
+				brand.onclick = function(){createAdminTab()};
+
 				var user = zs4.ui.a(header,'zs4-user');
 				if (zs4.is.email(zs4.session.email)){
 					user.textContent = zs4.session.email;
@@ -314,7 +324,11 @@ zs4.server ={
 };
 
 zs4.request = function(o,cb){
-	zs4.server.request.post(o,cb);
+	zs4.server.request.post(o,function(ret){
+		zs4.THIS.got(ret);
+		if (cb)cb(ret);
+		zs4.console.log(zs4.THIS);
+	});
 };
 
 zs4.session = {};

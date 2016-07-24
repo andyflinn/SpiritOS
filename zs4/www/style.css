@@ -18,6 +18,10 @@ zs4-brand,zs4-slogan{
   align-self:auto;
   font-weight: bolder;
 }
+zs4-brand{
+  color: darkgreen;
+  cursor: pointer;
+}
 img.zs4user{
   display:inline-block;
   vertical-align:middle;

@@ -46,22 +46,22 @@ www.app.use(bodyParser.urlencoded({ extended: false }));
 www.app.use(cookieParser());
 www.app.use(express.static(path.join(__dirname, 'www')));
 
-www.app.use(function(req, res, next) {token.validate(req,res,function(ret){next();});});
+www.app.use(function(req, res, next) {token.validateExpress(req,res,function(ret){next();});});
 
 www.app.get('/returntoken', function (req, res) {
-  token.validate(req,res,function(ret){
+  token.validateExpress(req,res,function(ret){
     if (zs4.is.error(ret)){
 
       res.redirect('/');
     }
-    else token.renew(req,res,ret,function(ret){
+    else token.renewExpress(req,res,ret,function(ret){
       res.redirect('/');
     });
   });
 });
 
 www.app.get('/destroytoken', function (req, res) {
-  token.destroy(req,res,function(ret){
+  token.destroyExpress(req,res,function(ret){
     res.redirect('/');
   });
 });
@@ -100,6 +100,8 @@ www.app.post('/*', function (req, res) {
   }
 });
 
+www.running = false;
+
 www.schema = function(parent){
   zs4.type.property(parent,new zs4.type.object({name:'www',required:true,
     onchange:function(req,cb){
@@ -109,6 +111,7 @@ www.schema = function(parent){
       if (this.value.run == true){
         this.start();
       }
+      this.value.run = false;
       cb();
     },
   }));
@@ -117,12 +120,18 @@ www.schema = function(parent){
   zs4.type.property(parent.www,new zs4.type.boolean({name:'run',nostore:true}));
 
   parent.www.start = function(){
-    console.log('inside start');
+    if (www.running)return;
+    //console.log('inside start');
     var port = this.value.port;
     zs4.boot.run(function(){
       www.app.listen(port, function (err) {
-        if (err!=null)console.log('failed to start server: '+zs4.json.stringify(err));
-        else console.log('zs4 listening on port '+port+'!');
+        if (err!=null){
+          console.log('failed to start server: '+zs4.json.stringify(err));
+        }
+        else {
+          www.running = true;
+          console.log('zs4 listening on port '+port+'!');
+        }
       });
     });
   };

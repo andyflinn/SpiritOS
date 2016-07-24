@@ -9,12 +9,22 @@ password.schema = function(parent){
       //zs4.console.log('password.onchange()');
       //zs4.console.log(this.value);
       if (passhash.isHashed(this.value.hashed)){
-        //zs4.console.log('...have password already');
-        if (zs4.is.password(this.value.set)&&this.verify(this.value.old)){
-          //zs4.console.log('...pass change');
-          var nu = this.generate(this.value.set);
-          if (nu!=null) this.value.hashed = nu;
+        var oldPassVerified = this.verify(this.value.vfy);
+
+        if (oldPassVerified){
+          zs4.console.log('...old password verified...');
+
+          if (zs4.is.password(this.value.set)){
+            zs4.console.log('...pass change...');
+            var nu = this.generate(this.value.set);
+            if (nu!=null) this.value.hashed = nu;
+          }
+
         }
+        else {
+          zs4.console.log('...password incorrect...');
+        }
+        //zs4.console.log('...have password already');
       }
       else{
         if (zs4.is.password(this.value.set)){
@@ -24,10 +34,10 @@ password.schema = function(parent){
         }
       }
       this.value.set='';
-      this.value.old='';
+      this.value.vfy='';
       cb();
     },
-
+    authGet:[zs4.const.EMAIL.PUBLIC,],
   }));
 
   zs4.type.property(parent.password,new zs4.type.string({name:'hashed',required:true,noget:true,index:{unique:true},}));
@@ -36,7 +46,7 @@ password.schema = function(parent){
   zs4.type.property(parent.password,new zs4.type.integer({name:'iterations',required:true,min:1,max:128,default:1,}));
 
   zs4.type.property(parent.password,new zs4.type.string({name:'set',required:true,nostore:true,}));
-  zs4.type.property(parent.password,new zs4.type.string({name:'old',required:true,nostore:true,}));
+  zs4.type.property(parent.password,new zs4.type.string({name:'vfy',required:true,nostore:true,authGet:[zs4.const.EMAIL.PUBLIC,],authSet:[zs4.const.EMAIL.PUBLIC,],}));
 
   parent.password.verify = function(pw){
     //zs4.console.log('verifying');

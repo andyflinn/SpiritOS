@@ -55,7 +55,7 @@ token.create = function(email){
   return new token.model(tokob);
 }
 
-token.renew = function(req,res,tokob,cb){
+token.renewExpress = function(req,res,tokob,cb){
   function onError(){
     res.cookie('zs4' , '', {expires :0});
   };
@@ -83,7 +83,7 @@ token.renew = function(req,res,tokob,cb){
   });
 }
 
-token.validate = function(req,res,cb){
+token.validateExpress = function(req,res,cb){
   function onError(){
     res.cookie('zs4' , '', {expire :0});
   };
@@ -128,7 +128,7 @@ token.validate = function(req,res,cb){
 
 };
 
-token.destroy = function(req,res,cb){
+token.destroyExpress = function(req,res,cb){
 
   res.cookie('zs4' , '', {expire :0});
   if (req.zs4.token != null)req.zs4.token = null;

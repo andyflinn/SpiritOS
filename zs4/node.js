@@ -47,32 +47,43 @@ zs4.request = function(o){
 
   if (zs4.is.object(o)){
     if (zs4.is.object(o.request))this.request = o.request;
-    if (zs4.is.object(o.input))this.input = o.input;
+    if (o.input!=null)this.input = o.input;
+    if (zs4.is.object(o.parent))this.parent = o.parent;
   }
 
   if (!zs4.is.object(this.request))this.request = new Object();
-  if (!zs4.is.object(this.input))this.input = new Object();
+  if (this.input==null)this.input = new Object();
 
   if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
 
-  this.needsSaving = false;
-  this.save = function(){this.needsSaving=true};
+  this.request.needsSaving = false;
 
-  this.userIsRoot = function(){
-    if (zs4.is.email(this.request.email)&&zs4.THIS.zs4.admin.value.email==this.request.email)return true;
-    if (this.request.node) return true;
+  this.request.userIsRoot = function(){
+    if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin.value.email==this.email)return true;
+    if (this.node) return true;
     return false;
-  }
+  };
+
+  this.request.authorize = function(THIS,arr){
+    //zs4.console.log('authorizing... '+THIS.path);
+    if (!zs4.is.array(arr))return this.userIsRoot();
+    if (zs4.string.array.is.element(arr,zs4.const.EMAIL.PUBLIC)){
+      //zs4.console.log('authorized public request to '+THIS.path);
+      return true;
+    }
+    if (zs4.is.email(this.email)&&zs4.string.array.is.element(arr,this.email))return true;
+    return this.userIsRoot();
+  };
 
   this.process = function(cb){
-    zs4.console.log(this.userIsRoot());
     var THIS = this;
-    zs4.THIS.transform(this,function(){
+    //zs4.console.log(THIS.request.userIsRoot());
+    zs4.THIS.transform(THIS,function(){
       //zs4.console.log(THIS);
       var get = zs4.THIS.get(THIS);
       if (get==null)get = new Object();
       cb(get);
-      if (THIS.needsSaving){
+      if (THIS.request.needsSaving){
         zs4.save(function(){zs4.console.log('THIS was saved')});
       }
     });
