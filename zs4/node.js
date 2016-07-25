@@ -1,4 +1,4 @@
-var zs4 = require('./www/zs4');
+var zs4 = require('./static/zs4');
 var fs = require('fs');
 
 const ZS4 = 'zs4';
@@ -37,55 +37,8 @@ zs4.define = function(){
 
   require('./admin').schema(zs4.THIS.zs4);
   require('./password').schema(zs4.THIS.zs4);
-  require('./mongobase').schema(zs4.THIS.zs4);
-  require('./www').schema(zs4.THIS.zs4);
+  //require('./mongobase').schema(zs4.THIS.zs4);
+  require('./express').schema(zs4.THIS.zs4);
   require('./email').schema(zs4.THIS.zs4);
 
 }
-
-zs4.request = function(o){
-
-  if (zs4.is.object(o)){
-    if (zs4.is.object(o.request))this.request = o.request;
-    if (o.input!=null)this.input = o.input;
-    if (zs4.is.object(o.parent))this.parent = o.parent;
-  }
-
-  if (!zs4.is.object(this.request))this.request = new Object();
-  if (this.input==null)this.input = new Object();
-
-  if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
-
-  this.request.needsSaving = false;
-
-  this.request.userIsRoot = function(){
-    if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin.value.email==this.email)return true;
-    if (this.node) return true;
-    return false;
-  };
-
-  this.request.authorize = function(THIS,arr){
-    //zs4.console.log('authorizing... '+THIS.path);
-    if (!zs4.is.array(arr))return this.userIsRoot();
-    if (zs4.string.array.is.element(arr,zs4.const.EMAIL.PUBLIC)){
-      //zs4.console.log('authorized public request to '+THIS.path);
-      return true;
-    }
-    if (zs4.is.email(this.email)&&zs4.string.array.is.element(arr,this.email))return true;
-    return this.userIsRoot();
-  };
-
-  this.process = function(cb){
-    var THIS = this;
-    //zs4.console.log(THIS.request.userIsRoot());
-    zs4.THIS.transform(THIS,function(){
-      //zs4.console.log(THIS);
-      var get = zs4.THIS.get(THIS);
-      if (get==null)get = new Object();
-      cb(get);
-      if (THIS.request.needsSaving){
-        zs4.save(function(){zs4.console.log('THIS was saved')});
-      }
-    });
-  };
-};

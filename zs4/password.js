@@ -1,4 +1,4 @@
-var zs4 = require('./www/zs4');
+var zs4 = require('./static/zs4');
 var passhash = require('password-hash');
 
 var password = exports;

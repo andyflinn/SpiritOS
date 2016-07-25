@@ -1,4 +1,4 @@
-var zs4 = require('./zs4/www/zs4');
+var zs4 = require('./zs4/static/zs4');
 var node = require('./zs4/node');
 
 var msg = new Object();
@@ -41,7 +41,7 @@ zs4.load(function(){
       });
     }
     else{
-      //console.log(zs4.json.stringify(zs4.type.store.call(zs4.THIS)));      
+      //console.log(zs4.json.stringify(zs4.type.store.call(zs4.THIS)));
     }
   });
 });

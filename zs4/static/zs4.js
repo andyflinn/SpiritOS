@@ -55,11 +55,11 @@ zs4.const = {
   },
   STRING:{
     MINLENGTH:0,
-    MAXLENGTH:256,
+    MAXLENGTH:255,
   },
   TEXT:{
     MINLENGTH:0,
-    MAXLENGTH:256*256,
+    MAXLENGTH:((256*256)-1),
   },
   SERVER:{
     NAME:{
@@ -903,6 +903,89 @@ zs4.type = {
   },
 
 };
+
+zs4.request = function(o){
+
+  if (zs4.is.object(o)){
+    if (zs4.is.object(o.request))this.request = o.request;
+    if (o.input!=null)this.input = o.input;
+    if (zs4.is.object(o.parent))this.parent = o.parent;
+    if (zs4.is.object(o.token))this.token = o.token;
+  }
+
+  if (!zs4.is.object(this.request))this.request = new Object();
+  if (this.input==null)this.input = new Object();
+
+  if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
+
+  this.request.needsSaving = false;
+
+  this.request.userIsRoot = function(){
+    if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin.value.email==this.email)return true;
+    if (this.node) return true;
+    return false;
+  };
+
+  this.request.authorize = function(THIS,arr){
+    //zs4.console.log('authorizing... '+THIS.path);
+    if (!zs4.is.array(arr))return this.userIsRoot();
+    if (zs4.string.array.is.element(arr,zs4.const.EMAIL.PUBLIC)){
+      //zs4.console.log('authorized public request to '+THIS.path);
+      return true;
+    }
+    if (zs4.is.email(this.email)&&zs4.string.array.is.element(arr,this.email))return true;
+    return this.userIsRoot();
+  };
+
+  this.process = function(cb){
+    var THIS = this;
+    //zs4.console.log(THIS.request.userIsRoot());
+    zs4.THIS.transform(THIS,function(){
+      //zs4.console.log(THIS);
+      var get = zs4.THIS.get(THIS);
+      if (get==null)get = new Object();
+      cb(get);
+      if (THIS.request.needsSaving){
+        zs4.save(function(){zs4.console.log('THIS was saved')});
+      }
+    });
+  };
+};
+
+
+if (!zs4.is.node()){
+zs4.io = {
+  ajax:function(u,cb){
+    this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
+  },
+  get:function(u,cb){
+    this.ajax(u,function(d){if(cb!=null)cb(d);});
+    return ('this.ajax(\''+u+'\',cb)');
+  },
+  post:function(o,cb){
+    this.ajax('/',function(d){
+      if(cb!=null){
+        cb(JSON.parse(d));
+      }else{
+        zs4.console.log(d);
+      }
+    },JSON.stringify(o)
+    );
+    //return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
+  },
+};
+
+  zs4.post = function(o,cb){
+
+  	zs4.io.post(o,function(ret){
+  		zs4.THIS.got(ret);
+  		if (cb)cb(ret);
+  		zs4.console.log(zs4.THIS);
+  	});
+  };
+}
+
+
 
 //zs4.console.log('___DEFINE___');
 zs4.THIS = new zs4.type.object({name:'this',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
