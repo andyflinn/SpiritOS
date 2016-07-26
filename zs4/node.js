@@ -14,7 +14,7 @@ zs4.load = function(cb){
     if (!err && data){
       value = zs4.json.parse(data);
       if (value!=null){
-        zs4.type.load.call(zs4.THIS,value);
+        zs4.THIS._.load(value);
         cb(new zs4.done());
         return;
       }
@@ -24,7 +24,7 @@ zs4.load = function(cb){
 };
 
 zs4.save = function(cb){
-  var out = zs4.type.store.call(zs4.THIS);
+  var out = zs4.THIS._.store();
   if (out==null){cb(new zs4.error({text:'no save data.'}));return;}
   var save = zs4.json.stringify(out);
   fs.writeFile(DOT_ZS4,save, (err) => {

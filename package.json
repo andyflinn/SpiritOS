@@ -11,6 +11,7 @@
     "debug": "~2.2.0",
     "emailjs": "^1.0.5",
     "express": "~4.13.1",
+    "jwt-simple": "^0.5.0",
     "mongodb": "^2.1.21",
     "mongoose": "^4.4.19",
     "mongoose-paginate": "^5.0.0",

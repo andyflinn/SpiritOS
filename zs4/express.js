@@ -46,13 +46,17 @@ express.app.use(cookieParser());
 express.app.use(xpress.static(path.join(__dirname, 'static')));
 
 express.app.get('/*', function (req, res) {
-  //zs4.console.log(req.zs4);
+  var zs4req = new zs4.request({request:{want:'html'},input:req.query});
+  zs4.console.log(zs4req);
+
   res.write(express.html(req,res));
   res.end();
 });
 
 express.app.post('/*', function (req, res) {
-  var zs4req = new zs4.request({request:req.zs4,input:req.body});
+  var zs4req = new zs4.request({request:{want:'json'},input:req.body});
+  zs4.console.log(zs4req);
+
   zs4req.process(function(ret){
     res.send(ret);
 
@@ -67,11 +71,11 @@ express.schema = function(parent){
     onchange:function(req,cb){
       //zs4.console.log('____WWW_ONCHANGE___');
       //zs4.console.log(this);
-      var port = this.value.port;
-      if (this.value.run == true){
+      var port = this._.value.port;
+      if (this._.value.run == true){
         this.start();
       }
-      this.value.run = false;
+      this._.value.run = false;
       cb();
     },
   }));
@@ -82,7 +86,7 @@ express.schema = function(parent){
   parent.express.start = function(){
     if (express.running)return;
     //console.log('inside start');
-    var port = this.value.port;
+    var port = this._.value.port;
     zs4.boot.run(function(){
       express.app.listen(port, function (err) {
         if (err!=null){
@@ -96,6 +100,6 @@ express.schema = function(parent){
     });
   };
   parent.express.getHostURL = function(){
-    return ('http://'+this.value.host+':'+this.value.port);
+    return ('http://'+this._.value.host+':'+this._.value.port);
   }
 }

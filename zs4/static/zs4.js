@@ -9,6 +9,14 @@ else {
     zs4 = new Object();
 }
 
+zs4.host = {
+  window:{
+
+  },
+  node:{
+
+  },
+}
 zs4.const = {
   API:{
     NAME:{
@@ -86,6 +94,7 @@ zs4.console = {
 
 zs4.is = {
       node:function(){if (typeof window === 'undefined')return true; return false;},
+      window:function(){if (typeof window === 'undefined')return false; return true;},
       array:function (a){
         if	(a==null)return false;
         return (a instanceof Array);
@@ -166,10 +175,9 @@ zs4.is = {
       },
       type:function(o){
         if (!zs4.is.object(o)
-        || !o.hasOwnProperty('name')
-        || !o.hasOwnProperty('typename')
-        || !zs4.is.name(o.name)
-        || !zs4.is.name(o.typename)
+        || !zs4.is.object(o._)
+        || !zs4.is.name(o._.name)
+        || !zs4.is.name(o._.typename)
         //|| !zs4.is.function(o.type)
         )return false;
         return true;
@@ -223,7 +231,7 @@ zs4.string = {
       element:function(arr,str){
         var trimmed = str.trim();
         for (var i = 0 ; i < arr.length ; i++){
-          if (arr[i].trim() == trimmed)return true;
+          if (arr[i] == trimmed)return true;
         }
         return false;
       },
@@ -235,9 +243,18 @@ zs4.string = {
         return arr;
       },
     },
+    remove:{
+      string:function(arr,str){
+        var trimmed = str.trim();
+        for (var i = (arr.length-1) ; i >= 0 ; i--){
+          if (arr[i]==trimmed)
+            arr.splice(i,1);
+        }
+      },
+    },
     trimToArray:function (arr,to){
       for (var i = (arr.length-1) ; i >= 0 ; i--){
-        if (!zs4.string.array.is.element(to,arr[i].trim()))
+        if (!zs4.string.array.is.element(to,arr[i]))
           arr.splice(i,1);
       }
     },
@@ -259,69 +276,6 @@ zs4.count = {
         return count;
       },
     },
-};
-
-zs4.scan = {
-  object:function(obj,foo,data){
-    zs4.console.log('scanning....');
-    var scan = {
-      o:obj,
-      a:[],
-      p:[],
-      path:function(){
-        var path = '';
-        for (var i = 0 ; i < this.p.length ; i++){
-          if (i>0)path+='.';
-          path+=this.p[i];
-        }
-        return path;
-      },
-      parentPath:function(){
-        var path = '';
-        for (var i = 0 ; i < (this.p.length-1) ; i++){
-          if (i>0)path+='.';
-          path+=this.p[i];
-        }
-        return path;
-      },
-    }
-
-    if (foo) scan.function = foo;
-    if (data) scan.data = data;
-
-    function item(path,name,item,parent){var ret = {path:path,name:name,item:item,parent:parent}; scan.a.push(ret); return ret;}
-    function itemCircular(item){
-      for (var i = 0 ; i < scan.a.length ; i++)if (scan.a[i].item==item)return true;
-      return false;
-    }
-    function recurse(o){
-
-      for (var n in o){
-        scan.p.push(n);
-        var path = scan.path();
-
-        if (zs4.is.object(o[n])){
-          //console.log('Object: '+o[n])
-          if (itemCircular(o[n])){
-            //console.log('circular: '+o[n])
-          }
-          else{
-            var i = item(path,n,o[n],o);
-            if (scan.function)scan.function(scan,i);
-            recurse(o[n]);
-          }
-        }else{
-          var i = item(path,n,o[n],o);
-          if (scan.function)scan.function(scan,i);
-          //item(path,n,o[n]);
-        }
-        scan.p.pop();
-      };
-    };
-
-    recurse(obj);
-    return scan;
-  },
 };
 
 zs4.copy = {
@@ -367,13 +321,13 @@ zs4.copy = {
     schemabasics(from,to){
       if (!zs4.is.type(from)||!zs4.is.type(to))return;
 
-      if (zs4.is.number(from.min))to.min=from.min;
-      if (zs4.is.number(from.max))to.max=from.max;
+      if (zs4.is.number(from._.min))to._.min=from._.min;
+      if (zs4.is.number(from._.max))to._.max=from._.max;
 
-      if (zs4.is.number(from.minlength))to.minlength=from.minlength;
-      if (zs4.is.number(from.maxlength))to.maxlength=from.maxlength;
-      if (zs4.is.array(from.enum))to.enum = from.enum;
-      if (zs4.is.boolean(from.trim))to.trim = from.trim;
+      if (zs4.is.number(from._.minlength))to._.minlength=from._.minlength;
+      if (zs4.is.number(from._.maxlength))to._.maxlength=from._.maxlength;
+      if (zs4.is.array(from._.enum))to._.enum = from._.enum;
+      if (zs4.is.boolean(from._.trim))to._.trim = from._.trim;
     },
 };
 
@@ -488,105 +442,102 @@ zs4.type = {
       return new zs4.error({text:'bad input',data:input});
     }
 
-    this.path = '';
-    this.name = input.name;
-    if (zs4.is.boolean(input.required))this.required = input.required; else this.required = true;
-    if (zs4.is.function(input.api))this.api = input.api;
-    if (zs4.is.boolean(input.nostore))this.nostore = input.nostore;
-    if (zs4.is.boolean(input.noget))this.noget = input.noget;
+    this._ = new Object();
+    this._.path = '';
+    this._.name = input.name;
+    if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
+    if (zs4.is.function(input.api))this._.api = input.api;
+    if (zs4.is.boolean(input.nostore))this._.nostore = input.nostore;
+    if (zs4.is.boolean(input.noget))this._.noget = input.noget;
 
     // support mongoose
-    if (zs4.is.boolean(input.index) && input.index == true) this.index = true;
-    else if (zs4.is.object(input.index)&&zs4.is.boolean(input.index.unique)&&input.index.unique==true)this.index={unique:true};
+    if (zs4.is.boolean(input.index) && input.index == true) this._.index = true;
+    else if (zs4.is.object(input.index)&&zs4.is.boolean(input.index.unique)&&input.index.unique==true)this._.index={unique:true};
 
-    if (zs4.is.node()){
+    if (zs4.is.function(input.onchange)){
+      this._.onchange = input.onchange;
+    };
 
-      if (zs4.is.function(input.onchange)){
-        this.onchange = input.onchange;
-      };
+    if (zs4.is.array(input.authGet))this._.authGet = input.authGet;
+    if (zs4.is.array(input.authSet))this._.authSet = input.authSet;
 
-      if (zs4.is.array(input.authGet))this.authGet = input.authGet;
-      if (zs4.is.array(input.authSet))this.authSet = input.authSet;
+    this._.shouldBeSaved = (function(args){
+      if (this._.nostore)return;
+      zs4.console.log('this.shouldBeSaved()');
+      args.request.needsSaving = true;
+    }).bind(this);
 
-      this.shouldBeSaved = function(args){
-        if (this.nostore)return;
-        zs4.console.log('this.shouldBeSaved()');
-        args.request.needsSaving = true;
-      };
+    this._.getProperties = (function(args,parent){
+      for (var n in this){
+        if (!zs4.is.type(this[n])||this[n]._.noget)continue;
+        var ret;
+        var ret = this[n]._.get(args,this);
+        if (ret != null) parent[n] = ret;
+      }
+    }).bind(this);
+    this._.getInitialize = (function(args,parent){
+      if (this._.noget || !args.request.authorize(this,this._.authGet)){return null;}
 
-      this.getProperties = function(args,parent){
+      var get = new Object({_:{}});
+
+      get._.name = this._.name;
+      get._.typename = this._.typename;
+      var thisIsObject = (this._.typename == 'object');
+      if (!thisIsObject && parent!=null){
+        get._.value = parent._.value[this._.name];
+      }
+
+      zs4.copy.schemabasics(this,get);
+
+      return get;
+    }).bind(this);
+    this._.get = (function(args,parent){
+      //zs4.console.log(this.path+'.get()');
+      var get = this._.getInitialize(args,parent);
+      if (get==null)return null;
+
+      this._.getProperties(args,get);
+
+      return get;
+    }).bind(this);
+
+    this._.got = (function(o,p){
+      zs4.console.log(this);
+      if (!zs4.is.type(o))return;
+
+      zs4.console.log('got \''+this._.path+'\'');
+
+      if ( this._.name != o._.name
+        || this._.typename != o._.typename
+      ){
+        console.log('missmatching type or name');
+        return;
+      }
+
+      zs4.copy.schemabasics(o,this);
+
+      if (this._.typename=='object'){
+        for (var n in o){
+          if (!zs4.is.type(o[n]))continue;
+
+          if (!this.hasOwnProperty(n)||!zs4.is.type(this[n])){
+            zs4.type.property(this,new zs4.type[o[n]._.typename](o[n]._))
+          }
+
+          this[n]._.got(o[n],this);
+        }
         for (var n in this){
-          if (!zs4.is.type(this[n])||this[n].noget)continue;
-          var ret;
-          var ret = this[n].get(args,this);
-          if (ret != null) parent[n] = ret;
+          if (!zs4.is.type(this[n]))continue;
+          if (zs4.is.type(o[n]))continue;
+
+          this._.value[n]==null;
+          this[n]==null;
         }
-      };
-      this.getInitialize = function(args,parent){
-        if (this.noget || !args.request.authorize(this,this.authGet)){return null;}
-
-        var get = new Object();
-
-        get.name = this.name;
-        get.typename = this.typename;
-        var thisIsObject = (this.typename == 'object');
-        if (!thisIsObject && parent!=null){
-          get.value = parent.value[this.name];
-        }
-
-        zs4.copy.schemabasics(this,get);
-
-        return get;
-      };
-      this.get = function(args,parent){
-        //zs4.console.log(this.path+'.get()');
-        var get = this.getInitialize(args,parent);
-        if (get==null)return null;
-
-        this.getProperties(args,get);
-
-        return get;
-      };
-    }
-    else{
-      this.got = function(o,p){
-        if (!zs4.is.type(o))return;
-
-        //zs4.console.log('got \''+this.path+'\'');
-
-        if ( this.name != o.name
-          || this.typename != o.typename
-        ){
-          console.log('missmatching type or name');
-          return;
-        }
-
-        zs4.copy.schemabasics(o,this);
-
-        if (this.typename=='object'){
-          for (var n in o){
-            if (!zs4.is.type(o[n]))continue;
-
-            if (!this.hasOwnProperty(n)||!zs4.is.type(this[n])){
-              zs4.type.property(this,new zs4.type[o[n].typename](o[n]))
-            }
-
-            this[n].got(o[n],this);
-          }
-          for (var n in this){
-            if (!zs4.is.type(this[n]))continue;
-            if (zs4.is.type(o[n]))continue;
-
-            this.value[n]==null;
-            this[n]==null;
-          }
-        }
-        else if (p!=null){
-          p.value[this.name]=o.value;
-        }
-      };
-    }
-    // utilities
+      }
+      else if (p!=null){
+        p._.value[this._.name]=o._.value;
+      }
+    }).bind(this);
 
   },
 
@@ -596,310 +547,282 @@ zs4.type = {
       console.log(ns);
       return null;
     }
-    schema[ns.name] = ns;
+    schema[ns._.name] = ns;
 
-    if (ns.type == Object){
+    if (ns._.type == Object){
         //debug += ' Object';
-        schema.value[ns.name] = ns.value;
+        schema._.value[ns._.name] = ns._.value;
     }
     else {
-      schema.value[ns.name] = new ns.type();
-      schema.value[ns.name] = ns.default;
-      var d = schema.value[ns.name];
+      schema._.value[ns._.name] = new ns._.type();
+      schema._.value[ns._.name] = ns._.default;
+      //var d = schema._.value[ns._.name];
     }
 
-    if (schema.path.length>0)ns.path = schema.path +'.'+ns.name;
-    else ns.path = ns.name;
-  },
-
-  validate:function(input){
-    if (!zs4.is.object(input))return false;
-    var ret = true;
-
-    for (var n in this){
-      if (this[n].required&&!input.hasOwnProperty(n))return false;
-
-      if (this[n].type == Object){
-        if (!this[n].validate(input[n]))return false;
-        continue;
-      }
-
-      get[n] = this.value[n];
-    }
-
-    return true;
-  },
-  store:function(){
-    //zs4.console.log(this.path+'.store()');
-    if (this.nostore){return null;}
-    var store = new Object();
-
-    for (var n in this){
-
-      if (!zs4.is.type(this[n])||this[n].nostore==true)continue;
-
-      //zs4.console.log('storing '+n);
-
-      if (this[n].type == Object){
-        var ret = zs4.type.store.call(this[n])
-        if (ret != null) store[n] = ret;
-        continue;
-      }
-
-      store[n] = this.value[n];
-    }
-
-    return store;
-  },
-  load:function(input){
-    if (!zs4.is.object(input))return;
-    for (var n in this){
-      if (!zs4.is.type(this[n]))continue;
-
-      if (this[n].type == Object){
-         if (zs4.is.object(input[n])) zs4.type.load.call(this[n],input[n]);
-      }else{
-        this[n].load(this.value,input[n]);
-      }
-    }
+    if (schema._.path.length>0)ns._.path = schema._.path +'.'+ns._.name;
+    else ns._.path = ns._.name;
   },
 
   string:function(input){
     zs4.type.unknown.call(this,input);
-    this.type = String;
-    this.typename = 'string';
-    this.default = new String();
-    if (zs4.is.boolean(input.trim))this.trim = input.trim; else this.trim = false;
-    if (zs4.is.string(input.default))this.default = input.default;
+    this._.type = String;
+    this._.typename = 'string';
+    this._.default = new String();
+    if (zs4.is.boolean(input.trim))this._.trim = input.trim; else this._.trim = false;
+    if (zs4.is.string(input.default))this._.default = input.default;
     if (zs4.is.array(input.enum)){
-      this.enum = input.enum;
+      this._.enum = input.enum;
     }
     else{
-      if (zs4.is.number(input.minlength))this.minlength = parseInt(input.minlength);
-      if (zs4.is.number(input.maxlength))this.maxlength = parseInt(input.maxlength);
-      if (!zs4.is.number(this.minlength))this.minlength = zs4.const.STRING.MINLENGTH;
-      if (!zs4.is.number(this.maxlength))this.maxlength = zs4.const.STRING.MAXLENGTH;
+      if (zs4.is.number(input.minlength))this._.minlength = parseInt(input.minlength);
+      if (zs4.is.number(input.maxlength))this._.maxlength = parseInt(input.maxlength);
+      if (!zs4.is.number(this.minlength))this._.minlength = zs4.const.STRING.MINLENGTH;
+      if (!zs4.is.number(this.maxlength))this._.maxlength = zs4.const.STRING.MAXLENGTH;
     }
 
-    this.zs4check = function(input){
+    this._.zs4check = (function(input){
       if (!zs4.is.string(input))return false;
-      if (zs4.is.number(this.minlength)&&input.length<this.minlength)return false;
-      if (zs4.is.number(this.maxlength)&&input.length>this.maxlength)return false;
-      if (zs4.is.array(this.enum)&&this.enum.length>0&&!zs4.string.array.is.element(this.enum,input))return false;
+      if (zs4.is.number(this._.minlength)&&input.length<this._.minlength)return false;
+      if (zs4.is.number(this._.maxlength)&&input.length>this._.maxlength)return false;
+      if (zs4.is.array(this._.enum)&&this._.enum.length>0&&!zs4.string.array.is.element(this._.enum,input))return false;
       return true;
-    };
+    }).bind(this);
 
-    if (zs4.is.node()){
-      this.load = function(parent,input){
-        //zs4.console.log(this.path+'.load(\''+input+'\')');
-        if (input==null||!zs4.is.string(input)){
-          if (!this.required){
-            return null;
-          }
-          else{
-            if (zs4.is.string(this.default))parent[this.name]=this.default;
-            else parent[this.name]=new String();
-          }
-          return this;
-        }
-        parent[this.name]=input;
-      };
-
-      this.transform = function(args,cb){
-        //zs4.console.log(this.path+'.transform(\''+input+'\')');
-        this.shouldBeSaved(args);
-
-        if (zs4.is.string(args.input)){
-          if (this.trim)args.parent[this.name]=args.input.trim();
-          else args.parent[this.name]=args.input;
-          cb(args.input);
+    this._.load = (function(parent,input){
+      //zs4.console.log(this.path+'.load(\''+input+'\')');
+      if (input==null||!zs4.is.string(input)){
+        if (!this._.required){
+          return null;
         }
         else{
-          cb(new zs4.error({text:'bad input',data:{path:this.path,input:args.input}}));
+          if (zs4.is.string(this._.default))parent[this._.name]=this._.default;
+          else parent[this._.name]=new String();
         }
-      };
+        return this;
+      }
+      parent[this._.name]=input;
+    }).bind(this);
 
-    }
+    this._.transform = (function(args,cb){
+      //zs4.console.log(this.path+'.transform(\''+input+'\')');
+      this._.shouldBeSaved(args);
+
+      if (zs4.is.string(args.input)){
+        if (this.trim)args.parent[this._.name]=args.input.trim();
+        else args.parent[this._.name]=args.input;
+        cb(args.input);
+      }
+      else{
+        cb(new zs4.error({text:'bad input',data:{path:this.path,input:args.input}}));
+      }
+    }).bind(this);
+
   },
   email:function(input){
     zs4.type.string.call(this,input);
-    this.typename = 'email';
-    this.minlength = zs4.const.EMAIL.MINLENGTH;
-    this.maxlength = zs4.const.EMAIL.MAXLENGTH;
-    if (zs4.is.node()){
-      this.transform = function(args,cb){
-        //zs4.console.log(this.path+'.transform(\''+input+'\')');
-        this.shouldBeSaved(args);
+    this._.typename = 'email';
+    this._.minlength = zs4.const.EMAIL.MINLENGTH;
+    this._.maxlength = zs4.const.EMAIL.MAXLENGTH;
 
-        if (zs4.is.email(args.input)){
-          args.parent[this.name]=args.input.trim();
-          cb(args.parent[this.name]);
-        }
-        else{
-          cb(new zs4.error({text:'input not an email address',data:{path:this.path,input:args.input}}));
-        }
-      };
-    }
+    this._.transform = (function(args,cb){
+      //zs4.console.log(this.path+'.transform(\''+input+'\')');
+      this._.shouldBeSaved(args);
+
+      if (zs4.is.email(args.input)){
+        args.parent[this._.name]=args.input.trim();
+        cb(args.parent[this._.name]);
+      }
+      else{
+        cb(new zs4.error({text:'input not an email address',data:{path:this.path,input:args.input}}));
+      }
+    }).bind(this);
   },
   integer:function(input){
     zs4.type.unknown.call(this,input);
-    this.type = Number;
-    this.typename = 'integer';
-    this.default = new Number();
-    if (zs4.is.number(input.default))this.default = parseInt(input.default);
+    this._.type = Number;
+    this._.typename = 'integer';
+    this._.default = new Number();
+    if (zs4.is.number(input.default))this._.default = parseInt(input.default);
     if (zs4.is.array(input.enum)){
-      this.enum = input.enum;
+      this._.enum = input.enum;
     }
     else{
-      if (zs4.is.number(input.min))this.min = parseInt(input.min);
-      if (zs4.is.number(input.max))this.max = parseInt(input.max);
+      if (zs4.is.number(input.min))this._.min = parseInt(input.min);
+      if (zs4.is.number(input.max))this._.max = parseInt(input.max);
     }
 
-    this.zs4check = function(input){
+    this._.zs4check = (function(input){
       if (!zs4.is.number(input))return false;
-      if (zs4.is.number(this.min)&&input<this.min)return false;
-      if (zs4.is.number(this.max)&&input>this.max)return false;
-      if (zs4.is.array(this.enum)&&this.enum.length>0){
-        for (var i = 0 ; i < this.enum.length ; i++){if (this.enum[i]==input)return true;}
-        return true;
+      if (zs4.is.number(this._.min)&&input<this._.min)return false;
+      if (zs4.is.number(this._.max)&&input>this._.max)return false;
+      if (zs4.is.array(this._.enum)&&this._.enum.length>0){
+        for (var i = 0 ; i < this._.enum.length ; i++){if (this._.enum[i]==input)return true;}
+        return false;
       }
       return true;
-    };
+    }).bind(this);
 
-    if (zs4.is.node()){
-      this.load = function(parent,input){
-        //zs4.console.log(this.path+'.load(\''+input+'\')');
+    this._.load = (function(parent,input){
+      //zs4.console.log(this.path+'.load(\''+input+'\')');
 
-        if (input==null || !zs4.is.number(input)){
-          if (!this.required){
-            return null;
-          }
-          else{
-            if (zs4.is.number(this.default))parent[this.name]=parseInt(this.default);
-            else parent[this.name]=new Number(0);
-          }
+      if (input==null || !zs4.is.number(input)){
+        if (!this._.required){
+          return null;
         }
-        parent[this.name]=parseInt(input);
-      };
-
-      this.transform = function(args,cb){
-        //zs4.console.log(this.path+'.transform(\''+input+'\')');
-        //zs4.console.log(args);
-        this.shouldBeSaved(args);
-
-        if (zs4.is.number(args.input)){
-          args.parent[this.name]=parseInt(args.input);
+        else{
+          if (zs4.is.number(this._.default))parent[this._.name]=parseInt(this._.default);
+          else parent[this._.name]=new Number(0);
         }
-        else if (zs4.is.string(args.input)){
-          try{
-            args.parent[this.name]=parseInt(args.input);
-          }
-          catch(err){}
-          //parent[this.name]=parseInt(input);
-        }
-        else if (zs4.is.boolean(args.input)){
-          if (args.input) args.parent[this.name]=1;
-          else args.parent[this.name]=0;
-        }
-        if (cb)cb(args.parent[this.name]);
-      };
+      }
+      parent[this._.name]=parseInt(input);
+    }).bind(this);
 
-    }
+    this._.transform = (function(args,cb){
+      //zs4.console.log(this.path+'.transform(\''+input+'\')');
+      //zs4.console.log(args);
+      this._.shouldBeSaved(args);
+
+      if (zs4.is.number(args.input)){
+        args.parent[this._.name]=parseInt(args.input);
+      }
+      else if (zs4.is.string(args.input)){
+        try{
+          args.parent[this._.name]=parseInt(args.input);
+        }
+        catch(err){}
+        //parent[this.name]=parseInt(input);
+      }
+      else if (zs4.is.boolean(args.input)){
+        if (args.input) args.parent[this._.name]=1;
+        else args.parent[this._.name]=0;
+      }
+      if (cb)cb(args.parent[this._.name]);
+    }).bind(this);
+
   },
   boolean:function(input){
     zs4.type.unknown.call(this,input);
-    this.type = Boolean;
-    this.typename = 'boolean';
-    this.default = new Boolean();
-    if (zs4.is.boolean(input.default))this.default = input.default; else this.default = false;
+    this._.type = Boolean;
+    this._.typename = 'boolean';
+    this._.default = new Boolean();
+    if (zs4.is.boolean(input.default))this._.default = input.default; else this._.default = false;
 
-    this.zs4check = function(input){
+    this._.zs4check = (function(input){
       if (!zs4.is.boolean(input))return false;
       return true;
-    };
+    }).bind(this);
 
-    if (zs4.is.node()){
-
-
-      this.load = function(parent,input){
-        if (input==null||!zs4.is.boolean(input)){
-          if (!this.required){
-            return null;
-          }
-          else{
-            if (zs4.is.boolean(this.default))parent[this.name]=this.default;
-            else parent[this.name]=new Boolean(false);
-            return this;
-          }
-        }
-        parent[this.name]=input;
-      }
-
-      this.transform = function(args,cb){
-        //zs4.console.log(this.path+'.transform()');
-        //zs4.console.log(args);
-        this.shouldBeSaved(args);
-
-        if (zs4.is.boolean(args.input)){
-          args.parent[this.name]=args.input;
-          cb(args.input);
-        }
-        else if (zs4.is.string(args.input)){
-          if (args.input=='true'){
-            args.parent[this.name]=true;
-          }
-          if (args.input=='false') {
-            args.parent[this.name]=false;
-          }
-          cb(args.parent[this.name]);
-
+    this._.load = (function(parent,input){
+      if (input==null||!zs4.is.boolean(input)){
+        if (!this._.required){
+          return null;
         }
         else{
-          cb(new zs4.error({text:'bad input',data:{path:this.path,input:args.input}}));
+          if (zs4.is.boolean(this._.default))parent[this._.name]=this._.default;
+          else parent[this._.name]=new Boolean(false);
+          return this;
         }
-      };
+      }
+      parent[this._.name]=input;
+    }).bind(this);
 
-    }
+    this._.transform = (function(args,cb){
+      //zs4.console.log(this.path+'.transform()');
+      //zs4.console.log(args);
+      this._.shouldBeSaved(args);
+
+      if (zs4.is.boolean(args.input)){
+        args.parent[this._.name]=args.input;
+        cb(args.input);
+      }
+      else if (zs4.is.string(args.input)){
+        if (args.input=='true'){
+          args.parent[this._.name]=true;
+        }
+        if (args.input=='false') {
+          args.parent[this._.name]=false;
+        }
+        cb(args.parent[this._.name]);
+
+      }
+      else{
+        cb(new zs4.error({text:'bad input',data:{path:this.path,input:args.input}}));
+      }
+    }).bind(this);
+
   },
   object:function(input){
     zs4.type.unknown.call(this,input);
 
-    this.type = Object;
-    this.typename = 'object';
-    this.value = new Object();
-    this.path = '';
+    this._.type = Object;
+    this._.typename = 'object';
+    this._.value = new Object();
+    this._.path = '';
 
-    if (zs4.is.node()){
-      this.transform = function(args,cb){
-        //zs4.console.log('transforming '+this.path)
+    this._.load = (function(input){
+      if (!zs4.is.object(input))return;
+      for (var n in this){
+        if (!zs4.is.type(this[n]))continue;
 
-        if (!zs4.is.object(args.input)){
-          if (cb)cb(new zs4.error({text:'input not an object.'}));
-          return;
+        if (this[n]._.type == Object){
+           if (zs4.is.object(input[n])) this[n]._.load(input[n]);
+        }else{
+          this[n]._.load(this._.value,input[n]);
+        }
+      }
+    }).bind(this);
+    this._.store = (function(){
+      //zs4.console.log(this.path+'.store()');
+      if (this._.nostore){return null;}
+      var store = new Object();
+
+      for (var n in this){
+
+        if (!zs4.is.type(this[n])||this[n]._.nostore==true)continue;
+
+        //zs4.console.log('storing '+n);
+
+        if (this[n]._.type == Object){
+          var ret = this[n]._.store();
+          if (ret != null) store[n] = ret;
+          continue;
         }
 
-        var parallel = new zs4.processor.parallel();
+        store[n] = this._.value[n];
+      }
 
-        for (var n in this){
-          if (!zs4.is.type(this[n])||args.input[n]==null)continue;
+      return store;
+    }).bind(this);
 
-          if (this[n].type == Object){
-            parallel.call(this[n],this[n].transform,new zs4.request({request:args.request,input:args.input[n],}));
-          }else{
-            parallel.call(this[n],this[n].transform,new zs4.request({request:args.request,input:args.input[n],parent:this.value,}));
-          }
+    this._.transform = (function(args,cb){
+      //zs4.console.log('transforming '+this.path)
+
+      if (!zs4.is.object(args.input)){
+        if (cb)cb(new zs4.error({text:'input not an object.'}));
+        return;
+      }
+
+      var parallel = new zs4.processor.parallel();
+
+      for (var n in this){
+        if (!zs4.is.type(this[n])||args.input[n]==null)continue;
+
+        if (this[n]._.type == Object){
+          parallel.call(this[n],this[n]._.transform,new zs4.request({request:args.request,input:args.input[n],}));
+        }else{
+          parallel.call(this[n],this[n]._.transform,new zs4.request({request:args.request,input:args.input[n],parent:this._.value,}));
         }
+      }
 
-        var THIS = this;
-        parallel.run(function(){
-          //zs4.console.log(THIS.onchange);
-          if (zs4.is.function(THIS.onchange)){THIS.onchange.call(THIS,args,cb);}
-          else {cb();}
-        });
-        //if (this.type == Object)zs4.console.log(this.path+'.transform() done');
+      var THIS = this;
+      parallel.run(function(){
+        //zs4.console.log(THIS.onchange);
+        if (zs4.is.function(THIS._.onchange)){THIS._.onchange.call(THIS,args,cb);}
+        else {cb();}
+      });
+      //if (this.type == Object)zs4.console.log(this.path+'.transform() done');
 
-      };
-    }
+    }).bind(this);
   },
 
 };
@@ -921,7 +844,7 @@ zs4.request = function(o){
   this.request.needsSaving = false;
 
   this.request.userIsRoot = function(){
-    if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin.value.email==this.email)return true;
+    if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin._.value.email==this.email)return true;
     if (this.node) return true;
     return false;
   };
@@ -940,9 +863,9 @@ zs4.request = function(o){
   this.process = function(cb){
     var THIS = this;
     //zs4.console.log(THIS.request.userIsRoot());
-    zs4.THIS.transform(THIS,function(){
+    zs4.THIS._.transform(THIS,function(){
       //zs4.console.log(THIS);
-      var get = zs4.THIS.get(THIS);
+      var get = zs4.THIS._.get(THIS);
       if (get==null)get = new Object();
       cb(get);
       if (THIS.request.needsSaving){
@@ -952,9 +875,28 @@ zs4.request = function(o){
   };
 };
 
+zs4.onload = function(){
+  //zs4.console.log('inside zs4.onload()');
+  //zs4.console.log(this);
+  for (var host in zs4.host){
+    if (!zs4.is.function(zs4.is[host])||!zs4.is[host]())continue;
+    //zs4.console.log('inside zs4.onload('+ host +')');
+    //zs4.console.log(zs4.host[host]);
 
-if (!zs4.is.node()){
-zs4.io = {
+
+    for (var name in zs4.host[host]){
+      //zs4.console.log(zs4.host[host][name]);
+      if (zs4.is.function(zs4.host[host][name])){
+        zs4[name] = zs4.host[host][name].bind(zs4);
+      }
+      else if (zs4.is.object(zs4.host[host][name])){
+        zs4[name] = zs4.host[host][name];
+      }
+    }
+  }
+};
+
+zs4.host.window.io = {
   ajax:function(u,cb){
     this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
   },
@@ -975,20 +917,18 @@ zs4.io = {
   },
 };
 
-  zs4.post = function(o,cb){
+zs4.host.window.post = function(o,cb){
 
-  	zs4.io.post(o,function(ret){
-  		zs4.THIS.got(ret);
-  		if (cb)cb(ret);
-  		zs4.console.log(zs4.THIS);
-  	});
-  };
-}
-
-
+	zs4.host.window.io.post(o,function(ret){
+		zs4.THIS._.got(ret);
+		if (cb)cb(ret);
+		zs4.console.log(zs4.THIS);
+	});
+};
 
 //zs4.console.log('___DEFINE___');
 zs4.THIS = new zs4.type.object({name:'this',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
 zs4.type.property(zs4.THIS,new zs4.type.object({name:'zs4',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],}));
 
+zs4.onload();
 //zs4.console.log(zs4.THIS);
