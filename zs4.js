@@ -37,7 +37,7 @@ zs4.load(function(){
       zs4.console.log('req.request.needsSaving');
       zs4.save(function(){
         zs4.console.log('saved');
-        console.log(zs4.json.stringify(zs4.THIS.store()));
+        console.log(zs4.json.stringify(zs4.THIS._.store()));
       });
     }
     else{

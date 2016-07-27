@@ -502,10 +502,10 @@ zs4.type = {
     }).bind(this);
 
     this._.got = (function(o,p){
-      zs4.console.log(this);
+      //zs4.console.log(this);
       if (!zs4.is.type(o))return;
 
-      zs4.console.log('got \''+this._.path+'\'');
+      //zs4.console.log('got \''+this._.path+'\'');
 
       if ( this._.name != o._.name
         || this._.typename != o._.typename
