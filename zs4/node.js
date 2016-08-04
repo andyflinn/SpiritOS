@@ -37,8 +37,40 @@ zs4.define = function(){
 
   require('./admin').schema(zs4.THIS.zs4);
   require('./password').schema(zs4.THIS.zs4);
+  require('./rsa').schema(zs4.THIS.zs4);
   //require('./mongobase').schema(zs4.THIS.zs4);
   require('./express').schema(zs4.THIS.zs4);
   require('./email').schema(zs4.THIS.zs4);
+
+  zs4.THIS._.transform = (function(args,cb){
+    //zs4.console.log('transforming '+this.path)
+
+    if (!zs4.is.object(args.input)){
+      if (cb)cb(new zs4.error({text:'input not an object.'}));
+      return;
+    }
+
+    var parallel = new zs4.processor.parallel();
+
+    for (var n in this){
+      if (!zs4.is.type(this[n])||args.input[n]==null)continue;
+
+      if (this[n]._.type == Object){
+        parallel.call(this[n],this[n]._.transform,new zs4.request({request:args.request,input:args.input[n],}));
+      }else{
+        parallel.call(this[n],this[n]._.transform,new zs4.request({request:args.request,input:args.input[n],parent:this._.value,}));
+      }
+    }
+
+    var THIS = this;
+    parallel.run(function(){
+      //zs4.console.log(THIS.onchange);
+      if (zs4.is.function(THIS._.onchange)){THIS._.onchange.call(THIS,args,cb);}
+      else {cb();}
+    });
+    //if (this.type == Object)zs4.console.log(this.path+'.transform() done');
+
+  }).bind(zs4.THIS);
+
 
 }

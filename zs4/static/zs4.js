@@ -328,6 +328,7 @@ zs4.copy = {
       if (zs4.is.number(from._.maxlength))to._.maxlength=from._.maxlength;
       if (zs4.is.array(from._.enum))to._.enum = from._.enum;
       if (zs4.is.boolean(from._.trim))to._.trim = from._.trim;
+      if (zs4.is.boolean(from._.noset))to._.noset=from._.noset;
     },
 };
 
@@ -357,7 +358,7 @@ zs4.path = {
       ret = ret[a[i]];
     }
     return ret;
-  }
+  },
 };
 
 zs4.error = function(o){
@@ -446,9 +447,14 @@ zs4.type = {
     this._.path = '';
     this._.name = input.name;
     if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
-    if (zs4.is.function(input.api))this._.api = input.api;
+    //if (zs4.is.function(input.api))this._.api = input.api;
+
     if (zs4.is.boolean(input.nostore))this._.nostore = input.nostore;
     if (zs4.is.boolean(input.noget))this._.noget = input.noget;
+    if (zs4.is.boolean(input.noset))this._.noset = input.noset;
+
+    if (zs4.is.boolean(input.array))this._.array = input.array;
+    if (zs4.is.number(input.arraymaxlength))this._.arraymaxlength = parseInt(input.arraymaxlength);
 
     // support mongoose
     if (zs4.is.boolean(input.index) && input.index == true) this._.index = true;
@@ -470,7 +476,6 @@ zs4.type = {
     this._.getProperties = (function(args,parent){
       for (var n in this){
         if (!zs4.is.type(this[n])||this[n]._.noget)continue;
-        var ret;
         var ret = this[n]._.get(args,this);
         if (ret != null) parent[n] = ret;
       }
@@ -536,6 +541,15 @@ zs4.type = {
       }
       else if (p!=null){
         p._.value[this._.name]=o._.value;
+        console.log(o._.value);
+        console.log(o._.html);
+        if (zs4.is.function(o._.response)){
+          console.log('response() function found for '+o._.path);
+          o._.response(o._.value);
+        }
+      }
+      else {
+        zs4.console.log('value without parent.')
       }
     }).bind(this);
 
@@ -617,6 +631,20 @@ zs4.type = {
       }
     }).bind(this);
 
+  },
+  text:function(input){
+    if (zs4.is.object(input)){
+      input.maxlength = zs4.const.TEXT.MAXLENGTH;
+    }
+    else{
+      input = {maxlength:zs4.const.TEXT.MAXLENGTH};
+    }
+    zs4.type.string.call(this,input);
+    this._.typename = 'text';
+  },
+  password:function(input){
+    zs4.type.string.call(this,input);
+    this._.typename = 'password';
   },
   email:function(input){
     zs4.type.string.call(this,input);
@@ -700,6 +728,69 @@ zs4.type = {
     }).bind(this);
 
   },
+  number:function(input){
+    zs4.type.unknown.call(this,input);
+    this._.type = Number;
+    this._.typename = 'number';
+    this._.default = new Number();
+    if (zs4.is.number(input.default))this._.default = input.default;
+    if (zs4.is.array(input.enum)){
+      this._.enum = input.enum;
+    }
+    else{
+      if (zs4.is.number(input.min))this._.min = input.min;
+      if (zs4.is.number(input.max))this._.max = input.max;
+    }
+
+    this._.zs4check = (function(input){
+      if (!zs4.is.number(input))return false;
+      if (zs4.is.number(this._.min)&&input<this._.min)return false;
+      if (zs4.is.number(this._.max)&&input>this._.max)return false;
+      if (zs4.is.array(this._.enum)&&this._.enum.length>0){
+        for (var i = 0 ; i < this._.enum.length ; i++){if (this._.enum[i]==input)return true;}
+        return false;
+      }
+      return true;
+    }).bind(this);
+
+    this._.load = (function(parent,input){
+      //zs4.console.log(this.path+'.load(\''+input+'\')');
+
+      if (input==null || !zs4.is.number(input)){
+        if (!this._.required){
+          return null;
+        }
+        else{
+          if (zs4.is.number(this._.default))parent[this._.name]=this._.default;
+          else parent[this._.name]=new Number(0);
+        }
+      }
+      parent[this._.name]=parseFloat(input);
+    }).bind(this);
+
+    this._.transform = (function(args,cb){
+      //zs4.console.log(this.path+'.transform(\''+input+'\')');
+      //zs4.console.log(args);
+      this._.shouldBeSaved(args);
+
+      if (zs4.is.number(args.input)){
+        args.parent[this._.name]=args.input;
+      }
+      else if (zs4.is.string(args.input)){
+        try{
+          args.parent[this._.name]=parseFloat(args.input);
+        }
+        catch(err){}
+        //parent[this.name]=parseInt(input);
+      }
+      else if (zs4.is.boolean(args.input)){
+        if (args.input) args.parent[this._.name]=1;
+        else args.parent[this._.name]=0;
+      }
+      if (cb)cb(args.parent[this._.name]);
+    }).bind(this);
+
+  },
   boolean:function(input){
     zs4.type.unknown.call(this,input);
     this._.type = Boolean;
@@ -760,6 +851,7 @@ zs4.type = {
     this._.path = '';
 
     this._.load = (function(input){
+      //zs4.console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
@@ -875,60 +967,49 @@ zs4.request = function(o){
   };
 };
 
-zs4.onload = function(){
-  //zs4.console.log('inside zs4.onload()');
-  //zs4.console.log(this);
-  for (var host in zs4.host){
-    if (!zs4.is.function(zs4.is[host])||!zs4.is[host]())continue;
-    //zs4.console.log('inside zs4.onload('+ host +')');
-    //zs4.console.log(zs4.host[host]);
-
-
-    for (var name in zs4.host[host]){
-      //zs4.console.log(zs4.host[host][name]);
-      if (zs4.is.function(zs4.host[host][name])){
-        zs4[name] = zs4.host[host][name].bind(zs4);
-      }
-      else if (zs4.is.object(zs4.host[host][name])){
-        zs4[name] = zs4.host[host][name];
-      }
-    }
-  }
-};
-
-zs4.host.window.io = {
-  ajax:function(u,cb){
-    this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
-  },
-  get:function(u,cb){
-    this.ajax(u,function(d){if(cb!=null)cb(d);});
-    return ('this.ajax(\''+u+'\',cb)');
-  },
-  post:function(o,cb){
-    this.ajax('/',function(d){
-      if(cb!=null){
-        cb(JSON.parse(d));
-      }else{
-        zs4.console.log(d);
-      }
-    },JSON.stringify(o)
-    );
-    //return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
-  },
-};
-
-zs4.host.window.post = function(o,cb){
-
-	zs4.host.window.io.post(o,function(ret){
-		zs4.THIS._.got(ret);
-		if (cb)cb(ret);
-		zs4.console.log(zs4.THIS);
-	});
-};
-
-//zs4.console.log('___DEFINE___');
 zs4.THIS = new zs4.type.object({name:'this',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
 zs4.type.property(zs4.THIS,new zs4.type.object({name:'zs4',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],}));
 
-zs4.onload();
-//zs4.console.log(zs4.THIS);
+if (zs4.is.window()){
+
+  zs4.io = {
+    ajax:function(u,cb){
+      this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
+    },
+    get:function(u,cb){
+      this.ajax(u,function(d){if(cb!=null)cb(d);});
+      return ('this.ajax(\''+u+'\',cb)');
+    },
+    post:function(o,cb){
+      this.ajax('/',function(d){
+        if(cb!=null){
+          cb(JSON.parse(d));
+        }else{
+          //zs4.console.log(d);
+        }
+      },JSON.stringify(o)
+      );
+      //return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
+    },
+  };
+
+  zs4.post = function(o,cb){
+
+  	zs4.io.post(o,function(ret){
+  		zs4.THIS._.got(ret);
+  		if (cb)cb(ret);
+      else console.log('no callback specified for zs4.post()');
+  		//zs4.console.log(zs4.THIS);
+  	});
+  };
+
+  zs4.admin = function(parentElement){
+    zs4.post({},function(){
+      var js=document.createElement('script');
+      js.setAttribute("type","text/javascript");
+      js.setAttribute("src", '/admin.js');
+      document.head.appendChild(js);
+    });
+
+  };
+}

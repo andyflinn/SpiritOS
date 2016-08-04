@@ -45,8 +45,8 @@ password.schema = function(parent){
   zs4.type.property(parent.password,new zs4.type.integer({name:'saltlength',required:true,noget:true,min:32,max:256,default:32,}));
   zs4.type.property(parent.password,new zs4.type.integer({name:'iterations',required:true,noget:true,min:1,max:128,default:1,}));
 
-  zs4.type.property(parent.password,new zs4.type.string({name:'set',required:true,nostore:true,}));
-  zs4.type.property(parent.password,new zs4.type.string({name:'vfy',required:true,nostore:true,authGet:[zs4.const.EMAIL.PUBLIC,],authSet:[zs4.const.EMAIL.PUBLIC,],}));
+  zs4.type.property(parent.password,new zs4.type.password({name:'set',required:true,nostore:true,}));
+  zs4.type.property(parent.password,new zs4.type.password({name:'vfy',required:true,nostore:true,authGet:[zs4.const.EMAIL.PUBLIC,],authSet:[zs4.const.EMAIL.PUBLIC,],}));
 
   parent.password.verify = function(pw){
     //zs4.console.log('verifying');
