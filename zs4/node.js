@@ -38,7 +38,7 @@ zs4.define = function(){
   require('./admin').schema(zs4.THIS.zs4);
   require('./password').schema(zs4.THIS.zs4);
   require('./rsa').schema(zs4.THIS.zs4);
-  //require('./response').schema(zs4.THIS.zs4);
+  require('./token').schema(zs4.THIS.zs4);
   //require('./mongobase').schema(zs4.THIS.zs4);
   require('./express').schema(zs4.THIS.zs4);
   require('./email').schema(zs4.THIS.zs4);

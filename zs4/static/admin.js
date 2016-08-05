@@ -3,15 +3,15 @@
 zs4.ui = new Object();
 
 zs4.ui.type = {
-	unknown:function(po,o,typename){
+	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
 		if (o._.input==null)o._.input = (function(){return null;}).bind(o);
 		if (o._.response==null)o._.response = (function(r){zs4.console.log(r);}).bind(o);
 
 		if (o._.cleanup==null)o._.cleanup = (function(){
-			zs4.console.log(this._.path + '._.cleanup()');
-			zs4.console.log(o._.html.parentElement);
-			zs4.console.log(o._.html.e);
+			//zs4.console.log(this._.path + '._.cleanup()');
+			//zs4.console.log(o._.html.parentElement);
+			//zs4.console.log(o._.html.e);
 			if (o._.html.parentElement != null && o._.html.e != null){
 				o._.html.parentElement.removeChild(o._.html.e);
 				o._.html.parentElement = null;
@@ -33,7 +33,7 @@ zs4.ui.type = {
 				po.appendChild(o._.html.e);
 				o._.html.parentElement = po;
 
-				//zs4.ui.rootElementParent = po;
+				if (zs4.ui.rootElementParent==null)zs4.ui.rootElementParent = po;
 				zs4.ui.rootObject = o;
 			}
 
@@ -45,7 +45,7 @@ zs4.ui.type = {
 		if (o._.html.name==null){
 			o._.html.e.style.display = 'block';
 
-			o._.html.name = document.createElement('zs4-password-name');
+			o._.html.name = document.createElement('zs4-value-name');
 			o._.html.e.appendChild(o._.html.name);
 			o._.html.name.textContent = o._.name;
 
@@ -62,6 +62,31 @@ zs4.ui.type = {
 		}
 		o._.html.input.value = '';
 	},
+	email:function(po,o){
+		this.unknown(po,o);
+		//console.log('checking ui for object '+o._.path);
+		if (o._.html.name==null){
+			o._.html.e.style.display = 'block';
+
+			o._.html.name = document.createElement('zs4-value-name');
+			o._.html.e.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+
+			o._.html.input = document.createElement('input');
+			o._.html.e.appendChild(o._.html.input);
+			o._.html.input.setAttribute('type', 'text');
+			o._.html.input.autocomplete = 'on';
+
+			o._.input = (function(){
+				return this._.html.input.value;
+			}).bind(o);
+			o._.response = (function(r){
+				if (zs4.is.string(r))this._.html.input.value = r;
+			}).bind(o);
+		}
+		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
+		o._.html.input.value = po._.value[o._.name];
+	},
 	string:function(po,o){
 		this.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
@@ -71,12 +96,11 @@ zs4.ui.type = {
 			o._.html.name = document.createElement('zs4-value-name');
 			o._.html.e.appendChild(o._.html.name);
 			o._.html.name.textContent = o._.name;
-			o._.html.name.style.display = 'block';
 
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
-			//o._.html.input.style.display = 'block';
-			//o._.html.input.setAttribute("type", "password");
+			o._.html.input.setAttribute('type', 'text');
+			o._.html.input.autocomplete = 'on';
 
 			o._.input = (function(){
 				if (o._.noset)return null;
@@ -99,12 +123,79 @@ zs4.ui.type = {
 
 			o._.html.input = document.createElement('textarea');
 			o._.html.e.appendChild(o._.html.input);
-			//o._.html.input.style.display = 'block';
-			//o._.html.input.setAttribute("type", "password");
 
 			o._.input = (function(){
 				if (o._.noset)return null;
 				return this._.html.input.value;
+			}).bind(o);
+		}
+		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
+		o._.html.input.value = po._.value[o._.name];
+	},
+	integer:function(po,o){
+		this.unknown(po,o);
+		//console.log('checking ui for object '+o._.path);
+		if (o._.html.name==null){
+			o._.html.e.style.display = 'block';
+
+			o._.html.name = document.createElement('zs4-value-name');
+			o._.html.e.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+
+			o._.html.input = document.createElement('input');
+			o._.html.e.appendChild(o._.html.input);
+			o._.html.input.setAttribute('type', 'number');
+
+			o._.input = (function(){
+				if (o._.noset)return null;
+				return parseInt(this._.html.input.value);
+			}).bind(o);
+		}
+		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
+		//console.log(o._.path);
+		//console.log(po._.value[o._.name]);
+		o._.html.input.value = parseInt(po._.value[o._.name]);
+	},
+	number:function(po,o){
+		this.unknown(po,o);
+		//console.log('checking ui for object '+o._.path);
+		if (o._.html.name==null){
+			o._.html.e.style.display = 'block';
+
+			o._.html.name = document.createElement('zs4-value-name');
+			o._.html.e.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+
+			o._.html.input = document.createElement('input');
+			o._.html.e.appendChild(o._.html.input);
+			o._.html.input.setAttribute('type', 'number');
+
+			o._.input = (function(){
+				if (o._.noset)return null;
+				return parseFloat(this._.html.input.value);
+			}).bind(o);
+		}
+		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
+		o._.html.input.value = parseFloat(po._.value[o._.name]);
+	},
+	boolean:function(po,o){
+		this.unknown(po,o);
+		//console.log('checking ui for object '+o._.path);
+		if (o._.html.name==null){
+			o._.html.e.style.display = 'block';
+
+			o._.html.name = document.createElement('zs4-value-name');
+			o._.html.e.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+
+			o._.html.input = document.createElement('input');
+			o._.html.e.appendChild(o._.html.input);
+			o._.html.input.setAttribute('type', 'checkbox');
+
+			o._.input = (function(){
+				if (o._.noset)return null;
+				if (this._.html.input.checked)return true;
+				return false;
 			}).bind(o);
 		}
 		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
@@ -152,10 +243,10 @@ zs4.ui.type = {
 					wrap[n] = input;
 					input = wrap;
 				}
-				console.log(input);
+				//zs4.console.log(input);
 
 				zs4.post(input,function(ret){
-					console.log('inside admin post callback')
+					//console.log('inside admin post callback')
 					zs4.ui.type.object(zs4.ui.rootElementParent,zs4.ui.rootObject);
 				});
 
@@ -217,5 +308,6 @@ zs4.ui.type = {
 	},
 };
 
-
 zs4.session = {};
+
+zs4.ui.type.object(null,zs4.THIS);

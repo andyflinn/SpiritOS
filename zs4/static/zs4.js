@@ -407,7 +407,7 @@ zs4.processor = {
   },
   parallel:function(){
     this.callback = (function(){
-      //zs4.console.log('parallel callback');
+      //zs4.console.log('parallel callback '+this.count);
       this.count--;
       if (this.count==0){
         //zs4.console.log('all parallels ('+this.arr.length+') complete');
@@ -426,8 +426,9 @@ zs4.processor = {
         cb();
       }
       else{
+        var limit = this.count;
         this.cb = cb;
-        for (var i = 0 ; i < this.count ; i++){
+        for (var i = 0 ; i < limit ; i++){
           this.arr[i].f.call(this.arr[i].t,this.arr[i].a,this.callback);
         }
       }
@@ -469,7 +470,7 @@ zs4.type = {
 
     this._.shouldBeSaved = (function(args){
       if (this._.nostore)return;
-      zs4.console.log('this.shouldBeSaved()');
+      //zs4.console.log('this.shouldBeSaved()');
       args.request.needsSaving = true;
     }).bind(this);
 
@@ -481,7 +482,7 @@ zs4.type = {
       }
     }).bind(this);
     this._.getInitialize = (function(args,parent){
-      if (this._.noget || !args.request.authorize(this,this._.authGet)){return null;}
+      if (this._.noget || !args.authorize(this,this._.authGet)){return null;}
 
       var get = new Object({_:{}});
 
@@ -542,8 +543,8 @@ zs4.type = {
       }
       else if (p!=null){
         p._.value[this._.name]=o._.value;
-        console.log(o._.value);
-        console.log(o._.html);
+        //console.log(o._.value);
+        //console.log(o._.html);
         if (zs4.is.function(o._.response)){
           console.log('response() function found for '+o._.path);
           o._.response(o._.value);
@@ -619,7 +620,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(args,cb){
-      //zs4.console.log(this.path+'.transform(\''+input+'\')');
+      //zs4.console.log(this._.path+'._.transform(\''+args.input+'\')');
       this._.shouldBeSaved(args);
 
       if (zs4.is.string(args.input)){
@@ -654,7 +655,7 @@ zs4.type = {
     this._.maxlength = zs4.const.EMAIL.MAXLENGTH;
 
     this._.transform = (function(args,cb){
-      //zs4.console.log(this.path+'.transform(\''+input+'\')');
+      //zs4.console.log(this._.path+'._.transform(\''+args.input+'\')');
       this._.shouldBeSaved(args);
 
       if (zs4.is.email(args.input)){
@@ -672,6 +673,7 @@ zs4.type = {
     this._.typename = 'integer';
     this._.default = new Number();
     if (zs4.is.number(input.default))this._.default = parseInt(input.default);
+    else this._.default = 0;
     if (zs4.is.array(input.enum)){
       this._.enum = input.enum;
     }
@@ -707,8 +709,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(args,cb){
-      //zs4.console.log(this.path+'.transform(\''+input+'\')');
-      //zs4.console.log(args);
+      //zs4.console.log(this._.path+'._.transform(\''+args.input+'\')');
       this._.shouldBeSaved(args);
 
       if (zs4.is.number(args.input)){
@@ -735,6 +736,7 @@ zs4.type = {
     this._.typename = 'number';
     this._.default = new Number();
     if (zs4.is.number(input.default))this._.default = input.default;
+    else this._.default = 0;
     if (zs4.is.array(input.enum)){
       this._.enum = input.enum;
     }
@@ -770,8 +772,8 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(args,cb){
-      //zs4.console.log(this.path+'.transform(\''+input+'\')');
-      //zs4.console.log(args);
+      //zs4.console.log(this._.path+'._.transform(\''+args.input+'\')');
+
       this._.shouldBeSaved(args);
 
       if (zs4.is.number(args.input)){
@@ -819,8 +821,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(args,cb){
-      //zs4.console.log(this.path+'.transform()');
-      //zs4.console.log(args);
+      //zs4.console.log(this._.path+'._.transform(\''+args.input+'\')');
       this._.shouldBeSaved(args);
 
       if (zs4.is.boolean(args.input)){
@@ -888,8 +889,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(args,cb){
-      //zs4.console.log('transforming '+this.path)
-
+      //zs4.console.log('transforming '+this._.path);
       if (!zs4.is.object(args.input)){
         if (cb)cb(new zs4.error({text:'input not an object.'}));
         return;
@@ -908,8 +908,9 @@ zs4.type = {
       }
 
       var THIS = this;
+      //zs4.console.log('parallel run '+THIS._.path);
       parallel.run(function(){
-        //zs4.console.log(THIS.onchange);
+        //zs4.console.log('parallel done '+THIS._.path);
         if (zs4.is.function(THIS._.onchange)){THIS._.onchange.call(THIS,args,cb);}
         else {cb();}
       });
@@ -925,24 +926,43 @@ zs4.request = function(o){
     if (zs4.is.object(o.request))this.request = o.request;
     if (o.input!=null)this.input = o.input;
     if (zs4.is.object(o.parent))this.parent = o.parent;
-    if (zs4.is.object(o.token))this.token = o.token;
   }
 
   if (!zs4.is.object(this.request))this.request = new Object();
   if (this.input==null)this.input = new Object();
 
-  if (zs4.is.node){
+  if (zs4.is.node()){
+    //var token = require('../token');
+
+    this.payloadRefresh = function(){
+      if (zs4.is.string(this.request.token)&&this.request.token.length>10){
+        if (!zs4.is.object(this.request.payload)){
+          this.request.payload = zs4.THIS.zs4.token.decode(this.request.token);
+          if (this.request.payload == null)this.request.token=null;
+        }
+      }
+    };
+    this.payloadRefresh();
+
+    this.tokenCreate = function(claims){
+      this.request.token = zs4.THIS.zs4.token.encode(claims);
+      this.payloadRefresh();
+      //zs4.console.log('token: \''+this.request.token+'\'');
+      //zs4.console.log(this.request.payload);
+    };
+
     if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
 
     this.request.needsSaving = false;
 
-    this.request.userIsRoot = function(){
+    this.userIsRoot = function(){
+      if (zs4.is.object(this.request.payload)&&this.request.payload.rpw)return true;
       if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin._.value.email==this.email)return true;
       if (this.node) return true;
       return false;
     };
 
-    this.request.authorize = function(THIS,arr){
+    this.authorize = function(THIS,arr){
       //zs4.console.log('authorizing... '+THIS.path);
       if (!zs4.is.array(arr))return this.userIsRoot();
       if (zs4.string.array.is.element(arr,zs4.const.EMAIL.PUBLIC)){
@@ -963,15 +983,23 @@ zs4.request = function(o){
         cb(this);
 
         if (THIS.request.needsSaving){
+          //zs4.console.log('THIS.request.needsSaving');
           zs4.save(function(){zs4.console.log('THIS was saved')});
         }
       });
     };
+
+    this.getReply = function(){
+      var r = new Object({request:{},input:this.input,reply:this.reply});
+      if (zs4.is.object(this.request.payload))this.tokenCreate(this.request.payload);
+      if (zs4.is.string(this.request.token))r.request.token = this.request.token;
+      return r;
+    };
   }
   else{
-    this.request.userIsRoot = function(){return true;};
+    this.userIsRoot = function(){return true;};
 
-    this.request.authorize = function(THIS,arr){return true;};
+    this.authorize = function(THIS,arr){return true;};
 
     this.request.needsSaving = false;
 
@@ -1010,8 +1038,12 @@ if (zs4.is.window()){
   zs4.post = function(o,cb){
 
     var req = new zs4.request({input:o})
+    if (zs4.is.string(zs4.THIS._.token)&&zs4.THIS._.token.length>10) req.request.token = zs4.THIS._.token;
+    zs4.console.log(req);
 
   	zs4.io.post(req,function(ret){
+      if (zs4.is.string(ret.request.token)&&ret.request.token.length>10)zs4.THIS._.token = ret.request.token;
+      else zs4.THIS._.token = null;
       zs4.console.log(ret);
   		zs4.THIS._.got(ret.reply);
   		if (cb)cb(ret);
@@ -1019,7 +1051,7 @@ if (zs4.is.window()){
   	});
   };
 
-  zs4.admin = function(parentElement){
+  zs4.admin = function(){
     zs4.post({},function(){
       var js=document.createElement('script');
       js.setAttribute("type","text/javascript");

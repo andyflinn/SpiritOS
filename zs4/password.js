@@ -1,4 +1,5 @@
 var zs4 = require('./static/zs4');
+var token = require('./token');
 var passhash = require('password-hash');
 
 var password = exports;
@@ -8,13 +9,14 @@ password.schema = function(parent){
   zs4.type.property(parent,THIS);
 
   THIS._.transform = (function(args,cb){
-    zs4.console.log('password.transform()');
-    zs4.console.log(args);
+    //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
+
     if (passhash.isHashed(this._.value.hashed)){
       var oldPassVerified = this.verify(args.input.vfy);
 
       if (oldPassVerified){
         zs4.console.log('...old password verified...');
+        args.tokenCreate({rpw:true});
 
         if (zs4.is.password(args.input.set)){
           zs4.console.log('...pass change...');
@@ -51,17 +53,27 @@ password.schema = function(parent){
     var get = this._.getInitialize(args,parent);
     if (get==null)return null;
 
-    if (passhash.isHashed(this._.value.hashed)){
+    function vfy(get){
       get.vfy = new Object({_:{}});
       get.vfy._.name = 'vfy';
       get.vfy._.typename = 'password';
       get.vfy._.value = '';
-    }
-    else {
+    };
+    function set(get){
       get.set = new Object({_:{}});
       get.set._.name = 'set';
       get.set._.typename = 'password';
       get.set._.value = '';
+    };
+
+    if (passhash.isHashed(this._.value.hashed)){
+      vfy(get);
+      if (args.userIsRoot()){
+        set(get);
+      }
+    }
+    else {
+      set(get);
     }
 
     return get;

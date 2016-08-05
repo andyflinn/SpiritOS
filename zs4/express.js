@@ -52,11 +52,15 @@ express.app.get('/*', function (req, res) {
 
 express.app.post('/*', function (req, res) {
   var zs4req = new zs4.request(req.body);
-  //zs4.console.log(zs4req);
+  //zs4.console.log(zs4.copy.noncircular(zs4req));
+  zs4.console.log('request received: '+JSON.stringify(zs4req));
 
   zs4req.process(function(ret){
-    res.send(zs4req);
-    zs4.console.log(zs4req);
+    zs4.console.log('request processed: '+JSON.stringify(ret))
+    var r = zs4req.getReply();
+    //zs4.console.log(r);
+    res.send(r);
+    //zs4.console.log(r.reply.zs4.email.smtp);
   });
 
 });
@@ -78,7 +82,7 @@ express.schema = function(parent){
   }));
   zs4.type.property(parent.express,new zs4.type.string({name:'host',required:true,default:'localhost',}));
   zs4.type.property(parent.express,new zs4.type.integer({name:'port',required:true,default:3000,}));
-  zs4.type.property(parent.express,new zs4.type.boolean({name:'run',nostore:true}));
+  zs4.type.property(parent.express,new zs4.type.boolean({name:'run',nostore:true,noget:true}));
 
   parent.express.start = function(){
     if (express.running)return;

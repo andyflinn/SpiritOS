@@ -45,7 +45,7 @@ rsa.schema = function(parent){
 
   parent.rsa._.store = (function(){
     //return null;
-    zs4.console.log(this._.path+'.store()');
+    //zs4.console.log(this._.path+'.store()');
     //if (this._.nostore){return null;}
     var store = new Object();
     this._.ensureKeyExists();
