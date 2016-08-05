@@ -46,20 +46,17 @@ express.app.use(cookieParser());
 express.app.use(xpress.static(path.join(__dirname, 'static')));
 
 express.app.get('/*', function (req, res) {
-  var zs4req = new zs4.request({request:{want:'html'},input:req.query});
-  zs4.console.log(zs4req);
-
   res.write(express.html(req,res));
   res.end();
 });
 
 express.app.post('/*', function (req, res) {
-  var zs4req = new zs4.request({request:{want:'json'},input:req.body});
-  zs4.console.log(zs4req);
+  var zs4req = new zs4.request(req.body);
+  //zs4.console.log(zs4req);
 
   zs4req.process(function(ret){
-    res.send(ret);
-
+    res.send(zs4req);
+    zs4.console.log(zs4req);
   });
 
 });

@@ -4,41 +4,69 @@ var passhash = require('password-hash');
 var password = exports;
 
 password.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'password',required:true,
-    onchange:function(req,cb){
-      //zs4.console.log('password.onchange()');
-      //zs4.console.log(this.value);
-      if (passhash.isHashed(this._.value.hashed)){
-        var oldPassVerified = this.verify(this._.value.vfy);
+  var THIS = new zs4.type.object({name:'password',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
+  zs4.type.property(parent,THIS);
 
-        if (oldPassVerified){
-          zs4.console.log('...old password verified...');
+  THIS._.transform = (function(args,cb){
+    zs4.console.log('password.transform()');
+    zs4.console.log(args);
+    if (passhash.isHashed(this._.value.hashed)){
+      var oldPassVerified = this.verify(args.input.vfy);
 
-          if (zs4.is.password(this._.value.set)){
-            zs4.console.log('...pass change...');
-            var nu = this.generate(this._.value.set);
-            if (nu!=null) this._.value.hashed = nu;
+      if (oldPassVerified){
+        zs4.console.log('...old password verified...');
+
+        if (zs4.is.password(args.input.set)){
+          zs4.console.log('...pass change...');
+          var nu = this.generate(args.input.set);
+          if (nu!=null) {
+            this._.value.hashed = nu;
+            this._.shouldBeSaved(args);
           }
+        }
 
-        }
-        else {
-          zs4.console.log('...password '+this._.value.vfy+' incorrect...');
-        }
-        //zs4.console.log('...have password already');
       }
-      else{
-        if (zs4.is.password(this._.value.set)){
-        //zs4.console.log('...pass initialize');
-        var nu = this.generate(this._.value.set);
-          if (nu) this._.value.hashed = nu;
+      else {
+        zs4.console.log('...password '+args.input.vfy+' incorrect...');
+      }
+      //zs4.console.log('...have password already');
+    }
+    else{
+      if (zs4.is.password(args.input.set)){
+      //zs4.console.log('...pass initialize');
+      var nu = this.generate(args.input.set);
+        if (nu) {
+          this._.value.hashed = nu;
+          this._.shouldBeSaved(args);
         }
       }
-      this._.value.set='';
-      this._.value.vfy='';
-      cb();
-    },
-    authGet:[zs4.const.EMAIL.PUBLIC,],
-  }));
+    }
+    this._.value.set='';
+    this._.value.vfy='';
+    cb();
+  }).bind(THIS);
+
+  THIS._.get = (function(args,parent){
+    //zs4.console.log(this.path+'.get()');
+    var get = this._.getInitialize(args,parent);
+    if (get==null)return null;
+
+    if (passhash.isHashed(this._.value.hashed)){
+      get.vfy = new Object({_:{}});
+      get.vfy._.name = 'vfy';
+      get.vfy._.typename = 'password';
+      get.vfy._.value = '';
+    }
+    else {
+      get.set = new Object({_:{}});
+      get.set._.name = 'set';
+      get.set._.typename = 'password';
+      get.set._.value = '';
+    }
+
+    return get;
+  }).bind(THIS);
+
 
   zs4.type.property(parent.password,new zs4.type.string({name:'hashed',required:true,noget:true,index:{unique:true},}));
   zs4.type.property(parent.password,new zs4.type.string({name:'algorithm',required:true,noget:true,default:'sha1',}));

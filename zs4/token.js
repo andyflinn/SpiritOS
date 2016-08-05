@@ -1,10 +1,14 @@
 var zs4 = require('./static/zs4');
-var mongoose = require('mongoose');
-var randomstring = require('randomstring');
 
-const RANDOMLENGTH = 8;
+var token;
+if (zs4.is.node()) {
+    token = exports;
+}
+else {
+    token = new Object();
+}
 
-var token = exports;
-token.lastMopUp = 0;
-
-token.password = require('./password');
+token.schema = function(parent){
+  zs4.type.property(parent,new zs4.type.object({name:'token',required:true,}));
+  zs4.type.property(parent,new zs4.type.string({name:'token',required:true,}));
+}

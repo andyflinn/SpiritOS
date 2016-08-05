@@ -38,10 +38,11 @@ zs4.define = function(){
   require('./admin').schema(zs4.THIS.zs4);
   require('./password').schema(zs4.THIS.zs4);
   require('./rsa').schema(zs4.THIS.zs4);
+  //require('./response').schema(zs4.THIS.zs4);
   //require('./mongobase').schema(zs4.THIS.zs4);
   require('./express').schema(zs4.THIS.zs4);
   require('./email').schema(zs4.THIS.zs4);
-
+/*
   zs4.THIS._.transform = (function(args,cb){
     //zs4.console.log('transforming '+this.path)
 
@@ -71,6 +72,6 @@ zs4.define = function(){
     //if (this.type == Object)zs4.console.log(this.path+'.transform() done');
 
   }).bind(zs4.THIS);
-
+*/
 
 }

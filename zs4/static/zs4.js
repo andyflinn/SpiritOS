@@ -535,6 +535,7 @@ zs4.type = {
           if (!zs4.is.type(this[n]))continue;
           if (zs4.is.type(o[n]))continue;
 
+          if (zs4.is.function(this[n]._.cleanup))this[n]._.cleanup();
           this._.value[n]==null;
           this[n]==null;
         }
@@ -916,7 +917,6 @@ zs4.type = {
 
     }).bind(this);
   },
-
 };
 
 zs4.request = function(o){
@@ -931,40 +931,54 @@ zs4.request = function(o){
   if (!zs4.is.object(this.request))this.request = new Object();
   if (this.input==null)this.input = new Object();
 
-  if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
+  if (zs4.is.node){
+    if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
 
-  this.request.needsSaving = false;
+    this.request.needsSaving = false;
 
-  this.request.userIsRoot = function(){
-    if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin._.value.email==this.email)return true;
-    if (this.node) return true;
-    return false;
-  };
+    this.request.userIsRoot = function(){
+      if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin._.value.email==this.email)return true;
+      if (this.node) return true;
+      return false;
+    };
 
-  this.request.authorize = function(THIS,arr){
-    //zs4.console.log('authorizing... '+THIS.path);
-    if (!zs4.is.array(arr))return this.userIsRoot();
-    if (zs4.string.array.is.element(arr,zs4.const.EMAIL.PUBLIC)){
-      //zs4.console.log('authorized public request to '+THIS.path);
-      return true;
-    }
-    if (zs4.is.email(this.email)&&zs4.string.array.is.element(arr,this.email))return true;
-    return this.userIsRoot();
-  };
-
-  this.process = function(cb){
-    var THIS = this;
-    //zs4.console.log(THIS.request.userIsRoot());
-    zs4.THIS._.transform(THIS,function(){
-      //zs4.console.log(THIS);
-      var get = zs4.THIS._.get(THIS);
-      if (get==null)get = new Object();
-      cb(get);
-      if (THIS.request.needsSaving){
-        zs4.save(function(){zs4.console.log('THIS was saved')});
+    this.request.authorize = function(THIS,arr){
+      //zs4.console.log('authorizing... '+THIS.path);
+      if (!zs4.is.array(arr))return this.userIsRoot();
+      if (zs4.string.array.is.element(arr,zs4.const.EMAIL.PUBLIC)){
+        //zs4.console.log('authorized public request to '+THIS.path);
+        return true;
       }
-    });
-  };
+      if (zs4.is.email(this.email)&&zs4.string.array.is.element(arr,this.email))return true;
+      return this.userIsRoot();
+    };
+
+    this.process = function(cb){
+      var THIS = this;
+      //zs4.console.log(THIS.request.userIsRoot());
+      zs4.THIS._.transform(THIS,function(){
+        //zs4.console.log(THIS);
+        THIS.reply = zs4.THIS._.get(THIS);
+
+        cb(this);
+
+        if (THIS.request.needsSaving){
+          zs4.save(function(){zs4.console.log('THIS was saved')});
+        }
+      });
+    };
+  }
+  else{
+    this.request.userIsRoot = function(){return true;};
+
+    this.request.authorize = function(THIS,arr){return true;};
+
+    this.request.needsSaving = false;
+
+    this.process = function(cb){
+
+    }
+  }
 };
 
 zs4.THIS = new zs4.type.object({name:'this',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
@@ -995,11 +1009,13 @@ if (zs4.is.window()){
 
   zs4.post = function(o,cb){
 
-  	zs4.io.post(o,function(ret){
-  		zs4.THIS._.got(ret);
+    var req = new zs4.request({input:o})
+
+  	zs4.io.post(req,function(ret){
+      zs4.console.log(ret);
+  		zs4.THIS._.got(ret.reply);
   		if (cb)cb(ret);
       else console.log('no callback specified for zs4.post()');
-  		//zs4.console.log(zs4.THIS);
   	});
   };
 
