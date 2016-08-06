@@ -39,7 +39,8 @@ zs4.ui.type = {
 
 		}
 	},
-	password:function(po,o){
+
+	boolean:function(po,o){
 		this.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
 		if (o._.html.name==null){
@@ -51,16 +52,16 @@ zs4.ui.type = {
 
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
-			o._.html.input.setAttribute("type", "password");
+			o._.html.input.setAttribute('type', 'checkbox');
 
 			o._.input = (function(){
-				return this._.html.input.value;
-			}).bind(o);
-			o._.response = (function(r){
-				if (zs4.is.string(r))this._.html.input.value = r;
+				if (o._.noset)return null;
+				if (this._.html.input.checked)return true;
+				return false;
 			}).bind(o);
 		}
-		o._.html.input.value = '';
+		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
+		o._.html.input.checked = po._.value[o._.name];
 	},
 	email:function(po,o){
 		this.unknown(po,o);
@@ -82,51 +83,6 @@ zs4.ui.type = {
 			}).bind(o);
 			o._.response = (function(r){
 				if (zs4.is.string(r))this._.html.input.value = r;
-			}).bind(o);
-		}
-		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
-		o._.html.input.value = po._.value[o._.name];
-	},
-	string:function(po,o){
-		this.unknown(po,o);
-		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-			o._.html.e.style.display = 'block';
-
-			o._.html.name = document.createElement('zs4-value-name');
-			o._.html.e.appendChild(o._.html.name);
-			o._.html.name.textContent = o._.name;
-
-			o._.html.input = document.createElement('input');
-			o._.html.e.appendChild(o._.html.input);
-			o._.html.input.setAttribute('type', 'text');
-			o._.html.input.autocomplete = 'on';
-
-			o._.input = (function(){
-				if (o._.noset)return null;
-				return this._.html.input.value;
-			}).bind(o);
-		}
-		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
-		o._.html.input.value = po._.value[o._.name];
-	},
-	text:function(po,o){
-		this.unknown(po,o);
-		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-			o._.html.e.style.display = 'block';
-
-			o._.html.name = document.createElement('zs4-value-name');
-			o._.html.e.appendChild(o._.html.name);
-			o._.html.name.textContent = o._.name;
-			o._.html.name.style.display = 'block';
-
-			o._.html.input = document.createElement('textarea');
-			o._.html.e.appendChild(o._.html.input);
-
-			o._.input = (function(){
-				if (o._.noset)return null;
-				return this._.html.input.value;
 			}).bind(o);
 		}
 		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
@@ -177,29 +133,6 @@ zs4.ui.type = {
 		}
 		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
 		o._.html.input.value = parseFloat(po._.value[o._.name]);
-	},
-	boolean:function(po,o){
-		this.unknown(po,o);
-		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-			o._.html.e.style.display = 'block';
-
-			o._.html.name = document.createElement('zs4-value-name');
-			o._.html.e.appendChild(o._.html.name);
-			o._.html.name.textContent = o._.name;
-
-			o._.html.input = document.createElement('input');
-			o._.html.e.appendChild(o._.html.input);
-			o._.html.input.setAttribute('type', 'checkbox');
-
-			o._.input = (function(){
-				if (o._.noset)return null;
-				if (this._.html.input.checked)return true;
-				return false;
-			}).bind(o);
-		}
-		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
-		o._.html.input.value = po._.value[o._.name];
 	},
 	object:function(po,o){
 		if (!zs4.is.type(o) || o._.typename!='object'){
@@ -305,6 +238,74 @@ zs4.ui.type = {
 			zs4.ui.type[o[n]._.typename](o,o[n]);
 		}
 
+	},
+	password:function(po,o){
+		this.unknown(po,o);
+		//console.log('checking ui for object '+o._.path);
+		if (o._.html.name==null){
+			o._.html.e.style.display = 'block';
+
+			o._.html.name = document.createElement('zs4-value-name');
+			o._.html.e.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+
+			o._.html.input = document.createElement('input');
+			o._.html.e.appendChild(o._.html.input);
+			o._.html.input.setAttribute("type", "password");
+
+			o._.input = (function(){
+				return this._.html.input.value;
+			}).bind(o);
+			o._.response = (function(r){
+				if (zs4.is.string(r))this._.html.input.value = r;
+			}).bind(o);
+		}
+		o._.html.input.value = '';
+	},
+	string:function(po,o){
+		this.unknown(po,o);
+		//console.log('checking ui for object '+o._.path);
+		if (o._.html.name==null){
+			o._.html.e.style.display = 'block';
+
+			o._.html.name = document.createElement('zs4-value-name');
+			o._.html.e.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+
+			o._.html.input = document.createElement('input');
+			o._.html.e.appendChild(o._.html.input);
+			o._.html.input.setAttribute('type', 'text');
+			o._.html.input.autocomplete = 'on';
+
+			o._.input = (function(){
+				if (o._.noset)return null;
+				return this._.html.input.value;
+			}).bind(o);
+		}
+		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
+		o._.html.input.value = po._.value[o._.name];
+	},
+	text:function(po,o){
+		this.unknown(po,o);
+		//console.log('checking ui for object '+o._.path);
+		if (o._.html.name==null){
+			o._.html.e.style.display = 'block';
+
+			o._.html.name = document.createElement('zs4-value-name');
+			o._.html.e.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+			o._.html.name.style.display = 'block';
+
+			o._.html.input = document.createElement('textarea');
+			o._.html.e.appendChild(o._.html.input);
+
+			o._.input = (function(){
+				if (o._.noset)return null;
+				return this._.html.input.value;
+			}).bind(o);
+		}
+		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
+		o._.html.input.value = po._.value[o._.name];
 	},
 };
 
