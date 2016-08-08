@@ -5,7 +5,7 @@ var passhash = require('password-hash');
 var password = exports;
 
 password.schema = function(parent){
-  var THIS = new zs4.type.object({name:'password',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
+  var THIS = new zs4.type.object({name:'password',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],api:true,});
   zs4.type.property(parent,THIS);
 
   THIS._.transform = (function(args,cb){
@@ -29,6 +29,7 @@ password.schema = function(parent){
 
       }
       else {
+        args.error(THIS);
         zs4.console.log('...password '+args.input.vfy+' incorrect...');
       }
       //zs4.console.log('...have password already');

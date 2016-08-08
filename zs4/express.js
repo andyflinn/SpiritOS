@@ -100,7 +100,7 @@ express.app.post('/*', function (req, res) {
 express.running = false;
 
 express.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'express',required:true,
+  zs4.type.property(parent,new zs4.type.object({name:'express',required:true,api:true,
     onchange:function(req,cb){
       //zs4.console.log('____WWW_ONCHANGE___');
       //zs4.console.log(this);

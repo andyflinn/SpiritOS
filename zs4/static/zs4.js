@@ -330,6 +330,7 @@ zs4.copy = {
       if (zs4.is.array(from._.enum))to._.enum = from._.enum;
       if (zs4.is.boolean(from._.trim))to._.trim = from._.trim;
       if (zs4.is.boolean(from._.noset))to._.noset=from._.noset;
+      if (zs4.is.boolean(from._.api))to._.api=from._.api;
     },
 };
 
@@ -497,7 +498,6 @@ zs4.type = {
     this._.path = '';
     this._.name = input.name;
     if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
-    //if (zs4.is.function(input.api))this._.api = input.api;
 
     if (zs4.is.boolean(input.nostore))this._.nostore = input.nostore;
     if (zs4.is.boolean(input.noget))this._.noget = input.noget;
@@ -517,6 +517,24 @@ zs4.type = {
     if (zs4.is.array(input.authGet))this._.authGet = input.authGet;
     if (zs4.is.array(input.authSet))this._.authSet = input.authSet;
 
+    this._.zs4Parent = (function(){
+      var arr = zs4.string.split.separators(this._.path,'.');
+      var result = zs4.THIS;
+      var scan = zs4.THIS;
+      for (var i = 0; i < arr.length ; i++){
+        if (!scan.hasOwnProperty(arr[i])
+        ||!zs4.is.type(scan[arr[i]]))
+        return result;
+        scan = scan[arr[i]];
+
+        if (
+            scan.hasOwnProperty('zs4')
+          && zs4.is.type(scan.zs4)
+          && scan.zs4._.type == Object
+        )result = scan;
+      }
+      return result;
+    }).bind(this);
     this._.shouldBeSaved = (function(args){
       if (this._.nostore)return;
       //zs4.console.log('this.shouldBeSaved()');
@@ -571,7 +589,7 @@ zs4.type = {
 
       zs4.copy.schemabasics(o,this);
 
-      if (this._.typename=='object'){
+      if (this._.typename=='object'||this._.typename=='array'){
         for (var n in o){
           if (!zs4.is.type(o[n]))continue;
 
@@ -635,12 +653,22 @@ zs4.type = {
   array:function(input){
     zs4.type.object.call(this,input)
     this._.typename = 'array';
-    //if (zs4.is.node()){
-      zs4.type.property(this,new zs4.type.object({name:'this',required:true,}));
-      zs4.type.property(this,new zs4.type.integer({name:'maxlength',required:true,}));
-      zs4.type.property(this,new zs4.type.integer({name:'length',required:true,noset:true,}));
-      zs4.type.property(this,new zs4.type.object({name:'array',required:true,}));
-    //}
+    var THIS = this;
+
+    zs4.type.property(this,new zs4.type.integer({name:'maxlength',required:true,}));
+    zs4.type.property(this,new zs4.type.integer({name:'length',required:true,noset:true,}));
+
+    zs4.type.property(this,new zs4.type.object({name:'method',required:true,}));
+    zs4.type.property(this.method,new zs4.type.object({name:'new',required:true,}));
+
+    zs4.type.property(this,new zs4.type.object({name:'template',required:true,}));
+    zs4.type.property(this.template,new zs4.type.object({name:'meta',required:true,}));
+    zs4.type.property(this.template.meta,new zs4.type.integer({name:'created',required:true,noset:true,default:Date.now(),}));
+    zs4.type.property(this.template.meta,new zs4.type.integer({name:'updated',required:true,noset:true,default:Date.now(),}));
+    zs4.type.property(this.template,new zs4.type.object({name:'this',required:true,}));
+
+    zs4.type.property(this,new zs4.type.object({name:'array',required:true,}));
+
   },
   boolean:function(input){
     zs4.type.unknown.call(this,input);
@@ -875,6 +903,8 @@ zs4.type = {
     this._.value = new Object();
     this._.path = '';
 
+    if (zs4.is.boolean(input.api))this._.api = input.api;
+
     this._.load = (function(input){
       //zs4.console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
@@ -912,7 +942,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(args,cb){
-      //zs4.console.log('transforming '+this._.path);
+      zs4.console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
       if (!zs4.is.object(args.input)){
         if (cb)cb(new zs4.error({text:'input not an object.'}));
         return;
@@ -1079,8 +1109,6 @@ zs4.request = function(o){
     this.tokenCreate = function(claims){
       this.request.token = zs4.THIS.zs4.token.encode(claims);
       this.payloadRefresh();
-      //zs4.console.log('token: \''+this.request.token+'\'');
-      //zs4.console.log(this.request.payload);
     };
 
     if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;

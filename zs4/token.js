@@ -14,7 +14,7 @@ else {
 }
 
 token.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'token',required:true,}));
+  zs4.type.property(parent,new zs4.type.object({name:'token',required:true,api:true,}));
   zs4.type.property(parent.token,new zs4.type.string({name:'secret',required:true,default:randomstring.generate(RANDOMLENGTH),}));
 
   parent.token.encode = (function(claims){

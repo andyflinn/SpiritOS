@@ -54,7 +54,7 @@ zs4.admin.type = {
 			o._.html.e.style.display = 'block';
 
 
-			o._.html.toggle = document.createElement('zs4-object-toggle');
+			o._.html.toggle = document.createElement('zs4-array-toggle');
 			o._.html.e.appendChild(o._.html.toggle);
 			o._.html.toggle.textContent = '+';
 			o._.html.toggle.style.display = 'inline-block';
@@ -64,7 +64,7 @@ zs4.admin.type = {
 			o._.html.toggle.style.border = 'thin dotted';
 			o._.html.expanded = false;
 
-			o._.html.name = document.createElement('zs4-object-name');
+			o._.html.name = document.createElement('zs4-array-name');
 			o._.html.e.appendChild(o._.html.name);
 			if (po == null) o._.html.name.textContent = 'zs4.THIS';
 			else o._.html.name.textContent = o._.name;
@@ -90,18 +90,18 @@ zs4.admin.type = {
 
 			};
 
-			o._.html.start = document.createElement('zs4-object-start');
+			o._.html.start = document.createElement('zs4-array-start');
 			o._.html.e.appendChild(o._.html.start);
 			o._.html.start.textContent = '[';
 
-			o._.html.c = document.createElement('zs4-object-content');
+			o._.html.c = document.createElement('zs4-array-content');
 			o._.html.e.appendChild(o._.html.c);
 			o._.html.c.style.display = 'none';
 			o._.html.c.style.paddingLeft = '1em';
 			o._.html.c.style.borderLeft = 'thin dotted';
 			//o._.html.content.textContent = 'blah blah';
 
-			o._.html.end = document.createElement('zs4-object-end');
+			o._.html.end = document.createElement('zs4-array-end');
 			o._.html.e.appendChild(o._.html.end);
 			o._.html.end.textContent = ']';
 
@@ -268,26 +268,29 @@ zs4.admin.type = {
 			if (po == null) o._.html.name.textContent = 'zs4.THIS';
 			else o._.html.name.textContent = o._.name;
 			o._.html.name.style.cursor = 'pointer';
-			o._.html.name.style.fontWeight = 'bold';
-			o._.html.name.onclick = function(){
-				var input = o._.input();
-				if (input == null)return;
 
-				var patharr = zs4.string.split.separators(o._.path,'.');
-				if (patharr.length>0)for (var i = 0 ; i < patharr.length ; i++){
-					var n = patharr[patharr.length-1-i];
-					var wrap = new Object();
-					wrap[n] = input;
-					input = wrap;
-				}
-				//zs4.console.log(input);
+			if (o._.api){
+				o._.html.name.style.fontWeight = 'bold';
+				o._.html.name.onclick = function(){
+					var input = o._.input();
+					if (input == null)return;
 
-				zs4.post(input,function(ret){
-					//console.log('inside admin post callback')
-					zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
-				});
+					var patharr = zs4.string.split.separators(o._.path,'.');
+					if (patharr.length>0)for (var i = 0 ; i < patharr.length ; i++){
+						var n = patharr[patharr.length-1-i];
+						var wrap = new Object();
+						wrap[n] = input;
+						input = wrap;
+					}
+					//zs4.console.log(input);
 
-			};
+					zs4.post(input,function(ret){
+						//console.log('inside admin post callback')
+						zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
+					});
+
+				};
+			}
 
 			o._.html.start = document.createElement('zs4-object-start');
 			o._.html.e.appendChild(o._.html.start);

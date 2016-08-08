@@ -47,7 +47,7 @@ zs4.define = function(){
   zs4.array = new Object();
 
   zs4.array.user = require('./user');
-  zs4.type.property(zs4.THIS.zs4,zs4.array.user.array({name:'user',required:true}));
+  zs4.type.property(zs4.THIS.zs4,zs4.array.user.array({name:'user',required:true,}));
 
 
 

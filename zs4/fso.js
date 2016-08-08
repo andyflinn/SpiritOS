@@ -36,7 +36,7 @@ fso.schema = function(parent){
     zs4.type.property(p,new zs4.type.string({name:'path',required:true,}));
   };
 
-  zs4.type.property(THIS,new zs4.type.object({name:'stat',required:true,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'stat',required:true,api:true,}));
   addPath(THIS.stat);
   THIS.stat._.transform = (function(args,cb){
     //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
@@ -55,7 +55,7 @@ fso.schema = function(parent){
 
   }).bind(THIS);
 
-  zs4.type.property(THIS,new zs4.type.object({name:'readdir',required:true,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'readdir',required:true,api:true,}));
   addPath(THIS.readdir);
   THIS.readdir._.transform = (function(args,cb){
     //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
@@ -76,7 +76,7 @@ fso.schema = function(parent){
 
   }).bind(THIS);
 
-  zs4.type.property(THIS,new zs4.type.object({name:'readfile',required:true,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'readfile',required:true,api:true,}));
   addPath(THIS.readfile);
   THIS.readfile._.transform = (function(args,cb){
     //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
