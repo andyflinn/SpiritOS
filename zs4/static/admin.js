@@ -68,27 +68,6 @@ zs4.admin.type = {
 			o._.html.e.appendChild(o._.html.name);
 			if (po == null) o._.html.name.textContent = 'zs4.THIS';
 			else o._.html.name.textContent = o._.name;
-			o._.html.name.style.cursor = 'pointer';
-			o._.html.name.style.fontWeight = 'bold';
-			o._.html.name.onclick = function(){
-				var input = o._.input();
-				if (input == null)return;
-
-				var patharr = zs4.string.split.separators(o._.path,'.');
-				if (patharr.length>0)for (var i = 0 ; i < patharr.length ; i++){
-					var n = patharr[patharr.length-1-i];
-					var wrap = new Object();
-					wrap[n] = input;
-					input = wrap;
-				}
-				//zs4.console.log(input);
-
-				zs4.post(input,function(ret){
-					//console.log('inside admin post callback')
-					zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
-				});
-
-			};
 
 			o._.html.start = document.createElement('zs4-array-start');
 			o._.html.e.appendChild(o._.html.start);
@@ -99,7 +78,6 @@ zs4.admin.type = {
 			o._.html.c.style.display = 'none';
 			o._.html.c.style.paddingLeft = '1em';
 			o._.html.c.style.borderLeft = 'thin dotted';
-			//o._.html.content.textContent = 'blah blah';
 
 			o._.html.end = document.createElement('zs4-array-end');
 			o._.html.e.appendChild(o._.html.end);
@@ -134,6 +112,34 @@ zs4.admin.type = {
 				return ret;
 	    }).bind(o);
 
+			o._.refresh = (function(){
+				zs4.console.log('inside '+o._.path+'.refresh()');
+				zs4.console.log(o.array._.value);
+
+				for (var n in o.array._.value){
+					zs4.console.log('refresh('+n+')');
+					if (!zs4.is.type(o.array[n])){
+						zs4.console.log('new('+n+')');
+						var nu = o.template._.new();
+						nu._.notrans = false;
+						nu._.name = n;
+						zs4.type.property(o.array,nu);
+					}
+					zs4.console.log('load('+n+')');
+					o.array[n]._.load(o.array._.value[n]);
+				}
+
+				for (var n in o.array){
+					if (!zs4.is.type(o.array[n]))continue;
+					if (!o.array._.value.hasOwnProperty(n)){
+						if (zs4.is.function(o.array[n]._.cleanup))o.array[n]._.cleanup();
+            o.array._.value[n]==null;
+            o.array[n]==null;
+					}
+				}
+				zs4.admin.type.object(o,o.array);
+
+			}).bind(o);
 
 		}
 
@@ -251,7 +257,9 @@ zs4.admin.type = {
 			//console.log('make ui for object '+o._.name);
 
 			o._.html.e.style.display = 'block';
-
+			if (o._.notrans){
+				o._.html.e.style.opacity = 0.5;
+			}
 
 			o._.html.toggle = document.createElement('zs4-object-toggle');
 			o._.html.e.appendChild(o._.html.toggle);
@@ -265,13 +273,12 @@ zs4.admin.type = {
 
 			o._.html.name = document.createElement('zs4-object-name');
 			o._.html.e.appendChild(o._.html.name);
-			if (po == null) o._.html.name.textContent = 'zs4.THIS';
+			if (po == null) o._.html.name.textContent = 'zs4';
 			else o._.html.name.textContent = o._.name;
-			o._.html.name.style.cursor = 'pointer';
 
 			if (o._.api){
-				o._.html.name.style.fontWeight = 'bold';
-				o._.html.name.onclick = function(){
+				//o._.html.response = (function(res){window.alert(JSON.stringify(res))}).bind(o);
+				o._.html.submit = (function(){
 					var input = o._.input();
 					if (input == null)return;
 
@@ -285,16 +292,19 @@ zs4.admin.type = {
 					//zs4.console.log(input);
 
 					zs4.post(input,function(ret){
-						//console.log('inside admin post callback')
+						zs4.console.log('refreshing object tree');
 						zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
 					});
-
-				};
+				}).bind(o);
+				o._.html.name.style.cursor = 'pointer';
+				o._.html.name.style.fontWeight = 'bold';
+				o._.html.name.onclick = o._.html.submit;
 			}
 
 			o._.html.start = document.createElement('zs4-object-start');
 			o._.html.e.appendChild(o._.html.start);
-			o._.html.start.textContent = '{';
+			if (o._.arrayio) o._.html.start.textContent = '[';
+			else o._.html.start.textContent = '{';
 
 			o._.html.c = document.createElement('zs4-object-content');
 			o._.html.e.appendChild(o._.html.c);
@@ -305,7 +315,8 @@ zs4.admin.type = {
 
 			o._.html.end = document.createElement('zs4-object-end');
 			o._.html.e.appendChild(o._.html.end);
-			o._.html.end.textContent = '}';
+			if (o._.arrayio) o._.html.end.textContent = ']';
+			else o._.html.end.textContent = '}';
 
 			o._.html.onToggle = function(){
 				if (o._.html.expanded){
@@ -345,6 +356,7 @@ zs4.admin.type = {
 			zs4.admin.type[o[n]._.typename](o,o[n]);
 		}
 
+		if (zs4.is.function(o._.refresh))o._.refresh();
 	},
 	password:function(po,o){
 		this.unknown(po,o);

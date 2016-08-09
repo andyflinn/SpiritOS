@@ -319,7 +319,7 @@ zs4.copy = {
       };
       return recurse(from,new Object(),0);
     },
-    schemabasics(from,to){
+    schemabasics:function(from,to){
       if (!zs4.is.type(from)||!zs4.is.type(to))return;
 
       if (zs4.is.number(from._.min))to._.min=from._.min;
@@ -329,8 +329,28 @@ zs4.copy = {
       if (zs4.is.number(from._.maxlength))to._.maxlength=from._.maxlength;
       if (zs4.is.array(from._.enum))to._.enum = from._.enum;
       if (zs4.is.boolean(from._.trim))to._.trim = from._.trim;
+      if (zs4.is.boolean(from._.arrayio))to._.arrayio=from._.arrayio;
+      if (zs4.is.boolean(from._.notrans))to._.notrans=from._.notrans;
       if (zs4.is.boolean(from._.noset))to._.noset=from._.noset;
       if (zs4.is.boolean(from._.api))to._.api=from._.api;
+    },
+    trim:function(from,to){
+      for (var n in from){
+        if (zs4.is.object(from[n])){
+          if (!zs4.is.object(to[n])){
+            to[n] = new Object();
+            zs4.copy.trim(from[n],to[n]);
+          }
+        }
+        else {
+          to[n] = from[n];
+        }
+      }
+
+      for (var n in to){
+        if (!from.hasOwnProperty(n))
+          to[n] = null;
+      }
     },
 };
 
@@ -386,16 +406,16 @@ zs4.integer = {
       var s = parseInt(i).toString();
       var r = '';
       for (var i=0;i<s.length;i++){
-        if(n.charAt(i)<'0')r+='a';
-        if(n.charAt(i)<'1')r+='b';
-        if(n.charAt(i)<'2')r+='c';
-        if(n.charAt(i)<'3')r+='d';
-        if(n.charAt(i)<'4')r+='e';
-        if(n.charAt(i)<'5')r+='f';
-        if(n.charAt(i)<'6')r+='g';
-        if(n.charAt(i)<'7')r+='h';
-        if(n.charAt(i)<'8')r+='i';
-        if(n.charAt(i)<'9')r+='j';
+        if(s.charAt(i)=='0')r+='a';
+        if(s.charAt(i)=='1')r+='b';
+        if(s.charAt(i)=='2')r+='c';
+        if(s.charAt(i)=='3')r+='d';
+        if(s.charAt(i)=='4')r+='e';
+        if(s.charAt(i)=='5')r+='f';
+        if(s.charAt(i)=='6')r+='g';
+        if(s.charAt(i)=='7')r+='h';
+        if(s.charAt(i)=='8')r+='i';
+        if(s.charAt(i)=='9')r+='j';
       }
       return r;
     },
@@ -408,16 +428,16 @@ zs4.name = {
       if (!zs4.is.name(i))return null;
       r = '';
       for (var i=0;i<s.length;i++){
-        if(n.charAt(i)<'a')r+='0';
-        if(n.charAt(i)<'b')r+='1';
-        if(n.charAt(i)<'c')r+='2';
-        if(n.charAt(i)<'d')r+='3';
-        if(n.charAt(i)<'e')r+='4';
-        if(n.charAt(i)<'f')r+='5';
-        if(n.charAt(i)<'g')r+='6';
-        if(n.charAt(i)<'h')r+='7';
-        if(n.charAt(i)<'i')r+='8';
-        if(n.charAt(i)<'j')r+='9';
+        if(n.charAt(i)=='a')r+='0';
+        if(n.charAt(i)=='b')r+='1';
+        if(n.charAt(i)=='c')r+='2';
+        if(n.charAt(i)=='d')r+='3';
+        if(n.charAt(i)=='e')r+='4';
+        if(n.charAt(i)=='f')r+='5';
+        if(n.charAt(i)=='g')r+='6';
+        if(n.charAt(i)=='h')r+='7';
+        if(n.charAt(i)=='i')r+='8';
+        if(n.charAt(i)=='j')r+='9';
       }
       return parseInt(r);
     },
@@ -499,6 +519,8 @@ zs4.type = {
     this._.name = input.name;
     if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
 
+    if (zs4.is.boolean(input.notrans))this._.notrans = input.notrans;
+    if (zs4.is.boolean(input.arrayio))this._.arrayio = input.arrayio;
     if (zs4.is.boolean(input.nostore))this._.nostore = input.nostore;
     if (zs4.is.boolean(input.noget))this._.noget = input.noget;
     if (zs4.is.boolean(input.noset))this._.noset = input.noset;
@@ -510,12 +532,26 @@ zs4.type = {
     if (zs4.is.boolean(input.index) && input.index == true) this._.index = true;
     else if (zs4.is.object(input.index)&&zs4.is.boolean(input.index.unique)&&input.index.unique==true)this._.index={unique:true};
 
-    if (zs4.is.function(input.onchange)){
-      this._.onchange = input.onchange;
-    };
-
     if (zs4.is.array(input.authGet))this._.authGet = input.authGet;
     if (zs4.is.array(input.authSet))this._.authSet = input.authSet;
+
+    this._.new = (function(parent){
+      var ret = new zs4.type[this._.typename](this._);
+      for (var n in this){
+        if (!zs4.is.type(this[n]))continue;
+        var prop = this[n]._.new(this);
+        if (prop != null) zs4.type.property(ret,prop);
+      }
+      return ret;
+    }).bind(this);
+
+    this._.clone = (function(parent){
+      var ret = this._.new();
+      if (this._.type == Object){
+        ret._.load(this._.value);
+      }
+      return ret;
+    }).bind(this);
 
     this._.zs4Parent = (function(){
       var arr = zs4.string.split.separators(this._.path,'.');
@@ -540,6 +576,12 @@ zs4.type = {
       //zs4.console.log('this.shouldBeSaved()');
       args.request.needsSaving = true;
     }).bind(this);
+
+    for (var n in this){
+      if (!zs4.is.type(this[n])||this[n]._.noget)continue;
+      var ret = this[n]._.get(args,this);
+      if (ret != null) parent[n] = ret;
+    }
 
     this._.getProperties = (function(args,parent){
       for (var n in this){
@@ -589,23 +631,27 @@ zs4.type = {
 
       zs4.copy.schemabasics(o,this);
 
-      if (this._.typename=='object'||this._.typename=='array'){
-        for (var n in o){
-          if (!zs4.is.type(o[n]))continue;
+      if (this._.type==Object){
 
-          if (!this.hasOwnProperty(n)||!zs4.is.type(this[n])){
-            zs4.type.property(this,new zs4.type[o[n]._.typename](o[n]._))
+        if (!this._.arrayio){
+          for (var n in o){
+            if (!zs4.is.type(o[n]))continue;
+
+            if (!this.hasOwnProperty(n)||!zs4.is.type(this[n])){
+              zs4.type.property(this,new zs4.type[o[n]._.typename](o[n]._))
+            }
+
+            this[n]._.got(o[n],this);
           }
 
-          this[n]._.got(o[n],this);
-        }
-        for (var n in this){
-          if (!zs4.is.type(this[n]))continue;
-          if (zs4.is.type(o[n]))continue;
+          for (var n in this){
+            if (!zs4.is.type(this[n]))continue;
+            if (zs4.is.type(o[n]))continue;
 
-          if (zs4.is.function(this[n]._.cleanup))this[n]._.cleanup();
-          this._.value[n]==null;
-          this[n]==null;
+            if (zs4.is.function(this[n]._.cleanup))this[n]._.cleanup();
+            this._.value[n]==null;
+            this[n]==null;
+          }
         }
       }
       else if (p!=null){
@@ -653,22 +699,108 @@ zs4.type = {
   array:function(input){
     zs4.type.object.call(this,input)
     this._.typename = 'array';
+
     var THIS = this;
 
-    zs4.type.property(this,new zs4.type.integer({name:'maxlength',required:true,}));
-    zs4.type.property(this,new zs4.type.integer({name:'length',required:true,noset:true,}));
+    THIS._.array = new Object();
+    THIS._.array.addElements = (function(o){
+      //window.alert(JSON.stringify(o));
+      if (zs4.is.object(o.result)&&zs4.is.object(o.result.array)){
+        var from = o.result.array;
+        var to = THIS.array._.value;
+        zs4.console.log(from);
+        zs4.console.log(to);
+        for (var n in from){
+          if (!to.hasOwnProperty(n))to[n] = new Object();
+          zs4.copy.trim(from[n],to[n]);
+          zs4.console.log(n+' copied.');
+        }
+        if (zs4.is.function(THIS._.refresh))THIS._.refresh();
+      }
+    }).bind(THIS);
+    THIS._.array.clearAllElements = (function(o){
+      this.array._.value = new Object();
+      if (zs4.is.function(THIS._.refresh))THIS._.refresh();
+    }).bind(THIS);
+    zs4.type.property(this,new zs4.type.object({name:'config',required:true,api:true,}));
+    zs4.type.property(this.config,new zs4.type.integer({name:'maxlength',required:true,}));
+    zs4.type.property(this.config,new zs4.type.integer({name:'lastid',required:true,noset:true,}));
 
     zs4.type.property(this,new zs4.type.object({name:'method',required:true,}));
-    zs4.type.property(this.method,new zs4.type.object({name:'new',required:true,}));
 
-    zs4.type.property(this,new zs4.type.object({name:'template',required:true,}));
-    zs4.type.property(this.template,new zs4.type.object({name:'meta',required:true,}));
-    zs4.type.property(this.template.meta,new zs4.type.integer({name:'created',required:true,noset:true,default:Date.now(),}));
-    zs4.type.property(this.template.meta,new zs4.type.integer({name:'updated',required:true,noset:true,default:Date.now(),}));
+    zs4.type.property(this.method,new zs4.type.object({name:'new',required:true,api:true,}));
+    this.method.new._.transform = (function(req,cb){
+      var length = zs4.count.object.properties(THIS.array._.value);
+      if (THIS.config._.value.maxlength > 0 && length >= THIS.config._.value.maxlength){
+        req.error(this,{text:'array limit reached'})
+        cb();
+        return;
+      }
+
+      THIS.config._.value.lastid++;
+      var id = zs4.integer.to.name(THIS.config._.value.lastid);
+      var nu = THIS.template._.new();
+      nu.meta._.value.created = nu.meta._.value.updated = Date.now();
+      THIS.array._.value[id] = nu._.store();
+      var ret = {
+        array:{},
+      };
+      ret.array[id] = nu._.store();
+      req.result(this,ret);
+      this._.shouldBeSaved(req);
+      cb();
+    }).bind(this.method.new);
+    this.method.new._.callback = (function(o){
+      THIS._.array.addElements(o);
+    }).bind(this.method.new);
+
+    zs4.type.property(this.method,new zs4.type.object({name:'deleteall',required:true,api:true,}));
+    this.method.deleteall._.transform = (function(req,cb){
+      THIS.array._.value = new Object();
+      req.result(this,{array:{}});
+      this._.shouldBeSaved(req);
+      cb();
+    }).bind(this.method.deleteall);
+    this.method.deleteall._.callback = (function(o){
+      THIS._.array.clearAllElements(o);
+    }).bind(this.method.deleteall);
+
+    zs4.type.property(this.method,new zs4.type.object({name:'getall',required:true,api:true,}));
+    this.method.getall._.transform = (function(req,cb){
+      var ret = {
+        array:{},
+      };
+      zs4.copy.trim(THIS.array._.value,ret.array);
+      req.result(this,{array:{}});
+      cb();
+    }).bind(this.method.getall);
+    this.method.getall._.callback = (function(o){
+      THIS._.array.addElements(o);
+    }).bind(this.method.getall);
+
+    zs4.type.property(this,new zs4.type.object({name:'template',required:true,notrans:true,}));
+    zs4.type.property(this.template,new zs4.type.object({name:'meta',required:true,api:true,}));
+    zs4.type.property(this.template.meta,new zs4.type.string({name:'title',required:true,}));
+    zs4.type.property(this.template.meta,new zs4.type.integer({name:'created',required:true,noset:true,}));
+    zs4.type.property(this.template.meta,new zs4.type.integer({name:'updated',required:true,noset:true,}));
     zs4.type.property(this.template,new zs4.type.object({name:'this',required:true,}));
 
-    zs4.type.property(this,new zs4.type.object({name:'array',required:true,}));
+    zs4.type.property(this,new zs4.type.object({name:'array',required:true,arrayio:true,}));
+    THIS.array._.load = (function(input){
+      //zs4.console.log('loading '+this._.path);
+      if (!zs4.is.object(input))return;
+      zs4.copy.trim(input,THIS.array._.value);
+    }).bind(THIS.array);
+    THIS.array._.store = (function(){
+      //zs4.console.log(this.path+'.store()');
+      if (this._.nostore){return null;}
+      var store = new Object();
+      zs4.copy.trim(THIS.array._.value,store);
+      return store;
+    }).bind(THIS.array);
+    THIS.array._.transform = (function(req,cb){
 
+    }).bind(THIS.array);
   },
   boolean:function(input){
     zs4.type.unknown.call(this,input);
@@ -905,6 +1037,18 @@ zs4.type = {
 
     if (zs4.is.boolean(input.api))this._.api = input.api;
 
+    this._.dcb = (function(input){
+      //zs4.console.log('loading '+this._.path);
+      if (!zs4.is.object(input))return;
+
+      for (var n in this){
+        if (!zs4.is.type(this[n])||this[n]._.type!=Object)continue;
+           if (zs4.is.object(input[n])) this[n]._.dcb(input[n]);
+      }
+
+      if (zs4.is.function(this._.callback))this._.callback(input);
+    }).bind(this);
+
     this._.load = (function(input){
       //zs4.console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
@@ -944,10 +1088,13 @@ zs4.type = {
     this._.transform = (function(args,cb){
       zs4.console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
       if (!zs4.is.object(args.input)){
-        if (cb)cb(new zs4.error({text:'input not an object.'}));
-        return;
+        args.error(this,{text:'input not an object.'});
+        cb(); return;
       }
-
+      if (this._.notrans){
+        args.error(this,{text:'transform disabled'});
+        cb(); return;
+      }
       var parallel = new zs4.processor.parallel();
 
       for (var n in this){
@@ -962,11 +1109,7 @@ zs4.type = {
 
       var THIS = this;
       //zs4.console.log('parallel run '+THIS._.path);
-      parallel.run(function(){
-        //zs4.console.log('parallel done '+THIS._.path);
-        if (zs4.is.function(THIS._.onchange)){THIS._.onchange.call(THIS,args,cb);}
-        else {cb();}
-      });
+      parallel.run(cb);
       //if (this.type == Object)zs4.console.log(this.path+'.transform() done');
 
     }).bind(this);
@@ -1053,8 +1196,8 @@ zs4.request = function(o){
   if (!zs4.is.object(this.request))this.request = new Object();
   if (this.input==null)this.input = new Object();
 
-  this.request.result = new Object();
-  this.request.error = new Object();
+  if (!zs4.is.object(this.request.callback))
+    this.request.callback = new Object();
 
   this.resolvePath = function(o,r){
     if (!zs4.is.type(o)){
@@ -1072,8 +1215,11 @@ zs4.request = function(o){
     return r;
   }
   this.error = function(o,error){
-    var r = this.resolvePath(o,this.request.error);
-    if (r==null)return;
+    var r = this.resolvePath(o,this.request.callback);
+    if (r==null){
+      zs4.console.log('cannot resolve path');
+      return;
+    }
     r.error = {
       text:'unknown error',
       data:null,
@@ -1084,7 +1230,7 @@ zs4.request = function(o){
     }
   }
   this.result = function(o,result){
-    var r = this.resolvePath(o,this.request.result);
+    var r = this.resolvePath(o,this.request.callback);
     if (r==null){
       zs4.console.log('cannot resolve path');
       return;
@@ -1151,8 +1297,7 @@ zs4.request = function(o){
 
     this.getReply = function(){
       var r = new Object({request:{},input:this.input,reply:this.reply});
-      r.request.error = this.request.error;
-      r.request.result = this.request.result;
+      r.request.callback = this.request.callback;
       if (zs4.is.object(this.request.payload))this.tokenCreate(this.request.payload);
       if (zs4.is.string(this.request.token))r.request.token = this.request.token;
       return r;
@@ -1195,11 +1340,30 @@ if (zs4.is.window()){
       );
       //return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
     },
+    validPost:function(req,t,o){
+      if (!zs4.is.type(t)||!zs4.is.object(o))return false;
+      for (var n in t){
+        if (!zs4.is.type(t[n])||t[n]._.type!=Object||!zs4.is.object(o[n]))continue;
+        if (t[n]._.notrans){
+          req.error(t[n],{text:'transform not accepted'});
+          return false;
+        }
+        if (!zs4.io.validPost(req,t[n],o[n]))return false;
+      }
+      return true;
+    },
   };
 
   zs4.post = function(o,cb){
 
     var req = new zs4.request({input:o})
+
+    if (!zs4.io.validPost(req,zs4.THIS,o)){
+      zs4.THIS._.dcb(req.request.callback);
+      zs4.console.log(req);
+      if (cb) cb(req); return;
+    }
+
     if (zs4.is.string(zs4.THIS._.token)&&zs4.THIS._.token.length>10) req.request.token = zs4.THIS._.token;
     zs4.console.log(req);
 
@@ -1208,8 +1372,9 @@ if (zs4.is.window()){
       else zs4.THIS._.token = null;
       zs4.console.log(ret);
   		zs4.THIS._.got(ret.reply);
-  		if (cb)cb(ret);
+  		if (cb) cb(ret);
       else console.log('no callback specified for zs4.post()');
+      zs4.THIS._.dcb(ret.request.callback);
   	});
   };
 

@@ -100,26 +100,16 @@ express.app.post('/*', function (req, res) {
 express.running = false;
 
 express.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'express',required:true,api:true,
-    onchange:function(req,cb){
-      //zs4.console.log('____WWW_ONCHANGE___');
-      //zs4.console.log(this);
-      var port = this._.value.port;
-      if (this._.value.run == true){
-        this.start();
-      }
-      this._.value.run = false;
-      cb();
-    },
-  }));
+  var THIS = express.THIS = new zs4.type.object({name:'express',required:true,api:true,});
+  zs4.type.property(parent,THIS);
 
-  express.THIS = parent.express;
-  zs4.type.property(parent.express,new zs4.type.string({name:'host',required:true,default:'localhost',}));
-  zs4.type.property(parent.express,new zs4.type.integer({name:'port',required:true,default:3000,}));
-  zs4.type.property(parent.express,new zs4.type.boolean({name:'cookies',required:true,default:false,}));
-  zs4.type.property(parent.express,new zs4.type.boolean({name:'run',nostore:true,noget:true}));
+  zs4.type.property(THIS,new zs4.type.string({name:'host',required:true,default:'localhost',}));
+  zs4.type.property(THIS,new zs4.type.integer({name:'port',required:true,default:3000,}));
+  zs4.type.property(THIS,new zs4.type.boolean({name:'cookies',required:true,default:false,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'run',nostore:true,noget:true,api:true,}));
+  THIS.run._.transform = (function(req,cb){THIS.start();cb();}).bind(THIS.run);
 
-  parent.express.start = function(){
+  THIS.start = function(){
     if (express.running)return;
     //console.log('inside start');
     var port = this._.value.port;
@@ -135,7 +125,7 @@ express.schema = function(parent){
       });
     });
   };
-  parent.express.getHostURL = function(){
+  THIS.getHostURL = function(){
     return ('http://'+this._.value.host+':'+this._.value.port);
   }
 }
