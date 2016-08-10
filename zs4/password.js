@@ -8,50 +8,83 @@ password.schema = function(parent){
   var THIS = new zs4.type.object({name:'password',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],api:true,});
   zs4.type.property(parent,THIS);
 
-  THIS._.transform = (function(args,cb){
-    //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
+  THIS._.transform = (function(req,cb){
+    //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
+    if (zs4.is.object(req.input)){
+      if (passhash.isHashed(this._.value.hashed)){
+        var oldPassVerified = this.verify(req.input.vfy);
 
-    if (passhash.isHashed(this._.value.hashed)){
-      var oldPassVerified = this.verify(args.input.vfy);
+        if (oldPassVerified){
+          zs4.console.log('...old password verified...');
+          req.tokenCreate({rpw:true});
 
-      if (oldPassVerified){
-        zs4.console.log('...old password verified...');
-        args.tokenCreate({rpw:true});
+          if (zs4.is.password(req.input.set)){
+            zs4.console.log('...pass change...');
+            var nu = this.generate(req.input.set);
+            if (nu!=null) {
+              this._.value.hashed = nu;
+              this._.shouldBeSaved(req);
+            }
+          }
 
-        if (zs4.is.password(args.input.set)){
-          zs4.console.log('...pass change...');
-          var nu = this.generate(args.input.set);
-          if (nu!=null) {
+        }
+        else {
+          req.error(THIS);
+          zs4.console.log('...password '+req.input.vfy+' incorrect...');
+        }
+        //zs4.console.log('...have password already');
+      }
+      else{
+        if (zs4.is.password(req.input.set)){
+
+        var nu = this.generate(req.input.set);
+          if (nu) {
             this._.value.hashed = nu;
-            this._.shouldBeSaved(args);
+            this._.shouldBeSaved(req);
           }
         }
+      }
+    }
 
-      }
-      else {
-        args.error(THIS);
-        zs4.console.log('...password '+args.input.vfy+' incorrect...');
-      }
-      //zs4.console.log('...have password already');
-    }
-    else{
-      if (zs4.is.password(args.input.set)){
-      //zs4.console.log('...pass initialize');
-      var nu = this.generate(args.input.set);
-        if (nu) {
-          this._.value.hashed = nu;
-          this._.shouldBeSaved(args);
-        }
-      }
-    }
     this._.value.set='';
     this._.value.vfy='';
+
+    this._.reply(req);
     cb();
   }).bind(THIS);
 
-  THIS._.get = (function(args,parent){
+  THIS._.reply = (function(req,po){
+    var get = this._.replyInitialize(req);
+    if (get==null)return;
+
+    function vfy(get){
+      get.vfy = new Object({_:{}});
+      get.vfy._.name = 'vfy';
+      get.vfy._.typename = 'password';
+      get.vfy._.value = '';
+    };
+    function set(get){
+      get.set = new Object({_:{}});
+      get.set._.name = 'set';
+      get.set._.typename = 'password';
+      get.set._.value = '';
+    };
+
+    if (passhash.isHashed(this._.value.hashed)){
+      vfy(get);
+      if (req.userIsRoot()){
+        set(get);
+      }
+    }
+    else {
+      set(get);
+    }
+
+  }).bind(THIS);
+
+  THIS._.get = (function(req,parent){
     //zs4.console.log(this.path+'.get()');
-    var get = this._.getInitialize(args,parent);
+    var get = this._.getInitialize(req,parent);
     if (get==null)return null;
 
     function vfy(get){
@@ -69,7 +102,7 @@ password.schema = function(parent){
 
     if (passhash.isHashed(this._.value.hashed)){
       vfy(get);
-      if (args.userIsRoot()){
+      if (req.userIsRoot()){
         set(get);
       }
     }

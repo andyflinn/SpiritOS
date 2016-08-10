@@ -577,6 +577,24 @@ zs4.type = {
       args.request.needsSaving = true;
     }).bind(this);
 
+    this._.replyInitialize = (function(req){
+      if (!this._.noget && req.authorize(this,this._.authGet)){
+        var get = req.get(this);
+        get._.name = this._.name;
+        get._.typename = this._.typename;
+        zs4.copy.schemabasics(this,get);
+        return get;
+      }
+      return null;
+    }).bind(this);
+    this._.reply = (function(req,po){
+      var get = this._.replyInitialize(req);
+      if (get == null)return;
+      if (this._.type != Object && po!=null){
+        get._.value = po._.value[this._.name];
+      }
+    }).bind(this);
+
     this._.getProperties = (function(args,parent){
       for (var n in this){
         if (!zs4.is.type(this[n])||this[n]._.noget)continue;
@@ -699,18 +717,18 @@ zs4.type = {
 
     THIS._.array = new Object();
     THIS._.array.addElements = (function(o){
-      console.log('add array elements');
+      //console.log('add array elements');
       if (zs4.is.object(o.result)&&zs4.is.object(o.result.array)){
         var from = o.result.array;
         var to = THIS.array._.value;
-        console.log(from);
+        //console.log(from);
         for (var n in from){
           if (!to.hasOwnProperty(n))to[n] = new Object();
-          console.log(from[n]);
+          //console.log(from[n]);
           zs4.copy.trim(from[n],to[n]);
-          console.log(to[n]);
+          //console.log(to[n]);
         }
-        console.log(to);
+        //console.log(to);
         if (zs4.is.function(THIS._.refresh))THIS._.refresh();
       }
     }).bind(THIS);
@@ -1158,29 +1176,44 @@ zs4.type = {
       return store;
     }).bind(this);
 
-    this._.transform = (function(args,cb){
+    this._.reply = (function(req,po){
+      if (req.authorize(this,this._.authGet)){
+        var get = this._.replyInitialize(req);
+        for (var n in this){
+          if (zs4.is.type(this[n])&&this[n]._.type!=Object){
+            this[n]._.reply(req,this);
+          }
+        }
+      }
+    }).bind(this);
+
+    this._.transform = (function(req,cb){
       console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
-      if (!zs4.is.object(args.input)){
-        args.error(this,{text:'input not an object.'});
-        cb(); return;
-      }
-      if (this._.notrans){
-        args.error(this,{text:'transform disabled'});
-        cb(); return;
-      }
+      var THIS = this;
       var parallel = new zs4.processor.parallel();
 
       for (var n in this){
-        if (!zs4.is.type(this[n])||args.input[n]==null)continue;
+        if (!zs4.is.type(this[n]))continue;
 
-        if (this[n]._.type == Object){
-          parallel.call(this[n],this[n]._.transform,new zs4.request({request:args.request,input:args.input[n],}));
-        }else{
-          parallel.call(this[n],this[n]._.transform,new zs4.request({request:args.request,input:args.input[n],parent:this._.value,}));
+        if (req.input==null||req.input[n]==null){
+          if (this[n]._.type == Object){
+            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:null,}));
+          }
+        }
+        else if (zs4.is.object(req.input)&&!this._.notrans){
+          if (this[n]._.type == Object){
+            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:req.input[n],}));
+          }else{
+            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:req.input[n],parent:this._.value,}));
+          }
         }
       }
 
-      parallel.run(cb);
+      parallel.run(function(){
+        THIS._.reply(req);
+        cb();
+      });
+
     }).bind(this);
   },
   password:function(input){
@@ -1256,6 +1289,7 @@ zs4.type = {
 
 zs4.request = function(o){
 
+  const BADPATH = 'bad path';
   var THIS = this;
 
   if (zs4.is.object(o)){
@@ -1269,6 +1303,9 @@ zs4.request = function(o){
 
   if (!zs4.is.object(this.request.callback))
     this.request.callback = new Object();
+
+  if (!zs4.is.object(this.request.get))
+    this.request.get = new Object();
 
   this.resolvePath = function(o,r){
     if (!zs4.is.type(o)){
@@ -1288,7 +1325,7 @@ zs4.request = function(o){
   this.error = function(o,error){
     var r = this.resolvePath(o,this.request.callback);
     if (r==null){
-      console.log('cannot resolve path');
+      console.log(BADPATH);
       return;
     }
     r.error = {text:'unknown error',}
@@ -1307,11 +1344,16 @@ zs4.request = function(o){
   this.result = function(o,result){
     var r = this.resolvePath(o,this.request.callback);
     if (r==null){
-      console.log('cannot resolve path');
+      console.log(BADPATH);
       return;
     }
     r.result = result;
-    console.log(result);
+    //console.log(result);
+  }
+  this.get = function(o,result){
+    var get = this.resolvePath(o,this.request.get);
+    if (!zs4.is.object(get._)) get._ = new Object();
+    return get;
   }
 
   if (zs4.is.node()){
@@ -1371,8 +1413,9 @@ zs4.request = function(o){
     };
 
     this.getReply = function(){
-      var r = new Object({request:{},input:this.input,reply:this.reply});
+      var r = new Object({request:{},input:this.input,reply:this.reply,});
       r.request.callback = this.request.callback;
+      r.request.state = this.request.get;
       if (zs4.is.object(this.request.payload))this.tokenCreate(this.request.payload);
       if (zs4.is.string(this.request.token))r.request.token = this.request.token;
       return r;

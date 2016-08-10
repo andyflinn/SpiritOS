@@ -25,12 +25,6 @@ zs4.load(function(){
   // set up root authority
   var req = new zs4.request({request:{node:true,},input:msg});
 
-  if (zs4.is.email(zs4.THIS.zs4.admin._.value.email)){
-    zs4.console.log('admin email: '+zs4.THIS.zs4.admin._.value.email);
-    req.request.email = zs4.THIS.zs4.admin._.value.email;
-  }
-
-
   zs4.THIS._.transform(req,function(){
     zs4.console.log('transformed');
     if (req.request.needsSaving){

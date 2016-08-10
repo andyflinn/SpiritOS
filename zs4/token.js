@@ -14,10 +14,11 @@ else {
 }
 
 token.schema = function(parent){
-  zs4.type.property(parent,new zs4.type.object({name:'token',required:true,api:true,}));
-  zs4.type.property(parent.token,new zs4.type.string({name:'secret',required:true,default:randomstring.generate(RANDOMLENGTH),}));
+  var THIS = new zs4.type.object({name:'token',required:true,api:true,});
+  zs4.type.property(parent,THIS);
+  zs4.type.property(THIS,new zs4.type.string({name:'secret',required:true,default:randomstring.generate(RANDOMLENGTH),}));
 
-  parent.token.encode = (function(claims){
+  THIS.encode = (function(claims){
     var payload = new Object({
       iss:zs4.THIS.zs4.express._.value.host,
       iat:Date.now(),
@@ -31,9 +32,9 @@ token.schema = function(parent){
     //zs4.console.log(zs4.const.MS.WEEK*2);
     //zs4.console.log(payload);
     return jwt.encode(payload, this._.value.secret);
-  }).bind(parent.token);
+  }).bind(THIS);
 
-  parent.token.decode = (function(token){
+  THIS.decode = (function(token){
 
     var dec;
     try {
@@ -46,7 +47,7 @@ token.schema = function(parent){
     if (!zs4.is.object(dec))return null;
 
     return dec;
-  }).bind(parent.token);
+  }).bind(THIS);
 
 
 }

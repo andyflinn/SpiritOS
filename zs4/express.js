@@ -107,7 +107,11 @@ express.schema = function(parent){
   zs4.type.property(THIS,new zs4.type.integer({name:'port',required:true,default:3000,}));
   zs4.type.property(THIS,new zs4.type.boolean({name:'cookies',required:true,default:false,}));
   zs4.type.property(THIS,new zs4.type.object({name:'run',nostore:true,noget:true,api:true,}));
-  THIS.run._.transform = (function(req,cb){THIS.start();cb();}).bind(THIS.run);
+  THIS.run._.transform = (function(req,cb){
+    THIS.start();
+    this._.reply(req);
+    cb();
+  }).bind(THIS.run);
 
   THIS.start = function(){
     if (express.running)return;

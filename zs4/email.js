@@ -8,51 +8,53 @@ email.schema = function(parent){
   zs4.type.property(parent,THIS);
 
   //zs4.console.log('____INSIDE EMAIL SCHEMA____');
-//  email.THIS = parent.email;
-  zs4.type.property(parent.email,new zs4.type.email({name:'address',required:true,}));
+//  email.THIS = THIS;
+  zs4.type.property(THIS,new zs4.type.email({name:'address',required:true,}));
 
-  zs4.type.property(parent.email,new zs4.type.object({name:'smtp',required:true,api:true,}));
-  zs4.type.property(parent.email.smtp,new zs4.type.boolean({name:'configured',required:true,default:false,}));
-  zs4.type.property(parent.email.smtp,new zs4.type.string({name:'user',required:true,}));
-  zs4.type.property(parent.email.smtp,new zs4.type.string({name:'password',required:true,}));
-  zs4.type.property(parent.email.smtp,new zs4.type.string({name:'host',required:true,}));
-  zs4.type.property(parent.email.smtp,new zs4.type.integer({name:'port',required:true,default:587}));
-  zs4.type.property(parent.email.smtp,new zs4.type.boolean({name:'ssl',required:true,default:false,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'smtp',required:true,api:true,}));
+  zs4.type.property(THIS.smtp,new zs4.type.boolean({name:'configured',required:true,default:false,}));
+  zs4.type.property(THIS.smtp,new zs4.type.string({name:'user',required:true,}));
+  zs4.type.property(THIS.smtp,new zs4.type.string({name:'password',required:true,}));
+  zs4.type.property(THIS.smtp,new zs4.type.string({name:'host',required:true,}));
+  zs4.type.property(THIS.smtp,new zs4.type.integer({name:'port',required:true,default:587}));
+  zs4.type.property(THIS.smtp,new zs4.type.boolean({name:'ssl',required:true,default:false,}));
 
-  zs4.type.property(parent.email.smtp,new zs4.type.object({name:'message',required:true,nostore:true,api:true,}));
-  //zs4.type.property(parent.email.message,new zs4.type.email({name:'from',required:true,}));
-  zs4.type.property(parent.email.smtp.message,new zs4.type.email({name:'to',required:true,}));
-  zs4.type.property(parent.email.smtp.message,new zs4.type.string({name:'subject',required:true,}));
-  zs4.type.property(parent.email.smtp.message,new zs4.type.text({name:'text',required:true,}));
+  zs4.type.property(THIS.smtp,new zs4.type.object({name:'message',required:true,nostore:true,api:true,}));
+  //zs4.type.property(THIS.message,new zs4.type.email({name:'from',required:true,}));
+  zs4.type.property(THIS.smtp.message,new zs4.type.email({name:'to',required:true,}));
+  zs4.type.property(THIS.smtp.message,new zs4.type.string({name:'subject',required:true,}));
+  zs4.type.property(THIS.smtp.message,new zs4.type.text({name:'text',required:true,}));
 
-  parent.email.smtp.message._.transform = (function(args,cb){
-    zs4.console.log('message.transform('+JSON.stringify(args.input)+')');
+  THIS.smtp.message._.transform = (function(req,cb){
+    zs4.console.log('message.transform('+JSON.stringify(req.input)+')');
     this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
 
-    if (!zs4.is.email(parent.email.smtp._.value.user)
-    ||  !zs4.is.email(args.input.to)
-    ||  !zs4.is.string(args.input.subject)
-    ||  !zs4.is.string(args.input.text)
-    ||  args.input.subject.length == 0
-    ||  args.input.text.length == 0
+    if (!zs4.is.email(THIS.smtp._.value.user)
+    ||  !zs4.is.email(req.input.to)
+    ||  !zs4.is.string(req.input.subject)
+    ||  !zs4.is.string(req.input.text)
+    ||  req.input.subject.length == 0
+    ||  req.input.text.length == 0
     ){
+      this._.reply(req);
       cb();
     }
     else{
       var message = {
-        from:parent.email.smtp._.value.user,
-        to:args.input.to,
-        subject:args.input.subject,
-        text:args.input.text,
+        from:THIS.smtp._.value.user,
+        to:req.input.to,
+        subject:req.input.subject,
+        text:req.input.text,
       };
       zs4.THIS.zs4.email.send(message,function(){
+        this._.reply(req);
         cb();
       });
     }
 
-  }).bind(parent.email.smtp.message);
+  }).bind(THIS.smtp.message);
 
-  parent.email.send = function(message,cb){
+  THIS.send = function(message,cb){
     if (!this._.value.smtp.configured){
 
     }
@@ -78,5 +80,5 @@ email.schema = function(parent){
     });
   };
 
-  //zs4.console.log(parent.email.smtp.message._.zs4Parent());
+  //zs4.console.log(THIS.smtp.message._.zs4Parent());
 };

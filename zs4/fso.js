@@ -38,63 +38,66 @@ fso.schema = function(parent){
 
   zs4.type.property(THIS,new zs4.type.object({name:'stat',required:true,api:true,}));
   addPath(THIS.stat);
-  THIS.stat._.transform = (function(args,cb){
-    //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
+  THIS.stat._.transform = (function(req,cb){
+    //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var THIS = this;
-    fs.stat(args.input.path,function(err,stats){
-      if (err){
-        args.error(THIS,{text:'fs.stat(\''+args.input.path+'\')',data:err});
-      }
-      else{
-        var result = fso.statsObject(stats);
-        args.result(THIS,result);
-      }
-
-      cb();
-    });
-
+    if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
+      fs.stat(req.input.path,function(err,stats){
+        if (err){
+          req.error(THIS,{text:'fs.stat(\''+req.input.path+'\')',data:err});
+        }
+        else{
+          var result = fso.statsObject(stats);
+          req.result(THIS,result);
+        }
+        THIS._.reply(req);
+        cb();
+      });
+    }
+    THIS._.reply(req);
+    cb();
   }).bind(THIS);
 
   zs4.type.property(THIS,new zs4.type.object({name:'readdir',required:true,api:true,}));
   addPath(THIS.readdir);
-  THIS.readdir._.transform = (function(args,cb){
-    //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
+  THIS.readdir._.transform = (function(req,cb){
+    //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var THIS = this;
-    fs.readdir(args.input.path,function(err,list){
-      if (err){
-        args.error(THIS,{text:'fs.readdir(\''+args.input.path+'\')',data:err});
-      }
-      else {//if (zs4.is.array(list)){
-        args.result(THIS,list);
-      }
-      //else{
-      //  args.error(THIS,{text:'fs.stat(\''+args.input.path+'\')',data:err});
-      //}
-
-      cb();
-    });
-
+    if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
+      fs.readdir(req.input.path,function(err,list){
+        if (err){
+          req.error(THIS,{text:'fs.readdir(\''+req.input.path+'\')',data:err});
+        }
+        else {//if (zs4.is.array(list)){
+          req.result(THIS,list);
+        }
+        THIS._.reply(req);
+        cb();
+      });
+    }
+    THIS._.reply(req);
+    cb();
   }).bind(THIS);
 
   zs4.type.property(THIS,new zs4.type.object({name:'readfile',required:true,api:true,}));
   addPath(THIS.readfile);
-  THIS.readfile._.transform = (function(args,cb){
-    //zs4.console.log('password.transform('+JSON.stringify(args.input)+')');
+  THIS.readfile._.transform = (function(req,cb){
+    //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var THIS = this;
-    fs.readFile(args.input.path,'base64',function(err,data){
-      if (err){
-        args.error(THIS,{text:'fs.readFile(\''+args.input.path+'\')',data:err});
-      }
-      else {//if (zs4.is.array(list)){
-        args.result(THIS,data);
-      }
-      //else{
-      //  args.error(THIS,{text:'fs.stat(\''+args.input.path+'\')',data:err});
-      //}
-
-      cb();
-    });
-
+    if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
+      fs.readFile(req.input.path,'base64',function(err,data){
+        if (err){
+          req.error(THIS,{text:'fs.readFile(\''+req.input.path+'\')',data:err});
+        }
+        else {//if (zs4.is.array(list)){
+          req.result(THIS,data);
+        }
+        THIS._.reply(req);
+        cb();
+      });
+    }
+    THIS._.reply(req);
+    cb();
   }).bind(THIS);
 
 }

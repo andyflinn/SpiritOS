@@ -114,7 +114,7 @@ zs4.admin.type = {
 
 			o._.refresh = (function(){
 				console.log('inside '+o._.path+'.refresh()');
-				console.log(o.array._.value);
+				//console.log(o.array._.value);
 
 				for (var n in o.array._.value){
 					//console.log('refresh('+n+')');
