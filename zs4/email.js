@@ -26,8 +26,8 @@ email.schema = function(parent){
   zs4.type.property(THIS.smtp.message,new zs4.type.text({name:'text',required:true,}));
 
   THIS.smtp.message._.transform = (function(req,cb){
-    zs4.console.log('message.transform('+JSON.stringify(req.input)+')');
     this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
+    if (req.input==null){this._.get(req); cb(); return;}
 
     if (!zs4.is.email(THIS.smtp._.value.user)
     ||  !zs4.is.email(req.input.to)
@@ -36,19 +36,39 @@ email.schema = function(parent){
     ||  req.input.subject.length == 0
     ||  req.input.text.length == 0
     ){
-      this._.reply(req);
-      cb();
+      req.error(this,'invalid message');
+      this._.get(req); cb(); return;
     }
     else{
+      console.log(this._.path+'.transform()');
       var message = {
         from:THIS.smtp._.value.user,
         to:req.input.to,
         subject:req.input.subject,
         text:req.input.text,
       };
-      zs4.THIS.zs4.email.send(message,function(){
-        this._.reply(req);
-        cb();
+      if (!this._.value.smtp.configured){
+
+      }
+      if (this.smtpServer == null){
+        this.smtpServer = emailjs.server.connect({
+           user:    this._.value.smtp.user,
+           password: this._.value.smtp.password,
+           host:    this._.value.smtp.host,
+           port:    this._.value.smtp.port,
+           ssl:     this._.value.smtp.ssl,
+        });
+      }
+      console.log(message);
+      this.smtpServer.send(message, function(err,abc) {
+          if(err){
+              req.error({text:'smtp send failed',data:err});
+              console.log(err);
+              this._.get(req); cb(); return;
+          }
+          else{
+            this._.get(req); cb(); return;
+          }
       });
     }
 

@@ -536,6 +536,11 @@ zs4.type = {
     if (zs4.is.array(input.authSet))this._.authSet = input.authSet;
 
     this._.new = (function(parent){
+      if (zs4.is.function(this._.create)){
+        console.log('FROM CONSTRUCTIST!!!!');
+        var r = new this._.create(this._);
+        return r;
+      }
       var ret = new zs4.type[this._.typename](this._);
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
@@ -572,12 +577,13 @@ zs4.type = {
       return result;
     }).bind(this);
     this._.shouldBeSaved = (function(args){
+      console.log('this.shouldBeSaved()');
       if (this._.nostore)return;
-      //console.log('this.shouldBeSaved()');
+      console.log('this.shouldBeSaved()');
       args.request.needsSaving = true;
     }).bind(this);
 
-    this._.replyInitialize = (function(req){
+    this._.getInitialize = (function(req){
       if (!this._.noget && req.authorize(this,this._.authGet)){
         var get = req.get(this);
         get._.name = this._.name;
@@ -587,45 +593,12 @@ zs4.type = {
       }
       return null;
     }).bind(this);
-    this._.reply = (function(req,po){
-      var get = this._.replyInitialize(req);
+    this._.get = (function(req,po){
+      var get = this._.getInitialize(req);
       if (get == null)return;
       if (this._.type != Object && po!=null){
         get._.value = po._.value[this._.name];
       }
-    }).bind(this);
-
-    this._.getProperties = (function(args,parent){
-      for (var n in this){
-        if (!zs4.is.type(this[n])||this[n]._.noget)continue;
-        var ret = this[n]._.get(args,this);
-        if (ret != null) parent[n] = ret;
-      }
-    }).bind(this);
-    this._.getInitialize = (function(args,parent){
-      if (this._.noget || !args.authorize(this,this._.authGet)){return null;}
-
-      var get = new Object({_:{}});
-
-      get._.name = this._.name;
-      get._.typename = this._.typename;
-      var thisIsObject = (this._.typename == 'object');
-      if (!thisIsObject && parent!=null){
-        get._.value = parent._.value[this._.name];
-      }
-
-      zs4.copy.schemabasics(this,get);
-
-      return get;
-    }).bind(this);
-    this._.get = (function(args,parent){
-      //console.log(this.path+'.get()');
-      var get = this._.getInitialize(args,parent);
-      if (get==null)return null;
-
-      this._.getProperties(args,get);
-
-      return get;
     }).bind(this);
 
     this._.got = (function(o,p){
@@ -716,26 +689,18 @@ zs4.type = {
     var THIS = this;
 
     THIS._.array = new Object();
-    THIS._.array.addElements = (function(o){
-      //console.log('add array elements');
-      if (zs4.is.object(o.result)&&zs4.is.object(o.result.array)){
-        var from = o.result.array;
-        var to = THIS.array._.value;
-        //console.log(from);
-        for (var n in from){
-          if (!to.hasOwnProperty(n))to[n] = new Object();
-          //console.log(from[n]);
-          zs4.copy.trim(from[n],to[n]);
-          //console.log(to[n]);
-        }
-        //console.log(to);
-        if (zs4.is.function(THIS._.refresh))THIS._.refresh();
+    THIS._.array.elementConnect = (function(p,e){
+      if (p==null)e._.path = e._.name;
+      else e._.path = p._.path +'.'+e._.name;
+      if (e._.type == Object){
+          for (var n in e){
+            if (!zs4.is.type(e[n]))continue;
+            THIS._.array.elementConnect(e,e[n]);
+          }
       }
-    }).bind(THIS);
-    THIS._.array.clearAllElements = (function(o){
-      this.array._.value = new Object();
-      if (zs4.is.function(THIS._.refresh))THIS._.refresh();
-    }).bind(THIS);
+      return e;
+    }).bind(THIS.array);
+
     zs4.type.property(this,new zs4.type.object({name:'config',required:true,api:true,}));
     zs4.type.property(this.config,new zs4.type.integer({name:'maxlength',required:true,}));
     zs4.type.property(this.config,new zs4.type.integer({name:'lastid',required:true,noset:true,}));
@@ -744,62 +709,80 @@ zs4.type = {
 
     zs4.type.property(this.method,new zs4.type.object({name:'new',required:true,api:true,}));
     this.method.new._.transform = (function(req,cb){
-      console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
-      var length = zs4.count.object.properties(THIS.array._.value);
-      if (THIS.config._.value.maxlength > 0 && length >= THIS.config._.value.maxlength){
-        req.error(this,{text:'array limit reached'})
-        cb();
-        return;
-      }
+      if (zs4.is.object(req.input)){
+        console.log(this._.path+'.transform()');
+        console.log(req.input);
+        var length = zs4.count.object.properties(THIS.array._.value);
+        if (THIS.config._.value.maxlength > 0 && length >= THIS.config._.value.maxlength){
+          req.error(this,{text:'array limit reached'})
+          this._.get(req); cb(); return;
+        }
 
-      THIS.config._.value.lastid++;
-      var id = zs4.integer.to.name(THIS.config._.value.lastid);
-      var nu = THIS.template._.new();
-      nu.meta._.value.created = nu.meta._.value.updated = Date.now();
-      THIS.array._.value[id] = nu._.store();
-      var ret = {
-        array:{},
-      };
-      ret.array[id] = nu._.store();
-      req.result(this,ret);
-      this._.shouldBeSaved(req);
-      cb();
+        THIS.config._.value.lastid++;
+        var id = zs4.integer.to.name(THIS.config._.value.lastid);
+        var nu = THIS.template._.new();
+        nu._.name = id; nu._.notrans = false;
+        nu.meta._.value.created = nu.meta._.value.updated = Date.now();
+        THIS.array._.value[id] = nu._.store();
+
+        THIS._.array.elementConnect(THIS.array,nu);
+
+        nu._.transform(new zs4.request({request:req.request,input:null,}),function(){
+
+          THIS._.shouldBeSaved(req);
+        });
+
+      }
+      this._.get(req); cb(); return;
     }).bind(this.method.new);
-    this.method.new._.callback = (function(o){
-      THIS._.array.addElements(o);
-    }).bind(this.method.new);
+
+    zs4.type.property(this.method,new zs4.type.object({name:'getall',required:true,api:true,}));
+    this.method.getall._.transform = (function(req,cb){
+      if (zs4.is.object(req.input)){
+        console.log(this._.path+'.transform()');
+
+        var parallel = new zs4.processor.parallel();
+        for (var n in THIS.array._.value){
+          console.log(' .. '+n);
+
+          var r = new zs4.request({request:req.request,input:null,});
+          r.elenam = n;
+          parallel.call(THIS.array,function(req,cb){
+            var model = THIS.template._.new();
+            model._.name = req.elenam; model._.notrans = false;
+            THIS._.array.elementConnect(THIS.array,model);
+            model._.load(THIS.array._.value[req.elenam]);
+            model._.transform(req,cb);
+          },r);
+        }
+
+        parallel.run(function(){
+          THIS._.get(req);
+          cb();
+        });
+
+      }
+      this._.get(req); cb(); return;
+    }).bind(this.method.getall);
 
     zs4.type.property(this.method,new zs4.type.object({name:'deleteall',required:true,api:true,}));
     zs4.type.property(this.method.deleteall,new zs4.type.boolean({name:'sure',required:true,}));
     this.method.deleteall._.transform = (function(req,cb){
-      console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
-      if (req.input.sure!=true){
-        req.error(this,{text:'not sure'});
-        cb();return;
+      if (zs4.is.object(req.input)){
+        console.log(this._.path+'.transform()');
+        if (req.input.sure!=true){
+          req.error(this,{text:'not sure'});
+          this._.get(req); cb(); return;
+        }
+        THIS.array._.value = new Object();
+        req.result(this,true);
+        this._.shouldBeSaved(req);
       }
-      THIS.array._.value = new Object();
-      req.result(this,{array:{}});
-      this._.shouldBeSaved(req);
-      cb();
+      this._.get(req); cb(); return;
     }).bind(this.method.deleteall);
     this.method.deleteall._.callback = (function(o){
-      console.log('deleteall._.callback(o): '+JSON.stringify(o));
-      if (!o.hasOwnProperty('error'))THIS._.array.clearAllElements(o);
+      console.log('deleteall._.callback()');
     }).bind(this.method.deleteall);
-
-    zs4.type.property(this.method,new zs4.type.object({name:'getall',required:true,api:true,}));
-    this.method.getall._.transform = (function(req,cb){
-      console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
-      var ret = {
-        array:{},
-      };
-      zs4.copy.trim(THIS.array._.value,ret.array);
-      req.result(this,ret);
-      cb();
-    }).bind(this.method.getall);
-    this.method.getall._.callback = (function(o){
-      THIS._.array.addElements(o);
-    }).bind(this.method.getall);
 
     zs4.type.property(this,new zs4.type.object({name:'template',required:true,notrans:true,}));
     zs4.type.property(this.template,new zs4.type.object({name:'meta',required:true,api:true,}));
@@ -822,17 +805,6 @@ zs4.type = {
       return store;
     }).bind(THIS.array);
 
-    THIS.array._.elementConnect = (function(schema,ns){
-      ns._.path = schema._.path +'.'+ns._.name;
-      if (ns._.type == Object){
-          for (var n in ns){
-            if (!zs4.is.type(ns[n]))continue;
-            THIS.array._.elementConnect(ns,ns[n]);
-          }
-      }
-    }).bind(THIS.array);
-
-
     THIS.array._.elementLoad = (function(req,cb){
       //console.log('elementLoad '+this._.path+'.'+req.elenam);
 
@@ -850,7 +822,7 @@ zs4.type = {
       cb();
     }).bind(THIS.array);
     THIS.array._.elementTransform = (function(req,cb){
-      //console.log('transforming '+this._.path+'.'+req.elenam);
+      console.log(this._.path+'.transform()');
       THIS.array._.elementLoad(req,function(ret){
         if (ret==null){
           req.error(THIS.array,THIS.array._.path+'.'+req.elenam+' not found');
@@ -860,26 +832,20 @@ zs4.type = {
         o._.name = req.elenam;
         o._.notrans = false;
         o._.load(ret);
-        THIS.array._.elementConnect(THIS.array,o);
+        THIS._.array.elementConnect(THIS.array,o);
         o._.transform(req,function(){
           var save = o._.store();
           req.elesav = save;
           THIS.array._.elementSave(req,function(){});
-          var ret = {
-            array:{},
-          };
-          ret.array[req.elenam] = save;
-          req.result(THIS.method.new,ret);
-          cb();
+          THIS.array._.get(req); cb(); return;
         });
       });
     }).bind(THIS.array);
     THIS.array._.transform = (function(req,cb){
-      //console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
       if (!zs4.is.object(req.input)){
-        req.error(this,{text:'input not an object.'});
-        cb(); return;
+        this._.get(req); cb(); return;
       }
+      console.log(this._.path+'.transform()');
 
       var parallel = new zs4.processor.parallel();
 
@@ -890,7 +856,10 @@ zs4.type = {
         parallel.call(this,this._.elementTransform,childreq);
       }
 
-      parallel.run(cb);
+      var t = this;
+      parallel.run(function(){
+        t._.get(req); cb(); return;
+      });
     }).bind(THIS.array);
   },
   boolean:function(input){
@@ -1176,19 +1145,21 @@ zs4.type = {
       return store;
     }).bind(this);
 
-    this._.reply = (function(req,po){
+    this._.get = (function(req,po){
       if (req.authorize(this,this._.authGet)){
-        var get = this._.replyInitialize(req);
+        var get = this._.getInitialize(req);
+        if (get==null)return;
+        //console.log(this._.path+'.get()');
         for (var n in this){
           if (zs4.is.type(this[n])&&this[n]._.type!=Object){
-            this[n]._.reply(req,this);
+            this[n]._.get(req,this);
           }
         }
       }
     }).bind(this);
 
     this._.transform = (function(req,cb){
-      console.log('transforming '+this._.path+' in '+ this._.zs4Parent()._.path);
+      if (zs4.is.object(req.input))console.log(this._.path+'.transform()');
       var THIS = this;
       var parallel = new zs4.processor.parallel();
 
@@ -1210,7 +1181,7 @@ zs4.type = {
       }
 
       parallel.run(function(){
-        THIS._.reply(req);
+        THIS._.get(req);
         cb();
       });
 
@@ -1299,7 +1270,7 @@ zs4.request = function(o){
   }
 
   if (!zs4.is.object(this.request))this.request = new Object();
-  if (this.input==null)this.input = new Object();
+  //if (this.input==null)this.input = new Object();
 
   if (!zs4.is.object(this.request.callback))
     this.request.callback = new Object();
@@ -1400,8 +1371,6 @@ zs4.request = function(o){
       var THIS = this;
       //console.log(THIS.request.userIsRoot());
       zs4.THIS._.transform(THIS,function(){
-        //console.log(THIS);
-        THIS.reply = zs4.THIS._.get(THIS);
 
         cb(this);
 
@@ -1413,9 +1382,8 @@ zs4.request = function(o){
     };
 
     this.getReply = function(){
-      var r = new Object({request:{},input:this.input,reply:this.reply,});
+      var r = new Object({request:{},input:this.input,reply:this.request.get,});
       r.request.callback = this.request.callback;
-      r.request.state = this.request.get;
       if (zs4.is.object(this.request.payload))this.tokenCreate(this.request.payload);
       if (zs4.is.string(this.request.token))r.request.token = this.request.token;
       return r;
@@ -1493,7 +1461,7 @@ if (zs4.is.window()){
       zs4.THIS._.dcb(ret.request.callback);
   		if (cb) cb(ret);
       else console.log('no callback specified for zs4.post()');
-      zs4.THIS._.dcb(ret.request.callback);
+      //zs4.THIS._.dcb(ret.request.callback);
   	});
   };
 

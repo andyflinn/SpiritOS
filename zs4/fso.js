@@ -50,11 +50,11 @@ fso.schema = function(parent){
           var result = fso.statsObject(stats);
           req.result(THIS,result);
         }
-        THIS._.reply(req);
+        THIS._.get(req);
         cb();
       });
     }
-    THIS._.reply(req);
+    THIS._.get(req);
     cb();
   }).bind(THIS);
 
@@ -71,11 +71,11 @@ fso.schema = function(parent){
         else {//if (zs4.is.array(list)){
           req.result(THIS,list);
         }
-        THIS._.reply(req);
+        THIS._.get(req);
         cb();
       });
     }
-    THIS._.reply(req);
+    THIS._.get(req);
     cb();
   }).bind(THIS);
 
@@ -92,11 +92,11 @@ fso.schema = function(parent){
         else {//if (zs4.is.array(list)){
           req.result(THIS,data);
         }
-        THIS._.reply(req);
+        THIS._.get(req);
         cb();
       });
     }
-    THIS._.reply(req);
+    THIS._.get(req);
     cb();
   }).bind(THIS);
 

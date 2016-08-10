@@ -24,8 +24,8 @@ rsa.schema = function(parent){
     }
   }).bind(THIS);
 
-  THIS._.reply = (function(req,po){
-    var get = this._.replyInitialize(req);
+  THIS._.get = (function(req,po){
+    var get = this._.getInitialize(req);
     if (get==null)return;
 
     get.public = new Object({_:{}});

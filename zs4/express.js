@@ -108,9 +108,10 @@ express.schema = function(parent){
   zs4.type.property(THIS,new zs4.type.boolean({name:'cookies',required:true,default:false,}));
   zs4.type.property(THIS,new zs4.type.object({name:'run',nostore:true,noget:true,api:true,}));
   THIS.run._.transform = (function(req,cb){
-    THIS.start();
-    this._.reply(req);
-    cb();
+    if (zs4.is.object(req.input)){
+      THIS.start();
+    }
+    this._.get(req); cb(); return;
   }).bind(THIS.run);
 
   THIS.start = function(){
