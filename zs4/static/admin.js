@@ -6,12 +6,12 @@ zs4.admin.type = {
 	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
 		if (o._.input==null)o._.input = (function(){return null;}).bind(o);
-		if (o._.response==null)o._.response = (function(r){zs4.console.log(r);}).bind(o);
+		if (o._.response==null)o._.response = (function(r){console.log(r);}).bind(o);
 
 		if (o._.cleanup==null)o._.cleanup = (function(){
-			//zs4.console.log(this._.path + '._.cleanup()');
-			//zs4.console.log(o._.html.parentElement);
-			//zs4.console.log(o._.html.e);
+			//console.log(this._.path + '._.cleanup()');
+			//console.log(o._.html.parentElement);
+			//console.log(o._.html.e);
 			if (o._.html.parentElement != null && o._.html.e != null){
 				o._.html.parentElement.removeChild(o._.html.e);
 				o._.html.parentElement = null;
@@ -41,8 +41,8 @@ zs4.admin.type = {
 	},
 	array:function(po,o){
 		if (!zs4.is.type(o) || o._.typename!='array'){
-			zs4.console.log('not a valid zs4 array');
-			zs4.console.log(o);
+			console.log('not a valid zs4 array');
+			console.log(o);
 			return null;
 		}
 		this.unknown(po,o);
@@ -101,50 +101,52 @@ zs4.admin.type = {
 				var ret = new Object();
 
 				for (var n in o){
-					//if (zs4.is.name(n))zs4.console.log(n);
+					//if (zs4.is.name(n))console.log(n);
 					if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
 
 					var prop = o[n]._.input();
 					if (prop != null)ret[n]=prop;
 				}
 
-	      //zs4.console.log(ret);
+	      //console.log(ret);
 				return ret;
 	    }).bind(o);
 
 			o._.refresh = (function(){
-				zs4.console.log('inside '+o._.path+'.refresh()');
-				zs4.console.log(o.array._.value);
+				console.log('inside '+o._.path+'.refresh()');
+				console.log(o.array._.value);
 
 				for (var n in o.array._.value){
-					zs4.console.log('refresh('+n+')');
+					//console.log('refresh('+n+')');
 					if (!zs4.is.type(o.array[n])){
-						zs4.console.log('new('+n+')');
+						//console.log('new('+n+')');
 						var nu = o.template._.new();
 						nu._.notrans = false;
 						nu._.name = n;
 						zs4.type.property(o.array,nu);
 					}
-					zs4.console.log('load('+n+')');
+					//console.log('load('+n+')');
 					o.array[n]._.load(o.array._.value[n]);
+					zs4.admin.type.object(o.array,o.array[n]);
 				}
 
 				for (var n in o.array){
 					if (!zs4.is.type(o.array[n]))continue;
 					if (!o.array._.value.hasOwnProperty(n)){
 						if (zs4.is.function(o.array[n]._.cleanup))o.array[n]._.cleanup();
-            o.array._.value[n]==null;
-            o.array[n]==null;
+            o.array._.value[n]=null;
+            o.array[n]=null;
 					}
 				}
-				zs4.admin.type.object(o,o.array);
+				//zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
+  			zs4.admin.type.object(o,o.array);
 
 			}).bind(o);
 
 		}
 
 		for (var n in o){
-			//if (zs4.is.name(n))zs4.console.log(n);
+			//if (zs4.is.name(n))console.log(n);
 			if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
 			zs4.admin.type[o[n]._.typename](o,o[n]);
 		}
@@ -166,7 +168,7 @@ zs4.admin.type = {
 
 			o._.input = (function(){
 				if (o._.noset)return null;
-				if (this._.html.input.checked)return true;
+				if (this._.html.input.checked==true)return true;
 				return false;
 			}).bind(o);
 		}
@@ -246,8 +248,8 @@ zs4.admin.type = {
 	},
 	object:function(po,o){
 		if (!zs4.is.type(o) || o._.typename!='object'){
-			zs4.console.log('not a valid zs4 object');
-			zs4.console.log(o);
+			console.log('not a valid zs4 object');
+			console.log(o);
 			return null;
 		}
 		this.unknown(po,o);
@@ -289,10 +291,10 @@ zs4.admin.type = {
 						wrap[n] = input;
 						input = wrap;
 					}
-					//zs4.console.log(input);
+					//console.log(input);
 
 					zs4.post(input,function(ret){
-						zs4.console.log('refreshing object tree');
+						console.log('refreshing object tree');
 						zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
 					});
 				}).bind(o);
@@ -304,6 +306,7 @@ zs4.admin.type = {
 			o._.html.start = document.createElement('zs4-object-start');
 			o._.html.e.appendChild(o._.html.start);
 			if (o._.arrayio) o._.html.start.textContent = '[';
+			else if (o._.api) o._.html.start.textContent = '(';
 			else o._.html.start.textContent = '{';
 
 			o._.html.c = document.createElement('zs4-object-content');
@@ -316,6 +319,7 @@ zs4.admin.type = {
 			o._.html.end = document.createElement('zs4-object-end');
 			o._.html.e.appendChild(o._.html.end);
 			if (o._.arrayio) o._.html.end.textContent = ']';
+			else if (o._.api) o._.html.end.textContent = ')';
 			else o._.html.end.textContent = '}';
 
 			o._.html.onToggle = function(){
@@ -336,14 +340,14 @@ zs4.admin.type = {
 				var ret = new Object();
 
 				for (var n in o){
-					//if (zs4.is.name(n))zs4.console.log(n);
+					//if (zs4.is.name(n))console.log(n);
 					if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
 
 					var prop = o[n]._.input();
 					if (prop != null)ret[n]=prop;
 				}
 
-	      //zs4.console.log(ret);
+	      //console.log(ret);
 				return ret;
 	    }).bind(o);
 
@@ -351,7 +355,7 @@ zs4.admin.type = {
 		}
 
 		for (var n in o){
-			//if (zs4.is.name(n))zs4.console.log(n);
+			//if (zs4.is.name(n))console.log(n);
 			if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
 			zs4.admin.type[o[n]._.typename](o,o[n]);
 		}
@@ -403,6 +407,7 @@ zs4.admin.type = {
 		}
 		if (zs4.is.boolean(o._.noset))o._.html.input.readOnly = o._.noset;
 		o._.html.input.value = po._.value[o._.name];
+		//console.log(po._.value[o._.name]);
 	},
 	text:function(po,o){
 		this.unknown(po,o);

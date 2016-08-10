@@ -35,7 +35,7 @@ zs4.save = function(cb){
 
 zs4.define = function(){
 
-  require('./admin').schema(zs4.THIS.zs4);
+  //require('./admin').schema(zs4.THIS.zs4);
   require('./fso').schema(zs4.THIS.zs4);
   require('./password').schema(zs4.THIS.zs4);
   require('./rsa').schema(zs4.THIS.zs4);
@@ -48,8 +48,5 @@ zs4.define = function(){
 
   zs4.array.user = require('./user');
   zs4.type.property(zs4.THIS.zs4,zs4.array.user.array({name:'user',required:true,}));
-
-
-
 
 }
