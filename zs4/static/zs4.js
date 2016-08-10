@@ -766,7 +766,7 @@ zs4.type = {
     }).bind(this.method.getall);
 
     zs4.type.property(this.method,new zs4.type.object({name:'deleteall',required:true,api:true,}));
-    zs4.type.property(this.method.deleteall,new zs4.type.boolean({name:'sure',required:true,}));
+    zs4.type.property(this.method.deleteall,new zs4.type.boolean({name:'sure',required:true,nostore:true,}));
     this.method.deleteall._.transform = (function(req,cb){
       if (zs4.is.object(req.input)){
         console.log(this._.path+'.transform()');
@@ -776,7 +776,7 @@ zs4.type = {
         }
         THIS.array._.value = new Object();
         req.result(this,true);
-        this._.shouldBeSaved(req);
+        THIS._.shouldBeSaved(req);
       }
       this._.get(req); cb(); return;
     }).bind(this.method.deleteall);

@@ -18,8 +18,9 @@ password.create = function(input){
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
-    console.log('password.transform('+JSON.stringify(req.input)+')');
     if (zs4.is.object(req.input)){
+      console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
+      console.log(req.input);
       if (passhash.isHashed(this._.value.hashed)){
         var oldPassVerified = this.verify(req.input.vfy);
 
