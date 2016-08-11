@@ -577,9 +577,9 @@ zs4.type = {
       return result;
     }).bind(this);
     this._.shouldBeSaved = (function(args){
-      console.log('this.shouldBeSaved()');
+      //console.log('this.shouldBeSaved()');
       if (this._.nostore)return;
-      console.log('this.shouldBeSaved()');
+      console.log('this.shouldBeSaved('+this._.path+')');
       args.request.needsSaving = true;
     }).bind(this);
 
@@ -769,7 +769,7 @@ zs4.type = {
     zs4.type.property(this.method.deleteall,new zs4.type.boolean({name:'sure',required:true,nostore:true,}));
     this.method.deleteall._.transform = (function(req,cb){
       if (zs4.is.object(req.input)){
-        console.log(this._.path+'.transform()');
+        console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
         if (req.input.sure!=true){
           req.error(this,{text:'not sure'});
           this._.get(req); cb(); return;
@@ -782,6 +782,20 @@ zs4.type = {
     }).bind(this.method.deleteall);
     this.method.deleteall._.callback = (function(o){
       console.log('deleteall._.callback()');
+      console.log(o);
+      if (zs4.is.boolean(o.result)&&o.result==true){
+        for (var n in THIS.array){
+          if (!zs4.is.type(THIS.array[n]))continue;
+          console.log('deleting '+THIS.array[n]._.path);
+
+          if (zs4.is.function(THIS.array[n]._.cleanup))THIS.array[n]._.cleanup();
+          THIS.array._.value[n]==null;
+          THIS.array[n]==null;
+        }
+        if (zs4.is.function(THIS._.refresh)){
+          THIS._.refresh();
+        }
+      }
     }).bind(this.method.deleteall);
 
     zs4.type.property(this,new zs4.type.object({name:'template',required:true,notrans:true,}));
@@ -796,12 +810,15 @@ zs4.type = {
       //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
       zs4.copy.trim(input,THIS.array._.value);
+      var count = zs4.count.object.properties(input);
+      console.log('loaded '+count+' array elements');
     }).bind(THIS.array);
     THIS.array._.store = (function(){
-      //console.log(this.path+'.store()');
-      if (this._.nostore){return null;}
+      console.log(this.path+'.store()');
       var store = new Object();
       zs4.copy.trim(THIS.array._.value,store);
+      var count = zs4.count.object.properties(store);
+      console.log('saving '+count+' array elements');
       return store;
     }).bind(THIS.array);
 
@@ -841,6 +858,7 @@ zs4.type = {
         });
       });
     }).bind(THIS.array);
+
     THIS.array._.transform = (function(req,cb){
       if (!zs4.is.object(req.input)){
         this._.get(req); cb(); return;
@@ -861,6 +879,7 @@ zs4.type = {
         t._.get(req); cb(); return;
       });
     }).bind(THIS.array);
+
   },
   boolean:function(input){
     zs4.type.unknown.call(this,input);
@@ -1182,6 +1201,7 @@ zs4.type = {
 
       parallel.run(function(){
         THIS._.get(req);
+        if (req.request.needsSaving==true){console.log('save obj '+THIS._.path);}
         cb();
       });
 
@@ -1346,8 +1366,7 @@ zs4.request = function(o){
     };
 
     if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
-
-    this.request.needsSaving = false;
+    if (!zs4.is.boolean(this.request.needsSaving)) this.request.needsSaving = false;
 
     this.userIsRoot = function(){
       if (zs4.is.object(this.request.payload)&&this.request.payload.rpw)return true;

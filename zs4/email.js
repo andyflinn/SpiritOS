@@ -4,8 +4,18 @@ var emailjs = require('emailjs');
 var email = exports;
 
 email.schema = function(parent){
-  var THIS = new zs4.type.object({name:'email',required:true,api:true,});
-  zs4.type.property(parent,THIS);
+  zs4.type.property(parent,new email.create({name:'email',required:true,}));
+};
+
+
+
+email.create = function(input){
+
+  var THIS = this;
+  if (!zs4.is.object(input))input = new Object({name:'email',required:true,});
+  zs4.type.object.call(this,input);
+  THIS._.api = true;
+  THIS._.create = email.create;
 
   //zs4.console.log('____INSIDE EMAIL SCHEMA____');
 //  email.THIS = THIS;
@@ -47,58 +57,32 @@ email.schema = function(parent){
         subject:req.input.subject,
         text:req.input.text,
       };
-      if (!this._.value.smtp.configured){
+      if (!THIS._.value.smtp.configured){
 
       }
-      if (this.smtpServer == null){
-        this.smtpServer = emailjs.server.connect({
-           user:    this._.value.smtp.user,
-           password: this._.value.smtp.password,
-           host:    this._.value.smtp.host,
-           port:    this._.value.smtp.port,
-           ssl:     this._.value.smtp.ssl,
+      if (THIS.smtpServer == null){
+        THIS.smtpServer = emailjs.server.connect({
+           user:    THIS._.value.smtp.user,
+           password: THIS._.value.smtp.password,
+           host:    THIS._.value.smtp.host,
+           port:    THIS._.value.smtp.port,
+           ssl:     THIS._.value.smtp.ssl,
         });
       }
       console.log(message);
-      this.smtpServer.send(message, function(err,abc) {
+      THIS.smtpServer.send(message, function(err,abc) {
           if(err){
               req.error({text:'smtp send failed',data:err});
               console.log(err);
-              this._.get(req); cb(); return;
+              THIS._.get(req); cb(); return;
           }
           else{
-            this._.get(req); cb(); return;
+            THIS._.get(req); cb(); return;
           }
       });
     }
 
   }).bind(THIS.smtp.message);
 
-  THIS.send = function(message,cb){
-    if (!this._.value.smtp.configured){
 
-    }
-    if (this.smtpServer == null){
-      this.smtpServer = emailjs.server.connect({
-         user:    this._.value.smtp.user,
-         password: this._.value.smtp.password,
-         host:    this._.value.smtp.host,
-         port:    this._.value.smtp.port,
-         ssl:     this._.value.smtp.ssl,
-      });
-    }
-    zs4.console.log('inside email.send()');
-    zs4.console.log(message);
-    this.smtpServer.send(message, function(err,abc) {
-        if(err){
-            console.log(err);
-            if (cb)cb(new zs4.error({text:'smtp send failed',data:err}));
-        }
-        else{
-          if (cb)cb(new zs4.done({text:'email sent.'}));
-        }
-    });
-  };
-
-  //zs4.console.log(THIS.smtp.message._.zs4Parent());
 };
