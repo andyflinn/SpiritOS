@@ -654,6 +654,25 @@ zs4.type = {
       }
     }).bind(this);
 
+    this._.dcb = (function(input){
+      this._.cberror = null;
+      this._.cbresult = null;
+
+      if (zs4.is.object(input)){
+        if (zs4.is.object(input.error))this._.cberror = input.error;
+        if (input.result != null)this._.cbresult = input.result;
+      }
+
+      for (var n in this){
+        if (!zs4.is.type(this[n]))continue;
+
+        if (zs4.is.object(input)&&zs4.is.object(input[n])) this[n]._.dcb(input[n]);
+        else this[n]._.dcb(null);
+      }
+
+      if (zs4.is.object(input)&&zs4.is.function(this._.callback))this._.callback(input);
+    }).bind(this);
+
   },
 
   property:function(schema,ns){
@@ -682,6 +701,13 @@ zs4.type = {
 
   },
 
+  admin:function(){
+    zs4.type.object.call(this,{name:'admin',required:true,api:true,})
+    this._.typename = 'admin';
+    zs4.type.property(this,new zs4.type.string({name:'title',required:true,}));
+    zs4.type.property(this,new zs4.type.integer({name:'created',required:true,noset:true,}));
+    zs4.type.property(this,new zs4.type.integer({name:'updated',required:true,noset:true,}));
+  },
   array:function(input){
     zs4.type.object.call(this,input)
     this._.typename = 'array';
@@ -722,7 +748,7 @@ zs4.type = {
         var id = zs4.integer.to.name(THIS.config._.value.lastid);
         var nu = THIS.template._.new();
         nu._.name = id; nu._.notrans = false;
-        nu.meta._.value.created = nu.meta._.value.updated = Date.now();
+        nu.zs4.admin._.value.created = nu.zs4.admin._.value.updated = Date.now();
         THIS.array._.value[id] = nu._.store();
 
         THIS._.array.elementConnect(THIS.array,nu);
@@ -799,11 +825,8 @@ zs4.type = {
     }).bind(this.method.deleteall);
 
     zs4.type.property(this,new zs4.type.object({name:'template',required:true,notrans:true,}));
-    zs4.type.property(this.template,new zs4.type.object({name:'meta',required:true,api:true,}));
-    zs4.type.property(this.template.meta,new zs4.type.string({name:'title',required:true,}));
-    zs4.type.property(this.template.meta,new zs4.type.integer({name:'created',required:true,noset:true,}));
-    zs4.type.property(this.template.meta,new zs4.type.integer({name:'updated',required:true,noset:true,}));
-    zs4.type.property(this.template,new zs4.type.object({name:'this',required:true,}));
+    zs4.type.property(this.template,new zs4.type.object({name:'zs4',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],}));
+    zs4.type.property(this.template.zs4,new zs4.type.admin());
 
     zs4.type.property(this,new zs4.type.object({name:'array',required:true,arrayio:true,}));
     THIS.array._.load = (function(input){
@@ -850,7 +873,14 @@ zs4.type = {
         o._.notrans = false;
         o._.load(ret);
         THIS._.array.elementConnect(THIS.array,o);
+        var neededSaving = req.request.needsSaving;
+        req.request.needsSaving = false;
         o._.transform(req,function(){
+          if (req.request.needsSaving==true){
+            o._.value.zs4.admin.updated = Date.now();
+          }
+          if (neededSaving==true)req.request.needsSaving=true;
+
           var save = o._.store();
           req.elesav = save;
           THIS.array._.elementSave(req,function(){});
@@ -1116,18 +1146,6 @@ zs4.type = {
 
     if (zs4.is.boolean(input.api))this._.api = input.api;
 
-    this._.dcb = (function(input){
-      //console.log('loading '+this._.path);
-      if (!zs4.is.object(input))return;
-
-      for (var n in this){
-        if (!zs4.is.type(this[n])||this[n]._.type!=Object)continue;
-           if (zs4.is.object(input[n])) this[n]._.dcb(input[n]);
-      }
-
-      if (zs4.is.function(this._.callback))this._.callback(input);
-    }).bind(this);
-
     this._.load = (function(input){
       //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
@@ -1201,7 +1219,7 @@ zs4.type = {
 
       parallel.run(function(){
         THIS._.get(req);
-        if (req.request.needsSaving==true){console.log('save obj '+THIS._.path);}
+        //if (req.request.needsSaving==true){console.log('save obj '+THIS._.path);}
         cb();
       });
 
@@ -1391,10 +1409,15 @@ zs4.request = function(o){
       //console.log(THIS.request.userIsRoot());
       zs4.THIS._.transform(THIS,function(){
 
+        if (THIS.request.needsSaving){
+          var now = Date.now();
+          if (zs4.THIS.zs4.admin._.value.created == 0)zs4.THIS.zs4.admin._.value.created=now;
+          zs4.THIS.zs4.admin._.value.updated=now;
+        }
+
         cb(this);
 
         if (THIS.request.needsSaving){
-          //console.log('THIS.request.needsSaving');
           zs4.save(function(){console.log('THIS was saved')});
         }
       });
@@ -1423,6 +1446,7 @@ zs4.request = function(o){
 
 zs4.THIS = new zs4.type.object({name:'this',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
 zs4.type.property(zs4.THIS,new zs4.type.object({name:'zs4',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],}));
+zs4.type.property(zs4.THIS.zs4,new zs4.type.admin());
 
 if (zs4.is.window()){
 

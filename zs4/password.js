@@ -19,8 +19,10 @@ password.create = function(input){
 
   THIS._.transform = (function(req,cb){
     if (zs4.is.object(req.input)){
-      console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
-      console.log(req.input);
+      if (zs4.is.password(req.input.vfy)||zs4.is.password(req.input.set)){
+        console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
+        console.log(req.input);
+      }
       if (passhash.isHashed(this._.value.hashed)){
         var oldPassVerified = this.verify(req.input.vfy);
 
@@ -50,7 +52,7 @@ password.create = function(input){
         var nu = this.generate(req.input.set);
           if (nu) {
             this._.value.hashed = nu;
-            console.log('...password set...');
+            //console.log('...password set...');
             this._.shouldBeSaved(req);
           }
         }
@@ -66,7 +68,7 @@ password.create = function(input){
   THIS._.get = (function(req,po){
     var get = this._.getInitialize(req);
     if (get==null)return;
-    console.log(this._.path+'.transform()');
+    //console.log(this._.path+'.get()');
 
     function vfy(get){
       get.vfy = new Object({_:{}});

@@ -17,9 +17,8 @@ else {
 
 user.array = function(input){
   var USER = new zs4.type.array(input);
-  zs4.type.property(USER.template.this,new zs4.type.object({name:'zs4',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],}));
-  password.schema(USER.template.this.zs4);
-  email.schema(USER.template.this.zs4);
+  password.schema(USER.template.zs4);
+  email.schema(USER.template.zs4);
   //zs4.console.log(JSON.stringify(USER));
   return USER;
 };

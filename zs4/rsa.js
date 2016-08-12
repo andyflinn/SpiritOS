@@ -4,8 +4,16 @@ var NodeRSA = require('node-rsa');
 var rsa = exports;
 
 rsa.schema = function(parent){
-  var THIS = new zs4.type.object({name:'rsa',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
-  zs4.type.property(parent,THIS);
+  zs4.type.property(parent,new rsa.create({name:'rsa',required:true,}));
+};
+
+rsa.create = function(input){
+
+  var THIS = this;
+  if (!zs4.is.object(input))input = new Object({name:'rsa',required:true,});
+  zs4.type.object.call(this,input);
+  THIS._.create = rsa.create;
+
   zs4.type.property(THIS,new zs4.type.text({name:'pem',required:true,noget:true,}));
   zs4.type.property(THIS,new zs4.type.string({name:'hash',required:true,noget:true,}));
 
@@ -33,20 +41,6 @@ rsa.schema = function(parent){
     get.public._.typename = 'text';
     get.public._.noset = true;
     get.public._.value = this._.getPublicKey();
-  }).bind(THIS);
-
-  THIS._.get = (function(args,parent){
-    //zs4.console.log(this.path+'.get()');
-    var get = this._.getInitialize(args,parent);
-    if (get==null)return null;
-
-    get.public = new Object({_:{}});
-    get.public._.name = 'public';
-    get.public._.typename = 'text';
-    get.public._.noset = true;
-    get.public._.value = this._.getPublicKey();
-
-    return get;
   }).bind(THIS);
 
   THIS._.getPublicKey = (function(){
