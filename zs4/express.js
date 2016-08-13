@@ -89,6 +89,7 @@ express.app.post('/*', function (req, res) {
 
   zs4req.process(function(ret){
     var r = zs4req.getReply();
+    console.log('callback: '+JSON.stringify(r.request));
     express.setCookie(res,zs4req);
     //zs4.console.log('request processed: '+JSON.stringify(r));
     res.send(r);

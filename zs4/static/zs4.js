@@ -584,6 +584,9 @@ zs4.type = {
     }).bind(this);
 
     this._.getInitialize = (function(req){
+      //if (this._.path.startsWith('zs4.fso'))
+      //  console.log('getInitialize '+this._.path);
+
       if (!this._.noget && req.authorize(this,this._.authGet)){
         var get = req.get(this);
         get._.name = this._.name;
@@ -685,7 +688,11 @@ zs4.type = {
     if (schema._.path.length>0)ns._.path = schema._.path +'.'+ns._.name;
     else ns._.path = ns._.name;
 
+    //if (ns._.path.startsWith('zs4.fso'))
+    //  console.log('linking '+ns._.path);
+
     if (ns._.type == Object){
+
         //debug += ' Object';
         schema._.value[ns._.name] = ns._.value;
 
@@ -1188,10 +1195,18 @@ zs4.type = {
         if (get==null)return;
         //console.log(this._.path+'.get()');
         for (var n in this){
-          if (zs4.is.type(this[n])&&this[n]._.type!=Object){
+          if (!zs4.is.type(this[n]))continue;
+
+          if (this[n]._.type==Object){
+            var nu = this[n]._.get(req,this);
+            if (zs4.is.object(nu))get[n]=nu;
+          }
+          else{
             this[n]._.get(req,this);
           }
         }
+
+        return get;
       }
     }).bind(this);
 
@@ -1200,6 +1215,7 @@ zs4.type = {
       var THIS = this;
       var parallel = new zs4.processor.parallel();
 
+      //if (req.input!=null)console.log(THIS._.path+' cb-before: '+JSON.stringify(req.request.callback));
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
 
@@ -1218,6 +1234,7 @@ zs4.type = {
       }
 
       parallel.run(function(){
+        //if (req.input!=null)console.log(THIS._.path+' cb-after: '+JSON.stringify(req.request.callback));
         THIS._.get(req);
         //if (req.request.needsSaving==true){console.log('save obj '+THIS._.path);}
         cb();
@@ -1349,6 +1366,8 @@ zs4.request = function(o){
     else {
       r.error.data = error;
     }
+    console.log('error from '+ o._.path + ' ' + JSON.stringify(this.request.callback))
+
   }
   this.result = function(o,result){
     var r = this.resolvePath(o,this.request.callback);
@@ -1357,7 +1376,8 @@ zs4.request = function(o){
       return;
     }
     r.result = result;
-    //console.log(result);
+    console.log('result from '+ o._.path + ' ' + JSON.stringify(this.request.callback))
+
   }
   this.get = function(o,result){
     var get = this.resolvePath(o,this.request.get);

@@ -35,7 +35,7 @@ zs4.save = function(cb){
 
 zs4.define = function(){
 
-  require('./fso').schema(zs4.THIS.zs4);
+  require('./fs').schema(zs4.THIS.zs4);
 
   require('./password').schema(zs4.THIS.zs4);
 

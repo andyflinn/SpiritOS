@@ -17,8 +17,6 @@ email.create = function(input){
   THIS._.api = true;
   THIS._.create = email.create;
 
-  //zs4.console.log('____INSIDE EMAIL SCHEMA____');
-//  email.THIS = THIS;
   zs4.type.property(THIS,new zs4.type.email({name:'address',required:true,}));
 
   zs4.type.property(THIS,new zs4.type.object({name:'smtp',required:true,api:true,}));
