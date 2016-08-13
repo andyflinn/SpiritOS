@@ -14,7 +14,6 @@ email.create = function(input){
   var THIS = this;
   if (!zs4.is.object(input))input = new Object({name:'email',required:true,});
   zs4.type.object.call(this,input);
-  THIS._.api = true;
   THIS._.create = email.create;
 
   zs4.type.property(THIS,new zs4.type.email({name:'address',required:true,}));
@@ -27,13 +26,13 @@ email.create = function(input){
   zs4.type.property(THIS.smtp,new zs4.type.integer({name:'port',required:true,default:587}));
   zs4.type.property(THIS.smtp,new zs4.type.boolean({name:'ssl',required:true,default:false,}));
 
-  zs4.type.property(THIS.smtp,new zs4.type.object({name:'message',required:true,nostore:true,api:true,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'message',required:true,nostore:true,api:true,}));
   //zs4.type.property(THIS.message,new zs4.type.email({name:'from',required:true,}));
-  zs4.type.property(THIS.smtp.message,new zs4.type.email({name:'to',required:true,}));
-  zs4.type.property(THIS.smtp.message,new zs4.type.string({name:'subject',required:true,}));
-  zs4.type.property(THIS.smtp.message,new zs4.type.text({name:'text',required:true,}));
+  zs4.type.property(THIS.message,new zs4.type.email({name:'to',required:true,}));
+  zs4.type.property(THIS.message,new zs4.type.string({name:'subject',required:true,}));
+  zs4.type.property(THIS.message,new zs4.type.text({name:'text',required:true,}));
 
-  THIS.smtp.message._.transform = (function(req,cb){
+  THIS.message._.transform = (function(req,cb){
     this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
     if (req.input==null){this._.get(req); cb(); return;}
 
@@ -80,7 +79,7 @@ email.create = function(input){
       });
     }
 
-  }).bind(THIS.smtp.message);
+  }).bind(THIS.message);
 
 
 };
