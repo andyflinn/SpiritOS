@@ -23,7 +23,7 @@ fs.statsObject = function(stats){
 };
 
 fs.schema = function(parent){
-  zs4.type.property(parent,new fs.create({name:'fs',required:true,}));
+  zs4.type.property(parent,new fs.create({name:'fs',flags:'required',}));
 
   //console.log(parent.fs.stat);
 };
@@ -32,12 +32,12 @@ fs.schema = function(parent){
 fs.create = function(input){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'fs',required:true,nostore:true,});
+  if (!zs4.is.object(input))input = new Object({name:'fs',flags:'required nostore',nostore:true,});
   zs4.type.object.call(this,input);
   THIS._.create = fs.create;
 
-  zs4.type.property(THIS,new zs4.type.object({name:'stat',required:true,nostore:true,api:true,}));
-  zs4.type.property(THIS.stat,new zs4.type.string({name:'path',required:true,nostore:true,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'stat',flags:'required nostore api',}));
+  zs4.type.property(THIS.stat,new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.stat._.transform = (function(req,cb){
     //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var STAT = this;
@@ -62,10 +62,8 @@ fs.create = function(input){
     STAT._.get(req); cb(); return;
   }).bind(THIS.stat);
 
-  //console.log(THIS.stat);
-
-  zs4.type.property(THIS,new zs4.type.object({name:'readdir',required:true,nostore:true,api:true,}));
-  zs4.type.property(THIS.readdir,new zs4.type.string({name:'path',required:true,nostore:true,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'readdir',flags:'required nostore api',}));
+  zs4.type.property(THIS.readdir,new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readdir._.transform = (function(req,cb){
     //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var READDIR = this;
@@ -89,8 +87,8 @@ fs.create = function(input){
     READDIR._.get(req); cb(); return;
   }).bind(THIS.readdir);
 
-  zs4.type.property(THIS,new zs4.type.object({name:'readfile',required:true,nostore:true,api:true,}));
-  zs4.type.property(THIS.readfile,new zs4.type.string({name:'path',required:true,nostore:true,}));
+  zs4.type.property(THIS,new zs4.type.object({name:'readfile',flags:'required nostore api',}));
+  zs4.type.property(THIS.readfile,new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readfile._.transform = (function(req,cb){
     //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var THIS = this;

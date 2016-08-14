@@ -2,20 +2,20 @@ var zs4 = require('./static/zs4');
 var NodeRSA = require('node-rsa');
 
 var rsa = exports;
-
+var rsa
 rsa.schema = function(parent){
-  zs4.type.property(parent,new rsa.create({name:'rsa',required:true,}));
+  zs4.type.property(parent,new rsa.create());
 };
 
-rsa.create = function(input){
+rsa.create = function(){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'rsa',required:true,});
+  var input = new Object({name:'rsa',flags:'required',});
   zs4.type.object.call(this,input);
   THIS._.create = rsa.create;
 
-  zs4.type.property(THIS,new zs4.type.text({name:'pem',required:true,noget:true,}));
-  zs4.type.property(THIS,new zs4.type.string({name:'hash',required:true,noget:true,}));
+  zs4.type.property(THIS,new zs4.type.text({name:'pem',flags:'required noget',}));
+  zs4.type.property(THIS,new zs4.type.string({name:'hash',flags:'required noget',}));
 
   THIS._.key = new NodeRSA();
 
@@ -39,7 +39,7 @@ rsa.create = function(input){
     get.public = new Object({_:{}});
     get.public._.name = 'public';
     get.public._.typename = 'text';
-    get.public._.noset = true;
+    get.public._.flags = (this._.flags.value | this._.flags.noset);
     get.public._.value = this._.getPublicKey();
   }).bind(THIS);
 

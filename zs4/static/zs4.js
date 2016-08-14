@@ -42,7 +42,7 @@ zs4.const = {
     SYSTEM:'zs4@zs4.zs4',
     USER:'user@zs4.zs4',
     ADMIN:'admin@zs4.zs4',
-    PUBLIC:'public@zs4.zs4',
+    //PUBLIC:'public@zs4.zs4',
   },
   FLAG:{
     SETTABLE:0x00000001,
@@ -188,7 +188,7 @@ zs4.is = {
 zs4.string = {
   split:{
     words:function(str){
-      arr = []; buf = '';
+      var arr = []; var buf = '';
       for (var i = 0; i < str.length ;i++){
         var c = str.charAt(i);
         if ((c >= 'a' && c <= 'z')||(c >= 'A' && c <= 'Z')){
@@ -328,11 +328,13 @@ zs4.copy = {
       if (zs4.is.number(from._.minlength))to._.minlength=from._.minlength;
       if (zs4.is.number(from._.maxlength))to._.maxlength=from._.maxlength;
       if (zs4.is.array(from._.enum))to._.enum = from._.enum;
-      if (zs4.is.boolean(from._.trim))to._.trim = from._.trim;
-      if (zs4.is.boolean(from._.arrayio))to._.arrayio=from._.arrayio;
-      if (zs4.is.boolean(from._.notrans))to._.notrans=from._.notrans;
-      if (zs4.is.boolean(from._.noset))to._.noset=from._.noset;
-      if (zs4.is.boolean(from._.api))to._.api=from._.api;
+
+      //if (zs4.is.boolean(from._.trim))to._.trim = from._.trim;
+      //if (zs4.is.boolean(from._.arrayio))to._.arrayio=from._.arrayio;
+      //if (zs4.is.boolean(from._.notrans))to._.notrans=from._.notrans;
+      //if (zs4.is.boolean(from._.scope))to._.scope=from._.scope;
+      //if (from._.noset==true)to._.noset=true;else to._.noset=false;
+      //if (from._.api==true)to._.api=true;else to._.api=false;
     },
     trim:function(f,t){
       for (var n in f){
@@ -506,6 +508,119 @@ zs4.processor = {
 // Create base64 Object
 zs4.base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=zs4.base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9\+\/\=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=zs4.base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/\r\n/g,"\n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}}
 
+zs4.util = {
+  flags:function(){
+    this.value = 0;
+    this.set = new Object();
+    this.get = new Object();
+
+    this.trim = 0x0001,
+    this.arrayio = 0x02,
+    this.notrans = 0x04,
+    this.scope = 0x08,
+    this.noset = 0x10,
+    this.api = 0x20,
+    this.required = 0x40,
+    this.nostore = 0x80,
+    this.noget = 0x100,
+
+    this.set.trim = (function(tof){
+      if (tof==true)this.value |= this.trim;
+      else if (tof==false)this.value &= (~(this.trim));
+      return this.value;
+    }).bind(this);
+    this.get.trim = (function(){
+      if (this.value & this.trim)return true; return false;
+    }).bind(this);
+
+    this.set.arrayio = (function(tof){
+      if (tof==true)this.value |= this.arrayio;
+      else if (tof==false)this.value &= (~(this.arrayio));
+      return this.value;
+    }).bind(this);
+    this.get.arrayio = (function(){
+      if (this.value & this.arrayio)return true; return false;
+    }).bind(this);
+
+    this.set.notrans = (function(tof){
+      if (tof==true)this.value |= this.notrans;
+      else if (tof==false)this.value &= (~(this.notrans));
+      return this.value;
+    }).bind(this);
+    this.get.notrans = (function(){
+      if (this.value & this.notrans)return true; return false;
+    }).bind(this);
+
+    this.set.scope = (function(tof){
+      if (tof==true)this.value |= this.scope;
+      else if (tof==false)this.value &= (~(this.scope));
+      return this.value;
+    }).bind(this);
+    this.get.scope = (function(){
+      if (this.value & this.scope)return true; return false;
+    }).bind(this);
+
+    this.set.noset = (function(tof){
+      if (tof==true)this.value |= this.noset;
+      else if (tof==false)this.value &= (~(this.noset));
+      return this.value;
+    }).bind(this);
+    this.get.noset = (function(){
+      if (this.value & this.noset)return true; return false;
+    }).bind(this);
+
+    this.set.api = (function(tof){
+      if (tof==true)this.value |= this.api;
+      else if (tof==false)this.value &= (~(this.api));
+      return this.value;
+    }).bind(this);
+    this.get.api = (function(){
+      if (this.value & this.api)return true; return false;
+    }).bind(this);
+
+    this.set.required = (function(tof){
+      if (tof==true)this.value |= this.required;
+      else if (tof==false)this.value &= (~(this.required));
+      return this.value;
+    }).bind(this);
+    this.get.required = (function(){
+      if (this.value & this.required)return true; return false;
+    }).bind(this);
+
+    this.set.nostore = (function(tof){
+      if (tof==true)this.value |= this.nostore;
+      else if (tof==false)this.value &= (~(this.nostore));
+      return this.value;
+    }).bind(this);
+    this.get.nostore = (function(){
+      if (this.value & this.nostore)return true; return false;
+    }).bind(this);
+
+    this.set.noget = (function(tof){
+      if (tof==true)this.value |= this.noget;
+      else if (tof==false)this.value &= (~(this.noget));
+      return this.value;
+    }).bind(this);
+    this.get.noget = (function(){
+      if (this.value & this.noget)return true; return false;
+    }).bind(this);
+
+    this.setString = function(s){
+      //console.log(this.value);
+      var a = zs4.string.split.words(s)
+      for (var i = 0 ; i < a.length ; i++){
+        //console.log(a[i]+': ');
+        if (zs4.is.function(this.set[a[i]])){
+          //console.log('  ...is a function');
+          this.set[a[i]](true);
+        }
+      }
+      return this.value;
+    };
+
+  },
+};
+
 zs4.type = {
 
   unknown:function(input){
@@ -519,11 +634,8 @@ zs4.type = {
     this._.name = input.name;
     if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
 
-    if (zs4.is.boolean(input.notrans))this._.notrans = input.notrans;
-    if (zs4.is.boolean(input.arrayio))this._.arrayio = input.arrayio;
-    if (zs4.is.boolean(input.nostore))this._.nostore = input.nostore;
-    if (zs4.is.boolean(input.noget))this._.noget = input.noget;
-    if (zs4.is.boolean(input.noset))this._.noset = input.noset;
+    this._.flags = new zs4.util.flags();
+    if (zs4.is.string(input.flags))this._.flags.setString(input.flags);
 
     if (zs4.is.boolean(input.array))this._.array = input.array;
     if (zs4.is.number(input.arraymaxlength))this._.arraymaxlength = parseInt(input.arraymaxlength);
@@ -587,21 +699,37 @@ zs4.type = {
       //if (this._.path.startsWith('zs4.fso'))
       //  console.log('getInitialize '+this._.path);
 
-      if (!this._.noget && req.authorize(this,this._.authGet)){
+      if (!this._.flags.get.noget() && req.authorize(this,this._.authGet)){
+        //console.log('get init: \''+this._.path+'\'')
         var get = req.get(this);
         get._.name = this._.name;
         get._.typename = this._.typename;
         zs4.copy.schemabasics(this,get);
+
+        var gflags = new zs4.util.flags();
+        gflags.value = this._.flags.value;
+        if (!this._.flags.get.noset()||this._.flags.get.api()){
+          if (req.authorize(this,this._.authSet)){
+            gflags.set.noset(this._.flags.get.noset());
+            gflags.set.api(this._.flags.get.api());
+          }
+          else {
+            gflags.set.noset(true);
+            gflags.set.api(false);
+          }
+        }
+        get._.flags = gflags.value;
         return get;
       }
       return null;
     }).bind(this);
     this._.get = (function(req,po){
       var get = this._.getInitialize(req);
-      if (get == null)return;
+      if (get == null) return null;
       if (this._.type != Object && po!=null){
         get._.value = po._.value[this._.name];
       }
+      return get;
     }).bind(this);
 
     this._.got = (function(o,p){
@@ -618,7 +746,7 @@ zs4.type = {
       }
 
       zs4.copy.schemabasics(o,this);
-
+      this._.flags.value = o._.flags;
       if (this._.type==Object){
 
         for (var n in o){
@@ -631,7 +759,7 @@ zs4.type = {
           this[n]._.got(o[n],this);
         }
 
-        if (!this._.arrayio){
+        if (!this._.flags.get.arrayio()){
 
           for (var n in this){
             if (!zs4.is.type(this[n]))continue;
@@ -709,11 +837,12 @@ zs4.type = {
   },
 
   admin:function(){
-    zs4.type.object.call(this,{name:'admin',required:true,api:true,})
+    zs4.type.object.call(this,{name:'admin',flags:'required api',authGet:['zs4.public'],})
     this._.typename = 'admin';
-    zs4.type.property(this,new zs4.type.string({name:'title',required:true,}));
-    zs4.type.property(this,new zs4.type.integer({name:'created',required:true,noset:true,}));
-    zs4.type.property(this,new zs4.type.integer({name:'updated',required:true,noset:true,}));
+    zs4.type.property(this,new zs4.type.string({name:'title',flags:'required',authGet:['zs4.public'],}));
+    zs4.type.property(this,new zs4.type.integer({name:'created',flags:'required noset',authGet:['zs4.public'],}));
+    zs4.type.property(this,new zs4.type.integer({name:'updated',flags:'required noset',authGet:['zs4.public'],}));
+    zs4.type.property(this,new zs4.type.string({name:'app',required:true,default:'/admin.js',authGet:['zs4.public'],}))
   },
   array:function(input){
     zs4.type.object.call(this,input)
@@ -734,13 +863,13 @@ zs4.type = {
       return e;
     }).bind(THIS.array);
 
-    zs4.type.property(this,new zs4.type.object({name:'config',required:true,api:true,}));
-    zs4.type.property(this.config,new zs4.type.integer({name:'maxlength',required:true,}));
-    zs4.type.property(this.config,new zs4.type.integer({name:'lastid',required:true,noset:true,}));
+    zs4.type.property(this,new zs4.type.object({name:'config',flags:'required api',}));
+    zs4.type.property(this.config,new zs4.type.integer({name:'maxlength',flags:'required',}));
+    zs4.type.property(this.config,new zs4.type.integer({name:'lastid',flags:'required noset',}));
 
-    zs4.type.property(this,new zs4.type.object({name:'method',required:true,}));
+    zs4.type.property(this,new zs4.type.object({name:'method',flags:'required',}));
 
-    zs4.type.property(this.method,new zs4.type.object({name:'new',required:true,api:true,}));
+    zs4.type.property(this.method,new zs4.type.object({name:'new',flags:'required api'}));
     this.method.new._.transform = (function(req,cb){
       if (zs4.is.object(req.input)){
         console.log(this._.path+'.transform()');
@@ -754,7 +883,7 @@ zs4.type = {
         THIS.config._.value.lastid++;
         var id = zs4.integer.to.name(THIS.config._.value.lastid);
         var nu = THIS.template._.new();
-        nu._.name = id; nu._.notrans = false;
+        nu._.name = id; nu._.flags.set.notrans(false);
         nu.zs4.admin._.value.created = nu.zs4.admin._.value.updated = Date.now();
         THIS.array._.value[id] = nu._.store();
 
@@ -769,7 +898,7 @@ zs4.type = {
       this._.get(req); cb(); return;
     }).bind(this.method.new);
 
-    zs4.type.property(this.method,new zs4.type.object({name:'getall',required:true,api:true,}));
+    zs4.type.property(this.method,new zs4.type.object({name:'getall',flags:'required api',}));
     this.method.getall._.transform = (function(req,cb){
       if (zs4.is.object(req.input)){
         console.log(this._.path+'.transform()');
@@ -782,7 +911,7 @@ zs4.type = {
           r.elenam = n;
           parallel.call(THIS.array,function(req,cb){
             var model = THIS.template._.new();
-            model._.name = req.elenam; model._.notrans = false;
+            model._.name = req.elenam; model._.flags.set.notrans(false);
             THIS._.array.elementConnect(THIS.array,model);
             model._.load(THIS.array._.value[req.elenam]);
             model._.transform(req,cb);
@@ -798,7 +927,7 @@ zs4.type = {
       this._.get(req); cb(); return;
     }).bind(this.method.getall);
 
-    zs4.type.property(this.method,new zs4.type.object({name:'deleteall',required:true,api:true,}));
+    zs4.type.property(this.method,new zs4.type.object({name:'deleteall',flags:'required api',}));
     zs4.type.property(this.method.deleteall,new zs4.type.boolean({name:'sure',required:true,nostore:true,}));
     this.method.deleteall._.transform = (function(req,cb){
       if (zs4.is.object(req.input)){
@@ -831,11 +960,11 @@ zs4.type = {
       }
     }).bind(this.method.deleteall);
 
-    zs4.type.property(this,new zs4.type.object({name:'template',required:true,notrans:true,}));
-    zs4.type.property(this.template,new zs4.type.object({name:'zs4',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],}));
+    zs4.type.property(this,new zs4.type.object({name:'template',flags:'required notrans',}));
+    zs4.type.property(this.template,new zs4.type.object({name:'zs4',flags:'required',authGet:[zs4.const.EMAIL.PUBLIC,],}));
     zs4.type.property(this.template.zs4,new zs4.type.admin());
 
-    zs4.type.property(this,new zs4.type.object({name:'array',required:true,arrayio:true,}));
+    zs4.type.property(this,new zs4.type.object({name:'array',flags:'required arrayio',}));
     THIS.array._.load = (function(input){
       //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
@@ -877,7 +1006,7 @@ zs4.type = {
         }
         var o = THIS.template._.new();
         o._.name = req.elenam;
-        o._.notrans = false;
+        o._.flags.set.notrans(false);
         o._.load(ret);
         THIS._.array.elementConnect(THIS.array,o);
         var neededSaving = req.request.needsSaving;
@@ -1151,8 +1280,6 @@ zs4.type = {
     this._.value = new Object();
     this._.path = '';
 
-    if (zs4.is.boolean(input.api))this._.api = input.api;
-
     this._.load = (function(input){
       //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
@@ -1190,45 +1317,58 @@ zs4.type = {
     }).bind(this);
 
     this._.get = (function(req,po){
-      if (req.authorize(this,this._.authGet)){
-        var get = this._.getInitialize(req);
-        if (get==null)return;
-        //console.log(this._.path+'.get()');
-        for (var n in this){
-          if (!zs4.is.type(this[n]))continue;
+      if (this._.flags.get.noget())return null;
+      var get = this._.getInitialize(req);
+      if (get==null)return null;
+      //console.log(this._.path+'.get()');
+      for (var n in this){
+        if (!zs4.is.type(this[n]))continue;
 
-          if (this[n]._.type==Object){
-            var nu = this[n]._.get(req,this);
-            if (zs4.is.object(nu))get[n]=nu;
-          }
-          else{
-            this[n]._.get(req,this);
-          }
+        if (this[n]._.type==Object){
+          var nu = this[n]._.get(req,this);
+          if (zs4.is.object(nu))get[n]=nu;
         }
-
-        return get;
+        else{
+          this[n]._.get(req,this);
+        }
       }
+
+      return get;
     }).bind(this);
 
     this._.transform = (function(req,cb){
-      if (zs4.is.object(req.input))console.log(this._.path+'.transform()');
       var THIS = this;
+
+      if (this._.flags.get.scope()){
+        req.scope = THIS;
+        console.log('scope set to: \''+req.scope._.path+'\'');
+      }
+
+      //if (zs4.is.type(req.scope)){console.log('path:\''+THIS._.path+'\' scope(\''+req.scope._.path+'\')')}
+
+      if (!req.authorize(this,this._.authGet)){this._.get(req); cb(); return;}
+
+      if (zs4.is.object(req.input))console.log(this._.path+'.transform()');
       var parallel = new zs4.processor.parallel();
 
       //if (req.input!=null)console.log(THIS._.path+' cb-before: '+JSON.stringify(req.request.callback));
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
 
+        if (this[n]._.path=='zs4.express.run')console.log('transform child type ok.'+this[n]._.path);
+
         if (req.input==null||req.input[n]==null){
+          if (this[n]._.path=='zs4.express.run')console.log('transform child NO INPUT!!!'+this[n]._.path);
           if (this[n]._.type == Object){
-            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:null,}));
+            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:null,scope:req.scope,}));
           }
         }
-        else if (zs4.is.object(req.input)&&!this._.notrans){
+        else if (zs4.is.object(req.input)&&!this._.flags.get.notrans()){
+          if (this[n]._.path=='zs4.express.run')console.log('transform child '+this[n]._.path);
           if (this[n]._.type == Object){
-            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:req.input[n],}));
+            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:req.input[n],scope:req.scope,}));
           }else{
-            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:req.input[n],parent:this._.value,}));
+            parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:req.input[n],scope:req.scope,parent:this._.value,}));
           }
         }
       }
@@ -1246,12 +1386,17 @@ zs4.type = {
     zs4.type.string.call(this,input);
     this._.typename = 'password';
   },
+  scope:function(){
+    var THIS = this;
+    zs4.type.object.call(this,{name:'this',flags:'required scope',authGet:['zs4.public'],})
+    this._.typename = 'scope';
+    zs4.type.property(THIS,new zs4.type.object({name:'zs4',flags:'required',authGet:['zs4.public'],}));
+  },
   string:function(input){
     zs4.type.unknown.call(this,input);
     this._.type = String;
     this._.typename = 'string';
     this._.default = new String();
-    if (zs4.is.boolean(input.trim))this._.trim = input.trim; else this._.trim = false;
     if (zs4.is.string(input.default))this._.default = input.default;
     if (zs4.is.array(input.enum)){
       this._.enum = input.enum;
@@ -1322,10 +1467,10 @@ zs4.request = function(o){
     if (zs4.is.object(o.request))this.request = o.request;
     if (o.input!=null)this.input = o.input;
     if (zs4.is.object(o.parent))this.parent = o.parent;
+    if (zs4.is.type(o.scope))this.scope = o.scope;
   }
 
   if (!zs4.is.object(this.request))this.request = new Object();
-  //if (this.input==null)this.input = new Object();
 
   if (!zs4.is.object(this.request.callback))
     this.request.callback = new Object();
@@ -1398,8 +1543,8 @@ zs4.request = function(o){
     };
     this.payloadRefresh();
 
-    this.tokenCreate = function(claims){
-      this.request.token = zs4.THIS.zs4.token.encode(claims);
+    this.tokenCreate = function(nuload){
+      this.request.token = zs4.THIS.zs4.token.encode(nuload);
       this.payloadRefresh();
     };
 
@@ -1407,20 +1552,22 @@ zs4.request = function(o){
     if (!zs4.is.boolean(this.request.needsSaving)) this.request.needsSaving = false;
 
     this.userIsRoot = function(){
-      if (zs4.is.object(this.request.payload)&&this.request.payload.rpw)return true;
-      if (zs4.is.email(this.email)&&zs4.THIS.zs4.admin._.value.email==this.email)return true;
-      if (this.node) return true;
+      if (this.request.node) return true;
+      if (zs4.is.object(this.request.payload)){
+        if (zs4.is.string(this.request.payload.scope)){
+          if (this.request.payload.scope=='')return true;
+        }
+      }
       return false;
     };
 
     this.authorize = function(THIS,arr){
       //console.log('authorizing... '+THIS.path);
       if (!zs4.is.array(arr))return this.userIsRoot();
-      if (zs4.string.array.is.element(arr,zs4.const.EMAIL.PUBLIC)){
-        //console.log('authorized public request to '+THIS.path);
+      //console.log(arr);
+      if (zs4.string.array.is.element(arr,'zs4.public')){
         return true;
       }
-      if (zs4.is.email(this.email)&&zs4.string.array.is.element(arr,this.email))return true;
       return this.userIsRoot();
     };
 
@@ -1433,12 +1580,13 @@ zs4.request = function(o){
           var now = Date.now();
           if (zs4.THIS.zs4.admin._.value.created == 0)zs4.THIS.zs4.admin._.value.created=now;
           zs4.THIS.zs4.admin._.value.updated=now;
+          zs4.save(function(){
+            console.log('THIS was saved');
+            cb(this);
+          });
         }
-
-        cb(this);
-
-        if (THIS.request.needsSaving){
-          zs4.save(function(){console.log('THIS was saved')});
+        else {
+          cb(this);
         }
       });
     };
@@ -1452,6 +1600,20 @@ zs4.request = function(o){
     };
   }
   else{
+    if (!zs4.is.object(this.request.window)){
+      this.request.window = {
+        navigator:{
+          appName:window.navigator.appName,
+          appCodeName:window.navigator.appCodeName,
+          product:window.navigator.product,
+          platform:window.navigator.platform,
+        },
+        screen:{
+          width:window.screen.width,
+          height:window.screen.height,
+        },
+      };
+    }
     this.userIsRoot = function(){return true;};
 
     this.authorize = function(THIS,arr){return true;};
@@ -1464,9 +1626,11 @@ zs4.request = function(o){
   }
 };
 
-zs4.THIS = new zs4.type.object({name:'this',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],});
-zs4.type.property(zs4.THIS,new zs4.type.object({name:'zs4',required:true,authGet:[zs4.const.EMAIL.PUBLIC,],}));
-zs4.type.property(zs4.THIS.zs4,new zs4.type.admin());
+zs4.THIS = new zs4.type.scope();
+if (zs4.is.node()){
+  zs4.type.property(zs4.THIS.zs4,new zs4.type.admin());
+  zs4.type.property(zs4.THIS.zs4,new zs4.type.object({name:'public',flags:'required nostore noget noset',}));
+}
 
 if (zs4.is.window()){
 
@@ -1493,7 +1657,7 @@ if (zs4.is.window()){
       if (!zs4.is.type(t)||!zs4.is.object(o))return false;
       for (var n in t){
         if (!zs4.is.type(t[n])||t[n]._.type!=Object||!zs4.is.object(o[n]))continue;
-        if (t[n]._.notrans){
+        if (t[n]._.flags.get.notrans()){
           req.error(t[n],{text:'transform not accepted'});
           return false;
         }
@@ -1528,350 +1692,21 @@ if (zs4.is.window()){
   	});
   };
 
+  zs4.loadscript = function(url){
+    var js=document.createElement('script');
+    js.setAttribute("type","text/javascript");
+    js.setAttribute("src", url);
+    document.head.appendChild(js);
+  };
+
   zs4.admin = function(){
     zs4.post({},function(){
-      var js=document.createElement('script');
-      js.setAttribute("type","text/javascript");
-      js.setAttribute("src", '/admin.js');
-      document.head.appendChild(js);
-    });
-
-  };
-}
-
-zs4.um = {
-  _convert:{
-    linear:function(quantity,from,to){
-      if (from==null || to == null
-      ||!this.hasOwnProperty(from)
-      || from.length < 1
-      || from.charAt(0)=='_'
-      ||!this.hasOwnProperty(to)
-      || to.length < 1
-      || to.charAt(0)=='_'
-      )return zs4.create.error('bad args');
-
-      return (quantity * this[from] / this[to]);
-    }
-  },
-  _quantifyable(arg){
-    if (arg == null || !zs4.is.name(arg)){
-      var ret = [];
-      for (var n in zs4.um){if (zs4.is.name(n))ret.push(n);}
-      return ret;
-    }
-
-    var ret = [];
-    for (var n in zs4.um)if (n==arg){
-      //console.log('check '+n);
-      for (var u in zs4.um[n]){
-        //console.log('um '+u);
-        if(zs4.is.name(u))ret.push(u);
+      var script = zs4.THIS.zs4.admin._.value.app.trim();
+      if (script != ''){
+        zs4.loadscript(script);
       }
-    }
-    return ret;
-  },
+    });
+  };
 
-},
-zs4.um.unit = {
-  _convert:zs4.um._convert.linear,
-  one:1.0,
-  two:2.0,
-  three:3.0,
-  four:4.0,
-  five:5.0,
-  six:6.0,
-  seven:7.0,
-  eight:8.0,
-  nine:9.0,
-  ten:10.0,
-  eleven:11.0,
-  twelve:12.0,
-  thirteen:13.0,
-  fourteen:14.0,
-  fifteen:15.0,
-  sixteen:16.0,
-  seventeen:17.0,
-  eighteen:18.0,
-  nineteen:19.0,
-
-  teen:10.0,
-  twenty:20.0,
-  thirty:30.0,
-  fourty:40.0,
-  fifty:50.0,
-  sixty:60.0,
-  seventy:70.0,
-  eighty:80.0,
-  ninety:90.0,
-
-  hect:100.0,
-  hecto:100.0,
-  hundred:100.0,
-
-  thousand:1000.0,
-  myriad:10000.0,
-  mega:1000000,
-  million:1000000,
-
-  uni:1.0,
-  unit:1.0,
-  solo:1.0,
-
-  semi:0.5,
-  hemi:0.5,
-  demi:0.5,
-  half:0.5,
-  third:(1.0/3.0),
-  quarter:0.25,
-  fifth:0.2,
-  sixth:(1.0/6.0),
-  seventh:(1.0/7.0),
-  eighth:0.125,
-  nineth:(1.0/9.0),
-  tenth:0.1,
-
-  kilo: 1000,
-  mega: 1000000,
-  giga: 1000000000,
-  tera: 1000000000000,
-  peta: 1000000000000000,
-  exa:  1000000000000000000,
-  zetta:1000000000000000000000,
-  yotta:1000000000000000000000000,
-
-  deci:0.1,
-  centi:0.01,
-  milli:0.001,
-  micro:0.000001,
-  nano: 0.000000001,
-  pico: 0.000000000001,
-  femto:0.000000000000001,
-  atto: 0.000000000000000001,
-  zepto:0.000000000000000000001,
-  yocto:0.000000000000000000000001,
-
-  pi:Math.PI,
-
-  couple:2.0,
-  pair:2.0,
-  duo:2.0,
-  duet:2.0,
-  twin:2.0,
-
-  try:3.0,
-  ter:3.0,
-  trio:3.0,
-  tri:3.0,
-  triplet:3.0,
-
-  quartet:4.0,
-  quad:4.0,
-  quint:5.0,
-  quintet:5.0,
-  sextet:6.0,
-  septet:7.0,
-  octet:8.0,
-
-  dozen:12.0,
-  score:20.0,
-
-  gross:144.0,
-};
-zs4.um.mass = {
-  _convert:zs4.um._convert.linear,
-  gram:1.0,
-  kilogram: 1000,
-  megagram: 1000000,
-  gigagram: 1000000000,
-  teragram: 1000000000000,
-  petagram: 1000000000000000,
-  exagram:  1000000000000000000,
-  zettagram:1000000000000000000000,
-  yottagram:1000000000000000000000000,
-
-  decigram:0.1,
-  centigram:0.01,
-  milligram:0.001,
-  microgram:0.000001,
-  nanogram: 0.000000001,
-  picogram: 0.000000000001,
-  femtogram:0.000000000000001,
-  attogram: 0.000000000000000001,
-  zeptogram:0.000000000000000000001,
-  yoctogram:0.000000000000000000000001,
-
-  dalton:1.66053e-24,
-  pound:453.59237,
-  ounce:28.349523125,
-  ton:1000000,
-  tonne:1000000,
-  kiloton:1000000000,
-  quintal:100000,
-  hundredweightus:45359.237,
-  hundredweightuk:50802.34544,
-  slug:14593.902937205,
-  pennyweight:1.55517384,
-  carat:0.2,
-  grain:0.06479891,
-  stoneus:5669.904625,
-  stoneuk:6350.29318,
-
-  electron:9.1093897e-28,
-  muon:1.8835327e-25,
-  proton:1.6726231e-24,
-  neutron:1.6749286e-24,
-  deuteron:3.343586e-24,
-
-  earth:5.976e+27,
-  sun:2e+33,
-
-};
-zs4.um.time = {
-  _convert:zs4.um._convert.linear,
-  second:1.0,
-  minute:60.0,
-  hour:(60.0*60.0),
-  day:(60.0*60.0*24.0),
-  moon:(60.0*60.0*24.0*29.530587981),
-  week:(60.0*60.0*24.0*7),
-
-  year:(60.0*60.0*24.0*365.25),
-  olympiad:(60.0*60.0*24.0*365.25*4),
-  lustrum:(60.0*60.0*24.0*365.25*5),
-  indiction:(60.0*60.0*24.0*365.25*15),
-  decade:(60.0*60.0*24.0*365.25*10),
-  jubilee:(60.0*60.0*24.0*365.25*50),
-  century:(60.0*60.0*24.0*365.25*100),
-  millenium:(60.0*60.0*24.0*365.25*1000),
-  kiloannum:(60.0*60.0*24.0*365.25*1000),
-  month:(60.0*60.0*24.0*365.25/12.0),
-
-  millisecond:0.001,
-  microsecond:0.000001,
-  nanosecond: 0.000000001,
-  picosecond: 0.000000000001,
-  femtosecond:0.000000000000001,
-  attosecond: 0.000000000000000001,
-  zeptosecond:0.000000000000000000001,
-  yoctosecond:0.00000000000000000000001,
-  kilosecond: 1000,
-  megasecond: 1000000,
-  gigasecond: 1000000000,
-  terasecond: 1000000000000,
-  petasecond: 1000000000000000,
-  exasecond:  1000000000000000000,
-  zettasecond:1000000000000000000000,
-  yottasecond:1000000000000000000000000,
-};
-zs4.um.information = {
-  _convert:zs4.um._convert.linear,
-  byte:1.0,
-  kilobyte:1024.0,
-  megabyte:1024.0*1024.0,
-  gigabyte:1024.0*1024.0*1024.0,
-  terabyte:1024.0*1024.0*1024.0*1024.0,
-
-  bit:0.125,
-  kilobit:0.125*1024.0,
-  megabit:0.125*1024.0*1024.0,
-  gigabit:0.125*1024.0*1024.0*1024.0,
-  terabit:0.125*1024.0*1024.0*1024.0*1024.0,
-
-  nibble:0.5,
-  word:2,
-  dword:4,
-  qword:8,
-};
-zs4.um.liquid = {
-  _convert:zs4.um._convert.linear,
-  cubicmeter:1.0,
-  barreloil:6.2898107280219,
-  barreluk:6.1102568971969,
-  barrelus:8.5216794934986,
-  boardfeet:423.776000658,
-  busheluk:27.496156037386,
-  bushelus:28.377593256211,
-  centilitre:100000,
-  cubiccentimetre:1000000,
-  cubicdecimetre:1000,
-  cubicfeet:35.314666721489,
-  cubicinch:61023.744094732,
-  cubicyard:1.3079506193144,
-  cups:4000,
-  cupsuk:3519.5079727854,
-  cupsus:4226.7528377304,
-  decilitre:10000,
-  decalitre:100,
-  dram:270512.18161474,
-  fluidounceuk:35195.077544697,
-  fluidounceus:33814.022701843,
-  gallonsuk:219.96923465436,
-  gallonsus:264.17205235815,
-  hectolitre:10,
-  kilolitre:1,
-  litre:1000,
-  millilitre:1000000,
-  peckuk:109.98462415,
-  peckus:113.51037228,
-  pintuk:1759.7538772348,
-  pintus:2113.3764188652,
-  quartuk:879.87693861742,
-  quartus:1056.6882094326,
-  tablespoon:66666.666666667,
-  tablespoonuk:56312.127564567,
-  tablespoonus:67628.045403686,
-  teaspoon:200000,
-};
-zs4.um.distance = {
-  _convert:zs4.um._convert.linear,
-  meter:1.0,
-  kilometer:1000.0,
-  decimeter:0.1,
-  centimeter:0.01,
-  millimeter:0.001,
-  micrometer:0.000001,
-  nanometer: 0.000000001,
-  picometer: 0.000000000001,
-  femtometer:0.000000000000001,
-  attometer: 0.000000000000000001,
-  zeptometer:0.000000000000000000001,
-  yoctometer:0.000000000000000000000001,
-
-  kilometer: 1000,
-  megameter: 1000000,
-  gigameter: 1000000000,
-  terameter: 1000000000000,
-  petameter: 1000000000000000,
-  exameter:  1000000000000000000,
-  zettameter:1000000000000000000000,
-  yottameter:1000000000000000000000000,
-
-  inch:0.0254,
-  mil:(0.0254/1000),
-  thou:(0.0254/1000),
-  foot:12*0.0254,
-  yard:3*12*0.0254,
-  mile:5280*12*0.0254,
-  league:3*5280*12*0.0254,
-
-  fathom:2*3*12*0.0254,
-  nauticalmile:1852,
-
-  angstrom:0.0000000001,
-
-  lightyear:9460730472580800,
-  parsec:9460730472580800*3.26,
-};
-zs4.unit = {
-  _exists:function(name){
-    if (name==null || !zs4.is.name(name) || !zs4['unit'].hasOwnProperty(name))false;
-    return true;
-  },
-  _create:function(name){
-    if (name==null || !zs4.is.name(name))return null;
-    if (zs4['unit'].hasOwnProperty(name))return zs4['unit'][name];
-    zs4['unit'][name] = {};
-  },
-
-};
+  zs4.admin();
+}

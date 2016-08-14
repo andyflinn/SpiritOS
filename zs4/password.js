@@ -6,15 +6,13 @@ var password = exports;
 
 
 password.schema = function(parent){
-  zs4.type.property(parent,new password.create({name:'password',required:true,}));
+  zs4.type.property(parent,new password.create());
 };
 
-password.create = function(input){
+password.create = function(){
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'password',required:true,});
+  var input = new Object({name:'password',flags:'required api',authGet:['zs4.public',],authSet:['zs4.public',]});
   zs4.type.object.call(this,input);
-  THIS._.authGet = [zs4.const.EMAIL.PUBLIC,];
-  THIS._.api = true;
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
@@ -23,12 +21,16 @@ password.create = function(input){
         console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
         console.log(req.input);
       }
+
+      //if (zs4.is.type(req.scope)){console.log('path:\''+THIS._.path+'\' scope(\''+req.scope._.path+'\')')}
+
+
       if (passhash.isHashed(this._.value.hashed)){
         var oldPassVerified = this.verify(req.input.vfy);
 
         if (oldPassVerified){
           console.log('...old password verified...');
-          req.tokenCreate({rpw:true});
+          req.tokenCreate({iss:THIS._.path,scope:req.scope._.path,});
 
           if (zs4.is.password(req.input.set)){
             console.log('...pass change...');
@@ -66,9 +68,13 @@ password.create = function(input){
   }).bind(THIS);
 
   THIS._.get = (function(req,po){
+    //console.log('password.get'+ JSON.stringify(this._.authGet));
     var get = this._.getInitialize(req);
-    if (get==null)return;
-    //console.log(this._.path+'.get()');
+    if (get==null){
+      console.log(this._.path+'.get() NOT AUTHORIZED!?!?!?');
+      //console.log(this._.authGet);
+      return null;
+    }
 
     function vfy(get){
       get.vfy = new Object({_:{}});
@@ -95,13 +101,13 @@ password.create = function(input){
 
   }).bind(THIS);
 
-  zs4.type.property(THIS,new zs4.type.string({name:'hashed',required:true,noget:true,index:{unique:true},}));
-  zs4.type.property(THIS,new zs4.type.string({name:'algorithm',required:true,noget:true,default:'sha1',}));
-  zs4.type.property(THIS,new zs4.type.integer({name:'saltlength',required:true,noget:true,min:32,max:256,default:32,}));
-  zs4.type.property(THIS,new zs4.type.integer({name:'iterations',required:true,noget:true,min:1,max:128,default:1,}));
+  zs4.type.property(THIS,new zs4.type.string({name:'hashed',flags:'required noget',index:{unique:true},}));
+  zs4.type.property(THIS,new zs4.type.string({name:'algorithm',flags:'required noget',default:'sha1',}));
+  zs4.type.property(THIS,new zs4.type.integer({name:'saltlength',flags:'required noget',min:32,max:256,default:32,}));
+  zs4.type.property(THIS,new zs4.type.integer({name:'iterations',flags:'required noget',min:1,max:128,default:1,}));
 
-  zs4.type.property(THIS,new zs4.type.password({name:'set',required:true,nostore:true,}));
-  zs4.type.property(THIS,new zs4.type.password({name:'vfy',required:true,nostore:true,authGet:[zs4.const.EMAIL.PUBLIC,],authSet:[zs4.const.EMAIL.PUBLIC,],}));
+  zs4.type.property(THIS,new zs4.type.password({name:'set',flags:'required nostore',}));
+  zs4.type.property(THIS,new zs4.type.password({name:'vfy',flags:'required nostore',authGet:['zs4.public'],authSet:['zs4.public'],}));
 
   THIS.verify = function(pw){
     //zs4.console.log('verifying');

@@ -5,32 +5,24 @@ var jwt = require('jwt-simple');
 const RANDOMLENGTH = 32;
 const TIMETOLIVE = (zs4.const.MS.WEEK*2);
 
-var token;
-if (zs4.is.node()) {
-    token = exports;
-}
-else {
-    token = new Object();
-}
+var token = exports;
 
 token.schema = function(parent){
-  var THIS = new zs4.type.object({name:'token',required:true,api:true,});
+  var THIS = new zs4.type.object({name:'token',flags:'required api',});
   zs4.type.property(parent,THIS);
-  zs4.type.property(THIS,new zs4.type.string({name:'secret',required:true,default:randomstring.generate(RANDOMLENGTH),}));
+  zs4.type.property(THIS,new zs4.type.string({name:'secret',flags:'required',default:randomstring.generate(RANDOMLENGTH),}));
 
-  THIS.encode = (function(claims){
+  THIS.encode = (function(nuload){
     var payload = new Object({
-      iss:zs4.THIS.zs4.express._.value.host,
       iat:Date.now(),
       exp:(Date.now()+TIMETOLIVE),
     });
 
-    if (zs4.is.object(claims)){
-      if (zs4.is.boolean(claims.rpw)&&claims.rpw){payload.rpw=claims.rpw;}
-      if (zs4.is.email(claims.email)){payload.email=claims.email;}
-    }
-    //zs4.console.log(zs4.const.MS.WEEK*2);
-    //zs4.console.log(payload);
+    if (zs4.is.string(nuload.iss))payload.iss = nuload.iss;
+    if (zs4.is.string(nuload.scope))payload.scope = nuload.scope;
+
+    console.log('token payload: '+JSON.stringify(payload));
+
     return jwt.encode(payload, this._.value.secret);
   }).bind(THIS);
 
@@ -45,6 +37,11 @@ token.schema = function(parent){
     }
 
     if (!zs4.is.object(dec))return null;
+
+    if (!zs4.is.object(dec)
+    ||  !zs4.is.string(dec.iss)
+    ||  !zs4.is.string(dec.scope)
+    )return null;
 
     return dec;
   }).bind(THIS);
