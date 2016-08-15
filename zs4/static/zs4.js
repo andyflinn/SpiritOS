@@ -39,10 +39,6 @@ zs4.const = {
   EMAIL:{
     MINLENGTH:5,
     MAXLENGTH:64,
-    SYSTEM:'zs4@zs4.zs4',
-    USER:'user@zs4.zs4',
-    ADMIN:'admin@zs4.zs4',
-    //PUBLIC:'public@zs4.zs4',
   },
   FLAG:{
     SETTABLE:0x00000001,
@@ -514,15 +510,39 @@ zs4.util = {
     this.set = new Object();
     this.get = new Object();
 
-    this.trim = 0x0001,
-    this.arrayio = 0x02,
-    this.notrans = 0x04,
-    this.scope = 0x08,
-    this.noset = 0x10,
-    this.api = 0x20,
-    this.required = 0x40,
-    this.nostore = 0x80,
-    this.noget = 0x100,
+    this.nodeflags = 0x0ffff;
+
+    this.trim = 0x0001;
+    this.arrayio = 0x0002;
+    this.notrans = 0x0004;
+    this.scope = 0x0008;
+    this.noset = 0x0010;
+    this.api = 0x0020;
+    this.required = 0x0040;
+    this.nostore = 0x0080;
+    this.noget = 0x0100;
+    this.am = 0x0200;
+    this.own = 0x0400;
+
+    this.getString = function(mask){
+      var ret = '';
+      function addFlag(s){
+        if (ret.length == 0) ret = s; ret += (' '+s);
+
+      }
+      if (mask & this.trim) addFlag('trim');
+      if (mask & this.arrayio) addFlag('arrayio');
+      if (mask & this.notrans) addFlag('notrans');
+      if (mask & this.scope) addFlag('scope');
+      if (mask & this.noset) addFlag('noset');
+      if (mask & this.api) addFlag('api');
+      if (mask & this.required) addFlag('required');
+      if (mask & this.nostore) addFlag('nostore');
+      if (mask & this.noget) addFlag('noget');
+      if (mask & this.am) addFlag('am');
+      if (mask & this.own) addFlag('own');
+      return ret;
+    };
 
     this.set.trim = (function(tof){
       if (tof==true)this.value |= this.trim;
@@ -605,6 +625,24 @@ zs4.util = {
       if (this.value & this.noget)return true; return false;
     }).bind(this);
 
+    this.set.am = (function(tof){
+      if (tof==true)this.value |= this.am;
+      else if (tof==false)this.value &= (~(this.am));
+      return this.value;
+    }).bind(this);
+    this.get.am = (function(){
+      if (this.value & this.am)return true; return false;
+    }).bind(this);
+
+    this.set.own = (function(tof){
+      if (tof==true)this.value |= this.own;
+      else if (tof==false)this.value &= (~(this.own));
+      return this.value;
+    }).bind(this);
+    this.get.own = (function(){
+      if (this.value & this.own)return true; return false;
+    }).bind(this);
+
     this.setString = function(s){
       //console.log(this.value);
       var a = zs4.string.split.words(s)
@@ -647,7 +685,7 @@ zs4.type = {
     if (zs4.is.array(input.authGet))this._.authGet = input.authGet;
     if (zs4.is.array(input.authSet))this._.authSet = input.authSet;
 
-    this._.new = (function(parent){
+    this._.new = (function(){
       if (zs4.is.function(this._.create)){
         console.log('FROM CONSTRUCTIST!!!!');
         var r = new this._.create(this._);
@@ -719,6 +757,16 @@ zs4.type = {
           }
         }
         get._.flags = gflags.value;
+
+        if (req.am(this)) {
+          get._.flags |= this._.flags.am;
+          //console.log('AM status! for '+this._.path);
+        }
+        if (req.own(this)) {
+          get._.flags |= this._.flags.own;
+          //console.log('OWN status! for '+this._.path);
+        }
+
         return get;
       }
       return null;
@@ -738,12 +786,17 @@ zs4.type = {
 
       //console.log('got \''+this._.path+'\'');
 
+
       if ( this._.name != o._.name
         || this._.typename != o._.typename
       ){
+        console.log('this._.name:'+this._.name+',o._.name: '+o._.name);
+        console.log('this._.typename:'+this._.typename+',o._.typename: '+o._.typename);
         console.log('missmatching type or name');
-        return;
       }
+
+      this._.name = o._.name;
+      this._.typename = o._.typename;
 
       zs4.copy.schemabasics(o,this);
       this._.flags.value = o._.flags;
@@ -753,7 +806,10 @@ zs4.type = {
           if (!zs4.is.type(o[n]))continue;
 
           if (!this.hasOwnProperty(n)||!zs4.is.type(this[n])){
-            zs4.type.property(this,new zs4.type[o[n]._.typename](o[n]._))
+            var nu =new zs4.type[o[n]._.typename](o[n]._);
+            nu._.name = o[n]._.name;
+            nu._.typename = o[n]._.typename;
+            zs4.type.property(this,nu);
           }
 
           this[n]._.got(o[n],this);
@@ -839,14 +895,18 @@ zs4.type = {
   admin:function(){
     zs4.type.object.call(this,{name:'admin',flags:'required api',authGet:['zs4.public'],})
     this._.typename = 'admin';
+    this._.create = zs4.type.admin;
+
     zs4.type.property(this,new zs4.type.string({name:'title',flags:'required',authGet:['zs4.public'],}));
     zs4.type.property(this,new zs4.type.integer({name:'created',flags:'required noset',authGet:['zs4.public'],}));
     zs4.type.property(this,new zs4.type.integer({name:'updated',flags:'required noset',authGet:['zs4.public'],}));
     zs4.type.property(this,new zs4.type.string({name:'app',required:true,default:'/admin.js',authGet:['zs4.public'],}))
   },
   array:function(input){
-    zs4.type.object.call(this,input)
+    zs4.type.object.call(this,input);
     this._.typename = 'array';
+
+    if (!zs4.is.type(input.template))input.template = new zs4.type.object({name:'template'});
 
     var THIS = this;
 
@@ -884,6 +944,7 @@ zs4.type = {
         var id = zs4.integer.to.name(THIS.config._.value.lastid);
         var nu = THIS.template._.new();
         nu._.name = id; nu._.flags.set.notrans(false);
+        nu._.flags.set.scope(true);
         nu.zs4.admin._.value.created = nu.zs4.admin._.value.updated = Date.now();
         THIS.array._.value[id] = nu._.store();
 
@@ -911,7 +972,9 @@ zs4.type = {
           r.elenam = n;
           parallel.call(THIS.array,function(req,cb){
             var model = THIS.template._.new();
-            model._.name = req.elenam; model._.flags.set.notrans(false);
+            model._.name = req.elenam;
+            model._.flags.set.notrans(false);
+            model._.flags.set.scope(true);
             THIS._.array.elementConnect(THIS.array,model);
             model._.load(THIS.array._.value[req.elenam]);
             model._.transform(req,cb);
@@ -960,9 +1023,9 @@ zs4.type = {
       }
     }).bind(this.method.deleteall);
 
-    zs4.type.property(this,new zs4.type.object({name:'template',flags:'required notrans',}));
-    zs4.type.property(this.template,new zs4.type.object({name:'zs4',flags:'required',authGet:[zs4.const.EMAIL.PUBLIC,],}));
-    zs4.type.property(this.template.zs4,new zs4.type.admin());
+    var template = input.template._.new();
+    template._.name = 'template'
+    zs4.type.property(this,template);
 
     zs4.type.property(this,new zs4.type.object({name:'array',flags:'required arrayio',}));
     THIS.array._.load = (function(input){
@@ -1007,6 +1070,7 @@ zs4.type = {
         var o = THIS.template._.new();
         o._.name = req.elenam;
         o._.flags.set.notrans(false);
+        o._.flags.set.scope(true);
         o._.load(ret);
         THIS._.array.elementConnect(THIS.array,o);
         var neededSaving = req.request.needsSaving;
@@ -1095,6 +1159,11 @@ zs4.type = {
         cb(new zs4.error({text:'bad input',data:{path:this.path,input:args.input}}));
       }
     }).bind(this);
+
+  },
+  date:function(input){
+    zs4.type.integer.call(this,input);
+    this._.typename = 'date';
 
   },
   email:function(input){
@@ -1280,6 +1349,11 @@ zs4.type = {
     this._.value = new Object();
     this._.path = '';
 
+    this._.countProperties = (function(){
+      var count = 0;
+      for (var n in this){if (zs4.is.type(this[n])){count++;}}
+      return count;
+    }).bind(this);
     this._.load = (function(input){
       //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
@@ -1355,16 +1429,16 @@ zs4.type = {
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
 
-        if (this[n]._.path=='zs4.express.run')console.log('transform child type ok.'+this[n]._.path);
+        //if (this[n]._.path=='zs4.express.run')console.log('transform child type ok.'+this[n]._.path);
 
         if (req.input==null||req.input[n]==null){
-          if (this[n]._.path=='zs4.express.run')console.log('transform child NO INPUT!!!'+this[n]._.path);
+          //if (this[n]._.path=='zs4.express.run')console.log('transform child NO INPUT!!!'+this[n]._.path);
           if (this[n]._.type == Object){
             parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:null,scope:req.scope,}));
           }
         }
         else if (zs4.is.object(req.input)&&!this._.flags.get.notrans()){
-          if (this[n]._.path=='zs4.express.run')console.log('transform child '+this[n]._.path);
+          //if (this[n]._.path=='zs4.express.run')console.log('transform child '+this[n]._.path);
           if (this[n]._.type == Object){
             parallel.call(this[n],this[n]._.transform,new zs4.request({request:req.request,input:req.input[n],scope:req.scope,}));
           }else{
@@ -1561,6 +1635,18 @@ zs4.request = function(o){
       return false;
     };
 
+    this.am = function(THIS){
+      if (!zs4.is.object(this.request.payload))return false;
+      if (this.request.payload.scope==this.scope._.path)return true;
+      return false;
+    };
+
+    this.own = function(THIS){
+      if (!zs4.is.object(this.request.payload))return false;
+      if (this.scope._.path.startsWith(this.request.payload.scope)&&this.scope._.path.length>this.request.payload.scope.length)return true;
+      return false;
+    };
+
     this.authorize = function(THIS,arr){
       //console.log('authorizing... '+THIS.path);
       if (!zs4.is.array(arr))return this.userIsRoot();
@@ -1630,6 +1716,8 @@ zs4.THIS = new zs4.type.scope();
 if (zs4.is.node()){
   zs4.type.property(zs4.THIS.zs4,new zs4.type.admin());
   zs4.type.property(zs4.THIS.zs4,new zs4.type.object({name:'public',flags:'required nostore noget noset',}));
+  zs4.type.property(zs4.THIS.zs4,new zs4.type.object({name:'owner',flags:'required nostore noget noset',}));
+  zs4.type.property(zs4.THIS.zs4,new zs4.type.object({name:'self',flags:'required nostore noget noset',}));
 }
 
 if (zs4.is.window()){
@@ -1697,6 +1785,15 @@ if (zs4.is.window()){
     js.setAttribute("type","text/javascript");
     js.setAttribute("src", url);
     document.head.appendChild(js);
+  };
+
+  zs4.loadcss = function(url){
+    var css=document.createElement("link")
+    css.setAttribute("rel", "stylesheet")
+    css.setAttribute("type", "text/css")
+    css.setAttribute("href", url);
+    document.head.appendChild(css);
+    return css;
   };
 
   zs4.admin = function(){

@@ -2,117 +2,103 @@ body{
   margin:0;
   border:0;
   padding:0;
-}
-
-zs4-header{
-  display:block;
-  font-size: 150%;
-  font-weight: bold;
-  background-color: lightgreen;
-  text-decoration: none;
-}
-
-zs4-brand,zs4-slogan{
-  margin: 0.5em;
-  display:inline-block;
-  align-self:auto;
-  font-weight: bolder;
-}
-zs4-brand{
-  color: darkgreen;
-  cursor: pointer;
-}
-img.zs4user{
-  display:inline-block;
-  vertical-align:middle;
-  border-radius: 1em;
-  height: 2em;
-}
-zs4-user{
-  margin: 0.5em;
-  display:inline-block;
-  align-self: auto;
-}
-zs4-logout{
-  margin: 0.5em;
-  display:inline-block;
-  align-self: auto;
-  cursor: pointer;
-}
-zs4-o-login{
-  margin: 0.5em;
-  align-self: auto;
-}
-zs4-o-login-r{
-  margin: 0.5em;
-  align-self: auto;
-  cursor: pointer;
-}
-zs4-user-options{
+  color:black;
   background-color: white;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+zs4-name{
+  vertical-align: top;
+}
+
+zs4-object-head.top{
+  color:white;
+  background-color: blue;
+  font-weight: bold;
+  display:block;
+  height:2em;
+}
+zs4-object-toggle.top{
+  width:2em;
+  height:2em;
+  background-image: url('/favicon.png');
+  background-size:contain;
+  border:initial;
+}
+zs4-name.top{
+  font-size: 150%;
   display:inline-block;
-  border-radius: 1em;
-  height: 1em;
-  width: 1em;
-  cursor: pointer;
+  vertical-align: 30%;
+}
+zs4-object-content.top{
+  padding:1em;
+}
+
+
+.am {
+  color:blue;
+}
+.own {
+  color:green;
+}
+
+.container{
+  display:block;
+  border-width: 2px;
+  border-color: white;
 }
 zs4-error{
-  background-color: red;
-  color:black;
+  color:red;
+  display:inline;
+}
+zs4-error.hide{
   display:none;
 }
-zs4-error.zs4error{
-  display:block;
-}
 
-zs4-response{
-  background-color: green;
-  color:black;
+zs4-result{
+  color:green;
+  display:inline;
+}
+zs4-result.hide{
   display:none;
 }
-zs4-response.zs4response{
+
+zs4-object-toggle{
+  display:inline-block;
+  width:1em;
+  height:1em;
+  cursor:pointer;
+  border:thin dotted;
+}
+zs4-object-content{
+  padding-left: 1em;
+  border-left: thin dotted;
   display:block;
+}
+zs4-object-content.hide{
+  display:none;
 }
 
-zs4-t-main{
-  display:block;
-}
-zs4-t-main-h{
-  border-radius:0.5em 0.5em 0px 0px;
-  padding-left: 0.5em;
-  padding-right: 0.5em;
-  background-color: lightgreen;
-}
-zs4-t-main-h.active zs4-t-main-tx{
-  visibility: visible;
-  cursor: pointer;
-}
-zs4-t-main-h.active{
-  background-color: white;
-}
-zs4-t-main-h.hidden{
-  cursor: pointer;
-}
-zs4-t-main-p{
-  margin: 1em;
-}
-zs4-t-main-th{
-  display: block;
-  background-color: lightgreen;
-}
-zs4-t-main-tp{
-  display:block;
-}
-zs4-t-main-tl{
+zs4-name.api{
+  cursor:pointer;
   font-weight: bold;
 }
-zs4-t-main-tx{
-  padding-left: 0.3em;
-  font-size:0.8em;
-  vertical-align: text-top;
-  visibility: hidden;
-  font-weight: bold;
+
+input{
+  border-left-style: none;
+  border-top-style: none;
+  border-right-style: none;
+  border-bottom-style: dotted;
+  border-color: darkgray;
+  margin-left: 1em;
 }
-zs4-t-main-tx:hover{
-  color: red;
+input.noset{
+  border-color:white;
+}
+
+.noset,.notrans{
+  color:grey;
 }
