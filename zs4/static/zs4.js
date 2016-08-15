@@ -525,22 +525,23 @@ zs4.util = {
     this.own = 0x0400;
 
     this.getString = function(mask){
+      var int = mask;
+      if (!zs4.is.number(int))int=this.value;
       var ret = '';
       function addFlag(s){
-        if (ret.length == 0) ret = s; ret += (' '+s);
-
+        if (ret.length == 0) ret = s; else ret += (' '+s);
       }
-      if (mask & this.trim) addFlag('trim');
-      if (mask & this.arrayio) addFlag('arrayio');
-      if (mask & this.notrans) addFlag('notrans');
-      if (mask & this.scope) addFlag('scope');
-      if (mask & this.noset) addFlag('noset');
-      if (mask & this.api) addFlag('api');
-      if (mask & this.required) addFlag('required');
-      if (mask & this.nostore) addFlag('nostore');
-      if (mask & this.noget) addFlag('noget');
-      if (mask & this.am) addFlag('am');
-      if (mask & this.own) addFlag('own');
+      if (int & this.trim) addFlag('trim');
+      if (int & this.arrayio) addFlag('arrayio');
+      if (int & this.notrans) addFlag('notrans');
+      if (int & this.scope) addFlag('scope');
+      if (int & this.noset) addFlag('noset');
+      if (int & this.api) addFlag('api');
+      if (int & this.required) addFlag('required');
+      if (int & this.nostore) addFlag('nostore');
+      if (int & this.noget) addFlag('noget');
+      if (int & this.am) addFlag('am');
+      if (int & this.own) addFlag('own');
       return ret;
     };
 
@@ -1025,6 +1026,8 @@ zs4.type = {
 
     var template = input.template._.new();
     template._.name = 'template'
+    template._.flags.set.notrans(true);
+    template._.flags.set.nostore(true);
     zs4.type.property(this,template);
 
     zs4.type.property(this,new zs4.type.object({name:'array',flags:'required arrayio',}));
