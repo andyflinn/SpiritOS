@@ -23,7 +23,9 @@ token.schema = function(parent){
 
     console.log('token payload: '+JSON.stringify(payload));
 
-    return jwt.encode(payload, this._.value.secret);
+    var ret = jwt.encode(payload, this._.value.secret);
+    console.log(ret);
+    return ret;
   }).bind(THIS);
 
   THIS.decode = (function(token){

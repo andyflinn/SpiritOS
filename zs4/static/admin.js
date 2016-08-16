@@ -3,6 +3,19 @@
 zs4.admin = new Object();
 
 zs4.admin.util = {
+	am:function(o){
+		if (zs4.THIS._.token==null||zs4.THIS._.scopath==null)return false;
+		if (zs4.THIS._.scopath==o._.scope._.path)return true;
+
+		return false;
+	},
+	own:function(o){
+		if (zs4.THIS._.token==null||zs4.THIS._.scopath==null)return false;
+
+		if (o._.scope._.path.startsWith(zs4.THIS._.scopath)
+		&&  o._.scope._.path>zs4.THIS._.scopath)return true;
+		return false;
+	},
 	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
 		if (o._.input==null)o._.input = (function(){return null;}).bind(o);
@@ -42,9 +55,17 @@ zs4.admin.util = {
 			}
 		}
 
-		zs4.admin.util.setClass(o._.html.e,'scope',o._.flags.get.scope());
-		zs4.admin.util.setClass(o._.html.e,'am',o._.flags.get.am());
-		zs4.admin.util.setClass(o._.html.e,'own',o._.flags.get.own());
+		if (o._.flags.get.scope()){
+			zs4.admin.util.addClass(o._.html.e,'scope');
+			o._.scope = o;
+		}
+		else{
+			o._.scope = po._.scope;
+			zs4.admin.util.removeClass(o._.html.e,'scope');
+
+		}
+		zs4.admin.util.setClass(o._.html.e,'am',zs4.admin.util.am(o));
+		zs4.admin.util.setClass(o._.html.e,'own',zs4.admin.util.own(o));
 	},
 
 	createNameElement:function(po,o){
@@ -56,7 +77,7 @@ zs4.admin.util = {
 		zs4.admin.util.setClass(o._.html.name,'noset',o._.flags.get.noset());
 		zs4.admin.util.setClass(o._.html.input,'noset',o._.flags.get.noset());
 
-
+		zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
 	},
 
 	createCallback:function(THIS){
@@ -130,6 +151,7 @@ zs4.admin.type = {
 					if (!zs4.is.type(o.array[n])){
 						//console.log('new('+n+')');
 						var nu = o.template._.new();
+						nu._.flags.value =
 						nu._.flags.set.notrans(false);
 						nu._.name = n;
 						zs4.type.property(o.array,nu);
@@ -397,6 +419,8 @@ zs4.admin.type = {
 			if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
 			zs4.admin.type[o[n]._.typename](o,o[n]);
 		}
+
+		zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
 
 		if (zs4.is.function(o._.html.refresh))o._.html.refresh();
 	},

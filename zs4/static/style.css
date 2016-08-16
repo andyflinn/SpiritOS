@@ -50,6 +50,10 @@ zs4-object-content.top{
   border-width: 2px;
   border-color: white;
 }
+
+.nodisplay{
+  display:none;
+}
 zs4-error{
   color:red;
   display:inline;

@@ -17,7 +17,7 @@ user.create = function(){
   zs4.type.scope.call(this);
   this._.name = 'user';
   USER._.create = user.create;
-  zs4.type.property(USER.zs4,new zs4.type.admin());
   zs4.type.property(USER.zs4,new password.create());
+  zs4.type.property(USER.zs4,new zs4.type.admin());
   zs4.type.property(USER.zs4,new email.create());
 }

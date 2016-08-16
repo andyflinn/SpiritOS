@@ -31,6 +31,7 @@ password.create = function(){
         if (oldPassVerified){
           console.log('...old password verified...');
           req.tokenCreate({iss:THIS._.path,scope:req.scope._.path,});
+          req.request.reget = THIS._.path;
 
           if (zs4.is.password(req.input.set)){
             console.log('...pass change...');
@@ -91,7 +92,7 @@ password.create = function(){
 
     if (passhash.isHashed(this._.value.hashed)){
       vfy(get);
-      if (req.userIsRoot()){
+      if (req.am(THIS)||req.own(THIS)){
         set(get);
       }
     }
