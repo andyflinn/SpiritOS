@@ -9,8 +9,8 @@ var token = exports;
 
 token.schema = function(parent){
   var THIS = new zs4.type.object({name:'token',flags:'required api',});
-  zs4.type.property(parent,THIS);
-  zs4.type.property(THIS,new zs4.type.string({name:'secret',flags:'required',default:randomstring.generate(RANDOMLENGTH),}));
+  parent._.property(THIS);
+  THIS._.property(new zs4.type.string({name:'secret',flags:'required',default:randomstring.generate(RANDOMLENGTH),}));
 
   THIS.encode = (function(nuload){
     var payload = new Object({

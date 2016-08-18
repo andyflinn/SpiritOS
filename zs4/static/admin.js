@@ -155,7 +155,7 @@ zs4.admin.type = {
 						nu._.flags.value =
 						nu._.flags.set.notrans(false);
 						nu._.name = n;
-						zs4.type.property(o.array,nu);
+						o.array._.property(nu);
 					}
 					//console.log('load('+n+')');
 					o.array[n]._.load(o.array._.value[n]);
@@ -434,7 +434,15 @@ zs4.admin.type = {
 
 		for (var n in o){
 			//if (zs4.is.name(n))console.log(n);
-			if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
+			if (!zs4.is.type(o[n]))continue;
+			if (!zs4.is.function(zs4.admin.type[o[n]._.typename])){
+				console.log('o[n]._.typename '
+				+o[n]._.typename
+				+' @'
+				+o[n]._.path
+				+' IS NOT A CONSTRUCTOR!!!')
+				continue;
+			}
 			zs4.admin.type[o[n]._.typename](o,o[n]);
 		}
 
@@ -487,6 +495,79 @@ zs4.admin.type = {
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
+	scopeitem:function(po,o){
+    zs4.admin.util.unknown(po,o);
+    if (o._.html.name==null){
+
+      zs4.admin.util.createNameElement(po,o);
+
+      o._.html.input = document.createElement('select');
+      o._.html.e.appendChild(o._.html.input);
+
+      zs4.admin.util.createCallback(o);
+
+      o._.input = (function(){
+        if (o._.flags.get.noset())return null;
+        return this._.html.input.value;
+      }).bind(o);
+
+      o._.html.refreshOptions = function(o){
+        var arr = o._.scope._.getScopeItems();
+        //console.log (arr);
+        //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
+				o._.html.input.innerHTML = '';
+        for (var i = 0 ; i < arr.length ; i++){
+          var option = document.createElement('option');
+					option.text = arr[i].label;
+					option.value = arr[i].value;
+        	o._.html.input.add(option);
+        }
+      }
+    }
+
+    o._.html.refreshOptions(o);
+    //o._.html.input.readOnly = o._.flags.get.noset();
+    o._.html.input.value = po._.value[o._.name];
+    zs4.admin.util.refreshNameInput(po,o);
+  },
+  scopescope:function(po,o){
+		zs4.admin.util.unknown(po,o);
+    if (o._.html.name==null){
+
+      zs4.admin.util.createNameElement(po,o);
+
+      o._.html.input = document.createElement('select');
+      o._.html.e.appendChild(o._.html.input);
+			o._.html.input.onchange = function(){
+				console.log(o._.html.input.value);
+			}
+
+      zs4.admin.util.createCallback(o);
+
+      o._.input = (function(){
+        if (o._.flags.get.noset())return null;
+        return this._.html.input.value;
+      }).bind(o);
+
+      o._.html.refreshOptions = function(o){
+        var arr = o._.scope._.getScopeScopes();
+        console.log (arr);
+        //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
+				o._.html.input.innerHTML = '';
+        for (var i = 0 ; i < arr.length ; i++){
+          var option = document.createElement('option');
+					option.text = arr[i].label;
+					option.value = arr[i].value;
+          o._.html.input.add(option);
+        }
+      }
+    }
+
+    o._.html.refreshOptions(o);
+    //o._.html.input.readOnly = o._.flags.get.noset();
+    o._.html.input.value = po._.value[o._.name];
+    zs4.admin.util.refreshNameInput(po,o);
+  },
 	string:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		if (o._.html.name==null){

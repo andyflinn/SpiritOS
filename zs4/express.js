@@ -114,12 +114,12 @@ express.running = false;
 
 express.schema = function(parent){
   var THIS = express.THIS = new zs4.type.object({name:'express',flags:'required api'});
-  zs4.type.property(parent,THIS);
+  parent._.property(THIS);
 
-  zs4.type.property(THIS,new zs4.type.string({name:'host',flags:'required',default:'localhost',}));
-  zs4.type.property(THIS,new zs4.type.integer({name:'port',flags:'required',default:3000,}));
-  zs4.type.property(THIS,new zs4.type.boolean({name:'cookies',flags:'required',default:false,}));
-  zs4.type.property(THIS,new zs4.type.object({name:'run',flags:'required nostore noget api'}));
+  THIS._.property(new zs4.type.string({name:'host',flags:'required',default:'localhost',}));
+  THIS._.property(new zs4.type.integer({name:'port',flags:'required',default:3000,}));
+  THIS._.property(new zs4.type.boolean({name:'cookies',flags:'required',default:false,}));
+  THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
     console.log(this._.path+'.transform()');
     if (zs4.is.object(req.input)){

@@ -4,7 +4,7 @@ var NodeRSA = require('node-rsa');
 var rsa = exports;
 var rsa
 rsa.schema = function(parent){
-  zs4.type.property(parent,new rsa.create());
+  parent._.property(new rsa.create());
 };
 
 rsa.create = function(){
@@ -14,8 +14,8 @@ rsa.create = function(){
   zs4.type.object.call(this,input);
   THIS._.create = rsa.create;
 
-  zs4.type.property(THIS,new zs4.type.text({name:'pem',flags:'required noget',}));
-  zs4.type.property(THIS,new zs4.type.string({name:'hash',flags:'required noget',}));
+  THIS._.property(new zs4.type.text({name:'pem',flags:'required noget',}));
+  THIS._.property(new zs4.type.string({name:'hash',flags:'required noget',}));
 
   THIS._.key = new NodeRSA();
 

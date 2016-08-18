@@ -4,7 +4,7 @@ var emailjs = require('emailjs');
 var email = exports;
 
 email.schema = function(parent){
-  zs4.type.property(parent,new email.create({name:'email',required:true,authGet:['zs4.self'],}));
+  parent._.property(new email.create({name:'email',required:true,authGet:['zs4.self'],}));
 };
 
 
@@ -16,21 +16,19 @@ email.create = function(input){
   zs4.type.object.call(this,input);
   THIS._.create = email.create;
 
-  zs4.type.property(THIS,new zs4.type.email({name:'address',flags:'required',}));
+  THIS._.property(new zs4.type.object({name:'smtp',flags:'required api'}));
+  THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'required',default:false,}));
+  THIS.smtp._.property(new zs4.type.string({name:'user',flags:'required',}));
+  THIS.smtp._.property(new zs4.type.string({name:'password',flags:'required',}));
+  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'required',}));
+  THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'required',default:587}));
+  THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'required',default:false,}));
 
-  zs4.type.property(THIS,new zs4.type.object({name:'smtp',flags:'required api'}));
-  zs4.type.property(THIS.smtp,new zs4.type.boolean({name:'configured',flags:'required',default:false,}));
-  zs4.type.property(THIS.smtp,new zs4.type.string({name:'user',flags:'required',}));
-  zs4.type.property(THIS.smtp,new zs4.type.string({name:'password',flags:'required',}));
-  zs4.type.property(THIS.smtp,new zs4.type.string({name:'host',flags:'required',}));
-  zs4.type.property(THIS.smtp,new zs4.type.integer({name:'port',flags:'required',default:587}));
-  zs4.type.property(THIS.smtp,new zs4.type.boolean({name:'ssl',flags:'required',default:false,}));
+  THIS._.property(new zs4.type.object({name:'message',flags:'required nostore api noprune',}));
 
-  zs4.type.property(THIS,new zs4.type.object({name:'message',flags:'required nostore api',}));
-  //zs4.type.property(THIS.message,new zs4.type.email({name:'from',required:true,}));
-  zs4.type.property(THIS.message,new zs4.type.email({name:'to',flags:'required',}));
-  zs4.type.property(THIS.message,new zs4.type.string({name:'subject',flags:'required',}));
-  zs4.type.property(THIS.message,new zs4.type.text({name:'text',flags:'required',}));
+  THIS.message._.property(new zs4.type.email({name:'to',flags:'required',}));
+  THIS.message._.property(new zs4.type.string({name:'subject',flags:'required',}));
+  THIS.message._.property(new zs4.type.text({name:'text',flags:'required',}));
 
   THIS.message._.transform = (function(req,cb){
     this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
@@ -55,7 +53,8 @@ email.create = function(input){
         text:req.input.text,
       };
       if (!THIS._.value.smtp.configured){
-
+        req.error(this,'smtp not configured');
+        this._.get(req); cb(); return;
       }
       if (THIS.smtpServer == null){
         THIS.smtpServer = emailjs.server.connect({
@@ -67,14 +66,17 @@ email.create = function(input){
         });
       }
       console.log(message);
+      var msg = this;
       THIS.smtpServer.send(message, function(err,abc) {
           if(err){
-              req.error({text:'smtp send failed',data:err});
+              req.error(msg,{text:'smtp send failed',data:err});
               console.log(err);
-              THIS._.get(req); cb(); return;
+              msg._.get(req); cb(); return;
           }
           else{
-            THIS._.get(req); cb(); return;
+            console.log('message sent to '+req.input.to+', subject: \''+req.input.subject+'\'');
+            req.result(msg,'message sent to '+req.input.to+', subject: \''+req.input.subject+'\'');
+            msg._.get(req); cb(); return;
           }
       });
     }

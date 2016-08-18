@@ -23,7 +23,7 @@ fs.statsObject = function(stats){
 };
 
 fs.schema = function(parent){
-  zs4.type.property(parent,new fs.create({name:'fs',flags:'required',}));
+  parent._.property(new fs.create({name:'fs',flags:'required',}));
 
   //console.log(parent.fs.stat);
 };
@@ -36,8 +36,8 @@ fs.create = function(input){
   zs4.type.object.call(this,input);
   THIS._.create = fs.create;
 
-  zs4.type.property(THIS,new zs4.type.object({name:'stat',flags:'required nostore api',}));
-  zs4.type.property(THIS.stat,new zs4.type.string({name:'path',flags:'required nostore',}));
+  THIS._.property(new zs4.type.object({name:'stat',flags:'required nostore api',}));
+  THIS.stat._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.stat._.transform = (function(req,cb){
     //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var STAT = this;
@@ -62,8 +62,8 @@ fs.create = function(input){
     STAT._.get(req); cb(); return;
   }).bind(THIS.stat);
 
-  zs4.type.property(THIS,new zs4.type.object({name:'readdir',flags:'required nostore api',}));
-  zs4.type.property(THIS.readdir,new zs4.type.string({name:'path',flags:'required nostore',}));
+  THIS._.property(new zs4.type.object({name:'readdir',flags:'required nostore api',}));
+  THIS.readdir._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readdir._.transform = (function(req,cb){
     //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var READDIR = this;
@@ -87,8 +87,8 @@ fs.create = function(input){
     READDIR._.get(req); cb(); return;
   }).bind(THIS.readdir);
 
-  zs4.type.property(THIS,new zs4.type.object({name:'readfile',flags:'required nostore api',}));
-  zs4.type.property(THIS.readfile,new zs4.type.string({name:'path',flags:'required nostore',}));
+  THIS._.property(new zs4.type.object({name:'readfile',flags:'required nostore api',}));
+  THIS.readfile._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readfile._.transform = (function(req,cb){
     //zs4.console.log('password.transform('+JSON.stringify(req.input)+')');
     var THIS = this;
