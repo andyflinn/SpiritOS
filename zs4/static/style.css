@@ -1,40 +1,176 @@
-body{
+:root{
   margin:0;
   border:0;
   padding:0;
   color:black;
   background-color: white;
+  font-size:48px;
 }
 
 * {
     box-sizing: border-box;
 }
 
-zs4-name{
-  vertical-align: top;
+.container{
+  display:block;
 }
 
-zs4-object-head.top{
-  color:white;
-  background-color: blue;
-  font-weight: bold;
-  display:block;
-  height:2em;
+body{
+  padding:0;
+  margin:0;
 }
-zs4-object-toggle.top{
-  width:2em;
-  height:2em;
-  background-image: url('/favicon.png');
-  background-size:contain;
-  border:initial;
+input{
+  font-size:48px;
+}
+input[type="checkbox"]{
+  width:1em;
+  height:1em;
+}
+input{
+  border-left-style: none;
+  border-top-style: none;
+  border-right-style: none;
+  border-bottom-style: dotted;
+  border-color: darkgray;
+  margin-left: 0.5em;
+}
+input.noset{
+  border-color:white;
+}
+textarea{
+  font-size:48px;
+  height: 2em;
+}
+
+zs4-name{
+  vertical-align: top;
 }
 zs4-name.top{
   font-size: 150%;
   display:inline-block;
   vertical-align: 30%;
 }
+
+zs4-object-head.top,
+zs4-object-head.top.off,
+zs4-object-head.top.on{
+  color:white;
+  background-color: blue;
+  font-weight: bold;
+  display:block;
+  height:2em;
+  width:100%;
+  top:0px;
+  position:fixed;
+  z-index: 100;
+}
 zs4-object-content.top{
-  padding:1em;
+  width:100%;
+  margin-top:2em;
+}
+
+zs4-object-toggle.off{
+  display:inline-block;
+  width:0.8em;
+  height:0.8em;
+  cursor:pointer;
+  background-image: url('/plus.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.on{
+  display:inline-block;
+  width:0.8em;
+  height:0.8em;
+  cursor:pointer;
+  background-image: url('/minus.png');
+  background-size:100% 100%;
+}
+
+zs4-object-toggle.notrans.off{
+  background-image: url('/info.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.notrans.on{
+  background-image: url('/infoon.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.scope.off{
+  background-image: url('/scope.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.scope.on{
+  background-image: url('/scopeon.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.scope.top.off{
+  background-image: url('/scope.png');
+  width:2em;
+  height:2em;
+}
+zs4-object-toggle.scope.top.off{
+  background-image: url('/scope.png');
+  width:2em;
+  height:2em;
+}
+zs4-object-toggle.scope.top.on{
+  background-image: url('/scope.png');
+  width:2em;
+  height:2em;
+}
+zs4-object-toggle.api.off{
+  background-image: url('/gears.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.api.on{
+  background-image: url('/gearson.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.arrayio.off{
+  background-image: url('/array.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.arrayio.on{
+  background-image: url('/arrayon.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.array.off{
+  background-image: url('/database.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.array.on{
+  background-image: url('/databaseon.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.settings.off{
+  background-image: url('/settings.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.settings.on{
+  background-image: url('/settingson.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.email.off{
+  background-image: url('/email.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-object-toggle.email.on{
+  background-image: url('/emailon.png');
+  background-size:100% 100%;
+  border:initial;
 }
 
 
@@ -45,7 +181,7 @@ zs4-object-content.top{
   color:green;
 }
 
-.container{
+.100% 100%er{
   display:block;
   border-width: 2px;
   border-color: white;
@@ -70,17 +206,39 @@ zs4-result.hide{
   display:none;
 }
 
-zs4-object-toggle{
-  display:inline-block;
-  width:1em;
-  height:1em;
-  cursor:pointer;
-  border:thin dotted;
+
+zs4-object-head.notop{
+  width:100%;
+  padding-right:0.5em;
+  background: initial;
+  background-size: initial;
+  background-repeat: initial;
 }
+zs4-object-head.notop.off{
+  width:100%;
+  background: initial;
+  background-size: initial;
+  background-repeat: initial;
+}
+
+zs4-object-head.notop.on{
+  width:100%;
+  background: initial;
+  background-size: initial;
+  background-repeat: initial;
+}
+
 zs4-object-content{
-  padding-left: 1em;
-  border-left: thin dotted;
+  padding-left: 0.5em;
+  width:100%;
   display:block;
+  background: linear-gradient(to right, lightblue , white);
+  background-size: 0.5em 100%;
+  background-repeat: no-repeat;
+  border-left: solid blue;
+  padding-left:0.5em;
+  padding-top:0.5em;
+  padding-bottom:0.5em;
 }
 zs4-object-content.hide{
   display:none;
@@ -91,17 +249,6 @@ zs4-name.api{
   font-weight: bold;
 }
 
-input{
-  border-left-style: none;
-  border-top-style: none;
-  border-right-style: none;
-  border-bottom-style: dotted;
-  border-color: darkgray;
-  margin-left: 1em;
-}
-input.noset{
-  border-color:white;
-}
 
 .noset,.notrans{
   color:grey;

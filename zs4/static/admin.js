@@ -39,6 +39,7 @@ zs4.admin.util = {
 			if (zs4.is.type(po)){
 				po._.html.c.appendChild(o._.html.e);
 				o._.html.parentElement = po._.html.c;
+				zs4.admin.util.addClass(o._.html.e,'branch');
 			}
 			else {
 				if (po==null){
@@ -308,13 +309,14 @@ zs4.admin.type = {
 			o._.html.head = document.createElement('zs4-object-head');
 			o._.html.e.appendChild(o._.html.head);
 			if (o._.html.topElement==true)zs4.admin.util.addClass(o._.html.head,'top');
+			else zs4.admin.util.addClass(o._.html.head,'notop');
 
 			o._.html.toggle = document.createElement('zs4-object-toggle');
 			o._.html.head.appendChild(o._.html.toggle);
-			o._.html.toggle.textContent = '+';
+			zs4.admin.util.addClass(o._.html.toggle,o._.typename);
 			o._.html.expanded = false;
 			if (o._.html.topElement==true){
-				o._.html.toggle.textContent = '';
+				//o._.html.toggle.textContent = '';
 				zs4.admin.util.addClass(o._.html.toggle,'top');
 			}
 
@@ -352,13 +354,6 @@ zs4.admin.type = {
 			}
 			o._.html.name.onclick = o._.html.submit;
 
-			if (po != null) {
-				o._.html.name.textContent = o._.name;
-			}
-			else {
-				o._.html.treetitle = zs4.THIS.zs4.admin._.value.title;
-			}
-
 			zs4.admin.util.createCallback(o);
 
 			o._.html.c = document.createElement('zs4-object-content');
@@ -366,22 +361,40 @@ zs4.admin.type = {
 			zs4.admin.util.addClass(o._.html.c,'hide');
 			if (o._.html.topElement==true)zs4.admin.util.addClass(o._.html.c,'top');
 
+			o._.html.toggleOff = function(){
+				o._.html.expanded = false;
+				zs4.admin.util.addClass(o._.html.e,'off');
+				zs4.admin.util.removeClass(o._.html.e,'on');
+				zs4.admin.util.addClass(o._.html.name,'off');
+				zs4.admin.util.removeClass(o._.html.name,'on');
+				zs4.admin.util.addClass(o._.html.head,'off');
+				zs4.admin.util.removeClass(o._.html.head,'on');
+				zs4.admin.util.addClass(o._.html.toggle,'off');
+				zs4.admin.util.removeClass(o._.html.toggle,'on');
+				zs4.admin.util.addClass(o._.html.c,'hide');
+			};
+			o._.html.toggleOn = function(){
+				o._.html.expanded = true;
+				zs4.admin.util.removeClass(o._.html.e,'off');
+				zs4.admin.util.addClass(o._.html.e,'on');
+				zs4.admin.util.removeClass(o._.html.name,'off');
+				zs4.admin.util.addClass(o._.html.name,'on');
+				zs4.admin.util.removeClass(o._.html.head,'off');
+				zs4.admin.util.addClass(o._.html.head,'on');
+				zs4.admin.util.removeClass(o._.html.toggle,'off');
+				zs4.admin.util.addClass(o._.html.toggle,'on');
+				zs4.admin.util.removeClass(o._.html.c,'hide');
+			};
 			o._.html.onToggle = function(){
 				if (o._.html.expanded){
-					o._.html.expanded = false;
-					zs4.admin.util.removeClass(o._.html.toggle,'on');
-					zs4.admin.util.addClass(o._.html.c,'hide');
-					if (o._.html.topElement!=true)o._.html.toggle.textContent = '+';
+					o._.html.toggleOff();
 				}
 				else {
-					o._.html.expanded = true;
-					zs4.admin.util.addClass(o._.html.toggle,'on');
-					zs4.admin.util.removeClass(o._.html.c,'hide');
-					if (o._.html.topElement!=true)o._.html.toggle.textContent = '-';
+					o._.html.toggleOn();
 				}
 			};
 			o._.html.toggle.onclick = o._.html.onToggle;
-
+			o._.html.toggleOff();
 			o._.input = (function(){
 				var ret = new Object();
 
@@ -398,19 +411,24 @@ zs4.admin.type = {
 	    }).bind(o);
 		}
 
-		if (o._.flags.get.api()){
-			//o._.html.response = (function(res){window.alert(JSON.stringify(res))}).bind(o);
-			zs4.admin.util.addClass(o._.html.name,'api');
-		}
-		else {
-			zs4.admin.util.removeClass(o._.html.name,'api');
-		}
+		function setObjectClass(o,c,tof){
+			if (tof){
+				zs4.admin.util.addClass(o._.html.e,c);
+				zs4.admin.util.addClass(o._.html.toggle,c);
+				zs4.admin.util.addClass(o._.html.head,c);
+				zs4.admin.util.addClass(o._.html.name,c);
+				zs4.admin.util.addClass(o._.html.c,c);
+			}
+			else {
+				zs4.admin.util.removeClass(o._.html.e,c);
+				zs4.admin.util.removeClass(o._.html.toggle,c);
+				zs4.admin.util.removeClass(o._.html.head,c);
+				zs4.admin.util.removeClass(o._.html.name,c);
+				zs4.admin.util.removeClass(o._.html.c,c);
+			}
+		};
 
-		if (zs4.is.string(o._.html.treetitle)){
-			o._.html.treetitle = (zs4.THIS.zs4.admin._.value.title).trim();
-			if (o._.html.treetitle.length==null)o._.html.treetitle = 'zs4';
-			o._.html.name.textContent = o._.html.treetitle;
-		}
+		setObjectClass(o,'api',o._.flags.get.api())
 
 		zs4.admin.util.refreshCallback(o);
 
@@ -421,6 +439,45 @@ zs4.admin.type = {
 		}
 
 		zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
+
+		setObjectClass(o,'scope',o._.flags.get.scope())
+		if (o._.flags.value & o._.flags.scope){
+			//zs4.admin.util.addClass(o._.html.toggle,'scope');
+			o._.scope = o;
+			if (zs4.is.string(o._.value.zs4.admin.title) && o._.value.zs4.admin.title.length > 0){
+				o._.html.name.textContent = o._.value.zs4.admin.title;
+			}
+			else {
+				o._.html.name.textContent = o._.name;
+			}
+		}
+		else{
+			o._.scope = po._.scope;
+			//zs4.admin.util.removeClass(o._.html.toggle,'scope');
+		}
+
+		setObjectClass(o,'arrayio',o._.flags.get.arrayio())
+
+		if (o._.name == 'zs4'){
+			setObjectClass(o,'settings',true);
+		}
+		else {
+			setObjectClass(o,'settings',false);
+		}
+
+		if (o._.name == 'email'){
+			setObjectClass(o,'email',true);
+		}
+		else {
+			setObjectClass(o,'email',false);
+		}
+
+		if (o._.name == 'rsa'){
+			setObjectClass(o,'rsa',true);
+		}
+		else {
+			setObjectClass(o,'rsa',false);
+		}
 
 		if (zs4.is.function(o._.html.refresh))o._.html.refresh();
 	},

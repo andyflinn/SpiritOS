@@ -369,14 +369,15 @@ zs4.json =  {
 
 zs4.path = {
   resolve:function(path){
-    if (path == null || path.length == 0)return this;
+    var ret = zs4.THIS;
+    if (path == null || path.length == 0)return ret;
     var a = zs4.string.split.separators(path,'./\\_-');
-    if (a == null || a.length == 0)return null;
-    var ret = this;
+    if (a == null || a.length == 0)return ret;
     for (var i = 0 ; i < a.length ; i++){
-      if (!zs4.is.name(a[i])||!ret.hasOwnProperty(a[i])||!zs4.is.object(ret[a[i]])) return null;
+      if (!zs4.is.name(a[i])||!ret.hasOwnProperty(a[i])||!zs4.is.type(ret[a[i]])) return ret;
       ret = ret[a[i]];
     }
+    console.log('path resolved: '+ret._.path);
     return ret;
   },
 };
@@ -806,6 +807,23 @@ zs4.type = {
       if (zs4.is.object(input)&&zs4.is.function(this._.callback))this._.callback(input);
     }).bind(this);
 
+    this._.getHTML = (function(req){
+      var html = '<!DOCTYPE html>\n';
+      html += '<html>\n';
+        html += ' <head>\n';
+          html += '  <title>'+this._.path+'</title>\n';
+          html += '  <script src="/zs4.js"></script>\n';
+        html += ' </head>\n';
+        if (true){
+          html += ' <body>\n';
+          html += ' </body>\n';
+        }
+      html += '</html>\n';
+      req.request.html = html;
+      console.log('HTML RESONPSE FROM '+this._.path);
+      console.log(html);
+      return(html);
+    }).bind(this);
   },
 
   property:function(schema,ns){
@@ -854,7 +872,7 @@ zs4.type = {
 
     //if (zs4.is.window())return;
 
-    if (!zs4.is.type(input.template))input.template = new zs4.type.object({name:'template'});
+    if (!zs4.is.type(input.template))input.template = new zs4.type.scope({name:'template'});
 
     var THIS = this;
 
@@ -1377,7 +1395,13 @@ zs4.type = {
 
       if (!req.authorize(this,this._.authGet)){this._.get(req); cb(); return;}
 
-      if (zs4.is.object(req.input))console.log(this._.path+'.transform()');
+      if (zs4.is.object(req.input)){
+        console.log(this._.path+'.transform()');
+        if (zs4.is.object(req.input.getHTML)){
+          this._.getHTML(req);
+          cb(); return;
+        }
+      }
       var parallel = new zs4.processor.parallel();
 
       //if (req.input!=null)console.log(THIS._.path+' cb-before: '+JSON.stringify(req.request.callback));
@@ -1432,6 +1456,7 @@ zs4.type = {
     zs4.type.object.call(this,{name:'this',flags:'required scope',authGet:['zs4.public'],})
     this._.typename = 'scope';
     zs4.type.property(THIS,new zs4.type.object({name:'zs4',flags:'required',authGet:['zs4.public'],}));
+
   },
   string:function(input){
     zs4.type.unknown.call(this,input);
@@ -1569,6 +1594,21 @@ zs4.request = function(o){
     var get = this.resolvePath(o,this.request.get);
     if (!zs4.is.object(get._)) get._ = new Object();
     return get;
+  }
+
+  this.resolveInputPath = function(p){
+
+    if (!zs4.is.object(this.input))this.input = new Object();
+    var a = zs4.string.split.separators(p,'/\\.-_');
+
+    var r = this.input;
+    for (var i = 0 ; i < a.length ; i++){
+      if (!r.hasOwnProperty(a[i])||!zs4.is.object(r[a[i]])){
+        r[a[i]] = new Object();
+      }
+      r = r[a[i]];
+    }
+    return r;
   }
 
   if (zs4.is.node()){

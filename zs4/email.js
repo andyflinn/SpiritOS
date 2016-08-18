@@ -4,7 +4,7 @@ var emailjs = require('emailjs');
 var email = exports;
 
 email.schema = function(parent){
-  zs4.type.property(parent,new email.create({name:'email',required:true,authGet:['zs4.owner'],['zs4.self']}));
+  zs4.type.property(parent,new email.create({name:'email',required:true,authGet:['zs4.self'],}));
 };
 
 
@@ -12,7 +12,7 @@ email.schema = function(parent){
 email.create = function(input){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'email',flags:'required',});
+  if (!zs4.is.object(input))input = new Object({name:'email',flags:'required',authGet:['zs4.self'],});
   zs4.type.object.call(this,input);
   THIS._.create = email.create;
 

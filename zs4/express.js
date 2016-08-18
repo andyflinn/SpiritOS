@@ -75,11 +75,23 @@ express.setCookie = function(res,zs4request){
 };
 
 express.app.get('/*', function (req, res) {
+  console.log('express.app.get('+req.path+')');
   var zs4req = new zs4.request();
+  var input = zs4req.resolveInputPath(req.path);
+  input.getHTML = new Object();
+  input.getHTML.query = req.query;
+  console.log(zs4req.input);
+
   express.getCookie(req,zs4req);
-  express.setCookie(res,zs4req);
-  res.write(express.html(req,res));
-  res.end();
+
+  zs4req.process(function(ret){
+    var r = zs4req.request.html;
+    console.log(r);
+    express.setCookie(res,zs4req);
+    //res.write(express.html(req,res));
+    res.write(r);
+    res.end();
+  });
 });
 
 express.app.post('/*', function (req, res) {
