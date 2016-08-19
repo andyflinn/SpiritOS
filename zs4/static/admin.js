@@ -183,6 +183,9 @@ zs4.admin.type = {
 		}
 
 	},
+	auth:function(po,o){
+		zs4.admin.type.object(po,o);
+	},
 	boolean:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
@@ -207,6 +210,9 @@ zs4.admin.type = {
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.checked = po._.value[o._.name];
 		zs4.admin.util.refreshNameInput(po,o);
+	},
+	bye:function(po,o){
+		zs4.admin.type.object(po,o);
 	},
 	date:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -617,4 +623,4 @@ zs4.admin.type = {
 zs4.session = {};
 
 zs4.css = zs4.loadcss('/style.css');
-zs4.admin.type.object(null,zs4.THIS);
+zs4.admin.type.object(null,zs4.location.get());

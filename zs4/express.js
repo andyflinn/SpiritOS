@@ -14,22 +14,16 @@ express = exports;
 
 express.zs4 = zs4;
 
-express.html = function(req,res,err){
+express.html = function(req,res){
   var html = '<html>\n';
     html += ' <head>\n';
+      html += '  <title>'+req.path+' ERROR</title>\n';
       html += '  <base href="' + req.path + '">\n';
-
-      //html += '  <link rel="stylesheet" href="/style.css">\n';
-
-      html += '  <script src="/zs4.js"></script>\n';
-      //html += '  <script src="/html.js"></script>\n';
-      //if (zs4.is.email(req.zs4.email))html += '  <script>zs4.session.email=\''+req.zs4.email+'\';</script>\n';
-
     html += ' </head>\n';
     if (true){
       //html += ' <body onload="zs4.ui.initialize(document.body)">\n';
       html += ' <body>\n';
-
+      html += '<a href=\"/\">Go to homepage</a>\n'
 
       html += ' </body>\n';
     }
@@ -89,6 +83,9 @@ express.app.get('/*', function (req, res) {
     console.log(r);
     express.setCookie(res,zs4req);
     //res.write(express.html(req,res));
+    if (r == null || r.length == 0){
+      r = express.html(req,res);
+    }
     res.write(r);
     res.end();
   });
@@ -96,16 +93,30 @@ express.app.get('/*', function (req, res) {
 
 express.app.post('/*', function (req, res) {
   var zs4req = new zs4.request(req.body);
+  zs4.console.log('POST BODY: '+JSON.stringify(req.body));
   express.getCookie(req,zs4req);
-  //zs4.console.log('request received: '+JSON.stringify(zs4req));
+  zs4.console.log('request received: '+JSON.stringify(zs4req));
 
   zs4req.process(function(ret){
-    var r = zs4req.getReply();
-    console.log('callback: '+JSON.stringify(r.request));
-    express.setCookie(res,zs4req);
-    //zs4.console.log('request processed: '+JSON.stringify(r));
-    res.send(r);
-    //zs4.console.log(r.reply.zs4.email.smtp);
+    if (zs4req.html==true){
+      var r = zs4req.request.html;
+      console.log(r);
+      express.setCookie(res,zs4req);
+      //res.write(express.html(req,res));
+      if (r == null || r.length == 0){
+        r = express.html(req,res);
+      }
+      res.write(r);
+      res.end();
+    }
+    else {
+      var r = zs4req.getReply();
+      console.log('callback: '+JSON.stringify(r.request));
+      express.setCookie(res,zs4req);
+      //zs4.console.log('request processed: '+JSON.stringify(r));
+      res.send(r);
+      //zs4.console.log(r.reply.zs4.email.smtp);
+    }
   });
 
 });
