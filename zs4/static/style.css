@@ -49,6 +49,16 @@ zs4-name.top{
   display:inline-block;
   vertical-align: 30%;
 }
+zs4-error.top{
+  font-size: 50%;
+  display:inline-block;
+  vertical-align: top;
+}
+zs4-result.top{
+  font-size: 50%;
+  display:inline-block;
+  vertical-align: top;
+}
 
 zs4-object-head.top,
 zs4-object-head.top.off,
@@ -57,7 +67,6 @@ zs4-object-head.top.on{
   background-color: blue;
   font-weight: bold;
   display:block;
-  height:2em;
   width:100%;
   top:0px;
   position:fixed;

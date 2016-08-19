@@ -20,7 +20,7 @@ email.create = function(input){
   THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'required',default:false,authGet:['zs4.self'],authSet:['zs4.self'],}));
   THIS.smtp._.property(new zs4.type.string({name:'user',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
   THIS.smtp._.property(new zs4.type.string({name:'password',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'required',}));
+  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
   THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'required',default:587,authGet:['zs4.self'],authSet:['zs4.self'],}));
   THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'required',default:false,authGet:['zs4.self'],authSet:['zs4.self'],}));
 

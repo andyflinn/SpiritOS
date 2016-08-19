@@ -93,9 +93,9 @@ express.app.get('/*', function (req, res) {
 
 express.app.post('/*', function (req, res) {
   var zs4req = new zs4.request(req.body);
-  zs4.console.log('POST BODY: '+JSON.stringify(req.body));
+  //zs4.console.log('POST BODY: '+JSON.stringify(req.body));
   express.getCookie(req,zs4req);
-  zs4.console.log('request received: '+JSON.stringify(zs4req));
+  //zs4.console.log('request received: '+JSON.stringify(zs4req));
 
   zs4req.process(function(ret){
     if (zs4req.html==true){

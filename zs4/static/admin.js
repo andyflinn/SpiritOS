@@ -67,28 +67,42 @@ zs4.admin.util = {
 		}
 		zs4.admin.util.setClass(o._.html.e,'am',zs4.admin.util.am(o));
 		zs4.admin.util.setClass(o._.html.e,'own',zs4.admin.util.own(o));
+
+		if (o._.html.head==null){
+			o._.html.head = document.createElement('zs4-object-head');
+			o._.html.e.appendChild(o._.html.head);
+
+			if (o._.type==Object){
+				o._.html.toggle = document.createElement('zs4-object-toggle');
+				o._.html.head.appendChild(o._.html.toggle);
+				zs4.admin.util.addClass(o._.html.toggle,o._.typename);
+				o._.html.expanded = false;
+				if (o._.html.topElement==true){
+					//o._.html.toggle.textContent = '';
+					zs4.admin.util.addClass(o._.html.toggle,'top');
+				}
+			}
+
+			o._.html.name = document.createElement('zs4-name');
+			o._.html.head.appendChild(o._.html.name);
+			o._.html.name.textContent = o._.name;
+
+			o._.html.error = document.createElement('zs4-error');
+			zs4.admin.util.addClass(o._.html.error,'hide');
+			o._.html.head.appendChild(o._.html.error);
+
+			o._.html.result = document.createElement('zs4-result');
+			zs4.admin.util.addClass(o._.html.result,'hide');
+			o._.html.head.appendChild(o._.html.result);
+		}
 	},
 
-	createNameElement:function(po,o){
-		o._.html.name = document.createElement('zs4-name');
-		o._.html.e.appendChild(o._.html.name);
-		o._.html.name.textContent = o._.name;
-	},
+
 	refreshNameInput:function(po,o){
 		zs4.admin.util.setClass(o._.html.name,'noset',o._.flags.get.noset());
 		zs4.admin.util.setClass(o._.html.input,'noset',o._.flags.get.noset());
 
 		zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
-	},
-
-	createCallback:function(THIS){
-		THIS._.html.error = document.createElement('zs4-error');
-		zs4.admin.util.addClass(THIS._.html.error,'hide');
-		THIS._.html.e.appendChild(THIS._.html.error);
-
-		THIS._.html.result = document.createElement('zs4-result');
-		zs4.admin.util.addClass(THIS._.html.result,'hide');
-		THIS._.html.e.appendChild(THIS._.html.result);
 	},
 	refreshCallback:function(THIS){
 		//console.log('refreshCallback('+THIS._.path+')')
@@ -189,15 +203,11 @@ zs4.admin.type = {
 	boolean:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-
-			zs4.admin.util.createNameElement(po,o);
+		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'checkbox');
-
-			zs4.admin.util.createCallback(o);
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -217,15 +227,11 @@ zs4.admin.type = {
 	date:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-
-			zs4.admin.util.createNameElement(po,o);
+		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
-
-			zs4.admin.util.createCallback(o);
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -244,15 +250,11 @@ zs4.admin.type = {
 	integer:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-
-			zs4.admin.util.createNameElement(po,o);
+		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
-
-			zs4.admin.util.createCallback(o);
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -271,15 +273,11 @@ zs4.admin.type = {
 	number:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-
-			zs4.admin.util.createNameElement(po,o);
+		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
-
-			zs4.admin.util.createCallback(o);
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -302,7 +300,7 @@ zs4.admin.type = {
 		zs4.admin.util.unknown(po,o);
 
 		//console.log('checking ui for object '+o._.path);
-		if (o._.html.toggle==null){
+		if (o._.html.c==null){
 			//console.log('make ui for object '+o._.name);
 
 			if (o._.flags.get.notrans()){
@@ -311,26 +309,6 @@ zs4.admin.type = {
 			else {
 				zs4.admin.util.removeClass(o._.html.e,'notrans');
 			}
-
-			o._.html.head = document.createElement('zs4-object-head');
-			o._.html.e.appendChild(o._.html.head);
-			if (o._.html.topElement==true)zs4.admin.util.addClass(o._.html.head,'top');
-			else zs4.admin.util.addClass(o._.html.head,'notop');
-
-			o._.html.toggle = document.createElement('zs4-object-toggle');
-			o._.html.head.appendChild(o._.html.toggle);
-			zs4.admin.util.addClass(o._.html.toggle,o._.typename);
-			o._.html.expanded = false;
-			if (o._.html.topElement==true){
-				//o._.html.toggle.textContent = '';
-				zs4.admin.util.addClass(o._.html.toggle,'top');
-			}
-
-			o._.html.name = document.createElement('zs4-name');
-			o._.html.head.appendChild(o._.html.name);
-			o._.html.name.textContent = o._.name;
-			if (o._.html.topElement==true)zs4.admin.util.addClass(o._.html.name,'top');
-
 
 			if (!zs4.is.function(o._.html.submit)){
 				o._.html.submit = (function(){
@@ -360,12 +338,9 @@ zs4.admin.type = {
 			}
 			o._.html.name.onclick = o._.html.submit;
 
-			zs4.admin.util.createCallback(o);
-
 			o._.html.c = document.createElement('zs4-object-content');
 			o._.html.e.appendChild(o._.html.c);
 			zs4.admin.util.addClass(o._.html.c,'hide');
-			if (o._.html.topElement==true)zs4.admin.util.addClass(o._.html.c,'top');
 
 			o._.html.toggleOff = function(){
 				o._.html.expanded = false;
@@ -424,6 +399,8 @@ zs4.admin.type = {
 				zs4.admin.util.addClass(o._.html.head,c);
 				zs4.admin.util.addClass(o._.html.name,c);
 				zs4.admin.util.addClass(o._.html.c,c);
+				zs4.admin.util.addClass(o._.html.error,c);
+				zs4.admin.util.addClass(o._.html.result,c);
 			}
 			else {
 				zs4.admin.util.removeClass(o._.html.e,c);
@@ -431,10 +408,16 @@ zs4.admin.type = {
 				zs4.admin.util.removeClass(o._.html.head,c);
 				zs4.admin.util.removeClass(o._.html.name,c);
 				zs4.admin.util.removeClass(o._.html.c,c);
+				zs4.admin.util.removeClass(o._.html.error,c);
+				zs4.admin.util.removeClass(o._.html.result,c);
 			}
 		};
 
 		setObjectClass(o,'api',o._.flags.get.api())
+
+		if (o._.html.topElement==true)setObjectClass(o,'top',true);
+		else setObjectClass(o,'top',false);
+
 
 		zs4.admin.util.refreshCallback(o);
 
@@ -503,14 +486,10 @@ zs4.admin.type = {
 	},
 	scopeitem:function(po,o){
     zs4.admin.util.unknown(po,o);
-    if (o._.html.name==null){
-
-      zs4.admin.util.createNameElement(po,o);
+    if (o._.html.input==null){
 
       o._.html.input = document.createElement('select');
       o._.html.e.appendChild(o._.html.input);
-
-      zs4.admin.util.createCallback(o);
 
       o._.input = (function(){
         if (o._.flags.get.noset())return null;
@@ -538,17 +517,13 @@ zs4.admin.type = {
   },
   scopescope:function(po,o){
 		zs4.admin.util.unknown(po,o);
-    if (o._.html.name==null){
-
-      zs4.admin.util.createNameElement(po,o);
+    if (o._.html.input==null){
 
       o._.html.input = document.createElement('select');
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
 				console.log(o._.html.input.value);
 			}
-
-      zs4.admin.util.createCallback(o);
 
       o._.input = (function(){
         if (o._.flags.get.noset())return null;
@@ -576,17 +551,13 @@ zs4.admin.type = {
   },
 	string:function(po,o){
 		zs4.admin.util.unknown(po,o);
-		if (o._.html.name==null){
-
-			zs4.admin.util.createNameElement(po,o);
+		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			var typeAttr = 'text';
 			if (o._.typename=='password')typeAttr='password';
 			o._.html.input.setAttribute('type', typeAttr);
-
-			zs4.admin.util.createCallback(o);
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -600,11 +571,7 @@ zs4.admin.type = {
 	text:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
-		if (o._.html.name==null){
-
-			zs4.admin.util.createNameElement(po,o);
-
-			zs4.admin.util.createCallback(o);
+		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('textarea');
 			o._.html.e.appendChild(o._.html.input);

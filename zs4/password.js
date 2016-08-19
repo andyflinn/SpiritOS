@@ -22,9 +22,6 @@ password.create = function(){
         console.log(req.input);
       }
 
-      //if (zs4.is.type(req.scope)){console.log('path:\''+THIS._.path+'\' scope(\''+req.scope._.path+'\')')}
-
-
       if (passhash.isHashed(this._.value.hashed)){
         var oldPassVerified = this.verify(req.input.vfy);
 
@@ -39,13 +36,17 @@ password.create = function(){
             if (nu!=null) {
               this._.value.hashed = nu;
               this._.shouldBeSaved(req);
+              req.result(THIS,'password changed');
             }
+          }
+          else {
+            req.result(THIS,'goscope');
           }
 
         }
         else {
           req.error(THIS);
-          zs4.console.log('...password '+req.input.vfy+' incorrect...');
+          //zs4.console.log('...password '+req.input.vfy+' incorrect...');
         }
         //zs4.console.log('...have password already');
       }
@@ -57,7 +58,11 @@ password.create = function(){
             this._.value.hashed = nu;
             //console.log('...password set...');
             this._.shouldBeSaved(req);
+            req.result(THIS,'password set');
           }
+        }
+        else {
+          req.error(THIS);
         }
       }
     }

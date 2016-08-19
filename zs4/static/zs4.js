@@ -511,9 +511,11 @@ zs4.location = {
     if (a.length == 0)return ret;
 
     for (var i = 0 ; i < a.length ;i++){
-      if (!ret.hasOwnProperty(a[i])||!zs4.is.type(ret[a[i]]))return ret;
+      if (!ret.hasOwnProperty(a[i])||!zs4.is.type(ret[a[i]]))break;
       ret = ret[a[i]];
     }
+
+    if (zs4.is.type(ret._.scope))return ret._.scope;
     return ret;
   }
 }
@@ -670,7 +672,7 @@ zs4.type = {
 
     this._.new = (function(){
       if (zs4.is.function(this._.create)){
-        console.log('FROM CONSTRUCTIST!!!!');
+        //console.log('FROM CONSTRUCTIST!!!!');
         var r = new this._.create(this._);
         return r;
       }
@@ -717,11 +719,11 @@ zs4.type = {
     }).bind(this);
 
     this._.getInitialize = (function(req){
-      var debug = 'zs4.bye';
-      if (this._.path == debug) console.log('getInitialize '+this._.path);
+      //var debug = 'zs4.bye';
+      //if (this._.path == debug) console.log('getInitialize '+this._.path);
 
       if (!this._.flags.get.noget() && req.authorize(this,this._.authGet)){
-        if (this._.path == debug) console.log('  get authorized '+debug);
+        //if (this._.path == debug) console.log('  get authorized '+debug);
 
         if (!req.request.node){
           //console.log('get init: \''+this._.path+'\''+' authGet='+JSON.stringify(this._.authGet));
@@ -760,7 +762,7 @@ zs4.type = {
         return get;
       }
       else {
-        if (this._.path == debug) console.log('  denied '+debug);
+        //if (this._.path == debug) console.log('  denied '+debug);
         return null;
       }
     }).bind(this);
@@ -847,8 +849,13 @@ zs4.type = {
     this._.dcb = (function(input){
       this._.cberror = null;
       this._.cbresult = null;
+      if (this._.flags.value & this._.flags.notrans)return;
+      //console.log('XXXX dcb()ing '+this._.path);
 
       if (zs4.is.object(input)){
+        if (this._.path == 'zs4.user.array.b.zs4.password'){
+          console.log('XXXX dcb()ing '+this._.path);
+        }
         if (zs4.is.object(input.error))this._.cberror = input.error;
         if (input.result != null)this._.cbresult = input.result;
       }
@@ -860,7 +867,15 @@ zs4.type = {
         else this[n]._.dcb(null);
       }
 
-      if (zs4.is.object(input)&&zs4.is.function(this._.callback))this._.callback(input);
+      if (zs4.is.object(input)){
+        if (zs4.is.function(this._.callback)){
+          this._.callback(input);
+        }
+        else if (zs4.is.string(input.result)&&input.result=='goscope'){
+          console.log('goscope '+this._.scope._.path);
+          zs4.navigate(this._.scope._.path);
+        }
+      }
     }).bind(this);
 
     this._.getHTML = (function(req){
@@ -869,7 +884,7 @@ zs4.type = {
         html += ' <head>\n';
           html += '  <title>'+this._.path+'</title>\n';
           html += '  <script src="/zs4.js"></script>\n';
-          html += '  <script>zs4.location.path=\''+this._.path+'\';</script>\n'
+          html += '  <script>zs4.location.path=\''+this._.path+'\';zs4.admin();</script>\n'
         html += ' </head>\n';
         if (true){
           html += ' <body>\n';
@@ -1533,7 +1548,7 @@ zs4.type = {
       if (this._.flags.get.noget())return null;
       var get = this._.getInitialize(req);
       if (get==null){
-        if (this._.path==debug)console.log('NOT GETTING '+this._.path);
+        //if (this._.path==debug)console.log('NOT GETTING '+this._.path);
         return null;
       }
       //console.log(this._.path+'.get()');
@@ -1626,9 +1641,9 @@ zs4.type = {
     THIS._.typename = 'scope';
     THIS._.scope = this;
     var test = new zs4.type.object({name:'zs4',flags:'required',authGet:['zs4.public'],});
-    console.log('new zs4 object: '+JSON.stringify(test));
+    //console.log('new zs4 object: '+JSON.stringify(test));
     THIS._.property(test);
-    console.log('PROPERTY ZS4 ADDED TO SCOPE');
+    //console.log('PROPERTY ZS4 ADDED TO SCOPE');
     THIS.zs4.password = null;
     THIS.zs4._.property(new zs4.type.admin());
     if (zs4.is.node()){
@@ -1859,20 +1874,6 @@ zs4.request = function(o){
 
   if (zs4.is.node()){
     //var token = require('../token');
-    if (zs4.is.object(o)&&o.html!=null&&zs4.is.string(o.path)){
-      this.html = true;
-      if (zs4.is.string(o.token)&&o.token.length>10){
-        this.request.token = o.token();
-        this.payloadRefresh();
-        console.log('TOKEN FROM NAVIGATION POST');
-      }
-      var input = this.resolveInputPath(o.path);
-      input.getHTML = new Object();
-    }
-    else {
-      this.html = false;
-    }
-
     //var token = require('../token');
 
 
@@ -1904,6 +1905,8 @@ zs4.request = function(o){
 
     if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
     if (!zs4.is.boolean(this.request.needsSaving)) this.request.needsSaving = false;
+
+
 
     this.request.reget = null;
 
@@ -1977,6 +1980,21 @@ zs4.request = function(o){
 
       return r;
     };
+
+    if (zs4.is.object(o)&&o.html!=null&&zs4.is.string(o.path)){
+      this.html = true;
+      if (zs4.is.string(o.token)&&o.token.length>10){
+        this.request.token = o.token;
+        this.payloadRefresh();
+        console.log('TOKEN FROM NAVIGATION POST');
+      }
+      var input = this.resolveInputPath(o.path);
+      input.getHTML = new Object();
+    }
+    else {
+      this.html = false;
+    }
+
   }
   else{
     if (!zs4.is.object(this.request.window)){
@@ -2133,7 +2151,15 @@ if (zs4.is.window()){
   };
 
   zs4.admin = function(){
-    zs4.post({},function(){
+    var input = new Object();
+    var a = zs4.string.split.separators(zs4.location.path,'./\\_-');
+    var p = input;
+    for (var i = 0 ; i < a.length ; i++){
+      p[a[i]] = new Object();
+      p = p[a[i]];
+    }
+    console.log('LAUNCHING ADMIN @ '+ JSON.stringify(input));
+    zs4.post(input,function(){
       var script = zs4.THIS.zs4.admin._.value.app.trim();
       if (script != ''){
         zs4.loadscript(script);
@@ -2141,5 +2167,4 @@ if (zs4.is.window()){
     });
   };
 
-  zs4.admin();
 }
