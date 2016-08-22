@@ -16,6 +16,77 @@ zs4.admin.util = {
 		&&  o._.scope._.path>zs4.THIS._.scopath)return true;
 		return false;
 	},
+	setClass:function(e,c,tof){
+		if (tof)return zs4.admin.util.addClass(e,c);
+		else return zs4.admin.util.removeClass(e,c);
+	},
+	addClass:function(e,c){
+		var set = zs4.string.split.words(c);
+		if  (set.length==0)return;
+		var cls = zs4.string.split.words(e.className);
+		for (var i = 0 ; i < set.length ; i++)zs4.string.array.add.new(cls,set[i]);
+		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
+			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
+		}
+		e.className = ret;
+	},
+	removeClass:function(e,c){
+		var rem = zs4.string.split.words(c);
+		if  (rem.length==0)return;
+		var cls = zs4.string.split.words(e.className);
+		for (var i = 0 ; i < rem.length ; i++)zs4.string.array.remove.string(cls,rem[i]);
+		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
+			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
+		}
+		e.className = ret;
+	},
+	tool:function(o,name){
+		this.active = false;
+		this.name = name;
+		o._.html.tool[name] = this;
+
+		this.select = document.createElement('zs4-tool-tab');
+		o._.html.toolbarHeader.appendChild(this.select);
+		this.select.textContent = name;
+
+		this.pane = document.createElement('zs4-tool-pane');
+		o._.html.toolbarTool.appendChild(this.pane);
+		this.pane.textContent = 'tool pane for '+name;
+
+		this.select.onclick = (function(){
+			console.log(this);
+			console.log(this.name);
+			console.log(o._.path+'.zs4.admin.tool.'+name);
+			var count = 0;
+			for (var n in o._.html.tool){
+				console.log('...this.name='+this.name+'  o._.html.tool[n].name='+o._.html.tool[n].name);
+				if (name==o._.html.tool[n].name){
+					console.log('... CURRENT: '+n);
+					zs4.admin.util.addClass(o._.html.tool[n].select,'current');
+					zs4.admin.util.addClass(o._.html.tool[n].pane,'current');
+					if (this.active)o._.html.tool[n].active = false;
+					else o._.html.tool[n].active = true;
+				}
+				else {
+					console.log('... IDLE: '+n);
+					zs4.admin.util.removeClass(o._.html.tool[n].select,'current');
+					zs4.admin.util.removeClass(o._.html.tool[n].pane,'current');
+					o._.html.tool[n].active = false;
+				}
+
+				if (o._.html.tool[n].active){
+					zs4.admin.util.addClass(o._.html.tool[n].select,'active');
+					zs4.admin.util.addClass(o._.html.tool[n].pane,'show');
+					zs4.admin.util.removeClass(o._.html.tool[n].pane,'hide');
+				}
+				else {
+					zs4.admin.util.addClass(o._.html.tool[n].pane,'hide');
+					zs4.admin.util.removeClass(o._.html.tool[n].pane,'show');
+					zs4.admin.util.removeClass(o._.html.tool[n].select,'active');
+				}
+			}
+		}).bind(this);
+	},
 	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
 		if (o._.input==null)o._.input = (function(){return null;}).bind(o);
@@ -54,6 +125,56 @@ zs4.admin.util = {
 				zs4.admin.util.addClass(o._.html.e,'top');
 				o._.html.topElement=true;
 			}
+
+			o._.html.genericRefresh = (function(){
+				var add = '';
+				var rem = '';
+
+				function addrem(e){
+					if (e==null)return;
+					zs4.admin.util.addClass(e,add);
+					zs4.admin.util.removeClass(e,rem);
+				};
+				//if (zs4.admin.util.am(o))add+=' am'; else rem+=' am';
+				//if (zs4.admin.util.own(o))add+=' own'; else rem+=' own';
+
+				if (o._.html.toolbarIsOpen){add+=' tbon'; rem+=' tboff'}else{add+=' tboff';rem+=' tbon'}
+				if (zs4.is.boolean(o._.html.expanded)){
+					if (o._.html.expanded){
+						add+=' on'; rem+=' off'
+					}
+					else{
+						add+=' off';rem+=' on'
+					}
+
+				}
+
+				if (o._.html.topElement==true)add+=' top';else rem+=' top';
+
+				if (o._.name == 'zs4')add+=' settings';else rem+=' settings';
+				if (o._.name == 'email')add+=' email';else rem+=' email';
+				if (o._.name == 'rsa')add+=' rsa';else rem+=' rsa';
+
+				if (o._.flags.get.api())add+=' api';else rem+=' api';
+				if (o._.flags.get.scope())add+=' scope';else rem+=' scope';
+				if (o._.flags.get.am())add+=' am';else rem+=' am';
+				if (o._.flags.get.own())add+=' own';else rem+=' own';
+				if (o._.flags.get.arrayio())add+=' arrayio';else rem+=' arrayio';
+				if (o._.flags.get.notrans())add+=' notrans';else rem+=' notrans';
+				if (o._.flags.get.nodisplay())add+=' nodisplay';else rem+=' nodisplay';;
+
+				addrem(o._.html.e);
+				addrem(o._.html.head);
+				addrem(o._.html.toggle);
+				addrem(o._.html.name);
+				addrem(o._.html.c);
+
+				addrem(o._.html.toolbar);
+				addrem(o._.html.toolbarContent);
+				addrem(o._.html.toolbarToggleOff);
+				addrem(o._.html.toolbarToggleOn);
+
+			}).bind(o);
 		}
 
 		if (o._.flags.get.scope()){
@@ -77,10 +198,23 @@ zs4.admin.util = {
 				o._.html.head.appendChild(o._.html.toggle);
 				zs4.admin.util.addClass(o._.html.toggle,o._.typename);
 				o._.html.expanded = false;
-				if (o._.html.topElement==true){
-					//o._.html.toggle.textContent = '';
-					zs4.admin.util.addClass(o._.html.toggle,'top');
-				}
+				o._.html.toggleOff = function(){
+					o._.html.expanded = false;
+					o._.html.genericRefresh();
+				};
+				o._.html.toggleOn = function(){
+					o._.html.expanded = true;
+					o._.html.genericRefresh();
+				};
+				o._.html.onToggle = function(){
+					if (o._.html.expanded){
+						o._.html.toggleOff();
+					}
+					else {
+						o._.html.toggleOn();
+					}
+				};
+				o._.html.toggle.onclick = o._.html.onToggle;
 			}
 
 			o._.html.name = document.createElement('zs4-name');
@@ -94,9 +228,96 @@ zs4.admin.util = {
 			o._.html.result = document.createElement('zs4-result');
 			zs4.admin.util.addClass(o._.html.result,'hide');
 			o._.html.head.appendChild(o._.html.result);
-		}
-	},
 
+			o._.html.toolbar = document.createElement('zs4-toolbar');
+			o._.html.head.appendChild(o._.html.toolbar);
+
+					o._.html.tool = new Object();
+					o._.html.toolbarIsOpen = false;
+					o._.html.toolbarOpen = (function(){
+						o._.html.toolbarIsOpen = true;
+						o._.html.genericRefresh();
+					}).bind(o);
+					o._.html.toolbarClose = (function(){
+						o._.html.toolbarIsOpen = false;
+						o._.html.genericRefresh();
+					}).bind(o);
+
+					o._.html.toolbarToggleOff = document.createElement('zs4-toolbar-toggle-off');
+					o._.html.head.appendChild(o._.html.toolbarToggleOff);
+					o._.html.toolbarToggleOff.onclick = (function(){
+						if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
+						else o._.html.toolbarOpen();
+					}).bind(o);
+
+					o._.html.toolbarContent = document.createElement('zs4-toolbar-content');
+					o._.html.toolbar.appendChild(o._.html.toolbarContent);
+
+					o._.html.toolbarToggleOn = document.createElement('zs4-toolbar-toggle-on');
+					o._.html.toolbarContent.appendChild(o._.html.toolbarToggleOn);
+					o._.html.toolbarToggleOn.onclick = (function(){
+						if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
+						else o._.html.toolbarOpen();
+					}).bind(o);
+
+					o._.html.toolbarHeader = document.createElement('zs4-toolbar-header');
+					o._.html.toolbarContent.appendChild(o._.html.toolbarHeader);
+
+					o._.html.toolbarTool = document.createElement('zs4-toolbar-tool');
+					o._.html.toolbarContent.appendChild(o._.html.toolbarTool);
+
+					o._.html.toolbarClose();
+
+			if (o._.type==Object){
+				o._.html.c = document.createElement('zs4-object-content');
+				o._.html.e.appendChild(o._.html.c);
+
+				if (!zs4.is.function(o._.html.submit)){
+					o._.html.submit = (function(){
+						var count = o._.countProperties();
+						if (o._.flags.get.api()&&(o._.html.expanded||count==0)){
+							var input = o._.input();
+							if (input == null)return;
+
+							zs4.post(o._.wrapRequest(input),function(ret){
+								console.log('refreshing object tree');
+								zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
+							});
+						}
+						else {
+							o._.html.onToggle();
+						}
+					}).bind(o);
+				}
+				o._.html.name.onclick = o._.html.submit;
+
+				o._.input = (function(){
+					var ret = new Object();
+
+					for (var n in o){
+						//if (zs4.is.name(n))console.log(n);
+						if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
+
+						var prop = o[n]._.input();
+						if (prop != null)ret[n]=prop;
+					}
+
+		      //console.log(ret);
+					return ret;
+		    }).bind(o);
+
+				o._.html.toggleOff();
+			}
+			else {
+				o._.html.c = null;
+			}
+
+			new zs4.admin.util.tool(o,'auth');
+			new zs4.admin.util.tool(o,'about');
+			o._.html.tool.auth.select.onclick();
+		}
+
+	},
 
 	refreshNameInput:function(po,o){
 		zs4.admin.util.setClass(o._.html.name,'noset',o._.flags.get.noset());
@@ -123,36 +344,9 @@ zs4.admin.util = {
 		}
 	},
 
-	setClass:function(e,c,tof){
-		if (tof)return zs4.admin.util.addClass(e,c);
-		else return zs4.admin.util.removeClass(e,c);
-	},
-	addClass:function(e,c){
-		var set = zs4.string.split.words(c);
-		if  (set.length==0)return;
-		var cls = zs4.string.split.words(e.className);
-		for (var i = 0 ; i < set.length ; i++)zs4.string.array.add.new(cls,set[i]);
-		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
-			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
-		}
-		e.className = ret;
-	},
-	removeClass:function(e,c){
-		var rem = zs4.string.split.words(c);
-		if  (rem.length==0)return;
-		var cls = zs4.string.split.words(e.className);
-		for (var i = 0 ; i < rem.length ; i++)zs4.string.array.remove.string(cls,rem[i]);
-		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
-			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
-		}
-		e.className = ret;
-	},
 }
 
 zs4.admin.type = {
-	head:function(po,o){
-		zs4.admin.type.object(po,o);
-	},
 	array:function(po,o){
 		zs4.admin.type.object(po,o);
 
@@ -246,6 +440,9 @@ zs4.admin.type = {
 	email:function(po,o){
 		zs4.admin.type.string(po,o);
 	},
+	head:function(po,o){
+		zs4.admin.type.object(po,o);
+	},
 	integer:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
@@ -302,121 +499,10 @@ zs4.admin.type = {
 		if (o._.html.c==null){
 			//console.log('make ui for object '+o._.name);
 
-			if (o._.flags.get.notrans()){
-				zs4.admin.util.addClass(o._.html.e,'notrans');
-			}
-			else {
-				zs4.admin.util.removeClass(o._.html.e,'notrans');
-			}
 
-			if (!zs4.is.function(o._.html.submit)){
-				o._.html.submit = (function(){
-					var count = o._.countProperties();
-					if (o._.flags.get.api()&&(o._.html.expanded||count==0)){
-						var input = o._.input();
-						if (input == null)return;
-
-						var patharr = zs4.string.split.separators(o._.path,'.');
-						if (patharr.length>0)for (var i = 0 ; i < patharr.length ; i++){
-							var n = patharr[patharr.length-1-i];
-							var wrap = new Object();
-							wrap[n] = input;
-							input = wrap;
-						}
-						//console.log(input);
-
-						zs4.post(input,function(ret){
-							console.log('refreshing object tree');
-							zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
-						});
-					}
-					else {
-						o._.html.onToggle();
-					}
-				}).bind(o);
-			}
-			o._.html.name.onclick = o._.html.submit;
-
-			o._.html.c = document.createElement('zs4-object-content');
-			o._.html.e.appendChild(o._.html.c);
-			zs4.admin.util.addClass(o._.html.c,'hide');
-
-			o._.html.toggleOff = function(){
-				o._.html.expanded = false;
-				zs4.admin.util.addClass(o._.html.e,'off');
-				zs4.admin.util.removeClass(o._.html.e,'on');
-				zs4.admin.util.addClass(o._.html.name,'off');
-				zs4.admin.util.removeClass(o._.html.name,'on');
-				zs4.admin.util.addClass(o._.html.head,'off');
-				zs4.admin.util.removeClass(o._.html.head,'on');
-				zs4.admin.util.addClass(o._.html.toggle,'off');
-				zs4.admin.util.removeClass(o._.html.toggle,'on');
-				zs4.admin.util.addClass(o._.html.c,'hide');
-			};
-			o._.html.toggleOn = function(){
-				o._.html.expanded = true;
-				zs4.admin.util.removeClass(o._.html.e,'off');
-				zs4.admin.util.addClass(o._.html.e,'on');
-				zs4.admin.util.removeClass(o._.html.name,'off');
-				zs4.admin.util.addClass(o._.html.name,'on');
-				zs4.admin.util.removeClass(o._.html.head,'off');
-				zs4.admin.util.addClass(o._.html.head,'on');
-				zs4.admin.util.removeClass(o._.html.toggle,'off');
-				zs4.admin.util.addClass(o._.html.toggle,'on');
-				zs4.admin.util.removeClass(o._.html.c,'hide');
-			};
-			o._.html.onToggle = function(){
-				if (o._.html.expanded){
-					o._.html.toggleOff();
-				}
-				else {
-					o._.html.toggleOn();
-				}
-			};
-			o._.html.toggle.onclick = o._.html.onToggle;
-			o._.html.toggleOff();
-			o._.input = (function(){
-				var ret = new Object();
-
-				for (var n in o){
-					//if (zs4.is.name(n))console.log(n);
-					if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
-
-					var prop = o[n]._.input();
-					if (prop != null)ret[n]=prop;
-				}
-
-	      //console.log(ret);
-				return ret;
-	    }).bind(o);
 		}
 
-		function setObjectClass(o,c,tof){
-			if (tof){
-				zs4.admin.util.addClass(o._.html.e,c);
-				zs4.admin.util.addClass(o._.html.toggle,c);
-				zs4.admin.util.addClass(o._.html.head,c);
-				zs4.admin.util.addClass(o._.html.name,c);
-				zs4.admin.util.addClass(o._.html.c,c);
-				zs4.admin.util.addClass(o._.html.error,c);
-				zs4.admin.util.addClass(o._.html.result,c);
-			}
-			else {
-				zs4.admin.util.removeClass(o._.html.e,c);
-				zs4.admin.util.removeClass(o._.html.toggle,c);
-				zs4.admin.util.removeClass(o._.html.head,c);
-				zs4.admin.util.removeClass(o._.html.name,c);
-				zs4.admin.util.removeClass(o._.html.c,c);
-				zs4.admin.util.removeClass(o._.html.error,c);
-				zs4.admin.util.removeClass(o._.html.result,c);
-			}
-		};
-
-		setObjectClass(o,'api',o._.flags.get.api())
-
-		if (o._.html.topElement==true)setObjectClass(o,'top',true);
-		else setObjectClass(o,'top',false);
-
+		o._.html.genericRefresh();
 
 		zs4.admin.util.refreshCallback(o);
 
@@ -434,11 +520,9 @@ zs4.admin.type = {
 			zs4.admin.type[o[n]._.typename](o,o[n]);
 		}
 
-		zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
 
-		setObjectClass(o,'scope',o._.flags.get.scope())
 		if (o._.flags.value & o._.flags.scope){
-			//zs4.admin.util.addClass(o._.html.toggle,'scope');
+			console.log('change label for scope '+o._.path+': '+o._.value.zs4.head.title);
 			o._.scope = o;
 			if (zs4.is.string(o._.value.zs4.head.title) && o._.value.zs4.head.title.length > 0){
 				o._.html.name.textContent = o._.value.zs4.head.title;
@@ -452,28 +536,6 @@ zs4.admin.type = {
 			//zs4.admin.util.removeClass(o._.html.toggle,'scope');
 		}
 
-		setObjectClass(o,'arrayio',o._.flags.get.arrayio())
-
-		if (o._.name == 'zs4'){
-			setObjectClass(o,'settings',true);
-		}
-		else {
-			setObjectClass(o,'settings',false);
-		}
-
-		if (o._.name == 'email'){
-			setObjectClass(o,'email',true);
-		}
-		else {
-			setObjectClass(o,'email',false);
-		}
-
-		if (o._.name == 'rsa'){
-			setObjectClass(o,'rsa',true);
-		}
-		else {
-			setObjectClass(o,'rsa',false);
-		}
 
 		if (zs4.is.function(o._.html.refresh))o._.html.refresh();
 	},

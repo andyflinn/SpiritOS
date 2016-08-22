@@ -696,6 +696,18 @@ zs4.type = {
 
     this._.console = (function(str){
 
+
+    }).bind(this);
+
+    this._.wrapRequest = (function(r){
+      var patharr = zs4.string.split.separators(this._.path,'.');
+      if (patharr.length>0)for (var i = 0 ; i < patharr.length ; i++){
+        var n = patharr[patharr.length-1-i];
+        var w = new Object();
+        w[n] = r;
+        r = w;
+      }
+      return r;
     }).bind(this);
 
     this._.loadAuth = (function(input){
@@ -888,7 +900,7 @@ zs4.type = {
               this[n]==null;
             }
             else {
-              console.log('did not prune '+this[n]._.path);
+              this[n]._.print('got noprune: \''+this._.flags.getString(o._.flags)+'\'');
               this[n]._.flags.set.nodisplay(true);
             }
           }
@@ -961,17 +973,6 @@ zs4.type = {
     this._.print = (function(m){zs4.console.print(this,m);}).bind(this);
   },
 
-  head:function(){
-    zs4.type.object.call(this,{name:'head',flags:'required api',authGet:['zs4.public'],authSet:['zs4.self'],})
-    this._.typename = 'head';
-    this._.create = zs4.type.head;
-
-    this._.property(new zs4.type.string({name:'title',flags:'required index',authGet:['zs4.public'],authSet:['zs4.self'],}));
-    this._.property(new zs4.type.integer({name:'created',flags:'required noset index',}));
-    this._.property(new zs4.type.integer({name:'updated',flags:'required noset index',}));
-    this._.property(new zs4.type.string({name:'app',flags:'required index',default:'/admin.js',authSet:['zs4.self'],}));
-
-  },
   array:function(input){
     zs4.type.object.call(this,input);
     this._.typename = 'array';
@@ -1334,6 +1335,12 @@ zs4.type = {
         //console.log(this._.authGet);
         return null;
       }
+
+      get.sure = new Object({_:{}});
+      get.sure._.name = 'sure';
+      get.sure._.typename = 'boolean';
+      get.sure._.value = false;
+
       return get;
     }).bind(THIS);
 
@@ -1363,9 +1370,16 @@ zs4.type = {
       }
     }).bind(this);
   },
-  enumstring:function(input){
-    zs4.type.string.call(this,input);
-    this._.typename = 'selectconstant';
+  head:function(){
+    zs4.type.object.call(this,{name:'head',flags:'required api',authGet:['zs4.public'],authSet:['zs4.self'],})
+    this._.typename = 'head';
+    this._.create = zs4.type.head;
+
+    this._.property(new zs4.type.string({name:'title',flags:'required index',authGet:['zs4.public'],authSet:['zs4.self'],}));
+    this._.property(new zs4.type.integer({name:'created',flags:'required noset index',}));
+    this._.property(new zs4.type.integer({name:'updated',flags:'required noset index',}));
+    this._.property(new zs4.type.string({name:'app',flags:'required index',default:'/admin.js',authSet:['zs4.self'],}));
+
   },
   integer:function(input){
     zs4.type.unknown.call(this,input);
