@@ -11,11 +11,12 @@ password.schema = function(parent){
 
 password.create = function(){
   var THIS = this;
-  var input = new Object({name:'password',flags:'required api',authGet:['zs4.public',],authSet:['zs4.public',]});
+  var input = new Object({name:'password',flags:'required api',authGet:['zs4.public'],authSet:['zs4.public'],});
   zs4.type.object.call(this,input);
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
+    req.setScope(this);
     if (zs4.is.object(req.input)){
       if (zs4.is.password(req.input.vfy)||zs4.is.password(req.input.set)){
         console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
@@ -74,6 +75,7 @@ password.create = function(){
   }).bind(THIS);
 
   THIS._.get = (function(req,po){
+    req.setScope(this);
     //console.log('password.get'+ JSON.stringify(this._.authGet));
     var get = this._.getInitialize(req);
     if (get==null){
@@ -113,7 +115,7 @@ password.create = function(){
   THIS._.property(new zs4.type.integer({name:'iterations',flags:'required noget',min:1,max:128,default:1,}));
 
   THIS._.property(new zs4.type.password({name:'set',flags:'required nostore',}));
-  THIS._.property(new zs4.type.password({name:'vfy',flags:'required nostore',authGet:['zs4.public'],authSet:['zs4.public'],}));
+  THIS._.property(new zs4.type.password({name:'vfy',flags:'required nostore',}));
 
   THIS.verify = function(pw){
     //zs4.console.log('verifying');

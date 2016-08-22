@@ -18,19 +18,20 @@ email.create = function(input){
 
   THIS._.property(new zs4.type.object({name:'smtp',flags:'required api',authGet:['zs4.self'],authSet:['zs4.self'],}));
   THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'required',default:false,authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.smtp._.property(new zs4.type.string({name:'user',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.smtp._.property(new zs4.type.string({name:'password',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'required',default:587,authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'required',default:false,authGet:['zs4.self'],authSet:['zs4.self'],}));
+  THIS.smtp._.property(new zs4.type.string({name:'user',flags:'required index unique',}));
+  THIS.smtp._.property(new zs4.type.string({name:'password',flags:'required',}));
+  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'required',}));
+  THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'required',}));
+  THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'required',default:false,}));
 
-  THIS._.property(new zs4.type.object({name:'message',flags:'required nostore api noprune',authGet:['zs4.self'],authSet:['zs4.self'],}));
+  THIS._.property(new zs4.type.object({name:'message',flags:'required nostore api noprune',authSet:['zs4.self'],}));
 
-  THIS.message._.property(new zs4.type.email({name:'to',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.message._.property(new zs4.type.string({name:'subject',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
-  THIS.message._.property(new zs4.type.text({name:'text',flags:'required',authGet:['zs4.self'],authSet:['zs4.self'],}));
+  THIS.message._.property(new zs4.type.email({name:'to',flags:'required',}));
+  THIS.message._.property(new zs4.type.string({name:'subject',flags:'required',}));
+  THIS.message._.property(new zs4.type.text({name:'text',flags:'required',}));
 
   THIS.message._.transform = (function(req,cb){
+    req.setScope(this);
     this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
     if (req.input==null){this._.get(req); cb(); return;}
 

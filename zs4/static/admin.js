@@ -150,7 +150,7 @@ zs4.admin.util = {
 }
 
 zs4.admin.type = {
-	admin:function(po,o){
+	head:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
 	array:function(po,o){
@@ -184,7 +184,6 @@ zs4.admin.type = {
             o.array[n]=null;
 					}
 				}
-				//zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
   			zs4.admin.type.object(o,o.array);
 
 			}).bind(o);
@@ -441,8 +440,8 @@ zs4.admin.type = {
 		if (o._.flags.value & o._.flags.scope){
 			//zs4.admin.util.addClass(o._.html.toggle,'scope');
 			o._.scope = o;
-			if (zs4.is.string(o._.value.zs4.admin.title) && o._.value.zs4.admin.title.length > 0){
-				o._.html.name.textContent = o._.value.zs4.admin.title;
+			if (zs4.is.string(o._.value.zs4.head.title) && o._.value.zs4.head.title.length > 0){
+				o._.html.name.textContent = o._.value.zs4.head.title;
 			}
 			else {
 				o._.html.name.textContent = o._.name;
@@ -532,7 +531,7 @@ zs4.admin.type = {
 
       o._.html.refreshOptions = function(o){
         var arr = o._.scope._.getScopeScopes();
-        console.log (arr);
+        //console.log (arr);
         //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
 				o._.html.input.innerHTML = '';
         for (var i = 0 ; i < arr.length ; i++){
@@ -587,7 +586,9 @@ zs4.admin.type = {
 	},
 };
 
-zs4.session = {};
+//zs4.session = {};
 
 zs4.css = zs4.loadcss('/style.css');
 zs4.admin.type.object(null,zs4.location.get());
+zs4.admin.rootObject._.html.toggleOn();
+zs4.admin.rootObject.zs4._.html.toggleOn();

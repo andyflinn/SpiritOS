@@ -32,7 +32,7 @@ fs.schema = function(parent){
 fs.create = function(input){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'fs',flags:'required nostore',nostore:true,});
+  if (!zs4.is.object(input))input = new Object({name:'fs',flags:'required nostore',authGet:['zs4.owner'],});
   zs4.type.object.call(this,input);
   THIS._.create = fs.create;
 
