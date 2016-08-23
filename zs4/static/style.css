@@ -157,6 +157,42 @@ zs4-tool-pane.show{
 }
 zs4-tool-pane.hide{display:none}
 
+zs4-about-item{
+  display:block;
+}
+zs4-about-label{
+  display:inline;
+
+}
+zs4-about-value{
+  display:inline;
+  font-style: italic;
+}
+
+zs4-auth-add{
+  display:inline-block;
+  width:0.8em;
+  height:0.8em;
+  cursor:pointer;
+  background-image: url('/plus.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-auth-remove{
+  display:inline-block;
+  width:0.8em;
+  height:0.8em;
+  cursor:pointer;
+  background-image: url('/minus.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-auth-table{
+  display:block;
+}
+zs4-auth-item{
+  display:block;
+}
 
 zs4-toolbar-toggle-on,
 zs4-toolbar-toggle-on.am.off,

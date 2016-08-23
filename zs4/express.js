@@ -132,6 +132,7 @@ express.schema = function(parent){
   THIS._.property(new zs4.type.boolean({name:'cookies',flags:'required',default:false,}));
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
+    this._.transformInternal(req);
     req.setScope(this);
     console.log(this._.path+'.transform()');
     if (zs4.is.object(req.input)){

@@ -31,6 +31,7 @@ email.create = function(input){
   THIS.message._.property(new zs4.type.text({name:'text',flags:'required',}));
 
   THIS.message._.transform = (function(req,cb){
+    this._.transformInternal(req);
     req.setScope(this);
     this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
     if (req.input==null){this._.get(req); cb(); return;}

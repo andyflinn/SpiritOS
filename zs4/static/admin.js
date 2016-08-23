@@ -51,24 +51,29 @@ zs4.admin.util = {
 
 		this.pane = document.createElement('zs4-tool-pane');
 		o._.html.toolbarTool.appendChild(this.pane);
-		this.pane.textContent = 'tool pane for '+name;
+		//this.pane.textContent = 'tool pane for '+name;
+		this.refreshTool = function(){};
 
 		this.select.onclick = (function(){
-			console.log(this);
-			console.log(this.name);
-			console.log(o._.path+'.zs4.admin.tool.'+name);
+			//console.log(this);
+			//console.log(this.name);
+			//console.log(o._.path+'.zs4.admin.tool.'+name);
 			var count = 0;
 			for (var n in o._.html.tool){
-				console.log('...this.name='+this.name+'  o._.html.tool[n].name='+o._.html.tool[n].name);
+				//console.log('...this.name='+this.name+'  o._.html.tool[n].name='+o._.html.tool[n].name);
 				if (name==o._.html.tool[n].name){
-					console.log('... CURRENT: '+n);
+					//console.log('... CURRENT: '+n);
 					zs4.admin.util.addClass(o._.html.tool[n].select,'current');
 					zs4.admin.util.addClass(o._.html.tool[n].pane,'current');
-					if (this.active)o._.html.tool[n].active = false;
-					else o._.html.tool[n].active = true;
+					if (this.active){
+						o._.html.tool[n].active = false;
+					}
+					else {
+						o._.html.tool[n].active = true;
+					}
 				}
 				else {
-					console.log('... IDLE: '+n);
+					//console.log('... IDLE: '+n);
 					zs4.admin.util.removeClass(o._.html.tool[n].select,'current');
 					zs4.admin.util.removeClass(o._.html.tool[n].pane,'current');
 					o._.html.tool[n].active = false;
@@ -78,6 +83,7 @@ zs4.admin.util = {
 					zs4.admin.util.addClass(o._.html.tool[n].select,'active');
 					zs4.admin.util.addClass(o._.html.tool[n].pane,'show');
 					zs4.admin.util.removeClass(o._.html.tool[n].pane,'hide');
+					this.refreshTool();
 				}
 				else {
 					zs4.admin.util.addClass(o._.html.tool[n].pane,'hide');
@@ -86,6 +92,169 @@ zs4.admin.util = {
 				}
 			}
 		}).bind(this);
+	},
+	about:function(o){
+		var THIS = this;
+		zs4.admin.util.tool.call(THIS,o,'about');
+		THIS.about = new Object();
+		function addValue(n,v){
+			var lbl = n+'_label';
+			var val = n+'_value';
+
+			THIS.about[n] = document.createElement('zs4-about-item');
+			THIS.pane.appendChild(THIS.about[n]);
+
+			THIS.about[lbl] = document.createElement('zs4-about-label');
+			THIS.about[lbl].textContent = n;
+			THIS.about[n].appendChild(THIS.about[lbl]);
+
+			THIS.about.colon = document.createElement('zs4-about-colon');
+			THIS.about.colon.textContent = ': ';
+			THIS.about[n].appendChild(THIS.about.colon);
+
+			THIS.about[val] = document.createElement('zs4-about-value');
+			THIS.about[val].textContent = '\''+v+'\'';
+			THIS.about[n].appendChild(THIS.about[val]);
+		}
+		addValue('name',o._.name);
+		addValue('path',o._.path);
+		addValue('typename',o._.typename);
+		addValue('flags',o._.flags.getString());
+	},
+	auth:function(o){
+		var THIS = this;
+		zs4.admin.util.tool.call(THIS,o,'auth');
+		THIS.auth = new Object();
+
+		THIS.auth.add = document.createElement('zs4-auth-add');
+		THIS.pane.appendChild(THIS.auth.add);
+		THIS.auth.add.onclick = function(){
+			var typ = THIS.auth.type.value;
+			if (!zs4.is.string(typ)||typ=='')return;
+			var user = THIS.auth.user.value;
+			if (!zs4.is.string(user)||user=='')return;
+
+			var input = new Object({_:{auth:{type:typ,add:user,}}});
+			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayTable()});
+
+		};
+		THIS.auth.type = document.createElement('select');
+		THIS.auth.type.className = 'authtype';
+		THIS.auth.type.oninput = function(){THIS.refreshTool();};
+		//THIS.auth.type.oninput = THIS.refreshTool;
+		THIS.pane.appendChild(THIS.auth.type);
+		function appendAuthType(t){
+			var option = document.createElement('option');
+			option.className = 'authtype';
+
+			option.text = t;
+			option.value = t;
+
+			THIS.auth.type.add(option);
+			return option;
+		}
+		var blank = appendAuthType('');
+		if (o._.flags.get.authgetauth())appendAuthType('getauth');
+		if (o._.flags.get.authsetauth())appendAuthType('setauth');
+		if (o._.flags.get.am()){
+			appendAuthType('authgetauth');
+		}
+		if (o._.flags.get.own()){
+			appendAuthType('authsetauth');
+		}
+
+		THIS.auth.user = document.createElement('select');
+		THIS.auth.user.className = 'authuser';
+		THIS.pane.appendChild(THIS.auth.user);
+
+		THIS.auth.table = document.createElement('zs4-auth-table');
+		THIS.pane.appendChild(THIS.auth.table);
+
+		THIS.refreshUsers= function(){
+			var arr = o._.scope._.getScopeScopes();
+
+			THIS.auth.user.innerHTML = '';
+
+			var option = document.createElement('option');
+			option.className = 'authuser';
+			option.text = 'select user';
+			option.value = '';
+			THIS.auth.user.add(option);
+
+			for (var i = 0 ; i < arr.length ; i++){
+				option = document.createElement('option');
+				option.text = arr[i].value;
+				option.value = arr[i].value;
+				THIS.auth.user.add(option);
+			}
+		}
+
+		THIS.redisplayTable= function(){
+			THIS.auth.table.innerHTML = '';
+			var typ = THIS.auth.type.value;
+			if (!zs4.is.string(typ)||typ==''){
+					THIS.auth.table.innerHTML = 'no authorization type selected.';
+					return;
+			}
+			console.log('refreshing object tree');
+
+			var arr;
+			if (typ == 'getauth')arr = o._.authGet;
+			else if (typ == 'setauth')arr = o._.authSet;
+			else if (typ == 'authgetauth')arr = o._.authGetAuth;
+			else if (typ == 'authsetauth')arr = o._.authSetAuth;
+			else {
+				THIS.auth.table.innerHTML = typ+' is not a valid auth type.';
+				return;
+			}
+
+			if (arr.length == 0){
+				THIS.auth.table.innerHTML = 'no '+typ+' authorizations.';
+				return;
+			}
+			for (var i = 0 ; i < arr.length ; i++){
+				var line = document.createElement('zs4-auth-item');
+				THIS.auth.table.appendChild(line);
+
+				var remove = document.createElement('zs4-auth-remove');
+				line.appendChild(remove);
+				var id = arr[i];
+				remove.onclick = function(){
+					var typ = THIS.auth.type.value;
+					if (!zs4.is.string(typ)||typ=='')return;
+
+					var input = new Object({_:{auth:{type:typ,remove:id,}}});
+					zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayTable()});
+				};
+
+				var user = document.createElement('zs4-auth-user');
+				user.textContent = arr[i];
+				line.appendChild(user);
+
+			}
+
+		}
+
+		THIS.refreshTable= function(){
+			console.log('refreshing auth table \''+THIS.auth.type.value+'\'');
+			THIS.auth.table.innerHTML = '';
+			var typ = THIS.auth.type.value;
+			if (!zs4.is.string(typ)||typ==''){
+					THIS.auth.table.innerHTML = 'no authorization type selected.';
+					return;
+			}
+
+			//THIS.auth.table.innerHTML = 'showing '+typ;
+
+			var input = new Object({_:{auth:{type:typ}}});
+			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayTable()});
+	};
+
+		THIS.refreshTool = function(){
+			THIS.refreshUsers();
+			THIS.refreshTable();
+		};
+
 	},
 	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
@@ -229,44 +398,50 @@ zs4.admin.util = {
 			zs4.admin.util.addClass(o._.html.result,'hide');
 			o._.html.head.appendChild(o._.html.result);
 
-			o._.html.toolbar = document.createElement('zs4-toolbar');
-			o._.html.head.appendChild(o._.html.toolbar);
+			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own){
+				o._.html.toolbar = document.createElement('zs4-toolbar');
+				o._.html.head.appendChild(o._.html.toolbar);
 
-					o._.html.tool = new Object();
-					o._.html.toolbarIsOpen = false;
-					o._.html.toolbarOpen = (function(){
-						o._.html.toolbarIsOpen = true;
-						o._.html.genericRefresh();
-					}).bind(o);
-					o._.html.toolbarClose = (function(){
+						o._.html.tool = new Object();
 						o._.html.toolbarIsOpen = false;
-						o._.html.genericRefresh();
-					}).bind(o);
+						o._.html.toolbarOpen = (function(){
+							o._.html.toolbarIsOpen = true;
+							o._.html.genericRefresh();
+						}).bind(o);
+						o._.html.toolbarClose = (function(){
+							o._.html.toolbarIsOpen = false;
+							o._.html.genericRefresh();
+						}).bind(o);
 
-					o._.html.toolbarToggleOff = document.createElement('zs4-toolbar-toggle-off');
-					o._.html.head.appendChild(o._.html.toolbarToggleOff);
-					o._.html.toolbarToggleOff.onclick = (function(){
-						if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
-						else o._.html.toolbarOpen();
-					}).bind(o);
+						o._.html.toolbarToggleOff = document.createElement('zs4-toolbar-toggle-off');
+						o._.html.head.appendChild(o._.html.toolbarToggleOff);
+						o._.html.toolbarToggleOff.onclick = (function(){
+							if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
+							else o._.html.toolbarOpen();
+						}).bind(o);
 
-					o._.html.toolbarContent = document.createElement('zs4-toolbar-content');
-					o._.html.toolbar.appendChild(o._.html.toolbarContent);
+						o._.html.toolbarContent = document.createElement('zs4-toolbar-content');
+						o._.html.toolbar.appendChild(o._.html.toolbarContent);
 
-					o._.html.toolbarToggleOn = document.createElement('zs4-toolbar-toggle-on');
-					o._.html.toolbarContent.appendChild(o._.html.toolbarToggleOn);
-					o._.html.toolbarToggleOn.onclick = (function(){
-						if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
-						else o._.html.toolbarOpen();
-					}).bind(o);
+						o._.html.toolbarToggleOn = document.createElement('zs4-toolbar-toggle-on');
+						o._.html.toolbarContent.appendChild(o._.html.toolbarToggleOn);
+						o._.html.toolbarToggleOn.onclick = (function(){
+							if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
+							else o._.html.toolbarOpen();
+						}).bind(o);
 
-					o._.html.toolbarHeader = document.createElement('zs4-toolbar-header');
-					o._.html.toolbarContent.appendChild(o._.html.toolbarHeader);
+						o._.html.toolbarHeader = document.createElement('zs4-toolbar-header');
+						o._.html.toolbarContent.appendChild(o._.html.toolbarHeader);
 
-					o._.html.toolbarTool = document.createElement('zs4-toolbar-tool');
-					o._.html.toolbarContent.appendChild(o._.html.toolbarTool);
+						o._.html.toolbarTool = document.createElement('zs4-toolbar-tool');
+						o._.html.toolbarContent.appendChild(o._.html.toolbarTool);
 
-					o._.html.toolbarClose();
+						o._.html.toolbarClose();
+
+						if (!o._.html.tool.hasOwnProperty('about'))new zs4.admin.util.about(o);
+						if (!o._.html.tool.hasOwnProperty('auth'))new zs4.admin.util.auth(o);
+						o._.html.tool.about.select.onclick();
+		}
 
 			if (o._.type==Object){
 				o._.html.c = document.createElement('zs4-object-content');
@@ -312,9 +487,6 @@ zs4.admin.util = {
 				o._.html.c = null;
 			}
 
-			new zs4.admin.util.tool(o,'auth');
-			new zs4.admin.util.tool(o,'about');
-			o._.html.tool.auth.select.onclick();
 		}
 
 	},
@@ -494,13 +666,6 @@ zs4.admin.type = {
 			return null;
 		}
 		zs4.admin.util.unknown(po,o);
-
-		//console.log('checking ui for object '+o._.path);
-		if (o._.html.c==null){
-			//console.log('make ui for object '+o._.name);
-
-
-		}
 
 		o._.html.genericRefresh();
 

@@ -16,6 +16,7 @@ password.create = function(){
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
+    this._.transformInternal(req);
     req.setScope(this);
     if (zs4.is.object(req.input)){
       if (zs4.is.password(req.input.vfy)||zs4.is.password(req.input.set)){
