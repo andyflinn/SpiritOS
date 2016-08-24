@@ -1,5 +1,6 @@
 ////////////////////////////////////////////////////////////////////////"+"
 'use strict';
+
 zs4.admin = new Object();
 
 zs4.admin.util = {
@@ -268,6 +269,7 @@ zs4.admin.util = {
 		};
 
 	},
+
 	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
 		if (o._.input==null)o._.input = (function(){return null;}).bind(o);
@@ -297,6 +299,7 @@ zs4.admin.util = {
 				if (po==null){
 					po=document.body;
 				}
+
 				po.appendChild(o._.html.e);
 				o._.html.parentElement = po;
 
@@ -828,6 +831,8 @@ zs4.admin.type = {
 //zs4.session = {};
 
 zs4.css = zs4.loadcss('/style.css');
-zs4.admin.type.object(null,zs4.location.get());
-zs4.admin.rootObject._.html.toggleOn();
-zs4.admin.rootObject.zs4._.html.toggleOn();
+zs4.css.onload = function(){
+	zs4.admin.type.object(null,zs4.location.get());
+	zs4.admin.rootObject._.html.toggleOn();
+	zs4.admin.rootObject.zs4._.html.toggleOn();
+};

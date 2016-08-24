@@ -45,12 +45,12 @@ express.getCookie = function(req,zs4request){
       if (req.query!=null&&req.query.token!=null&&req.query.token.length >10){
         zs4request.request.token=req.query.token;
         zs4request.payloadRefresh();
-        zs4.console.log('cookie in url: ')
+        express.THIS._.print('cookie in url');
       }
       else if (zs4.is.string(req.cookies.zs4)){
         zs4request.request.token=req.cookies.zs4;
         zs4request.payloadRefresh();
-        zs4.console.log('cookie in post: ')
+        express.THIS._.print('cookie in post');
       }
     }
   }
@@ -59,28 +59,29 @@ express.setCookie = function(res,zs4request){
   if (express.THIS._.value.cookies){
     if (zs4.is.string(zs4request.request.token)&&(zs4.is.object(zs4request.request.payload))){
       res.cookie('zs4' , zs4request.request.token, {expires :new Date(zs4request.request.payload.exp)});
-      zs4.console.log('cookie set: ')
+      express.THIS._.print('cookie set');
     }
     else {
       res.cookie('zs4' , '', {expires :0});
-      zs4.console.log('cookie deleted: ')
+      express.THIS._.print('cookie deleted');
     }
   }
 };
 
 express.app.get('/*', function (req, res) {
-  console.log('express.app.get('+req.path+')');
+  express.THIS._.print('express.app.get('+req.path+')')
+
   var zs4req = new zs4.request();
   var input = zs4req.resolveInputPath(req.path);
   input.getHTML = new Object();
   input.getHTML.query = req.query;
-  console.log(zs4req.input);
+  express.THIS._.print('input('+JSON.stringify(zs4req.input)+')')
 
   express.getCookie(req,zs4req);
 
   zs4req.process(function(ret){
     var r = zs4req.request.html;
-    console.log(r);
+    express.THIS._.print('output('+r+')')
     express.setCookie(res,zs4req);
     //res.write(express.html(req,res));
     if (r == null || r.length == 0){
@@ -93,16 +94,16 @@ express.app.get('/*', function (req, res) {
 
 express.app.post('/*', function (req, res) {
   var zs4req = new zs4.request(req.body);
-  //zs4.console.log('POST BODY: '+JSON.stringify(req.body));
+
   express.getCookie(req,zs4req);
-  //zs4.console.log('request received: '+JSON.stringify(zs4req));
 
   zs4req.process(function(ret){
     if (zs4req.html==true){
       var r = zs4req.request.html;
-      console.log(r);
+      express.THIS._.print('request.process returned('+zs4.json.stringify(r)+')');
+
       express.setCookie(res,zs4req);
-      //res.write(express.html(req,res));
+
       if (r == null || r.length == 0){
         r = express.html(req,res);
       }
@@ -111,11 +112,9 @@ express.app.post('/*', function (req, res) {
     }
     else {
       var r = zs4req.getReply();
-      console.log('callback: '+JSON.stringify(r.request));
+      express.THIS._.print('callback: '+JSON.stringify(r.request));
       express.setCookie(res,zs4req);
-      //zs4.console.log('request processed: '+JSON.stringify(r));
       res.send(r);
-      //zs4.console.log(r.reply.zs4.email.smtp);
     }
   });
 
@@ -134,7 +133,7 @@ express.schema = function(parent){
   THIS.run._.transform = (function(req,cb){
     this._.transformInternal(req);
     req.setScope(this);
-    console.log(this._.path+'.transform()');
+    this._.print('.transform()');
     if (zs4.is.object(req.input)){
       THIS.start();
     }
@@ -143,12 +142,12 @@ express.schema = function(parent){
 
   THIS.start = function(){
     if (express.running)return;
-    //console.log('inside start');
+
     var port = this._.value.port;
     zs4.boot.run(function(){
       express.app.listen(port, function (err) {
         if (err!=null){
-          console.log('failed to start server: '+zs4.json.stringify(err));
+          req.error(THIS,{text:'failed to start server',data:err,});
         }
         else {
           express.running = true;

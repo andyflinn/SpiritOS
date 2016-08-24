@@ -95,11 +95,12 @@ zs4.console = {
     if (zs4.is.window())r = 'window.zs4.THIS';
     else  r = 'node.zs4.THIS';
     if (o!=zs4.THIS) r += ('.'+o._.path);
-    r += ': \n';
+    r += ': ';
 
     r += ('flags: \''+o._.flags.getString()+'\'\n')
 
     r += m;
+    r += '\n';
     console.log(r);
     return r;
   }
@@ -1221,14 +1222,13 @@ zs4.type = {
       if (!zs4.is.object(input))return;
       zs4.copy.trim(input,THIS.array._.value);
       var count = zs4.count.object.properties(input);
-      console.log('loaded '+count+' array elements');
+      this._.print('loaded '+count+' array elements');
     }).bind(THIS.array);
     THIS.array._.store = (function(){
-      console.log(this.path+'.store()');
       var store = new Object();
       zs4.copy.trim(THIS.array._.value,store);
       var count = zs4.count.object.properties(store);
-      console.log('saving '+count+' array elements');
+      this._.print('storing '+count+' array elements');
       return store;
     }).bind(THIS.array);
 
@@ -1280,9 +1280,10 @@ zs4.type = {
     THIS.array._.transform = (function(req,cb){
       req.setScope(this);
       if (!zs4.is.object(req.input)){
+        this._.print('transform: no input');
         this._.get(req); cb(); return;
       }
-      console.log(this._.path+'.transform()');
+      this._.print('transform: ('+JSON.stringify+')');
 
       var parallel = new zs4.processor.parallel();
 
@@ -1301,21 +1302,22 @@ zs4.type = {
 
   },
   auth:function(input){
-    zs4.type.object.call(this,{name:'auth',flags:'required api noprune',authGet:['zs4.owner'],authSet:['zs4.owner'],})
+    zs4.type.object.call(this,{name:'auth',flags:'required api noget noset',})
     this._.typename = 'auth';
     this._.create = zs4.type.auth;
     this._.load = (function(input){
 
-      console.log('loading '+this._.path);
+      this._.print('load('+JSON.stringify(input)+')');
 
-      if (!zs4.is.object(input))return;
+      if (!zs4.is.object(input)){
+        return;
+      }
 
       this._.scope._.loadAuth(input);
 
     }).bind(this);
     this._.store = (function(){
-      //return null;
-      console.log(this._.path+'.store()');
+      this._.print('store()');
       if (this._.nostore){return null;}
 
       return this._.scope._.saveAuth(input)
@@ -1348,6 +1350,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(req,cb){
+      this._.print('transform('+req.input+')');
       req.setScope(this);
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
@@ -1437,6 +1440,7 @@ zs4.type = {
     this._.maxlength = zs4.const.EMAIL.MAXLENGTH;
 
     this._.transform = (function(req,cb){
+      this._.print('transform('+req.input+')');
       req.setScope(this);
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
@@ -1512,6 +1516,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(req,cb){
+      this._.print('transform('+req.input+')');
       req.setScope(this);
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
@@ -1544,6 +1549,7 @@ zs4.type = {
     this._.maxlength = zs4.const.STRING.MAXLENGTH;
 
     this._.transform = (function(req,cb){
+      this._.print('transform('+req.input+')');
       req.setScope(this);
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
@@ -1599,6 +1605,7 @@ zs4.type = {
     }).bind(this);
 
     this._.transform = (function(req,cb){
+      this._.print('transform('+req.input+')');
       req.setScope(this);
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
@@ -1733,12 +1740,13 @@ zs4.type = {
       req.setScope(this);
       this._.transformInternal(req);
 
-      //if (zs4.is.type(req.scope)){console.log('path:\''+THIS._.path+'\' scope(\''+req.scope._.path+'\')')}
-
-      if (!(req.flags.value & req.flags.authget)){this._.get(req); cb(); return;}
+      if (!(req.flags.value & req.flags.authget)){
+        this._.print('transform() no get authority');
+        this._.get(req); cb(); return;
+      }
 
       if (zs4.is.object(req.input)){
-        console.log(this._.path+'.transform()');
+        this._.print('transform() '+zs4.json.stringify(input));
         if (zs4.is.object(req.input.getHTML)){
           this._.getHTML(req);
           cb(); return;
@@ -1746,14 +1754,11 @@ zs4.type = {
       }
       var parallel = new zs4.processor.parallel();
 
-      //if (req.input!=null)console.log(THIS._.path+' cb-before: '+JSON.stringify(req.request.callback));
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
 
-        //if (this[n]._.path=='zs4.express.run')console.log('transform child type ok.'+this[n]._.path);
 
         if (req.input==null||req.input[n]==null){
-          //if (this[n]._.path=='zs4.express.run')console.log('transform child NO INPUT!!!'+this[n]._.path);
           parallel.call(this[n],this[n]._.transform,req.create({input:null,parent:this,}));
         }
         else if (zs4.is.object(req.input)&&!this._.flags.get.notrans()){
@@ -1774,9 +1779,7 @@ zs4.type = {
             }
           }
         }
-        //if (req.input!=null)console.log(THIS._.path+' cb-after: '+JSON.stringify(req.request.callback));
         THIS._.get(req);
-        //if (req.request.needsSaving==true){console.log('save obj '+THIS._.path);}
         cb();
       });
 
@@ -1906,18 +1909,22 @@ zs4.type = {
       //console.log(this.path+'.load(\''+input+'\')');
       if (input==null||!zs4.is.string(input)){
         if (!this._.required){
+          this._.print('load() !required string=null)');
           return null;
         }
         else{
           if (zs4.is.string(this._.default))parent[this._.name]=this._.default;
           else parent[this._.name]=new String();
+          this._.print('load() required string=\''+parent[this._.name]+'\')');
         }
         return this;
       }
       parent[this._.name]=input;
+      this._.print('load() loaded input=\''+parent[this._.name]+'\')');
     }).bind(this);
 
     this._.transform = (function(req,cb){
+      this._.print('transform('+req.input+')');
       req.setScope(this);
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
@@ -2003,7 +2010,7 @@ zs4.request = function(o){
 
     if (o._.flags.value & this.flags.scope){THIS.scope = o;}
 
-    o._.print('request flags 1: \''+THIS.flags.getString()+'\'');
+    //o._.print('request flags 1: \''+THIS.flags.getString()+'\'');
 
     THIS.flags.value = 0;
     var am = THIS.am(o);
@@ -2029,7 +2036,7 @@ zs4.request = function(o){
       THIS.flags.set.authgetauth(true);
       THIS.flags.set.authsetauth(true);
     }
-    o._.print('request flags 2: \''+THIS.flags.getString()+'\'');
+    o._.print('setScope() req.flags = \''+THIS.flags.getString()+'\'');
   }).bind(this);
   this.resolvePath = function(o,r){
     if (!zs4.is.type(o)){
@@ -2105,15 +2112,11 @@ zs4.request = function(o){
 
     this.payloadRefresh = function(){
       if (zs4.is.string(this.request.token)&&this.request.token.length>10){
-        //console.log('payloadRefresh() '+this.request.token);
         this.request.payload = zs4.THIS.zs4.token.decode(this.request.token);
-        //console.log('payloadRefresh() payload: '+JSON.stringify(this.request.payload));
         if (zs4.is.object(this.request.payload)){
           return;
-          //console.log('payloadRefresh() REFRESHED!');
         }
       }
-      //console.log('payloadRefresh() DELETING TOKEN AND PAYLOAD...');
       this.request.token=null;
       this.request.payload=null;
     };
@@ -2134,10 +2137,7 @@ zs4.request = function(o){
       return false;
     }
 
-    //if (!zs4.is.email(this.request.email))this.request.email = zs4.const.EMAIL.PUBLIC;
     if (!zs4.is.boolean(this.request.needsSaving)) this.request.needsSaving = false;
-
-
 
     this.request.reget = null;
 
@@ -2207,7 +2207,7 @@ zs4.request = function(o){
       if (zs4.is.string(o.token)&&o.token.length>10){
         this.request.token = o.token;
         this.payloadRefresh();
-        console.log('TOKEN FROM NAVIGATION POST');
+        zs4.THIS._.print('TOKEN FROM NAVIGATION POST');
       }
       var input = this.resolveInputPath(o.path);
       input.getHTML = new Object();
@@ -2406,5 +2406,21 @@ if (zs4.is.window()){
       }
     });
   };
+  zs4.style = {
+    refresh:function(){
+      zs4.style.element.innerHTML = '';
+      var limit = 1024;
+      var iw = window.innerWidth;
+      if (iw > limit)iw = limit;
+      var em = iw / 16;
+      zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
+    },
+  };
 
+  zs4.style.element = document.createElement('style');
+  document.head.appendChild(zs4.style.element);
+  zs4.style.refresh();
+  window.onresize = function(){
+    zs4.style.refresh();
+  };
 }
