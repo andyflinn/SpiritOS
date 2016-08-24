@@ -138,30 +138,42 @@ zs4.admin.util = {
 			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayTable()});
 
 		};
+
 		THIS.auth.type = document.createElement('select');
 		THIS.auth.type.className = 'authtype';
-		THIS.auth.type.oninput = function(){THIS.refreshTool();};
+		THIS.auth.type.oninput = function(){
+			THIS.refreshUsers();
+			THIS.refreshTable();
+		};
 		//THIS.auth.type.oninput = THIS.refreshTool;
 		THIS.pane.appendChild(THIS.auth.type);
-		function appendAuthType(t){
-			var option = document.createElement('option');
-			option.className = 'authtype';
 
-			option.text = t;
-			option.value = t;
+		THIS.refreshAuthTypes = function(){
+			THIS.auth.type.innerHTML = '';
 
-			THIS.auth.type.add(option);
-			return option;
-		}
-		var blank = appendAuthType('');
-		if (o._.flags.get.authgetauth())appendAuthType('getauth');
-		if (o._.flags.get.authsetauth())appendAuthType('setauth');
-		if (o._.flags.get.am()){
-			appendAuthType('authgetauth');
-		}
-		if (o._.flags.get.own()){
-			appendAuthType('authsetauth');
-		}
+			function appendAuthType(t){
+				var option = document.createElement('option');
+				option.className = 'authtype';
+
+				option.text = t;
+				option.value = t;
+
+				THIS.auth.type.add(option);
+				return option;
+			};
+
+
+			var blank = appendAuthType('');
+			if (o._.flags.get.authgetauth())appendAuthType('getauth');
+			if (o._.flags.get.authsetauth())appendAuthType('setauth');
+			if (o._.flags.get.am()){
+				appendAuthType('authgetauth');
+			}
+			if (o._.flags.get.own()){
+				appendAuthType('authsetauth');
+			}
+
+		};
 
 		THIS.auth.user = document.createElement('select');
 		THIS.auth.user.className = 'authuser';
@@ -172,7 +184,7 @@ zs4.admin.util = {
 
 		THIS.refreshUsers= function(){
 			var arr = o._.scope._.getScopeScopes();
-
+			console.log(arr);
 			THIS.auth.user.innerHTML = '';
 
 			var option = document.createElement('option');
@@ -230,7 +242,6 @@ zs4.admin.util = {
 				var user = document.createElement('zs4-auth-user');
 				user.textContent = arr[i];
 				line.appendChild(user);
-
 			}
 
 		}
@@ -248,9 +259,10 @@ zs4.admin.util = {
 
 			var input = new Object({_:{auth:{type:typ}}});
 			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayTable()});
-	};
+		};
 
 		THIS.refreshTool = function(){
+			THIS.refreshAuthTypes();
 			THIS.refreshUsers();
 			THIS.refreshTable();
 		};
@@ -351,7 +363,7 @@ zs4.admin.util = {
 			o._.scope = o;
 		}
 		else{
-			o._.scope = po._.scope;
+			if (zs4.is.type(po))o._.scope = po._.scope;
 			zs4.admin.util.removeClass(o._.html.e,'scope');
 
 		}
@@ -697,7 +709,7 @@ zs4.admin.type = {
 			}
 		}
 		else{
-			o._.scope = po._.scope;
+			if (zs4.is.type(po))o._.scope = po._.scope;
 			//zs4.admin.util.removeClass(o._.html.toggle,'scope');
 		}
 
