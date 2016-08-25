@@ -18,10 +18,10 @@ password.create = function(){
   THIS._.transform = (function(req,cb){
     this._.transformInternal(req);
     req.setScope(this);
+    this._.print('transform()');
     if (zs4.is.object(req.input)){
       if (zs4.is.password(req.input.vfy)||zs4.is.password(req.input.set)){
-        console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
-        console.log(req.input);
+        this._.print(this._.path+'.transform('+JSON.stringify(req.input)+')');
       }
 
       if (passhash.isHashed(this._.value.hashed)){
@@ -77,11 +77,11 @@ password.create = function(){
 
   THIS._.get = (function(req,po){
     req.setScope(this);
+    this._.print(this._.path+'.get()');
     //console.log('password.get'+ JSON.stringify(this._.authGet));
     var get = this._.getInitialize(req);
     if (get==null){
-      console.log(this._.path+'.get() NOT AUTHORIZED!?!?!?');
-      //console.log(this._.authGet);
+      this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?');
       return null;
     }
 

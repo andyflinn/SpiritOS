@@ -131,8 +131,14 @@ express.schema = function(parent){
   THIS._.property(new zs4.type.boolean({name:'cookies',flags:'required',default:false,}));
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
-    this._.transformInternal(req);
     req.setScope(this);
+    this._.transformInternal(req);
+    if (!(req.flags.value & req.flags.authset)){
+      var err = 'not authorized';
+      req.error(THIS,err);
+      this._.print(err);
+      this._.get(req); cb(); return;
+    }
     this._.print('.transform()');
     if (zs4.is.object(req.input)){
       THIS.start();

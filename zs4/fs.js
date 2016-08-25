@@ -39,8 +39,14 @@ fs.create = function(input){
   THIS._.property(new zs4.type.object({name:'stat',flags:'required nostore api',}));
   THIS.stat._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.stat._.transform = (function(req,cb){
-    this._.transformInternal(req);
     req.setScope(this);
+    this._.transformInternal(req);
+    if (!(req.flags.value & req.flags.authset)){
+      var err = 'not authorized';
+      req.error(THIS,err);
+      this._.print(err);
+      this._.get(req); cb(); return;
+    }
     var STAT = this;
 
 
@@ -66,8 +72,14 @@ fs.create = function(input){
   THIS._.property(new zs4.type.object({name:'readdir',flags:'required nostore api',}));
   THIS.readdir._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readdir._.transform = (function(req,cb){
-    this._.transformInternal(req);
     req.setScope(this);
+    this._.transformInternal(req);
+    if (!(req.flags.value & req.flags.authset)){
+      var err = 'not authorized';
+      req.error(THIS,err);
+      this._.print(err);
+      this._.get(req); cb(); return;
+    }
     var READDIR = this;
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
       //console.log(READDIR._.path+'.readdir('+JSON.stringify(req.input)+')');
@@ -92,8 +104,14 @@ fs.create = function(input){
   THIS._.property(new zs4.type.object({name:'readfile',flags:'required nostore api',}));
   THIS.readfile._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readfile._.transform = (function(req,cb){
-    this._.transformInternal(req);
     req.setScope(this);
+    this._.transformInternal(req);
+    if (!(req.flags.value & req.flags.authset)){
+      var err = 'not authorized';
+      req.error(THIS,err);
+      this._.print(err);
+      this._.get(req); cb(); return;
+    }
     var THIS = this;
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
       nodefs.readFile(req.input.path,'base64',function(err,data){

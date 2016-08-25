@@ -83,7 +83,7 @@ zs4.const = {
 };
 
 zs4.console = {
-  arr:['zs4.head.title'],
+  arr:['','zs4.password',],
   on:true,
   log:function(v){
     if (this.on)console.log(v);
@@ -342,12 +342,6 @@ zs4.copy = {
       if (zs4.is.number(from._.maxlength))to._.maxlength=from._.maxlength;
       if (zs4.is.array(from._.enum))to._.enum = from._.enum;
 
-      //if (zs4.is.boolean(from._.trim))to._.trim = from._.trim;
-      //if (zs4.is.boolean(from._.arrayio))to._.arrayio=from._.arrayio;
-      //if (zs4.is.boolean(from._.notrans))to._.notrans=from._.notrans;
-      //if (zs4.is.boolean(from._.scope))to._.scope=from._.scope;
-      //if (from._.noset==true)to._.noset=true;else to._.noset=false;
-      //if (from._.api==true)to._.api=true;else to._.api=false;
     },
     trim:function(f,t){
       for (var n in f){
@@ -654,6 +648,8 @@ zs4.type = {
     if (zs4.is.boolean(input.array))this._.array = input.array;
     if (zs4.is.number(input.arraymaxlength))this._.arraymaxlength = parseInt(input.arraymaxlength);
 
+    if (zs4.is.type(input.inscope)&&input.inscope._.flags.get.scope())
+      this._.inscope = input.inscope;
     // support mongoose
     if (zs4.is.boolean(input.index) && input.index == true) this._.index = true;
     else if (zs4.is.object(input.index)&&zs4.is.boolean(input.index.unique)&&input.index.unique==true)this._.index={unique:true};
@@ -811,10 +807,16 @@ zs4.type = {
       get._.typename = this._.typename;
       zs4.copy.schemabasics(this,get);
 
+      if (zs4.is.type(this._.inscope)&&this._.inscope._.flags.get.scope())
+        get._.inscope = this._.inscope._.path;
+
       get._.flags = req.flags.value;
       if (this._.flags.get.api())get._.flags |= req.flags.api;
       if (this._.flags.get.scope())get._.flags |= req.flags.scope;
       if (this._.flags.get.noset())get._.flags |= req.flags.noset;
+      if (this._.flags.get.arrayio())get._.flags |= req.flags.arrayio;
+      if (this._.flags.get.index())get._.flags |= req.flags.index;
+      if (this._.flags.get.unique())get._.flags |= req.flags.unique;
 
       if (!req.flags.get.authset()
       ||  this._.flags.get.noset()
@@ -857,6 +859,15 @@ zs4.type = {
 
       zs4.copy.schemabasics(o,this);
       this._.flags.value = o._.flags;
+      if (zs4.is.string(o._.inscope)&&this._.inscope._.flags.get.scope()){
+        var is = this._.scope._.resolvePath(o._.inscope);
+        if (is != null  && is._.flags.get.scope()) {
+          this._.inscope = is;
+          this._.print('got inscope: \''+o._.inscope+'\'');
+          console.log('got inscope: \''+o._.inscope+'\'');
+        }
+      }
+
 
       this._.print('got: \''+this._.flags.getString(o._.flags)+'\'');
 
@@ -981,8 +992,8 @@ zs4.type = {
         }
       html += '</html>\n';
       req.request.html = html;
-      console.log('HTML RESONPSE FROM '+this._.path);
-      console.log(html);
+      this._.print('HTML RESPONSE FROM '+this._.path)
+      //console.log(html);
       return(html);
     }).bind(this);
     this._.print = (function(m){zs4.console.print(this,m);}).bind(this);
@@ -1076,6 +1087,17 @@ zs4.type = {
         }
       }
     }).bind(this);
+
+    this._.resolvePath = (function(path){
+      var arr = zs4.string.split.separators(path,'./\\-_');
+      if (arr.length == 0)return this;
+      var ret = this;
+      for (var i = 0 ; i < arr.length; i++){
+        if (!zs4.is.type(ret[arr[i]]))return null;
+        ret = ret[arr[i]];
+      }
+      return ret;
+    }).bind(this);
   },
 
   array:function(input){
@@ -1105,11 +1127,18 @@ zs4.type = {
     THIS.config._.property(new zs4.type.integer({name:'maxlength',flags:'required noprune',authGet:['zs4.self'],authSet:['zs4.owner'],}));
     THIS.config._.property(new zs4.type.integer({name:'lastid',flags:'required noset noprune',authGet:['zs4.self'],}));
 
-    THIS._.property(new zs4.type.object({name:'method',flags:'required noprune',authGet:['zs4.public'],}));
+    THIS._.property(new zs4.type.object({name:'method',flags:'required noprune nostore',authGet:['zs4.public'],}));
 
-    THIS.method._.property(new zs4.type.object({name:'new',flags:'required api noprune',authGet:['zs4.self'],}));
+    THIS.method._.property(new zs4.type.object({name:'new',flags:'required api noprune nostore',authGet:['zs4.self'],}));
     this.method.new._.transform = (function(req,cb){
       req.setScope(this);
+      this._.transformInternal(req);
+      if (!(req.flags.value & req.flags.authset)){
+        var err = 'not authorized';
+        req.error(THIS,err);
+        this._.print(err);
+        this._.get(req); cb(); return;
+      }
       if (zs4.is.object(req.input)){
         if (!(req.flags.value & req.flags.authset)){
           req.error('not authorized');
@@ -1143,9 +1172,17 @@ zs4.type = {
       this._.get(req); cb(); return;
     }).bind(this.method.new);
 
-    THIS.method._.property(new zs4.type.object({name:'getall',flags:'required api noprune',authGet:['zs4.public'],authSet:['zs4.public'],}));
+    THIS.method._.property(new zs4.type.object({name:'getall',flags:'required api noprune nostore',authGet:['zs4.public'],authSet:['zs4.public'],}));
     this.method.getall._.transform = (function(req,cb){
       req.setScope(this);
+      this._.transformInternal(req);
+      if (!(req.flags.value & req.flags.authset)){
+        var err = 'not authorized';
+        req.error(THIS,err);
+        this._.print(err);
+        this._.get(req); cb(); return;
+      }
+
       if (zs4.is.object(req.input)){
         console.log(this._.path+'.transform()');
 
@@ -1175,21 +1212,37 @@ zs4.type = {
       this._.get(req); cb(); return;
     }).bind(this.method.getall);
 
-    THIS.method._.property(new zs4.type.object({name:'deleteall',flags:'required api noprune',authGet:['zs4.self'],}));
-    THIS.method.deleteall._.property(new zs4.type.boolean({name:'sure',required:true,nostore:true,}));
+    this.method.getone = null;
+
+    THIS.method._.property(new zs4.type.object({name:'deleteall',flags:'required api noprune nostore',authGet:['zs4.owner'],authSet:['zs4.owner'],}));
+    THIS.method.deleteall._.property(new zs4.type.boolean({name:'sure',flags:'required nostore noprune',authGet:['zs4.owner'],authSet:['zs4.owner'],}));
     this.method.deleteall._.transform = (function(req,cb){
+      var DELETEALL = this;
       req.setScope(this);
+      this._.transformInternal(req);
+      function get(){
+        DELETEALL._.get(req);
+        req.setScope(DELETEALL.sure);
+        DELETEALL.sure._.get(req,DELETEALL);
+        cb();
+        return;
+      }
+      if (!req.flags.value & req.flags.authset){
+        req.error(this,{text:'not authorized'});
+        return get();
+      }
       if (zs4.is.object(req.input)){
         console.log(this._.path+'.transform('+JSON.stringify(req.input)+')');
         if (req.input.sure!=true){
           req.error(this,{text:'not sure'});
-          this._.get(req); cb(); return;
+          return get();
         }
+        console.log(this.sure);
         THIS.array._.value = new Object();
         req.result(this,true);
         THIS._.shouldBeSaved(req);
       }
-      this._.get(req); cb(); return;
+      return get();
     }).bind(this.method.deleteall);
     this.method.deleteall._.callback = (function(o){
       console.log('deleteall._.callback()');
@@ -1300,6 +1353,92 @@ zs4.type = {
       });
     }).bind(THIS.array);
 
+    THIS.method._.property(new zs4.type.object({name:'getone',flags:'required api noprune nostore',authGet:['zs4.public'],authSet:['zs4.public'],}));
+    THIS.method.getone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune',inscope:THIS.template,authGet:['zs4.public'],authSet:['zs4.public'],}));
+    THIS.method.getone._.property(new zs4.type.string({name:'equals',flags:'required nostore noprune',authGet:['zs4.public'],authSet:['zs4.public'],}));
+
+    this.method.getone._.transform = (function(req,cb){
+      var GETONE = this;
+      req.setScope(this);
+      this._.transformInternal(req);
+      function get(){
+        GETONE._.get(req);
+
+        req.setScope(GETONE.item);
+        GETONE.item._.get(req,GETONE);
+
+        req.setScope(GETONE.equals);
+        GETONE.equals._.get(req,GETONE);
+
+        cb();
+        return;
+      }
+      if (!req.flags.value & req.flags.authset){
+        req.error(this,{text:'not authorized'});
+        return get();
+      }
+
+      if (!zs4.is.object(req.input)){
+        return get();
+      }
+
+      console.log(this._.path+'.transform()');
+
+      if (!zs4.is.string(req.input.item)||req.input.item.length==0){
+        var err = 'no item specified'
+        req.error(this,err);
+        this._.print(err);
+        return get();
+      }
+      var item = THIS.template._.resolvePath(req.input.item);
+      if (item==null){
+        var err = 'template has no '+req.input.item;
+        req.error(this,err);
+        this._.print(err);
+        return get();
+      }
+      var item = req.input.item;
+      var equals = req.input.equals;
+
+      var parallel = new zs4.processor.parallel();
+      for (var n in THIS.array._.value){
+
+        var r = req.create();
+        r.elenam = n;
+        parallel.call(THIS.array,function(req,cb){
+          var model = THIS.template._.new();
+          GETONE._.print('   scanning '+THIS.array._.path+'.'+req.elenam);
+          model._.name = req.elenam;
+          model._.flags.set.notrans(false);
+          model._.flags.set.scope(true);
+          THIS._.array.elementConnect(THIS.array,model);
+          model._.load(THIS.array._.value[req.elenam]);
+
+          GETONE._.print('   scanning '+THIS.array._.path+'.'+n);
+          var val = model._.resolvePath(item);
+          if (val == null){
+            GETONE._.print('   CANT FIND '+item);
+            cb(); return;
+          }
+          if (val._.opcode.equals(equals)){
+            GETONE._.print('   MATCH! -> transform() '+item);
+            model._.transform(req,cb);
+            return;
+          }
+          else {
+            GETONE._.print('   FAILURE! (v/e) '+val._.value+'!='+equals);
+            cb(); return;
+          }
+        },r);
+      }
+
+      parallel.run(function(){
+        return get();
+      });
+
+
+    }).bind(this.method.getone);
+
   },
   auth:function(input){
     zs4.type.object.call(this,{name:'auth',flags:'required api noget noset',})
@@ -1324,6 +1463,7 @@ zs4.type = {
     }).bind(this);
   },
   boolean:function(input){
+    var THIS = this;
     zs4.type.unknown.call(this,input);
     this._.type = Boolean;
     this._.typename = 'boolean';
@@ -1335,18 +1475,33 @@ zs4.type = {
       return true;
     }).bind(this);
 
+    this._.opcode = {
+      convert:(function(v){
+        if (zs4.is.boolean(v))return v;
+        if (zs4.is.string(v)){
+          if (v=='true')return true;
+          if (v=='false')return false;
+        }
+        return null;
+      }).bind(THIS),
+      equals:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (v===this._.value)return true;
+        return false;
+      }).bind(THIS),
+    };
+
     this._.load = (function(parent,input){
-      if (input==null||!zs4.is.boolean(input)){
-        if (!this._.required){
-          return null;
-        }
-        else{
-          if (zs4.is.boolean(this._.default))parent[this._.name]=this._.default;
-          else parent[this._.name]=new Boolean(false);
-          return this;
-        }
+      var v = this._.opcode.convert(input);
+      if (v==null){
+          if (zs4.is.boolean(this._.default))this._.value = parent[this._.name]=this._.default;
+          else this._.value = parent[this._.name]=new Boolean(false);
       }
-      parent[this._.name]=input;
+      else {
+        this._.value = parent[this._.name]=v;
+      }
+      this._.print('load() loaded input=\''+parent[this._.name]+'\')');
     }).bind(this);
 
     this._.transform = (function(req,cb){
@@ -1357,17 +1512,8 @@ zs4.type = {
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
       this._.shouldBeSaved(req);
 
-      if (zs4.is.boolean(req.input)){
-        req.parent._.value[this._.name]=req.input;
-      }
-      else if (zs4.is.string(req.input)){
-        if (req.input=='true'){
-          req.parent._.value[this._.name]=true;
-        }
-        if (req.input=='false') {
-          req.parent._.value[this._.name]=false;
-        }
-      }
+      var v = this._.opcode.convert(req.input);
+      if (v!=null)this._.value = req.parent._.value[this._.name]=v;
 
       this._.get(req,req.parent);
       cb();
@@ -1465,6 +1611,7 @@ zs4.type = {
 
   },
   integer:function(input){
+    var THIS = this;
     zs4.type.unknown.call(this,input);
     this._.type = Number;
     this._.typename = 'integer';
@@ -1500,19 +1647,42 @@ zs4.type = {
       return true;
     }).bind(this);
 
-    this._.load = (function(parent,input){
-      //console.log(this.path+'.load(\''+input+'\')');
-
-      if (input==null || !zs4.is.number(input)){
-        if (!this._.required){
+    this._.opcode = {
+      convert:(function(v){
+        if (zs4.is.number(v)){
+          return this._.parseInt(v);
+        }
+        if (zs4.is.string(v)){
+          try{
+            return this._.parseInt(v);
+          }
+          catch(err){}
           return null;
         }
-        else{
-          if (zs4.is.number(this._.default))parent[this._.name]=this._.parseInt(this._.default);
-          else parent[this._.name]=new Number(0);
+        if (zs4.is.boolean(v)){
+          if (v) return 1;
+          else return 0;
         }
+      }).bind(THIS),
+      equals:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (v===this._.value)return true;
+        return false;
+      }).bind(THIS),
+    };
+
+    this._.load = (function(parent,input){
+      var v = this._.opcode.convert(input);
+
+      if (v==null){
+        if (zs4.is.number(this._.default))this._.value = parent[this._.name]=this._.parseInt(this._.default);
+        else this._.value = parent[this._.name]=new Number(0);
       }
-      parent[this._.name]=this._.parseInt(input);
+      else {
+        this._.value=parent[this._.name]=v;
+      }
+      this._.print('load() loaded input=\''+parent[this._.name]+'\')');
     }).bind(this);
 
     this._.transform = (function(req,cb){
@@ -1523,20 +1693,9 @@ zs4.type = {
 
       this._.shouldBeSaved(req);
 
-      if (zs4.is.number(req.input)){
-        req.parent._.value[this._.name]=this._.parseInt(req.input);
-      }
-      else if (zs4.is.string(req.input)){
-        try{
-          req.parent._.value[this._.name]=this._.parseInt(req.input);
-        }
-        catch(err){}
-        //parent[this.name]=parseInt(input);
-      }
-      else if (zs4.is.boolean(req.input)){
-        if (req.input) req.parent._.value[this._.name]=1;
-        else req.parent._.value[this._.name]=0;
-      }
+      var v = this._.opcode.convert(req.input);
+      if (v!=null)this._.value = req.parent._.value[this._.name]=v;
+
       this._.get(req,req.parent);
       cb();
     }).bind(this);
@@ -1556,13 +1715,14 @@ zs4.type = {
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
       this._.shouldBeSaved(req);
 
-      if (zs4.is.name(req.input)) req.parent._.value[this._.name]=req.input.trim();
+      if (zs4.is.name(req.input)) this._.value = req.parent._.value[this._.name]=req.input.trim();
 
       this._.get(req,req.parent);
       cb();
     }).bind(this);
   },
   number:function(input){
+    var THIS = this;
     req.setScope(this);
     zs4.type.unknown.call(this,input);
     this._.type = Number;
@@ -1589,19 +1749,39 @@ zs4.type = {
       return true;
     }).bind(this);
 
+    this._.opcode = {
+      convert:(function(v){
+        if (zs4.is.number(v))return v;
+        if (zs4.is.string(v)){
+          var x = parseFloat(v);
+          if (x==NaN)return null;
+          return x;
+        }
+        if (zs4.is.boolean(v)){
+          if (v) return 1;
+          else return 0;
+        }
+      }).bind(THIS),
+      equals:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (v===this._.value)return true;
+        return false;
+      }).bind(THIS),
+    };
+
     this._.load = (function(parent,input){
+      var v = this._.opcode.convert(input);
       //console.log(this.path+'.load(\''+input+'\')');
 
-      if (input==null || !zs4.is.number(input)){
-        if (!this._.required){
-          return null;
-        }
-        else{
-          if (zs4.is.number(this._.default))parent[this._.name]=this._.default;
-          else parent[this._.name]=new Number(0);
-        }
+      if (v==null){
+        if (zs4.is.number(this._.default))this._.value = parent[this._.name]=this._.default;
+        else this._.value = parent[this._.name]=new Number(0);
       }
-      parent[this._.name]=parseFloat(input);
+      else {
+        this._.value=parent[this._.name]=v;
+      }
+      this._.print('load() loaded input=\''+parent[this._.name]+'\')');
     }).bind(this);
 
     this._.transform = (function(req,cb){
@@ -1612,20 +1792,9 @@ zs4.type = {
 
       this._.shouldBeSaved(req);
 
-      if (zs4.is.number(req.input)){
-        req.parent._.value[this._.name]=req.input;
-      }
-      else if (zs4.is.string(req.input)){
-        try{
-          req.parent._.value[this._.name]=parseFloat(req.input);
-        }
-        catch(err){}
-        //parent[this.name]=parseInt(input);
-      }
-      else if (zs4.is.boolean(req.input)){
-        if (req.input) req.parent._.value[this._.name]=1;
-        else req.parent._.value[this._.name]=0;
-      }
+      var v = this._.opcode.convert(req.input);
+      if (v!=null)this._.value = req.parent._.value[this._.name]=v;
+
       this._.get(req,req.parent);
       if (cb);
     }).bind(this);
@@ -1715,43 +1884,27 @@ zs4.type = {
     }).bind(this);
 
     this._.get = (function(req,po){
-      var debug = 'zs4.bye';
       if (this._.flags.get.noget())return null;
+      this._.print('get() ')
       return this._.getInitialize(req);
-      //if (get==null){
-        //if (this._.path==debug)console.log('NOT GETTING '+this._.path);
-      //  return null;
-      //}
-      //console.log(this._.path+'.get()');
-      //for (var n in this){
-      //  if (!zs4.is.type(this[n]))continue;
-      //
-      //  if (this[n]._.type!=Object){
-      //
-      //    this[n]._.get(req,this);
-      //  }
-      //}
-
-      //return get;
     }).bind(this);
 
     this._.transform = (function(req,cb){
       var THIS = this;
       req.setScope(this);
       this._.transformInternal(req);
-
-      if (!(req.flags.value & req.flags.authget)){
-        this._.print('transform() no get authority');
+      if (zs4.is.object(req.input)&&zs4.is.object(req.input.getHTML)){
+        this._.print('getHTML() '+zs4.json.stringify(input));
+        this._.getHTML(req);
         this._.get(req); cb(); return;
       }
-
-      if (zs4.is.object(req.input)){
-        this._.print('transform() '+zs4.json.stringify(input));
-        if (zs4.is.object(req.input.getHTML)){
-          this._.getHTML(req);
-          cb(); return;
-        }
+      if (!(req.flags.value & req.flags.authset)){
+        var err = 'set not authorized';
+        //req.error(THIS,err);
+        this._.print(err);
+        //this._.get(req); cb(); return;
       }
+
       var parallel = new zs4.processor.parallel();
 
       for (var n in this){
@@ -1784,6 +1937,7 @@ zs4.type = {
       });
 
     }).bind(this);
+
   },
   password:function(input){
     zs4.type.string.call(this,input);
@@ -1802,28 +1956,32 @@ zs4.type = {
       THIS.zs4._.property(new zs4.type.bye());
     }
     THIS._.getScopeItems = (function(scope,type){
-      if (scope == null)scope = THIS;
+      var subtract = false;
+      if (scope != null && scope._.path.length>0){
+        subtract = true;
+      }
+      else {
+        scope = THIS;
+      }
       var response = new Array();
+      console.log(type);
       function recurse(item){
         for (var n in item){
           if (!zs4.is.type(item[n]))continue;
 
-          if( (item[n]._.flags.value & item[n]._.flags.scope)
-          || (item[n]._.typename=='scope')
-          || (item[n]._.flags.value & item[n]._.flags.notrans)
-          ){
-            continue;
+          if (item[n]._.type != Object){
+            console.log('getScopeItems-recurse '+item[n]._.path);
+            if (type == null
+            || (zs4.is.function(type)&&type == item[n]._.type)
+            || (zs4.is.string(type)&&type==item[n]._.typename)
+            || (zs4.is.number(type)&&((item[n]._.flags.value&type)==type))
+            ){
+              var val = item[n]._.path;
+              val = val.substr(scope._.path.length+1,val.length-scope._.path.length-1);
+              response.push(new Object({label:val,value:val}));
+            }
           }
-
-          if (type == null
-          || (zs4.is.function(type)&&type == item[n]._.type)
-          || (zs4.is.string(type)&&type==item[n]._.typename)
-          || (zs4.is.number(type)&&(item[n]._.flags.value&type))
-          ){
-            response.push(new Object({label:item[n]._.path,value:item[n]._.path}));
-          }
-
-          if (item[n]._.type == Object){
+          else {
             recurse(item[n]);
           }
         }
@@ -1873,6 +2031,14 @@ zs4.type = {
       return response;
     }).bind(this);
   },
+  scopeindex:function(input){
+    zs4.type.string.call(this,input);
+    this._.typename = 'scopeindex';
+  },
+  scopeindexunique:function(input){
+    zs4.type.string.call(this,input);
+    this._.typename = 'scopeindexunique';
+  },
   scopeitem:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'scopeitem';
@@ -1882,6 +2048,7 @@ zs4.type = {
     this._.typename = 'scopescope';
   },
   string:function(input){
+    var THIS = this;
     zs4.type.unknown.call(this,input);
     this._.type = String;
     this._.typename = 'string';
@@ -1905,21 +2072,31 @@ zs4.type = {
       return true;
     }).bind(this);
 
+    this._.opcode = {
+      convert:(function(v){
+        if (v==null)return null;
+        if (zs4.is.string(v))return v;
+
+        else return v.toString();
+      }).bind(THIS),
+      equals:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (v===this._.value)return true;
+        return false;
+      }).bind(THIS),
+    };
+
     this._.load = (function(parent,input){
-      //console.log(this.path+'.load(\''+input+'\')');
-      if (input==null||!zs4.is.string(input)){
-        if (!this._.required){
-          this._.print('load() !required string=null)');
-          return null;
-        }
-        else{
-          if (zs4.is.string(this._.default))parent[this._.name]=this._.default;
-          else parent[this._.name]=new String();
-          this._.print('load() required string=\''+parent[this._.name]+'\')');
-        }
-        return this;
+      var v = this._.opcode.convert(input);
+
+      if (v==null){
+        if (zs4.is.string(this._.default))this._.value = parent[this._.name]=this._.default;
+        else this._.value = parent[this._.name]=new String();
       }
-      parent[this._.name]=input;
+      else {
+        this._.value = parent[this._.name]=v;
+      }
       this._.print('load() loaded input=\''+parent[this._.name]+'\')');
     }).bind(this);
 
@@ -2071,8 +2248,7 @@ zs4.request = function(o){
     else {
       r.error.data = error;
     }
-    console.log('error from '+ o._.path + ' ' + JSON.stringify(this.request.callback))
-
+    o._.print(o._.path + '.error() scope.flags:'+this.flags.getString() +' error:' + JSON.stringify(this.request.callback))
   }
   this.result = function(o,result){
     var r = this.resolvePath(o,this.request.callback);
@@ -2157,7 +2333,7 @@ zs4.request = function(o){
         THIS._.print('req.am said \'zs4.self\'');
         return true;
       }
-      return false;
+      return this.userIsRoot();
     };
 
     this.own = function(THIS){
@@ -2167,7 +2343,7 @@ zs4.request = function(o){
         THIS._.print('req.am said zs4.owner');
         return true;
       }
-      return false;
+      return this.userIsRoot();
     };
 
     this.process = function(cb){
@@ -2246,8 +2422,7 @@ zs4.request = function(o){
 
 zs4.THIS = new zs4.type.scope();
 
-if (zs4.is.node())
-{
+if (zs4.is.node()){
   var nu;
 
   /*
@@ -2398,10 +2573,11 @@ if (zs4.is.window()){
       p[a[i]] = new Object();
       p = p[a[i]];
     }
-    console.log('LAUNCHING ADMIN @ '+ JSON.stringify(input));
+    zs4.THIS._.print('LAUNCHING ADMIN @ '+ JSON.stringify(input))
     zs4.post(input,function(){
       var script = zs4.THIS.zs4.head._.value.app.trim();
       if (script != ''){
+        zs4.THIS._.print('loading script \''+script+'\'')
         zs4.loadscript(script);
       }
     });

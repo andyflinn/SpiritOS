@@ -120,6 +120,7 @@ zs4.admin.util = {
 		addValue('name',o._.name);
 		addValue('path',o._.path);
 		addValue('typename',o._.typename);
+		if (zs4.is.type(o._.inscope))addValue('inscope',o._.inscope._.path);
 		addValue('flags',o._.flags.getString());
 	},
 	auth:function(o){
@@ -702,7 +703,7 @@ zs4.admin.type = {
 
 
 		if (o._.flags.value & o._.flags.scope){
-			console.log('change label for scope '+o._.path+': '+o._.value.zs4.head.title);
+			//console.log('change label for scope '+o._.path+': '+o._.value.zs4.head.title);
 			o._.scope = o;
 			if (zs4.is.string(o._.value.zs4.head.title) && o._.value.zs4.head.title.length > 0){
 				o._.html.name.textContent = o._.value.zs4.head.title;
@@ -725,6 +726,68 @@ zs4.admin.type = {
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
+	scopeindex:function(po,o){
+    zs4.admin.util.unknown(po,o);
+    if (o._.html.input==null){
+
+      o._.html.input = document.createElement('select');
+      o._.html.e.appendChild(o._.html.input);
+
+      o._.input = (function(){
+        if (o._.flags.get.noset())return null;
+        return this._.html.input.value;
+      }).bind(o);
+
+      o._.html.refreshOptions = function(o){
+        var arr = o._.scope._.getScopeItems(this._.flags.index);
+        //console.log (arr);
+        //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
+				o._.html.input.innerHTML = '';
+        for (var i = 0 ; i < arr.length ; i++){
+          var option = document.createElement('option');
+					option.text = arr[i].label;
+					option.value = arr[i].value;
+        	o._.html.input.add(option);
+        }
+      }
+    }
+
+    o._.html.refreshOptions(o);
+    //o._.html.input.readOnly = o._.flags.get.noset();
+    o._.html.input.value = po._.value[o._.name];
+    zs4.admin.util.refreshNameInput(po,o);
+  },
+	scopeindexunique:function(po,o){
+    zs4.admin.util.unknown(po,o);
+    if (o._.html.input==null){
+
+      o._.html.input = document.createElement('select');
+      o._.html.e.appendChild(o._.html.input);
+
+      o._.input = (function(){
+        if (o._.flags.get.noset())return null;
+        return this._.html.input.value;
+      }).bind(o);
+
+      o._.html.refreshOptions = function(o){
+				console.log ('getting options '+o._.path+' inscope='+o._.inscope._.path);
+        var arr = o._.scope._.getScopeItems(o._.inscope,o._.flags.index|o._.flags.unique);
+        console.log (arr);
+				o._.html.input.innerHTML = '';
+        for (var i = 0 ; i < arr.length ; i++){
+          var option = document.createElement('option');
+					option.text = arr[i].label;
+					option.value = arr[i].value;
+        	o._.html.input.add(option);
+        }
+      }
+    }
+
+    o._.html.refreshOptions(o);
+    //o._.html.input.readOnly = o._.flags.get.noset();
+    o._.html.input.value = po._.value[o._.name];
+    zs4.admin.util.refreshNameInput(po,o);
+  },
 	scopeitem:function(po,o){
     zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){
@@ -832,7 +895,9 @@ zs4.admin.type = {
 
 zs4.css = zs4.loadcss('/style.css');
 zs4.css.onload = function(){
+	zs4.THIS._.print('loaded css \''+'/style.css'+'\'')
 	zs4.admin.type.object(null,zs4.location.get());
 	zs4.admin.rootObject._.html.toggleOn();
 	zs4.admin.rootObject.zs4._.html.toggleOn();
+	zs4.THIS._.print('ADMIN LAUNCHED');
 };

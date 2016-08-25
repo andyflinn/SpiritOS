@@ -31,9 +31,16 @@ email.create = function(input){
   THIS.message._.property(new zs4.type.text({name:'text',flags:'required',}));
 
   THIS.message._.transform = (function(req,cb){
-    this._.transformInternal(req);
     req.setScope(this);
+    this._.transformInternal(req);
     this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
+    if (!(req.flags.value & req.flags.authset)){
+      var err = 'not authorized';
+      req.error(THIS,err);
+      this._.print(err);
+      this._.get(req); cb(); return;
+    }
+
     if (req.input==null){this._.get(req); cb(); return;}
 
     if (!zs4.is.email(THIS.smtp._.value.user)
