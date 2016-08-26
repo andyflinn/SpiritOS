@@ -190,7 +190,7 @@ zs4.admin.util = {
 			THIS.auth.user.innerHTML = '';
 
 			var option = document.createElement('option');
-			option.className = 'authuser';
+			option.className = 'placeholder';
 			option.text = 'select user';
 			option.value = '';
 			THIS.auth.user.add(option);
@@ -210,7 +210,7 @@ zs4.admin.util = {
 					THIS.auth.table.innerHTML = 'no authorization type selected.';
 					return;
 			}
-			console.log('refreshing object tree');
+			o._.print('redisplaying auth table');
 
 			var arr;
 			if (typ == 'getauth')arr = o._.authGet;
@@ -269,6 +269,62 @@ zs4.admin.util = {
 			THIS.refreshTable();
 		};
 
+	},
+	console:function(o){
+		var THIS = this;
+		zs4.admin.util.tool.call(THIS,o,'console');
+		THIS.console = new Object();
+
+		THIS.console.windowlabel = document.createElement('zs4-console-label');
+		THIS.console.windowlabel.textContent = 'window';
+		THIS.pane.appendChild(THIS.console.windowlabel);
+
+		THIS.console.window = document.createElement('input');
+		THIS.console.window.type = 'checkbox';
+		THIS.pane.appendChild(THIS.console.window);
+		THIS.console.window.onchange = function(){
+			//window.alert('THIS.console.node.onchange');
+			console.log(THIS.console.window.checked);
+			if (THIS.console.window.checked) {
+				zs4.string.array.add.new(zs4.console.arr,o._.path);
+				o._.print('window.console turned on');
+			}
+			else {
+				o._.print('turning off window.console');
+				zs4.string.array.remove.string(zs4.console.arr,o._.path);
+			}
+		}
+
+		THIS.console.nodelabel = document.createElement('zs4-console-label');
+		THIS.console.nodelabel.textContent = 'node';
+		THIS.pane.appendChild(THIS.console.nodelabel);
+
+		THIS.console.node = document.createElement('input');
+		THIS.console.node.type = 'checkbox';
+		THIS.pane.appendChild(THIS.console.node);
+		THIS.console.node.onchange = function(){
+			//window.alert('THIS.console.node.onchange');
+			var input;
+			if (THIS.console.node.checked) input = new Object({_:{console:{switch:true,}}});
+			else input = new Object({_:{console:{switch:false,}}});
+
+			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayNode()});
+		}
+
+		THIS.redisplayNode = function(){
+			THIS.console.node.checked = o._.console.switch;
+		};
+		THIS.refreshNode= function(){
+			console.log('refreshing node value \''+THIS.console+'\'');
+
+			var input = new Object({_:{console:{}}});
+			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayNode()});
+		};
+
+		THIS.refreshTool = function(){
+			//window.alert('console tool refresh');
+			THIS.refreshNode();
+		};
 	},
 
 	unknown:function(po,o){
@@ -456,6 +512,7 @@ zs4.admin.util = {
 
 						if (!o._.html.tool.hasOwnProperty('about'))new zs4.admin.util.about(o);
 						if (!o._.html.tool.hasOwnProperty('auth'))new zs4.admin.util.auth(o);
+						if (!o._.html.tool.hasOwnProperty('console'))new zs4.admin.util.console(o);
 						o._.html.tool.about.select.onclick();
 		}
 
@@ -471,7 +528,7 @@ zs4.admin.util = {
 							if (input == null)return;
 
 							zs4.post(o._.wrapRequest(input),function(ret){
-								console.log('refreshing object tree');
+								o._.print('refreshing object tree');
 								zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
 							});
 						}
@@ -540,7 +597,7 @@ zs4.admin.type = {
 
 		if (!zs4.is.function(o._.html.refresh)){
 			o._.html.refresh = (function(){
-				console.log('inside '+o._.path+'.html.refresh()');
+				o._.print('inside '+o._.path+'.html.refresh()');
 				//console.log(o.array._.value);
 
 				for (var n in o.array._.value){
@@ -770,9 +827,9 @@ zs4.admin.type = {
       }).bind(o);
 
       o._.html.refreshOptions = function(o){
-				console.log ('getting options '+o._.path+' inscope='+o._.inscope._.path);
+				//console.log ('getting options '+o._.path+' inscope='+o._.inscope._.path);
         var arr = o._.scope._.getScopeItems(o._.inscope,o._.flags.index|o._.flags.unique);
-        console.log (arr);
+        //console.log (arr);
 				o._.html.input.innerHTML = '';
         for (var i = 0 ; i < arr.length ; i++){
           var option = document.createElement('option');

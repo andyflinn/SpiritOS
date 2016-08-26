@@ -21,7 +21,7 @@ token.schema = function(parent){
     if (zs4.is.string(nuload.iss))payload.iss = nuload.iss;
     if (zs4.is.string(nuload.scope))payload.scope = nuload.scope;
 
-    console.log('token payload: '+JSON.stringify(payload));
+    THIS._.print('token payload: '+JSON.stringify(payload));
 
     var ret = jwt.encode(payload, this._.value.secret);
     console.log(ret);

@@ -11,17 +11,17 @@ password.schema = function(parent){
 
 password.create = function(){
   var THIS = this;
-  var input = new Object({name:'password',flags:'required api',authGet:['zs4.public'],authSet:['zs4.public'],});
+  var input = new Object({name:'password',flags:'required api authgetpublic',authSet:['zs4.public'],});
   zs4.type.object.call(this,input);
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
     this._.transformInternal(req);
     req.setScope(this);
-    this._.print('transform()');
+    this._.print('transform()',req);
     if (zs4.is.object(req.input)){
       if (zs4.is.password(req.input.vfy)||zs4.is.password(req.input.set)){
-        this._.print(this._.path+'.transform('+JSON.stringify(req.input)+')');
+        this._.print(this._.path+'.transform('+JSON.stringify(req.input)+')',req);
       }
 
       if (passhash.isHashed(this._.value.hashed)){
@@ -81,7 +81,7 @@ password.create = function(){
     //console.log('password.get'+ JSON.stringify(this._.authGet));
     var get = this._.getInitialize(req);
     if (get==null){
-      this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?');
+      this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
       return null;
     }
 
@@ -98,14 +98,20 @@ password.create = function(){
       get.set._.value = '';
     };
 
-    if (passhash.isHashed(this._.value.hashed)){
+    if (this._.flags.value & this._.flags.notrans){
       vfy(get);
-      if (req.am(THIS)||req.own(THIS)){
-        set(get);
-      }
+      set(get);
     }
     else {
-      set(get);
+      if (passhash.isHashed(this._.value.hashed)){
+        vfy(get);
+        if (req.am(THIS)||req.own(THIS)){
+          set(get);
+        }
+      }
+      else {
+        set(get);
+      }
     }
 
   }).bind(THIS);
