@@ -11,8 +11,9 @@ password.schema = function(parent){
 
 password.create = function(){
   var THIS = this;
-  var input = new Object({name:'password',flags:'required api authgetpublic',authSet:['zs4.public'],});
+  var input = new Object({name:'password',flags:'api authgetpublic authsetpublic',});
   zs4.type.object.call(this,input);
+  console.log('password flags: '+this._.flags.getString());
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
@@ -116,12 +117,12 @@ password.create = function(){
 
   }).bind(THIS);
 
-  THIS._.property(new zs4.type.string({name:'hashed',flags:'required noget',index:{unique:true},}));
-  THIS._.property(new zs4.type.string({name:'algorithm',flags:'required noget',default:'sha1',}));
-  THIS._.property(new zs4.type.integer({name:'saltlength',flags:'required noget',min:32,max:256,default:32,}));
-  THIS._.property(new zs4.type.integer({name:'iterations',flags:'required noget',min:1,max:128,default:1,}));
+  THIS._.property(new zs4.type.string({name:'hashed',flags:'noget',index:{unique:true},}));
+  THIS._.property(new zs4.type.string({name:'algorithm',flags:'noget',default:'sha1',}));
+  THIS._.property(new zs4.type.integer({name:'saltlength',flags:'noget',min:32,max:256,default:32,}));
+  THIS._.property(new zs4.type.integer({name:'iterations',flags:'noget',min:1,max:128,default:1,}));
 
-  THIS._.property(new zs4.type.password({name:'set',flags:'required nostore',}));
+  THIS._.property(new zs4.type.password({name:'set',flags:'nostore',}));
   THIS._.property(new zs4.type.password({name:'vfy',flags:'required nostore',}));
 
   THIS.verify = function(pw){

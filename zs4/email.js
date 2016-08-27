@@ -25,8 +25,8 @@ email.create = function(input){
   THIS._.property(new zs4.type.object({name:'message',flags:'required api nostore noprune authsetself',}));
 
   THIS.message._.property(new zs4.type.email({name:'to',flags:'required noprune authsetself',}));
-  THIS.message._.property(new zs4.type.string({name:'subject',flags:'required noprune authsetself',}));
-  THIS.message._.property(new zs4.type.text({name:'text',flags:'required noprune authsetself',}));
+  THIS.message._.property(new zs4.type.string({name:'subject',flags:'required noprune authsetself',minlength:1,}));
+  THIS.message._.property(new zs4.type.text({name:'text',flags:'required noprune authsetself',minlength:1,}));
 
   THIS.message._.transform = (function(req,cb){
     var MESSAGE = this;

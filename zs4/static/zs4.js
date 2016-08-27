@@ -63,6 +63,7 @@ zs4.const = {
     MAXLENGTH:255,
   },
   TEXT:{
+    DFTLENGTH:((8*1024)-1),
     MINLENGTH:0,
     MAXLENGTH:((256*256)-1),
   },
@@ -564,6 +565,7 @@ zs4.util = {
     this.addFlag('authsetauth',0x80000);
 
     this.addFlag('authsetself',0x100000);
+    this.addFlag('authsetpublic',0x200000);
 
     this.getString = function(mask){
       var int = mask;
@@ -598,6 +600,7 @@ zs4.util = {
       if (int & this.authsetauth) addFlag('authsetauth');
 
       if (int & this.authsetself) addFlag('authsetself');
+      if (int & this.authsetpublic) addFlag('authsetpublic');
 
 
       return ret;
@@ -636,13 +639,8 @@ zs4.type = {
     if (zs4.is.string(input.flags))this._.flags.setString(input.flags);
 
     if (zs4.is.boolean(input.array))this._.array = input.array;
-    if (zs4.is.number(input.arraymaxlength))this._.arraymaxlength = parseInt(input.arraymaxlength);
 
-    if (zs4.is.type(input.inscope)&&input.inscope._.flags.get.scope())
-      this._.inscope = input.inscope;
-    // support mongoose
-    if (zs4.is.boolean(input.index) && input.index == true) this._.index = true;
-    else if (zs4.is.object(input.index)&&zs4.is.boolean(input.index.unique)&&input.index.unique==true)this._.index={unique:true};
+    if (zs4.is.type(input.inscope)&&input.inscope._.flags.get.scope())this._.inscope = input.inscope;
 
     if (zs4.is.array(input.authGet)){
       this._.authGet = input.authGet;
@@ -668,6 +666,28 @@ zs4.type = {
     else {
       this._.authSetAuth = new Array();
     }
+
+    //if (zs4.is.number(input.min))this._.min = input.min;
+    //if (zs4.is.number(input.max))this._.max = input.max;
+    //if (zs4.is.number(input.minlength))this._.minlength = input.minlength;
+    //if (zs4.is.number(input.maxlength))this._.maxlength = input.maxlength;
+
+    this._.zs4checkfail = (function(req,text){
+      if (req != null)req.error(this,text);
+      console.log('ZS4 CHECK FAIL!!!: '+ this._.path+' error:'+text);
+      return false;
+    }).bind(this);
+    this._.zs4checkinit = (function(req,input){
+      if (this._.flags.get.notrans()){
+        return this._.zs4checkfail(req,'notrans');
+      }
+      if (this._.flags.get.required()&&input==null){
+        return this._.zs4checkfail(req,'required');
+      }
+      return true;
+    }).bind(this);
+
+    this._.zs4check = (function(req,input){return this._.zs4checkinit(req,input);}).bind(this);
 
     this._.console = new Object({switch:false,})
 
@@ -808,6 +828,7 @@ zs4.type = {
       if (this._.flags.get.unique())get._.flags |= req.flags.unique;
       if (this._.flags.get.notrans())get._.flags |= req.flags.notrans;
       if (this._.flags.get.authgetpublic())get._.flags |= req.flags.authgetpublic;
+      if (this._.flags.get.authsetpublic())get._.flags |= req.flags.authsetpublic;
       if (this._.flags.get.authsetself())get._.flags |= req.flags.authsetself;
 
       if (!req.flags.get.authset()
@@ -827,6 +848,12 @@ zs4.type = {
       if (get == null) return null;
       if (this._.type != Object && po!=null){
         get._.value = po._.value[this._.name];
+      }
+      if (this._.type == Object()){
+        for (var n in this)if (zs4.is.type(this[n])&&this[n]._.type != Object){
+          req.setScope(this[n]);
+          this[n]._.get(req,this);
+        }
       }
       return get;
     }).bind(this);
@@ -920,8 +947,8 @@ zs4.type = {
       //console.log('XXXX dcb()ing '+this._.path);
 
       if (zs4.is.object(input)){
-        if (zs4.is.object(input.result)&&zs4.is.object(input.result._)){
-          var input = input.result;
+        this._.print('got callback: '+JSON.stringify(input));
+        if (zs4.is.object(input)&&zs4.is.object(input._)){
           for (var n in input._){
             //this._.print('callbacking '+JSON.stringify(input._));
             if (n=='auth'){
@@ -941,22 +968,21 @@ zs4.type = {
             else if (n=='console'){
               this._.console.switch = input._.console.switch;
               if (zs4.is.array(input._.console.output)){
-                //window.alert(input._.console.output)
                 for (var i = 0 ; i < input._.console.output.length ; i++){
                   zs4.console.log(input._.console.output[i]);
                 }
               }
-              //console.log(input);
             }
           }
 
         }
-        else {
-          //if (this._.path == 'zs4.user.array.b.zs4.password'){
-          //  console.log('XXXX dcb()ing '+this._.path);
-          //}
-          if (zs4.is.object(input.error))this._.cberror = input.error;
-          if (input.result != null)this._.cbresult = input.result;
+        if (zs4.is.object(input.error)){
+          this._.print('got error: '+JSON.stringify(input.error));
+          this._.cberror = input.error;
+        }
+        if (input.result != null){
+          this._.print('got result: '+JSON.stringify(input.result));
+          this._.cbresult = input.result;
         }
       }
 
@@ -996,6 +1022,7 @@ zs4.type = {
       //console.log(html);
       return(html);
     }).bind(this);
+
     this._.print = (function(m,req){
 
         if (!zs4.string.array.is.element(zs4.console.arr,this._.path))return;
@@ -1013,14 +1040,13 @@ zs4.type = {
         zs4.console.log(r);
 
         if (zs4.is.node()&&req != null){
+
           //console.log('pushing ')
-          var res = req.resultPath(this);
+          var res = req.internalResultPath(this);
           if (res == null)return;
-          if (res.result == null)res.result = new Object();
-          if (!zs4.is.object(res.result._))res.result._ = new Object();
-          if (!zs4.is.object(res.result._.console))res.result._.console = new Object();
-          if (!zs4.is.array(res.result._.console.output))res.result._.console.output = new Array();
-          res.result._.console.output.push(r);
+          if (!zs4.is.object(res.console))res.console = new Object();
+          if (!zs4.is.array(res.console.output))res.console.output = new Array();
+          res.console.output.push(r);
         }
 
       ;}).bind(this);
@@ -1031,6 +1057,8 @@ zs4.type = {
       var own = req.flags.get.own();
       for (var n in req.input._){
         if (n=='auth'){
+          var res = req.internalResultPath(this);
+
           //console.log(req.input._[n]);
           if (req.input._.auth.type == 'getauth'){
             if (am){
@@ -1046,7 +1074,7 @@ zs4.type = {
               }
               var ret = new Array();
               for (var i = 0 ; i < this._.authGet.length ; i++)ret.push(this._.authGet[i])
-              req.result(this,{_:{auth:{type:req.input._.auth.type,arr:ret,}}});
+              res.auth = {type:req.input._.auth.type,arr:ret,};
             }
             else {
               req.error(this);
@@ -1066,7 +1094,7 @@ zs4.type = {
               }
               var ret = new Array();
               for (var i = 0 ; i < this._.authSet.length ; i++)ret.push(this._.authSet[i])
-              req.result(this,{_:{auth:{type:req.input._.auth.type,arr:ret,}}});
+              res.auth = {type:req.input._.auth.type,arr:ret,};
             }
             else {
               req.error(this);
@@ -1086,7 +1114,7 @@ zs4.type = {
               }
               var ret = new Array();
               for (var i = 0 ; i < this._.authGetAuth.length ; i++)ret.push(this._.authGetAuth[i])
-              req.result(this,{_:{auth:{type:req.input._.auth.type,arr:ret,}}});
+              res.auth = {type:req.input._.auth.type,arr:ret,};
             }
             else {
               req.error(this,'owner or self only');
@@ -1106,7 +1134,7 @@ zs4.type = {
               }
               var ret = new Array();
               for (var i = 0 ; i < this._.authSetAuth.length ; i++)ret.push(this._.authSetAuth[i])
-              req.result(this,{_:{auth:{type:req.input._.auth.type,arr:ret,}}});
+              res.auth = {type:req.input._.auth.type,arr:ret,};
             }
             else {
               req.error(this,'owner only');
@@ -1128,20 +1156,18 @@ zs4.type = {
             }
           }
 
-          var res = req.resultPath(this);
+          var res = req.internalResultPath(this);
           if (res == null)return;
-          if (!zs4.is.object(res.result))res.result = new Object();
-          if (!zs4.is.object(res.result._))res.result._ = new Object();
-          if (!zs4.is.object(res.result._.console))res.result._.console = new Object();
-          if (!zs4.is.object(res.result._.console.switch))res.result._.console.switch = new Object();
+          if (!zs4.is.object(res.console))res.console = new Object();
+          if (!zs4.is.object(res.console.switch))res.console.switch = new Object();
 
           if (zs4.string.array.is.element(zs4.console.arr,this._.path))
-            res.result._.console.switch = true;
+            res.console.switch = true;
           else
-            res.result._.console.switch = false;
+            res.console.switch = false;
 
           //console.log('transformInternal() returns '+JSON.stringify(res.result._));
-          this._.print('transformInternal() returns '+JSON.stringify(res.result._));
+          this._.print('transformInternal() returns '+JSON.stringify(res));
         };
       }
     }).bind(this);
@@ -1312,8 +1338,8 @@ zs4.type = {
       return get();
     }).bind(this.method.deleteall);
     this.method.deleteall._.callback = (function(o){
-      console.log('deleteall._.callback()');
-      console.log(o);
+      //console.log('deleteall._.callback()');
+      //console.log(o);
       if (zs4.is.boolean(o.result)&&o.result==true){
         for (var n in THIS.array){
           if (!zs4.is.type(THIS.array[n]))continue;
@@ -1511,7 +1537,7 @@ zs4.type = {
 
   },
   auth:function(input){
-    zs4.type.object.call(this,{name:'auth',flags:'required api noget noset',})
+    zs4.type.object.call(this,{name:'auth',flags:'api noget noset',})
     this._.typename = 'auth';
     this._.create = zs4.type.auth;
     this._.load = (function(input){
@@ -1540,8 +1566,11 @@ zs4.type = {
     this._.default = new Boolean();
     if (zs4.is.boolean(input.default))this._.default = input.default; else this._.default = false;
 
-    this._.zs4check = (function(input){
-      if (!zs4.is.boolean(input))return false;
+    this._.zs4check = (function(req,input){
+      if (!this._.zs4checkinit(req,input))return false;
+
+      if (!zs4.is.boolean(input)) return this._.zs4checkfail(req,'not boolean');
+
       return true;
     }).bind(this);
 
@@ -1592,7 +1621,7 @@ zs4.type = {
   },
   bye:function(input){
     var THIS = this;
-    zs4.type.object.call(this,{name:'bye',flags:'required api nostore authgetpublic',authSet:['zs4.public'],})
+    zs4.type.object.call(this,{name:'bye',flags:'api nostore authgetpublic',authSet:['zs4.public'],})
     this._.typename = 'bye';
     this._.create = zs4.type.bye;
     this._.property(new zs4.type.boolean({name:'sure',flags:'required noprune',}));
@@ -1618,8 +1647,8 @@ zs4.type = {
       THIS._.get(req); cb(); return;
     }).bind(this);
     this._.callback = (function(o){
-      console.log('deleteall._.callback()');
-      console.log(o);
+      //console.log('deleteall._.callback()');
+      //console.log(o);
       if (zs4.is.boolean(o.result)&&o.result==true){
         zs4.navigate('/');
       }
@@ -1645,7 +1674,7 @@ zs4.type = {
 
   },
   console:function(input){
-    zs4.type.object.call(this,{name:'console',flags:'required api noget noset',})
+    zs4.type.object.call(this,{name:'console',flags:'api noget noset',})
     this._.typename = 'auth';
     this._.create = zs4.type.auth;
     this._.load = (function(input){
@@ -1728,13 +1757,15 @@ zs4.type = {
       if (zs4.is.number(input.max))this._.max = this._.parseInt(input.max);
     }
 
-    this._.zs4check = (function(input){
-      if (!zs4.is.number(input))return false;
-      if (zs4.is.number(this._.min)&&input<this._.min)return false;
-      if (zs4.is.number(this._.max)&&input>this._.max)return false;
+    this._.zs4check = (function(req,input){
+      if (!this._.zs4checkinit(req,input))return false;
+      if (!zs4.is.number(input))return this._.zs4checkfail(req,'not integer');
+
+      if (zs4.is.number(this._.min)&&input<this._.min)return this._.zs4checkfail(req,'min='+this._.min);
+      if (zs4.is.number(this._.max)&&input>this._.max)return this._.zs4checkfail(req,'max='+this._.max);
       if (zs4.is.array(this._.enum)&&this._.enum.length>0){
         for (var i = 0 ; i < this._.enum.length ; i++){if (this._.enum[i]==input)return true;}
-        return false;
+        return this._.zs4checkfail(req,'enum');
       }
       return true;
     }).bind(this);
@@ -1830,13 +1861,14 @@ zs4.type = {
       if (zs4.is.number(input.max))this._.max = input.max;
     }
 
-    this._.zs4check = (function(input){
-      if (!zs4.is.number(input))return false;
-      if (zs4.is.number(this._.min)&&input<this._.min)return false;
-      if (zs4.is.number(this._.max)&&input>this._.max)return false;
+    this._.zs4check = (function(req,input){
+      if (!this._.zs4checkinit(req,input))return false;
+      if (!zs4.is.number(input))return this._.zs4checkfail(req,'not number');
+      if (zs4.is.number(this._.min)&&input<this._.min)return this._.zs4checkfail(req,'min='+this._.min);
+      if (zs4.is.number(this._.max)&&input>this._.max)return this._.zs4checkfail(req,'max='+this._.max);
       if (zs4.is.array(this._.enum)&&this._.enum.length>0){
         for (var i = 0 ; i < this._.enum.length ; i++){if (this._.enum[i]==input)return true;}
-        return false;
+        return this._.zs4checkfail(req,'enum');
       }
       return true;
     }).bind(this);
@@ -2030,6 +2062,23 @@ zs4.type = {
 
     }).bind(this);
 
+    this._.zs4check = (function(req,input){
+      if (!this._.zs4checkinit(req,input))return false;
+      var api =this._.flags.get.api();
+
+      var assume = true;
+      for (var n in this){
+        if (!zs4.is.type(this[n]))continue;
+
+        if (this[n]._.flags.get.required()&&!input.hasOwnProperty(n))return this._.zs4checkfail(req,n + ' required');
+
+        if (input.hasOwnProperty(n)){
+          if (!this[n]._.zs4check(req,input[n])) return false;
+        }
+      }
+      return true;
+    }).bind(this);
+
   },
   password:function(input){
     zs4.type.string.call(this,input);
@@ -2037,10 +2086,10 @@ zs4.type = {
   },
   scope:function(){
     var THIS = this;
-    zs4.type.object.call(this,{name:'this',flags:'required scope authgetpublic',})
+    zs4.type.object.call(this,{name:'this',flags:'scope authgetpublic',})
     THIS._.typename = 'scope';
     THIS._.scope = this;
-    THIS._.property(new zs4.type.object({name:'zs4',flags:'required authgetpublic'}));
+    THIS._.property(new zs4.type.object({name:'zs4',flags:'authgetpublic'}));
     THIS.zs4.password = null;
     THIS.zs4._.property(new zs4.type.head());
     if (zs4.is.node()){
@@ -2153,15 +2202,16 @@ zs4.type = {
     else{
       if (zs4.is.number(input.minlength))this._.minlength = parseInt(input.minlength);
       if (zs4.is.number(input.maxlength))this._.maxlength = parseInt(input.maxlength);
-      if (!zs4.is.number(this.minlength))this._.minlength = zs4.const.STRING.MINLENGTH;
-      if (!zs4.is.number(this.maxlength))this._.maxlength = zs4.const.STRING.MAXLENGTH;
+      //if (!zs4.is.number(this.minlength))this._.minlength = zs4.const.STRING.MINLENGTH;
+      if (!zs4.is.number(this._.maxlength))this._.maxlength = zs4.const.STRING.MAXLENGTH;
     }
 
-    this._.zs4check = (function(input){
-      if (!zs4.is.string(input))return false;
-      if (zs4.is.number(this._.minlength)&&input.length<this._.minlength)return false;
-      if (zs4.is.number(this._.maxlength)&&input.length>this._.maxlength)return false;
-      if (zs4.is.array(this._.enum)&&this._.enum.length>0&&!zs4.string.array.is.element(this._.enum,input))return false;
+    this._.zs4check = (function(req,input){
+      if (!this._.zs4checkinit(req,input))return false;
+      if (!zs4.is.string(input))return this._.zs4checkfail(req,'not string');
+      if (zs4.is.number(this._.minlength)&&input.length<this._.minlength)return this._.zs4checkfail(req,'minlength='+this._.minlength);
+      if (zs4.is.number(this._.maxlength)&&input.length>this._.maxlength)return this._.zs4checkfail(req,'maxlength='+this._.maxlength);
+      if (zs4.is.array(this._.enum)&&this._.enum.length>0&&!zs4.string.array.is.element(this._.enum,input))return this._.zs4checkfail(req,'enum');
       return true;
     }).bind(this);
 
@@ -2213,10 +2263,16 @@ zs4.type = {
   },
   text:function(input){
     if (zs4.is.object(input)){
-      input.maxlength = zs4.const.TEXT.MAXLENGTH;
+      if (zs4.is.number(input.maxlength)){
+        if (input.maxlength > zs4.const.TEXT.MAXLENGTH)input.maxlength = zs4.const.TEXT.MAXLENGTH;
+        if (input.maxlength < zs4.const.STRING.MAXLENGTH)input.maxlength = zs4.const.STRING.MAXLENGTH;
+      }
+      else {
+        input.maxlength = zs4.const.TEXT.DFTLENGTH;
+      }
     }
     else{
-      input = {name:'text',maxlength:zs4.const.TEXT.MAXLENGTH};
+      input = {name:'text',maxlength:zs4.const.TEXT.DFTLENGTH};
     }
     zs4.type.string.call(this,input);
     this._.typename = 'text';
@@ -2291,7 +2347,8 @@ zs4.request = function(o){
     if (o._.flags.get.authgetpublic()||(am||own))THIS.flags.set.authget(true);
     else THIS.flags.set.authget(authorize(o._.authGet));
 
-    if ((am||own) && o._.flags.get.authsetself())THIS.flags.set.authset(true);
+    if (o._.flags.get.authsetpublic())THIS.flags.set.authset(true);
+    else if ((am||own) && o._.flags.get.authsetself())THIS.flags.set.authset(true);
     else THIS.flags.set.authset(authorize(o._.authSet));
 
     if (am||own){
@@ -2345,16 +2402,27 @@ zs4.request = function(o){
     o._.print(o._.path + '.error() scope.flags:'+this.flags.getString() +' error:' + JSON.stringify(this.request.callback))
   }
   this.result = function(o,result){
-    var r = this.resultPath(o);
+    var r = this.resolvePath(o,this.request.callback);
     if (r==null){
       console.log(BADPATH);
       return;
     }
     r.result = result;
-    console.log('result from '+ o._.path + ' ' + JSON.stringify(this.request.callback))
 
-  }
-  this.resultPath = function(o){return this.resolvePath(o,this.request.callback);}
+    o._.print('result: '+JSON.stringify(this.request.callback));
+
+  };
+  this.internalResultPath = function(o){
+    var r = this.resolvePath(o,this.request.callback);
+    if (r==null){
+      o._.print(BADPATH);
+      return;
+    }
+
+    if (!zs4.is.object(r._))r._ = new Object();
+    return r._
+  };
+
   this.get = function(o,result){
     var get = this.resolvePath(o,this.request.get);
     if (!zs4.is.object(get._)) get._ = new Object();
@@ -2562,18 +2630,6 @@ if (zs4.is.window()){
       );
       //return ('this.ajax(\''+'/zs4'+'\',cb,'+JSON.stringify(o)+')');
     },
-    validPost:function(req,t,o){
-      if (!zs4.is.type(t)||!zs4.is.object(o))return false;
-      for (var n in t){
-        if (!zs4.is.type(t[n])||t[n]._.type!=Object||!zs4.is.object(o[n]))continue;
-        if (t[n]._.flags.get.notrans()){
-          req.error(t[n],{text:'transform not accepted'});
-          return false;
-        }
-        if (!zs4.io.validPost(req,t[n],o[n]))return false;
-      }
-      return true;
-    },
   };
 
   zs4.navigate = function(path){
@@ -2612,9 +2668,10 @@ if (zs4.is.window()){
 
     var req = new zs4.request({input:o})
 
-    if (!zs4.io.validPost(req,zs4.THIS,o)){
+    if (!zs4.THIS._.zs4check(req,o)){
+      console.log('zs4.post() not valid');
+      console.log(req);
       zs4.THIS._.dcb(req.request.callback);
-      //console.log(req);
       if (cb) cb(req); return;
     }
 

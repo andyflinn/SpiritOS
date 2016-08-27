@@ -23,35 +23,42 @@ fs.statsObject = function(stats){
 };
 
 fs.schema = function(parent){
-  parent._.property(new fs.create({name:'fs',flags:'required',}));
+  parent._.property(new fs.create());
 
   //console.log(parent.fs.stat);
 };
 
 
-fs.create = function(input){
+fs.create = function(){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'fs',flags:'required nostore',authGet:['zs4.owner'],});
+  input = new Object({name:'fs',flags:'nostore',});
   zs4.type.object.call(this,input);
   THIS._.create = fs.create;
 
-  THIS._.property(new zs4.type.object({name:'stat',flags:'required nostore api',}));
+  THIS._.property(new zs4.type.object({name:'stat',flags:'nostore api',}));
   THIS.stat._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.stat._.transform = (function(req,cb){
+    var STAT = this;
     req.setScope(this);
+    function get(){
+      STAT._.get(req);
+      req.setScope(STAT.path);
+      STAT.path._.get(req,STAT);
+      cb();
+      return;
+    };
     this._.transformInternal(req);
+    this._.print('transform()');
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
       this._.print(err);
-      this._.get(req); cb(); return;
+      return get();
     }
-    var STAT = this;
-
 
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
-      console.log(STAT._.path+' cb-before: '+JSON.stringify(req.request.callback));
+      STAT._.print('cb-before: '+JSON.stringify(req.request.callback));
       nodefs.stat(req.input.path,function(err,stats){
         if (err){
           req.error(STAT,{text:'fs.stat(\''+req.input.path+'\')',data:err});
@@ -60,25 +67,32 @@ fs.create = function(input){
           var result = fs.statsObject(stats);
           req.result(STAT,result);
         }
-        console.log(STAT._.path+' cb-after: '+JSON.stringify(req.request.callback));
-        STAT._.get(req); cb(); return;
+        STAT._.print('cb-after: '+JSON.stringify(req.request.callback));
+        return get();
       });
       return;
     }
 
-    STAT._.get(req); cb(); return;
+    return get();
   }).bind(THIS.stat);
 
-  THIS._.property(new zs4.type.object({name:'readdir',flags:'required nostore api',}));
+  THIS._.property(new zs4.type.object({name:'readdir',flags:'nostore api',}));
   THIS.readdir._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readdir._.transform = (function(req,cb){
     req.setScope(this);
+    function get(){
+      THIS.readdir._.get(req);
+      req.setScope(THIS.readdir.path);
+      THIS.readdir.path._.get(req,THIS.readdir);
+      cb();
+      return;
+    };
     this._.transformInternal(req);
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
       this._.print(err);
-      this._.get(req); cb(); return;
+      return get();
     }
     var READDIR = this;
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
@@ -94,23 +108,31 @@ fs.create = function(input){
           //console.log('result.readdir('+req.input.path+')');
           //console.log(list);
         }
-        READDIR._.get(req); cb(); return;
+        return get();
       });
       return;
     }
-    READDIR._.get(req); cb(); return;
+    return get();
   }).bind(THIS.readdir);
 
-  THIS._.property(new zs4.type.object({name:'readfile',flags:'required nostore api',}));
+  THIS._.property(new zs4.type.object({name:'readfile',flags:'nostore api',}));
   THIS.readfile._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
   THIS.readfile._.transform = (function(req,cb){
+    var READFILE = this;
     req.setScope(this);
+    function get(){
+      READFILE._.get(req);
+      req.setScope(READFILE.path);
+      READFILE.path._.get(req,READFILE);
+      cb();
+      return;
+    };
     this._.transformInternal(req);
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
       this._.print(err);
-      this._.get(req); cb(); return;
+      return get();
     }
     var THIS = this;
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
@@ -121,12 +143,11 @@ fs.create = function(input){
         else {//if (zs4.is.array(list)){
           req.result(THIS,data);
         }
-        THIS._.get(req);
-        cb();
+        return get();
       });
       return;
     }
-    THIS._.get(req); cb(); return;
+    return get();
   }).bind(THIS.readfile);
 
 }

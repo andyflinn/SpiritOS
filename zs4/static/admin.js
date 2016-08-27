@@ -114,7 +114,8 @@ zs4.admin.util = {
 			THIS.about[n].appendChild(THIS.about.colon);
 
 			THIS.about[val] = document.createElement('zs4-about-value');
-			THIS.about[val].textContent = '\''+v+'\'';
+			if (zs4.is.string(v))	THIS.about[val].textContent = '\''+v+'\'';
+			else	THIS.about[val].textContent = v;
 			THIS.about[n].appendChild(THIS.about[val]);
 		}
 		addValue('name',o._.name);
@@ -122,6 +123,14 @@ zs4.admin.util = {
 		addValue('typename',o._.typename);
 		if (zs4.is.type(o._.inscope))addValue('inscope',o._.inscope._.path);
 		addValue('flags',o._.flags.getString());
+		if (o._.type==Number){
+			if (zs4.is.number(o._.min)&&o._.min>0)addValue('min',o._.min);
+			if (zs4.is.number(o._.max))addValue('max',o._.max);
+		}
+		if (o._.type==String){
+			if (zs4.is.number(o._.minlength))addValue('minlength',o._.minlength);
+			if (zs4.is.number(o._.maxlength))addValue('maxlength',o._.maxlength);
+		}
 	},
 	auth:function(o){
 		var THIS = this;
