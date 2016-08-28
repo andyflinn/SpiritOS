@@ -13,7 +13,7 @@ password.create = function(){
   var THIS = this;
   var input = new Object({name:'password',flags:'api authgetpublic authsetpublic',});
   zs4.type.object.call(this,input);
-  console.log('password flags: '+this._.flags.getString());
+  //console.log('password flags: '+this._.flags.getString());
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){

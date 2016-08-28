@@ -70,11 +70,31 @@ zs4-object-head.top.on{
   position:fixed;
   z-index: 100;
 }
+
+zs4-object-content{
+  padding-left: 0.5em;
+  width:100%;
+  background: linear-gradient(to right, lightblue , white);
+  background-size: 0.5em 100%;
+  background-repeat: no-repeat;
+  border-left: 0.1em solid blue;
+  padding-left:0.5em;
+  padding-top:0.5em;
+  padding-bottom:0.5em;
+  display:block;
+}
+zs4-object-content.tboff,
+zs4-object-content.on.tboff{
+  display:block;
+}
+zs4-object-content.off{
+  display:none;
+}
+
 zs4-object-content.top{
   width:100%;
   margin-top:2em;
 }
-zs4-object-content.tbon,
 zs4-object-content.top.tbon{
   display:none;
 }
@@ -223,6 +243,25 @@ zs4-auth-item{
   display:block;
 }
 
+zs4-select-add{
+  display:inline-block;
+  width:0.8em;
+  height:0.8em;
+  cursor:pointer;
+  background-image: url('/plus.png');
+  background-size:100% 100%;
+  border:initial;
+}
+zs4-select-remove{
+  display:inline-block;
+  width:0.8em;
+  height:0.8em;
+  cursor:pointer;
+  background-image: url('/minus.png');
+  background-size:100% 100%;
+  border:initial;
+}
+
 zs4-toolbar-toggle-on,
 zs4-toolbar-toggle-on.am.off,
 zs4-toolbar-toggle-on.off{
@@ -330,6 +369,10 @@ zs4-object-toggle.email.on{
   border:initial;
 }
 
+zs4-select-ui{
+  display:block;
+  background-color: lightgray;
+}
 
 .am, .am.own {
   color:blue;
@@ -382,23 +425,6 @@ zs4-object-head.notop.on{
   background-repeat: initial;
 }
 
-zs4-object-content.tboff{
-  padding-left: 0.5em;
-  width:100%;
-  background: linear-gradient(to right, lightblue , white);
-  background-size: 0.5em 100%;
-  background-repeat: no-repeat;
-  border-left: 0.1em solid blue;
-  padding-left:0.5em;
-  padding-top:0.5em;
-  padding-bottom:0.5em;
-}
-zs4-object-content.on.tboff{
-  display:block;
-}
-zs4-object-content.off{
-  display:none;
-}
 
 zs4-name.api{
   cursor:pointer;

@@ -292,8 +292,8 @@ zs4.admin.util = {
 		THIS.console.window.type = 'checkbox';
 		THIS.pane.appendChild(THIS.console.window);
 		THIS.console.window.onchange = function(){
-			//window.alert('THIS.console.node.onchange');
-			console.log(THIS.console.window.checked);
+			//o._.print('THIS.console.node.onchange');
+			o._.print('changing THIS.console.window.checked to '+THIS.console.window.checked);
 			if (THIS.console.window.checked) {
 				zs4.string.array.add.new(zs4.console.arr,o._.path);
 				o._.print('window.console turned on');
@@ -304,35 +304,72 @@ zs4.admin.util = {
 			}
 		}
 
-		THIS.console.nodelabel = document.createElement('zs4-console-label');
-		THIS.console.nodelabel.textContent = 'node';
-		THIS.pane.appendChild(THIS.console.nodelabel);
+		if (o._.flags.get.own()){
+			THIS.console.nodelabel = document.createElement('zs4-console-label');
+			THIS.console.nodelabel.textContent = 'node';
+			THIS.pane.appendChild(THIS.console.nodelabel);
 
-		THIS.console.node = document.createElement('input');
-		THIS.console.node.type = 'checkbox';
-		THIS.pane.appendChild(THIS.console.node);
-		THIS.console.node.onchange = function(){
-			//window.alert('THIS.console.node.onchange');
-			var input;
-			if (THIS.console.node.checked) input = new Object({_:{console:{switch:true,}}});
-			else input = new Object({_:{console:{switch:false,}}});
+			THIS.console.node = document.createElement('input');
+			THIS.console.node.type = 'checkbox';
+			THIS.pane.appendChild(THIS.console.node);
+			THIS.console.node.onchange = function(){
+				o._.print('changing THIS.console.node.checked to '+THIS.console.node.checked);
+				var input;
+				if (THIS.console.node.checked) input = new Object({_:{console:{switch:true,}}});
+				else input = new Object({_:{console:{switch:false,}}});
 
-			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayNode()});
+				zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayNode()});
+			}
+
+			THIS.redisplayNode = function(){
+				THIS.console.node.checked = o._.console.switch;
+			};
+			THIS.refreshNode= function(){
+				console.log('refreshing node value \''+THIS.console+'\'');
+
+				var input = new Object({_:{console:{}}});
+				zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayNode()});
+			};
+
+			THIS.refreshTool = function(){
+				THIS.refreshNode();
+			};
 		}
+	},
+	select:function(o){
+		var THIS = this;
+		zs4.admin.util.tool.call(THIS,o,'select');
+		this.select.textContent = 'options';
+		THIS.mysel = new Object();
 
-		THIS.redisplayNode = function(){
-			THIS.console.node.checked = o._.console.switch;
+		THIS.mysel.add = document.createElement('zs4-select-add');
+		THIS.pane.appendChild(THIS.mysel.add);
+		THIS.mysel.add.onclick = function(){
+			var nu = o._.select.add(THIS.mysel.type.value);
+			o._.html.refreshAll();
 		};
-		THIS.refreshNode= function(){
-			console.log('refreshing node value \''+THIS.console+'\'');
 
-			var input = new Object({_:{console:{}}});
-			zs4.post(o._.wrapRequest(input),function(ret){THIS.redisplayNode()});
+		THIS.mysel.type = document.createElement('select');
+		THIS.mysel.type.className = 'selopt';
+		THIS.mysel.addOption = function(n){
+			var option = document.createElement('option');
+			option.text = n;
+			option.value = n;
+			THIS.mysel.type.add(option);
+		}
+		THIS.refreshMySelect = function(){
+			THIS.mysel.type.innerHTML = '';
+			for (var i = 0 ; i < o._.select.types.length; i++){
+				THIS.mysel.addOption(o._.select.types[i]);
+			}
 		};
+		THIS.mysel.type.oninput = function(){
+
+		};
+		THIS.pane.appendChild(THIS.mysel.type);
 
 		THIS.refreshTool = function(){
-			//window.alert('console tool refresh');
-			THIS.refreshNode();
+			THIS.refreshMySelect();
 		};
 	},
 
@@ -351,6 +388,14 @@ zs4.admin.util = {
 				o._.html.e = null;
 			}
 		}).bind(o);
+
+		if (o._.html.refreshAll==null){
+			o._.html.refreshAll = function(){
+				o._.print('refreshing object tree');
+				zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
+			}
+		}
+
 
 		if (o._.html.e==null){
 			o._.html.e = document.createElement('zs4-'+o._.typename);
@@ -479,51 +524,65 @@ zs4.admin.util = {
 			zs4.admin.util.addClass(o._.html.result,'hide');
 			o._.html.head.appendChild(o._.html.result);
 
-			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own){
+			//if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.value & o._.flags.apiarg == o._.flags.apiarg)){
+			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.get.apiarg())){
 				o._.html.toolbar = document.createElement('zs4-toolbar');
 				o._.html.head.appendChild(o._.html.toolbar);
 
-						o._.html.tool = new Object();
-						o._.html.toolbarIsOpen = false;
-						o._.html.toolbarOpen = (function(){
-							o._.html.toolbarIsOpen = true;
-							o._.html.genericRefresh();
-						}).bind(o);
-						o._.html.toolbarClose = (function(){
-							o._.html.toolbarIsOpen = false;
-							o._.html.genericRefresh();
-						}).bind(o);
+				o._.html.tool = new Object();
+				o._.html.toolbarIsOpen = false;
+				o._.html.toolbarOpen = (function(){
+					o._.html.toolbarIsOpen = true;
+					o._.html.genericRefresh();
+				}).bind(o);
+				o._.html.toolbarClose = (function(){
+					o._.html.toolbarIsOpen = false;
+					o._.html.genericRefresh();
+				}).bind(o);
 
-						o._.html.toolbarToggleOff = document.createElement('zs4-toolbar-toggle-off');
-						o._.html.head.appendChild(o._.html.toolbarToggleOff);
-						o._.html.toolbarToggleOff.onclick = (function(){
-							if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
-							else o._.html.toolbarOpen();
-						}).bind(o);
+				o._.html.toolbarToggleOff = document.createElement('zs4-toolbar-toggle-off');
+				o._.html.head.appendChild(o._.html.toolbarToggleOff);
+				o._.html.toolbarToggleOff.onclick = (function(){
+					if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
+					else o._.html.toolbarOpen();
+				}).bind(o);
 
-						o._.html.toolbarContent = document.createElement('zs4-toolbar-content');
-						o._.html.toolbar.appendChild(o._.html.toolbarContent);
+				o._.html.toolbarContent = document.createElement('zs4-toolbar-content');
+				o._.html.toolbar.appendChild(o._.html.toolbarContent);
 
-						o._.html.toolbarToggleOn = document.createElement('zs4-toolbar-toggle-on');
-						o._.html.toolbarContent.appendChild(o._.html.toolbarToggleOn);
-						o._.html.toolbarToggleOn.onclick = (function(){
-							if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
-							else o._.html.toolbarOpen();
-						}).bind(o);
+				o._.html.toolbarToggleOn = document.createElement('zs4-toolbar-toggle-on');
+				o._.html.toolbarContent.appendChild(o._.html.toolbarToggleOn);
+				o._.html.toolbarToggleOn.onclick = (function(){
+					if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
+					else o._.html.toolbarOpen();
+				}).bind(o);
 
-						o._.html.toolbarHeader = document.createElement('zs4-toolbar-header');
-						o._.html.toolbarContent.appendChild(o._.html.toolbarHeader);
+				o._.html.toolbarHeader = document.createElement('zs4-toolbar-header');
+				o._.html.toolbarContent.appendChild(o._.html.toolbarHeader);
 
-						o._.html.toolbarTool = document.createElement('zs4-toolbar-tool');
-						o._.html.toolbarContent.appendChild(o._.html.toolbarTool);
+				o._.html.toolbarTool = document.createElement('zs4-toolbar-tool');
+				o._.html.toolbarContent.appendChild(o._.html.toolbarTool);
 
-						o._.html.toolbarClose();
+				o._.html.toolbarClose();
 
-						if (!o._.html.tool.hasOwnProperty('about'))new zs4.admin.util.about(o);
-						if (!o._.html.tool.hasOwnProperty('auth'))new zs4.admin.util.auth(o);
-						if (!o._.html.tool.hasOwnProperty('console'))new zs4.admin.util.console(o);
-						o._.html.tool.about.select.onclick();
-		}
+				var defaultTool = 'about';
+				if (o._.typename == 'select' && zs4.is.object(o._.select) && o._.select.type!='item'){
+					if (!o._.html.tool.hasOwnProperty('select'))new zs4.admin.util.select(o);
+					defaultTool = 'select';
+				}
+				if (!o._.html.tool.hasOwnProperty('about'))new zs4.admin.util.about(o);
+				if (!o._.html.tool.hasOwnProperty('auth')){
+					if (o._.flags.get.authgetpublic()&&o._.flags.get.authsetpublic())
+					{
+
+					}
+					else {
+						new zs4.admin.util.auth(o);
+					}
+				}
+				if (!o._.html.tool.hasOwnProperty('console'))new zs4.admin.util.console(o);
+				o._.html.tool[defaultTool].select.onclick();
+			}
 
 			if (o._.type==Object){
 				o._.html.c = document.createElement('zs4-object-content');
@@ -537,8 +596,8 @@ zs4.admin.util = {
 							if (input == null)return;
 
 							zs4.post(o._.wrapRequest(input),function(ret){
-								o._.print('refreshing object tree');
-								zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
+								o._.html.refreshAll();
+								//zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
 							});
 						}
 						else {
@@ -655,7 +714,19 @@ zs4.admin.type = {
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'checkbox');
-
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					if (o._.html.input.checked==true){
+						po._.value[o._.name] = true;
+						o._.value = true;
+					}
+					else {
+						po._.value[o._.name] = false;
+						o._.value = false;
+					}
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
 				if (this._.html.input.checked==true)return true;
@@ -679,6 +750,13 @@ zs4.admin.type = {
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = o._.parseInt(o._.html.input.value);
+					o._.value = o._.parseInt(o._.html.input.value);
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -705,6 +783,13 @@ zs4.admin.type = {
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = o._.parseInt(o._.html.input.value);
+					o._.value = o._.parseInt(o._.html.input.value);
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -728,6 +813,13 @@ zs4.admin.type = {
 			o._.html.input = document.createElement('input');
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = this._.parseFloat(o._.html.input.value);
+					o._.value = this._.parseFloat(o._.html.input.value);
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
@@ -798,6 +890,13 @@ zs4.admin.type = {
 
       o._.html.input = document.createElement('select');
       o._.html.e.appendChild(o._.html.input);
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
       o._.input = (function(){
         if (o._.flags.get.noset())return null;
@@ -805,7 +904,7 @@ zs4.admin.type = {
       }).bind(o);
 
       o._.html.refreshOptions = function(o){
-        var arr = o._.scope._.getScopeItems(this._.flags.index);
+        var arr = o._.scope._.getScopeItems(o._.inscope,o._.flags.index);
         //console.log (arr);
         //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
 				o._.html.input.innerHTML = '';
@@ -829,6 +928,13 @@ zs4.admin.type = {
 
       o._.html.input = document.createElement('select');
       o._.html.e.appendChild(o._.html.input);
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
       o._.input = (function(){
         if (o._.flags.get.noset())return null;
@@ -860,6 +966,13 @@ zs4.admin.type = {
 
       o._.html.input = document.createElement('select');
       o._.html.e.appendChild(o._.html.input);
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
       o._.input = (function(){
         if (o._.flags.get.noset())return null;
@@ -867,7 +980,7 @@ zs4.admin.type = {
       }).bind(o);
 
       o._.html.refreshOptions = function(o){
-        var arr = o._.scope._.getScopeItems();
+        var arr = o._.scope._.getScopeItems(o._.inscope);
         //console.log (arr);
         //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
 				o._.html.input.innerHTML = '';
@@ -892,8 +1005,12 @@ zs4.admin.type = {
       o._.html.input = document.createElement('select');
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
-				console.log(o._.html.input.value);
-			}
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
       o._.input = (function(){
         if (o._.flags.get.noset())return null;
@@ -919,6 +1036,10 @@ zs4.admin.type = {
     o._.html.input.value = po._.value[o._.name];
     zs4.admin.util.refreshNameInput(po,o);
   },
+	select:function(po,o){
+		zs4.admin.type.object(po,o);
+		o._.html.name.textContent = o._.select.type;
+	},
 	string:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		if (o._.html.input==null){
@@ -928,12 +1049,20 @@ zs4.admin.type = {
 			var typeAttr = 'text';
 			if (o._.typename=='password')typeAttr='password';
 			o._.html.input.setAttribute('type', typeAttr);
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+			};
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
 				return this._.html.input.value;
 			}).bind(o);
 		}
+		zs4.admin.util.refreshCallback(o);
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.value = po._.value[o._.name];
 		zs4.admin.util.refreshNameInput(po,o);

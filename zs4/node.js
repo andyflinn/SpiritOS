@@ -48,5 +48,5 @@ zs4.define = function(){
   var user = require('./user');
 
   zs4.THIS.zs4._.property(new zs4.type.array({name:'user',template:new user.create(),}));
-  zs4.string.array.add.new(zs4.THIS.zs4.user._.authGet,'zs4.public');
+  zs4.THIS.zs4.user._.flags.value |= zs4.THIS.zs4.user._.flags.apiarg;
 }

@@ -47,6 +47,7 @@ rsa.create = function(){
     //zs4.console.log('loading rsa object \n'+input.pem);
     if (this._.value.pem=='')return '';
     return this._.key.exportKey('pkcs1-public');
+
   }).bind(THIS);
 
   THIS._.store = (function(){

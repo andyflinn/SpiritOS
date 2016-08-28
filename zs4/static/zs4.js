@@ -534,7 +534,7 @@ zs4.util = {
         return this.value;
       }).bind(this);
       this.get[flagname] = (function(){
-        if (this.value & this[flagname])return true; return false;
+        if ((this.value & this[flagname])==this[flagname])return true; return false;
       }).bind(this);
 
     }
@@ -567,6 +567,10 @@ zs4.util = {
     this.addFlag('authsetself',0x100000);
     this.addFlag('authsetpublic',0x200000);
 
+    this.addFlag('local',0x1000000);
+
+    //combo flags
+    this.addFlag('apiarg',this.authgetpublic|this.authsetpublic);
     this.getString = function(mask){
       var int = mask;
       if (!zs4.is.number(int))int=this.value;
@@ -602,6 +606,8 @@ zs4.util = {
       if (int & this.authsetself) addFlag('authsetself');
       if (int & this.authsetpublic) addFlag('authsetpublic');
 
+      if (int & this.local) addFlag('local');
+
 
       return ret;
     };
@@ -633,7 +639,7 @@ zs4.type = {
     this._ = new Object();
     this._.path = '';
     this._.name = input.name;
-    if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
+    //if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
 
     this._.flags = new zs4.util.flags();
     if (zs4.is.string(input.flags))this._.flags.setString(input.flags);
@@ -671,6 +677,22 @@ zs4.type = {
     //if (zs4.is.number(input.max))this._.max = input.max;
     //if (zs4.is.number(input.minlength))this._.minlength = input.minlength;
     //if (zs4.is.number(input.maxlength))this._.maxlength = input.maxlength;
+    this._.parseInt = (function(v){
+      var n = parseInt(v);
+      if (n==NaN){
+        if (zs4.is.number(this._.default))n = this._.default;
+        else n = 0;
+      }
+      return n;
+    }).bind(this);
+    this._.parseFloat = (function(v){
+      var n = parseFloat(v);
+      if (n==NaN){
+        if (zs4.is.number(this._.default))n = this._.default;
+        else n = 0;
+      }
+      return n;
+    }).bind(this);
 
     this._.zs4checkfail = (function(req,text){
       if (req != null)req.error(this,text);
@@ -830,6 +852,7 @@ zs4.type = {
       if (this._.flags.get.authgetpublic())get._.flags |= req.flags.authgetpublic;
       if (this._.flags.get.authsetpublic())get._.flags |= req.flags.authsetpublic;
       if (this._.flags.get.authsetself())get._.flags |= req.flags.authsetself;
+      if (this._.flags.get.local())get._.flags |= req.flags.local;
 
       if (!req.flags.get.authset()
       ||  this._.flags.get.noset()
@@ -919,7 +942,7 @@ zs4.type = {
               this._.value[n]==null;
               this[n]==null;
             }
-            else {
+            else if (!this[n]._.flags.get.local()){
               this[n]._.print('got noprune: \''+this._.flags.getString(o._.flags)+'\'');
               this[n]._.flags.set.nodisplay(true);
             }
@@ -1216,13 +1239,13 @@ zs4.type = {
       return e;
     }).bind(THIS.array);
 
-    THIS._.property(new zs4.type.object({name:'config',flags:'required api noprune',authGet:['zs4.self'],authSet:['zs4.owner'],}));
-    THIS.config._.property(new zs4.type.integer({name:'maxlength',flags:'required noprune',authGet:['zs4.self'],authSet:['zs4.owner'],}));
-    THIS.config._.property(new zs4.type.integer({name:'lastid',flags:'required noset noprune',authGet:['zs4.self'],}));
+    THIS._.property(new zs4.type.object({name:'config',flags:'api noprune',authSet:['zs4.owner'],}));
+    THIS.config._.property(new zs4.type.integer({name:'maxlength',flags:'noprune',authSet:['zs4.owner'],}));
+    THIS.config._.property(new zs4.type.integer({name:'lastid',flags:'noset noprune',}));
 
-    THIS._.property(new zs4.type.object({name:'method',flags:'required noprune nostore authgetpublic',}));
+    THIS._.property(new zs4.type.object({name:'method',flags:'noprune nostore authgetpublic',}));
 
-    THIS.method._.property(new zs4.type.object({name:'new',flags:'required api noprune nostore authsetself',}));
+    THIS.method._.property(new zs4.type.object({name:'new',flags:'api noprune nostore authsetself',}));
     this.method.new._.transform = (function(req,cb){
       req.setScope(this);
       this._.transformInternal(req);
@@ -1265,7 +1288,7 @@ zs4.type = {
       this._.get(req); cb(); return;
     }).bind(this.method.new);
 
-    THIS.method._.property(new zs4.type.object({name:'getall',flags:'required api noprune nostore authsetself',}));
+    THIS.method._.property(new zs4.type.object({name:'getall',flags:'api noprune nostore authsetself',}));
     this.method.getall._.transform = (function(req,cb){
       req.setScope(this);
       this._.transformInternal(req);
@@ -1307,7 +1330,7 @@ zs4.type = {
 
     this.method.getone = null;
 
-    THIS.method._.property(new zs4.type.object({name:'deleteall',flags:'required api noprune nostore',}));
+    THIS.method._.property(new zs4.type.object({name:'deleteall',flags:'api noprune nostore',}));
     THIS.method.deleteall._.property(new zs4.type.boolean({name:'sure',flags:'required nostore noprune',}));
     THIS.method.deleteall._.transform = (function(req,cb){
       var DELETEALL = this;
@@ -1355,6 +1378,7 @@ zs4.type = {
       }
     }).bind(this.method.deleteall);
 
+
     var template = input.template._.new();
     template._.name = 'template'
     THIS._.property(template);
@@ -1365,7 +1389,15 @@ zs4.type = {
       |this._.flags.nostore
     ),true);
 
-    THIS._.property(new zs4.type.object({name:'array',flags:'required arrayio noprune authgetpublic',}));
+    THIS._.property(new zs4.type.select());
+    THIS.select._.flags.value |= (THIS._.flags.nostore);
+    THIS.select._.inscope = THIS.template;
+
+    THIS._.property(new zs4.type.object({name:'sort',flags:'noprune nostore authgetpublic local',}));
+    THIS.sort._.property(new zs4.type.scopeindex({name:'item',flags:'required nostore noprune apiarg local',inscope:THIS.template,default:'zs4.head.updated'}));
+    THIS.sort._.property(new zs4.type.boolean({name:'descend',flags:'required nostore noprune apiarg local',default:true,}));
+
+    THIS._.property(new zs4.type.object({name:'array',flags:'arrayio noprune authgetpublic',}));
     THIS.array._.load = (function(input){
       //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
@@ -1449,10 +1481,9 @@ zs4.type = {
       });
     }).bind(THIS.array);
 
-    THIS.method._.property(new zs4.type.object({name:'getone',flags:'required api noprune nostore noprune authgetpublic',authSet:['zs4.public'],}));
-    THIS.method.getone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune authgetpublic',inscope:THIS.template,authSet:['zs4.public'],}));
-    THIS.method.getone._.property(new zs4.type.string({name:'equals',flags:'required nostore noprune authgetpublic',authSet:['zs4.public'],}));
-
+    THIS.method._.property(new zs4.type.object({name:'getone',flags:'api noprune nostore noprune apiarg',}));
+    THIS.method.getone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
+    THIS.method.getone._.property(new zs4.type.string({name:'equals',flags:'required nostore noprune apiarg',}));
     this.method.getone._.transform = (function(req,cb){
       var GETONE = this;
       req.setScope(this);
@@ -1621,7 +1652,7 @@ zs4.type = {
   },
   bye:function(input){
     var THIS = this;
-    zs4.type.object.call(this,{name:'bye',flags:'api nostore authgetpublic',authSet:['zs4.public'],})
+    zs4.type.object.call(this,{name:'bye',flags:'api nostore authgetpublic authsetpublic',})
     this._.typename = 'bye';
     this._.create = zs4.type.bye;
     this._.property(new zs4.type.boolean({name:'sure',flags:'required noprune',}));
@@ -1721,13 +1752,13 @@ zs4.type = {
     }).bind(this);
   },
   head:function(){
-    zs4.type.object.call(this,{name:'head',flags:'required api authgetpublic authsetself',})
+    zs4.type.object.call(this,{name:'head',flags:'api authgetpublic authsetself',})
     this._.typename = 'head';
     this._.create = zs4.type.head;
 
     this._.property(new zs4.type.string({name:'title',flags:'required index noprune authgetpublic authsetself',}));
-    this._.property(new zs4.type.integer({name:'created',flags:'required noset index noprune',}));
-    this._.property(new zs4.type.integer({name:'updated',flags:'required noset index noprune',}));
+    this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune',}));
+    this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune',}));
     this._.property(new zs4.type.string({name:'app',flags:'required index noprune authsetself',default:'/admin.js',}));
 
   },
@@ -1737,15 +1768,6 @@ zs4.type = {
     this._.type = Number;
     this._.typename = 'integer';
     this._.default = new Number();
-
-    this._.parseInt = function(v){
-      var n = parseInt(v);
-      if (n==NaN){
-        if (zs4.is.number(this._.default))n = this._.default;
-        else n = 0;
-      }
-      return n;
-    }
 
     if (zs4.is.number(input.default))this._.default = this._.parseInt(input.default);
     else this._.default = 0;
@@ -2118,7 +2140,11 @@ zs4.type = {
             || (zs4.is.string(type)&&type==item[n]._.typename)
             || (zs4.is.number(type)&&((item[n]._.flags.value&type)==type))
             ){
+              //var sp = scope._.path;
+              //var ip = item[n]._.path;
               var val = item[n]._.path;
+              //for (var i=0;i<ip.length;i++)if (i>(sp.length+1))
+              if (scope._.path.length>0)
               val = val.substr(scope._.path.length+1,val.length-scope._.path.length-1);
               response.push(new Object({label:val,value:val}));
             }
@@ -2138,7 +2164,7 @@ zs4.type = {
         for (var n in item){
           if (!zs4.is.type(item[n]))continue;
 
-          item[n]._.print('getScopeScopes')
+          item[n]._.print('getScopeScopes');
 
           if( item[n]._.flags.get.scope()
           && (item[n]._.typename=='scope')
@@ -2188,6 +2214,61 @@ zs4.type = {
   scopescope:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'scopescope';
+  },
+  select:function(){
+    zs4.type.object.call(this,{name:'select',flags:'noprune apiarg local',});
+    this._.typename = 'select';
+    this._.create = zs4.type.select;
+    this._.select = new Object({type:'select',types:['all','any','none','item'],});
+    this._.select.lastid = 0;
+
+    this._.select.getOpcodes = (function(){
+      if (this.select.type != 'item')return null;
+      return null;
+    }).bind(this);
+    this._.select.add = (function(n){
+      if (!zs4.string.array.is.element(this._.select.types,n))return null;
+      var nu = new zs4.type.select();
+      nu._.flags.value = this._.flags.value;
+      if (this._.inscope != null)nu._.inscope = this._.inscope;
+      else nu.inscope = this._.scope;
+      nu._.select.type = n;
+      nu._.name = zs4.integer.to.name(this._.select.lastid++);
+
+      if (n=='item'){
+        nu._.property(new zs4.type.scopeitem({name:'path'}));
+        if (this._.inscope != null)nu.path._.inscope = this._.inscope;
+        nu.path._.flags.value = this._.flags.value;
+
+        nu._.property(new zs4.type.scopeitem({name:'opcode'}));
+        if (this._.inscope != null)nu.opcode._.inscope = this._.inscope;
+        nu.opcode._.flags.value = this._.flags.value;
+
+
+      };
+      this._.property(nu);
+    }).bind(this);
+
+    this._.select.check = (function(){
+      if (this._.name == 'select' || this._.name == 'all'){
+        for (var n in this)if (zs4.is.type(this[n])){
+          if (!this[n]._.select.check())return false;
+        }
+        return true;
+      }
+      else if (this._.name=='any'){
+        for (var n in this)if (zs4.is.type(this[n])){
+          if (this[n]._.select.check())return true;
+        }
+        return false;
+      }
+      else if (this._.name=='none'){
+        for (var n in this)if (zs4.is.type(this[n])){
+          if (this[n]._.select.check())return false;
+        }
+        return true;
+      }
+    }).bind(this);
   },
   string:function(input){
     var THIS = this;
