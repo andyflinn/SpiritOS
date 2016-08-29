@@ -21,7 +21,9 @@
 .icon-right:before { content: '\e813'; } /* '' */
 .icon-up:before { content: '\e814'; } /* '' */
 .icon-music:before { content: '\e815'; } /* '' */
+.icon-error:before { content: '\e816'; } /* '' */
 .icon-spin:before { content: '\e838'; } /* '' */
+.icon-menu:before { content: '\f008'; } /* '' */
 .icon-pause:before { content: '\f00e'; } /* '' */
 .icon-play:before { content: '\f00f'; } /* '' */
 .icon-to-end:before { content: '\f010'; } /* '' */

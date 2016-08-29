@@ -46,6 +46,7 @@ rsa.create = function(){
   THIS._.getPublicKey = (function(){
     //zs4.console.log('loading rsa object \n'+input.pem);
     if (this._.value.pem=='')return '';
+    console.log(zs4.base64.encode(JSON.stringify(this._.key.exportKey('pkcs1-public-der'))));
     return this._.key.exportKey('pkcs1-public');
 
   }).bind(THIS);
