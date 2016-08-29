@@ -422,6 +422,10 @@ zs4.admin.util = {
 				o._.html.icon.on = 'home';
 				o._.html.icon.off = 'home';
 			}
+			if (o._.typename == 'array'){
+				o._.html.icon.on = 'database';
+				o._.html.icon.off = 'database';
+			}
 		}
 
 		if (o._.html.e==null){
