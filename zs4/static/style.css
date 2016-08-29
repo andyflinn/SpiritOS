@@ -1,3 +1,4 @@
+@import url("fontello/css/zs4-icons.css");
 :root{
   margin:0;
   border:0;
@@ -6,11 +7,11 @@
   background-color: white;
 }
 
-.container{
+.zs4-container{
   display:block;
 }
 
-option.placeholder {
+option.zs4-placeholder {
   font-style: italic;
   color:gray;
 }
@@ -30,7 +31,7 @@ input{
   border-color: darkgray;
   margin-left: 0.5em;
 }
-input.noset{
+input.zs4-noset{
   border-color:white;
 }
 textarea{
@@ -41,29 +42,33 @@ textarea{
 zs4-name{
   vertical-align: top;
 }
-zs4-name.top{
+zs4-name.zs4-top{
   color:white;
-  font-size: 150%;
-  display:inline-block;
+  display:inline;
   vertical-align: 30%;
 }
-zs4-error.top{
+zs4-name.zs4-api{
+  cursor:pointer;
+  font-weight: bold;
+}
+
+
+zs4-error.zs4-top{
   font-size: 50%;
   display:inline-block;
   vertical-align: top;
 }
-zs4-result.top{
+zs4-result.zs4-top{
   font-size: 50%;
   display:inline-block;
   vertical-align: top;
 }
 
-zs4-object-head.top,
-zs4-object-head.top.off,
-zs4-object-head.top.on{
+zs4-object-head.zs4-top{
   color:white;
   background-color: blue;
   font-weight: bold;
+  font-size: 2em;
   display:block;
   width:100%;
   top:0px;
@@ -83,51 +88,33 @@ zs4-object-content{
   padding-bottom:0.5em;
   display:block;
 }
-zs4-object-content.tboff,
-zs4-object-content.on.tboff{
+zs4-object-content.zs4-tboff,
+zs4-object-content.zs4-on.zs4-tboff{
   display:block;
 }
-zs4-object-content.off{
+zs4-object-content.zs4-off{
   display:none;
 }
 
-zs4-object-content.top{
+zs4-object-content.zs4-top{
   width:100%;
   margin-top:2em;
 }
-zs4-object-content.top.tbon{
+zs4-object-content.zs4-top.zs4-tbon{
   display:none;
-}
-
-zs4-object-toggle.off{
-  display:inline-block;
-  width:0.8em;
-  height:0.8em;
-  cursor:pointer;
-  background-image: url('/plus.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.on{
-  display:inline-block;
-  width:0.8em;
-  height:0.8em;
-  cursor:pointer;
-  background-image: url('/minus.png');
-  background-size:100% 100%;
 }
 
 zs4-toolbar{
   background-color: white;
 }
-zs4-toolbar.off,
-zs4-toolbar.tboff{
+zs4-toolbar.zs4-off,
+zs4-toolbar.zs4-tboff{
   display:none;
 }
-zs4-toolbar.on{
+zs4-toolbar.zs4-on{
   display:inline-block;
 }
-zs4-toolbar.tbon.on{
+zs4-toolbar.zs4-tbon.zs4-on{
   display:block;
   padding-left: 0.5em;
   width:100%;
@@ -137,10 +124,10 @@ zs4-toolbar.tbon.on{
   border-left: 0.1em solid blue;
   padding-left:0.5em;
 }
-zs4-toolbar.tboff.on{
+zs4-toolbar.zs4-tboff.zs4-on{
   display:inline-block;
 }
-zs4-toolbar.off{
+zs4-toolbar.zs4-off{
   display:none;
 }
 
@@ -152,39 +139,17 @@ zs4-toolbar-content{
   display:block;
   background-color: white;
 }
-zs4-toolbar-content.tboff{
+zs4-toolbar-content.zs4-tboff{
   display:none;
 }
 
-zs4-toolbar-toggle-on,
+zs4-toolbar-toggle-off.zs4-tbon,
+zs4-toolbar-toggle-off.zs4-off,
+zs4-toolbar-toggle-off.zs4-off.zs4-tboff,
+zs4-toolbar-toggle-off.zs4-off.zs4-tbon{
+  display:none;
+}
 
-zs4-toolbar-toggle-off{
-  width:0.8em;
-  height:0.8em;
-  padding:0.1em;
-  cursor:pointer;
-  background-image: url('/tool.png');
-  background-size:cover;
-  border:initial;
-}
-zs4-toolbar-toggle-off.off,
-zs4-toolbar-toggle-off.off.tboff,
-zs4-toolbar-toggle-off.off.tbon{
-  display:none;
-}
-zs4-toolbar-toggle-off.tboff{
-  background-image: url('/tool.png');
-  display:inline-block;
-}
-zs4-toolbar-toggle-off.top.tboff{
-  width:1em;
-  height:1em;
-  padding:0.25em;
-  vertical-align: 50%;
-}
-zs4-toolbar-toggle-off.tbon{
-  display:none;
-}
 zs4-toolbar-tool{display:block}
 
 zs4-tool-tab{
@@ -193,18 +158,18 @@ zs4-tool-tab{
   cursor:pointer;
   color:darkgray;
 }
-zs4-tool-tab.active{
+zs4-tool-tab.zs4-active{
   color:black;
   background-color:lightgray;
 }
 
-zs4-tool-pane.show{
+zs4-tool-pane.zs4-show{
   width:100%;
   display:block;
   background-color:lightgray;
   color:black;
 }
-zs4-tool-pane.hide{display:none}
+zs4-tool-pane.zs4-hide{display:none}
 
 zs4-about-item{
   display:block;
@@ -218,24 +183,6 @@ zs4-about-value{
   font-style: italic;
 }
 
-zs4-auth-add{
-  display:inline-block;
-  width:0.8em;
-  height:0.8em;
-  cursor:pointer;
-  background-image: url('/plus.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-auth-remove{
-  display:inline-block;
-  width:0.8em;
-  height:0.8em;
-  cursor:pointer;
-  background-image: url('/minus.png');
-  background-size:100% 100%;
-  border:initial;
-}
 zs4-auth-table{
   display:block;
 }
@@ -243,15 +190,6 @@ zs4-auth-item{
   display:block;
 }
 
-zs4-select-add{
-  display:inline-block;
-  width:0.8em;
-  height:0.8em;
-  cursor:pointer;
-  background-image: url('/plus.png');
-  background-size:100% 100%;
-  border:initial;
-}
 zs4-select-remove{
   display:inline-block;
   width:0.8em;
@@ -262,136 +200,29 @@ zs4-select-remove{
   border:initial;
 }
 
-zs4-toolbar-toggle-on,
-zs4-toolbar-toggle-on.am.off,
-zs4-toolbar-toggle-on.off{
-  display:inline-block;
-  width:0.8em;
-  height:0.8em;
-  cursor:pointer;
-  background-image: url('/toolon.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-toolbar-toggle-on.am.tbon,
-zs4-toolbar-toggle-on.tbon{
-  display:inline-block;
-  width:0.8em;
-  height:0.8em;
-  cursor:pointer;
-  background-image: url('/close.png');
-  background-size:100% 100%;
-}
-
-zs4-object-toggle.notrans.off{
-  background-image: url('/info.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.notrans.on{
-  background-image: url('/infoon.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.scope.off{
-  background-image: url('/scope.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.scope.on{
-  background-image: url('/scopeon.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.scope.top.off{
-  background-image: url('/scope.png');
-  width:2em;
-  height:2em;
-}
-zs4-object-toggle.scope.top.off{
-  background-image: url('/scope.png');
-  width:2em;
-  height:2em;
-}
-zs4-object-toggle.scope.top.on{
-  background-image: url('/scope.png');
-  width:2em;
-  height:2em;
-}
-zs4-object-toggle.api.off{
-  background-image: url('/gears.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.api.on{
-  background-image: url('/gearson.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.arrayio.off{
-  background-image: url('/array.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.arrayio.on{
-  background-image: url('/arrayon.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.array.off{
-  background-image: url('/database.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.array.on{
-  background-image: url('/databaseon.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.settings.off{
-  background-image: url('/settings.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.settings.on{
-  background-image: url('/settingson.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.email.off{
-  background-image: url('/email.png');
-  background-size:100% 100%;
-  border:initial;
-}
-zs4-object-toggle.email.on{
-  background-image: url('/emailon.png');
-  background-size:100% 100%;
-  border:initial;
-}
-
 zs4-select-ui{
   display:block;
   background-color: lightgray;
 }
 
-.am, .am.own {
+.zs4-am, .zs4-am.zs4-own {
   color:blue;
 }
-.own {
+.zs4-own {
   color:green;
 }
-.am.top, .own.top, .am.own.top {
+.zs4-am.zs4-top, .zs4-own.zs4-top, .zs4-am.zs4-own.zs4-top {
   color:white;
 }
 
-.nodisplay{
+.zs4-nodisplay{
   display:none;
 }
 zs4-error{
   color:red;
   display:inline;
 }
-zs4-error.hide{
+zs4-error.zs4-hide{
   display:none;
 }
 
@@ -399,26 +230,25 @@ zs4-result{
   color:green;
   display:inline;
 }
-zs4-result.hide{
+zs4-result.zs4-hide{
   display:none;
 }
 
-
-zs4-object-head.notop{
+zs4-object-head.zs4-notop{
   width:100%;
   padding-right:0.5em;
   background: initial;
   background-size: initial;
   background-repeat: initial;
 }
-zs4-object-head.notop.off{
+zs4-object-head.zs4-notop.zs4-off{
   width:100%;
   background: initial;
   background-size: initial;
   background-repeat: initial;
 }
 
-zs4-object-head.notop.on{
+zs4-object-head.zs4-notop.zs4-on{
   width:100%;
   background: initial;
   background-size: initial;
@@ -426,12 +256,8 @@ zs4-object-head.notop.on{
 }
 
 
-zs4-name.api{
-  cursor:pointer;
-  font-weight: bold;
-}
 
 
-.noset,.notrans{
+.zs4-noset,.zs4-notrans{
   color:grey;
 }

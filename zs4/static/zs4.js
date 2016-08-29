@@ -1756,10 +1756,10 @@ zs4.type = {
     this._.typename = 'head';
     this._.create = zs4.type.head;
 
-    this._.property(new zs4.type.string({name:'title',flags:'required index noprune authgetpublic authsetself',}));
+    this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself',}));
     this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune',}));
     this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune',}));
-    this._.property(new zs4.type.string({name:'app',flags:'required index noprune authsetself',default:'/admin.js',}));
+    this._.property(new zs4.type.string({name:'app',flags:'index noprune authsetself',default:'/admin.js',}));
 
   },
   integer:function(input){
@@ -2289,7 +2289,7 @@ zs4.type = {
 
     this._.zs4check = (function(req,input){
       if (!this._.zs4checkinit(req,input))return false;
-      if (!zs4.is.string(input))return this._.zs4checkfail(req,'not string');
+      if (!zs4.is.string(input))return this._.zs4checkfail(req,'not string: '+input);
       if (zs4.is.number(this._.minlength)&&input.length<this._.minlength)return this._.zs4checkfail(req,'minlength='+this._.minlength);
       if (zs4.is.number(this._.maxlength)&&input.length>this._.maxlength)return this._.zs4checkfail(req,'maxlength='+this._.maxlength);
       if (zs4.is.array(this._.enum)&&this._.enum.length>0&&!zs4.string.array.is.element(this._.enum,input))return this._.zs4checkfail(req,'enum');

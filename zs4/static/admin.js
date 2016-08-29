@@ -4,6 +4,7 @@
 zs4.admin = new Object();
 
 zs4.admin.util = {
+	clseps:' ',
 	am:function(o){
 		if (zs4.THIS._.token==null||zs4.THIS._.scopath==null)return false;
 		if (zs4.THIS._.scopath==o._.scope._.path)return true;
@@ -21,21 +22,34 @@ zs4.admin.util = {
 		if (tof)return zs4.admin.util.addClass(e,c);
 		else return zs4.admin.util.removeClass(e,c);
 	},
+	setIcon:function(e,icon){
+		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
+		for (var i = (cls.length-1) ; i >= 0; i--){
+			if (cls[i].substr(0,5)=='icon-')
+			cls.splice(i,1);
+		}
+		cls.push('icon-'+icon);
+		var ret = '';
+		for (var i = 0 ; i < cls.length ; i++){
+			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
+		}
+		e.className = ret;
+	},
 	addClass:function(e,c){
-		var set = zs4.string.split.words(c);
+		var set = zs4.string.split.separators(c,zs4.admin.util.clseps);
 		if  (set.length==0)return;
-		var cls = zs4.string.split.words(e.className);
-		for (var i = 0 ; i < set.length ; i++)zs4.string.array.add.new(cls,set[i]);
+		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
+		for (var i = 0 ; i < set.length ; i++)zs4.string.array.add.new(cls,'zs4-'+set[i]);
 		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
 			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
 		}
 		e.className = ret;
 	},
 	removeClass:function(e,c){
-		var rem = zs4.string.split.words(c);
+		var rem = zs4.string.split.separators(c,zs4.admin.util.clseps);
 		if  (rem.length==0)return;
-		var cls = zs4.string.split.words(e.className);
-		for (var i = 0 ; i < rem.length ; i++)zs4.string.array.remove.string(cls,rem[i]);
+		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
+		for (var i = 0 ; i < rem.length ; i++)zs4.string.array.remove.string(cls,'zs4-'+rem[i]);
 		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
 			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
 		}
@@ -138,6 +152,7 @@ zs4.admin.util = {
 		THIS.auth = new Object();
 
 		THIS.auth.add = document.createElement('zs4-auth-add');
+		zs4.admin.util.setIcon(THIS.auth.add,'plus')
 		THIS.pane.appendChild(THIS.auth.add);
 		THIS.auth.add.onclick = function(){
 			var typ = THIS.auth.type.value;
@@ -240,6 +255,7 @@ zs4.admin.util = {
 				THIS.auth.table.appendChild(line);
 
 				var remove = document.createElement('zs4-auth-remove');
+				zs4.admin.util.setIcon(remove,'cancel')
 				line.appendChild(remove);
 				var id = arr[i];
 				remove.onclick = function(){
@@ -343,6 +359,7 @@ zs4.admin.util = {
 		THIS.mysel = new Object();
 
 		THIS.mysel.add = document.createElement('zs4-select-add');
+		zs4.admin.util.setIcon(THIS.mysel.add,'plus')
 		THIS.pane.appendChild(THIS.mysel.add);
 		THIS.mysel.add.onclick = function(){
 			var nu = o._.select.add(THIS.mysel.type.value);
@@ -396,6 +413,16 @@ zs4.admin.util = {
 			}
 		}
 
+		if (o._.html.icon == null){
+			o._.html.icon = new Object({
+				on:'minus',
+				off:'plus',
+			});
+			if (o._.flags.get.scope()){
+				o._.html.icon.on = 'home';
+				o._.html.icon.off = 'home';
+			}
+		}
 
 		if (o._.html.e==null){
 			o._.html.e = document.createElement('zs4-'+o._.typename);
@@ -437,9 +464,11 @@ zs4.admin.util = {
 				if (zs4.is.boolean(o._.html.expanded)){
 					if (o._.html.expanded){
 						add+=' on'; rem+=' off'
+						zs4.admin.util.setIcon(o._.html.toggle,o._.html.icon.on);
 					}
 					else{
 						add+=' off';rem+=' on'
+						zs4.admin.util.setIcon(o._.html.toggle,o._.html.icon.off);
 					}
 
 				}
@@ -468,6 +497,7 @@ zs4.admin.util = {
 				addrem(o._.html.toolbarContent);
 				addrem(o._.html.toolbarToggleOff);
 				addrem(o._.html.toolbarToggleOn);
+
 
 			}).bind(o);
 		}
@@ -542,6 +572,7 @@ zs4.admin.util = {
 
 				o._.html.toolbarToggleOff = document.createElement('zs4-toolbar-toggle-off');
 				o._.html.head.appendChild(o._.html.toolbarToggleOff);
+				zs4.admin.util.setIcon(o._.html.toolbarToggleOff,'settings');
 				o._.html.toolbarToggleOff.onclick = (function(){
 					if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
 					else o._.html.toolbarOpen();
@@ -552,6 +583,7 @@ zs4.admin.util = {
 
 				o._.html.toolbarToggleOn = document.createElement('zs4-toolbar-toggle-on');
 				o._.html.toolbarContent.appendChild(o._.html.toolbarToggleOn);
+				zs4.admin.util.setIcon(o._.html.toolbarToggleOn,'cancel');
 				o._.html.toolbarToggleOn.onclick = (function(){
 					if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
 					else o._.html.toolbarOpen();
@@ -859,6 +891,7 @@ zs4.admin.type = {
 			zs4.admin.type[o[n]._.typename](o,o[n]);
 		}
 
+		//zs4.admin.util.addClass(e)
 
 		if (o._.flags.value & o._.flags.scope){
 			//console.log('change label for scope '+o._.path+': '+o._.value.zs4.head.title);
