@@ -2420,7 +2420,7 @@ zs4.request = function(o){
     THIS.flags.value = 0;
     var am = THIS.am(o);
     var own = THIS.own(o);
-    own |= this.userIsRoot();
+    //own |= this.userIsRoot();
 
     THIS.flags.set.am(am);
     THIS.flags.set.own(own);
@@ -2577,7 +2577,7 @@ zs4.request = function(o){
         THIS._.print('req.am said \'zs4.self\'',REQUEST);
         return true;
       }
-      return this.userIsRoot();
+      return false; //this.userIsRoot();
     };
 
     this.own = function(THIS){
@@ -2587,7 +2587,7 @@ zs4.request = function(o){
         THIS._.print('req.am said zs4.owner');
         return true;
       }
-      return this.userIsRoot();
+      return false; //this.userIsRoot();
     };
 
     this.process = function(cb){

@@ -28,7 +28,20 @@ zs4.admin.util = {
 			if (cls[i].substr(0,5)=='icon-')
 			cls.splice(i,1);
 		}
-		cls.push('icon-'+icon);
+		if (zs4.is.string(icon))cls.push('icon-'+icon);
+		var ret = '';
+		for (var i = 0 ; i < cls.length ; i++){
+			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
+		}
+		e.className = ret;
+	},
+	setAnimate:function(e,icon){
+		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
+		for (var i = (cls.length-1) ; i >= 0; i--){
+			if (cls[i].substr(0,5)=='animate-')
+			cls.splice(i,1);
+		}
+		if (zs4.is.string(icon))cls.push('animate-'+icon);
 		var ret = '';
 		for (var i = 0 ; i < cls.length ; i++){
 			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
@@ -422,9 +435,25 @@ zs4.admin.util = {
 				o._.html.icon.on = 'home';
 				o._.html.icon.off = 'home';
 			}
-			if (o._.typename == 'array'){
+			else if (o._.typename == 'array'){
 				o._.html.icon.on = 'database';
 				o._.html.icon.off = 'database';
+			}
+			else if (o._.typename == 'head'){
+				o._.html.icon.on = 'info';
+				o._.html.icon.off = 'info';
+			}
+			else if (o._.flags.get.arrayio()){
+				o._.html.icon.on = 'list';
+				o._.html.icon.off = 'list';
+			}
+			else if (o._.path == 'zs4.password' || o._.path == 'zs4.token'){
+				o._.html.icon.on = 'key';
+				o._.html.icon.off = 'password';
+			}
+			else if (o._.path == 'zs4.email'){
+				o._.html.icon.on = 'at';
+				o._.html.icon.off = 'mail';
 			}
 		}
 
@@ -558,6 +587,12 @@ zs4.admin.util = {
 			zs4.admin.util.addClass(o._.html.result,'hide');
 			o._.html.head.appendChild(o._.html.result);
 
+			o._.html.spin = document.createElement('zs4-spin');
+			zs4.admin.util.setIcon(o._.html.spin,'spin');
+			zs4.admin.util.setAnimate(o._.html.spin,'spin');
+			zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+			o._.html.head.appendChild(o._.html.spin);
+
 			//if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.value & o._.flags.apiarg == o._.flags.apiarg)){
 			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.get.apiarg())){
 				o._.html.toolbar = document.createElement('zs4-toolbar');
@@ -630,10 +665,12 @@ zs4.admin.util = {
 						if (o._.flags.get.api()&&(o._.html.expanded||count==0)){
 							var input = o._.input();
 							if (input == null)return;
-
+							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+							zs4.admin.util.addClass(o._.html.toolbarToggleOff,'nodisplay');
 							zs4.post(o._.wrapRequest(input),function(ret){
 								o._.html.refreshAll();
-								//zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
+								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+								zs4.admin.util.removeClass(o._.html.toolbarToggleOff,'nodisplay');
 							});
 						}
 						else {

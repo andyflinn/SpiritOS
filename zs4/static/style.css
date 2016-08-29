@@ -1,4 +1,5 @@
 @import url("fontello/css/zs4-icons.css");
+@import url("fontello/css/animation.css");
 :root{
   margin:0;
   border:0;
@@ -11,6 +12,17 @@
   display:block;
 }
 
+[class^="icon-"]:before, [class*=" icon-"]:before {
+  font-size:50%;
+  vertical-align:0.25em;
+  cursor:pointer;
+  border-radius:1em;
+  background-color: lightgray;
+  width:1em;
+  height:1em;
+  padding:0.25em;
+}
+
 option.zs4-placeholder {
   font-style: italic;
   color:gray;
@@ -18,6 +30,8 @@ option.zs4-placeholder {
 body{
   padding:0;
   margin:0;
+  color:black;
+  background-color: white;
 }
 input[type="checkbox"]{
   width:1em;
@@ -40,37 +54,65 @@ textarea{
 }
 
 zs4-name{
-  vertical-align: top;
-}
-zs4-name.zs4-top{
-  color:white;
-  display:inline;
-  vertical-align: 30%;
+  font-size: enherit;
 }
 zs4-name.zs4-api{
   cursor:pointer;
   font-weight: bold;
 }
+zs4-name.zs4-top{
+  color:white;
+}
 
+.zs4-am.notrans:not{
+  color:blue;
+}
+.zs4-own.notrans:not{
+  color:green;
+}
+.zs4-noset,.zs4-notrans{
+  color:grey;
+}
+.zs4-nodisplay{
+  display:none;
+}
 
+.icon-cancel{color:red;}
+zs4-error{
+  color:red;
+  display:inline;
+}
+zs4-error.zs4-hide{
+  display:none;
+}
 zs4-error.zs4-top{
   font-size: 50%;
-  display:inline-block;
   vertical-align: top;
+}
+
+zs4-result{
+  color:green;
+  display:inline;
+}
+zs4-result.zs4-hide{
+  display:none;
 }
 zs4-result.zs4-top{
   font-size: 50%;
-  display:inline-block;
   vertical-align: top;
 }
 
+zs4-object-head{
+  display:block;
+  width:100%;
+
+}
 zs4-object-head.zs4-top{
   color:white;
   background-color: blue;
   font-weight: bold;
-  font-size: 2em;
   display:block;
-  width:100%;
+  vertical-align: bottom;
   top:0px;
   position:fixed;
   z-index: 100;
@@ -98,7 +140,7 @@ zs4-object-content.zs4-off{
 
 zs4-object-content.zs4-top{
   width:100%;
-  margin-top:2em;
+  margin-top:1em;
 }
 zs4-object-content.zs4-top.zs4-tbon{
   display:none;
@@ -203,61 +245,4 @@ zs4-select-remove{
 zs4-select-ui{
   display:block;
   background-color: lightgray;
-}
-
-.zs4-am, .zs4-am.zs4-own {
-  color:blue;
-}
-.zs4-own {
-  color:green;
-}
-.zs4-am.zs4-top, .zs4-own.zs4-top, .zs4-am.zs4-own.zs4-top {
-  color:white;
-}
-
-.zs4-nodisplay{
-  display:none;
-}
-zs4-error{
-  color:red;
-  display:inline;
-}
-zs4-error.zs4-hide{
-  display:none;
-}
-
-zs4-result{
-  color:green;
-  display:inline;
-}
-zs4-result.zs4-hide{
-  display:none;
-}
-
-zs4-object-head.zs4-notop{
-  width:100%;
-  padding-right:0.5em;
-  background: initial;
-  background-size: initial;
-  background-repeat: initial;
-}
-zs4-object-head.zs4-notop.zs4-off{
-  width:100%;
-  background: initial;
-  background-size: initial;
-  background-repeat: initial;
-}
-
-zs4-object-head.zs4-notop.zs4-on{
-  width:100%;
-  background: initial;
-  background-size: initial;
-  background-repeat: initial;
-}
-
-
-
-
-.zs4-noset,.zs4-notrans{
-  color:grey;
 }
