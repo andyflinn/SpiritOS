@@ -37,7 +37,7 @@ fs.create = function(){
   THIS._.create = fs.create;
 
   THIS._.property(new zs4.type.object({name:'stat',flags:'nostore api',}));
-  THIS.stat._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
+  THIS.stat._.property(new zs4.type.string({name:'path',flags:'required nostore',minlength:1,}));
   THIS.stat._.transform = (function(req,cb){
     var STAT = this;
     req.setScope(this);
@@ -77,7 +77,7 @@ fs.create = function(){
   }).bind(THIS.stat);
 
   THIS._.property(new zs4.type.object({name:'readdir',flags:'nostore api',}));
-  THIS.readdir._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
+  THIS.readdir._.property(new zs4.type.string({name:'path',flags:'required nostore',minlength:1,}));
   THIS.readdir._.transform = (function(req,cb){
     req.setScope(this);
     function get(){
@@ -116,7 +116,7 @@ fs.create = function(){
   }).bind(THIS.readdir);
 
   THIS._.property(new zs4.type.object({name:'readfile',flags:'nostore api',}));
-  THIS.readfile._.property(new zs4.type.string({name:'path',flags:'required nostore',}));
+  THIS.readfile._.property(new zs4.type.string({name:'path',flags:'required nostore',minlength:1,}));
   THIS.readfile._.transform = (function(req,cb){
     var READFILE = this;
     req.setScope(this);
@@ -136,7 +136,7 @@ fs.create = function(){
     }
     var THIS = this;
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
-      nodefs.readFile(req.input.path,'base64',function(err,data){
+      nodefs.readFile(req.input.path,function(err,data){
         if (err){
           req.error(THIS,{text:'fs.readFile(\''+req.input.path+'\')',data:err});
         }

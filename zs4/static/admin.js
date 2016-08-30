@@ -75,29 +75,44 @@ zs4.admin.util = {
 
 		this.select = document.createElement('zs4-tool-tab');
 		o._.html.toolbarHeader.appendChild(this.select);
-		this.select.textContent = name;
+		zs4.admin.util.setIcon(this.select,name);
+		//this.select.textContent = name;
 
 		this.pane = document.createElement('zs4-tool-pane');
 		o._.html.toolbarTool.appendChild(this.pane);
 		//this.pane.textContent = 'tool pane for '+name;
 		this.refreshTool = function(){};
 
+		this.deselectAll = (function(){
+			var count = 0;
+			for (var n in o._.html.tool){
+				zs4.admin.util.removeClass(o._.html.tool[n].select,'current');
+				zs4.admin.util.removeClass(o._.html.tool[n].pane,'current');
+				o._.html.tool[n].active = false;
+				zs4.admin.util.addClass(o._.html.tool[n].pane,'nodisplay');
+				zs4.admin.util.setIcon(o._.html.tool[n].select,o._.html.tool[n].name);
+			}
+			o._.html.toolbarClose();
+		}).bind(this);
+
 		this.select.onclick = (function(){
 			//console.log(this);
 			//console.log(this.name);
 			//console.log(o._.path+'.zs4.admin.tool.'+name);
-			var count = 0;
+			var active = false;
 			for (var n in o._.html.tool){
 				//console.log('...this.name='+this.name+'  o._.html.tool[n].name='+o._.html.tool[n].name);
 				if (name==o._.html.tool[n].name){
 					//console.log('... CURRENT: '+n);
-					zs4.admin.util.addClass(o._.html.tool[n].select,'current');
-					zs4.admin.util.addClass(o._.html.tool[n].pane,'current');
 					if (this.active){
 						o._.html.tool[n].active = false;
+						zs4.admin.util.removeClass(o._.html.tool[n].select,'current');
+						zs4.admin.util.removeClass(o._.html.tool[n].pane,'current');
 					}
 					else {
-						o._.html.tool[n].active = true;
+						active = o._.html.tool[n].active = true;
+						zs4.admin.util.addClass(o._.html.tool[n].select,'current');
+						zs4.admin.util.addClass(o._.html.tool[n].pane,'current');
 					}
 				}
 				else {
@@ -108,17 +123,16 @@ zs4.admin.util = {
 				}
 
 				if (o._.html.tool[n].active){
-					zs4.admin.util.addClass(o._.html.tool[n].select,'active');
-					zs4.admin.util.addClass(o._.html.tool[n].pane,'show');
-					zs4.admin.util.removeClass(o._.html.tool[n].pane,'hide');
+					zs4.admin.util.removeClass(o._.html.tool[n].pane,'nodisplay');
+					zs4.admin.util.setIcon(o._.html.tool[n].select,'to-start');
 					this.refreshTool();
 				}
 				else {
-					zs4.admin.util.addClass(o._.html.tool[n].pane,'hide');
-					zs4.admin.util.removeClass(o._.html.tool[n].pane,'show');
-					zs4.admin.util.removeClass(o._.html.tool[n].select,'active');
+					zs4.admin.util.addClass(o._.html.tool[n].pane,'nodisplay');
+					zs4.admin.util.setIcon(o._.html.tool[n].select,o._.html.tool[n].name);
 				}
 			}
+			if (!active)o._.html.toolbarClose();
 		}).bind(this);
 	},
 	about:function(o){
@@ -432,8 +446,8 @@ zs4.admin.util = {
 				off:'plus',
 			});
 			if (o._.flags.get.scope()){
-				o._.html.icon.on = 'home';
-				o._.html.icon.off = 'home';
+				o._.html.icon.on = 'user';
+				o._.html.icon.off = 'user';
 			}
 			else if (o._.typename == 'array'){
 				o._.html.icon.on = 'database';
@@ -447,13 +461,21 @@ zs4.admin.util = {
 				o._.html.icon.on = 'list';
 				o._.html.icon.off = 'list';
 			}
-			else if (o._.path == 'zs4.password' || o._.path == 'zs4.token'){
+			else if (o._.name == 'password' || o._.name == 'token'){
 				o._.html.icon.on = 'key';
 				o._.html.icon.off = 'password';
 			}
-			else if (o._.path == 'zs4.email'){
+			else if (o._.name == 'email'){
 				o._.html.icon.on = 'at';
 				o._.html.icon.off = 'mail';
+			}
+			else if (o._.name == 'zs4'){
+				o._.html.icon.on = 'cogs';
+				o._.html.icon.off = 'cogs';
+			}
+			else if (o._.name == 'rsa'){
+				o._.html.icon.on = 'password';
+				o._.html.icon.off = 'key';
 			}
 		}
 
@@ -518,6 +540,14 @@ zs4.admin.util = {
 				if (o._.flags.get.own())add+=' own';else rem+=' own';
 				if (o._.flags.get.arrayio())add+=' arrayio';else rem+=' arrayio';
 				if (o._.flags.get.notrans())add+=' notrans';else rem+=' notrans';
+
+
+				addrem(o._.html.toolbar);
+				addrem(o._.html.toolbarHeader);
+				addrem(o._.html.toolbarContent);
+				addrem(o._.html.toolbarTool);
+				addrem(o._.html.toolbarToggle);
+
 				if (o._.flags.get.nodisplay())add+=' nodisplay';else rem+=' nodisplay';;
 
 				addrem(o._.html.e);
@@ -526,10 +556,6 @@ zs4.admin.util = {
 				addrem(o._.html.name);
 				addrem(o._.html.c);
 
-				addrem(o._.html.toolbar);
-				addrem(o._.html.toolbarContent);
-				addrem(o._.html.toolbarToggleOff);
-				addrem(o._.html.toolbarToggleOn);
 
 
 			}).bind(o);
@@ -551,9 +577,10 @@ zs4.admin.util = {
 			o._.html.head = document.createElement('zs4-object-head');
 			o._.html.e.appendChild(o._.html.head);
 
-			if (o._.type==Object){
+			//if (o._.type==Object){
 				o._.html.toggle = document.createElement('zs4-object-toggle');
 				o._.html.head.appendChild(o._.html.toggle);
+				zs4.admin.util.setIcon(o._.html.toggle,'minus');
 				zs4.admin.util.addClass(o._.html.toggle,o._.typename);
 				o._.html.expanded = false;
 				o._.html.toggleOff = function(){
@@ -573,19 +600,24 @@ zs4.admin.util = {
 					}
 				};
 				o._.html.toggle.onclick = o._.html.onToggle;
-			}
+			//}
 
 			o._.html.name = document.createElement('zs4-name');
 			o._.html.head.appendChild(o._.html.name);
 			o._.html.name.textContent = o._.name;
 
 			o._.html.error = document.createElement('zs4-error');
-			zs4.admin.util.addClass(o._.html.error,'hide');
+			zs4.admin.util.setIcon(o._.html.error,'error');
+			zs4.admin.util.addClass(o._.html.error,'nodisplay');
 			o._.html.head.appendChild(o._.html.error);
 
 			o._.html.result = document.createElement('zs4-result');
-			zs4.admin.util.addClass(o._.html.result,'hide');
+			zs4.admin.util.addClass(o._.html.result,'nodisplay');
+			zs4.admin.util.setIcon(o._.html.result,'true');
 			o._.html.head.appendChild(o._.html.result);
+			o._.html.result.onclick = function(){
+				if (o._.cbresult != null)console.log(o._.cbresult);
+			};
 
 			o._.html.spin = document.createElement('zs4-spin');
 			zs4.admin.util.setIcon(o._.html.spin,'spin');
@@ -595,6 +627,17 @@ zs4.admin.util = {
 
 			//if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.value & o._.flags.apiarg == o._.flags.apiarg)){
 			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.get.apiarg())){
+				o._.html.toolbarToggle = document.createElement('zs4-toolbar-toggle');
+				o._.html.head.appendChild(o._.html.toolbarToggle);
+				zs4.admin.util.setIcon(o._.html.toolbarToggle,'settings');
+				o._.html.toolbarToggle.onclick = (function(){
+					if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
+					else o._.html.toolbarOpen();
+				}).bind(o);
+
+				o._.html.toolbarHeader = document.createElement('zs4-toolbar-header');
+				o._.html.head.appendChild(o._.html.toolbarHeader);
+
 				o._.html.toolbar = document.createElement('zs4-toolbar');
 				o._.html.head.appendChild(o._.html.toolbar);
 
@@ -602,37 +645,23 @@ zs4.admin.util = {
 				o._.html.toolbarIsOpen = false;
 				o._.html.toolbarOpen = (function(){
 					o._.html.toolbarIsOpen = true;
+					zs4.admin.util.removeClass(o._.html.toolbarHeader,'nodisplay');
+					//zs4.admin.util.removeClass(o._.html.toolbarTool,'nodisplay');
+					zs4.admin.util.removeClass(o._.html.toolbar,'nodisplay');
+					zs4.admin.util.setIcon(o._.html.toolbarToggle,'tool');
 					o._.html.genericRefresh();
 				}).bind(o);
 				o._.html.toolbarClose = (function(){
 					o._.html.toolbarIsOpen = false;
+					zs4.admin.util.addClass(o._.html.toolbarHeader,'nodisplay');
+					//zs4.admin.util.addClass(o._.html.toolbarTool,'nodisplay');
+					zs4.admin.util.addClass(o._.html.toolbar,'nodisplay');
+					zs4.admin.util.setIcon(o._.html.toolbarToggle,'settings');
 					o._.html.genericRefresh();
 				}).bind(o);
 
-				o._.html.toolbarToggleOff = document.createElement('zs4-toolbar-toggle-off');
-				o._.html.head.appendChild(o._.html.toolbarToggleOff);
-				zs4.admin.util.setIcon(o._.html.toolbarToggleOff,'settings');
-				o._.html.toolbarToggleOff.onclick = (function(){
-					if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
-					else o._.html.toolbarOpen();
-				}).bind(o);
-
-				o._.html.toolbarContent = document.createElement('zs4-toolbar-content');
-				o._.html.toolbar.appendChild(o._.html.toolbarContent);
-
-				o._.html.toolbarToggleOn = document.createElement('zs4-toolbar-toggle-on');
-				o._.html.toolbarContent.appendChild(o._.html.toolbarToggleOn);
-				zs4.admin.util.setIcon(o._.html.toolbarToggleOn,'cancel');
-				o._.html.toolbarToggleOn.onclick = (function(){
-					if (o._.html.toolbarIsOpen)o._.html.toolbarClose();
-					else o._.html.toolbarOpen();
-				}).bind(o);
-
-				o._.html.toolbarHeader = document.createElement('zs4-toolbar-header');
-				o._.html.toolbarContent.appendChild(o._.html.toolbarHeader);
-
 				o._.html.toolbarTool = document.createElement('zs4-toolbar-tool');
-				o._.html.toolbarContent.appendChild(o._.html.toolbarTool);
+				o._.html.toolbar.appendChild(o._.html.toolbarTool);
 
 				o._.html.toolbarClose();
 
@@ -652,7 +681,7 @@ zs4.admin.util = {
 					}
 				}
 				if (!o._.html.tool.hasOwnProperty('console'))new zs4.admin.util.console(o);
-				o._.html.tool[defaultTool].select.onclick();
+				o._.html.tool.about.deselectAll();
 			}
 
 			if (o._.type==Object){
@@ -666,11 +695,11 @@ zs4.admin.util = {
 							var input = o._.input();
 							if (input == null)return;
 							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-							zs4.admin.util.addClass(o._.html.toolbarToggleOff,'nodisplay');
+							zs4.admin.util.addClass(o._.html.toolbarToggle,'nodisplay');
 							zs4.post(o._.wrapRequest(input),function(ret){
 								o._.html.refreshAll();
 								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-								zs4.admin.util.removeClass(o._.html.toolbarToggleOff,'nodisplay');
+								zs4.admin.util.removeClass(o._.html.toolbarToggle,'nodisplay');
 							});
 						}
 						else {
@@ -714,19 +743,19 @@ zs4.admin.util = {
 	refreshCallback:function(THIS){
 		//console.log('refreshCallback('+THIS._.path+')')
 		if (THIS._.cberror == null){
-			zs4.admin.util.addClass(THIS._.html.error,'hide');
+			zs4.admin.util.addClass(THIS._.html.error,'nodisplay');
 		}
 		else {
 			THIS._.html.error.textContent = THIS._.cberror.text;
-			zs4.admin.util.removeClass(THIS._.html.error,'hide');
+			zs4.admin.util.removeClass(THIS._.html.error,'nodisplay');
 		}
 
 		if (THIS._.cbresult == null){
-			zs4.admin.util.addClass(THIS._.html.result,'hide');
+			zs4.admin.util.addClass(THIS._.html.result,'nodisplay');
 		}
 		else {
-			THIS._.html.result.textContent = 'result!';
-			zs4.admin.util.removeClass(THIS._.html.result,'hide');
+			THIS._.html.result.textContent = '';
+			zs4.admin.util.removeClass(THIS._.html.result,'nodisplay');
 		}
 	},
 

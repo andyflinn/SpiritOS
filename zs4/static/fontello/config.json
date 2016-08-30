@@ -259,6 +259,72 @@
       "src": "mfglabs"
     },
     {
+      "uid": "8b80d36d4ef43889db10bc1f0dc9a862",
+      "css": "user",
+      "code": 59415,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "31972e4e9d080eaa796290349ae6c1fd",
+      "css": "users",
+      "code": 59416,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "e82cedfa1d5f15b00c5a81c9bd731ea2",
+      "css": "info-circled",
+      "code": 59417,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "c1f1975c885aa9f3dad7810c53b82074",
+      "css": "auth",
+      "code": 59418,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "85fda3129wk4amvn25wrq843sbj3yzl0",
+      "css": "about",
+      "code": 59419,
+      "src": "typicons"
+    },
+    {
+      "uid": "2d76f2c8d13be40694ecadfea7fb83c3",
+      "css": "logout",
+      "code": 59420,
+      "src": "entypo"
+    },
+    {
+      "uid": "a204f0fa972408eaae5a363c444991b2",
+      "css": "login",
+      "code": 59421,
+      "src": "entypo"
+    },
+    {
+      "uid": "3d8cc269fdad8a4cda55a20542a84e5c",
+      "css": "credit-card",
+      "code": 59422,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "b7a336095aa4535c3689cb557edf23db",
+      "css": "monitor",
+      "code": 59423,
+      "src": "entypo"
+    },
+    {
+      "uid": "744a71fe4b5ab7c4f4b7cd598e9bf75a",
+      "css": "console",
+      "code": 59424,
+      "src": "entypo"
+    },
+    {
+      "uid": "74b2f1d1ee541715b3f389f7cdf63d1c",
+      "css": "bye",
+      "code": 59425,
+      "src": "websymbols"
+    },
+    {
       "uid": "594884b448c7d263f79f141863059a47",
       "css": "home",
       "code": 59392,

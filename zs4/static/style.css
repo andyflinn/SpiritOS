@@ -13,14 +13,32 @@
 }
 
 [class^="icon-"]:before, [class*=" icon-"]:before {
-  font-size:50%;
+  font-size:0.5em;
   vertical-align:0.25em;
   cursor:pointer;
   border-radius:1em;
-  background-color: lightgray;
+  opacity: 50%;
   width:1em;
   height:1em;
   padding:0.25em;
+  -webkit-transition: color 1s, border-radius 1s, opacity 1s; /* For Safari 3.1 to 6.0 */
+  transition: color 1s, border-radius 1s, opacity 1s;
+}
+
+[class^="icon-"]:hover, [class*=" icon-"]:hover {
+  border-radius:0.2em;
+  opacity: 100%;
+  color:lightgreen;
+  width:1em;
+  height:1em;
+}
+
+[class^="icon-"].zs4-top:hover, [class*=" icon-"].zs4-top:hover {
+  border-radius:0.2em;
+  opacity: 100%;
+  color:orange;
+  width:1em;
+  height:1em;
 }
 
 option.zs4-placeholder {
@@ -55,6 +73,7 @@ textarea{
 
 zs4-name{
   font-size: enherit;
+  padding-right: 0.5em;
 }
 zs4-name.zs4-api{
   cursor:pointer;
@@ -78,6 +97,8 @@ zs4-name.zs4-top{
 }
 
 .icon-cancel{color:red;}
+.icon-error{background-color: white;}
+
 zs4-error{
   color:red;
   display:inline;
@@ -97,10 +118,6 @@ zs4-result{
 zs4-result.zs4-hide{
   display:none;
 }
-zs4-result.zs4-top{
-  font-size: 50%;
-  vertical-align: top;
-}
 
 zs4-object-head{
   display:block;
@@ -119,12 +136,10 @@ zs4-object-head.zs4-top{
 }
 
 zs4-object-content{
-  padding-left: 0.5em;
   width:100%;
-  background: linear-gradient(to right, lightblue , white);
-  background-size: 0.5em 100%;
+  background: linear-gradient(to right, lightblue, white );
+  background-size: 0.8em 100%;
   background-repeat: no-repeat;
-  border-left: 0.1em solid blue;
   padding-left:0.5em;
   padding-top:0.5em;
   padding-bottom:0.5em;
@@ -147,52 +162,37 @@ zs4-object-content.zs4-top.zs4-tbon{
 }
 
 zs4-toolbar{
+  width:100%;
+  background: linear-gradient(to right, lightblue, white );
+  background-size: 0.8em 100%;
+  background-repeat: no-repeat;
+  padding-left:0.5em;
+  padding-top:0.5em;
+  padding-bottom:0.5em;
+  display:block;
   background-color: white;
 }
-zs4-toolbar.zs4-off,
-zs4-toolbar.zs4-tboff{
-  display:none;
-}
-zs4-toolbar.zs4-on{
-  display:inline-block;
-}
-zs4-toolbar.zs4-tbon.zs4-on{
-  display:block;
-  padding-left: 0.5em;
-  width:100%;
-  background: linear-gradient(to right, lightblue , white);
-  background-size: 0.5em 100%;
-  background-repeat: no-repeat;
-  border-left: 0.1em solid blue;
-  padding-left:0.5em;
-}
-zs4-toolbar.zs4-tboff.zs4-on{
-  display:inline-block;
-}
-zs4-toolbar.zs4-off{
-  display:none;
-}
-
-zs4-toolbar-header{
-  background-color:white;
-}
-
 zs4-toolbar-content{
   display:block;
-  background-color: white;
 }
 zs4-toolbar-content.zs4-tboff{
   display:none;
 }
+zs4-toolbar-tool{
+  color:black;
+  background-color: white;
+  display:block;
+}
+zs4-tool-pane.zs4-tbon{
+  display:block;
+  width:100%;
+}
 
-zs4-toolbar-toggle-off.zs4-tbon,
-zs4-toolbar-toggle-off.zs4-off,
-zs4-toolbar-toggle-off.zs4-off.zs4-tboff,
-zs4-toolbar-toggle-off.zs4-off.zs4-tbon{
+zs4-tool-pane.zs4-tboff{
   display:none;
 }
 
-zs4-toolbar-tool{display:block}
+
 
 zs4-tool-tab{
   padding-left:0.25em;
@@ -205,13 +205,6 @@ zs4-tool-tab.zs4-active{
   background-color:lightgray;
 }
 
-zs4-tool-pane.zs4-show{
-  width:100%;
-  display:block;
-  background-color:lightgray;
-  color:black;
-}
-zs4-tool-pane.zs4-hide{display:none}
 
 zs4-about-item{
   display:block;

@@ -1,5 +1,6 @@
 var zs4 = require('./static/zs4');
 var NodeRSA = require('node-rsa');
+const crypto = require('crypto');
 
 var rsa = exports;
 var rsa
@@ -10,12 +11,13 @@ rsa.schema = function(parent){
 rsa.create = function(){
 
   var THIS = this;
-  var input = new Object({name:'rsa',flags:'required',});
+  var input = new Object({name:'rsa',flags:'required authgetpublic',});
   zs4.type.object.call(this,input);
   THIS._.create = rsa.create;
 
-  THIS._.property(new zs4.type.text({name:'pem',flags:'required noget',}));
-  THIS._.property(new zs4.type.string({name:'hash',flags:'required noget',}));
+  THIS._.property(new zs4.type.text({name:'pem',flags:'noget',}));
+  THIS._.property(new zs4.type.text({name:'public',flags:'nostore authgetpublic authsetself',}));
+  THIS._.property(new zs4.type.string({name:'hash',flags:'noset nostore index unique',}));
 
   THIS._.key = new NodeRSA();
 
@@ -25,32 +27,14 @@ rsa.create = function(){
       this._.key = new NodeRSA(input.pem);
       this._.value.pem = input.pem;
 
-      //zs4.console.log('isPrivate: '+this._.key.isPrivate());
-      //zs4.console.log('isPublic: '+this._.key.isPublic());
-      //zs4.console.log('isPublicOnly: '+this._.key.isPublic(true));
-      //zs4.console.log(this._.key.exportKey('pkcs1-public'));
+      this._.value.public = THIS._.getPublicKey();
+      const hash = crypto.createHash('sha1');
+      hash.update(this._.key.exportKey('pkcs1-public-der'));
+      this._.value.hash = hash.digest('base64');
+
+      THIS._.print('RSA KEY HASH: '+this._.value.hash);
     }
   }).bind(THIS);
-
-  THIS._.get = (function(req,po){
-    var get = this._.getInitialize(req);
-    if (get==null)return;
-
-    get.public = new Object({_:{}});
-    get.public._.name = 'public';
-    get.public._.typename = 'text';
-    get.public._.flags = (this._.flags.value | this._.flags.noset);
-    get.public._.value = this._.getPublicKey();
-  }).bind(THIS);
-
-  THIS._.getPublicKey = (function(){
-    //zs4.console.log('loading rsa object \n'+input.pem);
-    if (this._.value.pem=='')return '';
-    console.log(zs4.base64.encode(JSON.stringify(this._.key.exportKey('pkcs1-public-der'))));
-    return this._.key.exportKey('pkcs1-public');
-
-  }).bind(THIS);
-
   THIS._.store = (function(){
     //return null;
     //zs4.console.log(this._.path+'.store()');
@@ -60,6 +44,31 @@ rsa.create = function(){
     store.pem = this._.value.pem;
     //store.key =   THIS._.key;
     return store;
+  }).bind(THIS);
+
+
+  THIS._.get = (function(req,po){
+    req.setScope(THIS);
+    this._.print(this._.path+'.get()');
+    console.log('GETTING RSA PUBLIC KEY');
+    var get = this._.getInitialize(req);
+    if (get==null)return;
+
+    req.setScope(THIS.public);
+    this.public._.get(req,THIS);
+
+    req.setScope(THIS.hash);
+    this.hash._.get(req,THIS);
+
+    return get;
+  }).bind(THIS);
+
+  THIS._.getPublicKey = (function(){
+    //zs4.console.log('loading rsa object \n'+input.pem);
+    if (this._.value.pem=='')return '';
+    //console.log(zs4.base64.encode(JSON.stringify(this._.key.exportKey('pkcs1-public-der'))));
+    return this._.key.exportKey('pkcs1-public');
+
   }).bind(THIS);
 
   THIS._.ensureKeyExists = (function(){

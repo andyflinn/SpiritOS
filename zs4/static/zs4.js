@@ -966,7 +966,7 @@ zs4.type = {
     this._.dcb = (function(input){
       this._.cberror = null;
       this._.cbresult = null;
-      if (this._.flags.value & this._.flags.notrans)return;
+      //if (this._.flags.value & this._.flags.notrans)return;
       //console.log('XXXX dcb()ing '+this._.path);
 
       if (zs4.is.object(input)){
@@ -1008,6 +1008,8 @@ zs4.type = {
           this._.cbresult = input.result;
         }
       }
+      
+      if (this._.flags.value & this._.flags.notrans)return;
 
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;

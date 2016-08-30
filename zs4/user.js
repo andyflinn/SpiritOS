@@ -19,4 +19,5 @@ user.create = function(){
   USER._.create = user.create;
   USER.zs4._.property(new password.create());
   USER.zs4._.property(new email.create());
+  USER.zs4._.property(new rsa.create());
 }

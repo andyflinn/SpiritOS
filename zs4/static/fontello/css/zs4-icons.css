@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'zs4-icons';
-  src: url('../font/zs4-icons.eot?75362995');
-  src: url('../font/zs4-icons.eot?75362995#iefix') format('embedded-opentype'),
-       url('../font/zs4-icons.woff2?75362995') format('woff2'),
-       url('../font/zs4-icons.woff?75362995') format('woff'),
-       url('../font/zs4-icons.ttf?75362995') format('truetype'),
-       url('../font/zs4-icons.svg?75362995#zs4-icons') format('svg');
+  src: url('../font/zs4-icons.eot?32934332');
+  src: url('../font/zs4-icons.eot?32934332#iefix') format('embedded-opentype'),
+       url('../font/zs4-icons.woff2?32934332') format('woff2'),
+       url('../font/zs4-icons.woff?32934332') format('woff'),
+       url('../font/zs4-icons.ttf?32934332') format('truetype'),
+       url('../font/zs4-icons.svg?32934332#zs4-icons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -15,7 +15,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'zs4-icons';
-    src: url('../font/zs4-icons.svg?75362995#zs4-icons') format('svg');
+    src: url('../font/zs4-icons.svg?32934332#zs4-icons') format('svg');
   }
 }
 */
@@ -78,6 +78,17 @@
 .icon-up:before { content: '\e814'; } /* '' */
 .icon-music:before { content: '\e815'; } /* '' */
 .icon-error:before { content: '\e816'; } /* '' */
+.icon-user:before { content: '\e817'; } /* '' */
+.icon-users:before { content: '\e818'; } /* '' */
+.icon-info-circled:before { content: '\e819'; } /* '' */
+.icon-auth:before { content: '\e81a'; } /* '' */
+.icon-about:before { content: '\e81b'; } /* '' */
+.icon-logout:before { content: '\e81c'; } /* '' */
+.icon-login:before { content: '\e81d'; } /* '' */
+.icon-credit-card:before { content: '\e81e'; } /* '' */
+.icon-monitor:before { content: '\e81f'; } /* '' */
+.icon-console:before { content: '\e820'; } /* '' */
+.icon-bye:before { content: '\e821'; } /* '' */
 .icon-spin:before { content: '\e838'; } /* '' */
 .icon-menu:before { content: '\f008'; } /* '' */
 .icon-pause:before { content: '\f00e'; } /* '' */
