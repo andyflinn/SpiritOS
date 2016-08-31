@@ -21,12 +21,13 @@
   width:1em;
   height:1em;
   padding:0.25em;
-  -webkit-transition: color 1s, border-radius 1s, opacity 1s; /* For Safari 3.1 to 6.0 */
-  transition: color 1s, border-radius 1s, opacity 1s;
+  -webkit-transition: color 1s, opacity 1s; /* For Safari 3.1 to 6.0 */
+  transition: color 1s, opacity 1s;
+  background-color: rgba(128,128,128,0.3);
 }
 
 [class^="icon-"]:hover, [class*=" icon-"]:hover {
-  border-radius:0.2em;
+  border-radius:1em;
   opacity: 100%;
   color:lightgreen;
   width:1em;
@@ -96,8 +97,21 @@ zs4-name.zs4-top{
   display:none;
 }
 
+
 .icon-cancel{color:red;}
 .icon-error{background-color: white;}
+
+.icon-none:before{content:" ";font-weight: bolder;background-color: rgba(128,128,128,0.0);}
+
+.icon-equals:before{content:"=";font-weight: bolder;}
+
+.icon-selectall:before{content:"&";font-weight: bolder;}
+.icon-selectany:before{content:"|";font-weight: bolder;}
+.icon-selectnone:before{content:"!";font-weight: bolder;}
+.icon-selectitem:before{content:"$";font-weight: bolder;}
+
+.icon-required:before{content:"*";font-weight: bolder;}
+.icon-info:before{content:"i";font-weight: bolder;}
 
 zs4-error{
   color:red;
@@ -120,11 +134,13 @@ zs4-result.zs4-hide{
 }
 
 zs4-object-head{
-  display:block;
-  width:100%;
+  display:inline-block;
+}
+zs4-object-head.zs4.value{
 
 }
 zs4-object-head.zs4-top{
+  width:100%;
   color:white;
   background-color: blue;
   font-weight: bold;
@@ -164,33 +180,24 @@ zs4-object-content.zs4-top.zs4-tbon{
 zs4-toolbar{
   width:100%;
   background: linear-gradient(to right, lightblue, white );
-  background-size: 0.8em 100%;
+  background-size: 8em 100%;
   background-repeat: no-repeat;
   padding-left:0.5em;
   padding-top:0.5em;
   padding-bottom:0.5em;
   display:block;
-  background-color: white;
-}
-zs4-toolbar-content{
-  display:block;
-}
-zs4-toolbar-content.zs4-tboff{
-  display:none;
 }
 zs4-toolbar-tool{
   color:black;
   background-color: white;
   display:block;
+  width:100%;
 }
-zs4-tool-pane.zs4-tbon{
+zs4-tool-pane.zs4-current{
   display:block;
   width:100%;
 }
 
-zs4-tool-pane.zs4-tboff{
-  display:none;
-}
 
 
 

@@ -123,7 +123,7 @@ express.app.post('/*', function (req, res) {
 express.running = false;
 
 express.schema = function(parent){
-  var THIS = express.THIS = new zs4.type.object({name:'express',flags:'required api'});
+  var THIS = express.THIS = new zs4.type.object({name:'express',flags:'api'});
   parent._.property(THIS);
 
   THIS._.property(new zs4.type.string({name:'host',flags:'required',default:'localhost',}));

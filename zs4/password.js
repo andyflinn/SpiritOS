@@ -91,12 +91,14 @@ password.create = function(){
       get.vfy._.name = 'vfy';
       get.vfy._.typename = 'password';
       get.vfy._.value = '';
+      get.vfy._.flags = THIS._.flags.apiarg|THIS._.flags.required;
     };
     function set(get){
       get.set = new Object({_:{}});
       get.set._.name = 'set';
       get.set._.typename = 'password';
       get.set._.value = '';
+      get.vfy._.flags = THIS._.flags.apiarg;
     };
 
     if (this._.flags.value & this._.flags.notrans){
@@ -111,7 +113,7 @@ password.create = function(){
         }
       }
       else {
-        set(get);
+        set(get);get.set._.flags |= THIS._.flags.required;
       }
     }
 

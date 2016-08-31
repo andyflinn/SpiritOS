@@ -8,7 +8,7 @@ const TIMETOLIVE = (zs4.const.MS.WEEK*2);
 var token = exports;
 
 token.schema = function(parent){
-  var THIS = new zs4.type.object({name:'token',flags:'required api',});
+  var THIS = new zs4.type.object({name:'token',flags:'api',});
   parent._.property(THIS);
   THIS._.property(new zs4.type.string({name:'secret',flags:'required',default:randomstring.generate(RANDOMLENGTH),}));
 

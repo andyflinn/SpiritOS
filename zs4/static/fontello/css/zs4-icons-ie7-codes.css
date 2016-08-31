@@ -33,6 +33,8 @@
 .icon-monitor { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe81f;&nbsp;'); }
 .icon-console { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe820;&nbsp;'); }
 .icon-bye { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe821;&nbsp;'); }
+.icon-delete { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe823;&nbsp;'); }
+.icon-add { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe824;&nbsp;'); }
 .icon-spin { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xe838;&nbsp;'); }
 .icon-menu { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf008;&nbsp;'); }
 .icon-pause { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf00e;&nbsp;'); }
@@ -43,12 +45,16 @@
 .icon-fast-backward { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf013;&nbsp;'); }
 .icon-stop { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf080;&nbsp;'); }
 .icon-false { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf096;&nbsp;'); }
+.icon-list-numbered { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf0cb;&nbsp;'); }
 .icon-mail { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf0e0;&nbsp;'); }
 .icon-download { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf0ed;&nbsp;'); }
 .icon-upload { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf0ee;&nbsp;'); }
+.icon-ascend { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf160;&nbsp;'); }
+.icon-sort-descend { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf161;&nbsp;'); }
 .icon-thumbs-up { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf164;&nbsp;'); }
 .icon-database { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf1c0;&nbsp;'); }
 .icon-wifi { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf1eb;&nbsp;'); }
+.icon-trash { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf1f8;&nbsp;'); }
 .icon-at { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf1fa;&nbsp;'); }
 .icon-toggle-off { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf204;&nbsp;'); }
 .icon-toggle-on { *zoom: expression( this.runtimeStyle['zoom'] = '1', this.innerHTML = '&#xf205;&nbsp;'); }

@@ -11,7 +11,7 @@ rsa.schema = function(parent){
 rsa.create = function(){
 
   var THIS = this;
-  var input = new Object({name:'rsa',flags:'required authgetpublic',});
+  var input = new Object({name:'rsa',flags:'authgetpublic',});
   zs4.type.object.call(this,input);
   THIS._.create = rsa.create;
 

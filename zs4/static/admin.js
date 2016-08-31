@@ -379,42 +379,27 @@ zs4.admin.util = {
 			};
 		}
 	},
-	select:function(o){
+	add:function(o){
 		var THIS = this;
-		zs4.admin.util.tool.call(THIS,o,'select');
-		this.select.textContent = 'options';
-		THIS.mysel = new Object();
+		zs4.admin.util.tool.call(THIS,o,'add');
 
-		THIS.mysel.add = document.createElement('zs4-select-add');
-		zs4.admin.util.setIcon(THIS.mysel.add,'plus')
-		THIS.pane.appendChild(THIS.mysel.add);
-		THIS.mysel.add.onclick = function(){
-			var nu = o._.select.add(THIS.mysel.type.value);
-			o._.html.refreshAll();
-		};
-
-		THIS.mysel.type = document.createElement('select');
-		THIS.mysel.type.className = 'selopt';
-		THIS.mysel.addOption = function(n){
-			var option = document.createElement('option');
-			option.text = n;
-			option.value = n;
-			THIS.mysel.type.add(option);
-		}
-		THIS.refreshMySelect = function(){
-			THIS.mysel.type.innerHTML = '';
-			for (var i = 0 ; i < o._.select.types.length; i++){
-				THIS.mysel.addOption(o._.select.types[i]);
+		function createOnClick(ele,name){
+			ele.onclick = function(){
+				var prop = new zs4.type[name]();
+				prop._.name = zs4.integer.to.name(o._.addId++);
+				o._.property(prop);
+				o._.html.refreshAll();
 			}
 		};
-		THIS.mysel.type.oninput = function(){
 
-		};
-		THIS.pane.appendChild(THIS.mysel.type);
+		for (var i = 0 ; i < o._.addTypes.length ; i++){
+			var name = ''+o._.addTypes[i];
+			var ele = document.createElement('zs4-add-'+name);
+			THIS.pane.appendChild(ele);
+			zs4.admin.util.setIcon(ele,name);
+			createOnClick(ele,name);
+		}
 
-		THIS.refreshTool = function(){
-			THIS.refreshMySelect();
-		};
 	},
 
 	unknown:function(po,o){
@@ -445,38 +430,19 @@ zs4.admin.util = {
 				on:'minus',
 				off:'plus',
 			});
-			if (o._.flags.get.scope()){
-				o._.html.icon.on = 'user';
-				o._.html.icon.off = 'user';
+			if (o._.type == Object){
+
+							if (o._.typename == 'array'){
+							}
+							else if (o._.typename == 'head'){
+							}
 			}
-			else if (o._.typename == 'array'){
-				o._.html.icon.on = 'database';
-				o._.html.icon.off = 'database';
+			else{
+				if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
+				else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
+				else {o._.html.icon.off=o._.html.icon.on='none'}
 			}
-			else if (o._.typename == 'head'){
-				o._.html.icon.on = 'info';
-				o._.html.icon.off = 'info';
-			}
-			else if (o._.flags.get.arrayio()){
-				o._.html.icon.on = 'list';
-				o._.html.icon.off = 'list';
-			}
-			else if (o._.name == 'password' || o._.name == 'token'){
-				o._.html.icon.on = 'key';
-				o._.html.icon.off = 'password';
-			}
-			else if (o._.name == 'email'){
-				o._.html.icon.on = 'at';
-				o._.html.icon.off = 'mail';
-			}
-			else if (o._.name == 'zs4'){
-				o._.html.icon.on = 'cogs';
-				o._.html.icon.off = 'cogs';
-			}
-			else if (o._.name == 'rsa'){
-				o._.html.icon.on = 'password';
-				o._.html.icon.off = 'key';
-			}
+
 		}
 
 		if (o._.html.e==null){
@@ -515,7 +481,26 @@ zs4.admin.util = {
 				//if (zs4.admin.util.am(o))add+=' am'; else rem+=' am';
 				//if (zs4.admin.util.own(o))add+=' own'; else rem+=' own';
 
-				if (o._.html.toolbarIsOpen){add+=' tbon'; rem+=' tboff'}else{add+=' tboff';rem+=' tbon'}
+
+				if (o._.html.toolbarIsOpen){
+					add+=' tbon'; rem+=' tboff';
+					zs4.admin.util.removeClass(o._.html.toolbarHeader,'nodisplay');
+					zs4.admin.util.removeClass(o._.html.toolbar,'nodisplay');
+					zs4.admin.util.setIcon(o._.html.toolbarToggle,'tool');
+				}
+				else{
+					add+=' tboff';rem+=' tbon';
+					if (o._.html.toolbar!=null){
+						zs4.admin.util.addClass(o._.html.toolbarHeader,'nodisplay');
+						zs4.admin.util.addClass(o._.html.toolbar,'nodisplay');
+						if (o._.type==Object){
+							zs4.admin.util.setIcon(o._.html.toolbarToggle,'settings');
+						}
+						else {
+							zs4.admin.util.setIcon(o._.html.toolbarToggle,'equals');
+						}
+					}
+				}
 				if (zs4.is.boolean(o._.html.expanded)){
 					if (o._.html.expanded){
 						add+=' on'; rem+=' off'
@@ -540,6 +525,16 @@ zs4.admin.util = {
 				if (o._.flags.get.own())add+=' own';else rem+=' own';
 				if (o._.flags.get.arrayio())add+=' arrayio';else rem+=' arrayio';
 				if (o._.flags.get.notrans())add+=' notrans';else rem+=' notrans';
+
+				if (o._.type == Object){
+					add+=' object'; rem+=' value';
+				}
+				else {
+					add+=' value'; rem+=' object';
+					if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
+					else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
+					else {o._.html.icon.off=o._.html.icon.on='none'}
+				}
 
 
 				addrem(o._.html.toolbar);
@@ -625,6 +620,8 @@ zs4.admin.util = {
 			zs4.admin.util.addClass(o._.html.spin,'nodisplay');
 			o._.html.head.appendChild(o._.html.spin);
 
+			o._.html.toolbar == null;
+			o._.html.toolbarIsOpen = false;
 			//if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.value & o._.flags.apiarg == o._.flags.apiarg)){
 			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.get.apiarg())){
 				o._.html.toolbarToggle = document.createElement('zs4-toolbar-toggle');
@@ -642,21 +639,12 @@ zs4.admin.util = {
 				o._.html.head.appendChild(o._.html.toolbar);
 
 				o._.html.tool = new Object();
-				o._.html.toolbarIsOpen = false;
 				o._.html.toolbarOpen = (function(){
 					o._.html.toolbarIsOpen = true;
-					zs4.admin.util.removeClass(o._.html.toolbarHeader,'nodisplay');
-					//zs4.admin.util.removeClass(o._.html.toolbarTool,'nodisplay');
-					zs4.admin.util.removeClass(o._.html.toolbar,'nodisplay');
-					zs4.admin.util.setIcon(o._.html.toolbarToggle,'tool');
 					o._.html.genericRefresh();
 				}).bind(o);
 				o._.html.toolbarClose = (function(){
 					o._.html.toolbarIsOpen = false;
-					zs4.admin.util.addClass(o._.html.toolbarHeader,'nodisplay');
-					//zs4.admin.util.addClass(o._.html.toolbarTool,'nodisplay');
-					zs4.admin.util.addClass(o._.html.toolbar,'nodisplay');
-					zs4.admin.util.setIcon(o._.html.toolbarToggle,'settings');
 					o._.html.genericRefresh();
 				}).bind(o);
 
@@ -665,10 +653,10 @@ zs4.admin.util = {
 
 				o._.html.toolbarClose();
 
-				var defaultTool = 'about';
-				if (o._.typename == 'select' && zs4.is.object(o._.select) && o._.select.type!='item'){
-					if (!o._.html.tool.hasOwnProperty('select'))new zs4.admin.util.select(o);
-					defaultTool = 'select';
+				var defaultTool = '';
+				if (o._.addTypes.length > 0){
+					if (!o._.html.tool.hasOwnProperty('add'))new zs4.admin.util.add(o);
+					defaultTool = 'add';
 				}
 				if (!o._.html.tool.hasOwnProperty('about'))new zs4.admin.util.about(o);
 				if (!o._.html.tool.hasOwnProperty('auth')){
@@ -682,6 +670,7 @@ zs4.admin.util = {
 				}
 				if (!o._.html.tool.hasOwnProperty('console'))new zs4.admin.util.console(o);
 				o._.html.tool.about.deselectAll();
+				if (defaultTool!='')o._.html.tool[defaultTool].select.onclick();
 			}
 
 			if (o._.type==Object){
@@ -764,6 +753,8 @@ zs4.admin.util = {
 zs4.admin.type = {
 	array:function(po,o){
 		zs4.admin.type.object(po,o);
+		o._.html.icon.on = 'database';
+		o._.html.icon.off = 'database';
 
 		if (!zs4.is.function(o._.html.refresh)){
 			o._.html.refresh = (function(){
@@ -835,6 +826,7 @@ zs4.admin.type = {
 				return false;
 			}).bind(o);
 		}
+		o._.html.genericRefresh();
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
@@ -843,6 +835,8 @@ zs4.admin.type = {
 	},
 	bye:function(po,o){
 		zs4.admin.type.object(po,o);
+		o._.html.icon.on = 'bye';
+		o._.html.icon.off = 'bye';
 	},
 	date:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -865,6 +859,7 @@ zs4.admin.type = {
 				return parseInt(this._.html.input.value);
 			}).bind(o);
 		}
+		o._.html.genericRefresh();
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
@@ -876,6 +871,8 @@ zs4.admin.type = {
 	},
 	head:function(po,o){
 		zs4.admin.type.object(po,o);
+		o._.html.icon.on = 'info';
+		o._.html.icon.off = 'info';
 	},
 	integer:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -898,6 +895,7 @@ zs4.admin.type = {
 				return parseInt(this._.html.input.value);
 			}).bind(o);
 		}
+		o._.html.genericRefresh();
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
@@ -928,6 +926,7 @@ zs4.admin.type = {
 				return parseFloat(this._.html.input.value);
 			}).bind(o);
 		}
+		o._.html.genericRefresh();
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
@@ -942,6 +941,42 @@ zs4.admin.type = {
 			return null;
 		}
 		zs4.admin.util.unknown(po,o);
+
+		if (o._.html.icon.off=='plus'&&o._.html.icon.on=='minus'){
+			if (o._.flags.get.arrayio()){
+				o._.html.icon.on = 'list';
+				o._.html.icon.off = 'list';
+			}
+			else if (o._.name == 'password'){
+				o._.html.icon.on = 'key';
+				o._.html.icon.off = 'password';
+			}
+			else if (o._.name == 'email'){
+				o._.html.icon.on = 'at';
+				o._.html.icon.off = 'mail';
+			}
+			else if (o._.name == 'zs4'){
+				o._.html.icon.on = 'cogs';
+				o._.html.icon.off = 'cogs';
+			}
+			else if (o._.name == 'rsa'){
+				o._.html.icon.on = 'password';
+				o._.html.icon.off = 'key';
+			}
+			else if (o._.name == 'rsa'){
+				o._.html.icon.on = 'password';
+				o._.html.icon.off = 'key';
+			}
+			else if (o._.name == 'bye'){
+				o._.html.icon.on = 'bye';
+				o._.html.icon.off = 'bye';
+			}
+			else if (o._.name == 'user'){
+				o._.html.icon.on = 'user';
+				o._.html.icon.off = 'user';
+			}
+
+		}
 
 		o._.html.genericRefresh();
 
@@ -983,9 +1018,13 @@ zs4.admin.type = {
 	},
 	password:function(po,o){
 		zs4.admin.type.string(po,o);
+		o._.html.icon.on = 'key';
+		o._.html.icon.off = 'password';
 	},
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);
+		o._.html.icon.on = 'user';
+		o._.html.icon.off = 'user';
 	},
 	scopeindex:function(po,o){
     zs4.admin.util.unknown(po,o);
@@ -1019,6 +1058,7 @@ zs4.admin.type = {
         }
       }
     }
+		o._.html.genericRefresh();
 
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
@@ -1057,6 +1097,7 @@ zs4.admin.type = {
         }
       }
     }
+		o._.html.genericRefresh();
 
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
@@ -1096,6 +1137,7 @@ zs4.admin.type = {
       }
     }
 
+		o._.html.genericRefresh();
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
     o._.html.input.value = po._.value[o._.name];
@@ -1134,6 +1176,7 @@ zs4.admin.type = {
       }
     }
 
+		o._.html.genericRefresh();
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
     o._.html.input.value = po._.value[o._.name];
@@ -1141,7 +1184,23 @@ zs4.admin.type = {
   },
 	select:function(po,o){
 		zs4.admin.type.object(po,o);
-		o._.html.name.textContent = o._.select.type;
+		o._.html.name.textContent = 'select';
+	},
+	selectall:function(po,o){
+		zs4.admin.type.object(po,o);
+		o._.html.name.textContent = 'all';
+	},
+	selectany:function(po,o){
+		zs4.admin.type.object(po,o);
+		o._.html.name.textContent = 'any';
+	},
+	selectnone:function(po,o){
+		zs4.admin.type.object(po,o);
+		o._.html.name.textContent = 'none';
+	},
+	selectitem:function(po,o){
+		zs4.admin.type.object(po,o);
+		o._.html.name.textContent = 'item';
 	},
 	string:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -1165,6 +1224,7 @@ zs4.admin.type = {
 				return this._.html.input.value;
 			}).bind(o);
 		}
+		o._.html.genericRefresh();
 		zs4.admin.util.refreshCallback(o);
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.value = po._.value[o._.name];

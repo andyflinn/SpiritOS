@@ -673,6 +673,14 @@ zs4.type = {
       this._.authSetAuth = new Array();
     }
 
+    if (zs4.is.array(input.addTypes)){
+      this._.addTypes = input.addTypes;
+    }
+    else {
+      this._.addTypes = new Array();
+    }
+    this._.addId = 0;
+
     //if (zs4.is.number(input.min))this._.min = input.min;
     //if (zs4.is.number(input.max))this._.max = input.max;
     //if (zs4.is.number(input.minlength))this._.minlength = input.minlength;
@@ -853,6 +861,7 @@ zs4.type = {
       if (this._.flags.get.authsetpublic())get._.flags |= req.flags.authsetpublic;
       if (this._.flags.get.authsetself())get._.flags |= req.flags.authsetself;
       if (this._.flags.get.local())get._.flags |= req.flags.local;
+      if (this._.flags.get.required())get._.flags |= req.flags.required;
 
       if (!req.flags.get.authset()
       ||  this._.flags.get.noset()
@@ -1008,7 +1017,7 @@ zs4.type = {
           this._.cbresult = input.result;
         }
       }
-      
+
       if (this._.flags.value & this._.flags.notrans)return;
 
       for (var n in this){
@@ -1654,7 +1663,7 @@ zs4.type = {
   },
   bye:function(input){
     var THIS = this;
-    zs4.type.object.call(this,{name:'bye',flags:'api nostore authgetpublic authsetpublic',})
+    zs4.type.object.call(this,{name:'bye',flags:'api nostore apiarg',})
     this._.typename = 'bye';
     this._.create = zs4.type.bye;
     this._.property(new zs4.type.boolean({name:'sure',flags:'required noprune',}));
@@ -1701,6 +1710,7 @@ zs4.type = {
       get.sure._.name = 'sure';
       get.sure._.typename = 'boolean';
       get.sure._.value = false;
+      get.sure._.flags = THIS._.flags.apiarg|THIS._.flags.required;
 
       return get;
     }).bind(THIS);
@@ -1964,8 +1974,11 @@ zs4.type = {
       else ns._.path = ns._.name;
 
       if (!zs4.is.type(ns._.scope))ns._.scope = this._.scope;
-      //if (ns._.path.startsWith('zs4.fso'))
-      //  console.log('linking '+ns._.path);
+
+      if (this._.inscope != null){
+        ns._.inscope = this._.inscope;
+        ns._.flags.value = this._.flags.value;
+      };
 
       if (ns._.type == Object){
 
@@ -2221,55 +2234,53 @@ zs4.type = {
     zs4.type.object.call(this,{name:'select',flags:'noprune apiarg local',});
     this._.typename = 'select';
     this._.create = zs4.type.select;
-    this._.select = new Object({type:'select',types:['all','any','none','item'],});
-    this._.select.lastid = 0;
-
-    this._.select.getOpcodes = (function(){
-      if (this.select.type != 'item')return null;
-      return null;
-    }).bind(this);
-    this._.select.add = (function(n){
-      if (!zs4.string.array.is.element(this._.select.types,n))return null;
-      var nu = new zs4.type.select();
-      nu._.flags.value = this._.flags.value;
-      if (this._.inscope != null)nu._.inscope = this._.inscope;
-      else nu.inscope = this._.scope;
-      nu._.select.type = n;
-      nu._.name = zs4.integer.to.name(this._.select.lastid++);
-
-      if (n=='item'){
-        nu._.property(new zs4.type.scopeitem({name:'path'}));
-        if (this._.inscope != null)nu.path._.inscope = this._.inscope;
-        nu.path._.flags.value = this._.flags.value;
-
-        nu._.property(new zs4.type.scopeitem({name:'opcode'}));
-        if (this._.inscope != null)nu.opcode._.inscope = this._.inscope;
-        nu.opcode._.flags.value = this._.flags.value;
-
-
-      };
-      this._.property(nu);
-    }).bind(this);
+    this._.addTypes = ['selectall','selectany','selectnone','selectitem'];
+    this._.select = new Object();
 
     this._.select.check = (function(){
-      if (this._.name == 'select' || this._.name == 'all'){
-        for (var n in this)if (zs4.is.type(this[n])){
-          if (!this[n]._.select.check())return false;
-        }
-        return true;
+      for (var n in this)if (zs4.is.type(this[n])){
+        if (!this[n]._.select.check())return false;
       }
-      else if (this._.name=='any'){
-        for (var n in this)if (zs4.is.type(this[n])){
-          if (this[n]._.select.check())return true;
-        }
-        return false;
+      return true;
+
+    }).bind(this);
+  },
+  selectall:function(){
+    zs4.type.select.call(this);
+    this._.typename = 'selectall';
+    this._.select.check = (function(){
+      for (var n in this)if (zs4.is.type(this[n])){
+        if (!this[n]._.select.check())return false;
       }
-      else if (this._.name=='none'){
-        for (var n in this)if (zs4.is.type(this[n])){
-          if (this[n]._.select.check())return false;
-        }
-        return true;
+      return true;
+    }).bind(this);
+  },
+  selectany:function(){
+    zs4.type.select.call(this);
+    this._.typename = 'selectany';
+    this._.select.check = (function(){
+      for (var n in this)if (zs4.is.type(this[n])){
+        if (this[n]._.select.check())return true;
       }
+      return false;
+    }).bind(this);
+  },
+  selectnone:function(){
+    zs4.type.select.call(this);
+    this._.typename = 'selectnone';
+    this._.select.check = (function(){
+      for (var n in this)if (zs4.is.type(this[n])){
+        if (this[n]._.select.check())return false;
+      }
+      return true;
+    }).bind(this);
+  },
+  selectitem:function(){
+    zs4.type.select.call(this);
+    this._.typename = 'selectitem';
+    this._.addTypes = new Array();
+    this._.select.check = (function(){
+      return false;
     }).bind(this);
   },
   string:function(input){
@@ -2823,7 +2834,7 @@ if (zs4.is.window()){
       var limit = 1024;
       var iw = window.innerWidth;
       if (iw > limit)iw = limit;
-      var em = iw / 16;
+      var em = iw / 24;
       zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
     },
   };
