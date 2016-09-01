@@ -10,7 +10,7 @@ email.schema = function(parent){
 email.create = function(input){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'email',flags:'required',authGet:['zs4.self'],});
+  if (!zs4.is.object(input))input = new Object({name:'email',flags:'authgetpublic authsetself'],});
   zs4.type.object.call(this,input);
   THIS._.create = email.create;
 

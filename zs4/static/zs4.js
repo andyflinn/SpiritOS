@@ -387,6 +387,9 @@ zs4.error = function(o){
     if (zs4.is.string(o.text)){this.error.text = o.text.trim();}
     this.error.data = o.data;
   }
+  else if (zs4.is.string(o)){
+    this.error.text = o;
+  }
 }
 
 zs4.done = function(o){
@@ -568,6 +571,7 @@ zs4.util = {
     this.addFlag('authsetpublic',0x200000);
 
     this.addFlag('local',0x1000000);
+    this.addFlag('authroot',0x2000000);
 
     //combo flags
     this.addFlag('apiarg',this.authgetpublic|this.authsetpublic);
@@ -607,6 +611,7 @@ zs4.util = {
       if (int & this.authsetpublic) addFlag('authsetpublic');
 
       if (int & this.local) addFlag('local');
+      if (int & this.authroot) addFlag('authroot');
 
 
       return ret;
@@ -644,8 +649,6 @@ zs4.type = {
     this._.flags = new zs4.util.flags();
     if (zs4.is.string(input.flags))this._.flags.setString(input.flags);
 
-    if (zs4.is.boolean(input.array))this._.array = input.array;
-
     if (zs4.is.type(input.inscope)&&input.inscope._.flags.get.scope())this._.inscope = input.inscope;
 
     if (zs4.is.array(input.authGet)){
@@ -673,6 +676,13 @@ zs4.type = {
       this._.authSetAuth = new Array();
     }
 
+    if (zs4.is.array(input.enum)){
+      this._.enum = input.enum;
+    }
+    else {
+      this._.enum = new Array();
+    }
+
     if (zs4.is.array(input.addTypes)){
       this._.addTypes = input.addTypes;
     }
@@ -681,6 +691,14 @@ zs4.type = {
     }
     this._.addId = 0;
 
+    this._.localRefresh = (function(){
+      for (var n in this)if (zs4.is.type(this[n])){
+        this[n]._.localRefresh();
+      }
+      if (zs4.is.function(this._.onLocalChange)){
+        this._.onLocalChange();
+      }
+    }).bind(this);
     //if (zs4.is.number(input.min))this._.min = input.min;
     //if (zs4.is.number(input.max))this._.max = input.max;
     //if (zs4.is.number(input.minlength))this._.minlength = input.minlength;
@@ -846,6 +864,8 @@ zs4.type = {
       get._.typename = this._.typename;
       zs4.copy.schemabasics(this,get);
 
+      if (this._.typename=='enum'&&zs4.is.array(this._.enum))get._.enum = this._.enum;
+
       if (zs4.is.type(this._.inscope)&&this._.inscope._.flags.get.scope())
         get._.inscope = this._.inscope._.path;
 
@@ -862,6 +882,7 @@ zs4.type = {
       if (this._.flags.get.authsetself())get._.flags |= req.flags.authsetself;
       if (this._.flags.get.local())get._.flags |= req.flags.local;
       if (this._.flags.get.required())get._.flags |= req.flags.required;
+      if (this._.flags.get.authroot())get._.flags |= req.flags.authroot;
 
       if (!req.flags.get.authset()
       ||  this._.flags.get.noset()
@@ -908,6 +929,8 @@ zs4.type = {
       this._.name = o._.name;
       this._.typename = o._.typename;
 
+      if (zs4.is.array(o._.enum))this._.enum = o._.enum;
+
       zs4.copy.schemabasics(o,this);
       this._.flags.value = o._.flags;
       if (zs4.is.string(o._.inscope)&&this._.inscope._.flags.get.scope()){
@@ -937,7 +960,7 @@ zs4.type = {
           this[n]._.got(o[n],this);
         }
 
-        if (!this._.flags.get.arrayio()){
+        if (!this._.flags.get.arrayio()&&!this._.flags.get.local()){
 
           for (var n in this){
             if (!zs4.is.type(this[n]))continue;
@@ -960,6 +983,7 @@ zs4.type = {
       }
       else if (p!=null){
         p._.value[this._.name]=o._.value;
+        this._.value = o._.value;
         //console.log(o._.value);
         //console.log(o._.html);
         if (zs4.is.function(o._.response)){
@@ -1398,6 +1422,7 @@ zs4.type = {
       |this._.flags.notrans
       |this._.flags.noprune
       |this._.flags.nostore
+      |this._.flags.local
     ),true);
 
     THIS._.property(new zs4.type.select());
@@ -1494,7 +1519,7 @@ zs4.type = {
 
     THIS.method._.property(new zs4.type.object({name:'getone',flags:'api noprune nostore noprune apiarg',}));
     THIS.method.getone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
-    THIS.method.getone._.property(new zs4.type.string({name:'equals',flags:'required nostore noprune apiarg',}));
+    THIS.method.getone._.property(new zs4.type.string({name:'eq',flags:'required nostore noprune apiarg',}));
     this.method.getone._.transform = (function(req,cb){
       var GETONE = this;
       req.setScope(this);
@@ -1505,8 +1530,8 @@ zs4.type = {
         req.setScope(GETONE.item);
         GETONE.item._.get(req,GETONE);
 
-        req.setScope(GETONE.equals);
-        GETONE.equals._.get(req,GETONE);
+        req.setScope(GETONE.eq);
+        GETONE.eq._.get(req,GETONE);
 
         cb();
         return;
@@ -1536,7 +1561,7 @@ zs4.type = {
         return get();
       }
       var item = req.input.item;
-      var equals = req.input.equals;
+      var eq = req.input.eq;
 
       var parallel = new zs4.processor.parallel();
       for (var n in THIS.array._.value){
@@ -1558,13 +1583,13 @@ zs4.type = {
             GETONE._.print('   CANT FIND '+item,req);
             cb(); return;
           }
-          if (val._.opcode.equals(equals)){
+          if (val._.opcode.eq(eq)){
             GETONE._.print('   MATCH! -> transform() '+item,req);
             model._.transform(req,cb);
             return;
           }
           else {
-            GETONE._.print('   FAILURE! (v/e) '+val._.value+'!='+equals,req);
+            GETONE._.print('   FAILURE! (v/e) '+val._.value+'!='+eq,req);
             cb(); return;
           }
         },r);
@@ -1607,7 +1632,7 @@ zs4.type = {
     this._.typename = 'boolean';
     this._.default = new Boolean();
     if (zs4.is.boolean(input.default))this._.default = input.default; else this._.default = false;
-
+    this._.value = this._.default;
     this._.zs4check = (function(req,input){
       if (!this._.zs4checkinit(req,input))return false;
 
@@ -1625,10 +1650,34 @@ zs4.type = {
         }
         return null;
       }).bind(THIS),
-      equals:(function(value){
+      eq:(function(value){
         var v = THIS._.opcode.convert(value);
         if (v==null)return false;
-        if (v===this._.value)return true;
+        if (v==this._.value)return true;
+        return false;
+      }).bind(THIS),
+      gt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value==true && v==false)return true;
+        return false;
+      }).bind(THIS),
+      lt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value==false && v==true)return true;
+        return false;
+      }).bind(THIS),
+      ge:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (v==false)return true;
+        return false;
+      }).bind(THIS),
+      le:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (v==true)return true;
         return false;
       }).bind(THIS),
     };
@@ -1763,6 +1812,10 @@ zs4.type = {
       cb();
     }).bind(this);
   },
+  enum:function(input){
+    zs4.type.string.call(this,input);
+    this._.typename = 'enum';
+  },
   head:function(){
     zs4.type.object.call(this,{name:'head',flags:'api authgetpublic authsetself',})
     this._.typename = 'head';
@@ -1790,6 +1843,7 @@ zs4.type = {
       if (zs4.is.number(input.min))this._.min = this._.parseInt(input.min);
       if (zs4.is.number(input.max))this._.max = this._.parseInt(input.max);
     }
+    this._.value = this._.default;
 
     this._.zs4check = (function(req,input){
       if (!this._.zs4checkinit(req,input))return false;
@@ -1821,10 +1875,34 @@ zs4.type = {
           else return 0;
         }
       }).bind(THIS),
-      equals:(function(value){
+      eq:(function(value){
         var v = THIS._.opcode.convert(value);
         if (v==null)return false;
-        if (v===this._.value)return true;
+        if (v==this._.value)return true;
+        return false;
+      }).bind(THIS),
+      gt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value > v)return true;
+        return false;
+      }).bind(THIS),
+      lt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value < v)return true;
+        return false;
+      }).bind(THIS),
+      ge:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value >= v)return true;
+        return false;
+      }).bind(THIS),
+      le:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value <= v)return true;
         return false;
       }).bind(THIS),
     };
@@ -1894,6 +1972,7 @@ zs4.type = {
       if (zs4.is.number(input.min))this._.min = input.min;
       if (zs4.is.number(input.max))this._.max = input.max;
     }
+    this._.value = this._.default;
 
     this._.zs4check = (function(req,input){
       if (!this._.zs4checkinit(req,input))return false;
@@ -1920,10 +1999,34 @@ zs4.type = {
           else return 0;
         }
       }).bind(THIS),
-      equals:(function(value){
+      eq:(function(value){
         var v = THIS._.opcode.convert(value);
         if (v==null)return false;
-        if (v===this._.value)return true;
+        if (v==this._.value)return true;
+        return false;
+      }).bind(THIS),
+      gt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value > v)return true;
+        return false;
+      }).bind(THIS),
+      lt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value < v)return true;
+        return false;
+      }).bind(THIS),
+      ge:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value >= v)return true;
+        return false;
+      }).bind(THIS),
+      le:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value <= v)return true;
         return false;
       }).bind(THIS),
     };
@@ -1978,6 +2081,7 @@ zs4.type = {
       if (this._.inscope != null){
         ns._.inscope = this._.inscope;
         ns._.flags.value = this._.flags.value;
+        this._.inscope._.localRefresh();
       };
 
       if (ns._.type == Object){
@@ -2188,15 +2292,12 @@ zs4.type = {
             item[n]._.print('getScopeScopes OK!!!!')
             var label = item[n]._.path;
             var value = item[n]._.path;
-            if (zs4.is.object(item[n].zs4.head._.value)){
-              if (zs4.is.string(item[n].zs4.head._.value.title)){
-                if (item[n].zs4.head._.value.title.length > 1 ) {
-                  label = item[n].zs4.head._.value.title;
-                }
-                else {
-                  label = n + ' (untitled)';
-                }
-              }
+            if (zs4.is.string(item[n].zs4.head._.value.title)
+            && (item[n].zs4.head._.value.title.length > 1 )){
+              label = item[n].zs4.head._.value.title;
+            }
+            else {
+              label = n + '(untitled)';
             }
             response.push(new Object({label:label,value:value}));
           }
@@ -2231,17 +2332,38 @@ zs4.type = {
     this._.typename = 'scopescope';
   },
   select:function(){
+    var SELECT = this;
     zs4.type.object.call(this,{name:'select',flags:'noprune apiarg local',});
     this._.typename = 'select';
     this._.create = zs4.type.select;
     this._.addTypes = ['selectall','selectany','selectnone','selectitem'];
     this._.select = new Object();
 
+    this._.onLocalChange = (function(){
+      this._.select.check();
+    }).bind(this);
+
+    this._.select.inscope = (function(){
+      if (zs4.is.type(this._.inscope))return this._.inscope;
+      return this._.scope;
+    }).bind(this);
+    this._.select.result = (function(r){
+      if (zs4.is.boolean(r)){
+        this._.cberror = null;
+        this._.cbresult = r;
+        return r;
+      }
+      else if (zs4.is.string(r)){
+        SELECT._.cberror = new Object({text:r});
+        SELECT._.cbresult = null;
+        return false;
+      }
+    }).bind(this);
     this._.select.check = (function(){
       for (var n in this)if (zs4.is.type(this[n])){
-        if (!this[n]._.select.check())return false;
+        if (!this[n]._.select.check())return this._.select.result('');
       }
-      return true;
+      return this._.select.result(true);
 
     }).bind(this);
   },
@@ -2250,9 +2372,9 @@ zs4.type = {
     this._.typename = 'selectall';
     this._.select.check = (function(){
       for (var n in this)if (zs4.is.type(this[n])){
-        if (!this[n]._.select.check())return false;
+        if (!this[n]._.select.check())return this._.select.result('');
       }
-      return true;
+      return this._.select.result(true);
     }).bind(this);
   },
   selectany:function(){
@@ -2260,9 +2382,9 @@ zs4.type = {
     this._.typename = 'selectany';
     this._.select.check = (function(){
       for (var n in this)if (zs4.is.type(this[n])){
-        if (this[n]._.select.check())return true;
+        if (this[n]._.select.check())return this._.select.result(true);
       }
-      return false;
+      return this._.select.result('');
     }).bind(this);
   },
   selectnone:function(){
@@ -2270,18 +2392,113 @@ zs4.type = {
     this._.typename = 'selectnone';
     this._.select.check = (function(){
       for (var n in this)if (zs4.is.type(this[n])){
-        if (this[n]._.select.check())return false;
+        if (this[n]._.select.check())return this._.select.result('');
       }
-      return true;
+      return this._.select.result(true);
     }).bind(this);
   },
   selectitem:function(){
-    zs4.type.select.call(this);
-    this._.typename = 'selectitem';
-    this._.addTypes = new Array();
-    this._.select.check = (function(){
-      return false;
+    var ITEM = this;
+    zs4.type.select.call(ITEM);
+    ITEM._.typename = 'selectitem';
+    ITEM._.addTypes = new Array();
+
+    ITEM._.property(new zs4.type.scopeitem({name:'item',}));
+    ITEM._.property(new zs4.type.enum({name:'opcode',enum:['exists','eq','gt','lt','ge','le'],default:'exists'}));
+    ITEM._.property(new zs4.type.enum({name:'type',enum:['const','prop'],default:'const'}));
+    ITEM._.property(new zs4.type.string({name:'const'}));
+    ITEM._.property(new zs4.type.scopeitem({name:'prop',}));
+
+    ITEM._.select.check = (function(){
+      //console.log(ITEM._.path+'._.select.check()');
+      var scope = this._.select.inscope();
+      if (scope==null)return this._.select.result('scope');
+
+      if (ITEM.item._.value==null||ITEM.item._.value==''){
+        return this._.select.result('item empty');
+      }
+
+      var item = scope._.resolvePath(ITEM.item._.value)
+      if (item==null)return this._.select.result('item not found');
+      //console.log('    item value: '+item._.value);
+      if (ITEM.opcode._.value==null||ITEM.opcode._.value=='')return this._.select.result('opcode');
+
+      if (ITEM.opcode._.value=='exists')return this._.select.result(true);
+
+      if (!zs4.is.function(item._.opcode[ITEM.opcode._.value])){
+        return this._.select.result('no \''+ITEM.opcode._.value+'\' opcode');
+      }
+
+      if (ITEM.type._.value != 'const' && ITEM.type._.value != 'prop')return this._.select.result('type');
+
+      if (ITEM.type._.value == 'const'){
+        if(item._.opcode[ITEM.opcode._.value](ITEM.const._.value)) return this._.select.result(true);
+        return this._.select.result('not '+ITEM.opcode._.value);
+      }
+
+      if (ITEM.type._.value == 'prop'){
+        if (ITEM.prop._.value==null||ITEM.prop._.value=='')return this._.select.result('prop empty');
+        var prop = scope._.resolvePath(ITEM.prop._.value)
+        if (prop==null)return this._.select.result('prop not found');
+        if (prop._.type==Object)return this._.select.result('bad prop');
+
+        if (item._.opcode[ITEM.opcode._.value](prop._.value))return this._.select.result(true);
+        return this._.select.result('not '+ITEM.opcode._.value);
+      }
+
+      return this._.select.result('error');
     }).bind(this);
+
+    ITEM._.onLocalChange = (function(){
+      var scope = this._.select.inscope();
+      if (scope==null)return this._.select.result('scope');
+      //console.log(ITEM._.path+'._.onLocalChange()');
+      ITEM.opcode._.flags.set.nodisplay(true);
+      ITEM.type._.flags.set.nodisplay(true);
+      ITEM.const._.flags.set.nodisplay(true);
+      ITEM.prop._.flags.set.nodisplay(true);
+      if (ITEM.item._.value==null||ITEM.item._.value==''){
+        //console.log('      all items hidden');
+      }
+      else {
+        ITEM.opcode._.flags.set.nodisplay(false);
+        var item = scope._.resolvePath(ITEM.item._.value)
+        if (item!=null){
+          if (item._.type==String){
+            ITEM.opcode._.enum = ['exists','eq','gt','lt','ge','le',
+            'str_eq','str_gt','str_lt','str_ge','str_le',
+            'str_start','str_end','str_search',];
+          }
+          else{
+            ITEM.opcode._.enum = ['exists','eq','gt','lt','ge','le'];
+          }
+          //console.log('      show opcode');
+          if (ITEM.opcode._.value == null||ITEM.opcode._.value == ''){
+            ITEM.opcode._.value = 'exists';
+            ITEM._.value.opcode = 'exists';
+          }
+          //console.log('      opcode='+ITEM.opcode._.value);
+          if (ITEM.opcode._.value != 'exists'){
+            ITEM.type._.flags.set.nodisplay(false);
+
+            if (ITEM.type._.value != 'const' && ITEM.type._.value != 'prop'){
+              ITEM.type._.value = 'const';
+            }
+
+            //.log('      type='+ITEM.type._.value);
+            if (ITEM.type._.value == 'const'){
+              ITEM.const._.flags.set.nodisplay(false);
+            }
+            else {
+              ITEM.prop._.flags.set.nodisplay(false);
+            }
+
+          }
+        }
+
+      }
+      ITEM._.select.check();
+    }).bind(ITEM);
   },
   string:function(input){
     var THIS = this;
@@ -2299,6 +2516,7 @@ zs4.type = {
       //if (!zs4.is.number(this.minlength))this._.minlength = zs4.const.STRING.MINLENGTH;
       if (!zs4.is.number(this._.maxlength))this._.maxlength = zs4.const.STRING.MAXLENGTH;
     }
+    this._.value = this._.default;
 
     this._.zs4check = (function(req,input){
       if (!this._.zs4checkinit(req,input))return false;
@@ -2316,10 +2534,81 @@ zs4.type = {
 
         else return v.toString();
       }).bind(THIS),
-      equals:(function(value){
+      eq:(function(value){
         var v = THIS._.opcode.convert(value);
         if (v==null)return false;
-        if (v===this._.value)return true;
+        if (v==this._.value)return true;
+        return false;
+      }).bind(THIS),
+      gt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value > v)return true;
+        return false;
+      }).bind(THIS),
+      lt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value < v)return true;
+        return false;
+      }).bind(THIS),
+      ge:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value >= v)return true;
+        return false;
+      }).bind(THIS),
+      le:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value <= v)return true;
+        return false;
+      }).bind(THIS),
+      str_eq:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value.localeCompare(v)==0)return true;
+        return false;
+      }).bind(THIS),
+      str_gt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value.localeCompare(v)>0)return true;
+        return false;
+      }).bind(THIS),
+      str_lt:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value.localeCompare(v)<0)return true;
+        return false;
+      }).bind(THIS),
+      str_ge:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value.localeCompare(v)>=0)return true;
+        return false;
+      }).bind(THIS),
+      str_le:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        if (this._.value.localeCompare(v)<=0)return true;
+        return false;
+      }).bind(THIS),
+      str_start:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        return this._.value.startsWith(v);
+      }).bind(THIS),
+      str_end:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        return this._.value.endsWith(v);
+      }).bind(THIS),
+      str_search:(function(value){
+        var v = THIS._.opcode.convert(value);
+        if (v==null)return false;
+        var count = this._.value.search(v);
+        if (count >= 0)return true;
         return false;
       }).bind(THIS),
     };
@@ -2453,6 +2742,7 @@ zs4.request = function(o){
     }
 
     if (this.userIsRoot()){
+      THIS.flags.set.authroot(true);
       THIS.flags.set.authget(true);
       THIS.flags.set.authset(true);
       THIS.flags.set.authgetauth(true);
@@ -2834,7 +3124,7 @@ if (zs4.is.window()){
       var limit = 1024;
       var iw = window.innerWidth;
       if (iw > limit)iw = limit;
-      var em = iw / 24;
+      var em = iw / 16;
       zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
     },
   };

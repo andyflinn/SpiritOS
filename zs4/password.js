@@ -98,7 +98,7 @@ password.create = function(){
       get.set._.name = 'set';
       get.set._.typename = 'password';
       get.set._.value = '';
-      get.vfy._.flags = THIS._.flags.apiarg;
+      get.set._.flags = THIS._.flags.apiarg;
     };
 
     if (this._.flags.value & this._.flags.notrans){
