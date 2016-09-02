@@ -40,7 +40,7 @@ express.app.use(cookieParser());
 express.app.use(xpress.static(path.join(__dirname, 'static')));
 
 express.getCookie = function(req,zs4request){
-  if (express.THIS._.value.cookies){
+  if (express.THIS.cookies._.value){
     if (!zs4.is.string(zs4request.request.token)){
       if (req.query!=null&&req.query.token!=null&&req.query.token.length >10){
         zs4request.request.token=req.query.token;
@@ -56,7 +56,7 @@ express.getCookie = function(req,zs4request){
   }
 };
 express.setCookie = function(res,zs4request){
-  if (express.THIS._.value.cookies){
+  if (express.THIS.cookies._.value){
     if (zs4.is.string(zs4request.request.token)&&(zs4.is.object(zs4request.request.payload))){
       res.cookie('zs4' , zs4request.request.token, {expires :new Date(zs4request.request.payload.exp)});
       express.THIS._.print('cookie set');
@@ -149,7 +149,7 @@ express.schema = function(parent){
   THIS.start = function(){
     if (express.running)return;
 
-    var port = this._.value.port;
+    var port = this.port._.value;
     zs4.boot.run(function(){
       express.app.listen(port, function (err) {
         if (err!=null){
@@ -163,6 +163,6 @@ express.schema = function(parent){
     });
   };
   THIS.getHostURL = function(){
-    return ('http://'+this._.value.host+':'+this._.value.port);
+    return ('http://'+this.host._.value+':'+this.port._.value);
   }
 }

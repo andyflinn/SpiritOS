@@ -10,6 +10,6 @@ mongobase.schema = function(parent){
   parent.mongobase._.property(new zs4.type.string({name:'url',required:true,default:'mongodb://127.0.0.1/'}));
 
   parent.mongobase.getDataBaseUrl = function(dbName){
-    return (this.value.url + dbName);
+    return (this.url._.value + dbName);
   }
 };

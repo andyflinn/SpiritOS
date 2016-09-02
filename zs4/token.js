@@ -23,7 +23,7 @@ token.schema = function(parent){
 
     THIS._.print('token payload: '+JSON.stringify(payload));
 
-    var ret = jwt.encode(payload, this._.value.secret);
+    var ret = jwt.encode(payload, this.secret._.value);
     //console.log(ret);
     return ret;
   }).bind(THIS);
@@ -32,7 +32,7 @@ token.schema = function(parent){
 
     var dec;
     try {
-      dec = jwt.decode(token, this._.value.secret);
+      dec = jwt.decode(token, this.secret._.value);
     }
     catch(err) {
       return null;

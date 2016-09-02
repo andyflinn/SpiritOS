@@ -1126,10 +1126,10 @@ zs4.admin.type = {
 		//zs4.admin.util.addClass(e)
 
 		if (o._.flags.value & o._.flags.scope){
-			//console.log('change label for scope '+o._.path+': '+o._.value.zs4.head.title);
+
 			o._.scope = o;
-			if (zs4.is.string(o._.value.zs4.head.title) && o._.value.zs4.head.title.length > 0){
-				o._.html.name.textContent = o._.value.zs4.head.title;
+			if (zs4.is.string(o.zs4.head.title._.value) && o.zs4.head.title._.value.length > 0){
+				o._.html.name.textContent = o.zs4.head.title._.value;
 			}
 			else if (!o._.flags.get.notrans()){
 				o._.html.name.textContent = o._.name + ' (untitled)';

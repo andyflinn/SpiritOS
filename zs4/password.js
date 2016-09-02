@@ -25,7 +25,7 @@ password.create = function(){
         this._.print(this._.path+'.transform('+JSON.stringify(req.input)+')',req);
       }
 
-      if (passhash.isHashed(this._.value.hashed)){
+      if (passhash.isHashed(this.hashed._.value)){
         var oldPassVerified = this.verify(req.input.vfy);
 
         if (oldPassVerified){
@@ -37,7 +37,7 @@ password.create = function(){
             console.log('...pass change...');
             var nu = this.generate(req.input.set);
             if (nu!=null) {
-              this._.value.hashed = nu;
+              this.hashed._.value = nu;
               this._.shouldBeSaved(req);
               req.result(THIS,'password changed');
             }
@@ -58,7 +58,7 @@ password.create = function(){
 
         var nu = this.generate(req.input.set);
           if (nu) {
-            this._.value.hashed = nu;
+            this.hashed._.value = nu;
             //console.log('...password set...');
             this._.shouldBeSaved(req);
             req.result(THIS,'password set');
@@ -70,8 +70,8 @@ password.create = function(){
       }
     }
 
-    this._.value.set='';
-    this._.value.vfy='';
+    this.set._.value='';
+    this.vfy._.value='';
 
     this._.get(req); cb(); return;
   }).bind(THIS);
@@ -106,7 +106,7 @@ password.create = function(){
       set(get);
     }
     else {
-      if (passhash.isHashed(this._.value.hashed)){
+      if (passhash.isHashed(this.hashed._.value)){
         vfy(get);
         if (req.am(THIS)||req.own(THIS)){
           set(get);
@@ -129,18 +129,18 @@ password.create = function(){
 
   THIS.verify = function(pw){
     //zs4.console.log('verifying');
-    if (!zs4.is.password(pw)||!passhash.isHashed(this._.value.hashed)){
+    if (!zs4.is.password(pw)||!passhash.isHashed(this.hashed._.value)){
       //zs4.console.log('BAD!');
       return false;
     }
-    return passhash.verify(pw,this._.value.hashed);
+    return passhash.verify(pw,this.hashed._.value);
   };
   THIS.generate = function(pw){
     //zs4.console.log('generating password');
     if (!zs4.is.password(pw)) return null;
     var nu = null;
     try{
-      nu = passhash.generate(pw,{algorithm:this._.value.algorithm,saltLength:this._.value.saltlength,iterations:this._.value.iterations,});
+      nu = passhash.generate(pw,{algorithm:this.algorithm._.value,saltLength:this.saltlength._.value,iterations:this.iterations._.value,});
     }
     catch(err){
       //zs4.console.log(err);

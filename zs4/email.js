@@ -37,7 +37,7 @@ email.create = function(input){
 
     req.setScope(this);
     this._.transformInternal(req);
-    this._.value.from = this._.value.to = this._.value.subject = this._.value.text = '';
+    this.to._.value = this.subject._.value = this.text._.value = '';
 
     function get(){
       MESSAGE._.get(req);
@@ -59,7 +59,7 @@ email.create = function(input){
 
     if (req.input==null) return get();
 
-    if (!zs4.is.email(THIS.smtp._.value.user)
+    if (!zs4.is.email(THIS.smtp.user._.value)
     ||  !zs4.is.email(req.input.to)
     ||  !zs4.is.string(req.input.subject)
     ||  !zs4.is.string(req.input.text)
@@ -72,22 +72,22 @@ email.create = function(input){
     else{
       console.log(this._.path+'.transform()');
       var message = {
-        from:THIS.smtp._.value.user,
+        from:THIS.smtp.user._.value,
         to:req.input.to,
         subject:req.input.subject,
         text:req.input.text,
       };
-      if (!THIS._.value.smtp.configured){
+      if (!THIS.smtp.configured._.value){
         req.error(this,'smtp not configured');
         return get();
       }
       if (THIS.smtpServer == null){
         THIS.smtpServer = emailjs.server.connect({
-           user:    THIS._.value.smtp.user,
-           password: THIS._.value.smtp.password,
-           host:    THIS._.value.smtp.host,
-           port:    THIS._.value.smtp.port,
-           ssl:     THIS._.value.smtp.ssl,
+           user:    THIS.smtp.user._.value,
+           password: THIS.smtp.password._.value,
+           host:    THIS.smtp.host._.value,
+           port:    THIS.smtp.port._.value,
+           ssl:     THIS.smtp.ssl._.value,
         });
       }
       console.log(message);
