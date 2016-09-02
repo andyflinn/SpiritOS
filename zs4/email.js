@@ -3,6 +3,8 @@ var emailjs = require('emailjs');
 
 var email = exports;
 
+email.lastaddr = Date.now();
+
 email.schema = function(parent){
   parent._.property(new email.create({name:'email',required:true,authGet:['zs4.self'],}));
 };
@@ -10,19 +12,21 @@ email.schema = function(parent){
 email.create = function(input){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'email',flags:'authgetpublic authsetself'],});
+  if (!zs4.is.object(input))input = new Object({name:'email',flags:'authgetpublic authsetself',});
   zs4.type.object.call(this,input);
   THIS._.create = email.create;
 
-  THIS._.property(new zs4.type.object({name:'smtp',flags:'required api authsetself',}));
-  THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'required authsetself',default:false,}));
-  THIS.smtp._.property(new zs4.type.string({name:'user',flags:'required index unique authsetself',}));
-  THIS.smtp._.property(new zs4.type.string({name:'password',flags:'required authsetself',}));
-  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'required authsetself',}));
-  THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'required authsetself',}));
-  THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'required authsetself',default:false,}));
+  var nuaddr = (zs4.integer.to.name(email.lastaddr++)+'@zs4.zs4');
 
-  THIS._.property(new zs4.type.object({name:'message',flags:'required api nostore noprune authsetself',}));
+  THIS._.property(new zs4.type.object({name:'smtp',flags:'required api authsetself',}));
+  THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'authsetself',default:false,}));
+  THIS.smtp._.property(new zs4.type.string({name:'user',flags:'index unique authsetself',default:nuaddr}));
+  THIS.smtp._.property(new zs4.type.string({name:'password',flags:'authsetself',}));
+  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'authsetself',}));
+  THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'authsetself',}));
+  THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'authsetself',default:false,}));
+
+  THIS._.property(new zs4.type.object({name:'message',flags:'api nostore noprune authsetself',}));
 
   THIS.message._.property(new zs4.type.email({name:'to',flags:'required noprune apiarg',}));
   THIS.message._.property(new zs4.type.string({name:'subject',flags:'required noprune apiarg',minlength:1,}));

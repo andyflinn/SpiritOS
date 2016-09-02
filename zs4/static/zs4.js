@@ -364,16 +364,16 @@ zs4.json =  {
 };
 
 zs4.path = {
-  resolve:function(path){
-    var ret = zs4.THIS;
+  resolve:function(obj,path){
+    var ret = obj;
     if (path == null || path.length == 0)return ret;
     var a = zs4.string.split.separators(path,'./\\_-');
     if (a == null || a.length == 0)return ret;
     for (var i = 0 ; i < a.length ; i++){
-      if (!zs4.is.name(a[i])||!ret.hasOwnProperty(a[i])||!zs4.is.type(ret[a[i]])) return ret;
+      if (!zs4.is.name(a[i])||!ret.hasOwnProperty(a[i])) return null;
       ret = ret[a[i]];
     }
-    console.log('path resolved: '+ret._.path);
+    console.log('path resolved: '+path);
     return ret;
   },
 };
@@ -1364,6 +1364,7 @@ zs4.type = {
     }).bind(this.method.getall);
 
     this.method.getone = null;
+    this.method.deleteone = null;
 
     THIS.method._.property(new zs4.type.object({name:'deleteall',flags:'api noprune nostore',}));
     THIS.method.deleteall._.property(new zs4.type.boolean({name:'sure',flags:'required nostore noprune',}));
@@ -1494,6 +1495,42 @@ zs4.type = {
       });
     }).bind(THIS.array);
 
+    THIS.array._.findOne = (function(path,value){
+      var arr = THIS.array._.value;
+      for (var n in arr){
+        var prop = zs4.path.resolve(arr[n],path);
+        if (prop == null || zs4.is.object(prop))continue;
+        if (prop == value)return ((' '+n+' ').trim());
+      }
+      return null;
+    }).bind(THIS.array);
+
+    THIS.array._.unique = function(type,value){
+      //console.log('checking uniqueness of: '+type._.path+':'+value);
+        if  (!type._.flags.get.unique()){
+          //console.log('not a unique property: '+type._.name);
+          return true;
+        }
+
+        var spath = type._.scope._.path;
+        var tpath = type._.path;
+        var vpath = tpath.substring((spath.length+1),(tpath.length));
+        //console.log('checking uniqueness of: '+vpath);
+        var arr = THIS.array._.value;
+        for (var n in arr){
+          var v = zs4.path.resolve(arr[n],vpath);
+          if (v == null){
+            //console.log(n+'.'+vpath+' NOT FOUND!!!!!');
+            continue;
+          }
+          if (v==value){
+            //console.log(n+'.'+vpath+' MATCH '+v+' and '+value);
+            if (n!=type._.name)return false;
+
+          }
+        }
+        return true;
+    };
     THIS.array._.transform = (function(req,cb){
       req.setScope(this);
       if (!zs4.is.object(req.input)){
@@ -1506,7 +1543,8 @@ zs4.type = {
 
       for (var n in req.input){
         if (!zs4.is.object(req.input[n]))continue;
-        var childreq = req.create({input:req.input[n],})
+        var childreq = req.create({input:req.input[n],});
+        childreq.request.unique = THIS.array._.unique;
         childreq.elenam = n;
         parallel.call(this,this._.elementTransform,childreq);
       }
@@ -1601,6 +1639,116 @@ zs4.type = {
 
 
     }).bind(this.method.getone);
+
+    THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune apiarg',}));
+    THIS.method.deleteone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
+    THIS.method.deleteone._.property(new zs4.type.string({name:'eq',flags:'required nostore noprune apiarg',}));
+    this.method.deleteone._.transform = (function(req,cb){
+      var DELONE = this;
+      var DELREQ = req;
+      req.setScope(this);
+      this._.transformInternal(req);
+      function get(){
+        DELONE._.get(req);
+
+        req.setScope(DELONE.item);
+        DELONE.item._.get(req,DELONE);
+
+        req.setScope(DELONE.eq);
+        DELONE.eq._.get(req,DELONE);
+
+        cb();
+        return;
+      }
+      if (!req.flags.value & req.flags.authset){
+        req.error(this.method.deleteone,{text:'not authorized'});
+        return get();
+      }
+
+      if (!zs4.is.object(req.input)){
+        return get();
+      }
+
+      //console.log(this._.path+'.transform()');
+
+      if (!zs4.is.string(req.input.item)||req.input.item.length==0){
+        var err = 'no item specified'
+        req.error(this,err);
+        this._.print(err,req);
+        return get();
+      }
+      var item = THIS.template._.resolvePath(req.input.item);
+      if (item==null){
+        var err = 'template has no '+req.input.item;
+        req.error(this,err);
+        this._.print(err,req);
+        return get();
+      }
+      var item = req.input.item;
+      var eq = req.input.eq;
+
+      var parallel = new zs4.processor.parallel();
+      for (var n in THIS.array._.value){
+
+        var r = req.create();
+        r.elenam = (' '+n+' ').trim();
+        parallel.call(THIS.array,function(req,cb){
+          var model = THIS.template._.new();
+          DELONE._.print('   scanning '+THIS.array._.path+'.'+req.elenam,req);
+          model._.name = req.elenam;
+          model._.flags.set.notrans(false);
+          model._.flags.set.scope(true);
+          THIS._.array.elementConnect(THIS.array,model);
+          model._.load(THIS.array._.value[req.elenam]);
+
+          DELONE._.print('   scanning '+THIS.array._.path+'.'+n,req);
+          var val = model._.resolvePath(item);
+          if (val == null){
+            console.log('   CANT FIND '+item)
+            DELONE._.print('   CANT FIND '+item,req);
+            cb(); return;
+          }
+          console.log('deleteone : found '+req.elenam)
+          if (val._.opcode.eq(eq)){
+            console.log('   MATCH! (v/e) '+val._.value+'=='+eq)
+            DELONE._.print('   MATCH! (v/e) '+val._.value+'=='+eq,req);
+            delete THIS.array._.value[req.elenam];
+            THIS._.shouldBeSaved(req);
+            DELREQ.result(DELONE,req.elenam);
+            console.log('deleteone : DELETED! '+req.elenam)
+            cb(); return;
+          }
+          else {
+            console.log('   FAILURE! (v/e) '+val._.value+'!='+eq)
+            DELONE._.print('   FAILURE! (v/e) '+val._.value+'!='+eq,req);
+            cb(); return;
+          }
+        },r);
+      }
+
+      parallel.run(function(){
+        return get();
+      });
+
+
+    }).bind(this.method.deleteone);
+    this.method.deleteone._.callback = (function(o){
+      //console.log('deleteall._.callback()');
+      console.log(o);
+      if (zs4.is.name(o.result)&&zs4.is.type(THIS.array[o.result])){
+
+        console.log('deleting '+THIS.array[o.result]._.path);
+
+        if (zs4.is.function(THIS.array[o.result]._.cleanup))THIS.array[o.result]._.cleanup();
+        THIS.array._.value[o.result]==null;
+        THIS.array[o.result]==null;
+
+        if (zs4.is.function(THIS._.refresh)){
+          THIS._.refresh();
+        }
+      }
+    }).bind(this.method.deleteone);
+
 
   },
   auth:function(input){
@@ -1700,10 +1848,18 @@ zs4.type = {
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
-      this._.shouldBeSaved(req);
 
       var v = this._.opcode.convert(req.input);
-      if (v!=null)this._.value = req.parent._.value[this._.name]=v;
+      if (v!=null&&req.parent._.value[this._.name]!=v){
+        if (zs4.is.function(req.request.unique)
+        &&!req.request.unique(this,req.input)){
+          req.error(THIS,'already exists');
+          this._.get(req,req.parent);cb();return;
+        }
+        this._.value = req.parent._.value[this._.name]=v;
+        this._.shouldBeSaved(req);
+        req.result(THIS,this._.value);
+      }
 
       this._.get(req,req.parent);
       cb();
@@ -1804,9 +1960,17 @@ zs4.type = {
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
-      this._.shouldBeSaved(req);
 
-      if (zs4.is.email(req.input))req.parent._.value[this._.name]=req.input.trim();
+      if (zs4.is.email(req.input) && req.parent._.value[this._.name]!=req.input.trim()){
+        if (zs4.is.function(req.request.unique)
+        &&!req.request.unique(this,req.input)){
+          req.error(THIS,'already exists');
+          this._.get(req,req.parent);cb();return;
+        }
+        this._.value = req.parent._.value[this._.name]=req.input.trim();
+        this._.shouldBeSaved(req);
+        req.result(THIS,this._.value);
+      }
 
       this._.get(req,req.parent);
       cb();
@@ -1926,10 +2090,17 @@ zs4.type = {
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
 
-      this._.shouldBeSaved(req);
-
       var v = this._.opcode.convert(req.input);
-      if (v!=null)this._.value = req.parent._.value[this._.name]=v;
+      if (v!=null && req.parent._.value[this._.name]!=v){
+        if (zs4.is.function(req.request.unique)
+        &&!req.request.unique(this,req.input)){
+          req.error(THIS,'already exists');
+          this._.get(req,req.parent);cb();return;
+        }
+        this._.value = req.parent._.value[this._.name]=v;
+        this._.shouldBeSaved(req);
+        req.result(THIS,this._.value);
+      }
 
       this._.get(req,req.parent);
       cb();
@@ -1950,8 +2121,14 @@ zs4.type = {
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
       this._.shouldBeSaved(req);
 
-      if (zs4.is.name(req.input)) this._.value = req.parent._.value[this._.name]=req.input.trim();
-
+      if (zs4.is.name(req.input)&&req.parent._.value[this._.name]!=req.input.trim()){
+        if (zs4.is.function(req.request.unique)
+        &&!req.request.unique(this,req.input)){
+          req.error(THIS,'already exists');
+          this._.get(req,req.parent);cb();return;
+        }
+        this._.value = req.parent._.value[this._.name]=req.input.trim();
+      }
       this._.get(req,req.parent);
       cb();
     }).bind(this);
@@ -2054,7 +2231,16 @@ zs4.type = {
       this._.shouldBeSaved(req);
 
       var v = this._.opcode.convert(req.input);
-      if (v!=null)this._.value = req.parent._.value[this._.name]=v;
+      if (v!=null && req.parent._.value[this._.name]!=v){
+        if (zs4.is.function(req.request.unique)
+        &&!req.request.unique(this,req.input)){
+          req.error(THIS,'already exists');
+          this._.get(req,req.parent);cb();return;
+        }
+        this._.value = req.parent._.value[this._.name]=v;
+        this._.shouldBeSaved(req);
+        req.result(THIS,this._.value);
+      }
 
       this._.get(req,req.parent);
       if (cb);
@@ -2297,7 +2483,7 @@ zs4.type = {
               label = item[n].zs4.head._.value.title;
             }
             else {
-              label = n + '(untitled)';
+              label = new String(n + '(untitled)');
             }
             response.push(new Object({label:label,value:value}));
           }
@@ -2632,11 +2818,18 @@ zs4.type = {
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
-      this._.shouldBeSaved(req);
 
       if (zs4.is.string(req.input)){
-        if (this.trim)req.parent._.value[this._.name]=req.input.trim();
-        else req.parent._.value[this._.name]=req.input;
+        if (req.parent._.value[this._.name]!=req.input){
+          if (zs4.is.function(req.request.unique)
+          &&!req.request.unique(this,req.input)){
+            req.error(THIS,'already exists');
+            this._.get(req,req.parent);cb();return;
+          }
+          req.parent._.value[this._.name]=req.input;
+          this._.shouldBeSaved(req);
+          req.result(THIS,req.input);
+        }
       }
 
       this._.get(req,req.parent);

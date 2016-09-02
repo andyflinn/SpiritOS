@@ -40,7 +40,9 @@ rsa.create = function(){
     //zs4.console.log(this._.path+'.store()');
     //if (this._.nostore){return null;}
     var store = new Object();
-    this._.ensureKeyExists();
+    //if (this._.path == 'zs4.rsa') {
+    //  this._.ensureKeyExists();
+    //}
     store.pem = this._.value.pem;
     //store.key =   THIS._.key;
     return store;
