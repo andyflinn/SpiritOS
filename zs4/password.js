@@ -112,6 +112,9 @@ password.create = function(){
         if (req.am(THIS)||req.own(THIS)){
           set(get);
         }
+        else {
+          get.vfy._.flags |= THIS._.flags.quickupdate;
+        }
       }
       else {
         set(get);get.set._.flags |= THIS._.flags.required;

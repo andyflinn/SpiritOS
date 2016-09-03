@@ -541,7 +541,8 @@ zs4.admin.util = {
 						zs4.admin.util.setIcon(o._.html.toggle,'to-start');
 					}
 					else{
-						zs4.admin.util.setIcon(o._.html.toggle,o._.html.icon.on);
+						if (o._.html.topElement)zs4.admin.util.setIcon(o._.html.toggle,'logo');
+						else zs4.admin.util.setIcon(o._.html.toggle,o._.html.icon.on);
 						if (o._.type==Object){
 							if (o._.html.c != null)zs4.admin.util.removeClass(o._.html.c,'nodisplay');
 						}
@@ -561,8 +562,12 @@ zs4.admin.util = {
 					}
 				}
 
-				if (o._.html.topElement==true)add+=' top';else rem+=' top';
-
+				if (o._.html.topElement==true){
+					add+=' top';
+				}
+				else {
+					rem+=' top';
+				}
 				if (o._.name == 'zs4')add+=' settings';else rem+=' settings';
 				if (o._.name == 'email')add+=' email';else rem+=' email';
 				if (o._.name == 'rsa')add+=' rsa';else rem+=' rsa';
@@ -637,7 +642,7 @@ zs4.admin.util = {
 			o._.html.onToggle = function(){
 				if (o._.html.expanded){
 					if (!o._.html.toolbarIsOpen || o._.html.toolbar == null){
-						o._.html.toggleOff();
+						if (!o._.html.topElement) o._.html.toggleOff();
 					}
 					else {
 						o._.html.toolbarClose();
@@ -678,6 +683,15 @@ zs4.admin.util = {
 			o._.html.toolbarIsOpen = false;
 			o._.html.defaultTool = null;
 
+			o._.html.quickupdate = function(input){
+				if (input == null)return;
+				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+				zs4.post(o._.wrapRequest(input),function(ret){
+					o._.html.refreshAll();
+					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+				});
+
+			};
 			//if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.value & o._.flags.apiarg == o._.flags.apiarg)){
 			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.get.apiarg())){
 				o._.html.toolbarToggle = document.createElement('zs4-toolbar-toggle');
@@ -828,45 +842,6 @@ zs4.admin.type = {
 		o._.html.icon.on = 'database';
 		o._.html.icon.off = 'database';
 
-		if (!zs4.is.function(o._.html.refresh)){
-			o._.html.refresh = (function(){
-				o._.print('inside '+o._.path+'.html.refresh()');
-				//console.log(o.array._.value);
-
-				for (var n in o.array._.value){
-					//console.log('refresh('+n+')');
-					if (!zs4.is.type(o.array[n])){
-						//console.log('new('+n+')');
-						var nu = o.template._.new();
-						nu._.flags.value =
-						nu._.flags.set.notrans(false);
-						nu._.name = n;
-						o.array._.property(nu);
-					}
-					//console.log('load('+n+')');
-					o.array[n]._.load(o.array._.value[n]);
-					zs4.admin.type.object(o.array,o.array[n]);
-				}
-
-				for (var n in o.array){
-					if (!zs4.is.type(o.array[n]))continue;
-					if (!o.array._.value.hasOwnProperty(n)){
-						if (zs4.is.function(o.array[n]._.cleanup))o.array[n]._.cleanup();
-            o.array._.value[n]=null;
-            o.array[n]=null;
-					}
-				}
-  			zs4.admin.type.object(o,o.array);
-
-			}).bind(o);
-		}
-
-		for (var n in o){
-			//if (zs4.is.name(n))console.log(n);
-			if (!zs4.is.type(o[n])||!zs4.is.function(zs4.admin.type[o[n]._.typename]))continue;
-			zs4.admin.type[o[n]._.typename](o,o[n]);
-		}
-
 	},
 	auth:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -882,15 +857,21 @@ zs4.admin.type = {
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
 					if (o._.html.input.checked==true){
-						po._.value[o._.name] = true;
 						o._.value = true;
 					}
 					else {
-						po._.value[o._.name] = false;
 						o._.value = false;
 					}
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					if (o._.html.input.checked==true){
+						o._.html.quickupdate(true);
+					}
+					else {
+						o._.html.quickupdate(false);
+					}
 				}
 			};
 			o._.input = (function(){
@@ -904,7 +885,7 @@ zs4.admin.type = {
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.checked = po._.value[o._.name];
+		o._.html.input.checked = o._.value;
 		zs4.admin.util.refreshNameInput(po,o);
 	},
 	bye:function(po,o){
@@ -922,10 +903,12 @@ zs4.admin.type = {
 			o._.html.input.setAttribute('type', 'number');
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.parseInt(o._.html.input.value);
 					o._.value = o._.parseInt(o._.html.input.value);
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.parseInt(o._.html.input.value));
 				}
 			};
 
@@ -939,7 +922,7 @@ zs4.admin.type = {
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = parseInt(po._.value[o._.name]);
+		o._.html.input.value = parseInt(o._.value);
 		zs4.admin.util.refreshNameInput(po,o);
 	},
 	enum:function(po,o){
@@ -950,12 +933,14 @@ zs4.admin.type = {
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
 				}
-			};
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
+				}
+		};
 
 			o._.html.enumRefresh = function(){
 				//console.log(o._.path+'._.html.enumRefresh()');
@@ -979,7 +964,7 @@ zs4.admin.type = {
 		o._.html.enumRefresh();
 		o._.html.genericRefresh();
 
-    o._.html.input.value = po._.value[o._.name];
+    o._.html.input.value = o._.value;
     zs4.admin.util.refreshNameInput(po,o);
 	},
 	email:function(po,o){
@@ -1000,10 +985,13 @@ zs4.admin.type = {
 			o._.html.input.setAttribute('type', 'number');
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.parseInt(o._.html.input.value);
+					o._.value = o._.parseInt(o._.html.input.value);
 					o._.value = o._.parseInt(o._.html.input.value);
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.parseInt(o._.html.input.value));
 				}
 			};
 
@@ -1017,7 +1005,7 @@ zs4.admin.type = {
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = parseInt(po._.value[o._.name]);
+		o._.html.input.value = parseInt(o._.value);
 		zs4.admin.util.refreshNameInput(po,o);
 	},
 	name:function(po,o){
@@ -1033,10 +1021,13 @@ zs4.admin.type = {
 			o._.html.input.setAttribute('type', 'number');
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = this._.parseFloat(o._.html.input.value);
-					o._.value = this._.parseFloat(o._.html.input.value);
+					o._.value = o._.parseFloat(o._.html.input.value);
+					o._.value = o._.parseFloat(o._.html.input.value);
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.parseFloat(o._.html.input.value));
 				}
 			};
 
@@ -1050,7 +1041,7 @@ zs4.admin.type = {
 		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = parseFloat(po._.value[o._.name]);
+		o._.html.input.value = parseFloat(o._.value);
 		zs4.admin.util.refreshNameInput(po,o);
 	},
 	object:function(po,o){
@@ -1062,7 +1053,7 @@ zs4.admin.type = {
 		}
 		zs4.admin.util.unknown(po,o);
 
-		if (o._.html.icon.off=='plus'&&o._.html.icon.on=='minus'&&o._.type==Object){
+		if (o._.html.icon.off=='plus'&&o._.html.icon.on==''&&o._.type==Object){
 			if (o._.flags.get.arrayio()){
 				o._.html.icon.on = 'list';
 				o._.html.icon.off = 'list';
@@ -1134,7 +1125,7 @@ zs4.admin.type = {
 		}
 
 
-		if (zs4.is.function(o._.html.refresh))o._.html.refresh();
+		//if (zs4.is.function(o._.html.refresh))o._.html.refresh();
 	},
 	password:function(po,o){
 		zs4.admin.type.string(po,o);
@@ -1143,8 +1134,14 @@ zs4.admin.type = {
 	},
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);
-		o._.html.icon.on = 'user';
-		o._.html.icon.off = 'user';
+		if (o._.html.topElement){
+			o._.html.icon.on = 'logo';
+			o._.html.icon.off = 'logo';
+		}
+		else {
+			o._.html.icon.on = 'user';
+			o._.html.icon.off = 'user';
+		}
 	},
 	scopeindex:function(po,o){
     zs4.admin.util.unknown(po,o);
@@ -1154,10 +1151,13 @@ zs4.admin.type = {
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
 				}
 			};
 
@@ -1184,7 +1184,7 @@ zs4.admin.type = {
 
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = po._.value[o._.name];
+    o._.html.input.value = o._.value;
     zs4.admin.util.refreshNameInput(po,o);
   },
 	scopeindexunique:function(po,o){
@@ -1195,10 +1195,13 @@ zs4.admin.type = {
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
 				}
 			};
 
@@ -1225,7 +1228,7 @@ zs4.admin.type = {
 
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = po._.value[o._.name];
+    o._.html.input.value = o._.value;
     zs4.admin.util.refreshNameInput(po,o);
   },
 	scopeitem:function(po,o){
@@ -1236,10 +1239,13 @@ zs4.admin.type = {
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
 				}
 			};
 
@@ -1266,7 +1272,7 @@ zs4.admin.type = {
 		o._.html.genericRefresh();
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = po._.value[o._.name];
+    o._.html.input.value = o._.value;
     zs4.admin.util.refreshNameInput(po,o);
   },
   scopescope:function(po,o){
@@ -1277,10 +1283,13 @@ zs4.admin.type = {
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.html.input.value;
+					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
 				}
 			};
 
@@ -1307,7 +1316,7 @@ zs4.admin.type = {
 		o._.html.genericRefresh();
     o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = po._.value[o._.name];
+    o._.html.input.value = o._.value;
     zs4.admin.util.refreshNameInput(po,o);
   },
 	select:function(po,o){
@@ -1343,10 +1352,12 @@ zs4.admin.type = {
 			o._.html.input.onchange = function(){
 				//alert('++++++++++++++++++');
 				if (o._.flags.get.local()){
-					po._.value[o._.name] = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
 				}
 			};
 
@@ -1359,7 +1370,7 @@ zs4.admin.type = {
 		o._.html.genericRefresh();
 		zs4.admin.util.refreshCallback(o);
 		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = po._.value[o._.name];
+		o._.html.input.value = o._.value;
 		zs4.admin.util.refreshNameInput(po,o);
 	},
 	text:function(po,o){
@@ -1377,7 +1388,7 @@ zs4.admin.type = {
 			o._.html.expanded = true;
 		}
 		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = po._.value[o._.name];
+		o._.html.input.value = o._.value;
 		zs4.admin.util.refreshNameInput(po,o);
 	},
 };

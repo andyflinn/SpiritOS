@@ -18,13 +18,13 @@ email.create = function(input){
 
   var nuaddr = (zs4.integer.to.name(email.lastaddr++)+'@zs4.zs4');
 
-  THIS._.property(new zs4.type.object({name:'smtp',flags:'api authsetself',}));
-  THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'authsetself',default:false,}));
-  THIS.smtp._.property(new zs4.type.string({name:'user',flags:'index unique authsetself',default:nuaddr}));
-  THIS.smtp._.property(new zs4.type.string({name:'password',flags:'authsetself',}));
-  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'authsetself',}));
-  THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'authsetself',}));
-  THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'authsetself',default:false,}));
+  THIS._.property(new zs4.type.object({name:'smtp',flags:'authsetself',}));
+  THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'authsetself quickupdate',default:false,}));
+  THIS.smtp._.property(new zs4.type.string({name:'user',flags:'index unique authsetself quickupdate',default:nuaddr}));
+  THIS.smtp._.property(new zs4.type.string({name:'password',flags:'authsetself quickupdate',}));
+  THIS.smtp._.property(new zs4.type.string({name:'host',flags:'authsetself quickupdate',}));
+  THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'authsetself quickupdate',}));
+  THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'authsetself quickupdate',default:false,}));
 
   THIS._.property(new zs4.type.object({name:'message',flags:'api nostore noprune authsetself',}));
 

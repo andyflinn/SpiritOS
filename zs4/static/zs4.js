@@ -576,6 +576,7 @@ zs4.util = {
 
     this.addFlag('local',0x1000000);
     this.addFlag('authroot',0x2000000);
+    this.addFlag('quickupdate',0x4000000);
 
     //combo flags
     this.addFlag('apiarg',this.authgetpublic|this.authsetpublic);
@@ -616,6 +617,7 @@ zs4.util = {
 
       if (int & this.local) addFlag('local');
       if (int & this.authroot) addFlag('authroot');
+      if (int & this.authroot) addFlag('quickupdate');
 
 
       return ret;
@@ -881,8 +883,7 @@ zs4.type = {
     }).bind(this);
 
     this._.getInitialize = (function(req){
-      //var debug = 'zs4.bye';
-      //if (this._.path == debug) console.log('getInitialize '+this._.path);
+
       if (this._.flags.get.noget())return null;
       this._.print('getInitialize() req.flags=\''+req.flags.getString()+'\'',req)
       if (!req.flags.get.authgetpublic()&&!req.flags.get.authsetself()&&!req.flags.get.authget())return null;
@@ -911,6 +912,7 @@ zs4.type = {
       if (this._.flags.get.local())get._.flags |= req.flags.local;
       if (this._.flags.get.required())get._.flags |= req.flags.required;
       if (this._.flags.get.authroot())get._.flags |= req.flags.authroot;
+      if (this._.flags.get.quickupdate())get._.flags |= req.flags.quickupdate;
 
       if (!req.flags.get.authset()
       ||  this._.flags.get.noset()
@@ -939,12 +941,9 @@ zs4.type = {
       return get;
     }).bind(this);
 
-    this._.got = (function(o,p){
+    this._.got = (function(o){
       //console.log(this);
       if (!zs4.is.type(o))return;
-
-      //console.log('got \''+this._.path+'\'');
-
 
       if ( this._.name != o._.name
         || this._.typename != o._.typename
@@ -971,6 +970,7 @@ zs4.type = {
       }
 
 
+      //console.log('got: \''+this._.path+'\'');
       this._.print('got: \''+this._.flags.getString(o._.flags)+'\'');
 
       if (this._.type==Object){
@@ -985,7 +985,7 @@ zs4.type = {
             this._.property(nu);
           }
 
-          this[n]._.got(o[n],this);
+          this[n]._.got(o[n]);//,this);
         }
 
         if (!this._.flags.get.arrayio()&&!this._.flags.get.local()){
@@ -1009,19 +1009,19 @@ zs4.type = {
           }
         }
       }
-      else if (p!=null){
-        p._.value[this._.name]=o._.value;
+      else {//if (p!=null){
+        //console.log('got: \''+this._.path+'\' = \''+o._.value+'\'');
         this._.value = o._.value;
         //console.log(o._.value);
         //console.log(o._.html);
         if (zs4.is.function(o._.response)){
-          console.log('response() function found for '+o._.path);
+          //console.log('response() function found for '+o._.path);
           o._.response(o._.value);
         }
       }
-      else {
-        console.log('value without parent.')
-      }
+      //else {
+      //  console.log('value without parent.')
+      //}
     }).bind(this);
 
     this._.dcb = (function(input){
@@ -1280,6 +1280,40 @@ zs4.type = {
         this[n]._.flagTree(flag,tof);
       }
     }).bind(this);
+
+    this._.transformValue = (function(req,cb){
+      this._.print('transform('+req.input+')',req);
+      req.setScope(this);
+      this._.transformInternal(req);
+      if (req.input==null){this._.get(req,req.parent);cb();return;}
+
+      if (!this._.zs4check(req,req.input)){
+        this._.get(req,req.parent);cb();return;
+      }
+      //console.log(this._.path+'._.transform(\''+req.input+'\')');
+      if (zs4.is.object(this._.opcode)
+      && zs4.is.function(this._.opcode.convert)
+      ){
+        var v = this._.opcode.convert(req.input);
+        if (v!=null && v != this._.value){
+          if (zs4.is.function(req.request.unique)
+          &&!req.request.unique(this,v)){
+            req.error(THIS,'already exists');
+            this._.get(req,req.parent);cb();return;
+          }
+          this._.value=v;
+          this._.shouldBeSaved(req);
+          req.result(this,v);
+        }
+      }
+
+      this._.get(req,req.parent);
+      cb();
+    }).bind(this);
+
+    this._.transform = (function(req,cb){
+      this._.transformValue(req,cb);
+    }).bind(this);
   },
 
   array:function(input){
@@ -1305,8 +1339,8 @@ zs4.type = {
       return e;
     }).bind(THIS.array);
 
-    THIS._.property(new zs4.type.object({name:'config',flags:'api noprune',authSet:['zs4.owner'],}));
-    THIS.config._.property(new zs4.type.integer({name:'maxlength',flags:'noprune',authSet:['zs4.owner'],}));
+    THIS._.property(new zs4.type.object({name:'config',flags:'noprune',authSet:['zs4.owner'],}));
+    THIS.config._.property(new zs4.type.integer({name:'maxlength',flags:'noprune quickupdate',authSet:['zs4.owner'],}));
     THIS.config._.property(new zs4.type.integer({name:'lastid',flags:'noset noprune',}));
 
     THIS._.property(new zs4.type.object({name:'method',flags:'noprune nostore authgetpublic',}));
@@ -1469,7 +1503,7 @@ zs4.type = {
     THIS.array._.load = (function(input){
       //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
-      console.log(JSON.stringify(input));
+      //console.log(JSON.stringify(input));
       //debugger;
 
       zs4.copy.trim(input,THIS.array._.value);
@@ -1875,29 +1909,6 @@ zs4.type = {
       }
     }).bind(this);
 
-    this._.transform = (function(req,cb){
-      this._.print('transform('+req.input+')');
-      req.setScope(this);
-      this._.transformInternal(req);
-      if (req.input==null){this._.get(req,req.parent);cb();return;}
-      //console.log(this._.path+'._.transform(\''+req.input+'\')');
-
-      var v = this._.opcode.convert(req.input);
-      if (v!=null&&this._.value!=v){
-        if (zs4.is.function(req.request.unique)
-        &&!req.request.unique(this,req.input)){
-          req.error(THIS,'already exists');
-          this._.get(req,req.parent);cb();return;
-        }
-        this._.value=v;
-        this._.shouldBeSaved(req);
-        req.result(THIS,this._.value);
-      }
-
-      this._.get(req,req.parent);
-      cb();
-    }).bind(this);
-
   },
   bye:function(input){
     var THIS = this;
@@ -1986,27 +1997,12 @@ zs4.type = {
     this._.typename = 'email';
     this._.minlength = zs4.const.EMAIL.MINLENGTH;
     this._.maxlength = zs4.const.EMAIL.MAXLENGTH;
+    this._.zs4check = (function(req,input){
+      if (!this._.zs4checkinit(req,input))return false;
 
-    this._.transform = (function(req,cb){
-      this._.print('transform('+req.input+')',req);
-      req.setScope(this);
-      this._.transformInternal(req);
-      if (req.input==null){this._.get(req,req.parent);cb();return;}
-      //console.log(this._.path+'._.transform(\''+req.input+'\')');
+      if (!zs4.is.email(input)) return this._.zs4checkfail(req,'not email');
 
-      if (zs4.is.email(req.input) && this._.value!=req.input.trim()){
-        if (zs4.is.function(req.request.unique)
-        &&!req.request.unique(this,req.input)){
-          req.error(THIS,'already exists');
-          this._.get(req,req.parent);cb();return;
-        }
-        this._.value=req.input.trim();
-        this._.shouldBeSaved(req);
-        req.result(THIS,this._.value);
-      }
-
-      this._.get(req,req.parent);
-      cb();
+      return true;
     }).bind(this);
   },
   enum:function(input){
@@ -2014,14 +2010,14 @@ zs4.type = {
     this._.typename = 'enum';
   },
   head:function(){
-    zs4.type.object.call(this,{name:'head',flags:'api authgetpublic authsetself',})
+    zs4.type.object.call(this,{name:'head',flags:'authgetpublic authsetself',})
     this._.typename = 'head';
     this._.create = zs4.type.head;
 
-    this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself',}));
+    this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself quickupdate',}));
     this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune',}));
     this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune',}));
-    this._.property(new zs4.type.string({name:'app',flags:'index noprune authsetself',default:'/admin.js',}));
+    this._.property(new zs4.type.string({name:'app',flags:'index noprune  quickupdate',default:'/admin.js',}));
 
   },
   integer:function(input){
@@ -2115,55 +2111,12 @@ zs4.type = {
         this._.value=v;
       }
     }).bind(this);
-
-    this._.transform = (function(req,cb){
-      this._.print('transform('+req.input+')');
-      req.setScope(this);
-      this._.transformInternal(req);
-      if (req.input==null){this._.get(req,req.parent);cb();return;}
-
-      var v = this._.opcode.convert(req.input);
-      if (v!=null && this._.value!=v){
-        if (zs4.is.function(req.request.unique)
-        &&!req.request.unique(this,req.input)){
-          req.error(THIS,'already exists');
-          this._.get(req,req.parent);cb();return;
-        }
-        this._.value=v;
-        this._.shouldBeSaved(req);
-        req.result(THIS,this._.value);
-      }
-
-      this._.get(req,req.parent);
-      cb();
-    }).bind(this);
-
   },
   name:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'name';
     this._.minlength = 1;
     this._.maxlength = zs4.const.STRING.MAXLENGTH;
-
-    this._.transform = (function(req,cb){
-      this._.print('transform('+req.input+')',req);
-      req.setScope(this);
-      this._.transformInternal(req);
-      if (req.input==null){this._.get(req,req.parent);cb();return;}
-      //console.log(this._.path+'._.transform(\''+req.input+'\')');
-      this._.shouldBeSaved(req);
-
-      if (zs4.is.name(req.input)&&this._.value!=req.input.trim()){
-        if (zs4.is.function(req.request.unique)
-        &&!req.request.unique(this,req.input)){
-          req.error(THIS,'already exists');
-          this._.get(req,req.parent);cb();return;
-        }
-        this._.value = req.input.trim();
-      }
-      this._.get(req,req.parent);
-      cb();
-    }).bind(this);
   },
   number:function(input){
     var THIS = this;
@@ -2252,31 +2205,6 @@ zs4.type = {
         this._.value=v;
       }
     }).bind(this);
-
-    this._.transform = (function(req,cb){
-      this._.print('transform('+req.input+')');
-      req.setScope(this);
-      this._.transformInternal(req);
-      if (req.input==null){this._.get(req,req.parent);cb();return;}
-
-      this._.shouldBeSaved(req);
-
-      var v = this._.opcode.convert(req.input);
-      if (v!=null && this._.value!=v){
-        if (zs4.is.function(req.request.unique)
-        &&!req.request.unique(this,req.input)){
-          req.error(THIS,'already exists');
-          this._.get(req,req.parent);cb();return;
-        }
-        this._.value=v;
-        this._.shouldBeSaved(req);
-        req.result(THIS,this._.value);
-      }
-
-      this._.get(req,req.parent);
-      if (cb);
-    }).bind(this);
-
   },
   object:function(input){
     zs4.type.unknown.call(this,input);
@@ -2422,6 +2350,13 @@ zs4.type = {
   password:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'password';
+    this._.zs4check = (function(req,input){
+      if (!this._.zs4checkinit(req,input))return false;
+
+      if (!zs4.is.password(input)) return this._.zs4checkfail(req,'not email');
+
+      return true;
+    }).bind(this);
   },
   scope:function(){
     //debugger;
@@ -2822,31 +2757,6 @@ zs4.type = {
         this._.value=v;
       }
     }).bind(this);
-
-    this._.transform = (function(req,cb){
-      this._.print('transform('+req.input+')',req);
-      req.setScope(this);
-      this._.transformInternal(req);
-      if (req.input==null){this._.get(req,req.parent);cb();return;}
-      //console.log(this._.path+'._.transform(\''+req.input+'\')');
-
-      if (zs4.is.string(req.input)){
-        if (this._.value!=req.input){
-          if (zs4.is.function(req.request.unique)
-          &&!req.request.unique(this,req.input)){
-            req.error(THIS,'already exists');
-            this._.get(req,req.parent);cb();return;
-          }
-          this._.value=req.input;
-          this._.shouldBeSaved(req);
-          req.result(THIS,req.input);
-        }
-      }
-
-      this._.get(req,req.parent);
-      cb();
-    }).bind(this);
-
   },
   text:function(input){
     if (zs4.is.object(input)){
@@ -3051,13 +2961,13 @@ zs4.request = function(o){
     this.payloadRefresh();
 
     this.tokenCreate = function(nuload){
-      console.log('this.tokenCreate');
+      //console.log('this.tokenCreate');
       this.request.token = zs4.THIS.zs4.token.encode(nuload);
       this.payloadRefresh();
     };
 
     this.tokenDelete = function(){
-      console.log('TOKEN DELETED!!!!!!!!!!');
+      //console.log('TOKEN DELETED!!!!!!!!!!');
       this.request.token=null;
       this.request.payload=null;
     };
