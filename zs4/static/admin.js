@@ -456,14 +456,7 @@ zs4.admin.util = {
 				on:'minus',
 				off:'plus',
 			});
-			if (o._.type == Object){
-
-							if (o._.typename == 'array'){
-							}
-							else if (o._.typename == 'head'){
-							}
-			}
-			else{
+			if (o._.type != Object){
 				if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
 				else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
 				else {o._.html.icon.off=o._.html.icon.on='none'}
@@ -1069,7 +1062,7 @@ zs4.admin.type = {
 		}
 		zs4.admin.util.unknown(po,o);
 
-		if (o._.html.icon.off=='plus'&&o._.html.icon.on=='minus'){
+		if (o._.html.icon.off=='plus'&&o._.html.icon.on=='minus'&&o._.type==Object){
 			if (o._.flags.get.arrayio()){
 				o._.html.icon.on = 'list';
 				o._.html.icon.off = 'list';

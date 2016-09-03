@@ -6,7 +6,7 @@ var email = exports;
 email.lastaddr = Date.now();
 
 email.schema = function(parent){
-  parent._.property(new email.create({name:'email',required:true,authGet:['zs4.self'],}));
+  parent._.property(new email.create({name:'email',flags:'authgetpublic authsetself',}));
 };
 
 email.create = function(input){
@@ -18,7 +18,7 @@ email.create = function(input){
 
   var nuaddr = (zs4.integer.to.name(email.lastaddr++)+'@zs4.zs4');
 
-  THIS._.property(new zs4.type.object({name:'smtp',flags:'required api authsetself',}));
+  THIS._.property(new zs4.type.object({name:'smtp',flags:'api authsetself',}));
   THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'authsetself',default:false,}));
   THIS.smtp._.property(new zs4.type.string({name:'user',flags:'index unique authsetself',default:nuaddr}));
   THIS.smtp._.property(new zs4.type.string({name:'password',flags:'authsetself',}));

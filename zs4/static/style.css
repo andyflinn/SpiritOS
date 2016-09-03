@@ -128,12 +128,11 @@ zs4-result.zs4-hide{
 }
 
 zs4-object-head{
-  width:100%;
   display:inline-block;
 }
 zs4-object-head.zs4-tbon{
+  width:100%;
   display:block;
-  padding-top:0.5em;
   background-color: white;
 
   position: fixed;

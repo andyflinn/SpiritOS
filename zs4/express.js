@@ -71,6 +71,8 @@ express.setCookie = function(res,zs4request){
 express.app.get('/*', function (req, res) {
   express.THIS._.print('express.app.get('+req.path+')')
 
+  //console.log('GET REQUEST!!!!!!!!');
+
   var zs4req = new zs4.request();
   var input = zs4req.resolveInputPath(req.path);
   input.getHTML = new Object();
@@ -94,11 +96,12 @@ express.app.get('/*', function (req, res) {
 
 express.app.post('/*', function (req, res) {
   var zs4req = new zs4.request(req.body);
-
+  //console.log(req.body);
   express.getCookie(req,zs4req);
 
   zs4req.process(function(ret){
     if (zs4req.html==true){
+      //console.log('express got HTML to send back....');
       var r = zs4req.request.html;
       express.THIS._.print('request.process returned('+zs4.json.stringify(r)+')');
 

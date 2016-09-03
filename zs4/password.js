@@ -56,11 +56,12 @@ password.create = function(){
       else{
         if (zs4.is.password(req.input.set)){
 
-        var nu = this.generate(req.input.set);
+          var nu = this.generate(req.input.set);
           if (nu) {
             this.hashed._.value = nu;
             //console.log('...password set...');
             this._.shouldBeSaved(req);
+            this._.print('password set '+this.hashed._.value)
             req.result(THIS,'password set');
           }
         }
@@ -119,7 +120,7 @@ password.create = function(){
 
   }).bind(THIS);
 
-  THIS._.property(new zs4.type.string({name:'hashed',flags:'noget',index:{unique:true},}));
+  THIS._.property(new zs4.type.string({name:'hashed',flags:'noget',}));
   THIS._.property(new zs4.type.string({name:'algorithm',flags:'noget',default:'sha1',}));
   THIS._.property(new zs4.type.integer({name:'saltlength',flags:'noget',min:32,max:256,default:32,}));
   THIS._.property(new zs4.type.integer({name:'iterations',flags:'noget',min:1,max:128,default:1,}));

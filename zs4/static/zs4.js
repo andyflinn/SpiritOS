@@ -765,20 +765,16 @@ zs4.type = {
       }
     }).bind(this);
     this._.store = (function(){
-      //console.log(this.path+'.store()');
-      if (this._.nostore){return null;}
 
-      if (this._.type!=Object())return this._.value;
-
-      var store = new Object();
-      var count = 0;
-      for (var n in this){
-        var ret = this[n]._.store();
-        if (ret != null) {count++; store[n] = ret;}
+      //console.log(this._.path+'.store()');
+      if (this._.nostore){
+        //console.log(this._.path+'.NO_store()');
+        return null;
       }
+      //console.log(this._.path+'.actually_store()');
 
-      if (count > 0) return store;
-      return null;
+      //console.log(this._.path+'value_store('+this._.typename +')');
+      return this._.value;
     }).bind(this);
 
 
@@ -1099,6 +1095,9 @@ zs4.type = {
       html += '<html>\n';
         html += ' <head>\n';
           html += '  <title>'+this._.path+'</title>\n';
+          if (req.request.token&&req.request.payload){
+            html += '  <script>window.token=\''+req.request.token+'\'</script>\n';
+          }
           html += '  <script src="/zs4.js"></script>\n';
           html += '  <script>zs4.location.path=\''+this._.path+'\';zs4.admin();</script>\n'
         html += ' </head>\n';
@@ -1675,7 +1674,7 @@ zs4.type = {
 
     }).bind(this.method.getone);
 
-    THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune apiarg',}));
+    THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune',}));
     THIS.method.deleteone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
     THIS.method.deleteone._.property(new zs4.type.string({name:'eq',flags:'required nostore noprune apiarg',}));
     this.method.deleteone._.transform = (function(req,cb){
@@ -1884,13 +1883,13 @@ zs4.type = {
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
 
       var v = this._.opcode.convert(req.input);
-      if (v!=null&&req.parent._.value[this._.name]!=v){
+      if (v!=null&&this._.value!=v){
         if (zs4.is.function(req.request.unique)
         &&!req.request.unique(this,req.input)){
           req.error(THIS,'already exists');
           this._.get(req,req.parent);cb();return;
         }
-        this._.value = req.parent._.value[this._.name]=v;
+        this._.value=v;
         this._.shouldBeSaved(req);
         req.result(THIS,this._.value);
       }
@@ -1967,7 +1966,7 @@ zs4.type = {
         return;
       }
 
-      zs4.console.arr = input.array;
+      //zs4.console.arr = input.array;
 
     }).bind(this);
     this._.store = (function(){
@@ -1995,13 +1994,13 @@ zs4.type = {
       if (req.input==null){this._.get(req,req.parent);cb();return;}
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
 
-      if (zs4.is.email(req.input) && req.parent._.value[this._.name]!=req.input.trim()){
+      if (zs4.is.email(req.input) && this._.value!=req.input.trim()){
         if (zs4.is.function(req.request.unique)
         &&!req.request.unique(this,req.input)){
           req.error(THIS,'already exists');
           this._.get(req,req.parent);cb();return;
         }
-        this._.value = req.parent._.value[this._.name]=req.input.trim();
+        this._.value=req.input.trim();
         this._.shouldBeSaved(req);
         req.result(THIS,this._.value);
       }
@@ -2124,13 +2123,13 @@ zs4.type = {
       if (req.input==null){this._.get(req,req.parent);cb();return;}
 
       var v = this._.opcode.convert(req.input);
-      if (v!=null && req.parent._.value[this._.name]!=v){
+      if (v!=null && this._.value!=v){
         if (zs4.is.function(req.request.unique)
         &&!req.request.unique(this,req.input)){
           req.error(THIS,'already exists');
           this._.get(req,req.parent);cb();return;
         }
-        this._.value = req.parent._.value[this._.name]=v;
+        this._.value=v;
         this._.shouldBeSaved(req);
         req.result(THIS,this._.value);
       }
@@ -2154,13 +2153,13 @@ zs4.type = {
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
       this._.shouldBeSaved(req);
 
-      if (zs4.is.name(req.input)&&req.parent._.value[this._.name]!=req.input.trim()){
+      if (zs4.is.name(req.input)&&this._.value!=req.input.trim()){
         if (zs4.is.function(req.request.unique)
         &&!req.request.unique(this,req.input)){
           req.error(THIS,'already exists');
           this._.get(req,req.parent);cb();return;
         }
-        this._.value = req.parent._.value[this._.name]=req.input.trim();
+        this._.value = req.input.trim();
       }
       this._.get(req,req.parent);
       cb();
@@ -2263,13 +2262,13 @@ zs4.type = {
       this._.shouldBeSaved(req);
 
       var v = this._.opcode.convert(req.input);
-      if (v!=null && req.parent._.value[this._.name]!=v){
+      if (v!=null && this._.value!=v){
         if (zs4.is.function(req.request.unique)
         &&!req.request.unique(this,req.input)){
           req.error(THIS,'already exists');
           this._.get(req,req.parent);cb();return;
         }
-        this._.value = req.parent._.value[this._.name]=v;
+        this._.value=v;
         this._.shouldBeSaved(req);
         req.result(THIS,this._.value);
       }
@@ -2395,6 +2394,28 @@ zs4.type = {
         }
       }
       return true;
+    }).bind(this);
+
+    this._.store = (function(){
+
+      //console.log(this._.path+'.store()');
+      if (this._.nostore){
+        //console.log(this._.path+'.NO_store()');
+        return null;
+      }
+      //console.log(this._.path+'.actually_store()');
+
+      //console.log(this._.path+'.object_store('+this._.typename +')');
+      var store = new Object();
+      var count = 0;
+      for (var n in this)if(zs4.is.type(this[n])){
+        var ret = this[n]._.store();
+        if (ret != null) {count++; store[n] = ret;}
+      }
+
+      return store;
+      //if (count > 0) return store;
+      //return null;
     }).bind(this);
 
   },
@@ -2810,13 +2831,13 @@ zs4.type = {
       //console.log(this._.path+'._.transform(\''+req.input+'\')');
 
       if (zs4.is.string(req.input)){
-        if (req.parent._.value[this._.name]!=req.input){
+        if (this._.value!=req.input){
           if (zs4.is.function(req.request.unique)
           &&!req.request.unique(this,req.input)){
             req.error(THIS,'already exists');
             this._.get(req,req.parent);cb();return;
           }
-          req.parent._.value[this._.name]=req.input;
+          this._.value=req.input;
           this._.shouldBeSaved(req);
           req.result(THIS,req.input);
         }
@@ -2935,6 +2956,7 @@ zs4.request = function(o){
   }).bind(this);
   this.resolvePath = function(o,r){
     if (!zs4.is.type(o)){
+      debugger;
       console.log('object is not a type.');
       console.log(o);
       return null;
@@ -3029,11 +3051,13 @@ zs4.request = function(o){
     this.payloadRefresh();
 
     this.tokenCreate = function(nuload){
+      console.log('this.tokenCreate');
       this.request.token = zs4.THIS.zs4.token.encode(nuload);
       this.payloadRefresh();
     };
 
     this.tokenDelete = function(){
+      console.log('TOKEN DELETED!!!!!!!!!!');
       this.request.token=null;
       this.request.payload=null;
     };
@@ -3099,8 +3123,12 @@ zs4.request = function(o){
     this.getReply = function(){
       var r = new Object({request:{},input:this.input,reply:this.request.get,});
       r.request.callback = this.request.callback;
-      if (zs4.is.object(this.request.payload))this.tokenCreate(this.request.payload);
+      if (zs4.is.object(this.request.payload)){
+        //console.log('request.getReply() FOUND PAYLOAD');
+        this.tokenCreate(this.request.payload);
+      }
       if (zs4.is.string(this.request.token)){
+        //console.log('request.getReply() FOUND TOKEN');
         r.request.token = this.request.token;
         r.request.scope = this.request.payload.scope;
       }
@@ -3109,6 +3137,7 @@ zs4.request = function(o){
     };
 
     if (zs4.is.object(o)&&o.html!=null&&zs4.is.string(o.path)){
+      //console.log('REQUEST RECOGNIZED AS REDIRECT',o,zs4.is.string(o.token),o.token.length);
       this.html = true;
       if (zs4.is.string(o.token)&&o.token.length>10){
         this.request.token = o.token;
@@ -3117,6 +3146,7 @@ zs4.request = function(o){
       }
       var input = this.resolveInputPath(o.path);
       input.getHTML = new Object();
+      //console.log(this.request.token,this.request.payload);
     }
     else {
       this.html = false;
@@ -3197,7 +3227,7 @@ if (zs4.is.window()){
     form.appendChild(loc);
 
     if (zs4.is.string(zs4.THIS._.token)&&zs4.THIS._.token.length>10) {
-      console.log('TOKEN FOUND FOR SUBMIT....');
+      //console.log('TOKEN FOUND FOR SUBMIT....');
 
       var token = document.createElement('input');
       token.setAttribute('name', 'token');
@@ -3207,7 +3237,7 @@ if (zs4.is.window()){
 
     }
     else {
-      console.log('NO TOKEN FOUND FOR SUBMIT....');
+      //console.log('NO TOKEN FOUND FOR SUBMIT....');
     }
     form.submit();
   }
@@ -3224,6 +3254,9 @@ if (zs4.is.window()){
 
     if (zs4.is.string(zs4.THIS._.token)&&zs4.THIS._.token.length>10){
       req.request.token = zs4.THIS._.token;
+    }
+    else if (zs4.is.string(window.token)&&window.token.length>10){
+      req.request.token = window.token;
     }
     else {
       req.request.token = null;

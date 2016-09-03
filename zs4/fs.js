@@ -130,7 +130,7 @@ fs.create = function(){
     this._.transformInternal(req);
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
-      req.error(THIS,err);
+      req.error(READFILE,err);
       this._.print(err);
       return get();
     }
