@@ -576,7 +576,6 @@ zs4.admin.util = {
 				if (o._.flags.get.scope())add+=' scope';else rem+=' scope';
 				if (o._.flags.get.am())add+=' am';else rem+=' am';
 				if (o._.flags.get.own())add+=' own';else rem+=' own';
-				if (o._.flags.get.arrayio())add+=' arrayio';else rem+=' arrayio';
 				if (o._.flags.get.notrans())add+=' notrans';else rem+=' notrans';
 
 				if (o._.type == Object){
@@ -841,7 +840,6 @@ zs4.admin.type = {
 		zs4.admin.type.object(po,o);
 		o._.html.icon.on = 'database';
 		o._.html.icon.off = 'database';
-
 	},
 	auth:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -1054,7 +1052,7 @@ zs4.admin.type = {
 		zs4.admin.util.unknown(po,o);
 
 		if (o._.html.icon.off=='plus'&&o._.html.icon.on==''&&o._.type==Object){
-			if (o._.flags.get.arrayio()){
+			if (o._.name == 'array'){
 				o._.html.icon.on = 'list';
 				o._.html.icon.off = 'list';
 			}

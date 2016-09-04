@@ -6,13 +6,13 @@ var email = exports;
 email.lastaddr = Date.now();
 
 email.schema = function(parent){
-  parent._.property(new email.create({name:'email',flags:'authgetpublic authsetself',}));
+  parent._.property(new email.create({name:'email',flags:'authsetself',}));
 };
 
 email.create = function(input){
 
   var THIS = this;
-  if (!zs4.is.object(input))input = new Object({name:'email',flags:'authgetpublic authsetself',});
+  if (!zs4.is.object(input))input = new Object({name:'email',flags:'authsetself',});
   zs4.type.object.call(this,input);
   THIS._.create = email.create;
 
