@@ -639,6 +639,46 @@ zs4.util = {
     };
 
   },
+  bits:function(){
+    const BITLIMIT = 48;
+    const BITMASK = 0x0ffffffffffff;
+
+    this.value = 0;
+    this.addBit = (function(n,v){
+      if (!zs4.is.name(n) || v < 0 || v >= BITLIMIT)return null;
+      this[n] = new Object({v:v,m:(1<<v),});
+      this[n].true = (function(){this.value |= (this[n].m);}).bind(this);
+      this[n].false = (function(){this.value &= (~(this[n].m));}).bind(this);
+      this[n].get = (function(){if(this.value&this[n].m)return true;return false;}).bind(this);
+      return this[n];
+    }).bind(this);
+
+    this.getString = (function(v){
+      var ret = ''
+      if (v == null)v = this.value;
+      for (var n in this)if(zs4.is.object(this[n])&&zs4.is.number(this[n].m)){
+        if (v & this[n].m){
+          if (ret == '')ret += n;
+          else ret += (' '+n);
+        }
+      }
+      return ret;
+    }).bind(this);
+
+    this.setString = (function(s){
+      var a = zs4.string.split.words(s)
+      for (var i = 0 ; i < a.length ; i++){
+        //console.log(a[i]+': ');
+        if (zs4.is.object(this[a[i]])&&zs4.is.number(this[a[i]].m)){
+          //console.log('  ...is a function');
+          this[a[i]].true();
+        }
+      }
+      return this.value;
+
+    }).bind(this);
+    return this;
+  },
 };
 
 zs4.type = {
@@ -1506,6 +1546,7 @@ zs4.type = {
     THIS._.property(new zs4.type.object({name:'sort',flags:'noprune nostore authgetpublic local',}));
     THIS.sort._.property(new zs4.type.scopeindex({name:'item',flags:'required nostore noprune apiarg local',inscope:THIS.template,default:'zs4.head.updated'}));
     THIS.sort._.property(new zs4.type.boolean({name:'descend',flags:'required nostore noprune apiarg local',default:true,}));
+    THIS.sort._.sortDefault = THIS.sort._.sortNot;
 
     THIS._.property(new zs4.type.object({name:'array',flags:'noprune authgetpublic',}));
     THIS.array._.load = (function(input){
@@ -1525,6 +1566,28 @@ zs4.type = {
       this._.print('storing '+count+' array elements');
       return store;
     }).bind(THIS.array);
+
+    THIS.array._.sortArray = (function(a,b){
+      var va = a._.resolvePath(THIS.sort.item._.value);
+      var vb = b._.resolvePath(THIS.sort.item._.value);
+      if (va == null){
+        if (vb == null)return 0;
+        return -1;
+      }
+      else if (vb == null){
+        return 1;
+      }
+
+      if (THIS.sort.descend._.value==true){
+        var swap = va; va = vb; vb = swap;
+      }
+      if (va._.opcode.eq(vb._.value))return 0;
+      if (va._.opcode.lt(vb._.value))return -1;
+      return 1;
+    }).bind(this);
+
+    THIS.array._.sortDefault = THIS.array._.sortArray;
+
 
     THIS.array._.elementLoad = (function(req,cb){
       //console.log('elementLoad '+this._.path+'.'+req.elenam);
@@ -2378,6 +2441,31 @@ zs4.type = {
       //return null;
     }).bind(this);
 
+    this._.sortNot = (function(a,b){
+      return 0;
+    }).bind(this);
+
+    this._.sortName = (function(a,b){
+      if (a._.name == b._.name)return 0;
+      if (a._.name < b._.name)return -1;
+      return 1;
+    }).bind(this);
+
+    this._.sortDefault = this._.sortName;
+    this._.sortDefaultDescend = false;
+    this._.sort = (function(foo,descend){
+      if (foo==null)foo=this._.sortDefault;
+      if (descend==null)descend = this._.sortDefaultDescend;
+
+      if (descend==true)foo = function(a,b){return foo(b,a);}
+      var a = new Array();
+      for (var n in this)if(zs4.is.type(this[n])){a.push(this[n])};
+      if (a.length > 1){
+        a = a.sort(foo);
+      }
+      return a;
+    }).bind(this);
+
   },
   password:function(input){
     zs4.type.string.call(this,input);
@@ -2504,6 +2592,8 @@ zs4.type = {
     this._.create = zs4.type.select;
     this._.addTypes = ['selectall','selectany','selectnone','selectitem'];
     this._.select = new Object();
+
+    this._.sortDefault = this._.sortNot;
 
     this._.onLocalChange = (function(){
       this._.select.check();

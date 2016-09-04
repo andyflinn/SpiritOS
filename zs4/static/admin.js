@@ -432,6 +432,9 @@ zs4.admin.util = {
 		if (o._.input==null)o._.input = (function(){return null;}).bind(o);
 		if (o._.response==null)o._.response = (function(r){console.log(r);}).bind(o);
 
+		if (!zs4.is.boolean(o._.html.uninitialized))o._.html.uninitialized=true;
+		else o._.html.uninitialized=false;
+
 		if (o._.cleanup==null)o._.cleanup = (function(){
 			//console.log(this._.path + '._.cleanup()');
 			//console.log(o._.html.parentElement);
@@ -607,6 +610,19 @@ zs4.admin.util = {
 
 
 			}).bind(o);
+
+			if (o._.type == Object){
+				o._.html.sort = (function(foo,descend){
+					var a = o._.sort(foo,descend);
+					if (a.length > 1){
+						for (var i = 0 ; i < (a.length-1) ; i++){
+							this._.html.c.removeChild(a[i]._.html.e);
+							this._.html.c.insertBefore(a[i]._.html.e, this._.html.c.childNodes[i]);
+						}
+
+					}
+				}).bind(o);
+			}
 		}
 
 		if (o._.flags.get.scope()){
@@ -1051,39 +1067,39 @@ zs4.admin.type = {
 		}
 		zs4.admin.util.unknown(po,o);
 
-		if (o._.html.icon.off=='plus'&&o._.html.icon.on==''&&o._.type==Object){
-			if (o._.name == 'array'){
-				o._.html.icon.on = 'list';
-				o._.html.icon.off = 'list';
-			}
-			else if (o._.name == 'password'){
-				o._.html.icon.on = 'key';
-				o._.html.icon.off = 'password';
-			}
-			else if (o._.name == 'email'){
-				o._.html.icon.on = 'at';
-				o._.html.icon.off = 'mail';
-			}
-			else if (o._.name == 'zs4'){
-				o._.html.icon.on = 'cogs';
-				o._.html.icon.off = 'cogs';
-			}
-			else if (o._.name == 'rsa'){
-				o._.html.icon.on = 'password';
-				o._.html.icon.off = 'key';
-			}
-			else if (o._.name == 'rsa'){
-				o._.html.icon.on = 'password';
-				o._.html.icon.off = 'key';
-			}
-			else if (o._.name == 'bye'){
-				o._.html.icon.on = 'bye';
-				o._.html.icon.off = 'bye';
-			}
-			else if (o._.name == 'user'){
-				o._.html.icon.on = 'user';
-				o._.html.icon.off = 'user';
-			}
+		if (o._.html.uninitialized){
+				if (o._.name == 'array'){
+					o._.html.icon.on = 'list';
+					o._.html.icon.off = 'list';
+				}
+				else if (o._.name == 'password'){
+					o._.html.icon.on = 'key';
+					o._.html.icon.off = 'password';
+				}
+				else if (o._.name == 'email'){
+					o._.html.icon.on = 'at';
+					o._.html.icon.off = 'mail';
+				}
+				else if (o._.name == 'zs4'){
+					o._.html.icon.on = 'cogs';
+					o._.html.icon.off = 'cogs';
+				}
+				else if (o._.name == 'rsa'){
+					o._.html.icon.on = 'password';
+					o._.html.icon.off = 'key';
+				}
+				else if (o._.name == 'rsa'){
+					o._.html.icon.on = 'password';
+					o._.html.icon.off = 'key';
+				}
+				else if (o._.name == 'bye'){
+					o._.html.icon.on = 'bye';
+					o._.html.icon.off = 'bye';
+				}
+				else if (o._.name == 'user'){
+					o._.html.icon.on = 'user';
+					o._.html.icon.off = 'user';
+				}
 
 		}
 
@@ -1122,7 +1138,7 @@ zs4.admin.type = {
 			//zs4.admin.util.removeClass(o._.html.toggle,'scope');
 		}
 
-
+		o._.html.sort();
 		//if (zs4.is.function(o._.html.refresh))o._.html.refresh();
 	},
 	password:function(po,o){
