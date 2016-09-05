@@ -46,7 +46,7 @@ zs4.define = function(){
   require('./email').schema(zs4.THIS.zs4);
 
   var user = require('./user');
-
+  zs4.THIS.zs4.type._.property(new user.create());
   zs4.THIS.zs4._.property(new zs4.type.array({name:'user',template:new user.create(),}));
   zs4.THIS.zs4.user._.flags.value |= zs4.THIS.zs4.user._.flags.apiarg;
 }

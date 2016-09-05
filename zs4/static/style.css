@@ -199,11 +199,13 @@ zs4-name.zs4-top{
 .icon-minus:before{content:"-";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
 .icon-required:before{content:"*";font-weight: bolder;}
+.icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-select:before{content:'\02611';font-weight: bolder;}
 .icon-spin:before{content:'\029B0 ';font-weight: bolder;}
 .icon-to-start:before{content:'\025C4';;font-weight: bolder;}
 .icon-tool:before{content:'\02692 ';font-weight: bolder;}
 .icon-true:before{content:'\02611';font-weight: bolder;}
+.icon-type:before{content:'+';font-weight: bolder;}
 
 .icon-logo:before{
   content:"zs4";

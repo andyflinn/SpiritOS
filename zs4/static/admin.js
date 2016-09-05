@@ -190,6 +190,8 @@ zs4.admin.util = {
 			if (zs4.is.number(o._.minlength))addValue('minlength',o._.minlength);
 			if (zs4.is.number(o._.maxlength))addValue('maxlength',o._.maxlength);
 		}
+		//if (o._.==true)addValue('hidden',true);
+
 	},
 	auth:function(o){
 		var THIS = this;
@@ -613,11 +615,29 @@ zs4.admin.util = {
 				addrem(o._.html.toggle);
 				addrem(o._.html.name);
 
-				if (o._.flags.get.nodisplay())add+=' nodisplay';else rem+=' nodisplay';;
 
 				addrem(o._.html.e);
 
+				//if (o._.flags.get.nodisplay()  ){ //||o._.hideThis==true){
+				//	zs4.admin.util.addClass(o._.html.e,'nodisplay');
+				//}
+				zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
 
+				if (o._.cberror == null){
+					zs4.admin.util.addClass(o._.html.error,'nodisplay');
+				}
+				else {
+					o._.html.error.textContent = o._.cberror.text;
+					zs4.admin.util.removeClass(o._.html.error,'nodisplay');
+				}
+
+				if (o._.cbresult == null){
+					zs4.admin.util.addClass(o._.html.result,'nodisplay');
+				}
+				else {
+					o._.html.result.textContent = '';
+					zs4.admin.util.removeClass(o._.html.result,'nodisplay');
+				}
 
 			}).bind(o);
 
@@ -834,31 +854,6 @@ zs4.admin.util = {
 
 	},
 
-	refreshNameInput:function(po,o){
-		zs4.admin.util.setClass(o._.html.name,'noset',o._.flags.get.noset());
-		zs4.admin.util.setClass(o._.html.input,'noset',o._.flags.get.noset());
-
-		zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
-	},
-	refreshCallback:function(THIS){
-		//console.log('refreshCallback('+THIS._.path+')')
-		if (THIS._.cberror == null){
-			zs4.admin.util.addClass(THIS._.html.error,'nodisplay');
-		}
-		else {
-			THIS._.html.error.textContent = THIS._.cberror.text;
-			zs4.admin.util.removeClass(THIS._.html.error,'nodisplay');
-		}
-
-		if (THIS._.cbresult == null){
-			zs4.admin.util.addClass(THIS._.html.result,'nodisplay');
-		}
-		else {
-			THIS._.html.result.textContent = '';
-			zs4.admin.util.removeClass(THIS._.html.result,'nodisplay');
-		}
-	},
-
 }
 
 zs4.admin.type = {
@@ -905,12 +900,10 @@ zs4.admin.type = {
 			}).bind(o);
 			o._.html.expanded = true;
 		}
-		o._.html.genericRefresh();
-		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.checked = o._.value;
-		zs4.admin.util.refreshNameInput(po,o);
+		o._.html.genericRefresh();
 	},
 	bye:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -942,12 +935,10 @@ zs4.admin.type = {
 			}).bind(o);
 			o._.html.expanded = true;
 		}
-		o._.html.genericRefresh();
-		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.value = parseInt(o._.value);
-		zs4.admin.util.refreshNameInput(po,o);
+		o._.html.genericRefresh();
 	},
 	enum:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -964,7 +955,7 @@ zs4.admin.type = {
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);
 				}
-		};
+			};
 
 			o._.html.enumRefresh = function(){
 				//console.log(o._.path+'._.html.enumRefresh()');
@@ -985,11 +976,9 @@ zs4.admin.type = {
 
 			o._.html.expanded = true;
     }
-		o._.html.enumRefresh();
 		o._.html.genericRefresh();
-
-    o._.html.input.value = o._.value;
-    zs4.admin.util.refreshNameInput(po,o);
+		o._.html.enumRefresh();
+		o._.html.input.value = o._.value;
 	},
 	email:function(po,o){
 		zs4.admin.type.string(po,o);
@@ -1025,12 +1014,10 @@ zs4.admin.type = {
 			}).bind(o);
 			o._.html.expanded = true;
 		}
-		o._.html.genericRefresh();
-		zs4.admin.util.refreshCallback(o);
 
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.value = parseInt(o._.value);
-		zs4.admin.util.refreshNameInput(po,o);
+		o._.html.genericRefresh();
 	},
 	name:function(po,o){
 		zs4.admin.type.string(po,o);
@@ -1061,12 +1048,9 @@ zs4.admin.type = {
 			}).bind(o);
 			o._.html.expanded = true;
 		}
-		o._.html.genericRefresh();
-		zs4.admin.util.refreshCallback(o);
-
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.value = parseFloat(o._.value);
-		zs4.admin.util.refreshNameInput(po,o);
+		o._.html.genericRefresh();
 	},
 	object:function(po,o){
 		//if (!zs4.is.type(o) || o._.typename!='object'){
@@ -1079,10 +1063,6 @@ zs4.admin.type = {
 
 		if (o._.html.uninitialized){
 		}
-
-		o._.html.genericRefresh();
-
-		zs4.admin.util.refreshCallback(o);
 
 		for (var n in o){
 			//if (zs4.is.name(n))console.log(n);
@@ -1103,6 +1083,7 @@ zs4.admin.type = {
 		if (o._.flags.value & o._.flags.scope){
 
 			o._.scope = o;
+			//if (zs4.is.string(zs4.path.resolve(o,'zs4.head.title._.value')) && o.zs4.head.title._.value.length > 0){
 			if (zs4.is.string(o.zs4.head.title._.value) && o.zs4.head.title._.value.length > 0){
 				o._.html.name.textContent = o.zs4.head.title._.value;
 			}
@@ -1114,6 +1095,7 @@ zs4.admin.type = {
 			if (zs4.is.type(po))o._.scope = po._.scope;
 		}
 
+		o._.html.genericRefresh();
 		o._.html.sort();
 	},
 	password:function(po,o){
@@ -1140,7 +1122,6 @@ zs4.admin.type = {
       o._.html.e.appendChild(o._.html.input);
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
-					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
 					o._.print(o._.path + ' updated with '+o._.value);
@@ -1169,12 +1150,11 @@ zs4.admin.type = {
       }
 			o._.html.expanded = true;
     }
-		o._.html.genericRefresh();
 
-    o._.html.refreshOptions(o);
     //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = o._.value;
-    zs4.admin.util.refreshNameInput(po,o);
+		o._.html.genericRefresh();
+		o._.html.refreshOptions(o);
+		o._.html.input.value = o._.value;
   },
 	scopeindexunique:function(po,o){
     zs4.admin.util.unknown(po,o);
@@ -1214,12 +1194,9 @@ zs4.admin.type = {
 			o._.html.expanded = true;
     }
 		o._.html.genericRefresh();
-
-    o._.html.refreshOptions(o);
-    //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = o._.value;
-    zs4.admin.util.refreshNameInput(po,o);
-  },
+		o._.html.refreshOptions(o);
+		o._.html.input.value = o._.value;
+},
 	scopeitem:function(po,o){
     zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){
@@ -1259,10 +1236,8 @@ zs4.admin.type = {
     }
 
 		o._.html.genericRefresh();
-    o._.html.refreshOptions(o);
-    //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = o._.value;
-    zs4.admin.util.refreshNameInput(po,o);
+		o._.html.refreshOptions(o);
+		o._.html.input.value = o._.value;
   },
   scopescope:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -1301,12 +1276,9 @@ zs4.admin.type = {
       }
 			o._.html.expanded = true;
     }
-
 		o._.html.genericRefresh();
-    o._.html.refreshOptions(o);
-    //o._.html.input.readOnly = o._.flags.get.noset();
-    o._.html.input.value = o._.value;
-    zs4.admin.util.refreshNameInput(po,o);
+		o._.html.refreshOptions(o);
+		o._.html.input.value = o._.value;
   },
 	select:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -1327,7 +1299,7 @@ zs4.admin.type = {
 	},
 	selectitem:function(po,o){
 		zs4.admin.type.object(po,o);
-		o._.html.name.textContent = 'item';
+		o._.html.name.textContent = 'property';
 	},
 	string:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -1356,11 +1328,9 @@ zs4.admin.type = {
 			}).bind(o);
 			o._.html.expanded = true;
 		}
-		o._.html.genericRefresh();
-		zs4.admin.util.refreshCallback(o);
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.value = o._.value;
-		zs4.admin.util.refreshNameInput(po,o);
+		o._.html.genericRefresh();
 	},
 	text:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -1378,7 +1348,12 @@ zs4.admin.type = {
 		}
 		o._.html.input.readOnly = o._.flags.get.noset();
 		o._.html.input.value = o._.value;
-		zs4.admin.util.refreshNameInput(po,o);
+		o._.html.genericRefresh();
+	},
+	type:function(po,o){
+		zs4.admin.type.object(po,o);
+		//o._.html.icon.on = 'info';
+		//o._.html.icon.off = 'info';
 	},
 };
 
