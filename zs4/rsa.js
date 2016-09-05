@@ -23,7 +23,7 @@ rsa.create = function(){
 
   THIS._.load = (function(input){
     //zs4.console.log('loading rsa object \n'+input.pem);
-    if (zs4.is.string(input.pem)&&input.pem.length>10){
+    if (zs4.is.object(input)&&zs4.is.string(input.pem)&&input.pem.length>10){
       this._.key = new NodeRSA(input.pem);
       this.pem._.value = input.pem;
 

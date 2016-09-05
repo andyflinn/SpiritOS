@@ -31,7 +31,7 @@ password.create = function(){
         if (oldPassVerified){
           console.log('...old password verified...');
           req.tokenCreate({iss:THIS._.path,scope:req.scope._.path,});
-          req.request.reget = THIS._.path;
+          //req.request.reget = THIS._.path;
 
           if (zs4.is.password(req.input.set)){
             console.log('...pass change...');
@@ -55,14 +55,19 @@ password.create = function(){
       }
       else{
         if (zs4.is.password(req.input.set)){
-
-          var nu = this.generate(req.input.set);
-          if (nu) {
-            this.hashed._.value = nu;
-            //console.log('...password set...');
-            this._.shouldBeSaved(req);
-            this._.print('password set '+this.hashed._.value)
-            req.result(THIS,'password set');
+          if (!req.flags.get.am()&&!req.flags.get.own()){
+              req.error(THIS,'not authorized');
+          }
+          else {
+            var nu = this.generate(req.input.set);
+            if (nu) {
+              this.hashed._.value = nu;
+              //console.log('...password set...');
+              this._.shouldBeSaved(req);
+              this._.print('password set '+this.hashed._.value)
+              req.result(THIS,'goscope');
+              req.tokenCreate({iss:THIS._.path,scope:req.scope._.path,});
+            }
           }
         }
         else {
@@ -81,11 +86,7 @@ password.create = function(){
     req.setScope(this);
     this._.print(this._.path+'.get()');
     //console.log('password.get'+ JSON.stringify(this._.authGet));
-    var get = this._.getInitialize(req);
-    if (get==null){
-      this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
-      return null;
-    }
+    var get = null;
 
     function vfy(get){
       get.vfy = new Object({_:{}});
@@ -99,28 +100,43 @@ password.create = function(){
       get.set._.name = 'set';
       get.set._.typename = 'password';
       get.set._.value = '';
-      get.set._.flags = THIS._.flags.apiarg;
+      get.set._.flags = THIS._.flags.authsetself;
     };
 
     if (this._.flags.value & this._.flags.notrans){
+      var get = this._.getInitialize(req);
+      if (get==null){
+        this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
+        return null;
+      }
       vfy(get);
       set(get);
     }
-    else {
-      if (passhash.isHashed(this.hashed._.value)){
-        vfy(get);
-        if (req.am(THIS)||req.own(THIS)){
-          set(get);
-        }
-        else {
-          get.vfy._.flags |= THIS._.flags.quickupdate;
-        }
+    else if (passhash.isHashed(this.hashed._.value)){
+      get = this._.getInitialize(req);
+      if (get==null){
+        this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
+        return null;
+      }
+
+      vfy(get);
+      if (req.flags.get.am()||req.flags.get.own()){
+        set(get);
       }
       else {
-        set(get);get.set._.flags |= THIS._.flags.required;
+        get.vfy._.flags |= THIS._.flags.quickupdate;
       }
     }
+    else if (req.flags.get.am()||req.flags.get.own()){
+      get = this._.getInitialize(req);
+      if (get==null){
+        this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
+        return null;
+      }
 
+      set(get);get.set._.flags |= THIS._.flags.required;
+
+    }
   }).bind(THIS);
 
   THIS._.property(new zs4.type.string({name:'hashed',flags:'noget',}));

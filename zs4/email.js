@@ -19,6 +19,7 @@ email.create = function(input){
   var nuaddr = (zs4.integer.to.name(email.lastaddr++)+'@zs4.zs4');
 
   THIS._.property(new zs4.type.object({name:'smtp',flags:'authsetself',}));
+  THIS.smtp._.sortDefault = THIS.smtp._.sortNot;
   THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'authsetself quickupdate',default:false,}));
   THIS.smtp._.property(new zs4.type.string({name:'user',flags:'index unique authsetself quickupdate',default:nuaddr}));
   THIS.smtp._.property(new zs4.type.string({name:'password',flags:'authsetself quickupdate',}));
@@ -27,7 +28,7 @@ email.create = function(input){
   THIS.smtp._.property(new zs4.type.boolean({name:'ssl',flags:'authsetself quickupdate',default:false,}));
 
   THIS._.property(new zs4.type.object({name:'message',flags:'api nostore noprune authsetself',}));
-
+  THIS.message._.sortDefault = THIS.message._.sortNot;
   THIS.message._.property(new zs4.type.email({name:'to',flags:'required noprune apiarg',}));
   THIS.message._.property(new zs4.type.string({name:'subject',flags:'required noprune apiarg',minlength:1,}));
   THIS.message._.property(new zs4.type.text({name:'text',flags:'required noprune apiarg',minlength:1,}));

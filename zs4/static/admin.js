@@ -19,10 +19,12 @@ zs4.admin.util = {
 		return false;
 	},
 	setClass:function(e,c,tof){
+		if (e==null||c==null)return;
 		if (tof)return zs4.admin.util.addClass(e,c);
 		else return zs4.admin.util.removeClass(e,c);
 	},
 	setIcon:function(e,icon){
+		if (e==null||icon==null)return;
 		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
 		for (var i = (cls.length-1) ; i >= 0; i--){
 			if (cls[i].substr(0,5)=='icon-')
@@ -36,6 +38,7 @@ zs4.admin.util = {
 		e.className = ret;
 	},
 	setAnimate:function(e,icon){
+		if (e==null||icon==null)return;
 		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
 		for (var i = (cls.length-1) ; i >= 0; i--){
 			if (cls[i].substr(0,5)=='animate-')
@@ -49,6 +52,7 @@ zs4.admin.util = {
 		e.className = ret;
 	},
 	addClass:function(e,c){
+		if (e==null||c==null)return;
 		var set = zs4.string.split.separators(c,zs4.admin.util.clseps);
 		if  (set.length==0)return;
 		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
@@ -59,6 +63,7 @@ zs4.admin.util = {
 		e.className = ret;
 	},
 	removeClass:function(e,c){
+		if (e==null||c==null)return;
 		var rem = zs4.string.split.separators(c,zs4.admin.util.clseps);
 		if  (rem.length==0)return;
 		var cls = zs4.string.split.separators(e.className,zs4.admin.util.clseps);
@@ -412,6 +417,7 @@ zs4.admin.util = {
 				var prop = new zs4.type[name]();
 				prop._.name = zs4.integer.to.name(o._.addId++);
 				o._.property(prop);
+				prop._.flags.set.deletable(true);
 				o._.html.toolbarIsOpen = false;
 				o._.html.refreshAll();
 			}
@@ -463,6 +469,10 @@ zs4.admin.util = {
 				if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
 				else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
 				else {o._.html.icon.off=o._.html.icon.on='none'}
+			}
+			else {
+				o._.html.icon.off=o._.typename;
+				o._.html.icon.on='minus';
 			}
 
 		}
@@ -657,7 +667,7 @@ zs4.admin.util = {
 			o._.html.onToggle = function(){
 				if (o._.html.expanded){
 					if (!o._.html.toolbarIsOpen || o._.html.toolbar == null){
-						if (!o._.html.topElement) o._.html.toggleOff();
+						if (!o._.html.topElement && o._.type == Object) o._.html.toggleOff();
 					}
 					else {
 						o._.html.toolbarClose();
@@ -854,8 +864,8 @@ zs4.admin.util = {
 zs4.admin.type = {
 	array:function(po,o){
 		zs4.admin.type.object(po,o);
-		o._.html.icon.on = 'database';
-		o._.html.icon.off = 'database';
+		//o._.html.icon.on = 'database';
+		//o._.html.icon.off = 'database';
 	},
 	auth:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -904,8 +914,8 @@ zs4.admin.type = {
 	},
 	bye:function(po,o){
 		zs4.admin.type.object(po,o);
-		o._.html.icon.on = 'bye';
-		o._.html.icon.off = 'bye';
+		//._.html.icon.on = 'bye';
+		//o._.html.icon.off = 'bye';
 	},
 	date:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -986,8 +996,8 @@ zs4.admin.type = {
 	},
 	head:function(po,o){
 		zs4.admin.type.object(po,o);
-		o._.html.icon.on = 'info';
-		o._.html.icon.off = 'info';
+		//o._.html.icon.on = 'info';
+		//o._.html.icon.off = 'info';
 	},
 	integer:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -1068,39 +1078,6 @@ zs4.admin.type = {
 		zs4.admin.util.unknown(po,o);
 
 		if (o._.html.uninitialized){
-				if (o._.name == 'array'){
-					o._.html.icon.on = 'list';
-					o._.html.icon.off = 'list';
-				}
-				else if (o._.name == 'password'){
-					o._.html.icon.on = 'key';
-					o._.html.icon.off = 'password';
-				}
-				else if (o._.name == 'email'){
-					o._.html.icon.on = 'at';
-					o._.html.icon.off = 'mail';
-				}
-				else if (o._.name == 'zs4'){
-					o._.html.icon.on = 'cogs';
-					o._.html.icon.off = 'cogs';
-				}
-				else if (o._.name == 'rsa'){
-					o._.html.icon.on = 'password';
-					o._.html.icon.off = 'key';
-				}
-				else if (o._.name == 'rsa'){
-					o._.html.icon.on = 'password';
-					o._.html.icon.off = 'key';
-				}
-				else if (o._.name == 'bye'){
-					o._.html.icon.on = 'bye';
-					o._.html.icon.off = 'bye';
-				}
-				else if (o._.name == 'user'){
-					o._.html.icon.on = 'user';
-					o._.html.icon.off = 'user';
-				}
-
 		}
 
 		o._.html.genericRefresh();
@@ -1135,16 +1112,14 @@ zs4.admin.type = {
 		}
 		else{
 			if (zs4.is.type(po))o._.scope = po._.scope;
-			//zs4.admin.util.removeClass(o._.html.toggle,'scope');
 		}
 
 		o._.html.sort();
-		//if (zs4.is.function(o._.html.refresh))o._.html.refresh();
 	},
 	password:function(po,o){
 		zs4.admin.type.string(po,o);
-		o._.html.icon.on = 'key';
-		o._.html.icon.off = 'password';
+		//o._.html.icon.on = 'key';
+		//o._.html.icon.off = 'password';
 	},
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -1153,8 +1128,8 @@ zs4.admin.type = {
 			o._.html.icon.off = 'logo';
 		}
 		else {
-			o._.html.icon.on = 'user';
-			o._.html.icon.off = 'user';
+			//._.html.icon.on = 'user';
+			//o._.html.icon.off = 'user';
 		}
 	},
 	scopeindex:function(po,o){

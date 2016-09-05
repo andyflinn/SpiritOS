@@ -1,5 +1,3 @@
-@import url("fontello/css/zs4-icons.css");
-@import url("fontello/css/animation.css");
 :root{
   margin:0;
   border:0;
@@ -12,7 +10,92 @@
   display:block;
 }
 
+.animate-spin {
+  -moz-animation: spin 2s infinite linear;
+  -o-animation: spin 2s infinite linear;
+  -webkit-animation: spin 2s infinite linear;
+  animation: spin 2s infinite linear;
+  display: inline-block;
+}
+@-moz-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-webkit-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-o-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@-ms-keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+@keyframes spin {
+  0% {
+    -moz-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+
+  100% {
+    -moz-transform: rotate(359deg);
+    -o-transform: rotate(359deg);
+    -webkit-transform: rotate(359deg);
+    transform: rotate(359deg);
+  }
+}
+
+
 [class^="icon-"]:before, [class*=" icon-"]:before {
+  display:inline-block;
   font-size:0.5em;
   vertical-align:0.25em;
   cursor:pointer;
@@ -104,8 +187,24 @@ zs4-name.zs4-top{
 .icon-selectnone:before{content:"!";font-weight: bolder;}
 .icon-selectitem:before{content:"$";font-weight: bolder;}
 
-.icon-required:before{content:"*";font-weight: bolder;}
+.icon-about:before{content:"i";font-weight: bolder;}
+.icon-add:before{content:"+";font-weight: bolder;}
+.icon-array:before{content:'\02630';font-weight: bolder;}
+.icon-auth:before{content:"a";font-weight: bolder;}
+.icon-bye:before{content:'\027B2 ';font-weight: bolder;}
+.icon-console:before{content:">_";font-weight: bolder;}
+.icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
+.icon-head:before{content:'\02594';;font-weight: bolder;color:blue;}
 .icon-info:before{content:"i";font-weight: bolder;}
+.icon-minus:before{content:"-";font-weight: bolder;}
+.icon-object:before{content:"+";font-weight: bolder;}
+.icon-required:before{content:"*";font-weight: bolder;}
+.icon-select:before{content:'\02611';font-weight: bolder;}
+.icon-spin:before{content:'\029B0 ';font-weight: bolder;}
+.icon-to-start:before{content:'\025C4';;font-weight: bolder;}
+.icon-tool:before{content:'\02692 ';font-weight: bolder;}
+.icon-true:before{content:'\02611';font-weight: bolder;}
+
 .icon-logo:before{
   content:"zs4";
   font-weight: bolder;
@@ -212,7 +311,7 @@ zs4-toolbar-toogle.zs4-current.icon-tool,
 zs4-tool-tab.zs4-current{
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
-  background-color:rgba(172,172,255,1.0);
+  background-color:lightblue;
 }
 
 
