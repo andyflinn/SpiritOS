@@ -328,7 +328,7 @@ zs4.copy = {
 
       if (zs4.is.number(from._.minlength))to._.minlength=from._.minlength;
       if (zs4.is.number(from._.maxlength))to._.maxlength=from._.maxlength;
-      if (zs4.is.array(from._.enum))to._.enum = from._.enum;
+      if (zs4.is.array(from._.enum)&&from._.enum.length>0)to._.enum = from._.enum;
 
     },
     trim:function(f,t){
@@ -935,7 +935,7 @@ zs4.type = {
       get._.typename = this._.typename;
       zs4.copy.schemabasics(this,get);
 
-      if (this._.typename=='enum'&&zs4.is.array(this._.enum))get._.enum = this._.enum;
+      if (this._.typename=='enum'&&zs4.is.array(this._.enum)&&this._.enum.length>0)get._.enum = this._.enum;
 
       if (zs4.is.type(this._.inscope)&&this._.inscope._.flags.get.scope())
         get._.inscope = this._.inscope._.path;
@@ -1126,8 +1126,10 @@ zs4.type = {
           this._.callback(input);
         }
         else if (zs4.is.string(input.result)&&input.result=='goscope'){
-          console.log('goscope '+this._.scope._.path);
-          zs4.navigate(this._.scope._.path);
+          //console.log('goscope '+this._.scope._.path);
+          //zs4.navigate(this._.scope._.path);
+          console.log('goscope /');
+          zs4.navigate('/');
         }
       }
     }).bind(this);
@@ -3346,11 +3348,7 @@ if (zs4.is.window()){
     }
     zs4.THIS._.print('LAUNCHING ADMIN @ '+ JSON.stringify(input))
     zs4.post(input,function(){
-      var script = zs4.THIS.zs4.head.app._.value.trim();
-      if (script != ''){
-        zs4.THIS._.print('loading script \''+script+'\'')
-        zs4.loadscript(script);
-      }
+      zs4.loadscript('/admin.js');
     });
   };
   zs4.style = {
