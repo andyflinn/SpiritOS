@@ -501,6 +501,7 @@ zs4.admin.util = {
 
 				zs4.admin.util.addClass(o._.html.e,'top');
 				o._.html.topElement=true;
+				o._.html.top = new Object({value:{}});
 			}
 
 			o._.html.genericRefresh = (function(){
@@ -578,7 +579,13 @@ zs4.admin.util = {
 				}
 
 				if (o._.html.topElement==true){
+					var top = o._.html.top;
 					add+=' top';
+					if (o._.flags.get.authroot())add+=' root';else rem+=' root';
+					var wtit = 'zs4';
+					if (o.zs4.head.title._.value != '')wtit+= ':' + o.zs4.head.title._.value;
+					if (top.value.utitle != '')wtit+=':'+top.value.utitle;
+					if (document.title != wtit)document.title = wtit;
 				}
 				else {
 					rem+=' top';
@@ -601,6 +608,8 @@ zs4.admin.util = {
 					if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
 					else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
 					else {o._.html.icon.off=o._.html.icon.on='none'}
+
+					if (o._.html.input != null)zs4.admin.util.setClass(o._.html.input,'noset',o._.flags.get.noset());
 				}
 
 
@@ -618,9 +627,6 @@ zs4.admin.util = {
 
 				addrem(o._.html.e);
 
-				//if (o._.flags.get.nodisplay()  ){ //||o._.hideThis==true){
-				//	zs4.admin.util.addClass(o._.html.e,'nodisplay');
-				//}
 				zs4.admin.util.setClass(o._.html.e,'nodisplay',o._.flags.get.nodisplay());
 
 				if (o._.cberror == null){
@@ -664,6 +670,7 @@ zs4.admin.util = {
 			zs4.admin.util.removeClass(o._.html.e,'scope');
 
 		}
+
 		zs4.admin.util.setClass(o._.html.e,'am',zs4.admin.util.am(o));
 		zs4.admin.util.setClass(o._.html.e,'own',zs4.admin.util.own(o));
 
@@ -737,7 +744,7 @@ zs4.admin.util = {
 				});
 
 			};
-			//if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.value & o._.flags.apiarg == o._.flags.apiarg)){
+
 			if (o._.flags.value & o._.flags.am || o._.flags.value & o._.flags.own || (o._.flags.get.apiarg())){
 				o._.html.toolbarToggle = document.createElement('zs4-toolbar-toggle');
 				o._.html.head.appendChild(o._.html.toolbarToggle);
@@ -848,6 +855,34 @@ zs4.admin.util = {
 			}
 			else {
 				o._.html.c = null;
+			}
+
+			if (o._.html.topElement==true){
+				var top = o._.html.top;
+				top.value.uscope = null;
+				top.value.utitle = '';
+
+				if (zs4.is.string(zs4.THIS._.token)&&zs4.is.string(zs4.THIS._.scopath)){
+					top.value.uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+					if (top.value.uscope!=null){
+						top.userHead = document.createElement('zs4-user-head');
+						o._.html.head.appendChild(top.userHead);
+
+						top.userName = document.createElement('zs4-user-name');
+						top.userHead.appendChild(top.userName);
+
+						if (zs4.THIS._.scopath==''){
+							top.value.utitle = 'root';
+						}
+						else if (top.value.uscope.zs4.head.title._.value.trim()==''){
+							top.value.utitle = zs4.THIS._.scopath;
+						}
+						else {
+							top.value.utitle = top.value.uscope.zs4.head.title._.value;
+						}
+						top.userName.textContent = top.value.utitle;
+					}
+				}
 			}
 
 		}
@@ -1080,7 +1115,7 @@ zs4.admin.type = {
 
 		//zs4.admin.util.addClass(e)
 
-		if (o._.flags.value & o._.flags.scope){
+		if (zs4.is.type(o.zs4)&&(o._.flags.value & o._.flags.scope)){
 
 			o._.scope = o;
 			//if (zs4.is.string(zs4.path.resolve(o,'zs4.head.title._.value')) && o.zs4.head.title._.value.length > 0){
@@ -1196,7 +1231,7 @@ zs4.admin.type = {
 		o._.html.genericRefresh();
 		o._.html.refreshOptions(o);
 		o._.html.input.value = o._.value;
-},
+	},
 	scopeitem:function(po,o){
     zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){
@@ -1281,25 +1316,34 @@ zs4.admin.type = {
 		o._.html.input.value = o._.value;
   },
 	select:function(po,o){
+		o.sc._.flags.set.nodisplay();
 		zs4.admin.type.object(po,o);
 		o._.html.name.textContent = 'select';
-
+		o._.select.check();
 	},
 	selectall:function(po,o){
+		o.sc._.flags.set.nodisplay();
 		zs4.admin.type.object(po,o);
 		o._.html.name.textContent = 'all';
+		o._.select.check();
 	},
 	selectany:function(po,o){
+		o.sc._.flags.set.nodisplay();
 		zs4.admin.type.object(po,o);
 		o._.html.name.textContent = 'any';
+		o._.select.check();
 	},
 	selectnone:function(po,o){
+		o.sc._.flags.set.nodisplay();
 		zs4.admin.type.object(po,o);
 		o._.html.name.textContent = 'none';
+		o._.select.check();
 	},
 	selectitem:function(po,o){
+		o.sc._.flags.set.nodisplay();
 		zs4.admin.type.object(po,o);
 		o._.html.name.textContent = 'property';
+		o._.select.check();
 	},
 	string:function(po,o){
 		zs4.admin.util.unknown(po,o);

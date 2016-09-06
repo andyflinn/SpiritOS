@@ -264,6 +264,9 @@ zs4-object-head.zs4-top{
   position:fixed;
   z-index: 50;
 }
+zs4-object-head.zs4-root{
+  background-color: darkred;
+}
 
 zs4-object-content{
   width:100%;
