@@ -1328,6 +1328,30 @@ zs4.type = {
       }
     }).bind(this);
 
+    this._.inscopeTree = (function(is){
+      this._.inscope = is;
+      for (var n in this){
+        if (!zs4.is.type(this[n]))continue;
+        this[n]._.inscopeTree(is);
+      }
+    }).bind(this);
+
+    this._.search = (function(s){
+      if (this._.type==Object){
+        for (var n in this)if (zs4.is.type(this[n])){
+          var ret = this[n]._.search(s);
+          if (ret==true)return true;
+        }
+        return false;
+      }
+      else if (this._.type==String){
+        if (this._.value.search(s)<0)return false;
+        return true;
+      }
+
+      return false;
+    }).bind(this);
+
     this._.transformValue = (function(req,cb){
       this._.print('transform('+req.input+')',req);
       req.setScope(this);
@@ -1423,8 +1447,8 @@ zs4.type = {
     }).bind(THIS.array);
 
     THIS.array._.sortArray = (function(a,b){
-      var va = a._.resolvePath(THIS.sort.item._.value);
-      var vb = b._.resolvePath(THIS.sort.item._.value);
+      var va = a._.resolvePath(THIS.method.query.sort.item._.value);
+      var vb = b._.resolvePath(THIS.method.query.sort.item._.value);
       if (va == null){
         if (vb == null)return 0;
         return -1;
@@ -1433,7 +1457,7 @@ zs4.type = {
         return 1;
       }
 
-      if (THIS.sort.descend._.value==true){
+      if (THIS.method.query.sort.descend._.value==true){
         var swap = va; va = vb; vb = swap;
       }
       if (va._.opcode.eq(vb._.value))return 0;
@@ -1657,6 +1681,7 @@ zs4.type = {
       ),true);
       //console.log(THIS.method.query);
       THIS.method.query._.transform = (function(req,cb){
+        var REQUEST = req;
         req.setScope(this);
         this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
@@ -1668,6 +1693,8 @@ zs4.type = {
 
         if (zs4.is.object(req.input)){
           console.log(this._.path+'.transform()',JSON.stringify(req.input));
+
+          //console.log(this._.path+'.transform()',zs4.json.stringify(SELECT));
 
           var parallel = new zs4.processor.parallel();
           for (var n in THIS.array._.value){
@@ -1682,6 +1709,21 @@ zs4.type = {
               model._.flags.set.scope(true);
               THIS._.array.elementConnect(THIS.array,model);
               model._.load(THIS.array._.value[req.elenam]);
+
+              if (zs4.is.string(REQUEST.input.search)&&REQUEST.input.search!=''){
+                if (!model._.search(REQUEST.input.search)){
+                  cb(); return;
+                }
+              }
+
+              if (zs4.is.object(REQUEST.input.select)){
+                var sel = new zs4.type.select();
+                sel._.parse(REQUEST.input.select);
+                sel._.inscopeTree(model);
+                if (!sel._.select.check()){cb(); return;}
+              }
+
+              console.log('SUCCESS!!! FOUND!!! '+model._.name);
               model._.transform(req,cb);
             },r);
           }
@@ -2679,6 +2721,38 @@ zs4.type = {
     this.sc._.flags.set.nodisplay(true);
     this.sc._.value = 'all';
 
+    this._.parse = (function(input){
+      console.log('SELECT.parse('+this._.path+')');
+      for (var n in input){
+        if (!zs4.is.object(input[n])&&!zs4.is.string(input[n].sc))continue;
+        if (input[n].sc == 'all'){
+          var nu = new zs4.type.selectall();
+          nu._.name = zs4.integer.to.name(this._.addId++);
+          this._.property(nu);
+          nu._.parse(input[n]);
+        }
+        else if (input[n].sc == 'any'){
+          var nu = new zs4.type.selectany();
+          nu._.name = zs4.integer.to.name(this._.addId++);
+          this._.property(nu);
+          nu._.parse(input[n]);
+        }
+        else if (input[n].sc == 'none'){
+          var nu = new zs4.type.selectnone();
+          nu._.name = zs4.integer.to.name(this._.addId++);
+          this._.property(nu);
+          nu._.parse(input[n]);
+        }
+        else if (input[n].sc == 'item'){
+          var nu = new zs4.type.selectitem();
+          nu._.name = zs4.integer.to.name(this._.addId++);
+          this._.property(nu);
+          nu._.parse(input[n]);
+        }
+
+      }
+    }).bind(this);
+
     this._.sortDefault = this._.sortNot;
     this._.typename = 'select';
     this._.create = zs4.type.select;
@@ -2696,20 +2770,28 @@ zs4.type = {
     }).bind(this);
     this._.select.result = (function(r){
       if (zs4.is.boolean(r)){
-        this._.cberror = null;
-        this._.cbresult = r;
+        if (!zs4.is.node()){
+          this._.cberror = null;
+          this._.cbresult = r;
+        }
         return r;
       }
       else if (zs4.is.string(r)){
-        SELECT._.cberror = new Object({text:r});
-        SELECT._.cbresult = null;
+        if (!zs4.is.node()){
+          SELECT._.cberror = new Object({text:r});
+          SELECT._.cbresult = null;
+        }
         return false;
       }
     }).bind(this);
     this._.select.check = (function(){
+      console.log(this._.path+'._.select.check()');
       this.sc._.flags.set.nodisplay(true);
-      for (var n in this)if (zs4.is.type(this[n])&&this[n]._.type==Object){
-        if (!this[n]._.select.check())return this._.select.result('');
+      for (var n in this){
+        console.log('    property '+n);
+      if (zs4.is.type(this[n])&&this[n]._.typename.startsWith('sel')){
+          if (!this[n]._.select.check())return this._.select.result('');
+        }
       }
       return this._.select.result(true);
 
@@ -2721,6 +2803,7 @@ zs4.type = {
     this.sc._.value = 'all';
     this._.create = zs4.type.selectall;
     this._.select.check = (function(){
+      console.log(this._.path+'._.select.check()');
       this.sc._.flags.set.nodisplay(true);
       for (var n in this)if (zs4.is.type(this[n])&&this[n]._.type==Object){
         if (!this[n]._.select.check())return this._.select.result('');
@@ -2734,6 +2817,7 @@ zs4.type = {
     this.sc._.value = 'any';
     this._.create = zs4.type.selectany;
     this._.select.check = (function(){
+      console.log(this._.path+'._.select.check()');
       this.sc._.flags.set.nodisplay(true);
       for (var n in this)if (zs4.is.type(this[n])&&this[n]._.type==Object){
         if (this[n]._.select.check())return this._.select.result(true);
@@ -2768,9 +2852,17 @@ zs4.type = {
     ITEM._.property(new zs4.type.string({name:'const'}));
     ITEM._.property(new zs4.type.scopeitem({name:'prop',}));
 
+    ITEM._.parse = (function(input){
+      console.log('ITEM.parse('+this._.path+')',input);
+      if (zs4.is.object(input)){
+        this._.load(input);
+      }
+      //console.log(ITEM);
+    }).bind(this);
+
     ITEM._.select.check = (function(){
       this.sc._.flags.set.nodisplay(true);
-      //console.log(ITEM._.path+'._.select.check()');
+      console.log(ITEM._.path+'._.select.check()');
       var scope = this._.select.inscope();
       if (scope==null)return this._.select.result('scope');
 
@@ -2783,11 +2875,15 @@ zs4.type = {
       //console.log('    item value: '+item._.value);
       if (ITEM.opcode._.value==null||ITEM.opcode._.value=='')return this._.select.result('opcode');
 
-      if (ITEM.opcode._.value=='exists')return this._.select.result(true);
+      if (ITEM.opcode._.value=='exists'){
+        console.log('   EXISTS! '+ITEM.item._.value);
+        return this._.select.result(true);
+      }
 
       if (!zs4.is.function(item._.opcode[ITEM.opcode._.value])){
         return this._.select.result('no \''+ITEM.opcode._.value+'\' opcode');
       }
+      console.log('   OPCODE! '+ITEM.opcode._.value);
 
       if (ITEM.type._.value != 'const' && ITEM.type._.value != 'prop')return this._.select.result('type');
 

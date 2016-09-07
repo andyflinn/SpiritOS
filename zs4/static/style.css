@@ -194,7 +194,7 @@ zs4-name.zs4-top{
 .icon-bye:before{content:'\027B2 ';font-weight: bolder;}
 .icon-console:before{content:">_";font-weight: bolder;}
 .icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
-.icon-head:before{content:'\02594';;font-weight: bolder;color:blue;}
+.icon-head:before{content:'+';;font-weight: bolder;color:blue;}
 .icon-info:before{content:"i";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
