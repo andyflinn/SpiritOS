@@ -1191,6 +1191,7 @@ zs4.type = {
       if (!zs4.is.object(req.input)||!zs4.is.object(req.input._))return;
       var am = req.flags.get.am();
       var own = req.flags.get.own();
+      var root = req.flags.get.authroot();
       for (var n in req.input._){
         if (n=='auth'){
           var res = req.internalResultPath(this);
@@ -1278,32 +1279,37 @@ zs4.type = {
           }
         }
         else if (n=='console'){
-          console.log('console: '+JSON.stringify(req.input._) + '  req.input._.console.switch:'+req.input._.console.switch);
-          if (zs4.is.boolean(req.input._.console.switch)){
-            if (req.input._.console.switch == true){
-              zs4.string.array.add.new(zs4.console.arr,this._.path)
-              this._.shouldBeSaved(req);
-              this._.print('turned ON console');
+          if (root){
+            console.log('console: '+JSON.stringify(req.input._) + '  req.input._.console.switch:'+req.input._.console.switch);
+            if (zs4.is.boolean(req.input._.console.switch)){
+              if (req.input._.console.switch == true){
+                zs4.string.array.add.new(zs4.console.arr,this._.path)
+                this._.shouldBeSaved(req);
+                this._.print('turned ON console');
+              }
+              else if (req.input._.console.switch == false){
+                zs4.string.array.remove.string(zs4.console.arr,this._.path)
+                this._.shouldBeSaved(req);
+                this._.print('turned OFF console');
+              }
             }
-            else if (req.input._.console.switch == false){
-              zs4.string.array.remove.string(zs4.console.arr,this._.path)
-              this._.shouldBeSaved(req);
-              this._.print('turned OFF console');
-            }
+
+            var res = req.internalResultPath(this);
+            if (res == null)return;
+            if (!zs4.is.object(res.console))res.console = new Object();
+            if (!zs4.is.object(res.console.switch))res.console.switch = new Object();
+
+            if (zs4.string.array.is.element(zs4.console.arr,this._.path))
+              res.console.switch = true;
+            else
+              res.console.switch = false;
+
+            //console.log('transformInternal() returns '+JSON.stringify(res.result._));
+            this._.print('transformInternal() returns '+JSON.stringify(res));
           }
-
-          var res = req.internalResultPath(this);
-          if (res == null)return;
-          if (!zs4.is.object(res.console))res.console = new Object();
-          if (!zs4.is.object(res.console.switch))res.console.switch = new Object();
-
-          if (zs4.string.array.is.element(zs4.console.arr,this._.path))
-            res.console.switch = true;
-          else
-            res.console.switch = false;
-
-          //console.log('transformInternal() returns '+JSON.stringify(res.result._));
-          this._.print('transformInternal() returns '+JSON.stringify(res));
+          else {
+            req.error(this,'root only');
+          }
         };
       }
     }).bind(this);

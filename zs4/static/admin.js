@@ -378,7 +378,7 @@ zs4.admin.util = {
 			}
 		}
 
-		if (o._.flags.get.own()||o._.flags.get.authroot()){
+		if (o._.flags.get.authroot()){
 			THIS.console.nodelabel = document.createElement('zs4-console-label');
 			THIS.console.nodelabel.textContent = 'node';
 			THIS.pane.appendChild(THIS.console.nodelabel);

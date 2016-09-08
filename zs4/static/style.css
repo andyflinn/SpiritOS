@@ -133,6 +133,7 @@ input[type="checkbox"]{
   height:1em;
 }
 input{
+  width:6em;
   border-left-style: none;
   border-top-style: none;
   border-right-style: none;
@@ -389,9 +390,13 @@ zs4-app{
   margin-top:1em;
 }
 
-zs4-app-tab.zs4-current{
+zs4-app-tab{
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
+  padding-left:0.3em;
+  padding-right:0.3em;
+}
+zs4-app-tab.zs4-current{
   background-color:white;
   color:black;
 }
