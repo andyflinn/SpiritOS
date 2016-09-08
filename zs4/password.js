@@ -11,7 +11,7 @@ password.schema = function(parent){
 
 password.create = function(){
   var THIS = this;
-  var input = new Object({name:'password',flags:'api authgetpublic authsetpublic',});
+  var input = new Object({name:'password',flags:'api authsetself',});
   zs4.type.object.call(this,input);
   //console.log('password flags: '+this._.flags.getString());
   THIS._.create = password.create;

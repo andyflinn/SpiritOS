@@ -919,13 +919,22 @@ zs4.admin.util = {
 				o._.html.dialogHeader= document.createElement('zs4-app-header');
 				o._.html.head.appendChild(o._.html.dialogHeader);
 
+				o._.html.searchIcon = document.createElement('zs4-app-tab');
+				o._.html.dialogHeader.appendChild(o._.html.searchIcon);
+				zs4.admin.util.setIcon(o._.html.searchIcon,'search');
+
+				o._.html.search = document.createElement('input');
+				o._.html.search.type = 'text';
+				zs4.admin.util.addClass(o._.html.search,'app-search');
+				o._.html.dialogHeader.appendChild(o._.html.search);
+
 				o._.html.appElement = document.createElement('zs4-app');
 				o._.html.e.appendChild(o._.html.appElement);
 
 				o._.html.appWindow = document.createElement('zs4-app-window');
 				o._.html.appElement.appendChild(o._.html.appWindow);
 
-				o._.html.appWindow.textContent = 'here is the actuall app window';
+				o._.html.appWindow.textContent = 'here is the actual app window';
 
 				o._.html.top.dialog = function(name){
 					this.active = false;
@@ -937,14 +946,14 @@ zs4.admin.util = {
 					o._.html.dialogHeader.appendChild(this.select);
 					zs4.admin.util.setIcon(this.select,name);
 					zs4.admin.util.removeClass(this.select,'current');
-					this.select.textContent = name;
+					//this.select.textContent = name;
 
 					this.pane = document.createElement('zs4-app-dialog');
 					o._.html.appElement.appendChild(this.pane);
-					this.pane.textContent = 'tool pane for '+name;
+					this.pane.textContent = 'dialog pane for '+name;
 					zs4.admin.util.removeClass(this.pane,'current');
 					zs4.admin.util.addClass(this.pane,'nodisplay');
-				this.refreshDialog = function(){};
+					this.refreshDialog = function(){};
 
 					this.select.onclick = (function(){
 						var active = false;
@@ -983,8 +992,11 @@ zs4.admin.util = {
 					}).bind(this);
 
 				};
+				o._.html.top.dialogUser = function(){
+					o._.html.top.dialog.call(this,'user');
+				};
 
-				new o._.html.top.dialog('bye');
+				new o._.html.top.dialogUser('user');
 			}
 
 		}

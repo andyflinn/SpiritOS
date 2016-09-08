@@ -1,5 +1,4 @@
 var zs4 = require('./zs4/static/zs4');
-var node = require('./zs4/node');
 
 var msg = new Object();
 var path = msg;
