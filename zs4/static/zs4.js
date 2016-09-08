@@ -1385,6 +1385,10 @@ zs4.type = {
     this._.transform = (function(req,cb){
       this._.transformValue(req,cb);
     }).bind(this);
+
+    this._.call = (function(req,input,cb){
+      req.call(this._.path,input,cb);
+    }).bind(this);
   },
 
   array:function(input){
@@ -1812,6 +1816,7 @@ zs4.type = {
       THIS.method.getone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
       THIS.method.getone._.property(new zs4.type.string({name:'eq',flags:'required nostore noprune apiarg',}));
       this.method.getone._.transform = (function(req,cb){
+        var REQUEST = req;
         var GETONE = this;
         req.setScope(this);
         this._.transformInternal(req);
@@ -1879,6 +1884,7 @@ zs4.type = {
             if (val._.opcode.eq(eq)){
               GETONE._.print('   MATCH! -> transform() '+item,req);
               model._.transform(req,cb);
+              REQUEST.result(GETONE,model._.path);
               return;
             }
             else {
@@ -2137,6 +2143,7 @@ zs4.type = {
       req.result(THIS,true);
       THIS._.get(req); cb(); return;
     }).bind(this);
+
     this._.callback = (function(o){
       //console.log('deleteall._.callback()');
       //console.log(o);
@@ -2223,6 +2230,85 @@ zs4.type = {
       this._.property(new zs4.type.string({name:'app',flags:'index noprune  quickupdate',}));
     }
 
+  },
+  hi:function(){
+    var THIS = this;
+    zs4.type.object.call(this,{name:'hi',flags:'api apiarg nostore nosort',})
+    this._.typename = 'hi';
+    this._.create = zs4.type.hi;
+
+    if (zs4.is.node()){
+      this._.property(new zs4.type.email({name:'email',flags:'apiarg noprune required',}));
+      this._.property(new zs4.type.password({name:'password',flags:'apiarg noprune required',}));
+
+      this._.transform = (function(req,cb){
+        var REQUEST = req;
+        req.setScope(this);
+        this._.transformInternal(req);
+
+        if (!zs4.is.object(req.input)){
+          THIS._.get(req); cb(); return;
+        }
+
+        if (!zs4.is.email(req.input.email)){
+          req.error(this,'no email');
+          THIS._.get(req); cb(); return;
+        }
+
+        if (!zs4.is.password(req.input.password)){
+          req.error(this,'no password');
+          THIS._.get(req); cb(); return;
+        }
+
+        req.call('zs4.type.user.method.getone',{item:'zs4.email.smtp.user',eq:req.input.email},function(callback){
+          console.log(callback);
+          if (callback.error != null){
+            req.error(THIS,'');
+            THIS._.get(req); cb(); return;
+          };
+          if (!zs4.is.string(callback.result)||!callback.result.startsWith('zs4.type.user.array')){
+            req.error(THIS,'not found');
+            THIS._.get(req); cb(); return;
+          }
+
+          console.log('calling: '+callback.result+'.zs4.password')
+          req.call(callback.result+'.zs4.password',{vfy:req.input.password},function(callback){
+            if (callback.error != null){
+              req.error(THIS,'');
+              THIS._.get(req); cb(); return;
+            };
+
+            if (!req.tokenExists()){
+              req.error(THIS,'login failed');
+              THIS._.get(req); cb(); return;
+            }
+
+            req.result(THIS,'goscope');
+            THIS._.get(req); cb(); return;
+          });
+        });
+      }).bind(this);
+    }
+
+
+    THIS._.get = (function(req,po){
+      //console.log('password.get'+ JSON.stringify(this._.authGet));
+      if (req.tokenExists())return null;
+      var get = this._.getInitialize(req);
+      if (get==null){
+        console.log(this._.path+'.get() NOT AUTHORIZED!?!?!?');
+        //console.log(this._.authGet);
+        return null;
+      }
+
+      req.setScope(THIS.email);
+      THIS.email._.get(req);
+
+      req.setScope(THIS.password);
+      THIS.password._.get(req);
+
+      return get;
+    }).bind(THIS);
   },
   integer:function(input){
     var THIS = this;
@@ -2535,10 +2621,12 @@ zs4.type = {
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
 
-        if (input.hasOwnProperty(n)){
-          if (!this[n]._.zs4check(req,input[n]))return false;
+        if (!zs4.is.object(input)){
+          return this._.zs4checkfail(req,n + ' required');
         }
-        else if (this[n]._.flags.get.required()){
+        //  if (!this[n]._.zs4check(req,input[n]))return false;
+        //}
+        if (this[n]._.flags.get.required()){
           return this._.zs4checkfail(req,n + ' required');
         }
 
@@ -3204,7 +3292,10 @@ zs4.request = function(o){
       console.log(o);
       return null;
     }
-    var a = zs4.string.split.separators(o._.path,'.');
+    return this.callbackPath(o._.path,r);
+  };
+  this.callbackPath = function(p,r){
+    var a = zs4.string.split.separators(p,'.');
     for (var i = 0 ; i < a.length ; i++){
       if (!r.hasOwnProperty(a[i])||!zs4.is.object(r[a[i]])){
         r[a[i]] = new Object();
@@ -3212,12 +3303,12 @@ zs4.request = function(o){
       r = r[a[i]];
     }
     return r;
-  }
+  };
   this.error = function(o,error){
     var r = this.resolvePath(o,this.request.callback);
     if (r==null){
       console.log(BADPATH);
-      return;
+      return null;
     }
     r.error = {text:'unknown error',}
 
@@ -3232,17 +3323,19 @@ zs4.request = function(o){
       r.error.data = error;
     }
     o._.print(o._.path + '.error() scope.flags:'+this.flags.getString() +' error:' + JSON.stringify(this.request.callback))
-  }
+    return r;
+  };
   this.result = function(o,result){
     var r = this.resolvePath(o,this.request.callback);
     if (r==null){
       console.log(BADPATH);
-      return;
+      return null;
     }
     r.result = result;
 
     o._.print('result: '+JSON.stringify(this.request.callback));
 
+    return r;
   };
   this.internalResultPath = function(o){
     var r = this.resolvePath(o,this.request.callback);
@@ -3283,6 +3376,20 @@ zs4.request = function(o){
     //var token = require('../token');
     //var token = require('../token');
 
+    this.call = (function(path,input,cb){
+      var THIS = this;
+      var request = new zs4.request({request:{node:true,}});
+
+      var inp = request.resolveInputPath(path);
+      for (var n in input)inp[n]=input[n];
+      request.process(function(){
+        if (request.tokenExists()){
+          THIS.request.token = request.request.token;
+          THIS.request.payload = request.request.payload;
+        };
+        cb(THIS.callbackPath(path,request.request.callback));
+      });
+    }).bind(this);
 
     this.payloadRefresh = function(){
       if (zs4.is.string(this.request.token)&&this.request.token.length>10){
@@ -3441,6 +3548,7 @@ zs4.THIS = new zs4.type.scope();
 
 if (zs4.is.node()){
   zs4.THIS.zs4._.property(new zs4.type.type());
+  zs4.THIS.zs4._.property(new zs4.type.hi());
   zs4.THIS.zs4._.property(new zs4.type.bye());
   var nu;
 }

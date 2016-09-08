@@ -83,6 +83,8 @@ password.create = function(){
   }).bind(THIS);
 
   THIS._.get = (function(req,po){
+    if (req.tokenExists()&&!req.flags.get.own())return null;
+
     req.setScope(this);
     this._.print(this._.path+'.get()');
     //console.log('password.get'+ JSON.stringify(this._.authGet));

@@ -96,6 +96,7 @@ express.app.get('/*', function (req, res) {
 
 express.app.post('/*', function (req, res) {
   var zs4req = new zs4.request(req.body);
+  zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
   //console.log(req.body);
   express.getCookie(req,zs4req);
 

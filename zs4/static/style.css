@@ -160,13 +160,10 @@ zs4-name.zs4-api{
 zs4-name.zs4-top{
   color:lightblue;
 }
-
-.zs4-am.notrans:not{
+zs4-name.zs4-am{
   color:blue;
 }
-.zs4-own.notrans:not{
-  color:green;
-}
+
 .zs4-noset,.zs4-notrans{
   color:grey;
 }
@@ -191,10 +188,11 @@ zs4-name.zs4-top{
 .icon-add:before{content:"+";font-weight: bolder;}
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-auth:before{content:"a";font-weight: bolder;}
-.icon-bye:before{content:'\027B2 ';font-weight: bolder;}
+.icon-bye:before{content:'(>';font-weight: bolder;}
 .icon-console:before{content:">_";font-weight: bolder;}
 .icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
 .icon-head:before{content:'+';;font-weight: bolder;color:blue;}
+.icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:"i";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
@@ -285,6 +283,11 @@ zs4-object-content.zs4-top{
 }
 zs4-object-content.zs4-top.zs4-tbon{
   display:none;
+}
+zs4-app{
+  display:block;
+  width:100%;
+  margin-top:1em;
 }
 
 zs4-toolbar{
