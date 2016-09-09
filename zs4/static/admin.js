@@ -1092,6 +1092,11 @@ zs4.admin.type = {
 		o._.html.input.value = parseInt(o._.value);
 		o._.html.genericRefresh();
 	},
+	document:function(po,o){
+		zs4.admin.type.scope(po,o);
+		//o._.html.icon.on = 'info';
+		//o._.html.icon.off = 'info';
+	},
 	enum:function(po,o){
 		zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){
