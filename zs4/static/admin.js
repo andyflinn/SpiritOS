@@ -920,13 +920,6 @@ zs4.admin.util = {
 				o._.html.head.appendChild(o._.html.dialogHeader);
 
 				o._.html.searchIcon = document.createElement('zs4-app-tab');
-				o._.html.dialogHeader.appendChild(o._.html.searchIcon);
-				zs4.admin.util.setIcon(o._.html.searchIcon,'search');
-
-				o._.html.search = document.createElement('input');
-				o._.html.search.type = 'text';
-				zs4.admin.util.addClass(o._.html.search,'app-search');
-				o._.html.dialogHeader.appendChild(o._.html.search);
 
 				o._.html.appElement = document.createElement('zs4-app');
 				o._.html.e.appendChild(o._.html.appElement);
@@ -995,8 +988,18 @@ zs4.admin.util = {
 				o._.html.top.dialogUser = function(){
 					o._.html.top.dialog.call(this,'user');
 				};
+				o._.html.top.dialogSearch = function(){
+					o._.html.top.dialog.call(this,'search');
+				};
 
-				new o._.html.top.dialogUser('user');
+				new o._.html.top.dialogSearch();
+
+				o._.html.search = document.createElement('input');
+				o._.html.search.type = 'text';
+				zs4.admin.util.addClass(o._.html.search,'search');
+				o._.html.dialogHeader.appendChild(o._.html.search);
+
+				new o._.html.top.dialogUser();
 			}
 
 		}
@@ -1434,6 +1437,11 @@ zs4.admin.type = {
 		o._.html.refreshOptions(o);
 		o._.html.input.value = o._.value;
   },
+	search:function(po,o){
+		zs4.admin.type.object(po,o);
+		//o._.html.icon.on = 'zs4';
+		//o._.html.icon.off = 'zs4';
+	},
 	select:function(po,o){
 		o.sc._.flags.set.nodisplay();
 		zs4.admin.type.object(po,o);
@@ -1517,6 +1525,11 @@ zs4.admin.type = {
 		zs4.admin.type.object(po,o);
 		//o._.html.icon.on = 'info';
 		//o._.html.icon.off = 'info';
+	},
+	zs4:function(po,o){
+		zs4.admin.type.object(po,o);
+		//o._.html.icon.on = 'zs4';
+		//o._.html.icon.off = 'zs4';
 	},
 };
 

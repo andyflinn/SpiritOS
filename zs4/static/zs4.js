@@ -1393,7 +1393,7 @@ zs4.type = {
     }).bind(this);
 
     this._.call = (function(req,input,cb){
-      req.call(this._.path,input,cb);
+      req.call({path:this._.path,input:input},cb);
     }).bind(this);
   },
 
@@ -1702,7 +1702,7 @@ zs4.type = {
         }
 
         if (zs4.is.object(req.input)){
-          console.log(this._.path+'.transform()',JSON.stringify(req.input));
+          console.log(this._.path+'.transform()',req.input);
 
           //console.log(this._.path+'.transform()',zs4.json.stringify(SELECT));
 
@@ -2267,7 +2267,7 @@ zs4.type = {
         }
 
         if (req.input.email==zs4.THIS.zs4.email.smtp.user._.value){
-          req.call('zs4.password',{vfy:req.input.password,},function(callback){
+          req.call({path:'zs4.password',input:{vfy:req.input.password,}},function(callback){
             if (callback.error != null){
               req.error(THIS,'');
               THIS._.get(req); cb(); return;
@@ -2283,7 +2283,7 @@ zs4.type = {
           });
         }
 
-        req.call('zs4.type.user.method.getone',{item:'zs4.email.smtp.user',eq:req.input.email},function(callback){
+        req.call({path:'zs4.type.user.method.getone',input:{item:'zs4.email.smtp.user',eq:req.input.email}},function(callback){
           console.log(callback);
           if (callback.error != null){
             req.error(THIS,'');
@@ -2295,7 +2295,7 @@ zs4.type = {
           }
 
           console.log('calling: '+callback.result+'.zs4.password')
-          req.call(callback.result+'.zs4.password',{vfy:req.input.password},function(callback){
+          req.call({path:callback.result+'.zs4.password',input:{vfy:req.input.password}},function(callback){
             if (callback.error != null){
               req.error(THIS,'');
               THIS._.get(req); cb(); return;
@@ -2616,20 +2616,6 @@ zs4.type = {
       }
 
       parallel.run(function(){
-        /*
-        if (zs4.is.string(req.request.reget)){
-          if (req.request.reget.startsWith(THIS._.path)
-          &&  req.request.reget.length > THIS._.path.length){
-            console.log('....RE-GETTING '+THIS._.path);
-            req.request.reget = null;
-            for (var n in THIS){
-              if (!zs4.is.type(THIS[n]))continue;
-              THIS[n]._.get(req);
-              console.log('    '+THIS[n]._.name);
-            }
-          }
-        }
-        */
         THIS._.get(req);
         cb();
       });
@@ -2724,7 +2710,7 @@ zs4.type = {
     zs4.type.object.call(this,{name:'this',flags:'scope authgetpublic',})
     THIS._.typename = 'scope';
     THIS._.scope = this;
-    THIS._.property(new zs4.type.object({name:'zs4',flags:'authgetpublic'}));
+    THIS._.property(new zs4.type.zs4());
     THIS.zs4.password = null;
     THIS.zs4._.property(new zs4.type.head());
     if (zs4.is.node()){
@@ -2823,6 +2809,70 @@ zs4.type = {
   scopescope:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'scopescope';
+  },
+  search:function(){
+    var SEARCH = this;
+    zs4.type.object.call(this,{name:'search',flags:'api apiarg',});
+    this._.typename = 'search';
+    if (zs4.is.node()){
+      this._.property(new zs4.type.string({name:'value',flags:'apiarg',}));
+      this._.property(new zs4.type.enum({name:'type',flags:'apiarg',}));
+      this.type._.get = (function(req){
+        var get = this._.getInitialize(req);
+        if (get == null) return null;
+        get._.value = '';
+
+        get._.enum = new Array(); get._.enum.push('');
+        for (var n in zs4.THIS.zs4.type)if (zs4.is.type(zs4.THIS.zs4.type[n])){
+            get._.enum.push((' '+n+' ').trim());
+        }
+        return get;
+      }).bind(this.type);
+      this._.transform = (function(req,cb){
+        var REQUEST = req;
+        REQUEST.setScope(this);
+        this._.transformInternal(REQUEST);
+
+        if (!zs4.is.object(req.input)){
+          SEARCH._.get(REQUEST); cb(); return;
+        }
+
+        var typ = zs4.THIS.zs4.type;
+        var query = zs4.THIS.zs4.type.user.method.query._.new();
+        //console.log(query);
+      //req.call({path:callback.result+'.zs4.password',{vfy:req.input.password},function(callback){
+
+        var parallel = new zs4.processor.parallel();
+
+        for (var n in typ)if (zs4.is.type(typ[n])){
+          parallel.call(
+            REQUEST,
+            REQUEST.call,
+            {path:'zs4.type.'+n+'.method.query',input:query,wantreply:true,}
+          );
+        }
+
+        console.log('ASsEMBLED SEARCH PARRALLELS...');
+
+        parallel.run(function(){
+          SEARCH._.get(REQUEST);
+          cb();
+        });
+
+      }).bind(this);
+      this._.get = (function(req){
+        var get = this._.getInitialize(req);
+        if (get == null) return null;
+
+        req.setScope(this.value);
+        this.value._.get(req);
+
+        req.setScope(this.type);
+        this.type._.get(req);
+
+        return get;
+      }).bind(this);
+    }
   },
   select:function(){
     var SELECT = this;
@@ -3212,6 +3262,10 @@ zs4.type = {
     this._.typename = 'type';
 
   },
+  zs4:function(){
+    zs4.type.object.call(this,{name:'zs4',flags:'authgetpublic'});
+    this._.typename = 'zs4';
+  },
 };
 
 zs4.request = function(o){
@@ -3399,12 +3453,31 @@ zs4.request = function(o){
     //var token = require('../token');
     //var token = require('../token');
 
-    this.call = (function(path,input,cb){
+    this.call = (function(args,cb){
       var THIS = this;
-      var request = new zs4.request({request:{node:true,}});
+      var request;
 
+      if (args.wantreply){
+        request = new zs4.request();
+        if (this.tokenExists()){
+          request.request.token = this.request.token;
+          request.request.payload = this.request.payload;
+        }
+      }
+      else {
+        request = new zs4.request({request:{node:true,}});
+      }
+
+      var path = args.path;
+      var input = args.input;
       var inp = request.resolveInputPath(path);
+      
       for (var n in input)inp[n]=input[n];
+
+      if (args.wantreply){
+        request.request.get = this.request.get;
+        request.request.callback = this.request.callback;
+      }
       request.process(function(){
         if (request.tokenExists()){
           THIS.request.token = request.request.token;
@@ -3577,6 +3650,7 @@ if (zs4.is.node()){
   var fs = require('fs');
 
   zs4.THIS.zs4.head.typename._.value = 'node'
+  zs4.THIS.zs4._.property(new zs4.type.search());
   zs4.THIS.zs4._.property(new zs4.type.type());
   zs4.THIS.zs4._.property(new zs4.type.hi());
   zs4.THIS.zs4._.property(new zs4.type.bye());

@@ -199,7 +199,7 @@ zs4-name.zs4-am{
 .icon-object:before{content:"+";font-weight: bolder;}
 .icon-required:before{content:"*";font-weight: bolder;}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
-.icon-search:before{content:'search';padding-right: 1em;width:2em;}
+.icon-search:before{content:'?';font-weight: bolder;}
 .icon-select:before{content:'\02611';font-weight: bolder;}
 .icon-spin:before{content:'\029B0 ';font-weight: bolder;}
 .icon-to-start:before{content:'\025C4';;font-weight: bolder;}
@@ -207,6 +207,7 @@ zs4-name.zs4-am{
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-type:before{content:'+';font-weight: bolder;}
 .icon-user:before{content:'\0263B';font-weight: bolder;}
+.icon-zs4:before{content:'\025C8';font-weight: bolder;}
 
 .icon-logo:before{
   content:"zs4";
@@ -371,17 +372,17 @@ zs4-user-name{
 zs4-app-header{
   float: right;
 }
-input.zs4-app-search{
+input.zs4-search{
   width:5em;
   height:1em;
   border-style:none;
-  padding-right: 0.5em;
+  padding-right: 1em;
   padding-top:0.1em;
   padding-left:0.1em;
   padding-bottom:0.1em;
   background-color: lightblue;
 }
-.zs4-app-search:focus{
+.zs4-search:focus{
   background-color: white;
 }
 zs4-app{
