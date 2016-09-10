@@ -698,6 +698,7 @@ zs4.scope = {
     zs4.type.scope.call(DOCUMENT);
     DOCUMENT._.create = zs4.scope.document;
     DOCUMENT.zs4.head.typename._.value = 'document';
+    DOCUMENT.zs4.head.typename._.default = 'document';
     DOCUMENT._.name = 'document';
   },
 };
@@ -950,11 +951,8 @@ zs4.type = {
       if (this._.flags.get.noget())return null;
       this._.print('getInitialize() req.flags=\''+req.flags.getString()+'\'',req)
 
-      //if (this._.path.startsWith('zs4.user.method.query')){
-      //  console.log(this._.path+'.getInitialize():');
-      //}
       //if (!req.flags.get.authgetpublic()&&!req.flags.get.authsetself()&&!req.flags.get.authget())return null;
-      if (!req.flags.get.authgetpublic()&&!req.flags.get.authsetself()&&!req.flags.get.authget())return null;
+      if (!req.flags.get.authget())return null;
 
       var get = req.get(this);
       get._.name = this._.name;
@@ -1215,7 +1213,7 @@ zs4.type = {
 
           //console.log(req.input._[n]);
           if (req.input._.auth.type == 'getauth'){
-            if (am){
+            if (am||own){
               if (zs4.is.string(req.input._.auth.add)&&req.input._.auth.add.length>0){
                 //console.log('adding auth '+req.input._.auth.add);
                 zs4.string.array.add.new(this._.authGet,req.input._.auth.add);
@@ -1231,7 +1229,7 @@ zs4.type = {
               res.auth = {type:req.input._.auth.type,arr:ret,};
             }
             else {
-              req.error(this);
+              req.error(this,'owner or self only');
             }
           }
           else if (req.input._.auth.type == 'setauth'){
@@ -1251,7 +1249,7 @@ zs4.type = {
               res.auth = {type:req.input._.auth.type,arr:ret,};
             }
             else {
-              req.error(this);
+              req.error(this,'owner only');
             }
           }
           else if (req.input._.auth.type == 'authgetauth'){
@@ -2063,14 +2061,14 @@ zs4.type = {
         return;
       }
 
-      //this._.scope._.loadAuth(input);
+      this._.scope._.loadAuth(input);
 
     }).bind(this);
     this._.store = (function(){
       this._.print('store()');
       if (this._.flags.get.nostore()){return null;}
 
-      //return this._.scope._.saveAuth(input)
+      return this._.scope._.saveAuth(input)
     }).bind(this);
   },
   boolean:function(input){
@@ -2259,7 +2257,7 @@ zs4.type = {
     if (zs4.is.node()){
       this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself quickupdate',}));
       this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune',}));
-      this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune',}));
+      this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune nostore',}));
       this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune',}));
       this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune',}));
       this._.property(new zs4.type.string({name:'app',flags:'index noprune  quickupdate',}));
@@ -2736,7 +2734,7 @@ zs4.type = {
   scope:function(){
     //debugger;
     var THIS = this;
-    zs4.type.object.call(this,{name:'this',flags:'scope authgetpublic',})
+    zs4.type.object.call(this,{name:'this',flags:'scope',})
     THIS._.typename = 'scope';
     THIS._.scope = this;
     THIS._.property(new zs4.type.zs4());
@@ -2784,20 +2782,25 @@ zs4.type = {
       recurse(scope);
       return response;
     }).bind(this);
-    THIS._.getScopeScopes = (function(scope){
-      if (scope == null)scope = THIS;
+    THIS._.getUserScopes = (function(){
+      var scope = zs4.THIS;
       var response = new Array();
       function recurse(item){
         for (var n in item){
           if (!zs4.is.type(item[n]))continue;
 
-          item[n]._.print('getScopeScopes');
+          console.log('getUserScopes('+item[n]._.path+') ? ')
+          item[n]._.print('getUserScopes');
 
           if( item[n]._.flags.get.scope()
           && (item[n]._.typename=='scope')
-          && !item[n]._.flags.get.notrans()
           ){
-            item[n]._.print('getScopeScopes OK!!!!')
+            console.log('getUserScopes('+item[n]._.path+')')
+            if (item[n]._.flags.get.notrans())continue;
+
+            console.log('getUserScopes('+item[n]._.path+') VALID!')
+
+            item[n]._.print('getUserScopes OK!!!!')
             var label = item[n]._.path;
             var value = item[n]._.path;
             if (zs4.is.string(item[n].zs4.head.title._.value)
@@ -2808,6 +2811,7 @@ zs4.type = {
               label = new String(n + '(untitled)');
             }
             response.push(new Object({label:label,value:value}));
+            continue;
           }
 
           if (item[n]._.type == Object){
@@ -2819,7 +2823,7 @@ zs4.type = {
       response.push(new Object({label:'zs4.public',value:'zs4.public'}));
       response.push(new Object({label:'zs4.owner',value:'zs4.owner'}));
       response.push(new Object({label:'zs4.self',value:'zs4.self'}));
-      recurse(scope);
+      recurse(scope.zs4.type.user.array);
       return response;
     }).bind(this);
   },
@@ -3606,6 +3610,10 @@ zs4.request = function(o){
         THIS._.print('req.am said zs4.owner');
         return true;
       }
+      if (this.scope.zs4.head.owner._.value == this.request.payload.scope){
+        THIS._.print('req.am said zs4.owner');
+        return true;
+      }
       return false; //this.userIsRoot();
     };
 
@@ -3699,7 +3707,7 @@ zs4.request = function(o){
 };
 
 zs4.THIS = new zs4.type.scope();
-
+zs4.THIS._.flags.set.authgetpublic(true);
 if (zs4.is.node()){
 
   const ZS4 = 'zs4';
@@ -3707,7 +3715,8 @@ if (zs4.is.node()){
 
   var fs = require('fs');
 
-  zs4.THIS.zs4.head.typename._.value = 'node'
+  zs4.THIS.zs4.head.typename._.value = 'node';
+  zs4.THIS.zs4.head.typename._.default = 'node';
   zs4.THIS.zs4._.property(new zs4.type.search());
   zs4.THIS.zs4._.property(new zs4.type.type());
   zs4.THIS.zs4._.property(new zs4.type.hi());

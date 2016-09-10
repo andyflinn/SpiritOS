@@ -16,6 +16,7 @@ user.create = function(){
   var USER = this;
   zs4.type.scope.call(this);
   this.zs4.head.typename._.value = 'user';
+  this.zs4.head.typename._.default = 'user';
   this._.name = 'user';
   USER._.create = user.create;
   if (zs4.is.node()){

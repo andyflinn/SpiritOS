@@ -260,7 +260,7 @@ zs4.admin.util = {
 		THIS.pane.appendChild(THIS.auth.table);
 
 		THIS.refreshUsers= function(){
-			var arr = o._.scope._.getScopeScopes();
+			var arr = zs4.THIS._.getUserScopes();
 			console.log(arr);
 			THIS.auth.user.innerHTML = '';
 
@@ -272,7 +272,8 @@ zs4.admin.util = {
 
 			for (var i = 0 ; i < arr.length ; i++){
 				option = document.createElement('option');
-				option.text = arr[i].value;
+				//console.log(arr[i].label+': '+arr[i].value);
+				option.text = arr[i].label;
 				option.value = arr[i].value;
 				THIS.auth.user.add(option);
 			}
@@ -306,7 +307,7 @@ zs4.admin.util = {
 				THIS.auth.table.appendChild(line);
 
 				var remove = document.createElement('zs4-auth-remove');
-				zs4.admin.util.setIcon(remove,'cancel')
+				zs4.admin.util.setIcon(remove,'delete')
 				line.appendChild(remove);
 				var id = arr[i];
 				remove.onclick = function(){
@@ -472,11 +473,31 @@ zs4.admin.util = {
 				else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
 				else {o._.html.icon.off=o._.html.icon.on='none'}
 			}
+			else if (o._.flags.value & o._.flags.scope){
+				if (o._.html.topElement){
+					o._.html.icon.on = 'logo';
+					o._.html.icon.off = 'logo';
+				}
+				else if (o._.path.startsWith('zs4.type.')){
+					var a = zs4.string.split.words(o._.path);
+					if (a.length == 5 && a[3]=='array'){
+						o._.html.icon.on = a[2];
+						o._.html.icon.off = a[2];
+					}
+					else {
+						o._.html.icon.on = 'scope';
+						o._.html.icon.off = 'scope';
+					}
+				}
+				else {
+					o._.html.icon.on = 'scope';
+					o._.html.icon.off = 'scope';
+				}
+			}
 			else {
 				o._.html.icon.off=o._.typename;
 				o._.html.icon.on='minus';
 			}
-
 		}
 
 		if (o._.html.e==null){
@@ -1092,11 +1113,11 @@ zs4.admin.type = {
 		o._.html.input.value = parseInt(o._.value);
 		o._.html.genericRefresh();
 	},
-	document:function(po,o){
-		zs4.admin.type.scope(po,o);
+//	document:function(po,o){
+	//	zs4.admin.type.scope(po,o);
 		//o._.html.icon.on = 'info';
 		//o._.html.icon.off = 'info';
-	},
+//	},
 	enum:function(po,o){
 		zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){
@@ -1267,14 +1288,18 @@ zs4.admin.type = {
 	},
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);
+		/*
 		if (o._.html.topElement){
 			o._.html.icon.on = 'logo';
 			o._.html.icon.off = 'logo';
 		}
-		else {
-			//._.html.icon.on = 'user';
-			//o._.html.icon.off = 'user';
+		else if (o._.path.startsWith('zs4.type.')){
+			var a = zs4.string.split.words(o._.path);
+			if (a.length == 5 && a[3]=='array')
+			o._.html.icon.on = a[2];
+			o._.html.icon.off = a[2];
 		}
+		*/
 	},
 	scopeindex:function(po,o){
     zs4.admin.util.unknown(po,o);
@@ -1425,7 +1450,7 @@ zs4.admin.type = {
       }).bind(o);
 
       o._.html.refreshOptions = function(o){
-        var arr = o._.scope._.getScopeScopes();
+        var arr = zs4.THIS._.getUserScopes();
         //console.log (arr);
         //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
 				o._.html.input.innerHTML = '';
@@ -1444,8 +1469,6 @@ zs4.admin.type = {
   },
 	search:function(po,o){
 		zs4.admin.type.object(po,o);
-		//o._.html.icon.on = 'zs4';
-		//o._.html.icon.off = 'zs4';
 	},
 	select:function(po,o){
 		o.sc._.flags.set.nodisplay();
@@ -1528,13 +1551,9 @@ zs4.admin.type = {
 	},
 	type:function(po,o){
 		zs4.admin.type.object(po,o);
-		//o._.html.icon.on = 'info';
-		//o._.html.icon.off = 'info';
 	},
 	zs4:function(po,o){
 		zs4.admin.type.object(po,o);
-		//o._.html.icon.on = 'zs4';
-		//o._.html.icon.off = 'zs4';
 	},
 };
 

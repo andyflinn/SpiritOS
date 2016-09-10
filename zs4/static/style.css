@@ -144,6 +144,7 @@ input{
 }
 input.zs4-noset{
   border-color:white;
+  width:auto;
 }
 textarea{
   height: 4em;
@@ -161,8 +162,11 @@ zs4-name.zs4-api{
 zs4-name.zs4-top{
   color:lightblue;
 }
-zs4-name.zs4-am{
+zs4-name.zs4-am.zs4-noset:not{
   color:blue;
+}
+zs4-name.zs4-own.zs4-noset:not{
+  color:darkgreen;
 }
 
 .zs4-noset,.zs4-notrans{
@@ -191,12 +195,15 @@ zs4-name.zs4-am{
 .icon-auth:before{content:"a";font-weight: bolder;}
 .icon-bye:before{content:'(>';font-weight: bolder;}
 .icon-console:before{content:">_";font-weight: bolder;}
+.icon-delete:before{content:"x";font-weight: bolder; color:red;}
+.icon-document:before{content:'\02683';font-weight: bolder;}
 .icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
 .icon-head:before{content:'+';;font-weight: bolder;color:blue;}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:"i";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
+.icon-plus:before{content:"+";font-weight: bolder;}
 .icon-required:before{content:"*";font-weight: bolder;}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-search:before{content:'?';font-weight: bolder;}
@@ -376,6 +383,8 @@ input.zs4-search{
   width:5em;
   height:1em;
   border-style:none;
+  margin-left:0em;
+  margin-right:0em;
   padding-right: 1em;
   padding-top:0.1em;
   padding-left:0.1em;
@@ -394,6 +403,8 @@ zs4-app{
 zs4-app-tab{
   border-top-left-radius: 0.5em;
   border-top-right-radius: 0.5em;
+  margin-left:0.3em;
+  margin-right:0.3em;
   padding-left:0.3em;
   padding-right:0.3em;
 }
