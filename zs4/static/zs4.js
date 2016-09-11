@@ -762,6 +762,10 @@ zs4.type = {
     }
     this._.addId = 0;
 
+    if (zs4.is.window()){
+      this._.cbarr = new Array();
+    }
+
     this._.localRefresh = (function(){
       for (var n in this)if (zs4.is.type(this[n])){
         this[n]._.localRefresh();
