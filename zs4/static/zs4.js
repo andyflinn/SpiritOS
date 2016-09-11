@@ -2384,7 +2384,12 @@ zs4.type = {
 
     this._.zs4check = (function(req,input){
       if (!this._.zs4checkinit(req,input))return false;
-      if (!zs4.is.number(input))return this._.zs4checkfail(req,'not integer');
+
+      if (!zs4.is.number(input)){
+        var int = parseInt(input);
+        if (int==NaN) return this._.zs4checkfail(req,'not integer');
+        input = int;
+      }
 
       if (zs4.is.number(this._.min)&&input<this._.min)return this._.zs4checkfail(req,'min='+this._.min);
       if (zs4.is.number(this._.max)&&input>this._.max)return this._.zs4checkfail(req,'max='+this._.max);
@@ -2482,7 +2487,11 @@ zs4.type = {
 
     this._.zs4check = (function(req,input){
       if (!this._.zs4checkinit(req,input))return false;
-      if (!zs4.is.number(input))return this._.zs4checkfail(req,'not number');
+      if (!zs4.is.number(input)){
+        var num = parseFloat(input);
+        if (num==NaN) return this._.zs4checkfail(req,'not number');
+        input = num;
+      }
       if (zs4.is.number(this._.min)&&input<this._.min)return this._.zs4checkfail(req,'min='+this._.min);
       if (zs4.is.number(this._.max)&&input>this._.max)return this._.zs4checkfail(req,'max='+this._.max);
       if (zs4.is.array(this._.enum)&&this._.enum.length>0){
