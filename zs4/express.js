@@ -144,6 +144,8 @@ express.schema = function(parent){
       this._.get(req); cb(); return;
     }
     this._.print('.transform()');
+
+    //if (!zs4.is.email(zs4.THIS.zs4.))
     if (zs4.is.object(req.input)){
       THIS.start();
     }

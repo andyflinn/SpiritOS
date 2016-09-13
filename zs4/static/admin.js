@@ -914,6 +914,7 @@ zs4.admin.util = {
 
 				if (zs4.is.string(zs4.THIS._.token)&&zs4.is.string(zs4.THIS._.scopath)){
 					top.value.uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+					console.log('scopath='+zs4.THIS._.scopath+', ');
 					if (top.value.uscope!=null){
 						top.userHead = document.createElement('zs4-user-head');
 						o._.html.head.appendChild(top.userHead);
