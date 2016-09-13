@@ -1583,12 +1583,23 @@ zs4.type = {
     };
 
     THIS.array._.callback = (function(o){
-      console.log('deleteall._.callback()');
+      console.log('THIS.array._.callback()');
       //console.log(o);
       if (zs4.is.object(o.result)){
         if (o.result.deleteall==true){
           for (var n in THIS.array){
             if (!zs4.is.type(THIS.array[n]))continue;
+            console.log('deleting '+THIS.array[n]._.path);
+
+            if (zs4.is.function(THIS.array[n]._.cleanup))THIS.array[n]._.cleanup();
+            delete THIS.array[n];
+          }
+
+        }
+        if (zs4.is.array(o.result.deletearr)){
+          for (var n in THIS.array){
+            if (!zs4.is.type(THIS.array[n]))continue;
+            if (!zs4.string.array.is.element(o.result.deletearr,n))continue;
             console.log('deleting '+THIS.array[n]._.path);
 
             if (zs4.is.function(THIS.array[n]._.cleanup))THIS.array[n]._.cleanup();
@@ -1913,8 +1924,7 @@ zs4.type = {
       }).bind(this.method.getone);
 
       THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune',}));
-      THIS.method.deleteone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
-      THIS.method.deleteone._.property(new zs4.type.string({name:'eq',flags:'required nostore noprune apiarg',}));
+      THIS.method.deleteone._.property(new zs4.type.string({name:'id',flags:'required nostore noprune apiarg',}));
       this.method.deleteone._.transform = (function(req,cb){
         var DELONE = this;
         var DELREQ = req;
@@ -1923,11 +1933,8 @@ zs4.type = {
         function get(){
           DELONE._.get(req);
 
-          req.setScope(DELONE.item);
-          DELONE.item._.get(req,DELONE);
-
-          req.setScope(DELONE.eq);
-          DELONE.eq._.get(req,DELONE);
+          req.setScope(DELONE.id);
+          DELONE.id._.get(req,DELONE);
 
           req.setScope(THIS.array);
           THIS.array._.get(req);
@@ -1946,82 +1953,43 @@ zs4.type = {
 
         //console.log(this._.path+'.transform()');
 
-        if (!zs4.is.string(req.input.item)||req.input.item.length==0){
-          var err = 'no item specified'
+        if (!zs4.is.name(req.input.id)){
+          var err = 'no valid id';
           req.error(this,err);
           this._.print(err,req);
           return get();
         }
-        var item = THIS.template._.resolvePath(req.input.item);
-        if (item==null){
-          var err = 'template has no '+req.input.item;
+        var id = req.input.id;
+
+        if (!THIS.array.hasOwnProperty(id)){
+          var err = id+' not found';
           req.error(this,err);
           this._.print(err,req);
           return get();
         }
-        var item = req.input.item;
-        var eq = req.input.eq;
 
-        var parallel = new zs4.processor.parallel();
-        for (var n in THIS.array._.value){
-
-          var r = req.create();
-          r.elenam = (' '+n+' ').trim();
-          parallel.call(THIS.array,function(req,cb){
-            var model = THIS.template._.new();
-            DELONE._.print('   scanning '+THIS.array._.path+'.'+req.elenam,req);
-            model._.name = req.elenam;
-            model._.flags.set.notrans(false);
-            model._.flags.set.scope(true);
-            THIS._.array.elementConnect(THIS.array,model);
-            model._.load(THIS.array._.value[req.elenam]);
-
-            DELONE._.print('   scanning '+THIS.array._.path+'.'+n,req);
-            var val = model._.resolvePath(item);
-            if (val == null){
-              console.log('   CANT FIND '+item)
-              DELONE._.print('   CANT FIND '+item,req);
-              cb(); return;
-            }
-            console.log('deleteone : found '+req.elenam)
-            if (val._.opcode.eq(eq)){
-              console.log('   MATCH! (v/e) '+val._.value+'=='+eq)
-              DELONE._.print('   MATCH! (v/e) '+val._.value+'=='+eq,req);
-              delete THIS.array._.value[req.elenam];
-              THIS._.shouldBeSaved(req);
-              DELREQ.result(DELONE,req.elenam);
-              console.log('deleteone : DELETED! '+req.elenam)
-              cb(); return;
-            }
-            else {
-              console.log('   FAILURE! (v/e) '+val._.value+'!='+eq)
-              DELONE._.print('   FAILURE! (v/e) '+val._.value+'!='+eq,req);
-              cb(); return;
-            }
-          },r);
-        }
-
-        parallel.run(function(){
+        if (!req.tokenExists()){
+          var err = 'not logged in';
+          req.error(this,err);
+          this._.print(err,req);
           return get();
-        });
-
-
-      }).bind(this.method.deleteone);
-      this.method.deleteone._.callback = (function(o){
-        //console.log('deleteall._.callback()');
-        console.log(o);
-        if (zs4.is.name(o.result)&&zs4.is.type(THIS.array[o.result])){
-
-          console.log('deleting '+THIS.array[o.result]._.path);
-
-          if (zs4.is.function(THIS.array[o.result]._.cleanup))THIS.array[o.result]._.cleanup();
-          THIS.array._.value[o.result]==null;
-          THIS.array[o.result]==null;
-
-          if (zs4.is.function(THIS._.refresh)){
-            THIS._.refresh();
-          }
         }
+
+        if (!req.request.payload.scope != THIS.array[id].zs4.head.owner._.value
+        &&!req.flags&&THIS._.flags.authroot){
+          var err = 'not authorized';
+          req.error(this,err);
+          this._.print(err,req);
+          return get();
+        }
+
+        delete THIS.array[id];
+
+        req.setScope(THIS.array);
+        req.result(THIS.array,new Object({deletearr:[id,]}));
+        THIS.array._.get(req);
+        THIS._.shouldBeSaved(req);
+        return get();
       }).bind(this.method.deleteone);
 
     }
