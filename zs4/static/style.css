@@ -409,6 +409,42 @@ zs4-app-tab{
   padding-right:0.3em;
 }
 zs4-app-tab.zs4-current{
-  background-color:white;
+  background-color:lightgray;
   color:black;
+}
+
+zs4-app-toolbar{
+  display:block;
+  background-color: lightgray;
+}
+
+zs4-app-item{
+  display:block;
+}
+
+zs4-login-email,
+zs4-login-password{
+  display:block;
+}
+input.zs4-login-email.zs4-error,
+input.zs4-login-password.zs4-error{
+  border-color: red;
+}
+zs4-logout{
+  cursor:pointer;
+  font-weight: bold;
+}
+zs4-logout-args{
+  display:block;
+}
+zs4-hi,zs4-bye{
+  display:block;
+  cursor:pointer;
+  font-weight: bold;
+  background-color: darkred;
+  color:white;
+  text-align: center;
+}
+zs4-hi:hover,zs4-bye:hover{
+  background-color: black;
 }

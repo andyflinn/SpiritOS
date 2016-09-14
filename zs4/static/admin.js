@@ -73,6 +73,7 @@ zs4.admin.util = {
 		}
 		e.className = ret;
 	},
+
 	tool:function(o,name){
 		this.active = false;
 		this.name = name;
@@ -436,6 +437,19 @@ zs4.admin.util = {
 
 	},
 
+	app:function(scope,containerElement){
+		this.scope = scope;
+		this.containerElement = containerElement;
+
+		this.internalRefresh = function(){
+			// flag the first pass
+			if (!zs4.is.boolean(this.uninitialized))this.uninitialized=true;
+			else this.uninitialized=false;
+
+			if (zs4.is.function(this.refresh()))this.refresh();
+		};
+	},
+
 	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
 		if (o._.input==null)o._.input = (function(){return null;}).bind(o);
@@ -613,6 +627,9 @@ zs4.admin.util = {
 						zs4.admin.util.removeClass(o._.html.dialogHeader,'nodisplay');
 						zs4.admin.util.removeClass(o._.html.appElement,'nodisplay');
 						zs4.admin.util.addClass(o._.html.c,'nodisplay');
+						if (zs4.is.object(top.app)){
+							top.app.internalRefresh();
+						}
 					}
 					else {
 						zs4.admin.util.addClass(o._.html.dialogHeader,'nodisplay');
@@ -912,36 +929,13 @@ zs4.admin.util = {
 				top.value.uscope = null;
 				top.value.utitle = '';
 
-				if (zs4.is.string(zs4.THIS._.token)&&zs4.is.string(zs4.THIS._.scopath)){
-					top.value.uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
-					console.log('scopath='+zs4.THIS._.scopath+', ');
-					if (top.value.uscope!=null){
-						top.userHead = document.createElement('zs4-user-head');
-						o._.html.head.appendChild(top.userHead);
-
-						top.userName = document.createElement('zs4-user-name');
-						top.userHead.appendChild(top.userName);
-
-						if (zs4.THIS._.scopath==''){
-							top.value.utitle = 'root';
-						}
-						else if (top.value.uscope.zs4.head.title._.value.trim()==''){
-							top.value.utitle = zs4.THIS._.scopath;
-						}
-						else {
-							top.value.utitle = top.value.uscope.zs4.head.title._.value;
-						}
-						top.userName.textContent = top.value.utitle;
-					}
-				}
-
 				o._.html.appIsOpen = true;
 				o._.html.dialog = new Object();
 
 				o._.html.dialogHeader= document.createElement('zs4-app-header');
 				o._.html.head.appendChild(o._.html.dialogHeader);
 
-				o._.html.searchIcon = document.createElement('zs4-app-tab');
+				//o._.html.searchIcon = document.createElement('zs4-app-tab');
 
 				o._.html.appElement = document.createElement('zs4-app');
 				o._.html.e.appendChild(o._.html.appElement);
@@ -949,7 +943,7 @@ zs4.admin.util = {
 				o._.html.appWindow = document.createElement('zs4-app-window');
 				o._.html.appElement.appendChild(o._.html.appWindow);
 
-				o._.html.appWindow.textContent = 'here is the actual app window';
+				//o._.html.appWindow.textContent = 'here is the actual app window';
 
 				o._.html.top.dialog = function(name){
 					this.active = false;
@@ -965,10 +959,18 @@ zs4.admin.util = {
 
 					this.pane = document.createElement('zs4-app-dialog');
 					o._.html.appElement.appendChild(this.pane);
-					this.pane.textContent = 'dialog pane for '+name;
+					//this.pane.textContent = 'dialog pane for '+name;
 					zs4.admin.util.removeClass(this.pane,'current');
 					zs4.admin.util.addClass(this.pane,'nodisplay');
 					this.refreshDialog = function(){};
+					this.refreshInternal = function(){
+						if (!zs4.is.boolean(this.uninitialized))this.uninitialized=true;
+						else this.uninitialized=false;
+						this.refreshDialog();
+					};
+
+					this.toolbar = document.createElement('zs4-app-toolbar');
+					this.pane.appendChild(this.toolbar);
 
 					this.select.onclick = (function(){
 						var active = false;
@@ -991,7 +993,7 @@ zs4.admin.util = {
 							if (o._.html.dialog[n].active){
 								zs4.admin.util.removeClass(o._.html.dialog[n].pane,'nodisplay');
 								zs4.admin.util.setIcon(o._.html.dialog[n].select,o._.html.dialog[n].name);
-								this.refreshDialog();
+								this.refreshInternal();
 							}
 							else {
 								zs4.admin.util.addClass(o._.html.dialog[n].pane,'nodisplay');
@@ -1009,19 +1011,250 @@ zs4.admin.util = {
 				};
 				o._.html.top.dialogUser = function(){
 					o._.html.top.dialog.call(this,'user');
-				};
-				o._.html.top.dialogSearch = function(){
-					o._.html.top.dialog.call(this,'search');
+
+					this.loggedIn = false;
+					if (zs4.THIS.zs4.hasOwnProperty('bye'))this.loggedIn=true;
+
+					this.username = document.createElement('zs4-app-username');
+					this.toolbar.appendChild(this.username);
+
+					if (this.loggedIn){
+						this.logout = document.createElement('zs4-logout');
+						this.logout.textContent = 'logout';
+						zs4.admin.util.setIcon(this.logout,'bye');
+						this.pane.appendChild(this.logout);
+						this.logout.onclick = (function(){
+							zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
+							zs4.admin.util.addClass(this.bye,'nodisplay');
+							this.sure.checked = false;
+						}).bind(this);
+
+						this.logoutArgs = document.createElement('zs4-logout-args');
+						this.pane.appendChild(this.logoutArgs);
+						zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+
+						this.sureText = document.createElement('zs4-sure-text');
+						this.sureText.textContent = 'sure?';
+						this.logoutArgs.appendChild(this.sureText);
+
+						this.sure = document.createElement('input');
+						this.sure.type = 'checkbox';
+						zs4.admin.util.addClass(this.sure,'sure');
+						this.logoutArgs.appendChild(this.sure);
+						this.sure.onchange = (function(){
+							if (this.sure.checked)zs4.admin.util.removeClass(this.bye,'nodisplay');
+							else zs4.admin.util.addClass(this.bye,'nodisplay');
+						}).bind(this);
+
+						this.bye = document.createElement('zs4-bye');
+						this.bye.textContent = 'bye';
+						zs4.admin.util.addClass(this.bye,'nodisplay');
+						this.pane.appendChild(this.bye);
+						this.bye.onclick = (function(){
+							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+							zs4.post(zs4.THIS.zs4.bye._.wrapRequest({sure:true}),function(ret){
+								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+							});
+						}).bind(this);
+
+					}
+					else {
+						this.email = document.createElement('zs4-login-email');
+						this.pane.appendChild(this.email);
+
+						this.emailLabel = document.createElement('zs4-login-email-label');
+						this.emailLabel.textContent = 'email';
+						this.email.appendChild(this.emailLabel);
+
+						this.emailAddress = document.createElement('input');
+						this.emailAddress.type = 'text';
+						this.email.appendChild(this.emailAddress);
+						zs4.admin.util.addClass(this.emailAddress,'login-email');
+
+						this.password = document.createElement('zs4-login-password');
+						this.pane.appendChild(this.password);
+
+						this.passwordLabel = document.createElement('zs4-login-password-label');
+						this.passwordLabel.textContent = 'password';
+						this.password.appendChild(this.passwordLabel);
+
+						this.pass = document.createElement('input');
+						this.pass.type = 'password';
+						this.password.appendChild(this.pass);
+						zs4.admin.util.addClass(this.pass,'login-password');
+
+						this.hi = document.createElement('zs4-hi');
+						this.hi.textContent = 'login';
+						this.pane.appendChild(this.hi);
+						this.hi.onclick = (function(){
+							var error = false;
+							if (!zs4.is.email(this.emailAddress.value)){
+								zs4.admin.util.addClass(this.emailAddress,'error');
+								error = true;
+							}
+							else {
+								zs4.admin.util.removeClass(this.emailAddress,'error');
+							}
+							if (!zs4.is.password(this.pass.value)){
+								zs4.admin.util.addClass(this.pass,'error');
+								error = true;
+							}
+							else {
+								zs4.admin.util.removeClass(this.pass,'error');
+							}
+							if (error)return;
+
+							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+							zs4.post(zs4.THIS.zs4.hi._.wrapRequest({email:this.emailAddress.value,password:this.pass.value,}),function(ret){
+								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+							});
+						}).bind(this);
+
+
+					}
+
+					this.refreshDialog = (function(){
+						if (zs4.is.string(zs4.THIS._.token)&&zs4.is.string(zs4.THIS._.scopath)){
+							var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+							var utitle = '';
+							console.log('scopath='+zs4.THIS._.scopath+', ');
+							if (uscope!=null){
+								if (zs4.THIS._.scopath==''){
+									utitle = 'root';
+								}
+								else if (uscope.zs4.head.title._.value.trim()==''){
+									utitle = zs4.THIS._.scopath;
+								}
+								else {
+									utitle = uscope.zs4.head.title._.value;
+								}
+								this.username.textContent = utitle;
+							}
+						}
+						else {
+							this.username.textContent = 'login';
+						}
+
+						if (this.loggedIn==true){
+							zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+							zs4.admin.util.addClass(this.bye,'nodisplay');
+						}
+					}).bind(this);
 				};
 
-				new o._.html.top.dialogSearch();
+				o._.html.top.deselectAll = function(){
+					for (var n in o._.html.dialog){
 
-				o._.html.search = document.createElement('input');
-				o._.html.search.type = 'text';
-				zs4.admin.util.addClass(o._.html.search,'search');
-				o._.html.dialogHeader.appendChild(o._.html.search);
+						zs4.admin.util.removeClass(o._.html.dialog[n].select,'current');
+						zs4.admin.util.removeClass(o._.html.dialog[n].pane,'current');
+						zs4.admin.util.addClass(o._.html.dialog[n].pane,'nodisplay');
+						zs4.admin.util.setIcon(o._.html.dialog[n].select,o._.html.dialog[n].name);
+					}
+					zs4.admin.util.removeClass(o._.html.appWindow,'nodisplay');
+				}
+
+				if (o._.flags.get.scope()){
+					if (o.zs4.head.typename._.value=='node'||o.zs4.head.typename._.value=='user'){
+						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
+						top.app.refresh = (function(){
+							if (top.app.uninitialized==true){
+								top.app.searchButton = document.createElement('zs4-app-search-icon');
+								zs4.admin.util.setIcon(top.app.searchButton,'search');
+								o._.html.dialogHeader.appendChild(top.app.searchButton);
+
+								top.app.search = document.createElement('input');
+								top.app.search.type = 'text';
+								zs4.admin.util.addClass(top.app.search,'search');
+								o._.html.dialogHeader.appendChild(top.app.search);
+
+								top.app.toolbar = document.createElement('zs4-app-toolbar');
+								o._.html.appWindow.appendChild(top.app.toolbar);
+
+								top.app.typeIcon = document.createElement('zs4-app-type-icon');
+								zs4.admin.util.setIcon(top.app.typeIcon,'scope');
+								top.app.toolbar.appendChild(top.app.typeIcon);
+
+
+								top.app.typeSelect = document.createElement('select');
+								zs4.admin.util.addClass(top.app.typeSelect,'zs4-app-type-select');
+								top.app.toolbar.appendChild(top.app.typeSelect);
+								var option = document.createElement('option');
+								option.value = '';
+								option.text = 'all types';
+								option.selected = true;
+								top.app.typeSelect.add(option);
+								for (var n in zs4.THIS.zs4.type)if (zs4.is.type(zs4.THIS.zs4.type[n])){
+									option = document.createElement('option');
+									option.text = option.value = (' '+n+' ').trim();
+				          top.app.typeSelect.add(option);
+								}
+
+								top.app.content = document.createElement('zs4-app-content');
+								o._.html.appWindow.appendChild(top.app.content);
+
+								top.app.array = new Array();
+
+								top.app.item = (function(scope){
+									this.scope = scope;
+									top.app.array.push(this);
+
+									this.element = document.createElement('zs4-app-item');
+									top.app.content.appendChild(this.element);
+
+									this.icon = document.createElement('zs4-app-item-icon');
+									zs4.admin.util.setIcon(this.icon,scope.zs4.head.typename._.value);
+									this.element.appendChild(this.icon);
+
+									this.title = document.createElement('zs4-app-item-title');
+									this.title.textContent = scope.zs4.head.title._.value;
+									this.element.appendChild(this.title);
+
+								}).bind(top.app);
+
+								top.app.findItem = (function(scope){
+									for (var i = 0 ; i < top.app.array.length ; i++){
+										if (top.app.array[i].scope==scope)return top.app.array[i];
+									}
+									return null;
+								}).bind(top.app);
+							}
+
+							// get new object
+							var arr = o._.getAllScopes();
+							for (var i = 0 ; i < arr.length  ; i++){
+								var item = top.app.findItem(arr[i]);
+								if (item != null){
+									item.title.textContent = item.scope.zs4.head.title._.value;
+								}
+								else {
+									item = new top.app.item(arr[i]);
+								}
+							}
+
+							// clean up discarded objects;
+							for (var i = top.app.array.length-1 ; i >= 0 ; i--){
+								if (top.app.scope._.resolvePath(top.app.array[i].scope._.path)==null){
+									console.log('discarding '+top.app.array[i].scope._.path);
+									top.app.content.removeChild(top.app.array[i].element);
+									top.app.array.splice(i,1);
+								}
+							}
+
+
+						}).bind(top.app);
+						top.app.internalRefresh();
+					}
+					else {
+						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
+						if (top.app.uninitialized==true){
+						}
+						top.app.internalRefresh();
+					}
+
+				}
 
 				new o._.html.top.dialogUser();
+
 			}
 
 		}
@@ -1114,11 +1347,6 @@ zs4.admin.type = {
 		o._.html.input.value = parseInt(o._.value);
 		o._.html.genericRefresh();
 	},
-//	document:function(po,o){
-	//	zs4.admin.type.scope(po,o);
-		//o._.html.icon.on = 'info';
-		//o._.html.icon.off = 'info';
-//	},
 	enum:function(po,o){
 		zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){
@@ -1451,14 +1679,14 @@ zs4.admin.type = {
       }).bind(o);
 
       o._.html.refreshOptions = function(o){
-        var arr = zs4.THIS._.getUserScopes();
+        var arr = zs4.THIS._.getAllScopes();
         //console.log (arr);
         //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
 				o._.html.input.innerHTML = '';
         for (var i = 0 ; i < arr.length ; i++){
           var option = document.createElement('option');
-					option.text = arr[i].label;
-					option.value = arr[i].value;
+					option.text = arr[i]._.path;
+					option.value = arr[i];
           o._.html.input.add(option);
         }
       }
@@ -1553,6 +1781,47 @@ zs4.admin.type = {
 	type:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
+	userscope:function(po,o){
+		zs4.admin.util.unknown(po,o);
+    if (o._.html.input==null){
+
+      o._.html.input = document.createElement('select');
+      o._.html.e.appendChild(o._.html.input);
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					o._.value = o._.html.input.value;
+					o._.value = o._.html.input.value;
+					o._.html.refreshAll();
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
+				}
+			};
+
+      o._.input = (function(){
+        if (o._.flags.get.noset())return null;
+        return this._.html.input.value;
+      }).bind(o);
+
+      o._.html.refreshOptions = function(o){
+        var arr = zs4.THIS._.getUserScopes();
+        //console.log (arr);
+        //for (var i = (o._.html.input.size-1) ; i >= 0 ; i-- )o._.html.input.remove(i);
+				o._.html.input.innerHTML = '';
+        for (var i = 0 ; i < arr.length ; i++){
+          var option = document.createElement('option');
+					option.text = arr[i].label;
+					option.value = arr[i].value;
+          o._.html.input.add(option);
+        }
+      }
+			o._.html.expanded = true;
+    }
+		o._.html.genericRefresh();
+		o._.html.refreshOptions(o);
+		o._.html.input.value = o._.value;
+  },
 	zs4:function(po,o){
 		zs4.admin.type.object(po,o);
 	},

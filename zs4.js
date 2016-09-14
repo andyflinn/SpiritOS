@@ -6,7 +6,7 @@ var path = msg;
 path['zs4'] = new Object();
 path = path['zs4'];
 
-console.log(process.argv);
+//console.log(process.argv);
 if (process.argv.length==2){
   path.express = new Object({run:{}});
 }
@@ -23,7 +23,7 @@ else {
   }
 }
 
-console.log(msg);
+//console.log(msg);
 
 zs4.define();
 zs4.console.log('defined');

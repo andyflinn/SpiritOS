@@ -1462,7 +1462,7 @@ zs4.type = {
 
     THIS._.property(new zs4.type.object({name:'array',flags:'noprune authgetpublic nogetall',}));
     THIS.array._.load = (function(input){
-      console.log('loading '+this._.path);
+      //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
       for (var id in input)if(zs4.is.object(input[id])){
 
@@ -1474,7 +1474,7 @@ zs4.type = {
 
         THIS.array[id]._.load(input[id]);
 
-        console.log('load('+THIS.array[id]._.path+')')
+        //console.log('load('+THIS.array[id]._.path+')')
       }
     }).bind(THIS.array);
 
@@ -2202,7 +2202,7 @@ zs4.type = {
     if (zs4.is.node()){
       this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself quickupdate',}));
       this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune',}));
-      this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune nostore',}));
+      this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune authgetpublic nostore',}));
       this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune',}));
       this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune',}));
       this._.property(new zs4.type.string({name:'app',flags:'index noprune  quickupdate',}));
@@ -2640,7 +2640,7 @@ zs4.type = {
     }).bind(this);
 
     this._.load = (function(input){
-      console.log('loading '+this._.path);
+      //console.log('loading '+this._.path);
       if (!zs4.is.object(input))return;
       for (var n in this){
         if (!zs4.is.type(this[n]))continue;
@@ -2802,6 +2802,35 @@ zs4.type = {
       response.push(new Object({label:'zs4.owner',value:'zs4.owner'}));
       response.push(new Object({label:'zs4.self',value:'zs4.self'}));
       recurse(scope.zs4.type.user.array);
+      return response;
+    }).bind(this);
+    THIS._.getAllScopes = (function(){
+      var scope = zs4.THIS;
+      var response = new Array();
+      function recurse(item){
+        for (var n in item){
+          if (!zs4.is.type(item[n]))continue;
+
+          //console.log('getAllScopes('+item[n]._.path+') ? ')
+          item[n]._.print('getAllScopes');
+
+          if( item[n]._.flags.get.scope()
+          && (item[n]._.typename=='scope')
+          ){
+            //console.log('getAllScopes('+item[n]._.path+')')
+            if (item[n]._.flags.get.notrans())continue;
+
+            //console.log('getAllScopes('+item[n]._.path+') VALID!')
+            response.push(item[n]);
+            continue;
+          }
+
+          if (item[n]._.type == Object){
+            recurse(item[n]);
+          }
+        }
+      };
+      recurse(scope.zs4.type);
       return response;
     }).bind(this);
   },
@@ -3285,6 +3314,10 @@ zs4.type = {
     zs4.type.object.call(this,{name:'type',flags:'apiarg'});
     this._.typename = 'type';
 
+  },
+  userscope:function(input){
+    zs4.type.string.call(this,input);
+    this._.typename = 'userscope';
   },
   zs4:function(){
     zs4.type.object.call(this,{name:'zs4',flags:'authgetpublic'});
