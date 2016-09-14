@@ -437,7 +437,7 @@ zs4-logout{
 zs4-logout-args{
   display:block;
 }
-zs4-hi,zs4-bye{
+zs4-login,zs4-logout{
   display:block;
   cursor:pointer;
   font-weight: bold;
@@ -445,6 +445,6 @@ zs4-hi,zs4-bye{
   color:white;
   text-align: center;
 }
-zs4-hi:hover,zs4-bye:hover{
+zs4-login:hover,zs4-logout:hover{
   background-color: black;
 }

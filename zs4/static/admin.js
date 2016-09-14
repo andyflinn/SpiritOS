@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////"+"
 'use strict';
 
-zs4.admin = new Object({debug:true,});
+zs4.admin = new Object({debug:false,});
 
 zs4.admin.util = {
 	clseps:' ',
@@ -1046,8 +1046,8 @@ zs4.admin.util = {
 							else zs4.admin.util.addClass(this.bye,'nodisplay');
 						}).bind(this);
 
-						this.bye = document.createElement('zs4-bye');
-						this.bye.textContent = 'bye';
+						this.bye = document.createElement('zs4-logout');
+						this.bye.textContent = 'logout';
 						zs4.admin.util.addClass(this.bye,'nodisplay');
 						this.pane.appendChild(this.bye);
 						this.bye.onclick = (function(){
@@ -1083,7 +1083,7 @@ zs4.admin.util = {
 						this.password.appendChild(this.pass);
 						zs4.admin.util.addClass(this.pass,'login-password');
 
-						this.hi = document.createElement('zs4-hi');
+						this.hi = document.createElement('zs4-login');
 						this.hi.textContent = 'login';
 						this.pane.appendChild(this.hi);
 						this.hi.onclick = (function(){
@@ -1836,4 +1836,5 @@ zs4.css.onload = function(){
 	zs4.admin.rootObject._.html.toggleOn();
 	zs4.admin.rootObject.zs4._.html.toggleOn();
 	zs4.THIS._.print('ADMIN LAUNCHED');
+	zs4.style.refresh();
 };
