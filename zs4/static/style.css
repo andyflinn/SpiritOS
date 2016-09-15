@@ -192,10 +192,12 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-about:before{content:"i";font-weight: bolder;}
 .icon-add:before{content:"+";font-weight: bolder;}
 .icon-array:before{content:'\02630';font-weight: bolder;}
+.icon-ascend:before{content:'\0219F';font-weight: bolder;}
 .icon-auth:before{content:"a";font-weight: bolder;}
 .icon-bye:before{content:'(>';font-weight: bolder;}
 .icon-console:before{content:">_";font-weight: bolder;}
 .icon-delete:before{content:"x";font-weight: bolder; color:red;}
+.icon-descend:before{content:'\021A1';font-weight: bolder;}
 .icon-document:before{content:'\02683';font-weight: bolder;}
 .icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
 .icon-head:before{content:'+';;font-weight: bolder;color:blue;}
@@ -420,6 +422,9 @@ zs4-app-toolbar{
 
 zs4-app-item{
   display:block;
+}
+zs4-app-item-title.zs4-own{
+  color:green;
 }
 
 zs4-login-email,

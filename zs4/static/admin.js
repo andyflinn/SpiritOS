@@ -627,6 +627,9 @@ zs4.admin.util = {
 						zs4.admin.util.removeClass(o._.html.dialogHeader,'nodisplay');
 						zs4.admin.util.removeClass(o._.html.appElement,'nodisplay');
 						zs4.admin.util.addClass(o._.html.c,'nodisplay');
+						if (o._.html.toolbarToggle){
+							zs4.admin.util.addClass(o._.html.toolbarToggle,'nodisplay');
+						}
 						if (zs4.is.object(top.app)){
 							top.app.internalRefresh();
 						}
@@ -935,15 +938,11 @@ zs4.admin.util = {
 				o._.html.dialogHeader= document.createElement('zs4-app-header');
 				o._.html.head.appendChild(o._.html.dialogHeader);
 
-				//o._.html.searchIcon = document.createElement('zs4-app-tab');
-
 				o._.html.appElement = document.createElement('zs4-app');
 				o._.html.e.appendChild(o._.html.appElement);
 
 				o._.html.appWindow = document.createElement('zs4-app-window');
 				o._.html.appElement.appendChild(o._.html.appWindow);
-
-				//o._.html.appWindow.textContent = 'here is the actual app window';
 
 				o._.html.top.dialog = function(name){
 					this.active = false;
@@ -1161,23 +1160,35 @@ zs4.admin.util = {
 								top.app.searchButton = document.createElement('zs4-app-search-icon');
 								zs4.admin.util.setIcon(top.app.searchButton,'search');
 								o._.html.dialogHeader.appendChild(top.app.searchButton);
+								top.app.searchButton.onclick = (function(){
+									this.requestItems();
+								}).bind(top.app);
 
 								top.app.search = document.createElement('input');
 								top.app.search.type = 'text';
 								zs4.admin.util.addClass(top.app.search,'search');
 								o._.html.dialogHeader.appendChild(top.app.search);
+								top.app.search.onchange = (function(){
+									this.requestItems();
+								}).bind(top.app);
+								top.app.search.oninput = (function(){
+									top.app.internalRefresh();
+								}).bind(top.app);
 
 								top.app.toolbar = document.createElement('zs4-app-toolbar');
 								o._.html.appWindow.appendChild(top.app.toolbar);
 
+
+								top.app.type = document.createElement('zs4-app-type');
+								top.app.toolbar.appendChild(top.app.type);
+
 								top.app.typeIcon = document.createElement('zs4-app-type-icon');
 								zs4.admin.util.setIcon(top.app.typeIcon,'scope');
-								top.app.toolbar.appendChild(top.app.typeIcon);
-
+								top.app.type.appendChild(top.app.typeIcon);
 
 								top.app.typeSelect = document.createElement('select');
 								zs4.admin.util.addClass(top.app.typeSelect,'zs4-app-type-select');
-								top.app.toolbar.appendChild(top.app.typeSelect);
+								top.app.type.appendChild(top.app.typeSelect);
 								var option = document.createElement('option');
 								option.value = '';
 								option.text = 'all types';
@@ -1188,9 +1199,103 @@ zs4.admin.util = {
 									option.text = option.value = (' '+n+' ').trim();
 				          top.app.typeSelect.add(option);
 								}
+								top.app.typeSelect.onchange = (function(){this.requestItems();}).bind(top.app);
+
+								top.app.creator = document.createElement('zs4-app-creator');
+								top.app.toolbar.appendChild(top.app.creator);
+
+								top.app.creatorIcon = document.createElement('zs4-app-creator-icon');
+								zs4.admin.util.setIcon(top.app.creatorIcon,'user');
+								top.app.creator.appendChild(top.app.creatorIcon);
+
+								top.app.creatorSelect = document.createElement('select');
+								zs4.admin.util.addClass(top.app.creatorSelect,'zs4-app-creator-select');
+								top.app.creator.appendChild(top.app.creatorSelect);
+								top.app.creatorInitialized = false;
+								top.app.creatorRefresh = (function(){
+									var lastSelection;
+									if (top.app.creatorInitialized){
+										lastSelection = top.app.creatorSelect.value;
+									}
+									top.app.creatorSelect.innerHTML = '';
+									var option = document.createElement('option');
+									option.value = '';
+									option.text = 'any owner';
+									if (!top.app.creatorInitialized){
+										option.selected = true;
+										lastSelection = '';
+									}
+									top.app.creatorSelect.add(option);
+
+									top.app.creatorInitialized = true;
+									var arr = zs4.THIS.zs4.type.user.array;
+					        for (var n in arr)if(zs4.is.type(arr[n])){
+					          option = document.createElement('option');
+										if (arr[n].zs4.head.title._.value.length > 0)
+											option.text = arr[n].zs4.head.title._.value;
+										else option.text = arr[n]._.name;
+										option.value = arr[n]._.path;
+										if (lastSelection==arr[n]._.path)option.selected = true;
+					          top.app.creatorSelect.add(option);
+					        }
+								}).bind(top.app);
+								top.app.creatorSelect.onchange = (function(){this.requestItems();}).bind(top.app);
+
+								top.app.sort = document.createElement('zs4-app-sort');
+								top.app.toolbar.appendChild(top.app.sort);
+
+								top.app.orderDescend = false;
+								top.app.sortIcon = document.createElement('zs4-app-sort-icon');
+								zs4.admin.util.setIcon(top.app.sortIcon,'ascend');
+								top.app.sort.appendChild(top.app.sortIcon);
+								top.app.sortIcon.onclick = (function(){
+									if (top.app.orderDescend){
+										top.app.orderDescend = false;
+										zs4.admin.util.setIcon(top.app.sortIcon,'ascend');
+									}
+									else {
+										top.app.orderDescend = true;
+										zs4.admin.util.setIcon(top.app.sortIcon,'descend');
+									}
+									top.app.internalRefresh();
+								}).bind(top.app);
+
+								top.app.sortSelect = document.createElement('select');
+								zs4.admin.util.addClass(top.app.sortSelect,'zs4-app-sort-select');
+								top.app.sort.appendChild(top.app.sortSelect);
+								top.app.sortSelectOption = (function(name,foo,selected){
+									var option = document.createElement('option');
+									option.value = foo;
+									option.text = name;
+									if (selected==true){
+										option.selected = true;
+										top.app.orderFunction = foo;
+									}
+									top.app.sortSelect.add(option);
+								}).bind(top.app);
+								top.app.sortSelect.onchange = (function(){
+									top.app.orderFunction = top.app.sortSelect.value;
+									top.app.internalRefresh();
+								}).bind(top.app);
+								top.app.sortSelectOption('title',function(a,b){
+									var ret = a.scope.zs4.head.title._.value.localeCompare(b.scope.zs4.head.title._.value);
+									if (top.app.orderDescend==true){return -ret;}
+									else {return ret;}
+								},true);
 
 								top.app.content = document.createElement('zs4-app-content');
 								o._.html.appWindow.appendChild(top.app.content);
+
+								top.app.orderHtml = (function(){
+									var a = top.app.array.sort(top.app.orderFunction);
+									if (a.length > 1){
+										for (var i = 0 ; i < (a.length-1) ; i++){
+											top.app.content.removeChild(a[i].element);
+											top.app.content.insertBefore(a[i].element, top.app.content.childNodes[i]);
+										}
+
+									}
+								}).bind(top.app);
 
 								top.app.array = new Array();
 
@@ -1217,9 +1322,25 @@ zs4.admin.util = {
 									}
 									return null;
 								}).bind(top.app);
+
+								top.app.requestItems = (function(){
+									var req = new Object();
+									req.value = top.app.search.value;
+									req.type = top.app.typeSelect.value;
+									req.owner = top.app.creatorSelect.value;
+
+									zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+									zs4.post(zs4.THIS.zs4.search._.wrapRequest(req),function(ret){
+										zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+										o._.html.refreshAll();
+									});
+
+								}).bind(top.app);
 							}
 
-							// get new object
+							top.app.creatorRefresh();
+
+							// get new objects
 							var arr = o._.getAllScopes();
 							for (var i = 0 ; i < arr.length  ; i++){
 								var item = top.app.findItem(arr[i]);
@@ -1238,8 +1359,43 @@ zs4.admin.util = {
 									top.app.content.removeChild(top.app.array[i].element);
 									top.app.array.splice(i,1);
 								}
+
+								if (top.app.search.value != ''){
+									if (!top.app.array[i].scope._.search(top.app.search.value)){
+										zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										continue;
+									}
+								}
+								if (top.app.typeSelect.value != ''){
+									if (top.app.array[i].scope.zs4.head.typename._.value!=top.app.typeSelect.value){
+										zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										continue;
+									}
+								}
+								if (top.app.creatorSelect.value != ''){
+									console.log('compare '+top.app.creatorSelect.value+' to '+top.app.array[i].scope.zs4.head.owner._.value);
+									if (top.app.array[i].scope.zs4.head.owner._.value!=top.app.creatorSelect.value){
+										zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										continue;
+									}
+								}
+
+								if (zs4.is.string(zs4.THIS._.token)
+								&& zs4.is.string(zs4.THIS._.scopath)
+								&& top.app.array[i].scope.zs4.head.owner._.value==zs4.THIS._.scopath){
+									zs4.admin.util.addClass(top.app.array[i].element,'own');
+									zs4.admin.util.addClass(top.app.array[i].icon,'own');
+									zs4.admin.util.addClass(top.app.array[i].title,'own');
+								}
+								else {
+									zs4.admin.util.removeClass(top.app.array[i].element,'own');
+									zs4.admin.util.removeClass(top.app.array[i].icon,'own');
+									zs4.admin.util.removeClass(top.app.array[i].title,'own');
+								}
+								zs4.admin.util.removeClass(top.app.array[i].element,'nodisplay');
 							}
 
+							top.app.orderHtml();
 
 						}).bind(top.app);
 						top.app.internalRefresh();
