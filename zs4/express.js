@@ -77,6 +77,7 @@ express.app.get('/*', function (req, res) {
   var input = zs4req.resolveInputPath(req.path);
   input.getHTML = new Object();
   input.getHTML.query = req.query;
+  console.log(req.path,req.query);
   express.THIS._.print('input('+JSON.stringify(zs4req.input)+')')
 
   express.getCookie(req,zs4req);

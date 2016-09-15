@@ -1151,11 +1151,11 @@ zs4.type = {
         if (zs4.is.function(this._.callback)){
           this._.callback(input);
         }
-        else if (zs4.is.string(input.result)&&input.result=='goscope'){
-          //console.log('goscope '+this._.scope._.path);
-          //zs4.navigate(this._.scope._.path);
-          console.log('goscope /');
-          zs4.navigate('/');
+        else if (zs4.is.object(input.result)){
+          if (zs4.is.string(input.result.goscope)){
+            //console.log('NAV: '+input.result.goscope);
+            zs4.navigate(input.result.goscope);
+          }
         }
       }
     }).bind(this);
@@ -1517,7 +1517,7 @@ zs4.type = {
       cb();
     }).bind(THIS.array);
     THIS.array._.elementTransform = (function(req,cb){
-      console.log(this._.path+'.transform()');
+      //console.log(this._.path+'.transform()');
       THIS.array._.elementLoad(req,function(ret){
         if (ret==null){
           req.error(THIS.array,THIS.array._.path+'.'+req.elenam+' not found');
@@ -1639,8 +1639,8 @@ zs4.type = {
           //  req.error(THIS.method.new,'not authorized');
           //  this._.get(req); cb(); return;
           //}
-          console.log(this._.path+'.transform()');
-          console.log(req.input);
+          //console.log(this._.path+'.transform()');
+          //console.log(req.input);
           var length = zs4.count.object.properties(THIS.array._.value);
           if (THIS.config.maxlength._.value > 0 && length >= THIS.config.maxlength._.value){
             req.error(this,{text:'array limit reached'})
@@ -1673,7 +1673,7 @@ zs4.type = {
         req.setScope(this);
         this._.transformInternal(req);
         if (req.getall){
-          console.log(this._.path+'() GETALL');
+          //console.log(this._.path+'() GETALL');
           this._.get(req); cb(); return;
         }
 
@@ -1685,11 +1685,11 @@ zs4.type = {
         }
 
         if (zs4.is.object(req.input)){
-          console.log(this._.path+'.transform()');
+          //console.log(this._.path+'.transform()');
 
 
           for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
-            console.log(this._.path+'.'+n+'.transform()');
+            //console.log(this._.path+'.'+n+'.transform()');
             req.setScope(THIS.array[n]);
             THIS.array[n]._.getTree(req);
           }
@@ -1724,7 +1724,7 @@ zs4.type = {
         req.setScope(this);
         this._.transformInternal(req);
         if (req.getall){
-          console.log(this._.path+'() GETALL');
+          //console.log(this._.path+'() GETALL');
           this._.get(req); cb(); return;
         }
         if (!(req.flags.value & req.flags.authset)){
@@ -1735,7 +1735,7 @@ zs4.type = {
         }
 
         if (zs4.is.object(req.input)){
-          console.log(QUERY._.path+'.transform()',req.input);
+          //console.log(QUERY._.path+'.transform()',req.input);
 
           if (zs4.count.object.properties(req.input)==0){
             console.log(QUERY._.path+'.transform(no select input)',req.input);
@@ -1757,7 +1757,7 @@ zs4.type = {
           }
 
           for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
-            console.log(this._.path+'.'+n+'.query()');
+            //console.log(this._.path+'.'+n+'.query()');
             if (sel!= null){
               sel._.inscopeTree(THIS.array[n]);
               if (!sel._.select.check())continue;
@@ -1802,7 +1802,7 @@ zs4.type = {
         req.setScope(this.sort.descend);
         this.sort.descend._.get(req);
 
-        console.log('GET COMPLETE '+QUERY._.path);
+        //console.log('GET COMPLETE '+QUERY._.path);
 
       }).bind(THIS.method.query);
 
@@ -2250,7 +2250,8 @@ zs4.type = {
               THIS._.get(req); cb(); return;
             }
 
-            req.result(THIS,'goscope');
+            console.log('GOSCOPE ROOTSCOPE');
+            req.result(THIS,{goscope:''});
             THIS._.get(req); cb(); return;
           });
         }
@@ -2266,7 +2267,8 @@ zs4.type = {
             THIS._.get(req); cb(); return;
           }
 
-          console.log('calling: '+callback.result+'.zs4.password')
+          console.log('calling: '+callback.result+'.zs4.password');
+          var userpath = callback.result;
           req.call({path:callback.result+'.zs4.password',input:{vfy:req.input.password}},function(callback){
             if (callback.error != null){
               req.error(THIS,'');
@@ -2278,7 +2280,8 @@ zs4.type = {
               THIS._.get(req); cb(); return;
             }
 
-            req.result(THIS,'goscope');
+            console.log('GOSCOPE '+userpath);
+            req.result(THIS,{goscope:userpath});
             THIS._.get(req); cb(); return;
           });
         });
@@ -2569,7 +2572,7 @@ zs4.type = {
       }
 
       if (this._.flags.get.nogetall()){
-        console.log(this._.path+' NOGETALL');
+        //console.log(this._.path+' NOGETALL');
       }
 
       var empty_input_object = false;
@@ -2581,12 +2584,12 @@ zs4.type = {
       }
 
       if (this._.name == 'array'){
-        console.log(this._.path+'.transform()',this._.flags.getString());
-        console.log(req.flags.getString());
+        //console.log(this._.path+'.transform()',this._.flags.getString());
+        //console.log(req.flags.getString());
       }
 
       if (empty_input_object&&req.getall&&this._.flags.get.nogetall()) {
-        console.log(this._.path+' NOGETALL');
+        //console.log(this._.path+' NOGETALL');
         THIS._.get(req); cb(); return;
       }
 
@@ -3349,6 +3352,7 @@ zs4.request = function(o){
     if (o.input!=null)this.input = o.input;
     if (zs4.is.object(o.parent))this.parent = o.parent;
     if (zs4.is.type(o.scope))this.scope = o.scope;
+    if (o.getall==true)this.getall=true;
   }
 
   if (!zs4.is.object(this.request))this.request = new Object();
@@ -3812,7 +3816,8 @@ if (zs4.is.window()){
 
   zs4.navigate = function(path){
     var form = document.createElement('form');
-    form.action = path; // Remember to change me
+    //console.log('NAVIGATE: '+path);
+    form.action = '/'+path; // Remember to change me
     form.method = 'post';
 
     var html = document.createElement('input');
@@ -3842,7 +3847,7 @@ if (zs4.is.window()){
     }
     form.submit();
   }
-  zs4.post = function(o,cb){
+  zs4.post = function(o,cb,getall){
 
     var req = new zs4.request({input:o})
 
@@ -3863,6 +3868,10 @@ if (zs4.is.window()){
       req.request.token = null;
     }
     console.log(req);
+
+    if (getall==true){
+      req.getall = true;
+    }
 
   	zs4.io.post(req,function(ret){
       if (zs4.is.string(ret.request.token)&&ret.request.token.length>10&&zs4.is.string(ret.request.scope)){
@@ -3908,7 +3917,7 @@ if (zs4.is.window()){
     zs4.THIS._.print('LAUNCHING ADMIN @ '+ JSON.stringify(input))
     zs4.post(input,function(){
       zs4.loadscript('/admin.js');
-    });
+    },true);
   };
   zs4.style = {
     refresh:function(){

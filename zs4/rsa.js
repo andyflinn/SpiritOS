@@ -52,7 +52,7 @@ rsa.create = function(){
   THIS._.get = (function(req,po){
     req.setScope(THIS);
     this._.print(this._.path+'.get()');
-    console.log('GETTING RSA PUBLIC KEY');
+    //console.log('GETTING RSA PUBLIC KEY');
     var get = this._.getInitialize(req);
     if (get==null)return;
 

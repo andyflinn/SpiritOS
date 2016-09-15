@@ -18,6 +18,11 @@ zs4.admin.util = {
 		&&  o._.scope._.path>zs4.THIS._.scopath)return true;
 		return false;
 	},
+	root:function(){
+		if (zs4.THIS._.token==null||zs4.THIS._.scopath==null)return false;
+		if (zs4.THIS._.scopath=='') return true;
+		return false;
+	},
 	setClass:function(e,c,tof){
 		if (e==null||c==null)return;
 		if (tof)return zs4.admin.util.addClass(e,c);
@@ -446,7 +451,7 @@ zs4.admin.util = {
 			if (!zs4.is.boolean(this.uninitialized))this.uninitialized=true;
 			else this.uninitialized=false;
 
-			if (zs4.is.function(this.refresh()))this.refresh();
+			if (zs4.is.function(this.refresh))this.refresh();
 		};
 	},
 
@@ -752,9 +757,15 @@ zs4.admin.util = {
 				}
 				if (o._.html.topElement==true){
 					o._.html.toggleOn()
-					if (o._.html.appIsOpen && (o._.flags.get.own()||zs4.admin.debug)){
-						o._.html.appIsOpen=false;
-						o._.html.toggleOn()
+					if (o._.html.appIsOpen){
+						if (zs4.admin.util.root()||zs4.admin.debug){
+							o._.html.appIsOpen=false;
+							o._.html.toggleOn()
+						}
+						else if (zs4.admin.rootObject._.scope._.path!=''){
+							console.log('NAV 2 ROOT');
+							zs4.navigate('');
+						}
 					}
 					else {
 						o._.html.appIsOpen = true;
@@ -1108,8 +1119,6 @@ zs4.admin.util = {
 								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
 							});
 						}).bind(this);
-
-
 					}
 
 					this.refreshDialog = (function(){
@@ -1300,6 +1309,7 @@ zs4.admin.util = {
 								top.app.array = new Array();
 
 								top.app.item = (function(scope){
+									var THIS = this;
 									this.scope = scope;
 									top.app.array.push(this);
 
@@ -1313,6 +1323,10 @@ zs4.admin.util = {
 									this.title = document.createElement('zs4-app-item-title');
 									this.title.textContent = scope.zs4.head.title._.value;
 									this.element.appendChild(this.title);
+									this.title.onclick = (function(){
+										console.log('ITEM PATH: '+THIS.scope._.path)
+										zs4.navigate(THIS.scope._.path);
+									});
 
 								}).bind(top.app);
 
@@ -1336,6 +1350,8 @@ zs4.admin.util = {
 									});
 
 								}).bind(top.app);
+
+								top.app.requestItems();
 							}
 
 							top.app.creatorRefresh();
@@ -1354,10 +1370,11 @@ zs4.admin.util = {
 
 							// clean up discarded objects;
 							for (var i = top.app.array.length-1 ; i >= 0 ; i--){
-								if (top.app.scope._.resolvePath(top.app.array[i].scope._.path)==null){
+								if (zs4.THIS._.resolvePath(top.app.array[i].scope._.path)==null){
 									console.log('discarding '+top.app.array[i].scope._.path);
 									top.app.content.removeChild(top.app.array[i].element);
 									top.app.array.splice(i,1);
+									continue;
 								}
 
 								if (top.app.search.value != ''){
@@ -1392,6 +1409,7 @@ zs4.admin.util = {
 									zs4.admin.util.removeClass(top.app.array[i].icon,'own');
 									zs4.admin.util.removeClass(top.app.array[i].title,'own');
 								}
+
 								zs4.admin.util.removeClass(top.app.array[i].element,'nodisplay');
 							}
 

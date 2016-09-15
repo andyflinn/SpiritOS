@@ -425,6 +425,8 @@ zs4-app-item{
 }
 zs4-app-item-title.zs4-own{
   color:green;
+  font-weight: bold;
+  cursor:pointer;
 }
 
 zs4-login-email,
