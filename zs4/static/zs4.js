@@ -941,6 +941,8 @@ zs4.type = {
       if (this._.flags.get.nostore())return;
       this._.print('this.shouldBeSaved('+this._.path+')',req);
       req.request.needsSaving = true;
+      this._.scope.zs4.head.updated._.value = Date.now();
+      if (this._.scope._.path != '')this._.scope._.getTree(req);
     }).bind(this);
 
     this._.getInitialize = (function(req){
@@ -1415,9 +1417,17 @@ zs4.type = {
       this._.transformValue(req,cb);
     }).bind(this);
 
-    this._.call = (function(req,input,cb){
-      req.call({path:this._.path,input:input},cb);
-    }).bind(this);
+    if (zs4.is.node()){
+      this._.call = (function(req,input,cb){
+        req.call({path:this._.path,input:input},cb);
+      }).bind(this);
+    }
+    if (zs4.is.window()){
+      this._.call = (function(input,cb){
+        var reqinp = this._.wrapRequest(input);
+        zs4.post(reqinp,cb);
+      }).bind(this);
+    }
   },
 
   array:function(input){
@@ -1583,7 +1593,7 @@ zs4.type = {
     };
 
     THIS.array._.callback = (function(o){
-      console.log('THIS.array._.callback()');
+      //console.log('THIS.array._.callback()');
       //console.log(o);
       if (zs4.is.object(o.result)){
         if (o.result.deleteall==true){
@@ -1612,7 +1622,6 @@ zs4.type = {
         }
       }
     }).bind(THIS.array);
-
 
     if (zs4.is.node()){
 
@@ -1657,8 +1666,9 @@ zs4.type = {
           THIS.array._.property(nu);
           nu._.transform(req.create({input:{}}),function(){
             THIS._.shouldBeSaved(req);
-            console.log(THIS.array._.flags.getString());
-            console.log(nu._.flags.getString());
+            req.result(THIS.method.new,nu._.path);
+            //console.log(THIS.array._.flags.getString());
+            //console.log(nu._.flags.getString());
           });
 
         }
@@ -1923,7 +1933,7 @@ zs4.type = {
 
       }).bind(this.method.getone);
 
-      THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune',}));
+      THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune authsetself',}));
       THIS.method.deleteone._.property(new zs4.type.string({name:'id',flags:'required nostore noprune apiarg',}));
       this.method.deleteone._.transform = (function(req,cb){
         var DELONE = this;
@@ -2201,11 +2211,11 @@ zs4.type = {
 
     if (zs4.is.node()){
       this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself quickupdate',}));
-      this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune',}));
+      this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune authgetpublic nostore',}));
-      this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune',}));
-      this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune',}));
-      this._.property(new zs4.type.string({name:'app',flags:'index noprune  quickupdate',}));
+      this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune authgetpublic',}));
+      this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune authgetpublic',}));
+      this._.property(new zs4.type.string({name:'app',flags:'index noprune quickupdate authgetpublic',}));
     }
 
   },
@@ -3636,13 +3646,12 @@ zs4.request = function(o){
     this.process = function(cb){
       var THIS = this;
 
-      if (zs4.is.object(this.input)&&zs4.count.object.properties(this.input)==0){
+      if (this.getall||(zs4.is.object(this.input)&&zs4.count.object.properties(this.input)==0)){
         if (zs4.is.object(this.request.payload)&&zs4.is.string(this.request.payload.scope)){
           console.log('REQUEST FROM USER \''+this.request.payload.scope+'\'',JSON.stringify(this.input))
           this.resolveInputPath(this.request.payload.scope);
           this.getAll();
         }
-
       }
       //console.log(THIS.request.userIsRoot());
       zs4.THIS._.transform(THIS,function(){
@@ -3779,6 +3788,7 @@ if (zs4.is.node()){
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
     zs4.THIS.zs4.type.document._.flags.value |= zs4.THIS._.flags.apiarg;
     zs4.THIS.zs4.type.document.method.new._.flags.value |= zs4.THIS._.flags.authuser;
+    zs4.THIS.zs4.type.document.method.deleteone._.flags.value |= zs4.THIS._.flags.authuser;
 
 
     var user = require('../user');
@@ -3880,10 +3890,12 @@ if (zs4.is.window()){
       if (zs4.is.string(ret.request.token)&&ret.request.token.length>10&&zs4.is.string(ret.request.scope)){
         zs4.THIS._.token = ret.request.token;
         zs4.THIS._.scopath = ret.request.scope;
+        zs4.THIS._.loggedIn = true;
       }
       else {
         zs4.THIS._.token = null;
         zs4.THIS._.scopath = null;
+        zs4.THIS._.loggedIn = false;
       }
       console.log(ret);
   		zs4.THIS._.got(ret,ret.reply);

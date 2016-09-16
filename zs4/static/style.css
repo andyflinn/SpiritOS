@@ -419,7 +419,11 @@ zs4-app-toolbar{
   display:block;
   background-color: lightgray;
 }
-
+zs4-app-new-item{
+  font-weight: bold;
+  cursor: pointer;
+  color: green;
+}
 zs4-app-item{
   display:block;
 }
@@ -432,6 +436,17 @@ zs4-app-item-title.zs4-am{
 }
 zs4-app-item-title.zs4-own{
   color:green;
+}
+
+input.zs4-scope-title{
+  background-color: lightgray;
+}
+
+input.zs4-scope-title{
+  background-color: lightgray;
+}
+input.zs4-scope-title:focus{
+  background-color: white;
 }
 
 zs4-app-username.zs4-am{

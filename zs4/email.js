@@ -95,6 +95,7 @@ email.create = function(input){
       var msg = this;
       THIS.smtpServer.send(message, function(err,abc) {
           if(err){
+              console.log('SENDMAIL ERROR: '+err);
               req.error(msg,{text:'smtp send failed',data:err});
               return get();
           }
