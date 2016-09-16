@@ -763,9 +763,16 @@ zs4.admin.util = {
 							o._.html.toggleOn()
 						}
 						else if (zs4.admin.rootObject._.scope._.path!='' && !o._.html.top.dialogActive){
-							console.log('NAV 2 ROOT');
-							zs4.navigate('');
-							return;
+							if (zs4.admin.util.user()&&zs4.THIS._.scopath!=o._.path){
+								console.log('NAV 2 USER');
+								zs4.navigate(zs4.THIS._.scopath);
+								return;
+							}
+							else {
+								console.log('NAV 2 ROOT');
+								zs4.navigate('');
+								return;
+							}
 						}
 						else {
 							o._.html.top.deselectAll();
