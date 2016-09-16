@@ -423,12 +423,22 @@ zs4-app-toolbar{
 zs4-app-item{
   display:block;
 }
-zs4-app-item-title.zs4-own{
-  color:green;
+zs4-app-item-title{
   font-weight: bold;
   cursor:pointer;
 }
+zs4-app-item-title.zs4-am{
+  color:blue;
+}
+zs4-app-item-title.zs4-own{
+  color:green;
+}
 
+zs4-app-username.zs4-am{
+  font-weight: bold;
+  color:blue;
+  cursor: pointer;
+}
 zs4-login-email,
 zs4-login-password{
   display:block;

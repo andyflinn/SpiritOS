@@ -3817,7 +3817,10 @@ if (zs4.is.window()){
   zs4.navigate = function(path){
     var form = document.createElement('form');
     //console.log('NAVIGATE: '+path);
-    form.action = '/'+path; // Remember to change me
+
+    if (!path.startsWith('/')) path = ('/'+path);
+
+    form.action = path; // Remember to change me
     form.method = 'post';
 
     var html = document.createElement('input');

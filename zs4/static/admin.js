@@ -23,6 +23,10 @@ zs4.admin.util = {
 		if (zs4.THIS._.scopath=='') return true;
 		return false;
 	},
+	user:function(){
+		if (zs4.THIS._.token!=null&&zs4.THIS._.scopath!=null)return true;
+		return false;
+	},
 	setClass:function(e,c,tof){
 		if (e==null||c==null)return;
 		if (tof)return zs4.admin.util.addClass(e,c);
@@ -766,6 +770,9 @@ zs4.admin.util = {
 							console.log('NAV 2 ROOT');
 							zs4.navigate('');
 						}
+						else {
+							o._.html.top.deselectAll();
+						}
 					}
 					else {
 						o._.html.appIsOpen = true;
@@ -910,9 +917,6 @@ zs4.admin.util = {
 								zs4.admin.util.removeClass(o._.html.toolbarToggle,'nodisplay');
 							});
 						}
-						else {
-							o._.html.onToggle();
-						}
 					}).bind(o);
 				}
 				o._.html.name.onclick = o._.html.submit;
@@ -1027,6 +1031,14 @@ zs4.admin.util = {
 
 					this.username = document.createElement('zs4-app-username');
 					this.toolbar.appendChild(this.username);
+					if (zs4.admin.util.user()){
+						zs4.admin.util.addClass(this.username,'am');
+						if (zs4.location.path!=zs4.THIS._.scopath){
+							this.username.onclick = (function(){
+								zs4.navigate(zs4.THIS._.scopath);
+							});
+						}
+					}
 
 					if (this.loggedIn){
 						this.logout = document.createElement('zs4-logout');
@@ -1323,10 +1335,12 @@ zs4.admin.util = {
 									this.title = document.createElement('zs4-app-item-title');
 									this.title.textContent = scope.zs4.head.title._.value;
 									this.element.appendChild(this.title);
-									this.title.onclick = (function(){
-										console.log('ITEM PATH: '+THIS.scope._.path)
-										zs4.navigate(THIS.scope._.path);
-									});
+									if (THIS.scope._.path != zs4.location.path){
+										this.title.onclick = (function(){
+											console.log('ITEM PATH: '+THIS.scope._.path)
+											zs4.navigate(THIS.scope._.path);
+										});
+									}
 
 								}).bind(top.app);
 
@@ -1404,10 +1418,21 @@ zs4.admin.util = {
 									zs4.admin.util.addClass(top.app.array[i].icon,'own');
 									zs4.admin.util.addClass(top.app.array[i].title,'own');
 								}
+								else if (zs4.is.string(zs4.THIS._.token)
+								&& zs4.is.string(zs4.THIS._.scopath)
+								&& top.app.array[i].scope._.path==zs4.THIS._.scopath){
+									zs4.admin.util.addClass(top.app.array[i].element,'am');
+									zs4.admin.util.addClass(top.app.array[i].icon,'am');
+									zs4.admin.util.addClass(top.app.array[i].title,'am');
+								}
 								else {
 									zs4.admin.util.removeClass(top.app.array[i].element,'own');
 									zs4.admin.util.removeClass(top.app.array[i].icon,'own');
 									zs4.admin.util.removeClass(top.app.array[i].title,'own');
+
+									zs4.admin.util.removeClass(top.app.array[i].element,'am');
+									zs4.admin.util.removeClass(top.app.array[i].icon,'am');
+									zs4.admin.util.removeClass(top.app.array[i].title,'am');
 								}
 
 								zs4.admin.util.removeClass(top.app.array[i].element,'nodisplay');
