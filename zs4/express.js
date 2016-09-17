@@ -1,3 +1,5 @@
+'use strict';
+
 var zs4 = require('./static/zs4');
 var token = require('./token');
 
@@ -10,7 +12,9 @@ var bodyParser = require('body-parser');
 
 var fs = require('fs');
 
-express = exports;
+var express = exports;
+
+console.log('__dirname = '+__dirname)
 
 express.zs4 = zs4;
 
@@ -30,14 +34,6 @@ express.html = function(req,res){
   html += '</html>\n';
   return(html);
 }
-
-express.app = xpress();
-express.app.use(favicon(path.join(__dirname, 'static', 'favicon.ico')));
-express.app.use(logger('dev'));
-express.app.use(bodyParser.json());
-express.app.use(bodyParser.urlencoded({ extended: false }));
-express.app.use(cookieParser());
-express.app.use(xpress.static(path.join(__dirname, 'static')));
 
 express.getCookie = function(req,zs4request){
   if (express.THIS.cookies._.value){
@@ -68,8 +64,9 @@ express.setCookie = function(res,zs4request){
   }
 };
 
-express.app.get('/*', function (req, res) {
+express.getFunction = function (req, res) {
   express.THIS._.print('express.app.get('+req.path+')')
+  console.log('get() __dirname = '+__dirname)
 
   //console.log('GET REQUEST!!!!!!!!');
 
@@ -93,9 +90,8 @@ express.app.get('/*', function (req, res) {
     res.write(r);
     res.end();
   });
-});
-
-express.app.post('/*', function (req, res) {
+};
+express.postFunction = function (req, res) {
   var zs4req = new zs4.request(req.body);
   zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
   //console.log(req.body);
@@ -123,7 +119,7 @@ express.app.post('/*', function (req, res) {
     }
   });
 
-});
+};
 
 express.running = false;
 
@@ -136,8 +132,9 @@ express.schema = function(parent){
   THIS._.property(new zs4.type.boolean({name:'cookies',flags:'quickupdate',default:false,}));
   THIS._.property(new zs4.type.boolean({name:'https',flags:'quickupdate',default:false,}));
   THIS._.property(new zs4.type.integer({name:'sslport',flags:'quickupdate',default:3443,}));
-  THIS._.property(new zs4.type.text({name:'key',flags:'quickupdate',}));
-  THIS._.property(new zs4.type.text({name:'cert',flags:'quickupdate',}));
+  THIS._.property(new zs4.type.string({name:'key',flags:'quickupdate',}));
+  THIS._.property(new zs4.type.string({name:'cert',flags:'quickupdate',}));
+  THIS._.property(new zs4.type.string({name:'ca',flags:'quickupdate',}));
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
     req.setScope(this);
@@ -157,12 +154,43 @@ express.schema = function(parent){
     this._.get(req); cb(); return;
   }).bind(THIS.run);
 
+  THIS.getcredentials = (function(){
+    if (!THIS.https._.value
+      || THIS.key._.value == ''
+      || THIS.cert._.value == ''
+      || THIS.ca._.value=='')
+      return null;
+
+    var ret = new Object();
+
+    ret.key = fs.readFileSync(THIS.key._.value);
+    ret.cert = fs.readFileSync(THIS.cert._.value);
+    ret.ca = fs.readFileSync(THIS.ca._.value);
+
+  }).bind(THIS);
+
   THIS.start = function(){
     if (express.running)return;
 
+
+    var app = xpress();
+
+    app.use(favicon(path.join(__dirname, 'static', 'favicon.ico')));
+    app.use(logger('dev'));
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(cookieParser());
+    app.use(xpress.static(path.join(__dirname, 'static')));
+
+    app.get('/*',express.getFunction);
+    app.post('/*',express.postFunction);
+
     var port = this.port._.value;
     zs4.boot.run(function(){
-      express.app.listen(port, function (err) {
+
+      if (THIS.https._.value == true)
+
+      app.listen(port, function (err) {
         if (err!=null){
           req.error(THIS,{text:'failed to start server',data:err,});
         }
@@ -172,6 +200,7 @@ express.schema = function(parent){
         }
       });
     });
+
   };
   THIS.getHostURL = function(){
     return ('http://'+this.host._.value+':'+this.port._.value);
