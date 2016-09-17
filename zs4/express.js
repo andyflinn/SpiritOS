@@ -170,8 +170,9 @@ express.schema = function(parent){
   }).bind(THIS);
 
   THIS.start = function(){
+    console.log('EXPRESS-START()');
     if (express.running)return;
-
+    console.log('EXPRESS-not running yet');
 
     var app = xpress();
 
@@ -188,7 +189,7 @@ express.schema = function(parent){
     var port = this.port._.value;
     zs4.boot.run(function(){
 
-      if (THIS.https._.value == true)
+      //if (THIS.https._.value == true)
 
       app.listen(port, function (err) {
         if (err!=null){
