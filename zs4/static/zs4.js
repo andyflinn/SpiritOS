@@ -2228,6 +2228,7 @@ zs4.type = {
     if (zs4.is.node()){
       this._.property(new zs4.type.email({name:'email',flags:'apiarg noprune required',}));
       this._.property(new zs4.type.password({name:'password',flags:'apiarg noprune required',}));
+      this._.property(new zs4.type.boolean({name:'sendtoken',flags:'apiarg noprune',}));
 
       this._.transform = (function(req,cb){
         var REQUEST = req;
@@ -2244,8 +2245,13 @@ zs4.type = {
         }
 
         if (!zs4.is.password(req.input.password)){
-          req.error(this,'no password');
-          THIS._.get(req); cb(); return;
+          if (zs4.is.boolean(req.input.sendtoken)&&req.input.sendtoken==true){
+            
+          }
+          else {
+            req.error(this,'no password');
+            THIS._.get(req); cb(); return;
+          }
         }
 
         if (req.input.email==zs4.THIS.zs4.email.smtp.user._.value){
@@ -3937,10 +3943,15 @@ if (zs4.is.window()){
   zs4.style = {
     refresh:function(){
       zs4.style.element.innerHTML = '';
-      var limit = 1024;
-      var iw = window.innerWidth;
-      if (iw > limit)iw = limit;
-      var em = iw / 20;
+      var widthLimit = 2048;
+      var width = window.innerWidth;
+      if (width > widthLimit)width = widthLimit;
+
+      var heightLimit = 2048;
+      var height = window.innerWidth;
+      if (height > heightLimit)height = heightLimit;
+
+      var em = (width) / 15;
       zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
     },
   };

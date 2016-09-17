@@ -128,12 +128,16 @@ express.app.post('/*', function (req, res) {
 express.running = false;
 
 express.schema = function(parent){
-  var THIS = express.THIS = new zs4.type.object({name:'express',flags:'api'});
+  var THIS = express.THIS = new zs4.type.object({name:'express',flags:'nosort'});
   parent._.property(THIS);
 
-  THIS._.property(new zs4.type.string({name:'host',flags:'required',default:'localhost',}));
-  THIS._.property(new zs4.type.integer({name:'port',flags:'required',default:3000,}));
-  THIS._.property(new zs4.type.boolean({name:'cookies',flags:'required',default:false,}));
+  THIS._.property(new zs4.type.string({name:'host',flags:'quickupdate',default:'localhost',}));
+  THIS._.property(new zs4.type.integer({name:'port',flags:'quickupdate',default:3000,}));
+  THIS._.property(new zs4.type.boolean({name:'cookies',flags:'quickupdate',default:false,}));
+  THIS._.property(new zs4.type.boolean({name:'https',flags:'quickupdate',default:false,}));
+  THIS._.property(new zs4.type.integer({name:'sslport',flags:'quickupdate',default:3443,}));
+  THIS._.property(new zs4.type.text({name:'key',flags:'quickupdate',}));
+  THIS._.property(new zs4.type.text({name:'cert',flags:'quickupdate',}));
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
     req.setScope(this);

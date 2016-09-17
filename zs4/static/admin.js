@@ -789,7 +789,12 @@ zs4.admin.util = {
 				}
 				else {
 					if (o._.html.expanded){
-						o._.html.toggleOff();
+						if (o._.type==Object){
+							o._.html.toggleOff();
+						}
+						else {
+							o._.html.toggleOn();
+						}
 					}
 					else {
 						o._.html.toggleOn();
@@ -2117,12 +2122,23 @@ zs4.admin.type = {
 		o._.html.genericRefresh();
 	},
 	text:function(po,o){
+		var THIS = this;
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
 		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('textarea');
 			o._.html.e.appendChild(o._.html.input);
+			o._.html.input.onchange = function(){
+				if (o._.flags.get.local()){
+					o._.value = o._.html.input.value;
+					o._.html.refreshAll();
+					o._.print(o._.path + ' updated with '+o._.value);
+				}
+				else if (o._.flags.get.quickupdate()){
+					o._.html.quickupdate(o._.html.input.value);
+				}
+			};
 
 			o._.input = (function(){
 				if (o._.flags.get.noset())return null;
