@@ -205,7 +205,7 @@ express.schema = function(parent){
 
       if (cred != null){
         var httpsServer = https.createServer(cred, app);
-        httpsServer.listen(this.sslport._.value);
+        httpsServer.listen(THIS.sslport._.value);
       }
       else {
         app.listen(port, function (err) {
