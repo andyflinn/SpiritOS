@@ -101,7 +101,7 @@ express.postFunction = function (req, res) {
 
   zs4req.process(function(ret){
     if (zs4req.html==true){
-      //console.log('express got HTML to send back....');
+      console.log('express got HTML to send back....');
       var r = zs4req.request.html;
       express.THIS._.print('request.process returned('+zs4.json.stringify(r)+')');
 
@@ -134,8 +134,8 @@ express.schema = function(parent){
   THIS._.property(new zs4.type.boolean({name:'cookies',flags:'quickupdate',default:false,}));
   THIS._.property(new zs4.type.boolean({name:'https',flags:'quickupdate',default:false,}));
   THIS._.property(new zs4.type.integer({name:'sslport',flags:'quickupdate',default:3443,}));
-  THIS._.property(new zs4.type.string({name:'key',flags:'quickupdate',}));
-  THIS._.property(new zs4.type.string({name:'cert',flags:'quickupdate',}));
+  THIS._.property(new zs4.type.string({name:'key',flags:'quickupdate',default:'./zs4/https/localhost.key',}));
+  THIS._.property(new zs4.type.string({name:'cert',flags:'quickupdate',default:'./zs4/https/localhost.cert',}));
   THIS._.property(new zs4.type.string({name:'ca',flags:'quickupdate',}));
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
@@ -160,22 +160,27 @@ express.schema = function(parent){
     console.log('getcredentials()');
     if (!THIS.https._.value
       || THIS.key._.value == ''
-      || THIS.cert._.value == ''
-      || THIS.ca._.value==''){
+      || THIS.cert._.value == ''){
         console.log('getcredentials() not configured.');
         return null;
       }
 
     var ret = new Object();
 
-    ret.key = fs.readFileSync(THIS.key._.value);
-    ret.cert = fs.readFileSync(THIS.cert._.value);
-    ret.ca = fs.readFileSync(THIS.ca._.value);
-
-    if (ret.key==null || ret.cert==null || ret.ca==null){
+    try{
+      ret.key = fs.readFileSync(THIS.key._.value);
+      ret.cert = fs.readFileSync(THIS.cert._.value);
+    }
+    catch(err){
       console.log('getcredentials() load failure');
       return null;
     }
+
+    try{
+      ret.ca = fs.readFileSync(THIS.ca._.value);
+    }
+    catch(err){}
+
 
     console.log('getcredentials() SUCCESS!');
     return ret;

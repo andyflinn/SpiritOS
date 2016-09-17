@@ -2246,7 +2246,7 @@ zs4.type = {
 
         if (!zs4.is.password(req.input.password)){
           if (zs4.is.boolean(req.input.sendtoken)&&req.input.sendtoken==true){
-            
+
           }
           else {
             req.error(this,'no password');
@@ -3856,7 +3856,7 @@ if (zs4.is.window()){
 
       var token = document.createElement('input');
       token.setAttribute('name', 'token');
-      token.setAttribute('type', 'text');
+      token.setAttribute('type', 'hidden');
       token.value = zs4.THIS._.token;
       form.appendChild(token);
 
@@ -3951,7 +3951,7 @@ if (zs4.is.window()){
       var height = window.innerWidth;
       if (height > heightLimit)height = heightLimit;
 
-      var em = (width) / 15;
+      var em = (width) / 20;
       zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
     },
   };
