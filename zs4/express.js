@@ -131,7 +131,7 @@ express.schema = function(parent){
 
   THIS._.property(new zs4.type.string({name:'host',flags:'quickupdate',default:'localhost',}));
   THIS._.property(new zs4.type.integer({name:'port',flags:'quickupdate',default:3000,}));
-  THIS._.property(new zs4.type.boolean({name:'cookies',flags:'quickupdate',default:false,}));
+  THIS._.property(new zs4.type.boolean({name:'cookies',flags:'quickupdate',default:true,}));
   THIS._.property(new zs4.type.boolean({name:'https',flags:'quickupdate',default:false,}));
   THIS._.property(new zs4.type.integer({name:'sslport',flags:'quickupdate',default:3443,}));
   THIS._.property(new zs4.type.string({name:'key',flags:'quickupdate',default:'./zs4/https/localhost.key',}));

@@ -18,7 +18,11 @@ else {
       }
       else{
         var arr = zs4.string.split.separators(process.argv[i],':/\\=');
-        if (arr.length == 2 && zs4.is.name(arr[0])) path[arr[0]]=arr[1];
+        if (arr.length == 2 && zs4.is.name(arr[0])){
+          if (arr[1]=='true')path[arr[0]]=true;
+          else if (arr[1]=='false')path[arr[0]]=false;
+          else path[arr[0]]=arr[1];
+        }
       }
   }
 }

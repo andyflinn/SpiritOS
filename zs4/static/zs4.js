@@ -2304,7 +2304,6 @@ zs4.type = {
       }).bind(this);
     }
 
-
     THIS._.get = (function(req,po){
       //console.log('password.get'+ JSON.stringify(this._.authGet));
       if (req.tokenExists())return null;
@@ -3831,10 +3830,13 @@ if (zs4.is.window()){
   };
 
   zs4.navigate = function(path){
+    if (!path.startsWith('/')) path = ('/'+path);
+
+    window.location.replace(path);
+    return;
+    
     var form = document.createElement('form');
     //console.log('NAVIGATE: '+path);
-
-    if (!path.startsWith('/')) path = ('/'+path);
 
     form.action = path; // Remember to change me
     form.method = 'post';
