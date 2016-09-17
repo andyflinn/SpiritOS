@@ -9,6 +9,8 @@ var path = require('path');
 var favicon = require('serve-favicon');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var http = require('http');
+var https = require('https');
 
 var fs = require('fs');
 
@@ -155,11 +157,14 @@ express.schema = function(parent){
   }).bind(THIS.run);
 
   THIS.getcredentials = (function(){
+    console.log('getcredentials()');
     if (!THIS.https._.value
       || THIS.key._.value == ''
       || THIS.cert._.value == ''
-      || THIS.ca._.value=='')
-      return null;
+      || THIS.ca._.value==''){
+        console.log('getcredentials() not configured.');
+        return null;
+      }
 
     var ret = new Object();
 
@@ -167,6 +172,13 @@ express.schema = function(parent){
     ret.cert = fs.readFileSync(THIS.cert._.value);
     ret.ca = fs.readFileSync(THIS.ca._.value);
 
+    if (ret.key==null || ret.cert==null || ret.ca==null){
+      console.log('getcredentials() load failure');
+      return null;
+    }
+
+    console.log('getcredentials() SUCCESS!');
+    return ret;
   }).bind(THIS);
 
   THIS.start = function(){
@@ -189,17 +201,24 @@ express.schema = function(parent){
     var port = this.port._.value;
     zs4.boot.run(function(){
 
-      //if (THIS.https._.value == true)
+      var cred = THIS.getcredentials();
 
-      app.listen(port, function (err) {
-        if (err!=null){
-          req.error(THIS,{text:'failed to start server',data:err,});
-        }
-        else {
-          express.running = true;
-          console.log('zs4 listening on port '+port+'!');
-        }
-      });
+      if (cred != null){
+        var httpsServer = https.createServer(cred, app);
+        httpsServer.listen(this.sslport._.value);
+      }
+      else {
+        app.listen(port, function (err) {
+          if (err!=null){
+            req.error(THIS,{text:'failed to start server',data:err,});
+          }
+          else {
+            express.running = true;
+            console.log('zs4 listening on port '+port+'!');
+          }
+        });
+      }
+
     });
 
   };
