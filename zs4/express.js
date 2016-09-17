@@ -200,20 +200,23 @@ express.schema = function(parent){
     app.use(cookieParser());
     app.use(xpress.static(path.join(__dirname, 'static')));
 
+    app.get('*',function(req,res,next){
+      console.log('dfsadfasfas');
+      if (!req.secure && express.HTTPS_RUNNING){
+        return res.redirect(THIS.getHostURL() + req.url);
+      }
+      else next();
+    });
+
     app.get('/*',express.getFunction);
     app.post('/*',express.postFunction);
 
     var port = this.port._.value;
     zs4.boot.run(function(){
 
-      var cred = THIS.getcredentials();
-
-      if (cred != null){
-        var httpsServer = https.createServer(cred, app);
-        httpsServer.listen(THIS.sslport._.value);
-      }
-      else {
-        app.listen(port, function (err) {
+      function runHttp(){
+        var httpServer = http.createServer(app);
+        httpServer.listen(port,function(err){
           if (err!=null){
             req.error(THIS,{text:'failed to start server',data:err,});
           }
@@ -222,12 +225,25 @@ express.schema = function(parent){
             console.log('zs4 listening on port '+port+'!');
           }
         });
-      }
+      };
 
+      var cred = THIS.getcredentials();
+
+      if (cred != null){
+        var httpsServer = https.createServer(cred, app);
+        httpsServer.listen(THIS.sslport._.value,function(){
+          console.log('zs4 HTTPS on port '+THIS.sslport._.value+'!');
+          express.HTTPS_RUNNING = true;
+
+          return runHttp();
+        });
+      }
+      else return runHttp();
     });
 
   };
   THIS.getHostURL = function(){
-    return ('http://'+this.host._.value+':'+this.port._.value);
+    if (express.HTTPS_RUNNING)return ('https://'+THIS.host._.value+':'+THIS.sslport._.value);
+    return ('http://'+THIS.host._.value+':'+THIS.port._.value);
   }
 }

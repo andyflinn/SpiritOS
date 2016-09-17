@@ -3831,42 +3831,7 @@ if (zs4.is.window()){
 
   zs4.navigate = function(path){
     if (!path.startsWith('/')) path = ('/'+path);
-
     window.location.replace(path);
-    return;
-    
-    var form = document.createElement('form');
-    //console.log('NAVIGATE: '+path);
-
-    form.action = path; // Remember to change me
-    form.method = 'post';
-
-    var html = document.createElement('input');
-    html.setAttribute('name', 'html');
-    html.setAttribute('type', 'checkbox');
-    html.checked = html.value = true;
-    form.appendChild(html);
-
-    var loc = document.createElement('input');
-    loc.setAttribute('name', 'path');
-    loc.setAttribute('type', 'hidden');
-    loc.value = path;
-    form.appendChild(loc);
-
-    if (zs4.is.string(zs4.THIS._.token)&&zs4.THIS._.token.length>10) {
-      //console.log('TOKEN FOUND FOR SUBMIT....');
-
-      var token = document.createElement('input');
-      token.setAttribute('name', 'token');
-      token.setAttribute('type', 'hidden');
-      token.value = zs4.THIS._.token;
-      form.appendChild(token);
-
-    }
-    else {
-      //console.log('NO TOKEN FOUND FOR SUBMIT....');
-    }
-    form.submit();
   }
   zs4.post = function(o,cb,getall){
 
@@ -3950,10 +3915,10 @@ if (zs4.is.window()){
       if (width > widthLimit)width = widthLimit;
 
       var heightLimit = 2048;
-      var height = window.innerWidth;
+      var height = window.innerHeight;
       if (height > heightLimit)height = heightLimit;
 
-      var em = (width) / 20;
+      var em = (width) / 15;
       zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
     },
   };

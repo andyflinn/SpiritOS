@@ -270,10 +270,6 @@ zs4-object-head.zs4-top{
   background-color: blue;
   font-weight: bold;
   display:block;
-  vertical-align: bottom;
-  top:0px;
-  position:fixed;
-  z-index: 50;
 }
 zs4-object-head.zs4-root{
   background-color: darkred;
@@ -292,7 +288,6 @@ zs4-object-content.zs4-off{
 }
 
 zs4-object-content.zs4-top{
-  margin-top:1em;
 }
 zs4-object-content.zs4-top.zs4-tbon{
   display:none;
@@ -379,7 +374,7 @@ zs4-user-name{
 }
 
 zs4-app-header{
-  float: right;
+  display:inline-block;
 }
 input.zs4-search{
   width:5em;
@@ -399,7 +394,6 @@ input.zs4-search{
 zs4-app{
   display:block;
   width:100%;
-  margin-top:1em;
 }
 
 zs4-app-tab{
