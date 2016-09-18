@@ -584,6 +584,7 @@ zs4.util = {
     this.addFlag('authgetuser',0x10000000);
     this.addFlag('authsetuser',0x20000000);
     this.addFlag('nogetall',0x40000000);
+    this.addFlag('bits',0x80000000);
 
     //combo flags
     this.addFlag('authuser',this.authgetuser|this.authsetuser);
@@ -652,23 +653,25 @@ zs4.util = {
     };
 
   },
-  bits:function(){
+  bits:function(po,name){
     const BITLIMIT = 48;
     const BITMASK = 0x0ffffffffffff;
 
-    this.value = 0;
+    var THIS = this;
+    THIS._ = new Object({po:po,n:name});
+
     this.addBit = (function(n,v){
       if (!zs4.is.name(n) || v < 0 || v >= BITLIMIT)return null;
       this[n] = new Object({v:v,m:(1<<v),});
-      this[n].true = (function(){this.value |= (this[n].m);}).bind(this);
-      this[n].false = (function(){this.value &= (~(this[n].m));}).bind(this);
-      this[n].get = (function(){if(this.value&this[n].m)return true;return false;}).bind(this);
+      this[n].true = (function(){THIS._.po[THIS._.n] |= (this[n].m);}).bind(this);
+      this[n].false = (function(){THIS._.po[THIS._.n] &= (~(this[n].m));}).bind(this);
+      this[n].get = (function(){if(THIS._.po[THIS._.n] & this[n].m)return true;return false;}).bind(this);
       return this[n];
     }).bind(this);
 
     this.getString = (function(v){
       var ret = ''
-      if (v == null)v = this.value;
+      if (v == null)v = THIS._.po[THIS._.n];
       for (var n in this)if(zs4.is.object(this[n])&&zs4.is.number(this[n].m)){
         if (v & this[n].m){
           if (ret == '')ret += n;
@@ -687,7 +690,7 @@ zs4.util = {
           this[a[i]].true();
         }
       }
-      return this.value;
+      return THIS._.po[THIS._.n];
 
     }).bind(this);
     return this;
@@ -2026,6 +2029,12 @@ zs4.type = {
       return this._.scope._.saveAuth(input)
     }).bind(this);
   },
+  bits:function(input){
+    var THIS = this;
+    zs4.type.integer.call(this,input);
+    this._.typename = 'bits';
+    THIS._.bits = new zs4.util.bits(THIS._,'value');
+  },
   boolean:function(input){
     var THIS = this;
     zs4.type.unknown.call(this,input);
@@ -2216,6 +2225,7 @@ zs4.type = {
       this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'app',flags:'index noprune quickupdate authgetpublic',}));
+      this._.property(new zs4.type.scopebits({name:'bits',flags:'index noprune quickupdate',}));
     }
 
   },
@@ -2776,7 +2786,6 @@ zs4.type = {
     }).bind(this);
   },
   scope:function(){
-    //debugger;
     var THIS = this;
     zs4.type.object.call(this,{name:'this',flags:'scope',})
     THIS._.typename = 'scope';
@@ -2899,6 +2908,12 @@ zs4.type = {
       recurse(scope.zs4.type);
       return response;
     }).bind(this);
+  },
+  scopebits:function(input){
+    var THIS = this;
+    zs4.type.bits.call(this,input);
+    this._.typename = 'scopebits';
+    THIS._.bits.addBit('public',0);
   },
   scopeindex:function(input){
     zs4.type.string.call(this,input);
@@ -3452,7 +3467,8 @@ zs4.request = function(o){
       return THIS.userIsRoot();
     };
 
-    if (o._.flags.value & this.flags.scope){THIS.scope = o;}
+    var thisIsScope = false;
+    if (o._.flags.value & this.flags.scope){THIS.scope = o;thisIsScope=true;}
     THIS.requestObject = o;
 
     THIS.flags.value = 0;
@@ -3463,7 +3479,10 @@ zs4.request = function(o){
     THIS.flags.set.am(am);
     THIS.flags.set.own(own);
 
-    if (o._.flags.get.authgetpublic()||(am||own)){
+    if (thisIsScope && o.zs4.head.bits._.bits.public.get()){
+      THIS.flags.set.authget(true);
+    }
+    else if (o._.flags.get.authgetpublic()||(am||own)){
       THIS.flags.set.authget(true);
     }
     else if (THIS.tokenExists()&&o._.flags.get.authgetuser()){

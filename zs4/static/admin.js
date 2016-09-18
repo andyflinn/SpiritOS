@@ -1055,6 +1055,39 @@ zs4.admin.util = {
 						});
 					};
 
+					if (o._.flags.get.own()||o._.flags.get.am()){
+						this.isPublic = false;
+						this.public = document.createElement('zs4-bit-public');
+						this.toolbar.appendChild(this.public);
+						this.public.onclick = (function(){
+							var bits = new zs4.type.scopebits({name:'temp'});
+							bits._.value = o.zs4.head.bits._.value;
+
+							if (bits._.bits.public.get()){
+								bits._.bits.public.false();
+							}
+							else {
+								bits._.bits.public.true();
+							}
+
+							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+							o.zs4.head.bits._.call(bits._.value,function(){
+								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+								THIS.refreshInternal();
+							});
+						}).bind(THIS);
+
+					}
+					this.refreshDialog = (function(){
+						if (o._.flags.get.own()||o._.flags.get.am()){
+							if (o.zs4.head.bits._.bits.public.get()){
+								this.public.textContent = 'public';
+							}
+							else {
+								this.public.textContent = 'private';
+							}
+						}
+					}).bind(this);
 				};
 				o._.html.top.dialogUser = function(){
 					var DIALOG = this;
@@ -1804,6 +1837,9 @@ zs4.admin.type = {
 	auth:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
+	bits:function(po,o){
+		zs4.admin.type.integer(po,o);
+	},
 	boolean:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
@@ -1846,8 +1882,6 @@ zs4.admin.type = {
 	},
 	bye:function(po,o){
 		zs4.admin.type.object(po,o);
-		//._.html.icon.on = 'bye';
-		//o._.html.icon.off = 'bye';
 	},
 	date:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -2061,6 +2095,9 @@ zs4.admin.type = {
 			o._.html.icon.off = a[2];
 		}
 		*/
+	},
+	scopebits:function(po,o){
+		zs4.admin.type.bits(po,o);
 	},
 	scopeindex:function(po,o){
     zs4.admin.util.unknown(po,o);

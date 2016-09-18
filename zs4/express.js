@@ -201,7 +201,6 @@ express.schema = function(parent){
     app.use(xpress.static(path.join(__dirname, 'static')));
 
     app.get('*',function(req,res,next){
-      console.log('dfsadfasfas');
       if (!req.secure && express.HTTPS_RUNNING){
         return res.redirect(THIS.getHostURL() + req.url);
       }
