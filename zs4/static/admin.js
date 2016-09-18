@@ -1057,6 +1057,7 @@ zs4.admin.util = {
 
 				};
 				o._.html.top.dialogUser = function(){
+					var DIALOG = this;
 					o._.html.top.dialog.call(this,'user');
 
 					this.loggedIn = zs4.THIS._.loggedIn;
@@ -1074,9 +1075,98 @@ zs4.admin.util = {
 					}
 
 					if (this.loggedIn){
+						this.spwIsOpen = false;
+
+						this.spwtitle = document.createElement('zs4-spw-title');
+						this.spwtitle.textContent = 'set password';
+						this.pane.appendChild(this.spwtitle);
+						this.spwtitle.onclick = function(){
+							if (DIALOG.spwIsOpen){
+								DIALOG.spwIsOpen = false;
+								zs4.admin.util.addClass(DIALOG.setpassword,'nodisplay');
+							}
+							else {
+								DIALOG.spwIsOpen = true;
+								zs4.admin.util.removeClass(DIALOG.setpassword,'nodisplay');
+							}
+							DIALOG.refreshInternal();
+						};
+
+
+						this.setpassword = document.createElement('zs4-setpassword');
+						zs4.admin.util.addClass(DIALOG.setpassword,'nodisplay');
+						this.pane.appendChild(this.setpassword);
+
+						this.old1 = document.createElement('zs4-spw-pwe');
+						this.setpassword.appendChild(this.old1);
+
+						this.old1label = document.createElement('zs4-spw-old');
+						this.old1label.textContent = 'old: ';
+						this.old1.appendChild(this.old1label);
+						this.old1input = document.createElement('input');
+						this.old1input.type = 'password';
+						this.old1.appendChild(this.old1input);
+
+						this.old2 = document.createElement('zs4-spw-pwe');
+						this.setpassword.appendChild(this.old2);
+
+						this.old2label = document.createElement('zs4-spw-old');
+						this.old2label.textContent = 'old: ';
+						this.old2.appendChild(this.old2label);
+						this.old2input = document.createElement('input');
+						this.old2input.type = 'password';
+						this.old2.appendChild(this.old2input);
+
+						this.setpwd = document.createElement('zs4-spw-pwe');
+						this.setpassword.appendChild(this.setpwd);
+
+						this.setpwdlabel = document.createElement('zs4-spw-old');
+						this.setpwdlabel.textContent = 'new: ';
+						this.setpwd.appendChild(this.setpwdlabel);
+						this.setpwdinput = document.createElement('input');
+						this.setpwdinput.type = 'password';
+						this.setpwd.appendChild(this.setpwdinput);
+
+						this.setpwdsend = document.createElement('zs4-spw-send');
+						this.setpassword.appendChild(this.setpwdsend);
+						this.setpwdsend.textContent = 'set now';
+						this.setpwdsend.onclick = (function(){
+							if (!zs4.THIS._.loggedIn)return;
+							var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+							if (uscope==null)return;
+							var password = uscope._.resolvePath('zs4.password');
+							if (password==null)return;
+							var set = uscope._.resolvePath('zs4.password.set');
+							if (set==null)return;
+							if (!zs4.is.password(this.setpwdinput.value)){
+								zs4.admin.util.addClass(DIALOG.setpwd,'error');
+								return;
+							}
+							var input = new Object({set:this.setpwdinput.value,})
+							var vfy = uscope._.resolvePath('zs4.password.vfy');
+							if (vfy != null){
+								if (!zs4.is.password(this.old1input.value)
+								||  !zs4.is.password(this.old2input.value)
+								||  this.old1input.value!=this.old2input.value
+								){
+									zs4.admin.util.addClass(DIALOG.old1,'error');
+									zs4.admin.util.addClass(DIALOG.old2,'error');
+									return;
+								}
+								input.vfy = this.old1input.value;
+							}
+
+							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+							zs4.post(password._.wrapRequest(input),function(ret){
+								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+								o._.html.refreshAll();
+							});
+
+
+						}).bind(DIALOG);
+
 						this.logout = document.createElement('zs4-logout');
 						this.logout.textContent = 'logout';
-						zs4.admin.util.setIcon(this.logout,'bye');
 						this.pane.appendChild(this.logout);
 						this.logout.onclick = (function(){
 							zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
@@ -1101,7 +1191,7 @@ zs4.admin.util = {
 							else zs4.admin.util.addClass(this.bye,'nodisplay');
 						}).bind(this);
 
-						this.bye = document.createElement('zs4-logout');
+						this.bye = document.createElement('zs4-logout-now');
 						this.bye.textContent = 'logout';
 						zs4.admin.util.addClass(this.bye,'nodisplay');
 						this.pane.appendChild(this.bye);
@@ -1138,17 +1228,65 @@ zs4.admin.util = {
 						this.password.appendChild(this.pass);
 						zs4.admin.util.addClass(this.pass,'login-password');
 
+						this.failcount = 0;
+
+						this.etok = document.createElement('zs4-email-token');
+						this.pane.appendChild(this.etok);
+						zs4.admin.util.addClass(this.etok,'nodisplay');
+
+						this.emailtoken = document.createElement('zs4-email-token-send');
+						this.emailtoken.textContent = 'email access code / password reset';
+						this.etok.appendChild(this.emailtoken);
+						this.emailtoken.onclick = (function(){
+							if (!zs4.is.email(DIALOG.emailAddress.value)){
+								zs4.admin.util.addClass(DIALOG.emailAddress,'error');
+								return;
+							}
+							else {
+								zs4.admin.util.removeClass(DIALOG.emailAddress,'error');
+							}
+							zs4.admin.util.removeClass(this.pass,'error');
+
+							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+							zs4.THIS.zs4.hi._.call({email:this.emailAddress.value,sendtoken:true,},function(){
+								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+								console.log(zs4.THIS.zs4.hi._.cberror);
+								console.log(zs4.THIS.zs4.hi._.cbresult);
+								if (zs4.THIS.zs4.hi._.cbresult != null){
+									//window.alert('token sent');
+									zs4.admin.util.removeClass(DIALOG.emailAddress,'error');
+									zs4.admin.util.removeClass(DIALOG.pass,'error');
+									zs4.admin.util.removeClass(DIALOG.emailtoken,'error');
+
+									DIALOG.emailresponse.textContent = zs4.THIS.zs4.hi._.cbresult;
+									zs4.admin.util.addClass(DIALOG.emailtoken,'nodisplay');
+									zs4.admin.util.removeClass(DIALOG.emailresponse,'nodisplay');
+									zs4.admin.util.removeClass(DIALOG.hi,'nodisplay');
+									DIALOG.failcount = 0;
+									DIALOG.refreshDialog();
+								}
+								else {
+									zs4.admin.util.addClass(DIALOG.emailtoken,'error');
+								}
+
+							});
+
+						}).bind(DIALOG);
+
+						this.emailresponse = document.createElement('zs4-email-token-response');
+						this.etok.appendChild(this.emailresponse);
+
 						this.hi = document.createElement('zs4-login');
 						this.hi.textContent = 'login';
 						this.pane.appendChild(this.hi);
 						this.hi.onclick = (function(){
 							var error = false;
 							if (!zs4.is.email(this.emailAddress.value)){
-								zs4.admin.util.addClass(this.emailAddress,'error');
+								zs4.admin.util.addClass(DIALOG.emailAddress,'error');
 								error = true;
 							}
 							else {
-								zs4.admin.util.removeClass(this.emailAddress,'error');
+								zs4.admin.util.removeClass(DIALOG.emailAddress,'error');
 							}
 							if (!zs4.is.password(this.pass.value)){
 								zs4.admin.util.addClass(this.pass,'error');
@@ -1161,6 +1299,14 @@ zs4.admin.util = {
 
 							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
 							zs4.post(zs4.THIS.zs4.hi._.wrapRequest({email:this.emailAddress.value,password:this.pass.value,}),function(ret){
+								if (zs4.THIS.zs4.hi._.cberror != null){
+									zs4.admin.util.addClass(DIALOG.emailAddress,'error');
+									zs4.admin.util.addClass(DIALOG.pass,'error');
+									DIALOG.failcount++;
+									DIALOG.refreshDialog();
+								}
+								console.log('DIALOG.failcount: '+DIALOG.failcount);
+
 								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
 							});
 						}).bind(this);
@@ -1182,10 +1328,35 @@ zs4.admin.util = {
 									utitle = uscope.zs4.head.title._.value;
 								}
 								this.username.textContent = utitle;
+
+								if (this.spwIsOpen){
+									var vfy = uscope._.resolvePath('zs4.password.vfy');
+									var set = uscope._.resolvePath('zs4.password.set');
+									if (set!=null){
+										if (vfy==null){
+											zs4.admin.util.addClass(DIALOG.old1,'nodisplay');
+											zs4.admin.util.addClass(DIALOG.old2,'nodisplay');
+										}
+										else {
+											zs4.admin.util.removeClass(DIALOG.old1,'nodisplay');
+											zs4.admin.util.removeClass(DIALOG.old2,'nodisplay');
+										}
+										zs4.admin.util.removeClass(DIALOG.setpwd,'nodisplay');
+									}
+									else {
+										zs4.admin.util.addClass(DIALOG.setpwd,'nodisplay');
+									}
+								}
+								else {
+
+								}
 							}
 						}
 						else {
 							this.username.textContent = 'login';
+							if (DIALOG.failcount > 2){
+								zs4.admin.util.removeClass(this.etok,'nodisplay');
+							}
 						}
 
 						if (this.loggedIn==true){
@@ -1218,6 +1389,7 @@ zs4.admin.util = {
 								zs4.admin.util.setIcon(top.app.searchButton,'search');
 								o._.html.dialogHeader.appendChild(top.app.searchButton);
 								top.app.searchButton.onclick = (function(){
+									o._.html.top.deselectAll();
 									this.requestItems();
 								}).bind(top.app);
 
@@ -1239,12 +1411,8 @@ zs4.admin.util = {
 								top.app.type = document.createElement('zs4-app-type');
 								top.app.toolbar.appendChild(top.app.type);
 
-								top.app.typeIcon = document.createElement('zs4-app-type-icon');
-								zs4.admin.util.setIcon(top.app.typeIcon,'scope');
-								top.app.type.appendChild(top.app.typeIcon);
-
 								top.app.typeSelect = document.createElement('select');
-								zs4.admin.util.addClass(top.app.typeSelect,'zs4-app-type-select');
+								zs4.admin.util.addClass(top.app.typeSelect,'app-type-select');
 								top.app.type.appendChild(top.app.typeSelect);
 								var option = document.createElement('option');
 								option.value = '';
@@ -1278,12 +1446,8 @@ zs4.admin.util = {
 								top.app.creator = document.createElement('zs4-app-creator');
 								top.app.toolbar.appendChild(top.app.creator);
 
-								top.app.creatorIcon = document.createElement('zs4-app-creator-icon');
-								zs4.admin.util.setIcon(top.app.creatorIcon,'user');
-								top.app.creator.appendChild(top.app.creatorIcon);
-
 								top.app.creatorSelect = document.createElement('select');
-								zs4.admin.util.addClass(top.app.creatorSelect,'zs4-app-creator-select');
+								zs4.admin.util.addClass(top.app.creatorSelect,'app-creator-select');
 								top.app.creator.appendChild(top.app.creatorSelect);
 								top.app.creatorInitialized = false;
 								top.app.creatorRefresh = (function(){
@@ -1322,22 +1486,6 @@ zs4.admin.util = {
 								top.app.sort = document.createElement('zs4-app-sort');
 								top.app.toolbar.appendChild(top.app.sort);
 
-								top.app.orderDescend = false;
-								top.app.sortIcon = document.createElement('zs4-app-sort-icon');
-								zs4.admin.util.setIcon(top.app.sortIcon,'ascend');
-								top.app.sort.appendChild(top.app.sortIcon);
-								top.app.sortIcon.onclick = (function(){
-									if (top.app.orderDescend){
-										top.app.orderDescend = false;
-										zs4.admin.util.setIcon(top.app.sortIcon,'ascend');
-									}
-									else {
-										top.app.orderDescend = true;
-										zs4.admin.util.setIcon(top.app.sortIcon,'descend');
-									}
-									top.app.internalRefresh();
-								}).bind(top.app);
-
 								top.app.sortSelect = document.createElement('select');
 								zs4.admin.util.addClass(top.app.sortSelect,'app-sort-select');
 								top.app.sort.appendChild(top.app.sortSelect);
@@ -1358,19 +1506,42 @@ zs4.admin.util = {
 								}).bind(top.app);
 								top.app.sortSelectOption('title',function(a,b){
 									var ret = a.scope.zs4.head.title._.value.localeCompare(b.scope.zs4.head.title._.value);
-									if (top.app.orderDescend==true){return -ret;}
+									if (top.app.orderDescendTrue){return -ret;}
 									else {return ret;}
 								},true);
 								top.app.sortSelectOption('updated',function(a,b){
 									var ret = a.scope.zs4.head.updated._.value - b.scope.zs4.head.updated._.value;
-									if (top.app.orderDescend==true){return -ret;}
+									if (top.app.orderDescendTrue){return -ret;}
 									else {return ret;}
 								});
 								top.app.sortSelectOption('created',function(a,b){
 									var ret = a.scope.zs4.head.created._.value - b.scope.zs4.head.created._.value;
-									if (top.app.orderDescend==true){return -ret;}
+									if (top.app.orderDescendTrue){return -ret;}
 									else {return ret;}
 								});
+
+								top.app.orderDescendTrue = false;
+								top.app.orderDescend = document.createElement('select');
+								zs4.admin.util.addClass(top.app.orderDescend,'app-sort-toggle');
+								var option = document.createElement('option');
+								option.value = 'ascend';
+								option.text = 'ascend';
+								option.selected = true;
+								top.app.orderDescend.add(option);
+								option = document.createElement('option');
+								option.value = 'descend';
+								option.text = 'descend';
+								top.app.orderDescend.add(option);
+								top.app.sort.appendChild(top.app.orderDescend);
+								top.app.orderDescend.onchange = (function(){
+									if (top.app.orderDescend.value=='ascend'){
+										top.app.orderDescendTrue = false;
+									}
+									else {
+										top.app.orderDescendTrue = true;
+									}
+									top.app.internalRefresh();
+								}).bind(top.app);
 
 								top.app.new = document.createElement('zs4-app-new-item');
 								top.app.new.textContent = 'new';

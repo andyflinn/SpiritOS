@@ -34,7 +34,8 @@ zs4.console.log('defined');
 zs4.load(function(){
   zs4.console.log('loaded');
   // set up root authority
-  var req = new zs4.request({request:{node:true,},input:msg});
+  var req = new zs4.request({input:msg});
+  req.request.node = true;
 
   zs4.THIS._.transform(req,function(){
     zs4.console.log('transformed');

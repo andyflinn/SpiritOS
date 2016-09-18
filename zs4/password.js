@@ -21,6 +21,12 @@ password.create = function(){
     req.setScope(this);
     this._.print('transform()',req);
     if (zs4.is.object(req.input)){
+      if (req.input.reset==true){
+        console.log(this._.path+' PASSWORD WAS RESET');
+        this._.reset();
+        this._.shouldBeSaved(req);
+        this._.get(req); cb(); return;
+      }
       if (zs4.is.password(req.input.vfy)||zs4.is.password(req.input.set)){
         this._.print(this._.path+'.transform('+JSON.stringify(req.input)+')',req);
       }
@@ -141,10 +147,13 @@ password.create = function(){
     }
   }).bind(THIS);
 
+  THIS._.reset = (function(){THIS.hashed._.value=''}).bind(THIS);
+
   THIS._.property(new zs4.type.string({name:'hashed',flags:'noget',}));
   THIS._.property(new zs4.type.string({name:'algorithm',flags:'noget',default:'sha1',}));
   THIS._.property(new zs4.type.integer({name:'saltlength',flags:'noget',min:32,max:256,default:32,}));
   THIS._.property(new zs4.type.integer({name:'iterations',flags:'noget',min:1,max:128,default:1,}));
+  THIS._.property(new zs4.type.boolean({name:'reset',flags:'noget nostore',}));
 
   THIS._.property(new zs4.type.password({name:'set',flags:'nostore',}));
   THIS._.property(new zs4.type.password({name:'vfy',flags:'required nostore',}));

@@ -373,6 +373,40 @@ zs4-user-name{
   padding-right: 0.5em;
 }
 
+zs4-email-token-send{
+  font-size: 0.5em;
+  font-weight:bold;
+  cursor: pointer;
+}
+
+zs4-email-token-response{
+  display:block;
+  font-size: 1em;
+  background-color: lightblue;
+  border-radius: 0.3em;
+}
+
+zs4-spw-title,
+zs4-setpassword,
+zs4-spw-pwe,
+zs4-spw-send{
+  display:block;
+}
+
+zs4-spw-pwe.zs4-error{
+  color:red;
+}
+
+zs4-spw-title{
+  background-color: lightgray;
+  font-weight: bold;
+}
+zs4-spw-send,
+zs4-logout-now{
+  font-weight: bold;
+  cursor: pointer;
+}
+
 zs4-app-header{
   display:inline-block;
 }
@@ -443,6 +477,14 @@ input.zs4-scope-title:focus{
   background-color: white;
 }
 
+select.zs4-app-creator-select,
+select.zs4-app-sort-select,
+select.zs4-app-sort-toggle,
+select.zs4-app-type-select{
+  background-color: lightgray;
+}
+
+
 zs4-app-username.zs4-am{
   font-weight: bold;
   color:blue;
@@ -456,10 +498,6 @@ input.zs4-login-email.zs4-error,
 input.zs4-login-password.zs4-error{
   border-color: red;
 }
-zs4-logout{
-  cursor:pointer;
-  font-weight: bold;
-}
 zs4-logout-args{
   display:block;
 }
@@ -467,10 +505,10 @@ zs4-login,zs4-logout{
   display:block;
   cursor:pointer;
   font-weight: bold;
-  background-color: darkred;
-  color:white;
-  text-align: center;
+  background-color: lightgray;
 }
-zs4-login:hover,zs4-logout:hover{
-  background-color: black;
+zs4-login:hover,
+zs4-logout:hover,
+zs4-spw-title:hover{
+  background-color: lightblue;
 }
