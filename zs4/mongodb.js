@@ -1,15 +1,100 @@
+'use strict';
+
 var zs4 = require('./static/zs4');
 var mongoose = require('mongoose');
 var pager = require('mongoose-paginate');
 
 var mongodb = exports;
 
+mongodb.hex2name = function(hex){
+  var h = hex.toString().trim().toLowerCase();
+  var n = '';
+  for (var i = 0;i<h.length;i++){
+    if(h.charAt(i)=='0'){n+='a';continue;}
+    if(h.charAt(i)=='1'){n+='b';continue;}
+    if(h.charAt(i)=='2'){n+='c';continue;}
+    if(h.charAt(i)=='3'){n+='d';continue;}
+    if(h.charAt(i)=='4'){n+='e';continue;}
+    if(h.charAt(i)=='5'){n+='f';continue;}
+    if(h.charAt(i)=='6'){n+='g';continue;}
+    if(h.charAt(i)=='7'){n+='h';continue;}
+    if(h.charAt(i)=='8'){n+='i';continue;}
+    if(h.charAt(i)=='9'){n+='j';continue;}
+    if(h.charAt(i)=='a'){n+='k';continue;}
+    if(h.charAt(i)=='b'){n+='l';continue;}
+    if(h.charAt(i)=='c'){n+='m';continue;}
+    if(h.charAt(i)=='d'){n+='n';continue;}
+    if(h.charAt(i)=='e'){n+='o';continue;}
+    if(h.charAt(i)=='f'){n+='p';continue;}
+  }
+  return n;
+};
+
+mongodb.name2hex = function(name){
+  var n = name.trim();
+  var h = ''
+  for (var i = 0;i < n.length;i++){
+    if(n.charAt(i)=='a'){h+='0';continue;}
+    if(n.charAt(i)=='b'){h+='1';continue;}
+    if(n.charAt(i)=='c'){h+='2';continue;}
+    if(n.charAt(i)=='d'){h+='3';continue;}
+    if(n.charAt(i)=='e'){h+='4';continue;}
+    if(n.charAt(i)=='f'){h+='5';continue;}
+    if(n.charAt(i)=='g'){h+='6';continue;}
+    if(n.charAt(i)=='h'){h+='7';continue;}
+    if(n.charAt(i)=='i'){h+='8';continue;}
+    if(n.charAt(i)=='j'){h+='9';continue;}
+    if(n.charAt(i)=='k'){h+='a';continue;}
+    if(n.charAt(i)=='l'){h+='b';continue;}
+    if(n.charAt(i)=='m'){h+='c';continue;}
+    if(n.charAt(i)=='n'){h+='d';continue;}
+    if(n.charAt(i)=='o'){h+='e';continue;}
+    if(n.charAt(i)=='p'){h+='f';continue;}
+  }
+  return h;
+};
+
+mongodb.scopeToSchema = function(scope){
+
+  function recurse(type){
+    var ret = new Object();
+    if (type._.type==Object){
+      for (var n in type){
+        if (!zs4.is.type(type[n]))continue;
+        if (type[n]._.flags.get.nostore())continue;
+
+        ret[n] = recurse(type[n]);
+      }
+    }
+    else {
+      ret.type = type._.type;
+      ret.default = type._.default;
+      if (type._.flags.get.index())ret.index=true;
+      if (type._.flags.get.unique())ret.unique=true;
+
+      if (ret.type==Number){
+        if (zs4.is.number(type._.min))ret.min = type._.min;
+        if (zs4.is.number(type._.max))ret.max = type._.max;
+      }
+      else if (ret.type==String){
+        if (zs4.is.number(type._.minlength))ret.minlength = type._.minlength;
+        if (zs4.is.number(type._.maxlength))ret.maxlength = type._.maxlength;
+      }
+    }
+    return ret;
+  };
+
+  var ret = recurse(scope._.new());
+  return ret;
+};
+
 mongodb.create = function(input){
   var MONGODB = this;
   zs4.type.object.call(MONGODB,input);
   this._.name = 'mongodb';
   MONGODB._.create = mongodb.create;
-
+  //MONGODB._.mongodb = new Object({schema:{},util:{}});
+  //MONGODB._.mongodb
   var dbname = MONGODB._.name;
   if (zs4.is.string(input.dbname)&&input.dbname.length > 0)dbname = input.dbname;
 
@@ -17,7 +102,40 @@ mongodb.create = function(input){
   MONGODB.config._.property(new zs4.type.boolean({name:'connected',flags:'required noset nostore',default:false,}));
   MONGODB.config._.property(new zs4.type.string({name:'url',flags:'required',default:'mongodb://127.0.0.1/'+dbname}));
 
-  MONGODB._.property(new zs4.type.object({name:'method',flags:'',}))
+  MONGODB.initializeArray = function(ARRAY){
+
+    if (ARRAY._.mongoSchema == null){
+      ARRAY._.mongoSchema = mongodb.scopeToSchema(ARRAY.template);
+      console.log(JSON.stringify(ARRAY._.mongoSchema));
+
+      ARRAY._.mongoModel = function(){
+        return mongoose.model(ARRAY.template.zs4.head.typename._.value, ARRAY._.mongoSchema);
+      };
+
+      ARRAY._.model = ARRAY._.mongoModel();
+    }
+  }
+
+  MONGODB.new = function(nu,cb){
+    var ARRAY = this;
+    MONGODB.initializeArray(ARRAY);
+    console.log('MONGODB.new('+this._.path+')');
+
+    var item = new ARRAY._.model(nu._.store());
+
+    item.save(function (err,data){
+      if(err||data==null){cb(null);return;}
+
+      console.log(data);
+      nu._.load(data);
+
+      nu._.name = mongodb.hex2name(data._id.toString());
+      console.log(nu._.name,mongodb.name2hex(nu._.name));
+
+      cb(nu); return;
+    });
+
+  }
 
   MONGODB.connect = (function(input,cb){
     console.log('MONGODB CONNECT!');
@@ -58,6 +176,5 @@ mongodb.create = function(input){
 
 
   }).bind(MONGODB);
-
   zs4.boot.call(MONGODB,MONGODB.connect,MONGODB);
 }
