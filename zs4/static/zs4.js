@@ -1462,6 +1462,22 @@ zs4.type = {
       THIS._.property(new zs4.type.object({name:'config',flags:'noprune',authSet:['zs4.owner'],}));
       THIS.config._.property(new zs4.type.integer({name:'maxlength',flags:'noprune quickupdate',authSet:['zs4.owner'],}));
       THIS.config._.property(new zs4.type.integer({name:'lastid',flags:'noset noprune',}));
+      THIS.config._.property(new zs4.type.enum({name:'driver',flags:'noprune quickupdate',}));
+      THIS.config.driver._.get = (function(req){
+        var arr = new Array();
+        arr.push('');
+        for (var n in zs4.array){
+          arr.push((' '+n+' ').trim());
+        }
+        this._.enum = arr;
+        var get = this._.getInitialize(req);
+        if (get == null) return null;
+        if (this._.type != Object){
+          get._.value = this._.value;
+        }
+        return get;
+
+      }).bind(THIS.config.driver);
     }
 
     var template = input.template._.new();
@@ -1634,6 +1650,8 @@ zs4.type = {
 
       THIS.method._.property(new zs4.type.object({name:'new',flags:'api noprune nostore authsetself',}));
       this.method.new._.transform = (function(req,cb){
+        var REQUEST = req;
+        var NEW = THIS.method.new;
         req.setScope(this);
         this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
@@ -1649,38 +1667,68 @@ zs4.type = {
           this._.get(req); cb(); return;
         }
         if (zs4.is.object(req.input)){
-          //if (!(req.flags.value & req.flags.authset)){
-          //  req.error(THIS.method.new,'not authorized');
-          //  this._.get(req); cb(); return;
-          //}
-          //console.log(this._.path+'.transform()');
-          //console.log(req.input);
-          var length = zs4.count.object.properties(THIS.array._.value);
-          if (THIS.config.maxlength._.value > 0 && length >= THIS.config.maxlength._.value){
-            req.error(this,{text:'array limit reached'})
-            this._.get(req); cb(); return;
+          if (THIS.config.driver._.value != ''){
+            var nu = THIS.template._.new();
+            nu._.flags.set.notrans(false);
+            nu._.flags.set.scope(true);
+            nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
+            nu.zs4.head.owner._.value = req.request.payload.scope;
+            zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
+              if (zs4.is.type(ret)){
+                THIS._.array.elementConnect(THIS.array,ret);
+
+                ret._.transform(REQUEST.create({input:{}}),function(){
+
+                  REQUEST.result(NEW,ret._.path);
+                  console.log('DB CREATED ',ret._.path);
+
+                  NEW._.get(REQUEST);
+
+                  REQUEST.setScope(THIS.array);
+                  THIS.array._.get(REQUEST);
+
+                  cb(); return;
+                });
+              }
+              else {
+                NEW._.get(REQUEST);
+                cb(); return;
+              }
+            });
+
+            console.log('END DB DRIVER NEW FUNCTION');
+            return;
           }
+          else {
+            var length = zs4.count.object.properties(THIS.array._.value);
+            if (THIS.config.maxlength._.value > 0 && length >= THIS.config.maxlength._.value){
+              req.error(this,{text:'array limit reached'})
+              this._.get(req); cb(); return;
+            }
 
-          var id = zs4.integer.to.name(THIS.config.lastid._.value++);
-          var nu = THIS.template._.new();
-          nu._.name = id; nu._.flags.set.notrans(false);
-          nu._.flags.set.scope(true);
-          nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
-          nu.zs4.head.owner._.value = req.request.payload.scope;
-          //nu.zs4.email._.value = id+'@zs4.zs4';
-          THIS.array._.property(nu);
-          nu._.transform(req.create({input:{}}),function(){
-            THIS._.shouldBeSaved(req);
-            req.result(THIS.method.new,nu._.path);
-            //console.log(THIS.array._.flags.getString());
-            //console.log(nu._.flags.getString());
-          });
+            var id = zs4.integer.to.name(THIS.config.lastid._.value++);
+            var nu = THIS.template._.new();
+            nu._.name = id; nu._.flags.set.notrans(false);
+            nu._.flags.set.scope(true);
+            nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
+            nu.zs4.head.owner._.value = req.request.payload.scope;
+            //nu.zs4.email._.value = id+'@zs4.zs4';
+            THIS.array._.property(nu);
+            nu._.transform(REQUEST.create({input:{}}),function(){
+              THIS._.shouldBeSaved(REQUEST);
+              REQUEST.result(THIS.method.new,nu._.path);
 
+              NEW._.get(REQUEST);
+              REQUEST.setScope(THIS.array);
+              THIS.array._.get(REQUEST);
+              cb(); return;
+            });
+
+          }
         }
-        this._.get(req);
-        req.setScope(THIS.array);
-        THIS.array._.get(req);
-        cb(); return;
+        else {
+          this._.get(req); cb(); return;
+        }
       }).bind(this.method.new);
 
       THIS.method._.property(new zs4.type.object({name:'getall',flags:'api noprune nostore authsetself',}));
