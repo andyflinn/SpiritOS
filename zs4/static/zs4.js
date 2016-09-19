@@ -3860,7 +3860,9 @@ if (zs4.is.node()){
     require('../email').schema(zs4.THIS.zs4);
 
     var mongodb = require('../mongodb');
-    zs4.THIS.zs4._.property(new mongodb.create({name:'mongodb'}));
+
+    zs4.array.mongodb = new mongodb.create({name:'mongodb'});
+    zs4.THIS.zs4._.property(zs4.array.mongodb);
 
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
     zs4.THIS.zs4.type.document._.flags.value |= zs4.THIS._.flags.apiarg;
