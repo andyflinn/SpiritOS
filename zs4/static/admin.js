@@ -1418,9 +1418,13 @@ zs4.admin.util = {
 						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
 						top.app.refresh = (function(){
 							if (top.app.uninitialized==true){
+
+								top.app.toolbar = document.createElement('zs4-app-toolbar');
+								o._.html.appWindow.appendChild(top.app.toolbar);
+
 								top.app.searchButton = document.createElement('zs4-app-search-icon');
 								zs4.admin.util.setIcon(top.app.searchButton,'search');
-								o._.html.dialogHeader.appendChild(top.app.searchButton);
+								top.app.toolbar.appendChild(top.app.searchButton);
 								top.app.searchButton.onclick = (function(){
 									o._.html.top.deselectAll();
 									this.requestItems();
@@ -1429,16 +1433,13 @@ zs4.admin.util = {
 								top.app.search = document.createElement('input');
 								top.app.search.type = 'search';
 								zs4.admin.util.addClass(top.app.search,'search');
-								o._.html.dialogHeader.appendChild(top.app.search);
+								top.app.toolbar.appendChild(top.app.search);
 								top.app.search.onchange = (function(){
 									this.requestItems();
 								}).bind(top.app);
 								top.app.search.oninput = (function(){
 									top.app.internalRefresh();
 								}).bind(top.app);
-
-								top.app.toolbar = document.createElement('zs4-app-toolbar');
-								o._.html.appWindow.appendChild(top.app.toolbar);
 
 
 								top.app.type = document.createElement('zs4-app-type');

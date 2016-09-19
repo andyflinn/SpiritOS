@@ -133,14 +133,13 @@ input[type="checkbox"]{
   height:1em;
 }
 input{
-  width:6em;
+  width:auto;
   border-left-style: none;
   border-top-style: none;
   border-right-style: none;
   border-bottom-style: dotted;
   border-color: darkgray;
   margin-left: 0.5em;
-  width:8em;
 }
 input.zs4-noset{
   border-color:white;
@@ -153,7 +152,7 @@ textarea{
 
 zs4-name{
   font-size: enherit;
-  padding-right: 0.5em;
+  padding-right: 0.2em;
 }
 zs4-name.zs4-api{
   cursor:pointer;
@@ -249,23 +248,13 @@ zs4-result.zs4-hide{
 }
 
 zs4-object-head{
-  display:inline-block;
-}
-zs4-object-head.zs4-tbon{
   width:100%;
   display:block;
+}
+zs4-object-head.zs4-tbon{
   background-color: white;
-
-  position: fixed;
-  left: 0px;
-  top: 0px;
-  bottom: 0px;
-  right: 0px;
-  z-index: 100;
-
 }
 zs4-object-head.zs4-top{
-  width:100%;
   color:white;
   background-color: blue;
   font-weight: bold;
@@ -295,18 +284,13 @@ zs4-object-content.zs4-top.zs4-tbon{
 zs4-toolbar{
   width:100%;
   height:100%;
-  background: linear-gradient(to bottom, lightblue, white );
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
+  background-color: lightblue;
   padding:0.5em;
   display:block;
 }
 zs4-toolbar-tool{
   color:black;
   background-color: white;
-  display:block;
-  width:100%;
-  height:100%;
 }
 zs4-tool-pane.zs4-current{
   display:block;
@@ -314,20 +298,17 @@ zs4-tool-pane.zs4-current{
 }
 
 zs4-toolbar-toogle,
-zs4-tool-tab{
-  display:inline-block;
-}
 zs4-toolbar-toogle.zs4-current.icon-tool,
 zs4-tool-tab.zs4-current{
-  border-top-left-radius: 0.5em;
-  border-top-right-radius: 0.5em;
+  border-top-left-radius: 0.2em;
+  border-top-right-radius: 0.2em;
   background-color:lightblue;
 }
 
 
 zs4-tool-tab{
-  padding-left:0.25em;
-  padding-right:0.25em;
+  padding-left:0.1em;
+  padding-right:0.1em;
   cursor:pointer;
   color:black;
 }
@@ -407,11 +388,8 @@ zs4-logout-now{
   cursor: pointer;
 }
 
-zs4-app-header{
-  display:inline-block;
-}
 input.zs4-search{
-  width:5em;
+  width:auto;
   height:1em;
   border-style:none;
   margin-left:0em;
@@ -431,12 +409,10 @@ zs4-app{
 }
 
 zs4-app-tab{
-  border-top-left-radius: 0.5em;
-  border-top-right-radius: 0.5em;
-  margin-left:0.3em;
-  margin-right:0.3em;
-  padding-left:0.3em;
-  padding-right:0.3em;
+  border-top-left-radius: 0.2em;
+  border-top-right-radius: 0.2em;
+  padding-left:0.1em;
+  padding-right:0.1em;
 }
 zs4-app-tab.zs4-current{
   background-color:lightgray;
@@ -464,10 +440,6 @@ zs4-app-item-title.zs4-am{
 }
 zs4-app-item-title.zs4-own{
   color:green;
-}
-
-input.zs4-scope-title{
-  background-color: lightgray;
 }
 
 input.zs4-scope-title{
