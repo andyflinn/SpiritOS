@@ -133,7 +133,7 @@ input[type="checkbox"]{
   height:1em;
 }
 input{
-  width:auto;
+  width:6em;
   border-left-style: none;
   border-top-style: none;
   border-right-style: none;
