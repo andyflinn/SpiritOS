@@ -1168,6 +1168,7 @@ zs4.type = {
     }).bind(this);
 
     this._.getHTML = (function(req){
+      console.log('getHTML('+this._.path+')');
       var html = '<!DOCTYPE html>\n';
       html += '<html>\n';
         html += ' <head>\n';
@@ -1547,31 +1548,24 @@ zs4.type = {
       THIS.array._.shouldBeSaved(req);
       cb();
     }).bind(THIS.array);
-    THIS.array._.elementTransform = (function(req,cb){
-      //console.log(this._.path+'.transform()');
-      THIS.array._.elementLoad(req,function(ret){
-        if (ret==null){
-          req.error(THIS.array,THIS.array._.path+'.'+req.elenam+' not found');
-          cb();return;
-        }
-        var o = THIS.template._.new();
-        o._.name = req.elenam;
-        o._.flags.set.notrans(false);
-        o._.flags.set.scope(true);
-        o._.load(ret);
-        THIS._.array.elementConnect(THIS.array,o);
-        var neededSaving = req.request.needsSaving;
-        req.request.needsSaving = false;
-        o._.transform(req,function(){
-          if (req.request.needsSaving==true){
-            o.zs4.head.updated._.value = Date.now();
-          }
-          if (neededSaving==true)req.request.needsSaving=true;
+    THIS.array._.driverTransform = (function(req,cb){
+      console.log(req.elenam);
+      zs4.array[THIS.config.driver._.value].getID.call(THIS,req.elenam,function(ret){
+        if (ret == null){req.error(THIS.array,req.elenam+' not found');cb();return;}
 
-          var save = o._.store();
-          req.elesav = save;
-          THIS.array._.elementSave(req,function(){});
-          THIS.array._.get(req); cb(); return;
+        var item = THIS.template._.new();
+        item._.name = req.elenam;
+        item._.load(ret);
+        THIS._.array.elementConnect(THIS.array,item);
+
+        item._.transform(req,function(){
+          zs4.array[THIS.config.driver._.value].updateID.call(
+          THIS,req.elenam,item._.store(),
+          function(ret){
+            if (ret == null){req.error(THIS.array,req.elenam+' update fail');cb();return;}
+            req.result(item,true);
+            cb();
+          });
         });
       });
     }).bind(THIS.array);
@@ -1646,6 +1640,46 @@ zs4.type = {
 
     if (zs4.is.node()){
 
+      THIS.array._.oldTransform = this.array._.transform;
+
+      THIS.array._.transform = (function(req,cb){
+
+        var TABLE = this;
+
+        if (THIS.config.driver._.value == ''){
+          THIS.array._.oldTransform(req,cb);
+          return;
+        }
+
+        req.setScope(TABLE);
+        TABLE._.transformInternal(req);
+
+        if (!zs4.is.object(req.input)
+        ||  zs4.count.object.properties(req.input)==0
+        ){
+          TABLE._.get(req); cb(); return;
+        }
+
+        var parallel = new zs4.processor.parallel();
+        var input = req.input;
+        for (var n in input){
+          if (!zs4.is.object(input[n]))continue;
+
+          var name = (' '+n+' ').trim();
+          var request = req.create({input:input[name],});
+          request.elenam = name;
+
+          parallel.call(TABLE,THIS.array._.driverTransform,request);
+        }
+
+        parallel.run(function(){
+          TABLE._.get(req);
+          cb();
+        });
+
+      }).bind(THIS.array);
+
+
       THIS._.property(new zs4.type.object({name:'method',flags:'noprune nostore authgetpublic',}));
 
       THIS.method._.property(new zs4.type.object({name:'new',flags:'api noprune nostore authsetself',}));
@@ -1671,6 +1705,7 @@ zs4.type = {
             var nu = THIS.template._.new();
             nu._.flags.set.notrans(false);
             nu._.flags.set.scope(true);
+            nu.zs4.head.title._.value = '(untitled)';
             nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
             nu.zs4.head.owner._.value = req.request.payload.scope;
             zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
@@ -3648,6 +3683,7 @@ zs4.request = function(o){
 
     if (!zs4.is.object(this.input))this.input = new Object();
     var a = zs4.string.split.separators(p,'/\\.-_');
+    console.log('resolveInputPath('+a+')');
 
     var r = this.input;
     for (var i = 0 ; i < a.length ; i++){
@@ -3656,6 +3692,8 @@ zs4.request = function(o){
       }
       r = r[a[i]];
     }
+
+    console.log('resolveInputPath('+p+') = '+JSON.stringify(r));
     return r;
   }
 

@@ -116,6 +116,41 @@ mongodb.create = function(input){
     }
   }
 
+  MONGODB.getID = function(id,cb){
+    var ARRAY = this;
+    MONGODB.initializeArray(ARRAY);
+    console.log('MONGODB.getID('+this._.path+'.array.'+id+')');
+
+    //var item = new ARRAY._.model();
+
+    ARRAY._.model.findById(mongodb.name2hex(id), function (err, data){
+      if (err!=null||data==null){cb(null); return;}
+      console.log('FOUND!!!: '+id);
+
+      var old = ARRAY.template._.new();
+      old._.load(data);
+
+      cb(data);
+    });
+
+  };
+
+  MONGODB.updateID = function(id,data,cb){
+    var ARRAY = this;
+    MONGODB.initializeArray(ARRAY);
+    console.log('MONGODB.updateID('+this._.path+'.array.'+id+')');
+
+    var item = new ARRAY._.model();
+
+    ARRAY._.model.findOneAndUpdate({_id:mongodb.name2hex(id)},data,{new:true,},function(err, item){
+      if (err!=null||item==null){cb(null); return;}
+      console.log('FOUND for UPDATE!!!: '+id);
+
+      item.save()
+      cb(data);
+    });
+  };
+
   MONGODB.new = function(nu,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
@@ -134,7 +169,6 @@ mongodb.create = function(input){
 
       cb(nu); return;
     });
-
   }
 
   MONGODB.connect = (function(input,cb){
