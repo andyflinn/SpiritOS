@@ -1768,42 +1768,6 @@ zs4.type = {
         }
       }).bind(this.method.new);
 
-      THIS.method._.property(new zs4.type.object({name:'getall',flags:'api noprune nostore authsetself',}));
-      this.method.getall._.transform = (function(req,cb){
-        req.setScope(this);
-        this._.transformInternal(req);
-        if (req.getall){
-          //console.log(this._.path+'() GETALL');
-          this._.get(req); cb(); return;
-        }
-
-        if (!(req.flags.value & req.flags.authset)){
-          var err = 'not authorized';
-          req.error(THIS.method.getall,err);
-          this._.print(err,req);
-          this._.get(req); cb(); return;
-        }
-
-        if (zs4.is.object(req.input)){
-          //console.log(this._.path+'.transform()');
-
-
-          for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
-            //console.log(this._.path+'.'+n+'.transform()');
-            req.setScope(THIS.array[n]);
-            THIS.array[n]._.getTree(req);
-          }
-
-          req.setScope(this);
-          this._.get(req);
-          req.setScope(THIS.array);
-          THIS.array._.get(req);
-          cb();
-        }
-        this._.get(req);
-        cb(); return;
-      }).bind(this.method.getall);
-
       THIS.method._.property(new zs4.type.object({name:'query',flags:'api noprune nostore apiarg',}));
       THIS.method.query._.property(new zs4.type.string({name:'search',flags:'apiarg'}));
       THIS.method.query._.property(new zs4.type.select());
@@ -1815,23 +1779,20 @@ zs4.type = {
       THIS.method.query._.flagTree((
         this._.flags.apiarg
         |this._.flags.nostore
-        //|this._.flags.local
       ),true);
-      //console.log(THIS.method.query);
       THIS.method.query._.transform = (function(req,cb){
         var QUERY = this;
         var REQUEST = req;
-        req.setScope(this);
-        this._.transformInternal(req);
+        req.setScope(QUERY);
+        QUERY._.transformInternal(req);
         if (req.getall){
-          //console.log(this._.path+'() GETALL');
-          this._.get(req); cb(); return;
+          QUERY._.get(req); cb(); return;
         }
         if (!(req.flags.value & req.flags.authset)){
           var err = 'not authorized';
           req.error(THIS.method.query,err);
-          this._.print(err,req);
-          this._.get(req); cb(); return;
+          QUERY._.print(err,req);
+          QUERY._.get(req); cb(); return;
         }
 
         if (zs4.is.object(req.input)){
@@ -1856,27 +1817,46 @@ zs4.type = {
             search = REQUEST.input.search;
           }
 
-          for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
-            //console.log(this._.path+'.'+n+'.query()');
-            if (sel!= null){
-              sel._.inscopeTree(THIS.array[n]);
-              if (!sel._.select.check())continue;
-            }
+          if (THIS.config.driver._.value != ''){
+            var args = new Object({request:req,select:sel,search:search,});
+            zs4.array[THIS.config.driver._.value].query.call(THIS,args,function(ret){
+              if (!zs4.is.array(ret)){
 
-            if (search != null){
-              if (!THIS.array[n]._.search(REQUEST.input.search))continue;
-            }
+              }
+              else {
+                console.log(ret);
+              }
 
-            req.setScope(THIS.array[n]);
-            THIS.array[n]._.getTree(req);
+              QUERY._.get(req);
+              THIS.array._.get(req);
+              cb();
+            });
+
+            return;
           }
+          else {
+            for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
+              //console.log(this._.path+'.'+n+'.query()');
+              if (sel!= null){
+                sel._.inscopeTree(THIS.array[n]);
+                if (!sel._.select.check())continue;
+              }
 
-          req.setScope(this);
-          this._.get(req);
-          req.setScope(THIS.array);
-          THIS.array._.get(req);
-          cb();
-          return;
+              if (search != null){
+                if (!THIS.array[n]._.search(REQUEST.input.search))continue;
+              }
+
+              req.setScope(THIS.array[n]);
+              THIS.array[n]._.getTree(req);
+            }
+
+            req.setScope(this);
+            this._.get(req);
+            req.setScope(THIS.array);
+            THIS.array._.get(req);
+            cb();
+            return;
+          }
         }
 
         req.setScope(this);
@@ -1888,22 +1868,11 @@ zs4.type = {
         req.setScope(this);
         var get = this._.getInitialize(req);
         if (get == null)return null;
-
-        req.setScope(this.search);
         this.search._.get(req);
-
-        req.setScope(this.select);
         this.select._.get(req);
-
-        req.setScope(this.sort);
         this.sort._.get(req);
-        req.setScope(this.sort.item);
         this.sort.item._.get(req);
-        req.setScope(this.sort.descend);
         this.sort.descend._.get(req);
-
-        //console.log('GET COMPLETE '+QUERY._.path);
-
       }).bind(THIS.method.query);
 
       THIS.method._.property(new zs4.type.object({name:'deleteall',flags:'api noprune nostore',}));
@@ -1951,77 +1920,90 @@ zs4.type = {
         return get();
       }).bind(this.method.deleteall);
 
-      THIS.method._.property(new zs4.type.object({name:'getone',flags:'api noprune nostore noprune apiarg',}));
-      THIS.method.getone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
-      THIS.method.getone._.property(new zs4.type.string({name:'eq',flags:'required nostore noprune apiarg',}));
-      this.method.getone._.transform = (function(req,cb){
-        var REQUEST = req;
-        var GETONE = this;
-        req.setScope(this);
-        this._.transformInternal(req);
-        function get(){
-          req.setScope(GETONE);
-          GETONE._.get(req);
-
-          req.setScope(GETONE.item);
-          GETONE.item._.get(req,GETONE);
-
-          req.setScope(GETONE.eq);
-          GETONE.eq._.get(req,GETONE);
-
-          req.setScope(THIS.array);
-          THIS.array._.get(req);
-          cb();
-          return;
-        }
-        if (!req.flags.value & req.flags.authset){
-          req.error(this.method.getone,{text:'not authorized'});
-          return get();
-        }
-
-        if (!zs4.is.object(req.input)){
-          return get();
-        }
-
-        //console.log(this._.path+'.transform()');
-
-        if (!zs4.is.string(req.input.item)||req.input.item.length==0){
-          var err = 'no item specified'
-          req.error(this,err);
-          this._.print(err,req);
-          return get();
-        }
-        var item = THIS.template._.resolvePath(req.input.item);
-        if (item==null){
-          var err = 'template has no '+req.input.item;
-          req.error(this,err);
-          this._.print(err,req);
-          return get();
-        }
-        var item = req.input.item;
-        var eq = req.input.eq;
-
-        for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
-          GETONE._.print('   scanning '+THIS.array._.path+'.'+n,req);
-          var val = THIS.array[n]._.resolvePath(item);
-          if (val == null){
-            continue;
-          }
-          if (val._.opcode.eq(eq)){
-            GETONE._.print('   MATCH! -> transform() '+item,req);
-
-            REQUEST.result(GETONE,THIS.array[n]._.path);
-            THIS.array[n]._.getTree(req);
-            req.setScope(THIS.array);
+      var arr = THIS.template._.getScopeItems(THIS.template,THIS._.flags.index|THIS._.flags.unique);
+      if (arr.length>0){
+        THIS.method._.property(new zs4.type.object({name:'getone',flags:'api noprune nostore noprune apiarg',}));
+        THIS.method.getone._.property(new zs4.type.scopeindexunique({name:'item',flags:'required nostore noprune apiarg',inscope:THIS.template,}));
+        THIS.method.getone._.property(new zs4.type.string({name:'eq',flags:'required nostore noprune apiarg',}));
+        this.method.getone._.transform = (function(req,cb){
+          var REQUEST = req;
+          var GETONE = this;
+          req.setScope(this);
+          this._.transformInternal(req);
+          function get(){
+            GETONE._.get(req);
+            GETONE.item._.get(req,GETONE);
+            GETONE.eq._.get(req,GETONE);
             THIS.array._.get(req);
+            cb();
+            return;
+          }
+          if (!req.flags.value & req.flags.authset){
+            req.error(this.method.getone,{text:'not authorized'});
             return get();
           }
-        }
 
-        REQUEST.error(GETONE,'not found');
-        return get();
+          if (!zs4.is.object(req.input)){
+            return get();
+          }
 
-      }).bind(this.method.getone);
+          if (!zs4.is.string(req.input.item)||req.input.item.length==0){
+            var err = 'no item specified'
+            req.error(this,err);
+            this._.print(err,req);
+            return get();
+          }
+          if (!zs4.is.string(req.input.eq)||req.input.eq.length==0){
+            var err = 'no eq value'
+            req.error(this,err);
+            this._.print(err,req);
+            return get();
+          }
+          var item = THIS.template._.resolvePath(req.input.item);
+          if (item==null){
+            var err = 'template has no '+req.input.item;
+            req.error(this,err);
+            this._.print(err,req);
+            return get();
+          }
+
+          if (THIS.config.driver._.value != ''){
+            var args = new Object({request:req,});
+            zs4.array[THIS.config.driver._.value].getOne.call(THIS,req,function(ret){
+              if (ret == null){
+                REQUEST.error(GETONE,'not found');
+                return get();
+              }
+              REQUEST.result(GETONE,ret._.path);
+              return get();
+            });
+          }
+          else {
+            var item = req.input.item;
+            var eq = req.input.eq;
+
+            for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
+              GETONE._.print('   scanning '+THIS.array._.path+'.'+n,req);
+              var val = THIS.array[n]._.resolvePath(item);
+              if (val == null){
+                continue;
+              }
+              if (val._.opcode.eq(eq)){
+                GETONE._.print('   MATCH! -> transform() '+item,req);
+
+                REQUEST.result(GETONE,THIS.array[n]._.path);
+                THIS.array[n]._.getTree(req);
+                THIS.array._.get(req);
+                return get();
+              }
+            }
+
+            REQUEST.error(GETONE,'not found');
+            return get();
+          }
+
+        }).bind(this.method.getone);
+      }
 
       THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune authsetself',}));
       THIS.method.deleteone._.property(new zs4.type.string({name:'id',flags:'required nostore noprune apiarg',}));
@@ -2032,11 +2014,7 @@ zs4.type = {
         this._.transformInternal(req);
         function get(){
           DELONE._.get(req);
-
-          req.setScope(DELONE.id);
           DELONE.id._.get(req,DELONE);
-
-          req.setScope(THIS.array);
           THIS.array._.get(req);
 
           cb();
@@ -2051,22 +2029,14 @@ zs4.type = {
           return get();
         }
 
-        //console.log(this._.path+'.transform()');
-
         if (!zs4.is.name(req.input.id)){
           var err = 'no valid id';
           req.error(this,err);
           this._.print(err,req);
           return get();
         }
-        var id = req.input.id;
 
-        if (!THIS.array.hasOwnProperty(id)){
-          var err = id+' not found';
-          req.error(this,err);
-          this._.print(err,req);
-          return get();
-        }
+        var id = req.input.id;
 
         if (!req.tokenExists()){
           var err = 'not logged in';
@@ -2075,21 +2045,61 @@ zs4.type = {
           return get();
         }
 
-        if (!req.request.payload.scope != THIS.array[id].zs4.head.owner._.value
-        &&!req.flags&&THIS._.flags.authroot){
-          var err = 'not authorized';
-          req.error(this,err);
-          this._.print(err,req);
+        if (THIS.config.driver._.value != ''){
+          zs4.array[THIS.config.driver._.value].getID.call(THIS,id,function(ret){
+            if (ret==null){
+              var err = id+' not found';
+              req.error(DELONE,err);
+              DELONE._.print(err,DELREQ);
+              return get();
+            }
+
+            if (!req.flags.get.authroot()){
+              if (!req.request.payload.scope != ret.zs4.head.owner){
+                var err = 'not authorized';
+                req.error(DELONE,err);
+                DELONE._.print(err,req);
+                return get();
+              }
+            }
+            zs4.array[THIS.config.driver._.value].deleteID.call(THIS,id,function(ret){
+              if (ret==null){
+                var err = 'not authorized';
+                req.error(DELONE,err);
+                DELONE._.print(err,req);
+              }
+              else{
+                req.result(THIS.array,new Object({deletearr:[id,]}));
+              }
+              return get();
+            });
+
+          });
+        }
+        else {
+          if (!THIS.array.hasOwnProperty(id)){
+            var err = id+' not found';
+            req.error(this,err);
+            this._.print(err,req);
+            return get();
+          }
+
+          if (!req.flags.get.authroot()){
+            if (!req.request.payload.scope != THIS.array[id].zs4.head.owner._.value){
+              var err = 'not authorized';
+              req.error(this,err);
+              this._.print(err,req);
+              return get();
+            }
+          }
+
+          delete THIS.array[id];
+
+          req.result(THIS.array,new Object({deletearr:[id,]}));
+          THIS._.shouldBeSaved(req);
           return get();
         }
 
-        delete THIS.array[id];
-
-        req.setScope(THIS.array);
-        req.result(THIS.array,new Object({deletearr:[id,]}));
-        THIS.array._.get(req);
-        THIS._.shouldBeSaved(req);
-        return get();
       }).bind(this.method.deleteone);
 
     }
@@ -3688,7 +3698,7 @@ zs4.request = function(o){
 
     if (!zs4.is.object(this.input))this.input = new Object();
     var a = zs4.string.split.separators(p,'/\\.-_');
-    console.log('resolveInputPath('+a+')');
+    //console.log('resolveInputPath('+a+')');
 
     var r = this.input;
     for (var i = 0 ; i < a.length ; i++){
@@ -3698,7 +3708,7 @@ zs4.request = function(o){
       r = r[a[i]];
     }
 
-    console.log('resolveInputPath('+p+') = '+JSON.stringify(r));
+    //console.log('resolveInputPath('+p+') = '+JSON.stringify(r));
     return r;
   }
 

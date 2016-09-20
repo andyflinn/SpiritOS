@@ -1349,7 +1349,7 @@ zs4.admin.util = {
 						if (zs4.THIS._.loggedIn){
 							var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
 							var utitle = '';
-							console.log('scopath='+zs4.THIS._.scopath+', ');
+							//console.log('scopath='+zs4.THIS._.scopath+', ');
 							if (uscope!=null){
 								if (zs4.THIS._.scopath==''){
 									utitle = 'root';

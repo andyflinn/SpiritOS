@@ -116,20 +116,61 @@ mongodb.create = function(input){
     }
   }
 
+  MONGODB.query = function(arg,cb){
+    var ARRAY = this;
+    MONGODB.initializeArray(ARRAY);
+    console.log('MONGODB.query('+this._.path+'.array.)');
+
+    //var item = new ARRAY._.model();
+
+    ARRAY._.model.find({}, function (err, data){
+      if (err!=null||data==null||!zs4.is.array(data)){cb(null); return;}
+      console.log('QUERY RETURNED ARRAY!!!: ');
+
+      var type = ARRAY.template._.new();
+
+      for (var i = 0 ; i < data.length ; i++){
+        type._.name = mongodb.hex2name(data[i]._id);
+        ARRAY._.array.elementConnect(ARRAY.array,type);
+        type._.load(data[i]);
+        type._.getTree(arg.request);
+      }
+
+      cb(data);
+    });
+
+  };
+
+  MONGODB.getOne = function(req,cb){
+    var ARRAY = this;
+    MONGODB.initializeArray(ARRAY);
+    console.log('MONGODB.getOne('+this._.path+'.array.)');
+
+    var q = new Object();
+    q[req.input.item]=req.input.eq;
+
+    ARRAY._.model.findOne(q, function (err, data){
+      if (err!=null||data==null){cb(null); return;}
+      console.log('FOUND!!!: '+req.input.eq);
+
+      var type = ARRAY.template._.new();
+      type._.name = mongodb.hex2name(data._id);
+      type._.load(data);
+      ARRAY._.array.elementConnect(ARRAY.array,type);
+      type._.getTree(req);
+
+      cb(type);
+    });
+};
+
   MONGODB.getID = function(id,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
     console.log('MONGODB.getID('+this._.path+'.array.'+id+')');
 
-    //var item = new ARRAY._.model();
-
     ARRAY._.model.findById(mongodb.name2hex(id), function (err, data){
       if (err!=null||data==null){cb(null); return;}
       console.log('FOUND!!!: '+id);
-
-      var old = ARRAY.template._.new();
-      old._.load(data);
-
       cb(data);
     });
 
@@ -148,6 +189,20 @@ mongodb.create = function(input){
 
       item.save()
       cb(data);
+    });
+  };
+
+  MONGODB.deleteID = function(id,cb){
+    var ARRAY = this;
+    MONGODB.initializeArray(ARRAY);
+    console.log('MONGODB.deleteID('+this._.path+'.array.'+id+')');
+
+    var item = new ARRAY._.model();
+
+    ARRAY._.model.findOneAndRemove({_id:mongodb.name2hex(id)},function(err, item){
+      if (err!=null||item==null){cb(null); return;}
+      console.log('FOUND for DELETE!!!: '+id);
+      cb(item);
     });
   };
 
