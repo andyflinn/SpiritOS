@@ -635,6 +635,7 @@ zs4.util = {
       if (int & this.authgetuser) addFlag('authgetuser');
       if (int & this.authsetuser) addFlag('authsetuser');
       if (int & this.nogetall) addFlag('nogetall');
+      if (int & this.bits) addFlag('bits');
 
       return ret;
     };
@@ -943,7 +944,7 @@ zs4.type = {
     }).bind(this);
     this._.shouldBeSaved = (function(req){
       //console.log('this.shouldBeSaved()');
-      if (this._.flags.get.nostore())return;
+      if (this._.flags.get.nostore()||req.noneedsaving==true)return;
       this._.print('this.shouldBeSaved('+this._.path+')',req);
       req.request.needsSaving = true;
       this._.scope.zs4.head.updated._.value = Date.now();
@@ -1668,6 +1669,7 @@ zs4.type = {
           var name = (' '+n+' ').trim();
           var request = req.create({input:input[name],});
           request.elenam = name;
+          request.noneedsaving = true;
 
           parallel.call(TABLE,THIS.array._.driverTransform,request);
         }
@@ -3505,6 +3507,9 @@ zs4.request = function(o){
       ret.getall=true;
       ret.flags.value |= this.flags.prune;
     }
+
+    if (this.noneedsaving==true)ret.noneedsaving=true;
+
     return ret;
   };
   const BADPATH = 'bad path';

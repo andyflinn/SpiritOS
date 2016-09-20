@@ -68,7 +68,7 @@ express.setCookie = function(res,zs4request){
 
 express.getFunction = function (req, res) {
   express.THIS._.print('express.app.get('+req.path+')')
-  console.log('GET REQUEST: '+req.path);
+  //console.log('GET REQUEST: '+req.path);
 
   //console.log('GET REQUEST!!!!!!!!');
 
@@ -95,7 +95,7 @@ express.getFunction = function (req, res) {
   });
 };
 express.postFunction = function (req, res) {
-  console.log('POST REQUEST: '+JSON.stringify(req.body));
+  //console.log('POST REQUEST: '+JSON.stringify(req.body));
   var zs4req = new zs4.request(req.body);
   zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
   //console.log(req.body);
