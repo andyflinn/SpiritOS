@@ -443,6 +443,10 @@ zs4.admin.util = {
 		this.scope = scope;
 		this.containerElement = containerElement;
 
+		this.toolbar = document.createElement('zs4-app-toolbar');
+		this.containerElement.appendChild(this.toolbar);
+
+
 		this.internalRefresh = function(){
 			// flag the first pass
 			if (!zs4.is.boolean(this.uninitialized))this.uninitialized=true;
@@ -473,6 +477,8 @@ zs4.admin.util = {
 
 		if (o._.html.refreshAll==null){
 			o._.html.refreshAll = function(){
+				//document.body.style.width = window.innerWidth+'px';
+				//document.body.style.height = window.innerHeight+'px';
 				o._.print('refreshing object tree');
 				zs4.admin.rootObject._.localRefresh();
 				zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
@@ -984,8 +990,11 @@ zs4.admin.util = {
 				o._.html.appElement = document.createElement('zs4-app');
 				o._.html.e.appendChild(o._.html.appElement);
 
+				o._.html.appUserInterface = document.createElement('zs4-app-ui');
+				o._.html.appElement.appendChild(o._.html.appUserInterface);
+
 				o._.html.appWindow = document.createElement('zs4-app-window');
-				o._.html.appElement.appendChild(o._.html.appWindow);
+				o._.html.appUserInterface.appendChild(o._.html.appWindow);
 
 				o._.html.top.dialogActive = false;
 				o._.html.top.dialog = function(name){
@@ -1001,7 +1010,7 @@ zs4.admin.util = {
 					//this.select.textContent = name;
 
 					this.pane = document.createElement('zs4-app-dialog');
-					o._.html.appElement.appendChild(this.pane);
+					o._.html.appUserInterface.appendChild(this.pane);
 					//this.pane.textContent = 'dialog pane for '+name;
 					zs4.admin.util.removeClass(this.pane,'current');
 					zs4.admin.util.addClass(this.pane,'nodisplay');
@@ -1428,6 +1437,7 @@ zs4.admin.util = {
 					}
 					o._.html.top.dialogActive = false;
 					zs4.admin.util.removeClass(o._.html.appWindow,'nodisplay');
+
 					o._.html.refreshAll();
 				}
 
@@ -1436,9 +1446,6 @@ zs4.admin.util = {
 						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
 						top.app.refresh = (function(){
 							if (top.app.uninitialized==true){
-
-								top.app.toolbar = document.createElement('zs4-app-toolbar');
-								o._.html.appWindow.appendChild(top.app.toolbar);
 
 								top.app.searchButton = document.createElement('zs4-app-search-icon');
 								zs4.admin.util.setIcon(top.app.searchButton,'search');
@@ -1863,6 +1870,13 @@ zs4.admin.util = {
 					new o._.html.top.dialogTool();
 				}
 				new o._.html.top.dialogUser();
+
+				o._.html.appInfo = document.createElement('zs4-app-info');
+				o._.html.appElement.appendChild(o._.html.appInfo);
+
+				o._.html.appInfoContent = document.createElement('zs4-app-info-content');
+				o._.html.appInfoContent.textContent = 'lorem ipsum et cetera...';
+				o._.html.appInfo.appendChild(o._.html.appInfoContent);
 
 			}
 

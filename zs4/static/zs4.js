@@ -4116,7 +4116,7 @@ if (zs4.is.window()){
       var height = window.innerHeight;
       if (height > heightLimit)height = heightLimit;
 
-      var em = (width) / 20;
+      var em = (width+height) / 30;
       zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
     },
   };
