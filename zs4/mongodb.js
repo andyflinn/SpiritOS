@@ -54,19 +54,20 @@ mongodb.name2hex = function(name){
   return h;
 };
 
-mongodb.scopeToSchema = function(scope){
+mongodb.scopeToSchema = function(ARRAY,scope){
 
-  function recurse(type){
+  function recurse(ARRAY,type){
     var ret = new Object();
     if (type._.type==Object){
       for (var n in type){
         if (!zs4.is.type(type[n]))continue;
         if (type[n]._.flags.get.nostore())continue;
 
-        ret[n] = recurse(type[n]);
+        ret[n] = recurse(ARRAY,type[n]);
       }
     }
     else {
+      //console.log('SCHEMA ENTRY: '+type._.path);
       ret.type = type._.type;
       ret.default = type._.default;
       if (type._.flags.get.index())ret.index=true;
@@ -79,12 +80,16 @@ mongodb.scopeToSchema = function(scope){
       else if (ret.type==String){
         if (zs4.is.number(type._.minlength))ret.minlength = type._.minlength;
         if (zs4.is.number(type._.maxlength))ret.maxlength = type._.maxlength;
+        if (type._.flags.get.textsearch()){
+          console.log('MUST SEARCH '+type._.path);
+          ARRAY._.mongoTextSearch[type._.path]='text';
+        }
       }
     }
     return ret;
   };
 
-  var ret = recurse(scope._.new());
+  var ret = recurse(ARRAY,scope);
   return ret;
 };
 
@@ -105,8 +110,15 @@ mongodb.create = function(input){
   MONGODB.initializeArray = function(ARRAY){
 
     if (ARRAY._.mongoSchema == null){
-      ARRAY._.mongoSchema = mongodb.scopeToSchema(ARRAY.template);
-      console.log(JSON.stringify(ARRAY._.mongoSchema));
+
+      ARRAY._.mongoTextSearch = new Object();
+      ARRAY._.mongoSchemeRaw = mongodb.scopeToSchema(ARRAY,ARRAY.template._.new());
+      ARRAY._.mongoSchema = new mongoose.Schema(ARRAY._.mongoSchemeRaw);
+
+      console.log(ARRAY._.mongoTextSearch);
+      ARRAY._.mongoSchema.index(ARRAY._.mongoTextSearch);
+
+      //console.log(JSON.stringify(ARRAY._.mongoSchema));
 
       ARRAY._.mongoModel = function(){
         return mongoose.model(ARRAY.template.zs4.head.typename._.value, ARRAY._.mongoSchema);
@@ -119,17 +131,75 @@ mongodb.create = function(input){
   MONGODB.query = function(arg,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.query('+this._.path+'.array.)');
+    console.log('MONGODB.query('+this._.path+'.array)');
 
+    var find = new Object();
+
+    var query = ARRAY._.model.find({});
+    if (zs4.is.string(arg.search)){
+      var a = zs4.string.split.spaces(arg.search);
+      if (a.length > 0){
+        var or = new Array();
+        for (var i = 0 ; i < a.length;i++){
+          for (var n in ARRAY._.mongoTextSearch){
+            var name = (' '+n+' ').trim();
+            var nu = new Object();
+            nu[name] = { "$regex": a[i], "$options": "i" };
+            or.push(nu);
+          }
+        }
+        console.log('$or:',or);
+        query.find({$or:or});
+      }
+    }
+
+    for (var n in arg.select){
+      //console.log('for (var '+n+' in arg.select)');
+      if (!zs4.is.type(arg.select[n]))continue;
+      if (arg.select[n]._.typename!='selectitem')continue;
+      //console.log('for (var '+n+' in arg.select) ITEM ENTRY FOUND!!!');
+
+      var item = arg.select[n].item._.value;
+      var ityp = ARRAY.template._.resolvePath(item)
+      if (ityp==null)continue;
+      var opcode = arg.select[n].opcode._.value;
+      if (opcode=='exists')continue;
+      var type = arg.select[n].type._.value;
+      if (type!='const')continue;
+      var value = arg.select[n].const._.value;
+      if (ityp._.type == String || ityp._.type == Number || ityp._.type == Boolean){
+        value = ityp._.opcode.convert(value);
+      }
+      if (opcode=='eq'){query.where(item).equals(value);}
+
+      console.log('FOUND A SELECT CONDITION');
+    }
+
+    if (arg.sort!=null&&zs4.is.string(arg.sort.item)&&arg.sort.item.length>0){
+        var so = new Object();
+
+        if (arg.sort.item.descend==true)so[arg.sort.item]=-1;
+        else so[arg.sort.item]=1;
+
+        query.sort(so);
+    }
+    else {
+      query.sort('-zs4.head.updated');
+    }
+
+    //console.log('   QUERY: ',query);
+    //console.log('FIND: ',find);
     //var item = new ARRAY._.model();
 
-    ARRAY._.model.find({}, function (err, data){
+    ARRAY._.model.find(query, function (err, data){
       if (err!=null||data==null||!zs4.is.array(data)){cb(null); return;}
-      console.log('QUERY RETURNED ARRAY!!!: ');
+      console.log('QUERY RETURNED ARRAY!!!: length='+data.length);
 
       var type = ARRAY.template._.new();
 
       for (var i = 0 ; i < data.length ; i++){
+        console.log(data[i].zs4.head.title);
+
         type._.name = mongodb.hex2name(data[i]._id);
         ARRAY._.array.elementConnect(ARRAY.array,type);
         type._.load(data[i]);

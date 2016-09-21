@@ -194,7 +194,6 @@ zs4.admin.util = {
 			if (zs4.is.number(o._.minlength))addValue('minlength',o._.minlength);
 			if (zs4.is.number(o._.maxlength))addValue('maxlength',o._.maxlength);
 		}
-		//if (o._.==true)addValue('hidden',true);
 
 	},
 	auth:function(o){
@@ -540,6 +539,8 @@ zs4.admin.util = {
 				zs4.admin.util.addClass(o._.html.e,'top');
 				o._.html.topElement=true;
 				o._.html.top = new Object({value:{}});
+
+				zs4.window.onresize.push(o._.html.refreshAll);
 			}
 
 			o._.html.genericRefresh = (function(){
@@ -660,6 +661,9 @@ zs4.admin.util = {
 				if (o._.flags.get.own())add+=' own';else rem+=' own';
 				if (o._.flags.get.notrans())add+=' notrans';else rem+=' notrans';
 
+				if (window.innerWidth>window.innerHeight){add+=' landscape';rem+=' portrait'}
+				else {add+=' portrait';rem+=' landscape'}
+
 				if (o._.type == Object){
 					add+=' object'; rem+=' value';
 				}
@@ -683,7 +687,21 @@ zs4.admin.util = {
 				addrem(o._.html.head);
 				addrem(o._.html.toggle);
 				addrem(o._.html.name);
-
+				if (o._.html.topElement==true && o._.html.top.app){
+					var top = o._.html.top;
+					addrem(o._.html.dialogHeader);
+					addrem(o._.html.appElement);
+					addrem(o._.html.appWindow);
+					addrem(o._.html.top.app.toolbar);
+					addrem(o._.html.top.app.searchButton);
+					addrem(o._.html.top.app.search);
+					addrem(o._.html.top.app.content);
+					for (var n in o._.html.dialog){
+						addrem(o._.html.dialog[n].select)
+						addrem(o._.html.dialog[n].pane)
+						addrem(o._.html.dialog[n].toolbar)
+					}
+				}
 
 				addrem(o._.html.e);
 
@@ -1523,59 +1541,49 @@ zs4.admin.util = {
 								top.app.sortSelect = document.createElement('select');
 								zs4.admin.util.addClass(top.app.sortSelect,'app-sort-select');
 								top.app.sort.appendChild(top.app.sortSelect);
-								top.app.sortSelectOption = (function(name,foo,selected){
+								top.app.sortSelectOption = (function(input,path,foo,selected){
 									var option = document.createElement('option');
-									top.app.sortFunction[name] = foo;
-									option.value = name;
-									option.text = name;
-									if (selected==true){
+									top.app.sortFunction[input.name] = input;
+									option.value = input.name;
+									option.text = input.name;
+									if (input.selected==true){
 										option.selected = true;
-										top.app.orderFunction = foo;
+										top.app.orderFunction = input;
 									}
 									top.app.sortSelect.add(option);
 								}).bind(top.app);
 								top.app.sortSelect.onchange = (function(){
 									top.app.orderFunction = top.app.sortFunction[top.app.sortSelect.value];
-									top.app.internalRefresh();
+									//top.app.internalRefresh();
+									this.requestItems();
 								}).bind(top.app);
-								top.app.sortSelectOption('title',function(a,b){
-									var ret = a.scope.zs4.head.title._.value.localeCompare(b.scope.zs4.head.title._.value);
-									if (top.app.orderDescendTrue){return -ret;}
-									else {return ret;}
-								},true);
-								top.app.sortSelectOption('updated',function(a,b){
-									var ret = a.scope.zs4.head.updated._.value - b.scope.zs4.head.updated._.value;
-									if (top.app.orderDescendTrue){return -ret;}
-									else {return ret;}
-								});
-								top.app.sortSelectOption('created',function(a,b){
-									var ret = a.scope.zs4.head.created._.value - b.scope.zs4.head.created._.value;
-									if (top.app.orderDescendTrue){return -ret;}
-									else {return ret;}
-								});
 
-								top.app.orderDescendTrue = false;
-								top.app.orderDescend = document.createElement('select');
-								zs4.admin.util.addClass(top.app.orderDescend,'app-sort-toggle');
-								var option = document.createElement('option');
-								option.value = 'ascend';
-								option.text = 'ascend';
-								option.selected = true;
-								top.app.orderDescend.add(option);
-								option = document.createElement('option');
-								option.value = 'descend';
-								option.text = 'descend';
-								top.app.orderDescend.add(option);
-								top.app.sort.appendChild(top.app.orderDescend);
-								top.app.orderDescend.onchange = (function(){
-									if (top.app.orderDescend.value=='ascend'){
-										top.app.orderDescendTrue = false;
-									}
-									else {
-										top.app.orderDescendTrue = true;
-									}
-									top.app.internalRefresh();
-								}).bind(top.app);
+								top.app.sortSelectOption({
+									name:'title',
+									path:'zs4.head.title',
+									descend:false,
+									selected:false,
+									sort:function(a,b){
+										return a.scope.zs4.head.title._.value.localeCompare(b.scope.zs4.head.title._.value);
+									},});
+
+								top.app.sortSelectOption({
+									name:'recent',
+									path:'zs4.head.updated',
+									descend:true,
+									selected:true,
+									sort:function(a,b){
+										return b.scope.zs4.head.updated._.value - a.scope.zs4.head.updated._.value;
+									},});
+
+								top.app.sortSelectOption({
+									name:'oldest',
+									path:'zs4.head.created',
+									descend:false,
+									selected:false,
+									sort:function(a,b){
+										return a.scope.zs4.head.created._.value - b.scope.zs4.head.created._.value;
+									},});
 
 								top.app.new = document.createElement('zs4-app-new-item');
 								top.app.new.textContent = 'new';
@@ -1603,13 +1611,12 @@ zs4.admin.util = {
 								o._.html.appWindow.appendChild(top.app.content);
 
 								top.app.orderHtml = (function(){
-									var a = top.app.array.sort(top.app.orderFunction);
+									var a = top.app.array.sort(top.app.orderFunction.sort);
 									if (a.length > 1){
 										for (var i = 0 ; i < (a.length-1) ; i++){
 											top.app.content.removeChild(a[i].element);
 											top.app.content.insertBefore(a[i].element, top.app.content.childNodes[i]);
 										}
-
 									}
 								}).bind(top.app);
 
@@ -1700,15 +1707,52 @@ zs4.admin.util = {
 									req.value = top.app.search.value;
 									req.type = top.app.typeSelect.value;
 									req.owner = top.app.creatorSelect.value;
-									if (o._.flags.get.scope()&&o.zs4.head.typename=='user'){
+									if (o._.flags.get.scope()&&o.zs4.head.typename._.value=='user'){
 										req.owner = o._.path;
 									}
 
-									zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-									zs4.post(zs4.THIS.zs4.search._.wrapRequest(req),function(ret){
-										zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-										o._.html.refreshAll();
-									});
+									var tq = null;
+									if(req.type.length>0)
+									tq=zs4.THIS._.resolvePath('zs4.type.'+req.type+'.method.query')
+
+									console.log('resolvePath('+'zs4.type.'+req.type+'.method.query'+') = '+tq);
+
+									if (tq != null){
+										var query = new Object({
+											search:top.app.search.value,
+											sort:{
+												item:top.app.orderFunction.path,
+												descend:top.app.orderFunction.descend,
+											},
+											select:{sc:'all'},
+										});
+
+										if (o.zs4.head.typename._.value=='user'){
+											query.select.owner = new Object({
+												sc:'item',
+												item:'zs4.head.owner',
+												opcode:'eq',
+												type:'const',
+												const:o._.path,
+												prop:'',
+											});
+										}
+
+										console.log(JSON.stringify(query));
+
+										zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+										zs4.post(tq._.wrapRequest(query),function(ret){
+											zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+											o._.html.refreshAll();
+										});
+									}
+									else {
+										zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+										zs4.post(zs4.THIS.zs4.search._.wrapRequest(req),function(ret){
+											zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+											o._.html.refreshAll();
+										});
+									}
 
 								}).bind(top.app);
 
@@ -1747,7 +1791,6 @@ zs4.admin.util = {
 									zs4.admin.util.addClass(top.app.array[i].surdel,'nodisplay');
 									zs4.admin.util.addClass(top.app.array[i].sure,'nodisplay');
 									zs4.admin.util.addClass(top.app.array[i].reallydelete,'nodisplay');
-
 								}
 
 								if (top.app.search.value != ''){

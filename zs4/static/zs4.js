@@ -40,9 +40,6 @@ zs4.const = {
     MINLENGTH:5,
     MAXLENGTH:64,
   },
-  FLAG:{
-    SETTABLE:0x00000001,
-  },
   MS:{
     SECOND:1000,
     MINUTE:(1000*60),
@@ -67,20 +64,7 @@ zs4.const = {
     MINLENGTH:0,
     MAXLENGTH:((256*256)-1),
   },
-  SERVER:{
-    NAME:{
-      MINLENGTH:1,
-      MAXLENGTH:16,
-    },
-    SLOGAN:{
-      MINLENGTH:4,
-      MAXLENGTH:32,
-    },
-  },
-  TYPE:{
-    PLAIN:0,
-    COLLECTED:1,
-  },
+  SPACECHARS:' \n\r\t',
 };
 
 zs4.console = {
@@ -224,6 +208,9 @@ zs4.string = {
       }
       return arr;
     },
+    spaces:function(str){
+      return zs4.string.split.separators(str,zs4.const.SPACECHARS);
+    }
   },
   to:{
     lower:function(str){return str.toLowerCase();},
@@ -446,6 +433,15 @@ zs4.name = {
   },
 };
 
+zs4.time = {
+  driver:{
+    ticks:{
+      now:0,
+    },
+  },
+
+};
+
 zs4.processor = {
   sequential:function(){
     this.count = 0;
@@ -574,7 +570,7 @@ zs4.util = {
     this.addFlag('authsetself',0x100000);
     this.addFlag('authsetpublic',0x200000);
     this.addFlag('deletable',0x400000);
-    this.addFlag('hidden',0x800000);
+    this.addFlag('textsearch',0x800000);
 
     this.addFlag('local',0x1000000);
     this.addFlag('authroot',0x2000000);
@@ -625,7 +621,7 @@ zs4.util = {
       if (int & this.authsetself) addFlag('authsetself');
       if (int & this.authsetpublic) addFlag('authsetpublic');
       if (int & this.deletable) addFlag('deletable');
-      if (int & this.hidden) addFlag('hidden');
+      if (int & this.textsearch) addFlag('textsearch');
 
       if (int & this.local) addFlag('local');
       if (int & this.authroot) addFlag('authroot');
@@ -636,6 +632,7 @@ zs4.util = {
       if (int & this.authsetuser) addFlag('authsetuser');
       if (int & this.nogetall) addFlag('nogetall');
       if (int & this.bits) addFlag('bits');
+
 
       return ret;
     };
@@ -695,6 +692,13 @@ zs4.util = {
 
     }).bind(this);
     return this;
+  },
+  select:function(){
+    this.sc = 'all';
+    this.itemConstant = function(){
+
+    };
+
   },
 };
 
@@ -987,6 +991,7 @@ zs4.type = {
       if (this._.flags.get.authroot())get._.flags |= req.flags.authroot;
       if (this._.flags.get.quickupdate())get._.flags |= req.flags.quickupdate;
       if (this._.flags.get.nosort())get._.flags |= req.flags.nosort;
+      if (this._.flags.get.textsearch())get._.flags |= req.flags.textsearch;
 
       if (!req.flags.get.authset()
       ||  this._.flags.get.noset()
@@ -1375,6 +1380,7 @@ zs4.type = {
     }).bind(this);
 
     this._.search = (function(s){
+
       if (this._.type==Object){
         for (var n in this)if (zs4.is.type(this[n])){
           var ret = this[n]._.search(s);
@@ -1383,8 +1389,15 @@ zs4.type = {
         return false;
       }
       else if (this._.type==String){
-        if (this._.value.search(s)<0)return false;
-        return true;
+        if (!this._.flags.get.textsearch())return false;
+        if (s==null||s=='')return true;
+
+        var a = zs4.string.split.spaces(s);
+        if (a.length==0)return true;
+        for (var i = 0 ; i < a.length;i++){
+          if (this._.value.toLowerCase().search(a[i].toLowerCase())>=0)return true;
+        }
+        return false;
       }
 
       return false;
@@ -1531,7 +1544,6 @@ zs4.type = {
     }).bind(this);
 
     THIS.array._.sortDefault = THIS.array._.sortArray;
-
 
     THIS.array._.elementLoad = (function(req,cb){
       //console.log('elementLoad '+this._.path+'.'+req.elenam);
@@ -1805,11 +1817,12 @@ zs4.type = {
 
           var sel = null;
           if (zs4.is.object(REQUEST.input.select)){
+            //console.log('QUERY-SELECT: ',JSON.stringify(REQUEST.input.select,null,1));
             sel = new zs4.type.select();
             sel._.parse(REQUEST.input.select);
           }
           else {
-            console.log(QUERY._.path+'.transform(no select input)',req.input);
+            //console.log(QUERY._.path+'.transform(no select input)',req.input);
             this._.get(req); cb(); return;
           }
           var search = null;
@@ -1817,14 +1830,16 @@ zs4.type = {
             search = REQUEST.input.search;
           }
 
+          console.log(QUERY._.path+'.transform()',REQUEST.input);
+
           if (THIS.config.driver._.value != ''){
-            var args = new Object({request:req,select:sel,search:search,});
+            var args = new Object({request:req,select:sel,search:search,sort:REQUEST.input.sort,});
             zs4.array[THIS.config.driver._.value].query.call(THIS,args,function(ret){
               if (!zs4.is.array(ret)){
 
               }
               else {
-                console.log(ret);
+                //console.log(ret);
               }
 
               QUERY._.get(req);
@@ -2316,7 +2331,7 @@ zs4.type = {
     this._.create = zs4.type.head;
 
     if (zs4.is.node()){
-      this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself quickupdate',}));
+      this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
       this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune authgetpublic nostore',}));
       this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune authgetpublic',}));
@@ -3060,6 +3075,7 @@ zs4.type = {
         var query = new Object({search:req.input.value,select:{sc:'all'}});
 
         if (zs4.is.string(req.input.owner)&&req.input.owner!=''){
+          console.log('zs4.search('+req.input.owner+')')
           query.select.owner = new Object({
               sc:'item',
               item:'zs4.head.owner',
@@ -3069,6 +3085,8 @@ zs4.type = {
               prop:'',
           });
         }
+
+        console.log('zs4.search('+JSON.stringify(query)+')');
 
         var parallel = new zs4.processor.parallel();
 
@@ -3983,6 +4001,10 @@ if (zs4.is.node()){
 
 if (zs4.is.window()){
 
+  zs4.window ={
+    onresize:[],
+  };
+
   zs4.io = {
     ajax:function(u,cb){
       this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
@@ -4083,6 +4105,7 @@ if (zs4.is.window()){
     },true);
   };
   zs4.style = {
+
     refresh:function(){
       zs4.style.element.innerHTML = '';
       var widthLimit = 2048;
@@ -4093,7 +4116,7 @@ if (zs4.is.window()){
       var height = window.innerHeight;
       if (height > heightLimit)height = heightLimit;
 
-      var em = (width) / 10;
+      var em = (width) / 20;
       zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
     },
   };
@@ -4103,5 +4126,11 @@ if (zs4.is.window()){
   zs4.style.refresh();
   window.onresize = function(){
     zs4.style.refresh();
+    for (var i = 0 ; i < zs4.window.onresize.length ; i++){
+      if (zs4.is.function(zs4.window.onresize[i])){
+        //console.log('...WINDOW.ONRESIZE....')
+        zs4.window.onresize[i]();
+      }
+    }
   };
 }
