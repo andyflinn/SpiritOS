@@ -122,13 +122,15 @@ option.zs4-placeholder {
   font-style: italic;
   color:gray;
 }
-html{
+html,
+zs4-scope,
+zs4-object{
   width:100%;
   height:100%;
 }
 body{
   width:100%;
-  min-height:100%;
+  height:100%;
   padding:0;
   margin:0;
   color:black;
@@ -232,6 +234,15 @@ zs4-name.zs4-own.zs4-noset:not{
   background-color: lightblue;
   border-radius:0.5em;
 }
+.icon-to-start:before{
+  content:'\025C4';
+  font-weight: bolder;
+  font-size:0.6em;
+  padding-right:0.5em;
+  color:black;
+  background-color: lightblue;
+  border-radius:0.5em;
+}
 
 zs4-error{
   color:red;
@@ -272,6 +283,7 @@ zs4-object-head.zs4-root{
 
 zs4-object-content{
   width:100%;
+  height:100%;
   background: linear-gradient(to right, lightblue, white );
   background-size: 0.8em 100%;
   background-repeat: no-repeat;
@@ -282,8 +294,6 @@ zs4-object-content.zs4-off{
   display:none;
 }
 
-zs4-object-content.zs4-top{
-}
 zs4-object-content.zs4-top.zs4-tbon{
   display:none;
 }
@@ -437,6 +447,7 @@ zs4-app-info{
 zs4-app-info.zs4-portrait{
   display:block;
   width:100%;
+  align-self: flex-end;
 }
 zs4-app-info.zs4-landscape{
   display:inline-block;

@@ -2020,8 +2020,8 @@ zs4.type = {
         }).bind(this.method.getone);
       }
 
-      THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune authsetself',}));
-      THIS.method.deleteone._.property(new zs4.type.string({name:'id',flags:'required nostore noprune apiarg',}));
+      THIS.method._.property(new zs4.type.object({name:'deleteone',flags:'api noprune nostore noprune authuser',}));
+      THIS.method.deleteone._.property(new zs4.type.string({name:'id',flags:'apiarg required nostore noprune apiarg',}));
       this.method.deleteone._.transform = (function(req,cb){
         var DELONE = this;
         var DELREQ = req;
@@ -2070,7 +2070,7 @@ zs4.type = {
             }
 
             if (!req.flags.get.authroot()){
-              if (!req.request.payload.scope != ret.zs4.head.owner){
+              if (req.request.payload.scope != ret.zs4.head.owner){
                 var err = 'not authorized';
                 req.error(DELONE,err);
                 DELONE._.print(err,req);
