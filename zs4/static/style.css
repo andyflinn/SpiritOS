@@ -563,6 +563,9 @@ zs4-app-device{
   background-color: lightgray;
   font-weight: bold;
 }
+zs4-app-device:hover{
+  background-color: lightblue;
+}
 zs4-app-device-info-item{
   display:block;
 }
