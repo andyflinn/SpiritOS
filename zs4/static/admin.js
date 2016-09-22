@@ -1372,6 +1372,97 @@ zs4.admin.util = {
 						}).bind(this);
 					}
 
+					this.deviceIsOpen = false;
+					this.device = document.createElement('zs4-app-device');
+					this.device.textContent = 'device info';
+					this.pane.appendChild(this.device);
+					this.device.onclick = function(){
+						if (DIALOG.deviceIsOpen){
+							DIALOG.deviceIsOpen = false;
+							zs4.admin.util.addClass(DIALOG.deviceInfo,'nodisplay');
+						}
+						else {
+							DIALOG.deviceIsOpen = true;
+							zs4.admin.util.removeClass(DIALOG.deviceInfo,'nodisplay');
+						}
+						DIALOG.refreshInternal();
+					};
+
+					this.deviceInfo = document.createElement('zs4-app-device-info');
+					zs4.admin.util.addClass(DIALOG.deviceInfo,'nodisplay');
+					this.pane.appendChild(this.deviceInfo);
+
+					function addDeviceItem(name,value){
+						var item = document.createElement('zs4-app-device-info-item');
+						DIALOG.deviceInfo.appendChild(item);
+
+						var nameEle = document.createElement('zs4-app-device-info-name');
+						nameEle.textContent = name;
+						item.appendChild(nameEle);
+
+						var valueEle = document.createElement('zs4-app-device-info-value');
+						valueEle.textContent = value.toString();
+						item.appendChild(valueEle);
+					}
+
+					var titles = new Array();
+					function addBowserFlag(title,flag){
+						if(zs4.string.array.is.element(titles,title))return false;
+
+						if (zs4.is.boolean(bowser[flag])&&bowser[flag]==true){
+							titles.push(title);
+							addDeviceItem(title,flag);
+							return true;
+						}
+
+						return false;
+					}
+
+					addDeviceItem('browser',bowser.name);
+					addDeviceItem('version',bowser.version);
+
+					addBowserFlag('type','mobile');
+					addBowserFlag('type','tablet');
+
+					addBowserFlag('renderer','webkit');
+					addBowserFlag('renderer','blink');
+					addBowserFlag('renderer','gecko');
+					addBowserFlag('renderer','msie');
+					addBowserFlag('renderer','msedge');
+
+					addBowserFlag('os','mac');
+					addBowserFlag('os','windows');
+					addBowserFlag('os','windowsphone');
+					addBowserFlag('os','linux');
+					addBowserFlag('os','chromeos');
+					addBowserFlag('os','android');
+					addBowserFlag('os','ios');
+					addBowserFlag('os','blackberry');
+					addBowserFlag('os','firefoxos');
+					addBowserFlag('os','webos');
+					addBowserFlag('os','bada');
+					addBowserFlag('os','tizen');
+					addBowserFlag('os','sailfish');
+
+					addBowserFlag('ios','iphone');
+					addBowserFlag('ios','ipad');
+					addBowserFlag('ios','ipod');
+					if (bowser.osversion!=null)addBowserFlag('version',bowser.osversion);
+
+
+					var hr = document.createElement('hr');
+					DIALOG.deviceInfo.appendChild(hr);
+
+					addDeviceItem('appName',window.navigator.appName);
+					addDeviceItem('appCodeName',window.navigator.appCodeName);
+					addDeviceItem('product',window.navigator.product);
+					addDeviceItem('platform',window.navigator.platform);
+
+					hr = document.createElement('hr');
+					DIALOG.deviceInfo.appendChild(hr);
+
+					addDeviceItem('screen',window.screen.width + 'x'+window.screen.height);
+
 					this.refreshDialog = (function(){
 						if (zs4.THIS._.loggedIn){
 							var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);

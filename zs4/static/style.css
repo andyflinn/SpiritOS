@@ -310,6 +310,7 @@ zs4-toolbar-tool{
 }
 zs4-tool-pane.zs4-current{
   display:block;
+  overflow:auto;
   width:100%;
 }
 
@@ -405,7 +406,7 @@ zs4-logout-now{
 }
 
 input.zs4-search{
-  width:8em;
+  width:4em;
   height:1em;
   border-style:none;
   margin-left:0em;
@@ -451,8 +452,8 @@ zs4-app-info.zs4-portrait{
 }
 zs4-app-info.zs4-landscape{
   display:inline-block;
-  flex-grow: 0;
-  flex-shrink: 0;
+  flex-grow: 1;
+  flex-shrink: 1;
   flex-basis:8em;
   align-self: flex-end;
 }
@@ -467,6 +468,7 @@ zs4-app-dialog{
 zs4-app-toolbar{
   display:block;
   width:100%;
+  overflow:auto;
   background-color: lightgray;
 }
 zs4-app-content{
@@ -554,4 +556,19 @@ zs4-login:hover,
 zs4-logout:hover,
 zs4-spw-title:hover{
   background-color: lightblue;
+}
+
+zs4-app-device{
+  display:block;
+  background-color: lightgray;
+  font-weight: bold;
+}
+zs4-app-device-info-item{
+  display:block;
+}
+zs4-app-device-info-name:after{
+  content:': ';
+}
+zs4-app-device-info-value{
+  font-weight: bold;
 }

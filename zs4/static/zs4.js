@@ -1182,6 +1182,7 @@ zs4.type = {
           if (req.request.token&&req.request.payload){
             html += '  <script>window.token=\''+req.request.token+'\'</script>\n';
           }
+          html += '  <script src="/bowser.min.js"></script>\n';
           html += '  <script src="/zs4.js"></script>\n';
           html += '  <script>zs4.location.path=\''+this._.path+'\';zs4.admin();</script>\n'
         html += ' </head>\n';
