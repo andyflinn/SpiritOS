@@ -713,7 +713,10 @@ zs4.scope = {
   },
 };
 
+zs4.folder = new Object();
 zs4.array = new Object();
+
+if (zs4.is.node())zs4.node = new Object({require:{}});
 
 zs4.type = {
 
@@ -850,6 +853,17 @@ zs4.type = {
       return this._.value;
     }).bind(this);
 
+    this._.elementConnect = (function(p,e){
+      if (p==null)e._.path = e._.name;
+      else e._.path = p._.path +'.'+e._.name;
+      if (e._.type == Object){
+          for (var n in e){
+            if (!zs4.is.type(e[n]))continue;
+            this._.elementConnect(e,e[n]);
+          }
+      }
+      return e;
+    }).bind(this);
 
     this._.loadAuth = (function(input){
       if (zs4.is.object(input)&&zs4.is.object(input._))
@@ -1462,17 +1476,7 @@ zs4.type = {
     var THIS = this;
 
     THIS._.array = new Object();
-    THIS._.array.elementConnect = (function(p,e){
-      if (p==null)e._.path = e._.name;
-      else e._.path = p._.path +'.'+e._.name;
-      if (e._.type == Object){
-          for (var n in e){
-            if (!zs4.is.type(e[n]))continue;
-            THIS._.array.elementConnect(e,e[n]);
-          }
-      }
-      return e;
-    }).bind(THIS.array);
+    THIS._.array.elementConnect = this._.elementConnect;
 
     if (zs4.is.node()){
       THIS._.property(new zs4.type.object({name:'config',flags:'noprune',authSet:['zs4.owner'],}));
@@ -2309,6 +2313,12 @@ zs4.type = {
     this._.typename = 'date';
 
   },
+  download:function(input){
+    zs4.type.object.call(this,input)
+    this._.typename = 'download';
+    this._.create = zs4.type.download;
+    this._.flags.set.api();
+  },
   email:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'email';
@@ -2325,6 +2335,301 @@ zs4.type = {
   enum:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'enum';
+  },
+  file:function(input){
+    var FILE = this;
+    zs4.type.object.call(this,input);
+    this._.typename = 'file';
+    this._.flags.set.nosort(true);
+    //if (zs4.is.node()){
+      this._.property(new zs4.type.download({name:'download',flags:'api noprune nostore',}));
+      this.download._.transform = (function(req,cb){
+        var REQUEST = req;
+        var DOWNLOAD = this;
+        req.setScope(this);
+        this._.transformInternal(req);
+        if (!(req.flags.value & req.flags.authset)){
+          var err = 'not authorized';
+          req.error(DOWNLOAD,err);
+          this._.print(err,req);
+          this._.get(req); cb(); return;
+        }
+        if (!req.tokenExists()){
+          var err = 'not logged in';
+          req.error(DOWNLOAD,err);
+          this._.print(err,req);
+          this._.get(req); cb(); return;
+        }
+
+
+        this._.get(req);
+        FILE.content._.get(req);
+        FILE._.get(req); cb(); return;
+
+      }).bind(this.download);
+
+      this._.property(new zs4.type.filecontent({name:'content',flags:'noprune quickupdate',}));
+    //}
+  },
+  filecontent:function(input){
+    zs4.type.text.call(this,input);
+    this._.typename = 'filecontent';
+    this._.maxlength = zs4.const.TEXT.MAXLENGTH;
+  },
+  folder:function(input){
+    var DRIVE = this;
+    zs4.type.object.call(DRIVE,input);
+
+    DRIVE._.typename = 'folder';
+    DRIVE._.flags.set.nogetall(true);
+
+    DRIVE._.folder = new Object();
+
+    DRIVE._.load = (function(input){
+      console.log('loading '+this._.path,input);
+      if (!zs4.is.object(input))return;
+      for (var n in input){
+        var name = (' '+n+' ').trim();
+
+        if (input[name].hasOwnProperty('content')&&zs4.is.string(input[name].content)){
+          console.log('   FILE: \''+name+'\'')
+          DRIVE._.property(new zs4.type.file({name:name}));
+          DRIVE[name]._.load(input[n]);
+        }
+        else if (zs4.is.object(input[name].zs4)&&input[name].zs4.hasOwnProperty('driver')){
+          console.log('   FOLDER: \''+name+'\'')
+          DRIVE._.property(new zs4.type.folder({name:name}));
+          DRIVE[name]._.load(input[n]);
+        }
+
+        this[n]._.load(input[n]);
+      }
+    }).bind(DRIVE);
+
+    DRIVE._.callback = (function(o){
+      console.log('DRIVE._.callback()');
+      console.log(o);
+      if (zs4.is.object(o.result)){
+        if (zs4.is.string(o.result.delete)){
+          if (DRIVE.hasOwnProperty(o.result.delete)){
+            if (zs4.is.type(DRIVE[o.result.delete])){
+              console.log('deleting '+o.result.delete);
+
+              if (zs4.is.function(DRIVE[o.result.delete]._.cleanup))DRIVE[o.result.delete]._.cleanup();
+              delete DRIVE[o.result.delete];
+            }
+          }
+        }
+        if (zs4.is.function(DRIVE._.refresh)){
+          DRIVE._.refresh();
+        }
+      }
+    }).bind(DRIVE);
+
+    if (zs4.is.node()){
+      DRIVE._.get = (function(req){
+        var get = this._.getInitialize(req);
+        if (get==null)return null;
+        DRIVE.zs4._.getTree(req);
+        return get;
+      }).bind(DRIVE);
+
+      DRIVE._.property(new zs4.type.object({name:'zs4',flags:'noprune'}));
+
+      DRIVE.zs4._.property(new zs4.type.integer({name:'maxsize',flags:'noprune quickupdate'}));
+      DRIVE.zs4._.property(new zs4.type.enum({name:'driver',flags:'noprune quickupdate',}));
+      DRIVE.zs4.driver._.get = (function(req){
+        var arr = new Array();
+        arr.push('');
+        for (var n in zs4.folder){
+          arr.push((' '+n+' ').trim());
+        }
+        this._.enum = arr;
+        return this._.getInitialize(req);
+      }).bind(DRIVE.zs4.driver);
+
+      DRIVE.zs4._.property(new zs4.type.object({name:'list',flags:'noprune api nostore',}));
+      DRIVE.zs4.list._.transform = (function(req,cb){
+        var REQUEST = req;
+        var LIST = DRIVE.zs4.list;
+        req.setScope(this);
+        this._.transformInternal(req);
+        if (!(req.flags.value & req.flags.authset)){
+          var err = 'not authorized';
+          req.error(LIST,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (!req.tokenExists()){
+          var err = 'not logged in';
+          req.error(LIST,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (zs4.is.object(req.input)){
+          if (DRIVE.zs4.driver._.value != ''){
+            this._.getTree(req); cb(); return;
+          }
+          else {
+            for (var n in DRIVE)if (n!='zs4'&&zs4.is.type(DRIVE[n])){
+              if (DRIVE[n]._.typename=='file'){
+                DRIVE[n]._.get(req);
+              }
+              else if (DRIVE[n]._.typename=='folder'){
+                DRIVE[n]._.get(req);
+                DRIVE[n].zs4._.getTree(req);
+              }
+            }
+            this._.getTree(req);
+            cb(); return;
+          }
+        }
+        else {
+          this._.getTree(req); cb(); return;
+        }
+      }).bind(DRIVE.zs4.list);
+
+      DRIVE.zs4._.property(new zs4.type.object({name:'newfile',flags:'noprune api nostore',}));
+      DRIVE.zs4.newfile._.property(new zs4.type.name({name:'name',flags:'noprune required apiarg'}));
+      DRIVE.zs4.newfile._.property(new zs4.type.text({name:'data',flags:'noprune apiarg'}));
+      DRIVE.zs4.newfile._.transform = (function(req,cb){
+        var REQUEST = req;
+        var NEW = DRIVE.zs4.newfile;
+        req.setScope(this);
+        this._.transformInternal(req);
+        if (!(req.flags.value & req.flags.authset)){
+          var err = 'not authorized';
+          req.error(NEW,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (!req.tokenExists()){
+          var err = 'not logged in';
+          req.error(NEW,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (zs4.is.object(req.input)){
+          if (!zs4.is.name(req.input.name)){
+            req.error(NEW,'bad name');
+            this._.getTree(req); cb(); return;
+          }
+
+          if (DRIVE.zs4.driver._.value != ''){
+            this._.getTree(req); cb(); return;
+          }
+          else {
+            if (DRIVE.hasOwnProperty(req.input.name)){
+              req.error(NEW,'already exists');
+              this._.getTree(req); cb(); return;
+            }
+
+            DRIVE._.shouldBeSaved(req);
+            DRIVE._.property(new zs4.type.file({name:req.input.name,}));
+            DRIVE[req.input.name].content._.value = req.input.data;
+            DRIVE[req.input.name]._.getTree(req);
+            this._.getTree(req);
+            cb(); return;
+          }
+        }
+        else {
+          this._.getTree(req); cb(); return;
+        }
+      }).bind(DRIVE.zs4.newfile);
+
+      DRIVE.zs4._.property(new zs4.type.object({name:'newdir',flags:'noprune api nostore',}));
+      DRIVE.zs4.newdir._.property(new zs4.type.name({name:'name',flags:'noprune required apiarg'}));
+      DRIVE.zs4.newdir._.transform = (function(req,cb){
+        var REQUEST = req;
+        var NEW = DRIVE.zs4.newdir;
+        req.setScope(this);
+        this._.transformInternal(req);
+        if (!(req.flags.value & req.flags.authset)){
+          var err = 'not authorized';
+          req.error(NEW,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (!req.tokenExists()){
+          var err = 'not logged in';
+          req.error(NEW,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (zs4.is.object(req.input)){
+          if (!zs4.is.name(req.input.name)){
+            req.error(NEW,'bad name');
+            this._.getTree(req); cb(); return;
+          }
+
+          if (DRIVE.zs4.driver._.value != ''){
+            this._.getTree(req); cb(); return;
+          }
+          else {
+            if (DRIVE.hasOwnProperty(req.input.name)){
+              req.error(NEW,'already exists');
+              this._.getTree(req); cb(); return;
+            }
+            DRIVE._.shouldBeSaved(req);
+            DRIVE._.property(new zs4.type.folder({name:req.input.name,}));
+            DRIVE[req.input.name]._.getTree(req);
+            this._.getTree(req);
+            cb(); return;
+          }
+        }
+        else {
+          this._.getTree(req); cb(); return;
+        }
+      }).bind(DRIVE.zs4.newdir);
+
+      DRIVE.zs4._.property(new zs4.type.object({name:'delete',flags:'noprune api nostore',}));
+      DRIVE.zs4.delete._.property(new zs4.type.name({name:'name',flags:'noprune required apiarg'}));
+      DRIVE.zs4.delete._.transform = (function(req,cb){
+        var REQUEST = req;
+        var DELETE = DRIVE.zs4.delete;
+        req.setScope(this);
+        this._.transformInternal(req);
+        if (!(req.flags.value & req.flags.authset)){
+          var err = 'not authorized';
+          req.error(DELETE,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (!req.tokenExists()){
+          var err = 'not logged in';
+          req.error(DELETE,err);
+          this._.print(err,req);
+          this._.getTree(req); cb(); return;
+        }
+        if (zs4.is.object(req.input)){
+          if (!zs4.is.name(req.input.name)||req.input.name=='zs4'){
+            req.error(DELETE,'bad name');
+            this._.getTree(req); cb(); return;
+          }
+
+          if (DRIVE.zs4.driver._.value != ''){
+            this._.getTree(req); cb(); return;
+          }
+          else {
+            if (!DRIVE.hasOwnProperty(req.input.name)
+            ||  !zs4.is.type(DRIVE[req.input.name])){
+              req.error(DELETE,'not found');
+              this._.getTree(req); cb(); return;
+            }
+
+            DRIVE._.shouldBeSaved(req);
+            delete DRIVE[req.input.name];
+            req.result(DRIVE,{delete:req.input.name})
+            req.result(this,true);
+            this._.getTree(req);
+            cb(); return;
+          }
+        }
+        else {
+          this._.getTree(req); cb(); return;
+        }
+      }).bind(DRIVE.zs4.newdir);
+    }
   },
   head:function(){
     zs4.type.object.call(this,{name:'head',flags:'authgetpublic authsetself nosort',})
@@ -3968,21 +4273,34 @@ if (zs4.is.node()){
   };
 
   zs4.define = function(){
-    //console.log(zs4.THIS);
-    require('../fs').schema(zs4.THIS.zs4);
 
-    require('../password').schema(zs4.THIS.zs4);
+    zs4.node.require.fs = require('../fs');
+    zs4.node.require.fs.schema(zs4.THIS.zs4);
 
-    require('../rsa').schema(zs4.THIS.zs4);
-    require('../token').schema(zs4.THIS.zs4);
-    //require('./mongobase').schema(zs4.THIS.zs4);
-    require('../express').schema(zs4.THIS.zs4);
-    require('../email').schema(zs4.THIS.zs4);
+    zs4.node.require.password = require('../password');
+    zs4.node.require.password.schema(zs4.THIS.zs4);
 
-    var mongodb = require('../mongodb');
+    zs4.node.require.rsa = require('../rsa');
+    zs4.node.require.rsa.schema(zs4.THIS.zs4);
 
-    zs4.array.mongodb = new mongodb.create({name:'mongodb'});
+    zs4.node.require.token = require('../token');
+    zs4.node.require.token.schema(zs4.THIS.zs4);
+
+    zs4.node.require.express = require('../express');
+    zs4.node.require.express.schema(zs4.THIS.zs4);
+
+    zs4.node.require.email = require('../email');
+    zs4.node.require.email.schema(zs4.THIS.zs4);
+
+    zs4.node.require.password = require('../password');
+    zs4.node.require.password.schema(zs4.THIS.zs4);
+
+
+    zs4.node.require.mongodb = require('../mongodb');
+    zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb'});
     zs4.THIS.zs4._.property(zs4.array.mongodb);
+
+    zs4.THIS.zs4._.property(new zs4.type.folder({name:'folder'}));
 
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
     zs4.THIS.zs4.type.document._.flags.value |= zs4.THIS._.flags.apiarg;

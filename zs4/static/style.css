@@ -149,12 +149,16 @@ input{
   border-color: darkgray;
   margin-left: 0.5em;
 }
+input[type="number"]{
+  width:3em;
+  height:1em;
+}
 input.zs4-noset{
   border-color:white;
   width:auto;
 }
 textarea{
-  height: 4em;
+  height: auto;
   width:100%;
 }
 
@@ -206,7 +210,10 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-delete:before{content:"x";font-weight: bolder; color:red;}
 .icon-descend:before{content:'\021A1';font-weight: bolder;}
 .icon-document:before{content:'\02683';font-weight: bolder;}
+.icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
+.icon-folder:before{content:'\025D5';font-weight: bolder;}
 .icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
+.icon-file:before{content:'f';;font-weight: bolder;color:blue;}
 .icon-head:before{content:'+';;font-weight: bolder;color:blue;}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:"i";font-weight: bolder;}
@@ -222,6 +229,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-tool:before{content:'\02692 ';font-weight: bolder;}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-type:before{content:'+';font-weight: bolder;}
+.icon-upload:before{content:'\0219F';;font-weight: bolder;color:blue;}
 .icon-user:before{content:'\0263B';font-weight: bolder;}
 .icon-zs4:before{content:'\025C8';font-weight: bolder;}
 
@@ -264,9 +272,12 @@ zs4-result.zs4-hide{
   display:none;
 }
 
-zs4-object-head{
+zs4-object-head.zs4-object{
   width:100%;
   display:block;
+}
+zs4-object-head.zs4-value{
+  display:inline-block;
 }
 zs4-object-head.zs4-tbon{
   background-color: white;

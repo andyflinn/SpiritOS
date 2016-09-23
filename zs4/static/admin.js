@@ -491,7 +491,8 @@ zs4.admin.util = {
 				off:'plus',
 			});
 			if (o._.type != Object){
-				if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
+				if (o._.typename=='filecontent'){o._.html.icon.off=o._.html.icon.on='upload'}
+				else if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
 				else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
 				else {o._.html.icon.off=o._.html.icon.on='none'}
 			}
@@ -675,7 +676,11 @@ zs4.admin.util = {
 				}
 				else {
 					add+=' value'; rem+=' object';
-					if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
+					if (o._.typename=='filecontent'){
+						if (o._.value=='') o._.html.icon.off=o._.html.icon.on='upload';
+						else o._.html.icon.off=o._.html.icon.on='upload';
+					}
+					else if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
 					else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
 					else {o._.html.icon.off=o._.html.icon.on='none'}
 
@@ -1414,7 +1419,6 @@ zs4.admin.util = {
 							addDeviceItem(title,flag);
 							return true;
 						}
-
 						return false;
 					}
 
@@ -2062,6 +2066,9 @@ zs4.admin.type = {
 		o._.html.input.value = parseInt(o._.value);
 		o._.html.genericRefresh();
 	},
+	download:function(po,o){
+		zs4.admin.type.object(po,o);
+	},
 	enum:function(po,o){
 		zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){
@@ -2105,10 +2112,17 @@ zs4.admin.type = {
 	email:function(po,o){
 		zs4.admin.type.string(po,o);
 	},
+	file:function(po,o){
+		zs4.admin.type.object(po,o);
+	},
+	filecontent:function(po,o){
+		zs4.admin.type.text(po,o);
+	},
+	folder:function(po,o){
+		zs4.admin.type.object(po,o);
+	},
 	head:function(po,o){
 		zs4.admin.type.object(po,o);
-		//o._.html.icon.on = 'info';
-		//o._.html.icon.off = 'info';
 	},
 	hi:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -2227,8 +2241,6 @@ zs4.admin.type = {
 	},
 	password:function(po,o){
 		zs4.admin.type.string(po,o);
-		//o._.html.icon.on = 'key';
-		//o._.html.icon.off = 'password';
 	},
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);

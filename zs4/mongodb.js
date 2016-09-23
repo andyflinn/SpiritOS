@@ -98,6 +98,8 @@ mongodb.create = function(input){
   zs4.type.object.call(MONGODB,input);
   this._.name = 'mongodb';
   MONGODB._.create = mongodb.create;
+  //zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb'});
+
   //MONGODB._.mongodb = new Object({schema:{},util:{}});
   //MONGODB._.mongodb
   var dbname = MONGODB._.name;
@@ -231,7 +233,7 @@ mongodb.create = function(input){
 
       cb(type);
     });
-};
+  };
 
   MONGODB.getID = function(id,cb){
     var ARRAY = this;
