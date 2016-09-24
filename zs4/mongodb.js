@@ -98,10 +98,7 @@ mongodb.create = function(input){
   zs4.type.object.call(MONGODB,input);
   this._.name = 'mongodb';
   MONGODB._.create = mongodb.create;
-  //zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb'});
 
-  //MONGODB._.mongodb = new Object({schema:{},util:{}});
-  //MONGODB._.mongodb
   var dbname = MONGODB._.name;
   if (zs4.is.string(input.dbname)&&input.dbname.length > 0)dbname = input.dbname;
 

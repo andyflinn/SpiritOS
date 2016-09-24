@@ -28,13 +28,14 @@ fs.schema = function(parent){
   //console.log(parent.fs.stat);
 };
 
-
 fs.create = function(){
-
+  var DRIVER = this;
   var THIS = this;
   input = new Object({name:'fs',flags:'nostore',});
   zs4.type.object.call(this,input);
   THIS._.create = fs.create;
+
+  THIS._.property(new  zs4.type.string({name:'path',flags:'quickupdate',default:'./',}))
 
   THIS._.property(new zs4.type.object({name:'stat',flags:'nostore api',}));
   THIS.stat._.property(new zs4.type.string({name:'path',flags:'required nostore',minlength:1,}));
@@ -150,4 +151,73 @@ fs.create = function(){
     return get();
   }).bind(THIS.readfile);
 
+  THIS.list = function(req,cb){
+    var REQUEST = req;
+    var FOLDER = this;
+    console.log('FOLDER._.path: '+FOLDER._.path);
+    console.log('DRIVER._.path: '+DRIVER._.path);
+    console.log('DRIVER.path._.value: ',DRIVER.path._.value);
+    if (FOLDER._.rootFolder==true){
+      FOLDER._.driver.path = DRIVER.path._.value;
+      console.log('ROOT FOLDER!!!!');
+    }
+    else {
+      if (!zs4.is.string(FOLDER._.driver.path)||!FOLDER._.driver.path.startsWith(DRIVER.path._.value)){
+        req.error(FOLDER,'internal error');
+        FOLDER._.getTree(req); cb(); return;
+      }
+
+      console.log('CHILD FOLDER!!!!');
+    }
+
+    nodefs.readdir(FOLDER._.driver.path,function(err,list){
+      if (err||!list){
+        req.error(FOLDER,'fs.readdir failure');
+        FOLDER._.getTree(req); cb(); return;
+      }
+      if (list.length==0){
+        req.error(FOLDER,'folder empty');
+        FOLDER._.getTree(req); cb(); return;
+      }
+      else {
+        //console.log('readdir returned: ',list);
+        function getFileInfo(req,cb){
+          console.log('getFileInfo('+req.input+')');
+          nodefs.stat(FOLDER._.driver.path+'/'+req.input,function(err,stats){
+            if (err||!stats){cb();return;}
+            if (stats.isFile()){
+              var nu = new zs4.type.file({name:'x'});
+              nu._.name = req.input;
+              FOLDER._.elementConnect(FOLDER,nu);
+              nu._.get(req);
+            }
+            else if (stats.isDirectory()){
+              console.log('stat('+req.input+')');
+              var nu = new zs4.type.folder({name:'x'});
+              nu._.name = req.input;
+              FOLDER._.elementConnect(FOLDER,nu);
+              nu._.getTree(req);
+              nu.zs4._.getTree(req);
+            }
+            cb();
+          });
+        };
+
+        var parallel = new zs4.processor.parallel();
+
+        for (var i = 0 ; i < list.length ;i++){
+          if (!zs4.is.name(list[i])||list[i]=='zs4')continue;
+          var r = req.create({input:list[i],})
+          parallel.call(FOLDER,getFileInfo,r);
+        }
+
+        parallel.run(function(){
+          FOLDER._.getTree(req); cb(); return;
+        });
+      }
+    });
+  }
+
 }
+
+// folder driver

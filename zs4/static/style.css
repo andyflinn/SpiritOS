@@ -161,6 +161,9 @@ textarea{
   height: auto;
   width:100%;
 }
+a{
+  text-decoration: none;
+}
 
 zs4-name{
   font-size: enherit;
@@ -494,7 +497,6 @@ zs4-app-content.zs4-landscape{
   width:100%;
 }
 
-
 zs4-app-tab{
   border-top-left-radius: 0.2em;
   border-top-right-radius: 0.2em;
@@ -506,7 +508,6 @@ zs4-app-tab.zs4-current{
   color:black;
 }
 
-
 zs4-app-new-item{
   font-weight: bold;
   cursor: pointer;
@@ -515,14 +516,17 @@ zs4-app-new-item{
 zs4-app-item{
   display:block;
 }
-zs4-app-item-title{
-  font-weight: bold;
-  cursor:pointer;
+zs4-app-item-icon{
+  float:left;
 }
-zs4-app-item-title.zs4-am{
+zs4-app-item-data{
+}
+a.zs4-app-item-link{
+}
+a.zs4-app-item-link.zs4-am{
   color:blue;
 }
-zs4-app-item-title.zs4-own{
+a.zs4-app-item-link.zs4-own{
   color:green;
 }
 

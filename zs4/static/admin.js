@@ -1128,15 +1128,14 @@ zs4.admin.util = {
 					this.loggedIn = zs4.THIS._.loggedIn;
 					//if (zs4.THIS.zs4.hasOwnProperty('bye'))this.loggedIn=true;
 
-					this.username = document.createElement('zs4-app-username');
+					this.username = document.createElement('a');
 					this.toolbar.appendChild(this.username);
 					if (this.loggedIn){
+						this.username.href = zs4.THIS._.scopath;
 						zs4.admin.util.addClass(this.username,'am');
-						if (zs4.location.path!=zs4.THIS._.scopath){
-							this.username.onclick = (function(){
-								zs4.navigate(zs4.THIS._.scopath);
-							});
-						}
+					}
+					else {
+						this.username.href = '#';
 					}
 
 					if (this.loggedIn){
@@ -1482,7 +1481,7 @@ zs4.admin.util = {
 								else {
 									utitle = uscope.zs4.head.title._.value;
 								}
-								this.username.textContent = utitle;
+								this.username.text = utitle;
 
 								if (this.spwIsOpen){
 									var vfy = uscope._.resolvePath('zs4.password.vfy');
@@ -1508,7 +1507,7 @@ zs4.admin.util = {
 							}
 						}
 						else {
-							this.username.textContent = 'login';
+							this.username.text = 'login';
 							if (DIALOG.failcount > 2){
 								zs4.admin.util.removeClass(this.etok,'nodisplay');
 							}
@@ -1736,20 +1735,19 @@ zs4.admin.util = {
 									zs4.admin.util.setIcon(this.icon,scope.zs4.head.typename._.value);
 									this.element.appendChild(this.icon);
 
-									this.title = document.createElement('zs4-app-item-title');
-									this.title.textContent = scope.zs4.head.title._.value;
-									this.element.appendChild(this.title);
-									if (THIS.scope._.path != zs4.location.path){
-										this.title.onclick = (function(){
-											console.log('ITEM PATH: '+THIS.scope._.path)
-											zs4.navigate(THIS.scope._.path);
-										});
-									}
+									this.data = document.createElement('zs4-app-item-data');
+									this.element.appendChild(this.data);
+
+									this.title = document.createElement('a');
+									this.title.text = scope.zs4.head.title._.value;
+									this.title.href = THIS.scope._.path;
+									zs4.admin.util.addClass(this.title,'app-item-link');
+									this.data.appendChild(this.title);
 
 									if (scope._.flags.get.own()){
 										this.delete = document.createElement('zs4-app-item-delete');
 										zs4.admin.util.setIcon(this.delete,'delete');
-										this.element.appendChild(this.delete);
+										this.data.appendChild(this.delete);
 										this.delete.onclick = function(){
 											zs4.admin.util.removeClass(THIS.surdel,'nodisplay');
 											zs4.admin.util.removeClass(THIS.sure,'nodisplay');
@@ -1758,12 +1756,12 @@ zs4.admin.util = {
 										this.surdel = document.createElement('zs4-app-item-delete-sure');
 										this.surdel.textContent = 'sure?';
 										zs4.admin.util.addClass(this.surdel,'nodisplay');
-										this.element.appendChild(this.surdel);
+										this.data.appendChild(this.surdel);
 
 										this.sure = document.createElement('input');
 										this.sure.type = 'checkbox';
 										zs4.admin.util.addClass(this.sure,'nodisplay');
-										this.element.appendChild(this.sure);
+										this.data.appendChild(this.sure);
 										this.sure.onchange = function(){
 											if (THIS.sure.checked)zs4.admin.util.removeClass(THIS.reallydelete,'nodisplay');
 											else zs4.admin.util.addClass(THIS.reallydelete,'nodisplay');
@@ -1772,7 +1770,7 @@ zs4.admin.util = {
 										this.reallydelete = document.createElement('zs4-app-item-really-delete');
 										zs4.admin.util.setIcon(this.reallydelete,'delete');
 										zs4.admin.util.addClass(this.reallydelete,'nodisplay');
-										this.element.appendChild(this.reallydelete);
+										this.data.appendChild(this.reallydelete);
 										this.reallydelete.onclick = function(){
 											var a = zs4.string.split.separators(THIS.scope._.path,'./\\ ');
 											if (a.length != 5
