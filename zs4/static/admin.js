@@ -443,10 +443,6 @@ zs4.admin.util = {
 		this.scope = scope;
 		this.containerElement = containerElement;
 
-		this.toolbar = document.createElement('zs4-app-toolbar');
-		this.containerElement.appendChild(this.toolbar);
-
-
 		this.internalRefresh = function(){
 			// flag the first pass
 			if (!zs4.is.boolean(this.uninitialized))this.uninitialized=true;
@@ -1131,7 +1127,7 @@ zs4.admin.util = {
 					this.username = document.createElement('a');
 					this.toolbar.appendChild(this.username);
 					if (this.loggedIn){
-						this.username.href = zs4.THIS._.scopath;
+						this.username.href = '/'+zs4.THIS._.scopath;
 						zs4.admin.util.addClass(this.username,'am');
 					}
 					else {
@@ -1232,10 +1228,20 @@ zs4.admin.util = {
 						this.logout = document.createElement('zs4-logout');
 						this.logout.textContent = 'logout';
 						this.pane.appendChild(this.logout);
+						this.logoutvisible = false;
 						this.logout.onclick = (function(){
-							zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
-							zs4.admin.util.addClass(this.bye,'nodisplay');
-							this.sure.checked = false;
+							if (!DIALOG.logoutvisible){
+								zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
+								zs4.admin.util.addClass(this.bye,'nodisplay');
+								DIALOG.sure.checked = false;
+								DIALOG.logoutvisible = true;
+							}
+							else {
+								zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+								zs4.admin.util.addClass(this.bye,'nodisplay');
+								DIALOG.sure.checked = false;
+								DIALOG.logoutvisible = false;
+							}
 						}).bind(this);
 
 						this.logoutArgs = document.createElement('zs4-logout-args');
@@ -1538,6 +1544,8 @@ zs4.admin.util = {
 				if (o._.flags.get.scope()){
 					if (o.zs4.head.typename._.value=='node'||o.zs4.head.typename._.value=='user'){
 						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
+						top.app.toolbar = document.createElement('zs4-app-toolbar');
+						top.app.containerElement.appendChild(top.app.toolbar);
 						top.app.refresh = (function(){
 							if (top.app.uninitialized==true){
 
@@ -1945,12 +1953,32 @@ zs4.admin.util = {
 						}).bind(top.app);
 						top.app.internalRefresh();
 					}
-					else {
+					else if (o.zs4.head.typename._.value=='app'){
 						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
 						top.app.refresh = (function(){
 							if (top.app.uninitialized==true){
-								top.app.toolbar = document.createElement('zs4-app-toolbar');
-								o._.html.appWindow.appendChild(top.app.toolbar);
+								if (o.zs4.head.app._.value != ''){
+									console.log('APP: '+o.zs4.head.app._.value);
+									zs4.loadcss(o.zs4.head.app._.value+'/'+o.zs4.head.style._.value);
+									zs4.loaddata(o.zs4.head.app._.value+'/index.js',function(data){
+										console.log(data);
+										var foo;
+										foo = new Function('element',data);
+										foo.call(o,top.app.containerElement);
+									});
+
+								}
+							}
+
+						}).bind(top.app);
+						top.app.internalRefresh();
+					}
+					else {
+						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
+						top.app.toolbar = document.createElement('zs4-app-toolbar');
+						top.app.containerElement.appendChild(top.app.toolbar);
+						top.app.refresh = (function(){
+							if (top.app.uninitialized==true){
 							}
 
 						}).bind(top.app);

@@ -205,6 +205,7 @@ zs4-name.zs4-own.zs4-noset:not{
 
 .icon-about:before{content:"i";font-weight: bolder;}
 .icon-add:before{content:"+";font-weight: bolder;}
+.icon-app:before{content:'\0265E';font-weight: bolder;}
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-ascend:before{content:'\0219F';font-weight: bolder;}
 .icon-auth:before{content:"a";font-weight: bolder;}
@@ -303,14 +304,15 @@ zs4-object-content{
   background-repeat: no-repeat;
   padding:0.5em;
   display:block;
+  overflow: auto;
 }
 zs4-object-content.zs4-off{
   display:none;
 }
-
 zs4-object-content.zs4-top.zs4-tbon{
   display:none;
 }
+
 zs4-toolbar{
   width:100%;
   height:100%;
