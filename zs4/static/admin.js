@@ -1025,6 +1025,38 @@ zs4.admin.util = {
 					this.toolbar = document.createElement('zs4-app-toolbar');
 					this.pane.appendChild(this.toolbar);
 
+					this.dItem = new Object();
+					this.dialogItem = function(name){
+						var di = this.dItem[name] = new Object();
+
+						di.element = document.createElement('zs4-dialog-item');
+						this.pane.appendChild(di.element);
+
+						di.toggleActive = false;
+						di.toggle = document.createElement('zs4-dialog-item-toggle');
+						di.toggle.textContent = name;
+						di.element.appendChild(di.toggle);
+						di.toggleOn = function(){
+							di.toggleActive=true;
+							if (zs4.is.function(di.ontoggleopen))di.ontoggleopen();
+							zs4.admin.util.removeClass(di.content,'nodisplay');
+						};
+						di.toggleOff = function(){
+							di.toggleActive=false;
+							zs4.admin.util.addClass(di.content,'nodisplay');
+						};
+						di.toggle.onclick = function(){
+							if (di.toggleActive==true){di.toggleOff();}
+							else {di.toggleOn();}
+						};
+
+						di.content = document.createElement('zs4-dialog-item-content');
+						di.element.appendChild(di.content);
+
+						di.toggleOff();
+						return di;
+					}
+
 					this.select.onclick = (function(){
 						var active = false;
 
@@ -1525,6 +1557,20 @@ zs4.admin.util = {
 						}
 					}).bind(this);
 				};
+				o._.html.top.dialogDocument = function(){
+					var THIS = this;
+					o._.html.top.dialog.call(this,'document');
+
+					var nu = THIS.dialogItem('new');
+					nu.create = document.createElement('zs4-document-create');
+					nu.create.textContent = 'create';
+					nu.content.appendChild(nu.create);
+
+					var list = THIS.dialogItem('list');
+					list.ontoggleopen = function(){
+						window.alert('listing documents');
+					};
+				};
 
 				o._.html.top.deselectAll = function(){
 					for (var n in o._.html.dialog){
@@ -1694,27 +1740,36 @@ zs4.admin.util = {
 										return a.scope.zs4.head.created._.value - b.scope.zs4.head.created._.value;
 									},});
 
-								top.app.new = document.createElement('zs4-app-new-item');
-								top.app.new.textContent = 'new';
-								zs4.admin.util.addClass(top.app.new,'nodisplay');
-								top.app.toolbar.appendChild(top.app.new);
-								top.app.new.onclick = function(){
-									if (top.app.typeSelect.value != ''){
-										var path = 'zs4.type.'+top.app.typeSelect.value+'.method.new';
-										var nu = zs4.THIS._.resolvePath(path);
-										if (nu == null) return;
+								if (o._.path==''){
+									top.app.new = document.createElement('zs4-app-new-item');
+									top.app.new.textContent = 'new';
+									zs4.admin.util.addClass(top.app.new,'nodisplay');
+									top.app.toolbar.appendChild(top.app.new);
+									top.app.new.onclick = function(){
+										if (top.app.typeSelect.value != ''){
+											var path = 'zs4.type.'+top.app.typeSelect.value+'.method.new';
 
-										zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-										nu._.call({},function(){
-											zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-											if (zs4.is.string(nu._.cbresult)){
-												zs4.navigate(nu._.cbresult)
+											if (top.app.typeSelect.value == 'document'){
+												top.app.typeSelect.value = 'doctype';
+												top.app.typeSelect.onchange();
+												return;
 											}
-										});
 
-										//alert('NEW METHOD EXISTS!');
-									}
-								};
+											var nu = zs4.THIS._.resolvePath(path);
+											if (nu == null) return;
+
+											zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+											nu._.call({},function(){
+												zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+												if (zs4.is.string(nu._.cbresult)){
+													zs4.navigate(nu._.cbresult)
+												}
+											});
+
+											//alert('NEW METHOD EXISTS!');
+										}
+									};
+								}
 
 								top.app.content = document.createElement('zs4-app-content');
 								o._.html.appWindow.appendChild(top.app.content);
@@ -1799,6 +1854,14 @@ zs4.admin.util = {
 											});
 
 										};
+									}
+
+									if (scope.zs4.head.typename._.value=='doctype'){
+										if (zs4.is.object(zs4.THIS.zs4.type.document.method.new)){
+											this.newdoc = document.createElement('zs4-app-item-newdoc');
+											this.newdoc.textContent = 'new';
+											this.element.appendChild(this.newdoc);
+										}
 									}
 
 								}).bind(top.app);
@@ -1953,14 +2016,14 @@ zs4.admin.util = {
 						}).bind(top.app);
 						top.app.internalRefresh();
 					}
-					else if (o.zs4.head.typename._.value=='app'){
+					else if (o.zs4.head.typename._.value=='doctype'){
 						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
 						top.app.refresh = (function(){
 							if (top.app.uninitialized==true){
-								if (o.zs4.head.app._.value != ''){
-									console.log('APP: '+o.zs4.head.app._.value);
-									zs4.loadcss(o.zs4.head.app._.value+'/'+o.zs4.head.style._.value);
-									zs4.loaddata(o.zs4.head.app._.value+'/index.js',function(data){
+								if (o.zs4.head.title._.value != ''){
+									console.log('APP: '+o.zs4.head.title._.value);
+									zs4.loadcss('/plugin/'+o.zs4.head.title._.value+'/style.css');
+									zs4.loaddata('/plugin/'+o.zs4.head.title._.value+'/index.js',function(data){
 										console.log(data);
 										var foo;
 										foo = new Function('element',data);
@@ -1971,6 +2034,7 @@ zs4.admin.util = {
 							}
 
 						}).bind(top.app);
+						new o._.html.top.dialogDocument();
 						top.app.internalRefresh();
 					}
 					else {

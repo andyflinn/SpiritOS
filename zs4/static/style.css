@@ -205,7 +205,6 @@ zs4-name.zs4-own.zs4-noset:not{
 
 .icon-about:before{content:"i";font-weight: bolder;}
 .icon-add:before{content:"+";font-weight: bolder;}
-.icon-app:before{content:'\0265E';font-weight: bolder;}
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-ascend:before{content:'\0219F';font-weight: bolder;}
 .icon-auth:before{content:"a";font-weight: bolder;}
@@ -213,6 +212,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-console:before{content:">_";font-weight: bolder;}
 .icon-delete:before{content:"x";font-weight: bolder; color:red;}
 .icon-descend:before{content:'\021A1';font-weight: bolder;}
+.icon-doctype:before{content:'\0265E';font-weight: bolder;}
 .icon-document:before{content:'\02683';font-weight: bolder;}
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
 .icon-folder:before{content:'\025D5';font-weight: bolder;}
@@ -479,7 +479,16 @@ zs4-app-dialog{
   width:100%;
   height:100%;
 }
-
+zs4-dialog-item-toggle{
+  display:block;
+  background-color: lightgray;
+  cursor: pointer;
+  font-weight: bold;
+}
+zs4-dialog-item-content{
+  display:block;
+  background-color: white;
+}
 
 zs4-app-toolbar{
   display:block;
@@ -521,7 +530,10 @@ zs4-app-item{
 zs4-app-item-icon{
   float:left;
 }
-zs4-app-item-data{
+zs4-app-item-newdoc{
+  padding-left: 0.5em;
+  cursor: pointer;
+  color: red;
 }
 a.zs4-app-item-link{
 }

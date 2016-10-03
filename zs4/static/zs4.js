@@ -46,14 +46,14 @@ zs4.const = {
     HOUR:(1000*60*60),
     DAY:(1000*60*60*24),
     WEEK:(1000*60*60*24*7),
-    YEAR:(1000*60*60*24*7*366),
+    YEAR:(1000*60*60*24*365.25),
   },
   OBJECT:{
     OWNER:'owner@zs4.zs4',
   },
   PATH:{
     MINLENGTH:1,
-    MAXLENGTH:256,
+    MAXLENGTH:255,
   },
   STRING:{
     MINLENGTH:0,
@@ -811,17 +811,17 @@ zs4.util = {
 };
 
 zs4.scope = {
-  app:function(){
+  doctype:function(){
     var APP = this;
     zs4.type.scope.call(APP);
-    APP._.create = zs4.scope.app;
-    APP.zs4.head.typename._.value = 'app';
-    APP.zs4.head.typename._.default = 'app';
-    APP._.name = 'app';
+    APP._.create = zs4.scope.doctype;
+    APP.zs4.head.typename._.value = 'doctype';
+    APP.zs4.head.typename._.default = 'doctype';
+    APP._.name = 'doctype';
 
-    APP.zs4.head._.property(new zs4.type.string({name:'style',flags:'quickupdate',}));
-    //APP._.property(new zs4.type.string({name:'link',flags:' quickupdate',}));
-    //APP._.property(new zs4.type.text({name:'script',flags:' quickupdate',}));
+    APP._.property(new zs4.type.object({name:'document',flags:'apiarg',}));
+    APP.document._.property(new zs4.type.object({name:'new',flags:'api',}));
+    APP.document._.property(new zs4.type.object({name:'list',flags:'api apiarg',}));
   },
   document:function(){
     var DOCUMENT = this;
@@ -2763,7 +2763,7 @@ zs4.type = {
       this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune authgetpublic nostore',}));
       this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune authgetpublic',}));
-      this._.property(new zs4.type.string({name:'app',flags:'index noprune quickupdate authgetpublic',}));
+      this._.property(new zs4.type.string({name:'doctype',flags:'index noprune quickupdate authgetpublic',}));
       this._.property(new zs4.type.scopebits({name:'bits',flags:'index noprune quickupdate',}));
     }
 
@@ -3453,7 +3453,7 @@ zs4.type = {
     zs4.type.bits.call(this,input);
     this._.typename = 'scopebits';
     THIS._.bits.addBit('public',0);
-    THIS._.bits.addBit('app',0);
+    THIS._.bits.addBit('doctype',0);
   },
   scopeindex:function(input){
     zs4.type.string.call(this,input);
@@ -4424,8 +4424,8 @@ if (zs4.is.node()){
 
     zs4.THIS.zs4._.property(new zs4.type.folder({name:'folder'}));
 
-    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'app',template:new zs4.scope.app(),}));
-    zs4.THIS.zs4.type.app._.flags.value |= zs4.THIS._.flags.apiarg;
+    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'doctype',template:new zs4.scope.doctype(),}));
+    zs4.THIS.zs4.type.doctype._.flags.value |= zs4.THIS._.flags.apiarg;
 
 
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
