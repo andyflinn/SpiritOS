@@ -1861,6 +1861,9 @@ zs4.admin.util = {
 											this.newdoc = document.createElement('zs4-app-item-newdoc');
 											this.newdoc.textContent = 'new';
 											this.element.appendChild(this.newdoc);
+											this.newdoc.onclick = function(){
+												
+											};
 										}
 									}
 

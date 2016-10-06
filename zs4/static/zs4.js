@@ -1843,6 +1843,7 @@ zs4.type = {
         if (zs4.is.object(req.input)){
           if (THIS.config.driver._.value != ''){
             var nu = THIS.template._.new();
+            nu._.load(req.input);
             nu._.flags.set.notrans(false);
             nu._.flags.set.scope(true);
             nu.zs4.head.title._.value = '(untitled)';
@@ -1883,6 +1884,7 @@ zs4.type = {
 
             var id = zs4.integer.to.name(THIS.config.lastid._.value++);
             var nu = THIS.template._.new();
+            nu._.load(req.input);
             nu._.name = id; nu._.flags.set.notrans(false);
             nu._.flags.set.scope(true);
             nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
