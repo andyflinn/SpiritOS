@@ -4426,8 +4426,8 @@ if (zs4.is.node()){
 
     zs4.THIS.zs4._.property(new zs4.type.folder({name:'folder'}));
 
-    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'doctype',template:new zs4.scope.doctype(),}));
-    zs4.THIS.zs4.type.doctype._.flags.value |= zs4.THIS._.flags.apiarg;
+    //zs4.THIS.zs4.type._.property(new zs4.type.array({name:'doctype',template:new zs4.scope.doctype(),}));
+    //zs4.THIS.zs4.type.doctype._.flags.value |= zs4.THIS._.flags.apiarg;
 
 
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
