@@ -3027,7 +3027,7 @@ zs4.type = {
   },
   number:function(input){
     var THIS = this;
-    req.setScope(this);
+    //req.setScope(this);
     zs4.type.unknown.call(this,input);
     this._.type = Number;
     this._.typename = 'number';
@@ -4439,13 +4439,15 @@ if (zs4.is.node()){
     zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
 
     // plugins
+    var plugin = new Object();
+
     var nodefs = require('fs');
     var rdr = nodefs.readdirSync('./zs4/plugin');
     console.log('readPlugins: ' + zs4.is.array(rdr) +  ' ' + rdr);
     for ( var i = 0 ; i < rdr.length ; i++ ){
       var fnam = '../plugin/'+rdr[i]+'/'+rdr[i]+'.js';
       console.log('array element '+i+': '+fnam)
-      require(fnam);
+      plugin[rdr[i]]=require(fnam);
     }
 
     // Run express only once all components/plugins are loaded and ready
