@@ -4398,7 +4398,8 @@ if (zs4.is.node()){
 
   zs4.define = function(){
 
-    zs4.node.require.fs = require('../fs');
+    var fs = require('../fs');
+    zs4.node.require.fs = fs;
     zs4.node.require.fs.schema(zs4.THIS.zs4);
 
     zs4.node.require.password = require('../password');
@@ -4410,15 +4411,11 @@ if (zs4.is.node()){
     zs4.node.require.token = require('../token');
     zs4.node.require.token.schema(zs4.THIS.zs4);
 
-    zs4.node.require.express = require('../express');
-    zs4.node.require.express.schema(zs4.THIS.zs4);
-
     zs4.node.require.email = require('../email');
     zs4.node.require.email.schema(zs4.THIS.zs4);
 
     zs4.node.require.password = require('../password');
     zs4.node.require.password.schema(zs4.THIS.zs4);
-
 
     zs4.node.require.mongodb = require('../mongodb');
     zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb'});
@@ -4440,6 +4437,22 @@ if (zs4.is.node()){
     //zs4.THIS.zs4.type._.property(new user.create());
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
     zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
+
+    // plugins
+    var nodefs = require('fs');
+    var rdr = nodefs.readdirSync('./zs4/plugin');
+    console.log('readPlugins: ' + zs4.is.array(rdr) +  ' ' + rdr);
+    for ( var i = 0 ; i < rdr.length ; i++ ){
+      var fnam = '../plugin/'+rdr[i]+'/'+rdr[i]+'.js';
+      console.log('array element '+i+': '+fnam)
+      require(fnam);
+    }
+
+    // Run express only once all components/plugins are loaded and ready
+    zs4.node.require.express = require('../express');
+    zs4.node.require.express.schema(zs4.THIS.zs4);
+
+
 
   }
 
