@@ -3464,7 +3464,8 @@ zs4.type = {
     zs4.type.bits.call(this,input);
     this._.typename = 'scopebits';
     THIS._.bits.addBit('public',0);
-    THIS._.bits.addBit('doctype',0);
+    THIS._.bits.addBit('doctype',1);
+    THIS._.bits.addBit('plugin',2);
   },
   scopeindex:function(input){
     zs4.type.string.call(this,input);

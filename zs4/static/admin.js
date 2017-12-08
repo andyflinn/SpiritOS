@@ -443,10 +443,18 @@ zs4.admin.util = {
 		this.scope = scope;
 		this.containerElement = containerElement;
 
+		console.log(scope);
+
+		if (this.scope.zs4.head.bits._.bits.plugin.get()){
+			window.alert('plugin created...');
+		}
+
 		this.internalRefresh = function(){
 			// flag the first pass
 			if (!zs4.is.boolean(this.uninitialized))this.uninitialized=true;
 			else this.uninitialized=false;
+
+				//console.log('refreshing app type: ' + this.scope.zs4.head.type._.value + ' ' + this.scope.zs4.head.bits._.value);
 
 			if (zs4.is.function(this.refresh))this.refresh();
 		};
@@ -1862,7 +1870,7 @@ zs4.admin.util = {
 											this.newdoc.textContent = 'new';
 											this.element.appendChild(this.newdoc);
 											this.newdoc.onclick = function(){
-												
+
 											};
 										}
 									}
