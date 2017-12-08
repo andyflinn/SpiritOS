@@ -1320,6 +1320,15 @@ zs4.type = {
           html += '  <script src="/bowser.min.js"></script>\n';
           html += '  <script src="/zs4.js"></script>\n';
           html += '  <script>zs4.location.path=\''+this._.path+'\';zs4.admin();</script>\n'
+          for (var i = 0 ; i < zs4.plugin.script.length ; i++){
+            html += '  <script src="/' + zs4.plugin.script[i] + '"></script>\n';
+          }
+
+          for (var i = 0 ; i < zs4.plugin.style.length ; i++){
+            html += '  <link rel="stylesheet" href="/' + zs4.plugin.style[i] + '">\n';
+          }
+
+
         html += ' </head>\n';
         if (true){
           html += ' <body>\n';
@@ -4356,6 +4365,23 @@ zs4.request = function(o){
 
 zs4.THIS = new zs4.type.scope();
 zs4.THIS._.flags.set.authgetpublic(true);
+
+zs4.plugin = new Object({
+  registerStatic:function(dir){
+    zs4.plugin.static.push(dir);
+  },
+  registerStyle:function(dir){
+    zs4.plugin.style.push(dir);
+  },
+  registerScript:function(dir){
+    zs4.plugin.script.push(dir);
+  },
+  list:new Object(),
+  static:new Array(),
+  style:new Array(),
+  script:new Array(),
+});
+
 if (zs4.is.node()){
 
   const ZS4 = 'zs4';
@@ -4447,8 +4473,9 @@ if (zs4.is.node()){
     for ( var i = 0 ; i < rdr.length ; i++ ){
       var fnam = '../plugin/'+rdr[i]+'/'+rdr[i]+'.js';
       console.log('array element '+i+': '+fnam)
-      plugin[rdr[i]]=require(fnam);
+      zs4.plugin.list[rdr[i]]=require(fnam);
     }
+    console.log(zs4.plugin);
 
     // Run express only once all components/plugins are loaded and ready
     zs4.node.require.express = require('../express');

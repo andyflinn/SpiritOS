@@ -202,6 +202,10 @@ express.schema = function(parent){
     app.use(cookieParser());
     app.use(xpress.static(path.join(__dirname, 'static')));
 
+    for (var i = 0 ; i < zs4.plugin.static.length ; i++){
+      app.use(xpress.static(path.join(__dirname, zs4.plugin.static[i])));
+    }
+
     app.get('*',function(req,res,next){
       if (!req.secure && express.HTTPS_RUNNING){
         return res.redirect(THIS.getHostURL() + req.url);
