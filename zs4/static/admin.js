@@ -440,14 +440,14 @@ zs4.admin.util = {
 	},
 
 	app:function(scope,containerElement){
-		this.scope = scope;
+		//this.scope = scope;
 		this.containerElement = containerElement;
 
 		console.log(scope);
 
-		if (this.scope.zs4.head.bits._.bits.plugin.get()){
-			window.alert('plugin created...');
-		}
+		//if (this.scope.zs4.head.bits._.bits.plugin.get()){
+			//window.alert('plugin created...: '+scope.zs4.head.typename._.value+'.js');
+		//}
 
 		this.internalRefresh = function(){
 			// flag the first pass
@@ -757,11 +757,13 @@ zs4.admin.util = {
 		if (o._.flags.get.scope()){
 			zs4.admin.util.addClass(o._.html.e,'scope');
 			o._.scope = o;
+			if (o.zs4.head.bits._.bits.plugin.get()){
+				zs4.admin.util.addClass(o._.html.e,o.zs4.head.typename._.value);
+			}
 		}
 		else{
 			if (zs4.is.type(po))o._.scope = po._.scope;
 			zs4.admin.util.removeClass(o._.html.e,'scope');
-
 		}
 
 		zs4.admin.util.setClass(o._.html.e,'am',zs4.admin.util.am(o));
@@ -1004,6 +1006,23 @@ zs4.admin.util = {
 
 				o._.html.appWindow = document.createElement('zs4-app-window');
 				o._.html.appUserInterface.appendChild(o._.html.appWindow);
+
+				if (zs4.plugin.list.hasOwnProperty(o.zs4.head.typename._.value)){
+
+					o._.html.appWindowToolbar = document.createElement('zs4-app-toolbar');
+					o._.html.appWindow.appendChild(o._.html.appWindowToolbar);
+
+					if (zs4.is.function(zs4.plugin.list[o.zs4.head.typename._.value].save)){
+						o._.html.appWindowSave = document.createElement('zs4-app-window-save');
+						o._.html.appWindowSave.textContent = 'save';
+						o._.html.appWindowSave.onclick = zs4.plugin.list[o.zs4.head.typename._.value].save;
+						o._.html.appWindowToolbar.appendChild(o._.html.appWindowSave);
+					}
+
+					zs4.plugin.list[o.zs4.head.typename._.value].ui(o._.html.appWindow,o);
+
+
+				}
 
 				o._.html.top.dialogActive = false;
 				o._.html.top.dialog = function(name){
@@ -2060,6 +2079,28 @@ zs4.admin.util = {
 						top.app.internalRefresh();
 					}
 
+
+					if (o.zs4.head.bits._.bits.plugin.get()){
+						var appClass = o.zs4.head.typename._.value;
+						//window.alert(appClass);
+						zs4.admin.util.addClass(o._.html.head,appClass);
+						zs4.admin.util.addClass(o._.html.toggle,appClass);
+						zs4.admin.util.addClass(o._.html.name,appClass);
+						zs4.admin.util.addClass(o._.html.c,appClass);
+
+						zs4.admin.util.addClass(o._.html.dialogHeader,appClass);
+						zs4.admin.util.addClass(o._.html.appElement,appClass);
+						zs4.admin.util.addClass(o._.html.appUserInterface,appClass);
+						zs4.admin.util.addClass(o._.html.appWindow,appClass);
+
+						zs4.admin.util.addClass(o._.html.top.app.toolbar,appClass);
+						zs4.admin.util.addClass(o._.html.top.app.searchButton,appClass);
+						zs4.admin.util.addClass(o._.html.top.app.search,appClass);
+						zs4.admin.util.addClass(o._.html.top.app.content,appClass);
+						//zs4.admin.util.addClass(,appClass);
+						//zs4.admin.util.addClass(,appClass);
+
+					}
 				}
 
 				if (zs4.admin.util.am(o)||zs4.admin.util.own(o)){
@@ -2227,8 +2268,6 @@ zs4.admin.type = {
 	},
 	hi:function(po,o){
 		zs4.admin.type.object(po,o);
-		//._.html.icon.on = 'bye';
-		//o._.html.icon.off = 'bye';
 	},
 	integer:function(po,o){
 		zs4.admin.util.unknown(po,o);
