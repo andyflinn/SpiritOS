@@ -39,6 +39,7 @@ zs4.admin.util = {
 			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
 		}
 		e.className = ret;
+		e.title = icon;
 	},
 	setAnimate:function(e,icon){
 		if (e==null||icon==null)return;
@@ -537,10 +538,8 @@ zs4.admin.util = {
 				zs4.admin.util.addClass(o._.html.e,'branch');
 			}
 			else {
-				if (po==null){
-					po=document.body;
-				}
 
+				if (po==null)po=document.body;
 				po.appendChild(o._.html.e);
 				o._.html.parentElement = po;
 
@@ -846,6 +845,9 @@ zs4.admin.util = {
 			o._.html.error = document.createElement('zs4-error');
 			zs4.admin.util.setIcon(o._.html.error,'error');
 			zs4.admin.util.addClass(o._.html.error,'nodisplay');
+			o._.html.error.onclick = function(){
+				zs4.admin.util.addClass(o._.html.error,'nodisplay');
+			};
 			o._.html.head.appendChild(o._.html.error);
 
 			o._.html.result = document.createElement('zs4-result');
@@ -1012,10 +1014,18 @@ zs4.admin.util = {
 					o._.html.appWindowToolbar = document.createElement('zs4-app-toolbar');
 					o._.html.appWindow.appendChild(o._.html.appWindowToolbar);
 
+					// Reload Button
+					o._.html.appWindowReload = document.createElement('zs4-app-window-reload');
+					o._.html.appWindowReload.onclick = location.reload;
+					zs4.admin.util.setIcon(o._.html.appWindowReload,'reload');
+					o._.html.appWindowToolbar.appendChild(o._.html.appWindowReload);
+
+					// Save Button
 					if (zs4.is.function(zs4.plugin.list[o.zs4.head.typename._.value].save)){
 						o._.html.appWindowSave = document.createElement('zs4-app-window-save');
-						o._.html.appWindowSave.textContent = 'save';
+						//o._.html.appWindowSave.title = 'save';
 						o._.html.appWindowSave.onclick = zs4.plugin.list[o.zs4.head.typename._.value].save;
+						zs4.admin.util.setIcon(o._.html.appWindowSave,'save');
 						o._.html.appWindowToolbar.appendChild(o._.html.appWindowSave);
 					}
 

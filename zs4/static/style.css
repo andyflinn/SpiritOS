@@ -223,12 +223,16 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-info:before{content:"i";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
+.icon-play:before{content:'\025B6';font-weight: bolder;}
 .icon-plus:before{content:"+";font-weight: bolder;}
+.icon-reload:before{content:'\01f503';font-weight: bolder;}
 .icon-required:before{content:"*";font-weight: bolder;}
+.icon-save:before{content:'\01f4be';font-weight: bolder;}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-search:before{content:'?';font-weight: bolder;}
 .icon-select:before{content:'\02611';font-weight: bolder;}
-.icon-spin:before{content:'\029B0 ';font-weight: bolder;}
+.icon-spin:before{content:'\029B0';font-weight: bolder;}
+.icon-stop:before{content:'\025A0';font-weight: bolder;color:red;}
 .icon-to-start:before{content:'\025C4';;font-weight: bolder;}
 .icon-tool:before{content:'\02692 ';font-weight: bolder;}
 .icon-true:before{content:'\02611';font-weight: bolder;}
@@ -446,7 +450,8 @@ zs4-app.zs4-portrait{
   flex-direction: column;
 }
 zs4-app.zs4-landscape{
-  flex-direction: row;
+  /* flex-direction: row; */
+  flex-direction: column;
 }
 
 zs4-app-ui.zs4-portrait{

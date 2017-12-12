@@ -1313,13 +1313,14 @@ zs4.type = {
       var html = '<!DOCTYPE html>\n';
       html += '<html>\n';
         html += ' <head>\n';
+          html += '<meta charset="UTF-8">\n';
           html += '  <title>'+this._.path+'</title>\n';
           if (req.request.token&&req.request.payload){
             html += '  <script>window.token=\''+req.request.token+'\'</script>\n';
           }
           html += '  <script src="/bowser.min.js"></script>\n';
           html += '  <script src="/zs4.js"></script>\n';
-          html += '  <script>zs4.location.path=\''+this._.path+'\';zs4.admin();</script>\n'
+          html += '  <script>zs4.location.path=\''+this._.path+'\';;</script>\n'
           for (var i = 0 ; i < zs4.plugin.script.length ; i++){
             html += '  <script src="/' + zs4.plugin.script[i] + '"></script>\n';
           }
@@ -1331,7 +1332,7 @@ zs4.type = {
 
         html += ' </head>\n';
         if (true){
-          html += ' <body>\n';
+          html += ' <body onload="zs4.admin()">\n';
           html += ' </body>\n';
         }
       html += '</html>\n';
@@ -1554,24 +1555,35 @@ zs4.type = {
       this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
 
-      if (!this._.zs4check(req,req.input)){
-        this._.get(req,req.parent);cb();return;
-      }
-      //console.log(this._.path+'._.transform(\''+req.input+'\')');
-      if (zs4.is.object(this._.opcode)
-      && zs4.is.function(this._.opcode.convert)
-      ){
-        var v = this._.opcode.convert(req.input);
-        if (v!=null && v != this._.value){
-          if (zs4.is.function(req.request.unique)
-          &&!req.request.unique(this,v)){
-            req.error(THIS,'already exists');
-            this._.get(req,req.parent);cb();return;
-          }
-          this._.value=v;
-          this._.shouldBeSaved(req);
-          req.result(this,v);
+      console.log(this._.path + '.transformValue() //'+ this._.flags.getString());
+      console.log(req.flags.getString());
+      console.log(req.flags.get.authset());
+      //console.log(req.scope);
+      console.log(this._.flags.getString());
+
+      if (req.flags.get.authset()){
+        if (!this._.zs4check(req,req.input)){
+          this._.get(req,req.parent);cb();return;
         }
+        //console.log(this._.path+'._.transform(\''+req.input+'\')');
+        if (zs4.is.object(this._.opcode)&&zs4.is.function(this._.opcode.convert)){
+          var v = this._.opcode.convert(req.input);
+          if (v!=null && v != this._.value){
+            if (zs4.is.function(req.request.unique)
+            &&!req.request.unique(this,v)){
+              req.error(THIS,'already exists');
+              this._.get(req,req.parent);cb();return;
+            }
+            this._.value=v;
+            this._.shouldBeSaved(req);
+            req.result(this,v);
+          }
+        }
+      }
+      else{
+        console.log('returning error (not authorized)')
+        req.error(this._.scope,'not authorized');
+        this._.get(req,req.parent);cb();return;
       }
 
       this._.get(req,req.parent);
@@ -2775,7 +2787,7 @@ zs4.type = {
       this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'doctype',flags:'index noprune quickupdate authgetpublic',}));
-      this._.property(new zs4.type.scopebits({name:'bits',flags:'index noprune quickupdate',}));
+      this._.property(new zs4.type.scopebits({name:'bits',flags:'index noprune quickupdate authgetpublic',}));
     }
 
   },
@@ -4004,7 +4016,8 @@ zs4.request = function(o){
   this.setScope = (function(o){
 
     function authorize(arr){
-      //console.log('authorizing... '+THIS.path);
+      console.log(o._.authSet);
+      console.log('authorizing... '+THIS.path);
       if (!zs4.is.array(arr)){
         return THIS.userIsRoot();
       }
@@ -4610,8 +4623,15 @@ if (zs4.is.window()){
       var height = window.innerHeight;
       if (height > heightLimit)height = heightLimit;
 
-      var em = (width+height) / 30;
-      zs4.style.element.appendChild(document.createTextNode('*{box-sizing: border-box;font-size:'+em+'px;}\n.fouc{opacity:0}'));
+      var em = (width+height) / 50;
+
+      var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
+      sheet += '.fouc{opacity:0}\n';
+      for (var i = 20; i < 210; i+=10){
+        sheet += '.zs4-size-pct-'+i+'{font-size:'+((em*i)/100)+';}\n';
+      }
+      console.log(sheet);
+      zs4.style.element.appendChild(document.createTextNode(sheet));
     },
   };
 
