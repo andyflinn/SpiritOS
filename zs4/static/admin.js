@@ -1010,26 +1010,37 @@ zs4.admin.util = {
 				o._.html.appUserInterface.appendChild(o._.html.appWindow);
 
 				if (zs4.plugin.list.hasOwnProperty(o.zs4.head.typename._.value)){
+					var plugname = o.zs4.head.typename._.value;
 
 					o._.html.appWindowToolbar = document.createElement('zs4-app-toolbar');
+					zs4.admin.util.addClass(o._.html.appWindowToolbar,plugname);
 					o._.html.appWindow.appendChild(o._.html.appWindowToolbar);
+
+					o._.html.appWindowTitle = document.createElement('zs4-app-window-title');
+					o._.html.appWindowTitle.textContent = plugname;
+					zs4.admin.util.setIcon(o._.html.appWindowTitle,plugname);
+					zs4.admin.util.addClass(o._.html.appWindowTitle,plugname);
+					o._.html.appWindowToolbar.appendChild(o._.html.appWindowTitle);
+
 
 					// Reload Button
 					o._.html.appWindowReload = document.createElement('zs4-app-window-reload');
-					o._.html.appWindowReload.onclick = location.reload;
-					zs4.admin.util.setIcon(o._.html.appWindowReload,'reload');
+					//o._.html.appWindowReload.onclick = location.reload;
+					zs4.admin.util.setIcon(o._.html.appWindowReload,plugname);
+					zs4.admin.util.addClass(o._.html.appWindowReload,plugname);
 					o._.html.appWindowToolbar.appendChild(o._.html.appWindowReload);
 
 					// Save Button
-					if (zs4.is.function(zs4.plugin.list[o.zs4.head.typename._.value].save)){
+					if (o._.flags.get.authset()&&zs4.is.function(zs4.plugin.list[plugname].save)){
 						o._.html.appWindowSave = document.createElement('zs4-app-window-save');
 						//o._.html.appWindowSave.title = 'save';
-						o._.html.appWindowSave.onclick = zs4.plugin.list[o.zs4.head.typename._.value].save;
+						o._.html.appWindowSave.onclick = zs4.plugin.list[plugname].save;
 						zs4.admin.util.setIcon(o._.html.appWindowSave,'save');
+						zs4.admin.util.addClass(o._.html.appWindowSave,plugname);
 						o._.html.appWindowToolbar.appendChild(o._.html.appWindowSave);
 					}
 
-					zs4.plugin.list[o.zs4.head.typename._.value].ui(o._.html.appWindow,o);
+					zs4.plugin.list[plugname].ui(o._.html.appWindow,o);
 
 
 				}
