@@ -4016,8 +4016,8 @@ zs4.request = function(o){
   this.setScope = (function(o){
 
     function authorize(arr){
-      console.log(o._.authSet);
-      console.log('authorizing... '+THIS.path);
+      //console.log(o._.authSet);
+      //console.log('authorizing... '+THIS.path);
       if (!zs4.is.array(arr)){
         return THIS.userIsRoot();
       }
@@ -4384,16 +4384,21 @@ zs4.plugin = new Object({
   registerStatic:function(dir){
     zs4.plugin.static.push(dir);
   },
-  registerStyle:function(dir){
-    zs4.plugin.style.push(dir);
+  registerStyle:function(path){
+    zs4.plugin.style.push(path);
   },
-  registerScript:function(dir){
-    zs4.plugin.script.push(dir);
+  registerScript:function(path){
+    zs4.plugin.script.push(path);
+  },
+  registerApp:function(scope,script){
+    zs4.plugin.registerScript(script);
+    zs4.plugin.script.push(path);
   },
   list:new Object(),
   static:new Array(),
   style:new Array(),
   script:new Array(),
+  app:new Object(),
 });
 
 if (zs4.is.node()){
