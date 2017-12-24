@@ -104,7 +104,7 @@ mongodb.create = function(input){
 
   MONGODB._.property(new zs4.type.object({name:'config',flags:'',}))
   MONGODB.config._.property(new zs4.type.boolean({name:'connected',flags:'required noset nostore',default:false,}));
-  MONGODB.config._.property(new zs4.type.string({name:'url',flags:'required',default:'mongodb://127.0.0.1/zs4'}));
+  MONGODB.config._.property(new zs4.type.string({name:'url',flags:'required quickupdate',default:'mongodb://127.0.0.1/zs4'}));
 
   MONGODB.initializeArray = function(ARRAY){
 
