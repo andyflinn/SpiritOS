@@ -6,7 +6,7 @@
   "author": "Andy Flinn",
   "license": "MIT",
   "scripts": {
-    "start": "node app.js"
+    "start": "node zs4.js"
   },
   "dependencies": {
     "body-parser": "~1.13.2",
