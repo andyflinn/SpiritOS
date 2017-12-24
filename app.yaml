@@ -2,7 +2,7 @@ runtime: nodejs
 env: flex
 
 handlers:
-  url: /.*
+  url: *
   script: IGNORED
   secure: always
 # This sample incurs costs to run on the App Engine flexible environment.
