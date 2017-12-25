@@ -207,10 +207,16 @@ express.schema = function(parent){
     }
 
     app.get('*',function(req,res,next){
-      if (!req.secure && express.HTTPS_RUNNING){
-        return res.redirect(THIS.getHostURL() + req.url);
+      if (!req.secure){
+        if (express.HTTPS_RUNNING){
+          return res.redirect(THIS.getHostURL() + req.url);
+        }
+        else if (req.host != 'localhost' && req.get('X-Forwarded-Proto') == 'http'){
+          return res.redirect(THIS.getHostURL() + req.url);
+        }
       }
-      else next();
+
+      next();
     });
 
     app.get('/*',express.getFunction);
