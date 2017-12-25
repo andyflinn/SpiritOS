@@ -231,6 +231,8 @@ mongodb.create = function(input){
 
       cb(type);
     });
+
+    cb(null);
   };
 
   MONGODB.getID = function(id,cb){
