@@ -191,7 +191,7 @@ mongodb.create = function(input){
     //var item = new ARRAY._.model();
 
     ARRAY._.model.find(query, function (err, data){
-      if (err!=null||data==null||!zs4.is.array(data)){cb(null); return;}
+      if (err!=null||data==null||!zs4.is.array(data)){cb(); return;}
       console.log('QUERY RETURNED ARRAY!!!: length='+data.length);
 
       var type = ARRAY.template._.new();
@@ -207,12 +207,10 @@ mongodb.create = function(input){
         //console.log(gt);
       }
 
-      cb(data);
+      cb(); return;
       //console.log(arg.request.request);
       //console.log(JSON.stringify(data));
     });
-
-    //cb(null);
   };
 
   MONGODB.getOne = function(req,cb){
@@ -309,7 +307,7 @@ mongodb.create = function(input){
     var options = {
       useMongoClient: true,
       autoIndex: false, // Don't build indexes
-      reconnectTries: Number.MAX_VALUE, // Never stop trying to reconnect
+      reconnectTries: 0, //Number.MAX_VALUE, // Never stop trying to reconnect
       reconnectInterval: 500, // Reconnect every 500ms
       poolSize: 10, // Maintain up to 10 socket connections
       // If not connected, return errors immediately rather than waiting for reconnect
