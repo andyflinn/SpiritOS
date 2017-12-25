@@ -197,18 +197,22 @@ mongodb.create = function(input){
       var type = ARRAY.template._.new();
 
       for (var i = 0 ; i < data.length ; i++){
-        console.log(data[i].zs4.head.title);
+        //console.log(data[i].zs4.head.title);
 
         type._.name = mongodb.hex2name(data[i]._id);
         ARRAY._.array.elementConnect(ARRAY.array,type);
         type._.load(data[i]);
-        type._.getTree(arg.request);
+        //console.log(type);
+        var gt = type._.getTree(arg.request);
+        //console.log(gt);
       }
 
       cb(data);
+      //console.log(arg.request.request);
+      //console.log(JSON.stringify(data));
     });
 
-    cb(null);
+    //cb(null);
   };
 
   MONGODB.getOne = function(req,cb){

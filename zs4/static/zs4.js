@@ -4494,7 +4494,7 @@ if (zs4.is.node()){
       console.log('array element '+i+': '+fnam)
       zs4.plugin.list[rdr[i]]=require(fnam);
     }
-    console.log(zs4.plugin);
+    //console.log(zs4.plugin);
 
     // Run express only once all components/plugins are loaded and ready
     zs4.node.require.express = require('../express');
@@ -4632,10 +4632,10 @@ if (zs4.is.window()){
 
       var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
       sheet += '.fouc{opacity:0}\n';
-      for (var i = 20; i < 210; i+=10){
-        sheet += '.zs4-size-pct-'+i+'{font-size:'+((em*i)/100)+';}\n';
-      }
-      console.log(sheet);
+      //for (var i = 20; i < 210; i+=10){
+      //  sheet += '.zs4-size-pct-'+i+'{font-size:'+((em*i)/100)+';}\n';
+      //}
+      //console.log(sheet);
       zs4.style.element.appendChild(document.createTextNode(sheet));
     },
   };
