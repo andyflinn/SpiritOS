@@ -208,6 +208,7 @@ mongodb.create = function(input){
       cb(data);
     });
 
+    cb(null);
   };
 
   MONGODB.getOne = function(req,cb){
