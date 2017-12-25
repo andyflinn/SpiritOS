@@ -117,7 +117,7 @@ mongodb.create = function(input){
       console.log(ARRAY._.mongoTextSearch);
       ARRAY._.mongoSchema.index(ARRAY._.mongoTextSearch);
 
-      //console.log(JSON.stringify(ARRAY._.mongoSchema));
+      console.log(JSON.stringify(ARRAY._.mongoSchema));
 
       ARRAY._.mongoModel = function(){
         return mongoose.model(ARRAY.template.zs4.head.typename._.value, ARRAY._.mongoSchema);

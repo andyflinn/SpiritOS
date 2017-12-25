@@ -212,7 +212,7 @@ express.schema = function(parent){
           return res.redirect(THIS.getHostURL() + req.url);
         }
         else if (req.host != 'localhost' && req.get('X-Forwarded-Proto') == 'http'){
-          return res.redirect(THIS.getHostURL() + req.url);
+          return res.redirect(THIS.getSecureUrl() + req.url);
         }
       }
 
@@ -256,5 +256,8 @@ express.schema = function(parent){
   THIS.getHostURL = function(){
     if (express.HTTPS_RUNNING)return ('https://'+THIS.host._.value+':'+THIS.sslport._.value);
     return ('http://'+THIS.host._.value+':'+THIS.port._.value);
-  }
+  };
+  THIS.getSecureUrl = function(){
+    return ('https://'+THIS.host._.value);
+  };
 }
