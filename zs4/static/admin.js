@@ -838,6 +838,9 @@ zs4.admin.util = {
 			};
 			o._.html.toggle.onclick = o._.html.onToggle;
 
+			o._.html.ePlugName = document.createElement('zs4-scope-type');
+			o._.html.head.appendChild(o._.html.ePlugName);
+
 			o._.html.name = document.createElement('zs4-name');
 			o._.html.head.appendChild(o._.html.name);
 			o._.html.name.textContent = o._.name;
@@ -856,6 +859,7 @@ zs4.admin.util = {
 			o._.html.head.appendChild(o._.html.result);
 			o._.html.result.onclick = function(){
 				if (o._.cbresult != null)console.log(o._.cbresult);
+				o._.html.result.style.display = 'none';
 			};
 
 			o._.html.spin = document.createElement('zs4-spin');
@@ -1012,23 +1016,11 @@ zs4.admin.util = {
 				if (zs4.plugin.list.hasOwnProperty(o.zs4.head.typename._.value)){
 					var plugname = o.zs4.head.typename._.value;
 
+					o._.html.ePlugName.textContent = plugname;
+
 					o._.html.appWindowToolbar = document.createElement('zs4-app-toolbar');
 					zs4.admin.util.addClass(o._.html.appWindowToolbar,plugname);
 					o._.html.appWindow.appendChild(o._.html.appWindowToolbar);
-
-					o._.html.appWindowTitle = document.createElement('zs4-app-window-title');
-					o._.html.appWindowTitle.textContent = plugname;
-					zs4.admin.util.setIcon(o._.html.appWindowTitle,plugname);
-					zs4.admin.util.addClass(o._.html.appWindowTitle,plugname);
-					o._.html.appWindowToolbar.appendChild(o._.html.appWindowTitle);
-
-
-					// Reload Button
-					o._.html.appWindowReload = document.createElement('zs4-app-window-reload');
-					//o._.html.appWindowReload.onclick = location.reload;
-					zs4.admin.util.setIcon(o._.html.appWindowReload,plugname);
-					zs4.admin.util.addClass(o._.html.appWindowReload,plugname);
-					o._.html.appWindowToolbar.appendChild(o._.html.appWindowReload);
 
 					// Save Button
 					if (o._.flags.get.authset()&&zs4.is.function(zs4.plugin.list[plugname].save)){
@@ -1037,12 +1029,10 @@ zs4.admin.util = {
 						o._.html.appWindowSave.onclick = zs4.plugin.list[plugname].save;
 						zs4.admin.util.setIcon(o._.html.appWindowSave,'save');
 						zs4.admin.util.addClass(o._.html.appWindowSave,plugname);
-						o._.html.appWindowToolbar.appendChild(o._.html.appWindowSave);
+						o._.html.head.appendChild(o._.html.appWindowSave);
 					}
 
 					zs4.plugin.list[plugname].ui(o._.html.appWindow,o);
-
-
 				}
 
 				o._.html.top.dialogActive = false;

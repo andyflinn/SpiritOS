@@ -96,7 +96,7 @@
 
 [class^="icon-"]:before, [class*=" icon-"]:before {
   display:inline-block;
-  font-size:0.5em;
+  font-size:1em;
   vertical-align:0.25em;
   cursor:pointer;
   border-radius:1em;
@@ -211,20 +211,26 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-bye:before{content:'(>';font-weight: bolder;}
 .icon-console:before{content:">_";font-weight: bolder;}
 .icon-delete:before{content:"x";font-weight: bolder; color:red;}
+.icon-degree:before{content:'\000B0';font-weight: bolder;}
 .icon-descend:before{content:'\021A1';font-weight: bolder;}
 .icon-doctype:before{content:'\0265E';font-weight: bolder;}
-.icon-document:before{content:'\02683';font-weight: bolder;}
+.icon-document:before{content:'\01F4C3';font-weight: bolder;}
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
+.icon-female:before{content:'\02640';font-weight: bolder;}
 .icon-folder:before{content:'\025D5';font-weight: bolder;}
 .icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
 .icon-file:before{content:'f';;font-weight: bolder;color:blue;}
 .icon-head:before{content:'+';;font-weight: bolder;color:blue;}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:"i";font-weight: bolder;}
+.icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
+.icon-next:before{content:"\000BB";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
+.icon-pilcrow:before{content:'\000B6';font-weight: bolder;}
 .icon-play:before{content:'\025B6';font-weight: bolder;}
 .icon-plus:before{content:"+";font-weight: bolder;}
+.icon-previous:before{content:"\000AB";font-weight: bolder;}
 .icon-reload:before{content:'\01f503';font-weight: bolder;}
 .icon-required:before{content:"*";font-weight: bolder;}
 .icon-save:before{content:'\01f4be';font-weight: bolder;}
@@ -454,14 +460,9 @@ zs4-app.zs4-landscape{
   flex-direction: column;
 }
 
-zs4-app-ui.zs4-portrait{
+zs4-app-ui{
   display:block;
   width:100%;
-}
-zs4-app-ui.zs4-landscape{
-  display:inline-block;
-  flex-grow: 10;
-  flex-basis:70%;
 }
 zs4-app-info{
   background-color: lightblue;
