@@ -227,11 +227,12 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-minus:before{content:"-";font-weight: bolder;}
 .icon-next:before{content:"\000BB";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
+.icon-pencil:before{content:'\0270F';font-weight: bolder;}
 .icon-pilcrow:before{content:'\000B6';font-weight: bolder;}
 .icon-play:before{content:'\025B6';font-weight: bolder;}
 .icon-plus:before{content:"+";font-weight: bolder;}
 .icon-previous:before{content:"\000AB";font-weight: bolder;}
-.icon-reload:before{content:'\01f503';font-weight: bolder;}
+.icon-reload:before{content:'\021BB';font-weight: bolder;}
 .icon-required:before{content:"*";font-weight: bolder;}
 .icon-save:before{content:'\01f4be';font-weight: bolder;}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}

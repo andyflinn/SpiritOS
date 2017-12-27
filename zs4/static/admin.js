@@ -1022,6 +1022,16 @@ zs4.admin.util = {
 					zs4.admin.util.addClass(o._.html.appWindowToolbar,plugname);
 					o._.html.appWindow.appendChild(o._.html.appWindowToolbar);
 
+					// Reload Button
+					if (zs4.is.function(zs4.plugin.list[plugname].reload)){
+						o._.html.appWindowReload = document.createElement('zs4-app-window-reload');
+						//o._.html.appWindowReload.title = 'save';
+						o._.html.appWindowReload.onclick = zs4.plugin.list[plugname].reload;
+						zs4.admin.util.setIcon(o._.html.appWindowReload,'reload');
+						zs4.admin.util.addClass(o._.html.appWindowReload,plugname);
+						o._.html.head.appendChild(o._.html.appWindowReload);
+					}
+
 					// Save Button
 					if (o._.flags.get.authset()&&zs4.is.function(zs4.plugin.list[plugname].save)){
 						o._.html.appWindowSave = document.createElement('zs4-app-window-save');
