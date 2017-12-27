@@ -236,7 +236,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-required:before{content:"*";font-weight: bolder;}
 .icon-save:before{content:'\01f4be';font-weight: bolder;}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
-.icon-search:before{content:'?';font-weight: bolder;}
+.icon-search:before{content:'\01F50E';font-weight: bolder;}
 .icon-select:before{content:'\02611';font-weight: bolder;}
 .icon-spin:before{content:'\029B0';font-weight: bolder;}
 .icon-stop:before{content:'\025A0';font-weight: bolder;color:red;}
