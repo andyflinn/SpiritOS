@@ -131,6 +131,7 @@ mongodb.create = function(input){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
     console.log('MONGODB.query('+this._.path+'.array)');
+    console.log(arg);
 
     var find = new Object();
 

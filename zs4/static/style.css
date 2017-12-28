@@ -160,6 +160,8 @@ input.zs4-noset{
 textarea{
   height: auto;
   width:100%;
+  max-width: 100%;
+  min-width: 100%;
 }
 a{
   text-decoration: none;
@@ -224,8 +226,10 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:"i";font-weight: bolder;}
 .icon-male:before{content:'\02642';font-weight: bolder;}
+.icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
 .icon-next:before{content:"\000BB";font-weight: bolder;}
+.icon-new:before{content:"\01F5CB";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
 .icon-pencil:before{content:'\0270F';font-weight: bolder;}
 .icon-pilcrow:before{content:'\000B6';font-weight: bolder;}
