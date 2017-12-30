@@ -225,6 +225,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-head:before{content:'+';;font-weight: bolder;color:blue;}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:"i";font-weight: bolder;}
+.icon-layout:before{content:'\02318';font-weight: bolder;}
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
