@@ -1,0 +1,9 @@
+version: '2'
+services:
+  mongo:
+    container_name: some-mongo
+    image: launcher.gcr.io/google/mongodb3
+    ports:
+      - '27017:27017'
+    volumes:
+      - /home/countinn/src/andy-flinn-canada/zs4/gcloud/mongo:/data/db
