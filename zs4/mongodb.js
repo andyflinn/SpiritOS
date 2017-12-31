@@ -308,7 +308,7 @@ mongodb.create = function(input){
     var options = {
       useMongoClient: true,
       autoIndex: false, // Don't build indexes
-      reconnectTries: 0, //Number.MAX_VALUE, // Never stop trying to reconnect
+      reconnectTries: 10, //Number.MAX_VALUE, // Never stop trying to reconnect
       reconnectInterval: 500, // Reconnect every 500ms
       poolSize: 10, // Maintain up to 10 socket connections
       // If not connected, return errors immediately rather than waiting for reconnect
