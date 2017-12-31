@@ -31,12 +31,12 @@ COPY ./zs4/plugin/toonsmith/static/toonsmith/window.js    /usr/src/app/zs4/plugi
 
 RUN mkdir -p /usr/src/app/zs4/static/tables/
 
-COPY ./zs4/plugin/static/admin.js       /usr/src/app/zs4/static/
-COPY ./zs4/plugin/static/bowser.min.js  /usr/src/app/zs4/static/
-COPY ./zs4/plugin/static/favicon.ico    /usr/src/app/zs4/static/
-COPY ./zs4/plugin/static/style.css      /usr/src/app/zs4/static/
-COPY ./zs4/plugin/static/zs4.js         /usr/src/app/zs4/static/
-COPY ./zs4/plugin/static/tables/midi.js /usr/src/app/zs4/static/tables
+COPY ./zs4/static/admin.js       /usr/src/app/zs4/static/
+COPY ./zs4/static/bowser.min.js  /usr/src/app/zs4/static/
+COPY ./zs4/static/favicon.ico    /usr/src/app/zs4/static/
+COPY ./zs4/static/style.css      /usr/src/app/zs4/static/
+COPY ./zs4/static/zs4.js         /usr/src/app/zs4/static/
+COPY ./zs4/static/tables/midi.js /usr/src/app/zs4/static/tables
 
 RUN ls -la /usr/src/app/zs4
 EXPOSE 8080
