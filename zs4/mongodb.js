@@ -335,16 +335,16 @@ mongodb.create = function(input){
     });
 
     // When the connection is disconnected
-    mongoose.connection.on('disconnected', function () {
-      console.log('Mongoose default connection disconnected');
+    mongoose.connection.on('disconnected', function (err) {
+      console.log('Mongoose default connection disconnected: ' + err);
       MONGODB.config.connected._.value = false;
     });
 
     // If the Node process ends, close the Mongoose connection
     process.on('SIGINT', function() {
-      mongoose.connection.close(function () {
+      mongoose.connection.close(function (err) {
         MONGODB.config.connected._.value = false;
-        console.log('Mongoose default connection disconnected through app termination');
+        console.log('Mongoose default connection disconnected through app termination: '+err);
         process.exit(0);
       });
     });
