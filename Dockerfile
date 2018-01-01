@@ -39,6 +39,7 @@ COPY ./zs4/static/style.css      /usr/src/app/zs4/static/
 COPY ./zs4/static/zs4.js         /usr/src/app/zs4/static/
 COPY ./zs4/static/tables/midi.js /usr/src/app/zs4/static/tables
 
+RUN ls -la /usr/src/app
 RUN ls -la /usr/src/app/zs4
 EXPOSE 8080
 CMD [ "npm", "start" ]
