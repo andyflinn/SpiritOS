@@ -316,6 +316,7 @@ mongodb.create = function(input){
       // If not connected, return errors immediately rather than waiting for reconnect
       bufferMaxEntries: 0
     };
+    console.log(options);
     mongoose.connect(MONGODB.config.url._.value,options);
 
     // CONNECTION EVENTS
