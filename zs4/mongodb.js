@@ -104,6 +104,7 @@ mongodb.create = function(input){
 
   MONGODB._.property(new zs4.type.object({name:'config',flags:'',}))
   MONGODB.config._.property(new zs4.type.boolean({name:'connected',flags:'required noset nostore',default:false,}));
+  MONGODB.config._.property(new zs4.type.boolean({name:'ssl',flags:'required quickupdate',default:false}));
   MONGODB.config._.property(new zs4.type.string({name:'url',flags:'required quickupdate',default:'mongodb://127.0.0.1/zs4'}));
 
   MONGODB.initializeArray = function(ARRAY){
@@ -307,6 +308,7 @@ mongodb.create = function(input){
     // Create the database connection
     var options = {
       useMongoClient: true,
+      ssl:MONGODB.config.ssl._.value,
       autoIndex: false, // Don't build indexes
       reconnectTries: 10, //Number.MAX_VALUE, // Never stop trying to reconnect
       reconnectInterval: 500, // Reconnect every 500ms
