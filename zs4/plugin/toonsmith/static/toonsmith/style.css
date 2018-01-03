@@ -1,0 +1,92 @@
+.icon-toonsmith:before{content:'\0266B';font-weight: bolder;}
+
+.icon-audio:before{content:'\01F509';font-weight: bolder;}
+.icon-bars:before{content:'\023D0';font-weight: bolder;}
+.icon-bass:before{content:'\01D122';font-weight: bolder;}
+.icon-beats:before{content:'\0237F';font-weight: bolder;}
+.icon-bpb:before{content:'\0215E';font-weight: bolder;}
+.icon-bpm:before{content:'\023F1';font-weight: bolder;}
+.icon-chord:before{content:'\01F3B6';font-weight: bolder;}
+.icon-guitar:before{content:'\01F3B8';font-weight: bolder;}
+.icon-keyboard:before{content:'\01F3B9';font-weight: bolder;}
+.icon-midi:before{content:'\0266C';font-weight: bolder;}
+.icon-transpose:before{content:'\021C5';font-weight: bolder;}
+.icon-violin:before{content:'\01F3BB';font-weight: bolder;}
+
+ts-block-chart.tsbar {
+  border-left: .1em solid lightgray;
+}
+ts-block-chart.tsbeat {
+  border-left: .05em dashed lightgray;
+}
+ts-block-melody {
+  font-size: .5em;
+  color: grey;
+}
+ts-content{
+  font-size:0.5em;
+}
+ts-count-events,ts-count-chords,ts-count-bars,ts-count-beat,ts-count-notes{
+  font-size: .5em;
+}
+ts-event.tscurrent {
+  background-color: yellow;
+}
+ts-event-chord-delete{
+  color: red;
+}
+
+ts-keyboard{
+  width:100%;
+  height: 2em;
+  overflow: scroll;
+}
+ts-piano-note.chordroot{
+  border-bottom: .2em solid green;
+}
+ts-piano-note.chordnote{
+  border-bottom: .2em solid lightgreen;
+}
+ts-piano-note.eventnote{
+  border-bottom: .3em solid red;
+  background-color:pink;
+}
+
+ts-bass-note.chordroot,
+ts-violin-note.chordroot,
+ts-bass-note.chordroot,
+ts-guitar-note.chordroot{
+  color:green;
+}
+ts-bass-note.chordnote,
+ts-violin-note.chordnote,
+ts-bass-note.chordnote,
+ts-guitar-note.chordnote{
+  color:green;
+}
+ts-bass-note.eventnote,
+ts-violin-note.eventnote,
+ts-bass-note.eventnote,
+ts-guitar-note.eventnote{
+  color:red;
+}
+
+
+ts-tool-icons{
+  display:block;
+}
+ts-tool-window{
+  background-color: lightgray;
+  display: block;
+}
+ts-top-tools{
+  display:block;
+  font-size: 2em;
+}
+ts-statusbar{
+  background-color: lightgray;
+}
+
+ts-titlebar{
+  background-color: lightgray;
+}

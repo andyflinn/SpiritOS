@@ -308,17 +308,17 @@ mongodb.create = function(input){
     // Create the database connection
     var options = {
       useMongoClient: true,
-      ssl:MONGODB.config.ssl._.value,
-      autoIndex: false, // Don't build indexes
-      reconnectTries: 10, //Number.MAX_VALUE, // Never stop trying to reconnect
-      reconnectInterval: 500, // Reconnect every 500ms
-      poolSize: 10, // Maintain up to 10 socket connections
+      //ssl:MONGODB.config.ssl._.value,
+      //autoIndex: false, // Don't build indexes
+      //reconnectTries: 10, //Number.MAX_VALUE, // Never stop trying to reconnect
+      //reconnectInterval: 500, // Reconnect every 500ms
+      //poolSize: 10, // Maintain up to 10 socket connections
       // If not connected, return errors immediately rather than waiting for reconnect
-      bufferMaxEntries: 0
+      //bufferMaxEntries: 0
     };
     console.log(options);
     mongoose.connect(MONGODB.config.url._.value,options);
-
+    //mongoose.createConnection().openUri(MONGODB.config.url._.value);
     // CONNECTION EVENTS
     // When successfully connected
     mongoose.connection.on('connected', function () {

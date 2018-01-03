@@ -17,11 +17,16 @@ else {
         path = path[process.argv[i]];
       }
       else{
-        var arr = zs4.string.split.separators(process.argv[i],':/\\=');
+        var arr = zs4.string.split.separators(process.argv[i],'=');
         if (arr.length == 2 && zs4.is.name(arr[0])){
           if (arr[1]=='true')path[arr[0]]=true;
           else if (arr[1]=='false')path[arr[0]]=false;
           else path[arr[0]]=arr[1];
+        }
+        else if (arr.length > 2 && zs4.is.name(arr[0])){
+          var val = arr[1];
+          for (var i = 2 ; i < arr.length; i++)val += ('='+arr[i]);
+          path[arr[0]] = val;
         }
       }
   }
@@ -43,7 +48,7 @@ zs4.load(function(){
       zs4.console.log('req.request.needsSaving');
       zs4.save(function(){
         zs4.console.log('saved');
-        console.log(zs4.json.stringify(zs4.THIS._.store()));
+        //console.log(zs4.json.stringify(zs4.THIS._.store()));
       });
     }
     else{
