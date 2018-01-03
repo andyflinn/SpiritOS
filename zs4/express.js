@@ -222,7 +222,7 @@ express.schema = function(parent){
     app.get('/*',express.getFunction);
     app.post('/*',express.postFunction);
 
-    var port = this.port._.value;
+    var port = process.env.PORT || this.port._.value;
     zs4.boot.run(function(){
 
       function runHttp(){
