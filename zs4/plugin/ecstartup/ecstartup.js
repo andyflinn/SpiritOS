@@ -1,0 +1,16 @@
+var zs4 = require('../../static/zs4');
+var xpress = require('express');
+
+console.log('ecstartup loading...');
+
+var ecstartup;
+if (zs4.is.node()) {
+    ecstartup = exports;
+}
+else {
+    ecstartup = new Object();
+}
+
+zs4.plugin.registerStatic('./plugin/ecstartup/static/');
+zs4.plugin.registerStyle('ecstartup/style.css');
+zs4.plugin.registerScript('ecstartup/window.js');
