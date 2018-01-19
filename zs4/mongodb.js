@@ -118,7 +118,7 @@ mongodb.create = function(input){
       console.log(ARRAY._.mongoTextSearch);
       ARRAY._.mongoSchema.index(ARRAY._.mongoTextSearch);
 
-      console.log(JSON.stringify(ARRAY._.mongoSchema));
+      //console.log(JSON.stringify(ARRAY._.mongoSchema));
 
       ARRAY._.mongoModel = function(){
         return mongoose.model(ARRAY.template.zs4.head.typename._.value, ARRAY._.mongoSchema);
@@ -131,8 +131,8 @@ mongodb.create = function(input){
   MONGODB.query = function(arg,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.query('+this._.path+'.array)');
-    console.log(arg);
+    //console.log('MONGODB.query('+this._.path+'.array)');
+    //console.log(arg);
 
     var find = new Object();
 
@@ -149,7 +149,7 @@ mongodb.create = function(input){
             or.push(nu);
           }
         }
-        console.log('$or:',or);
+        //console.log('$or:',or);
         query.find({$or:or});
       }
     }

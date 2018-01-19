@@ -211,7 +211,7 @@ express.schema = function(parent){
         if (express.HTTPS_RUNNING){
           return res.redirect(THIS.getHostURL() + req.url);
         }
-        else if (req.host != 'localhost' && req.get('X-Forwarded-Proto') == 'http'){
+        else if (req.hostname != 'localhost' && req.get('X-Forwarded-Proto') == 'http'){
           return res.redirect(THIS.getSecureUrl() + req.url);
         }
       }

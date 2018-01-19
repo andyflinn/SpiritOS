@@ -4462,6 +4462,9 @@ if (zs4.is.node()){
     zs4.node.require.password = require('../password');
     zs4.node.require.password.schema(zs4.THIS.zs4);
 
+    zs4.node.require.paypal = require('../paypal');
+    zs4.node.require.paypal.schema(zs4.THIS.zs4);
+
     zs4.node.require.mongodb = require('../mongodb');
     zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb'});
     zs4.THIS.zs4._.property(zs4.array.mongodb);

@@ -2133,9 +2133,15 @@ zs4.admin.util = {
 				o._.html.appElement.appendChild(o._.html.appInfo);
 
 				o._.html.appInfoContent = document.createElement('zs4-app-info-content');
-				o._.html.appInfoContent.textContent = 'lorem ipsum et cetera...';
 				o._.html.appInfo.appendChild(o._.html.appInfoContent);
 
+				if (zs4.is.function(zs4.static)){
+					//window.alert('asdfasddf');
+					zs4.static(o._.html.appInfoContent);
+				}
+				else {
+					o._.html.appInfoContent.textContent = 'lorem ipsum et cetera...';
+				}
 			}
 
 		}
