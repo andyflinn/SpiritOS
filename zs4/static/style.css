@@ -205,13 +205,13 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-selectnone:before{content:"!";font-weight: bolder;}
 .icon-selectitem:before{content:"$";font-weight: bolder;}
 
-.icon-about:before{content:"i";font-weight: bolder;}
+.icon-about:before{content:url(/gfx/icons/info.svg);}
 .icon-add:before{content:"+";font-weight: bolder;}
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-ascend:before{content:'\0219F';font-weight: bolder;}
-.icon-auth:before{content:"a";font-weight: bolder;}
+.icon-auth:before{content:url(/gfx/icons/auth.svg);}
 .icon-bye:before{content:'(>';font-weight: bolder;}
-.icon-console:before{content:">_";font-weight: bolder;}
+.icon-console:before{content:url(/gfx/icons/console.svg);}
 .icon-delete:before{content:"x";font-weight: bolder; color:red;}
 .icon-degree:before{content:'\000B0';font-weight: bolder;}
 .icon-descend:before{content:'\021A1';font-weight: bolder;}
@@ -224,8 +224,8 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-file:before{content:'f';;font-weight: bolder;color:blue;}
 .icon-head:before{content:'+';;font-weight: bolder;color:blue;}
 .icon-hi:before{content:'>)';font-weight: bolder;}
-.icon-info:before{content:"i";font-weight: bolder;}
-.icon-layout:before{content:'\02318';font-weight: bolder;}
+.icon-info:before{content:url(/gfx/icons/info.svg);}
+.icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
@@ -246,12 +246,12 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-spin:before{content:'\029B0';font-weight: bolder;}
 .icon-stop:before{content:'\025A0';font-weight: bolder;color:red;}
 .icon-to-start:before{content:'\025C4';;font-weight: bolder;}
-.icon-tool:before{content:'\02692 ';font-weight: bolder;}
+.icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-type:before{content:'+';font-weight: bolder;}
 .icon-upload:before{content:'\0219F';;font-weight: bolder;color:blue;}
 .icon-user:before{content:'\0263B';font-weight: bolder;}
-.icon-zs4:before{content:'\025C8';font-weight: bolder;}
+.icon-zs4:before{content:url(/gfx/icons/zs4.svg);}
 
 .icon-logo:before{
   content:"zs4";

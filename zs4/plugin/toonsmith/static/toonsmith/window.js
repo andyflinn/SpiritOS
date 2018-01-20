@@ -111,6 +111,7 @@ var ts = {
 				evt_curidx:-1,
 				evt_shown:null,
 				current_tool:null,
+				current_inst:null,
 
 				onKeyChange:function(nuKee){
 					if	(!this.key.ok)
@@ -179,6 +180,9 @@ var ts = {
 
 					if (this.current_tool != null && !playing){
 						this.current_tool.refresh();
+					}
+					if (this.current_inst != null && !playing){
+						this.current_inst.refresh();
 					}
 
 				},
@@ -432,6 +436,22 @@ var ts = {
 					this.recomputeTiming();
 					for (var i = 0; i < this.evt.length; i++)this.evt[i].refresh();
 					for (var i = 0; i < this.tool.length; i++)this.tool[i].refresh();
+					for (var i = 0; i < this.inst.length; i++)this.tool[i].refresh();
+					this.refreshLineFeed();
+				},
+				refreshLineFeed:function(){
+					var arr = this.evt;
+					for (var i = 0 ; i < arr.length; i++){
+						if (arr[i].eLineFeed != null){
+							if (this.toolobject.layout.eLineFeed.checked){
+								arr[i].eLineFeed.style.display='initial';
+							}
+							else {
+								arr[i].eLineFeed.style.display='none';
+							}
+						}
+					}
+
 				},
 				addEvent:function(str,info){
 					// Global values
@@ -454,6 +474,14 @@ var ts = {
 							this.bpmTool.eEventBpmInput.value = this.bpm;
 
 							//window.alert('bpm='+this.bpm);
+						}
+						if (glob[0].trim()=='lf'){
+							if (glob[1].trim()=='false'){
+								this.toolobject.layout.eLineFeed.checked=false;
+							}
+							if (glob[1].trim()=='true'){
+								this.toolobject.layout.eLineFeed.checked=true;
+							}
 						}
 					}
 					if (info.search(":") != -1) return 0;
@@ -518,7 +546,8 @@ var ts = {
 					if (true) { // createn UI
 						o.eEvent = document.createElement('ts-event');
 						o.eEvent.style.display = 'inline-block';
-						o.eEvent.style.marginTop = '1em';
+						o.eEvent.style.marginTop = '0.1em';
+						o.eEvent.style.marginBottom = '0.1em';
 						o.eEvent.ts = o;
 						o.eEvent.onclick = function(){this.ts.ts.onEventClick(this.ts);};
 
@@ -616,6 +645,13 @@ var ts = {
 						o.eBlockLyric.style.visibility = 'hidden';
 						o.linefeed = true;
 						o.eLineFeed = document.createElement('br');
+						if (this.toolobject.layout.eLineFeed.checked==true){
+							o.eLineFeed.style.display='initial';
+						}
+						else {
+							o.eLineFeed.style.display='none';
+						}
+
 					}
 					else if (str.trim().length>0){
 						o.eBlockLyric.textContent = str.trim();
@@ -742,6 +778,13 @@ var ts = {
 				},
 				getChordsAndLyrics:function(){
 					var ret = '[bpb:'+this.bpb+'][bpm:'+this.bpm+']';
+
+					if (this.toolobject.layout.eLineFeed.checked==true){
+						ret+='[lf:true]';
+					}
+					else {
+						ret+='[lf:false]';
+					}
 
 					for (var i = 0; i < this.evt.length; i++){
 						var evt = this.evt[i];
@@ -932,9 +975,9 @@ var ts = {
 					};
 					nu.toolWindow.appendChild(nu.titleIcon);
 
+
 					nu.toolTitlebar = ts.html.nu.ele('ts-tool-titlebar');
 					nu.toolTitlebar.style.display = 'inline-block';
-					nu.toolTitlebar.textContent = name + ': ';
 					nu.toolTitlebar.ts = this;
 					if (tooltype=='i') nu.toolWindow.appendChild(nu.toolTitlebar);
 					else nu.toolWindow.appendChild(nu.toolTitlebar);
@@ -953,6 +996,7 @@ var ts = {
 
 					return nu;
 				},
+
 				createToolInstrument:function(name,icon){
 					var nu = this.createTool(name,icon,'i');
 
@@ -1065,19 +1109,16 @@ var ts = {
 					};
 
 					nu.eEventInstrument = ts.html.nu.ele('ts-instrument-' + name);
-					nu.eEventInstrument.style.display = 'block';
+					//nu.eEventInstrument.style.display = 'inline-block';
 					nu.eEventInstrument.className = 'instrument';
-					nu.toolWindow.appendChild(nu.eEventInstrument);
+					nu.toolTitlebar.appendChild(nu.eEventInstrument);
 
 						nu.iGeneral = ts.html.nu.ele('ts-instrument-general');
-						nu.iGeneral.style.display = 'block';
+						//nu.iGeneral.style.display = 'inline-block';
 						nu.eEventInstrument.appendChild(nu.iGeneral);
 
-							//nu.iName = ts.html.nu.ele('ts-instrument-name');
-							//nu.iName.textContent = name;
-							//nu.iGeneral.appendChild(nu.iName);
-
 							nu.iCurrentChord = ts.html.nu.ele('ts-instrument-curchord');
+							zs4.admin.util.setIcon(nu.iCurrentChord,'chord');
 							nu.iGeneral.appendChild(nu.iCurrentChord);
 
 								nu.iCurrentChordRoot = ts.html.nu.ele('ts-instrument-chord-root');
@@ -1087,10 +1128,11 @@ var ts = {
 								nu.iCurrentChord.appendChild(nu.iCurrentChordType);
 
 							nu.iHoverNote = ts.html.nu.ele('ts-instrument-hovernote');
+							zs4.admin.util.setIcon(nu.iHoverNote,'note');
 							nu.iGeneral.appendChild(nu.iHoverNote);
 
 						nu.iSpecific = ts.html.nu.ele('ts-instrument-specific');
-						nu.iSpecific.style.display = 'block';
+						//nu.iSpecific.style.display = 'block';
 						nu.eEventInstrument.appendChild(nu.iSpecific);
 						nu.iSpecific.ts = nu;
 						nu.iSpecific.onmouseleave = function(){
@@ -1294,7 +1336,7 @@ var ts = {
 					var nu = this.createToolInstrument('piano','keyboard');
 
 					nu.eKeyboard = ts.html.nu.ele('ts-keyboard');
-					nu.eKeyboard.style.display = 'block';
+					nu.eKeyboard.style.display = 'inline-block';
 					nu.iSpecific.appendChild(nu.eKeyboard);
 
 					for (var i = ts.midi.constant.MIDI_NOTE_MIN; i <= ts.midi.constant.MIDI_NOTE_MAX ; i++){
@@ -1700,6 +1742,36 @@ var ts = {
 					nu.refresh = function(){};
 
 				},
+				createToolLayout(){
+					var nu = this.createTool('layout','layout');
+
+					nu.lfLabel =  ts.html.nu.ele('ts-input-label');
+					nu.lfLabel.innerHTML =  '&#xb6;';
+					//zs4.admin.util.setIcon(nu.lfLabel,'pilcrow');
+					nu.toolTitlebar.appendChild(nu.lfLabel);
+
+					nu.eLineFeed = ts.html.nu.ele('input');
+					nu.eLineFeed.type = 'checkbox';
+					nu.eLineFeed.checked = true;
+					nu.eLineFeed.name = '&#xb6;';
+					nu.eLineFeed.style.display = 'inline-block';
+					nu.eLineFeed.onclick = function(){
+						var arr = nu.ts.evt;
+						for (var i = 0 ; i < arr.length; i++){
+							if (arr[i].eLineFeed != null){
+								if (nu.eLineFeed.checked){
+									arr[i].eLineFeed.style.display='initial';
+								}
+								else {
+									arr[i].eLineFeed.style.display='none';
+								}
+							}
+						}
+					};
+					nu.toolTitlebar.appendChild(nu.eLineFeed);
+
+					return nu;
+				},
 
 				createColon(){
 					var nu = ts.html.nu.ele('ts-colon');
@@ -1856,6 +1928,7 @@ var ts = {
 				nu.createToolTranspose();
 				nu.createToolAudio();
 				nu.createToolMidi();
+				nu.createToolLayout();
 				return ts.ts = nu;
 			}
 		},
@@ -2278,6 +2351,7 @@ var ts = {
 					else pi.timeout = 0;
 
 					if (zs.current_tool) zs.current_tool.refresh();
+					if (zs.current_inst) zs.current_inst.refresh();
 
 					if (zs.evt[nextIdx].bar && pi.bar.jump){
 

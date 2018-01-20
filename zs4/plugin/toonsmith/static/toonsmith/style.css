@@ -12,6 +12,7 @@
 .icon-keyboard:before{content:url(/gfx/icons/piano.svg);}
 .icon-mandolin:before{content:url(/gfx/icons/mandolin.svg);}
 .icon-midi:before{content:'\0266C';font-weight: bolder;}
+.icon-note:before{content:url(/gfx/icons/note.svg);}
 .icon-transpose:before{content:'\021C5';font-weight: bolder;}
 .icon-ukulele:before{content:url(/gfx/icons/ukulele.svg);}
 .icon-violin:before{content:url(/gfx/icons/violin.svg);}
@@ -58,26 +59,29 @@ ts-piano-note.eventnote{
 ts-bass-note.chordroot,
 ts-violin-note.chordroot,
 ts-bass-note.chordroot,
+ts-mandolin-note.chordroot,
+ts-ukulele-note.chordroot,
 ts-guitar-note.chordroot{
   color:green;
 }
 ts-bass-note.chordnote,
 ts-violin-note.chordnote,
 ts-bass-note.chordnote,
+ts-mandolin-note.chordnote,
+ts-ukulele-note.chordnote,
 ts-guitar-note.chordnote{
   color:green;
 }
 ts-bass-note.eventnote,
 ts-violin-note.eventnote,
 ts-bass-note.eventnote,
+ts-mandolin-note.eventnote,
+ts-ukulele-note.eventnote,
 ts-guitar-note.eventnote{
   color:red;
 }
 
 
-ts-tool-icons{
-  display:block;
-}
 ts-tool-window{
   background-color: lightgray;
   display: block;
