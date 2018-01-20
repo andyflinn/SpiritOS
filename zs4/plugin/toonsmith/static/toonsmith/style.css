@@ -2,16 +2,19 @@
 
 .icon-audio:before{content:'\01F509';font-weight: bolder;}
 .icon-bars:before{content:'\023D0';font-weight: bolder;}
-.icon-bass:before{content:'\01D122';font-weight: bolder;}
+.icon-bass:before{content:url(/gfx/icons/bass.svg);}
 .icon-beats:before{content:'\0237F';font-weight: bolder;}
 .icon-bpb:before{content:'\0215E';font-weight: bolder;}
 .icon-bpm:before{content:'\023F1';font-weight: bolder;}
 .icon-chord:before{content:'\01F3B6';font-weight: bolder;}
-.icon-guitar:before{content:'\01F3B8';font-weight: bolder;}
-.icon-keyboard:before{content:'\01F3B9';font-weight: bolder;}
+.icon-guitar:before{content:url(/gfx/icons/guitar.svg);}
+.icon-instruments:before{content:url(/gfx/icons/instruments.svg);}
+.icon-keyboard:before{content:url(/gfx/icons/piano.svg);}
+.icon-mandolin:before{content:url(/gfx/icons/mandolin.svg);}
 .icon-midi:before{content:'\0266C';font-weight: bolder;}
 .icon-transpose:before{content:'\021C5';font-weight: bolder;}
-.icon-violin:before{content:'\01F3BB';font-weight: bolder;}
+.icon-ukulele:before{content:url(/gfx/icons/ukulele.svg);}
+.icon-violin:before{content:url(/gfx/icons/violin.svg);}
 
 ts-block-chart.tsbar {
   border-left: .1em solid lightgray;

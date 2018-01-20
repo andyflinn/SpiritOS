@@ -30,7 +30,9 @@ var ts = {
 				arg:{},
 				evt:[],
 				tool:[],
+				inst:[],
 				toolobject:{},
+				instobject:{},
 				bpb:4,
 				bpm:120,
 				tpb:2,
@@ -770,33 +772,15 @@ var ts = {
 
 					return ret;
 				},
-				createTool:function(name,icon){
+				createTool:function(name,icon,tooltype){
 					var nu = new Object({
 						nam:name,
 						ts:this,
 						visible:false,
 
-						arr:this.tool,
+						//arr:this.tool,
 
 						refresh:function(){},
-						use:function(){
-							this.ts.toolspopped.style.display = 'none';
-							this.ts.toolsArePopped = false;
-
-							for (var i = 0; i < this.arr.length; i++){
-								if (this.arr[i]==this){
-										this.toolWindow.style.display = 'block';
-										this.visible = true;
-										this.onactivate();
-										this.refresh();
-										this.ts.current_tool = this;
-										this.ts.current_tool.refresh();
-								}else{
-									this.arr[i].toolWindow.style.display = 'none';
-									this.arr[i].visible = false;
-								}
-							}
-						},
 						onactivate:function(){},
 
 						getCurrentEvent:function(){
@@ -874,11 +858,56 @@ var ts = {
 							return event;
 						},
 					});
-					this.toolobject[name] = nu;
+					if (tooltype=='i'){
+						nu.arr = this.inst;
+						nu.use = function(){
+							this.ts.instpopped.style.display = 'none';
+							this.ts.instArePopped = false;
+
+							for (var i = 0; i < this.arr.length; i++){
+								if (this.arr[i]==this){
+										this.toolWindow.style.display = 'block';
+										this.visible = true;
+										this.onactivate();
+										this.refresh();
+										this.ts.current_inst = this;
+										this.ts.current_inst.refresh();
+								}else{
+									this.arr[i].toolWindow.style.display = 'none';
+									this.arr[i].visible = false;
+								}
+							}
+						};
+						this.instobject[name] = nu;
+					}
+					else {
+						nu.arr = this.tool;
+						nu.use = function(){
+							this.ts.toolspopped.style.display = 'none';
+							this.ts.toolsArePopped = false;
+
+							for (var i = 0; i < this.arr.length; i++){
+								if (this.arr[i]==this){
+										this.toolWindow.style.display = 'block';
+										this.visible = true;
+										this.onactivate();
+										this.refresh();
+										this.ts.current_tool = this;
+										this.ts.current_tool.refresh();
+								}else{
+									this.arr[i].toolWindow.style.display = 'none';
+									this.arr[i].visible = false;
+								}
+							}
+						};
+						this.toolobject[name] = nu;
+					}
+
 					if (zs4.is.string(icon)){
 						nu.toolicon = ts.html.nu.ele('ts-tool-icon-'+icon);
 						zs4.admin.util.setIcon(nu.toolicon,icon);
-						nu.ts.toolspopped.appendChild(nu.toolicon);
+						if (tooltype=='i') nu.ts.instpopped.appendChild(nu.toolicon);
+						else nu.ts.toolspopped.appendChild(nu.toolicon);
 						//console.log('adding icon for '+icon);
 						nu.toolicon.onclick = function(){nu.use();};
 					}
@@ -890,9 +919,16 @@ var ts = {
 					nu.titleIcon = ts.html.nu.ele('ts-tool-titleicon');
 					zs4.admin.util.setIcon(nu.titleIcon,icon);
 					nu.titleIcon.onclick = function(){
-						nu.ts.toolspopped.style.display = 'block';
-						nu.ts.toolsArePopped = true;
-						nu.ts.hideAllToolPanes();
+						if (tooltype=='i'){
+							nu.ts.instpopped.style.display = 'block';
+							nu.ts.instArePopped = true;
+							nu.ts.hideAllInstPanes();
+						}
+						else {
+							nu.ts.toolspopped.style.display = 'block';
+							nu.ts.toolsArePopped = true;
+							nu.ts.hideAllToolPanes();
+						}
 					};
 					nu.toolWindow.appendChild(nu.titleIcon);
 
@@ -900,18 +936,25 @@ var ts = {
 					nu.toolTitlebar.style.display = 'inline-block';
 					nu.toolTitlebar.textContent = name + ': ';
 					nu.toolTitlebar.ts = this;
-					nu.toolWindow.appendChild(nu.toolTitlebar);
+					if (tooltype=='i') nu.toolWindow.appendChild(nu.toolTitlebar);
+					else nu.toolWindow.appendChild(nu.toolTitlebar);
 
 
 
-					this.workarea.appendChild(nu.toolWindow);
+					if (tooltype=='i'){
+						this.instarea.appendChild(nu.toolWindow);
+						this.inst.push(nu);
+					}
+					else {
+						this.toolarea.appendChild(nu.toolWindow);
+						this.tool.push(nu);
+					}
 
-					this.tool.push(nu);
 
 					return nu;
 				},
 				createToolInstrument:function(name,icon){
-					var nu = this.createTool(name,icon);
+					var nu = this.createTool(name,icon,'i');
 
 					nu.instrument = {
 						name: name,
@@ -1219,6 +1262,13 @@ var ts = {
 					nu.createString(57);
 					nu.createString(52);
 				},
+				createToolUkulele:function(){
+					var nu = this.createToolStringInstrument('ukulele','ukulele');
+					nu.createString(81);
+					nu.createString(76);
+					nu.createString(72);
+					nu.createString(79);
+				},
 				createToolBass:function(){
 					var nu = this.createToolStringInstrument('bass','bass');
 					nu.createString(55);
@@ -1228,6 +1278,13 @@ var ts = {
 				},
 				createToolViolin:function(){
 					var nu = this.createToolStringInstrument('violin','violin');
+					nu.createString(88);
+					nu.createString(81);
+					nu.createString(74);
+					nu.createString(67);
+				},
+				createToolMandolin:function(){
+					var nu = this.createToolStringInstrument('mandolin','mandolin');
 					nu.createString(88);
 					nu.createString(81);
 					nu.createString(74);
@@ -1258,6 +1315,7 @@ var ts = {
 
 					return nu;
 				},
+
 				createToolTranspose(){
 					var nu = this.createTool('','transpose');
 
@@ -1642,6 +1700,7 @@ var ts = {
 					nu.refresh = function(){};
 
 				},
+
 				createColon(){
 					var nu = ts.html.nu.ele('ts-colon');
 					nu.textContent = ':';
@@ -1687,6 +1746,23 @@ var ts = {
 
 					nu.player = null;
 
+					nu.toolinst = ts.html.nu.ele('ts-instbutton');
+					zs4.admin.util.setIcon(nu.toolinst,'instruments');
+					nu.instArePopped = false;
+					nu.toolinst.onclick = function(){
+						if (nu.instArePopped==true){
+							nu.instpopped.style.display = 'none';
+							nu.instArePopped = false;
+						}else{
+							nu.instpopped.style.display = 'block';
+							nu.instArePopped = true;
+							nu.toolspopped.style.display = 'none';
+							nu.toolsArePopped = false;
+							nu.hideAllInstPanes();
+						}
+					};
+					nu.tsTopTools.appendChild(nu.toolinst);
+
 					nu.toolpop = ts.html.nu.ele('ts-toolbutton');
 					zs4.admin.util.setIcon(nu.toolpop,'tool');
 					nu.toolsArePopped = false;
@@ -1697,6 +1773,8 @@ var ts = {
 						}else{
 							nu.toolspopped.style.display = 'block';
 							nu.toolsArePopped = true;
+							nu.instpopped.style.display = 'none';
+							nu.instArePopped = false;
 							nu.hideAllToolPanes();
 						}
 					};
@@ -1706,11 +1784,19 @@ var ts = {
 					nu.toolspopped.style.display = 'none';
 					nu.titlebarElement.appendChild(nu.toolspopped);
 
+					nu.instpopped = ts.html.nu.ele('ts-inst-icons');
+					nu.instpopped.style.display = 'none';
+					nu.titlebarElement.appendChild(nu.instpopped);
+
 
 				//
-				nu.workarea = ts.html.nu.ele('ts-workarea');
-				nu.workarea.style.display = 'block';
-				ele.appendChild(nu.workarea);
+				nu.toolarea = ts.html.nu.ele('ts-toolarea');
+				nu.toolarea.style.display = 'block';
+				ele.appendChild(nu.toolarea);
+
+				nu.instarea = ts.html.nu.ele('ts-instarea');
+				nu.instarea.style.display = 'block';
+				ele.appendChild(nu.instarea);
 
 				// create content bin
 				nu.cnt = ts.html.nu.ele('ts-content');
@@ -1740,6 +1826,12 @@ var ts = {
 					nu.stsNotes.className = 'tsnote';
 					nu.stsElement.appendChild(nu.stsNotes);
 
+				nu.hideAllInstPanes = function(){
+					for (var i = 0; i < nu.inst.length; i++){
+						nu.inst[i].toolWindow.style.display = 'none';
+						nu.inst[i].visible = false;
+					}
+				};
 				nu.hideAllToolPanes = function(){
 					for (var i = 0; i < nu.tool.length; i++){
 						nu.tool[i].toolWindow.style.display = 'none';
@@ -1750,8 +1842,12 @@ var ts = {
 				nu.createToolChord();
 				nu.createToolGuitar();
 				nu.createToolPiano();
+				nu.createToolUkulele();
+				nu.createToolMandolin();
+
 				nu.createToolViolin();
 				nu.createToolBass();
+
 				nu.createToolScript();
 				nu.createToolBars();
 				nu.createToolBeats();
