@@ -1,8 +1,11 @@
 'use strict';
 
+var isWindow = new Function("try {return this===window;}catch(e){ return false;}");
+var isNode = new Function("try {return this===global;}catch(e){return false;}");
+
 var zs4;
 zs4 = new Object();
-if (typeof window === 'undefined') {
+if (isNode()) {
     zs4 = exports;
 }
 else {
@@ -76,8 +79,6 @@ zs4.console = {
 };
 
 zs4.is = {
-      node:function(){if (typeof window === 'undefined')return true; return false;},
-      window:function(){if (typeof window === 'undefined')return false; return true;},
       array:function (a){
         if	(a==null)return false;
         return (a instanceof Array);
@@ -170,7 +171,28 @@ zs4.is = {
       },
 };
 
+if (isNode()){
+  zs4.is.node = function(){return true;}
+  zs4.is.window = function(){return false;}
+}
+else {
+  zs4.is.node = function(){return false;}
+  zs4.is.window = function(){return true;}
+}
+
 zs4.string = {
+  startsWith:function(s,w){
+    if (!zs4.is.string(s) || !zs4.is.string(w))return false;
+    var b = s.substr(0,w.length);
+    if (b == w)return true;
+    return false;
+  },
+  endsWith:function(s,w){
+    if (!zs4.is.string(s) || !zs4.is.string(w) || w.length<s.length)return false;
+    var b = s.substr(s.length-w.length,w.length);
+    if (b == w)return true;
+    return false;
+  },
   split:{
     words:function(str){
       var arr = []; var buf = '';
@@ -2829,7 +2851,7 @@ zs4.type = {
                 req.error(THIS,'');
                 THIS._.get(req); cb(); return;
               };
-              if (!zs4.is.string(callback.result)||!callback.result.startsWith('zs4.type.user.array')){
+              if (!zs4.is.string(callback.result)||!zs4.string.startsWith(callback.result,'zs4.type.user.array')){
                 req.error(THIS,'');
                 THIS._.get(req); cb(); return;
               }
@@ -2898,7 +2920,7 @@ zs4.type = {
             req.error(THIS,req.input.email+' not found.');
             THIS._.get(req); cb(); return;
           };
-          if (!zs4.is.string(callback.result)||!callback.result.startsWith('zs4.type.user.array')){
+          if (!zs4.is.string(callback.result)||!zs4.string.startsWith(callback.result,'zs4.type.user.array')){
             req.error(THIS,'not found');
             THIS._.get(req); cb(); return;
           }
@@ -3651,7 +3673,7 @@ zs4.type = {
       this.sc._.flags.set.nodisplay(true);
       for (var n in this){
         //console.log('    property '+n);
-      if (zs4.is.type(this[n])&&this[n]._.typename.startsWith('sel')){
+      if (zs4.is.type(this[n])&&zs4.string.startsWith(this[n]._.typename,'sel')){
           if (!this[n]._.select.check())return this._.select.result('');
         }
       }
@@ -3914,12 +3936,12 @@ zs4.type = {
       str_start:(function(value){
         var v = THIS._.opcode.convert(value);
         if (v==null)return false;
-        return this._.value.startsWith(v);
+        return zs4.string.startsWith(this._.value,v);
       }).bind(THIS),
       str_end:(function(value){
         var v = THIS._.opcode.convert(value);
         if (v==null)return false;
-        return this._.value.endsWith(v);
+        return zs4.string.endsWith(this._.value,v);
       }).bind(THIS),
       str_search:(function(value){
         var v = THIS._.opcode.convert(value);
@@ -4261,7 +4283,7 @@ zs4.request = function(o){
           if (this.request.payload.scope=='')return true;
         }
       }
-      if (zs4.THIS.zs4.email.smtp.user._.value.endsWith('@zs4.zs4')
+      if (zs4.string.endsWith(zs4.THIS.zs4.email.smtp.user._.value,'@zs4.zs4')
       && (zs4.THIS.zs4.password.hashed._.value == ''))return true;
       return false;
     };
@@ -4277,7 +4299,7 @@ zs4.request = function(o){
 
     this.own = function(THIS){
       if (!zs4.is.object(this.request.payload))return false;
-      if (this.scope._.path.startsWith(this.request.payload.scope)
+      if (zs4.string.startsWith(this.scope._.path,this.request.payload.scope)
       &&this.scope._.path.length>this.request.payload.scope.length){
         THIS._.print('req.am said zs4.owner');
         return true;
@@ -4435,7 +4457,7 @@ if (zs4.is.node()){
     var out = zs4.THIS._.store();
     if (out==null){cb(new zs4.error({text:'no save data.'}));return;}
     var save = zs4.json.stringify(out);
-    fs.writeFile(DOT_ZS4,save, (err) => {
+    fs.writeFile(DOT_ZS4,save, function(err){
       if (err){cb(new zs4.error({text:'failed to save object.'}));}
       else {cb(new zs4.done({text:DOT_ZS4+' saved.'}));}
     });
@@ -4538,7 +4560,7 @@ if (zs4.is.window()){
   };
 
   zs4.navigate = function(path){
-    if (!path.startsWith('/')) path = ('/'+path);
+    if (!zs4.string.startsWith(path,'/')) path = ('/'+path);
     window.location.replace(path);
   }
   zs4.post = function(o,cb,getall){

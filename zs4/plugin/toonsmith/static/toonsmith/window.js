@@ -287,7 +287,7 @@ var ts = {
 					this.stsBeats.textContent = ('beats:' + this.stats.beats+' ');
 					this.stsNotes.textContent = ('notes:' + this.stats.notes+' ');
 				},
-				recomputeTiming(){
+				recomputeTiming:function(){
 					this.updateStats();
 					var seq = this;
 					var barTotalMillies = Math.round(this.bpb * (60000/this.bpm));
@@ -425,7 +425,7 @@ var ts = {
 						}
 					}
 				},
-				refreshKey(){
+				refreshKey:function(){
 
 				},
 				refresh:function(){
@@ -1358,7 +1358,7 @@ var ts = {
 					return nu;
 				},
 
-				createToolTranspose(){
+				createToolTranspose:function(){
 					var nu = this.createTool('','transpose');
 
 					nu.eEventTranspose = ts.html.nu.ele('ts-tool-transpose');
@@ -1396,7 +1396,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolBpb(){
+				createToolBpb:function(){
 					var nu = this.createTool('bpb','bpb');
 
 					nu.eEventBpc = ts.html.nu.ele('ts-tool-bpb');
@@ -1420,7 +1420,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolBpm(){
+				createToolBpm:function(){
 					var nu = this.createTool('bpm','bpm');
 
 					nu.eEventBpm = ts.html.nu.ele('ts-tool-bpm');
@@ -1442,7 +1442,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolMidi(){
+				createToolMidi:function(){
 					var nu = this.createTool('midi','midi');
 
 					function addDeviceOptions(){
@@ -1517,7 +1517,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolAudio(){
+				createToolAudio:function(){
 					var nu = this.createTool('audio','audio');
 
 					nu.eEventAudio = ts.html.nu.ele('ts-tool-audio');
@@ -1554,7 +1554,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolBars(){
+				createToolBars:function(){
 					var nu = this.createTool('bars','bars');
 
 					nu.eEventBarButton = ts.html.nu.ele('ts-tool-bar-button');
@@ -1585,7 +1585,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolBeats(){
+				createToolBeats:function(){
 					var nu = this.createTool('beats','beats');
 
 					nu.eEventBeatButton = ts.html.nu.ele('ts-tool-beat-button');
@@ -1614,7 +1614,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolChord(){
+				createToolChord:function(){
 					var nu = this.createTool('chord','chord');
 
 					nu.eEventChord = ts.html.nu.ele('ts-tool-chord');
@@ -1721,7 +1721,7 @@ var ts = {
 
 					return nu;
 				},
-				createToolScript(){
+				createToolScript:function(){
 					var nu = this.createTool('script','document');
 
 					nu.eTextArea = ts.html.nu.ele('textarea');
@@ -1742,7 +1742,7 @@ var ts = {
 					nu.refresh = function(){};
 
 				},
-				createToolLayout(){
+				createToolLayout:function(){
 					var nu = this.createTool('layout','layout');
 
 					nu.lfLabel =  ts.html.nu.ele('ts-input-label');
@@ -1773,7 +1773,7 @@ var ts = {
 					return nu;
 				},
 
-				createColon(){
+				createColon:function(){
 					var nu = ts.html.nu.ele('ts-colon');
 					nu.textContent = ':';
 					return nu;
@@ -2009,13 +2009,19 @@ var ts = {
 				ts.midi.access = midiAccess;
 				ts.midi.initialized = true;
 
-				for (var entry of ts.midi.access.inputs) {
-					ts.midi.input.push(entry[1]);
-				}
+				try {
 
-				for (var entry of ts.midi.access.outputs) {
-					ts.midi.output.push(entry[1]);
-				}
+					console.log('testing ts.midi.access');
+					console.log(ts.midi.access);
+					for (var entry in ts.midi.access.inputs) {
+						ts.midi.input.push(entry[1]);
+					}
+
+					for (var entry in ts.midi.access.outputs) {
+						ts.midi.output.push(entry[1]);
+					}
+				} catch(e){}
+
 			},
 
 			onMIDIFailure:function(e) {
@@ -2419,7 +2425,7 @@ var ts = {
 				keep.refresh();
 			}
 		},
-		onEventClick(clickTs,evt){
+		onEventClick:function(clickTs,evt){
 			var idx = clickTs.getEventIndex(evt);
 			if (ts.player.internal.bar.jumpEventEle!=null)
 				ts.player.internal.bar.jumpEventEle.className = '';

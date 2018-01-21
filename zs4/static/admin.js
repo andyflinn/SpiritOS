@@ -506,7 +506,7 @@ zs4.admin.util = {
 					o._.html.icon.on = 'logo';
 					o._.html.icon.off = 'logo';
 				}
-				else if (o._.path.startsWith('zs4.type.')){
+				else if (zs4.string.startsWith(o._.path,'zs4.type.')){
 					var a = zs4.string.split.words(o._.path);
 					if (a.length == 5 && a[3]=='array'){
 						o._.html.icon.on = a[2];
