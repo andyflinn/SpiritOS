@@ -1033,7 +1033,7 @@ zs4.admin.util = {
 					}
 
 					// Save Button
-					if (o._.flags.get.authset()&&zs4.is.function(zs4.plugin.list[plugname].save)){
+					if (zs4.is.function(zs4.plugin.list[plugname].save)&&o._.flags.get.own()){
 						o._.html.appWindowSave = document.createElement('zs4-app-window-save');
 						//o._.html.appWindowSave.title = 'save';
 						o._.html.appWindowSave.onclick = zs4.plugin.list[plugname].save;
@@ -1683,6 +1683,7 @@ zs4.admin.util = {
 								top.app.typeSelect.onchange = (function(){
 									if (top.app.typeSelect.value != ''){
 										var path = 'zs4.type.'+top.app.typeSelect.value+'.method.new';
+										console.log('path for new option: '+path);
 										var nu = zs4.THIS._.resolvePath(path);
 										if (nu != null){
 											zs4.admin.util.removeClass(top.app.new,'nodisplay');
@@ -1840,6 +1841,7 @@ zs4.admin.util = {
 									top.app.array.push(this);
 
 									this.element = document.createElement('zs4-app-item');
+									this.element.style.display = 'block';
 									top.app.content.appendChild(this.element);
 
 									this.icon = document.createElement('zs4-app-item-icon');
@@ -2005,7 +2007,8 @@ zs4.admin.util = {
 								}
 
 								if (top.app.array[i].scope==o){
-									zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+									//zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+									top.app.array[i].element.style.display = 'none';
 									continue;
 								}
 
@@ -2017,20 +2020,23 @@ zs4.admin.util = {
 
 								if (top.app.search.value != ''){
 									if (!top.app.array[i].scope._.search(top.app.search.value)){
-										zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										//zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										top.app.array[i].element.style.display = 'none';
 										continue;
 									}
 								}
 								if (top.app.typeSelect.value != ''){
 									if (top.app.array[i].scope.zs4.head.typename._.value!=top.app.typeSelect.value){
-										zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										//zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										top.app.array[i].element.style.display = 'none';
 										continue;
 									}
 								}
 								if (top.app.creatorSelect.value != ''){
 									console.log('compare '+top.app.creatorSelect.value+' to '+top.app.array[i].scope.zs4.head.owner._.value);
 									if (top.app.array[i].scope.zs4.head.owner._.value!=top.app.creatorSelect.value){
-										zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										//zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
+										top.app.array[i].element.style.display = 'none';
 										continue;
 									}
 								}
@@ -2059,7 +2065,8 @@ zs4.admin.util = {
 									zs4.admin.util.removeClass(top.app.array[i].title,'am');
 								}
 
-								zs4.admin.util.removeClass(top.app.array[i].element,'nodisplay');
+								//zs4.admin.util.removeClass(top.app.array[i].element,'nodisplay');
+								top.app.array[i].element.style.display = 'block';
 							}
 
 							top.app.orderHtml();

@@ -35,7 +35,7 @@ zs4.plugin.list.toonsmith = new Object({
   save:function(){
     var THIS = zs4.plugin.list.toonsmith;
 
-    if (!THIS.scope._.flags.get.authset()){
+    if (!THIS.scope._.flags.get.own()){
       THIS.scope._.html.error.textContent = 'not authorized';
       zs4.admin.util.removeClass(THIS.scope._.html.error,'nodisplay');
       return;

@@ -81,7 +81,7 @@ mongodb.scopeToSchema = function(ARRAY,scope){
         if (zs4.is.number(type._.minlength))ret.minlength = type._.minlength;
         if (zs4.is.number(type._.maxlength))ret.maxlength = type._.maxlength;
         if (type._.flags.get.textsearch()){
-          console.log('MUST SEARCH '+type._.path);
+          //console.log('MUST SEARCH '+type._.path);
           ARRAY._.mongoTextSearch[type._.path]='text';
         }
       }
@@ -218,14 +218,21 @@ mongodb.create = function(input){
   MONGODB.getOne = function(req,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.getOne('+this._.path+'.array.)');
+    console.log('MONGODB.getOne("'+this._.path+'.array","'+req.input.item+'='+req.input.eq+'")');
 
     var q = new Object();
     q[req.input.item]=req.input.eq;
 
     ARRAY._.model.findOne(q, function (err, data){
-      if (err!=null||data==null){cb(null); return;}
-      console.log('FOUND!!!: '+req.input.eq);
+      if (err!=null){
+        console.log('MONGODB.getOne: '+req.input.eq+' not found. error:'+err);
+        cb(null); return;
+      }
+      if (data==null){
+        console.log('MONGODB.getOne: '+req.input.eq+' no data');
+        cb(null); return;
+      }
+      console.log('MONGODB.getOne: '+'FOUND!!!: '+req.input.eq);
 
       var type = ARRAY.template._.new();
       type._.name = mongodb.hex2name(data._id);
@@ -236,7 +243,7 @@ mongodb.create = function(input){
       cb(type);
     });
 
-    cb(null);
+    //cb(null);
   };
 
   MONGODB.getID = function(id,cb){

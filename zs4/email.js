@@ -36,6 +36,8 @@ email.create = function(input){
   THIS.message._.transform = (function(req,cb){
     var MESSAGE = this;
 
+    console.log(req.data);
+
     req.setScope(this);
     this._.transformInternal(req);
     this.to._.value = this.subject._.value = this.text._.value = '';
@@ -56,7 +58,7 @@ email.create = function(input){
       return;
     }
 
-    if (!(req.flags.value & req.flags.authset)) return get();
+    //if (!(req.flags.value & req.flags.authset)) return get();
 
     if (req.input==null) return get();
 
@@ -95,9 +97,16 @@ email.create = function(input){
       var msg = this;
       THIS.smtpServer.send(message, function(err,abc) {
           if(err){
-              console.log('SENDMAIL ERROR: '+err);
-              req.error(msg,{text:'smtp send failed',data:err});
-              return get();
+            console.log('SENDMAIL ERROR: '+err);
+            console.log({
+               user:    THIS.smtp.user._.value,
+               password: THIS.smtp.password._.value,
+               host:    THIS.smtp.host._.value,
+               port:    THIS.smtp.port._.value,
+               ssl:     THIS.smtp.ssl._.value,
+            });
+            req.error(msg,{text:'smtp send failed',data:err});
+            return get();
           }
           else{
             console.log('message sent to '+req.input.to+', subject: \''+req.input.subject+'\'');

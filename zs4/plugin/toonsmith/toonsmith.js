@@ -25,11 +25,11 @@ toonsmith.create = function(){
   console.log(this.zs4.head.typename._.value);
   this.zs4.head.bits._.bits.plugin.true();
   this._.name = 'toonsmith';
+  //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;
-  if (zs4.is.node()){
-    TOONSMITH._.property(new zs4.type.text({name:'data',flags:'authgetpublic quickupdate',}));
-  }
+  TOONSMITH._.property(new zs4.type.text({name:'data',flags:'authgetpublic quickupdate authsetself',}));
 }
 
 zs4.THIS.zs4.type._.property(new zs4.type.array({name:'toonsmith',template:new toonsmith.create(),}));
 zs4.THIS.zs4.type.toonsmith._.flags.value |= zs4.THIS.zs4.type.toonsmith._.flags.apiarg;
+zs4.THIS.zs4.type.toonsmith.method.new._.flags.set.authuser();

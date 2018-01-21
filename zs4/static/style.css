@@ -512,13 +512,6 @@ zs4-app-content{
   display:block;
   width:100%;
 }
-zs4-app-content.zs4-portrait{
-  width:100%;
-}
-zs4-app-content.zs4-landscape{
-  display:block;
-  width:100%;
-}
 
 zs4-app-tab{
   border-top-left-radius: 0.2em;
