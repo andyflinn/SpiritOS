@@ -97,25 +97,23 @@
 [class^="icon-"]:before, [class*=" icon-"]:before {
   display:inline-block;
   font-size:1em;
-  vertical-align:0.25em;
   cursor:pointer;
   border-radius:1em;
   opacity: 30%;
   width:1em;
   height:1em;
-  padding:0.25em;
   -webkit-transition: color 1s, opacity 1s, border-radius 1s; /* For Safari 3.1 to 6.0 */
   transition: color 1s, opacity 1s, border-radius;
 }
 
 [class^="icon-"]:hover, [class*=" icon-"]:hover {
   opacity: 100%;
-  color:lightgreen;
+  color:darkgreen;
 }
 
 [class^="icon-"].zs4-top:hover, [class*=" icon-"].zs4-top:hover {
   opacity: 100%;
-  color:orange;
+  color:darkred;
 }
 
 option.zs4-placeholder {
@@ -147,7 +145,8 @@ input{
   border-right-style: none;
   border-bottom-style: dotted;
   border-color: darkgray;
-  margin-left: 0.5em;
+  margin-left: 0.25em;
+  margin-right: 0.25em;
 }
 input[type="number"]{
   width:3em;
@@ -243,7 +242,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-search:before{content:'\01F50E';font-weight: bolder;}
 .icon-select:before{content:'\02611';font-weight: bolder;}
-.icon-spin:before{content:'\029B0';font-weight: bolder;}
+.icon-spin:before{content:url(/gfx/icons/globe.svg);}
 .icon-stop:before{content:'\025A0';font-weight: bolder;color:red;}
 .icon-to-start:before{content:'\025C4';;font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
@@ -254,13 +253,10 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-zs4:before{content:url(/gfx/icons/zs4.svg);}
 
 .icon-logo:before{
-  content:"zs4";
-  font-weight: bolder;
-  font-size:0.6em;
+  content:url(/gfx/icons/zs4.svg);
   padding-right:0.5em;
-  color:black;
-  background-color: lightblue;
-  border-radius:0.5em;
+  width:1em;
+  height:1em;
 }
 .icon-to-start:before{
   content:'\025C4';

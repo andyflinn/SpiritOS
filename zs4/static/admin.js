@@ -998,6 +998,8 @@ zs4.admin.util = {
 				top.value.uscope = null;
 				top.value.utitle = '';
 
+				o._.html.result.style.display = 'none';
+
 				o._.html.appIsOpen = true;
 				o._.html.dialog = new Object();
 
@@ -1166,6 +1168,7 @@ zs4.admin.util = {
 					if (o._.flags.get.own()||o._.flags.get.am()){
 						this.isPublic = false;
 						this.public = document.createElement('zs4-bit-public');
+						zs4.admin.util.setIcon(this.public,'auth');
 						this.toolbar.appendChild(this.public);
 						this.public.onclick = (function(){
 							var bits = new zs4.type.scopebits({name:'temp'});
