@@ -4666,13 +4666,13 @@ if (zs4.is.window()){
 
     refresh:function(){
       zs4.style.element.innerHTML = '';
-      var widthLimit = 1024;
+      var widthMax = 1024;
       var width = window.innerWidth;
-      if (width > widthLimit)width = widthLimit;
+      if (width > widthMax)width = widthMax;
 
-      var heightLimit = 1024;
+      var heightMax = 1024;
       var height = window.innerHeight;
-      if (height > heightLimit)height = heightLimit;
+      if (height > heightMax)height = heightMax;
 
       var em = (width+height) / 50;
 
