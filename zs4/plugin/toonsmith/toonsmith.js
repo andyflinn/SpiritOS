@@ -28,6 +28,34 @@ toonsmith.create = function(){
   //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;
   TOONSMITH._.property(new zs4.type.text({name:'data',flags:'authgetpublic quickupdate authsetself',}));
+  TOONSMITH._.getTextOnly = (function(){
+    var ret = '';
+    var skip = false;
+    for (var i = 0 ; i < TOONSMITH.data._.value.length ; i++){
+      var cur_ch = TOONSMITH.data._.value.charAt(i);
+      if (skip==true){if (cur_ch == ']'){skip=false;}continue;}
+      else if (cur_ch == '['){skip=true;continue;}
+      else {ret += cur_ch;}
+     }
+     return ret;
+  }).bind(TOONSMITH);
+
+  TOONSMITH._.getKeyWordArray = (function(){
+    var ret = new Array();
+    ret.push(new String('zs4'));
+    ret.push(new String('toonsmith'));
+
+    var textOnly = TOONSMITH._.getTextOnly();
+    //console.log(textOnly);
+    var arr = zs4.string.split.separators(textOnly,zs4.const.SPECIALCHARS);
+
+    for (var i = 0; i < arr.length; i++){
+      zs4.string.array.add.new(ret,zs4.string.to.lower(arr[i]));
+    }
+
+    return ret;
+  }).bind(TOONSMITH);
+
 }
 
 zs4.THIS.zs4.type._.property(new zs4.type.array({name:'toonsmith',template:new toonsmith.create(),}));

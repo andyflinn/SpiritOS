@@ -209,6 +209,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-ascend:before{content:'\0219F';font-weight: bolder;}
 .icon-auth:before{content:url(/gfx/icons/auth.svg);}
+.icon-author:before{content:url(/gfx/icons/author.svg);}
 .icon-bye:before{content:'(>';font-weight: bolder;}
 .icon-console:before{content:url(/gfx/icons/console.svg);}
 .icon-delete:before{content:"x";font-weight: bolder; color:red;}
@@ -228,14 +229,17 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
-.icon-next:before{content:"\000BB";font-weight: bolder;}
+.icon-next:before{content:url(/gfx/icons/next.svg);}
 .icon-new:before{content:"\01F5CB";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}
+.icon-pause:before{content:url(/gfx/icons/pause.svg);}
 .icon-pencil:before{content:'\0270F';font-weight: bolder;}
 .icon-pilcrow:before{content:'\000B6';font-weight: bolder;}
-.icon-play:before{content:'\025B6';font-weight: bolder;}
+.icon-play:before{content:url(/gfx/icons/play.svg);}
 .icon-plus:before{content:"+";font-weight: bolder;}
-.icon-previous:before{content:"\000AB";font-weight: bolder;}
+.icon-prev:before{content:url(/gfx/icons/prev.svg);}
+.icon-private:before{content:url(/gfx/icons/private.svg);}
+.icon-public:before{content:url(/gfx/icons/public.svg);}
 .icon-reload:before{content:url(/gfx/icons/reload.svg);}
 .icon-required:before{content:"*";font-weight: bolder;}
 .icon-save:before{content:url(/gfx/icons/save.svg);}
@@ -243,9 +247,10 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-search:before{content:url(/gfx/icons/search.svg);}
 .icon-select:before{content:'\02611';font-weight: bolder;}
 .icon-spin:before{content:url(/gfx/icons/globe.svg);}
-.icon-stop:before{content:'\025A0';font-weight: bolder;color:red;}
-.icon-to-start:before{content:'\025C4';;font-weight: bolder;}
+.icon-stop:before{content:url(/gfx/icons/stop.svg);}
+.icon-toend:before{content:url(/gfx/icons/toend.svg);}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
+.icon-tostart:before{content:url(/gfx/icons/tostart.svg);}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-type:before{content:'+';font-weight: bolder;}
 .icon-upload:before{content:'\0219F';;font-weight: bolder;color:blue;}
@@ -544,10 +549,24 @@ a.zs4-app-item-link.zs4-am{
 a.zs4-app-item-link.zs4-own{
   color:green;
 }
+zs4-app-item-gap{
+    font-size: 0.5em;
+}
+zs4-app-item-more,
+zs4-app-item-author,
+zs4-app-item-desc{
+    display: block;
+    padding-left: 1em;
+    font-size: 0.7em;
+}
 
+input.zs4-scope-desc,
+input.zs4-scope-author,
 input.zs4-scope-title{
   background-color: lightgray;
 }
+input.zs4-scope-desc:focus,
+input.zs4-scope-author:focus,
 input.zs4-scope-title:focus{
   background-color: white;
 }

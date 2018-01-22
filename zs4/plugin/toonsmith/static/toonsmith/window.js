@@ -1852,6 +1852,14 @@ var ts = {
 					};
 					nu.tsTopTools.appendChild(nu.toolpop);
 
+					nu.transport = ts.html.nu.ele('ts-transport');
+					nu.tsTopTools.appendChild(nu.transport);
+
+					nu.tostart = zs4.admin.util.addIconElement(nu.transport,'tostart');
+					nu.prev = zs4.admin.util.addIconElement(nu.transport,'prev');
+					nu.next = zs4.admin.util.addIconElement(nu.transport,'next');
+					nu.toend = zs4.admin.util.addIconElement(nu.transport,'toend');
+
 					nu.toolspopped = ts.html.nu.ele('ts-tool-icons');
 					nu.toolspopped.style.display = 'none';
 					nu.titlebarElement.appendChild(nu.toolspopped);
@@ -1859,7 +1867,6 @@ var ts = {
 					nu.instpopped = ts.html.nu.ele('ts-inst-icons');
 					nu.instpopped.style.display = 'none';
 					nu.titlebarElement.appendChild(nu.instpopped);
-
 
 				//
 				nu.toolarea = ts.html.nu.ele('ts-toolarea');

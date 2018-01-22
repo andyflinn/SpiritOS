@@ -68,6 +68,12 @@ zs4.const = {
     MAXLENGTH:((256*256)-1),
   },
   SPACECHARS:' \n\r\t',
+  SPECIALCHARS:' \n\r\t\"\'\\/,.?<>[]=-_+()*&^%$#@!0123456789;:',
+  NOATTRCHARS:'\n\r\t\"\'',
+  MAXLENGTH:{
+    META:160,
+    TITLE:70,
+  },
 };
 
 zs4.console = {
@@ -181,6 +187,19 @@ else {
 }
 
 zs4.string = {
+  addKeyWord:function(o,n,k){
+    k = zs4.string.to.lower(k);
+    if (!zs4.is.name(k))return;
+    if ((o[n].length + k.length + 1)>zs4.const.MAXLENGTH.META){
+      return;
+    }
+    if (o[n]==''){
+      o[n] = k;
+    }
+    else {
+      o[n]+= ','+k;
+    }
+  },
   startsWith:function(s,w){
     if (!zs4.is.string(s) || !zs4.is.string(w))return false;
     var b = s.substr(0,w.length);
@@ -234,6 +253,16 @@ zs4.string = {
       return zs4.string.split.separators(str,zs4.const.SPACECHARS);
     }
   },
+  strip:{
+    chars:function(s,x){
+      var r='';
+      for (var i=0;i<s.length;i++){
+        var c = s.charAt(i);
+        if (x.indexOf(c)== -1)r+=c;
+      }
+      return r;
+    },
+  },
   to:{
     lower:function(str){return str.toLowerCase();},
   },
@@ -274,7 +303,32 @@ zs4.string = {
         zs4.string.array.add.new(to,arr[i]);
       }
     },
-
+    sort:{
+      value:{
+        ascend:function(arr){
+          arr.sort(function(a,b){
+            return a.localeCompare(b);
+          });
+        },
+        descend:function(arr){
+          arr.sort(function(a,b){
+            return b.localeCompare(a);
+          });
+        },
+      },
+      length:{
+        ascend:function(arr){
+          arr.sort(function(a,b){
+            return a.length - b.length;
+          });
+        },
+        descend:function(arr){
+          arr.sort(function(a,b){
+            return b.length - a.length;
+          });
+        },
+      },
+    },
   },
 };
 
@@ -1332,11 +1386,41 @@ zs4.type = {
 
     this._.getHTML = (function(req){
       console.log('getHTML('+this._.path+')');
+      var title = this._.path;
+      var description = '';
+      var keywords = '';
+      if (title=='')title = 'zs4 web app';
+      if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
+        console.log('gettin scope.head html...');
+        // title
+        if (this.zs4.head.title._.value!=''){
+          title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
+        }
+
+        // description
+        if (this.zs4.head.title._.description!=''){
+          description = zs4.string.strip.chars(this.zs4.head.description._.value,zs4.const.NOATTRCHARS);
+        }
+
+        // keywords
+        var arr = this._.getKeyWordArray();
+        zs4.string.array.sort.length.descend(arr);
+        var o = {k:''};
+        for (var i = 0; i < arr.length;i++){zs4.string.addKeyWord(o,'k',arr[i]);}
+        keywords = o.k;
+
+      }
       var html = '<!DOCTYPE html>\n';
       html += '<html>\n';
         html += ' <head>\n';
           html += '<meta charset="UTF-8">\n';
-          html += '  <title>'+this._.path+'</title>\n';
+          html += '  <title>'+title+'</title>\n';
+          if (description != ''){
+            html+= '  <meta name="description" content="'+description+'">\n';
+          }
+          if (keywords != ''){
+            html+= '  <meta name="keywords" content="'+keywords+'">\n';
+          }
           if (req.request.token&&req.request.payload){
             html += '  <script>window.token=\''+req.request.token+'\'</script>\n';
           }
@@ -2801,7 +2885,9 @@ zs4.type = {
     this._.create = zs4.type.head;
 
     if (zs4.is.node()){
-      this._.property(new zs4.type.string({name:'title',flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
+      this._.property(new zs4.type.string({name:'title',maxlength:zs4.const.MAXLENGTH.TITLE,flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
+      this._.property(new zs4.type.string({name:'author',flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
+      this._.property(new zs4.type.text({name:'description',maxlength:zs4.const.MAXLENGTH.META,flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
       this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune authgetpublic nostore',}));
       this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune authgetpublic',}));
@@ -3494,6 +3580,11 @@ zs4.type = {
       };
       recurse(scope.zs4.type);
       return response;
+    }).bind(this);
+    THIS._.getKeyWordArray = (function(){
+      var ret = new Array();
+      ret.push(new String('zs4'));
+      return ret;
     }).bind(this);
   },
   scopebits:function(input){
