@@ -2421,18 +2421,6 @@ zs4.admin.type = {
 	},
 	scope:function(po,o){
 		zs4.admin.type.object(po,o);
-		/*
-		if (o._.html.topElement){
-			o._.html.icon.on = 'logo';
-			o._.html.icon.off = 'logo';
-		}
-		else if (o._.path.startsWith('zs4.type.')){
-			var a = zs4.string.split.words(o._.path);
-			if (a.length == 5 && a[3]=='array')
-			o._.html.icon.on = a[2];
-			o._.html.icon.off = a[2];
-		}
-		*/
 	},
 	scopebits:function(po,o){
 		zs4.admin.type.bits(po,o);

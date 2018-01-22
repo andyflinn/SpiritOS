@@ -236,11 +236,11 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-play:before{content:'\025B6';font-weight: bolder;}
 .icon-plus:before{content:"+";font-weight: bolder;}
 .icon-previous:before{content:"\000AB";font-weight: bolder;}
-.icon-reload:before{content:'\021BB';font-weight: bolder;}
+.icon-reload:before{content:url(/gfx/icons/reload.svg);}
 .icon-required:before{content:"*";font-weight: bolder;}
-.icon-save:before{content:'\01f4be';font-weight: bolder;}
+.icon-save:before{content:url(/gfx/icons/save.svg);}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
-.icon-search:before{content:'\01F50E';font-weight: bolder;}
+.icon-search:before{content:url(/gfx/icons/search.svg);}
 .icon-select:before{content:'\02611';font-weight: bolder;}
 .icon-spin:before{content:url(/gfx/icons/globe.svg);}
 .icon-stop:before{content:'\025A0';font-weight: bolder;color:red;}
@@ -249,7 +249,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-type:before{content:'+';font-weight: bolder;}
 .icon-upload:before{content:'\0219F';;font-weight: bolder;color:blue;}
-.icon-user:before{content:'\0263B';font-weight: bolder;}
+.icon-user:before{content:url(/gfx/icons/user.svg);}
 .icon-zs4:before{content:url(/gfx/icons/zs4.svg);}
 
 .icon-logo:before{
