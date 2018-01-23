@@ -211,6 +211,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-auth:before{content:url(/gfx/icons/auth.svg);}
 .icon-author:before{content:url(/gfx/icons/author.svg);}
 .icon-bye:before{content:'(>';font-weight: bolder;}
+.icon-config:before{content:url(/gfx/icons/node.svg);}
 .icon-console:before{content:url(/gfx/icons/console.svg);}
 .icon-delete:before{content:"x";font-weight: bolder; color:red;}
 .icon-degree:before{content:'\000B0';font-weight: bolder;}
@@ -232,6 +233,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-mmongodb:before{content:url(/gfx/icons/mongodb.svg);}
 .icon-next:before{content:url(/gfx/icons/next.svg);}
 .icon-new:before{content:"\01F5CB";font-weight: bolder;}
+.icon-node:before{content:url(/gfx/icons/node.svg);}
 .icon-object:before{content:"+";font-weight: bolder;}
 .icon-pause:before{content:url(/gfx/icons/pause.svg);}
 .icon-pencil:before{content:'\0270F';font-weight: bolder;}

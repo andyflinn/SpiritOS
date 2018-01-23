@@ -927,7 +927,6 @@ zs4.type = {
     this._ = new Object();
     this._.path = '';
     this._.name = input.name;
-    //if (zs4.is.boolean(input.required))this._.required = input.required; else this._.required = true;
 
     this._.flags = new zs4.util.flags();
     if (zs4.is.string(input.flags))this._.flags.setString(input.flags);
@@ -4300,8 +4299,6 @@ zs4.request = function(o){
   }
 
   if (zs4.is.node()){
-    //var token = require('../token');
-    //var token = require('../token');
 
     this.call = (function(args,cb,rootAuthority){
       var THIS = this;
@@ -4553,7 +4550,7 @@ if (zs4.is.node()){
 
   zs4.load = function(cb){
 
-    var env = zs4.json.parse(process.env.ZS4)
+    var env = zs4.json.parse(process.env.ZS4);
     if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
       zs4.THIS._.load(env);
       cb(new zs4.done());

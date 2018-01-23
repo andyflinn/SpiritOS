@@ -134,11 +134,6 @@ express.schema = function(parent){
   THIS._.property(new zs4.type.string({name:'host',flags:'quickupdate',default:'localhost',}));
   THIS._.property(new zs4.type.integer({name:'port',flags:'quickupdate',default:3000,}));
   THIS._.property(new zs4.type.boolean({name:'cookies',flags:'quickupdate',default:true,}));
-  THIS._.property(new zs4.type.boolean({name:'https',flags:'quickupdate',default:false,}));
-  THIS._.property(new zs4.type.integer({name:'sslport',flags:'quickupdate',default:3443,}));
-  THIS._.property(new zs4.type.string({name:'key',flags:'quickupdate',default:'./zs4/https/localhost.key',}));
-  THIS._.property(new zs4.type.string({name:'cert',flags:'quickupdate',default:'./zs4/https/localhost.cert',}));
-  THIS._.property(new zs4.type.string({name:'ca',flags:'quickupdate',}));
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
     req.setScope(this);
@@ -157,36 +152,6 @@ express.schema = function(parent){
     }
     this._.get(req); cb(); return;
   }).bind(THIS.run);
-
-  THIS.getcredentials = (function(){
-    console.log('getcredentials()');
-    if (!THIS.https._.value
-      || THIS.key._.value == ''
-      || THIS.cert._.value == ''){
-        console.log('getcredentials() not configured.');
-        return null;
-      }
-
-    var ret = new Object();
-
-    try{
-      ret.key = fs.readFileSync(THIS.key._.value);
-      ret.cert = fs.readFileSync(THIS.cert._.value);
-    }
-    catch(err){
-      console.log('getcredentials() load failure');
-      return null;
-    }
-
-    try{
-      ret.ca = fs.readFileSync(THIS.ca._.value);
-    }
-    catch(err){}
-
-
-    console.log('getcredentials() SUCCESS!');
-    return ret;
-  }).bind(THIS);
 
   THIS.start = function(){
     console.log('EXPRESS-START()');
@@ -238,18 +203,7 @@ express.schema = function(parent){
         });
       };
 
-      var cred = THIS.getcredentials();
-
-      if (cred != null){
-        var httpsServer = https.createServer(cred, app);
-        httpsServer.listen(THIS.sslport._.value,function(){
-          console.log('zs4 HTTPS on port '+THIS.sslport._.value+'!');
-          express.HTTPS_RUNNING = true;
-
-          return runHttp();
-        });
-      }
-      else return runHttp();
+      return runHttp();
     });
 
   };

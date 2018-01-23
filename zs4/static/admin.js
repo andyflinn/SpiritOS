@@ -504,11 +504,11 @@ zs4.admin.util = {
 				if (o._.typename=='filecontent'){o._.html.icon.off=o._.html.icon.on='upload'}
 				else if (o._.flags.get.required()){o._.html.icon.off=o._.html.icon.on='required'}
 				else if (o._.flags.get.noset()){o._.html.icon.off=o._.html.icon.on='info'}
-				else {o._.html.icon.off=o._.html.icon.on='none'}
+				else {o._.html.icon.off=o._.html.icon.on=o._.typename;}
 			}
 			else if (o._.flags.value & o._.flags.scope){
 				if (o._.html.topElement){
-					o._.html.icon.on = 'logo';
+					o._.html.icon.on = o.zs4.head.typename._.value;
 					o._.html.icon.off = 'logo';
 				}
 				else if (zs4.string.startsWith(o._.path,'zs4.type.')){
@@ -518,13 +518,13 @@ zs4.admin.util = {
 						o._.html.icon.off = a[2];
 					}
 					else {
-						o._.html.icon.on = 'scope';
-						o._.html.icon.off = 'scope';
+						o._.html.icon.on = 'minus';
+						o._.html.icon.off = o.zs4.head.typename._.value;
 					}
 				}
 				else {
-					o._.html.icon.on = 'scope';
-					o._.html.icon.off = 'scope';
+					o._.html.icon.on = 'minus';
+					o._.html.icon.off = o.zs4.head.typename._.value;
 				}
 			}
 			else {
@@ -761,9 +761,9 @@ zs4.admin.util = {
 		if (o._.flags.get.scope()){
 			zs4.admin.util.addClass(o._.html.e,'scope');
 			o._.scope = o;
-			if (o.zs4.head.bits._.bits.plugin.get()){
+			//if (o.zs4.head.bits._.bits.plugin.get()){
 				zs4.admin.util.addClass(o._.html.e,o.zs4.head.typename._.value);
-			}
+			//}
 		}
 		else{
 			if (zs4.is.type(po))o._.scope = po._.scope;
