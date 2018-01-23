@@ -4552,6 +4552,14 @@ if (zs4.is.node()){
   zs4.boot = new zs4.processor.sequential();
 
   zs4.load = function(cb){
+
+    var env = zs4.json.parse(process.env.ZS4)
+    if (zs4.is.object(env)&&zs4.is.object.env.zs4){
+      zs4.THIS._.load(env);
+      cb(new zs4.done());
+      return;
+    }
+
     fs.readFile(DOT_ZS4,'utf8',function(err,data){
       if (!err && data){
         var value = zs4.json.parse(data);
