@@ -1311,15 +1311,15 @@ zs4.admin.util = {
 						this.old1input.type = 'password';
 						this.old1.appendChild(this.old1input);
 
-						this.old2 = document.createElement('zs4-spw-pwe');
-						this.setpassword.appendChild(this.old2);
+						this.new1 = document.createElement('zs4-spw-pwe');
+						this.setpassword.appendChild(this.new1);
 
-						this.old2label = document.createElement('zs4-spw-old');
-						this.old2label.textContent = 'old: ';
-						this.old2.appendChild(this.old2label);
-						this.old2input = document.createElement('input');
-						this.old2input.type = 'password';
-						this.old2.appendChild(this.old2input);
+						this.new1label = document.createElement('zs4-spw-old');
+						this.new1label.textContent = 'new: ';
+						this.new1.appendChild(this.new1label);
+						this.new1input = document.createElement('input');
+						this.new1input.type = 'password';
+						this.new1.appendChild(this.new1input);
 
 						this.setpwd = document.createElement('zs4-spw-pwe');
 						this.setpassword.appendChild(this.setpwd);
@@ -1342,28 +1342,55 @@ zs4.admin.util = {
 							if (password==null)return;
 							var set = uscope._.resolvePath('zs4.password.set');
 							if (set==null)return;
+
+							zs4.admin.util.removeClass(DIALOG.old1,'error');
+							zs4.admin.util.removeClass(DIALOG.new1,'error');
+							zs4.admin.util.removeClass(DIALOG.setpwd,'error');
+
+							var wrong = false;
+							if (!zs4.is.password(this.old1input.value)){
+								zs4.admin.util.addClass(DIALOG.old1,'error');
+								wrong = true;
+							}
+							if (!zs4.is.password(this.new1input.value)){
+								zs4.admin.util.addClass(DIALOG.new1,'error');
+								wrong = true;
+							}
 							if (!zs4.is.password(this.setpwdinput.value)){
 								zs4.admin.util.addClass(DIALOG.setpwd,'error');
-								return;
+								wrong = true;
+							}
+
+							if (this.setpwdinput.value!=this.new1input.value){
+									zs4.admin.util.addClass(DIALOG.new1,'error');
+									zs4.admin.util.addClass(DIALOG.setpwd,'error');
+									wrong = true;
 							}
 							var input = new Object({set:this.setpwdinput.value,})
 							var vfy = uscope._.resolvePath('zs4.password.vfy');
-							if (vfy != null){
-								if (!zs4.is.password(this.old1input.value)
-								||  !zs4.is.password(this.old2input.value)
-								||  this.old1input.value!=this.old2input.value
-								){
-									zs4.admin.util.addClass(DIALOG.old1,'error');
-									zs4.admin.util.addClass(DIALOG.old2,'error');
-									return;
-								}
+							if (vfy == null){
+								wrong = true;
+							}
+							else{
 								input.vfy = this.old1input.value;
 							}
+
+							if (wrong) return;
+
+							zs4.admin.util.removeClass(DIALOG.old1,'error');
+							zs4.admin.util.removeClass(DIALOG.new1,'error');
+							zs4.admin.util.removeClass(DIALOG.setpwd,'error');
 
 							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
 							zs4.post(password._.wrapRequest(input),function(ret){
 								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
 								o._.html.refreshAll();
+								if (zs4.is.error(ret.request.callback.zs4.password)){
+									zs4.admin.util.addClass(DIALOG.old1,'error');
+									zs4.admin.util.addClass(DIALOG.new1,'error');
+									zs4.admin.util.addClass(DIALOG.setpwd,'error');
+								}
+
 							});
 
 
@@ -1639,11 +1666,11 @@ zs4.admin.util = {
 									if (set!=null){
 										if (vfy==null){
 											zs4.admin.util.addClass(DIALOG.old1,'nodisplay');
-											zs4.admin.util.addClass(DIALOG.old2,'nodisplay');
+											zs4.admin.util.addClass(DIALOG.new1,'nodisplay');
 										}
 										else {
 											zs4.admin.util.removeClass(DIALOG.old1,'nodisplay');
-											zs4.admin.util.removeClass(DIALOG.old2,'nodisplay');
+											zs4.admin.util.removeClass(DIALOG.new1,'nodisplay');
 										}
 										zs4.admin.util.removeClass(DIALOG.setpwd,'nodisplay');
 									}
