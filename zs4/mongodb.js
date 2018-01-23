@@ -331,7 +331,7 @@ mongodb.create = function(input){
     // CONNECTION EVENTS
     // When successfully connected
     mongoose.connection.on('connected', function () {
-      console.log('Mongoose default connection open to ' + MONGODB.config.url._.value);
+      console.log('Mongoose default connection open: ' + MONGODB._.path);
       MONGODB.config.connected._.value = true;
       cb();
     });
