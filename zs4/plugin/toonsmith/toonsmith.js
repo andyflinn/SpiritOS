@@ -22,7 +22,7 @@ toonsmith.create = function(){
   zs4.type.scope.call(this);
   this.zs4.head.typename._.value = 'toonsmith';
   this.zs4.head.typename._.default = 'toonsmith';
-  console.log(this.zs4.head.typename._.value);
+  //console.log(this.zs4.head.typename._.value);
   this.zs4.head.bits._.bits.plugin.true();
   this._.name = 'toonsmith';
   //this._.flags.set.authuser();

@@ -35,9 +35,9 @@ else {
 //console.log(msg);
 
 zs4.define();
-zs4.console.log('defined');
+//zs4.console.log('defined');
 zs4.load(function(){
-  zs4.console.log('loaded');
+  //zs4.console.log('loaded');
   // set up root authority
   var req = new zs4.request({input:msg});
   req.request.node = true;

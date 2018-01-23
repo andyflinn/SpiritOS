@@ -312,7 +312,7 @@ mongodb.create = function(input){
   }
 
   MONGODB.connect = (function(input,cb){
-    console.log('MONGODB CONNECT!');
+    //console.log('MONGODB CONNECT!');
 
     // Create the database connection
     var options = {
@@ -325,7 +325,7 @@ mongodb.create = function(input){
       // If not connected, return errors immediately rather than waiting for reconnect
       //bufferMaxEntries: 0
     };
-    console.log(options);
+    //console.log(options);
     mongoose.connect(MONGODB.config.url._.value,options);
     //mongoose.createConnection().openUri(MONGODB.config.url._.value);
     // CONNECTION EVENTS

@@ -2633,7 +2633,7 @@ zs4.type = {
     DRIVE._.folder = new Object();
 
     DRIVE._.load = (function(input){
-      console.log('loading '+this._.path,input);
+      //console.log('loading '+this._.path,input);
       if (!zs4.is.object(input))return;
       for (var n in input){
         var name = (' '+n+' ').trim();
@@ -4598,9 +4598,6 @@ if (zs4.is.node()){
     zs4.node.require.email = require('../email');
     zs4.node.require.email.schema(zs4.THIS.zs4);
 
-    //zs4.node.require.password = require('../password');
-    //zs4.node.require.password.schema(zs4.THIS.zs4);
-
     zs4.node.require.paypal = require('../paypal');
     zs4.node.require.paypal.schema(zs4.THIS.zs4);
 
@@ -4609,7 +4606,6 @@ if (zs4.is.node()){
     zs4.THIS.zs4._.property(zs4.array.mongodb);
 
     zs4.THIS.zs4._.property(new zs4.type.folder({name:'folder'}));
-
 
     zs4.scope.config = function(){
       var CONFIG = this;
@@ -4627,10 +4623,6 @@ if (zs4.is.node()){
       CONFIG.zs4._.property(new zs4.node.require.mongodb.template({name:'mongodb'}));
     };
 
-
-    //zs4.THIS.zs4.type._.property(new zs4.type.array({name:'doctype',template:new zs4.scope.doctype(),}));
-    //zs4.THIS.zs4.type.doctype._.flags.value |= zs4.THIS._.flags.apiarg;
-
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'config',template:new zs4.scope.config(),}));
     zs4.THIS.zs4.type.config._.flags.value |= zs4.THIS.zs4.type.config._.flags.apiarg;
     zs4.THIS.zs4.type.config._.flags.set.authgetpublic(false);
@@ -4638,11 +4630,6 @@ if (zs4.is.node()){
     var user = require('../user');
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
     zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
-
-    //zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
-    //zs4.THIS.zs4.type.document._.flags.value |= zs4.THIS._.flags.apiarg;
-    //zs4.THIS.zs4.type.document.method.new._.flags.value |= zs4.THIS._.flags.authuser;
-    //zs4.THIS.zs4.type.document.method.deleteone._.flags.value |= zs4.THIS._.flags.authuser;
 
     var user = require('../user');
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
@@ -4656,20 +4643,13 @@ if (zs4.is.node()){
     console.log('readPlugins: ' + zs4.is.array(rdr) +  ' ' + rdr);
     for ( var i = 0 ; i < rdr.length ; i++ ){
       var fnam = '../plugin/'+rdr[i]+'/'+rdr[i]+'.js';
-      console.log('array element '+i+': '+fnam)
       zs4.plugin.list[rdr[i]]=require(fnam);
     }
-    //console.log(zs4.plugin);
 
     // Run express only once all components/plugins are loaded and ready
     zs4.node.require.express = require('../express');
     zs4.node.require.express.schema(zs4.THIS.zs4);
-
-
-
   }
-
-
 }
 
 if (zs4.is.window()){

@@ -16,7 +16,7 @@ var fs = require('fs');
 
 var express = exports;
 
-console.log('__dirname = '+__dirname)
+//console.log('__dirname = '+__dirname)
 
 express.zs4 = zs4;
 
@@ -172,13 +172,8 @@ express.schema = function(parent){
     }
 
     app.get('*',function(req,res,next){
-      if (!req.secure){
-        if (express.HTTPS_RUNNING){
-          return res.redirect(THIS.getHostURL() + req.url);
-        }
-        else if (req.hostname != 'localhost' && req.get('X-Forwarded-Proto') == 'http'){
-          return res.redirect(THIS.getSecureUrl() + req.url);
-        }
+      if (req.hostname != 'localhost' && req.get('X-Forwarded-Proto') == 'http'){
+        return res.redirect(THIS.getSecureUrl() + req.url);
       }
 
       next();
