@@ -22,6 +22,7 @@ email.create = function(input){
   THIS.smtp._.sortDefault = THIS.smtp._.sortNot;
   THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'authsetself quickupdate',default:false,}));
   THIS.smtp._.property(new zs4.type.string({name:'user',flags:'index unique authsetself quickupdate',default:nuaddr}));
+  THIS.smtp._.property(new zs4.type.email({name:'from',flags:'index unique authsetself quickupdate',default:nuaddr}));
   THIS.smtp._.property(new zs4.type.string({name:'password',flags:'authsetself quickupdate',}));
   THIS.smtp._.property(new zs4.type.string({name:'host',flags:'authsetself quickupdate',}));
   THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'authsetself quickupdate',}));
@@ -62,8 +63,7 @@ email.create = function(input){
 
     if (req.input==null) return get();
 
-    if (!zs4.is.email(THIS.smtp.user._.value)
-    ||  !zs4.is.email(req.input.to)
+    if (!zs4.is.email(req.input.to)
     ||  !zs4.is.string(req.input.subject)
     ||  !zs4.is.string(req.input.text)
     ||  req.input.subject.length == 0
@@ -75,7 +75,7 @@ email.create = function(input){
     else{
       console.log(this._.path+'.transform()');
       var message = {
-        from:THIS.smtp.user._.value,
+        from:THIS.smtp.from._.value,
         to:req.input.to,
         subject:req.input.subject,
         text:req.input.text,
