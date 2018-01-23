@@ -93,19 +93,21 @@ mongodb.scopeToSchema = function(ARRAY,scope){
   return ret;
 };
 
-mongodb.create = function(input){
+mongodb.template = function(input){
   var MONGODB = this;
   zs4.type.object.call(MONGODB,input);
   this._.name = 'mongodb';
   MONGODB._.create = mongodb.create;
 
-  var dbname = MONGODB._.name;
-  if (zs4.is.string(input.dbname)&&input.dbname.length > 0)dbname = input.dbname;
-
   MONGODB._.property(new zs4.type.object({name:'config',flags:'',}))
   MONGODB.config._.property(new zs4.type.boolean({name:'connected',flags:'required noset nostore',default:false,}));
   MONGODB.config._.property(new zs4.type.boolean({name:'ssl',flags:'required quickupdate',default:false}));
   MONGODB.config._.property(new zs4.type.string({name:'url',flags:'required quickupdate',default:'mongodb://127.0.0.1/zs4'}));
+};
+
+mongodb.create = function(input){
+  var MONGODB = this;
+  mongodb.template.call(MONGODB,input);
 
   MONGODB.initializeArray = function(ARRAY){
 

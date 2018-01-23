@@ -229,6 +229,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
+.icon-mmongodb:before{content:url(/gfx/icons/mongodb.svg);}
 .icon-next:before{content:url(/gfx/icons/next.svg);}
 .icon-new:before{content:"\01F5CB";font-weight: bolder;}
 .icon-object:before{content:"+";font-weight: bolder;}

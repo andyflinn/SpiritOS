@@ -4593,30 +4593,53 @@ if (zs4.is.node()){
     zs4.node.require.email = require('../email');
     zs4.node.require.email.schema(zs4.THIS.zs4);
 
-    zs4.node.require.password = require('../password');
-    zs4.node.require.password.schema(zs4.THIS.zs4);
+    //zs4.node.require.password = require('../password');
+    //zs4.node.require.password.schema(zs4.THIS.zs4);
 
     zs4.node.require.paypal = require('../paypal');
     zs4.node.require.paypal.schema(zs4.THIS.zs4);
 
     zs4.node.require.mongodb = require('../mongodb');
-    zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb'});
+    zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb',boot:true,});
     zs4.THIS.zs4._.property(zs4.array.mongodb);
 
     zs4.THIS.zs4._.property(new zs4.type.folder({name:'folder'}));
 
+
+    zs4.scope.config = function(){
+      var CONFIG = this;
+      zs4.type.scope.call(CONFIG);
+      CONFIG._.create = zs4.scope.config;
+      CONFIG.zs4.head.typename._.value = 'config';
+      CONFIG.zs4.head.typename._.default = 'config';
+      CONFIG._.name = 'config';
+
+      zs4.node.require.password.schema(CONFIG.zs4);
+      zs4.node.require.rsa.schema(CONFIG.zs4);
+      zs4.node.require.token.schema(CONFIG.zs4);
+      zs4.node.require.email.schema(CONFIG.zs4);
+      zs4.node.require.paypal.schema(CONFIG.zs4);
+      CONFIG.zs4._.property(new zs4.node.require.mongodb.template({name:'mongodb'}));
+    };
+
+
     //zs4.THIS.zs4.type._.property(new zs4.type.array({name:'doctype',template:new zs4.scope.doctype(),}));
     //zs4.THIS.zs4.type.doctype._.flags.value |= zs4.THIS._.flags.apiarg;
 
-
-    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
-    zs4.THIS.zs4.type.document._.flags.value |= zs4.THIS._.flags.apiarg;
-    zs4.THIS.zs4.type.document.method.new._.flags.value |= zs4.THIS._.flags.authuser;
-    zs4.THIS.zs4.type.document.method.deleteone._.flags.value |= zs4.THIS._.flags.authuser;
-
+    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'config',template:new zs4.scope.config(),}));
+    zs4.THIS.zs4.type.config._.flags.value |= zs4.THIS.zs4.type.config._.flags.apiarg;
+    zs4.THIS.zs4.type.config._.flags.set.authgetpublic(false);
 
     var user = require('../user');
-    //zs4.THIS.zs4.type._.property(new user.create());
+    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
+    zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
+
+    //zs4.THIS.zs4.type._.property(new zs4.type.array({name:'document',template:new zs4.scope.document(),}));
+    //zs4.THIS.zs4.type.document._.flags.value |= zs4.THIS._.flags.apiarg;
+    //zs4.THIS.zs4.type.document.method.new._.flags.value |= zs4.THIS._.flags.authuser;
+    //zs4.THIS.zs4.type.document.method.deleteone._.flags.value |= zs4.THIS._.flags.authuser;
+
+    var user = require('../user');
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
     zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
 
