@@ -4,7 +4,7 @@
   "description": "zs4 example",
   "repository": "git@gitlab.com:countinn/zs4.git",
   "author": "Andy Flinn",
-  "license": "MIT",
+  "license": "THE ZS4 NPL (NATURAL PERSONS LICENCE)",
   "scripts": {
     "start": "node zs4.js"
   },

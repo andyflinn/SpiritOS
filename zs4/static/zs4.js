@@ -4554,7 +4554,7 @@ if (zs4.is.node()){
   zs4.load = function(cb){
 
     var env = zs4.json.parse(process.env.ZS4)
-    if (zs4.is.object(env)&&zs4.is.object.env.zs4){
+    if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
       zs4.THIS._.load(env);
       cb(new zs4.done());
       return;
