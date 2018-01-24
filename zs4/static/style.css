@@ -219,14 +219,16 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-doctype:before{content:'\0265E';font-weight: bolder;}
 .icon-document:before{content:'\01F4C3';font-weight: bolder;}
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
+.icon-email:before{content:url(/gfx/icons/email.svg);}
 .icon-female:before{content:'\02640';font-weight: bolder;}
 .icon-folder:before{content:'\025D5';font-weight: bolder;}
-.icon-error:before{content:"!!";font-weight: bolder;color:black;background-color: red;}
+.icon-error:before{content:url(/gfx/icons/error.svg);}
 .icon-file:before{content:'f';;font-weight: bolder;color:blue;}
-.icon-head:before{content:'+';;font-weight: bolder;color:blue;}
+.icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
+.icon-logo:before{content:url(/gfx/icons/zs4.svg);}
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-minus:before{content:"-";font-weight: bolder;}
@@ -234,7 +236,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-next:before{content:url(/gfx/icons/next.svg);}
 .icon-new:before{content:"\01F5CB";font-weight: bolder;}
 .icon-node:before{content:url(/gfx/icons/node.svg);}
-.icon-object:before{content:"+";font-weight: bolder;}
+.icon-object:before{content:url(/gfx/icons/object.svg);}
 .icon-pause:before{content:url(/gfx/icons/pause.svg);}
 .icon-pencil:before{content:'\0270F';font-weight: bolder;}
 .icon-pilcrow:before{content:'\000B6';font-weight: bolder;}
@@ -260,21 +262,6 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-user:before{content:url(/gfx/icons/guitarist.svg);}
 .icon-zs4:before{content:url(/gfx/icons/zs4.svg);}
 
-.icon-logo:before{
-  content:url(/gfx/icons/zs4.svg);
-  padding-right:0.5em;
-  width:1em;
-  height:1em;
-}
-.icon-to-start:before{
-  content:'\025C4';
-  font-weight: bolder;
-  font-size:0.6em;
-  padding-right:0.5em;
-  color:black;
-  background-color: lightblue;
-  border-radius:0.5em;
-}
 
 zs4-error{
   color:red;

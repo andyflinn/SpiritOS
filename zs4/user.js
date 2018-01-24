@@ -23,6 +23,10 @@ user.create = function(){
     USER.zs4._.property(new password.create());
     USER.zs4._.property(new zs4.type.email({name:'email',flags:'index unique authsetself quickupdate'}));
     USER.zs4.email._.value = zs4.integer.to.name(Date.now())+'@zs4.zs4';
-    USER.zs4._.property(new rsa.create());
+
+    USER._.property(new zs4.type.object({name:'info',flags:'authsetself quickupdate'}));
+    USER.info._.property(new zs4.type.date({name:'birth',flags:'authsetself quickupdate'}));
+
+    //USER.zs4._.property(new rsa.create());
   }
 }

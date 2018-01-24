@@ -608,7 +608,7 @@ zs4.admin.util = {
 				if (o._.html.expanded==true){
 					add+=' on'; rem+=' off';
 					if (o._.html.toolbarIsOpen){
-						zs4.admin.util.setIcon(o._.html.toggle,'to-start');
+						zs4.admin.util.setIcon(o._.html.toggle,'tostart');
 					}
 					else{
 						if (o._.html.topElement)zs4.admin.util.setIcon(o._.html.toggle,'logo');
@@ -643,7 +643,7 @@ zs4.admin.util = {
 					if (document.title != wtit)document.title = wtit;
 
 					if (o._.html.appIsOpen){
-						if (o._.html.top.dialogActive)zs4.admin.util.setIcon(o._.html.toggle,'to-start');
+						if (o._.html.top.dialogActive)zs4.admin.util.setIcon(o._.html.toggle,'tostart');
 						else zs4.admin.util.setIcon(o._.html.toggle,'logo');
 						zs4.admin.util.removeClass(o._.html.dialogHeader,'nodisplay');
 						zs4.admin.util.removeClass(o._.html.appElement,'nodisplay');
@@ -2318,8 +2318,6 @@ zs4.admin.util = {
 zs4.admin.type = {
 	array:function(po,o){
 		zs4.admin.type.object(po,o);
-		//o._.html.icon.on = 'database';
-		//o._.html.icon.off = 'database';
 	},
 	auth:function(po,o){
 		zs4.admin.type.object(po,o);
