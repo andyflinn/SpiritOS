@@ -2932,23 +2932,10 @@ zs4.type = {
               THIS._.get(req); cb(); return;
             }
 
-            req.call({path:'zs4.type.user.method.getone',input:{item:'zs4.email',eq:req.input.email}},function(callback){
-              console.log(callback);
-              if (callback.error != null){
-                req.error(THIS,'');
-                THIS._.get(req); cb(); return;
-              };
-              if (!zs4.is.string(callback.result)||!zs4.string.startsWith(callback.result,'zs4.type.user.array')){
-                req.error(THIS,'');
-                THIS._.get(req); cb(); return;
-              }
-
-              var USERPATH = callback.result;
-
-              var token = zs4.THIS.zs4.token.encode({iss:'zs4.email.message',scope:callback.result,});
-
+            function sendEmailToken(email,scope){
+              var token = zs4.THIS.zs4.token.encode({iss:'zs4.email.message',scope:scope,});
               var message = new Object({
-                to:req.input.email,
+                to:email,
                 subject:zs4.THIS.zs4.express.host._.value+' access token.',
                 text:'Click here for automatic login: '+zs4.THIS.zs4.express.getHostURL()+'?token='+token});
 
@@ -2960,9 +2947,11 @@ zs4.type = {
                 };
 
                 if (backcall.result != null){
-                  console.log('SO THERE IS A RESULT!!!',backcall);
-                  req.call({path:USERPATH+'.zs4.password',input:{reset:true}},function(resetcb){
-                    console.log(USERPATH+'.zs4.password: RESET!!!');
+                  var path = scope;
+                  if (path!='')path+='.';
+                  path+='zs4.password';
+                  req.call({path:path,input:{reset:true}},function(resetcb){
+                    console.log(path+': RESET!!!');
                     req.result(THIS,backcall.result);
                     THIS._.get(req); cb(); return;
                   });
@@ -2971,9 +2960,27 @@ zs4.type = {
                   req.error(THIS,'send message failure');
                   THIS._.get(req); cb(); return;
                 }
-
               },true);
+            };
 
+            if (req.input.email==zs4.THIS.zs4.email.smtp.from._.value){
+              sendEmailToken(req.input.email,'');
+              return;
+            }
+
+            req.call({path:'zs4.type.user.method.getone',input:{item:'zs4.email',eq:req.input.email}},function(callback){
+              console.log(callback);
+              if (callback.error != null){
+                req.error(THIS,'');
+                THIS._.get(req); cb(); return;
+              };
+              if (!zs4.is.string(callback.result)||!zs4.string.startsWith(callback.result,'zs4.type.user.array')){
+                req.error(THIS,'');
+                THIS._.get(req); cb(); return;
+              }
+              var USERPATH = callback.result;
+              sendEmailToken(req.input.email,callback.result);
+              return;
             },true);
             return;
           }
