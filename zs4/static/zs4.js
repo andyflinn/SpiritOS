@@ -2983,7 +2983,7 @@ zs4.type = {
           }
         }
 
-        if (req.input.email==zs4.THIS.zs4.email.smtp.user._.value){
+        if (req.input.email==zs4.THIS.zs4.email.smtp.from._.value){
           req.call({path:'zs4.password',input:{vfy:req.input.password,}},function(callback){
             if (callback.error != null){
               req.error(THIS,'');

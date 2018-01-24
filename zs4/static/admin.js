@@ -528,7 +528,7 @@ zs4.admin.util = {
 				}
 			}
 			else {
-				o._.html.icon.off=o._.typename;
+				o._.html.icon.off=o._.name;
 				o._.html.icon.on='minus';
 			}
 		}
@@ -956,8 +956,11 @@ zs4.admin.util = {
 			}
 
 			if (o._.type==Object){
+				o._.html.form = document.createElement('form');
+				o._.html.e.appendChild(o._.html.form);
+
 				o._.html.c = document.createElement('zs4-object-content');
-				o._.html.e.appendChild(o._.html.c);
+				o._.html.form.appendChild(o._.html.c);
 
 				if (!zs4.is.function(o._.html.submit)){
 					o._.html.submit = (function(){
@@ -1297,9 +1300,12 @@ zs4.admin.util = {
 						};
 
 
-						this.setpassword = document.createElement('zs4-setpassword');
+						this.setpasswordpane = document.createElement('zs4-setpassword');
 						zs4.admin.util.addClass(DIALOG.setpassword,'nodisplay');
-						this.pane.appendChild(this.setpassword);
+						this.pane.appendChild(this.setpasswordpane);
+
+						this.setpassword = document.createElement('form');
+						this.setpasswordpane.appendChild(this.setpassword);
 
 						this.old1 = document.createElement('zs4-spw-pwe');
 						this.setpassword.appendChild(this.old1);
