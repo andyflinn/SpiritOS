@@ -766,6 +766,8 @@ zs4.util = {
     this.addFlag('nogetall',0x40000000);
     this.addFlag('bits',0x80000000);
 
+    this.addFlag('nostat',0x100000000);
+
     //combo flags
     this.addFlag('authuser',this.authgetuser|this.authsetuser);
     this.addFlag('apiarg',this.authgetpublic|this.authsetpublic);
@@ -2558,7 +2560,8 @@ zs4.type = {
   date:function(input){
     zs4.type.integer.call(this,input);
     this._.typename = 'date';
-
+    var d = new Date();
+    this._.value = this._.default = d.getTime();
   },
   download:function(input){
     zs4.type.object.call(this,input)
@@ -2889,8 +2892,8 @@ zs4.type = {
       this._.property(new zs4.type.text({name:'description',maxlength:zs4.const.MAXLENGTH.META,flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
       this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune authgetpublic nostore',}));
-      this._.property(new zs4.type.integer({name:'created',flags:'noset index noprune authgetpublic',}));
-      this._.property(new zs4.type.integer({name:'updated',flags:'noset index noprune authgetpublic',}));
+      this._.property(new zs4.type.date({name:'created',flags:'noset index noprune authgetpublic',}));
+      this._.property(new zs4.type.date({name:'updated',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'doctype',flags:'index noprune quickupdate authgetpublic',}));
       this._.property(new zs4.type.scopebits({name:'bits',flags:'index noprune quickupdate authgetpublic authsetself',}));
     }
@@ -2936,8 +2939,8 @@ zs4.type = {
               var token = zs4.THIS.zs4.token.encode({iss:'zs4.email.message',scope:scope,});
               var message = new Object({
                 to:email,
-                subject:zs4.THIS.zs4.express.host._.value+' access token.',
-                text:'Click here for automatic login: '+zs4.THIS.zs4.express.getHostURL()+'?token='+token});
+                subject:zs4.THIS.zs4.express.host._.value+' access token for '+email,
+                text:'Click here to automatically log in '+email+': '+zs4.THIS.zs4.express.getHostURL()+'?token='+token});
 
               req.call({path:'zs4.email.message',input:message,},function(backcall){
                 console.log('response from zs4.email.message',backcall);
@@ -4638,8 +4641,11 @@ if (zs4.is.node()){
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
     zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
 
-    var user = require('../user');
-    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
+    zs4.stat = require('../stats');
+    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'statpath',template:new zs4.stat.createPathStat(),}));
+    zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
+
+    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'statuser',template:new zs4.stat.createUserStat(),}));
     zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
 
     // plugins

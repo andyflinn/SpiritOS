@@ -27,6 +27,9 @@ user.create = function(){
     USER._.property(new zs4.type.object({name:'info',flags:'authsetself quickupdate'}));
     USER.info._.property(new zs4.type.date({name:'birth',flags:'authsetself quickupdate'}));
 
+    USER._.property(new zs4.type.object({name:'account',flags:'noset'}));
+    USER.account._.property(new zs4.type.integer({name:'balance',flags:'authroot quickupdate'}));
+
     //USER.zs4._.property(new rsa.create());
   }
 }

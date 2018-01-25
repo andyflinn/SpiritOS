@@ -139,7 +139,7 @@ input[type="checkbox"]{
   height:1em;
 }
 input{
-  width:6em;
+  width:auto;
   border-left-style: none;
   border-top-style: none;
   border-right-style: none;
@@ -204,13 +204,17 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-selectnone:before{content:"!";font-weight: bolder;}
 .icon-selectitem:before{content:"$";font-weight: bolder;}
 
+.icon-account:before{content:url(/gfx/icons/account.svg);}
 .icon-about:before{content:url(/gfx/icons/info.svg);}
 .icon-add:before{content:"+";font-weight: bolder;}
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-ascend:before{content:'\0219F';font-weight: bolder;}
 .icon-auth:before{content:url(/gfx/icons/auth.svg);}
 .icon-author:before{content:url(/gfx/icons/author.svg);}
+.icon-balance:before{content:url(/gfx/icons/coins.svg);}
 .icon-bye:before{content:url(/gfx/icons/bye.svg);}
+.icon-coin:before{content:url(/gfx/icons/coin.svg);}
+.icon-coins:before{content:url(/gfx/icons/coins.svg);}
 .icon-config:before{content:url(/gfx/icons/node.svg);}
 .icon-console:before{content:url(/gfx/icons/console.svg);}
 .icon-delete:before{content:url(/gfx/icons/delete.svg);}
@@ -232,6 +236,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
+.icon-item:before{content:url(/gfx/icons/info.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
 .icon-logo:before{content:url(/gfx/icons/zs4.svg);}
@@ -267,15 +272,20 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-search:before{content:url(/gfx/icons/search.svg);}
 .icon-select:before{content:'\02611';font-weight: bolder;}
+.icon-since:before{content:url(/gfx/icons/info.svg);}
+.icon-sincedate:before{content:url(/gfx/icons/info.svg);}
 .icon-smtp:before{content:url(/gfx/icons/smtp.svg);}
 .icon-sort:before{content:url(/gfx/icons/sort.svg);}
 .icon-spin:before{content:url(/gfx/icons/globe.svg);}
 .icon-stat:before{content:url(/gfx/icons/info.svg);}
+.icon-statpath:before{content:url(/gfx/icons/info.svg);}
+.icon-statuser:before{content:url(/gfx/icons/info.svg);}
 .icon-stop:before{content:url(/gfx/icons/stop.svg);}
 .icon-toend:before{content:url(/gfx/icons/toend.svg);}
 .icon-user:before{content:url(/gfx/icons/guitarist.svg);}
 .icon-token:before{content:url(/gfx/icons/token.svg);}
 .icon-tostart:before{content:url(/gfx/icons/tostart.svg);}
+.icon-total:before{content:url(/gfx/icons/info.svg);}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}

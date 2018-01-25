@@ -5,6 +5,38 @@ zs4.admin = new Object({debug:false,});
 
 zs4.admin.util = {
 	clseps:' ',
+
+	date:{
+		fromInput:function(i){
+			var d = new Date();
+
+			var a = zs4.string.split.separators(i.value,"-");
+			d.setFullYear(parseInt(a[0]),parseInt(a[1]),parseInt(a[2]));
+			//console.log(d);
+			//console.log(d.valueOf());
+
+			return d.valueOf();
+		},
+		toInput:function(date,i){
+
+			var datum = new Date();
+			datum.setTime(date);
+
+			if (i.readOnly){
+			//	i.value = parseInt(date);
+				return;
+			}
+			var s = datum.getFullYear()+'-';
+			if (datum.getMonth()<10) {s+= '0'+datum.getMonth();} else {s+=datum.getMonth();}
+			s += '-';
+			if (datum.getDate()<10) {s+= '0'+datum.getDate();} else {s+=datum.getDate();}
+
+			console.log('date to input: '+s);
+			console.log('input string: '+s);
+			i.value = s;
+		},
+	},
+
 	am:function(o){
 		return o._.flags.get.am();
 	},
@@ -1264,6 +1296,22 @@ zs4.admin.util = {
 						}
 					}).bind(this);
 				};
+				o._.html.top.dialogCoins = function(){
+					var DIALOG = this;
+					o._.html.top.dialog.call(this,'coins');
+					DIALOG.uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+					DIALOG.updateBalance = function(){
+						if (zs4.admin.util.root())return;
+						if (DIALOG.uscope != null){
+							DIALOG.balance.textContent = DIALOG.uscope.account.balance._.value;
+						}
+
+					};
+					this.balance = document.createElement('zs4-coins-header-balance');
+					o._.html.dialogHeader.appendChild(this.balance);
+
+					DIALOG.updateBalance();
+				},
 				o._.html.top.dialogUser = function(){
 					var DIALOG = this;
 					o._.html.top.dialog.call(this,'user');
@@ -2299,6 +2347,9 @@ zs4.admin.util = {
 					new o._.html.top.dialogTool();
 				}
 				new o._.html.top.dialogUser();
+				if (zs4.admin.util.user()) {
+					new o._.html.top.dialogCoins();
+				}
 
 				o._.html.appInfo = document.createElement('zs4-app-info');
 				o._.html.appElement.appendChild(o._.html.appInfo);
@@ -2378,30 +2429,48 @@ zs4.admin.type = {
 		zs4.admin.util.unknown(po,o);
 		//console.log('checking ui for object '+o._.path);
 		if (o._.html.input==null){
+			if (o._.flags.get.noset()){
+				o._.html.input = document.createElement('input-date-readonly');
+				o._.html.e.appendChild(o._.html.input);
 
-			o._.html.input = document.createElement('input');
-			o._.html.e.appendChild(o._.html.input);
-			o._.html.input.setAttribute('type', 'number');
-			o._.html.input.onchange = function(){
-				if (o._.flags.get.local()){
-					o._.value = o._.parseInt(o._.html.input.value);
-					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
-				}
-				else if (o._.flags.get.quickupdate()){
-					o._.html.quickupdate(o._.parseInt(o._.html.input.value));
-				}
-			};
+			}
+			else {
+				o._.html.input = document.createElement('input');
+				o._.html.e.appendChild(o._.html.input);
+				o._.html.input.setAttribute('type', 'date');
+				o._.html.input.onchange = function(){
+					console.log("o._.html.input.value: ",o._.html.input.value)
+					console.log("zs4.admin.util.date.fromInput(o._.html.input): ",zs4.admin.util.date.fromInput(o._.html.input))
+					if (o._.flags.get.local()){
+						o._.value = zs4.admin.util.date.fromInput(o._.html.input);
+						o._.html.refreshAll();
+						o._.print(o._.path + ' updated with '+o._.value);
+					}
+					else if (o._.flags.get.quickupdate()){
+						o._.html.quickupdate(zs4.admin.util.date.fromInput(o._.html.input));
+					}
+				};
 
-			o._.input = (function(){
-				if (o._.flags.get.noset())return null;
-				return parseInt(this._.html.input.value);
-			}).bind(o);
+				o._.input = (function(){
+					if (o._.flags.get.noset())return null;
+					return zs4.admin.util.date.fromInput(o._.html.input);
+				}).bind(o);
+			}
 			o._.html.expanded = true;
 		}
 
 		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = parseInt(o._.value);
+		console.log('admin.date.type: ',o._.type)
+		console.log('admin.date.value: ',o._.value)
+
+		if (o._.flags.get.noset()){
+			var d = new Date(o._.value);
+			o._.html.input.textContent = ( d.toLocaleDateString() + ' ' + d.toLocaleTimeString() );
+		}
+		else {
+			zs4.admin.util.date.toInput(o._.value,o._.html.input);
+		}
+
 		o._.html.genericRefresh();
 	},
 	download:function(po,o){
