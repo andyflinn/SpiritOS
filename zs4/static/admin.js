@@ -31,8 +31,8 @@ zs4.admin.util = {
 			s += '-';
 			if (datum.getDate()<10) {s+= '0'+datum.getDate();} else {s+=datum.getDate();}
 
-			console.log('date to input: '+s);
-			console.log('input string: '+s);
+			//console.log('date to input: '+s);
+			//console.log('input string: '+s);
 			i.value = s;
 		},
 	},
@@ -989,6 +989,8 @@ zs4.admin.util = {
 
 			if (o._.type==Object){
 				o._.html.form = document.createElement('form');
+				o._.html.form.autocomplete = 'on';
+				o._.html.form.id = o._.path;
 				o._.html.e.appendChild(o._.html.form);
 
 				o._.html.c = document.createElement('zs4-object-content');
@@ -1353,6 +1355,7 @@ zs4.admin.util = {
 						this.pane.appendChild(this.setpasswordpane);
 
 						this.setpassword = document.createElement('form');
+						this.setpassword.id = 'login.'+o._.path;
 						this.setpasswordpane.appendChild(this.setpassword);
 
 						this.old1 = document.createElement('zs4-spw-pwe');
@@ -1362,6 +1365,7 @@ zs4.admin.util = {
 						this.old1label.textContent = 'old: ';
 						this.old1.appendChild(this.old1label);
 						this.old1input = document.createElement('input');
+						this.old1input.autocomplete = 'current-password';
 						this.old1input.type = 'password';
 						this.old1.appendChild(this.old1input);
 
@@ -1372,6 +1376,7 @@ zs4.admin.util = {
 						this.new1label.textContent = 'new: ';
 						this.new1.appendChild(this.new1label);
 						this.new1input = document.createElement('input');
+						this.new1input.autocomplete = 'new-password';
 						this.new1input.type = 'password';
 						this.new1.appendChild(this.new1input);
 
@@ -1382,6 +1387,7 @@ zs4.admin.util = {
 						this.setpwdlabel.textContent = 'new: ';
 						this.setpwd.appendChild(this.setpwdlabel);
 						this.setpwdinput = document.createElement('input');
+						this.setpwdinput.autocomplete = 'new-password';
 						this.setpwdinput.type = 'password';
 						this.setpwd.appendChild(this.setpwdinput);
 
@@ -1507,6 +1513,7 @@ zs4.admin.util = {
 						this.email.appendChild(this.emailLabel);
 
 						this.emailAddress = document.createElement('input');
+						this.emailAddress.autocomplete = 'username';
 						this.emailAddress.type = 'text';
 						this.email.appendChild(this.emailAddress);
 						zs4.admin.util.addClass(this.emailAddress,'login-email');
@@ -1519,6 +1526,7 @@ zs4.admin.util = {
 						this.password.appendChild(this.passwordLabel);
 
 						this.pass = document.createElement('input');
+						this.pass.autocomplete = 'username';
 						this.pass.type = 'password';
 						this.password.appendChild(this.pass);
 						zs4.admin.util.addClass(this.pass,'login-password');
@@ -2460,8 +2468,8 @@ zs4.admin.type = {
 		}
 
 		o._.html.input.readOnly = o._.flags.get.noset();
-		console.log('admin.date.type: ',o._.type)
-		console.log('admin.date.value: ',o._.value)
+		//console.log('admin.date.type: ',o._.type)
+		//console.log('admin.date.value: ',o._.value)
 
 		if (o._.flags.get.noset()){
 			var d = new Date(o._.value);
