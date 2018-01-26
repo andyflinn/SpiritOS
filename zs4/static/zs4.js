@@ -4395,6 +4395,16 @@ zs4.request = function(o){
       return true;
     };
 
+    this.getUserPath = function(){
+      if (this.request.node) return null;
+      if (zs4.is.object(this.request.payload)){
+        if (zs4.is.string(this.request.payload.scope)){
+          return this.request.payload.scope;
+        }
+      }
+      return null;
+    };
+
     this.userIsRoot = function(){
       if (this.request.node) return true;
       if (zs4.is.object(this.request.payload)){

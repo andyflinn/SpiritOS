@@ -8,6 +8,18 @@ else {
     stat = new Object();
 }
 
+stat.feed = function(req,item,data){
+  if (item._.flags.get.nostat())return;
+  if (zs4.string.startsWith(item._.path,'zs4.type.stat'))return;
+  var user = req.getUserPath();
+
+  var cb = function(){};
+
+
+
+}
+
+
 stat.createBasic = function(name){
   var BASIC = this;
   zs4.type.scope.call(BASIC);
@@ -18,6 +30,7 @@ stat.createBasic = function(name){
   BASIC._.property(new zs4.type.object({name:'total',flags:'nostat noset authsetself'}));
   BASIC._.property(new zs4.type.date({name:'sincedate',flags:'nostat noset authsetself'}));
   BASIC._.property(new zs4.type.object({name:'since',flags:'nostat noset authsetself'}));
+  BASIC._.property(new zs4.type.object({name:'root',flags:'nostat noset authsetself'}));
 
   BASIC._.createStatEntry = (function(n){
 
@@ -46,7 +59,7 @@ stat.createPathStat = function(){
 }
 stat.createUserStat = function(){
   var PATHUSER = this;
-  stat.createBasic.call(PATHUSER,'path');
+  stat.createBasic.call(PATHUSER,'user');
   PATHUSER._.create = stat.createUserStat;
 
   PATHUSER._.property(new zs4.type.string({name:'path',flags:'nostat noset index'}));
