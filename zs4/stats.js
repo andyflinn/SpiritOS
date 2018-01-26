@@ -20,7 +20,8 @@ stat.createBasic = function(name){
   BASIC._.property(new zs4.type.object({name:'since',flags:'nostat noset authsetself'}));
 
   BASIC._.createStatEntry = (function(n){
-    BASIC.total._.property(new zs4.type.integer({
+
+    BASIC.total._.property(new zs4.type.number({
       name:n,
       flags:'nostat authpublic noset',
     }));

@@ -87,6 +87,28 @@ zs4.admin.util = {
 		}
 		e.className = ret;
 	},
+	addAttribute:function(e,a,c){
+		if (e==null||c==null)return;
+		var set = zs4.string.split.separators(c,zs4.admin.util.clseps);
+		if  (set.length==0)return;
+		var cls = zs4.string.split.separators(e[a],zs4.admin.util.clseps);
+		for (var i = 0 ; i < set.length ; i++)zs4.string.array.add.new(cls,'zs4-'+set[i]);
+		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
+			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
+		}
+		e[a] = ret;
+	},
+	removeAttribute:function(e,a,c){
+		if (e==null||c==null)return;
+		var rem = zs4.string.split.separators(c,zs4.admin.util.clseps);
+		if  (rem.length==0)return;
+		var cls = zs4.string.split.separators(e[a],zs4.admin.util.clseps);
+		for (var i = 0 ; i < rem.length ; i++)zs4.string.array.remove.string(cls,'zs4-'+rem[i]);
+		var ret = ''; for (var i = 0 ; i < cls.length ; i++){
+			if (i==0)ret = cls[0]; else ret += (' '+cls[i]);
+		}
+		e[a] = ret;
+	},
 	addClass:function(e,c){
 		if (e==null||c==null)return;
 		var set = zs4.string.split.separators(c,zs4.admin.util.clseps);
@@ -1204,6 +1226,7 @@ zs4.admin.util = {
 					this.title.type = 'text';
 					zs4.admin.util.addClass(this.title,'scope-title');
 					zs4.admin.util.setIcon(this.title,'search');
+					zs4.admin.util.addAttribute(this.title,'autocomplete','title');
 					this.title.value = o.zs4.head.title._.value;
 					this.title.maxLength = o.zs4.head.title._.maxlength;
 					this.titleblock.appendChild(this.title);
@@ -1225,6 +1248,7 @@ zs4.admin.util = {
 
 					this.author = document.createElement('input');
 					this.author.type = 'text';
+					zs4.admin.util.addAttribute(this.author,'autocomplete','author');
 					zs4.admin.util.addClass(this.author,'scope-author');
 					zs4.admin.util.setIcon(this.author,'search');
 					this.author.value = o.zs4.head.author._.value;
@@ -1355,7 +1379,7 @@ zs4.admin.util = {
 						this.pane.appendChild(this.setpasswordpane);
 
 						this.setpassword = document.createElement('form');
-						this.setpassword.id = 'login.'+o._.path;
+						this.setpassword.id = 'cpwd.'+o._.path;
 						this.setpasswordpane.appendChild(this.setpassword);
 
 						this.old1 = document.createElement('zs4-spw-pwe');
@@ -1365,7 +1389,8 @@ zs4.admin.util = {
 						this.old1label.textContent = 'old: ';
 						this.old1.appendChild(this.old1label);
 						this.old1input = document.createElement('input');
-						this.old1input.autocomplete = 'current-password';
+						zs4.admin.util.addAttribute(this.old1input,'autocomplete','current-password');
+						//this.old1input.autocomplete = 'current-password';
 						this.old1input.type = 'password';
 						this.old1.appendChild(this.old1input);
 
@@ -1376,7 +1401,8 @@ zs4.admin.util = {
 						this.new1label.textContent = 'new: ';
 						this.new1.appendChild(this.new1label);
 						this.new1input = document.createElement('input');
-						this.new1input.autocomplete = 'new-password';
+						//this.new1input.autocomplete = 'new-password';
+						zs4.admin.util.addAttribute(this.new1input,'autocomplete','new-password');
 						this.new1input.type = 'password';
 						this.new1.appendChild(this.new1input);
 
@@ -1387,7 +1413,8 @@ zs4.admin.util = {
 						this.setpwdlabel.textContent = 'new: ';
 						this.setpwd.appendChild(this.setpwdlabel);
 						this.setpwdinput = document.createElement('input');
-						this.setpwdinput.autocomplete = 'new-password';
+						//this.setpwdinput.autocomplete = 'new-password';
+						zs4.admin.util.addAttribute(this.setpwdinput,'autocomplete','new-password');
 						this.setpwdinput.type = 'password';
 						this.setpwd.appendChild(this.setpwdinput);
 
@@ -1505,21 +1532,27 @@ zs4.admin.util = {
 
 					}
 					else {
+						this.loginform = document.createElement('form');
+						this.loginform.id = 'login.'+o._.path;
+						this.loginform.autocomplete = 'on';
+						this.pane.appendChild(this.loginform);
+
 						this.email = document.createElement('zs4-login-email');
-						this.pane.appendChild(this.email);
+						this.loginform.appendChild(this.email);
 
 						this.emailLabel = document.createElement('zs4-login-email-label');
 						this.emailLabel.textContent = 'email';
 						this.email.appendChild(this.emailLabel);
 
 						this.emailAddress = document.createElement('input');
-						this.emailAddress.autocomplete = 'username';
+						//this.emailAddress.autocomplete = 'username';
+						zs4.admin.util.addAttribute(this.emailAddress,'autocomplete','username');
 						this.emailAddress.type = 'text';
 						this.email.appendChild(this.emailAddress);
 						zs4.admin.util.addClass(this.emailAddress,'login-email');
 
 						this.password = document.createElement('zs4-login-password');
-						this.pane.appendChild(this.password);
+						this.loginform.appendChild(this.password);
 
 						this.passwordLabel = document.createElement('zs4-login-password-label');
 						this.passwordLabel.textContent = 'password';
@@ -1660,35 +1693,37 @@ zs4.admin.util = {
 						return false;
 					}
 
-					addDeviceItem('browser',bowser.name);
-					addDeviceItem('version',bowser.version);
+					{
+						addDeviceItem('browser',bowser.name);
+						addDeviceItem('version',bowser.version);
 
-					addBowserFlag('type','mobile');
-					addBowserFlag('type','tablet');
+						addBowserFlag('type','mobile');
+						addBowserFlag('type','tablet');
 
-					addBowserFlag('renderer','webkit');
-					addBowserFlag('renderer','blink');
-					addBowserFlag('renderer','gecko');
-					addBowserFlag('renderer','msie');
-					addBowserFlag('renderer','msedge');
+						addBowserFlag('renderer','webkit');
+						addBowserFlag('renderer','blink');
+						addBowserFlag('renderer','gecko');
+						addBowserFlag('renderer','msie');
+						addBowserFlag('renderer','msedge');
 
-					addBowserFlag('os','mac');
-					addBowserFlag('os','windows');
-					addBowserFlag('os','windowsphone');
-					addBowserFlag('os','linux');
-					addBowserFlag('os','chromeos');
-					addBowserFlag('os','android');
-					addBowserFlag('os','ios');
-					addBowserFlag('os','blackberry');
-					addBowserFlag('os','firefoxos');
-					addBowserFlag('os','webos');
-					addBowserFlag('os','bada');
-					addBowserFlag('os','tizen');
-					addBowserFlag('os','sailfish');
+						addBowserFlag('os','mac');
+						addBowserFlag('os','windows');
+						addBowserFlag('os','windowsphone');
+						addBowserFlag('os','linux');
+						addBowserFlag('os','chromeos');
+						addBowserFlag('os','android');
+						addBowserFlag('os','ios');
+						addBowserFlag('os','blackberry');
+						addBowserFlag('os','firefoxos');
+						addBowserFlag('os','webos');
+						addBowserFlag('os','bada');
+						addBowserFlag('os','tizen');
+						addBowserFlag('os','sailfish');
 
-					addBowserFlag('ios','iphone');
-					addBowserFlag('ios','ipad');
-					addBowserFlag('ios','ipod');
+						addBowserFlag('ios','iphone');
+						addBowserFlag('ios','ipad');
+						addBowserFlag('ios','ipod');
+					}
 					if (bowser.osversion!=null)addBowserFlag('version',bowser.osversion);
 
 
@@ -2446,6 +2481,8 @@ zs4.admin.type = {
 				o._.html.input = document.createElement('input');
 				o._.html.e.appendChild(o._.html.input);
 				o._.html.input.setAttribute('type', 'date');
+				zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.name);
+				zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.typename);
 				o._.html.input.onchange = function(){
 					console.log("o._.html.input.value: ",o._.html.input.value)
 					console.log("zs4.admin.util.date.fromInput(o._.html.input): ",zs4.admin.util.date.fromInput(o._.html.input))
@@ -2541,6 +2578,7 @@ zs4.admin.type = {
 	},
 	hi:function(po,o){
 		zs4.admin.type.object(po,o);
+		//o.email._.html.
 	},
 	integer:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -2548,6 +2586,8 @@ zs4.admin.type = {
 		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
+			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.name);
+			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.typename);
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
 			o._.html.input.onchange = function(){
@@ -2582,6 +2622,8 @@ zs4.admin.type = {
 		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
+			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.name);
+			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.typename);
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
 			o._.html.input.onchange = function(){
@@ -2865,6 +2907,8 @@ zs4.admin.type = {
 		if (o._.html.input==null){
 
 			o._.html.input = document.createElement('input');
+			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.name);
+			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.typename);
 			o._.html.input.maxLength = o._.maxlength;
 			o._.html.e.appendChild(o._.html.input);
 			var typeAttr = 'text';
