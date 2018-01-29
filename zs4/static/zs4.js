@@ -4144,8 +4144,6 @@ zs4.request = function(o){
   this.setScope = (function(o){
 
     function authorize(arr){
-      //console.log(o._.authSet);
-      //console.log('authorizing... '+THIS.path);
       if (!zs4.is.array(arr)){
         return THIS.userIsRoot();
       }
