@@ -117,7 +117,7 @@ mongodb.create = function(input){
       ARRAY._.mongoSchemeRaw = mongodb.scopeToSchema(ARRAY,ARRAY.template._.new());
       ARRAY._.mongoSchema = new mongoose.Schema(ARRAY._.mongoSchemeRaw);
 
-      console.log(ARRAY._.mongoTextSearch);
+      //console.log(ARRAY._.mongoTextSearch);
       ARRAY._.mongoSchema.index(ARRAY._.mongoTextSearch);
 
       //console.log(JSON.stringify(ARRAY._.mongoSchema));
@@ -175,7 +175,7 @@ mongodb.create = function(input){
       }
       if (opcode=='eq'){query.where(item).equals(value);}
 
-      console.log('FOUND A SELECT CONDITION');
+      //console.log('FOUND A SELECT CONDITION');
     }
 
     if (arg.sort!=null&&zs4.is.string(arg.sort.item)&&arg.sort.item.length>0){
@@ -196,7 +196,7 @@ mongodb.create = function(input){
 
     ARRAY._.model.find(query, function (err, data){
       if (err!=null||data==null||!zs4.is.array(data)){cb(); return;}
-      console.log('QUERY RETURNED ARRAY!!!: length='+data.length);
+      //console.log('QUERY RETURNED ARRAY!!!: length='+data.length);
 
       var type = ARRAY.template._.new();
 

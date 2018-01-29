@@ -15,6 +15,7 @@ else {
 user.create = function(){
   var USER = this;
   zs4.type.scope.call(this);
+  USER._.flags.set.scopestats(true);
   this.zs4.head.typename._.value = 'user';
   this.zs4.head.typename._.default = 'user';
   this._.name = 'user';

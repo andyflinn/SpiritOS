@@ -6,7 +6,7 @@
 .icon-beats:before{content:'\0237F';font-weight: bolder;}
 .icon-bpb:before{content:'\0215E';font-weight: bolder;}
 .icon-bpm:before{content:'\023F1';font-weight: bolder;}
-.icon-chord:before{content:'\01F3B6';font-weight: bolder;}
+.icon-chord:before{content:url(/gfx/icons/chord.svg);}
 .icon-guitar:before{content:url(/gfx/icons/guitar.svg);}
 .icon-instruments:before{content:url(/gfx/icons/instruments.svg);}
 .icon-keyboard:before{content:url(/gfx/icons/piano.svg);}

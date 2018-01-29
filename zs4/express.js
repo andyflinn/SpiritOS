@@ -120,6 +120,7 @@ express.postFunction = function (req, res) {
       express.THIS._.print('callback: '+JSON.stringify(r.request));
       express.setCookie(res,zs4req);
       res.send(r);
+      zs4.stat.updateUser(zs4req);
     }
   });
 
@@ -203,7 +204,6 @@ express.schema = function(parent){
 
   };
   THIS.getHostURL = function(){
-    if (express.HTTPS_RUNNING)return ('https://'+THIS.host._.value+':'+THIS.sslport._.value);
     return ('http://'+THIS.host._.value+':'+THIS.port._.value);
   };
   THIS.getSecureUrl = function(){
