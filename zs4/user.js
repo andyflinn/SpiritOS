@@ -31,6 +31,25 @@ user.create = function(){
     USER._.property(new zs4.type.object({name:'account',flags:'noset'}));
     USER.account._.property(new zs4.type.integer({name:'balance',flags:'authroot quickupdate'}));
 
-    //USER.zs4._.property(new rsa.create());
+    USER.zs4.update._.transform = (function(req,cb){
+      var REQUEST = req;
+      REQUEST.setScope(USER);
+      this._.transformInternal(REQUEST);
+
+      console.log('user.zs4.update()');
+      console.log(REQUEST.input);
+
+      USER.account.balance._.value -= 1;
+
+      REQUEST.result(USER.zs4.update,true);
+
+      REQUEST.setScope(USER.account.balance);
+      USER.account.balance._.get(REQUEST);
+
+      REQUEST.setScope(USER);
+      USER._.getTree(REQUEST);
+
+      cb(); return;
+    }).bind(USER);
   }
 }

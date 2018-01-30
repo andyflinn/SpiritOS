@@ -116,11 +116,14 @@ express.postFunction = function (req, res) {
       res.end();
     }
     else {
-      var r = zs4req.getReply();
-      express.THIS._.print('callback: '+JSON.stringify(r.request));
-      express.setCookie(res,zs4req);
-      res.send(r);
-      zs4.stat.updateUser(zs4req);
+      zs4.stat.updateUser(zs4req,function(ret){
+        console.log('back in town');
+
+        var r = zs4req.getReply();
+        express.THIS._.print('callback: '+JSON.stringify(r.request));
+        express.setCookie(res,zs4req);
+        res.send(r);
+      });
     }
   });
 

@@ -1131,9 +1131,15 @@ zs4.admin.util = {
 					zs4.admin.util.addClass(this.pane,'nodisplay');
 					this.refreshDialog = function(){};
 					this.refreshInternal = function(){
+						//console.log('dialog('+this.name+').refreshInternal()');
 						if (!zs4.is.boolean(this.uninitialized))this.uninitialized=true;
 						else this.uninitialized=false;
 						this.refreshDialog();
+						//console.log(o._.html.dialog.coins);
+						if (zs4.is.object(o._.html.dialog.coins)){
+							//console.log('updating balance from refreshInternal()');
+							o._.html.dialog.coins.updateBalance();
+						}
 					};
 
 					this.toolbar = document.createElement('zs4-app-toolbar');
@@ -1337,6 +1343,11 @@ zs4.admin.util = {
 					o._.html.dialogHeader.appendChild(this.balance);
 
 					DIALOG.updateBalance();
+
+					DIALOG.refreshDialog = function(){
+						
+					};
+
 				},
 				o._.html.top.dialogUser = function(){
 					var DIALOG = this;
@@ -1599,7 +1610,7 @@ zs4.admin.util = {
 									zs4.admin.util.removeClass(DIALOG.emailresponse,'nodisplay');
 									zs4.admin.util.removeClass(DIALOG.hi,'nodisplay');
 									DIALOG.failcount = 0;
-									DIALOG.refreshDialog();
+									DIALOG.refreshInternal();
 								}
 								else {
 									zs4.admin.util.addClass(DIALOG.emailtoken,'error');
@@ -1639,7 +1650,7 @@ zs4.admin.util = {
 									zs4.admin.util.addClass(DIALOG.emailAddress,'error');
 									zs4.admin.util.addClass(DIALOG.pass,'error');
 									DIALOG.failcount++;
-									DIALOG.refreshDialog();
+									DIALOG.refreshInternal();
 								}
 								console.log('DIALOG.failcount: '+DIALOG.failcount);
 

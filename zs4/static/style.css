@@ -290,6 +290,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}
+.icon-update:before{content:'\0219F';font-weight: bolder;color:blue;}
 .icon-upload:before{content:'\0219F';font-weight: bolder;color:blue;}
 .icon-user:before{content:url(/gfx/icons/guitarist.svg);}
 .icon-zs4:before{content:url(/gfx/icons/zs4.svg);}
