@@ -217,6 +217,9 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-coins:before{content:url(/gfx/icons/coins.svg);}
 .icon-config:before{content:url(/gfx/icons/node.svg);}
 .icon-console:before{content:url(/gfx/icons/console.svg);}
+.icon-date:before{content:url(/gfx/icons/date.svg);}
+.icon-datefrom:before{content:url(/gfx/icons/date.svg);}
+.icon-dateto:before{content:url(/gfx/icons/date.svg);}
 .icon-delete:before{content:url(/gfx/icons/delete.svg);}
 .icon-deleteall:before{content:url(/gfx/icons/delete.svg);}
 .icon-deleteone:before{content:url(/gfx/icons/delete.svg);}
@@ -226,6 +229,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-document:before{content:'\01F4C3';font-weight: bolder;}
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
 .icon-email:before{content:url(/gfx/icons/email.svg);}
+.icon-emailsent:before{content:url(/gfx/icons/email.svg);}
 .icon-error:before{content:url(/gfx/icons/error.svg);}
 .icon-express:before{content:'X';font-weight: bolder;color:darkblue;}
 .icon-female:before{content:'\02640';font-weight: bolder;}
@@ -235,8 +239,9 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-getone:before{content:'1';font-weight: bolder;color:darkgreen;}
 .icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-hi:before{content:'>)';font-weight: bolder;}
+.icon-htmlserved:before{content:url(/gfx/icons/html.svg);}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
-.icon-item:before{content:url(/gfx/icons/info.svg);}
+.icon-item:before{content:url(/gfx/icons/item.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
 .icon-logo:before{content:url(/gfx/icons/zs4.svg);}
@@ -260,6 +265,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-play:before{content:url(/gfx/icons/play.svg);}
 .icon-plus:before{content:"+";font-weight: bolder;}
 .icon-prev:before{content:url(/gfx/icons/prev.svg);}
+.icon-price:before{content:url(/gfx/icons/coins.svg);}
 .icon-private:before{content:url(/gfx/icons/private.svg);}
 .icon-public:before{content:url(/gfx/icons/public.svg);}
 .icon-query:before{content:url(/gfx/icons/search.svg);}
@@ -273,12 +279,11 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-search:before{content:url(/gfx/icons/search.svg);}
 .icon-select:before{content:'\02611';font-weight: bolder;}
-.icon-since:before{content:url(/gfx/icons/info.svg);}
-.icon-sincedate:before{content:url(/gfx/icons/info.svg);}
+.icon-since:before{content:url(/gfx/icons/date.svg);}
 .icon-smtp:before{content:url(/gfx/icons/smtp.svg);}
 .icon-sort:before{content:url(/gfx/icons/sort.svg);}
 .icon-spin:before{content:url(/gfx/icons/globe.svg);}
-.icon-stat:before{content:url(/gfx/icons/info.svg);}
+.icon-stat:before{content:url(/gfx/icons/stat.svg);}
 .icon-statpath:before{content:url(/gfx/icons/info.svg);}
 .icon-statuser:before{content:url(/gfx/icons/info.svg);}
 .icon-stop:before{content:url(/gfx/icons/stop.svg);}
@@ -286,7 +291,9 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-user:before{content:url(/gfx/icons/guitarist.svg);}
 .icon-token:before{content:url(/gfx/icons/token.svg);}
 .icon-tostart:before{content:url(/gfx/icons/tostart.svg);}
-.icon-total:before{content:url(/gfx/icons/info.svg);}
+.icon-total:before{content:url(/gfx/icons/total.svg);}
+.icon-transform:before{content:url(/gfx/icons/transform.svg);}
+.icon-transitem:before{content:url(/gfx/icons/gears.svg);}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}

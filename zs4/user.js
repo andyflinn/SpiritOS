@@ -29,7 +29,7 @@ user.create = function(){
     USER.info._.property(new zs4.type.date({name:'birth',flags:'authsetself quickupdate'}));
 
     USER._.property(new zs4.type.object({name:'account',flags:'noset'}));
-    USER.account._.property(new zs4.type.integer({name:'balance',flags:'authroot quickupdate'}));
+    USER.account._.property(new zs4.type.integer({name:'balance',flags:'quickupdate'}));
 
     USER.zs4.update._.transform = (function(req,cb){
       var REQUEST = req;

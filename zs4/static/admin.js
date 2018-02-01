@@ -498,16 +498,291 @@ zs4.admin.util = {
 		}
 
 	},
+	createSearchSelect:function(o,s){
+		var search = document.createElement('zs4-search-box');
+		search.zs4 = new Object({
+			s:s,
+			value:'',
+			getValue:function(){
+				return search.zs4.value;
+			},
+			setValue:function(v){
+				if (zs4.is.string(v)){
+					search.zs4.value = v;
+					search.zs4.selectedtitle.textContent = v;
+				}
+				else if (zs4.is.object(v)){
+					search.zs4.value = v._.path;
+					search.zs4.selectedtitle.textContent = v.zs4.head.title._.value;
+					search.zs4.valuescope = v;
+				}
+			},
+			getScope:function(){
+				if (!zs4.is.object(search.zs4.valuescope))return null;
+				return search.zs4.valuescope;
+			},
+			showResults:function(){
+				if (search.zs4.results.length == 0){
+					search.zs4.optionsAreVisible = false;
+					return;
+				}
 
+				search.zs4.options.style.display = 'block';
+				search.zs4.optionsAreVisible = true;
+			},
+			hideResults:function(){
+				search.zs4.options.style.display = 'none';
+				search.zs4.optionsAreVisible = false;
+			},
+			toggleResults:function(){
+				if (search.zs4.optionsAreVisible){
+					search.zs4.hideResults();
+				}
+				else {
+					search.zs4.showResults();
+				}
+			},
+			scopeTrueOrFalse:null,
+			scopeIsIncluded:function(scope){
+				//console.log(scope._.path+': owner ('+scope.zs4.head.owner._.value+')');
+				if (zs4.is.string(search.zs4.s.owner)&&scope.zs4.head.owner._.value != search.zs4.s.owner){
+					console.log(scope._.path+': bad owner ('+scope.zs4.head.owner._.value+')');
+					return false;
+				}
+				if (zs4.is.string(search.zs4.s.type)&&search.zs4.s.type.length>0&&s.type!=scope.zs4.head.typename._.value){
+					console.log(scope._.path+': bad type ('+scope.zs4.head.typename._.value+')');
+					return false;
+				}
+				if (zs4.is.string(search.zs4.stringinput.value)&&search.zs4.stringinput.value!=''){
+					if (!scope._.search(search.zs4.stringinput.value)){
+						console.log(scope._.path+': did not find ('+search.zs4.stringinput.value+')');
+						return false;
+					}
+				}
+				if (zs4.is.function(search.zs4.scopeTrueOrFalse)){
+					return search.zs4.scopeTrueOrFalse(scope);
+				}
+				return true;
+			},
+			refreshResults:function(){
+				var a = search.zs4.results;
+				for (var i = 0 ; i < a.length; i++){
+					if (search.zs4.scopeIsIncluded(a[i].scope)){
+						a[i].container.style.display = 'block';
+						if (search.zs4.value == a[i].scope._.path){
+							search.zs4.selectedtitle.textContent = a[i].scope.zs4.head.title._.value;
+							search.zs4.valuescope = a[i].scope;
+						}
+
+					}
+					else {
+						a[i].container.style.display = 'none';
+					}
+				}
+			},
+			results:new Array(),
+			result:function(scope){
+				var RESULT = this;
+
+				RESULT.scope = scope;
+				RESULT.container = document.createElement('zs4-search-result');
+				RESULT.container.style.display = 'block';
+				RESULT.container.onclick = function(){
+					search.zs4.setValue(RESULT.scope);
+					search.zs4.hideResults();
+					if (zs4.is.function(search.zs4.onchange)){
+						search.zs4.onchange();
+					}
+				};
+
+				RESULT.icon = zs4.admin.util.addIconElement(RESULT.container,scope.zs4.head.typename._.value);
+
+				RESULT.title = document.createElement('zs4-search-result-title');
+				RESULT.title.textContent = scope.zs4.head.title._.value;
+				RESULT.container.appendChild(RESULT.title);
+
+				RESULT.description = document.createElement('zs4-search-result-description');
+				RESULT.description.textContent = scope.zs4.head.description._.value;
+				RESULT.description.style.fontSize = '.7em';
+				RESULT.description.style.display = 'block';
+				RESULT.container.appendChild(RESULT.description);
+
+				search.zs4.options.appendChild(RESULT.container);
+				search.zs4.results.push(RESULT);
+			},
+			submit:function(cb){
+				var req = new Object({
+					value:search.zs4.stringinput.value,
+					type:s.type,
+					owner:s.owner,
+				});
+
+				var tq = null;
+				if(req.type.length>0)
+				tq=zs4.THIS._.resolvePath('zs4.type.'+req.type+'.method.query')
+
+				console.log('resolvePath('+'zs4.type.'+req.type+'.method.query'+') = '+tq);
+
+				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+				zs4.post(zs4.THIS.zs4.search._.wrapRequest(req),function(ret){
+					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+					//o._.html.refreshAll();
+
+					var scopes = zs4.THIS._.getAllScopes();
+					console.log(scopes);
+
+					search.zs4.options.innerHTML = '';
+					search.zs4.results = new Array();
+					for (var i = 0 ; i < scopes.length; i++){
+						var nu = new search.zs4.result(scopes[i]);
+					}
+					search.zs4.refreshResults();
+					search.zs4.showResults();
+					if (zs4.is.function(cb)) cb();
+				});
+
+			},
+		});
+		if (search != null){
+				search.style.display = 'block';
+
+				// add search icon and string input
+				search.zs4.string = document.createElement('zs4-search-string');
+				search.zs4.string.style.display = 'block';
+				search.appendChild(search.zs4.string);
+
+				search.zs4.stringicon = zs4.admin.util.addIconElement(search.zs4.string,'search');
+				search.zs4.stringicon.onclick = search.zs4.submit;
+				search.zs4.stringinput = document.createElement('input');
+				search.zs4.stringinput.oninput = search.zs4.refreshResults;
+				search.zs4.stringinput.onchange = search.zs4.submit;
+				search.zs4.stringinput.type = 'search';
+				search.zs4.string.appendChild(search.zs4.stringinput);
+
+				// add search select input
+				search.zs4.select = document.createElement('zs4-search-select');
+				search.zs4.select.style.display = 'block';
+				search.appendChild(search.zs4.select);
+
+				search.zs4.selecticon = zs4.admin.util.addIconElement(search.zs4.select,'select');
+				search.zs4.selecticon.onclick = search.zs4.toggleResults;
+				search.zs4.selectedoption = document.createElement('zs4-search-selectedoption');
+				search.zs4.select.appendChild(search.zs4.selectedoption);
+
+				search.zs4.selectedtitle = document.createElement('zs4-search-selectedtitle');
+				search.zs4.selectedtitle.style.fontWeight = 'bold';
+				search.zs4.selectedtitle.onclick = search.zs4.toggleResults;
+				search.zs4.select.appendChild(search.zs4.selectedtitle);
+
+				// options container
+				search.zs4.optionsAreVisible = true;
+				search.zs4.options = document.createElement('zs4-search-options');
+				search.zs4.options.style.display = 'block';
+				search.appendChild(search.zs4.options);
+		}
+		return search;
+	},
+	createSelectScopeItem:function(o,s){
+		if (s==null)s=zs4.THIS;
+		var container = document.createElement('zs4-scope-item-select');
+		var text = document.createElement('zs4-scope-item-path');
+		container.appendChild(text);
+		var select = document.createElement('select');
+		container.appendChild(select);
+		select.onchange = function(){
+			select.zs4.setValue(select.value);
+			console.log('createSelectScopeItem.onchange.value = '+select.value);
+			if (zs4.is.function(select.zs4.onchange))select.zs4.onchange();
+		}
+		select.zs4 = new Object({
+			container:container,
+			text:text,
+			scope:s,
+			value:'',
+			getValue:function(){
+				return select.zs4.value;
+			},
+			setValue:function(v){
+				select.value = v;
+				select.zs4.value = v;
+				select.zs4.text.textContent = v;
+				select.zs4.refreshOptions();
+			},
+			setScope:function(s){
+				select.zs4.scope = s;
+				select.zs4.refreshOptions();
+			},
+			showText:function(){
+				text.style.display = 'inline';
+			},
+			hideText:function(){
+				text.style.display = 'none';
+			},
+			showSelect:function(){
+				select.style.display = 'inline';
+			},
+			hideSelect:function(){
+				select.style.display = 'none';
+			},
+			refreshOptions:function(){
+				select.innerHTML = '';
+				if (select.zs4.scope==null){
+					select.zs4.showText();
+					select.zs4.hideSelect();
+					return;
+				}
+
+				var a = select.zs4.scope._.getScopeItems();
+				a.sort(function(a,b){
+					return a.value.localeCompare(b.value);
+				});
+				select.zs4.options = a;
+				console.log('refreshing scope item dropdown');
+				console.log(a);
+
+				var found = false;
+				for (var i = 0 ; i < a.length; i++){
+					if (zs4.is.function(select.zs4.itemTrueOrFalse)){
+						console.log('itemTrueOrFalse is a function');
+						if (zs4.is.object(a[i].item)){
+							if (!select.zs4.itemTrueOrFalse(a[i]))continue;
+						}
+					}
+					a[i].opt = document.createElement('option');
+					a[i].opt.textContent = a[i].value;
+					a[i].opt.value = a[i].value;
+					if (a[i].value = select.zs4.value){
+						var found = true;
+						a[i].opt.selected = true;
+					}
+					select.appendChild(a[i].opt);
+				}
+				select.value = select.zs4.value;
+				if (found){
+					select.zs4.hideText();
+					select.zs4.showSelect();
+				}
+				else if (a.length > 0){
+					select.zs4.showText();
+					select.zs4.showSelect();
+				}
+				else {
+					select.zs4.showText();
+					select.zs4.hideSelect();
+				}
+			},
+		});
+		container.zs4 = select.zs4;
+		if (select!=null){
+
+		}
+		return container;
+	},
 	app:function(scope,containerElement){
 		//this.scope = scope;
 		this.containerElement = containerElement;
 
 		console.log(scope);
-
-		//if (this.scope.zs4.head.bits._.bits.plugin.get()){
-			//window.alert('plugin created...: '+scope.zs4.head.typename._.value+'.js');
-		//}
 
 		this.internalRefresh = function(){
 			// flag the first pass
@@ -517,6 +792,11 @@ zs4.admin.util = {
 				//console.log('refreshing app type: ' + this.scope.zs4.head.type._.value + ' ' + this.scope.zs4.head.bits._.value);
 
 			if (zs4.is.function(this.refresh))this.refresh();
+
+			if (zs4.is.object(scope._.html.dialog.coins)){
+				console.log('updating balance from app.refreshInternal()');
+				scope._.html.dialog.coins.updateBalance();
+			}
 		};
 	},
 
@@ -933,12 +1213,16 @@ zs4.admin.util = {
 			o._.html.toolbarIsOpen = false;
 			o._.html.defaultTool = null;
 
-			o._.html.quickupdate = function(input){
-				if (input == null)return;
+			o._.html.quickupdate = function(input,cb){
+				if (input == null){
+					if (zs4.is.function(cb))cb();
+					return;
+				}
 				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
 				zs4.post(o._.wrapRequest(input),function(ret){
 					o._.html.refreshAll();
 					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+					if (zs4.is.function(cb))cb();
 				});
 
 			};
@@ -1345,7 +1629,7 @@ zs4.admin.util = {
 					DIALOG.updateBalance();
 
 					DIALOG.refreshDialog = function(){
-						
+
 					};
 
 				},
@@ -2086,6 +2370,7 @@ zs4.admin.util = {
 												else {
 													zs4.admin.util.setIcon(epub,'private');
 												}
+												scope._.html.refreshAll();
 											});
 										};
 
@@ -2141,6 +2426,7 @@ zs4.admin.util = {
 										};
 									}
 
+									/*
 									if (scope.zs4.head.typename._.value=='doctype'){
 										if (zs4.is.object(zs4.THIS.zs4.type.document.method.new)){
 											this.newdoc = document.createElement('zs4-app-item-newdoc');
@@ -2150,7 +2436,7 @@ zs4.admin.util = {
 
 											};
 										}
-									}
+									}*/
 
 									this.more = document.createElement('zs4-app-item-more');
 									this.more.style.display = 'block';
@@ -2340,22 +2626,54 @@ zs4.admin.util = {
 						}).bind(top.app);
 						top.app.internalRefresh();
 					}
-					else if (o.zs4.head.typename._.value=='doctype'){
+					else if (o.zs4.head.typename._.value=='price'){
 						top.app = new zs4.admin.util.app(o,o._.html.appWindow);
 						top.app.refresh = (function(){
 							if (top.app.uninitialized==true){
-								if (o.zs4.head.title._.value != ''){
-									console.log('APP: '+o.zs4.head.title._.value);
-									zs4.loadcss('/plugin/'+o.zs4.head.title._.value+'/style.css');
-									zs4.loaddata('/plugin/'+o.zs4.head.title._.value+'/index.js',function(data){
-										console.log(data);
-										var foo;
-										foo = new Function('element',data);
-										foo.call(o,top.app.containerElement);
+								top.app.content = document.createElement('zs4-app-content');
+								top.app.content.textContent = 'price editor';
+								o._.html.appWindow.appendChild(top.app.content);
+
+								top.app.searchdialog = zs4.admin.util.createSearchSelect(o,{type:'',owner:o.zs4.head.owner._.value,});
+								top.app.searchdialog.zs4.setValue(o.scope._.value);
+								top.app.searchdialog.zs4.scopeTrueOrFalse = function(scope){
+									var styp = scope.zs4.head.typename._.value;
+									if (styp=='user'||styp=='price')return false;
+									return true;
+								}
+								top.app.searchdialog.zs4.onchange = function(){
+									o.scope._.html.quickupdate(top.app.searchdialog.zs4.getValue(),function(){
+										var s = top.app.searchdialog.zs4.getScope();
+										if (zs4.is.object(s)){
+											zs4.admin.util.setIcon(top.app.scopeitemicon,s.zs4.head.typename._.value);
+											top.app.scopeitemselect.zs4.setScope();
+										}
 									});
 
 								}
+								top.app.content.appendChild(top.app.searchdialog);
+
+								top.app.scopeitem = document.createElement('zs4-price-scopeitem');
+								top.app.scopeitem.style.display = 'block';
+								top.app.content.appendChild(top.app.scopeitem);
+
+								top.app.scopeitemicon = zs4.admin.util.addIconElement(top.app.scopeitem,'item');
+								top.app.scopeitemselect = zs4.admin.util.createSelectScopeItem(o,zs4.THIS);
+								top.app.scopeitemselect.zs4.setValue(o.item._.value);
+								top.app.scopeitemselect.zs4.itemTrueOrFalse = function(item){
+									console.log('testing item: '+item.value);
+									if (zs4.string.startsWith(item.value,'zs4.type.price'))return false;
+									return true;
+								};
+								top.app.scopeitemselect.zs4.onchange = function(){
+									o.item._.html.quickupdate(top.app.scopeitemselect.zs4.getValue());
+								};
+								top.app.content.appendChild(top.app.scopeitemselect);
+
+								top.app.searchdialog.zs4.submit(top.app.searchdialog.zs4.hideResults);
 							}
+
+
 
 						}).bind(top.app);
 						new o._.html.top.dialogDocument();
@@ -2367,6 +2685,9 @@ zs4.admin.util = {
 						top.app.containerElement.appendChild(top.app.toolbar);
 						top.app.refresh = (function(){
 							if (top.app.uninitialized==true){
+								//top.app.content = document.createElement('zs4-app-content');
+								//top.app.content.textContent = o.zs4.head.typename._.value+' editor';
+								//o._.html.appWindow.appendChild(top.app.content);
 							}
 
 						}).bind(top.app);
@@ -2393,7 +2714,6 @@ zs4.admin.util = {
 						zs4.admin.util.addClass(o._.html.top.app.content,appClass);
 						//zs4.admin.util.addClass(,appClass);
 						//zs4.admin.util.addClass(,appClass);
-
 					}
 				}
 
@@ -2916,31 +3236,60 @@ zs4.admin.type = {
 	string:function(po,o){
 		zs4.admin.util.unknown(po,o);
 		if (o._.html.input==null){
-
-			o._.html.input = document.createElement('input');
-			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.name);
-			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.typename);
-			o._.html.input.maxLength = o._.maxlength;
-			o._.html.e.appendChild(o._.html.input);
-			var typeAttr = 'text';
-			if (o._.typename=='password')typeAttr='password';
-			o._.html.input.setAttribute('type', typeAttr);
-			o._.html.input.onchange = function(){
-				//alert('++++++++++++++++++');
-				if (o._.flags.get.local()){
-					o._.value = o._.html.input.value;
-					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
+			o._.select = false;
+			if (zs4.is.array(o._.enum)&&o._.enum.length>0){
+				o._.select = true;
+				o._.html.input = document.createElement('select');
+				for (var i = 0; i < o._.enum.length; i++){
+					var opt = document.createElement('option');
+					opt.value = opt.textContent = o._.enum[i];
+					if (i==0)opt.selected = true;
+					o._.html.input.appendChild(opt);
 				}
-				else if (o._.flags.get.quickupdate()){
-					o._.html.quickupdate(o._.html.input.value);
-				}
-			};
+				o._.html.input.onchange = function(){
+					console.log(o._.html.input.selectedIndex,o._.html.input.value);
+					if (o._.flags.get.local()){
+						o._.value = o._.enum[o._.html.input.selectedIndex];
+						o._.html.refreshAll();
+						o._.print(o._.path + ' updated with '+o._.value);
+					}
+					else if (o._.flags.get.quickupdate()){
+						o._.html.quickupdate(o._.enum[o._.html.input.selectedIndex]);
+					}
+				};
+				o._.html.e.appendChild(o._.html.input);
 
-			o._.input = (function(){
-				if (o._.flags.get.noset())return null;
-				return this._.html.input.value;
-			}).bind(o);
+				o._.input = (function(){
+					if (o._.flags.get.noset())return null;
+					return o._.enum[o._.html.input.selectedIndex];
+				}).bind(o);
+			}
+			else {
+				o._.html.input = document.createElement('input');
+				zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.name);
+				zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.typename);
+				o._.html.input.maxLength = o._.maxlength;
+				o._.html.e.appendChild(o._.html.input);
+				var typeAttr = 'text';
+				if (o._.typename=='password')typeAttr='password';
+				o._.html.input.setAttribute('type', typeAttr);
+				o._.html.input.onchange = function(){
+					//alert('++++++++++++++++++');
+					if (o._.flags.get.local()){
+						o._.value = o._.html.input.value;
+						o._.html.refreshAll();
+						o._.print(o._.path + ' updated with '+o._.value);
+					}
+					else if (o._.flags.get.quickupdate()){
+						o._.html.quickupdate(o._.html.input.value);
+					}
+				};
+
+				o._.input = (function(){
+					if (o._.flags.get.noset())return null;
+					return this._.html.input.value;
+				}).bind(o);
+			}
 			o._.html.expanded = true;
 		}
 		o._.html.input.readOnly = o._.flags.get.noset();

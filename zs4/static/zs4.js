@@ -1429,6 +1429,7 @@ zs4.type = {
           }
           html += '  <script src="/bowser.min.js"></script>\n';
           html += '  <script src="/zs4.js"></script>\n';
+          html += '  <script src="/um.js"></script>\n';
           html += '  <script>zs4.location.path=\''+this._.path+'\';;</script>\n'
           for (var i = 0 ; i < zs4.plugin.script.length ; i++){
             html += '  <script src="/' + zs4.plugin.script[i] + '"></script>\n';
@@ -1447,6 +1448,10 @@ zs4.type = {
       html += '</html>\n';
       req.request.html = html;
       this._.print('HTML RESPONSE FROM '+this._.path,req);
+
+      if (this._.flags.get.scope()){
+        this.zs4.head.stat.item.htmlserved._.stat.accumulate(html.length,0);
+      }
       //console.log(html);
       return(html);
     }).bind(this);
@@ -3337,9 +3342,10 @@ zs4.type = {
       req.setScope(this);
       this._.transformInternal(req);
 
-      if (this._.flags.get.scope()){THIS.zs4.head.stat.since.transform._.captureStat(1);}
-      zs4.stat.feed(req,THIS,{transform:1,});
-
+      var starttime = Date.now();
+      if (zs4.is.object(req.scope)){
+        console.log('in scope /' + req.scope._.path + ' (at '+this._.path+')');
+      }
 
       if (zs4.is.object(req.input)&&zs4.is.object(req.input.getHTML)){
         this._.print('getHTML() '+zs4.json.stringify(input),req);
@@ -3382,8 +3388,8 @@ zs4.type = {
 
         if (req.input==null||req.input[n]==null){
           if (req.getall && !this._.flags.get.nogetall()){
-            if (THIS._.flags.get.scope()){this.zs4.head.stat.since.getall._.captureStat(1);}
-            zs4.stat.feed(req,THIS,{getall:1,});
+            //if (THIS._.flags.get.scope()){this.zs4.head.stat.since.getall._.captureStat(1);}
+            //zs4.stat.feed(req,THIS,{getall:1,});
             parallel.call(THIS[n],THIS[n]._.transform,req.create({input:null,parent:this,}));
           }
         }
@@ -3393,7 +3399,13 @@ zs4.type = {
       }
 
       parallel.run(function(){
-        if (THIS._.flags.get.scope()){THIS.zs4.head.stat.since.read._.captureStat(1);}
+        var now = Date.now();
+        if (THIS._.flags.get.scope()){
+          THIS.zs4.head.stat.item.transform._.stat.accumulate(1,(now-starttime));
+        }
+        else if (zs4.is.object(req.scope)){
+          req.scope.zs4.head.stat.item.transitem._.stat.accumulate(1,(now-starttime));
+        }
         zs4.stat.feed(req,THIS,{read:1,});
         THIS._.get(req);
         cb();
@@ -3518,24 +3530,26 @@ zs4.type = {
         for (var n in item){
           if (!zs4.is.type(item[n]))continue;
 
-          if (item[n]._.type != Object){
-            //console.log('getScopeItems-recurse '+item[n]._.path);
-            if (type == null
-            || (zs4.is.function(type)&&type == item[n]._.type)
-            || (zs4.is.string(type)&&type==item[n]._.typename)
-            || (zs4.is.number(type)&&((item[n]._.flags.value&type)==type))
-            ){
-              //var sp = scope._.path;
-              //var ip = item[n]._.path;
-              var val = item[n]._.path;
-              //for (var i=0;i<ip.length;i++)if (i>(sp.length+1))
-              if (scope._.path.length>0)
+          if (item[n]._.flags.get.scope())continue;
+
+          //console.log('getScopeItems-recurse '+item[n]._.path);
+          if (type == null
+          || (zs4.is.function(type)&&type == item[n]._.type)
+          || (zs4.is.string(type)&&type==item[n]._.typename)
+          || (zs4.is.number(type)&&((item[n]._.flags.value&type)==type))
+          ){
+            //var sp = scope._.path;
+            //var ip = item[n]._.path;
+            var val = item[n]._.path;
+            //for (var i=0;i<ip.length;i++)if (i>(sp.length+1))
+            if (scope._.path.length>0)
               val = val.substr(scope._.path.length+1,val.length-scope._.path.length-1);
-              response.push(new Object({label:val,value:val}));
-            }
+            response.push(new Object({item:item[n],label:item[n]._.typename,value:val}));
           }
-          else {
-            recurse(item[n]);
+
+          if (item[n]._.type == Object){
+            if (!item[n]._.flags.get.scope())
+              recurse(item[n]);
           }
         }
       };
@@ -3589,6 +3603,7 @@ zs4.type = {
     THIS._.getAllScopes = (function(){
       var scope = zs4.THIS;
       var response = new Array();
+      response.push(scope);
       function recurse(item){
         for (var n in item){
           if (!zs4.is.type(item[n]))continue;
@@ -3621,7 +3636,7 @@ zs4.type = {
       return ret;
     }).bind(this);
 
-    THIS.zs4._.property(new zs4.type.object({name:'update',flags:'api apiarg authroot',}));
+    THIS.zs4._.property(new zs4.type.object({name:'update',flags:'noget nostore api apiarg',}));
   },
   scopebits:function(input){
     var THIS = this;
@@ -4146,36 +4161,48 @@ zs4.call = {
 };
 
 zs4.stat = {
+  createAccumulator:function(parent,name){
+    parent._.property(new zs4.type.object({name:name,flags:'noset authsetself'}))
+
+    var ACC = parent[name];
+    ACC._.property(new zs4.type.number({name:'value',flags:'authpublic noset',}));
+    ACC._.property(new zs4.type.number({name:'count',flags:'authpublic noset',}));
+    ACC._.property(new zs4.type.number({name:'time',flags:'authpublic noset',}));
+
+    ACC._.stat = new Object({});
+    ACC._.stat.accumulate = (function(v,t){
+      ACC.value._.value += v;
+      ACC.time._.value += t;
+      ACC.count._.value += 1;
+    }).bind(ACC);
+  },
+  createItem:function(parent,name){
+    parent.item._.property(new zs4.type.object({name:name,flags:'noset authsetself'}));
+    var ITEM = parent.item[name];
+
+    zs4.stat.createAccumulator(ITEM,'since');
+    zs4.stat.createAccumulator(ITEM,'total');
+
+    ITEM._.stat = new Object({});
+    ITEM._.stat.accumulate = (function(v,t){
+      ITEM.since._.stat.accumulate(v,t);
+      parent.dateto._.value = Date.now();
+    }).bind(ITEM);
+
+  },
   create:function(name){
     var BASIC = this;
     zs4.type.object.call(BASIC,{name:name,flags:'noprune authgetpublic',});
     BASIC._.name = name;
 
-    BASIC._.property(new zs4.type.object({name:'total',flags:'noset authsetself'}));
-    BASIC._.property(new zs4.type.date({name:'sincedate',flags:'noset authsetself'}));
-    BASIC._.property(new zs4.type.object({name:'since',flags:'noset authsetself'}));
+    BASIC._.property(new zs4.type.date({name:'datefrom',flags:'noset authsetself'}));
+    BASIC._.property(new zs4.type.date({name:'dateto',flags:'noset authsetself'}));
+    BASIC._.property(new zs4.type.object({name:'item',flags:'noset authsetself'}));
 
-    BASIC._.createStatEntry = (function(n){
-
-      BASIC.total._.property(new zs4.type.number({
-        name:n,
-        flags:'authpublic noset',
-      }));
-      BASIC.since._.property(new zs4.type.number({
-        name:n,
-        flags:'authpublic noset',
-      }));
-      BASIC.since[n]._.captureStat = (function(value){
-        this.value += value;
-      }).bind(BASIC.since[n]._);
-    }).bind(BASIC)
-
-    BASIC._.createStatEntry('transform');
-    BASIC._.createStatEntry('read');
-    BASIC._.createStatEntry('getall');
-    BASIC._.createStatEntry('update');
-    //BASIC._.createStatEntry('requestbytes');
-    //BASIC._.createStatEntry('responsebytes');
+    zs4.stat.createItem(BASIC,'transform');
+    zs4.stat.createItem(BASIC,'transitem');
+    zs4.stat.createItem(BASIC,'htmlserved');
+    zs4.stat.createItem(BASIC,'emailsent');
   },
   updateUser:function(req,cb){
     if (!zs4.is.string(req.request.token)
@@ -4742,6 +4769,8 @@ if (zs4.is.node()){
     zs4.node.require.fs = fs;
     zs4.node.require.fs.schema(zs4.THIS.zs4);
 
+    zs4.node.require.password = require('./um');
+
     zs4.node.require.password = require('../password');
     zs4.node.require.password.schema(zs4.THIS.zs4);
 
@@ -4756,6 +4785,9 @@ if (zs4.is.node()){
 
     zs4.node.require.paypal = require('../paypal');
     zs4.node.require.paypal.schema(zs4.THIS.zs4);
+
+    zs4.node.require.price = require('../price');
+    //zs4.node.require.price.schema(zs4.THIS.zs4);
 
     zs4.node.require.mongodb = require('../mongodb');
     zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb',boot:true,});
@@ -4786,6 +4818,11 @@ if (zs4.is.node()){
     var user = require('../user');
     zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
     zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
+
+    var price = require('../price');
+    zs4.THIS.zs4.type._.property(new zs4.type.array({name:'price',template:new price.create(),}));
+    zs4.THIS.zs4.type.price._.flags.value |= zs4.THIS.zs4.type.price._.flags.apiarg;
+    zs4.THIS.zs4.type.price._.flags.set.authgetpublic(false);
 
     // plugins
     var plugin = new Object();
