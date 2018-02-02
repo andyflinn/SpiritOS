@@ -37,6 +37,8 @@ email.create = function(input){
   THIS.message._.transform = (function(req,cb){
     var MESSAGE = this;
 
+    var starttime = Date.now();
+
     console.log(req.data);
 
     req.setScope(this);
@@ -69,11 +71,11 @@ email.create = function(input){
     ||  req.input.subject.length == 0
     ||  req.input.text.length == 0
     ){
-      req.error(this,'invalid message');
+      req.error(this,'invalid message',starttime);
       return get();
     }
     else{
-      console.log(this._.path+'.transform()');
+      console.log(this._.path+'.transform()',starttime);
       var message = {
         from:THIS.smtp.from._.value,
         to:req.input.to,
@@ -81,7 +83,7 @@ email.create = function(input){
         text:req.input.text,
       };
       if (!THIS.smtp.configured._.value){
-        req.error(this,'smtp not configured');
+        req.error(this,'smtp not configured',starttime);
         return get();
       }
       if (THIS.smtpServer == null){
@@ -105,12 +107,13 @@ email.create = function(input){
                port:    THIS.smtp.port._.value,
                ssl:     THIS.smtp.ssl._.value,
             });
-            req.error(msg,{text:'smtp send failed',data:err});
+            req.error(msg,{text:'smtp send failed',data:err},starttime);
             return get();
           }
           else{
             console.log('message sent to '+req.input.to+', subject: \''+req.input.subject+'\'');
             req.result(msg,'message sent to '+req.input.to+', subject: \''+req.input.subject+'\'');
+            req.stat(THIS,{emailsent:1,},(Date.now()-starttime));
             return get();
           }
       });

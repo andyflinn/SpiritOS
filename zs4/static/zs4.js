@@ -1224,7 +1224,7 @@ zs4.type = {
         get._.value = this._.value;
 
       }
-      zs4.stat.feed(req,this,{read:1,});
+      req.stat(this,{read:1,},0);
       return get;
     }).bind(this);
     this._.getTree = (function(req){
@@ -1684,13 +1684,12 @@ zs4.type = {
           if (v!=null && v != this._.value){
             if (zs4.is.function(req.request.unique)
             &&!req.request.unique(this,v)){
-              zs4.stat.feed(req,this,{error:1,});
               req.error(THIS,'already exists');
               this._.get(req,req.parent);cb();return;
             }
             this._.value=v;
             this._.shouldBeSaved(req);
-            zs4.stat.feed(req,this,{update:1,});
+            req.stat(this,{update:1,},0);
             req.result(this,v);
           }
         }
@@ -1824,6 +1823,8 @@ zs4.type = {
       cb();
     }).bind(THIS.array);
     THIS.array._.driverTransform = (function(req,cb){
+      var starttime = Date.now();
+
       console.log(req.elenam);
       zs4.array[THIS.config.driver._.value].getID.call(THIS,req.elenam,function(ret){
         if (ret == null){
@@ -1843,10 +1844,9 @@ zs4.type = {
           THIS,req.elenam,item._.store(),
           function(ret){
             if (ret == null){
-              zs4.stat.feed(req,item,{error:1,});
               req.error(THIS.array,req.elenam+' update fail');cb();return;
             }
-            zs4.stat.feed(req,item,{update:1,});
+            req.stat(this,{update:1,},(Date.now()-starttime));
             req.result(item,true);
             cb();
           });
@@ -3343,9 +3343,9 @@ zs4.type = {
       this._.transformInternal(req);
 
       var starttime = Date.now();
-      if (zs4.is.object(req.scope)){
-        console.log('in scope /' + req.scope._.path + ' (at '+this._.path+')');
-      }
+      //if (zs4.is.object(req.scope)){
+      //  console.log('in scope /' + req.scope._.path + ' (at '+this._.path+')');
+      //}
 
       if (zs4.is.object(req.input)&&zs4.is.object(req.input.getHTML)){
         this._.print('getHTML() '+zs4.json.stringify(input),req);
@@ -3388,8 +3388,6 @@ zs4.type = {
 
         if (req.input==null||req.input[n]==null){
           if (req.getall && !this._.flags.get.nogetall()){
-            //if (THIS._.flags.get.scope()){this.zs4.head.stat.since.getall._.captureStat(1);}
-            //zs4.stat.feed(req,THIS,{getall:1,});
             parallel.call(THIS[n],THIS[n]._.transform,req.create({input:null,parent:this,}));
           }
         }
@@ -3401,12 +3399,12 @@ zs4.type = {
       parallel.run(function(){
         var now = Date.now();
         if (THIS._.flags.get.scope()){
-          THIS.zs4.head.stat.item.transform._.stat.accumulate(1,(now-starttime));
+          req.stat(THIS,{transform:1,},now-starttime);
         }
         else if (zs4.is.object(req.scope)){
-          req.scope.zs4.head.stat.item.transitem._.stat.accumulate(1,(now-starttime));
+          req.stat(THIS,{transitem:1,},now-starttime);
         }
-        zs4.stat.feed(req,THIS,{read:1,});
+        req.stat(THIS,{read:1,},now-starttime);
         THIS._.get(req);
         cb();
       });
@@ -3728,8 +3726,6 @@ zs4.type = {
       this._.get = (function(req){
         var get = this._.getInitialize(req);
         if (get == null) return null;
-
-        zs4.stat.feed(req,this,{read:1,});
 
         req.setScope(this.value);
         this.value._.get(req);
@@ -4203,6 +4199,7 @@ zs4.stat = {
     zs4.stat.createItem(BASIC,'transitem');
     zs4.stat.createItem(BASIC,'htmlserved');
     zs4.stat.createItem(BASIC,'emailsent');
+    zs4.stat.createItem(BASIC,'error');
   },
   updateUser:function(req,cb){
     if (!zs4.is.string(req.request.token)
@@ -4225,34 +4222,6 @@ zs4.stat = {
       cb(); return;
     },true);
   },
-  feed:function(req,item,data){
-    //if (!item._.flags.get.scope())return;
-
-    var u = req.getUserPath();
-    var p = item._.path;
-    //var cb = function(){};
-
-    var nu = new Object({
-      p:p,
-      d:data,
-      u:u,
-    })
-    //console.log(nu);
-
-    var a = req.request.stat;
-    for (var i = 0 ; i < a.length; i++){
-      if (a[i].p==nu.p && a[i].u==nu.u){
-        for (var n in nu.d){
-          if (n=='u'||n=='p')continue;
-          if (a[i].d.hasOwnProperty(n)){a[i].d[n]+=nu.d[n];}
-          else a[i].d[n] = nu.d[n];
-          return;
-        }
-      }
-    }
-    a.push(nu);
-  },
-
 };
 
 zs4.request = function(o){
@@ -4287,11 +4256,9 @@ zs4.request = function(o){
 
   if (!zs4.is.object(this.request))this.request = new Object();
 
-  if (!zs4.is.object(this.request.callback))
-    this.request.callback = new Object();
-
-    if (!zs4.is.object(this.request.get))this.request.get = new Object();
-    if (!zs4.is.object(this.request.stat))this.request.stat = new Array();
+  if (!zs4.is.object(this.request.callback))this.request.callback = new Object();
+  if (!zs4.is.object(this.request.get))this.request.get = new Object();
+  if (!zs4.is.object(this.request.stat))this.request.stat = new Array();
 
   this.flags = new zs4.util.flags();
   this.flags.value = 0;
@@ -4393,7 +4360,9 @@ zs4.request = function(o){
     }
     return r;
   };
-  this.error = function(o,error){
+  this.error = function(o,error,starttime){
+    if (starttime==null)starttime = Date.now();
+
     var r = this.resolvePath(o,this.request.callback);
     if (r==null){
       console.log(BADPATH);
@@ -4412,6 +4381,9 @@ zs4.request = function(o){
       r.error.data = error;
     }
     o._.print(o._.path + '.error() scope.flags:'+this.flags.getString() +' error:' + JSON.stringify(this.request.callback))
+    if (zs4.is.type(this.scope)){
+      this.scope.zs4.head.stat.item.error._.stat.accumulate(1,(Date.now()-starttime));
+    }
     return r;
   };
   this.result = function(o,result){
@@ -4445,6 +4417,40 @@ zs4.request = function(o){
     if (!zs4.is.object(get._)) get._ = new Object();
     return get;
   }
+  this.stat = function(item,data,time){
+    var a = this.request.stat;
+    if (zs4.is.type(this.scope)&&zs4.is.type(item)){
+      for (var name in data){
+        if (zs4.is.type(this.scope.zs4.head.stat.item[name])){
+          //console.log('found stat \"'+name+'\" for '+item._.path);
+          this.scope.zs4.head.stat.item[name]._.stat.accumulate(data[name],time);
+        }
+      }
+
+      var u = THIS.getUserPath();
+      var p = THIS.requestObject._.path;
+
+      var nu = new Object({
+        p:p,
+        d:data,
+        u:u,
+      })
+      //console.log(nu);
+
+      var a = THIS.request.stat;
+      for (var i = 0 ; i < a.length; i++){
+        if (a[i].p==nu.p && a[i].u==nu.u){
+          for (var n in nu.d){
+            if (n=='u'||n=='p')continue;
+            if (a[i].d.hasOwnProperty(n)){a[i].d[n]+=nu.d[n];}
+            else a[i].d[n] = nu.d[n];
+            return;
+          }
+        }
+      }
+      a.push(nu);
+    };
+  };
 
   this.resolveInputPath = function(p){
 
