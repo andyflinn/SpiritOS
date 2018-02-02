@@ -361,5 +361,6 @@ mongodb.create = function(input){
 
 
   }).bind(MONGODB);
+
   zs4.boot.call(MONGODB,MONGODB.connect,MONGODB);
 }

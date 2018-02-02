@@ -764,9 +764,10 @@ zs4.util = {
     this.addFlag('authgetuser',0x10000000);
     this.addFlag('authsetuser',0x20000000);
     this.addFlag('nogetall',0x40000000);
-    this.addFlag('bits',0x80000000);
+    this.addFlag('priced',0x80000000);
 
-    this.addFlag('scopestats',0x100000000);
+    //this.addFlag('scopestats',0x100000000);
+    //this.addFlag('priced',0x200000000);
 
     //combo flags
     this.addFlag('authuser',this.authgetuser|this.authsetuser);
@@ -817,7 +818,10 @@ zs4.util = {
       if (int & this.authgetuser) addFlag('authgetuser');
       if (int & this.authsetuser) addFlag('authsetuser');
       if (int & this.nogetall) addFlag('nogetall');
-      if (int & this.bits) addFlag('bits');
+      if (int & this.priced) addFlag('priced');
+
+      //if (int & this.scopestats) addFlag('scopestats');
+      //if (int & this.priced) addFlag('priced');
 
 
       return ret;
@@ -929,6 +933,7 @@ zs4.type = {
     this._ = new Object();
     this._.path = '';
     this._.name = input.name;
+    this._.price = new Array();
 
     this._.flags = new zs4.util.flags();
     if (zs4.is.string(input.flags))this._.flags.setString(input.flags);
@@ -1182,10 +1187,13 @@ zs4.type = {
 
       if (this._.typename=='enum'&&zs4.is.array(this._.enum)&&this._.enum.length>0)get._.enum = this._.enum;
 
-      if (zs4.is.type(this._.inscope)&&this._.inscope._.flags.get.scope())
+      if (zs4.is.type(this._.inscope)&&this._.inscope._.flags.get.scope()){
         get._.inscope = this._.inscope._.path;
+      }
 
       if (this._.flags.get.noprune())req.flags.set.prune(false);
+      if (this._.price.length>0)req.flags.set.priced(true);
+      else req.flags.set.priced(false);
 
       get._.flags = req.flags.value;
 
@@ -1204,6 +1212,7 @@ zs4.type = {
       if (this._.flags.get.quickupdate())get._.flags |= req.flags.quickupdate;
       if (this._.flags.get.nosort())get._.flags |= req.flags.nosort;
       if (this._.flags.get.textsearch())get._.flags |= req.flags.textsearch;
+      if (this._.flags.get.priced())get._.flags |= req.flags.priced;
 
       if (!req.flags.get.authset()
       ||  this._.flags.get.noset()
@@ -1212,7 +1221,21 @@ zs4.type = {
         get._.flags &= (~(req.flags.api));
       }
 
+      if (this._.price.length>0){
+        get._.flags |= req.flags.priced;
+        console.log('PRICED: '+this._.flags.getString(get._.flags));
+      }
+      else {
+        get._.flags &= (~(req.flags.priced));
+      }
+
       this._.print('getinit: \''+req.flags.getString(get._.flags)+'\'',req);
+
+      if (this._.path == 'zs4.email.message'){
+        console.log('zs4.email.message._.price.length='+this._.price.length);
+        console.log('PRICES!!:' + this._.flags.getString());
+        //console.log('get PRICED: '+'\''+get._.flags.getString(get._.flags)+'\'')
+      }
 
       return get;
 
@@ -3542,7 +3565,7 @@ zs4.type = {
             //for (var i=0;i<ip.length;i++)if (i>(sp.length+1))
             if (scope._.path.length>0)
               val = val.substr(scope._.path.length+1,val.length-scope._.path.length-1);
-            response.push(new Object({item:item[n],label:item[n]._.typename,value:val}));
+            response.push(new Object({item:item[n],label:val,value:val}));
           }
 
           if (item[n]._.type == Object){
@@ -4222,6 +4245,71 @@ zs4.stat = {
       cb(); return;
     },true);
   },
+  boot:function(input,cb){
+    console.log('zs4.stat.boot() is active');
+    //if (input==zs4.THIS)console.log('input: zs4.THIS');
+
+    var q = new Object({zs4:{type:{price:{method:{
+      query:{
+        search:'',
+        sort:{
+          item:'zs4.head.updated',
+          descend:true,
+        },
+        select:{
+          sc:'all',
+          a:{
+            sc:'item',
+            item:'zs4.head.owner',
+            opcode:'eq',
+            const:'',
+          },
+        }
+      }
+    }}}}});
+
+    var req = new zs4.request({input:q});
+    req.request.node = true;
+
+    zs4.THIS._.transform(req,function(ret){
+      var array = req.request.get.zs4.type.price.array;
+      if (zs4.is.object(array)){
+        //console.log('query called back',array);
+        for (var n in array){
+          var item = array[n];
+          if (!zs4.is.type(item))continue;
+
+          var scope;
+          if (item.scope._.value=='')scope = zs4.THIS;
+          else {
+            scope = zs4.THIS._.resolvePath(item.scope._.value);
+          }
+          if (!zs4.is.type(scope)||!scope._.flags.get.scope()){
+            console.log('no scope in price: '+item._.path);
+            continue;
+          }
+
+          var price = new zs4.node.require.price.create();
+          price._.load(item);
+          price._.name = n;
+          zs4.THIS._.elementConnect(zs4.THIS.zs4.type.price.array,price);
+
+          var scopeitem = scope._.resolvePath(item.item._.value);
+          if (item.item._.value!='' && zs4.is.type(scopeitem)){
+            scopeitem._.price.push(price);
+            scopeitem._.flags.set.priced(true);
+            console.log('price \"'+price._.path+'\" attached to '+item.item._.value);
+          }
+          else {
+            scope._.price.push(price);
+            scope._.flags.set.priced(true);
+            console.log('price \"'+price._.path+'\" attached to scope'+scope.zs4.head.title._.value)
+          }
+        }
+      }
+      cb();
+    });
+  },
 };
 
 zs4.request = function(o){
@@ -4297,6 +4385,9 @@ zs4.request = function(o){
 
     THIS.flags.set.am(am);
     THIS.flags.set.own(own);
+
+    if (o._.price.length>0)THIS.flags.set.priced(true);
+    else THIS.flags.set.priced(true);
 
     if (thisIsScope && o.zs4.head.bits._.bits.public.get()){
       THIS.flags.set.authget(true);
@@ -4840,6 +4931,8 @@ if (zs4.is.node()){
       var fnam = '../plugin/'+rdr[i]+'/'+rdr[i]+'.js';
       zs4.plugin.list[rdr[i]]=require(fnam);
     }
+
+    zs4.boot.call(zs4.THIS,zs4.stat.boot,zs4.THIS);
 
     // Run express only once all components/plugins are loaded and ready
     zs4.node.require.express = require('../express');

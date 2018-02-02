@@ -13,7 +13,7 @@ price.create = function(){
 
   zs4.type.scope.call(this);
   PRICE._.create = price.create;
-  PRICE._.flags.set.scopestats(true);
+  //PRICE._.flags.set.scopestats(true);
   PRICE.zs4.head.typename._.value = 'price';
   PRICE.zs4.head.typename._.default = 'price';
   PRICE._.name = 'price';

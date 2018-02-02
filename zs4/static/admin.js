@@ -862,7 +862,12 @@ zs4.admin.util = {
 				}
 			}
 			else {
-				o._.html.icon.off=o._.name;
+				if (o._.flags.get.local()){
+					o._.html.icon.off=o._.typename;
+				}
+				else {
+					o._.html.icon.off=o._.name;
+				}
 				o._.html.icon.on='minus';
 			}
 		}
@@ -1009,6 +1014,7 @@ zs4.admin.util = {
 				if (o._.flags.get.am())add+=' am';else rem+=' am';
 				if (o._.flags.get.own())add+=' own';else rem+=' own';
 				if (o._.flags.get.notrans())add+=' notrans';else rem+=' notrans';
+				if (o._.flags.get.priced())add+=' priced';else rem+=' priced';
 
 				if (window.innerWidth>window.innerHeight){add+=' landscape';rem+=' portrait'}
 				else {add+=' portrait';rem+=' landscape'}
@@ -1112,6 +1118,7 @@ zs4.admin.util = {
 			o._.html.e.appendChild(o._.html.head);
 
 			o._.html.toggle = document.createElement('zs4-object-toggle');
+			if (o._.flags.get.priced())zs4.admin.util.addClass('priced');
 			o._.html.head.appendChild(o._.html.toggle);
 			zs4.admin.util.setIcon(o._.html.toggle,'minus');
 			zs4.admin.util.addClass(o._.html.toggle,o._.typename);

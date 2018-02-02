@@ -116,6 +116,10 @@
   color:darkred;
 }
 
+[class^="icon-"].zs4-priced:hover, [class*=" icon-"].zs4-priced:hover {
+  background-color: yellow;
+}
+
 option.zs4-placeholder {
   font-style: italic;
   color:gray;
@@ -267,6 +271,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-prev:before{content:url(/gfx/icons/prev.svg);}
 .icon-price:before{content:url(/gfx/icons/coins.svg);}
 .icon-private:before{content:url(/gfx/icons/private.svg);}
+.icon-property:before{content:url(/gfx/icons/info.svg);}
 .icon-public:before{content:url(/gfx/icons/public.svg);}
 .icon-query:before{content:url(/gfx/icons/search.svg);}
 .icon-readdir:before{content:url(/gfx/icons/readdir.svg);}
@@ -279,6 +284,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-search:before{content:url(/gfx/icons/search.svg);}
 .icon-select:before{content:'\02611';font-weight: bolder;}
+.icon-selectitem:before{content:'\02611';font-weight: bolder;}
 .icon-since:before{content:url(/gfx/icons/date.svg);}
 .icon-smtp:before{content:url(/gfx/icons/smtp.svg);}
 .icon-sort:before{content:url(/gfx/icons/sort.svg);}
