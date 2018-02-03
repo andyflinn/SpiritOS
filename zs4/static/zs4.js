@@ -686,7 +686,6 @@ zs4.sequence = function(){
 
 };
 
-
 zs4.location = {
   get:function(){
     var ret = zs4.THIS;
@@ -895,6 +894,7 @@ zs4.util = {
 };
 
 zs4.scope = {
+  /*
   doctype:function(){
     var APP = this;
     zs4.type.scope.call(APP);
@@ -916,12 +916,11 @@ zs4.scope = {
     DOCUMENT._.name = 'document';
 
   },
+  */
 };
 
 zs4.folder = new Object();
 zs4.array = new Object();
-
-//if (zs4.is.node())
 
 zs4.type = {
 
