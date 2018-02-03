@@ -59,26 +59,19 @@ zs4.commandLine = function(){
   });
 };
 
-zs4.plugin = new Object({
-  registerStatic:function(dir){
-    zs4.plugin.static.push(dir);
-  },
-  registerStyle:function(path){
-    zs4.plugin.style.push(path);
-  },
-  registerScript:function(path){
-    zs4.plugin.script.push(path);
-  },
-  registerApp:function(scope,script){
-    zs4.plugin.registerScript(script);
-    zs4.plugin.script.push(path);
-  },
-  list:new Object(),
-  static:new Array(),
-  style:new Array(),
-  script:new Array(),
-  app:new Object(),
-});
+zs4.plugin.registerStatic=function(dir){
+  zs4.plugin.static.push(dir);
+};
+zs4.plugin.registerStyle=function(path){
+  zs4.plugin.style.push(path);
+};
+zs4.plugin.registerScript=function(path){
+  zs4.plugin.script.push(path);
+};
+zs4.plugin.registerApp=function(scope,script){
+  zs4.plugin.registerScript(script);
+  zs4.plugin.script.push(path);
+};
 
 zs4.node = new Object({require:{}});
 

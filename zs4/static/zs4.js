@@ -1412,75 +1412,6 @@ zs4.type = {
       }
     }).bind(this);
 
-    this._.getHTML = (function(req){
-      console.log('getHTML('+this._.path+')');
-      var title = this._.path;
-      var description = '';
-      var keywords = '';
-      if (title=='')title = 'zs4 web app';
-      if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
-        console.log('gettin scope.head html...');
-        // title
-        if (this.zs4.head.title._.value!=''){
-          title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
-        }
-
-        // description
-        if (this.zs4.head.title._.description!=''){
-          description = zs4.string.strip.chars(this.zs4.head.description._.value,zs4.const.NOATTRCHARS);
-        }
-
-        // keywords
-        var arr = this._.getKeyWordArray();
-        zs4.string.array.sort.length.descend(arr);
-        var o = {k:''};
-        for (var i = 0; i < arr.length;i++){zs4.string.addKeyWord(o,'k',arr[i]);}
-        keywords = o.k;
-
-      }
-      var html = '<!DOCTYPE html>\n';
-      html += '<html>\n';
-        html += ' <head>\n';
-          html += '<meta charset="UTF-8">\n';
-          html += '  <title>'+title+'</title>\n';
-          if (description != ''){
-            html+= '  <meta name="description" content="'+description+'">\n';
-          }
-          if (keywords != ''){
-            html+= '  <meta name="keywords" content="'+keywords+'">\n';
-          }
-          if (req.request.token&&req.request.payload){
-            html += '  <script>window.token=\''+req.request.token+'\'</script>\n';
-          }
-          html += '  <script src="/bowser.min.js"></script>\n';
-          html += '  <script src="/zs4.js"></script>\n';
-          html += '  <script src="/um.js"></script>\n';
-          html += '  <script>zs4.location.path=\''+this._.path+'\';;</script>\n'
-          for (var i = 0 ; i < zs4.plugin.script.length ; i++){
-            html += '  <script src="/' + zs4.plugin.script[i] + '"></script>\n';
-          }
-
-          for (var i = 0 ; i < zs4.plugin.style.length ; i++){
-            html += '  <link rel="stylesheet" href="/' + zs4.plugin.style[i] + '">\n';
-          }
-
-
-        html += ' </head>\n';
-        if (true){
-          html += ' <body onload="zs4.admin()">\n';
-          html += ' </body>\n';
-        }
-      html += '</html>\n';
-      req.request.html = html;
-      this._.print('HTML RESPONSE FROM '+this._.path,req);
-
-      if (this._.flags.get.scope()){
-        //req.stat(this,{bytesserved:html.length,},0)
-      }
-      //console.log(html);
-      return(html);
-    }).bind(this);
-
     this._.print = (function(m,req){
 
         if (!zs4.string.array.is.element(zs4.console.arr,this._.path))return;
@@ -1734,6 +1665,74 @@ zs4.type = {
     }).bind(this);
 
     if (zs4.is.node()){
+      this._.getHTML = (function(req){
+        console.log('getHTML('+this._.path+')');
+        var title = this._.path;
+        var description = '';
+        var keywords = '';
+        if (title=='')title = 'zs4 web app';
+        if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
+          console.log('gettin scope.head html...');
+          // title
+          if (this.zs4.head.title._.value!=''){
+            title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
+          }
+
+          // description
+          if (this.zs4.head.title._.description!=''){
+            description = zs4.string.strip.chars(this.zs4.head.description._.value,zs4.const.NOATTRCHARS);
+          }
+
+          // keywords
+          var arr = this._.getKeyWordArray();
+          zs4.string.array.sort.length.descend(arr);
+          var o = {k:''};
+          for (var i = 0; i < arr.length;i++){zs4.string.addKeyWord(o,'k',arr[i]);}
+          keywords = o.k;
+
+        }
+        var html = '<!DOCTYPE html>\n';
+        html += '<html>\n';
+          html += ' <head>\n';
+            html += '<meta charset="UTF-8">\n';
+            html += '  <title>'+title+'</title>\n';
+            if (description != ''){
+              html+= '  <meta name="description" content="'+description+'">\n';
+            }
+            if (keywords != ''){
+              html+= '  <meta name="keywords" content="'+keywords+'">\n';
+            }
+            if (req.request.token&&req.request.payload){
+              html += '  <script>window.token=\''+req.request.token+'\'</script>\n';
+            }
+            html += '  <script src="/bowser.min.js"></script>\n';
+            html += '  <script src="/zs4.js"></script>\n';
+            html += '  <script src="/um.js"></script>\n';
+            html += '  <script>zs4.location.path=\''+this._.path+'\';;</script>\n'
+            for (var i = 0 ; i < zs4.plugin.script.length ; i++){
+              html += '  <script src="/' + zs4.plugin.script[i] + '"></script>\n';
+            }
+
+            for (var i = 0 ; i < zs4.plugin.style.length ; i++){
+              html += '  <link rel="stylesheet" href="/' + zs4.plugin.style[i] + '">\n';
+            }
+
+
+          html += ' </head>\n';
+          if (true){
+            html += ' <body onload="zs4.admin()">\n';
+            html += ' </body>\n';
+          }
+        html += '</html>\n';
+        req.request.html = html;
+        this._.print('HTML RESPONSE FROM '+this._.path,req);
+
+        if (this._.flags.get.scope()){
+          //req.stat(this,{bytesserved:html.length,},0)
+        }
+        //console.log(html);
+        return(html);
+      }).bind(this);
       this._.call = (function(req,input,cb){
         req.call({path:this._.path,input:input},cb);
       }).bind(this);
@@ -4821,6 +4820,14 @@ zs4.request = function(o){
 
 zs4.THIS = new zs4.type.scope();
 zs4.THIS._.flags.set.authgetpublic(true);
+
+zs4.plugin = new Object({
+  list:new Object(),
+  static:new Array(),
+  style:new Array(),
+  script:new Array(),
+  app:new Object(),
+});
 
 if (zs4.is.window()){
 
