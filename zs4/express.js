@@ -131,8 +131,6 @@ express.postFunction = function (req, res) {
       var r = zs4req.getReply();
       zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
       zs4.stat.updateUser(zs4req,function(ret){
-        console.log('back in town');
-
         express.THIS._.print('callback: '+JSON.stringify(r.request));
         express.setCookie(res,zs4req);
         res.send(r);
