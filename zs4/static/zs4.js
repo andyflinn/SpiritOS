@@ -42,6 +42,8 @@ zs4.const = {
   EMAIL:{
     MINLENGTH:5,
     MAXLENGTH:64,
+    ROOT:'root@zs4.zs4',
+    PUBLIC:'public@zs4.zs4',
   },
   MS:{
     SECOND:1000,
@@ -919,7 +921,7 @@ zs4.scope = {
 zs4.folder = new Object();
 zs4.array = new Object();
 
-if (zs4.is.node())zs4.node = new Object({require:{}});
+//if (zs4.is.node())
 
 zs4.type = {
 
@@ -4842,6 +4844,7 @@ zs4.plugin = new Object({
 });
 
 if (zs4.is.node()){
+  zs4.node = new Object({require:{}});
 
   const ZS4 = 'zs4';
   const DOT_ZS4 = '.'+ZS4;
