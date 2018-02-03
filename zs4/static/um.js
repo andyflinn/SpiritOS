@@ -39,7 +39,19 @@ zs4.um = {
     }
     return ret;
   },
-
+  _array:function(){
+    var a = new Array();
+    for (var n in zs4.um){
+      if (zs4.is.object(zs4.um[n])){
+        for (var u in zs4.um[n]){
+          if (zs4.is.number(zs4.um[n][u])){
+            a.push(n+'.'+u)
+          }
+        }
+      }
+    }
+    return a;
+  },
 },
 zs4.um.unit = {
   _convert:zs4.um._convert.linear,

@@ -710,6 +710,8 @@ zs4.admin.util = {
 			},
 			setScope:function(s){
 				select.zs4.scope = s;
+				if (zs4.is.object(s))console.log('setScope() for item select... '+ s.zs4.head.typename._.value);
+				else console.log('setScope() for item select... '+ s);
 				select.zs4.refreshOptions();
 			},
 			showText:function(){
@@ -737,8 +739,6 @@ zs4.admin.util = {
 					return a.value.localeCompare(b.value);
 				});
 				select.zs4.options = a;
-				console.log('refreshing scope item dropdown');
-				console.log(a);
 
 				var found = false;
 				for (var i = 0 ; i < a.length; i++){
@@ -767,8 +767,8 @@ zs4.admin.util = {
 					select.zs4.showSelect();
 				}
 				else {
-					select.zs4.showText();
-					select.zs4.hideSelect();
+					select.zs4.hideText();
+					select.zs4.showSelect();
 				}
 			},
 		});
@@ -2653,7 +2653,7 @@ zs4.admin.util = {
 										var s = top.app.searchdialog.zs4.getScope();
 										if (zs4.is.object(s)){
 											zs4.admin.util.setIcon(top.app.scopeitemicon,s.zs4.head.typename._.value);
-											top.app.scopeitemselect.zs4.setScope();
+											top.app.scopeitemselect.zs4.setScope(s);
 										}
 									});
 
@@ -3336,6 +3336,51 @@ zs4.admin.type = {
 	type:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
+	um:function(po,o){
+    zs4.admin.util.unknown(po,o);
+    if (o._.html.input==null){
+
+      o._.html.input = document.createElement('select');
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.value = o._.value;
+      o._.html.e.appendChild(o._.html.input);
+			if (!o._.flags.get.noset()){
+				o._.html.input.onchange = function(){
+					if (o._.flags.get.local()){
+						o._.value = o._.html.input.value;
+						o._.html.refreshAll();
+						o._.print(o._.path + ' updated with '+o._.value);
+					}
+					else if (o._.flags.get.quickupdate()){
+						o._.html.quickupdate(o._.html.input.value);
+					}
+				};
+			}
+
+      o._.input = (function(){
+        if (o._.flags.get.noset())return null;
+        return this._.html.input.value;
+      }).bind(o);
+
+      o._.html.refreshOptions = function(o){
+				o._.html.input.innerHTML = '';
+				var a = zs4.um._array();
+
+        for (var i = 0 ; i < a.length ; i++){
+          var option = document.createElement('option');
+					option.text = a[i];
+					option.value = a[i];
+					if (a[i]==o._.value)option.selected = true;
+        	o._.html.input.appendChild(option);
+        }
+      }
+			o._.html.expanded = true;
+    }
+
+		o._.html.genericRefresh();
+		o._.html.refreshOptions(o);
+		o._.html.input.value = o._.value;
+  },
 	userscope:function(po,o){
 		zs4.admin.util.unknown(po,o);
     if (o._.html.input==null){

@@ -924,8 +924,6 @@ if (zs4.is.node())zs4.node = new Object({require:{}});
 zs4.type = {
 
   unknown:function(input){
-    //console.log('object()');
-    //debugger;
     if (input == null || !zs4.is.object(input) || !zs4.is.name(input.name)){
       return new zs4.error({text:'bad input',data:input});
     }
@@ -934,6 +932,8 @@ zs4.type = {
     this._.path = '';
     this._.name = input.name;
     this._.price = new Array();
+
+    //if (input.value != null)this._.value=input.value;
 
     this._.flags = new zs4.util.flags();
     if (zs4.is.string(input.flags))this._.flags.setString(input.flags);
@@ -1473,7 +1473,7 @@ zs4.type = {
       this._.print('HTML RESPONSE FROM '+this._.path,req);
 
       if (this._.flags.get.scope()){
-        this.zs4.head.stat.item.htmlserved._.stat.accumulate(html.length,0);
+        //req.stat(this,{bytesserved:html.length,},0)
       }
       //console.log(html);
       return(html);
@@ -4151,6 +4151,13 @@ zs4.type = {
     this._.typename = 'type';
 
   },
+  um:function(input){
+    zs4.type.string.call(this,input);
+    this._.minlength = 3;
+    this._.maxlength = 32;
+    this._.typename = 'um';
+    //this._.default = 'unit.one';
+  },
   userscope:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'userscope';
@@ -4185,19 +4192,39 @@ zs4.stat = {
 
     var ACC = parent[name];
     ACC._.property(new zs4.type.number({name:'value',flags:'authpublic noset',}));
+    ACC._.property(new zs4.type.number({name:'vmin',flags:'authpublic noset',}));
+    ACC._.property(new zs4.type.number({name:'vmax',flags:'authpublic noset',}));
     ACC._.property(new zs4.type.number({name:'count',flags:'authpublic noset',}));
     ACC._.property(new zs4.type.number({name:'time',flags:'authpublic noset',}));
+    ACC._.property(new zs4.type.number({name:'tmin',flags:'authpublic noset',}));
+    ACC._.property(new zs4.type.number({name:'tmax',flags:'authpublic noset',}));
 
     ACC._.stat = new Object({});
+    ACC._.stat.clear = (function(){
+      ACC.count._.value = ACC.value._.value = ACC.time._.value = ACC.tmax._.value = 0;
+      ACC.vmin._.value = ACC.tmin._.value = 999999999999;
+    }).bind(ACC);
     ACC._.stat.accumulate = (function(v,t){
       ACC.value._.value += v;
+      if (ACC.vmax._.value < v)ACC.vmax._.value = v;
+      if (ACC.vmin._.value > v)ACC.vmin._.value = v;
+
       ACC.time._.value += t;
+      if (ACC.tmax._.value < t)ACC.tmax._.value = t;
+      if (ACC.tmin._.value > t)ACC.tmin._.value = t;
+
       ACC.count._.value += 1;
     }).bind(ACC);
+
+    ACC._.stat.clear();
   },
-  createItem:function(parent,name){
+  createItem:function(parent,name,um){
     parent.item._.property(new zs4.type.object({name:name,flags:'noset authsetself'}));
     var ITEM = parent.item[name];
+
+    if (zs4.is.string(um)){
+      ITEM._.property(new zs4.type.um({name:'um',flags:'noset notrans nostore',default:um}));
+    }
 
     zs4.stat.createAccumulator(ITEM,'since');
     zs4.stat.createAccumulator(ITEM,'total');
@@ -4218,11 +4245,11 @@ zs4.stat = {
     BASIC._.property(new zs4.type.date({name:'dateto',flags:'noset authsetself'}));
     BASIC._.property(new zs4.type.object({name:'item',flags:'noset authsetself'}));
 
-    zs4.stat.createItem(BASIC,'transform');
-    zs4.stat.createItem(BASIC,'transitem');
-    zs4.stat.createItem(BASIC,'htmlserved');
-    zs4.stat.createItem(BASIC,'emailsent');
-    zs4.stat.createItem(BASIC,'error');
+    zs4.stat.createItem(BASIC,'transform','unit.one');
+    zs4.stat.createItem(BASIC,'transitem','unit.one');
+    zs4.stat.createItem(BASIC,'bytesserved','information.byte');
+    zs4.stat.createItem(BASIC,'emailsent','unit.one');
+    zs4.stat.createItem(BASIC,'error','unit.one');
   },
   updateUser:function(req,cb){
     if (!zs4.is.string(req.request.token)
@@ -4511,9 +4538,11 @@ zs4.request = function(o){
   this.stat = function(item,data,time){
     var a = this.request.stat;
     if (zs4.is.type(this.scope)&&zs4.is.type(item)){
+
       for (var name in data){
+        if (name=='bytesserved')console.log('REQUEST.stat('+this.scope.zs4.head.typename._.value+'), '+name)
         if (zs4.is.type(this.scope.zs4.head.stat.item[name])){
-          //console.log('found stat \"'+name+'\" for '+item._.path);
+          //console.log('REQUEST.stat('+this.scope.zs4.head.typename._.value+'), '+name)
           this.scope.zs4.head.stat.item[name]._.stat.accumulate(data[name],time);
         }
       }

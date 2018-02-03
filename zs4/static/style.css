@@ -153,7 +153,7 @@ input{
   margin-right: 0.25em;
 }
 input[type="number"]{
-  width:3em;
+  width:auto;
   height:1em;
 }
 input.zs4-noset{
@@ -217,6 +217,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-author:before{content:url(/gfx/icons/author.svg);}
 .icon-balance:before{content:url(/gfx/icons/coins.svg);}
 .icon-bye:before{content:url(/gfx/icons/bye.svg);}
+.icon-bytesserved:before{content:url(/gfx/icons/html.svg);}
 .icon-coin:before{content:url(/gfx/icons/coin.svg);}
 .icon-coins:before{content:url(/gfx/icons/coins.svg);}
 .icon-config:before{content:url(/gfx/icons/node.svg);}
@@ -243,7 +244,6 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-getone:before{content:'1';font-weight: bolder;color:darkgreen;}
 .icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-hi:before{content:'>)';font-weight: bolder;}
-.icon-htmlserved:before{content:url(/gfx/icons/html.svg);}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
 .icon-item:before{content:url(/gfx/icons/item.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
@@ -285,6 +285,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-search:before{content:url(/gfx/icons/search.svg);}
 .icon-select:before{content:'\02611';font-weight: bolder;}
 .icon-selectitem:before{content:'\02611';font-weight: bolder;}
+.icon-server:before{content:url(/gfx/icons/server.svg);}
 .icon-since:before{content:url(/gfx/icons/date.svg);}
 .icon-smtp:before{content:url(/gfx/icons/smtp.svg);}
 .icon-sort:before{content:url(/gfx/icons/sort.svg);}

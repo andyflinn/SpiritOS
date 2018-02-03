@@ -67,6 +67,7 @@ express.setCookie = function(res,zs4request){
 };
 
 express.getFunction = function (req, res) {
+  var starttime = Date.now();
   express.THIS._.print('express.app.get('+req.path+')')
   //console.log('GET REQUEST: '+req.path);
 
@@ -90,11 +91,17 @@ express.getFunction = function (req, res) {
       r = express.html(req,res);
       console.log('ZS4 FAILED TO PRODUCE HTML');
     }
-    res.write(r);
-    res.end();
+
+    console.log('SENDING');
+    zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
+    zs4.stat.updateUser(zs4req,function(ret){
+      res.write(r);
+      res.end();
+    });
   });
 };
 express.postFunction = function (req, res) {
+  var starttime = Date.now();
   //console.log('POST REQUEST: '+JSON.stringify(req.body));
   var zs4req = new zs4.request(req.body);
   zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
@@ -112,14 +119,20 @@ express.postFunction = function (req, res) {
       if (r == null || r.length == 0){
         r = express.html(req,res);
       }
-      res.write(r);
-      res.end();
+
+      zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
+      zs4.stat.updateUser(zs4req,function(ret){
+        res.write(r);
+        res.end();
+      });
+
     }
     else {
+      var r = zs4req.getReply();
+      zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
       zs4.stat.updateUser(zs4req,function(ret){
         console.log('back in town');
 
-        var r = zs4req.getReply();
         express.THIS._.print('callback: '+JSON.stringify(r.request));
         express.setCookie(res,zs4req);
         res.send(r);
