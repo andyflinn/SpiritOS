@@ -59,6 +59,27 @@ zs4.commandLine = function(){
   });
 };
 
+zs4.plugin = new Object({
+  registerStatic:function(dir){
+    zs4.plugin.static.push(dir);
+  },
+  registerStyle:function(path){
+    zs4.plugin.style.push(path);
+  },
+  registerScript:function(path){
+    zs4.plugin.script.push(path);
+  },
+  registerApp:function(scope,script){
+    zs4.plugin.registerScript(script);
+    zs4.plugin.script.push(path);
+  },
+  list:new Object(),
+  static:new Array(),
+  style:new Array(),
+  script:new Array(),
+  app:new Object(),
+});
+
 zs4.node = new Object({require:{}});
 
 const ZS4 = 'zs4';

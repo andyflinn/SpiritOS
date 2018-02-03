@@ -4822,27 +4822,6 @@ zs4.request = function(o){
 zs4.THIS = new zs4.type.scope();
 zs4.THIS._.flags.set.authgetpublic(true);
 
-zs4.plugin = new Object({
-  registerStatic:function(dir){
-    zs4.plugin.static.push(dir);
-  },
-  registerStyle:function(path){
-    zs4.plugin.style.push(path);
-  },
-  registerScript:function(path){
-    zs4.plugin.script.push(path);
-  },
-  registerApp:function(scope,script){
-    zs4.plugin.registerScript(script);
-    zs4.plugin.script.push(path);
-  },
-  list:new Object(),
-  static:new Array(),
-  style:new Array(),
-  script:new Array(),
-  app:new Object(),
-});
-
 if (zs4.is.window()){
 
   zs4.window ={
