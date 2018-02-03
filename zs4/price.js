@@ -4,18 +4,18 @@ var zs4 = require('./static/zs4');
 
 var price = exports;
 
-var STAT = new zs4.stat.create('stat');
-
 price.schema = function(parent){
   parent._.property(new price.create());
 };
 
 price.create = function(){
-  var PRICE = this;
 
   zs4.type.scope.call(this);
+
+  var PRICE = this;
+  var STAT = this.zs4.head.stat;
   PRICE._.create = price.create;
-  //PRICE._.flags.set.scopestats(true);
+
   PRICE.zs4.head.typename._.value = 'price';
   PRICE.zs4.head.typename._.default = 'price';
   PRICE._.name = 'price';
