@@ -985,6 +985,17 @@ zs4.type = {
       this._.cbarr = new Array();
     }
 
+    this._.onchange_call = (function(){
+      if (!zs4.is.array(this._.onchange_arr))return;
+      for (var i = 0; i < this._.onchange_arr.length; i++){
+        this._.onchange_arr[i](this);
+      }
+    }).bind(this);
+    this._.onchange = (function(f){
+      if (!zs4.is.array(this._.onchange_arr))this._.onchange_arr = new Array();
+      this._.onchange_arr.push(f);
+    }).bind(this);
+
     this._.localRefresh = (function(){
       for (var n in this)if (zs4.is.type(this[n])){
         this[n]._.localRefresh();
@@ -1335,14 +1346,10 @@ zs4.type = {
       }
       else {
         this._.value = o._.value;
-        if (zs4.is.function(o._.response)){
-          //console.log('response() function found for '+o._.path);
-          o._.response(o._.value);
-        }
+
+        this._.onchange_call();
       }
-      //else {
-      //  console.log('value without parent.')
-      //}
+
     }).bind(this);
 
     this._.dcb = (function(req,input){

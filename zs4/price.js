@@ -33,7 +33,7 @@ price.create = function(){
     PRICE.server._.property(new zs4.type.object({name:n,flags:'authsetself quickupdate',}));
     var sp = PRICE.server[n];
     sp._.property(new zs4.type.boolean({name:'active',flags:'authsetself quickupdate',}));
-    sp._.property(new zs4.type.um({name:'um',flags:'noset nostore authsetself',default:si.um._.value,}));
+    sp._.property(new zs4.type.um({name:'um',flags:'noset nostore',default:si.um._.value,}));
     sp._.property(new zs4.type.number({name:'coins',flags:'authsetself quickupdate',}));
   }
 

@@ -8,53 +8,171 @@ if (isNode()) zs4 = require('./zs4');
 if (isWindow()) zs4 = window.zs4;
 
 zs4.um = {
-  _convert:{
-    linear:function(quantity,from,to){
-      if (from==null || to == null
-      ||!this.hasOwnProperty(from)
-      || from.length < 1
-      || from.charAt(0)=='_'
-      ||!this.hasOwnProperty(to)
-      || to.length < 1
-      || to.charAt(0)=='_'
-      )return zs4.create.error('bad args');
-
-      return (quantity * this[from] / this[to]);
-    }
+  _checkconvertargs:function(arr,quantity,from,to){
+    if (from==null || to == null
+    ||!arr.hasOwnProperty(from)
+    || from.length < 1
+    || from.charAt(0)=='_'
+    ||!arr.hasOwnProperty(to)
+    || to.length < 1
+    || to.charAt(0)=='_'
+    )return false;
+    return true;
   },
-  _quantifyable(arg){
-    if (arg == null || !zs4.is.name(arg)){
-      var ret = [];
-      for (var n in zs4.um){if (zs4.is.name(n))ret.push(n);}
-      return ret;
-    }
-
-    var ret = [];
-    for (var n in zs4.um)if (n==arg){
-      //console.log('check '+n);
-      for (var u in zs4.um[n]){
-        //console.log('um '+u);
-        if(zs4.is.name(u))ret.push(u);
-      }
-    }
-    return ret;
+  _convert:{
+    linear:function(arr,quantity,from,to){
+      if (!zs4.um._checkconvertargs(arr,quantity,from,to)) return zs4.create.error('bad args');
+      return (quantity * arr[from] / arr[to]);
+    },
+    squared:function(arr,quantity,from,to){
+      from = from.substr(0,from.length-1);
+      to = to.substr(0,to.length-1);
+      if (!zs4.um._checkconvertargs(arr,quantity,from,to)) return zs4.create.error('bad args');
+      return (quantity * ((arr[from] * arr[from])) / (arr[to] * arr[to]));
+    },
+    cubed:function(arr,quantity,from,to){
+      from = from.substr(0,from.length-1);
+      to = to.substr(0,to.length-1);
+      if (!zs4.um._checkconvertargs(arr,quantity,from,to)) return zs4.create.error('bad args');
+      return (quantity * ((arr[from] * arr[from] * arr[from])) / (arr[to] * arr[to] * arr[to]));
+    },
   },
   _array:function(){
+    if (zs4.is.array(zs4.um._chachearray))return zs4.um._chachearray;
     var a = new Array();
     for (var n in zs4.um){
-      if (zs4.is.object(zs4.um[n])){
-        for (var u in zs4.um[n]){
-          if (zs4.is.number(zs4.um[n][u])){
-            a.push(n+'.'+u)
+      var t = zs4.um[n];
+      if (zs4.is.object(t)&&zs4.is.function(t._array)){
+        var ta = t._array();
+        for (var i = 0; i<ta.length; i++) a.push(ta[i]);
+      }
+    }
+    zs4.um._chachearray = a;
+    return a;
+  },
+  _arr:{
+    plain:function(name,append){
+      var a = new Array();
+      var o = zs4.um[name];
+
+      if (zs4.is.string(append)){
+        for (var n in o){
+          if (zs4.is.number(o[n])){
+            a.push(name+append+':'+n+append);
           }
         }
       }
+      else {
+        for (var n in o){
+          if (zs4.is.number(o[n])){
+            a.push(name+':'+n)
+          }
+        }
+      }
+      return a;
+    },
+  },
+  _po:function(c){
+    var r = new Object({
+      a:'',
+      b:'',
+    });
+    c = c.substr(1,(c.length-2))
+    var o = 0; var x = false;
+    for (var i = 0 ; i < c.length; i++){
+      if (c.charAt(i)=='(')o++;
+      else if (c.charAt(i)==')')o--;
+
+      if (o==0 && (c.charAt(i)=='/'||c.charAt(i)=='*')){x=true;continue;}
+      if (x)r.b+=c.charAt(i);
+      else r.a+=c.charAt(i);
     }
-    return a;
+    return r;
+  },
+  _pu:function(u){
+    var r = '';
+    var x = false;
+    for (var i = 0 ; i < u.length; i++){
+      if (u.charAt(i)==':'){x=true;continue;}
+      if (!x)continue;
+      r += u.charAt(i);
+    }
+
+    return r;
+  },
+  _product:function(name,factor1,factor2){
+    if (zs4.um.hasOwnProperty(name)
+    ||!zs4.um.hasOwnProperty(factor1)
+    ||!zs4.um.hasOwnProperty(factor2)
+    ) return null;
+    var product = zs4.um[name] = new Object();
+    product._array = function(){
+      var a = zs4.um[factor1]._array();
+      var b = zs4.um[factor2]._array();
+      var r = new Array();
+
+      for (var ia = 0; ia < a.length; ia++){
+        for (var ib = 0; ib < b.length; ib++){
+          r.push((name+':('+a[ia]+'*'+b[ib]+')'));
+        }
+      }
+      return r;
+    };
+    product._convert = function(q,f,t){
+      if (!zs4.string.startsWith(f,name+':') || !zs4.string.startsWith(t,name+':')) return null;
+      f = f.substr((name.length+1),((f.length-name.length)-1));
+      t = t.substr((name.length+1),((t.length-name.length)-1));
+
+      f = zs4.um._po(f); f.a = zs4.um._pu(f.a); f.b = zs4.um._pu(f.b);
+      t = zs4.um._po(t); t.a = zs4.um._pu(t.a); t.b = zs4.um._pu(t.b);
+
+      q = zs4.um[factor1]._convert(q,f.a,t.a);
+      q = zs4.um[factor2]._convert(q,f.b,t.b);
+
+      return q;
+    };
+
+    return product;
+  },
+  _ratio:function(name,dividend,divisor){
+    if (zs4.um.hasOwnProperty(name)
+    ||!zs4.um.hasOwnProperty(dividend)
+    ||!zs4.um.hasOwnProperty(divisor)
+    ) return null;
+    var ratio = zs4.um[name] = new Object();
+    ratio._array = function(){
+      var a = zs4.um[dividend]._array();
+      var b = zs4.um[divisor]._array();
+      var r = new Array();
+
+      for (var ia = 0; ia < a.length; ia++){
+        for (var ib = 0; ib < b.length; ib++){
+          r.push((name+':('+a[ia]+'/'+b[ib]+')'));
+        }
+      }
+      return r;
+    };
+    ratio._convert = function(q,f,t){
+      if (!zs4.string.startsWith(f,name+':') || !zs4.string.startsWith(t,name+':')) return null;
+      f = f.substr((name.length+1),((f.length-name.length)-1));
+      t = t.substr((name.length+1),((t.length-name.length)-1));
+
+      f = zs4.um._po(f); f.a = zs4.um._pu(f.a); f.b = zs4.um._pu(f.b);
+      t = zs4.um._po(t); t.a = zs4.um._pu(t.a); t.b = zs4.um._pu(t.b);
+
+      q = zs4.um[dividend]._convert(q,f.a,t.a);
+      q = zs4.um[divisor]._convert(q,t.b,f.b);
+
+      return q;
+    };
+
+    return ratio;
   },
 },
+
 zs4.um.unit = {
-  _convert:zs4.um._convert.linear,
+  _convert:function(q,f,t){return zs4.um._convert.linear(zs4.um.unit,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('unit');},
   one:1.0,
   two:2.0,
   three:3.0,
@@ -159,7 +277,8 @@ zs4.um.unit = {
   gross:144.0,
 };
 zs4.um.mass = {
-  _convert:zs4.um._convert.linear,
+  _convert:function(q,f,t){return zs4.um._convert.linear(zs4.um.mass,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('mass');},
   gram:1.0,
   kilogram: 1000,
   megagram: 1000000,
@@ -208,7 +327,8 @@ zs4.um.mass = {
 
 };
 zs4.um.time = {
-  _convert:zs4.um._convert.linear,
+  _convert:function(q,f,t){return zs4.um._convert.linear(zs4.um.time,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('time');},
   second:1.0,
   minute:60.0,
   hour:(60.0*60.0),
@@ -244,8 +364,13 @@ zs4.um.time = {
   zettasecond:1000000000000000000000,
   yottasecond:1000000000000000000000000,
 };
+zs4.um.time2 = {
+  _convert:function(q,f,t){return zs4.um._convert.squared(zs4.um.time,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('time','2');},
+};
 zs4.um.information = {
-  _convert:zs4.um._convert.linear,
+  _convert:function(q,f,t){return zs4.um._convert.linear(zs4.um.information,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('information');},
   byte:1.0,
   kilobyte:1024.0,
   megabyte:1024.0*1024.0,
@@ -264,7 +389,8 @@ zs4.um.information = {
   qword:8,
 };
 zs4.um.liquid = {
-  _convert:zs4.um._convert.linear,
+  _convert:function(q,f,t){return zs4.um._convert.linear(zs4.um.liquid,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('liquid');},
   cubicmeter:1.0,
   barreloil:6.2898107280219,
   barreluk:6.1102568971969,
@@ -304,7 +430,8 @@ zs4.um.liquid = {
   teaspoon:200000,
 };
 zs4.um.distance = {
-  _convert:zs4.um._convert.linear,
+  _convert:function(q,f,t){return zs4.um._convert.linear(zs4.um.distance,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('distance');},
   meter:1.0,
   kilometer:1000.0,
   decimeter:0.1,
@@ -343,15 +470,14 @@ zs4.um.distance = {
   lightyear:9460730472580800,
   parsec:9460730472580800*3.26,
 };
-zs4.unit = {
-  _exists:function(name){
-    if (name==null || !zs4.is.name(name) || !zs4['unit'].hasOwnProperty(name))false;
-    return true;
-  },
-  _create:function(name){
-    if (name==null || !zs4.is.name(name))return null;
-    if (zs4['unit'].hasOwnProperty(name))return zs4['unit'][name];
-    zs4['unit'][name] = {};
-  },
-
+zs4.um.distance2 = {
+  _convert:function(q,f,t){return zs4.um._convert.squared(zs4.um.distance,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('distance','2');},
 };
+zs4.um.distance3 = {
+  _convert:function(q,f,t){return zs4.um._convert.cubed(zs4.um.distance,q,f,t)},
+  _array:function(){return zs4.um._arr.plain('distance','3');},
+};
+
+zs4.um._ratio('bandwidth','information','time');
+zs4.um._product('storage','information','time');

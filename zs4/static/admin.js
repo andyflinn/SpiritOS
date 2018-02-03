@@ -1227,7 +1227,7 @@ zs4.admin.util = {
 				}
 				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
 				zs4.post(o._.wrapRequest(input),function(ret){
-					o._.html.refreshAll();
+					//o._.html.refreshAll();
 					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
 					if (zs4.is.function(cb))cb();
 				});
@@ -2668,7 +2668,7 @@ zs4.admin.util = {
 								top.app.scopeitemselect = zs4.admin.util.createSelectScopeItem(o,zs4.THIS);
 								top.app.scopeitemselect.zs4.setValue(o.item._.value);
 								top.app.scopeitemselect.zs4.itemTrueOrFalse = function(item){
-									console.log('testing item: '+item.value);
+									//console.log('testing item: '+item.value);
 									if (zs4.string.startsWith(item.value,'zs4.type.price'))return false;
 									return true;
 								};
@@ -2796,12 +2796,14 @@ zs4.admin.type = {
 				if (this._.html.input.checked==true)return true;
 				return false;
 			}).bind(o);
+			o._.onchange(function(ctx){
+				o._.html.input.checked = o._.value;
+				o._.html.genericRefresh();
+			});
 			o._.html.expanded = true;
+			o._.html.input.checked = o._.value;
+			o._.html.input.readOnly = o._.flags.get.noset();
 		}
-
-		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.checked = o._.value;
-		o._.html.genericRefresh();
 	},
 	bye:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -2839,22 +2841,27 @@ zs4.admin.type = {
 					return zs4.admin.util.date.fromInput(o._.html.input);
 				}).bind(o);
 			}
+			o._.onchange(function(ctx){
+				if (o._.flags.get.noset()){
+					var d = new Date(o._.value);
+					o._.html.input.textContent = ( d.toLocaleDateString() + ' ' + d.toLocaleTimeString() );
+				}
+				else {
+					zs4.admin.util.date.toInput(o._.value,o._.html.input);
+				}
+
+			});
 			o._.html.expanded = true;
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.onchange_call();
+			o._.html.genericRefresh();
 		}
 
-		o._.html.input.readOnly = o._.flags.get.noset();
 		//console.log('admin.date.type: ',o._.type)
 		//console.log('admin.date.value: ',o._.value)
 
-		if (o._.flags.get.noset()){
-			var d = new Date(o._.value);
-			o._.html.input.textContent = ( d.toLocaleDateString() + ' ' + d.toLocaleTimeString() );
-		}
-		else {
-			zs4.admin.util.date.toInput(o._.value,o._.html.input);
-		}
 
-		o._.html.genericRefresh();
+		//o._.html.genericRefresh();
 	},
 	download:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -2894,10 +2901,16 @@ zs4.admin.type = {
       }).bind(o);
 
 			o._.html.expanded = true;
+
+			o._.onchange(function(ctx){
+				o._.html.input.value = o._.value;
+				o._.html.enumRefresh();
+				o._.html.genericRefresh();
+			});
+			o._.html.input.value = o._.value;
+			o._.html.enumRefresh();
+			o._.html.genericRefresh();
     }
-		o._.html.genericRefresh();
-		o._.html.enumRefresh();
-		o._.html.input.value = o._.value;
 	},
 	email:function(po,o){
 		zs4.admin.type.string(po,o);
@@ -2945,11 +2958,14 @@ zs4.admin.type = {
 				return parseInt(this._.html.input.value);
 			}).bind(o);
 			o._.html.expanded = true;
+			o._.onchange(function(ctx){
+				o._.html.input.value = parseInt(o._.value);
+				o._.html.genericRefresh();
+			});
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.value = parseInt(o._.value);
+			o._.html.genericRefresh();
 		}
-
-		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = parseInt(o._.value);
-		o._.html.genericRefresh();
 	},
 	name:function(po,o){
 		zs4.admin.type.string(po,o);
@@ -2964,6 +2980,7 @@ zs4.admin.type = {
 			zs4.admin.util.addAttribute(o._.html.input,'autocomplete',o._.typename);
 			o._.html.e.appendChild(o._.html.input);
 			o._.html.input.setAttribute('type', 'number');
+			o._.html.input.setAttribute('step', 0.000001);
 			o._.html.input.onchange = function(){
 				if (o._.flags.get.local()){
 					o._.value = o._.parseFloat(o._.html.input.value);
@@ -2981,10 +2998,14 @@ zs4.admin.type = {
 				return parseFloat(this._.html.input.value);
 			}).bind(o);
 			o._.html.expanded = true;
+			o._.onchange(function(ctx){
+				o._.html.input.value = parseFloat(o._.value);
+				o._.html.genericRefresh();
+			});
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.value = parseFloat(o._.value);
+			o._.html.genericRefresh();
 		}
-		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = parseFloat(o._.value);
-		o._.html.genericRefresh();
 	},
 	object:function(po,o){
 		//if (!zs4.is.type(o) || o._.typename!='object'){
@@ -3076,6 +3097,8 @@ zs4.admin.type = {
         }
       }
 			o._.html.expanded = true;
+
+
     }
 
     //o._.html.input.readOnly = o._.flags.get.noset();
@@ -3298,10 +3321,14 @@ zs4.admin.type = {
 				}).bind(o);
 			}
 			o._.html.expanded = true;
-		}
-		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = o._.value;
-		o._.html.genericRefresh();
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.onchange(function(ctx){
+				o._.html.input.value = o._.value;
+				o._.html.genericRefresh();
+			});
+			o._.html.input.value = o._.value;
+			o._.html.genericRefresh();
+	}
 	},
 	text:function(po,o){
 		var THIS = this;
@@ -3328,10 +3355,14 @@ zs4.admin.type = {
 				return this._.html.input.value;
 			}).bind(o);
 			o._.html.expanded = true;
+			o._.onchange(function(ctx){
+				o._.html.input.value = o._.value;
+				o._.html.genericRefresh();
+			});
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.value = o._.value;
+			o._.html.genericRefresh();
 		}
-		o._.html.input.readOnly = o._.flags.get.noset();
-		o._.html.input.value = o._.value;
-		o._.html.genericRefresh();
 	},
 	type:function(po,o){
 		zs4.admin.type.object(po,o);
@@ -3341,11 +3372,30 @@ zs4.admin.type = {
     if (o._.html.input==null){
 
       o._.html.input = document.createElement('select');
-			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.onclick = function(){
+				o._.html.refreshOptions(o);
+			};
+			o._.html.input.onblur = function(){
+				o._.html.input.value = o._.value;
+				//window.alert('onblur in um dropdown');
+			};
+			o._.html.input.readOnly = o._.html.input.disabled = o._.flags.get.noset();
 			o._.html.input.value = o._.value;
+
+			console.log('refreshing read-only um dropdown');
+			//o._.html.input.value = o._.value;
+			o._.html.input.innerHTML = '';
+			var option = document.createElement('option');
+			option.text = o._.value;
+			option.value = o._.value;
+			option.selected = true;
+			o._.html.input.appendChild(option);
+
+
       o._.html.e.appendChild(o._.html.input);
 			if (!o._.flags.get.noset()){
 				o._.html.input.onchange = function(){
+
 					if (o._.flags.get.local()){
 						o._.value = o._.html.input.value;
 						o._.html.refreshAll();
@@ -3356,15 +3406,21 @@ zs4.admin.type = {
 					}
 				};
 			}
+			else {
+				o._.html.input.onchange = function(){
+				};
+			}
 
       o._.input = (function(){
         if (o._.flags.get.noset())return null;
         return this._.html.input.value;
       }).bind(o);
 
+			o._.html.umtable = null;
       o._.html.refreshOptions = function(o){
+				if (zs4.is.array(o._.html.umtable))return;
 				o._.html.input.innerHTML = '';
-				var a = zs4.um._array();
+				var a = o._.html.umtable = zs4.um._array();
 
         for (var i = 0 ; i < a.length ; i++){
           var option = document.createElement('option');
@@ -3375,11 +3431,14 @@ zs4.admin.type = {
         }
       }
 			o._.html.expanded = true;
+			o._.onchange(function(ctx){
+				o._.html.input.value = o._.value;
+				o._.html.genericRefresh();
+			});
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.value = o._.value;
+			o._.html.genericRefresh();
     }
-
-		o._.html.genericRefresh();
-		o._.html.refreshOptions(o);
-		o._.html.input.value = o._.value;
   },
 	userscope:function(po,o){
 		zs4.admin.util.unknown(po,o);
@@ -3417,10 +3476,16 @@ zs4.admin.type = {
         }
       }
 			o._.html.expanded = true;
+			o._.onchange(function(ctx){
+				o._.html.input.value = o._.value;
+				o._.html.genericRefresh();
+				o._.html.refreshOptions(o);
+			});
+			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.value = o._.value;
+			o._.html.refreshOptions(o);
+			o._.html.genericRefresh();
     }
-		o._.html.genericRefresh();
-		o._.html.refreshOptions(o);
-		o._.html.input.value = o._.value;
   },
 	zs4:function(po,o){
 		zs4.admin.type.object(po,o);
