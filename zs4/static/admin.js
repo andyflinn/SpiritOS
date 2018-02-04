@@ -2898,6 +2898,7 @@ zs4.admin.type = {
 					var option = document.createElement('option');
 					option.text = o._.enum[i];
 					option.value = o._.enum[i];
+					if (o._.value == o._.enum[i])option.selected=true;
 					o._.html.input.add(option);
 				}
 
