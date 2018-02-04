@@ -301,7 +301,7 @@ mongodb.create = function(input){
     item.save(function (err,data){
       if(err||data==null){cb(null);return;}
 
-      console.log(data);
+      //console.log(data);
       nu._.load(data);
 
       nu._.name = mongodb.hex2name(data._id.toString());

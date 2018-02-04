@@ -36,11 +36,85 @@ user.create = function(){
       REQUEST.setScope(USER);
       this._.transformInternal(REQUEST);
 
-      console.log('user.zs4.update()');
-      console.log(REQUEST.input);
+      //console.log('user.zs4.update()');
 
-      USER.account.balance._.value -= 1;
+      //USER.account.balance._.value -= 1;
 
+      var arr;
+      if (zs4.is.object(REQUEST.input)){
+        for (var n in REQUEST.input) {
+          if (zs4.is.array(REQUEST.input[n])&&n=='array'){
+            arr = REQUEST.input[n];
+            //console.log('ARRAY input.'+n);
+          }
+        }
+      }
+
+      if (zs4.is.array(arr)){
+        var stat = USER.zs4.head.stat; //new zs4.stat.create('stat');
+        var statitem = new Array();
+        for (var n in stat.item){ statitem.push(new String(n));}
+
+        for (var i = 0; i < arr.length; i++){
+          var item = arr[i];
+          if (item.u != USER._.path)continue;
+          if (item.p.substr(0,USER._.path.length)==USER._.path)continue;
+
+          var priced = false;
+          var ori = zs4.THIS._.resolvePath(item.p);
+          if (zs4.is.type(ori)){
+            if (ori._.price.length>0){
+              //console.log('USER update found PRICED iteM');
+              priced = true;
+
+            }
+          }
+
+          //console.log(item.d,item.p);
+
+          for (var n in item.d){
+            var msg = n+':';
+//            if (!stat.item.hasOwnProperty(item.d[n])){
+            if (!zs4.string.array.is.element(statitem,n)){
+              msg += ' nostat';
+            }
+            else if (!zs4.is.number(item.d[n])){
+              msg += ' v-no-number='+item.d[n];
+            }
+            else {
+              msg+= ' found';
+              //console.log(arr[i].d,arr[i].p,arr[i].u);
+              stat.item[n]._.stat.accumulate(item.d[n],0);
+              if (priced){
+                //console.log('PRICE '+n+' search in '+ item.p);
+                var price = ori._.price[0];
+                var prop = price.server[n];
+                if (prop.active._.value==true){
+                  console.log('BILLING USER '+USER._.path+' for '+n+' at '+ item.p
+                  + '    qty:'+item.d[n]
+                  + ' * coins:'+prop.coins._.value
+                  + ' = '+prop.coins._.value
+                  );
+                  USER.account.balance._.value -= (item.d[n] *prop.coins._.value) ;
+                }
+                else {
+                  //console.log('PRICE '+n+' not found in '+ item.p
+                  //+ ' active:'+prop.active._.value
+                  //+ ' coins:'+prop.coins._.value
+                  //);
+                }
+              }
+            }
+
+            //console.log(msg);
+          }
+
+        }
+
+
+      }
+
+      // return a successfull result
       REQUEST.result(USER.zs4.update,true);
 
       REQUEST.setScope(USER.account.balance);

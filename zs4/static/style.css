@@ -211,13 +211,17 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-account:before{content:url(/gfx/icons/account.svg);}
 .icon-about:before{content:url(/gfx/icons/info.svg);}
 .icon-add:before{content:"+";font-weight: bolder;}
+.icon-android:before{content:url(/gfx/icons/android.svg);}
+.icon-apple:before{content:url(/gfx/icons/apple.svg);}
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-ascend:before{content:'\0219F';font-weight: bolder;}
 .icon-auth:before{content:url(/gfx/icons/auth.svg);}
 .icon-author:before{content:url(/gfx/icons/author.svg);}
 .icon-balance:before{content:url(/gfx/icons/coins.svg);}
+.icon-blogger:before{content:url(/gfx/icons/blogger.svg);}
 .icon-bye:before{content:url(/gfx/icons/bye.svg);}
 .icon-bytesserved:before{content:url(/gfx/icons/html.svg);}
+.icon-cloud:before{content:url(/gfx/icons/cloud.svg);}
 .icon-coin:before{content:url(/gfx/icons/coin.svg);}
 .icon-coins:before{content:url(/gfx/icons/coins.svg);}
 .icon-config:before{content:url(/gfx/icons/node.svg);}
@@ -233,6 +237,8 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-doctype:before{content:'\0265E';font-weight: bolder;}
 .icon-document:before{content:'\01F4C3';font-weight: bolder;}
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
+.icon-drive:before{content:url(/gfx/icons/drive.svg);}
+.icon-dropbox:before{content:url(/gfx/icons/dropbox.svg);}
 .icon-email:before{content:url(/gfx/icons/email.svg);}
 .icon-emailsent:before{content:url(/gfx/icons/email.svg);}
 .icon-error:before{content:url(/gfx/icons/error.svg);}
@@ -242,9 +248,11 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-folder:before{content:'\025D5';font-weight: bolder;}
 .icon-fs:before{content:url(/gfx/icons/fs.svg);}
 .icon-getone:before{content:'1';font-weight: bolder;color:darkgreen;}
+.icon-glasses:before{content:url(/gfx/icons/glasses.svg);}
 .icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
+.icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
 .icon-item:before{content:url(/gfx/icons/item.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
@@ -264,8 +272,10 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-password:before{content:url(/gfx/icons/password.svg);}
 .icon-pause:before{content:url(/gfx/icons/pause.svg);}
 .icon-paypal:before{content:url(/gfx/icons/paypal.svg);}
+.icon-penguin:before{content:url(/gfx/icons/penguin.svg);}
 .icon-pencil:before{content:'\0270F';font-weight: bolder;}
 .icon-pilcrow:before{content:'\000B6';font-weight: bolder;}
+.icon-pinterest:before{content:url(/gfx/icons/pinterest.svg);}
 .icon-play:before{content:url(/gfx/icons/play.svg);}
 .icon-plus:before{content:"+";font-weight: bolder;}
 .icon-prev:before{content:url(/gfx/icons/prev.svg);}
@@ -307,6 +317,12 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-update:before{content:'\0219F';font-weight: bolder;color:blue;}
 .icon-upload:before{content:'\0219F';font-weight: bolder;color:blue;}
 .icon-user:before{content:url(/gfx/icons/guitarist.svg);}
+.icon-wifi:before{content:url(/gfx/icons/wifi.svg);}
+.icon-windows:before{content:url(/gfx/icons/windows.svg);}
+.icon-wordpress:before{content:url(/gfx/icons/wordpress.svg);}
+.icon-yahoo:before{content:url(/gfx/icons/yahoo.svg);}
+.icon-yinyang:before{content:url(/gfx/icons/yinyang.svg);}
+.icon-youtube:before{content:url(/gfx/icons/youtube.svg);}
 .icon-zs4:before{content:url(/gfx/icons/zs4.svg);}
 
 
@@ -349,6 +365,11 @@ zs4-object-head.zs4-top{
 zs4-object-head.zs4-root{
   background-color: darkred;
 }
+
+zs4-coins-header-balance.zs4-negative{
+  color:red;
+}
+
 
 zs4-object-content{
   width:100%;

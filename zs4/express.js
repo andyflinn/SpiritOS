@@ -43,6 +43,7 @@ express.getCookie = function(req,zs4request){
       if (req.query!=null&&req.query.token!=null&&req.query.token.length >10){
         zs4request.request.token=req.query.token;
         zs4request.payloadRefresh();
+        zs4request.request.tokenlogin = true;
         express.THIS._.print('cookie in url');
       }
       else if (zs4.is.string(req.cookies.zs4)){
@@ -93,6 +94,9 @@ express.getFunction = function (req, res) {
     }
 
     console.log('SENDING');
+    if (zs4req.request.tokenlogin==true){
+      zs4req.stat(zs4.THIS.zs4.email.message,{emailsent:1,},0);
+    }
     zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
     zs4.stat.updateUser(zs4req,function(ret){
       res.write(r);
@@ -129,7 +133,9 @@ express.postFunction = function (req, res) {
     }
     else {
       var r = zs4req.getReply();
-      zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
+      var j = zs4.json.stringify(r);
+
+      zs4req.stat(express.THIS,{bytesserved:j.length,},(Date.now()-starttime));
       zs4.stat.updateUser(zs4req,function(ret){
         express.THIS._.print('callback: '+JSON.stringify(r.request));
         express.setCookie(res,zs4req);

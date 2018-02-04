@@ -1627,6 +1627,14 @@ zs4.admin.util = {
 						if (zs4.admin.util.root())return;
 						if (DIALOG.uscope != null){
 							DIALOG.balance.textContent = DIALOG.uscope.account.balance._.value;
+							if (DIALOG.uscope.account.balance._.value >= 0){
+								zs4.admin.util.addClass(DIALOG.balance,'positive');
+								zs4.admin.util.removeClass(DIALOG.balance,'negative');
+							}
+							else {
+								zs4.admin.util.addClass(DIALOG.balance,'negative');
+								zs4.admin.util.removeClass(DIALOG.balance,'positive');
+							}
 						}
 
 					};

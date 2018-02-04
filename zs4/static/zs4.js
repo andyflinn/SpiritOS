@@ -4275,7 +4275,20 @@ zs4.stat = {
     }
     var userid = a[4];
 
-    req.call({path:'zs4.type.user.array.'+userid+'.zs4.update',wantreply:true,input:{array:req.request.stat,}},function(read){
+    if (req.request.tokenlogin==true){
+      console.log('updateUser() tOKENloGIN');
+    }
+
+    var arr = new Array();
+    for (var i = 0; i < req.request.stat.length; i++){
+      if (req.request.stat[i].u == req.request.payload.scope)
+        arr.push(req.request.stat[i]);
+    }
+    req.request.stat = new Array();
+    req.request.nostat = true;
+    //var json = JSON.stringify(req.request.stat);
+
+    req.call({path:'zs4.type.user.array.'+userid+'.zs4.update',wantreply:true,input:{array:arr}},function(read){
       cb(); return;
     },true);
   },
@@ -4323,21 +4336,16 @@ zs4.stat = {
             continue;
           }
 
-          var price = new zs4.node.require.price.create();
-          price._.load(item);
-          price._.name = n;
-          zs4.THIS._.elementConnect(zs4.THIS.zs4.type.price.array,price);
-
           var scopeitem = scope._.resolvePath(item.item._.value);
           if (item.item._.value!='' && zs4.is.type(scopeitem)){
-            scopeitem._.price.push(price);
+            scopeitem._.price.push(item);
             scopeitem._.flags.set.priced(true);
-            console.log('price \"'+price._.path+'\" attached to '+item.item._.value);
+            console.log('price \"'+item._.path+'\" attached to '+item.item._.value);
           }
           else {
-            scope._.price.push(price);
+            scope._.price.push(item);
             scope._.flags.set.priced(true);
-            console.log('price \"'+price._.path+'\" attached to scope'+scope.zs4.head.title._.value)
+            console.log('price \"'+item._.path+'\" attached to scope'+scope.zs4.head.title._.value)
           }
         }
       }
@@ -4382,6 +4390,10 @@ zs4.request = function(o){
   if (!zs4.is.object(this.request.get))this.request.get = new Object();
   if (!zs4.is.object(this.request.stat))this.request.stat = new Array();
 
+  if (!zs4.is.object(this.request.rbits)){
+    //this.request.rbits_value = 0;
+    //this.request.rbits = new zs4.util.rbits(this.request,'rbits_value');
+  }
   this.flags = new zs4.util.flags();
   this.flags.value = 0;
 
@@ -4544,10 +4556,18 @@ zs4.request = function(o){
   }
   this.stat = function(item,data,time){
     var a = this.request.stat;
+    //if (this.request.nostat==true){
+    //  console.log('no stats anymore');
+    //}
+
+    //if (zs4.is.number(data.emailsent)){
+    //  console.log('EMAIL SENT objeCT',data);
+    //}
     if (zs4.is.type(this.scope)&&zs4.is.type(item)){
 
       for (var name in data){
-        if (name=='bytesserved')console.log('REQUEST.stat('+this.scope.zs4.head.typename._.value+'), '+name)
+        //if (name=='bytesserved')console.log('REQUEST.stat('+this.scope.zs4.head.typename._.value+'), '+name)
+        //if (name=='emailsent')console.log('REQUEST.stat('+this.scope.zs4.head.typename._.value+'), '+name)
         if (zs4.is.type(this.scope.zs4.head.stat.item[name])){
           //console.log('REQUEST.stat('+this.scope.zs4.head.typename._.value+'), '+name)
           this.scope.zs4.head.stat.item[name]._.stat.accumulate(data[name],time);
@@ -4555,14 +4575,20 @@ zs4.request = function(o){
       }
 
       var u = THIS.getUserPath();
-      var p = THIS.requestObject._.path;
+      //var p = THIS.requestObject._.path;
+      var p = item._.path;
 
       var nu = new Object({
         p:p,
         d:data,
         u:u,
       })
-      //console.log(nu);
+
+      //if (item._.price.length > 0){
+      //  console.log('req.stat -- PRICE ----> item:   '+p);
+      //  console.log('req.stat -- PRICE ----> data:   '+data);
+      //  console.log('req.stat -- PRICE ----> user:   '+u);
+      //}
 
       var a = THIS.request.stat;
       for (var i = 0 ; i < a.length; i++){
@@ -4683,7 +4709,7 @@ zs4.request = function(o){
     //this.request.reget = null;
 
     this.forceUserIsRoot = function(){
-      console.log('request.userIsRoot() called returning "true"....');
+      //console.log('request.userIsRoot() called returning "true"....');
       return true;
     };
 
@@ -4775,7 +4801,8 @@ zs4.request = function(o){
         r.request.scope = this.request.payload.scope;
       }
 
-      if (this.userIsRoot())r.request.stat = this.request.stat;
+      //if (this.userIsRoot())
+        r.request.stat = this.request.stat;
 
       return r;
     };
