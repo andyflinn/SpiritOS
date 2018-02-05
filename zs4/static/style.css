@@ -253,6 +253,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
 .icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
+.icon-is:before{content:url(/gfx/icons/server.svg);}
 .icon-item:before{content:url(/gfx/icons/item.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-list:before{content:url(/gfx/icons/list.svg);}

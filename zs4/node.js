@@ -16,6 +16,19 @@ node.create = function(name){
   var input = new Object({name:'node',flags:'noset',});
   zs4.type.object.call(NODE,input);
 
+  // NODE IS
+  //////////
+  NODE._.property(new zs4.type.object({name:'is',flags:'noset',}));
+  NODE.is._.property(new zs4.type.boolean({name:'heroku',flags:'noset',}));
+  if (zs4.is.string(process.env.NODE)&&(process.env.NODE=='/app/.heroku/node/bin/node')){
+    NODE.is.heroku._.value = true;
+  }
+  else {
+    NODE.is.heroku._.value = false;
+  }
+
+  // NODE PROCESS
+  ///////////////
   NODE._.property(new zs4.type.object({name:'process',flags:'noset',}));
 
   NODE.process._.property(new zs4.type.string({name:'platform',flags:'noset',}));
@@ -38,6 +51,8 @@ node.create = function(name){
   if (zs4.is.string(process.env.NODE)){NODE.process.node._.value = process.env.NODE;}
   else {NODE.process.node._.value = ('(not in process.env)');}
 
+  // OPERATING SYSTEM
+  ///////////////////
   NODE._.property(new zs4.type.object({name:'os',flags:'noset',}));
 
   var cpus = os.cpus();
