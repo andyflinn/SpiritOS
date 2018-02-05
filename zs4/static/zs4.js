@@ -2988,10 +2988,12 @@ zs4.type = {
 
             function sendEmailToken(email,scope){
               var token = zs4.THIS.zs4.token.encode({iss:'zs4.email.message',scope:scope,});
+              var hosturl = zs4.THIS.zs4.express.getHostURL(req);
+              hosturl += '/'+scope;
               var message = new Object({
                 to:email,
                 subject:zs4.THIS.zs4.express.host._.value+' access token for '+email,
-                text:'Click here to automatically log in '+email+': '+zs4.THIS.zs4.express.getHostURL()+'?token='+token});
+                text:'Click here to automatically log in '+email+': '+hosturl+'?token='+token});
 
               req.call({path:'zs4.email.message',input:message,},function(backcall){
                 console.log('response from zs4.email.message',backcall);

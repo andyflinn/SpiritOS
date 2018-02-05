@@ -75,6 +75,10 @@ express.getFunction = function (req, res) {
   //console.log('GET REQUEST!!!!!!!!');
 
   var zs4req = new zs4.request();
+  zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
+  if (req.hostname == 'localhost' || req.hostname == '127.0.0.1'){
+    zs4req.request.localhost = true;
+  }
   var input = zs4req.resolveInputPath(req.path);
   input.getHTML = new Object();
   input.getHTML.query = req.query;
@@ -109,6 +113,9 @@ express.postFunction = function (req, res) {
   //console.log('POST REQUEST: '+JSON.stringify(req.body));
   var zs4req = new zs4.request(req.body);
   zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
+  if (req.hostname == 'localhost' || req.hostname == '127.0.0.1'){
+    zs4req.request.localhost = true;
+  }
   //console.log(req.body);
   express.getCookie(req,zs4req);
 
@@ -223,8 +230,14 @@ express.schema = function(parent){
     });
 
   };
-  THIS.getHostURL = function(){
-    return ('http://'+THIS.host._.value+':'+THIS.port._.value);
+  THIS.getHostURL = function(req){
+    var port = '';
+    if (THIS.port._.value != 80) port = ':'+THIS.port._.value;
+    if (req != null && req.request.localhost == true){
+      console.log('WARNING: returning localhost name')
+      return ('http://localhost'+port);
+    }
+    return ('http://'+THIS.host._.value+port);
   };
   THIS.getSecureUrl = function(){
     return ('https://'+THIS.host._.value);

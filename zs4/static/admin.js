@@ -743,7 +743,7 @@ zs4.admin.util = {
 				var found = false;
 				for (var i = 0 ; i < a.length; i++){
 					if (zs4.is.function(select.zs4.itemTrueOrFalse)){
-						console.log('itemTrueOrFalse is a function');
+						//console.log('itemTrueOrFalse is a function');
 						if (zs4.is.object(a[i].item)){
 							if (!select.zs4.itemTrueOrFalse(a[i]))continue;
 						}
@@ -793,10 +793,10 @@ zs4.admin.util = {
 
 			if (zs4.is.function(this.refresh))this.refresh();
 
-			if (zs4.is.object(scope._.html.dialog.coins)){
-				console.log('updating balance from app.refreshInternal()');
-				scope._.html.dialog.coins.updateBalance();
-			}
+			//if (zs4.is.object(scope._.html.dialog.coins)){
+				//console.log('updating balance from app.refreshInternal()');
+				//scope._.html.dialog.coins.updateBalance();
+			//}
 		};
 	},
 
@@ -1190,6 +1190,12 @@ zs4.admin.util = {
 			o._.html.name = document.createElement('zs4-name');
 			o._.html.head.appendChild(o._.html.name);
 			o._.html.name.textContent = o._.name;
+			if (o._.flags.value & o._.flags.scope){
+				o.zs4.head.title._.onchange(function(){
+					//console.log('AUTOUPDATING SCOPE TITLE');
+					o._.html.name.textContent = o.zs4.head.title._.value;
+				});
+			}
 
 			o._.html.error = document.createElement('zs4-error');
 			zs4.admin.util.setIcon(o._.html.error,'error');
@@ -1525,6 +1531,10 @@ zs4.admin.util = {
 					zs4.admin.util.setIcon(this.title,'search');
 					zs4.admin.util.addAttribute(this.title,'autocomplete','title');
 					this.title.value = o.zs4.head.title._.value;
+					o.zs4.head.title._.onchange(function(){
+						//console.log('AUTOUPDATED DOC TITLE');
+						THIS.title.value = o.zs4.head.title._.value;
+					});
 					this.title.maxLength = o.zs4.head.title._.maxlength;
 					this.titleblock.appendChild(this.title);
 
@@ -1635,11 +1645,13 @@ zs4.admin.util = {
 								zs4.admin.util.addClass(DIALOG.balance,'negative');
 								zs4.admin.util.removeClass(DIALOG.balance,'positive');
 							}
+							console.log('BALANCE UPDATED');
 						}
 
 					};
 					this.balance = document.createElement('zs4-coins-header-balance');
 					o._.html.dialogHeader.appendChild(this.balance);
+					o._.onchange(DIALOG.updateBalance);
 
 					DIALOG.updateBalance();
 
@@ -2681,7 +2693,19 @@ zs4.admin.util = {
 									return true;
 								};
 								top.app.scopeitemselect.zs4.onchange = function(){
-									o.item._.html.quickupdate(top.app.scopeitemselect.zs4.getValue());
+									var val = top.app.scopeitemselect.zs4.getValue();
+									//o.item._.html.quickupdate(val);
+									var req = new Object({
+										item:val,
+										zs4:{head:{title:val}},
+									});
+
+									zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+									o._.call(req,function(){
+										zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+
+									});
+									//o.zs4.head.title._.html.quickupdate(top.app.scopeitemselect.zs4.getValue());
 								};
 								top.app.content.appendChild(top.app.scopeitemselect);
 
@@ -3047,9 +3071,12 @@ zs4.admin.type = {
 		if (zs4.is.type(o.zs4)&&(o._.flags.value & o._.flags.scope)){
 
 			o._.scope = o;
-			//if (zs4.is.string(zs4.path.resolve(o,'zs4.head.title._.value')) && o.zs4.head.title._.value.length > 0){
 			if (zs4.is.string(o.zs4.head.title._.value) && o.zs4.head.title._.value.length > 0){
 				o._.html.name.textContent = o.zs4.head.title._.value;
+				o._.onchange(function(){
+					console.log('TITLE AUTOUPDATED');
+					o._.html.name.textContent = o.zs4.head.title._.value;
+				});
 			}
 			else if (!o._.flags.get.notrans()){
 				o._.html.name.textContent = o._.name + ' (untitled)';
@@ -3391,7 +3418,7 @@ zs4.admin.type = {
 			o._.html.input.readOnly = o._.html.input.disabled = o._.flags.get.noset();
 			o._.html.input.value = o._.value;
 
-			console.log('refreshing read-only um dropdown');
+			//console.log('refreshing read-only um dropdown');
 			//o._.html.input.value = o._.value;
 			o._.html.input.innerHTML = '';
 			var option = document.createElement('option');
