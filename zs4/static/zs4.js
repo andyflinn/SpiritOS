@@ -1989,6 +1989,7 @@ zs4.type = {
         }
 
         parallel.run(function(){
+
           TABLE._.get(req);
           cb();
         });
