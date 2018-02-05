@@ -2572,7 +2572,7 @@ zs4.admin.util = {
 									item.title.textContent = item.scope.zs4.head.title._.value;
 								}
 								else {
-									item = new top.app.item(arr[i]);
+									if (arr[i]._.path != '')item = new top.app.item(arr[i]);
 								}
 							}
 
