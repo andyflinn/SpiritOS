@@ -90,7 +90,7 @@ zs4.THIS.zs4._.property(new zs4.type.bye());
 zs4.boot = new zs4.processor.sequential();
 
 zs4.load = function(cb){
-  function envar(v,cb){
+  var function envvar(v,cb){
     var env = zs4.json.parse(process.env[v]);
     if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
       console.log('launching from process.env.'+v);
