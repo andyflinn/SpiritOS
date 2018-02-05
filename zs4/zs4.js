@@ -127,7 +127,10 @@ zs4.define = function(){
   zs4.node.require.fs = fs;
   zs4.node.require.fs.schema(zs4.THIS.zs4);
 
-  zs4.node.require.password = require('./static/um');
+  zs4.node.require.um = require('./static/um');
+
+  zs4.node.require.node = require('./node');
+  zs4.node.require.node.schema(zs4.THIS.zs4);
 
   zs4.node.require.password = require('./password');
   zs4.node.require.password.schema(zs4.THIS.zs4);

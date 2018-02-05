@@ -2185,6 +2185,7 @@ zs4.admin.util = {
 								option.selected = true;
 								top.app.typeSelect.add(option);
 								for (var n in zs4.THIS.zs4.type)if (zs4.is.type(zs4.THIS.zs4.type[n])){
+									if (n=='user'&&!zs4.admin.util.root())continue;
 									option = document.createElement('option');
 									option.text = option.value = (' '+n+' ').trim();
 									zs4.admin.util.setIcon(option,option.value);
@@ -2299,7 +2300,7 @@ zs4.admin.util = {
 										return a.scope.zs4.head.created._.value - b.scope.zs4.head.created._.value;
 									},});
 
-								if (o._.path==''){
+								if (zs4.is.string(zs4.THIS._.scopath) && o._.path==zs4.THIS._.scopath){
 									top.app.new = document.createElement('zs4-app-new-item');
 									top.app.new.textContent = 'new';
 									zs4.admin.util.addClass(top.app.new,'nodisplay');

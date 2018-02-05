@@ -1,0 +1,89 @@
+'use strict';
+
+var zs4 = require('./static/zs4');
+var os = require('os');
+
+var node = exports;
+
+node.schema = function(parent){
+  parent._.property(new node.create());
+};
+
+node.create = function(name){
+
+  var NODE = this;
+
+  var input = new Object({name:'node',flags:'noset',});
+  zs4.type.object.call(NODE,input);
+
+  console.log();
+
+  NODE._.property(new zs4.type.object({name:'os',flags:'noset',}));
+
+  var cpus = os.cpus();
+  NODE.os._.property(new zs4.type.integer({name:'cpucount',flags:'noset',}));
+  NODE.os.cpucount._.value = cpus.length;
+  NODE.os._.property(new zs4.type.integer({name:'cpumhz',flags:'noset',}));
+  NODE.os.cpumhz._.value = cpus[0].speed;
+  NODE.os._.property(new zs4.type.string({name:'cputype',flags:'noset',}));
+  NODE.os.cputype._.value = cpus[0].model;
+
+  NODE.os._.property(new zs4.type.string({name:'endian',flags:'noset',}));
+  NODE.os.endian._.value = os.endianness();
+
+  NODE.os._.property(new zs4.type.integer({name:'memfree',flags:'noset',}));
+  NODE.os.memfree._.value = os.freemem();
+
+  NODE.os._.property(new zs4.type.integer({name:'memtotal',flags:'noset',}));
+  NODE.os.memtotal._.value = os.totalmem();
+
+  NODE.os._.property(new zs4.type.integer({name:'uptimesecs',flags:'noset',}));
+  NODE.os.uptimesecs._.value = os.uptime();
+
+  NODE.os._.property(new zs4.type.string({name:'homedir',flags:'noset',}));
+  NODE.os.homedir._.value = os.homedir();
+
+  NODE.os._.property(new zs4.type.string({name:'hostname',flags:'noset',}));
+  NODE.os.hostname._.value = os.hostname();
+
+  NODE.os._.property(new zs4.type.string({name:'platform',flags:'noset',}));
+  NODE.os.platform._.value = os.platform();
+
+  NODE.os._.property(new zs4.type.string({name:'release',flags:'noset',}));
+  NODE.os.release._.value = os.release();
+
+  NODE.os._.property(new zs4.type.string({name:'tmpdir',flags:'noset',}));
+  NODE.os.tmpdir._.value = os.tmpdir();
+
+  NODE.os._.property(new zs4.type.string({name:'type',flags:'noset',}));
+  NODE.os.type._.value = os.type();
+
+  var networkinterfaces = os.networkInterfaces();
+  console.log(networkinterfaces);
+  NODE.os._.property(new zs4.type.text({name:'networkinterfaces',flags:'noset',}));
+  var text = ''; var count = 0;
+  for (var n in networkinterfaces){
+    var o = networkinterfaces[n];
+    if (zs4.is.array(o)){
+      text += (n + '\n');
+      count++;
+
+      for (var i = 0; i < o.length; i++){
+        var a = o[i];
+        for (var x in a){
+          text += '  '+x+' '+a[x]+'\n';
+        }
+      }
+      text+='\n';
+    }
+    text+='\n';
+  }
+  NODE.os.networkinterfaces._.value = text;
+  NODE.os._.property(new zs4.type.integer({name:'networkifcount',flags:'noset',}));
+  NODE.os.networkifcount._.value = count;
+
+
+
+
+
+}
