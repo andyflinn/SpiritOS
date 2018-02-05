@@ -93,12 +93,14 @@ zs4.load = function(cb){
 
   var env = zs4.json.parse(process.env.ZS4);
   if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
+    console.log('launching from process.env.ZS4');
     zs4.THIS._.load(env);
     cb(new zs4.done());
     return;
   }
 
   fs.readFile(DOT_ZS4,'utf8',function(err,data){
+    console.log('launching from ./.zs4');
     if (!err && data){
       var value = zs4.json.parse(data);
       if (value!=null){
