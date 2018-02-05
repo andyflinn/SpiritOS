@@ -176,6 +176,10 @@ zs4.define = function(){
   var user = require('./user');
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
   zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;
+  zs4.THIS.zs4.type.user.method.new._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.user.method.new._.flags.set.authuser(false);
+  zs4.THIS.zs4.type.user.method.deleteone._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.user.method.deleteall._.flags.set.authgetpublic(false);
 
   var price = require('./price');
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'price',template:new price.create(),}));
