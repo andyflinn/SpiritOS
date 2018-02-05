@@ -35,7 +35,7 @@ node.create = function(name){
   else {NODE.process.port._.value = ('(not in process.env)');}
 
   NODE.process._.property(new zs4.type.string({name:'node',flags:'noset',}));
-  if (zs4.is.string(process.env.NODE)){NODE.process.node._.value = process.env.PORT;}
+  if (zs4.is.string(process.env.NODE)){NODE.process.node._.value = process.env.NODE;}
   else {NODE.process.node._.value = ('(not in process.env)');}
 
   NODE._.property(new zs4.type.object({name:'os',flags:'noset',}));
