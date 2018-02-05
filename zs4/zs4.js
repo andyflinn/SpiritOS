@@ -90,27 +90,43 @@ zs4.THIS.zs4._.property(new zs4.type.bye());
 zs4.boot = new zs4.processor.sequential();
 
 zs4.load = function(cb){
+  function envar(v,cb){
+    var env = zs4.json.parse(process.env[v]);
+    if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
+      console.log('launching from process.env.'+v);
+      zs4.THIS._.load(env);
+      cb(new zs4.done());
+      return true;
+    }
+    cb(new zs4.error({text:'process.env.'+v+' did not contain a valid zs4 config'}));
+    return false;
+  };
+  function file(f,cb){
+    fs.readFile(f,'utf8',function(err,data){
+      console.log('launching from ./'+f);
+      if (!err && data){
+        var value = zs4.json.parse(data);
+        if (value!=null){
+          zs4.THIS._.load(value);
+          cb(new zs4.done());
+          return true;
+        }
+        else {
+          cb(new zs4.error({text:('cannot parse file '+f)}));
+        }
+      }
+      else {
+        cb(new zs4.error({text:('cannot load file '+f)}));
+      }
+    });
+  };
 
-  var env = zs4.json.parse(process.env.ZS4);
-  if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
-    console.log('launching from process.env.ZS4');
-    zs4.THIS._.load(env);
-    cb(new zs4.done());
-    return;
+
+  if (zs4.THIS.zs4.node.is.heroku._.getValue()){
+    return envvar('ZS4',cb);
   }
 
-  fs.readFile(DOT_ZS4,'utf8',function(err,data){
-    console.log('launching from ./.zs4');
-    if (!err && data){
-      var value = zs4.json.parse(data);
-      if (value!=null){
-        zs4.THIS._.load(value);
-        cb(new zs4.done());
-        return;
-      }
-    }
-    cb(new zs4.error({text:'load failed.'}));
-  });
+  return file(DOT_ZS4,cb);
 };
 
 zs4.save = function(cb){

@@ -13,7 +13,7 @@ node.create = function(name){
 
   var NODE = this;
 
-  var input = new Object({name:'node',flags:'noset',});
+  var input = new Object({name:'node',flags:'noset nostore',});
   zs4.type.object.call(NODE,input);
 
   // NODE IS
