@@ -283,6 +283,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-prev:before{content:url(/gfx/icons/prev.svg);}
 .icon-price:before{content:url(/gfx/icons/coins.svg);}
 .icon-private:before{content:url(/gfx/icons/private.svg);}
+.icon-process:before{content:url(/gfx/icons/server.svg);}
 .icon-property:before{content:url(/gfx/icons/info.svg);}
 .icon-public:before{content:url(/gfx/icons/public.svg);}
 .icon-query:before{content:url(/gfx/icons/search.svg);}

@@ -1252,11 +1252,12 @@ zs4.type = {
       return get;
 
     }).bind(this);
+    this._.getValue = (function(){ return this._.value;}).bind(this);
     this._.get = (function(req,po){
       var get = this._.getInitialize(req);
       if (get == null) return null;
       if (this._.type != Object){
-        get._.value = this._.value;
+        get._.value = this._.getValue();
 
       }
       req.stat(this,{read:1,},0);

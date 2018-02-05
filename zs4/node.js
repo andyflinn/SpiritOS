@@ -16,7 +16,27 @@ node.create = function(name){
   var input = new Object({name:'node',flags:'noset',});
   zs4.type.object.call(NODE,input);
 
-  console.log();
+  NODE._.property(new zs4.type.object({name:'process',flags:'noset',}));
+
+  NODE.process._.property(new zs4.type.string({name:'platform',flags:'noset',}));
+  NODE.process.platform._.value = process.platform;
+
+  NODE.process._.property(new zs4.type.string({name:'title',flags:'noset',}));
+  NODE.process.title._.value = process.title;
+
+  NODE.process._.property(new zs4.type.string({name:'version',flags:'noset',}));
+  NODE.process.version._.value = process.version;
+
+  NODE.process._.property(new zs4.type.number({name:'uptimesecs',flags:'noset',}));
+  NODE.process.uptimesecs._.getValue = function(){ return process.uptime();};
+
+  NODE.process._.property(new zs4.type.string({name:'port',flags:'noset',}));
+  if (zs4.is.string(process.env.PORT)){NODE.process.port._.value = process.env.PORT;}
+  else {NODE.process.port._.value = ('(not in process.env)');}
+
+  NODE.process._.property(new zs4.type.string({name:'node',flags:'noset',}));
+  if (zs4.is.string(process.env.NODE)){NODE.process.node._.value = process.env.PORT;}
+  else {NODE.process.node._.value = ('(not in process.env)');}
 
   NODE._.property(new zs4.type.object({name:'os',flags:'noset',}));
 
@@ -32,13 +52,13 @@ node.create = function(name){
   NODE.os.endian._.value = os.endianness();
 
   NODE.os._.property(new zs4.type.integer({name:'memfree',flags:'noset',}));
-  NODE.os.memfree._.value = os.freemem();
+  NODE.os.memfree._.getValue = function(){ return os.freemem();};
 
   NODE.os._.property(new zs4.type.integer({name:'memtotal',flags:'noset',}));
-  NODE.os.memtotal._.value = os.totalmem();
+  NODE.os.memtotal._.getValue = function(){ return os.totalmem();};
 
   NODE.os._.property(new zs4.type.integer({name:'uptimesecs',flags:'noset',}));
-  NODE.os.uptimesecs._.value = os.uptime();
+  NODE.os.uptimesecs._.getValue = function(){ return os.uptime();};
 
   NODE.os._.property(new zs4.type.string({name:'homedir',flags:'noset',}));
   NODE.os.homedir._.value = os.homedir();
@@ -59,7 +79,7 @@ node.create = function(name){
   NODE.os.type._.value = os.type();
 
   var networkinterfaces = os.networkInterfaces();
-  console.log(networkinterfaces);
+  //console.log(networkinterfaces);
   NODE.os._.property(new zs4.type.text({name:'networkinterfaces',flags:'noset',}));
   var text = ''; var count = 0;
   for (var n in networkinterfaces){
