@@ -16,17 +16,6 @@ node.create = function(name){
   var input = new Object({name:'node',flags:'noset nostore',});
   zs4.type.object.call(NODE,input);
 
-  // NODE IS
-  //////////
-  NODE._.property(new zs4.type.object({name:'is',flags:'noset',}));
-  NODE.is._.property(new zs4.type.boolean({name:'heroku',flags:'noset',}));
-  if (zs4.is.string(process.env.NODE)&&(process.env.NODE=='/app/.heroku/node/bin/node')){
-    NODE.is.heroku._.value = true;
-  }
-  else {
-    NODE.is.heroku._.value = false;
-  }
-
   // NODE PROCESS
   ///////////////
   NODE._.property(new zs4.type.object({name:'process',flags:'noset',}));
@@ -93,30 +82,72 @@ node.create = function(name){
   NODE.os._.property(new zs4.type.string({name:'type',flags:'noset',}));
   NODE.os.type._.value = os.type();
 
-  var networkinterfaces = os.networkInterfaces();
   //console.log(networkinterfaces);
   NODE.os._.property(new zs4.type.text({name:'networkinterfaces',flags:'noset',}));
-  var text = ''; var count = 0;
-  for (var n in networkinterfaces){
-    var o = networkinterfaces[n];
-    if (zs4.is.array(o)){
-      text += (n + '\n');
-      count++;
+  NODE.os._.neteyeface = new Object({
+    nif:os.networkInterfaces(),
+  });
+  NODE.os._.neteyeface.count = (function(){
+    var nif = NODE.os._.neteyeface.nif;
+    var count = 0;
+    for (var n in nif){
+      var o = nif[n];
+      if (zs4.is.array(o)){
+        count++;
+      }
+    }
+    return count;
+  }).bind(NODE);
+  NODE.os._.neteyeface.search = (function(s){
+    var nif = NODE.os._.neteyeface.nif;
+    var count = 0;
+    for (var n in nif){
+      var o = nif[n];
+      if (zs4.is.array(o)){
+        count++;
+      }
+    }
+    return count;
+  }).bind(NODE);
+  NODE.os._.neteyeface.totext = (function(){
+    var nif = NODE.os._.neteyeface.nif;
+    var text = '';
+    var count = 0;
+    for (var n in nif){
+      var o = nif[n];
+      if (zs4.is.array(o)){
+        text += (n + '\n');
+        count++;
 
-      for (var i = 0; i < o.length; i++){
-        var a = o[i];
-        for (var x in a){
-          text += '  '+x+' '+a[x]+'\n';
+        for (var i = 0; i < o.length; i++){
+          var a = o[i];
+          for (var x in a){
+            text += '  '+x+' '+a[x]+'\n';
+          }
         }
+        text+='\n';
       }
       text+='\n';
     }
-    text+='\n';
-  }
-  NODE.os.networkinterfaces._.value = text;
+    return text;
+  }).bind(NODE);
+  NODE.os.networkinterfaces._.value = NODE.os._.neteyeface.totext();
   NODE.os._.property(new zs4.type.integer({name:'networkifcount',flags:'noset',}));
-  NODE.os.networkifcount._.value = count;
+  NODE.os.networkifcount._.value = NODE.os._.neteyeface.count();
 
+  // NODE IS
+  //////////
+  NODE._.property(new zs4.type.object({name:'is',flags:'noset',}));
+  NODE.is._.property(new zs4.type.boolean({name:'heroku',flags:'noset',}));
+  if (zs4.is.string(process.env.NODE)&&(process.env.NODE=='/app/.heroku/node/bin/node')){
+    NODE.is.heroku._.value = true;
+  }
+  else {
+    NODE.is.heroku._.value = false;
+  }
+
+  NODE.is._.property(new zs4.type.object({name:'not',flags:'noset',}));
+  NODE.is.not._.property(new zs4.type.boolean({name:'cloudhost',flags:'noset',}));
 
 
 

@@ -270,6 +270,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-newdir:before{content:url(/gfx/icons/newdir.svg);}
 .icon-newfile:before{content:url(/gfx/icons/newfile.svg);}
 .icon-node:before{content:url(/gfx/icons/node.svg);}
+.icon-not:before{content:url(/gfx/icons/not.svg);}
 .icon-object:before{content:url(/gfx/icons/object.svg);}
 .icon-os:before{content:url(/gfx/icons/server.svg);}
 .icon-password:before{content:url(/gfx/icons/password.svg);}

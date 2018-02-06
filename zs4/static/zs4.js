@@ -332,6 +332,14 @@ zs4.string = {
       },
     },
   },
+  search:function(s,f){
+    var a = zs4.string.split.spaces(f);
+    if (a.length==0)return true;
+    for (var i = 0 ; i < a.length;i++){
+      if (s.toLowerCase().search(a[i].toLowerCase())>=0)return true;
+    }
+    return false;
+  },
 };
 
 zs4.count = {
@@ -1614,12 +1622,12 @@ zs4.type = {
       else if (this._.type==String){
         if (!this._.flags.get.textsearch())return false;
         if (s==null||s=='')return true;
-
-        var a = zs4.string.split.spaces(s);
-        if (a.length==0)return true;
-        for (var i = 0 ; i < a.length;i++){
-          if (this._.value.toLowerCase().search(a[i].toLowerCase())>=0)return true;
-        }
+        return zs4.string.search(this._.value,s);
+        //var a = zs4.string.split.spaces(s);
+        //if (a.length==0)return true;
+        //for (var i = 0 ; i < a.length;i++){
+        //  if (this._.value.toLowerCase().search(a[i].toLowerCase())>=0)return true;
+        //}
         return false;
       }
 
@@ -4196,6 +4204,37 @@ zs4.call = {
   },
 
 };
+
+zs4.throttle = {
+  q:[],
+  w:[],
+  f:function(){
+    if (zs4.throttle.q.length == 0){
+      if (zs4.throttle.w.length > 0){
+        var j = zs4.throttle.w.shift();
+        j.f();
+        if (zs4.is.function(j.cb)) j.cb();
+        setTimeout(zs4.throttle.f,0);
+        return;
+      }
+      setTimeout(zs4.throttle.f,5);
+      return;
+    }
+    var j = zs4.throttle.q.shift();
+    j.f();
+    if (zs4.is.function(j.cb)) j.cb();
+    setTimeout(zs4.throttle.f,0);
+  },
+  job:function(f,cb){
+    zs4.throttle.q.push(new Object({f:f,cb:cb,}));
+    return;
+  },
+  onidle:function(f,cb){
+    zs4.throttle.w.push(new Object({f:f,cb:cb,}));
+    return;
+  },
+};
+setTimeout(zs4.throttle.f,0),
 
 zs4.stat = {
   createAccumulator:function(parent,name){
