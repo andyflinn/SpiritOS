@@ -1086,14 +1086,18 @@ zs4.admin.util = {
 
 			if (o._.type == Object){
 				o._.html.sort = (function(foo,descend){
-					var a = o._.sort(foo,descend);
-					if (a.length > 1){
-						for (var i = 0 ; i < (a.length-1) ; i++){
-							this._.html.c.removeChild(a[i]._.html.e);
-							this._.html.c.insertBefore(a[i]._.html.e, this._.html.c.childNodes[i]);
+					zs4.throttle.job(function(){
+						var a = o._.sort(foo,descend);
+						if (a.length > 1){
+							for (var i = 0 ; i < (a.length-1) ; i++){
+								if (zs4.is.object(a[i]._.html)){
+									o._.html.c.removeChild(a[i]._.html.e);
+									o._.html.c.insertBefore(a[i]._.html.e, o._.html.c.childNodes[i]);
+								}
+							}
 						}
+					});
 
-					}
 				}).bind(o);
 			}
 		}
@@ -1127,9 +1131,17 @@ zs4.admin.util = {
 				o._.html.expanded = false;
 				o._.html.genericRefresh();
 			};
-			o._.html.toggleOn = function(){
+			o._.html.expandTree = function(){
 				o._.html.expanded = true;
-				o._.html.genericRefresh();
+				if (o._.type == Object){
+					zs4.admin.type[o._.typename](po,o);
+				}
+				else {
+					o._.html.genericRefresh();
+				}
+			};
+			o._.html.toggleOn = function(){
+				o._.html.expandTree();
 			};
 			o._.html.onToggle = function(){
 				if (o._.html.toolbarIsOpen && o._.html.toolbar != null){
@@ -3048,47 +3060,65 @@ zs4.admin.type = {
 			console.log(o);
 			return null;
 		}
-		zs4.admin.util.unknown(po,o);
 
-		if (o._.html.uninitialized){
-		}
+		zs4.throttle.job(function(){
+			zs4.admin.util.unknown(po,o);
 
-		for (var n in o){
-			//if (zs4.is.name(n))console.log(n);
-			if (!zs4.is.type(o[n]))continue;
-			if (!zs4.is.function(zs4.admin.type[o[n]._.typename])){
-				console.log('o[n]._.typename '
-				+o[n]._.typename
-				+' @'
-				+o[n]._.path
-				+' IS NOT A CONSTRUCTOR!!!')
-				continue;
+			var kids = new Array();
+
+			for (var n in o){
+				var name = new String(n);
+				//if (zs4.is.name(n))console.log(n);
+				if (!zs4.is.type(o[n]))continue;
+				if (!zs4.is.function(zs4.admin.type[o[n]._.typename])){
+					console.log('o[n]._.typename '
+					+o[n]._.typename
+					+' @'
+					+o[n]._.path
+					+' IS NOT A CONSTRUCTOR!!!')
+					continue;
+				}
+				kids.push(o[n]);
 			}
-			zs4.admin.type[o[n]._.typename](o,o[n]);
-		}
+
+			function makefoo(child){
+
+			};
+			for (var i = 0 ; i < kids.length; i++){
+				if (o._.html.expanded){
+					var child = kids[i]
+					zs4.admin.type[new String(child._.typename)](o,child);
+				}
+			}
+
+			zs4.throttle.job(function(){
+				if (zs4.is.type(o.zs4)&&(o._.flags.value & o._.flags.scope)){
+
+					o._.scope = o;
+					if (zs4.is.string(o.zs4.head.title._.value) && o.zs4.head.title._.value.length > 0){
+						o._.html.name.textContent = o.zs4.head.title._.value;
+						o._.onchange(function(){
+							o._.html.name.textContent = o.zs4.head.title._.value;
+						});
+					}
+					else if (!o._.flags.get.notrans()){
+						o._.html.name.textContent = o._.name + ' (untitled)';
+					}
+				}
+				else{
+					if (zs4.is.type(po))o._.scope = po._.scope;
+				}
+			});
+
+			zs4.throttle.job(function(){o._.html.genericRefresh();});
+			zs4.throttle.job(function(){o._.html.sort();});
+
+		});
 
 		//zs4.admin.util.addClass(e)
 
-		if (zs4.is.type(o.zs4)&&(o._.flags.value & o._.flags.scope)){
 
-			o._.scope = o;
-			if (zs4.is.string(o.zs4.head.title._.value) && o.zs4.head.title._.value.length > 0){
-				o._.html.name.textContent = o.zs4.head.title._.value;
-				o._.onchange(function(){
-					console.log('TITLE AUTOUPDATED');
-					o._.html.name.textContent = o.zs4.head.title._.value;
-				});
-			}
-			else if (!o._.flags.get.notrans()){
-				o._.html.name.textContent = o._.name + ' (untitled)';
-			}
-		}
-		else{
-			if (zs4.is.type(po))o._.scope = po._.scope;
-		}
 
-		o._.html.genericRefresh();
-		o._.html.sort();
 	},
 	password:function(po,o){
 		zs4.admin.type.string(po,o);
@@ -3531,10 +3561,12 @@ zs4.admin.type = {
 
 zs4.css = zs4.loadcss('/style.css');
 zs4.css.onload = function(){
-	zs4.THIS._.print('loaded css \''+'/style.css'+'\'')
-	zs4.admin.type.object(null,zs4.location.get());
-	zs4.admin.rootObject._.html.toggleOn();
-	zs4.admin.rootObject.zs4._.html.toggleOn();
-	zs4.THIS._.print('ADMIN LAUNCHED');
-	zs4.style.refresh();
+	zs4.throttle.job(function(){
+		zs4.THIS._.print('loaded css \''+'/style.css'+'\'')
+		zs4.admin.type.object(null,zs4.location.get());
+		//zs4.admin.rootObject._.html.toggleOn();
+		//zs4.admin.rootObject.zs4._.html.toggleOn();
+		zs4.THIS._.print('ADMIN LAUNCHED');
+		zs4.style.refresh();
+	});
 };
