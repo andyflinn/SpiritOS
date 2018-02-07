@@ -36,10 +36,6 @@ user.create = function(){
       REQUEST.setScope(USER);
       this._.transformInternal(REQUEST);
 
-      //console.log('user.zs4.update()');
-
-      //USER.account.balance._.value -= 1;
-
       var arr;
       if (zs4.is.object(REQUEST.input)){
         for (var n in REQUEST.input) {
@@ -74,7 +70,7 @@ user.create = function(){
 
           for (var n in item.d){
             var msg = n+':';
-//            if (!stat.item.hasOwnProperty(item.d[n])){
+
             if (!zs4.string.array.is.element(statitem,n)){
               msg += ' nostat';
             }

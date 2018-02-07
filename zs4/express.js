@@ -11,7 +11,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var http = require('http');
 var https = require('https');
-
+var passport = require('passport');
 var fs = require('fs');
 
 var express = exports;
@@ -70,7 +70,7 @@ express.setCookie = function(res,zs4request){
 express.getFunction = function (req, res) {
   var starttime = Date.now();
   express.THIS._.print('express.app.get('+req.path+')')
-  //console.log('GET REQUEST: '+req.path);
+  console.log('GET REQUEST: '+req.path);
 
   //console.log('GET REQUEST!!!!!!!!');
 
@@ -206,6 +206,8 @@ express.schema = function(parent){
 
       next();
     });
+
+    zs4.THIS.zs4.passport._.installToExpressApp(app);
 
     app.get('/*',express.getFunction);
     app.post('/*',express.postFunction);

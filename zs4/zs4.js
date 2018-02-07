@@ -223,4 +223,8 @@ zs4.define = function(){
   // Run express only once all components/plugins are loaded and ready
   zs4.node.require.express = require('./express');
   zs4.node.require.express.schema(zs4.THIS.zs4);
+
+  zs4.node.require.passport = require('./passport');
+  zs4.node.require.passport.schema(zs4.THIS.zs4);
+  
 }

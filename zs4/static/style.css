@@ -243,6 +243,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-emailsent:before{content:url(/gfx/icons/email.svg);}
 .icon-error:before{content:url(/gfx/icons/error.svg);}
 .icon-express:before{content:'X';font-weight: bolder;color:darkblue;}
+.icon-facebook:before{content:url(/gfx/icons/facebook.svg);}
 .icon-female:before{content:'\02640';font-weight: bolder;}
 .icon-file:before{content:'f';font-weight: bolder;color:blue;}
 .icon-folder:before{content:'\025D5';font-weight: bolder;}
@@ -257,6 +258,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-item:before{content:url(/gfx/icons/item.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
+.icon-login:before{content:url(/gfx/icons/password.svg);}
 .icon-logo:before{content:url(/gfx/icons/zs4.svg);}
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
@@ -273,6 +275,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-not:before{content:url(/gfx/icons/not.svg);}
 .icon-object:before{content:url(/gfx/icons/object.svg);}
 .icon-os:before{content:url(/gfx/icons/server.svg);}
+.icon-passport:before{content:url(/gfx/icons/passport.svg);}
 .icon-password:before{content:url(/gfx/icons/password.svg);}
 .icon-pause:before{content:url(/gfx/icons/pause.svg);}
 .icon-paypal:before{content:url(/gfx/icons/paypal.svg);}
