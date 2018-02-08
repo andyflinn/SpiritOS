@@ -39,6 +39,7 @@ user.create = function(){
         var network = SOCIAL._.name;
         console.log('instantiating '+SOCIAL._.name+' for USER');
         USER.social._.property(new zs4.type.object({name:network,flags:''}));
+        USER.social[network]._.property(new zs4.type.date({name:'date',flags:''}));
         USER.social[network]._.property(new zs4.type.string({name:'display',flags:''}));
         USER.social[network]._.property(new zs4.type.string({name:'id',flags:''}));
         USER.social[network]._.property(new zs4.type.string({name:'email',flags:''}));

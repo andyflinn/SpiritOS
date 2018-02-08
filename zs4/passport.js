@@ -40,6 +40,7 @@ passport.create = function(){
     var ret = new Object({
       email:profile.emails[0].value,
       display:profile.displayName,
+      provider:profile.provider,
       id:profile.id,
     });
 
@@ -67,6 +68,16 @@ passport.create = function(){
         var nu = new USER.create();
         nu.zs4.email._.value = po.email;
         nu.zs4.head.title._.value = po.display;
+        var validProvider = false;
+        if (zs4.is.string(po.provider)&&po.provided != ''&&zs4.is.type(nu.social[po.provider]))
+          validProvider = true;
+
+        if (validProvider){
+          nu.social[po.provider].display._.value = po.display;
+          nu.social[po.provider].id._.value = po.id;
+          nu.social[po.provider].email._.value = po.email;
+          nu.social[po.provider].date._.value = Date.now();
+        }
         var data = nu._.store();
         console.log('NEW USER REQUEST:',zs4.json.stringify(data));
         req.call({
@@ -76,19 +87,41 @@ passport.create = function(){
         },
         function(callback){
           if (callback.error != null){
-            console.log('zs4.type.user.method.new() failed: ',callback.error);
-            return cb(null, profile);
+            var err = 'zs4.type.user.method.new() failed: ' + callback.error;
+            console.log(err);
+            return cb(err, null);
           }
           else {
-            console.log('zs4.type.user.method.new() SUCCESS: ',callback.result);
-            return cb(null, profile);
+            console.log('zs4.type.user.method.new() SUCCESS: ',callback);
+            req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
+            return cb(null, req.request.token);
           }
         });
       }
       else {
-        console.log('zs4.type.user.method.getone() SUCCESS: ',callback.result);
+        console.log('zs4.type.user.method.getone() SUCCESS: ',callback);
+        req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
 
-        return cb(null, profile);
+        if (validProvider){
+          var input = new Object({social:{}});
+          input.social[po.provider] = new Object({
+            display:po.display,
+            id:po.id,
+            email:po.email,
+            date:Date.now(),
+          })
+          req.call({
+            path:callback.result,
+            input:input,
+            root:true,
+          },
+          function(){
+            return cb(null, req.request.token);
+          });
+        }
+        else {
+          return cb(null, req.request.token);
+        }
       }
 
     });
@@ -109,9 +142,11 @@ passport.create = function(){
 
       PP.use(new PASSPORT[strat]._.Strategy({
           clientID: PASSPORT[strat].id._.value,
+          clientId: PASSPORT[strat].id._.value,
           clientSecret: PASSPORT[strat].secret._.value,
           //callbackURL: zs4.THIS.zs4.express.getHostURL(),
           callbackURL: 'http://'+zs4.THIS.zs4.express.host._.value+'/zs4.passport.'+strat+'.return',
+          returnURL: 'http://'+zs4.THIS.zs4.express.host._.value+'/zs4.passport.'+strat+'.return',
           profileFields: ['id', 'displayName', 'email', 'birthday', 'friends', 'first_name', 'last_name', 'middle_name', 'gender', 'link'],
         },
         PASSPORT._.loginHandler
@@ -127,7 +162,7 @@ passport.create = function(){
       );
 
       app.get('/'+PASSPORT[strat]._.path + '.return',
-              PP.authenticate(strat,{failureRedirect: '/error'}),
+              PP.authenticate(strat,PASSPORT[strat]._.Options),
               function(req, res) {
                 // Successful authentication, redirect home.
                 res.redirect('/');
@@ -155,6 +190,7 @@ passport.create = function(){
 
     PASSPORT[name]._.Strategy = strat;
     PASSPORT[name]._.Options = opt;
+    PASSPORT[name]._.Options.failureRedirect = '/error';
   }
 
   createStrategy(
@@ -165,4 +201,12 @@ passport.create = function(){
       scope: ['user_friends', 'email', 'public_profile'],
     }
   );
+  createStrategy(
+    'google',
+    require('passport-google-auth').Strategy,
+    {
+    }
+  );
+
+
 }

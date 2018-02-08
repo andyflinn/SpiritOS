@@ -38,6 +38,15 @@ express.html = function(req,res){
 }
 
 express.getCookie = function(req,zs4request){
+  if (req.user){
+    console.log('!!!!!!!!!!!!!!! getCookie found user object: ',req.user);
+  }
+  for (var n in req) {
+    //var txt = n;
+    //if (n=='_passport') txt += zs4.json.stringify(n._passport);
+    //console.log('GET_COOKIE......',txt);
+  }
+
   if (express.THIS.cookies._.value){
     if (!zs4.is.string(zs4request.request.token)){
       if (req.query!=null&&req.query.token!=null&&req.query.token.length >10){

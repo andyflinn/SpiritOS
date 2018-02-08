@@ -2847,7 +2847,8 @@ zs4.admin.type = {
 			});
 			o._.html.expanded = true;
 			o._.html.input.checked = o._.value;
-			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.readOnly = o._.html.input.disabled = o._.flags.get.noset();
+			//o._.html.input.readOnly = o._.flags.get.noset();
 		}
 	},
 	bye:function(po,o){
@@ -3008,7 +3009,8 @@ zs4.admin.type = {
 				o._.html.input.value = parseInt(o._.value);
 				o._.html.genericRefresh();
 			});
-			o._.html.input.readOnly = o._.flags.get.noset();
+			//o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.readOnly = o._.html.input.disabled = o._.flags.get.noset();
 			o._.html.input.value = parseInt(o._.value);
 			o._.html.genericRefresh();
 		}
@@ -3048,7 +3050,8 @@ zs4.admin.type = {
 				o._.html.input.value = parseFloat(o._.value);
 				o._.html.genericRefresh();
 			});
-			o._.html.input.readOnly = o._.flags.get.noset();
+			//o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.readOnly = o._.html.input.disabled = o._.flags.get.noset();
 			o._.html.input.value = parseFloat(o._.value);
 			o._.html.genericRefresh();
 		}
@@ -3388,7 +3391,7 @@ zs4.admin.type = {
 				}).bind(o);
 			}
 			o._.html.expanded = true;
-			o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.readOnly = o._.html.input.disabled = o._.flags.get.noset();
 			o._.onchange(function(ctx){
 				o._.html.input.value = o._.value;
 				o._.html.genericRefresh();
@@ -3548,7 +3551,8 @@ zs4.admin.type = {
 				o._.html.genericRefresh();
 				o._.html.refreshOptions(o);
 			});
-			o._.html.input.readOnly = o._.flags.get.noset();
+			//o._.html.input.readOnly = o._.flags.get.noset();
+			o._.html.input.readOnly = o._.html.input.disabled = o._.flags.get.noset();
 			o._.html.input.value = o._.value;
 			o._.html.refreshOptions(o);
 			o._.html.genericRefresh();
