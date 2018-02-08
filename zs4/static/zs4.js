@@ -4674,6 +4674,8 @@ zs4.request = function(o){
       var THIS = this;
       var request;
 
+      if (rootAuthority==null && args.root == true)rootAuthority=true;
+
       if (args.wantreply){
         request = new zs4.request();
         if (this.tokenExists()){
