@@ -150,7 +150,7 @@ passport.create = function(){
           profileFields: ['id', 'displayName', 'email', 'birthday', 'friends', 'first_name', 'last_name', 'middle_name', 'gender', 'link'],
         },
         PASSPORT._.loginHandler
-      ));
+      )) ;
 
 
       console.log('PASSPORT.'+strat+'._.Options = ',PASSPORT[strat]._.Options);
