@@ -153,6 +153,9 @@ zs4.define = function(){
   zs4.node.require.password = require('./password');
   zs4.node.require.password.schema(zs4.THIS.zs4);
 
+  zs4.node.require.passport = require('./passport');
+  zs4.node.require.passport.schema(zs4.THIS.zs4);
+
   zs4.node.require.rsa = require('./rsa');
   zs4.node.require.rsa.schema(zs4.THIS.zs4);
 
@@ -224,7 +227,4 @@ zs4.define = function(){
   zs4.node.require.express = require('./express');
   zs4.node.require.express.schema(zs4.THIS.zs4);
 
-  zs4.node.require.passport = require('./passport');
-  zs4.node.require.passport.schema(zs4.THIS.zs4);
-  
 }

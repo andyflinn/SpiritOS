@@ -2019,21 +2019,24 @@ zs4.type = {
           this._.print(err,req);
           this._.get(req); cb(); return;
         }
-        if (!req.tokenExists()){
+        if (!req.tokenExists()&&!req.userIsRoot()){
           var err = 'not logged in';
           req.error(THIS.method.new,err);
           this._.print(err,req);
           this._.get(req); cb(); return;
         }
+
         if (zs4.is.object(req.input)){
           if (THIS.config.driver._.value != ''){
             var nu = THIS.template._.new();
             nu._.load(req.input);
             nu._.flags.set.notrans(false);
             nu._.flags.set.scope(true);
-            nu.zs4.head.title._.value = '(untitled)';
+            //nu.zs4.head.title._.value = '(untitled)';
             nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
-            nu.zs4.head.owner._.value = req.request.payload.scope;
+            if (!req.userIsRoot())nu.zs4.head.owner._.value = req.request.payload.scope;
+            else nu.zs4.head.owner._.value = '';
+
             zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
               if (zs4.is.type(ret)){
                 THIS._.array.elementConnect(THIS.array,ret);

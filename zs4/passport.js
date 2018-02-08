@@ -15,15 +15,83 @@ passport.create = function(){
   zs4.type.object.call(PASSPORT,new Object({name:'passport',flags:'authgetpublic authsetself',}));
 
   PASSPORT._.create = passport.create;
+  PASSPORT._.extractUserObject = function(profile){
+
+    var log = 'PASSPORT._.extractUserObject: ';
+
+    if (!zs4.is.object(profile)) {
+      console.log(log+'ERROR: profile is not an object');
+      return null;
+    }
+    if (!zs4.is.array(profile.emails)) {
+      console.log(log+'ERROR: profile.emails is not an array');
+      return null;
+    }
+    if (!zs4.is.object(profile.emails[0])) {
+      console.log(log+'ERROR: profile.emails[0] is not an object');
+      return null;
+    }
+    if (!zs4.is.email(profile.emails[0].value)) {
+      console.log(log+'ERROR: profile.emails[0].value is not an email address');
+      return null;
+    }
+
+    console.log(log+profile.emails[0].value);
+    var ret = new Object({
+      email:profile.emails[0].value,
+      display:profile.displayName,
+      id:profile.id,
+    });
+
+    return ret;
+  };
   PASSPORT._.loginHandler = function(accessToken, refreshToken, profile, cb) {
     console.log('PASSPORT PROFILE FUNCTION returned');
     console.log(zs4.json.stringify(profile));
-    // In this example, the user's Facebook profile is supplied as the user
-    // record.  In a production-quality application, the Facebook profile should
-    // be associated with a user record in the application's database, which
-    // allows for account linking and authentication with other identity
-    // providers.
-    return cb(null, profile);
+    var po = PASSPORT._.extractUserObject(profile);
+    if (po == null) return cb(null, profile);
+    console.log(po);
+
+    var input = new Object({zs4:{type:{user:{method:{getone:{item:'zs4.email',eq:po.email}}}}}});
+    console.log('PASSPORT search user req',zs4.json.stringify(input));
+    var req = new zs4.request();
+    req.call({
+      path:'zs4.type.user.method.getone',
+      input:{item:'zs4.email',eq:po.email},
+      root:true,
+    },
+    function(callback){
+      if (callback.error != null){
+        console.log('zs4.type.user.method.getone() failed: ',callback);
+        var USER = require('./user');
+        var nu = new USER.create();
+        nu.zs4.email._.value = po.email;
+        nu.zs4.head.title._.value = po.display;
+        var data = nu._.store();
+        console.log('NEW USER REQUEST:',zs4.json.stringify(data));
+        req.call({
+          path:'zs4.type.user.method.new',
+          input:data,
+          root:true,
+        },
+        function(callback){
+          if (callback.error != null){
+            console.log('zs4.type.user.method.new() failed: ',callback.error);
+            return cb(null, profile);
+          }
+          else {
+            console.log('zs4.type.user.method.new() SUCCESS: ',callback.result);
+            return cb(null, profile);
+          }
+        });
+      }
+      else {
+        console.log('zs4.type.user.method.getone() SUCCESS: ',callback.result);
+
+        return cb(null, profile);
+      }
+
+    });
   };
   PASSPORT._.installToExpressApp = function(app){
     app.use(PP.initialize());
