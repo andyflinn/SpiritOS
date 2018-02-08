@@ -251,6 +251,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-getone:before{content:'1';font-weight: bolder;color:darkgreen;}
 .icon-glasses:before{content:url(/gfx/icons/glasses.svg);}
 .icon-head:before{content:url(/gfx/icons/head.svg);}
+.icon-id:before{content:url(/gfx/icons/head.svg);}
 .icon-hi:before{content:'>)';font-weight: bolder;}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
 .icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
@@ -306,6 +307,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-server:before{content:url(/gfx/icons/server.svg);}
 .icon-since:before{content:url(/gfx/icons/date.svg);}
 .icon-smtp:before{content:url(/gfx/icons/smtp.svg);}
+.icon-social:before{content:url(/gfx/icons/social.svg);}
 .icon-sort:before{content:url(/gfx/icons/sort.svg);}
 .icon-spin:before{content:url(/gfx/icons/globe.svg);}
 .icon-stat:before{content:url(/gfx/icons/stat.svg);}
