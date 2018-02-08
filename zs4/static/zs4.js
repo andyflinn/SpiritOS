@@ -4844,8 +4844,7 @@ zs4.request = function(o){
         r.request.scope = this.request.payload.scope;
       }
 
-      //if (this.userIsRoot())
-        r.request.stat = this.request.stat;
+      r.request.stat = this.request.stat;
 
       return r;
     };
