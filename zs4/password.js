@@ -89,7 +89,7 @@ password.create = function(){
   }).bind(THIS);
 
   THIS._.get = (function(req,po){
-    if (req.tokenExists()&&(!req.flags.get.am()&&!req.flags.get.own()))return null;
+    //if (req.tokenExists()&&(!req.flags.get.am()&&!req.flags.get.own()))return null;
 
     req.setScope(this);
     this._.print(this._.path+'.get()');
@@ -142,7 +142,8 @@ password.create = function(){
         return null;
       }
 
-      set(get);get.set._.flags |= THIS._.flags.required;
+      set(get);
+      get.set._.flags |= THIS._.flags.required;
 
     }
   }).bind(THIS);

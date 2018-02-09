@@ -101,13 +101,8 @@ node.create = function(name){
   NODE.os._.neteyeface.search = (function(s){
     var nif = NODE.os._.neteyeface.nif;
     var count = 0;
-    for (var n in nif){
-      var o = nif[n];
-      if (zs4.is.array(o)){
-        count++;
-      }
-    }
-    return count;
+    for (var n in nif){if(zs4.string.search(n,s))return true;}
+    return false;
   }).bind(NODE);
   NODE.os._.neteyeface.totext = (function(){
     var nif = NODE.os._.neteyeface.nif;
@@ -146,9 +141,15 @@ node.create = function(name){
     NODE.is.heroku._.value = false;
   }
 
-  NODE.is._.property(new zs4.type.object({name:'not',flags:'noset',}));
-  NODE.is.not._.property(new zs4.type.boolean({name:'cloudhost',flags:'noset',}));
-
+  // NODE HAS
+  ///////////
+  NODE._.property(new zs4.type.object({name:'has',flags:'noset',}));
+  NODE.has._.property(new zs4.type.boolean({name:'wifi',flags:'noset',}));
+  NODE.has.wifi._.value = NODE.os._.neteyeface.search('Wi-Fi');
+  NODE.has._.property(new zs4.type.boolean({name:'lonet',flags:'noset',}));
+  NODE.has.lonet._.value = NODE.os._.neteyeface.search('lo');
+  NODE.has._.property(new zs4.type.boolean({name:'ethnet',flags:'noset',}));
+  NODE.has.ethnet._.value = NODE.os._.neteyeface.search('eth0');
 
 
 
