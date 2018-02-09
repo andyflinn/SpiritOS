@@ -105,25 +105,8 @@ node.create = function(name){
     return false;
   }).bind(NODE);
   NODE.os._.neteyeface.totext = (function(){
-    var nif = NODE.os._.neteyeface.nif;
-    var text = '';
-    var count = 0;
-    for (var n in nif){
-      var o = nif[n];
-      if (zs4.is.array(o)){
-        text += (n + '\n');
-        count++;
-
-        for (var i = 0; i < o.length; i++){
-          var a = o[i];
-          for (var x in a){
-            text += '  '+x+' '+a[x]+'\n';
-          }
-        }
-        text+='\n';
-      }
-      text+='\n';
-    }
+    //var nif = NODE.os._.neteyeface.nif;
+    var text = zs4.json.textify(NODE.os._.neteyeface.nif);
     return text;
   }).bind(NODE);
   NODE.os.networkinterfaces._.value = NODE.os._.neteyeface.totext();
