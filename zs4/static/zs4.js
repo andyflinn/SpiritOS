@@ -459,7 +459,7 @@ zs4.json =  {
         text += '['
         if (o.length>0)text+='\n';
         for (var i = 0; i<o.length; i++){
-          text += indent + '\"'+ n + '\":';
+          text += indent; // + '\"'+ n + '\":';
 
           if (zs4.is.object(o[i])||zs4.is.array(o[i])){
             level += ipl;
@@ -469,7 +469,7 @@ zs4.json =  {
           else {
             text += JSON.stringify(o[i]);
           }
-          if (c2 < count)text += ',';
+          if (i < (o.length-1))text += ',';
           text += '\n';
         }
         text += indent+']';
