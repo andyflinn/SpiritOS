@@ -132,7 +132,7 @@ zs4.load = function(cb){
 zs4.save = function(cb){
   var out = zs4.THIS._.store();
   if (out==null){cb(new zs4.error({text:'no save data.'}));return;}
-  var save = zs4.json.stringify(out);
+  var save = zs4.json.textify(out);
   fs.writeFile(DOT_ZS4,save, function(err){
     if (err){cb(new zs4.error({text:'failed to save object.'}));}
     else {cb(new zs4.done({text:DOT_ZS4+' saved.'}));}
