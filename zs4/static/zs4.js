@@ -427,6 +427,61 @@ zs4.copy = {
 
 zs4.json =  {
   stringify:function(o){return JSON.stringify(zs4.copy.noncircular(o,15));},
+  textify:function(o){
+    o = zs4.copy.noncircular(o,15);
+
+    var text = ''; var level = 0; var ipl = 2;
+    function recurse(o){
+      var indent = ''; for (var i = 0;i<level;i++){indent += ' ';}
+      if (zs4.is.object(o)){
+        text += '{'
+        var count = 0; for (var n in o){count += 1;}
+        if (count>0)text+='\n';
+        var c2 = 0;
+        for (var n in o){
+          c2 += 1;
+          text += indent + '\"'+ n + '\":';
+
+          if (zs4.is.object(o[n])||zs4.is.array(o[n])){
+            level += ipl;
+            recurse(o[n]);
+            level -= ipl;
+          }
+          else {
+            text += JSON.stringify(o[n]);
+          }
+          if (c2 < count)text += ',';
+          text += '\n';
+        }
+        text += indent+'}';
+      }
+      else if (zs4.is.array(o)){
+        text += '['
+        if (o.length>0)text+='\n';
+        for (var i = 0; i<o.length; i++){
+          text += indent + '\"'+ n + '\":';
+
+          if (zs4.is.object(o[i])||zs4.is.array(o[i])){
+            level += ipl;
+            recurse(o[i]);
+            level -= ipl;
+          }
+          else {
+            text += JSON.stringify(o[i]);
+          }
+          if (c2 < count)text += ',';
+          text += '\n';
+        }
+        text += indent+']';
+      }
+      else {
+        text += JSON.stringify(o);
+      }
+    }
+
+    recurse(o);
+    return text;
+  },
   parse:function(string,output){
     try {
       var r = JSON.parse(string);
