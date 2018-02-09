@@ -94,7 +94,11 @@ password.create = function(){
     req.setScope(this);
     this._.print(this._.path+'.get()');
     //console.log('password.get'+ JSON.stringify(this._.authGet));
-    var get = null;
+    var get = this._.getInitialize(req);
+    if (get==null){
+      this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
+      return null;
+    }
 
     function vfy(get){
       get.vfy = new Object({_:{}});
@@ -112,21 +116,10 @@ password.create = function(){
     };
 
     if (this._.flags.value & this._.flags.notrans){
-      var get = this._.getInitialize(req);
-      if (get==null){
-        this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
-        return null;
-      }
       vfy(get);
       set(get);
     }
     else if (passhash.isHashed(this.hashed._.value)){
-      get = this._.getInitialize(req);
-      if (get==null){
-        this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
-        return null;
-      }
-
       vfy(get);
       if (req.flags.get.am()||req.flags.get.own()){
         set(get);
@@ -136,16 +129,11 @@ password.create = function(){
       }
     }
     else if (req.flags.get.am()||req.flags.get.own()){
-      get = this._.getInitialize(req);
-      if (get==null){
-        this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
-        return null;
-      }
-
       set(get);
       get.set._.flags |= THIS._.flags.required;
-
     }
+
+    return get;
   }).bind(THIS);
 
   THIS._.reset = (function(){THIS.hashed._.value=''}).bind(THIS);
