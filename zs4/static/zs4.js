@@ -436,7 +436,7 @@ zs4.json =  {
       if (zs4.is.object(o)){
         text += '{'
         var count = 0; for (var n in o){count += 1;}
-        if (count>0)text+='\n';
+        if (count>0)text+='\r\n';
         var c2 = 0;
         for (var n in o){
           c2 += 1;
@@ -451,13 +451,13 @@ zs4.json =  {
             text += JSON.stringify(o[n]);
           }
           if (c2 < count)text += ',';
-          text += '\n';
+          text += '\r\n';
         }
         text += indent+'}';
       }
       else if (zs4.is.array(o)){
         text += '['
-        if (o.length>0)text+='\n';
+        if (o.length>0)text+='\r\n';
         for (var i = 0; i<o.length; i++){
           text += indent; // + '\"'+ n + '\":';
 
@@ -470,7 +470,7 @@ zs4.json =  {
             text += JSON.stringify(o[i]);
           }
           if (i < (o.length-1))text += ',';
-          text += '\n';
+          text += '\r\n';
         }
         text += indent+']';
       }
@@ -3448,7 +3448,8 @@ zs4.type = {
       //}
 
       if (zs4.is.object(req.input)&&zs4.is.object(req.input.getHTML)){
-        this._.print('getHTML() '+zs4.json.stringify(input),req);
+        this._.print('getHTML() '+zs4.json.stringify(req.input),req);
+        console.log('---- getHTML('+THIS._.path+') '+zs4.json.stringify(req.input));
         this._.getHTML(req);
         this._.get(req); cb(); return;
       }

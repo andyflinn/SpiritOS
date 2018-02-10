@@ -46,65 +46,75 @@ passport.create = function(){
 
     return ret;
   };
-  PASSPORT._.loginHandler = function(accessToken, refreshToken, profile, cb) {
-    console.log('PASSPORT PROFILE FUNCTION returned');
-    console.log(zs4.json.stringify(profile));
-    var po = PASSPORT._.extractUserObject(profile);
-    if (po == null) return cb(null, profile);
-    console.log(po);
+  PASSPORT._.installToExpressApp = function(app){
+    app.use(PP.initialize());
 
-    var input = new Object({zs4:{type:{user:{method:{getone:{item:'zs4.email',eq:po.email}}}}}});
-    console.log('PASSPORT search user req',zs4.json.stringify(input));
-    var req = new zs4.request();
-    req.call({
-      path:'zs4.type.user.method.getone',
-      input:{item:'zs4.email',eq:po.email},
-      root:true,
-    },
-    function(callback){
-      if (callback.error != null){
-        console.log('zs4.type.user.method.getone() failed: ',callback);
-        var USER = require('./user');
-        var nu = new USER.create();
-        nu.zs4.email._.value = po.email;
-        nu.zs4.head.title._.value = po.display;
-        var validProvider = false;
-        if (zs4.is.string(po.provider)&&po.provided != ''&&zs4.is.type(nu.social[po.provider]))
-          validProvider = true;
+    PASSPORT._.installStrategy(app,'facebook');
+    PASSPORT._.installStrategy(app,'google');
+  };
+  PASSPORT._.installStrategy = function(app,strategy){
+    //var strategy = new String(strat);
+    if (PASSPORT[strategy].configured._.value != true)return;
 
-        if (validProvider){
-          nu.social[po.provider].display._.value = po.display;
-          nu.social[po.provider].id._.value = po.id;
-          nu.social[po.provider].email._.value = po.email;
-          nu.social[po.provider].date._.value = Date.now();
+    PASSPORT[strategy]._.loginQueue = new Array();
+
+    PASSPORT[strategy]._.loginHandler = function(accessToken, refreshToken, profile, cb) {
+      //console.log('STRATEGY is still '+strategy);
+      //console.log('PASSPORT PROFILE FUNCTION returned',accessToken,refreshToken);
+      //console.log(zs4.json.stringify(profile));
+      var po = PASSPORT._.extractUserObject(profile);
+      if (po == null) return cb(null, profile);
+      //console.log(po);
+
+      var input = new Object({zs4:{type:{user:{method:{getone:{item:'zs4.email',eq:po.email}}}}}});
+      //console.log('PASSPORT search user req',zs4.json.stringify(input));
+      var req = new zs4.request();
+      req.call({
+        path:'zs4.type.user.method.getone',
+        input:{item:'zs4.email',eq:po.email},
+        root:true,
+      },
+      function(callback){
+        if (callback.error != null){
+          //console.log('zs4.type.user.method.getone() failed: ',callback);
+          var USER = require('./user');
+          var nu = new USER.create();
+          nu.zs4.email._.value = po.email;
+          nu.zs4.head.title._.value = po.display;
+
+          nu.social[strategy].display._.value = po.display;
+          nu.social[strategy].id._.value = po.id;
+          nu.social[strategy].email._.value = po.email;
+          nu.social[strategy].date._.value = Date.now();
+
+          var data = nu._.store();
+          //console.log('NEW USER REQUEST:',zs4.json.stringify(data));
+          req.call({
+            path:'zs4.type.user.method.new',
+            input:data,
+            root:true,
+          },
+          function(callback){
+            if (callback.error != null){
+              var err = 'zs4.type.user.method.new() failed: ' + callback.error;
+              console.log(err);
+              return cb(err, null);
+            }
+            else {
+              //console.log('zs4.type.user.method.new() SUCCESS: ',callback);
+              req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
+              var ret = new Object({token:req.request.token,id:callback.result,time:Date.now(),});
+              PASSPORT[strategy]._.loginQueue.push(ret);
+              return cb(null,ret);
+            }
+          });
         }
-        var data = nu._.store();
-        console.log('NEW USER REQUEST:',zs4.json.stringify(data));
-        req.call({
-          path:'zs4.type.user.method.new',
-          input:data,
-          root:true,
-        },
-        function(callback){
-          if (callback.error != null){
-            var err = 'zs4.type.user.method.new() failed: ' + callback.error;
-            console.log(err);
-            return cb(err, null);
-          }
-          else {
-            console.log('zs4.type.user.method.new() SUCCESS: ',callback);
-            req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
-            return cb(null, req.request.token);
-          }
-        });
-      }
-      else {
-        console.log('zs4.type.user.method.getone() SUCCESS: ',callback);
-        req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
+        else {
+          //console.log('zs4.type.user.method.getone() SUCCESS: ',callback);
+          req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
 
-        if (validProvider){
           var input = new Object({social:{}});
-          input.social[po.provider] = new Object({
+          input.social[strategy] = new Object({
             display:po.display,
             id:po.id,
             email:po.email,
@@ -116,81 +126,73 @@ passport.create = function(){
             root:true,
           },
           function(){
-            return cb(null, req.request.token);
+            var ret = new Object({token:req.request.token,id:callback.result,time:Date.now(),});
+            //console.log(strategy);
+            PASSPORT[strategy]._.loginQueue.push(ret);
+            return cb(null, ret);
           });
+
         }
-        else {
-          return cb(null, req.request.token);
-        }
-      }
 
-    });
-  };
-  PASSPORT._.installToExpressApp = function(app){
-    app.use(PP.initialize());
-    PP.serializeUser(function(user, done) {
-      done(null, user);
-    });
+      });
+    };
 
-    PP.deserializeUser(function(user, done) {
-      done(null, user);
-    });
-
-    for (var strat in PASSPORT){
-      if (!zs4.is.type(PASSPORT[strat]))continue;
-      if (PASSPORT[strat].configured._.value != true)continue;
-
-      PP.use(new PASSPORT[strat]._.Strategy({
-          clientID: PASSPORT[strat].id._.value,
-          clientId: PASSPORT[strat].id._.value,
-          clientSecret: PASSPORT[strat].secret._.value,
-          //callbackURL: zs4.THIS.zs4.express.getHostURL(),
-          callbackURL: 'http://'+zs4.THIS.zs4.express.host._.value+'/zs4.passport.'+strat+'.return',
-          returnURL: 'http://'+zs4.THIS.zs4.express.host._.value+'/zs4.passport.'+strat+'.return',
-          profileFields: ['id', 'displayName', 'email', 'birthday', 'friends', 'first_name', 'last_name', 'middle_name', 'gender', 'link'],
-        },
-        PASSPORT._.loginHandler
-      )) ;
+    PP.use(new PASSPORT[strategy]._.Strategy({
+        clientID: PASSPORT[strategy].id._.value,
+        clientId: PASSPORT[strategy].id._.value,
+        clientSecret: PASSPORT[strategy].secret._.value,
+        //callbackURL: zs4.THIS.zs4.express.getHostURL(),
+        callbackURL: 'http://'+zs4.THIS.zs4.express.host._.value+'/zs4.passport.'+strategy+'.return',
+        returnURL: 'http://'+zs4.THIS.zs4.express.host._.value+'/zs4.passport.'+strategy+'.return',
+        profileFields: ['id', 'displayName', 'email', 'birthday', 'friends', 'first_name', 'last_name', 'middle_name', 'gender', 'link'],
+      },
+      PASSPORT[strategy]._.loginHandler
+    )) ;
 
 
-      console.log('PASSPORT.'+strat+'._.Options = ',PASSPORT[strat]._.Options);
-      app.get('/'+PASSPORT[strat]._.path + '.login',
-              PP.authenticate(strat,PASSPORT[strat]._.Options,PASSPORT[strat]._.Options),
-              function(req, res) {
-                res.redirect('/');
-              }
-      );
+    console.log('PASSPORT.'+strategy+'._.Options = ',PASSPORT[strategy]._.Options);
+    app.get('/'+PASSPORT[strategy]._.path + '.login',
+            PP.authenticate(strategy,PASSPORT[strategy]._.Options,PASSPORT[strategy]._.Options),
+            function(req, res) {
+              res.redirect('/');
+            }
+    );
 
-      app.get('/'+PASSPORT[strat]._.path + '.return',
-              PP.authenticate(strat,PASSPORT[strat]._.Options),
-              function(req, res) {
-                // Successful authentication, redirect home.
-                res.redirect('/');
-              }
-      );
+    var redir = '/zs4.passport.'+strategy+'.success';
+    console.log('REDIRECT = '+redir);
+    app.get('/'+PASSPORT[strategy]._.path + '.return',
+            PP.authenticate(strategy,PASSPORT[strategy]._.Options),
+            function(req, res) {
+              // Successful authentication, redirect home.
+              var shift = PASSPORT[strategy]._.loginQueue.shift();
+              console.log('time elapsed: '+(Date.now()-shift.time));
+              console.log('SESSION-esque data: ',zs4.json.textify(shift));
+              res.redirect(redir+'?token='+shift.token+'&id='+shift.id);
+            }
+    );
 
-      //app.post(pp[strat]._.path + '.login',passport.authenticate('facebook'));
-      console.log('EXPRESS/PASSPORT route for '+strat+' configured:'+PASSPORT[strat]._.path + '.login');
-
-      //app.get(pp[strat]._.path + '.return',
-      //  passport.authenticate(strat, { failureRedirect: '/login' }),
-    }
+    console.log('EXPRESS/PASSPORT route for '+strategy+' configured:'+PASSPORT[strategy]._.path + '.login');
 
   };
 
   function createStrategy(name,strat,opt){
 
-
     PASSPORT._.property(new zs4.type.object({name:name,flags:'authgetpublic authsetself',}));
     PASSPORT[name]._.property(new zs4.type.boolean({name:'configured',flags:'authsetself quickupdate',default:false,}));
     PASSPORT[name]._.property(new zs4.type.string({name:'id',flags:'authsetself quickupdate',}));
     PASSPORT[name]._.property(new zs4.type.string({name:'secret',flags:'authsetself quickupdate',}));
-    PASSPORT[name]._.property(new zs4.type.object({name:'login',flags:'api authpublic authsetself quickupdate',}));
-    PASSPORT[name]._.property(new zs4.type.object({name:'return',flags:'api authpublic authsetself quickupdate',}));
+    PASSPORT[name]._.property(new zs4.type.object({name:'success',flags:'api authpublic authsetself quickupdate',}));
 
     PASSPORT[name]._.Strategy = strat;
     PASSPORT[name]._.Options = opt;
     PASSPORT[name]._.Options.failureRedirect = '/error';
+    PASSPORT[name]._.Options.session = false;
+
+    //var oldGetHtml = PASSPORT[name].success._.getHTML;
+    //PASSPORT[name].success._.getHTML = (function(req){
+    //  console.log('PASSPORT SUCCESS FUNCTION CALLED');
+    //  return oldGetHtml(req)
+    //}).bind(PASSPORT[name].success);
   }
 
   createStrategy(

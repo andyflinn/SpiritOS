@@ -37,7 +37,7 @@ user.create = function(){
       for (var n in PASSPORT)if (zs4.is.type(PASSPORT[n])){
         var SOCIAL = PASSPORT[n];
         var network = SOCIAL._.name;
-        console.log('instantiating '+SOCIAL._.name+' for USER');
+        //console.log('instantiating '+SOCIAL._.name+' for USER');
         USER.social._.property(new zs4.type.object({name:network,flags:''}));
         USER.social[network]._.property(new zs4.type.date({name:'date',flags:''}));
         USER.social[network]._.property(new zs4.type.string({name:'display',flags:''}));
