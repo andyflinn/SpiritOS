@@ -49,11 +49,9 @@ zs4.commandLine = function(){
         zs4.console.log('req.request.needsSaving');
         zs4.save(function(){
           zs4.console.log('saved');
-          //console.log(zs4.json.stringify(zs4.THIS._.store()));
+          console.log(zs4.json.textify(zs4.THIS._.store()));
+          zs4.throttle.k=true;
         });
-      }
-      else{
-        //console.log(zs4.json.stringify(zs4.type.store.call(zs4.THIS)));
       }
     });
   });
@@ -113,14 +111,15 @@ zs4.load = function(cb){
         }
         else {
           cb(new zs4.error({text:('cannot parse file '+f)}));
+          return false;
         }
       }
       else {
         cb(new zs4.error({text:('cannot load file '+f)}));
+        return false;
       }
     });
   };
-
 
   if (zs4.THIS.zs4.node.is.heroku._.getValue()){
     return envvar('ZS4',cb);
