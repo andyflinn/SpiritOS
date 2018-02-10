@@ -139,7 +139,7 @@ zs4.load = function(cb){
   return file(DOT_ZS4,function(){
 
 
-    return guess(cb);
+    return cb();
   });
 };
 
