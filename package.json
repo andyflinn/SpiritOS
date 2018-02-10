@@ -6,7 +6,7 @@
   "author": "Andy Flinn",
   "license": "THE ZS4 NPL (NATURAL PERSONS LICENCE)",
   "scripts": {
-    "start": "node zs4.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "body-parser": "~1.13.2",
