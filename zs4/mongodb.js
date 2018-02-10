@@ -360,7 +360,9 @@ mongodb.create = function(input){
         });
       });
     }
-
+    else {
+      cb();
+    }
   }).bind(MONGODB);
 
   zs4.boot.call(MONGODB,MONGODB.connect,MONGODB);
