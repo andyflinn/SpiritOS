@@ -147,6 +147,9 @@ password.create = function(){
   THIS._.property(new zs4.type.password({name:'set',flags:'nostore',}));
   THIS._.property(new zs4.type.password({name:'vfy',flags:'required nostore',}));
 
+  THIS.isinitialized = function(){
+    return passhash.isHashed(this.hashed._.value)
+  };
   THIS.verify = function(pw){
     //zs4.console.log('verifying');
     if (!zs4.is.password(pw)||!passhash.isHashed(this.hashed._.value)){

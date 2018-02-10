@@ -128,6 +128,20 @@ node.create = function(name){
     else {
       NODE.is.heroku._.value = false;
     }
+
+        NODE.is._.property(new zs4.type.boolean({name:'root',flags:'noset',}));
+        if (NODE.os.user._.value=='root' && NODE.os.platform._.value=='linux'){NODE.is.root._.value=true;}
+
+        NODE.is._.property(new zs4.type.boolean({name:'gcloudshell',flags:'noset',}));
+        if (NODE.os.hostname._.value.search('devshell-vm')>=0){NODE.is.gcloudshell._.value=true;}
+
+        NODE.is._.property(new zs4.type.boolean({name:'windows',flags:'noset',}));
+        if (NODE.os.platform._.value=='win32' && NODE.process.platform._.value=='win32'){NODE.is.windows._.value=true;}
+
+        NODE.is._.property(new zs4.type.boolean({name:'unixish',flags:'noset',}));
+        if (NODE.os.homedir._.value.charAt(0)=='/'){NODE.is.unixish._.value=true;}
+
+
   };
   function has(){
     NODE._.property(new zs4.type.object({name:'has',flags:'noset',}));

@@ -87,6 +87,18 @@ zs4.THIS.zs4._.property(new zs4.type.bye());
 zs4.boot = new zs4.processor.sequential();
 
 zs4.load = function(cb){
+  function guess(cb){
+    var z = zs4.THIS.zs4;
+    z.express.port._.value = 8080;
+
+    z.email.smtp.from._.value = 'zs4@zs4.zs4';
+    z.password.hashed._.value = z.password.generate('password');
+    console.log('user/pass: zs4@zs4.zs4/password');
+
+    var node = zs4.THIS.zs4.node;
+
+    return cb();
+  };
   function envvar(v,cb){
     var env = zs4.json.parse(process.env[v]);
     if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
@@ -124,7 +136,11 @@ zs4.load = function(cb){
     return envvar('ZS4',cb);
   }
 
-  return file(DOT_ZS4,cb);
+  return file(DOT_ZS4,function(){
+
+
+    return guess(cb);
+  });
 };
 
 zs4.save = function(cb){
