@@ -188,11 +188,6 @@ passport.create = function(){
     PASSPORT[name]._.Options.failureRedirect = '/error';
     PASSPORT[name]._.Options.session = false;
 
-    //var oldGetHtml = PASSPORT[name].success._.getHTML;
-    //PASSPORT[name].success._.getHTML = (function(req){
-    //  console.log('PASSPORT SUCCESS FUNCTION CALLED');
-    //  return oldGetHtml(req)
-    //}).bind(PASSPORT[name].success);
   }
 
   createStrategy(
