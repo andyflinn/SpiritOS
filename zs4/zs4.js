@@ -50,7 +50,6 @@ zs4.commandLine = function(){
         zs4.save(function(){
           zs4.console.log('saved');
           console.log(zs4.json.textify(zs4.THIS._.store()));
-          zs4.throttle.k=true;
         });
       }
     });
