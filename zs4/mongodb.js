@@ -100,6 +100,7 @@ mongodb.template = function(input){
   MONGODB._.create = mongodb.create;
 
   MONGODB._.property(new zs4.type.object({name:'config',flags:'',}))
+  MONGODB.config._.property(new zs4.type.boolean({name:'configured',flags:'required quickupdate',default:false,}));
   MONGODB.config._.property(new zs4.type.boolean({name:'connected',flags:'required noset nostore',default:false,}));
   MONGODB.config._.property(new zs4.type.boolean({name:'ssl',flags:'required quickupdate',default:false}));
   MONGODB.config._.property(new zs4.type.string({name:'url',flags:'required quickupdate',default:'mongodb://127.0.0.1/zs4'}));
@@ -314,51 +315,51 @@ mongodb.create = function(input){
   MONGODB.connect = (function(input,cb){
     //console.log('MONGODB CONNECT!');
 
-    // Create the database connection
-    var options = {
-      useMongoClient: true,
-      //ssl:MONGODB.config.ssl._.value,
-      //autoIndex: false, // Don't build indexes
-      //reconnectTries: 10, //Number.MAX_VALUE, // Never stop trying to reconnect
-      //reconnectInterval: 500, // Reconnect every 500ms
-      //poolSize: 10, // Maintain up to 10 socket connections
-      // If not connected, return errors immediately rather than waiting for reconnect
-      //bufferMaxEntries: 0
-    };
-    //console.log(options);
-    mongoose.connect(MONGODB.config.url._.value,options);
-    //mongoose.createConnection().openUri(MONGODB.config.url._.value);
-    // CONNECTION EVENTS
-    // When successfully connected
-    mongoose.connection.on('connected', function () {
-      console.log('Mongoose default connection open: ' + MONGODB._.path);
-      MONGODB.config.connected._.value = true;
-      cb();
-    });
-
-    // If the connection throws an error
-    mongoose.connection.on('error',function (err) {
-      console.log('Mongoose default connection error: ' + err);
-      MONGODB.config.connected._.value = false;
-      cb();
-    });
-
-    // When the connection is disconnected
-    mongoose.connection.on('disconnected', function (err) {
-      console.log('Mongoose default connection disconnected: ' + err);
-      MONGODB.config.connected._.value = false;
-    });
-
-    // If the Node process ends, close the Mongoose connection
-    process.on('SIGINT', function() {
-      mongoose.connection.close(function (err) {
-        MONGODB.config.connected._.value = false;
-        console.log('Mongoose default connection disconnected through app termination: '+err);
-        process.exit(0);
+    if (MONGODB.config.configured._.value==true){
+      // Create the database connection
+      var options = {
+        useMongoClient: true,
+        //ssl:MONGODB.config.ssl._.value,
+        //autoIndex: false, // Don't build indexes
+        //reconnectTries: 10, //Number.MAX_VALUE, // Never stop trying to reconnect
+        //reconnectInterval: 500, // Reconnect every 500ms
+        //poolSize: 10, // Maintain up to 10 socket connections
+        // If not connected, return errors immediately rather than waiting for reconnect
+        //bufferMaxEntries: 0
+      };
+      //console.log(options);
+      mongoose.connect(MONGODB.config.url._.value,options);
+      //mongoose.createConnection().openUri(MONGODB.config.url._.value);
+      // CONNECTION EVENTS
+      // When successfully connected
+      mongoose.connection.on('connected', function () {
+        console.log('Mongoose default connection open: ' + MONGODB._.path);
+        MONGODB.config.connected._.value = true;
+        cb();
       });
-    });
 
+      // If the connection throws an error
+      mongoose.connection.on('error',function (err) {
+        console.log('Mongoose default connection error: ' + err);
+        MONGODB.config.connected._.value = false;
+        cb();
+      });
 
+      // When the connection is disconnected
+      mongoose.connection.on('disconnected', function (err) {
+        console.log('Mongoose default connection disconnected: ' + err);
+        MONGODB.config.connected._.value = false;
+      });
+
+      // If the Node process ends, close the Mongoose connection
+      process.on('SIGINT', function() {
+        mongoose.connection.close(function (err) {
+          MONGODB.config.connected._.value = false;
+          console.log('Mongoose default connection disconnected through app termination: '+err);
+          process.exit(0);
+        });
+      });
+    }
 
   }).bind(MONGODB);
 
