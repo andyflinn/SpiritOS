@@ -1854,9 +1854,13 @@ var ts = {
 					nu.tsTopTools.appendChild(nu.transport);
 
 					nu.tostart = zs4.admin.util.addIconElement(nu.transport,'tostart');
+					nu.tostart.onclick = function(){nu.setCurrentEvent(nu.evt[0]);}
 					nu.prev = zs4.admin.util.addIconElement(nu.transport,'prev');
+					nu.prev.onclick = function(){nu.setPreviousEvent();}
 					nu.next = zs4.admin.util.addIconElement(nu.transport,'next');
+					nu.next.onclick = function(){nu.setNextEvent();}
 					nu.toend = zs4.admin.util.addIconElement(nu.transport,'toend');
+					nu.toend.onclick = function(){nu.setCurrentEvent(nu.evt[(nu.evt.length-1)]);}
 
 					nu.toolspopped = ts.html.nu.ele('ts-tool-icons');
 					nu.toolspopped.style.display = 'none';
