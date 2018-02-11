@@ -617,8 +617,6 @@ var ts = {
 
 					var chord = ts.music.parse.chord(info);
 					if (chord.ok){
-						o.bar = {};
-						o.beat = {};
 						o.chord = chord;
 						o.eChordBaseNote.textContent = ts.music.note.name(chord.v);
 						o.eChordType.textContent = ts.music.CHORD.TYPE[chord.t].t;
