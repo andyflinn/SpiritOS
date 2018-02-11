@@ -158,7 +158,7 @@ var ts = {
 						return null;
 					}
 
-					this.evt_shown = e.eEvent;
+					this.evt_shown = e.eSpan;
 					this.evt_shown.className = 'tscurrent';
 					return e;
 				},
@@ -453,7 +453,17 @@ var ts = {
 					}
 
 				},
-				addEvent:function(str,info){
+				alignHTML:function(){
+					var SEQUENCE = this;
+					var PARENT = SEQUENCE.cnt;
+					for (var i = 0 ; i < (SEQUENCE.evt.length-1) ; i++){
+						PARENT.removeChild(SEQUENCE.evt[i].eEvent);
+						PARENT.insertBefore(SEQUENCE.evt[i].eEvent, PARENT.childNodes[i]);
+					}
+
+				},
+				addEvent:function(str,info,afterIndex){
+					var SEQUENCE = this;
 					// Global values
 					var glob = zs4.string.split.separators(info,':');
 					if (glob.length==2){
@@ -544,24 +554,31 @@ var ts = {
 					};
 
 					if (true) { // createn UI
-						o.eEvent = document.createElement('ts-event');
-						o.eEvent.style.display = 'inline-block';
-						o.eEvent.style.marginTop = '0.1em';
-						o.eEvent.style.marginBottom = '0.1em';
+						var EVENT = o;
+
+						o.eEvent = document.createElement('span');
+						//o.eEvent.style.display = 'inline';
 						o.eEvent.ts = o;
 						o.eEvent.onclick = function(){this.ts.ts.onEventClick(this.ts);};
+
+						o.eSpan = document.createElement('ts-event');
+						o.eSpan.style.display = 'inline-block';
+						o.eSpan.style.marginTop = '0.1em';
+						o.eSpan.style.marginBottom = '0.1em';
+						o.eSpan.ts = o;
+						o.eEvent.appendChild(o.eSpan);
 
 						o.eBlockMelody = document.createElement('ts-block-melody');
 						o.eBlockMelody.style.height = '1em';
 						o.eBlockMelody.style.display = 'block';
 						o.eBlockMelody.textContent = '|';
-						o.eEvent.appendChild(o.eBlockMelody);
+						o.eSpan.appendChild(o.eBlockMelody);
 
 						o.eBlockChart = document.createElement('ts-block-chart');
 						o.eBlockChart.style.display = 'block';
 						o.eBlockChart.style.height = '1em';
 						//o.eBlockChart.textContent = info;
-						o.eEvent.appendChild(o.eBlockChart);
+						o.eSpan.appendChild(o.eBlockChart);
 
 							o.eChordBaseNote = document.createElement('ts-chord-base');
 							o.eChordBaseNote.textContent = '|';
@@ -588,7 +605,29 @@ var ts = {
 						o.eBlockLyric.textContent = '|';
 						o.eBlockLyric.style.visibility = 'hidden';
 						o.eBlockLyric.style.height = '1em';
-						o.eEvent.appendChild(o.eBlockLyric);
+						o.eBlockLyric.ondblclick = function(e){
+							SEQUENCE.onEventClick(EVENT);
+							if (SEQUENCE.evt[SEQUENCE.evt_curidx]!=EVENT)return;
+
+							var clickpos = parseInt(this.textContent.length * e.offsetX / this.offsetWidth);
+							console.log(clickpos);
+							console.log(SEQUENCE);
+							console.log(EVENT);
+
+							var old = ''; var nu = ''; var orig = this.textContent;
+							for (var i = 0 ; i < orig.length; i++){
+								if (i < clickpos) old+=orig.charAt(i);
+								else nu+=orig.charAt(i);
+							}
+							console.log(old+'-'+nu);
+							EVENT.lyric = EVENT.eBlockLyric.textContent = old;
+							var nuEvent = SEQUENCE.addEvent(nu,'',(SEQUENCE.evt_curidx+1));
+							SEQUENCE.onEventClick(nuEvent);
+							console.log(nuEvent);
+							SEQUENCE.alignHTML();
+							//console.log(zs4.json.textify(e));
+						};
+						o.eSpan.appendChild(o.eBlockLyric);
 					}
 
 					while (true){
@@ -643,6 +682,7 @@ var ts = {
 						o.eBlockLyric.style.visibility = 'hidden';
 						o.linefeed = true;
 						o.eLineFeed = document.createElement('br');
+						o.eEvent.appendChild(o.eLineFeed);
 						if (this.toolobject.layout.eLineFeed.checked==true){
 							o.eLineFeed.style.display='initial';
 						}
@@ -663,17 +703,25 @@ var ts = {
 						o.eBlockLyric.textContent = '|';
 						o.eBlockLyric.style.visibility = 'hidden';
 					}
-					if (o.eBlockLyric.textContent==''){
-						o.eBlockLyric.textContent = '|';
-						o.eBlockLyric.style.visibility = 'hidden';
-					}
 
 					this.cnt.appendChild(o.eEvent);
-					if (o.linefeed==true){this.cnt.appendChild(o.eLineFeed);}
-					this.evt.push(o);
+					//if (o.linefeed==true){this.cnt.appendChild(o.eLineFeed);}
+
+					if (afterIndex==null){
+						afterIndex=this.evt.length;
+					}
+					else if (zs4.is.number(afterIndex)){
+						if (afterIndex<0)afterIndex=0;
+						if (afterIndex>this.evt.length)afterIndex=this.evt.length;
+					}
+					else {
+						afterIndex=this.evt.length;
+					}
+
+					this.evt.splice(afterIndex,0,o);
 
 					this.evt_current = o;
-					this.evt_curidx = this.evt.length-1;
+					this.evt_curidx = afterIndex;
 
 					o.refresh();
 					return o;
