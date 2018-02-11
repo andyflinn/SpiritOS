@@ -1188,6 +1188,8 @@ var ts = {
 					return nu;
 				},
 				createToolStringInstrument:function(name,icon){
+					var fontHeight = '0.5em';
+
 					var nu = this.createToolInstrument(name,icon);
 					nu.FRET_COUNT = 12;
 					nu.KAPO_MAX = 7;
@@ -1200,18 +1202,19 @@ var ts = {
 					nu.TAB_CIRCLE_SMALL = '&#x26AC';
 					nu.eFretboard = ts.html.nu.ele('table');
 					nu.eFretboard.class = 'ts-fretboard';
-					nu.eFretboard.style.fontSize='0.5em';
+					//nu.eFretboard.style.fontSize='0.5em';
 					nu.iSpecific.appendChild(nu.eFretboard);
 
 					nu.eHeader = ts.html.nu.ele('tr');
 					nu.eFretboard.appendChild(nu.eHeader);
 
 					nu.eTdCapo = ts.html.nu.ele('td');
+					nu.eTdCapo.style.height = fontHeight;
 					nu.eHeader.appendChild(nu.eTdCapo);
 
 					nu.eKapo = ts.html.nu.ele('input');
 					nu.eKapo.setAttribute('type', 'number');
-					nu.eKapo.style.fontSize = '1em';
+					nu.eKapo.style.fontSize = fontHeight;
 					nu.eKapo.max = nu.KAPO_MAX;
 					nu.eKapo.min = nu.KAPO_MIN;
 					nu.eKapo.value = nu.KAPO_DFT;
@@ -1239,19 +1242,23 @@ var ts = {
 					};
 
 					nu.createString = (function(tuning){
+						//var fontHeight = '0.5em';
 
 						var string = new Object({
 							fret:new Array(),
 						});
 						nu.strings.push(string);
 						string.eRow = ts.html.nu.ele('tr');
+						//string.eRow.style.height = fontHeight;
+						//string.eRow.style.fontSize = fontHeight;
 						this.eFretboard.appendChild(string.eRow);
 
 						string.eTdTuning = ts.html.nu.ele('td');
+						//string.eTdTuning.style.height = fontHeight;
 						string.eRow.appendChild(string.eTdTuning);
 
 						string.eTuning = ts.html.nu.ele('select');
-						string.eTuning.style.fontSize = '0.8em';
+						string.eTuning.style.fontSize = fontHeight;
 						string.eTdTuning.appendChild(string.eTuning);
 						for (var i = tuning+12 ; i >= tuning-12 ; i-- ){
 							if (i < ts.midi.constant.MIDI_NOTE_MIN)continue;
@@ -1273,11 +1280,13 @@ var ts = {
 
 						string.eTdEmpty = ts.html.nu.ele('td');
 						string.eTdEmpty.style.borderRight = '.10em solid black';
+						//string.eTdEmpty.style.fontSize = fontHeight;
+						//string.eTdEmpty.style.height = fontHeight;
 						string.eRow.appendChild(string.eTdEmpty);
 
 						string.eEmptyEle = nu.createPad(i,(tuning));
 						string.eEmptyEle.innerHTML = nu.TAB_DOT_SMALL;
-						string.eEmptyEle.style.fontSize = '0.8em';
+						string.eEmptyEle.style.fontSize = fontHeight;
 						string.empty = string.eEmptyEle.ts;
 						string.eTdEmpty.appendChild(string.eEmptyEle);
 
@@ -1295,11 +1304,12 @@ var ts = {
 							fret.td = ts.html.nu.ele('td');
 							fret.td.style.borderLeft = '.07em solid black';
 							fret.td.style.textAlign = "center";
-							fret.td.style.fontSize = '0.8em';
+							//fret.td.style.height = fontHeight;
+							//fret.td.style.fontSize = fontHeight;
 							string.eRow.appendChild(fret.td);
 
 							fret.padele = nu.createPad(i,(tuning+1+i));
-							fret.padele.style.fontSize = '0.8em';
+							fret.padele.style.fontSize = fontHeight;
 							fret.pad = fret.padele.ts;
 							fret.td.appendChild(fret.padele);
 							fret.padele.innerHTML = nu.TAB_LINE;
@@ -1838,6 +1848,8 @@ var ts = {
 				ele.style.display = 'block';
 				ele.style.fontSize = 'xx-small';
 				container.appendChild(ele);
+				//ele.width = '100%';
+				//ele.height = '32em';
 				ele.ts = nu;
 
 				var nu = ts.create.ts();
@@ -1931,6 +1943,8 @@ var ts = {
 				nu.cnt = ts.html.nu.ele('ts-content');
 				nu.cnt.style.marginLeft = '.5em';
 				nu.cnt.style.display = 'block';
+				nu.cnt.style.maxHeight = (window.innerHeight/2)+'px';
+				nu.cnt.style.overflowY = 'scroll';
 				ele.appendChild(nu.cnt);
 
 				nu.stsElement = ts.html.nu.ele('ts-statusbar');
