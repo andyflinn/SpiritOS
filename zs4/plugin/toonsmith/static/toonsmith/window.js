@@ -1011,11 +1011,13 @@ var ts = {
 						if (tooltype=='i'){
 							nu.ts.instpopped.style.display = 'block';
 							nu.ts.instArePopped = true;
+							nu.ts.current_inst = null;
 							nu.ts.hideAllInstPanes();
 						}
 						else {
 							nu.ts.toolspopped.style.display = 'block';
 							nu.ts.toolsArePopped = true;
+							nu.ts.current_tool = null;
 							nu.ts.hideAllToolPanes();
 						}
 					};
@@ -1788,6 +1790,7 @@ var ts = {
 					nu.eTextArea.onchange = function(){
 						nu.ts.clearChordsAndLyrics();
 				    nu.ts.runChordsAndLyrics(nu.eTextArea.value);
+						nu.ts.current_tool = null;
 						nu.ts.hideAllToolPanes();
 					};
 					nu.toolWindow.appendChild(nu.eTextArea);
@@ -1905,6 +1908,7 @@ var ts = {
 							nu.toolsArePopped = true;
 							nu.instpopped.style.display = 'none';
 							nu.instArePopped = false;
+							nu.ts.current_tool = null;
 							nu.hideAllToolPanes();
 						}
 					};
@@ -1970,12 +1974,14 @@ var ts = {
 					nu.stsElement.appendChild(nu.stsNotes);
 
 				nu.hideAllInstPanes = function(){
+					nu.ts.current_inst = null;
 					for (var i = 0; i < nu.inst.length; i++){
 						nu.inst[i].toolWindow.style.display = 'none';
 						nu.inst[i].visible = false;
 					}
 				};
 				nu.hideAllToolPanes = function(){
+					nu.ts.current_tool = null;
 					for (var i = 0; i < nu.tool.length; i++){
 						nu.tool[i].toolWindow.style.display = 'none';
 						nu.tool[i].visible = false;
