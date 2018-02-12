@@ -35,7 +35,7 @@ var ts = {
 				instobject:{},
 				bpb:4,
 				bpm:120,
-				tpb:2,
+				tpb:3,
 				stats:{
 					chords:0,
 					bars:0,
