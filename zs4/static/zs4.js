@@ -3290,7 +3290,6 @@ zs4.type = {
     this._.default = 'en';
     this._.enum = [
       'de',
-      'de_ch',
       'en',
       'fr',
     ];

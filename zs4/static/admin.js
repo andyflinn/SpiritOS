@@ -838,6 +838,7 @@ zs4.admin.util = {
 						else {
 							zs4.admin.util.setIcon(l,'upload');
 							zs4.post(v._.wrapRequest(v._.enum[i.selectedIndex]),function(ret){
+								console.log(ret);
 								zs4.admin.util.setIcon(l,v._.name);
 							});
 						}
