@@ -97,10 +97,10 @@ express.getFunction = function (req, res) {
       console.log('ZS4 FAILED TO PRODUCE HTML');
     }
 
-    console.log('SENDING');
-    if (zs4req.request.tokenlogin==true){
-      zs4req.stat(zs4.THIS.zs4.email.message,{emailsent:1,},0);
-    }
+    //console.log('SENDING');
+    //if (zs4req.request.tokenlogin==true){
+    //  zs4req.stat(zs4.THIS.zs4.email.message,{emailsent:1,},0);
+    //}
     zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
     zs4.stat.updateUser(zs4req,function(ret){
       res.write(r);

@@ -1741,6 +1741,7 @@ zs4.type = {
         var title = this._.path;
         var description = '';
         var keywords = '';
+        var lang = 'en';
         if (title=='')title = 'zs4 web app';
         if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
           console.log('gettin scope.head html...');
@@ -1748,7 +1749,7 @@ zs4.type = {
           if (this.zs4.head.title._.value!=''){
             title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
           }
-
+          if (this.zs4.head.lang._.value!='')lang = 'this.zs4.head.lang._.value';
           // description
           if (this.zs4.head.title._.description!=''){
             description = zs4.string.strip.chars(this.zs4.head.description._.value,zs4.const.NOATTRCHARS);
@@ -1763,10 +1764,11 @@ zs4.type = {
 
         }
         var html = '<!DOCTYPE html>\n';
-        html += '<html>\n';
+        html += '<html lang="'+lang+'">\n';
           html += ' <head>\n';
             html += '<meta charset="UTF-8">\n';
             html += '  <title>'+title+'</title>\n';
+            html += '  <link rel="amphtml" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'.amp">\n';
             if (description != ''){
               html+= '  <meta name="description" content="'+description+'">\n';
             }
@@ -1798,11 +1800,89 @@ zs4.type = {
         req.request.html = html;
         this._.print('HTML RESPONSE FROM '+this._.path,req);
 
-        if (this._.flags.get.scope()){
-          //req.stat(this,{bytesserved:html.length,},0)
-        }
-        //console.log(html);
         return(html);
+      }).bind(this);
+      this._.getAMP = (function(req){
+        console.log('getAMP('+this._.path+')');
+        var title = this._.path;
+        var description = '';
+        var keywords = '';
+        var lang = 'en';
+        if (title=='')title = 'zs4 web app';
+        if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
+          console.log('gettin scope.head html...');
+          // title
+          if (this.zs4.head.title._.value!=''){
+            title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
+          }
+          if (this.zs4.head.lang._.value!='')lang = 'this.zs4.head.lang._.value';
+
+          // description
+          if (this.zs4.head.title._.description!=''){
+            description = zs4.string.strip.chars(this.zs4.head.description._.value,zs4.const.NOATTRCHARS);
+          }
+
+          // keywords
+          var arr = this._.getKeyWordArray();
+          zs4.string.array.sort.length.descend(arr);
+          var o = {k:''};
+          for (var i = 0; i < arr.length;i++){zs4.string.addKeyWord(o,'k',arr[i]);}
+          keywords = o.k;
+
+          var html = '<!DOCTYPE html>\n';
+          html += '<html amp lang="'+lang+'">\n';
+          {
+            html += ' <head>\n';
+            {
+              html += '  <meta charset="UTF-8">\n';
+              html += '  <script async src="https://cdn.ampproject.org/v0.js"></script>\n';
+              html += '  <title>'+title+'</title>\n';
+              html += '  <link rel="canonical" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'">\n';
+              html += '  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">\n';
+
+              html += '  <script type="application/ld+json">\n';
+              html += '   {\n';
+              html += '    "@context": "http://schema.org",\n';
+              html += '    "@type": "NewsArticle",\n';
+              html += '    "headline": "'+title+'",\n';
+              html += '    "datePublished": "2015-10-07T12:02:41Z",\n';
+              html += '    "image": [\n';
+              html += '      "logo.jpg"\n';
+              html += '    ]\n';
+              html += '   }\n';
+              html += '  </script>\n';
+
+              html += '  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>\n';
+              html += '  \n';
+
+              html += '<style amp-custom>';
+              html += '  /* any custom style goes here */';
+              html += '  body {';
+              html += '    background-color: white;';
+              html += '  }';
+              html += '  amp-img {';
+              html += '    background-color: gray;';
+              html += '    border: 1px solid black;';
+              html += '  }';
+              html += '</style>';
+            }
+            html += ' </head>\n';
+
+            html += ' <body>\n';
+            {
+              html += '  <h1>Welcome to the mobile web</h1>\n';
+              html += '  <amp-img src="/gfx/icons/zs4.svg" alt="Welcome" height="400" width="400"></amp-img>\n';
+            }
+            html += ' </body>\n';
+          }
+          html += '</html>\n';
+
+          req.request.html = html;
+          this._.print('AMP RESPONSE FROM '+this._.path,req);
+
+          return(html);
+        }
+
       }).bind(this);
       this._.call = (function(req,input,cb){
         req.call({path:this._.path,input:input},cb);
@@ -3466,6 +3546,14 @@ zs4.type = {
         this._.getHTML(req);
         this._.get(req); cb(); return;
       }
+      if (this._.flags.get.scope()){
+        if (zs4.is.object(req.input)&&zs4.is.object(req.input.amp)&&zs4.is.object(req.input.amp.getHTML)){
+          this._.print('getAMP() '+zs4.json.stringify(req.input),req);
+          console.log('---- getAMP('+THIS._.path+') '+zs4.json.stringify(req.input));
+          this._.getAMP(req);
+          this._.get(req); cb(); return;
+        }
+      }
 
       if (this._.flags.get.nogetall()){
         //console.log(this._.path+' NOGETALL');
@@ -3477,11 +3565,6 @@ zs4.type = {
           empty_input_object = true;
           if (!this._.flags.get.nogetall()){ req.getAll(); }
         }
-      }
-
-      if (this._.name == 'array'){
-        //console.log(this._.path+'.transform()',this._.flags.getString());
-        //console.log(req.flags.getString());
       }
 
       if (empty_input_object&&req.getall&&this._.flags.get.nogetall()) {
