@@ -75,6 +75,7 @@ zs4.const = {
   MAXLENGTH:{
     META:160,
     TITLE:70,
+    LANG:10,
   },
 };
 
@@ -3005,6 +3006,7 @@ zs4.type = {
       this._.property(new zs4.type.string({name:'title',maxlength:zs4.const.MAXLENGTH.TITLE,flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
       this._.property(new zs4.type.string({name:'author',flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
       this._.property(new zs4.type.text({name:'description',maxlength:zs4.const.MAXLENGTH.META,flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
+      this._.property(new zs4.type.lang({name:'lang',flags:'index noprune authgetpublic authsetself quickupdate textsearch',}));
       this._.property(new zs4.type.string({name:'owner',flags:'noset index noprune authgetpublic',}));
       this._.property(new zs4.type.string({name:'typename',flags:'noset index noprune authgetpublic nostore',}));
       this._.property(new zs4.type.date({name:'created',flags:'noset index noprune authgetpublic',}));
@@ -3013,8 +3015,6 @@ zs4.type = {
       this._.property(new zs4.type.scopebits({name:'bits',flags:'index noprune quickupdate authgetpublic authsetself',}));
       //console.log('adding stat to header');
       this._.property(new zs4.stat.create('stat'));
-      //console.log('stat added to header');
-      //this._.property(new zs4.type.object({name:'method',flags:'api authroot nostore'}));
     }
 
   },
@@ -3117,6 +3117,7 @@ zs4.type = {
         if (req.input.email==zs4.THIS.zs4.email.smtp.from._.value){
           req.call({path:'zs4.password',input:{vfy:req.input.password,}},function(callback){
             if (callback.error != null){
+              console.log('zs4.password root login attempt failed');
               req.error(THIS,'');
               THIS._.get(req); cb(); return;
             };
@@ -3130,6 +3131,7 @@ zs4.type = {
             req.result(THIS,{goscope:''});
             THIS._.get(req); cb(); return;
           });
+          return;
         }
 
         req.call({path:'zs4.type.user.method.getone',input:{item:'zs4.email',eq:req.input.email}},function(callback){
@@ -3280,6 +3282,18 @@ zs4.type = {
         this._.value=v;
       }
     }).bind(this);
+  },
+  lang:function(input){
+    zs4.type.string.call(this,input);
+    this._.maxlength = zs4.const.MAXLENGTH.LANG;
+    this._.typename = 'lang';
+    this._.default = 'en';
+    this._.enum = [
+      'de',
+      'de_ch',
+      'en',
+      'fr',
+    ];
   },
   name:function(input){
     zs4.type.string.call(this,input);

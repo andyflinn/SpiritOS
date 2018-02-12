@@ -259,6 +259,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
 .icon-is:before{content:url(/gfx/icons/server.svg);}
 .icon-item:before{content:url(/gfx/icons/item.svg);}
+.icon-lang:before{content:url(/gfx/icons/lang.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
 .icon-login:before{content:url(/gfx/icons/password.svg);}
@@ -327,7 +328,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}
 .icon-update:before{content:'\0219F';font-weight: bolder;color:blue;}
-.icon-upload:before{content:'\0219F';font-weight: bolder;color:blue;}
+.icon-upload:before{content:url(/gfx/icons/upload.svg);}
 .icon-user:before{content:url(/gfx/icons/guitarist.svg);}
 .icon-wifi:before{content:url(/gfx/icons/wifi.svg);}
 .icon-windows:before{content:url(/gfx/icons/windows.svg);}
