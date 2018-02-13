@@ -1802,13 +1802,17 @@ zs4.type = {
 
         return(html);
       }).bind(this);
-      this._.getAMP = (function(req){
+      this._.getAmpBody= (function(req,cb){
+        return cb('');
+      }).bind(this);
+      this._.getAMP = (function(req,cb){
         console.log('getAMP('+this._.path+')');
         var title = this._.path;
         var description = '';
         var keywords = '';
         var lang = 'en';
         if (title=='')title = 'zs4 web app';
+
         if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
           console.log('gettin scope.head html...');
           // title
@@ -1843,6 +1847,8 @@ zs4.type = {
               var dateCreated = new Date(this.zs4.head.created._.value);
               var datePublished = new Date(this.zs4.head.updated._.value);
               var author = this.zs4.head.author._.value;
+              if (description=='')description = 'zs4 AMP page';
+
               if (author=='')author = 'zs4 User';
               var ld = new Object({
                 '@context':'http://schema.org',
@@ -1851,7 +1857,10 @@ zs4.type = {
                 headline:title,
                 datePublished:dateCreated.toJSON(),
                 dateModified:datePublished.toJSON(),
-                author:author,
+                author:{
+                  '@type':'Person',
+                  name:author,
+                },
                 mainEntityOfPage:{
                   '@type':'Webpage',
                   '@id':'https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path,
@@ -1872,50 +1881,44 @@ zs4.type = {
                   width:132,
                   height:132,
                 },
+                description:description,
               });
 
               html += '  <script type="application/ld+json">\n';
               html += zs4.json.textify(ld);
-              //html += '   {\n';
-              //html += '    "@context": "http://schema.org",\n';
-              //html += '    "@type": "Webpage",\n';
-              //html += '    "headline": "'+title+'",\n';
-              //html += '    "datePublished": "2015-10-07T12:02:41Z",\n';
-              //html += '    "image": [\n';
-              //html += '      "logo.jpg"\n';
-              //html += '    ]\n';
-              //html += '   }\n';
               html += '  </script>\n';
 
               html += '  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>\n';
               html += '  \n';
 
               html += '<style amp-custom>';
-              html += '  /* any custom style goes here */';
-              html += '  body {';
-              html += '    background-color: white;';
-              html += '  }';
-              html += '  amp-img {';
-              html += '    background-color: gray;';
-              html += '    border: 1px solid black;';
-              html += '  }';
+              html += '  h1{background-color:darkblue;color:white;padding:0px;border:0px;}';
+              html += '  body {background-color:white;color:black;padding:0px;border:0px;background-image:url("/gfx/images/winterfooter.svg");background-repeat:no-repeat;background-position:bottom;background-attachment:fixed;}';
+              html += '    ';
+              html += '  ';
               html += '</style>';
             }
             html += ' </head>\n';
 
             html += ' <body>\n';
             {
-              html += '  <h1>Welcome to the mobile web</h1>\n';
-              html += '  <amp-img src="/gfx/icons/zs4.svg" alt="Welcome" height="400" width="400"></amp-img>\n';
+              html += '  <h1><amp-img src="/gfx/icons/zs4.svg" alt="Welcome" height="1em" width="1em"></amp-img>'+title+'</h1>\n';
+              if (description != ''){
+                html += '   <h3>Summary</h3>';
+                html += description;
+              }
             }
-            html += ' </body>\n';
           }
-          html += '</html>\n';
+          this._.getAmpBody(req,function(body){
+            html += body;
+            //html += '  <amp-img layout="responsive" src="/gfx/icons/zs4.svg" alt="Welcome" height="400" width="400"></amp-img>\n';
+            html += ' </body>\n';
+            html += '</html>\n';
 
-          req.request.html = html;
-          this._.print('AMP RESPONSE FROM '+this._.path,req);
+            req.request.html = html;
 
-          return(html);
+            return cb();
+          });
         }
 
       }).bind(this);
@@ -3579,14 +3582,15 @@ zs4.type = {
         this._.print('getHTML() '+zs4.json.stringify(req.input),req);
         console.log('---- getHTML('+THIS._.path+') '+zs4.json.stringify(req.input));
         this._.getHTML(req);
-        this._.get(req); cb(); return;
+        //this._.get(req);
+        cb(); return;
       }
       if (this._.flags.get.scope()){
         if (zs4.is.object(req.input)&&zs4.is.object(req.input.amp)&&zs4.is.object(req.input.amp.getHTML)){
           this._.print('getAMP() '+zs4.json.stringify(req.input),req);
           console.log('---- getAMP('+THIS._.path+') '+zs4.json.stringify(req.input));
-          this._.getAMP(req);
-          this._.get(req); cb(); return;
+          this._.getAMP(req,cb);
+          return;
         }
       }
 
