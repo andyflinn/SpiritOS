@@ -341,6 +341,24 @@ zs4.string = {
     }
     return false;
   },
+  escape:{
+    html:function(plain){
+      var html = ''
+      for (var i = 0; i < plain.length; i++){
+        var ch = plain.charAt(i);
+        if (ch=='\n'){ html += '<br>\n';}
+        else if (ch=='&'){html += '&amp;'}
+        else if (ch=='<'){html += '&lt;'}
+        else if (ch=='>'){html += '&gt;'}
+        else if (ch=='&'){html += '&quot;'}
+        else if (ch=='"'){html += '&amp;'}
+        else if (ch=='\''){html += '&apos;'}
+        else {html += ch;}
+      }
+
+      return html;
+    },
+  },
 };
 
 zs4.count = {
@@ -1803,15 +1821,7 @@ zs4.type = {
         return(html);
       }).bind(this);
       this._.getAmpPlainTextDecorated= (function(req,plain,cb){
-        var html = ''
-        var decorated = '';
-        for (var i = 0; i < plain.length; i++){
-          var ch = plain.charAt(i);
-          if (ch=='\n'){ html += '<br>\n';}
-          else {html += ch;}
-        }
-
-        return cb(html);
+        return cb(zs4.string.escape.html(plain));
       }).bind(this);
       this._.getAmpStyle= (function(req,cb){
         return cb('');
