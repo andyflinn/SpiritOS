@@ -1749,7 +1749,7 @@ zs4.type = {
           if (this.zs4.head.title._.value!=''){
             title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
           }
-          if (this.zs4.head.lang._.value!='')lang = 'this.zs4.head.lang._.value';
+          if (this.zs4.head.lang._.value!='')lang = this.zs4.head.lang._.value;
           // description
           if (this.zs4.head.title._.description!=''){
             description = zs4.string.strip.chars(this.zs4.head.description._.value,zs4.const.NOATTRCHARS);
@@ -1802,8 +1802,79 @@ zs4.type = {
 
         return(html);
       }).bind(this);
-      this._.getAmpBody= (function(req,cb){
+      this._.getAmpPlainTextDecorated= (function(req,plain,cb){
+        var html = ''
+        var decorated = '';
+        for (var i = 0; i < plain.length; i++){
+          var ch = plain.charAt(i);
+          if (ch=='\n'){ html += '<br>\n';}
+          else {html += ch;}
+        }
+
+        return cb(html);
+      }).bind(this);
+      this._.getAmpStyle= (function(req,cb){
         return cb('');
+      }).bind(this);
+      this._.getAmpBody= (function(req,cb){
+        var SCOPE = this;
+        var query = new Object({
+          path:'zs4.search',
+          input:{
+            value:'',
+            type:'',
+            owner:'',
+          },
+          wantreply:true,
+        });
+
+        var OWNER = '';
+        if (this.zs4.head.typename._.value=='user'){
+          query.input.owner = OWNER = this._.path;
+        }
+        console.log('AMP query',query);
+        req.call(query,function(r){
+          var r = req.getReply().reply;
+          //console.log('AMP result',zs4.json.textify(r));
+
+          var arr = new Array();
+
+          for (var type in r.zs4.type){
+            if (!zs4.is.type(r.zs4.type[type]))continue;
+
+            console.log('collecting '+type)
+            for (var scope in r.zs4.type[type].array){
+              if (!zs4.is.type(r.zs4.type[type].array[scope]))continue;
+              console.log('zs4.type.'+type+'.array.'+scope);
+              r.zs4.type[type].array[scope]._.path = 'zs4.type.'+type+'.array.'+scope;
+              arr.push(r.zs4.type[type].array[scope]);
+            }
+          }
+
+          arr.sort(function(a,b){
+            return b.zs4.head.updated._.value-a.zs4.head.updated._.value;
+          });
+
+          console.log('collected '+arr.length+' items');
+          for (var i = 0 ; i < arr.length; i++){
+            console.log(arr[i].zs4.head.title._.value);
+          }
+
+          console.log(arr[0]);
+          var html = '<h3>The Newest Items for '+SCOPE.zs4.head.title._.value+'</h3>\n';
+          html += '<table>\n';
+          for (var i = 0 ; i < arr.length; i++){
+            html+='<tr>';
+
+            html+='<td><amp-img src="/gfx/icons/'+arr[i].zs4.head.typename._.value+'.svg" alt="Welcome" height="1em" width="1em"></amp-img></td>\n';
+            html+='<td><a href="/'+arr[i]._.path+'.amp">'+arr[i].zs4.head.title._.value+'</a></td>\n';
+
+            html+='</tr>';
+          }
+          html += '</table>\n';
+
+          return cb(html);
+        });
       }).bind(this);
       this._.getAMP = (function(req,cb){
         console.log('getAMP('+this._.path+')');
@@ -1814,12 +1885,13 @@ zs4.type = {
         if (title=='')title = 'zs4 web app';
 
         if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
+          var SCOPE = this;
           console.log('gettin scope.head html...');
           // title
           if (this.zs4.head.title._.value!=''){
             title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
           }
-          if (this.zs4.head.lang._.value!='')lang = 'this.zs4.head.lang._.value';
+          if (this.zs4.head.lang._.value!='')lang = this.zs4.head.lang._.value;
 
           // description
           if (this.zs4.head.title._.description!=''){
@@ -1835,89 +1907,100 @@ zs4.type = {
 
           var html = '<!DOCTYPE html>\n';
           html += '<html amp lang="'+lang+'">\n';
-          {
-            html += ' <head>\n';
-            {
-              html += '  <meta charset="UTF-8">\n';
-              html += '  <script async src="https://cdn.ampproject.org/v0.js"></script>\n';
-              html += '  <title>'+title+'</title>\n';
-              html += '  <link rel="canonical" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'">\n';
-              html += '  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">\n';
 
-              var dateCreated = new Date(this.zs4.head.created._.value);
-              var datePublished = new Date(this.zs4.head.updated._.value);
-              var author = this.zs4.head.author._.value;
-              if (description=='')description = 'zs4 AMP page';
+          html += ' <head>\n';
 
-              if (author=='')author = 'zs4 User';
-              var ld = new Object({
-                '@context':'http://schema.org',
-                '@type':'Webpage',
-                url:'https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path,
-                headline:title,
-                datePublished:dateCreated.toJSON(),
-                dateModified:datePublished.toJSON(),
-                author:{
-                  '@type':'Person',
-                  name:author,
-                },
-                mainEntityOfPage:{
-                  '@type':'Webpage',
-                  '@id':'https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path,
-                },
-                publisher:{
-                  '@type':'Organization',
-                  name:'zs4 Project',
-                  logo:{
-                    '@type':'ImageObject',
-                    url:'https://'+zs4.THIS.zs4.express.host._.value+'/gfx/icons/zs4.svg',
-                    width:132,
-                    height:132,
-                  },
-                },
-                image:{
-                  '@type':'ImageObject',
-                  url:'https://'+zs4.THIS.zs4.express.host._.value+'/gfx/icons/zs4.svg',
-                  width:132,
-                  height:132,
-                },
-                description:description,
-              });
+          html += '  <meta charset="UTF-8">\n';
+          html += '  <script async src="https://cdn.ampproject.org/v0.js"></script>\n';
+          html += '  <title>'+title+'</title>\n';
+          html += '  <link rel="canonical" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'">\n';
+          html += '  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">\n';
 
-              html += '  <script type="application/ld+json">\n';
-              html += zs4.json.textify(ld);
-              html += '  </script>\n';
+          var dateCreated = new Date(this.zs4.head.created._.value);
+          var datePublished = new Date(this.zs4.head.updated._.value);
+          var author = this.zs4.head.author._.value;
+          if (description=='')description = 'zs4 AMP page';
 
-              html += '  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>\n';
-              html += '  \n';
+          if (author=='')author = 'zs4 User';
+          var ld = new Object({
+            '@context':'http://schema.org',
+            '@type':'Webpage',
+            url:'https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path,
+            headline:title,
+            datePublished:dateCreated.toJSON(),
+            dateModified:datePublished.toJSON(),
+            author:{
+              '@type':'Person',
+              name:author,
+            },
+            mainEntityOfPage:{
+              '@type':'Webpage',
+              '@id':'https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path,
+            },
+            publisher:{
+              '@type':'Organization',
+              name:'zs4 Project',
+              logo:{
+                '@type':'ImageObject',
+                url:'https://'+zs4.THIS.zs4.express.host._.value+'/gfx/icons/zs4.svg',
+                width:132,
+                height:132,
+              },
+            },
+            image:{
+              '@type':'ImageObject',
+              url:'https://'+zs4.THIS.zs4.express.host._.value+'/gfx/icons/zs4.svg',
+              width:132,
+              height:132,
+            },
+            description:description,
+          });
 
-              html += '<style amp-custom>';
-              html += '  h1{background-color:darkblue;color:white;padding:0px;border:0px;}';
-              html += '  body {background-color:white;color:black;padding:0px;border:0px;background-image:url("/gfx/images/winterfooter.svg");background-repeat:no-repeat;background-position:bottom;background-attachment:fixed;}';
-              html += '    ';
-              html += '  ';
-              html += '</style>';
-            }
+          html += '  <script type="application/ld+json">\n';
+          html += zs4.json.textify(ld);
+          html += '  </script>\n';
+
+          html += '  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>\n';
+          html += '  \n';
+
+          html += '<style amp-custom>\n';
+          html += 'h1{background-color:darkblue;color:white;padding:0px;border:0px;margin:0px;}';
+          html += 'body{background-color:white;color:black;padding:0;border:0px;margin:0px;background-image:url("/gfx/images/winterfooter.svg");background-repeat:no-repeat;background-position:bottom;background-attachment:fixed;}';
+          html += 'div.scope{padding:2em;border:0px;margin:0px;} ';
+          html += 'div.footer{background-color:darkblue;color:white;}';
+          html += 'a.footer{background-color:darkblue;color:white;text-decoration:none;}';
+
+          SCOPE._.getAmpStyle(req,function(style){
+            html += style;
+            html += '</style>\n';
+
             html += ' </head>\n';
 
             html += ' <body>\n';
-            {
-              html += '  <h1><amp-img src="/gfx/icons/zs4.svg" alt="Welcome" height="1em" width="1em"></amp-img>'+title+'</h1>\n';
-              if (description != ''){
-                html += '   <h3>Summary</h3>';
-                html += description;
-              }
-            }
-          }
-          this._.getAmpBody(req,function(body){
-            html += body;
-            //html += '  <amp-img layout="responsive" src="/gfx/icons/zs4.svg" alt="Welcome" height="400" width="400"></amp-img>\n';
-            html += ' </body>\n';
-            html += '</html>\n';
 
-            req.request.html = html;
+            html += '  <h1><amp-img src="/gfx/icons/zs4.svg" alt="Welcome" height="1em" width="1em"></amp-img>'+title+'</h1>\n';
+            //if (description != ''){
+            //  html += '   <h3>Summary</h3>';
+            //  html += description;
+            //}
+            html += ' <div class="scope">\n';
 
-            return cb();
+            SCOPE._.getAmpBody(req,function(body){
+              html += body;
+              //html += '  <amp-img layout="responsive" src="/gfx/icons/zs4.svg" alt="Welcome" height="400" width="400"></amp-img>\n';
+              html += ' </div>\n';
+
+              html += ' <div class="footer">\n';
+              html += '  <a  class="footer" href="/'+SCOPE._.path+'">See full zs4 version of this page</a>\n';
+              html += ' </div>\n';
+
+              html += ' </body>\n';
+              html += '</html>\n';
+
+              req.request.html = html;
+
+              return cb();
+            });
           });
         }
 

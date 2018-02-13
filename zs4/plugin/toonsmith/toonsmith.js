@@ -56,6 +56,17 @@ toonsmith.create = function(){
     return ret;
   }).bind(TOONSMITH);
 
+  TOONSMITH._.oldGetAmpBody = TOONSMITH._.getAmpBody;
+  TOONSMITH._.getAmpBody= (function(req,cb){
+    var html = '';
+
+    var plain = TOONSMITH._.getTextOnly();
+    this._.getAmpPlainTextDecorated(req,TOONSMITH._.getTextOnly(),function(decorated){
+      html += decorated;
+
+      return cb(html);
+    })
+  }).bind(TOONSMITH);
 }
 
 zs4.THIS.zs4.type._.property(new zs4.type.array({name:'toonsmith',template:new toonsmith.create(),}));
