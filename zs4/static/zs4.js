@@ -1840,16 +1840,51 @@ zs4.type = {
               html += '  <link rel="canonical" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'">\n';
               html += '  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">\n';
 
+              var dateCreated = new Date(this.zs4.head.created._.value);
+              var datePublished = new Date(this.zs4.head.updated._.value);
+              var author = this.zs4.head.author._.value;
+              if (author=='')author = 'zs4 User';
+              var ld = new Object({
+                '@context':'http://schema.org',
+                '@type':'Webpage',
+                url:'https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path,
+                headline:title,
+                datePublished:dateCreated.toJSON(),
+                dateModified:datePublished.toJSON(),
+                author:author,
+                mainEntityOfPage:{
+                  '@type':'Webpage',
+                  '@id':'https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path,
+                },
+                publisher:{
+                  '@type':'Organization',
+                  name:'zs4 Project',
+                  logo:{
+                    '@type':'ImageObject',
+                    url:'https://'+zs4.THIS.zs4.express.host._.value+'/gfx/icons/zs4.svg',
+                    width:132,
+                    height:132,
+                  },
+                },
+                image:{
+                  '@type':'ImageObject',
+                  url:'https://'+zs4.THIS.zs4.express.host._.value+'/gfx/icons/zs4.svg',
+                  width:132,
+                  height:132,
+                },
+              });
+
               html += '  <script type="application/ld+json">\n';
-              html += '   {\n';
-              html += '    "@context": "http://schema.org",\n';
-              html += '    "@type": "NewsArticle",\n';
-              html += '    "headline": "'+title+'",\n';
-              html += '    "datePublished": "2015-10-07T12:02:41Z",\n';
-              html += '    "image": [\n';
-              html += '      "logo.jpg"\n';
-              html += '    ]\n';
-              html += '   }\n';
+              html += zs4.json.textify(ld);
+              //html += '   {\n';
+              //html += '    "@context": "http://schema.org",\n';
+              //html += '    "@type": "Webpage",\n';
+              //html += '    "headline": "'+title+'",\n';
+              //html += '    "datePublished": "2015-10-07T12:02:41Z",\n';
+              //html += '    "image": [\n';
+              //html += '      "logo.jpg"\n';
+              //html += '    ]\n';
+              //html += '   }\n';
               html += '  </script>\n';
 
               html += '  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>\n';
