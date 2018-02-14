@@ -1071,14 +1071,14 @@ var ts = {
 							isChordNote:false,
 							isChordRoot:false,
 							isMelodyNote:false,
+							isMelodyOctave:false,
 							e:e,
 						}
 						nu.instrument.ui.push(pad);
 						e.ts = pad;
 
 						e.onclick = function(){
-							//ts.playNote(this.ts.channel,this.ts.note,100,300);
-							//console.log(this.ts);
+              //if (ts.player.is.running())return;
 
 							if (this.ts.song.evt_current != null){
 								if (this.ts.song.evt_current.melody != this.ts.note){
@@ -1088,7 +1088,7 @@ var ts = {
 									this.ts.song.evt_current.melody = 0;
 								}
 								this.ts.song.refresh();
-							}else{
+                nu.refresh();
 							}
 						};
 
@@ -1101,59 +1101,60 @@ var ts = {
 
 					nu.instrumentRefresh = function(){};
 					nu.refresh = function(){
-						for (var i = 0 ; i < this.instrument.ui.length ; i++ ){
-							this.instrument.ui[i].isChordNote =false;
-							this.instrument.ui[i].isChordRoot =false;
-							this.instrument.ui[i].isMelodyNote =false;
-							this.instrument.ui[i].e.className = '';
+						for (var i = 0 ; i < nu.instrument.ui.length ; i++ ){
+							nu.instrument.ui[i].isChordNote =false;
+							nu.instrument.ui[i].isChordRoot =false;
+							nu.instrument.ui[i].isMelodyNote =false;
+							nu.instrument.ui[i].isMelodyOctave =false;
+							nu.instrument.ui[i].e.className = '';
 						}
-						if (this.ts.evt_current != null){
-							var chord = this.ts.searchActiveChord();
+						if (nu.ts.evt_current != null){
+							var chord = nu.ts.searchActiveChord();
 							if (chord != null){
-								this.iCurrentChordRoot.textContent = ts.music.note.name(chord.v);
-								this.iCurrentChordType.textContent = ts.music.CHORD.TYPE[chord.t].t;
+								nu.iCurrentChordRoot.textContent = ts.music.note.name(chord.v);
+								nu.iCurrentChordType.textContent = ts.music.CHORD.TYPE[chord.t].t;
 								var className = '';
 								var ch = ts.music.CHORD.TYPE[chord.t].a;
-								for (var i = 0 ; i < this.instrument.ui.length ; i++ ){
-									var cur_inst_note = (this.instrument.ui[i].note)%12;
+								for (var i = 0 ; i < nu.instrument.ui.length ; i++ ){
+									var cur_inst_note = (nu.instrument.ui[i].note)%12;
 									for (var x = 0; x < ch.length ; x++ ){
 										var cur_chord_note = ((chord.v + x)%12);
 										if (!ch[x])
 											continue;
 
 										if (cur_inst_note == cur_chord_note){
-											this.instrument.ui[i].isChordNote =true;
+											nu.instrument.ui[i].isChordNote =true;
 											if (x==0){
-												this.instrument.ui[i].e.className = 'chordroot';
-												this.instrument.ui[i].isChordRoot = true;
+												nu.instrument.ui[i].e.className = 'chordroot';
+												nu.instrument.ui[i].isChordRoot = true;
 											}
 											else {
-												this.instrument.ui[i].e.className = 'chordnote';
+												nu.instrument.ui[i].e.className = 'chordnote';
 											}
 											break;
 										}
 									}
 								}
 
-							}else{
-								this.iCurrentChordRoot.textContent = '';
-								this.iCurrentChordType.textContent = '';
+							}
+							else{
+								nu.iCurrentChordRoot.textContent = '';
+								nu.iCurrentChordType.textContent = '';
 							}
 
-							if (this.ts.evt_current.melody != 0){
-								for (var i = 0 ; i < this.instrument.ui.length ; i++ ){
-									if ((this.ts.evt_current.melody%12) == (this.instrument.ui[i].note%12)){
-										if (this.instrument.ui[i].e.className==''){
-											this.instrument.ui[i].e.className = 'eventnote';
-											this.instrument.ui[i].isMelodyNote = true;
-										}else{
-											this.instrument.ui[i].e.className=this.instrument.ui[i].e.className+' eventnote';
-										}
+							if (nu.ts.evt_current.melody != 0){
+								for (var i = 0 ; i < nu.instrument.ui.length ; i++ ){
+									if (nu.ts.evt_current.melody == nu.instrument.ui[i].note){
+										nu.instrument.ui[i].isMelodyNote = true;
+									}
+									else if ((nu.ts.evt_current.melody%12) == (nu.instrument.ui[i].note%12)){
+										nu.instrument.ui[i].isMelodyOctave = true;
 									}
 								}
 							}
 						}
 						nu.instrumentRefresh();
+
 					};
 
 					nu.eEventInstrument = ts.html.nu.ele('ts-instrument-' + name);
@@ -1193,30 +1194,24 @@ var ts = {
 					var fontHeight = '0.5em';
 
 					var nu = this.createToolInstrument(name,icon);
-					nu.FRET_COUNT = 12;
+					nu.FRET_COUNT = 7;
 					nu.KAPO_MAX = 7;
 					nu.KAPO_MIN = 0;
 					nu.KAPO_DFT = 0;
-					nu.TAB_LINE = '&#x2015';
-					nu.TAB_CIRCLE = '&#x29B5';
-					nu.TAB_DOT = '&#x2B24';
-					nu.TAB_DOT_SMALL = '&#x25CF';
-					nu.TAB_CIRCLE_SMALL = '&#x26AC';
+
 					nu.eFretboard = ts.html.nu.ele('table');
-					nu.eFretboard.class = 'ts-fretboard';
-					//nu.eFretboard.style.fontSize='0.5em';
+					nu.eFretboard.className = 'ts-fretboard';
 					nu.iSpecific.appendChild(nu.eFretboard);
 
 					nu.eHeader = ts.html.nu.ele('tr');
 					nu.eFretboard.appendChild(nu.eHeader);
 
 					nu.eTdCapo = ts.html.nu.ele('td');
-					nu.eTdCapo.style.height = fontHeight;
 					nu.eHeader.appendChild(nu.eTdCapo);
 
 					nu.eKapo = ts.html.nu.ele('input');
 					nu.eKapo.setAttribute('type', 'number');
-					nu.eKapo.style.fontSize = fontHeight;
+					//nu.eKapo.style.fontSize = fontHeight;
 					nu.eKapo.max = nu.KAPO_MAX;
 					nu.eKapo.min = nu.KAPO_MIN;
 					nu.eKapo.value = nu.KAPO_DFT;
@@ -1244,23 +1239,21 @@ var ts = {
 					};
 
 					nu.createString = (function(tuning){
-						//var fontHeight = '0.5em';
 
 						var string = new Object({
 							fret:new Array(),
 						});
 						nu.strings.push(string);
 						string.eRow = ts.html.nu.ele('tr');
-						//string.eRow.style.height = fontHeight;
-						//string.eRow.style.fontSize = fontHeight;
+						string.eRow.className = 'string';
+						string.eRow.style.border = '0';
 						this.eFretboard.appendChild(string.eRow);
 
 						string.eTdTuning = ts.html.nu.ele('td');
-						//string.eTdTuning.style.height = fontHeight;
+						string.eTdTuning.className = 'string';
 						string.eRow.appendChild(string.eTdTuning);
 
 						string.eTuning = ts.html.nu.ele('select');
-						string.eTuning.style.fontSize = fontHeight;
 						string.eTdTuning.appendChild(string.eTuning);
 						for (var i = tuning+12 ; i >= tuning-12 ; i-- ){
 							if (i < ts.midi.constant.MIDI_NOTE_MIN)continue;
@@ -1281,21 +1274,22 @@ var ts = {
 						};
 
 						string.eTdEmpty = ts.html.nu.ele('td');
-						string.eTdEmpty.style.borderRight = '.10em solid black';
-						//string.eTdEmpty.style.fontSize = fontHeight;
-						//string.eTdEmpty.style.height = fontHeight;
+						string.eTdEmpty.className = 'string';
 						string.eRow.appendChild(string.eTdEmpty);
 
 						string.eEmptyEle = nu.createPad(i,(tuning));
-						string.eEmptyEle.innerHTML = nu.TAB_DOT_SMALL;
-						string.eEmptyEle.style.fontSize = fontHeight;
-						string.empty = string.eEmptyEle.ts;
+						string.pad = string.eEmptyEle.ts;
 						string.eTdEmpty.appendChild(string.eEmptyEle);
 
+						string.canvas = document.createElement('canvas');
+						string.canvas.style.width = '2em';
+						string.canvas.style.height = '1em';
+						string.eEmptyEle.appendChild(string.canvas);
+
 						string.retune = function(){
-							string.empty.note = parseInt(string.eTuning.value) + parseInt(nu.eKapo.value);
+							string.pad.note = parseInt(string.eTuning.value) + parseInt(nu.eKapo.value);
 							for (var i = 0 ; i < nu.FRET_COUNT; i++){
-								string.fret[i].pad.note = string.empty.note + 1 + i;
+								string.fret[i].pad.note = string.pad.note + 1 + i;
 							}
 							nu.refresh();
 						};
@@ -1304,51 +1298,136 @@ var ts = {
 							string.fret.push(fret);
 
 							fret.td = ts.html.nu.ele('td');
-							fret.td.style.borderLeft = '.07em solid black';
-							fret.td.style.textAlign = "center";
-							//fret.td.style.height = fontHeight;
-							//fret.td.style.fontSize = fontHeight;
+							fret.td.className = 'string';
 							string.eRow.appendChild(fret.td);
 
 							fret.padele = nu.createPad(i,(tuning+1+i));
-							fret.padele.style.fontSize = fontHeight;
 							fret.pad = fret.padele.ts;
 							fret.td.appendChild(fret.padele);
-							fret.padele.innerHTML = nu.TAB_LINE;
+
+							fret.canvas = document.createElement('canvas');
+							fret.canvas.style.width = '2em';
+							fret.canvas.style.height = '1em';
+							fret.padele.appendChild(fret.canvas);
 						}
 						string.retune();
 					}).bind(nu);
 
 					nu.instrumentRefresh = (function(){
-						//console.log('instrumentRefresh - ' + nu.nam);
-						var meldone = false;
+            console.log('STRING INSTRUMENT REFRESH');
 						for (var s = 0 ; s < nu.strings.length; s++){
 							var str = nu.strings[s];
-							if (str.empty.isMelodyNote||str.empty.isChordNote)str.eEmptyEle.innerHTML = nu.TAB_DOT_SMALL;
-							else str.eEmptyEle.innerHTML = nu.TAB_CIRCLE_SMALL;
+
+              console.log('STRING '+s+' REFRESH');
 
 							var cnf = false;
 							var mnf = false;
-							if (str.empty.isChordNote) cnf = true;
-							if (str.empty.isMelodyNote) mnf = meldone = true;
+							var mof = false;
+							var pos = 0;
 
-							for (var i = 0; i < nu.FRET_COUNT; i++){
-								var f = str.fret[i];
-								if (f.pad.isMelodyNote){
-									if (mnf){f.padele.innerHTML = nu.TAB_CIRCLE_SMALL;}
-									else if (meldone){f.padele.innerHTML = nu.TAB_CIRCLE_SMALL;mnf=meldone=true;}
-									else{f.padele.innerHTML = nu.TAB_DOT;mnf=meldone=true;}
+							function refreshStringPad(pad,canvas){
+								var ctx = canvas.getContext("2d");
+								var w = canvas.width;
+								var h = canvas.height;
+								var max = w; if (h>w) max = h;
+								var min = w; if (h<w) min = h;
+								var lw = max/30;
+
+								var ctrY = h/2;
+								var ctrX = w/2;
+								var radBig = (min/2);
+								var rad = (min/2.7);
+								var radMel = (min/3.5);
+								var radTiny = (min/4.2);
+
+								// CLEAR CANVAS
+								ctx.clearRect(0,0,w,h);
+
+								// DRAW THE STRING AND FRET
+								if (pos>0){
+									ctx.beginPath();
+									ctx.lineWidth = lw;
+									ctx.moveTo(0,ctrY);
+									ctx.lineTo(w,ctrY);
+									ctx.strokeStyle = 'rgba(0,0,0,1)';
+									ctx.stroke();
+
+									ctx.beginPath();
+									ctx.lineWidth = lw;
+									if (pos==1)ctx.lineWidth = lw*2;
+									ctx.moveTo((lw/2),0);
+									ctx.lineTo((lw/2),h);
+									ctx.strokeStyle = 'rgba(0,0,0,1)';
+									ctx.stroke();
 								}
-								else if (f.pad.isChordRoot){
-									if (cnf){f.padele.innerHTML = nu.TAB_CIRCLE;}
-									else {f.padele.innerHTML = nu.TAB_DOT;cnf=true;}
+
+
+								if (pad.isChordRoot){
+									ctx.beginPath();
+									ctx.arc(ctrX, ctrY, radBig, 0, 2 * Math.PI, false);
+									if (cnf){
+										ctx.lineWidth = lw*2;
+							      ctx.strokeStyle = 'rgba(0,128,0,0.7)';
+							      ctx.stroke();
+									}
+									else {
+										ctx.fillStyle = 'rgba(0,128,0,0.7)';
+										ctx.fill();
+										cnf = true;
+									}
 								}
-								else if (f.pad.isChordNote){
-									if (cnf){f.padele.innerHTML = nu.TAB_CIRCLE_SMALL;}
-									else {f.padele.innerHTML = nu.TAB_DOT_SMALL;cnf=true;}
+								else if (pad.isChordNote){
+									ctx.beginPath();
+									ctx.arc(ctrX, ctrY, rad, 0, 2 * Math.PI, false);
+									if (cnf){
+										ctx.lineWidth = lw*2;
+							      ctx.strokeStyle = 'rgba(0,128,0,0.7)';
+							      ctx.stroke();
+									}
+									else {
+										ctx.fillStyle = 'rgba(0,128,0,0.7)';
+										ctx.fill();
+										cnf = true;
+									}
 								}
-								else f.padele.innerHTML = nu.TAB_LINE;
-							}
+
+								if (pad.isMelodyNote){
+									ctx.beginPath();
+									ctx.arc(ctrX, ctrY, radMel, 0, 2 * Math.PI, false);
+									if (mnf){
+										ctx.lineWidth = lw*2;
+							      ctx.strokeStyle = 'rgba(250,0,0,0.7)';
+							      ctx.stroke();
+									}
+									else {
+										ctx.fillStyle = 'rgba(250,0,0,0.7)';
+										ctx.fill();
+										mnf = true;
+									}
+								}
+								else if (pad.isMelodyOctave){
+									ctx.beginPath();
+									ctx.arc(ctrX, ctrY, radTiny, 0, 2 * Math.PI, false);
+									if (mof){
+										ctx.lineWidth = lw*2;
+							      ctx.strokeStyle = 'rgba(250,0,0,0.7)';
+							      ctx.stroke();
+									}
+									else {
+										ctx.fillStyle = 'rgba(250,0,0,0.7)';
+										ctx.fill();
+										mof = true;
+									}
+								}
+
+								pos += 1;
+							};
+
+							refreshStringPad(str.pad,str.canvas);
+
+							for (var i = 0; i < nu.FRET_COUNT; i++)
+								refreshStringPad(str.fret[i].pad,str.fret[i].canvas);
+
 						}
 					}).bind(nu);
 					return nu;
@@ -1394,25 +1473,112 @@ var ts = {
 					var nu = this.createToolInstrument('piano','keyboard');
 
 					nu.eKeyboard = ts.html.nu.ele('ts-keyboard');
-					nu.eKeyboard.style.display = 'inline-block';
+					nu.eKeyboard.style.display = 'block';
 					nu.iSpecific.appendChild(nu.eKeyboard);
 
-					for (var i = ts.midi.constant.MIDI_NOTE_MIN; i <= ts.midi.constant.MIDI_NOTE_MAX ; i++){
+					for (var i = (ts.midi.constant.MIDI_NOTE_MIN+12); i <= (ts.midi.constant.MIDI_NOTE_MAX-24) ; i++){
 						var pad = nu.createPad(i,0);
-						pad.textContent = '!';
+						pad.ts.canvas = document.createElement('canvas');
+						pad.ts.canvas.style.width = '0.4em';
+						pad.ts.canvas.style.height = '2em';
+						pad.appendChild(pad.ts.canvas);
+						//string.eEmptyEle.appendChild(string.canvas);
+						//pad.textContent = '!';
+
 						var note = (pad.ts.note%12);
 						if (note == 1 || note == 3 || note == 6 || note == 8 || note == 10){
-							pad.style.color = pad.style.backgroundColor = 'black';
+							pad.ts.bgcolor = 'black';
 						}else{
-							pad.style.color = pad.style.backgroundColor = 'white';
+							pad.ts.bgcolor = 'white';
 						}
 
-						if (note == 0 || note == 5)
-							pad.style.borderLeft = '0.05em solid gray';
+						if (note == 0 || note == 5) pad.ts.borderLeft = true;
+						else pad.ts.borderLeft = false;
+						if (note == 11 || note == 4) pad.ts.borderRight = true;
+						else pad.ts.borderRight = false;
 
 						nu.eKeyboard.appendChild(pad);
 					}
+					nu.instrumentRefresh = (function(){
+						var running = false;
+						if (ts.player.is.running())running = true;
 
+						if (zs4.is.array(nu.instrument.ui)){
+              console.log('REFRESHING PIANO running='+running);
+
+							for (var i=0;i<nu.instrument.ui.length;i++){
+								var pad = nu.instrument.ui[i];
+
+
+								var canvas = pad.canvas;
+								var ctx = canvas.getContext("2d");
+								var w = canvas.width;
+								var h = canvas.height;
+								var lw = w/5;
+								//console.log(w,h,pad);
+
+								//ctx.beginPath();
+								ctx.rect(0, 0, w, h);
+					      ctx.fillStyle = pad.bgcolor;
+					      ctx.fill();
+
+								if (pad.borderLeft){
+									//console.log('BORDERLEFT!!!');
+									ctx.beginPath();
+									ctx.lineWidth = lw;
+									ctx.moveTo(0,0);
+									ctx.lineTo(0,h);
+									ctx.strokeStyle = 'rgba(120,120,120,1)';
+									ctx.stroke();
+								}
+
+								if (pad.borderRight){
+									//console.log('BORDERLEFT!!!');
+									ctx.beginPath();
+									ctx.lineWidth = lw;
+									ctx.moveTo(w-1,0);
+									ctx.lineTo(w-1,h);
+									ctx.strokeStyle = 'rgba(120,120,120,1)';
+									ctx.stroke();
+								}
+
+								if (running){
+
+								}
+								else {
+									if (pad.isChordRoot){
+										ctx.beginPath();
+										ctx.rect(0, 0, w, h);
+										var grd = ctx.createLinearGradient(0,h,0,h/3);
+										grd.addColorStop(0,'rgba(0,128,0,1)');
+										grd.addColorStop(1,'rgba(0,128,0,0)');
+										ctx.fillStyle = grd;
+										ctx.fill();
+									}
+									else if (pad.isChordNote){
+										ctx.beginPath();
+										ctx.rect(0, 0, w, h);
+										var grd = ctx.createLinearGradient(0,h,0,(h-(h/6)));
+										grd.addColorStop(0,'rgba(0,128,0,1)');
+										grd.addColorStop(1,'rgba(0,128,0,0)');
+										ctx.fillStyle = grd;
+										ctx.fill();
+									}
+								}
+
+								if (pad.isMelodyNote){
+									ctx.beginPath();
+									ctx.rect(0, 0, w, h);
+									var grd = ctx.createLinearGradient(0,0,0,(h-(h/3)));
+									grd.addColorStop(0,'rgba(255,0,0,1)');
+									grd.addColorStop(1,'rgba(255,0,0,0)');
+									ctx.fillStyle = grd;
+									ctx.fill();
+								}
+
+							}
+						}
+					});
 					return nu;
 				},
 
@@ -1849,7 +2015,7 @@ var ts = {
 
 				var ele = ts.html.nu.ele('ts');
 				ele.style.display = 'block';
-				ele.style.fontSize = 'xx-small';
+				//ele.style.fontSize = 'xx-small';
 				container.appendChild(ele);
 				//ele.width = '100%';
 				//ele.height = '32em';
