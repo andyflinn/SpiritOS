@@ -255,13 +255,6 @@ ts.create = function(){
 			}
 			this.stats.end();
 		};
-		SEQUENCE.renderStats = function(){
-			this.stsEvents.textContent = ('events:'+this.evt.length+' ');
-			this.stsChords.textContent = ('chords:' + this.stats.chords+' ');
-			this.stsBars.textContent = ('bars:' + this.stats.bars+' ');
-			this.stsBeats.textContent = ('beats:' + this.stats.beats+' ');
-			this.stsNotes.textContent = ('notes:' + this.stats.notes+' ');
-		};
 		SEQUENCE.recomputeTiming = function(){
 			this.updateStats();
 			var seq = this;
@@ -805,6 +798,13 @@ ts.create = function(){
 		};
 
   if (ts.is.window){
+    SEQUENCE.renderStats = function(){
+			this.stsEvents.textContent = ('events:'+this.evt.length+' ');
+			this.stsChords.textContent = ('chords:' + this.stats.chords+' ');
+			this.stsBars.textContent = ('bars:' + this.stats.bars+' ');
+			this.stsBeats.textContent = ('beats:' + this.stats.beats+' ');
+			this.stsNotes.textContent = ('notes:' + this.stats.notes+' ');
+		};
     SEQUENCE.onLogoClick = function(){
 			if (this.evt.length == 0)
 				return;
@@ -2034,366 +2034,6 @@ ts.create = function(){
   }
 };
 
-ts.playNote = function(channel,note,volume,millies){};
-
-ts.html = new Object({
-  init:{
-		block:function(container){
-
-			var ele = ts.html.nu.ele('ts');
-			ele.style.display = 'block';
-			//ele.style.fontSize = 'xx-small';
-			container.appendChild(ele);
-			//ele.width = '100%';
-			//ele.height = '32em';
-			ele.ts = nu;
-
-			var nu = new ts.create();
-			ele.ts = nu;
-			container.ts = nu;
-
-			nu.ele = ele;
-
-			ts.initialize();
-
-			// make a title bar;
-			nu.titlebarElement = ts.html.nu.ele('ts-titlebar');
-			nu.titlebarElement.style.display = 'block';
-			ele.appendChild(nu.titlebarElement);
-
-				nu.tsTopTools = ts.html.nu.ele('ts-top-tools');
-        //nu.tsTopTools.style.fontSize =
-				nu.titlebarElement.appendChild(nu.tsTopTools);
-
-				nu.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
-				nu.titlebarLogo.ts = nu;
-				nu.titlebarLogo.onclick = function(){this.ts.onLogoClick();};
-				zs4.admin.util.setIcon(nu.titlebarLogo,'play');
-				nu.tsTopTools.appendChild(nu.titlebarLogo);
-
-				nu.player = null;
-
-				nu.toolinst = ts.html.nu.ele('ts-instbutton');
-				zs4.admin.util.setIcon(nu.toolinst,'instruments');
-				nu.instArePopped = false;
-				nu.toolinst.onclick = function(){
-					if (nu.instArePopped==true){
-						nu.instpopped.style.display = 'none';
-						nu.instArePopped = false;
-					}else{
-						nu.instpopped.style.display = 'block';
-						nu.instArePopped = true;
-						nu.toolspopped.style.display = 'none';
-						nu.toolsArePopped = false;
-						nu.hideAllInstPanes();
-					}
-				};
-				nu.tsTopTools.appendChild(nu.toolinst);
-
-				nu.toolpop = ts.html.nu.ele('ts-toolbutton');
-				zs4.admin.util.setIcon(nu.toolpop,'tool');
-				nu.toolsArePopped = false;
-				nu.toolpop.onclick = function(){
-					if (nu.toolsArePopped==true){
-						nu.toolspopped.style.display = 'none';
-						nu.toolsArePopped = false;
-					}else{
-						nu.toolspopped.style.display = 'block';
-						nu.toolsArePopped = true;
-						nu.instpopped.style.display = 'none';
-						nu.instArePopped = false;
-						nu.ts.current_tool = null;
-						nu.hideAllToolPanes();
-					}
-				};
-				nu.tsTopTools.appendChild(nu.toolpop);
-
-				nu.transport = ts.html.nu.ele('ts-transport');
-				nu.tsTopTools.appendChild(nu.transport);
-
-				nu.tostart = zs4.admin.util.addIconElement(nu.transport,'tostart');
-				nu.tostart.onclick = function(){nu.setCurrentEvent(nu.evt[0]);}
-				nu.prev = zs4.admin.util.addIconElement(nu.transport,'prev');
-				nu.prev.onclick = function(){nu.setPreviousEvent();}
-				nu.next = zs4.admin.util.addIconElement(nu.transport,'next');
-				nu.next.onclick = function(){nu.setNextEvent();}
-				nu.toend = zs4.admin.util.addIconElement(nu.transport,'toend');
-				nu.toend.onclick = function(){nu.setCurrentEvent(nu.evt[(nu.evt.length-1)]);}
-
-				nu.toolspopped = ts.html.nu.ele('ts-tool-icons');
-				nu.toolspopped.style.display = 'none';
-				nu.titlebarElement.appendChild(nu.toolspopped);
-
-				nu.instpopped = ts.html.nu.ele('ts-inst-icons');
-				nu.instpopped.style.display = 'none';
-				nu.titlebarElement.appendChild(nu.instpopped);
-
-			//
-			nu.toolarea = ts.html.nu.ele('ts-toolarea');
-			nu.toolarea.style.display = 'block';
-			ele.appendChild(nu.toolarea);
-
-			nu.instarea = ts.html.nu.ele('ts-instarea');
-			nu.instarea.style.display = 'block';
-			ele.appendChild(nu.instarea);
-
-			// create content bin
-			nu.cnt = ts.html.nu.ele('ts-content');
-			nu.cnt.style.marginLeft = '.5em';
-			nu.cnt.style.display = 'block';
-			nu.cnt.style.maxHeight = (window.innerHeight/2)+'px';
-			nu.cnt.style.overflowY = 'scroll';
-			ele.appendChild(nu.cnt);
-
-			nu.stsElement = ts.html.nu.ele('ts-statusbar');
-			nu.stsElement.style.display = 'block';
-			ele.appendChild(nu.stsElement);
-
-				nu.stsEvents = ts.html.nu.ele('ts-count-events');
-				nu.stsElement.appendChild(nu.stsEvents);
-
-				nu.stsChords = ts.html.nu.ele('ts-count-chords');
-				nu.stsElement.appendChild(nu.stsChords);
-
-				nu.stsBars = ts.html.nu.ele('ts-count-bars');
-				nu.stsBars.className = 'tsbar';
-				nu.stsElement.appendChild(nu.stsBars);
-
-				nu.stsBeats = ts.html.nu.ele('ts-count-beat');
-				nu.stsBeats.className = 'tsbeat';
-				nu.stsElement.appendChild(nu.stsBeats);
-
-				nu.stsNotes = ts.html.nu.ele('ts-count-notes');
-				nu.stsNotes.className = 'tsnote';
-				nu.stsElement.appendChild(nu.stsNotes);
-
-			nu.hideAllInstPanes = function(){
-				nu.ts.current_inst = null;
-				for (var i = 0; i < nu.inst.length; i++){
-					nu.inst[i].toolWindow.style.display = 'none';
-					nu.inst[i].visible = false;
-				}
-			};
-			nu.hideAllToolPanes = function(){
-				nu.ts.current_tool = null;
-				for (var i = 0; i < nu.tool.length; i++){
-					nu.tool[i].toolWindow.style.display = 'none';
-					nu.tool[i].visible = false;
-				}
-			};
-
-			nu.createToolChord();
-			nu.createToolGuitar();
-			nu.createToolPiano();
-			nu.createToolUkulele();
-			nu.createToolMandolin();
-
-			nu.createToolViolin();
-			nu.createToolBass();
-
-			nu.createToolScript();
-			nu.createToolBars();
-			nu.createToolBeats();
-			nu.bpbTool = nu.createToolBpb();
-			nu.bpmTool = nu.createToolBpm();
-			nu.createToolTranspose();
-			nu.createToolAudio();
-			nu.createToolMidi();
-			nu.createToolLayout();
-			return ts.ts = nu;
-		}
-	},
-	nu:{
-		ele:function(nam){
-			var nu = document.createElement(nam);
-			return nu;
-		},
-		err:function(val){
-			var nu = ts.html.nu.ele('ts-error');
-			nu.textContent = val;
-			return nu;
-		},
-	},
-	get:{
-		id:function(id){
-			return document.getElementById(id);
-		},
-		plain:function(f){
-			var t = "";
-			if (!zs4.is.string(f)) return t;
-			var last_ch = ' ';
-			var last_ch_was_space = true;
-			var lessening = false;
-			var o = 0;
-			for (var i = 0 ; i < f.length ; i++){
-				var cur_ch = f.charAt(i);
-				if (cur_ch=='<') {lessening=true; continue;}
-				if (cur_ch=='>') {lessening=false; continue;}
-				if (lessening||cur_ch=='\t'||cur_ch=='\r')continue;
-
-				if (cur_ch=='\n'){if (o==0||i==(f.length-1))continue; t += cur_ch.toString();o++;last_ch_was_space=false;continue;}
-
-				if (zs4.is.space(cur_ch)){
-					if (last_ch_was_space)continue;
-					t += " "; o++;
-					last_ch_was_space = true;
-					continue;
-				}
-				last_ch_was_space = false;
-				t += cur_ch.toString();
-				o++;
-			}
-			return t.trim();
-		}
-	},
-});
-
-ts.initialize = function(){
-	if (ts.initialized) return true;
-	ts.initialized = true;
-
-	//initialize Audio
-	ts.audio.initialize();
-	//initialize MIDI
-	ts.midi.initialize();
-	// initialize Player
-	ts.player.initialize();
-
-	if (ts.audio.initialized){
-		ts.playNote = ts.audio.play.note;
-	}
-	else
-	if (ts.midi.initialized){
-		ts.playNote = ts.midi.play.note;
-	}
-
-	return ts.initialized;
-};
-
-ts.initialized = false;
-
-ts.midi = new Object({
-	access:null,
-	initialized:false,
-	input:[],
-	output:[],
-	current_output:0,
-	status:{
-		onMIDISuccess:function(midiAccess) {
-			ts.midi.access = midiAccess;
-			ts.midi.initialized = true;
-
-			try {
-
-				console.log('testing ts.midi.access');
-				console.log(ts.midi.access);
-				for (var entry in ts.midi.access.inputs) {
-					ts.midi.input.push(entry[1]);
-				}
-
-				for (var entry in ts.midi.access.outputs) {
-					ts.midi.output.push(entry[1]);
-				}
-			} catch(e){}
-
-		},
-
-		onMIDIFailure:function(e) {
-			ts.midi.access = null;
-			ts.midi.initialized = false;
-		},
-	},
-	initialize:function(){
-		if (ts.midi.initialized)
-			return ts.midi.access;
-
-		ts.midi.initialized = true;
-		if (navigator.requestMIDIAccess) {
-			navigator.requestMIDIAccess({
-				sysex: false // this defaults to 'false' and we won't be covering sysex in this article.
-			}).then(ts.midi.status.onMIDISuccess, ts.midi.status.onMIDIFailure);
-		} else {
-			ts.midi.initialized = false;
-			ts.midi.access = null;
-		}
-		return ts.midi.access;
-	},
-	constant:{
-		A4_NOTE:69,
-		MIDI_NOTE_MIN:21,
-		MIDI_NOTE_MAX:108,
-		MIDDLE_C:60,
-	},
-	play:{
-		note:function(channel,note,volume,millies){
-
-			var noteOnMessage = [0x90|(channel&0xf), (note&0x7f), (volume&0x7f)];    // note on, middle C, full velocity
-			var noteOffMessage = [0x80|(channel&0xf), (note&0x7f), 0x40];    // note off, middle C, full velocity
-			var output = ts.midi.output[ts.midi.current_output];
-			output.send( noteOnMessage );  //omitting the timestamp means send immediately.
-			output.send( noteOffMessage, window.performance.now() + millies );
-		},
-	},
-});
-
-ts.audio = new Object({
-	context:null,
-	create:{
-		voice:function(name){
-
-		},
-	},
-	ctxType:'AudioContext',
-	initialized:false,
-	initialize:function(){
-		if (ts.audio.initialized)
-			return true;
-
-		if (typeof window.AudioContext === "function"){
-			ts.audio.context = new window.AudioContext();
-		} else if (typeof window.webkitAudioContext === "function"){
-			ts.audio.context = new window.webkitAudioContext();
-			ctxType='webkitAudioContext';
-		}
-
-		if (ts.audio.context == null)
-			return false;
-
-		ts.audio.initialized = true;
-		return true;
-	},
-	play:{
-		note:function(channel,note,volume,millies){
-			return ts.audio.play.frequency(channel,(440 * Math.pow(2.0,((note-ts.midi.constant.A4_NOTE)/12.0))),volume,millies);
-		},
-		frequency:function(channel,freq,volume,millies){
-
-				var now = ts.audio.context.currentTime;
-
-				if (volume == null)
-				volume = 127;
-
-			var aVol = volume / 127;
-
-			var o = ts.audio.context.createOscillator();
-			o.type = 'sine';
-			o.frequency.setValueAtTime(freq,now);
-
-			var g = ts.audio.context.createGain();
-			g.gain.setValueAtTime((volume / 127),now);
-
-			o.connect(g);
-			g.connect(ts.audio.context.destination);
-
-
-			o.start(0);
-			setTimeout(function(){o.stop();},millies);
-
-		},
-	},
-
-});
-
 ts.music = new Object({
 	transpose:{
 		note:{
@@ -2736,4 +2376,364 @@ ts.player = new Object({
 			}
 		}
 	},
+});
+
+ts.playNote = function(channel,note,volume,millies){};
+
+ts.initialize = function(){
+	if (ts.initialized) return true;
+	ts.initialized = true;
+
+	//initialize Audio
+	ts.audio.initialize();
+	//initialize MIDI
+	ts.midi.initialize();
+	// initialize Player
+	ts.player.initialize();
+
+	if (ts.audio.initialized){
+		ts.playNote = ts.audio.play.note;
+	}
+	else
+	if (ts.midi.initialized){
+		ts.playNote = ts.midi.play.note;
+	}
+
+	return ts.initialized;
+};
+
+ts.initialized = false;
+
+ts.html = new Object({
+  init:{
+		block:function(container){
+
+			var ele = ts.html.nu.ele('ts');
+			ele.style.display = 'block';
+			//ele.style.fontSize = 'xx-small';
+			container.appendChild(ele);
+			//ele.width = '100%';
+			//ele.height = '32em';
+			ele.ts = nu;
+
+			var nu = new ts.create();
+			ele.ts = nu;
+			container.ts = nu;
+
+			nu.ele = ele;
+
+			ts.initialize();
+
+			// make a title bar;
+			nu.titlebarElement = ts.html.nu.ele('ts-titlebar');
+			nu.titlebarElement.style.display = 'block';
+			ele.appendChild(nu.titlebarElement);
+
+				nu.tsTopTools = ts.html.nu.ele('ts-top-tools');
+        //nu.tsTopTools.style.fontSize =
+				nu.titlebarElement.appendChild(nu.tsTopTools);
+
+				nu.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
+				nu.titlebarLogo.ts = nu;
+				nu.titlebarLogo.onclick = function(){this.ts.onLogoClick();};
+				zs4.admin.util.setIcon(nu.titlebarLogo,'play');
+				nu.tsTopTools.appendChild(nu.titlebarLogo);
+
+				nu.player = null;
+
+				nu.toolinst = ts.html.nu.ele('ts-instbutton');
+				zs4.admin.util.setIcon(nu.toolinst,'instruments');
+				nu.instArePopped = false;
+				nu.toolinst.onclick = function(){
+					if (nu.instArePopped==true){
+						nu.instpopped.style.display = 'none';
+						nu.instArePopped = false;
+					}else{
+						nu.instpopped.style.display = 'block';
+						nu.instArePopped = true;
+						nu.toolspopped.style.display = 'none';
+						nu.toolsArePopped = false;
+						nu.hideAllInstPanes();
+					}
+				};
+				nu.tsTopTools.appendChild(nu.toolinst);
+
+				nu.toolpop = ts.html.nu.ele('ts-toolbutton');
+				zs4.admin.util.setIcon(nu.toolpop,'tool');
+				nu.toolsArePopped = false;
+				nu.toolpop.onclick = function(){
+					if (nu.toolsArePopped==true){
+						nu.toolspopped.style.display = 'none';
+						nu.toolsArePopped = false;
+					}else{
+						nu.toolspopped.style.display = 'block';
+						nu.toolsArePopped = true;
+						nu.instpopped.style.display = 'none';
+						nu.instArePopped = false;
+						nu.ts.current_tool = null;
+						nu.hideAllToolPanes();
+					}
+				};
+				nu.tsTopTools.appendChild(nu.toolpop);
+
+				nu.transport = ts.html.nu.ele('ts-transport');
+				nu.tsTopTools.appendChild(nu.transport);
+
+				nu.tostart = zs4.admin.util.addIconElement(nu.transport,'tostart');
+				nu.tostart.onclick = function(){nu.setCurrentEvent(nu.evt[0]);}
+				nu.prev = zs4.admin.util.addIconElement(nu.transport,'prev');
+				nu.prev.onclick = function(){nu.setPreviousEvent();}
+				nu.next = zs4.admin.util.addIconElement(nu.transport,'next');
+				nu.next.onclick = function(){nu.setNextEvent();}
+				nu.toend = zs4.admin.util.addIconElement(nu.transport,'toend');
+				nu.toend.onclick = function(){nu.setCurrentEvent(nu.evt[(nu.evt.length-1)]);}
+
+				nu.toolspopped = ts.html.nu.ele('ts-tool-icons');
+				nu.toolspopped.style.display = 'none';
+				nu.titlebarElement.appendChild(nu.toolspopped);
+
+				nu.instpopped = ts.html.nu.ele('ts-inst-icons');
+				nu.instpopped.style.display = 'none';
+				nu.titlebarElement.appendChild(nu.instpopped);
+
+			//
+			nu.toolarea = ts.html.nu.ele('ts-toolarea');
+			nu.toolarea.style.display = 'block';
+			ele.appendChild(nu.toolarea);
+
+			nu.instarea = ts.html.nu.ele('ts-instarea');
+			nu.instarea.style.display = 'block';
+			ele.appendChild(nu.instarea);
+
+			// create content bin
+			nu.cnt = ts.html.nu.ele('ts-content');
+			nu.cnt.style.marginLeft = '.5em';
+			nu.cnt.style.display = 'block';
+			nu.cnt.style.maxHeight = (window.innerHeight/2)+'px';
+			nu.cnt.style.overflowY = 'scroll';
+			ele.appendChild(nu.cnt);
+
+			nu.stsElement = ts.html.nu.ele('ts-statusbar');
+			nu.stsElement.style.display = 'block';
+			ele.appendChild(nu.stsElement);
+
+				nu.stsEvents = ts.html.nu.ele('ts-count-events');
+				nu.stsElement.appendChild(nu.stsEvents);
+
+				nu.stsChords = ts.html.nu.ele('ts-count-chords');
+				nu.stsElement.appendChild(nu.stsChords);
+
+				nu.stsBars = ts.html.nu.ele('ts-count-bars');
+				nu.stsBars.className = 'tsbar';
+				nu.stsElement.appendChild(nu.stsBars);
+
+				nu.stsBeats = ts.html.nu.ele('ts-count-beat');
+				nu.stsBeats.className = 'tsbeat';
+				nu.stsElement.appendChild(nu.stsBeats);
+
+				nu.stsNotes = ts.html.nu.ele('ts-count-notes');
+				nu.stsNotes.className = 'tsnote';
+				nu.stsElement.appendChild(nu.stsNotes);
+
+			nu.hideAllInstPanes = function(){
+				nu.ts.current_inst = null;
+				for (var i = 0; i < nu.inst.length; i++){
+					nu.inst[i].toolWindow.style.display = 'none';
+					nu.inst[i].visible = false;
+				}
+			};
+			nu.hideAllToolPanes = function(){
+				nu.ts.current_tool = null;
+				for (var i = 0; i < nu.tool.length; i++){
+					nu.tool[i].toolWindow.style.display = 'none';
+					nu.tool[i].visible = false;
+				}
+			};
+
+			nu.createToolChord();
+			nu.createToolGuitar();
+			nu.createToolPiano();
+			nu.createToolUkulele();
+			nu.createToolMandolin();
+
+			nu.createToolViolin();
+			nu.createToolBass();
+
+			nu.createToolScript();
+			nu.createToolBars();
+			nu.createToolBeats();
+			nu.bpbTool = nu.createToolBpb();
+			nu.bpmTool = nu.createToolBpm();
+			nu.createToolTranspose();
+			nu.createToolAudio();
+			nu.createToolMidi();
+			nu.createToolLayout();
+			return ts.ts = nu;
+		}
+	},
+	nu:{
+		ele:function(nam){
+			var nu = document.createElement(nam);
+			return nu;
+		},
+		err:function(val){
+			var nu = ts.html.nu.ele('ts-error');
+			nu.textContent = val;
+			return nu;
+		},
+	},
+	get:{
+		id:function(id){
+			return document.getElementById(id);
+		},
+		plain:function(f){
+			var t = "";
+			if (!zs4.is.string(f)) return t;
+			var last_ch = ' ';
+			var last_ch_was_space = true;
+			var lessening = false;
+			var o = 0;
+			for (var i = 0 ; i < f.length ; i++){
+				var cur_ch = f.charAt(i);
+				if (cur_ch=='<') {lessening=true; continue;}
+				if (cur_ch=='>') {lessening=false; continue;}
+				if (lessening||cur_ch=='\t'||cur_ch=='\r')continue;
+
+				if (cur_ch=='\n'){if (o==0||i==(f.length-1))continue; t += cur_ch.toString();o++;last_ch_was_space=false;continue;}
+
+				if (zs4.is.space(cur_ch)){
+					if (last_ch_was_space)continue;
+					t += " "; o++;
+					last_ch_was_space = true;
+					continue;
+				}
+				last_ch_was_space = false;
+				t += cur_ch.toString();
+				o++;
+			}
+			return t.trim();
+		}
+	},
+});
+
+ts.midi = new Object({
+	access:null,
+	initialized:false,
+	input:[],
+	output:[],
+	current_output:0,
+	status:{
+		onMIDISuccess:function(midiAccess) {
+			ts.midi.access = midiAccess;
+			ts.midi.initialized = true;
+
+			try {
+
+				console.log('testing ts.midi.access');
+				console.log(ts.midi.access);
+				for (var entry in ts.midi.access.inputs) {
+					ts.midi.input.push(entry[1]);
+				}
+
+				for (var entry in ts.midi.access.outputs) {
+					ts.midi.output.push(entry[1]);
+				}
+			} catch(e){}
+
+		},
+
+		onMIDIFailure:function(e) {
+			ts.midi.access = null;
+			ts.midi.initialized = false;
+		},
+	},
+	initialize:function(){
+		if (ts.midi.initialized)
+			return ts.midi.access;
+
+		ts.midi.initialized = true;
+		if (navigator.requestMIDIAccess) {
+			navigator.requestMIDIAccess({
+				sysex: false // this defaults to 'false' and we won't be covering sysex in this article.
+			}).then(ts.midi.status.onMIDISuccess, ts.midi.status.onMIDIFailure);
+		} else {
+			ts.midi.initialized = false;
+			ts.midi.access = null;
+		}
+		return ts.midi.access;
+	},
+	constant:{
+		A4_NOTE:69,
+		MIDI_NOTE_MIN:21,
+		MIDI_NOTE_MAX:108,
+		MIDDLE_C:60,
+	},
+	play:{
+		note:function(channel,note,volume,millies){
+
+			var noteOnMessage = [0x90|(channel&0xf), (note&0x7f), (volume&0x7f)];    // note on, middle C, full velocity
+			var noteOffMessage = [0x80|(channel&0xf), (note&0x7f), 0x40];    // note off, middle C, full velocity
+			var output = ts.midi.output[ts.midi.current_output];
+			output.send( noteOnMessage );  //omitting the timestamp means send immediately.
+			output.send( noteOffMessage, window.performance.now() + millies );
+		},
+	},
+});
+
+ts.audio = new Object({
+	context:null,
+	create:{
+		voice:function(name){
+
+		},
+	},
+	ctxType:'AudioContext',
+	initialized:false,
+	initialize:function(){
+		if (ts.audio.initialized)
+			return true;
+
+		if (typeof window.AudioContext === "function"){
+			ts.audio.context = new window.AudioContext();
+		} else if (typeof window.webkitAudioContext === "function"){
+			ts.audio.context = new window.webkitAudioContext();
+			ctxType='webkitAudioContext';
+		}
+
+		if (ts.audio.context == null)
+			return false;
+
+		ts.audio.initialized = true;
+		return true;
+	},
+	play:{
+		note:function(channel,note,volume,millies){
+			return ts.audio.play.frequency(channel,(440 * Math.pow(2.0,((note-ts.midi.constant.A4_NOTE)/12.0))),volume,millies);
+		},
+		frequency:function(channel,freq,volume,millies){
+
+				var now = ts.audio.context.currentTime;
+
+				if (volume == null)
+				volume = 127;
+
+			var aVol = volume / 127;
+
+			var o = ts.audio.context.createOscillator();
+			o.type = 'sine';
+			o.frequency.setValueAtTime(freq,now);
+
+			var g = ts.audio.context.createGain();
+			g.gain.setValueAtTime((volume / 127),now);
+
+			o.connect(g);
+			g.connect(ts.audio.context.destination);
+
+
+			o.start(0);
+			setTimeout(function(){o.stop();},millies);
+
+		},
+	},
+
 });
