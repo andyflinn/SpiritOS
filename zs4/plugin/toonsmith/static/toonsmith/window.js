@@ -1,14 +1,26 @@
 'use strict';
 
-var isWindow = new Function("try {return this===window;}catch(e){ return false;}");
-var isNode = new Function("try {return this===global;}catch(e){return false;}");
-
 var ts;
-if (isNode()) {
-    ts = exports;
-}
-else {
-    ts = new Object();
+
+if (true){
+  var isWindow = new Function("try {return this===window;}catch(e){ return false;}");
+  var isNode = new Function("try {return this===global;}catch(e){return false;}");
+
+  if (isNode()) {
+      ts = exports;
+      ts.is = new Object({
+        window:function(){return false;},
+        node:function(){return true;},
+      });
+  }
+  else {
+      ts = new Object({
+        is:{
+          window:function(){return true;},
+          node:function(){return false;},
+        },
+      });
+  }
 }
 
 ts.create = new Object({
@@ -450,6 +462,7 @@ ts.create = new Object({
 				}
 
 			},
+
 			addEvent:function(str,info,afterIndex){
 				var SEQUENCE = this;
 				// Global values
@@ -540,9 +553,12 @@ ts.create = new Object({
 						return false;
 					},
 				};
+        var EVENT = o;
 
-				if (true) { // createn UI
-					var EVENT = o;
+
+
+				if (ts.is.window()) {
+
 
 					o.eEvent = document.createElement('span');
 					//o.eEvent.style.display = 'inline';
@@ -849,6 +865,7 @@ ts.create = new Object({
 
 				return ret;
 			},
+
 			createTool:function(name,icon,tooltype){
 				var nu = new Object({
 					nam:name,

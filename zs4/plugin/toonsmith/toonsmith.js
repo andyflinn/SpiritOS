@@ -1,5 +1,6 @@
 var zs4 = require('../../static/zs4');
 var xpress = require('express');
+var ts = require('./static/toonsmith/window');
 
 console.log('toonsmith loading...');
 
