@@ -51,10 +51,6 @@ ts-tool-window{
   background-color: lightgray;
   display: block;
 }
-ts-top-tools{
-  display:block;
-  font-size: 2em;
-}
 ts-statusbar{
   background-color: lightgray;
 }

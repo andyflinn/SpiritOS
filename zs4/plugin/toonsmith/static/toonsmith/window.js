@@ -1314,11 +1314,11 @@ var ts = {
 					}).bind(nu);
 
 					nu.instrumentRefresh = (function(){
-            console.log('STRING INSTRUMENT REFRESH');
+            //console.log('STRING INSTRUMENT REFRESH');
 						for (var s = 0 ; s < nu.strings.length; s++){
 							var str = nu.strings[s];
 
-              console.log('STRING '+s+' REFRESH');
+              //console.log('STRING '+s+' REFRESH');
 
 							var cnf = false;
 							var mnf = false;
@@ -1504,7 +1504,7 @@ var ts = {
 						if (ts.player.is.running())running = true;
 
 						if (zs4.is.array(nu.instrument.ui)){
-              console.log('REFRESHING PIANO running='+running);
+              //console.log('REFRESHING PIANO running='+running);
 
 							for (var i=0;i<nu.instrument.ui.length;i++){
 								var pad = nu.instrument.ui[i];
@@ -1517,7 +1517,7 @@ var ts = {
 								var lw = w/5;
 								//console.log(w,h,pad);
 
-								//ctx.beginPath();
+								ctx.beginPath();
 								ctx.rect(0, 0, w, h);
 					      ctx.fillStyle = pad.bgcolor;
 					      ctx.fill();
@@ -1543,7 +1543,29 @@ var ts = {
 								}
 
 								if (running){
+                  if (pad.isChordRoot){
+                    var rt = h/2;
+                    var rh = h - rt;
+										ctx.beginPath();
+										ctx.rect(0, rt, w, rh);
+										ctx.fillStyle = 'rgba(0,128,0,.75)';
+										ctx.fill();
+									}
+									else if (pad.isChordNote){
+                    var rt = h*3/4;
+                    var rh = h - rt;
+										ctx.beginPath();
+                    ctx.rect(0, rt, w, rh);
+										ctx.fillStyle = 'rgba(0,128,0,.75)';
+										ctx.fill();
+									}
 
+                  if (pad.isMelodyNote){
+                    ctx.beginPath();
+  									ctx.rect(0, 0, w, h/3);
+  									ctx.fillStyle = 'rgba(255,0,0,1)';
+  									ctx.fill();
+                  }
 								}
 								else {
 									if (pad.isChordRoot){
@@ -1564,18 +1586,18 @@ var ts = {
 										ctx.fillStyle = grd;
 										ctx.fill();
 									}
-								}
 
-								if (pad.isMelodyNote){
-									ctx.beginPath();
-									ctx.rect(0, 0, w, h);
-									var grd = ctx.createLinearGradient(0,0,0,(h-(h/3)));
-									grd.addColorStop(0,'rgba(255,0,0,1)');
-									grd.addColorStop(1,'rgba(255,0,0,0)');
-									ctx.fillStyle = grd;
-									ctx.fill();
-								}
+  								if (pad.isMelodyNote){
+  									ctx.beginPath();
+  									ctx.rect(0, 0, w, h);
+  									var grd = ctx.createLinearGradient(0,0,0,(h-(h/3)));
+  									grd.addColorStop(0,'rgba(255,0,0,1)');
+  									grd.addColorStop(1,'rgba(255,0,0,0)');
+  									ctx.fillStyle = grd;
+  									ctx.fill();
+  								}
 
+								}
 							}
 						}
 					});
@@ -2035,6 +2057,7 @@ var ts = {
 				ele.appendChild(nu.titlebarElement);
 
 					nu.tsTopTools = ts.html.nu.ele('ts-top-tools');
+          //nu.tsTopTools.style.fontSize = 
 					nu.titlebarElement.appendChild(nu.tsTopTools);
 
 					nu.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
