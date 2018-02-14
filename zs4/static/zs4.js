@@ -5318,10 +5318,10 @@ if (zs4.is.window()){
 
       var em = (width+height) / 50;
 
-      var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
-      sheet += '.fouc{opacity:0}\n';
+      //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
+      //sheet += '.fouc{opacity:0}\n';
 
-      zs4.style.element.appendChild(document.createTextNode(sheet));
+      //zs4.style.element.appendChild(document.createTextNode(sheet));
     },
   };
 
