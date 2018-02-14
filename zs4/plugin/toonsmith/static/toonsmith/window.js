@@ -1,28 +1,17 @@
-////////////////////////////////////////////////////////////////////////"+"
 'use strict';
 
-var ts = {
-	console:{
-		active:true,
-		log:function(s){if(ts.ts.console.active==true)console.log(s);return ts.ts.console.active;},
-		on:function(){return(ts.ts.console.active=true);},
-		off:function(){return(ts.ts.console.active=false);},
-	},
-	copy:{
-		object:{
-			properties:function(s,d){
-				for (var n in s){
-					if(zs4.is.object(s[n])){
-						if(!d.hasOwnProperty(n)){d[n]={};}
-						ts.copy.object.properties(s[n],d[n]);
-						continue;
-					}
-					d[n]=s[n];
-				}
-				return d;
-			},
-		},
-	},
+var isWindow = new Function("try {return this===window;}catch(e){ return false;}");
+var isNode = new Function("try {return this===global;}catch(e){return false;}");
+
+var ts;
+if (isNode()) {
+    ts = exports;
+}
+else {
+    ts = new Object();
+}
+
+ts = {
 	create:{
 		ts:function(){
 			var nu = {
@@ -2057,7 +2046,7 @@ var ts = {
 				ele.appendChild(nu.titlebarElement);
 
 					nu.tsTopTools = ts.html.nu.ele('ts-top-tools');
-          //nu.tsTopTools.style.fontSize = 
+          //nu.tsTopTools.style.fontSize =
 					nu.titlebarElement.appendChild(nu.tsTopTools);
 
 					nu.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
@@ -2726,21 +2715,4 @@ var ts = {
 			}
 		},
 	},
-	ts:{
-	},
-	ui:{
-		e:function(n){
-			var e = document.createElement(n);
-			e.ts = {ui:ts.ui,e:e};
-			return ts.ui.z(e);
-		},
-		id:function(i){
-			return document.getElementById(i);
-		},
-		z:function(e){
-			e.ts = {ui:ts.ui,e:e};
-			return e;
-		},
-	},
-
 };
