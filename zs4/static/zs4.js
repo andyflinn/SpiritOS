@@ -1892,6 +1892,8 @@ zs4.type = {
         var description = '';
         var keywords = '';
         var lang = 'en';
+        const BODY_WIDTH = 800;
+        var TABINDEX = 0;
         if (title=='')title = 'zs4 web app';
 
         if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
@@ -1922,6 +1924,8 @@ zs4.type = {
 
           html += '  <meta charset="UTF-8">\n';
           html += '  <script async src="https://cdn.ampproject.org/v0.js"></script>\n';
+          html += '  <script async custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js"></script>\n';
+          html += '  <script async custom-element="amp-fit-text" src="https://cdn.ampproject.org/v0/amp-fit-text-0.1.js"></script>\n';
           html += '  <title>'+title+'</title>\n';
           html += '  <link rel="canonical" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'">\n';
           html += '  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">\n';
@@ -1974,11 +1978,15 @@ zs4.type = {
           html += '  \n';
 
           html += '<style amp-custom>\n';
-          html += 'h1{background-color:darkblue;color:white;padding:0px;border:0px;margin:0px;}';
-          html += 'body{background-color:white;color:black;padding:0;border:0px;margin:0px;background-image:url("/gfx/images/winterfooter.svg");background-repeat:no-repeat;background-position:bottom;background-attachment:fixed;}';
+          html += 'h1{}';
+          html += 'body{background-color:white;color:black;padding:0;border:0;margin:0px;background-image:url("/gfx/images/winterfooter.svg");background-repeat:no-repeat;background-position:bottom;background-attachment:fixed;background-size:100%;}';
+          html += 'amp-sidebar{width:"'+(BODY_WIDTH*3/4)+'px";padding:0em;border:2px solid black;margin:0px;background-image:url("/gfx/images/winterpattern.jpg");} ';
+          //html += 'amp-fit-text.sidebar{background-color:black;display:block;color:white;padding:0px;border:0px;margin:0px;}';
+          html += 'div.sidebar{display:block;font-size:2em;color:black;padding:10px;border:0px;margin:0px;}';
+          html += 'div.titlebar{background-color:darkblue;display:block;font-size:2em;color:white;padding:0px;border:0px;margin:0px;}';
           html += 'div.scope{padding:2em;border:0px;margin:0px;} ';
-          html += 'div.footer{background-color:darkblue;color:white;}';
-          html += 'a.footer{background-color:darkblue;color:white;text-decoration:none;}';
+          html += 'div.footer{margin-top:2em;}';
+          html += 'a.footer{text-decoration:none;}';
 
           SCOPE._.getAmpStyle(req,function(style){
             html += style;
@@ -1987,8 +1995,13 @@ zs4.type = {
             html += ' </head>\n';
 
             html += ' <body>\n';
-
-            html += '  <h1><amp-img src="/gfx/icons/zs4.svg" alt="Welcome" height="1em" width="1em"></amp-img>'+title+'</h1>\n';
+            html += '  <amp-sidebar id="sidebar" layout="nodisplay" side="left">\n';
+            html += '   <div class="sidebar"><amp-img tabindex='+(TABINDEX++)+' role="button" on="tap:sidebar.toggle" src="/gfx/icons/prev.svg" alt="Welcome" height="1em" width="1em"></amp-img>options</div>\n';
+            html += '   \n';
+            html += '   \n';
+            html += '   \n';
+            html += '  </amp-sidebar>\n';
+            html += '  <div class="titlebar"><amp-img tabindex='+(TABINDEX++)+' role="button" on="tap:sidebar.toggle" src="/gfx/icons/zs4.svg" alt="Welcome" height="1em" width="1em"></amp-img>'+title+'</div>\n';
             //if (description != ''){
             //  html += '   <h3>Summary</h3>';
             //  html += description;
