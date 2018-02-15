@@ -57,16 +57,78 @@ toonsmith.create = function(){
     return ret;
   }).bind(TOONSMITH);
 
+  TOONSMITH._.getAmpStyle= (function(req,cb){
+    var style = '';
+    style += 'span.zs4e{display:inline-block;}';
+    style += 'span.zs4c{display:block;}';
+    style += 'span.zs4t{display:block;}';
+    style += 'span.zs4i{visibility:hidden;}';
+    return cb(style);
+  }).bind(TOONSMITH);
   TOONSMITH._.oldGetAmpBody = TOONSMITH._.getAmpBody;
   TOONSMITH._.getAmpBody= (function(req,cb){
     var html = '';
 
-    var plain = TOONSMITH._.getTextOnly();
-    this._.getAmpPlainTextDecorated(req,TOONSMITH._.getTextOnly(),function(decorated){
-      html += decorated;
+    var SEQUENCE = new ts.create();
+    SEQUENCE.runChordsAndLyrics(TOONSMITH.data._.value);
 
-      return cb(html);
-    })
+
+    for (var i = 0; i < SEQUENCE.evt.length; i++){
+      var EVENT = SEQUENCE.evt[i];
+      //if (EVENT.lyric!='') console.log(EVENT.lyric);
+
+      if (EVENT.linefeed && SEQUENCE.layoutlinefeed){
+        html += '<br>\n';
+        continue;
+      }
+
+      var chord = false;
+      if (zs4.is.object(EVENT.chord)&&EVENT.chord.ok==true)chord=true;
+
+      var lyric = false;
+      //if (EVENT.lyric != '' || (EVENT.lyric == ' ' && !EVENT.space)) lyric = true;
+      if (EVENT.lyric != '') lyric = true;
+
+      if (!chord && !lyric)continue;
+
+      // OUTPUT EVENT
+      html+='<span class="zs4e">';
+      {
+        // OUTPUT CHORD;
+        html+='<span class="zs4c">';
+        {
+          if (chord){
+            console.log(EVENT.chord);
+            html += ts.music.NOTES[EVENT.chord.v].s;
+            html += ts.music.CHORD.TYPE[EVENT.chord.t].s;
+            if (EVENT.chord.v != EVENT.chord.b){
+              html += '/'+ts.music.NOTES[EVENT.chord.b].s;
+            }
+          }
+        }
+        html+='</span>';
+
+        // OUTPUT LYRIC;
+        if (lyric){
+          html+='<span class="zs4t">';
+          {
+            if (EVENT.space){
+              html+=' '
+            }
+            else if (EVENT.lyric != ''){
+              html += zs4.string.escape.html(EVENT.lyric);
+            }
+          }
+          html+='</span>';
+        }
+        else {
+          html+='<span class="zs4i">|</span>';
+        }
+      }
+      html+='</span>\n';
+    }
+
+    return cb(html);
   }).bind(TOONSMITH);
 }
 
