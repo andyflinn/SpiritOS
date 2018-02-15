@@ -71,7 +71,7 @@ toonsmith.create = function(){
 
     var SEQUENCE = new ts.create();
     SEQUENCE.runChordsAndLyrics(TOONSMITH.data._.value);
-
+    SEQUENCE.updateStats();
 
     for (var i = 0; i < SEQUENCE.evt.length; i++){
       var EVENT = SEQUENCE.evt[i];
