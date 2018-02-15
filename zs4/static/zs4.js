@@ -3673,7 +3673,7 @@ zs4.type = {
 
       if (zs4.is.object(req.input)&&zs4.is.object(req.input.getHTML)){
         this._.print('getHTML() '+zs4.json.stringify(req.input),req);
-        console.log('---- getHTML('+THIS._.path+') '+zs4.json.stringify(req.input));
+        //console.log('---- getHTML('+THIS._.path+') '+zs4.json.stringify(req.input));
         this._.getHTML(req);
         //this._.get(req);
         cb(); return;
@@ -3681,7 +3681,7 @@ zs4.type = {
       if (this._.flags.get.scope()){
         if (zs4.is.object(req.input)&&zs4.is.object(req.input.amp)&&zs4.is.object(req.input.amp.getHTML)){
           this._.print('getAMP() '+zs4.json.stringify(req.input),req);
-          console.log('---- getAMP('+THIS._.path+') '+zs4.json.stringify(req.input));
+          //console.log('---- getAMP('+THIS._.path+') '+zs4.json.stringify(req.input));
           this._.getAMP(req,cb);
           return;
         }
