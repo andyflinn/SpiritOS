@@ -495,22 +495,28 @@ ts.create = function(){
 			var glob = ts.zs4.string.split.separators(info,':');
 			if (glob.length==2){
 				//window.alert(info);
-				if (glob[0].trim()=='bpb'){
+        if (glob[0].trim()=='tpb'){
+					this.tpb = parseInt(glob[1]);
+					if (this.tpb < ts.music.MIN_TICKS_PER_BEAT)this.tpb = ts.music.MIN_TICKS_PER_BEAT;
+					else if (this.tpb > ts.music.MAX_TICKS_PER_BEAT) this.tpb = ts.music.MAX_TICKS_PER_BEAT;
+
+          if (ts.is.window())this.bpmTool.eEventTpbInput.value = this.tpb;
+
+				}
+        if (glob[0].trim()=='bpb'){
 					this.bpb = parseInt(glob[1]);
-					if (this.bpb < 2)this.bpb = 2;
+					if (this.bpb < ts.music.MIN_BEATS_PER_BAR)this.bpb = ts.music.MIN_BEATS_PER_BAR;
 					else if (this.bpb > ts.music.MAX_BEATS_PER_BAR) this.bpb = ts.music.MAX_BEATS_PER_BAR;
 
-          if (ts.is.window())this.bpbTool.eEventBpcInput.value = this.bpb;
+          if (ts.is.window())this.bpmTool.eEventBpcInput.value = this.bpb;
 
 				}
 				if (glob[0].trim()=='bpm'){
-					this.bpm = parseInt(glob[1]);
-					if (this.bpm < ts.music.MIN_BEATS_PER_MINUTE)this.bpm = MIN_BEATS_PER_MINUTE;
-					else if (this.bpm > ts.music.MAX_BEATS_PER_MINUTE) this.bpm = ts.music.MAX_BEATS_PER_MINUTE;
+					SEQUENCE.bpm = parseInt(glob[1]);
+					if (SEQUENCE.bpm < ts.music.MIN_BEATS_PER_MINUTE)SEQUENCE.bpm = MIN_BEATS_PER_MINUTE;
+					else if (SEQUENCE.bpm > ts.music.MAX_BEATS_PER_MINUTE) SEQUENCE.bpm = ts.music.MAX_BEATS_PER_MINUTE;
 
 					if (ts.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
-
-					//window.alert('bpm='+this.bpm);
 				}
 
         if (glob[0].trim()=='lf'){
@@ -886,7 +892,7 @@ ts.create = function(){
 			return this.cnt;
 		};
 		SEQUENCE.getChordsAndLyrics = function(){
-			var ret = '[bpb:'+this.bpb+'][bpm:'+this.bpm+']';
+			var ret = '[bpb:'+this.bpb+'][bpm:'+this.bpm+'][tpb:'+this.tpb+']';
 
 			if (SEQUENCE.layoutlinefeed){
 				ret+='[lf:true]';
@@ -1777,17 +1783,28 @@ ts.create = function(){
 
 			return nu;
 		};
-		SEQUENCE.createToolBpb = function(){
-			var nu = this.createTool('bpb','bpb');
+    SEQUENCE.createToolBpm = function(){
+			var nu = this.createTool('bpm','bpm');
 
-			nu.eEventBpc = ts.html.nu.ele('ts-tool-bpb');
+			nu.eEventBpm = ts.html.nu.ele('ts-tool-bpm');
+			nu.eEventBpm.style.display = 'inline-block';
+			nu.toolTitlebar.appendChild(nu.eEventBpm);
+
+				nu.eEventBpmInput = ts.html.nu.ele('input');
+				nu.eEventBpmInput.type = 'number';
+				nu.eEventBpmInput.value = this.bpm;
+				nu.eEventBpmInput.min = 12;
+				nu.eEventBpmInput.max = 480;
+				nu.eEventBpm.appendChild(nu.eEventBpmInput);
+				nu.eEventBpmInput.ts = nu;
+				nu.eEventBpmInput.onchange = function(){this.ts.ts.bpm = parseInt(this.value); this.ts.ts.refresh();};
+
+
+      nu.eEventBpc = ts.html.nu.ele('ts-tool-bpb');
 			nu.eEventBpc.style.display = 'inline-block';
 			nu.toolTitlebar.appendChild(nu.eEventBpc);
 
-				//nu.eEventBpcLabel = ts.html.nu.ele('ts-tool-bpb-label');
-				//nu.eEventBpcLabel.textContent = 'bpb:';
-				//nu.eEventBpc.appendChild(nu.eEventBpcLabel);
-
+        zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
 				nu.eEventBpcInput = ts.html.nu.ele('input');
 				nu.eEventBpcInput.type = 'number';
 				nu.eEventBpcInput.value = this.bpb;
@@ -1799,27 +1816,20 @@ ts.create = function(){
 					this.ts.ts.bpb = parseInt(this.value); this.ts.ts.refresh();
 				};
 
-			return nu;
-		};
-		SEQUENCE.createToolBpm = function(){
-			var nu = this.createTool('bpm','bpm');
+      nu.eEventTpb = ts.html.nu.ele('ts-tool-tpb');
+			nu.eEventTpb.style.display = 'inline-block';
+			nu.toolTitlebar.appendChild(nu.eEventTpb);
 
-			nu.eEventBpm = ts.html.nu.ele('ts-tool-bpm');
-			nu.eEventBpm.style.display = 'inline-block';
-			nu.toolTitlebar.appendChild(nu.eEventBpm);
 
-				//nu.eEventBpmLabel = ts.html.nu.ele('ts-tool-bpm-label');
-				//nu.eEventBpmLabel.textContent = 'bpm:';
-				//nu.eEventBpm.appendChild(nu.eEventBpmLabel);
-
-				nu.eEventBpmInput = ts.html.nu.ele('input');
-				nu.eEventBpmInput.type = 'number';
-				nu.eEventBpmInput.value = this.bpm;
-				nu.eEventBpmInput.min = 12;
-				nu.eEventBpmInput.max = 480;
-				nu.eEventBpm.appendChild(nu.eEventBpmInput);
-				nu.eEventBpmInput.ts = nu;
-				nu.eEventBpmInput.onchange = function(){this.ts.ts.bpm = parseInt(this.value); this.ts.ts.refresh();};
+        zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
+				nu.eEventTpbInput = ts.html.nu.ele('input');
+				nu.eEventTpbInput.type = 'number';
+				nu.eEventTpbInput.value = SEQUENCE.tpb;
+				nu.eEventTpbInput.min = 1;
+				nu.eEventTpbInput.max = 11;
+				nu.eEventTpb.appendChild(nu.eEventTpbInput);
+				nu.eEventTpbInput.ts = nu;
+				nu.eEventTpbInput.onchange = function(){SEQUENCE.tpb = parseInt(this.value); this.ts.ts.refresh();};
 
 			return nu;
 		};
@@ -2460,7 +2470,10 @@ ts.music = new Object({
 		],
 	},
 	SEMI_TONES_PER_OCTAVE:12,
-	MAX_BEATS_PER_BAR:23,
+  MIN_TICKS_PER_BEAT:2,
+  MAX_TICKS_PER_BEAT:23,
+  MIN_BEATS_PER_BAR:2,
+  MAX_BEATS_PER_BAR:23,
 	MAX_BEATS_PER_MINUTE:240,
 	MIN_BEATS_PER_MINUTE:24,
 });
@@ -2860,8 +2873,7 @@ ts.html = new Object({
 			SEQUENCE.createToolScript();
 			SEQUENCE.createToolBars();
 			SEQUENCE.createToolBeats();
-			SEQUENCE.bpbTool = SEQUENCE.createToolBpb();
-			SEQUENCE.bpmTool = SEQUENCE.createToolBpm();
+      SEQUENCE.bpmTool = SEQUENCE.createToolBpm();
 			SEQUENCE.createToolTranspose();
 			SEQUENCE.createToolAudio();
 			SEQUENCE.createToolMidi();
