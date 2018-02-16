@@ -87,6 +87,7 @@ toonsmith.create = function(){
       var html = '\n<!-- LYRICS -->\n<br>\n';
       var txt = TOONSMITH._.getTextOnly();
       html += zs4.string.escape.html(txt);
+      html += '\n<br>\n';
       return html;
     };
     function chordsAndLyrics(){
@@ -146,6 +147,7 @@ toonsmith.create = function(){
         }
         html+='</span>\n';
       }
+      html += '\n<br>\n';
       return html;
     }
 
