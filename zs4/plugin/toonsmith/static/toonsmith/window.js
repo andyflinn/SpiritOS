@@ -406,7 +406,8 @@ ts.create = function(){
 				var countObject = new Object({
 					events:0,
 					beats:0,
-					notes:0,
+          notes:0,
+          chords:0,
 				});
 
 				for (var b = 0; b < SEQUENCE.stats.bars; b++){
@@ -416,20 +417,22 @@ ts.create = function(){
 					var beatMillies = Math.round(barTotalMillies/SEQUENCE.bpb);
 
 					// count beats and events in current bar
-					countObject.events = countObject.beats = countObject.notes = 0;
+					countObject.events = countObject.beats = countObject.notes = countObject.chords = 0;
 					for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
 						var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
 						countObject.events++;
-						if (SEQUENCE.evt[ci].beat) countObject.beats++;
-						if (SEQUENCE.evt[ci].melody != 0) countObject.notes++;
+						if (SEQUENCE.evt[ci].isBeat()) countObject.beats++;
+            if (SEQUENCE.evt[ci].isMelody()) countObject.notes++;
+            if (SEQUENCE.evt[ci].isChord()) countObject.chords++;
 
 						// loop control
 						ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
 						if (SEQUENCE.evt[ci].bar) break;
 					}
 					title += ' beats:'+countObject.beats
-								+' events:'+countObject.events
-								+' notes:'+countObject.notes;
+                +' events:'+countObject.events
+                +' notes:'+countObject.notes
+								+' chords:'+countObject.chords;
 
 
 					if (countObject.beats == this.bpb){
