@@ -2,7 +2,7 @@
 
 var zs4 = require('./static/zs4');
 var os = require('os');
-
+var system = require('child_process');
 var node = exports;
 
 node.schema = function(parent){
@@ -152,10 +152,38 @@ node.create = function(name){
     NODE.has._.property(new zs4.type.boolean({name:'ethnet',flags:'noset',}));
     NODE.has.ethnet._.value = NODE.os._.neteyeface.search('eth0');
   };
+  function exec(){
+    NODE._.property(new zs4.type.object({name:'system',flags:'api apiarg',}));
+    NODE.system._.property(new zs4.type.string({name:'cmd',flags:'apiarg',}));
+    NODE.system._.transform = (function(req,cb){
+      var SYSTEM = this;
+      var REQUEST = req;
+      req.setScope(this);
+      SYSTEM._.transformInternal(req);
+
+      if (!zs4.is.object(req.input)||!zs4.is.string(req.input.cmd)||req.input.cmd==''){
+        req.error(SYSTEM,'bad input');
+        SYSTEM._.getTree(req); cb(); return;
+      }
+
+      system.exec(req.input.cmd,{},function(err,stdout,stderr){
+        if (err){
+          req.error(SYSTEM,'during '+req.input.cmd);
+          SYSTEM._.getTree(req); cb(); return;
+        }
+        req.result(SYSTEM,stdout);
+        SYSTEM._.getTree(req); cb(); return;
+      });
+
+
+    }).bind(NODE.system);
+
+  }
 
   proc();
   osys();
   is();
   has();
 
+  exec();
 }

@@ -320,6 +320,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-statpath:before{content:url(/gfx/icons/info.svg);}
 .icon-statuser:before{content:url(/gfx/icons/info.svg);}
 .icon-stop:before{content:url(/gfx/icons/stop.svg);}
+.icon-system:before{content:url(/gfx/icons/server.svg);}
 .icon-toend:before{content:url(/gfx/icons/toend.svg);}
 .icon-user:before{content:url(/gfx/icons/guitarist.svg);}
 .icon-text:before{content:url(/gfx/icons/text.svg);}
