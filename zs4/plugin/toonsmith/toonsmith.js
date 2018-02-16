@@ -61,10 +61,10 @@ toonsmith.create = function(){
 
   TOONSMITH._.getAmpStyle= (function(req,cb){
     var style = '';
-    style += 'span.zs4e{display:inline-block;}';
-    style += 'span.zs4c{display:block;}';
-    style += 'span.zs4t{display:block;}';
-    style += 'span.zs4i{visibility:hidden;}';
+    style += 'span.zs4e{display:inline-block;border:0px;margin:0px;padding:0px;}';
+    style += 'span.zs4c{display:block;border:0px;margin:0px;padding:0px;}';
+    style += 'span.zs4t{display:block;border:0px;margin:0px;padding:0px;}';
+    style += 'span.zs4i{visibility:hidden;border:0px;margin:0px;padding:0px;}';
     return cb(style);
   }).bind(TOONSMITH);
   TOONSMITH._.oldGetAmpBody = TOONSMITH._.getAmpBody;
@@ -102,14 +102,13 @@ toonsmith.create = function(){
           continue;
         }
 
-        var chord = false;
-        if (zs4.is.object(EVENT.chord)&&EVENT.chord.ok==true)chord=true;
+        var chord = EVENT.isChord();
+        var lyric = EVENT.isLyric();
 
-        var lyric = false;
-        //if (EVENT.lyric != '' || (EVENT.lyric == ' ' && !EVENT.space)) lyric = true;
-        if (EVENT.lyric != '') lyric = true;
-
-        if (!chord && !lyric)continue;
+        if (!chord && !lyric){
+          if (EVENT.space)html += '\n';
+          continue;
+        }
 
         // OUTPUT EVENT
         html+='<span class="zs4e">';
@@ -145,7 +144,7 @@ toonsmith.create = function(){
             html+='<span class="zs4i">|</span>';
           }
         }
-        html+='</span>\n';
+        html+='</span>';
       }
       html += '\n<br>\n';
       return html;
