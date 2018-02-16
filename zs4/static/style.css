@@ -256,7 +256,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-id:before{content:url(/gfx/icons/head.svg);}
 .icon-has:before{content:url(/gfx/icons/has.svg);}
-.icon-hi:before{content:'>)';font-weight: bolder;}
+.icon-hi:before{content:url(/gfx/icons/llap.svg);}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
 .icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
 .icon-is:before{content:url(/gfx/icons/server.svg);}

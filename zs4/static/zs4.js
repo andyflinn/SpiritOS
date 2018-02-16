@@ -2011,7 +2011,9 @@ zs4.type = {
             html += '   <div class="sidebarcontent">\n';
             html += '   <h3>More from '+zs4.THIS.zs4.express.host._.value+'</h3>\n';
             html += '   <ul>\n';
-            html += '    <li><a href="/amp">Home</a></li>\n';
+            if (SCOPE._.path!='')html += '    <li><a href="/amp">Home</a></li>\n';
+            else html += '    <li>Home (You are here now)</li>\n';
+            html += '    <li><a href="/'+SCOPE._.path+'">Interactive Version of this Page</a></li>\n';
             html += '    \n';
             html += '    \n';
             html += '   </ul>\n';
@@ -2025,7 +2027,7 @@ zs4.type = {
                         html += '<span class="show-less"><amp-img src="/gfx/icons/prev.svg" alt="image" height="1em" width="1em"></amp-img></span>';
                         html += 'Document Information</h4>\n';
             html += '   <ul class="docinfo">\n';
-            html += '   \n';
+            html += '    <li><b>Language:</b> '+SCOPE.zs4.head.lang._.value+'</li>\n';
             if (author!='')html += '    <li><b>Author:</b> '+author+'</li>\n';
             if (description!='')html += '    <li><b>Description:</b> '+description+'</li>\n';
             html += '    <li><b>Created:</b> '+zs4.string.from.date(SCOPE.zs4.head.created._.value)+'</li>\n';
@@ -2037,10 +2039,6 @@ zs4.type = {
             html += '   \n';
             html += '  </section></amp-accordion>\n';
 
-            //if (description != ''){
-            //  html += '   <h3>Summary</h3>';
-            //  html += description;
-            //}
             html += '  <amp-accordion><section expanded>\n';
             html += '<h4>';
             html += '<span class="show-more"><amp-img src="/gfx/icons/toonsmith.svg" alt="image" height="1em" width="1em"></amp-img></span>';
@@ -2055,7 +2053,7 @@ zs4.type = {
               html += '  </section></amp-accordion>\n';
 
               html += ' <div class="footer">\n';
-              html += '  <a  class="footer" href="/'+SCOPE._.path+'">See full zs4 version of this page</a>\n';
+              //html += '  <a  class="footer" href="/'+SCOPE._.path+'">See full zs4 version of this page</a>\n';
               html += ' </div>\n';
 
               html += ' </body>\n';
