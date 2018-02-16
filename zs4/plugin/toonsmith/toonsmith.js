@@ -73,6 +73,8 @@ toonsmith.create = function(){
     SEQUENCE.runChordsAndLyrics(TOONSMITH.data._.value);
     SEQUENCE.updateStats();
 
+    //console.log(SEQUENCE.stats);
+
     for (var i = 0; i < SEQUENCE.evt.length; i++){
       var EVENT = SEQUENCE.evt[i];
       //if (EVENT.lyric!='') console.log(EVENT.lyric);
@@ -98,7 +100,7 @@ toonsmith.create = function(){
         html+='<span class="zs4c">';
         {
           if (chord){
-            console.log(EVENT.chord);
+            //console.log(EVENT.chord);
             html += ts.music.NOTES[EVENT.chord.v].s;
             html += ts.music.CHORD.TYPE[EVENT.chord.t].s;
             if (EVENT.chord.v != EVENT.chord.b){

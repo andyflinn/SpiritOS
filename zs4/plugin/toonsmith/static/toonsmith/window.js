@@ -730,6 +730,9 @@ ts.create = function(){
 
   			}
   			else if (o.space){
+          o.eSpace = document.createElement('span');
+          o.eSpace.textContent = ' ';
+  				o.eEvent.appendChild(o.eSpace);
   				o.eBlockLyric.textContent = str.trim();
   				o.eBlockLyric.style.visibility = 'visible';
   			}
@@ -785,37 +788,38 @@ ts.create = function(){
 				return SEQUENCE.cnt;
 			}
 
-			var process='p';
+			//var process='p';
 			var buffer = "";
 			var musinfo = "";
 
 			var cur = 0;
 			var last_ch = ' ';
       var last_ch_was_space = true;
-      var last_ch_was_linefeed = true;
+      var last_ch_was_linefeed = 1;
 			for (var i = 0 ; i < this.data.length ; i++){
 				var render = false;
 				var cur_ch = this.data.charAt(i);
 
         // handle line breaks;
 				if (cur_ch == '\n'){
-          if (last_ch_was_linefeed)continue;
+          if (last_ch_was_linefeed > 1)continue;
 					if (this.evt.length == 0){
 						continue;
 					}
 					if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
 					this.addEvent('\n','\n');
           last_ch_was_space = true;
-          last_ch_was_linefeed = true;
+          last_ch_was_linefeed += 1;
 					continue;
 				}
         else {
-          last_ch_was_linefeed = false;
+          last_ch_was_linefeed = 0;
         }
 
         // handle spaces;
 				if (ts.zs4.is.space(cur_ch)){
           if (last_ch_was_space)continue;
+          if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
 					if (this.evt.length == 0){
 						continue;
 					}
@@ -865,7 +869,6 @@ ts.create = function(){
 			if (ts.is.window())this.refresh();
 			//this.renderStats();
 
-			console.log(this);
 			return this.cnt;
 		};
 		SEQUENCE.getChordsAndLyrics = function(){

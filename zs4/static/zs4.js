@@ -1768,7 +1768,7 @@ zs4.type = {
         var lang = 'en';
         if (title=='')title = 'zs4 web app';
         if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
-          console.log('gettin scope.head html...');
+          //console.log('gettin scope.head html...');
           // title
           if (this.zs4.head.title._.value!=''){
             title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
@@ -1904,7 +1904,7 @@ zs4.type = {
 
         if (this._.flags.get.scope()&&zs4.is.object(this.zs4.head)){
           var SCOPE = this;
-          console.log('gettin scope.head html...');
+          //console.log('gettin scope.head html...');
           // title
           if (this.zs4.head.title._.value!=''){
             title = zs4.string.strip.chars(this.zs4.head.title._.value,zs4.const.NOATTRCHARS);
