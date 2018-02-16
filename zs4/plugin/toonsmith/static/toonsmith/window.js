@@ -424,7 +424,7 @@ ts.create = function(){
 						if (SEQUENCE.evt[ci].melody != 0) countObject.notes++;
 
 						// loop control
-						ci = ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
+						ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
 						if (SEQUENCE.evt[ci].bar) break;
 					}
 					title += ' beats:'+countObject.beats
