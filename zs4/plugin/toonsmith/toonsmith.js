@@ -1,6 +1,8 @@
 var zs4 = require('../../static/zs4');
+//var abc = require('../../static/abcjs.min.js');
 var xpress = require('express');
 var ts = require('./static/toonsmith/window');
+//var abc = require('abcjs/midi');
 
 console.log('toonsmith loading...');
 
@@ -68,67 +70,112 @@ toonsmith.create = function(){
   TOONSMITH._.oldGetAmpBody = TOONSMITH._.getAmpBody;
   TOONSMITH._.getAmpBody= (function(req,cb){
     var html = '';
-
+    var section = new Array();
+    function storeSection(title,html,expanded){
+      section.push(new Object({
+        title:title,
+        html:html,
+        expanded:expanded,
+      }));
+    }
     var SEQUENCE = new ts.create();
     SEQUENCE.runChordsAndLyrics(TOONSMITH.data._.value);
     SEQUENCE.updateStats();
 
-    //console.log(SEQUENCE.stats);
+    // Generate Section functions
+    function lyrics(){
+      var html = '\n<!-- LYRICS -->\n<br>\n';
+      var txt = TOONSMITH._.getTextOnly();
+      html += zs4.string.escape.html(txt);
+      return html;
+    };
+    function chordsAndLyrics(){
+      var html = '\n<!-- CHORDS AND LYRICS -->\n<br>\n';
 
-    for (var i = 0; i < SEQUENCE.evt.length; i++){
-      var EVENT = SEQUENCE.evt[i];
-      //if (EVENT.lyric!='') console.log(EVENT.lyric);
+      for (var i = 0; i < SEQUENCE.evt.length; i++){
+        var EVENT = SEQUENCE.evt[i];
+        //if (EVENT.lyric!='') console.log(EVENT.lyric);
 
-      if (EVENT.linefeed && SEQUENCE.layoutlinefeed){
-        html += '<br>\n';
-        continue;
-      }
-
-      var chord = false;
-      if (zs4.is.object(EVENT.chord)&&EVENT.chord.ok==true)chord=true;
-
-      var lyric = false;
-      //if (EVENT.lyric != '' || (EVENT.lyric == ' ' && !EVENT.space)) lyric = true;
-      if (EVENT.lyric != '') lyric = true;
-
-      if (!chord && !lyric)continue;
-
-      // OUTPUT EVENT
-      html+='<span class="zs4e">';
-      {
-        // OUTPUT CHORD;
-        html+='<span class="zs4c">';
-        {
-          if (chord){
-            //console.log(EVENT.chord);
-            html += ts.music.NOTES[EVENT.chord.v].s;
-            html += ts.music.CHORD.TYPE[EVENT.chord.t].s;
-            if (EVENT.chord.v != EVENT.chord.b){
-              html += '/'+ts.music.NOTES[EVENT.chord.b].s;
-            }
-          }
+        if (EVENT.linefeed && SEQUENCE.layoutlinefeed){
+          html += '<br>\n';
+          continue;
         }
-        html+='</span>';
 
-        // OUTPUT LYRIC;
-        if (lyric){
-          html+='<span class="zs4t">';
+        var chord = false;
+        if (zs4.is.object(EVENT.chord)&&EVENT.chord.ok==true)chord=true;
+
+        var lyric = false;
+        //if (EVENT.lyric != '' || (EVENT.lyric == ' ' && !EVENT.space)) lyric = true;
+        if (EVENT.lyric != '') lyric = true;
+
+        if (!chord && !lyric)continue;
+
+        // OUTPUT EVENT
+        html+='<span class="zs4e">';
+        {
+          // OUTPUT CHORD;
+          html+='<span class="zs4c">';
           {
-            if (EVENT.space){
-              html+=' '
-            }
-            else if (EVENT.lyric != ''){
-              html += zs4.string.escape.html(EVENT.lyric);
+            if (chord){
+              //console.log(EVENT.chord);
+              html += ts.music.NOTES[EVENT.chord.v].s;
+              html += ts.music.CHORD.TYPE[EVENT.chord.t].s;
+              if (EVENT.chord.v != EVENT.chord.b){
+                html += '/'+ts.music.NOTES[EVENT.chord.b].s;
+              }
             }
           }
           html+='</span>';
+
+          // OUTPUT LYRIC;
+          if (lyric){
+            html+='<span class="zs4t">';
+            {
+              if (EVENT.space){
+                html+=' '
+              }
+              else if (EVENT.lyric != ''){
+                html += zs4.string.escape.html(EVENT.lyric);
+              }
+            }
+            html+='</span>';
+          }
+          else {
+            html+='<span class="zs4i">|</span>';
+          }
         }
-        else {
-          html+='<span class="zs4i">|</span>';
-        }
+        html+='</span>\n';
       }
-      html+='</span>\n';
+      return html;
     }
+
+    var stats = SEQUENCE.stats;
+    console.log('lyric:'+stats.lyric,stats.result);
+
+    if (stats.result.words){
+      if (stats.chords > 0){
+        storeSection('Chords and Lyrics',chordsAndLyrics(),true);
+        storeSection('Lyrics',lyrics(),false);
+      }
+      else {
+        storeSection('Lyrics',lyrics(),true);
+      }
+    }
+    else {
+      storeSection('Chords',chordsAndLyrics(),true);
+    }
+
+    html += '<amp-accordion>\n';
+    for (var i = 0; i < section.length; i++){
+      var s = section[i];
+      if (s.expanded)html += '<section expanded>\n';
+      else html += '<section>\n';
+      html += '<h4>'+zs4.string.escape.html(s.title)+'</h4><div>';
+      html += s.html;
+
+      html += '\n</div></section>\n';
+    }
+    html += '</amp-accordion>\n';
 
     return cb(html);
   }).bind(TOONSMITH);

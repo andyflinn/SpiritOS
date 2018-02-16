@@ -5370,7 +5370,7 @@ if (zs4.is.window()){
       var height = window.innerHeight;
       if (height > heightMax)height = heightMax;
 
-      var em = (width+height) / 50;
+      var em = (width+height) / 30;
 
       //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
       //sheet += '.fouc{opacity:0}\n';

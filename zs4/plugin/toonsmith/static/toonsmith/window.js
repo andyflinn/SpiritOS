@@ -38,6 +38,7 @@ ts.create = function(){
 		SEQUENCE.bpb = 4;
 		SEQUENCE.bpm = 120;
 		SEQUENCE.tpb = 3;
+    SEQUENCE.layoutlinefeed = true;
 		SEQUENCE.stats = new Object({
 			chords:0,
 			bars:0,
@@ -55,7 +56,6 @@ ts.create = function(){
       countSpace:0,
       countLinefeed:0,
 
-      layoutlinefeed:true,
 
 			currentBar:null,
 			currentBeat:null,
@@ -117,7 +117,7 @@ ts.create = function(){
 
         if (e.space) this.countSpace++;
         if (e.linefeed) this.countLinefeed++;
-        if (e.isLyric) this.countLyric++;
+        if (e.isLyric()) this.countLyric++;
 			},
 			end:function(){
 				this.chords = this.countChords;
@@ -127,6 +127,20 @@ ts.create = function(){
         this.lyric = this.countLyric;
         this.linefeed = this.countLinefeed;
         this.space = this.countSpace;
+
+        this.result = new Object();
+
+        if (this.chords==0 && this.notes==0)this.result.tone = false;
+        else this.result.tone = true;
+
+        if (this.bars==0&&this.beats==0)this.result.time = false;
+        else this.result.time = true;
+
+        if (!this.result.time && !this.result.tone) this.result.music = false;
+        else  this.result.music = true;
+
+        if (this.lyric == 0)this.result.words = false;
+        else this.result.words = true;
 			},
 		});
 		SEQUENCE.key = ts.music.parse.chord("");
@@ -536,7 +550,7 @@ ts.create = function(){
         isLinefeed:function(){return this.linefeed;},
         isSpace:function(){return this.space;},
         isMelody:function(){if(this.melody!=0)return true;return false;},
-        isLyric:function(){if(this.melody!=0)return true;return false;},
+        isLyric:function(){if(this.lyric!='')return true;return false;},
 			};
       if (ts.is.node())o.refresh = function(){};
 
