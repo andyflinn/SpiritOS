@@ -970,6 +970,7 @@ ts.create = function(){
 			for (var i = 0; i < this.tool.length; i++)this.tool[i].refresh();
 			for (var i = 0; i < this.inst.length; i++)this.tool[i].refresh();
 			this.refreshLineFeed();
+      SEQUENCE.adaptContentPane();
 		};
 		SEQUENCE.refreshLineFeed = function(){
 			var arr = this.evt;
@@ -1132,7 +1133,7 @@ ts.create = function(){
 				if (tooltype=='i') nu.ts.instpopped.appendChild(nu.toolicon);
 				else nu.ts.toolspopped.appendChild(nu.toolicon);
 				//console.log('adding icon for '+icon);
-				nu.toolicon.onclick = function(){nu.use();};
+				nu.toolicon.onclick = function(){nu.use();SEQUENCE.adaptContentPane(); };
 			}
 
 			nu.toolWindow = ts.html.nu.ele('ts-tool-window');
@@ -2698,162 +2699,175 @@ ts.html = new Object({
 			container.appendChild(ele);
 			//ele.width = '100%';
 			//ele.height = '32em';
-			ele.ts = nu;
+			//ele.ts = nu;
 
-			var nu = new ts.create();
-			ele.ts = nu;
-			container.ts = nu;
+			var SEQUENCE = new ts.create();
+			ele.ts = SEQUENCE;
+			container.ts = SEQUENCE;
 
-			nu.ele = ele;
+			SEQUENCE.ele = ele;
 
 			ts.initialize();
 
 			// make a title bar;
-			nu.titlebarElement = ts.html.nu.ele('ts-titlebar');
-			nu.titlebarElement.style.display = 'block';
-			ele.appendChild(nu.titlebarElement);
+			SEQUENCE.titlebarElement = ts.html.nu.ele('ts-titlebar');
+			SEQUENCE.titlebarElement.style.display = 'block';
+			ele.appendChild(SEQUENCE.titlebarElement);
 
-				nu.tsTopTools = ts.html.nu.ele('ts-top-tools');
+				SEQUENCE.tsTopTools = ts.html.nu.ele('ts-top-tools');
         //nu.tsTopTools.style.fontSize =
-				nu.titlebarElement.appendChild(nu.tsTopTools);
+				SEQUENCE.titlebarElement.appendChild(SEQUENCE.tsTopTools);
 
-				nu.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
-				nu.titlebarLogo.ts = nu;
-				nu.titlebarLogo.onclick = function(){this.ts.onLogoClick();};
-				zs4.admin.util.setIcon(nu.titlebarLogo,'play');
-				nu.tsTopTools.appendChild(nu.titlebarLogo);
+				SEQUENCE.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
+				SEQUENCE.titlebarLogo.ts = SEQUENCE;
+				SEQUENCE.titlebarLogo.onclick = function(){this.ts.onLogoClick();};
+				zs4.admin.util.setIcon(SEQUENCE.titlebarLogo,'play');
+				SEQUENCE.tsTopTools.appendChild(SEQUENCE.titlebarLogo);
 
-				nu.player = null;
+				SEQUENCE.player = null;
 
-				nu.toolinst = ts.html.nu.ele('ts-instbutton');
-				zs4.admin.util.setIcon(nu.toolinst,'instruments');
-				nu.instArePopped = false;
-				nu.toolinst.onclick = function(){
-					if (nu.instArePopped==true){
-						nu.instpopped.style.display = 'none';
-						nu.instArePopped = false;
+				SEQUENCE.toolinst = ts.html.nu.ele('ts-instbutton');
+				zs4.admin.util.setIcon(SEQUENCE.toolinst,'instruments');
+				SEQUENCE.instArePopped = false;
+				SEQUENCE.toolinst.onclick = function(){
+					if (SEQUENCE.instArePopped==true){
+						SEQUENCE.instpopped.style.display = 'none';
+						SEQUENCE.instArePopped = false;
 					}else{
-						nu.instpopped.style.display = 'block';
-						nu.instArePopped = true;
-						nu.toolspopped.style.display = 'none';
-						nu.toolsArePopped = false;
-						nu.hideAllInstPanes();
+						SEQUENCE.instpopped.style.display = 'block';
+						SEQUENCE.instArePopped = true;
+						SEQUENCE.toolspopped.style.display = 'none';
+						SEQUENCE.toolsArePopped = false;
+						SEQUENCE.hideAllInstPanes();
 					}
+          SEQUENCE.adaptContentPane();
 				};
-				nu.tsTopTools.appendChild(nu.toolinst);
+				SEQUENCE.tsTopTools.appendChild(SEQUENCE.toolinst);
 
-				nu.toolpop = ts.html.nu.ele('ts-toolbutton');
-				zs4.admin.util.setIcon(nu.toolpop,'tool');
-				nu.toolsArePopped = false;
-				nu.toolpop.onclick = function(){
-					if (nu.toolsArePopped==true){
-						nu.toolspopped.style.display = 'none';
-						nu.toolsArePopped = false;
+				SEQUENCE.toolpop = ts.html.nu.ele('ts-toolbutton');
+				zs4.admin.util.setIcon(SEQUENCE.toolpop,'tool');
+				SEQUENCE.toolsArePopped = false;
+				SEQUENCE.toolpop.onclick = function(){
+					if (SEQUENCE.toolsArePopped==true){
+						SEQUENCE.toolspopped.style.display = 'none';
+						SEQUENCE.toolsArePopped = false;
 					}else{
-						nu.toolspopped.style.display = 'block';
-						nu.toolsArePopped = true;
-						nu.instpopped.style.display = 'none';
-						nu.instArePopped = false;
-						nu.ts.current_tool = null;
-						nu.hideAllToolPanes();
+						SEQUENCE.toolspopped.style.display = 'block';
+						SEQUENCE.toolsArePopped = true;
+						SEQUENCE.instpopped.style.display = 'none';
+						SEQUENCE.instArePopped = false;
+						SEQUENCE.current_tool = null;
+						SEQUENCE.hideAllToolPanes();
 					}
+          SEQUENCE.adaptContentPane();
 				};
-				nu.tsTopTools.appendChild(nu.toolpop);
+				SEQUENCE.tsTopTools.appendChild(SEQUENCE.toolpop);
 
-				nu.transport = ts.html.nu.ele('ts-transport');
-				nu.tsTopTools.appendChild(nu.transport);
+				SEQUENCE.transport = ts.html.nu.ele('ts-transport');
+				SEQUENCE.tsTopTools.appendChild(SEQUENCE.transport);
 
-				nu.tostart = zs4.admin.util.addIconElement(nu.transport,'tostart');
-				nu.tostart.onclick = function(){nu.setCurrentEvent(nu.evt[0]);}
-				nu.prev = zs4.admin.util.addIconElement(nu.transport,'prev');
-				nu.prev.onclick = function(){nu.setPreviousEvent();}
-				nu.next = zs4.admin.util.addIconElement(nu.transport,'next');
-				nu.next.onclick = function(){nu.setNextEvent();}
-				nu.toend = zs4.admin.util.addIconElement(nu.transport,'toend');
-				nu.toend.onclick = function(){nu.setCurrentEvent(nu.evt[(nu.evt.length-1)]);}
+				SEQUENCE.tostart = zs4.admin.util.addIconElement(SEQUENCE.transport,'tostart');
+				SEQUENCE.tostart.onclick = function(){SEQUENCE.setCurrentEvent(SEQUENCE.evt[0]);}
+				SEQUENCE.prev = zs4.admin.util.addIconElement(SEQUENCE.transport,'prev');
+				SEQUENCE.prev.onclick = function(){SEQUENCE.setPreviousEvent();}
+				SEQUENCE.next = zs4.admin.util.addIconElement(SEQUENCE.transport,'next');
+				SEQUENCE.next.onclick = function(){SEQUENCE.setNextEvent();}
+				SEQUENCE.toend = zs4.admin.util.addIconElement(SEQUENCE.transport,'toend');
+				SEQUENCE.toend.onclick = function(){SEQUENCE.setCurrentEvent(SEQUENCE.evt[(SEQUENCE.evt.length-1)]);}
 
-				nu.toolspopped = ts.html.nu.ele('ts-tool-icons');
-				nu.toolspopped.style.display = 'none';
-				nu.titlebarElement.appendChild(nu.toolspopped);
+				SEQUENCE.toolspopped = ts.html.nu.ele('ts-tool-icons');
+				SEQUENCE.toolspopped.style.display = 'none';
+				SEQUENCE.titlebarElement.appendChild(SEQUENCE.toolspopped);
 
-				nu.instpopped = ts.html.nu.ele('ts-inst-icons');
-				nu.instpopped.style.display = 'none';
-				nu.titlebarElement.appendChild(nu.instpopped);
+				SEQUENCE.instpopped = ts.html.nu.ele('ts-inst-icons');
+				SEQUENCE.instpopped.style.display = 'none';
+				SEQUENCE.titlebarElement.appendChild(SEQUENCE.instpopped);
 
 			//
-			nu.toolarea = ts.html.nu.ele('ts-toolarea');
-			nu.toolarea.style.display = 'block';
-			ele.appendChild(nu.toolarea);
+			SEQUENCE.toolarea = ts.html.nu.ele('ts-toolarea');
+			SEQUENCE.toolarea.style.display = 'block';
+			ele.appendChild(SEQUENCE.toolarea);
 
-			nu.instarea = ts.html.nu.ele('ts-instarea');
-			nu.instarea.style.display = 'block';
-			ele.appendChild(nu.instarea);
+			SEQUENCE.instarea = ts.html.nu.ele('ts-instarea');
+			SEQUENCE.instarea.style.display = 'block';
+			ele.appendChild(SEQUENCE.instarea);
 
 			// create content bin
-			nu.cnt = ts.html.nu.ele('ts-content');
-			nu.cnt.style.marginLeft = '.5em';
-			nu.cnt.style.display = 'block';
-			nu.cnt.style.maxHeight = (window.innerHeight/2)+'px';
-			nu.cnt.style.overflowY = 'scroll';
-			ele.appendChild(nu.cnt);
+			SEQUENCE.cnt = ts.html.nu.ele('ts-content');
+			SEQUENCE.cnt.style.marginLeft = '.5em';
+			SEQUENCE.cnt.style.display = 'block';
+			ele.appendChild(SEQUENCE.cnt);
 
-			nu.stsElement = ts.html.nu.ele('ts-statusbar');
-			nu.stsElement.style.display = 'block';
-			ele.appendChild(nu.stsElement);
+      SEQUENCE.adaptContentPane = function(){
+        if (SEQUENCE.current_tool == null && SEQUENCE.current_inst == null){
+          SEQUENCE.cnt.style.maxHeight = 'initial';
+    			SEQUENCE.cnt.style.overflowY = 'initial';
+        }
+        else {
+          SEQUENCE.cnt.style.maxHeight = (window.innerHeight/2)+'px';
+    			SEQUENCE.cnt.style.overflowY = 'scroll';
+        }
+      };
 
-				nu.stsEvents = ts.html.nu.ele('ts-count-events');
-				nu.stsElement.appendChild(nu.stsEvents);
+			SEQUENCE.stsElement = ts.html.nu.ele('ts-statusbar');
+			SEQUENCE.stsElement.style.display = 'block';
+			ele.appendChild(SEQUENCE.stsElement);
 
-				nu.stsChords = ts.html.nu.ele('ts-count-chords');
-				nu.stsElement.appendChild(nu.stsChords);
+				SEQUENCE.stsEvents = ts.html.nu.ele('ts-count-events');
+				SEQUENCE.stsElement.appendChild(SEQUENCE.stsEvents);
 
-				nu.stsBars = ts.html.nu.ele('ts-count-bars');
-				nu.stsBars.className = 'tsbar';
-				nu.stsElement.appendChild(nu.stsBars);
+				SEQUENCE.stsChords = ts.html.nu.ele('ts-count-chords');
+				SEQUENCE.stsElement.appendChild(SEQUENCE.stsChords);
 
-				nu.stsBeats = ts.html.nu.ele('ts-count-beat');
-				nu.stsBeats.className = 'tsbeat';
-				nu.stsElement.appendChild(nu.stsBeats);
+				SEQUENCE.stsBars = ts.html.nu.ele('ts-count-bars');
+				SEQUENCE.stsBars.className = 'tsbar';
+				SEQUENCE.stsElement.appendChild(SEQUENCE.stsBars);
 
-				nu.stsNotes = ts.html.nu.ele('ts-count-notes');
-				nu.stsNotes.className = 'tsnote';
-				nu.stsElement.appendChild(nu.stsNotes);
+				SEQUENCE.stsBeats = ts.html.nu.ele('ts-count-beat');
+				SEQUENCE.stsBeats.className = 'tsbeat';
+				SEQUENCE.stsElement.appendChild(SEQUENCE.stsBeats);
 
-			nu.hideAllInstPanes = function(){
-				nu.ts.current_inst = null;
-				for (var i = 0; i < nu.inst.length; i++){
-					nu.inst[i].toolWindow.style.display = 'none';
-					nu.inst[i].visible = false;
+				SEQUENCE.stsNotes = ts.html.nu.ele('ts-count-notes');
+				SEQUENCE.stsNotes.className = 'tsnote';
+				SEQUENCE.stsElement.appendChild(SEQUENCE.stsNotes);
+
+			SEQUENCE.hideAllInstPanes = function(){
+				SEQUENCE.current_inst = null;
+				for (var i = 0; i < SEQUENCE.inst.length; i++){
+					SEQUENCE.inst[i].toolWindow.style.display = 'none';
+					SEQUENCE.inst[i].visible = false;
 				}
+        SEQUENCE.adaptContentPane();
 			};
-			nu.hideAllToolPanes = function(){
-				nu.ts.current_tool = null;
-				for (var i = 0; i < nu.tool.length; i++){
-					nu.tool[i].toolWindow.style.display = 'none';
-					nu.tool[i].visible = false;
+			SEQUENCE.hideAllToolPanes = function(){
+				SEQUENCE.current_tool = null;
+				for (var i = 0; i < SEQUENCE.tool.length; i++){
+					SEQUENCE.tool[i].toolWindow.style.display = 'none';
+					SEQUENCE.tool[i].visible = false;
 				}
+        SEQUENCE.adaptContentPane();
 			};
 
-			nu.createToolChord();
-			nu.createToolGuitar();
-			nu.createToolPiano();
-			nu.createToolUkulele();
-			nu.createToolMandolin();
+			SEQUENCE.createToolChord();
+			SEQUENCE.createToolGuitar();
+			SEQUENCE.createToolPiano();
+			SEQUENCE.createToolUkulele();
+			SEQUENCE.createToolMandolin();
 
-			nu.createToolViolin();
-			nu.createToolBass();
+			SEQUENCE.createToolViolin();
+			SEQUENCE.createToolBass();
 
-			nu.createToolScript();
-			nu.createToolBars();
-			nu.createToolBeats();
-			nu.bpbTool = nu.createToolBpb();
-			nu.bpmTool = nu.createToolBpm();
-			nu.createToolTranspose();
-			nu.createToolAudio();
-			nu.createToolMidi();
-      nu.createToolLayout();
-      nu.createToolEvent();
-			return ts.ts = nu;
+			SEQUENCE.createToolScript();
+			SEQUENCE.createToolBars();
+			SEQUENCE.createToolBeats();
+			SEQUENCE.bpbTool = SEQUENCE.createToolBpb();
+			SEQUENCE.bpmTool = SEQUENCE.createToolBpm();
+			SEQUENCE.createToolTranspose();
+			SEQUENCE.createToolAudio();
+			SEQUENCE.createToolMidi();
+      SEQUENCE.createToolLayout();
+      SEQUENCE.createToolEvent();
+			return ts.ts = SEQUENCE;
 		}
 	},
 	nu:{
