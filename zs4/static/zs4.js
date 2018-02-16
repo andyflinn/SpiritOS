@@ -2019,7 +2019,7 @@ zs4.type = {
             html += '  </div>\n';
             html += '  </amp-sidebar>\n';
             html += '  <div class="titlebar"><amp-img tabindex='+(TABINDEX++)+' role="button" on="tap:sidebar.toggle" src="/gfx/icons/zs4.svg" alt="Welcome" height="1em" width="1em"></amp-img>'+title+'</div>\n';
-            html += '  <amp-accordion><section expanded>\n';
+            html += '  <amp-accordion><section>\n';
                         html += '<h4>';
                         html += '<span class="show-more"><amp-img src="/gfx/icons/info.svg" alt="image" height="1em" width="1em"></amp-img></span>';
                         html += '<span class="show-less"><amp-img src="/gfx/icons/prev.svg" alt="image" height="1em" width="1em"></amp-img></span>';
