@@ -359,6 +359,12 @@ zs4.string = {
       return html;
     },
   },
+  from:{
+    date:function(time){
+      var d = new Date(time);
+      return ( d.toLocaleDateString() + ' ' + d.toLocaleTimeString() );
+    }
+  },
 };
 
 zs4.count = {
@@ -1925,6 +1931,7 @@ zs4.type = {
           html += '  <meta charset="UTF-8">\n';
           html += '  <script async src="https://cdn.ampproject.org/v0.js"></script>\n';
           html += '  <script async custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js"></script>\n';
+          html += '  <script async custom-element="amp-accordion" src="https://cdn.ampproject.org/v0/amp-accordion-0.1.js"></script>\n';
           html += '  <script async custom-element="amp-fit-text" src="https://cdn.ampproject.org/v0/amp-fit-text-0.1.js"></script>\n';
           html += '  <title>'+title+'</title>\n';
           html += '  <link rel="canonical" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'">\n';
@@ -1983,7 +1990,11 @@ zs4.type = {
           html += 'amp-sidebar{width:"'+(BODY_WIDTH*3/4)+'px";padding:0em;border:2px solid black;margin:0px;background-image:url("/gfx/images/winterpattern.jpg");} ';
           //html += 'amp-fit-text.sidebar{background-color:black;display:block;color:white;padding:0px;border:0px;margin:0px;}';
           html += 'div.sidebar{display:block;font-size:2em;color:black;padding:10px;border:0px;margin:0px;}';
+          html += 'div.sidebarcontent{display:block;color:black;padding:10px;border:0px;margin:0px;}';
+          html += 'amp-accordion section[expanded] .show-more {display:none}';
+          html += 'amp-accordion section:not([expanded]) .show-less {display:none}';
           html += 'div.titlebar{background-color:darkblue;display:block;font-size:2em;color:white;padding:0px;border:0px;margin:0px;}';
+          html += 'ul.docinfo{background-color:lightblue;}';
           html += 'div.scope{padding:2em;border:0px;margin:0px;} ';
           html += 'div.footer{margin-top:2em;}';
           html += 'a.footer{text-decoration:none;}';
@@ -1997,21 +2008,51 @@ zs4.type = {
             html += ' <body>\n';
             html += '  <amp-sidebar id="sidebar" layout="nodisplay" side="left">\n';
             html += '   <div class="sidebar"><amp-img tabindex='+(TABINDEX++)+' role="button" on="tap:sidebar.toggle" src="/gfx/icons/prev.svg" alt="Welcome" height="1em" width="1em"></amp-img>options</div>\n';
+            html += '   <div class="sidebarcontent">\n';
+            html += '   <h3>More from '+zs4.THIS.zs4.express.host._.value+'</h3>\n';
+            html += '   <ul>\n';
+            html += '    <li><a href="/amp">Home</a></li>\n';
+            html += '    \n';
+            html += '    \n';
+            html += '   </ul>\n';
             html += '   \n';
-            html += '   \n';
-            html += '   \n';
+            html += '  </div>\n';
             html += '  </amp-sidebar>\n';
             html += '  <div class="titlebar"><amp-img tabindex='+(TABINDEX++)+' role="button" on="tap:sidebar.toggle" src="/gfx/icons/zs4.svg" alt="Welcome" height="1em" width="1em"></amp-img>'+title+'</div>\n';
+            html += '  <amp-accordion><section expanded>\n';
+                        html += '<h4>';
+                        html += '<span class="show-more"><amp-img src="/gfx/icons/info.svg" alt="image" height="1em" width="1em"></amp-img></span>';
+                        html += '<span class="show-less"><amp-img src="/gfx/icons/prev.svg" alt="image" height="1em" width="1em"></amp-img></span>';
+                        html += 'Document Information</h4>\n';
+            html += '   <ul class="docinfo">\n';
+            html += '   \n';
+            if (author!='')html += '    <li><b>Author:</b> '+author+'</li>\n';
+            if (description!='')html += '    <li><b>Description:</b> '+description+'</li>\n';
+            html += '    <li><b>Created:</b> '+zs4.string.from.date(SCOPE.zs4.head.created._.value)+'</li>\n';
+            html += '    <li><b>Last Update:</b> '+zs4.string.from.date(SCOPE.zs4.head.updated._.value)+'</li>\n';
+            html += '   \n';
+            html += '   \n';
+            html += '   \n';
+            html += '   </ul>\n';
+            html += '   \n';
+            html += '  </section></amp-accordion>\n';
+
             //if (description != ''){
             //  html += '   <h3>Summary</h3>';
             //  html += description;
             //}
+            html += '  <amp-accordion><section expanded>\n';
+            html += '<h4>';
+            html += '<span class="show-more"><amp-img src="/gfx/icons/toonsmith.svg" alt="image" height="1em" width="1em"></amp-img></span>';
+            html += '<span class="show-less"><amp-img src="/gfx/icons/toonsmith.svg" alt="image" height="1em" width="1em"></amp-img></span>';
+            html += 'Document Content</h4>\n';
             html += ' <div class="scope">\n';
 
             SCOPE._.getAmpBody(req,function(body){
               html += body;
               //html += '  <amp-img layout="responsive" src="/gfx/icons/zs4.svg" alt="Welcome" height="400" width="400"></amp-img>\n';
               html += ' </div>\n';
+              html += '  </section></amp-accordion>\n';
 
               html += ' <div class="footer">\n';
               html += '  <a  class="footer" href="/'+SCOPE._.path+'">See full zs4 version of this page</a>\n';
