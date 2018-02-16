@@ -2881,6 +2881,11 @@ zs4.admin.util = {
 					new o._.html.top.dialogCoins();
 				}
 
+				o._.html.amppage = zs4.admin.util.addIconElement(o._.html.dialogHeader,'amppage');
+				o._.html.amppage.onclick = function(){
+					zs4.navigate(o._.path + '.amp');
+				}
+
 				o._.html.appInfo = document.createElement('zs4-app-info');
 				o._.html.appElement.appendChild(o._.html.appInfo);
 
