@@ -13,9 +13,7 @@ zs4.plugin.list.toonsmith = new Object({
     THIS.initialized=true;
 
     ts.initialize();
-//
-//    ts.html.get.plain('this is a plain text');
-//    console.log('toonsmith initialized');
+
   },
   ui:function(e,scope){
     var THIS = zs4.plugin.list.toonsmith;
