@@ -935,8 +935,8 @@ zs4.util = {
 
   },
   bits:function(po,name){
-    const BITLIMIT = 48;
-    const BITMASK = 0x0ffffffffffff;
+    const BITLIMIT = 32;
+    const BITMASK = 0x0ffffffff;
 
     var THIS = this;
     THIS._ = new Object({po:po,n:name});
