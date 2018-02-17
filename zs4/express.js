@@ -3,6 +3,8 @@
 var zs4 = require('./static/zs4');
 var token = require('./token');
 
+var debug = require('debug')('zs4express');
+
 var xpress = require('express');
 var logger = require('morgan');
 var path = require('path');
@@ -16,7 +18,7 @@ var fs = require('fs');
 
 var express = exports;
 
-//console.log('__dirname = '+__dirname)
+//debug('__dirname = '+__dirname)
 
 express.zs4 = zs4;
 
@@ -70,9 +72,9 @@ express.setCookie = function(res,zs4request){
 express.getFunction = function (req, res) {
   var starttime = Date.now();
   express.THIS._.print('express.app.get('+req.path+')')
-  console.log('GET REQUEST: '+req.path);
+  debug('GET REQUEST: '+req.path);
 
-  //console.log('GET REQUEST!!!!!!!!');
+  //debug('GET REQUEST!!!!!!!!');
 
   var zs4req = new zs4.request();
   zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
@@ -82,7 +84,7 @@ express.getFunction = function (req, res) {
   var input = zs4req.resolveInputPath(req.path);
   input.getHTML = new Object();
   input.getHTML.query = req.query;
-  console.log(req.path,req.query);
+  debug(req.path,req.query);
   express.THIS._.print('input('+JSON.stringify(zs4req.input)+')');
 
   express.getCookie(req,zs4req);
@@ -94,10 +96,10 @@ express.getFunction = function (req, res) {
     //res.write(express.html(req,res));
     if (r == null || r.length == 0){
       r = express.html(req,res);
-      console.log('ZS4 FAILED TO PRODUCE HTML');
+      debug('ZS4 FAILED TO PRODUCE HTML');
     }
 
-    //console.log('SENDING');
+    //debug('SENDING');
     //if (zs4req.request.tokenlogin==true){
     //  zs4req.stat(zs4.THIS.zs4.email.message,{emailsent:1,},0);
     //}
@@ -110,18 +112,18 @@ express.getFunction = function (req, res) {
 };
 express.postFunction = function (req, res) {
   var starttime = Date.now();
-  //console.log('POST REQUEST: '+JSON.stringify(req.body));
+  //debug('POST REQUEST: '+JSON.stringify(req.body));
   var zs4req = new zs4.request(req.body);
   zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
   if (req.hostname == 'localhost' || req.hostname == '127.0.0.1'){
     zs4req.request.localhost = true;
   }
-  //console.log(req.body);
+  //debug(req.body);
   express.getCookie(req,zs4req);
 
   zs4req.process(function(ret){
     if (zs4req.html==true){
-      console.log('express got HTML to send back....');
+      debug('express got HTML to send back....');
       var r = zs4req.request.html;
       express.THIS._.print('request.process returned('+zs4.json.stringify(r)+')');
 
@@ -182,9 +184,9 @@ express.schema = function(parent){
   }).bind(THIS.run);
 
   THIS.start = function(){
-    console.log('EXPRESS-START()');
+    debug('EXPRESS-START()');
     if (express.running)return;
-    console.log('EXPRESS-not running yet');
+    debug('EXPRESS-not running yet');
 
     var app = xpress();
 
@@ -223,7 +225,7 @@ express.schema = function(parent){
           }
           else {
             express.running = true;
-            console.log('zs4 listening on port '+port+'!');
+            debug('zs4 listening on port '+port+'!');
           }
         });
       };
@@ -236,7 +238,7 @@ express.schema = function(parent){
     var port = '';
     if (THIS.port._.value != 80) port = ':'+THIS.port._.value;
     if (req != null && req.request.localhost == true){
-      console.log('WARNING: returning localhost name')
+      debug('WARNING: returning localhost name')
       return ('http://localhost'+port);
     }
     return ('http://'+THIS.host._.value+port);

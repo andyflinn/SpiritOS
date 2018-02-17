@@ -2,6 +2,7 @@
 
 var zs4 = require('./static/zs4');
 var PP = require('passport');
+var debug = require('debug')('zs4passport');
 
 var passport = exports;
 
@@ -20,23 +21,23 @@ passport.create = function(){
     var log = 'PASSPORT._.extractUserObject: ';
 
     if (!zs4.is.object(profile)) {
-      console.log(log+'ERROR: profile is not an object');
+      debug(log+'ERROR: profile is not an object');
       return null;
     }
     if (!zs4.is.array(profile.emails)) {
-      console.log(log+'ERROR: profile.emails is not an array');
+      debug(log+'ERROR: profile.emails is not an array');
       return null;
     }
     if (!zs4.is.object(profile.emails[0])) {
-      console.log(log+'ERROR: profile.emails[0] is not an object');
+      debug(log+'ERROR: profile.emails[0] is not an object');
       return null;
     }
     if (!zs4.is.email(profile.emails[0].value)) {
-      console.log(log+'ERROR: profile.emails[0].value is not an email address');
+      debug(log+'ERROR: profile.emails[0].value is not an email address');
       return null;
     }
 
-    console.log(log+profile.emails[0].value);
+    debug(log+profile.emails[0].value);
     var ret = new Object({
       email:profile.emails[0].value,
       display:profile.displayName,
@@ -59,15 +60,15 @@ passport.create = function(){
     PASSPORT[strategy]._.loginQueue = new Array();
 
     PASSPORT[strategy]._.loginHandler = function(accessToken, refreshToken, profile, cb) {
-      //console.log('STRATEGY is still '+strategy);
-      //console.log('PASSPORT PROFILE FUNCTION returned',accessToken,refreshToken);
-      //console.log(zs4.json.stringify(profile));
+      //debug('STRATEGY is still '+strategy);
+      //debug('PASSPORT PROFILE FUNCTION returned',accessToken,refreshToken);
+      //debug(zs4.json.stringify(profile));
       var po = PASSPORT._.extractUserObject(profile);
       if (po == null) return cb(null, profile);
-      //console.log(po);
+      //debug(po);
 
       var input = new Object({zs4:{type:{user:{method:{getone:{item:'zs4.email',eq:po.email}}}}}});
-      //console.log('PASSPORT search user req',zs4.json.stringify(input));
+      //debug('PASSPORT search user req',zs4.json.stringify(input));
       var req = new zs4.request();
       req.call({
         path:'zs4.type.user.method.getone',
@@ -76,7 +77,7 @@ passport.create = function(){
       },
       function(callback){
         if (callback.error != null){
-          //console.log('zs4.type.user.method.getone() failed: ',callback);
+          //debug('zs4.type.user.method.getone() failed: ',callback);
           var USER = require('./user');
           var nu = new USER.create();
           nu.zs4.email._.value = po.email;
@@ -88,7 +89,7 @@ passport.create = function(){
           nu.social[strategy].date._.value = Date.now();
 
           var data = nu._.store();
-          //console.log('NEW USER REQUEST:',zs4.json.stringify(data));
+          //debug('NEW USER REQUEST:',zs4.json.stringify(data));
           req.call({
             path:'zs4.type.user.method.new',
             input:data,
@@ -97,11 +98,11 @@ passport.create = function(){
           function(callback){
             if (callback.error != null){
               var err = 'zs4.type.user.method.new() failed: ' + callback.error;
-              console.log(err);
+              debug(err);
               return cb(err, null);
             }
             else {
-              //console.log('zs4.type.user.method.new() SUCCESS: ',callback);
+              //debug('zs4.type.user.method.new() SUCCESS: ',callback);
               req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
               var ret = new Object({token:req.request.token,id:callback.result,time:Date.now(),});
               PASSPORT[strategy]._.loginQueue.push(ret);
@@ -110,7 +111,7 @@ passport.create = function(){
           });
         }
         else {
-          //console.log('zs4.type.user.method.getone() SUCCESS: ',callback);
+          //debug('zs4.type.user.method.getone() SUCCESS: ',callback);
           req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
 
           var input = new Object({social:{}});
@@ -127,7 +128,7 @@ passport.create = function(){
           },
           function(){
             var ret = new Object({token:req.request.token,id:callback.result,time:Date.now(),});
-            //console.log(strategy);
+            //debug(strategy);
             PASSPORT[strategy]._.loginQueue.push(ret);
             return cb(null, ret);
           });
@@ -150,7 +151,7 @@ passport.create = function(){
     )) ;
 
 
-    console.log('PASSPORT.'+strategy+'._.Options = ',PASSPORT[strategy]._.Options);
+    debug('PASSPORT.'+strategy+'._.Options = ',PASSPORT[strategy]._.Options);
     app.get('/'+PASSPORT[strategy]._.path + '.login',
             PP.authenticate(strategy,PASSPORT[strategy]._.Options,PASSPORT[strategy]._.Options),
             function(req, res) {
@@ -159,19 +160,19 @@ passport.create = function(){
     );
 
     var redir = '/zs4.passport.'+strategy+'.success';
-    console.log('REDIRECT = '+redir);
+    debug('REDIRECT = '+redir);
     app.get('/'+PASSPORT[strategy]._.path + '.return',
             PP.authenticate(strategy,PASSPORT[strategy]._.Options),
             function(req, res) {
               // Successful authentication, redirect home.
               var shift = PASSPORT[strategy]._.loginQueue.shift();
-              console.log('time elapsed: '+(Date.now()-shift.time));
-              console.log('SESSION-esque data: ',zs4.json.textify(shift));
+              debug('time elapsed: '+(Date.now()-shift.time));
+              debug('SESSION-esque data: ',zs4.json.textify(shift));
               res.redirect(redir+'?token='+shift.token+'&id='+shift.id);
             }
     );
 
-    console.log('EXPRESS/PASSPORT route for '+strategy+' configured:'+PASSPORT[strategy]._.path + '.login');
+    debug('EXPRESS/PASSPORT route for '+strategy+' configured:'+PASSPORT[strategy]._.path + '.login');
 
   };
 

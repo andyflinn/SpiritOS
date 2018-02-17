@@ -1,5 +1,6 @@
 var zs4 = require('./static/zs4');
 var nodefs = require('fs');
+var debug = require('debug')('zs4fs');
 
 var fs = exports;
 
@@ -25,7 +26,7 @@ fs.statsObject = function(stats){
 fs.schema = function(parent){
   parent._.property(new fs.create());
 
-  //console.log(parent.fs.stat);
+  //debug(parent.fs.stat);
 };
 
 fs.create = function(){
@@ -97,17 +98,17 @@ fs.create = function(){
     }
     var READDIR = this;
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
-      //console.log(READDIR._.path+'.readdir('+JSON.stringify(req.input)+')');
+      //debug(READDIR._.path+'.readdir('+JSON.stringify(req.input)+')');
       nodefs.readdir(req.input.path,function(err,list){
-        //console.log('readdir('+req.input.path+')')
+        //debug('readdir('+req.input.path+')')
         if (err){
           req.error(READDIR,{text:'fs.readdir(\''+req.input.path+'\')',data:err});
-          //console.log('error.readdir('+req.input.path+')');
+          //debug('error.readdir('+req.input.path+')');
         }
         else {
           req.result(READDIR,list);
-          //console.log('result.readdir('+req.input.path+')');
-          //console.log(list);
+          //debug('result.readdir('+req.input.path+')');
+          //debug(list);
         }
         return get();
       });
@@ -154,12 +155,12 @@ fs.create = function(){
   THIS.list = function(req,cb){
     var REQUEST = req;
     var FOLDER = this;
-    console.log('FOLDER._.path: '+FOLDER._.path);
-    console.log('DRIVER._.path: '+DRIVER._.path);
-    console.log('DRIVER.path._.value: ',DRIVER.path._.value);
+    debug('FOLDER._.path: '+FOLDER._.path);
+    debug('DRIVER._.path: '+DRIVER._.path);
+    debug('DRIVER.path._.value: ',DRIVER.path._.value);
     if (FOLDER._.rootFolder==true){
       FOLDER._.driver.path = DRIVER.path._.value;
-      console.log('ROOT FOLDER!!!!');
+      debug('ROOT FOLDER!!!!');
     }
     else {
       if (!zs4.is.string(FOLDER._.driver.path)||!FOLDER._.driver.path.startsWith(DRIVER.path._.value)){
@@ -167,7 +168,7 @@ fs.create = function(){
         FOLDER._.getTree(req); cb(); return;
       }
 
-      console.log('CHILD FOLDER!!!!');
+      debug('CHILD FOLDER!!!!');
     }
 
     nodefs.readdir(FOLDER._.driver.path,function(err,list){
@@ -180,9 +181,9 @@ fs.create = function(){
         FOLDER._.getTree(req); cb(); return;
       }
       else {
-        //console.log('readdir returned: ',list);
+        //debug('readdir returned: ',list);
         function getFileInfo(req,cb){
-          console.log('getFileInfo('+req.input+')');
+          debug('getFileInfo('+req.input+')');
           nodefs.stat(FOLDER._.driver.path+'/'+req.input,function(err,stats){
             if (err||!stats){cb();return;}
             if (stats.isFile()){
@@ -192,7 +193,7 @@ fs.create = function(){
               nu._.get(req);
             }
             else if (stats.isDirectory()){
-              console.log('stat('+req.input+')');
+              debug('stat('+req.input+')');
               var nu = new zs4.type.folder({name:'x'});
               nu._.name = req.input;
               FOLDER._.elementConnect(FOLDER,nu);

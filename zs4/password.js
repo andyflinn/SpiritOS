@@ -1,6 +1,7 @@
 var zs4 = require('./static/zs4');
 var token = require('./token');
 var passhash = require('password-hash');
+var debug = require('debug')('zs4password');
 
 var password = exports;
 
@@ -13,7 +14,7 @@ password.create = function(){
   var THIS = this;
   var input = new Object({name:'password',flags:'api authsetself',});
   zs4.type.object.call(this,input);
-  //console.log('password flags: '+this._.flags.getString());
+  //debug('password flags: '+this._.flags.getString());
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
@@ -22,7 +23,7 @@ password.create = function(){
     this._.print('transform()',req);
     if (zs4.is.object(req.input)){
       if (req.input.reset==true){
-        console.log(this._.path+' PASSWORD WAS RESET');
+        debug(this._.path+' PASSWORD WAS RESET');
         this._.reset();
         this._.shouldBeSaved(req);
         this._.get(req); cb(); return;
@@ -35,12 +36,12 @@ password.create = function(){
         var oldPassVerified = this.verify(req.input.vfy);
 
         if (oldPassVerified){
-          console.log('...old password verified...');
+          debug('...old password verified...');
           req.tokenCreate({iss:THIS._.path,scope:req.scope._.path,});
           //req.request.reget = THIS._.path;
 
           if (zs4.is.password(req.input.set)){
-            console.log('...pass change...');
+            debug('...pass change...');
             var nu = this.generate(req.input.set);
             if (nu!=null) {
               this.hashed._.value = nu;
@@ -55,9 +56,9 @@ password.create = function(){
         }
         else {
           req.error(THIS);
-          //zs4.console.log('...password '+req.input.vfy+' incorrect...');
+          //zs4.debug('...password '+req.input.vfy+' incorrect...');
         }
-        //zs4.console.log('...have password already');
+        //zs4.debug('...have password already');
       }
       else{
         if (zs4.is.password(req.input.set)){
@@ -68,7 +69,7 @@ password.create = function(){
             var nu = this.generate(req.input.set);
             if (nu) {
               this.hashed._.value = nu;
-              //console.log('...password set...');
+              //debug('...password set...');
               this._.shouldBeSaved(req);
               this._.print('password set '+this.hashed._.value)
               req.result(THIS,'goscope');
@@ -93,7 +94,7 @@ password.create = function(){
 
     req.setScope(this);
     this._.print(this._.path+'.get()');
-    //console.log('password.get'+ JSON.stringify(this._.authGet));
+    //debug('password.get'+ JSON.stringify(this._.authGet));
     var get = this._.getInitialize(req);
     if (get==null){
       this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
@@ -151,25 +152,25 @@ password.create = function(){
     return passhash.isHashed(this.hashed._.value)
   };
   THIS.verify = function(pw){
-    //zs4.console.log('verifying');
+    //zs4.debug('verifying');
     if (!zs4.is.password(pw)||!passhash.isHashed(this.hashed._.value)){
-      //zs4.console.log('BAD!');
+      //zs4.debug('BAD!');
       return false;
     }
     return passhash.verify(pw,this.hashed._.value);
   };
   THIS.generate = function(pw){
-    //zs4.console.log('generating password');
+    //zs4.debug('generating password');
     if (!zs4.is.password(pw)) return null;
     var nu = null;
     try{
       nu = passhash.generate(pw,{algorithm:this.algorithm._.value,saltLength:this.saltlength._.value,iterations:this.iterations._.value,});
     }
     catch(err){
-      //zs4.console.log(err);
+      //zs4.debug(err);
       return null;
     }
-    //zs4.console.log('success!');
+    //zs4.debug('success!');
     return nu;
   };
 

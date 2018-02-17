@@ -2570,18 +2570,6 @@ zs4.admin.util = {
 										};
 									}
 
-									/*
-									if (scope.zs4.head.typename._.value=='doctype'){
-										if (zs4.is.object(zs4.THIS.zs4.type.document.method.new)){
-											this.newdoc = document.createElement('zs4-app-item-newdoc');
-											this.newdoc.textContent = 'new';
-											this.element.appendChild(this.newdoc);
-											this.newdoc.onclick = function(){
-
-											};
-										}
-									}*/
-
 									this.more = document.createElement('zs4-app-item-more');
 									this.more.style.display = 'block';
 									this.element.appendChild(this.more);
@@ -2832,7 +2820,7 @@ zs4.admin.util = {
 
 
 						}).bind(top.app);
-						new o._.html.top.dialogDocument();
+
 						top.app.internalRefresh();
 					}
 					else {

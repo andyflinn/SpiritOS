@@ -1,10 +1,9 @@
 var zs4 = require('../../static/zs4');
-//var abc = require('../../static/abcjs.min.js');
 var xpress = require('express');
 var ts = require('./static/toonsmith/window');
-//var abc = require('abcjs/midi');
+var debug = require('debug')('zs4toonsmith');
 
-console.log('toonsmith loading...');
+debug('toonsmith loading...');
 
 var toonsmith;
 if (zs4.is.node()) {
@@ -25,7 +24,7 @@ toonsmith.create = function(){
   zs4.type.scope.call(this);
   this.zs4.head.typename._.value = 'toonsmith';
   this.zs4.head.typename._.default = 'toonsmith';
-  //console.log(this.zs4.head.typename._.value);
+  //debug(this.zs4.head.typename._.value);
   this.zs4.head.bits._.bits.plugin.true();
   this._.name = 'toonsmith';
   //this._.flags.set.authuser();
@@ -49,7 +48,7 @@ toonsmith.create = function(){
     ret.push(new String('toonsmith'));
 
     var textOnly = TOONSMITH._.getTextOnly();
-    //console.log(textOnly);
+    //debug(textOnly);
     var arr = zs4.string.split.separators(textOnly,zs4.const.SPECIALCHARS);
 
     for (var i = 0; i < arr.length; i++){
@@ -95,7 +94,7 @@ toonsmith.create = function(){
 
       for (var i = 0; i < SEQUENCE.evt.length; i++){
         var EVENT = SEQUENCE.evt[i];
-        //if (EVENT.lyric!='') console.log(EVENT.lyric);
+        //if (EVENT.lyric!='') debug(EVENT.lyric);
 
         if (EVENT.linefeed && SEQUENCE.layoutlinefeed){
           html += '<br>\n';
@@ -117,7 +116,7 @@ toonsmith.create = function(){
           html+='<span class="zs4c">';
           {
             if (chord){
-              //console.log(EVENT.chord);
+              //debug(EVENT.chord);
               html += ts.music.NOTES[EVENT.chord.v].s;
               html += ts.music.CHORD.TYPE[EVENT.chord.t].s;
               if (EVENT.chord.v != EVENT.chord.b){
@@ -151,7 +150,7 @@ toonsmith.create = function(){
     }
 
     var stats = SEQUENCE.stats;
-    console.log('lyric:'+stats.lyric,stats.result);
+    debug('lyric:'+stats.lyric,stats.result);
 
     if (stats.result.words){
       if (stats.chords > 0){

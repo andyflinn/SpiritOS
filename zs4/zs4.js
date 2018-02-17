@@ -1,4 +1,5 @@
 var zs4 = require('./static/zs4');
+var debug = require('debug')('zs4node');
 
 zs4.commandLine = function(){
   var msg = new Object();
@@ -7,7 +8,7 @@ zs4.commandLine = function(){
   path['zs4'] = new Object();
   path = path['zs4'];
 
-  //console.log(process.argv);
+  //debug(process.argv);
   if (process.argv.length==2){
     path.express = new Object({run:{}});
   }
@@ -33,22 +34,22 @@ zs4.commandLine = function(){
     }
   }
 
-  //console.log(msg);
+  //debug(msg);
 
   zs4.define();
-  //zs4.console.log('defined');
+  //zs4.debug('defined');
   zs4.load(function(){
-    //zs4.console.log('loaded');
+    //zs4.debug('loaded');
     // set up root authority
     var req = new zs4.request({input:msg});
     req.request.node = true;
 
     zs4.THIS._.transform(req,function(){
-      zs4.console.log('transformed');
+      zs4.debug('transformed');
       if (req.request.needsSaving){
-        zs4.console.log('req.request.needsSaving');
+        zs4.debug('req.request.needsSaving');
         zs4.save(function(){
-          zs4.console.log('saved');
+          zs4.debug('saved');
           console.log(zs4.json.textify(zs4.THIS._.store()));
         });
       }
@@ -93,7 +94,7 @@ zs4.load = function(cb){
 
     z.email.smtp.from._.value = 'zs4@zs4.zs4';
     z.password.hashed._.value = z.password.generate('password');
-    console.log('user/pass: zs4@zs4.zs4/password');
+    debug('user/pass: zs4@zs4.zs4/password');
 
     var node = zs4.THIS.zs4.node;
 
@@ -102,7 +103,7 @@ zs4.load = function(cb){
   function envvar(v,cb){
     var env = zs4.json.parse(process.env[v]);
     if (zs4.is.object(env)&&zs4.is.object(env.zs4)){
-      console.log('launching from process.env.'+v);
+      debug('launching from process.env.'+v);
       zs4.THIS._.load(env);
       cb(new zs4.done());
       return true;
@@ -112,7 +113,7 @@ zs4.load = function(cb){
   };
   function file(f,cb){
     fs.readFile(f,'utf8',function(err,data){
-      console.log('launching from ./'+f);
+      debug('launching from ./'+f);
       if (!err && data){
         var value = zs4.json.parse(data);
         if (value!=null){
@@ -248,7 +249,7 @@ zs4.define = function(){
 
   var nodefs = require('fs');
   var rdr = nodefs.readdirSync('./zs4/plugin');
-  console.log('readPlugins: ' + zs4.is.array(rdr) +  ' ' + rdr);
+  debug('readPlugins: ' + zs4.is.array(rdr) +  ' ' + rdr);
   for ( var i = 0 ; i < rdr.length ; i++ ){
     var fnam = './plugin/'+rdr[i]+'/'+rdr[i]+'.js';
     zs4.plugin.list[rdr[i]]=require(fnam);

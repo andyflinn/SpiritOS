@@ -88,7 +88,6 @@ node.create = function(name){
     else NODE.os.user._.value = ua[(ua.length-1)];
 
 
-    //console.log(networkinterfaces);
     NODE.os._.property(new zs4.type.text({name:'networkinterfaces',flags:'noset',}));
     NODE.os._.neteyeface = new Object({
       nif:os.networkInterfaces(),

@@ -1,6 +1,7 @@
 var zs4 = require('./static/zs4');
 var randomstring = require('randomstring');
 var jwt = require('jwt-simple');
+var debug = require('debug')('zs4token');
 
 const RANDOMLENGTH = 32;
 const TIMETOLIVE = (zs4.const.MS.WEEK*2);
@@ -24,7 +25,7 @@ token.schema = function(parent){
     THIS._.print('token payload: '+JSON.stringify(payload));
 
     var ret = jwt.encode(payload, this.secret._.value);
-    //console.log(ret);
+    //debug(ret);
     return ret;
   }).bind(THIS);
 

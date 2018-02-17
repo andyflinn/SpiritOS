@@ -1,7 +1,8 @@
 var zs4 = require('../../static/zs4');
 var xpress = require('express');
+var debug = require('debug')('zs4ecstartup');
 
-console.log('ecstartup loading...');
+debug('ecstartup loading...');
 
 var ecstartup;
 if (zs4.is.node()) {

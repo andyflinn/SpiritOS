@@ -1,6 +1,7 @@
 var zs4 = require('./static/zs4');
 var NodeRSA = require('node-rsa');
 const crypto = require('crypto');
+var debug = require('debug')('zs4rsa');
 
 var rsa = exports;
 var rsa
@@ -22,7 +23,7 @@ rsa.create = function(){
   THIS._.key = new NodeRSA();
 
   THIS._.load = (function(input){
-    //zs4.console.log('loading rsa object \n'+input.pem);
+    //zs4.debug('loading rsa object \n'+input.pem);
     if (zs4.is.object(input)&&zs4.is.string(input.pem)&&input.pem.length>10){
       this._.key = new NodeRSA(input.pem);
       this.pem._.value = input.pem;
@@ -37,7 +38,7 @@ rsa.create = function(){
   }).bind(THIS);
   THIS._.store = (function(){
     //return null;
-    //zs4.console.log(this._.path+'.store()');
+    //zs4.debug(this._.path+'.store()');
     //if (this._.nostore){return null;}
     var store = new Object();
     //if (this._.path == 'zs4.rsa') {
@@ -52,7 +53,7 @@ rsa.create = function(){
   THIS._.get = (function(req,po){
     req.setScope(THIS);
     this._.print(this._.path+'.get()');
-    //console.log('GETTING RSA PUBLIC KEY');
+    //debug('GETTING RSA PUBLIC KEY');
     var get = this._.getInitialize(req);
     if (get==null)return;
 
@@ -66,9 +67,9 @@ rsa.create = function(){
   }).bind(THIS);
 
   THIS._.getPublicKey = (function(){
-    //zs4.console.log('loading rsa object \n'+input.pem);
+    //zs4.debug('loading rsa object \n'+input.pem);
     if (this.pem._.value=='')return '';
-    //console.log(zs4.base64.encode(JSON.stringify(this._.key.exportKey('pkcs1-public-der'))));
+    //debug(zs4.base64.encode(JSON.stringify(this._.key.exportKey('pkcs1-public-der'))));
     return this._.key.exportKey('pkcs1-public');
 
   }).bind(THIS);
@@ -76,12 +77,12 @@ rsa.create = function(){
   THIS._.ensureKeyExists = (function(){
 
     if (this.pem._.value==''){
-      zs4.console.log('....generating key pair...');
+      zs4.debug('....generating key pair...');
 
       this._.key.generateKeyPair();
       this.pem._.value = THIS._.key.exportKey();
     }
   }).bind(THIS);
 
-  //zs4.console.log(THIS);
+  //zs4.debug(THIS);
 };

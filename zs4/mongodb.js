@@ -3,6 +3,7 @@
 var zs4 = require('./static/zs4');
 var mongoose = require('mongoose');
 var pager = require('mongoose-paginate');
+var debug = require('debug')('zs4mongo');
 
 var mongodb = exports;
 
@@ -67,7 +68,7 @@ mongodb.scopeToSchema = function(ARRAY,scope){
       }
     }
     else {
-      //console.log('SCHEMA ENTRY: '+type._.path);
+      //debug('SCHEMA ENTRY: '+type._.path);
       ret.type = type._.type;
       ret.default = type._.default;
       if (type._.flags.get.index())ret.index=true;
@@ -81,7 +82,7 @@ mongodb.scopeToSchema = function(ARRAY,scope){
         if (zs4.is.number(type._.minlength))ret.minlength = type._.minlength;
         if (zs4.is.number(type._.maxlength))ret.maxlength = type._.maxlength;
         if (type._.flags.get.textsearch()){
-          //console.log('MUST SEARCH '+type._.path);
+          //debug('MUST SEARCH '+type._.path);
           ARRAY._.mongoTextSearch[type._.path]='text';
         }
       }
@@ -118,10 +119,10 @@ mongodb.create = function(input){
       ARRAY._.mongoSchemeRaw = mongodb.scopeToSchema(ARRAY,ARRAY.template._.new());
       ARRAY._.mongoSchema = new mongoose.Schema(ARRAY._.mongoSchemeRaw);
 
-      //console.log(ARRAY._.mongoTextSearch);
+      //debug(ARRAY._.mongoTextSearch);
       ARRAY._.mongoSchema.index(ARRAY._.mongoTextSearch);
 
-      //console.log(JSON.stringify(ARRAY._.mongoSchema));
+      //debug(JSON.stringify(ARRAY._.mongoSchema));
 
       ARRAY._.mongoModel = function(){
         return mongoose.model(ARRAY.template.zs4.head.typename._.value, ARRAY._.mongoSchema);
@@ -134,8 +135,8 @@ mongodb.create = function(input){
   MONGODB.query = function(arg,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    //console.log('MONGODB.query('+this._.path+'.array)');
-    //console.log(arg);
+    //debug('MONGODB.query('+this._.path+'.array)');
+    //debug(arg);
 
     var find = new Object();
 
@@ -152,16 +153,16 @@ mongodb.create = function(input){
             or.push(nu);
           }
         }
-        //console.log('$or:',or);
+        //debug('$or:',or);
         query.find({$or:or});
       }
     }
 
     for (var n in arg.select){
-      //console.log('for (var '+n+' in arg.select)');
+      //debug('for (var '+n+' in arg.select)');
       if (!zs4.is.type(arg.select[n]))continue;
       if (arg.select[n]._.typename!='selectitem')continue;
-      //console.log('for (var '+n+' in arg.select) ITEM ENTRY FOUND!!!');
+      //debug('for (var '+n+' in arg.select) ITEM ENTRY FOUND!!!');
 
       var item = arg.select[n].item._.value;
       var ityp = ARRAY.template._.resolvePath(item)
@@ -176,7 +177,7 @@ mongodb.create = function(input){
       }
       if (opcode=='eq'){query.where(item).equals(value);}
 
-      //console.log('FOUND A SELECT CONDITION');
+      //debug('FOUND A SELECT CONDITION');
     }
 
     if (arg.sort!=null&&zs4.is.string(arg.sort.item)&&arg.sort.item.length>0){
@@ -191,51 +192,51 @@ mongodb.create = function(input){
       query.sort('-zs4.head.updated');
     }
 
-    //console.log('   QUERY: ',query);
-    //console.log('FIND: ',find);
+    //debug('   QUERY: ',query);
+    //debug('FIND: ',find);
     //var item = new ARRAY._.model();
 
     ARRAY._.model.find(query, function (err, data){
       if (err!=null||data==null||!zs4.is.array(data)){cb(); return;}
-      //console.log('QUERY RETURNED ARRAY!!!: length='+data.length);
+      //debug('QUERY RETURNED ARRAY!!!: length='+data.length);
 
       var type = ARRAY.template._.new();
 
       for (var i = 0 ; i < data.length ; i++){
-        //console.log(data[i].zs4.head.title);
+        //debug(data[i].zs4.head.title);
 
         type._.name = mongodb.hex2name(data[i]._id);
         ARRAY._.array.elementConnect(ARRAY.array,type);
         type._.load(data[i]);
-        //console.log(type);
+        //debug(type);
         var gt = type._.getTree(arg.request);
-        //console.log(gt);
+        //debug(gt);
       }
 
       cb(); return;
-      //console.log(arg.request.request);
-      //console.log(JSON.stringify(data));
+      //debug(arg.request.request);
+      //debug(JSON.stringify(data));
     });
   };
 
   MONGODB.getOne = function(req,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.getOne("'+this._.path+'.array","'+req.input.item+'='+req.input.eq+'")');
+    debug('MONGODB.getOne("'+this._.path+'.array","'+req.input.item+'='+req.input.eq+'")');
 
     var q = new Object();
     q[req.input.item]=req.input.eq;
 
     ARRAY._.model.findOne(q, function (err, data){
       if (err!=null){
-        console.log('MONGODB.getOne: '+req.input.eq+' not found. error:'+err);
+        debug('MONGODB.getOne: '+req.input.eq+' not found. error:'+err);
         cb(null); return;
       }
       if (data==null){
-        console.log('MONGODB.getOne: '+req.input.eq+' no data');
+        debug('MONGODB.getOne: '+req.input.eq+' no data');
         cb(null); return;
       }
-      console.log('MONGODB.getOne: '+'FOUND!!!: '+req.input.eq);
+      debug('MONGODB.getOne: '+'FOUND!!!: '+req.input.eq);
 
       var type = ARRAY.template._.new();
       type._.name = mongodb.hex2name(data._id);
@@ -252,11 +253,11 @@ mongodb.create = function(input){
   MONGODB.getID = function(id,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.getID('+this._.path+'.array.'+id+')');
+    debug('MONGODB.getID('+this._.path+'.array.'+id+')');
 
     ARRAY._.model.findById(mongodb.name2hex(id), function (err, data){
       if (err!=null||data==null){cb(null); return;}
-      console.log('FOUND!!!: '+id);
+      debug('FOUND!!!: '+id);
       cb(data);
     });
 
@@ -265,13 +266,13 @@ mongodb.create = function(input){
   MONGODB.updateID = function(id,data,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.updateID('+this._.path+'.array.'+id+')');
+    debug('MONGODB.updateID('+this._.path+'.array.'+id+')');
 
     var item = new ARRAY._.model();
 
     ARRAY._.model.findOneAndUpdate({_id:mongodb.name2hex(id)},data,{new:true,},function(err, item){
       if (err!=null||item==null){cb(null); return;}
-      console.log('FOUND for UPDATE!!!: '+id);
+      debug('FOUND for UPDATE!!!: '+id);
 
       item.save()
       cb(data);
@@ -281,13 +282,13 @@ mongodb.create = function(input){
   MONGODB.deleteID = function(id,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.deleteID('+this._.path+'.array.'+id+')');
+    debug('MONGODB.deleteID('+this._.path+'.array.'+id+')');
 
     var item = new ARRAY._.model();
 
     ARRAY._.model.findOneAndRemove({_id:mongodb.name2hex(id)},function(err, item){
       if (err!=null||item==null){cb(null); return;}
-      console.log('FOUND for DELETE!!!: '+id);
+      debug('FOUND for DELETE!!!: '+id);
       cb(item);
     });
   };
@@ -295,25 +296,25 @@ mongodb.create = function(input){
   MONGODB.new = function(nu,cb){
     var ARRAY = this;
     MONGODB.initializeArray(ARRAY);
-    console.log('MONGODB.new('+this._.path+')');
+    debug('MONGODB.new('+this._.path+')');
 
     var item = new ARRAY._.model(nu._.store());
 
     item.save(function (err,data){
       if(err||data==null){cb(null);return;}
 
-      //console.log(data);
+      //debug(data);
       nu._.load(data);
 
       nu._.name = mongodb.hex2name(data._id.toString());
-      console.log(nu._.name,mongodb.name2hex(nu._.name));
+      debug(nu._.name,mongodb.name2hex(nu._.name));
 
       cb(nu); return;
     });
   }
 
   MONGODB.connect = (function(input,cb){
-    //console.log('MONGODB CONNECT!');
+    //debug('MONGODB CONNECT!');
 
     if (MONGODB.config.configured._.value==true){
       // Create the database connection
@@ -327,27 +328,27 @@ mongodb.create = function(input){
         // If not connected, return errors immediately rather than waiting for reconnect
         //bufferMaxEntries: 0
       };
-      //console.log(options);
+      //debug(options);
       mongoose.connect(MONGODB.config.url._.value,options);
       //mongoose.createConnection().openUri(MONGODB.config.url._.value);
       // CONNECTION EVENTS
       // When successfully connected
       mongoose.connection.on('connected', function () {
-        console.log('Mongoose default connection open: ' + MONGODB._.path);
+        debug('Mongoose default connection open: ' + MONGODB._.path);
         MONGODB.config.connected._.value = true;
         cb();
       });
 
       // If the connection throws an error
       mongoose.connection.on('error',function (err) {
-        console.log('Mongoose default connection error: ' + err);
+        debug('Mongoose default connection error: ' + err);
         MONGODB.config.connected._.value = false;
         cb();
       });
 
       // When the connection is disconnected
       mongoose.connection.on('disconnected', function (err) {
-        console.log('Mongoose default connection disconnected: ' + err);
+        debug('Mongoose default connection disconnected: ' + err);
         MONGODB.config.connected._.value = false;
       });
 
@@ -355,7 +356,7 @@ mongodb.create = function(input){
       process.on('SIGINT', function() {
         mongoose.connection.close(function (err) {
           MONGODB.config.connected._.value = false;
-          console.log('Mongoose default connection disconnected through app termination: '+err);
+          debug('Mongoose default connection disconnected through app termination: '+err);
           process.exit(0);
         });
       });

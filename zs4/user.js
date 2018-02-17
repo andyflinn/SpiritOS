@@ -3,6 +3,7 @@ var email = require('./email');
 var password = require('./password');
 var rsa = require('./rsa');
 var token = require('./token');
+var debug = require('debug')('zs4user');
 
 var user;
 if (zs4.is.node()) {
@@ -37,7 +38,7 @@ user.create = function(){
       for (var n in PASSPORT)if (zs4.is.type(PASSPORT[n])){
         var SOCIAL = PASSPORT[n];
         var network = SOCIAL._.name;
-        //console.log('instantiating '+SOCIAL._.name+' for USER');
+        //debug('instantiating '+SOCIAL._.name+' for USER');
         USER.social._.property(new zs4.type.object({name:network,flags:''}));
         USER.social[network]._.property(new zs4.type.date({name:'date',flags:''}));
         USER.social[network]._.property(new zs4.type.string({name:'display',flags:''}));
@@ -56,7 +57,7 @@ user.create = function(){
         for (var n in REQUEST.input) {
           if (zs4.is.array(REQUEST.input[n])&&n=='array'){
             arr = REQUEST.input[n];
-            //console.log('ARRAY input.'+n);
+            //debug('ARRAY input.'+n);
           }
         }
       }
@@ -75,13 +76,13 @@ user.create = function(){
           var ori = zs4.THIS._.resolvePath(item.p);
           if (zs4.is.type(ori)){
             if (ori._.price.length>0){
-              //console.log('USER update found PRICED iteM');
+              //debug('USER update found PRICED iteM');
               priced = true;
 
             }
           }
 
-          //console.log(item.d,item.p);
+          //debug(item.d,item.p);
 
           for (var n in item.d){
             var msg = n+':';
@@ -94,14 +95,14 @@ user.create = function(){
             }
             else {
               msg+= ' found';
-              //console.log(arr[i].d,arr[i].p,arr[i].u);
+              //debug(arr[i].d,arr[i].p,arr[i].u);
               stat.item[n]._.stat.accumulate(item.d[n],0);
               if (priced){
-                //console.log('PRICE '+n+' search in '+ item.p);
+                //debug('PRICE '+n+' search in '+ item.p);
                 var price = ori._.price[0];
                 var prop = price.server[n];
                 if (prop.active._.value==true){
-                  console.log('BILLING USER '+USER._.path+' for '+n+' at '+ item.p
+                  debug('BILLING USER '+USER._.path+' for '+n+' at '+ item.p
                   + '    qty:'+item.d[n]
                   + ' * coins:'+prop.coins._.value
                   + ' = '+prop.coins._.value
@@ -109,7 +110,7 @@ user.create = function(){
                   USER.account.balance._.value -= (item.d[n] *prop.coins._.value) ;
                 }
                 else {
-                  //console.log('PRICE '+n+' not found in '+ item.p
+                  //debug('PRICE '+n+' not found in '+ item.p
                   //+ ' active:'+prop.active._.value
                   //+ ' coins:'+prop.coins._.value
                   //);
@@ -117,7 +118,7 @@ user.create = function(){
               }
             }
 
-            //console.log(msg);
+            //debug(msg);
           }
 
         }

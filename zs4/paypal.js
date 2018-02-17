@@ -2,6 +2,7 @@
 
 var zs4 = require('./static/zs4');
 var paypalSDK = require('paypal-rest-sdk');
+var debug = require('debug')('zs4paypal');
 
 var paypal = exports;
 

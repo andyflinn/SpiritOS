@@ -13,6 +13,8 @@ if (true){
         node:function(){return true;},
       });
       ts.zs4 = require('../../../../static/zs4.js');
+      ts.debug = require('debug')('zs4ts');
+
   }
   else {
       ts = new Object({
@@ -22,6 +24,7 @@ if (true){
         },
       });
       ts.zs4 = zs4;
+      ts.debug = console.log;
   }
 }
 
@@ -364,7 +367,7 @@ ts.create = function(){
 				}
 				seq.evt[beat].duration = length;
 
-				//if (seq.evt[beat].beat==null)console.log('beat with no beat');
+				//if (seq.evt[beat].beat==null)ts.debug('beat with no beat');
 				// count beat events
 				var eCount = 0;
 				for (var c = beat ; c < (beat+seq.evt.length); c++){
@@ -465,12 +468,12 @@ ts.create = function(){
 
 								var bpbThis = 0;
 								var bpbUsedBefore = bpbUsed;
-								//console.log('timePerBeat:'+ timePerBeat + ' target:' + target);
+								//ts.debug('timePerBeat:'+ timePerBeat + ' target:' + target);
 								for (var x = bpbUsed ; x < bpb; x++) {
 									var diff =  Math.round(Math.abs(((bpbUsed*bMils)-target))%bMils);
-									//console.log('distance of ' +(bpbUsed)+'/'+(couBeats)+' beat is '+diff);
+									//ts.debug('distance of ' +(bpbUsed)+'/'+(couBeats)+' beat is '+diff);
 									var diff_if_addbeat = Math.round(Math.abs((((bpbUsed+1)*bMils)-target))%bMils);
-									//console.log('distance of ' +(bpbUsed+1)+'/'+(couBeats)+' beat is '+diff_if_addbeat);
+									//ts.debug('distance of ' +(bpbUsed+1)+'/'+(couBeats)+' beat is '+diff_if_addbeat);
 									if (diff_if_addbeat <= diff){
 										bpbUsed += 1;
 										bpbThis += 1;
@@ -478,7 +481,7 @@ ts.create = function(){
 									}
 									else break;
 								}
-								//console.log('bpbUsed:'+bpbUsed+' bpbThis:'+bpbThis);
+								//ts.debug('bpbUsed:'+bpbUsed+' bpbThis:'+bpbThis);
 								if (beatNo==0) {title += ' length:'+(bpbThis*bMils);}
 								processBeat(ci,beatNo,bpbThis*bMils);
 								beatNo += 1;
@@ -720,22 +723,22 @@ ts.create = function(){
 					if (SEQUENCE.evt[SEQUENCE.evt_curidx]!=EVENT)return;
 
 					var clickpos = parseInt(this.textContent.length * e.offsetX / this.offsetWidth);
-					console.log(clickpos);
-					console.log(SEQUENCE);
-					console.log(EVENT);
+					ts.debug(clickpos);
+					ts.debug(SEQUENCE);
+					ts.debug(EVENT);
 
 					var old = ''; var nu = ''; var orig = this.textContent;
 					for (var i = 0 ; i < orig.length; i++){
 						if (i < clickpos) old+=orig.charAt(i);
 						else nu+=orig.charAt(i);
 					}
-					console.log(old+'-'+nu);
+					ts.debug(old+'-'+nu);
 					EVENT.lyric = EVENT.eBlockLyric.textContent = old;
 					var nuEvent = SEQUENCE.addEvent(nu,'',(SEQUENCE.evt_curidx+1));
 					SEQUENCE.onEventClick(nuEvent);
-					console.log(nuEvent);
+					ts.debug(nuEvent);
 					SEQUENCE.alignHTML();
-					//console.log(zs4.json.textify(e));
+					//ts.debug(zs4.json.textify(e));
 				};
 				o.eSpan.appendChild(o.eBlockLyric);
 
@@ -970,7 +973,7 @@ ts.create = function(){
 
     SEQUENCE.refreshKey = function(){};
 		SEQUENCE.refresh = function(){
-			//console.log('refresh() toonsmith');
+			//ts.debug('refresh() toonsmith');
 			this.updateStats();
 			this.renderStats();
 
@@ -1141,7 +1144,7 @@ ts.create = function(){
 				zs4.admin.util.setIcon(nu.toolicon,icon);
 				if (tooltype=='i') nu.ts.instpopped.appendChild(nu.toolicon);
 				else nu.ts.toolspopped.appendChild(nu.toolicon);
-				//console.log('adding icon for '+icon);
+				//ts.debug('adding icon for '+icon);
 				nu.toolicon.onclick = function(){nu.use();SEQUENCE.adaptContentPane(); };
 			}
 
@@ -1458,11 +1461,11 @@ ts.create = function(){
 			}).bind(nu);
 
 			nu.instrumentRefresh = (function(){
-        //console.log('STRING INSTRUMENT REFRESH');
+        //ts.debug('STRING INSTRUMENT REFRESH');
 				for (var s = 0 ; s < nu.strings.length; s++){
 					var str = nu.strings[s];
 
-          //console.log('STRING '+s+' REFRESH');
+          //ts.debug('STRING '+s+' REFRESH');
 
 					var cnf = false;
 					var mnf = false;
@@ -1648,7 +1651,7 @@ ts.create = function(){
 				if (ts.player.is.running())running = true;
 
 				if (zs4.is.array(nu.instrument.ui)){
-          //console.log('REFRESHING PIANO running='+running);
+          //ts.debug('REFRESHING PIANO running='+running);
 
 					for (var i=0;i<nu.instrument.ui.length;i++){
 						var pad = nu.instrument.ui[i];
@@ -1659,7 +1662,7 @@ ts.create = function(){
 						var w = canvas.width;
 						var h = canvas.height;
 						var lw = w/5;
-						//console.log(w,h,pad);
+						//ts.debug(w,h,pad);
 
 						ctx.beginPath();
 						ctx.rect(0, 0, w, h);
@@ -1667,7 +1670,7 @@ ts.create = function(){
 			      ctx.fill();
 
 						if (pad.borderLeft){
-							//console.log('BORDERLEFT!!!');
+							//ts.debug('BORDERLEFT!!!');
 							ctx.beginPath();
 							ctx.lineWidth = lw;
 							ctx.moveTo(0,0);
@@ -1677,7 +1680,7 @@ ts.create = function(){
 						}
 
 						if (pad.borderRight){
-							//console.log('BORDERLEFT!!!');
+							//ts.debug('BORDERLEFT!!!');
 							ctx.beginPath();
 							ctx.lineWidth = lw;
 							ctx.moveTo(w-1,0);
@@ -1773,7 +1776,7 @@ ts.create = function(){
 				nu.eEventTranspose.appendChild(nu.eEventTransposeSelect);
 
 			nu.refresh = function(){
-				//console.log('transpose.refresh()');
+				//ts.debug('transpose.refresh()');
 				nu.eEventTransposeSelect.value = 0;
 				for (var i = 0; i < this.ts.evt.length; i++){
 					var e = this.ts.evt[i];
@@ -2300,7 +2303,7 @@ ts.create = function(){
         SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextLinefeed(SEQUENCE.evt_curidx)]);
       };
 
-      //console.log(space);
+      //ts.debug(space);
 
 
       TOOL.refresh = function(){
@@ -2517,7 +2520,7 @@ ts.player = new Object({
 			if (isChord)	{
 				pi.chord = e.chord;
 				pi.beatsSinceChord = 0;
-				//console.log('chord');
+				//ts.debug('chord');
 			}
 			if (e.melody >= ts.midi.constant.MIDI_NOTE_MIN && e.melody <= ts.midi.constant.MIDI_NOTE_MAX){
 				ts.playNote(0,e.melody,70,Math.round(beatMillies*9/10))
@@ -2525,12 +2528,12 @@ ts.player = new Object({
 			if (isBar) {
 				pi.currentBeat = 0;
 				pi.beatsSinceChord = 0;
-				//console.log('bar');
+				//ts.debug('bar');
 			}
 			else if (isBeat) {
 				pi.currentBeat += 1;
 				pi.beatsSinceChord += 1;
-				//console.log('beat '+(pi.currentBeat+1) );
+				//ts.debug('beat '+(pi.currentBeat+1) );
 			}
 
 			if (pi.chord && isBeat){
@@ -2943,8 +2946,8 @@ ts.midi = new Object({
 
 			try {
 
-				console.log('testing ts.midi.access');
-				console.log(ts.midi.access);
+				ts.debug('testing ts.midi.access');
+				ts.debug(ts.midi.access);
 				for (var entry in ts.midi.access.inputs) {
 					ts.midi.input.push(entry[1]);
 				}
