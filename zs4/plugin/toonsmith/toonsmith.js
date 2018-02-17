@@ -82,6 +82,13 @@ toonsmith.create = function(){
     SEQUENCE.runChordsAndLyrics(TOONSMITH.data._.value);
     SEQUENCE.updateStats();
 
+
+    function htmlSongInfo(){
+      var html = '';
+      
+      return html;
+    }
+
     // Generate Section functions
     function lyrics(){
       var html = '\n<!-- LYRICS -->\n<br>\n';

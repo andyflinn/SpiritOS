@@ -21,7 +21,7 @@ word.meaning = new Object({
     MEANING._.name = 'meaning';
 
     MEANING._.property(new zs4.type.name({name:'name',flags:'index unique authsetself',}));
-    MEANING._.property(new zs4.type.names({name:'context',flags:'authsetself quickupdate',}));
+    MEANING._.property(new zs4.type.names({name:'context',flags:'authsetself textsearch',}));
   }
 });
 
@@ -57,8 +57,8 @@ word.translation = new Object({
     TRANSLATION.zs4.head.typename._.default = 'translation';
     TRANSLATION._.name = 'translation';
 
-    TRANSLATION._.property(new zs4.type.name({name:'meaning',flags:'index authsetself quickupdate',}));
-    TRANSLATION._.property(new zs4.type.name({name:'lang',flags:'index authsetself quickupdate',}));
+    TRANSLATION._.property(new zs4.type.name({name:'meaning',flags:'index authsetself textsearch',}));
+    TRANSLATION._.property(new zs4.type.name({name:'lang',flags:'index authsetself textsearch',}));
     TRANSLATION._.property(new zs4.type.string({name:'translation',flags:'authsetself quickupdate',}));
   },
 });
