@@ -211,6 +211,25 @@ zs4.define = function(){
   zs4.THIS.zs4.type.config._.flags.value |= zs4.THIS.zs4.type.config._.flags.apiarg;
   zs4.THIS.zs4.type.config._.flags.set.authgetpublic(false);
 
+  var word = require('./word');
+  zs4.THIS.zs4.type._.property(new zs4.type.array({name:'meaning',template:new word.meaning.create(),}));
+  zs4.THIS.zs4.type.meaning._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.meaning._.flags.value |= zs4.THIS.zs4.type.meaning._.flags.apiarg;
+  zs4.THIS.zs4.type.meaning.method.new._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.meaning.method.new._.flags.set.authuser(false);
+  zs4.THIS.zs4.type.meaning.method.deleteone._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.meaning.method.deleteall._.flags.set.authgetpublic(false);
+
+  zs4.THIS.zs4.type._.property(new zs4.type.array({name:'lang',template:new word.lang.create(),}));
+  zs4.THIS.zs4.type.lang._.flags.value |= zs4.THIS.zs4.type.lang._.flags.apiarg;
+  zs4.THIS.zs4.type.lang.method.new._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.lang.method.new._.flags.set.authuser(false);
+  zs4.THIS.zs4.type.lang.method.deleteone._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.lang.method.deleteall._.flags.set.authgetpublic(false);
+
+  zs4.THIS.zs4.type._.property(new zs4.type.array({name:'translation',template:new word.translation.create(),}));
+  zs4.THIS.zs4.type.translation._.flags.value |= zs4.THIS.zs4.type.translation._.flags.apiarg;
+
   var user = require('./user');
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));
   zs4.THIS.zs4.type.user._.flags.value |= zs4.THIS.zs4.type.user._.flags.apiarg;

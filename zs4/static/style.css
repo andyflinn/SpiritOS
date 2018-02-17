@@ -268,6 +268,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-login:before{content:url(/gfx/icons/password.svg);}
 .icon-logo:before{content:url(/gfx/icons/zs4.svg);}
 .icon-male:before{content:'\02642';font-weight: bolder;}
+.icon-meaning:before{content:url(/gfx/icons/info.svg);}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-message:before{content:url(/gfx/icons/message.svg);}
 .icon-method:before{content:url(/gfx/icons/method.svg);}
@@ -330,6 +331,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-total:before{content:url(/gfx/icons/total.svg);}
 .icon-transform:before{content:url(/gfx/icons/transform.svg);}
 .icon-transitem:before{content:url(/gfx/icons/gears.svg);}
+.icon-translation:before{content:url(/gfx/icons/lang.svg);}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}

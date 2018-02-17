@@ -60,6 +60,10 @@ zs4.const = {
     MINLENGTH:1,
     MAXLENGTH:255,
   },
+  NAME:{
+    MINLENGTH:1,
+    MAXLENGTH:32,
+  },
   STRING:{
     MINLENGTH:0,
     MAXLENGTH:255,
@@ -3560,7 +3564,13 @@ zs4.type = {
   name:function(input){
     zs4.type.string.call(this,input);
     this._.typename = 'name';
-    this._.minlength = 1;
+    this._.minlength = zs4.const.NAME.MINLENGTH;
+    this._.maxlength = zs4.const.NAME.MAXLENGTH;
+  },
+  names:function(input){
+    zs4.type.string.call(this,input);
+    this._.typename = 'names';
+    this._.minlength = 0;
     this._.maxlength = zs4.const.STRING.MAXLENGTH;
   },
   number:function(input){

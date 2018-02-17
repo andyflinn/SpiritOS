@@ -2415,7 +2415,7 @@ zs4.admin.util = {
 										return a.scope.zs4.head.created._.value - b.scope.zs4.head.created._.value;
 									},});
 
-								if (zs4.is.string(zs4.THIS._.scopath) && o._.path==zs4.THIS._.scopath){
+								if (zs4.is.string(zs4.THIS._.scopath)){// && o._.path==zs4.THIS._.scopath){
 									top.app.new = document.createElement('zs4-app-new-item');
 									top.app.new.textContent = 'new';
 									zs4.admin.util.addClass(top.app.new,'nodisplay');
@@ -2883,7 +2883,8 @@ zs4.admin.util = {
 
 				o._.html.amppage = zs4.admin.util.addIconElement(o._.html.dialogHeader,'amppage');
 				o._.html.amppage.onclick = function(){
-					zs4.navigate(o._.path + '.amp');
+					if (o._.path=='') zs4.navigate('/amp');
+					else zs4.navigate(o._.path + '.amp');
 				}
 
 				o._.html.appInfo = document.createElement('zs4-app-info');
@@ -3128,6 +3129,9 @@ zs4.admin.type = {
 		zs4.admin.type.enum(po,o);
 	},
 	name:function(po,o){
+		zs4.admin.type.string(po,o);
+	},
+	names:function(po,o){
 		zs4.admin.type.string(po,o);
 	},
 	number:function(po,o){
