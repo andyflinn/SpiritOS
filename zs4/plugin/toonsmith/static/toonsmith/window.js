@@ -810,8 +810,11 @@ ts.create = function(){
 		SEQUENCE.runChordsAndLyrics = function(data){
 			SEQUENCE.data = data;
 			if (SEQUENCE.data == null || SEQUENCE.data.length < 1){
-				this.toolobject.script.use();
-				return SEQUENCE.cnt;
+        if (ts.is.window()){
+          this.toolobject.script.use();
+  				return SEQUENCE.cnt;
+        }
+        return '';
 			}
 
 			//var process='p';

@@ -5393,15 +5393,4 @@ if (zs4.is.window()){
   document.head.appendChild(zs4.style.element);
   zs4.style.refresh();
 
-  /*
-  window.onresize = function(){
-    //zs4.style.refresh();
-    for (var i = 0 ; i < zs4.window.onresize.length ; i++){
-      if (zs4.is.function(zs4.window.onresize[i])){
-        //zs4.debug('...WINDOW.ONRESIZE....')
-        zs4.window.onresize[i]();
-      }
-    }
-  };
-  */
 }

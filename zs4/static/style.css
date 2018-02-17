@@ -213,6 +213,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-add:before{content:"+";font-weight: bolder;}
 .icon-amppage:before{content:url(/gfx/icons/amppage.svg);}
 .icon-android:before{content:url(/gfx/icons/android.svg);}
+.icon-app:before{content:url(/gfx/icons/app.svg);}
 .icon-apple:before{content:url(/gfx/icons/apple.svg);}
 .icon-array:before{content:'\02630';font-weight: bolder;}
 .icon-ascend:before{content:'\0219F';font-weight: bolder;}

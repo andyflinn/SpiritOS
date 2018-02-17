@@ -160,6 +160,8 @@ zs4.define = function(){
   zs4.node.require.fs = fs;
   zs4.node.require.fs.schema(zs4.THIS.zs4);
 
+  zs4.THIS.zs4._.property(new zs4.type.object({name:'app',flags:'authgetpublic',}));
+
   zs4.node.require.um = require('./static/um');
 
   zs4.node.require.node = require('./node');

@@ -3,6 +3,7 @@ var xpress = require('express');
 var ts = require('./static/toonsmith/window');
 var debug = require('debug')('zs4toonsmith');
 
+const APPNAME = 'toonsmith';
 debug('toonsmith loading...');
 
 var toonsmith;
@@ -181,6 +182,16 @@ toonsmith.create = function(){
   }).bind(TOONSMITH);
 }
 
+// install application
+var app = new toonsmith.create();
+zs4.THIS.zs4.app._.property(app);
+app.zs4.head.title._.value = APPNAME;
+app.zs4.head.author._.value = 'Andy Flinn';
+app.zs4.head.description._.value = 'a tool to create song charts';
+app.zs4.head.bits._.bits.public.true();
+app._.flags.set.authgetpublic(true);
+
+// install database
 zs4.THIS.zs4.type._.property(new zs4.type.array({name:'toonsmith',template:new toonsmith.create(),}));
 zs4.THIS.zs4.type.toonsmith._.flags.value |= zs4.THIS.zs4.type.toonsmith._.flags.apiarg;
 zs4.THIS.zs4.type.toonsmith.method.new._.flags.set.authuser();
