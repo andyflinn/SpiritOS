@@ -74,48 +74,69 @@ ts.create = function(){
         this.countNotes = 0;
 			},
 			countEvent:function(e){
+        var STATS = this;
 				e.duration = 0;
-				if (e.bar != null) {
-					this.countBars++;
-					this.currentBar = e;
-					this.currentBeat = e;
-					this.currentBar.bar.beats = [e];
-					this.currentBar.bar.events = [e];
+				if (e.isBar()) {
+					STATS.countBars++;
+					STATS.currentBar = e;
+					STATS.currentBeat = e;
+					STATS.currentBar.bar.beats = [e];
+          STATS.currentBar.bar.events = [e];
+          STATS.currentBar.bar.chords = [];
+          STATS.currentBar.bar.melodies = [];
 
-					this.countBeats++;
-					this.currentBeat.beat = {
+					STATS.countBeats++;
+					STATS.currentBeat.beat = {
 						events:[e],
+            chords:[],
+            melodies:[],
 					};
 				}
-				else if (e.beat!=null){
-					this.countBeats++;
-					this.currentBeat = e;
+				else if (e.isBeat()){
+					STATS.countBeats++;
+					STATS.currentBeat = e;
 
-					this.currentBeat.beat = {
+					STATS.currentBeat.beat = {
 						events:[e],
+            chords:[],
+            melodies:[],
 					};
 
-					if (this.currentBar != null){
-						this.currentBar.bar.beats.push(e);
-						this.currentBar.bar.events.push(e);
+					if (STATS.currentBar != null){
+						STATS.currentBar.bar.beats.push(e);
+						STATS.currentBar.bar.events.push(e);
 					}
 				}
 				else {
-					if (this.currentBar != null){
-						this.currentBar.bar.events.push(e);
+					if (STATS.currentBar != null){
+						STATS.currentBar.bar.events.push(e);
 					}
 
-					if (this.currentBeat != null){
-						this.currentBeat.beat.events.push(e);
+					if (STATS.currentBeat != null){
+						STATS.currentBeat.beat.events.push(e);
 					}
 				}
 
 				if (e.chord != null && e.chord.ok){
-					this.countChords++;
+					STATS.countChords++;
+          if (STATS.currentBar != null){
+						STATS.currentBar.bar.chords.push(e);
+					}
+
+					if (STATS.currentBeat != null){
+						STATS.currentBeat.beat.chords.push(e);
+					}
 				}
 
 				if (e.melody != 0){
 					this.countNotes++;
+          if (STATS.currentBar != null){
+						STATS.currentBar.bar.melodies.push(e);
+					}
+
+					if (STATS.currentBeat != null){
+						STATS.currentBeat.beat.melodies.push(e);
+					}
 				}
 
         if (e.space) this.countSpace++;
@@ -2516,7 +2537,7 @@ ts.player = new Object({
     ATTACKRELEASE:20,
 		timeout:100,
     barTicks:0,
-		playEvent:function(e){
+		playMelody:function(e){
 			var pi = ts.player.internal;
 			var SEQUENCE = ts.player.ts;
 
@@ -2524,7 +2545,7 @@ ts.player = new Object({
 
         var duration = SEQUENCE.beatMillies/6;
         if (duration>SEQUENCE.beatMillies)duration=SEQUENCE.beatMillies;
-        ts.debug('melEv.duration: '+duration);
+        //ts.debug('melEv.duration: '+duration);
         var AR = 20;
         if (duration < (pi.ATTACKRELEASE*2)) AR = duration/2;
         ts.audio.master.melody.noteAtTime(e.melody);
@@ -2628,7 +2649,7 @@ ts.player = new Object({
   				//ts.debug('beat '+(pi.currentBeat+1) );
   			}
 
-				pi.playEvent(ce);
+				pi.playMelody(ce);
 
 				SEQUENCE.showEventAsCurrent(ce)
 			}
