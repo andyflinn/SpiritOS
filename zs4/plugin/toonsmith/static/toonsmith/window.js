@@ -357,34 +357,45 @@ ts.create = function(){
 			SEQUENCE.updateStats();
 			var seq = SEQUENCE;
 			SEQUENCE.barTotalMillies = Math.round(SEQUENCE.bpb * (60000/SEQUENCE.bpm));
-			SEQUENCE.beatMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.bpb);
+      SEQUENCE.beatMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.bpb);
+      SEQUENCE.barTicks = Math.round(SEQUENCE.bpb*SEQUENCE.tpb);
+      SEQUENCE.tickMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.barTicks);
+      while ((SEQUENCE.tickMillies*SEQUENCE.barTicks)<SEQUENCE.barTotalMillies)SEQUENCE.tickMillies += 1;
+
+      ts.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
+      ts.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
+      ts.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
+      ts.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
+
 			var title = '';
 
 			function processBeat(beat,no,length){
+
 				var tit = 'beat:'+ (no+1) +' length:'+length;
-				if (seq.evt[beat].bar==null && seq.evt[beat].beat!=null){
-					if (ts.is.window())seq.evt[beat].eBlockChart.title = tit;
+				if (SEQUENCE.evt[beat].bar==null && SEQUENCE.evt[beat].beat!=null){
+					if (ts.is.window())SEQUENCE.evt[beat].eBlockChart.title = tit;
 				}
-				seq.evt[beat].duration = length;
+				SEQUENCE.evt[beat].duration = length;
 
 				//if (seq.evt[beat].beat==null)ts.debug('beat with no beat');
 				// count beat events
 				var eCount = 0;
-				for (var c = beat ; c < (beat+seq.evt.length); c++){
-					var ci = (c+seq.evt.length)%seq.evt.length;
+				for (var c = beat ; c < (beat+SEQUENCE.evt.length); c++){
+					var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
 
-					if (seq.evt[ci].beat || seq.evt[ci].melody != 0) eCount++;
+					if (SEQUENCE.evt[ci].hasMusic()) eCount++;
 
 					// loop control
-					ci = (ci+1+seq.evt.length)%seq.evt.length;
-					if (seq.evt[ci].beat) break;
+					ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
+					if (SEQUENCE.evt[ci].beat) break;
 				}
 
 				if (eCount > 1){
 					var eDur = Math.round(length/eCount);
 					for (var c = beat ; c < (beat+seq.evt.length) && eCount>0; c++){
 						var ci = (c+seq.evt.length)%seq.evt.length;
-						if (seq.evt[ci].beat || seq.evt[ci].melody != 0) {
+						if (seq.evt[ci].hasMusic()) {
+
 							eCount--
 							if (eCount==0){
 								seq.evt[ci].duration = length;
@@ -435,13 +446,12 @@ ts.create = function(){
                 +' notes:'+countObject.notes
 								+' chords:'+countObject.chords;
 
-
 					if (countObject.beats == this.bpb){
 						beatNo = 0;
 						for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
 							var ci = (c+this.evt.length)%this.evt.length;
-							if (zs4.is.object(this.evt[ci].bar)&&ci!=cur_bar)break;
-							if (zs4.is.object(this.evt[ci].beat)){
+							if (this.evt[ci].isBar()&&ci!=cur_bar)break;
+							if (this.evt[ci].isBeat()) {
 								if (beatNo==0) {title += ' length:'+SEQUENCE.beatMillies;}
 								processBeat(ci,beatNo,SEQUENCE.beatMillies);
 								beatNo += 1;
@@ -460,8 +470,8 @@ ts.create = function(){
 						var timePerBeat = SEQUENCE.barTotalMillies/couBeats;
 						for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
 							var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-							if (zs4.is.object(SEQUENCE.evt[ci].bar)&&ci!=cur_bar)break;
-							if (zs4.is.object(SEQUENCE.evt[ci].beat)){
+							if (SEQUENCE.evt[ci].isBar()&&ci!=cur_bar)break;
+							if (SEQUENCE.evt[ci].isBeat()){
 								var target = (beatNo+1) * timePerBeat;
 
 								var bpbThis = 0;
@@ -566,11 +576,7 @@ ts.create = function(){
 
       var EVENT = o;
 
-			if (ts.is.window()) {
-			}
-
-
-      // MUSICAL info
+	      // MUSICAL info
       ///////////////////////////////////
 			while (true){
 				if (info.substr(0,1)=='|'){
@@ -2505,36 +2511,30 @@ ts.player = new Object({
 			},
 		},
 		initialTime:0,
-		//time:0,
-		timeout:2000,
+    osc:{
+    },
+    ATTACKRELEASE:20,
+		timeout:100,
+    barTicks:0,
 		playEvent:function(e){
 			var pi = ts.player.internal;
 			var SEQUENCE = ts.player.ts;
 
-			var isChord = zs4.is.object(e.chord);
-			var isBar = zs4.is.object(e.bar);
-			var isBeat = zs4.is.object(e.beat);
-
-			if (isChord)	{
-				pi.chord = e.chord;
-				pi.beatsSinceChord = 0;
-				//ts.debug('chord');
-			}
 			if (e.melody >= ts.midi.constant.MIDI_NOTE_MIN && e.melody <= ts.midi.constant.MIDI_NOTE_MAX){
-				ts.playNote(0,e.melody,70,Math.round(SEQUENCE.beatMillies*9/10))
-			}
-			if (isBar) {
-				pi.currentBeat = 0;
-				pi.beatsSinceChord = 0;
-				//ts.debug('bar');
-			}
-			else if (isBeat) {
-				pi.currentBeat += 1;
-				pi.beatsSinceChord += 1;
-				//ts.debug('beat '+(pi.currentBeat+1) );
+
+        var duration = SEQUENCE.beatMillies/6;
+        if (duration>SEQUENCE.beatMillies)duration=SEQUENCE.beatMillies;
+        ts.debug('melEv.duration: '+duration);
+        var AR = 20;
+        if (duration < (pi.ATTACKRELEASE*2)) AR = duration/2;
+        ts.audio.master.melody.noteAtTime(e.melody);
+        ts.audio.master.melody.fadeToBy(1,AR);
+        setTimeout(function(){ts.audio.master.melody.fadeToBy(0,duration-AR);},AR);
+
+				//ts.playNote(0,e.melody,70,Math.round(SEQUENCE.beatMillies*9/10))
 			}
 
-			if (pi.chord && isBeat){
+			if (false && pi.chord && e.isBeat()){
 				var type = ts.music.CHORD.TYPE[pi.chord.t];
 
 				var note = pi.chord.v + 36;
@@ -2554,6 +2554,12 @@ ts.player = new Object({
 		},
 		eventLoop:function(){
 			var pi = ts.player.internal;
+      var CHANNEL = ts.audio.master;
+      // initialize oscillators
+      if (pi.osc.mel == null){
+        pi.osc.mel = new CHANNEL.oscillator({name:'melody',});
+      }
+
 			pi.time = (new Date).getTime();
 			var SEQUENCE = ts.player.ts;
 
@@ -2562,6 +2568,7 @@ ts.player = new Object({
 
 				if (pi.bar.active.startTime==0){
 					pi.bar.active.startTime = pi.time;
+          pi.barTicks = 0;
 				}else{
 					pi.bar.active.startTime = pi.bar.active.nextEventTime;
 				}
@@ -2571,14 +2578,25 @@ ts.player = new Object({
 				// LOOP ENDING!!!! PUT STUFF BEFORE!!!!
 				// look-ahead! if a bar is upcoming.
 				var nextIdx = SEQUENCE.searchNextEvent();
-				if (pi.bar.active.nextEventTime > (pi.time))
-					pi.timeout = (pi.bar.active.nextEventTime - (pi.time));
-				else pi.timeout = 0;
+				if (pi.bar.active.nextEventTime > (pi.time)){
+          if (SEQUENCE.evt[nextIdx].isBar()){
+            pi.timeout = (pi.bar.active.nextEventTime - (pi.time));
+          }
+          else {
+            var want = (pi.bar.active.nextEventTime - (pi.time));
+            pi.timeout = (want + (SEQUENCE.tickMillies-1))%SEQUENCE.tickMillies;
+          }
+        }
+				else {
+          pi.timeout = 0;
+        }
+
+        var e = SEQUENCE.evt[nextIdx];
 
 				if (SEQUENCE.current_tool) SEQUENCE.current_tool.refresh();
 				if (SEQUENCE.current_inst) SEQUENCE.current_inst.refresh();
 
-				if (SEQUENCE.evt[nextIdx].bar && pi.bar.jump){
+				if (e.bar && pi.bar.jump){
 
 					if (ts != pi.bar.jumpTs){
 						ts.player.attach(pi.bar.jumpTs);
@@ -2588,12 +2606,30 @@ ts.player = new Object({
 					pi.bar.jumpEventEle.className = '';
 					SEQUENCE.setCurrentEvent(SEQUENCE.evt[pi.bar.jumpEvent]);
 					pi.bar.jump = false;
-
-				}else{
+				}
+        else{
 					SEQUENCE.setNextEvent();
 				}
+        //ce = SEQUENCE.evt_current;
+
+        //update running harmonic and rhythmic state
+        if (ce.isChord())	{
+  				pi.chord = ce.chord;
+  				pi.beatsSinceChord = 0;
+  			}
+        if (ce.isBar()) {
+  				pi.currentBeat = 0;
+  				pi.beatsSinceChord = 0;
+  				//ts.debug('bar');
+  			}
+  			else if (ce.isBeat()) {
+  				pi.currentBeat += 1;
+  				pi.beatsSinceChord += 1;
+  				//ts.debug('beat '+(pi.currentBeat+1) );
+  			}
 
 				pi.playEvent(ce);
+
 				SEQUENCE.showEventAsCurrent(ce)
 			}
 			else if (ts.player.internal.bar.jump && ts.player.internal.bar.jumpTs != null ){
@@ -2603,7 +2639,12 @@ ts.player = new Object({
 				ts.player.internal.bar.jump = false;
 			}
 
-			setTimeout(pi.eventLoop,pi.timeout);
+      if (ts.player.ts != null){
+        setTimeout(pi.eventLoop,pi.timeout);
+      }
+			else {
+        setTimeout(pi.eventLoop,100);
+      }
 		},
 
 	},
@@ -2617,7 +2658,6 @@ ts.player = new Object({
 
 		ts.player.internal.initialTime = (new Date).getTime();
 		setTimeout(ts.player.internal.eventLoop,ts.player.internal.timeout);
-
 	},
 	is:{
 		running:function(){
@@ -2661,13 +2701,9 @@ ts.player = new Object({
 	onLogoClick:function(clickTs){
 		if (clickTs == ts.player.ts){
 			if (clickTs.player == ts.player.html){
-				//alert("active ts object, player active.");
 				ts.player.detach();
-				// detach player
 			} else {
-				//alert("active ts object, player idle.");
 				ts.player.attach(clickTs);
-				// attach player
 			}
 		} else {
 			if (clickTs.player == ts.player.html){
@@ -2998,11 +3034,47 @@ ts.midi = new Object({
 ts.audio = new Object({
 	context:null,
 	create:{
-		voice:function(name){
-
+		node:function(obj){
+      const AUDIO = ts.audio;
+      const CTX = AUDIO.context;
+      const NODE = this;
+      if (obj==null){
+        NODE.name = 'master';
+        NODE.object = CTX;
+        NODE.volume = CTX.createGain();
+        NODE.volume.connect(CTX.destination);
+        NODE.volume.gain.value = 0.4;
+        NODE.destination = NODE.volume;
+        AUDIO.master = NODE;
+      }
+      NODE.oscillator = function(obj){
+        const OSC = this;
+        OSC.name = obj.name;
+        OSC.object = CTX.createOscillator();
+        OSC.noteAtTime = function(note,t){
+          if(t==null)t=CTX.currentTime;
+          else t=CTX.currentTime+(t/1000);
+          OSC.object.frequency.setValueAtTime(
+            (440 * Math.pow(2.0,((note-ts.midi.constant.A4_NOTE)/12.0))),
+          t);
+        };
+        OSC.volume = CTX.createGain();
+        OSC.volume.connect(NODE.destination);
+        OSC.volume.gain.setValueAtTime(1.0,CTX.currentTime);
+        OSC.adsr = CTX.createGain();
+        OSC.adsr.gain.value = 0;
+        OSC.adsr.connect(OSC.volume);
+        OSC.adsr.gain.setValueAtTime(0.0,CTX.currentTime);
+        OSC.fadeToBy = function(g,t){
+          if(t==null)t=CTX.currentTime;
+          else t=CTX.currentTime+(t/1000);
+          OSC.adsr.gain.linearRampToValueAtTime(g,(t));};
+        OSC.object.connect(OSC.adsr);
+        AUDIO.master[OSC.name] = OSC;
+        OSC.object.start();
+      }
 		},
 	},
-	ctxType:'AudioContext',
 	initialized:false,
 	initialize:function(){
 		if (ts.audio.initialized)
@@ -3012,11 +3084,12 @@ ts.audio = new Object({
 			ts.audio.context = new window.AudioContext();
 		} else if (typeof window.webkitAudioContext === "function"){
 			ts.audio.context = new window.webkitAudioContext();
-			ctxType='webkitAudioContext';
 		}
 
 		if (ts.audio.context == null)
 			return false;
+
+    ts.audio.create.node(null);
 
 		ts.audio.initialized = true;
 		return true;
@@ -3042,7 +3115,7 @@ ts.audio = new Object({
 			g.gain.setValueAtTime((volume / 127),now);
 
 			o.connect(g);
-			g.connect(ts.audio.context.destination);
+			g.connect(ts.audio.master.destination);
 
 
 			o.start(0);
