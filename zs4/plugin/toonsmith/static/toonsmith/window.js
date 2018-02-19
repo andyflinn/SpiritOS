@@ -380,10 +380,12 @@ ts.create = function(){
 		};
 		SEQUENCE.updateStats = function(){
 			SEQUENCE.stats.start();
+      var bar = SEQUENCE.searchNextBar(SEQUENCE.evt.length-1);
 			for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ ){
-				SEQUENCE.evt[i].duration = 0;
-				SEQUENCE.evt[i].refresh();
-				SEQUENCE.stats.countEvent(SEQUENCE.evt[i]);
+        var idx = (i+bar)%SEQUENCE.evt.length;
+				SEQUENCE.evt[idx].duration = 0;
+				SEQUENCE.evt[idx].refresh();
+				SEQUENCE.stats.countEvent(SEQUENCE.evt[idx]);
 			}
 			SEQUENCE.stats.end();
 
@@ -2728,6 +2730,9 @@ ts.player = new Object({
       var SEQUENCE = ts.player.ts;
 
       pi.playBass(e);
+
+      var a = e.playArray;
+      var chord = pi.chord;
 
 			if (false && pi.chord && e.isBeat()){
 				var type = ts.music.CHORD.TYPE[pi.chord.t];
