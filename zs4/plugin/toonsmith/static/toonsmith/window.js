@@ -76,6 +76,7 @@ ts.create = function(){
 			countEvent:function(e){
         var STATS = this;
 				e.duration = 0;
+        var music_done = false;
 				if (e.isBar()) {
 					STATS.countBars++;
 					STATS.currentBar = e;
@@ -84,13 +85,16 @@ ts.create = function(){
           STATS.currentBar.bar.events = [e];
           STATS.currentBar.bar.chords = [];
           STATS.currentBar.bar.melodies = [];
+          STATS.currentBar.bar.music = [e];
 
 					STATS.countBeats++;
 					STATS.currentBeat.beat = {
 						events:[e],
             chords:[],
             melodies:[],
+            music:[e],
 					};
+          music_done=true;
 				}
 				else if (e.isBeat()){
 					STATS.countBeats++;
@@ -100,12 +104,15 @@ ts.create = function(){
 						events:[e],
             chords:[],
             melodies:[],
+            music:[e],
 					};
 
 					if (STATS.currentBar != null){
 						STATS.currentBar.bar.beats.push(e);
-						STATS.currentBar.bar.events.push(e);
+            STATS.currentBar.bar.events.push(e);
+            STATS.currentBar.bar.music.push(e);
 					}
+          music_done=true;
 				}
 				else {
 					if (STATS.currentBar != null){
@@ -120,23 +127,29 @@ ts.create = function(){
 				if (e.chord != null && e.chord.ok){
 					STATS.countChords++;
           if (STATS.currentBar != null){
-						STATS.currentBar.bar.chords.push(e);
+            STATS.currentBar.bar.chords.push(e);
+            if (!music_done)STATS.currentBar.bar.music.push(e);
 					}
 
 					if (STATS.currentBeat != null){
-						STATS.currentBeat.beat.chords.push(e);
+            STATS.currentBeat.beat.chords.push(e);
+            if (!music_done)STATS.currentBeat.beat.music.push(e);
 					}
+          music_done=true;
 				}
 
 				if (e.melody != 0){
 					this.countNotes++;
           if (STATS.currentBar != null){
-						STATS.currentBar.bar.melodies.push(e);
+            STATS.currentBar.bar.melodies.push(e);
+            if (!music_done)STATS.currentBar.bar.music.push(e);
 					}
 
 					if (STATS.currentBeat != null){
-						STATS.currentBeat.beat.melodies.push(e);
+            STATS.currentBeat.beat.melodies.push(e);
+            if (!music_done)STATS.currentBeat.beat.music.push(e);
 					}
+          music_done=true;
 				}
 
         if (e.space) this.countSpace++;
@@ -373,6 +386,33 @@ ts.create = function(){
 				SEQUENCE.stats.countEvent(SEQUENCE.evt[i]);
 			}
 			SEQUENCE.stats.end();
+
+      if (SEQUENCE.evt.length > 0){
+
+        var bar = null, beat = null, chord = null, melody = null, text = null;
+        for ( var idx = 0 ; idx <= (SEQUENCE.evt.length+1); idx++){
+          var i = idx % SEQUENCE.evt.length;
+          var e = SEQUENCE.evt[i];
+          if (e.isBar()){if (bar!=null) e.prevBar = bar; bar = e; }
+          if (e.isBeat()){if (beat!=null) e.prevBeat = beat; beat = e; }
+          if (e.isChord()){if (chord!=null) e.prevChord = chord; chord = e; }
+          if (e.isMelody()){if (melody!=null) e.prevMelody = melody; melody = e; }
+          if (e.isLyric()||e.isSpace()){if (text!=null) e.prevText = text; text = e; }
+        }
+
+        bar = null; beat = null; chord = null; melody = null; text = null;
+        for ( var idx = SEQUENCE.evt.length ; idx >= 0; idx--){
+          var i = idx % SEQUENCE.evt.length;
+          var e = SEQUENCE.evt[i];
+          if (e.isBar()){if (bar!=null) e.nextBar = bar; bar = e; }
+          if (e.isBeat()){if (beat!=null) e.nextBeat = beat; beat = e; }
+          if (e.isChord()){if (chord!=null) e.nextChord = chord; chord = e; }
+          if (e.isMelody()){if (melody!=null) e.nextMelody = melody; melody = e; }
+          if (e.isLyric()||e.isSpace()){if (text!=null) e.nextText = text; text = e; }
+        }
+
+      }
+
 		};
 		SEQUENCE.recomputeTiming = function(){
 			SEQUENCE.updateStats();
@@ -523,6 +563,89 @@ ts.create = function(){
 				}
 			}
 		};
+    SEQUENCE.recomputeBar = function(e){
+      var tix = SEQUENCE.barTicks;
+
+      e.playArray = new Array();
+
+      // create a tick-grid
+      var starttime = 0;
+      var available_bar = SEQUENCE.barTotalMillies;
+      for (var b = 0; b < SEQUENCE.bpb; b++){
+        var available_beat = SEQUENCE.beatMillies;
+        if (b == (SEQUENCE.bpb-1)) available_beat = available_bar;
+        available_bar -= available_beat;
+
+        for (var t = 0; t < SEQUENCE.tpb; t++){
+          var available_tick = SEQUENCE.tickMillies;
+          if (t == (SEQUENCE.tpb-1))available_tick = available_beat;
+          available_beat -= available_tick;
+
+          e.playArray.push(new Object({
+            starttime:starttime,
+            ticktime:available_tick,
+          }));
+          starttime += available_tick;
+        }
+
+      }
+      ts.debug('total duration: '+starttime)
+
+      // spread out the beats;
+      var bcount = e.bar.beats.length;
+      var tix_available = tix;
+      var tpos = 0;
+      var tpb = Math.round(tix/bcount);
+      for (var b = 0; b < bcount; b++){
+        var beat = e.bar.beats[b];
+        var bstart = tpos;
+        var blength = tpb
+        if (b==(bcount-1))blength=tix_available;
+        tpos += blength;
+        tix_available -= blength;
+
+        // count music events
+        var a = new Array();
+        for (var m = 0; m < beat.beat.events.length; m++){
+          if (beat.beat.events[m].hasMusic())a.push(beat.beat.events[m])
+        }
+        ts.debug('bstart='+bstart+' blength='+blength+' musicEvents='+a.length);
+
+        var m_pos = bstart;
+        var m_available = blength;
+        var tpe_float = blength/a.length;
+        for (var m = 0; m < a.length;m++){
+          var start = Math.round((m*tpe_float)+bstart);
+          ts.debug('musicEvent '+m+' starts on tick '+start);
+          if (a[m].isChord())e.playArray[start].chord = (a[m]);
+          if (a[m].isMelody())e.playArray[start].melody = (a[m]);
+        }
+
+      }
+
+      e.arrayMelody = new Array();
+      for (var i = 0 ; i < tix; i++) {
+        if (e.playArray[i].melody!=null){
+          e.arrayMelody.push(new Object({
+            starttime:e.playArray[i].starttime,
+            ticktime:e.playArray[i].ticktime,
+            event:e.playArray[i].melody,
+          }));
+        }
+      }
+
+      var melpos = 0;
+      for (var i = 0 ; i < e.arrayMelody.length; i++) {
+        if (i == (e.arrayMelody.length-1)){
+          e.arrayMelody[i].ticktime = SEQUENCE.barTotalMillies-e.arrayMelody[i].starttime;
+        }
+        else {
+          e.arrayMelody[i].ticktime = e.arrayMelody[i+1].starttime-e.arrayMelody[i].starttime;
+        }
+      }
+
+      ts.debug(e);
+    };
 
 		SEQUENCE.addEvent = function(str,info,afterIndex){
 			var SEQUENCE = this;
@@ -1827,8 +1950,8 @@ ts.create = function(){
 				nu.eEventBpmInput = ts.html.nu.ele('input');
 				nu.eEventBpmInput.type = 'number';
 				nu.eEventBpmInput.value = this.bpm;
-				nu.eEventBpmInput.min = 12;
-				nu.eEventBpmInput.max = 480;
+				nu.eEventBpmInput.min = ts.music.MIN_BEATS_PER_MINUTE;
+				nu.eEventBpmInput.max = ts.music.MAX_BEATS_PER_MINUTE;
 				nu.eEventBpm.appendChild(nu.eEventBpmInput);
 				nu.eEventBpmInput.ts = nu;
 				nu.eEventBpmInput.onchange = function(){this.ts.ts.bpm = parseInt(this.value); this.ts.ts.refresh();};
@@ -1842,7 +1965,7 @@ ts.create = function(){
 				nu.eEventBpcInput = ts.html.nu.ele('input');
 				nu.eEventBpcInput.type = 'number';
 				nu.eEventBpcInput.value = this.bpb;
-				nu.eEventBpcInput.min = 1;
+				nu.eEventBpcInput.min = ts.music.MIN_BEATS_PER_BAR;
 				nu.eEventBpcInput.max = ts.music.MAX_BEATS_PER_BAR;
 				nu.eEventBpc.appendChild(nu.eEventBpcInput);
 				nu.eEventBpcInput.ts = nu;
@@ -1859,8 +1982,8 @@ ts.create = function(){
 				nu.eEventTpbInput = ts.html.nu.ele('input');
 				nu.eEventTpbInput.type = 'number';
 				nu.eEventTpbInput.value = SEQUENCE.tpb;
-				nu.eEventTpbInput.min = 1;
-				nu.eEventTpbInput.max = 11;
+				nu.eEventTpbInput.min = ts.music.MIN_TICKS_PER_BEAT;
+				nu.eEventTpbInput.max = ts.music.MAX_TICKS_PER_BEAT;
 				nu.eEventTpb.appendChild(nu.eEventTpbInput);
 				nu.eEventTpbInput.ts = nu;
 				nu.eEventTpbInput.onchange = function(){SEQUENCE.tpb = parseInt(this.value); this.ts.ts.refresh();};
@@ -2537,23 +2660,27 @@ ts.player = new Object({
     ATTACKRELEASE:20,
 		timeout:100,
     barTicks:0,
+    barTicks:0,
 		playMelody:function(e){
-			var pi = ts.player.internal;
-			var SEQUENCE = ts.player.ts;
+      if (e.bar.melodies.length==0)return;
+      ts.debug('PLAYING MELODY',e);
+      var pi = ts.player.internal;
+      var CHANNEL = ts.audio.master;
+      var SEQUENCE = ts.player.ts;
 
-			if (e.melody >= ts.midi.constant.MIDI_NOTE_MIN && e.melody <= ts.midi.constant.MIDI_NOTE_MAX){
+      var available = SEQUENCE.barTotalMillies;
+      var a = e.arrayMelody;
+      console.log(a);
 
-        var duration = SEQUENCE.beatMillies/6;
-        if (duration>SEQUENCE.beatMillies)duration=SEQUENCE.beatMillies;
-        //ts.debug('melEv.duration: '+duration);
-        var AR = 20;
-        if (duration < (pi.ATTACKRELEASE*2)) AR = duration/2;
-        ts.audio.master.melody.noteAtTime(e.melody);
-        ts.audio.master.melody.fadeToBy(1,AR);
-        setTimeout(function(){ts.audio.master.melody.fadeToBy(0,duration-AR);},AR);
+      for (var i = 0 ; i < a.length ;i++){
+        var AR = pi.ATTACKRELEASE;
+        var NOTE = a[i];
+        if (a[i].ticktime < (AR*2)) AR = a[i].ticktime/2;
+        ts.audio.master.melody.noteAtTime(a[i].event.melody,a[i].starttime);
+        ts.audio.master.melody.fadeToBy(1,a[i].starttime+AR);
+        ts.audio.master.melody.fadeToBy(0,a[i].starttime+a[i].ticktime);
 
-				//ts.playNote(0,e.melody,70,Math.round(SEQUENCE.beatMillies*9/10))
-			}
+      }
 
 			if (false && pi.chord && e.isBeat()){
 				var type = ts.music.CHORD.TYPE[pi.chord.t];
@@ -2573,12 +2700,28 @@ ts.player = new Object({
 			}
 
 		},
+    playBar:function(bar){
+      ts.debug('PLAYING BAR',bar);
+      var pi = ts.player.internal;
+      var CHANNEL = ts.audio.master;
+      var SEQUENCE = ts.player.ts;
+
+      SEQUENCE.recomputeBar(bar);
+
+      pi.playMelody(bar);
+    },
 		eventLoop:function(){
 			var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       // initialize oscillators
       if (pi.osc.mel == null){
         pi.osc.mel = new CHANNEL.oscillator({name:'melody',});
+        pi.osc.chord = new Object({
+          bass:new CHANNEL.oscillator({name:'bass',}),
+          tenor:new CHANNEL.oscillator({name:'tenor',}),
+          alto:new CHANNEL.oscillator({name:'alto',}),
+          soprano:new CHANNEL.oscillator({name:'bass',}),
+        });
       }
 
 			pi.time = (new Date).getTime();
@@ -2590,6 +2733,9 @@ ts.player = new Object({
 				if (pi.bar.active.startTime==0){
 					pi.bar.active.startTime = pi.time;
           pi.barTicks = 0;
+          for (var n in pi.pos){
+            pi.pos[n].prev = pi.pos[n].curr = pi.pos[n].next = null;
+          }
 				}else{
 					pi.bar.active.startTime = pi.bar.active.nextEventTime;
 				}
@@ -2649,7 +2795,10 @@ ts.player = new Object({
   				//ts.debug('beat '+(pi.currentBeat+1) );
   			}
 
-				pi.playMelody(ce);
+        if (ce.isBar()){
+          pi.playBar(ce);
+        }
+				//pi.playMelody(ce);
 
 				SEQUENCE.showEventAsCurrent(ce)
 			}
