@@ -2631,6 +2631,31 @@ ts.music = new Object({
 		{n:'B',s:'B',v:11},
 	],
 	CHORD:{
+    toString:function(chord){
+      var s = ts.music.NOTES[chord.v].n+ts.music.CHORD.TYPE[chord.t].t;
+      if (chord.b!=chord.v)s += '/'+ts.music.NOTES[chord.b].b;
+      return s;
+    },
+    countNotes:function(chord){
+      var TYPE = ts.music.CHORD.TYPE[chord.t];
+      var count = 0;
+      for (var i = 0; i < TYPE.a.length;i++){
+        if (TYPE.a[i]==true)count++;
+      }
+      return count;
+    },
+    searchNote:function(chord,note){
+      var TYPE = ts.music.CHORD.TYPE[chord.t];
+      var cur_no = 0; if (note==0)return chord.v;
+      for (var i = 1; i < TYPE.a.length;i++){
+        if (TYPE.a[i]==true){
+          cur_no++;
+          if (cur_no==note)
+            return (i);
+        }
+      }
+      return 0;
+    },
 		TYPE:[	//				C				D				E		F				G				A				B
 			{t:"",			s:'',		a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false]},
 			{t:"-7b5",	s:'&#x2300;',		a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true,	false]},
@@ -2708,6 +2733,7 @@ ts.player = new Object({
       }
 		},
     playBass:function(e){
+      const BASS_OFFSET = 36;
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       var SEQUENCE = ts.player.ts;
@@ -2718,13 +2744,14 @@ ts.player = new Object({
 
       for (var i = 0; i < a.length;i++){
         if (a[i].chord != null)chord = a[i].chord.chord;
-        var note = chord.b + 36;
+        var note = chord.b + BASS_OFFSET;
         var velocity = .2;
         if ((i%SEQUENCE.tpb)==0)velocity=.5;
         pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,a[i].ticktime);
       }
     },
     playAccompaniment:function(e){
+      const CHORD_OFFSET = 60;
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       var SEQUENCE = ts.player.ts;
@@ -2734,22 +2761,52 @@ ts.player = new Object({
       var a = e.playArray;
       var chord = pi.chord;
 
-			if (false && pi.chord && e.isBeat()){
-				var type = ts.music.CHORD.TYPE[pi.chord.t];
+      var done = [false,false,false,false];
 
-				var note = pi.chord.v + 36;
-				var velocity = 30;
-				if ((pi.beatsSinceChord & 1)==0){
-					if ((pi.beatsSinceChord & 3)==0) velocity = 20;
-					ts.playNote(0,note,velocity,Math.round(SEQUENCE.beatMillies*9/10))
-				}
+      function q(v){return ts.music.note.qualified(v);}
 
-				note = pi.chord.v + 60;
-				velocity = 30;
-				for (var i = 0 ; i < type.a.length ; i++ ){
-					if (type.a[i]) ts.playNote(0,note+i,velocity,Math.round(SEQUENCE.beatMillies*9/10));
-				}
-			}
+      for (var i = 0; i < a.length;i++){
+        if (a[i].chord != null)chord = a[i].chord.chord;
+        var chordNoteCount = ts.music.CHORD.countNotes(chord);
+        if (chord.v==chord.b)done[0]=true;
+        var type = ts.music.CHORD.TYPE[chord.t];
+        if ((i%SEQUENCE.tpb)!=0) continue;
+        var root = chord.v + CHORD_OFFSET;
+
+        // TENOR
+        var tenor_job = 0;
+        if (done[0]==true)tenor_job = 1;
+        var tenor_note = ts.music.CHORD.searchNote(chord,tenor_job);
+        tenor_note += root;
+        var velocity = .2; if (i==0)velocity=.4;
+        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
+        done[tenor_job]=true;
+
+        // ALTO
+        var alto_job = 1; var alto_note = 0;
+        if (tenor_job==1){
+          if (chordNoteCount>3)alto_job = 3; else alto_job = 2;
+          alto_note = ts.music.CHORD.searchNote(chord,alto_job);
+        }
+        else {
+          alto_job = 1;
+          alto_note = ts.music.CHORD.searchNote(chord,alto_job);
+        }
+        alto_note += root;
+        pi.playNote(CHANNEL.alto,alto_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
+        done[alto_job]=true;
+
+        // ALTO
+        var soprano_job = 0;
+        for (var x=0;x<done.length;x++){if (done[x]==false){soprano_job=x;break;}}
+        var soprano_note = root + ts.music.CHORD.searchNote(chord,soprano_job);
+        pi.playNote(CHANNEL.soprano,soprano_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
+        done[soprano_job]=true;
+
+        //ts.debug(ts.music.CHORD.toString(chord),chord);
+        //ts.debug('jobs t='+tenor_job+' a='+alto_job+' s='+soprano_job);
+        //ts.debug('notes t='+q(tenor_note)+' a='+q(alto_note)+' s='+q(soprano_note));
+      }
 
 		},
     playBar:function(bar){
@@ -2760,10 +2817,10 @@ ts.player = new Object({
 
       SEQUENCE.recomputeBar(bar);
 
-      var before = Date.now();
-      pi.playAccompaniment(bar);
+      //var before = Date.now();
       pi.playMelody(bar);
-      ts.debug(before,Date.now());
+      pi.playAccompaniment(bar);
+      //ts.debug(before,Date.now());
     },
 		eventLoop:function(){
 			var pi = ts.player.internal;
@@ -2775,7 +2832,7 @@ ts.player = new Object({
           bass:new CHANNEL.oscillator({name:'bass',}),
           tenor:new CHANNEL.oscillator({name:'tenor',}),
           alto:new CHANNEL.oscillator({name:'alto',}),
-          soprano:new CHANNEL.oscillator({name:'bass',}),
+          soprano:new CHANNEL.oscillator({name:'soprano',}),
         });
       }
 
