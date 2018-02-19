@@ -423,10 +423,10 @@ ts.create = function(){
       SEQUENCE.tickMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.barTicks);
       while ((SEQUENCE.tickMillies*SEQUENCE.barTicks)<SEQUENCE.barTotalMillies)SEQUENCE.tickMillies += 1;
 
-      ts.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
-      ts.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
-      ts.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
-      ts.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
+      //ts.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
+      //ts.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
+      //ts.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
+      //ts.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
 
 			var title = '';
 
@@ -589,7 +589,7 @@ ts.create = function(){
         }
 
       }
-      ts.debug('total duration: '+starttime)
+      //ts.debug('total duration: '+starttime)
 
       // spread out the beats;
       var bcount = e.bar.beats.length;
@@ -609,14 +609,14 @@ ts.create = function(){
         for (var m = 0; m < beat.beat.events.length; m++){
           if (beat.beat.events[m].hasMusic())a.push(beat.beat.events[m])
         }
-        ts.debug('bstart='+bstart+' blength='+blength+' musicEvents='+a.length);
+        //ts.debug('bstart='+bstart+' blength='+blength+' musicEvents='+a.length);
 
         var m_pos = bstart;
         var m_available = blength;
         var tpe_float = blength/a.length;
         for (var m = 0; m < a.length;m++){
           var start = Math.round((m*tpe_float)+bstart);
-          ts.debug('musicEvent '+m+' starts on tick '+start);
+          //ts.debug('musicEvent '+m+' starts on tick '+start);
           if (a[m].isChord())e.playArray[start].chord = (a[m]);
           if (a[m].isMelody())e.playArray[start].melody = (a[m]);
         }
@@ -644,7 +644,7 @@ ts.create = function(){
         }
       }
 
-      ts.debug(e);
+      //ts.debug(e);
     };
 
 		SEQUENCE.addEvent = function(str,info,afterIndex){
@@ -871,20 +871,20 @@ ts.create = function(){
 					if (SEQUENCE.evt[SEQUENCE.evt_curidx]!=EVENT)return;
 
 					var clickpos = parseInt(this.textContent.length * e.offsetX / this.offsetWidth);
-					ts.debug(clickpos);
-					ts.debug(SEQUENCE);
-					ts.debug(EVENT);
+					//ts.debug(clickpos);
+					//ts.debug(SEQUENCE);
+					//ts.debug(EVENT);
 
 					var old = ''; var nu = ''; var orig = this.textContent;
 					for (var i = 0 ; i < orig.length; i++){
 						if (i < clickpos) old+=orig.charAt(i);
 						else nu+=orig.charAt(i);
 					}
-					ts.debug(old+'-'+nu);
+					//ts.debug(old+'-'+nu);
 					EVENT.lyric = EVENT.eBlockLyric.textContent = old;
 					var nuEvent = SEQUENCE.addEvent(nu,'',(SEQUENCE.evt_curidx+1));
 					SEQUENCE.onEventClick(nuEvent);
-					ts.debug(nuEvent);
+					//ts.debug(nuEvent);
 					SEQUENCE.alignHTML();
 					//ts.debug(zs4.json.textify(e));
 				};
@@ -2663,22 +2663,21 @@ ts.player = new Object({
     barTicks:0,
 		playMelody:function(e){
       if (e.bar.melodies.length==0)return;
-      ts.debug('PLAYING MELODY',e);
+      //ts.debug('PLAYING MELODY',e);
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       var SEQUENCE = ts.player.ts;
 
       var available = SEQUENCE.barTotalMillies;
       var a = e.arrayMelody;
-      console.log(a);
 
       for (var i = 0 ; i < a.length ;i++){
         var AR = pi.ATTACKRELEASE;
         var NOTE = a[i];
         if (a[i].ticktime < (AR*2)) AR = a[i].ticktime/2;
         ts.audio.master.melody.noteAtTime(a[i].event.melody,a[i].starttime);
-        ts.audio.master.melody.fadeToBy(1,a[i].starttime+AR);
-        ts.audio.master.melody.fadeToBy(0,a[i].starttime+a[i].ticktime);
+        ts.audio.master.melody.fadeToBy(1,a[i].starttime,AR);
+        ts.audio.master.melody.fadeToBy(0,a[i].starttime+AR,a[i].ticktime-AR);
 
       }
 
@@ -2701,7 +2700,7 @@ ts.player = new Object({
 
 		},
     playBar:function(bar){
-      ts.debug('PLAYING BAR',bar);
+      //ts.debug('PLAYING BAR',bar);
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       var SEQUENCE = ts.player.ts;
@@ -3150,8 +3149,8 @@ ts.midi = new Object({
 
 			try {
 
-				ts.debug('testing ts.midi.access');
-				ts.debug(ts.midi.access);
+				//ts.debug('testing ts.midi.access');
+				//ts.debug(ts.midi.access);
 				for (var entry in ts.midi.access.inputs) {
 					ts.midi.input.push(entry[1]);
 				}
@@ -3213,7 +3212,7 @@ ts.audio = new Object({
         NODE.object = CTX;
         NODE.volume = CTX.createGain();
         NODE.volume.connect(CTX.destination);
-        NODE.volume.gain.value = 0.4;
+        NODE.volume.gain.value = 0.2;
         NODE.destination = NODE.volume;
         AUDIO.master = NODE;
       }
@@ -3235,10 +3234,11 @@ ts.audio = new Object({
         OSC.adsr.gain.value = 0;
         OSC.adsr.connect(OSC.volume);
         OSC.adsr.gain.setValueAtTime(0.0,CTX.currentTime);
-        OSC.fadeToBy = function(g,t){
+        OSC.fadeToBy = function(g,t,d){
           if(t==null)t=CTX.currentTime;
           else t=CTX.currentTime+(t/1000);
-          OSC.adsr.gain.linearRampToValueAtTime(g,(t));};
+          OSC.adsr.gain.setTargetAtTime(g,t,d/1000);
+        };
         OSC.object.connect(OSC.adsr);
         AUDIO.master[OSC.name] = OSC;
         OSC.object.start();
