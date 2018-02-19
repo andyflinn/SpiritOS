@@ -623,6 +623,7 @@ ts.create = function(){
 
       }
 
+      // concoct a melody summary
       e.arrayMelody = new Array();
       for (var i = 0 ; i < tix; i++) {
         if (e.playArray[i].melody!=null){
@@ -634,7 +635,6 @@ ts.create = function(){
         }
       }
 
-      var melpos = 0;
       for (var i = 0 ; i < e.arrayMelody.length; i++) {
         if (i == (e.arrayMelody.length-1)){
           e.arrayMelody[i].ticktime = SEQUENCE.barTotalMillies-e.arrayMelody[i].starttime;
@@ -644,7 +644,27 @@ ts.create = function(){
         }
       }
 
-      //ts.debug(e);
+      // concoct a chord summary
+      e.arrayChords = new Array();
+      for (var i = 0 ; i < tix; i++) {
+        if (e.playArray[i].chord!=null){
+          e.arrayChords.push(new Object({
+            starttime:e.playArray[i].starttime,
+            ticktime:e.playArray[i].ticktime,
+            event:e.playArray[i].chord,
+          }));
+        }
+      }
+
+      for (var i = 0 ; i < e.arrayChords.length; i++) {
+        if (i == (e.arrayChords.length-1)){
+          e.arrayChords[i].ticktime = SEQUENCE.barTotalMillies-e.arrayChords[i].starttime;
+        }
+        else {
+          e.arrayChords[i].ticktime = e.arrayChords[i+1].starttime-e.arrayChords[i].starttime;
+        }
+      }
+
     };
 
 		SEQUENCE.addEvent = function(str,info,afterIndex){
@@ -2661,7 +2681,14 @@ ts.player = new Object({
 		timeout:100,
     barTicks:0,
     barTicks:0,
-		playMelody:function(e){
+    playNote:function(oscillator,note,velocity,start,duration){
+      var AR = ts.player.internal.ATTACKRELEASE;
+      if (duration < (AR*2)) AR = duration/2;
+      oscillator.noteAtTime(note,start);
+      oscillator.fadeToBy(velocity,start,AR);
+      oscillator.fadeToBy(0,start+AR,duration-AR);
+    },
+    playMelody:function(e){
       if (e.bar.melodies.length==0)return;
       //ts.debug('PLAYING MELODY',e);
       var pi = ts.player.internal;
@@ -2671,15 +2698,36 @@ ts.player = new Object({
       var available = SEQUENCE.barTotalMillies;
       var a = e.arrayMelody;
 
-      for (var i = 0 ; i < a.length ;i++){
-        var AR = pi.ATTACKRELEASE;
-        var NOTE = a[i];
-        if (a[i].ticktime < (AR*2)) AR = a[i].ticktime/2;
-        ts.audio.master.melody.noteAtTime(a[i].event.melody,a[i].starttime);
-        ts.audio.master.melody.fadeToBy(1,a[i].starttime,AR);
-        ts.audio.master.melody.fadeToBy(0,a[i].starttime+AR,a[i].ticktime-AR);
+      var o = new Object();
 
+
+      for (var i = 0 ; i < a.length ;i++){
+        pi.playNote(CHANNEL.melody,a[i].event.melody,1,a[i].starttime,a[i].ticktime);
       }
+		},
+    playBass:function(e){
+      var pi = ts.player.internal;
+      var CHANNEL = ts.audio.master;
+      var SEQUENCE = ts.player.ts;
+      //ts.debug(e);
+
+      var a = e.playArray;
+      var chord = pi.chord;
+
+      for (var i = 0; i < a.length;i++){
+        if (a[i].chord != null)chord = a[i].chord.chord;
+        var note = chord.b + 36;
+        var velocity = .2;
+        if ((i%SEQUENCE.tpb)==0)velocity=.5;
+        pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,a[i].ticktime);
+      }
+    },
+    playAccompaniment:function(e){
+      var pi = ts.player.internal;
+      var CHANNEL = ts.audio.master;
+      var SEQUENCE = ts.player.ts;
+
+      pi.playBass(e);
 
 			if (false && pi.chord && e.isBeat()){
 				var type = ts.music.CHORD.TYPE[pi.chord.t];
@@ -2707,7 +2755,10 @@ ts.player = new Object({
 
       SEQUENCE.recomputeBar(bar);
 
+      var before = Date.now();
+      pi.playAccompaniment(bar);
       pi.playMelody(bar);
+      ts.debug(before,Date.now());
     },
 		eventLoop:function(){
 			var pi = ts.player.internal;
