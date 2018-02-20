@@ -3180,9 +3180,6 @@ ts.player = new Object({
         pi.playNote(CHANNEL.soprano,soprano_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
         done[soprano_job]=true;
 
-        //ts.debug(ts.music.CHORD.toString(chord),chord);
-        //ts.debug('jobs t='+tenor_job+' a='+alto_job+' s='+soprano_job);
-        //ts.debug('notes t='+q(tenor_note)+' a='+q(alto_note)+' s='+q(soprano_note));
       }
 
 		},
@@ -3197,7 +3194,26 @@ ts.player = new Object({
       //var before = Date.now();
       pi.playMelody(bar);
       pi.playAccompaniment(bar);
-      //ts.debug(before,Date.now());
+
+      var e = bar;
+      var a = e.playArray;
+
+      var count = a.length;
+      var i = 0;
+      var time = 0;
+      var progress;
+
+      progress = function(){
+        if (a[i].melody!=null){SEQUENCE.showEventAsCurrent(a[i].melody);}
+        else if (a[i].chord!=null){SEQUENCE.showEventAsCurrent(a[i].chord);}
+
+        i++;
+        if (i<count){
+          setTimeout(progress,SEQUENCE.tickMillies)
+        }
+      };
+      progress();
+
     },
 		eventLoop:function(){
 			var pi = ts.player.internal;
@@ -3289,7 +3305,6 @@ ts.player = new Object({
         }
 				//pi.playMelody(ce);
 
-				SEQUENCE.showEventAsCurrent(ce)
 			}
 			else if (ts.player.internal.bar.jump && ts.player.internal.bar.jumpTs != null ){
 				ts.player.internal.bar.jumpEventEle.className = '';
