@@ -13,7 +13,6 @@ zs4.plugin.list.toonsmith = new Object({
     THIS.initialized=true;
 
     ts.initialize();
-
   },
   ui:function(e,scope){
     var THIS = zs4.plugin.list.toonsmith;
@@ -24,10 +23,12 @@ zs4.plugin.list.toonsmith = new Object({
     THIS.initialize();
     THIS.toon = ts.html.init.block(e);
     THIS.toon.runChordsAndLyrics(THIS.scope.data._.value);
+    THIS.toon.zs4scope = scope; 
+
   },
   reload:function(){
     var THIS = zs4.plugin.list.toonsmith;
-    THIS.toon.clearChordsAndLyrics(THIS.scope.data._.value);
+    THIS.toon.clear(THIS.scope.data._.value);
     THIS.toon.runChordsAndLyrics(THIS.scope.data._.value);
   },
   save:function(){

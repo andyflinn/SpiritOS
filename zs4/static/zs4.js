@@ -175,6 +175,10 @@ zs4.is = {
         if (ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')return true;
         return false;
       },
+      numchar:function(ch){
+        if (ch=='0'||ch=='1'||ch=='2'||ch=='3'||ch=='4'||ch=='5'||ch=='6'||ch=='7'||ch=='8'||ch=='9')return true;
+        return false;
+      },
       type:function(o){
         if (!zs4.is.object(o)
         || !zs4.is.object(o._)
@@ -373,6 +377,19 @@ zs4.string = {
   },
 };
 
+zs4.parse = {
+  int:function(v){
+    var n = parseInt(v);
+    if (n==NaN)return 0;
+    return n;
+  },
+  float:function(v){
+    var n = parseFloat(v);
+    if (n==NaN)return 0;
+    return n;
+  },
+
+};
 zs4.count = {
     object:{
       properties:function(o){

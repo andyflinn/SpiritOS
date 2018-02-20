@@ -209,6 +209,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-selectitem:before{content:"$";font-weight: bolder;}
 
 .icon-account:before{content:url(/gfx/icons/account.svg);}
+.icon-abc:before{content:url(/gfx/icons/abc.svg);}
 .icon-about:before{content:url(/gfx/icons/info.svg);}
 .icon-add:before{content:"+";font-weight: bolder;}
 .icon-amppage:before{content:url(/gfx/icons/amppage.svg);}
