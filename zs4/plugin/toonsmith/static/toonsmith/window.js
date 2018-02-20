@@ -2677,12 +2677,6 @@ ts.create = function(){
 			nu.eTextArea.style.height = 'auto';
       nu.toolWindow.appendChild(nu.eTextArea);
 
-
-			nu.onactivate = function(){
-				nu.eTextArea.value = '';
-			};
-			nu.refresh = function(){};
-
 		};
 		SEQUENCE.createToolLayout = function(){
 			var nu = this.createTool('layout','layout');
