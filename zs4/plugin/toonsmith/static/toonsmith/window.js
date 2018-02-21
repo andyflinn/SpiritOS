@@ -3064,17 +3064,32 @@ ts.music = new Object({
       }
       return count;
     },
-    searchNote:function(chord,note){
+    noteFromChordIndex:function(chord,index){
       var TYPE = ts.music.CHORD.TYPE[chord.t];
-      var cur_no = 0; if (note==0)return chord.v;
+      var cur_no = 0; if (index==0)return 0;//chord.v;
       for (var i = 1; i < TYPE.a.length;i++){
         if (TYPE.a[i]==true){
           cur_no++;
-          if (cur_no==note)
+          if (cur_no==index)
             return (i);
         }
       }
       return 0;
+    },
+    indexFromChordNote:function(chord,note){
+      note = (note+12-chord.v)%12;
+      if (note==0) return 0;
+
+      var TYPE = ts.music.CHORD.TYPE[chord.t];
+      var cur_no = 0;
+      for (var i = 1; i < TYPE.a.length;i++){
+        if (TYPE.a[i]==true){
+          cur_no++;
+          if (i==note)
+            return cur_no;
+        }
+      }
+      return -1;
     },
 		TYPE:[	//				C				D				E		F				G				A				B
 			{
@@ -3246,58 +3261,51 @@ ts.player = new Object({
       var a = e.playArray;
       var chord = pi.chord;
 
-
+      var CHORD = ts.music.CHORD;
       function q(v){return ts.music.note.qualified(v);}
-
+      var velocity = 0.3;
       for (var i = 0; i < a.length;i++){
 
-        var done = [false,false,false,false];
+        var done = [false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false];
 
         if (a[i].chord != null)chord = a[i].chord.chord;
         if (chord==null)continue;
-        var chordNoteCount = ts.music.CHORD.countNotes(chord);
-        if (chord.v==chord.b)done[0]=true;
-        var type = ts.music.CHORD.TYPE[chord.t];
+        var chordNoteCount = CHORD.countNotes(chord);
+        var bar_bass_index = CHORD.indexFromChordNote(chord,chord.b);
+        if (bar_bass_index>=0)done[bar_bass_index]= true;
+        else if (chordNoteCount>3)done[2]=true;
+        var index = 0;
+        var newIndex = function(){
+          while (done[index]==true)index++;
+          done[index]=true;
+          return (index%chordNoteCount);
+        };
+
         if ((i%SEQUENCE.tpb)!=0) continue;
         var root = chord.v + CHORD_OFFSET;
 
         // TENOR
-        var tenor_job = 0;
-        if (done[0]==true)tenor_job = 1;
-        var tenor_note = ts.music.CHORD.searchNote(chord,tenor_job);
-        tenor_note += root;
-        var velocity = .2; if (i==0)velocity=.4;
+        var tenor_note = root+CHORD.noteFromChordIndex(chord,newIndex());
         pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
-        done[tenor_job]=true;
 
         // ALTO
-        var alto_job = 1; var alto_note = 0;
-        if (tenor_job==1){
-          if (chordNoteCount>3)alto_job = 3; else alto_job = 2;
-          alto_note = ts.music.CHORD.searchNote(chord,alto_job);
-        }
-        else {
-          alto_job = 1;
-          alto_note = ts.music.CHORD.searchNote(chord,alto_job);
-        }
-        alto_note += root;
-        pi.playNote(CHANNEL.alto,alto_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
-        done[alto_job]=true;
+        var alto_note = root+CHORD.noteFromChordIndex(chord,newIndex());
+        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
 
         // SOPRANO
-        var soprano_job = 0;
-        for (var x=0;x<done.length;x++){if (done[x]==false){soprano_job=x;break;}}
-        var soprano_note = root + ts.music.CHORD.searchNote(chord,soprano_job);
-        pi.playNote(CHANNEL.soprano,soprano_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
-        done[soprano_job]=true;
+        var soprano_note = root+CHORD.noteFromChordIndex(chord,newIndex());
+        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
 
+
+        /*
         ts.debug(
           'chord:'+ts.music.CHORD.toString(chord),
+          chord,
           't:'+ts.music.note.qualified(tenor_note),
           'a:'+ts.music.note.qualified(alto_note),
-          's:'+ts.music.note.qualified(soprano_note),
-          'sjob:'+soprano_job
+          's:'+ts.music.note.qualified(soprano_note)
         )
+        */
       }
 
 		},
