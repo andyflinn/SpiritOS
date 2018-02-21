@@ -1153,24 +1153,32 @@ ts.create = function(){
       M_DIVISOR:4,
       bar:new Array(),
       line:new Array(),
+      failures:new Array(),
       currentBar:null,
       mode:'header',
+      NOTE:['A','B','C','D','E','F','G','a','b','c','d','e','f','g'],
       KEY:{
-        G:{c:1,t:1},
-        D:{c:2,t:1},
-        A:{c:3,t:1},
-        E:{c:4,t:1},
-        B:{c:5,t:1},
-        'F#':{c:6,t:1},
-        'C#':{c:7,t:1},
+        G:{c:1,t:1,o:7},
+        D:{c:2,t:1,o:2},
+        A:{c:3,t:1,o:9},
+        E:{c:4,t:1,o:4},
+        B:{c:5,t:1,o:11},
+        'F#':{c:6,t:1,o:6},
+        'C#':{c:7,t:1,o:1},
 
-        F:{c:1,t:-1},
-        'Bb':{c:2,t:-1},
-        'Eb':{c:3,t:-1},
-        'Ab':{c:4,t:-1},
-        'Db':{c:5,t:-1},
-        'Gb':{c:6,t:-1},
-        'Cb':{c:7,t:-1},
+        F:{c:1,t:-1,o:5},
+        'Bb':{c:2,t:-1,o:10},
+        'Eb':{c:3,t:-1,o:3},
+        'Ab':{c:4,t:-1,o:8},
+        'Db':{c:5,t:-1,o:1},
+        'Gb':{c:6,t:-1,o:6},
+        'Cb':{c:7,t:-1,o:11},
+      },
+      failure:function(txt){
+        var ABC = this;
+        ABC.failures.push(txt);
+        ts.debug('ABC failure: \"'+txt+'\"');
+        return false;
       },
       barCreate:function(){
         var BAR = new Object({
@@ -1227,39 +1235,87 @@ ts.create = function(){
           ABC.note.push(new note('b\'',BOTTOM+36+11));
         }
 
-        if (this.KEY.hasOwnProperty(K)){
-          ts.debug('FOUND KEY OF '+K,this.KEY[K]);
-          var DO = this.KEY[K];
-          var t = new Array();
-          var start; var increment; var count; var symbol;
-          count = DO.c;
-          if (DO.t==1){
-            start = 5;
-            increment = 7;
-            symbol = '#';
-          }
-          else if (DO.t==-1){
-            start = 11;
-            increment = 5;
-            symbol = 'b';
-          }
+        var keynote = 24;
 
-          for (var i = 0 ; i < TABLE.length; i++){
-            var pos = start;
-            for (var c = 0; c < count; c++ ){
-              if ((TABLE[i].orig%12)==pos){
-                TABLE[i].value += DO.t;
-                ts.debug(TABLE[i].name+symbol);
-                break;
-              }
-              pos = ((pos+increment)%12);
+        var i = 0;
+        var Knote = '';
+        var Ktype = '';
+        //skip leading spaces
+        while (i < K.length && K.charAt(i)==' ')i++;
+        // handle keynote;
+        if (i >= K.length)return ABC.failure('No key note specified');
+        if (ABC.isNoteCharacter(K.charAt(i))){Knote+=K.charAt(i);i++}
+        else {return ABC.failure(K.charAt(i)+' is not a valid key note');}
+        if (i<K.length&&(K.charAt(i)=='#'||K.charAt(i)=='b')){Knote+=K.charAt(i);i++}
+        //skip spaces
+        while (i < K.length && K.charAt(i)==' ')i++;
+        while (i < K.length && K.charAt(i)!=' '){Ktype+=K.charAt(i);i++;}
+        // done parsing key
+        ts.debug('key note: '+Knote, 'Ktype: '+Ktype);
+        keynote = ts.music.parse.note(Knote);
+        if (keynote==-1)return ABC.failure(Knote+' is not a valid keynote');
+        if (Ktype=='m'||Ktype=='min')keynote+=3;
+        else if (zs4.string.startsWith(Ktype,'dor'))keynote-=2;
+        else if (zs4.string.startsWith(Ktype,'phr'))keynote-=4;
+        else if (zs4.string.startsWith(Ktype,'lyd'))keynote-=5;
+        else if (zs4.string.startsWith(Ktype,'mix'))keynote-=7;
+        else if (zs4.string.startsWith(Ktype,'aeo'))keynote-=9;
+        else if (zs4.string.startsWith(Ktype,'loc'))keynote-=11;
+
+        keynote %= 12;
+
+        if (keynote==0){
+          ts.debug('using no B\'s or #\'s');
+          return true;
+        }
+
+        var DO = -1;
+        for(var n in ABC.KEY){
+          if (ABC.KEY[n].o==keynote){
+            DO = ABC.KEY[n];
+            break;
+          }
+        }
+        if (DO==-1){
+          return ABC.failure('internal error during key lookup')
+        }
+
+        //var t = new Array();
+        var start; var increment; var count; var symbol;
+        count = DO.c;
+        if (DO.t==1){
+          start = 5;
+          increment = 7;
+          symbol = '#';
+          ts.debug('using '+count+' #\'s');
+        }
+        else if (DO.t==-1){
+          start = 11;
+          increment = 5;
+          symbol = 'b';
+          ts.debug('using '+count+' b\'s');
+        }
+
+        for (var i = 0 ; i < TABLE.length; i++){
+          var pos = start;
+          for (var c = 0; c < count; c++ ){
+            if ((TABLE[i].orig%12)==pos){
+              TABLE[i].value += DO.t;
+              ts.debug(TABLE[i].name+symbol);
+              break;
             }
+            pos = ((pos+increment)%12);
           }
         }
-        else {
-          ts.debug('CANNOT FIND KEY OF '+K,this.KEY[K]);
-        }
 
+        return true;
+      },
+      isNoteCharacter:function(ch){
+        var ABC = this;
+        for (var x = 0; x < ABC.NOTE.length;x++){
+          if (ABC.NOTE[x]==ch)return true;
+        }
+        return false;
       },
       findNoteValue:function(n){
         for (var i = 0 ; i < this.note.length;i++){
@@ -1301,7 +1357,7 @@ ts.create = function(){
         return out;
       },
       parseHeaderLine:function(line){
-        ts.debug('PARSEING HEADER LINE:',line)
+        //ts.debug('PARSEING HEADER LINE:',line)
         var ABC = this;
         var head = ts.zs4.string.split.separators(line,':');
         if (head.length==2){
@@ -1378,9 +1434,6 @@ ts.create = function(){
         var ABC = this;
         //var mode = 'header';
 
-        var ns = ['A','B','C','D','E','F','G','a','b','c','d','e','f','g'];
-        function noteStart(ch){for (var x = 0; x < ns.length;x++){if (ns[x]==ch)return true;}return false;};
-
         var gch = null;
 
         for (var i = 0; i < input.length;i++){
@@ -1419,7 +1472,7 @@ ts.create = function(){
             ABC.L_DIVISOR = zs4.parse.int(buf);buf='';
           }
           else {
-            if (noteStart(ch)){
+            if (ABC.isNoteCharacter(ch)){
               var note = ch;
               while ((i < (input.length-1))&&(input[i+1]==','||input[i+1]=='\'')){
                 i++;
@@ -1458,7 +1511,9 @@ ts.create = function(){
               }
               i++;
               gch = ts.music.parse.chord(chord);
-              ts.debug('CHORD FOUND.. '+chord,gch,input[i]);
+              if (!gch.ok){
+                ABC.failure('Can\'t parse chord \"'+chord+'\"');
+              }
             }
           }
         }
@@ -3007,6 +3062,17 @@ ts.music = new Object({
 
 			return nu;
 		},
+    note:function(str){
+      var a = ts.music.NOTES;
+      var s = str.trim();
+      for (var i = 0; i < a.length; i++){
+        if (a[i].n==s)return a[i].v;
+        for (var x = 0; x<a[i].a.length;x++){
+          if (a[i].a[x]==s)return a[i].v;
+        }
+      }
+      return -1;
+    },
 	},
 	note:{
 		name:function(v){
@@ -3032,18 +3098,18 @@ ts.music = new Object({
 		{n:'H',v:11},
 	],
 	NOTES:[
-		{n:'C',s:'C',v:0},
-		{n:'C#',s:'C&#x266f;',v:1},
-		{n:'D',s:'D',v:2},
-		{n:'Eb',s:'E&#x266d;',v:3},
-		{n:'E',s:'E',v:4},
-		{n:'F',s:'F',v:5},
-		{n:'F#',s:'F&#x266f;',v:6},
-		{n:'G',s:'G',v:7},
-		{n:'Ab',s:'A&#x266d;',v:8},
-		{n:'A',s:'A',v:9},
-		{n:'Bb',s:'B&#x266d;',v:10},
-		{n:'B',s:'B',v:11},
+		{n:'C',s:'C',v:0,a:['C','c','B#','b#']},
+		{n:'C#',s:'C&#x266f;',v:1,a:['C#','c#','Db','db']},
+		{n:'D',s:'D',v:2,a:['D','d']},
+		{n:'Eb',s:'E&#x266d;',v:3,a:['Eb','eb','D#','d#']},
+		{n:'E',s:'E',v:4,a:['E','e','Fb','fb']},
+		{n:'F',s:'F',v:5,a:['F','f','E#','e#']},
+		{n:'F#',s:'F&#x266f;',v:6,a:['F#','f#','Gb','gb']},
+		{n:'G',s:'G',v:7,a:['F','g']},
+		{n:'Ab',s:'A&#x266d;',v:8,a:['Ab','ab','G#','f#']},
+		{n:'A',s:'A',v:9,a:['A','a']},
+		{n:'Bb',s:'B&#x266d;',v:10,a:['Bb','bb','A#','a#']},
+		{n:'B',s:'B',v:11,a:['B','b','Cb','cb']},
 	],
   SCALE:{
     TYPE:[
