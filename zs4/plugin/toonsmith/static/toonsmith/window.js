@@ -1152,6 +1152,9 @@ ts.create = function(){
       line:new Array(),
       failures:new Array(),
       currentBar:null,
+      verseCount:0,
+      lastMusicLineStart:null,
+      lastMusicLineEnd:null,
       mode:'header',
       NOTE:['A','B','C','D','E','F','G','a','b','c','d','e','f','g'],
       KEY:{
@@ -1180,12 +1183,33 @@ ts.create = function(){
       barCreate:function(){
         var BAR = new Object({
           content:new Array(),
+          lyrix:new Array(),
           raw:'',
         });
         BAR.index = this.bar.length;
+        BAR.lf = false;
         this.bar.push(BAR);
         this.currentBar = BAR;
         return BAR;
+      },
+      firstBarIsComplete:function(){
+        if (ABC.bar.length==0)return false;
+        var time = 0;
+        var a = ABC.bar[0].content;
+        for (var i = 0; i < a.length; i++)time += a[i].length;
+        if (time >= ((1 * ABC.M_DIVIDEND)/ABC.M_DIVISOR))return true;
+        return false;
+      },
+      hasLyrix:function(){
+        var ABC = this;
+        var ret = false;
+        for (var i = 0; i < ABC.bar.length; i++){
+          if (ABC.bar[i].lyrix.length > ABC.verseCount){
+            ABC.verseCount = ABC.bar[i].lyrix.length;
+            ret = true;
+          }
+        }
+        return ret;
       },
       noteTableCreate:function(K){
         var BOTTOM = 48;
@@ -1326,56 +1350,138 @@ ts.create = function(){
           length:t,
           beat:0,
           lab:0,
-          lf:false,
           x:x,
         }));
+      },
+      parseLyricLine:function(line){
+        var ABC = this;
+        line = line.substr(2,line.length-2).trim();
+
+        var word = ''; // -_*
+        var ret = new Array();
+        function addWord(space){
+          if (word != '')ret.push(word);
+          word = '';
+          if (space==' '||space=='-'){
+            ret.push(space);
+          }
+        }
+
+        for (var i = 0; i < line.length;i++){
+          if (line.charAt(i)==' '){
+            addWord(' ');
+          }
+          else if (line.charAt(i)=='-'){
+            addWord('-');
+          }
+          else if (line.charAt(i)=='_'){
+            addWord(); word = '*'; addWord();
+          }
+          else if (line.charAt(i)=='*'){
+            addWord(); word = '*'; addWord();
+          }
+          else {
+            word += line.charAt(i);
+          }
+        }
+        addWord();
+        return ret;
       },
       toToonsmith:function(){
         var ABC = this;
         var BAR = (1 * ABC.M_DIVIDEND)/ABC.M_DIVISOR;
         var BEAT = 1/ABC.L_DIVISOR;
-        var out = '[bpb:'+this.M_DIVIDEND+']';
-        for (var i=0; i < this.bar.length;i++){
-          var bar = this.bar[i].content;
-          if (bar.length==0){
-            out+='[|]\n';
+        var out = '[bpb:'+ABC.M_DIVIDEND+']';
+
+
+
+        function outPass(v){
+          var fbc = true;
+          if (!ABC.firstBarIsComplete()){
+            ts.debug('FIRST BAR IS INCOMPLETE!');
+            fbc = false;
           }
-          else {
-            var time = 0;
-            var beat = 0;
-            for (var n = 0; n < bar.length;n++){
-              out += '[';
-              if (n==0) {
-                out+='|';
 
-                bar[n].beat=beat;
-                beat+=1;
-              }
-              else if ((beat*BEAT)<=time){
-                out+='.';
-                bar[n].lab = time-(beat*BEAT);
-                if (bar[n].lab>0.00001)out+='][';
-
-                bar[n].beat=beat;
-                beat+=1;
+          var LYRIX = null;
+          var lyri = 0;
+          for (var i=0; i < ABC.bar.length;i++){
+            var bar = ABC.bar[i].content;
+            if (zs4.is.number(v)&&ABC.bar[i].lyrix.length>0){
+              if (v<ABC.bar[i].lyrix.length){
+                LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[v]);
               }
               else {
-                bar[n].lab = time-(beat*BEAT);
-                bar[n].beat=beat;
+                LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[0]);
               }
-              out += this.findNoteValue(bar[n].note);
-              if (bar[n].x!=null&&bar[n].x.chord!=null){
-                out += ts.music.CHORD.toString(bar[n].x.chord);
-              }
-              out +=']';
-              time += bar[n].length;
-              while (((beat+1)*BEAT)<=time){
-                out += '[.]';
-                beat+=1;
+              ts.debug(LYRIX);
+              lyri = 0;
+            }
+
+            if (ABC.bar[i].lf)out+='\n';
+            if (bar.length==0){
+              out+='[|]\n';
+            }
+            else {
+              var time = 0;
+              var beat = 0;
+              var space = false;
+              for (var n = 0; n < bar.length;n++){
+                out += '[';
+                if (n==0) {
+                  if (i==0 && !fbc)out+='.'
+                  else out+='|';
+
+                  bar[n].beat=beat;
+                  beat+=1;
+                }
+                else if ((beat*BEAT)<=time){
+                  out+='.';
+                  bar[n].lab = time-(beat*BEAT);
+                  if (bar[n].lab>0.00001)out+='][';
+
+                  bar[n].beat=beat;
+                  beat+=1;
+                }
+                else {
+                  bar[n].lab = time-(beat*BEAT);
+                  bar[n].beat=beat;
+                }
+                out += ABC.findNoteValue(bar[n].note);
+                if (bar[n].x!=null&&bar[n].x.chord!=null){
+                  out += ts.music.CHORD.toString(bar[n].x.chord);
+                }
+                out +=']';
+                if (LYRIX!=null&&lyri<(LYRIX.length)){
+                  if (LYRIX[lyri]!='*'&&LYRIX[lyri]!='_')out+=LYRIX[lyri];
+                  lyri++;
+                  if (lyri<(LYRIX.length)&&(LYRIX[lyri]==' '||LYRIX[lyri]=='-')){
+                    out+=LYRIX[lyri];lyri++;
+                    while (lyri<(LYRIX.length)&&LYRIX[lyri]==' '){
+                      lyri++;
+                    }
+                  }
+                }
+                time += bar[n].length;
+                while (((beat+1)*BEAT)<=time){
+                  out += '[.]';
+                  beat+=1;
+                }
               }
             }
           }
+        };
+
+        // this
+        if (ABC.hasLyrix()){
+          ts.debug('ABC HAS LYRIX IT!! verseCount='+ABC.verseCount);
+          for (var i = 0; i < ABC.verseCount; i++){
+            outPass(i)
+          }
         }
+        else {
+          outPass(null);
+        }
+
         return out;
       },
       parseHeaderLine:function(line){
@@ -1441,7 +1547,7 @@ ts.create = function(){
             if (ch=='\n'){
               if (line=='')continue;
               else {
-                ABC.line.push(line);
+                ABC.line.push({data:line.trim()});
                 line = '';
               }
             }
@@ -1450,7 +1556,9 @@ ts.create = function(){
             }
           }
         }
-        if (line!='')ABC.line.push(line);
+        if (line!=''){
+          ABC.line.push({data:line});
+        }
       },
       parseLineMusic:function(input){
         var ABC = this;
@@ -1583,16 +1691,31 @@ ts.create = function(){
             }
           }
         }
+
+        if (ABC.bar.length > 0)ABC.bar[ABC.bar.length-1].lf = true;
       },
       parse:function(input){
         var ABC = this;
         ABC.pass1(input);
         for (var i = 0; i < ABC.line.length; i++){
-          if (ABC.line[i].length>2&&ABC.line[i].charAt(1)==':'){
-            ABC.parseHeaderLine(ABC.line[i]);
+          if (ABC.line[i].data.length>2&&ABC.line[i].data.charAt(1)==':'){
+            if (ABC.lastMusicLineStart&&zs4.string.startsWith(ABC.line[i].data,'w')){
+              ts.debug('should add lyrix');
+              ABC.lastMusicLineStart.lyrix.push(ABC.line[i].data);
+              ABC.lastMusicLineStart.lyrixEnd = ABC.lastMusicLineEnd;
+            }
+            else {
+              ABC.parseHeaderLine(ABC.line[i].data);
+            }
           }
           else {
-            ABC.parseLineMusic(ABC.line[i]);
+            var mline = false;
+            if (ABC.currentBar.content.length==0){
+              ABC.lastMusicLineStart = ABC.currentBar;
+              mline = true;
+            }
+            ABC.parseLineMusic(ABC.line[i].data);
+            if (mline)ABC.lastMusicLineEnd = ABC.currentBar;
           }
         }
 
