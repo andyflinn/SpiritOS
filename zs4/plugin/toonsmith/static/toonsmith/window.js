@@ -599,7 +599,7 @@ ts.create = function(){
     var bcount = e.bar.beats.length;
     var tix_available = tix;
     var tpos = 0;
-    var tpb = Math.round(tix/bcount);
+    var tpb = tix/bcount; //Math.round(tix/bcount);98u
     for (var b = 0; b < bcount; b++){
       var beat = e.bar.beats[b];
       var bstart = tpos;
@@ -1140,10 +1140,7 @@ ts.create = function(){
 	};
 
   SEQUENCE.runABC = function(input,idx){
-    const COLON = ':';
-    const COMMA = ',';
-    const APOSTROPHE = '\'';
-
+    const DOT_MULTIPLIER = 1.5;
     var index = new Array();
     var ABC = new Object({
       X:'',
@@ -1323,14 +1320,20 @@ ts.create = function(){
         }
         return '';
       },
-      addNote:function(n,t,c){
+      addNote:function(n,t,x){
         this.currentBar.content.push(new Object({
           note:n,
           length:t,
-          chord:c,
+          beat:0,
+          lab:0,
+          lf:false,
+          x:x,
         }));
       },
       toToonsmith:function(){
+        var ABC = this;
+        var BAR = (1 * ABC.M_DIVIDEND)/ABC.M_DIVISOR;
+        var BEAT = 1/ABC.L_DIVISOR;
         var out = '[bpb:'+this.M_DIVIDEND+']';
         for (var i=0; i < this.bar.length;i++){
           var bar = this.bar[i].content;
@@ -1338,19 +1341,38 @@ ts.create = function(){
             out+='[|]\n';
           }
           else {
-            out += '[|';
-            out += this.findNoteValue(bar[0].note);
-            if (bar[0].chord!=null){
-              out += ts.music.CHORD.toString(bar[0].chord);
-            }
-            out +=']';
-            for (var n = 1; n < bar.length;n++){
+            var time = 0;
+            var beat = 0;
+            for (var n = 0; n < bar.length;n++){
               out += '[';
+              if (n==0) {
+                out+='|';
+
+                bar[n].beat=beat;
+                beat+=1;
+              }
+              else if ((beat*BEAT)<=time){
+                out+='.';
+                bar[n].lab = time-(beat*BEAT);
+                if (bar[n].lab>0.00001)out+='][';
+
+                bar[n].beat=beat;
+                beat+=1;
+              }
+              else {
+                bar[n].lab = time-(beat*BEAT);
+                bar[n].beat=beat;
+              }
               out += this.findNoteValue(bar[n].note);
-              if (bar[n].chord!=null){
-                out += ts.music.CHORD.toString(bar[n].chord);
+              if (bar[n].x!=null&&bar[n].x.chord!=null){
+                out += ts.music.CHORD.toString(bar[n].x.chord);
               }
               out +=']';
+              time += bar[n].length;
+              while (((beat+1)*BEAT)<=time){
+                out += '[.]';
+                beat+=1;
+              }
             }
           }
         }
@@ -1434,7 +1456,36 @@ ts.create = function(){
         var ABC = this;
         //var mode = 'header';
 
+
+
         var gch = null;
+        var acc = '';
+        function extra(){
+          var e = new Object({
+            chord:gch,
+            acc:acc,
+          })
+          gch = null;
+          acc = '';
+          return e;
+        };
+
+        var glt_ratio = 1;
+        function ratio(glt){
+          const GT = 1.5;
+          const LT = 0.5;
+          if (glt=='>'){
+            glt_ratio = LT;
+            return GT;
+          }
+          else if (glt=='<'){
+            glt_ratio = GT;
+            return LT;
+          }
+          var r = glt_ratio;
+          glt_ratio = 1;
+          return r;
+        };
 
         for (var i = 0; i < input.length;i++){
           var ch = input.charAt(i);
@@ -1472,7 +1523,7 @@ ts.create = function(){
             ABC.L_DIVISOR = zs4.parse.int(buf);buf='';
           }
           else {
-            if (ABC.isNoteCharacter(ch)){
+            if (ABC.isNoteCharacter(ch)||ch=='z'||ch=='Z'){
               var note = ch;
               while ((i < (input.length-1))&&(input[i+1]==','||input[i+1]=='\'')){
                 i++;
@@ -1480,18 +1531,31 @@ ts.create = function(){
               }
 
               var length = ABC.L_DIVIDEND/ABC.L_DIVISOR;
-              var num = 1;
+              //var num = 1;
+              if ((i < (input.length-1)&&input[i+1]=='>')){
+                i++;
+                length *= ratio('>');
+              }
+              else if ((i < (input.length-1)&&input[i+1]=='<')){
+                i++;
+                length *= ratio('<');
+              }
+              else {
+                length *= ratio();
+              }
+
               if ((i < (input.length-1))&&input[i+1]=='/'){
                 i++;
                 var buf = '';
-                while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
+                while (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
                   i++; buf+=input[i];
                 }
+                if (buf=='')buf='2';
                 var num = zs4.parse.int(buf);
                 if (num!=0)length /= num;
                 else length /= 2;
               }
-              else if (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
+              else if (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
                 var buf = '';
                 while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
                   i++; buf+=input[i];
@@ -1500,8 +1564,7 @@ ts.create = function(){
                 if (num!=0)length *= num;
               }
 
-              ABC.addNote(note,length,gch);
-              gch = null;
+              ABC.addNote(note,length,extra());
             }
             else if (ch=='"'){
               var chord = ''; gch = null;
@@ -1515,6 +1578,9 @@ ts.create = function(){
                 ABC.failure('Can\'t parse chord \"'+chord+'\"');
               }
             }
+            else if (ch=='_'||ch=='^'){
+              acc+=ch;
+            }
           }
         }
       },
@@ -1525,7 +1591,9 @@ ts.create = function(){
           if (ABC.line[i].length>2&&ABC.line[i].charAt(1)==':'){
             ABC.parseHeaderLine(ABC.line[i]);
           }
-          ABC.parseLineMusic(ABC.line[i]);
+          else {
+            ABC.parseLineMusic(ABC.line[i]);
+          }
         }
 
         //remove last bar if EMPTY!
