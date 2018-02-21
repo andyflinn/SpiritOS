@@ -29,1339 +29,1362 @@ if (true){
 }
 
 ts.create = function(){
-    var SEQUENCE = this;
+  var SEQUENCE = this;
 
-		SEQUENCE.ts = ts;
-		SEQUENCE.arg = new Object({});
-		SEQUENCE.evt = new Array();
-		SEQUENCE.tool = new Array();
-		SEQUENCE.inst = new Array();
-		SEQUENCE.toolobject = new Object({});
-		SEQUENCE.instobject = new Object({});
-		SEQUENCE.bpb = 4;
-		SEQUENCE.bpm = 120;
-		SEQUENCE.tpb = 3;
-    SEQUENCE.layoutlinefeed = true;
-		SEQUENCE.stats = new Object({
-			chords:0,
-			bars:0,
-			beats:0,
-      notes:0,
-      lyric:0,
-      linefeed:0,
-      space:0,
+	SEQUENCE.ts = ts;
+	SEQUENCE.arg = new Object({});
+	SEQUENCE.evt = new Array();
+	SEQUENCE.tool = new Array();
+	SEQUENCE.inst = new Array();
+	SEQUENCE.toolobject = new Object({});
+	SEQUENCE.instobject = new Object({});
+	SEQUENCE.bpb = 4;
+	SEQUENCE.bpm = 120;
+	SEQUENCE.tpb = 3;
+  SEQUENCE.layoutlinefeed = true;
+	SEQUENCE.stats = new Object({
+		chords:0,
+		bars:0,
+		beats:0,
+    notes:0,
+    lyric:0,
+    linefeed:0,
+    space:0,
 
-			countChords:0,
-			countBars:0,
-			countBeats:0,
-      countNotes:0,
-      countLyric:0,
-      countSpace:0,
-      countLinefeed:0,
+		countChords:0,
+		countBars:0,
+		countBeats:0,
+    countNotes:0,
+    countLyric:0,
+    countSpace:0,
+    countLinefeed:0,
 
 
-			currentBar:null,
-			currentBeat:null,
-			start:function(){
-				this.currentBar = null;
-				this.currentBeat = null;
-				this.countChords =
-        this.countBars =
-        this.countBeats =
-        this.countLyric =
-        this.countLinefeed =
-        this.countSpace =
-        this.countNotes = 0;
-			},
-			countEvent:function(e){
-        var STATS = this;
-				e.duration = 0;
-        var music_done = false;
-				if (e.isBar()) {
-					STATS.countBars++;
-					STATS.currentBar = e;
-					STATS.currentBeat = e;
-					STATS.currentBar.bar.beats = [e];
-          STATS.currentBar.bar.events = [e];
-          STATS.currentBar.bar.chords = [];
-          STATS.currentBar.bar.melodies = [];
-          STATS.currentBar.bar.music = [e];
+		currentBar:null,
+		currentBeat:null,
+		start:function(){
+			this.currentBar = null;
+			this.currentBeat = null;
+			this.countChords =
+      this.countBars =
+      this.countBeats =
+      this.countLyric =
+      this.countLinefeed =
+      this.countSpace =
+      this.countNotes = 0;
+		},
+		countEvent:function(e){
+      var STATS = this;
+			e.duration = 0;
+      var music_done = false;
+			if (e.isBar()) {
+				STATS.countBars++;
+				STATS.currentBar = e;
+				STATS.currentBeat = e;
+				STATS.currentBar.bar.beats = [e];
+        STATS.currentBar.bar.events = [e];
+        STATS.currentBar.bar.chords = [];
+        STATS.currentBar.bar.melodies = [];
+        STATS.currentBar.bar.music = [e];
 
-					STATS.countBeats++;
-					STATS.currentBeat.beat = {
-						events:[e],
-            chords:[],
-            melodies:[],
-            music:[e],
-					};
-          music_done=true;
+				STATS.countBeats++;
+				STATS.currentBeat.beat = {
+					events:[e],
+          chords:[],
+          melodies:[],
+          music:[e],
+				};
+        music_done=true;
+			}
+			else if (e.isBeat()){
+				STATS.countBeats++;
+				STATS.currentBeat = e;
+
+				STATS.currentBeat.beat = {
+					events:[e],
+          chords:[],
+          melodies:[],
+          music:[e],
+				};
+
+				if (STATS.currentBar != null){
+					STATS.currentBar.bar.beats.push(e);
+          STATS.currentBar.bar.events.push(e);
+          STATS.currentBar.bar.music.push(e);
 				}
-				else if (e.isBeat()){
-					STATS.countBeats++;
-					STATS.currentBeat = e;
-
-					STATS.currentBeat.beat = {
-						events:[e],
-            chords:[],
-            melodies:[],
-            music:[e],
-					};
-
-					if (STATS.currentBar != null){
-						STATS.currentBar.bar.beats.push(e);
-            STATS.currentBar.bar.events.push(e);
-            STATS.currentBar.bar.music.push(e);
-					}
-          music_done=true;
-				}
-				else {
-					if (STATS.currentBar != null){
-						STATS.currentBar.bar.events.push(e);
-					}
-
-					if (STATS.currentBeat != null){
-						STATS.currentBeat.beat.events.push(e);
-					}
+        music_done=true;
+			}
+			else {
+				if (STATS.currentBar != null){
+					STATS.currentBar.bar.events.push(e);
 				}
 
-				if (e.chord != null && e.chord.ok){
-					STATS.countChords++;
-          if (STATS.currentBar != null){
-            STATS.currentBar.bar.chords.push(e);
-            if (!music_done)STATS.currentBar.bar.music.push(e);
-					}
+				if (STATS.currentBeat != null){
+					STATS.currentBeat.beat.events.push(e);
+				}
+			}
 
-					if (STATS.currentBeat != null){
-            STATS.currentBeat.beat.chords.push(e);
-            if (!music_done)STATS.currentBeat.beat.music.push(e);
-					}
-          music_done=true;
+			if (e.chord != null && e.chord.ok){
+				STATS.countChords++;
+        if (STATS.currentBar != null){
+          STATS.currentBar.bar.chords.push(e);
+          if (!music_done)STATS.currentBar.bar.music.push(e);
 				}
 
-				if (e.melody != 0){
-					this.countNotes++;
-          if (STATS.currentBar != null){
-            STATS.currentBar.bar.melodies.push(e);
-            if (!music_done)STATS.currentBar.bar.music.push(e);
-					}
+				if (STATS.currentBeat != null){
+          STATS.currentBeat.beat.chords.push(e);
+          if (!music_done)STATS.currentBeat.beat.music.push(e);
+				}
+        music_done=true;
+			}
 
-					if (STATS.currentBeat != null){
-            STATS.currentBeat.beat.melodies.push(e);
-            if (!music_done)STATS.currentBeat.beat.music.push(e);
-					}
-          music_done=true;
+			if (e.melody != 0){
+				this.countNotes++;
+        if (STATS.currentBar != null){
+          STATS.currentBar.bar.melodies.push(e);
+          if (!music_done)STATS.currentBar.bar.music.push(e);
 				}
 
-        if (e.space) this.countSpace++;
-        if (e.linefeed) this.countLinefeed++;
-        if (e.isLyric()) this.countLyric++;
-			},
-			end:function(){
-				this.chords = this.countChords;
-				this.bars = this.countBars;
-				this.beats = this.countBeats;
-        this.notes = this.countNotes;
-        this.lyric = this.countLyric;
-        this.linefeed = this.countLinefeed;
-        this.space = this.countSpace;
+				if (STATS.currentBeat != null){
+          STATS.currentBeat.beat.melodies.push(e);
+          if (!music_done)STATS.currentBeat.beat.music.push(e);
+				}
+        music_done=true;
+			}
 
-        this.result = new Object();
+      if (e.space) this.countSpace++;
+      if (e.linefeed) this.countLinefeed++;
+      if (e.isLyric()) this.countLyric++;
+		},
+		end:function(){
+			this.chords = this.countChords;
+			this.bars = this.countBars;
+			this.beats = this.countBeats;
+      this.notes = this.countNotes;
+      this.lyric = this.countLyric;
+      this.linefeed = this.countLinefeed;
+      this.space = this.countSpace;
 
-        if (this.chords==0 && this.notes==0)this.result.tone = false;
-        else this.result.tone = true;
+      this.result = new Object();
 
-        if (this.bars==0&&this.beats==0)this.result.time = false;
-        else this.result.time = true;
+      if (this.chords==0 && this.notes==0)this.result.tone = false;
+      else this.result.tone = true;
 
-        if (!this.result.time && !this.result.tone) this.result.music = false;
-        else  this.result.music = true;
+      if (this.bars==0&&this.beats==0)this.result.time = false;
+      else this.result.time = true;
 
-        if (this.lyric == 0)this.result.words = false;
-        else this.result.words = true;
-			},
-		});
-		SEQUENCE.key = ts.music.parse.chord("");
-		SEQUENCE.evt_current = null;
+      if (!this.result.time && !this.result.tone) this.result.music = false;
+      else  this.result.music = true;
+
+      if (this.lyric == 0)this.result.words = false;
+      else this.result.words = true;
+		},
+	});
+	SEQUENCE.key = ts.music.parse.chord("");
+	SEQUENCE.evt_current = null;
+	SEQUENCE.evt_curidx = -1;
+	SEQUENCE.evt_shown = null;
+	SEQUENCE.current_tool = null;
+	SEQUENCE.current_inst = null;
+
+	SEQUENCE.onKeyChange = function(nuKee){
+		if	(!this.key.ok)
+			return;
+
+		nuKee = parseInt(nuKee);
+
+		var delta = nuKee - this.key.v;
+		this.key.v = nuKee;
+
+		this.transpose(delta);
+	};
+	SEQUENCE.showEventAsCurrent = function(e){
+    if (!ts.is.window())return null;
+		if ( this.evt_shown != null ){
+			this.evt_shown.className = '';
+		}
+
+		if (e == null){
+			return null;
+		}
+
+		this.evt_shown = e.eSpan;
+		this.evt_shown.className = 'tscurrent';
+		return e;
+	};
+	SEQUENCE.setCurrentEvent = function(evt){
+		var playing = ts.player.is.running();
+
+		SEQUENCE.evt_current = evt;
+		if (!playing){
+			if (ts.is.window())SEQUENCE.showEventAsCurrent(evt);
+		}
+
 		SEQUENCE.evt_curidx = -1;
-		SEQUENCE.evt_shown = null;
-		SEQUENCE.current_tool = null;
-		SEQUENCE.current_inst = null;
+		for (var i = 0 ; i < this.evt.length ; i++){
+			if (evt == SEQUENCE.evt[i]){
+				SEQUENCE.evt_curidx = i;
+				break;
+			}
+		}
 
-		SEQUENCE.onKeyChange = function(nuKee){
-			if	(!this.key.ok)
-				return;
+		if (SEQUENCE.current_tool != null && !playing){
+			SEQUENCE.current_tool.refresh();
+		}
+		if (SEQUENCE.current_inst != null && !playing){
+			SEQUENCE.current_inst.refresh();
+		}
 
-			nuKee = parseInt(nuKee);
+	};
+	SEQUENCE.getEventIndex = function(evt){
+		for (var i = 0 ; i < SEQUENCE.evt.length ; i++){
+			if (evt == SEQUENCE.evt[i])
+			return i;
+		}
 
-			var delta = nuKee - this.key.v;
-			this.key.v = nuKee;
+		return 0;
+	};
+	SEQUENCE.setNextEvent = function(){
+		SEQUENCE.setCurrentEvent(SEQUENCE.evt[((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length)]);
+	};
+	SEQUENCE.setPreviousEvent = function(){
+		SEQUENCE.setCurrentEvent(SEQUENCE.evt[((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length)]);
+	};
 
-			this.transpose(delta);
-		};
-		SEQUENCE.showEventAsCurrent = function(e){
-      if (!ts.is.window())return null;
-			if ( this.evt_shown != null ){
-				this.evt_shown.className = '';
+  SEQUENCE.searchNextEvent = function(from,testEvent){
+    if (SEQUENCE.evt.length==0)return from;
+    if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length);
+    var start = from;
+		if (start == null) start = SEQUENCE.evt_curidx;
+		start %= SEQUENCE.evt.length;
+		start += SEQUENCE.evt.length;
+
+		for (var i = 0 ; i < SEQUENCE.evt.length ; i++){
+			start++;
+			var idx = (start%SEQUENCE.evt.length);
+			if (testEvent(SEQUENCE.evt[idx]))
+				return idx;
+		}
+
+		return from;
+	};
+	SEQUENCE.searchPrevEvent = function(from,testEvent){
+    if (SEQUENCE.evt.length==0)return from;
+		if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length);
+    var start = from;
+		if (start == null) start = SEQUENCE.evt_curidx;
+		start %= SEQUENCE.evt.length;
+		start += SEQUENCE.evt.length;
+
+		for (var i = 0 ; i < this.evt.length ; i++){
+			start--;
+			var idx = (start%SEQUENCE.evt.length);
+      if (testEvent(SEQUENCE.evt[idx]))
+				return idx;
+		}
+
+		return from;
+	};
+	SEQUENCE.searchPrevBar = function(from){
+    return SEQUENCE.searchPrevEvent(from,function(evt){if (evt.bar)return true; return false});
+	};
+	SEQUENCE.searchNextBar = function(from){
+    return SEQUENCE.searchNextEvent(from,function(evt){if (evt.bar)return true; return false});
+	};
+  SEQUENCE.searchPrevBeat = function(from){
+    return SEQUENCE.searchPrevEvent(from,function(evt){if (evt.beat)return true; return false});
+	};
+	SEQUENCE.searchNextBeat = function(from){
+    return SEQUENCE.searchNextEvent(from,function(evt){if (evt.beat)return true; return false});
+	};
+  SEQUENCE.searchPrevChord = function(from){
+    return SEQUENCE.searchPrevEvent(from,function(evt){
+      if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
+    });
+	};
+	SEQUENCE.searchNextChord = function(from){
+    return SEQUENCE.searchNextEvent(from,function(evt){
+      if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
+    });
+	};
+  SEQUENCE.searchPrevNote = function(from){
+    return SEQUENCE.searchPrevEvent(from,function(evt){
+      if (evt.melody!=0)return true; return false
+    });
+	};
+	SEQUENCE.searchNextNote = function(from){
+    return SEQUENCE.searchNextEvent(from,function(evt){
+      if (evt.melody!=0)return true; return false
+    });
+	};
+  SEQUENCE.searchPrevLyric = function(from){
+    return SEQUENCE.searchPrevEvent(from,function(evt){
+      if (evt.lyric.trim()!='')return true; return false
+    });
+	};
+	SEQUENCE.searchNextLyric = function(from){
+    return SEQUENCE.searchNextEvent(from,function(evt){
+      if (evt.lyric.trim()!='')return true; return false
+    });
+	};
+  SEQUENCE.searchPrevSpace = function(from){
+    return SEQUENCE.searchPrevEvent(from,function(evt){
+      if (evt.space)return true; return false
+    });
+	};
+	SEQUENCE.searchNextSpace = function(from){
+    return SEQUENCE.searchNextEvent(from,function(evt){
+      if (evt.space)return true; return false
+    });
+	};
+  SEQUENCE.searchPrevLinefeed = function(from){
+    return SEQUENCE.searchPrevEvent(from,function(evt){
+      if (evt.linefeed)return true; return false
+    });
+	};
+	SEQUENCE.searchNextLinefeed = function(from){
+    return SEQUENCE.searchNextEvent(from,function(evt){
+      if (evt.linefeed)return true; return false
+    });
+	};
+	SEQUENCE.searchActiveChord = function(from){
+		if (SEQUENCE.evt.length == 0 || SEQUENCE.evt_current == null)
+			return null;
+
+		if (SEQUENCE.evt_current.chord)
+			return SEQUENCE.evt_current.chord;
+
+		for (var i = (SEQUENCE.evt.length-1) ; i > 0; i--){
+			var idx = ((SEQUENCE.evt_curidx+i)%SEQUENCE.evt.length);
+			if (SEQUENCE.evt[idx].chord)
+				return SEQUENCE.evt[idx].chord;
+		}
+
+		return from;
+	};
+	SEQUENCE.transpose = function(delta){
+
+		for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ ){
+			var evt = SEQUENCE.evt[i];
+			// if this event has a chord
+			if (evt.chord!=null){
+				evt.chord.v = ts.music.transpose.note.name(evt.chord.v,delta)
+				evt.chord.b = ts.music.transpose.note.name(evt.chord.b,delta)
 			}
 
-			if (e == null){
-				return null;
+			if (evt.melody != 0){
+				evt.melody += delta;
 			}
+		}
+		this.refresh();
+	};
+	SEQUENCE.updateStats = function(){
+		SEQUENCE.stats.start();
+    var bar = SEQUENCE.searchNextBar(SEQUENCE.evt.length-1);
+		for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ ){
+      var idx = (i+bar)%SEQUENCE.evt.length;
+			SEQUENCE.evt[idx].duration = 0;
+			SEQUENCE.evt[idx].refresh();
+			SEQUENCE.stats.countEvent(SEQUENCE.evt[idx]);
+		}
+		SEQUENCE.stats.end();
 
-			this.evt_shown = e.eSpan;
-			this.evt_shown.className = 'tscurrent';
-			return e;
-		};
-		SEQUENCE.setCurrentEvent = function(evt){
-			var playing = ts.player.is.running();
+    if (SEQUENCE.evt.length > 0){
 
-			SEQUENCE.evt_current = evt;
-			if (!playing){
-				if (ts.is.window())SEQUENCE.showEventAsCurrent(evt);
-			}
-
-			SEQUENCE.evt_curidx = -1;
-			for (var i = 0 ; i < this.evt.length ; i++){
-				if (evt == SEQUENCE.evt[i]){
-					SEQUENCE.evt_curidx = i;
-					break;
-				}
-			}
-
-			if (SEQUENCE.current_tool != null && !playing){
-				SEQUENCE.current_tool.refresh();
-			}
-			if (SEQUENCE.current_inst != null && !playing){
-				SEQUENCE.current_inst.refresh();
-			}
-
-		};
-		SEQUENCE.getEventIndex = function(evt){
-			for (var i = 0 ; i < SEQUENCE.evt.length ; i++){
-				if (evt == SEQUENCE.evt[i])
-				return i;
-			}
-
-			return 0;
-		};
-		SEQUENCE.setNextEvent = function(){
-			SEQUENCE.setCurrentEvent(SEQUENCE.evt[((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length)]);
-		};
-		SEQUENCE.setPreviousEvent = function(){
-			SEQUENCE.setCurrentEvent(SEQUENCE.evt[((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length)]);
-		};
-
-    SEQUENCE.searchNextEvent = function(from,testEvent){
-      if (SEQUENCE.evt.length==0)return from;
-      if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length);
-      var start = from;
-			if (start == null) start = SEQUENCE.evt_curidx;
-			start %= SEQUENCE.evt.length;
-			start += SEQUENCE.evt.length;
-
-			for (var i = 0 ; i < SEQUENCE.evt.length ; i++){
-				start++;
-				var idx = (start%SEQUENCE.evt.length);
-				if (testEvent(SEQUENCE.evt[idx]))
-					return idx;
-			}
-
-			return from;
-		};
-		SEQUENCE.searchPrevEvent = function(from,testEvent){
-      if (SEQUENCE.evt.length==0)return from;
-			if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length);
-      var start = from;
-			if (start == null) start = SEQUENCE.evt_curidx;
-			start %= SEQUENCE.evt.length;
-			start += SEQUENCE.evt.length;
-
-			for (var i = 0 ; i < this.evt.length ; i++){
-				start--;
-				var idx = (start%SEQUENCE.evt.length);
-        if (testEvent(SEQUENCE.evt[idx]))
-					return idx;
-			}
-
-			return from;
-		};
-		SEQUENCE.searchPrevBar = function(from){
-      return SEQUENCE.searchPrevEvent(from,function(evt){if (evt.bar)return true; return false});
-		};
-		SEQUENCE.searchNextBar = function(from){
-      return SEQUENCE.searchNextEvent(from,function(evt){if (evt.bar)return true; return false});
-		};
-    SEQUENCE.searchPrevBeat = function(from){
-      return SEQUENCE.searchPrevEvent(from,function(evt){if (evt.beat)return true; return false});
-		};
-		SEQUENCE.searchNextBeat = function(from){
-      return SEQUENCE.searchNextEvent(from,function(evt){if (evt.beat)return true; return false});
-		};
-    SEQUENCE.searchPrevChord = function(from){
-      return SEQUENCE.searchPrevEvent(from,function(evt){
-        if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
-      });
-		};
-		SEQUENCE.searchNextChord = function(from){
-      return SEQUENCE.searchNextEvent(from,function(evt){
-        if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
-      });
-		};
-    SEQUENCE.searchPrevNote = function(from){
-      return SEQUENCE.searchPrevEvent(from,function(evt){
-        if (evt.melody!=0)return true; return false
-      });
-		};
-		SEQUENCE.searchNextNote = function(from){
-      return SEQUENCE.searchNextEvent(from,function(evt){
-        if (evt.melody!=0)return true; return false
-      });
-		};
-    SEQUENCE.searchPrevLyric = function(from){
-      return SEQUENCE.searchPrevEvent(from,function(evt){
-        if (evt.lyric.trim()!='')return true; return false
-      });
-		};
-		SEQUENCE.searchNextLyric = function(from){
-      return SEQUENCE.searchNextEvent(from,function(evt){
-        if (evt.lyric.trim()!='')return true; return false
-      });
-		};
-    SEQUENCE.searchPrevSpace = function(from){
-      return SEQUENCE.searchPrevEvent(from,function(evt){
-        if (evt.space)return true; return false
-      });
-		};
-		SEQUENCE.searchNextSpace = function(from){
-      return SEQUENCE.searchNextEvent(from,function(evt){
-        if (evt.space)return true; return false
-      });
-		};
-    SEQUENCE.searchPrevLinefeed = function(from){
-      return SEQUENCE.searchPrevEvent(from,function(evt){
-        if (evt.linefeed)return true; return false
-      });
-		};
-		SEQUENCE.searchNextLinefeed = function(from){
-      return SEQUENCE.searchNextEvent(from,function(evt){
-        if (evt.linefeed)return true; return false
-      });
-		};
-		SEQUENCE.searchActiveChord = function(from){
-			if (SEQUENCE.evt.length == 0 || SEQUENCE.evt_current == null)
-				return null;
-
-			if (SEQUENCE.evt_current.chord)
-				return SEQUENCE.evt_current.chord;
-
-			for (var i = (SEQUENCE.evt.length-1) ; i > 0; i--){
-				var idx = ((SEQUENCE.evt_curidx+i)%SEQUENCE.evt.length);
-				if (SEQUENCE.evt[idx].chord)
-					return SEQUENCE.evt[idx].chord;
-			}
-
-			return from;
-		};
-		SEQUENCE.transpose = function(delta){
-
-			for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ ){
-				var evt = SEQUENCE.evt[i];
-				// if this event has a chord
-				if (evt.chord!=null){
-					evt.chord.v = ts.music.transpose.note.name(evt.chord.v,delta)
-					evt.chord.b = ts.music.transpose.note.name(evt.chord.b,delta)
-				}
-
-				if (evt.melody != 0){
-					evt.melody += delta;
-				}
-			}
-			this.refresh();
-		};
-		SEQUENCE.updateStats = function(){
-			SEQUENCE.stats.start();
-      var bar = SEQUENCE.searchNextBar(SEQUENCE.evt.length-1);
-			for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ ){
-        var idx = (i+bar)%SEQUENCE.evt.length;
-				SEQUENCE.evt[idx].duration = 0;
-				SEQUENCE.evt[idx].refresh();
-				SEQUENCE.stats.countEvent(SEQUENCE.evt[idx]);
-			}
-			SEQUENCE.stats.end();
-
-      if (SEQUENCE.evt.length > 0){
-
-        var bar = null, beat = null, chord = null, melody = null, text = null;
-        for ( var idx = 0 ; idx <= (SEQUENCE.evt.length+1); idx++){
-          var i = idx % SEQUENCE.evt.length;
-          var e = SEQUENCE.evt[i];
-          if (e.isBar()){if (bar!=null) e.prevBar = bar; bar = e; }
-          if (e.isBeat()){if (beat!=null) e.prevBeat = beat; beat = e; }
-          if (e.isChord()){if (chord!=null) e.prevChord = chord; chord = e; }
-          if (e.isMelody()){if (melody!=null) e.prevMelody = melody; melody = e; }
-          if (e.isLyric()||e.isSpace()){if (text!=null) e.prevText = text; text = e; }
-        }
-
-        bar = null; beat = null; chord = null; melody = null; text = null;
-        for ( var idx = SEQUENCE.evt.length ; idx >= 0; idx--){
-          var i = idx % SEQUENCE.evt.length;
-          var e = SEQUENCE.evt[i];
-          if (e.isBar()){if (bar!=null) e.nextBar = bar; bar = e; }
-          if (e.isBeat()){if (beat!=null) e.nextBeat = beat; beat = e; }
-          if (e.isChord()){if (chord!=null) e.nextChord = chord; chord = e; }
-          if (e.isMelody()){if (melody!=null) e.nextMelody = melody; melody = e; }
-          if (e.isLyric()||e.isSpace()){if (text!=null) e.nextText = text; text = e; }
-        }
-
+      var bar = null, beat = null, chord = null, melody = null, text = null;
+      for ( var idx = 0 ; idx <= (SEQUENCE.evt.length+1); idx++){
+        var i = idx % SEQUENCE.evt.length;
+        var e = SEQUENCE.evt[i];
+        if (e.isBar()){if (bar!=null) e.prevBar = bar; bar = e; }
+        if (e.isBeat()){if (beat!=null) e.prevBeat = beat; beat = e; }
+        if (e.isChord()){if (chord!=null) e.prevChord = chord; chord = e; }
+        if (e.isMelody()){if (melody!=null) e.prevMelody = melody; melody = e; }
+        if (e.isLyric()||e.isSpace()){if (text!=null) e.prevText = text; text = e; }
       }
 
-		};
-		SEQUENCE.recomputeTiming = function(){
-			SEQUENCE.updateStats();
-			var seq = SEQUENCE;
-			SEQUENCE.barTotalMillies = Math.round(SEQUENCE.bpb * (60000/SEQUENCE.bpm));
-      SEQUENCE.beatMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.bpb);
-      SEQUENCE.barTicks = Math.round(SEQUENCE.bpb*SEQUENCE.tpb);
-      SEQUENCE.tickMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.barTicks);
-      while ((SEQUENCE.tickMillies*SEQUENCE.barTicks)<SEQUENCE.barTotalMillies)SEQUENCE.tickMillies += 1;
+      bar = null; beat = null; chord = null; melody = null; text = null;
+      for ( var idx = SEQUENCE.evt.length ; idx >= 0; idx--){
+        var i = idx % SEQUENCE.evt.length;
+        var e = SEQUENCE.evt[i];
+        if (e.isBar()){if (bar!=null) e.nextBar = bar; bar = e; }
+        if (e.isBeat()){if (beat!=null) e.nextBeat = beat; beat = e; }
+        if (e.isChord()){if (chord!=null) e.nextChord = chord; chord = e; }
+        if (e.isMelody()){if (melody!=null) e.nextMelody = melody; melody = e; }
+        if (e.isLyric()||e.isSpace()){if (text!=null) e.nextText = text; text = e; }
+      }
 
-      //ts.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
-      //ts.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
-      //ts.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
-      //ts.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
+    }
 
-			var title = '';
+	};
+	SEQUENCE.recomputeTiming = function(){
+		SEQUENCE.updateStats();
+		var seq = SEQUENCE;
+		SEQUENCE.barTotalMillies = Math.round(SEQUENCE.bpb * (60000/SEQUENCE.bpm));
+    SEQUENCE.beatMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.bpb);
+    SEQUENCE.barTicks = Math.round(SEQUENCE.bpb*SEQUENCE.tpb);
+    SEQUENCE.tickMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.barTicks);
+    while ((SEQUENCE.tickMillies*SEQUENCE.barTicks)<SEQUENCE.barTotalMillies)SEQUENCE.tickMillies += 1;
 
-			function processBeat(beat,no,length){
+    //ts.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
+    //ts.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
+    //ts.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
+    //ts.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
 
-				var tit = 'beat:'+ (no+1) +' length:'+length;
-				if (SEQUENCE.evt[beat].bar==null && SEQUENCE.evt[beat].beat!=null){
-					if (ts.is.window())SEQUENCE.evt[beat].eBlockChart.title = tit;
+		var title = '';
+
+		function processBeat(beat,no,length){
+
+			var tit = 'beat:'+ (no+1) +' length:'+length;
+			if (SEQUENCE.evt[beat].bar==null && SEQUENCE.evt[beat].beat!=null){
+				if (ts.is.window())SEQUENCE.evt[beat].eBlockChart.title = tit;
+			}
+			SEQUENCE.evt[beat].duration = length;
+
+			//if (seq.evt[beat].beat==null)ts.debug('beat with no beat');
+			// count beat events
+			var eCount = 0;
+			for (var c = beat ; c < (beat+SEQUENCE.evt.length); c++){
+				var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
+
+				if (SEQUENCE.evt[ci].hasMusic()) eCount++;
+
+				// loop control
+				ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
+				if (SEQUENCE.evt[ci].beat) break;
+			}
+
+			if (eCount > 1){
+				var eDur = Math.round(length/eCount);
+				for (var c = beat ; c < (beat+seq.evt.length) && eCount>0; c++){
+					var ci = (c+seq.evt.length)%seq.evt.length;
+					if (seq.evt[ci].hasMusic()) {
+
+						eCount--
+						if (eCount==0){
+							seq.evt[ci].duration = length;
+							break;
+						}
+						else {
+							seq.evt[ci].duration = eDur;
+							length -= eDur;
+						}
+					};
+
+					// loop control
+					ci = (ci+1+seq.evt.length)%seq.evt.length;
+					if (seq.evt[ci].beat) break;
 				}
-				SEQUENCE.evt[beat].duration = length;
+			}
 
-				//if (seq.evt[beat].beat==null)ts.debug('beat with no beat');
-				// count beat events
-				var eCount = 0;
-				for (var c = beat ; c < (beat+SEQUENCE.evt.length); c++){
+		}
+
+		if (SEQUENCE.stats.bars > 0){
+			var cur_bar = SEQUENCE.searchNextBar(this.evt.length-1);
+			var countObject = new Object({
+				events:0,
+				beats:0,
+        notes:0,
+        chords:0,
+			});
+
+			for (var b = 0; b < SEQUENCE.stats.bars; b++){
+				title = 'bar '+(b+1)+' ';
+				var beatNo = 0;
+
+				// count beats and events in current bar
+				countObject.events = countObject.beats = countObject.notes = countObject.chords = 0;
+				for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
 					var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-
-					if (SEQUENCE.evt[ci].hasMusic()) eCount++;
+					countObject.events++;
+					if (SEQUENCE.evt[ci].isBeat()) countObject.beats++;
+          if (SEQUENCE.evt[ci].isMelody()) countObject.notes++;
+          if (SEQUENCE.evt[ci].isChord()) countObject.chords++;
 
 					// loop control
 					ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-					if (SEQUENCE.evt[ci].beat) break;
+					if (SEQUENCE.evt[ci].bar) break;
 				}
+				title += ' beats:'+countObject.beats
+              +' events:'+countObject.events
+              +' notes:'+countObject.notes
+							+' chords:'+countObject.chords;
 
-				if (eCount > 1){
-					var eDur = Math.round(length/eCount);
-					for (var c = beat ; c < (beat+seq.evt.length) && eCount>0; c++){
-						var ci = (c+seq.evt.length)%seq.evt.length;
-						if (seq.evt[ci].hasMusic()) {
-
-							eCount--
-							if (eCount==0){
-								seq.evt[ci].duration = length;
-								break;
-							}
-							else {
-								seq.evt[ci].duration = eDur;
-								length -= eDur;
-							}
-						};
-
-						// loop control
-						ci = (ci+1+seq.evt.length)%seq.evt.length;
-						if (seq.evt[ci].beat) break;
+				if (countObject.beats == this.bpb){
+					beatNo = 0;
+					for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
+						var ci = (c+this.evt.length)%this.evt.length;
+						if (this.evt[ci].isBar()&&ci!=cur_bar)break;
+						if (this.evt[ci].isBeat()) {
+							if (beatNo==0) {title += ' length:'+SEQUENCE.beatMillies;}
+							processBeat(ci,beatNo,SEQUENCE.beatMillies);
+							beatNo += 1;
+						}
 					}
 				}
+				else {
+					var bMils = SEQUENCE.beatMillies;
+					var couBeats = countObject.beats;
+					var bpb = SEQUENCE.bpb;
 
-			}
+					while (couBeats>bpb) bpb+=SEQUENCE.bpb;
+					var bMils = Math.round(SEQUENCE.barTotalMillies/bpb);
 
-			if (SEQUENCE.stats.bars > 0){
-				var cur_bar = SEQUENCE.searchNextBar(this.evt.length-1);
-				var countObject = new Object({
-					events:0,
-					beats:0,
-          notes:0,
-          chords:0,
-				});
-
-				for (var b = 0; b < SEQUENCE.stats.bars; b++){
-					title = 'bar '+(b+1)+' ';
-					var beatNo = 0;
-
-					// count beats and events in current bar
-					countObject.events = countObject.beats = countObject.notes = countObject.chords = 0;
+					var beatNo = 0; var bpbUsed = 0;
+					var timePerBeat = SEQUENCE.barTotalMillies/couBeats;
 					for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
 						var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-						countObject.events++;
-						if (SEQUENCE.evt[ci].isBeat()) countObject.beats++;
-            if (SEQUENCE.evt[ci].isMelody()) countObject.notes++;
-            if (SEQUENCE.evt[ci].isChord()) countObject.chords++;
+						if (SEQUENCE.evt[ci].isBar()&&ci!=cur_bar)break;
+						if (SEQUENCE.evt[ci].isBeat()){
+							var target = (beatNo+1) * timePerBeat;
 
-						// loop control
-						ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-						if (SEQUENCE.evt[ci].bar) break;
-					}
-					title += ' beats:'+countObject.beats
-                +' events:'+countObject.events
-                +' notes:'+countObject.notes
-								+' chords:'+countObject.chords;
-
-					if (countObject.beats == this.bpb){
-						beatNo = 0;
-						for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
-							var ci = (c+this.evt.length)%this.evt.length;
-							if (this.evt[ci].isBar()&&ci!=cur_bar)break;
-							if (this.evt[ci].isBeat()) {
-								if (beatNo==0) {title += ' length:'+SEQUENCE.beatMillies;}
-								processBeat(ci,beatNo,SEQUENCE.beatMillies);
-								beatNo += 1;
-							}
-						}
-					}
-					else {
-						var bMils = SEQUENCE.beatMillies;
-						var couBeats = countObject.beats;
-						var bpb = SEQUENCE.bpb;
-
-						while (couBeats>bpb) bpb+=SEQUENCE.bpb;
-						var bMils = Math.round(SEQUENCE.barTotalMillies/bpb);
-
-						var beatNo = 0; var bpbUsed = 0;
-						var timePerBeat = SEQUENCE.barTotalMillies/couBeats;
-						for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
-							var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-							if (SEQUENCE.evt[ci].isBar()&&ci!=cur_bar)break;
-							if (SEQUENCE.evt[ci].isBeat()){
-								var target = (beatNo+1) * timePerBeat;
-
-								var bpbThis = 0;
-								var bpbUsedBefore = bpbUsed;
-								//ts.debug('timePerBeat:'+ timePerBeat + ' target:' + target);
-								for (var x = bpbUsed ; x < bpb; x++) {
-									var diff =  Math.round(Math.abs(((bpbUsed*bMils)-target))%bMils);
-									//ts.debug('distance of ' +(bpbUsed)+'/'+(couBeats)+' beat is '+diff);
-									var diff_if_addbeat = Math.round(Math.abs((((bpbUsed+1)*bMils)-target))%bMils);
-									//ts.debug('distance of ' +(bpbUsed+1)+'/'+(couBeats)+' beat is '+diff_if_addbeat);
-									if (diff_if_addbeat <= diff){
-										bpbUsed += 1;
-										bpbThis += 1;
-										if ((bpbUsed*bMils)>=target)break;
-									}
-									else break;
+							var bpbThis = 0;
+							var bpbUsedBefore = bpbUsed;
+							//ts.debug('timePerBeat:'+ timePerBeat + ' target:' + target);
+							for (var x = bpbUsed ; x < bpb; x++) {
+								var diff =  Math.round(Math.abs(((bpbUsed*bMils)-target))%bMils);
+								//ts.debug('distance of ' +(bpbUsed)+'/'+(couBeats)+' beat is '+diff);
+								var diff_if_addbeat = Math.round(Math.abs((((bpbUsed+1)*bMils)-target))%bMils);
+								//ts.debug('distance of ' +(bpbUsed+1)+'/'+(couBeats)+' beat is '+diff_if_addbeat);
+								if (diff_if_addbeat <= diff){
+									bpbUsed += 1;
+									bpbThis += 1;
+									if ((bpbUsed*bMils)>=target)break;
 								}
-								//ts.debug('bpbUsed:'+bpbUsed+' bpbThis:'+bpbThis);
-								if (beatNo==0) {title += ' length:'+(bpbThis*bMils);}
-								processBeat(ci,beatNo,bpbThis*bMils);
-								beatNo += 1;
+								else break;
 							}
+							//ts.debug('bpbUsed:'+bpbUsed+' bpbThis:'+bpbThis);
+							if (beatNo==0) {title += ' length:'+(bpbThis*bMils);}
+							processBeat(ci,beatNo,bpbThis*bMils);
+							beatNo += 1;
 						}
 					}
-
-					if (ts.is.window())SEQUENCE.evt[cur_bar].eBlockChart.title = title;
-					cur_bar = SEQUENCE.searchNextBar(cur_bar);
 				}
+
+				if (ts.is.window())SEQUENCE.evt[cur_bar].eBlockChart.title = title;
+				cur_bar = SEQUENCE.searchNextBar(cur_bar);
 			}
-		};
-    SEQUENCE.recomputeBar = function(e){
-      var tix = SEQUENCE.barTicks;
+		}
+	};
+  SEQUENCE.recomputeBar = function(e){
+    var tix = SEQUENCE.barTicks;
 
-      e.playArray = new Array();
+    e.playArray = new Array();
 
-      // create a tick-grid
-      var starttime = 0;
-      var available_bar = SEQUENCE.barTotalMillies;
-      for (var b = 0; b < SEQUENCE.bpb; b++){
-        var available_beat = SEQUENCE.beatMillies;
-        if (b == (SEQUENCE.bpb-1)) available_beat = available_bar;
-        available_bar -= available_beat;
+    // create a tick-grid
+    var starttime = 0;
+    var available_bar = SEQUENCE.barTotalMillies;
+    for (var b = 0; b < SEQUENCE.bpb; b++){
+      var available_beat = SEQUENCE.beatMillies;
+      if (b == (SEQUENCE.bpb-1)) available_beat = available_bar;
+      available_bar -= available_beat;
 
-        for (var t = 0; t < SEQUENCE.tpb; t++){
-          var available_tick = SEQUENCE.tickMillies;
-          if (t == (SEQUENCE.tpb-1))available_tick = available_beat;
-          available_beat -= available_tick;
+      for (var t = 0; t < SEQUENCE.tpb; t++){
+        var available_tick = SEQUENCE.tickMillies;
+        if (t == (SEQUENCE.tpb-1))available_tick = available_beat;
+        available_beat -= available_tick;
 
-          e.playArray.push(new Object({
+        e.playArray.push(new Object({
+          starttime:starttime,
+          ticktime:available_tick,
+          chordCount:new Array(),
+          melodyCount:new Array(),
+        }));
+        starttime += available_tick;
+      }
+
+    }
+    //ts.debug('total duration: '+starttime)
+
+    // spread out the beats;
+    var bcount = e.bar.beats.length;
+    var tix_available = tix;
+    var tpos = 0;
+    var tpb = Math.round(tix/bcount);
+    for (var b = 0; b < bcount; b++){
+      var beat = e.bar.beats[b];
+      var bstart = tpos;
+      var blength = tpb
+      if (b==(bcount-1))blength=tix_available;
+      tpos += blength;
+      tix_available -= blength;
+
+      // count music events
+      var a = new Array();
+      for (var m = 0; m < beat.beat.events.length; m++){
+        if (beat.beat.events[m].hasMusic())a.push(beat.beat.events[m])
+      }
+      //ts.debug('bstart='+bstart+' blength='+blength+' musicEvents='+a.length);
+
+      var m_pos = bstart;
+      var m_available = blength;
+      var tpe_float = blength/a.length;
+      for (var m = 0; m < a.length;m++){
+        var start = Math.round((m*tpe_float)+bstart);
+        if (start >= e.playArray.length)start--;
+        //ts.debug('musicEvent '+m+' starts on tick '+start);
+        if (a[m].isChord()){
+          e.playArray[start].chord = (a[m]);
+          e.playArray[start].chordCount.push(a[m]);
+        }
+
+        if (a[m].isMelody()){
+          e.playArray[start].melody = (a[m]);
+          e.playArray[start].melodyCount.push(a[m]);
+        }
+      }
+
+    }
+
+    // concoct a melody summary
+    e.arrayMelody = new Array();
+    for (var i = 0 ; i < tix; i++) {
+      var a = e.playArray[i].melodyCount;
+      var tickstart = e.playArray[i].starttime;
+      var ticklength = e.playArray[i].ticktime;
+      var count = e.playArray[i].melodyCount.length;
+      if (count>0){
+        var start = tickstart;
+        var available = ticklength;
+        var slice = Math.round(available/count);
+        for (var c = 0; c < a.length; c++){
+          var event = a[c];
+          var starttime = start+(c*slice);
+          var ticktime = Math.round(available/(a.length-(c)));
+          available -= ticktime;
+          //tick.arr.push(new Object({
+          e.arrayMelody.push(new Object({
             starttime:starttime,
-            ticktime:available_tick,
-            chordCount:new Array(),
-            melodyCount:new Array(),
-          }));
-          starttime += available_tick;
-        }
+            ticktime:ticktime,
 
-      }
-      //ts.debug('total duration: '+starttime)
+            //debug
+            //ticklength:ticklength,
+            //slice:slice,
 
-      // spread out the beats;
-      var bcount = e.bar.beats.length;
-      var tix_available = tix;
-      var tpos = 0;
-      var tpb = Math.round(tix/bcount);
-      for (var b = 0; b < bcount; b++){
-        var beat = e.bar.beats[b];
-        var bstart = tpos;
-        var blength = tpb
-        if (b==(bcount-1))blength=tix_available;
-        tpos += blength;
-        tix_available -= blength;
-
-        // count music events
-        var a = new Array();
-        for (var m = 0; m < beat.beat.events.length; m++){
-          if (beat.beat.events[m].hasMusic())a.push(beat.beat.events[m])
-        }
-        //ts.debug('bstart='+bstart+' blength='+blength+' musicEvents='+a.length);
-
-        var m_pos = bstart;
-        var m_available = blength;
-        var tpe_float = blength/a.length;
-        for (var m = 0; m < a.length;m++){
-          var start = Math.round((m*tpe_float)+bstart);
-          if (start >= e.playArray.length)start--;
-          //ts.debug('musicEvent '+m+' starts on tick '+start);
-          if (a[m].isChord()){
-            e.playArray[start].chord = (a[m]);
-            e.playArray[start].chordCount.push(a[m]);
-          }
-
-          if (a[m].isMelody()){
-            e.playArray[start].melody = (a[m]);
-            e.playArray[start].melodyCount.push(a[m]);
-          }
-        }
-
-      }
-
-      // concoct a melody summary
-      e.arrayMelody = new Array();
-      for (var i = 0 ; i < tix; i++) {
-        var a = e.playArray[i].melodyCount;
-        var tickstart = e.playArray[i].starttime;
-        var ticklength = e.playArray[i].ticktime;
-        var count = e.playArray[i].melodyCount.length;
-        if (count>0){
-          var start = tickstart;
-          var available = ticklength;
-          var slice = Math.round(available/count);
-          for (var c = 0; c < a.length; c++){
-            var event = a[c];
-            var starttime = start+(c*slice);
-            var ticktime = Math.round(available/(a.length-(c)));
-            available -= ticktime;
-            //tick.arr.push(new Object({
-            e.arrayMelody.push(new Object({
-              starttime:starttime,
-              ticktime:ticktime,
-
-              //debug
-              //ticklength:ticklength,
-              //slice:slice,
-
-              event:a[c],
-            }));
-          }
-        }
-      }
-
-      for (var i = 0 ; i < e.arrayMelody.length; i++) {
-        if (i == (e.arrayMelody.length-1)){
-          e.arrayMelody[i].ticktime = SEQUENCE.barTotalMillies-e.arrayMelody[i].starttime;
-        }
-        else {
-          e.arrayMelody[i].ticktime = e.arrayMelody[i+1].starttime-e.arrayMelody[i].starttime;
-        }
-      }
-
-      // concoct a chord summary
-      e.arrayChords = new Array();
-      for (var i = 0 ; i < tix; i++) {
-        if (e.playArray[i].chord!=null){
-          e.arrayChords.push(new Object({
-            starttime:e.playArray[i].starttime,
-            ticktime:e.playArray[i].ticktime,
-            event:e.playArray[i].chord,
+            event:a[c],
           }));
         }
       }
+    }
 
-      for (var i = 0 ; i < e.arrayChords.length; i++) {
-        if (i == (e.arrayChords.length-1)){
-          e.arrayChords[i].ticktime = SEQUENCE.barTotalMillies-e.arrayChords[i].starttime;
+    for (var i = 0 ; i < e.arrayMelody.length; i++) {
+      if (i == (e.arrayMelody.length-1)){
+        e.arrayMelody[i].ticktime = SEQUENCE.barTotalMillies-e.arrayMelody[i].starttime;
+      }
+      else {
+        e.arrayMelody[i].ticktime = e.arrayMelody[i+1].starttime-e.arrayMelody[i].starttime;
+      }
+    }
+
+    // concoct a chord summary
+    e.arrayChords = new Array();
+    for (var i = 0 ; i < tix; i++) {
+      if (e.playArray[i].chord!=null){
+        e.arrayChords.push(new Object({
+          starttime:e.playArray[i].starttime,
+          ticktime:e.playArray[i].ticktime,
+          event:e.playArray[i].chord,
+        }));
+      }
+    }
+
+    for (var i = 0 ; i < e.arrayChords.length; i++) {
+      if (i == (e.arrayChords.length-1)){
+        e.arrayChords[i].ticktime = SEQUENCE.barTotalMillies-e.arrayChords[i].starttime;
+      }
+      else {
+        e.arrayChords[i].ticktime = e.arrayChords[i+1].starttime-e.arrayChords[i].starttime;
+      }
+    }
+
+  };
+
+	SEQUENCE.addEvent = function(str,info,afterIndex){
+		var SEQUENCE = this;
+		// Global values
+		var glob = ts.zs4.string.split.separators(info,':');
+		if (glob.length==2){
+			//window.alert(info);
+      if (glob[0].trim()=='tpb'){
+				this.tpb = parseInt(glob[1]);
+				if (this.tpb < ts.music.MIN_TICKS_PER_BEAT)this.tpb = ts.music.MIN_TICKS_PER_BEAT;
+				else if (this.tpb > ts.music.MAX_TICKS_PER_BEAT) this.tpb = ts.music.MAX_TICKS_PER_BEAT;
+
+        if (ts.is.window())this.bpmTool.eEventTpbInput.value = this.tpb;
+
+			}
+      if (glob[0].trim()=='bpb'){
+				this.bpb = parseInt(glob[1]);
+				if (this.bpb < ts.music.MIN_BEATS_PER_BAR)this.bpb = ts.music.MIN_BEATS_PER_BAR;
+				else if (this.bpb > ts.music.MAX_BEATS_PER_BAR) this.bpb = ts.music.MAX_BEATS_PER_BAR;
+
+        if (ts.is.window())this.bpmTool.eEventBpcInput.value = this.bpb;
+
+			}
+			if (glob[0].trim()=='bpm'){
+				SEQUENCE.bpm = parseInt(glob[1]);
+				if (SEQUENCE.bpm < ts.music.MIN_BEATS_PER_MINUTE)SEQUENCE.bpm = MIN_BEATS_PER_MINUTE;
+				else if (SEQUENCE.bpm > ts.music.MAX_BEATS_PER_MINUTE) SEQUENCE.bpm = ts.music.MAX_BEATS_PER_MINUTE;
+
+				if (ts.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
+			}
+
+      if (glob[0].trim()=='lf'){
+        if (glob[1].trim()=='false'){
+          SEQUENCE.layoutlinefeed = false;
+          if (ts.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=false;
         }
         else {
-          e.arrayChords[i].ticktime = e.arrayChords[i+1].starttime-e.arrayChords[i].starttime;
+          SEQUENCE.layoutlinefeed = true;
+          if (ts.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=true;
         }
       }
+		}
+		if (info.search(":") != -1) return 0;
 
-    };
+		var o = {
+			ts:this,
+			space:false,
+			linefeed:false,
+			bar:null,
+			beat:null,
+			melody:0,
+			duration:0,
+			lyric:str.trim(),
+			refresh:function(){},
+			hasMusic:function(){
+				if (this.bar != null
+					|| this.beat != null
+					|| this.chord != null
+					|| this.melody != 0
+				) return true;
+				return false;
+			},
+      isChord:function(){if (this.chord!=null&&this.chord.ok)return true; return false;},
+      isBar:function(){return zs4.is.object(this.bar)},
+      isBeat:function(){return zs4.is.object(this.beat)},
+      isLinefeed:function(){return this.linefeed;},
+      isSpace:function(){return this.space;},
+      isMelody:function(){if(this.melody!=0)return true;return false;},
+      isLyric:function(){if(this.lyric!='')return true;return false;},
+		};
+    if (ts.is.node())o.refresh = function(){};
 
-		SEQUENCE.addEvent = function(str,info,afterIndex){
-			var SEQUENCE = this;
-			// Global values
-			var glob = ts.zs4.string.split.separators(info,':');
-			if (glob.length==2){
-				//window.alert(info);
-        if (glob[0].trim()=='tpb'){
-					this.tpb = parseInt(glob[1]);
-					if (this.tpb < ts.music.MIN_TICKS_PER_BEAT)this.tpb = ts.music.MIN_TICKS_PER_BEAT;
-					else if (this.tpb > ts.music.MAX_TICKS_PER_BEAT) this.tpb = ts.music.MAX_TICKS_PER_BEAT;
+    var EVENT = o;
 
-          if (ts.is.window())this.bpmTool.eEventTpbInput.value = this.tpb;
-
-				}
-        if (glob[0].trim()=='bpb'){
-					this.bpb = parseInt(glob[1]);
-					if (this.bpb < ts.music.MIN_BEATS_PER_BAR)this.bpb = ts.music.MIN_BEATS_PER_BAR;
-					else if (this.bpb > ts.music.MAX_BEATS_PER_BAR) this.bpb = ts.music.MAX_BEATS_PER_BAR;
-
-          if (ts.is.window())this.bpmTool.eEventBpcInput.value = this.bpb;
-
-				}
-				if (glob[0].trim()=='bpm'){
-					SEQUENCE.bpm = parseInt(glob[1]);
-					if (SEQUENCE.bpm < ts.music.MIN_BEATS_PER_MINUTE)SEQUENCE.bpm = MIN_BEATS_PER_MINUTE;
-					else if (SEQUENCE.bpm > ts.music.MAX_BEATS_PER_MINUTE) SEQUENCE.bpm = ts.music.MAX_BEATS_PER_MINUTE;
-
-					if (ts.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
-				}
-
-        if (glob[0].trim()=='lf'){
-          if (glob[1].trim()=='false'){
-            SEQUENCE.layoutlinefeed = false;
-            if (ts.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=false;
-          }
-          else {
-            SEQUENCE.layoutlinefeed = true;
-            if (ts.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=true;
-          }
-        }
+      // MUSICAL info
+    ///////////////////////////////////
+		while (true){
+			if (info.substr(0,1)=='|'){
+				//window.alert('|'); // toggleBar
+				o.bar = {}; o.beat = {};
+				info = info.substr(1,info.length-1);
 			}
-			if (info.search(":") != -1) return 0;
-
-			var o = {
-				ts:this,
-				space:false,
-				linefeed:false,
-				bar:null,
-				beat:null,
-				melody:0,
-				duration:0,
-				lyric:str.trim(),
-				refresh:function(){},
-				hasMusic:function(){
-					if (this.bar != null
-						|| this.beat != null
-						|| this.chord != null
-						|| this.melody != 0
-					) return true;
-					return false;
-				},
-        isChord:function(){if (this.chord!=null&&this.chord.ok)return true; return false;},
-        isBar:function(){return zs4.is.object(this.bar)},
-        isBeat:function(){return zs4.is.object(this.beat)},
-        isLinefeed:function(){return this.linefeed;},
-        isSpace:function(){return this.space;},
-        isMelody:function(){if(this.melody!=0)return true;return false;},
-        isLyric:function(){if(this.lyric!='')return true;return false;},
-			};
-      if (ts.is.node())o.refresh = function(){};
-
-      var EVENT = o;
-
-	      // MUSICAL info
-      ///////////////////////////////////
-			while (true){
-				if (info.substr(0,1)=='|'){
-					//window.alert('|'); // toggleBar
-					o.bar = {}; o.beat = {};
-					info = info.substr(1,info.length-1);
-				}
-				else if (info.substr(0,1)=='.'){
-					o.beat = {};
-					info = info.substr(1,info.length-1);
-				}
-				else break;
+			else if (info.substr(0,1)=='.'){
+				o.beat = {};
+				info = info.substr(1,info.length-1);
 			}
+			else break;
+		}
 
-			// note
-			var note = '';
-			while (true){
-				var nc = info.charAt(0);
-				if (nc >= '0' && nc <= '9'){ note += nc; info = info.substr(1,info.length-1);}
-				else break;
+		// note
+		var note = '';
+		while (true){
+			var nc = info.charAt(0);
+			if (nc >= '0' && nc <= '9'){ note += nc; info = info.substr(1,info.length-1);}
+			else break;
+		}
+		if (note.length > 0) {
+			o.melody = parseInt(note);
+		}
+
+		var chord = ts.music.parse.chord(info);
+		if (chord.ok){
+			o.chord = chord;
+      if (!this.key.ok) {
+				this.key.v  = chord.v;
+				this.key.t  = chord.t;
+				this.key.ok = chord.ok;
 			}
-			if (note.length > 0) {
-				o.melody = parseInt(note);
-			}
+		}
 
-			var chord = ts.music.parse.chord(info);
-			if (chord.ok){
-				o.chord = chord;
-        if (!this.key.ok) {
-					this.key.v  = chord.v;
-					this.key.t  = chord.t;
-					this.key.ok = chord.ok;
-				}
-			}
+    // TEXT info
+    ///////////////////////////////////
+    if (str=='\n' && info=='\n')o.linefeed = o.space = true;
+    if (str==' ' && info==' ')o.space = true;
 
-      // TEXT info
-      ///////////////////////////////////
-      if (str=='\n' && info=='\n')o.linefeed = o.space = true;
-      if (str==' ' && info==' ')o.space = true;
+		if (afterIndex==null){
+			afterIndex=this.evt.length;
+		}
+		else if (zs4.is.number(afterIndex)){
+			if (afterIndex<0)afterIndex=0;
+			if (afterIndex>this.evt.length)afterIndex=this.evt.length;
+		}
+		else {
+			afterIndex=this.evt.length;
+		}
 
-			if (afterIndex==null){
-				afterIndex=this.evt.length;
-			}
-			else if (zs4.is.number(afterIndex)){
-				if (afterIndex<0)afterIndex=0;
-				if (afterIndex>this.evt.length)afterIndex=this.evt.length;
-			}
-			else {
-				afterIndex=this.evt.length;
-			}
+		this.evt.splice(afterIndex,0,o);
 
-			this.evt.splice(afterIndex,0,o);
+		this.evt_current = o;
+		this.evt_curidx = afterIndex;
 
-			this.evt_current = o;
-			this.evt_curidx = afterIndex;
+    if (ts.is.window()){
+      o.refresh = function(){
+        if (this.chord != null && this.chord.ok){
 
-      if (ts.is.window()){
-        o.refresh = function(){
-          if (this.chord != null && this.chord.ok){
-
-						this.eChordBaseNote.style.visibility = 'visible';
-						this.eChordBaseNote.innerHTML = ts.music.note.symbol(this.chord.v);
-						this.eChordType.innerHTML = ts.music.CHORD.TYPE[this.chord.t].s;
-						if (this.chord.b != this.chord.v){
-							this.eBass.style.display = 'inline';
-							this.eBassNote.innerHTML = ts.music.note.symbol(this.chord.b);
-						}
-						else{
-							this.eBass.style.display = 'none';
-						}
+					this.eChordBaseNote.style.visibility = 'visible';
+					this.eChordBaseNote.innerHTML = ts.music.note.symbol(this.chord.v);
+					this.eChordType.innerHTML = ts.music.CHORD.TYPE[this.chord.t].s;
+					if (this.chord.b != this.chord.v){
+						this.eBass.style.display = 'inline';
+						this.eBassNote.innerHTML = ts.music.note.symbol(this.chord.b);
 					}
 					else{
-						this.eChordBaseNote.style.visibility = 'hidden';
-						this.eChordBaseNote.textContent = '|';
-						this.eChordType.textContent = '';
-						this.eBassNote.textContent = '';
 						this.eBass.style.display = 'none';
 					}
+				}
+				else{
+					this.eChordBaseNote.style.visibility = 'hidden';
+					this.eChordBaseNote.textContent = '|';
+					this.eChordType.textContent = '';
+					this.eBassNote.textContent = '';
+					this.eBass.style.display = 'none';
+				}
 
-					if (this.melody < ts.midi.constant.MIDI_NOTE_MIN || this.melody > ts.midi.constant.MIDI_NOTE_MAX ){
-						this.eBlockMelody.textContent = '|';
-						this.eBlockMelody.style.visibility = 'hidden';
-					}else{
-						this.eBlockMelody.textContent = ts.music.note.qualified(o.melody);
-						this.eBlockMelody.style.visibility = 'visible';
-					}
+				if (this.melody < ts.midi.constant.MIDI_NOTE_MIN || this.melody > ts.midi.constant.MIDI_NOTE_MAX ){
+					this.eBlockMelody.textContent = '|';
+					this.eBlockMelody.style.visibility = 'hidden';
+				}else{
+					this.eBlockMelody.textContent = ts.music.note.qualified(o.melody);
+					this.eBlockMelody.style.visibility = 'visible';
+				}
 
-					if (this.bar){
-						this.eBlockChart.className = 'tsbar';
-					}else if (this.beat){
-						this.eBlockChart.className = 'tsbeat';
-					}else{
-						this.eBlockChart.className = '';
-					}
-        };
+				if (this.bar){
+					this.eBlockChart.className = 'tsbar';
+				}else if (this.beat){
+					this.eBlockChart.className = 'tsbeat';
+				}else{
+					this.eBlockChart.className = '';
+				}
+      };
 
-				o.eEvent = document.createElement('span');
-				//o.eEvent.style.display = 'inline';
-				o.eEvent.ts = o;
-				o.eEvent.onclick = function(){this.ts.ts.onEventClick(this.ts);};
+			o.eEvent = document.createElement('span');
+			//o.eEvent.style.display = 'inline';
+			o.eEvent.ts = o;
+			o.eEvent.onclick = function(){this.ts.ts.onEventClick(this.ts);};
 
-				o.eSpan = document.createElement('ts-event');
-				o.eSpan.style.display = 'inline-block';
-				o.eSpan.style.marginTop = '0.1em';
-				o.eSpan.style.marginBottom = '0.1em';
-				o.eSpan.ts = o;
-				o.eEvent.appendChild(o.eSpan);
+			o.eSpan = document.createElement('ts-event');
+			o.eSpan.style.display = 'inline-block';
+			o.eSpan.style.marginTop = '0.1em';
+			o.eSpan.style.marginBottom = '0.1em';
+			o.eSpan.ts = o;
+			o.eEvent.appendChild(o.eSpan);
 
-				o.eBlockMelody = document.createElement('ts-block-melody');
-				o.eBlockMelody.style.height = '1em';
-				o.eBlockMelody.style.display = 'block';
-				o.eBlockMelody.textContent = '|';
-				o.eSpan.appendChild(o.eBlockMelody);
+			o.eBlockMelody = document.createElement('ts-block-melody');
+			o.eBlockMelody.style.height = '1em';
+			o.eBlockMelody.style.display = 'block';
+			o.eBlockMelody.textContent = '|';
+			o.eSpan.appendChild(o.eBlockMelody);
 
-				o.eBlockChart = document.createElement('ts-block-chart');
-				o.eBlockChart.style.display = 'block';
-				o.eBlockChart.style.height = '1em';
-				//o.eBlockChart.textContent = info;
-				o.eSpan.appendChild(o.eBlockChart);
+			o.eBlockChart = document.createElement('ts-block-chart');
+			o.eBlockChart.style.display = 'block';
+			o.eBlockChart.style.height = '1em';
+			//o.eBlockChart.textContent = info;
+			o.eSpan.appendChild(o.eBlockChart);
 
-					o.eChordBaseNote = document.createElement('ts-chord-base');
-					o.eChordBaseNote.textContent = '|';
-					o.eChordBaseNote.style.visibility = 'hidden';
-					o.eBlockChart.appendChild(o.eChordBaseNote);
+				o.eChordBaseNote = document.createElement('ts-chord-base');
+				o.eChordBaseNote.textContent = '|';
+				o.eChordBaseNote.style.visibility = 'hidden';
+				o.eBlockChart.appendChild(o.eChordBaseNote);
 
-					o.eChordType = document.createElement('ts-chord-type');
-					o.eChordType.className = '.zs4-size-pct-50';
-					o.eBlockChart.appendChild(o.eChordType);
+				o.eChordType = document.createElement('ts-chord-type');
+				o.eChordType.className = '.zs4-size-pct-50';
+				o.eBlockChart.appendChild(o.eChordType);
 
-					o.eBass = document.createElement('ts-bass');
+				o.eBass = document.createElement('ts-bass');
+				o.eBass.style.display = 'none';
+				o.eBlockChart.appendChild(o.eBass);
+
+					o.eSlash = document.createElement('ts-bass-slash');
+					o.eBass.appendChild(o.eSlash);
+					o.eSlash.textContent = '/';
+
+					o.eBassNote = document.createElement('ts-bass-note');
+					o.eBass.appendChild(o.eBassNote);
+
+			o.eBlockLyric = document.createElement('ts-block-lyric');
+			o.eBlockLyric.style.display = 'block';
+			o.eBlockLyric.textContent = '|';
+			o.eBlockLyric.style.visibility = 'hidden';
+			o.eBlockLyric.style.height = '1em';
+			o.eBlockLyric.ondblclick = function(e){
+				SEQUENCE.onEventClick(EVENT);
+				if (SEQUENCE.evt[SEQUENCE.evt_curidx]!=EVENT)return;
+
+				var clickpos = parseInt(this.textContent.length * e.offsetX / this.offsetWidth);
+				//ts.debug(clickpos);
+				//ts.debug(SEQUENCE);
+				//ts.debug(EVENT);
+
+				var old = ''; var nu = ''; var orig = this.textContent;
+				for (var i = 0 ; i < orig.length; i++){
+					if (i < clickpos) old+=orig.charAt(i);
+					else nu+=orig.charAt(i);
+				}
+				//ts.debug(old+'-'+nu);
+				EVENT.lyric = EVENT.eBlockLyric.textContent = old;
+				var nuEvent = SEQUENCE.addEvent(nu,'',(SEQUENCE.evt_curidx+1));
+				SEQUENCE.onEventClick(nuEvent);
+				//ts.debug(nuEvent);
+				SEQUENCE.alignHTML();
+				//ts.debug(zs4.json.textify(e));
+			};
+			o.eSpan.appendChild(o.eBlockLyric);
+
+      if (o.linefeed){
+				o.eBlockLyric.style.visibility = 'hidden';
+				o.linefeed = true;
+				o.eLineFeed = document.createElement('br');
+				o.eEvent.appendChild(o.eLineFeed);
+				if (this.toolobject.layout.eLineFeed.checked==true){
+					o.eLineFeed.style.display='initial';
+				}
+				else {
+					o.eLineFeed.style.display='none';
+				}
+
+			}
+			else if (o.space){
+        o.eSpace = document.createElement('span');
+        o.eSpace.textContent = ' ';
+				o.eEvent.appendChild(o.eSpace);
+				o.eBlockLyric.textContent = str.trim();
+				o.eBlockLyric.style.visibility = 'visible';
+			}
+
+      if (chord.ok){
+        o.eChordBaseNote.textContent = ts.music.note.name(chord.v);
+				o.eChordType.textContent = ts.music.CHORD.TYPE[chord.t].t;
+				if (chord.b != chord.v){
+					o.eBass.style.display = 'inline';
+					o.eBassNote.textContent = ts.music.note.name(chord.b);
+				}
+				else{
 					o.eBass.style.display = 'none';
-					o.eBlockChart.appendChild(o.eBass);
+				}
+				o.eChordBaseNote.style.visibility = 'visible';
+      }
+      else {
+        o.eChordBaseNote.textContent = '|';
+				o.eChordBaseNote.style.visibility = 'hidden';
+      }
 
-						o.eSlash = document.createElement('ts-bass-slash');
-						o.eBass.appendChild(o.eSlash);
-						o.eSlash.textContent = '/';
+      if (o.lyric != ''){
+        o.eBlockLyric.textContent=o.lyric;
+        o.eBlockLyric.style.visibility = 'visible';
+      }
 
-						o.eBassNote = document.createElement('ts-bass-note');
-						o.eBass.appendChild(o.eBassNote);
-
-				o.eBlockLyric = document.createElement('ts-block-lyric');
-				o.eBlockLyric.style.display = 'block';
+      if (o.eBlockLyric.textContent==''){
 				o.eBlockLyric.textContent = '|';
 				o.eBlockLyric.style.visibility = 'hidden';
-				o.eBlockLyric.style.height = '1em';
-				o.eBlockLyric.ondblclick = function(e){
-					SEQUENCE.onEventClick(EVENT);
-					if (SEQUENCE.evt[SEQUENCE.evt_curidx]!=EVENT)return;
+			}
 
-					var clickpos = parseInt(this.textContent.length * e.offsetX / this.offsetWidth);
-					//ts.debug(clickpos);
-					//ts.debug(SEQUENCE);
-					//ts.debug(EVENT);
+			this.cnt.appendChild(o.eEvent);
+      o.refresh();
+    }
+		return o;
+	};
+	SEQUENCE.run = function(){
+		this.runChordsAndLyrics();
+		this.transpose(0);
+		if (this.evt.length > 0)
+			this.setCurrentEvent(this.evt[0]);
+	};
+	SEQUENCE.clear = function(){
+		this.evt = new Array();
+		this.evt_current = 0;
+		this.evt_curidx = this.evt.length-1;
+		if (ts.is.window())this.cnt.innerHTML = '';
+	};
+	SEQUENCE.runChordsAndLyrics = function(data){
+		SEQUENCE.data = data;
+		if (SEQUENCE.data == null || SEQUENCE.data.length < 1){
+      if (ts.is.window()){
+        this.toolobject.script.use();
+				return SEQUENCE.cnt;
+      }
+      return '';
+		}
 
-					var old = ''; var nu = ''; var orig = this.textContent;
-					for (var i = 0 ; i < orig.length; i++){
-						if (i < clickpos) old+=orig.charAt(i);
-						else nu+=orig.charAt(i);
-					}
-					//ts.debug(old+'-'+nu);
-					EVENT.lyric = EVENT.eBlockLyric.textContent = old;
-					var nuEvent = SEQUENCE.addEvent(nu,'',(SEQUENCE.evt_curidx+1));
-					SEQUENCE.onEventClick(nuEvent);
-					//ts.debug(nuEvent);
-					SEQUENCE.alignHTML();
-					//ts.debug(zs4.json.textify(e));
-				};
-				o.eSpan.appendChild(o.eBlockLyric);
+		//var process='p';
+		var buffer = "";
+		var musinfo = "";
 
-        if (o.linefeed){
-  				o.eBlockLyric.style.visibility = 'hidden';
-  				o.linefeed = true;
-  				o.eLineFeed = document.createElement('br');
-  				o.eEvent.appendChild(o.eLineFeed);
-  				if (this.toolobject.layout.eLineFeed.checked==true){
-  					o.eLineFeed.style.display='initial';
-  				}
-  				else {
-  					o.eLineFeed.style.display='none';
-  				}
+		var cur = 0;
+		var last_ch = ' ';
+    var last_ch_was_space = true;
+    var last_ch_was_linefeed = 1;
+		for (var i = 0 ; i < this.data.length ; i++){
+			var render = false;
+			var cur_ch = this.data.charAt(i);
 
-  			}
-  			else if (o.space){
-          o.eSpace = document.createElement('span');
-          o.eSpace.textContent = ' ';
-  				o.eEvent.appendChild(o.eSpace);
-  				o.eBlockLyric.textContent = str.trim();
-  				o.eBlockLyric.style.visibility = 'visible';
-  			}
+      // handle line breaks;
+			if (cur_ch == '\n'){
+        if (last_ch_was_linefeed > 1)continue;
+				if (this.evt.length == 0){
+					continue;
+				}
+				if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
+				this.addEvent('\n','\n');
+        last_ch_was_space = true;
+        last_ch_was_linefeed += 1;
+				continue;
+			}
+      else {
+        last_ch_was_linefeed = 0;
+      }
 
-        if (chord.ok){
-          o.eChordBaseNote.textContent = ts.music.note.name(chord.v);
-  				o.eChordType.textContent = ts.music.CHORD.TYPE[chord.t].t;
-  				if (chord.b != chord.v){
-  					o.eBass.style.display = 'inline';
-  					o.eBassNote.textContent = ts.music.note.name(chord.b);
-  				}
-  				else{
-  					o.eBass.style.display = 'none';
-  				}
-  				o.eChordBaseNote.style.visibility = 'visible';
+      // handle spaces;
+			if (ts.zs4.is.space(cur_ch)){
+        if (last_ch_was_space)continue;
+        if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
+				if (this.evt.length == 0){
+					continue;
+				}
+				if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
+				this.addEvent(' ',' ');
+        last_ch_was_space = true;
+				continue;
+			}
+      else {
+        last_ch_was_space = false;
+      }
+
+			// handle musical info
+			if (cur_ch == '['){
+				if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
+				last_ch_was_space = false;
+				if (i < (this.data.length-1)) i++; else break;
+				var from = i;
+				var count = 0;
+				var found = false;
+				for (;i<this.data.length;i++){
+					if (this.data.charAt(i) == ']'){found = true;break;}
+					count++;
+				}
+				if (!found){
+					var ne = document.createElement("ts-error");
+					ne.textContent = "unmatched [ character!";
+					this.cnt.appendChild(ne);
+					break;
+				}
+				//alert("found chord "+this.data.substr(from,count));
+				musinfo = this.data.substr(from,count);
+
+				continue;
+			}
+
+      buffer += cur_ch.toString();
+		}
+
+    // FLUSH BUFFERS AFTER LOOP
+		if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
+
+		if (ts.is.window()) this.cnt.appendChild(document.createElement("br"));
+		//this.onSelectTool('chord');
+
+		this.setCurrentEvent(this.evt[0]);
+		if (ts.is.window())this.refresh();
+		//this.renderStats();
+
+		return this.cnt;
+	};
+	SEQUENCE.getChordsAndLyrics = function(){
+		var ret = '[bpb:'+this.bpb+'][bpm:'+this.bpm+'][tpb:'+this.tpb+']';
+
+		if (SEQUENCE.layoutlinefeed){
+			ret+='[lf:true]';
+		}
+		else {
+			ret+='[lf:false]';
+		}
+
+		for (var i = 0; i < this.evt.length; i++){
+			var evt = this.evt[i];
+			if (evt.hasMusic()){
+				ret+='[';
+
+				// bar / beat
+				if (evt.bar != null)ret+='|';
+				else if (evt.beat!=null)ret+='.';
+
+				if (evt.melody >= ts.midi.constant.MIDI_NOTE_MIN && evt.melody <= ts.midi.constant.MIDI_NOTE_MAX){
+					ret+=evt.melody;
+				}
+				// chord\
+				if (evt.chord != null){
+					ret+=ts.music.note.name(evt.chord.v);
+					ret+=ts.music.CHORD.TYPE[evt.chord.t].t;
+					if (evt.chord.v != evt.chord.b)ret+= '/'+ ts.music.note.name(evt.chord.b);
+					evt.chord.v;
+				}
+				ret+=']';
+			}
+
+			if (evt.linefeed==true && evt.lyric == '') ret += '\n';
+			if (evt.space==true) ret += ' ';
+			else ret += evt.lyric.trim();
+		}
+
+		return ret;
+	};
+
+  SEQUENCE.runABC = function(input,idx){
+    const COLON = ':';
+    const COMMA = ',';
+    const APOSTROPHE = '\'';
+
+    var index = new Array();
+    var ABC = new Object({
+      X:'',
+      L_DIVIDEND:1,
+      L_DIVISOR:8,
+      M_DIVIDEND:4,
+      M_DIVISOR:4,
+      bar:new Array(),
+      line:new Array(),
+      currentBar:null,
+      mode:'header',
+      KEY:{
+        G:{c:1,t:1},
+        D:{c:2,t:1},
+        A:{c:3,t:1},
+        E:{c:4,t:1},
+        B:{c:5,t:1},
+        'F#':{c:6,t:1},
+        'C#':{c:7,t:1},
+
+        F:{c:1,t:-1},
+        'Bb':{c:2,t:-1},
+        'Eb':{c:3,t:-1},
+        'Ab':{c:4,t:-1},
+        'Db':{c:5,t:-1},
+        'Gb':{c:6,t:-1},
+        'Cb':{c:7,t:-1},
+      },
+      barCreate:function(){
+        var BAR = new Object({
+          content:new Array(),
+          raw:'',
+        });
+        BAR.index = this.bar.length;
+        this.bar.push(BAR);
+        this.currentBar = BAR;
+        return BAR;
+      },
+      noteTableCreate:function(K){
+        var BOTTOM = 48;
+        var ABC = this;
+        var TABLE = ABC.note = new Array();
+        function note(n,v){
+          var NOTE = this;
+          NOTE.name = n;
+          NOTE.value = v;
+          NOTE.orig = v;
+        };
+
+        if (true){
+          ABC.note.push(new note('C,',BOTTOM));
+          ABC.note.push(new note('D,',BOTTOM+2));
+          ABC.note.push(new note('E,',BOTTOM+4));
+          ABC.note.push(new note('F,',BOTTOM+5));
+          ABC.note.push(new note('G,',BOTTOM+7));
+          ABC.note.push(new note('A,',BOTTOM+9));
+          ABC.note.push(new note('B,',BOTTOM+11));
+
+          ABC.note.push(new note('C',BOTTOM+12));
+          ABC.note.push(new note('D',BOTTOM+12+2));
+          ABC.note.push(new note('E',BOTTOM+12+4));
+          ABC.note.push(new note('F',BOTTOM+12+5));
+          ABC.note.push(new note('G',BOTTOM+12+7));
+          ABC.note.push(new note('A',BOTTOM+12+9));
+          ABC.note.push(new note('B',BOTTOM+12+11));
+
+          ABC.note.push(new note('c',BOTTOM+24));
+          ABC.note.push(new note('d',BOTTOM+24+2));
+          ABC.note.push(new note('e',BOTTOM+24+4));
+          ABC.note.push(new note('f',BOTTOM+24+5));
+          ABC.note.push(new note('g',BOTTOM+24+7));
+          ABC.note.push(new note('a',BOTTOM+24+9));
+          ABC.note.push(new note('b',BOTTOM+24+11));
+
+          ABC.note.push(new note('c\'',BOTTOM+36));
+          ABC.note.push(new note('d\'',BOTTOM+36+2));
+          ABC.note.push(new note('e\'',BOTTOM+36+4));
+          ABC.note.push(new note('f\'',BOTTOM+36+5));
+          ABC.note.push(new note('g\'',BOTTOM+36+7));
+          ABC.note.push(new note('a\'',BOTTOM+36+9));
+          ABC.note.push(new note('b\'',BOTTOM+36+11));
+        }
+
+        if (this.KEY.hasOwnProperty(K)){
+          ts.debug('FOUND KEY OF '+K,this.KEY[K]);
+          var DO = this.KEY[K];
+          var t = new Array();
+          var start; var increment; var count; var symbol;
+          count = DO.c;
+          if (DO.t==1){
+            start = 5;
+            increment = 7;
+            symbol = '#';
+          }
+          else if (DO.t==-1){
+            start = 11;
+            increment = 5;
+            symbol = 'b';
+          }
+
+          for (var i = 0 ; i < TABLE.length; i++){
+            var pos = start;
+            for (var c = 0; c < count; c++ ){
+              if ((TABLE[i].orig%12)==pos){
+                TABLE[i].value += DO.t;
+                ts.debug(TABLE[i].name+symbol);
+                break;
+              }
+              pos = ((pos+increment)%12);
+            }
+          }
         }
         else {
-          o.eChordBaseNote.textContent = '|';
-  				o.eChordBaseNote.style.visibility = 'hidden';
+          ts.debug('CANNOT FIND KEY OF '+K,this.KEY[K]);
         }
 
-        if (o.lyric != ''){
-          o.eBlockLyric.textContent=o.lyric;
-          o.eBlockLyric.style.visibility = 'visible';
-        }
-
-        if (o.eBlockLyric.textContent==''){
-  				o.eBlockLyric.textContent = '|';
-  				o.eBlockLyric.style.visibility = 'hidden';
-  			}
-
-  			this.cnt.appendChild(o.eEvent);
-        o.refresh();
-      }
-			return o;
-		};
-		SEQUENCE.run = function(){
-			this.runChordsAndLyrics();
-			this.transpose(0);
-			if (this.evt.length > 0)
-				this.setCurrentEvent(this.evt[0]);
-		};
-		SEQUENCE.clear = function(){
-			this.evt = new Array();
-			this.evt_current = 0;
-			this.evt_curidx = this.evt.length-1;
-			if (ts.is.window())this.cnt.innerHTML = '';
-		};
-		SEQUENCE.runChordsAndLyrics = function(data){
-			SEQUENCE.data = data;
-			if (SEQUENCE.data == null || SEQUENCE.data.length < 1){
-        if (ts.is.window()){
-          this.toolobject.script.use();
-  				return SEQUENCE.cnt;
+      },
+      findNoteValue:function(n){
+        for (var i = 0 ; i < this.note.length;i++){
+          if (this.note[i].name==n)return this.note[i].value.toString();
         }
         return '';
-			}
-
-			//var process='p';
-			var buffer = "";
-			var musinfo = "";
-
-			var cur = 0;
-			var last_ch = ' ';
-      var last_ch_was_space = true;
-      var last_ch_was_linefeed = 1;
-			for (var i = 0 ; i < this.data.length ; i++){
-				var render = false;
-				var cur_ch = this.data.charAt(i);
-
-        // handle line breaks;
-				if (cur_ch == '\n'){
-          if (last_ch_was_linefeed > 1)continue;
-					if (this.evt.length == 0){
-						continue;
-					}
-					if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
-					this.addEvent('\n','\n');
-          last_ch_was_space = true;
-          last_ch_was_linefeed += 1;
-					continue;
-				}
-        else {
-          last_ch_was_linefeed = 0;
-        }
-
-        // handle spaces;
-				if (ts.zs4.is.space(cur_ch)){
-          if (last_ch_was_space)continue;
-          if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
-					if (this.evt.length == 0){
-						continue;
-					}
-					if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
-					this.addEvent(' ',' ');
-          last_ch_was_space = true;
-					continue;
-				}
-        else {
-          last_ch_was_space = false;
-        }
-
-				// handle musical info
-				if (cur_ch == '['){
-					if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
-					last_ch_was_space = false;
-					if (i < (this.data.length-1)) i++; else break;
-					var from = i;
-					var count = 0;
-					var found = false;
-					for (;i<this.data.length;i++){
-						if (this.data.charAt(i) == ']'){found = true;break;}
-						count++;
-					}
-					if (!found){
-						var ne = document.createElement("ts-error");
-						ne.textContent = "unmatched [ character!";
-						this.cnt.appendChild(ne);
-						break;
-					}
-					//alert("found chord "+this.data.substr(from,count));
-					musinfo = this.data.substr(from,count);
-
-					continue;
-				}
-
-        buffer += cur_ch.toString();
-			}
-
-      // FLUSH BUFFERS AFTER LOOP
-			if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
-
-			if (ts.is.window()) this.cnt.appendChild(document.createElement("br"));
-			//this.onSelectTool('chord');
-
-			this.setCurrentEvent(this.evt[0]);
-			if (ts.is.window())this.refresh();
-			//this.renderStats();
-
-			return this.cnt;
-		};
-		SEQUENCE.getChordsAndLyrics = function(){
-			var ret = '[bpb:'+this.bpb+'][bpm:'+this.bpm+'][tpb:'+this.tpb+']';
-
-			if (SEQUENCE.layoutlinefeed){
-				ret+='[lf:true]';
-			}
-			else {
-				ret+='[lf:false]';
-			}
-
-			for (var i = 0; i < this.evt.length; i++){
-				var evt = this.evt[i];
-				if (evt.hasMusic()){
-					ret+='[';
-
-					// bar / beat
-					if (evt.bar != null)ret+='|';
-					else if (evt.beat!=null)ret+='.';
-
-					if (evt.melody >= ts.midi.constant.MIDI_NOTE_MIN && evt.melody <= ts.midi.constant.MIDI_NOTE_MAX){
-						ret+=evt.melody;
-					}
-					// chord\
-					if (evt.chord != null){
-						ret+=ts.music.note.name(evt.chord.v);
-						ret+=ts.music.CHORD.TYPE[evt.chord.t].t;
-						if (evt.chord.v != evt.chord.b)ret+= '/'+ ts.music.note.name(evt.chord.b);
-						evt.chord.v;
-					}
-					ret+=']';
-				}
-
-				if (evt.linefeed==true && evt.lyric == '') ret += '\n';
-				if (evt.space==true) ret += ' ';
-				else ret += evt.lyric.trim();
-			}
-
-			return ret;
-		};
-
-    SEQUENCE.runABC = function(input,idx){
-      const COLON = ':';
-      const COMMA = ',';
-      const APOSTROPHE = '\'';
-
-      var index = new Array();
-      var ABC = new Object({
-        X:'',
-        L_DIVIDEND:1,
-        L_DIVISOR:8,
-        M_DIVIDEND:4,
-        M_DIVISOR:4,
-        bar:new Array(),
-        currentBar:null,
-        KEY:{
-          G:{c:1,t:1},
-          D:{c:2,t:1},
-          A:{c:3,t:1},
-          E:{c:4,t:1},
-          B:{c:5,t:1},
-          'F#':{c:6,t:1},
-          'C#':{c:7,t:1},
-
-          F:{c:1,t:-1},
-          'Bb':{c:2,t:-1},
-          'Eb':{c:3,t:-1},
-          'Ab':{c:4,t:-1},
-          'Db':{c:5,t:-1},
-          'Gb':{c:6,t:-1},
-          'Cb':{c:7,t:-1},
-        },
-        barCreate:function(){
-          var BAR = new Object({
-            content:new Array(),
-            raw:'',
-          });
-          BAR.index = this.bar.length;
-          this.bar.push(BAR);
-          this.currentBar = BAR;
-          return BAR;
-        },
-        noteTableCreate:function(K){
-          var BOTTOM = 48;
-          var ABC = this;
-          var TABLE = ABC.note = new Array();
-          function note(n,v){
-            var NOTE = this;
-            NOTE.name = n;
-            NOTE.value = v;
-            NOTE.orig = v;
-          };
-
-          if (true){
-            ABC.note.push(new note('C,',BOTTOM));
-            ABC.note.push(new note('D,',BOTTOM+2));
-            ABC.note.push(new note('E,',BOTTOM+4));
-            ABC.note.push(new note('F,',BOTTOM+5));
-            ABC.note.push(new note('G,',BOTTOM+7));
-            ABC.note.push(new note('A,',BOTTOM+9));
-            ABC.note.push(new note('B,',BOTTOM+11));
-
-            ABC.note.push(new note('C',BOTTOM+12));
-            ABC.note.push(new note('D',BOTTOM+12+2));
-            ABC.note.push(new note('E',BOTTOM+12+4));
-            ABC.note.push(new note('F',BOTTOM+12+5));
-            ABC.note.push(new note('G',BOTTOM+12+7));
-            ABC.note.push(new note('A',BOTTOM+12+9));
-            ABC.note.push(new note('B',BOTTOM+12+11));
-
-            ABC.note.push(new note('c',BOTTOM+24));
-            ABC.note.push(new note('d',BOTTOM+24+2));
-            ABC.note.push(new note('e',BOTTOM+24+4));
-            ABC.note.push(new note('f',BOTTOM+24+5));
-            ABC.note.push(new note('g',BOTTOM+24+7));
-            ABC.note.push(new note('a',BOTTOM+24+9));
-            ABC.note.push(new note('b',BOTTOM+24+11));
-
-            ABC.note.push(new note('c\'',BOTTOM+36));
-            ABC.note.push(new note('d\'',BOTTOM+36+2));
-            ABC.note.push(new note('e\'',BOTTOM+36+4));
-            ABC.note.push(new note('f\'',BOTTOM+36+5));
-            ABC.note.push(new note('g\'',BOTTOM+36+7));
-            ABC.note.push(new note('a\'',BOTTOM+36+9));
-            ABC.note.push(new note('b\'',BOTTOM+36+11));
-          }
-
-          if (this.KEY.hasOwnProperty(K)){
-            ts.debug('FOUND KEY OF '+K,this.KEY[K]);
-            var DO = this.KEY[K];
-            var t = new Array();
-            var start; var increment; var count; var symbol;
-            count = DO.c;
-            if (DO.t==1){
-              start = 5;
-              increment = 7;
-              symbol = '#';
-            }
-            else if (DO.t==-1){
-              start = 11;
-              increment = 5;
-              symbol = 'b';
-            }
-
-            for (var i = 0 ; i < TABLE.length; i++){
-              var pos = start;
-              for (var c = 0; c < count; c++ ){
-                if ((TABLE[i].orig%12)==pos){
-                  TABLE[i].value += DO.t;
-                  ts.debug(TABLE[i].name+symbol);
-                  break;
-                }
-                pos = ((pos+increment)%12);
-              }
-            }
+      },
+      addNote:function(n,t,c){
+        this.currentBar.content.push(new Object({
+          note:n,
+          length:t,
+          chord:c,
+        }));
+      },
+      toToonsmith:function(){
+        var out = '[bpb:'+this.M_DIVIDEND+']';
+        for (var i=0; i < this.bar.length;i++){
+          var bar = this.bar[i].content;
+          if (bar.length==0){
+            out+='[|]\n';
           }
           else {
-            ts.debug('CANNOT FIND KEY OF '+K,this.KEY[K]);
-          }
-
-        },
-        findNoteValue:function(n){
-          for (var i = 0 ; i < this.note.length;i++){
-            if (this.note[i].name==n)return this.note[i].value.toString();
-          }
-          return '';
-        },
-        addNote:function(n,t,c){
-          this.currentBar.content.push(new Object({
-            note:n,
-            length:t,
-            chord:c,
-          }));
-        },
-        toToonsmith:function(){
-          var out = '[bpb:'+this.M_DIVIDEND+']';
-          for (var i=0; i < this.bar.length;i++){
-            var bar = this.bar[i].content;
-            if (bar.length==0){
-              out+='[|]\n';
+            out += '[|';
+            out += this.findNoteValue(bar[0].note);
+            if (bar[0].chord!=null){
+              out += ts.music.CHORD.toString(bar[0].chord);
             }
-            else {
-              out += '[|';
-              out += this.findNoteValue(bar[0].note);
-              if (bar[0].chord!=null){
-                out += ts.music.CHORD.toString(bar[0].chord);
+            out +=']';
+            for (var n = 1; n < bar.length;n++){
+              out += '[';
+              out += this.findNoteValue(bar[n].note);
+              if (bar[n].chord!=null){
+                out += ts.music.CHORD.toString(bar[n].chord);
               }
               out +=']';
-              for (var n = 1; n < bar.length;n++){
-                out += '[';
-                out += this.findNoteValue(bar[n].note);
-                if (bar[n].chord!=null){
-                  out += ts.music.CHORD.toString(bar[n].chord);
-                }
-                out +=']';
-              }
             }
           }
-          return out;
-        },
-
-      });
-
-      if (!zs4.is.string(input)||input=='') return;
-
-      var mode = 'header';
-      var headerStarted = false;
-      var line = '';
-
-      var ns = ['A','B','C','D','E','F','G','a','b','c','d','e','f','g'];
-      function noteStart(ch){for (var x = 0; x < ns.length;x++){if (ns[x]==ch)return true;}return false;};
-
-      var gch = null;
-
-      for (var i = 0; i < input.length;i++){
-        var ch = input.charAt(i);
-        if (mode == 'header') {
-          if (ch=='\n'){
-            var head = ts.zs4.string.split.separators(line,':');
-            if (head.length==2){
-              if (head[0]=='X'){
-                if (ABC.X != '')break;
-                ABC.X = head[1];
-                line = '';
-              }
-              else if (head[0]=='T'){
-                ABC.T = head[1];
-                line = '';
-              }
-              else if (head[0]=='C'){
-                ABC.C = head[1];
-                line = '';
-              }
-              else if (head[0]=='M'){
-                var m = ts.zs4.string.split.separators(head[1],'/');
-                if (m.length==2){
-                  ABC.M_DIVIDEND = zs4.parse.int(m[0]);
-                  ABC.M_DIVISOR = zs4.parse.int(m[1]);
-                }
-                line = '';
-              }
-              else if (head[0]=='L'){
-                var m = ts.zs4.string.split.separators(head[1],'/');
-                if (m.length==2){
-                  ABC.L_DIVIDEND = zs4.parse.int(m[0]);
-                  ABC.L_DIVISOR = zs4.parse.int(m[1]);
-                }
-                line = '';
-              }
-              else if (head[0]=='K'){
-                ABC.K = head[1];
-                line = '';
-                ABC.noteTableCreate(ABC.K);
-                ABC.barCreate();
-                mode = 'content';
-              }
+        }
+        return out;
+      },
+      parseHeaderLine:function(line){
+        ts.debug('PARSEING HEADER LINE:',line)
+        var ABC = this;
+        var head = ts.zs4.string.split.separators(line,':');
+        if (head.length==2){
+          if (head[0]=='X'){
+            //if (ABC.X != '')break;
+            ABC.X = head[1];
+            line = '';
+          }
+          else if (head[0]=='T'){
+            ABC.T = head[1];
+            line = '';
+          }
+          else if (head[0]=='C'){
+            ABC.C = head[1];
+            line = '';
+          }
+          else if (head[0]=='M'){
+            var m = ts.zs4.string.split.separators(head[1],'/');
+            if (m.length==2){
+              ABC.M_DIVIDEND = zs4.parse.int(m[0]);
+              ABC.M_DIVISOR = zs4.parse.int(m[1]);
+            }
+            line = '';
+          }
+          else if (head[0]=='L'){
+            var m = ts.zs4.string.split.separators(head[1],'/');
+            if (m.length==2){
+              ABC.L_DIVIDEND = zs4.parse.int(m[0]);
+              ABC.L_DIVISOR = zs4.parse.int(m[1]);
+            }
+            line = '';
+          }
+          else if (head[0]=='K'){
+            ABC.K = head[1];
+            line = '';
+            ABC.noteTableCreate(ABC.K);
+            ABC.barCreate();
+            ABC.mode = 'content';
+          }
+        }
+      },
+      pass1:function(input){
+        //ts.debug('start of pass1 BC',this);
+        var ABC = this;
+        var line = '';
+        for (var i = 0; i < input.length;i++){
+          var ch = input.charAt(i);
+          if (ABC.mode == 'header') {
+            if (ch=='\n'){
+              ABC.parseHeaderLine(line);
               line = '';
+            }
+            else {
+              line += ch;
             }
           }
           else {
-            line += ch;
+            var ch = input.charAt(i);
+            if (ch=='\n'){
+              if (line=='')continue;
+              else {
+                ABC.line.push(line);
+                line = '';
+              }
+            }
+            else {
+              line += ch;
+            }
           }
         }
-        else {
+        if (line!='')ABC.line.push(line);
+      },
+      parseLineMusic:function(input){
+        var ABC = this;
+        //var mode = 'header';
+
+        var ns = ['A','B','C','D','E','F','G','a','b','c','d','e','f','g'];
+        function noteStart(ch){for (var x = 0; x < ns.length;x++){if (ns[x]==ch)return true;}return false;};
+
+        var gch = null;
+
+        for (var i = 0; i < input.length;i++){
+          var ch = input.charAt(i);
           if (ch==' '||ch=='~'||ch=='\n')continue;
 
           // bar break
@@ -1396,12 +1419,10 @@ ts.create = function(){
             ABC.L_DIVISOR = zs4.parse.int(buf);buf='';
           }
           else {
-            ABC.currentBar.raw += ch;
             if (noteStart(ch)){
               var note = ch;
               while ((i < (input.length-1))&&(input[i+1]==','||input[i+1]=='\'')){
                 i++;
-                ABC.currentBar.raw += input[i];
                 note += input[i];
               }
 
@@ -1441,19 +1462,35 @@ ts.create = function(){
             }
           }
         }
-      }
+      },
+      parse:function(input){
+        var ABC = this;
+        ABC.pass1(input);
+        for (var i = 0; i < ABC.line.length; i++){
+          if (ABC.line[i].length>2&&ABC.line[i].charAt(1)==':'){
+            ABC.parseHeaderLine(ABC.line[i]);
+          }
+          ABC.parseLineMusic(ABC.line[i]);
+        }
 
-      if (ABC.bar.length>0&&ABC.bar[ABC.bar.length-1].raw==''&&ABC.bar[ABC.bar.length-1].content.length==0){
-        ABC.bar.pop();
-      }
+        //remove last bar if EMPTY!
+        if (ABC.bar[ABC.bar.length-1].content.length==0){ABC.bar.pop();}
+      },
+    });
 
-      var toonsmith = ABC.toToonsmith();
+    if (!zs4.is.string(input)||input=='') return;
 
-      ts.debug(ABC);
-      ts.debug(toonsmith);
+    // extract lines
+    ABC.parse(input);
 
-      return toonsmith;
-    };
+    var toonsmith = ABC.toToonsmith();
+
+    ts.debug(ABC);
+    ts.debug(toonsmith);
+
+    return toonsmith;
+  };
+
   if (ts.is.window()){
     SEQUENCE.renderStats = function(){
 			this.stsEvents.textContent = ('events:'+this.evt.length+' ');
@@ -2666,8 +2703,8 @@ ts.create = function(){
         var parsed = SEQUENCE.runABC(nu.eTextArea.value);
         nu.ts.clear();
 		    nu.ts.runChordsAndLyrics(parsed);
-				nu.ts.current_tool = null;
-				nu.ts.hideAllToolPanes();
+				//nu.ts.current_tool = null;
+				//nu.ts.hideAllToolPanes();
       }
 
 			nu.eTextArea = ts.html.nu.ele('textarea');
@@ -2884,6 +2921,9 @@ ts.music = new Object({
 	parse:{
 		chord:function(str){
 			str = str.trim();
+
+      //ts.debug('chord:'+str);
+
 			var nu = {v:0,t:0,b:0,ok:true};
 
 			str = str.trim();
@@ -2911,20 +2951,29 @@ ts.music = new Object({
 				if (str.length == 0) return nu;
 			}
 
-			// chord variant
-			for (var i = 0 ; i < ts.music.CHORD.TYPE.length; i++){
-				var length = ts.music.CHORD.TYPE[i].t.length;
-				if (length > 0 && length <= str.length){
-					if (str.substr(0,length).toLowerCase() == ts.music.CHORD.TYPE[i].t.toLowerCase()){
-						nu.t = i;
-						str = str.substr(length,(str.length-length));
-						if (str.length == 0) return nu;
-						break;
-					}
-				}
-			}
+      var type = '';
+      for (var t = 0 ; t < str.length && str.charAt(t)!='/' ;t++){
+        type += str.charAt(t);
+      }
+      str = str.substr(type.length,(str.length-type.length));
+
+
+			if (type!=''){
+        for (var i = 0 ; i < ts.music.CHORD.TYPE.length; i++){
+          var at = ts.music.CHORD.TYPE[i]
+          if (type == at.t){ nu.t = i; break; }
+          else {
+            for (var n = 0; n < at.n.length; n++){
+              if (type == at.n[n]) { nu.t = i; break; }
+            }
+            if (nu.t!=0)break;
+          }
+  			}
+      }
+
 			if (str.length == 0) return nu;
 
+      //ts.debug('chord end with \"'+str+'\"')
 
 			// Slash
 			if (str[0] != '/'){
@@ -2942,6 +2991,7 @@ ts.music = new Object({
 					break;
 				}
 			}
+
 
 			//check for sharp or flat
 			if (str[0]=='#'){
@@ -3003,7 +3053,7 @@ ts.music = new Object({
 	CHORD:{
     toString:function(chord){
       var s = ts.music.NOTES[chord.v].n+ts.music.CHORD.TYPE[chord.t].t;
-      if (chord.b!=chord.v)s += '/'+ts.music.NOTES[chord.b].b;
+      if (chord.b!=chord.v)s += '/'+ts.music.NOTES[chord.b].n;
       return s;
     },
     countNotes:function(chord){
@@ -3027,20 +3077,85 @@ ts.music = new Object({
       return 0;
     },
 		TYPE:[	//				C				D				E		F				G				A				B
-			{t:"",			s:'',		a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false]},
-			{t:"-7b5",	s:'&#x2300;',		a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true,	false]},
-			{t:"-6",		s:'-&#x2076;',		a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	true,	false,	false]},
-			{t:"-7",		s:'-&#x2077;',		a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	true,	false]},
-			{t:"M7",		s:'&#x25B3;',		a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true]},
-			{t:"+7",		s:'+&#x2077;',		a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	true,	false]},
-			{t:"o7",		s:'&#x00B0;&#x2077;',		a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false,	false]},
-			{t:"-",			s:'-',		a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false,	false]},
-			{t:"o",			s:'&#x00B0;',		a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false,	false]},
-			{t:"+",			s:'+',		a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false]},
+			{
+        t:"",
+        n:[],
+        s:'',
+        a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false],
+      },
+			{
+        t:"-7b5",
+        n:['m7b5'],
+        s:'&#x2300;',
+        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true,	false],
+      },
+			{
+        t:"-6",
+        n:['m6'],
+        s:'-&#x2076;',
+        a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	true,	false,	false],
+      },
+			{
+        t:"-7",
+        n:['m7'],
+        s:'-&#x2077;',
+        a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	true,	false],
+      },
+			{
+        t:"M7",
+        n:[],
+        s:'&#x25B3;',
+        a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true],
+      },
+			{
+        t:"+7",
+        n:[],
+        s:'+&#x2077;',
+        a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	true,	false],
+      },
+			{
+        t:"o7",
+        n:[],
+        s:'&#x00B0;&#x2077;',
+        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false,	false],
+      },
+			{
+        t:"-",
+        n:['m'],
+        s:'-',
+        a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false,	false],
+      },
+			{
+        t:"o",
+        n:[],
+        s:'&#x00B0;',
+        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false,	false],
+      },
+			{
+        t:"+",
+        n:[],
+        s:'+',
+        a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false],
+      },
 
-			{t:"6",			s:'&#x2076;',		a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	true,	false,	false]},
-			{t:"7",			s:'&#x2077;',		a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false]},
-			{t:"7b9",		s:'&#x2077;&#x1D47;&#x2079;',		a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false, false, true]},
+			{
+        t:"6",
+        n:[],
+        s:'&#x2076;',
+        a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	true,	false,	false],
+      },
+			{
+        t:"7",
+        n:[],
+        s:'&#x2077;',
+        a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false],
+      },
+			{
+        t:"7b9",
+        n:[],
+        s:'&#x2077;&#x1D47;&#x2079;',
+        a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false, false, true],
+      },
 		],
 	},
 	SEMI_TONES_PER_OCTAVE:12,
@@ -3131,11 +3246,13 @@ ts.player = new Object({
       var a = e.playArray;
       var chord = pi.chord;
 
-      var done = [false,false,false,false];
 
       function q(v){return ts.music.note.qualified(v);}
 
       for (var i = 0; i < a.length;i++){
+
+        var done = [false,false,false,false];
+
         if (a[i].chord != null)chord = a[i].chord.chord;
         if (chord==null)continue;
         var chordNoteCount = ts.music.CHORD.countNotes(chord);
@@ -3167,13 +3284,20 @@ ts.player = new Object({
         pi.playNote(CHANNEL.alto,alto_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
         done[alto_job]=true;
 
-        // ALTO
+        // SOPRANO
         var soprano_job = 0;
         for (var x=0;x<done.length;x++){if (done[x]==false){soprano_job=x;break;}}
         var soprano_note = root + ts.music.CHORD.searchNote(chord,soprano_job);
         pi.playNote(CHANNEL.soprano,soprano_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
         done[soprano_job]=true;
 
+        ts.debug(
+          'chord:'+ts.music.CHORD.toString(chord),
+          't:'+ts.music.note.qualified(tenor_note),
+          'a:'+ts.music.note.qualified(alto_note),
+          's:'+ts.music.note.qualified(soprano_note),
+          'sjob:'+soprano_job
+        )
       }
 
 		},
