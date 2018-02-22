@@ -16,7 +16,7 @@ require.create = function(){
   zs4.type.object.call(REQUIRE,input);
   REQUIRE._.create = require.create;
 
-  REQUIRE._.property(new  zs4.type.string({name:'path',flags:'script'}))
+  REQUIRE._.property(new  zs4.type.string({name:'path',flags:'apiarg'}))
 
   REQUIRE._.transform = (function(req,cb){
     req.setScope(REQUIRE);

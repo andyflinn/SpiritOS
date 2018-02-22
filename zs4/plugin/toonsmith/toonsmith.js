@@ -1,6 +1,6 @@
 var zs4 = require('../../static/zs4');
 var xpress = require('express');
-var ts = require('./static/toonsmith/window');
+var ts = require('../../static/toonsmith/window');
 var debug = require('debug')('zs4toonsmith');
 
 const APPNAME = 'toonsmith';
@@ -14,7 +14,6 @@ else {
     toonsmith = new Object();
 }
 
-zs4.plugin.registerStatic('./plugin/toonsmith/static/');
 zs4.plugin.registerScript('tables/midi.js');
 zs4.plugin.registerStyle('toonsmith/style.css');
 zs4.plugin.registerScript('toonsmith/window.js');
@@ -85,7 +84,7 @@ toonsmith.create = function(){
 
     function htmlSongInfo(){
       var html = '';
-      
+
       return html;
     }
 

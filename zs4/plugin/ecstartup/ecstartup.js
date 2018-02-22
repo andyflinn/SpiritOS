@@ -12,6 +12,5 @@ else {
     ecstartup = new Object();
 }
 
-zs4.plugin.registerStatic('./plugin/ecstartup/static/');
 zs4.plugin.registerStyle('ecstartup/style.css');
 zs4.plugin.registerScript('ecstartup/window.js');

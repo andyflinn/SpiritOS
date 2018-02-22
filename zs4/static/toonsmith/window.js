@@ -12,7 +12,7 @@ if (true){
         window:function(){return false;},
         node:function(){return true;},
       });
-      ts.zs4 = require('../../../../static/zs4.js');
+      ts.zs4 = require('../zs4.js');
       ts.debug = require('debug')('zs4ts');
 
   }

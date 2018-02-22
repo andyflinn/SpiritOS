@@ -57,9 +57,6 @@ zs4.commandLine = function(){
   });
 };
 
-zs4.plugin.registerStatic=function(dir){
-  zs4.plugin.static.push(dir);
-};
 zs4.plugin.registerStyle=function(path){
   zs4.plugin.style.push(path);
 };

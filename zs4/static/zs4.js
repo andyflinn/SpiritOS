@@ -3927,6 +3927,16 @@ zs4.type = {
         });
       }).bind(this);
     }
+    if (zs4.is.node()){
+      this._.submit = (function(input,cb){
+        var THIS = this;
+        var reqinp = this._.wrapRequest(input);
+        zs4.post(reqinp,function(ret){
+          cb(zs4.path.resolve(ret,'request.callback.'+THIS._.path));
+        });
+      }).bind(this);
+
+    }
 
   },
   password:function(input){
@@ -5272,6 +5282,38 @@ zs4.plugin = new Object({
   app:new Object(),
 });
 
+zs4.module = new Array();
+zs4.require = function(path,cb,force){
+  zs4.THIS.zs4.require._.submit({path:path},function(ret){
+      if (ret==null||ret.result==null||!zs4.is.string(ret.result)){ if (cb)cb(null);}
+      console.log(ret.result);
+
+      var body = '\'use strict\';\n';
+      if (zs4.is.window()){
+        body += 'var zs4 = window.zs4\n';
+      }
+      else if (zs4.is.node()){
+        body += 'var zs4 = global.zs4\n';
+      }
+      body += '{'+ret.result+'}\n';
+
+      var nu;
+
+      try {
+        nu = new Function(body);
+        cb(nu);
+      }
+      catch(err) {
+        if (zs4.is.window())console.log(err);
+        else zs4.debug(err);
+          cb(null);
+      }
+
+  })
+  return path;
+};
+
+
 if (zs4.is.window()){
   zs4.throttle = {
     q:[],
@@ -5305,32 +5347,6 @@ if (zs4.is.window()){
     },
   };
   setTimeout(zs4.throttle.f,0),
-
-  zs4.require = function(path,cb){
-    zs4.THIS.zs4.require._.submit({path:path},function(ret){
-        if (ret==null||ret.result==null||!zs4.is.string(ret.result)){ if (cb)cb(null);}
-        console.log(ret.result);
-
-        var body = '\'use strict\';\n';
-        body += 'var zs4 = window.zs4\n';
-        body += '{'+ret.result+'}\n';
-
-        var nu;
-
-        try {
-          nu = new Function(body);
-          cb(nu);
-        }
-        catch(err) {
-            console.log(err);
-            cb(null);
-        }
-
-    })
-    return path;
-  };
-
-
 
   zs4.window ={
     onresize:[],
