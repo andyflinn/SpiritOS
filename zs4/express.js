@@ -195,7 +195,7 @@ express.schema = function(parent){
     app.use(bodyParser.json());
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(cookieParser());
-    app.use(xpress.static(path.join(__dirname, 'static')));
+    app.use(xpress.static(path.join(__dirname, 'static'),{index:'/'}));
 
     for (var i = 0 ; i < zs4.plugin.static.length ; i++){
       app.use(xpress.static(path.join(__dirname, zs4.plugin.static[i])));
