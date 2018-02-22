@@ -305,6 +305,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-readdir:before{content:url(/gfx/icons/readdir.svg);}
 .icon-readfile:before{content:url(/gfx/icons/readfile.svg);}
 .icon-reload:before{content:url(/gfx/icons/reload.svg);}
+.icon-require:before{content:url(/gfx/icons/item.svg);}
 .icon-required:before{content:"*";font-weight: bolder;}
 .icon-root:before{content:url(/gfx/icons/info.svg);}
 .icon-rsa:before{content:url(/gfx/icons/rsa.svg);}

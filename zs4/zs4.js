@@ -157,6 +157,10 @@ zs4.save = function(cb){
 zs4.define = function(){
 
   var fs = require('./fs');
+
+  zs4.node.require.require = require('./require');
+  zs4.node.require.require.schema(zs4.THIS.zs4);
+
   zs4.node.require.fs = fs;
   zs4.node.require.fs.schema(zs4.THIS.zs4);
 

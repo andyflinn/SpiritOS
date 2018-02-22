@@ -226,6 +226,24 @@ zs4.string = {
     return false;
   },
   split:{
+    names:function(str){
+      var arr = []; var buf = '';
+      for (var i = 0; i < str.length ;i++){
+        var c = str.charAt(i);
+        if ((c >= 'a' && c <= 'z')){
+          buf+=c;
+        }else{
+          if (buf!=''){
+            arr.push(buf);
+            buf = '';
+          }
+        }
+      }
+      if (buf!=''){
+        arr.push(buf);
+      }
+      return arr;
+    },
     words:function(str){
       var arr = []; var buf = '';
       for (var i = 0; i < str.length ;i++){
@@ -3900,6 +3918,16 @@ zs4.type = {
       return a;
     }).bind(this);
 
+    if (zs4.is.window()){
+      this._.submit = (function(input,cb){
+        var THIS = this;
+        var reqinp = this._.wrapRequest(input);
+        zs4.post(reqinp,function(ret){
+          cb(zs4.path.resolve(ret,'request.callback.'+THIS._.path));
+        });
+      }).bind(this);
+    }
+
   },
   password:function(input){
     zs4.type.string.call(this,input);
@@ -5277,6 +5305,32 @@ if (zs4.is.window()){
     },
   };
   setTimeout(zs4.throttle.f,0),
+
+  zs4.require = function(path,cb){
+    zs4.THIS.zs4.require._.submit({path:path},function(ret){
+        if (ret==null||ret.result==null||!zs4.is.string(ret.result)){ if (cb)cb(null);}
+        console.log(ret.result);
+
+        var body = '\'use strict\';\n';
+        body += 'var zs4 = window.zs4\n';
+        body += '{'+ret.result+'}\n';
+
+        var nu;
+
+        try {
+          nu = new Function(body);
+          cb(nu);
+        }
+        catch(err) {
+            console.log(err);
+            cb(null);
+        }
+
+    })
+    return path;
+  };
+
+
 
   zs4.window ={
     onresize:[],
