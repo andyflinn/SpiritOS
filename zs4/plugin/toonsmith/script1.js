@@ -1,31 +1,13 @@
-'use strict';
+//console.log(zs4);
+
+console.log(this);
 
 var ts;
-
-if (true){
-  var isWindow = new Function("try {return this===window;}catch(e){ return false;}");
-  var isNode = new Function("try {return this===global;}catch(e){return false;}");
-
-  if (isNode()) {
-      ts = exports;
-      ts.is = new Object({
-        window:function(){return false;},
-        node:function(){return true;},
-      });
-      ts.zs4 = require('../zs4.js');
-      ts.debug = require('debug')('zs4ts');
-
-  }
-  else {
-      ts = new Object({
-        is:{
-          window:function(){return true;},
-          node:function(){return false;},
-        },
-      });
-      ts.zs4 = zs4;
-      ts.debug = console.log;
-  }
+if (zs4.is.node()){
+  ts = this;
+}
+if (zs4.is.window()){
+  ts = new Object();
 }
 
 ts.create = function(){
@@ -199,7 +181,7 @@ ts.create = function(){
 		this.transpose(delta);
 	};
 	SEQUENCE.showEventAsCurrent = function(e){
-    if (!ts.is.window())return null;
+    if (!zs4.is.window())return null;
 		if ( this.evt_shown != null ){
 			this.evt_shown.className = '';
 		}
@@ -217,7 +199,7 @@ ts.create = function(){
 
 		SEQUENCE.evt_current = evt;
 		if (!playing){
-			if (ts.is.window())SEQUENCE.showEventAsCurrent(evt);
+			if (zs4.is.window())SEQUENCE.showEventAsCurrent(evt);
 		}
 
 		SEQUENCE.evt_curidx = -1;
@@ -253,7 +235,7 @@ ts.create = function(){
 
   SEQUENCE.searchNextEvent = function(from,testEvent){
     if (SEQUENCE.evt.length==0)return from;
-    if (!ts.zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length);
+    if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length);
     var start = from;
 		if (start == null) start = SEQUENCE.evt_curidx;
 		start %= SEQUENCE.evt.length;
@@ -270,7 +252,7 @@ ts.create = function(){
 	};
 	SEQUENCE.searchPrevEvent = function(from,testEvent){
     if (SEQUENCE.evt.length==0)return from;
-		if (!ts.zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length);
+		if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length);
     var start = from;
 		if (start == null) start = SEQUENCE.evt_curidx;
 		start %= SEQUENCE.evt.length;
@@ -299,12 +281,12 @@ ts.create = function(){
 	};
   SEQUENCE.searchPrevChord = function(from){
     return SEQUENCE.searchPrevEvent(from,function(evt){
-      if (ts.zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
+      if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
     });
 	};
 	SEQUENCE.searchNextChord = function(from){
     return SEQUENCE.searchNextEvent(from,function(evt){
-      if (ts.zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
+      if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
     });
 	};
   SEQUENCE.searchPrevNote = function(from){
@@ -425,10 +407,10 @@ ts.create = function(){
     SEQUENCE.tickMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.barTicks);
     while ((SEQUENCE.tickMillies*SEQUENCE.barTicks)<SEQUENCE.barTotalMillies)SEQUENCE.tickMillies += 1;
 
-    //ts.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
-    //ts.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
-    //ts.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
-    //ts.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
+    //zs4.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
+    //zs4.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
+    //zs4.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
+    //zs4.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
 
 		var title = '';
 
@@ -436,11 +418,11 @@ ts.create = function(){
 
 			var tit = 'beat:'+ (no+1) +' length:'+length;
 			if (SEQUENCE.evt[beat].bar==null && SEQUENCE.evt[beat].beat!=null){
-				if (ts.is.window())SEQUENCE.evt[beat].eBlockChart.title = tit;
+				if (zs4.is.window())SEQUENCE.evt[beat].eBlockChart.title = tit;
 			}
 			SEQUENCE.evt[beat].duration = length;
 
-			//if (seq.evt[beat].beat==null)ts.debug('beat with no beat');
+			//if (seq.evt[beat].beat==null)zs4.debug('beat with no beat');
 			// count beat events
 			var eCount = 0;
 			for (var c = beat ; c < (beat+SEQUENCE.evt.length); c++){
@@ -539,12 +521,12 @@ ts.create = function(){
 
 							var bpbThis = 0;
 							var bpbUsedBefore = bpbUsed;
-							//ts.debug('timePerBeat:'+ timePerBeat + ' target:' + target);
+							//zs4.debug('timePerBeat:'+ timePerBeat + ' target:' + target);
 							for (var x = bpbUsed ; x < bpb; x++) {
 								var diff =  Math.round(Math.abs(((bpbUsed*bMils)-target))%bMils);
-								//ts.debug('distance of ' +(bpbUsed)+'/'+(couBeats)+' beat is '+diff);
+								//zs4.debug('distance of ' +(bpbUsed)+'/'+(couBeats)+' beat is '+diff);
 								var diff_if_addbeat = Math.round(Math.abs((((bpbUsed+1)*bMils)-target))%bMils);
-								//ts.debug('distance of ' +(bpbUsed+1)+'/'+(couBeats)+' beat is '+diff_if_addbeat);
+								//zs4.debug('distance of ' +(bpbUsed+1)+'/'+(couBeats)+' beat is '+diff_if_addbeat);
 								if (diff_if_addbeat <= diff){
 									bpbUsed += 1;
 									bpbThis += 1;
@@ -552,7 +534,7 @@ ts.create = function(){
 								}
 								else break;
 							}
-							//ts.debug('bpbUsed:'+bpbUsed+' bpbThis:'+bpbThis);
+							//zs4.debug('bpbUsed:'+bpbUsed+' bpbThis:'+bpbThis);
 							if (beatNo==0) {title += ' length:'+(bpbThis*bMils);}
 							processBeat(ci,beatNo,bpbThis*bMils);
 							beatNo += 1;
@@ -560,7 +542,7 @@ ts.create = function(){
 					}
 				}
 
-				if (ts.is.window())SEQUENCE.evt[cur_bar].eBlockChart.title = title;
+				if (zs4.is.window())SEQUENCE.evt[cur_bar].eBlockChart.title = title;
 				cur_bar = SEQUENCE.searchNextBar(cur_bar);
 			}
 		}
@@ -593,7 +575,7 @@ ts.create = function(){
       }
 
     }
-    //ts.debug('total duration: '+starttime)
+    //zs4.debug('total duration: '+starttime)
 
     // spread out the beats;
     var bcount = e.bar.beats.length;
@@ -613,7 +595,7 @@ ts.create = function(){
       for (var m = 0; m < beat.beat.events.length; m++){
         if (beat.beat.events[m].hasMusic())a.push(beat.beat.events[m])
       }
-      //ts.debug('bstart='+bstart+' blength='+blength+' musicEvents='+a.length);
+      //zs4.debug('bstart='+bstart+' blength='+blength+' musicEvents='+a.length);
 
       var m_pos = bstart;
       var m_available = blength;
@@ -621,7 +603,7 @@ ts.create = function(){
       for (var m = 0; m < a.length;m++){
         var start = Math.round((m*tpe_float)+bstart);
         if (start >= e.playArray.length)start--;
-        //ts.debug('musicEvent '+m+' starts on tick '+start);
+        //zs4.debug('musicEvent '+m+' starts on tick '+start);
         if (a[m].isChord()){
           e.playArray[start].chord = (a[m]);
           e.playArray[start].chordCount.push(a[m]);
@@ -701,7 +683,7 @@ ts.create = function(){
 	SEQUENCE.addEvent = function(str,info,afterIndex){
 		var SEQUENCE = this;
 		// Global values
-		var glob = ts.zs4.string.split.separators(info,':');
+		var glob = zs4.string.split.separators(info,':');
 		if (glob.length==2){
 			//window.alert(info);
       if (glob[0].trim()=='tpb'){
@@ -709,7 +691,7 @@ ts.create = function(){
 				if (this.tpb < ts.music.MIN_TICKS_PER_BEAT)this.tpb = ts.music.MIN_TICKS_PER_BEAT;
 				else if (this.tpb > ts.music.MAX_TICKS_PER_BEAT) this.tpb = ts.music.MAX_TICKS_PER_BEAT;
 
-        if (ts.is.window())this.bpmTool.eEventTpbInput.value = this.tpb;
+        if (zs4.is.window())this.bpmTool.eEventTpbInput.value = this.tpb;
 
 			}
       if (glob[0].trim()=='bpb'){
@@ -717,7 +699,7 @@ ts.create = function(){
 				if (this.bpb < ts.music.MIN_BEATS_PER_BAR)this.bpb = ts.music.MIN_BEATS_PER_BAR;
 				else if (this.bpb > ts.music.MAX_BEATS_PER_BAR) this.bpb = ts.music.MAX_BEATS_PER_BAR;
 
-        if (ts.is.window())this.bpmTool.eEventBpcInput.value = this.bpb;
+        if (zs4.is.window())this.bpmTool.eEventBpcInput.value = this.bpb;
 
 			}
 			if (glob[0].trim()=='bpm'){
@@ -725,17 +707,17 @@ ts.create = function(){
 				if (SEQUENCE.bpm < ts.music.MIN_BEATS_PER_MINUTE)SEQUENCE.bpm = MIN_BEATS_PER_MINUTE;
 				else if (SEQUENCE.bpm > ts.music.MAX_BEATS_PER_MINUTE) SEQUENCE.bpm = ts.music.MAX_BEATS_PER_MINUTE;
 
-				if (ts.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
+				if (zs4.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
 			}
 
       if (glob[0].trim()=='lf'){
         if (glob[1].trim()=='false'){
           SEQUENCE.layoutlinefeed = false;
-          if (ts.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=false;
+          if (zs4.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=false;
         }
         else {
           SEQUENCE.layoutlinefeed = true;
-          if (ts.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=true;
+          if (zs4.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=true;
         }
       }
 		}
@@ -760,14 +742,14 @@ ts.create = function(){
 				return false;
 			},
       isChord:function(){if (this.chord!=null&&this.chord.ok)return true; return false;},
-      isBar:function(){return ts.zs4.is.object(this.bar)},
-      isBeat:function(){return ts.zs4.is.object(this.beat)},
+      isBar:function(){return zs4.is.object(this.bar)},
+      isBeat:function(){return zs4.is.object(this.beat)},
       isLinefeed:function(){return this.linefeed;},
       isSpace:function(){return this.space;},
       isMelody:function(){if(this.melody!=0)return true;return false;},
       isLyric:function(){if(this.lyric!='')return true;return false;},
 		};
-    if (ts.is.node())o.refresh = function(){};
+    if (zs4.is.node())o.refresh = function(){};
 
     var EVENT = o;
 
@@ -815,7 +797,7 @@ ts.create = function(){
 		if (afterIndex==null){
 			afterIndex=this.evt.length;
 		}
-		else if (ts.zs4.is.number(afterIndex)){
+		else if (zs4.is.number(afterIndex)){
 			if (afterIndex<0)afterIndex=0;
 			if (afterIndex>this.evt.length)afterIndex=this.evt.length;
 		}
@@ -828,7 +810,7 @@ ts.create = function(){
 		this.evt_current = o;
 		this.evt_curidx = afterIndex;
 
-    if (ts.is.window()){
+    if (zs4.is.window()){
       o.refresh = function(){
         if (this.chord != null && this.chord.ok){
 
@@ -922,22 +904,22 @@ ts.create = function(){
 				if (SEQUENCE.evt[SEQUENCE.evt_curidx]!=EVENT)return;
 
 				var clickpos = parseInt(this.textContent.length * e.offsetX / this.offsetWidth);
-				//ts.debug(clickpos);
-				//ts.debug(SEQUENCE);
-				//ts.debug(EVENT);
+				//zs4.debug(clickpos);
+				//zs4.debug(SEQUENCE);
+				//zs4.debug(EVENT);
 
 				var old = ''; var nu = ''; var orig = this.textContent;
 				for (var i = 0 ; i < orig.length; i++){
 					if (i < clickpos) old+=orig.charAt(i);
 					else nu+=orig.charAt(i);
 				}
-				//ts.debug(old+'-'+nu);
+				//zs4.debug(old+'-'+nu);
 				EVENT.lyric = EVENT.eBlockLyric.textContent = old;
 				var nuEvent = SEQUENCE.addEvent(nu,'',(SEQUENCE.evt_curidx+1));
 				SEQUENCE.onEventClick(nuEvent);
-				//ts.debug(nuEvent);
+				//zs4.debug(nuEvent);
 				SEQUENCE.alignHTML();
-				//ts.debug(ts.zs4.json.textify(e));
+				//zs4.debug(zs4.json.textify(e));
 			};
 			o.eSpan.appendChild(o.eBlockLyric);
 
@@ -1004,12 +986,12 @@ ts.create = function(){
 		this.evt = new Array();
 		this.evt_current = 0;
 		this.evt_curidx = this.evt.length-1;
-		if (ts.is.window())this.cnt.innerHTML = '';
+		if (zs4.is.window())this.cnt.innerHTML = '';
 	};
 	SEQUENCE.runChordsAndLyrics = function(data){
 		SEQUENCE.data = data;
 		if (SEQUENCE.data == null || SEQUENCE.data.length < 1){
-      if (ts.is.window()){
+      if (zs4.is.window()){
         this.toolobject.script.use();
 				return SEQUENCE.cnt;
       }
@@ -1045,7 +1027,7 @@ ts.create = function(){
       }
 
       // handle spaces;
-			if (ts.zs4.is.space(cur_ch)){
+			if (zs4.is.space(cur_ch)){
         if (last_ch_was_space)continue;
         if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
 				if (this.evt.length == 0){
@@ -1090,11 +1072,11 @@ ts.create = function(){
     // FLUSH BUFFERS AFTER LOOP
 		if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
 
-		if (ts.is.window()) this.cnt.appendChild(document.createElement("br"));
+		if (zs4.is.window()) this.cnt.appendChild(document.createElement("br"));
 		//this.onSelectTool('chord');
 
 		this.setCurrentEvent(this.evt[0]);
-		if (ts.is.window())this.refresh();
+		if (zs4.is.window())this.refresh();
 		//this.renderStats();
 
 		return this.cnt;
@@ -1177,7 +1159,7 @@ ts.create = function(){
       failure:function(txt){
         var ABC = this;
         ABC.failures.push(txt);
-        ts.debug('ABC failure: \"'+txt+'\"');
+        zs4.debug('ABC failure: \"'+txt+'\"');
         return false;
       },
       barCreate:function(){
@@ -1272,21 +1254,21 @@ ts.create = function(){
         while (i < K.length && K.charAt(i)==' ')i++;
         while (i < K.length && K.charAt(i)!=' '){Ktype+=K.charAt(i);i++;}
         // done parsing key
-        ts.debug('key note: '+Knote, 'Ktype: '+Ktype);
+        zs4.debug('key note: '+Knote, 'Ktype: '+Ktype);
         keynote = ts.music.parse.note(Knote);
         if (keynote==-1)return ABC.failure(Knote+' is not a valid keynote');
         if (Ktype=='m'||Ktype=='min')keynote+=3;
-        else if (ts.zs4.string.startsWith(Ktype,'dor'))keynote-=2;
-        else if (ts.zs4.string.startsWith(Ktype,'phr'))keynote-=4;
-        else if (ts.zs4.string.startsWith(Ktype,'lyd'))keynote-=5;
-        else if (ts.zs4.string.startsWith(Ktype,'mix'))keynote-=7;
-        else if (ts.zs4.string.startsWith(Ktype,'aeo'))keynote-=9;
-        else if (ts.zs4.string.startsWith(Ktype,'loc'))keynote-=11;
+        else if (zs4.string.startsWith(Ktype,'dor'))keynote-=2;
+        else if (zs4.string.startsWith(Ktype,'phr'))keynote-=4;
+        else if (zs4.string.startsWith(Ktype,'lyd'))keynote-=5;
+        else if (zs4.string.startsWith(Ktype,'mix'))keynote-=7;
+        else if (zs4.string.startsWith(Ktype,'aeo'))keynote-=9;
+        else if (zs4.string.startsWith(Ktype,'loc'))keynote-=11;
 
         keynote %= 12;
 
         if (keynote==0){
-          ts.debug('using no B\'s or #\'s');
+          zs4.debug('using no B\'s or #\'s');
           return true;
         }
 
@@ -1308,13 +1290,13 @@ ts.create = function(){
           start = 5;
           increment = 7;
           symbol = '#';
-          ts.debug('using '+count+' #\'s');
+          zs4.debug('using '+count+' #\'s');
         }
         else if (DO.t==-1){
           start = 11;
           increment = 5;
           symbol = 'b';
-          ts.debug('using '+count+' b\'s');
+          zs4.debug('using '+count+' b\'s');
         }
 
         for (var i = 0 ; i < TABLE.length; i++){
@@ -1322,7 +1304,7 @@ ts.create = function(){
           for (var c = 0; c < count; c++ ){
             if ((TABLE[i].orig%12)==pos){
               TABLE[i].value += DO.t;
-              ts.debug(TABLE[i].name+symbol);
+              zs4.debug(TABLE[i].name+symbol);
               break;
             }
             pos = ((pos+increment)%12);
@@ -1398,7 +1380,7 @@ ts.create = function(){
         function outPass(v){
           var fbc = true;
           if (!ABC.firstBarIsComplete()){
-            ts.debug('FIRST BAR IS INCOMPLETE!');
+            zs4.debug('FIRST BAR IS INCOMPLETE!');
             fbc = false;
           }
 
@@ -1406,14 +1388,14 @@ ts.create = function(){
           var lyri = 0;
           for (var i=0; i < ABC.bar.length;i++){
             var bar = ABC.bar[i].content;
-            if (ts.zs4.is.number(v)&&ABC.bar[i].lyrix.length>0){
+            if (zs4.is.number(v)&&ABC.bar[i].lyrix.length>0){
               if (v<ABC.bar[i].lyrix.length){
                 LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[v]);
               }
               else {
                 LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[0]);
               }
-              ts.debug(LYRIX);
+              zs4.debug(LYRIX);
               lyri = 0;
             }
 
@@ -1473,7 +1455,7 @@ ts.create = function(){
 
         // this
         if (ABC.hasLyrix()){
-          ts.debug('ABC HAS LYRIX IT!! verseCount='+ABC.verseCount);
+          zs4.debug('ABC HAS LYRIX IT!! verseCount='+ABC.verseCount);
           for (var i = 0; i < ABC.verseCount; i++){
             outPass(i)
           }
@@ -1485,9 +1467,9 @@ ts.create = function(){
         return out;
       },
       parseHeaderLine:function(line){
-        //ts.debug('PARSEING HEADER LINE:',line)
+        //zs4.debug('PARSEING HEADER LINE:',line)
         var ABC = this;
-        var head = ts.zs4.string.split.separators(line,':');
+        var head = zs4.string.split.separators(line,':');
         if (head.length==2){
           if (head[0]=='X'){
             //if (ABC.X != '')break;
@@ -1503,18 +1485,18 @@ ts.create = function(){
             line = '';
           }
           else if (head[0]=='M'){
-            var m = ts.zs4.string.split.separators(head[1],'/');
+            var m = zs4.string.split.separators(head[1],'/');
             if (m.length==2){
-              ABC.M_DIVIDEND = ts.zs4.parse.int(m[0]);
-              ABC.M_DIVISOR = ts.zs4.parse.int(m[1]);
+              ABC.M_DIVIDEND = zs4.parse.int(m[0]);
+              ABC.M_DIVISOR = zs4.parse.int(m[1]);
             }
             line = '';
           }
           else if (head[0]=='L'){
-            var m = ts.zs4.string.split.separators(head[1],'/');
+            var m = zs4.string.split.separators(head[1],'/');
             if (m.length==2){
-              ABC.L_DIVIDEND = ts.zs4.parse.int(m[0]);
-              ABC.L_DIVISOR = ts.zs4.parse.int(m[1]);
+              ABC.L_DIVIDEND = zs4.parse.int(m[0]);
+              ABC.L_DIVISOR = zs4.parse.int(m[1]);
             }
             line = '';
           }
@@ -1528,7 +1510,7 @@ ts.create = function(){
         }
       },
       pass1:function(input){
-        //ts.debug('start of pass1 BC',this);
+        //zs4.debug('start of pass1 BC',this);
         var ABC = this;
         var line = '';
         for (var i = 0; i < input.length;i++){
@@ -1605,7 +1587,7 @@ ts.create = function(){
             function check(ch){for (var x = 0; x < bc.length;x++){if (bc[x]==ch)return true;}return false;};
             while ((i < (input.length-1))&&(check(input[i+1])))i++;
 
-            if ((i < (input.length-1)&&ts.zs4.is.numchar(input[i+1]))) {
+            if ((i < (input.length-1)&&zs4.is.numchar(input[i+1]))) {
               i++;
               if (input[i]=='1'){
                 while ((i < (input.length-1))&&(!check(input[i+1])))i++;
@@ -1622,13 +1604,13 @@ ts.create = function(){
               i++;
               buf+=input[i];
             }
-            ABC.L_DIVIDEND = ts.zs4.parse.int(buf);buf='';
+            ABC.L_DIVIDEND = zs4.parse.int(buf);buf='';
             while (i < (input.length-1)&&input[i+1]=='/')i++;
             while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
               i++;
               buf+=input[i];
             }
-            ABC.L_DIVISOR = ts.zs4.parse.int(buf);buf='';
+            ABC.L_DIVISOR = zs4.parse.int(buf);buf='';
           }
           else {
             if (ABC.isNoteCharacter(ch)||ch=='z'||ch=='Z'){
@@ -1655,20 +1637,20 @@ ts.create = function(){
               if ((i < (input.length-1))&&input[i+1]=='/'){
                 i++;
                 var buf = '';
-                while (i < (input.length-1)&&ts.zs4.is.numchar(input[i+1])){
+                while (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
                   i++; buf+=input[i];
                 }
                 if (buf=='')buf='2';
-                var num = ts.zs4.parse.int(buf);
+                var num = zs4.parse.int(buf);
                 if (num!=0)length /= num;
                 else length /= 2;
               }
-              else if (i < (input.length-1)&&ts.zs4.is.numchar(input[i+1])){
+              else if (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
                 var buf = '';
                 while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
                   i++; buf+=input[i];
                 }
-                var num = ts.zs4.parse.int(buf);
+                var num = zs4.parse.int(buf);
                 if (num!=0)length *= num;
               }
 
@@ -1699,8 +1681,8 @@ ts.create = function(){
         ABC.pass1(input);
         for (var i = 0; i < ABC.line.length; i++){
           if (ABC.line[i].data.length>2&&ABC.line[i].data.charAt(1)==':'){
-            if (ABC.lastMusicLineStart&&ts.zs4.string.startsWith(ABC.line[i].data,'w')){
-              ts.debug('should add lyrix');
+            if (ABC.lastMusicLineStart&&zs4.string.startsWith(ABC.line[i].data,'w')){
+              zs4.debug('should add lyrix');
               ABC.lastMusicLineStart.lyrix.push(ABC.line[i].data);
               ABC.lastMusicLineStart.lyrixEnd = ABC.lastMusicLineEnd;
             }
@@ -1724,20 +1706,20 @@ ts.create = function(){
       },
     });
 
-    if (!ts.zs4.is.string(input)||input=='') return;
+    if (!zs4.is.string(input)||input=='') return;
 
     // extract lines
     ABC.parse(input);
 
     var toonsmith = ABC.toToonsmith();
 
-    ts.debug(ABC);
-    ts.debug(toonsmith);
+    zs4.debug(ABC);
+    zs4.debug(toonsmith);
 
     return toonsmith;
   };
 
-  if (ts.is.window()){
+  if (zs4.is.window()){
     SEQUENCE.renderStats = function(){
 			this.stsEvents.textContent = ('events:'+this.evt.length+' ');
 			this.stsChords.textContent = ('chords:' + this.stats.chords+' ');
@@ -1773,7 +1755,7 @@ ts.create = function(){
 
     SEQUENCE.refreshKey = function(){};
 		SEQUENCE.refresh = function(){
-			//ts.debug('refresh() toonsmith');
+			//zs4.debug('refresh() toonsmith');
 			this.updateStats();
 			this.renderStats();
 
@@ -1939,12 +1921,12 @@ ts.create = function(){
 				this.toolobject[name] = nu;
 			}
 
-			if (ts.zs4.is.string(icon)){
+			if (zs4.is.string(icon)){
 				nu.toolicon = ts.html.nu.ele('ts-tool-icon-'+icon);
-				ts.zs4.admin.util.setIcon(nu.toolicon,icon);
+				zs4.admin.util.setIcon(nu.toolicon,icon);
 				if (tooltype=='i') nu.ts.instpopped.appendChild(nu.toolicon);
 				else nu.ts.toolspopped.appendChild(nu.toolicon);
-				//ts.debug('adding icon for '+icon);
+				//zs4.debug('adding icon for '+icon);
 				nu.toolicon.onclick = function(){nu.use();SEQUENCE.adaptContentPane(); };
 			}
 
@@ -1953,7 +1935,7 @@ ts.create = function(){
 			nu.toolWindow.ts = this;
 
 			nu.titleIcon = ts.html.nu.ele('ts-tool-titleicon');
-			ts.zs4.admin.util.setIcon(nu.titleIcon,icon);
+			zs4.admin.util.setIcon(nu.titleIcon,icon);
 			nu.titleIcon.onclick = function(){
 				if (tooltype=='i'){
 					nu.ts.instpopped.style.display = 'block';
@@ -2114,7 +2096,7 @@ ts.create = function(){
 				nu.eEventInstrument.appendChild(nu.iGeneral);
 
 					nu.iCurrentChord = ts.html.nu.ele('ts-instrument-curchord');
-					ts.zs4.admin.util.setIcon(nu.iCurrentChord,'chord');
+					zs4.admin.util.setIcon(nu.iCurrentChord,'chord');
 					nu.iGeneral.appendChild(nu.iCurrentChord);
 
 						nu.iCurrentChordRoot = ts.html.nu.ele('ts-instrument-chord-root');
@@ -2124,7 +2106,7 @@ ts.create = function(){
 						nu.iCurrentChord.appendChild(nu.iCurrentChordType);
 
 					nu.iHoverNote = ts.html.nu.ele('ts-instrument-hovernote');
-					ts.zs4.admin.util.setIcon(nu.iHoverNote,'note');
+					zs4.admin.util.setIcon(nu.iHoverNote,'note');
 					nu.iGeneral.appendChild(nu.iHoverNote);
 
 				nu.iSpecific = ts.html.nu.ele('ts-instrument-specific');
@@ -2261,11 +2243,11 @@ ts.create = function(){
 			}).bind(nu);
 
 			nu.instrumentRefresh = (function(){
-        //ts.debug('STRING INSTRUMENT REFRESH');
+        //zs4.debug('STRING INSTRUMENT REFRESH');
 				for (var s = 0 ; s < nu.strings.length; s++){
 					var str = nu.strings[s];
 
-          //ts.debug('STRING '+s+' REFRESH');
+          //zs4.debug('STRING '+s+' REFRESH');
 
 					var cnf = false;
 					var mnf = false;
@@ -2450,8 +2432,8 @@ ts.create = function(){
 				var running = false;
 				if (ts.player.is.running())running = true;
 
-				if (ts.zs4.is.array(nu.instrument.ui)){
-          //ts.debug('REFRESHING PIANO running='+running);
+				if (zs4.is.array(nu.instrument.ui)){
+          //zs4.debug('REFRESHING PIANO running='+running);
 
 					for (var i=0;i<nu.instrument.ui.length;i++){
 						var pad = nu.instrument.ui[i];
@@ -2462,7 +2444,7 @@ ts.create = function(){
 						var w = canvas.width;
 						var h = canvas.height;
 						var lw = w/5;
-						//ts.debug(w,h,pad);
+						//zs4.debug(w,h,pad);
 
 						ctx.beginPath();
 						ctx.rect(0, 0, w, h);
@@ -2470,7 +2452,7 @@ ts.create = function(){
 			      ctx.fill();
 
 						if (pad.borderLeft){
-							//ts.debug('BORDERLEFT!!!');
+							//zs4.debug('BORDERLEFT!!!');
 							ctx.beginPath();
 							ctx.lineWidth = lw;
 							ctx.moveTo(0,0);
@@ -2480,7 +2462,7 @@ ts.create = function(){
 						}
 
 						if (pad.borderRight){
-							//ts.debug('BORDERLEFT!!!');
+							//zs4.debug('BORDERLEFT!!!');
 							ctx.beginPath();
 							ctx.lineWidth = lw;
 							ctx.moveTo(w-1,0);
@@ -2576,7 +2558,7 @@ ts.create = function(){
 				nu.eEventTranspose.appendChild(nu.eEventTransposeSelect);
 
 			nu.refresh = function(){
-				//ts.debug('transpose.refresh()');
+				//zs4.debug('transpose.refresh()');
 				nu.eEventTransposeSelect.value = 0;
 				for (var i = 0; i < this.ts.evt.length; i++){
 					var e = this.ts.evt[i];
@@ -2610,7 +2592,7 @@ ts.create = function(){
 			nu.eEventBpc.style.display = 'inline-block';
 			nu.toolTitlebar.appendChild(nu.eEventBpc);
 
-        ts.zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
+        zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
 				nu.eEventBpcInput = ts.html.nu.ele('input');
 				nu.eEventBpcInput.type = 'number';
 				nu.eEventBpcInput.value = this.bpb;
@@ -2627,7 +2609,7 @@ ts.create = function(){
 			nu.toolTitlebar.appendChild(nu.eEventTpb);
 
 
-        ts.zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
+        zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
 				nu.eEventTpbInput = ts.html.nu.ele('input');
 				nu.eEventTpbInput.type = 'number';
 				nu.eEventTpbInput.value = SEQUENCE.tpb;
@@ -2758,9 +2740,9 @@ ts.create = function(){
 			nu.eEventBarButton.ts = nu;
 			nu.eEventBarButton.onclick = function(){
 				var e = this.ts.toggleBar();
-				if (e.bar && e.beat) ts.zs4.admin.util.setIcon(nu.eEventBarButton,'bars');
-				else if (e.beat) ts.zs4.admin.util.setIcon(nu.eEventBarButton,'beats');
-				else ts.zs4.admin.util.setIcon(nu.eEventBarButton,'plus');
+				if (e.bar && e.beat) zs4.admin.util.setIcon(nu.eEventBarButton,'bars');
+				else if (e.beat) zs4.admin.util.setIcon(nu.eEventBarButton,'beats');
+				else zs4.admin.util.setIcon(nu.eEventBarButton,'plus');
 				this.ts.ts.refresh();
 			};
 			nu.toolTitlebar.appendChild(nu.eEventBarButton);
@@ -2769,13 +2751,13 @@ ts.create = function(){
 				if (this.ts.evt_current != null){
 					var e = this.ts.evt_current;
 					if (e.bar){
-						ts.zs4.admin.util.setIcon(nu.eEventBarButton,'bars');
+						zs4.admin.util.setIcon(nu.eEventBarButton,'bars');
 					}
 					else if (e.beat){
-						ts.zs4.admin.util.setIcon(nu.eEventBarButton,'beats');
+						zs4.admin.util.setIcon(nu.eEventBarButton,'beats');
 					}
 					else {
-						ts.zs4.admin.util.setIcon(nu.eEventBarButton,'plus');
+						zs4.admin.util.setIcon(nu.eEventBarButton,'plus');
 					}
 				}
 			};
@@ -2798,13 +2780,13 @@ ts.create = function(){
 				if (this.ts.evt_current != null){
 					var e = this.ts.evt_current;
 					if (e.bar){
-						ts.zs4.admin.util.setIcon(nu.eEventBeatButton,'bars');
+						zs4.admin.util.setIcon(nu.eEventBeatButton,'bars');
 					}
 					else if (e.beat){
-						ts.zs4.admin.util.setIcon(nu.eEventBeatButton,'beats');
+						zs4.admin.util.setIcon(nu.eEventBeatButton,'beats');
 					}
 					else {
-						ts.zs4.admin.util.setIcon(nu.eEventBeatButton,'plus');
+						zs4.admin.util.setIcon(nu.eEventBeatButton,'plus');
 					}
 				}
 			};
@@ -2825,7 +2807,7 @@ ts.create = function(){
 					this.ts.setCurrentChordRoot(0);
 					this.ts.ts.refresh();
 				};
-				ts.zs4.admin.util.setIcon(nu.eEventChordAdd,'plus');
+				zs4.admin.util.setIcon(nu.eEventChordAdd,'plus');
 				nu.eEventChord.appendChild(nu.eEventChordAdd);
 
 				nu.eEventChordNote = ts.html.nu.ele('select');
@@ -2943,7 +2925,7 @@ ts.create = function(){
     SEQUENCE.createToolAbc = function(){
 			var nu = this.createTool('abc','abc');
 
-      var go = ts.zs4.admin.util.addIconElement(nu.toolTitlebar,'toonsmith');
+      var go = zs4.admin.util.addIconElement(nu.toolTitlebar,'toonsmith');
       go.onclick = function(){
         if (nu.eTextArea.value=='')return;
         var parsed = SEQUENCE.runABC(nu.eTextArea.value);
@@ -2966,7 +2948,7 @@ ts.create = function(){
 
 			nu.lfLabel =  ts.html.nu.ele('ts-input-label');
 			nu.lfLabel.innerHTML =  '&#xb6;';
-			//ts.zs4.admin.util.setIcon(nu.lfLabel,'pilcrow');
+			//zs4.admin.util.setIcon(nu.lfLabel,'pilcrow');
 			nu.toolTitlebar.appendChild(nu.lfLabel);
 
 			nu.eLineFeed = ts.html.nu.ele('input');
@@ -3045,12 +3027,12 @@ ts.create = function(){
           ROW.e.appendChild(ROW.n.e);
 
           ROW.addIcons = function(name){
-            ROW.p.icon = ts.zs4.admin.util.addIconElement(ROW.p.e,'prev');
+            ROW.p.icon = zs4.admin.util.addIconElement(ROW.p.e,'prev');
             ROW.p.icon.onclick = SEQUENCE.setPreviousEvent;
 
-            ROW.c.icon = ts.zs4.admin.util.addIconElement(ROW.c.e,name);
+            ROW.c.icon = zs4.admin.util.addIconElement(ROW.c.e,name);
 
-            ROW.n.icon = ts.zs4.admin.util.addIconElement(ROW.n.e,'next');
+            ROW.n.icon = zs4.admin.util.addIconElement(ROW.n.e,'next');
             ROW.n.icon.onclick = SEQUENCE.setNextEvent;
           }
         };
@@ -3124,7 +3106,7 @@ ts.create = function(){
         SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextLinefeed(SEQUENCE.evt_curidx)]);
       };
 
-      //ts.debug(space);
+      //zs4.debug(space);
 
 
       TOOL.refresh = function(){
@@ -3168,7 +3150,7 @@ ts.music = new Object({
 		chord:function(str){
 			str = str.trim();
 
-      //ts.debug('chord:'+str);
+      //zs4.debug('chord:'+str);
 
 			var nu = {v:0,t:0,b:0,ok:true};
 
@@ -3219,7 +3201,7 @@ ts.music = new Object({
 
 			if (str.length == 0) return nu;
 
-      //ts.debug('chord end with \"'+str+'\"')
+      //zs4.debug('chord end with \"'+str+'\"')
 
 			// Slash
 			if (str[0] != '/'){
@@ -3474,7 +3456,7 @@ ts.player = new Object({
     },
     playMelody:function(e){
       if (e.bar.melodies.length==0)return;
-      //ts.debug('PLAYING MELODY',e);
+      //zs4.debug('PLAYING MELODY',e);
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       var SEQUENCE = ts.player.ts;
@@ -3482,7 +3464,7 @@ ts.player = new Object({
       var available = SEQUENCE.barTotalMillies;
       var a = e.arrayMelody;
 
-      //ts.debug(a);
+      //zs4.debug(a);
 
       for (var i = 0; i < a.length; i++){
         pi.playNote(CHANNEL.melody,a[i].event.melody,1,a[i].starttime,a[i].ticktime);
@@ -3493,7 +3475,7 @@ ts.player = new Object({
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       var SEQUENCE = ts.player.ts;
-      //ts.debug(e);
+      //zs4.debug(e);
 
       var a = e.playArray;
       var chord = pi.chord;
@@ -3555,7 +3537,7 @@ ts.player = new Object({
 
 
         /*
-        ts.debug(
+        zs4.debug(
           'chord:'+ts.music.CHORD.toString(chord),
           chord,
           't:'+ts.music.note.qualified(tenor_note),
@@ -3567,7 +3549,7 @@ ts.player = new Object({
 
 		},
     playBar:function(bar){
-      //ts.debug('PLAYING BAR',bar);
+      //zs4.debug('PLAYING BAR',bar);
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       var SEQUENCE = ts.player.ts;
@@ -3599,6 +3581,7 @@ ts.player = new Object({
 
     },
 		eventLoop:function(){
+      //if (ts==null)return;
 			var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       // initialize oscillators
@@ -3675,12 +3658,12 @@ ts.player = new Object({
         if (ce.isBar()) {
   				pi.currentBeat = 0;
   				pi.beatsSinceChord = 0;
-  				//ts.debug('bar');
+  				//zs4.debug('bar');
   			}
   			else if (ce.isBeat()) {
   				pi.currentBeat += 1;
   				pi.beatsSinceChord += 1;
-  				//ts.debug('beat '+(pi.currentBeat+1) );
+  				//zs4.debug('beat '+(pi.currentBeat+1) );
   			}
 
         if (ce.isBar()){
@@ -3724,7 +3707,7 @@ ts.player = new Object({
 	},
 	attach:function(nuTs){
 		ts.player.detach();
-		ts.zs4.admin.util.setIcon(nuTs.titlebarLogo,'stop');
+		zs4.admin.util.setIcon(nuTs.titlebarLogo,'stop');
 		nuTs.titlebarElement.appendChild(ts.player.html);
 		nuTs.player = ts.player.html;
 		ts.player.ts = nuTs;
@@ -3736,7 +3719,7 @@ ts.player = new Object({
 				ts.player.ts.player = null;
 			}
 			var keep = ts.player.ts;
-			ts.zs4.admin.util.setIcon(keep.titlebarLogo,'play');
+			zs4.admin.util.setIcon(keep.titlebarLogo,'play');
 			ts.player.ts = null;
 			keep.refresh();
 		}
@@ -3831,13 +3814,13 @@ ts.html = new Object({
 				SEQUENCE.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
 				SEQUENCE.titlebarLogo.ts = SEQUENCE;
 				SEQUENCE.titlebarLogo.onclick = function(){this.ts.onLogoClick();};
-				ts.zs4.admin.util.setIcon(SEQUENCE.titlebarLogo,'play');
+				zs4.admin.util.setIcon(SEQUENCE.titlebarLogo,'play');
 				SEQUENCE.tsTopTools.appendChild(SEQUENCE.titlebarLogo);
 
 				SEQUENCE.player = null;
 
 				SEQUENCE.toolinst = ts.html.nu.ele('ts-instbutton');
-				ts.zs4.admin.util.setIcon(SEQUENCE.toolinst,'instruments');
+				zs4.admin.util.setIcon(SEQUENCE.toolinst,'instruments');
 				SEQUENCE.instArePopped = false;
 				SEQUENCE.toolinst.onclick = function(){
 					if (SEQUENCE.instArePopped==true){
@@ -3855,7 +3838,7 @@ ts.html = new Object({
 				SEQUENCE.tsTopTools.appendChild(SEQUENCE.toolinst);
 
 				SEQUENCE.toolpop = ts.html.nu.ele('ts-toolbutton');
-				ts.zs4.admin.util.setIcon(SEQUENCE.toolpop,'tool');
+				zs4.admin.util.setIcon(SEQUENCE.toolpop,'tool');
 				SEQUENCE.toolsArePopped = false;
 				SEQUENCE.toolpop.onclick = function(){
 					if (SEQUENCE.toolsArePopped==true){
@@ -3876,13 +3859,13 @@ ts.html = new Object({
 				SEQUENCE.transport = ts.html.nu.ele('ts-transport');
 				SEQUENCE.tsTopTools.appendChild(SEQUENCE.transport);
 
-				SEQUENCE.tostart = ts.zs4.admin.util.addIconElement(SEQUENCE.transport,'tostart');
+				SEQUENCE.tostart = zs4.admin.util.addIconElement(SEQUENCE.transport,'tostart');
 				SEQUENCE.tostart.onclick = function(){SEQUENCE.setCurrentEvent(SEQUENCE.evt[0]);}
-				SEQUENCE.prev = ts.zs4.admin.util.addIconElement(SEQUENCE.transport,'prev');
+				SEQUENCE.prev = zs4.admin.util.addIconElement(SEQUENCE.transport,'prev');
 				SEQUENCE.prev.onclick = function(){SEQUENCE.setPreviousEvent();}
-				SEQUENCE.next = ts.zs4.admin.util.addIconElement(SEQUENCE.transport,'next');
+				SEQUENCE.next = zs4.admin.util.addIconElement(SEQUENCE.transport,'next');
 				SEQUENCE.next.onclick = function(){SEQUENCE.setNextEvent();}
-				SEQUENCE.toend = ts.zs4.admin.util.addIconElement(SEQUENCE.transport,'toend');
+				SEQUENCE.toend = zs4.admin.util.addIconElement(SEQUENCE.transport,'toend');
 				SEQUENCE.toend.onclick = function(){SEQUENCE.setCurrentEvent(SEQUENCE.evt[(SEQUENCE.evt.length-1)]);}
 
 				SEQUENCE.toolspopped = ts.html.nu.ele('ts-tool-icons');
@@ -3997,7 +3980,7 @@ ts.html = new Object({
 		},
 		plain:function(f){
 			var t = "";
-			if (!ts.zs4.is.string(f)) return t;
+			if (!zs4.is.string(f)) return t;
 			var last_ch = ' ';
 			var last_ch_was_space = true;
 			var lessening = false;
@@ -4010,7 +3993,7 @@ ts.html = new Object({
 
 				if (cur_ch=='\n'){if (o==0||i==(f.length-1))continue; t += cur_ch.toString();o++;last_ch_was_space=false;continue;}
 
-				if (ts.zs4.is.space(cur_ch)){
+				if (zs4.is.space(cur_ch)){
 					if (last_ch_was_space)continue;
 					t += " "; o++;
 					last_ch_was_space = true;
@@ -4038,8 +4021,8 @@ ts.midi = new Object({
 
 			try {
 
-				//ts.debug('testing ts.midi.access');
-				//ts.debug(ts.midi.access);
+				//zs4.debug('testing ts.midi.access');
+				//zs4.debug(ts.midi.access);
 				for (var entry in ts.midi.access.inputs) {
 					ts.midi.input.push(entry[1]);
 				}

@@ -1801,6 +1801,9 @@ zs4.type = {
     }).bind(this);
 
     if (zs4.is.node()){
+      this._.getHTMLhead =(function(){
+        return '';
+      }).bind(this);
       this._.getHTML = (function(req){
         zs4.debug('getHTML('+this._.path+')');
         var title = this._.path;
@@ -1855,7 +1858,7 @@ zs4.type = {
               html += '  <link rel="stylesheet" href="/' + zs4.plugin.style[i] + '">\n';
             }
 
-
+            html += this._.getHTMLhead();
           html += ' </head>\n';
           if (true){
             html += ' <body onload="zs4.admin()">\n';
@@ -5283,33 +5286,39 @@ zs4.plugin = new Object({
 });
 
 zs4.module = new Array();
+zs4.scriptToConstructor = function(script){
+  var body = '\'use strict\';\n';
+  if (zs4.is.window()){
+    //body += 'var zs4 = window.zs4\n';
+  }
+  else if (zs4.is.node()){
+    //body += 'var zs4 = zs4\n';
+  }
+  body += '{'+script+'}\n';
+
+  try {
+    return new Function('zs4',body);
+  }
+  catch(err) {
+    return null;
+  }
+}
 zs4.require = function(path,cb,force){
-  zs4.THIS.zs4.require._.submit({path:path},function(ret){
-      if (ret==null||ret.result==null||!zs4.is.string(ret.result)){ if (cb)cb(null);}
-      console.log(ret.result);
 
-      var body = '\'use strict\';\n';
-      if (zs4.is.window()){
-        body += 'var zs4 = window.zs4\n';
-      }
-      else if (zs4.is.node()){
-        body += 'var zs4 = global.zs4\n';
-      }
-      body += '{'+ret.result+'}\n';
+  var header;
 
-      var nu;
+  if (zs4.is.window){
+    zs4.THIS.zs4.require._.submit({path:path},function(ret){
+        if (ret==null||ret.result==null||!zs4.is.string(ret.result)){ if (cb)cb(null);}
+        console.log(ret.result);
 
-      try {
-        nu = new Function(body);
-        cb(nu);
-      }
-      catch(err) {
-        if (zs4.is.window())console.log(err);
-        else zs4.debug(err);
-          cb(null);
-      }
+        cb(zs4.scriptToConstructor(ret.result));
+    })
+  }
+  if (zs4.is.node){
+    var data = fs.readFile(path,'utf8');
+  }
 
-  })
   return path;
 };
 

@@ -1,23 +1,28 @@
 var zs4 = require('../../static/zs4');
 var xpress = require('express');
-var ts = require('../../static/toonsmith/window');
+//var ts = require('../../static/toonsmith/window');
 var debug = require('debug')('zs4toonsmith');
+var fs = require('fs');
 
 const APPNAME = 'toonsmith';
 debug('toonsmith loading...');
 
+var ts;
 var toonsmith;
 if (zs4.is.node()) {
     toonsmith = exports;
+    toonsmith.script0 = fs.readFileSync('./zs4/plugin/toonsmith/script0.js','utf8');
+    toonsmith.script1 = fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
+    toonsmith.style = fs.readFileSync('./zs4/plugin/toonsmith/style.css','utf8');
+    var createTS = zs4.scriptToConstructor(toonsmith.script1);
+    //if (createTS==null){exit();}
+    //console.log(createTS);
+    ts = new createTS(zs4);
+    //console.log(ts);
 }
 else {
     toonsmith = new Object();
 }
-
-zs4.plugin.registerScript('tables/midi.js');
-zs4.plugin.registerStyle('toonsmith/style.css');
-zs4.plugin.registerScript('toonsmith/window.js');
-zs4.plugin.registerScript('toonsmith/script.js');
 
 toonsmith.create = function(){
   var TOONSMITH = this;
@@ -27,9 +32,27 @@ toonsmith.create = function(){
   //debug(this.zs4.head.typename._.value);
   this.zs4.head.bits._.bits.plugin.true();
   this._.name = 'toonsmith';
+
+
   //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;
   TOONSMITH._.property(new zs4.type.text({name:'data',flags:'authgetpublic quickupdate authsetself',}));
+
+  TOONSMITH._.getHTMLhead = (function(){
+    var head = '<script>';
+    head += toonsmith.script0;
+    head += toonsmith.script1;
+    head += '</script>';
+
+    head += '<style>';
+    head += toonsmith.style;
+    head += '</style>';
+
+    return head;
+  }).bind(TOONSMITH);
+
+
+
   TOONSMITH._.getTextOnly = (function(){
     var ret = '';
     var skip = false;

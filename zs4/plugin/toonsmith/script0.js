@@ -23,7 +23,7 @@ zs4.plugin.list.toonsmith = new Object({
     THIS.initialize();
     THIS.toon = ts.html.init.block(e);
     THIS.toon.runChordsAndLyrics(THIS.scope.data._.value);
-    THIS.toon.zs4scope = scope; 
+    THIS.toon.zs4scope = scope;
 
   },
   reload:function(){
