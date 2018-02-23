@@ -168,7 +168,7 @@ ts.create = function(){
 	SEQUENCE.evt_shown = null;
 	SEQUENCE.current_tool = null;
 	SEQUENCE.current_inst = null;
-
+  SEQUENCE.isPlaying = function(){if(SEQUENCE.player!=null)return true;return false;};
 	SEQUENCE.onKeyChange = function(nuKee){
 		if	(!this.key.ok)
 			return;
@@ -195,7 +195,7 @@ ts.create = function(){
 		return e;
 	};
 	SEQUENCE.setCurrentEvent = function(evt){
-		var playing = ts.player.is.running();
+		var playing = SEQUENCE.isPlaying();
 
 		SEQUENCE.evt_current = evt;
 		if (!playing){
@@ -1125,7 +1125,7 @@ ts.create = function(){
     const DOT_MULTIPLIER = 1.5;
     var index = new Array();
     var ABC = new ts.abc();
-    
+
     if (!zs4.is.string(input)||input=='') return;
 
     // extract lines
@@ -1140,6 +1140,21 @@ ts.create = function(){
   };
 
   if (zs4.is.window()){
+
+    document.addEventListener('keydown',function(e){
+      console.log(e);
+      // NAVIGATION
+      if (!SEQUENCE.isPlaying()){
+        if (e.key=='ArrowRight')SEQUENCE.setNextEvent();
+        else if (e.key=='ArrowLeft')SEQUENCE.setPreviousEvent();
+
+        if (SEQUENCE.current_inst != null){
+
+
+        }
+      }
+    });
+
     SEQUENCE.renderStats = function(){
 			this.stsEvents.textContent = ('events:'+this.evt.length+' ');
 			this.stsChords.textContent = ('chords:' + this.stats.chords+' ');
@@ -1507,6 +1522,7 @@ ts.create = function(){
 			};
 
 			nu.eEventInstrument = ts.html.nu.ele('ts-instrument-' + name);
+
 			//nu.eEventInstrument.style.display = 'inline-block';
 			nu.eEventInstrument.className = 'instrument';
 			nu.toolTitlebar.appendChild(nu.eEventInstrument);
@@ -1539,6 +1555,7 @@ ts.create = function(){
 
 			return nu;
 		};
+
 		SEQUENCE.createToolStringInstrument = function(name,icon){
 			var fontHeight = '0.5em';
 
@@ -3662,7 +3679,7 @@ ts.player = new Object({
 			else if (ts.player.internal.bar.jump && ts.player.internal.bar.jumpTs != null ){
 				ts.player.internal.bar.jumpEventEle.className = '';
 				ts.player.attach(ts.player.internal.bar.jumpTs);
-				ts.player.ts.setCurrentEvent(ts.player.ts.evt[0]);
+				ts.player.ts.setCurrentEvent(ts.player.ts.evt[ts.player.ts.evt_curidx]);
 				ts.player.internal.bar.jump = false;
 			}
 
@@ -3737,7 +3754,16 @@ ts.player = new Object({
 				alert("idle ts object, player active.");
 			} else {
 				ts.player.internal.bar.active.startTime = 0;
-				ts.player.onEventClick(clickTs,clickTs.evt[0]);
+        var SEQUENCE = clickTs;
+        var idx = SEQUENCE.evt_curidx;
+        if (SEQUENCE.evt_current.isBar()){
+          idx = SEQUENCE.evt_curidx;
+        }
+        else {
+          idx = SEQUENCE.searchPrevBar(SEQUENCE.evt_curidx);
+        }
+
+				ts.player.onEventClick(clickTs,clickTs.evt[idx]);
 			}
 		}
 	},
@@ -3800,7 +3826,9 @@ ts.html = new Object({
 
 				SEQUENCE.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
 				SEQUENCE.titlebarLogo.ts = SEQUENCE;
-				SEQUENCE.titlebarLogo.onclick = function(){this.ts.onLogoClick();};
+				SEQUENCE.titlebarLogo.onclick = function(){
+          this.ts.onLogoClick();
+        };
 				zs4.admin.util.setIcon(SEQUENCE.titlebarLogo,'play');
 				SEQUENCE.tsTopTools.appendChild(SEQUENCE.titlebarLogo);
 

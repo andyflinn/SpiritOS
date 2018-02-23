@@ -33,6 +33,7 @@ toonsmith.create = function(){
   this.zs4.head.bits._.bits.plugin.true();
   this._.name = 'toonsmith';
 
+var debug = true;
 
   //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;
@@ -41,7 +42,12 @@ toonsmith.create = function(){
   TOONSMITH._.getHTMLhead = (function(){
     var head = '<script>';
     head += toonsmith.script0;
-    head += toonsmith.script1;
+    if (debug){
+      head +=  fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
+    }
+    else{
+      head += toonsmith.script1;
+    }
     head += '</script>';
 
     head += '<style>';
