@@ -1124,588 +1124,8 @@ ts.create = function(){
   SEQUENCE.runABC = function(input,idx){
     const DOT_MULTIPLIER = 1.5;
     var index = new Array();
-    var ABC = new Object({
-      X:'',
-      L_DIVIDEND:1,
-      L_DIVISOR:8,
-      M_DIVIDEND:4,
-      M_DIVISOR:4,
-      bar:new Array(),
-      line:new Array(),
-      failures:new Array(),
-      currentBar:null,
-      verseCount:0,
-      lastMusicLineStart:null,
-      lastMusicLineEnd:null,
-      mode:'header',
-      NOTE:['A','B','C','D','E','F','G','a','b','c','d','e','f','g'],
-      KEY:{
-        G:{c:1,t:1,o:7},
-        D:{c:2,t:1,o:2},
-        A:{c:3,t:1,o:9},
-        E:{c:4,t:1,o:4},
-        B:{c:5,t:1,o:11},
-        'F#':{c:6,t:1,o:6},
-        'C#':{c:7,t:1,o:1},
-
-        F:{c:1,t:-1,o:5},
-        'Bb':{c:2,t:-1,o:10},
-        'Eb':{c:3,t:-1,o:3},
-        'Ab':{c:4,t:-1,o:8},
-        'Db':{c:5,t:-1,o:1},
-        'Gb':{c:6,t:-1,o:6},
-        'Cb':{c:7,t:-1,o:11},
-      },
-      failure:function(txt){
-        var ABC = this;
-        ABC.failures.push(txt);
-        zs4.debug('ABC failure: \"'+txt+'\"');
-        return false;
-      },
-      barCreate:function(){
-        var BAR = new Object({
-          content:new Array(),
-          lyrix:new Array(),
-          raw:'',
-        });
-        BAR.index = this.bar.length;
-        BAR.lf = false;
-        this.bar.push(BAR);
-        this.currentBar = BAR;
-        return BAR;
-      },
-      firstBarIsComplete:function(){
-        if (ABC.bar.length==0)return false;
-        var time = 0;
-        var a = ABC.bar[0].content;
-        for (var i = 0; i < a.length; i++)time += a[i].length;
-        if (time >= ((1 * ABC.M_DIVIDEND)/ABC.M_DIVISOR))return true;
-        return false;
-      },
-      hasLyrix:function(){
-        var ABC = this;
-        var ret = false;
-        for (var i = 0; i < ABC.bar.length; i++){
-          if (ABC.bar[i].lyrix.length > ABC.verseCount){
-            ABC.verseCount = ABC.bar[i].lyrix.length;
-            ret = true;
-          }
-        }
-        return ret;
-      },
-      noteTableCreate:function(K){
-        var BOTTOM = 48;
-        var ABC = this;
-        var TABLE = ABC.note = new Array();
-        function note(n,v){
-          var NOTE = this;
-          NOTE.name = n;
-          NOTE.value = v;
-          NOTE.orig = v;
-        };
-
-        if (true){
-          ABC.note.push(new note('C,',BOTTOM));
-          ABC.note.push(new note('D,',BOTTOM+2));
-          ABC.note.push(new note('E,',BOTTOM+4));
-          ABC.note.push(new note('F,',BOTTOM+5));
-          ABC.note.push(new note('G,',BOTTOM+7));
-          ABC.note.push(new note('A,',BOTTOM+9));
-          ABC.note.push(new note('B,',BOTTOM+11));
-
-          ABC.note.push(new note('C',BOTTOM+12));
-          ABC.note.push(new note('D',BOTTOM+12+2));
-          ABC.note.push(new note('E',BOTTOM+12+4));
-          ABC.note.push(new note('F',BOTTOM+12+5));
-          ABC.note.push(new note('G',BOTTOM+12+7));
-          ABC.note.push(new note('A',BOTTOM+12+9));
-          ABC.note.push(new note('B',BOTTOM+12+11));
-
-          ABC.note.push(new note('c',BOTTOM+24));
-          ABC.note.push(new note('d',BOTTOM+24+2));
-          ABC.note.push(new note('e',BOTTOM+24+4));
-          ABC.note.push(new note('f',BOTTOM+24+5));
-          ABC.note.push(new note('g',BOTTOM+24+7));
-          ABC.note.push(new note('a',BOTTOM+24+9));
-          ABC.note.push(new note('b',BOTTOM+24+11));
-
-          ABC.note.push(new note('c\'',BOTTOM+36));
-          ABC.note.push(new note('d\'',BOTTOM+36+2));
-          ABC.note.push(new note('e\'',BOTTOM+36+4));
-          ABC.note.push(new note('f\'',BOTTOM+36+5));
-          ABC.note.push(new note('g\'',BOTTOM+36+7));
-          ABC.note.push(new note('a\'',BOTTOM+36+9));
-          ABC.note.push(new note('b\'',BOTTOM+36+11));
-        }
-
-        var keynote = 24;
-
-        var i = 0;
-        var Knote = '';
-        var Ktype = '';
-        //skip leading spaces
-        while (i < K.length && K.charAt(i)==' ')i++;
-        // handle keynote;
-        if (i >= K.length)return ABC.failure('No key note specified');
-        if (ABC.isNoteCharacter(K.charAt(i))){Knote+=K.charAt(i);i++}
-        else {return ABC.failure(K.charAt(i)+' is not a valid key note');}
-        if (i<K.length&&(K.charAt(i)=='#'||K.charAt(i)=='b')){Knote+=K.charAt(i);i++}
-        //skip spaces
-        while (i < K.length && K.charAt(i)==' ')i++;
-        while (i < K.length && K.charAt(i)!=' '){Ktype+=K.charAt(i);i++;}
-        // done parsing key
-        zs4.debug('key note: '+Knote, 'Ktype: '+Ktype);
-        keynote = ts.music.parse.note(Knote);
-        if (keynote==-1)return ABC.failure(Knote+' is not a valid keynote');
-        if (Ktype=='m'||Ktype=='min')keynote+=3;
-        else if (zs4.string.startsWith(Ktype,'dor'))keynote-=2;
-        else if (zs4.string.startsWith(Ktype,'phr'))keynote-=4;
-        else if (zs4.string.startsWith(Ktype,'lyd'))keynote-=5;
-        else if (zs4.string.startsWith(Ktype,'mix'))keynote-=7;
-        else if (zs4.string.startsWith(Ktype,'aeo'))keynote-=9;
-        else if (zs4.string.startsWith(Ktype,'loc'))keynote-=11;
-
-        keynote %= 12;
-
-        if (keynote==0){
-          zs4.debug('using no B\'s or #\'s');
-          return true;
-        }
-
-        var DO = -1;
-        for(var n in ABC.KEY){
-          if (ABC.KEY[n].o==keynote){
-            DO = ABC.KEY[n];
-            break;
-          }
-        }
-        if (DO==-1){
-          return ABC.failure('internal error during key lookup')
-        }
-
-        //var t = new Array();
-        var start; var increment; var count; var symbol;
-        count = DO.c;
-        if (DO.t==1){
-          start = 5;
-          increment = 7;
-          symbol = '#';
-          zs4.debug('using '+count+' #\'s');
-        }
-        else if (DO.t==-1){
-          start = 11;
-          increment = 5;
-          symbol = 'b';
-          zs4.debug('using '+count+' b\'s');
-        }
-
-        for (var i = 0 ; i < TABLE.length; i++){
-          var pos = start;
-          for (var c = 0; c < count; c++ ){
-            if ((TABLE[i].orig%12)==pos){
-              TABLE[i].value += DO.t;
-              zs4.debug(TABLE[i].name+symbol);
-              break;
-            }
-            pos = ((pos+increment)%12);
-          }
-        }
-
-        return true;
-      },
-      isNoteCharacter:function(ch){
-        var ABC = this;
-        for (var x = 0; x < ABC.NOTE.length;x++){
-          if (ABC.NOTE[x]==ch)return true;
-        }
-        return false;
-      },
-      findNoteValue:function(n){
-        for (var i = 0 ; i < this.note.length;i++){
-          if (this.note[i].name==n)return this.note[i].value.toString();
-        }
-        return '';
-      },
-      addNote:function(n,t,x){
-        this.currentBar.content.push(new Object({
-          note:n,
-          length:t,
-          beat:0,
-          lab:0,
-          x:x,
-        }));
-      },
-      parseLyricLine:function(line){
-        var ABC = this;
-        line = line.substr(2,line.length-2).trim();
-
-        var word = ''; // -_*
-        var ret = new Array();
-        function addWord(space){
-          if (word != '')ret.push(word);
-          word = '';
-          if (space==' '||space=='-'){
-            ret.push(space);
-          }
-        }
-
-        for (var i = 0; i < line.length;i++){
-          if (line.charAt(i)==' '){
-            addWord(' ');
-          }
-          else if (line.charAt(i)=='-'){
-            addWord('-');
-          }
-          else if (line.charAt(i)=='_'){
-            addWord(); word = '*'; addWord();
-          }
-          else if (line.charAt(i)=='*'){
-            addWord(); word = '*'; addWord();
-          }
-          else {
-            word += line.charAt(i);
-          }
-        }
-        addWord();
-        return ret;
-      },
-      toToonsmith:function(){
-        var ABC = this;
-        var BAR = (1 * ABC.M_DIVIDEND)/ABC.M_DIVISOR;
-        var BEAT = 1/ABC.L_DIVISOR;
-        var out = '[bpb:'+ABC.M_DIVIDEND+']';
-
-
-
-        function outPass(v){
-          var fbc = true;
-          if (!ABC.firstBarIsComplete()){
-            zs4.debug('FIRST BAR IS INCOMPLETE!');
-            fbc = false;
-          }
-
-          var LYRIX = null;
-          var lyri = 0;
-          for (var i=0; i < ABC.bar.length;i++){
-            var bar = ABC.bar[i].content;
-            if (zs4.is.number(v)&&ABC.bar[i].lyrix.length>0){
-              if (v<ABC.bar[i].lyrix.length){
-                LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[v]);
-              }
-              else {
-                LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[0]);
-              }
-              zs4.debug(LYRIX);
-              lyri = 0;
-            }
-
-            if (ABC.bar[i].lf)out+='\n';
-            if (bar.length==0){
-              out+='[|]\n';
-            }
-            else {
-              var time = 0;
-              var beat = 0;
-              var space = false;
-              for (var n = 0; n < bar.length;n++){
-                out += '[';
-                if (n==0) {
-                  if (i==0 && !fbc)out+='.'
-                  else out+='|';
-
-                  bar[n].beat=beat;
-                  beat+=1;
-                }
-                else if ((beat*BEAT)<=time){
-                  out+='.';
-                  bar[n].lab = time-(beat*BEAT);
-                  if (bar[n].lab>0.00001)out+='][';
-
-                  bar[n].beat=beat;
-                  beat+=1;
-                }
-                else {
-                  bar[n].lab = time-(beat*BEAT);
-                  bar[n].beat=beat;
-                }
-                out += ABC.findNoteValue(bar[n].note);
-                if (bar[n].x!=null&&bar[n].x.chord!=null){
-                  out += ts.music.CHORD.toString(bar[n].x.chord);
-                }
-                out +=']';
-                if (LYRIX!=null&&lyri<(LYRIX.length)){
-                  if (LYRIX[lyri]!='*'&&LYRIX[lyri]!='_')out+=LYRIX[lyri];
-                  lyri++;
-                  if (lyri<(LYRIX.length)&&(LYRIX[lyri]==' '||LYRIX[lyri]=='-')){
-                    out+=LYRIX[lyri];lyri++;
-                    while (lyri<(LYRIX.length)&&LYRIX[lyri]==' '){
-                      lyri++;
-                    }
-                  }
-                }
-                time += bar[n].length;
-                while (((beat+1)*BEAT)<=time){
-                  out += '[.]';
-                  beat+=1;
-                }
-              }
-            }
-          }
-        };
-
-        // this
-        if (ABC.hasLyrix()){
-          zs4.debug('ABC HAS LYRIX IT!! verseCount='+ABC.verseCount);
-          for (var i = 0; i < ABC.verseCount; i++){
-            outPass(i)
-          }
-        }
-        else {
-          outPass(null);
-        }
-
-        return out;
-      },
-      parseHeaderLine:function(line){
-        //zs4.debug('PARSEING HEADER LINE:',line)
-        var ABC = this;
-        var head = zs4.string.split.separators(line,':');
-        if (head.length==2){
-          if (head[0]=='X'){
-            //if (ABC.X != '')break;
-            ABC.X = head[1];
-            line = '';
-          }
-          else if (head[0]=='T'){
-            ABC.T = head[1];
-            line = '';
-          }
-          else if (head[0]=='C'){
-            ABC.C = head[1];
-            line = '';
-          }
-          else if (head[0]=='M'){
-            var m = zs4.string.split.separators(head[1],'/');
-            if (m.length==2){
-              ABC.M_DIVIDEND = zs4.parse.int(m[0]);
-              ABC.M_DIVISOR = zs4.parse.int(m[1]);
-            }
-            line = '';
-          }
-          else if (head[0]=='L'){
-            var m = zs4.string.split.separators(head[1],'/');
-            if (m.length==2){
-              ABC.L_DIVIDEND = zs4.parse.int(m[0]);
-              ABC.L_DIVISOR = zs4.parse.int(m[1]);
-            }
-            line = '';
-          }
-          else if (head[0]=='K'){
-            ABC.K = head[1];
-            line = '';
-            ABC.noteTableCreate(ABC.K);
-            ABC.barCreate();
-            ABC.mode = 'content';
-          }
-        }
-      },
-      pass1:function(input){
-        //zs4.debug('start of pass1 BC',this);
-        var ABC = this;
-        var line = '';
-        for (var i = 0; i < input.length;i++){
-          var ch = input.charAt(i);
-          if (ABC.mode == 'header') {
-            if (ch=='\n'){
-              ABC.parseHeaderLine(line);
-              line = '';
-            }
-            else {
-              line += ch;
-            }
-          }
-          else {
-            var ch = input.charAt(i);
-            if (ch=='\n'){
-              if (line=='')continue;
-              else {
-                ABC.line.push({data:line.trim()});
-                line = '';
-              }
-            }
-            else {
-              line += ch;
-            }
-          }
-        }
-        if (line!=''){
-          ABC.line.push({data:line});
-        }
-      },
-      parseLineMusic:function(input){
-        var ABC = this;
-        //var mode = 'header';
-
-
-
-        var gch = null;
-        var acc = '';
-        function extra(){
-          var e = new Object({
-            chord:gch,
-            acc:acc,
-          })
-          gch = null;
-          acc = '';
-          return e;
-        };
-
-        var glt_ratio = 1;
-        function ratio(glt){
-          const GT = 1.5;
-          const LT = 0.5;
-          if (glt=='>'){
-            glt_ratio = LT;
-            return GT;
-          }
-          else if (glt=='<'){
-            glt_ratio = GT;
-            return LT;
-          }
-          var r = glt_ratio;
-          glt_ratio = 1;
-          return r;
-        };
-
-        for (var i = 0; i < input.length;i++){
-          var ch = input.charAt(i);
-          if (ch==' '||ch=='~'||ch=='\n')continue;
-
-          // bar break
-          if (ch==':'||ch=='|'||ch==']'){
-            var bc = [':','|',']','['];
-            function check(ch){for (var x = 0; x < bc.length;x++){if (bc[x]==ch)return true;}return false;};
-            while ((i < (input.length-1))&&(check(input[i+1])))i++;
-
-            if ((i < (input.length-1)&&zs4.is.numchar(input[i+1]))) {
-              i++;
-              if (input[i]=='1'){
-                while ((i < (input.length-1))&&(!check(input[i+1])))i++;
-                while ((i < (input.length-1))&&(check(input[i+1])))i++;
-              }
-            }
-
-            ABC.barCreate();
-          }
-          else if (ch=='L'){
-            var buf = '';
-            while (i < (input.length-1)&&input[i+1]==':')i++;
-            while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
-              i++;
-              buf+=input[i];
-            }
-            ABC.L_DIVIDEND = zs4.parse.int(buf);buf='';
-            while (i < (input.length-1)&&input[i+1]=='/')i++;
-            while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
-              i++;
-              buf+=input[i];
-            }
-            ABC.L_DIVISOR = zs4.parse.int(buf);buf='';
-          }
-          else {
-            if (ABC.isNoteCharacter(ch)||ch=='z'||ch=='Z'){
-              var note = ch;
-              while ((i < (input.length-1))&&(input[i+1]==','||input[i+1]=='\'')){
-                i++;
-                note += input[i];
-              }
-
-              var length = ABC.L_DIVIDEND/ABC.L_DIVISOR;
-              //var num = 1;
-              if ((i < (input.length-1)&&input[i+1]=='>')){
-                i++;
-                length *= ratio('>');
-              }
-              else if ((i < (input.length-1)&&input[i+1]=='<')){
-                i++;
-                length *= ratio('<');
-              }
-              else {
-                length *= ratio();
-              }
-
-              if ((i < (input.length-1))&&input[i+1]=='/'){
-                i++;
-                var buf = '';
-                while (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
-                  i++; buf+=input[i];
-                }
-                if (buf=='')buf='2';
-                var num = zs4.parse.int(buf);
-                if (num!=0)length /= num;
-                else length /= 2;
-              }
-              else if (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
-                var buf = '';
-                while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
-                  i++; buf+=input[i];
-                }
-                var num = zs4.parse.int(buf);
-                if (num!=0)length *= num;
-              }
-
-              ABC.addNote(note,length,extra());
-            }
-            else if (ch=='"'){
-              var chord = ''; gch = null;
-              while ((i < (input.length-1))&&input[i+1]!='"'){
-                i++;
-                chord += input[i];
-              }
-              i++;
-              gch = ts.music.parse.chord(chord);
-              if (!gch.ok){
-                ABC.failure('Can\'t parse chord \"'+chord+'\"');
-              }
-            }
-            else if (ch=='_'||ch=='^'){
-              acc+=ch;
-            }
-          }
-        }
-
-        if (ABC.bar.length > 0)ABC.bar[ABC.bar.length-1].lf = true;
-      },
-      parse:function(input){
-        var ABC = this;
-        ABC.pass1(input);
-        for (var i = 0; i < ABC.line.length; i++){
-          if (ABC.line[i].data.length>2&&ABC.line[i].data.charAt(1)==':'){
-            if (ABC.lastMusicLineStart&&zs4.string.startsWith(ABC.line[i].data,'w')){
-              zs4.debug('should add lyrix');
-              ABC.lastMusicLineStart.lyrix.push(ABC.line[i].data);
-              ABC.lastMusicLineStart.lyrixEnd = ABC.lastMusicLineEnd;
-            }
-            else {
-              ABC.parseHeaderLine(ABC.line[i].data);
-            }
-          }
-          else {
-            var mline = false;
-            if (ABC.currentBar.content.length==0){
-              ABC.lastMusicLineStart = ABC.currentBar;
-              mline = true;
-            }
-            ABC.parseLineMusic(ABC.line[i].data);
-            if (mline)ABC.lastMusicLineEnd = ABC.currentBar;
-          }
-        }
-
-        //remove last bar if EMPTY!
-        if (ABC.bar[ABC.bar.length-1].content.length==0){ABC.bar.pop();}
-      },
-    });
-
+    var ABC = new ts.abc();
+    
     if (!zs4.is.string(input)||input=='') return;
 
     // extract lines
@@ -3136,6 +2556,573 @@ ts.create = function(){
 			return nu;
 		};
   }
+};
+
+ts.abc = function(){
+  var ABC = this;
+  ABC.X = '',
+  ABC.L_DIVIDEND = 1;
+  ABC.L_DIVISOR = 8;
+  ABC.M_DIVIDEND = 4;
+  ABC.M_DIVISOR = 4;
+  ABC.bar = new Array();
+  ABC.line = new Array();
+  ABC.failures = new Array();
+  ABC.currentBar = null;
+  ABC.verseCount = 0;
+  ABC.lastMusicLineStart = null;
+  ABC.lastMusicLineEnd = null;
+  ABC.mode = 'header';
+  ABC.NOTE = ['A','B','C','D','E','F','G','a','b','c','d','e','f','g'];
+  ABC.KEY = {
+    G:{c:1,t:1,o:7},
+    D:{c:2,t:1,o:2},
+    A:{c:3,t:1,o:9},
+    E:{c:4,t:1,o:4},
+    B:{c:5,t:1,o:11},
+    'F#':{c:6,t:1,o:6},
+    'C#':{c:7,t:1,o:1},
+
+    F:{c:1,t:-1,o:5},
+    'Bb':{c:2,t:-1,o:10},
+    'Eb':{c:3,t:-1,o:3},
+    'Ab':{c:4,t:-1,o:8},
+    'Db':{c:5,t:-1,o:1},
+    'Gb':{c:6,t:-1,o:6},
+    'Cb':{c:7,t:-1,o:11},
+  };
+  ABC.failure = function(txt){
+    ABC.failures.push(txt);
+    zs4.debug('ABC failure: \"'+txt+'\"');
+    return false;
+  };
+  ABC.barCreate = function(){
+    var BAR = new Object({
+      content:new Array(),
+      lyrix:new Array(),
+      raw:'',
+    });
+    BAR.index = this.bar.length;
+    BAR.lf = false;
+    this.bar.push(BAR);
+    this.currentBar = BAR;
+    return BAR;
+  };
+  ABC.firstBarIsComplete = function(){
+    if (ABC.bar.length==0)return false;
+    var time = 0;
+    var a = ABC.bar[0].content;
+    for (var i = 0; i < a.length; i++)time += a[i].length;
+    if (time >= ((1 * ABC.M_DIVIDEND)/ABC.M_DIVISOR))return true;
+    return false;
+  };
+  ABC.hasLyrix = function(){
+    var ret = false;
+    for (var i = 0; i < ABC.bar.length; i++){
+      if (ABC.bar[i].lyrix.length > ABC.verseCount){
+        ABC.verseCount = ABC.bar[i].lyrix.length;
+        ret = true;
+      }
+    }
+    return ret;
+  };
+  ABC.noteTableCreate = function(K){
+    var BOTTOM = 48;
+    var TABLE = ABC.note = new Array();
+    function note(n,v){
+      var NOTE = this;
+      NOTE.name = n;
+      NOTE.value = v;
+      NOTE.orig = v;
+    };
+
+    if (true){
+      ABC.note.push(new note('C,',BOTTOM));
+      ABC.note.push(new note('D,',BOTTOM+2));
+      ABC.note.push(new note('E,',BOTTOM+4));
+      ABC.note.push(new note('F,',BOTTOM+5));
+      ABC.note.push(new note('G,',BOTTOM+7));
+      ABC.note.push(new note('A,',BOTTOM+9));
+      ABC.note.push(new note('B,',BOTTOM+11));
+
+      ABC.note.push(new note('C',BOTTOM+12));
+      ABC.note.push(new note('D',BOTTOM+12+2));
+      ABC.note.push(new note('E',BOTTOM+12+4));
+      ABC.note.push(new note('F',BOTTOM+12+5));
+      ABC.note.push(new note('G',BOTTOM+12+7));
+      ABC.note.push(new note('A',BOTTOM+12+9));
+      ABC.note.push(new note('B',BOTTOM+12+11));
+
+      ABC.note.push(new note('c',BOTTOM+24));
+      ABC.note.push(new note('d',BOTTOM+24+2));
+      ABC.note.push(new note('e',BOTTOM+24+4));
+      ABC.note.push(new note('f',BOTTOM+24+5));
+      ABC.note.push(new note('g',BOTTOM+24+7));
+      ABC.note.push(new note('a',BOTTOM+24+9));
+      ABC.note.push(new note('b',BOTTOM+24+11));
+
+      ABC.note.push(new note('c\'',BOTTOM+36));
+      ABC.note.push(new note('d\'',BOTTOM+36+2));
+      ABC.note.push(new note('e\'',BOTTOM+36+4));
+      ABC.note.push(new note('f\'',BOTTOM+36+5));
+      ABC.note.push(new note('g\'',BOTTOM+36+7));
+      ABC.note.push(new note('a\'',BOTTOM+36+9));
+      ABC.note.push(new note('b\'',BOTTOM+36+11));
+    }
+
+    var keynote = 24;
+
+    var i = 0;
+    var Knote = '';
+    var Ktype = '';
+    //skip leading spaces
+    while (i < K.length && K.charAt(i)==' ')i++;
+    // handle keynote;
+    if (i >= K.length)return ABC.failure('No key note specified');
+    if (ABC.isNoteCharacter(K.charAt(i))){Knote+=K.charAt(i);i++}
+    else {return ABC.failure(K.charAt(i)+' is not a valid key note');}
+    if (i<K.length&&(K.charAt(i)=='#'||K.charAt(i)=='b')){Knote+=K.charAt(i);i++}
+    //skip spaces
+    while (i < K.length && K.charAt(i)==' ')i++;
+    while (i < K.length && K.charAt(i)!=' '){Ktype+=K.charAt(i);i++;}
+    // done parsing key
+    zs4.debug('key note: '+Knote, 'Ktype: '+Ktype);
+    keynote = ts.music.parse.note(Knote);
+    if (keynote==-1)return ABC.failure(Knote+' is not a valid keynote');
+    if (Ktype=='m'||Ktype=='min')keynote+=3;
+    else if (zs4.string.startsWith(Ktype,'dor'))keynote-=2;
+    else if (zs4.string.startsWith(Ktype,'phr'))keynote-=4;
+    else if (zs4.string.startsWith(Ktype,'lyd'))keynote-=5;
+    else if (zs4.string.startsWith(Ktype,'mix'))keynote-=7;
+    else if (zs4.string.startsWith(Ktype,'aeo'))keynote-=9;
+    else if (zs4.string.startsWith(Ktype,'loc'))keynote-=11;
+
+    keynote %= 12;
+
+    if (keynote==0){
+      zs4.debug('using no B\'s or #\'s');
+      return true;
+    }
+
+    var DO = -1;
+    for(var n in ABC.KEY){
+      if (ABC.KEY[n].o==keynote){
+        DO = ABC.KEY[n];
+        break;
+      }
+    }
+    if (DO==-1){
+      return ABC.failure('internal error during key lookup')
+    }
+
+    //var t = new Array();
+    var start; var increment; var count; var symbol;
+    count = DO.c;
+    if (DO.t==1){
+      start = 5;
+      increment = 7;
+      symbol = '#';
+      zs4.debug('using '+count+' #\'s');
+    }
+    else if (DO.t==-1){
+      start = 11;
+      increment = 5;
+      symbol = 'b';
+      zs4.debug('using '+count+' b\'s');
+    }
+
+    for (var i = 0 ; i < TABLE.length; i++){
+      var pos = start;
+      for (var c = 0; c < count; c++ ){
+        if ((TABLE[i].orig%12)==pos){
+          TABLE[i].value += DO.t;
+          zs4.debug(TABLE[i].name+symbol);
+          break;
+        }
+        pos = ((pos+increment)%12);
+      }
+    }
+
+    return true;
+  };
+  ABC.isNoteCharacter = function(ch){
+    for (var x = 0; x < ABC.NOTE.length;x++){
+      if (ABC.NOTE[x]==ch)return true;
+    }
+    return false;
+  };
+  ABC.findNoteValue = function(n){
+    for (var i = 0 ; i < this.note.length;i++){
+      if (this.note[i].name==n)return this.note[i].value.toString();
+    }
+    return '';
+  };
+  ABC.addNote = function(n,t,x){
+    this.currentBar.content.push(new Object({
+      note:n,
+      length:t,
+      beat:0,
+      lab:0,
+      x:x,
+    }));
+  };
+  ABC.parseLyricLine = function(line){
+    line = line.substr(2,line.length-2).trim();
+
+    var word = ''; // -_*
+    var ret = new Array();
+    function addWord(space){
+      if (word != '')ret.push(word);
+      word = '';
+      if (space==' '||space=='-'){
+        ret.push(space);
+      }
+    }
+
+    for (var i = 0; i < line.length;i++){
+      if (line.charAt(i)==' '){
+        addWord(' ');
+      }
+      else if (line.charAt(i)=='-'){
+        addWord('-');
+      }
+      else if (line.charAt(i)=='_'){
+        addWord(); word = '*'; addWord();
+      }
+      else if (line.charAt(i)=='*'){
+        addWord(); word = '*'; addWord();
+      }
+      else {
+        word += line.charAt(i);
+      }
+    }
+    addWord();
+    return ret;
+  };
+  ABC.toToonsmith = function(){
+    var BAR = (1 * ABC.M_DIVIDEND)/ABC.M_DIVISOR;
+    var BEAT = 1/ABC.L_DIVISOR;
+    var out = '[bpb:'+ABC.M_DIVIDEND+']';
+
+
+
+    function outPass(v){
+      var fbc = true;
+      if (!ABC.firstBarIsComplete()){
+        zs4.debug('FIRST BAR IS INCOMPLETE!');
+        fbc = false;
+      }
+
+      var LYRIX = null;
+      var lyri = 0;
+      for (var i=0; i < ABC.bar.length;i++){
+        var bar = ABC.bar[i].content;
+        if (zs4.is.number(v)&&ABC.bar[i].lyrix.length>0){
+          if (v<ABC.bar[i].lyrix.length){
+            LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[v]);
+          }
+          else {
+            LYRIX = ABC.parseLyricLine(ABC.bar[i].lyrix[0]);
+          }
+          zs4.debug(LYRIX);
+          lyri = 0;
+        }
+
+        if (ABC.bar[i].lf)out+='\n';
+        if (bar.length==0){
+          out+='[|]\n';
+        }
+        else {
+          var time = 0;
+          var beat = 0;
+          var space = false;
+          for (var n = 0; n < bar.length;n++){
+            out += '[';
+            if (n==0) {
+              if (i==0 && !fbc)out+='.'
+              else out+='|';
+
+              bar[n].beat=beat;
+              beat+=1;
+            }
+            else if ((beat*BEAT)<=time){
+              out+='.';
+              bar[n].lab = time-(beat*BEAT);
+              if (bar[n].lab>0.00001)out+='][';
+
+              bar[n].beat=beat;
+              beat+=1;
+            }
+            else {
+              bar[n].lab = time-(beat*BEAT);
+              bar[n].beat=beat;
+            }
+            out += ABC.findNoteValue(bar[n].note);
+            if (bar[n].x!=null&&bar[n].x.chord!=null){
+              out += ts.music.CHORD.toString(bar[n].x.chord);
+            }
+            out +=']';
+            if (LYRIX!=null&&lyri<(LYRIX.length)){
+              if (LYRIX[lyri]!='*'&&LYRIX[lyri]!='_')out+=LYRIX[lyri];
+              lyri++;
+              if (lyri<(LYRIX.length)&&(LYRIX[lyri]==' '||LYRIX[lyri]=='-')){
+                out+=LYRIX[lyri];lyri++;
+                while (lyri<(LYRIX.length)&&LYRIX[lyri]==' '){
+                  lyri++;
+                }
+              }
+            }
+            time += bar[n].length;
+            while (((beat+1)*BEAT)<=time){
+              out += '[.]';
+              beat+=1;
+            }
+          }
+        }
+      }
+    };
+
+    // this
+    if (ABC.hasLyrix()){
+      zs4.debug('ABC HAS LYRIX IT!! verseCount='+ABC.verseCount);
+      for (var i = 0; i < ABC.verseCount; i++){
+        outPass(i)
+      }
+    }
+    else {
+      outPass(null);
+    }
+
+    return out;
+  };
+  ABC.parseHeaderLine = function(line){
+    var head = zs4.string.split.separators(line,':');
+    if (head.length==2){
+      if (head[0]=='X'){
+        //if (ABC.X != '')break;
+        ABC.X = head[1];
+        line = '';
+      }
+      else if (head[0]=='T'){
+        ABC.T = head[1];
+        line = '';
+      }
+      else if (head[0]=='C'){
+        ABC.C = head[1];
+        line = '';
+      }
+      else if (head[0]=='M'){
+        var m = zs4.string.split.separators(head[1],'/');
+        if (m.length==2){
+          ABC.M_DIVIDEND = zs4.parse.int(m[0]);
+          ABC.M_DIVISOR = zs4.parse.int(m[1]);
+        }
+        line = '';
+      }
+      else if (head[0]=='L'){
+        var m = zs4.string.split.separators(head[1],'/');
+        if (m.length==2){
+          ABC.L_DIVIDEND = zs4.parse.int(m[0]);
+          ABC.L_DIVISOR = zs4.parse.int(m[1]);
+        }
+        line = '';
+      }
+      else if (head[0]=='K'){
+        ABC.K = head[1];
+        line = '';
+        ABC.noteTableCreate(ABC.K);
+        ABC.barCreate();
+        ABC.mode = 'content';
+      }
+    }
+  };
+  ABC.pass1 = function(input){
+    var line = '';
+    for (var i = 0; i < input.length;i++){
+      var ch = input.charAt(i);
+      if (ABC.mode == 'header') {
+        if (ch=='\n'){
+          ABC.parseHeaderLine(line);
+          line = '';
+        }
+        else {
+          line += ch;
+        }
+      }
+      else {
+        var ch = input.charAt(i);
+        if (ch=='\n'){
+          if (line=='')continue;
+          else {
+            ABC.line.push({data:line.trim()});
+            line = '';
+          }
+        }
+        else {
+          line += ch;
+        }
+      }
+    }
+    if (line!=''){
+      ABC.line.push({data:line});
+    }
+  };
+  ABC.parseLineMusic = function(input){
+    var gch = null;
+    var acc = '';
+    function extra(){
+      var e = new Object({
+        chord:gch,
+        acc:acc,
+      })
+      gch = null;
+      acc = '';
+      return e;
+    };
+
+    var glt_ratio = 1;
+    function ratio(glt){
+      const GT = 1.5;
+      const LT = 0.5;
+      if (glt=='>'){
+        glt_ratio = LT;
+        return GT;
+      }
+      else if (glt=='<'){
+        glt_ratio = GT;
+        return LT;
+      }
+      var r = glt_ratio;
+      glt_ratio = 1;
+      return r;
+    };
+
+    for (var i = 0; i < input.length;i++){
+      var ch = input.charAt(i);
+      if (ch==' '||ch=='~'||ch=='\n')continue;
+
+      // bar break
+      if (ch==':'||ch=='|'||ch==']'){
+        var bc = [':','|',']','['];
+        function check(ch){for (var x = 0; x < bc.length;x++){if (bc[x]==ch)return true;}return false;};
+        while ((i < (input.length-1))&&(check(input[i+1])))i++;
+
+        if ((i < (input.length-1)&&zs4.is.numchar(input[i+1]))) {
+          i++;
+          if (input[i]=='1'){
+            while ((i < (input.length-1))&&(!check(input[i+1])))i++;
+            while ((i < (input.length-1))&&(check(input[i+1])))i++;
+          }
+        }
+
+        ABC.barCreate();
+      }
+      else if (ch=='L'){
+        var buf = '';
+        while (i < (input.length-1)&&input[i+1]==':')i++;
+        while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
+          i++;
+          buf+=input[i];
+        }
+        ABC.L_DIVIDEND = zs4.parse.int(buf);buf='';
+        while (i < (input.length-1)&&input[i+1]=='/')i++;
+        while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
+          i++;
+          buf+=input[i];
+        }
+        ABC.L_DIVISOR = zs4.parse.int(buf);buf='';
+      }
+      else {
+        if (ABC.isNoteCharacter(ch)||ch=='z'||ch=='Z'){
+          var note = ch;
+          while ((i < (input.length-1))&&(input[i+1]==','||input[i+1]=='\'')){
+            i++;
+            note += input[i];
+          }
+
+          var length = ABC.L_DIVIDEND/ABC.L_DIVISOR;
+          //var num = 1;
+          if ((i < (input.length-1)&&input[i+1]=='>')){
+            i++;
+            length *= ratio('>');
+          }
+          else if ((i < (input.length-1)&&input[i+1]=='<')){
+            i++;
+            length *= ratio('<');
+          }
+          else {
+            length *= ratio();
+          }
+
+          if ((i < (input.length-1))&&input[i+1]=='/'){
+            i++;
+            var buf = '';
+            while (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
+              i++; buf+=input[i];
+            }
+            if (buf=='')buf='2';
+            var num = zs4.parse.int(buf);
+            if (num!=0)length /= num;
+            else length /= 2;
+          }
+          else if (i < (input.length-1)&&zs4.is.numchar(input[i+1])){
+            var buf = '';
+            while (i < (input.length-1)&&input[i+1]>='0'&&input[i+1]<='9'){
+              i++; buf+=input[i];
+            }
+            var num = zs4.parse.int(buf);
+            if (num!=0)length *= num;
+          }
+
+          ABC.addNote(note,length,extra());
+        }
+        else if (ch=='"'){
+          var chord = ''; gch = null;
+          while ((i < (input.length-1))&&input[i+1]!='"'){
+            i++;
+            chord += input[i];
+          }
+          i++;
+          gch = ts.music.parse.chord(chord);
+          if (!gch.ok){
+            ABC.failure('Can\'t parse chord \"'+chord+'\"');
+          }
+        }
+        else if (ch=='_'||ch=='^'){
+          acc+=ch;
+        }
+      }
+    }
+
+    if (ABC.bar.length > 0)ABC.bar[ABC.bar.length-1].lf = true;
+  };
+  ABC.parse = function(input){
+    ABC.pass1(input);
+    for (var i = 0; i < ABC.line.length; i++){
+      if (ABC.line[i].data.length>2&&ABC.line[i].data.charAt(1)==':'){
+        if (ABC.lastMusicLineStart&&zs4.string.startsWith(ABC.line[i].data,'w')){
+          zs4.debug('should add lyrix');
+          ABC.lastMusicLineStart.lyrix.push(ABC.line[i].data);
+          ABC.lastMusicLineStart.lyrixEnd = ABC.lastMusicLineEnd;
+        }
+        else {
+          ABC.parseHeaderLine(ABC.line[i].data);
+        }
+      }
+      else {
+        var mline = false;
+        if (ABC.currentBar.content.length==0){
+          ABC.lastMusicLineStart = ABC.currentBar;
+          mline = true;
+        }
+        ABC.parseLineMusic(ABC.line[i].data);
+        if (mline)ABC.lastMusicLineEnd = ABC.currentBar;
+      }
+    }
+
+    //remove last bar if EMPTY!
+    if (ABC.bar[ABC.bar.length-1].content.length==0){ABC.bar.pop();}
+  };
 };
 
 ts.music = new Object({
