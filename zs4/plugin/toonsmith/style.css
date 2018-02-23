@@ -1,4 +1,4 @@
-.icon-toonsmith:before{content:'\0266B';font-weight: bolder;}
+.icon-toonsmith:before{content:url(/gfx/icons/toonsmith.svg);}
 
 .icon-audio:before{content:'\01F509';font-weight: bolder;}
 .icon-bar:before{content:'\023D0';font-weight: bolder;}
