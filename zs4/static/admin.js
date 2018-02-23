@@ -1398,6 +1398,7 @@ zs4.admin.util = {
 
 			if (o._.type==Object){
 				o._.html.form = document.createElement('form');
+				o._.html.form.onsubmit = function(){return false;};
 				o._.html.form.autocomplete = 'on';
 				o._.html.form.id = o._.path;
 				o._.html.e.appendChild(o._.html.form);
@@ -1795,6 +1796,7 @@ zs4.admin.util = {
 						this.pane.appendChild(this.setpasswordpane);
 
 						this.setpassword = document.createElement('form');
+						this.setpassword.onsubmit = function(){return false;};
 						this.setpassword.id = 'cpwd.'+o._.path;
 						this.setpasswordpane.appendChild(this.setpassword);
 
@@ -1950,6 +1952,7 @@ zs4.admin.util = {
 					}
 					else {
 						this.loginform = document.createElement('form');
+						this.loginform.onsubmit = function(){return false;};
 						this.loginform.id = 'login.'+o._.path;
 						this.loginform.autocomplete = 'on';
 						this.pane.appendChild(this.loginform);
