@@ -33,7 +33,7 @@ toonsmith.create = function(){
   this.zs4.head.bits._.bits.plugin.true();
   this._.name = 'toonsmith';
 
-var dbg = false;
+var dbg = true;
 
   //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;

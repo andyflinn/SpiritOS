@@ -174,6 +174,7 @@ ts.create = function(){
 	SEQUENCE.current_tool = null;
 	SEQUENCE.current_inst = null;
   SEQUENCE.kbm = KBM_EVENT;
+  SEQUENCE.kb = new Object({pos:'start'});
   SEQUENCE.isPlaying = function(){if(SEQUENCE.player!=null)return true;return false;};
 	SEQUENCE.onKeyChange = function(nuKee){
 		if	(!this.key.ok)
@@ -829,14 +830,10 @@ ts.create = function(){
           var w = '0.01em'; if (space==true) w = '0.3em';
           var h = '1em';
           p.innerHTML = '<svg width=\"'+w+'\" height=\"'+h+'\"></svg>';
-          //var i = document.createElement('img');
-          //i.src = '/gfx/images/empty.svg';
-          //if (space==true)i.style.width = '0.3em';
-          //else i.style.width = '0.01em';
-          //i.style.height = '1em';
-          //p.appendChild(i);
       }
-
+      function cursor(){
+        return '<span style="color:red;font-weight:bolder;">|</span>';
+      }
       o.refresh = function(){
         o.eSpan.style.paddingTop = '0.5em';
         o.eSpan.style.paddingBottom = '0.5em';
@@ -889,51 +886,67 @@ ts.create = function(){
 
         if (this.chord != null && this.chord.ok){
 
-					this.eChordBaseNote.innerHTML = ts.music.note.symbol(this.chord.v);
-					this.eChordType.innerHTML = ts.music.CHORD.TYPE[this.chord.t].s;
-					if (this.chord.b != this.chord.v){
-						this.eBass.style.display = 'inline';
-						this.eBassNote.innerHTML = ts.music.note.symbol(this.chord.b);
-					}
-					else{
-						this.eBass.style.display = 'none';
-					}
-				}
-				else{
+          this.eChordBaseNote.innerHTML = ts.music.note.symbol(this.chord.v);
+          this.eChordType.innerHTML = ts.music.CHORD.TYPE[this.chord.t].s;
+          if (this.chord.b != this.chord.v){
+            this.eBass.style.display = 'inline';
+            this.eBassNote.innerHTML = ts.music.note.symbol(this.chord.b);
+          }
+          else{
+            this.eBass.style.display = 'none';
+          }
+        }
+        else{
           putEmptyImage(this.eChordBaseNote,true);
-					this.eChordBaseNote.innerHTML = ' ';
-					this.eChordType.textContent = '';
-					this.eBassNote.textContent = '';
-					this.eBass.style.display = 'none';
-				}
+          this.eChordBaseNote.innerHTML = ' ';
+          this.eChordType.textContent = '';
+          this.eBassNote.textContent = '';
+          this.eBass.style.display = 'none';
+        }
 
 
-				if (this.melody < ts.midi.constant.MIDI_NOTE_MIN || this.melody > ts.midi.constant.MIDI_NOTE_MAX ){
+        if (this.melody < ts.midi.constant.MIDI_NOTE_MIN || this.melody > ts.midi.constant.MIDI_NOTE_MAX ){
           putEmptyImage(this.eBlockMelody,true);
-					//this.eBlockMelody.style.visibility = 'hidden';
-				}else{
-					this.eBlockMelody.textContent = ts.music.note.qualified(o.melody);
-				}
-
-        //this.eSpace.style.display = 'none';
-        if (this.lyric != ''){
-          if (this.isSpace())putEmptyImage(this.eBlockLyric,true);
-          else this.eBlockLyric.textContent = this.lyric;
-        }
-        else if (this.isSpace()){
-          putEmptyImage(this.eBlockLyric,true);
-          //this.eBlockLyric.textContent = '\n';
-          //this.eSpace.style.display = 'initial';
-        }
-        else {
-          putEmptyImage(this.eBlockLyric,true);
+          //this.eBlockMelody.style.visibility = 'hidden';
+        }else{
+          this.eBlockMelody.textContent = ts.music.note.qualified(o.melody);
         }
 
-        if (this.isLinefeed()&&SEQUENCE.layoutlinefeed){
-          this.eLineFeed.style.display = 'initial';
+        if (o.current && SEQUENCE.kbm == KBM_LYRIC){
+            if (SEQUENCE.kb.pos=='start'){
+              this.eBlockLyric.innerHTML = cursor()+this.lyric;
+              SEQUENCE.kb.pos = 0;
+            }
+            else if (SEQUENCE.kb.pos=='end'){
+              this.eBlockLyric.innerHTML = this.lyric+cursor();
+              SEQUENCE.kb.pos = this.lyric.length;
+            }
+            else {
+              this.eBlockLyric.innerHTML =
+                this.lyric.substr(0,SEQUENCE.kb.pos)+
+                cursor()+
+                this.lyric.substr(SEQUENCE.kb.pos,this.lyric.length-SEQUENCE.kb.pos);
+            }
         }
         else {
-          this.eLineFeed.style.display = 'none';
+          if (this.isSpace()){
+            putEmptyImage(this.eBlockLyric,true);
+          }
+          else if (this.lyric != ''){
+            if (this.isSpace())putEmptyImage(this.eBlockLyric,true);
+            else this.eBlockLyric.textContent = this.lyric;
+          }
+          else {
+            putEmptyImage(this.eBlockLyric,true);
+          }
+
+          if (this.isLinefeed()&&SEQUENCE.layoutlinefeed){
+            this.eLineFeed.style.display = 'initial';
+          }
+          else {
+            this.eLineFeed.style.display = 'none';
+          }
+
         }
 
       };
@@ -977,6 +990,7 @@ ts.create = function(){
   					o.eBassNote = document.createElement('ts-bass-note');
   					o.eBass.appendChild(o.eBassNote);
 
+
   			o.eBlockLyric = document.createElement('ts-block-lyric');
   			o.eBlockLyric.style.display = 'block';
   			o.eBlockLyric.style.height = '1em';
@@ -1000,6 +1014,7 @@ ts.create = function(){
   				SEQUENCE.alignHTML();
   				//zs4.debug(zs4.json.textify(e));
   			};
+
   			o.eSpan.appendChild(o.eBlockLyric);
 
         o.eLineFeed = document.createElement('br');
@@ -1024,6 +1039,8 @@ ts.create = function(){
 		this.evt = new Array();
 		this.evt_current = null;
 		this.evt_curidx = this.evt.length-1;
+    this.kb.pos = 'start';
+    this.kbm = KBM_EVENT;
 		if (zs4.is.window())this.cnt.innerHTML = '';
 	};
 	SEQUENCE.runChordsAndLyrics = function(data){
@@ -1186,41 +1203,214 @@ ts.create = function(){
   };
 
   if (zs4.is.window()){
+    SEQUENCE.createEvent = function(txt,mus,pos){
+      if (SEQUENCE.isPlaying())return null;
+
+      if (SEQUENCE.evt.length==0)pos=0;
+      else pos %= SEQUENCE.evt.length;
+
+      var e = SEQUENCE.addEvent(txt,mus,pos);
+      SEQUENCE.alignHTML();
+
+      return e;
+    };
+    SEQUENCE.deleteCurrentEvent = function(pos){
+      if (pos < 0 || pos >= SEQUENCE.evt.length)return false;
+      SEQUENCE.cnt.removeChild(SEQUENCE.evt[pos].eEvent);
+      SEQUENCE.evt.splice(pos,1);
+      SEQUENCE.setCurrentEvent(SEQUENCE.evt_curidx);
+      return true;
+    }
+
+    SEQUENCE.isCharacterKeyPress = function(evt) {
+        if (typeof evt.which == "undefined") {
+            // This is IE, which only fires keypress events for printable keys
+            return true;
+        } else if (typeof evt.which == "number" && evt.which > 0) {
+            // In other browsers except old versions of WebKit, evt.which is
+            // only greater than zero if the keypress is a printable key.
+            // We need to filter out backspace and ctrl/alt/meta key combinations
+            return !evt.ctrlKey && !evt.metaKey && !evt.altKey && evt.which != 8;
+        }
+        return false;
+      };
+
+    document.addEventListener('keypress',function(e){
+      e.preventDefault();
+      console.log(e);
+      var EVENT = SEQUENCE.evt_current;
+      if (EVENT==null)return;
+      if (SEQUENCE.isPlaying())return;
+
+      if (SEQUENCE.kbm == KBM_LYRIC){
+        if (SEQUENCE.isCharacterKeyPress(e)){
+          console.log('PRINTABLE!!!!');
+          var ch = String.fromCharCode(e.which);
+          if (ch==' '||ch=='\n'){
+            var curidx = SEQUENCE.evt_curidx;
+            if (SEQUENCE.kb.pos==0){
+              var nu = SEQUENCE.createEvent(EVENT.lyric,'',curidx+1);
+              EVENT.lyric = ch;
+              EVENT.space = true;
+              if (ch=='\n')EVENT.linefeed=true;
+              SEQUENCE.kb.pos=1;
+              EVENT.refresh();
+              SEQUENCE.kb.pos=0;
+              SEQUENCE.setCurrentEvent(nu);
+              e.preventDefault();
+            }
+            else if (SEQUENCE.kb.pos==EVENT.lyric.length){
+              var nu = SEQUENCE.createEvent(ch,'',curidx+1);
+              SEQUENCE.kb.pos=1;
+              SEQUENCE.setCurrentEvent(nu);
+              e.preventDefault();
+            }
+            else {
+              var end = EVENT.lyric.substr(SEQUENCE.kb.pos,EVENT.lyric.length-SEQUENCE.kb.pos)
+              EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos);
+              EVENT.refresh();
+              var nu = SEQUENCE.createEvent(ch,'',curidx+1);
+              SEQUENCE.setCurrentEvent(nu);
+              EVENT = SEQUENCE.evt_current;
+              var tail = SEQUENCE.createEvent(end,'',SEQUENCE.evt_curidx+1);
+              SEQUENCE.kb.pos=1;
+              SEQUENCE.setCurrentEvent(nu);
+            }
+          }
+          else {
+            EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos)+
+            ch+
+            EVENT.lyric.substr(SEQUENCE.kb.pos,EVENT.lyric.length-SEQUENCE.kb.pos);
+            SEQUENCE.kb.pos++;
+            EVENT.refresh();
+            e.preventDefault();
+          }
+        }
+      }
+
+    });
 
     document.addEventListener('keydown',function(e){
+      //e.preventDefault();
       console.log(e);
-
-      //if (e.key='?'){
-      //  console.log(SEQUENCE.getCurrentEventRect())
-      //}
+      var EVENT = SEQUENCE.evt_current;
+      if (EVENT==null)return;
 
       // IN ANy context
       // NAVIGATION
       if (!SEQUENCE.isPlaying()){
         if (SEQUENCE.kbm == KBM_EVENT){
+          //if (SEQUENCE.evt_current!=null){
+          //  var EVENT = SEQUENCE.evt_current;
+          //  if (EVENT.kbm==null){
+          //    EVENT.kbm = new Object({
+          //      pos:0,
+          //    });
+          //  }
+          //}
           if (e.key=='Home')SEQUENCE.setCurrentEvent(SEQUENCE.evt[0]);
 
-          else if (e.key=='ArrowRight')SEQUENCE.setNextEvent();
-          else if (e.key=='ArrowLeft')SEQUENCE.setPreviousEvent();
+          else if (e.key=='ArrowRight'){
+            SEQUENCE.setNextEvent();
+            SEQUENCE.kb.pos = 'start';
+            e.preventDefault();
+          }
+          else if (e.key=='ArrowLeft'){
+            SEQUENCE.setPreviousEvent();
+            SEQUENCE.kb.pos = 'end';
+            e.preventDefault();
+          }
 
           else if (e.key=='t'){
             SEQUENCE.kbm = KBM_LYRIC;
             SEQUENCE.evt_current.refresh();
+            e.preventDefault();
           }
           else if (e.key=='m'){
             SEQUENCE.kbm = KBM_MELODY;
             SEQUENCE.evt_current.refresh();
+            e.preventDefault();
           }
           else if (e.key=='k'){
             SEQUENCE.kbm = KBM_CHORD;
             SEQUENCE.evt_current.refresh();
+            e.preventDefault();
           }
         }
         else if (SEQUENCE.kbm == KBM_LYRIC){
           if (e.key=='Escape'){
             SEQUENCE.kbm = KBM_EVENT;
             SEQUENCE.evt_current.refresh();
+            e.preventDefault();
           }
+          else if (e.key=='ArrowRight'){
+            if (SEQUENCE.kb.pos<EVENT.lyric.length){
+              SEQUENCE.kb.pos++;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              SEQUENCE.setNextEvent();
+              SEQUENCE.kb.pos = 'start';
+              EVENT.refresh();
+              SEQUENCE.evt_current.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (e.key=='ArrowLeft'){
+            if (SEQUENCE.kb.pos>0){
+              SEQUENCE.kb.pos--;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              SEQUENCE.setPreviousEvent();
+              SEQUENCE.kb.pos = 'end';
+              EVENT.refresh();
+              SEQUENCE.evt_current.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (e.key=='Delete'){
+            if (SEQUENCE.kb.pos<EVENT.lyric.length){
+              EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos)+
+                EVENT.lyric.substr(SEQUENCE.kb.pos+1,EVENT.lyric.length-SEQUENCE.kb.pos-1);
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              var ei = SEQUENCE.searchNextEvent(SEQUENCE.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
+              if (ei==SEQUENCE.evt_curidx)return;
+              SEQUENCE.setCurrentEvent(SEQUENCE.evt[ei]);
+              EVENT = SEQUENCE.evt_current;
+              EVENT.lyric = EVENT.lyric.substr(1,EVENT.lyric.length-1);
+              SEQUENCE.kb.pos = 0;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (e.key=='Backspace'){
+            if (SEQUENCE.kb.pos>0){
+              SEQUENCE.kb.pos--;
+              EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos)+
+                EVENT.lyric.substr(SEQUENCE.kb.pos+1,EVENT.lyric.length-SEQUENCE.kb.pos-1);
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              var ei = SEQUENCE.searchPrevEvent(SEQUENCE.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
+              if (ei==SEQUENCE.evt_curidx)return;
+              SEQUENCE.setCurrentEvent(SEQUENCE.evt[ei]);
+              EVENT = SEQUENCE.evt_current;
+              EVENT.lyric = EVENT.lyric.substr(1,EVENT.lyric.length-1);
+              SEQUENCE.kb.pos = EVENT.lyric.length;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+          }
+          //else if (SEQUENCE.isCharacterKeyPress(e)){
+          //  console.log('PRINTABLE!!!!')
+          //}
         }
         else if (SEQUENCE.kbm == KBM_MELODY){
           if (e.key=='Escape'){
