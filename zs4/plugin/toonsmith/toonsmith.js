@@ -33,7 +33,7 @@ toonsmith.create = function(){
   this.zs4.head.bits._.bits.plugin.true();
   this._.name = 'toonsmith';
 
-var debug = true;
+var dbg = false;
 
   //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;
@@ -42,7 +42,7 @@ var debug = true;
   TOONSMITH._.getHTMLhead = (function(){
     var head = '<script>';
     head += toonsmith.script0;
-    if (debug){
+    if (dbg){
       head +=  fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
     }
     else{
@@ -99,6 +99,10 @@ var debug = true;
   TOONSMITH._.getAmpBody= (function(req,cb){
     var html = '';
     var section = new Array();
+
+    function spaceImage(){
+      return '<amp-img src="/gfx/images/empty.svg" alt="image" height="1em" width="0.25em"></amp-img>';
+    };
     function storeSection(title,html,expanded){
       section.push(new Object({
         title:title,
@@ -141,7 +145,8 @@ var debug = true;
         var lyric = EVENT.isLyric();
 
         if (!chord && !lyric){
-          if (EVENT.space)html += '\n';
+          //console.log('space only')
+          if (EVENT.space)html += spaceImage();//'\n';
           continue;
         }
 
@@ -167,7 +172,8 @@ var debug = true;
             html+='<span class="zs4t">';
             {
               if (EVENT.space){
-                html+=' '
+                //console.log('space in lyric')
+                html+=spaceImage();//' '
               }
               else if (EVENT.lyric != ''){
                 html += zs4.string.escape.html(EVENT.lyric);
