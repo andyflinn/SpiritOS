@@ -4,16 +4,6 @@ td.string,tr.string {
   width:1.5em;
 }
 
-ts-block-chart.tsbar {
-  border-left: .1em solid lightgray;
-}
-ts-block-chart.tsbeat {
-  border-left: .05em dashed lightgray;
-}
-ts-block-melody {
-  font-size: .5em;
-  color: grey;
-}
 ts-count-events,ts-count-chords,ts-count-bars,ts-count-beat,ts-count-notes{
   font-size: .5em;
 }
