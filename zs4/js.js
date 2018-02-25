@@ -5401,7 +5401,9 @@ if (zs4.is.window()){
   setTimeout(zs4.throttle.f,0),
 
   zs4.window ={
-    onresize:[],
+    onresize:new Array(),
+    width:window.screen.width,
+    height:window.screen.height,
   };
 
   zs4.io = {
@@ -5498,15 +5500,10 @@ if (zs4.is.window()){
 
     refresh:function(){
       zs4.style.element.innerHTML = '';
-      var widthMax = 1024;
-      var width = window.innerWidth;
-      if (width > widthMax)width = widthMax;
+      var width = window.screen.width;
+      var height = window.screen.width;
 
-      var heightMax = 1024;
-      var height = window.innerHeight;
-      if (height > heightMax)height = heightMax;
-
-      var em = (width+height) / 50;
+      var em = 18;
 
       //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
       //sheet += '.fouc{opacity:0}\n';
