@@ -1,4 +1,4 @@
-var zs4 = require('../../static/zs4');
+var zs4 = require('../../js');
 var xpress = require('express');
 //var ts = require('../../static/toonsmith/window');
 var debug = require('debug')('zs4toonsmith');
@@ -38,25 +38,29 @@ var dbg = true;
   //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;
   TOONSMITH._.property(new zs4.type.text({name:'data',flags:'authgetpublic quickupdate authsetself',}));
+  TOONSMITH._.getScript = (function(req,cb){
+    var js = toonsmith.script0;
 
-  TOONSMITH._.getHTMLhead = (function(){
-    var head = '<script>';
-    head += toonsmith.script0;
     if (dbg){
-      head +=  fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
+      js +=  fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
     }
     else{
-      head += toonsmith.script1;
+      js += toonsmith.script1;
     }
-    head += '</script>';
-
-    head += '<style>';
-    head += toonsmith.style;
-    head += '</style>';
-
-    return head;
+    debug('returning script');
+    cb(js);
   }).bind(TOONSMITH);
+  TOONSMITH._.getStyle = (function(req,cb){
 
+    debug('returning style');
+    if (dbg){
+      cb(fs.readFileSync('./zs4/plugin/toonsmith/style.css','utf8'));
+    }
+    else{
+      cb(toonsmith.style);
+    }
+
+  }).bind(TOONSMITH);
 
 
   TOONSMITH._.getTextOnly = (function(){

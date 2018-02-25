@@ -1,4 +1,4 @@
-var zs4 = require('./static/zs4');
+var zs4 = require('./js');
 var randomstring = require('randomstring');
 var jwt = require('jwt-simple');
 var debug = require('debug')('zs4token');

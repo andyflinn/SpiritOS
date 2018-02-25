@@ -229,6 +229,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-coins:before{content:url(/gfx/icons/coins.svg);}
 .icon-config:before{content:url(/gfx/icons/node.svg);}
 .icon-console:before{content:url(/gfx/icons/console.svg);}
+.icon-css:before{content:url(/gfx/icons/css.svg);}
 .icon-date:before{content:url(/gfx/icons/date.svg);}
 .icon-datefrom:before{content:url(/gfx/icons/date.svg);}
 .icon-dateto:before{content:url(/gfx/icons/date.svg);}
@@ -263,6 +264,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
 .icon-is:before{content:url(/gfx/icons/server.svg);}
 .icon-item:before{content:url(/gfx/icons/item.svg);}
+.icon-js:before{content:url(/gfx/icons/js.svg);}
 .icon-lang:before{content:url(/gfx/icons/lang.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-linefeed:before{content:'\000B6';font-weight: bolder;}

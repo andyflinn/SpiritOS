@@ -1,4 +1,4 @@
-var zs4 = require('./static/zs4');
+var zs4 = require('./js');
 var emailjs = require('emailjs');
 
 var email = exports;

@@ -1801,8 +1801,52 @@ zs4.type = {
     }).bind(this);
 
     if (zs4.is.node()){
-      this._.getHTMLhead =(function(){
-        return '';
+      this._.getScript = (function(req,cb){
+        zs4.debug('default getScript() called');
+        cb('');
+      }).bind(this);
+      this._.getStyle = (function(req,cb){
+        zs4.debug('default getStyle() called');
+        cb('');
+      }).bind(this);
+      this._.getZS4js = (function(req,cb){
+        var SCOPE = this;
+        var js = '';
+
+        function script(str){
+          js += '\n{\n';
+          js += str;
+          js += '\n}\n\n'
+        };
+        js += zs4.THIS.zs4.js._.js.bowser; js += '\n';
+        js += zs4.THIS.zs4.js._.js.js; js += '\n';
+
+        if (req.request.token&&req.request.payload){
+          js += 'zs4.window.token=\''+req.request.token+'\'\n';
+        }
+        js += 'zs4.location.path = \"'+this._.path+'\"\n';
+        js += 'zs4.style.sheet = '+zs4.THIS.zs4.css._.css.css+';\n';
+        zs4.debug('calling getStyle('+SCOPE._.path+')');
+        this._.getStyle(req,function(style){
+
+          js += 'zs4.style.sheet += '+JSON.stringify(style)+';\n'
+
+          js += 'zs4.style.refresh();\n\n';
+
+          script(zs4.THIS.zs4.js._.js.um);
+          script(zs4.THIS.zs4.js._.js.admin);
+          script(zs4.THIS.zs4.js._.js.onwindow);
+
+          zs4.debug('calling getScript('+SCOPE._.path+')');
+          SCOPE._.getScript(req,function(Skript){
+
+            script(Skript);
+
+            req.request.html = js;
+            cb();
+          });
+
+        });
       }).bind(this);
       this._.getHTML = (function(req){
         zs4.debug('getHTML('+this._.path+')');
@@ -1831,37 +1875,25 @@ zs4.type = {
           keywords = o.k;
 
         }
+        var ampath = this._.path; if (ampath!='')ampath+='.';ampath+='amp';
         var html = '<!DOCTYPE html>\n';
         html += '<html lang="'+lang+'">\n';
           html += ' <head>\n';
             html += '<meta charset="UTF-8">\n';
             html += '  <title>'+title+'</title>\n';
-            html += '  <link rel="amphtml" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+this._.path+'.amp">\n';
+            html += '  <link rel="amphtml" href="https://'+zs4.THIS.zs4.express.host._.value+'/'+ampath+'">\n';
             if (description != ''){
               html+= '  <meta name="description" content="'+description+'">\n';
             }
             if (keywords != ''){
               html+= '  <meta name="keywords" content="'+keywords+'">\n';
             }
-            if (req.request.token&&req.request.payload){
-              html += '  <script>window.token=\''+req.request.token+'\'</script>\n';
-            }
-            html += '  <script src="/bowser.min.js"></script>\n';
-            html += '  <script src="/zs4.js"></script>\n';
-            html += '  <script src="/um.js"></script>\n';
-            html += '  <script>zs4.location.path=\''+this._.path+'\';;</script>\n'
-            for (var i = 0 ; i < zs4.plugin.script.length ; i++){
-              html += '  <script src="/' + zs4.plugin.script[i] + '"></script>\n';
-            }
-
-            for (var i = 0 ; i < zs4.plugin.style.length ; i++){
-              html += '  <link rel="stylesheet" href="/' + zs4.plugin.style[i] + '">\n';
-            }
-
-            html += this._.getHTMLhead();
+            var js = this._.path; if (js!='')js+='.';
+            html += '  <script src="/'+js+'zs4.js"></script>\n';
           html += ' </head>\n';
           if (true){
-            html += ' <body onload="zs4.admin()">\n';
+            //html += ' <body onload="zs4.admin()">\n';
+            html += ' <body>\n';
             html += ' </body>\n';
           }
         html += '</html>\n';
@@ -3781,7 +3813,18 @@ zs4.type = {
         cb(); return;
       }
       if (this._.flags.get.scope()){
-        if (zs4.is.object(req.input)&&zs4.is.object(req.input.amp)&&zs4.is.object(req.input.amp.getHTML)){
+        if (zs4.is.object(req.input)
+        && zs4.is.object(req.input.zs4)
+        && zs4.is.object(req.input.zs4.js)
+        && zs4.is.object(req.input.zs4.js.getHTML)){
+          this._.print('get.zs4.js() '+zs4.json.stringify(req.input),req);
+          //zs4.debug('---- getAMP('+THIS._.path+') '+zs4.json.stringify(req.input));
+          this._.getZS4js(req,cb);
+          return;
+        }
+        if (zs4.is.object(req.input)
+        && zs4.is.object(req.input.amp)
+        && zs4.is.object(req.input.amp.getHTML)){
           this._.print('getAMP() '+zs4.json.stringify(req.input),req);
           //zs4.debug('---- getAMP('+THIS._.path+') '+zs4.json.stringify(req.input));
           this._.getAMP(req,cb);
@@ -5400,8 +5443,8 @@ if (zs4.is.window()){
     if (zs4.is.string(zs4.THIS._.token)&&zs4.THIS._.token.length>10){
       req.request.token = zs4.THIS._.token;
     }
-    else if (zs4.is.string(window.token)&&window.token.length>10){
-      req.request.token = window.token;
+    else if (zs4.is.string(zs4.window.token)&&zs4.window.token.length>10){
+      req.request.token = zs4.window.token;
     }
     else {
       req.request.token = null;
@@ -5451,19 +5494,6 @@ if (zs4.is.window()){
     return css;
   };
 
-  zs4.admin = function(){
-    var input = new Object();
-    var a = zs4.string.split.separators(zs4.location.path,'./\\_-');
-    var p = input;
-    for (var i = 0 ; i < a.length ; i++){
-      p[a[i]] = new Object();
-      p = p[a[i]];
-    }
-    zs4.THIS._.print('LAUNCHING ADMIN @ '+ JSON.stringify(input))
-    zs4.post(input,function(){
-      zs4.loadscript('/admin.js');
-    },true);
-  };
   zs4.style = {
 
     refresh:function(){
@@ -5476,12 +5506,14 @@ if (zs4.is.window()){
       var height = window.innerHeight;
       if (height > heightMax)height = heightMax;
 
-      var em = (width+height) / 20;
+      var em = (width+height) / 50;
 
       //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
       //sheet += '.fouc{opacity:0}\n';
 
-      //zs4.style.element.appendChild(document.createTextNode(sheet));
+      var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
+      sheet += zs4.style.sheet;
+      zs4.style.element.appendChild(document.createTextNode(sheet));
     },
   };
 

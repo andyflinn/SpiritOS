@@ -1,6 +1,6 @@
 'use strict';
 
-var zs4 = require('./static/zs4');
+var zs4 = require('./js');
 var debug = require('debug')('zs4price');
 
 var price = exports;

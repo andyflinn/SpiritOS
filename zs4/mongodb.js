@@ -1,6 +1,6 @@
 'use strict';
 
-var zs4 = require('./static/zs4');
+var zs4 = require('./js');
 var mongoose = require('mongoose');
 var pager = require('mongoose-paginate');
 var debug = require('debug')('zs4mongo');

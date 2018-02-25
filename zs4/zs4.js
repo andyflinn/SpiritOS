@@ -1,4 +1,4 @@
-var zs4 = require('./static/zs4');
+var zs4 = require('./js');
 var debug = require('debug')('zs4node');
 
 zs4.commandLine = function(){
@@ -163,7 +163,7 @@ zs4.define = function(){
 
   zs4.THIS.zs4._.property(new zs4.type.object({name:'app',flags:'authgetpublic',}));
 
-  zs4.node.require.um = require('./static/um');
+  zs4.node.require.um = require('./js/um');
 
   zs4.node.require.node = require('./node');
   zs4.node.require.node.schema(zs4.THIS.zs4);
@@ -247,10 +247,24 @@ zs4.define = function(){
   zs4.THIS.zs4.type.price._.flags.value |= zs4.THIS.zs4.type.price._.flags.apiarg;
   zs4.THIS.zs4.type.price._.flags.set.authgetpublic(false);
 
+  var nodefs = require('fs');
+
+  zs4.THIS.zs4._.property(new zs4.type.object({name:'css'}));
+  zs4.THIS.zs4.css._.css = new Object();
+  zs4.THIS.zs4.css._.css.css = JSON.stringify(nodefs.readFileSync('./zs4/style.css','utf8'));
+
+  zs4.THIS.zs4._.property(new zs4.type.object({name:'js'}));
+  zs4.THIS.zs4.js._.js = new Object();
+  zs4.THIS.zs4.js._.js.bowser = nodefs.readFileSync('./zs4/js/bowser.min.js','utf8');
+  zs4.THIS.zs4.js._.js.js = nodefs.readFileSync('./zs4/js.js','utf8');
+  zs4.THIS.zs4.js._.js.um = nodefs.readFileSync('./zs4/js/um.js','utf8');
+  zs4.THIS.zs4.js._.js.admin = nodefs.readFileSync('./zs4/js/admin.js','utf8');
+  zs4.THIS.zs4.js._.js.onwindow = nodefs.readFileSync('./zs4/js/onwindow.js','utf8');
+
+
   // plugins
   var plugin = new Object();
 
-  var nodefs = require('fs');
   var rdr = nodefs.readdirSync('./zs4/plugin');
   debug('readPlugins: ' + zs4.is.array(rdr) +  ' ' + rdr);
   for ( var i = 0 ; i < rdr.length ; i++ ){

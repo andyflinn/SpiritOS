@@ -1,4 +1,4 @@
-var zs4 = require('./static/zs4');
+var zs4 = require('./js');
 var NodeRSA = require('node-rsa');
 const crypto = require('crypto');
 var debug = require('debug')('zs4rsa');

@@ -3669,15 +3669,3 @@ zs4.admin.type = {
 		zs4.admin.type.object(po,o);
 	},
 };
-
-zs4.css = zs4.loadcss('/style.css');
-zs4.css.onload = function(){
-	zs4.throttle.job(function(){
-		zs4.THIS._.print('loaded css \''+'/style.css'+'\'')
-		zs4.admin.type.object(null,zs4.location.get());
-		//zs4.admin.rootObject._.html.toggleOn();
-		//zs4.admin.rootObject.zs4._.html.toggleOn();
-		zs4.THIS._.print('ADMIN LAUNCHED');
-		zs4.style.refresh();
-	});
-};
