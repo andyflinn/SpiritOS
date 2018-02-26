@@ -296,6 +296,7 @@ zs4.string = {
   },
   to:{
     lower:function(str){return str.toLowerCase();},
+    upper:function(str){return str.toUpperCase();},
   },
   array:{
     is:{
@@ -5516,6 +5517,12 @@ if (zs4.is.window()){
 
   zs4.style.element = document.createElement('style');
   document.head.appendChild(zs4.style.element);
+
   zs4.style.refresh();
+
+  window.onresize = function(){
+    var width = window.screen.width;
+    var height = window.screen.width;
+  };
 
 }

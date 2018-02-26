@@ -10,8 +10,19 @@ if (zs4.is.window()){
   ts = new Object();
 }
 
+ts.sequence = new Array();
+
 ts.create = function(){
   var SEQUENCE = this;
+  ts.sequence.push(SEQUENCE);
+
+  const SEMI_TONES_PER_OCTAVE=12;
+  const MIN_TICKS_PER_BEAT=2;
+  const MAX_TICKS_PER_BEAT=23;
+  const MIN_BEATS_PER_BAR=2;
+  const MAX_BEATS_PER_BAR=23;
+	const MAX_BEATS_PER_MINUTE=240;
+	const MIN_BEATS_PER_MINUTE=24;
 
   const KBM_EVENT = 0;
   const KBM_LYRIC = 1;
@@ -19,6 +30,7 @@ ts.create = function(){
   const KBM_MELODY = 3;
 
 	SEQUENCE.ts = ts;
+  SEQUENCE.abc = new ts.abc();
 	SEQUENCE.arg = new Object({});
 	SEQUENCE.evt = new Array();
 	SEQUENCE.tool = new Array();
@@ -46,10 +58,44 @@ ts.create = function(){
     countSpace:0,
     countLinefeed:0,
 
-
+    melodyMax:0,
+    melodyMin:127,
+    noteMelody:[0,0,0,0,0,0,0,0,0,0,0,0],
+    noteChord:[0,0,0,0,0,0,0,0,0,0,0,0],
+    noteBass:[0,0,0,0,0,0,0,0,0,0,0,0],
+    noteStats:[0,0,0,0,0,0,0,0,0,0,0,0],
+    chordStat:null,
 		currentBar:null,
 		currentBeat:null,
 		start:function(){
+      var STATS = this;
+
+      this.melodyMax = 0;
+      this.melodyMin = 127;
+      for (i=0;i<12;i++){this.noteMelody[i]=this.noteChord[i]=this.noteBass[i]=0;}
+      STATS.chordStat = new Object({
+        all:new Array(),
+        add:function(c){
+          var found = -1;
+          for (var i = 0 ; i < this.all.length;i++){
+            if (c.v == this.all[i].v && c.t==this.all[i].t){found=i;break;}
+          }
+          if (found==-1){
+            found = this.all.length;
+            this.all.push(new Object(c));
+          }
+          if (this.all[found].count==null)this.all[found].count=0;
+          this.all[found].count++;
+
+          STATS.noteBass[c.b]++;
+
+          var a = ts.music.CHORD.TYPE[c.t].a;
+          for (var i = 0;i<a.length;i++){
+            if (a[i]==true) STATS.noteChord[(c.v+i)%12]++;
+          }
+
+        },
+      });
 			this.currentBar = null;
 			this.currentBeat = null;
 			this.countChords =
@@ -111,8 +157,9 @@ ts.create = function(){
 				}
 			}
 
-			if (e.chord != null && e.chord.ok){
+			if (e.isChord()){
 				STATS.countChords++;
+        STATS.chordStat.add(e.chord);
         if (STATS.currentBar != null){
           STATS.currentBar.bar.chords.push(e);
           if (!music_done)STATS.currentBar.bar.music.push(e);
@@ -125,7 +172,11 @@ ts.create = function(){
         music_done=true;
 			}
 
-			if (e.melody != 0){
+			if (e.isMelody()){
+        if (STATS.melodyMax<e.melody)STATS.melodyMax=e.melody;
+        if (STATS.melodyMin>e.melody)STATS.melodyMin=e.melody;
+        STATS.noteMelody[e.melody%12]++;
+
 				this.countNotes++;
         if (STATS.currentBar != null){
           STATS.currentBar.bar.melodies.push(e);
@@ -144,6 +195,7 @@ ts.create = function(){
       if (e.isLyric()) this.countLyric++;
 		},
 		end:function(){
+      var STATS = this;
 			this.chords = this.countChords;
 			this.bars = this.countBars;
 			this.beats = this.countBeats;
@@ -151,6 +203,7 @@ ts.create = function(){
       this.lyric = this.countLyric;
       this.linefeed = this.countLinefeed;
       this.space = this.countSpace;
+      for (i=0;i<12;i++){this.noteStats[i]=this.noteMelody[i]+this.noteChord[i]+this.noteBass[i];}
 
       this.result = new Object();
 
@@ -165,6 +218,22 @@ ts.create = function(){
 
       if (this.lyric == 0)this.result.words = false;
       else this.result.words = true;
+
+      if (this.result.tone==true){
+        if (this.chords>0){
+          SEQUENCE.guessedKeys = ts.music.guess.key.from.noteStats(this.noteChord);
+        }
+        else {
+          SEQUENCE.guessedKeys = ts.music.guess.key.from.noteStats(this.noteStats);
+        }
+        SEQUENCE.abc.noteTableCreate(SEQUENCE.guessedKeys[0].n + SEQUENCE.guessedKeys[0].s.t);
+      }
+      else {
+        SEQUENCE.guessedKeys = ts.music.guess.key.from.noteStats([1,0,1,0,1,1,0,1,0,1,0,1]);
+        SEQUENCE.abc.noteTableCreate(SEQUENCE.guessedKeys[0].n + SEQUENCE.guessedKeys[0].s.t);
+      }
+
+      console.log(STATS);
 		},
 	});
 	SEQUENCE.key = ts.music.parse.chord("");
@@ -174,7 +243,31 @@ ts.create = function(){
 	SEQUENCE.current_tool = null;
 	SEQUENCE.current_inst = null;
   SEQUENCE.kbm = KBM_EVENT;
-  SEQUENCE.kb = new Object({pos:'start'});
+  SEQUENCE.kb = new Object({
+    pos:'start',
+    cv:'',
+    ct:'',
+    cb:'',
+    cm:0,
+    chord:null,
+    ctp:function(){
+      if (this.pos>1){
+        var v = ts.music.parse.note(SEQUENCE.kb.chord.substr(0,2));
+        if (v != -1)return 2;
+        v = ts.music.parse.note(SEQUENCE.kb.chord.substr(0,1));
+        if (v != -1)return 1;
+      }
+      else if (this.pos>0){
+        var v = ts.music.parse.note(SEQUENCE.kb.chord.substr(0,1));
+        if (v != -1)return 1;
+      }
+      return -1;
+    },
+    ctb:function(){
+      var ctp = this.ctp();
+      return ts.music.CHORD.checkTypeBeginning(this.chord.substr(ctp,this.pos-ctp));
+    },
+  });
   SEQUENCE.isPlaying = function(){if(SEQUENCE.player!=null)return true;return false;};
 	SEQUENCE.onKeyChange = function(nuKee){
 		if	(!this.key.ok)
@@ -705,24 +798,24 @@ ts.create = function(){
 			//window.alert(info);
       if (glob[0].trim()=='tpb'){
 				this.tpb = parseInt(glob[1]);
-				if (this.tpb < ts.music.MIN_TICKS_PER_BEAT)this.tpb = ts.music.MIN_TICKS_PER_BEAT;
-				else if (this.tpb > ts.music.MAX_TICKS_PER_BEAT) this.tpb = ts.music.MAX_TICKS_PER_BEAT;
+				if (this.tpb < MIN_TICKS_PER_BEAT)this.tpb = MIN_TICKS_PER_BEAT;
+				else if (this.tpb > MAX_TICKS_PER_BEAT) this.tpb = MAX_TICKS_PER_BEAT;
 
         if (zs4.is.window())this.bpmTool.eEventTpbInput.value = this.tpb;
 
 			}
       if (glob[0].trim()=='bpb'){
 				this.bpb = parseInt(glob[1]);
-				if (this.bpb < ts.music.MIN_BEATS_PER_BAR)this.bpb = ts.music.MIN_BEATS_PER_BAR;
-				else if (this.bpb > ts.music.MAX_BEATS_PER_BAR) this.bpb = ts.music.MAX_BEATS_PER_BAR;
+				if (this.bpb < MIN_BEATS_PER_BAR)this.bpb = MIN_BEATS_PER_BAR;
+				else if (this.bpb > MAX_BEATS_PER_BAR) this.bpb = MAX_BEATS_PER_BAR;
 
         if (zs4.is.window())this.bpmTool.eEventBpcInput.value = this.bpb;
 
 			}
 			if (glob[0].trim()=='bpm'){
 				SEQUENCE.bpm = parseInt(glob[1]);
-				if (SEQUENCE.bpm < ts.music.MIN_BEATS_PER_MINUTE)SEQUENCE.bpm = MIN_BEATS_PER_MINUTE;
-				else if (SEQUENCE.bpm > ts.music.MAX_BEATS_PER_MINUTE) SEQUENCE.bpm = ts.music.MAX_BEATS_PER_MINUTE;
+				if (SEQUENCE.bpm < MIN_BEATS_PER_MINUTE)SEQUENCE.bpm = MIN_BEATS_PER_MINUTE;
+				else if (SEQUENCE.bpm > MAX_BEATS_PER_MINUTE) SEQUENCE.bpm = MAX_BEATS_PER_MINUTE;
 
 				if (zs4.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
 			}
@@ -833,7 +926,16 @@ ts.create = function(){
       }
       function cursor(){
         return '<span style="color:red;font-weight:bolder;">|</span>';
-      }
+      };
+      function black(s){
+        return '<span style="color:black;font-weight:bolder;">'+s+'</span>';
+      };
+      function grey(s){
+        return '<span style="color:grey;">'+s+'</span>';
+      };
+      function red(s){
+        return '<span style="color:red;">'+s+'</span>';
+      };
       o.refresh = function(){
         o.eSpan.style.paddingTop = '0.5em';
         o.eSpan.style.paddingBottom = '0.5em';
@@ -884,24 +986,94 @@ ts.create = function(){
           o.eBlockMelody.style.backgroundColor = 'initial';
         }
 
-        if (this.chord != null && this.chord.ok){
+        if (o.current && SEQUENCE.kbm == KBM_CHORD){
+          var left = ''; var right = '';
+          if (SEQUENCE.kb.pos=='start'||SEQUENCE.kb.pos<0)SEQUENCE.kb.pos = 0;
 
-          this.eChordBaseNote.innerHTML = ts.music.note.symbol(this.chord.v);
-          this.eChordType.innerHTML = ts.music.CHORD.TYPE[this.chord.t].s;
-          if (this.chord.b != this.chord.v){
-            this.eBass.style.display = 'inline';
-            this.eBassNote.innerHTML = ts.music.note.symbol(this.chord.b);
+          if (this.isChord()){
+            SEQUENCE.kb.chord = ts.music.CHORD.toString(this.chord);
+            if (SEQUENCE.kb.pos=='end'||SEQUENCE.kb.pos>SEQUENCE.kb.chord.length){
+              SEQUENCE.kb.pos=SEQUENCE.kb.chord.length;
+            }
+            this.eChordBaseNote.innerHTML=
+              black(SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos))+
+              cursor()+
+              red(SEQUENCE.kb.chord.substr(SEQUENCE.kb.pos,SEQUENCE.kb.chord.length-SEQUENCE.kb.pos));
           }
-          else{
-            this.eBass.style.display = 'none';
+          else {
+            function initChord(){
+              var pi = SEQUENCE.searchPrevChord(this.index);
+              if (!SEQUENCE.evt[pi].isChord())SEQUENCE.kb.chord='C';
+              else SEQUENCE.kb.chord = ts.music.CHORD.toString(SEQUENCE.evt[pi].chord);
+            };
+            if (!zs4.is.string(SEQUENCE.kb.chord)){
+              initChord();
+            }
+            if (SEQUENCE.kb.pos=='end'||SEQUENCE.kb.pos>SEQUENCE.kb.chord.length){
+              SEQUENCE.kb.pos=SEQUENCE.kb.chord.length;
+            }
+            if (SEQUENCE.kb.pos==1 && SEQUENCE.kb.chord.length==1 && SEQUENCE.abc.modCount!=0){
+              var noteobj = SEQUENCE.abc.findNoteObject(SEQUENCE.kb.chord);
+              if (noteobj != null){
+                if (noteobj.value == (noteobj.orig+1)){
+                  SEQUENCE.kb.chord += '#';
+                  SEQUENCE.kb.pos = 2;
+                }
+                if (noteobj.value == (noteobj.orig-1)){
+                  SEQUENCE.kb.chord += 'b';
+                  SEQUENCE.kb.pos = 2;
+                }
+              }
+            }
+
+            if ((SEQUENCE.kb.pos==1 || SEQUENCE.kb.pos==2) && SEQUENCE.kb.chord.length==SEQUENCE.kb.pos){
+              var v = ts.music.parse.note(SEQUENCE.kb.chord);
+              if (v != -1 && SEQUENCE.kb.typed==true){
+                var gk = SEQUENCE.guessedKeys;
+                for (var i=0;i<gk.length;i++){
+                  if (gk[i].r==v){
+                    var r = ts.music.guess.chord.from.scaleObject(gk[i]);
+                    SEQUENCE.kb.chord += r[0].t;
+                    break;
+                  }
+                }
+              }
+            }
+            else if (SEQUENCE.kb.ctb()){
+              var ctp = SEQUENCE.kb.ctp();
+              SEQUENCE.kb.chord =
+                SEQUENCE.kb.chord.substr(0,ctp)+
+                ts.music.CHORD.suggestType(SEQUENCE.kb.chord.substr(ctp,SEQUENCE.kb.pos-ctp));
+                console.log(SEQUENCE.kb.chord);
+            }
+            else{
+              var c = ts.music.parse.chord(SEQUENCE.kb.chord)
+              if (c.ok && SEQUENCE.kb.chord[SEQUENCE.kb.pos-1]=='/'){
+                console.log('chord '+SEQUENCE.kb.chord+' needs bass note');
+                var n = ts.music.CHORD.noteFromChordIndex(c,2)+c.v;
+                SEQUENCE.kb.chord = SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos)+SEQUENCE.abc.findNoteNameReverse(n);
+              }
+            }
+
+            if (SEQUENCE.kb.pos==0){
+              var c = ts.music.parse.chord(SEQUENCE.kb.chord);
+              if (!c.ok)initChord();
+            }
+
+            SEQUENCE.kb.typed = false;
+            this.eChordBaseNote.innerHTML=
+              grey(SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos))+
+              cursor()+
+              grey(SEQUENCE.kb.chord.substr(SEQUENCE.kb.pos,SEQUENCE.kb.chord.length-SEQUENCE.kb.pos));
           }
         }
-        else{
-          putEmptyImage(this.eChordBaseNote,true);
-          this.eChordBaseNote.innerHTML = ' ';
-          this.eChordType.textContent = '';
-          this.eBassNote.textContent = '';
-          this.eBass.style.display = 'none';
+        else {
+          if (this.isChord()){
+            this.eChordBaseNote.innerHTML = ts.music.CHORD.toString(this.chord)
+          }
+          else{
+            putEmptyImage(this.eChordBaseNote,true);
+          }
         }
 
 
@@ -922,6 +1094,10 @@ ts.create = function(){
               SEQUENCE.kb.pos = this.lyric.length;
             }
             else {
+              if (!zs4.is.number(SEQUENCE.kb.pos))SEQUENCE.kb.pos=0;
+              else if (SEQUENCE.kb.pos<0)SEQUENCE.kb.pos=0;
+              else if (SEQUENCE.kb.pos>this.lyric.length)SEQUENCE.kb.pos=this.lyric.length;
+
               this.eBlockLyric.innerHTML =
                 this.lyric.substr(0,SEQUENCE.kb.pos)+
                 cursor()+
@@ -976,20 +1152,6 @@ ts.create = function(){
 
   				o.eChordBaseNote = document.createElement('ts-chord-base');
   				o.eBlockChart.appendChild(o.eChordBaseNote);
-
-  				o.eChordType = document.createElement('ts-chord-type');
-  				o.eBlockChart.appendChild(o.eChordType);
-
-  				o.eBass = document.createElement('ts-bass');
-  				o.eBlockChart.appendChild(o.eBass);
-
-  					o.eSlash = document.createElement('ts-bass-slash');
-  					o.eBass.appendChild(o.eSlash);
-  					o.eSlash.textContent = '/';
-
-  					o.eBassNote = document.createElement('ts-bass-note');
-  					o.eBass.appendChild(o.eBassNote);
-
 
   			o.eBlockLyric = document.createElement('ts-block-lyric');
   			o.eBlockLyric.style.display = 'block';
@@ -1203,6 +1365,8 @@ ts.create = function(){
   };
 
   if (zs4.is.window()){
+
+
     SEQUENCE.createEvent = function(txt,mus,pos){
       if (SEQUENCE.isPlaying())return null;
 
@@ -1287,6 +1451,11 @@ ts.create = function(){
           }
         }
       }
+      else if (SEQUENCE.kbm == KBM_CHORD){
+        if (SEQUENCE.isCharacterKeyPress(e)){
+
+        }
+      }
 
     });
 
@@ -1299,15 +1468,29 @@ ts.create = function(){
       // IN ANy context
       // NAVIGATION
       if (!SEQUENCE.isPlaying()){
+
+        if (e.altKey){
+          if (e.key=='t'){
+            SEQUENCE.kbm = KBM_LYRIC;
+            SEQUENCE.evt_current.refresh();
+            e.preventDefault();
+          }
+          else if (e.key=='m'){
+            SEQUENCE.kbm = KBM_MELODY;
+            SEQUENCE.evt_current.refresh();
+            e.preventDefault();
+          }
+          else if (e.key=='k'){
+            SEQUENCE.kb.chord = null;
+
+            SEQUENCE.kbm = KBM_CHORD;
+            SEQUENCE.evt_current.refresh();
+            e.preventDefault();
+          }
+        }
+
         if (SEQUENCE.kbm == KBM_EVENT){
-          //if (SEQUENCE.evt_current!=null){
-          //  var EVENT = SEQUENCE.evt_current;
-          //  if (EVENT.kbm==null){
-          //    EVENT.kbm = new Object({
-          //      pos:0,
-          //    });
-          //  }
-          //}
+
           if (e.key=='Home')SEQUENCE.setCurrentEvent(SEQUENCE.evt[0]);
 
           else if (e.key=='ArrowRight'){
@@ -1321,21 +1504,6 @@ ts.create = function(){
             e.preventDefault();
           }
 
-          else if (e.key=='t'){
-            SEQUENCE.kbm = KBM_LYRIC;
-            SEQUENCE.evt_current.refresh();
-            e.preventDefault();
-          }
-          else if (e.key=='m'){
-            SEQUENCE.kbm = KBM_MELODY;
-            SEQUENCE.evt_current.refresh();
-            e.preventDefault();
-          }
-          else if (e.key=='k'){
-            SEQUENCE.kbm = KBM_CHORD;
-            SEQUENCE.evt_current.refresh();
-            e.preventDefault();
-          }
         }
         else if (SEQUENCE.kbm == KBM_LYRIC){
           if (e.key=='Escape'){
@@ -1423,6 +1591,103 @@ ts.create = function(){
             SEQUENCE.kbm = KBM_EVENT;
             SEQUENCE.evt_current.refresh();
           }
+          else if (e.key=='ArrowRight'){
+            if (SEQUENCE.kb.pos<SEQUENCE.kb.chord.length){
+              SEQUENCE.kb.pos++;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              SEQUENCE.setNextEvent();
+              SEQUENCE.kb.pos = 'start';
+              SEQUENCE.kb.chord = null;
+              EVENT.refresh();
+              SEQUENCE.evt_current.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (e.key=='ArrowLeft'){
+            if (SEQUENCE.kb.pos>0){
+              SEQUENCE.kb.pos--;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              SEQUENCE.setPreviousEvent();
+              SEQUENCE.kb.pos = 'end';
+              SEQUENCE.kb.chord = null;
+              EVENT.refresh();
+              SEQUENCE.evt_current.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (e.key=='Tab'&&!e.shiftKey){
+            if (SEQUENCE.kb.pos<SEQUENCE.kb.chord.length){
+              SEQUENCE.kb.pos = SEQUENCE.kb.chord.length;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              SEQUENCE.setNextEvent();
+              SEQUENCE.kb.pos = 'start';
+              SEQUENCE.kb.chord = null;
+              EVENT.refresh();
+              SEQUENCE.evt_current.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (e.key=='Tab'&&e.shiftKey){
+            if (SEQUENCE.kb.pos>0){
+              SEQUENCE.kb.pos = 0;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+            else {
+              SEQUENCE.setPreviousEvent();
+              SEQUENCE.kb.pos = 'end';
+              SEQUENCE.kb.chord = null;
+              EVENT.refresh();
+              SEQUENCE.evt_current.refresh();
+              e.preventDefault();
+            }
+          }
+
+          else if (SEQUENCE.kb.pos==0){
+            if (ts.music.parse.note(zs4.string.to.upper(e.key))!=-1){
+              SEQUENCE.kb.chord = zs4.string.to.upper(e.key);
+              SEQUENCE.kb.pos=1;
+              SEQUENCE.kb.typed = true;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (SEQUENCE.kb.pos==1 && (e.key=='#'||e.key=='b')){
+            SEQUENCE.kb.chord = SEQUENCE.kb.chord.charAt(0)+e.key;
+            SEQUENCE.kb.pos=2;
+            EVENT.refresh();
+            e.preventDefault();
+          }
+          else if (e.key=='/'){
+            var ctp = SEQUENCE.kb.ctp();
+            var test = SEQUENCE.kb.chord.substr(ctp,SEQUENCE.kb.pos-ctp);
+            if (ts.music.CHORD.checkType(test)){
+              SEQUENCE.kb.chord = SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos)+'/';
+              SEQUENCE.kb.pos = SEQUENCE.kb.chord.length;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (e.key.length==1&&!e.key.shiftKey){
+            var ctp = SEQUENCE.kb.ctp();
+            var test = SEQUENCE.kb.chord.substr(ctp,SEQUENCE.kb.pos-ctp)+e.key;
+            if (ts.music.CHORD.checkTypeBeginning(test)){
+              SEQUENCE.kb.chord = SEQUENCE.kb.chord.substr(0,ctp)+test;
+              SEQUENCE.kb.pos++;
+              EVENT.refresh();
+              e.preventDefault();
+            }
+          }
+
         }
 
         if (SEQUENCE.current_inst != null){
@@ -1463,20 +1728,25 @@ ts.create = function(){
 			if (ts.player.is.running()){
 				ts.player.onEventClick(this,evt);
 			}else{
+        SEQUENCE.evt_current.refresh();
 				this.setCurrentEvent(evt);
-				if (this.current_tool!=null){
-					if (this.current_tool.nam == 'bars'){
-						this.current_tool.toggleBar();
-					}
-					else if (this.current_tool.nam == 'beats'){
-						this.current_tool.toggleBeat();
-					}
-				}
-        this.refresh();
+				//if (this.current_tool!=null){
+				//	if (this.current_tool.nam == 'bars'){
+				//		this.current_tool.toggleBar();
+				//	}
+				//	else if (this.current_tool.nam == 'beats'){
+				//		this.current_tool.toggleBeat();
+				//	}
+				//}
+        SEQUENCE.resetKeyboard();
+        SEQUENCE.evt_current.refresh();
 			}
 		};
 
-    SEQUENCE.refreshKey = function(){};
+    SEQUENCE.resetKeyboard = function(){
+      SEQUENCE.kb.pos=0;
+      //SEQUENCE.kb.chord=ts.music.CHORD.toString();
+    };
 		SEQUENCE.refresh = function(){
 			//zs4.debug('refresh() toonsmith');
 			this.updateStats();
@@ -2306,8 +2576,8 @@ ts.create = function(){
 				nu.eEventBpmInput = ts.html.nu.ele('input');
 				nu.eEventBpmInput.type = 'number';
 				nu.eEventBpmInput.value = this.bpm;
-				nu.eEventBpmInput.min = ts.music.MIN_BEATS_PER_MINUTE;
-				nu.eEventBpmInput.max = ts.music.MAX_BEATS_PER_MINUTE;
+				nu.eEventBpmInput.min = MIN_BEATS_PER_MINUTE;
+				nu.eEventBpmInput.max = MAX_BEATS_PER_MINUTE;
 				nu.eEventBpm.appendChild(nu.eEventBpmInput);
 				nu.eEventBpmInput.ts = nu;
 				nu.eEventBpmInput.onchange = function(){
@@ -2325,8 +2595,8 @@ ts.create = function(){
 				nu.eEventBpcInput = ts.html.nu.ele('input');
 				nu.eEventBpcInput.type = 'number';
 				nu.eEventBpcInput.value = this.bpb;
-				nu.eEventBpcInput.min = ts.music.MIN_BEATS_PER_BAR;
-				nu.eEventBpcInput.max = ts.music.MAX_BEATS_PER_BAR;
+				nu.eEventBpcInput.min = MIN_BEATS_PER_BAR;
+				nu.eEventBpcInput.max = MAX_BEATS_PER_BAR;
 				nu.eEventBpc.appendChild(nu.eEventBpcInput);
 				nu.eEventBpcInput.ts = nu;
 				nu.eEventBpcInput.onchange = function(){
@@ -2344,8 +2614,8 @@ ts.create = function(){
 				nu.eEventTpbInput = ts.html.nu.ele('input');
 				nu.eEventTpbInput.type = 'number';
 				nu.eEventTpbInput.value = SEQUENCE.tpb;
-				nu.eEventTpbInput.min = ts.music.MIN_TICKS_PER_BEAT;
-				nu.eEventTpbInput.max = ts.music.MAX_TICKS_PER_BEAT;
+				nu.eEventTpbInput.min = MIN_TICKS_PER_BEAT;
+				nu.eEventTpbInput.max = MAX_TICKS_PER_BEAT;
 				nu.eEventTpb.appendChild(nu.eEventTpbInput);
 				nu.eEventTpbInput.ts = nu;
 				nu.eEventTpbInput.onchange = function(){
@@ -2879,6 +3149,8 @@ ts.abc = function(){
   ABC.lastMusicLineStart = null;
   ABC.lastMusicLineEnd = null;
   ABC.mode = 'header';
+  ABC.modCount = 0;
+  ABC.modType = '';
   ABC.NOTE = ['A','B','C','D','E','F','G','a','b','c','d','e','f','g'];
   ABC.KEY = {
     G:{c:1,t:1,o:7},
@@ -2977,6 +3249,8 @@ ts.abc = function(){
     }
 
     var keynote = 24;
+    ABC.modCount = 0;
+    ABC.modType = '';
 
     var i = 0;
     var Knote = '';
@@ -2995,7 +3269,7 @@ ts.abc = function(){
     zs4.debug('key note: '+Knote, 'Ktype: '+Ktype);
     keynote = ts.music.parse.note(Knote);
     if (keynote==-1)return ABC.failure(Knote+' is not a valid keynote');
-    if (Ktype=='m'||Ktype=='min')keynote+=3;
+    if (Ktype=='m'||Ktype=='min'||Ktype=='minor')keynote+=3;
     else if (zs4.string.startsWith(Ktype,'dor'))keynote-=2;
     else if (zs4.string.startsWith(Ktype,'phr'))keynote-=4;
     else if (zs4.string.startsWith(Ktype,'lyd'))keynote-=5;
@@ -3023,17 +3297,18 @@ ts.abc = function(){
 
     //var t = new Array();
     var start; var increment; var count; var symbol;
-    count = DO.c;
+    ABC.modCount = count = DO.c;
+
     if (DO.t==1){
       start = 5;
       increment = 7;
-      symbol = '#';
+      ABC.modType = symbol = '#';
       zs4.debug('using '+count+' #\'s');
     }
     else if (DO.t==-1){
       start = 11;
       increment = 5;
-      symbol = 'b';
+      ABC.modType = symbol = 'b';
       zs4.debug('using '+count+' b\'s');
     }
 
@@ -3062,6 +3337,63 @@ ts.abc = function(){
       if (this.note[i].name==n)return this.note[i].value.toString();
     }
     return '';
+  };
+  ABC.findNoteObject = function(n){
+    for (var i = 0 ; i < this.note.length;i++){
+      if (this.note[i].name==n)return this.note[i];
+    }
+    return null;
+  };
+  ABC.findNoteNameReverse = function(v){
+    v%=12;
+    for (var i = 7 ; i < 14;i++){
+      if ((this.note[i].value%12)==(v%12)){
+        if (this.note[i].value==this.note[i].orig){
+          return this.note[i].name;
+        }
+        if (ABC.modType=='#'&&this.note[i].value==(this.note[i].orig+1)){
+          return this.note[i].name+'#';
+        }
+        else if (ABC.modType=='b'&&this.note[i].value==(this.note[i].orig-1)){
+          return this.note[i].name+'b';
+        }
+      }
+    }
+
+    if (ABC.modType=='b'){
+      for (var i = 7 ; i < 14;i++){
+        if (((this.note[i].orig)%12)==(v%12)){
+          return this.note[i].name;
+        }
+        if (((this.note[i].orig-1)%12)==(v%12)){
+          return this.note[i].name + 'b';
+        }
+      }
+    }
+
+    if (ABC.modType=='#'){
+      for (var i = 7 ; i < 14;i++){
+        if (((this.note[i].orig)%12)==(v%12)){
+          return this.note[i].name;
+        }
+        if (((this.note[i].orig+1)%12)==(v%12)){
+          return this.note[i].name + '#';
+        }
+      }
+    }
+
+    if (v==0)return 'C';
+    if (v==1)return 'C#';
+    if (v==2)return 'D';
+    if (v==3)return 'Eb';
+    if (v==4)return 'E';
+    if (v==5)return 'F';
+    if (v==6)return 'F#';
+    if (v==7)return 'G';
+    if (v==8)return 'Ab';
+    if (v==9)return 'A';
+    if (v==10)return 'Bb';
+    if (v==11)return 'B';
   };
   ABC.addNote = function(n,t,x){
     this.currentBar.content.push(new Object({
@@ -3553,6 +3885,65 @@ ts.music = new Object({
 			return this.name(v) + ((parseInt((v-12)/12)));
 		},
 	},
+  guess:{
+    key:{
+      from:{
+        noteStats:function(stats){
+          var a = new Array();
+          var st = ts.music.SCALE.TYPE;
+          for (var r = 0;r < 12;r++){
+            for (var s=0;s < st.length;s++){
+              var o = new ts.music.SCALE.object(r,s);
+              o.mc = o.mmc = 0;
+
+              var sta = st[s].a;
+              for (var n = 0; n < sta.length; n++){
+                var note = (((n+r)%12))
+                if (sta[n]==true){
+                  o.mc+=stats[note];
+                }
+                else {
+                  o.mmc+=stats[note];
+                }
+              }
+              a.push(o);
+            }
+          }
+          a.sort(function(a,b){return b.mc-a.mc})
+
+          //console.log(a);
+          return a;
+        },
+      },
+    },
+    chord:{
+      from:{
+        scaleObject:function(so){
+          var T = ts.music.CHORD.TYPE;
+          var sa = so.s.a; var sacount=0;
+          for (var i=0;i<sa.length;i++)if(sa[i]==true)sacount++;
+          var ret = new Array();
+          for (var i = 0 ; i < T.length;i++){
+            var a = T[i].a; var ok = true; var count = 0;
+            for (var x = 0 ; x < T[i].a.length;x++){
+              if (a[x]==true){
+                if(sa[x%sa.length]==false){ok=false;break;}
+                count++;
+              }
+            }
+            if (!ok)continue;
+            ret.push(new Object({
+              n:so.n,
+              t:T[i].t,
+              mc:count,
+            }));
+          }
+          ret.sort(function(a,b){return b.mc-a.mc});
+          return ret;
+        },
+      },
+    },
+  },
 	PLAIN_NOTES:[
 		{n:'C',v:0},
 		{n:'D',v:2},
@@ -3578,8 +3969,68 @@ ts.music = new Object({
 		{n:'B',s:'B',v:11,a:['B','b','Cb','cb']},
 	],
   SCALE:{
+    object:function(r,t){
+      this.r=r;
+      this.n = ts.music.note.name(r);
+      this.s = ts.music.SCALE.TYPE[t];
+    },
+    find:{
+      by:{
+        name:function(n){
+          var a = ts.music.SCALE.TYPE;
+          for (var i = 0; i < a.length;i++){
+            if (zs4.string.startsWith(a[i].t,n))return i;
+            for (var x=0;x<a[i].n.length;x++){
+              if (zs4.string.startsWith(a[i].n[x],n))return i;
+            }
+          }
+          return 0;
+        }
+      },
+    },
     TYPE:[
-
+      {
+        t:'major',
+        n:['ionian'],
+        s:'',
+        a:[true,false,true,false,true,true,false,true,false,true,false,true,],
+      },
+      {
+        t:'dorian',
+        n:[],
+        s:'',
+        a:[true,false,true,true,false,true,false,true,false,true,true,false,],
+      },
+      {
+        t:'phrygian',
+        n:[],
+        s:'',
+        a:[true,true,false,true,false,true,false,true,true,false,true,false,],
+      },
+      {
+        t:'lydian',
+        n:[],
+        s:'',
+        a:[true,false,true,false,true,false,true,true,false,true,false,true,],
+      },
+      {
+        t:'mixolydian',
+        n:[],
+        s:'',
+        a:[true,false,true,false,true,true,false,true,false,true,true,false,],
+      },
+      {
+        t:'minor',
+        n:['aeolian'],
+        s:'',
+        a:[true,false,true,true,false,true,false,true,true,false,true,false,],
+      },
+      {
+        t:'locrian',
+        n:[],
+        s:'',
+        a:[true,true,false,true,false,true,true,false,true,false,true,false,],
+      },
     ],
   },
 	CHORD:{
@@ -3623,6 +4074,44 @@ ts.music = new Object({
       }
       return -1;
     },
+    suggestType:function(t){
+      var T = ts.music.CHORD.TYPE;
+      for (var i = 0 ; i < T.length;i++){
+        if (T[i].t.length>t.length && zs4.string.startsWith(T[i].t,t)){
+          return T[i].t;
+        }
+        for (var x = 0; x < T[i].n.length;x++){
+          if (T[i].n[x].length>t.length && zs4.string.startsWith(T[i].n[x],t)){
+            return T[i].n[x];
+          }
+        }
+      }
+      return t;
+    },
+    checkType:function(t){
+      var T = ts.music.CHORD.TYPE;
+      for (var i = 0 ; i < T.length;i++){
+        if (T[i].t==t)return true;
+        for (var x = 0; x < T[i].n.length;x++){
+          if (T[i].n[x]==t)return true;
+        }
+      }
+      return false;
+    },
+    checkTypeBeginning:function(t){
+      var T = ts.music.CHORD.TYPE;
+      for (var i = 0 ; i < T.length;i++){
+        if (T[i].t.length>=t.length && zs4.string.startsWith(T[i].t,t)){
+          return true;
+        }
+        for (var x = 0; x < T[i].n.length;x++){
+          if (T[i].n[x].length>=t.length && zs4.string.startsWith(T[i].n[x],t)){
+            return true;
+          }
+        }
+      }
+      return false;
+    },
 		TYPE:[	//				C				D				E		F				G				A				B
 			{
         t:"",
@@ -3630,11 +4119,23 @@ ts.music = new Object({
         s:'',
         a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false],
       },
+      {
+        t:"-",
+        n:['m'],
+        s:'-',
+        a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false,	false],
+      },
+      {
+        t:"o",
+        n:['dim'],
+        s:'&#x00B0;',
+        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false,	false],
+      },
 			{
-        t:"-7b5",
-        n:['m7b5'],
-        s:'&#x2300;',
-        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true,	false],
+        t:"+",
+        n:[],
+        s:'+',
+        a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false],
       },
 			{
         t:"-6",
@@ -3648,44 +4149,13 @@ ts.music = new Object({
         s:'-&#x2077;',
         a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	true,	false],
       },
-			{
-        t:"M7",
-        n:[],
-        s:'&#x25B3;',
-        a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true],
+      {
+        t:"-7b5",
+        n:['m7b5'],
+        s:'&#x2300;',
+        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true,	false],
       },
-			{
-        t:"+7",
-        n:[],
-        s:'+&#x2077;',
-        a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	true,	false],
-      },
-			{
-        t:"o7",
-        n:[],
-        s:'&#x00B0;&#x2077;',
-        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false,	false],
-      },
-			{
-        t:"-",
-        n:['m'],
-        s:'-',
-        a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false,	false],
-      },
-			{
-        t:"o",
-        n:[],
-        s:'&#x00B0;',
-        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	false,	false,	false],
-      },
-			{
-        t:"+",
-        n:[],
-        s:'+',
-        a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false],
-      },
-
-			{
+      {
         t:"6",
         n:[],
         s:'&#x2076;',
@@ -3698,6 +4168,25 @@ ts.music = new Object({
         a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false],
       },
 			{
+        t:"M7",
+        n:[],
+        s:'&#x25B3;',
+        a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true],
+      },
+			{
+        t:"+7",
+        n:['aug7'],
+        s:'+&#x2077;',
+        a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	true,	false],
+      },
+			{
+        t:"o7",
+        n:['dim7'],
+        s:'&#x00B0;&#x2077;',
+        a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false,	false],
+      },
+
+			{
         t:"7b9",
         n:[],
         s:'&#x2077;&#x1D47;&#x2079;',
@@ -3705,13 +4194,6 @@ ts.music = new Object({
       },
 		],
 	},
-	SEMI_TONES_PER_OCTAVE:12,
-  MIN_TICKS_PER_BEAT:2,
-  MAX_TICKS_PER_BEAT:23,
-  MIN_BEATS_PER_BAR:2,
-  MAX_BEATS_PER_BAR:23,
-	MAX_BEATS_PER_MINUTE:240,
-	MIN_BEATS_PER_MINUTE:24,
 });
 
 ts.player = new Object({
