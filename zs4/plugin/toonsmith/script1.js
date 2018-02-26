@@ -13,8 +13,8 @@ if (zs4.is.window()){
 ts.sequence = new Array();
 
 ts.create = function(){
-  var SEQUENCE = this;
-  ts.sequence.push(SEQUENCE);
+  var SEQ = this;
+  ts.sequence.push(SEQ);
 
   const SEMI_TONES_PER_OCTAVE=12;
   const MIN_TICKS_PER_BEAT=2;
@@ -29,19 +29,19 @@ ts.create = function(){
   const KBM_CHORD = 2;
   const KBM_MELODY = 3;
 
-	SEQUENCE.ts = ts;
-  SEQUENCE.abc = new ts.abc();
-	SEQUENCE.arg = new Object({});
-	SEQUENCE.evt = new Array();
-	SEQUENCE.tool = new Array();
-	SEQUENCE.inst = new Array();
-	SEQUENCE.toolobject = new Object({});
-	SEQUENCE.instobject = new Object({});
-	SEQUENCE.bpb = 4;
-	SEQUENCE.bpm = 120;
-	SEQUENCE.tpb = 3;
-  SEQUENCE.layoutlinefeed = true;
-	SEQUENCE.stats = new Object({
+	SEQ.ts = ts;
+  SEQ.abc = new ts.abc();
+	SEQ.arg = new Object({});
+	SEQ.evt = new Array();
+	SEQ.tool = new Array();
+	SEQ.inst = new Array();
+	SEQ.toolobject = new Object({});
+	SEQ.instobject = new Object({});
+	SEQ.bpb = 4;
+	SEQ.bpm = 120;
+	SEQ.tpb = 3;
+  SEQ.layoutlinefeed = true;
+	SEQ.stats = new Object({
 		chords:0,
 		bars:0,
 		beats:0,
@@ -221,29 +221,29 @@ ts.create = function(){
 
       if (this.result.tone==true){
         if (this.chords>0){
-          SEQUENCE.guessedKeys = ts.music.guess.key.from.noteStats(this.noteChord);
+          SEQ.guessedKeys = ts.music.guess.key.from.noteStats(this.noteChord);
         }
         else {
-          SEQUENCE.guessedKeys = ts.music.guess.key.from.noteStats(this.noteStats);
+          SEQ.guessedKeys = ts.music.guess.key.from.noteStats(this.noteStats);
         }
-        SEQUENCE.abc.noteTableCreate(SEQUENCE.guessedKeys[0].n + SEQUENCE.guessedKeys[0].s.t);
+        SEQ.abc.noteTableCreate(SEQ.guessedKeys[0].n + SEQ.guessedKeys[0].s.t);
       }
       else {
-        SEQUENCE.guessedKeys = ts.music.guess.key.from.noteStats([1,0,1,0,1,1,0,1,0,1,0,1]);
-        SEQUENCE.abc.noteTableCreate(SEQUENCE.guessedKeys[0].n + SEQUENCE.guessedKeys[0].s.t);
+        SEQ.guessedKeys = ts.music.guess.key.from.noteStats([1,0,1,0,1,1,0,1,0,1,0,1]);
+        SEQ.abc.noteTableCreate(SEQ.guessedKeys[0].n + SEQ.guessedKeys[0].s.t);
       }
 
       console.log(STATS);
 		},
 	});
-	SEQUENCE.key = ts.music.parse.chord("");
-	SEQUENCE.evt_current = null;
-	SEQUENCE.evt_curidx = -1;
-	SEQUENCE.evt_shown = null;
-	SEQUENCE.current_tool = null;
-	SEQUENCE.current_inst = null;
-  SEQUENCE.kbm = KBM_EVENT;
-  SEQUENCE.kb = new Object({
+	SEQ.key = ts.music.parse.chord("");
+	SEQ.evt_current = null;
+	SEQ.evt_curidx = -1;
+	SEQ.evt_shown = null;
+	SEQ.current_tool = null;
+	SEQ.current_inst = null;
+  SEQ.kbm = KBM_EVENT;
+  SEQ.kb = new Object({
     pos:'start',
     cv:'',
     ct:'',
@@ -252,13 +252,13 @@ ts.create = function(){
     chord:null,
     ctp:function(){
       if (this.pos>1){
-        var v = ts.music.parse.note(SEQUENCE.kb.chord.substr(0,2));
+        var v = ts.music.parse.note(SEQ.kb.chord.substr(0,2));
         if (v != -1)return 2;
-        v = ts.music.parse.note(SEQUENCE.kb.chord.substr(0,1));
+        v = ts.music.parse.note(SEQ.kb.chord.substr(0,1));
         if (v != -1)return 1;
       }
       else if (this.pos>0){
-        var v = ts.music.parse.note(SEQUENCE.kb.chord.substr(0,1));
+        var v = ts.music.parse.note(SEQ.kb.chord.substr(0,1));
         if (v != -1)return 1;
       }
       return -1;
@@ -268,8 +268,8 @@ ts.create = function(){
       return ts.music.CHORD.checkTypeBeginning(this.chord.substr(ctp,this.pos-ctp));
     },
   });
-  SEQUENCE.isPlaying = function(){if(SEQUENCE.player!=null)return true;return false;};
-	SEQUENCE.onKeyChange = function(nuKee){
+  SEQ.isPlaying = function(){if(SEQ.player!=null)return true;return false;};
+	SEQ.onKeyChange = function(nuKee){
 		if	(!this.key.ok)
 			return;
 
@@ -280,7 +280,7 @@ ts.create = function(){
 
 		this.transpose(delta);
 	};
-	SEQUENCE.showEventAsCurrent = function(e){
+	SEQ.showEventAsCurrent = function(e){
     return null;
     if (!zs4.is.window())return null;
 		if ( this.evt_shown != null ){
@@ -294,169 +294,169 @@ ts.create = function(){
 		this.evt_shown = e;
 		return e;
 	};
-	SEQUENCE.setCurrentEvent = function(evt){
-		//var playing = SEQUENCE.isPlaying();
+	SEQ.setCurrentEvent = function(evt){
+		//var playing = SEQ.isPlaying();
 
-    if (SEQUENCE.evt_current != null){
-      SEQUENCE.evt_current.current=false;
-      SEQUENCE.evt_current.refresh();
+    if (SEQ.evt_current != null){
+      SEQ.evt_current.current=false;
+      SEQ.evt_current.refresh();
     }
 
-		SEQUENCE.evt_current = evt;
-    SEQUENCE.evt_current.current=true;
-    SEQUENCE.evt_current.refresh();
+		SEQ.evt_current = evt;
+    SEQ.evt_current.current=true;
+    SEQ.evt_current.refresh();
 
-    SEQUENCE.evt_curidx = -1;
+    SEQ.evt_curidx = -1;
 		for (var i = 0 ; i < this.evt.length ; i++){
-      SEQUENCE.evt[i].index = i;
-			if (evt == SEQUENCE.evt[i]){
-				SEQUENCE.evt_curidx = i;
+      SEQ.evt[i].index = i;
+			if (evt == SEQ.evt[i]){
+				SEQ.evt_curidx = i;
 			}
       else {
-        SEQUENCE.evt[i].current=false;
+        SEQ.evt[i].current=false;
       }
 		}
 
-    SEQUENCE.evt_current.refresh();
+    SEQ.evt_current.refresh();
 
-		if (SEQUENCE.current_tool != null && !SEQUENCE.isPlaying()){
-			SEQUENCE.current_tool.refresh();
+		if (SEQ.current_tool != null && !SEQ.isPlaying()){
+			SEQ.current_tool.refresh();
 		}
-		if (SEQUENCE.current_inst != null && !SEQUENCE.isPlaying()){
-			SEQUENCE.current_inst.refresh();
+		if (SEQ.current_inst != null && !SEQ.isPlaying()){
+			SEQ.current_inst.refresh();
 		}
 
 	};
-	SEQUENCE.getEventIndex = function(evt){
-		for (var i = 0 ; i < SEQUENCE.evt.length ; i++){
-			if (evt == SEQUENCE.evt[i])
+	SEQ.getEventIndex = function(evt){
+		for (var i = 0 ; i < SEQ.evt.length ; i++){
+			if (evt == SEQ.evt[i])
 			return i;
 		}
 
 		return 0;
 	};
-	SEQUENCE.setNextEvent = function(){
-		SEQUENCE.setCurrentEvent(SEQUENCE.evt[((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length)]);
+	SEQ.setNextEvent = function(){
+		SEQ.setCurrentEvent(SEQ.evt[((SEQ.evt_curidx+1) % SEQ.evt.length)]);
 	};
-	SEQUENCE.setPreviousEvent = function(){
-		SEQUENCE.setCurrentEvent(SEQUENCE.evt[((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length)]);
+	SEQ.setPreviousEvent = function(){
+		SEQ.setCurrentEvent(SEQ.evt[((SEQ.evt_curidx+SEQ.evt.length-1) % SEQ.evt.length)]);
 	};
 
-  SEQUENCE.searchNextEvent = function(from,testEvent){
-    if (SEQUENCE.evt.length==0)return from;
-    if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+1) % SEQUENCE.evt.length);
+  SEQ.searchNextEvent = function(from,testEvent){
+    if (SEQ.evt.length==0)return from;
+    if (!zs4.is.function(testEvent))return ((SEQ.evt_curidx+1) % SEQ.evt.length);
     var start = from;
-		if (start == null) start = SEQUENCE.evt_curidx;
-		start %= SEQUENCE.evt.length;
-		start += SEQUENCE.evt.length;
+		if (start == null) start = SEQ.evt_curidx;
+		start %= SEQ.evt.length;
+		start += SEQ.evt.length;
 
-		for (var i = 0 ; i < SEQUENCE.evt.length ; i++){
+		for (var i = 0 ; i < SEQ.evt.length ; i++){
 			start++;
-			var idx = (start%SEQUENCE.evt.length);
-			if (testEvent(SEQUENCE.evt[idx]))
+			var idx = (start%SEQ.evt.length);
+			if (testEvent(SEQ.evt[idx]))
 				return idx;
 		}
 
 		return from;
 	};
-	SEQUENCE.searchPrevEvent = function(from,testEvent){
-    if (SEQUENCE.evt.length==0)return from;
-		if (!zs4.is.function(testEvent))return ((SEQUENCE.evt_curidx+SEQUENCE.evt.length-1) % SEQUENCE.evt.length);
+	SEQ.searchPrevEvent = function(from,testEvent){
+    if (SEQ.evt.length==0)return from;
+		if (!zs4.is.function(testEvent))return ((SEQ.evt_curidx+SEQ.evt.length-1) % SEQ.evt.length);
     var start = from;
-		if (start == null) start = SEQUENCE.evt_curidx;
-		start %= SEQUENCE.evt.length;
-		start += SEQUENCE.evt.length;
+		if (start == null) start = SEQ.evt_curidx;
+		start %= SEQ.evt.length;
+		start += SEQ.evt.length;
 
 		for (var i = 0 ; i < this.evt.length ; i++){
 			start--;
-			var idx = (start%SEQUENCE.evt.length);
-      if (testEvent(SEQUENCE.evt[idx]))
+			var idx = (start%SEQ.evt.length);
+      if (testEvent(SEQ.evt[idx]))
 				return idx;
 		}
 
 		return from;
 	};
-	SEQUENCE.searchPrevBar = function(from){
-    return SEQUENCE.searchPrevEvent(from,function(evt){if (evt.bar)return true; return false});
+	SEQ.searchPrevBar = function(from){
+    return SEQ.searchPrevEvent(from,function(evt){if (evt.bar)return true; return false});
 	};
-	SEQUENCE.searchNextBar = function(from){
-    return SEQUENCE.searchNextEvent(from,function(evt){if (evt.bar)return true; return false});
+	SEQ.searchNextBar = function(from){
+    return SEQ.searchNextEvent(from,function(evt){if (evt.bar)return true; return false});
 	};
-  SEQUENCE.searchPrevBeat = function(from){
-    return SEQUENCE.searchPrevEvent(from,function(evt){if (evt.beat)return true; return false});
+  SEQ.searchPrevBeat = function(from){
+    return SEQ.searchPrevEvent(from,function(evt){if (evt.beat)return true; return false});
 	};
-	SEQUENCE.searchNextBeat = function(from){
-    return SEQUENCE.searchNextEvent(from,function(evt){if (evt.beat)return true; return false});
+	SEQ.searchNextBeat = function(from){
+    return SEQ.searchNextEvent(from,function(evt){if (evt.beat)return true; return false});
 	};
-  SEQUENCE.searchPrevChord = function(from){
-    return SEQUENCE.searchPrevEvent(from,function(evt){
+  SEQ.searchPrevChord = function(from){
+    return SEQ.searchPrevEvent(from,function(evt){
       if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
     });
 	};
-	SEQUENCE.searchNextChord = function(from){
-    return SEQUENCE.searchNextEvent(from,function(evt){
+	SEQ.searchNextChord = function(from){
+    return SEQ.searchNextEvent(from,function(evt){
       if (zs4.is.object(evt.chord)&&evt.chord.ok)return true; return false
     });
 	};
-  SEQUENCE.searchPrevNote = function(from){
-    return SEQUENCE.searchPrevEvent(from,function(evt){
+  SEQ.searchPrevNote = function(from){
+    return SEQ.searchPrevEvent(from,function(evt){
       if (evt.melody!=0)return true; return false
     });
 	};
-	SEQUENCE.searchNextNote = function(from){
-    return SEQUENCE.searchNextEvent(from,function(evt){
+	SEQ.searchNextNote = function(from){
+    return SEQ.searchNextEvent(from,function(evt){
       if (evt.melody!=0)return true; return false
     });
 	};
-  SEQUENCE.searchPrevLyric = function(from){
-    return SEQUENCE.searchPrevEvent(from,function(evt){
+  SEQ.searchPrevLyric = function(from){
+    return SEQ.searchPrevEvent(from,function(evt){
       if (evt.lyric.trim()!='')return true; return false
     });
 	};
-	SEQUENCE.searchNextLyric = function(from){
-    return SEQUENCE.searchNextEvent(from,function(evt){
+	SEQ.searchNextLyric = function(from){
+    return SEQ.searchNextEvent(from,function(evt){
       if (evt.lyric.trim()!='')return true; return false
     });
 	};
-  SEQUENCE.searchPrevSpace = function(from){
-    return SEQUENCE.searchPrevEvent(from,function(evt){
+  SEQ.searchPrevSpace = function(from){
+    return SEQ.searchPrevEvent(from,function(evt){
       if (evt.space)return true; return false
     });
 	};
-	SEQUENCE.searchNextSpace = function(from){
-    return SEQUENCE.searchNextEvent(from,function(evt){
+	SEQ.searchNextSpace = function(from){
+    return SEQ.searchNextEvent(from,function(evt){
       if (evt.space)return true; return false
     });
 	};
-  SEQUENCE.searchPrevLinefeed = function(from){
-    return SEQUENCE.searchPrevEvent(from,function(evt){
+  SEQ.searchPrevLinefeed = function(from){
+    return SEQ.searchPrevEvent(from,function(evt){
       if (evt.linefeed)return true; return false
     });
 	};
-	SEQUENCE.searchNextLinefeed = function(from){
-    return SEQUENCE.searchNextEvent(from,function(evt){
+	SEQ.searchNextLinefeed = function(from){
+    return SEQ.searchNextEvent(from,function(evt){
       if (evt.linefeed)return true; return false
     });
 	};
-	SEQUENCE.searchActiveChord = function(from){
-		if (SEQUENCE.evt.length == 0 || SEQUENCE.evt_current == null)
+	SEQ.searchActiveChord = function(from){
+		if (SEQ.evt.length == 0 || SEQ.evt_current == null)
 			return null;
 
-		if (SEQUENCE.evt_current.chord)
-			return SEQUENCE.evt_current.chord;
+		if (SEQ.evt_current.chord)
+			return SEQ.evt_current.chord;
 
-		for (var i = (SEQUENCE.evt.length-1) ; i > 0; i--){
-			var idx = ((SEQUENCE.evt_curidx+i)%SEQUENCE.evt.length);
-			if (SEQUENCE.evt[idx].chord)
-				return SEQUENCE.evt[idx].chord;
+		for (var i = (SEQ.evt.length-1) ; i > 0; i--){
+			var idx = ((SEQ.evt_curidx+i)%SEQ.evt.length);
+			if (SEQ.evt[idx].chord)
+				return SEQ.evt[idx].chord;
 		}
 
 		return from;
 	};
-	SEQUENCE.transpose = function(delta){
+	SEQ.transpose = function(delta){
 
-		for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ ){
-			var evt = SEQUENCE.evt[i];
+		for ( var i = 0 ; i < SEQ.evt.length ; i++ ){
+			var evt = SEQ.evt[i];
 			// if this event has a chord
 			if (evt.chord!=null){
 				evt.chord.v = ts.music.transpose.note.name(evt.chord.v,delta)
@@ -469,24 +469,24 @@ ts.create = function(){
 		}
 		this.refresh();
 	};
-	SEQUENCE.updateStats = function(){
-    for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ )SEQUENCE.evt[i].index=i;
-		SEQUENCE.stats.start();
-    var bar = SEQUENCE.searchNextBar(SEQUENCE.evt.length-1);
-		for ( var i = 0 ; i < SEQUENCE.evt.length ; i++ ){
-      var idx = (i+bar)%SEQUENCE.evt.length;
-			SEQUENCE.evt[idx].duration = 0;
-			SEQUENCE.evt[idx].refresh();
-			SEQUENCE.stats.countEvent(SEQUENCE.evt[idx]);
+	SEQ.updateStats = function(){
+    for ( var i = 0 ; i < SEQ.evt.length ; i++ )SEQ.evt[i].index=i;
+		SEQ.stats.start();
+    var bar = SEQ.searchNextBar(SEQ.evt.length-1);
+		for ( var i = 0 ; i < SEQ.evt.length ; i++ ){
+      var idx = (i+bar)%SEQ.evt.length;
+			SEQ.evt[idx].duration = 0;
+			SEQ.evt[idx].refresh();
+			SEQ.stats.countEvent(SEQ.evt[idx]);
 		}
-		SEQUENCE.stats.end();
+		SEQ.stats.end();
 
-    if (SEQUENCE.evt.length > 0){
+    if (SEQ.evt.length > 0){
 
       var bar = null, beat = null, chord = null, melody = null, text = null;
-      for ( var idx = 0 ; idx <= (SEQUENCE.evt.length+1); idx++){
-        var i = idx % SEQUENCE.evt.length;
-        var e = SEQUENCE.evt[i];
+      for ( var idx = 0 ; idx <= (SEQ.evt.length+1); idx++){
+        var i = idx % SEQ.evt.length;
+        var e = SEQ.evt[i];
         if (e.isBar()){if (bar!=null) e.prevBar = bar; bar = e; }
         if (e.isBeat()){if (beat!=null) e.prevBeat = beat; beat = e; }
         if (e.isChord()){if (chord!=null) e.prevChord = chord; chord = e; }
@@ -495,9 +495,9 @@ ts.create = function(){
       }
 
       bar = null; beat = null; chord = null; melody = null; text = null;
-      for ( var idx = SEQUENCE.evt.length ; idx >= 0; idx--){
-        var i = idx % SEQUENCE.evt.length;
-        var e = SEQUENCE.evt[i];
+      for ( var idx = SEQ.evt.length ; idx >= 0; idx--){
+        var i = idx % SEQ.evt.length;
+        var e = SEQ.evt[i];
         if (e.isBar()){if (bar!=null) e.nextBar = bar; bar = e; }
         if (e.isBeat()){if (beat!=null) e.nextBeat = beat; beat = e; }
         if (e.isChord()){if (chord!=null) e.nextChord = chord; chord = e; }
@@ -508,41 +508,41 @@ ts.create = function(){
     }
 
 	};
-	SEQUENCE.recomputeTiming = function(){
-		SEQUENCE.updateStats();
-		var seq = SEQUENCE;
-		SEQUENCE.barTotalMillies = Math.round(SEQUENCE.bpb * (60000/SEQUENCE.bpm));
-    SEQUENCE.beatMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.bpb);
-    SEQUENCE.barTicks = Math.round(SEQUENCE.bpb*SEQUENCE.tpb);
-    SEQUENCE.tickMillies = Math.round(SEQUENCE.barTotalMillies/SEQUENCE.barTicks);
-    while ((SEQUENCE.tickMillies*SEQUENCE.barTicks)<SEQUENCE.barTotalMillies)SEQUENCE.tickMillies += 1;
+	SEQ.recomputeTiming = function(){
+		SEQ.updateStats();
+		var seq = SEQ;
+		SEQ.barTotalMillies = Math.round(SEQ.bpb * (60000/SEQ.bpm));
+    SEQ.beatMillies = Math.round(SEQ.barTotalMillies/SEQ.bpb);
+    SEQ.barTicks = Math.round(SEQ.bpb*SEQ.tpb);
+    SEQ.tickMillies = Math.round(SEQ.barTotalMillies/SEQ.barTicks);
+    while ((SEQ.tickMillies*SEQ.barTicks)<SEQ.barTotalMillies)SEQ.tickMillies += 1;
 
-    //zs4.debug('SEQUENCE.barTotalMillies='+SEQUENCE.barTotalMillies);
-    //zs4.debug('SEQUENCE.beatMillies='+SEQUENCE.beatMillies);
-    //zs4.debug('SEQUENCE.barTicks='+SEQUENCE.barTicks);
-    //zs4.debug('SEQUENCE.tickMillies='+SEQUENCE.tickMillies);
+    //zs4.debug('SEQ.barTotalMillies='+SEQ.barTotalMillies);
+    //zs4.debug('SEQ.beatMillies='+SEQ.beatMillies);
+    //zs4.debug('SEQ.barTicks='+SEQ.barTicks);
+    //zs4.debug('SEQ.tickMillies='+SEQ.tickMillies);
 
 		var title = '';
 
 		function processBeat(beat,no,length){
 
 			var tit = 'beat:'+ (no+1) +' length:'+length;
-			if (SEQUENCE.evt[beat].bar==null && SEQUENCE.evt[beat].beat!=null){
-				if (zs4.is.window())SEQUENCE.evt[beat].eBlockChart.title = tit;
+			if (SEQ.evt[beat].bar==null && SEQ.evt[beat].beat!=null){
+				if (zs4.is.window())SEQ.evt[beat].eBlockChart.title = tit;
 			}
-			SEQUENCE.evt[beat].duration = length;
+			SEQ.evt[beat].duration = length;
 
 			//if (seq.evt[beat].beat==null)zs4.debug('beat with no beat');
 			// count beat events
 			var eCount = 0;
-			for (var c = beat ; c < (beat+SEQUENCE.evt.length); c++){
-				var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
+			for (var c = beat ; c < (beat+SEQ.evt.length); c++){
+				var ci = (c+SEQ.evt.length)%SEQ.evt.length;
 
-				if (SEQUENCE.evt[ci].hasMusic()) eCount++;
+				if (SEQ.evt[ci].hasMusic()) eCount++;
 
 				// loop control
-				ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-				if (SEQUENCE.evt[ci].beat) break;
+				ci = (ci+1+SEQ.evt.length)%SEQ.evt.length;
+				if (SEQ.evt[ci].beat) break;
 			}
 
 			if (eCount > 1){
@@ -570,8 +570,8 @@ ts.create = function(){
 
 		}
 
-		if (SEQUENCE.stats.bars > 0){
-			var cur_bar = SEQUENCE.searchNextBar(this.evt.length-1);
+		if (SEQ.stats.bars > 0){
+			var cur_bar = SEQ.searchNextBar(this.evt.length-1);
 			var countObject = new Object({
 				events:0,
 				beats:0,
@@ -579,22 +579,22 @@ ts.create = function(){
         chords:0,
 			});
 
-			for (var b = 0; b < SEQUENCE.stats.bars; b++){
+			for (var b = 0; b < SEQ.stats.bars; b++){
 				title = 'bar '+(b+1)+' ';
 				var beatNo = 0;
 
 				// count beats and events in current bar
 				countObject.events = countObject.beats = countObject.notes = countObject.chords = 0;
-				for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
-					var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
+				for (var c = cur_bar ; c < (cur_bar+SEQ.evt.length); c++){
+					var ci = (c+SEQ.evt.length)%SEQ.evt.length;
 					countObject.events++;
-					if (SEQUENCE.evt[ci].isBeat()) countObject.beats++;
-          if (SEQUENCE.evt[ci].isMelody()) countObject.notes++;
-          if (SEQUENCE.evt[ci].isChord()) countObject.chords++;
+					if (SEQ.evt[ci].isBeat()) countObject.beats++;
+          if (SEQ.evt[ci].isMelody()) countObject.notes++;
+          if (SEQ.evt[ci].isChord()) countObject.chords++;
 
 					// loop control
-					ci = (ci+1+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-					if (SEQUENCE.evt[ci].bar) break;
+					ci = (ci+1+SEQ.evt.length)%SEQ.evt.length;
+					if (SEQ.evt[ci].bar) break;
 				}
 				title += ' beats:'+countObject.beats
               +' events:'+countObject.events
@@ -603,30 +603,30 @@ ts.create = function(){
 
 				if (countObject.beats == this.bpb){
 					beatNo = 0;
-					for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
+					for (var c = cur_bar ; c < (cur_bar+SEQ.evt.length); c++){
 						var ci = (c+this.evt.length)%this.evt.length;
 						if (this.evt[ci].isBar()&&ci!=cur_bar)break;
 						if (this.evt[ci].isBeat()) {
-							if (beatNo==0) {title += ' length:'+SEQUENCE.beatMillies;}
-							processBeat(ci,beatNo,SEQUENCE.beatMillies);
+							if (beatNo==0) {title += ' length:'+SEQ.beatMillies;}
+							processBeat(ci,beatNo,SEQ.beatMillies);
 							beatNo += 1;
 						}
 					}
 				}
 				else {
-					var bMils = SEQUENCE.beatMillies;
+					var bMils = SEQ.beatMillies;
 					var couBeats = countObject.beats;
-					var bpb = SEQUENCE.bpb;
+					var bpb = SEQ.bpb;
 
-					while (couBeats>bpb) bpb+=SEQUENCE.bpb;
-					var bMils = Math.round(SEQUENCE.barTotalMillies/bpb);
+					while (couBeats>bpb) bpb+=SEQ.bpb;
+					var bMils = Math.round(SEQ.barTotalMillies/bpb);
 
 					var beatNo = 0; var bpbUsed = 0;
-					var timePerBeat = SEQUENCE.barTotalMillies/couBeats;
-					for (var c = cur_bar ; c < (cur_bar+SEQUENCE.evt.length); c++){
-						var ci = (c+SEQUENCE.evt.length)%SEQUENCE.evt.length;
-						if (SEQUENCE.evt[ci].isBar()&&ci!=cur_bar)break;
-						if (SEQUENCE.evt[ci].isBeat()){
+					var timePerBeat = SEQ.barTotalMillies/couBeats;
+					for (var c = cur_bar ; c < (cur_bar+SEQ.evt.length); c++){
+						var ci = (c+SEQ.evt.length)%SEQ.evt.length;
+						if (SEQ.evt[ci].isBar()&&ci!=cur_bar)break;
+						if (SEQ.evt[ci].isBeat()){
 							var target = (beatNo+1) * timePerBeat;
 
 							var bpbThis = 0;
@@ -652,27 +652,27 @@ ts.create = function(){
 					}
 				}
 
-				if (zs4.is.window())SEQUENCE.evt[cur_bar].eBlockChart.title = title;
-				cur_bar = SEQUENCE.searchNextBar(cur_bar);
+				if (zs4.is.window())SEQ.evt[cur_bar].eBlockChart.title = title;
+				cur_bar = SEQ.searchNextBar(cur_bar);
 			}
 		}
 	};
-  SEQUENCE.recomputeBar = function(e){
-    var tix = SEQUENCE.barTicks;
+  SEQ.recomputeBar = function(e){
+    var tix = SEQ.barTicks;
 
     e.playArray = new Array();
 
     // create a tick-grid
     var starttime = 0;
-    var available_bar = SEQUENCE.barTotalMillies;
-    for (var b = 0; b < SEQUENCE.bpb; b++){
-      var available_beat = SEQUENCE.beatMillies;
-      if (b == (SEQUENCE.bpb-1)) available_beat = available_bar;
+    var available_bar = SEQ.barTotalMillies;
+    for (var b = 0; b < SEQ.bpb; b++){
+      var available_beat = SEQ.beatMillies;
+      if (b == (SEQ.bpb-1)) available_beat = available_bar;
       available_bar -= available_beat;
 
-      for (var t = 0; t < SEQUENCE.tpb; t++){
-        var available_tick = SEQUENCE.tickMillies;
-        if (t == (SEQUENCE.tpb-1))available_tick = available_beat;
+      for (var t = 0; t < SEQ.tpb; t++){
+        var available_tick = SEQ.tickMillies;
+        if (t == (SEQ.tpb-1))available_tick = available_beat;
         available_beat -= available_tick;
 
         e.playArray.push(new Object({
@@ -760,7 +760,7 @@ ts.create = function(){
 
     for (var i = 0 ; i < e.arrayMelody.length; i++) {
       if (i == (e.arrayMelody.length-1)){
-        e.arrayMelody[i].ticktime = SEQUENCE.barTotalMillies-e.arrayMelody[i].starttime;
+        e.arrayMelody[i].ticktime = SEQ.barTotalMillies-e.arrayMelody[i].starttime;
       }
       else {
         e.arrayMelody[i].ticktime = e.arrayMelody[i+1].starttime-e.arrayMelody[i].starttime;
@@ -781,7 +781,7 @@ ts.create = function(){
 
     for (var i = 0 ; i < e.arrayChords.length; i++) {
       if (i == (e.arrayChords.length-1)){
-        e.arrayChords[i].ticktime = SEQUENCE.barTotalMillies-e.arrayChords[i].starttime;
+        e.arrayChords[i].ticktime = SEQ.barTotalMillies-e.arrayChords[i].starttime;
       }
       else {
         e.arrayChords[i].ticktime = e.arrayChords[i+1].starttime-e.arrayChords[i].starttime;
@@ -790,8 +790,8 @@ ts.create = function(){
 
   };
 
-	SEQUENCE.addEvent = function(str,info,afterIndex){
-		var SEQUENCE = this;
+	SEQ.addEvent = function(str,info,afterIndex){
+		var SEQ = this;
 		// Global values
 		var glob = zs4.string.split.separators(info,':');
 		if (glob.length==2){
@@ -813,21 +813,21 @@ ts.create = function(){
 
 			}
 			if (glob[0].trim()=='bpm'){
-				SEQUENCE.bpm = parseInt(glob[1]);
-				if (SEQUENCE.bpm < MIN_BEATS_PER_MINUTE)SEQUENCE.bpm = MIN_BEATS_PER_MINUTE;
-				else if (SEQUENCE.bpm > MAX_BEATS_PER_MINUTE) SEQUENCE.bpm = MAX_BEATS_PER_MINUTE;
+				SEQ.bpm = parseInt(glob[1]);
+				if (SEQ.bpm < MIN_BEATS_PER_MINUTE)SEQ.bpm = MIN_BEATS_PER_MINUTE;
+				else if (SEQ.bpm > MAX_BEATS_PER_MINUTE) SEQ.bpm = MAX_BEATS_PER_MINUTE;
 
 				if (zs4.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
 			}
 
       if (glob[0].trim()=='lf'){
         if (glob[1].trim()=='false'){
-          SEQUENCE.layoutlinefeed = false;
-          if (zs4.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=false;
+          SEQ.layoutlinefeed = false;
+          if (zs4.is.window())SEQ.toolobject.layout.eLineFeed.checked=false;
         }
         else {
-          SEQUENCE.layoutlinefeed = true;
-          if (zs4.is.window())SEQUENCE.toolobject.layout.eLineFeed.checked=true;
+          SEQ.layoutlinefeed = true;
+          if (zs4.is.window())SEQ.toolobject.layout.eLineFeed.checked=true;
         }
       }
 		}
@@ -927,13 +927,16 @@ ts.create = function(){
       function cursor(){
         return '<span style="color:red;font-weight:bolder;">|</span>';
       };
-      function black(s){
-        return '<span style="color:black;font-weight:bolder;">'+s+'</span>';
+      function black(s,bolder){
+        if (bolder)return '<span style="color:black;font-weight:bolder;">'+s+'</span>';
+        return '<span style="color:black;">'+s+'</span>';
       };
-      function grey(s){
+      function grey(s,bolder){
+        if (bolder)return '<span style="color:grey;font-weight:bolder;">'+s+'</span>';
         return '<span style="color:grey;">'+s+'</span>';
       };
-      function red(s){
+      function red(s,bolder){
+        if (bolder)return '<span style="color:red;font-weight:bolder;">'+s+'</span>';
         return '<span style="color:red;">'+s+'</span>';
       };
       o.refresh = function(){
@@ -957,21 +960,21 @@ ts.create = function(){
           o.eSpan.style.backgroundColor = 'lightgray';
           o.eSpan.focus();
 
-          if (SEQUENCE.kbm == KBM_LYRIC){
+          if (SEQ.kbm == KBM_LYRIC){
             o.eBlockLyric.style.backgroundColor = 'white';
           }
           else {
             o.eBlockLyric.style.backgroundColor = 'initial';
           }
 
-          if (SEQUENCE.kbm == KBM_CHORD){
+          if (SEQ.kbm == KBM_CHORD){
             o.eBlockChart.style.backgroundColor = 'white';
           }
           else {
             o.eBlockChart.style.backgroundColor = 'initial';
           }
 
-          if (SEQUENCE.kbm == KBM_MELODY){
+          if (SEQ.kbm == KBM_MELODY){
             o.eBlockMelody.style.backgroundColor = 'white';
           }
           else {
@@ -986,85 +989,110 @@ ts.create = function(){
           o.eBlockMelody.style.backgroundColor = 'initial';
         }
 
-        if (o.current && SEQUENCE.kbm == KBM_CHORD){
+        if (o.current && SEQ.kbm == KBM_CHORD){
           var left = ''; var right = '';
-          if (SEQUENCE.kb.pos=='start'||SEQUENCE.kb.pos<0)SEQUENCE.kb.pos = 0;
+          if (SEQ.kb.pos=='start'||SEQ.kb.pos<0)SEQ.kb.pos = 0;
 
           if (this.isChord()){
-            SEQUENCE.kb.chord = ts.music.CHORD.toString(this.chord);
-            if (SEQUENCE.kb.pos=='end'||SEQUENCE.kb.pos>SEQUENCE.kb.chord.length){
-              SEQUENCE.kb.pos=SEQUENCE.kb.chord.length;
+            SEQ.kb.chord = ts.music.CHORD.toString(this.chord);
+            if (SEQ.kb.pos=='end'||SEQ.kb.pos>SEQ.kb.chord.length){
+              SEQ.kb.pos=SEQ.kb.chord.length;
             }
             this.eChordBaseNote.innerHTML=
-              black(SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos))+
+              black(SEQ.kb.chord.substr(0,SEQ.kb.pos),true)+
               cursor()+
-              red(SEQUENCE.kb.chord.substr(SEQUENCE.kb.pos,SEQUENCE.kb.chord.length-SEQUENCE.kb.pos));
+              red(SEQ.kb.chord.substr(SEQ.kb.pos,SEQ.kb.chord.length-SEQ.kb.pos),true);
           }
           else {
             function initChord(){
-              var pi = SEQUENCE.searchPrevChord(this.index);
-              if (!SEQUENCE.evt[pi].isChord())SEQUENCE.kb.chord='C';
-              else SEQUENCE.kb.chord = ts.music.CHORD.toString(SEQUENCE.evt[pi].chord);
+              var pi = SEQ.searchPrevChord(this.index);
+              if (!SEQ.evt[pi].isChord())SEQ.kb.chord='C';
+              else SEQ.kb.chord = ts.music.CHORD.toString(SEQ.evt[pi].chord);
             };
-            if (!zs4.is.string(SEQUENCE.kb.chord)){
+            if (!zs4.is.string(SEQ.kb.chord)){
               initChord();
             }
-            if (SEQUENCE.kb.pos=='end'||SEQUENCE.kb.pos>SEQUENCE.kb.chord.length){
-              SEQUENCE.kb.pos=SEQUENCE.kb.chord.length;
+            if (SEQ.kb.pos=='end'||SEQ.kb.pos>SEQ.kb.chord.length){
+              SEQ.kb.pos=SEQ.kb.chord.length;
             }
-            if (SEQUENCE.kb.pos==1 && SEQUENCE.kb.chord.length==1 && SEQUENCE.abc.modCount!=0){
-              var noteobj = SEQUENCE.abc.findNoteObject(SEQUENCE.kb.chord);
-              if (noteobj != null){
-                if (noteobj.value == (noteobj.orig+1)){
-                  SEQUENCE.kb.chord += '#';
-                  SEQUENCE.kb.pos = 2;
-                }
-                if (noteobj.value == (noteobj.orig-1)){
-                  SEQUENCE.kb.chord += 'b';
-                  SEQUENCE.kb.pos = 2;
-                }
-              }
-            }
-
-            if ((SEQUENCE.kb.pos==1 || SEQUENCE.kb.pos==2) && SEQUENCE.kb.chord.length==SEQUENCE.kb.pos){
-              var v = ts.music.parse.note(SEQUENCE.kb.chord);
-              if (v != -1 && SEQUENCE.kb.typed==true){
-                var gk = SEQUENCE.guessedKeys;
-                for (var i=0;i<gk.length;i++){
-                  if (gk[i].r==v){
-                    var r = ts.music.guess.chord.from.scaleObject(gk[i]);
-                    SEQUENCE.kb.chord += r[0].t;
-                    break;
+            var slash = SEQ.kb.chord.indexOf('/');
+            if (slash==-1){
+              if (SEQ.kb.pos==1 && SEQ.kb.chord.length==1 && SEQ.abc.modCount!=0){
+                var noteobj = SEQ.abc.findNoteObject(SEQ.kb.chord);
+                if (noteobj != null){
+                  if (noteobj.value == (noteobj.orig+1)){
+                    SEQ.kb.chord += '#';
+                    SEQ.kb.pos = 2;
+                  }
+                  if (noteobj.value == (noteobj.orig-1)){
+                    SEQ.kb.chord += 'b';
+                    SEQ.kb.pos = 2;
                   }
                 }
               }
-            }
-            else if (SEQUENCE.kb.ctb()){
-              var ctp = SEQUENCE.kb.ctp();
-              SEQUENCE.kb.chord =
-                SEQUENCE.kb.chord.substr(0,ctp)+
-                ts.music.CHORD.suggestType(SEQUENCE.kb.chord.substr(ctp,SEQUENCE.kb.pos-ctp));
-                console.log(SEQUENCE.kb.chord);
-            }
-            else{
-              var c = ts.music.parse.chord(SEQUENCE.kb.chord)
-              if (c.ok && SEQUENCE.kb.chord[SEQUENCE.kb.pos-1]=='/'){
-                console.log('chord '+SEQUENCE.kb.chord+' needs bass note');
-                var n = ts.music.CHORD.noteFromChordIndex(c,2)+c.v;
-                SEQUENCE.kb.chord = SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos)+SEQUENCE.abc.findNoteNameReverse(n);
+
+              if ((SEQ.kb.pos<=2) && SEQ.kb.chord.length==SEQ.kb.pos){
+                var v = ts.music.parse.note(SEQ.kb.chord);
+                if (v != -1 && SEQ.kb.typed==true){
+                  var gk = SEQ.guessedKeys;
+                  for (var i=0;i<gk.length;i++){
+                    if (gk[i].r==v){
+                      var r = ts.music.guess.chord.from.scaleObject(gk[i]);
+                      SEQ.kb.chord += r[0].t;
+                      break;
+                    }
+                  }
+                }
+              }
+              else if (SEQ.kb.ctb()){
+                var ctp = SEQ.kb.ctp();
+                SEQ.kb.chord =
+                  SEQ.kb.chord.substr(0,ctp)+
+                  ts.music.CHORD.suggestType(SEQ.kb.chord.substr(ctp,SEQ.kb.pos-ctp));
+                  console.log(SEQ.kb.chord);
+              }
+
+              if (SEQ.kb.pos==0){
+                var c = ts.music.parse.chord(SEQ.kb.chord);
+                if (!c.ok)initChord();
               }
             }
+            else {
+              // BASSNOTEREFRESH
+              var pre = SEQ.kb.chord.substr(0,slash);
+              var pc = ts.music.parse.chord(pre);
+              if (pc.ok){
+                if (SEQ.kb.chord[SEQ.kb.pos-1]=='/'&&SEQ.kb.typed){
+                  console.log('chord '+SEQ.kb.chord+' needs bass note');
+                  var n = ts.music.CHORD.noteFromChordIndex(pc,2)+pc.v;
+                  SEQ.kb.chord = SEQ.kb.chord.substr(0,SEQ.kb.pos)+SEQ.abc.findNoteNameReverse(n);
+                }
+                if (SEQ.kb.chord[SEQ.kb.pos-2]=='/'&&SEQ.kb.pos==SEQ.kb.chord.length){
+                  var noteobj = SEQ.abc.findNoteObject(SEQ.kb.chord.substr(SEQ.kb.pos-1,1));
+                  console.log('bass note entered');
+                  if (noteobj != null){
+                    var note = zs4.string.to.upper(noteobj.name);
+                    var sub = SEQ.kb.chord.substr(0,SEQ.kb.pos-1);
+                    if (noteobj.value == (noteobj.orig+1)){
+                      SEQ.kb.chord = sub+note+'#';
+                    }
+                    else if (noteobj.value == (noteobj.orig-1)){
+                      SEQ.kb.chord = sub+note+'b';
+                    }
+                    else {
+                      SEQ.kb.chord = sub+note;
+                    }
+                  }
+                }
+              }
 
-            if (SEQUENCE.kb.pos==0){
-              var c = ts.music.parse.chord(SEQUENCE.kb.chord);
-              if (!c.ok)initChord();
             }
 
-            SEQUENCE.kb.typed = false;
+            SEQ.kb.typed = false;
             this.eChordBaseNote.innerHTML=
-              grey(SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos))+
+              grey(SEQ.kb.chord.substr(0,SEQ.kb.pos))+
               cursor()+
-              grey(SEQUENCE.kb.chord.substr(SEQUENCE.kb.pos,SEQUENCE.kb.chord.length-SEQUENCE.kb.pos));
+              red(SEQ.kb.chord.substr(SEQ.kb.pos,SEQ.kb.chord.length-SEQ.kb.pos));
           }
         }
         else {
@@ -1084,24 +1112,24 @@ ts.create = function(){
           this.eBlockMelody.textContent = ts.music.note.qualified(o.melody);
         }
 
-        if (o.current && SEQUENCE.kbm == KBM_LYRIC){
-            if (SEQUENCE.kb.pos=='start'){
+        if (o.current && SEQ.kbm == KBM_LYRIC){
+            if (SEQ.kb.pos=='start'){
               this.eBlockLyric.innerHTML = cursor()+this.lyric;
-              SEQUENCE.kb.pos = 0;
+              SEQ.kb.pos = 0;
             }
-            else if (SEQUENCE.kb.pos=='end'){
+            else if (SEQ.kb.pos=='end'){
               this.eBlockLyric.innerHTML = this.lyric+cursor();
-              SEQUENCE.kb.pos = this.lyric.length;
+              SEQ.kb.pos = this.lyric.length;
             }
             else {
-              if (!zs4.is.number(SEQUENCE.kb.pos))SEQUENCE.kb.pos=0;
-              else if (SEQUENCE.kb.pos<0)SEQUENCE.kb.pos=0;
-              else if (SEQUENCE.kb.pos>this.lyric.length)SEQUENCE.kb.pos=this.lyric.length;
+              if (!zs4.is.number(SEQ.kb.pos))SEQ.kb.pos=0;
+              else if (SEQ.kb.pos<0)SEQ.kb.pos=0;
+              else if (SEQ.kb.pos>this.lyric.length)SEQ.kb.pos=this.lyric.length;
 
               this.eBlockLyric.innerHTML =
-                this.lyric.substr(0,SEQUENCE.kb.pos)+
+                this.lyric.substr(0,SEQ.kb.pos)+
                 cursor()+
-                this.lyric.substr(SEQUENCE.kb.pos,this.lyric.length-SEQUENCE.kb.pos);
+                this.lyric.substr(SEQ.kb.pos,this.lyric.length-SEQ.kb.pos);
             }
         }
         else {
@@ -1116,7 +1144,7 @@ ts.create = function(){
             putEmptyImage(this.eBlockLyric,true);
           }
 
-          if (this.isLinefeed()&&SEQUENCE.layoutlinefeed){
+          if (this.isLinefeed()&&SEQ.layoutlinefeed){
             this.eLineFeed.style.display = 'initial';
           }
           else {
@@ -1158,8 +1186,8 @@ ts.create = function(){
   			o.eBlockLyric.style.height = '1em';
         o.eBlockLyric.style.minHeight = '1em';
   			o.eBlockLyric.ondblclick = function(e){
-  				SEQUENCE.onEventClick(EVENT);
-  				if (SEQUENCE.evt[SEQUENCE.evt_curidx]!=EVENT)return;
+  				SEQ.onEventClick(EVENT);
+  				if (SEQ.evt[SEQ.evt_curidx]!=EVENT)return;
 
   				var clickpos = parseInt(this.textContent.length * e.offsetX / this.offsetWidth);
 
@@ -1170,10 +1198,10 @@ ts.create = function(){
   				}
   				//zs4.debug(old+'-'+nu);
   				EVENT.lyric = EVENT.eBlockLyric.textContent = old;
-  				var nuEvent = SEQUENCE.addEvent(nu,'',(SEQUENCE.evt_curidx+1));
-  				SEQUENCE.onEventClick(nuEvent);
+  				var nuEvent = SEQ.addEvent(nu,'',(SEQ.evt_curidx+1));
+  				SEQ.onEventClick(nuEvent);
   				//zs4.debug(nuEvent);
-  				SEQUENCE.alignHTML();
+  				SEQ.alignHTML();
   				//zs4.debug(zs4.json.textify(e));
   			};
 
@@ -1188,16 +1216,16 @@ ts.create = function(){
       o.refresh();
     }
 
-    SEQUENCE.setCurrentEvent(o);
+    SEQ.setCurrentEvent(o);
 		return o;
 	};
-	SEQUENCE.run = function(){
+	SEQ.run = function(){
 		this.runChordsAndLyrics();
 		this.transpose(0);
 		if (this.evt.length > 0)
 			this.setCurrentEvent(this.evt[0]);
 	};
-	SEQUENCE.clear = function(){
+	SEQ.clear = function(){
 		this.evt = new Array();
 		this.evt_current = null;
 		this.evt_curidx = this.evt.length-1;
@@ -1205,12 +1233,12 @@ ts.create = function(){
     this.kbm = KBM_EVENT;
 		if (zs4.is.window())this.cnt.innerHTML = '';
 	};
-	SEQUENCE.runChordsAndLyrics = function(data){
-		SEQUENCE.data = data;
-		if (SEQUENCE.data == null || SEQUENCE.data.length < 1){
+	SEQ.runChordsAndLyrics = function(data){
+		SEQ.data = data;
+		if (SEQ.data == null || SEQ.data.length < 1){
       if (zs4.is.window()){
         this.toolobject.script.use();
-				return SEQUENCE.cnt;
+				return SEQ.cnt;
       }
       return '';
 		}
@@ -1292,9 +1320,9 @@ ts.create = function(){
 		//this.onSelectTool('chord');
 
     var text = '';
-    for (var i = 0 ; i < SEQUENCE.evt.length;i++)text+=SEQUENCE.evt[i].lyric;
+    for (var i = 0 ; i < SEQ.evt.length;i++)text+=SEQ.evt[i].lyric;
     //console.log(text);
-    //console.log(SEQUENCE.getChordsAndLyrics());
+    //console.log(SEQ.getChordsAndLyrics());
 
 		this.setCurrentEvent(this.evt[0]);
 		if (zs4.is.window())this.refresh();
@@ -1302,10 +1330,10 @@ ts.create = function(){
 
 		return this.cnt;
 	};
-	SEQUENCE.getChordsAndLyrics = function(){
+	SEQ.getChordsAndLyrics = function(){
 		var ret = '[bpb:'+this.bpb+'][bpm:'+this.bpm+'][tpb:'+this.tpb+']';
 
-		if (SEQUENCE.layoutlinefeed){
+		if (SEQ.layoutlinefeed){
 			ret+='[lf:true]';
 		}
 		else {
@@ -1346,7 +1374,7 @@ ts.create = function(){
 		return ret;
 	};
 
-  SEQUENCE.runABC = function(input,idx){
+  SEQ.runABC = function(input,idx){
     const DOT_MULTIPLIER = 1.5;
     var index = new Array();
     var ABC = new ts.abc();
@@ -1367,26 +1395,26 @@ ts.create = function(){
   if (zs4.is.window()){
 
 
-    SEQUENCE.createEvent = function(txt,mus,pos){
-      if (SEQUENCE.isPlaying())return null;
+    SEQ.createEvent = function(txt,mus,pos){
+      if (SEQ.isPlaying())return null;
 
-      if (SEQUENCE.evt.length==0)pos=0;
-      else pos %= SEQUENCE.evt.length;
+      if (SEQ.evt.length==0)pos=0;
+      else pos %= SEQ.evt.length;
 
-      var e = SEQUENCE.addEvent(txt,mus,pos);
-      SEQUENCE.alignHTML();
+      var e = SEQ.addEvent(txt,mus,pos);
+      SEQ.alignHTML();
 
       return e;
     };
-    SEQUENCE.deleteCurrentEvent = function(pos){
-      if (pos < 0 || pos >= SEQUENCE.evt.length)return false;
-      SEQUENCE.cnt.removeChild(SEQUENCE.evt[pos].eEvent);
-      SEQUENCE.evt.splice(pos,1);
-      SEQUENCE.setCurrentEvent(SEQUENCE.evt_curidx);
+    SEQ.deleteCurrentEvent = function(pos){
+      if (pos < 0 || pos >= SEQ.evt.length)return false;
+      SEQ.cnt.removeChild(SEQ.evt[pos].eEvent);
+      SEQ.evt.splice(pos,1);
+      SEQ.setCurrentEvent(SEQ.evt_curidx);
       return true;
     }
 
-    SEQUENCE.isCharacterKeyPress = function(evt) {
+    SEQ.isCharacterKeyPress = function(evt) {
         if (typeof evt.which == "undefined") {
             // This is IE, which only fires keypress events for printable keys
             return true;
@@ -1401,58 +1429,58 @@ ts.create = function(){
 
     document.addEventListener('keypress',function(e){
       e.preventDefault();
-      console.log(e);
-      var EVENT = SEQUENCE.evt_current;
+      //console.log(e);
+      var EVENT = SEQ.evt_current;
       if (EVENT==null)return;
-      if (SEQUENCE.isPlaying())return;
+      if (SEQ.isPlaying())return;
 
-      if (SEQUENCE.kbm == KBM_LYRIC){
-        if (SEQUENCE.isCharacterKeyPress(e)){
-          console.log('PRINTABLE!!!!');
+      if (SEQ.kbm == KBM_LYRIC){
+        if (SEQ.isCharacterKeyPress(e)){
+          //console.log('PRINTABLE!!!!');
           var ch = String.fromCharCode(e.which);
           if (ch==' '||ch=='\n'){
-            var curidx = SEQUENCE.evt_curidx;
-            if (SEQUENCE.kb.pos==0){
-              var nu = SEQUENCE.createEvent(EVENT.lyric,'',curidx+1);
+            var curidx = SEQ.evt_curidx;
+            if (SEQ.kb.pos==0){
+              var nu = SEQ.createEvent(EVENT.lyric,'',curidx+1);
               EVENT.lyric = ch;
               EVENT.space = true;
               if (ch=='\n')EVENT.linefeed=true;
-              SEQUENCE.kb.pos=1;
+              SEQ.kb.pos=1;
               EVENT.refresh();
-              SEQUENCE.kb.pos=0;
-              SEQUENCE.setCurrentEvent(nu);
+              SEQ.kb.pos=0;
+              SEQ.setCurrentEvent(nu);
               e.preventDefault();
             }
-            else if (SEQUENCE.kb.pos==EVENT.lyric.length){
-              var nu = SEQUENCE.createEvent(ch,'',curidx+1);
-              SEQUENCE.kb.pos=1;
-              SEQUENCE.setCurrentEvent(nu);
+            else if (SEQ.kb.pos==EVENT.lyric.length){
+              var nu = SEQ.createEvent(ch,'',curidx+1);
+              SEQ.kb.pos=1;
+              SEQ.setCurrentEvent(nu);
               e.preventDefault();
             }
             else {
-              var end = EVENT.lyric.substr(SEQUENCE.kb.pos,EVENT.lyric.length-SEQUENCE.kb.pos)
-              EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos);
+              var end = EVENT.lyric.substr(SEQ.kb.pos,EVENT.lyric.length-SEQ.kb.pos)
+              EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos);
               EVENT.refresh();
-              var nu = SEQUENCE.createEvent(ch,'',curidx+1);
-              SEQUENCE.setCurrentEvent(nu);
-              EVENT = SEQUENCE.evt_current;
-              var tail = SEQUENCE.createEvent(end,'',SEQUENCE.evt_curidx+1);
-              SEQUENCE.kb.pos=1;
-              SEQUENCE.setCurrentEvent(nu);
+              var nu = SEQ.createEvent(ch,'',curidx+1);
+              SEQ.setCurrentEvent(nu);
+              EVENT = SEQ.evt_current;
+              var tail = SEQ.createEvent(end,'',SEQ.evt_curidx+1);
+              SEQ.kb.pos=1;
+              SEQ.setCurrentEvent(nu);
             }
           }
           else {
-            EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos)+
+            EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos)+
             ch+
-            EVENT.lyric.substr(SEQUENCE.kb.pos,EVENT.lyric.length-SEQUENCE.kb.pos);
-            SEQUENCE.kb.pos++;
+            EVENT.lyric.substr(SEQ.kb.pos,EVENT.lyric.length-SEQ.kb.pos);
+            SEQ.kb.pos++;
             EVENT.refresh();
             e.preventDefault();
           }
         }
       }
-      else if (SEQUENCE.kbm == KBM_CHORD){
-        if (SEQUENCE.isCharacterKeyPress(e)){
+      else if (SEQ.kbm == KBM_CHORD){
+        if (SEQ.isCharacterKeyPress(e)){
 
         }
       }
@@ -1461,274 +1489,308 @@ ts.create = function(){
 
     document.addEventListener('keydown',function(e){
       //e.preventDefault();
-      console.log(e);
-      var EVENT = SEQUENCE.evt_current;
+      //console.log(e);
+      var EVENT = SEQ.evt_current;
       if (EVENT==null)return;
 
       // IN ANy context
       // NAVIGATION
-      if (!SEQUENCE.isPlaying()){
+      if (!SEQ.isPlaying()){
 
         if (e.altKey){
           if (e.key=='t'){
-            SEQUENCE.kbm = KBM_LYRIC;
-            SEQUENCE.evt_current.refresh();
+            SEQ.kbm = KBM_LYRIC;
+            SEQ.evt_current.refresh();
             e.preventDefault();
           }
           else if (e.key=='m'){
-            SEQUENCE.kbm = KBM_MELODY;
-            SEQUENCE.evt_current.refresh();
+            SEQ.kbm = KBM_MELODY;
+            SEQ.evt_current.refresh();
             e.preventDefault();
           }
           else if (e.key=='k'){
-            SEQUENCE.kb.chord = null;
+            SEQ.kb.chord = null;
 
-            SEQUENCE.kbm = KBM_CHORD;
-            SEQUENCE.evt_current.refresh();
+            SEQ.kbm = KBM_CHORD;
+            SEQ.evt_current.refresh();
             e.preventDefault();
           }
         }
 
-        if (SEQUENCE.kbm == KBM_EVENT){
+        if (SEQ.kbm == KBM_EVENT){
 
-          if (e.key=='Home')SEQUENCE.setCurrentEvent(SEQUENCE.evt[0]);
+          if (e.key=='Home')SEQ.setCurrentEvent(SEQ.evt[0]);
 
           else if (e.key=='ArrowRight'){
-            SEQUENCE.setNextEvent();
-            SEQUENCE.kb.pos = 'start';
+            SEQ.setNextEvent();
+            SEQ.kb.pos = 'start';
             e.preventDefault();
           }
           else if (e.key=='ArrowLeft'){
-            SEQUENCE.setPreviousEvent();
-            SEQUENCE.kb.pos = 'end';
+            SEQ.setPreviousEvent();
+            SEQ.kb.pos = 'end';
             e.preventDefault();
           }
 
         }
-        else if (SEQUENCE.kbm == KBM_LYRIC){
+        else if (SEQ.kbm == KBM_LYRIC){
           if (e.key=='Escape'){
-            SEQUENCE.kbm = KBM_EVENT;
-            SEQUENCE.evt_current.refresh();
+            SEQ.kbm = KBM_EVENT;
+            SEQ.evt_current.refresh();
             e.preventDefault();
           }
           else if (e.key=='ArrowRight'){
-            if (SEQUENCE.kb.pos<EVENT.lyric.length){
-              SEQUENCE.kb.pos++;
+            if (SEQ.kb.pos<EVENT.lyric.length){
+              SEQ.kb.pos++;
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              SEQUENCE.setNextEvent();
-              SEQUENCE.kb.pos = 'start';
+              SEQ.setNextEvent();
+              SEQ.kb.pos = 'start';
               EVENT.refresh();
-              SEQUENCE.evt_current.refresh();
+              SEQ.evt_current.refresh();
               e.preventDefault();
             }
           }
           else if (e.key=='ArrowLeft'){
-            if (SEQUENCE.kb.pos>0){
-              SEQUENCE.kb.pos--;
+            if (SEQ.kb.pos>0){
+              SEQ.kb.pos--;
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              SEQUENCE.setPreviousEvent();
-              SEQUENCE.kb.pos = 'end';
+              SEQ.setPreviousEvent();
+              SEQ.kb.pos = 'end';
               EVENT.refresh();
-              SEQUENCE.evt_current.refresh();
+              SEQ.evt_current.refresh();
               e.preventDefault();
             }
           }
           else if (e.key=='Delete'){
-            if (SEQUENCE.kb.pos<EVENT.lyric.length){
-              EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos)+
-                EVENT.lyric.substr(SEQUENCE.kb.pos+1,EVENT.lyric.length-SEQUENCE.kb.pos-1);
+            if (SEQ.kb.pos<EVENT.lyric.length){
+              EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos)+
+                EVENT.lyric.substr(SEQ.kb.pos+1,EVENT.lyric.length-SEQ.kb.pos-1);
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              var ei = SEQUENCE.searchNextEvent(SEQUENCE.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
-              if (ei==SEQUENCE.evt_curidx)return;
-              SEQUENCE.setCurrentEvent(SEQUENCE.evt[ei]);
-              EVENT = SEQUENCE.evt_current;
+              var ei = SEQ.searchNextEvent(SEQ.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
+              if (ei==SEQ.evt_curidx)return;
+              SEQ.setCurrentEvent(SEQ.evt[ei]);
+              EVENT = SEQ.evt_current;
               EVENT.lyric = EVENT.lyric.substr(1,EVENT.lyric.length-1);
-              SEQUENCE.kb.pos = 0;
+              SEQ.kb.pos = 0;
               EVENT.refresh();
               e.preventDefault();
             }
           }
           else if (e.key=='Backspace'){
-            if (SEQUENCE.kb.pos>0){
-              SEQUENCE.kb.pos--;
-              EVENT.lyric = EVENT.lyric.substr(0,SEQUENCE.kb.pos)+
-                EVENT.lyric.substr(SEQUENCE.kb.pos+1,EVENT.lyric.length-SEQUENCE.kb.pos-1);
+            if (SEQ.kb.pos>0){
+              SEQ.kb.pos--;
+              EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos)+
+                EVENT.lyric.substr(SEQ.kb.pos+1,EVENT.lyric.length-SEQ.kb.pos-1);
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              var ei = SEQUENCE.searchPrevEvent(SEQUENCE.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
-              if (ei==SEQUENCE.evt_curidx)return;
-              SEQUENCE.setCurrentEvent(SEQUENCE.evt[ei]);
-              EVENT = SEQUENCE.evt_current;
+              var ei = SEQ.searchPrevEvent(SEQ.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
+              if (ei==SEQ.evt_curidx)return;
+              SEQ.setCurrentEvent(SEQ.evt[ei]);
+              EVENT = SEQ.evt_current;
               EVENT.lyric = EVENT.lyric.substr(1,EVENT.lyric.length-1);
-              SEQUENCE.kb.pos = EVENT.lyric.length;
+              SEQ.kb.pos = EVENT.lyric.length;
               EVENT.refresh();
               e.preventDefault();
             }
           }
-          //else if (SEQUENCE.isCharacterKeyPress(e)){
+          //else if (SEQ.isCharacterKeyPress(e)){
           //  console.log('PRINTABLE!!!!')
           //}
         }
-        else if (SEQUENCE.kbm == KBM_MELODY){
+        else if (SEQ.kbm == KBM_MELODY){
           if (e.key=='Escape'){
-            SEQUENCE.kbm = KBM_EVENT;
-            SEQUENCE.evt_current.refresh();
+            SEQ.kbm = KBM_EVENT;
+            SEQ.evt_current.refresh();
           }
         }
-        else if (SEQUENCE.kbm == KBM_CHORD){
+        else if (SEQ.kbm == KBM_CHORD){
+          var slash = SEQ.kb.chord.indexOf('/');
           if (e.key=='Escape'){
-            SEQUENCE.kbm = KBM_EVENT;
-            SEQUENCE.evt_current.refresh();
+            SEQ.kbm = KBM_EVENT;
+            SEQ.evt_current.refresh();
           }
           else if (e.key=='ArrowRight'){
-            if (SEQUENCE.kb.pos<SEQUENCE.kb.chord.length){
-              SEQUENCE.kb.pos++;
+            if (SEQ.kb.pos<SEQ.kb.chord.length){
+              SEQ.kb.pos++;
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              SEQUENCE.setNextEvent();
-              SEQUENCE.kb.pos = 'start';
-              SEQUENCE.kb.chord = null;
+              SEQ.setNextEvent();
+              SEQ.kb.pos = 'start';
+              SEQ.kb.chord = null;
               EVENT.refresh();
-              SEQUENCE.evt_current.refresh();
+              SEQ.evt_current.refresh();
               e.preventDefault();
             }
           }
           else if (e.key=='ArrowLeft'){
-            if (SEQUENCE.kb.pos>0){
-              SEQUENCE.kb.pos--;
+            if (SEQ.kb.pos>0){
+              SEQ.kb.pos--;
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              SEQUENCE.setPreviousEvent();
-              SEQUENCE.kb.pos = 'end';
-              SEQUENCE.kb.chord = null;
+              SEQ.setPreviousEvent();
+              SEQ.kb.pos = 'end';
+              SEQ.kb.chord = null;
               EVENT.refresh();
-              SEQUENCE.evt_current.refresh();
+              SEQ.evt_current.refresh();
               e.preventDefault();
             }
           }
           else if (e.key=='Tab'&&!e.shiftKey){
-            if (SEQUENCE.kb.pos<SEQUENCE.kb.chord.length){
-              SEQUENCE.kb.pos = SEQUENCE.kb.chord.length;
+            if (SEQ.kb.pos<SEQ.kb.chord.length){
+              SEQ.kb.pos = SEQ.kb.chord.length;
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              SEQUENCE.setNextEvent();
-              SEQUENCE.kb.pos = 'start';
-              SEQUENCE.kb.chord = null;
+              SEQ.setNextEvent();
+              SEQ.kb.pos = 'start';
+              SEQ.kb.chord = null;
               EVENT.refresh();
-              SEQUENCE.evt_current.refresh();
+              SEQ.evt_current.refresh();
               e.preventDefault();
             }
           }
           else if (e.key=='Tab'&&e.shiftKey){
-            if (SEQUENCE.kb.pos>0){
-              SEQUENCE.kb.pos = 0;
+            if (SEQ.kb.pos>0){
+              SEQ.kb.pos = 0;
               EVENT.refresh();
               e.preventDefault();
             }
             else {
-              SEQUENCE.setPreviousEvent();
-              SEQUENCE.kb.pos = 'end';
-              SEQUENCE.kb.chord = null;
+              SEQ.setPreviousEvent();
+              SEQ.kb.pos = 'end';
+              SEQ.kb.chord = null;
               EVENT.refresh();
-              SEQUENCE.evt_current.refresh();
+              SEQ.evt_current.refresh();
               e.preventDefault();
             }
           }
 
-          else if (SEQUENCE.kb.pos==0){
+          else if (SEQ.kb.pos==0){
             if (ts.music.parse.note(zs4.string.to.upper(e.key))!=-1){
-              SEQUENCE.kb.chord = zs4.string.to.upper(e.key);
-              SEQUENCE.kb.pos=1;
-              SEQUENCE.kb.typed = true;
+              SEQ.kb.chord = zs4.string.to.upper(e.key);
+              SEQ.kb.pos=1;
+              SEQ.kb.typed = true;
               EVENT.refresh();
               e.preventDefault();
             }
           }
-          else if (SEQUENCE.kb.pos==1 && (e.key=='#'||e.key=='b')){
-            SEQUENCE.kb.chord = SEQUENCE.kb.chord.charAt(0)+e.key;
-            SEQUENCE.kb.pos=2;
+          else if (SEQ.kb.pos==1 && (e.key=='#'||e.key=='b')){
+            SEQ.kb.chord = SEQ.kb.chord.charAt(0)+e.key;
+            SEQ.kb.pos=2;
             EVENT.refresh();
             e.preventDefault();
           }
           else if (e.key=='/'){
-            var ctp = SEQUENCE.kb.ctp();
-            var test = SEQUENCE.kb.chord.substr(ctp,SEQUENCE.kb.pos-ctp);
+            var ctp = SEQ.kb.ctp();
+            var test = SEQ.kb.chord.substr(ctp,SEQ.kb.pos-ctp);
             if (ts.music.CHORD.checkType(test)){
-              SEQUENCE.kb.chord = SEQUENCE.kb.chord.substr(0,SEQUENCE.kb.pos)+'/';
-              SEQUENCE.kb.pos = SEQUENCE.kb.chord.length;
+              SEQ.kb.chord = SEQ.kb.chord.substr(0,SEQ.kb.pos)+'/';
+              SEQ.kb.pos = SEQ.kb.chord.length;
+              SEQ.kb.typed = true;
               EVENT.refresh();
               e.preventDefault();
             }
           }
+          else if ((slash>1)&&(SEQ.kb.pos==slash+2)&&(e.key=='#'||e.key=='b')){
+            SEQ.kb.chord = SEQ.kb.chord.substr(0,slash+2)+e.key;
+            SEQ.kb.pos = slash+=3;
+            EVENT.refresh();
+            e.preventDefault();
+          }
+          else if (e.key=='Enter'){
+            var chord = SEQ.kb.chord.substr(0,SEQ.kb.pos);
+            var ch = ts.music.parse.chord(chord);
+            SEQ.kb.chord = chord;
+            SEQ.kb.pos = chord.length;
+            if (EVENT.isChord()){
+                EVENT.chord = null;
+            }
+            else if (ch.ok){
+              EVENT.chord = ch;
+            }
+            SEQ.refresh();
+            //EVENT.refresh();
+            e.preventDefault();
+          }
           else if (e.key.length==1&&!e.key.shiftKey){
-            var ctp = SEQUENCE.kb.ctp();
-            var test = SEQUENCE.kb.chord.substr(ctp,SEQUENCE.kb.pos-ctp)+e.key;
-            if (ts.music.CHORD.checkTypeBeginning(test)){
-              SEQUENCE.kb.chord = SEQUENCE.kb.chord.substr(0,ctp)+test;
-              SEQUENCE.kb.pos++;
-              EVENT.refresh();
-              e.preventDefault();
+            if (slash==-1){
+              var ctp = SEQ.kb.ctp();
+              var test = SEQ.kb.chord.substr(ctp,SEQ.kb.pos-ctp)+e.key;
+              if (ts.music.CHORD.checkTypeBeginning(test)){
+                SEQ.kb.chord = SEQ.kb.chord.substr(0,ctp)+test;
+                SEQ.kb.pos++;
+                EVENT.refresh();
+                e.preventDefault();
+              }
+            }
+            else if (slash==SEQ.kb.pos-1){
+              var n = ts.music.parse.note(zs4.string.to.upper(e.key));
+              if (n!=-1){
+                SEQ.kb.chord = SEQ.kb.chord.substr(0,SEQ.kb.pos)+e.key;
+                SEQ.kb.pos++;
+                EVENT.refresh();
+                e.preventDefault();
+              }
             }
           }
 
         }
 
-        if (SEQUENCE.current_inst != null){
+        if (SEQ.current_inst != null){
 
 
         }
       }
     });
 
-    SEQUENCE.getCurrentEventRect = function(){
-      SEQUENCE.evt_current.eSpan.getBoundingClientRect()
+    SEQ.getCurrentEventRect = function(){
+      SEQ.evt_current.eSpan.getBoundingClientRect()
       getBoundingClientRect()
     };
 
-    SEQUENCE.renderStats = function(){
+    SEQ.renderStats = function(){
 			this.stsEvents.textContent = ('events:'+this.evt.length+' ');
 			this.stsChords.textContent = ('chords:' + this.stats.chords+' ');
 			this.stsBars.textContent = ('bars:' + this.stats.bars+' ');
 			this.stsBeats.textContent = ('beats:' + this.stats.beats+' ');
 			this.stsNotes.textContent = ('notes:' + this.stats.notes+' ');
 		};
-    SEQUENCE.onLogoClick = function(){
+    SEQ.onLogoClick = function(){
 			if (this.evt.length == 0)
 				return;
 
-      if (!SEQUENCE.isPlaying()){
-        SEQUENCE.hideAllToolPanes();
-        SEQUENCE.toolspopped.style.display = 'none';
-        SEQUENCE.toolsArePopped = false;
-        SEQUENCE.refresh();
+      if (!SEQ.isPlaying()){
+        SEQ.hideAllToolPanes();
+        SEQ.toolspopped.style.display = 'none';
+        SEQ.toolsArePopped = false;
+        SEQ.refresh();
       }
 
       ts.player.onLogoClick(this);
 
-      //if (!SEQUENCE.isPlaying())this.refresh();
+      //if (!SEQ.isPlaying())this.refresh();
 		};
-		SEQUENCE.onEventClick = function(evt){
+		SEQ.onEventClick = function(evt){
 			if (ts.player.is.running()){
 				ts.player.onEventClick(this,evt);
 			}else{
-        SEQUENCE.evt_current.refresh();
+        SEQ.evt_current.refresh();
 				this.setCurrentEvent(evt);
 				//if (this.current_tool!=null){
 				//	if (this.current_tool.nam == 'bars'){
@@ -1738,16 +1800,16 @@ ts.create = function(){
 				//		this.current_tool.toggleBeat();
 				//	}
 				//}
-        SEQUENCE.resetKeyboard();
-        SEQUENCE.evt_current.refresh();
+        SEQ.resetKeyboard();
+        SEQ.evt_current.refresh();
 			}
 		};
 
-    SEQUENCE.resetKeyboard = function(){
-      SEQUENCE.kb.pos=0;
-      //SEQUENCE.kb.chord=ts.music.CHORD.toString();
+    SEQ.resetKeyboard = function(){
+      SEQ.kb.pos=0;
+      //SEQ.kb.chord=ts.music.CHORD.toString();
     };
-		SEQUENCE.refresh = function(){
+		SEQ.refresh = function(){
 			//zs4.debug('refresh() toonsmith');
 			this.updateStats();
 			this.renderStats();
@@ -1757,9 +1819,9 @@ ts.create = function(){
 			for (var i = 0; i < this.tool.length; i++)this.tool[i].refresh();
 			for (var i = 0; i < this.inst.length; i++)this.tool[i].refresh();
 			this.refreshLineFeed();
-      SEQUENCE.adaptContentPane();
+      SEQ.adaptContentPane();
 		};
-		SEQUENCE.refreshLineFeed = function(){
+		SEQ.refreshLineFeed = function(){
 			var arr = this.evt;
 			for (var i = 0 ; i < arr.length; i++){
 				if (arr[i].isLinefeed()){
@@ -1773,17 +1835,17 @@ ts.create = function(){
 			}
 
 		};
-		SEQUENCE.alignHTML = function(){
-			var SEQUENCE = this;
-			var PARENT = SEQUENCE.cnt;
-			for (var i = 0 ; i < (SEQUENCE.evt.length-1) ; i++){
-				PARENT.removeChild(SEQUENCE.evt[i].eEvent);
-				PARENT.insertBefore(SEQUENCE.evt[i].eEvent, PARENT.childNodes[i]);
+		SEQ.alignHTML = function(){
+			var SEQ = this;
+			var PARENT = SEQ.cnt;
+			for (var i = 0 ; i < (SEQ.evt.length-1) ; i++){
+				PARENT.removeChild(SEQ.evt[i].eEvent);
+				PARENT.insertBefore(SEQ.evt[i].eEvent, PARENT.childNodes[i]);
 			}
 
 		};
 
-		SEQUENCE.createTool = function(name,icon,tooltype){
+		SEQ.createTool = function(name,icon,tooltype){
 			var nu = new Object({
 				nam:name,
 				ts:this,
@@ -1920,7 +1982,7 @@ ts.create = function(){
 				if (tooltype=='i') nu.ts.instpopped.appendChild(nu.toolicon);
 				else nu.ts.toolspopped.appendChild(nu.toolicon);
 				//zs4.debug('adding icon for '+icon);
-				nu.toolicon.onclick = function(){nu.use();SEQUENCE.adaptContentPane(); };
+				nu.toolicon.onclick = function(){nu.use();SEQ.adaptContentPane(); };
 			}
 
 			nu.toolWindow = ts.html.nu.ele('ts-tool-window');
@@ -1967,7 +2029,7 @@ ts.create = function(){
 			return nu;
 		};
 
-		SEQUENCE.createToolInstrument = function(name,icon){
+		SEQ.createToolInstrument = function(name,icon){
 			var nu = this.createTool(name,icon,'i');
 
 			nu.instrument = {
@@ -2114,7 +2176,7 @@ ts.create = function(){
 			return nu;
 		};
 
-		SEQUENCE.createToolStringInstrument = function(name,icon){
+		SEQ.createToolStringInstrument = function(name,icon){
 			var fontHeight = '0.5em';
 
 			var nu = this.createToolInstrument(name,icon);
@@ -2356,7 +2418,7 @@ ts.create = function(){
 			}).bind(nu);
 			return nu;
 		};
-		SEQUENCE.createToolGuitar = function(){
+		SEQ.createToolGuitar = function(){
 			var nu = this.createToolStringInstrument('guitar','guitar');
 			nu.createString(76);
 			nu.createString(71);
@@ -2365,35 +2427,35 @@ ts.create = function(){
 			nu.createString(57);
 			nu.createString(52);
 		};
-		SEQUENCE.createToolUkulele = function(){
+		SEQ.createToolUkulele = function(){
 			var nu = this.createToolStringInstrument('ukulele','ukulele');
 			nu.createString(81);
 			nu.createString(76);
 			nu.createString(72);
 			nu.createString(79);
 		};
-		SEQUENCE.createToolBass = function(){
+		SEQ.createToolBass = function(){
 			var nu = this.createToolStringInstrument('bass','bass');
 			nu.createString(55);
 			nu.createString(50);
 			nu.createString(45);
 			nu.createString(40);
 		};
-		SEQUENCE.createToolViolin = function(){
+		SEQ.createToolViolin = function(){
 			var nu = this.createToolStringInstrument('violin','violin');
 			nu.createString(88);
 			nu.createString(81);
 			nu.createString(74);
 			nu.createString(67);
 		};
-		SEQUENCE.createToolMandolin = function(){
+		SEQ.createToolMandolin = function(){
 			var nu = this.createToolStringInstrument('mandolin','mandolin');
 			nu.createString(88);
 			nu.createString(81);
 			nu.createString(74);
 			nu.createString(67);
 		};
-		SEQUENCE.createToolPiano = function(){
+		SEQ.createToolPiano = function(){
 			var nu = this.createToolInstrument('piano','keyboard');
 
 			nu.eKeyboard = ts.html.nu.ele('ts-keyboard');
@@ -2528,7 +2590,7 @@ ts.create = function(){
 			return nu;
 		};
 
-		SEQUENCE.createToolTranspose = function(){
+		SEQ.createToolTranspose = function(){
 			var nu = this.createTool('','transpose');
 
 			nu.eEventTranspose = ts.html.nu.ele('ts-tool-transpose');
@@ -2566,7 +2628,7 @@ ts.create = function(){
 
 			return nu;
 		};
-    SEQUENCE.createToolBpm = function(){
+    SEQ.createToolBpm = function(){
 			var nu = this.createTool('bpm','bpm');
 
 			nu.eEventBpm = ts.html.nu.ele('ts-tool-bpm');
@@ -2582,7 +2644,7 @@ ts.create = function(){
 				nu.eEventBpmInput.ts = nu;
 				nu.eEventBpmInput.onchange = function(){
           this.ts.ts.bpm = parseInt(this.value);
-          //if (!SEQUENCE.isPlaying())
+          //if (!SEQ.isPlaying())
           this.ts.ts.refresh();
         };
 
@@ -2601,7 +2663,7 @@ ts.create = function(){
 				nu.eEventBpcInput.ts = nu;
 				nu.eEventBpcInput.onchange = function(){
 					this.ts.ts.bpb = parseInt(this.value);
-          //if (!SEQUENCE.isPlaying())
+          //if (!SEQ.isPlaying())
             this.ts.ts.refresh();
 				};
 
@@ -2613,20 +2675,20 @@ ts.create = function(){
         zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
 				nu.eEventTpbInput = ts.html.nu.ele('input');
 				nu.eEventTpbInput.type = 'number';
-				nu.eEventTpbInput.value = SEQUENCE.tpb;
+				nu.eEventTpbInput.value = SEQ.tpb;
 				nu.eEventTpbInput.min = MIN_TICKS_PER_BEAT;
 				nu.eEventTpbInput.max = MAX_TICKS_PER_BEAT;
 				nu.eEventTpb.appendChild(nu.eEventTpbInput);
 				nu.eEventTpbInput.ts = nu;
 				nu.eEventTpbInput.onchange = function(){
-          //SEQUENCE.tpb = parseInt(this.value);
-          if (!SEQUENCE.isPlaying())
+          //SEQ.tpb = parseInt(this.value);
+          if (!SEQ.isPlaying())
             this.ts.ts.refresh();
         };
 
 			return nu;
 		};
-		SEQUENCE.createToolMidi = function(){
+		SEQ.createToolMidi = function(){
 			var nu = this.createTool('midi','midi');
 
 			function addDeviceOptions(){
@@ -2701,7 +2763,7 @@ ts.create = function(){
 
 			return nu;
 		};
-		SEQUENCE.createToolAudio = function(){
+		SEQ.createToolAudio = function(){
 			var nu = this.createTool('audio','audio');
 
 			nu.eEventAudio = ts.html.nu.ele('ts-tool-audio');
@@ -2738,7 +2800,7 @@ ts.create = function(){
 
 			return nu;
 		};
-		SEQUENCE.createToolBars = function(){
+		SEQ.createToolBars = function(){
 			var nu = this.createTool('bars','bars');
 
 			nu.eEventBarButton = ts.html.nu.ele('ts-tool-bar-button');
@@ -2769,7 +2831,7 @@ ts.create = function(){
 
 			return nu;
 		};
-		SEQUENCE.createToolBeats = function(){
+		SEQ.createToolBeats = function(){
 			var nu = this.createTool('beats','beats');
 
 			nu.eEventBeatButton = ts.html.nu.ele('ts-tool-beat-button');
@@ -2798,7 +2860,7 @@ ts.create = function(){
 
 			return nu;
 		};
-		SEQUENCE.createToolChord = function(){
+		SEQ.createToolChord = function(){
 			var nu = this.createTool('chord','chord');
 
 			nu.eEventChord = ts.html.nu.ele('ts-tool-chord');
@@ -2905,7 +2967,7 @@ ts.create = function(){
 
 			return nu;
 		};
-		SEQUENCE.createToolScript = function(){
+		SEQ.createToolScript = function(){
 			var nu = this.createTool('script','document');
 
 			nu.eTextArea = ts.html.nu.ele('textarea');
@@ -2927,13 +2989,13 @@ ts.create = function(){
 			nu.refresh = function(){};
 
 		};
-    SEQUENCE.createToolAbc = function(){
+    SEQ.createToolAbc = function(){
 			var nu = this.createTool('abc','abc');
 
       var go = zs4.admin.util.addIconElement(nu.toolTitlebar,'toonsmith');
       go.onclick = function(){
         if (nu.eTextArea.value=='')return;
-        var parsed = SEQUENCE.runABC(nu.eTextArea.value);
+        var parsed = SEQ.runABC(nu.eTextArea.value);
         nu.ts.clear();
 		    nu.ts.runChordsAndLyrics(parsed);
 				//nu.ts.current_tool = null;
@@ -2948,7 +3010,7 @@ ts.create = function(){
       nu.toolWindow.appendChild(nu.eTextArea);
 
 		};
-		SEQUENCE.createToolLayout = function(){
+		SEQ.createToolLayout = function(){
 			var nu = this.createTool('layout','layout');
 
 			nu.lfLabel =  ts.html.nu.ele('ts-input-label');
@@ -2962,16 +3024,16 @@ ts.create = function(){
 			nu.eLineFeed.name = '&#xb6;';
 			nu.eLineFeed.style.display = 'inline-block';
 			nu.eLineFeed.onclick = function(){
-        if (nu.eLineFeed.checked)SEQUENCE.layoutlinefeed=true;
-        else SEQUENCE.layoutlinefeed=false;
-        SEQUENCE.refreshLineFeed();
+        if (nu.eLineFeed.checked)SEQ.layoutlinefeed=true;
+        else SEQ.layoutlinefeed=false;
+        SEQ.refreshLineFeed();
 				var arr = nu.ts.evt;
 			};
 			nu.toolTitlebar.appendChild(nu.eLineFeed);
 
 			return nu;
 		};
-    SEQUENCE.createToolEvent = function(){
+    SEQ.createToolEvent = function(){
 			var TOOL = this.createTool('event','event');
 
       TOOL.eLabel = document.createElement('ts-label');
@@ -3024,12 +3086,12 @@ ts.create = function(){
 
           ROW.addIcons = function(name){
             ROW.p.icon = zs4.admin.util.addIconElement(ROW.p.e,'prev');
-            ROW.p.icon.onclick = SEQUENCE.setPreviousEvent;
+            ROW.p.icon.onclick = SEQ.setPreviousEvent;
 
             ROW.c.icon = zs4.admin.util.addIconElement(ROW.c.e,name);
 
             ROW.n.icon = zs4.admin.util.addIconElement(ROW.n.e,'next');
-            ROW.n.icon.onclick = SEQUENCE.setNextEvent;
+            ROW.n.icon.onclick = SEQ.setNextEvent;
           }
         };
 
@@ -3048,58 +3110,58 @@ ts.create = function(){
 
       var bar = new table('bar');
       bar.head.p.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchPrevBar(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchPrevBar(SEQ.evt_curidx)]);
       };
       bar.head.n.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextBar(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchNextBar(SEQ.evt_curidx)]);
       };
 
       var beat = new table('beat');
       beat.head.p.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchPrevBeat(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchPrevBeat(SEQ.evt_curidx)]);
       };
       beat.head.n.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextBeat(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchNextBeat(SEQ.evt_curidx)]);
       };
 
       var chord = new table('chord');
       chord.head.p.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchPrevChord(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchPrevChord(SEQ.evt_curidx)]);
       };
       chord.head.n.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextChord(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchNextChord(SEQ.evt_curidx)]);
       };
 
       var note = new table('note');
       note.head.p.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchPrevNote(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchPrevNote(SEQ.evt_curidx)]);
       };
       note.head.n.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextNote(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchNextNote(SEQ.evt_curidx)]);
       };
 
       var lyric = new table('lyric');
       lyric.head.p.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchPrevLyric(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchPrevLyric(SEQ.evt_curidx)]);
       };
       lyric.head.n.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextLyric(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchNextLyric(SEQ.evt_curidx)]);
       };
       var space = new lyric.row('space');
       space.addIcons('space');
       space.p.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchPrevSpace(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchPrevSpace(SEQ.evt_curidx)]);
       };
       space.n.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextSpace(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchNextSpace(SEQ.evt_curidx)]);
       };
       var linefeed = new lyric.row('linefeed');
       linefeed.addIcons('linefeed');
       linefeed.p.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchPrevLinefeed(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchPrevLinefeed(SEQ.evt_curidx)]);
       };
       linefeed.n.icon.onclick = function(){
-        SEQUENCE.setCurrentEvent(SEQUENCE.evt[SEQUENCE.searchNextLinefeed(SEQUENCE.evt_curidx)]);
+        SEQ.setCurrentEvent(SEQ.evt[SEQ.searchNextLinefeed(SEQ.evt_curidx)]);
       };
 
       //zs4.debug(space);
@@ -3110,9 +3172,9 @@ ts.create = function(){
           // UPDATE LABEL
           TOOL.eLabel.textContent =
           'Event: #'
-          +SEQUENCE.evt_curidx
+          +SEQ.evt_curidx
           +' of '
-          +SEQUENCE.evt.length;
+          +SEQ.evt.length;
 
           TOOL.eDetail.style.display = 'block';
         }
@@ -3126,7 +3188,7 @@ ts.create = function(){
 			return TOOL;
 		};
 
-		SEQUENCE.createColon = function(){
+		SEQ.createColon = function(){
 			var nu = ts.html.nu.ele('ts-colon');
 			nu.textContent = ':';
 			return nu;
@@ -3777,87 +3839,67 @@ ts.music = new Object({
 
       //zs4.debug('chord:'+str);
 
-			var nu = {v:0,t:0,b:0,ok:true};
+			var nu = {v:0,t:0,b:0,ok:false};
+
 
 			str = str.trim();
-			if (str.length < 1){nu.ok=false; return nu;};
+			if (str.length < 1){return nu;};
 
-			// look up main note name
-			for (var i=0;i<ts.music.PLAIN_NOTES.length;i++){
-				if (str.substr(0,1).toLowerCase()==ts.music.PLAIN_NOTES[i].n.toLowerCase()){
-					nu.v = nu.b = ts.music.PLAIN_NOTES[i].v;
-					str = str.substr(1,(str.length-1));
-					if (str.length == 0) return nu;
-					break;
-				}
-			}
+      var n = ts.music.parse.note(zs4.string.to.upper(str.charAt(0)));
+      if (n==-1)return nu;
+      nu.v = nu.b = n;
+      str = str.substr(1,(str.length-1));
+      if (str.length==0){nu.ok=true;return nu;}
 
 			//check for sharp or flat
 			if (str[0]=='#'){
 				nu.v = nu.b = ts.music.transpose.note.name(nu.v,+1);
 				str = str.substr(1,(str.length-1));
-				if (str.length == 0) return nu;
 			}
 			else if (str[0]=='b'){
 				nu.v = nu.b = ts.music.transpose.note.name(nu.v,-1);
 				str = str.substr(1,(str.length-1));
-				if (str.length == 0) return nu;
 			}
+      if (str.length==0){nu.ok=true;return nu;}
 
       var type = '';
-      for (var t = 0 ; t < str.length && str.charAt(t)!='/' ;t++){
+      for (var t = 0 ; (t < str.length) && (str.charAt(t)!='/') ;t++){
         type += str.charAt(t);
       }
       str = str.substr(type.length,(str.length-type.length));
 
-
-			if (type!=''){
-        for (var i = 0 ; i < ts.music.CHORD.TYPE.length; i++){
-          var at = ts.music.CHORD.TYPE[i]
-          if (type == at.t){ nu.t = i; break; }
-          else {
-            for (var n = 0; n < at.n.length; n++){
-              if (type == at.n[n]) { nu.t = i; break; }
-            }
-            if (nu.t!=0)break;
-          }
-  			}
+      var T = ts.music.CHORD.TYPE; var tok = false;
+      for (var i = 0 ; (i < T.length)&&(tok==false);i++){
+        if (T[i].t==type){nu.t=i;tok=true;break;}
+        for (var x = 0; x < T[i].n.length;x++){
+          if (T[i].n[x]==type){nu.t=i;tok=true;break;}
+        }
       }
-
-			if (str.length == 0) return nu;
-
-      //zs4.debug('chord end with \"'+str+'\"')
+      if (tok==false)return nu;
+      if (str.length==0){nu.ok=true;return nu;}
 
 			// Slash
-			if (str[0] != '/'){
-				nu.ok = false;
-				return nu;
-			}
+			if (str[0] != '/')return nu;
 			str = str.substr(1,(str.length-1));
+      if (str.length==0){nu.ok=true;return nu;}
 
-			// bass note
-			for (var i=0;i<ts.music.PLAIN_NOTES.length;i++){
-				if (str.substr(0,1).toLowerCase()==ts.music.PLAIN_NOTES[i].n.toLowerCase()){
-					nu.b = ts.music.PLAIN_NOTES[i].v;
-					str = str.substr(1,(str.length-1));
-					if (str.length == 0) return nu;
-					break;
-				}
-			}
+      // bass note
+      var n = ts.music.parse.note(zs4.string.to.upper(str.charAt(0)));
+      if (n==-1)return nu;
+      nu.b = n;
+      str = str.substr(1,(str.length-1));
+      if (str.length==0){nu.ok=true;return nu;}
 
-
-			//check for sharp or flat
+		  //check for sharp or flat
 			if (str[0]=='#'){
 				nu.b = ts.music.transpose.note.name(nu.b,+1);
 				str = str.substr(1,(str.length-1));
-				if (str.length == 0) return nu;
 			}
 			else if (str[0]=='b'){
 				nu.b = ts.music.transpose.note.name(nu.b,-1);
 				str = str.substr(1,(str.length-1));
-				if (str.length == 0) return nu;
 			}
-
+      nu.ok = true;
 			return nu;
 		},
     note:function(str){
@@ -4234,9 +4276,9 @@ ts.player = new Object({
       //zs4.debug('PLAYING MELODY',e);
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
-      var SEQUENCE = ts.player.ts;
+      var SEQ = ts.player.ts;
 
-      var available = SEQUENCE.barTotalMillies;
+      var available = SEQ.barTotalMillies;
       var a = e.arrayMelody;
 
       //zs4.debug(a);
@@ -4249,7 +4291,7 @@ ts.player = new Object({
       const BASS_OFFSET = 36;
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
-      var SEQUENCE = ts.player.ts;
+      var SEQ = ts.player.ts;
       //zs4.debug(e);
 
       var a = e.playArray;
@@ -4260,7 +4302,7 @@ ts.player = new Object({
         if (chord==null)continue;
         var note = chord.b + BASS_OFFSET;
         var velocity = .2;
-        if ((i%SEQUENCE.tpb)==0)velocity=.5;
+        if ((i%SEQ.tpb)==0)velocity=.5;
         pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,a[i].ticktime);
       }
     },
@@ -4268,7 +4310,7 @@ ts.player = new Object({
       const CHORD_OFFSET = 60;
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
-      var SEQUENCE = ts.player.ts;
+      var SEQ = ts.player.ts;
 
       pi.playBass(e);
 
@@ -4295,20 +4337,20 @@ ts.player = new Object({
           return (index%chordNoteCount);
         };
 
-        if ((i%SEQUENCE.tpb)!=0) continue;
+        if ((i%SEQ.tpb)!=0) continue;
         var root = chord.v + CHORD_OFFSET;
 
         // TENOR
         var tenor_note = root+CHORD.noteFromChordIndex(chord,newIndex());
-        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
+        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQ.beatMillies);
 
         // ALTO
         var alto_note = root+CHORD.noteFromChordIndex(chord,newIndex());
-        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
+        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQ.beatMillies);
 
         // SOPRANO
         var soprano_note = root+CHORD.noteFromChordIndex(chord,newIndex());
-        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQUENCE.beatMillies);
+        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQ.beatMillies);
 
 
         /*
@@ -4327,9 +4369,9 @@ ts.player = new Object({
       //zs4.debug('PLAYING BAR',bar);
       var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
-      var SEQUENCE = ts.player.ts;
+      var SEQ = ts.player.ts;
 
-      SEQUENCE.recomputeBar(bar);
+      SEQ.recomputeBar(bar);
 
       //var before = Date.now();
       pi.playMelody(bar);
@@ -4344,12 +4386,12 @@ ts.player = new Object({
       var progress;
 
       progress = function(){
-        //if (a[i].melody!=null){SEQUENCE.showEventAsCurrent(a[i].melody);}
-        //else if (a[i].chord!=null){SEQUENCE.showEventAsCurrent(a[i].chord);}
+        //if (a[i].melody!=null){SEQ.showEventAsCurrent(a[i].melody);}
+        //else if (a[i].chord!=null){SEQ.showEventAsCurrent(a[i].chord);}
 
         i++;
         if (i<count){
-          setTimeout(progress,SEQUENCE.tickMillies)
+          setTimeout(progress,SEQ.tickMillies)
         }
       };
       progress();
@@ -4371,10 +4413,10 @@ ts.player = new Object({
       }
 
 			pi.time = (new Date).getTime();
-			var SEQUENCE = ts.player.ts;
+			var SEQ = ts.player.ts;
 
-			if (SEQUENCE != null){
-				var ce = SEQUENCE.evt_current;
+			if (SEQ != null){
+				var ce = SEQ.evt_current;
 
 				if (pi.bar.active.startTime==0){
 					pi.bar.active.startTime = pi.time;
@@ -4390,40 +4432,40 @@ ts.player = new Object({
 
 				// LOOP ENDING!!!! PUT STUFF BEFORE!!!!
 				// look-ahead! if a bar is upcoming.
-				var nextIdx = SEQUENCE.searchNextEvent();
+				var nextIdx = SEQ.searchNextEvent();
 				if (pi.bar.active.nextEventTime > (pi.time)){
-          if (SEQUENCE.evt[nextIdx].isBar()){
+          if (SEQ.evt[nextIdx].isBar()){
             pi.timeout = (pi.bar.active.nextEventTime - (pi.time));
           }
           else {
             var want = (pi.bar.active.nextEventTime - (pi.time));
-            pi.timeout = (want + (SEQUENCE.tickMillies-1))%SEQUENCE.tickMillies;
+            pi.timeout = (want + (SEQ.tickMillies-1))%SEQ.tickMillies;
           }
         }
 				else {
           pi.timeout = 0;
         }
 
-        var e = SEQUENCE.evt[nextIdx];
+        var e = SEQ.evt[nextIdx];
 
-				if (SEQUENCE.current_tool) SEQUENCE.current_tool.refresh();
-				if (SEQUENCE.current_inst) SEQUENCE.current_inst.refresh();
+				if (SEQ.current_tool) SEQ.current_tool.refresh();
+				if (SEQ.current_inst) SEQ.current_inst.refresh();
 
 				if (e.bar && pi.bar.jump){
 
 					if (ts != pi.bar.jumpTs){
 						ts.player.attach(pi.bar.jumpTs);
-						SEQUENCE = ts.player.ts;
-						ce = SEQUENCE.evt_current;
+						SEQ = ts.player.ts;
+						ce = SEQ.evt_current;
 					}
 					pi.bar.jumpEventEle.className = '';
-					SEQUENCE.setCurrentEvent(SEQUENCE.evt[pi.bar.jumpEvent]);
+					SEQ.setCurrentEvent(SEQ.evt[pi.bar.jumpEvent]);
 					pi.bar.jump = false;
 				}
         else{
-					SEQUENCE.setNextEvent();
+					SEQ.setNextEvent();
 				}
-        //ce = SEQUENCE.evt_current;
+        //ce = SEQ.evt_current;
 
         //update running harmonic and rhythmic state
         if (ce.isChord())	{
@@ -4526,13 +4568,13 @@ ts.player = new Object({
 				alert("idle ts object, player active.");
 			} else {
 				ts.player.internal.bar.active.startTime = 0;
-        var SEQUENCE = clickTs;
-        var idx = SEQUENCE.evt_curidx;
-        if (SEQUENCE.evt_current.isBar()){
-          idx = SEQUENCE.evt_curidx;
+        var SEQ = clickTs;
+        var idx = SEQ.evt_curidx;
+        if (SEQ.evt_current.isBar()){
+          idx = SEQ.evt_curidx;
         }
         else {
-          idx = SEQUENCE.searchPrevBar(SEQUENCE.evt_curidx);
+          idx = SEQ.searchPrevBar(SEQ.evt_curidx);
         }
 
 				ts.player.onEventClick(clickTs,clickTs.evt[idx]);
@@ -4579,176 +4621,176 @@ ts.html = new Object({
 			//ele.height = '32em';
 			//ele.ts = nu;
 
-			var SEQUENCE = new ts.create();
-			ele.ts = SEQUENCE;
-			container.ts = SEQUENCE;
+			var SEQ = new ts.create();
+			ele.ts = SEQ;
+			container.ts = SEQ;
 
-			SEQUENCE.ele = ele;
+			SEQ.ele = ele;
 
 			ts.initialize();
 
 			// make a title bar;
-			SEQUENCE.titlebarElement = ts.html.nu.ele('ts-titlebar');
-			SEQUENCE.titlebarElement.style.display = 'block';
-			ele.appendChild(SEQUENCE.titlebarElement);
+			SEQ.titlebarElement = ts.html.nu.ele('ts-titlebar');
+			SEQ.titlebarElement.style.display = 'block';
+			ele.appendChild(SEQ.titlebarElement);
 
-				SEQUENCE.tsTopTools = ts.html.nu.ele('ts-top-tools');
+				SEQ.tsTopTools = ts.html.nu.ele('ts-top-tools');
         //nu.tsTopTools.style.fontSize =
-				SEQUENCE.titlebarElement.appendChild(SEQUENCE.tsTopTools);
+				SEQ.titlebarElement.appendChild(SEQ.tsTopTools);
 
-				SEQUENCE.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
-				SEQUENCE.titlebarLogo.ts = SEQUENCE;
-				SEQUENCE.titlebarLogo.onclick = function(){
+				SEQ.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
+				SEQ.titlebarLogo.ts = SEQ;
+				SEQ.titlebarLogo.onclick = function(){
           this.ts.onLogoClick();
         };
-				zs4.admin.util.setIcon(SEQUENCE.titlebarLogo,'play');
-				SEQUENCE.tsTopTools.appendChild(SEQUENCE.titlebarLogo);
+				zs4.admin.util.setIcon(SEQ.titlebarLogo,'play');
+				SEQ.tsTopTools.appendChild(SEQ.titlebarLogo);
 
-				SEQUENCE.player = null;
+				SEQ.player = null;
 
-				SEQUENCE.toolinst = ts.html.nu.ele('ts-instbutton');
-				zs4.admin.util.setIcon(SEQUENCE.toolinst,'instruments');
-				SEQUENCE.instArePopped = false;
-				SEQUENCE.toolinst.onclick = function(){
-					if (SEQUENCE.instArePopped==true){
-						SEQUENCE.instpopped.style.display = 'none';
-						SEQUENCE.instArePopped = false;
+				SEQ.toolinst = ts.html.nu.ele('ts-instbutton');
+				zs4.admin.util.setIcon(SEQ.toolinst,'instruments');
+				SEQ.instArePopped = false;
+				SEQ.toolinst.onclick = function(){
+					if (SEQ.instArePopped==true){
+						SEQ.instpopped.style.display = 'none';
+						SEQ.instArePopped = false;
 					}else{
-						SEQUENCE.instpopped.style.display = 'block';
-						SEQUENCE.instArePopped = true;
-						SEQUENCE.toolspopped.style.display = 'none';
-						SEQUENCE.toolsArePopped = false;
-						SEQUENCE.hideAllInstPanes();
+						SEQ.instpopped.style.display = 'block';
+						SEQ.instArePopped = true;
+						SEQ.toolspopped.style.display = 'none';
+						SEQ.toolsArePopped = false;
+						SEQ.hideAllInstPanes();
 					}
-          SEQUENCE.adaptContentPane();
+          SEQ.adaptContentPane();
 				};
-				SEQUENCE.tsTopTools.appendChild(SEQUENCE.toolinst);
+				SEQ.tsTopTools.appendChild(SEQ.toolinst);
 
-				SEQUENCE.toolpop = ts.html.nu.ele('ts-toolbutton');
-				zs4.admin.util.setIcon(SEQUENCE.toolpop,'tool');
-				SEQUENCE.toolsArePopped = false;
-				SEQUENCE.toolpop.onclick = function(){
-					if (SEQUENCE.toolsArePopped==true){
-						SEQUENCE.toolspopped.style.display = 'none';
-						SEQUENCE.toolsArePopped = false;
+				SEQ.toolpop = ts.html.nu.ele('ts-toolbutton');
+				zs4.admin.util.setIcon(SEQ.toolpop,'tool');
+				SEQ.toolsArePopped = false;
+				SEQ.toolpop.onclick = function(){
+					if (SEQ.toolsArePopped==true){
+						SEQ.toolspopped.style.display = 'none';
+						SEQ.toolsArePopped = false;
 					}
-          else if (!SEQUENCE.isPlaying()){
-						SEQUENCE.toolspopped.style.display = 'block';
-						SEQUENCE.toolsArePopped = true;
-						SEQUENCE.instpopped.style.display = 'none';
-						SEQUENCE.instArePopped = false;
-						SEQUENCE.current_tool = null;
-						SEQUENCE.hideAllToolPanes();
+          else if (!SEQ.isPlaying()){
+						SEQ.toolspopped.style.display = 'block';
+						SEQ.toolsArePopped = true;
+						SEQ.instpopped.style.display = 'none';
+						SEQ.instArePopped = false;
+						SEQ.current_tool = null;
+						SEQ.hideAllToolPanes();
 					}
-          SEQUENCE.adaptContentPane();
+          SEQ.adaptContentPane();
 				};
-				SEQUENCE.tsTopTools.appendChild(SEQUENCE.toolpop);
+				SEQ.tsTopTools.appendChild(SEQ.toolpop);
 
-				SEQUENCE.transport = ts.html.nu.ele('ts-transport');
-				SEQUENCE.tsTopTools.appendChild(SEQUENCE.transport);
+				SEQ.transport = ts.html.nu.ele('ts-transport');
+				SEQ.tsTopTools.appendChild(SEQ.transport);
 
-				SEQUENCE.tostart = zs4.admin.util.addIconElement(SEQUENCE.transport,'tostart');
-				SEQUENCE.tostart.onclick = function(){SEQUENCE.setCurrentEvent(SEQUENCE.evt[0]);}
-				SEQUENCE.prev = zs4.admin.util.addIconElement(SEQUENCE.transport,'prev');
-				SEQUENCE.prev.onclick = function(){SEQUENCE.setPreviousEvent();}
-				SEQUENCE.next = zs4.admin.util.addIconElement(SEQUENCE.transport,'next');
-				SEQUENCE.next.onclick = function(){SEQUENCE.setNextEvent();}
-				SEQUENCE.toend = zs4.admin.util.addIconElement(SEQUENCE.transport,'toend');
-				SEQUENCE.toend.onclick = function(){SEQUENCE.setCurrentEvent(SEQUENCE.evt[(SEQUENCE.evt.length-1)]);}
+				SEQ.tostart = zs4.admin.util.addIconElement(SEQ.transport,'tostart');
+				SEQ.tostart.onclick = function(){SEQ.setCurrentEvent(SEQ.evt[0]);}
+				SEQ.prev = zs4.admin.util.addIconElement(SEQ.transport,'prev');
+				SEQ.prev.onclick = function(){SEQ.setPreviousEvent();}
+				SEQ.next = zs4.admin.util.addIconElement(SEQ.transport,'next');
+				SEQ.next.onclick = function(){SEQ.setNextEvent();}
+				SEQ.toend = zs4.admin.util.addIconElement(SEQ.transport,'toend');
+				SEQ.toend.onclick = function(){SEQ.setCurrentEvent(SEQ.evt[(SEQ.evt.length-1)]);}
 
-				SEQUENCE.toolspopped = ts.html.nu.ele('ts-tool-icons');
-				SEQUENCE.toolspopped.style.display = 'none';
-				SEQUENCE.titlebarElement.appendChild(SEQUENCE.toolspopped);
+				SEQ.toolspopped = ts.html.nu.ele('ts-tool-icons');
+				SEQ.toolspopped.style.display = 'none';
+				SEQ.titlebarElement.appendChild(SEQ.toolspopped);
 
-				SEQUENCE.instpopped = ts.html.nu.ele('ts-inst-icons');
-				SEQUENCE.instpopped.style.display = 'none';
-				SEQUENCE.titlebarElement.appendChild(SEQUENCE.instpopped);
+				SEQ.instpopped = ts.html.nu.ele('ts-inst-icons');
+				SEQ.instpopped.style.display = 'none';
+				SEQ.titlebarElement.appendChild(SEQ.instpopped);
 
 			//
-			SEQUENCE.toolarea = ts.html.nu.ele('ts-toolarea');
-			SEQUENCE.toolarea.style.display = 'block';
-			ele.appendChild(SEQUENCE.toolarea);
+			SEQ.toolarea = ts.html.nu.ele('ts-toolarea');
+			SEQ.toolarea.style.display = 'block';
+			ele.appendChild(SEQ.toolarea);
 
-			SEQUENCE.instarea = ts.html.nu.ele('ts-instarea');
-			SEQUENCE.instarea.style.display = 'block';
-			ele.appendChild(SEQUENCE.instarea);
+			SEQ.instarea = ts.html.nu.ele('ts-instarea');
+			SEQ.instarea.style.display = 'block';
+			ele.appendChild(SEQ.instarea);
 
 			// create content bin
-			SEQUENCE.cnt = ts.html.nu.ele('ts-content');
-			SEQUENCE.cnt.style.marginLeft = '.5em';
-			SEQUENCE.cnt.style.display = 'block';
-			ele.appendChild(SEQUENCE.cnt);
+			SEQ.cnt = ts.html.nu.ele('ts-content');
+			SEQ.cnt.style.marginLeft = '.5em';
+			SEQ.cnt.style.display = 'block';
+			ele.appendChild(SEQ.cnt);
 
-      SEQUENCE.adaptContentPane = function(){
-        if (SEQUENCE.current_tool == null && SEQUENCE.current_inst == null){
-          SEQUENCE.cnt.style.maxHeight = 'initial';
-    			SEQUENCE.cnt.style.overflowY = 'initial';
+      SEQ.adaptContentPane = function(){
+        if (SEQ.current_tool == null && SEQ.current_inst == null){
+          SEQ.cnt.style.maxHeight = 'initial';
+    			SEQ.cnt.style.overflowY = 'initial';
         }
         else {
-          SEQUENCE.cnt.style.maxHeight = (window.innerHeight/2)+'px';
-    			SEQUENCE.cnt.style.overflowY = 'scroll';
+          SEQ.cnt.style.maxHeight = (window.innerHeight/2)+'px';
+    			SEQ.cnt.style.overflowY = 'scroll';
         }
       };
 
-			SEQUENCE.stsElement = ts.html.nu.ele('ts-statusbar');
-			SEQUENCE.stsElement.style.display = 'block';
-			ele.appendChild(SEQUENCE.stsElement);
+			SEQ.stsElement = ts.html.nu.ele('ts-statusbar');
+			SEQ.stsElement.style.display = 'block';
+			ele.appendChild(SEQ.stsElement);
 
-				SEQUENCE.stsEvents = ts.html.nu.ele('ts-count-events');
-				SEQUENCE.stsElement.appendChild(SEQUENCE.stsEvents);
+				SEQ.stsEvents = ts.html.nu.ele('ts-count-events');
+				SEQ.stsElement.appendChild(SEQ.stsEvents);
 
-				SEQUENCE.stsChords = ts.html.nu.ele('ts-count-chords');
-				SEQUENCE.stsElement.appendChild(SEQUENCE.stsChords);
+				SEQ.stsChords = ts.html.nu.ele('ts-count-chords');
+				SEQ.stsElement.appendChild(SEQ.stsChords);
 
-				SEQUENCE.stsBars = ts.html.nu.ele('ts-count-bars');
-				SEQUENCE.stsBars.className = 'tsbar';
-				SEQUENCE.stsElement.appendChild(SEQUENCE.stsBars);
+				SEQ.stsBars = ts.html.nu.ele('ts-count-bars');
+				SEQ.stsBars.className = 'tsbar';
+				SEQ.stsElement.appendChild(SEQ.stsBars);
 
-				SEQUENCE.stsBeats = ts.html.nu.ele('ts-count-beat');
-				SEQUENCE.stsBeats.className = 'tsbeat';
-				SEQUENCE.stsElement.appendChild(SEQUENCE.stsBeats);
+				SEQ.stsBeats = ts.html.nu.ele('ts-count-beat');
+				SEQ.stsBeats.className = 'tsbeat';
+				SEQ.stsElement.appendChild(SEQ.stsBeats);
 
-				SEQUENCE.stsNotes = ts.html.nu.ele('ts-count-notes');
-				SEQUENCE.stsNotes.className = 'tsnote';
-				SEQUENCE.stsElement.appendChild(SEQUENCE.stsNotes);
+				SEQ.stsNotes = ts.html.nu.ele('ts-count-notes');
+				SEQ.stsNotes.className = 'tsnote';
+				SEQ.stsElement.appendChild(SEQ.stsNotes);
 
-			SEQUENCE.hideAllInstPanes = function(){
-				SEQUENCE.current_inst = null;
-				for (var i = 0; i < SEQUENCE.inst.length; i++){
-					SEQUENCE.inst[i].toolWindow.style.display = 'none';
-					SEQUENCE.inst[i].visible = false;
+			SEQ.hideAllInstPanes = function(){
+				SEQ.current_inst = null;
+				for (var i = 0; i < SEQ.inst.length; i++){
+					SEQ.inst[i].toolWindow.style.display = 'none';
+					SEQ.inst[i].visible = false;
 				}
-        SEQUENCE.adaptContentPane();
+        SEQ.adaptContentPane();
 			};
-			SEQUENCE.hideAllToolPanes = function(){
-				SEQUENCE.current_tool = null;
-				for (var i = 0; i < SEQUENCE.tool.length; i++){
-					SEQUENCE.tool[i].toolWindow.style.display = 'none';
-					SEQUENCE.tool[i].visible = false;
+			SEQ.hideAllToolPanes = function(){
+				SEQ.current_tool = null;
+				for (var i = 0; i < SEQ.tool.length; i++){
+					SEQ.tool[i].toolWindow.style.display = 'none';
+					SEQ.tool[i].visible = false;
 				}
-        SEQUENCE.adaptContentPane();
+        SEQ.adaptContentPane();
 			};
 
-			SEQUENCE.createToolChord();
-			SEQUENCE.createToolGuitar();
-			SEQUENCE.createToolPiano();
-			SEQUENCE.createToolUkulele();
-			SEQUENCE.createToolMandolin();
+			SEQ.createToolChord();
+			SEQ.createToolGuitar();
+			SEQ.createToolPiano();
+			SEQ.createToolUkulele();
+			SEQ.createToolMandolin();
 
-			SEQUENCE.createToolViolin();
-			SEQUENCE.createToolBass();
+			SEQ.createToolViolin();
+			SEQ.createToolBass();
 
-      SEQUENCE.createToolScript();
-      SEQUENCE.createToolAbc();
-			SEQUENCE.createToolBars();
-			SEQUENCE.createToolBeats();
-      SEQUENCE.bpmTool = SEQUENCE.createToolBpm();
-			SEQUENCE.createToolTranspose();
-			SEQUENCE.createToolAudio();
-			SEQUENCE.createToolMidi();
-      SEQUENCE.createToolLayout();
-      SEQUENCE.createToolEvent();
-			return ts.ts = SEQUENCE;
+      SEQ.createToolScript();
+      SEQ.createToolAbc();
+			SEQ.createToolBars();
+			SEQ.createToolBeats();
+      SEQ.bpmTool = SEQ.createToolBpm();
+			SEQ.createToolTranspose();
+			SEQ.createToolAudio();
+			SEQ.createToolMidi();
+      SEQ.createToolLayout();
+      SEQ.createToolEvent();
+			return ts.ts = SEQ;
 		}
 	},
 	nu:{
