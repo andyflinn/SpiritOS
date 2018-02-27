@@ -245,10 +245,6 @@ ts.create = function(){
   SEQ.kbm = KBM_EVENT;
   SEQ.kb = new Object({
     pos:'start',
-    cv:'',
-    ct:'',
-    cb:'',
-    cm:0,
     chord:null,
     ctp:function(){
       if (this.pos>1){
@@ -1159,7 +1155,17 @@ ts.create = function(){
       if (true){
         o.eEvent = document.createElement('ts-event-span');
   			o.eEvent.ts = o;
-  			o.eEvent.onclick = function(){this.ts.ts.onEventClick(this.ts);};
+  			o.eEvent.onclick = function(){
+          if (SEQ.kbm==KBM_CHORD){
+            SEQ.kb.chord = null;
+          }
+          this.ts.ts.onEventClick(this.ts);
+          if (SEQ.kbm==KBM_CHORD){
+            SEQ.kb.chord = null;
+            SEQ.kb.pos = -1;
+            o.refresh();
+          }
+        };
 
   			o.eSpan = document.createElement('ts-event');
   			o.eSpan.style.display = 'inline-block';
