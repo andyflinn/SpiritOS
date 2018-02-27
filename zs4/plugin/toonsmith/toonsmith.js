@@ -105,7 +105,8 @@ var dbg = true;
     var section = new Array();
 
     function spaceImage(){
-      return '<amp-img src="/gfx/images/empty.svg" alt="image" height="1em" width="0.25em"></amp-img>';
+      return '<svg width=\"0.25em\" height=\"1em\"></svg>';
+      //return '<amp-img src="/gfx/images/empty.svg" alt="image" height="1em" width="0.25em"></amp-img>';
     };
     function storeSection(title,html,expanded){
       section.push(new Object({

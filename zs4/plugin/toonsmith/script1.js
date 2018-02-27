@@ -1,6 +1,6 @@
-//console.log(zs4);
+'use strict';
 
-//console.log(this);
+console.log(this);
 
 var ts;
 if (zs4.is.node()){
@@ -72,7 +72,7 @@ ts.create = function(){
 
       this.melodyMax = 0;
       this.melodyMin = 127;
-      for (i=0;i<12;i++){this.noteMelody[i]=this.noteChord[i]=this.noteBass[i]=0;}
+      for (var i=0;i<12;i++){this.noteMelody[i]=this.noteChord[i]=this.noteBass[i]=0;}
       STATS.chordStat = new Object({
         all:new Array(),
         add:function(c){
@@ -203,7 +203,7 @@ ts.create = function(){
       this.lyric = this.countLyric;
       this.linefeed = this.countLinefeed;
       this.space = this.countSpace;
-      for (i=0;i<12;i++){this.noteStats[i]=this.noteMelody[i]+this.noteChord[i]+this.noteBass[i];}
+      for (var i=0;i<12;i++){this.noteStats[i]=this.noteMelody[i]+this.noteChord[i]+this.noteBass[i];}
 
       this.result = new Object();
 
