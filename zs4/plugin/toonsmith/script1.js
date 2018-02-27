@@ -3318,17 +3318,13 @@ ts.html = new Object({
       SEQ.cnt.addEventListener('keypress',SEQ.eventListenerKeypress);
       SEQ.cnt.addEventListener('keydown',SEQ.eventListenerKeydown);
 
-      //SEQ.cnt.onfocus = function(){
-      //  alert('adding');
-      //  document.addEventListener('keypress',SEQ.eventListenerKeypress);
-      //  document.addEventListener('keydown',SEQ.eventListenerKeydown);
-      //};
-      //SEQ.cnt.onblur = function(){
-      //  alert('removing');
-      //  document.removeEventListener('keypress',SEQ.eventListenerKeypress);
-      //  document.removeEventListener('keydown',SEQ.eventListenerKeydown);
-      //};
-
+      SEQ.tsKeyboard = function(element){
+        element.tabIndex=0;
+        element.style.outlineWidth='0px';
+        element.addEventListener('keypress',SEQ.eventListenerKeypress);
+        element.addEventListener('keydown',SEQ.eventListenerKeydown);
+      }
+      SEQ.tsKeyboard(SEQ.titlebarElement);
 
       SEQ.getCurrentEventRect = function(){
         SEQ.evt_current.eSpan.getBoundingClientRect()

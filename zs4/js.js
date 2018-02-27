@@ -5505,7 +5505,7 @@ if (zs4.is.window()){
       var height = window.screen.width;
 
       var em = 18;
-
+      if (bowser.mobile==true)em *= 4;
       //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
       //sheet += '.fouc{opacity:0}\n';
 
