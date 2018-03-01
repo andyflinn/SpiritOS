@@ -5505,11 +5505,12 @@ if (zs4.is.window()){
       var height = window.screen.width;
 
       var em = 18;
-      if (bowser.mobile==true)em *= 4;
+      if (bowser.mobile==true)em *= 3;
       //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
       //sheet += '.fouc{opacity:0}\n';
 
-      var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
+      //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
+      var sheet = 'body{font-size:'+em+'px;}\n';
       sheet += zs4.style.sheet;
       zs4.style.element.appendChild(document.createTextNode(sheet));
     },

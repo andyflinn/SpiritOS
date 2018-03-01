@@ -22,6 +22,8 @@ const KBM_EVENT = 0;
 const KBM_LYRIC = 1;
 const KBM_CHORD = 2;
 const KBM_MELODY = 3;
+const KBM_BAR = 4;
+const KBM_BEAT = 5;
 
 ts.sequence = new Array();
 
@@ -854,6 +856,20 @@ ts.create = function(){
       isSpace:function(){return this.space;},
       isMelody:function(){if(this.melody!=0)return true;return false;},
       isLyric:function(){if(this.lyric!='')return true;return false;},
+      toggleBar:function(){
+        if (this.bar){this.bar=null;this.beat=null}
+        else {this.bar = {}; this.beat = {};}
+
+      },
+      toggleBeat:function(){
+        if (this.bar == null){
+          if (this.beat){
+            this.beat=null;
+            this.eBlockChart.title ='';
+          }
+          else this.beat = {};
+        }
+      },
 		};
     if (zs4.is.node())o.refresh = function(){};
 
@@ -863,7 +879,6 @@ ts.create = function(){
     ///////////////////////////////////
 		while (true){
 			if (info.substr(0,1)=='|'){
-				//window.alert('|'); // toggleBar
 				o.bar = {}; o.beat = {};
 				info = info.substr(1,info.length-1);
 			}
@@ -954,8 +969,23 @@ ts.create = function(){
         }
 
         if (o.current){
-          o.eSpan.style.backgroundColor = 'lightgray';
           o.eSpan.focus();
+
+          if (!isPlaying && (SEQ.kbm==KBM_BAR)){
+            o.eSpan.style.backgroundColor = 'initial';
+            o.eBlockMelody.style.borderLeft = '0.3em solid red';
+            o.eBlockLyric.style.borderLeft = '0.15em solid red';
+          }
+          else if (!isPlaying && (SEQ.kbm==KBM_BEAT)){
+            o.eSpan.style.backgroundColor = 'initial';
+            o.eBlockMelody.style.borderLeft = '0.05em solid red';
+            o.eBlockLyric.style.borderLeft = '0.05em solid red';
+          }
+          else {
+            o.eSpan.style.backgroundColor = 'rgba(200,200,200,0.3)';
+            o.eBlockMelody.style.borderLeft = 'initial';
+            o.eBlockLyric.style.borderLeft = 'initial';
+          }
 
           if (!isPlaying && SEQ.kbm == KBM_LYRIC){
             o.eBlockLyric.style.backgroundColor = 'white';
@@ -980,6 +1010,8 @@ ts.create = function(){
 
         }
         else {
+          o.eBlockMelody.style.borderLeft = 'initial';
+          o.eBlockLyric.style.borderLeft = 'initial';
           o.eSpan.style.backgroundColor = 'initial';
           o.eBlockLyric.style.backgroundColor = 'initial';
           o.eBlockChart.style.backgroundColor = 'initial';
@@ -1102,6 +1134,14 @@ ts.create = function(){
         }
 
 
+        if (!isPlaying && o.current && SEQ.kbm == KBM_MELODY)
+        {
+          o.eBlockMelody.style.backgroundColor = 'red';
+        }
+        else {
+          o.eBlockMelody.style.backgroundColor = 'initial';
+        }
+
         if (this.melody < ts.midi.constant.MIDI_NOTE_MIN || this.melody > ts.midi.constant.MIDI_NOTE_MAX ){
           putEmptyImage(this.eBlockMelody,true);
           //this.eBlockMelody.style.visibility = 'hidden';
@@ -1130,6 +1170,10 @@ ts.create = function(){
             }
         }
         else {
+          if (this.lyric==' ')this.space = true;
+          else if (this.lyric=='\n')this.space=this.linefeed=true;
+          else this.space=this.linefeed=false;
+
           if (this.isSpace()){
             putEmptyImage(this.eBlockLyric,true);
           }
@@ -1399,10 +1443,10 @@ ts.create = function(){
     return toonsmith;
   };
 
-  if (zs4.is.window()){
-
-
-  }
+  SEQ.refresh = function(){
+    this.updateStats();
+    this.recomputeTiming();
+  };
 };
 
 ts.abc = function(){
@@ -2843,6 +2887,66 @@ ts.html = new Object({
 			SEQ.titlebarElement.style.display = 'block';
 			ele.appendChild(SEQ.titlebarElement);
 
+      SEQ.createTransport = function(parent){
+        var transport = ts.html.nu.ele('ts-transport');
+				parent.appendChild(transport);
+
+				var tostart = zs4.admin.util.addIconElement(transport,'tostart');
+				tostart.onclick = function(){SEQ.setCurrentEvent(SEQ.evt[0]);}
+				var toend = zs4.admin.util.addIconElement(transport,'toend');
+				toend.onclick = function(){SEQ.setCurrentEvent(SEQ.evt[(SEQ.evt.length-1)]);}
+      };
+
+      SEQ.createKeyboardModes = function(parent){
+        var kbm = ts.html.nu.ele('ts-kbm');
+				parent.appendChild(kbm);
+
+				var timing = zs4.admin.util.addIconElement(kbm,'bpm');
+        timing.onclick = function(){
+          SEQ.kbm = KBM_BAR;
+          if (SEQ.evt.length>0){
+            SEQ.evt_current.refresh();
+          }
+          SEQ.kb.refresh();
+        };
+
+        var chord = zs4.admin.util.addIconElement(kbm,'chord');
+        chord.onclick = function(){
+          SEQ.kbm = KBM_CHORD;
+          if (SEQ.evt.length>0){
+            SEQ.evt_current.refresh();
+          }
+          SEQ.kb.refresh();
+        };
+
+        var melody = zs4.admin.util.addIconElement(kbm,'note');
+        melody.onclick = function(){
+          SEQ.kbm = KBM_MELODY;
+          if (SEQ.evt.length>0){
+            SEQ.evt_current.refresh();
+          }
+          SEQ.kb.refresh();
+        };
+
+				var lyric = zs4.admin.util.addIconElement(kbm,'lyric');
+        lyric.onclick = function(){
+          SEQ.kbm = KBM_LYRIC;
+          if (SEQ.evt.length>0){
+            SEQ.evt_current.refresh();
+          }
+          SEQ.kb.refresh();
+        };
+
+        var prev = zs4.admin.util.addIconElement(transport,'prev');
+				prev.onclick = function(){SEQ.kbLeft();}
+				var next = zs4.admin.util.addIconElement(transport,'next');
+				next.onclick = function(){SEQ.kbRight();}
+
+        SEQ.kb.refresh = function(){
+
+        };
+      };
+
 				SEQ.tsTopTools = ts.html.nu.ele('ts-top-tools');
         //nu.tsTopTools.style.fontSize =
 				SEQ.titlebarElement.appendChild(SEQ.tsTopTools);
@@ -2875,6 +2979,9 @@ ts.html = new Object({
 				};
 				SEQ.tsTopTools.appendChild(SEQ.toolinst);
 
+        SEQ.createKeyboardModes(SEQ.tsTopTools);
+        SEQ.createTransport(SEQ.tsTopTools);
+
 				SEQ.toolpop = ts.html.nu.ele('ts-toolbutton');
 				zs4.admin.util.setIcon(SEQ.toolpop,'tool');
 				SEQ.toolsArePopped = false;
@@ -2894,18 +3001,6 @@ ts.html = new Object({
           SEQ.adaptContentPane();
 				};
 				SEQ.tsTopTools.appendChild(SEQ.toolpop);
-
-				SEQ.transport = ts.html.nu.ele('ts-transport');
-				SEQ.tsTopTools.appendChild(SEQ.transport);
-
-				SEQ.tostart = zs4.admin.util.addIconElement(SEQ.transport,'tostart');
-				SEQ.tostart.onclick = function(){SEQ.setCurrentEvent(SEQ.evt[0]);}
-				SEQ.prev = zs4.admin.util.addIconElement(SEQ.transport,'prev');
-				SEQ.prev.onclick = function(){SEQ.setPreviousEvent();}
-				SEQ.next = zs4.admin.util.addIconElement(SEQ.transport,'next');
-				SEQ.next.onclick = function(){SEQ.setNextEvent();}
-				SEQ.toend = zs4.admin.util.addIconElement(SEQ.transport,'toend');
-				SEQ.toend.onclick = function(){SEQ.setCurrentEvent(SEQ.evt[(SEQ.evt.length-1)]);}
 
 				SEQ.toolspopped = ts.html.nu.ele('ts-tool-icons');
 				SEQ.toolspopped.style.display = 'none';
@@ -2931,6 +3026,7 @@ ts.html = new Object({
       SEQ.cnt.tabIndex=0;
       SEQ.cnt.style.outlineWidth='0px';
 			ele.appendChild(SEQ.cnt);
+      SEQ.cnt.focus();
 
       SEQ.adaptContentPane = function(){
         if (SEQ.current_tool == null && SEQ.current_inst == null){
@@ -2973,6 +3069,12 @@ ts.html = new Object({
           }
           return false;
         };
+
+      SEQ.setKbmMode = function(m){
+        SEQ.kbm = m;
+        SEQ.evt_current.refresh();
+
+      }
 
       SEQ.eventListenerKeypress = function(e){
         e.preventDefault();
@@ -3033,7 +3135,128 @@ ts.html = new Object({
         }
 
       };
+
+      SEQ.kbLeft = function(){
+        if (SEQ.kbm == KBM_EVENT){
+          SEQ.kbLeftEvent();
+        }
+        else if (SEQ.kbm == KBM_BAR){
+          SEQ.kbLeftBar();
+        }
+        else if (SEQ.kbm == KBM_BEAT){
+          SEQ.kbLeftBeat();
+        }
+        else if (SEQ.kbm == KBM_LYRIC){
+          SEQ.kbLeftLyric();
+        }
+        else if (SEQ.kbm == KBM_CHORD){
+          SEQ.kbLeftChord();
+        }
+        else if (SEQ.kbm == KBM_MELODY){
+          SEQ.kbLeftMelody();
+        }
+      };
+      SEQ.kbRight = function(){
+        if (SEQ.kbm == KBM_EVENT){
+          SEQ.kbRightEvent();
+        }
+        else if (SEQ.kbm == KBM_BAR){
+          SEQ.kbRightBar();
+        }
+        else if (SEQ.kbm == KBM_BEAT){
+          SEQ.kbRightBeat();
+        }
+        else if (SEQ.kbm == KBM_LYRIC){
+          SEQ.kbRightLyric();
+        }
+        else if (SEQ.kbm == KBM_CHORD){
+          SEQ.kbRightChord();
+        }
+        else if (SEQ.kbm == KBM_MELODY){
+          SEQ.kbRightMelody();
+        }
+      };
+      SEQ.kbLeftEvent = function(){
+        SEQ.setPreviousEvent();
+        SEQ.kb.pos = 'end';
+      };
+      SEQ.kbRightEvent = function(){
+        SEQ.setNextEvent();
+        SEQ.kb.pos = 'start';
+      };
+      SEQ.kbLeftBar = SEQ.kbLeftEvent;
+      SEQ.kbRightBar = SEQ.kbRightEvent;
+      SEQ.kbLeftBeat = SEQ.kbLeftEvent;
+      SEQ.kbRightBeat = SEQ.kbRightEvent;
+      SEQ.kbLeftLyric = function(){
+        var EVENT = SEQ.evt_current;
+        if (EVENT==null)return;
+        if (SEQ.kb.pos>0){
+          SEQ.kb.pos--;
+          EVENT.refresh();
+        }
+        else {
+          SEQ.setPreviousEvent();
+          SEQ.kb.pos = 'end';
+          EVENT.refresh();
+          SEQ.evt_current.refresh();
+        }
+      };
+      SEQ.kbRightLyric = function(){
+        var EVENT = SEQ.evt_current;
+        if (EVENT==null)return;
+        if (SEQ.kb.pos<EVENT.lyric.length){
+          SEQ.kb.pos++;
+          EVENT.refresh();
+        }
+        else {
+          SEQ.setNextEvent();
+          SEQ.kb.pos = 'start';
+          EVENT.refresh();
+          SEQ.evt_current.refresh();
+        }
+      };
+      SEQ.kbLeftChord = function(){
+        var EVENT = SEQ.evt_current;
+        if (EVENT==null)return;
+        if (SEQ.kb.pos>0){
+          SEQ.kb.pos--;
+          EVENT.refresh();
+        }
+        else {
+          SEQ.setPreviousEvent();
+          SEQ.kb.pos = 'end';
+          SEQ.kb.chord = null;
+          EVENT.refresh();
+          SEQ.evt_current.refresh();
+        }
+      };
+      SEQ.kbRightChord = function(){
+        var EVENT = SEQ.evt_current;
+        if (EVENT==null)return;
+        if (SEQ.kb.pos<SEQ.kb.chord.length){
+          SEQ.kb.pos++;
+          EVENT.refresh();
+        }
+        else {
+          SEQ.setNextEvent();
+          SEQ.kb.pos = 'start';
+          SEQ.kb.chord = null;
+          EVENT.refresh();
+          SEQ.evt_current.refresh();
+        }
+      };
+      SEQ.kbLeftMelody = function(){};
+      SEQ.kbRightMelody = function(){};
+
       SEQ.eventListenerKeydown = function(e){
+        function isEsc(){if ((e.key=='Escape')||(e.key=='Esc'))return true; return false;}
+
+        function isLeft(){if ((e.key=='ArrowLeft')||(e.key=='Left'))return true; return false;}
+        function isRight(){if ((e.key=='ArrowRight')||(e.key=='Right'))return true; return false;}
+        function isUp(){if ((e.key=='ArrowUp')||(e.key=='Up'))return true; return false;}
+        function isDown(){if ((e.key=='ArrowDown')||(e.key=='Down'))return true; return false;}
+
         //e.preventDefault();
         console.log(e);
         var EVENT = SEQ.evt_current;
@@ -3043,20 +3266,35 @@ ts.html = new Object({
         // NAVIGATION
         if (!SEQ.isPlaying()){
 
-          if (e.altKey){
+          if (e.altKey || e.ctrlKey){
             if (e.key=='p'){
               SEQ.onLogoClick(SEQ);
               e.preventDefault();
+              return false;
+            }
+
+            else if (e.key=='b'){
+              SEQ.setKbmMode(KBM_BAR);
+              e.preventDefault();
+              return false;
+            }
+            else if (e.key=='B'){
+              SEQ.setKbmMode(KBM_BEAT);
+              e.preventDefault();
+            }
+            else if (e.key=='e'){
+              SEQ.setKbmMode(KBM_EVENT);
+              e.preventDefault();
             }
             else if (e.key=='t'){
-              SEQ.kbm = KBM_LYRIC;
-              SEQ.evt_current.refresh();
+              SEQ.setKbmMode(KBM_LYRIC);
               e.preventDefault();
+              return false;
             }
             else if (e.key=='m'){
-              SEQ.kbm = KBM_MELODY;
-              SEQ.evt_current.refresh();
+              SEQ.setKbmMode(KBM_MELODY);
               e.preventDefault();
+              return false;
             }
             else if (e.key=='k'){
               SEQ.kb.chord = null;
@@ -3064,58 +3302,90 @@ ts.html = new Object({
               SEQ.kbm = KBM_CHORD;
               SEQ.evt_current.refresh();
               e.preventDefault();
+              return false;
             }
+
+            else if (isUp()){
+              SEQ.transpose(1);
+              SEQ.refresh();
+              e.preventDefault();
+            }
+            else if (isDown()){
+              SEQ.transpose(-1);
+              SEQ.refresh();
+              e.preventDefault();
+            }
+
+            e.preventDefault();
           }
 
           if (SEQ.kbm == KBM_EVENT){
 
             if (e.key=='Home')SEQ.setCurrentEvent(SEQ.evt[0]);
 
-            else if (e.key=='ArrowRight'&&!e.shiftKey){
-              SEQ.setNextEvent();
-              SEQ.kb.pos = 'start';
+            else if (isRight()&&!e.shiftKey){
+              SEQ.kbRightEvent();
               e.preventDefault();
             }
-            else if (e.key=='ArrowLeft'&&!e.shiftKey){
-              SEQ.setPreviousEvent();
-              SEQ.kb.pos = 'end';
+            else if (isLeft()&&!e.shiftKey){
+              SEQ.kbLeftEvent();
               e.preventDefault();
             }
 
           }
-          else if (SEQ.kbm == KBM_LYRIC){
-            if (e.key=='Escape'){
+          else if (SEQ.kbm == KBM_BAR){
+            if (isEsc()){
               SEQ.kbm = KBM_EVENT;
               SEQ.evt_current.refresh();
               e.preventDefault();
             }
-            else if (e.key=='ArrowRight'&&!e.shiftKey){
-              if (SEQ.kb.pos<EVENT.lyric.length){
-                SEQ.kb.pos++;
-                EVENT.refresh();
-                e.preventDefault();
-              }
-              else {
-                SEQ.setNextEvent();
-                SEQ.kb.pos = 'start';
-                EVENT.refresh();
-                SEQ.evt_current.refresh();
-                e.preventDefault();
-              }
+            else if (isRight()&&!e.shiftKey){
+              SEQ.kbRightBar();
+              e.preventDefault();
             }
-            else if (e.key=='ArrowLeft'&&!e.shiftKey){
-              if (SEQ.kb.pos>0){
-                SEQ.kb.pos--;
-                EVENT.refresh();
-                e.preventDefault();
-              }
-              else {
-                SEQ.setPreviousEvent();
-                SEQ.kb.pos = 'end';
-                EVENT.refresh();
-                SEQ.evt_current.refresh();
-                e.preventDefault();
-              }
+            else if (isLeft()&&!e.shiftKey){
+              SEQ.kbLeftBar();
+              e.preventDefault();
+            }
+            else if ((e.key=='B')||(e.key=='b')){
+    					EVENT.toggleBar();
+              EVENT.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (SEQ.kbm == KBM_BEAT){
+            if (isEsc()){
+              SEQ.kbm = KBM_EVENT;
+              SEQ.evt_current.refresh();
+              e.preventDefault();
+            }
+            else if (isRight()&&!e.shiftKey){
+              SEQ.kbRightBeat();
+              e.preventDefault();
+            }
+            else if (isLeft()&&!e.shiftKey){
+              SEQ.kbLeftBeat();
+              e.preventDefault();
+            }
+            else if ((e.key=='B')||(e.key=='b')){
+    					EVENT.toggleBeat();
+              EVENT.refresh();
+              e.preventDefault();
+            }
+          }
+          else if (SEQ.kbm == KBM_LYRIC){
+            if (isEsc()){
+              SEQ.kbm = KBM_EVENT;
+              SEQ.evt_current.refresh();
+              e.preventDefault();
+            }
+            else if (isRight()&&!e.shiftKey){
+              SEQ.kbRightLyric();
+              e.preventDefault();
+            }
+            else if (isLeft()&&!e.shiftKey){
+              SEQ.kbLeftLyric();
+              e.preventDefault();
             }
             else if (e.key=='Delete'){
               if (SEQ.kb.pos<EVENT.lyric.length){
@@ -3154,51 +3424,42 @@ ts.html = new Object({
                 e.preventDefault();
               }
             }
-            //else if (SEQ.isCharacterKeyPress(e)){
-            //  console.log('PRINTABLE!!!!')
-            //}
+
           }
           else if (SEQ.kbm == KBM_MELODY){
-            if (e.key=='Escape'){
+            if (isEsc()){
               SEQ.kbm = KBM_EVENT;
               SEQ.evt_current.refresh();
             }
           }
           else if (SEQ.kbm == KBM_CHORD){
             var slash = SEQ.kb.chord.indexOf('/');
-            if (e.key=='Escape'){
+            if (isEsc()){
               SEQ.kbm = KBM_EVENT;
               SEQ.evt_current.refresh();
             }
-            else if (e.key=='ArrowRight'&&!e.shiftKey){
-              if (SEQ.kb.pos<SEQ.kb.chord.length){
-                SEQ.kb.pos++;
-                EVENT.refresh();
-                e.preventDefault();
-              }
-              else {
-                SEQ.setNextEvent();
-                SEQ.kb.pos = 'start';
-                SEQ.kb.chord = null;
-                EVENT.refresh();
-                SEQ.evt_current.refresh();
-                e.preventDefault();
-              }
+            else if (isRight()&&!e.shiftKey){
+              SEQ.kbRightChord();
+              e.preventDefault();
             }
-            else if (e.key=='ArrowLeft'&&!e.shiftKey){
-              if (SEQ.kb.pos>0){
-                SEQ.kb.pos--;
-                EVENT.refresh();
-                e.preventDefault();
+            else if (isLeft()&&!e.shiftKey){
+              SEQ.kbLeftChord();
+              e.preventDefault();
+            }
+            else if (e.key=='Enter'){
+              var chord = SEQ.kb.chord.substr(0,SEQ.kb.pos);
+              var ch = ts.music.parse.chord(chord);
+              SEQ.kb.chord = chord;
+              SEQ.kb.pos = chord.length;
+              if (EVENT.isChord()){
+                  EVENT.chord = null;
               }
-              else {
-                SEQ.setPreviousEvent();
-                SEQ.kb.pos = 'end';
-                SEQ.kb.chord = null;
-                EVENT.refresh();
-                SEQ.evt_current.refresh();
-                e.preventDefault();
+              else if (ch.ok){
+                EVENT.chord = ch;
               }
+              SEQ.refresh();
+              //EVENT.refresh();
+              e.preventDefault();
             }
             else if (e.key=='Tab'&&!e.shiftKey){
               if (SEQ.kb.pos<SEQ.kb.chord.length){
@@ -3263,21 +3524,6 @@ ts.html = new Object({
               EVENT.refresh();
               e.preventDefault();
             }
-            else if (e.key=='Enter'){
-              var chord = SEQ.kb.chord.substr(0,SEQ.kb.pos);
-              var ch = ts.music.parse.chord(chord);
-              SEQ.kb.chord = chord;
-              SEQ.kb.pos = chord.length;
-              if (EVENT.isChord()){
-                  EVENT.chord = null;
-              }
-              else if (ch.ok){
-                EVENT.chord = ch;
-              }
-              SEQ.refresh();
-              //EVENT.refresh();
-              e.preventDefault();
-            }
             else if (e.key.length==1&&!e.key.shiftKey){
               if (slash==-1){
                 var ctp = SEQ.kb.ctp();
@@ -3308,28 +3554,43 @@ ts.html = new Object({
           }
         }
         else {
-          if (e.key=='Escape'){
+          if ((isEsc())
+          || ((e.altKey||e.ctrlKey)&&(e.key==p))
+          ){
             ts.player.onLogoClick(SEQ);
             e.preventDefault();
           }
+          else if (isUp()&&(e.altKey||e.ctrlKey)){
+            SEQ.transpose(1);
+            SEQ.refresh();
+            e.preventDefault();
+          }
+          else if ((isDown())&&(e.altKey||e.ctrlKey)){
+            SEQ.transpose(-1);
+            SEQ.refresh();
+            e.preventDefault();
+          }
+        }
+        if (e.ctrlKey){
+          e.preventDefault();
         }
       };
-
-      SEQ.cnt.addEventListener('keypress',SEQ.eventListenerKeypress);
-      SEQ.cnt.addEventListener('keydown',SEQ.eventListenerKeydown);
 
       SEQ.tsKeyboard = function(element){
         element.tabIndex=0;
         element.style.outlineWidth='0px';
-        element.addEventListener('keypress',SEQ.eventListenerKeypress);
-        element.addEventListener('keydown',SEQ.eventListenerKeydown);
+        if (element.addEventListener){
+          //window.alert('addEventListener()');
+          element.addEventListener('keydown',SEQ.eventListenerKeydown);
+          element.addEventListener('keypress',SEQ.eventListenerKeypress);
+        }
+        else {
+          element.attachEvent('onkeydown',SEQ.eventListenerKeydown);
+          element.attachEvent('onkeypress',SEQ.eventListenerKeypress);
+        }
       }
+      SEQ.tsKeyboard(SEQ.cnt);
       SEQ.tsKeyboard(SEQ.titlebarElement);
-
-      SEQ.getCurrentEventRect = function(){
-        SEQ.evt_current.eSpan.getBoundingClientRect()
-        getBoundingClientRect()
-      };
 
       SEQ.onPlayingDone = function(){
         if (!SEQ.isPlaying()){
@@ -3373,14 +3634,6 @@ ts.html = new Object({
   			}else{
           SEQ.evt_current.refresh();
   				this.setCurrentEvent(evt);
-  				//if (this.current_tool!=null){
-  				//	if (this.current_tool.nam == 'bars'){
-  				//		this.current_tool.toggleBar();
-  				//	}
-  				//	else if (this.current_tool.nam == 'beats'){
-  				//		this.current_tool.toggleBeat();
-  				//	}
-  				//}
           SEQ.resetKeyboard();
           SEQ.evt_current.refresh();
   			}
@@ -3401,6 +3654,8 @@ ts.html = new Object({
   			for (var i = 0; i < this.inst.length; i++)this.tool[i].refresh();
   			this.refreshLineFeed();
         SEQ.adaptContentPane();
+        SEQ.cnt.focus();
+
   		};
   		SEQ.refreshLineFeed = function(){
   			var arr = this.evt;
@@ -3492,23 +3747,12 @@ ts.html = new Object({
   				toggleBar:function(){
   					var event = this.getCurrentEvent();
   					if (event == null)return null;
-
-  					if (event.bar){event.bar=null;}
-  					else if (event.beat){event.beat=null;}
-  					else {event.bar = {}; event.beat = {};}
-  					return event;
+            event.toggleBar();
   				},
   				toggleBeat:function(){
   					var event = this.getCurrentEvent();
   					if (event == null)return null;
-
-  					if (event.bar == null){
-  						if (event.beat){
-  							event.beat=null;
-  							event.eBlockChart.title ='';
-  						}
-  						else event.beat = {};
-  					}
+            event.toggleBeat();
   					return event;
   				},
   			});
@@ -3570,7 +3814,14 @@ ts.html = new Object({
   			nu.toolWindow.style.display = 'none';
   			nu.toolWindow.ts = this;
 
-  			nu.titleIcon = ts.html.nu.ele('ts-tool-titleicon');
+
+  			nu.toolTitlebar = ts.html.nu.ele('ts-tool-titlebar');
+  			nu.toolTitlebar.style.display = 'block';
+  			nu.toolTitlebar.ts = this;
+  			if (tooltype=='i') nu.toolWindow.appendChild(nu.toolTitlebar);
+  			else nu.toolWindow.appendChild(nu.toolTitlebar);
+
+        nu.titleIcon = ts.html.nu.ele('ts-tool-titleicon');
   			zs4.admin.util.setIcon(nu.titleIcon,icon);
   			nu.titleIcon.onclick = function(){
   				if (tooltype=='i'){
@@ -3586,14 +3837,7 @@ ts.html = new Object({
   					nu.ts.hideAllToolPanes();
   				}
   			};
-  			nu.toolWindow.appendChild(nu.titleIcon);
-
-
-  			nu.toolTitlebar = ts.html.nu.ele('ts-tool-titlebar');
-  			nu.toolTitlebar.style.display = 'inline-block';
-  			nu.toolTitlebar.ts = this;
-  			if (tooltype=='i') nu.toolWindow.appendChild(nu.toolTitlebar);
-  			else nu.toolWindow.appendChild(nu.toolTitlebar);
+  			nu.toolTitlebar.appendChild(nu.titleIcon);
 
 
 
@@ -3722,32 +3966,32 @@ ts.html = new Object({
 
   			};
 
-  			nu.eEventInstrument = ts.html.nu.ele('ts-instrument-' + name);
+        nu.iGeneral = ts.html.nu.ele('ts-instrument-general');
+        nu.iGeneral.style.display = 'inline-block';
+        nu.toolTitlebar.appendChild(nu.iGeneral);
 
-  			//nu.eEventInstrument.style.display = 'inline-block';
+          nu.iCurrentChord = ts.html.nu.ele('ts-instrument-curchord');
+          zs4.admin.util.setIcon(nu.iCurrentChord,'chord');
+          nu.iGeneral.appendChild(nu.iCurrentChord);
+
+            nu.iCurrentChordRoot = ts.html.nu.ele('ts-instrument-chord-root');
+            nu.iCurrentChord.appendChild(nu.iCurrentChordRoot);
+
+            nu.iCurrentChordType = ts.html.nu.ele('ts-instrument-chord-type');
+            nu.iCurrentChord.appendChild(nu.iCurrentChordType);
+
+          nu.iHoverNote = ts.html.nu.ele('ts-instrument-hovernote');
+          zs4.admin.util.setIcon(nu.iHoverNote,'note');
+          nu.iGeneral.appendChild(nu.iHoverNote);
+
+
+
+  			nu.eEventInstrument = ts.html.nu.ele('ts-instrument-' + name);
   			nu.eEventInstrument.className = 'instrument';
   			nu.toolTitlebar.appendChild(nu.eEventInstrument);
 
-  				nu.iGeneral = ts.html.nu.ele('ts-instrument-general');
-  				//nu.iGeneral.style.display = 'inline-block';
-  				nu.eEventInstrument.appendChild(nu.iGeneral);
-
-  					nu.iCurrentChord = ts.html.nu.ele('ts-instrument-curchord');
-  					zs4.admin.util.setIcon(nu.iCurrentChord,'chord');
-  					nu.iGeneral.appendChild(nu.iCurrentChord);
-
-  						nu.iCurrentChordRoot = ts.html.nu.ele('ts-instrument-chord-root');
-  						nu.iCurrentChord.appendChild(nu.iCurrentChordRoot);
-
-  						nu.iCurrentChordType = ts.html.nu.ele('ts-instrument-chord-type');
-  						nu.iCurrentChord.appendChild(nu.iCurrentChordType);
-
-  					nu.iHoverNote = ts.html.nu.ele('ts-instrument-hovernote');
-  					zs4.admin.util.setIcon(nu.iHoverNote,'note');
-  					nu.iGeneral.appendChild(nu.iHoverNote);
-
   				nu.iSpecific = ts.html.nu.ele('ts-instrument-specific');
-  				//nu.iSpecific.style.display = 'block';
+  				nu.iSpecific.style.display = 'block';
   				nu.eEventInstrument.appendChild(nu.iSpecific);
   				nu.iSpecific.ts = nu;
   				nu.iSpecific.onmouseleave = function(){
@@ -3779,6 +4023,7 @@ ts.html = new Object({
   			nu.eKapo = ts.html.nu.ele('input');
   			nu.eKapo.setAttribute('type', 'number');
   			//nu.eKapo.style.fontSize = fontHeight;
+        nu.eKapo.width = '3em';
   			nu.eKapo.max = nu.KAPO_MAX;
   			nu.eKapo.min = nu.KAPO_MIN;
   			nu.eKapo.value = nu.KAPO_DFT;
