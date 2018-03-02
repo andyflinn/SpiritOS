@@ -4047,7 +4047,7 @@ ts.html = new Object({
               transchord.t = chord.t;
               transchord.b = ((60+chord.b) - NIK)%12;
               transchord.ok = true;
-              
+
               nu.iCurrentChord.textContent = ts.music.CHORD.toString(transchord);
   						var className = '';
   						var ch = ts.music.CHORD.TYPE[chord.t].a;
@@ -4116,6 +4116,54 @@ ts.html = new Object({
         nu.eTdEmpty = ts.html.nu.ele('td');
   			nu.eHeader.appendChild(nu.eTdEmpty);
 
+        nu.tunArr = new Array();
+        nu.tuneObj = function(n,a){
+          this.name = n;
+          if (zs4.is.array(a)){
+            this.a = a;
+          }
+          else {
+            this.a = new Array();
+          }
+        }
+        nu.eTuning = ts.html.nu.ele('select');
+        nu.dftTuning = new nu.tuneObj({name:'default',})
+        nu.tunArr.push(nu.dftTuning);
+        nu.eTuningDefault = ts.html.nu.ele('option');
+        nu.eTuningDefault.selected = true;
+        nu.eTuningDefault.value = 0;
+        nu.eTuningDefault.textContent = 'default';
+        nu.eTuning.appendChild(nu.eTuningDefault);
+        nu.addTuning = function(tuneObj){
+          var v = nu.tunArr.length;
+          nu.tunArr.push(tuneObj);
+          var opt = ts.html.nu.ele('option');
+          opt.value = v;
+          opt.textContent = tuneObj.name;
+          nu.eTuning.appendChild(opt);
+        }
+        nu.eTuning.onchange = function(){
+          var tun = parseInt(nu.eTuning.value);
+          var a = nu.tunArr[tun].a;
+          for (var s = 0; s < nu.strings.length; s++){
+            var sa = nu.strings[s].tunArr;
+            for (var i = 0;i < sa.length; i++){
+              var saiv = sa[i].v;
+              var as = a[s];
+              if (saiv == as){
+                sa[i].o.selected = true;
+              }
+              else {
+                sa[i].o.selected = false;
+              }
+            }
+            nu.strings[s].eTuning.value = a[s];
+          }
+          nu.retune();
+          nu.refresh();
+        };
+        nu.eTdEmpty.appendChild(nu.eTuning);
+
   			nu.eTdCapo = ts.html.nu.ele('td');
   			nu.eHeader.appendChild(nu.eTdCapo);
 
@@ -4161,7 +4209,7 @@ ts.html = new Object({
   			};
 
   			nu.createString = (function(tuning){
-
+          nu.dftTuning.a.push(tuning);
   				var string = new Object({
   					fret:new Array(),
   				});
@@ -4175,20 +4223,23 @@ ts.html = new Object({
   				string.eTdTuning.className = 'string';
   				string.eRow.appendChild(string.eTdTuning);
 
+          string.tunArr = new Array();
   				string.eTuning = ts.html.nu.ele('select');
   				string.eTdTuning.appendChild(string.eTuning);
-  				for (var i = tuning+12 ; i >= tuning-12 ; i-- ){
+  				for (var i = tuning+7 ; i >= tuning-7 ; i-- ){
   					if (i < ts.midi.constant.MIDI_NOTE_MIN)continue;
   					if (i > ts.midi.constant.MIDI_NOTE_MAX)continue;
 
   					var opt = ts.html.nu.ele('option');
   					opt.value = i;
   					opt.style.fontSize = '0.8em';
-  					opt.innerHTML = ts.music.note.qualified(i);
+            var lbl = ts.music.note.qualified(i);
+  					opt.innerHTML = lbl;
   					if (i==tuning){
   						opt.selected = true;
   						string.eTuning.value = i;
   					}
+            string.tunArr.push(new Object({v:i,l:lbl,o:opt,}));
   					string.eTuning.appendChild(opt);
   				}
   				string.eTuning.onchange = function(){
@@ -4363,6 +4414,15 @@ ts.html = new Object({
   			nu.createString(62);
   			nu.createString(57);
   			nu.createString(52);
+
+        //nu.addTuning({name:'standard',a:[76,71,67,62,57,52]});
+        nu.addTuning({name:'DADGAD',a:[74,69,67,62,57,50]});
+        nu.addTuning({name:'Drop D',a:[76,71,67,62,57,50]});
+        nu.addTuning({name:'Open D',a:[74,69,66,62,57,50]});
+        nu.addTuning({name:'Open Dm',a:[74,69,65,62,57,50]});
+        nu.addTuning({name:'Open G',a:[74,71,67,62,55,50]});
+        nu.addTuning({name:'Open Gm',a:[74,70,67,62,55,50]});
+        nu.addTuning({name:'Open A',a:[76,69,64,61,57,52]});
   		};
   		SEQ.createToolUkulele = function(){
   			var nu = this.createToolStringInstrument('ukulele','ukulele');
@@ -4377,6 +4437,8 @@ ts.html = new Object({
   			nu.createString(50);
   			nu.createString(45);
   			nu.createString(40);
+        //nu.addTuning({name:'standard',a:[55,50,45,40]});
+        nu.addTuning({name:'Drop D',a:[55,50,45,38]});
   		};
   		SEQ.createToolViolin = function(){
   			var nu = this.createToolStringInstrument('violin','violin');
@@ -4391,6 +4453,10 @@ ts.html = new Object({
   			nu.createString(81);
   			nu.createString(74);
   			nu.createString(67);
+
+        //nu.addTuning({name:'standard',a:[88,81,74,67]});
+        nu.addTuning({name:'GDAD',a:[86,81,74,67]});
+        nu.addTuning({name:'Open 5ths',a:[86,79,74,67]});
   		};
   		SEQ.createToolPiano = function(){
   			var nu = this.createToolInstrument('piano','keyboard');
