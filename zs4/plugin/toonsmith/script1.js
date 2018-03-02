@@ -2926,7 +2926,8 @@ ts.html = new Object({
 
         var timing = zs4.admin.util.addIconElement(kbm,'bpm');
         timing.onclick = function(){
-          SEQ.kbm = KBM_BAR;
+          if (SEQ.kbm == KBM_BAR) SEQ.kbm = KBM_EVENT;
+          else SEQ.kbm = KBM_BAR;
           if (SEQ.evt.length>0){
             SEQ.evt_current.refresh();
           }
@@ -2935,7 +2936,8 @@ ts.html = new Object({
 
         var beat = zs4.admin.util.addIconElement(kbm,'beat');
         beat.onclick = function(){
-          SEQ.kbm = KBM_BEAT;
+          if (SEQ.kbm == KBM_BEAT) SEQ.kbm = KBM_EVENT;
+          else SEQ.kbm = KBM_BEAT;
           if (SEQ.evt.length>0){
             SEQ.evt_current.refresh();
           }
@@ -2944,7 +2946,8 @@ ts.html = new Object({
 
         var chord = zs4.admin.util.addIconElement(kbm,'chord');
         chord.onclick = function(){
-          SEQ.kbm = KBM_CHORD;
+          if (SEQ.kbm == KBM_CHORD) SEQ.kbm = KBM_EVENT;
+          else SEQ.kbm = KBM_CHORD;
           if (SEQ.evt.length>0){
             SEQ.evt_current.refresh();
           }
@@ -2953,7 +2956,8 @@ ts.html = new Object({
 
         var melody = zs4.admin.util.addIconElement(kbm,'note');
         melody.onclick = function(){
-          SEQ.kbm = KBM_MELODY;
+          if (SEQ.kbm == KBM_MELODY) SEQ.kbm = KBM_EVENT;
+          else SEQ.kbm = KBM_MELODY;
           if (SEQ.evt.length>0){
             SEQ.evt_current.refresh();
           }
@@ -2962,7 +2966,8 @@ ts.html = new Object({
 
 				var lyric = zs4.admin.util.addIconElement(kbm,'lyric');
         lyric.onclick = function(){
-          SEQ.kbm = KBM_LYRIC;
+          if (SEQ.kbm == KBM_LYRIC) SEQ.kbm = KBM_EVENT;
+          else SEQ.kbm = KBM_LYRIC;
           if (SEQ.evt.length>0){
             SEQ.evt_current.refresh();
           }
@@ -4010,7 +4015,8 @@ ts.html = new Object({
 
         var kord = zs4.admin.util.addIconElement(nu.iGeneral,'chord');
         kord.onclick = function(){
-          SEQ.kbm = KBM_CHORD;
+          if (SEQ.kbm == KBM_CHORD) SEQ.kbm = KBM_EVENT;
+          else SEQ.kbm = KBM_CHORD;
           if (SEQ.evt.length>0){
             SEQ.evt_current.refresh();
           }
@@ -4024,7 +4030,8 @@ ts.html = new Object({
 
         var melody = zs4.admin.util.addIconElement(nu.iGeneral,'note');
         melody.onclick = function(){
-          SEQ.kbm = KBM_MELODY;
+          if (SEQ.kbm == KBM_MELODY) SEQ.kbm = KBM_EVENT;
+          else SEQ.kbm = KBM_MELODY;
           if (SEQ.evt.length>0){
             SEQ.evt_current.refresh();
           }
