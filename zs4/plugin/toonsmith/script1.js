@@ -4042,9 +4042,12 @@ ts.html = new Object({
             var NIK = nu.instrumentKey();
   					if (chord != null){
 
-              transchord = new Object(chord);
-              transchord.v = ((60+transchord.v) - NIK)%12;
-              transchord.b = ((60+transchord.b) - NIK)%12;
+              transchord = ts.music.parse.chord('C');
+              transchord.v = ((60+chord.v) - NIK)%12;
+              transchord.t = chord.t;
+              transchord.b = ((60+chord.b) - NIK)%12;
+              transchord.ok = true;
+              
               nu.iCurrentChord.textContent = ts.music.CHORD.toString(transchord);
   						var className = '';
   						var ch = ts.music.CHORD.TYPE[chord.t].a;
