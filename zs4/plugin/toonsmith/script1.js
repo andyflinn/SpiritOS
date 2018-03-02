@@ -2421,6 +2421,12 @@ ts.music = new Object({
         a:	[true,	false,	false,	true,	false,	false,	false,	true,	false,	false,	false,	false],
       },
       {
+        t:"5",
+        n:['power'],
+        s:'-',
+        a:	[true,	false,	false,	false,	false,	false,	false,	true,	false,	false,	false,	false],
+      },
+      {
         t:"o",
         n:['dim'],
         s:'&#x00B0;',
@@ -2464,7 +2470,7 @@ ts.music = new Object({
       },
 			{
         t:"M7",
-        n:[],
+        n:['maj7'],
         s:'&#x25B3;',
         a:	[true,	false,	false,	false,	true,	false,	false,	true,	false,	false,	false,	true],
       },
@@ -2474,11 +2480,23 @@ ts.music = new Object({
         s:'+&#x2077;',
         a:	[true,	false,	false,	false,	true,	false,	false,	false,	true,	false,	true,	false],
       },
-			{
+      {
         t:"o7",
         n:['dim7'],
         s:'&#x00B0;&#x2077;',
         a:	[true,	false,	false,	true,	false,	false,	true,	false,	false,	true,	false,	false],
+      },
+      {
+        t:"sus",
+        n:['sus4'],
+        s:'sus',
+        a:	[true,	false,	false,	false,	false,	true,	false,	true,	false,	false,	false,	false],
+      },
+      {
+        t:"sus2",
+        n:[],
+        s:'sus2',
+        a:	[true,	false,	true,	false,	false,	false,	false,	true,	false,	false,	false,	false],
       },
 
 			{
