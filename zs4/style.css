@@ -265,6 +265,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-is:before{content:url(/gfx/icons/server.svg);}
 .icon-item:before{content:url(/gfx/icons/item.svg);}
 .icon-js:before{content:url(/gfx/icons/js.svg);}
+.icon-keys:before{content:url(/gfx/icons/keys.svg);}
 .icon-lang:before{content:url(/gfx/icons/lang.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-linefeed:before{content:'\000B6';font-weight: bolder;}
@@ -353,11 +354,11 @@ zs4-name.zs4-own.zs4-noset:not{
 
 .icon-toonsmith:before{content:url(/gfx/icons/toonsmith.svg);}
 .icon-audio:before{content:'\01F509';font-weight: bolder;}
-.icon-bar:before{content:'\023D0';font-weight: bolder;}
-.icon-bars:before{content:'\023D0';font-weight: bolder;}
+.icon-bar:before{content:url(/gfx/icons/beer.svg);}
+.icon-bars:before{content:url(/gfx/icons/beer.svg);}
 .icon-bass:before{content:url(/gfx/icons/bass.svg);}
-.icon-beat:before{content:'\0237F';font-weight: bolder;}
-.icon-beats:before{content:'\0237F';font-weight: bolder;}
+.icon-beat:before{content:url(/gfx/icons/beat.svg);}
+.icon-beats:before{content:url(/gfx/icons/beat.svg);}
 .icon-bpb:before{content:'\0215E';font-weight: bolder;}
 .icon-bpm:before{content:'\023F1';font-weight: bolder;}
 .icon-chord:before{content:url(/gfx/icons/chord.svg);}

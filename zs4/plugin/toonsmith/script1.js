@@ -366,7 +366,7 @@ ts.create = function(){
 				return idx;
 		}
 
-		return from;
+		return (from%SEQ.evt.length);
 	};
 	SEQ.searchPrevEvent = function(from,testEvent){
     if (SEQ.evt.length==0)return from;
@@ -383,7 +383,7 @@ ts.create = function(){
 				return idx;
 		}
 
-		return from;
+		return (from%SEQ.evt.length);
 	};
 	SEQ.searchPrevBar = function(from){
     return SEQ.searchPrevEvent(from,function(evt){if (evt.bar)return true; return false});
@@ -721,7 +721,7 @@ ts.create = function(){
       var tpe_float = blength/a.length;
       for (var m = 0; m < a.length;m++){
         var start = Math.round((m*tpe_float)+bstart);
-        if (start >= e.playArray.length)start--;
+        if (start >= e.playArray.length)start = e.playArray.length-1;
         //zs4.debug('musicEvent '+m+' starts on tick '+start);
         if (a[m].isChord()){
           e.playArray[start].chord = (a[m]);
@@ -874,7 +874,7 @@ ts.create = function(){
       toggleBar:function(){
         if (this.bar){this.bar=null;this.beat=null}
         else {this.bar = {}; this.beat = {};}
-
+        return this;
       },
       toggleBeat:function(){
         if (this.bar == null){
@@ -884,6 +884,12 @@ ts.create = function(){
           }
           else this.beat = {};
         }
+        return this;
+      },
+      update:function(){
+        if (this.lyric==' ')this.space = true;
+        else if (this.lyric=='\n')this.space=this.linefeed=true;
+        else this.space=this.linefeed=false;
       },
 		};
     if (zs4.is.node())o.refresh = function(){};
@@ -925,10 +931,7 @@ ts.create = function(){
 			}
 		}
 
-    // TEXT info
-    ///////////////////////////////////
-    if (str=='\n')o.linefeed = o.space = true;
-    if (str==' ')o.space = true;
+    o.update();
 
 		if (afterIndex==null){
 			afterIndex=this.evt.length;
@@ -966,6 +969,8 @@ ts.create = function(){
         return '<span style="color:red;">'+s+'</span>';
       };
       o.refresh = function(){
+        o.update();
+
         var isPlaying = SEQ.isPlaying();
         o.eSpan.style.paddingTop = '0.5em';
         o.eSpan.style.paddingBottom = '0.5em';
@@ -1183,9 +1188,6 @@ ts.create = function(){
             }
         }
         else {
-          if (o.lyric==' ')o.space = true;
-          else if (o.lyric=='\n')o.space=o.linefeed=true;
-          else o.space=o.linefeed=false;
 
           if (o.isSpace()){
             putEmptyImage(o.eBlockLyric,true);
@@ -1198,15 +1200,14 @@ ts.create = function(){
             putEmptyImage(o.eBlockLyric,true);
           }
 
-          if (o.isLinefeed()&&SEQ.layoutlinefeed){
-            o.eLineFeed.style.display = 'initial';
-          }
-          else {
-            o.eLineFeed.style.display = 'none';
-          }
-
         }
 
+        if (o.isLinefeed()){
+          o.eLineFeed.style.display = 'initial';
+        }
+        else {
+          o.eLineFeed.style.display = 'none';
+        }
       };
 
       // create all neccessary elementSave
@@ -1272,6 +1273,7 @@ ts.create = function(){
   			o.eSpan.appendChild(o.eBlockLyric);
 
         o.eLineFeed = document.createElement('br');
+        o.eLineFeed.style.display = 'none';
         o.eEvent.appendChild(o.eLineFeed);
 
   			this.cnt.appendChild(o.eEvent);
@@ -1280,7 +1282,7 @@ ts.create = function(){
       o.refresh();
     }
 
-    SEQ.setCurrentEvent(o);
+    //SEQ.setCurrentEvent(o);
 		return o;
 	};
 	SEQ.run = function(){
@@ -1301,10 +1303,6 @@ ts.create = function(){
 		SEQ.data = data;
 		if (SEQ.data == null || SEQ.data.length < 1){
       SEQ.unEmpty();
-      //if (zs4.is.window()){
-      //  this.toolobject.script.use();
-			//	return SEQ.cnt;
-      //}
       return '';
 		}
 
@@ -1381,13 +1379,8 @@ ts.create = function(){
     // FLUSH BUFFERS AFTER LOOP
 		if (buffer.length > 0||musinfo.length > 0){this.addEvent(buffer,musinfo); buffer="";musinfo="";}
 
-		if (zs4.is.window()) this.cnt.appendChild(document.createElement("br"));
-		//this.onSelectTool('chord');
-
     var text = '';
     for (var i = 0 ; i < SEQ.evt.length;i++)text+=SEQ.evt[i].lyric;
-    //console.log(text);
-    //console.log(SEQ.getChordsAndLyrics());
 
     SEQ.unEmpty();
 		this.setCurrentEvent(this.evt[0]);
@@ -1407,6 +1400,7 @@ ts.create = function(){
 
 		for (var i = 0; i < this.evt.length; i++){
 			var evt = this.evt[i];
+      evt.update();
 			if (evt.hasMusic()){
 				ret+='[';
 
@@ -1430,7 +1424,7 @@ ts.create = function(){
 			if (evt.linefeed==true) {
         ret += '\n';
       }
-			if (evt.space==true){
+			else if (evt.space==true){
         ret += ' ';
       }
 			else ret += evt.lyric.trim();
@@ -2938,8 +2932,8 @@ ts.html = new Object({
         var kbm = ts.html.nu.ele('ts-kbm');
 				parent.appendChild(kbm);
 
-        var timing = zs4.admin.util.addIconElement(kbm,'bpm');
-        timing.onclick = function(){
+        var bar = zs4.admin.util.addIconElement(kbm,'bar');
+        bar.onclick = function(){
           if (SEQ.kbm == KBM_BAR) SEQ.kbm = KBM_EVENT;
           else SEQ.kbm = KBM_BAR;
           if (SEQ.evt.length>0){
@@ -3003,14 +2997,7 @@ ts.html = new Object({
             next.style.display = 'inline-block';
           }
 
-          if (SEQ.kbm==KBM_BAR||SEQ.kbm==KBM_BEAT){
-            beat.style.display = 'inline-block';
-          }
-          else {
-            beat.style.display = 'none';
-          }
-
-          SEQ.kbIconMode(timing,SEQ.kbm == KBM_BAR);
+          SEQ.kbIconMode(bar,SEQ.kbm == KBM_BAR);
           SEQ.kbIconMode(beat,SEQ.kbm == KBM_BEAT);
           SEQ.kbIconMode(melody,SEQ.kbm == KBM_MELODY);
           SEQ.kbIconMode(lyric,SEQ.kbm == KBM_LYRIC);
@@ -3060,8 +3047,6 @@ ts.html = new Object({
 			};
 			SEQ.tsTopTools.appendChild(SEQ.toolinst);
 
-      SEQ.createKeyboardModes(SEQ.tsTopTools);
-
 			SEQ.toolpop = ts.html.nu.ele('ts-toolbutton');
 			zs4.admin.util.setIcon(SEQ.toolpop,'tool');
 			SEQ.toolsArePopped = false;
@@ -3070,7 +3055,7 @@ ts.html = new Object({
 					SEQ.toolspopped.style.display = 'none';
 					SEQ.toolsArePopped = false;
 				}
-        else if (!SEQ.isPlaying()){
+        else { //if (!SEQ.isPlaying()){
 					SEQ.toolspopped.style.display = 'block';
 					SEQ.toolsArePopped = true;
 					SEQ.instpopped.style.display = 'none';
@@ -3160,6 +3145,106 @@ ts.html = new Object({
         SEQ.kb.refresh();
       }
 
+      SEQ.handleLyricChar = function(ch){
+        var EVENT = SEQ.evt_current;
+        if (EVENT==null)return;
+        if (SEQ.isPlaying())return;
+
+        var nu;
+        if (ch=='\n'){
+          var idxprev = SEQ.searchPrevEvent(SEQ.evt_curidx);
+          var curidx = SEQ.evt_curidx;
+          if (SEQ.kb.pos==0){
+            nu = SEQ.createEvent(ch,'',curidx);
+            SEQ.kb.pos=0;
+            SEQ.setNextEvent();
+          }
+          else if (SEQ.kb.pos==EVENT.lyric.length){
+            nu = SEQ.createEvent(ch,'',curidx+1);
+            SEQ.kb.pos=1;
+            SEQ.setCurrentEvent(nu);
+            if (SEQ.currentEventIsLastEvent()){
+              nu = SEQ.createEvent('','',SEQ.evt.length);
+              SEQ.kb.pos=0;
+              SEQ.setCurrentEvent(nu);
+            }
+            else {
+              SEQ.kb.pos=0;
+              SEQ.setNextEvent()
+            }
+          }
+          else {
+            var end = EVENT.lyric.substr(SEQ.kb.pos,EVENT.lyric.length-SEQ.kb.pos)
+            EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos);
+            EVENT.refresh();
+            nu = SEQ.createEvent(ch,'',curidx+1);
+            SEQ.setCurrentEvent(nu);
+            EVENT = SEQ.evt_current;
+            var tail = SEQ.createEvent(end,'',SEQ.evt_curidx+1);
+            SEQ.kb.pos=0;
+            SEQ.setCurrentEvent(tail);
+          }
+        }
+        else if (ch==' '){
+          var idxprev = SEQ.searchPrevEvent(SEQ.evt_curidx);
+          if (SEQ.evt_current.isSpace()){
+            if (SEQ.currentEventIsLastEvent()){
+              SEQ.kb.pos = 1;
+              return false;
+            }
+            else {
+              SEQ.kb.pos = 0;
+              SEQ.setNextEvent();
+              return false;
+            }
+          }
+          else if (SEQ.evt[idxprev].isSpace()&&(SEQ.kb.pos==0)){
+            return false;
+          }
+          var curidx = SEQ.evt_curidx;
+          if (SEQ.kb.pos==0){
+            nu = SEQ.createEvent(ch,'',curidx);
+            SEQ.kb.pos=0;
+            SEQ.setCurrentEvent(SEQ.evt[curidx+1]);
+          }
+          else if (SEQ.kb.pos==EVENT.lyric.length){
+            nu = SEQ.createEvent(ch,'',curidx+1);
+            SEQ.kb.pos=1;
+            SEQ.setCurrentEvent(nu);
+          }
+          else {
+            var end = EVENT.lyric.substr(SEQ.kb.pos,EVENT.lyric.length-SEQ.kb.pos)
+            EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos);
+            EVENT.refresh();
+            nu = SEQ.createEvent(ch,'',curidx+1);
+            var tail = SEQ.createEvent(end,'',curidx+2);
+            SEQ.kb.pos=0;
+            SEQ.setCurrentEvent(tail);
+          }
+        }
+        else {
+          if (SEQ.evt_current.isSpace()){
+            if (SEQ.kb.pos==0||SEQ.kb.pos=='start'){
+              nu = SEQ.createEvent('','',SEQ.evt_curidx);
+              SEQ.kb.pos = 0;
+              SEQ.setCurrentEvent(nu);
+              EVENT = nu;
+            }
+            else if (SEQ.kb.pos==1||SEQ.kb.pos=='end'){
+              nu = SEQ.createEvent('','',SEQ.evt_curidx+1);
+              SEQ.kb.pos = 0;
+              SEQ.setCurrentEvent(nu);
+              EVENT = nu;
+            }
+          }
+          EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos)+
+          ch+
+          EVENT.lyric.substr(SEQ.kb.pos,EVENT.lyric.length-SEQ.kb.pos);
+          SEQ.kb.pos++;
+          EVENT.refresh();
+        }
+      };
+
       SEQ.eventListenerKeypress = function(e){
         e.preventDefault();
         console.log(e);
@@ -3171,85 +3256,9 @@ ts.html = new Object({
           if (SEQ.isCharacterKeyPress(e)){
             //console.log('PRINTABLE!!!!');
             var ch = String.fromCharCode(e.which);
-            var nu;
-            if (ch==' '||ch=='\n'){
-              var idxprev = SEQ.searchPrevEvent(SEQ.evt_curidx);
-              if (SEQ.evt_current.isSpace()){
-                if (SEQ.currentEventIsLastEvent()){
-                  nu = SEQ.createEvent('','',curidx);
-                  SEQ.kb.pos = 0;
-                  SEQ.setCurrentEvent(EVENT);
-                  e.preventDefault();
-                  return false;
-                }
-                else {
-                  SEQ.kb.pos = 0;
-                  SEQ.setNextEvent();
-                  EVENT = SEQ.evt_current;
-                  e.preventDefault();
-                  return false;
-                }
-              }
-              else if (SEQ.evt[idxprev].isSpace()&&(SEQ.kb.pos==0)){
-                e.preventDefault();
-                return false;
-              }
-              var curidx = SEQ.evt_curidx;
-              if (SEQ.kb.pos==0){
-                nu = SEQ.createEvent(ch,'',curidx);
-                SEQ.kb.pos=0;
-                SEQ.setNextEvent();
-                e.preventDefault();
-              }
-              else if (SEQ.kb.pos==EVENT.lyric.length){
-                nu = SEQ.createEvent(ch,'',curidx+1);
-                SEQ.kb.pos=1;
-                SEQ.setCurrentEvent(nu);
-                if (SEQ.currentEventIsLastEvent()){
-                  nu = SEQ.createEvent('','',SEQ.evt.length);
-                  SEQ.kb.pos=0;
-                  SEQ.setCurrentEvent(nu);
-                }
-                else {
-                  SEQ.kb.pos=0;
-                  SEQ.setNextEvent()
-                }
-                e.preventDefault();
-              }
-              else {
-                var end = EVENT.lyric.substr(SEQ.kb.pos,EVENT.lyric.length-SEQ.kb.pos)
-                EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos);
-                EVENT.refresh();
-                nu = SEQ.createEvent(ch,'',curidx+1);
-                SEQ.setCurrentEvent(nu);
-                EVENT = SEQ.evt_current;
-                var tail = SEQ.createEvent(end,'',SEQ.evt_curidx+1);
-                SEQ.kb.pos=0;
-                SEQ.setCurrentEvent(tail);
-              }
-            }
-            else {
-              if (SEQ.evt_current.isSpace()){
-                if (SEQ.kb.pos==0||SEQ.kb.pos=='start'){
-                  nu = SEQ.createEvent('','',SEQ.evt_current);
-                  SEQ.kb.pos = 0;
-                  SEQ.setCurrentEvent(nu);
-                  EVENT = nu;
-                }
-                else if (SEQ.kb.pos==1||SEQ.kb.pos=='end'){
-                  nu = SEQ.createEvent('','',SEQ.evt_current+1);
-                  SEQ.kb.pos = 0;
-                  SEQ.setCurrentEvent(nu);
-                  EVENT = nu;
-                }
-              }
-              EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos)+
-              ch+
-              EVENT.lyric.substr(SEQ.kb.pos,EVENT.lyric.length-SEQ.kb.pos);
-              SEQ.kb.pos++;
-              EVENT.refresh();
-              e.preventDefault();
-            }
+            SEQ.handleLyricChar(ch);
+            e.preventDefault();
+            return false;
           }
         }
 
@@ -3314,10 +3323,14 @@ ts.html = new Object({
           SEQ.kb.pos--;
           EVENT.refresh();
         }
+        else if (SEQ.evt_curidx==0){
+          return;
+        }
         else {
-          SEQ.setPreviousEvent();
-          SEQ.kb.pos = 'end';
-          EVENT.refresh();
+          var previdx = SEQ.searchPrevEvent(SEQ.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
+          SEQ.setCurrentEvent(SEQ.evt[previdx]);
+          if (SEQ.evt_current.lyric.length==0)SEQ.kb.pos=0;
+          else SEQ.kb.pos = SEQ.evt_current.lyric.length-1;
           SEQ.evt_current.refresh();
         }
       };
@@ -3328,18 +3341,35 @@ ts.html = new Object({
           SEQ.kb.pos++;
           EVENT.refresh();
         }
+        else if (SEQ.currentEventIsLastEvent()){
+          return;
+          //var nu = SEQ.addEvent('','');
+          //SEQ.kb.pos = 'start';
+          //SEQ.setCurrentEvent(nu);
+        }
         else {
           if (!SEQ.currentEventIsLastEvent()){
-            SEQ.setNextEvent();
-            SEQ.kb.pos = 'start';
-            EVENT.refresh();
-            SEQ.evt_current.refresh();
+            var next = SEQ.searchNextEvent(SEQ.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
+            if ((next>SEQ.evt_curidx)&&(next<(SEQ.evt.length-1))){
+              SEQ.kb.pos = 1;
+              SEQ.setCurrentEvent(SEQ.evt[next]);
+              if (SEQ.evt_current.isSpace()&&!SEQ.currentEventIsLastEvent()){
+                SEQ.kb.pos = 0;
+                SEQ.setNextEvent();
+              }
+            }
+            //else {
+            //  SEQ.setNextEvent();
+            //  SEQ.kb.pos = 'start';
+            //  EVENT.refresh();
+            //  SEQ.evt_current.refresh();
+            //}
           }
-          else{
-            var nu = SEQ.addEvent('','');
-            SEQ.kb.pos = 'start';
-            SEQ.setCurrentEvent(nu);
-          }
+          //else{
+          //  var nu = SEQ.addEvent('','');
+          //  SEQ.kb.pos = 'start';
+          //  SEQ.setCurrentEvent(nu);
+          //}
         }
       };
       SEQ.kbLeftChord = function(){
@@ -3528,7 +3558,7 @@ ts.html = new Object({
               }
               else {
                 var ei = SEQ.searchNextEvent(SEQ.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
-                if (ei==SEQ.evt_curidx)return;
+                if (ei<=SEQ.evt_curidx)return;
                 SEQ.setCurrentEvent(SEQ.evt[ei]);
                 EVENT = SEQ.evt_current;
                 EVENT.lyric = EVENT.lyric.substr(1,EVENT.lyric.length-1);
@@ -3547,7 +3577,7 @@ ts.html = new Object({
               }
               else {
                 var ei = SEQ.searchPrevEvent(SEQ.evt_curidx,function(e){if (e.lyric.length>0)return true;return false;});
-                if (ei==SEQ.evt_curidx)return;
+                if (ei>=SEQ.evt_curidx)return;
                 SEQ.setCurrentEvent(SEQ.evt[ei]);
                 EVENT = SEQ.evt_current;
                 EVENT.lyric = EVENT.lyric.substr(1,EVENT.lyric.length-1);
@@ -3556,7 +3586,10 @@ ts.html = new Object({
                 e.preventDefault();
               }
             }
-
+            else if (e.key=='Enter'){
+              SEQ.handleLyricChar('\n');
+              e.preventDefault();
+            }
           }
           else if (SEQ.kbm == KBM_MELODY){
             if (isEsc()){
@@ -3899,6 +3932,7 @@ ts.html = new Object({
   					var event = this.getCurrentEvent();
   					if (event == null)return null;
             event.toggleBar();
+            return event;
   				},
   				toggleBeat:function(){
   					var event = this.getCurrentEvent();
@@ -3971,8 +4005,10 @@ ts.html = new Object({
   			nu.toolTitlebar = ts.html.nu.ele('ts-tool-titlebar');
   			nu.toolTitlebar.style.display = 'block';
   			nu.toolTitlebar.ts = this;
-  			if (tooltype=='i') nu.toolWindow.appendChild(nu.toolTitlebar);
-  			else nu.toolWindow.appendChild(nu.toolTitlebar);
+  			//if (tooltype=='i') nu.toolWindow.appendChild(nu.toolTitlebar);
+  			//else nu.toolWindow.appendChild(nu.toolTitlebar);
+        nu.toolWindow.appendChild(nu.toolTitlebar);
+        SEQ.tsKeyboard(nu.toolTitlebar);
 
         nu.titleIcon = ts.html.nu.ele('ts-tool-titleicon');
   			zs4.admin.util.setIcon(nu.titleIcon,icon);
@@ -3991,8 +4027,6 @@ ts.html = new Object({
   				}
   			};
   			nu.toolTitlebar.appendChild(nu.titleIcon);
-
-
 
   			if (tooltype=='i'){
   				this.instarea.appendChild(nu.toolWindow);
@@ -4677,6 +4711,10 @@ ts.html = new Object({
   			return nu;
   		};
 
+      SEQ.createToolKeys = function(){
+        var nu = this.createTool('keys','keys');
+        SEQ.createKeyboardModes(nu.toolTitlebar);
+      };
   		SEQ.createToolTranspose = function(){
   			var nu = this.createTool('','transpose');
 
@@ -4731,8 +4769,7 @@ ts.html = new Object({
   				nu.eEventBpmInput.ts = nu;
   				nu.eEventBpmInput.onchange = function(){
             this.ts.ts.bpm = parseInt(this.value);
-            //if (!SEQ.isPlaying())
-            this.ts.ts.refresh();
+            SEQ.recomputeTiming();
           };
 
 
@@ -4750,8 +4787,7 @@ ts.html = new Object({
   				nu.eEventBpcInput.ts = nu;
   				nu.eEventBpcInput.onchange = function(){
   					this.ts.ts.bpb = parseInt(this.value);
-            //if (!SEQ.isPlaying())
-              this.ts.ts.refresh();
+            SEQ.recomputeTiming();
   				};
 
         nu.eEventTpb = ts.html.nu.ele('ts-tool-tpb');
@@ -4768,9 +4804,8 @@ ts.html = new Object({
   				nu.eEventTpb.appendChild(nu.eEventTpbInput);
   				nu.eEventTpbInput.ts = nu;
   				nu.eEventTpbInput.onchange = function(){
-            //SEQ.tpb = parseInt(this.value);
-            if (!SEQ.isPlaying())
-              this.ts.ts.refresh();
+            SEQ.tpb = parseInt(this.value);
+            SEQ.recomputeTiming();
           };
 
   			return nu;
@@ -5322,7 +5357,6 @@ ts.html = new Object({
         SEQ.kb.refresh();
 			};
 
-			SEQ.createToolChord();
 			SEQ.createToolGuitar();
 			SEQ.createToolPiano();
 			SEQ.createToolUkulele();
@@ -5331,6 +5365,8 @@ ts.html = new Object({
 			SEQ.createToolViolin();
 			SEQ.createToolBass();
 
+      SEQ.createToolKeys();
+      SEQ.createToolChord();
       SEQ.createToolScript();
       SEQ.createToolAbc();
 			SEQ.createToolBars();
