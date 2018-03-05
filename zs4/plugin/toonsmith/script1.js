@@ -1202,7 +1202,7 @@ ts.create = function(){
 
         }
 
-        if (o.isLinefeed()){
+        if (SEQ.layoutlinefeed && o.isLinefeed()){
           o.eLineFeed.style.display = 'initial';
         }
         else {
