@@ -3793,9 +3793,9 @@ ts.html = new Object({
   				return;
 
         if (!SEQ.isPlaying()){
-          SEQ.hideAllToolPanes();
-          SEQ.toolspopped.style.display = 'none';
-          SEQ.toolsArePopped = false;
+          //SEQ.hideAllToolPanes();
+          //SEQ.toolspopped.style.display = 'none';
+          //SEQ.toolsArePopped = false;
 
           if (!SEQ.evt_current.isBar()){
             idx = SEQ.searchPrevBar(SEQ.evt_curidx);
