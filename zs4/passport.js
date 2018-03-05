@@ -14,6 +14,8 @@ passport.create = function(){
   var PASSPORT = this;
 
   zs4.type.object.call(PASSPORT,new Object({name:'passport',flags:'authgetpublic authsetself',}));
+  PASSPORT._.property(new zs4.type.object({name:'config',}));
+  PASSPORT.config._.property(new zs4.type.boolean({name:'autocreateaccount',}));
 
   PASSPORT._.create = passport.create;
   PASSPORT._.extractUserObject = function(profile){
@@ -78,37 +80,44 @@ passport.create = function(){
       function(callback){
         if (callback.error != null){
           //debug('zs4.type.user.method.getone() failed: ',callback);
-          var USER = require('./user');
-          var nu = new USER.create();
-          nu.zs4.email._.value = po.email;
-          nu.zs4.head.title._.value = po.display;
+          if (PASSPORT.config.autocreateaccount._.value!=true){
+            var err = 'no account with the associated email address exists.';
+            debug(err);
+            return cb(err, null);
+          }
+          else {
+            var USER = require('./user');
+            var nu = new USER.create();
+            nu.zs4.email._.value = po.email;
+            nu.zs4.head.title._.value = po.display;
 
-          nu.social[strategy].display._.value = po.display;
-          nu.social[strategy].id._.value = po.id;
-          nu.social[strategy].email._.value = po.email;
-          nu.social[strategy].date._.value = Date.now();
+            nu.social[strategy].display._.value = po.display;
+            nu.social[strategy].id._.value = po.id;
+            nu.social[strategy].email._.value = po.email;
+            nu.social[strategy].date._.value = Date.now();
 
-          var data = nu._.store();
-          //debug('NEW USER REQUEST:',zs4.json.stringify(data));
-          req.call({
-            path:'zs4.type.user.method.new',
-            input:data,
-            root:true,
-          },
-          function(callback){
-            if (callback.error != null){
-              var err = 'zs4.type.user.method.new() failed: ' + callback.error;
-              debug(err);
-              return cb(err, null);
-            }
-            else {
-              //debug('zs4.type.user.method.new() SUCCESS: ',callback);
-              req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
-              var ret = new Object({token:req.request.token,id:callback.result,time:Date.now(),});
-              PASSPORT[strategy]._.loginQueue.push(ret);
-              return cb(null,ret);
-            }
-          });
+            var data = nu._.store();
+            //debug('NEW USER REQUEST:',zs4.json.stringify(data));
+            req.call({
+              path:'zs4.type.user.method.new',
+              input:data,
+              root:true,
+            },
+            function(callback){
+              if (callback.error != null){
+                var err = 'zs4.type.user.method.new() failed: ' + callback.error;
+                debug(err);
+                return cb(err, null);
+              }
+              else {
+                //debug('zs4.type.user.method.new() SUCCESS: ',callback);
+                req.tokenCreate({iss:PASSPORT._.path,scope:callback.result,});
+                var ret = new Object({token:req.request.token,id:callback.result,time:Date.now(),});
+                PASSPORT[strategy]._.loginQueue.push(ret);
+                return cb(null,ret);
+              }
+            });
+          }
         }
         else {
           //debug('zs4.type.user.method.getone() SUCCESS: ',callback);
@@ -205,6 +214,5 @@ passport.create = function(){
     {
     }
   );
-
 
 }

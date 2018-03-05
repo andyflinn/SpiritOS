@@ -3793,9 +3793,6 @@ ts.html = new Object({
   				return;
 
         if (!SEQ.isPlaying()){
-          //SEQ.hideAllToolPanes();
-          //SEQ.toolspopped.style.display = 'none';
-          //SEQ.toolsArePopped = false;
 
           if (!SEQ.evt_current.isBar()){
             idx = SEQ.searchPrevBar(SEQ.evt_curidx);
@@ -4753,13 +4750,14 @@ ts.html = new Object({
 
   			return nu;
   		};
-      SEQ.createToolBpm = function(){
-  			var nu = this.createTool('bpm','bpm');
+      SEQ.createToolGlobal = function(){
+  			var nu = this.createTool('global','global');
 
   			nu.eEventBpm = ts.html.nu.ele('ts-tool-bpm');
   			nu.eEventBpm.style.display = 'inline-block';
   			nu.toolTitlebar.appendChild(nu.eEventBpm);
 
+          zs4.admin.util.addIconElement(nu.eEventBpm,'bpm')
   				nu.eEventBpmInput = ts.html.nu.ele('input');
   				nu.eEventBpmInput.type = 'number';
   				nu.eEventBpmInput.value = this.bpm;
@@ -5371,7 +5369,7 @@ ts.html = new Object({
       SEQ.createToolAbc();
 			SEQ.createToolBars();
 			SEQ.createToolBeats();
-      SEQ.bpmTool = SEQ.createToolBpm();
+      SEQ.bpmTool = SEQ.createToolGlobal();
 			SEQ.createToolTranspose();
 			SEQ.createToolAudio();
 			SEQ.createToolMidi();
