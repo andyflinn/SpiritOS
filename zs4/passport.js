@@ -198,6 +198,34 @@ passport.create = function(){
     PASSPORT[name]._.Options.failureRedirect = '/error';
     PASSPORT[name]._.Options.session = false;
 
+    PASSPORT[name].success._.getHTML = (function(req){
+      debug('getHTML(passport.success)');
+      var title = 'login successful';
+      var lang = 'en';
+      var html = '<!DOCTYPE html>\n';
+      html += '<html lang="'+lang+'">\n';
+        html += ' <head>\n';
+          html += '<meta charset="UTF-8">\n';
+          html += '  <title>'+title+'</title>\n';
+          if (req.tokenExists()){
+            html += '  <script>';
+            html += 'window.location.replace("/'+req.getUserPath()+'");';
+            html += '</script>\n';
+          }
+
+        html += ' </head>\n';
+        if (true){
+          //html += ' <body onload="zs4.admin()">\n';
+          html += ' <body>\n';
+          html += ' </body>\n';
+        }
+      html += '</html>\n';
+      req.request.html = html;
+
+      return(html);
+
+    }).bind(PASSPORT[name].sucess);
+
   }
 
   createStrategy(
