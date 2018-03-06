@@ -4755,7 +4755,7 @@ ts.html = new Object({
 
   			nu.eEventBpm = ts.html.nu.ele('ts-tool-bpm');
   			nu.eEventBpm.style.display = 'inline-block';
-  			nu.toolTitlebar.appendChild(nu.eEventBpm);
+  			nu.toolWindow.appendChild(nu.eEventBpm);
 
           zs4.admin.util.addIconElement(nu.eEventBpm,'bpm')
   				nu.eEventBpmInput = ts.html.nu.ele('input');
@@ -4773,7 +4773,7 @@ ts.html = new Object({
 
         nu.eEventBpc = ts.html.nu.ele('ts-tool-bpb');
   			nu.eEventBpc.style.display = 'inline-block';
-  			nu.toolTitlebar.appendChild(nu.eEventBpc);
+  			nu.toolWindow.appendChild(nu.eEventBpc);
 
           zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
   				nu.eEventBpcInput = ts.html.nu.ele('input');
@@ -4790,7 +4790,7 @@ ts.html = new Object({
 
         nu.eEventTpb = ts.html.nu.ele('ts-tool-tpb');
   			nu.eEventTpb.style.display = 'inline-block';
-  			nu.toolTitlebar.appendChild(nu.eEventTpb);
+  			nu.toolWindow.appendChild(nu.eEventTpb);
 
 
           zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
