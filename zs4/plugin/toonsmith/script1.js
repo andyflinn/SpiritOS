@@ -689,6 +689,7 @@ ts.create = function(){
           ticktime:available_tick,
           chordCount:new Array(),
           melodyCount:new Array(),
+          eventCount:new Array(),
         }));
         starttime += available_tick;
       }
@@ -869,7 +870,7 @@ ts.create = function(){
       isBeat:function(){return zs4.is.object(this.beat)},
       isLinefeed:function(){return this.linefeed;},
       isSpace:function(){return this.space;},
-      isMelody:function(){if(this.melody!=0)return true;return false;},
+      isMelody:function(){if((this.melody>=MIDI_NOTE_MIN)&&(this.melody<=MIDI_NOTE_MAX))return true;return false;},
       isLyric:function(){if(this.lyric!='')return true;return false;},
       toggleBar:function(){
         if (this.bar){this.bar=null;this.beat=null}
@@ -3868,8 +3869,6 @@ ts.html = new Object({
   				ts:this,
   				visible:false,
 
-  				//arr:this.tool,
-
   				refresh:function(){},
   				onactivate:function(){},
 
@@ -4025,6 +4024,11 @@ ts.html = new Object({
   			};
   			nu.toolTitlebar.appendChild(nu.titleIcon);
 
+        nu.eToolName = ts.html.nu.ele('ts-tool-name');
+        nu.eToolName.textContent = name;
+        nu.eToolName.style.paddingRight = '0.5em';
+        nu.toolTitlebar.appendChild(nu.eToolName);
+
   			if (tooltype=='i'){
   				this.instarea.appendChild(nu.toolWindow);
   				this.inst.push(nu);
@@ -4103,9 +4107,17 @@ ts.html = new Object({
 
   			nu.instrumentRefresh = function(){};
         nu.instrumentKey = function(){return 0;}
+        nu.instrumentNoteLowest = function(){return MIDI_NOTE_MIN;}
+        nu.instrumentNoteHighest = function(){return MIDI_NOTE_MAX;}
+
+        nu.iRange = ts.html.nu.ele('ts-instrument-range');
+        nu.iRange.style.paddingRight = '0.5em';
+        nu.toolTitlebar.appendChild(nu.iRange);
+
         nu.iGeneral = ts.html.nu.ele('ts-instrument-general');
         nu.iGeneral.style.display = 'inline-block';
         nu.toolTitlebar.appendChild(nu.iGeneral);
+
 
         var kord = zs4.admin.util.addIconElement(nu.iGeneral,'chord');
         kord.onclick = function(){
@@ -4119,7 +4131,7 @@ ts.html = new Object({
 
         nu.iCurrentChord = ts.html.nu.ele('ts-instrument-curchord');
         nu.iCurrentChord.style.minWidth = '5em';
-        nu.iCurrentChord.style.paddingRight = '1em';
+        nu.iCurrentChord.style.paddingRight = '0.5em';
         nu.iGeneral.appendChild(nu.iCurrentChord);
 
         var melody = zs4.admin.util.addIconElement(nu.iGeneral,'note');
@@ -4147,6 +4159,11 @@ ts.html = new Object({
 				}
 
         nu.refresh = function(){
+          nu.iRange.textContent = ('range:'+
+            ts.music.note.qualified(nu.instrumentNoteLowest())+
+            '-'+
+            ts.music.note.qualified(nu.instrumentNoteHighest())
+          );
           SEQ.kbIconMode(kord,SEQ.kbm == KBM_CHORD);
           SEQ.kbIconMode(melody,SEQ.kbm == KBM_MELODY);
   				for (var i = 0 ; i < nu.instrument.ui.length ; i++ ){
@@ -4195,12 +4212,20 @@ ts.html = new Object({
   						nu.iCurrentChord.textContent = '';
   					}
 
-  					if (nu.ts.evt_current.melody != 0){
+            var mel = 0;
+            if (!SEQ.evt_current.isMelody()){
+              var idx = SEQ.searchPrevNote(SEQ.evt_curidx);
+              if (SEQ.evt[idx].isMelody())mel = SEQ.evt[idx].melody;
+            }
+            else {
+              mel = SEQ.evt_current.melody;
+            }
+  					if (mel != 0){
   						for (var i = 0 ; i < nu.instrument.ui.length ; i++ ){
-  							if (nu.ts.evt_current.melody == nu.instrument.ui[i].note){
+  							if (mel == nu.instrument.ui[i].note){
   								nu.instrument.ui[i].isMelodyNote = true;
   							}
-  							else if ((nu.ts.evt_current.melody%12) == (nu.instrument.ui[i].note%12)){
+  							else if ((mel%12) == (nu.instrument.ui[i].note%12)){
   								nu.instrument.ui[i].isMelodyOctave = true;
   							}
   						}
@@ -4331,6 +4356,17 @@ ts.html = new Object({
   				fret.innerHTML = (i+1).toString();
           nu.eFretNumbers.push(fret);
   			}
+
+        nu.instrumentNoteLowest = function(){
+          var ret = MIDI_NOTE_MAX;
+          for (var s = 0 ; s < nu.strings.length; s++){
+  					var str = nu.strings[s];
+            var low = parseInt(str.eTuning.value) + parseInt(nu.eKapo.value);
+            if (low < ret)ret = low;
+          }
+          return ret;
+        }
+        nu.instrumentNoteHighest = function(){return (MIDI_NOTE_MAX-24);}
 
   			nu.strings = new Array();
 
@@ -4613,7 +4649,10 @@ ts.html = new Object({
   			nu.eKeyboard.style.display = 'block';
   			nu.iSpecific.appendChild(nu.eKeyboard);
 
-  			for (var i = (MIDI_NOTE_MIN+12); i <= (MIDI_NOTE_MAX-24) ; i++){
+        nu.instrumentNoteLowest = function(){return (MIDI_NOTE_MIN+12);}
+        nu.instrumentNoteHighest = function(){return (MIDI_NOTE_MAX-24);}
+
+  			for (var i = nu.instrumentNoteLowest(); i <= nu.instrumentNoteHighest() ; i++){
   				var pad = nu.createPad(i,0);
   				pad.ts.canvas = document.createElement('canvas');
   				pad.ts.canvas.style.width = PIANO_KEY_WIDTH;
