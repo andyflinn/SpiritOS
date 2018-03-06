@@ -4057,6 +4057,9 @@ ts.html = new Object({
   			nu.createPad = function(note,channel){
 
   				var e = ts.html.nu.ele('ts-'+nu.instrument.name+'-note');
+          e.style.padding = '0';
+          e.style.border = '0';
+          e.style.margin = '0';
   				var pad = {
   					song:nu.ts,
   					tool:nu,
@@ -4219,16 +4222,24 @@ ts.html = new Object({
   			const KAPO_MIN = 0;
   			const KAPO_DFT = 0;
 
-        const FRETNO_FONTSIZE = '0.5em'
+        const FRETNO_FONTSIZE = '0.5em';
+        const STR_CANVAS_WIDTH = '2em';
+        const STR_CANVAS_HEIGHT = '1em';
 
   			nu.eFretboard = ts.html.nu.ele('table');
   			nu.eFretboard.className = 'ts-fretboard';
   			nu.iSpecific.appendChild(nu.eFretboard);
 
   			nu.eHeader = ts.html.nu.ele('tr');
+        nu.eHeader.style.padding = '0';
+        nu.eHeader.style.border = '0';
+        nu.eHeader.style.margin = '0';
   			nu.eFretboard.appendChild(nu.eHeader);
 
         nu.eTdEmpty = ts.html.nu.ele('td');
+        nu.eTdEmpty.style.padding = '0';
+        nu.eTdEmpty.style.border = '0';
+        nu.eTdEmpty.style.margin = '0';
   			nu.eHeader.appendChild(nu.eTdEmpty);
 
         nu.tunArr = new Array();
@@ -4280,9 +4291,15 @@ ts.html = new Object({
         nu.eTdEmpty.appendChild(nu.eTuning);
 
   			nu.eTdCapo = ts.html.nu.ele('td');
+        nu.eTdCapo.style.padding = '0';
+        nu.eTdCapo.style.border = '0';
+        nu.eTdCapo.style.margin = '0';
   			nu.eHeader.appendChild(nu.eTdCapo);
 
   			nu.eKapo = ts.html.nu.ele('select');
+        nu.eKapo.style.padding = '0';
+        nu.eKapo.style.border = '0';
+        nu.eKapo.style.margin = '0';
   			nu.eKapo.setAttribute('type', 'number');
         for (var k = 0; k <= KAPO_MAX; k++){
           var opt = ts.html.nu.ele('option');
@@ -4305,6 +4322,9 @@ ts.html = new Object({
         nu.eFretNumbers = new Array();
   			for (var i = 0; i < FRET_COUNT;i++){
   				var fret = ts.html.nu.ele('td');
+          fret.style.padding = '0';
+          fret.style.border = '0';
+          fret.style.margin = '0';
   				nu.eHeader.appendChild(fret);
   				fret.style.textAlign = "center";
   				fret.style.fontSize = FRETNO_FONTSIZE;
@@ -4331,11 +4351,16 @@ ts.html = new Object({
   				nu.strings.push(string);
   				string.eRow = ts.html.nu.ele('tr');
   				string.eRow.className = 'string';
-  				string.eRow.style.border = '0';
+          string.eRow.style.border = '0';
+          string.eRow.style.padding = '0';
+          string.eRow.style.margin = '0';
   				this.eFretboard.appendChild(string.eRow);
 
   				string.eTdTuning = ts.html.nu.ele('td');
   				string.eTdTuning.className = 'string';
+          string.eTdTuning.style.border = '0';
+          string.eTdTuning.style.padding = '0';
+          string.eTdTuning.style.margin = '0';
   				string.eRow.appendChild(string.eTdTuning);
 
           string.tunArr = new Array();
@@ -4363,6 +4388,9 @@ ts.html = new Object({
 
   				string.eTdEmpty = ts.html.nu.ele('td');
   				string.eTdEmpty.className = 'string';
+          string.eTdEmpty.style.border = '0';
+          string.eTdEmpty.style.padding = '0';
+          string.eTdEmpty.style.margin = '0';
           string.eTdEmpty.style.backgroundColor = 'grey';
   				string.eRow.appendChild(string.eTdEmpty);
 
@@ -4371,8 +4399,8 @@ ts.html = new Object({
   				string.eTdEmpty.appendChild(string.eEmptyEle);
 
   				string.canvas = document.createElement('canvas');
-  				string.canvas.style.width = '2em';
-  				string.canvas.style.height = '1em';
+  				string.canvas.style.width = STR_CANVAS_WIDTH;
+  				string.canvas.style.height = STR_CANVAS_HEIGHT;
   				string.eEmptyEle.appendChild(string.canvas);
 
   				string.retune = function(){
@@ -4388,6 +4416,9 @@ ts.html = new Object({
 
   					fret.td = ts.html.nu.ele('td');
   					fret.td.className = 'string';
+            fret.td.style.border = '0';
+            fret.td.style.padding = '0';
+            fret.td.style.margin = '0';
   					string.eRow.appendChild(fret.td);
 
   					fret.padele = nu.createPad(i,(tuning+1+i));
@@ -4395,8 +4426,8 @@ ts.html = new Object({
   					fret.td.appendChild(fret.padele);
 
   					fret.canvas = document.createElement('canvas');
-  					fret.canvas.style.width = '2em';
-  					fret.canvas.style.height = '1em';
+  					fret.canvas.style.width = STR_CANVAS_WIDTH;
+  					fret.canvas.style.height = STR_CANVAS_HEIGHT;
   					fret.padele.appendChild(fret.canvas);
   				}
   				string.retune();
@@ -4574,6 +4605,8 @@ ts.html = new Object({
         nu.addTuning({name:'Open 5ths',a:[86,79,74,67]});
   		};
   		SEQ.createToolPiano = function(){
+        const PIANO_KEY_WIDTH = '0.4em';
+        const PIANO_KEY_HEIGHT = '2em';
   			var nu = this.createToolInstrument('piano','keyboard');
 
   			nu.eKeyboard = ts.html.nu.ele('ts-keyboard');
@@ -4583,17 +4616,15 @@ ts.html = new Object({
   			for (var i = (MIDI_NOTE_MIN+12); i <= (MIDI_NOTE_MAX-24) ; i++){
   				var pad = nu.createPad(i,0);
   				pad.ts.canvas = document.createElement('canvas');
-  				pad.ts.canvas.style.width = '0.4em';
-  				pad.ts.canvas.style.height = '2em';
+  				pad.ts.canvas.style.width = PIANO_KEY_WIDTH;
+  				pad.ts.canvas.style.height = PIANO_KEY_HEIGHT;
   				pad.appendChild(pad.ts.canvas);
-  				//string.eEmptyEle.appendChild(string.canvas);
-  				//pad.textContent = '!';
 
   				var note = (pad.ts.note%12);
   				if (note == 1 || note == 3 || note == 6 || note == 8 || note == 10){
-  					pad.ts.bgcolor = 'black';
+  					pad.ts.bgcolor = 'rgba(0,0,0,1)';
   				}else{
-  					pad.ts.bgcolor = 'white';
+  					pad.ts.bgcolor = 'rgba(255,255,255,1)';
   				}
 
   				if (note == 0 || note == 5) pad.ts.borderLeft = true;
@@ -4602,7 +4633,114 @@ ts.html = new Object({
   				else pad.ts.borderRight = false;
 
   				nu.eKeyboard.appendChild(pad);
+
+          pad.ts.canvas_basic = document.createElement('canvas');
+          pad.ts.canvas_basic.style.width = PIANO_KEY_WIDTH;
+  				pad.ts.canvas_basic.style.height = PIANO_KEY_HEIGHT;
+
+          var canvas = pad.ts.canvas_basic;
+          var ctx = canvas.getContext("2d");
+          var w = canvas.width;
+          var h = canvas.height;
+          var lw = w/5;
+
+          ctx.beginPath();
+          ctx.rect(0, 0, w, h);
+          if (note == 1 || note == 3 || note == 6 || note == 8 || note == 10)
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+          else ctx.fillStyle = 'rgba(255,255,255,1)';
+          ctx.fill();
+
+          if (pad.ts.borderLeft){
+            ctx.beginPath();
+            ctx.lineWidth = lw;
+            ctx.moveTo(0,0);
+            ctx.lineTo(0,h);
+            ctx.strokeStyle = 'rgba(120,120,120,1)';
+            ctx.stroke();
+          }
+
+          if (pad.ts.borderRight){
+            ctx.beginPath();
+            ctx.lineWidth = lw;
+            ctx.moveTo(w-1,0);
+            ctx.lineTo(w-1,h);
+            ctx.strokeStyle = 'rgba(120,120,120,1)';
+            ctx.stroke();
+          }
   			}
+
+        function canvasChordNote(ctx){
+          var w = canvas.width;
+          var h = canvas.height;
+
+          ctx.beginPath();
+          ctx.rect(0, 0, w, h);
+          var grd = ctx.createLinearGradient(0,h,0,(h-(h/6)));
+          grd.addColorStop(0,'rgba(0,128,0,1)');
+          grd.addColorStop(1,'rgba(0,128,0,0)');
+          ctx.fillStyle = grd;
+          ctx.fill();
+        }
+        function canvasChordRoot(ctx){
+          var w = canvas.width;
+          var h = canvas.height;
+
+          ctx.beginPath();
+          ctx.rect(0, 0, w, h);
+          var grd = ctx.createLinearGradient(0,h,0,h/3);
+          grd.addColorStop(0,'rgba(0,128,0,1)');
+          grd.addColorStop(1,'rgba(0,128,0,0)');
+          ctx.fillStyle = grd;
+          ctx.fill();
+        }
+        function canvasMelodyNote(ctx){
+          var w = canvas.width;
+          var h = canvas.height;
+
+          ctx.beginPath();
+          ctx.rect(0, 0, w, h);
+          var grd = ctx.createLinearGradient(0,0,0,(h-(h/3)));
+          grd.addColorStop(0,'rgba(255,0,0,1)');
+          grd.addColorStop(1,'rgba(255,0,0,0)');
+          ctx.fillStyle = grd;
+          ctx.fill();
+        }
+
+        var ctx;
+
+        nu.canvasChordNote = document.createElement('canvas');
+        nu.canvasChordNote.style.width = PIANO_KEY_WIDTH;
+        nu.canvasChordNote.style.height = PIANO_KEY_HEIGHT;
+        ctx = nu.canvasChordNote.getContext("2d");
+        canvasChordNote(ctx);
+
+        nu.canvasChordRoot = document.createElement('canvas');
+        nu.canvasChordRoot.style.width = PIANO_KEY_WIDTH;
+        nu.canvasChordRoot.style.height = PIANO_KEY_HEIGHT;
+        ctx = nu.canvasChordRoot.getContext("2d");
+        canvasChordRoot(ctx);
+
+        nu.canvasChordNoteMelody = document.createElement('canvas');
+        nu.canvasChordNoteMelody.style.width = PIANO_KEY_WIDTH;
+        nu.canvasChordNoteMelody.style.height = PIANO_KEY_HEIGHT;
+        ctx = nu.canvasChordNoteMelody.getContext("2d");
+        canvasChordNote(ctx);
+        canvasMelodyNote(ctx);
+
+        nu.canvasChordRootMelody = document.createElement('canvas');
+        nu.canvasChordRootMelody.style.width = PIANO_KEY_WIDTH;
+        nu.canvasChordRootMelody.style.height = PIANO_KEY_HEIGHT;
+        ctx = nu.canvasChordRootMelody.getContext("2d");
+        canvasChordRoot(ctx);
+        canvasMelodyNote(ctx);
+
+        nu.canvasMelodyNote = document.createElement('canvas');
+        nu.canvasMelodyNote.style.width = PIANO_KEY_WIDTH;
+        nu.canvasMelodyNote.style.height = PIANO_KEY_HEIGHT;
+        ctx = nu.canvasMelodyNote.getContext("2d");
+        canvasMelodyNote(ctx);
+
   			nu.instrumentRefresh = (function(){
   				var running = false;
   				if (ts.player.is.running())running = true;
@@ -4613,95 +4751,31 @@ ts.html = new Object({
   					for (var i=0;i<nu.instrument.ui.length;i++){
   						var pad = nu.instrument.ui[i];
 
-
   						var canvas = pad.canvas;
   						var ctx = canvas.getContext("2d");
-  						var w = canvas.width;
-  						var h = canvas.height;
-  						var lw = w/5;
-  						//zs4.debug(w,h,pad);
 
-  						ctx.beginPath();
-  						ctx.rect(0, 0, w, h);
-  			      ctx.fillStyle = pad.bgcolor;
-  			      ctx.fill();
+              ctx.drawImage(pad.canvas_basic,0,0);
 
-  						if (pad.borderLeft){
-  							//zs4.debug('BORDERLEFT!!!');
-  							ctx.beginPath();
-  							ctx.lineWidth = lw;
-  							ctx.moveTo(0,0);
-  							ctx.lineTo(0,h);
-  							ctx.strokeStyle = 'rgba(120,120,120,1)';
-  							ctx.stroke();
-  						}
-
-  						if (pad.borderRight){
-  							//zs4.debug('BORDERLEFT!!!');
-  							ctx.beginPath();
-  							ctx.lineWidth = lw;
-  							ctx.moveTo(w-1,0);
-  							ctx.lineTo(w-1,h);
-  							ctx.strokeStyle = 'rgba(120,120,120,1)';
-  							ctx.stroke();
-  						}
-
-  						if (running){
-                if (pad.isChordRoot){
-                  var rt = h/2;
-                  var rh = h - rt;
-  								ctx.beginPath();
-  								ctx.rect(0, rt, w, rh);
-  								ctx.fillStyle = 'rgba(0,128,0,.75)';
-  								ctx.fill();
-  							}
-  							else if (pad.isChordNote){
-                  var rt = h*3/4;
-                  var rh = h - rt;
-  								ctx.beginPath();
-                  ctx.rect(0, rt, w, rh);
-  								ctx.fillStyle = 'rgba(0,128,0,.75)';
-  								ctx.fill();
-  							}
-
+              if (pad.isChordRoot){
                 if (pad.isMelodyNote){
-                  ctx.beginPath();
-  								ctx.rect(0, 0, w, h/3);
-  								ctx.fillStyle = 'rgba(255,0,0,1)';
-  								ctx.fill();
+                  ctx.drawImage(nu.canvasChordRootMelody,0,0);
                 }
-  						}
-  						else {
-  							if (pad.isChordRoot){
-  								ctx.beginPath();
-  								ctx.rect(0, 0, w, h);
-  								var grd = ctx.createLinearGradient(0,h,0,h/3);
-  								grd.addColorStop(0,'rgba(0,128,0,1)');
-  								grd.addColorStop(1,'rgba(0,128,0,0)');
-  								ctx.fillStyle = grd;
-  								ctx.fill();
-  							}
-  							else if (pad.isChordNote){
-  								ctx.beginPath();
-  								ctx.rect(0, 0, w, h);
-  								var grd = ctx.createLinearGradient(0,h,0,(h-(h/6)));
-  								grd.addColorStop(0,'rgba(0,128,0,1)');
-  								grd.addColorStop(1,'rgba(0,128,0,0)');
-  								ctx.fillStyle = grd;
-  								ctx.fill();
-  							}
+                else {
+                  ctx.drawImage(nu.canvasChordRoot,0,0);
+                }
+              }
+              else if (pad.isChordNote){
+                if (pad.isMelodyNote){
+                  ctx.drawImage(nu.canvasChordNoteMelody,0,0);
+                }
+                else {
+                  ctx.drawImage(nu.canvasChordNote,0,0);
+                }
+              }
+              else if (pad.isMelodyNote){
+                ctx.drawImage(nu.canvasMelodyNote,0,0);
+              }
 
-  							if (pad.isMelodyNote){
-  								ctx.beginPath();
-  								ctx.rect(0, 0, w, h);
-  								var grd = ctx.createLinearGradient(0,0,0,(h-(h/3)));
-  								grd.addColorStop(0,'rgba(255,0,0,1)');
-  								grd.addColorStop(1,'rgba(255,0,0,0)');
-  								ctx.fillStyle = grd;
-  								ctx.fill();
-  							}
-
-  						}
   					}
   				}
   			});
