@@ -278,7 +278,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-menu:before{content:"\02630";font-weight: bolder;}
 .icon-message:before{content:url(/gfx/icons/message.svg);}
 .icon-method:before{content:url(/gfx/icons/method.svg);}
-.icon-minus:before{content:"-";font-weight: bolder;}
+.icon-minus:before{content:url(/gfx/icons/minus.svg);}
 .icon-mongodb:before{content:url(/gfx/icons/mongodb.svg);}
 .icon-networkinterfaces:before{content:url(/gfx/icons/connector.svg);}
 .icon-next:before{content:url(/gfx/icons/next.svg);}
@@ -298,7 +298,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-pilcrow:before{content:'\000B6';font-weight: bolder;}
 .icon-pinterest:before{content:url(/gfx/icons/pinterest.svg);}
 .icon-play:before{content:url(/gfx/icons/play.svg);}
-.icon-plus:before{content:"+";font-weight: bolder;}
+.icon-plus:before{content:url(/gfx/icons/plus.svg);}
 .icon-prev:before{content:url(/gfx/icons/prev.svg);}
 .icon-price:before{content:url(/gfx/icons/coins.svg);}
 .icon-private:before{content:url(/gfx/icons/private.svg);}

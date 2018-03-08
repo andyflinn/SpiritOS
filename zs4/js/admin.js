@@ -137,6 +137,18 @@ zs4.admin.util = {
 		p.appendChild(ret);
 		return ret;
 	},
+	addTextSpan:function(p,text){
+		var ret = document.createElement('span');
+		ret.textContent = text;
+		p.appendChild(ret);
+		return ret;
+	},
+	addSpace:function(p,w,h){
+		var ret = document.createElement('span');
+		ret.innerHTML = '<svg width=\"0.5em\" height=\"1em\"></svg>';
+		p.appendChild(ret);
+		return ret;
+	},
 	tool:function(o,name){
 		this.active = false;
 		this.name = name;

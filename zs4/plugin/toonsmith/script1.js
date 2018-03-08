@@ -735,6 +735,9 @@ ts.create = function(){
         }
       }
 
+      for (var m = 0; m < beat.beat.events.length; m++){
+        if (beat.beat.events[m].hasMusic())a.push(beat.beat.events[m])
+      }
     }
 
     // concoct a melody summary
@@ -2088,6 +2091,91 @@ ts.abc = function(){
 };
 
 ts.music = new Object({
+  element:{
+    chord:function(parentelement){
+      var CHORD = this;
+      var chordobject = ts.music.parse.chord('C');
+      function chordChanged(){
+        if (zs4.is.function(CHORD.onchange)){
+          CHORD.onchange(CHORD.get());
+        }
+      }
+
+      var chordblock = document.createElement('ts-chordblock');
+      chordblock.style.display = 'inline-block';
+      parentelement.appendChild(chordblock);
+
+      var chordnote = document.createElement('select');
+      chordblock.appendChild(chordnote);
+        for (var i = 0 ; i < ts.music.NOTES.length ; i++ ){
+          var opt = document.createElement('option');
+          opt.value = i;
+          opt.innerHTML = ts.music.NOTES[i].s;
+          chordnote.appendChild(opt);
+        }
+      chordnote.onchange = function(){
+        chordobject.v = chordobject.b = chordbass.value = zs4.parse.int(chordnote.value);
+        chordChanged();
+      };
+
+      var chordtype = document.createElement('select');
+      chordblock.appendChild(chordtype);
+        for (var i = 0 ; i < ts.music.CHORD.TYPE.length ; i++ ){
+          var opt = document.createElement('option');
+          opt.value = i;
+          opt.innerHTML = ts.music.CHORD.TYPE[i].s;
+          chordtype.appendChild(opt);
+        }
+      chordtype.onchange = function(){
+        chordobject.t = zs4.parse.int(chordtype.value);
+        chordChanged();
+      };
+
+      var chordslash = document.createElement('ts-chord-slash');
+      chordslash.textContent = '/';
+      chordslash.style.fontWeight = 'bolder';
+      chordblock.appendChild(chordslash);
+
+      var chordbass = document.createElement('select');
+      chordblock.appendChild(chordbass);
+        for (var i = 0 ; i < ts.music.NOTES.length ; i++ ){
+          var opt = document.createElement('option');
+          opt.value = i;
+          opt.innerHTML = ts.music.NOTES[i].s;
+          chordbass.appendChild(opt);
+        }
+      chordbass.onchange = function(){
+        chordobject.b = zs4.parse.int(chordbass.value);
+        chordChanged();
+      };
+
+      CHORD.set = function(v){
+        if (zs4.is.string(v)){
+          v = ts.music.parse.chord(v);
+        }
+        if (zs4.is.object(v)){
+          chordobject.v = zs4.parse.int(v.v)%12;
+          chordobject.t = zs4.parse.int(v.t)%ts.music.CHORD.TYPE.length;
+          chordobject.b = zs4.parse.int(v.b)%12;
+          chordobject.ok = true;
+        }
+        chordnote.value = chordobject.v;
+        chordtype.value = chordobject.t;
+        chordbass.value = chordobject.b;
+      };
+
+      CHORD.get = function(){
+        var c = ts.music.parse.chord('C');
+        c.v = chordobject.v;
+        c.t = chordobject.t;
+        c.b = chordobject.b;
+        c.ok = true;
+        return c;
+      };
+
+      CHORD.element = chordblock;
+    },
+  },
 	transpose:{
 		note:{
 			name:function(value,delta){
@@ -2934,6 +3022,7 @@ ts.html = new Object({
 				parent.appendChild(kbm);
 
         var bar = zs4.admin.util.addIconElement(kbm,'bar');
+        bar.title = 'Bar mode: ctrl b or ctrl |';
         bar.onclick = function(){
           if (SEQ.kbm == KBM_BAR) SEQ.kbm = KBM_EVENT;
           else SEQ.kbm = KBM_BAR;
@@ -2942,8 +3031,17 @@ ts.html = new Object({
           }
           SEQ.kb.refresh();
         };
+        var baronoff = zs4.admin.util.addIconElement(kbm,'plus');
+        baronoff.onclick = function(){
+          SEQ.evt_current.toggleBar();
+          SEQ.evt_current.refresh();
+          SEQ.kb.refresh();
+        };
+
+        zs4.admin.util.addSpace(kbm);
 
         var beat = zs4.admin.util.addIconElement(kbm,'beat');
+        beat.title = 'Beat mode: ctrl B or ctrl .';
         beat.onclick = function(){
           if (SEQ.kbm == KBM_BEAT) SEQ.kbm = KBM_EVENT;
           else SEQ.kbm = KBM_BEAT;
@@ -2952,8 +3050,17 @@ ts.html = new Object({
           }
           SEQ.kb.refresh();
         };
+        var beatonoff = zs4.admin.util.addIconElement(kbm,'plus');
+        beatonoff.onclick = function(){
+          SEQ.evt_current.toggleBeat();
+          SEQ.evt_current.refresh();
+          SEQ.kb.refresh();
+        };
+
+        zs4.admin.util.addSpace(kbm);
 
         var chord = zs4.admin.util.addIconElement(kbm,'chord');
+        chord.title = 'Chord mode: ctrl c(hord) or ctrl k(ord)';
         chord.onclick = function(){
           if (SEQ.kbm == KBM_CHORD) SEQ.kbm = KBM_EVENT;
           else SEQ.kbm = KBM_CHORD;
@@ -2963,7 +3070,33 @@ ts.html = new Object({
           SEQ.kb.refresh();
         };
 
+        var CHORD = new ts.music.element.chord(kbm);
+        CHORD.onchange = function(chord){
+          if (SEQ.evt_current.isChord(chord)){
+            SEQ.evt_current.chord.v = chord.v;
+            SEQ.evt_current.chord.t = chord.t;
+            SEQ.evt_current.chord.b = chord.b;
+          }
+          else {
+            SEQ.kb.chord = ts.music.CHORD.toString(chord);
+            SEQ.kb.pos = SEQ.kb.chord.length;
+          }
+          SEQ.evt_current.refresh();
+          if (SEQ.current_inst != null)SEQ.current_inst.refresh();
+        }
+        var chordonoff = zs4.admin.util.addIconElement(kbm,'plus');
+        chordonoff.onclick = function(){
+          if (SEQ.evt_current.isChord()) SEQ.evt_current.chord = null;
+          else
+          SEQ.evt_current.refresh();
+          SEQ.kb.refresh();
+          if (SEQ.current_inst != null)SEQ.current_inst.refresh();
+        };
+
+        zs4.admin.util.addSpace(kbm);
+
         var melody = zs4.admin.util.addIconElement(kbm,'note');
+        melody.title = 'Melody mode: ctrl m(elody) or ctrl n(note)';
         melody.onclick = function(){
           if (SEQ.kbm == KBM_MELODY) SEQ.kbm = KBM_EVENT;
           else SEQ.kbm = KBM_MELODY;
@@ -2973,7 +3106,10 @@ ts.html = new Object({
           SEQ.kb.refresh();
         };
 
+        zs4.admin.util.addSpace(kbm);
+
 				var lyric = zs4.admin.util.addIconElement(kbm,'lyric');
+        lyric.title = 'Lyric mode: ctrl t(ext) or ctrl a';
         lyric.onclick = function(){
           if (SEQ.kbm == KBM_LYRIC) SEQ.kbm = KBM_EVENT;
           else SEQ.kbm = KBM_LYRIC;
@@ -2982,6 +3118,8 @@ ts.html = new Object({
           }
           SEQ.kb.refresh();
         };
+
+        zs4.admin.util.addSpace(kbm);
 
         var prev = zs4.admin.util.addIconElement(kbm,'prev');
 				prev.onclick = function(){SEQ.kbLeft();}
@@ -3004,14 +3142,52 @@ ts.html = new Object({
           SEQ.kbIconMode(lyric,SEQ.kbm == KBM_LYRIC);
           SEQ.kbIconMode(chord,SEQ.kbm == KBM_CHORD);
 
-          if (SEQ.current_inst!=null){
-            SEQ.current_inst.refresh();
-            chord.style.display = 'none'
-            melody.style.display = 'none'
+          if (SEQ.kbm == KBM_BAR){
+            baronoff.style.display = 'inline-block';
+            if (SEQ.evt_current.isBar())zs4.admin.util.setIcon(baronoff,'delete');
+            else zs4.admin.util.setIcon(baronoff,'plus');
+            baronoff.title = 'Toogle Bar: \'b\'';
           }
           else {
-            chord.style.display = 'inline-block'
-            melody.style.display = 'inline-block'
+            baronoff.style.display = 'none';
+          }
+
+          if (SEQ.kbm == KBM_BEAT){
+            beatonoff.style.display = 'inline-block';
+            if (SEQ.evt_current.isBar())zs4.admin.util.setIcon(beatonoff,'bar');
+            else if (SEQ.evt_current.isBeat())zs4.admin.util.setIcon(beatonoff,'delete');
+            else zs4.admin.util.setIcon(beatonoff,'plus');
+            beatonoff.title = 'Toogle Beat: \'b\'';
+          }
+          else {
+            beatonoff.style.display = 'none';
+          }
+
+          if (SEQ.kbm == KBM_CHORD){
+            CHORD.element.style.display = 'inline-block';
+            chordonoff.style.display = 'inline-block';
+            if (SEQ.evt_current.isChord()){
+              CHORD.set(SEQ.evt_current.chord);
+              zs4.admin.util.setIcon(chordonoff,'delete');
+            }
+            else {
+              CHORD.set(SEQ.kb.chord);
+              zs4.admin.util.setIcon(chordonoff,'plus');
+            }
+          }
+          else {
+            CHORD.element.style.display = 'none';
+            chordonoff.style.display = 'none';
+          }
+
+          if (SEQ.current_inst!=null){
+            SEQ.current_inst.refresh();
+            //chord.style.display = 'none'
+            //melody.style.display = 'none'
+          }
+          else {
+            //chord.style.display = 'inline-block'
+            //melody.style.display = 'inline-block'
           }
         };
       };
@@ -3438,12 +3614,12 @@ ts.html = new Object({
               return false;
             }
 
-            else if (e.key=='b'){
+            else if ((e.key=='b')||(e.key=='|')){
               SEQ.setKbmMode(KBM_BAR);
               e.preventDefault();
               return false;
             }
-            else if (e.key=='B'){
+            else if ((e.key=='B')||(e.key=='.')){
               SEQ.setKbmMode(KBM_BEAT);
               e.preventDefault();
             }
@@ -3451,17 +3627,17 @@ ts.html = new Object({
               SEQ.setKbmMode(KBM_EVENT);
               e.preventDefault();
             }
-            else if (e.key=='t'){
+            else if ((e.key=='t')||(e.key=='a')){
               SEQ.setKbmMode(KBM_LYRIC);
               e.preventDefault();
               return false;
             }
-            else if (e.key=='m'){
+            else if ((e.key=='m')||(e.key=='n')){
               SEQ.setKbmMode(KBM_MELODY);
               e.preventDefault();
               return false;
             }
-            else if (e.key=='k'){
+            else if ((e.key=='c')||(e.key=='k')){
               SEQ.kb.chord = null;
               SEQ.setKbmMode(KBM_CHORD);
               e.preventDefault();
@@ -3820,7 +3996,19 @@ ts.html = new Object({
 
       SEQ.resetKeyboard = function(){
         SEQ.kb.pos=0;
-        //SEQ.kb.chord=ts.music.CHORD.toString();
+        if (SEQ.evt_current.isChord()){
+          SEQ.kb.chord = ts.music.CHORD.toString(SEQ.evt_current.chord);
+        }
+        else {
+          var prev = SEQ.searchPrevChord(SEQ.evt_curidx);
+          if ((prev != SEQ.evt_curidx) && (SEQ.evt[prev].isChord())){
+              SEQ.kb.chord = ts.music.CHORD.toString(SEQ.evt[prev].chord);
+          }
+          else {
+            SEQ.kb.chord = '';
+          }
+        }
+
       };
   		SEQ.refresh = function(){
   			//zs4.debug('refresh() toonsmith');
@@ -3872,70 +4060,6 @@ ts.html = new Object({
   				refresh:function(){},
   				onactivate:function(){},
 
-  				getCurrentEvent:function(){
-  					if (this.ts.evt.length == 0 || this.ts.evt_current == null ) return null;
-  					return this.ts.evt_current;
-  				},
-  				getCurrentChord:function(){
-  					var e = this.getCurrentEvent();
-  					if (e == null)return null;
-
-  					if (e.chord == null || !e.chord.ok) return null;
-
-  					return e.chord;
-  				},
-  				deleteCurrentChord:function(){
-  					var e = this.getCurrentEvent();
-  					if (e == null)return null;
-
-  					if (e.chord == null)
-  						return null;
-
-  					e.chord = null;
-  					return null;
-  				},
-  				setCurrentChordRoot:function(note){
-  					var event = this.getCurrentEvent();
-  					if (event == null)return null;
-
-  					var chord = this.getCurrentChord();
-  					if (chord == null){
-  						chord = ts.music.parse.chord("C");
-  						event.chord = chord;
-  					}
-  					chord.v = chord.b = parseInt(note);
-  					chord.t = 0;
-  				},
-  				setCurrentChordType:function(type){
-  					var event = this.getCurrentEvent();
-  					if (event == null)return null;
-
-  					var chord = this.getCurrentChord();
-  					if (chord == null)return null;
-
-  					chord.t = parseInt(type);
-  				},
-  				setCurrentChordBass:function(bass){
-  					var event = this.getCurrentEvent();
-  					if (event == null)return null;
-
-  					var chord = this.getCurrentChord();
-  					if (chord == null)return null;
-
-  					chord.b = parseInt(bass);
-  				},
-  				toggleBar:function(){
-  					var event = this.getCurrentEvent();
-  					if (event == null)return null;
-            event.toggleBar();
-            return event;
-  				},
-  				toggleBeat:function(){
-  					var event = this.getCurrentEvent();
-  					if (event == null)return null;
-            event.toggleBeat();
-  					return event;
-  				},
   			});
   			if (tooltype=='i'){
   				nu.arr = this.inst;
@@ -3985,12 +4109,21 @@ ts.html = new Object({
   			}
 
   			if (zs4.is.string(icon)){
-  				nu.toolicon = ts.html.nu.ele('ts-tool-icon-'+icon);
-  				zs4.admin.util.setIcon(nu.toolicon,icon);
-  				if (tooltype=='i') nu.ts.instpopped.appendChild(nu.toolicon);
-  				else nu.ts.toolspopped.appendChild(nu.toolicon);
+  				//zs4.admin.util.setIcon(nu.toolicon,icon);
+  				if (tooltype=='i') {
+            nu.toolicon = zs4.admin.util.addIconElement(SEQ.instpopped,icon);
+            nu.toolicon.onclick = function(){nu.use();SEQ.adaptContentPane(); };
+          }
+  				else {
+            nu.toolselector = document.createElement('div');
+            SEQ.toolspopped.appendChild(nu.toolselector);
+            nu.toolicon = zs4.admin.util.addIconElement(nu.toolselector,icon);
+            zs4.admin.util.addSpace(nu.toolselector);
+            nu.tooltext = zs4.admin.util.addTextSpan(nu.toolselector,tooltype);
+            nu.toolselector.onclick = function(){nu.use();SEQ.adaptContentPane(); };
+          }
+
   				//zs4.debug('adding icon for '+icon);
-  				nu.toolicon.onclick = function(){nu.use();SEQ.adaptContentPane(); };
   			}
 
   			nu.toolWindow = ts.html.nu.ele('ts-tool-window');
@@ -4023,20 +4156,20 @@ ts.html = new Object({
   				}
   			};
   			nu.toolTitlebar.appendChild(nu.titleIcon);
-
-        nu.eToolName = ts.html.nu.ele('ts-tool-name');
-        nu.eToolName.textContent = name;
-        nu.eToolName.style.paddingRight = '0.5em';
-        nu.toolTitlebar.appendChild(nu.eToolName);
-
+        zs4.admin.util.addSpace(nu.toolTitlebar);
   			if (tooltype=='i'){
+          nu.eToolName = zs4.admin.util.addTextSpan(nu.toolTitlebar,name);
   				this.instarea.appendChild(nu.toolWindow);
   				this.inst.push(nu);
   			}
   			else {
+          nu.eToolName = zs4.admin.util.addTextSpan(nu.toolTitlebar,tooltype);
   				this.toolarea.appendChild(nu.toolWindow);
   				this.tool.push(nu);
   			}
+        nu.eToolName.style.fontWeight = 'bold';
+        nu.eToolName.style.backgroundColor = 'grey';
+        zs4.admin.util.addSpace(nu.toolTitlebar);
 
 
   			return nu;
@@ -4110,9 +4243,9 @@ ts.html = new Object({
         nu.instrumentNoteLowest = function(){return MIDI_NOTE_MIN;}
         nu.instrumentNoteHighest = function(){return MIDI_NOTE_MAX;}
 
-        nu.iRange = ts.html.nu.ele('ts-instrument-range');
-        nu.iRange.style.paddingRight = '0.5em';
-        nu.toolTitlebar.appendChild(nu.iRange);
+        nu.iRange = zs4.admin.util.addTextSpan(nu.toolTitlebar,'range:');
+
+        zs4.admin.util.addSpace(nu.toolTitlebar);
 
         nu.iGeneral = ts.html.nu.ele('ts-instrument-general');
         nu.iGeneral.style.display = 'inline-block';
@@ -4128,11 +4261,51 @@ ts.html = new Object({
           }
           SEQ.kb.refresh();
         };
+        var eChord = new ts.music.element.chord(nu.iGeneral);
+        eChord.onchange = function(ch){
+          var NIK = nu.instrumentKey();
+          if (SEQ.evt_current.isChord()){
+            SEQ.evt_current.chord.v = (ch.v + NIK)%12;
+            SEQ.evt_current.chord.t = ch.t;
+            SEQ.evt_current.chord.b = (ch.b + NIK)%12;
+          }
+          else {
+            var c = ts.music.parse.chord('C');
+            c.v = (ch.v + NIK)%12;
+            c.t = ch.t;
+            c.b = (ch.b + NIK)%12;
+            SEQ.kb.chord = ts.music.CHORD.toString(c);
+            SEQ.kb.pos = SEQ.kb.chord.length;
+          }
+          SEQ.evt_current.refresh();
+          SEQ.kb.refresh();
+          nu.refresh();
+        };
+        var eChordAddRem = zs4.admin.util.addIconElement(nu.iGeneral,'plus');
+        eChordAddRem.onclick = function(){
+          if (SEQ.evt_current.isChord()){
+            SEQ.evt_current.chord = null;
+          }
+          else {
+            var NIK = nu.instrumentKey();
+            var c = eChord.get();
+            c.v = (c.v + NIK)%12;
+            c.b = (c.b + NIK)%12;
+            SEQ.evt_current.chord = c;
+
+            SEQ.kb.chord = ts.music.CHORD.toString(c);
+            SEQ.kb.pos = SEQ.kb.chord.length;
+          }
+          SEQ.evt_current.refresh();
+          SEQ.kb.refresh();
+          nu.refresh();
+        };
 
         nu.iCurrentChord = ts.html.nu.ele('ts-instrument-curchord');
         nu.iCurrentChord.style.minWidth = '5em';
-        nu.iCurrentChord.style.paddingRight = '0.5em';
         nu.iGeneral.appendChild(nu.iCurrentChord);
+
+        zs4.admin.util.addSpace(nu.iGeneral);
 
         var melody = zs4.admin.util.addIconElement(nu.iGeneral,'note');
         melody.onclick = function(){
@@ -4145,6 +4318,8 @@ ts.html = new Object({
         };
         nu.iHoverNote = ts.html.nu.ele('ts-instrument-hovernote');
         nu.iGeneral.appendChild(nu.iHoverNote);
+
+        zs4.admin.util.addSpace(nu.iGeneral);
 
   			nu.eEventInstrument = ts.html.nu.ele('ts-instrument-' + name);
   			nu.eEventInstrument.className = 'instrument';
@@ -4184,7 +4359,35 @@ ts.html = new Object({
               transchord.b = ((60+chord.b) - NIK)%12;
               transchord.ok = true;
 
+              if (!SEQ.evt_current.isChord()&&(SEQ.kb.chord!=null)&&(SEQ.kb.chord.length>0)) {
+                var c = ts.music.parse.chord(SEQ.kb.chord);
+                if (c.ok){
+                  transchord.v = ((60+c.v) - NIK)%12;
+                  transchord.t = chord.t;
+                  transchord.b = ((60+c.b) - NIK)%12;
+                  transchord.ok = true;
+                }
+              }
+
               nu.iCurrentChord.textContent = ts.music.CHORD.toString(transchord);
+              eChord.set(transchord);
+              if (SEQ.kbm == KBM_CHORD){
+                eChord.element.style.display = 'inline-block';
+                eChordAddRem.style.display = 'inline';
+                nu.iCurrentChord.style.display = 'none';
+                if (SEQ.evt_current.isChord()){
+                  zs4.admin.util.setIcon(eChordAddRem,'delete');
+                }
+                else {
+                  zs4.admin.util.setIcon(eChordAddRem,'plus');
+                }
+              }
+              else {
+                eChord.element.style.display = 'none';
+                eChordAddRem.style.display = 'none';
+                nu.iCurrentChord.style.display = 'initial';
+            }
+
   						var className = '';
   						var ch = ts.music.CHORD.TYPE[chord.t].a;
   						for (var i = 0 ; i < nu.instrument.ui.length ; i++ ){
@@ -4822,11 +5025,13 @@ ts.html = new Object({
   		};
 
       SEQ.createToolKeys = function(){
-        var nu = this.createTool('keys','keys');
+        var nu = this.createTool('keys','keys', 'edit Sequence (keyboard/mouse)');
+        var br = document.createElement('br');
+        nu.toolTitlebar.appendChild(br);
         SEQ.createKeyboardModes(nu.toolTitlebar);
       };
   		SEQ.createToolTranspose = function(){
-  			var nu = this.createTool('','transpose');
+  			var nu = this.createTool('','transpose', 'transpose sequence');
 
   			nu.eEventTranspose = ts.html.nu.ele('ts-tool-transpose');
   			nu.eEventTranspose.style.display = 'inline-block';
@@ -4864,13 +5069,13 @@ ts.html = new Object({
   			return nu;
   		};
       SEQ.createToolGlobal = function(){
-  			var nu = this.createTool('global','global');
+  			var nu = this.createTool('global','global', 'global sequence parameters');
 
-  			nu.eEventBpm = ts.html.nu.ele('ts-tool-bpm');
-  			nu.eEventBpm.style.display = 'inline-block';
+  			nu.eEventBpm = ts.html.nu.ele('div');
   			nu.toolWindow.appendChild(nu.eEventBpm);
 
           zs4.admin.util.addIconElement(nu.eEventBpm,'bpm')
+          zs4.admin.util.addTextSpan(nu.eEventBpm,'beats/minute:');
   				nu.eEventBpmInput = ts.html.nu.ele('input');
   				nu.eEventBpmInput.type = 'number';
   				nu.eEventBpmInput.value = this.bpm;
@@ -4884,11 +5089,11 @@ ts.html = new Object({
           };
 
 
-        nu.eEventBpc = ts.html.nu.ele('ts-tool-bpb');
-  			nu.eEventBpc.style.display = 'inline-block';
+        nu.eEventBpc = ts.html.nu.ele('div');
   			nu.toolWindow.appendChild(nu.eEventBpc);
 
           zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
+          zs4.admin.util.addTextSpan(nu.eEventBpc,'beats/bar:');
   				nu.eEventBpcInput = ts.html.nu.ele('input');
   				nu.eEventBpcInput.type = 'number';
   				nu.eEventBpcInput.value = this.bpb;
@@ -4901,12 +5106,11 @@ ts.html = new Object({
             SEQ.recomputeTiming();
   				};
 
-        nu.eEventTpb = ts.html.nu.ele('ts-tool-tpb');
-  			nu.eEventTpb.style.display = 'inline-block';
+        nu.eEventTpb = ts.html.nu.ele('div');
   			nu.toolWindow.appendChild(nu.eEventTpb);
 
-
           zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
+          zs4.admin.util.addTextSpan(nu.eEventTpb,'ticks/beat:');
   				nu.eEventTpbInput = ts.html.nu.ele('input');
   				nu.eEventTpbInput.type = 'number';
   				nu.eEventTpbInput.value = SEQ.tpb;
@@ -4922,7 +5126,7 @@ ts.html = new Object({
   			return nu;
   		};
   		SEQ.createToolMidi = function(){
-  			var nu = this.createTool('midi','midi');
+  			var nu = this.createTool('midi','midi', 'setup midi interface');
 
   			function addDeviceOptions(){
   				if (ts.playNote == ts.midi.play.note && ts.midi.output.length > 0 && !nu.devices_ok)
@@ -4997,7 +5201,7 @@ ts.html = new Object({
   			return nu;
   		};
   		SEQ.createToolAudio = function(){
-  			var nu = this.createTool('audio','audio');
+  			var nu = this.createTool('audio','audio', 'setup audio interface');
 
   			nu.eEventAudio = ts.html.nu.ele('ts-tool-audio');
   			nu.eEventAudio.style.display = 'inline-block';
@@ -5033,175 +5237,8 @@ ts.html = new Object({
 
   			return nu;
   		};
-  		SEQ.createToolBars = function(){
-  			var nu = this.createTool('bars','bars');
-
-  			nu.eEventBarButton = ts.html.nu.ele('ts-tool-bar-button');
-  			nu.eEventBarButton.ts = nu;
-  			nu.eEventBarButton.onclick = function(){
-  				var e = this.ts.toggleBar();
-  				if (e.bar && e.beat) zs4.admin.util.setIcon(nu.eEventBarButton,'bars');
-  				else if (e.beat) zs4.admin.util.setIcon(nu.eEventBarButton,'beats');
-  				else zs4.admin.util.setIcon(nu.eEventBarButton,'plus');
-  				this.ts.ts.refresh();
-  			};
-  			nu.toolTitlebar.appendChild(nu.eEventBarButton);
-
-  			nu.refresh = function(){
-  				if (this.ts.evt_current != null){
-  					var e = this.ts.evt_current;
-  					if (e.bar){
-  						zs4.admin.util.setIcon(nu.eEventBarButton,'bars');
-  					}
-  					else if (e.beat){
-  						zs4.admin.util.setIcon(nu.eEventBarButton,'beats');
-  					}
-  					else {
-  						zs4.admin.util.setIcon(nu.eEventBarButton,'plus');
-  					}
-  				}
-  			};
-
-  			return nu;
-  		};
-  		SEQ.createToolBeats = function(){
-  			var nu = this.createTool('beats','beats');
-
-  			nu.eEventBeatButton = ts.html.nu.ele('ts-tool-beat-button');
-  			nu.eEventBeatButton.ts = nu;
-  			nu.eEventBeatButton.onclick = function(){
-  				//alert('add chord');
-  				this.ts.toggleBeat();
-  				this.ts.ts.refresh();
-  			};
-  			nu.toolTitlebar.appendChild(nu.eEventBeatButton);
-
-  			nu.refresh = function(){
-  				if (this.ts.evt_current != null){
-  					var e = this.ts.evt_current;
-  					if (e.bar){
-  						zs4.admin.util.setIcon(nu.eEventBeatButton,'bars');
-  					}
-  					else if (e.beat){
-  						zs4.admin.util.setIcon(nu.eEventBeatButton,'beats');
-  					}
-  					else {
-  						zs4.admin.util.setIcon(nu.eEventBeatButton,'plus');
-  					}
-  				}
-  			};
-
-  			return nu;
-  		};
-  		SEQ.createToolChord = function(){
-  			var nu = this.createTool('chord','chord');
-
-  			nu.eEventChord = ts.html.nu.ele('ts-tool-chord');
-  			nu.eEventChord.style.display = 'inline-block';
-  			nu.toolTitlebar.appendChild(nu.eEventChord);
-
-  				nu.eEventChordAdd = ts.html.nu.ele('ts-tool-chord-add');
-  				nu.eEventChordAdd.ts = nu;
-  				nu.eEventChordAdd.onclick = function(){
-  					//alert('add chord');
-  					this.ts.setCurrentChordRoot(0);
-  					this.ts.ts.refresh();
-  				};
-  				zs4.admin.util.setIcon(nu.eEventChordAdd,'plus');
-  				nu.eEventChord.appendChild(nu.eEventChordAdd);
-
-  				nu.eEventChordNote = ts.html.nu.ele('select');
-  				nu.eEventChordNote.ts = nu;
-  				nu.eEventChord.appendChild(nu.eEventChordNote);
-  					for (var i = 0 ; i < ts.music.NOTES.length ; i++ ){
-  						var opt = ts.html.nu.ele('option');
-  						opt.value = i;
-  						opt.innerHTML = ts.music.NOTES[i].s;
-  						nu.eEventChordNote.appendChild(opt);
-  					}
-  				nu.eEventChordNote.onchange = function(){
-  					this.ts.setCurrentChordRoot(this.value);
-  					this.ts.ts.refresh();
-  				};
-
-  				nu.eEventChordType = ts.html.nu.ele('select');
-  				nu.eEventChordType.ts = nu;
-  				nu.eEventChord.appendChild(nu.eEventChordType);
-
-  					for (var i = 0 ; i < ts.music.CHORD.TYPE.length ; i++ ){
-  						var opt = ts.html.nu.ele('option');
-  						opt.value = i;
-  						opt.innerHTML = ts.music.CHORD.TYPE[i].s;
-  						nu.eEventChordType.appendChild(opt);
-  					}
-  				nu.eEventChordType.onchange = function(){
-  					this.ts.setCurrentChordType(this.value);
-  					this.ts.ts.refresh();
-  				};
-
-  				nu.eEventChordSlash = ts.html.nu.ele('ts-chord-slash');
-  				nu.eEventChordSlash.ts = nu;
-  				nu.eEventChord.appendChild(nu.eEventChordSlash);
-
-  				nu.eEventChordBass = ts.html.nu.ele('select');
-  				nu.eEventChordBass.ts = nu;
-  				nu.eEventChord.appendChild(nu.eEventChordBass);
-
-  					for (var i = 0 ; i < ts.music.NOTES.length ; i++ ){
-  						var opt = ts.html.nu.ele('option');
-  						opt.value = i;
-  						opt.innerHTML = ts.music.NOTES[i].s;
-  						nu.eEventChordBass.appendChild(opt);
-  					}
-  				nu.eEventChordBass.onchange = function(){
-  					this.ts.setCurrentChordBass(this.value);
-  					this.ts.ts.refresh();
-  				};
-
-
-  				//nu.eEventChordType.onchange = function(){this.ts.onKeyChange();};
-  				nu.eEventChordDelete = ts.html.nu.ele('ts-event-chord-delete');
-  				nu.eEventChordDelete.textContent = 'X';
-  				nu.eEventChordDelete.ts = nu;
-  				nu.eEventChordDelete.onclick = function(){
-  					this.ts.deleteCurrentChord();
-  					this.ts.ts.refresh();
-  				};
-  				nu.eEventChord.appendChild(nu.eEventChordDelete);
-
-  			nu.refresh = function(){
-  				if (this.ts.evt_current != null){
-  					var e = this.ts.evt_current;
-  					if (e.chord != null){
-  						this.eEventChordAdd.style.display = 'none';
-  						this.eEventChordNote.style.display = 'inline'
-  						this.eEventChordType.style.display = 'inline'
-  						this.eEventChordSlash.style.display = 'inline'
-  						this.eEventChordBass.style.display = 'inline'
-  						this.eEventChordDelete.style.display = 'inline'
-
-  						this.eEventChordNote.value = e.chord.v;
-  						this.eEventChordType.value = e.chord.t;
-  						this.eEventChordBass.value = e.chord.b;
-  						//alert('chord found!');
-  					}
-  					else {
-  						this.eEventChordAdd.style.display = 'inline';
-  						this.eEventChordNote.style.display = 'none'
-  						this.eEventChordType.style.display = 'none'
-  						this.eEventChordSlash.style.display = 'none'
-  						this.eEventChordBass.style.display = 'none'
-  						this.eEventChordDelete.style.display = 'none'
-
-  						//alert('no chord!');
-  					}
-  				}
-  			};
-
-  			return nu;
-  		};
   		SEQ.createToolScript = function(){
-  			var nu = this.createTool('script','document');
+  			var nu = this.createTool('script','document', 'import lyrics/script');
 
   			nu.eTextArea = ts.html.nu.ele('textarea');
   			nu.eTextArea.style.width = '100%';
@@ -5223,7 +5260,7 @@ ts.html = new Object({
 
   		};
       SEQ.createToolAbc = function(){
-  			var nu = this.createTool('abc','abc');
+  			var nu = this.createTool('abc','abc', 'import ABC notation');
 
         var go = zs4.admin.util.addIconElement(nu.toolTitlebar,'toonsmith');
         go.onclick = function(){
@@ -5244,7 +5281,7 @@ ts.html = new Object({
 
   		};
   		SEQ.createToolLayout = function(){
-  			var nu = this.createTool('layout','layout');
+  			var nu = this.createTool('layout','layout','change visual layout');
 
   			nu.lfLabel =  ts.html.nu.ele('ts-input-label');
   			nu.lfLabel.innerHTML =  '&#xb6;';
@@ -5267,7 +5304,7 @@ ts.html = new Object({
   			return nu;
   		};
       SEQ.createToolEvent = function(){
-  			var TOOL = this.createTool('event','event');
+  			var TOOL = this.createTool('event','event','inspect event (types)');
 
         TOOL.eLabel = document.createElement('ts-label');
         TOOL.toolTitlebar.appendChild(TOOL.eLabel);
@@ -5472,20 +5509,16 @@ ts.html = new Object({
 			SEQ.createToolPiano();
 			SEQ.createToolUkulele();
 			SEQ.createToolMandolin();
-
 			SEQ.createToolViolin();
 			SEQ.createToolBass();
 
+      SEQ.bpmTool = SEQ.createToolGlobal();
       SEQ.createToolKeys();
-      SEQ.createToolChord();
       SEQ.createToolScript();
       SEQ.createToolAbc();
-			SEQ.createToolBars();
-			SEQ.createToolBeats();
-      SEQ.bpmTool = SEQ.createToolGlobal();
 			SEQ.createToolTranspose();
-			SEQ.createToolAudio();
-			SEQ.createToolMidi();
+			//SEQ.createToolAudio();
+			//SEQ.createToolMidi();
       SEQ.createToolLayout();
       SEQ.createToolEvent();
 			return ts.ts = SEQ;
