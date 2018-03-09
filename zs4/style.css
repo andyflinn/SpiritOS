@@ -370,11 +370,19 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-lyric:before{content:url(/gfx/icons/text.svg);}
 .icon-mandolin:before{content:url(/gfx/icons/mandolin.svg);}
 .icon-midi:before{content:'\0266C';font-weight: bolder;}
+.icon-mixer:before{content:url(/gfx/icons/mixer.svg);}
+.icon-mute:before{content:'M';}
+.icon-muted:before{content:url(/gfx/icons/muted.svg);}
 .icon-note:before{content:url(/gfx/icons/note.svg);}
+.icon-solo:before{content:'S';}
+.icon-soloed:before{content:'S';color:red;}
 .icon-tpb:before{content:url(/gfx/icons/tick.svg);}
 .icon-transpose:before{content:'\021C5';font-weight: bolder;}
 .icon-ukulele:before{content:url(/gfx/icons/ukulele.svg);}
 .icon-violin:before{content:url(/gfx/icons/violin.svg);}
+
+/* SLIDER STYLING */
+/* END SLIDER STYLING */
 
 zs4-error{
   color:red;

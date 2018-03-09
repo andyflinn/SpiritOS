@@ -2714,11 +2714,11 @@ ts.player = new Object({
 
         // ALTO
         var alto_note = root+CHORD.noteFromChordIndex(chord,newIndex());
-        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQ.beatMillies);
+        pi.playNote(CHANNEL.alto,alto_note,velocity,a[i].starttime,SEQ.beatMillies);
 
         // SOPRANO
         var soprano_note = root+CHORD.noteFromChordIndex(chord,newIndex());
-        pi.playNote(CHANNEL.tenor,tenor_note,velocity,a[i].starttime,SEQ.beatMillies);
+        pi.playNote(CHANNEL.soprano,soprano_note,velocity,a[i].starttime,SEQ.beatMillies);
 
 
         /*
@@ -3244,6 +3244,30 @@ ts.html = new Object({
         SEQ.adaptContentPane();
 			};
 			SEQ.tsTopTools.appendChild(SEQ.toolpop);
+
+			SEQ.mixerpop = zs4.admin.util.addIconElement(SEQ.tsTopTools,'mixer');
+			SEQ.mixerIsPopped = false;
+			SEQ.mixerpop.onclick = function(){
+				if (SEQ.mixerIsPopped==true){
+					SEQ.mixerIsPopped = false;
+          SEQ.mixerarea.style.display = 'none';
+				}
+        else {
+					SEQ.mixerIsPopped = true;
+          SEQ.mixerarea.style.display = 'block';
+          SEQ.MIXER.refresh();
+				}
+			};
+			SEQ.tsTopTools.appendChild(SEQ.mixerpop);
+
+      SEQ.mixerMain = new ts.audio.element.icon(SEQ.tsTopTools);
+      SEQ.mixerMain.refresh();
+
+      SEQ.mixerarea = ts.html.nu.ele('ts-mixerarea');
+			SEQ.mixerarea.style.display = 'none';
+			ele.appendChild(SEQ.mixerarea);
+      SEQ.MIXER = new ts.audio.element.ui(SEQ.mixerarea);
+
 
 			SEQ.toolspopped = ts.html.nu.ele('ts-tool-icons');
 			SEQ.toolspopped.style.display = 'none';
@@ -4023,6 +4047,7 @@ ts.html = new Object({
   			this.refreshLineFeed();
 
         SEQ.kb.refresh();
+        SEQ.mixerMain.refresh();
 
         SEQ.adaptContentPane();
         //SEQ.cnt.focus();
@@ -5643,6 +5668,8 @@ ts.audio = new Object({
         NODE.volume.connect(CTX.destination);
         NODE.volume.gain.value = 0.2;
         NODE.destination = NODE.volume;
+        NODE.onchange = new Array();
+        NODE.input = new Array();
         AUDIO.master = NODE;
       }
       NODE.oscillator = function(obj){
@@ -5670,10 +5697,154 @@ ts.audio = new Object({
         };
         OSC.object.connect(OSC.adsr);
         AUDIO.master[OSC.name] = OSC;
+        AUDIO.master.input.push(OSC);
+        OSC.onchange = new Array();
         OSC.object.start();
       }
 		},
 	},
+  element:{
+    icon:function(pe){
+      var ICON = this;
+      var MASTER = ts.audio.master;
+      var slider = document.createElement('input')
+      slider.setAttribute('type', 'range');
+      slider.min = 0.0;
+      slider.max = 1.0;
+      slider.defaultValue = 1.0;
+      slider.step = 0.01;
+      slider.style.width = '5em';
+      slider.style.minWidth = '5em';
+      slider.style.height = '1em';
+      slider.style.minHeight = '1em';
+      slider.oninput = function(){
+        //console.log(slider.value);
+        MASTER.volume.gain.value = slider.value;
+      };
+      pe.appendChild(slider);
+
+      ICON.refresh = function(){
+        //console.log('MASTER gain = '+MASTER.volume.gain.value);
+        slider.value = MASTER.volume.gain.value;
+      };
+      MASTER.onchange.push(ICON.refresh);
+    },
+    ui:function(pe){
+      var MIXER = this;
+      var MASTER = ts.audio.master;
+      MIXER.channelArray = new Array()
+      var initialized = false;
+      var table = document.createElement('table');
+
+      var soloActive = false;
+
+      pe.appendChild(table);
+
+      MIXER.channel = function(OSC){
+        var CHANNEL = this;
+        CHANNEL.OSC = OSC;
+        var tr = document.createElement('tr');
+        table.appendChild(tr);
+
+        var tdLabel = document.createElement('td');
+        tr.appendChild(tdLabel);
+        tr.textContent = CHANNEL.OSC.name;
+
+        var tdMute = document.createElement('td');
+        CHANNEL.mute = zs4.admin.util.addIconElement(tdMute,'mute');
+        CHANNEL.muted = false;
+        CHANNEL.mutedBySolo = false;
+        CHANNEL.savedVolume;
+        CHANNEL.mute.onclick = function(){
+          if (CHANNEL.mutedBySolo || CHANNEL.soloed)return;
+
+          if (!CHANNEL.muted){
+            CHANNEL.muted = true;
+            zs4.admin.util.setIcon(CHANNEL.mute,'muted');
+            CHANNEL.savedVolume = CHANNEL.OSC.volume.gain.value;
+            CHANNEL.OSC.volume.gain.value = 0;
+            CHANNEL.slider.disabled = true;
+          }
+          else {
+            CHANNEL.muted = false;
+            zs4.admin.util.setIcon(CHANNEL.mute,'mute');
+            CHANNEL.OSC.volume.gain.value = CHANNEL.savedVolume;
+            CHANNEL.slider.disabled = false;
+          }
+        };
+        tr.appendChild(tdMute);
+
+        var tdSolo = document.createElement('td');
+        var solo = zs4.admin.util.addIconElement(tdSolo,'solo');
+        CHANNEL.soloed = false;
+        solo.onclick = function(){
+          if (CHANNEL.muted || CHANNEL.mutedBySolo)return;
+
+          var a = MIXER.channelArray;
+          if (!CHANNEL.soloed){
+            CHANNEL.soloed = true;
+            zs4.admin.util.setIcon(solo,'soloed');
+            soloActive = true;
+            for (var i = 0; i < a.length; i++){
+              var ch = a[i];
+              if (ch != CHANNEL){
+                ch.mutedBySolo = true;
+                if (!ch.muted){
+                  zs4.admin.util.setIcon(ch.mute,'muted');
+                  ch.savedVolume = ch.OSC.volume.gain.value;
+                  ch.OSC.volume.gain.value = 0;
+                  ch.slider.disabled = true;
+                }
+              }
+            }
+          }
+          else {
+            CHANNEL.soloed = false;
+            zs4.admin.util.setIcon(solo,'solo');
+            for (var i = 0; i < a.length; i++){
+              var ch = a[i];
+              if (ch != CHANNEL){
+                ch.mutedBySolo = false;
+                if (!ch.muted){
+                  zs4.admin.util.setIcon(ch.mute,'mute');
+                  ch.OSC.volume.gain.value = ch.savedVolume;
+                  ch.slider.disabled = false;
+                }
+              }
+            }
+          }
+        };
+        tr.appendChild(tdSolo);
+
+        var tdSlider = document.createElement('td');
+        tr.appendChild(tdSlider);
+        var slider = CHANNEL.slider = document.createElement('input')
+        slider.setAttribute('type', 'range');
+        slider.min = 0.0;
+        slider.max = 1.0;
+        slider.defaultValue = 1.0;
+        slider.step = 0.01;
+        slider.style.width = '5em';
+        slider.style.minWidth = '5em';
+        slider.style.height = '1em';
+        slider.style.minHeight = '1em';
+        slider.oninput = function(){
+          CHANNEL.OSC.volume.gain.value = slider.value;
+        };
+        tdSlider.appendChild(slider);
+        MIXER.channelArray.push(CHANNEL);
+      };
+
+      MIXER.refresh = function(){
+        if (!initialized){
+          for (var i = 0 ; i < MASTER.input.length; i++){
+            new MIXER.channel(MASTER.input[i])
+          }
+          initialized = true;
+        }
+      };
+    },
+  },
 	initialized:false,
 	initialize:function(){
 		if (ts.audio.initialized)
