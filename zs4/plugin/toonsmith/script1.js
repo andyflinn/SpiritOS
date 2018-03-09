@@ -3127,7 +3127,8 @@ ts.html = new Object({
 				next.onclick = function(){SEQ.kbRight();}
 
         SEQ.kb.refresh = function(){
-          if (SEQ.isPlaying()){
+          var playing = SEQ.isPlaying();
+          if (playing){
             prev.style.display = 'none';
             next.style.display = 'none';
           }
@@ -3142,7 +3143,7 @@ ts.html = new Object({
           SEQ.kbIconMode(lyric,SEQ.kbm == KBM_LYRIC);
           SEQ.kbIconMode(chord,SEQ.kbm == KBM_CHORD);
 
-          if (SEQ.kbm == KBM_BAR){
+          if ((SEQ.kbm == KBM_BAR)&&!playing){
             baronoff.style.display = 'inline-block';
             if (SEQ.evt_current.isBar())zs4.admin.util.setIcon(baronoff,'delete');
             else zs4.admin.util.setIcon(baronoff,'plus');
@@ -3152,7 +3153,7 @@ ts.html = new Object({
             baronoff.style.display = 'none';
           }
 
-          if (SEQ.kbm == KBM_BEAT){
+          if ((SEQ.kbm == KBM_BEAT)&&!playing){
             beatonoff.style.display = 'inline-block';
             if (SEQ.evt_current.isBar())zs4.admin.util.setIcon(beatonoff,'bar');
             else if (SEQ.evt_current.isBeat())zs4.admin.util.setIcon(beatonoff,'delete');
@@ -3163,7 +3164,7 @@ ts.html = new Object({
             beatonoff.style.display = 'none';
           }
 
-          if (SEQ.kbm == KBM_CHORD){
+          if ((SEQ.kbm == KBM_CHORD)&&!playing){
             CHORD.element.style.display = 'inline-block';
             chordonoff.style.display = 'inline-block';
             if (SEQ.evt_current.isChord()){
@@ -4334,6 +4335,7 @@ ts.html = new Object({
 				}
 
         nu.refresh = function(){
+          var playing = SEQ.isPlaying();
           nu.iRange.textContent = ('range:'+
             ts.music.note.qualified(nu.instrumentNoteLowest())+
             '-'+
@@ -4359,7 +4361,7 @@ ts.html = new Object({
               transchord.b = ((60+chord.b) - NIK)%12;
               transchord.ok = true;
 
-              if (!SEQ.evt_current.isChord()&&(SEQ.kb.chord!=null)&&(SEQ.kb.chord.length>0)) {
+              if (!SEQ.evt_current.isChord()&&(!playing)&&(SEQ.kb.chord!=null)&&(SEQ.kb.chord.length>0)) {
                 var c = ts.music.parse.chord(SEQ.kb.chord);
                 if (c.ok){
                   transchord.v = ((60+c.v) - NIK)%12;
@@ -4371,7 +4373,7 @@ ts.html = new Object({
 
               nu.iCurrentChord.textContent = ts.music.CHORD.toString(transchord);
               eChord.set(transchord);
-              if (SEQ.kbm == KBM_CHORD){
+              if ((SEQ.kbm == KBM_CHORD)&&(!SEQ.isPlaying())) {
                 eChord.element.style.display = 'inline-block';
                 eChordAddRem.style.display = 'inline';
                 nu.iCurrentChord.style.display = 'none';
