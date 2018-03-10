@@ -11,6 +11,7 @@ var ts;
 var toonsmith;
 if (zs4.is.node()) {
     toonsmith = exports;
+    //toonsmith.audioloader = fs.readFileSync('./zs4/plugin/toonsmith/audio-loader.min.js','utf8');
     toonsmith.script0 = fs.readFileSync('./zs4/plugin/toonsmith/script0.js','utf8');
     toonsmith.script1 = fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
     toonsmith.style = fs.readFileSync('./zs4/plugin/toonsmith/style.css','utf8');
@@ -19,6 +20,8 @@ if (zs4.is.node()) {
     //console.log(createTS);
     ts = new createTS(zs4);
     //console.log(ts);
+
+    //console.log(toonsmith.audioloader);
 }
 else {
     toonsmith = new Object();
@@ -39,7 +42,11 @@ var dbg = true;
   TOONSMITH._.create = toonsmith.create;
   TOONSMITH._.property(new zs4.type.text({name:'data',flags:'authgetpublic quickupdate authsetself',}));
   TOONSMITH._.getScript = (function(req,cb){
+    //var js = toonsmith.audioloader;
+    //js += '\n';
+
     var js = toonsmith.script0;
+    js += '\n';
 
     if (dbg){
       js +=  fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
