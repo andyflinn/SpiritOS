@@ -18,9 +18,9 @@ const MIDDLE_C=60;
 
 const SEMI_TONES_PER_OCTAVE=12;
 const MIN_TICKS_PER_BEAT=2;
-const MAX_TICKS_PER_BEAT=23;
+const MAX_TICKS_PER_BEAT=32;
 const MIN_BEATS_PER_BAR=2;
-const MAX_BEATS_PER_BAR=23;
+const MAX_BEATS_PER_BAR=32;
 const MAX_BEATS_PER_MINUTE=240;
 const MIN_BEATS_PER_MINUTE=24;
 
@@ -684,13 +684,49 @@ ts.create = function(){
         if (t == (SEQ.tpb-1))available_tick = available_beat;
         available_beat -= available_tick;
 
-        e.playArray.push(new Object({
+        var tickobj = new Object({
+          volume:1.0,
           starttime:starttime,
           ticktime:available_tick,
           chordCount:new Array(),
           melodyCount:new Array(),
           eventCount:new Array(),
-        }));
+        });
+        tickobj.tickbits = new ts.tickbits(tickobj,'bits');
+        tickobj.tickbits.tick.true();
+        tickobj.bits = 0;
+        if (b==0 && t==0){
+          tickobject.volume = 1.0;
+          tickobj.tickbits.downbeat.true();
+          tickobj.tickbits.beat.true();
+        }
+        else if (t==0){
+          tickobject.volume = 0.5;
+          tickobj.tickbits.beat.true();
+          if (((SEQ.bpb&1)==0)&&(b==Math.round((SEQ.bpb)/2))){
+            tickobj.tickbits.centrebeat.true();
+          }
+          else if (((SEQ.bpb&1)==1)&&(b==Math.round((SEQ.bpb+1)/2))){
+            tickobj.tickbits.centrebeat.true();
+          }
+          tickobj.tickbits.downtick.true();
+        }
+        else {
+          tickobject.volume = 0.25;
+        }
+
+        if (((SEQ.tpb&1)==0)&&(t==Math.round((SEQ.tpb)/2))){
+          tickobj.tickbits.centretick.true();
+        }
+        else if (((SEQ.tpb&1)==1)&&(t==Math.round((SEQ.tpb+1)/2))){
+          tickobj.tickbits.centretick.true();
+        }
+        else if (t!=0){
+          tickobject.volume = 0.125;
+        }
+        tickobj.bitString = tickobj.tickbits.getString();
+
+        e.playArray.push(tickobj);
         starttime += available_tick;
       }
 
@@ -801,6 +837,7 @@ ts.create = function(){
       }
     }
 
+    //console.log(e);
   };
 
   SEQ.unEmpty = function(){
@@ -1459,6 +1496,20 @@ ts.create = function(){
     this.updateStats();
     this.recomputeTiming();
   };
+};
+
+ts.tickbits = function(po,name){
+  var TICKBITS = this;
+  zs4.util.bits.call(this,po,name);
+  TICKBITS.addBit('downbeat',0);
+  TICKBITS.addBit('beat',1);
+  TICKBITS.addBit('centrebeat',2);
+
+  TICKBITS.addBit('downtick',4);
+  TICKBITS.addBit('tick',5);
+  TICKBITS.addBit('centretick',6);
+
+  
 };
 
 ts.abc = function(){
@@ -2632,6 +2683,7 @@ ts.player = new Object({
 		timeout:100,
     barTicks:0,
     barTicks:0,
+    ticker:0,
     playNote:function(oscillator,note,velocity,start,duration){
       var AR = ts.player.internal.ATTACKRELEASE;
       if (duration < (AR*2)) AR = duration/2;
@@ -2672,6 +2724,42 @@ ts.player = new Object({
         var velocity = .2;
         if ((i%SEQ.tpb)==0)velocity=.5;
         pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,a[i].ticktime);
+      }
+    },
+    playPercussion:function(e){
+      var pi = ts.player.internal;
+      var CHANNEL = ts.audio.master;
+      var SEQ = ts.player.ts;
+      //zs4.debug(e);
+
+      var a = e.playArray;
+      var chord = pi.chord;
+
+      var tpb = SEQ.tpb;
+      for (var i = 0; i < a.length;i++){
+
+        if (a[i].tickbits.downbeat.get()){
+          CHANNEL.perc.bass.play(0,a[i].volume);
+        }
+
+        if (a[i].tickbits.centrebeat.get()){
+          CHANNEL.perc.beatleft.play(a[i].starttime,a[i].volume);
+        }
+        else if (a[i].tickbits.beat.get()){
+          CHANNEL.perc.beatright.play(a[i].starttime,a[i].volume);
+        }
+
+        if (a[i].tickbits.beat.get()||a[i].tickbits.centretick.get()){
+          if (((pi.ticker%5)!=0)&&((pi.ticker%5)!=1)){
+            pi.ticker++;
+          }
+          else {
+            CHANNEL.perc.tickleft.play(a[i].starttime,a[i].volume);
+            pi.ticker++;
+          }
+        }
+
+
       }
     },
     playAccompaniment:function(e){
@@ -2742,6 +2830,7 @@ ts.player = new Object({
       SEQ.recomputeBar(bar);
 
       //var before = Date.now();
+      pi.playPercussion(bar);
       pi.playMelody(bar);
       pi.playAccompaniment(bar);
 
@@ -5770,7 +5859,7 @@ ts.audio = new Object({
           AUDIO.master[MEDIA.name] = MEDIA;
           AUDIO.master.input.push(MEDIA);
         }
-        MEDIA.play = function(t){
+        MEDIA.play = function(t,g){
           if (MEDIA.buffer==null){
             console.log('no buffer to play');
             return;
@@ -5778,9 +5867,13 @@ ts.audio = new Object({
           if(t==null)t=CTX.currentTime;
           else t=CTX.currentTime+(t/1000);
 
+          var gain = CTX.createGain();
+          gain.gain.setValueAtTime(g,CTX.currentTime);
+          gain.connect(MEDIA.volume);
+
           var src = CTX.createBufferSource();
           src.buffer = MEDIA.buffer;
-          src.connect(MEDIA.volume);
+          src.connect(gain);
           src.start(t);
         };
         MEDIA.getData(obj.url);
