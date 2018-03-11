@@ -696,23 +696,25 @@ ts.create = function(){
         tickobj.tickbits.tick.true();
         tickobj.bits = 0;
         if (b==0 && t==0){
-          tickobject.volume = 1.0;
+          tickobj.volume = 1.0;
           tickobj.tickbits.downbeat.true();
           tickobj.tickbits.beat.true();
         }
         else if (t==0){
-          tickobject.volume = 0.5;
+          tickobj.volume = 0.5;
           tickobj.tickbits.beat.true();
           if (((SEQ.bpb&1)==0)&&(b==Math.round((SEQ.bpb)/2))){
+            tickobj.volume = 1.0;
             tickobj.tickbits.centrebeat.true();
           }
           else if (((SEQ.bpb&1)==1)&&(b==Math.round((SEQ.bpb+1)/2))){
             tickobj.tickbits.centrebeat.true();
+            tickobj.volume = 0.75;
           }
           tickobj.tickbits.downtick.true();
         }
         else {
-          tickobject.volume = 0.25;
+          tickobj.volume = 0.25;
         }
 
         if (((SEQ.tpb&1)==0)&&(t==Math.round((SEQ.tpb)/2))){
@@ -722,7 +724,7 @@ ts.create = function(){
           tickobj.tickbits.centretick.true();
         }
         else if (t!=0){
-          tickobject.volume = 0.125;
+          tickobj.volume = 0.125;
         }
         tickobj.bitString = tickobj.tickbits.getString();
 
@@ -1509,7 +1511,7 @@ ts.tickbits = function(po,name){
   TICKBITS.addBit('tick',5);
   TICKBITS.addBit('centretick',6);
 
-  
+
 };
 
 ts.abc = function(){
