@@ -5908,7 +5908,7 @@ ts.audio = new Object({
         //console.log('MASTER gain = '+MASTER.volume.gain.value);
         slider.value = MASTER.volume.gain.value;
       };
-      MASTER.onchange.push(ICON.refresh);
+      //MASTER.onchange.push(ICON.refresh);
     },
     ui:function(pn,pe){
       const AUDIO = ts.audio;
@@ -6048,11 +6048,12 @@ ts.audio = new Object({
 		if (ts.audio.initialized)
 			return true;
 
-		if (typeof window.AudioContext === "function"){
-			ts.audio.context = new window.AudioContext();
-		} else if (typeof window.webkitAudioContext === "function"){
-			ts.audio.context = new window.webkitAudioContext();
-		}
+    ts.audio.context = new (window.AudioContext || window.webkitAudioContext)();
+		//if (typeof window.AudioContext === "function"){
+		//	ts.audio.context = new window.AudioContext();
+		//} else if (typeof window.webkitAudioContext === "function"){
+		//	ts.audio.context = new window.webkitAudioContext();
+		//}
 
 		if (ts.audio.context == null)
 			return false;
@@ -6062,6 +6063,7 @@ ts.audio = new Object({
     AUDIO.format.wav = htmlAudio.canPlayType('audio/wav');
     AUDIO.format.mp3 = htmlAudio.canPlayType('audio/mp3');
     AUDIO.format.aif = htmlAudio.canPlayType('audio/aif');
+    AUDIO.format.midi = htmlAudio.canPlayType('audio/midi');
 
     var CTX = AUDIO.context;
 

@@ -811,7 +811,7 @@ zs4.admin.util = {
 			//}
 		};
 	},
-	createValueElement(pe,v){
+	createValueElement:function(pe,v){
 		//container
 		var e = document.createElement('zs4-input-value');
 		e.style.display = 'block';
