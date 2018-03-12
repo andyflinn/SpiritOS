@@ -2792,6 +2792,7 @@ ts.player = new Object({
           }
           pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,SEQ.beatMillies);
           if ((note%12) == chord.v)rootplayed = true;
+          else rootplayed = false;
         }
       }
     },
