@@ -364,6 +364,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-bpm:before{content:'\023F1';font-weight: bolder;}
 .icon-chord:before{content:url(/gfx/icons/chord.svg);}
 .icon-event:before{content:url(/gfx/icons/detail.svg);}
+.icon-fivestringbass:before{content:url(/gfx/icons/fivestringbass.svg);}
 .icon-guitar:before{content:url(/gfx/icons/guitar.svg);}
 .icon-instruments:before{content:url(/gfx/icons/instruments.svg);}
 .icon-keyboard:before{content:url(/gfx/icons/piano.svg);}

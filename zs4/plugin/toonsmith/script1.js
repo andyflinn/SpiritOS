@@ -1325,7 +1325,6 @@ ts.create = function(){
       o.refresh();
     }
 
-    //SEQ.setCurrentEvent(o);
 		return o;
 	};
 	SEQ.run = function(){
@@ -1510,6 +1509,20 @@ ts.tickbits = function(po,name){
   TICKBITS.addBit('downtick',4);
   TICKBITS.addBit('tick',5);
   TICKBITS.addBit('centretick',6);
+
+
+};
+
+ts.bassbits = function(po,name){
+  var BASSBITS = this;
+  zs4.util.bits.call(this,po,name);
+  BASSBITS.addBit('dowbeatonly',0);
+  BASSBITS.addBit('beat',1);
+  BASSBITS.addBit('centrebeat',2);
+
+  BASSBITS.addBit('downtick',4);
+  BASSBITS.addBit('tick',5);
+  BASSBITS.addBit('centretick',6);
 
 
 };
@@ -4933,7 +4946,7 @@ ts.html = new Object({
   			nu.createString(72);
   			nu.createString(79);
   		};
-  		SEQ.createToolBass = function(){
+      SEQ.createToolBass = function(){
   			var nu = this.createToolStringInstrument('bass','bass');
   			nu.createString(55);
   			nu.createString(50);
@@ -4941,6 +4954,16 @@ ts.html = new Object({
   			nu.createString(40);
         //nu.addTuning({name:'standard',a:[55,50,45,40]});
         nu.addTuning({name:'Drop D',a:[55,50,45,38]});
+  		};
+      SEQ.createToolFiveStringBass = function(){
+  			var nu = this.createToolStringInstrument('fivestringbass','fivestringbass');
+  			nu.createString(55);
+  			nu.createString(50);
+  			nu.createString(45);
+        nu.createString(40);
+        nu.createString(35);
+        //nu.addTuning({name:'standard',a:[55,50,45,40,35]});
+        nu.addTuning({name:'Drop A',a:[55,50,45,40,33]});
   		};
   		SEQ.createToolViolin = function(){
   			var nu = this.createToolStringInstrument('violin','violin');
@@ -5192,10 +5215,11 @@ ts.html = new Object({
   			nu.toolWindow.appendChild(nu.eEventBpm);
 
           zs4.admin.util.addIconElement(nu.eEventBpm,'bpm')
+          zs4.admin.util.addSpace(nu.eEventBpm);
           zs4.admin.util.addTextSpan(nu.eEventBpm,'beats/minute:');
   				nu.eEventBpmInput = ts.html.nu.ele('input');
   				nu.eEventBpmInput.type = 'number';
-  				nu.eEventBpmInput.value = this.bpm;
+  				nu.eEventBpmInput.value = SEQ.bpm;
   				nu.eEventBpmInput.min = MIN_BEATS_PER_MINUTE;
   				nu.eEventBpmInput.max = MAX_BEATS_PER_MINUTE;
   				nu.eEventBpm.appendChild(nu.eEventBpmInput);
@@ -5210,10 +5234,11 @@ ts.html = new Object({
   			nu.toolWindow.appendChild(nu.eEventBpc);
 
           zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
+          zs4.admin.util.addSpace(nu.eEventBpc);
           zs4.admin.util.addTextSpan(nu.eEventBpc,'beats/bar:');
   				nu.eEventBpcInput = ts.html.nu.ele('input');
   				nu.eEventBpcInput.type = 'number';
-  				nu.eEventBpcInput.value = this.bpb;
+  				nu.eEventBpcInput.value = SEQ.bpb;
   				nu.eEventBpcInput.min = MIN_BEATS_PER_BAR;
   				nu.eEventBpcInput.max = MAX_BEATS_PER_BAR;
   				nu.eEventBpc.appendChild(nu.eEventBpcInput);
@@ -5227,6 +5252,7 @@ ts.html = new Object({
   			nu.toolWindow.appendChild(nu.eEventTpb);
 
           zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
+          zs4.admin.util.addSpace(nu.eEventTpb);
           zs4.admin.util.addTextSpan(nu.eEventTpb,'ticks/beat:');
   				nu.eEventTpbInput = ts.html.nu.ele('input');
   				nu.eEventTpbInput.type = 'number';
@@ -5240,6 +5266,11 @@ ts.html = new Object({
             SEQ.recomputeTiming();
           };
 
+        nu.onactivate = function(){
+          nu.eEventBpmInput.value = SEQ.bpm;
+          nu.eEventBpcInput.value = SEQ.bpb;
+          nu.eEventTpbInput.value = SEQ.tpb;
+        };
   			return nu;
   		};
   		SEQ.createToolMidi = function(){
@@ -5627,7 +5658,8 @@ ts.html = new Object({
 			SEQ.createToolUkulele();
 			SEQ.createToolMandolin();
 			SEQ.createToolViolin();
-			SEQ.createToolBass();
+      SEQ.createToolBass();
+      SEQ.createToolFiveStringBass();
 
       SEQ.bpmTool = SEQ.createToolGlobal();
       SEQ.createToolKeys();
