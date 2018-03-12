@@ -889,6 +889,59 @@ zs4.admin.util = {
 		pe.appendChild(e);
 		return e;
 	},
+	bitsElement:function(pe,bits){
+		var BITS = this;
+		var a = new Array();
+		var e = document.createElement('zs4-input-bits');
+
+		function bit(n){
+			var BIT = this;
+			var name = n.trim();
+			var b = document.createElement('zs4-input-bit-'+name);
+			b.style.display='inline';
+			b.style.marginLeft='0.25em';
+			b.style.marginRight='0.25em';
+			b.style.paddingLeft='0.25em';
+			b.style.paddingRight='0.25em';
+			b.style.border='0.05em solid black';
+			b.style.borderRadius = '0.5em';
+
+			b.textContent = name;
+			b.onclick = function(){
+				if (bits[name].get()){
+					bits[name].false();
+					b.style.backgroundColor='initial';
+				}
+				else {
+					bits[name].true();
+					b.style.backgroundColor='gray';
+				}
+			}
+
+			BIT.refresh = function(){
+				if (bits[name].get()){
+					b.style.backgroundColor='gray';
+				}
+				else {
+					b.style.backgroundColor='initial';
+				}
+			};
+
+			a.push(BIT)
+			e.appendChild(b);
+		}
+
+		for (var n in bits)if(zs4.is.object(bits[n])&&zs4.is.number(bits[n].m)){
+			new bit(' '+n+' ');
+		}
+
+		BITS.refresh = function(){
+			for (var i = 0; i < a.length; i++){
+				a[i].refresh();
+			}
+		};
+		pe.appendChild(e);
+	},
 
 	unknown:function(po,o){
 		if (!zs4.is.object(o._.html))o._.html = new Object();
