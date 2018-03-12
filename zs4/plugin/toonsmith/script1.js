@@ -272,6 +272,12 @@ ts.create = function(){
       return ts.music.CHORD.checkTypeBeginning(this.chord.substr(ctp,this.pos-ctp));
     },
   });
+  SEQ.bbits = 0;
+  SEQ.bassbits = new ts.bassbits(SEQ,'bbits');
+  SEQ.cbits = 0;
+  SEQ.chordbits = new ts.chordbits(SEQ,'cbits');
+  SEQ.mbits = 0;
+  SEQ.melodybits = new ts.melodybits(SEQ,'mbits');
   SEQ.isPlaying = function(){if(SEQ.player!=null)return true;return false;};
 	SEQ.onKeyChange = function(nuKee){
 		if	(!this.key.ok)
@@ -699,10 +705,13 @@ ts.create = function(){
           tickobj.volume = 1.0;
           tickobj.tickbits.downbeat.true();
           tickobj.tickbits.beat.true();
+          tickobj.tickbits.oddbeat.true();
         }
         else if (t==0){
           tickobj.volume = 0.5;
           tickobj.tickbits.beat.true();
+          if ((b&1)==0)tickobj.tickbits.oddbeat.true();
+          else tickobj.tickbits.evenbeat.true();
           if (((SEQ.bpb&1)==0)&&(b==Math.round((SEQ.bpb)/2))){
             tickobj.volume = 1.0;
             tickobj.tickbits.centrebeat.true();
@@ -868,12 +877,21 @@ ts.create = function(){
         if (zs4.is.window())this.bpmTool.eEventBpcInput.value = this.bpb;
 
 			}
-			if (glob[0].trim()=='bpm'){
+      if (glob[0].trim()=='bpm'){
 				SEQ.bpm = parseInt(glob[1]);
 				if (SEQ.bpm < MIN_BEATS_PER_MINUTE)SEQ.bpm = MIN_BEATS_PER_MINUTE;
 				else if (SEQ.bpm > MAX_BEATS_PER_MINUTE) SEQ.bpm = MAX_BEATS_PER_MINUTE;
 
 				if (zs4.is.window())this.bpmTool.eEventBpmInput.value = this.bpm;
+			}
+      if (glob[0].trim()=='bbits'){
+				SEQ.bbits = parseInt(glob[1]);
+			}
+      if (glob[0].trim()=='cbits'){
+				SEQ.cbits = parseInt(glob[1]);
+			}
+      if (glob[0].trim()=='mbits'){
+				SEQ.mbits = parseInt(glob[1]);
 			}
 
       if (glob[0].trim()=='lf'){
@@ -1431,7 +1449,13 @@ ts.create = function(){
 		return this.cnt;
 	};
 	SEQ.getChordsAndLyrics = function(){
-		var ret = '[bpb:'+this.bpb+'][bpm:'+this.bpm+'][tpb:'+this.tpb+']';
+		var ret = '[bpb:'+SEQ.bpb
+    +'][bpm:'+SEQ.bpm
+    +'][tpb:'+SEQ.tpb
+    +'][bbits:'+SEQ.bbits
+    +'][mbits:'+SEQ.mbits
+    +'][cbits:'+SEQ.cbits
+    +']';
 
 		if (SEQ.layoutlinefeed){
 			ret+='[lf:true]';
@@ -1505,10 +1529,12 @@ ts.tickbits = function(po,name){
   TICKBITS.addBit('downbeat',0);
   TICKBITS.addBit('beat',1);
   TICKBITS.addBit('centrebeat',2);
+  TICKBITS.addBit('oddbeat',3);
+  TICKBITS.addBit('evenbeat',4);
 
-  TICKBITS.addBit('downtick',4);
-  TICKBITS.addBit('tick',5);
-  TICKBITS.addBit('centretick',6);
+  TICKBITS.addBit('downtick',8);
+  TICKBITS.addBit('tick',9);
+  TICKBITS.addBit('centretick',10);
 
 
 };
@@ -1516,15 +1542,26 @@ ts.tickbits = function(po,name){
 ts.bassbits = function(po,name){
   var BASSBITS = this;
   zs4.util.bits.call(this,po,name);
-  BASSBITS.addBit('dowbeatonly',0);
-  BASSBITS.addBit('beat',1);
-  BASSBITS.addBit('centrebeat',2);
+  BASSBITS.addBit('downbeat',0);
+  BASSBITS.addBit('oddbeat',1);
+  BASSBITS.addBit('evenbeat',2);
+  BASSBITS.addBit('centrebeat',3);
+  BASSBITS.addBit('fives',4);
+};
 
-  BASSBITS.addBit('downtick',4);
-  BASSBITS.addBit('tick',5);
-  BASSBITS.addBit('centretick',6);
+ts.chordbits = function(po,name){
+  var CHORDBITS = this;
+  zs4.util.bits.call(this,po,name);
+  CHORDBITS.addBit('downbeat',0);
+  CHORDBITS.addBit('oddbeat',1);
+  CHORDBITS.addBit('evenbeat',2);
+  CHORDBITS.addBit('centrebeat',3);
+};
 
-
+ts.melodybits = function(po,name){
+  var MELODYBITS = this;
+  zs4.util.bits.call(this,po,name);
+  MELODYBITS.addBit('theremize',0);
 };
 
 ts.abc = function(){
@@ -2732,13 +2769,30 @@ ts.player = new Object({
       var a = e.playArray;
       var chord = pi.chord;
 
+      var rootplayed = false;
+
       for (var i = 0; i < a.length;i++){
         if (a[i].chord != null)chord = a[i].chord.chord;
         if (chord==null)continue;
+        if ((i%SEQ.tpb)!=0)continue;
         var note = chord.b + BASS_OFFSET;
-        var velocity = .2;
-        if ((i%SEQ.tpb)==0)velocity=.5;
-        pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,a[i].ticktime);
+        var velocity = .5;
+
+        var play = false;
+        if (a[i].tickbits.downbeat.get()&&SEQ.bassbits.downbeat.get()) play = true;
+        else if (a[i].tickbits.oddbeat.get()&&SEQ.bassbits.oddbeat.get()) play = true;
+        else if (a[i].tickbits.evenbeat.get()&&SEQ.bassbits.evenbeat.get()) play = true;
+        else if (a[i].tickbits.centrebeat.get()&&SEQ.bassbits.centrebeat.get()) play = true;
+        else if (SEQ.bbits==0) play=true;
+
+        if (play){
+          if (rootplayed && SEQ.bassbits.fives.get()){
+            note = ts.music.CHORD.noteFromChordIndex(chord,2);
+            note += BASS_OFFSET;
+          }
+          pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,SEQ.beatMillies);
+          if ((note%12) == chord.v)rootplayed = true;
+        }
       }
     },
     playPercussion:function(e){
@@ -2809,6 +2863,15 @@ ts.player = new Object({
         };
 
         if ((i%SEQ.tpb)!=0) continue;
+
+        var play = false;
+        if (a[i].tickbits.downbeat.get()&&SEQ.chordbits.downbeat.get()) play = true;
+        else if (a[i].tickbits.oddbeat.get()&&SEQ.chordbits.oddbeat.get()) play = true;
+        else if (a[i].tickbits.evenbeat.get()&&SEQ.chordbits.evenbeat.get()) play = true;
+        else if (a[i].tickbits.centrebeat.get()&&SEQ.chordbits.centrebeat.get()) play = true;
+        else if (SEQ.cbits==0) play=true;
+        if (!play)continue;
+
         var root = chord.v + CHORD_OFFSET;
 
         // TENOR
@@ -5266,10 +5329,37 @@ ts.html = new Object({
             SEQ.recomputeTiming();
           };
 
+        nu.eMelodyBits = ts.html.nu.ele('div');
+        nu.toolWindow.appendChild(nu.eMelodyBits);
+
+          zs4.admin.util.addIconElement(nu.eMelodyBits,'note');
+          zs4.admin.util.addSpace(nu.eMelodyBits);
+          zs4.admin.util.addTextSpan(nu.eMelodyBits,'melodybits:');
+          nu.melodybits = new zs4.admin.util.bitsElement(nu.eMelodyBits,SEQ.melodybits);
+
+        nu.eChordBits = ts.html.nu.ele('div');
+        nu.toolWindow.appendChild(nu.eChordBits);
+
+          zs4.admin.util.addIconElement(nu.eChordBits,'chord');
+          zs4.admin.util.addSpace(nu.eChordBits);
+          zs4.admin.util.addTextSpan(nu.eChordBits,'chordbits:');
+          nu.chordbits = new zs4.admin.util.bitsElement(nu.eChordBits,SEQ.chordbits);
+
+        nu.eBassBits = ts.html.nu.ele('div');
+        nu.toolWindow.appendChild(nu.eBassBits);
+
+          zs4.admin.util.addIconElement(nu.eBassBits,'bass');
+          zs4.admin.util.addSpace(nu.eBassBits);
+          zs4.admin.util.addTextSpan(nu.eBassBits,'bassbits:');
+          nu.bassbits = new zs4.admin.util.bitsElement(nu.eBassBits,SEQ.bassbits);
+
         nu.onactivate = function(){
           nu.eEventBpmInput.value = SEQ.bpm;
           nu.eEventBpcInput.value = SEQ.bpb;
           nu.eEventTpbInput.value = SEQ.tpb;
+          nu.melodybits.refresh();
+          nu.chordbits.refresh();
+          nu.bassbits.refresh();
         };
   			return nu;
   		};
