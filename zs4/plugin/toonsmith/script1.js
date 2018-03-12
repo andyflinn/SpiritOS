@@ -2787,7 +2787,7 @@ ts.player = new Object({
 
         if (play){
           if (rootplayed && SEQ.bassbits.fives.get()){
-            note = ts.music.CHORD.noteFromChordIndex(chord,2);
+            note = (chord.v + ts.music.CHORD.noteFromChordIndex(chord,2))%12;
             note += BASS_OFFSET;
           }
           pi.playNote(CHANNEL.bass,note,velocity,a[i].starttime,SEQ.beatMillies);
