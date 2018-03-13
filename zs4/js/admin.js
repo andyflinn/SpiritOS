@@ -1532,6 +1532,9 @@ zs4.admin.util = {
 				o._.html.appWindow = document.createElement('zs4-app-window');
 				o._.html.appUserInterface.appendChild(o._.html.appWindow);
 
+				o._.html.docOptions = document.createElement('zs4-doc-options');
+				o._.html.docOptions.style.display = 'block';
+
 				if (zs4.plugin.list.hasOwnProperty(o.zs4.head.typename._.value)){
 					var plugname = o.zs4.head.typename._.value;
 
@@ -1551,14 +1554,41 @@ zs4.admin.util = {
 						o._.html.head.appendChild(o._.html.appWindowReload);
 					}
 
+					// Create new Document BUtTON
+					var nu = zs4.path.resolve(zs4.THIS,'zs4.type.'+plugname+'.method.new');
+					if (zs4.admin.util.user()&&nu!=null){
+						//console.log('MUST PUT NEW DOC OPTION!!!!'); // 'new'
+						var block = document.createElement('div');
+						o._.html.docOptions.appendChild(block);
+						var icon = zs4.admin.util.addIconElement(block,'new');
+						zs4.admin.util.addSpace(block);
+						zs4.admin.util.addTextSpan(block,'new '+plugname+' document');
+					 	icon.onclick = function(){
+							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+							nu._.call({},function(){
+								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+								if (zs4.is.string(nu._.cbresult)){
+									zs4.navigate(nu._.cbresult)
+								}
+							});
+						};
+					}
+
 					// Save Button
 					if (zs4.is.function(zs4.plugin.list[plugname].save)&&o._.flags.get.own()){
-						o._.html.appWindowSave = document.createElement('zs4-app-window-save');
-						//o._.html.appWindowSave.title = 'save';
-						o._.html.appWindowSave.onclick = zs4.plugin.list[plugname].save;
-						zs4.admin.util.setIcon(o._.html.appWindowSave,'save');
-						zs4.admin.util.addClass(o._.html.appWindowSave,plugname);
-						o._.html.head.appendChild(o._.html.appWindowSave);
+						if (o._.html.docOptions!=null){
+							var block = document.createElement('div');
+							o._.html.docOptions.appendChild(block);
+							var icon = zs4.admin.util.addIconElement(block,'save');
+							icon.onclick = zs4.plugin.list[plugname].save;
+							zs4.admin.util.addSpace(block);
+							zs4.admin.util.addTextSpan(block,'save document');
+						}
+						//o._.html.appWindowSave = document.createElement('zs4-app-window-save');
+						//o._.html.appWindowSave.onclick = zs4.plugin.list[plugname].save;
+						//zs4.admin.util.setIcon(o._.html.appWindowSave,'save');
+						//zs4.admin.util.addClass(o._.html.appWindowSave,plugname);
+						//o._.html.head.appendChild(o._.html.appWindowSave);
 					}
 
 					zs4.plugin.list[plugname].ui(o._.html.appWindow,o);
@@ -1672,7 +1702,9 @@ zs4.admin.util = {
 				};
 				o._.html.top.dialogTool = function(){
 					var THIS = this;
-					o._.html.top.dialog.call(this,'tool');
+					o._.html.top.dialog.call(this,'document');
+
+					this.toolbar.appendChild(o._.html.docOptions);
 
 					// TITLE
 					this.titleblock = document.createElement('zs4-title-block');
@@ -2396,6 +2428,12 @@ zs4.admin.util = {
 								top.app.creator = document.createElement('zs4-app-creator');
 								top.app.toolbar.appendChild(top.app.creator);
 
+								top.app.searchForOwner = '';
+								if (o._.flags.get.scope()&&o.zs4.head.typename._.value=='user'){
+									top.app.searchForOwner = o._.path;
+								}
+
+								/*
 								top.app.creatorSelect = document.createElement('select');
 								zs4.admin.util.addClass(top.app.creatorSelect,'app-creator-select');
 								top.app.creator.appendChild(top.app.creatorSelect);
@@ -2431,6 +2469,7 @@ zs4.admin.util = {
 								if (o._.path != ''){
 									zs4.admin.util.addClass(top.app.creator,'nodisplay');
 								}
+								*/
 
 								top.app.sortFunction = new Object();
 								top.app.sort = document.createElement('zs4-app-sort');
@@ -2682,10 +2721,11 @@ zs4.admin.util = {
 									var req = new Object();
 									req.value = top.app.search.value;
 									req.type = top.app.typeSelect.value;
-									req.owner = top.app.creatorSelect.value;
-									if (o._.flags.get.scope()&&o.zs4.head.typename._.value=='user'){
-										req.owner = o._.path;
-									}
+									req.owner = top.app.searchForOwner;
+									//req.owner = ''; //top.app.creatorSelect.value;
+									//if (o._.flags.get.scope()&&o.zs4.head.typename._.value=='user'){
+									//	req.owner = o._.path;
+									//}
 
 									var tq = null;
 									if(req.type.length>0)
@@ -2735,7 +2775,7 @@ zs4.admin.util = {
 								top.app.requestItems();
 							}
 
-							top.app.creatorRefresh();
+							//top.app.creatorRefresh();
 
 							// get new objects
 							var arr = o._.getAllScopes();
@@ -2784,9 +2824,9 @@ zs4.admin.util = {
 										continue;
 									}
 								}
-								if (top.app.creatorSelect.value != ''){
-									console.log('compare '+top.app.creatorSelect.value+' to '+top.app.array[i].scope.zs4.head.owner._.value);
-									if (top.app.array[i].scope.zs4.head.owner._.value!=top.app.creatorSelect.value){
+								if (top.app.searchForOwner != ''){
+									console.log('compare '+top.app.searchForOwner+' to '+top.app.array[i].scope.zs4.head.owner._.value);
+									if (top.app.array[i].scope.zs4.head.owner._.value!=top.app.searchForOwner){
 										//zs4.admin.util.addClass(top.app.array[i].element,'nodisplay');
 										top.app.array[i].element.style.display = 'none';
 										continue;
@@ -2937,10 +2977,18 @@ zs4.admin.util = {
 					new o._.html.top.dialogCoins();
 				}
 
-				o._.html.amppage = zs4.admin.util.addIconElement(o._.html.dialogHeader,'amppage');
-				o._.html.amppage.onclick = function(){
-					if (o._.path=='') zs4.navigate('/amp');
-					else zs4.navigate(o._.path + '.amp');
+				if (o._.html.docOptions != null){
+					var block = document.createElement('div');
+					o._.html.docOptions.appendChild(block);
+
+					var icon = zs4.admin.util.addIconElement(o._.html.docOptions,'amppage');
+					zs4.admin.util.addSpace(o._.html.docOptions);
+					zs4.admin.util.addTextSpan(o._.html.docOptions,'view document as AMP page');
+
+					icon.onclick = function(){
+						if (o._.path=='') zs4.navigate('/amp');
+						else zs4.navigate(o._.path + '.amp');
+					}
 				}
 
 				o._.html.appInfo = document.createElement('zs4-app-info');
@@ -2954,7 +3002,7 @@ zs4.admin.util = {
 					zs4.static(o._.html.appInfoContent);
 				}
 				else {
-					o._.html.appInfoContent.textContent = 'lorem ipsum et cetera...';
+					o._.html.appInfoContent.textContent = 'zs4 toonsmith by Andy Flinn...';
 				}
 			}
 

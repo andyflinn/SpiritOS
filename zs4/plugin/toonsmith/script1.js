@@ -3146,6 +3146,16 @@ ts.initialize = function(){
 
 ts.initialized = false;
 
+ts.style = new Object({
+  toolbubble:function(e){
+    e.style.margin='0.25em';
+    e.style.padding='0.25em';
+    e.style.border='0.05em solid black';
+    e.style.borderRadius = '0.5em';
+    e.style.backgroundColor = 'lightgray';
+  },
+});
+
 ts.html = new Object({
   init:{
 		block:function(container){
@@ -3432,6 +3442,7 @@ ts.html = new Object({
 
       SEQ.mixerarea = ts.html.nu.ele('ts-mixerarea');
 			SEQ.mixerarea.style.display = 'none';
+      ts.style.toolbubble(SEQ.mixerarea);
 			ele.appendChild(SEQ.mixerarea);
       SEQ.MIXER = new ts.audio.element.ui(ts.audio.master,SEQ.mixerarea);
 
@@ -4322,7 +4333,7 @@ ts.html = new Object({
   			nu.toolWindow = ts.html.nu.ele('ts-tool-window');
   			nu.toolWindow.style.display = 'none';
   			nu.toolWindow.ts = this;
-
+        ts.style.toolbubble(nu.toolWindow);
 
   			nu.toolTitlebar = ts.html.nu.ele('ts-tool-titlebar');
   			nu.toolTitlebar.style.display = 'block';
@@ -6148,6 +6159,8 @@ ts.audio = new Object({
         if (CHANNEL.OSC.isGroup){
           console.log(CHANNEL.OSC.name + ' is a group!');
           var div = document.createElement('div');
+          ts.style.toolbubble(div);
+
           tdSlider.appendChild(div);
           var group = new ts.audio.element.ui(CHANNEL.OSC,div);
           group.refresh();
