@@ -47,6 +47,12 @@ zs4.plugin.list.toonsmith = new Object({
     });
 
   },
-
+  store:function(){
+    var THIS = zs4.plugin.list.toonsmith;
+    var obj = THIS.scope._.store();
+    obj.data = THIS.toon.getChordsAndLyrics();
+    console.log(obj);
+    return obj;
+  },
 
 });

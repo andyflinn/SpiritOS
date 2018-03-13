@@ -224,6 +224,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-blogger:before{content:url(/gfx/icons/blogger.svg);}
 .icon-bye:before{content:url(/gfx/icons/bye.svg);}
 .icon-bytesserved:before{content:url(/gfx/icons/html.svg);}
+.icon-clone:before{content:url(/gfx/icons/clone.svg);}
 .icon-cloud:before{content:url(/gfx/icons/cloud.svg);}
 .icon-coin:before{content:url(/gfx/icons/coin.svg);}
 .icon-coins:before{content:url(/gfx/icons/coins.svg);}
@@ -311,7 +312,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-reload:before{content:url(/gfx/icons/reload.svg);}
 .icon-require:before{content:url(/gfx/icons/item.svg);}
 .icon-required:before{content:"*";font-weight: bolder;}
-.icon-root:before{content:url(/gfx/icons/info.svg);}
+.icon-root:before{content:url(/gfx/icons/root.svg);}
 .icon-rsa:before{content:url(/gfx/icons/rsa.svg);}
 .icon-save:before{content:url(/gfx/icons/save.svg);}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}

@@ -1572,6 +1572,31 @@ zs4.admin.util = {
 								}
 							});
 						};
+
+						if (zs4.is.function(zs4.plugin.list[plugname].store)){
+							var block = document.createElement('div');
+							o._.html.docOptions.appendChild(block);
+							var icon = zs4.admin.util.addIconElement(block,'clone');
+							zs4.admin.util.addSpace(block);
+							zs4.admin.util.addTextSpan(block,'clone this '+plugname+' document');
+						 	icon.onclick = function(){
+								var obj = zs4.plugin.list[plugname].store();
+								obj.zs4.head.title = obj.zs4.head.title + ' (clone)';
+
+								var bits = new zs4.type.scopebits({name:'temp'});
+								bits._.value = obj.zs4.head.bits;
+								bits._.bits.public.false();
+								obj.zs4.head.bits = bits._.value;
+
+								zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+								nu._.call(obj,function(){
+									zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+									if (zs4.is.string(nu._.cbresult)){
+										zs4.navigate(nu._.cbresult)
+									}
+								});
+							};
+						}
 					}
 
 					// Save Button
@@ -1584,11 +1609,6 @@ zs4.admin.util = {
 							zs4.admin.util.addSpace(block);
 							zs4.admin.util.addTextSpan(block,'save document');
 						}
-						//o._.html.appWindowSave = document.createElement('zs4-app-window-save');
-						//o._.html.appWindowSave.onclick = zs4.plugin.list[plugname].save;
-						//zs4.admin.util.setIcon(o._.html.appWindowSave,'save');
-						//zs4.admin.util.addClass(o._.html.appWindowSave,plugname);
-						//o._.html.head.appendChild(o._.html.appWindowSave);
 					}
 
 					zs4.plugin.list[plugname].ui(o._.html.appWindow,o);
