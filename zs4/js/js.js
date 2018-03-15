@@ -5388,20 +5388,9 @@ zs4.require = function(path,cb,force){
 if (zs4.is.window()){
   zs4.throttle = {
     q:[],
-    w:[],
     k:false,
     f:function(){
-      if (zs4.throttle.q.length == 0){
-        if (zs4.throttle.w.length > 0){
-          var j = zs4.throttle.w.shift();
-          j.f();
-          if (zs4.is.function(j.cb)) j.cb();
-          setTimeout(zs4.throttle.f,0);
-          return;
-        }
-        setTimeout(zs4.throttle.f,5);
-        return;
-      }
+      if (zs4.throttle.q.length == 0)return;
       var j = zs4.throttle.q.shift();
       j.f();
       if (zs4.is.function(j.cb)) j.cb();
@@ -5415,12 +5404,7 @@ if (zs4.is.window()){
       zs4.throttle.q.push(new Object({f:f,cb:cb,}));
       return;
     },
-    //onidle:function(f,cb){
-    //  zs4.throttle.w.push(new Object({f:f,cb:cb,}));
-    //  return;
-    //},
   };
-  //setTimeout(zs4.throttle.f,0),
 
   zs4.window ={
     onresize:new Array(),
