@@ -1,4 +1,4 @@
-var zs4 = require('../../js');
+var zs4 = require('../../js/js');
 var xpress = require('express');
 //var ts = require('../../static/toonsmith/window');
 var debug = require('debug')('zs4toonsmith');

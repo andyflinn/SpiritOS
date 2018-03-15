@@ -1802,6 +1802,7 @@ zs4.type = {
     }).bind(this);
 
     if (zs4.is.node()){
+      const fs = require('fs');
       this._.getScript = (function(req,cb){
         zs4.debug('default getScript() called');
         cb('');
@@ -1814,13 +1815,26 @@ zs4.type = {
         var SCOPE = this;
         var js = '';
 
-        function script(str){
-          js += '\n{\n';
-          js += str;
-          js += '\n}\n\n'
+        function script(name){
+          if (!zs4.is.string(zs4.THIS.zs4.js._.js[name])){
+            zs4.THIS.zs4.js._.js[name] = fs.readFileSync('./zs4/js/'+name+'.js','utf8');
+          }
+          js += '\n';
+          if ((name!='bowser.min')&&(name!='js'))js += '\n{\n';
+          if (zs4.THIS.zs4.js.debug._.value==true){
+            js += fs.readFileSync('./zs4/js/'+name+'.js','utf8');
+          }
+          else {
+            js += zs4.THIS.zs4.js._.js[name];
+          }
+          if ((name!='bowser.min')&&(name!='js'))js += '\n}\n';
+          js += '\n';
         };
-        js += zs4.THIS.zs4.js._.js.bowser; js += '\n';
-        js += zs4.THIS.zs4.js._.js.js; js += '\n';
+
+        script('bowser.min');
+        script('js');
+        //js += zs4.THIS.zs4.js._.js.bowser; js += '\n';
+        //js += zs4.THIS.zs4.js._.js.js; js += '\n';
 
         if (req.request.token&&req.request.payload){
           js += 'zs4.window.token=\''+req.request.token+'\'\n';
@@ -1834,14 +1848,18 @@ zs4.type = {
 
           js += 'zs4.style.refresh();\n\n';
 
-          script(zs4.THIS.zs4.js._.js.um);
-          script(zs4.THIS.zs4.js._.js.admin);
-          script(zs4.THIS.zs4.js._.js.onwindow);
+          script('um');
+          script('color');
+          script('style');
+          script('admin');
+          script('onwindow');
 
           zs4.debug('calling getScript('+SCOPE._.path+')');
           SCOPE._.getScript(req,function(Skript){
 
-            script(Skript);
+            js += '\n{\n';
+            js += Skript;
+            js += '\n}\n';
 
             req.request.html = js;
             cb();
@@ -5388,18 +5406,21 @@ if (zs4.is.window()){
       j.f();
       if (zs4.is.function(j.cb)) j.cb();
       if (zs4.throttle.k==false)
-        setTimeout(zs4.throttle.f,0);
+        if (zs4.throttle.q.length > 0){
+          setTimeout(zs4.throttle.f,0);
+        }
     },
     job:function(f,cb){
+      if (zs4.throttle.q.length==0)setTimeout(zs4.throttle.f,0);
       zs4.throttle.q.push(new Object({f:f,cb:cb,}));
       return;
     },
-    onidle:function(f,cb){
-      zs4.throttle.w.push(new Object({f:f,cb:cb,}));
-      return;
-    },
+    //onidle:function(f,cb){
+    //  zs4.throttle.w.push(new Object({f:f,cb:cb,}));
+    //  return;
+    //},
   };
-  setTimeout(zs4.throttle.f,0),
+  //setTimeout(zs4.throttle.f,0),
 
   zs4.window ={
     onresize:new Array(),
@@ -5498,9 +5519,18 @@ if (zs4.is.window()){
   };
 
   zs4.style = {
+    ele:{
 
+    },
+    element:function(name,value){
+      if (!zs4.style.ele.hasOwnProperty(name)){
+        zs4.style.ele[name] = document.createElement('style');
+        document.head.appendChild(zs4.style.ele[name]);
+      };
+      zs4.style.ele[name].innerHTML = '';
+      zs4.style.ele[name].appendChild(document.createTextNode(value));
+    },
     refresh:function(){
-      zs4.style.element.innerHTML = '';
       var width = window.screen.width;
       var height = window.screen.width;
 
@@ -5512,14 +5542,11 @@ if (zs4.is.window()){
       //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
       var sheet = 'body{font-size:'+em+'px;}\n';
       sheet += zs4.style.sheet;
-      zs4.style.element.appendChild(document.createTextNode(sheet));
+      zs4.style.element('zs4',sheet);
     },
   };
 
-  zs4.style.element = document.createElement('style');
-  document.head.appendChild(zs4.style.element);
-
-  zs4.style.refresh();
+  //zs4.style.refresh();
 
   window.onresize = function(){
     var width = window.screen.width;

@@ -1,4 +1,4 @@
-var zs4 = require('./js');
+var zs4 = require('./js/js');
 var nodefs = require('fs');
 var debug = require('debug')('zs4fs');
 

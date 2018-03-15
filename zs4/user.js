@@ -1,4 +1,4 @@
-var zs4 = require('./js');
+var zs4 = require('./js/js');
 var email = require('./email');
 var password = require('./password');
 var rsa = require('./rsa');

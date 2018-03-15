@@ -1,6 +1,6 @@
 'use strict';
 
-console.log(this);
+//console.log(this);
 
 var ts;
 if (zs4.is.node()){

@@ -1,6 +1,6 @@
 'use strict';
 
-var zs4 = require('./js');
+var zs4 = require('./js/js');
 var os = require('os');
 var system = require('child_process');
 var node = exports;

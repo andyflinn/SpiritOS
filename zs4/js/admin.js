@@ -1,7 +1,31 @@
 ////////////////////////////////////////////////////////////////////////"+"
 'use strict';
 
+
 zs4.admin = new Object({debug:false,});
+
+zs4.admin.style = new Object({
+	light:{
+		fg:{r:0,g:0,b:0,a:1},
+		bg:{r:1,g:1,b:1,a:1},
+	},
+	dark:{
+		fg:{r:1,g:1,b:1,a:1},
+		bg:{r:0,g:0,b:0,a:1},
+	},
+
+	content:{
+		class:'zs4c',
+		color:'rgba(0,0,0,1)',
+		bgcolor:'rgba(255,255,255,1)',
+	},
+	tool:{
+		class:'zs4t',
+		color:'rgba(0,0,0,1)',
+		bgcolor:'rgba(192,192,192,0.8)',
+	},
+});
+//document.head.appendChild(zs4.admin.style.element);
 
 zs4.admin.util = {
 	clseps:' ',
@@ -1732,11 +1756,12 @@ zs4.admin.util = {
 					this.toolbar.appendChild(this.titleblock);
 
 					this.titleicon = zs4.admin.util.addIconElement(this.titleblock,'search');
+					zs4.admin.util.addSpace(this.titleblock);
 
 					this.title = document.createElement('input');
 					this.title.type = 'text';
 					zs4.admin.util.addClass(this.title,'scope-title');
-					zs4.admin.util.setIcon(this.title,'search');
+					//zs4.admin.util.setIcon(this.title,'search');
 					zs4.admin.util.addAttribute(this.title,'autocomplete','title');
 					this.title.value = o.zs4.head.title._.value;
 					o.zs4.head.title._.onchange(function(){

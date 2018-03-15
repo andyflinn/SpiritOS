@@ -1,4 +1,4 @@
-var zs4 = require('./js');
+var zs4 = require('./js/js');
 var debug = require('debug')('zs4node');
 
 zs4.commandLine = function(){
@@ -254,12 +254,15 @@ zs4.define = function(){
   zs4.THIS.zs4.css._.css.css = JSON.stringify(nodefs.readFileSync('./zs4/style.css','utf8'));
 
   zs4.THIS.zs4._.property(new zs4.type.object({name:'js'}));
+  zs4.THIS.zs4.js._.property(new zs4.type.boolean({name:'debug'}));
   zs4.THIS.zs4.js._.js = new Object();
-  zs4.THIS.zs4.js._.js.bowser = nodefs.readFileSync('./zs4/js/bowser.min.js','utf8');
-  zs4.THIS.zs4.js._.js.js = nodefs.readFileSync('./zs4/js.js','utf8');
-  zs4.THIS.zs4.js._.js.um = nodefs.readFileSync('./zs4/js/um.js','utf8');
-  zs4.THIS.zs4.js._.js.admin = nodefs.readFileSync('./zs4/js/admin.js','utf8');
-  zs4.THIS.zs4.js._.js.onwindow = nodefs.readFileSync('./zs4/js/onwindow.js','utf8');
+  //zs4.THIS.zs4.js._.js.bowser = nodefs.readFileSync('./zs4/js/bowser.min.js','utf8');
+  //zs4.THIS.zs4.js._.js.js = nodefs.readFileSync('./zs4/js.js','utf8');
+  //zs4.THIS.zs4.js._.js.um = nodefs.readFileSync('./zs4/js/um.js','utf8');
+  //zs4.THIS.zs4.js._.js.color = nodefs.readFileSync('./zs4/js/color.js','utf8');
+  //zs4.THIS.zs4.js._.js.style = nodefs.readFileSync('./zs4/js/style.js','utf8');
+  //zs4.THIS.zs4.js._.js.admin = nodefs.readFileSync('./zs4/js/admin.js','utf8');
+  //zs4.THIS.zs4.js._.js.onwindow = nodefs.readFileSync('./zs4/js/onwindow.js','utf8');
 
 
   // plugins

@@ -1,6 +1,6 @@
 'use strict';
 
-var zs4 = require('./js');
+var zs4 = require('./js/js');
 var PP = require('passport');
 var debug = require('debug')('zs4passport');
 
