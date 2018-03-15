@@ -37,6 +37,7 @@ toonsmith.create = function(){
   this._.name = 'toonsmith';
 
 var dbg = true;
+  if (zs4.THIS.zs4.node.is.heroku._.value == true)dbg = false;
 
   //this._.flags.set.authuser();
   TOONSMITH._.create = toonsmith.create;
@@ -49,11 +50,16 @@ var dbg = true;
     js += '\n';
 
     if (dbg){
+      js +=  fs.readFileSync('./zs4/plugin/toonsmith/script0.js','utf8');
+      js += '\n';
       js +=  fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
     }
     else{
+      js += toonsmith.script0;
+      js += '\n';
       js += toonsmith.script1;
     }
+    js += '\n';
     debug('returning script');
     cb(js);
   }).bind(TOONSMITH);

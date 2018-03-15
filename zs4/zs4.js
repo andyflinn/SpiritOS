@@ -256,6 +256,13 @@ zs4.define = function(){
   zs4.THIS.zs4._.property(new zs4.type.object({name:'js'}));
   zs4.THIS.zs4.js._.property(new zs4.type.boolean({name:'debug'}));
   zs4.THIS.zs4.js._.js = new Object();
+
+  if (zs4.THIS.zs4.node.is.heroku._.value == true){
+    zs4.THIS.zs4.js.debug._.value = false;
+  }
+  else {
+    zs4.THIS.zs4.js.debug._.value = true;
+  }
   //zs4.THIS.zs4.js._.js.bowser = nodefs.readFileSync('./zs4/js/bowser.min.js','utf8');
   //zs4.THIS.zs4.js._.js.js = nodefs.readFileSync('./zs4/js.js','utf8');
   //zs4.THIS.zs4.js._.js.um = nodefs.readFileSync('./zs4/js/um.js','utf8');
