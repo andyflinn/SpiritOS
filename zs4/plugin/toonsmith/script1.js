@@ -2943,8 +2943,11 @@ ts.player = new Object({
         pi.osc.bass = new CHANNEL.oscillator({name:'bass',});
         pi.osc.chord = new CHANNEL.group({name:'chord'});
         pi.osc.tenor = new CHANNEL.oscillator({name:'tenor',destination:pi.osc.chord,});
+        pi.osc.tenor.panner.pan.value = 0.2;
         pi.osc.alto = new CHANNEL.oscillator({name:'alto',destination:pi.osc.chord,});
+        pi.osc.alto.panner.pan.value = -0.4;
         pi.osc.soprano = new CHANNEL.oscillator({name:'soprano',destination:pi.osc.chord,});
+        pi.osc.soprano.panner.pan.value = 0.6;
       }
 
 			pi.time = (new Date).getTime();
@@ -5864,6 +5867,11 @@ ts.audio = new Object({
       const AUDIO = ts.audio;
       const CTX = AUDIO.context;
       const NODE = this;
+      function panner(po){
+        po.panner = CTX.createStereoPanner();
+        po.panner.pan = 0;
+      };
+
       if (obj==null){
         NODE.isGroup = true;
         NODE.name = 'master';
@@ -5882,7 +5890,8 @@ ts.audio = new Object({
         GROUP.name = obj.name;
         GROUP.volume = CTX.createGain();
         GROUP.volume.connect(NODE.destination);
-        GROUP.destination = GROUP.volume;
+        panner(GROUP); GROUP.panner.connect(GROUP.volume);
+        GROUP.destination = GROUP.panner;
         GROUP.input = new Array();
         AUDIO.master[GROUP.name] = GROUP;
         AUDIO.master.input.push(GROUP);
@@ -5906,11 +5915,13 @@ ts.audio = new Object({
         else {
           OSC.volume.connect(NODE.destination);
         }
+        panner(OSC);
+        OSC.panner.connect(OSC.volume);
 
         OSC.volume.gain.setValueAtTime(1.0,CTX.currentTime);
         OSC.adsr = CTX.createGain();
         OSC.adsr.gain.value = 0;
-        OSC.adsr.connect(OSC.volume);
+        OSC.adsr.connect(OSC.panner);
         OSC.adsr.gain.setValueAtTime(0.0,CTX.currentTime);
         OSC.fadeToBy = function(g,t,d){
           if(t==null)t=CTX.currentTime;
@@ -5971,6 +5982,10 @@ ts.audio = new Object({
           AUDIO.master[MEDIA.name] = MEDIA;
           AUDIO.master.input.push(MEDIA);
         }
+
+        panner(MEDIA);
+        MEDIA.panner.connect(MEDIA.volume);
+
         MEDIA.play = function(t,g){
           if (MEDIA.buffer==null){
             console.log('no buffer to play');
@@ -5981,7 +5996,7 @@ ts.audio = new Object({
 
           var gain = CTX.createGain();
           gain.gain.setValueAtTime(g,CTX.currentTime);
-          gain.connect(MEDIA.volume);
+          gain.connect(MEDIA.panner);
 
           var src = CTX.createBufferSource();
           src.buffer = MEDIA.buffer;
@@ -6028,7 +6043,7 @@ ts.audio = new Object({
 
       MIXER.channelArray = new Array()
       var initialized = false;
-      var table = document.createElement('table');
+      var table = document.createElement('div');
 
       var soloActive = false;
 
@@ -6037,31 +6052,16 @@ ts.audio = new Object({
       MIXER.channel = function(OSC){
         var CHANNEL = this;
         CHANNEL.OSC = OSC;
-        var tr = document.createElement('tr');
+        var tr = document.createElement('div');
+        tr.style.textAlign = 'center';
+        tr.style.display = 'inline-block';
         table.appendChild(tr);
 
         var groupOpen = false;
-        var tdLabel = document.createElement('td');
-        tdLabel.style.verticalAlign = 'top';
-        tdLabel.textContent = CHANNEL.OSC.name;
-        if (CHANNEL.OSC.isGroup){
-          tdLabel.style.fontWeight = 'bolder';
-          tdLabel.onclick = function(){
-            if (groupOpen){
-              groupOpen = false;
-              groupDiv.style.display = 'none';
-            }
-            else {
-              groupOpen = true;
-              groupDiv.style.display = 'block';
-            }
-          };
-        }
-        tr.appendChild(tdLabel);
 
-        var tdMute = document.createElement('td');
-        tdMute.style.verticalAlign = 'top';
-        CHANNEL.mute = zs4.admin.util.addIconElement(tdMute,'mute');
+        var tdMuteSolo = document.createElement('div');
+        tdMuteSolo.style.textAlign = 'center';
+        CHANNEL.mute = zs4.admin.util.addIconElement(tdMuteSolo,'mute');
         CHANNEL.muted = false;
         CHANNEL.mutedBySolo = false;
         CHANNEL.savedVolume;
@@ -6082,11 +6082,8 @@ ts.audio = new Object({
             CHANNEL.slider.disabled(false);
           }
         };
-        tr.appendChild(tdMute);
 
-        var tdSolo = document.createElement('td');
-        tdSolo.style.verticalAlign = 'top';
-        var solo = zs4.admin.util.addIconElement(tdSolo,'solo');
+        var solo = zs4.admin.util.addIconElement(tdMuteSolo,'solo');
         CHANNEL.soloed = false;
         solo.onclick = function(){
           if (CHANNEL.muted || CHANNEL.mutedBySolo)return;
@@ -6125,22 +6122,27 @@ ts.audio = new Object({
             }
           }
         };
-        tr.appendChild(tdSolo);
 
-        var tdSlider = document.createElement('td');
-        tdSlider.style.verticalAlign = 'top';
+        tr.appendChild(tdMuteSolo);
+
+        var tdSlider = document.createElement('div');
+        tdSlider.style.textAlign = 'center';
         tr.appendChild(tdSlider);
 
-        var slider = CHANNEL.slider = new zs4.admin.util.sliderElement(tdSlider);
-        slider.horizontal.value(1.0);
+        var slider = CHANNEL.slider = new zs4.admin.util.sliderElement(tdSlider,true,true);
+        slider.vertical.value(CHANNEL.OSC.volume.gain.value);
+        slider.horizontal.value((CHANNEL.OSC.panner.pan.value+1)/2);
         slider.on('update',function(){
-          CHANNEL.OSC.volume.gain.value = slider.value();
+          CHANNEL.OSC.volume.gain.value = slider.vertical.value();
+          var posX = -1 + (2*slider.horizontal.value());
+          CHANNEL.OSC.panner.pan.value = posX;
+          //console.log(posX);
         });
 
         var groupDiv = null;
         if (CHANNEL.OSC.isGroup){
           console.log(CHANNEL.OSC.name + ' is a group!');
-          groupDiv = document.createElement('div');
+          groupDiv = document.createElement('span');
           groupDiv.style.display = 'none';
           zs4.style.type.toolbubble(groupDiv);
 
@@ -6148,6 +6150,33 @@ ts.audio = new Object({
           var group = new ts.audio.element.ui(CHANNEL.OSC,groupDiv);
           group.refresh();
         }
+
+        var tdLabel = document.createElement('div');
+        //tdLabel.style.verticalAlign = 'top';
+        tdLabel.style.textAlign = 'center';
+        tdLabel.textContent = CHANNEL.OSC.name;
+        if (CHANNEL.OSC.isGroup){
+          tdLabel.style.fontWeight = 'bolder';
+          function onclick(){
+            if (groupOpen){
+              groupOpen = false;
+              groupDiv.style.display = 'none';
+              tr.style.display = 'inline-block';
+              tr.style.backgroundColor = 'initial';
+            }
+            else {
+              groupOpen = true;
+              groupDiv.style.display = 'inline-block';
+              tr.style.display = 'block';
+              tr.style.backgroundColor = 'gray';
+            }
+          };
+          tdLabel.onclick = onclick;
+          //tr.onclick = onclick;
+        }
+        tr.appendChild(tdLabel);
+
+
         MIXER.channelArray.push(CHANNEL);
       };
 
@@ -6186,6 +6215,23 @@ ts.audio = new Object({
 
     var CTX = AUDIO.context;
 
+    var listener = CTX.listener;
+
+    if(listener.forwardX) {
+      listener.forwardX.value = 0;
+      listener.forwardY.value = 0;
+      listener.forwardZ.value = -1;
+      listener.upX.value = 0;
+      listener.upY.value = 1;
+      listener.upZ.value = 0;
+      listener.positionX.value = 0;
+      listener.positionY.value = 0;
+      listener.positionZ.value = 1;
+    } else {
+      listener.setOrientation(0,0,-1,0,1,0);
+      listener.setPosition(0,0,1);
+    }
+
     ts.audio.create.node(null);
     ts.audio.ui = new ts.audio.master.oscillator({name:'ui'});
 
@@ -6193,9 +6239,13 @@ ts.audio = new Object({
 
     var bass = new AUDIO.master.media({name:'bass',url:'/audio/samples/perc/bd.mp3',destination:AUDIO.master.perc,});
     var beatleft = new AUDIO.master.media({name:'beatleft',url:'/audio/samples/perc/snare.mp3',destination:AUDIO.master.perc,});
+    beatleft.panner.pan.value = -0.3;
     var beatright = new AUDIO.master.media({name:'beatright',url:'/audio/samples/perc/tom.mp3',destination:AUDIO.master.perc,});
+    beatright.panner.pan.value = 0.3;
     var tickleft = new AUDIO.master.media({name:'tickleft',url:'/audio/samples/perc/hat.mp3',destination:AUDIO.master.perc,});
+    tickleft.panner.pan.value = -0.6;
     var tickright = new AUDIO.master.media({name:'tickright',url:'/audio/samples/perc/ride.mp3',destination:AUDIO.master.perc,});
+    tickright.panner.pan.value = 0.6;
 
 
 		ts.audio.initialized = true;

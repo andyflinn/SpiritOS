@@ -1171,8 +1171,8 @@ zs4.admin.util = {
 			u = document.createElement('canvas');
 			u.style.height = '1em';
 			tdu.appendChild(u);
-			u.onclick = function(){SLIDER.vertical.value(v_value+INCREMENT_SMALL);}
-			u.ondblclick = function(){SLIDER.vertical.value(v_value+INCREMENT_BIG);}
+			u.onclick = function(){SLIDER.vertical.value(v_value+INCREMENT_SMALL);SLIDER.trigger('change');}
+			u.ondblclick = function(){SLIDER.vertical.value(v_value+INCREMENT_BIG);SLIDER.trigger('change');}
 
 			if (horizontal){
 				u.style.width = '5em';
@@ -1200,8 +1200,8 @@ zs4.admin.util = {
 
 			l = document.createElement('canvas');
 			l.style.width = '1em';
-			l.onclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_SMALL);}
-			l.ondblclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_BIG);}
+			l.onclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_SMALL);SLIDER.trigger('change');}
+			l.ondblclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_BIG);SLIDER.trigger('change');}
 			tdl.appendChild(l);
 			if (vertical)l.style.height = '5em';
 			else l.style.height = '1em';
@@ -1253,25 +1253,34 @@ zs4.admin.util = {
 					v_value = ((h-e.offsetY)-hLimit)/(h-(2*hLimit));
 				}
 
-				console.log("SLIDER.trigger('update');",v_value);
+				//console.log("SLIDER.trigger('update');",v_value);
 			}
+			e.preventDefault();
 			SLIDER.trigger('update');
 			drawKnob();
 		}
 		function mouseMoved(e){
 			//console.log('mouseMoved',e);
 			if (liveUpdate)updateValue(e);
+
 		}
 		function mouseDown(e){
+			var eRect = k.getBoundingClientRect();
+			if (e.offsetX>0 && e.offsetY>0 && e.offsetX<eRect.width && e.offsetY<eRect.height){
+				liveUpdate = true;
+				e.target.addEventListener("mousemove", mouseMoved, false);
+				updateValue(e);
+			}
 			//console.log('mouseDown',e);
-			liveUpdate = true;
-			e.target.addEventListener("mousemove", mouseMoved, false);
 		}
 		function mouseUp(e){
+			if (liveUpdate){
+				updateValue(e);
+				liveUpdate = false;
+				SLIDER.trigger('change');
+				e.target.removeEventListener("mousemove", mouseMoved, false);
+			}
 			//console.log('mouseUp',e);
-			liveUpdate = false;
-			SLIDER.trigger('change');
-			e.target.removeEventListener("mousemove", mouseMoved, false);
 		}
 		k.addEventListener("mousedown", mouseDown, false);
 		k.addEventListener("mouseleave", mouseUp, false);
@@ -1285,8 +1294,8 @@ zs4.admin.util = {
 
 			r = document.createElement('canvas');
 			r.style.width = '1em';
-			r.onclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_SMALL);}
-			r.ondblclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_BIG);}
+			r.onclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_SMALL);SLIDER.trigger('change');}
+			r.ondblclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_BIG);SLIDER.trigger('change');}
 			tdr.appendChild(r);
 			if (vertical)r.style.height = '5em';
 			else r.style.height = '1em';
@@ -1312,8 +1321,8 @@ zs4.admin.util = {
 
 			d = document.createElement('canvas');
 			d.style.height = '1em';
-			d.onclick = function(){SLIDER.vertical.value(v_value-INCREMENT_SMALL);}
-			d.ondblclick = function(){SLIDER.vertical.value(v_value-INCREMENT_BIG);}
+			d.onclick = function(){SLIDER.vertical.value(v_value-INCREMENT_SMALL);SLIDER.trigger('change');}
+			d.ondblclick = function(){SLIDER.vertical.value(v_value-INCREMENT_BIG);SLIDER.trigger('change');}
 			tdd.appendChild(d);
 
 			if (horizontal){

@@ -5398,11 +5398,11 @@ if (zs4.is.window()){
       if (zs4.is.function(j.cb)) j.cb();
       if (zs4.throttle.k==false)
         if (zs4.throttle.q.length > 0){
-          setTimeout(zs4.throttle.f,0);
+          setTimeout(zs4.throttle.f,1);
         }
     },
     job:function(f,cb){
-      if (zs4.throttle.q.length==0)setTimeout(zs4.throttle.f,0);
+      if (zs4.throttle.q.length==0)setTimeout(zs4.throttle.f,1);
       zs4.throttle.q.push(new Object({f:f,cb:cb,}));
       return;
     },
