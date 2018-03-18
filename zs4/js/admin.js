@@ -1030,7 +1030,7 @@ zs4.admin.util = {
 		var e = document.createElement('table');
 		e.style.display = 'inline-block';
 		e.style.backgroundColor = SLIDERBACKGROUNDCOLOR.css();
-		e.style.fontSize = '0.8em';
+		e.style.fontSize = '0.5em';
 		zs4.style.type.valueplain(e);
 
 		var u; var d; var l; var r; var k;
@@ -1171,8 +1171,8 @@ zs4.admin.util = {
 			u = document.createElement('canvas');
 			u.style.height = '1em';
 			tdu.appendChild(u);
-			u.onclick = function(){SLIDER.vertical.value(v_value+INCREMENT_SMALL);SLIDER.trigger('change');}
-			u.ondblclick = function(){SLIDER.vertical.value(v_value+INCREMENT_BIG);SLIDER.trigger('change');}
+			u.onclick = function(){SLIDER.vertical.value(v_value+INCREMENT_BIG);SLIDER.trigger('change');}
+			//u.ondblclick = function(){SLIDER.vertical.value(v_value+INCREMENT_BIG);SLIDER.trigger('change');}
 
 			if (horizontal){
 				u.style.width = '5em';
@@ -1200,8 +1200,8 @@ zs4.admin.util = {
 
 			l = document.createElement('canvas');
 			l.style.width = '1em';
-			l.onclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_SMALL);SLIDER.trigger('change');}
-			l.ondblclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_BIG);SLIDER.trigger('change');}
+			l.onclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_BIG);SLIDER.trigger('change');}
+			//l.ondblclick = function(){SLIDER.horizontal.value(h_value-INCREMENT_BIG);SLIDER.trigger('change');}
 			tdl.appendChild(l);
 			if (vertical)l.style.height = '5em';
 			else l.style.height = '1em';
@@ -1294,8 +1294,8 @@ zs4.admin.util = {
 
 			r = document.createElement('canvas');
 			r.style.width = '1em';
-			r.onclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_SMALL);SLIDER.trigger('change');}
-			r.ondblclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_BIG);SLIDER.trigger('change');}
+			r.onclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_BIG);SLIDER.trigger('change');}
+			//r.ondblclick = function(){SLIDER.horizontal.value(h_value+INCREMENT_BIG);SLIDER.trigger('change');}
 			tdr.appendChild(r);
 			if (vertical)r.style.height = '5em';
 			else r.style.height = '1em';
@@ -1321,8 +1321,8 @@ zs4.admin.util = {
 
 			d = document.createElement('canvas');
 			d.style.height = '1em';
-			d.onclick = function(){SLIDER.vertical.value(v_value-INCREMENT_SMALL);SLIDER.trigger('change');}
-			d.ondblclick = function(){SLIDER.vertical.value(v_value-INCREMENT_BIG);SLIDER.trigger('change');}
+			d.onclick = function(){SLIDER.vertical.value(v_value-INCREMENT_BIG);SLIDER.trigger('change');}
+			//d.ondblclick = function(){SLIDER.vertical.value(v_value-INCREMENT_BIG);SLIDER.trigger('change');}
 			tdd.appendChild(d);
 
 			if (horizontal){

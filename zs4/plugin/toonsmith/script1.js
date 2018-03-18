@@ -6011,29 +6011,15 @@ ts.audio = new Object({
     icon:function(pe){
       var ICON = this;
       var MASTER = ts.audio.master;
-      var slider = document.createElement('input')
-      slider.setAttribute('type', 'range');
-      slider.min = 0.0;
-      slider.max = 1.0;
-      slider.defaultValue = 1.0;
-      slider.step = 0.01;
-      slider.style.width = '5em';
-      slider.style.minWidth = '5em';
-      slider.style.height = '1em';
-      slider.style.minHeight = '1em';
-      slider.style.textDecoration = 'none';
-      slider.style.border = '0px';
-      slider.oninput = function(){
-        //console.log(slider.value);
-        MASTER.volume.gain.value = slider.value;
+      var slider = new zs4.admin.util.sliderElement(pe);
+      function sliderUpdate(){
+        MASTER.volume.gain.value = slider.value();
       };
-      pe.appendChild(slider);
-
+      slider.on('update',sliderUpdate);
+      slider.on('change',sliderUpdate);
       ICON.refresh = function(){
-        //console.log('MASTER gain = '+MASTER.volume.gain.value);
-        slider.value = MASTER.volume.gain.value;
+        slider.value(MASTER.volume.gain.value);
       };
-      //MASTER.onchange.push(ICON.refresh);
     },
     ui:function(pn,pe){
       const AUDIO = ts.audio;
@@ -6060,6 +6046,9 @@ ts.audio = new Object({
         var groupOpen = false;
 
         var tdMuteSolo = document.createElement('div');
+        if (CHANNEL.OSC.isGroup){
+          CHANNEL.groupToggle = zs4.admin.util.addIconElement(tdMuteSolo,'plus');
+        }
         tdMuteSolo.style.textAlign = 'center';
         CHANNEL.mute = zs4.admin.util.addIconElement(tdMuteSolo,'mute');
         CHANNEL.muted = false;
@@ -6132,12 +6121,14 @@ ts.audio = new Object({
         var slider = CHANNEL.slider = new zs4.admin.util.sliderElement(tdSlider,true,true);
         slider.vertical.value(CHANNEL.OSC.volume.gain.value);
         slider.horizontal.value((CHANNEL.OSC.panner.pan.value+1)/2);
-        slider.on('update',function(){
+        function sliderUpdate(){
           CHANNEL.OSC.volume.gain.value = slider.vertical.value();
           var posX = -1 + (2*slider.horizontal.value());
           CHANNEL.OSC.panner.pan.value = posX;
           //console.log(posX);
-        });
+        };
+        slider.on('update',sliderUpdate);
+        slider.on('change',sliderUpdate);
 
         var groupDiv = null;
         if (CHANNEL.OSC.isGroup){
@@ -6163,16 +6154,18 @@ ts.audio = new Object({
               groupDiv.style.display = 'none';
               tr.style.display = 'inline-block';
               tr.style.backgroundColor = 'initial';
+              zs4.admin.util.setIcon(CHANNEL.groupToggle,'plus');
             }
             else {
               groupOpen = true;
               groupDiv.style.display = 'inline-block';
               tr.style.display = 'block';
               tr.style.backgroundColor = 'gray';
+              zs4.admin.util.setIcon(CHANNEL.groupToggle,'minus');
             }
           };
           tdLabel.onclick = onclick;
-          //tr.onclick = onclick;
+          CHANNEL.groupToggle.onclick = onclick;
         }
         tr.appendChild(tdLabel);
 
