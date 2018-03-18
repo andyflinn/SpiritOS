@@ -195,6 +195,25 @@ zs4-name.zs4-own.zs4-noset:not{
   display:none;
 }
 
+zs4-slider.sliderH{
+  display:grid;
+  grid-template-areas:
+  "l k r";
+}
+zs4-slider.sliderV{
+  display:grid;
+  grid-template-areas:
+ "u"
+ "k"
+ "d"
+}
+zs4-slider.sliderHV{
+  display:grid;
+  grid-template-areas:
+  "lt u rt"
+  "l k r"
+  "lb d rb";
+}
 
 .icon-cancel{color:red;}
 .icon-error{background-color: white;}
@@ -273,7 +292,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-linefeed:before{content:'\000B6';font-weight: bolder;}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
 .icon-login:before{content:url(/gfx/icons/password.svg);}
-.icon-logo:before{content:url(/gfx/icons/zs4.svg);}
+.icon-logo:before{content:url(/gfx/icons/logo.svg);}
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-meaning:before{content:url(/gfx/icons/info.svg);}
 .icon-menu:before{content:"\02630";font-weight: bolder;}
@@ -351,7 +370,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-yahoo:before{content:url(/gfx/icons/yahoo.svg);}
 .icon-yinyang:before{content:url(/gfx/icons/yinyang.svg);}
 .icon-youtube:before{content:url(/gfx/icons/youtube.svg);}
-.icon-zs4:before{content:url(/gfx/icons/zs4.svg);}
+.icon-zs4:before{content:url(/gfx/icons/logo.svg);}
 
 .icon-toonsmith:before{content:url(/gfx/icons/toonsmith.svg);}
 .icon-audio:before{content:'\01F509';font-weight: bolder;}
@@ -375,8 +394,9 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-mute:before{content:'M';}
 .icon-muted:before{content:url(/gfx/icons/muted.svg);}
 .icon-note:before{content:url(/gfx/icons/note.svg);}
-.icon-solo:before{content:'S';}
-.icon-soloed:before{content:'S';color:red;}
+.icon-piano:before{content:url(/gfx/icons/piano.svg);}
+.icon-solo:before{content:url(/gfx/icons/solo.svg);}
+.icon-soloed:before{content:url(/gfx/icons/soloed.svg);}
 .icon-tpb:before{content:url(/gfx/icons/tick.svg);}
 .icon-transpose:before{content:'\021C5';font-weight: bolder;}
 .icon-ukulele:before{content:url(/gfx/icons/ukulele.svg);}

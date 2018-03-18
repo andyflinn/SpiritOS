@@ -3146,16 +3146,6 @@ ts.initialize = function(){
 
 ts.initialized = false;
 
-ts.style = new Object({
-  toolbubble:function(e){
-    e.style.margin='0.25em';
-    e.style.padding='0.25em';
-    e.style.border='0.05em solid black';
-    e.style.borderRadius = '0.5em';
-    e.style.backgroundColor = 'lightgray';
-  },
-});
-
 ts.html = new Object({
   init:{
 		block:function(container){
@@ -3442,8 +3432,11 @@ ts.html = new Object({
 
       SEQ.mixerarea = ts.html.nu.ele('ts-mixerarea');
 			SEQ.mixerarea.style.display = 'none';
-      ts.style.toolbubble(SEQ.mixerarea);
+      zs4.style.type.toolbubble(SEQ.mixerarea);
 			ele.appendChild(SEQ.mixerarea);
+      //new zs4.admin.util.sliderElement(SEQ.mixerarea,true,true);
+      //new zs4.admin.util.sliderElement(SEQ.mixerarea);
+      //new zs4.admin.util.sliderElement(SEQ.mixerarea,false,true);
       SEQ.MIXER = new ts.audio.element.ui(ts.audio.master,SEQ.mixerarea);
 
 
@@ -4333,8 +4326,8 @@ ts.html = new Object({
   			nu.toolWindow = ts.html.nu.ele('ts-tool-window');
   			nu.toolWindow.style.display = 'none';
   			nu.toolWindow.ts = this;
-        ts.style.toolbubble(nu.toolWindow);
-
+        zs4.style.type.toolbubble(nu.toolWindow);
+        zs4.style.type.bgimage(nu.toolWindow,'/gfx/icons/'+icon+'.svg');
   			nu.toolTitlebar = ts.html.nu.ele('ts-tool-titlebar');
   			nu.toolTitlebar.style.display = 'block';
   			nu.toolTitlebar.ts = this;
@@ -4661,18 +4654,15 @@ ts.html = new Object({
 
   			nu.eFretboard = ts.html.nu.ele('table');
   			nu.eFretboard.className = 'ts-fretboard';
+        nu.eFretboard.style.backgroundColor = 'rgba(192,192,192,0.8)';
   			nu.iSpecific.appendChild(nu.eFretboard);
 
   			nu.eHeader = ts.html.nu.ele('tr');
-        nu.eHeader.style.padding = '0';
-        nu.eHeader.style.border = '0';
-        nu.eHeader.style.margin = '0';
+        zs4.style.type.boxplain(nu.eHeader);
   			nu.eFretboard.appendChild(nu.eHeader);
 
         nu.eTdEmpty = ts.html.nu.ele('td');
-        nu.eTdEmpty.style.padding = '0';
-        nu.eTdEmpty.style.border = '0';
-        nu.eTdEmpty.style.margin = '0';
+        zs4.style.type.boxplain(nu.eTdEmpty);
   			nu.eHeader.appendChild(nu.eTdEmpty);
 
         nu.tunArr = new Array();
@@ -4724,15 +4714,11 @@ ts.html = new Object({
         nu.eTdEmpty.appendChild(nu.eTuning);
 
   			nu.eTdCapo = ts.html.nu.ele('td');
-        nu.eTdCapo.style.padding = '0';
-        nu.eTdCapo.style.border = '0';
-        nu.eTdCapo.style.margin = '0';
+        zs4.style.type.boxplain(nu.eTdCapo);
   			nu.eHeader.appendChild(nu.eTdCapo);
 
   			nu.eKapo = ts.html.nu.ele('select');
-        nu.eKapo.style.padding = '0';
-        nu.eKapo.style.border = '0';
-        nu.eKapo.style.margin = '0';
+        zs4.style.type.boxplain(nu.eKapo);
   			nu.eKapo.setAttribute('type', 'number');
         for (var k = 0; k <= KAPO_MAX; k++){
           var opt = ts.html.nu.ele('option');
@@ -4755,9 +4741,7 @@ ts.html = new Object({
         nu.eFretNumbers = new Array();
   			for (var i = 0; i < FRET_COUNT;i++){
   				var fret = ts.html.nu.ele('td');
-          fret.style.padding = '0';
-          fret.style.border = '0';
-          fret.style.margin = '0';
+          zs4.style.type.boxplain(fret);
   				nu.eHeader.appendChild(fret);
   				fret.style.textAlign = "center";
   				fret.style.fontSize = FRETNO_FONTSIZE;
@@ -4795,16 +4779,12 @@ ts.html = new Object({
   				nu.strings.push(string);
   				string.eRow = ts.html.nu.ele('tr');
   				string.eRow.className = 'string';
-          string.eRow.style.border = '0';
-          string.eRow.style.padding = '0';
-          string.eRow.style.margin = '0';
+          zs4.style.type.boxplain(string.eRow);
   				this.eFretboard.appendChild(string.eRow);
 
   				string.eTdTuning = ts.html.nu.ele('td');
   				string.eTdTuning.className = 'string';
-          string.eTdTuning.style.border = '0';
-          string.eTdTuning.style.padding = '0';
-          string.eTdTuning.style.margin = '0';
+          zs4.style.type.boxplain(string.eTdTuning);
   				string.eRow.appendChild(string.eTdTuning);
 
           string.tunArr = new Array();
@@ -4832,9 +4812,7 @@ ts.html = new Object({
 
   				string.eTdEmpty = ts.html.nu.ele('td');
   				string.eTdEmpty.className = 'string';
-          string.eTdEmpty.style.border = '0';
-          string.eTdEmpty.style.padding = '0';
-          string.eTdEmpty.style.margin = '0';
+          zs4.style.type.boxplain(string.eTdEmpty);
           string.eTdEmpty.style.backgroundColor = 'grey';
   				string.eRow.appendChild(string.eTdEmpty);
 
@@ -4860,9 +4838,7 @@ ts.html = new Object({
 
   					fret.td = ts.html.nu.ele('td');
   					fret.td.className = 'string';
-            fret.td.style.border = '0';
-            fret.td.style.padding = '0';
-            fret.td.style.margin = '0';
+            zs4.style.type.boxplain(fret.td);
   					string.eRow.appendChild(fret.td);
 
   					fret.padele = nu.createPad(i,(tuning+1+i));
@@ -5061,7 +5037,7 @@ ts.html = new Object({
   		SEQ.createToolPiano = function(){
         const PIANO_KEY_WIDTH = '0.4em';
         const PIANO_KEY_HEIGHT = '2em';
-  			var nu = this.createToolInstrument('piano','keyboard');
+  			var nu = this.createToolInstrument('piano','piano');
 
   			nu.eKeyboard = ts.html.nu.ele('ts-keyboard');
   			nu.eKeyboard.style.display = 'block';
@@ -6064,9 +6040,23 @@ ts.audio = new Object({
         var tr = document.createElement('tr');
         table.appendChild(tr);
 
+        var groupOpen = false;
         var tdLabel = document.createElement('td');
         tdLabel.style.verticalAlign = 'top';
         tdLabel.textContent = CHANNEL.OSC.name;
+        if (CHANNEL.OSC.isGroup){
+          tdLabel.style.fontWeight = 'bolder';
+          tdLabel.onclick = function(){
+            if (groupOpen){
+              groupOpen = false;
+              groupDiv.style.display = 'none';
+            }
+            else {
+              groupOpen = true;
+              groupDiv.style.display = 'block';
+            }
+          };
+        }
         tr.appendChild(tdLabel);
 
         var tdMute = document.createElement('td');
@@ -6083,13 +6073,13 @@ ts.audio = new Object({
             zs4.admin.util.setIcon(CHANNEL.mute,'muted');
             CHANNEL.savedVolume = CHANNEL.OSC.volume.gain.value;
             CHANNEL.OSC.volume.gain.setValueAtTime(0,CTX.currentTime);
-            CHANNEL.slider.disabled = true;
+            CHANNEL.slider.disabled(true);
           }
           else {
             CHANNEL.muted = false;
             zs4.admin.util.setIcon(CHANNEL.mute,'mute');
             CHANNEL.OSC.volume.gain.setValueAtTime(CHANNEL.savedVolume,CTX.currentTime);
-            CHANNEL.slider.disabled = false;
+            CHANNEL.slider.disabled(false);
           }
         };
         tr.appendChild(tdMute);
@@ -6114,7 +6104,7 @@ ts.audio = new Object({
                   zs4.admin.util.setIcon(ch.mute,'muted');
                   ch.savedVolume = ch.OSC.volume.gain.value;
                   ch.OSC.volume.gain.setValueAtTime(0,CTX.currentTime);
-                  ch.slider.disabled = true;
+                  ch.slider.disabled(true);
                 }
               }
             }
@@ -6129,7 +6119,7 @@ ts.audio = new Object({
                 if (!ch.muted){
                   zs4.admin.util.setIcon(ch.mute,'mute');
                   ch.OSC.volume.gain.setValueAtTime(ch.savedVolume,CTX.currentTime);
-                  ch.slider.disabled = false;
+                  ch.slider.disabled(false);
                 }
               }
             }
@@ -6140,29 +6130,22 @@ ts.audio = new Object({
         var tdSlider = document.createElement('td');
         tdSlider.style.verticalAlign = 'top';
         tr.appendChild(tdSlider);
-        var slider = CHANNEL.slider = document.createElement('input')
-        slider.setAttribute('type', 'range');
-        slider.min = 0.0;
-        slider.max = 1.0;
-        slider.defaultValue = 1.0;
-        slider.step = 0.01;
-        slider.style.width = '5em';
-        slider.style.minWidth = '5em';
-        slider.style.height = '1em';
-        slider.style.minHeight = '1em';
-        slider.style.textDecoration = 'none';
-        slider.style.border = '0px';
-        slider.oninput = function(){
-          CHANNEL.OSC.volume.gain.value = slider.value;
-        };
-        tdSlider.appendChild(slider);
+
+        var slider = CHANNEL.slider = new zs4.admin.util.sliderElement(tdSlider);
+        slider.horizontal.value(1.0);
+        slider.on('update',function(){
+          CHANNEL.OSC.volume.gain.value = slider.value();
+        });
+
+        var groupDiv = null;
         if (CHANNEL.OSC.isGroup){
           console.log(CHANNEL.OSC.name + ' is a group!');
-          var div = document.createElement('div');
-          ts.style.toolbubble(div);
+          groupDiv = document.createElement('div');
+          groupDiv.style.display = 'none';
+          zs4.style.type.toolbubble(groupDiv);
 
-          tdSlider.appendChild(div);
-          var group = new ts.audio.element.ui(CHANNEL.OSC,div);
+          tdSlider.appendChild(groupDiv);
+          var group = new ts.audio.element.ui(CHANNEL.OSC,groupDiv);
           group.refresh();
         }
         MIXER.channelArray.push(CHANNEL);

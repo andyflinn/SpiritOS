@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   viewBox="0 0 192.56795 197.85963"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="logo.svg">
+  <defs
+     id="defs2">
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath4774">
+      <ellipse
+         ry="106.92378"
+         rx="90.116051"
+         cy="162.4938"
+         cx="-61.908531"
+         id="ellipse4776"
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.89999914;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:74.19212341;stroke-opacity:1;paint-order:stroke fill markers"
+         transform="matrix(0.79601786,-0.60527313,0.63228185,0.77473845,0,0)" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath4778">
+      <ellipse
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.88910365;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:74.19212341;stroke-opacity:1;paint-order:stroke fill markers"
+         id="ellipse4780"
+         cx="-66.145813"
+         cy="150.34525"
+         rx="96.283974"
+         ry="98.929817" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath4782">
+      <ellipse
+         ry="90.774315"
+         rx="106.92068"
+         cy="137.9512"
+         cx="-73.453094"
+         id="ellipse4784"
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.90689838;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:74.19212341;stroke-opacity:1;paint-order:stroke fill markers"
+         transform="matrix(0.74467781,-0.66742412,0.64815799,0.76150589,0,0)" />
+    </clipPath>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.35"
+     inkscape:cx="381.05072"
+     inkscape:cy="369.77611"
+     inkscape:document-units="mm"
+     inkscape:current-layer="g4762"
+     showgrid="false"
+     inkscape:snap-to-guides="true"
+     inkscape:window-width="1366"
+     inkscape:window-height="684"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(162.42979,-51.415428)">
+    <g
+       id="g4762">
+      <g
+         id="g4790">
+        <rect
+           clip-path="url(#clipPath4778)"
+           style="opacity:1;fill:#ffff00;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:3.78331542;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:74.19212341;stroke-opacity:0.33779267;paint-order:stroke fill markers"
+           id="rect4749"
+           width="250.66779"
+           height="197.75111"
+           x="-190.34579"
+           y="49.201813" />
+        <rect
+           clip-path="url(#clipPath4774)"
+           style="opacity:1;fill:#008000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:3.62239814;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:74.19212341;stroke-opacity:0.33779267;paint-order:stroke fill markers"
+           id="rect4747"
+           width="174.6454"
+           height="205.57951"
+           x="-151.59819"
+           y="63.929443"
+           ry="0"
+           transform="matrix(0.82825444,0.5603522,-0.67595748,0.73694063,0,0)" />
+        <rect
+           clip-path="url(#clipPath4782)"
+           style="opacity:1;fill:#ff0000;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:2.93825722;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:74.19212341;stroke-opacity:0.33779267;paint-order:stroke fill markers"
+           id="rect4751"
+           width="216.70012"
+           height="217.783"
+           x="66.885132"
+           y="27.720264"
+           transform="matrix(0.68597402,0.72762603,-0.58386881,0.81184803,0,0)" />
+        <ellipse
+           style="opacity:1;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.96300006;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:74.19212341;stroke-opacity:0.33779267;paint-order:stroke fill markers"
+           id="path4753"
+           cx="-55.940475"
+           cy="148.07738"
+           rx="84.666672"
+           ry="81.64286" />
+      </g>
+      <text
+         xml:space="preserve"
+         style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:112.18186951px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif Italic';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.58428049"
+         x="-159.83124"
+         y="174.7684"
+         id="text4794"
+         transform="scale(0.91188634,1.0966279)"><tspan
+           sodipodi:role="line"
+           id="tspan4792"
+           x="-159.83124"
+           y="174.7684"
+           style="font-style:italic;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:'sans-serif Italic';stroke-width:0.58428049">zs4</tspan></text>
+    </g>
+  </g>
+</svg>

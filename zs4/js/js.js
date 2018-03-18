@@ -977,6 +977,8 @@ zs4.util = {
     const BITMASK = 0x0ffffffff;
 
     var THIS = this;
+    if (po==null)po=THIS;
+    if (name==null)name='bits';
     THIS._ = new Object({po:po,n:name});
 
     this.addBit = (function(n,v){
@@ -1833,6 +1835,9 @@ zs4.type = {
 
         script('bowser.min');
         script('js');
+        script('um');
+        script('color');
+        script('style');
         //js += zs4.THIS.zs4.js._.js.bowser; js += '\n';
         //js += zs4.THIS.zs4.js._.js.js; js += '\n';
 
@@ -1848,9 +1853,6 @@ zs4.type = {
 
           js += 'zs4.style.refresh();\n\n';
 
-          script('um');
-          script('color');
-          script('style');
           script('admin');
           script('onwindow');
 
@@ -5501,36 +5503,6 @@ if (zs4.is.window()){
     document.head.appendChild(css);
     return css;
   };
-
-  zs4.style = {
-    ele:{
-
-    },
-    element:function(name,value){
-      if (!zs4.style.ele.hasOwnProperty(name)){
-        zs4.style.ele[name] = document.createElement('style');
-        document.head.appendChild(zs4.style.ele[name]);
-      };
-      zs4.style.ele[name].innerHTML = '';
-      zs4.style.ele[name].appendChild(document.createTextNode(value));
-    },
-    refresh:function(){
-      var width = window.screen.width;
-      var height = window.screen.width;
-
-      var em = 18;
-      if (bowser.mobile==true)em *= 3;
-      //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
-      //sheet += '.fouc{opacity:0}\n';
-
-      //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
-      var sheet = 'body{font-size:'+em+'px;}\n';
-      sheet += zs4.style.sheet;
-      zs4.style.element('zs4',sheet);
-    },
-  };
-
-  //zs4.style.refresh();
 
   window.onresize = function(){
     var width = window.screen.width;
