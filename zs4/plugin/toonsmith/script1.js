@@ -1546,7 +1546,8 @@ ts.bassbits = function(po,name){
   BASSBITS.addBit('oddbeat',1);
   BASSBITS.addBit('evenbeat',2);
   BASSBITS.addBit('centrebeat',3);
-  BASSBITS.addBit('fives',4);
+  BASSBITS.addBit('centretick',4);
+  BASSBITS.addBit('fives',5);
 };
 
 ts.chordbits = function(po,name){
@@ -1556,6 +1557,7 @@ ts.chordbits = function(po,name){
   CHORDBITS.addBit('oddbeat',1);
   CHORDBITS.addBit('evenbeat',2);
   CHORDBITS.addBit('centrebeat',3);
+  CHORDBITS.addBit('centretick',4);
 };
 
 ts.melodybits = function(po,name){
@@ -2776,13 +2778,14 @@ ts.player = new Object({
         if (chord==null)continue;
         if ((i%SEQ.tpb)!=0)continue;
         var note = chord.b + BASS_OFFSET;
-        var velocity = .5;
+        var velocity = a[i].volume;
 
         var play = false;
         if (a[i].tickbits.downbeat.get()&&SEQ.bassbits.downbeat.get()) play = true;
         else if (a[i].tickbits.oddbeat.get()&&SEQ.bassbits.oddbeat.get()) play = true;
         else if (a[i].tickbits.evenbeat.get()&&SEQ.bassbits.evenbeat.get()) play = true;
         else if (a[i].tickbits.centrebeat.get()&&SEQ.bassbits.centrebeat.get()) play = true;
+        else if (a[i].tickbits.centretick.get()&&SEQ.bassbits.centretick.get()) play = true;
         else if (SEQ.bbits==0) play=true;
 
         if (play){
@@ -2870,6 +2873,7 @@ ts.player = new Object({
         else if (a[i].tickbits.oddbeat.get()&&SEQ.chordbits.oddbeat.get()) play = true;
         else if (a[i].tickbits.evenbeat.get()&&SEQ.chordbits.evenbeat.get()) play = true;
         else if (a[i].tickbits.centrebeat.get()&&SEQ.chordbits.centrebeat.get()) play = true;
+        else if (a[i].tickbits.centretick.get()&&SEQ.chordbits.centretick.get()) play = true;
         else if (SEQ.cbits==0) play=true;
         if (!play)continue;
 

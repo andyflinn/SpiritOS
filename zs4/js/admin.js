@@ -900,6 +900,7 @@ zs4.admin.util = {
 		var BITS = this;
 		var a = new Array();
 		var e = document.createElement('zs4-input-bits');
+		e.style.display = 'inline-block';
 
 		function bit(n){
 			var BIT = this;
@@ -936,6 +937,7 @@ zs4.admin.util = {
 
 			a.push(BIT)
 			e.appendChild(b);
+			zs4.admin.util.addTextSpan(e,' ');
 		}
 
 		for (var n in bits)if(zs4.is.object(bits[n])&&zs4.is.number(bits[n].m)){
