@@ -6045,6 +6045,7 @@ ts.audio = new Object({
         var tr = document.createElement('div');
         tr.style.textAlign = 'center';
         tr.style.display = 'inline-block';
+        zs4.style.type.toolbubble(tr);
         table.appendChild(tr);
 
         var groupOpen = false;

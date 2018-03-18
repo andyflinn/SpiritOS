@@ -29,6 +29,7 @@ zs4.style = {
       e.style.border='0.05em solid black';
       e.style.borderRadius = '0.5em';
       e.style.backgroundColor = 'lightgray';
+      e.style.overflow = 'auto';
     },
     bgimage:function(e,i){
       e.style.backgroundImage = 'url(\"'+zs4.style.host + i+'\")';

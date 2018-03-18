@@ -391,7 +391,7 @@ zs4-slider.sliderHV{
 .icon-mandolin:before{content:url(/gfx/icons/mandolin.svg);}
 .icon-midi:before{content:'\0266C';font-weight: bolder;}
 .icon-mixer:before{content:url(/gfx/icons/mixer.svg);}
-.icon-mute:before{content:'M';}
+.icon-mute:before{content:url(/gfx/icons/mute.svg);}
 .icon-muted:before{content:url(/gfx/icons/muted.svg);}
 .icon-note:before{content:url(/gfx/icons/note.svg);}
 .icon-piano:before{content:url(/gfx/icons/piano.svg);}
