@@ -59,7 +59,7 @@ zs4.style = {
   },
   refresh:function(){
     var width = window.screen.width;
-    var height = window.screen.width;
+    var height = window.screen.height;
 
     var em = 18;
     if (bowser.mobile==true)em *= 3;
@@ -68,6 +68,12 @@ zs4.style = {
 
     //var sheet = '*{box-sizing: border-box;font-size:'+em+'px;}\n';
     var sheet = 'body{font-size:'+em+'px;}\n';
+    sheet += 'textarea{height:auto;width:90%;max-width: 90%;min-width:90%;height:8em;min-height:8em;}\n';
+    sheet += 'a{text-decoration:none;font-weight:bold;cursor:pointer;}\n';
+    sheet += 'input{width:auto;border-left-style:none;border-top-style:none;border-right-style:none;border-bottom-style:dotted;border-color:darkgray;margin-left:0.25em;margin-right:0.25em;}\n';
+    sheet += 'input[type="checkbox"]{width:1em;height:1em;}\n';
+    sheet += 'input[type="number"]{width:auto;height:1em;}\n';
+
     sheet += zs4.style.sheet;
     zs4.style.element('zs4',sheet);
   },

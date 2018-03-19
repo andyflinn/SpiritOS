@@ -4,11 +4,12 @@
 
 zs4.admin = new Object({debug:false,});
 
-var sliderStyle = '';
-sliderStyle += '.sliderH{display:grid;grid-template-areas:"l k r";}\n';
-sliderStyle += '.sliderV{display:grid;grid-template-areas:"u" "k" "d";}\n';
-sliderStyle += '.sliderHV{display:grid;grid-template-areas:"lt u rt" "l k r" "lb d rb";}\n';
-zs4.style.element('slider',sliderStyle)
+//var adminStyle = '';
+//adminStyle += '\n';
+//adminStyle += '\n';
+//adminStyle += '\n';
+//adminStyle += '\n';
+//zs4.style.element('admin',adminStyle)
 
 zs4.admin.util = {
 	clseps:' ',
@@ -94,6 +95,11 @@ zs4.admin.util = {
 		}
 		e.className = ret;
 	},
+	setOnClick:function(e,foo){
+		e.style.cursor = 'pointer';
+		e.onclick = foo;
+		return e;
+	},
 	addAttribute:function(e,a,c){
 		if (e==null||c==null)return;
 		var set = zs4.string.split.separators(c,zs4.admin.util.clseps);
@@ -141,6 +147,13 @@ zs4.admin.util = {
 	addIconElement:function(p,icon){
 		var ret = document.createElement('zs4-ielement');
 		zs4.admin.util.setIcon(ret,icon);
+		p.appendChild(ret);
+		return ret;
+	},
+	addIconImage:function(p,icon){
+		var ret = document.createElement('div');
+		ret.style.display = 'inline-block';
+		zs4.admin.util.addIconElement(ret,icon);
 		p.appendChild(ret);
 		return ret;
 	},
@@ -2090,6 +2103,7 @@ zs4.admin.util = {
 					//this.select.textContent = name;
 
 					this.pane = document.createElement('zs4-app-dialog');
+					zs4.style.type.toolbubble(this.pane);
 					o._.html.appUserInterface.appendChild(this.pane);
 					//this.pane.textContent = 'dialog pane for '+name;
 					zs4.admin.util.removeClass(this.pane,'current');

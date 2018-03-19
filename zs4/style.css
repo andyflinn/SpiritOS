@@ -138,37 +138,13 @@ body{
   color:black;
   background-color: white;
 }
-input[type="checkbox"]{
-  width:1em;
-  height:1em;
-}
-input{
-  width:auto;
-  border-left-style: none;
-  border-top-style: none;
-  border-right-style: none;
-  border-bottom-style: dotted;
-  border-color: darkgray;
-  margin-left: 0.25em;
-  margin-right: 0.25em;
-}
-input[type="number"]{
-  width:auto;
-  height:1em;
-}
+
+
 input.zs4-noset{
   border-color:white;
   width:auto;
 }
-textarea{
-  height: auto;
-  width:100%;
-  max-width: 100%;
-  min-width: 100%;
-}
-a{
-  text-decoration: none;
-}
+
 
 zs4-name{
   font-size: enherit;
@@ -240,7 +216,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-descend:before{content:'\021A1';font-weight: bolder;}
 .icon-detail:before{content:url(/gfx/icons/delete.svg);}
 .icon-doctype:before{content:'\0265E';font-weight: bolder;}
-.icon-document:before{content:'\01F4C3';font-weight: bolder;}
+.icon-document:before{content:url(/gfx/icons/document.svg);}
 .icon-down:before{content:url(/gfx/icons/down.svg);}
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
 .icon-drive:before{content:url(/gfx/icons/drive.svg);}

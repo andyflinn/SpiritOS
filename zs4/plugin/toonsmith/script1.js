@@ -544,7 +544,7 @@ ts.create = function(){
 
 			var tit = 'beat:'+ (no+1) +' length:'+length;
 			if (SEQ.evt[beat].bar==null && SEQ.evt[beat].beat!=null){
-				if (zs4.is.window())SEQ.evt[beat].eBlockChart.title = tit;
+				if (zs4.is.window())SEQ.evt[beat].ui.eBC.title = tit;
 			}
 			SEQ.evt[beat].duration = length;
 
@@ -668,7 +668,7 @@ ts.create = function(){
 					}
 				}
 
-				if (zs4.is.window())SEQ.evt[cur_bar].eBlockChart.title = title;
+				if (zs4.is.window())SEQ.evt[cur_bar].ui.eBC.title = title;
 				cur_bar = SEQ.searchNextBar(cur_bar);
 			}
 		}
@@ -1029,9 +1029,10 @@ ts.create = function(){
         };
 
         if (o.window==null){
-          o.window = o.eEvent = document.createElement('ts-event-span');
-    			o.eEvent.ts = o;
-    			o.eEvent.onclick = function(){
+          var eVent = o.window = document.createElement('ts-event-span');
+          o.ui = new Object({});
+    			eVent.ts = o;
+    			eVent.onclick = function(){
             if (SEQ.kbm==KBM_CHORD){
               SEQ.kb.chord = null;
             }
@@ -1043,31 +1044,28 @@ ts.create = function(){
             }
           };
 
-    			o.eSpan = document.createElement('ts-event');
-    			o.eSpan.style.display = 'inline-block';
-    			o.eSpan.ts = o;
-    			o.eEvent.appendChild(o.eSpan);
+    			o.ui.eSpan = document.createElement('ts-event');
+    			o.ui.eSpan.style.display = 'inline-block';
+    			o.ui.eSpan.ts = o;
+    			eVent.appendChild(o.ui.eSpan);
 
-    			o.eBlockMelody = document.createElement('ts-block-melody');
-          o.eBlockMelody.style.height = '1em';
-          o.eBlockMelody.style.minHeight = '1em';
-    			o.eBlockMelody.style.display = 'block';
-    			o.eSpan.appendChild(o.eBlockMelody);
+    			o.ui.eBM = document.createElement('div');
+          o.ui.eBM.style.height = '1em';
+          o.ui.eBM.style.minHeight = '1em';
+    			o.ui.eSpan.appendChild(o.ui.eBM);
 
-    			o.eBlockChart = document.createElement('ts-block-chart');
-    			o.eBlockChart.style.display = 'block';
-    			o.eBlockChart.style.height = '1em';
-          o.eBlockChart.style.minHeight = '1em';
-    			o.eSpan.appendChild(o.eBlockChart);
+    			o.ui.eBC = document.createElement('div');
+    			o.ui.eBC.style.height = '1em';
+          o.ui.eBC.style.minHeight = '1em';
+    			o.ui.eSpan.appendChild(o.ui.eBC);
 
-    				o.eChordBaseNote = document.createElement('ts-chord-base');
-    				o.eBlockChart.appendChild(o.eChordBaseNote);
+    				o.ui.eCBN = document.createElement('ts-chord-base');
+    				o.ui.eBC.appendChild(o.ui.eCBN);
 
-    			o.eBlockLyric = document.createElement('ts-block-lyric');
-    			o.eBlockLyric.style.display = 'block';
-    			o.eBlockLyric.style.height = '1em';
-          o.eBlockLyric.style.minHeight = '1em';
-    			o.eBlockLyric.ondblclick = function(e){
+    			o.ui.eBL = document.createElement('div');
+    			o.ui.eBL.style.height = '1em';
+          o.ui.eBL.style.minHeight = '1em';
+    			o.ui.eBL.ondblclick = function(e){
     				SEQ.onEventClick(EVENT);
     				if (SEQ.evt[SEQ.evt_curidx]!=EVENT)return;
 
@@ -1087,255 +1085,270 @@ ts.create = function(){
     				//zs4.debug(zs4.json.textify(e));
     			};
 
-    			o.eSpan.appendChild(o.eBlockLyric);
+    			o.ui.eSpan.appendChild(o.ui.eBL);
 
-          o.eLineFeed = document.createElement('br');
-          o.eLineFeed.style.display = 'none';
-          o.eEvent.appendChild(o.eLineFeed);
+          o.ui.eLF = document.createElement('br');
+          o.ui.eLF.style.display = 'none';
+          eVent.appendChild(o.ui.eLF);
 
-    			SEQ.cnt.appendChild(o.eEvent);
+    			SEQ.cnt.appendChild(eVent);
         }
 
-
-
-
-
         var isPlaying = SEQ.isPlaying();
-        o.eSpan.style.paddingTop = '0.5em';
-        o.eSpan.style.paddingBottom = '0.5em';
-        o.eBlockMelody.style.fontSize = '0.5em';
-        o.eBlockMelody.style.color = 'lightgray';
+        o.ui.eSpan.style.paddingTop = '0.5em';
+        o.ui.eSpan.style.paddingBottom = '0.5em';
+        o.ui.eBM.style.fontSize = '0.5em';
+        o.ui.eBM.style.color = 'lightgray';
 
-        if (o.isBar()) o.eSpan.style.borderLeft = '0.05em solid grey';
+        if (o.isBar()) o.ui.eSpan.style.borderLeft = '0.05em solid grey';
         else {
-          o.eSpan.style.borderLeft = 'initial';
+          o.ui.eSpan.style.borderLeft = 'initial';
           if (o.isBeat()){
-            o.eBlockChart.style.borderLeft = '0.05em dotted gray';
+            o.ui.eBC.style.borderLeft = '0.05em dotted gray';
           }
           else {
-            o.eBlockChart.style.borderLeft = 'initial';
+            o.ui.eBC.style.borderLeft = 'initial';
           }
         }
 
         if (o.current){
-          o.eSpan.focus();
+          o.ui.eSpan.focus();
 
           if (!isPlaying && (SEQ.kbm==KBM_BAR)){
-            o.eSpan.style.backgroundColor = 'initial';
-            o.eBlockMelody.style.borderLeft = '0.3em solid red';
-            o.eBlockLyric.style.borderLeft = '0.15em solid red';
+            o.ui.eSpan.style.backgroundColor = 'initial';
+            o.ui.eBM.style.borderLeft = '0.3em solid red';
+            o.ui.eBL.style.borderLeft = '0.15em solid red';
           }
           else if (!isPlaying && (SEQ.kbm==KBM_BEAT)){
-            o.eSpan.style.backgroundColor = 'initial';
-            o.eBlockMelody.style.borderLeft = '0.05em solid red';
-            o.eBlockLyric.style.borderLeft = '0.05em solid red';
+            o.ui.eSpan.style.backgroundColor = 'initial';
+            o.ui.eBM.style.borderLeft = '0.05em solid red';
+            o.ui.eBL.style.borderLeft = '0.05em solid red';
           }
           else {
-            o.eSpan.style.backgroundColor = 'rgba(200,200,200,0.3)';
-            o.eBlockMelody.style.borderLeft = 'initial';
-            o.eBlockLyric.style.borderLeft = 'initial';
+            o.ui.eSpan.style.backgroundColor = 'rgba(200,200,200,0.3)';
+            o.ui.eBM.style.borderLeft = 'initial';
+            o.ui.eBL.style.borderLeft = 'initial';
           }
 
           if (!isPlaying && SEQ.kbm == KBM_LYRIC){
-            o.eBlockLyric.style.backgroundColor = 'white';
+            o.ui.eBL.style.backgroundColor = 'white';
           }
           else {
-            o.eBlockLyric.style.backgroundColor = 'initial';
+            o.ui.eBL.style.backgroundColor = 'initial';
           }
 
           if (!isPlaying && SEQ.kbm == KBM_CHORD){
-            o.eBlockChart.style.backgroundColor = 'white';
+            o.ui.eBC.style.backgroundColor = 'white';
           }
           else {
-            o.eBlockChart.style.backgroundColor = 'initial';
+            o.ui.eBC.style.backgroundColor = 'initial';
           }
 
           if (!isPlaying && SEQ.kbm == KBM_MELODY){
-            o.eBlockMelody.style.backgroundColor = 'white';
+            o.ui.eBM.style.backgroundColor = 'white';
           }
           else {
-            o.eBlockMelody.style.backgroundColor = 'initial';
+            o.ui.eBM.style.backgroundColor = 'initial';
           }
 
         }
         else {
-          o.eBlockMelody.style.borderLeft = 'initial';
-          o.eBlockLyric.style.borderLeft = 'initial';
-          o.eSpan.style.backgroundColor = 'initial';
-          o.eBlockLyric.style.backgroundColor = 'initial';
-          o.eBlockChart.style.backgroundColor = 'initial';
-          o.eBlockMelody.style.backgroundColor = 'initial';
+          o.ui.eBM.style.borderLeft = 'initial';
+          o.ui.eBL.style.borderLeft = 'initial';
+          o.ui.eSpan.style.backgroundColor = 'initial';
+          o.ui.eBL.style.backgroundColor = 'initial';
+          o.ui.eBC.style.backgroundColor = 'initial';
+          o.ui.eBM.style.backgroundColor = 'initial';
         }
 
-        if (!isPlaying && o.current && SEQ.kbm == KBM_CHORD){
-          var left = ''; var right = '';
-          if (SEQ.kb.pos=='start'||SEQ.kb.pos<0)SEQ.kb.pos = 0;
+        if (!SEQ.layoutbits.chord.get()&&SEQ.kbm!=KBM_CHORD&&SEQ.kbm!=KBM_BEAT){
+          o.ui.eBC.style.display = 'none';
+        }
+        else {
+          o.ui.eBC.style.display = 'block';
+          if (!isPlaying && o.current && SEQ.kbm == KBM_CHORD){
+            var left = ''; var right = '';
+            if (SEQ.kb.pos=='start'||SEQ.kb.pos<0)SEQ.kb.pos = 0;
 
-          if (o.isChord()){
-            SEQ.kb.chord = ts.music.CHORD.toString(o.chord);
-            if (SEQ.kb.pos=='end'||SEQ.kb.pos>SEQ.kb.chord.length){
-              SEQ.kb.pos=SEQ.kb.chord.length;
-            }
-            o.eChordBaseNote.innerHTML=
-              black(SEQ.kb.chord.substr(0,SEQ.kb.pos),true)+
-              cursor()+
-              red(SEQ.kb.chord.substr(SEQ.kb.pos,SEQ.kb.chord.length-SEQ.kb.pos),true);
-          }
-          else {
-            function initChord(){
-              var pi = SEQ.searchPrevChord(o.index);
-              if (!SEQ.evt[pi].isChord(SEQ.evt[pi]))SEQ.kb.chord='C';
-              else SEQ.kb.chord = ts.music.CHORD.toString(SEQ.evt[pi].chord);
-            };
-            if (!zs4.is.string(SEQ.kb.chord)){
-              initChord();
-            }
-            if (SEQ.kb.pos=='end'||SEQ.kb.pos>SEQ.kb.chord.length){
-              SEQ.kb.pos=SEQ.kb.chord.length;
-            }
-            var slash = SEQ.kb.chord.indexOf('/');
-            if (slash==-1){
-              if (SEQ.kb.pos==1 && SEQ.kb.chord.length==1 && SEQ.abc.modCount!=0){
-                var noteobj = SEQ.abc.findNoteObject(SEQ.kb.chord);
-                if (noteobj != null){
-                  if (noteobj.value == (noteobj.orig+1)){
-                    SEQ.kb.chord += '#';
-                    SEQ.kb.pos = 2;
-                  }
-                  if (noteobj.value == (noteobj.orig-1)){
-                    SEQ.kb.chord += 'b';
-                    SEQ.kb.pos = 2;
-                  }
-                }
+            if (o.isChord()){
+              SEQ.kb.chord = ts.music.CHORD.toString(o.chord);
+              if (SEQ.kb.pos=='end'||SEQ.kb.pos>SEQ.kb.chord.length){
+                SEQ.kb.pos=SEQ.kb.chord.length;
               }
-
-              if ((SEQ.kb.pos<=2) && SEQ.kb.chord.length==SEQ.kb.pos){
-                var v = ts.music.parse.note(SEQ.kb.chord);
-                if (v != -1 && SEQ.kb.typed==true){
-                  var gk = SEQ.guessedKeys;
-                  for (var i=0;i<gk.length;i++){
-                    if (gk[i].r==v){
-                      var r = ts.music.guess.chord.from.scaleObject(gk[i]);
-                      SEQ.kb.chord += r[0].t;
-                      break;
-                    }
-                  }
-                }
-              }
-              else if (SEQ.kb.ctb()){
-                var ctp = SEQ.kb.ctp();
-                SEQ.kb.chord =
-                  SEQ.kb.chord.substr(0,ctp)+
-                  ts.music.CHORD.suggestType(SEQ.kb.chord.substr(ctp,SEQ.kb.pos-ctp));
-                  //console.log(SEQ.kb.chord);
-              }
-
-              if (SEQ.kb.pos==0){
-                var c = ts.music.parse.chord(SEQ.kb.chord);
-                if (!c.ok)initChord();
-              }
+              o.ui.eCBN.innerHTML=
+                black(SEQ.kb.chord.substr(0,SEQ.kb.pos),true)+
+                cursor()+
+                red(SEQ.kb.chord.substr(SEQ.kb.pos,SEQ.kb.chord.length-SEQ.kb.pos),true);
             }
             else {
-              // BASSNOTEREFRESH
-              var pre = SEQ.kb.chord.substr(0,slash);
-              var pc = ts.music.parse.chord(pre);
-              if (pc.ok){
-                if (SEQ.kb.chord[SEQ.kb.pos-1]=='/'&&SEQ.kb.typed){
-                  //console.log('chord '+SEQ.kb.chord+' needs bass note');
-                  var n = ts.music.CHORD.noteFromChordIndex(pc,2)+pc.v;
-                  SEQ.kb.chord = SEQ.kb.chord.substr(0,SEQ.kb.pos)+SEQ.abc.findNoteNameReverse(n);
-                }
-                if (SEQ.kb.chord[SEQ.kb.pos-2]=='/'&&SEQ.kb.pos==SEQ.kb.chord.length){
-                  var noteobj = SEQ.abc.findNoteObject(SEQ.kb.chord.substr(SEQ.kb.pos-1,1));
-                  //console.log('bass note entered');
+              function initChord(){
+                var pi = SEQ.searchPrevChord(o.index);
+                if (!SEQ.evt[pi].isChord(SEQ.evt[pi]))SEQ.kb.chord='C';
+                else SEQ.kb.chord = ts.music.CHORD.toString(SEQ.evt[pi].chord);
+              };
+              if (!zs4.is.string(SEQ.kb.chord)){
+                initChord();
+              }
+              if (SEQ.kb.pos=='end'||SEQ.kb.pos>SEQ.kb.chord.length){
+                SEQ.kb.pos=SEQ.kb.chord.length;
+              }
+              var slash = SEQ.kb.chord.indexOf('/');
+              if (slash==-1){
+                if (SEQ.kb.pos==1 && SEQ.kb.chord.length==1 && SEQ.abc.modCount!=0){
+                  var noteobj = SEQ.abc.findNoteObject(SEQ.kb.chord);
                   if (noteobj != null){
-                    var note = zs4.string.to.upper(noteobj.name);
-                    var sub = SEQ.kb.chord.substr(0,SEQ.kb.pos-1);
                     if (noteobj.value == (noteobj.orig+1)){
-                      SEQ.kb.chord = sub+note+'#';
+                      SEQ.kb.chord += '#';
+                      SEQ.kb.pos = 2;
                     }
-                    else if (noteobj.value == (noteobj.orig-1)){
-                      SEQ.kb.chord = sub+note+'b';
-                    }
-                    else {
-                      SEQ.kb.chord = sub+note;
+                    if (noteobj.value == (noteobj.orig-1)){
+                      SEQ.kb.chord += 'b';
+                      SEQ.kb.pos = 2;
                     }
                   }
                 }
+
+                if ((SEQ.kb.pos<=2) && SEQ.kb.chord.length==SEQ.kb.pos){
+                  var v = ts.music.parse.note(SEQ.kb.chord);
+                  if (v != -1 && SEQ.kb.typed==true){
+                    var gk = SEQ.guessedKeys;
+                    for (var i=0;i<gk.length;i++){
+                      if (gk[i].r==v){
+                        var r = ts.music.guess.chord.from.scaleObject(gk[i]);
+                        SEQ.kb.chord += r[0].t;
+                        break;
+                      }
+                    }
+                  }
+                }
+                else if (SEQ.kb.ctb()){
+                  var ctp = SEQ.kb.ctp();
+                  SEQ.kb.chord =
+                    SEQ.kb.chord.substr(0,ctp)+
+                    ts.music.CHORD.suggestType(SEQ.kb.chord.substr(ctp,SEQ.kb.pos-ctp));
+                    //console.log(SEQ.kb.chord);
+                }
+
+                if (SEQ.kb.pos==0){
+                  var c = ts.music.parse.chord(SEQ.kb.chord);
+                  if (!c.ok)initChord();
+                }
+              }
+              else {
+                // BASSNOTEREFRESH
+                var pre = SEQ.kb.chord.substr(0,slash);
+                var pc = ts.music.parse.chord(pre);
+                if (pc.ok){
+                  if (SEQ.kb.chord[SEQ.kb.pos-1]=='/'&&SEQ.kb.typed){
+                    //console.log('chord '+SEQ.kb.chord+' needs bass note');
+                    var n = ts.music.CHORD.noteFromChordIndex(pc,2)+pc.v;
+                    SEQ.kb.chord = SEQ.kb.chord.substr(0,SEQ.kb.pos)+SEQ.abc.findNoteNameReverse(n);
+                  }
+                  if (SEQ.kb.chord[SEQ.kb.pos-2]=='/'&&SEQ.kb.pos==SEQ.kb.chord.length){
+                    var noteobj = SEQ.abc.findNoteObject(SEQ.kb.chord.substr(SEQ.kb.pos-1,1));
+                    //console.log('bass note entered');
+                    if (noteobj != null){
+                      var note = zs4.string.to.upper(noteobj.name);
+                      var sub = SEQ.kb.chord.substr(0,SEQ.kb.pos-1);
+                      if (noteobj.value == (noteobj.orig+1)){
+                        SEQ.kb.chord = sub+note+'#';
+                      }
+                      else if (noteobj.value == (noteobj.orig-1)){
+                        SEQ.kb.chord = sub+note+'b';
+                      }
+                      else {
+                        SEQ.kb.chord = sub+note;
+                      }
+                    }
+                  }
+                }
+
               }
 
+              SEQ.kb.typed = false;
+              o.ui.eCBN.innerHTML=
+                grey(SEQ.kb.chord.substr(0,SEQ.kb.pos))+
+                cursor()+
+                red(SEQ.kb.chord.substr(SEQ.kb.pos,SEQ.kb.chord.length-SEQ.kb.pos));
             }
-
-            SEQ.kb.typed = false;
-            o.eChordBaseNote.innerHTML=
-              grey(SEQ.kb.chord.substr(0,SEQ.kb.pos))+
-              cursor()+
-              red(SEQ.kb.chord.substr(SEQ.kb.pos,SEQ.kb.chord.length-SEQ.kb.pos));
+          }
+          else {
+            if (o.isChord()){
+              o.ui.eCBN.innerHTML = ts.music.CHORD.toString(o.chord)
+            }
+            else{
+              putEmptyImage(o.ui.eCBN,true);
+            }
           }
         }
+
+        if (!SEQ.layoutbits.melody.get()&&SEQ.kbm!=KBM_MELODY){
+          o.ui.eBM.style.display = 'none';
+        }
         else {
-          if (o.isChord()){
-            o.eChordBaseNote.innerHTML = ts.music.CHORD.toString(o.chord)
+          o.ui.eBM.style.display = 'block';
+          if (!isPlaying && o.current && SEQ.kbm == KBM_MELODY){
+            o.ui.eBM.style.backgroundColor = 'red';
+          }
+          else {
+            o.ui.eBM.style.backgroundColor = 'initial';
+          }
+
+          if (o.melody < MIDI_NOTE_MIN || o.melody > MIDI_NOTE_MAX ){
+            putEmptyImage(o.ui.eBM,true);
           }
           else{
-            putEmptyImage(o.eChordBaseNote,true);
+            o.ui.eBM.textContent = ts.music.note.qualified(o.melody);
           }
         }
 
-
-        if (!isPlaying && o.current && SEQ.kbm == KBM_MELODY){
-          o.eBlockMelody.style.backgroundColor = 'red';
+        if (!SEQ.layoutbits.lyric.get()&&SEQ.kbm!=KBM_LYRIC){
+          o.ui.eBL.style.display = 'none';
         }
         else {
-          o.eBlockMelody.style.backgroundColor = 'initial';
-        }
+          o.ui.eBL.style.display = 'block';
+          if (!isPlaying && o.current && SEQ.kbm == KBM_LYRIC){
+              if (SEQ.kb.pos=='start'){
+                o.ui.eBL.innerHTML = cursor()+o.lyric;
+                SEQ.kb.pos = 0;
+              }
+              else if (SEQ.kb.pos=='end'){
+                o.ui.eBL.innerHTML = o.lyric+cursor();
+                SEQ.kb.pos = o.lyric.length;
+              }
+              else {
+                if (!zs4.is.number(SEQ.kb.pos))SEQ.kb.pos=0;
+                else if (SEQ.kb.pos<0)SEQ.kb.pos=0;
+                else if (SEQ.kb.pos>o.lyric.length)SEQ.kb.pos=o.lyric.length;
 
-        if (o.melody < MIDI_NOTE_MIN || o.melody > MIDI_NOTE_MAX ){
-          putEmptyImage(o.eBlockMelody,true);
-        }else{
-          o.eBlockMelody.textContent = ts.music.note.qualified(o.melody);
-        }
-
-        if (!isPlaying && o.current && SEQ.kbm == KBM_LYRIC){
-            if (SEQ.kb.pos=='start'){
-              o.eBlockLyric.innerHTML = cursor()+o.lyric;
-              SEQ.kb.pos = 0;
-            }
-            else if (SEQ.kb.pos=='end'){
-              o.eBlockLyric.innerHTML = o.lyric+cursor();
-              SEQ.kb.pos = o.lyric.length;
-            }
-            else {
-              if (!zs4.is.number(SEQ.kb.pos))SEQ.kb.pos=0;
-              else if (SEQ.kb.pos<0)SEQ.kb.pos=0;
-              else if (SEQ.kb.pos>o.lyric.length)SEQ.kb.pos=o.lyric.length;
-
-              o.eBlockLyric.innerHTML =
-                o.lyric.substr(0,SEQ.kb.pos)+
-                cursor()+
-                o.lyric.substr(SEQ.kb.pos,o.lyric.length-SEQ.kb.pos);
-            }
-        }
-        else {
-
-          if (o.isSpace()){
-            putEmptyImage(o.eBlockLyric,true);
-          }
-          else if (o.lyric != ''){
-            if (o.isSpace())putEmptyImage(o.eBlockLyric,true);
-            else o.eBlockLyric.textContent = o.lyric;
+                o.ui.eBL.innerHTML =
+                  o.lyric.substr(0,SEQ.kb.pos)+
+                  cursor()+
+                  o.lyric.substr(SEQ.kb.pos,o.lyric.length-SEQ.kb.pos);
+              }
           }
           else {
-            putEmptyImage(o.eBlockLyric,true);
+
+            if (o.isSpace()){
+              putEmptyImage(o.ui.eBL,true);
+            }
+            else if (o.lyric != ''){
+              if (o.isSpace())putEmptyImage(o.ui.eBL,true);
+              else o.ui.eBL.textContent = o.lyric;
+            }
+            else {
+              putEmptyImage(o.ui.eBL,true);
+            }
+
           }
 
         }
 
         if (SEQ.layoutbits.linefeed.get() && o.isLinefeed()){
-          o.eLineFeed.style.display = 'initial';
+          o.ui.eLF.style.display = 'initial';
         }
         else {
-          o.eLineFeed.style.display = 'none';
+          o.ui.eLF.style.display = 'none';
         }
       };
 
@@ -3108,7 +3121,7 @@ ts.player = new Object({
 
 		ts.player.internal.bar.jump = true;
 		ts.player.internal.bar.jumpEvent = idx;
-		ts.player.internal.bar.jumpEventEle = clickTs.evt[idx].eEvent;
+		ts.player.internal.bar.jumpEventEle = clickTs.evt[idx].window;
 		ts.player.internal.bar.jumpTs = clickTs;
 		ts.player.internal.bar.jumpEventEle.className = 'jumpToEvent';
 	},
@@ -3393,10 +3406,9 @@ ts.html = new Object({
 
 			SEQ.player = null;
 
-			SEQ.toolinst = ts.html.nu.ele('ts-instbutton');
-			zs4.admin.util.setIcon(SEQ.toolinst,'instruments');
+			SEQ.toolinst = zs4.admin.util.addIconImage(SEQ.tsTopTools,'instruments');
 			SEQ.instArePopped = false;
-			SEQ.toolinst.onclick = function(){
+      zs4.admin.util.setOnClick(SEQ.toolinst,function(){
 				if (SEQ.instArePopped==true){
 					SEQ.instpopped.style.display = 'none';
 					SEQ.instArePopped = false;
@@ -3408,13 +3420,11 @@ ts.html = new Object({
 					SEQ.hideAllInstPanes();
 				}
         SEQ.adaptContentPane();
-			};
-			SEQ.tsTopTools.appendChild(SEQ.toolinst);
+			});
 
-			SEQ.toolpop = ts.html.nu.ele('ts-toolbutton');
-			zs4.admin.util.setIcon(SEQ.toolpop,'tool');
+			SEQ.toolpop = zs4.admin.util.addIconImage(SEQ.tsTopTools,'tool');
 			SEQ.toolsArePopped = false;
-			SEQ.toolpop.onclick = function(){
+      zs4.admin.util.setOnClick(SEQ.toolpop,function(){
 				if (SEQ.toolsArePopped==true){
 					SEQ.toolspopped.style.display = 'none';
 					SEQ.toolsArePopped = false;
@@ -3428,12 +3438,11 @@ ts.html = new Object({
 					SEQ.hideAllToolPanes();
 				}
         SEQ.adaptContentPane();
-			};
-			SEQ.tsTopTools.appendChild(SEQ.toolpop);
+			});
 
-			SEQ.mixerpop = zs4.admin.util.addIconElement(SEQ.tsTopTools,'mixer');
+			SEQ.mixerpop = zs4.admin.util.addIconImage(SEQ.tsTopTools,'mixer');
 			SEQ.mixerIsPopped = false;
-			SEQ.mixerpop.onclick = function(){
+      zs4.admin.util.setOnClick(SEQ.mixerpop,function(){
 				if (SEQ.mixerIsPopped==true){
 					SEQ.mixerIsPopped = false;
           SEQ.mixerarea.style.display = 'none';
@@ -3443,7 +3452,8 @@ ts.html = new Object({
           SEQ.mixerarea.style.display = 'block';
           SEQ.MIXER.refresh();
 				}
-			};
+			});
+
 			SEQ.tsTopTools.appendChild(SEQ.mixerpop);
 
       SEQ.mixerMain = new ts.audio.element.icon(SEQ.tsTopTools);
@@ -3509,7 +3519,7 @@ ts.html = new Object({
       };
       SEQ.deleteCurrentEvent = function(pos){
         if (pos < 0 || pos >= SEQ.evt.length)return false;
-        SEQ.cnt.removeChild(SEQ.evt[pos].eEvent);
+        SEQ.cnt.removeChild(SEQ.evt[pos].window);
         SEQ.evt.splice(pos,1);
         SEQ.setCurrentEvent(SEQ.evt_curidx);
         return true;
@@ -4245,10 +4255,10 @@ ts.html = new Object({
   			for (var i = 0 ; i < arr.length; i++){
   				if (arr[i].isLinefeed()){
   					if (SEQ.layoutbits.linefeed.get()){
-  						arr[i].eLineFeed.style.display='initial';
+  						arr[i].ui.eLF.style.display='initial';
   					}
   					else {
-  						arr[i].eLineFeed.style.display='none';
+  						arr[i].ui.eLF.style.display='none';
   					}
   				}
   			}
@@ -4258,8 +4268,8 @@ ts.html = new Object({
   			var SEQ = this;
   			var PARENT = SEQ.cnt;
   			for (var i = 0 ; i < (SEQ.evt.length-1) ; i++){
-  				PARENT.removeChild(SEQ.evt[i].eEvent);
-  				PARENT.insertBefore(SEQ.evt[i].eEvent, PARENT.childNodes[i]);
+  				PARENT.removeChild(SEQ.evt[i].window);
+  				PARENT.insertBefore(SEQ.evt[i].window, PARENT.childNodes[i]);
   			}
 
   		};
@@ -4322,19 +4332,20 @@ ts.html = new Object({
   			}
 
   			if (zs4.is.string(icon)){
-  				//zs4.admin.util.setIcon(nu.toolicon,icon);
+          nu.toolselector = document.createElement('div');
   				if (tooltype=='i') {
-            nu.toolicon = zs4.admin.util.addIconElement(SEQ.instpopped,icon);
-            nu.toolicon.onclick = function(){nu.use();SEQ.adaptContentPane(); };
+            SEQ.instpopped.appendChild(nu.toolselector);
+            zs4.admin.util.addIconElement(nu.toolselector,icon);
+            zs4.admin.util.addSpace(nu.toolselector);
+            zs4.admin.util.addTextSpan(nu.toolselector,icon);
           }
   				else {
-            nu.toolselector = document.createElement('div');
             SEQ.toolspopped.appendChild(nu.toolselector);
-            nu.toolicon = zs4.admin.util.addIconElement(nu.toolselector,icon);
+            zs4.admin.util.addIconElement(nu.toolselector,icon);
             zs4.admin.util.addSpace(nu.toolselector);
-            nu.tooltext = zs4.admin.util.addTextSpan(nu.toolselector,tooltype);
-            nu.toolselector.onclick = function(){nu.use();SEQ.adaptContentPane(); };
+            zs4.admin.util.addTextSpan(nu.toolselector,tooltype);
           }
+          nu.toolselector.onclick = function(){nu.use();SEQ.adaptContentPane(); };
 
   				//zs4.debug('adding icon for '+icon);
   			}
@@ -4352,23 +4363,19 @@ ts.html = new Object({
         nu.toolWindow.appendChild(nu.toolTitlebar);
         SEQ.tsKeyboard(nu.toolTitlebar);
 
-        nu.titleIcon = ts.html.nu.ele('ts-tool-titleicon');
-  			zs4.admin.util.setIcon(nu.titleIcon,icon);
+        nu.titleIcon = zs4.admin.util.addIconImage(nu.toolTitlebar,icon);
   			nu.titleIcon.onclick = function(){
   				if (tooltype=='i'){
-  					nu.ts.instpopped.style.display = 'block';
-  					nu.ts.instArePopped = true;
   					nu.ts.current_inst = null;
   					nu.ts.hideAllInstPanes();
   				}
   				else {
-  					nu.ts.toolspopped.style.display = 'block';
-  					nu.ts.toolsArePopped = true;
   					nu.ts.current_tool = null;
   					nu.ts.hideAllToolPanes();
   				}
   			};
   			nu.toolTitlebar.appendChild(nu.titleIcon);
+
         zs4.admin.util.addSpace(nu.toolTitlebar);
   			if (tooltype=='i'){
           nu.eToolName = zs4.admin.util.addTextSpan(nu.toolTitlebar,name);
@@ -5499,10 +5506,6 @@ ts.html = new Object({
   			var nu = this.createTool('script','document', 'import lyrics/script');
 
   			nu.eTextArea = ts.html.nu.ele('textarea');
-  			nu.eTextArea.style.width = '100%';
-  			nu.eTextArea.style.maxWidth = '100%';
-  			nu.eTextArea.style.minWidth = '100%';
-  			nu.eTextArea.style.height = 'auto';
   			nu.eTextArea.onchange = function(){
   				nu.ts.clear();
   		    nu.ts.runChordsAndLyrics(nu.eTextArea.value);
@@ -5531,10 +5534,6 @@ ts.html = new Object({
         }
 
   			nu.eTextArea = ts.html.nu.ele('textarea');
-  			nu.eTextArea.style.width = '100%';
-  			nu.eTextArea.style.maxWidth = '100%';
-  			nu.eTextArea.style.minWidth = '100%';
-  			nu.eTextArea.style.height = 'auto';
         nu.toolWindow.appendChild(nu.eTextArea);
 
   		};
@@ -6014,6 +6013,12 @@ ts.audio = new Object({
   element:{
     icon:function(pe){
       var ICON = this;
+      if (ts.audio.context==null){
+        var e = zs4.admin.util.addTextSpan(pe,'no webaudio');
+        e.style.backgroundColor = 'red';
+        ICON.refresh = function(){};
+        return;
+      }
       var MASTER = ts.audio.master;
       var slider = new zs4.admin.util.sliderElement(pe);
       function sliderUpdate(){
@@ -6194,7 +6199,12 @@ ts.audio = new Object({
 		if (ts.audio.initialized)
 			return true;
 
-    ts.audio.context = new (window.AudioContext || window.webkitAudioContext)();
+    try {
+      ts.audio.context = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    catch (e){
+      console.log(e);
+    }
 		//if (typeof window.AudioContext === "function"){
 		//	ts.audio.context = new window.AudioContext();
 		//} else if (typeof window.webkitAudioContext === "function"){
