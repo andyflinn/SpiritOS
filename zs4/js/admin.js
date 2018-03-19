@@ -2663,21 +2663,22 @@ zs4.admin.util = {
 
 						console.log('LOGIN OPTIONS:');
 						this.pp = new Object();
-						this.pp.e = document.createElement('zs4-social-login');
+						this.pp.e = document.createElement('div');
 						this.pane.appendChild(this.pp.e);
 						var pp = zs4.THIS.zs4.passport;
 						for (var n in pp){
 							if (!zs4.is.type(pp[n]))continue;
 							var provider = this.pp[n] = new Object();
-							provider.e = document.createElement('zs4-social-provider');
-							provider.e.style.display = 'block';
+							provider.e = document.createElement('div');
+							provider.e.style.cursor = 'pointer';
+							//provider.e.style.display = 'block';
 							this.pp.e.appendChild(provider.e);
 
-							var a = this.pp[n] = document.createElement('a');
-							a.href = '/zs4.passport.'+n+'.login';
-							a.text = n;
-							zs4.admin.util.setIcon(a,n);
-							provider.e.appendChild(a);
+							zs4.admin.util.addIconElement(provider.e,n);
+							zs4.admin.util.addSpace(provider.e);
+							zs4.admin.util.addTextSpan(provider.e,n);
+
+							provider.e.onclick = function(){zs4.navigate('/zs4.passport.'+n+'.login');}
 							console.log('  - '+n);
 						}
 					}

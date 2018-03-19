@@ -935,7 +935,6 @@ ts.create = function(){
         if (this.bar == null){
           if (this.beat){
             this.beat=null;
-            this.eBlockChart.title ='';
           }
           else this.beat = {};
         }
@@ -2937,6 +2936,8 @@ ts.player = new Object({
 
       SEQ.recomputeBar(bar);
 
+      if (ts.audio.context==null)return;
+
       //var before = Date.now();
       pi.playPercussion(bar);
       pi.playMelody(bar);
@@ -2967,7 +2968,7 @@ ts.player = new Object({
 			var pi = ts.player.internal;
       var CHANNEL = ts.audio.master;
       // initialize oscillators
-      if (pi.osc.mel == null){
+      if (pi.osc.mel == null && ts.audio.context!=null){
         pi.osc.mel = new CHANNEL.oscillator({name:'melody',});
         pi.osc.bass = new CHANNEL.oscillator({name:'bass',});
         pi.osc.chord = new CHANNEL.group({name:'chord'});
@@ -3220,7 +3221,7 @@ ts.html = new Object({
         var kbm = ts.html.nu.ele('ts-kbm');
 				parent.appendChild(kbm);
 
-        var bar = zs4.admin.util.addIconElement(kbm,'bar');
+        var bar = zs4.admin.util.addIconImage(kbm,'bar');
         bar.title = 'Bar mode: ctrl b or ctrl |';
         bar.onclick = function(){
           if (SEQ.kbm == KBM_BAR) SEQ.kbm = KBM_EVENT;
@@ -3230,8 +3231,9 @@ ts.html = new Object({
           }
           SEQ.kb.refresh();
         };
-        var baronoff = zs4.admin.util.addIconElement(kbm,'plus');
-        baronoff.onclick = function(){
+        var baron = zs4.admin.util.addIconImage(kbm,'plus');
+        var baroff = zs4.admin.util.addIconImage(kbm,'delete');
+        baron.onclick = baroff.onclick = function(){
           SEQ.evt_current.toggleBar();
           SEQ.evt_current.refresh();
           SEQ.kb.refresh();
@@ -3239,7 +3241,7 @@ ts.html = new Object({
 
         zs4.admin.util.addSpace(kbm);
 
-        var beat = zs4.admin.util.addIconElement(kbm,'beat');
+        var beat = zs4.admin.util.addIconImage(kbm,'beat');
         beat.title = 'Beat mode: ctrl B or ctrl .';
         beat.onclick = function(){
           if (SEQ.kbm == KBM_BEAT) SEQ.kbm = KBM_EVENT;
@@ -3249,8 +3251,9 @@ ts.html = new Object({
           }
           SEQ.kb.refresh();
         };
-        var beatonoff = zs4.admin.util.addIconElement(kbm,'plus');
-        beatonoff.onclick = function(){
+        var beaton = zs4.admin.util.addIconImage(kbm,'plus');
+        var beatoff = zs4.admin.util.addIconImage(kbm,'delete');
+        beaton.onclick = beatoff.onclick = function(){
           SEQ.evt_current.toggleBeat();
           SEQ.evt_current.refresh();
           SEQ.kb.refresh();
@@ -3258,7 +3261,7 @@ ts.html = new Object({
 
         zs4.admin.util.addSpace(kbm);
 
-        var chord = zs4.admin.util.addIconElement(kbm,'chord');
+        var chord = zs4.admin.util.addIconImage(kbm,'chord');
         chord.title = 'Chord mode: ctrl c(hord) or ctrl k(ord)';
         chord.onclick = function(){
           if (SEQ.kbm == KBM_CHORD) SEQ.kbm = KBM_EVENT;
@@ -3283,10 +3286,11 @@ ts.html = new Object({
           SEQ.evt_current.refresh();
           if (SEQ.current_inst != null)SEQ.current_inst.refresh();
         }
-        var chordonoff = zs4.admin.util.addIconElement(kbm,'plus');
-        chordonoff.onclick = function(){
+        var chordon = zs4.admin.util.addIconImage(kbm,'plus');
+        var chordoff = zs4.admin.util.addIconImage(kbm,'delete');
+        chordon.onclick = chordoff.onclick = function(){
           if (SEQ.evt_current.isChord()) SEQ.evt_current.chord = null;
-          else
+          else SEQ.evt_current.chord = ts.music.parse.chord(SEQ.kb.chord);
           SEQ.evt_current.refresh();
           SEQ.kb.refresh();
           if (SEQ.current_inst != null)SEQ.current_inst.refresh();
@@ -3294,7 +3298,7 @@ ts.html = new Object({
 
         zs4.admin.util.addSpace(kbm);
 
-        var melody = zs4.admin.util.addIconElement(kbm,'note');
+        var melody = zs4.admin.util.addIconImage(kbm,'note');
         melody.title = 'Melody mode: ctrl m(elody) or ctrl n(note)';
         melody.onclick = function(){
           if (SEQ.kbm == KBM_MELODY) SEQ.kbm = KBM_EVENT;
@@ -3307,7 +3311,7 @@ ts.html = new Object({
 
         zs4.admin.util.addSpace(kbm);
 
-				var lyric = zs4.admin.util.addIconElement(kbm,'lyric');
+				var lyric = zs4.admin.util.addIconImage(kbm,'lyric');
         lyric.title = 'Lyric mode: ctrl t(ext) or ctrl a';
         lyric.onclick = function(){
           if (SEQ.kbm == KBM_LYRIC) SEQ.kbm = KBM_EVENT;
@@ -3320,9 +3324,9 @@ ts.html = new Object({
 
         zs4.admin.util.addSpace(kbm);
 
-        var prev = zs4.admin.util.addIconElement(kbm,'prev');
+        var prev = zs4.admin.util.addIconImage(kbm,'prev');
 				prev.onclick = function(){SEQ.kbLeft();}
-				var next = zs4.admin.util.addIconElement(kbm,'next');
+				var next = zs4.admin.util.addIconImage(kbm,'next');
 				next.onclick = function(){SEQ.kbRight();}
 
         SEQ.kb.refresh = function(){
@@ -3343,41 +3347,58 @@ ts.html = new Object({
           SEQ.kbIconMode(chord,SEQ.kbm == KBM_CHORD);
 
           if ((SEQ.kbm == KBM_BAR)&&!playing){
-            baronoff.style.display = 'inline-block';
-            if (SEQ.evt_current.isBar())zs4.admin.util.setIcon(baronoff,'delete');
-            else zs4.admin.util.setIcon(baronoff,'plus');
-            baronoff.title = 'Toogle Bar: \'b\'';
+            if (SEQ.evt_current.isBar()){
+              baron.style.display = 'none';
+              baroff.style.display = 'inline-block';
+            }
+            else {
+              baroff.style.display = 'none';
+              baron.style.display = 'inline-block';
+            }
+            baron.title = 'Toogle Bar ON: \'b\'';
+            baroff.title = 'Toogle Bar OFF: \'b\'';
           }
           else {
-            baronoff.style.display = 'none';
+            baron.style.display = baroff.style.display = 'none';
           }
 
           if ((SEQ.kbm == KBM_BEAT)&&!playing){
-            beatonoff.style.display = 'inline-block';
-            if (SEQ.evt_current.isBar())zs4.admin.util.setIcon(beatonoff,'bar');
-            else if (SEQ.evt_current.isBeat())zs4.admin.util.setIcon(beatonoff,'delete');
-            else zs4.admin.util.setIcon(beatonoff,'plus');
-            beatonoff.title = 'Toogle Beat: \'b\'';
+            if (SEQ.evt_current.isBar()){
+              beaton.style.display = beatoff.style.display = 'none';
+            }
+            else if (SEQ.evt_current.isBeat()){
+              beaton.style.display = 'none';
+              beatoff.style.display = 'inline-block';
+            }
+            else {
+              beatoff.style.display = 'none';
+              beaton.style.display = 'inline-block';
+            }
+            beaton.title = 'Toogle Beat ON: \'b\'';
+            beatoff.title = 'Toogle Beat OFF: \'b\'';
           }
           else {
-            beatonoff.style.display = 'none';
+            beaton.style.display = beatoff.style.display = 'none';
           }
 
           if ((SEQ.kbm == KBM_CHORD)&&!playing){
             CHORD.element.style.display = 'inline-block';
-            chordonoff.style.display = 'inline-block';
+            chordon.title = 'Use this chord';
+            chordoff.title = 'Remove this chord';
             if (SEQ.evt_current.isChord()){
               CHORD.set(SEQ.evt_current.chord);
-              zs4.admin.util.setIcon(chordonoff,'delete');
+              chordon.style.display = 'none';
+              chordoff.style.display = 'inline-block';
             }
             else {
               CHORD.set(SEQ.kb.chord);
-              zs4.admin.util.setIcon(chordonoff,'plus');
+              chordoff.style.display = 'none';
+              chordon.style.display = 'inline-block';
             }
           }
           else {
             CHORD.element.style.display = 'none';
-            chordonoff.style.display = 'none';
+            chordon.style.display = chordoff.style.display = 'none';
           }
 
           if (SEQ.current_inst!=null){
@@ -3813,12 +3834,54 @@ ts.html = new Object({
       };
 
       SEQ.eventListenerKeydown = function(e){
-        function isEsc(){if ((e.key=='Escape')||(e.key=='Esc'))return true; return false;}
 
-        function isLeft(){if ((e.key=='ArrowLeft')||(e.key=='Left'))return true; return false;}
-        function isRight(){if ((e.key=='ArrowRight')||(e.key=='Right'))return true; return false;}
-        function isUp(){if ((e.key=='ArrowUp')||(e.key=='Up'))return true; return false;}
-        function isDown(){if ((e.key=='ArrowDown')||(e.key=='Down'))return true; return false;}
+        if (!zs4.is.string(e.key)&&zs4.is.string(e.keyIdentifier))e.key=e.keyIdentifier;
+
+        function isEsc(){
+          if ((e.key=='Escape')||(e.key=='Esc')||(e.key=='U+001B'))return true;
+          return false;
+        }
+        function isLeft(){
+          if ((e.key=='ArrowLeft')||(e.key=='Left'))return true;
+          return false;
+        }
+        function isRight(){
+          if ((e.key=='ArrowRight')||(e.key=='Right'))return true;
+          return false;
+        }
+        function isUp(){
+          if ((e.key=='ArrowUp')||(e.key=='Up'))return true;
+          return false;
+        }
+        function isDown(){
+          if ((e.key=='ArrowDown')||(e.key=='Down'))return true;
+          return false;
+        }
+        function isDown(){
+          if ((e.key=='ArrowDown')||(e.key=='Down'))return true;
+          return false;
+        }
+        function isBack(){
+          if ((e.key=='Backspace')||(e.key=='U+0008'))return true;
+          return false;
+        }
+        function isDelete(){
+          if ((e.key=='Delete')||(e.key=='U+007F'))return true;
+          return false;
+        }
+        function isEnter(){
+          if ((e.key=='Enter'))return true;
+          return false;
+        }
+        function isTab(){
+          if (((e.key=='Tab')||(e.key=='U+0009'))&&!e.shiftKey)return true;
+          return false;
+        }
+        function isBacktab(){
+          if (((e.key=='Tab')||(e.key=='U+0009'))&&e.shiftKey)return true;
+          return false;
+        }
+
 
         //e.preventDefault();
         console.log(e);
@@ -3948,7 +4011,7 @@ ts.html = new Object({
               SEQ.kbLeftLyric();
               e.preventDefault();
             }
-            else if (e.key=='Delete'){
+            else if (isDelete()){
               if (SEQ.kb.pos<EVENT.lyric.length){
                 EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos)+
                   EVENT.lyric.substr(SEQ.kb.pos+1,EVENT.lyric.length-SEQ.kb.pos-1);
@@ -3966,7 +4029,7 @@ ts.html = new Object({
                 e.preventDefault();
               }
             }
-            else if (e.key=='Backspace'){
+            else if (isBack()){
               if (SEQ.kb.pos>0){
                 SEQ.kb.pos--;
                 EVENT.lyric = EVENT.lyric.substr(0,SEQ.kb.pos)+
@@ -3985,7 +4048,7 @@ ts.html = new Object({
                 e.preventDefault();
               }
             }
-            else if (e.key=='Enter'){
+            else if (isEnter()){
               SEQ.handleLyricChar('\n');
               e.preventDefault();
             }
@@ -4018,7 +4081,7 @@ ts.html = new Object({
               SEQ.kbLeftChord();
               e.preventDefault();
             }
-            else if (e.key=='Enter'){
+            else if (isEnter()){
               var chord = SEQ.kb.chord.substr(0,SEQ.kb.pos);
               var ch = ts.music.parse.chord(chord);
               SEQ.kb.chord = chord;
@@ -4033,7 +4096,7 @@ ts.html = new Object({
               //EVENT.refresh();
               e.preventDefault();
             }
-            else if (e.key=='Tab'&&!e.shiftKey){
+            else if (isTab()){
               if (SEQ.kb.pos<SEQ.kb.chord.length){
                 SEQ.kb.pos = SEQ.kb.chord.length;
                 EVENT.refresh();
@@ -4048,7 +4111,7 @@ ts.html = new Object({
                 e.preventDefault();
               }
             }
-            else if (e.key=='Tab'&&e.shiftKey){
+            else if (isBacktab()){
               if (SEQ.kb.pos>0){
                 SEQ.kb.pos = 0;
                 EVENT.refresh();
@@ -5337,10 +5400,10 @@ ts.html = new Object({
     				}
           };
 
-          var transUp = zs4.admin.util.addIconElement(nu.eEventTranspose,'up');
+          var transUp = zs4.admin.util.addIconImage(nu.eEventTranspose,'up');
           transUp.onclick = function(){SEQ.transpose(1); refreshTranspose();};
 
-          var transDown = zs4.admin.util.addIconElement(nu.eEventTranspose,'down');
+          var transDown = zs4.admin.util.addIconImage(nu.eEventTranspose,'down');
           transDown.onclick = function(){SEQ.transpose(-1); refreshTranspose();};
 
         nu.eMelodyBits = ts.html.nu.ele('div');
@@ -6031,9 +6094,16 @@ ts.audio = new Object({
       };
     },
     ui:function(pn,pe){
+      var MIXER = this;
+      if (ts.audio.context==null){
+        var e = zs4.admin.util.addTextSpan(pe,'no webaudio with '+bowser.name+' version '+bowser.version+'. Some browsers just suck!');
+        e.style.backgroundColor = 'red';
+        MIXER.refresh = function(){};
+        return;
+      }
+
       const AUDIO = ts.audio;
       const CTX = AUDIO.context;
-      var MIXER = this;
       var MASTER = pn;
 
       MIXER.channelArray = new Array()

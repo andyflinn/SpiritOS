@@ -263,6 +263,7 @@ zs4.string = {
       return arr;
     },
     separators:function(str,sep){
+      str = new String(str);
       var arr = []; var buf = '';
       for (var i = 0; i < str.length ;i++){
         var c = str.charAt(i);
