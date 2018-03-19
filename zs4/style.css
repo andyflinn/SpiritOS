@@ -195,26 +195,6 @@ zs4-name.zs4-own.zs4-noset:not{
   display:none;
 }
 
-zs4-slider.sliderH{
-  display:grid;
-  grid-template-areas:
-  "l k r";
-}
-zs4-slider.sliderV{
-  display:grid;
-  grid-template-areas:
- "u"
- "k"
- "d"
-}
-zs4-slider.sliderHV{
-  display:grid;
-  grid-template-areas:
-  "lt u rt"
-  "l k r"
-  "lb d rb";
-}
-
 .icon-cancel{color:red;}
 .icon-error{background-color: white;}
 
@@ -261,13 +241,14 @@ zs4-slider.sliderHV{
 .icon-detail:before{content:url(/gfx/icons/delete.svg);}
 .icon-doctype:before{content:'\0265E';font-weight: bolder;}
 .icon-document:before{content:'\01F4C3';font-weight: bolder;}
+.icon-down:before{content:url(/gfx/icons/down.svg);}
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
 .icon-drive:before{content:url(/gfx/icons/drive.svg);}
 .icon-dropbox:before{content:url(/gfx/icons/dropbox.svg);}
 .icon-email:before{content:url(/gfx/icons/email.svg);}
 .icon-emailsent:before{content:url(/gfx/icons/email.svg);}
 .icon-error:before{content:url(/gfx/icons/error.svg);}
-.icon-express:before{content:'X';font-weight: bolder;color:darkblue;}
+.icon-express:before{content:url(/gfx/icons/express.svg);}
 .icon-facebook:before{content:url(/gfx/icons/facebook.svg);}
 .icon-female:before{content:'\02640';font-weight: bolder;}
 .icon-file:before{content:'f';font-weight: bolder;color:blue;}
@@ -275,7 +256,7 @@ zs4-slider.sliderHV{
 .icon-fs:before{content:url(/gfx/icons/fs.svg);}
 .icon-getone:before{content:'1';font-weight: bolder;color:darkgreen;}
 .icon-glasses:before{content:url(/gfx/icons/glasses.svg);}
-.icon-global:before{content:url(/gfx/icons/earth.svg);}
+.icon-global:before{content:url(/gfx/icons/globe.svg);}
 .icon-google:before{content:url(/gfx/icons/google.svg);}
 .icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-id:before{content:url(/gfx/icons/head.svg);}
@@ -289,6 +270,7 @@ zs4-slider.sliderHV{
 .icon-keys:before{content:url(/gfx/icons/keys.svg);}
 .icon-lang:before{content:url(/gfx/icons/lang.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
+.icon-left:before{content:url(/gfx/icons/left.svg);}
 .icon-linefeed:before{content:'\000B6';font-weight: bolder;}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
 .icon-login:before{content:url(/gfx/icons/password.svg);}
@@ -331,6 +313,7 @@ zs4-slider.sliderHV{
 .icon-reload:before{content:url(/gfx/icons/reload.svg);}
 .icon-require:before{content:url(/gfx/icons/item.svg);}
 .icon-required:before{content:"*";font-weight: bolder;}
+.icon-right:before{content:url(/gfx/icons/right.svg);}
 .icon-root:before{content:url(/gfx/icons/root.svg);}
 .icon-rsa:before{content:url(/gfx/icons/rsa.svg);}
 .icon-save:before{content:url(/gfx/icons/save.svg);}
@@ -361,6 +344,7 @@ zs4-slider.sliderHV{
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}
+.icon-up:before{content:url(/gfx/icons/up.svg);}
 .icon-update:before{content:'\0219F';font-weight: bolder;color:blue;}
 .icon-upload:before{content:url(/gfx/icons/upload.svg);}
 .icon-user:before{content:url(/gfx/icons/songstress.svg);}
@@ -380,7 +364,7 @@ zs4-slider.sliderHV{
 .icon-beat:before{content:url(/gfx/icons/beat.svg);}
 .icon-beats:before{content:url(/gfx/icons/beat.svg);}
 .icon-bpb:before{content:'\0215E';font-weight: bolder;}
-.icon-bpm:before{content:'\023F1';font-weight: bolder;}
+.icon-bpm:before{content:url(/gfx/icons/clock.svg);}
 .icon-chord:before{content:url(/gfx/icons/chord.svg);}
 .icon-event:before{content:url(/gfx/icons/detail.svg);}
 .icon-fivestringbass:before{content:url(/gfx/icons/fivestringbass.svg);}
@@ -398,7 +382,7 @@ zs4-slider.sliderHV{
 .icon-solo:before{content:url(/gfx/icons/solo.svg);}
 .icon-soloed:before{content:url(/gfx/icons/soloed.svg);}
 .icon-tpb:before{content:url(/gfx/icons/tick.svg);}
-.icon-transpose:before{content:'\021C5';font-weight: bolder;}
+.icon-transpose:before{content:url(/gfx/icons/transpose.svg);}
 .icon-ukulele:before{content:url(/gfx/icons/ukulele.svg);}
 .icon-violin:before{content:url(/gfx/icons/violin.svg);}
 

@@ -897,10 +897,13 @@ zs4.admin.util = {
 		return e;
 	},
 	bitsElement:function(pe,bits){
+		zs4.admin.util.element.call(this);
 		var BITS = this;
 		var a = new Array();
 		var e = document.createElement('zs4-input-bits');
 		e.style.display = 'inline-block';
+		//e.style.fontSize = '0.7em';
+		//zs4.style.type.toolbubble(e);
 
 		function bit(n){
 			var BIT = this;
@@ -924,6 +927,7 @@ zs4.admin.util = {
 					bits[name].true();
 					b.style.backgroundColor='gray';
 				}
+				BITS.trigger('change');
 			}
 
 			BIT.refresh = function(){
