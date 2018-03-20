@@ -188,6 +188,13 @@ zs4.is = {
         )return false;
         return true;
       },
+      domelement:function(o){
+        if (!zs4.is.object(o)
+        || !zs4.is.object(o.style)
+        //|| !zs4.is.string(o.className)
+        )return false;
+        return true;
+      },
 };
 
 if (isNode()){

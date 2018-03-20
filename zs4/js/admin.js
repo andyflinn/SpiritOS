@@ -909,6 +909,528 @@ zs4.admin.util = {
 		pe.appendChild(e);
 		return e;
 	},
+
+	element:function(){
+		var ELEMENT = this;
+
+		var on = new Object();
+		ELEMENT.trigger = function(name){
+			if (!on.hasOwnProperty(name))return;
+
+			var ON = on[name];
+			for (var i = 0; i < ON.f.length;i++){
+				ON.f[i](ON);
+			}
+		}
+		ELEMENT.on = function(name,func,remove){
+			if (!zs4.is.name(name))return false;
+			if (!zs4.is.function(func))return false;
+			var ON;
+			if (on.hasOwnProperty(name)){
+				ON = on[name];
+			}
+			else {
+				if (remove) return false;
+				ON = on[name] = new Object();
+				ON.f = new Array();
+			}
+
+			var found = false;
+			for (var i = 0; i < ON.f.length;i++){
+				if (ON.f[i]==func){
+					if (remove==true){
+						ON.f.splice(i,1);
+						if (ON.f.length==0){
+							delete on[name];
+						}
+						return false;
+					}
+					found=true;
+				}
+			}
+			if (!found)ON.f.push(func);
+
+			return true;
+		};
+
+		ELEMENT.show = function(){};
+		ELEMENT.hide = function(){};
+
+		ELEMENT.element = null;
+
+		ELEMENT.appendElement = function(e){
+			if (zs4.is.string(e))e = document.createElement(e);
+			ELEMENT.element.appendChild(e);
+			return e;
+		};
+
+		ELEMENT.append = function(eObj){
+			if (ELEMENT.element==null || eObj.top==null)return null;
+			ELEMENT.element.appendChild(eObj.element);
+			return eObj;
+		}
+
+		return ELEMENT;
+	},
+	toolElement:function(pe,icon){
+		var TOOL = this;
+		zs4.admin.util.element.call(TOOL);
+
+		var div = TOOL.top = document.createElement('div');
+
+		var details = document.createElement('details');
+		div.appendChild(details);
+
+		var summary = document.createElement('summary');
+		details.appendChild(summary);
+
+		zs4.admin.util.addIconElement(summary,icon);
+		zs4.admin.util.addSpace(summary);
+		zs4.admin.util.addTextSpan(summary,icon)
+
+		var items = document.createElement('div');
+		items.style.paddingLeft = '1em';
+		details.appendChild(items);
+		TOOL.element = items;
+
+		pe.appendChild(div);
+	},
+	loginoutElement:function(pe){
+		var LOGIN = this;
+
+		zs4.admin.util.toolElement.call(LOGIN,pe,'user');
+
+		this.loggedIn = zs4.THIS._.loggedIn;
+		var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+		var utitle = '';
+
+		if (this.loggedIn){
+			this.spwIsOpen = false;
+
+			var username = document.createElement('a');
+			username.href = '/'+zs4.THIS._.scopath;
+			zs4.admin.util.addClass(username,'am');
+			LOGIN.appendElement(username);
+
+			var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+			var utitle = '';
+			if (uscope!=null){
+				if (zs4.THIS._.scopath==''){
+					utitle = 'root';
+				}
+				else if (uscope.zs4.head.title._.value.trim()==''){
+					utitle = zs4.THIS._.scopath;
+				}
+				else {
+					utitle = uscope.zs4.head.title._.value;
+				}
+				username.text = utitle;
+			}
+
+			this.setpassword = document.createElement('form');
+			this.setpassword.onsubmit = function(){return false;};
+			this.setpassword.id = 'cpwd';
+			LOGIN.appendElement(this.setpassword);
+
+			// OLD PASSWORD 1
+			this.old1 = document.createElement('zs4-spw-pwe');
+			this.setpassword.appendChild(this.old1);
+			this.old1label = document.createElement('zs4-spw-old');
+			this.old1label.textContent = 'old: ';
+			this.old1.appendChild(this.old1label);
+			this.old1input = document.createElement('input');
+			zs4.admin.util.addAttribute(this.old1input,'autocomplete','current-password');
+			this.old1input.type = 'password';
+			this.old1.appendChild(this.old1input);
+
+			// OLD PASSWORD 2
+			this.old2 = document.createElement('zs4-spw-pwe');
+			this.setpassword.appendChild(this.old2);
+			this.old2label = document.createElement('zs4-spw-old');
+			this.old2label.textContent = 'new: ';
+			this.old2.appendChild(this.old2label);
+			this.old2input = document.createElement('input');
+			zs4.admin.util.addAttribute(this.old2input,'autocomplete','current-password');
+			this.old2input.type = 'password';
+			this.old2.appendChild(this.old2input);
+
+			// NEW PASSWORD
+			this.setpwd = document.createElement('zs4-spw-pwe');
+			this.setpassword.appendChild(this.setpwd);
+			this.setpwdlabel = document.createElement('zs4-spw-new');
+			this.setpwdlabel.textContent = 'new: ';
+			this.setpwd.appendChild(this.setpwdlabel);
+			this.setpwdinput = document.createElement('input');
+			zs4.admin.util.addAttribute(this.setpwdinput,'autocomplete','new-password');
+			this.setpwdinput.type = 'password';
+			this.setpwd.appendChild(this.setpwdinput);
+
+			// SEND BUtTON
+			this.setpwdsend = document.createElement('zs4-spw-send');
+			this.setpassword.appendChild(this.setpwdsend);
+			this.setpwdsend.textContent = 'set now';
+			this.setpwdsend.onclick = (function(){
+				if (!zs4.THIS._.loggedIn)return;
+				var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+				if (uscope==null)return;
+				var password = uscope._.resolvePath('zs4.password');
+				if (password==null)return;
+				var set = uscope._.resolvePath('zs4.password.set');
+				if (set==null)return;
+
+				zs4.admin.util.removeClass(LOGIN.old1,'error');
+				zs4.admin.util.removeClass(LOGIN.old2,'error');
+				zs4.admin.util.removeClass(LOGIN.setpwd,'error');
+
+				var wrong = false;
+				if (!zs4.is.password(this.old1input.value)){
+					zs4.admin.util.addClass(LOGIN.old1,'error');
+					wrong = true;
+				}
+				if (!zs4.is.password(this.old2input.value)){
+					zs4.admin.util.addClass(LOGIN.old2,'error');
+					wrong = true;
+				}
+				if (!zs4.is.password(this.setpwdinput.value)){
+					zs4.admin.util.addClass(LOGIN.setpwd,'error');
+					wrong = true;
+				}
+
+				if (this.setpwdinput.value!=this.old2input.value){
+						zs4.admin.util.addClass(LOGIN.old2,'error');
+						zs4.admin.util.addClass(LOGIN.setpwd,'error');
+						wrong = true;
+				}
+				var input = new Object({set:this.setpwdinput.value,})
+				var vfy = uscope._.resolvePath('zs4.password.vfy');
+				if (vfy == null){
+					wrong = true;
+				}
+				else{
+					input.vfy = this.old1input.value;
+				}
+
+				if (wrong) return;
+
+				zs4.admin.util.removeClass(LOGIN.old1,'error');
+				zs4.admin.util.removeClass(LOGIN.old2,'error');
+				zs4.admin.util.removeClass(LOGIN.setpwd,'error');
+
+				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+				zs4.post(password._.wrapRequest(input),function(ret){
+					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+					o._.html.refreshAll();
+					if (zs4.is.error(ret.request.callback.zs4.password)){
+						zs4.admin.util.addClass(LOGIN.old1,'error');
+						zs4.admin.util.addClass(LOGIN.old2,'error');
+						zs4.admin.util.addClass(LOGIN.setpwd,'error');
+					}
+
+				});
+
+
+			}).bind(LOGIN);
+
+			// LOGOUT pane
+			///////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////
+			this.logout = document.createElement('zs4-logout');
+			this.logout.textContent = 'logout';
+			LOGIN.append(this.logout);
+			this.logoutvisible = false;
+			this.logout.onclick = (function(){
+				if (!LOGIN.logoutvisible){
+					zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
+					zs4.admin.util.addClass(this.bye,'nodisplay');
+					LOGIN.sure.checked = false;
+					LOGIN.logoutvisible = true;
+				}
+				else {
+					zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+					zs4.admin.util.addClass(this.bye,'nodisplay');
+					LOGIN.sure.checked = false;
+					LOGIN.logoutvisible = false;
+				}
+			}).bind(this);
+
+			this.logoutArgs = document.createElement('zs4-logout-args');
+			LOGIN.append(this.logoutArgs);
+			zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+
+			this.sureText = document.createElement('zs4-sure-text');
+			this.sureText.textContent = 'sure?';
+			this.logoutArgs.appendChild(this.sureText);
+
+			this.sure = document.createElement('input');
+			this.sure.type = 'checkbox';
+			zs4.admin.util.addClass(this.sure,'sure');
+			this.logoutArgs.appendChild(this.sure);
+			this.sure.onchange = (function(){
+				if (this.sure.checked)zs4.admin.util.removeClass(this.bye,'nodisplay');
+				else zs4.admin.util.addClass(this.bye,'nodisplay');
+			}).bind(this);
+
+			this.bye = document.createElement('zs4-logout-now');
+			this.bye.textContent = 'logout';
+			zs4.admin.util.addClass(this.bye,'nodisplay');
+			LOGIN.append(this.bye);
+			this.bye.onclick = (function(){
+				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+				zs4.post(zs4.THIS.zs4.bye._.wrapRequest({sure:true}),function(ret){
+					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
+				});
+			}).bind(this);
+
+			LOGIN.refresh = function(){
+				var vfy = uscope._.resolvePath('zs4.password.vfy');
+				var set = uscope._.resolvePath('zs4.password.set');
+				if (set!=null){
+					if (vfy==null){
+						zs4.admin.util.addClass(LOGIN.old1,'nodisplay');
+						zs4.admin.util.addClass(LOGIN.old2,'nodisplay');
+					}
+					else {
+						zs4.admin.util.removeClass(LOGIN.old1,'nodisplay');
+						zs4.admin.util.removeClass(LOGIN.old2,'nodisplay');
+					}
+					zs4.admin.util.removeClass(LOGIN.setpwd,'nodisplay');
+				}
+				else {
+					zs4.admin.util.addClass(LOGIN.setpwd,'nodisplay');
+				}
+			};
+			LOGIN.refresh();
+		}
+		else {
+			this.loginform = document.createElement('form');
+			this.loginform.onsubmit = function(){return false;};
+			this.loginform.id = 'login';
+			this.loginform.autocomplete = 'on';
+			LOGIN.appendElement(this.loginform);
+
+			this.email = document.createElement('zs4-login-email');
+			this.loginform.appendChild(this.email);
+
+			this.emailLabel = document.createElement('zs4-login-email-label');
+			this.emailLabel.textContent = 'email';
+			this.email.appendChild(this.emailLabel);
+
+			this.emailAddress = document.createElement('input');
+			//this.emailAddress.autocomplete = 'username';
+			zs4.admin.util.addAttribute(this.emailAddress,'autocomplete','username');
+			this.emailAddress.type = 'text';
+			this.email.appendChild(this.emailAddress);
+			zs4.admin.util.addClass(this.emailAddress,'login-email');
+
+			this.password = document.createElement('zs4-login-password');
+			this.loginform.appendChild(this.password);
+
+			this.passwordLabel = document.createElement('zs4-login-password-label');
+			this.passwordLabel.textContent = 'password';
+			this.password.appendChild(this.passwordLabel);
+
+			this.pass = document.createElement('input');
+			this.pass.autocomplete = 'username';
+			this.pass.type = 'password';
+			this.password.appendChild(this.pass);
+			zs4.admin.util.addClass(this.pass,'login-password');
+
+			this.failcount = 0;
+
+			this.etok = document.createElement('zs4-email-token');
+			LOGIN.appendElement(this.etok);
+			zs4.admin.util.addClass(this.etok,'nodisplay');
+
+			this.emailtoken = document.createElement('zs4-email-token-send');
+			this.emailtoken.textContent = 'email access code / password reset';
+			this.etok.appendChild(this.emailtoken);
+			this.emailtoken.onclick = (function(){
+				if (!zs4.is.email(LOGIN.emailAddress.value)){
+					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
+					return;
+				}
+				else {
+					zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
+				}
+				zs4.admin.util.removeClass(this.pass,'error');
+
+				LOGIN.emailtoken.style.backgroundColor = 'blue';
+				zs4.THIS.zs4.hi._.call({email:this.emailAddress.value,sendtoken:true,},function(){
+					LOGIN.emailtoken.style.backgroundColor = 'initial';
+
+					console.log(zs4.THIS.zs4.hi._.cberror);
+					console.log(zs4.THIS.zs4.hi._.cbresult);
+					if (zs4.THIS.zs4.hi._.cbresult != null){
+						//window.alert('token sent');
+						zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
+						zs4.admin.util.removeClass(LOGIN.pass,'error');
+						zs4.admin.util.removeClass(LOGIN.emailtoken,'error');
+
+						LOGIN.emailresponse.textContent = zs4.THIS.zs4.hi._.cbresult;
+						zs4.admin.util.addClass(LOGIN.emailtoken,'nodisplay');
+						zs4.admin.util.removeClass(LOGIN.emailresponse,'nodisplay');
+						zs4.admin.util.removeClass(LOGIN.hi,'nodisplay');
+						LOGIN.failcount = 0;
+						LOGIN.refreshInternal();
+					}
+					else {
+						zs4.admin.util.addClass(LOGIN.emailtoken,'error');
+					}
+
+				});
+
+			}).bind(LOGIN);
+
+			this.emailresponse = document.createElement('zs4-email-token-response');
+			this.etok.appendChild(this.emailresponse);
+
+			this.hi = LOGIN.appendElement('span');
+			this.hi.textContent = 'login';
+			this.hi.onclick = (function(){
+				var error = false;
+				if (!zs4.is.email(this.emailAddress.value)){
+					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
+					error = true;
+				}
+				else {
+					zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
+				}
+				if (!zs4.is.password(this.pass.value)){
+					zs4.admin.util.addClass(this.pass,'error');
+					error = true;
+				}
+				else {
+					zs4.admin.util.removeClass(this.pass,'error');
+				}
+				if (error)return;
+
+				LOGIN.hi.style.backgroundColor = 'blue';
+				zs4.post(zs4.THIS.zs4.hi._.wrapRequest({email:this.emailAddress.value,password:this.pass.value,}),function(ret){
+					if (zs4.THIS.zs4.hi._.cberror != null){
+						zs4.admin.util.addClass(LOGIN.emailAddress,'error');
+						zs4.admin.util.addClass(LOGIN.pass,'error');
+						LOGIN.failcount++;
+						LOGIN.refresh();
+					}
+					console.log('LOGIN.failcount: '+LOGIN.failcount);
+
+					LOGIN.hi.style.backgroundColor = 'initial';
+				});
+			}).bind(this);
+
+			console.log('LOGIN OPTIONS:');
+			this.pp = new Object();
+			this.pp.e = document.createElement('div');
+			LOGIN.appendElement(this.pp.e);
+			var pp = zs4.THIS.zs4.passport;
+			for (var n in pp){
+				if (!zs4.is.type(pp[n]))continue;
+				var provider = this.pp[n] = new Object();
+				provider.e = document.createElement('div');
+				provider.e.style.cursor = 'pointer';
+				//provider.e.style.display = 'block';
+				this.pp.e.appendChild(provider.e);
+
+				zs4.admin.util.addIconElement(provider.e,n);
+				zs4.admin.util.addSpace(provider.e);
+				zs4.admin.util.addTextSpan(provider.e,n);
+
+				provider.e.onclick = function(){zs4.navigate('/zs4.passport.'+n+'.login');}
+				console.log('  - '+n);
+			}
+
+			LOGIN.refresh = function(){
+				if (LOGIN.failcount > 2){
+					zs4.admin.util.removeClass(this.etok,'nodisplay');
+				}
+			};
+		}
+
+	},
+	bowserElement:function(pe){
+		var BOWSER = this;
+
+		var browser = 'browser';
+		if (bowser.name == 'Firefox')browser = 'firefox';
+		else if (bowser.name == 'Chrome')browser = 'chrome';
+		else if (bowser.name == 'Safari')browser = 'safari';
+		zs4.admin.util.toolElement.call(BOWSER,pe,browser);
+
+		var e = BOWSER.element;
+
+		function addDeviceItem(name,value){
+			var item = document.createElement('zs4-app-device-info-item');
+			e.appendChild(item);
+
+			var nameEle = document.createElement('zs4-app-device-info-name');
+			nameEle.textContent = name;
+			item.appendChild(nameEle);
+
+			var valueEle = document.createElement('zs4-app-device-info-value');
+			valueEle.textContent = value.toString();
+			item.appendChild(valueEle);
+		}
+
+		var titles = new Array();
+		function addBowserFlag(title,flag){
+			if(zs4.string.array.is.element(titles,title))return false;
+
+			if (zs4.is.boolean(bowser[flag])&&bowser[flag]==true){
+				titles.push(title);
+				addDeviceItem(title,flag);
+				return true;
+			}
+			return false;
+		}
+
+		{
+			addDeviceItem('browser',bowser.name);
+			addDeviceItem('version',bowser.version);
+
+			addBowserFlag('type','mobile');
+			addBowserFlag('type','tablet');
+
+			addBowserFlag('renderer','webkit');
+			addBowserFlag('renderer','blink');
+			addBowserFlag('renderer','gecko');
+			addBowserFlag('renderer','msie');
+			addBowserFlag('renderer','msedge');
+
+			addBowserFlag('os','mac');
+			addBowserFlag('os','windows');
+			addBowserFlag('os','windowsphone');
+			addBowserFlag('os','linux');
+			addBowserFlag('os','chromeos');
+			addBowserFlag('os','android');
+			addBowserFlag('os','ios');
+			addBowserFlag('os','blackberry');
+			addBowserFlag('os','firefoxos');
+			addBowserFlag('os','webos');
+			addBowserFlag('os','bada');
+			addBowserFlag('os','tizen');
+			addBowserFlag('os','sailfish');
+
+			addBowserFlag('ios','iphone');
+			addBowserFlag('ios','ipad');
+			addBowserFlag('ios','ipod');
+		}
+		if (bowser.osversion!=null)addBowserFlag('version',bowser.osversion);
+
+
+		var hr = document.createElement('hr');
+		e.appendChild(hr);
+
+		addDeviceItem('appName',window.navigator.appName);
+		addDeviceItem('appCodeName',window.navigator.appCodeName);
+		addDeviceItem('product',window.navigator.product);
+		addDeviceItem('platform',window.navigator.platform);
+
+		hr = document.createElement('hr');
+		e.appendChild(hr);
+
+		addDeviceItem('screen',window.screen.width + 'x'+window.screen.height);
+
+	},
 	bitsElement:function(pe,bits){
 		zs4.admin.util.element.call(this);
 		var BITS = this;
@@ -967,51 +1489,6 @@ zs4.admin.util = {
 			}
 		};
 		pe.appendChild(e);
-	},
-	element:function(){
-		var ELEMENT = this;
-
-		var on = new Object();
-		ELEMENT.trigger = function(name){
-			if (!on.hasOwnProperty(name))return;
-
-			var ON = on[name];
-			for (var i = 0; i < ON.f.length;i++){
-				ON.f[i](ON);
-			}
-		}
-		ELEMENT.on = function(name,func,remove){
-			if (!zs4.is.name(name))return false;
-			if (!zs4.is.function(func))return false;
-			var ON;
-			if (on.hasOwnProperty(name)){
-				ON = on[name];
-			}
-			else {
-				if (remove) return false;
-				ON = on[name] = new Object();
-				ON.f = new Array();
-			}
-
-			var found = false;
-			for (var i = 0; i < ON.f.length;i++){
-				if (ON.f[i]==func){
-					if (remove==true){
-						ON.f.splice(i,1);
-						if (ON.f.length==0){
-							delete on[name];
-						}
-						return false;
-					}
-					found=true;
-				}
-			}
-			if (!found)ON.f.push(func);
-
-			return true;
-		};
-
-		return ELEMENT;
 	},
 	sliderElement:function(pe,hori,vert){
 		zs4.admin.util.element.call(this);
@@ -2352,429 +2829,10 @@ zs4.admin.util = {
 					var DIALOG = this;
 					o._.html.top.dialog.call(this,'user');
 
-					this.loggedIn = zs4.THIS._.loggedIn;
-					//if (zs4.THIS.zs4.hasOwnProperty('bye'))this.loggedIn=true;
+					new zs4.admin.util.loginoutElement(this.pane);
+					new zs4.admin.util.bowserElement(this.pane);
 
-					this.username = document.createElement('a');
-					this.toolbar.appendChild(this.username);
-					if (this.loggedIn){
-						this.username.href = '/'+zs4.THIS._.scopath;
-						zs4.admin.util.addClass(this.username,'am');
-					}
-					else {
-						this.username.href = '#';
-					}
-
-					if (this.loggedIn){
-						this.spwIsOpen = false;
-
-						this.spwtitle = document.createElement('zs4-spw-title');
-						this.spwtitle.textContent = 'set password';
-						this.pane.appendChild(this.spwtitle);
-						this.spwtitle.onclick = function(){
-							if (DIALOG.spwIsOpen){
-								DIALOG.spwIsOpen = false;
-								zs4.admin.util.addClass(DIALOG.setpasswordpane,'nodisplay');
-							}
-							else {
-								DIALOG.spwIsOpen = true;
-								zs4.admin.util.removeClass(DIALOG.setpasswordpane,'nodisplay');
-							}
-							DIALOG.refreshInternal();
-						};
-
-
-						this.setpasswordpane = document.createElement('zs4-setpassword');
-						zs4.admin.util.addClass(DIALOG.setpasswordpane,'nodisplay');
-						this.spwIsOpen = false;
-						this.pane.appendChild(this.setpasswordpane);
-
-						this.setpassword = document.createElement('form');
-						this.setpassword.onsubmit = function(){return false;};
-						this.setpassword.id = 'cpwd.'+o._.path;
-						this.setpasswordpane.appendChild(this.setpassword);
-
-						// OLD PASSWORD 1
-						this.old1 = document.createElement('zs4-spw-pwe');
-						this.setpassword.appendChild(this.old1);
-						this.old1label = document.createElement('zs4-spw-old');
-						this.old1label.textContent = 'old: ';
-						this.old1.appendChild(this.old1label);
-						this.old1input = document.createElement('input');
-						zs4.admin.util.addAttribute(this.old1input,'autocomplete','current-password');
-						this.old1input.type = 'password';
-						this.old1.appendChild(this.old1input);
-
-						// OLD PASSWORD 2
-						this.old2 = document.createElement('zs4-spw-pwe');
-						this.setpassword.appendChild(this.old2);
-						this.old2label = document.createElement('zs4-spw-old');
-						this.old2label.textContent = 'new: ';
-						this.old2.appendChild(this.old2label);
-						this.old2input = document.createElement('input');
-						zs4.admin.util.addAttribute(this.old2input,'autocomplete','current-password');
-						this.old2input.type = 'password';
-						this.old2.appendChild(this.old2input);
-
-						// NEW PASSWORD
-						this.setpwd = document.createElement('zs4-spw-pwe');
-						this.setpassword.appendChild(this.setpwd);
-						this.setpwdlabel = document.createElement('zs4-spw-new');
-						this.setpwdlabel.textContent = 'new: ';
-						this.setpwd.appendChild(this.setpwdlabel);
-						this.setpwdinput = document.createElement('input');
-						zs4.admin.util.addAttribute(this.setpwdinput,'autocomplete','new-password');
-						this.setpwdinput.type = 'password';
-						this.setpwd.appendChild(this.setpwdinput);
-
-						// SEND BUtTON
-						this.setpwdsend = document.createElement('zs4-spw-send');
-						this.setpassword.appendChild(this.setpwdsend);
-						this.setpwdsend.textContent = 'set now';
-						this.setpwdsend.onclick = (function(){
-							if (!zs4.THIS._.loggedIn)return;
-							var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
-							if (uscope==null)return;
-							var password = uscope._.resolvePath('zs4.password');
-							if (password==null)return;
-							var set = uscope._.resolvePath('zs4.password.set');
-							if (set==null)return;
-
-							zs4.admin.util.removeClass(DIALOG.old1,'error');
-							zs4.admin.util.removeClass(DIALOG.old2,'error');
-							zs4.admin.util.removeClass(DIALOG.setpwd,'error');
-
-							var wrong = false;
-							if (!zs4.is.password(this.old1input.value)){
-								zs4.admin.util.addClass(DIALOG.old1,'error');
-								wrong = true;
-							}
-							if (!zs4.is.password(this.old2input.value)){
-								zs4.admin.util.addClass(DIALOG.old2,'error');
-								wrong = true;
-							}
-							if (!zs4.is.password(this.setpwdinput.value)){
-								zs4.admin.util.addClass(DIALOG.setpwd,'error');
-								wrong = true;
-							}
-
-							if (this.setpwdinput.value!=this.old2input.value){
-									zs4.admin.util.addClass(DIALOG.old2,'error');
-									zs4.admin.util.addClass(DIALOG.setpwd,'error');
-									wrong = true;
-							}
-							var input = new Object({set:this.setpwdinput.value,})
-							var vfy = uscope._.resolvePath('zs4.password.vfy');
-							if (vfy == null){
-								wrong = true;
-							}
-							else{
-								input.vfy = this.old1input.value;
-							}
-
-							if (wrong) return;
-
-							zs4.admin.util.removeClass(DIALOG.old1,'error');
-							zs4.admin.util.removeClass(DIALOG.old2,'error');
-							zs4.admin.util.removeClass(DIALOG.setpwd,'error');
-
-							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-							zs4.post(password._.wrapRequest(input),function(ret){
-								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-								o._.html.refreshAll();
-								if (zs4.is.error(ret.request.callback.zs4.password)){
-									zs4.admin.util.addClass(DIALOG.old1,'error');
-									zs4.admin.util.addClass(DIALOG.old2,'error');
-									zs4.admin.util.addClass(DIALOG.setpwd,'error');
-								}
-
-							});
-
-
-						}).bind(DIALOG);
-
-						// LOGOUT pane
-						///////////////////////////////////////////////////////////
-						///////////////////////////////////////////////////////////
-						this.logout = document.createElement('zs4-logout');
-						this.logout.textContent = 'logout';
-						this.pane.appendChild(this.logout);
-						this.logoutvisible = false;
-						this.logout.onclick = (function(){
-							if (!DIALOG.logoutvisible){
-								zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
-								zs4.admin.util.addClass(this.bye,'nodisplay');
-								DIALOG.sure.checked = false;
-								DIALOG.logoutvisible = true;
-							}
-							else {
-								zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
-								zs4.admin.util.addClass(this.bye,'nodisplay');
-								DIALOG.sure.checked = false;
-								DIALOG.logoutvisible = false;
-							}
-						}).bind(this);
-
-						this.logoutArgs = document.createElement('zs4-logout-args');
-						this.pane.appendChild(this.logoutArgs);
-						zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
-
-						this.sureText = document.createElement('zs4-sure-text');
-						this.sureText.textContent = 'sure?';
-						this.logoutArgs.appendChild(this.sureText);
-
-						this.sure = document.createElement('input');
-						this.sure.type = 'checkbox';
-						zs4.admin.util.addClass(this.sure,'sure');
-						this.logoutArgs.appendChild(this.sure);
-						this.sure.onchange = (function(){
-							if (this.sure.checked)zs4.admin.util.removeClass(this.bye,'nodisplay');
-							else zs4.admin.util.addClass(this.bye,'nodisplay');
-						}).bind(this);
-
-						this.bye = document.createElement('zs4-logout-now');
-						this.bye.textContent = 'logout';
-						zs4.admin.util.addClass(this.bye,'nodisplay');
-						this.pane.appendChild(this.bye);
-						this.bye.onclick = (function(){
-							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-							zs4.post(zs4.THIS.zs4.bye._.wrapRequest({sure:true}),function(ret){
-								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-							});
-						}).bind(this);
-
-					}
-					else {
-						this.loginform = document.createElement('form');
-						this.loginform.onsubmit = function(){return false;};
-						this.loginform.id = 'login.'+o._.path;
-						this.loginform.autocomplete = 'on';
-						this.pane.appendChild(this.loginform);
-
-						this.email = document.createElement('zs4-login-email');
-						this.loginform.appendChild(this.email);
-
-						this.emailLabel = document.createElement('zs4-login-email-label');
-						this.emailLabel.textContent = 'email';
-						this.email.appendChild(this.emailLabel);
-
-						this.emailAddress = document.createElement('input');
-						//this.emailAddress.autocomplete = 'username';
-						zs4.admin.util.addAttribute(this.emailAddress,'autocomplete','username');
-						this.emailAddress.type = 'text';
-						this.email.appendChild(this.emailAddress);
-						zs4.admin.util.addClass(this.emailAddress,'login-email');
-
-						this.password = document.createElement('zs4-login-password');
-						this.loginform.appendChild(this.password);
-
-						this.passwordLabel = document.createElement('zs4-login-password-label');
-						this.passwordLabel.textContent = 'password';
-						this.password.appendChild(this.passwordLabel);
-
-						this.pass = document.createElement('input');
-						this.pass.autocomplete = 'username';
-						this.pass.type = 'password';
-						this.password.appendChild(this.pass);
-						zs4.admin.util.addClass(this.pass,'login-password');
-
-						this.failcount = 0;
-
-						this.etok = document.createElement('zs4-email-token');
-						this.pane.appendChild(this.etok);
-						zs4.admin.util.addClass(this.etok,'nodisplay');
-
-						this.emailtoken = document.createElement('zs4-email-token-send');
-						this.emailtoken.textContent = 'email access code / password reset';
-						this.etok.appendChild(this.emailtoken);
-						this.emailtoken.onclick = (function(){
-							if (!zs4.is.email(DIALOG.emailAddress.value)){
-								zs4.admin.util.addClass(DIALOG.emailAddress,'error');
-								return;
-							}
-							else {
-								zs4.admin.util.removeClass(DIALOG.emailAddress,'error');
-							}
-							zs4.admin.util.removeClass(this.pass,'error');
-
-							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-							zs4.THIS.zs4.hi._.call({email:this.emailAddress.value,sendtoken:true,},function(){
-								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-								console.log(zs4.THIS.zs4.hi._.cberror);
-								console.log(zs4.THIS.zs4.hi._.cbresult);
-								if (zs4.THIS.zs4.hi._.cbresult != null){
-									//window.alert('token sent');
-									zs4.admin.util.removeClass(DIALOG.emailAddress,'error');
-									zs4.admin.util.removeClass(DIALOG.pass,'error');
-									zs4.admin.util.removeClass(DIALOG.emailtoken,'error');
-
-									DIALOG.emailresponse.textContent = zs4.THIS.zs4.hi._.cbresult;
-									zs4.admin.util.addClass(DIALOG.emailtoken,'nodisplay');
-									zs4.admin.util.removeClass(DIALOG.emailresponse,'nodisplay');
-									zs4.admin.util.removeClass(DIALOG.hi,'nodisplay');
-									DIALOG.failcount = 0;
-									DIALOG.refreshInternal();
-								}
-								else {
-									zs4.admin.util.addClass(DIALOG.emailtoken,'error');
-								}
-
-							});
-
-						}).bind(DIALOG);
-
-						this.emailresponse = document.createElement('zs4-email-token-response');
-						this.etok.appendChild(this.emailresponse);
-
-						this.hi = document.createElement('zs4-login');
-						this.hi.textContent = 'login';
-						this.pane.appendChild(this.hi);
-						this.hi.onclick = (function(){
-							var error = false;
-							if (!zs4.is.email(this.emailAddress.value)){
-								zs4.admin.util.addClass(DIALOG.emailAddress,'error');
-								error = true;
-							}
-							else {
-								zs4.admin.util.removeClass(DIALOG.emailAddress,'error');
-							}
-							if (!zs4.is.password(this.pass.value)){
-								zs4.admin.util.addClass(this.pass,'error');
-								error = true;
-							}
-							else {
-								zs4.admin.util.removeClass(this.pass,'error');
-							}
-							if (error)return;
-
-							zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-							zs4.post(zs4.THIS.zs4.hi._.wrapRequest({email:this.emailAddress.value,password:this.pass.value,}),function(ret){
-								if (zs4.THIS.zs4.hi._.cberror != null){
-									zs4.admin.util.addClass(DIALOG.emailAddress,'error');
-									zs4.admin.util.addClass(DIALOG.pass,'error');
-									DIALOG.failcount++;
-									DIALOG.refreshInternal();
-								}
-								console.log('DIALOG.failcount: '+DIALOG.failcount);
-
-								zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-							});
-						}).bind(this);
-
-						console.log('LOGIN OPTIONS:');
-						this.pp = new Object();
-						this.pp.e = document.createElement('div');
-						this.pane.appendChild(this.pp.e);
-						var pp = zs4.THIS.zs4.passport;
-						for (var n in pp){
-							if (!zs4.is.type(pp[n]))continue;
-							var provider = this.pp[n] = new Object();
-							provider.e = document.createElement('div');
-							provider.e.style.cursor = 'pointer';
-							//provider.e.style.display = 'block';
-							this.pp.e.appendChild(provider.e);
-
-							zs4.admin.util.addIconElement(provider.e,n);
-							zs4.admin.util.addSpace(provider.e);
-							zs4.admin.util.addTextSpan(provider.e,n);
-
-							provider.e.onclick = function(){zs4.navigate('/zs4.passport.'+n+'.login');}
-							console.log('  - '+n);
-						}
-					}
-
-					this.deviceIsOpen = false;
-					this.device = document.createElement('zs4-app-device');
-					this.device.textContent = 'device info';
-					this.pane.appendChild(this.device);
-					this.device.onclick = function(){
-						if (DIALOG.deviceIsOpen){
-							DIALOG.deviceIsOpen = false;
-							zs4.admin.util.addClass(DIALOG.deviceInfo,'nodisplay');
-						}
-						else {
-							DIALOG.deviceIsOpen = true;
-							zs4.admin.util.removeClass(DIALOG.deviceInfo,'nodisplay');
-						}
-						DIALOG.refreshInternal();
-					};
-
-					this.deviceInfo = document.createElement('zs4-app-device-info');
-					zs4.admin.util.addClass(DIALOG.deviceInfo,'nodisplay');
-					this.pane.appendChild(this.deviceInfo);
-
-					function addDeviceItem(name,value){
-						var item = document.createElement('zs4-app-device-info-item');
-						DIALOG.deviceInfo.appendChild(item);
-
-						var nameEle = document.createElement('zs4-app-device-info-name');
-						nameEle.textContent = name;
-						item.appendChild(nameEle);
-
-						var valueEle = document.createElement('zs4-app-device-info-value');
-						valueEle.textContent = value.toString();
-						item.appendChild(valueEle);
-					}
-
-					var titles = new Array();
-					function addBowserFlag(title,flag){
-						if(zs4.string.array.is.element(titles,title))return false;
-
-						if (zs4.is.boolean(bowser[flag])&&bowser[flag]==true){
-							titles.push(title);
-							addDeviceItem(title,flag);
-							return true;
-						}
-						return false;
-					}
-
-					{
-						addDeviceItem('browser',bowser.name);
-						addDeviceItem('version',bowser.version);
-
-						addBowserFlag('type','mobile');
-						addBowserFlag('type','tablet');
-
-						addBowserFlag('renderer','webkit');
-						addBowserFlag('renderer','blink');
-						addBowserFlag('renderer','gecko');
-						addBowserFlag('renderer','msie');
-						addBowserFlag('renderer','msedge');
-
-						addBowserFlag('os','mac');
-						addBowserFlag('os','windows');
-						addBowserFlag('os','windowsphone');
-						addBowserFlag('os','linux');
-						addBowserFlag('os','chromeos');
-						addBowserFlag('os','android');
-						addBowserFlag('os','ios');
-						addBowserFlag('os','blackberry');
-						addBowserFlag('os','firefoxos');
-						addBowserFlag('os','webos');
-						addBowserFlag('os','bada');
-						addBowserFlag('os','tizen');
-						addBowserFlag('os','sailfish');
-
-						addBowserFlag('ios','iphone');
-						addBowserFlag('ios','ipad');
-						addBowserFlag('ios','ipod');
-					}
-					if (bowser.osversion!=null)addBowserFlag('version',bowser.osversion);
-
-
-					var hr = document.createElement('hr');
-					DIALOG.deviceInfo.appendChild(hr);
-
-					addDeviceItem('appName',window.navigator.appName);
-					addDeviceItem('appCodeName',window.navigator.appCodeName);
-					addDeviceItem('product',window.navigator.product);
-					addDeviceItem('platform',window.navigator.platform);
-
-					hr = document.createElement('hr');
-					DIALOG.deviceInfo.appendChild(hr);
-
-					addDeviceItem('screen',window.screen.width + 'x'+window.screen.height);
-
+					/*
 					this.refreshDialog = (function(){
 						if (zs4.THIS._.loggedIn){
 							var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
@@ -2827,6 +2885,8 @@ zs4.admin.util = {
 							zs4.admin.util.addClass(this.bye,'nodisplay');
 						}
 					}).bind(this);
+					*/
+
 				};
 				o._.html.top.dialogDocument = function(){
 					var THIS = this;

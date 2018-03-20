@@ -3417,7 +3417,8 @@ ts.html = new Object({
       //nu.tsTopTools.style.fontSize =
 			SEQ.titlebarElement.appendChild(SEQ.tsTopTools);
 
-			SEQ.titlebarLogo = ts.html.nu.ele('ts-titlebar-logo');
+			SEQ.titlebarLogo = ts.html.nu.ele('div');
+      SEQ.titlebarLogo.style.display = 'inline-block';
 			SEQ.titlebarLogo.ts = SEQ;
 			SEQ.titlebarLogo.onclick = function(){
         this.ts.onLogoClick();
@@ -3857,10 +3858,6 @@ ts.html = new Object({
           if ((e.key=='ArrowDown')||(e.key=='Down'))return true;
           return false;
         }
-        function isDown(){
-          if ((e.key=='ArrowDown')||(e.key=='Down'))return true;
-          return false;
-        }
         function isBack(){
           if ((e.key=='Backspace')||(e.key=='U+0008'))return true;
           return false;
@@ -3882,6 +3879,13 @@ ts.html = new Object({
           return false;
         }
 
+        function isChar(ch){
+          ch = zs4.string.to.lower(ch);
+          if (e.key==ch)return true;
+          if (!zs4.is.number(e.which))return false;
+          if (ch == zs4.string.to.lower(String.fromCharCode(e.which))) return true;
+          return false;
+        }
 
         //e.preventDefault();
         console.log(e);
@@ -3899,30 +3903,30 @@ ts.html = new Object({
               return false;
             }
 
-            else if ((e.key=='b')||(e.key=='|')){
+            else if (isChar('b')||isChar('|')){
               SEQ.setKbmMode(KBM_BAR);
               e.preventDefault();
               return false;
             }
-            else if ((e.key=='B')||(e.key=='.')){
+            else if (isChar('B')||isChar('.')){
               SEQ.setKbmMode(KBM_BEAT);
               e.preventDefault();
             }
-            else if (e.key=='e'){
+            else if (isChar('e')){
               SEQ.setKbmMode(KBM_EVENT);
               e.preventDefault();
             }
-            else if ((e.key=='t')||(e.key=='a')){
+            else if (isChar('t')||isChar('a')){
               SEQ.setKbmMode(KBM_LYRIC);
               e.preventDefault();
               return false;
             }
-            else if ((e.key=='m')||(e.key=='n')){
+            else if (isChar('m')||isChar('n')){
               SEQ.setKbmMode(KBM_MELODY);
               e.preventDefault();
               return false;
             }
-            else if ((e.key=='c')||(e.key=='k')){
+            else if (isChar('c')||isChar('k')){
               SEQ.kb.chord = null;
               SEQ.setKbmMode(KBM_CHORD);
               e.preventDefault();
@@ -3971,7 +3975,7 @@ ts.html = new Object({
               SEQ.kbLeftBar();
               e.preventDefault();
             }
-            else if ((e.key=='B')||(e.key=='b')){
+            else if (isChar('B')||isChar('b')){
     					EVENT.toggleBar();
               EVENT.refresh();
               e.preventDefault();
@@ -3991,7 +3995,7 @@ ts.html = new Object({
               SEQ.kbLeftBeat();
               e.preventDefault();
             }
-            else if ((e.key=='B')||(e.key=='b')){
+            else if (isChar('B')||isChar('b')){
     					EVENT.toggleBeat();
               EVENT.refresh();
               e.preventDefault();
@@ -4136,7 +4140,7 @@ ts.html = new Object({
                 e.preventDefault();
               }
             }
-            else if (SEQ.kb.pos==1 && (e.key=='#'||e.key=='b')){
+            else if (SEQ.kb.pos==1 && (isChar('#')||isChar('b'))){
               SEQ.kb.chord = SEQ.kb.chord.charAt(0)+e.key;
               SEQ.kb.pos=2;
               EVENT.refresh();
@@ -4153,7 +4157,7 @@ ts.html = new Object({
                 e.preventDefault();
               }
             }
-            else if ((slash>1)&&(SEQ.kb.pos==slash+2)&&(e.key=='#'||e.key=='b')){
+            else if ((slash>1)&&(SEQ.kb.pos==slash+2)&&(isChar('#')||isChar('b'))){
               SEQ.kb.chord = SEQ.kb.chord.substr(0,slash+2)+e.key;
               SEQ.kb.pos = slash+=3;
               EVENT.refresh();
@@ -6098,6 +6102,7 @@ ts.audio = new Object({
       if (ts.audio.context==null){
         var e = zs4.admin.util.addTextSpan(pe,'no webaudio with '+bowser.name+' version '+bowser.version+'. Some browsers just suck!');
         e.style.backgroundColor = 'red';
+        new zs4.admin.util.bowserElement(pe);
         MIXER.refresh = function(){};
         return;
       }
