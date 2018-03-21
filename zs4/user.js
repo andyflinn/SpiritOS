@@ -4,6 +4,7 @@ var password = require('./password');
 var rsa = require('./rsa');
 var token = require('./token');
 var debug = require('debug')('zs4user');
+//var meaning = require('./js/meaning');
 
 var user;
 if (zs4.is.node()) {
@@ -19,6 +20,8 @@ user.create = function(){
   //USER._.flags.set.scopestats(true);
   this.zs4.head.typename._.value = 'user';
   this.zs4.head.typename._.default = 'user';
+  zs4.meaning.register('user');
+
   this._.name = 'user';
   USER._.create = user.create;
   if (zs4.is.node()){

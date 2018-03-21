@@ -163,6 +163,8 @@ zs4.define = function(){
 
   zs4.THIS.zs4._.property(new zs4.type.object({name:'app',flags:'authgetpublic',}));
 
+  zs4.node.require.meaning = require('./js/meaning');
+
   zs4.node.require.um = require('./js/um');
 
   zs4.node.require.node = require('./node');
@@ -216,20 +218,20 @@ zs4.define = function(){
   zs4.THIS.zs4.type.config._.flags.set.authgetpublic(false);
 
   var word = require('./word');
-  zs4.THIS.zs4.type._.property(new zs4.type.array({name:'meaning',template:new word.meaning.create(),}));
-  zs4.THIS.zs4.type.meaning._.flags.set.authgetpublic(false);
-  zs4.THIS.zs4.type.meaning._.flags.value |= zs4.THIS.zs4.type.meaning._.flags.apiarg;
-  zs4.THIS.zs4.type.meaning.method.new._.flags.set.authgetpublic(false);
-  zs4.THIS.zs4.type.meaning.method.new._.flags.set.authuser(false);
-  zs4.THIS.zs4.type.meaning.method.deleteone._.flags.set.authgetpublic(false);
-  zs4.THIS.zs4.type.meaning.method.deleteall._.flags.set.authgetpublic(false);
+  //zs4.THIS.zs4.type._.property(new zs4.type.array({name:'meaning',template:new word.meaning.create(),}));
+  //zs4.THIS.zs4.type.meaning._.flags.set.authgetpublic(false);
+  //zs4.THIS.zs4.type.meaning._.flags.value |= zs4.THIS.zs4.type.meaning._.flags.apiarg;
+  //zs4.THIS.zs4.type.meaning.method.new._.flags.set.authgetpublic(false);
+  //zs4.THIS.zs4.type.meaning.method.new._.flags.set.authuser(false);
+  //zs4.THIS.zs4.type.meaning.method.deleteone._.flags.set.authgetpublic(false);
+  //zs4.THIS.zs4.type.meaning.method.deleteall._.flags.set.authgetpublic(false);
 
-  zs4.THIS.zs4.type._.property(new zs4.type.array({name:'lang',template:new word.lang.create(),}));
-  zs4.THIS.zs4.type.lang._.flags.value |= zs4.THIS.zs4.type.lang._.flags.apiarg;
-  zs4.THIS.zs4.type.lang.method.new._.flags.set.authgetpublic(false);
-  zs4.THIS.zs4.type.lang.method.new._.flags.set.authuser(false);
-  zs4.THIS.zs4.type.lang.method.deleteone._.flags.set.authgetpublic(false);
-  zs4.THIS.zs4.type.lang.method.deleteall._.flags.set.authgetpublic(false);
+  //zs4.THIS.zs4.type._.property(new zs4.type.array({name:'lang',template:new word.lang.create(),}));
+  //zs4.THIS.zs4.type.lang._.flags.value |= zs4.THIS.zs4.type.lang._.flags.apiarg;
+  //zs4.THIS.zs4.type.lang.method.new._.flags.set.authgetpublic(false);
+  //zs4.THIS.zs4.type.lang.method.new._.flags.set.authuser(false);
+  //zs4.THIS.zs4.type.lang.method.deleteone._.flags.set.authgetpublic(false);
+  //zs4.THIS.zs4.type.lang.method.deleteall._.flags.set.authgetpublic(false);
 
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'translation',template:new word.translation.create(),}));
   zs4.THIS.zs4.type.translation._.flags.value |= zs4.THIS.zs4.type.translation._.flags.apiarg;

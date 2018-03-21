@@ -1,10 +1,13 @@
 'use strict';
 
 var zs4 = require('./js/js');
+var meaning = require('./js/meaning');
 var debug = require('debug')('zs4word');
+var fs = require('fs');
 
 var word = exports;
 
+/*
 word.meaning = new Object({
   schema:function(parent){
     parent._.property(new word.meaning.create());
@@ -41,6 +44,7 @@ word.lang = new Object({
     LANG._.name = 'lang';
   }
 });
+*/
 
 word.translation = new Object({
   schema:function(parent){
@@ -58,7 +62,62 @@ word.translation = new Object({
     TRANSLATION._.name = 'translation';
 
     TRANSLATION._.property(new zs4.type.name({name:'meaning',flags:'index authsetself textsearch',}));
-    TRANSLATION._.property(new zs4.type.name({name:'lang',flags:'index authsetself textsearch',}));
-    TRANSLATION._.property(new zs4.type.string({name:'translation',flags:'authsetself quickupdate',}));
+    TRANSLATION._.property(new zs4.type.string({name:'context',flags:'index authsetself textsearch',}));
+    TRANSLATION._.property(new zs4.type.lang({name:'lang',flags:'index authsetself textsearch',}));
+    TRANSLATION._.property(new zs4.type.text({name:'translation',flags:'authsetself quickupdate',maxlength:zs4.const.STRING.MAXLENGTH,minlength:1}));
   },
 });
+
+var L = fs.readFileSync('./zs4/static/tables/lang.json','utf8');
+L = zs4.json.parse(L);
+
+for (var n in L){
+  zs4.string.array.add.new(zs4.lang,n);
+  var m = zs4.meaning.register(n);
+  if (m==null){
+    debug('register language \"'+n+'\" failed.');
+    continue;
+  }
+  var a = zs4.string.split.separators(L[n].name,',');
+  if (a.length>0)m.en = a[0];
+  var b = zs4.string.split.separators(L[n].nativeName,',');
+  if (b.length>0)m[n] = b[0];
+}
+
+zs4.THIS.zs4._.property(new zs4.type.object({name:'translate',flags:'api apiarg'}));
+zs4.THIS.zs4.translate._.property(new zs4.type.name({name:'meaning',flags:'apiarg'}));
+zs4.THIS.zs4.translate._.property(new zs4.type.string({name:'context',flags:'apiarg'}));
+zs4.THIS.zs4.translate._.property(new zs4.type.lang({name:'lang',flags:'apiarg'}));
+zs4.THIS.zs4.translate._.property(new zs4.type.text({name:'translation',flags:'apiarg',maxlength:zs4.const.STRING.MAXLENGTH,minlength:1}));
+
+zs4.THIS.zs4.translate._.transform = (function(req,cb){
+  var THIS = this;
+  req.setScope(THIS);
+  function error(err){
+    req.error(THIS,err);
+    debug(err);
+    THIS._.getTree(req); cb();
+  }
+
+  if (zs4.is.string(req.input)){
+    req.result(THIS,zs4.meaning.export(req.input));
+    cb(); return;
+  }
+
+  if (!req.tokenExists()) return error('not logged in');
+  if (!zs4.is.object(req.input))return error('no input object');
+  if (!zs4.is.name(req.input.meaning))return error('invalid meaning');
+  if (!zs4.is.string(req.input.translation)||(req.input.translation.length<1))return error('no translation');
+
+  var ctx = req.input.context;
+
+  var meaning = zs4.meaning.find(req.input.meaning,ctx);
+  if (meaning==null)return error('meaning '+req.input.meaning+'ctx('+ctx+') not found.');
+
+  console.log(req.input);
+
+
+  req.result(THIS,true);
+  THIS._.getTree(req);
+  cb();
+}).bind(zs4.THIS.zs4.translate);

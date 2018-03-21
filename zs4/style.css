@@ -223,6 +223,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
 .icon-drive:before{content:url(/gfx/icons/drive.svg);}
 .icon-dropbox:before{content:url(/gfx/icons/dropbox.svg);}
+.icon-edge:before{content:url(/gfx/icons/edge.svg);}
 .icon-email:before{content:url(/gfx/icons/email.svg);}
 .icon-emailsent:before{content:url(/gfx/icons/email.svg);}
 .icon-error:before{content:url(/gfx/icons/error.svg);}
@@ -321,6 +322,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-transform:before{content:url(/gfx/icons/transform.svg);}
 .icon-transitem:before{content:url(/gfx/icons/gears.svg);}
 .icon-translation:before{content:url(/gfx/icons/lang.svg);}
+.icon-translate:before{content:url(/gfx/icons/translate.svg);}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}

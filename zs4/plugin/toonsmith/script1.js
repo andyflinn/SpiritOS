@@ -15,7 +15,6 @@ const MIDI_NOTE_MIN=21;
 const MIDI_NOTE_MAX=108;
 const MIDDLE_C=60;
 
-
 const SEMI_TONES_PER_OCTAVE=12;
 const MIN_TICKS_PER_BEAT=2;
 const MAX_TICKS_PER_BEAT=32;
@@ -30,6 +29,23 @@ const KBM_CHORD = 2;
 const KBM_MELODY = 3;
 const KBM_BAR = 4;
 const KBM_BEAT = 5;
+
+ts.meaning = new Object({
+  add:function(w){zs4.string.array.add.new(ts.meaning.word,w);},
+  word:new Array(),
+  register:function(){
+    for (var i = 0; i < ts.meaning.word.length; i++){
+      zs4.meaning.register(ts.meaning.word[i],'toonsmith');
+    }
+  },
+});
+
+var add = ts.meaning.add;
+add('bpb');
+add('bpm');
+add('tpb');
+
+ts.meaning.register();
 
 ts.sequence = new Array();
 
@@ -6125,7 +6141,7 @@ ts.audio = new Object({
         var tr = document.createElement('div');
         tr.style.textAlign = 'center';
         tr.style.display = 'inline-block';
-        zs4.style.type.toolbubble(tr);
+        zs4.style.type.boxplain(tr);
         table.appendChild(tr);
 
         var groupOpen = false;
@@ -6218,7 +6234,7 @@ ts.audio = new Object({
         var groupDiv = null;
         if (CHANNEL.OSC.isGroup){
           console.log(CHANNEL.OSC.name + ' is a group!');
-          groupDiv = document.createElement('span');
+          groupDiv = document.createElement('div');
           groupDiv.style.display = 'none';
           zs4.style.type.toolbubble(groupDiv);
 

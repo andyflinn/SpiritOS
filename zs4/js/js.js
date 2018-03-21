@@ -11,7 +11,8 @@ if (isNode()) {
 }
 else {
     zs4 = new Object();
-    zs4.debug = function(){};
+    //zs4.debug = function(){};
+    zs4.debug = console.log;
 }
 
 zs4.host = {
@@ -1062,6 +1063,28 @@ zs4.scope = {
 zs4.folder = new Object();
 zs4.array = new Object();
 
+zs4.lang = [
+'ab','aa','af','ak','sq','am','ar','an','hy','as',
+'av','ae','ay','az','bm','ba','eu','be','bn','bh',
+'bi','bs','br','bg','my','ca','ch','ce','ny','zh',
+'cv','kw','co','cr','hr','cs','da','dv','nl','en',
+'eo','et','ee','fo','fj','fi','fr','ff','gl','ka',
+'de','el','gn','gu','ht','ha','he','hz','hi','ho',
+'hu','ia','id','ie','ga','ig','ik','io','is','it',
+'iu','ja','jv','kl','kn','kr','ks','kk','km','ki',
+'rw','ky','kv','kg','ko','ku','kj','la','lb','lg',
+'li','ln','lo','lt','lu','lv','gv','mk','mg','ms',
+'ml','mt','mi','mr','mh','mn','na','nv','nb','nd',
+'ne','ng','nn','no','ii','nr','oc','oj','cu','om',
+'or','os','pa','pi','fa','pl','ps','pt','qu','rm',
+'rn','ro','ru','sa','sc','sd','se','sm','sg','sr',
+'gd','sn','si','sk','sl','so','st','es','su','sw',
+'ss','sv','ta','te','tg','th','ti','bo','tk','tl',
+'tn','to','tr','ts','tt','tw','ty','ug','uk','ur',
+'uz','ve','vi','vo','wa','cy','wo','fy','xh','yi',
+'yo','za',
+];
+
 zs4.type = {
 
   unknown:function(input){
@@ -1843,11 +1866,12 @@ zs4.type = {
 
         script('bowser.min');
         script('js');
+        script('meaning');
         script('um');
         script('color');
         script('style');
-        //js += zs4.THIS.zs4.js._.js.bowser; js += '\n';
-        //js += zs4.THIS.zs4.js._.js.js; js += '\n';
+
+        //js += 'zs4.meaning.import('+zs4.meaning.exportJSON(req.request.lang)+');\n';
 
         if (req.request.token&&req.request.payload){
           js += 'zs4.window.token=\''+req.request.token+'\'\n';
@@ -3656,11 +3680,7 @@ zs4.type = {
     this._.maxlength = zs4.const.MAXLENGTH.LANG;
     this._.typename = 'lang';
     this._.default = 'en';
-    this._.enum = [
-      'de',
-      'en',
-      'fr',
-    ];
+    this._.enum = zs4.lang;
   },
   name:function(input){
     zs4.type.string.call(this,input);
@@ -5422,6 +5442,21 @@ if (zs4.is.window()){
     height:window.screen.height,
   };
 
+  zs4.browserLanguage = function(){
+    var lang = new String(navigator.language || navigator.browserLanguage);
+    if (lang.length < 2)lang = 'en';
+    else if (lang.length > 2)lang = lang.substr(0,2);
+    return lang;
+  };
+  zs4.userLanguage = function(){
+    if (zs4.THIS._.token==null||zs4.THIS._.scopath==null)return zs4.browserLanguage();
+    var uobj = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+    if (uobj==null)return zs4.browserLanguage();
+    if (zs4.is.string(uobj.zs4.head.lang._.value)
+      && uobj.zs4.head.lang._.value.length==2) return uobj.zs4.head.lang._.value;
+    return zs4.browserLanguage();
+  };
+
   zs4.io = {
     ajax:function(u,cb){
       this.bindFunction=function(caller,o) {return function(){ return caller.apply(o,[o]);};};this.stateChange=function(o){if (this.request.readyState==4)this.cb(this.request.responseText);};this.getRequest=function(){if (window.ActiveXObject)return new ActiveXObject('Microsoft.XMLHTTP');else if(window.XMLHttpRequest)return new XMLHttpRequest();return false;};this.postBody=(arguments[2]||"");this.cb=cb;this.u=u;this.request=this.getRequest();if(this.request){var req=this.request;req.onreadystatechange=this.bindFunction(this.stateChange,this);if (this.postBody!==""){req.open("POST",u,true);req.setRequestHeader('Content-type','application/json');} else{req.open("GET",u,true);}req.send(this.postBody);}
@@ -5458,6 +5493,7 @@ if (zs4.is.window()){
       if (cb) cb(req); return;
     }
 
+    // user token
     if (zs4.is.string(zs4.THIS._.token)&&zs4.THIS._.token.length>10){
       req.request.token = zs4.THIS._.token;
     }
@@ -5467,6 +5503,9 @@ if (zs4.is.window()){
     else {
       req.request.token = null;
     }
+
+    req.request.lang = zs4.userLanguage();
+
     zs4.debug(req);
 
     if (getall==true){
@@ -5510,6 +5549,23 @@ if (zs4.is.window()){
     css.setAttribute("href", url);
     document.head.appendChild(css);
     return css;
+  };
+
+  zs4.loadtranslations = function(cb){
+    zs4.THIS.zs4.translate._.call(zs4.userLanguage(),function(r){
+      var t = zs4.path.resolve(r.request.callback,'zs4.translate');
+      if (t != null){
+        if (zs4.is.object(t.error)){
+          zs4.debug(t.error.text);
+        }
+        else {
+          zs4.meaning.import(t.result);
+        }
+      }
+      console.log(r);
+      if (zs4.is.function(cb))cb();
+    });
+
   };
 
   window.onresize = function(){

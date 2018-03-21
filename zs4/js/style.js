@@ -30,6 +30,7 @@ zs4.style = {
       e.style.borderRadius = '0.5em';
       e.style.backgroundColor = 'lightgray';
       e.style.overflow = 'auto';
+      e.style.width = '90%';
     },
     bgimage:function(e,i){
       e.style.backgroundImage = 'url(\"'+zs4.style.host + i+'\")';
@@ -41,6 +42,7 @@ zs4.style = {
       e.style.border = '0px';
       e.style.padding = '0px';
       e.style.margin = '0px';
+      e.style.overflow = 'auto';
     },
     valueplain:function(e){
       e.style.border='0.1em solid grey';

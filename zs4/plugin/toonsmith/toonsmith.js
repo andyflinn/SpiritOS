@@ -7,6 +7,8 @@ var fs = require('fs');
 const APPNAME = 'toonsmith';
 debug('toonsmith loading...');
 
+zs4.meaning.register(APPNAME);
+
 var ts;
 var toonsmith;
 if (zs4.is.node()) {

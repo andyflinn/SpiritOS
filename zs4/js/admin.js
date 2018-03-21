@@ -60,7 +60,10 @@ zs4.admin.util = {
 		if (zs4.THIS._.token!=null&&zs4.THIS._.scopath!=null)return true;
 		return false;
 	},
-
+	userScope:function(){
+		if (!zs4.admin.util.user())return null;
+		return zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+	},
 	setClass:function(e,c,tof){
 		if (e==null||c==null)return;
 		if (tof)return zs4.admin.util.addClass(e,c);
@@ -972,24 +975,139 @@ zs4.admin.util = {
 
 		return ELEMENT;
 	},
+	elementLanguage:function(pe){
+		var LANG = this;
+		zs4.admin.util.element.call(LANG);
+		var dft = LANG.value = zs4.userLanguage();
+		var select = LANG.top = LANG.element = document.createElement('select');
+		for (var i = 0; i < zs4.lang.length;i++){
+			var opt = document.createElement('option');
+			opt.value = zs4.lang[i];
+			if (dft == zs4.lang[i])opt.selected = true;
+			opt.textContent = zs4.lang[i];
+			select.appendChild(opt);
+		}
+		select.onchange = function(){
+			LANG.value = select.value;
+			LANG.trigger('change');
+		}
+		pe.appendChild(select);
+	},
+	elementMeaning:function(pe,meaning,context){
+		var ulang = zs4.userLanguage();
+		var MEANING = this;
+		zs4.admin.util.element.call(MEANING);
+		var div = MEANING.top = document.createElement('div');
+		div.style.display = 'inline-block';
+
+		var display = MEANING.element = document.createElement('div');
+		var text = meaning;
+		var trans = zs4.meaning.find(meaning,context);
+		if (trans != null){
+			if (trans.hasOwnProperty(ulang)){
+				text = trans[ulang];
+			}
+		}
+		display.textContent = text;
+		div.appendChild(display);
+
+		var uscope = zs4.admin.util.userScope();
+		if (uscope!=null){
+			var shotran = false;
+			var ready = false;
+
+			var lang; var text; var upload; var result;
+
+			var tran = document.createElement('div');
+			tran.style.display = 'none';
+			//tran.textContent = 'blah blah';
+			div.appendChild(tran);
+
+			display.onclick = function(e){
+				if (!e.ctrlKey && !e.altKey)return true;
+				console.log(e);
+
+				if (!ready){
+					lang = new zs4.admin.util.elementLanguage(tran);
+					text = document.createElement('input');
+					text.type = 'text';
+					tran.appendChild(text);
+					upload = zs4.admin.util.addIconImage(tran,'upload');
+					result = document.createElement('div');
+					result.style.display = 'none';
+					tran.appendChild(result);
+
+					upload.onclick = function(e){
+						result.textContent = '';
+						result.style.display = 'none';
+						result.style.backgroundColor = 'initial';
+						upload.style.backgroundColor = 'blue';
+						zs4.THIS.zs4.translate._.call({
+							meaning:meaning,
+							context:context,
+							lang:lang.value,
+							translation:text.value,
+						},function(r){
+							upload.style.backgroundColor = 'initial';
+							var t = zs4.path.resolve(r.request.callback,'zs4.translate');
+							if (t != null){
+								if (zs4.is.object(t.error)){
+									result.textContent = t.error.text;
+									result.style.backgroundColor = 'red';
+									result.style.display = 'block';
+								}
+								else {
+									result.textContent = 'done!';
+									result.style.backgroundColor = 'green';
+									result.style.display = 'block';
+								}
+							}
+							console.log(r);
+						});
+
+						return false;
+					};
+					ready = true;
+				}
+
+				if (shotran){
+					shotran = false;
+					tran.style.display = 'none';
+				}
+				else {
+					shotran = true;
+					tran.style.display = 'initial';
+				}
+				return false;
+			};
+		}
+
+		pe.appendChild(div);
+	},
 	toolElement:function(pe,icon){
 		var TOOL = this;
 		zs4.admin.util.element.call(TOOL);
 
 		var div = TOOL.top = document.createElement('div');
+		zs4.style.type.toolbubble(div);
+		//div.style.width = '90%';
 
 		var details = document.createElement('details');
+		zs4.style.type.boxplain(details);
 		div.appendChild(details);
 
 		var summary = document.createElement('summary');
+		zs4.style.type.boxplain(summary);
 		details.appendChild(summary);
 
 		zs4.admin.util.addIconElement(summary,icon);
 		zs4.admin.util.addSpace(summary);
-		zs4.admin.util.addTextSpan(summary,icon)
+		new zs4.admin.util.elementMeaning(summary,icon);
 
 		var items = document.createElement('div');
+		zs4.style.type.boxplain(items);
 		items.style.paddingLeft = '1em';
+		items.style.width = '90%';
 		details.appendChild(items);
 		TOOL.element = items;
 
@@ -1351,9 +1469,10 @@ zs4.admin.util = {
 		var BOWSER = this;
 
 		var browser = 'browser';
-		if (bowser.name == 'Firefox')browser = 'firefox';
-		else if (bowser.name == 'Chrome')browser = 'chrome';
-		else if (bowser.name == 'Safari')browser = 'safari';
+		if (zs4.string.search(bowser.name,'Firefox'))browser = 'firefox';
+		else if (zs4.string.search(bowser.name,'Chrome'))browser = 'chrome';
+		else if (zs4.string.search(bowser.name,'Safari'))browser = 'safari';
+		else if (zs4.string.search(bowser.name,'Edge'))browser = 'edge';
 		zs4.admin.util.toolElement.call(BOWSER,pe,browser);
 
 		var e = BOWSER.element;
@@ -2580,7 +2699,7 @@ zs4.admin.util = {
 					//this.select.textContent = name;
 
 					this.pane = document.createElement('zs4-app-dialog');
-					zs4.style.type.toolbubble(this.pane);
+					//zs4.style.type.toolbubble(this.pane);
 					o._.html.appUserInterface.appendChild(this.pane);
 					//this.pane.textContent = 'dialog pane for '+name;
 					zs4.admin.util.removeClass(this.pane,'current');
@@ -3560,7 +3679,7 @@ zs4.admin.util = {
 					zs4.static(o._.html.appInfoContent);
 				}
 				else {
-					o._.html.appInfoContent.textContent = 'zs4 toonsmith by Andy Flinn...';
+					o._.html.appInfoContent.innerHTML = 'zs4 toonsmith by <a href="https://andyflinn.com" target="andyflinn">Andy Flinn</a>...';
 				}
 			}
 
