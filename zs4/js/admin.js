@@ -993,32 +993,51 @@ zs4.admin.util = {
 		}
 		pe.appendChild(select);
 	},
-	elementMeaning:function(pe,meaning,context){
+	meaning:new Array(),
+	refreshAllMeanings:function(){
+		var a = zs4.admin.util.meaning;
+		for (var i = 0 ; i < a.length; i++){
+			a[i].refresh();
+		}
+	},
+	elementMeaning:function(pe,meaning){
 		var ulang = zs4.userLanguage();
 		var MEANING = this;
 		zs4.admin.util.element.call(MEANING);
+		zs4.admin.util.meaning.push(MEANING);
 		var div = MEANING.top = document.createElement('div');
 		div.style.display = 'inline-block';
 
+
 		var display = MEANING.element = document.createElement('div');
-		var text = meaning;
-		var trans = zs4.meaning.find(meaning,context);
-		if (trans != null){
-			if (trans.hasOwnProperty(ulang)){
-				text = trans[ulang];
-			}
-		}
-		display.textContent = text;
+		var text = MEANING.text = meaning;
 		div.appendChild(display);
+
+		MEANING.refresh = (function(){
+				var trans = zs4.meaning.find(meaning);
+				if (trans == null) {
+					MEANING.text = meaning;
+				}
+				else if (trans.hasOwnProperty(ulang)){
+					MEANING.text = trans[ulang];
+				}
+				else if (trans.hasOwnProperty('en')){
+					MEANING.text = trans.en;
+				}
+				this.element.textContent = MEANING.text;
+		}).bind(MEANING);
+		MEANING.refresh();
+
+		MEANING.tran = null;
+		MEANING.shotran = null;
 
 		var uscope = zs4.admin.util.userScope();
 		if (uscope!=null){
-			var shotran = false;
+			MEANING.shotran = false;
 			var ready = false;
-
 			var lang; var text; var upload; var result;
 
-			var tran = document.createElement('div');
+			var tran = MEANING.tran = document.createElement('div');
 			tran.style.display = 'none';
 			//tran.textContent = 'blah blah';
 			div.appendChild(tran);
@@ -1042,14 +1061,13 @@ zs4.admin.util = {
 						result.style.display = 'none';
 						result.style.backgroundColor = 'initial';
 						upload.style.backgroundColor = 'blue';
-						zs4.THIS.zs4.translate._.call({
+						zs4.THIS.zs4.language.translate._.call({
 							meaning:meaning,
-							context:context,
 							lang:lang.value,
 							translation:text.value,
 						},function(r){
 							upload.style.backgroundColor = 'initial';
-							var t = zs4.path.resolve(r.request.callback,'zs4.translate');
+							var t = zs4.path.resolve(r.request.callback,'zs4.language.translate');
 							if (t != null){
 								if (zs4.is.object(t.error)){
 									result.textContent = t.error.text;
@@ -1057,6 +1075,11 @@ zs4.admin.util = {
 									result.style.display = 'block';
 								}
 								else {
+									var trans = zs4.meaning.find(meaning);
+									if (trans != null){
+										trans[lang.value] = text.value;
+										zs4.admin.util.refreshAllMeanings();
+									}
 									result.textContent = 'done!';
 									result.style.backgroundColor = 'green';
 									result.style.display = 'block';
@@ -1070,13 +1093,22 @@ zs4.admin.util = {
 					ready = true;
 				}
 
-				if (shotran){
-					shotran = false;
+				if (MEANING.shotran){
+					MEANING.shotran = false;
 					tran.style.display = 'none';
 				}
 				else {
-					shotran = true;
+					MEANING.shotran = true;
 					tran.style.display = 'initial';
+
+					for (var i = 0 ; i < zs4.admin.util.meaning.length; i++){
+						var mean = zs4.admin.util.meaning[i];
+						if (mean != MEANING && mean.tran != null){
+							mean.tran.style.display = 'none';
+							mean.shotran = false;
+						}
+						mean.refresh();
+					}
 				}
 				return false;
 			};
@@ -1090,39 +1122,256 @@ zs4.admin.util = {
 
 		var div = TOOL.top = document.createElement('div');
 		zs4.style.type.toolbubble(div);
-		//div.style.width = '90%';
 
-		var details = document.createElement('details');
-		zs4.style.type.boxplain(details);
-		div.appendChild(details);
+		var header = TOOL.header = document.createElement('div');
+		zs4.style.type.boxplain(header);
+		header.style.backgroundColor = 'gray';
+		div.appendChild(header);
 
-		var summary = document.createElement('summary');
-		zs4.style.type.boxplain(summary);
-		details.appendChild(summary);
-
-		zs4.admin.util.addIconElement(summary,icon);
-		zs4.admin.util.addSpace(summary);
-		new zs4.admin.util.elementMeaning(summary,icon);
+		zs4.admin.util.addIconElement(header,icon);
+		zs4.admin.util.addSpace(header);
+		new zs4.admin.util.elementMeaning(header,icon);
 
 		var items = document.createElement('div');
 		zs4.style.type.boxplain(items);
+		items.style.display = 'none';
 		items.style.paddingLeft = '1em';
 		items.style.width = '90%';
-		details.appendChild(items);
+		div.appendChild(items);
 		TOOL.element = items;
+
+		var showing = false;
+		TOOL.show = function(){
+			showing = true;
+			items.style.display = 'block';
+		}
+		TOOL.hide = function(){
+			showing = false;
+			items.style.display = 'none';
+		}
+
+		header.onclick = function(){
+			if (!showing) TOOL.show();
+			else TOOL.hide();
+		};
 
 		pe.appendChild(div);
 	},
-	loginoutElement:function(pe){
+	loginElement:function(pe){
+		var LOGIN = this;
+		if (!zs4.THIS._.loggedIn){
+			zs4.admin.util.toolElement.call(LOGIN,pe,'login');
+			this.loginform = document.createElement('form');
+			this.loginform.onsubmit = function(){return false;};
+			this.loginform.id = 'login';
+			this.loginform.autocomplete = 'on';
+			LOGIN.appendElement(this.loginform);
+
+			this.email = document.createElement('zs4-login-email');
+			this.loginform.appendChild(this.email);
+
+			this.emailLabel = document.createElement('zs4-login-email-label');
+			this.emailLabel.textContent = 'email';
+			this.email.appendChild(this.emailLabel);
+
+			this.emailAddress = document.createElement('input');
+			//this.emailAddress.autocomplete = 'username';
+			zs4.admin.util.addAttribute(this.emailAddress,'autocomplete','username');
+			this.emailAddress.type = 'text';
+			this.email.appendChild(this.emailAddress);
+			zs4.admin.util.addClass(this.emailAddress,'login-email');
+
+			this.password = document.createElement('zs4-login-password');
+			this.loginform.appendChild(this.password);
+
+			this.passwordLabel = document.createElement('zs4-login-password-label');
+			this.passwordLabel.textContent = 'password';
+			this.password.appendChild(this.passwordLabel);
+
+			this.pass = document.createElement('input');
+			this.pass.autocomplete = 'username';
+			this.pass.type = 'password';
+			this.password.appendChild(this.pass);
+			zs4.admin.util.addClass(this.pass,'login-password');
+
+			this.failcount = 0;
+
+			this.etok = document.createElement('zs4-email-token');
+			LOGIN.appendElement(this.etok);
+			zs4.admin.util.addClass(this.etok,'nodisplay');
+
+			this.emailtoken = document.createElement('zs4-email-token-send');
+			this.emailtoken.textContent = 'email access code / password reset';
+			this.etok.appendChild(this.emailtoken);
+			this.emailtoken.onclick = (function(){
+				if (!zs4.is.email(LOGIN.emailAddress.value)){
+					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
+					return;
+				}
+				else {
+					zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
+				}
+				zs4.admin.util.removeClass(this.pass,'error');
+
+				LOGIN.emailtoken.style.backgroundColor = 'blue';
+				zs4.THIS.zs4.hi._.call({email:this.emailAddress.value,sendtoken:true,},function(){
+					LOGIN.emailtoken.style.backgroundColor = 'initial';
+
+					console.log(zs4.THIS.zs4.hi._.cberror);
+					console.log(zs4.THIS.zs4.hi._.cbresult);
+					if (zs4.THIS.zs4.hi._.cbresult != null){
+						//window.alert('token sent');
+						zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
+						zs4.admin.util.removeClass(LOGIN.pass,'error');
+						zs4.admin.util.removeClass(LOGIN.emailtoken,'error');
+
+						LOGIN.emailresponse.textContent = zs4.THIS.zs4.hi._.cbresult;
+						zs4.admin.util.addClass(LOGIN.emailtoken,'nodisplay');
+						zs4.admin.util.removeClass(LOGIN.emailresponse,'nodisplay');
+						zs4.admin.util.removeClass(LOGIN.hi,'nodisplay');
+						LOGIN.failcount = 0;
+						LOGIN.refresh();
+					}
+					else {
+						zs4.admin.util.addClass(LOGIN.emailtoken,'error');
+					}
+
+				});
+
+			}).bind(LOGIN);
+
+			this.emailresponse = document.createElement('zs4-email-token-response');
+			this.etok.appendChild(this.emailresponse);
+
+			this.hi = LOGIN.appendElement('span');
+			this.hi.textContent = 'login';
+			this.hi.onclick = (function(){
+				var error = false;
+				if (!zs4.is.email(this.emailAddress.value)){
+					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
+					error = true;
+				}
+				else {
+					zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
+				}
+				if (!zs4.is.password(this.pass.value)){
+					zs4.admin.util.addClass(this.pass,'error');
+					error = true;
+				}
+				else {
+					zs4.admin.util.removeClass(this.pass,'error');
+				}
+				if (error)return;
+
+				LOGIN.hi.style.backgroundColor = 'blue';
+				zs4.post(zs4.THIS.zs4.hi._.wrapRequest({email:this.emailAddress.value,password:this.pass.value,}),function(ret){
+					if (zs4.THIS.zs4.hi._.cberror != null){
+						zs4.admin.util.addClass(LOGIN.emailAddress,'error');
+						zs4.admin.util.addClass(LOGIN.pass,'error');
+						LOGIN.failcount++;
+						LOGIN.refresh();
+					}
+					console.log('LOGIN.failcount: '+LOGIN.failcount);
+
+					LOGIN.hi.style.backgroundColor = 'initial';
+				});
+			}).bind(this);
+
+			LOGIN.refresh = function(){
+				if (LOGIN.failcount > 2){
+					zs4.admin.util.removeClass(this.etok,'nodisplay');
+				}
+			};
+		}
+	},
+	socialLoginElement:function(pe){
+		var LOGIN = this;
+		if (!zs4.THIS._.loggedIn){
+			zs4.admin.util.toolElement.call(LOGIN,pe,'social');
+
+			console.log('LOGIN OPTIONS:');
+			this.pp = new Object();
+			this.pp.e = document.createElement('div');
+			LOGIN.appendElement(this.pp.e);
+			var pp = zs4.THIS.zs4.passport;
+			for (var n in pp){
+				if (!zs4.is.type(pp[n]))continue;
+				var provider = this.pp[n] = new Object();
+				provider.e = document.createElement('div');
+				provider.e.style.cursor = 'pointer';
+				//provider.e.style.display = 'block';
+				this.pp.e.appendChild(provider.e);
+
+				zs4.admin.util.addIconElement(provider.e,n);
+				zs4.admin.util.addSpace(provider.e);
+				zs4.admin.util.addTextSpan(provider.e,n);
+
+				provider.e.onclick = function(){zs4.navigate('/zs4.passport.'+n+'.login');}
+				console.log('  - '+n);
+			}
+		}
+	},
+	logoutElement:function(pe){
+		var LOGOUT = this;
+		if (zs4.THIS._.loggedIn){
+			zs4.admin.util.toolElement.call(LOGOUT,pe,'logout');
+			// LOGOUT pane
+			///////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////
+			this.logout = document.createElement('zs4-logout');
+			this.logout.textContent = 'logout';
+			LOGOUT.appendElement(this.logout);
+			this.logoutvisible = false;
+			this.logout.onclick = (function(){
+				if (!LOGOUT.logoutvisible){
+					zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
+					zs4.admin.util.addClass(this.bye,'nodisplay');
+					LOGOUT.sure.checked = false;
+					LOGOUT.logoutvisible = true;
+				}
+				else {
+					zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+					zs4.admin.util.addClass(this.bye,'nodisplay');
+					LOGOUT.sure.checked = false;
+					LOGOUT.logoutvisible = false;
+				}
+			}).bind(this);
+
+			this.logoutArgs = document.createElement('zs4-logout-args');
+			LOGOUT.appendElement(this.logoutArgs);
+			zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+
+			this.sureText = document.createElement('zs4-sure-text');
+			this.sureText.textContent = 'sure?';
+			this.logoutArgs.appendChild(this.sureText);
+
+			this.sure = document.createElement('input');
+			this.sure.type = 'checkbox';
+			zs4.admin.util.addClass(this.sure,'sure');
+			this.logoutArgs.appendChild(this.sure);
+			this.sure.onchange = (function(){
+				if (this.sure.checked)zs4.admin.util.removeClass(this.bye,'nodisplay');
+				else zs4.admin.util.addClass(this.bye,'nodisplay');
+			}).bind(this);
+
+			this.bye = document.createElement('zs4-logout-now');
+			this.bye.textContent = 'logout';
+			zs4.admin.util.addClass(this.bye,'nodisplay');
+			LOGOUT.appendElement(this.bye);
+			this.bye.onclick = (function(){
+				LOGOUT.bye.style.backgroundColor = 'blue';
+				zs4.post(zs4.THIS.zs4.bye._.wrapRequest({sure:true}),function(ret){
+					LOGOUT.bye.style.backgroundColor = 'initial';
+				});
+			}).bind(this);
+
+		}
+	},
+	setPassWordElement:function(pe){
 		var LOGIN = this;
 
-		zs4.admin.util.toolElement.call(LOGIN,pe,'user');
-
-		this.loggedIn = zs4.THIS._.loggedIn;
-		var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
-		var utitle = '';
-
-		if (this.loggedIn){
+		if (zs4.THIS._.loggedIn){
+			zs4.admin.util.toolElement.call(LOGIN,pe,'password');
 			this.spwIsOpen = false;
 
 			var username = document.createElement('a');
@@ -1234,10 +1483,9 @@ zs4.admin.util = {
 				zs4.admin.util.removeClass(LOGIN.old2,'error');
 				zs4.admin.util.removeClass(LOGIN.setpwd,'error');
 
-				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
+				LOGIN.setpwdsend.style.bgcolor = 'blue';
 				zs4.post(password._.wrapRequest(input),function(ret){
-					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-					o._.html.refreshAll();
+					LOGIN.setpwdsend.style.bgcolor = 'initial';
 					if (zs4.is.error(ret.request.callback.zs4.password)){
 						zs4.admin.util.addClass(LOGIN.old1,'error');
 						zs4.admin.util.addClass(LOGIN.old2,'error');
@@ -1248,56 +1496,6 @@ zs4.admin.util = {
 
 
 			}).bind(LOGIN);
-
-			// LOGOUT pane
-			///////////////////////////////////////////////////////////
-			///////////////////////////////////////////////////////////
-			this.logout = document.createElement('zs4-logout');
-			this.logout.textContent = 'logout';
-			LOGIN.append(this.logout);
-			this.logoutvisible = false;
-			this.logout.onclick = (function(){
-				if (!LOGIN.logoutvisible){
-					zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
-					zs4.admin.util.addClass(this.bye,'nodisplay');
-					LOGIN.sure.checked = false;
-					LOGIN.logoutvisible = true;
-				}
-				else {
-					zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
-					zs4.admin.util.addClass(this.bye,'nodisplay');
-					LOGIN.sure.checked = false;
-					LOGIN.logoutvisible = false;
-				}
-			}).bind(this);
-
-			this.logoutArgs = document.createElement('zs4-logout-args');
-			LOGIN.append(this.logoutArgs);
-			zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
-
-			this.sureText = document.createElement('zs4-sure-text');
-			this.sureText.textContent = 'sure?';
-			this.logoutArgs.appendChild(this.sureText);
-
-			this.sure = document.createElement('input');
-			this.sure.type = 'checkbox';
-			zs4.admin.util.addClass(this.sure,'sure');
-			this.logoutArgs.appendChild(this.sure);
-			this.sure.onchange = (function(){
-				if (this.sure.checked)zs4.admin.util.removeClass(this.bye,'nodisplay');
-				else zs4.admin.util.addClass(this.bye,'nodisplay');
-			}).bind(this);
-
-			this.bye = document.createElement('zs4-logout-now');
-			this.bye.textContent = 'logout';
-			zs4.admin.util.addClass(this.bye,'nodisplay');
-			LOGIN.append(this.bye);
-			this.bye.onclick = (function(){
-				zs4.admin.util.removeClass(o._.html.spin,'nodisplay');
-				zs4.post(zs4.THIS.zs4.bye._.wrapRequest({sure:true}),function(ret){
-					zs4.admin.util.addClass(o._.html.spin,'nodisplay');
-				});
-			}).bind(this);
 
 			LOGIN.refresh = function(){
 				var vfy = uscope._.resolvePath('zs4.password.vfy');
@@ -1318,162 +1516,42 @@ zs4.admin.util = {
 				}
 			};
 			LOGIN.refresh();
+
+		}
+	},
+	loginoutElement:function(pe){
+		var LOGIN = this;
+
+		this.loggedIn = zs4.THIS._.loggedIn;
+		var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+		var utitle = '';
+
+		if (this.loggedIn){
+			var spwe = new zs4.admin.util.setPassWordElement(pe);
+			var logout = new zs4.admin.util.logoutElement(pe);
 		}
 		else {
-			this.loginform = document.createElement('form');
-			this.loginform.onsubmit = function(){return false;};
-			this.loginform.id = 'login';
-			this.loginform.autocomplete = 'on';
-			LOGIN.appendElement(this.loginform);
-
-			this.email = document.createElement('zs4-login-email');
-			this.loginform.appendChild(this.email);
-
-			this.emailLabel = document.createElement('zs4-login-email-label');
-			this.emailLabel.textContent = 'email';
-			this.email.appendChild(this.emailLabel);
-
-			this.emailAddress = document.createElement('input');
-			//this.emailAddress.autocomplete = 'username';
-			zs4.admin.util.addAttribute(this.emailAddress,'autocomplete','username');
-			this.emailAddress.type = 'text';
-			this.email.appendChild(this.emailAddress);
-			zs4.admin.util.addClass(this.emailAddress,'login-email');
-
-			this.password = document.createElement('zs4-login-password');
-			this.loginform.appendChild(this.password);
-
-			this.passwordLabel = document.createElement('zs4-login-password-label');
-			this.passwordLabel.textContent = 'password';
-			this.password.appendChild(this.passwordLabel);
-
-			this.pass = document.createElement('input');
-			this.pass.autocomplete = 'username';
-			this.pass.type = 'password';
-			this.password.appendChild(this.pass);
-			zs4.admin.util.addClass(this.pass,'login-password');
-
-			this.failcount = 0;
-
-			this.etok = document.createElement('zs4-email-token');
-			LOGIN.appendElement(this.etok);
-			zs4.admin.util.addClass(this.etok,'nodisplay');
-
-			this.emailtoken = document.createElement('zs4-email-token-send');
-			this.emailtoken.textContent = 'email access code / password reset';
-			this.etok.appendChild(this.emailtoken);
-			this.emailtoken.onclick = (function(){
-				if (!zs4.is.email(LOGIN.emailAddress.value)){
-					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
-					return;
-				}
-				else {
-					zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
-				}
-				zs4.admin.util.removeClass(this.pass,'error');
-
-				LOGIN.emailtoken.style.backgroundColor = 'blue';
-				zs4.THIS.zs4.hi._.call({email:this.emailAddress.value,sendtoken:true,},function(){
-					LOGIN.emailtoken.style.backgroundColor = 'initial';
-
-					console.log(zs4.THIS.zs4.hi._.cberror);
-					console.log(zs4.THIS.zs4.hi._.cbresult);
-					if (zs4.THIS.zs4.hi._.cbresult != null){
-						//window.alert('token sent');
-						zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
-						zs4.admin.util.removeClass(LOGIN.pass,'error');
-						zs4.admin.util.removeClass(LOGIN.emailtoken,'error');
-
-						LOGIN.emailresponse.textContent = zs4.THIS.zs4.hi._.cbresult;
-						zs4.admin.util.addClass(LOGIN.emailtoken,'nodisplay');
-						zs4.admin.util.removeClass(LOGIN.emailresponse,'nodisplay');
-						zs4.admin.util.removeClass(LOGIN.hi,'nodisplay');
-						LOGIN.failcount = 0;
-						LOGIN.refreshInternal();
-					}
-					else {
-						zs4.admin.util.addClass(LOGIN.emailtoken,'error');
-					}
-
-				});
-
-			}).bind(LOGIN);
-
-			this.emailresponse = document.createElement('zs4-email-token-response');
-			this.etok.appendChild(this.emailresponse);
-
-			this.hi = LOGIN.appendElement('span');
-			this.hi.textContent = 'login';
-			this.hi.onclick = (function(){
-				var error = false;
-				if (!zs4.is.email(this.emailAddress.value)){
-					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
-					error = true;
-				}
-				else {
-					zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
-				}
-				if (!zs4.is.password(this.pass.value)){
-					zs4.admin.util.addClass(this.pass,'error');
-					error = true;
-				}
-				else {
-					zs4.admin.util.removeClass(this.pass,'error');
-				}
-				if (error)return;
-
-				LOGIN.hi.style.backgroundColor = 'blue';
-				zs4.post(zs4.THIS.zs4.hi._.wrapRequest({email:this.emailAddress.value,password:this.pass.value,}),function(ret){
-					if (zs4.THIS.zs4.hi._.cberror != null){
-						zs4.admin.util.addClass(LOGIN.emailAddress,'error');
-						zs4.admin.util.addClass(LOGIN.pass,'error');
-						LOGIN.failcount++;
-						LOGIN.refresh();
-					}
-					console.log('LOGIN.failcount: '+LOGIN.failcount);
-
-					LOGIN.hi.style.backgroundColor = 'initial';
-				});
-			}).bind(this);
-
-			console.log('LOGIN OPTIONS:');
-			this.pp = new Object();
-			this.pp.e = document.createElement('div');
-			LOGIN.appendElement(this.pp.e);
-			var pp = zs4.THIS.zs4.passport;
-			for (var n in pp){
-				if (!zs4.is.type(pp[n]))continue;
-				var provider = this.pp[n] = new Object();
-				provider.e = document.createElement('div');
-				provider.e.style.cursor = 'pointer';
-				//provider.e.style.display = 'block';
-				this.pp.e.appendChild(provider.e);
-
-				zs4.admin.util.addIconElement(provider.e,n);
-				zs4.admin.util.addSpace(provider.e);
-				zs4.admin.util.addTextSpan(provider.e,n);
-
-				provider.e.onclick = function(){zs4.navigate('/zs4.passport.'+n+'.login');}
-				console.log('  - '+n);
-			}
-
-			LOGIN.refresh = function(){
-				if (LOGIN.failcount > 2){
-					zs4.admin.util.removeClass(this.etok,'nodisplay');
-				}
-			};
+			var login = new zs4.admin.util.loginElement(pe);
+			var social = new zs4.admin.util.socialLoginElement(pe);
 		}
 
 	},
 	bowserElement:function(pe){
 		var BOWSER = this;
 
+		zs4.admin.util.toolElement.call(BOWSER,pe,'browser');
+
 		var browser = 'browser';
 		if (zs4.string.search(bowser.name,'Firefox'))browser = 'firefox';
 		else if (zs4.string.search(bowser.name,'Chrome'))browser = 'chrome';
 		else if (zs4.string.search(bowser.name,'Safari'))browser = 'safari';
 		else if (zs4.string.search(bowser.name,'Edge'))browser = 'edge';
-		zs4.admin.util.toolElement.call(BOWSER,pe,browser);
+
+		if (browser != 'browser'){
+			zs4.admin.util.addSpace(BOWSER.header);
+			zs4.admin.util.addIconElement(BOWSER.header,browser);
+		}
+
 
 		var e = BOWSER.element;
 
@@ -3298,7 +3376,7 @@ zs4.admin.util = {
 												else {
 													zs4.admin.util.setIcon(epub,'private');
 												}
-												scope._.html.refreshAll();
+												//scope._.html.refreshAll();
 											});
 										};
 

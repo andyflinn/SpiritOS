@@ -234,7 +234,7 @@ zs4.define = function(){
   //zs4.THIS.zs4.type.lang.method.deleteall._.flags.set.authgetpublic(false);
 
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'translation',template:new word.translation.create(),}));
-  zs4.THIS.zs4.type.translation._.flags.value |= zs4.THIS.zs4.type.translation._.flags.apiarg;
+  //zs4.THIS.zs4.type.translation._.flags.value |= zs4.THIS.zs4.type.translation._.flags.apiarg;
 
   var user = require('./user');
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'user',template:new user.create(),}));

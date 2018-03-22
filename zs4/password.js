@@ -5,6 +5,8 @@ var debug = require('debug')('zs4password');
 
 var password = exports;
 
+zs4.meaning.register('password');
+
 
 password.schema = function(parent){
   parent._.property(new password.create());

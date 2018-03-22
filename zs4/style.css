@@ -239,9 +239,9 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-global:before{content:url(/gfx/icons/globe.svg);}
 .icon-google:before{content:url(/gfx/icons/google.svg);}
 .icon-head:before{content:url(/gfx/icons/head.svg);}
-.icon-id:before{content:url(/gfx/icons/head.svg);}
 .icon-has:before{content:url(/gfx/icons/has.svg);}
-.icon-hi:before{content:url(/gfx/icons/llap.svg);}
+.icon-hi:before{content:url(/gfx/icons/hi.svg);}
+.icon-id:before{content:url(/gfx/icons/head.svg);}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
 .icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
 .icon-is:before{content:url(/gfx/icons/server.svg);}
@@ -253,8 +253,9 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-left:before{content:url(/gfx/icons/left.svg);}
 .icon-linefeed:before{content:'\000B6';font-weight: bolder;}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
-.icon-login:before{content:url(/gfx/icons/password.svg);}
+.icon-login:before{content:url(/gfx/icons/login.svg);}
 .icon-logo:before{content:url(/gfx/icons/logo.svg);}
+.icon-logout:before{content:url(/gfx/icons/logout.svg);}
 .icon-male:before{content:'\02642';font-weight: bolder;}
 .icon-meaning:before{content:url(/gfx/icons/info.svg);}
 .icon-menu:before{content:"\02630";font-weight: bolder;}

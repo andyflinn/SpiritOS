@@ -12,7 +12,7 @@ if (isNode()) {
 else {
     zs4 = new Object();
     //zs4.debug = function(){};
-    zs4.debug = console.log;
+    zs4.debug = function(v){console.log(v);};
 }
 
 zs4.host = {
@@ -424,6 +424,14 @@ zs4.count = {
         if (!zs4.is.object(o))return 0;
         var count = 0;
         for (var n in o)count++;
+        return count;
+      },
+    },
+    type:{
+      members:function(o){
+        if (!zs4.is.type(o))return 0;
+        var count = 0;
+        for (var n in o)if(zs4.is.type(o[n]))count++;
         return count;
       },
     },
@@ -1064,25 +1072,25 @@ zs4.folder = new Object();
 zs4.array = new Object();
 
 zs4.lang = [
-'ab','aa','af','ak','sq','am','ar','an','hy','as',
-'av','ae','ay','az','bm','ba','eu','be','bn','bh',
-'bi','bs','br','bg','my','ca','ch','ce','ny','zh',
-'cv','kw','co','cr','hr','cs','da','dv','nl','en',
-'eo','et','ee','fo','fj','fi','fr','ff','gl','ka',
-'de','el','gn','gu','ht','ha','he','hz','hi','ho',
-'hu','ia','id','ie','ga','ig','ik','io','is','it',
-'iu','ja','jv','kl','kn','kr','ks','kk','km','ki',
-'rw','ky','kv','kg','ko','ku','kj','la','lb','lg',
-'li','ln','lo','lt','lu','lv','gv','mk','mg','ms',
-'ml','mt','mi','mr','mh','mn','na','nv','nb','nd',
-'ne','ng','nn','no','ii','nr','oc','oj','cu','om',
-'or','os','pa','pi','fa','pl','ps','pt','qu','rm',
-'rn','ro','ru','sa','sc','sd','se','sm','sg','sr',
-'gd','sn','si','sk','sl','so','st','es','su','sw',
-'ss','sv','ta','te','tg','th','ti','bo','tk','tl',
-'tn','to','tr','ts','tt','tw','ty','ug','uk','ur',
-'uz','ve','vi','vo','wa','cy','wo','fy','xh','yi',
-'yo','za',
+  'ab','aa','af','ak','sq','am','ar','an','hy','as',
+  'av','ae','ay','az','bm','ba','eu','be','bn','bh',
+  'bi','bs','br','bg','my','ca','ch','ce','ny','zh',
+  'cv','kw','co','cr','hr','cs','da','dv','nl','en',
+  'eo','et','ee','fo','fj','fi','fr','ff','gl','ka',
+  'de','el','gn','gu','ht','ha','he','hz','hi','ho',
+  'hu','ia','id','ie','ga','ig','ik','io','is','it',
+  'iu','ja','jv','kl','kn','kr','ks','kk','km','ki',
+  'rw','ky','kv','kg','ko','ku','kj','la','lb','lg',
+  'li','ln','lo','lt','lu','lv','gv','mk','mg','ms',
+  'ml','mt','mi','mr','mh','mn','na','nv','nb','nd',
+  'ne','ng','nn','no','ii','nr','oc','oj','cu','om',
+  'or','os','pa','pi','fa','pl','ps','pt','qu','rm',
+  'rn','ro','ru','sa','sc','sd','se','sm','sg','sr',
+  'gd','sn','si','sk','sl','so','st','es','su','sw',
+  'ss','sv','ta','te','tg','th','ti','bo','tk','tl',
+  'tn','to','tr','ts','tt','tw','ty','ug','uk','ur',
+  'uz','ve','vi','vo','wa','cy','wo','fy','xh','yi',
+  'yo','za',
 ];
 
 zs4.type = {
@@ -5506,7 +5514,7 @@ if (zs4.is.window()){
 
     req.request.lang = zs4.userLanguage();
 
-    zs4.debug(req);
+    console.log(req);
 
     if (getall==true){
       req.getall = true;
@@ -5552,8 +5560,8 @@ if (zs4.is.window()){
   };
 
   zs4.loadtranslations = function(cb){
-    zs4.THIS.zs4.translate._.call(zs4.userLanguage(),function(r){
-      var t = zs4.path.resolve(r.request.callback,'zs4.translate');
+    zs4.THIS.zs4.language.translate._.call(zs4.userLanguage(),function(r){
+      var t = zs4.path.resolve(r.request.callback,'zs4.language.translate');
       if (t != null){
         if (zs4.is.object(t.error)){
           zs4.debug(t.error.text);
