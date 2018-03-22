@@ -24,12 +24,20 @@ zs4.meaning = new Object({
     return zs4.meaning.name[name];
   },
   export:function(lang){
-    console.log('EXPORTING MEANINGS in '+lang);
+    if (lang==null) console.log('EXPORTING ALL MEANINGS');
+    else console.log('EXPORTING MEANINGS in '+lang);
+
     var ret = new Object();
     for (var n in zs4.meaning.name){
       var m = zs4.meaning.name[n];
       ret[n] = new Object();
-      if (m.hasOwnProperty(lang)){
+
+      if (lang==null){
+        for (var t in m){
+          ret[n][t]=new String(m[t]);
+        }
+      }
+      else if (m.hasOwnProperty(lang)){
         ret[n][lang] = new String(m[lang]);
       }
       else if (m.hasOwnProperty('en')){

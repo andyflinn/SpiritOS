@@ -7,44 +7,8 @@ var fs = require('fs');
 
 var word = exports;
 
-/*
-word.meaning = new Object({
-  schema:function(parent){
-    parent._.property(new word.meaning.create());
-  },
-  create:function(context){
-
-    zs4.type.scope.call(this);
-
-    var MEANING = this;
-    MEANING._.create = word.meaning.create;
-
-    MEANING.zs4.head.typename._.value = 'meaning';
-    MEANING.zs4.head.typename._.default = 'meaning';
-    MEANING._.name = 'meaning';
-
-    MEANING._.property(new zs4.type.name({name:'name',flags:'index unique authsetself',}));
-    MEANING._.property(new zs4.type.names({name:'context',flags:'authsetself textsearch',}));
-  }
-});
-
-word.lang = new Object({
-  schema:function(parent){
-    parent._.property(new word.lang.create());
-  },
-  create:function(){
-
-    word.meaning.create.call(this);
-
-    var LANG = this;
-    LANG._.create = word.lang.create;
-
-    LANG.zs4.head.typename._.value = 'lang';
-    LANG.zs4.head.typename._.default = 'lang';
-    LANG._.name = 'lang';
-  }
-});
-*/
+const LANG_JSON = './zs4/static/tables/lang.json';
+const TRANSLATION_JSON = './zs4/word.json';
 
 word.translation = new Object({
   schema:function(parent){
@@ -67,20 +31,8 @@ word.translation = new Object({
   },
 });
 
-var L = fs.readFileSync('./zs4/static/tables/lang.json','utf8');
-L = zs4.json.parse(L);
-for (var n in L){
-  zs4.string.array.add.new(zs4.lang,n);
-  var m = zs4.meaning.register(n);
-  if (m==null){
-    debug('register language \"'+n+'\" failed.');
-    continue;
-  }
-  var a = zs4.string.split.separators(L[n].name,',');
-  if (a.length>0)m.en = a[0];
-  var b = zs4.string.split.separators(L[n].nativeName,',');
-  if (b.length>0)m[n] = b[0];
-}
+zs4.meaning.import(JSON.parse(fs.readFileSync(TRANSLATION_JSON,'utf8')));
+debug(zs4.meaning.export());
 
 zs4.THIS.zs4._.property(new zs4.type.object({name:'language',flags:'api authgetpublic'}));
 
@@ -251,3 +203,75 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   },true);
 
 }).bind(zs4.THIS.zs4.language.translate);
+
+word.boot = function(input,cb){
+  zs4.debug('zs4.stat.boot() is active');
+
+  var q = new Object({zs4:{type:{translation:{method:{
+    query:{
+      search:'',
+      sort:{
+        item:'zs4.head.updated',
+        descend:true,
+      },
+      select:{
+        sc:'all',
+      }
+    }
+  }}}}});
+
+  var req = new zs4.request({input:q});
+  req.request.node = true;
+
+  zs4.THIS._.transform(req,function(ret){
+    var array = req.request.get.zs4.type.translation.array;
+    if (zs4.is.object(array)){
+      var a = new Array();
+      for (var n in array){
+        var item = array[n];
+        if (!zs4.is.type(item))continue;
+        a.push(array[n]);
+      }
+    }
+    //console.log('booting translations',a);
+    a.sort(function(a,b){
+      var ret = a.meaning._.value.localeCompare(b.meaning._.value);
+      if (ret != 0)return ret;
+      return a.lang._.value.localeCompare(b.lang._.value);
+    });
+
+    var arr = new Array();
+    var lang; var meaning;
+
+    function loadTranslation(){
+      var m = zs4.meaning.find(meaning);
+      if (m==null)return;
+      debug('loading '+lang+' string for '+meaning+' --> '+arr[0].translation._.value);
+      m[lang]= arr[0].translation._.value;
+    };
+
+    for (var i = 0; i < a.length; i++){
+      if ((a[i].meaning._.value != meaning) || (a[i].lang._.value != lang)){
+        debug('encountered '+a[i].lang._.value+' string for '+a[i].meaning._.value);
+        if (arr.length > 0) loadTranslation();
+
+        meaning = a[i].meaning._.value;
+        lang = a[i].lang._.value;
+        arr = new Array();
+        arr.push(a[i]);
+      }
+      else {
+        arr.push(a[i]);
+      }
+    }
+    if (arr.length > 0) loadTranslation();
+
+    if (zs4.THIS.zs4.js.debug._.value==true){
+      fs.writeFileSync(TRANSLATION_JSON, zs4.json.textify(zs4.meaning.export()),'utf8');
+    }
+
+    cb();
+  });
+}
+
+zs4.boot.call(zs4.THIS,word.boot,zs4.THIS);
