@@ -973,12 +973,41 @@ zs4.admin.util = {
 			return eObj;
 		}
 
+		var current_bit = 0;
+		function bits(){
+			zs4.util.bits.call(this);
+		}
+		ELEMENT.bits = new bits();
+		ELEMENT.addBit = function(name){
+			ELEMENT.bits.addBit(name,current_bit);
+			current_bit += 1;
+		}
+
+
 		return ELEMENT;
+	},
+	elementLink:function(pe,hr,tx){
+		var LINK = this;
+		zs4.admin.util.element.call(LINK);
+
+		var target = null;
+		var href = null;
+
+		var a = LINK.top = LINK.element = document.createElement('a');
+
+		LINK.href = function(hr){
+			a.href = hr;
+		}
+
+		if (zs4.is.string(hr)) LINK.href(hr);
+		if (zs4.is.string(tx)) a.textContent = tx;
+
+		pe.appendChild(LINK.top);
 	},
 	elementLanguage:function(pe){
 		var LANG = this;
 		zs4.admin.util.element.call(LANG);
-		var dft = LANG.value = zs4.userLanguage();
+		var dft = zs4.userLanguage();
 		var select = LANG.top = LANG.element = document.createElement('select');
 		for (var i = 0; i < zs4.lang.length;i++){
 			var opt = document.createElement('option');
@@ -988,12 +1017,29 @@ zs4.admin.util = {
 			select.appendChild(opt);
 		}
 		select.onchange = function(){
-			LANG.value = select.value;
 			LANG.trigger('change');
+		}
+		LANG.value = function(lang){
+			if (zs4.is.string(lang))select.value = lang;
+			return select.value;
 		}
 		pe.appendChild(select);
 	},
 	meaning:new Array(),
+	setUILanguage:function(lang,cb){
+		if (!zs4.string.array.is.element(zs4.lang,lang)){
+			return zs4.admin.util.refreshAllMeanings();
+		}
+
+		zs4.loadtranslations(function(){
+			var a = zs4.admin.util.meaning;
+			for (var i = 0 ; i < a.length; i++){
+				a[i].ulang = lang;
+				a[i].refresh();
+			}
+			if (zs4.is.function(cb)) cb();
+		},lang);
+	},
 	refreshAllMeanings:function(){
 		var a = zs4.admin.util.meaning;
 		for (var i = 0 ; i < a.length; i++){
@@ -1001,16 +1047,21 @@ zs4.admin.util = {
 		}
 	},
 	elementMeaning:function(pe,meaning){
-		var ulang = zs4.userLanguage();
 		var MEANING = this;
+		MEANING.object = zs4.meaning.find(meaning);
+		MEANING.ulang = zs4.userLanguage();
+
 		zs4.admin.util.element.call(MEANING);
 		zs4.admin.util.meaning.push(MEANING);
 		var div = MEANING.top = document.createElement('div');
 		div.style.display = 'inline-block';
 
+		MEANING.addBit('noctrlclick');
+		MEANING.addBit('nolinktranslator');
 
 		var display = MEANING.element = document.createElement('div');
 		var text = MEANING.text = meaning;
+		display.style.cursor = 'help';
 		div.appendChild(display);
 
 		MEANING.refresh = (function(){
@@ -1018,13 +1069,18 @@ zs4.admin.util = {
 				if (trans == null) {
 					MEANING.text = meaning;
 				}
-				else if (trans.hasOwnProperty(ulang)){
-					MEANING.text = trans[ulang];
+				else if (trans.hasOwnProperty(MEANING.ulang)){
+					MEANING.text = trans[MEANING.ulang];
 				}
 				else if (trans.hasOwnProperty('en')){
 					MEANING.text = trans.en;
 				}
+				else {
+					MEANING.text = meaning;
+				}
 				this.element.textContent = MEANING.text;
+
+				if (MEANING.eLang)MEANING.eLang.value(MEANING.ulang);
 		}).bind(MEANING);
 		MEANING.refresh();
 
@@ -1039,15 +1095,28 @@ zs4.admin.util = {
 
 			var tran = MEANING.tran = document.createElement('div');
 			tran.style.display = 'none';
-			//tran.textContent = 'blah blah';
 			div.appendChild(tran);
+			function busy(){
+				//MEANING.top.style.backgroundColor = 'blue';
+				MEANING.top.style.backgroundImage = 'url("/gfx/icons/upload.svg")';
+				MEANING.top.style.backgroundRepeat = 'no-repeat';
+				MEANING.top.style.backgroundPosition = 'right';
+			}
+			function idle(){
+				//MEANING.tran.style.backgroundColor = 'initial';
+				MEANING.top.style.backgroundImage = 'initial';
+			}
+
 
 			display.onclick = function(e){
-				if (!e.ctrlKey && !e.altKey)return true;
+				if (!MEANING.bits.noctrlclick.get()){
+					if (!e.ctrlKey && !e.altKey)return true;
+				}
 				console.log(e);
 
 				if (!ready){
-					lang = new zs4.admin.util.elementLanguage(tran);
+					lang = MEANING.eLang = new zs4.admin.util.elementLanguage(tran);
+
 					text = document.createElement('input');
 					text.type = 'text';
 					tran.appendChild(text);
@@ -1056,17 +1125,24 @@ zs4.admin.util = {
 					result.style.display = 'none';
 					tran.appendChild(result);
 
-					upload.onclick = function(e){
+					if (!MEANING.bits.nolinktranslator.get()){
+						var more = document.createElement('div');
+						tran.appendChild(more);
+						var link = new zs4.admin.util.elementLink(more,'/zs4.app.translator','Translator App');
+					}
+
+					upload.onclick = text.onchange = function(e){
 						result.textContent = '';
 						result.style.display = 'none';
 						result.style.backgroundColor = 'initial';
-						upload.style.backgroundColor = 'blue';
+
+						busy();
 						zs4.THIS.zs4.language.translate._.call({
 							meaning:meaning,
-							lang:lang.value,
+							lang:lang.value(),
 							translation:text.value,
-						},function(r){
-							upload.style.backgroundColor = 'initial';
+						},
+						function(r){
 							var t = zs4.path.resolve(r.request.callback,'zs4.language.translate');
 							if (t != null){
 								if (zs4.is.object(t.error)){
@@ -1077,7 +1153,7 @@ zs4.admin.util = {
 								else {
 									var trans = zs4.meaning.find(meaning);
 									if (trans != null){
-										trans[lang.value] = text.value;
+										trans[lang.value()] = text.value;
 										zs4.admin.util.refreshAllMeanings();
 									}
 									result.textContent = 'done!';
@@ -1086,6 +1162,7 @@ zs4.admin.util = {
 								}
 							}
 							console.log(r);
+							idle();
 						});
 
 						return false;
@@ -1096,16 +1173,22 @@ zs4.admin.util = {
 				if (MEANING.shotran){
 					MEANING.shotran = false;
 					tran.style.display = 'none';
+					MEANING.top.style.backgroundColor = 'initial';
 				}
 				else {
 					MEANING.shotran = true;
 					tran.style.display = 'initial';
+					MEANING.top.style.backgroundColor = 'gray';
 
 					for (var i = 0 ; i < zs4.admin.util.meaning.length; i++){
 						var mean = zs4.admin.util.meaning[i];
 						if (mean != MEANING && mean.tran != null){
 							mean.tran.style.display = 'none';
+							mean.top.style.backgroundColor = 'initial';
 							mean.shotran = false;
+						}
+						else {
+							mean.top.style.backgroundColor = 'gray';
 						}
 						mean.refresh();
 					}
@@ -1685,6 +1768,8 @@ zs4.admin.util = {
 				a[i].refresh();
 			}
 		};
+		BITS.refresh();
+
 		pe.appendChild(e);
 	},
 	sliderElement:function(pe,hori,vert){

@@ -8,9 +8,9 @@
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.1"
-   viewBox="0 0 322.4452 322.44325"
+   viewBox="0 0 322.44519 322.44323"
    id="svg4947"
-   sodipodi:docname="upload.svg"
+   sodipodi:docname="transferring.svg"
    inkscape:version="0.92.2 (5c3e80d, 2017-08-06)">
   <metadata
      id="metadata4953">
@@ -40,8 +40,8 @@
      id="namedview4949"
      showgrid="false"
      inkscape:zoom="0.68350362"
-     inkscape:cx="374.72014"
-     inkscape:cy="90.936241"
+     inkscape:cx="361.32727"
+     inkscape:cy="316.67903"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
@@ -51,33 +51,35 @@
      fit-margin-right="0"
      fit-margin-bottom="0" />
   <g
-     id="g5009"
-     transform="translate(-69.246404,28.138615)">
-    <rect
-       x="70.939003"
-       y="120.05701"
-       width="319.06"
-       height="100.3"
-       ry="50.152"
-       id="rect4853"
-       style="fill:#42a5f5" />
-    <ellipse
-       cx="280.776"
-       cy="115.257"
-       rx="73.880997"
-       ry="69.447998"
-       id="ellipse4855"
-       style="fill:#42a5f5" />
-    <ellipse
-       cx="200.75601"
-       cy="141.117"
-       rx="65.235001"
-       ry="61.320999"
-       id="ellipse4857"
-       style="fill:#42a5f5" />
+     id="g5111"
+     transform="translate(-81.802831,-402.95895)">
     <g
-       transform="matrix(0.36456,0,0,0.36456,446.056,-127.264)"
-       id="g4865"
+       transform="matrix(5.851,0,0,5.851,-485.544,374.497)"
+       id="g4873"
+       style="fill:#ff9800">
+      <rect
+         x="97.254997"
+         y="30.191999"
+         width="54.530998"
+         height="17.143"
+         ry="8.5713997"
+         id="rect4867" />
+      <ellipse
+         cx="133.12"
+         cy="29.372"
+         rx="12.627"
+         ry="11.869"
+         id="ellipse4869" />
+      <ellipse
+         cx="119.44"
+         cy="33.792"
+         rx="11.149"
+         ry="10.48"
+         id="ellipse4871" />
+    </g>
+    <g
+       transform="matrix(0.36456,0,0,0.36456,413.836,303.827)"
+       id="g4881"
        style="fill:#ffffff">
       <rect
          x="-642.06"
@@ -85,11 +87,11 @@
          width="112.28"
          height="102.88"
          ry="0.69814998"
-         id="rect4859" />
+         id="rect4875" />
       <path
          transform="matrix(0.29544,-0.22019,0.40857,0.15922,-333.77,617.99)"
          d="m -660.47,-23.102 -76.89,174.8 -110.97,-155.41 -112.94,-153.99 190.07,-18.403 189.83,-20.811 z"
-         id="path4861"
+         id="path4877"
          inkscape:connector-curvature="0" />
       <rect
          x="-682.66998"
@@ -97,7 +99,31 @@
          width="193.57001"
          height="8.6051998"
          ry="2.056"
-         id="rect4863" />
+         id="rect4879" />
+    </g>
+    <g
+       transform="matrix(0.36456,0,0,-0.36456,507.976,892.057)"
+       id="g4889"
+       style="fill:#ffffff">
+      <rect
+         x="-642.06"
+         y="796.01001"
+         width="112.28"
+         height="102.88"
+         ry="0.69814998"
+         id="rect4883" />
+      <path
+         transform="matrix(0.29544,-0.22019,0.40857,0.15922,-333.77,617.99)"
+         d="m -660.47,-23.102 -76.89,174.8 -110.97,-155.41 -112.94,-153.99 190.07,-18.403 189.83,-20.811 z"
+         id="path4885"
+         inkscape:connector-curvature="0" />
+      <rect
+         x="-682.66998"
+         y="804.03003"
+         width="193.57001"
+         height="8.6051998"
+         ry="2.056"
+         id="rect4887" />
     </g>
   </g>
 </svg>

@@ -1,6 +1,22 @@
 {
+"meaning":{
+  "de":"Bedeutung"
+  },
+"lang":{
+  "de":"Sprache",
+  "en":"language"
+  },
+"translation":{
+  "de":"Übersetzung"
+  },
 "password":{
   "de":"Kennwort"
+  },
+"login":{
+  "de":"Anmelden"
+  },
+"logout":{
+  "de":"Abmelden"
   },
 "ab":{
   "en":"Abkhaz",
@@ -140,7 +156,8 @@
   },
 "hr":{
   "en":"Croatian",
-  "hr":"hrvatski"
+  "hr":"hrvatski",
+  "de":"Kroatisch"
   },
 "cs":{
   "en":"Czech",
@@ -148,7 +165,8 @@
   },
 "da":{
   "en":"Danish",
-  "da":"dansk"
+  "da":"dansk",
+  "de":"Dänisch"
   },
 "dv":{
   "en":"Divehi; Dhivehi; Maldivian;",
@@ -159,7 +177,8 @@
   "nl":"Nederlands"
   },
 "en":{
-  "en":"English"
+  "en":"English",
+  "de":"Englisch"
   },
 "eo":{
   "en":"Esperanto",
@@ -187,7 +206,8 @@
   },
 "fr":{
   "en":"French",
-  "fr":"français"
+  "fr":"français",
+  "de":"Französisch"
   },
 "ff":{
   "en":"Fula; Fulah; Pulaar; Pular",
@@ -195,7 +215,8 @@
   },
 "gl":{
   "en":"Galician",
-  "gl":"Galego"
+  "gl":"Galego",
+  "de":"Galizisch"
   },
 "ka":{
   "en":"Georgian",
@@ -279,7 +300,8 @@
   },
 "it":{
   "en":"Italian",
-  "it":"Italiano"
+  "it":"Italiano",
+  "de":"Italienisch"
   },
 "iu":{
   "en":"Inuktitut",
@@ -498,7 +520,8 @@
   },
 "fa":{
   "en":"Persian",
-  "fa":"فارسی"
+  "fa":"فارسی",
+  "de":"Persisch"
   },
 "pl":{
   "en":"Polish",
@@ -530,7 +553,8 @@
   },
 "ru":{
   "en":"Russian",
-  "ru":"русский язык"
+  "ru":"русский язык",
+  "de":"Russisch"
   },
 "sa":{
   "en":"Sanskrit (Saṁskṛta)",
@@ -538,7 +562,8 @@
   },
 "sc":{
   "en":"Sardinian",
-  "sc":"sardu"
+  "sc":"sardu",
+  "de":"Sardinisch"
   },
 "sd":{
   "en":"Sindhi",
@@ -574,7 +599,8 @@
   },
 "sk":{
   "en":"Slovak",
-  "sk":"slovenčina"
+  "sk":"slovenčina",
+  "de":"Slovakisch"
   },
 "sl":{
   "en":"Slovene",
@@ -710,7 +736,8 @@
   },
 "fy":{
   "en":"Western Frisian",
-  "fy":"Frysk"
+  "fy":"Frysk",
+  "de":"Westfriesisch"
   },
 "xh":{
   "en":"Xhosa",
@@ -730,5 +757,62 @@
   },
 "user":{
   "de":"Benützer"
+  },
+"bpb":{
+  "de":"Schläge/Takt",
+  "en":"beats/bar"
+  },
+"bpm":{
+  "de":"Schläge/Minute",
+  "en":"beats/minute"
+  },
+"tpb":{
+  "de":"Ticks/Schlag",
+  "en":"ticks/beat"
+  },
+"translator":{
+  "de":"Übersetzer"
+  },
+"bass":{
+  "de":"Bass"
+  },
+"fivestringbass":{
+  "de":"5-Saitiger Bass",
+  "en":"5-string bass"
+  },
+"guitar":{
+  "de":"Gitarre"
+  },
+"mandolin":{
+  "de":"Mandoline"
+  },
+"piano":{
+  "de":"Klavier"
+  },
+"ukulele":{
+  "de":"Ukulele"
+  },
+"violin":{
+  "de":"Geige"
+  },
+"abc":{
+  "de":"ABC-Text Importieren",
+  "en":"import ABC notation"
+  },
+"document":{
+  "de":"Toonsmith-Text Importieren",
+  "en":"import toonsmith script"
+  },
+"event":{
+  "de":"Events Inspizieren",
+  "en":"event inspector"
+  },
+"global":{
+  "de":"Globale Sequenzwerte",
+  "en":"change global sequence parameters"
+  },
+"keys":{
+  "de":"Mit Tastatur und Maus Editieren",
+  "en":"edit sequence with keyboard/mouse"
   }
 }

@@ -7,6 +7,10 @@ var fs = require('fs');
 
 var word = exports;
 
+var R = zs4.meaning.register;
+R('login');
+R('logout');
+
 const LANG_JSON = './zs4/static/tables/lang.json';
 const TRANSLATION_JSON = './zs4/word.json';
 
@@ -51,13 +55,17 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
     THIS._.getTree(req); cb();
   }
 
+  console.log(req.input);
+
   if (zs4.is.string(req.input)){
     if (!req.tokenExists()){
       req.result(THIS,zs4.meaning.export(req.input));
       cb(); return;
     }
     else {
-      var result = zs4.meaning.export(req.input);
+      var result;
+      if (req.input=='') result = zs4.meaning.export();
+      else result = zs4.meaning.export(req.input);
       req.call({
         path:'zs4.type.translation.method.query',
         input:{
@@ -91,7 +99,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
             }
           }
         }
-        console.log(result);
+        //console.log(result);
         req.result(THIS,result);
         cb(); return;
       },true);
@@ -103,7 +111,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   if (!req.tokenExists()) return error('not logged in');
   if (!zs4.is.object(req.input))return error('no input object');
   if (!zs4.is.name(req.input.meaning))return error('invalid meaning');
-  if (!zs4.is.name(req.input.lang)||(req.input.lang.length!=2))return error('invalid language');
+  if (!zs4.is.name(req.input.lang)||(req.input.lang.length!=2))return error('invalid language \"'+req.input.lang+'\"');
   if (!zs4.is.string(req.input.translation)||(req.input.translation.length<1))return error('no translation');
 
   var ctx = req.input.context;
@@ -111,7 +119,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   var meaning = zs4.meaning.find(req.input.meaning,ctx);
   if (meaning==null)return error('meaning '+req.input.meaning+' not found.');
 
-  console.log(req.input);
+  debug('translate input:',req.input);
 
   var query = new Object({
     search:'',
@@ -148,7 +156,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
     }
   });
 
-  console.log(query);
+  debug('translate query:',query);
 
   req.call({
     path:'zs4.type.translation.method.query',
@@ -157,7 +165,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   },
   function(res){
     var arr = zs4.path.resolve(req,'request.get.zs4.type.translation.array');
-    console.log(arr);
+    debug('query result:',arr);
     if (!zs4.is.object(arr)||(zs4.count.type.members(arr)!=1)){
       req.call({
         path:'zs4.type.translation.method.new',
@@ -194,7 +202,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
         wantreply:true,
       },
       function(res){
-        console.log('update result: ',res);
+        debug('update result: ',res);
         req.result(THIS,true);
         THIS._.getTree(req);
         cb();

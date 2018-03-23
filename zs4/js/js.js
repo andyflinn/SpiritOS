@@ -5559,8 +5559,9 @@ if (zs4.is.window()){
     return css;
   };
 
-  zs4.loadtranslations = function(cb){
-    zs4.THIS.zs4.language.translate._.call(zs4.userLanguage(),function(r){
+  zs4.loadtranslations = function(cb,lang){
+    if (lang==null)lang = zs4.userLanguage();
+    zs4.THIS.zs4.language.translate._.call(lang,function(r){
       var t = zs4.path.resolve(r.request.callback,'zs4.language.translate');
       if (t != null){
         if (zs4.is.object(t.error)){

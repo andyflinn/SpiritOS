@@ -220,7 +220,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-doctype:before{content:'\0265E';font-weight: bolder;}
 .icon-document:before{content:url(/gfx/icons/document.svg);}
 .icon-down:before{content:url(/gfx/icons/down.svg);}
-.icon-download:before{content:'\021A1';;font-weight: bolder;color:blue;}
+.icon-download:before{content:url(/gfx/icons/download.svg);}
 .icon-drive:before{content:url(/gfx/icons/drive.svg);}
 .icon-dropbox:before{content:url(/gfx/icons/dropbox.svg);}
 .icon-edge:before{content:url(/gfx/icons/edge.svg);}
@@ -249,6 +249,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-js:before{content:url(/gfx/icons/js.svg);}
 .icon-keys:before{content:url(/gfx/icons/keys.svg);}
 .icon-lang:before{content:url(/gfx/icons/lang.svg);}
+.icon-language:before{content:url(/gfx/icons/language.svg);}
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-left:before{content:url(/gfx/icons/left.svg);}
 .icon-linefeed:before{content:'\000B6';font-weight: bolder;}
@@ -320,9 +321,12 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-token:before{content:url(/gfx/icons/token.svg);}
 .icon-tostart:before{content:url(/gfx/icons/tostart.svg);}
 .icon-total:before{content:url(/gfx/icons/total.svg);}
+.icon-transferring:before{content:url(/gfx/icons/transferring.svg);}
 .icon-transform:before{content:url(/gfx/icons/transform.svg);}
 .icon-transitem:before{content:url(/gfx/icons/gears.svg);}
-.icon-translation:before{content:url(/gfx/icons/lang.svg);}
+.icon-translate:before{content:url(/gfx/icons/translate.svg);}
+.icon-translation:before{content:url(/gfx/icons/translation.svg);}
+.icon-translator:before{content:url(/gfx/icons/translator.svg);}
 .icon-translate:before{content:url(/gfx/icons/translate.svg);}
 .icon-true:before{content:'\02611';font-weight: bolder;}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}

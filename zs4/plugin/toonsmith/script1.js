@@ -41,9 +41,21 @@ ts.meaning = new Object({
 });
 
 var add = ts.meaning.add;
+add('abc');
+add('bass');
 add('bpb');
 add('bpm');
+add('document');
+add('event');
+add('fivestringbass');
+add('global');
+add('guitar');
+add('keys');
+add('mandolin');
+add('piano');
 add('tpb');
+add('ukulele');
+add('violin');
 
 ts.meaning.register();
 
@@ -4420,14 +4432,14 @@ ts.html = new Object({
             SEQ.instpopped.appendChild(nu.toolselector);
             zs4.admin.util.addIconElement(nu.toolselector,icon);
             zs4.admin.util.addSpace(nu.toolselector);
-            zs4.admin.util.addTextSpan(nu.toolselector,icon);
           }
   				else {
             SEQ.toolspopped.appendChild(nu.toolselector);
             zs4.admin.util.addIconElement(nu.toolselector,icon);
             zs4.admin.util.addSpace(nu.toolselector);
-            zs4.admin.util.addTextSpan(nu.toolselector,tooltype);
           }
+          new zs4.admin.util.elementMeaning(nu.toolselector,icon);
+          //zs4.admin.util.addTextSpan(nu.toolselector,icon);
           nu.toolselector.onclick = function(){nu.use();SEQ.adaptContentPane(); };
 
   				//zs4.debug('adding icon for '+icon);
@@ -4460,18 +4472,18 @@ ts.html = new Object({
   			nu.toolTitlebar.appendChild(nu.titleIcon);
 
         zs4.admin.util.addSpace(nu.toolTitlebar);
+        nu.eToolName = new zs4.admin.util.elementMeaning(nu.toolTitlebar,icon);
+        //nu.eToolName = zs4.admin.util.addTextSpan(nu.toolTitlebar,name);
   			if (tooltype=='i'){
-          nu.eToolName = zs4.admin.util.addTextSpan(nu.toolTitlebar,name);
   				this.instarea.appendChild(nu.toolWindow);
   				this.inst.push(nu);
   			}
   			else {
-          nu.eToolName = zs4.admin.util.addTextSpan(nu.toolTitlebar,tooltype);
   				this.toolarea.appendChild(nu.toolWindow);
   				this.tool.push(nu);
   			}
-        nu.eToolName.style.fontWeight = 'bold';
-        nu.eToolName.style.backgroundColor = 'grey';
+        nu.eToolName.element.style.fontWeight = 'bold';
+        nu.eToolName.element.style.backgroundColor = 'grey';
         zs4.admin.util.addSpace(nu.toolTitlebar);
 
 
