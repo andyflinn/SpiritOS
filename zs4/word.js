@@ -112,6 +112,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   }
 
   if (zs4.THIS.zs4.language.config.usedb._.value!=true)return error('this service not active');
+
   if (!req.tokenExists()) return error('not logged in');
   if (!zs4.is.object(req.input))return error('no input object');
   if (!zs4.is.name(req.input.meaning))return error('invalid meaning');
