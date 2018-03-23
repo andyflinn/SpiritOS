@@ -5,6 +5,56 @@
 var ts;
 if (zs4.is.node()){
   ts = this;
+
+  ts.meaning = new Object({
+    add:function(w){zs4.string.array.add.new(ts.meaning.word,w);},
+    word:new Array(),
+    register:function(){
+      for (var i = 0; i < ts.meaning.word.length; i++){
+        zs4.meaning.register(ts.meaning.word[i]);
+      }
+    },
+  });
+
+  var add = ts.meaning.add;
+  add('abc');
+  add('beat');
+  add('bar');
+  add('bass');
+  add('bassbits');
+  add('bpb');
+  add('bpm');
+  add('centrebeat');
+  add('centretick');
+  add('chord');
+  add('chordbits');
+  add('document');
+  add('downbeat');
+  add('evenbeat');
+  add('event');
+  add('fives');
+  add('fivestringbass');
+  add('global');
+  add('guitar');
+  add('keys');
+  add('layout');
+  add('layoutbits');
+  add('linefeed');
+  add('lyric');
+  add('mandolin');
+  add('melody');
+  add('melodybits');
+  add('note');
+  add('oddbeat');
+  add('piano');
+  add('space');
+  add('tpb');
+  add('transpose');
+  add('ukulele');
+  add('violin');
+
+  ts.meaning.register();
+
 }
 if (zs4.is.window()){
   ts = new Object();
@@ -30,34 +80,6 @@ const KBM_MELODY = 3;
 const KBM_BAR = 4;
 const KBM_BEAT = 5;
 
-ts.meaning = new Object({
-  add:function(w){zs4.string.array.add.new(ts.meaning.word,w);},
-  word:new Array(),
-  register:function(){
-    for (var i = 0; i < ts.meaning.word.length; i++){
-      zs4.meaning.register(ts.meaning.word[i],'toonsmith');
-    }
-  },
-});
-
-var add = ts.meaning.add;
-add('abc');
-add('bass');
-add('bpb');
-add('bpm');
-add('document');
-add('event');
-add('fivestringbass');
-add('global');
-add('guitar');
-add('keys');
-add('mandolin');
-add('piano');
-add('tpb');
-add('ukulele');
-add('violin');
-
-ts.meaning.register();
 
 ts.sequence = new Array();
 
@@ -5347,7 +5369,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eEventBpm,'bpm')
           zs4.admin.util.addSpace(nu.eEventBpm);
-          zs4.admin.util.addTextSpan(nu.eEventBpm,'beats/minute:');
+          new zs4.admin.util.elementMeaning(nu.eEventBpm,'bpm');
+          //zs4.admin.util.addTextSpan(nu.eEventBpm,'beats/minute:');
   				nu.eEventBpmInput = ts.html.nu.ele('input');
   				nu.eEventBpmInput.type = 'number';
   				nu.eEventBpmInput.value = SEQ.bpm;
@@ -5365,7 +5388,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
           zs4.admin.util.addSpace(nu.eEventBpc);
-          zs4.admin.util.addTextSpan(nu.eEventBpc,'beats/bar:');
+          new zs4.admin.util.elementMeaning(nu.eEventBpc,'bpb');
+          //zs4.admin.util.addTextSpan(nu.eEventBpc,'beats/bar:');
   				nu.eEventBpcInput = ts.html.nu.ele('input');
   				nu.eEventBpcInput.type = 'number';
   				nu.eEventBpcInput.value = SEQ.bpb;
@@ -5383,7 +5407,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
           zs4.admin.util.addSpace(nu.eEventTpb);
-          zs4.admin.util.addTextSpan(nu.eEventTpb,'ticks/beat:');
+          new zs4.admin.util.elementMeaning(nu.eEventTpb,'tpb');
+          //zs4.admin.util.addTextSpan(nu.eEventTpb,'ticks/beat:');
   				nu.eEventTpbInput = ts.html.nu.ele('input');
   				nu.eEventTpbInput.type = 'number';
   				nu.eEventTpbInput.value = SEQ.tpb;
@@ -5401,7 +5426,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eEventTranspose,'transpose');
           zs4.admin.util.addSpace(nu.eEventTranspose);
-          zs4.admin.util.addTextSpan(nu.eEventTranspose,'transpose:');
+          new zs4.admin.util.elementMeaning(nu.eEventTranspose,'transpose');
+          //zs4.admin.util.addTextSpan(nu.eEventTranspose,'transpose:');
           zs4.admin.util.addSpace(nu.eEventTranspose);
 
   				nu.eEventTransposeLabel = ts.html.nu.ele('ts-tool-transpose-label');
@@ -5443,7 +5469,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eMelodyBits,'note');
           zs4.admin.util.addSpace(nu.eMelodyBits);
-          zs4.admin.util.addTextSpan(nu.eMelodyBits,'melodybits:');
+          new zs4.admin.util.elementMeaning(nu.eMelodyBits,'melodybits');
+          //zs4.admin.util.addTextSpan(nu.eMelodyBits,'melodybits:');
           nu.melodybits = new zs4.admin.util.bitsElement(nu.eMelodyBits,SEQ.melodybits);
 
         nu.eChordBits = ts.html.nu.ele('div');
@@ -5451,7 +5478,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eChordBits,'chord');
           zs4.admin.util.addSpace(nu.eChordBits);
-          zs4.admin.util.addTextSpan(nu.eChordBits,'chordbits:');
+          new zs4.admin.util.elementMeaning(nu.eChordBits,'chordbits');
+          //zs4.admin.util.addTextSpan(nu.eChordBits,'chordbits:');
           nu.chordbits = new zs4.admin.util.bitsElement(nu.eChordBits,SEQ.chordbits);
 
         nu.eBassBits = ts.html.nu.ele('div');
@@ -5459,7 +5487,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eBassBits,'bass');
           zs4.admin.util.addSpace(nu.eBassBits);
-          zs4.admin.util.addTextSpan(nu.eBassBits,'bassbits:');
+          new zs4.admin.util.elementMeaning(nu.eBassBits,'bassbits');
+          //zs4.admin.util.addTextSpan(nu.eBassBits,'bassbits:');
           nu.bassbits = new zs4.admin.util.bitsElement(nu.eBassBits,SEQ.bassbits);
 
         nu.eLeyoutBits = ts.html.nu.ele('div');
@@ -5467,7 +5496,8 @@ ts.html = new Object({
 
           zs4.admin.util.addIconElement(nu.eLeyoutBits,'layout');
           zs4.admin.util.addSpace(nu.eLeyoutBits);
-          zs4.admin.util.addTextSpan(nu.eLeyoutBits,'layoutbits:');
+          new zs4.admin.util.elementMeaning(nu.eLeyoutBits,'layoutbits');
+          //zs4.admin.util.addTextSpan(nu.eLeyoutBits,'layoutbits:');
           nu.layoutbits = new zs4.admin.util.bitsElement(nu.eLeyoutBits,SEQ.layoutbits);
           nu.layoutbits.on('change',SEQ.refresh);
 
@@ -5663,7 +5693,7 @@ ts.html = new Object({
 
             ROW.t = new Object();
             ROW.t.e = document.createElement('td');
-            ROW.t.e.textContent = name;
+            ROW.t.e.textContent = zs4.meaning.translate(name,zs4.userLanguage());
             ROW.t.e.width = '25%';
             ROW.t.e.style.textAlign = 'right';
             ROW.e.appendChild(ROW.t.e);
@@ -5695,10 +5725,11 @@ ts.html = new Object({
           };
 
           var head = new TABLE.row('head');
-          //head.t.e.innerHTML = '<b>'+name+'</b>';
-          head.t.e.textContent = name;
+
+          head.t.e.textContent = zs4.meaning.translate(name,zs4.userLanguage());
           head.t.e.style.fontWeight = 'bolder';
           head.t.e.style.textAlign = 'left';
+          //var em = new zs4.admin.util.elementMeaning(head.t.e,name);
 
           head.addIcons(name);
 

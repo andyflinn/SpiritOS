@@ -1108,7 +1108,8 @@ zs4.admin.util = {
 			}
 
 
-			display.onclick = function(e){
+
+			MEANING.onclick = function(e){
 				if (!MEANING.bits.noctrlclick.get()){
 					if (!e.ctrlKey && !e.altKey)return true;
 				}
@@ -1195,6 +1196,7 @@ zs4.admin.util = {
 				}
 				return false;
 			};
+			display.onclick = MEANING.onclick;
 		}
 
 		pe.appendChild(div);
@@ -1715,7 +1717,7 @@ zs4.admin.util = {
 		zs4.admin.util.element.call(this);
 		var BITS = this;
 		var a = new Array();
-		var e = document.createElement('zs4-input-bits');
+		var e = BITS.top = BITS.element = document.createElement('zs4-input-bits');
 		e.style.display = 'inline-block';
 		//e.style.fontSize = '0.7em';
 		//zs4.style.type.toolbubble(e);
@@ -1723,8 +1725,11 @@ zs4.admin.util = {
 		function bit(n){
 			var BIT = this;
 			var name = n.trim();
-			var b = document.createElement('zs4-input-bit-'+name);
-			b.style.display='inline';
+
+			BIT.meaning = new zs4.admin.util.elementMeaning(e,name);
+
+			var b = BIT.meaning.element;
+			//b.style.display='inline';
 			b.style.marginLeft='0.25em';
 			b.style.marginRight='0.25em';
 			b.style.paddingLeft='0.25em';
@@ -1732,8 +1737,15 @@ zs4.admin.util = {
 			b.style.border='0.05em solid black';
 			b.style.borderRadius = '0.5em';
 
-			b.textContent = name;
-			b.onclick = function(){
+			//b.textContent = name;
+			b.onclick = function(e){
+				if (e.ctrlKey || e.altKey){
+					if (zs4.is.function(BIT.meaning.element.onclick)){
+						BIT.meaning.onclick(e);
+					}
+					return true;
+				}
+
 				if (bits[name].get()){
 					bits[name].false();
 					b.style.backgroundColor='initial';
@@ -1743,6 +1755,7 @@ zs4.admin.util = {
 					b.style.backgroundColor='gray';
 				}
 				BITS.trigger('change');
+				return false;
 			}
 
 			BIT.refresh = function(){
@@ -1755,7 +1768,7 @@ zs4.admin.util = {
 			};
 
 			a.push(BIT)
-			e.appendChild(b);
+			//e.appendChild(b);
 			zs4.admin.util.addTextSpan(e,' ');
 		}
 

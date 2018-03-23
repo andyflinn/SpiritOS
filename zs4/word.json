@@ -9,14 +9,32 @@
 "translation":{
   "de":"Übersetzung"
   },
+"translator":{
+  "de":"Übersetzer"
+  },
+"translated":{
+  "de":"übersetzt"
+  },
+"untranslated":{
+  "de":"nicht übersetzt"
+  },
+"sortmeaning":{
+  "de":"Nach Bedeutung Sortieren"
+  },
+"sorttranslation":{
+  "de":"Nach Übersetzung Sortieren"
+  },
+"twoletteritems":{
+  "de":"2-buchstabige Worte"
+  },
 "password":{
   "de":"Kennwort"
   },
 "login":{
-  "de":"Anmelden"
+  "de":"anmelden"
   },
 "logout":{
-  "de":"Abmelden"
+  "de":"abmelden"
   },
 "ab":{
   "en":"Abkhaz",
@@ -770,9 +788,6 @@
   "de":"Ticks/Schlag",
   "en":"ticks/beat"
   },
-"translator":{
-  "de":"Übersetzer"
-  },
 "bass":{
   "de":"Bass"
   },
@@ -814,5 +829,65 @@
 "keys":{
   "de":"Mit Tastatur und Maus Editieren",
   "en":"edit sequence with keyboard/mouse"
+  },
+"bassbits":{
+  "de":"Bass Spielverhalten"
+  },
+"chordbits":{
+  "de":"Akkordwiedergabe"
+  },
+"layoutbits":{
+  "de":"Layout-Kontrolle"
+  },
+"melodybits":{
+  "de":"Melodiesteuerung"
+  },
+"transpose":{
+  "de":"Transponieren"
+  },
+"centrebeat":{
+  "de":"Mittlerer Schlag"
+  },
+"centretick":{
+  "de":"Mittlerer Tick"
+  },
+"chord":{
+  "de":"Akkord"
+  },
+"downbeat":{
+  "de":"Erster Schlag"
+  },
+"evenbeat":{
+  "de":"Gerade Schläge"
+  },
+"fives":{
+  "de":"Quinten"
+  },
+"layout":{
+  "de":"Darstellung"
+  },
+"linefeed":{
+  "de":"Zeilenumbruch"
+  },
+"lyric":{
+  "de":"Songtext"
+  },
+"melody":{
+  "de":"Melodie"
+  },
+"oddbeat":{
+  "de":"Ungerade Schläge"
+  },
+"beat":{
+  "de":"Schlag"
+  },
+"bar":{
+  "de":"Takt"
+  },
+"note":{
+  "de":"Note"
+  },
+"space":{
+  "de":"Leertaste"
   }
 }

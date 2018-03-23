@@ -19,7 +19,7 @@ zs4.meaning = new Object({
     }
     return zs4.meaning.name[name];
   },
-  find:function(name,context){
+  find:function(name){
     if (!zs4.is.object(zs4.meaning.name[name]))return null;
     return zs4.meaning.name[name];
   },
@@ -63,9 +63,22 @@ zs4.meaning = new Object({
   importJSON:function(json){
     js = zs4.json.parse(json);
     zs4.meaning.import(js);
-  }
+  },
+  translate:function(word,lang){
+    var m = zs4.meaning.find(word);
+    if (m==null)return word;
+    if (m.hasOwnProperty(lang))return m[lang];
+    else if (zs4.is.string(m.en)) return m.en;
+    else return word;
+  },
 });
 
 zs4.meaning.register('meaning');
 zs4.meaning.register('lang');
 zs4.meaning.register('translation');
+zs4.meaning.register('translator');
+zs4.meaning.register('translated');
+zs4.meaning.register('untranslated');
+zs4.meaning.register('sortmeaning');
+zs4.meaning.register('sorttranslation');
+zs4.meaning.register('twoletteritems');

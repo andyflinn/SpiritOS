@@ -40,6 +40,9 @@ debug(zs4.meaning.export());
 
 zs4.THIS.zs4._.property(new zs4.type.object({name:'language',flags:'api authgetpublic'}));
 
+zs4.THIS.zs4.language._.property(new zs4.type.object({name:'config',flags:'authgetpublic'}));
+zs4.THIS.zs4.language.config._.property(new zs4.type.boolean({name:'usedb',flags:'quickupdate'}));
+
 zs4.THIS.zs4.language._.property(new zs4.type.object({name:'translate',flags:'api apiarg'}));
 zs4.THIS.zs4.language.translate._.property(new zs4.type.name({name:'meaning',flags:'apiarg'}));
 zs4.THIS.zs4.language.translate._.property(new zs4.type.string({name:'context',flags:'apiarg'}));
@@ -58,7 +61,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   console.log(req.input);
 
   if (zs4.is.string(req.input)){
-    if (!req.tokenExists()){
+    if ((zs4.THIS.zs4.language.config.usedb._.value!=true) || !req.tokenExists()){
       req.result(THIS,zs4.meaning.export(req.input));
       cb(); return;
     }
@@ -108,6 +111,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
     }
   }
 
+  if (zs4.THIS.zs4.language.config.usedb._.value!=true)return error('this service not active');
   if (!req.tokenExists()) return error('not logged in');
   if (!zs4.is.object(req.input))return error('no input object');
   if (!zs4.is.name(req.input.meaning))return error('invalid meaning');
@@ -166,7 +170,7 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   function(res){
     var arr = zs4.path.resolve(req,'request.get.zs4.type.translation.array');
     debug('query result:',arr);
-    if (!zs4.is.object(arr)||(zs4.count.type.members(arr)!=1)){
+    if (!zs4.is.object(arr)||(zs4.count.type.members(arr)<1)){
       req.call({
         path:'zs4.type.translation.method.new',
         input:{
@@ -282,4 +286,6 @@ word.boot = function(input,cb){
   });
 }
 
-zs4.boot.call(zs4.THIS,word.boot,zs4.THIS);
+if ((zs4.THIS.zs4.language.config.usedb._.value==true)){
+  zs4.boot.call(zs4.THIS,word.boot,zs4.THIS);
+}
