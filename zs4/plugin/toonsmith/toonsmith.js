@@ -17,7 +17,7 @@ if (zs4.is.node()) {
     toonsmith.style = fs.readFileSync('./zs4/plugin/toonsmith/style.css','utf8');
     var createTS = zs4.scriptToConstructor(toonsmith.script1);
     //if (createTS==null){exit();}
-    console.log(createTS);
+    debug(createTS);
     ts = new createTS(zs4);
     //console.log(ts);
 

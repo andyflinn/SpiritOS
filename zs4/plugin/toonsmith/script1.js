@@ -3546,7 +3546,6 @@ ts.html = new Object({
 			SEQ.instpopped.style.display = 'none';
 			SEQ.titlebarElement.appendChild(SEQ.instpopped);
 
-			//
 			SEQ.toolarea = ts.html.nu.ele('ts-toolarea');
 			SEQ.toolarea.style.display = 'block';
 			ele.appendChild(SEQ.toolarea);
@@ -4298,11 +4297,22 @@ ts.html = new Object({
       };
 
       SEQ.renderStats = function(){
-  			this.stsEvents.textContent = ('events:'+this.evt.length+' ');
-  			this.stsChords.textContent = ('chords:' + this.stats.chords+' ');
-  			this.stsBars.textContent = ('bars:' + this.stats.bars+' ');
-  			this.stsBeats.textContent = ('beats:' + this.stats.beats+' ');
-  			this.stsNotes.textContent = ('notes:' + this.stats.notes+' ');
+        var ulan = zs4.userLanguage();
+        var html = '';
+
+        function item(m,v){
+          html += '<b>'+zs4.meaning.translate(m,ulan)+':</b>'+v+' ';
+        }
+
+  			item('event',this.evt.length);
+  			item('chord',this.stats.chords);
+  			item('bar',this.stats.bars);
+  			item('beat',this.stats.beats);
+  			item('note',this.stats.notes);
+
+        console.log(html);
+        SEQ.stsElement.innerHTML = html;
+
   		};
       SEQ.onLogoClick = function(){
   			if (this.evt.length == 0)
@@ -4472,13 +4482,17 @@ ts.html = new Object({
   			nu.toolWindow.ts = this;
         zs4.style.type.toolbubble(nu.toolWindow);
         zs4.style.type.bgimage(nu.toolWindow,'/gfx/icons/'+icon+'.svg');
-  			nu.toolTitlebar = ts.html.nu.ele('ts-tool-titlebar');
-  			nu.toolTitlebar.style.display = 'block';
+  			nu.toolTitlebar = ts.html.nu.ele('div');
+        zs4.style.type.toolheader(nu.toolTitlebar);
   			nu.toolTitlebar.ts = this;
-  			//if (tooltype=='i') nu.toolWindow.appendChild(nu.toolTitlebar);
-  			//else nu.toolWindow.appendChild(nu.toolTitlebar);
         nu.toolWindow.appendChild(nu.toolTitlebar);
         SEQ.tsKeyboard(nu.toolTitlebar);
+
+        nu.toolDetailPane = ts.html.nu.ele('div');
+        zs4.style.type.tooldetail(nu.toolDetailPane);
+  			nu.toolDetailPane.ts = this;
+        nu.toolWindow.appendChild(nu.toolDetailPane);
+        //SEQ.tsKeyboard(nu.toolTitlebar);
 
         nu.titleIcon = zs4.admin.util.addIconImage(nu.toolTitlebar,icon);
   			nu.titleIcon.onclick = function(){
@@ -4664,7 +4678,7 @@ ts.html = new Object({
 
 				nu.iSpecific = ts.html.nu.ele('ts-instrument-specific');
 				nu.iSpecific.style.display = 'block';
-				nu.eEventInstrument.appendChild(nu.iSpecific);
+				nu.toolDetailPane.appendChild(nu.iSpecific);
 				nu.iSpecific.ts = nu;
 				nu.iSpecific.onmouseleave = function(){
 					this.ts.iHoverNote.textContent = '';
@@ -5356,16 +5370,16 @@ ts.html = new Object({
   		};
 
       SEQ.createToolKeys = function(){
-        var nu = this.createTool('keys','keys', 'edit Sequence (keyboard/mouse)');
+        var nu = SEQ.createTool('keys','keys', 'edit Sequence (keyboard/mouse)');
         var br = document.createElement('br');
         nu.toolTitlebar.appendChild(br);
-        SEQ.createKeyboardModes(nu.toolTitlebar);
+        SEQ.createKeyboardModes(nu.toolDetailPane);
       };
       SEQ.createToolGlobal = function(){
-  			var nu = this.createTool('global','global', 'global sequence parameters');
+  			var nu = SEQ.createTool('global','global', 'global sequence parameters');
 
   			nu.eEventBpm = ts.html.nu.ele('div');
-  			nu.toolWindow.appendChild(nu.eEventBpm);
+  			nu.toolDetailPane.appendChild(nu.eEventBpm);
 
           zs4.admin.util.addIconElement(nu.eEventBpm,'bpm')
           zs4.admin.util.addSpace(nu.eEventBpm);
@@ -5384,7 +5398,7 @@ ts.html = new Object({
           };
 
         nu.eEventBpc = ts.html.nu.ele('div');
-  			nu.toolWindow.appendChild(nu.eEventBpc);
+  			nu.toolDetailPane.appendChild(nu.eEventBpc);
 
           zs4.admin.util.addIconElement(nu.eEventBpc,'beat')
           zs4.admin.util.addSpace(nu.eEventBpc);
@@ -5403,7 +5417,7 @@ ts.html = new Object({
   				};
 
         nu.eEventTpb = ts.html.nu.ele('div');
-  			nu.toolWindow.appendChild(nu.eEventTpb);
+  			nu.toolDetailPane.appendChild(nu.eEventTpb);
 
           zs4.admin.util.addIconElement(nu.eEventTpb,'tpb');
           zs4.admin.util.addSpace(nu.eEventTpb);
@@ -5422,7 +5436,7 @@ ts.html = new Object({
           };
 
         nu.eEventTranspose = ts.html.nu.ele('div');
-  			nu.toolWindow.appendChild(nu.eEventTranspose);
+  			nu.toolDetailPane.appendChild(nu.eEventTranspose);
 
           zs4.admin.util.addIconElement(nu.eEventTranspose,'transpose');
           zs4.admin.util.addSpace(nu.eEventTranspose);
@@ -5465,7 +5479,7 @@ ts.html = new Object({
           transDown.onclick = function(){SEQ.transpose(-1); refreshTranspose();};
 
         nu.eMelodyBits = ts.html.nu.ele('div');
-        nu.toolWindow.appendChild(nu.eMelodyBits);
+        nu.toolDetailPane.appendChild(nu.eMelodyBits);
 
           zs4.admin.util.addIconElement(nu.eMelodyBits,'note');
           zs4.admin.util.addSpace(nu.eMelodyBits);
@@ -5474,7 +5488,7 @@ ts.html = new Object({
           nu.melodybits = new zs4.admin.util.bitsElement(nu.eMelodyBits,SEQ.melodybits);
 
         nu.eChordBits = ts.html.nu.ele('div');
-        nu.toolWindow.appendChild(nu.eChordBits);
+        nu.toolDetailPane.appendChild(nu.eChordBits);
 
           zs4.admin.util.addIconElement(nu.eChordBits,'chord');
           zs4.admin.util.addSpace(nu.eChordBits);
@@ -5483,7 +5497,7 @@ ts.html = new Object({
           nu.chordbits = new zs4.admin.util.bitsElement(nu.eChordBits,SEQ.chordbits);
 
         nu.eBassBits = ts.html.nu.ele('div');
-        nu.toolWindow.appendChild(nu.eBassBits);
+        nu.toolDetailPane.appendChild(nu.eBassBits);
 
           zs4.admin.util.addIconElement(nu.eBassBits,'bass');
           zs4.admin.util.addSpace(nu.eBassBits);
@@ -5492,7 +5506,7 @@ ts.html = new Object({
           nu.bassbits = new zs4.admin.util.bitsElement(nu.eBassBits,SEQ.bassbits);
 
         nu.eLeyoutBits = ts.html.nu.ele('div');
-        nu.toolWindow.appendChild(nu.eLeyoutBits);
+        nu.toolDetailPane.appendChild(nu.eLeyoutBits);
 
           zs4.admin.util.addIconElement(nu.eLeyoutBits,'layout');
           zs4.admin.util.addSpace(nu.eLeyoutBits);
@@ -5545,7 +5559,7 @@ ts.html = new Object({
   			nu.devices_ok = false;
   			nu.eEventMidi = ts.html.nu.ele('ts-tool-midi');
   			nu.eEventMidi.style.display = 'inline-block';
-  			nu.toolWindow.appendChild(nu.eEventMidi);
+  			nu.toolDetailPane.appendChild(nu.eEventMidi);
 
   				nu.eEventMidiLabel = ts.html.nu.ele('ts-tool-midi-label');
   				nu.eEventMidiLabel.textContent = 'midi:';
@@ -5595,7 +5609,7 @@ ts.html = new Object({
 
   			nu.eEventAudio = ts.html.nu.ele('ts-tool-audio');
   			nu.eEventAudio.style.display = 'inline-block';
-  			nu.toolWindow.appendChild(nu.eEventAudio);
+  			nu.toolDetailPane.appendChild(nu.eEventAudio);
 
   				nu.eEventAudioLabel = ts.html.nu.ele('ts-tool-audio-label');
   				nu.eEventAudioLabel.textContent = 'audio:';
@@ -5637,7 +5651,7 @@ ts.html = new Object({
   				nu.ts.current_tool = null;
   				nu.ts.hideAllToolPanes();
   			};
-  			nu.toolWindow.appendChild(nu.eTextArea);
+  			nu.toolDetailPane.appendChild(nu.eTextArea);
 
   			nu.onactivate = function(){
   				nu.eTextArea.value = nu.ts.getChordsAndLyrics();
@@ -5648,7 +5662,7 @@ ts.html = new Object({
       SEQ.createToolAbc = function(){
   			var nu = this.createTool('abc','abc', 'import ABC notation');
 
-        var go = zs4.admin.util.addIconElement(nu.toolTitlebar,'toonsmith');
+        var go = zs4.admin.util.addIconElement(nu.toolDetailPane,'toonsmith');
         go.onclick = function(){
           if (nu.eTextArea.value=='')return;
           var parsed = SEQ.runABC(nu.eTextArea.value);
@@ -5659,7 +5673,7 @@ ts.html = new Object({
         }
 
   			nu.eTextArea = ts.html.nu.ele('textarea');
-        nu.toolWindow.appendChild(nu.eTextArea);
+        nu.toolDetailPane.appendChild(nu.eTextArea);
 
   		};
       SEQ.createToolEvent = function(){
@@ -5670,7 +5684,7 @@ ts.html = new Object({
 
         TOOL.eDetail = document.createElement('ts-event-detail');
         TOOL.eDetail.style.display = 'none';
-        TOOL.toolWindow.appendChild(TOOL.eDetail);
+        TOOL.toolDetailPane.appendChild(TOOL.eDetail);
 
         TOOL.data = new Object({});
 
@@ -5824,27 +5838,10 @@ ts.html = new Object({
   			return nu;
   		};
 
-			SEQ.stsElement = ts.html.nu.ele('ts-statusbar');
+			SEQ.stsElement = ts.html.nu.ele('div');
 			SEQ.stsElement.style.display = 'block';
+      SEQ.stsElement.style.fontSize = '0.5em';
 			ele.appendChild(SEQ.stsElement);
-
-				SEQ.stsEvents = ts.html.nu.ele('ts-count-events');
-				SEQ.stsElement.appendChild(SEQ.stsEvents);
-
-				SEQ.stsChords = ts.html.nu.ele('ts-count-chords');
-				SEQ.stsElement.appendChild(SEQ.stsChords);
-
-				SEQ.stsBars = ts.html.nu.ele('ts-count-bars');
-				SEQ.stsBars.className = 'tsbar';
-				SEQ.stsElement.appendChild(SEQ.stsBars);
-
-				SEQ.stsBeats = ts.html.nu.ele('ts-count-beat');
-				SEQ.stsBeats.className = 'tsbeat';
-				SEQ.stsElement.appendChild(SEQ.stsBeats);
-
-				SEQ.stsNotes = ts.html.nu.ele('ts-count-notes');
-				SEQ.stsNotes.className = 'tsnote';
-				SEQ.stsElement.appendChild(SEQ.stsNotes);
 
 			SEQ.hideAllInstPanes = function(){
 				SEQ.current_inst = null;
@@ -6191,7 +6188,7 @@ ts.audio = new Object({
 
         var tdMuteSolo = document.createElement('div');
         if (CHANNEL.OSC.isGroup){
-          CHANNEL.groupToggle = zs4.admin.util.addIconElement(tdMuteSolo,'plus');
+          CHANNEL.groupToggle = zs4.admin.util.addIconElement(tdMuteSolo,'mixer');
         }
         tdMuteSolo.style.textAlign = 'center';
         CHANNEL.mute = zs4.admin.util.addIconElement(tdMuteSolo,'mute');
@@ -6298,7 +6295,7 @@ ts.audio = new Object({
               groupDiv.style.display = 'none';
               tr.style.display = 'inline-block';
               tr.style.backgroundColor = 'initial';
-              zs4.admin.util.setIcon(CHANNEL.groupToggle,'plus');
+              zs4.admin.util.setIcon(CHANNEL.groupToggle,'mixer');
             }
             else {
               groupOpen = true;

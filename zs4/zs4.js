@@ -256,7 +256,7 @@ zs4.define = function(){
   zs4.THIS.zs4.css._.css.css = JSON.stringify(nodefs.readFileSync('./zs4/style.css','utf8'));
 
   zs4.THIS.zs4._.property(new zs4.type.object({name:'js'}));
-  zs4.THIS.zs4.js._.property(new zs4.type.boolean({name:'debug'}));
+  zs4.THIS.zs4.js._.property(new zs4.type.boolean({name:'debug',flags:'quickupdate'}));
   zs4.THIS.zs4.js._.js = new Object();
 
   if (zs4.THIS.zs4.node.is.heroku._.value == true){

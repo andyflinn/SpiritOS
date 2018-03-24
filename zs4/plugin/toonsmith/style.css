@@ -3,7 +3,7 @@ td.string,tr.string {
   height:0.5em;
   width:1.5em;
 }
-
+ 
 ts-count-events,ts-count-chords,ts-count-bars,ts-count-beat,ts-count-notes{
   font-size: .5em;
 }

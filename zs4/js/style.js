@@ -17,7 +17,8 @@ function styleBits(po,name){
 
 zs4.style = {
   bits:new styleBits(),
-  hue:new zs4.color({r:.5,g:.5,b:.5}),
+  colorToolBackground:new zs4.color({r:.75,g:.75,b:.75,a:.9}),
+  colorToolTitlebarBackground:new zs4.color({r:.5,g:.5,b:.5,a:.9}),
   host:'',
   ele:{
 
@@ -25,12 +26,30 @@ zs4.style = {
   type:{
     toolbubble:function(e){
       e.style.margin='0.25em';
-      e.style.padding='0.25em';
+      //e.style.padding='0.25em';
       e.style.border='0.05em solid black';
       e.style.borderRadius = '0.5em';
-      e.style.backgroundColor = 'lightgray';
+      e.style.backgroundColor = zs4.style.colorToolBackground.css();
       e.style.overflow = 'auto';
       e.style.width = '90%';
+    },
+    toolbubble:function(e){
+      e.style.margin='0.25em';
+      //e.style.padding='0.25em';
+      e.style.border='0.05em solid black';
+      e.style.borderRadius = '0.5em';
+      e.style.backgroundColor = zs4.style.colorToolBackground.css();
+      e.style.overflow = 'auto';
+      e.style.width = '90%';
+    },
+    toolheader:function(e){
+      e.style.padding='0.5em';
+      e.style.backgroundColor = zs4.style.colorToolTitlebarBackground.css();
+
+    },
+    tooldetail:function(e){
+      e.style.padding='0.5em';
+      e.style.backgroundColor = zs4.style.colorToolBackground.css();
     },
     bgimage:function(e,i){
       e.style.backgroundImage = 'url(\"'+zs4.style.host + i+'\")';

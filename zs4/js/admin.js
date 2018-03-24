@@ -4,12 +4,6 @@
 
 zs4.admin = new Object({debug:false,});
 
-//var adminStyle = '';
-//adminStyle += '\n';
-//adminStyle += '\n';
-//adminStyle += '\n';
-//adminStyle += '\n';
-//zs4.style.element('admin',adminStyle)
 
 zs4.admin.util = {
 	clseps:' ',
@@ -845,10 +839,10 @@ zs4.admin.util = {
 
 		var div = TOOL.top = document.createElement('div');
 		zs4.style.type.toolbubble(div);
+		zs4.style.type.bgimage(div,'/gfx/icons/'+icon+'.svg');
 
 		var header = TOOL.header = document.createElement('div');
-		zs4.style.type.boxplain(header);
-		header.style.backgroundColor = 'gray';
+		zs4.style.type.toolheader(header);
 		div.appendChild(header);
 
 		zs4.admin.util.addIconElement(header,icon);
@@ -856,10 +850,10 @@ zs4.admin.util = {
 		new zs4.admin.util.elementMeaning(header,icon);
 
 		var items = document.createElement('div');
-		zs4.style.type.boxplain(items);
+		zs4.style.type.tooldetail(items);
 		items.style.display = 'none';
 		items.style.paddingLeft = '1em';
-		items.style.width = '90%';
+		//items.style.width = '90%';
 		div.appendChild(items);
 		TOOL.element = items;
 

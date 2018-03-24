@@ -572,7 +572,6 @@ zs4.path = {
       if (!zs4.is.name(a[i])||!ret.hasOwnProperty(a[i])) return null;
       ret = ret[a[i]];
     }
-    //zs4.debug('path resolved: '+path);
     return ret;
   },
 };
@@ -1281,7 +1280,7 @@ zs4.type = {
     this._.getInitialize = (function(req){
 
       if (this._.flags.get.noget())return null;
-      zs4.debug('getInitialize() req.flags=\''+req.flags.getString()+'\'');
+      //zs4.debug('ialize() req.flags=\''+req.flags.getString()+'\'');
 
       //if (!req.flags.get.authgetpublic()&&!req.flags.get.authsetself()&&!req.flags.get.authget())return null;
       if (!req.flags.get.authget())return null;
@@ -1333,14 +1332,6 @@ zs4.type = {
       }
       else {
         get._.flags &= (~(req.flags.priced));
-      }
-
-      zs4.debug('getinit: \''+req.flags.getString(get._.flags)+'\'');
-
-      if (this._.path == 'zs4.email.message'){
-        zs4.debug('zs4.email.message._.price.length='+this._.price.length);
-        zs4.debug('PRICES!!:' + this._.flags.getString());
-        //zs4.debug('get PRICED: '+'\''+get._.flags.getString(get._.flags)+'\'')
       }
 
       return get;
@@ -1614,6 +1605,7 @@ zs4.type = {
           if ((name!='bowser.min')&&(name!='js'))js += '\n{\n';
           if (zs4.THIS.zs4.js.debug._.value==true){
             js += fs.readFileSync('./zs4/js/'+name+'.js','utf8');
+            zs4.debug('reloading \"'+'./zs4/js/'+name+'.js'+'\"');
           }
           else {
             js += zs4.THIS.zs4.js._.js[name];

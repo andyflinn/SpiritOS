@@ -216,7 +216,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-deleteone:before{content:url(/gfx/icons/delete.svg);}
 .icon-degree:before{content:'\000B0';font-weight: bolder;}
 .icon-descend:before{content:'\021A1';font-weight: bolder;}
-.icon-detail:before{content:url(/gfx/icons/delete.svg);}
+.icon-detail:before{content:url(/gfx/icons/detail.svg);}
 .icon-doctype:before{content:'\0265E';font-weight: bolder;}
 .icon-document:before{content:url(/gfx/icons/document.svg);}
 .icon-down:before{content:url(/gfx/icons/down.svg);}
@@ -353,7 +353,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-bpb:before{content:'\0215E';font-weight: bolder;}
 .icon-bpm:before{content:url(/gfx/icons/clock.svg);}
 .icon-chord:before{content:url(/gfx/icons/chord.svg);}
-.icon-event:before{content:url(/gfx/icons/detail.svg);}
+.icon-event:before{content:url(/gfx/icons/event.svg);}
 .icon-fivestringbass:before{content:url(/gfx/icons/fivestringbass.svg);}
 .icon-guitar:before{content:url(/gfx/icons/guitar.svg);}
 .icon-instruments:before{content:url(/gfx/icons/instruments.svg);}
