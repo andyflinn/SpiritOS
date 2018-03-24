@@ -276,8 +276,6 @@ zs4.define = function(){
     zs4.plugin.list[rdr[i]]=require(fnam);
   }
 
-  zs4.boot.call(zs4.THIS,zs4.stat.boot,zs4.THIS);
-
   // Run express only once all components/plugins are loaded and ready
   zs4.node.require.express = require('./express');
   zs4.node.require.express.schema(zs4.THIS.zs4);

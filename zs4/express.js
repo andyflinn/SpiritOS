@@ -99,15 +99,9 @@ express.getFunction = function (req, res) {
       debug('ZS4 FAILED TO PRODUCE HTML');
     }
 
-    //debug('SENDING');
-    //if (zs4req.request.tokenlogin==true){
-    //  zs4req.stat(zs4.THIS.zs4.email.message,{emailsent:1,},0);
-    //}
-    zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
-    zs4.stat.updateUser(zs4req,function(ret){
-      res.write(r);
-      res.end();
-    });
+    res.write(r);
+    res.end();
+
   });
 };
 express.postFunction = function (req, res) {
@@ -125,7 +119,6 @@ express.postFunction = function (req, res) {
     if (zs4req.html==true){
       debug('express got HTML to send back....');
       var r = zs4req.request.html;
-      express.THIS._.print('request.process returned('+zs4.json.stringify(r)+')');
 
       express.setCookie(res,zs4req);
 
@@ -133,23 +126,17 @@ express.postFunction = function (req, res) {
         r = express.html(req,res);
       }
 
-      zs4req.stat(express.THIS,{bytesserved:r.length,},(Date.now()-starttime));
-      zs4.stat.updateUser(zs4req,function(ret){
-        res.write(r);
-        res.end();
-      });
+      res.write(r);
+      res.end();
 
     }
     else {
       var r = zs4req.getReply();
       var j = zs4.json.stringify(r);
 
-      zs4req.stat(express.THIS,{bytesserved:j.length,},(Date.now()-starttime));
-      zs4.stat.updateUser(zs4req,function(ret){
-        express.THIS._.print('callback: '+JSON.stringify(r.request));
-        express.setCookie(res,zs4req);
-        res.send(r);
-      });
+      express.setCookie(res,zs4req);
+      res.send(r);
+
     }
   });
 
