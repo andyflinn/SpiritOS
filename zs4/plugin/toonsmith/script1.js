@@ -3250,8 +3250,9 @@ ts.html = new Object({
 			ts.initialize();
 
 			// make a title bar;
-			SEQ.titlebarElement = ts.html.nu.ele('ts-titlebar');
-			SEQ.titlebarElement.style.display = 'block';
+			SEQ.titlebarElement = ts.html.nu.ele('div');
+      zs4.style.type.toolheader(SEQ.titlebarElement);
+			//SEQ.titlebarElement.style.display = 'block';
 			ele.appendChild(SEQ.titlebarElement);
 
       SEQ.kbIconMode = function(ele,active){
@@ -3534,6 +3535,7 @@ ts.html = new Object({
       SEQ.mixerarea = ts.html.nu.ele('ts-mixerarea');
 			SEQ.mixerarea.style.display = 'none';
       zs4.style.type.toolbubble(SEQ.mixerarea);
+      zs4.style.type.bgimage(SEQ.mixerarea,'/gfx/icons/mixer.svg');
 			ele.appendChild(SEQ.mixerarea);
       SEQ.MIXER = new ts.audio.element.ui(ts.audio.master,SEQ.mixerarea);
 
@@ -3555,7 +3557,9 @@ ts.html = new Object({
 			ele.appendChild(SEQ.instarea);
 
 			// create content bin
-			SEQ.cnt = ts.html.nu.ele('ts-content');
+			SEQ.cnt = ts.html.nu.ele('div');
+      zs4.style.type.content(SEQ.cnt);
+
 			SEQ.cnt.style.marginLeft = '.5em';
 			SEQ.cnt.style.display = 'block';
       SEQ.cnt.tabIndex=0;
@@ -6170,6 +6174,7 @@ ts.audio = new Object({
       MIXER.channelArray = new Array()
       var initialized = false;
       var table = document.createElement('div');
+      zs4.style.type.tooldetail(table);
 
       var soloActive = false;
 
@@ -6276,7 +6281,7 @@ ts.audio = new Object({
           console.log(CHANNEL.OSC.name + ' is a group!');
           groupDiv = document.createElement('div');
           groupDiv.style.display = 'none';
-          zs4.style.type.toolbubble(groupDiv);
+          //zs4.style.type.toolbubble(groupDiv);
 
           tdSlider.appendChild(groupDiv);
           var group = new ts.audio.element.ui(CHANNEL.OSC,groupDiv);
@@ -6295,13 +6300,15 @@ ts.audio = new Object({
               groupDiv.style.display = 'none';
               tr.style.display = 'inline-block';
               tr.style.backgroundColor = 'initial';
+              tr.style.borderRadius = 'initial';
               zs4.admin.util.setIcon(CHANNEL.groupToggle,'mixer');
             }
             else {
               groupOpen = true;
               groupDiv.style.display = 'inline-block';
               tr.style.display = 'block';
-              tr.style.backgroundColor = 'gray';
+              tr.style.backgroundColor = zs4.style.colorGrayer.css();;
+              tr.style.borderRadius = '1em';
               zs4.admin.util.setIcon(CHANNEL.groupToggle,'minus');
             }
           };

@@ -19,6 +19,8 @@ zs4.style = {
   bits:new styleBits(),
   colorToolBackground:new zs4.color({r:.75,g:.75,b:.75,a:.9}),
   colorToolTitlebarBackground:new zs4.color({r:.5,g:.5,b:.5,a:.9}),
+  colorContentBackground:new zs4.color({r:1,g:1,b:1,a:.9}),
+  colorGrayer:new zs4.color({r:.5,g:.5,b:.5,a:.5}),
   host:'',
   ele:{
 
@@ -50,6 +52,10 @@ zs4.style = {
     tooldetail:function(e){
       e.style.padding='0.5em';
       e.style.backgroundColor = zs4.style.colorToolBackground.css();
+    },
+    content:function(e){
+      e.style.padding='0.5em';
+      e.style.backgroundColor = zs4.style.colorContentBackground.css();
     },
     bgimage:function(e,i){
       e.style.backgroundImage = 'url(\"'+zs4.style.host + i+'\")';
