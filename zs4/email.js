@@ -42,7 +42,7 @@ email.create = function(input){
     console.log(req.data);
 
     req.setScope(this);
-    this._.transformInternal(req);
+    //this._.transformInternal(req);
     this.to._.value = this.subject._.value = this.text._.value = '';
 
     function get(){

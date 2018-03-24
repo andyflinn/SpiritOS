@@ -20,7 +20,7 @@ require.create = function(){
 
   REQUIRE._.transform = (function(req,cb){
     req.setScope(REQUIRE);
-    REQUIRE._.transformInternal(req);
+    //REQUIRE._.transformInternal(req);
     debug('transform('+zs4.json.stringify(req.input)+')');
     if (req.input==null||!zs4.is.string(req.input.path)){
       REQUIRE._.getTree(req);

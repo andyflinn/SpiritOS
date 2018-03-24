@@ -20,7 +20,7 @@ password.create = function(){
   THIS._.create = password.create;
 
   THIS._.transform = (function(req,cb){
-    this._.transformInternal(req);
+    //this._.transformInternal(req);
     req.setScope(this);
     this._.print('transform()',req);
     if (zs4.is.object(req.input)){

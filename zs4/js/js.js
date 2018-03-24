@@ -1611,6 +1611,7 @@ zs4.type = {
 
       ;}).bind(this);
 
+    /*
     this._.transformInternal = (function(req,input){
       if (!zs4.is.object(req.input)||!zs4.is.object(req.input._))return;
       var am = req.flags.get.am();
@@ -1737,6 +1738,7 @@ zs4.type = {
         };
       }
     }).bind(this);
+    */
 
     this._.resolvePath = (function(path){
       var arr = zs4.string.split.separators(path,'./\\-_');
@@ -1793,7 +1795,7 @@ zs4.type = {
     this._.transformValue = (function(req,cb){
       this._.print('transform('+req.input+')',req);
       req.setScope(this);
-      this._.transformInternal(req);
+      //this._.transformInternal(req);
       if (req.input==null){this._.get(req,req.parent);cb();return;}
 
       //zs4.debug(this._.path + '.transformValue() //'+ this._.flags.getString());
@@ -2422,7 +2424,7 @@ zs4.type = {
         }
 
         req.setScope(TABLE);
-        TABLE._.transformInternal(req);
+        //TABLE._.transformInternal(req);
 
         if (!zs4.is.object(req.input)
         ||  zs4.count.object.properties(req.input)==0
@@ -2459,7 +2461,7 @@ zs4.type = {
         var REQUEST = req;
         var NEW = THIS.method.new;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
           var err = 'not authorized';
           req.error(THIS.method.new,err);
@@ -2559,7 +2561,7 @@ zs4.type = {
         var QUERY = this;
         var REQUEST = req;
         req.setScope(QUERY);
-        QUERY._.transformInternal(req);
+        //QUERY._.transformInternal(req);
         if (req.getall){
           QUERY._.get(req); cb(); return;
         }
@@ -2659,7 +2661,7 @@ zs4.type = {
       THIS.method.deleteall._.transform = (function(req,cb){
         var DELETEALL = this;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         function get(){
           req.setScope(DELETEALL);
           DELETEALL._.get(req);
@@ -2706,7 +2708,7 @@ zs4.type = {
         var REQUEST = req;
         var GETONE = this;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         function get(){
           GETONE._.get(req);
           GETONE.item._.get(req,GETONE);
@@ -2787,7 +2789,7 @@ zs4.type = {
         var DELONE = this;
         var DELREQ = req;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         function get(){
           DELONE._.get(req);
           DELONE.id._.get(req,DELONE);
@@ -2994,7 +2996,7 @@ zs4.type = {
 
     this._.transform = (function(req,cb){
       req.setScope(this);
-      this._.transformInternal(req);
+      //this._.transformInternal(req);
       if (req.input == null || (!zs4.is.boolean(req.input.sure))){
         this._.get(req); cb(); return;
       }
@@ -3104,7 +3106,7 @@ zs4.type = {
         var REQUEST = req;
         var DOWNLOAD = this;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
           var err = 'not authorized';
           req.error(DOWNLOAD,err);
@@ -3210,7 +3212,7 @@ zs4.type = {
         var REQUEST = req;
         var LIST = DRIVE.zs4.list;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
           var err = 'not authorized';
           req.error(LIST,err);
@@ -3253,7 +3255,7 @@ zs4.type = {
         var REQUEST = req;
         var NEW = DRIVE.zs4.newfile;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
           var err = 'not authorized';
           req.error(NEW,err);
@@ -3300,7 +3302,7 @@ zs4.type = {
         var REQUEST = req;
         var NEW = DRIVE.zs4.newdir;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
           var err = 'not authorized';
           req.error(NEW,err);
@@ -3345,7 +3347,7 @@ zs4.type = {
         var REQUEST = req;
         var DELETE = DRIVE.zs4.delete;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
         if (!(req.flags.value & req.flags.authset)){
           var err = 'not authorized';
           req.error(DELETE,err);
@@ -3421,7 +3423,7 @@ zs4.type = {
       this._.transform = (function(req,cb){
         var REQUEST = req;
         req.setScope(this);
-        this._.transformInternal(req);
+        //this._.transformInternal(req);
 
         zs4.debug(req.input);
 
@@ -3844,7 +3846,7 @@ zs4.type = {
     this._.transform = (function(req,cb){
       var THIS = this;
       req.setScope(this);
-      this._.transformInternal(req);
+      //this._.transformInternal(req);
 
       var starttime = Date.now();
 
@@ -4163,7 +4165,6 @@ zs4.type = {
       return ret;
     }).bind(this);
 
-    //THIS.zs4._.property(new zs4.type.object({name:'update',flags:'noget nostore api apiarg',}));
   },
   scopebits:function(input){
     var THIS = this;
@@ -4211,7 +4212,7 @@ zs4.type = {
       this._.transform = (function(req,cb){
         var REQUEST = req;
         REQUEST.setScope(this);
-        this._.transformInternal(REQUEST);
+        //this._.transformInternal(REQUEST);
 
         if (!zs4.is.object(req.input)){
           SEARCH._.get(REQUEST); cb(); return;

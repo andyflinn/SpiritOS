@@ -50,8 +50,8 @@ fs.create = function(){
       cb();
       return;
     };
-    this._.transformInternal(req);
-    this._.print('transform()');
+    //this._.transformInternal(req);
+    //this._.print('transform()');
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
@@ -89,7 +89,7 @@ fs.create = function(){
       cb();
       return;
     };
-    this._.transformInternal(req);
+    //this._.transformInternal(req);
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
@@ -129,7 +129,7 @@ fs.create = function(){
       cb();
       return;
     };
-    this._.transformInternal(req);
+    //this._.transformInternal(req);
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(READFILE,err);

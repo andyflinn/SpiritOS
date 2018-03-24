@@ -158,7 +158,7 @@ node.create = function(name){
       var SYSTEM = this;
       var REQUEST = req;
       req.setScope(this);
-      SYSTEM._.transformInternal(req);
+      //SYSTEM._.transformInternal(req);
 
       if (!zs4.is.object(req.input)||!zs4.is.string(req.input.cmd)||req.input.cmd==''){
         req.error(SYSTEM,'bad input');

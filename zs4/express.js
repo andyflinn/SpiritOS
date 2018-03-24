@@ -154,7 +154,7 @@ express.schema = function(parent){
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
     req.setScope(this);
-    this._.transformInternal(req);
+    //this._.transformInternal(req);
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
