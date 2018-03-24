@@ -46,12 +46,10 @@ express.getCookie = function(req,zs4request){
         zs4request.request.token=req.query.token;
         zs4request.payloadRefresh();
         zs4request.request.tokenlogin = true;
-        express.THIS._.print('cookie in url');
       }
       else if (zs4.is.string(req.cookies.zs4)){
         zs4request.request.token=req.cookies.zs4;
         zs4request.payloadRefresh();
-        express.THIS._.print('cookie in post');
       }
     }
   }
@@ -60,18 +58,15 @@ express.setCookie = function(res,zs4request){
   if (express.THIS.cookies._.value){
     if (zs4.is.string(zs4request.request.token)&&(zs4.is.object(zs4request.request.payload))){
       res.cookie('zs4' , zs4request.request.token, {expires :new Date(zs4request.request.payload.exp)});
-      express.THIS._.print('cookie set');
     }
     else {
       res.cookie('zs4' , '', {expires :0});
-      express.THIS._.print('cookie deleted');
     }
   }
 };
 
 express.getFunction = function (req, res) {
   var starttime = Date.now();
-  express.THIS._.print('express.app.get('+req.path+')')
   debug('GET REQUEST: '+req.path);
 
   //debug('GET REQUEST!!!!!!!!');
@@ -85,13 +80,11 @@ express.getFunction = function (req, res) {
   input.getHTML = new Object();
   input.getHTML.query = req.query;
   debug(req.path,req.query);
-  express.THIS._.print('input('+JSON.stringify(zs4req.input)+')');
 
   express.getCookie(req,zs4req);
 
   zs4req.process(function(ret){
     var r = zs4req.request.html;
-    express.THIS._.print('output('+r+')')
     express.setCookie(res,zs4req);
     //res.write(express.html(req,res));
     if (r == null || r.length == 0){
@@ -154,16 +147,12 @@ express.schema = function(parent){
   THIS._.property(new zs4.type.object({name:'run',flags:'required nostore noget api'}));
   THIS.run._.transform = (function(req,cb){
     req.setScope(this);
-    //this._.transformInternal(req);
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
-      this._.print(err);
       this._.get(req); cb(); return;
     }
-    this._.print('.transform()');
 
-    //if (!zs4.is.email(zs4.THIS.zs4.))
     if (zs4.is.object(req.input)){
       THIS.start();
     }

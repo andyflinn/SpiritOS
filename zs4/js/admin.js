@@ -508,7 +508,6 @@ zs4.admin.util = {
 						console.log(i.selectedIndex,i.value);
 						if (v._.flags.get.local()){
 							v._.value = v._.enum[i.selectedIndex];
-							v._.print(v._.path + ' updated with '+v._.value);
 						}
 						else {
 							zs4.admin.util.setIcon(l,'upload');
@@ -531,7 +530,6 @@ zs4.admin.util = {
 						//alert('++++++++++++++++++');
 						if (v._.flags.get.local()){
 							v._.value = i.value;
-							v._.print(v._.path + ' updated with '+v._.value);
 						}
 						else {
 							zs4.admin.util.setIcon(l,'upload');
@@ -1851,9 +1849,6 @@ zs4.admin.util = {
 
 		if (o._.html.refreshAll==null){
 			o._.html.refreshAll = function(){
-				//document.body.style.width = window.innerWidth+'px';
-				//document.body.style.height = window.innerHeight+'px';
-				o._.print('refreshing object tree');
 				zs4.admin.rootObject._.localRefresh();
 				zs4.admin.type.object(zs4.admin.rootElementParent,zs4.admin.rootObject);
 			}
@@ -3443,9 +3438,6 @@ zs4.admin.type = {
 	array:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
-	auth:function(po,o){
-		zs4.admin.type.object(po,o);
-	},
 	bits:function(po,o){
 		zs4.admin.type.integer(po,o);
 	},
@@ -3466,7 +3458,6 @@ zs4.admin.type = {
 						o._.value = false;
 					}
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					if (o._.html.input.checked==true){
@@ -3516,7 +3507,6 @@ zs4.admin.type = {
 					if (o._.flags.get.local()){
 						o._.value = zs4.admin.util.date.fromInput(o._.html.input);
 						o._.html.refreshAll();
-						o._.print(o._.path + ' updated with '+o._.value);
 					}
 					else if (o._.flags.get.quickupdate()){
 						o._.html.quickupdate(zs4.admin.util.date.fromInput(o._.html.input));
@@ -3563,7 +3553,6 @@ zs4.admin.type = {
 				if (o._.flags.get.local()){
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);
@@ -3634,7 +3623,6 @@ zs4.admin.type = {
 					o._.value = o._.parseInt(o._.html.input.value);
 					o._.value = o._.parseInt(o._.html.input.value);
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.parseInt(o._.html.input.value));
@@ -3681,7 +3669,6 @@ zs4.admin.type = {
 					o._.value = o._.parseFloat(o._.html.input.value);
 					o._.value = o._.parseFloat(o._.html.input.value);
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.parseFloat(o._.html.input.value));
@@ -3789,7 +3776,6 @@ zs4.admin.type = {
 				if (o._.flags.get.local()){
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);
@@ -3834,7 +3820,6 @@ zs4.admin.type = {
 					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);
@@ -3875,7 +3860,6 @@ zs4.admin.type = {
 					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);
@@ -3917,7 +3901,6 @@ zs4.admin.type = {
 					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);
@@ -3998,7 +3981,6 @@ zs4.admin.type = {
 					if (o._.flags.get.local()){
 						o._.value = o._.enum[o._.html.input.selectedIndex];
 						o._.html.refreshAll();
-						o._.print(o._.path + ' updated with '+o._.value);
 					}
 					else if (o._.flags.get.quickupdate()){
 						o._.html.quickupdate(o._.enum[o._.html.input.selectedIndex]);
@@ -4025,7 +4007,6 @@ zs4.admin.type = {
 					if (o._.flags.get.local()){
 						o._.value = o._.html.input.value;
 						o._.html.refreshAll();
-						o._.print(o._.path + ' updated with '+o._.value);
 					}
 					else if (o._.flags.get.quickupdate()){
 						o._.html.quickupdate(o._.html.input.value);
@@ -4060,7 +4041,6 @@ zs4.admin.type = {
 				if (o._.flags.get.local()){
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);
@@ -4116,7 +4096,6 @@ zs4.admin.type = {
 					if (o._.flags.get.local()){
 						o._.value = o._.html.input.value;
 						o._.html.refreshAll();
-						o._.print(o._.path + ' updated with '+o._.value);
 					}
 					else if (o._.flags.get.quickupdate()){
 						o._.html.quickupdate(o._.html.input.value);
@@ -4168,7 +4147,6 @@ zs4.admin.type = {
 					o._.value = o._.html.input.value;
 					o._.value = o._.html.input.value;
 					o._.html.refreshAll();
-					o._.print(o._.path + ' updated with '+o._.value);
 				}
 				else if (o._.flags.get.quickupdate()){
 					o._.html.quickupdate(o._.html.input.value);

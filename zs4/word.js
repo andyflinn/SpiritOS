@@ -90,7 +90,8 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
           }
         },
         wantreply:true,
-      },function(res){
+      },
+      function(res){
         var arr = zs4.path.resolve(req,'request.get.zs4.type.translation.array');
         if (arr != null){
           for (var n in arr){

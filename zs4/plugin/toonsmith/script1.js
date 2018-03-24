@@ -1772,7 +1772,7 @@ ts.abc = function(){
     while (i < K.length && K.charAt(i)==' ')i++;
     while (i < K.length && K.charAt(i)!=' '){Ktype+=K.charAt(i);i++;}
     // done parsing key
-    zs4.debug('key note: '+Knote, 'Ktype: '+Ktype);
+    //zs4.debug('key note: '+Knote, 'Ktype: '+Ktype);
     keynote = ts.music.parse.note(Knote);
     if (keynote==-1)return ABC.failure(Knote+' is not a valid keynote');
     if (Ktype=='m'||Ktype=='min'||Ktype=='minor')keynote+=3;
@@ -1786,7 +1786,7 @@ ts.abc = function(){
     keynote %= 12;
 
     if (keynote==0){
-      zs4.debug('using no B\'s or #\'s');
+      //zs4.debug('using no B\'s or #\'s');
       return true;
     }
 

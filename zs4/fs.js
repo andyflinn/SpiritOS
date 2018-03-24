@@ -50,17 +50,14 @@ fs.create = function(){
       cb();
       return;
     };
-    //this._.transformInternal(req);
-    //this._.print('transform()');
+
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
-      this._.print(err);
       return get();
     }
 
     if (zs4.is.object(req.input)&&(zs4.is.string(req.input.path))){
-      STAT._.print('cb-before: '+JSON.stringify(req.request.callback));
       nodefs.stat(req.input.path,function(err,stats){
         if (err){
           req.error(STAT,{text:'fs.stat(\''+req.input.path+'\')',data:err});
@@ -69,7 +66,6 @@ fs.create = function(){
           var result = fs.statsObject(stats);
           req.result(STAT,result);
         }
-        STAT._.print('cb-after: '+JSON.stringify(req.request.callback));
         return get();
       });
       return;
@@ -93,7 +89,6 @@ fs.create = function(){
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(THIS,err);
-      this._.print(err);
       return get();
     }
     var READDIR = this;
@@ -133,7 +128,6 @@ fs.create = function(){
     if (!(req.flags.value & req.flags.authset)){
       var err = 'not authorized';
       req.error(READFILE,err);
-      this._.print(err);
       return get();
     }
     var THIS = this;

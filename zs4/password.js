@@ -22,7 +22,6 @@ password.create = function(){
   THIS._.transform = (function(req,cb){
     //this._.transformInternal(req);
     req.setScope(this);
-    this._.print('transform()',req);
     if (zs4.is.object(req.input)){
       if (req.input.reset==true){
         debug(this._.path+' PASSWORD WAS RESET');
@@ -31,7 +30,6 @@ password.create = function(){
         this._.get(req); cb(); return;
       }
       if (zs4.is.password(req.input.vfy)||zs4.is.password(req.input.set)){
-        this._.print(this._.path+'.transform('+JSON.stringify(req.input)+')',req);
       }
 
       if (passhash.isHashed(this.hashed._.value)){
@@ -73,7 +71,6 @@ password.create = function(){
               this.hashed._.value = nu;
               //debug('...password set...');
               this._.shouldBeSaved(req);
-              this._.print('password set '+this.hashed._.value)
               req.result(THIS,'goscope');
               req.tokenCreate({iss:THIS._.path,scope:req.scope._.path,});
             }
@@ -92,14 +89,10 @@ password.create = function(){
   }).bind(THIS);
 
   THIS._.get = (function(req,po){
-    //if (req.tokenExists()&&(!req.flags.get.am()&&!req.flags.get.own()))return null;
 
     req.setScope(this);
-    this._.print(this._.path+'.get()');
-    //debug('password.get'+ JSON.stringify(this._.authGet));
     var get = this._.getInitialize(req);
     if (get==null){
-      this._.print(this._.path+'.get() NOT AUTHORIZED!?!?!?',req);
       return null;
     }
 

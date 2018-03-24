@@ -6,13 +6,10 @@ if (true){
     p[a[i]] = new Object();
     p = p[a[i]];
   }
-  zs4.THIS._.print('LAUNCHING ADMIN @ '+ JSON.stringify(input))
   zs4.post(input,function(){
     zs4.loadtranslations(function(){
       zs4.throttle.job(function(){
-        zs4.THIS._.print('loaded css \''+'/style.css'+'\'')
         zs4.admin.type.object(null,zs4.location.get());
-        zs4.THIS._.print('ADMIN LAUNCHED');
         zs4.style.refresh();
       });
     });

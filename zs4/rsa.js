@@ -32,8 +32,6 @@ rsa.create = function(){
       const hash = crypto.createHash('sha1');
       hash.update(this._.key.exportKey('pkcs1-public-der'));
       this.hash._.value = hash.digest('base64');
-
-      THIS._.print('RSA KEY HASH: '+this.hash._.value);
     }
   }).bind(THIS);
   THIS._.store = (function(){
@@ -52,8 +50,6 @@ rsa.create = function(){
 
   THIS._.get = (function(req,po){
     req.setScope(THIS);
-    this._.print(this._.path+'.get()');
-    //debug('GETTING RSA PUBLIC KEY');
     var get = this._.getInitialize(req);
     if (get==null)return;
 
