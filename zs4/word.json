@@ -30,11 +30,37 @@
 "password":{
   "de":"Kennwort"
   },
+"areyousure":{
+  "de":"Sind Sie Sicher?",
+  "en":"are you sure?"
+  },
+"load":{
+  "de":"laden"
+  },
 "login":{
   "de":"anmelden"
   },
 "logout":{
   "de":"abmelden"
+  },
+"navhome":{
+  "de":"zur Startseite",
+  "en":"navigate to home page"
+  },
+"navuserhome":{
+  "de":"zur Benützerseite",
+  "en":"navigate to user page"
+  },
+"newpassword":{
+  "de":"neues Kennwort",
+  "en":"new password"
+  },
+"oldpassword":{
+  "de":"altes Kennwort",
+  "en":"old password"
+  },
+"save":{
+  "de":"speichern"
   },
 "ab":{
   "en":"Abkhaz",

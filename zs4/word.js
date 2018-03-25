@@ -8,8 +8,16 @@ var fs = require('fs');
 var word = exports;
 
 var R = zs4.meaning.register;
+R('areyousure');
+R('link');
+R('load');
 R('login');
 R('logout');
+R('navhome');
+R('navigate');
+R('newpassword');
+R('oldpassword');
+R('save');
 
 const LANG_JSON = './zs4/static/tables/lang.json';
 const TRANSLATION_JSON = './zs4/word.json';
@@ -37,6 +45,10 @@ word.translation = new Object({
 
 zs4.meaning.import(JSON.parse(fs.readFileSync(TRANSLATION_JSON,'utf8')));
 debug(zs4.meaning.export());
+
+word.saveMeanings = function(){
+
+}
 
 zs4.THIS.zs4._.property(new zs4.type.object({name:'language',flags:'api authgetpublic'}));
 
@@ -112,8 +124,6 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
     }
   }
 
-  if (zs4.THIS.zs4.language.config.usedb._.value!=true)return error('this service not active');
-
   if (!req.tokenExists()) return error('not logged in');
   if (!zs4.is.object(req.input))return error('no input object');
   if (!zs4.is.name(req.input.meaning))return error('invalid meaning');
@@ -126,6 +136,19 @@ zs4.THIS.zs4.language.translate._.transform = (function(req,cb){
   if (meaning==null)return error('meaning '+req.input.meaning+' not found.');
 
   debug('translate input:',req.input);
+
+  if (zs4.THIS.zs4.language.config.usedb._.value!=true){
+    if (req.userIsRoot()){
+      meaning[req.input.lang] = req.input.translation;
+      fs.writeFileSync(TRANSLATION_JSON, zs4.json.textify(zs4.meaning.export()),'utf8');
+      req.result(THIS,true);
+      return cb();
+    }
+    else {
+      return error('this service not active');
+    }
+  }
+
 
   var query = new Object({
     search:'',

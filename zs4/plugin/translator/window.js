@@ -21,7 +21,7 @@ zs4.plugin.list.translator = new Object({
     THIS.initialize();
 
     var T = new zs4.admin.util.toolElement(e,'translator');
-    T.show();
+    T.expand();
 
     THIS.language = zs4.userLanguage();
     var searchTerm = '';

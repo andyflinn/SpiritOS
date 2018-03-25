@@ -545,10 +545,15 @@ zs4.admin.util = {
 		return e;
 	},
 
-	element:function(){
+	element:function(bitstring){
 		var ELEMENT = this;
 
 		var on = new Object();
+		ELEMENT.hasEventHandler = function(name){
+			if (!zs4.is.name(name))return false;
+			if (!on.hasOwnProperty(name))return false;
+			return true;
+		};
 		ELEMENT.trigger = function(name){
 			if (!on.hasOwnProperty(name))return;
 
@@ -588,8 +593,19 @@ zs4.admin.util = {
 			return true;
 		};
 
-		ELEMENT.show = function(){};
-		ELEMENT.hide = function(){};
+		ELEMENT.show = function(){
+			if (ELEMENT.top != null){
+				if (ELEMENT.bits.block.get())ELEMENT.top.style.display = 'block';
+				else if (ELEMENT.bits.inlineblock.get())ELEMENT.top.style.display = 'inline-block';
+				else if (ELEMENT.bits.inline.get())ELEMENT.top.style.display = 'inline';
+				else ELEMENT.top.style.display = 'initial';
+			}
+		};
+		ELEMENT.hide = function(){
+			if (ELEMENT.top != null){
+				ELEMENT.top.style.display = 'none';
+			}
+		};
 
 		ELEMENT.element = null;
 
@@ -615,10 +631,95 @@ zs4.admin.util = {
 			current_bit += 1;
 		}
 
+		ELEMENT.addBit('block');
+		ELEMENT.addBit('inlineblock');
+		ELEMENT.addBit('inline');
+		ELEMENT.addBit('showing'); ELEMENT.bits.showing.true();
 
+		ELEMENT.bgimage = function(img){
+			if (ELEMENT.top==null)return false;
+			if (img==null){
+				zs4.style.type.bgimage(ELEMENT.top);
+			}
+			else {
+				zs4.style.type.bgimage(ELEMENT.top,'/gfx/icons/'+icon+'.svg');
+			}
+
+			return true;
+		}
+		ELEMENT.pointer = function(ptr){
+			if (ELEMENT.element==null)return false;
+			if (ptr==null) ELEMENT.element.style.cursor = 'initial';
+			else ELEMENT.element.style.cursor = ptr;
+			return ELEMENT.element.style.cursor;
+		},
+		ELEMENT.setBits = function(str){ELEMENT.bits.setString(str);}
+		if (zs4.is.string(bitstring))ELEMENT.setBits(bitstring);
 		return ELEMENT;
 	},
-	elementLink:function(pe,hr,tx){
+	div:function(pe){
+		var DIV = this;
+		zs4.admin.util.element.call(DIV,'block');
+		DIV.top = DIV.element = document.createElement('div');
+		pe.appendChild(DIV.top);
+	},
+	inputBoolean:function(pe,tof){
+		var BOOL = this;
+		zs4.admin.util.element.call(BOOL,'inlineblock');
+
+		var div = BOOL.top = BOOL.element = document.createElement('div');
+		div.style.width = div.style.height = '1em';
+		pe.appendChild(div);
+
+		var bool = false;
+		var imgFalse = 'false';
+		var imgTrue = 'true';
+
+		function bg(icon){
+			zs4.style.type.bgimage(div,'/gfx/icons/'+icon+'.svg');
+		}
+
+		function refresh(){
+			if (bool) bg(imgTrue);
+			else bg(imgFalse);
+		}
+
+		BOOL.imageFalse = function(icon){
+			imgFalse = icon;
+			refresh();
+		};
+		BOOL.imageTrue = function(icon){
+			imgTrue = icon;
+			refresh();
+		};
+
+		BOOL.value = function(v){
+			if (v==null)return bool;
+			if (v==true){
+				bool=true;
+			}
+			else {
+				bool=false;
+			}
+			refresh();
+			return bool;
+		}
+		BOOL.value(tof);
+
+		div.onclick = function(){
+			if (bool){
+				bool = false;
+			}
+			else {
+				bool = true;
+			}
+			refresh();
+			BOOL.trigger('change');
+		}
+
+		BOOL.show();
+	},
+	elementLink:function(pe,hr){
 		var LINK = this;
 		zs4.admin.util.element.call(LINK);
 
@@ -632,7 +733,6 @@ zs4.admin.util = {
 		}
 
 		if (zs4.is.string(hr)) LINK.href(hr);
-		if (zs4.is.string(tx)) a.textContent = tx;
 
 		pe.appendChild(LINK.top);
 	},
@@ -683,7 +783,7 @@ zs4.admin.util = {
 		MEANING.object = zs4.meaning.find(meaning);
 		MEANING.ulang = zs4.userLanguage();
 
-		zs4.admin.util.element.call(MEANING);
+		zs4.admin.util.element.call(MEANING,'inlineblock');
 		zs4.admin.util.meaning.push(MEANING);
 		var div = MEANING.top = document.createElement('div');
 		div.style.display = 'inline-block';
@@ -695,6 +795,26 @@ zs4.admin.util = {
 		var text = MEANING.text = meaning;
 		display.style.cursor = 'help';
 		div.appendChild(display);
+		MEANING.icon = function(icon){
+			zs4.admin.util.setIcon(display,icon);
+		}
+		MEANING.button = function(icon){
+			zs4.style.type.button(display);
+			if (zs4.is.string(icon)){MEANING.icon(icon);}
+			MEANING.bold(true);
+		}
+
+		MEANING.addBit('bold');
+		MEANING.bold = function(b){
+			if (b==null)return MEANING.bits.bold.get();
+			if (b==true) MEANING.bits.bold.true();
+			else if (b==false) MEANING.bits.bold.false();
+
+			if (MEANING.bold())MEANING.element.style.fontWeight = 'bold';
+			else MEANING.element.style.fontWeight = 'initial';
+
+			return MEANING.bits.bold.get();
+		};
 
 		MEANING.refresh = (function(){
 				var trans = zs4.meaning.find(meaning);
@@ -710,11 +830,10 @@ zs4.admin.util = {
 				else {
 					MEANING.text = meaning;
 				}
-				this.element.textContent = MEANING.text;
+				MEANING.element.textContent = MEANING.text;
 
 				if (MEANING.eLang)MEANING.eLang.value(MEANING.ulang);
 		}).bind(MEANING);
-		MEANING.refresh();
 
 		MEANING.tran = null;
 		MEANING.shotran = null;
@@ -739,11 +858,15 @@ zs4.admin.util = {
 				MEANING.top.style.backgroundImage = 'initial';
 			}
 
-
-
 			MEANING.onclick = function(e){
 				if (!MEANING.bits.noctrlclick.get()){
-					if (!e.ctrlKey && !e.altKey)return true;
+					if (!e.ctrlKey && !e.altKey){
+						if (MEANING.hasEventHandler('click')){
+							MEANING.trigger('click');
+							return false;
+						}
+						return true;
+					}
 				}
 				console.log(e);
 
@@ -832,10 +955,12 @@ zs4.admin.util = {
 		}
 
 		pe.appendChild(div);
+		MEANING.show();
+		MEANING.refresh();
 	},
 	toolElement:function(pe,icon){
 		var TOOL = this;
-		zs4.admin.util.element.call(TOOL);
+		zs4.admin.util.element.call(TOOL,'block');
 
 		var div = TOOL.top = document.createElement('div');
 		zs4.style.type.toolbubble(div);
@@ -847,7 +972,9 @@ zs4.admin.util = {
 
 		zs4.admin.util.addIconElement(header,icon);
 		zs4.admin.util.addSpace(header);
-		new zs4.admin.util.elementMeaning(header,icon);
+		var title = new zs4.admin.util.elementMeaning(header,icon);
+		title.bold(true);
+		title.pointer('pointer');
 
 		var items = document.createElement('div');
 		zs4.style.type.tooldetail(items);
@@ -858,21 +985,64 @@ zs4.admin.util = {
 		TOOL.element = items;
 
 		var showing = false;
-		TOOL.show = function(){
+		TOOL.expand = function(){
 			showing = true;
 			items.style.display = 'block';
 		}
-		TOOL.hide = function(){
+		TOOL.collapse = function(){
 			showing = false;
 			items.style.display = 'none';
 		}
 
 		header.onclick = function(){
-			if (!showing) TOOL.show();
-			else TOOL.hide();
+			if (TOOL.hasEventHandler('click')){
+				TOOL.trigger('click');
+			}
+			else {
+				if (!showing) TOOL.expand();
+				else TOOL.collapse();
+			}
 		};
 
 		pe.appendChild(div);
+	},
+	toolLink:function(pe,icon,text,f){
+		LINK = this;
+		if (icon==null)icon='link';
+
+		zs4.admin.util.toolElement.call(LINK,pe,'link');
+		zs4.admin.util.addSpace(LINK.header);
+		var link = new zs4.admin.util.elementLink(LINK.header);
+		LINK.element = link.element;
+		var icon = zs4.admin.util.addIconElement(link.element,icon);
+		zs4.admin.util.addSpace(link.element);
+		var text = new zs4.admin.util.elementMeaning(link.element,text);
+		text.pointer('pointer');
+		LINK.on('click',f);
+	},
+	toolLinkScope:function(pe,scope,f){
+		LINK = this;
+		zs4.admin.util.toolElement.call(LINK,pe,'link');
+
+		zs4.admin.util.addSpace(LINK.header);
+		var link = new zs4.admin.util.elementLink(LINK.header);
+		LINK.element = link.element;
+
+		if (zs4.is.type(scope)){
+			var si = 'home';
+			var st = 'navhome';
+			if (scope._.path!=''){
+				si = scope.zs4.head.typename._.value;
+				st = scope.zs4.head.title._.value;
+				new zs4.admin.util.elementMeaning(link.element,si);
+				zs4.admin.util.addSpace(link.element);
+			}
+			var icon = zs4.admin.util.addIconElement(link.element,si);
+			zs4.admin.util.addSpace(link.element);
+			var title = new zs4.admin.util.elementMeaning(link.element,st);
+
+			LINK.on('click',f);
+		}
 	},
 	loginElement:function(pe){
 		var LOGIN = this;
@@ -1035,52 +1205,31 @@ zs4.admin.util = {
 			// LOGOUT pane
 			///////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////
-			this.logout = document.createElement('zs4-logout');
-			this.logout.textContent = 'logout';
-			LOGOUT.appendElement(this.logout);
-			this.logoutvisible = false;
-			this.logout.onclick = (function(){
-				if (!LOGOUT.logoutvisible){
-					zs4.admin.util.removeClass(this.logoutArgs,'nodisplay');
-					zs4.admin.util.addClass(this.bye,'nodisplay');
-					LOGOUT.sure.checked = false;
-					LOGOUT.logoutvisible = true;
-				}
-				else {
-					zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
-					zs4.admin.util.addClass(this.bye,'nodisplay');
-					LOGOUT.sure.checked = false;
-					LOGOUT.logoutvisible = false;
-				}
-			}).bind(this);
+			var ulang = zs4.userLanguage();
 
-			this.logoutArgs = document.createElement('zs4-logout-args');
-			LOGOUT.appendElement(this.logoutArgs);
-			zs4.admin.util.addClass(this.logoutArgs,'nodisplay');
+			var e = LOGOUT.element;
 
-			this.sureText = document.createElement('zs4-sure-text');
-			this.sureText.textContent = 'sure?';
-			this.logoutArgs.appendChild(this.sureText);
+			var sureDiv = new zs4.admin.util.div(e);
+			var sureText = new zs4.admin.util.elementMeaning(sureDiv.element,'areyousure');
 
-			this.sure = document.createElement('input');
-			this.sure.type = 'checkbox';
-			zs4.admin.util.addClass(this.sure,'sure');
-			this.logoutArgs.appendChild(this.sure);
-			this.sure.onchange = (function(){
-				if (this.sure.checked)zs4.admin.util.removeClass(this.bye,'nodisplay');
-				else zs4.admin.util.addClass(this.bye,'nodisplay');
-			}).bind(this);
+			var sure = new zs4.admin.util.inputBoolean(sureDiv.element,false);
 
-			this.bye = document.createElement('zs4-logout-now');
-			this.bye.textContent = 'logout';
-			zs4.admin.util.addClass(this.bye,'nodisplay');
-			LOGOUT.appendElement(this.bye);
-			this.bye.onclick = (function(){
-				LOGOUT.bye.style.backgroundColor = 'blue';
+			var bye = new zs4.admin.util.elementMeaning(e,'logout');
+			bye.button('logout');
+			bye.hide();
+
+			sure.on('change',(function(){
+				if (sure.value())bye.show();
+				else bye.hide();
+			}).bind(this));
+
+			bye.on('click',(function(){
+				zs4.style.type.bgimage(bye.top,'logout');
+				//bye.element.style.backgroundColor = 'blue';
 				zs4.post(zs4.THIS.zs4.bye._.wrapRequest({sure:true}),function(ret){
-					LOGOUT.bye.style.backgroundColor = 'initial';
+					zs4.style.type.bgimage(bye.top);
 				});
-			}).bind(this);
+			}).bind(this));
 
 		}
 	},
@@ -1091,6 +1240,7 @@ zs4.admin.util = {
 			zs4.admin.util.toolElement.call(LOGIN,pe,'password');
 			this.spwIsOpen = false;
 
+			var ulang = zs4.userLanguage();
 			var username = document.createElement('a');
 			username.href = '/'+zs4.THIS._.scopath;
 			zs4.admin.util.addClass(username,'am');
@@ -1117,43 +1267,51 @@ zs4.admin.util = {
 			LOGIN.appendElement(this.setpassword);
 
 			// OLD PASSWORD 1
-			this.old1 = document.createElement('zs4-spw-pwe');
+			this.old1 = document.createElement('div');
 			this.setpassword.appendChild(this.old1);
-			this.old1label = document.createElement('zs4-spw-old');
-			this.old1label.textContent = 'old: ';
-			this.old1.appendChild(this.old1label);
+			new zs4.admin.util.elementMeaning(this.old1,'oldpassword');
+			zs4.admin.util.addTextSpan(this.old1,': ');
+			//this.old1label = document.createElement('zs4-spw-old');
+			//this.old1label.textContent = 'old: ';
+			//this.old1.appendChild(this.old1label);
 			this.old1input = document.createElement('input');
 			zs4.admin.util.addAttribute(this.old1input,'autocomplete','current-password');
 			this.old1input.type = 'password';
 			this.old1.appendChild(this.old1input);
 
 			// OLD PASSWORD 2
-			this.old2 = document.createElement('zs4-spw-pwe');
+			this.old2 = document.createElement('div');
 			this.setpassword.appendChild(this.old2);
-			this.old2label = document.createElement('zs4-spw-old');
-			this.old2label.textContent = 'new: ';
-			this.old2.appendChild(this.old2label);
+			new zs4.admin.util.elementMeaning(this.old2,'newpassword');
+			zs4.admin.util.addTextSpan(this.old2,': ');
+			//this.old2label = document.createElement('zs4-spw-old');
+			//this.old2label.textContent = 'new: ';
+			//this.old2.appendChild(this.old2label);
 			this.old2input = document.createElement('input');
 			zs4.admin.util.addAttribute(this.old2input,'autocomplete','current-password');
 			this.old2input.type = 'password';
 			this.old2.appendChild(this.old2input);
 
 			// NEW PASSWORD
-			this.setpwd = document.createElement('zs4-spw-pwe');
+			this.setpwd = document.createElement('div');
 			this.setpassword.appendChild(this.setpwd);
-			this.setpwdlabel = document.createElement('zs4-spw-new');
-			this.setpwdlabel.textContent = 'new: ';
-			this.setpwd.appendChild(this.setpwdlabel);
+			new zs4.admin.util.elementMeaning(this.setpwd,'newpassword');
+			zs4.admin.util.addTextSpan(this.setpwd,': ');
+			//this.setpwdlabel = document.createElement('zs4-spw-new');
+			//this.setpwdlabel.textContent = 'new: ';
+			//this.setpwd.appendChild(this.setpwdlabel);
 			this.setpwdinput = document.createElement('input');
 			zs4.admin.util.addAttribute(this.setpwdinput,'autocomplete','new-password');
 			this.setpwdinput.type = 'password';
 			this.setpwd.appendChild(this.setpwdinput);
 
 			// SEND BUtTON
-			this.setpwdsend = document.createElement('zs4-spw-send');
-			this.setpassword.appendChild(this.setpwdsend);
-			this.setpwdsend.textContent = 'set now';
-			this.setpwdsend.onclick = (function(){
+			this.buttonDiv = document.createElement('div');
+			this.setpassword.appendChild(this.buttonDiv);
+			this.setpwdsend = new zs4.admin.util.elementMeaning(this.buttonDiv,'save');
+			this.setpwdsend.icon('save');
+			this.setpwdsend.button();
+			this.setpwdsend.on('click',(function(){
 				if (!zs4.THIS._.loggedIn)return;
 				var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
 				if (uscope==null)return;
@@ -1212,7 +1370,7 @@ zs4.admin.util = {
 				});
 
 
-			}).bind(LOGIN);
+			}).bind(LOGIN));
 
 			LOGIN.refresh = function(){
 				var vfy = uscope._.resolvePath('zs4.password.vfy');
@@ -1240,16 +1398,26 @@ zs4.admin.util = {
 		var LOGIN = this;
 
 		this.loggedIn = zs4.THIS._.loggedIn;
-		var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
-		var utitle = '';
 
-		if (this.loggedIn){
-			var spwe = new zs4.admin.util.setPassWordElement(pe);
-			var logout = new zs4.admin.util.logoutElement(pe);
+		var utitle = '';
+		var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+
+		var home = new zs4.admin.util.toolLink(pe,'home','navhome',function(){zs4.navigate('/')})
+
+		if (uscope!=null){
+			if (zs4.THIS._.scopath==''){uitle = 'root';}
+			else if (uscope.zs4.head.title._.value.trim()==''){utitle = zs4.THIS._.scopath;}
+			else {utitle = uscope.zs4.head.title._.value;}
+
+			if (zs4.THIS._.scopath!='') {
+				new zs4.admin.util.toolLinkScope(pe,uscope,function(){zs4.navigate('/'+zs4.THIS._.scopath);});
+			}
+			new zs4.admin.util.setPassWordElement(pe);
+			new zs4.admin.util.logoutElement(pe);
 		}
 		else {
-			var login = new zs4.admin.util.loginElement(pe);
-			var social = new zs4.admin.util.socialLoginElement(pe);
+			new zs4.admin.util.loginElement(pe);
+			new zs4.admin.util.socialLoginElement(pe);
 		}
 
 	},
@@ -1351,7 +1519,7 @@ zs4.admin.util = {
 		var a = new Array();
 		var e = BITS.top = BITS.element = document.createElement('zs4-input-bits');
 		e.style.display = 'inline-block';
-		//e.style.fontSize = '0.7em';
+		e.style.paddingLeft = '1em';
 		//zs4.style.type.toolbubble(e);
 
 		function bit(n){

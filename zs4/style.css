@@ -229,6 +229,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-error:before{content:url(/gfx/icons/error.svg);}
 .icon-express:before{content:url(/gfx/icons/express.svg);}
 .icon-facebook:before{content:url(/gfx/icons/facebook.svg);}
+.icon-false:before{content:url(/gfx/icons/false.svg);}
 .icon-female:before{content:'\02640';font-weight: bolder;}
 .icon-file:before{content:'f';font-weight: bolder;color:blue;}
 .icon-firefox:before{content:url(/gfx/icons/firefox.svg);}
@@ -241,6 +242,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-head:before{content:url(/gfx/icons/head.svg);}
 .icon-has:before{content:url(/gfx/icons/has.svg);}
 .icon-hi:before{content:url(/gfx/icons/hi.svg);}
+.icon-home:before{content:url(/gfx/icons/home.svg);}
 .icon-id:before{content:url(/gfx/icons/head.svg);}
 .icon-info:before{content:url(/gfx/icons/info.svg);}
 .icon-instagram:before{content:url(/gfx/icons/instagram.svg);}
@@ -253,6 +255,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-layout:before{content:url(/gfx/icons/layout.svg);}
 .icon-left:before{content:url(/gfx/icons/left.svg);}
 .icon-linefeed:before{content:'\000B6';font-weight: bolder;}
+.icon-link:before{content:url(/gfx/icons/link.svg);}
 .icon-list:before{content:url(/gfx/icons/list.svg);}
 .icon-login:before{content:url(/gfx/icons/login.svg);}
 .icon-logo:before{content:url(/gfx/icons/logo.svg);}
@@ -328,7 +331,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-translation:before{content:url(/gfx/icons/translation.svg);}
 .icon-translator:before{content:url(/gfx/icons/translator.svg);}
 .icon-translate:before{content:url(/gfx/icons/translate.svg);}
-.icon-true:before{content:'\02611';font-weight: bolder;}
+.icon-true:before{content:url(/gfx/icons/true.svg);}
 .icon-tool:before{content:url(/gfx/icons/tool.svg);}
 .icon-type:before{content:url(/gfx/icons/type.svg);}
 .icon-up:before{content:url(/gfx/icons/up.svg);}
