@@ -4,7 +4,7 @@
 
 zs4.admin = new Object({debug:false,});
 
-
+var UI;
 zs4.admin.util = {
 	clseps:' ',
 
@@ -662,6 +662,14 @@ zs4.admin.util = {
 		zs4.admin.util.element.call(DIV,'block');
 		DIV.top = DIV.element = document.createElement('div');
 		pe.appendChild(DIV.top);
+		DIV.show();
+	},
+	inline:function(pe){
+		var INLINE = this;
+		zs4.admin.util.element.call(INLINE,'inlineblock');
+		INLINE.top = INLINE.element = document.createElement('div');
+		pe.appendChild(INLINE.top);
+		INLINE.show();
 	},
 	inputBoolean:function(pe,tof){
 		var BOOL = this;
@@ -672,8 +680,8 @@ zs4.admin.util = {
 		pe.appendChild(div);
 
 		var bool = false;
-		var imgFalse = 'false';
-		var imgTrue = 'true';
+		var imgFalse = 'selectedfalse';
+		var imgTrue = 'selectedtrue';
 
 		function bg(icon){
 			zs4.style.type.bgimage(div,'/gfx/icons/'+icon+'.svg');
@@ -706,7 +714,7 @@ zs4.admin.util = {
 		}
 		BOOL.value(tof);
 
-		div.onclick = function(){
+		div.onclick = function(e){
 			if (bool){
 				bool = false;
 			}
@@ -715,9 +723,12 @@ zs4.admin.util = {
 			}
 			refresh();
 			BOOL.trigger('change');
+			e.preventDefault();
+			return false;
 		}
 
 		BOOL.show();
+		refresh();
 	},
 	elementLink:function(pe,hr){
 		var LINK = this;
@@ -778,8 +789,10 @@ zs4.admin.util = {
 			a[i].refresh();
 		}
 	},
-	elementMeaning:function(pe,meaning){
+	elementMeaning:function(pe,meaningstring){
 		var MEANING = this;
+		var meaning = meaningstring;
+
 		MEANING.object = zs4.meaning.find(meaning);
 		MEANING.ulang = zs4.userLanguage();
 
@@ -815,6 +828,12 @@ zs4.admin.util = {
 
 			return MEANING.bits.bold.get();
 		};
+		MEANING.meaning = function(m){
+			if (m==null)return meaning;
+			meaning = m;
+			MEANING.object = zs4.meaning.find(meaning);
+			MEANING.refresh();
+		}
 
 		MEANING.refresh = (function(){
 				var trans = zs4.meaning.find(meaning);
@@ -1007,7 +1026,7 @@ zs4.admin.util = {
 		pe.appendChild(div);
 	},
 	toolLink:function(pe,icon,text,f){
-		LINK = this;
+		var LINK = this;
 		if (icon==null)icon='link';
 
 		zs4.admin.util.toolElement.call(LINK,pe,'link');
@@ -1020,8 +1039,216 @@ zs4.admin.util = {
 		text.pointer('pointer');
 		LINK.on('click',f);
 	},
+	elementItem:function(pe,obj){
+		var ITEM = this;
+		UI.element.call(ITEM,'block');
+
+		ITEM.value = obj;
+		ITEM.top = document.createElement('div');
+		ITEM.top.onclick = function(){ITEM.trigger('click');}
+
+		var selected = ITEM.icon = new zs4.admin.util.inputBoolean(ITEM.top);
+
+		var inline = new UI.inline(ITEM.top)
+		ITEM.element = inline.element;
+
+		pe.appendChild(ITEM.top);
+		ITEM.show();
+	},
+	toolSelect:function(pe,icon){
+		var SELECT = this;
+		UI.toolElement.call(SELECT,pe,icon);
+		var eHead = SELECT.header;
+		var a = new Array();
+		var value = null;
+		SELECT.addBit('multiple');
+		var colon = UI.addTextSpan(eHead,': ');
+		colon.style.fontWeight = 'bold';
+
+		//UI.addSpace(eHead);
+		//SELECT.itemtype = new UI.elementMeaning(eHead,icon);
+		//SELECT.itemtype.bold(true);
+		//SELECT.itemtype.pointer('pointer');
+
+		UI.addSpace(eHead);
+		UI.addIconElement(eHead,'select');
+		UI.addSpace(eHead);
+		SELECT.title = new UI.elementMeaning(eHead,icon);
+		SELECT.title.bold(true);
+		SELECT.title.pointer('pointer');
+		UI.addSpace(eHead);
+
+		SELECT.header = new UI.inline(eHead).element;
+		SELECT.tool = new UI.div(SELECT.element).element;
+		SELECT.tool.style.backgroundColor = zs4.style.colorToolTitlebarBackground.css();
+		SELECT.items = new UI.div(SELECT.element).element;
+		SELECT.item = function(obj){
+			var ITEM = this;
+			UI.elementItem.call(this,SELECT.items,obj);
+			if (!SELECT.bits.multiple.get()){
+				ITEM.icon.imageFalse('empty');
+			}
+			else {
+
+			}
+			ITEM.search = '';
+			ITEM.refresh = function(){
+				if (!SELECT.bits.multiple.get()){
+					if (value == ITEM.value){
+						ITEM.icon.value(true);
+					}
+					else {
+						ITEM.icon.value(false);
+					}
+				}
+				else {
+
+				}
+			};
+			ITEM.on('click',function(){
+				if (!SELECT.bits.multiple.get()){
+					SELECT.collapse();
+				}
+				if (value != ITEM.value){
+					value = ITEM.value;
+					SELECT.trigger('change');
+				}
+			});
+			a.push(ITEM);
+		};
+
+		SELECT.forAllOptions = function(f){
+			if (!zs4.is.function())return 0;
+			for (var i = 0 ; i < a.length; i++){
+				f(a[i]);
+			}
+			return a.length;
+		}
+
+		function sortDefault(a,b){
+			if (zs4.is.string(a.search)&&zs4.is.string(b.search)){
+				return a.search.localeCompare(b.search);
+			}
+			if (zs4.is.string(a.value)){
+				return a.value.localeCompare(b.value);
+			}
+		}
+		var sortFunction = sortDefault;
+		function searchDefault(a){
+			var string = '';
+			if (zs4.is.string(a.value)){
+				if (string.length > 0)string += ' ';
+				string += a.value;
+			}
+			if (zs4.is.string(a.search)){
+				if (string.length > 0)string += ' ';
+				string += a.search;
+			}
+
+			return zs4.string.search(string,SELECT.searchstr.value);
+		}
+		var searchFunction = searchDefault;
+
+		function refresh(){
+			for (var i = 0 ; i < a.length; i++){
+				var ITEM = a[i];
+				ITEM.refresh();
+				if (searchFunction(ITEM)){
+					ITEM.top.style.display = 'block';
+				}
+				else {
+					ITEM.top.style.display = 'none';
+				}
+			}
+			a.sort(function(a,b){
+				if (SELECT.sortswitch.value()){
+					return -sortFunction(a,b);
+				}
+				else {
+					return sortFunction(a,b);
+				}
+				sortFunction
+			});
+			for (var i = 0 ; i < (a.length-1) ; i++){
+				var ITEM = a[i];
+				SELECT.items.removeChild(ITEM.top);
+				SELECT.items.insertBefore(ITEM.top,SELECT.items.childNodes[i]);
+			}
+		}
+
+		SELECT.searchtool = new UI.div(SELECT.tool).element;
+		UI.addIconElement(SELECT.searchtool,'search');
+		UI.addSpace(SELECT.searchtool);
+		new UI.elementMeaning(SELECT.searchtool,'search');
+		SELECT.searchstr = document.createElement('input');
+		SELECT.searchstr.type = 'text';
+		SELECT.searchstr.oninput = refresh;
+		SELECT.searchtool.appendChild(SELECT.searchstr);
+
+		SELECT.sorttool = new UI.div(SELECT.tool).element;
+		UI.addIconElement(SELECT.sorttool,'sort');
+		UI.addSpace(SELECT.sorttool);
+		new UI.elementMeaning(SELECT.sorttool,'sort');
+
+		SELECT.sortswitch = new zs4.admin.util.inputBoolean(SELECT.sorttool);
+		SELECT.sortswitch.imageFalse('down');
+		SELECT.sortswitch.imageTrue('up');
+		SELECT.sortswitch.on('change',refresh);
+
+		SELECT.value = function(v){
+			if (v==null)return value;
+			value = v;
+			refresh();
+		};
+		SELECT.on('change',refresh);
+	},
+	toolSelectUiLanguage:function(pe){
+		var LANG = this;
+		UI.toolSelect.call(LANG,pe,'language');
+
+		function refreshItem(ITEM){
+			ITEM.search = '';
+			function add(s){if (ITEM.search!='')ITEM.search+=' '; ITEM.search+=s;}
+			var m = zs4.meaning.find(ITEM.value);
+			for (var n in m){
+				if (zs4.is.string(m[n]))add(m[n]);
+			}
+			add(ITEM.value);
+		}
+
+		function language(lang){
+			var ITEM = this;
+			LANG.item.call(this,lang);
+
+			UI.addSpace(ITEM.element);
+			UI.addTextSpan(ITEM.element,'('+lang+')');
+			UI.addSpace(ITEM.element);
+			LANG.meaning = new UI.elementMeaning(ITEM.element,lang);
+			LANG.meaning.pointer('pointer');
+			refreshItem(ITEM);
+		}
+
+		for (var i = 0 ; i < zs4.lang.length; i++){
+			new language(zs4.lang[i]);
+		}
+
+		LANG.refresh = function(){
+			LANG.title.meaning(LANG.value());
+			LANG.forAllOptions(refreshItem);
+		};
+
+		function onchange(){
+			UI.setUILanguage(LANG.value(),function(){
+				LANG.refresh();
+			});
+		};
+
+		LANG.value(zs4.userLanguage());
+		LANG.on('change',onchange);
+		LANG.refresh();
+	},
 	toolLinkScope:function(pe,scope,f){
-		LINK = this;
+		var LINK = this;
 		zs4.admin.util.toolElement.call(LINK,pe,'link');
 
 		zs4.admin.util.addSpace(LINK.header);
@@ -1031,15 +1258,35 @@ zs4.admin.util = {
 		if (zs4.is.type(scope)){
 			var si = 'home';
 			var st = 'navhome';
-			if (scope._.path!=''){
+			if (scope._.path==''){
+				var icon = zs4.admin.util.addIconElement(link.element,si);
+				zs4.admin.util.addSpace(link.element);
+				var title = new zs4.admin.util.elementMeaning(link.element,st);
+				title.pointer('pointer');
+			}
+			else {
 				si = scope.zs4.head.typename._.value;
 				st = scope.zs4.head.title._.value;
-				new zs4.admin.util.elementMeaning(link.element,si);
+
+				var notitle = false;
+				if (st.trim() == '') {
+					notitle = true;
+					st='notitle';
+					zs4.admin.util.addTextSpan(link.element,'(');
+				}
+				var icon = zs4.admin.util.addIconElement(link.element,'link');
+				if (notitle) {
+					zs4.admin.util.addTextSpan(link.element,')');
+				}
 				zs4.admin.util.addSpace(link.element);
+				var mean = new zs4.admin.util.elementMeaning(link.element,si);
+				mean.pointer('pointer');
+				zs4.admin.util.addSpace(link.element);
+				var icon = zs4.admin.util.addIconElement(link.element,si);
+				zs4.admin.util.addSpace(link.element);
+				var title = new zs4.admin.util.elementMeaning(link.element,st);
+				title.pointer('pointer');
 			}
-			var icon = zs4.admin.util.addIconElement(link.element,si);
-			zs4.admin.util.addSpace(link.element);
-			var title = new zs4.admin.util.elementMeaning(link.element,st);
 
 			LINK.on('click',f);
 		}
@@ -1212,6 +1459,7 @@ zs4.admin.util = {
 			var sureDiv = new zs4.admin.util.div(e);
 			var sureText = new zs4.admin.util.elementMeaning(sureDiv.element,'areyousure');
 
+			UI.addSpace(sureDiv.element);
 			var sure = new zs4.admin.util.inputBoolean(sureDiv.element,false);
 
 			var bye = new zs4.admin.util.elementMeaning(e,'logout');
@@ -1226,9 +1474,9 @@ zs4.admin.util = {
 			bye.on('click',(function(){
 				zs4.style.type.bgimage(bye.top,'logout');
 				//bye.element.style.backgroundColor = 'blue';
-				zs4.post(zs4.THIS.zs4.bye._.wrapRequest({sure:true}),function(ret){
+				zs4.THIS.zs4.bye._.call({sure:true,function(ret){
 					zs4.style.type.bgimage(bye.top);
-				});
+				}});
 			}).bind(this));
 
 		}
@@ -1241,25 +1489,9 @@ zs4.admin.util = {
 			this.spwIsOpen = false;
 
 			var ulang = zs4.userLanguage();
-			var username = document.createElement('a');
-			username.href = '/'+zs4.THIS._.scopath;
-			zs4.admin.util.addClass(username,'am');
-			LOGIN.appendElement(username);
 
 			var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
 			var utitle = '';
-			if (uscope!=null){
-				if (zs4.THIS._.scopath==''){
-					utitle = 'root';
-				}
-				else if (uscope.zs4.head.title._.value.trim()==''){
-					utitle = zs4.THIS._.scopath;
-				}
-				else {
-					utitle = uscope.zs4.head.title._.value;
-				}
-				username.text = utitle;
-			}
 
 			this.setpassword = document.createElement('form');
 			this.setpassword.onsubmit = function(){return false;};
@@ -1271,9 +1503,6 @@ zs4.admin.util = {
 			this.setpassword.appendChild(this.old1);
 			new zs4.admin.util.elementMeaning(this.old1,'oldpassword');
 			zs4.admin.util.addTextSpan(this.old1,': ');
-			//this.old1label = document.createElement('zs4-spw-old');
-			//this.old1label.textContent = 'old: ';
-			//this.old1.appendChild(this.old1label);
 			this.old1input = document.createElement('input');
 			zs4.admin.util.addAttribute(this.old1input,'autocomplete','current-password');
 			this.old1input.type = 'password';
@@ -1284,9 +1513,6 @@ zs4.admin.util = {
 			this.setpassword.appendChild(this.old2);
 			new zs4.admin.util.elementMeaning(this.old2,'newpassword');
 			zs4.admin.util.addTextSpan(this.old2,': ');
-			//this.old2label = document.createElement('zs4-spw-old');
-			//this.old2label.textContent = 'new: ';
-			//this.old2.appendChild(this.old2label);
 			this.old2input = document.createElement('input');
 			zs4.admin.util.addAttribute(this.old2input,'autocomplete','current-password');
 			this.old2input.type = 'password';
@@ -1297,9 +1523,6 @@ zs4.admin.util = {
 			this.setpassword.appendChild(this.setpwd);
 			new zs4.admin.util.elementMeaning(this.setpwd,'newpassword');
 			zs4.admin.util.addTextSpan(this.setpwd,': ');
-			//this.setpwdlabel = document.createElement('zs4-spw-new');
-			//this.setpwdlabel.textContent = 'new: ';
-			//this.setpwd.appendChild(this.setpwdlabel);
 			this.setpwdinput = document.createElement('input');
 			zs4.admin.util.addAttribute(this.setpwdinput,'autocomplete','new-password');
 			this.setpwdinput.type = 'password';
@@ -1402,7 +1625,8 @@ zs4.admin.util = {
 		var utitle = '';
 		var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
 
-		var home = new zs4.admin.util.toolLink(pe,'home','navhome',function(){zs4.navigate('/')})
+		//var home = new zs4.admin.util.toolLink(pe,'home','navhome',function(){zs4.navigate('/')})
+		var home = new zs4.admin.util.toolLinkScope(pe,zs4.THIS,function(){zs4.navigate('/');});
 
 		if (uscope!=null){
 			if (zs4.THIS._.scopath==''){uitle = 'root';}
@@ -1412,6 +1636,7 @@ zs4.admin.util = {
 			if (zs4.THIS._.scopath!='') {
 				new zs4.admin.util.toolLinkScope(pe,uscope,function(){zs4.navigate('/'+zs4.THIS._.scopath);});
 			}
+			new UI.toolSelectUiLanguage(pe);
 			new zs4.admin.util.setPassWordElement(pe);
 			new zs4.admin.util.logoutElement(pe);
 		}
@@ -3595,6 +3820,7 @@ zs4.admin.util = {
 	},
 
 }
+UI = zs4.admin.util;
 
 zs4.admin.type = {
 	array:function(po,o){

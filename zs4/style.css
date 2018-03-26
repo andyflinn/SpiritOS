@@ -226,6 +226,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-edge:before{content:url(/gfx/icons/edge.svg);}
 .icon-email:before{content:url(/gfx/icons/email.svg);}
 .icon-emailsent:before{content:url(/gfx/icons/email.svg);}
+.icon-empty:before{content:url(/gfx/icons/empty.svg);}
 .icon-error:before{content:url(/gfx/icons/error.svg);}
 .icon-express:before{content:url(/gfx/icons/express.svg);}
 .icon-facebook:before{content:url(/gfx/icons/facebook.svg);}
@@ -305,7 +306,9 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-save:before{content:url(/gfx/icons/save.svg);}
 .icon-scope:before{content:'\025EF';font-weight: bolder;}
 .icon-search:before{content:url(/gfx/icons/search.svg);}
-.icon-select:before{content:'\02611';font-weight: bolder;}
+.icon-select:before{content:url(/gfx/icons/select.svg);}
+.icon-selectedtrue:before{content:url(/gfx/icons/selectedtrue.svg);}
+.icon-selectedfalse:before{content:url(/gfx/icons/selectedfalse.svg);}
 .icon-selectitem:before{content:'\02611';font-weight: bolder;}
 .icon-server:before{content:url(/gfx/icons/server.svg);}
 .icon-since:before{content:url(/gfx/icons/date.svg);}

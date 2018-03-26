@@ -9,15 +9,24 @@ var word = exports;
 
 var R = zs4.meaning.register;
 R('areyousure');
+R('code');
 R('link');
+R('language');
 R('load');
 R('login');
 R('logout');
+R('name');
 R('navhome');
 R('navigate');
 R('newpassword');
+R('notitle');
 R('oldpassword');
 R('save');
+R('search');
+R('select');
+R('selectedtrue');
+R('selectedfalse');
+R('sort');
 
 const LANG_JSON = './zs4/static/tables/lang.json';
 const TRANSLATION_JSON = './zs4/word.json';

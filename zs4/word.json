@@ -34,6 +34,15 @@
   "de":"Sind Sie Sicher?",
   "en":"are you sure?"
   },
+"code":{
+  "de":"Code"
+  },
+"link":{
+  "de":"Link"
+  },
+"language":{
+  "de":"Sprache"
+  },
 "load":{
   "de":"laden"
   },
@@ -43,17 +52,22 @@
 "logout":{
   "de":"abmelden"
   },
+"name":{
+  "de":"Name"
+  },
 "navhome":{
   "de":"zur Startseite",
   "en":"navigate to home page"
   },
-"navuserhome":{
-  "de":"zur Benützerseite",
-  "en":"navigate to user page"
+"navigate":{
+  "de":"navigieren"
   },
 "newpassword":{
   "de":"neues Kennwort",
   "en":"new password"
+  },
+"notitle":{
+  "de":"ohne Titel"
   },
 "oldpassword":{
   "de":"altes Kennwort",
@@ -61,6 +75,19 @@
   },
 "save":{
   "de":"speichern"
+  },
+"select":{
+  "de":"auswählen"
+  },
+"selectedtrue":{
+  "de":"ausgewählt"
+  },
+"selectedfalse":{
+  "de":"nicht ausgewählt"
+  },
+"navuserhome":{
+  "de":"zur Benützerseite",
+  "en":"navigate to user page"
   },
 "ab":{
   "en":"Abkhaz",
