@@ -2698,6 +2698,7 @@ zs4.type = {
     this.sure._.zs4check = this.sure._.zs4checkTrue;
 
     this._.transform = (function(req,cb){
+      zs4.debug('bye.transform('+zs4.json.textify(req.input)+')');
       req.setScope(this);
       if (req.input == null || (!zs4.is.boolean(req.input.sure))){
         this._.get(req); cb(); return;

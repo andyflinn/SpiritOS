@@ -5,8 +5,12 @@ var debug = require('debug')('zs4password');
 
 var password = exports;
 
-zs4.meaning.register('password');
-
+function R(x){zs4.meaning.register(x);}
+R('password');
+R('setpwderrinvalid');
+R('setpwderrset');
+R('zenotapwd');
+R('zepwdmissmatch');
 
 password.schema = function(parent){
   parent._.property(new password.create());
@@ -55,21 +59,18 @@ password.create = function(){
 
         }
         else {
-          req.error(THIS);
-          //zs4.debug('...password '+req.input.vfy+' incorrect...');
+          req.error(THIS,'setpwderrinvalid');
         }
-        //zs4.debug('...have password already');
       }
       else{
         if (zs4.is.password(req.input.set)){
           if (!req.flags.get.am()&&!req.flags.get.own()){
-              req.error(THIS,'not authorized');
+              req.error(THIS,'zenotauthorized');
           }
           else {
             var nu = this.generate(req.input.set);
             if (nu) {
               this.hashed._.value = nu;
-              //debug('...password set...');
               this._.shouldBeSaved(req);
               req.result(THIS,'goscope');
               req.tokenCreate({iss:THIS._.path,scope:req.scope._.path,});
@@ -77,7 +78,7 @@ password.create = function(){
           }
         }
         else {
-          req.error(THIS);
+          req.error(THIS,'setpwderrset');
         }
       }
     }

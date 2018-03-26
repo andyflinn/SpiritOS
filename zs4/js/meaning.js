@@ -65,6 +65,7 @@ zs4.meaning = new Object({
     zs4.meaning.import(js);
   },
   translate:function(word,lang){
+    if (word=='nomeaning')return '';
     var m = zs4.meaning.find(word);
     if (m==null)return word;
     if (m.hasOwnProperty(lang))return m[lang];
@@ -73,6 +74,7 @@ zs4.meaning = new Object({
   },
 });
 
+zs4.meaning.register('nomeaning');
 zs4.meaning.register('meaning');
 zs4.meaning.register('lang');
 zs4.meaning.register('translation');

@@ -10,6 +10,10 @@ var word = exports;
 var R = zs4.meaning.register;
 R('areyousure');
 R('code');
+R('email');
+R('emailtok');
+R('emailtokerr');
+R('emailtokok');
 R('link');
 R('language');
 R('load');
@@ -27,6 +31,8 @@ R('select');
 R('selectedtrue');
 R('selectedfalse');
 R('sort');
+
+R('zenotauthorized')
 
 const LANG_JSON = './zs4/static/tables/lang.json';
 const TRANSLATION_JSON = './zs4/word.json';

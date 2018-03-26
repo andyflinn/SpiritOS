@@ -642,7 +642,7 @@ zs4.admin.util = {
 				zs4.style.type.bgimage(ELEMENT.top);
 			}
 			else {
-				zs4.style.type.bgimage(ELEMENT.top,'/gfx/icons/'+icon+'.svg');
+				zs4.style.type.bgimage(ELEMENT.top,'/gfx/icons/'+img+'.svg');
 			}
 
 			return true;
@@ -653,6 +653,13 @@ zs4.admin.util = {
 			else ELEMENT.element.style.cursor = ptr;
 			return ELEMENT.element.style.cursor;
 		},
+		ELEMENT.color = function(color){
+			if (ELEMENT.top==null)return null;
+			if (color==null)return ELEMENT.top.style.color;
+			ELEMENT.top.style.color = color;
+			return ELEMENT.top.style.color;
+		};
+
 		ELEMENT.setBits = function(str){ELEMENT.bits.setString(str);}
 		if (zs4.is.string(bitstring))ELEMENT.setBits(bitstring);
 		return ELEMENT;
@@ -858,7 +865,18 @@ zs4.admin.util = {
 		MEANING.shotran = null;
 
 		var uscope = zs4.admin.util.userScope();
-		if (uscope!=null){
+		if (uscope==null){
+			MEANING.onclick = function(e){
+				if (MEANING.hasEventHandler('click')){
+					MEANING.trigger('click');
+					return false;
+				}
+				console.log(e);
+				return true;
+			};
+			display.onclick = MEANING.onclick;
+		}
+		else {
 			MEANING.shotran = false;
 			var ready = false;
 			var lang; var text; var upload; var result;
@@ -1304,9 +1322,7 @@ zs4.admin.util = {
 			this.email = document.createElement('zs4-login-email');
 			this.loginform.appendChild(this.email);
 
-			this.emailLabel = document.createElement('zs4-login-email-label');
-			this.emailLabel.textContent = 'email';
-			this.email.appendChild(this.emailLabel);
+			new UI.elementMeaning(this.email,'email');
 
 			this.emailAddress = document.createElement('input');
 			//this.emailAddress.autocomplete = 'username';
@@ -1318,9 +1334,7 @@ zs4.admin.util = {
 			this.password = document.createElement('zs4-login-password');
 			this.loginform.appendChild(this.password);
 
-			this.passwordLabel = document.createElement('zs4-login-password-label');
-			this.passwordLabel.textContent = 'password';
-			this.password.appendChild(this.passwordLabel);
+			new UI.elementMeaning(this.password,'password');
 
 			this.pass = document.createElement('input');
 			this.pass.autocomplete = 'username';
@@ -1330,14 +1344,25 @@ zs4.admin.util = {
 
 			this.failcount = 0;
 
-			this.etok = document.createElement('zs4-email-token');
-			LOGIN.appendElement(this.etok);
-			zs4.admin.util.addClass(this.etok,'nodisplay');
+			var etok = new UI.div(LOGIN.element);
+			etok.hide();
 
-			this.emailtoken = document.createElement('zs4-email-token-send');
-			this.emailtoken.textContent = 'email access code / password reset';
-			this.etok.appendChild(this.emailtoken);
-			this.emailtoken.onclick = (function(){
+			var emailtoken = new UI.elementMeaning(etok.element,'emailtok');
+			emailtoken.top.style.fontSize = '0.5em';
+			emailtoken.button('email');
+			function tokerr(){
+				emailtoken.element.style.backgroundColor = 'red';
+			}
+			function tokok(){
+				emailtoken.element.style.backgroundColor = zs4.style.colorButtonBackground.css();
+			}
+
+			var emailresponse = new UI.div(etok.element);
+			emailresponse.element.style.backgroundColor = 'lightblue';
+			emailresponse.element.style.borderRadius = '0.3em';
+			emailresponse.hide();
+
+			emailtoken.on('click',(function(){
 				if (!zs4.is.email(LOGIN.emailAddress.value)){
 					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
 					return;
@@ -1347,9 +1372,9 @@ zs4.admin.util = {
 				}
 				zs4.admin.util.removeClass(this.pass,'error');
 
-				LOGIN.emailtoken.style.backgroundColor = 'blue';
+				zs4.style.type.bgimage(LOGIN.element,'/gfx/icons/email.svg');
 				zs4.THIS.zs4.hi._.call({email:this.emailAddress.value,sendtoken:true,},function(){
-					LOGIN.emailtoken.style.backgroundColor = 'initial';
+					zs4.style.type.bgimage(LOGIN.element);
 
 					console.log(zs4.THIS.zs4.hi._.cberror);
 					console.log(zs4.THIS.zs4.hi._.cbresult);
@@ -1357,29 +1382,29 @@ zs4.admin.util = {
 						//window.alert('token sent');
 						zs4.admin.util.removeClass(LOGIN.emailAddress,'error');
 						zs4.admin.util.removeClass(LOGIN.pass,'error');
-						zs4.admin.util.removeClass(LOGIN.emailtoken,'error');
+						tokok();
+						//zs4.admin.util.removeClass(LOGIN.emailtoken,'error');
 
-						LOGIN.emailresponse.textContent = zs4.THIS.zs4.hi._.cbresult;
+						emailresponse.element.textContent = zs4.THIS.zs4.hi._.cbresult;
+						emailresponse.show();
 						zs4.admin.util.addClass(LOGIN.emailtoken,'nodisplay');
-						zs4.admin.util.removeClass(LOGIN.emailresponse,'nodisplay');
+						//zs4.admin.util.removeClass(LOGIN.emailresponse,'nodisplay');
 						zs4.admin.util.removeClass(LOGIN.hi,'nodisplay');
 						LOGIN.failcount = 0;
 						LOGIN.refresh();
 					}
 					else {
-						zs4.admin.util.addClass(LOGIN.emailtoken,'error');
+						tokerr();
+						//zs4.admin.util.addClass(emailtoken.element,'error');
 					}
 
 				});
 
-			}).bind(LOGIN);
+			}).bind(LOGIN));
 
-			this.emailresponse = document.createElement('zs4-email-token-response');
-			this.etok.appendChild(this.emailresponse);
-
-			this.hi = LOGIN.appendElement('span');
-			this.hi.textContent = 'login';
-			this.hi.onclick = (function(){
+			var hi = new UI.elementMeaning(LOGIN.element,'login');
+			hi.button('login');
+			hi.on('click',(function(){
 				var error = false;
 				if (!zs4.is.email(this.emailAddress.value)){
 					zs4.admin.util.addClass(LOGIN.emailAddress,'error');
@@ -1397,7 +1422,7 @@ zs4.admin.util = {
 				}
 				if (error)return;
 
-				LOGIN.hi.style.backgroundColor = 'blue';
+				hi.bgimage('transferring');
 				zs4.post(zs4.THIS.zs4.hi._.wrapRequest({email:this.emailAddress.value,password:this.pass.value,}),function(ret){
 					if (zs4.THIS.zs4.hi._.cberror != null){
 						zs4.admin.util.addClass(LOGIN.emailAddress,'error');
@@ -1407,13 +1432,14 @@ zs4.admin.util = {
 					}
 					console.log('LOGIN.failcount: '+LOGIN.failcount);
 
-					LOGIN.hi.style.backgroundColor = 'initial';
+					hi.bgimage();
 				});
-			}).bind(this);
+			}).bind(this))
 
 			LOGIN.refresh = function(){
 				if (LOGIN.failcount > 2){
-					zs4.admin.util.removeClass(this.etok,'nodisplay');
+					etok.show();
+					//zs4.admin.util.removeClass(this.etok,'nodisplay');
 				}
 			};
 		}
@@ -1473,10 +1499,9 @@ zs4.admin.util = {
 
 			bye.on('click',(function(){
 				zs4.style.type.bgimage(bye.top,'logout');
-				//bye.element.style.backgroundColor = 'blue';
-				zs4.THIS.zs4.bye._.call({sure:true,function(ret){
+				zs4.THIS.zs4.bye._.call({sure:true},function(ret){
 					zs4.style.type.bgimage(bye.top);
-				}});
+				});
 			}).bind(this));
 
 		}
@@ -1484,128 +1509,154 @@ zs4.admin.util = {
 	setPassWordElement:function(pe){
 		var LOGIN = this;
 
-		if (zs4.THIS._.loggedIn){
+		if (!zs4.THIS._.loggedIn)return;
+
+		var ulang = zs4.userLanguage();
+
+		var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
+		if (uscope==null)return;
+		var password = uscope._.resolvePath('zs4.password');
+		if (password==null)return;
+		var set = uscope._.resolvePath('zs4.password.set');
+		if (set==null)return;
+		var vfy = uscope._.resolvePath('zs4.password.vfy');
+
+		if (uscope == null || set==null)return;
+
+		if (uscope != null){
 			zs4.admin.util.toolElement.call(LOGIN,pe,'password');
 			this.spwIsOpen = false;
 
-			var ulang = zs4.userLanguage();
-
-			var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
-			var utitle = '';
-
-			this.setpassword = document.createElement('form');
-			this.setpassword.onsubmit = function(){return false;};
-			this.setpassword.id = 'cpwd';
-			LOGIN.appendElement(this.setpassword);
+			var setpassword = document.createElement('form');
+			setpassword.onsubmit = function(){return false;};
+			setpassword.id = 'cpwd';
+			LOGIN.appendElement(setpassword);
 
 			// OLD PASSWORD 1
-			this.old1 = document.createElement('div');
-			this.setpassword.appendChild(this.old1);
-			new zs4.admin.util.elementMeaning(this.old1,'oldpassword');
-			zs4.admin.util.addTextSpan(this.old1,': ');
-			this.old1input = document.createElement('input');
-			zs4.admin.util.addAttribute(this.old1input,'autocomplete','current-password');
-			this.old1input.type = 'password';
-			this.old1.appendChild(this.old1input);
+			var vfy0 = new UI.div(setpassword);
+			new zs4.admin.util.elementMeaning(vfy0.element,'oldpassword');
+			zs4.admin.util.addTextSpan(vfy0.element,': ');
+			this.vfy0input = document.createElement('input');
+			zs4.admin.util.addAttribute(this.vfy0input,'autocomplete','current-password');
+			this.vfy0input.type = 'password';
+			this.vfy0input.oninput = function(){LOGIN.validate();}
+			vfy0.element.appendChild(this.vfy0input);
 
 			// OLD PASSWORD 2
-			this.old2 = document.createElement('div');
-			this.setpassword.appendChild(this.old2);
-			new zs4.admin.util.elementMeaning(this.old2,'newpassword');
-			zs4.admin.util.addTextSpan(this.old2,': ');
-			this.old2input = document.createElement('input');
-			zs4.admin.util.addAttribute(this.old2input,'autocomplete','current-password');
-			this.old2input.type = 'password';
-			this.old2.appendChild(this.old2input);
+			var new0 = new UI.div(setpassword);
+			new zs4.admin.util.elementMeaning(new0.element,'newpassword');
+			zs4.admin.util.addTextSpan(new0.element,': ');
+			this.new0input = document.createElement('input');
+			zs4.admin.util.addAttribute(this.new0input,'autocomplete','current-password');
+			this.new0input.type = 'password';
+			this.new0input.oninput = function(){LOGIN.validate();}
+			new0.element.appendChild(this.new0input);
 
 			// NEW PASSWORD
-			this.setpwd = document.createElement('div');
-			this.setpassword.appendChild(this.setpwd);
-			new zs4.admin.util.elementMeaning(this.setpwd,'newpassword');
-			zs4.admin.util.addTextSpan(this.setpwd,': ');
+			var setpwd = new UI.div(setpassword);
+			new zs4.admin.util.elementMeaning(setpwd.element,'newpassword');
+			zs4.admin.util.addTextSpan(setpwd.element,': ');
 			this.setpwdinput = document.createElement('input');
 			zs4.admin.util.addAttribute(this.setpwdinput,'autocomplete','new-password');
 			this.setpwdinput.type = 'password';
-			this.setpwd.appendChild(this.setpwdinput);
+			this.setpwdinput.oninput = function(){LOGIN.validate();}
+			setpwd.element.appendChild(this.setpwdinput);
 
 			// SEND BUtTON
-			this.buttonDiv = document.createElement('div');
-			this.setpassword.appendChild(this.buttonDiv);
-			this.setpwdsend = new zs4.admin.util.elementMeaning(this.buttonDiv,'save');
-			this.setpwdsend.icon('save');
-			this.setpwdsend.button();
-			this.setpwdsend.on('click',(function(){
-				if (!zs4.THIS._.loggedIn)return;
-				var uscope = zs4.THIS._.resolvePath(zs4.THIS._.scopath);
-				if (uscope==null)return;
-				var password = uscope._.resolvePath('zs4.password');
-				if (password==null)return;
-				var set = uscope._.resolvePath('zs4.password.set');
-				if (set==null)return;
+			var butdiv = document.createElement('div');
+			setpassword.appendChild(butdiv);
+			var button = new zs4.admin.util.elementMeaning(butdiv,'save');
+			button.button('save');
 
-				zs4.admin.util.removeClass(LOGIN.old1,'error');
-				zs4.admin.util.removeClass(LOGIN.old2,'error');
-				zs4.admin.util.removeClass(LOGIN.setpwd,'error');
+			var senderr = new zs4.admin.util.elementMeaning(butdiv,'senderr');
+			senderr.element.style.color = 'red';
+			senderr.hide();
+
+			LOGIN.validate = function(){
+				vfy0.color('initial');
+				new0.color('initial');
+				setpwd.color('initial');
 
 				var wrong = false;
-				if (!zs4.is.password(this.old1input.value)){
-					zs4.admin.util.addClass(LOGIN.old1,'error');
-					wrong = true;
-				}
-				if (!zs4.is.password(this.old2input.value)){
-					zs4.admin.util.addClass(LOGIN.old2,'error');
-					wrong = true;
-				}
-				if (!zs4.is.password(this.setpwdinput.value)){
-					zs4.admin.util.addClass(LOGIN.setpwd,'error');
-					wrong = true;
-				}
-
-				if (this.setpwdinput.value!=this.old2input.value){
-						zs4.admin.util.addClass(LOGIN.old2,'error');
-						zs4.admin.util.addClass(LOGIN.setpwd,'error');
+				if (vfy!=null){
+					if (!zs4.is.password(this.vfy0input.value)){
+						vfy0.color('red');
+						senderr.meaning('zenotapwd');
 						wrong = true;
+					}
+					if (!wrong && !zs4.is.password(this.new0input.value)){
+						new0.color('red');
+						senderr.meaning('zenotapwd');
+						wrong = true;
+					}
+					if (!wrong && this.setpwdinput.value!=this.new0input.value){
+						new0.color('red');
+						setpwd.color('red');
+						senderr.meaning('zepwdmissmatch');
+						wrong = true;
+					}
 				}
-				var input = new Object({set:this.setpwdinput.value,})
-				var vfy = uscope._.resolvePath('zs4.password.vfy');
-				if (vfy == null){
+				if (!wrong && !zs4.is.password(this.setpwdinput.value)){
+					setpwd.color('red');
+					senderr.meaning('zenotapwd');
 					wrong = true;
 				}
-				else{
-					input.vfy = this.old1input.value;
+				if (wrong){
+					button.hide();
+					senderr.show();
+					return false;
+				}
+				else {
+					senderr.meaning('nomeaning');
+					button.show();
+					senderr.hide();
+					return true;
 				}
 
-				if (wrong) return;
+			}
 
-				zs4.admin.util.removeClass(LOGIN.old1,'error');
-				zs4.admin.util.removeClass(LOGIN.old2,'error');
-				zs4.admin.util.removeClass(LOGIN.setpwd,'error');
+			button.on('click',(function(){
+				if (!LOGIN.validate())return;
 
-				LOGIN.setpwdsend.style.bgcolor = 'blue';
+				var input = new Object({set:this.setpwdinput.value,})
+				if (vfy!=null){
+					input.vfy = this.vfy0input.value;
+				}
+
+				vfy0.color('initial');
+				new0.color('initial');
+				setpwd.color('initial');
+
+				zs4.style.type.bgimage(setpassword,'/gfx/icons/upload.svg');
 				zs4.post(password._.wrapRequest(input),function(ret){
-					LOGIN.setpwdsend.style.bgcolor = 'initial';
-					if (zs4.is.error(ret.request.callback.zs4.password)){
-						zs4.admin.util.addClass(LOGIN.old1,'error');
-						zs4.admin.util.addClass(LOGIN.old2,'error');
-						zs4.admin.util.addClass(LOGIN.setpwd,'error');
+					zs4.style.type.bgimage(setpassword);
+					var callback = zs4.path.resolve(ret,'request.callback.'+password._.path);
+					console.log(callback);
+					if (zs4.is.error(callback)){
+						vfy0.color('red');
+						new0.color('red');
+						setpwd.color('red');
+
+						senderr.meaning(callback.error.text);
+						senderr.show();
+						zs4.debug(callback.error.text);
 					}
 
+					LOGIN.refresh();
 				});
 
 
 			}).bind(LOGIN));
 
 			LOGIN.refresh = function(){
-				var vfy = uscope._.resolvePath('zs4.password.vfy');
-				var set = uscope._.resolvePath('zs4.password.set');
 				if (set!=null){
 					if (vfy==null){
-						zs4.admin.util.addClass(LOGIN.old1,'nodisplay');
-						zs4.admin.util.addClass(LOGIN.old2,'nodisplay');
+						zs4.admin.util.addClass(LOGIN.vfy0,'nodisplay');
+						zs4.admin.util.addClass(LOGIN.new0,'nodisplay');
 					}
 					else {
-						zs4.admin.util.removeClass(LOGIN.old1,'nodisplay');
-						zs4.admin.util.removeClass(LOGIN.old2,'nodisplay');
+						zs4.admin.util.removeClass(LOGIN.vfy0,'nodisplay');
+						zs4.admin.util.removeClass(LOGIN.new0,'nodisplay');
 					}
 					zs4.admin.util.removeClass(LOGIN.setpwd,'nodisplay');
 				}
@@ -2534,7 +2585,7 @@ zs4.admin.util = {
 			o._.html.e.appendChild(o._.html.head);
 
 			o._.html.toggle = document.createElement('zs4-object-toggle');
-			if (o._.flags.get.priced())zs4.admin.util.addClass('priced');
+			//if (o._.flags.get.priced())zs4.admin.util.addClass('priced');
 			o._.html.head.appendChild(o._.html.toggle);
 			zs4.admin.util.setIcon(o._.html.toggle,'minus');
 			zs4.admin.util.addClass(o._.html.toggle,o._.typename);
@@ -3106,12 +3157,12 @@ zs4.admin.util = {
 									var set = uscope._.resolvePath('zs4.password.set');
 									if (set!=null){
 										if (vfy==null){
-											zs4.admin.util.addClass(DIALOG.old1,'nodisplay');
-											zs4.admin.util.addClass(DIALOG.old2,'nodisplay');
+											zs4.admin.util.addClass(DIALOG.vfy0,'nodisplay');
+											zs4.admin.util.addClass(DIALOG.new0,'nodisplay');
 										}
 										else {
-											zs4.admin.util.removeClass(DIALOG.old1,'nodisplay');
-											zs4.admin.util.removeClass(DIALOG.old2,'nodisplay');
+											zs4.admin.util.removeClass(DIALOG.vfy0,'nodisplay');
+											zs4.admin.util.removeClass(DIALOG.new0,'nodisplay');
 										}
 										zs4.admin.util.removeClass(DIALOG.setpwd,'nodisplay');
 									}

@@ -19,10 +19,12 @@
   "de":"nicht übersetzt"
   },
 "sortmeaning":{
-  "de":"Nach Bedeutung Sortieren"
+  "de":"Nach Bedeutung Sortieren",
+  "en":"sort by meaning code"
   },
 "sorttranslation":{
-  "de":"Nach Übersetzung Sortieren"
+  "de":"Nach Übersetzung Sortieren",
+  "en":"sort by translation"
   },
 "twoletteritems":{
   "de":"2-buchstabige Worte"
@@ -30,12 +32,39 @@
 "password":{
   "de":"Kennwort"
   },
+"setpwderrinvalid":{
+  "de":"Kennword Fehler",
+  "en":"Password error"
+  },
+"setpwderrset":{
+  "de":"Fehler beim neuen Kennwort",
+  "en":"new password invalid"
+  },
+"zenotapwd":{
+  "de":"Kein gültiges Kennwort",
+  "en":"Not a password"
+  },
 "areyousure":{
   "de":"Sind Sie Sicher?",
   "en":"are you sure?"
   },
 "code":{
   "de":"Code"
+  },
+"email":{
+  "de":"eMail"
+  },
+"emailtok":{
+  "de":"Bitte Zugangscode per eMail zustellen!",
+  "en":"Send access code by email"
+  },
+"emailtokerr":{
+  "de":"Code wurde nicht zugestellt.",
+  "en":"Access code was NOT sent"
+  },
+"emailtokok":{
+  "de":"Code wurde per eMail zugestellt.",
+  "en":"Access token sent"
   },
 "link":{
   "de":"Link"
@@ -76,6 +105,9 @@
 "save":{
   "de":"speichern"
   },
+"search":{
+  "de":"suchen"
+  },
 "select":{
   "de":"auswählen"
   },
@@ -84,6 +116,13 @@
   },
 "selectedfalse":{
   "de":"nicht ausgewählt"
+  },
+"sort":{
+  "de":"sortieren"
+  },
+"zenotauthorized":{
+  "de":"Nicht autorisiert",
+  "en":"NOT AUTHORIZED"
   },
 "navuserhome":{
   "de":"zur Benützerseite",

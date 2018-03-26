@@ -113,7 +113,6 @@ email.create = function(input){
           else{
             console.log('message sent to '+req.input.to+', subject: \''+req.input.subject+'\'');
             req.result(msg,'message sent to '+req.input.to+', subject: \''+req.input.subject+'\'');
-            req.stat(THIS,{emailsent:1,},(Date.now()-starttime));
             return get();
           }
       });
