@@ -12,7 +12,7 @@ if (zs4.is.node()) {
     //toonsmith.audioloader = fs.readFileSync('./zs4/plugin/toonsmith/audio-loader.min.js','utf8');
     toonsmith.script0 = fs.readFileSync('./zs4/plugin/toonsmith/script0.js','utf8');
     toonsmith.script1 = fs.readFileSync('./zs4/plugin/toonsmith/script1.js','utf8');
-    toonsmith.style = fs.readFileSync('./zs4/plugin/toonsmith/style.css','utf8');
+    //toonsmith.style = fs.readFileSync('./zs4/plugin/toonsmith/style.css','utf8');
     var createTS = zs4.scriptToConstructor(toonsmith.script1);
     //if (createTS==null){exit();}
     debug(createTS);
@@ -61,18 +61,6 @@ var dbg = true;
     debug('returning script');
     cb(js);
   }).bind(TOONSMITH);
-  TOONSMITH._.getStyle = (function(req,cb){
-
-    debug('returning style');
-    if (dbg){
-      cb(fs.readFileSync('./zs4/plugin/toonsmith/style.css','utf8'));
-    }
-    else{
-      cb(toonsmith.style);
-    }
-
-  }).bind(TOONSMITH);
-
 
   TOONSMITH._.getTextOnly = (function(){
     var ret = '';

@@ -4779,19 +4779,24 @@ zs4.plugin = new Object({
 zs4.module = new Array();
 zs4.scriptToConstructor = function(script){
   var body = '\'use strict\';\n';
+
+  body += '{\n';
   if (zs4.is.window()){
-    //body += 'var zs4 = window.zs4\n';
+    body += 'var zs4 = window.zs4\n';
   }
   else if (zs4.is.node()){
-    //body += 'var zs4 = zs4\n';
+    body += 'var zs4 = global.zs4\n';
   }
-  body += '{'+script+'}\n';
+  body += '{\n'+script+'\n}\n';
+  body += '}\n';
 
   try {
     return new Function('zs4',body);
   }
   catch(err) {
-    return null;
+    zs4.debug(body);
+    zs4.debug(err);
+    return body;
   }
 }
 zs4.require = function(path,cb,force){
@@ -4801,12 +4806,14 @@ zs4.require = function(path,cb,force){
   if (zs4.is.window){
     zs4.THIS.zs4.require._.submit({path:path},function(ret){
         if (ret==null||ret.result==null||!zs4.is.string(ret.result)){ if (cb)cb(null);}
-        zs4.debug(ret.result);
+        //zs4.debug(ret.result);
 
-        cb(zs4.scriptToConstructor(ret.result));
+        var con = zs4.scriptToConstructor(ret.result);
+        if (zs4.is.function(cb))cb(con);
     })
   }
-  if (zs4.is.node){
+  else if (zs4.is.node){
+    zs4.debug('node.require('+path+')');
     var data = fs.readFile(path,'utf8');
   }
 
