@@ -78,107 +78,107 @@ zs4.const = {
 };
 
 zs4.is = {
-      array:function (a){
-        if	(a==null)return false;
-        return (a instanceof Array);
-      },
-      boolean:function(b){
-        if	(b==null)return false;
-        if	(typeof(b)!='boolean')return false;
-        return true;
-      },
-      function:function(f){
-        if (f==null)return false;
-        return (f instanceof Function);
-      },
-      string:function(s){
-        if	(s==null)return false;
-        if	(typeof(s)!='string')return false;
-        return true;
-      },
-      email:function(str){
-        if (!zs4.is.string(str)||str.length<zs4.const.EMAIL.MINLENGTH||str.length>zs4.const.EMAIL.MAXLENGTH)return false;
-        var at = str.indexOf('@');
-        if (at < 1 || at > (str.length-(zs4.const.EMAIL.MINLENGTH-1)) || str.lastIndexOf('@') != at)return false;
-        var nam = str.substr(0,at);
-        var dom = str.substr((at+1),(str.length-at-1));
-        var dot = dom.indexOf('.');
-        if (dot < 1 || dot > (dom.length-2))return false;
-        dot = dom.lastIndexOf('.');
-        if (dot > (dom.length-2))return false;
-        return true;
-      },
-      password:function(s){
-        if	(!zs4.is.string(s) || s.trim()!=s || s.length < 4)return false;
-        return true;
-      },
-      number:function(b){
-        if	(b==null)return false;
-        if	(typeof(b)!='number')return false;
-        return true;
-      },
-      object:function(o){
-        //debugger;
-        if	(o==null)return false;
-        if	(o instanceof Object){
-          if (typeof(o)=='function')return false;
-          if	(typeof(o.length)=='number' || (o instanceof Array)==true)return false;
-          return true;
-        }
-        return false;
-      },
-      error:function(o){if (!zs4.is.object(o) || !zs4.is.object(o.error))return false;return true;},
-      done:function(o){if (!zs4.is.object(o) || !zs4.is.object(o.done))return false;return true;},
-      name:function(n){
-        if	(!zs4.is.string(n))return false;
-        if	(n=="zs4")return true;
-        var l=n.length;
-        if	(l<1)return false;
-        for (var i=0;i<l;i++){
-          if(n.charAt(i)<'a'||n.charAt(i)>'z')return false;
-        }
-        return true;
-      },
-      objectProperty:function(o,p){
-        if(!zs4.is.object(o)||!zs4.is.string(p))return null;
-        var a = p.split('.');
-        var l = a.length;
-        var p = '';
-        if (l<1)return null;
-        if ((l>=2)&&(a[0]=='zs4')&&(a[1]=='zs4'))return null;
+  array:function (a){
+    if	(a==null)return false;
+    return (a instanceof Array);
+  },
+  boolean:function(b){
+    if	(b==null)return false;
+    if	(typeof(b)!='boolean')return false;
+    return true;
+  },
+  function:function(f){
+    if (f==null)return false;
+    return (f instanceof Function);
+  },
+  string:function(s){
+    if	(s==null)return false;
+    if	(typeof(s)!='string')return false;
+    return true;
+  },
+  email:function(str){
+    if (!zs4.is.string(str)||str.length<zs4.const.EMAIL.MINLENGTH||str.length>zs4.const.EMAIL.MAXLENGTH)return false;
+    var at = str.indexOf('@');
+    if (at < 1 || at > (str.length-(zs4.const.EMAIL.MINLENGTH-1)) || str.lastIndexOf('@') != at)return false;
+    var nam = str.substr(0,at);
+    var dom = str.substr((at+1),(str.length-at-1));
+    var dot = dom.indexOf('.');
+    if (dot < 1 || dot > (dom.length-2))return false;
+    dot = dom.lastIndexOf('.');
+    if (dot > (dom.length-2))return false;
+    return true;
+  },
+  password:function(s){
+    if	(!zs4.is.string(s) || s.trim()!=s || s.length < 4)return false;
+    return true;
+  },
+  number:function(b){
+    if	(b==null)return false;
+    if	(typeof(b)!='number')return false;
+    return true;
+  },
+  object:function(o){
+    //debugger;
+    if	(o==null)return false;
+    if	(o instanceof Object){
+      if (typeof(o)=='function')return false;
+      if	(typeof(o.length)=='number' || (o instanceof Array)==true)return false;
+      return true;
+    }
+    return false;
+  },
+  error:function(o){if (!zs4.is.object(o) || !zs4.is.object(o.error))return false;return true;},
+  done:function(o){if (!zs4.is.object(o) || !zs4.is.object(o.done))return false;return true;},
+  name:function(n){
+    if	(!zs4.is.string(n))return false;
+    if	(n=="zs4")return true;
+    var l=n.length;
+    if	(l<1)return false;
+    for (var i=0;i<l;i++){
+      if(n.charAt(i)<'a'||n.charAt(i)>'z')return false;
+    }
+    return true;
+  },
+  objectProperty:function(o,p){
+    if(!zs4.is.object(o)||!zs4.is.string(p))return null;
+    var a = p.split('.');
+    var l = a.length;
+    var p = '';
+    if (l<1)return null;
+    if ((l>=2)&&(a[0]=='zs4')&&(a[1]=='zs4'))return null;
 
-        for (var i = 0 ; i < l ; i++){
-          if (p!='')p+='.'; p+=a[i];
+    for (var i = 0 ; i < l ; i++){
+      if (p!='')p+='.'; p+=a[i];
 
-          if (!o.hasOwnProperty(a[i])){return null;}
-          o=o[a[i]];
-        }
-        return o;
-      },
-      space:function(ch){
-        if (ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')return true;
-        return false;
-      },
-      numchar:function(ch){
-        if (ch>='0'&&ch<='9')return true;
-        return false;
-      },
-      type:function(o){
-        if (!zs4.is.object(o)
-        || !zs4.is.object(o._)
-        || !zs4.is.name(o._.name)
-        || !zs4.is.name(o._.typename)
-        //|| !zs4.is.function(o.type)
-        )return false;
-        return true;
-      },
-      domelement:function(o){
-        if (!zs4.is.object(o)
-        || !zs4.is.object(o.style)
-        //|| !zs4.is.string(o.className)
-        )return false;
-        return true;
-      },
+      if (!o.hasOwnProperty(a[i])){return null;}
+      o=o[a[i]];
+    }
+    return o;
+  },
+  space:function(ch){
+    if (ch=='\n'||ch=='\r'||ch=='\t'||ch==' ')return true;
+    return false;
+  },
+  numchar:function(ch){
+    if (ch>='0'&&ch<='9')return true;
+    return false;
+  },
+  type:function(o){
+    if (!zs4.is.object(o)
+    || !zs4.is.object(o._)
+    || !zs4.is.name(o._.name)
+    || !zs4.is.name(o._.typename)
+    //|| !zs4.is.function(o.type)
+    )return false;
+    return true;
+  },
+  domelement:function(o){
+    if (!zs4.is.object(o)
+    || !zs4.is.object(o.style)
+    //|| !zs4.is.string(o.className)
+    )return false;
+    return true;
+  },
 };
 
 if (isNode()){
@@ -4781,12 +4781,16 @@ zs4.scriptToConstructor = function(script){
   var body = '\'use strict\';\n';
 
   body += '{\n';
+
+  /*
   if (zs4.is.window()){
     body += 'var zs4 = window.zs4\n';
   }
   else if (zs4.is.node()){
     body += 'var zs4 = global.zs4\n';
   }
+  */
+
   body += '{\n'+script+'\n}\n';
   body += '}\n';
 
