@@ -44,6 +44,9 @@
   "de":"Kein gültiges Kennwort",
   "en":"Not a password"
   },
+"zepwdmissmatch":{
+  "de":"verschiedene Kennwörter"
+  },
 "areyousure":{
   "de":"Sind Sie Sicher?",
   "en":"are you sure?"
