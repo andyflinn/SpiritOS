@@ -2226,8 +2226,20 @@ zs4.type = {
             nu._.flags.set.scope(true);
             //nu.zs4.head.title._.value = '(untitled)';
             nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
-            if (!req.userIsRoot())nu.zs4.head.owner._.value = req.request.payload.scope;
-            else nu.zs4.head.owner._.value = '';
+            if (!req.userIsRoot()){
+              nu.zs4.head.owner._.value = req.request.payload.scope;
+              var creatorObj = zs4.THIS._.resolvePath(req.request.payload.scope);
+              if (creatorObj) nu.zs4.head.author._.value = creatorObj.zs4.email._.value;
+            } else {
+              var rootEmail = zs4.THIS.zs4.email.smtp.from._.value;
+              nu.zs4.head.author._.value = rootEmail;
+              var ownerPath = '';
+              if (zs4.is.object(zs4.array.jsondb)){
+                var rootDoc = zs4.array.jsondb.find('user','zs4.email',rootEmail);
+                if (rootDoc) ownerPath = 'zs4.type.user.array.'+rootDoc._id;
+              }
+              nu.zs4.head.owner._.value = ownerPath;
+            }
 
             zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
               if (zs4.is.type(ret)){
@@ -4646,6 +4658,7 @@ zs4.request = function(o){
 
     this.userIsRoot = function(){
       if (this.request.node) return true;
+      if (this.request.localhost) return true;
       if (zs4.is.object(this.request.payload)){
         if (zs4.is.string(this.request.payload.scope)){
           if (this.request.payload.scope=='')return true;

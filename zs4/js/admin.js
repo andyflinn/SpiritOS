@@ -2786,6 +2786,23 @@ zs4.admin.util = {
 				o._.html.appWindow = document.createElement('zs4-app-window');
 				o._.html.appUserInterface.appendChild(o._.html.appWindow);
 
+				if (UI.own(o) || UI.am(o)){
+					var titleBar = document.createElement('zs4-title-bar');
+					o._.html.appWindow.appendChild(titleBar);
+					var titleInput = o._.html.titleField = document.createElement('input');
+					titleInput.type = 'text';
+					titleInput.placeholder = '(title)';
+					titleInput.value = o.zs4.head.title._.value;
+					UI.addClass(titleInput,'scope-title');
+					titleBar.appendChild(titleInput);
+					o.zs4.head.title._.onchange(function(){
+						titleInput.value = o.zs4.head.title._.value;
+					});
+					titleInput.onchange = function(){
+						o.zs4.head.title._.call(titleInput.value, function(){});
+					};
+				}
+
 				o._.html.docOptions = document.createElement('zs4-doc-options');
 				o._.html.docOptions.style.display = 'block';
 
@@ -3446,8 +3463,12 @@ zs4.admin.util = {
 
 									this.title = document.createElement('a');
 									this.title.text = scope.zs4.head.title._.value;
-									if (scope.zs4.head.title._.value=='')this.title.text = '?';
-									this.title.href = THIS.scope._.path;
+									if (scope.zs4.head.title._.value=='')this.title.text = '(untitled)';
+									this.title.href = '/'+scope._.path;
+									this.title.onclick = (function(e){
+										e.preventDefault();
+										zs4.navigate(scope._.path);
+									}).bind(this);
 									UI.addClass(this.title,'app-item-link');
 									this.data.appendChild(this.title);
 
@@ -3642,7 +3663,7 @@ zs4.admin.util = {
 							for (var i = 0 ; i < arr.length  ; i++){
 								var item = top.app.findItem(arr[i]);
 								if (item != null){
-									item.title.textContent = item.scope.zs4.head.title._.value;
+									item.title.textContent = item.scope.zs4.head.title._.value || '(untitled)';
 								}
 								else {
 									if (arr[i]._.path != '')item = new top.app.item(arr[i]);
@@ -3829,6 +3850,11 @@ zs4.admin.util = {
 					}
 				}
 
+				var homeTab = document.createElement('zs4-app-tab');
+				UI.setIcon(homeTab,'home');
+				homeTab.onclick = function(){ zs4.navigate('/'); };
+				o._.html.dialogHeader.appendChild(homeTab);
+
 				if (UI.am(o)||UI.own(o)){
 					new o._.html.top.dialogTool();
 				}
@@ -3862,7 +3888,7 @@ zs4.admin.util = {
 					zs4.static(o._.html.appInfoContent);
 				}
 				else {
-					o._.html.appInfoContent.innerHTML = 'zs4 toonsmith by <a href="https://andyflinn.com" target="andyflinn">Andy Flinn</a>...';
+					o._.html.appInfoContent.innerHTML = 'zs4 toonsmith by Andy Flinn...';
 				}
 			}
 

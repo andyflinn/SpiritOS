@@ -3367,7 +3367,7 @@ ts.html = new Object({
         lyric.onclick = function(){
           if (SEQ.kbm == KBM_LYRIC) SEQ.kbm = KBM_EVENT;
           else SEQ.kbm = KBM_LYRIC;
-          if (SEQ.evt.length>0){
+          if (SEQ.evt.length>0 && SEQ.evt_current){
             SEQ.evt_current.refresh();
           }
           SEQ.kb.refresh();

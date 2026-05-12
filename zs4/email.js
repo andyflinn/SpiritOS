@@ -22,7 +22,7 @@ email.create = function(input){
   THIS.smtp._.sortDefault = THIS.smtp._.sortNot;
   THIS.smtp._.property(new zs4.type.boolean({name:'configured',flags:'authsetself quickupdate',default:false,}));
   THIS.smtp._.property(new zs4.type.string({name:'user',flags:'index unique authsetself quickupdate',default:nuaddr}));
-  THIS.smtp._.property(new zs4.type.email({name:'from',flags:'index unique authsetself quickupdate',default:'zs4@zs4.zs4'}));
+  THIS.smtp._.property(new zs4.type.email({name:'from',flags:'index unique authsetself quickupdate',default:'countinn@gmail.com'}));
   THIS.smtp._.property(new zs4.type.string({name:'password',flags:'authsetself quickupdate',}));
   THIS.smtp._.property(new zs4.type.string({name:'host',flags:'authsetself quickupdate',}));
   THIS.smtp._.property(new zs4.type.integer({name:'port',flags:'authsetself quickupdate',}));

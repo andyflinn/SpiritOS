@@ -89,9 +89,11 @@ zs4.load = function(cb){
     var z = zs4.THIS.zs4;
     z.express.port._.value = 8080;
 
-    z.email.smtp.from._.value = 'zs4@zs4.zs4';
+    z.email.smtp.from._.value = 'countinn@gmail.com';
     z.password.hashed._.value = z.password.generate('password');
-    debug('user/pass: zs4@zs4.zs4/password');
+    debug('user/pass: countinn@gmail.com/password');
+
+    applyJsondbDrivers();
 
     var node = zs4.THIS.zs4.node;
 
@@ -130,11 +132,21 @@ zs4.load = function(cb){
     });
   };
 
+  function applyJsondbDrivers(){
+    var z = zs4.THIS.zs4;
+    z.type.user.config.driver._.value = 'jsondb';
+    z.type.toonsmith.config.driver._.value = 'jsondb';
+    z.type.translation.config.driver._.value = 'jsondb';
+    z.type.config.config.driver._.value = 'jsondb';
+    z.type.price.config.driver._.value = 'jsondb';
+  };
+
   if (zs4.THIS.zs4.node.is.heroku._.getValue()){
     return envvar('ZS4',cb);
   }
 
   return file(DOT_ZS4,function(){
+    applyJsondbDrivers();
 
 
     return cb();
@@ -194,6 +206,10 @@ zs4.define = function(){
   zs4.node.require.mongodb = require('./mongodb');
   zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb',boot:true,});
   zs4.THIS.zs4._.property(zs4.array.mongodb);
+
+  zs4.node.require.jsondb = require('./jsondb');
+  zs4.array.jsondb = new zs4.node.require.jsondb.create({name:'jsondb',boot:true,});
+  zs4.node.require.jsondb.schema(zs4.THIS.zs4);
 
   zs4.THIS.zs4._.property(new zs4.type.folder({name:'folder'}));
 
@@ -279,5 +295,31 @@ zs4.define = function(){
   // Run express only once all components/plugins are loaded and ready
   zs4.node.require.express = require('./express');
   zs4.node.require.express.schema(zs4.THIS.zs4);
+
+  // Ensure root user exists in the database on startup
+  zs4.boot.call({}, function(input, cb){
+    var z = zs4.THIS.zs4;
+    var adminEmail = z.email.smtp.from._.value;
+    var USERARRAY = z.type.user;
+
+    var existing = zs4.array.jsondb.find('user', 'zs4.email', adminEmail);
+    if (existing){
+      debug('root user already exists: ' + adminEmail);
+      cb(); return;
+    }
+
+    var nu = USERARRAY.template._.new();
+    nu.zs4.email._.value = adminEmail;
+    nu.zs4.password.hashed._.value = z.password.hashed._.value;
+    nu.zs4.head.title._.value = 'Root';
+    nu.zs4.head.owner._.value = '';
+    nu.zs4.head.created._.value = Date.now();
+    nu.zs4.head.updated._.value = Date.now();
+
+    zs4.array.jsondb.new.call(USERARRAY, nu, function(ret){
+      debug(ret ? 'root user created: '+adminEmail : 'root user creation failed');
+      cb();
+    });
+  }, {});
 
 }

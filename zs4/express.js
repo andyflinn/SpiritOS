@@ -65,11 +65,17 @@ express.setCookie = function(res,zs4request){
   }
 };
 
+express.autoRootToken = function(req, zs4req){
+  if ((req.hostname == 'localhost' || req.hostname == '127.0.0.1')
+  && !zs4.is.object(zs4req.request.payload)){
+    zs4req.request.token = zs4.THIS.zs4.token.encode({iss:'zs4',scope:''});
+    zs4req.payloadRefresh();
+  }
+};
+
 express.getFunction = function (req, res) {
   var starttime = Date.now();
   debug('GET REQUEST: '+req.path);
-
-  //debug('GET REQUEST!!!!!!!!');
 
   var zs4req = new zs4.request();
   zs4req.request.node = null; // SECURITY !!!!! IMPORTANT
@@ -82,6 +88,7 @@ express.getFunction = function (req, res) {
   debug(req.path,req.query);
 
   express.getCookie(req,zs4req);
+  express.autoRootToken(req,zs4req);
 
   zs4req.process(function(ret){
     var r = zs4req.request.html;
@@ -107,6 +114,7 @@ express.postFunction = function (req, res) {
   }
   //debug(req.body);
   express.getCookie(req,zs4req);
+  express.autoRootToken(req,zs4req);
 
   zs4req.process(function(ret){
     if (zs4req.html==true){
