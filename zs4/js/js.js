@@ -2825,6 +2825,21 @@ zs4.type = {
     this._.typename = 'filecontent';
     this._.maxlength = zs4.const.TEXT.MAXLENGTH;
   },
+  media:function(input){
+    var MEDIA = this;
+    zs4.type.scope.call(this);
+    this._.typename = 'media';
+    if (zs4.is.node()){
+      this.zs4.head.typename._.value = 'media';
+      this.zs4.head.typename._.default = 'media';
+      this._.property(new zs4.type.string({name:'originalname',flags:'index authgetpublic authsetself',maxlength:255,}));
+      this._.property(new zs4.type.string({name:'mimetype',flags:'authgetpublic authsetself',maxlength:128,}));
+      this._.property(new zs4.type.integer({name:'size',flags:'authgetpublic authsetself',}));
+      this._.property(new zs4.type.string({name:'path',flags:'authgetpublic authsetself',maxlength:255,}));
+    }
+    this._.name = 'media';
+    this._.create = zs4.type.media;
+  },
   folder:function(input){
     var DRIVE = this;
     zs4.type.object.call(DRIVE,input);

@@ -176,8 +176,8 @@ express.schema = function(parent){
 
     app.use(favicon(path.join(__dirname, 'static', 'favicon.ico')));
     app.use(logger('dev'));
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.json({limit:'50mb'}));
+    app.use(bodyParser.urlencoded({ extended: false, limit:'50mb' }));
     app.use(cookieParser());
     app.use(xpress.static(path.join(__dirname, 'static'),{index:'/'}));
 

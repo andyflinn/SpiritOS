@@ -3288,15 +3288,21 @@ zs4.admin.util = {
 										var path = 'zs4.type.'+top.app.typeSelect.value+'.method.new';
 										console.log('path for new option: '+path);
 										var nu = zs4.THIS._.resolvePath(path);
-										if (nu != null){
+										if (top.app.typeSelect.value === 'media'){
+											UI.addClass(top.app.new,'nodisplay');
+											UI.removeClass(top.app.uploadBtn,'nodisplay');
+										} else if (nu != null){
 											UI.removeClass(top.app.new,'nodisplay');
+											UI.addClass(top.app.uploadBtn,'nodisplay');
 										}
 										else {
 											UI.addClass(top.app.new,'nodisplay');
+											UI.addClass(top.app.uploadBtn,'nodisplay');
 										}
 									}
 									else {
 										UI.addClass(top.app.new,'nodisplay');
+										UI.addClass(top.app.uploadBtn,'nodisplay');
 									}
 
 									this.requestItems();
@@ -3429,6 +3435,42 @@ zs4.admin.util = {
 										}
 									};
 								}
+
+								// Upload button — only shown when media type is selected
+								top.app.uploadBtn = document.createElement('zs4-app-new-item');
+								UI.setIcon(top.app.uploadBtn,'upload');
+								UI.addClass(top.app.uploadBtn,'nodisplay');
+								top.app.toolbar.appendChild(top.app.uploadBtn);
+
+								top.app.uploadInput = document.createElement('input');
+								top.app.uploadInput.type = 'file';
+								top.app.uploadInput.style.display = 'none';
+								top.app.toolbar.appendChild(top.app.uploadInput);
+
+								top.app.uploadBtn.onclick = function(){
+									top.app.uploadInput.value = '';
+									top.app.uploadInput.click();
+								};
+
+								top.app.uploadInput.onchange = function(){
+									var file = top.app.uploadInput.files[0];
+									if (!file) return;
+									var reader = new FileReader();
+									reader.onload = function(e){
+										var nu = zs4.THIS._.resolvePath('zs4.type.media.method.new');
+										if (!nu) return;
+										UI.removeClass(o._.html.spin,'nodisplay');
+										nu._.call({
+											filename: file.name,
+											mimetype: file.type,
+											filedata: e.target.result,
+										}, function(){
+											UI.addClass(o._.html.spin,'nodisplay');
+											o._.html.refreshAll();
+										});
+									};
+									reader.readAsDataURL(file);
+								};
 
 								top.app.content = document.createElement('zs4-app-content');
 								o._.html.appWindow.appendChild(top.app.content);
@@ -4650,5 +4692,40 @@ zs4.admin.type = {
   },
 	zs4:function(po,o){
 		zs4.admin.type.object(po,o);
+	},
+	media:function(po,o){
+		zs4.admin.type.object(po,o);
+		if (o._.html.mediaPreview == null && zs4.is.type(o.path)){
+			o._.html.mediaPreview = document.createElement('div');
+			o._.html.e.appendChild(o._.html.mediaPreview);
+			function renderPreview(){
+				var p = o.path._.value;
+				if (!p) return;
+				o._.html.mediaPreview.innerHTML = '';
+				var mime = o.mimetype ? o.mimetype._.value : '';
+				if (mime.indexOf('image/')===0){
+					var img = document.createElement('img');
+					img.src = p;
+					img.style.maxWidth = '100%';
+					o._.html.mediaPreview.appendChild(img);
+				} else if (mime.indexOf('audio/')===0){
+					var audio = document.createElement('audio');
+					audio.src = p; audio.controls = true;
+					o._.html.mediaPreview.appendChild(audio);
+				} else if (mime.indexOf('video/')===0){
+					var video = document.createElement('video');
+					video.src = p; video.controls = true;
+					video.style.maxWidth = '100%';
+					o._.html.mediaPreview.appendChild(video);
+				} else {
+					var a = document.createElement('a');
+					a.href = p; a.textContent = o.originalname ? o.originalname._.value : p;
+					a.target = '_blank';
+					o._.html.mediaPreview.appendChild(a);
+				}
+			}
+			renderPreview();
+			o._.onchange(renderPreview);
+		}
 	},
 };

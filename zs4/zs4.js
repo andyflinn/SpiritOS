@@ -139,6 +139,7 @@ zs4.load = function(cb){
     z.type.translation.config.driver._.value = 'jsondb';
     z.type.config.config.driver._.value = 'jsondb';
     z.type.price.config.driver._.value = 'jsondb';
+    z.type.media.config.driver._.value = 'jsondb';
   };
 
   if (zs4.THIS.zs4.node.is.heroku._.getValue()){
@@ -166,6 +167,8 @@ zs4.save = function(cb){
 zs4.define = function(){
 
   var fs = require('./fs');
+  var nodefs = require('fs');
+  var path = require('path');
 
   zs4.node.require.require = require('./require');
   zs4.node.require.require.schema(zs4.THIS.zs4);
@@ -265,7 +268,93 @@ zs4.define = function(){
   zs4.THIS.zs4.type.price._.flags.value |= zs4.THIS.zs4.type.price._.flags.apiarg;
   zs4.THIS.zs4.type.price._.flags.set.authgetpublic(false);
 
-  var nodefs = require('fs');
+  // Media type
+  zs4.THIS.zs4.type._.property(new zs4.type.array({name:'media',template:new zs4.type.media(),}));
+  zs4.THIS.zs4.type.media._.flags.value |= zs4.THIS.zs4.type.media._.flags.apiarg;
+  zs4.THIS.zs4.type.media._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.media.method.deleteone._.flags.set.authgetpublic(false);
+
+  zs4.THIS.zs4.type.media.method.new._.transform = (function(req,cb){
+    var REQUEST = req;
+    var NEW = zs4.THIS.zs4.type.media.method.new;
+    var THIS = zs4.THIS.zs4.type.media;
+    req.setScope(this);
+
+    if (!(req.flags.value & req.flags.authset)){
+      req.error(NEW,'not authorized'); NEW._.get(req); cb(); return;
+    }
+    if (!req.tokenExists()&&!req.userIsRoot()){
+      req.error(NEW,'not logged in'); NEW._.get(req); cb(); return;
+    }
+    if (!zs4.is.object(req.input)
+      ||!zs4.is.string(req.input.filedata)||req.input.filedata.length===0
+      ||!zs4.is.string(req.input.filename)||req.input.filename.length===0
+    ){
+      req.error(NEW,'missing file data'); NEW._.get(req); cb(); return;
+    }
+
+    var filename = req.input.filename.trim();
+    var ext = filename.lastIndexOf('.')>=0 ? filename.slice(filename.lastIndexOf('.')+1).toLowerCase() : '';
+    var mimetype = zs4.is.string(req.input.mimetype) ? req.input.mimetype : 'application/octet-stream';
+    var base64 = req.input.filedata;
+    if (base64.indexOf('base64,')>=0) base64 = base64.split('base64,')[1];
+
+    var buffer;
+    try { buffer = new Buffer(base64,'base64'); }
+    catch(e){ req.error(NEW,'invalid file data'); NEW._.get(req); cb(); return; }
+
+    var mediaDir = path.join(process.cwd(),'media');
+    if (!nodefs.existsSync(mediaDir)){ try{nodefs.mkdirSync(mediaDir);}catch(e){} }
+
+    var nu = THIS.template._.new();
+    nu._.flags.set.notrans(false);
+    nu._.flags.set.scope(true);
+    nu.zs4.head.title._.value = filename;
+    nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
+
+    if (!req.userIsRoot()){
+      nu.zs4.head.owner._.value = req.request.payload.scope;
+      var creatorObj = zs4.THIS._.resolvePath(req.request.payload.scope);
+      if (creatorObj) nu.zs4.head.author._.value = creatorObj.zs4.email._.value;
+    } else {
+      var rootEmail = zs4.THIS.zs4.email.smtp.from._.value;
+      nu.zs4.head.author._.value = rootEmail;
+      var ownerPath = '';
+      if (zs4.is.object(zs4.array.jsondb)){
+        var rootDoc = zs4.array.jsondb.find('user','zs4.email',rootEmail);
+        if (rootDoc) ownerPath = 'zs4.type.user.array.'+rootDoc._id;
+      }
+      nu.zs4.head.owner._.value = ownerPath;
+    }
+
+    zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
+      if (!zs4.is.type(ret)){ NEW._.get(REQUEST); cb(); return; }
+
+      var fileKey = ret._.name + (ext ? '.'+ext : '');
+      var filePath = path.join(mediaDir,fileKey);
+
+      nodefs.writeFile(filePath,buffer,function(err){
+        if (err){
+          req.error(NEW,'failed to save file');
+          zs4.array[THIS.config.driver._.value].deleteID.call(THIS,ret._.name,function(){
+            NEW._.get(REQUEST); cb();
+          });
+          return;
+        }
+        ret.originalname._.value = filename;
+        ret.mimetype._.value = mimetype;
+        ret.size._.value = buffer.length;
+        ret.path._.value = '/media/'+fileKey;
+        zs4.array[THIS.config.driver._.value].updateID.call(THIS,ret._.name,ret._.store(),function(){
+          REQUEST.result(NEW,ret._.path);
+          NEW._.get(REQUEST);
+          REQUEST.setScope(THIS.array);
+          THIS.array._.get(REQUEST);
+          cb();
+        });
+      });
+    });
+  }).bind(zs4.THIS.zs4.type.media.method.new);
 
   zs4.THIS.zs4._.property(new zs4.type.object({name:'css'}));
   zs4.THIS.zs4.css._.css = new Object();
