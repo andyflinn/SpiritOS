@@ -349,6 +349,20 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-youtube:before{content:url(/gfx/icons/youtube.svg);}
 .icon-zs4:before{content:url(/gfx/icons/logo.svg);}
 
+.icon-media:before{content:url(/gfx/icons/media.svg);}
+.icon-mp3:before{content:url(/gfx/icons/mp3.svg);}
+.icon-mp4:before{content:url(/gfx/icons/mp4.svg);}
+.icon-avi:before{content:url(/gfx/icons/avi.svg);}
+.icon-mov:before{content:url(/gfx/icons/mov.svg);}
+.icon-mpg:before{content:url(/gfx/icons/mpg.svg);}
+.icon-wav:before{content:url(/gfx/icons/wav.svg);}
+.icon-aif:before{content:url(/gfx/icons/aif.svg);}
+.icon-jpg:before{content:url(/gfx/icons/jpg.svg);}
+.icon-png:before{content:url(/gfx/icons/png.svg);}
+.icon-bmp:before{content:url(/gfx/icons/bmp.svg);}
+.icon-gif:before{content:url(/gfx/icons/gif.svg);}
+.icon-m4a:before{content:url(/gfx/icons/m4a.svg);}
+
 .icon-toonsmith:before{content:url(/gfx/icons/toonsmith.svg);}
 .icon-audio:before{content:'\01F509';font-weight: bolder;}
 .icon-bar:before{content:url(/gfx/icons/beer.svg);}
@@ -605,6 +619,12 @@ zs4-app-dialog{
   display:block;
   width:100%;
   height:100%;
+}
+zs4-media-view{
+  display:block;
+  width:100%;
+  padding:0.5em 0;
+  text-align:center;
 }
 zs4-title-bar{
   display:block;

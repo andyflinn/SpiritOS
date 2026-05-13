@@ -180,6 +180,7 @@ express.schema = function(parent){
     app.use(bodyParser.urlencoded({ extended: false, limit:'50mb' }));
     app.use(cookieParser());
     app.use(xpress.static(path.join(__dirname, 'static'),{index:'/'}));
+    app.use('/media', xpress.static(path.join(process.cwd(), 'media')));
 
     for (var i = 0 ; i < zs4.plugin.static.length ; i++){
       app.use(xpress.static(path.join(__dirname, zs4.plugin.static[i])));

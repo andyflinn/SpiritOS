@@ -35,3 +35,5 @@ build/Release
 node_modules
 
 zs4/static/test
+data
+media

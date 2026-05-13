@@ -3773,9 +3773,7 @@ zs4.type = {
 
           zs4.debug('getUserScopes('+item[n]._.path+') ? ')
 
-          if( item[n]._.flags.get.scope()
-          && (item[n]._.typename=='scope')
-          ){
+          if( item[n]._.flags.get.scope() ){
             zs4.debug('getUserScopes('+item[n]._.path+')')
             if (item[n]._.flags.get.notrans())continue;
 
@@ -3814,9 +3812,7 @@ zs4.type = {
         for (var n in item){
           if (!zs4.is.type(item[n]))continue;
 
-          if( item[n]._.flags.get.scope()
-          && (item[n]._.typename=='scope')
-          ){
+          if( item[n]._.flags.get.scope() ){
             //zs4.debug('getAllScopes('+item[n]._.path+')')
             if (item[n]._.flags.get.notrans())continue;
 
