@@ -3729,6 +3729,14 @@ zs4.admin.util = {
 										UI.removeClass(o._.html.spin,'nodisplay');
 										zs4.post(tq._.wrapRequest(query),function(ret){
 											UI.addClass(o._.html.spin,'nodisplay');
+											// install app icons when app type is queried
+											if (req.type === 'app' && zs4.app){
+												var arr = zs4.THIS.zs4.type.app.array;
+												for (var n in arr){
+													if (!zs4.is.type(arr[n])) continue;
+													zs4.app.addIcon(arr[n]);
+												}
+											}
 											o._.html.refreshAll();
 										});
 									}
@@ -3743,23 +3751,6 @@ zs4.admin.util = {
 								}).bind(top.app);
 
 								top.app.requestItems();
-
-								// Query app table after render settles, install toolbar icons
-								setTimeout(function(){
-									var tq = zs4.THIS._.resolvePath('zs4.type.app.method.query');
-									if (!tq) return;
-									zs4.post(tq._.wrapRequest({
-										search:'',
-										sort:{item:'zs4.head.title',descend:false},
-										select:{sc:'all'},
-									}), function(){
-										var arr = zs4.THIS.zs4.type.app.array;
-										for (var n in arr){
-											if (!zs4.is.type(arr[n])) continue;
-											zs4.app.addIcon(arr[n]);
-										}
-									});
-								}, 0);
 							}
 
 							//top.app.creatorRefresh();
@@ -3963,7 +3954,8 @@ zs4.admin.util = {
 				};
 				o._.html.dialogHeader.appendChild(homeTab);
 
-				// App system — persistent per-app panes, run main() once per session
+				// App system — only set up on the root scope; other scopes must not overwrite
+				if (o.zs4.head.typename._.value==='node'||o.zs4.head.typename._.value==='user'){
 				o._.html.appPanels = o._.html.appPanels || {};
 				zs4.app = zs4.app || {};
 
@@ -4022,6 +4014,8 @@ zs4.admin.util = {
 					}
 					zs4.app.show(name);
 				};
+				} // end root-only zs4.app setup
+
 				if (UI.am(o)||UI.own(o)){
 					new o._.html.top.dialogTool();
 				}
