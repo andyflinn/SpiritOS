@@ -1,0 +1,24 @@
+{
+  "_meta": {
+    "lastid": 1
+  },
+  "a": {
+    "zs4": {
+      "head": {
+        "title": "my new app named \"a\"",
+        "author": "countinn@gmail.com",
+        "description": "Edit ./apps/a/main.js to build this app.",
+        "lang": "",
+        "owner": "zs4.type.user.array.a",
+        "created": 1778759066573,
+        "updated": 1778792889511,
+        "doctype": "",
+        "bits": 0
+      }
+    },
+    "icon": "",
+    "code": "// zs4 app — key: a\n// Edit: ./apps/a/main.js\n// fn.call(THIS, THIS, window)\nfunction(THIS, window) {\n  var p = document.createElement('p');\n  p.textContent = THIS._.name + ' (untitled) — edit ./apps/a/main.js';\n  window.appendChild(p);\n}",
+    "gitstatus": "untracked",
+    "_id": "a"
+  }
+}
