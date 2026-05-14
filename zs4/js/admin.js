@@ -3151,6 +3151,14 @@ zs4.admin.util = {
 						_o._.onchange(buildMediaPreview);
 					}
 
+					// App: show path info in document panel; launch happens in appWindow
+					if (o.zs4.head.typename._.value === 'app'){
+						var appFileInfo = document.createElement('div');
+						appFileInfo.style.cssText = 'font-family:monospace;font-size:0.8em;color:gray;padding:0.3em 0;';
+						appFileInfo.textContent = './apps/'+o._.name+'/main.js';
+						this.pane.appendChild(appFileInfo);
+					}
+
 				};
 				o._.html.top.dialogCoins = function(){
 					var DIALOG = this;
@@ -3735,6 +3743,23 @@ zs4.admin.util = {
 								}).bind(top.app);
 
 								top.app.requestItems();
+
+								// Query app table after render settles, install toolbar icons
+								setTimeout(function(){
+									var tq = zs4.THIS._.resolvePath('zs4.type.app.method.query');
+									if (!tq) return;
+									zs4.post(tq._.wrapRequest({
+										search:'',
+										sort:{item:'zs4.head.title',descend:false},
+										select:{sc:'all'},
+									}), function(){
+										var arr = zs4.THIS.zs4.type.app.array;
+										for (var n in arr){
+											if (!zs4.is.type(arr[n])) continue;
+											zs4.app.addIcon(arr[n]);
+										}
+									});
+								}, 0);
 							}
 
 							//top.app.creatorRefresh();
@@ -3933,9 +3958,70 @@ zs4.admin.util = {
 
 				var homeTab = document.createElement('zs4-app-tab');
 				UI.setIcon(homeTab,'home');
-				homeTab.onclick = function(){ zs4.navigate('/'); };
+				homeTab.onclick = function(){
+					if (zs4.app) zs4.app.showHome();
+				};
 				o._.html.dialogHeader.appendChild(homeTab);
 
+				// App system — persistent per-app panes, run main() once per session
+				o._.html.appPanels = o._.html.appPanels || {};
+				zs4.app = zs4.app || {};
+
+				zs4.app.showHome = function(){
+					for (var k in o._.html.appPanels)
+						o._.html.appPanels[k].style.display = 'none';
+					UI.removeClass(o._.html.appWindow,'nodisplay');
+				};
+
+				zs4.app.show = function(name){
+					for (var k in o._.html.appPanels)
+						o._.html.appPanels[k].style.display = 'none';
+					UI.addClass(o._.html.appWindow,'nodisplay');
+					if (o._.html.appPanels[name])
+						o._.html.appPanels[name].style.display = 'block';
+				};
+
+				zs4.app.addIcon = function(appObj){
+					var name = appObj._.name;
+					if (o._.html.appPanels[name]) return;
+
+					// private pane — lives for the session
+					var pane = document.createElement('zs4-app-panel');
+					pane.style.cssText = 'display:none;width:100%;height:100%;overflow:auto;padding:0.5em;box-sizing:border-box;';
+					pane.code_executed = false;
+					o._.html.appUserInterface.appendChild(pane);
+					o._.html.appPanels[name] = pane;
+
+					// toolbar icon
+					var iconName = (appObj.icon && appObj.icon._.value) ? appObj.icon._.value : 'app';
+					var tab = document.createElement('zs4-app-tab');
+					tab.setAttribute('data-app', name);
+					UI.setIcon(tab, iconName);
+					tab.title = appObj.zs4.head.title._.value || name;
+					tab.onclick = function(){ zs4.app.launch(appObj); };
+					o._.html.dialogHeader.appendChild(tab);
+				};
+
+				zs4.app.launch = function(appObj){
+					var name = appObj._.name;
+					zs4.app.addIcon(appObj); // no-op if already exists
+					var pane = o._.html.appPanels[name];
+					if (!pane.code_executed){
+						pane.code_executed = true;
+						var code = appObj.code ? appObj.code._.value : '';
+						if (code){
+							try {
+								var fn = new Function('return ('+code.trim()+')')();
+								fn.call(appObj, appObj, pane);
+							} catch(e){
+								pane.textContent = 'Error in '+name+': '+e.message;
+							}
+						} else {
+							pane.textContent = name+' — no code yet.';
+						}
+					}
+					zs4.app.show(name);
+				};
 				if (UI.am(o)||UI.own(o)){
 					new o._.html.top.dialogTool();
 				}
@@ -4733,6 +4819,9 @@ zs4.admin.type = {
 		zs4.admin.type.object(po,o);
 	},
 	media:function(po,o){
+		zs4.admin.type.object(po,o);
+	},
+	app:function(po,o){
 		zs4.admin.type.object(po,o);
 	},
 };

@@ -362,6 +362,7 @@ zs4-name.zs4-own.zs4-noset:not{
 .icon-bmp:before{content:url(/gfx/icons/bmp.svg);}
 .icon-gif:before{content:url(/gfx/icons/gif.svg);}
 .icon-m4a:before{content:url(/gfx/icons/m4a.svg);}
+.icon-svg:before{content:url(/gfx/icons/svg.svg);}
 
 .icon-toonsmith:before{content:url(/gfx/icons/toonsmith.svg);}
 .icon-audio:before{content:'\01F509';font-weight: bolder;}
@@ -619,6 +620,14 @@ zs4-app-dialog{
   display:block;
   width:100%;
   height:100%;
+}
+zs4-app-panel{
+  display:none;
+  width:100%;
+  height:100%;
+  overflow:auto;
+  padding:0.5em;
+  box-sizing:border-box;
 }
 zs4-media-view{
   display:block;

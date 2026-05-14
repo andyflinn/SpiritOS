@@ -120,6 +120,7 @@ jsondb.create = function(input){
     var data = loadCache(ARRAY);
     if (!data[id]){ cb(null); return; }
     newdata._id = id;
+    if (zs4.is.function(ARRAY._.onUpdate)) ARRAY._.onUpdate(id, newdata);
     data[id] = newdata;
     saveCache(ARRAY);
     debug('JSONDB.updateID(' + id + ')');

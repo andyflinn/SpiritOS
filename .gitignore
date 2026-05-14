@@ -35,5 +35,8 @@ build/Release
 node_modules
 
 zs4/static/test
-data
+data/media.json
+data/toonsmith.json
+data/translation.json
+data/user.json
 media

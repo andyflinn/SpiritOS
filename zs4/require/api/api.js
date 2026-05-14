@@ -1,6 +1,6 @@
 var SCOPE = this;
 
-const DEBUG = false;
+const DEBUG = true;
 const NAMECHARS = 'zabcdefghijklmnopqrstuvwxy';
 
 function isArray(a){

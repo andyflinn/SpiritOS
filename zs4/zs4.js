@@ -8,7 +8,7 @@ zs4.commandLine = function(){
   path['zs4'] = new Object();
   path = path['zs4'];
 
-  //debug(process.argv);
+  debug(process.argv);
   if (process.argv.length==2){
     path.express = new Object({run:{}});
   }
@@ -140,6 +140,7 @@ zs4.load = function(cb){
     z.type.config.config.driver._.value = 'jsondb';
     z.type.price.config.driver._.value = 'jsondb';
     z.type.media.config.driver._.value = 'jsondb';
+    z.type.app.config.driver._.value = 'jsondb';
   };
 
   if (zs4.THIS.zs4.node.is.heroku._.getValue()){
@@ -267,6 +268,97 @@ zs4.define = function(){
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'price',template:new price.create(),}));
   zs4.THIS.zs4.type.price._.flags.value |= zs4.THIS.zs4.type.price._.flags.apiarg;
   zs4.THIS.zs4.type.price._.flags.set.authgetpublic(false);
+
+  // App type — file is source of truth; code field mirrors it; gitstatus is output-only
+  function appGitStatus(key){
+    try {
+      var fp = path.join(process.cwd(),'apps',key,'main.js');
+      var out = require('child_process').execSync('git status --porcelain '+fp,{cwd:process.cwd(),timeout:2000}).toString().trim();
+      if (out==='') return 'committed';
+      return out.charAt(0)==='?' ? 'untracked' : 'modified';
+    } catch(e){ return 'unknown'; }
+  }
+
+  function appWriteFile(key, code){
+    var appDir = path.join(process.cwd(),'apps',key);
+    try { nodefs.mkdirSync(appDir,{recursive:true}); } catch(e){}
+    nodefs.writeFile(path.join(appDir,'main.js'), code, function(){});
+  }
+
+  zs4.THIS.zs4.type._.property(new zs4.type.array({name:'app',template:new zs4.type.app(),}));
+  zs4.THIS.zs4.type.app._.flags.value |= zs4.THIS.zs4.type.app._.flags.apiarg;
+  zs4.THIS.zs4.type.app._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.app.method.new._.flags.set.authgetpublic(false);
+  zs4.THIS.zs4.type.app.method.new._.flags.set.authuser(false);
+
+  // When code is saved, sync to file and refresh gitstatus
+  zs4.THIS.zs4.type.app._.onUpdate = function(key, doc){
+    if (zs4.is.string(doc.code)) appWriteFile(key, doc.code);
+    doc.gitstatus = appGitStatus(key);
+  };
+
+  zs4.THIS.zs4.type.app.method.new._.transform = (function(req,cb){
+    var REQUEST = req;
+    var NEW = zs4.THIS.zs4.type.app.method.new;
+    var THIS = zs4.THIS.zs4.type.app;
+    req.setScope(this);
+    if (req.input === undefined || req.input === null){
+      NEW._.get(req); cb(); return;
+    }
+
+    if (!(req.flags.value & req.flags.authset)){
+      req.error(NEW,'not authorized'); NEW._.get(req); cb(); return;
+    }
+
+    var nu = THIS.template._.new();
+    nu._.flags.set.notrans(false);
+    nu._.flags.set.scope(true);
+    nu.zs4.head.title._.value = zs4.is.object(req.input)&&zs4.is.string(req.input.title) ? req.input.title : '';
+    nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
+
+    var rootEmail = zs4.THIS.zs4.email.smtp.from._.value;
+    nu.zs4.head.author._.value = rootEmail;
+    if (zs4.is.object(zs4.array.jsondb)){
+      var rootDoc = zs4.array.jsondb.find('user','zs4.email',rootEmail);
+      if (rootDoc) nu.zs4.head.owner._.value = 'zs4.type.user.array.'+rootDoc._id;
+    }
+
+    zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
+      if (!zs4.is.type(ret)){ NEW._.get(REQUEST); cb(); return; }
+
+      var key = ret._.name;
+      var filePath = './apps/'+key+'/main.js';
+
+      var mainJs = [
+        '// zs4 app — key: '+key,
+        '// Edit: '+filePath,
+        '// fn.call(THIS, THIS, window)',
+        'function(THIS, window) {',
+        '  var p = document.createElement(\'p\');',
+        '  p.textContent = THIS._.name + \' (untitled) — edit '+filePath+'\';',
+        '  window.appendChild(p);',
+        '}',
+      ].join('\n');
+
+      ret.zs4.head.title._.value = key + ' (untitled)';
+      ret.zs4.head.description._.value = 'Edit '+filePath+' to build this app.';
+      ret.code._.value = mainJs;
+      ret.gitstatus._.value = 'untracked';
+
+      appWriteFile(key, mainJs);
+
+      zs4.array[THIS.config.driver._.value].updateID.call(THIS, key, ret._.store(), function(){
+        THIS._.array.elementConnect(THIS.array,ret);
+        ret._.transform(REQUEST.create({input:{}}),function(){
+          REQUEST.result(NEW,ret._.path);
+          NEW._.get(REQUEST);
+          REQUEST.setScope(THIS.array);
+          THIS.array._.get(REQUEST);
+          cb();
+        });
+      });
+    });
+  }).bind(zs4.THIS.zs4.type.app.method.new);
 
   // Media type
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'media',template:new zs4.type.media(),}));
@@ -409,6 +501,27 @@ zs4.define = function(){
       debug(ret ? 'root user created: '+adminEmail : 'root user creation failed');
       cb();
     });
+  }, {});
+
+  // On startup: sync ./apps/(key)/main.js → DB code field, refresh gitstatus
+  zs4.boot.call({}, function(input, cb){
+    var appFile = path.join(process.cwd(),'data','app.json');
+    if (!nodefs.existsSync(appFile)){ cb(); return; }
+    try {
+      var data = JSON.parse(nodefs.readFileSync(appFile,'utf8'));
+      var changed = false;
+      Object.keys(data).filter(function(k){ return k!=='_meta'; }).forEach(function(k){
+        var mainJs = path.join(process.cwd(),'apps',k,'main.js');
+        if (nodefs.existsSync(mainJs)){
+          var fileCode = nodefs.readFileSync(mainJs,'utf8');
+          if (data[k].code !== fileCode){ data[k].code = fileCode; changed = true; }
+        }
+        var gs = appGitStatus(k);
+        if (data[k].gitstatus !== gs){ data[k].gitstatus = gs; changed = true; }
+      });
+      if (changed) nodefs.writeFileSync(appFile, JSON.stringify(data,null,2));
+    } catch(e){ debug('app sync error: '+e.message); }
+    cb();
   }, {});
 
 }

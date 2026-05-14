@@ -856,24 +856,24 @@ zs4.util = {
 
     }
 
-    this.addFlag('trim',0x0001);
+    this.addFlag('trim',0x0001); // this value will be trimmed of leading and trailing whitespace on the client and server.
     this.addFlag('nosort',0x0002);
-    this.addFlag('notrans',0x0004);
+    this.addFlag('notrans',0x0004); 
     this.addFlag('scope',0x0008);
 
-    this.addFlag('noset',0x0010);
-    this.addFlag('api',0x0020);
-    this.addFlag('required',0x0040);
-    this.addFlag('nostore',0x0080);
+    this.addFlag('noset',0x0010); // this value cannot be set by the client, but can be set by the server.
+    this.addFlag('api',0x0020); 
+    this.addFlag('required',0x0040); // this value is required to pass automated validation.
+    this.addFlag('nostore',0x0080); // this value wil not be stored in the database, but will be used in the API, to trasport data between client and server.
 
-    this.addFlag('noget',0x0100);
+    this.addFlag('noget',0x0100); // this value will never be sent to the client.
     this.addFlag('am',0x0200);
     this.addFlag('own',0x0400);
     this.addFlag('noprune',0x0800);
 
-    this.addFlag('nodisplay',0x1000);
-    this.addFlag('index',0x2000);
-    this.addFlag('unique',0x4000);
+    this.addFlag('nodisplay',0x1000); // this value will not be displayed in the client, even if sent to the client. 
+    this.addFlag('index',0x2000); // this value will be indexed for faster searching.
+    this.addFlag('unique',0x4000); // this value will be unique across all instances.
     this.addFlag('authgetpublic',0x8000);
 
     this.addFlag('authget',0x10000);
@@ -1994,6 +1994,7 @@ zs4.type = {
 
     var template = input.template._.new();
     template._.name = 'template'
+    template._.flags.set.notrans(true);
     THIS._.property(template);
     THIS.template._.flagTree((
       this._.flags.authgetpublic
@@ -2820,6 +2821,18 @@ zs4.type = {
       this._.property(new zs4.type.filecontent({name:'content',flags:'noprune quickupdate',}));
     //}
   },
+  app:function(input){
+    zs4.type.scope.call(this);
+    if (zs4.is.node()){
+      this.zs4.head.typename._.value = 'app';
+      this.zs4.head.typename._.default = 'app';
+      this._.property(new zs4.type.string({name:'icon',flags:'authgetpublic authsetself quickupdate',maxlength:64,}));
+      this._.property(new zs4.type.text({name:'code',flags:'authsetself quickupdate',maxlength:65536,}));
+      this._.property(new zs4.type.string({name:'gitstatus',flags:'noset authgetpublic',maxlength:128,}));
+    }
+    this._.name = 'app';
+    this._.create = zs4.type.app;
+  },
   filecontent:function(input){
     zs4.type.text.call(this,input);
     this._.typename = 'filecontent';
@@ -2828,7 +2841,6 @@ zs4.type = {
   media:function(input){
     var MEDIA = this;
     zs4.type.scope.call(this);
-    this._.typename = 'media';
     if (zs4.is.node()){
       this.zs4.head.typename._.value = 'media';
       this.zs4.head.typename._.default = 'media';
@@ -3773,7 +3785,9 @@ zs4.type = {
 
           zs4.debug('getUserScopes('+item[n]._.path+') ? ')
 
-          if( item[n]._.flags.get.scope() ){
+          if( item[n]._.flags.get.scope()
+          && (item[n]._.typename=='scope')
+          ){
             zs4.debug('getUserScopes('+item[n]._.path+')')
             if (item[n]._.flags.get.notrans())continue;
 
@@ -3812,7 +3826,9 @@ zs4.type = {
         for (var n in item){
           if (!zs4.is.type(item[n]))continue;
 
-          if( item[n]._.flags.get.scope() ){
+          if( item[n]._.flags.get.scope()
+          && (item[n]._.typename=='scope')
+          ){
             //zs4.debug('getAllScopes('+item[n]._.path+')')
             if (item[n]._.flags.get.notrans())continue;
 

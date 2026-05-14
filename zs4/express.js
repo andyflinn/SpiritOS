@@ -181,6 +181,7 @@ express.schema = function(parent){
     app.use(cookieParser());
     app.use(xpress.static(path.join(__dirname, 'static'),{index:'/'}));
     app.use('/media', xpress.static(path.join(process.cwd(), 'media')));
+    app.use('/apps', xpress.static(path.join(process.cwd(), 'apps')));
 
     for (var i = 0 ; i < zs4.plugin.static.length ; i++){
       app.use(xpress.static(path.join(__dirname, zs4.plugin.static[i])));
