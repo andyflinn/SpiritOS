@@ -1,0 +1,1 @@
+this folder stores the ideas of GitLags duo system
