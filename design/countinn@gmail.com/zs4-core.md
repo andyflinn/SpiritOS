@@ -20,7 +20,7 @@ The client api automatically merges that reply into it's mirror of the servers j
 
 ### the conceptual shape of the zs4 object 
 
-'''
+```
 zs4:
 {
     // a header, enherited by all object types...
@@ -37,7 +37,7 @@ zs4:
     cookware: {
     }
 }
-'''
+```
 
 The server is the keeper of "truth", when a client requests initiates a session, i.e. loads the (home) page, the server essentially responds with a mirror of the json file it represents, plus tools for the client to request modifications of that file.
 
