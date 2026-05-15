@@ -4929,7 +4929,9 @@ if (zs4.is.window()){
 
   zs4.navigate = function(path){
     if (!zs4.string.startsWith(path,'/')) path = ('/'+path);
-    window.location.replace(path);
+    if (window.history && window.history.pushState){
+      window.history.pushState({}, '', path);
+    }
   }
   zs4.post = function(o,cb,getall){
 
