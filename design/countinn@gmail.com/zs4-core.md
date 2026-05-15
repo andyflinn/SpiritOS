@@ -35,7 +35,6 @@ zs4:
     // type specific object members
     moretext:"bla bla",
     cookware: {
-
     }
 }
 '''
