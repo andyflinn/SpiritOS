@@ -4932,6 +4932,16 @@ if (zs4.is.window()){
     if (window.history && window.history.pushState){
       window.history.pushState({}, '', path);
     }
+    var scopePath = path.replace(/^\//,'');
+    zs4.location.path = scopePath;
+    var input = new Object();
+    var a = zs4.string.split.separators(scopePath,'./\\_-');
+    var p = input;
+    for (var i = 0; i < a.length; i++){ p[a[i]] = new Object(); p = p[a[i]]; }
+    zs4.post(input, function(){
+      zs4.admin.type.object(null, zs4.location.get());
+      if (zs4.style && zs4.style.refresh) zs4.style.refresh();
+    }, true);
   }
   zs4.post = function(o,cb,getall){
 
