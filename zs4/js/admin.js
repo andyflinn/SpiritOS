@@ -2774,17 +2774,22 @@ zs4.admin.util = {
 				o._.html.appIsOpen = true;
 				o._.html.dialog = new Object();
 
-				o._.html.dialogHeader= document.createElement('zs4-app-header');
-				o._.html.head.appendChild(o._.html.dialogHeader);
-
-				o._.html.appElement = document.createElement('zs4-app');
-				o._.html.e.appendChild(o._.html.appElement);
-
-				o._.html.appUserInterface = document.createElement('zs4-app-ui');
-				o._.html.appElement.appendChild(o._.html.appUserInterface);
-
-				o._.html.appWindow = document.createElement('zs4-app-window');
-				o._.html.appUserInterface.appendChild(o._.html.appWindow);
+				if (!o._.html.dialogHeader){
+					o._.html.dialogHeader= document.createElement('zs4-app-header');
+					o._.html.head.appendChild(o._.html.dialogHeader);
+				}
+				if (!o._.html.appElement){
+					o._.html.appElement = document.createElement('zs4-app');
+					o._.html.e.appendChild(o._.html.appElement);
+				}
+				if (!o._.html.appUserInterface){
+					o._.html.appUserInterface = document.createElement('zs4-app-ui');
+					o._.html.appElement.appendChild(o._.html.appUserInterface);
+				}
+				if (!o._.html.appWindow){
+					o._.html.appWindow = document.createElement('zs4-app-window');
+					o._.html.appUserInterface.appendChild(o._.html.appWindow);
+				}
 
 				if (UI.own(o) || UI.am(o)){
 					var titleBar = document.createElement('zs4-title-bar');
@@ -2883,6 +2888,9 @@ zs4.admin.util = {
 					}
 
 					zs4.plugin.list[plugname].ui(o._.html.appWindow,o);
+				}
+				else if (o.zs4.head.typename._.value === 'app'){
+					if (zs4.app && zs4.app.launch) zs4.app.launch(o);
 				}
 				o._.html.top.dialogActive = false;
 				o._.html.top.dialog = function(name){
@@ -3745,6 +3753,22 @@ zs4.admin.util = {
 										zs4.post(zs4.THIS.zs4.search._.wrapRequest(req),function(ret){
 											UI.addClass(o._.html.spin,'nodisplay');
 											o._.html.refreshAll();
+											// Sequential: after render settles, install app icons once per session
+											if (zs4.app && !zs4.app._iconsLoaded){
+												zs4.app._iconsLoaded = true;
+												var _tq = zs4.THIS._.resolvePath('zs4.type.app.method.query');
+												if (_tq) zs4.post(_tq._.wrapRequest({
+													search:'',
+													sort:{item:'zs4.head.title',descend:false},
+													select:{sc:'all'},
+												}), function(){
+													var _arr = zs4.THIS.zs4.type.app.array;
+													for (var _n in _arr){
+														if (!zs4.is.type(_arr[_n])) continue;
+														zs4.app.addIcon(_arr[_n]);
+													}
+												});
+											}
 										});
 									}
 
@@ -4050,6 +4074,11 @@ zs4.admin.util = {
 				}
 				else {
 					o._.html.appInfoContent.innerHTML = 'zs4 toonsmith by Andy Flinn...';
+				}
+
+				// Auto-open document tab when navigating to an app scope
+				if (o.zs4.head.typename._.value === 'app' && o._.html.dialog && o._.html.dialog['document']){
+					o._.html.dialog['document'].select.onclick();
 				}
 			}
 
