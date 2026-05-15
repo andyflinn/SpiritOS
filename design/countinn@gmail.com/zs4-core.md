@@ -1,7 +1,7 @@
-#The core zs4 architecture
+# The core zs4 architecture
 
 
-##The zs4 client / server concept
+## The zs4 client / server concept
 
 The server is, ,conceptually, the keeper on one single json file. When a client loads, the one server page, it receives an essential subset of the json file, a nested zs4 object, including tools that allow the client to read and modify the one json file. 
 
