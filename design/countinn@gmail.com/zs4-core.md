@@ -21,9 +21,10 @@ The client api automatically merges that reply into it's mirror of the servers j
 ### the conceptual shape of the zs4 object 
 
 *
+zs4:
 {
     // a header, enherited by all object types...
-    zs4.head:{ // the object head is common to zs4 objects, enherited by various object types
+    head:{ // the object head is common to zs4 objects, enherited by various object types
         author: "author@author.com", // the user who created this object
         uuid: "universally-unique-identifier", // assigned at creation time, immutable from then on.
         bits: 235426, // a set of names bits in an integer, controlling behaviour of this object
@@ -32,7 +33,10 @@ The client api automatically merges that reply into it's mirror of the servers j
     },
 
     // type specific object members
-    moretext:
+    moretext:"bla bla",
+    cookware: {
+
+    }
 }
 *
 
