@@ -13,7 +13,6 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var http = require('http');
 var https = require('https');
-var passport = require('passport');
 var fs = require('fs');
 
 var express = exports;
@@ -195,7 +194,6 @@ express.schema = function(parent){
       next();
     });
 
-    zs4.THIS.zs4.passport._.installToExpressApp(app);
 
     app.get('/*',express.getFunction);
     app.post('/*',express.postFunction);

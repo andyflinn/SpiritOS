@@ -1444,33 +1444,6 @@ zs4.admin.util = {
 			};
 		}
 	},
-	socialLoginElement:function(pe){
-		var LOGIN = this;
-		if (!zs4.THIS._.loggedIn){
-			UI.toolElement.call(LOGIN,pe,'social');
-
-			console.log('LOGIN OPTIONS:');
-			this.pp = new Object();
-			this.pp.e = document.createElement('div');
-			LOGIN.appendElement(this.pp.e);
-			var pp = zs4.THIS.zs4.passport;
-			for (var n in pp){
-				if (!zs4.is.type(pp[n]))continue;
-				var provider = this.pp[n] = new Object();
-				provider.e = document.createElement('div');
-				provider.e.style.cursor = 'pointer';
-				//provider.e.style.display = 'block';
-				this.pp.e.appendChild(provider.e);
-
-				UI.addIconElement(provider.e,n);
-				UI.addSpace(provider.e);
-				UI.addTextSpan(provider.e,n);
-
-				provider.e.onclick = function(){zs4.navigate('/zs4.passport.'+n+'.login');}
-				console.log('  - '+n);
-			}
-		}
-	},
 	logoutElement:function(pe){
 		var LOGOUT = this;
 		if (zs4.THIS._.loggedIn){
@@ -1693,7 +1666,6 @@ zs4.admin.util = {
 		}
 		else {
 			new UI.loginElement(pe);
-			new UI.socialLoginElement(pe);
 		}
 
 	},

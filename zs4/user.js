@@ -35,19 +35,5 @@ user.create = function(){
     USER._.property(new zs4.type.object({name:'account',flags:'noset'}));
     USER.account._.property(new zs4.type.integer({name:'balance',flags:'quickupdate'}));
 
-    USER._.property(new zs4.type.object({name:'social',flags:'authsetself quickupdate'}));
-    if (zs4.is.type(zs4.THIS.zs4.passport)){
-      var PASSPORT = zs4.THIS.zs4.passport
-      for (var n in PASSPORT)if (zs4.is.type(PASSPORT[n])){
-        var SOCIAL = PASSPORT[n];
-        var network = SOCIAL._.name;
-        //debug('instantiating '+SOCIAL._.name+' for USER');
-        USER.social._.property(new zs4.type.object({name:network,flags:''}));
-        USER.social[network]._.property(new zs4.type.date({name:'date',flags:''}));
-        USER.social[network]._.property(new zs4.type.string({name:'display',flags:''}));
-        USER.social[network]._.property(new zs4.type.string({name:'id',flags:''}));
-        USER.social[network]._.property(new zs4.type.string({name:'email',flags:''}));
-      }
-    }
   }
 }
