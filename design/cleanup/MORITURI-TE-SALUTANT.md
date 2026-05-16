@@ -8,13 +8,13 @@
 ### Phase 0: The Great Purge (Next ~10 days)
 
 **High Priority Kills:**
-- Passport.js + session middleware
-- Generic database driver layer
+- Passport.js + session middleware (done)
+- Generic database driver layer (done)
 - AMP support
 - price.js / coin stuff
 - Old polling / HTTP-only endpoints
-- OAuth / social logins
-- Multi-tenant / admin code
+- OAuth / social logins (done)
+- Multi-tenant / admin code (in progress, currently creashing)
 
 *(Continue the full list we discussed earlier...)*
 
