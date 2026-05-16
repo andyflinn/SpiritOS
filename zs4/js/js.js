@@ -2968,162 +2968,57 @@ zs4.type = {
 
     if (zs4.is.node()){
       this._.property(new zs4.type.email({name:'email',flags:'apiarg noprune required',}));
-      this._.property(new zs4.type.password({name:'password',flags:'apiarg noprune required',}));
-      this._.property(new zs4.type.boolean({name:'sendtoken',flags:'apiarg noprune',}));
 
       this._.transform = (function(req,cb){
-        var REQUEST = req;
         req.setScope(this);
 
-        zs4.debug(req.input);
-
-        if (!zs4.is.object(req.input)){
-          req.error(this,'input is not an object');
+        if (!zs4.is.object(req.input)||!zs4.is.email(req.input.email)){
+          req.error(this,'email required');
           THIS._.get(req); cb(); return;
         }
 
-        if (!zs4.is.email(req.input.email)){
-          req.error(this,'no email');
+        if (zs4.THIS.zs4.email.smtp.configured._.value!=true){
+          req.error(THIS,'smtp not configured');
           THIS._.get(req); cb(); return;
         }
 
-        if (!zs4.is.password(req.input.password)){
-          if (zs4.is.boolean(req.input.sendtoken)&&req.input.sendtoken==true){
-            zs4.debug('attempting to email token to address '+req.input.email);
-            if (zs4.THIS.zs4.email.smtp.configured._.value!=true){
-              req.error(THIS,'internal configuration error');
-              THIS._.get(req); cb(); return;
-            }
-
-            function sendEmailToken(email,scope){
-              var token = zs4.THIS.zs4.token.encode({iss:'zs4.email.message',scope:scope,});
-              var hosturl = zs4.THIS.zs4.express.getHostURL(req);
-              hosturl += '/'+scope;
-              var message = new Object({
-                to:email,
-                subject:zs4.THIS.zs4.express.host._.value+' access token for '+email,
-                text:'Click here to automatically log in '+email+': '+hosturl+'?token='+token});
-
-              req.call({path:'zs4.email.message',input:message,},function(backcall){
-                zs4.debug('response from zs4.email.message',backcall);
-                if (backcall.error != null){
-                  req.error(THIS,'');
-                  THIS._.get(req); cb(); return;
-                };
-
-                if (backcall.result != null){
-                  var path = scope;
-                  if (path!='')path+='.';
-                  path+='zs4.password';
-                  req.call({path:path,input:{reset:true}},function(resetcb){
-                    zs4.debug(path+': RESET!!!');
-                    req.result(THIS,backcall.result);
-                    THIS._.get(req); cb(); return;
-                  });
-                }
-                else {
-                  req.error(THIS,'send message failure');
-                  THIS._.get(req); cb(); return;
-                }
-              },true);
-            };
-
-            if (req.input.email==zs4.THIS.zs4.email.smtp.from._.value){
-              sendEmailToken(req.input.email,'');
-              return;
-            }
-
-            req.call({path:'zs4.type.user.method.getone',input:{item:'zs4.email',eq:req.input.email}},function(callback){
-              zs4.debug(callback);
-              if (callback.error != null){
-                req.error(THIS,'');
-                THIS._.get(req); cb(); return;
-              };
-              if (!zs4.is.string(callback.result)||!zs4.string.startsWith(callback.result,'zs4.type.user.array')){
-                req.error(THIS,'');
-                THIS._.get(req); cb(); return;
-              }
-              var USERPATH = callback.result;
-              sendEmailToken(req.input.email,callback.result);
-              return;
-            },true);
-            return;
-          }
-          else {
-            req.error(this,'no password');
-            THIS._.get(req); cb(); return;
-          }
+        function sendEmailToken(email,scope){
+          var token = zs4.THIS.zs4.token.encode({iss:'zs4.email.message',scope:scope,});
+          var hosturl = zs4.THIS.zs4.express.getHostURL(req);
+          hosturl += '/'+scope;
+          var message = {
+            to:email,
+            subject:zs4.THIS.zs4.express.host._.value+' login link for '+email,
+            text:'Click to log in: '+hosturl+'?token='+token,
+          };
+          req.call({path:'zs4.email.message',input:message,},function(backcall){
+            if (backcall.error!=null){ req.error(THIS,''); THIS._.get(req); cb(); return; }
+            if (backcall.result!=null){ req.result(THIS,backcall.result); }
+            else { req.error(THIS,'send failed'); }
+            THIS._.get(req); cb();
+          },true);
         }
 
         if (req.input.email==zs4.THIS.zs4.email.smtp.from._.value){
-          req.call({path:'zs4.password',input:{vfy:req.input.password,}},function(callback){
-            if (callback.error != null){
-              zs4.debug('zs4.password root login attempt failed');
-              req.error(THIS,'');
-              THIS._.get(req); cb(); return;
-            };
-
-            if (!req.tokenExists()){
-              req.error(THIS,'login failed');
-              THIS._.get(req); cb(); return;
-            }
-
-            zs4.debug('GOSCOPE ROOTSCOPE');
-            req.result(THIS,{goscope:''});
-            THIS._.get(req); cb(); return;
-          });
-          return;
+          sendEmailToken(req.input.email,''); return;
         }
 
         req.call({path:'zs4.type.user.method.getone',input:{item:'zs4.email',eq:req.input.email}},function(callback){
-          //zs4.debug(callback);
-          if (callback.error != null){
-            zs4.debug('zs4.type.user.method.getone('+req.input.email+') failed: ',callback);
-            req.error(THIS,req.input.email+' not found.');
-            THIS._.get(req); cb(); return;
-          };
-          if (!zs4.is.string(callback.result)||!zs4.string.startsWith(callback.result,'zs4.type.user.array')){
-            req.error(THIS,'not found');
-            THIS._.get(req); cb(); return;
+          if (callback.error!=null||!zs4.is.string(callback.result)||
+              !zs4.string.startsWith(callback.result,'zs4.type.user.array')){
+            req.error(THIS,'email not found'); THIS._.get(req); cb(); return;
           }
-
-          zs4.debug('calling: '+callback.result+'.zs4.password');
-          var userpath = callback.result;
-          req.call({path:callback.result+'.zs4.password',input:{vfy:req.input.password}},function(callback){
-            if (callback.error != null){
-              req.error(THIS,'password incorrect');
-              THIS._.get(req); cb(); return;
-            };
-
-            if (!req.tokenExists()){
-              req.error(THIS,'login failed');
-              THIS._.get(req); cb(); return;
-            }
-
-            zs4.debug('GOSCOPE '+userpath);
-            req.result(THIS,{goscope:userpath});
-            THIS._.get(req); cb(); return;
-          });
+          sendEmailToken(req.input.email,callback.result);
         },true);
       }).bind(this);
     }
 
     THIS._.get = (function(req,po){
-      //zs4.debug('password.get'+ JSON.stringify(this._.authGet));
       if (req.tokenExists())return null;
       var get = this._.getInitialize(req);
-      if (get==null){
-        zs4.debug(this._.path+'.get() NOT AUTHORIZED!?!?!?');
-        //zs4.debug(this._.authGet);
-        return null;
-      }
-
+      if (get==null)return null;
       req.setScope(THIS.email);
       THIS.email._.get(req);
-
-      req.setScope(THIS.password);
-      THIS.password._.get(req);
-
       return get;
     }).bind(THIS);
   },
