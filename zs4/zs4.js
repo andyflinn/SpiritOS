@@ -79,7 +79,6 @@ zs4.THIS.zs4.head.typename._.value = 'node';
 zs4.THIS.zs4.head.typename._.default = 'node';
 zs4.THIS.zs4._.property(new zs4.type.search());
 zs4.THIS.zs4._.property(new zs4.type.type());
-zs4.THIS.zs4._.property(new zs4.type.hi());
 zs4.THIS.zs4._.property(new zs4.type.bye());
 
 zs4.boot = new zs4.processor.sequential();
@@ -90,8 +89,6 @@ zs4.load = function(cb){
     z.express.port._.value = 8080;
 
     z.email.smtp.from._.value = 'countinn@gmail.com';
-    z.password.hashed._.value = z.password.generate('password');
-    debug('user/pass: countinn@gmail.com/password');
 
     var node = zs4.THIS.zs4.node;
 
@@ -170,15 +167,11 @@ zs4.define = function(){
   zs4.node.require.node = require('./node');
   zs4.node.require.node.schema(zs4.THIS.zs4);
 
-  zs4.node.require.password = require('./password');
-  zs4.node.require.password.schema(zs4.THIS.zs4);
 
 
   zs4.node.require.rsa = require('./rsa');
   zs4.node.require.rsa.schema(zs4.THIS.zs4);
 
-  zs4.node.require.token = require('./token');
-  zs4.node.require.token.schema(zs4.THIS.zs4);
 
   zs4.node.require.email = require('./email');
   zs4.node.require.email.schema(zs4.THIS.zs4);
@@ -204,9 +197,7 @@ zs4.define = function(){
     CONFIG.zs4.head.typename._.default = 'config';
     CONFIG._.name = 'config';
 
-    zs4.node.require.password.schema(CONFIG.zs4);
-    zs4.node.require.rsa.schema(CONFIG.zs4);
-    zs4.node.require.token.schema(CONFIG.zs4);
+      zs4.node.require.rsa.schema(CONFIG.zs4);
     zs4.node.require.email.schema(CONFIG.zs4);
     zs4.node.require.paypal.schema(CONFIG.zs4);
   };
@@ -469,7 +460,6 @@ zs4.define = function(){
 
     var nu = USERARRAY.template._.new();
     nu.zs4.email._.value = adminEmail;
-    nu.zs4.password.hashed._.value = z.password.hashed._.value;
     nu.zs4.head.title._.value = 'Root';
     nu.zs4.head.owner._.value = '';
     nu.zs4.head.created._.value = Date.now();

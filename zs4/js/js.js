@@ -108,10 +108,6 @@ zs4.is = {
     if (dot > (dom.length-2))return false;
     return true;
   },
-  password:function(s){
-    if	(!zs4.is.string(s) || s.trim()!=s || s.length < 4)return false;
-    return true;
-  },
   number:function(b){
     if	(b==null)return false;
     if	(typeof(b)!='number')return false;
@@ -3458,24 +3454,12 @@ zs4.type = {
     }
 
   },
-  password:function(input){
-    zs4.type.string.call(this,input);
-    this._.typename = 'password';
-    this._.zs4check = (function(req,input){
-      if (!this._.zs4checkinit(req,input))return false;
-
-      if (!zs4.is.password(input)&&input!='') return this._.zs4checkfail(req,'not password');
-
-      return true;
-    }).bind(this);
-  },
   scope:function(){
     var THIS = this;
     zs4.type.object.call(this,{name:'this',flags:'scope',})
     THIS._.typename = 'scope';
     THIS._.scope = this;
     THIS._.property(new zs4.type.zs4());
-    THIS.zs4.password = null;
     THIS.zs4._.property(new zs4.type.head());
     THIS._.getScopeItems = (function(scope,type){
       var subtract = false;
@@ -4427,13 +4411,6 @@ zs4.request = function(o){
     this.userIsRoot = function(){
       if (this.request.node) return true;
       if (this.request.localhost) return true;
-      if (zs4.is.object(this.request.payload)){
-        if (zs4.is.string(this.request.payload.scope)){
-          if (this.request.payload.scope=='')return true;
-        }
-      }
-      if (zs4.string.endsWith(zs4.THIS.zs4.email.smtp.user._.value,'@zs4.zs4')
-      && (zs4.THIS.zs4.password.hashed._.value == ''))return true;
       return false;
     };
 
