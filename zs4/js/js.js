@@ -1974,22 +1974,6 @@ zs4.type = {
       THIS._.property(new zs4.type.object({name:'config',flags:'noprune',authSet:['zs4.owner'],}));
       THIS.config._.property(new zs4.type.integer({name:'maxlength',flags:'noprune quickupdate',authSet:['zs4.owner'],}));
       THIS.config._.property(new zs4.type.integer({name:'lastid',flags:'noset noprune',}));
-      THIS.config._.property(new zs4.type.enum({name:'driver',flags:'noprune quickupdate',}));
-      THIS.config.driver._.get = (function(req){
-        var arr = new Array();
-        arr.push('');
-        for (var n in zs4.array){
-          arr.push((' '+n+' ').trim());
-        }
-        this._.enum = arr;
-        var get = this._.getInitialize(req);
-        if (get == null) return null;
-        if (this._.type != Object){
-          get._.value = this._.value;
-        }
-        return get;
-
-      }).bind(THIS.config.driver);
     }
 
     var template = input.template._.new();
@@ -2063,7 +2047,7 @@ zs4.type = {
       var starttime = Date.now();
 
       zs4.debug(req.elenam);
-      zs4.array[THIS.config.driver._.value].getID.call(THIS,req.elenam,function(ret){
+      zs4.array.jsondb.getID.call(THIS,req.elenam,function(ret){
         if (ret == null){
           req.error(THIS.array,req.elenam+' not found');cb();return;
         }
@@ -2074,10 +2058,9 @@ zs4.type = {
         THIS._.array.elementConnect(THIS.array,item);
 
         item._.transform(req,function(){
-          var now = Date.now();
           item.zs4.head.updated._.value = Date.now();
 
-          zs4.array[THIS.config.driver._.value].updateID.call(
+          zs4.array.jsondb.updateID.call(
           THIS,req.elenam,item._.store(),
           function(ret){
             if (ret == null){
@@ -2160,16 +2143,9 @@ zs4.type = {
 
     if (zs4.is.node()){
 
-      THIS.array._.oldTransform = this.array._.transform;
-
       THIS.array._.transform = (function(req,cb){
 
         var TABLE = this;
-
-        if (THIS.config.driver._.value == ''){
-          THIS.array._.oldTransform(req,cb);
-          return;
-        }
 
         req.setScope(TABLE);
 
@@ -2220,81 +2196,39 @@ zs4.type = {
         }
 
         if (zs4.is.object(req.input)){
-          if (THIS.config.driver._.value != ''){
-            var nu = THIS.template._.new();
-            nu._.load(req.input);
-            nu._.flags.set.notrans(false);
-            nu._.flags.set.scope(true);
-            //nu.zs4.head.title._.value = '(untitled)';
-            nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
-            if (!req.userIsRoot()){
-              nu.zs4.head.owner._.value = req.request.payload.scope;
-              var creatorObj = zs4.THIS._.resolvePath(req.request.payload.scope);
-              if (creatorObj) nu.zs4.head.author._.value = creatorObj.zs4.email._.value;
-            } else {
-              var rootEmail = zs4.THIS.zs4.email.smtp.from._.value;
-              nu.zs4.head.author._.value = rootEmail;
-              var ownerPath = '';
-              if (zs4.is.object(zs4.array.jsondb)){
-                var rootDoc = zs4.array.jsondb.find('user','zs4.email',rootEmail);
-                if (rootDoc) ownerPath = 'zs4.type.user.array.'+rootDoc._id;
-              }
-              nu.zs4.head.owner._.value = ownerPath;
-            }
-
-            zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
-              if (zs4.is.type(ret)){
-                THIS._.array.elementConnect(THIS.array,ret);
-
-                ret._.transform(REQUEST.create({input:{}}),function(){
-
-                  REQUEST.result(NEW,ret._.path);
-                  zs4.debug('DB CREATED ',ret._.path);
-
-                  NEW._.get(REQUEST);
-
-                  REQUEST.setScope(THIS.array);
-                  THIS.array._.get(REQUEST);
-
-                  cb(); return;
-                });
-              }
-              else {
-                NEW._.get(REQUEST);
-                cb(); return;
-              }
-            });
-
-            zs4.debug('END DB DRIVER NEW FUNCTION');
-            return;
-          }
-          else {
-            var length = zs4.count.object.properties(THIS.array._.value);
-            if (THIS.config.maxlength._.value > 0 && length >= THIS.config.maxlength._.value){
-              req.error(this,{text:'array limit reached'})
-              this._.get(req); cb(); return;
-            }
-
-            var id = zs4.integer.to.name(THIS.config.lastid._.value++);
-            var nu = THIS.template._.new();
-            nu._.load(req.input);
-            nu._.name = id; nu._.flags.set.notrans(false);
-            nu._.flags.set.scope(true);
-            nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
+          var nu = THIS.template._.new();
+          nu._.load(req.input);
+          nu._.flags.set.notrans(false);
+          nu._.flags.set.scope(true);
+          nu.zs4.head.created._.value = nu.zs4.head.updated._.value = Date.now();
+          if (!req.userIsRoot()){
             nu.zs4.head.owner._.value = req.request.payload.scope;
-            //nu.zs4.email._.value = id+'@zs4.zs4';
-            THIS.array._.property(nu);
-            nu._.transform(REQUEST.create({input:{}}),function(){
-              THIS._.shouldBeSaved(REQUEST);
-              REQUEST.result(THIS.method.new,nu._.path);
-
-              NEW._.get(REQUEST);
-              REQUEST.setScope(THIS.array);
-              THIS.array._.get(REQUEST);
-              cb(); return;
-            });
-
+            var creatorObj = zs4.THIS._.resolvePath(req.request.payload.scope);
+            if (creatorObj) nu.zs4.head.author._.value = creatorObj.zs4.email._.value;
+          } else {
+            var rootEmail = zs4.THIS.zs4.email.smtp.from._.value;
+            nu.zs4.head.author._.value = rootEmail;
+            var rootDoc = zs4.array.jsondb.find('user','zs4.email',rootEmail);
+            nu.zs4.head.owner._.value = rootDoc ? 'zs4.type.user.array.'+rootDoc._id : '';
           }
+
+          zs4.array.jsondb.new.call(THIS,nu,function(ret){
+            if (zs4.is.type(ret)){
+              THIS._.array.elementConnect(THIS.array,ret);
+              ret._.transform(REQUEST.create({input:{}}),function(){
+                REQUEST.result(NEW,ret._.path);
+                NEW._.get(REQUEST);
+                REQUEST.setScope(THIS.array);
+                THIS.array._.get(REQUEST);
+                cb(); return;
+              });
+            }
+            else {
+              NEW._.get(REQUEST);
+              cb(); return;
+            }
+          });
+          return;
         }
         else {
           this._.get(req); cb(); return;
@@ -2351,46 +2285,13 @@ zs4.type = {
 
           //zs4.debug(QUERY._.path+'.transform()',REQUEST.input);
 
-          if (THIS.config.driver._.value != ''){
-            var args = new Object({request:req,select:sel,search:search,sort:REQUEST.input.sort,});
-            zs4.array[THIS.config.driver._.value].query.call(THIS,args,function(ret){
-              if (!zs4.is.array(ret)){
-
-              }
-              else {
-                //zs4.debug(ret);
-              }
-
-              QUERY._.get(req);
-              THIS.array._.get(req);
-              cb();
-            });
-
-            return;
-          }
-          else {
-            for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
-              //zs4.debug(this._.path+'.'+n+'.query()');
-              if (sel!= null){
-                sel._.inscopeTree(THIS.array[n]);
-                if (!sel._.select.check())continue;
-              }
-
-              if (search != null){
-                if (!THIS.array[n]._.search(REQUEST.input.search))continue;
-              }
-
-              req.setScope(THIS.array[n]);
-              THIS.array[n]._.getTree(req);
-            }
-
-            req.setScope(this);
-            this._.get(req);
-            req.setScope(THIS.array);
+          var args = new Object({request:req,select:sel,search:search,sort:REQUEST.input.sort,});
+          zs4.array.jsondb.query.call(THIS,args,function(){
+            QUERY._.get(req);
             THIS.array._.get(req);
             cb();
-            return;
-          }
+          });
+          return;
         }
 
         req.setScope(this);
@@ -2495,37 +2396,14 @@ zs4.type = {
           return get();
         }
 
-        if (THIS.config.driver._.value != ''){
-          var args = new Object({request:req,});
-          zs4.array[THIS.config.driver._.value].getOne.call(THIS,req,function(ret){
-            if (ret == null){
-              REQUEST.error(GETONE,'not found');
-              return get();
-            }
-            REQUEST.result(GETONE,ret._.path);
+        zs4.array.jsondb.getOne.call(THIS,req,function(ret){
+          if (ret == null){
+            REQUEST.error(GETONE,'not found');
             return get();
-          });
-        }
-        else {
-          var item = req.input.item;
-          var eq = req.input.eq;
-
-          for (var n in THIS.array)if (zs4.is.type(THIS.array[n])){
-            var val = THIS.array[n]._.resolvePath(item);
-            if (val == null){
-              continue;
-            }
-            if (val._.opcode.eq(eq)){
-              REQUEST.result(GETONE,THIS.array[n]._.path);
-              THIS.array[n]._.getTree(req);
-              THIS.array._.get(req);
-              return get();
-            }
           }
-
-          REQUEST.error(GETONE,'not found');
+          REQUEST.result(GETONE,ret._.path);
           return get();
-        }
+        });
 
       }).bind(this.method.getone);
 
@@ -2566,55 +2444,23 @@ zs4.type = {
           return get();
         }
 
-        if (THIS.config.driver._.value != ''){
-          zs4.array[THIS.config.driver._.value].getID.call(THIS,id,function(ret){
-            if (ret==null){
-              var err = id+' not found';
-              req.error(DELONE,err);
-              return get();
-            }
-
-            if (!req.flags.get.authroot()){
-              if (req.request.payload.scope != ret.zs4.head.owner){
-                var err = 'not authorized';
-                req.error(DELONE,err);
-                return get();
-              }
-            }
-            zs4.array[THIS.config.driver._.value].deleteID.call(THIS,id,function(ret){
-              if (ret==null){
-                var err = 'not authorized';
-                req.error(DELONE,err);
-              }
-              else{
-                req.result(THIS.array,new Object({deletearr:[id,]}));
-              }
-              return get();
-            });
-
-          });
-        }
-        else {
-          if (!THIS.array.hasOwnProperty(id)){
-            var err = id+' not found';
-            req.error(this,err);
+        zs4.array.jsondb.getID.call(THIS,id,function(ret){
+          if (ret==null){
+            req.error(DELONE,id+' not found');
             return get();
           }
-
           if (!req.flags.get.authroot()){
-            if (!req.request.payload.scope != THIS.array[id].zs4.head.owner._.value){
-              var err = 'not authorized';
-              req.error(this,err);
+            if (req.request.payload.scope != ret.zs4.head.owner){
+              req.error(DELONE,'not authorized');
               return get();
             }
           }
-
-          delete THIS.array[id];
-
-          req.result(THIS.array,new Object({deletearr:[id,]}));
-          THIS._.shouldBeSaved(req);
-          return get();
-        }
+          zs4.array.jsondb.deleteID.call(THIS,id,function(ret){
+            if (ret==null) req.error(DELONE,'delete failed');
+            else req.result(THIS.array,new Object({deletearr:[id,]}));
+            return get();
+          });
+        });
 
       }).bind(this.method.deleteone);
 

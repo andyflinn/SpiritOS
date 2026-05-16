@@ -93,8 +93,6 @@ zs4.load = function(cb){
     z.password.hashed._.value = z.password.generate('password');
     debug('user/pass: countinn@gmail.com/password');
 
-    applyJsondbDrivers();
-
     var node = zs4.THIS.zs4.node;
 
     return cb();
@@ -132,25 +130,11 @@ zs4.load = function(cb){
     });
   };
 
-  function applyJsondbDrivers(){
-    var z = zs4.THIS.zs4;
-    z.type.user.config.driver._.value = 'jsondb';
-    z.type.toonsmith.config.driver._.value = 'jsondb';
-    z.type.translation.config.driver._.value = 'jsondb';
-    z.type.config.config.driver._.value = 'jsondb';
-    z.type.price.config.driver._.value = 'jsondb';
-    z.type.media.config.driver._.value = 'jsondb';
-    z.type.app.config.driver._.value = 'jsondb';
-  };
-
   if (zs4.THIS.zs4.node.is.heroku._.getValue()){
     return envvar('ZS4',cb);
   }
 
   return file(DOT_ZS4,function(){
-    applyJsondbDrivers();
-
-
     return cb();
   });
 };
@@ -207,9 +191,6 @@ zs4.define = function(){
   zs4.node.require.price = require('./price');
   //zs4.node.require.price.schema(zs4.THIS.zs4);
 
-  zs4.node.require.mongodb = require('./mongodb');
-  zs4.array.mongodb = new zs4.node.require.mongodb.create({name:'mongodb',boot:true,});
-  zs4.THIS.zs4._.property(zs4.array.mongodb);
 
   zs4.node.require.jsondb = require('./jsondb');
   zs4.array.jsondb = new zs4.node.require.jsondb.create({name:'jsondb',boot:true,});
@@ -230,7 +211,6 @@ zs4.define = function(){
     zs4.node.require.token.schema(CONFIG.zs4);
     zs4.node.require.email.schema(CONFIG.zs4);
     zs4.node.require.paypal.schema(CONFIG.zs4);
-    CONFIG.zs4._.property(new zs4.node.require.mongodb.template({name:'mongodb'}));
   };
 
   zs4.THIS.zs4.type._.property(new zs4.type.array({name:'config',template:new zs4.scope.config(),}));
@@ -323,7 +303,7 @@ zs4.define = function(){
       if (rootDoc) nu.zs4.head.owner._.value = 'zs4.type.user.array.'+rootDoc._id;
     }
 
-    zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
+    zs4.array.jsondb.new.call(THIS,nu,function(ret){
       if (!zs4.is.type(ret)){ NEW._.get(REQUEST); cb(); return; }
 
       var key = ret._.name;
@@ -347,7 +327,7 @@ zs4.define = function(){
 
       appWriteFile(key, mainJs);
 
-      zs4.array[THIS.config.driver._.value].updateID.call(THIS, key, ret._.store(), function(){
+      zs4.array.jsondb.updateID.call(THIS, key, ret._.store(), function(){
         THIS._.array.elementConnect(THIS.array,ret);
         ret._.transform(REQUEST.create({input:{}}),function(){
           REQUEST.result(NEW,ret._.path);
@@ -419,7 +399,7 @@ zs4.define = function(){
       nu.zs4.head.owner._.value = ownerPath;
     }
 
-    zs4.array[THIS.config.driver._.value].new.call(THIS,nu,function(ret){
+    zs4.array.jsondb.new.call(THIS,nu,function(ret){
       if (!zs4.is.type(ret)){ NEW._.get(REQUEST); cb(); return; }
 
       var fileKey = ret._.name + (ext ? '.'+ext : '');
@@ -428,7 +408,7 @@ zs4.define = function(){
       nodefs.writeFile(filePath,buffer,function(err){
         if (err){
           req.error(NEW,'failed to save file');
-          zs4.array[THIS.config.driver._.value].deleteID.call(THIS,ret._.name,function(){
+          zs4.array.jsondb.deleteID.call(THIS,ret._.name,function(){
             NEW._.get(REQUEST); cb();
           });
           return;
@@ -437,7 +417,7 @@ zs4.define = function(){
         ret.mimetype._.value = mimetype;
         ret.size._.value = buffer.length;
         ret.path._.value = '/media/'+fileKey;
-        zs4.array[THIS.config.driver._.value].updateID.call(THIS,ret._.name,ret._.store(),function(){
+        zs4.array.jsondb.updateID.call(THIS,ret._.name,ret._.store(),function(){
           REQUEST.result(NEW,ret._.path);
           NEW._.get(REQUEST);
           REQUEST.setScope(THIS.array);
