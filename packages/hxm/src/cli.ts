@@ -1,14 +1,12 @@
-#!/usr/bin/env node
 // packages/hxm/src/cli.ts
+const fs = require('fs');
 
-import fs from 'fs';
-import { validateDocument, applyTransform } from './core.js';
+const { validateDocument, applyTransform } = require('./core.js');
 
 const args = process.argv.slice(2);
 
 if (args.length !== 2) {
-  console.error("Usage: hxm <server-state.json> <request.json>");
-  console.error("Example: hxm state.json request.json");
+  console.error("Usage: npx tsx src/cli.ts <server-state.json> <request.json>");
   process.exit(1);
 }
 
@@ -44,7 +42,7 @@ try {
 
   console.log("\n✅ hxm transform completed successfully.");
 
-} catch (err: any) {
+} catch (err) {
   console.error("Error:", err.message);
   process.exit(1);
 }

@@ -3,13 +3,12 @@
   "version": "0.1.0",
   "description": "Human × Machine — lowest protocol layer for SpiritOS",
   "main": "dist/cli.js",
-  "type": "module",
   "bin": {
     "hxm": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
-    "dev": "node --loader tsx/esm src/cli.ts",
+    "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js"
   },
   "devDependencies": {
