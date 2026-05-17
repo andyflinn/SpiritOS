@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/cli.ts",
+    "dev": "node --loader tsx/esm src/cli.ts",
     "start": "node dist/cli.js"
   },
   "devDependencies": {
