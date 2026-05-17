@@ -1,6 +1,6 @@
-# ZS4 Design & Architecture
+# SpiritOS Design & Architecture
 
-This directory contains the vision, principles, and architecture decisions for the ZS4 Spirit Framework.
+This directory contains the vision, principles, and architecture decisions for **SpiritOS** — the sovereign personal operating system for your digital spirit.
 
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)

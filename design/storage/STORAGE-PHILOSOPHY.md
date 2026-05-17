@@ -1,11 +1,11 @@
-# ZS4 Storage Philosophy
+# SpiritOS Storage Philosophy
 
 **Version:** 0.1 (16 May 2026)  
 **Author:** Andy Flinn
 
 ## Core Principle
 
-The source of truth for a ZS4 digital personality must be **human and machine readable**, fully inspectable, and easily portable.
+The source of truth for a SpiritOS digital personality must be **human and machine readable**, fully inspectable, and easily portable.
 
 ## Why Plain JSON Files
 
