@@ -1,23 +1,20 @@
-// packages/hxm/src/cli.ts
-const fs = require('fs');
+// packages/hxm/src/cli.js
 
+const fs = require('fs');
 const { validateDocument, applyTransform } = require('./core.js');
 
 const args = process.argv.slice(2);
 
 if (args.length !== 2) {
-  console.error("Usage: npx tsx src/cli.ts <server-state.json> <request.json>");
+  console.error("Usage: node src/cli.js <server-state.json> <request.json>");
   process.exit(1);
 }
 
 const [stateFile, requestFile] = args;
 
 try {
-  const stateRaw = fs.readFileSync(stateFile, 'utf-8');
-  const requestRaw = fs.readFileSync(requestFile, 'utf-8');
-
-  const current = JSON.parse(stateRaw);
-  const request = JSON.parse(requestRaw);
+  const current = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+  const request = JSON.parse(fs.readFileSync(requestFile, 'utf-8'));
 
   console.log("=== Current Server State ===");
   console.dir(current, { depth: null });
