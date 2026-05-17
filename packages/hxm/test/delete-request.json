@@ -1,0 +1,12 @@
+{
+  "audio": null,
+  "human": {
+    "mood": null
+  },
+  "lights": null,
+  "system": {
+    "debug": null
+  },
+  "newfield": "this should stay",
+  "topLevelDelete": null
+}

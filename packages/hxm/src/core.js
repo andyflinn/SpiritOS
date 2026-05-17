@@ -1,56 +1,76 @@
 // packages/hxm/src/core.js
 
-/**
- * hxm Core - Human × Machine lowest protocol layer
- */
-
 function isValidHxmName(key) {
   return /^[a-z]+$/.test(key);
 }
 
-function validateDocument(doc) {
-  if (typeof doc !== 'object' || doc === null) {
-    console.warn("[hxm] Document must be an object");
-    return false;
-  }
+const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxy"; // index 0=z, 1=a, ..., 25=y
 
-  for (const key in doc) {
-    if (!isValidHxmName(key)) {
-      console.warn(`[hxm] Invalid key: "${key}" — must be lowercase a-z only`);
-      return false;
-    }
-  }
-  return true;
-}
+/** Integer → custom base-26 string (z=0, a=1, ..., y=25) */
+function numberToBase26(n) {
+  if (n < 0) return null;
+  if (n === 0) return "z";
 
-/**
- * Apply transform with special rule: null = delete key
- */
-function applyTransform(current, request) {
-  if (typeof current !== 'object' || current === null) current = {};
+  let result = "";
+  let num = n;
 
-  const result = { ...current };
-
-  for (const key in request) {
-    if (!isValidHxmName(key)) continue;
-
-    const value = request[key];
-
-    if (value === null) {
-      delete result[key];                    // DELETE
-    } else if (typeof value === 'object' && value !== null) {
-      // Recursive merge for nested objects
-      result[key] = applyTransform(result[key], value);
-    } else {
-      result[key] = value;                   // Normal set
-    }
+  while (num > 0) {
+    const remainder = num % 26;                    // 0 to 25
+    result = BASE26_DIGITS[remainder] + result;
+    num = Math.floor(num / 26);
   }
 
   return result;
 }
 
+/** base-26 string → integer */
+function base26ToNumber(str) {
+  if (!/^[a-z]+$/.test(str)) return null;
+
+  let num = 0;
+  for (let char of str) {
+    const digit = BASE26_DIGITS.indexOf(char);
+    if (digit === -1) return null;
+    num = num * 26 + digit;
+  }
+  return num;
+}
+
+/** Transform function with null = delete */
+function applyTransform(current, request, path = '') {
+  if (typeof current !== 'object' || current === null) current = {};
+
+  const result = { ...current };
+
+  for (const key in request) {
+    const currentPath = path ? `${path}.${key}` : key;
+
+    if (!isValidHxmName(key)) {
+      return {
+        success: false,
+        error: `Invalid key "${key}" at path "${currentPath}" — must be lowercase a-z only`
+      };
+    }
+
+    const value = request[key];
+
+    if (value === null) {
+      delete result[key];
+    } else if (typeof value === 'object' && value !== null) {
+      const nested = applyTransform(result[key] || {}, value, currentPath);
+      if (!nested.success) return nested;
+      result[key] = nested.state;
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return { success: true, state: result };
+}
+
 module.exports = {
   isValidHxmName,
-  validateDocument,
-  applyTransform
+  applyTransform,
+  numberToBase26,
+  base26ToNumber
 };
