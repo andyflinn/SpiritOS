@@ -4360,23 +4360,9 @@ zs4.request = function(o){
 
     }).bind(this);
 
-    this.payloadRefresh = function(){
-      if (zs4.is.string(this.request.token)&&this.request.token.length>10){
-        this.request.payload = zs4.THIS.zs4.token.decode(this.request.token);
-        if (zs4.is.object(this.request.payload)){
-          return;
-        }
-      }
-      this.request.token=null;
-      this.request.payload=null;
-    };
-    this.payloadRefresh();
+    this.payloadRefresh = function(){};
 
-    this.tokenCreate = function(nuload){
-      //zs4.debug('this.tokenCreate');
-      this.request.token = zs4.THIS.zs4.token.encode(nuload);
-      this.payloadRefresh();
-    };
+    this.tokenCreate = function(nuload){};
 
     this.tokenDelete = function(){
       //zs4.debug('TOKEN DELETED!!!!!!!!!!');
@@ -4385,8 +4371,7 @@ zs4.request = function(o){
     };
 
     this.tokenExists = function(){
-      if (this.request.token!=null&&this.request.payload!=null)return true;
-      return false;
+      return this.userIsRoot();
     }
 
     if (!zs4.is.boolean(this.request.needsSaving)) this.request.needsSaving = false;
@@ -4700,16 +4685,10 @@ if (zs4.is.window()){
     }
 
   	zs4.io.post(req,function(ret){
-      if (zs4.is.string(ret.request.token)&&ret.request.token.length>10&&zs4.is.string(ret.request.scope)){
-        zs4.THIS._.token = ret.request.token;
-        zs4.THIS._.scopath = ret.request.scope;
-        zs4.THIS._.loggedIn = true;
-      }
-      else {
-        zs4.THIS._.token = null;
-        zs4.THIS._.scopath = null;
-        zs4.THIS._.loggedIn = false;
-      }
+      // localhost is always root — always logged in
+      zs4.THIS._.token = 'local';
+      zs4.THIS._.scopath = zs4.is.string(ret.request.scope) ? ret.request.scope : '';
+      zs4.THIS._.loggedIn = true;
       zs4.debug(ret);
   		zs4.THIS._.got(ret,ret.reply);
       zs4.THIS._.dcb(ret,ret.request.callback);

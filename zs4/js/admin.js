@@ -46,7 +46,6 @@ zs4.admin.util = {
 		return o._.flags.get.own();
 	},
 	root:function(){
-		if (zs4.THIS._.token==null||zs4.THIS._.scopath==null)return false;
 		if (zs4.THIS._.scopath=='') return true;
 		return false;
 	},

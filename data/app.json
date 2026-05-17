@@ -18,7 +18,7 @@
     },
     "icon": "",
     "code": "// zs4 app — key: a\n// Edit: ./apps/a/main.js\n// fn.call(THIS, THIS, window)\nfunction(THIS, window) {\n  var p = document.createElement('p');\n  p.textContent = THIS._.name + ' (untitled) — edit ./apps/a/main.js';\n  window.appendChild(p);\n}",
-    "gitstatus": "committed",
+    "gitstatus": "unknown",
     "_id": "a"
   }
 }
