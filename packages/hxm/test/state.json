@@ -1,0 +1,17 @@
+{
+  "system": {
+    "running": true,
+    "version": "0.1.0"
+  },
+  "human": {
+    "name": "andyflinn",
+    "mood": "creative"
+  },
+  "audio": {
+    "volume": 75,
+    "playing": false
+  },
+  "lights": {
+    "studio": true
+  }
+}
