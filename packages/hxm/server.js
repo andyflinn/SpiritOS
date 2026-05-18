@@ -8,6 +8,23 @@ const { coreTypes } = require('./src/types/registry.js');
 const PORT = 7777;
 const SPIRIT_FILE = path.join(__dirname, 'test', 'spirit.json');
 
+let core = {
+  "readme": "SpiritOS is a sovereign personal operating system designed to capture, preserve, and extend a single human spirit under full individual control. Freedom first. Typing is optional but encouraged for high-quality data.",
+
+  "info": {
+    "version": "spiritos/0.1",
+    "createdat": new Date().toISOString(),
+    "modifiedat": new Date().toISOString(),
+    "name": "SpiritOS",
+    "author": "Andy Flinn",
+    "_flags": { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    "_type": "coreType",
+  },
+
+  "types": coreTypes,
+  _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true }
+};
+
 // Load or create spirit state
 let spiritState;
 if (fs.existsSync(SPIRIT_FILE)) {
@@ -15,33 +32,12 @@ if (fs.existsSync(SPIRIT_FILE)) {
   console.log(`✅ Loaded spirit.json`);
 } else {
   spiritState = {
-    "core": {
-      "readme": "SpiritOS is a sovereign personal operating system designed to capture, preserve, and extend a single human spirit under full individual control. Freedom first. Typing is optional but encouraged for high-quality data.",
-
-      "info": {
-        "version": "spiritos/0.1",
-        "createdat": new Date().toISOString(),
-        "modifiedat": new Date().toISOString(),
-        "name": "SpiritOS",
-        "author": "Andy Flinn"
-      },
-
-      "types": coreTypes
-    },
-
-    "identity": {
-      "_type": "identity",
-      "name": "andyflinn",
-      "publickey": "TODO",
-      "bio": "Musician, artist, and builder of digital spirits."
-    },
-
-    "media": { "_type": "object" },
-    "plugins": { "_type": "object" },
-    "lists": { "_type": "object" },
-    "journal": { "_type": "object" }
-  };
-  fs.writeFileSync(SPIRIT_FILE, JSON.stringify(spiritState, null, 2));
+    "core": core
+  }
+  
+  // the following line needs to be replaced by a recursive loop that observer the nostore flag
+  fs.writeFileSync(SPIRIT_FILE, "{}");
+  
   console.log(`✅ Created new spirit.json`);
 }
 

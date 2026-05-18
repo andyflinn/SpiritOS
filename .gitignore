@@ -33,8 +33,8 @@ build/Release
 # Dependency directory
 # https://docs.npmjs.com/misc/faq#should-i-check-my-node-modules-folder-into-git
 node_modules
-
-zs4/static/test
+packages/hxm/node_modules
+packages/hxm/test/spirit.json
 data/media.json
 data/toonsmith.json
 data/translation.json

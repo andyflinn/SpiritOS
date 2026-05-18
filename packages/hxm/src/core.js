@@ -6,6 +6,10 @@ function isValidHxmName(key) {
   return /^[a-z]+$/.test(key);
 }
 
+function createFlagSet(readonly = false, immutable = false, serveronly = false, nopersist = false) {
+   return new Object({readonly: readonly, immutable: immutable, serveronly: serveronly, nopersist: nopersist});
+}
+
 /** Wrap primitive values into typed objects */
 function wrapPrimitive(value, suggestedType = null) {
   if (value === null || value === undefined) {
@@ -74,5 +78,8 @@ function applyTransform(current, request, path = '') {
 }
 
 module.exports = {
+  isValidHxmName,
+  createFlagSet,
+  wrapPrimitive,
   applyTransform
 };

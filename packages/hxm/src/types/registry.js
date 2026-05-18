@@ -8,35 +8,40 @@ const coreTypes = {
     parenttype: null,
     name: "boolean",
     default: () => ({ _type: "boolean", value: false }),
-    flags: { readonly: false }
+    _flags: { readonly: true, immutable: true, serveronly: false, nopersist: true },
+    _type: "type",
   },
 
   "integer": {
     parenttype: null,
     name: "integer",
     default: () => ({ _type: "integer", value: 0 }),
-    flags: { readonly: false }
+    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _type: "type",
   },
 
   "float": {
     parenttype: null,
     name: "float",
     default: () => ({ _type: "float", value: 0.0 }),
-    flags: { readonly: false }
+    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _type: "type",
   },
 
   "string": {
     parenttype: null,
     name: "string",
     default: () => ({ _type: "string", value: "" }),
-    flags: { readonly: false }
+    _flags: { readonly: false, immutable: false, serveronly: false, nopersist: false },
+    _type: "type",
   },
 
   "name": {
     parenttype: "string",
     name: "name",
     default: () => ({ _type: "name", value: "" }),
-    flags: { readonly: false }
+    _flags: { readonly: false, immutable: false, serveronly: false, nopersist: false },
+    _type: "type",
   },
 
   // === Container Types ===
@@ -44,7 +49,8 @@ const coreTypes = {
     parenttype: null,
     name: "object",
     default: () => ({ _type: "object" }),
-    flags: { readonly: false }
+    _flags: { readonly: false, immutable: false, serveronly: false, nopersist: false },
+    _type: "type",
   },
 
   "field": {
@@ -55,7 +61,8 @@ const coreTypes = {
       "type": { "type": "name", "required": true }
     },
     default: () => ({ _type: "field" }),
-    flags: { readonly: false }
+    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _type: "type",
   },
 
   // === Transforms ===
@@ -63,14 +70,16 @@ const coreTypes = {
     parenttype: "object",
     name: "transform",
     default: () => ({ _type: "transform" }),
-    flags: { readonly: true }
+    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _type: "type",
   },
 
   "create": {
     parenttype: "transform",
     name: "create",
     default: () => ({ _type: "create" }),
-    flags: { readonly: true }
+    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _type: "type",
   },
 
   // === List ===
@@ -82,8 +91,11 @@ const coreTypes = {
       length: 0,
       _lastIndex: null
     }),
-    flags: { readonly: false }
-  }
+    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _type: "type",
+  },
+  _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+  _type: "object",
 };
 
 // Protect core types from accidental modification
