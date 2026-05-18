@@ -6,7 +6,10 @@ const { applyTransform } = require('./src/core.js');
 const { coreTypes } = require('./src/types/registry.js');
 
 const PORT = 7777;
-const SPIRIT_FILE = path.join(__dirname, 'test', 'spirit.json');
+//const SPIRIT_FILE = path.join(__dirname, 'test', 'spirit.json');
+const SPIRIT = 'spirit';
+const SPIRIT_FILE = SPIRIT +'.json';
+const SPIRIT_DIR = './' + SPIRIT +'/';
 
 let core = {
   "readme": "SpiritOS is a sovereign personal operating system designed to capture, preserve, and extend a single human spirit under full individual control. Freedom first. Typing is optional but encouraged for high-quality data.",
@@ -18,7 +21,7 @@ let core = {
     "name": "SpiritOS",
     "author": "Andy Flinn",
     "_flags": { readonly: true, immutable: false, serveronly: false, nopersist: true },
-    "_type": "coreType",
+    "_type": "object",
   },
 
   "types": coreTypes,
@@ -32,7 +35,9 @@ if (fs.existsSync(SPIRIT_FILE)) {
   console.log(`✅ Loaded spirit.json`);
 } else {
   spiritState = {
-    "core": core
+    "core": core,
+    "_flags": { readonly: false, immutable: false, serveronly: false, nopersist: false },
+    "_type": "object"
   }
   
   // initialize spirit file with an empty object,

@@ -34,10 +34,10 @@ build/Release
 # https://docs.npmjs.com/misc/faq#should-i-check-my-node-modules-folder-into-git
 node_modules
 packages/hxm/node_modules
-packages/hxm/test/spirit.json
+packages/hxm/spirit.json
+
 data/media.json
 data/toonsmith.json
 data/translation.json
 data/user.json
 media
-packages/hxm/test/spirit.json
