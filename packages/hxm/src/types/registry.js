@@ -39,7 +39,7 @@ const coreTypes = {
     flags: { readonly: false }
   },
 
-  // === Containers ===
+  // === Container Types ===
   "object": {
     parenttype: null,
     name: "object",
@@ -73,6 +73,7 @@ const coreTypes = {
     flags: { readonly: true }
   },
 
+  // === List ===
   "list": {
     parenttype: "object",
     name: "list",
@@ -85,12 +86,49 @@ const coreTypes = {
   }
 };
 
+// Protect core types from accidental modification
 Object.freeze(coreTypes);
 
 module.exports = {
   coreTypes,
-  getType: (typeName) => coreTypes[typeName] || null,
-  isCoreType: (typeName) => !!coreTypes[typeName],
+
+  /** Get a core type definition by name */
+  getType: (typeName) => {
+    return coreTypes[typeName] || null;
+  },
+
+  /** Check if a type is a core type */
+  isCoreType: (typeName) => {
+    return !!coreTypes[typeName];
+  },
+
   numberToBase26,
   base26ToNumber
 };
+
+// Base-26 helpers (z=0, a=1, ..., y=25)
+function numberToBase26(n) {
+  if (n < 0) return null;
+  if (n === 0) return "z";
+
+  let result = "";
+  let num = n;
+  while (num > 0) {
+    const remainder = (num - 1) % 26;
+    result = BASE26_DIGITS[remainder + 1] + result;
+    num = Math.floor((num - 1) / 26);
+  }
+  return result;
+}
+
+function base26ToNumber(str) {
+  if (!/^[a-z]+$/.test(str)) return null;
+
+  let num = 0;
+  for (let char of str) {
+    const digit = BASE26_DIGITS.indexOf(char);
+    if (digit === -1) return null;
+    num = num * 26 + digit;
+  }
+  return num;
+}
