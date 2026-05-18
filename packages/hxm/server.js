@@ -8,56 +8,41 @@ const { coreTypes } = require('./src/types/registry.js');
 const PORT = 7777;
 const SPIRIT_FILE = path.join(__dirname, 'test', 'spirit.json');
 
-// Initial structure - must match ROOT-STRUCTURE.md exactly
-const initialSpirit = {
-  "core": {
-    "readme": "SpiritOS is a sovereign personal operating system designed to capture, preserve, and extend a single human spirit under full individual control. Freedom first. Typing is optional but encouraged for high-quality data.",
-
-    "info": {
-      "version": "spiritos/0.1",
-      "createdat": new Date().toISOString(),
-      "modifiedat": new Date().toISOString(),
-      "name": "SpiritOS",
-      "author": "Andy Flinn"
-    },
-
-    "types": {}
-  },
-
-  "identity": {
-    "_type": "identity",
-    "name": "andyflinn",
-    "publickey": "TODO",
-    "bio": "Musician, artist, and builder of digital spirits."
-  },
-
-  "media": {
-    "_type": "object"
-  },
-
-  "plugins": {
-    "_type": "object"
-  },
-
-  "lists": {
-    "_type": "object"
-  },
-
-  "journal": {
-    "_type": "object"
-  }
-};
-
-// Load or create spirit.json
+// Load or create spirit state
 let spiritState;
 if (fs.existsSync(SPIRIT_FILE)) {
   spiritState = JSON.parse(fs.readFileSync(SPIRIT_FILE, 'utf-8'));
   console.log(`✅ Loaded spirit.json`);
 } else {
-  spiritState = initialSpirit;
-  spiritState.core.types = coreTypes;           // Inject core types
+  spiritState = {
+    "core": {
+      "readme": "SpiritOS is a sovereign personal operating system designed to capture, preserve, and extend a single human spirit under full individual control. Freedom first. Typing is optional but encouraged for high-quality data.",
+
+      "info": {
+        "version": "spiritos/0.1",
+        "createdat": new Date().toISOString(),
+        "modifiedat": new Date().toISOString(),
+        "name": "SpiritOS",
+        "author": "Andy Flinn"
+      },
+
+      "types": coreTypes
+    },
+
+    "identity": {
+      "_type": "identity",
+      "name": "andyflinn",
+      "publickey": "TODO",
+      "bio": "Musician, artist, and builder of digital spirits."
+    },
+
+    "media": { "_type": "object" },
+    "plugins": { "_type": "object" },
+    "lists": { "_type": "object" },
+    "journal": { "_type": "object" }
+  };
   fs.writeFileSync(SPIRIT_FILE, JSON.stringify(spiritState, null, 2));
-  console.log(`✅ Created new spirit.json from ROOT-STRUCTURE`);
+  console.log(`✅ Created new spirit.json`);
 }
 
 function saveSpirit() {
@@ -84,8 +69,8 @@ const server = http.createServer((req, res) => {
       try {
         const payload = JSON.parse(body);
 
-        // Bootstrap request: empty object → return full state
-        if (!payload || Object.keys(payload).length === 0 || !payload.state) {
+        // === Bootstrap Request: empty object or no 'request' key ===
+        if (!payload || Object.keys(payload).length === 0 || !payload.request) {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             success: true,
@@ -94,9 +79,9 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        // Normal transform
-        const { state, request } = payload;
-        const result = applyTransform(state, request);
+        // === Normal Transform Request ===
+        const { request } = payload;
+        const result = applyTransform(spiritState, request);
 
         if (result.success) {
           spiritState = result.state;
@@ -119,6 +104,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 SpiritOS server running on http://localhost:${PORT}`);
-  console.log(`   POST /   →   bootstrap or transform`);
+  console.log(`🚀 SpiritOS hxm server running on http://localhost:${PORT}`);
 });

@@ -1,12 +1,41 @@
 // packages/hxm/src/core.js
 
-const { coreTypes, getType, isCoreType } = require('./types/registry.js');
+const { coreTypes, getType } = require('./types/registry.js');
 
 function isValidHxmName(key) {
   return /^[a-z]+$/.test(key);
 }
 
-/** Main transform function - now with basic type awareness */
+/** Wrap primitive values into typed objects */
+function wrapPrimitive(value, suggestedType = null) {
+  if (value === null || value === undefined) {
+    return { _type: "string", value: "" };
+  }
+
+  if (typeof value === 'boolean') {
+    return { _type: "boolean", value };
+  }
+
+  if (typeof value === 'number') {
+    if (Number.isInteger(value)) {
+      return { _type: "integer", value };
+    } else {
+      return { _type: "float", value };
+    }
+  }
+
+  if (typeof value === 'string') {
+    if (/^[a-z]+$/.test(value)) {
+      return { _type: "name", value };
+    }
+    return { _type: "string", value };
+  }
+
+  // Fallback
+  return { _type: "string", value: String(value) };
+}
+
+/** Main transform function with primitive wrapping */
 function applyTransform(current, request, path = '') {
   if (typeof current !== 'object' || current === null) current = {};
 
@@ -24,13 +53,12 @@ function applyTransform(current, request, path = '') {
 
     const value = request[key];
 
-    // Deletion
     if (value === null) {
       delete result[key];
       continue;
     }
 
-    // Nested object / transform
+    // Nested object
     if (typeof value === 'object' && value !== null) {
       const nestedResult = applyTransform(result[key] || {}, value, currentPath);
       if (!nestedResult.success) return nestedResult;
@@ -38,8 +66,8 @@ function applyTransform(current, request, path = '') {
       continue;
     }
 
-    // Simple value
-    result[key] = value;
+    // Primitive value → wrap it
+    result[key] = wrapPrimitive(value);
   }
 
   return { success: true, state: result };

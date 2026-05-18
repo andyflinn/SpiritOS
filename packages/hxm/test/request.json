@@ -1,13 +1,3 @@
 {
-  "audio": {
-    "volume": 85,
-    "playing": true
-  },
-  "human": {
-    "mood": "inspired"
-  },
-  "lights": {
-    "studio": false
-  },
   "newfield": "this is allowed because keys are valid"
 }
