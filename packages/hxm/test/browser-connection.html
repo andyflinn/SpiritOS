@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpiritOS Browser Test</title>
+  <style>
+    body { font-family: monospace; margin: 20px; background: #111; color: #0f0; }
+    pre { background: #222; padding: 15px; border-radius: 5px; overflow: auto; max-height: 80vh; }
+    button { padding: 12px 24px; font-size: 16px; margin: 10px 0; cursor: pointer; }
+    .success { color: lime; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>SpiritOS Browser Test</h1>
+  <p>Click the button to send <code>{}</code> to the server root <code>/</code>.</p>
+  
+  <button onclick="fetchSpiritOS()">Fetch SpiritOS State</button>
+  
+  <h2>Response (stored in global <code>SpiritOS</code>):</h2>
+  <pre id="output">Click the button to load the full SpiritOS state...</pre>
+
+  <script>
+    let SpiritOS = null;   // Global variable
+
+    async function fetchSpiritOS() {
+      const output = document.getElementById('output');
+      output.textContent = 'Sending {} to http://localhost:7777/ ...';
+
+      try {
+        const response = await fetch('http://localhost:7777/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+
+        const result = await response.json();
+
+        // Store globally
+        SpiritOS = result;
+        
+        output.innerHTML = `<span class="success">Success! Global variable 'SpiritOS' is ready.</span><br><br>` 
+                         + JSON.stringify(result, null, 2);
+
+        console.log('%c✅ SpiritOS global object is now available!', 'color: lime; font-size: 16px; font-weight: bold');
+        console.dir(SpiritOS);
+
+      } catch (err) {
+        output.textContent = 'ERROR: ' + err.message;
+        console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>

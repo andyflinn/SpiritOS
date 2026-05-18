@@ -1,0 +1,17 @@
+{
+    core: {
+        readme: "SpiritOS is a modular operating system designed to be lightweight and efficient. It is built on a microkernel architecture, allowing for flexibility and scalability. The core components of SpiritOS include a minimal kernel, a set of essential system services, and a user-space environment for running applications.",   
+        config:{
+            port: 7777 // no flags, regular value
+            name: "SpiritOS", // no flags, regular value
+        },
+        types: {
+            const core:{
+                // Define core types here
+            },
+            list:{ // instance of the core list type
+                // here's where we test the list object typeDefine list types here           
+            }
+        }
+    }
+}
