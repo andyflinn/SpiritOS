@@ -1,5 +1,7 @@
 // packages/hxm/src/types/registry.js
 
+const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxy";
+
 const coreTypes = {
   // === Primitive Types ===
   "boolean": {
@@ -37,44 +39,38 @@ const coreTypes = {
     flags: { readonly: false }
   },
 
-  // === Container Types ===
+  // === Containers ===
   "object": {
     parenttype: null,
     name: "object",
-    members: {},
     default: () => ({ _type: "object" }),
     flags: { readonly: false }
   },
 
-  "nametype": {
+  "field": {
     parenttype: "object",
-    name: "nametype",
+    name: "field",
     members: {
-        name: { type: "name", required: true },
-        type: { type: "name", required: true }
+      "name": { "type": "name", "required": true },
+      "type": { "type": "name", "required": true }
     },
-    default: () => ({ _type: "object" }),
+    default: () => ({ _type: "field" }),
     flags: { readonly: false }
   },
 
+  // === Transforms ===
   "transform": {
     parenttype: "object",
     name: "transform",
-    members: {
-        input: { type: "object", required: true },
-    },
-    default: () => ({ _type: "object" }),
-    flags: { readonly: false }
+    default: () => ({ _type: "transform" }),
+    flags: { readonly: true }
   },
 
- "createmember": {
+  "create": {
     parenttype: "transform",
-    name: "createmember",
-    members: {
-        input: { type: "nametype", required: true },
-    },
-    default: () => ({ _type: "object" }),
-    flags: { readonly: false }
+    name: "create",
+    default: () => ({ _type: "create" }),
+    flags: { readonly: true }
   },
 
   "list": {
@@ -89,19 +85,12 @@ const coreTypes = {
   }
 };
 
-// Protect the core types from accidental modification
 Object.freeze(coreTypes);
 
 module.exports = {
   coreTypes,
-
-  /** Get a core type definition by name */
-  getType: (typeName) => {
-    return coreTypes[typeName] || null;
-  },
-
-  /** Check if a type is a core type */
-  isCoreType: (typeName) => {
-    return !!coreTypes[typeName];
-  }
+  getType: (typeName) => coreTypes[typeName] || null,
+  isCoreType: (typeName) => !!coreTypes[typeName],
+  numberToBase26,
+  base26ToNumber
 };
