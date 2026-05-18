@@ -37,7 +37,7 @@
         const result = await response.json();
 
         // Store globally
-        SpiritOS = result;
+        SpiritOS = result.state;
         
         output.innerHTML = `<span class="success">Success! Global variable 'SpiritOS' is ready.</span><br><br>` 
                          + JSON.stringify(result, null, 2);
