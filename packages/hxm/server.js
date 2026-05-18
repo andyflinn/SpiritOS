@@ -29,20 +29,20 @@ let core = {
 };
 
 // Load or create spirit state
-let spiritState;
+let spiritState = new Object({});
 
 if (fs.existsSync(SPIRIT_FILE)) {
   spiritState = JSON.parse(fs.readFileSync(SPIRIT_FILE, 'utf-8'));
   spiritState.core = core;  // Ensure core exists
   console.log(`✅ Loaded spirit.json`);
   } else {
-    spiritState = {
+    // initialize spirit file with an empty object,
+   spiritState = new Object({
       "core": core,
       "_flags": { readonly: false, immutable: false, serveronly: false, nopersist: false },
       "_type": "object"
-    }
-  
-    // initialize spirit file with an empty object,
+    })
+ 
     fs.writeFileSync(SPIRIT_FILE, "{}");
   
   console.log(`✅ Created new spirit.json`);
