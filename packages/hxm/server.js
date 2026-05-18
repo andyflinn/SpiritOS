@@ -35,15 +35,10 @@ if (fs.existsSync(SPIRIT_FILE)) {
     "core": core
   }
   
-  // the following line needs to be replaced by a recursive loop that observer the nostore flag
+  // initialize spirit file with an empty object,
   fs.writeFileSync(SPIRIT_FILE, "{}");
   
   console.log(`✅ Created new spirit.json`);
-}
-
-function saveSpirit() {
-  spiritState.core.info.modifiedat = new Date().toISOString();
-  fs.writeFileSync(SPIRIT_FILE, JSON.stringify(spiritState, null, 2));
 }
 
 const server = http.createServer((req, res) => {
