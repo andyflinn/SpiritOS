@@ -46,6 +46,48 @@ if (fs.existsSync(SPIRIT_FILE)) {
   console.log(`✅ Created new spirit.json`);
 }
 
+// Helper: recursive save filter
+function prepareForDisk(node) {
+  if (typeof node !== 'object' || node === null) {
+    return node;
+  }
+
+  // Check nopersist flag
+  if (node.nopersist === true) {
+    return null;                    // skip this entire subtree
+  }
+
+  const result = {};
+
+  for (const key in node) {
+    if (key === 'nopersist') continue;   // don't save the flag itself
+
+    const value = node[key];
+
+    if (typeof value === 'object' && value !== null) {
+      const filtered = prepareForDisk(value);
+      if (filtered !== null) {
+        result[key] = filtered;
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+// Main save function
+function saveSpirit() {
+  spiritState.core.info.modifiedat = new Date().toISOString();
+
+  const toSave = prepareForDisk(spiritState);
+
+  fs.writeFileSync(SPIRIT_FILE, JSON.stringify(toSave, null, 2));
+  console.log(`💾 Spirit saved to disk (${Object.keys(toSave).length} top-level keys)`);
+}
+
+
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

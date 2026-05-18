@@ -77,13 +77,8 @@ function applyTransform(current, request, path = '') {
   return { success: true, state: result };
 }
 
-function saveSpirit() {
-  spiritState.core.info.modifiedat = new Date().toISOString();
-  fs.writeFileSync(SPIRIT_FILE, JSON.stringify(spiritState, null, 2));
-}
 
 module.exports = {
-  saveSpirit,
   isValidHxmName,
   createFlagSet,
   wrapPrimitive,
