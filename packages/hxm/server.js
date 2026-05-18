@@ -11,6 +11,8 @@ const SPIRIT = 'spirit';
 const SPIRIT_FILE = SPIRIT +'.json';
 const SPIRIT_DIR = './' + SPIRIT +'/';
 
+let spiritState = new Object({});
+
 let core = {
   "readme": "SpiritOS is a sovereign personal operating system designed to capture, preserve, and extend a single human spirit under full individual control. Freedom first. Typing is optional but encouraged for high-quality data.",
 
@@ -28,9 +30,60 @@ let core = {
   _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true }
 };
 
-// Load or create spirit state
-let spiritState = new Object({});
+// Recursive filter: remove subtrees where nopersist === true
+function prepareForDisk(node) {
+  if (typeof node !== 'object' || node === null) {
+    return node;
+  }
 
+  // If this node has nopersist flag set to true → skip entire subtree
+  if (node._flags && node._flags.nopersist === true) {
+    return null;
+  }
+
+  const result = {};
+
+  for (const key in node) {
+    const value = node[key];
+
+    // Don't save the _flags object itself if it's nopersist
+    if (key === '_flags' && value && value.nopersist === true) {
+      continue;
+    }
+
+    const filteredValue = typeof value === 'object' && value !== null 
+      ? prepareForDisk(value) 
+      : value;
+
+    if (filteredValue !== null) {
+      result[key] = filteredValue;
+    }
+  }
+
+  return result;
+}
+
+// Main save function
+function saveSpirit() {
+  if (!spiritState) return;
+
+  // Update timestamp
+  if (spiritState.core && spiritState.core.info) {
+    spiritState.core.info.modifiedat = new Date().toISOString();
+  }
+
+  const toSave = prepareForDisk(spiritState);
+
+  try {
+    fs.writeFileSync(SPIRIT_FILE, JSON.stringify(toSave, null, 2));
+    console.log(`💾 Spirit saved to disk (${Object.keys(toSave).length} top-level keys)`);
+  } catch (err) {
+    console.error("Failed to save spirit.json:", err.message);
+  }
+}
+
+
+// Load or create spirit state
 if (fs.existsSync(SPIRIT_FILE)) {
   spiritState = JSON.parse(fs.readFileSync(SPIRIT_FILE, 'utf-8'));
   spiritState.core = core;  // Ensure core exists
@@ -46,47 +99,6 @@ if (fs.existsSync(SPIRIT_FILE)) {
     fs.writeFileSync(SPIRIT_FILE, "{}");
   
   console.log(`✅ Created new spirit.json`);
-}
-
-// Helper: recursive save filter
-function prepareForDisk(node) {
-  if (typeof node !== 'object' || node === null) {
-    return node;
-  }
-
-  // Check nopersist flag
-  if (node.nopersist === true) {
-    return null;                    // skip this entire subtree
-  }
-
-  const result = {};
-
-  for (const key in node) {
-    if (key === 'nopersist') continue;   // don't save the flag itself
-
-    const value = node[key];
-
-    if (typeof value === 'object' && value !== null) {
-      const filtered = prepareForDisk(value);
-      if (filtered !== null) {
-        result[key] = filtered;
-      }
-    } else {
-      result[key] = value;
-    }
-  }
-
-  return result;
-}
-
-// Main save function
-function saveSpirit() {
-  spiritState.core.info.modifiedat = new Date().toISOString();
-
-  const toSave = prepareForDisk(spiritState);
-
-  fs.writeFileSync(SPIRIT_FILE, JSON.stringify(toSave, null, 2));
-  console.log(`💾 Spirit saved to disk (${Object.keys(toSave).length} top-level keys)`);
 }
 
 
