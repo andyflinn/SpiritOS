@@ -1,8 +1,10 @@
 let spirit = null;   // Global variable
 
 {
+    const output = document.getElementById('output');
+    
     async function initialize() {
-        const output = document.getElementById('output');
+        
         output.textContent = 'Sending {} to http://localhost:7777/ ...';
 
         try {
@@ -129,9 +131,13 @@ let spirit = null;   // Global variable
 
 ////////////////////////////////////////////////////////////////////////////
 
+            scanProcessorGetPath: function(node, pathstack) {
+                return pathstack.join('.');
+            },
+
             scanProcessorDefault: function(node, pathstack) {
                 // with print the a path for this node
-                console.log(pathstack.join('.'));
+                console.log(spirit.console.scanProcessorGetPath(node, pathstack));
                 return;
             },
 
@@ -151,10 +157,20 @@ let spirit = null;   // Global variable
                 // and for each child, do the following:
                 // call the processor function with the child node and the current pathstack as arguments
                 for(const key in node){
+
                     if(node.hasOwnProperty(key)){
                         const child = node[key];
                         pathstack.push(key);
-                        processor(child, pathstack.concat([key]));
+
+                        processor(child, pathstack);
+
+                        // the the child is an object, recursively call the 
+                        // scanSpiritTree function with the child as the new node, and the current pathstack as the new pathstack
+
+                        if(typeof child === 'object' && child !== null){
+                            spirit.console.scanSpiritTree(processor, child, pathstack, depth);
+                        }
+
                         pathstack.pop();
 
                     }
