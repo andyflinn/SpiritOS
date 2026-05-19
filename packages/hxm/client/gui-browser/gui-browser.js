@@ -26,8 +26,14 @@ let spirit = null;   // Global variable
             output.textContent = 'ERROR: ' + err.message;
             console.error(err);
         }
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
         spirit.console = {
+
+////////////////////////////////////////////////////////////////////////////
+
             listTypes: function() {
             if (!spirit || !spirit.core || !spirit.core.types) {
                 console.error("SpiritOS core types not available");
@@ -39,6 +45,8 @@ let spirit = null;   // Global variable
                 return type._type === "type";
             });
             },
+
+////////////////////////////////////////////////////////////////////////////
 
             typeTree: function(){
                // the result object to build up 
@@ -117,9 +125,54 @@ let spirit = null;   // Global variable
                 }
 
                 return tree;
-            } 
+            }, 
+
+////////////////////////////////////////////////////////////////////////////
+
+            scanProcessorDefault: function(node, pathstack) {
+                // with print the a path for this node
+                console.log(pathstack.join('.'));
+                return;
+            },
+
+////////////////////////////////////////////////////////////////////////////
+
+            scanSpiritTree: function(
+                processor = spirit.console.scanProcessorDefault, // a node processor function that takes a node and a pathstack as arguments, and processes the node in some way. the pathstack is an array of strings representing the path to the current node in the tree, with the root node being an empty array. the processor function should return nothing.
+                node = spirit, // the root object to start scanning from
+                pathstack = [], // the current pathstack, used for recursion. should not be set when calling the function, only used internally.    
+                depth = 32) {
+                
+                // if the pathstack length is greater than or equal to the depth parameter,
+                // return false to prevent infinite recursion      
+                if (pathstack.length >= depth) return false;
+
+                // scan all the child properties of the node object, 
+                // and for each child, do the following:
+                // call the processor function with the child node and the current pathstack as arguments
+                for(const key in node){
+                    if(node.hasOwnProperty(key)){
+                        const child = node[key];
+                        pathstack.push(key);
+                        processor(child, pathstack.concat([key]));
+                        pathstack.pop();
+
+                    }
+                }
+
+            }
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////
 
         }
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+
     }
     
     initialize();
