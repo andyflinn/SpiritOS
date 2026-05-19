@@ -96,8 +96,9 @@ if (fs.existsSync(SPIRIT_FILE)) {
       "_type": "object"
     })
  
-    fs.writeFileSync(SPIRIT_FILE, "{}");
-  
+    //fs.writeFileSync(SPIRIT_FILE, "{}");
+    saveSpirit();
+    
   console.log(`✅ Created new spirit.json`);
 }
 

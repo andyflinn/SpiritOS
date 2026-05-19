@@ -2,29 +2,28 @@
 
 const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxy";
 
+const HXM_DEFAULT_FLAGS = { readonly: false, immutable: false, serveronly: false, nopersist: false }; 
+const HXM_CORE_FLAGS = { readonly: true, immutable: false, serveronly: false, nopersist: true }; 
+
 const coreTypes = {
+  
   // === Primitive Types ===
+  // All primitive values are wrapped in an object
+  // with _type and value properties for consistency and extensibility
+  
   "boolean": {
     parenttype: null,
     name: "boolean",
     default: () => ({ _type: "boolean", value: false }),
-    _flags: { readonly: true, immutable: true, serveronly: false, nopersist: true },
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
-  "integer": {
+  "number": {
     parenttype: null,
-    name: "integer",
-    default: () => ({ _type: "integer", value: 0 }),
-    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
-    _type: "type",
-  },
-
-  "float": {
-    parenttype: null,
-    name: "float",
-    default: () => ({ _type: "float", value: 0.0 }),
-    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    name: "number",
+    default: () => ({ _type: "number", value: 0 }),
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
@@ -32,7 +31,23 @@ const coreTypes = {
     parenttype: null,
     name: "string",
     default: () => ({ _type: "string", value: "" }),
-    _flags: { readonly: false, immutable: false, serveronly: false, nopersist: false },
+    _flags: HXM_CORE_FLAGS,
+    _type: "type",
+  },
+
+"integer": {
+    parenttype: "number",
+    name: "integer",
+    default: () => ({ _type: "integer", value: 0 }),
+    _flags: HXM_CORE_FLAGS,
+    _type: "type",
+  },
+
+  "float": {
+    parenttype: "number",
+    name: "float",
+    default: () => ({ _type: "float", value: 0.0 }),
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
@@ -40,7 +55,7 @@ const coreTypes = {
     parenttype: "string",
     name: "name",
     default: () => ({ _type: "name", value: "" }),
-    _flags: { readonly: false, immutable: false, serveronly: false, nopersist: false },
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
@@ -49,7 +64,7 @@ const coreTypes = {
     parenttype: null,
     name: "object",
     default: () => ({ _type: "object" }),
-    _flags: { readonly: false, immutable: false, serveronly: false, nopersist: false },
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
@@ -61,7 +76,7 @@ const coreTypes = {
       "type": { "type": "name", "required": true }
     },
     default: () => ({ _type: "field" }),
-    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
@@ -70,7 +85,7 @@ const coreTypes = {
     parenttype: "object",
     name: "transform",
     default: () => ({ _type: "transform" }),
-    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
@@ -78,7 +93,7 @@ const coreTypes = {
     parenttype: "transform",
     name: "create",
     default: () => ({ _type: "create" }),
-    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
 
@@ -91,10 +106,10 @@ const coreTypes = {
       length: 0,
       _lastIndex: null
     }),
-    _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+    _flags: HXM_CORE_FLAGS,
     _type: "type",
   },
-  _flags: { readonly: true, immutable: false, serveronly: false, nopersist: true },
+  _flags: HXM_CORE_FLAGS,
   _type: "object",
 };
 
