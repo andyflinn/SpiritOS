@@ -22,6 +22,7 @@ let core = {
     "modifiedat": new Date().toISOString(),
     "name": "SpiritOS",
     "author": "Andy Flinn",
+    "port": PORT,
     "_flags": { readonly: true, immutable: false, serveronly: false, nopersist: true },
     "_type": "object",
   },

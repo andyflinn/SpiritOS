@@ -47,7 +47,7 @@ let spirit = null;   // Global variable
             UNCHECKED: '⬜',
             LOADING: '⏳',        
             ERROR: '❌',
-            PINTRIGHT: '▶️',
+            POINTRIGHT: '▶️',
             POINTDOWN: '🔽',
             POINTLEFT: '◀️',
             POINTUP: '🔼', 
@@ -180,6 +180,7 @@ let spirit = null;   // Global variable
             STOP: '🟠',
             NUMBER: '🔢',
             STRING: '🔤',
+            BOOLEAN: '🔘',
             TEXT: '🔤',
             TOGGLE: '🔘',
 
@@ -303,17 +304,17 @@ let spirit = null;   // Global variable
 
             scanProcessorCreateHTML: function(child, pathstack, objectstack) {
 
-                let isObject = typeof child === 'object';
-                let isPrimitive = !isObject;
+                const isObject = typeof child === 'object';
+                const isPrimitive = !isObject;
                 
-                let parentObject = objectstack[objectstack.length-1];
-                let parentWindow = child._containerWindow = parentObject._childContainer;
+                const parentObject = objectstack[objectstack.length-1];
+                const parentWindow = child._containerWindow = parentObject._childContainer;
 
-                parentWindow.style.paddingLeft = '2em';
+                //parentWindow.style.paddingLeft = '2em';
                 parentWindow.style.margin = 0;
 
                 // create a title bar for the child
-                let titleBar = document.createElement('pre');
+                const titleBar = document.createElement('pre');
                 titleBar.classList.add('titlebar');
                 titleBar.style.padding = 0;
                 titleBar.style.margin = 0;
@@ -322,20 +323,25 @@ let spirit = null;   // Global variable
                 // create an icon for the child
                 let icon = document.createElement('span');
                 icon.classList.add('icon');
-                if (isObject)icon.textContent = ICON.OBJECT;
-                else icon.textContent = ICON.STRING;
+                icon.style.paddingRight = '0.5em';
                 titleBar.appendChild(icon);
+                icon.textContent = ICON.OBJECT;
 
                 // create a title for the child, 
                 let title = document.createElement('span');
                 title.classList.add('title');
+                title.style.paddingRight = '0.5em';
+                title.style.fontWeight = 'bold';
                 titleBar.appendChild(title);
                 
-                title.textContent = pathstack[pathstack.length-1];
-                
+                title.textContent = pathstack[pathstack.length-1] + ':';
+           
+
 
                 // if the child is an object, add an OBJECT icon, otherwise add a STRING icon
                 if (typeof child === 'object') {
+
+                    icon.textContent = ICON.POINTRIGHT;
 
                     // create a parentWindow for the child's children
                     child._childContainer = document.createElement('pre');
@@ -343,17 +349,60 @@ let spirit = null;   // Global variable
                     parentWindow.appendChild(child._childContainer);
                     child._childContainer.style.display = 'none';
                     child._childContainer.style.padding = 0;
-                    child._childContainer.style.paddingLeft = '2em';
+                    child._childContainer.style.paddingLeft = '1em';
 
                     // the child._childContainer.style.display value is toggled
                     // by clicking on the icon
                     icon.addEventListener('click', function() {
                         if (child._childContainer.style.display === 'none') {
                             child._childContainer.style.display = 'block';
+                            icon.textContent = ICON.POINTLEFT;
                         } else {
                             child._childContainer.style.display = 'none';
+                            icon.textContent = ICON.POINTRIGHT;
                         }
                     });
+                } else {
+                    // if node is a string the
+
+                    // for primitives we display the value in the title bar
+                    let childValue = document.createElement('span');
+                    icon.classList.add('icon');
+                    titleBar.appendChild(childValue);
+
+                    // we make sure that the value has all the
+                    // typing facilities, before with allow it 
+                    // to be manipulated
+                    let readonly = true;
+                    if (    (child.hasOwnProperty('_flags'))
+                        &&  (child.hasOwnProperty('_type'))
+                        &&  (child._flags.readonly == false)
+                    ) readonly = false;
+
+                    // if have different action now, 
+                    // depending on the child being a string, a number, 
+                    // a boolean or any other thing
+                    if (typeof child === 'string') {
+                        icon.textContent = ICON.STRING;
+                        childValue.textContent = child;
+
+                    } else if (typeof child === 'number') {
+                        icon.textContent = ICON.NUMBER;
+                        childValue.textContent = child;
+
+                    } else if (typeof child === 'boolean') {
+                        icon.textContent = ICON.BOOLEAN;
+
+                    } else {
+                        icon.textContent = ICON.OBJECT;
+                    }
+                
+
+                    if (isObject)icon.textContent = ICON.POINTRIGHT;
+                    else icon.textContent = ICON.STRING;
+
+
+
                 }
 
 
@@ -424,10 +473,12 @@ let spirit = null;   // Global variable
             },
 
             initializeGUI: function(){
-                debugger;
+                const titlebar = document.getElementById('titlebar');
+                const span = document.createElement('span');
+                span.textContent = ICON.SPIRIT + ' SpiritOS';
+                titlebar.appendChild(span);
+            
                 spiritWindow.textContent = '';
-                spirit._childContainer = document.createElement('pre');
-                spirit._childContainer.classList.add('child-container');
                 spirit.console.scanSpiritTree(spirit.console.scanProcessorCreateHTML);
             }
 
