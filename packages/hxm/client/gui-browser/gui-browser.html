@@ -3,16 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpiritOS by Andy Flinn)</title>
+  <title>SpiritOS by Andy Flinn</title>
   <style>
-    body { font-family: monospace; margin: 20px; background: #111; color: #0f0; }
-    pre { background: #222; padding: 15px; border-radius: 5px; overflow: auto; max-height: 80vh; }
-    button { padding: 12px 24px; font-size: 16px; margin: 10px 0; cursor: pointer; }
+    body { font-family: monospace; margin: 24px; background: #111; color: #0f0; }
+    #spirit { background: #303030; padding: 24px; border-radius: 10px; overflow: auto; max-height: 80vh; }
+    .titlebar { background: #303030; padding: 0px; border-radius: 0px; overflow: auto; max-height: 80vh; }
+    .child-container { background: #303030; padding: 0px; border-radius: 0px; overflow: auto; max-height: 80vh; }
+    .icon { cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #0f0; padding: 8px; text-align: left; }
+    th { background: #333; }  
     .success { color: lime; font-weight: bold; }
   </style>
   <script src="gui-browser.js" defer></script></head>
 <body>
-  <pre id="output">Ready when you are, Hackist!</pre>
+  <pre id="titlebar"></pre>
+  <pre id="spirit">Ready when you are, Hackist!</pre>
 
 </body>
 </html>

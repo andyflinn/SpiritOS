@@ -1,11 +1,12 @@
+
 let spirit = null;   // Global variable
 
 {
-    const output = document.getElementById('output');
-    
+    const spiritWindow = document.getElementById('spirit');
+
     async function initialize() {
         
-        output.textContent = 'Sending {} to http://localhost:7777/ ...';
+        spiritWindow.textContent = 'Sending {} to http://localhost:7777/ ...';
 
         try {
         const response = await fetch('http://localhost:7777/', {
@@ -18,21 +19,182 @@ let spirit = null;   // Global variable
 
         // Store globally
         spirit = result.state;
+        spirit._parentobject = null;
+        spirit._childContainer = spiritWindow;
         
-        output.innerHTML = `<span class="success">Success! Global variable 'spirit' is ready.</span><br><br>` 
-                            + JSON.stringify(result.state, null, 2);
+        spiritWindow.textContent = JSON.stringify(result.state, null, 2);
 
-            console.log('%c✅ spirit ready!', 'color: lime; font-size: 16px; font-weight: bold');
+        console.log('%c✅ spirit ready!', 'color: lime; font-size: 16px; font-weight: bold');
 
         } catch (err) {
-            output.textContent = 'ERROR: ' + err.message;
+            spiritWindow.textContent = 'ERROR: ' + err.message;
             console.error(err);
         }
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
 
+        const ICON = {
+            ARROWDOWN: '⬇️',
+            ARROWLEFT: '⬅️',
+            ARROWRIGHT: '➡️',
+            ARROWUP: '⬆️',
+            OK: '✅',
+            DELETE: '❌',
+            WARNING: '⚠️',
+            INFO: 'ℹ️',
+            CHECKED: '☑️',
+            UNCHECKED: '⬜',
+            LOADING: '⏳',        
+            ERROR: '❌',
+            PINTRIGHT: '▶️',
+            POINTDOWN: '🔽',
+            POINTLEFT: '◀️',
+            POINTUP: '🔼', 
+            BACK: '⬅️',
+            FORWARD: '➡️',
+            REFRESH: '🔄',
+            ADD: '➕',
+            REMOVE: '➖',
+            EDIT: '✏️',
+            VIEW: '👁️',
+            HIDDEN: '🙈',
+            VISIBLE: '🙉',
+            LOCKED: '🔒',
+            UNLOCKED: '🔓',
+            STAR: '⭐',
+            HEART: '❤️',
+            BROKENHEART: '💔',
+            PURPLEHEART: '💜',
+            THUMBSUP: '👍',  
+            THUMBSDOWN: '👎',
+            FIRE: '🔥',
+            WATER: '💧',
+            EARTH: '🌍',
+            AIR: '💨',
+            SUN: '☀️',
+            MOON: '🌙',
+            CLOUD: '☁️',
+            RAIN: '🌧️',
+            SNOW: '❄️',
+            LIGHTNING: '⚡',
+            TREE: '🌳',   
+            FLOWER: '🌸',
+            ANIMAL: '🐾',
+            PERSON: '👤',
+            GROUP: '👥',
+            MUSIC: '🎵',
+            VIDEO: '🎬',
+            DOCUMENT: '📄',
+            FOLDER: '📁',
+            OPEN: '📂',
+            LINK: '🔗',
+            LOCATION: '📍',
+            TIME: '⏰',
+            CALENDAR: '📅',
+            EMAIL: '✉️',
+            PHONE: '📞',
+            CHAT: '💬',
+            CODE: '💻',
+            BUG: '🐛',
+            IDEA: '💡',
+            CLOUD: '☁️',
+            UDLOAD: '⬆️',
+            DOWNLOAD: '⬇️',
+            EGGPLANT: '🍆',
+            VICTORY: '✌️',
+            COFFEE: '☕',
+            SMOKE: '💨',
+            NEEDLE: '🪡',
+            THREAD: '🧵',
+            NOTE: '📝',
+            HOME: '🏠',
+            WORK: '🏢',
+            SCHOOL: '🏫',
+            CAR: '🚗',
+            BIKE: '🚲',
+            BUS: '🚌',
+            TRAIN: '🚆',
+            PLANE: '✈️',
+            SHIP: '🚢',
+            ROCKET: '🚀',
+            SATELLITE: '🛰️',
+            GLOBE: '🌐',
+            OBJECT: '🔲',
+            BOX: '📦',
+            PACKAGE: '📦',
+            SPIRIT: '👻',
+            GHOST: '👻',
+            WIZARD: '🧙',
+            WITCH: '🧙‍♀️',
+            TABLE: '📊',
+            CHART: '📈',
+            GRAPH: '📉',
+            BOOK: '📖',
+            BATTERY: '🔋',
+            KEY: '🔑',
+            LOCK: '🔒',
+            UNLOCK: '🔓',
+            PAUSED: '⏸️',
+            PLAY: '▶️',
+            STOP: '⏹️',
+            RECORD: '⏺️',
+            REWIND: '⏪',
+            FASTFORWARD: '⏩',
+            PAUSE: '⏸️',
+            VOLUMEUP: '🔊',
+            VOLUMEDOWN: '🔉',
+            MUTED: '🔇',
+            UNMUTED: '🔈',
+            PROTECT: '🛡️',
+            SHIELD: '🛡️',
+            SWORD: '⚔️',
+            GUN: '🔫',
+            BOMB: '💣',
+            EXPLODE: '💥',
+            PRAY: '🙏',
+            THANKS: '🙏',
+            SLEEP: '😴',
+            PARTY: '🥳',
+            CELEBRATE: '🎉',
+            THINK: '🤔',
+            CONFUSED: '😕',
+            SAD: '😢',
+            HAPPY: '😄',
+            ANGRY: '😠',
+            LOVE: '❤️',
+            GROOVY: '😎',
+            DEAD: '💀',
+            BIRD: '🐦',
+            CAT: '🐱',
+            DOG: '🐶',
+            MONKEY: '🐒',
+            FISH: '🐟',
+            MENU: '📋',
+            LIST: '📋',
+            OFF: '🔴',
+            ON: '🟢',
+            YES: '✅',
+            NO: '❌',
+            START: '🔵',
+            STOP: '🟠',
+            NUMBER: '🔢',
+            STRING: '🔤',
+            TEXT: '🔤',
+            TOGGLE: '🔘',
+
+
+            END: '🔚' };
+
+        console.log(spirit._containerWindow)        
+        
+////////////////////////////////////////////////////////////////////////////
+       
         spirit.console = {
+
+
+////////////////////////////////////////////////////////////////////////////
+
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -131,13 +293,71 @@ let spirit = null;   // Global variable
 
 ////////////////////////////////////////////////////////////////////////////
 
-            scanProcessorGetPath: function(node, pathstack) {
-                return pathstack.join('.');
+            scanProcessorDefault: function(node, pathstack,objectstack) {
+                // with print the a path for this node
+                console.log(pathstack.join('.'));
+                return;
             },
 
-            scanProcessorDefault: function(node, pathstack) {
-                // with print the a path for this node
-                console.log(spirit.console.scanProcessorGetPath(node, pathstack));
+////////////////////////////////////////////////////////////////////////////
+
+            scanProcessorCreateHTML: function(child, pathstack, objectstack) {
+
+                let isObject = typeof child === 'object';
+                let isPrimitive = !isObject;
+                
+                let parentObject = objectstack[objectstack.length-1];
+                let parentWindow = child._containerWindow = parentObject._childContainer;
+
+                parentWindow.style.paddingLeft = '2em';
+                parentWindow.style.margin = 0;
+
+                // create a title bar for the child
+                let titleBar = document.createElement('pre');
+                titleBar.classList.add('titlebar');
+                titleBar.style.padding = 0;
+                titleBar.style.margin = 0;
+                parentWindow.appendChild(titleBar);
+                
+                // create an icon for the child
+                let icon = document.createElement('span');
+                icon.classList.add('icon');
+                if (isObject)icon.textContent = ICON.OBJECT;
+                else icon.textContent = ICON.STRING;
+                titleBar.appendChild(icon);
+
+                // create a title for the child, 
+                let title = document.createElement('span');
+                title.classList.add('title');
+                titleBar.appendChild(title);
+                
+                title.textContent = pathstack[pathstack.length-1];
+                
+
+                // if the child is an object, add an OBJECT icon, otherwise add a STRING icon
+                if (typeof child === 'object') {
+
+                    // create a parentWindow for the child's children
+                    child._childContainer = document.createElement('pre');
+                    child._childContainer.classList.add('child-container');
+                    parentWindow.appendChild(child._childContainer);
+                    child._childContainer.style.display = 'none';
+                    child._childContainer.style.padding = 0;
+                    child._childContainer.style.paddingLeft = '2em';
+
+                    // the child._childContainer.style.display value is toggled
+                    // by clicking on the icon
+                    icon.addEventListener('click', function() {
+                        if (child._childContainer.style.display === 'none') {
+                            child._childContainer.style.display = 'block';
+                        } else {
+                            child._childContainer.style.display = 'none';
+                        }
+                    });
+                }
+
+
+
                 return;
             },
 
@@ -147,28 +367,52 @@ let spirit = null;   // Global variable
                 processor = spirit.console.scanProcessorDefault, // a node processor function that takes a node and a pathstack as arguments, and processes the node in some way. the pathstack is an array of strings representing the path to the current node in the tree, with the root node being an empty array. the processor function should return nothing.
                 node = spirit, // the root object to start scanning from
                 pathstack = [], // the current pathstack, used for recursion. should not be set when calling the function, only used internally.    
+                objectstack = [], // the current pathstack, used for recursion. should not be set when calling the function, only used internally.    
                 depth = 32) {
                 
                 // if the pathstack length is greater than or equal to the depth parameter,
                 // return false to prevent infinite recursion      
                 if (pathstack.length >= depth) return false;
 
+                console.log(pathstack.join('.') 
+                    + ' **** tree scan at level ' 
+                    + (objectstack.length) 
+                );
+
+                objectstack.push(node);
+                
                 // scan all the child properties of the node object, 
                 // and for each child, do the following:
                 // call the processor function with the child node and the current pathstack as arguments
                 for(const key in node){
 
+                    // if the key is not a string containing only lowercase letters
+                    // from 'a' to 'z', skip this key and continue to the next one
+                    if (!/^[a-z]+$/.test(key)) continue;
+
                     if(node.hasOwnProperty(key)){
                         const child = node[key];
                         pathstack.push(key);
 
-                        processor(child, pathstack);
+                        processor(child, pathstack,objectstack);
 
                         // the the child is an object, recursively call the 
                         // scanSpiritTree function with the child as the new node, and the current pathstack as the new pathstack
 
                         if(typeof child === 'object' && child !== null){
-                            spirit.console.scanSpiritTree(processor, child, pathstack, depth);
+                        
+                            console.log(pathstack.join('.') + ' **** found an object: key: ' + key );
+
+                            child._parentobject = node;
+
+                            spirit.console.scanSpiritTree(
+                                processor, 
+                                child, 
+                                pathstack, 
+                                objectstack, 
+                                depth);
+                        } else {
+                            console.log(pathstack.join('.') + ' **** found a primitive value: ' + child.value);
                         }
 
                         pathstack.pop();
@@ -176,11 +420,16 @@ let spirit = null;   // Global variable
                     }
                 }
 
+                objectstack.pop();
+            },
+
+            initializeGUI: function(){
+                debugger;
+                spiritWindow.textContent = '';
+                spirit._childContainer = document.createElement('pre');
+                spirit._childContainer.classList.add('child-container');
+                spirit.console.scanSpiritTree(spirit.console.scanProcessorCreateHTML);
             }
-
-
-
-
 
 ////////////////////////////////////////////////////////////////////////////
 
