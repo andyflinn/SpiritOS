@@ -32,9 +32,6 @@ function base26ToNumber(str) {
     num = num * 26 + digit;
   }
   return num;
-
-
-
 }
 
 // 
