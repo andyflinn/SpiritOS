@@ -11,12 +11,19 @@ const VERSION = '0.0.1';
 const DEBUG = true;
 const SPIRIT_NAME = 'SpiritOS';
 
+const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
+const POWERS_OF_26 = [0,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
+
+
 // 
 const spirit = {
   name: SPIRIT_NAME,
   type: SPIRIT_NAME,
   core: {
-    nostore: true,
+    const: {
+      BASE26_DIGITS: BASE26_DIGITS,
+      POWERS_OF_26: POWERS_OF_26,
+    },
     info: {
       debug: DEBUG,
     },
@@ -55,13 +62,10 @@ let isName = spirit.core.util.isName = function(str) {
  *   1 → "a"
  *   2 → "b"
  *   …
- *   26 → "aa"
+ *   26 → "az"
  *
  * Returns `null` for negative numbers or non‑numeric arguments.
  */
-
-const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
-const powersOf26 = [0,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
 
 let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
   if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) return null;
@@ -72,8 +76,8 @@ let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
   let num = n;
   let remainder = 0;
   let index = 0;
-  for (let i = powersOf26.length - 1; i >= 0; i--) {
-    if (!active && num < powersOf26[i]) {
+  for (let i = POWERS_OF_26.length - 1; i >= 0; i--) {
+    if (!active && num < POWERS_OF_26[i]) {
       continue;
     }
     else {
@@ -81,8 +85,8 @@ let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
     }
 
     if (i > 0) {
-      remainder = num % powersOf26[i];
-      index = (num - remainder) / powersOf26[i];
+      remainder = num % POWERS_OF_26[i];
+      index = (num - remainder) / POWERS_OF_26[i];
     }else{ 
       remainder = num;
       index = remainder;
@@ -124,38 +128,6 @@ let base26ToNumber = spirit.core.util.base26ToNumber = function(str) {
 
   return num;
 }
-
-
-
-/*
-// Base-26 helpers (z=0, a=1, ..., y=25)
-const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
-let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
-  if (n < 0) return null;
-  if (n === 0) return "z";
-
-  let result = "";
-  let num = n;
-  while (num > 0) {
-    const remainder = (num - 1) % 26;
-    result = BASE26_DIGITS[remainder + 1] + result;
-    num = Math.floor((num - 1) / 26);
-  }
-  return result;
-}
-
-let base26ToNumber = spirit.core.util.base26ToNumber = function(str) {
-  if (!/^[a-z]+$/.test(str)) return null;
-
-  let num = 0;
-  for (let char of str) {
-    const digit = BASE26_DIGITS.indexOf(char);
-    if (digit === -1) return null;
-    num = num * 26 + digit;
-  }
-  return num;
-}
-*/
 
 let isType = spirit.core.util.isType = function(typename){
   if (!isName(typename)) return false;
@@ -266,7 +238,7 @@ let number = createType("number","type");{
   number.validate = function(value){
     if (value == null || value == undefined) return false;
     if (!(typeof value === 'number')) return false;
-    if (value < number.min || value > number.max) return false;
+    if (value < this.min || value > this.max) return false;
     return true;
   };
 }
@@ -275,10 +247,11 @@ let integer = createType("integer","number");{
   integer.min = Number.MIN_SAFE_INTEGER;
   integer.max = Number.MAX_SAFE_INTEGER;
   integer.validate = function(value){
+    if (!Number.isInteger(value)) return false;
     if (value == null || value == undefined) return false;
     if (!(typeof value === 'number')) return false;
     if (Math.round(value) !== value) return false;
-    if (value < integer.min || value > integer.max) return false;
+    if (value < this.min || value > this.max) return false;
     return true;
   };
 }
