@@ -3,6 +3,7 @@
 
 
 const ICON = {
+    ANGRY: '😠',
     ARROWDOWN: '⬇️',
     ARROWLEFT: '⬅️',
     ARROWRIGHT: '➡️',
@@ -153,7 +154,7 @@ const ICON = {
     TOGGLE: '🔘',
 
 
-    END: '🔚' 
+    END: '🔚', 
 
 };
 
