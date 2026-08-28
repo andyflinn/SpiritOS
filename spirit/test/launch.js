@@ -1,7 +1,8 @@
 // packages/hxm/client/cli-local.js
 // working
+'use strict';
 
-spirit = require('../kernel.js');
+let spirit = require('../kernel.js');
 
 spirit.core.call.instantiateTypeName.call(spirit,"tuple","testobject");
 spirit.core.call.instantiateTableType.call(spirit.value.testobject,"tuples","tuple");

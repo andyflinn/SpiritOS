@@ -3,27 +3,134 @@
 
 'use strict';
 
+const AUTHOR = 'Andy Flinn, from AndyFlinn.com';
+const COPYRIGHT = 'Copyright (c) 2024 Andy Flinn, from AndyFlinn.com';
+const VERSION = '0.0.1';
 
 // constants
+const DEBUG = true;
 const SPIRIT_NAME = 'SpiritOS';
 
-function print(str){
+// 
+const spirit = {
+  name: SPIRIT_NAME,
+  type: SPIRIT_NAME,
+  core: {
+    nostore: true,
+    info: {
+      debug: DEBUG,
+    },
+    // the util object contains utility functions which do not rely
+    // on a this context. they can be called directly, like spirit.core.util.isName("foo")
+    util: {
+    },
+    call: {
+
+    },
+    type:{},
+  },
+  value:{},
+};
+
+
+
+let print = spirit.core.util.print = function(str){
   console.log(str);
 }
-function error(str){
+
+let error = spirit.core.util.error = function(str){
   console.error('ERROR: ' + str);
 }
 
-function isName(str) {
+let isName = spirit.core.util.isName = function(str) {
   if (str == null) return false;
   if (str == undefined) return false;
   return /^[a-z]+$/.test(str);
 }
 
+/**
+ * Convert a non‑negative integer to a bijective base‑26 string.
+ *
+ *   0 → "z"
+ *   1 → "a"
+ *   2 → "b"
+ *   …
+ *   26 → "aa"
+ *
+ * Returns `null` for negative numbers or non‑numeric arguments.
+ */
+
+const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
+const powersOf26 = [0,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
+
+let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
+  if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) return null;
+  if (n === 0) return 'z';
+
+  let active = false;
+  let result = '';
+  let num = n;
+  let remainder = 0;
+  let index = 0;
+  for (let i = powersOf26.length - 1; i >= 0; i--) {
+    if (!active && num < powersOf26[i]) {
+      continue;
+    }
+    else {
+      active = true;
+    }
+
+    if (i > 0) {
+      remainder = num % powersOf26[i];
+      index = (num - remainder) / powersOf26[i];
+    }else{ 
+      remainder = num;
+      index = remainder;
+    }
+  
+    result += BASE26_DIGITS[index];
+    num = remainder;
+  }
+
+  return result;
+}
+
+/**
+ * Convert a bijective base‑26 string back to a non‑negative integer.
+ *
+ *   "z"   → 0
+ *   "a"   → 1
+ *   "b"   → 2
+ *   …
+ *   "aa"  → 26
+ *
+ * Returns `null` if the string is not a valid name or contains an illegal digit.
+ */
+let base26ToNumber = spirit.core.util.base26ToNumber = function(str) {
+  if (!isName(str)) return null;
+
+  // Special case for zero
+  if (str === 'z') return 0;
+
+  // create a loop that iterates in reverse over each character in the string
+  let num = 0; let power = 0;
+  for (let i = str.length - 1; i >= 0; i--) {
+    const ch = str[i];
+    const digit = BASE26_DIGITS.indexOf(ch);
+    const factor = 26**power;
+    num += digit * factor;
+    power++;
+  }
+
+  return num;
+}
+
+
+
 /*
-// constraints on the name of object names
-const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxy";
-function numberToBase26(n) {
+// Base-26 helpers (z=0, a=1, ..., y=25)
+const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
+let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
   if (n < 0) return null;
   if (n === 0) return "z";
 
@@ -36,8 +143,9 @@ function numberToBase26(n) {
   }
   return result;
 }
-function base26ToNumber(str) {
-  if (!isName(str)) return null;
+
+let base26ToNumber = spirit.core.util.base26ToNumber = function(str) {
+  if (!/^[a-z]+$/.test(str)) return null;
 
   let num = 0;
   for (let char of str) {
@@ -49,55 +157,11 @@ function base26ToNumber(str) {
 }
 */
 
-// 
-const spirit = {
-  name: SPIRIT_NAME,
-  type: SPIRIT_NAME,
-  core: {
-    nostore: true,
-    info: {
-      nostore: true,
-    },
-    // the util object contains utility functions which do not rely
-    // on a this context. they can be called directly, like spirit.core.util.isName("foo")
-    util: {
-      isName: isName,
-//      numberToBase26: numberToBase26,
-//      base26ToNumber: base26ToNumber,
-    },
-    call: {
-
-    },
-    type:{},
-  },
-  value:{},
-};
-
 let isType = spirit.core.util.isType = function(typename){
   if (!isName(typename)) return false;
   if (!spirit.core.type.hasOwnProperty(typename)) return false;
   return true;
 }
-
-/*
-let ancestorArray = spirit.core.util.ancestorArray = function(typename){
-  if (!isType(typename)) return null;
-
-  let ancestors = [];
-
-  while (   isName(typename)
-        &&  typename != "type"
-        &&  spirit.core.type.hasOwnProperty(typename)
-        ){
-          let type = spirit.core.type[typename];
-          ancestors.push(typename);
-        
-          typename = spirit.core.type[typename].parenttype;
-    }
-      
-  return ancestors;
-}
-*/
 
 let createType = spirit.core.util.createType = function(name,parenttype){
 
@@ -191,7 +255,7 @@ let flag = createType("flag","boolean");{
 let abstract = createType("abstract","flag");
 let array = createType("array","flag");
 let nostore = createType("nostore","flag");
-let immutable = createType("immutable","flag");
+let constant = createType("constant","flag");
 let readonly = createType("readonly","flag");
 let serveronly = createType("serveronly","flag");
 
@@ -217,6 +281,10 @@ let integer = createType("integer","number");{
     if (value < integer.min || value > integer.max) return false;
     return true;
   };
+}
+
+let counter = createType("counter","integer");{
+  counter.min = 0;
 }
 
 let float = createType("float","number");{
@@ -298,7 +366,7 @@ let defineTypeMember = spirit.core.call.defineTypeMember = function(typeName,mem
 
 let table = createType("table","object");{
   table.abstract = true;
-  table.value = [];
+  table.value = {};
 }
 
 let instantiateTableType = spirit.core.call.instantiateTableType = function(name,memberType){
@@ -355,13 +423,10 @@ let instantiateTableType = spirit.core.call.instantiateTableType = function(name
   return instance;
 }
 
-
-let tupletypename = createType("tupletypename","object");{
-  defineTypeMember.call(tupletypename,"name","typename");
-  defineTypeMember.call(tupletypename,"name","membername");
+let create = createType("create","object");{
+  defineTypeMember.call(create,"name","typename");
+  defineTypeMember.call(create,"name","membername");
 }
-
-let tuple = createType("tuple","tupletypename");
 
 // this function must allways be invoked
 // using the call function, in order to
