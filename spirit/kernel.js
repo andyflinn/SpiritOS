@@ -12,7 +12,7 @@ const DEBUG = true;
 const SPIRIT_NAME = 'SpiritOS';
 
 const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
-const POWERS_OF_26 = [0,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
+const POWERS_OF_26 = [1,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
 
 
 // 
