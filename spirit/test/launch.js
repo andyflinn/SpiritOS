@@ -4,7 +4,7 @@
 spirit = require('../kernel.js');
 
 spirit.core.call.instantiateTypeName.call(spirit,"tuple","testobject");
-spirit.core.call.instantiateTypeName.call(spirit.value.testobject,"object","testobjectagain");
+spirit.core.call.instantiateTableType.call(spirit.value.testobject,"tuples","tuple");
 spirit.core.call.instantiateTypeName.call(spirit,"integer","testnumber");
 
 let json = JSON.stringify(spirit,null,2);
