@@ -1,7 +1,7 @@
 // packages/hxm/test/base26-test.js
 'use strict';
 
-let spirit = require('../kernel.js');
+const spirit = require('../kernel.js');
 
 
 

@@ -22,6 +22,8 @@ const spirit = {
   core: {
     const: {
       BASE26_DIGITS: BASE26_DIGITS,
+      KERNEL_DEBUG: DEBUG,
+      ICON: require('./constants/icons.js'),
       POWERS_OF_26: POWERS_OF_26,
     },
     info: {

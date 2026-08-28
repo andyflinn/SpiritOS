@@ -2,7 +2,7 @@
 // working
 'use strict';
 
-let spirit = require('../kernel.js');
+const spirit = require('../kernel.js');
 
 spirit.core.call.instantiateTypeName.call(spirit,"tuple","testobject");
 spirit.core.call.instantiateTableType.call(spirit.value.testobject,"tuples","tuple");
