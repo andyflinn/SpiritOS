@@ -39,6 +39,10 @@ const spirit = {
   title: 'SpritOS',
   info: {},
   core: {
+    utils: {
+      numberToBase26: numberToBase26,
+      base26ToNumber: base26ToNumber,
+    },
     type:{},
   }
 };
@@ -227,7 +231,6 @@ let instantiateTypeName =
   }
 
   return newtype;
-
 }
 
 module.exports = {
