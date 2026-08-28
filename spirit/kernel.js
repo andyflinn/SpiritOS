@@ -1,6 +1,14 @@
 // the kernel
 // this file 
 
+'use strict';
+
+
+// constants
+
+function print(str){
+  console.log(str);
+}
 
 // constraints on the name of object names
 const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxy";
@@ -23,7 +31,7 @@ function numberToBase26(n) {
   return result;
 }
 function base26ToNumber(str) {
-  if (!isname(str)) return null;
+  if (!isName(str)) return null;
 
   let num = 0;
   for (let char of str) {
@@ -36,18 +44,37 @@ function base26ToNumber(str) {
 
 // 
 const spirit = {
-  title: 'SpritOS',
-  info: {},
+  name: 'SpiritOS',
+  type: 'SpiritOS',
   core: {
-    utils: {
+    nostore: true,
+    info: {
+      nostore: true,
+    },
+    // the util object contains utility functions which do not rely
+    // on a this context. they can be called directly, like spirit.core.util.isName("foo")
+    util: {
+      isName: isName,
       numberToBase26: numberToBase26,
       base26ToNumber: base26ToNumber,
     },
+    call: {
+
+    },
     type:{},
-  }
+  },
+  value:{},
 };
 
-let ancestorArray = spirit.core.type.ancestorArray = function(typename){
+let isType = spirit.core.util.isType = function(typename){
+  if (!isName(typename)) return false;
+  if (!spirit.core.type.hasOwnProperty(typename)) return false;
+  return true;
+}
+
+let ancestorArray = spirit.core.util.ancestorArray = function(typename){
+  if (!isType(typename)) return null;
+
   let ancestors = [];
 
   while (   isName(typename)
@@ -59,16 +86,13 @@ let ancestorArray = spirit.core.type.ancestorArray = function(typename){
         
           typename = spirit.core.type[typename].parenttype;
     }
-    
-    
-    
+      
   return ancestors;
-  
 }
 
-let createType = spirit.core.type.createType = function(name,parenttype){
+let createType = spirit.core.util.createType = function(name,parenttype){
 
-  console.log("createType(" + name + "," + parenttype + ")");
+  print("createType(" + name + "," + parenttype + ")");
 
   // check if input arguments are both valid names
   if (!isName(name)) return null;
@@ -79,7 +103,7 @@ let createType = spirit.core.type.createType = function(name,parenttype){
   // return null
   if (parenttype != "type"){
     if (!spirit.core.type.hasOwnProperty(parenttype)) {
-      console.log ("parenttype " + parenttype + " does not exist");
+      print("parenttype " + parenttype + " does not exist");
       return null;
     }
   }
@@ -107,7 +131,7 @@ let createType = spirit.core.type.createType = function(name,parenttype){
     for (const key in ptyp){
       if (key == "name" || key == "parenttype" || key == 'ancestorArray') continue;
       if (typeof ptyp[key] === 'function') continue; 
-      console.log("copying " + key + " from " + ptyp.name + " to " + name);
+      print("copying " + key + " from " + ptyp.name + " to " + name);
       if (newtype.hasOwnProperty(key)) continue;
       newtype[key] = JSON.parse(JSON.stringify(ptyp[key]));
     }
@@ -115,8 +139,23 @@ let createType = spirit.core.type.createType = function(name,parenttype){
   return newtype;
 }
 
-let bool = createType("boolean","type");
-{
+let isTypeEnheritedFrom = spirit.core.util.isTypeEnheritedFrom = function(typename,ancestortypename){
+  if (!isType(typename)) return false;
+  if (!isType(ancestortypename)) return false;
+  if (typename == ancestortypename) return false;
+
+  while (   isName(typename)
+        &&  typename != "type"
+        &&  spirit.core.type.hasOwnProperty(typename)
+        ){
+          if (typename == ancestortypename) return true;
+          typename = spirit.core.type[typename].parenttype;
+    }
+
+  return false;
+}
+
+let bool = createType("boolean","type");{
   bool.value = false;
   bool.validate = function(value){
     if (!(typeof value === 'boolean')) return false;
@@ -124,8 +163,7 @@ let bool = createType("boolean","type");
   }
 }
 
-let flag = createType("flag","boolean");
-{
+let flag = createType("flag","boolean");{
   flag.value = true;
 }
 
@@ -134,8 +172,7 @@ let immutable = createType("immutable","flag");
 let readonly = createType("readonly","flag");
 let serveronly = createType("serveronly","flag");
 
-let number = createType("number","type");
-{
+let number = createType("number","type");{
   number.min = Number.MIN_VALUE;
   number.max = Number.MAX_VALUE;
   number.value = 0;
@@ -147,18 +184,22 @@ let number = createType("number","type");
   };
 }
 
-let integer = createType("integer","number");
-{
+let integer = createType("integer","number");{
   integer.min = Number.MIN_SAFE_INTEGER;
   integer.max = Number.MAX_SAFE_INTEGER;
+  integer.validate = function(value){
+    if (value == null || value == undefined) return false;
+    if (!(typeof value === 'number')) return false;
+    if (Math.round(value) !== value) return false;
+    if (value < integer.min || value > integer.max) return false;
+    return true;
+  };
 }
 
-let float = createType("float","number");
-{
+let float = createType("float","number");{
 }
 
-let string = createType("string","type");
-{
+let string = createType("string","type");{
   string.maxlength = 256;
   string.value = "";
   string.validate = function(value){
@@ -169,21 +210,18 @@ let string = createType("string","type");
   }
 }
 
-let name = createType("name","string");
-{
+let name = createType("name","string");{
   name.validate = function(value){
     if (!isName(value)) return false;
     return true;
   }
 }
 
-let text = createType("text","string");
-{
+let text = createType("text","string");{
   text.maxlength = 65536;
 }
 
-let js = createType("js","text");
-{
+let js = createType("js","text");{
   js.validate = function(value){
     try{
       let executeMe = new Function("object", codeString);
@@ -194,46 +232,91 @@ let js = createType("js","text");
   }
 }
 
-let object = createType("object","type");
-{
+let object = createType("object","type");{
   object.value = {};
+  object.members = {};
   object.validate = function(value){
     if (!(typeof value === 'object')) return false;
     return true;
   }
 }
 
+
+let defineTypeMember = spirit.core.call.defineTypeMember = function(typeName,memberName){
+  if (!isName(memberName)) {
+    return null;
+  }
+  
+  if (!isTypeEnheritedFrom(this.name,"object")) {
+    print("Type " + typeName + " does not inherit from object");
+    return null;
+  }
+
+  if (this.members.hasOwnProperty(memberName)) return null;
+
+  let type = spirit.core.type[typeName];
+  let parenttype = spirit.core.type[this.parenttype];
+  
+  this.members[memberName] = typeName;
+  
+  let member = this.value[memberName] = {
+    name: memberName,
+    type: typeName,
+  };
+
+  if (!isTypeEnheritedFrom(typeName,"object")){
+    this.value[memberName].value = spirit.core.type[typeName].value;
+  } else {
+    this.value[memberName].value = JSON.parse(JSON.stringify(spirit.core.type[typeName].value));
+  }
+
+  return member;
+}
+
+let tupletypename = createType("tupletypename","object");
+{
+  defineTypeMember.call(tupletypename,"name","typename");
+  defineTypeMember.call(tupletypename,"name","membername");
+}
+
+let tuple = createType("tuple","tupletypename");
+
 // this function must allways be invoked
 // using the call function, in order to
 // set 'this'
-let instantiateTypeName = 
-  spirit.instantiateTypeName =
-  spirit.info.instantiateTypeName = 
-  spirit.core.instantiateTypeName = function(typeName,instanceName){
+let instantiateTypeName =
+spirit.core.call.instantiateTypeName = function(typeName,instanceName){
+  
+
+  if (this == null) return null;
+  if (this == undefined) return null;
+  if (typeof this !== 'object') return null;  
+  if (!this.hasOwnProperty('name')) return null;
+  if (!this.hasOwnProperty('type') && !this.hasOwnProperty('parenttype')) return null;
+  if (!this.hasOwnProperty('value')) return null;
+  if (typeName === "object") return null;
+
+  // print("___________ called the instantiator");
   
   if (!isName(typeName) || !isName(instanceName)) return null;
   if (this.hasOwnProperty(instanceName)) return null;
   if (!spirit.core.type.hasOwnProperty(typeName)) return null;
 
   let type = spirit.core.type[typeName];
-  let instance = this[instanceName] = {
+  let instance = this.value[instanceName] = {
     name: instanceName,
     type: typeName,
   }
 
   // copy all properties from parenttype to name
-  for (const key in type){
-    if (key == "name" || key == "parenttype" || key == 'ancestorArray') continue;
-    if (typeof ptyp[key] === 'function') continue; 
-    console.log("copying " + key + " from " + ptyp.name + " to " + name);
-    if (newtype.hasOwnProperty(key)) continue;
-    newtype[key] = JSON.parse(JSON.stringify(ptyp[key]));
+  if (!isTypeEnheritedFrom(typeName,"object")){
+    instance.value = type.value;
+  } else {
+    instance.value = JSON.parse(JSON.stringify(type.value));
   }
 
-  return newtype;
+  return instance;
 }
 
-module.exports = {
-  spirit,
-};
+module.exports = spirit;
 
