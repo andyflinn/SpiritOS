@@ -156,4 +156,4 @@ const ICON = {
     END: '🔚',
 };
 
-module.exports = ICON;
+spirit.core.const.ICON = ICON;

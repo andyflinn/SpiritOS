@@ -1,26 +1,13 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const spirit = require('./kernel');
+
+console.log(JSON.stringify(spirit,null,2));
 
 const rootDir = process.cwd();
 
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.txt': 'text/plain; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.ico': 'image/x-icon',
-  '.webp': 'image/webp',
-  '.mp3': 'audio/mpeg',
-  '.wav': 'audio/wav',
-  '.mp4': 'video/mp4'
-};
+const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
 function sendFile(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();

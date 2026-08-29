@@ -2,6 +2,14 @@
 // this file 
 
 'use strict';
+{ // ******************************************************************
+
+const isNode = () =>
+  typeof process !== 'undefined' &&
+  !!process.versions &&
+  !!process.versions.node;
+
+const isBrowser = function() { return !isNode(); }  
 
 // these are the main constants for the SpiritOS kernel
 const AUTHOR = 'Andy Flinn, from AndyFlinn.com';
@@ -12,11 +20,11 @@ const SPIRIT_NAME = 'SpiritOS';
 // constants
 const DEBUG = true;
 
-// these are user for base-26 conversion, where z=0, a=1, b=2, ..., y=25
+// these are used for base-26 conversion, where z=0, a=1, b=2, ..., y=25
 const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
 const POWERS_OF_26 = [1,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
 
-const ICON = require('./constants/icons.js');
+//const ICON = require('./constants/icons.js');
 
 // this here is the main spirit object, which contains all the core functionality of the SpiritOS kernel 
 const spirit = {
@@ -26,8 +34,9 @@ const spirit = {
     const: {
       BASE26_DIGITS: BASE26_DIGITS,
       KERNEL_DEBUG: DEBUG,
-      ICON: ICON,
       POWERS_OF_26: POWERS_OF_26,
+      IS_NODE:isNode(),
+      IS_BROWSER:isBrowser(),
     },
     info: {
       debug: DEBUG,
@@ -509,5 +518,66 @@ let transformJSON = spirit.core.util.transformJSON = function(jsonInput){
   return '{}';
 }
 
-module.exports = spirit;
+if (spirit.core.const.IS_NODE == true) {
+  const fs = require('fs');
+  const path = require('path');
+  const rootDir = process.cwd();
 
+  function safeJoin(baseDir, requestPath) {
+    const safePath = path.normalize(requestPath).replace(/^\/+/, '');
+    const joined = path.join(baseDir, safePath);
+    const relative = path.relative(baseDir, joined);
+
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      return null;
+    }
+
+    return joined;
+  };
+
+  spirit.core.util.loadFile = function(filePath){
+
+    filePath = safeJoin(rootDir,filePath);
+    print('in IS_NODE loadFile(); ' + process.cwd());
+  
+    try {
+      return fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' });
+    } catch (err) {
+      return null;
+    }
+  };
+
+
+  module.exports = spirit;
+}
+
+if (spirit.core.const.IS_BROWSER == true) {
+  spirit.core.util.loadFile = function(filePath){
+    let result = null;
+    let xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", filePath, false);
+    xmlhttp.send();
+    if (xmlhttp.status==200) {
+      result = xmlhttp.responseText;
+    }
+    return result;
+  };
+
+  
+  window.spirit = spirit;
+}
+
+ // ******************************************************************
+ // functions that depend on environment specific other functions
+
+spirit.core.util.require = function(filePath){
+  let script = spirit.core.util.loadFile(filePath);
+  if (script==null) return;
+  let foo = new Function("spirit",script);
+  foo(spirit);
+};
+
+spirit.core.util.require('./js/constants/icons.js');
+spirit.core.util.require('./js/constants/mimetypes.js');
+
+} // ******************************************************************
