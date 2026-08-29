@@ -9,3 +9,5 @@ spirit.core.call.instantiateTableType.call(spirit,"crts","create");
 let json = JSON.stringify(spirit,null,2);
 
 console.log(json);
+
+return 0;
