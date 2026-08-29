@@ -3,19 +3,22 @@
 
 'use strict';
 
+// these are the main constants for the SpiritOS kernel
 const AUTHOR = 'Andy Flinn, from AndyFlinn.com';
 const COPYRIGHT = 'Copyright (c) 2024 Andy Flinn, from AndyFlinn.com';
 const VERSION = '0.0.1';
+const SPIRIT_NAME = 'SpiritOS';
 
 // constants
 const DEBUG = true;
-const SPIRIT_NAME = 'SpiritOS';
 
+// these are user for base-26 conversion, where z=0, a=1, b=2, ..., y=25
 const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
 const POWERS_OF_26 = [1,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
 
+const ICON = require('./constants/icons.js');
 
-// 
+// this here is the main spirit object, which contains all the core functionality of the SpiritOS kernel 
 const spirit = {
   name: SPIRIT_NAME,
   type: SPIRIT_NAME,
@@ -23,7 +26,7 @@ const spirit = {
     const: {
       BASE26_DIGITS: BASE26_DIGITS,
       KERNEL_DEBUG: DEBUG,
-      ICON: require('./constants/icons.js'),
+      ICON: ICON,
       POWERS_OF_26: POWERS_OF_26,
     },
     info: {
@@ -42,13 +45,21 @@ const spirit = {
 };
 
 
-
+// use this for old fashioned console.log debugging, which can be turned on and off with the DEBUG constant
 let print = spirit.core.util.print = function(str){
-  console.log(str);
+  if (DEBUG) {
+    console.log(str);
+  }
 }
 
+// use this for error messages, which will always be printed to the console
 let error = spirit.core.util.error = function(str){
   console.error('ERROR: ' + str);
+  return {
+    error:{
+      string:str,
+    }
+  }; 
 }
 
 let isName = spirit.core.util.isName = function(str) {
@@ -139,7 +150,7 @@ let isType = spirit.core.util.isType = function(typename){
 
 let createType = spirit.core.util.createType = function(name,parenttype){
 
-  print("createType(" + name + "," + parenttype + ")");
+  //print("createType(" + name + "," + parenttype + ")");
 
   // check if input arguments are both valid names
   if (!isName(name)) {
@@ -187,7 +198,7 @@ let createType = spirit.core.util.createType = function(name,parenttype){
     for (const key in ptyp){
       if (key == "name" || key == "parenttype"  || key == "abstract" ) continue;
       if (typeof ptyp[key] === 'function') continue; 
-      print("copying " + key + " from " + ptyp.name + " to " + name);
+      //print("copying " + key + " from " + key + " to " + name);
       if (newtype.hasOwnProperty(key)) continue;
       newtype[key] = JSON.parse(JSON.stringify(ptyp[key]));
     }
@@ -312,12 +323,7 @@ let defineTypeMember = spirit.core.call.defineTypeMember = function(typeName,mem
   if (!isName(memberName)) {
     return null;
   }
-  
-  if (!isTypeEnheritedFrom(this.name,"object")) {
-    print("Type " + typeName + " does not inherit from object");
-    return null;
-  }
-
+ 
   if (this.members.hasOwnProperty(memberName)) return null;
 
   let type = spirit.core.type[typeName];
@@ -362,7 +368,7 @@ let instantiateTableType = spirit.core.call.instantiateTableType = function(name
     return null;
   }
 
-  print('instantiateTableType(' + name + ',' + memberType + ')');
+  // print('instantiateTableType(' + name + ',' + memberType + ')');
   
   if (this == null) {
     error("instantiateTableType: 'this' is null");
@@ -392,7 +398,7 @@ let instantiateTableType = spirit.core.call.instantiateTableType = function(name
     type: "table",
     membertype: memberType,
     array: true,
-    value: [],
+    value: {},
   }
 
   return instance;
@@ -466,6 +472,41 @@ spirit.core.call.instantiateTypeName = function(typeName,instanceName){
   }
 
   return instance;
+}
+
+let createRequestScannerObject = spirit.core.util.createRequestScannerObject = function(){
+  let requestScannerObject = new Object({
+    mustSave: false,
+    pathStack:[],
+    objectStack:[],
+  });
+
+  return requestScannerObject;
+}
+
+let scanReqestObject = spirit.core.call.scanRequestObject = function(requestObject,requestScannerObject = null){
+
+}
+
+let transformJSON = spirit.core.util.transformJSON = function(jsonInput){
+  let input = null;
+
+  // try and catch any in an attempt to parse the jsonInput argument
+
+  try {
+    input = JSON.parse(jsonInput);
+    if (!(typeof input === 'object')) {
+      return JSON.stringify(error('the argument to transformJSON(' + jsonInput + ') is not an object.'));
+    }
+
+    if (!input.hasOwnProperty('value')){
+      return JSON.stringify(spirit);
+    }
+  } catch(err) {
+    return JSON.stringify(error('JSON.parse(jsonInput) failed.'));
+  }
+  
+  return '{}';
 }
 
 module.exports = spirit;

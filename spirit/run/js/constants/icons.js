@@ -152,10 +152,8 @@ const ICON = {
     BOOLEAN: '🔘',
     TEXT: '🔤',
     TOGGLE: '🔘',
-
-
-    END: '🔚', 
-
+    SUCCESS: '✅',
+    END: '🔚',
 };
 
 module.exports = ICON;

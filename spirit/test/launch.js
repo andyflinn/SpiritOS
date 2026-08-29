@@ -2,11 +2,9 @@
 // working
 'use strict';
 
-const spirit = require('../kernel.js');
+const spirit = require('../run/js/kernel');
 
-spirit.core.call.instantiateTypeName.call(spirit,"tuple","testobject");
-spirit.core.call.instantiateTableType.call(spirit.value.testobject,"tuples","tuple");
-spirit.core.call.instantiateTypeName.call(spirit,"integer","testnumber");
+spirit.core.call.instantiateTableType.call(spirit,"crts","create");
 
 let json = JSON.stringify(spirit,null,2);
 
