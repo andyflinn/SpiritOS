@@ -481,6 +481,9 @@ if (spirit.core.const.IS_NODE == true) {
   const DEFAULT_SPIRIT_PORT = 65432;
   
   spirit.core.node = {
+    module:{
+      fs:fs,
+    },
     const:{
       ROOT_DIR:ROOT_DIR,
       DEFAULT_SPIRIT_PORT:DEFAULT_SPIRIT_PORT,
@@ -507,7 +510,7 @@ if (spirit.core.const.IS_NODE == true) {
   function(filePath){
 
     filePath = fsPath(ROOT_DIR,filePath);
-    print('in IS_NODE loadFile(); ' + process.cwd());
+    //print('in IS_NODE loadFile(); ' + process.cwd());
   
     try {
       return fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' });

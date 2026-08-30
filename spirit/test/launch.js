@@ -4,8 +4,7 @@
 
 const spirit = require('../run/js/kernel');
 
-let json = JSON.stringify(spirit,null,2);
 
-console.log(json);
+//console.log(json);
 
 return 0;

@@ -4,8 +4,6 @@
 const spirit = require('../run/js/kernel');
 const test = require('./testSupport.js');
 
-
-
 test.startTest("Base-26 Conversion Test (z=0, a=1, ..., y=25...Number.MAX_SAFE_INTEGER)");
 test.comment("[0, 1, 2, 3, 4, 5, 6, 10, 25, 26, 27, 52, 100, 1000, 10000,26**4,26**5,26**6,Number.MAX_SAFE_INTEGER]");
 test.lineFeed();
