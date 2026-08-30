@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const spirit = require('./kernel');
 
-//console.log(JSON.stringify(spirit,null,2));
+console.log(JSON.stringify(spirit,null,2));
 
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const MIME_TYPES = spirit.core.const.MIME_TYPES;

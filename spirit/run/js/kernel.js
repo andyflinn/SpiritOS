@@ -74,6 +74,18 @@ let isName = spirit.core.util.isName = function(str) {
   return /^[a-z]+$/.test(str);
 }
 
+let checkCircularity = spirit.core.util.checkCircularity =
+function(object = spirit){
+    let pathStack = [];
+    let array = [];
+
+    pathStack.push()
+   function createRef(obj,path){ return {obj,path};}
+
+   
+
+}
+
 let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
   if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) return null;
   if (n === 0) return 'z';
@@ -323,7 +335,6 @@ let defineTypeMember = spirit.core.util.defineTypeMember = function(typeobject,t
   typeobject.members[memberName] = typeName;
   
   let member = typeobject.value[memberName] = {
-  //  name: memberName,
     type: typeName,
   };
 
@@ -481,10 +492,6 @@ if (spirit.core.const.IS_NODE == true) {
   const DEFAULT_SPIRIT_PORT = 65432;
   
   spirit.core.node = {
-    module:{
-      fs:fs,
-      path:path,
-    },
     const:{
       ROOT_DIR:ROOT_DIR,
       DEFAULT_SPIRIT_PORT:DEFAULT_SPIRIT_PORT,
@@ -519,6 +526,58 @@ if (spirit.core.const.IS_NODE == true) {
       return null;
     }
   };
+
+  let scanFolder = spirit.core.node.util.scanFolder = function(path,result = []){
+      //UTIL.print('inside of scanFolder "' + path + '"');
+
+      try {
+          // Returns an array of fs.Dirent objects
+          const entries = fs.readdirSync(path, { withFileTypes: true });
+
+          while (entries.length > 0){
+              let entry = entries.shift();
+
+              if (entry.isDirectory()) {
+
+                  let subfolder = entry.parentPath + entry.name + '/';
+                  scanFolder(subfolder,result);
+                  result.push(entry);
+
+              } else if (entry.isFile()) {
+                  result.push(entry);
+              }
+
+      }
+          
+      } catch (err) {
+          UTIL.error(err);
+      }
+
+      return result;
+  } 
+
+  let loadFolder = spirit.core.node.util.loadFolder = function(){
+
+      let result = scanFolder('./');
+
+      print('loadFolder is finished');
+      print(JSON.stringify(result,null,2));
+
+      for (let i = 0 ; i < result.length ; i++){
+          let entry = result[i];
+          if (entry.isDirectory()) {
+
+              console.log(`📁 Folder: ${entry.parentPath}${entry.name}`);
+
+          } else if (entry.isFile()) {
+
+              console.log(`📄 File: ${entry.parentPath}${entry.name}`);
+
+          }
+  }
+
+      return result;
+  }
 
   module.exports = spirit;
 }

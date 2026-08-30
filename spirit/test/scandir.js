@@ -2,4 +2,4 @@
 
 const spirit = require('../run/js/kernel');
 
-spirit.core.node.loadFolder('./');
+spirit.core.node.util.loadFolder('./');
