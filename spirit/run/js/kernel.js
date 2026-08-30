@@ -28,7 +28,6 @@ const POWERS_OF_26 = [1,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**1
 
 // this here is the main spirit object, which contains all the core functionality of the SpiritOS kernel 
 const spirit = {
-  name: SPIRIT_NAME,
   type: SPIRIT_NAME,
   core: {
     const: {
@@ -43,11 +42,9 @@ const spirit = {
     },
     // the util object contains utility functions which do not rely
     // on a this context. they can be called directly, like spirit.core.util.isName("foo")
-    util: {
-    },
-    call: {
-
-    },
+    util: {},
+    call: {},
+    fs:{},
     type:{},
   },
   value:{},
@@ -76,18 +73,6 @@ let isName = spirit.core.util.isName = function(str) {
   if (str == undefined) return false;
   return /^[a-z]+$/.test(str);
 }
-
-/**
- * Convert a non‑negative integer to a bijective base‑26 string.
- *
- *   0 → "z"
- *   1 → "a"
- *   2 → "b"
- *   …
- *   26 → "az"
- *
- * Returns `null` for negative numbers or non‑numeric arguments.
- */
 
 let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
   if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) return null;
@@ -121,17 +106,6 @@ let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
   return result;
 }
 
-/**
- * Convert a bijective base‑26 string back to a non‑negative integer.
- *
- *   "z"   → 0
- *   "a"   → 1
- *   "b"   → 2
- *   …
- *   "aa"  → 26
- *
- * Returns `null` if the string is not a valid name or contains an illegal digit.
- */
 let base26ToNumber = spirit.core.util.base26ToNumber = function(str) {
   if (!isName(str)) return null;
 
@@ -159,8 +133,6 @@ let isType = spirit.core.util.isType = function(typename){
 
 let createType = spirit.core.util.createType = function(name,parenttype){
 
-  //print("createType(" + name + "," + parenttype + ")");
-
   // check if input arguments are both valid names
   if (!isName(name)) {
     error("createType: name '" + name + "' is not a valid name");
@@ -182,6 +154,13 @@ let createType = spirit.core.util.createType = function(name,parenttype){
     }
   }
 
+  // if the type already exists, fail as well
+  if (spirit.core.type.hasOwnProperty(name)) {
+    error("createType: the type '" + name + "' already exists");
+    return null;
+  }
+
+
   let ptyp = null;
   if (parenttype == "type"){
     ptyp = spirit.core.type;
@@ -198,8 +177,7 @@ let createType = spirit.core.util.createType = function(name,parenttype){
     //name: name,
     parenttype: parenttype,
   };
-  //newtype.ancestorArray = ancestorArray(name);
-
+  
 
   if (parenttype == "type") return newtype;
     
@@ -247,7 +225,7 @@ let flag = createType("flag","boolean");{
 }
 
 let abstract = createType("abstract","flag");
-let array = createType("array","flag");
+let isarray = createType("isarray","flag");
 let nostore = createType("nostore","flag");
 let constant = createType("constant","flag");
 let readonly = createType("readonly","flag");
@@ -280,6 +258,10 @@ let integer = createType("integer","number");{
 
 let counter = createType("counter","integer");{
   counter.min = 0;
+}
+
+let size = createType("size","integer");{
+  size.min = 0;
 }
 
 let float = createType("float","number");{
@@ -328,94 +310,59 @@ let object = createType("object","type");{
   }
 }
 
-let defineTypeMember = spirit.core.call.defineTypeMember = function(typeName,memberName){
+let defineTypeMember = spirit.core.util.defineTypeMember = function(typeobject,typeName,memberName){
   if (!isName(memberName)) {
     return null;
   }
  
-  if (this.members.hasOwnProperty(memberName)) return null;
+  if (typeobject.members.hasOwnProperty(memberName)) return null;
 
   let type = spirit.core.type[typeName];
-  let parenttype = spirit.core.type[this.parenttype];
+  let parenttype = spirit.core.type[typeobject.parenttype];
   
-  this.members[memberName] = typeName;
+  typeobject.members[memberName] = typeName;
   
-  let member = this.value[memberName] = {
+  let member = typeobject.value[memberName] = {
   //  name: memberName,
     type: typeName,
   };
 
   if (!isTypeEnheritedFrom(typeName,"object")){
-    this.value[memberName].value = spirit.core.type[typeName].value;
+    typeobject.value[memberName].value = spirit.core.type[typeName].value;
   } else {
-    this.value[memberName].value = JSON.parse(JSON.stringify(spirit.core.type[typeName].value));
+    typeobject.value[memberName].value = JSON.parse(JSON.stringify(spirit.core.type[typeName].value));
   }
 
   return member;
 }
 
-let table = createType("table","object");{
-  table.abstract = true;
-  table.value = {};
+let array = createType("array","object");{
+  array.abstract = true;
+  array.value = {};
 }
 
-let instantiateTableType = spirit.core.call.instantiateTableType = function(name,memberType){
-  if (!isName(name)){
-    error("instantiateTableType: name '" + name + "' is not a valid name");
-    return null;
-  }
-
+let createArrayType = spirit.core.util.createArrayType = function(memberType){
   if (!isType(memberType)){
-    error("instantiateTableType: memberType '" + memberType + "' is not a valid type");
+    error("createArrayType: memberType '" + memberType + "' is not a valid type");
     return null;
   }
 
   let mType = spirit.core.type[memberType];
-  
-  if (mType.abstract) {
-    error("instantiateTableType: memberType '" + memberType + "' is abstract");
+  let newtypename = 'arrayof' + memberType;
+
+  if (isType(newtypename)){
+    error('createArrayType: type ' + newtypename + ' already exists');
     return null;
   }
 
-  // print('instantiateTableType(' + name + ',' + memberType + ')');
-  
-  if (this == null) {
-    error("instantiateTableType: 'this' is null");
-    return null;
-  }
+  let newtype = createType(newtypename,array);
 
-  if (this == undefined) {
-    error("instantiateTableType: 'this' is undefined");
-    return null;
-  }
-
-  if (typeof this !== 'object') {
-    error("instantiateTableType: 'this' is not an object");
-    return null;
-  }  
-
-  if (!this.hasOwnProperty('type')) {
-    error("instantiateTableType: 'this' has no 'type' property");
-    return null;
-  }
-  if (!this.hasOwnProperty('value')) {
-    error("instantiateTableType: 'this' has no 'value' property");
-    return null;
-  }
-
-  let instance = this.value[name] = {
-    type: "table",
-    membertype: memberType,
-    array: true,
-    value: {},
-  }
-
-  return instance;
+  return newtype;
 }
 
 let create = createType("create","object");{
-  defineTypeMember.call(create,"name","typename");
-  defineTypeMember.call(create,"name","membername");
+  defineTypeMember(create,"name","typename");
+  defineTypeMember(create,"name","membername");
 }
 
 // this function must allways be invoked
@@ -483,6 +430,9 @@ spirit.core.call.instantiateTypeName = function(typeName,instanceName){
   return instance;
 }
 
+ // ******************************************************************
+ // stuff for tree-walker, parocessing scan....
+
 let createRequestScannerObject = spirit.core.util.createRequestScannerObject = function(){
   let requestScannerObject = new Object({
     mustSave: false,
@@ -518,12 +468,29 @@ let transformJSON = spirit.core.util.transformJSON = function(jsonInput){
   return '{}';
 }
 
+ // ******************************************************************
+ // functions that can only run in the node environment
+
 if (spirit.core.const.IS_NODE == true) {
+  // give the node environment a specific space in the kernel
+
   const fs = require('fs');
   const path = require('path');
-  const rootDir = process.cwd();
+  const ROOT_DIR = process.cwd();
+  const DEFAULT_SPIRIT_PORT = 65432;
+  
+  spirit.core.node = {
+    const:{
+      ROOT_DIR:ROOT_DIR,
+      DEFAULT_SPIRIT_PORT:DEFAULT_SPIRIT_PORT,
+    },
+    util:{
 
-  function safeJoin(baseDir, requestPath) {
+    },
+  };
+
+  let fsPath = spirit.core.node.util.fsPath =
+  function(baseDir, requestPath) {
     const safePath = path.normalize(requestPath).replace(/^\/+/, '');
     const joined = path.join(baseDir, safePath);
     const relative = path.relative(baseDir, joined);
@@ -535,9 +502,10 @@ if (spirit.core.const.IS_NODE == true) {
     return joined;
   };
 
-  spirit.core.util.loadFile = function(filePath){
+  let loadFile = spirit.core.fs.loadFile = 
+  function(filePath){
 
-    filePath = safeJoin(rootDir,filePath);
+    filePath = fsPath(ROOT_DIR,filePath);
     print('in IS_NODE loadFile(); ' + process.cwd());
   
     try {
@@ -547,12 +515,14 @@ if (spirit.core.const.IS_NODE == true) {
     }
   };
 
-
   module.exports = spirit;
 }
 
-if (spirit.core.const.IS_BROWSER == true) {
-  spirit.core.util.loadFile = function(filePath){
+ // ******************************************************************
+ // functions that can only run in the browser environment
+
+ if (spirit.core.const.IS_BROWSER == true) {
+  spirit.core.fs.loadFile = function(filePath){
     let result = null;
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.open("GET", filePath, false);
@@ -571,7 +541,7 @@ if (spirit.core.const.IS_BROWSER == true) {
  // functions that depend on environment specific other functions
 
 spirit.core.util.require = function(filePath){
-  let script = spirit.core.util.loadFile(filePath);
+  let script = spirit.core.fs.loadFile(filePath);
   if (script==null) return;
   let foo = new Function("spirit",script);
   foo(spirit);
@@ -579,5 +549,6 @@ spirit.core.util.require = function(filePath){
 
 spirit.core.util.require('./js/constants/icons.js');
 spirit.core.util.require('./js/constants/mimetypes.js');
+spirit.core.util.require('./js/fs.js');
 
 } // ******************************************************************

@@ -5,8 +5,7 @@ const spirit = require('./kernel');
 
 console.log(JSON.stringify(spirit,null,2));
 
-const rootDir = process.cwd();
-
+const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
 function sendFile(res, filePath) {
@@ -25,17 +24,7 @@ function sendFile(res, filePath) {
   });
 }
 
-function safeJoin(baseDir, requestPath) {
-  const safePath = path.normalize(requestPath).replace(/^\/+/, '');
-  const joined = path.join(baseDir, safePath);
-  const relative = path.relative(baseDir, joined);
-
-  if (relative.startsWith('..') || path.isAbsolute(relative)) {
-    return null;
-  }
-
-  return joined;
-}
+const fsPath = spirit.core.node.util.fsPath;
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -43,8 +32,8 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET') {
     const filePath = pathname === '/'
-      ? path.join(rootDir, 'index.html')
-      : safeJoin(rootDir, pathname);
+      ? path.join(ROOT_DIR, 'index.html')
+      : fsPath(ROOT_DIR, pathname);
 
     if (!filePath) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -72,7 +61,7 @@ const server = http.createServer((req, res) => {
   res.end('Method not allowed');
 });
 
-const port = process.env.PORT || 7777;
+const port = process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 server.listen(port, () => {
   console.log(`Server listening on http://localhost:${port}`);
 });
