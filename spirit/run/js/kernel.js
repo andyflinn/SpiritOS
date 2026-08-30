@@ -341,29 +341,30 @@ let array = createType("array","object");{
   array.value = {};
 }
 
-let createArrayType = spirit.core.util.createArrayType = function(memberType){
+let createArrayType = spirit.core.util.createArrayType = function(newtypename,memberType){
   if (!isType(memberType)){
     error("createArrayType: memberType '" + memberType + "' is not a valid type");
     return null;
   }
 
   let mType = spirit.core.type[memberType];
-  let newtypename = 'arrayof' + memberType;
-
+  
   if (isType(newtypename)){
     error('createArrayType: type ' + newtypename + ' already exists');
     return null;
   }
 
-  let newtype = createType(newtypename,array);
+  let arraytype = createType(newtypename,'array');
 
-  return newtype;
+  arraytype.membertype = memberType;
+
+  return arraytype;
 }
 
-let create = createType("create","object");{
-  defineTypeMember(create,"name","typename");
-  defineTypeMember(create,"name","membername");
-}
+let create = createType("create","object");
+defineTypeMember(create,"name","typename");
+defineTypeMember(create,"name","membername");
+
 
 // this function must allways be invoked
 // using the call function, in order to

@@ -8,15 +8,14 @@ const FS = spirit.core.fs;
 const createType = spirit.core.util.ceateType;
 const defineTypeMember = spirit.core.util.defineTypeMember;
 
-let fso = UTIL.createType('fso','object');
-fso.abstract = true;
-UTIL.defineTypeMember(fso,'object','info');
-UTIL.defineTypeMember(fso,'string','name');
-UTIL.defineTypeMember(fso,'size','size');
+let file = UTIL.createType('file','object');
 
-let folder = UTIL.createType('folder','fso');
 
-let file = UTIL.createType('file','fso')
+
+let directory = UTIL.createArrayType('directory','fso');
+
+let folder = UTIL.createType('folder','arrayoffso');
+
 
 
 //
