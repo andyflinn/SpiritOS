@@ -483,6 +483,7 @@ if (spirit.core.const.IS_NODE == true) {
   spirit.core.node = {
     module:{
       fs:fs,
+      path:path,
     },
     const:{
       ROOT_DIR:ROOT_DIR,

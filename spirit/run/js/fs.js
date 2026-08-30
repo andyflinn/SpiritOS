@@ -11,6 +11,9 @@ const FS = spirit.core.fs;
 const createType = spirit.core.util.createType;
 const defineTypeMember = spirit.core.util.defineTypeMember;
 
+let discobject = UTIL.createType('discobject','object');
+discobject.abstract = true;
+
 let file = UTIL.createType('file','object');
 defineTypeMember(file,'size','size');
 defineTypeMember(file,'string','mimetype');
@@ -42,16 +45,16 @@ let scanFolder = NODE.scanFolder = function(path,result = []){
 
        }
         
-        
     } catch (err) {
         UTIL.error(err);
     }
+
+    return result;
 } 
 
 let loadFolder = NODE.loadFolder = function(){
-    let result = [];
 
-    scanFolder('./',result);
+    let result = scanFolder('./');
 
     UTIL.print('loadFolder is finished');
     UTIL.print(JSON.stringify(result,null,2));
