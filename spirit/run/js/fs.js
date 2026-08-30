@@ -19,7 +19,6 @@ let folder = UTIL.createArrayType('folder','object');
  // functions that are generated in a node environment only
 
 if (spirit.core.const.IS_NODE) {
-
     const NODE = spirit.core.node;
 }
 

@@ -74,18 +74,6 @@ let isName = spirit.core.util.isName = function(str) {
   return /^[a-z]+$/.test(str);
 }
 
-let checkCircularity = spirit.core.util.checkCircularity =
-function(object = spirit){
-    let pathStack = [];
-    let array = [];
-
-    pathStack.push()
-   function createRef(obj,path){ return {obj,path};}
-
-   
-
-}
-
 let numberToBase26 = spirit.core.util.numberToBase26 = function(n) {
   if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) return null;
   if (n === 0) return 'z';
