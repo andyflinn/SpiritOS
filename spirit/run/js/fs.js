@@ -1,9 +1,5 @@
 'use strict';
 
-if (false) {const rfs = require('fs'); const spirit = require('../kernel')}
-
-const NODE = spirit.core.node;
-const fs = NODE.module.fs;
 
 const UTIL = spirit.core.util;
 const FS = spirit.core.fs;
@@ -23,59 +19,64 @@ let folder = UTIL.createArrayType('folder','object');
  // ******************************************************************
  // functions that are generated in a node environment only
 
-let scanFolder = NODE.scanFolder = function(path,result = []){
-    //UTIL.print('inside of scanFolder "' + path + '"');
+if (spirit.core.const.IS_NODE) {
 
-    try {
-        // Returns an array of fs.Dirent objects
-        const entries = fs.readdirSync(path, { withFileTypes: true });
+    const NODE = spirit.core.node;
+    const fs = NODE.module.fs;
 
-        while (entries.length > 0){
-            let entry = entries.shift();
+    let scanFolder = NODE.scanFolder = function(path,result = []){
+        //UTIL.print('inside of scanFolder "' + path + '"');
 
-            if (entry.isDirectory()) {
+        try {
+            // Returns an array of fs.Dirent objects
+            const entries = fs.readdirSync(path, { withFileTypes: true });
 
-                let subfolder = entry.parentPath + entry.name + '/';
-                scanFolder(subfolder,result);
-                result.push(entry);
+            while (entries.length > 0){
+                let entry = entries.shift();
 
-            } else if (entry.isFile()) {
-                result.push(entry);
-            }
+                if (entry.isDirectory()) {
 
-       }
-        
-    } catch (err) {
-        UTIL.error(err);
-    }
+                    let subfolder = entry.parentPath + entry.name + '/';
+                    scanFolder(subfolder,result);
+                    result.push(entry);
 
-    return result;
-} 
-
-let loadFolder = NODE.loadFolder = function(){
-
-    let result = scanFolder('./');
-
-    UTIL.print('loadFolder is finished');
-    UTIL.print(JSON.stringify(result,null,2));
-
-    for (let i = 0 ; i < result.length ; i++){
-        let entry = result[i];
-        if (entry.isDirectory()) {
-
-            console.log(`📁 Folder: ${entry.parentPath}${entry.name}`);
-
-        } else if (entry.isFile()) {
-
-            console.log(`📄 File: ${entry.parentPath}${entry.name}`);
+                } else if (entry.isFile()) {
+                    result.push(entry);
+                }
 
         }
+            
+        } catch (err) {
+            UTIL.error(err);
+        }
+
+        return result;
+    } 
+
+    let loadFolder = NODE.loadFolder = function(){
+
+        let result = scanFolder('./');
+
+        UTIL.print('loadFolder is finished');
+        UTIL.print(JSON.stringify(result,null,2));
+
+        for (let i = 0 ; i < result.length ; i++){
+            let entry = result[i];
+            if (entry.isDirectory()) {
+
+                console.log(`📁 Folder: ${entry.parentPath}${entry.name}`);
+
+            } else if (entry.isFile()) {
+
+                console.log(`📄 File: ${entry.parentPath}${entry.name}`);
+
+            }
+    }
+
+        return result;
+    }
+
 }
-
-    return result;
-}
-
-
 
 
 //

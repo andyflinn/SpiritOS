@@ -545,15 +545,16 @@ if (spirit.core.const.IS_NODE == true) {
  // ******************************************************************
  // functions that depend on environment specific other functions
 
-spirit.core.util.require = function(filePath){
+spirit.core.util.loadSpiritModule = function(filePath){
+  print('loading spirit module ' + filePath);
   let script = spirit.core.fs.loadFile(filePath);
   if (script==null) return;
   let foo = new Function("spirit",script);
   foo(spirit);
 };
 
-spirit.core.util.require('./js/constants/icons.js');
-spirit.core.util.require('./js/constants/mimetypes.js');
-spirit.core.util.require('./js/fs.js');
+spirit.core.util.loadSpiritModule('./js/constants/icons.js');
+spirit.core.util.loadSpiritModule('./js/constants/mimetypes.js');
+spirit.core.util.loadSpiritModule('./js/fs.js');
 
 } // ******************************************************************
