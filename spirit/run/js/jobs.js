@@ -183,10 +183,28 @@ module.exports = function installJobs(spirit, port) {
       lastTickTime = now;
 
       const jobCounts = { total: 0, byStatus: {} };
+      let fsWatcherJob = null;
       listJobs().forEach(function(j) {
         jobCounts.total++;
         jobCounts.byStatus[j.status] = (jobCounts.byStatus[j.status] || 0) + 1;
+        if (j.type === 'fs-watcher') fsWatcherJob = j;
       });
+
+      // Derived from the fs-watcher job's already-in-memory file list —
+      // no extra filesystem I/O, just tallying what it already scanned.
+      const filesystem = { files: 0, folders: 0, byMimeType: {} };
+      if (fsWatcherJob && Array.isArray(fsWatcherJob.data.files)) {
+        fsWatcherJob.data.files.forEach(function(entry) {
+          if (entry.kind === 'folder') {
+            filesystem.folders++;
+          } else {
+            filesystem.files++;
+            const ext = path.extname(entry.name).toLowerCase();
+            const mimeType = spirit.core.const.MIME_TYPES[ext] || 'application/octet-stream';
+            filesystem.byMimeType[mimeType] = (filesystem.byMimeType[mimeType] || 0) + 1;
+          }
+        });
+      }
 
       updateJob(job.id, {
         data: {
@@ -201,6 +219,7 @@ module.exports = function installJobs(spirit, port) {
           uptimeSeconds: process.uptime(),
           requests: requestCounters,
           jobs: jobCounts,
+          filesystem: filesystem,
           sseConnections: events.listenerCount('job-updated'),
         },
       });
