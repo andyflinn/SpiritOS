@@ -180,6 +180,47 @@
 
       .start-job-form button:hover, .cancel-btn:hover { background: #16487a; }
 
+      #job-manifest-form label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 8px 0;
+        font-size: 13px;
+      }
+
+      #job-manifest-form input, #job-manifest-form select {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        font: inherit;
+        color-scheme: dark; /* tells the browser to render this select's native open-dropdown popup in dark chrome, not the OS default light one */
+      }
+
+      /* Belt-and-suspenders for browsers that don't fully honor color-scheme
+         on the popup: most engines do respect explicit background/color on
+         <option> itself. */
+      #job-manifest-form select option {
+        background: #16213e;
+        color: #eee;
+      }
+
+      #job-manifest-form button {
+        margin-top: 8px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: none;
+        background: #0f3460;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      #job-manifest-form button:hover { background: #16487a; }
+
+      .job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 8px; min-height: 1em; }
+
       .job-start-error {
         color: #ff8080;
         font-size: 13px;
@@ -195,6 +236,27 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       }
 
+      .job-row { cursor: pointer; }
+      .job-row:hover { background: rgba(255, 255, 255, 0.06); }
+
+      .job-log-row td { padding: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+
+      .job-log-panel {
+        background: rgba(0, 0, 0, 0.25);
+        padding: 10px 14px;
+        max-height: 240px;
+        overflow-y: auto;
+        font-size: 12px;
+      }
+
+      .job-log-entry { padding: 2px 0; }
+      .job-log-time {
+        opacity: 0.6;
+        margin-right: 8px;
+        font-family: ui-monospace, Consolas, monospace;
+      }
+      .job-log-empty { opacity: 0.6; font-style: italic; }
+
       @media (max-width: 480px) {
         .app-icon .icon { font-size: 32px; }
         .app-icon .label { font-size: 11px; }
@@ -207,6 +269,7 @@
     <div id="app-container" hidden>
       <div id="app-header">
         <button id="app-close" type="button" title="Back">⬅️</button>
+        <button id="app-home" type="button" title="Home">🏠</button>
         <div id="app-title"></div>
       </div>
       <div id="app-content"></div>
@@ -221,6 +284,7 @@
         var titleEl = document.getElementById('app-title');
         var contentEl = document.getElementById('app-content');
         var closeBtn = document.getElementById('app-close');
+        var homeBtn = document.getElementById('app-home');
 
         var jobsById = new Map();
         var apps = {};
@@ -309,7 +373,14 @@
           switchTo(top.id, top.params);
         }
 
+        function goHome() {
+          if (navStack.length <= 1) return; // already at the bottom of the stack
+          navStack.length = 1; // navStack[0] is always {id:'desktop', params:null}
+          switchTo('desktop', null);
+        }
+
         closeBtn.addEventListener('click', goBack);
+        homeBtn.addEventListener('click', goHome);
 
         function renderActive() {
           if (activeAppId && apps[activeAppId]) {
@@ -391,10 +462,14 @@
             html += tileHtml(d.sseConnections, 'SSE connections');
             html += tileHtml(d.requests.total, 'Requests total');
 
+            var activeJobs = 0;
+            Object.keys(d.jobs.byStatus).forEach(function (status) {
+              if (TERMINAL_STATUSES.indexOf(status) === -1) activeJobs += d.jobs.byStatus[status];
+            });
+            html += tileHtml(activeJobs, 'Active jobs', false, 'jobs');
+
             html += '<div class="stat-tile wide clickable" data-launch-app="files"><div class="label">Files by MIME type</div>' +
               countsHtml(d.filesystem.byMimeType) + '</div>';
-            html += '<div class="stat-tile wide"><div class="label">Jobs by status</div>' +
-              countsHtml(d.jobs.byStatus) + '</div>';
             html += '<div class="stat-tile wide"><div class="label">Requests by method</div>' +
               countsHtml(d.requests.byMethod) + '</div>';
             html += '<div class="stat-tile wide"><div class="label">Requests by status class</div>' +
@@ -548,14 +623,28 @@
           var command = lang === 'js' ? 'node' : lang;
 
           var formEl = document.getElementById('job-manifest-form');
-          formEl.innerHTML = '<h3>' + escapeHtml(manifest.label || scriptPath) + '</h3>' +
-            (manifest.args || []).map(function (arg) {
-              var inputType = arg.type === 'number' ? 'number' : 'text';
+          var argsHtml = (manifest.args || []).map(function (arg) {
+            if (arg.type === 'lm-studio-model') {
+              // Rendered disabled with just the manifest default until the
+              // live fetch below resolves — never blocks starting the job
+              // on that fetch, since the default is already a valid value.
               return '<label>' + escapeHtml(arg.label || arg.name) +
-                '<input type="' + inputType + '" data-arg-name="' + escapeHtml(arg.name) +
-                '" value="' + escapeHtml(arg.default != null ? arg.default : '') + '"></label>';
-            }).join('') +
-            '<button type="button" id="start-manifest-job">Start Job</button>';
+                '<select data-arg-name="' + escapeHtml(arg.name) + '" data-lm-studio-model-select disabled>' +
+                '<option value="' + escapeHtml(arg.default || '') + '">' + escapeHtml(arg.default || '(loading models…)') + '</option>' +
+                '</select></label>';
+            }
+            var inputType = arg.type === 'number' ? 'number' : 'text';
+            return '<label>' + escapeHtml(arg.label || arg.name) +
+              '<input type="' + inputType + '" data-arg-name="' + escapeHtml(arg.name) +
+              '" value="' + escapeHtml(arg.default != null ? arg.default : '') + '"></label>';
+          }).join('');
+
+          formEl.innerHTML = '<div class="stat-tile wide">' +
+            '<h3>' + escapeHtml(manifest.label || scriptPath) + '</h3>' +
+            argsHtml +
+            '<button type="button" id="start-manifest-job">' + ICON.RUN + ' Start Job</button>' +
+            '<div id="job-manifest-note" class="job-manifest-note"></div>' +
+            '</div>';
 
           document.getElementById('start-manifest-job').addEventListener('click', function () {
             var values = {};
@@ -567,6 +656,48 @@
               args: [scriptPath, JSON.stringify(values)],
               type: manifest.label || match[2],
             });
+            launchApp('jobs'); // navigate immediately, don't wait on the request — the Jobs app picks up the new job live via SSE either way
+          });
+
+          // Populate any LM-Studio-model dropdowns live, without blocking the
+          // rest of the form — if LM Studio isn't running, fall back to a
+          // plain text input pre-filled with the manifest default rather
+          // than leaving the field stuck disabled.
+          formEl.querySelectorAll('[data-lm-studio-model-select]').forEach(function (select) {
+            var argName = select.dataset.argName;
+            var defaultValue = select.value;
+            var controller = new AbortController();
+            var timeoutId = setTimeout(function () { controller.abort(); }, 2000);
+
+            // Goes through our own server's /api/lm-studio-models proxy, not
+            // LM Studio directly — LM Studio sends no Access-Control-Allow-
+            // Origin header, so a cross-origin browser fetch to it would be
+            // silently blocked by CORS even when it's perfectly reachable.
+            fetch('/api/lm-studio-models', { signal: controller.signal })
+              .then(function (res) {
+                clearTimeout(timeoutId);
+                if (!res.ok) throw new Error('proxy returned ' + res.status);
+                return res.json();
+              })
+              .then(function (body) {
+                var ids = body.models || [];
+                if (ids.length === 0) throw new Error('no models currently loaded');
+                select.innerHTML = ids.map(function (id) {
+                  return '<option value="' + escapeHtml(id) + '"' + (id === defaultValue ? ' selected' : '') + '>' + escapeHtml(id) + '</option>';
+                }).join('');
+                select.disabled = false;
+              })
+              .catch(function () {
+                clearTimeout(timeoutId);
+                var fallback = document.createElement('input');
+                fallback.type = 'text';
+                fallback.dataset.argName = argName;
+                fallback.value = defaultValue;
+                fallback.title = 'LM Studio unreachable — enter the model id manually';
+                select.replaceWith(fallback);
+                var note = document.getElementById('job-manifest-note');
+                if (note) note.textContent = 'LM Studio not reachable — enter the model id manually.';
+              });
           });
         }
 
@@ -581,8 +712,8 @@
               '<div class="stat-tile wide">' +
                 '<div class="label">Path</div><div class="rows">' + escapeHtml(params.path) + '</div>' +
               '</div>' +
-              '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>' +
-              '<div id="job-manifest-form"></div>';
+              '<div id="job-manifest-form"></div>' +
+              '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>';
             maybeRenderJobForm(container, params.path);
           },
           render: function () {}, // static once mounted — the file's content doesn't live-update
@@ -707,11 +838,22 @@
           error: ICON.WARNING,
         };
 
+        var expandedJobIds = new Set(); // which job rows are currently expanded to show their full log
+
+        function formatLogEntries(job) {
+          if (!job.log || job.log.length === 0) return '<div class="job-log-empty">(no log entries yet)</div>';
+          return job.log.map(function (entry) {
+            return '<div class="job-log-entry"><span class="job-log-time">' +
+              new Date(entry.timestamp).toLocaleTimeString() + '</span>' + escapeHtml(entry.message) + '</div>';
+          }).join('');
+        }
+
         function renderJobRow(job) {
           var icon = STATUS_ICON[job.status] || '';
           var lastLog = job.log && job.log.length ? job.log[job.log.length - 1].message : '';
           var isTerminal = TERMINAL_STATUSES.indexOf(job.status) !== -1;
           var canCancel = job.kind === 'process' && !isTerminal;
+          var isExpanded = expandedJobIds.has(job.id);
 
           var actionHtml = canCancel
             ? '<button type="button" class="cancel-btn" data-job-id="' + escapeHtml(job.id) + '">Cancel</button>'
@@ -719,14 +861,31 @@
               ? '<button type="button" class="cancel-btn" data-delete-job-id="' + escapeHtml(job.id) + '">Delete</button>'
               : '');
 
-          return '<tr>' +
-            '<td>' + icon + ' ' + escapeHtml(job.status) + '</td>' +
+          var mainRow = '<tr class="job-row" data-job-row="' + escapeHtml(job.id) + '">' +
+            '<td>' + (isExpanded ? ICON.POINTDOWN : ICON.POINTRIGHT) + ' ' + icon + ' ' + escapeHtml(job.status) + '</td>' +
             '<td>' + escapeHtml(job.id) + '</td>' +
             '<td>' + escapeHtml(job.kind) + ' / ' + escapeHtml(job.type) + '</td>' +
             '<td>' + new Date(job.updatedAt).toLocaleTimeString() + '</td>' +
             '<td>' + escapeHtml(lastLog) + '</td>' +
             '<td>' + actionHtml + '</td>' +
             '</tr>';
+
+          if (!isExpanded) return mainRow;
+
+          return mainRow + '<tr class="job-log-row"><td colspan="6"><div class="job-log-panel">' +
+            formatLogEntries(job) + '</div></td></tr>';
+        }
+
+        function renderJobsTable() {
+          var tbody = document.getElementById('jobs-tbody');
+          if (!tbody) return;
+
+          var rows = [];
+          jobsById.forEach(function (job) { rows.push(job); });
+          rows.sort(function (a, b) { return a.createdAt - b.createdAt; });
+
+          tbody.innerHTML = rows.map(renderJobRow).join('') ||
+            '<tr><td colspan="6">(no jobs)</td></tr>';
         }
 
         registerApp({
@@ -734,6 +893,8 @@
           name: 'Jobs',
           icon: ICON.LIST,
           mount: function (container) {
+            expandedJobIds = new Set(); // fresh visit starts fully collapsed
+
             container.innerHTML =
               '<form id="start-job-form" class="start-job-form">' +
               '<input type="text" id="job-command" placeholder="command (e.g. node)" required>' +
@@ -779,19 +940,23 @@
                 spirit.core.jobs.delete(deleteBtn.dataset.deleteJobId).catch(function (err) {
                   console.error('delete failed', err);
                 });
+                return;
+              }
+
+              var row = event.target.closest('[data-job-row]');
+              if (row) {
+                var jobId = row.dataset.jobRow;
+                if (expandedJobIds.has(jobId)) {
+                  expandedJobIds.delete(jobId);
+                } else {
+                  expandedJobIds.add(jobId);
+                }
+                renderJobsTable(); // re-render immediately — don't wait for the next live update to reflect the toggle
               }
             });
           },
           render: function () {
-            var tbody = document.getElementById('jobs-tbody');
-            if (!tbody) return;
-
-            var rows = [];
-            jobsById.forEach(function (job) { rows.push(job); });
-            rows.sort(function (a, b) { return a.createdAt - b.createdAt; });
-
-            tbody.innerHTML = rows.map(renderJobRow).join('') ||
-              '<tr><td colspan="6">(no jobs)</td></tr>';
+            renderJobsTable();
           },
         });
 

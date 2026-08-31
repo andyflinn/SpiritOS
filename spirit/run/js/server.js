@@ -164,6 +164,34 @@ function handleFsDelete(req, res) {
   });
 }
 
+// LM Studio's local server sends no Access-Control-Allow-Origin header, so a
+// browser fetch() straight from this page (a different origin/port) is
+// silently blocked by CORS even though LM Studio itself is reachable and
+// responding fine (curl doesn't enforce CORS, only browsers do). Proxying
+// through our own server sidesteps this entirely — server-to-server requests
+// aren't subject to CORS at all.
+function handleLmStudioModels(res) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+  fetch('http://localhost:1234/v1/models', { signal: controller.signal })
+    .then((response) => {
+      clearTimeout(timeoutId);
+      if (!response.ok) throw new Error('LM Studio returned ' + response.status);
+      return response.json();
+    })
+    .then((body) => {
+      const ids = (body.data || []).map((m) => m.id);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ models: ids }));
+    })
+    .catch(() => {
+      clearTimeout(timeoutId);
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ models: [], error: 'LM Studio unreachable' }));
+    });
+}
+
 const server = http.createServer((req, res) => {
   requestCounters.total++;
   requestCounters.byMethod[req.method] = (requestCounters.byMethod[req.method] || 0) + 1;
@@ -183,6 +211,11 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && pathname === '/api/jobs') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(jobs.listJobs()));
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/lm-studio-models') {
+    handleLmStudioModels(res);
     return;
   }
 

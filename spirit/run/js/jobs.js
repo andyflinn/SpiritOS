@@ -12,6 +12,16 @@ const DEFAULT_STATS_INTERVAL_MS = 2000;
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'stopped']);
 
+function formatDuration(ms) {
+  const totalSeconds = Math.round(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return hours + 'h ' + minutes + 'm ' + seconds + 's';
+  if (minutes > 0) return minutes + 'm ' + seconds + 's';
+  return seconds + 's';
+}
+
 module.exports = function installJobs(spirit, port) {
   const scanFolder = spirit.core.node.util.scanFolder;
 
@@ -39,6 +49,13 @@ module.exports = function installJobs(spirit, port) {
     return job;
   }
 
+  function appendLog(job, message) {
+    job.log.push({ timestamp: Date.now(), message: message });
+    if (job.log.length > MAX_LOG_ENTRIES) {
+      job.log.splice(0, job.log.length - MAX_LOG_ENTRIES);
+    }
+  }
+
   function updateJob(id, patch) {
     const job = jobsMap.get(id);
     if (!job) return null;
@@ -55,13 +72,22 @@ module.exports = function installJobs(spirit, port) {
     }
 
     if (typeof patch.logMessage === 'string') {
-      job.log.push({ timestamp: Date.now(), message: patch.logMessage });
-      if (job.log.length > MAX_LOG_ENTRIES) {
-        job.log.splice(0, job.log.length - MAX_LOG_ENTRIES);
-      }
+      appendLog(job, patch.logMessage);
     }
 
     job.updatedAt = Date.now();
+
+    // The server's own record of completion, independent of whatever the job
+    // itself logged — covers every path to a terminal state uniformly
+    // (explicit complete()/fail() calls, the child-exit-code fallback for
+    // scripts that never report their own status, and cancellation), so a
+    // performance figure is always present regardless of how the job ended.
+    if (patch.status && TERMINAL_STATUSES.has(patch.status)) {
+      const durationMs = job.updatedAt - job.createdAt;
+      appendLog(job, 'Job ' + job.status + ' at ' + new Date(job.updatedAt).toLocaleString() +
+        ', running for ' + formatDuration(durationMs));
+    }
+
     events.emit('job-updated', job);
     return job;
   }

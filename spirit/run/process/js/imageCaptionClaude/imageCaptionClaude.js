@@ -74,9 +74,13 @@ async function main() {
   let processed = 0;
   let failed = 0;
 
-  for (const fullPath of images) {
+  for (let i = 0; i < images.length; i++) {
+    const fullPath = images[i];
     const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, '/');
     const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
+    const percent = Math.round((i / images.length) * 100);
+
+    await spirit.core.jobs.log(percent + '% done, processing ' + relativePath);
 
     try {
       const result = await captionImage(fullPath);
@@ -108,6 +112,7 @@ async function main() {
     }
   }
 
+  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + failed + ' failed, ' + images.length + ' total');
   await spirit.core.jobs.complete({ total: images.length, processed: processed, failed: failed });
 }
 

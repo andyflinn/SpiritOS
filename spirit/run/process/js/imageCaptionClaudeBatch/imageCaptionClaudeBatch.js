@@ -73,6 +73,7 @@ async function main() {
   await spirit.core.jobs.log('found ' + images.length + ' image(s) under media/ — submitting as one batch');
 
   if (images.length === 0) {
+    await spirit.core.jobs.log('Completed: 0 processed, 0 failed, 0 total');
     await spirit.core.jobs.complete({ total: 0, processed: 0, failed: 0 });
     return;
   }
@@ -133,6 +134,7 @@ async function main() {
     }
   }
 
+  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + failed + ' failed, ' + images.length + ' total (batch ' + batch.id + ')');
   await spirit.core.jobs.complete({ total: images.length, processed: processed, failed: failed, batchId: batch.id });
 }
 
