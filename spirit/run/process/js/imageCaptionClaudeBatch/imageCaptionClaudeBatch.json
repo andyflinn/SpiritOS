@@ -1,0 +1,5 @@
+{
+  "label": "Image Caption (Claude, batch)",
+  "description": "Submits every image under media/ as one Claude Batch API job — 50% cheaper than sync, fully async (up to 24h). Requires your own ANTHROPIC_API_KEY with billing configured at console.anthropic.com.",
+  "args": []
+}

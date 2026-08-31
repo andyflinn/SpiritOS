@@ -1,0 +1,8 @@
+{
+  "name": "spiritos-process-image-caption-claude",
+  "private": true,
+  "description": "SpiritOS process script: captions/tags images under media/ using the Claude API (sync, one request per image)",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0"
+  }
+}
