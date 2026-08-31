@@ -20,20 +20,12 @@ const SPIRIT_NAME = 'SpiritOS';
 // constants
 const DEBUG = true;
 
-// these are used for base-26 conversion, where z=0, a=1, b=2, ..., y=25
-const BASE26_DIGITS = "zabcdefghijklmnopqrstuvwxyz";
-const POWERS_OF_26 = [1,26,26**2,26**3,26**4,26**5,26**6,26**7,26**8,26**9,26**10,26**11];
-
-//const ICON = require('./constants/icons.js');
-
 // this here is the main spirit object, which contains all the core functionality of the SpiritOS kernel 
 const spirit = {
   type: SPIRIT_NAME,
   core: {
     const: {
-      BASE26_DIGITS: BASE26_DIGITS,
       KERNEL_DEBUG: DEBUG,
-      POWERS_OF_26: POWERS_OF_26,
       IS_NODE:isNode(),
       IS_BROWSER:isBrowser(),
     },
@@ -50,20 +42,13 @@ const spirit = {
 
 
 // use this for old fashioned console.log debugging, which can be turned on and off with the DEBUG constant
-let print = spirit.core.util.print = function(str){
-  if (DEBUG) {
-    console.log(str);
-  }
+let print = spirit.core.util.print = function(str){ if (DEBUG) { console.log(str); }
 }
 
 // use this for error messages, which will always be printed to the console
 let error = spirit.core.util.error = function(str){
   console.error('ERROR: ' + str);
-  return {
-    error:{
-      string:str,
-    }
-  }; 
+  return { error:{ string:str, } }; 
 }
 
  // ******************************************************************
