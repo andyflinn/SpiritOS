@@ -1,5 +1,0 @@
-{
-  "label": "Image Caption (LM Studio)",
-  "description": "Uses a local LM Studio vision model to write a caption and comma-separated tags for each image in media/, into its own sidecar key",
-  "args": []
-}

@@ -3,9 +3,9 @@ const path = require('path');
 const spirit = require('../../../js/kernel.js');
 
 // LM Studio's local OpenAI-compatible server. Edit directly here if your
-// setup differs — no manifest args for this, matching imageStats.js's style.
+// setup differs — no manifest arg for the URL itself, just the model.
 const LM_STUDIO_URL = 'http://localhost:1234/v1/chat/completions';
-const MODEL = 'prism-ml/bonsai-27b'; // must be vision-capable
+const DEFAULT_MODEL = 'prism-ml/bonsai-27b'; // used if this script is run without the args JSON (e.g. directly from the command line)
 
 const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
 const MIME_BY_EXT = {
@@ -27,7 +27,7 @@ function findImages(rootDir) {
     .filter((fullPath) => IMAGE_EXTENSIONS.has(path.extname(fullPath).toLowerCase()));
 }
 
-async function captionImage(fullPath) {
+async function captionImage(fullPath, model) {
   const ext = path.extname(fullPath).toLowerCase();
   const base64 = fs.readFileSync(fullPath).toString('base64');
   const dataUrl = 'data:' + MIME_BY_EXT[ext] + ';base64,' + base64;
@@ -36,12 +36,14 @@ async function captionImage(fullPath) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: MODEL,
+      model: model,
       temperature: 0.2,
-      // Bonsai does extensive chain-of-thought before answering — it burned
-      // ~1500 reasoning tokens on this exact prompt in testing, well past a
-      // "normal" chat max_tokens. Too low a budget means the model gets cut
-      // off mid-reasoning and content comes back empty, not truncated text.
+      // Generous budget on purpose: some local vision models (confirmed with
+      // Bonsai-27B) spend a large, unpredictable number of tokens on hidden
+      // chain-of-thought before writing an answer at all. Too low a
+      // max_tokens produces a silently empty response, not truncated text —
+      // this matters even more here since you may be trying models whose
+      // reasoning behavior you don't know yet.
       max_tokens: 3000,
       messages: [{
         role: 'user',
@@ -60,7 +62,7 @@ async function captionImage(fullPath) {
   const body = await response.json();
   const choice = body.choices[0];
   if (choice.finish_reason === 'length') {
-    await spirit.core.jobs.log('warning: response for ' + path.basename(fullPath) + ' was cut off (finish_reason=length) — max_tokens may still be too low for this image');
+    await spirit.core.jobs.log('warning: response for ' + path.basename(fullPath) + ' was cut off (finish_reason=length) — max_tokens may still be too low for this model');
   }
   const raw = (choice.message.content || '').trim();
 
@@ -74,11 +76,15 @@ async function captionImage(fullPath) {
 }
 
 async function main() {
+  let args = {};
+  try { args = JSON.parse(process.argv[2] || '{}'); } catch (e) { /* fall through to defaults */ }
+  const model = args.model || DEFAULT_MODEL;
+
   const rootDir = spirit.core.node.const.ROOT_DIR;
   const mediaDir = path.join(rootDir, 'media');
   const images = findImages(mediaDir);
 
-  await spirit.core.jobs.log('found ' + images.length + ' image(s) under media/');
+  await spirit.core.jobs.log('using model "' + model + '", found ' + images.length + ' image(s) under media/');
 
   let processed = 0;
   let failed = 0;
@@ -88,17 +94,21 @@ async function main() {
     const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
 
     try {
-      const result = await captionImage(fullPath);
+      const result = await captionImage(fullPath, model);
 
       const existingRaw = spirit.core.fs.loadFile(sidecarPath);
       let sidecar = {};
       if (existingRaw != null) {
         try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
       }
-      sidecar.spiritImageCaption = {
+      // Keyed by model id under one shared key, so trying several models
+      // while you search for one that fits your machine leaves every
+      // attempt's result available for comparison, rather than each new
+      // model overwriting the last one's output.
+      sidecar.spiritImageCaptionLmStudio = sidecar.spiritImageCaptionLmStudio || {};
+      sidecar.spiritImageCaptionLmStudio[model] = {
         caption: result.caption,
         tags: result.tags,
-        model: MODEL,
         computedAt: Date.now(),
       };
 
@@ -114,7 +124,7 @@ async function main() {
     }
   }
 
-  await spirit.core.jobs.complete({ total: images.length, processed: processed, failed: failed });
+  await spirit.core.jobs.complete({ total: images.length, processed: processed, failed: failed, model: model });
 }
 
 main()

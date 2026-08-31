@@ -156,6 +156,13 @@ if (isNode()) {
     }
   };
 
+  // Directories no tool should ever need to see: dependency trees and VCS
+  // internals. Skipped entirely (not recursed into, not added to result) —
+  // every consumer of scanFolder (the fs-watcher, the Files/Processes apps)
+  // otherwise ends up scanning/listing thousands of irrelevant files the
+  // moment any process script gets its own node_modules.
+  const SCAN_EXCLUDED_DIR_NAMES = new Set(['node_modules', '.git']);
+
   let scanFolder = spirit.core.node.util.scanFolder = function(dirPath,result = []){
       //print('inside of scanFolder "' + dirPath + '"');
 
@@ -167,6 +174,7 @@ if (isNode()) {
               let entry = entries.shift();
 
               if (entry.isDirectory()) {
+                  if (SCAN_EXCLUDED_DIR_NAMES.has(entry.name)) continue;
 
                   let subfolder = path.join(entry.parentPath, entry.name);
                   scanFolder(subfolder,result);

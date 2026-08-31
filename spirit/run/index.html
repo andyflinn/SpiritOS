@@ -625,7 +625,7 @@
               return;
             }
             lastProcessBrowserEntries = job.data.files
-              .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/[^/]+\/.+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
+              .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/[^/]+\/[^/]+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
               .map(function (f) {
                 var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.[^.]+$/, '.json'));
                 var manifest = null;

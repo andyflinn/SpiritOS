@@ -1,0 +1,7 @@
+{
+  "label": "Image Caption (LM Studio)",
+  "description": "Captions/tags images under media/ using any vision-capable model currently loaded in LM Studio. Enter the exact model id as shown by LM Studio (e.g. prism-ml/bonsai-27b, qwen/qwen3.8-27b). Each model's result is kept separately in the sidecar, so trying several while you find one that fits your machine doesn't lose earlier attempts.",
+  "args": [
+    { "name": "model", "type": "string", "label": "LM Studio model ID", "default": "prism-ml/bonsai-27b" }
+  ]
+}
