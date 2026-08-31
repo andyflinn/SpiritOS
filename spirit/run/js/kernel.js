@@ -476,6 +476,7 @@ if (isNode()) {
 
   const fs = require('fs');
   const path = require('path');
+  const http = require('http');
   const ROOT_DIR = process.cwd();
   const DEFAULT_SPIRIT_PORT = 65432;
   
@@ -514,19 +515,19 @@ if (isNode()) {
     }
   };
 
-  let scanFolder = spirit.core.node.util.scanFolder = function(path,result = []){
-      //UTIL.print('inside of scanFolder "' + path + '"');
+  let scanFolder = spirit.core.node.util.scanFolder = function(dirPath,result = []){
+      //print('inside of scanFolder "' + dirPath + '"');
 
       try {
           // Returns an array of fs.Dirent objects
-          const entries = fs.readdirSync(path, { withFileTypes: true });
+          const entries = fs.readdirSync(dirPath, { withFileTypes: true });
 
           while (entries.length > 0){
               let entry = entries.shift();
 
               if (entry.isDirectory()) {
 
-                  let subfolder = entry.parentPath + entry.name + '/';
+                  let subfolder = path.join(entry.parentPath, entry.name);
                   scanFolder(subfolder,result);
                   result.push(entry);
 
@@ -537,7 +538,7 @@ if (isNode()) {
       }
           
       } catch (err) {
-          UTIL.error(err);
+          error(err);
       }
 
       return result;
@@ -566,6 +567,50 @@ if (isNode()) {
       return result;
   }
 
+  // spirit.core.jobs: the external caller's API for the jobs subsystem
+  // (distinct from spirit.core.node.jobs, the server's own registry,
+  // installed separately by jobs.js only inside the server process).
+  // A spawned job process calls report()/log()/complete()/fail() to
+  // talk back to the server that spawned it, using the SPIRIT_JOB_ID /
+  // SPIRIT_CALLBACK_URL env vars the server provides.
+  spirit.core.jobs = {
+    report(patch) {
+      const jobId = process.env.SPIRIT_JOB_ID;
+      const url = process.env.SPIRIT_CALLBACK_URL;
+      if (!jobId || !url) {
+        return Promise.reject(new Error('spirit.core.jobs.report() called outside a spawned job context (SPIRIT_JOB_ID/SPIRIT_CALLBACK_URL unset)'));
+      }
+      return new Promise((resolve, reject) => {
+        const body = JSON.stringify(patch);
+        const req = http.request(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        }, res => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => {
+            try {
+              resolve(data ? JSON.parse(data) : null);
+            } catch (err) {
+              resolve(null);
+            }
+          });
+        });
+        req.on('error', reject);
+        req.end(body);
+      });
+    },
+    log(message) {
+      return spirit.core.jobs.report({ logMessage: message });
+    },
+    complete(data) {
+      return spirit.core.jobs.report({ status: 'completed', data });
+    },
+    fail(error) {
+      return spirit.core.jobs.report({ status: 'failed', data: { error: String(error) } });
+    },
+  };
+
   module.exports = spirit;
 }
 
@@ -584,7 +629,78 @@ if (isNode()) {
     return result;
   };
 
-  
+  // spirit.core.jobs: browser-side API for the jobs subsystem — wraps
+  // EventSource for live updates and XHR for the request/response calls,
+  // so a page never has to hand-roll either.
+  spirit.core.jobs = {
+    subscribe: function(handlers) {
+      handlers = handlers || {};
+      let source = new EventSource('/api/events');
+      source.addEventListener('snapshot', function(e) {
+        if (handlers.onSnapshot) handlers.onSnapshot(JSON.parse(e.data).jobs);
+      });
+      source.addEventListener('job-updated', function(e) {
+        if (handlers.onUpdate) handlers.onUpdate(JSON.parse(e.data));
+      });
+      return function unsubscribe() { source.close(); };
+    },
+    start: function(options) {
+      return new Promise(function(resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/jobs', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            reject(new Error('failed to start job: ' + xhr.status));
+          }
+        };
+        xhr.send(JSON.stringify(options || {}));
+      });
+    },
+    list: function() {
+      return new Promise(function(resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/api/jobs', true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          if (xhr.status === 200) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            reject(new Error('failed to list jobs: ' + xhr.status));
+          }
+        };
+        xhr.send();
+      });
+    },
+    cancel: function(id) {
+      return new Promise(function(resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/jobs/' + encodeURIComponent(id) + '/cancel', true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            reject(new Error('failed to cancel job: ' + xhr.status));
+          }
+        };
+        xhr.send();
+      });
+    },
+  };
+
+  // Self-starting: the moment kernel.js runs in a browser, connect and log
+  // every event via the shared print() (gated by the DEBUG constant above)
+  // so the live event stream is observable in the console with zero UI
+  // built on top of it.
+  spirit.core.jobs.subscribe({
+    onSnapshot: function(jobs) { print('[jobs] snapshot: ' + JSON.stringify(jobs)); },
+    onUpdate: function(job) { print('[jobs] updated: ' + JSON.stringify(job)); },
+  });
+
   window.spirit = spirit;
 }
 
@@ -603,5 +719,6 @@ spirit.core.util.loadSpiritModule = function(filePath){
 spirit.core.util.loadSpiritModule('./js/constants/icons.js');
 spirit.core.util.loadSpiritModule('./js/constants/mimetypes.js');
 spirit.core.util.loadSpiritModule('./js/fs.js');
+
 
 } // ******************************************************************
