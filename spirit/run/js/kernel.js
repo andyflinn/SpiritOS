@@ -993,7 +993,8 @@ const MIME_TYPES = spirit.core.const.MIME_TYPES = {
   '.webp': 'image/webp',
   '.mp3': 'audio/mpeg',
   '.wav': 'audio/wav',
-  '.mp4': 'video/mp4'
+  '.mp4': 'video/mp4',
+  '.py': 'text/x-python'
 };
 
 let discobject = createType('discobject','object');

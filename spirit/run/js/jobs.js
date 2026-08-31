@@ -92,17 +92,19 @@ module.exports = function installJobs(spirit, port) {
     return true;
   }
 
-  function mapEntry(entry) {
+  function mapEntry(entry, rootDir) {
+    const full = path.join(entry.parentPath, entry.name);
     return {
       name: entry.name,
       parentPath: entry.parentPath,
-      fullPath: path.join(entry.parentPath, entry.name),
+      fullPath: full,
+      relativePath: path.relative(rootDir, full).replace(/\\/g, '/'),
       kind: entry.isDirectory() ? 'folder' : 'file',
     };
   }
 
   function startFsWatcherJob(rootDir) {
-    const files = scanFolder(rootDir).map(mapEntry);
+    const files = scanFolder(rootDir).map(function(entry) { return mapEntry(entry, rootDir); });
     const job = createJob('permanent', 'fs-watcher', { files: files });
 
     let pending = null;
@@ -110,7 +112,7 @@ module.exports = function installJobs(spirit, port) {
       if (pending) return;
       pending = setTimeout(function() {
         pending = null;
-        const rescannedFiles = scanFolder(rootDir).map(mapEntry);
+        const rescannedFiles = scanFolder(rootDir).map(function(entry) { return mapEntry(entry, rootDir); });
         updateJob(job.id, { data: { files: rescannedFiles, lastEvent: { eventType: eventType, filename: filename } } });
       }, RESCAN_DEBOUNCE_MS);
     }

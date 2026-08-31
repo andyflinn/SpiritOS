@@ -118,6 +118,40 @@
 
       #file-detail { margin-top: 16px; }
 
+      .code-view {
+        background: rgba(0, 0, 0, 0.25);
+        border-radius: 10px;
+        padding: 12px;
+        overflow-x: auto;
+        white-space: pre;
+        font-family: ui-monospace, Consolas, monospace;
+        font-size: 13px;
+        margin-top: 12px;
+      }
+
+      .media-view { max-width: 100%; margin-top: 12px; display: block; }
+
+      #process-search {
+        width: 100%;
+        padding: 6px 8px;
+        margin-bottom: 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        font: inherit;
+      }
+
+      .process-entry {
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+      }
+
+      .process-entry:hover { background: rgba(255, 255, 255, 0.08); }
+      .process-entry-label { font-weight: 600; }
+      .process-entry-desc { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+
       .start-job-form {
         display: flex;
         gap: 8px;
@@ -191,10 +225,12 @@
         var jobsById = new Map();
         var apps = {};
         var activeAppId = null;
-        var navStack = ['desktop']; // last entry is the current screen; 'desktop' or an app id
+        var activeParams = null;
+        var navStack = [{ id: 'desktop', params: null }]; // last entry is the current screen
 
         function registerApp(app) {
           apps[app.id] = app;
+          if (app.hidden) return; // reachable only via launchApp(id, params) from another app, no desktop icon
 
           var iconEl = document.createElement('div');
           iconEl.className = 'app-icon';
@@ -207,13 +243,14 @@
 
         // Switches the visible screen without touching navStack — the stack
         // bookkeeping lives in launchApp/goBack, this just mounts/unmounts.
-        function switchTo(id) {
+        function switchTo(id, params) {
           if (activeAppId && apps[activeAppId] && typeof apps[activeAppId].unmount === 'function') {
             apps[activeAppId].unmount();
           }
 
           if (id === 'desktop') {
             activeAppId = null;
+            activeParams = null;
             containerEl.hidden = true;
             desktopEl.hidden = false;
             return;
@@ -221,48 +258,62 @@
 
           var app = apps[id];
           activeAppId = id;
+          activeParams = params;
           titleEl.textContent = app.name;
           contentEl.innerHTML = '';
           desktopEl.hidden = true;
           containerEl.hidden = false;
 
-          app.mount(contentEl);
-          app.render(jobsById);
+          app.mount(contentEl, params);
+          app.render(jobsById, params);
         }
 
         // Launching an app pushes onto the nav stack, so a later back-press
         // returns to wherever the launch happened from (desktop, or another
         // app — e.g. clicking a Stats tile that jumps into Files) rather than
         // always jumping straight to the desktop.
-        function launchApp(id) {
+        function launchApp(id, params) {
+          params = params || null;
           if (!apps[id]) return;
-          if (navStack[navStack.length - 1] === id) return; // already here
 
-          // If this app already exists elsewhere in the stack, collapse back
-          // to that occurrence instead of pushing a duplicate — otherwise
-          // revisiting a screen would make the stack (and the back button)
-          // walk through repeats on the way out.
-          var existingIndex = navStack.indexOf(id);
+          var top = navStack[navStack.length - 1];
+          if (top.id === id && JSON.stringify(top.params) === JSON.stringify(params)) return; // already here
+
+          // If this exact screen (id + params) already exists elsewhere in the
+          // stack, collapse back to that occurrence instead of pushing a
+          // duplicate — otherwise revisiting a screen would make the stack
+          // (and the back button) walk through repeats on the way out. Two
+          // Code Viewer entries for two different files are NOT the same
+          // screen, so they correctly stay as distinct stack entries.
+          var existingIndex = -1;
+          for (var i = 0; i < navStack.length; i++) {
+            if (navStack[i].id === id && JSON.stringify(navStack[i].params) === JSON.stringify(params)) {
+              existingIndex = i;
+              break;
+            }
+          }
+
           if (existingIndex !== -1) {
             navStack.length = existingIndex + 1;
           } else {
-            navStack.push(id);
+            navStack.push({ id: id, params: params });
           }
 
-          switchTo(id);
+          switchTo(id, params);
         }
 
         function goBack() {
           if (navStack.length <= 1) return; // already at the bottom of the stack
           navStack.pop();
-          switchTo(navStack[navStack.length - 1]);
+          var top = navStack[navStack.length - 1];
+          switchTo(top.id, top.params);
         }
 
         closeBtn.addEventListener('click', goBack);
 
         function renderActive() {
           if (activeAppId && apps[activeAppId]) {
-            apps[activeAppId].render(jobsById);
+            apps[activeAppId].render(jobsById, activeParams);
           }
         }
 
@@ -366,11 +417,27 @@
           return spirit.core.const.MIME_TYPES[ext] || 'application/octet-stream';
         }
 
+        function classifyMimeType(mimeType) {
+          if (mimeType.indexOf('image/') === 0) return 'image';
+          if (mimeType.indexOf('audio/') === 0) return 'audio';
+          if (mimeType.indexOf('video/') === 0) return 'video';
+          if (mimeType.indexOf('text/') === 0 || mimeType.indexOf('javascript') !== -1 || mimeType.indexOf('json') !== -1) return 'code';
+          return null;
+        }
+
         function iconForFile(mimeType) {
-          if (mimeType.indexOf('image/') === 0) return ICON.VIEW;
-          if (mimeType.indexOf('text/') === 0 || mimeType.indexOf('javascript') !== -1 || mimeType.indexOf('json') !== -1) return ICON.CODE;
+          var category = classifyMimeType(mimeType);
+          if (category === 'image' || category === 'audio' || category === 'video') return ICON.VIEW;
+          if (category === 'code') return ICON.CODE;
           return ICON.FILE;
         }
+
+        var CATEGORY_APP_HANDLERS = {
+          code: 'code-viewer',
+          image: 'media-viewer',
+          audio: 'media-viewer',
+          video: 'media-viewer',
+        };
 
         function buildTree(files) {
           var byPath = new Map();
@@ -401,7 +468,7 @@
 
           var mimeType = mimeTypeForName(entry.name);
           return '<div class="file-row" data-name="' + escapeHtml(entry.name) + '" data-path="' +
-            escapeHtml(entry.fullPath) + '" data-mime="' + escapeHtml(mimeType) + '">' +
+            escapeHtml(entry.relativePath) + '" data-mime="' + escapeHtml(mimeType) + '">' +
             iconForFile(mimeType) + ' ' + escapeHtml(entry.name) + '</div>';
         }
 
@@ -424,6 +491,11 @@
             document.getElementById('file-tree').addEventListener('click', function (event) {
               var row = event.target.closest('.file-row');
               if (!row) return;
+              var handlerId = CATEGORY_APP_HANDLERS[classifyMimeType(row.dataset.mime)];
+              if (handlerId) {
+                launchApp(handlerId, { path: row.dataset.path });
+                return;
+              }
               showFileDetail(row.dataset.name, row.dataset.path, row.dataset.mime);
             });
           },
@@ -441,6 +513,174 @@
             treeEl.innerHTML = tree.roots.map(function (r) {
               return renderTreeNode(r, tree.childrenByPath);
             }).join('') || '(empty)';
+          },
+        });
+
+        // ---- Code Viewer app ----
+        // Only reachable via launchApp('code-viewer', { path }) from Files or
+        // the Processes app — no desktop icon (hidden: true).
+        function maybeRenderJobForm(container, scriptPath) {
+          var match = scriptPath.match(/^process\/([^/]+)\/([^/]+)\/(.+)\.js$/);
+          if (!match) return;
+
+          var lang = match[1]; // 'js' -> node, anything else used as the literal command name
+          var manifestPath = scriptPath.replace(/\.js$/, '.json');
+          var manifestRaw = spirit.core.fs.loadFile(manifestPath);
+          if (manifestRaw == null) return; // no manifest, no form — just a plain code view
+
+          var manifest;
+          try {
+            manifest = JSON.parse(manifestRaw); // { label, description?, args: [{name, type, label, default}, ...] }
+          } catch (e) {
+            return;
+          }
+
+          var command = lang === 'js' ? 'node' : lang;
+
+          var formEl = document.getElementById('job-manifest-form');
+          formEl.innerHTML = '<h3>' + escapeHtml(manifest.label || scriptPath) + '</h3>' +
+            (manifest.args || []).map(function (arg) {
+              var inputType = arg.type === 'number' ? 'number' : 'text';
+              return '<label>' + escapeHtml(arg.label || arg.name) +
+                '<input type="' + inputType + '" data-arg-name="' + escapeHtml(arg.name) +
+                '" value="' + escapeHtml(arg.default != null ? arg.default : '') + '"></label>';
+            }).join('') +
+            '<button type="button" id="start-manifest-job">Start Job</button>';
+
+          document.getElementById('start-manifest-job').addEventListener('click', function () {
+            var values = {};
+            formEl.querySelectorAll('[data-arg-name]').forEach(function (input) {
+              values[input.dataset.argName] = input.type === 'number' ? Number(input.value) : input.value;
+            });
+            spirit.core.jobs.start({
+              command: command,
+              args: [scriptPath, JSON.stringify(values)],
+              type: manifest.label || match[2],
+            });
+          });
+        }
+
+        registerApp({
+          id: 'code-viewer',
+          name: 'Code Viewer',
+          icon: ICON.CODE,
+          hidden: true,
+          mount: function (container, params) {
+            var content = spirit.core.fs.loadFile(params.path);
+            container.innerHTML =
+              '<div class="stat-tile wide">' +
+                '<div class="label">Path</div><div class="rows">' + escapeHtml(params.path) + '</div>' +
+              '</div>' +
+              '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>' +
+              '<div id="job-manifest-form"></div>';
+            maybeRenderJobForm(container, params.path);
+          },
+          render: function () {}, // static once mounted — the file's content doesn't live-update
+        });
+
+        // ---- Media Viewer app (image/audio/video) ----
+        var MEDIA_TAG_BY_CATEGORY = {
+          image: { tag: 'img', extraAttrs: '' },
+          audio: { tag: 'audio', extraAttrs: ' controls' },
+          video: { tag: 'video', extraAttrs: ' controls' },
+        };
+
+        registerApp({
+          id: 'media-viewer',
+          name: 'Media Viewer',
+          icon: ICON.VIEW,
+          hidden: true,
+          mount: function (container, params) {
+            var category = classifyMimeType(mimeTypeForName(params.path));
+            var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
+            container.innerHTML =
+              '<div class="stat-tile wide"><div class="label">Path</div><div class="rows">' + escapeHtml(params.path) + '</div></div>' +
+              '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(params.path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>';
+          },
+          render: function () {},
+        });
+
+        // ---- Processes app ----
+        var lastProcessBrowserJob = null;
+        var lastProcessBrowserEntries = null; // cached {label, description, relativePath} list, independent of the search filter
+
+        function renderProcessList() {
+          var listEl = document.getElementById('process-browser-list');
+          if (!listEl) return;
+
+          if (!lastProcessBrowserEntries) {
+            var job = lastProcessBrowserJob;
+            if (!job || !job.data || !Array.isArray(job.data.files)) {
+              listEl.textContent = 'waiting for file list…';
+              return;
+            }
+            lastProcessBrowserEntries = job.data.files
+              .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/[^/]+\/.+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
+              .map(function (f) {
+                var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.[^.]+$/, '.json'));
+                var manifest = null;
+                try { manifest = manifestRaw ? JSON.parse(manifestRaw) : null; } catch (e) {}
+                return {
+                  relativePath: f.relativePath,
+                  label: (manifest && manifest.label) || f.name,
+                  description: (manifest && manifest.description) || '',
+                };
+              });
+          }
+
+          var query = (document.getElementById('process-search').value || '').toLowerCase();
+          var filtered = lastProcessBrowserEntries.filter(function (e) {
+            return !query || e.label.toLowerCase().indexOf(query) !== -1 ||
+              e.description.toLowerCase().indexOf(query) !== -1 ||
+              e.relativePath.toLowerCase().indexOf(query) !== -1;
+          });
+
+          listEl.innerHTML = filtered.map(function (e) {
+            return '<div class="process-entry" data-process-path="' + escapeHtml(e.relativePath) + '">' +
+              '<div class="process-entry-label">' + escapeHtml(e.label) + '</div>' +
+              (e.description ? '<div class="process-entry-desc">' + escapeHtml(e.description) + '</div>' : '') +
+              '</div>';
+          }).join('') || '(no matching processes)';
+        }
+
+        registerApp({
+          id: 'process-browser',
+          name: 'Processes',
+          icon: ICON.ROCKET,
+          mount: function (container) {
+            // Force the next render() to actually populate the list — mount()
+            // always wipes the DOM clean, so a cache hit from a previous visit
+            // (same fs-watcher job reference, nothing changed on disk) must
+            // not be allowed to skip repopulating a freshly-emptied container.
+            lastProcessBrowserJob = null;
+            lastProcessBrowserEntries = null;
+
+            container.innerHTML =
+              '<input type="text" id="process-search" placeholder="Search processes…">' +
+              '<div id="process-browser-list"></div>';
+
+            document.getElementById('process-search').addEventListener('input', function () {
+              renderProcessList();
+            });
+
+            document.getElementById('process-browser-list').addEventListener('click', function (event) {
+              var entry = event.target.closest('[data-process-path]');
+              if (!entry) return;
+              var mimeType = mimeTypeForName(entry.dataset.processPath);
+              var handlerId = CATEGORY_APP_HANDLERS[classifyMimeType(mimeType)];
+              if (!handlerId) {
+                alert('No viewer registered yet for this file type (' + mimeType + ').');
+                return;
+              }
+              launchApp(handlerId, { path: entry.dataset.processPath });
+            });
+          },
+          render: function () {
+            var job = findJobByType('fs-watcher');
+            if (job === lastProcessBrowserJob) return; // fs-watcher data unchanged — skip re-scanning/re-fetching manifests
+            lastProcessBrowserJob = job;
+            lastProcessBrowserEntries = null;
+            renderProcessList();
           },
         });
 
