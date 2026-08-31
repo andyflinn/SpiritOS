@@ -583,6 +583,7 @@ const ICON = spirit.core.const.ICON = {
     NO: '❌',
     START: '🔵',
     STOP: '🟠',
+    RUN:'🏃‍♂️',
     NUMBER: '🔢',
     STRING: '🔤',
     BOOLEAN: '🔘',
