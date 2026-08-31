@@ -117,10 +117,12 @@ if (isNode()) {
   // saveFile/deleteFile are new write capability, so they get a tighter
   // boundary than loadFile: not just "inside ROOT_DIR" but "inside
   // ROOT_DIR/app/", since that's the only place apps are meant to persist.
-  // Writable roots for saveFile/deleteFile — app/ (per-app data) and media/
+  // Writable roots for saveFile/deleteFile — app/ (per-app data), media/
   // (tagged assets + their JSON sidecars, added via the OS file browser, not
-  // this API). process/ is deliberately excluded: scripts stay browser-read-only.
-  const WRITABLE_ROOT_NAMES = ['app', 'media'];
+  // this API), and published/ (flat writing-corpus records written by scanner
+  // process scripts, e.g. the WordPress scanner). process/ is deliberately
+  // excluded: scripts stay browser-read-only.
+  const WRITABLE_ROOT_NAMES = ['app', 'media', 'published'];
 
   function isWithinWritableRoot(resolvedPath) {
     return WRITABLE_ROOT_NAMES.some(function(rootName) {

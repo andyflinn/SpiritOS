@@ -239,6 +239,11 @@
       .job-row { cursor: pointer; }
       .job-row:hover { background: rgba(255, 255, 255, 0.06); }
 
+      /* Fixed width + no wrap + ellipsis: a fast-changing last-log message
+         must never change row height, or the whole table jiggles as it
+         flips between wrapping and not. */
+      .job-last-log { max-width: 300px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
       .job-log-row td { padding: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 
       .job-log-panel {
@@ -866,7 +871,7 @@
             '<td>' + escapeHtml(job.id) + '</td>' +
             '<td>' + escapeHtml(job.kind) + ' / ' + escapeHtml(job.type) + '</td>' +
             '<td>' + new Date(job.updatedAt).toLocaleTimeString() + '</td>' +
-            '<td>' + escapeHtml(lastLog) + '</td>' +
+            '<td><div class="job-last-log">' + escapeHtml(lastLog) + '</div></td>' +
             '<td>' + actionHtml + '</td>' +
             '</tr>';
 
@@ -874,6 +879,28 @@
 
           return mainRow + '<tr class="job-log-row"><td colspan="6"><div class="job-log-panel">' +
             formatLogEntries(job) + '</div></td></tr>';
+        }
+
+        // Leading + trailing throttle: a burst of rapid job-updated events
+        // (e.g. a fast process logging hundreds of lines in ~1s) renders
+        // instantly on the first change, then at most once/sec while the
+        // burst continues, and always finishes with one render of the final
+        // state. Manual expand/collapse clicks bypass this and call
+        // renderJobsTable() directly, so toggling still feels instant.
+        var JOBS_RENDER_THROTTLE_MS = 1000;
+        var jobsRenderTimer = null;
+        var jobsRenderPending = false;
+
+        function throttledRenderJobsTable() {
+          if (jobsRenderTimer) { jobsRenderPending = true; return; }
+          renderJobsTable();
+          jobsRenderTimer = setTimeout(function () {
+            jobsRenderTimer = null;
+            if (jobsRenderPending) {
+              jobsRenderPending = false;
+              renderJobsTable();
+            }
+          }, JOBS_RENDER_THROTTLE_MS);
         }
 
         function renderJobsTable() {
@@ -956,7 +983,7 @@
             });
           },
           render: function () {
-            renderJobsTable();
+            throttledRenderJobsTable();
           },
         });
 
