@@ -515,6 +515,41 @@ if (isNode()) {
     }
   };
 
+  // saveFile/deleteFile are new write capability, so they get a tighter
+  // boundary than loadFile: not just "inside ROOT_DIR" but "inside
+  // ROOT_DIR/app/", since that's the only place apps are meant to persist.
+  function isWithinAppRoot(resolvedPath) {
+    const appRoot = path.join(ROOT_DIR, 'app');
+    const relative = path.relative(appRoot, resolvedPath);
+    return !relative.startsWith('..') && !path.isAbsolute(relative);
+  }
+
+  let saveFile = spirit.core.fs.saveFile = function(filePath, content){
+    const resolved = fsPath(ROOT_DIR, filePath);
+    if (!resolved || !isWithinAppRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    try {
+      fs.mkdirSync(path.dirname(resolved), { recursive: true });
+      fs.writeFileSync(resolved, content, 'utf8');
+      return { ok: true };
+    } catch (err) {
+      error(err);
+      return { ok: false, reason: 'error' };
+    }
+  };
+
+  let deleteFile = spirit.core.fs.deleteFile = function(filePath){
+    const resolved = fsPath(ROOT_DIR, filePath);
+    if (!resolved || !isWithinAppRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    try {
+      fs.unlinkSync(resolved);
+      return { ok: true };
+    } catch (err) {
+      if (err.code === 'ENOENT') return { ok: true }; // already gone — idempotent delete
+      error(err);
+      return { ok: false, reason: 'error' };
+    }
+  };
+
   let scanFolder = spirit.core.node.util.scanFolder = function(dirPath,result = []){
       //print('inside of scanFolder "' + dirPath + '"');
 
@@ -629,6 +664,58 @@ if (isNode()) {
     return result;
   };
 
+  spirit.core.fs.saveFile = function(filePath, content) {
+    return new Promise(function (resolve, reject) {
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/fs/save', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error('failed to save file: ' + xhr.status));
+      };
+      xhr.send(JSON.stringify({ path: filePath, content: content }));
+    });
+  };
+
+  spirit.core.fs.deleteFile = function(filePath) {
+    return new Promise(function (resolve, reject) {
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/fs/delete', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error('failed to delete file: ' + xhr.status));
+      };
+      xhr.send(JSON.stringify({ path: filePath }));
+    });
+  };
+
+  // Returns a load/save/delete handle scoped to app/<appName>/ — the app's
+  // own code only ever supplies a bare filename (appRoot is baked in by this
+  // closure), so it has no parameter through which to name a path outside
+  // its own folder. This is an accident-prevention convenience, not a
+  // security boundary: anything in the same page can still reach the raw
+  // spirit.core.fs.* functions directly. The real boundary is server-side
+  // (saveFile/deleteFile there reject anything outside ROOT_DIR/app/).
+  spirit.core.fs.createScopedFs = function(appName) {
+    let appRoot = 'app/' + appName + '/';
+
+    function safeName(filename) {
+      if (typeof filename !== 'string' || filename.indexOf('..') !== -1 || filename.charAt(0) === '/') {
+        throw new Error('invalid filename for app "' + appName + '": ' + filename);
+      }
+      return appRoot + filename;
+    }
+
+    return {
+      loadFile: function(filename) { return spirit.core.fs.loadFile(safeName(filename)); },
+      saveFile: function(filename, content) { return spirit.core.fs.saveFile(safeName(filename), content); },
+      deleteFile: function(filename) { return spirit.core.fs.deleteFile(safeName(filename)); },
+    };
+  };
+
   // spirit.core.jobs: browser-side API for the jobs subsystem — wraps
   // EventSource for live updates and XHR for the request/response calls,
   // so a page never has to hand-roll either.
@@ -641,6 +728,9 @@ if (isNode()) {
       });
       source.addEventListener('job-updated', function(e) {
         if (handlers.onUpdate) handlers.onUpdate(JSON.parse(e.data));
+      });
+      source.addEventListener('job-deleted', function(e) {
+        if (handlers.onDelete) handlers.onDelete(JSON.parse(e.data));
       });
       return function unsubscribe() { source.close(); };
     },
@@ -690,6 +780,21 @@ if (isNode()) {
         xhr.send();
       });
     },
+    delete: function(id) {
+      return new Promise(function(resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('DELETE', '/api/jobs/' + encodeURIComponent(id), true);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState !== 4) return;
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error('failed to delete job: ' + xhr.status));
+          }
+        };
+        xhr.send();
+      });
+    },
   };
 
   // Self-starting: the moment kernel.js runs in a browser, connect and log
@@ -702,6 +807,7 @@ if (isNode()) {
       if (job.type === 'server-stats') return; // ticks every ~2s, too noisy for console auto-logging
       print('[jobs] updated: ' + JSON.stringify(job));
     },
+    onDelete: function(id) { print('[jobs] deleted: ' + id); },
   });
 
   window.spirit = spirit;

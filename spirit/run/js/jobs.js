@@ -83,6 +83,15 @@ module.exports = function installJobs(spirit, port) {
     return updateJob(id, { status: nextStatus, logMessage: 'cancelled' });
   }
 
+  function deleteJob(id) {
+    const job = jobsMap.get(id);
+    if (!job) return false;
+    if (!TERMINAL_STATUSES.has(job.status)) return false; // must be cancelled/completed/failed/stopped first
+    jobsMap.delete(id);
+    events.emit('job-deleted', id);
+    return true;
+  }
+
   function mapEntry(entry) {
     return {
       name: entry.name,
@@ -244,6 +253,7 @@ module.exports = function installJobs(spirit, port) {
     getJob: getJob,
     listJobs: listJobs,
     cancelJob: cancelJob,
+    deleteJob: deleteJob,
     startFsWatcherJob: startFsWatcherJob,
     startProcessJob: startProcessJob,
     startStatsJob: startStatsJob,

@@ -5,8 +5,563 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SpiritOS</title>
     <script src="/js/kernel.js"></script>
+    <style>
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #1a1a2e;
+        color: #eee;
+      }
+
+      #desktop {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        gap: 16px;
+        padding: 24px;
+        height: 100vh;
+        align-content: start;
+      }
+
+      #desktop[hidden] { display: none; }
+
+      .app-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        padding: 10px 4px;
+        border-radius: 12px;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .app-icon:hover, .app-icon:active {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .app-icon .icon { font-size: 40px; line-height: 1; }
+      .app-icon .label { font-size: 13px; text-align: center; }
+
+      #app-container {
+        position: fixed;
+        inset: 0;
+        background: #16213e;
+        overflow-y: auto;
+      }
+
+      #app-container[hidden] { display: none; }
+
+      #app-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        position: sticky;
+        top: 0;
+        background: #0f3460;
+        z-index: 1;
+      }
+
+      #app-close {
+        cursor: pointer;
+        font-size: 22px;
+        background: none;
+        border: none;
+        color: inherit;
+        padding: 4px 8px;
+      }
+
+      #app-title { font-size: 16px; font-weight: 600; }
+      #app-content { padding: 16px; }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+      }
+
+      .stat-tile {
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      .stat-tile.wide { grid-column: 1 / -1; }
+      .stat-tile.clickable { cursor: pointer; }
+      .stat-tile.clickable:hover { background: rgba(255, 255, 255, 0.12); }
+      .stat-tile .value { font-size: 22px; font-weight: 700; }
+      .stat-tile .label { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+      .stat-tile .rows { font-size: 13px; margin-top: 4px; }
+
+      #file-tree summary {
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 6px;
+      }
+
+      #file-tree summary:hover { background: rgba(255, 255, 255, 0.08); }
+
+      .tree-children { margin-left: 20px; }
+
+      .file-row {
+        cursor: pointer;
+        padding: 4px 4px 4px 24px;
+        border-radius: 6px;
+      }
+
+      .file-row:hover { background: rgba(255, 255, 255, 0.08); }
+
+      #file-detail { margin-top: 16px; }
+
+      .start-job-form {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+
+      .start-job-form input {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        font: inherit;
+      }
+
+      .start-job-form button, .cancel-btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: none;
+        background: #0f3460;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+      }
+
+      .start-job-form button:hover, .cancel-btn:hover { background: #16487a; }
+
+      .job-start-error {
+        color: #ff8080;
+        font-size: 13px;
+        margin-bottom: 8px;
+        min-height: 1em;
+      }
+
+      .jobs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+      .jobs-table th, .jobs-table td {
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      @media (max-width: 480px) {
+        .app-icon .icon { font-size: 32px; }
+        .app-icon .label { font-size: 11px; }
+      }
+    </style>
   </head>
   <body>
-    <h1>hallo, I'm SpiritOS</h1>
+    <div id="desktop"></div>
+
+    <div id="app-container" hidden>
+      <div id="app-header">
+        <button id="app-close" type="button" title="Back">⬅️</button>
+        <div id="app-title"></div>
+      </div>
+      <div id="app-content"></div>
+    </div>
+
+    <script>
+      (function () {
+        var ICON = spirit.core.const.ICON;
+
+        var desktopEl = document.getElementById('desktop');
+        var containerEl = document.getElementById('app-container');
+        var titleEl = document.getElementById('app-title');
+        var contentEl = document.getElementById('app-content');
+        var closeBtn = document.getElementById('app-close');
+
+        var jobsById = new Map();
+        var apps = {};
+        var activeAppId = null;
+        var navStack = ['desktop']; // last entry is the current screen; 'desktop' or an app id
+
+        function registerApp(app) {
+          apps[app.id] = app;
+
+          var iconEl = document.createElement('div');
+          iconEl.className = 'app-icon';
+          iconEl.innerHTML =
+            '<span class="icon">' + app.icon + '</span>' +
+            '<span class="label">' + app.name + '</span>';
+          iconEl.addEventListener('click', function () { launchApp(app.id); });
+          desktopEl.appendChild(iconEl);
+        }
+
+        // Switches the visible screen without touching navStack — the stack
+        // bookkeeping lives in launchApp/goBack, this just mounts/unmounts.
+        function switchTo(id) {
+          if (activeAppId && apps[activeAppId] && typeof apps[activeAppId].unmount === 'function') {
+            apps[activeAppId].unmount();
+          }
+
+          if (id === 'desktop') {
+            activeAppId = null;
+            containerEl.hidden = true;
+            desktopEl.hidden = false;
+            return;
+          }
+
+          var app = apps[id];
+          activeAppId = id;
+          titleEl.textContent = app.name;
+          contentEl.innerHTML = '';
+          desktopEl.hidden = true;
+          containerEl.hidden = false;
+
+          app.mount(contentEl);
+          app.render(jobsById);
+        }
+
+        // Launching an app pushes onto the nav stack, so a later back-press
+        // returns to wherever the launch happened from (desktop, or another
+        // app — e.g. clicking a Stats tile that jumps into Files) rather than
+        // always jumping straight to the desktop.
+        function launchApp(id) {
+          if (!apps[id]) return;
+          if (navStack[navStack.length - 1] === id) return; // already here
+
+          // If this app already exists elsewhere in the stack, collapse back
+          // to that occurrence instead of pushing a duplicate — otherwise
+          // revisiting a screen would make the stack (and the back button)
+          // walk through repeats on the way out.
+          var existingIndex = navStack.indexOf(id);
+          if (existingIndex !== -1) {
+            navStack.length = existingIndex + 1;
+          } else {
+            navStack.push(id);
+          }
+
+          switchTo(id);
+        }
+
+        function goBack() {
+          if (navStack.length <= 1) return; // already at the bottom of the stack
+          navStack.pop();
+          switchTo(navStack[navStack.length - 1]);
+        }
+
+        closeBtn.addEventListener('click', goBack);
+
+        function renderActive() {
+          if (activeAppId && apps[activeAppId]) {
+            apps[activeAppId].render(jobsById);
+          }
+        }
+
+        function findJobByType(type) {
+          var found = null;
+          jobsById.forEach(function (job) {
+            if (job.type === type) found = job;
+          });
+          return found;
+        }
+
+        function formatBytes(bytes) {
+          return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+        }
+
+        function formatUptime(seconds) {
+          var total = Math.floor(seconds);
+          var h = Math.floor(total / 3600);
+          var m = Math.floor((total % 3600) / 60);
+          var s = total % 60;
+          return h + 'h ' + m + 'm ' + s + 's';
+        }
+
+        function tileHtml(value, label, wide, launchAppId) {
+          var classes = 'stat-tile' + (wide ? ' wide' : '') + (launchAppId ? ' clickable' : '');
+          var attr = launchAppId ? ' data-launch-app="' + launchAppId + '"' : '';
+          return '<div class="' + classes + '"' + attr + '>' +
+            '<div class="value">' + value + '</div>' +
+            '<div class="label">' + label + '</div>' +
+            '</div>';
+        }
+
+        function countsHtml(counts) {
+          var keys = Object.keys(counts);
+          if (keys.length === 0) return '<div class="rows">(none)</div>';
+          return '<div class="rows">' + keys.map(function (k) {
+            return k + ': ' + counts[k];
+          }).join('<br>') + '</div>';
+        }
+
+        // ---- Stats app ----
+        registerApp({
+          id: 'stats',
+          name: 'Stats',
+          icon: ICON.CHART,
+          mount: function (container) {
+            container.innerHTML = '<div class="stats-grid" id="stats-grid"></div>';
+            document.getElementById('stats-grid').addEventListener('click', function (event) {
+              var tile = event.target.closest('[data-launch-app]');
+              if (!tile) return;
+              launchApp(tile.dataset.launchApp);
+            });
+          },
+          render: function () {
+            var grid = document.getElementById('stats-grid');
+            if (!grid) return;
+
+            var job = findJobByType('server-stats');
+            if (!job || !job.data || !job.data.memory) {
+              grid.innerHTML = tileHtml('…', 'waiting for stats', true);
+              return;
+            }
+
+            var d = job.data;
+            var html = '';
+            html += tileHtml(formatBytes(d.memory.rss), 'Memory (RSS)');
+            html += tileHtml(formatBytes(d.memory.heapUsed), 'Heap used');
+            html += tileHtml(d.cpu.percent.toFixed(1) + '%', 'CPU');
+            html += tileHtml(formatUptime(d.uptimeSeconds), 'Uptime');
+            html += tileHtml(d.eventLoop.meanMs.toFixed(2) + ' ms', 'Event loop mean');
+            html += tileHtml(d.eventLoop.maxMs.toFixed(2) + ' ms', 'Event loop max');
+            html += tileHtml(d.eventLoop.p99Ms.toFixed(2) + ' ms', 'Event loop p99');
+            html += tileHtml(d.filesystem.files, 'Files', false, 'files');
+            html += tileHtml(d.filesystem.folders, 'Folders', false, 'files');
+            html += tileHtml(d.sseConnections, 'SSE connections');
+            html += tileHtml(d.requests.total, 'Requests total');
+
+            html += '<div class="stat-tile wide clickable" data-launch-app="files"><div class="label">Files by MIME type</div>' +
+              countsHtml(d.filesystem.byMimeType) + '</div>';
+            html += '<div class="stat-tile wide"><div class="label">Jobs by status</div>' +
+              countsHtml(d.jobs.byStatus) + '</div>';
+            html += '<div class="stat-tile wide"><div class="label">Requests by method</div>' +
+              countsHtml(d.requests.byMethod) + '</div>';
+            html += '<div class="stat-tile wide"><div class="label">Requests by status class</div>' +
+              countsHtml(d.requests.byStatusClass) + '</div>';
+
+            grid.innerHTML = html;
+          },
+        });
+
+        // ---- Files app ----
+        function escapeHtml(str) {
+          var div = document.createElement('div');
+          div.textContent = String(str);
+          return div.innerHTML;
+        }
+
+        function mimeTypeForName(name) {
+          var dot = name.lastIndexOf('.');
+          var ext = dot >= 0 ? name.substring(dot).toLowerCase() : '';
+          return spirit.core.const.MIME_TYPES[ext] || 'application/octet-stream';
+        }
+
+        function iconForFile(mimeType) {
+          if (mimeType.indexOf('image/') === 0) return ICON.VIEW;
+          if (mimeType.indexOf('text/') === 0 || mimeType.indexOf('javascript') !== -1 || mimeType.indexOf('json') !== -1) return ICON.CODE;
+          return ICON.FILE;
+        }
+
+        function buildTree(files) {
+          var byPath = new Map();
+          files.forEach(function (entry) { byPath.set(entry.fullPath, entry); });
+
+          var roots = [];
+          var childrenByPath = new Map();
+
+          files.forEach(function (entry) {
+            if (byPath.has(entry.parentPath)) {
+              if (!childrenByPath.has(entry.parentPath)) childrenByPath.set(entry.parentPath, []);
+              childrenByPath.get(entry.parentPath).push(entry);
+            } else {
+              roots.push(entry);
+            }
+          });
+
+          return { roots: roots, childrenByPath: childrenByPath };
+        }
+
+        function renderTreeNode(entry, childrenByPath) {
+          if (entry.kind === 'folder') {
+            var kids = childrenByPath.get(entry.fullPath) || [];
+            var kidsHtml = kids.map(function (k) { return renderTreeNode(k, childrenByPath); }).join('');
+            return '<details open><summary>' + ICON.FOLDER + ' ' + escapeHtml(entry.name) + '</summary>' +
+              '<div class="tree-children">' + kidsHtml + '</div></details>';
+          }
+
+          var mimeType = mimeTypeForName(entry.name);
+          return '<div class="file-row" data-name="' + escapeHtml(entry.name) + '" data-path="' +
+            escapeHtml(entry.fullPath) + '" data-mime="' + escapeHtml(mimeType) + '">' +
+            iconForFile(mimeType) + ' ' + escapeHtml(entry.name) + '</div>';
+        }
+
+        function showFileDetail(name, path, mimeType) {
+          var detailEl = document.getElementById('file-detail');
+          if (!detailEl) return;
+          detailEl.innerHTML = '<div class="stat-tile wide">' +
+            '<div class="label">Name</div><div class="rows">' + escapeHtml(name) + '</div>' +
+            '<div class="label">Path</div><div class="rows">' + escapeHtml(path) + '</div>' +
+            '<div class="label">MIME type</div><div class="rows">' + escapeHtml(mimeType) + '</div>' +
+            '</div>';
+        }
+
+        registerApp({
+          id: 'files',
+          name: 'Files',
+          icon: ICON.FOLDER,
+          mount: function (container) {
+            container.innerHTML = '<div id="file-tree"></div><div id="file-detail"></div>';
+            document.getElementById('file-tree').addEventListener('click', function (event) {
+              var row = event.target.closest('.file-row');
+              if (!row) return;
+              showFileDetail(row.dataset.name, row.dataset.path, row.dataset.mime);
+            });
+          },
+          render: function () {
+            var treeEl = document.getElementById('file-tree');
+            if (!treeEl) return;
+
+            var job = findJobByType('fs-watcher');
+            if (!job || !job.data || !Array.isArray(job.data.files)) {
+              treeEl.textContent = 'waiting for file list…';
+              return;
+            }
+
+            var tree = buildTree(job.data.files);
+            treeEl.innerHTML = tree.roots.map(function (r) {
+              return renderTreeNode(r, tree.childrenByPath);
+            }).join('') || '(empty)';
+          },
+        });
+
+        // ---- Jobs app ----
+        var TERMINAL_STATUSES = ['completed', 'failed', 'cancelled', 'stopped'];
+
+        var STATUS_ICON = {
+          pending: ICON.LOADING,
+          running: ICON.PLAY,
+          completed: ICON.OK,
+          failed: ICON.ERROR,
+          cancelled: ICON.STOP,
+          stopped: ICON.STOP,
+          error: ICON.WARNING,
+        };
+
+        function renderJobRow(job) {
+          var icon = STATUS_ICON[job.status] || '';
+          var lastLog = job.log && job.log.length ? job.log[job.log.length - 1].message : '';
+          var isTerminal = TERMINAL_STATUSES.indexOf(job.status) !== -1;
+          var canCancel = job.kind === 'process' && !isTerminal;
+
+          var actionHtml = canCancel
+            ? '<button type="button" class="cancel-btn" data-job-id="' + escapeHtml(job.id) + '">Cancel</button>'
+            : (isTerminal
+              ? '<button type="button" class="cancel-btn" data-delete-job-id="' + escapeHtml(job.id) + '">Delete</button>'
+              : '');
+
+          return '<tr>' +
+            '<td>' + icon + ' ' + escapeHtml(job.status) + '</td>' +
+            '<td>' + escapeHtml(job.id) + '</td>' +
+            '<td>' + escapeHtml(job.kind) + ' / ' + escapeHtml(job.type) + '</td>' +
+            '<td>' + new Date(job.updatedAt).toLocaleTimeString() + '</td>' +
+            '<td>' + escapeHtml(lastLog) + '</td>' +
+            '<td>' + actionHtml + '</td>' +
+            '</tr>';
+        }
+
+        registerApp({
+          id: 'jobs',
+          name: 'Jobs',
+          icon: ICON.LIST,
+          mount: function (container) {
+            container.innerHTML =
+              '<form id="start-job-form" class="start-job-form">' +
+              '<input type="text" id="job-command" placeholder="command (e.g. node)" required>' +
+              '<input type="text" id="job-args" placeholder="args (space-separated)">' +
+              '<input type="text" id="job-type" placeholder="label (optional)">' +
+              '<button type="submit">Start</button>' +
+              '</form>' +
+              '<div id="job-start-error" class="job-start-error"></div>' +
+              '<table class="jobs-table"><thead><tr>' +
+              '<th>Status</th><th>Id</th><th>Kind / Type</th><th>Updated</th><th>Last log</th><th></th>' +
+              '</tr></thead><tbody id="jobs-tbody"></tbody></table>';
+
+            document.getElementById('start-job-form').addEventListener('submit', function (event) {
+              event.preventDefault();
+
+              var command = document.getElementById('job-command').value.trim();
+              var argsRaw = document.getElementById('job-args').value.trim();
+              var type = document.getElementById('job-type').value.trim();
+              var args = argsRaw ? argsRaw.split(/\s+/) : [];
+              var errorEl = document.getElementById('job-start-error');
+              errorEl.textContent = '';
+
+              spirit.core.jobs.start({ command: command, args: args, type: type || undefined })
+                .then(function () {
+                  document.getElementById('start-job-form').reset();
+                })
+                .catch(function (err) {
+                  errorEl.textContent = 'Failed to start job: ' + err.message;
+                });
+            });
+
+            document.getElementById('jobs-tbody').addEventListener('click', function (event) {
+              var cancelBtn = event.target.closest('[data-job-id]');
+              if (cancelBtn) {
+                spirit.core.jobs.cancel(cancelBtn.dataset.jobId).catch(function (err) {
+                  console.error('cancel failed', err);
+                });
+                return;
+              }
+
+              var deleteBtn = event.target.closest('[data-delete-job-id]');
+              if (deleteBtn) {
+                spirit.core.jobs.delete(deleteBtn.dataset.deleteJobId).catch(function (err) {
+                  console.error('delete failed', err);
+                });
+              }
+            });
+          },
+          render: function () {
+            var tbody = document.getElementById('jobs-tbody');
+            if (!tbody) return;
+
+            var rows = [];
+            jobsById.forEach(function (job) { rows.push(job); });
+            rows.sort(function (a, b) { return a.createdAt - b.createdAt; });
+
+            tbody.innerHTML = rows.map(renderJobRow).join('') ||
+              '<tr><td colspan="6">(no jobs)</td></tr>';
+          },
+        });
+
+        // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
+        spirit.core.jobs.subscribe({
+          onSnapshot: function (jobs) {
+            jobsById.clear();
+            jobs.forEach(function (job) { jobsById.set(job.id, job); });
+            renderActive();
+          },
+          onUpdate: function (job) {
+            jobsById.set(job.id, job);
+            renderActive();
+          },
+          onDelete: function (id) {
+            jobsById.delete(id);
+            renderActive();
+          },
+        });
+      })();
+    </script>
   </body>
 </html>

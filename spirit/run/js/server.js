@@ -66,6 +66,11 @@ function handleSseConnection(req, res) {
   };
   jobs.events.on('job-updated', onJobUpdated);
 
+  const onJobDeleted = (id) => {
+    res.write('event: job-deleted\ndata: ' + JSON.stringify(id) + '\n\n');
+  };
+  jobs.events.on('job-deleted', onJobDeleted);
+
   const heartbeat = setInterval(() => {
     res.write(':\n\n');
   }, 20000);
@@ -73,6 +78,7 @@ function handleSseConnection(req, res) {
   req.on('close', () => {
     clearInterval(heartbeat);
     jobs.events.off('job-updated', onJobUpdated);
+    jobs.events.off('job-deleted', onJobDeleted);
   });
 }
 
@@ -114,6 +120,50 @@ function handleCancelJob(res, id) {
   res.end(JSON.stringify(job));
 }
 
+function handleDeleteJob(res, id) {
+  const deleted = jobs.deleteJob(id);
+  if (!deleted) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found, or job is not yet in a terminal state');
+    return;
+  }
+  res.writeHead(204);
+  res.end();
+}
+
+function writeFsResult(res, result) {
+  if (result.ok) {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+  if (result.reason === 'forbidden') {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
+  res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Internal error');
+}
+
+function handleFsSave(req, res) {
+  readJsonBody(req).then((body) => {
+    writeFsResult(res, spirit.core.fs.saveFile(body.path, body.content));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+function handleFsDelete(req, res) {
+  readJsonBody(req).then((body) => {
+    writeFsResult(res, spirit.core.fs.deleteFile(body.path));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
 const server = http.createServer((req, res) => {
   requestCounters.total++;
   requestCounters.byMethod[req.method] = (requestCounters.byMethod[req.method] || 0) + 1;
@@ -152,6 +202,16 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'POST') {
+    if (pathname === '/api/fs/save') {
+      handleFsSave(req, res);
+      return;
+    }
+
+    if (pathname === '/api/fs/delete') {
+      handleFsDelete(req, res);
+      return;
+    }
+
     if (pathname === '/api/jobs') {
       handleCreateJob(req, res);
       return;
@@ -180,7 +240,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  res.writeHead(405, { 'Allow': 'GET, POST' });
+  if (req.method === 'DELETE') {
+    const jobIdMatch = pathname.match(/^\/api\/jobs\/([^/]+)$/);
+    if (jobIdMatch) {
+      handleDeleteJob(res, jobIdMatch[1]);
+      return;
+    }
+  }
+
+  res.writeHead(405, { 'Allow': 'GET, POST, DELETE' });
   res.end('Method not allowed');
 });
 
