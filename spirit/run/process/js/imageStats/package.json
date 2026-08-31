@@ -1,0 +1,8 @@
+{
+  "name": "spiritos-process-image-stats",
+  "private": true,
+  "description": "SpiritOS process script: computes width/height/histogram/average color for images under media/",
+  "dependencies": {
+    "sharp": "^0.35.4"
+  }
+}

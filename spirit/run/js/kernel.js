@@ -117,15 +117,22 @@ if (isNode()) {
   // saveFile/deleteFile are new write capability, so they get a tighter
   // boundary than loadFile: not just "inside ROOT_DIR" but "inside
   // ROOT_DIR/app/", since that's the only place apps are meant to persist.
-  function isWithinAppRoot(resolvedPath) {
-    const appRoot = path.join(ROOT_DIR, 'app');
-    const relative = path.relative(appRoot, resolvedPath);
-    return !relative.startsWith('..') && !path.isAbsolute(relative);
+  // Writable roots for saveFile/deleteFile — app/ (per-app data) and media/
+  // (tagged assets + their JSON sidecars, added via the OS file browser, not
+  // this API). process/ is deliberately excluded: scripts stay browser-read-only.
+  const WRITABLE_ROOT_NAMES = ['app', 'media'];
+
+  function isWithinWritableRoot(resolvedPath) {
+    return WRITABLE_ROOT_NAMES.some(function(rootName) {
+      const root = path.join(ROOT_DIR, rootName);
+      const relative = path.relative(root, resolvedPath);
+      return !relative.startsWith('..') && !path.isAbsolute(relative);
+    });
   }
 
   let saveFile = spirit.core.fs.saveFile = function(filePath, content){
     const resolved = fsPath(ROOT_DIR, filePath);
-    if (!resolved || !isWithinAppRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
@@ -138,7 +145,7 @@ if (isNode()) {
 
   let deleteFile = spirit.core.fs.deleteFile = function(filePath){
     const resolved = fsPath(ROOT_DIR, filePath);
-    if (!resolved || !isWithinAppRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
     try {
       fs.unlinkSync(resolved);
       return { ok: true };

@@ -1,0 +1,5 @@
+{
+  "label": "Image Stats",
+  "description": "Scans media/ for images and writes width/height/histogram/average color into each image's sidecar JSON, under its own spiritImageStats key",
+  "args": []
+}

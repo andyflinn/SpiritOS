@@ -405,6 +405,8 @@
         });
 
         // ---- Files app ----
+        var lastFilesJob = null; // reference-equality cache — see mount()/render() below
+
         function escapeHtml(str) {
           var div = document.createElement('div');
           div.textContent = String(str);
@@ -487,6 +489,11 @@
           name: 'Files',
           icon: ICON.FOLDER,
           mount: function (container) {
+            // See the Processes app for why this must reset on every fresh
+            // mount, not just persist: mount() always wipes the tree's DOM,
+            // so a stale cache hit from a previous visit would leave it empty.
+            lastFilesJob = null;
+
             container.innerHTML = '<div id="file-tree"></div><div id="file-detail"></div>';
             document.getElementById('file-tree').addEventListener('click', function (event) {
               var row = event.target.closest('.file-row');
@@ -504,6 +511,9 @@
             if (!treeEl) return;
 
             var job = findJobByType('fs-watcher');
+            if (job === lastFilesJob) return; // fs-watcher data unchanged (e.g. an unrelated stats tick) — leave the tree (and any collapsed folders) alone
+            lastFilesJob = job;
+
             if (!job || !job.data || !Array.isArray(job.data.files)) {
               treeEl.textContent = 'waiting for file list…';
               return;
