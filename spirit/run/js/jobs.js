@@ -4,14 +4,18 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 const { EventEmitter } = require('events');
+const { monitorEventLoopDelay } = require('perf_hooks');
 
 const MAX_LOG_ENTRIES = 200;
 const RESCAN_DEBOUNCE_MS = 150;
+const DEFAULT_STATS_INTERVAL_MS = 2000;
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'stopped']);
 
 module.exports = function installJobs(spirit, port) {
   const scanFolder = spirit.core.node.util.scanFolder;
+
+  spirit.core.server = spirit.core.server || { stats: {} };
 
   const jobsMap = new Map();
   const events = new EventEmitter();
@@ -158,6 +162,62 @@ module.exports = function installJobs(spirit, port) {
     return job;
   }
 
+  function startStatsJob(options) {
+    options = options || {};
+    const intervalMs = options.intervalMs || DEFAULT_STATS_INTERVAL_MS;
+    const requestCounters = options.requestCounters || { total: 0, byMethod: {}, byStatusClass: {} };
+
+    const job = createJob('permanent', 'server-stats', spirit.core.server.stats);
+    // job.data === spirit.core.server.stats from here on (createJob assigns the reference as-is)
+
+    const histogram = monitorEventLoopDelay({ resolution: 10 });
+    histogram.enable();
+    let lastCpuUsage = process.cpuUsage();
+    let lastTickTime = Date.now();
+
+    function tick() {
+      const now = Date.now();
+      const elapsedMs = now - lastTickTime;
+      const cpuDelta = process.cpuUsage(lastCpuUsage);
+      lastCpuUsage = process.cpuUsage();
+      lastTickTime = now;
+
+      const jobCounts = { total: 0, byStatus: {} };
+      listJobs().forEach(function(j) {
+        jobCounts.total++;
+        jobCounts.byStatus[j.status] = (jobCounts.byStatus[j.status] || 0) + 1;
+      });
+
+      updateJob(job.id, {
+        data: {
+          timestamp: now,
+          memory: process.memoryUsage(),
+          eventLoop: {
+            meanMs: histogram.mean / 1e6,
+            maxMs: histogram.max / 1e6,
+            p99Ms: histogram.percentile(99) / 1e6,
+          },
+          cpu: { percent: elapsedMs > 0 ? (cpuDelta.user + cpuDelta.system) / 1000 / elapsedMs * 100 : 0 },
+          uptimeSeconds: process.uptime(),
+          requests: requestCounters,
+          jobs: jobCounts,
+          sseConnections: events.listenerCount('job-updated'),
+        },
+      });
+      histogram.reset();
+    }
+
+    tick(); // populate immediately rather than leaving data empty for the first intervalMs
+    const timer = setInterval(tick, intervalMs);
+
+    job._stop = function() {
+      clearInterval(timer);
+      histogram.disable();
+    };
+
+    return job;
+  }
+
   spirit.core.node.jobs = {
     events: events,
     createJob: createJob,
@@ -167,6 +227,7 @@ module.exports = function installJobs(spirit, port) {
     cancelJob: cancelJob,
     startFsWatcherJob: startFsWatcherJob,
     startProcessJob: startProcessJob,
+    startStatsJob: startStatsJob,
   };
 
   return spirit.core.node.jobs;

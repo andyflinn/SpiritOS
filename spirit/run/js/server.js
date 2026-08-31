@@ -12,6 +12,9 @@ const port = process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
 
+const requestCounters = { total: 0, byMethod: {}, byStatusClass: {} };
+jobs.startStatsJob({ requestCounters: requestCounters });
+
 function sendFile(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const type = MIME_TYPES[ext] || 'application/octet-stream';
@@ -112,6 +115,13 @@ function handleCancelJob(res, id) {
 }
 
 const server = http.createServer((req, res) => {
+  requestCounters.total++;
+  requestCounters.byMethod[req.method] = (requestCounters.byMethod[req.method] || 0) + 1;
+  res.on('finish', () => {
+    const bucket = Math.floor(res.statusCode / 100) + 'xx';
+    requestCounters.byStatusClass[bucket] = (requestCounters.byStatusClass[bucket] || 0) + 1;
+  });
+
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = decodeURIComponent(url.pathname);
 
