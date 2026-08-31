@@ -25,6 +25,9 @@ const spirit = {
   type: SPIRIT_NAME,
   core: {
     const: {
+      AUTHOR:AUTHOR,
+      COPYRIGHT:COPYRIGHT,
+      VERSION:VERSION,
       KERNEL_DEBUG: DEBUG,
       IS_NODE:isNode(),
       IS_BROWSER:isBrowser(),
@@ -49,6 +52,19 @@ let print = spirit.core.util.print = function(str){ if (DEBUG) { console.log(str
 let error = spirit.core.util.error = function(str){
   console.error('ERROR: ' + str);
   return { error:{ string:str, } }; 
+}
+
+let formatBytes = spirit.core.util.formatBytes = function(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+
+  // Determines which unit to use (0 = Bytes, 1 = KB, 2 = MB, etc.)
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
  // ******************************************************************
