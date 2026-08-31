@@ -1,7 +1,6 @@
 'use strict';
 
 const UTIL = spirit.core.util;
-const FS = spirit.core.fs;
 
 const createType = spirit.core.util.createType;
 const defineTypeMember = spirit.core.util.defineTypeMember;

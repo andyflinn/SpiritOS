@@ -471,7 +471,7 @@ let transformJSON = spirit.core.util.transformJSON = function(jsonInput){
  // ******************************************************************
  // functions that can only run in the node environment
 
-if (spirit.core.const.IS_NODE == true) {
+if (isNode()) {
   // give the node environment a specific space in the kernel
 
   const fs = require('fs');
@@ -506,7 +506,6 @@ if (spirit.core.const.IS_NODE == true) {
   function(filePath){
 
     filePath = fsPath(ROOT_DIR,filePath);
-    //print('in IS_NODE loadFile(); ' + process.cwd());
   
     try {
       return fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' });
@@ -555,11 +554,11 @@ if (spirit.core.const.IS_NODE == true) {
           let entry = result[i];
           if (entry.isDirectory()) {
 
-              console.log(`📁 Folder: ${entry.parentPath}${entry.name}`);
+              print(`📁 Folder: ${entry.parentPath}${entry.name}`);
 
           } else if (entry.isFile()) {
 
-              console.log(`📄 File: ${entry.parentPath}${entry.name}`);
+              print(`📄 File:   ${entry.parentPath}${entry.name}`);
 
           }
   }
@@ -573,7 +572,7 @@ if (spirit.core.const.IS_NODE == true) {
  // ******************************************************************
  // functions that can only run in the browser environment
 
- if (spirit.core.const.IS_BROWSER == true) {
+ if (isBrowser()) {
   spirit.core.fs.loadFile = function(filePath){
     let result = null;
     let xmlhttp = new XMLHttpRequest();
@@ -599,6 +598,7 @@ spirit.core.util.loadSpiritModule = function(filePath){
   let foo = new Function("spirit",script);
   foo(spirit);
 };
+
 
 spirit.core.util.loadSpiritModule('./js/constants/icons.js');
 spirit.core.util.loadSpiritModule('./js/constants/mimetypes.js');

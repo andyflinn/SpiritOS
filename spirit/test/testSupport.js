@@ -4,8 +4,8 @@ const STARS = '*****************************************************************
 const LINE_LENGTH = STARS.length;
 const INDENT_LENGTH = 3;
 const MAX_TITLE_LENGTH = LINE_LENGTH - INDENT_LENGTH*4;
-const ICON = require('../run/js/constants/icons.js');
 const spirit = require('../run/js/kernel.js');
+const ICON = spirit.core.const.ICON;
 
 let PAD_STARS = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_STARS += '*'; }
 let PAD_SPACES = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_SPACES += ' '; }
