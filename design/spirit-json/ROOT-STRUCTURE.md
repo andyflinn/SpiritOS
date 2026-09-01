@@ -3,6 +3,12 @@
 **Version:** 0.2 (17 May 2026)  
 **Author:** Andy Flinn
 
+> **Status: not yet implemented.** `spirit/run/` is the current, running
+> core — port 65432, no `spirit.json`, data organized as `app/`/`media/`/
+> `published/`/`process/` instead. This document describes a later
+> `spirit.json` layer that hasn't been built on top of that core yet, not
+> what's running today.
+
 ## Root Structure
 
 ```json

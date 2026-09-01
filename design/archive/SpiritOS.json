@@ -1,3 +1,6 @@
+// ARCHIVED — an early sketch (not valid JSON as written), superseded by
+// design/spirit-json/ROOT-STRUCTURE.md's later, different root shape.
+// Kept as a record of the thinking, not a current or planned structure.
 {
     core: {
         readme: "SpiritOS is a modular operating system designed to be lightweight and efficient. It is built on a microkernel architecture, allowing for flexibility and scalability. The core components of SpiritOS include a minimal kernel, a set of essential system services, and a user-space environment for running applications.",   

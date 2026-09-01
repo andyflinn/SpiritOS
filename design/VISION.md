@@ -51,15 +51,3 @@ Once the foundation is solid, we will build the minimal three-node network (Pers
 
 The goal is not mass adoption.  
 The goal is **deep, meaningful, sovereign digital lives**.
-
----
-
-**Andy**, this document is ready to commit. Suggested location:
-
-`design/VISION.md`
-
-Would you like any changes in tone, length, or emphasis before you add it? 
-
-(For example: more poetic, more technical, shorter version for README, etc.)
-
-Let me know and I’ll refine it instantly. 🎩✨

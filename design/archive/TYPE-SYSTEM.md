@@ -1,3 +1,9 @@
+> **Archived.** This type system was built and then deliberately deleted from
+> kernel.js — a genuine simplification, not an oversight. Kept here as a
+> record of the thinking, not as a description of anything current or
+> planned. See design/principles/NODE-ARCHITECTURE.md and spirit/run/js/kernel.js
+> for what the system actually looks like now.
+
 # SpiritOS Type System
 
 **Version:** 0.2 (17 May 2026)  

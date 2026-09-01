@@ -6,6 +6,13 @@
 
 **Goal:** Aggressively clean the codebase, then build the minimal viable three-node network.
 
+> **Status note:** the "High Priority Kills" below (Passport.js, a generic
+> DB driver, OAuth, multi-tenant code, etc.) describe the old zs4/ system —
+> spirit/run/ was built fresh afterward and never had any of them. Phase 0
+> is effectively superseded by that fresh build rather than executed
+> against zs4/ itself; Phase 1/2 are still ahead of where spirit/run is
+> today.
+
 ### Phase 0: The Great Purge (Current Phase)
 
 **High Priority Kills:**

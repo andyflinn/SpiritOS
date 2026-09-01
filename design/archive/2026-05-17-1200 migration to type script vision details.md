@@ -1,3 +1,8 @@
+> **Archived.** The strongly-typed "hxm" layer this document develops was
+> the design thinking behind the type system later deliberately deleted
+> from kernel.js. Kept as a record of the thinking, not as a description
+> of anything current or planned.
+
 # migration to type script vision details
 
 **Author:** Andy Flinn  

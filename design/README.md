@@ -9,8 +9,13 @@ This directory contains the vision, principles, and architecture decisions for *
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)
 
-## Relay & Networking
-- [Relay Architecture & Controlled Network Growth](relay/RELAY-ARCHITECTURE.md)
+## Future Layer (not yet implemented)
+- [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)
+- [Compound Request & Transform System](transforms/COMPOUND-REQUEST-SYSTEM.md)
+
+## Archive
+- Superseded design thinking, kept for the record rather than as current
+  or planned direction — see [archive/](archive/).
 
 ## Other
 - More documents will be added as we progress.
