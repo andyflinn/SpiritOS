@@ -142,6 +142,11 @@ function writeFsResult(res, result) {
     res.end('Forbidden');
     return;
   }
+  if (result.reason === 'app-entry-script-protected') {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden: an app\'s own entry script cannot be overwritten');
+    return;
+  }
   res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Internal error');
 }

@@ -124,17 +124,38 @@ if (isNode()) {
   // excluded: scripts stay browser-read-only.
   const WRITABLE_ROOT_NAMES = ['app', 'media', 'published'];
 
+  // A handful of single, well-known root-level files also need to be
+  // writable without opening up the whole ROOT_DIR — currently just
+  // preferences.json (user-configurable app preferences, e.g. default file
+  // handlers; deliberately root-level rather than app-scoped since these
+  // choices are meant to be part of the personal dataset this project is
+  // building toward, not ordinary per-app config).
+  const WRITABLE_ROOT_FILES = ['preferences.json'];
+
   function isWithinWritableRoot(resolvedPath) {
-    return WRITABLE_ROOT_NAMES.some(function(rootName) {
+    if (WRITABLE_ROOT_NAMES.some(function(rootName) {
       const root = path.join(ROOT_DIR, rootName);
       const relative = path.relative(root, resolvedPath);
       return !relative.startsWith('..') && !path.isAbsolute(relative);
+    })) return true;
+
+    return WRITABLE_ROOT_FILES.some(function(fileName) {
+      return resolvedPath === path.join(ROOT_DIR, fileName);
     });
   }
+
+  // Recognizes a dynamically-loaded app's own entry script (app/<name>/<name>.js,
+  // the same shape index.html's discoverDynamicApps uses to find apps to load).
+  // Protected everywhere, from every tool — not just self-protection, nothing
+  // can overwrite ANY app's own script, even though app/ is otherwise a
+  // writable root. Its sibling .json manifest is unaffected — only this one
+  // filename shape is denied.
+  const APP_ENTRY_SCRIPT_PATTERN = /^app\/([^/]+)\/\1\.js$/;
 
   let saveFile = spirit.core.fs.saveFile = function(filePath, content){
     const resolved = fsPath(ROOT_DIR, filePath);
     if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    if (APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return { ok: false, reason: 'app-entry-script-protected' };
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');

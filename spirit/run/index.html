@@ -129,6 +129,8 @@
         margin-top: 12px;
       }
 
+      textarea.code-view { width: 100%; box-sizing: border-box; resize: vertical; color: inherit; border: none; }
+
       .media-view { max-width: 100%; margin-top: 12px; display: block; }
 
       #process-search {
@@ -301,17 +303,60 @@
         var activeParams = null;
         var navStack = [{ id: 'desktop', params: null }]; // last entry is the current screen
 
+        // Extension -> [{id, name}] of every real handler app registered for
+        // it (dynamically-loaded apps only — see declareDynamicApp below).
+        // Separate from the fixed, non-configurable CATEGORY_APP_HANDLERS
+        // used for the built-in viewers: this is the pluggable "what else
+        // could open this file" registry behind "Open with".
+        var extensionHandlers = {};
+
+        // Default-handler choices persist here rather than in any app's own
+        // data, because they're explicitly meant to be part of the personal
+        // dataset this project is building toward (see preferences.json in
+        // .gitignore), not ordinary app config — hence root-level, not
+        // app-scoped.
+        var preferencesRaw = spirit.core.fs.loadFile('preferences.json');
+        var preferences = { defaultHandlers: {} };
+        if (preferencesRaw != null) {
+          try {
+            preferences = JSON.parse(preferencesRaw);
+            preferences.defaultHandlers = preferences.defaultHandlers || {};
+          } catch (e) { /* malformed — fall back to empty defaults */ }
+        }
+
+        function savePreferences() {
+          spirit.core.fs.saveFile('preferences.json', JSON.stringify(preferences, null, 2));
+        }
+
+        // Called once per extension a handler app declares. First
+        // declaration wins the default; later ones for the same extension
+        // never overwrite an existing choice — that's what the "Set as
+        // default" control (renderOpenWith, below) is for.
+        function registerExtensionHandler(ext, appId, appName) {
+          (extensionHandlers[ext] = extensionHandlers[ext] || []).push({ id: appId, name: appName });
+          if (preferences.defaultHandlers[ext] === undefined) {
+            preferences.defaultHandlers[ext] = appId;
+            savePreferences();
+          }
+        }
+
+        function defaultHandlerId(path) {
+          var ext = path.substring(path.lastIndexOf('.'));
+          return preferences.defaultHandlers[ext];
+        }
+
+        function createDesktopIcon(id, name, icon) {
+          var iconEl = document.createElement('div');
+          iconEl.className = 'app-icon';
+          iconEl.innerHTML = '<span class="icon">' + icon + '</span><span class="label">' + name + '</span>';
+          iconEl.addEventListener('click', function () { launchApp(id); });
+          desktopEl.appendChild(iconEl);
+        }
+
         function registerApp(app) {
           apps[app.id] = app;
           if (app.hidden) return; // reachable only via launchApp(id, params) from another app, no desktop icon
-
-          var iconEl = document.createElement('div');
-          iconEl.className = 'app-icon';
-          iconEl.innerHTML =
-            '<span class="icon">' + app.icon + '</span>' +
-            '<span class="label">' + app.name + '</span>';
-          iconEl.addEventListener('click', function () { launchApp(app.id); });
-          desktopEl.appendChild(iconEl);
+          createDesktopIcon(app.id, app.name, app.icon);
         }
 
         // Switches the visible screen without touching navStack — the stack
@@ -345,9 +390,11 @@
         // returns to wherever the launch happened from (desktop, or another
         // app — e.g. clicking a Stats tile that jumps into Files) rather than
         // always jumping straight to the desktop.
-        function launchApp(id, params) {
+        function launchApp(id, params, options) {
           params = params || null;
-          if (!apps[id]) return;
+          options = options || {};
+          var appEntry = apps[id];
+          if (!appEntry) return;
 
           var top = navStack[navStack.length - 1];
           if (top.id === id && JSON.stringify(top.params) === JSON.stringify(params)) return; // already here
@@ -368,11 +415,44 @@
 
           if (existingIndex !== -1) {
             navStack.length = existingIndex + 1;
+          } else if (options.replace && navStack.length > 1) {
+            // Used when picking a handler from "Open with" inside a viewer:
+            // the handler replaces the viewer's own stack entry rather than
+            // stacking on top of it, so Back returns straight to wherever
+            // the viewer was opened from, not back through the read-only
+            // preview first.
+            navStack[navStack.length - 1] = { id: id, params: params };
           } else {
             navStack.push({ id: id, params: params });
           }
 
+          // Manifest-declared dynamic apps are declared (icon, id, name) at
+          // discovery time but their script isn't fetched until first use —
+          // do that now, then mount once it finishes loading and has called
+          // activateApp to supply real mount/render.
+          if (appEntry._scriptPath && !appEntry._activated) {
+            var script = document.createElement('script');
+            script.src = '/' + appEntry._scriptPath;
+            script.onload = function () { switchTo(id, params); };
+            document.body.appendChild(script);
+            return;
+          }
+
           switchTo(id, params);
+        }
+
+        // A manifest-declared app's script has nothing left to say except its
+        // behavior — id/name/icon/hidden/handlesExtensions are already fully
+        // known from the manifest (declareDynamicApp, below). So it never
+        // calls registerApp (which stays completely unrelated to this
+        // declare/activate lifecycle and is only ever used by static apps);
+        // it calls this instead.
+        function activateApp(id, behavior) {
+          var existing = apps[id];
+          if (!existing) return; // no manifest declared this id — nothing to attach to
+          existing.mount = behavior.mount;
+          existing.render = behavior.render;
+          existing._activated = true;
         }
 
         function goBack() {
@@ -496,6 +576,65 @@
           div.textContent = String(str);
           return div.innerHTML;
         }
+
+        // "Open with": lists every real handler app registered for this
+        // file's extension (never the built-in viewers themselves — they
+        // aren't handlers, see the top-of-file state block). The dropdown
+        // just picks a candidate; "Open" navigates to it (replacing the
+        // viewer's own stack entry); "Set as default" promotes whichever
+        // candidate is currently picked, without navigating — kept as a
+        // separate action rather than firing on the dropdown's change event,
+        // since navigating away immediately would destroy this control
+        // before "Set as default" could ever apply to anything but the
+        // already-current default.
+        function renderOpenWith(container, currentAppId, path) {
+          var ext = path.substring(path.lastIndexOf('.'));
+          var handlers = extensionHandlers[ext] || [];
+          // currentAppId (always a viewer) is never itself in
+          // extensionHandlers, so even a single real handler is a genuine
+          // alternative to the read-only viewer — suppress only when
+          // there's truly nothing to switch to.
+          if (handlers.length < 1) { container.innerHTML = ''; return; }
+
+          var defaultId = preferences.defaultHandlers[ext];
+
+          container.innerHTML = '<label>Open with: <select id="open-with-select">' +
+            handlers.map(function (h) {
+              return '<option value="' + escapeHtml(h.id) + '"' + (h.id === defaultId ? ' selected' : '') + '>' + escapeHtml(h.name) + '</option>';
+            }).join('') + '</select></label>' +
+            ' <button type="button" id="open-with-go">Open</button>' +
+            (handlers.length > 1 ? ' <button type="button" id="open-with-set-default">Set as default</button>' : '');
+
+          document.getElementById('open-with-go').addEventListener('click', function () {
+            var selectedId = document.getElementById('open-with-select').value;
+            launchApp(selectedId, { path: path }, { replace: true });
+          });
+
+          var setDefaultBtn = document.getElementById('open-with-set-default');
+          if (setDefaultBtn) {
+            setDefaultBtn.addEventListener('click', function () {
+              var selectedId = document.getElementById('open-with-select').value;
+              preferences.defaultHandlers[ext] = selectedId;
+              savePreferences();
+              renderOpenWith(container, currentAppId, path); // re-render with the updated default pre-selected
+            });
+          }
+        }
+
+        // Minimal surface for dynamically-loaded apps (app/<name>/<name>.js,
+        // injected as a plain <script> tag — see discoverDynamicApps below).
+        // Such a script runs as a separate top-level script, not inside this
+        // IIFE, so registerApp/launchApp/escapeHtml aren't visible to it as
+        // bare identifiers the way they are to everything else in this file.
+        // window.spirit is the only thing dynamically-loaded code can already
+        // see, so this rides on it rather than inventing a new global.
+        spirit.shell = {
+          registerApp: registerApp,
+          launchApp: launchApp,
+          escapeHtml: escapeHtml,
+          activateApp: activateApp,
+          renderOpenWith: renderOpenWith,
+        };
 
         function mimeTypeForName(name) {
           var dot = name.lastIndexOf('.');
@@ -768,8 +907,10 @@
               '<div class="stat-tile wide">' +
                 '<div class="label">Path</div><div class="rows">' + escapeHtml(params.path) + '</div>' +
               '</div>' +
+              '<div id="open-with"></div>' +
               '<div id="job-manifest-form"></div>' +
               '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>';
+            renderOpenWith(document.getElementById('open-with'), 'code-viewer', params.path);
             maybeRenderJobForm(container, params.path);
           },
           render: function () {}, // static once mounted — the file's content doesn't live-update
@@ -792,7 +933,9 @@
             var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
             container.innerHTML =
               '<div class="stat-tile wide"><div class="label">Path</div><div class="rows">' + escapeHtml(params.path) + '</div></div>' +
+              '<div id="open-with"></div>' +
               '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(params.path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>';
+            renderOpenWith(document.getElementById('open-with'), 'media-viewer', params.path);
           },
           render: function () {},
         });
@@ -1058,11 +1201,54 @@
           },
         });
 
+        // Dynamically-loaded apps: discovery reads only each app's manifest
+        // (app/<name>/<name>.json — same folder/basename convention process/
+        // manifests already use) and declares it fully (icon, handler
+        // registration) without touching the .js at all. The script itself
+        // is fetched for the first time only when launchApp actually needs
+        // it (see launchApp's lazy-load branch, above) — an app nobody uses
+        // costs nothing beyond this one small JSON read. One-shot, not
+        // live-reactive — a new app added while the page is already open
+        // needs a reload to be discovered, same as you'd already expect for
+        // a new process manifest.
+        function declareDynamicApp(manifest, scriptPath) {
+          apps[manifest.id] = {
+            id: manifest.id,
+            name: manifest.name,
+            icon: spirit.core.const.ICON[manifest.icon] || spirit.core.const.ICON.FILE,
+            hidden: !!manifest.hidden,
+            mount: function (container) { container.textContent = 'Loading ' + manifest.name + '…'; },
+            render: function () {},
+            _scriptPath: scriptPath,
+            _activated: false,
+          };
+
+          (manifest.handlesExtensions || []).forEach(function (ext) {
+            registerExtensionHandler(ext, manifest.id, manifest.name);
+          });
+
+          if (!manifest.hidden) createDesktopIcon(manifest.id, manifest.name, apps[manifest.id].icon);
+        }
+
+        function discoverDynamicApps(jobs) {
+          var fsWatcherJob = jobs.find(function (j) { return j.type === 'fs-watcher'; });
+          if (!fsWatcherJob || !fsWatcherJob.data || !Array.isArray(fsWatcherJob.data.files)) return;
+
+          var appEntryPattern = /^app\/([^/]+)\/\1\.js$/;
+          fsWatcherJob.data.files.forEach(function (f) {
+            if (f.kind !== 'file' || !appEntryPattern.test(f.relativePath)) return;
+            var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.js$/, '.json'));
+            if (manifestRaw == null) return; // no manifest, no discovery — same rule process/ already uses
+            try { declareDynamicApp(JSON.parse(manifestRaw), f.relativePath); } catch (e) { /* malformed manifest — skip */ }
+          });
+        }
+
         // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
         spirit.core.jobs.subscribe({
           onSnapshot: function (jobs) {
             jobsById.clear();
             jobs.forEach(function (job) { jobsById.set(job.id, job); });
+            discoverDynamicApps(jobs);
             renderActive();
           },
           onUpdate: function (job) {
