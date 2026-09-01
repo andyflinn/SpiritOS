@@ -102,13 +102,27 @@ if (isNode()) {
     return joined;
   };
 
-  let loadFile = spirit.core.fs.loadFile = 
+  let loadFile = spirit.core.fs.loadFile =
   function(filePath){
 
     filePath = fsPath(ROOT_DIR,filePath);
-  
+
     try {
       return fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' });
+    } catch (err) {
+      return null;
+    }
+  };
+
+  // Read-only, same boundary as loadFile (anywhere under ROOT_DIR, not just
+  // the writable roots) — file metadata for display purposes (viewer info
+  // bubbles), not a write capability.
+  let statFile = spirit.core.fs.statFile = function(filePath){
+    const resolved = fsPath(ROOT_DIR, filePath);
+    if (!resolved) return null;
+    try {
+      const stats = fs.statSync(resolved);
+      return { size: stats.size, mtimeMs: stats.mtimeMs, birthtimeMs: stats.birthtimeMs };
     } catch (err) {
       return null;
     }
@@ -297,6 +311,20 @@ if (isNode()) {
     xmlhttp.send();
     if (xmlhttp.status==200) {
       result = xmlhttp.responseText;
+    }
+    return result;
+  };
+
+  // Sync, same as loadFile — file metadata (size/mtime/birthtime) for
+  // display purposes, via the new /api/fs/stat proxy (the browser has no
+  // direct filesystem access, unlike the Node side's fs.statSync).
+  spirit.core.fs.statFile = function(filePath) {
+    let result = null;
+    let xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", "/api/fs/stat?path=" + encodeURIComponent(filePath), false);
+    xmlhttp.send();
+    if (xmlhttp.status == 200) {
+      try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = null; }
     }
     return result;
   };

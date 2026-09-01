@@ -224,6 +224,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/fs/stat') {
+    const stats = spirit.core.fs.statFile(url.searchParams.get('path') || '');
+    if (!stats) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Not found');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(stats));
+    return;
+  }
+
   if (req.method === 'GET') {
     const filePath = pathname === '/'
       ? path.join(ROOT_DIR, 'index.html')

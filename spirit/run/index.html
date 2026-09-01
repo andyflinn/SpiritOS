@@ -98,6 +98,12 @@
       .stat-tile .label { font-size: 12px; opacity: 0.7; margin-top: 4px; }
       .stat-tile .rows { font-size: 13px; margin-top: 4px; }
 
+      /* Label and value on the same line — dedicated to the file info
+         bubble (renderFileInfoBubble), separate from .stat-tile .label/.rows
+         above (stacked label-over-value), which other apps rely on as-is. */
+      .file-info-row { display: flex; gap: 8px; font-size: 13px; margin-top: 4px; }
+      .file-info-row .file-info-label { opacity: 0.7; min-width: 70px; }
+
       #file-tree summary {
         cursor: pointer;
         padding: 4px;
@@ -749,6 +755,45 @@
           },
         });
 
+        // Shared by both viewers: replaces the plain "app name" titlebar
+        // with the filename plus a bail-out button, always. "Open " (making
+        // it a yes/no question) only prefixes the filename when there's
+        // actually something to say yes/no TO — a real handler registered
+        // for this extension; with no handler, it's just the filename, no
+        // question implied. The button reads as an "oops, wrong file"
+        // bail-out rather than a formal decline, hence ICON.ERROR instead of
+        // a "No" label — same action as the existing Back arrow either way.
+        function setViewerTitle(path) {
+          var ext = path.substring(path.lastIndexOf('.'));
+          var hasHandler = !!(extensionHandlers[ext] && extensionHandlers[ext].length > 0);
+          var filename = path.substring(path.lastIndexOf('/') + 1);
+
+          titleEl.innerHTML = (hasHandler ? 'Open ' : '') + escapeHtml(filename) + (hasHandler ? '?' : '') +
+            ' <button type="button" class="cancel-btn" id="viewer-no-btn">' + ICON.ERROR + '</button>';
+          document.getElementById('viewer-no-btn').addEventListener('click', goBack);
+        }
+
+        // Shared by both viewers: the info bubble a user needs to decide
+        // whether this is really the file they meant to open — path is
+        // always known; size/changed/created come from statFile and are
+        // simply omitted if the stat call fails (e.g. a race with the file
+        // being deleted) rather than showing misleading blanks.
+        function fileInfoRow(label, value) {
+          return '<div class="file-info-row"><span class="file-info-label">' + label + ':</span><span>' + value + '</span></div>';
+        }
+
+        function renderFileInfoBubble(path) {
+          var stats = spirit.core.fs.statFile(path);
+          var rows = fileInfoRow('Path', escapeHtml(path));
+          if (stats) {
+            rows +=
+              fileInfoRow('Size', stats.size) +
+              fileInfoRow('Changed', new Date(stats.mtimeMs).toLocaleString()) +
+              fileInfoRow('Created', new Date(stats.birthtimeMs).toLocaleString());
+          }
+          return '<div class="stat-tile wide">' + rows + '</div>';
+        }
+
         // ---- Code Viewer app ----
         // Only reachable via launchApp('code-viewer', { path }) from Files or
         // the Processes app — no desktop icon (hidden: true).
@@ -902,11 +947,10 @@
           icon: ICON.CODE,
           hidden: true,
           mount: function (container, params) {
+            setViewerTitle(params.path);
             var content = spirit.core.fs.loadFile(params.path);
             container.innerHTML =
-              '<div class="stat-tile wide">' +
-                '<div class="label">Path</div><div class="rows">' + escapeHtml(params.path) + '</div>' +
-              '</div>' +
+              renderFileInfoBubble(params.path) +
               '<div id="open-with"></div>' +
               '<div id="job-manifest-form"></div>' +
               '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>';
@@ -929,10 +973,11 @@
           icon: ICON.VIEW,
           hidden: true,
           mount: function (container, params) {
+            setViewerTitle(params.path);
             var category = classifyMimeType(mimeTypeForName(params.path));
             var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
             container.innerHTML =
-              '<div class="stat-tile wide"><div class="label">Path</div><div class="rows">' + escapeHtml(params.path) + '</div></div>' +
+              renderFileInfoBubble(params.path) +
               '<div id="open-with"></div>' +
               '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(params.path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>';
             renderOpenWith(document.getElementById('open-with'), 'media-viewer', params.path);
