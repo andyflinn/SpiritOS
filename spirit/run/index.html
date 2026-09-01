@@ -855,12 +855,19 @@
 
           var formEl = document.getElementById('job-manifest-form');
           var argsHtml = (manifest.args || []).map(function (arg) {
-            if (arg.type === 'lm-studio-model') {
+            if (arg.type === 'lm-studio-model' || arg.type === 'lm-studio-model-unloaded' || arg.type === 'lm-studio-model-loaded') {
+              // Three flavors of the same dropdown, sharing the population
+              // logic below: 'lm-studio-model' cross-references the vision
+              // probe (for captioning-style scripts); 'unloaded'/'loaded'
+              // filter by live state (for load/unload scripts — showing an
+              // already-loaded model in the Load dropdown would let you
+              // spawn a wasteful duplicate instance, confirmed live).
               // Rendered disabled with just the manifest default until the
               // live fetch below resolves — never blocks starting the job
               // on that fetch, since the default is already a valid value.
+              var lmFilter = arg.type === 'lm-studio-model' ? 'vision' : (arg.type === 'lm-studio-model-unloaded' ? 'unloaded' : 'loaded');
               return '<label>' + escapeHtml(arg.label || arg.name) +
-                '<select data-arg-name="' + escapeHtml(arg.name) + '" data-lm-studio-model-select disabled>' +
+                '<select data-arg-name="' + escapeHtml(arg.name) + '" data-lm-studio-model-select data-lm-studio-filter="' + lmFilter + '" disabled>' +
                 '<option value="' + escapeHtml(arg.default || '') + '">' + escapeHtml(arg.default || '(loading models…)') + '</option>' +
                 '</select></label>';
             }
@@ -897,6 +904,7 @@
           formEl.querySelectorAll('[data-lm-studio-model-select]').forEach(function (select) {
             var argName = select.dataset.argName;
             var defaultValue = select.value;
+            var filter = select.dataset.lmStudioFilter; // 'vision' | 'unloaded' | 'loaded'
             var controller = new AbortController();
             var timeoutId = setTimeout(function () { controller.abort(); }, 2000);
 
@@ -906,12 +914,16 @@
             // silently blocked by CORS even when it's perfectly reachable.
             // The proxy itself knows nothing about LM Studio — this caller
             // supplies the target and owns parsing LM Studio's raw response
-            // shape ({data: [{id, ...}]}), not the server.
+            // shape. Load-state filtering needs LM Studio's native
+            // /api/v0/models (the plain OpenAI-compatible /v1/models used
+            // for the vision-probe case doesn't report `state` at all).
+            var targetUrl = filter === 'vision' ? 'http://localhost:1234/v1/models' : 'http://localhost:1234/api/v0/models';
+
             fetch('/api/proxy', {
               method: 'POST',
               signal: controller.signal,
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: 'http://localhost:1234/v1/models', timeoutMs: 2000 }),
+              body: JSON.stringify({ url: targetUrl, timeoutMs: 2000 }),
             })
               .then(function (res) {
                 clearTimeout(timeoutId);
@@ -919,8 +931,22 @@
                 return res.json();
               })
               .then(function (body) {
-                var ids = (body.data || []).map(function (m) { return m.id; });
-                if (ids.length === 0) throw new Error('no models currently loaded');
+                var liveModels = body.data || [];
+                if (liveModels.length === 0) throw new Error('no models currently loaded');
+
+                if (filter === 'unloaded' || filter === 'loaded') {
+                  var filtered = liveModels.filter(function (m) {
+                    return filter === 'loaded' ? m.state === 'loaded' : m.state !== 'loaded';
+                  });
+                  if (filtered.length === 0) throw new Error('no ' + filter + ' models');
+                  select.innerHTML = filtered.map(function (m) {
+                    return '<option value="' + escapeHtml(m.id) + '"' + (m.id === defaultValue ? ' selected' : '') + '>' + escapeHtml(m.id) + '</option>';
+                  }).join('');
+                  select.disabled = false;
+                  return;
+                }
+
+                var ids = liveModels.map(function (m) { return m.id; });
                 var probeResult = classifyModelsAgainstProbe(ids);
                 select.innerHTML = probeResult.classified.map(function (entry) {
                   var label = entry.id +
@@ -1007,8 +1033,15 @@
               listEl.textContent = 'waiting for file list…';
               return;
             }
+            // A script's own file always shares its basename with its
+            // enclosing folder (process/<lang>/<name>/<name>.<ext> — same
+            // convention app/<name>/<name>.js already relies on), which
+            // correctly excludes sibling assets living in the same folder
+            // (a test fixture, an npm package.json, etc.) that the old
+            // shape-only check let through. .json is still excluded
+            // separately since a manifest shares that same basename.
             lastProcessBrowserEntries = job.data.files
-              .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/[^/]+\/[^/]+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
+              .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/([^/]+)\/\1\.[^/.]+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
               .map(function (f) {
                 var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.[^.]+$/, '.json'));
                 var manifest = null;

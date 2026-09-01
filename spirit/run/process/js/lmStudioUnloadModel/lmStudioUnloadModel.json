@@ -2,6 +2,6 @@
   "label": "Unload LM Studio Model",
   "description": "Unloads a specific model from LM Studio to free memory. Use the exact identifier as reported by the model list (repeated loads without unloading can create numbered duplicate instances, e.g. \"model-name:2\").",
   "args": [
-    { "name": "model", "type": "string", "label": "Model identifier (exact, e.g. prism-ml/bonsai-27b or prism-ml/bonsai-27b:2)", "default": "" }
+    { "name": "model", "type": "lm-studio-model-loaded", "label": "Model to unload", "default": "" }
   ]
 }

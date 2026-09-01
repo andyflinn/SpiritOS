@@ -2,6 +2,6 @@
   "label": "Load LM Studio Model",
   "description": "Loads a specific model into LM Studio so it's ready to answer immediately, rather than relying on auto-loading (which this setup doesn't do).",
   "args": [
-    { "name": "model", "type": "string", "label": "Model id (exact, e.g. prism-ml/bonsai-27b)", "default": "" }
+    { "name": "model", "type": "lm-studio-model-unloaded", "label": "Model to load", "default": "" }
   ]
 }
