@@ -76,7 +76,13 @@ if (isNode()) {
   const fs = require('fs');
   const path = require('path');
   const http = require('http');
-  const ROOT_DIR = process.cwd();
+  // Pinned to this file's own location, not process.cwd() — kernel.js
+  // always lives at spirit/run/js/kernel.js, so spirit/run/ is always
+  // exactly one level up, regardless of which directory the server was
+  // actually launched from. process.cwd() silently broke every path,
+  // discovery rule, and writable-root check if you started the server from
+  // anywhere but spirit/run/ itself, with no error pointing at why.
+  const ROOT_DIR = path.join(__dirname, '..');
   const DEFAULT_SPIRIT_PORT = 65432;
   
   spirit.core.node = {
