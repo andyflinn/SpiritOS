@@ -46,3 +46,7 @@ preferences.json
 conversation.json
 spirit/run/process/js/lmStudioVisionProbe/results.json
 spirit/currentIssues.md
+
+# Personal media that ended up in a folder named test/pix rather than real
+# test fixtures — unreferenced by any code or test (verified), 20MB.
+spirit/test/pix
