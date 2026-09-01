@@ -487,15 +487,6 @@ if (isNode()) {
  // ******************************************************************
  // functions that depend on environment specific other functions
 
-spirit.core.util.loadSpiritModule = function(filePath){
-  print('loading spirit module ' + filePath);
-  let script = spirit.core.fs.loadFile(filePath);
-  if (script==null) return;
-  let foo = new Function("spirit",script);
-  foo(spirit);
-};
-
-
 const ICON = spirit.core.const.ICON = {
     ANGRY: '😠',
     ARROWDOWN: '⬇️',
