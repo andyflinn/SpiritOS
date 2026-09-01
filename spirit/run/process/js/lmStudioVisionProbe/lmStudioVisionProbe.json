@@ -1,0 +1,5 @@
+{
+  "label": "LM Studio Vision Probe",
+  "description": "Tests every model LM Studio currently reports against a fixed local test image and records which ones actually produce a usable caption — imageCaptionLmStudio's model dropdown reads these results to filter out models that claim vision support but don't.",
+  "args": []
+}

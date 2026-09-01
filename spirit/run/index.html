@@ -180,6 +180,10 @@
 
       .start-job-form button:hover, .cancel-btn:hover { background: #16487a; }
 
+      #job-manifest-form {
+        margin-top: 12px;
+      }
+
       #job-manifest-form label {
         display: flex;
         flex-direction: column;
@@ -609,6 +613,44 @@
         // ---- Code Viewer app ----
         // Only reachable via launchApp('code-viewer', { path }) from Files or
         // the Processes app — no desktop icon (hidden: true).
+        // Cross-references a live LM Studio model list against the vision
+        // probe's results.json (if it has ever been run), so the dropdown
+        // can hide models that are KNOWN to fail rather than trusting a
+        // model's own self-reported vision-capability claim. Untested models
+        // (not yet probed, e.g. installed after the last run) still show —
+        // only confirmed failures are excluded, so a genuinely new model
+        // never gets hidden just because the probe hasn't seen it yet. If no
+        // probe has ever run, this is a no-op: unfiltered, exactly today's
+        // behavior.
+        function classifyModelsAgainstProbe(liveIds) {
+          var probeRaw = spirit.core.fs.loadFile('process/js/lmStudioVisionProbe/results.json');
+          var resultByModel = {};
+          var testedAt = null;
+          if (probeRaw != null) {
+            try {
+              var probe = JSON.parse(probeRaw);
+              testedAt = probe.testedAt || null;
+              (probe.results || []).forEach(function (r) { resultByModel[r.model] = r; });
+            } catch (e) { /* malformed/missing probe data — fall back to unfiltered */ }
+          }
+          var classified = liveIds
+            .filter(function (id) {
+              var r = resultByModel[id];
+              return !r || r.success !== false; // only exclude CONFIRMED failures
+            })
+            .map(function (id) {
+              var r = resultByModel[id];
+              return {
+                id: id,
+                verified: !!(r && r.success === true),
+                sizeBytes: r && r.sizeBytes != null ? r.sizeBytes : null,
+                fitsInVram: r && r.fitsInVram != null ? r.fitsInVram : null,
+              };
+            });
+          classified.sort(function (a, b) { return (b.verified ? 1 : 0) - (a.verified ? 1 : 0); });
+          return { classified: classified, testedAt: testedAt };
+        }
+
         function maybeRenderJobForm(container, scriptPath) {
           var match = scriptPath.match(/^process\/([^/]+)\/([^/]+)\/(.+)\.js$/);
           if (!match) return;
@@ -687,10 +729,19 @@
               .then(function (body) {
                 var ids = body.models || [];
                 if (ids.length === 0) throw new Error('no models currently loaded');
-                select.innerHTML = ids.map(function (id) {
-                  return '<option value="' + escapeHtml(id) + '"' + (id === defaultValue ? ' selected' : '') + '>' + escapeHtml(id) + '</option>';
+                var probeResult = classifyModelsAgainstProbe(ids);
+                select.innerHTML = probeResult.classified.map(function (entry) {
+                  var label = entry.id +
+                    (entry.sizeBytes != null ? ' (' + formatBytes(entry.sizeBytes) + ')' : '') +
+                    (entry.verified ? ' ' + ICON.OK : '') +
+                    (entry.fitsInVram === false ? ' ' + ICON.WARNING : '');
+                  return '<option value="' + escapeHtml(entry.id) + '"' + (entry.id === defaultValue ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
                 }).join('');
                 select.disabled = false;
+                if (probeResult.testedAt) {
+                  var probeNote = document.getElementById('job-manifest-note');
+                  if (probeNote) probeNote.textContent = 'Filtered using vision-probe results from ' + new Date(probeResult.testedAt).toLocaleString() + '.';
+                }
               })
               .catch(function () {
                 clearTimeout(timeoutId);
@@ -835,7 +886,7 @@
 
         var STATUS_ICON = {
           pending: ICON.LOADING,
-          running: ICON.PLAY,
+          running: ICON.RUN,
           completed: ICON.OK,
           failed: ICON.ERROR,
           cancelled: ICON.STOP,
@@ -843,7 +894,7 @@
           error: ICON.WARNING,
         };
 
-        var expandedJobIds = new Set(); // which job rows are currently expanded to show their full log
+        var expandedJobId = null; // the one job row currently expanded to show its full log, or null
 
         function formatLogEntries(job) {
           if (!job.log || job.log.length === 0) return '<div class="job-log-empty">(no log entries yet)</div>';
@@ -858,7 +909,7 @@
           var lastLog = job.log && job.log.length ? job.log[job.log.length - 1].message : '';
           var isTerminal = TERMINAL_STATUSES.indexOf(job.status) !== -1;
           var canCancel = job.kind === 'process' && !isTerminal;
-          var isExpanded = expandedJobIds.has(job.id);
+          var isExpanded = job.id === expandedJobId;
 
           var actionHtml = canCancel
             ? '<button type="button" class="cancel-btn" data-job-id="' + escapeHtml(job.id) + '">Cancel</button>'
@@ -907,12 +958,36 @@
           var tbody = document.getElementById('jobs-tbody');
           if (!tbody) return;
 
+          // Sticky scroll (same pattern as chat UIs): rebuilding tbody.innerHTML
+          // destroys and recreates the log panel's DOM node, which would
+          // otherwise silently reset its scroll position on every update —
+          // exactly what made watching a live log fight the fs-watcher/
+          // server-stats noise. Capture whether the panel was at (or near)
+          // the bottom before rebuilding, then either pin it back to the new
+          // bottom (so live-streaming logs stay watchable) or restore the
+          // exact same scrollTop (so scrolling up to read history isn't
+          // disturbed by unrelated updates). A freshly opened panel (no prior
+          // panel to measure) defaults to pinned-to-bottom.
+          var existingPanel = tbody.querySelector('.job-log-panel');
+          var stickToBottom = true;
+          var previousScrollTop = 0;
+          if (existingPanel) {
+            var distanceFromBottom = existingPanel.scrollHeight - existingPanel.scrollTop - existingPanel.clientHeight;
+            stickToBottom = distanceFromBottom < 20; // small threshold for sub-pixel rounding
+            previousScrollTop = existingPanel.scrollTop;
+          }
+
           var rows = [];
           jobsById.forEach(function (job) { rows.push(job); });
           rows.sort(function (a, b) { return a.createdAt - b.createdAt; });
 
           tbody.innerHTML = rows.map(renderJobRow).join('') ||
             '<tr><td colspan="6">(no jobs)</td></tr>';
+
+          var newPanel = tbody.querySelector('.job-log-panel');
+          if (newPanel) {
+            newPanel.scrollTop = stickToBottom ? newPanel.scrollHeight : previousScrollTop;
+          }
         }
 
         registerApp({
@@ -920,7 +995,7 @@
           name: 'Jobs',
           icon: ICON.LIST,
           mount: function (container) {
-            expandedJobIds = new Set(); // fresh visit starts fully collapsed
+            expandedJobId = null; // fresh visit starts fully collapsed
 
             container.innerHTML =
               '<form id="start-job-form" class="start-job-form">' +
@@ -973,11 +1048,7 @@
               var row = event.target.closest('[data-job-row]');
               if (row) {
                 var jobId = row.dataset.jobRow;
-                if (expandedJobIds.has(jobId)) {
-                  expandedJobIds.delete(jobId);
-                } else {
-                  expandedJobIds.add(jobId);
-                }
+                expandedJobId = (expandedJobId === jobId) ? null : jobId; // opening one closes any other
                 renderJobsTable(); // re-render immediately — don't wait for the next live update to reflect the toggle
               }
             });
