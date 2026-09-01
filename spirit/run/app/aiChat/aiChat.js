@@ -14,6 +14,7 @@ if (!document.getElementById('ai-chat-styles')) {
     '.ai-chat-prompt { font-weight: 600; margin-bottom: 6px; }' +
     '.ai-chat-response { background: rgba(255,255,255,0.06); border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }' +
     '.ai-chat-target { font-size: 12px; opacity: 0.7; margin-bottom: 4px; }' +
+    '.ai-chat-duration { opacity: 0.6; }' +
     '.ai-chat-pending { font-style: italic; opacity: 0.6; }' +
     '.ai-chat-error-text { color: #ff8080; }' +
     '.ai-chat-empty { opacity: 0.6; font-style: italic; }';
@@ -62,6 +63,11 @@ spirit.shell.activateApp('ai-chat', {
       '</form>' +
       '<div id="ai-chat-error" class="job-start-error"></div>';
 
+    function formatDuration(ms) {
+      if (ms == null) return '';
+      return ms < 1000 ? (ms + 'ms') : ((ms / 1000).toFixed(1) + 's');
+    }
+
     function renderHistory() {
       var historyEl = document.getElementById('ai-chat-history');
       historyEl.innerHTML = conversation.exchanges.map(function (exchange) {
@@ -71,10 +77,12 @@ spirit.shell.activateApp('ai-chat', {
           if (!response) {
             return '<div class="ai-chat-response"><div class="ai-chat-target">' + escapeHtml(label) + '</div><div class="ai-chat-pending">thinking…</div></div>';
           }
+          var targetLabel = escapeHtml(label) +
+            (response.durationMs != null ? ' <span class="ai-chat-duration">(' + formatDuration(response.durationMs) + ')</span>' : '');
           var body = response.error
             ? '<div class="ai-chat-error-text">' + escapeHtml(response.error) + '</div>'
             : '<div class="ai-chat-text">' + escapeHtml(response.text) + '</div>';
-          return '<div class="ai-chat-response"><div class="ai-chat-target">' + escapeHtml(label) + '</div>' + body + '</div>';
+          return '<div class="ai-chat-response"><div class="ai-chat-target">' + targetLabel + '</div>' + body + '</div>';
         }).join('');
 
         return '<div class="ai-chat-exchange">' +
@@ -85,25 +93,91 @@ spirit.shell.activateApp('ai-chat', {
       historyEl.scrollTop = historyEl.scrollHeight;
     }
 
+    // Combines two independent signals: what LM Studio's own metadata
+    // *proclaims* (type === 'vlm', from its native /api/v0/models — a
+    // richer, LM-Studio-specific endpoint than the plain OpenAI-compatible
+    // /v1/models used to actually talk to a model) versus what the vision
+    // probe *actually tested* by attempting a real caption. Proclaimed
+    // vision support has already been shown this session to sometimes just
+    // be wrong, so these are shown as distinct states, not collapsed into one.
+    function visionIconFor(liveEntry, probeEntry) {
+      // The probe records a "not a vision model" skip as success:false too
+      // (it never attempted a real test) — its own vision flag (from
+      // `lms ls`, independent of the live /api/v0/models type field) is
+      // what actually distinguishes that from a genuine tested failure.
+      // Treating a correct skip as a warning would be a false alarm.
+      if (probeEntry && probeEntry.vision === false) {
+        return liveEntry.type === 'vlm' ? { icon: spirit.core.const.ICON.WARNING, title: 'proclaims vision, but lms ls disagrees' } : null;
+      }
+      if (probeEntry && probeEntry.success === true) {
+        return { icon: spirit.core.const.ICON.OK, title: 'verified working (vision probe)' };
+      }
+      if (probeEntry && probeEntry.success === false) {
+        return { icon: spirit.core.const.ICON.WARNING, title: 'tested, failed: ' + (probeEntry.reason || 'unknown') };
+      }
+      if (liveEntry.type === 'vlm') {
+        return { icon: spirit.core.const.ICON.VIEW, title: 'proclaimed vision-capable, not verified' };
+      }
+      return null;
+    }
+
+    function renderModelTable(liveModels, probeByModel) {
+      var modelsEl = document.getElementById('ai-chat-models');
+      var rows = liveModels.map(function (liveEntry) {
+        var visionState = visionIconFor(liveEntry, probeByModel[liveEntry.id]);
+        return '<tr>' +
+          '<td><input type="checkbox" class="ai-chat-model-checkbox" value="' + escapeHtml(liveEntry.id) + '"' +
+            (visionState ? ' data-vision-capable="true"' : '') + '></td>' +
+          '<td>' + escapeHtml(liveEntry.id) + '</td>' +
+          '<td title="' + (visionState ? escapeHtml(visionState.title) : '') + '">' + (visionState ? visionState.icon : '') + '</td>' +
+          '</tr>';
+      }).join('');
+
+      modelsEl.innerHTML =
+        '<div id="ai-chat-model-toolbar">Select: ' +
+          '<button type="button" class="cancel-btn" data-select="all">All</button> ' +
+          '<button type="button" class="cancel-btn" data-select="none">None</button> ' +
+          '<button type="button" class="cancel-btn" data-select="vision">Vision-capable</button>' +
+        '</div>' +
+        '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>';
+
+      modelsEl.querySelectorAll('[data-select]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var mode = btn.dataset.select;
+          modelsEl.querySelectorAll('.ai-chat-model-checkbox').forEach(function (cb) {
+            cb.checked = mode === 'all' || (mode === 'vision' && cb.dataset.visionCapable === 'true');
+          });
+        });
+      });
+    }
+
     function loadModels() {
       var modelsEl = document.getElementById('ai-chat-models');
       // Goes through the server's generic /api/proxy route (not LM Studio
       // directly — no Access-Control-Allow-Origin header, so a cross-origin
       // browser fetch would be silently blocked by CORS). The proxy knows
       // nothing about LM Studio; this caller owns parsing its raw response
-      // shape ({data: [{id, ...}]}).
+      // shape ({data: [{id, type, ...}]}).
       fetch('/api/proxy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: 'http://localhost:1234/v1/models', timeoutMs: 2000 }),
+        body: JSON.stringify({ url: 'http://localhost:1234/api/v0/models', timeoutMs: 2000 }),
       })
         .then(function (res) { return res.json(); })
         .then(function (body) {
-          var ids = (body.data || []).map(function (m) { return m.id; });
-          if (ids.length === 0) throw new Error('no models currently loaded');
-          modelsEl.innerHTML = ids.map(function (id) {
-            return '<label><input type="checkbox" class="ai-chat-model-checkbox" value="' + escapeHtml(id) + '"> ' + escapeHtml(id) + '</label>';
-          }).join(' &nbsp; ');
+          var liveModels = body.data || [];
+          if (liveModels.length === 0) throw new Error('no models currently loaded');
+
+          var probeRaw = spirit.core.fs.loadFile('process/js/lmStudioVisionProbe/results.json');
+          var probeByModel = {};
+          if (probeRaw != null) {
+            try {
+              JSON.parse(probeRaw).results.forEach(function (r) { probeByModel[r.model] = r; });
+            } catch (e) { /* malformed/missing probe data — proclaimed-only is fine */ }
+          }
+
+          renderModelTable(liveModels, probeByModel);
         })
         .catch(function () {
           modelsEl.textContent = 'LM Studio unreachable — start it and reload this app.';
@@ -169,7 +243,7 @@ spirit.shell.activateApp('ai-chat', {
             renderHistory();
           })
           .catch(function (err) {
-            exchange.responses.push({ target: target, error: err.message, respondedAt: Date.now() });
+            exchange.responses.push({ target: target, error: err.message, respondedAt: Date.now(), durationMs: Date.now() - startedAt });
             saveConversation();
             renderHistory();
           });
