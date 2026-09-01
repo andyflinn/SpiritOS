@@ -900,18 +900,26 @@
             var controller = new AbortController();
             var timeoutId = setTimeout(function () { controller.abort(); }, 2000);
 
-            // Goes through our own server's /api/lm-studio-models proxy, not
+            // Goes through our own server's generic /api/proxy route, not
             // LM Studio directly — LM Studio sends no Access-Control-Allow-
             // Origin header, so a cross-origin browser fetch to it would be
             // silently blocked by CORS even when it's perfectly reachable.
-            fetch('/api/lm-studio-models', { signal: controller.signal })
+            // The proxy itself knows nothing about LM Studio — this caller
+            // supplies the target and owns parsing LM Studio's raw response
+            // shape ({data: [{id, ...}]}), not the server.
+            fetch('/api/proxy', {
+              method: 'POST',
+              signal: controller.signal,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: 'http://localhost:1234/v1/models', timeoutMs: 2000 }),
+            })
               .then(function (res) {
                 clearTimeout(timeoutId);
                 if (!res.ok) throw new Error('proxy returned ' + res.status);
                 return res.json();
               })
               .then(function (body) {
-                var ids = body.models || [];
+                var ids = (body.data || []).map(function (m) { return m.id; });
                 if (ids.length === 0) throw new Error('no models currently loaded');
                 var probeResult = classifyModelsAgainstProbe(ids);
                 select.innerHTML = probeResult.classified.map(function (entry) {

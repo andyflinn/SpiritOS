@@ -43,5 +43,6 @@ data/user.json
 media
 published
 preferences.json
+conversation.json
 spirit/run/process/js/lmStudioVisionProbe/results.json
 spirit/currentIssues.md

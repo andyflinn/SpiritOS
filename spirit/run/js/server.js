@@ -169,35 +169,67 @@ function handleFsDelete(req, res) {
   });
 }
 
-// LM Studio's local server sends no Access-Control-Allow-Origin header, so a
-// browser fetch() straight from this page (a different origin/port) is
-// silently blocked by CORS even though LM Studio itself is reachable and
-// responding fine (curl doesn't enforce CORS, only browsers do). Proxying
-// through our own server sidesteps this entirely — server-to-server requests
-// aren't subject to CORS at all.
-function handleLmStudioModels(res) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000);
+// Generic outbound-request proxy — knows nothing about LM Studio or any
+// other specific service, unlike the two hardcoded handlers this replaced.
+// A local service (LM Studio's included) sends no Access-Control-Allow-
+// Origin header, so a browser fetch() straight to it is silently blocked by
+// CORS even though it's reachable (server-to-server requests aren't subject
+// to CORS at all). The caller supplies the target url/method/body/timeout
+// and owns all response-shape parsing — this just forwards and relays back
+// whatever the target actually returned, or a synthesized {error} on
+// timeout/unreachable.
+function handleGenericProxy(req, res) {
+  readJsonBody(req).then((body) => {
+    if (!body.url) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'url is required' }));
+      return;
+    }
 
-  fetch('http://localhost:1234/v1/models', { signal: controller.signal })
-    .then((response) => {
-      clearTimeout(timeoutId);
-      if (!response.ok) throw new Error('LM Studio returned ' + response.status);
-      return response.json();
-    })
-    .then((body) => {
-      const ids = (body.data || []).map((m) => m.id);
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ models: ids }));
-    })
-    .catch(() => {
-      clearTimeout(timeoutId);
-      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ models: [], error: 'LM Studio unreachable' }));
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), body.timeoutMs || 10000);
+
+    const fetchOptions = { method: body.method || 'GET', signal: controller.signal };
+    if (body.body !== undefined) {
+      fetchOptions.headers = { 'Content-Type': 'application/json' };
+      fetchOptions.body = JSON.stringify(body.body);
+    }
+
+    fetch(body.url, fetchOptions)
+      .then((response) => response.text().then((text) => ({ status: response.status, text })))
+      .then(({ status, text }) => {
+        clearTimeout(timeoutId);
+        res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(text);
+      })
+      .catch((err) => {
+        clearTimeout(timeoutId);
+        res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: err.name === 'AbortError' ? 'proxy request timed out' : 'proxy target unreachable' }));
+      });
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+// server.listen below has no host argument, so Node binds to all network
+// interfaces by default — reachable from other devices on the same LAN, not
+// just this machine. That matters once any route makes outbound requests on
+// the caller's behalf (the generic proxy, below): without this check,
+// another device on the network could use this server to reach whatever it
+// can reach. Checked first, before any routing.
+function isLoopbackAddress(address) {
+  return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
 }
 
 const server = http.createServer((req, res) => {
+  if (!isLoopbackAddress(req.socket.remoteAddress)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden: this server only accepts connections from localhost');
+    return;
+  }
+
   requestCounters.total++;
   requestCounters.byMethod[req.method] = (requestCounters.byMethod[req.method] || 0) + 1;
   res.on('finish', () => {
@@ -216,11 +248,6 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && pathname === '/api/jobs') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(jobs.listJobs()));
-    return;
-  }
-
-  if (req.method === 'GET' && pathname === '/api/lm-studio-models') {
-    handleLmStudioModels(res);
     return;
   }
 
@@ -259,6 +286,11 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/fs/delete') {
       handleFsDelete(req, res);
+      return;
+    }
+
+    if (pathname === '/api/proxy') {
+      handleGenericProxy(req, res);
       return;
     }
 
