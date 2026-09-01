@@ -223,8 +223,22 @@ function isLoopbackAddress(address) {
   return address === '127.0.0.1' || address === '::1' || address === '::ffff:127.0.0.1';
 }
 
+// The loopback check above only proves the TCP connection came from this
+// machine — it does NOT prove the request came from this app's own page.
+// A malicious or DNS-rebound website open in another tab can still have its
+// JS fetch() straight to http://localhost:<port>, and from the server's side
+// that looks identical to a real request: the browser is the one connecting,
+// so remoteAddress is 127.0.0.1 either way. Validating the Host header the
+// browser actually sent closes that gap — DNS rebinding changes which IP a
+// hostname resolves to, but can't forge the Host header to also claim
+// "localhost" without giving up the attack's whole premise.
+const VALID_HOSTS = ['localhost:' + port, '127.0.0.1:' + port, '[::1]:' + port];
+function isValidHost(hostHeader) {
+  return !!hostHeader && VALID_HOSTS.indexOf(hostHeader.toLowerCase()) !== -1;
+}
+
 const server = http.createServer((req, res) => {
-  if (!isLoopbackAddress(req.socket.remoteAddress)) {
+  if (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host)) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden: this server only accepts connections from localhost');
     return;
