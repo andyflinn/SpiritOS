@@ -310,6 +310,18 @@ if (isNode()) {
  // functions that can only run in the browser environment
 
  if (isBrowser()) {
+  // loadFile/statFile below are synchronous XHR (async: false), blocking
+  // the UI thread for the round trip. Deliberately left as-is (review #9,
+  // 2026-09) rather than converted to async: doing it properly means every
+  // call site becoming promise-aware, not just these two functions. Known
+  // synchronous call sites as of this writing, if this is ever revisited:
+  //   - shell.js: renderFileInfoBubble, discoverDynamicApps, declareDynamicApp
+  //   - index.html: Code Viewer's mount (loadFile for file content),
+  //     maybeRenderJobForm (loadFile for manifest JSON)
+  // Current read: low real-world pain (Media Viewer never goes through
+  // loadFile — media loads via a plain <img>/<video src>, already async/
+  // streamed by the browser; what's left is small text/JSON reads), so
+  // deferred until it's actually felt, not fixed on foresight alone.
   spirit.core.fs.loadFile = function(filePath){
     let result = null;
     let xmlhttp = new XMLHttpRequest();

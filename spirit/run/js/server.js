@@ -225,13 +225,24 @@ function isLoopbackAddress(address) {
 
 // The loopback check above only proves the TCP connection came from this
 // machine — it does NOT prove the request came from this app's own page.
-// A malicious or DNS-rebound website open in another tab can still have its
-// JS fetch() straight to http://localhost:<port>, and from the server's side
-// that looks identical to a real request: the browser is the one connecting,
-// so remoteAddress is 127.0.0.1 either way. Validating the Host header the
-// browser actually sent closes that gap — DNS rebinding changes which IP a
-// hostname resolves to, but can't forge the Host header to also claim
-// "localhost" without giving up the attack's whole premise.
+// This check earns its keep against exactly one attack: DNS rebinding,
+// where a page at (say) evil.com has that hostname's DNS re-pointed to
+// 127.0.0.1 after load, so its own-origin fetch() calls land on this
+// server while the browser still treats it as same-origin with evil.com —
+// bypassing CORS entirely. That request's Host header still says
+// "evil.com:<port>" (the attacker can't also forge it to say "localhost"
+// without giving up the same-origin premise the whole trick depends on),
+// so this check catches it.
+// This is NOT "only our UI can talk to us" in general — a plain cross-
+// origin fetch('http://localhost:<port>/...') from any other tab sends a
+// correct Host: localhost:<port> and passes this check untouched. What
+// stops THAT today is that this server never sends
+// Access-Control-Allow-Origin, so the browser's own CORS preflight blocks
+// it before the real request is ever sent (verified: OPTIONS here returns
+// a plain 405, no CORS grant) — same "you don't run random pages against
+// your own node" trust boundary already accepted for /api/jobs's spawn
+// capability. If that stronger claim is ever wanted, the next lock is
+// validating Origin/Referer, not this Host check.
 const VALID_HOSTS = ['localhost:' + port, '127.0.0.1:' + port, '[::1]:' + port];
 function isValidHost(hostHeader) {
   return !!hostHeader && VALID_HOSTS.indexOf(hostHeader.toLowerCase()) !== -1;
@@ -348,6 +359,12 @@ const server = http.createServer((req, res) => {
   res.end('Method not allowed');
 });
 
-server.listen(port, () => {
+// Explicit 127.0.0.1 binding: belt-and-suspenders alongside the loopback +
+// Host checks above. Without this, Node binds all interfaces by default,
+// so a LAN request would still reach isLoopbackAddress and get rejected
+// with a 403 — this just makes it fail at the TCP level instead, with the
+// same net result. Revert to server.listen(port, ...) (no host) if this
+// node ever needs to be reachable from another device on purpose.
+server.listen(port, '127.0.0.1', () => {
   console.log(`Server listening on http://localhost:${port}`);
 });
