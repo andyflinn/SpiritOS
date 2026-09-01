@@ -1,6 +1,20 @@
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
 const spirit = require('../../../js/kernel.js');
+
+// Promise-wrapped, non-blocking — see lmStudioLoadModel.js for why: a
+// synchronous execSync call here froze this process's event loop for the
+// whole load and caused a real, reproducible ECONNRESET on this script's
+// own stdio pipe to its parent in this nested-spawn context.
+function execAsync(command, options) {
+  return new Promise((resolve, reject) => {
+    exec(command, options, (err, stdout, stderr) => {
+      if (err) { reject(err); return; }
+      resolve({ stdout, stderr });
+    });
+  });
+}
 
 // LM Studio's local OpenAI-compatible server. Edit directly here if your
 // setup differs — no manifest arg for the URL itself, just the model.
@@ -79,6 +93,13 @@ async function main() {
   let args = {};
   try { args = JSON.parse(process.argv[2] || '{}'); } catch (e) { /* fall through to defaults */ }
   const model = args.model || DEFAULT_MODEL;
+
+  // This LM Studio setup doesn't auto-load a model on request (confirmed
+  // live — an unloaded model errors instantly rather than loading), so
+  // ensure it's actually loaded before running the batch, instead of
+  // silently depending on undocumented behavior.
+  await spirit.core.jobs.log('ensuring model "' + model + '" is loaded...');
+  await execAsync('lms load "' + model + '"', { timeout: 300000 });
 
   const rootDir = spirit.core.node.const.ROOT_DIR;
   const mediaDir = path.join(rootDir, 'media');

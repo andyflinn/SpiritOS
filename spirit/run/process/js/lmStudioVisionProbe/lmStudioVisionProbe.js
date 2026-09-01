@@ -1,7 +1,22 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const spirit = require('../../../js/kernel.js');
+
+// Promise-wrapped, non-blocking — used only for lms load below (a
+// genuinely long-running, 7-13+ second call). execSync's short, fast calls
+// elsewhere in this file (lms ls, nvidia-smi) are unaffected and left as-is
+// — see lmStudioLoadModel.js for why: blocking the event loop for the
+// whole duration of a long call caused a real, reproducible ECONNRESET on
+// this script's own stdio pipe to its parent in this nested-spawn context.
+function execAsync(command, options) {
+  return new Promise((resolve, reject) => {
+    exec(command, options, (err, stdout, stderr) => {
+      if (err) { reject(err); return; }
+      resolve({ stdout, stderr });
+    });
+  });
+}
 
 const LM_STUDIO_MODELS_URL = 'http://localhost:1234/v1/models';
 const LM_STUDIO_CHAT_URL = 'http://localhost:1234/v1/chat/completions';
@@ -189,6 +204,20 @@ async function main() {
     }
 
     await spirit.core.jobs.log(percent + '% done, testing ' + model);
+
+    // This LM Studio setup doesn't auto-load a model on request (confirmed
+    // live — an unloaded model errors instantly rather than loading), so
+    // ensure it's actually loaded before attempting a real test, instead of
+    // silently depending on undocumented behavior.
+    try {
+      await execAsync('lms load "' + model + '"', { timeout: 300000 });
+    } catch (err) {
+      failed++;
+      results.push({ model: model, sizeBytes: info.sizeBytes, vision: info.vision, fitsInVram: fitsInVram, success: false, reason: 'failed to load: ' + err.message });
+      await spirit.core.jobs.log('failed to load ' + (i + 1) + '/' + models.length + ': ' + model);
+      saveResults(results, gpuVramBytes);
+      continue;
+    }
 
     const outcome = await testModel(model, dataUrl);
     if (outcome.success) {
