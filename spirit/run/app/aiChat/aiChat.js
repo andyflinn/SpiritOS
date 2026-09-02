@@ -22,6 +22,19 @@ if (!document.getElementById('ai-chat-styles')) {
   document.head.appendChild(styleEl);
 }
 
+// Claude models: unlike LM Studio's live-queried, locally-loaded set, this
+// is a small fixed list living directly in this app's own file — the
+// server/kernel never needs to know it exists (same "no app-specific code
+// in the kernel" principle, applied to a hosted backend instead of a local
+// one). No live discovery needed here: Anthropic's catalog doesn't churn
+// the way a local LM Studio install does, and all three support vision
+// natively, unlike LM Studio's mixed local model set.
+var CLAUDE_MODELS = [
+  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (cheap, fast)' },
+  { id: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
+  { id: 'claude-opus-5', label: 'Claude Opus 5 (most capable)' },
+];
+
 spirit.shell.activateApp({
   mount: function (container) {
     var escapeHtml = spirit.shell.escapeHtml;
@@ -46,8 +59,14 @@ spirit.shell.activateApp({
     // Historical turns stay text-only even if they had an image attached —
     // only the newest message ever includes one (see sendPrompt) — avoids
     // re-fetching and re-encoding a base64 blob on every later turn for no
-    // real benefit once a model has already answered about it.
-    function buildMessagesForTarget(target, newPrompt, imageDataUrl) {
+    // real benefit once a model has already answered about it. History
+    // shape (plain-string content for old turns) is identical across
+    // backends; only the NEWEST turn's image block differs, since Claude's
+    // Messages API wants {type:'image', source:{type:'base64', media_type,
+    // data}} (raw base64, media type split out) where LM Studio's OpenAI-
+    // compatible endpoint wants {type:'image_url', image_url:{url}} (the
+    // full data: URL, unsplit) — backend is 'claude' or 'lm-studio'.
+    function buildMessagesForTarget(target, newPrompt, imageDataUrl, backend) {
       var messages = [];
       conversation.exchanges.forEach(function (exchange) {
         var response = exchange.responses.filter(function (r) { return r.target === target && r.text != null; })[0];
@@ -55,12 +74,20 @@ spirit.shell.activateApp({
         messages.push({ role: 'user', content: exchange.prompt });
         messages.push({ role: 'assistant', content: response.text });
       });
-      messages.push({
-        role: 'user',
-        content: imageDataUrl
-          ? [{ type: 'text', text: newPrompt }, { type: 'image_url', image_url: { url: imageDataUrl } }]
-          : newPrompt,
-      });
+
+      var newContent = newPrompt;
+      if (imageDataUrl) {
+        if (backend === 'claude') {
+          var match = imageDataUrl.match(/^data:([^;]+);base64,(.*)$/);
+          newContent = [
+            { type: 'image', source: { type: 'base64', media_type: match[1], data: match[2] } },
+            { type: 'text', text: newPrompt },
+          ];
+        } else {
+          newContent = [{ type: 'text', text: newPrompt }, { type: 'image_url', image_url: { url: imageDataUrl } }];
+        }
+      }
+      messages.push({ role: 'user', content: newContent });
       return messages;
     }
 
@@ -216,7 +243,7 @@ spirit.shell.activateApp({
       historyEl.innerHTML = conversation.exchanges.map(function (exchange) {
         var responsesHtml = exchange.targets.map(function (target) {
           var response = exchange.responses.filter(function (r) { return r.target === target; })[0];
-          var label = target.replace(/^lm-studio:/, '');
+          var label = target.replace(/^[^:]+:/, ''); // strip whichever backend prefix precedes the first colon
           if (!response) {
             return '<div class="ai-chat-response"><div class="ai-chat-target">' + escapeHtml(label) + '</div><div class="ai-chat-pending">thinking…</div></div>';
           }
@@ -271,9 +298,16 @@ spirit.shell.activateApp({
     // replaced), so listeners bound directly to it here would otherwise
     // stack a duplicate on every re-render — and this now re-renders
     // repeatedly over a session's life (the "Load" auto-refresh below).
-    function renderModelTable(liveModels, probeByModel) {
+    //
+    // Claude renders unconditionally, independent of LM Studio's own
+    // reachability — lmStudioError (a string, or null) only ever affects
+    // the LM Studio section, so a hosted backend that has nothing to do
+    // with your local LM Studio setup doesn't disappear when LM Studio is
+    // simply not running.
+    function renderModelTable(liveModels, probeByModel, lmStudioError) {
       var modelsEl = document.getElementById('ai-chat-models');
-      var rows = liveModels.map(function (liveEntry) {
+
+      var lmStudioRows = liveModels.map(function (liveEntry) {
         var visionState = visionIconFor(liveEntry, probeByModel[liveEntry.id]);
         // LM Studio doesn't auto-load a model on request in this setup —
         // sending to an unloaded one errors immediately ("Model is
@@ -285,11 +319,23 @@ spirit.shell.activateApp({
           ? spirit.core.const.ICON.ON + ' <button type="button" class="cancel-btn" data-unload-model="' + escapeHtml(liveEntry.id) + '">Unload</button>'
           : '<button type="button" class="cancel-btn" data-load-model="' + escapeHtml(liveEntry.id) + '">Load</button>';
         return '<tr>' +
-          '<td><input type="checkbox" class="ai-chat-model-checkbox" value="' + escapeHtml(liveEntry.id) + '"' +
+          '<td><input type="checkbox" class="ai-chat-model-checkbox" data-target="' + escapeHtml('lm-studio:' + liveEntry.id) + '"' +
             (visionState ? ' data-vision-capable="true"' : '') + '></td>' +
           '<td>' + escapeHtml(liveEntry.id) + '</td>' +
           '<td title="' + (visionState ? escapeHtml(visionState.title) : '') + '">' + (visionState ? visionState.icon : '') + '</td>' +
           '<td title="' + (liveEntry.state === 'loaded' ? 'loaded, ready now' : 'not loaded') + '">' + loadedCell + '</td>' +
+          '</tr>';
+      }).join('');
+
+      // All three current Claude models support vision natively — no
+      // proclaimed-vs-tested distinction needed the way LM Studio's mixed
+      // local model set requires.
+      var claudeRows = CLAUDE_MODELS.map(function (m) {
+        return '<tr>' +
+          '<td><input type="checkbox" class="ai-chat-model-checkbox" data-target="' + escapeHtml('claude:' + m.id) + '" data-vision-capable="true"></td>' +
+          '<td>' + escapeHtml(m.label) + '</td>' +
+          '<td title="native vision support">' + spirit.core.const.ICON.OK + '</td>' +
+          '<td title="hosted API — always available, real cost per use">' + spirit.core.const.ICON.ON + '</td>' +
           '</tr>';
       }).join('');
 
@@ -299,12 +345,15 @@ spirit.shell.activateApp({
           '<button type="button" class="cancel-btn" data-select="none">None</button> ' +
           '<button type="button" class="cancel-btn" data-select="vision">Vision-capable</button>' +
         '</div>' +
-        '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th>Loaded</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody></table>';
+        '<div style="font-size:12px; opacity:0.7; margin-top:8px;">LM Studio (local)</div>' +
+        (lmStudioError
+          ? '<div class="job-manifest-note">' + escapeHtml(lmStudioError) + '</div>'
+          : '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th>Loaded</th></tr></thead><tbody>' + lmStudioRows + '</tbody></table>') +
+        '<div style="font-size:12px; opacity:0.7; margin-top:12px;">Claude (hosted API — real cost per use)</div>' +
+        '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th></th></tr></thead><tbody>' + claudeRows + '</tbody></table>';
     }
 
     function loadModels() {
-      var modelsEl = document.getElementById('ai-chat-models');
       // Goes through the server's generic /api/proxy route (not LM Studio
       // directly — no Access-Control-Allow-Origin header, so a cross-origin
       // browser fetch would be silently blocked by CORS). The proxy knows
@@ -328,11 +377,28 @@ spirit.shell.activateApp({
             } catch (e) { /* malformed/missing probe data — proclaimed-only is fine */ }
           }
 
-          renderModelTable(liveModels, probeByModel);
+          renderModelTable(liveModels, probeByModel, null);
         })
         .catch(function () {
-          modelsEl.textContent = 'LM Studio unreachable — start it and reload this app.';
+          renderModelTable([], {}, 'LM Studio unreachable — start it and reload this app.');
         });
+    }
+
+    // Normalizes each backend's raw response shape into one consistent
+    // {text} or {error} result, so sendPrompt's dispatch doesn't need to
+    // know either shape.
+    function extractLmStudioText(chatBody) {
+      var choice = chatBody.choices && chatBody.choices[0];
+      var text = choice && choice.message && choice.message.content;
+      if (chatBody.error || !text) return { error: chatBody.error || 'empty response' };
+      return { text: text };
+    }
+
+    function extractClaudeText(body) {
+      if (body.error) return { error: body.error.message || JSON.stringify(body.error) };
+      var block = (body.content || []).filter(function (b) { return b.type === 'text'; })[0];
+      if (!block || !block.text) return { error: 'empty response' };
+      return { text: block.text };
     }
 
     // Fires one request per checked target, concurrently — each resolves
@@ -349,7 +415,7 @@ spirit.shell.activateApp({
         return;
       }
 
-      var targets = checked.map(function (cb) { return 'lm-studio:' + cb.value; });
+      var targets = checked.map(function (cb) { return cb.dataset.target; });
       var exchange = {
         id: 'exchange_' + Date.now(),
         timestamp: Date.now(),
@@ -373,32 +439,45 @@ spirit.shell.activateApp({
 
       imageDataUrlPromise.then(function (imageDataUrl) {
         targets.forEach(function (target) {
-          var model = target.replace(/^lm-studio:/, '');
-          var messages = buildMessagesForTarget(target, prompt, imageDataUrl);
+          var colonIndex = target.indexOf(':');
+          var backend = target.slice(0, colonIndex);
+          var model = target.slice(colonIndex + 1);
+          var messages = buildMessagesForTarget(target, prompt, imageDataUrl, backend);
           var startedAt = Date.now();
 
-          // Same generic proxy as loadModels — this caller supplies the
-          // target and owns extracting the reply from LM Studio's raw chat-
-          // completion response shape.
+          // Same generic proxy either way — this caller supplies the
+          // target, the per-backend request shape, and owns extracting the
+          // reply from whichever raw response shape comes back. Claude's
+          // secret never appears here: ${ENV:ANTHROPIC_API_KEY} is a
+          // placeholder the server substitutes, allowlisted in server.js.
+          var proxyBody = backend === 'claude'
+            ? {
+                url: 'https://api.anthropic.com/v1/messages',
+                method: 'POST',
+                timeoutMs: 300000,
+                headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+                body: { model: model, max_tokens: 1024, messages: messages },
+              }
+            : {
+                url: 'http://localhost:1234/v1/chat/completions',
+                method: 'POST',
+                timeoutMs: 300000,
+                body: { model: model, temperature: 0.7, messages: messages },
+              };
+
           fetch('/api/proxy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              url: 'http://localhost:1234/v1/chat/completions',
-              method: 'POST',
-              timeoutMs: 300000,
-              body: { model: model, temperature: 0.7, messages: messages },
-            }),
+            body: JSON.stringify(proxyBody),
           })
             .then(function (res) { return res.json(); })
-            .then(function (chatBody) {
+            .then(function (rawBody) {
               var responseEntry = { target: target, respondedAt: Date.now(), durationMs: Date.now() - startedAt };
-              var choice = chatBody.choices && chatBody.choices[0];
-              var text = choice && choice.message && choice.message.content;
-              if (chatBody.error || !text) {
-                responseEntry.error = chatBody.error || 'empty response';
+              var extracted = backend === 'claude' ? extractClaudeText(rawBody) : extractLmStudioText(rawBody);
+              if (extracted.error) {
+                responseEntry.error = extracted.error;
               } else {
-                responseEntry.text = text;
+                responseEntry.text = extracted.text;
               }
               exchange.responses.push(responseEntry);
               saveConversation();
