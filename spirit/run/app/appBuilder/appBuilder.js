@@ -43,6 +43,19 @@ spirit.shell.activateApp({
     var history = loadHistory();
     function saveHistory() { scopedFs.saveFile('history.json', JSON.stringify(history, null, 2)); }
 
+    // A full debug log, separate from history.json above — history is a
+    // sparse, successful-Apply-only record for the safety-check; this is
+    // every single Generate call, applied or not, with the complete sent
+    // prompt and the complete raw API response, for tracing exactly why a
+    // given generation went wrong. JSON Lines (one JSON object per line,
+    // appended) rather than one growing JSON array — appending is just
+    // "load current text, add a line, save," no need to parse/re-stringify
+    // the whole history to add one entry.
+    function appendLog(entry) {
+      var raw = scopedFs.loadFile('log.jsonl') || '';
+      scopedFs.saveFile('log.jsonl', raw + JSON.stringify(entry) + '\n');
+    }
+
     // Cheap key-validity check — identical to aiChat.js's own (see that
     // file for why this one function stays duplicated rather than shared).
     var claudeKeyInvalid = false;
@@ -102,8 +115,8 @@ spirit.shell.activateApp({
         '<button type="button" id="ab-generate">Generate</button>' +
         '<div id="ab-error" class="job-start-error"></div>' +
       '</div>' +
-      '<div class="stat-tile wide"><div class="ab-file-path">Sent to Claude</div><pre class="code-view" id="ab-sent"></pre></div>' +
-      '<div id="ab-response"></div>';
+      '<div id="ab-response"></div>' +
+      '<div class="stat-tile wide"><div class="ab-file-path">Sent to Claude</div><pre class="code-view" id="ab-sent"></pre></div>';
 
     // ---- model select ----
     var modelEl = document.getElementById('ab-model');
@@ -137,17 +150,19 @@ spirit.shell.activateApp({
     }
     renderTargetOptions();
 
-    // Refresh the target list whenever the fs-watcher notices a real
-    // change on disk — covers a brand-new app appearing after Apply (same
-    // live-discovery path the desktop icon itself uses) without polling.
-    // Scoped to fs-watcher updates specifically, not every job tick
-    // (server-stats alone fires every ~2s) — renderTargetOptions already
-    // preserves the current selection across a rebuild, but there's no
-    // reason to rebuild on ticks that can't possibly mean a new app showed up.
-    spirit.core.jobs.subscribe({
-      onSnapshot: function () { renderTargetOptions(); },
-      onUpdate: function (job) { if (job.type === 'fs-watcher') renderTargetOptions(); },
-    });
+    // Refresh right when the dropdown is about to be opened, not via a
+    // background subscription — spirit.core.jobs.subscribe opens its own
+    // persistent EventSource, and this page can already have several
+    // (kernel.js's own debug one, shell.js's, AI Chat's if it's ever been
+    // opened this session — dynamic apps stay mounted, and subscribed,
+    // even while not visible). Browsers cap concurrent connections per
+    // origin; a fifth one added here risks silently never getting a slot,
+    // which is exactly what this replaces — it was diagnosed live: the
+    // desktop icon (driven by shell.js's own, earlier-opened subscription)
+    // updated correctly, but this dropdown never did. A focus-triggered,
+    // connectionless refresh can't starve the same way.
+    targetEl.addEventListener('focus', renderTargetOptions);
+    targetEl.addEventListener('mousedown', renderTargetOptions);
 
     var folderRowEl = document.getElementById('ab-folder-row');
     var folderInputEl = document.getElementById('ab-folder');
@@ -229,9 +244,17 @@ spirit.shell.activateApp({
 
       currentFolder = folderFromTargetId(currentTarget);
       folderRowEl.hidden = true;
+      // Only overwrite name/icon when the app is actually found in the
+      // live registry — right after a brand-new app's first Apply, the
+      // fs-watcher may not have discovered it yet (this same function
+      // gets called immediately post-Apply to re-sync form state), and
+      // blanking already-correct fields because of that lag would be a
+      // real regression, not a no-op.
       var app = dynamicApps().filter(function (a) { return a.id === currentTarget; })[0];
-      nameInputEl.value = app ? app.name : '';
-      iconInputEl.value = app ? app.icon : '';
+      if (app) {
+        nameInputEl.value = app.name;
+        iconInputEl.value = app.icon;
+      }
 
       if (!history[currentTarget]) {
         targetConfirmed = false;
@@ -502,15 +525,34 @@ spirit.shell.activateApp({
         .then(function (res) { return res.json(); })
         .then(function (rawBody) {
           var parsed = parseResponse(rawBody);
+          var validation = parsed.error ? null : validateResponse(built.program, parsed.content);
+          appendLog({
+            at: Date.now(),
+            target: currentTarget,
+            folder: folder,
+            model: model,
+            sentPrompt: built.messages[0].content,
+            rawResponse: rawBody,
+            parseError: parsed.error || null,
+            content: parsed.error ? null : parsed.content,
+            validation: validation,
+          });
           if (parsed.error) {
             errorEl.textContent = parsed.error;
             responseEl.innerHTML = '';
             return;
           }
-          var validation = validateResponse(built.program, parsed.content);
           renderResponse(prompt, folder, name, icon, parsed, validation);
         })
         .catch(function (err) {
+          appendLog({
+            at: Date.now(),
+            target: currentTarget,
+            folder: folder,
+            model: model,
+            sentPrompt: built.messages[0].content,
+            fetchError: err.message,
+          });
           errorEl.textContent = err.message;
           responseEl.innerHTML = '';
         })
@@ -530,8 +572,13 @@ spirit.shell.activateApp({
         '<div class="ab-file-path">Response from Claude</div>' +
         '<pre class="code-view">' + escapeHtml(parsed.content) + '</pre>' +
         (validation.ok ? '' : '<div class="job-start-error">Apply blocked — ' + escapeHtml(validation.reason) + '</div>') +
-        '<div style="margin-top:12px;"><button type="button" class="cancel-btn" id="ab-apply"' + (validation.ok ? '' : ' disabled') + '>Apply</button></div>' +
+        '<div style="margin-top:12px;">' +
+          '<button type="button" class="cancel-btn" id="ab-apply"' + (validation.ok ? '' : ' disabled') + '>Apply</button> ' +
+          '<button type="button" class="cancel-btn" id="ab-reload" title="Dynamic apps only mount once per page load — reload to test selecting this app fresh from the dropdown">Reload page</button>' +
+        '</div>' +
         '</div>';
+
+      document.getElementById('ab-reload').addEventListener('click', function () { window.location.reload(); });
 
       if (!validation.ok) return;
 
@@ -546,9 +593,18 @@ spirit.shell.activateApp({
           if (!history[id]) history[id] = [];
           history[id].push({ prompt: prompt, explanation: parsed.explanation, appliedAt: Date.now() });
           saveHistory();
-          currentTarget = id;
+          // Re-sync the form as if this app had just been freshly selected
+          // from the dropdown — not just patching the displayed value —
+          // so a second Generate click in the same session (no need to
+          // leave and re-enter App Builder) is grounded on properly
+          // reset state: the folder-name field hidden again (it's no
+          // longer a new app), history[id] now existing so loadTarget
+          // won't show the confirm banner, and identity re-validated
+          // against this app's own now-real id.
           renderTargetOptions();
-          targetEl.value = currentTarget;
+          targetEl.value = id;
+          loadTarget(id);
+          document.getElementById('ab-prompt').value = '';
           event.target.textContent = 'Applied ✓';
           event.target.disabled = true;
         });
