@@ -75,6 +75,7 @@ if (isNode()) {
 
   const fs = require('fs');
   const path = require('path');
+  const crypto = require('crypto');
   const http = require('http');
   // Pinned to this file's own location, not process.cwd() — kernel.js
   // always lives at spirit/run/js/kernel.js, so spirit/run/ is always
@@ -234,7 +235,53 @@ if (isNode()) {
       }
 
       return result;
-  } 
+  }
+
+  function hashFileContents(fullPath) {
+    return crypto.createHash('sha256').update(fs.readFileSync(fullPath)).digest('hex');
+  }
+
+  // Two-tier staleness check for process scripts that do expensive per-file
+  // work (image stats, captioning) and want to skip files already processed
+  // since they last changed. mtime alone is checked first, cheaply — if
+  // unchanged, definitely not stale, no file read needed. Only when mtime
+  // has moved does this read and hash the file to confirm a REAL content
+  // change happened, rather than reprocessing on every mtime bump (a copy,
+  // a backup/restore, or some editors touching mtime on save without
+  // changing a single byte) — worth the extra care specifically because
+  // reprocessing can mean a paid API call (imageCaptionClaude), not just
+  // CPU time.
+  //
+  // record: {mtimeMs, contentHash} from the caller's own last successful
+  // run (read back from wherever it stored its own result), or null/
+  // undefined if this file has never been processed. Returns one of:
+  //   {stale: false}                     — mtime unchanged, definitely current, nothing to do
+  //   {stale: false, refreshRecord}      — mtime moved but content is identical (false alarm);
+  //                                         caller should skip the real work but update its
+  //                                         stored record to refreshRecord, so the next run
+  //                                         goes back to the cheap mtime-only path instead of
+  //                                         re-hashing forever because the timestamp still
+  //                                         looks "off"
+  //   {stale: true, newRecord}           — genuinely changed, or never processed; caller
+  //                                         should do the real work, then store newRecord
+  spirit.core.node.util.checkStaleness = function(fullPath, record) {
+    const currentMtimeMs = fs.statSync(fullPath).mtimeMs;
+
+    if (!record) {
+      return { stale: true, newRecord: { mtimeMs: currentMtimeMs, contentHash: hashFileContents(fullPath) } };
+    }
+
+    if (currentMtimeMs === record.mtimeMs) {
+      return { stale: false };
+    }
+
+    const currentHash = hashFileContents(fullPath);
+    if (currentHash === record.contentHash) {
+      return { stale: false, refreshRecord: { mtimeMs: currentMtimeMs, contentHash: currentHash } };
+    }
+
+    return { stale: true, newRecord: { mtimeMs: currentMtimeMs, contentHash: currentHash } };
+  };
 
   let loadFolder = spirit.core.node.util.loadFolder = function(){
 
