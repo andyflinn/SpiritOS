@@ -29,6 +29,15 @@
 
       #desktop[hidden] { display: none; }
 
+      /* Same grid the real desktop uses, scoped to a grouping app's own
+         mount container (e.g. "spirit") rather than the full-viewport
+         #desktop — no height:100vh, #app-content already provides padding. */
+      .app-group-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+        gap: 16px;
+      }
+
       .app-icon {
         display: flex;
         flex-direction: column;
@@ -308,6 +317,7 @@
         var CATEGORY_APP_HANDLERS = spirit.shell.CATEGORY_APP_HANDLERS;
         var setViewerTitle = spirit.shell.setViewerTitle;
         var renderFileInfoBubble = spirit.shell.renderFileInfoBubble;
+        var renderAppGroup = spirit.shell.renderAppGroup;
 
         function formatUptime(seconds) {
           var total = Math.floor(seconds);
@@ -339,6 +349,7 @@
           id: 'stats',
           name: 'Stats',
           icon: ICON.CHART,
+          hidden: true, // reachable via the "spirit" app group, or launchApp('stats') from anywhere
           mount: function (container) {
             container.innerHTML = '<div class="stats-grid" id="stats-grid"></div>';
             document.getElementById('stats-grid').addEventListener('click', function (event) {
@@ -755,6 +766,7 @@
           id: 'process-browser',
           name: 'Processes',
           icon: ICON.ROCKET,
+          hidden: true, // reachable via the "spirit" app group, or launchApp('process-browser') from anywhere
           mount: function (container) {
             // Force the next render() to actually populate the list — mount()
             // always wipes the DOM clean, so a cache hit from a previous visit
@@ -906,6 +918,7 @@
           id: 'jobs',
           name: 'Jobs',
           icon: ICON.LIST,
+          hidden: true, // reachable via the "spirit" app group, or launchApp('jobs') from anywhere
           mount: function (container) {
             expandedJobId = null; // fresh visit starts fully collapsed
 
@@ -968,6 +981,26 @@
           render: function (jobsById) {
             currentJobsById = jobsById;
             throttledRenderJobsTable(jobsById);
+          },
+        });
+
+        // ---- Spirit app (launcher/grouping template) ----
+        // Hosts a sub-view of the machine-introspection apps (Stats,
+        // Processes, Jobs) — hidden from the real desktop below — using
+        // the same reusable icon-grid template a future grouping app could
+        // reuse. Files stays a front-page icon: it's a content-facing app
+        // you use, not a system-introspection tool.
+        registerApp({
+          id: 'spirit',
+          name: 'Spirit',
+          icon: ICON.SPIRIT,
+          mount: function (container) {
+            container.innerHTML = '<div class="app-group-grid" id="spirit-group"></div>';
+          },
+          render: function () {
+            var grid = document.getElementById('spirit-group');
+            if (!grid) return;
+            renderAppGroup(grid, ['stats', 'process-browser', 'jobs']);
           },
         });
 

@@ -56,12 +56,40 @@
     return preferences.defaultHandlers[ext];
   }
 
-  function createDesktopIcon(id, name, icon) {
+  function buildAppIcon(id, name, icon) {
     var iconEl = document.createElement('div');
     iconEl.className = 'app-icon';
     iconEl.innerHTML = '<span class="icon">' + icon + '</span><span class="label">' + name + '</span>';
-    iconEl.addEventListener('click', function () { launchApp(id); });
-    desktopEl.appendChild(iconEl);
+    // {replace: true} is a no-op for a real desktop icon click — navStack
+    // is always exactly length 1 whenever the desktop is actually visible,
+    // and launchApp's replace branch requires length > 1 — but it's exactly
+    // right for a grouping app's icon grid (e.g. "spirit"): same stack
+    // behavior as picking a handler from "Open with" (renderOpenWith,
+    // above) — the launched app replaces the group screen's own stack
+    // entry, so Back skips the group menu and returns to wherever it was
+    // opened from, rather than back through it.
+    iconEl.addEventListener('click', function () { launchApp(id, null, { replace: true }); });
+    return iconEl;
+  }
+
+  function createDesktopIcon(id, name, icon) {
+    desktopEl.appendChild(buildAppIcon(id, name, icon));
+  }
+
+  // Reusable grouping template: renders the same icon grid the real
+  // desktop uses, scoped to an arbitrary container and an arbitrary list
+  // of already-registered app ids. This is the mechanism behind a
+  // launcher app like "spirit" that hosts a sub-view of other intrinsic
+  // apps (Stats/Processes/Jobs, hidden from the real desktop) rather than
+  // each such grouping app hand-rolling its own icon grid. Unregistered
+  // or not-yet-registered ids are silently skipped rather than throwing.
+  function renderAppGroup(container, appIds) {
+    container.innerHTML = '';
+    appIds.forEach(function (id) {
+      var app = apps[id];
+      if (!app) return;
+      container.appendChild(buildAppIcon(id, app.name, app.icon));
+    });
   }
 
   function registerApp(app) {
@@ -376,6 +404,7 @@
     setViewerTitle: setViewerTitle,
     fileInfoRow: fileInfoRow,
     renderFileInfoBubble: renderFileInfoBubble,
+    renderAppGroup: renderAppGroup,
   };
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
