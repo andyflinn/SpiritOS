@@ -175,6 +175,7 @@
       preferences.appOverrides[id] = merged;
     }
     savePreferences();
+    renderDesktop(); // reflect a name/icon change on the real desktop immediately, not just wherever this was called from
     return { ok: true };
   }
 
@@ -213,8 +214,21 @@
     return iconEl;
   }
 
-  function createDesktopIcon(id) {
-    desktopEl.appendChild(buildAppIcon(id));
+  // Rebuilds the whole desktop icon grid from the current app registry +
+  // overrides, rather than the old approach of appending one icon once at
+  // registration time and never revisiting it. That additive approach
+  // meant a name/icon override set via the Apps table never reached the
+  // real desktop until a full page reload — this app might not even be
+  // the active screen right now (desktop can be hidden behind the app
+  // container), but rebuilding it while hidden is harmless and it'll be
+  // correct whenever the user navigates home. Cheap enough to call after
+  // every registration and every successful override save; the icon grid
+  // is small and each icon is a plain DOM element with no state to lose.
+  function renderDesktop() {
+    desktopEl.innerHTML = '';
+    Object.keys(apps).forEach(function (id) {
+      if (!apps[id].hidden) desktopEl.appendChild(buildAppIcon(id));
+    });
   }
 
   // Enumerates every registered app (built-in + already-discovered dynamic
@@ -255,7 +269,7 @@
   function registerApp(app) {
     apps[app.id] = app;
     if (app.hidden) return; // reachable only via launchApp(id, params) from another app, no desktop icon
-    createDesktopIcon(app.id);
+    renderDesktop();
   }
 
   // Switches the visible screen without touching navStack — the stack
@@ -527,7 +541,7 @@
       registerExtensionHandler(ext, manifest.id, manifest.name);
     });
 
-    if (!manifest.hidden) createDesktopIcon(manifest.id);
+    if (!manifest.hidden) renderDesktop();
   }
 
   function discoverDynamicApps(jobs) {
