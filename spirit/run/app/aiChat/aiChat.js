@@ -22,7 +22,7 @@ if (!document.getElementById('ai-chat-styles')) {
   document.head.appendChild(styleEl);
 }
 
-spirit.shell.activateApp('ai-chat', {
+spirit.shell.activateApp({
   mount: function (container) {
     var escapeHtml = spirit.shell.escapeHtml;
     var scopedFs = spirit.core.fs.createScopedFs('aiChat');

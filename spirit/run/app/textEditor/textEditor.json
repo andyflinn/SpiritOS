@@ -1,5 +1,4 @@
 {
-  "id": "text-editor",
   "name": "Text Editor",
   "description": "Edit any writable-root text file directly in the browser.",
   "icon": "EDIT",

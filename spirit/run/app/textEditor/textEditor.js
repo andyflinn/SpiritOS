@@ -12,7 +12,7 @@
 // message instead of a generic "Forbidden".
 var APP_ENTRY_SCRIPT_PATTERN = /^app\/([^/]+)\/\1\.js$/;
 
-spirit.shell.activateApp('text-editor', {
+spirit.shell.activateApp({
   mount: function (container, params) {
     var initialPath = (params && params.path) || 'app/textEditor/notes.txt';
     container.innerHTML =

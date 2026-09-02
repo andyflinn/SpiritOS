@@ -112,7 +112,11 @@
   // Merges patch into an app's override object; a property set to '' or
   // null clears that one property (reverting just it to default) rather
   // than clearing the whole override. Removes the app's entry entirely
-  // once no properties remain, keeping appOverrides sparse.
+  // once no properties remain, keeping appOverrides sparse. Note for
+  // boolean properties (visible): false is a real, meaningful value, not
+  // "unset" — only '' or null clears, so `{visible: false}` correctly
+  // persists an explicit "hidden" choice rather than being mistaken for a
+  // reset-to-default.
   //
   // Renaming is locked for built-in shell utilities (Stats, Files,
   // Processes, Jobs, Spirit, Apps, the viewers — anything not
@@ -195,6 +199,16 @@
     return (override && override.icon) || app.icon;
   }
 
+  // Same idea again, for visibility — but unlike name/icon, false is a
+  // real, meaningful value (not "unset"), so this checks typeof rather
+  // than truthiness: an explicit override.visible === false must win over
+  // the app's own default, not get treated as absent.
+  function effectiveVisible(app) {
+    var override = preferences.appOverrides[app.id];
+    if (override && typeof override.visible === 'boolean') return override.visible;
+    return !app.hidden;
+  }
+
   function buildAppIcon(id) {
     var app = apps[id];
     if (!app) return document.createDocumentFragment(); // shouldn't happen — callers already check
@@ -227,7 +241,7 @@
   function renderDesktop() {
     desktopEl.innerHTML = '';
     Object.keys(apps).forEach(function (id) {
-      if (!apps[id].hidden) desktopEl.appendChild(buildAppIcon(id));
+      if (effectiveVisible(apps[id])) desktopEl.appendChild(buildAppIcon(id));
     });
   }
 
@@ -245,7 +259,8 @@
         defaultName: app.name,
         icon: effectiveIcon(app),
         defaultIcon: app.icon,
-        hidden: !!app.hidden,
+        visible: effectiveVisible(app),
+        hidden: !!app.hidden, // the app's own code-level default, distinct from `visible` (post-override)
         dynamic: !!app._scriptPath,
       };
     });
@@ -342,8 +357,13 @@
     // Manifest-declared dynamic apps are declared (icon, id, name) at
     // discovery time but their script isn't fetched until first use —
     // do that now, then mount once it finishes loading and has called
-    // activateApp to supply real mount/render.
+    // activateApp to supply real mount/render. pendingActivationId records
+    // which app this particular injected script is for, so activateApp
+    // (below) never has to trust anything the script itself claims about
+    // its own identity — proven identity (the shell knows what it just
+    // injected), not claimed identity (the script stating an id).
     if (appEntry._scriptPath && !appEntry._activated) {
+      pendingActivationId = id;
       var script = document.createElement('script');
       script.src = '/' + appEntry._scriptPath;
       script.onload = function () { switchTo(id, params); };
@@ -354,18 +374,27 @@
     switchTo(id, params);
   }
 
+  // Set by launchApp immediately before injecting a dynamic app's script,
+  // read (and cleared) by activateApp when that script's own top-level
+  // code calls it during that same synchronous execution.
+  var pendingActivationId = null;
+
   // A manifest-declared app's script has nothing left to say except its
   // behavior — id/name/icon/hidden/handlesExtensions are already fully
-  // known from the manifest (declareDynamicApp, below). So it never
-  // calls registerApp (which stays completely unrelated to this
-  // declare/activate lifecycle and is only ever used by static apps);
-  // it calls this instead.
-  function activateApp(id, behavior) {
-    var existing = apps[id];
-    if (!existing) return; // no manifest declared this id — nothing to attach to
-    existing.mount = behavior.mount;
-    existing.render = behavior.render;
-    existing._activated = true;
+  // known from the manifest (declareDynamicApp, below), and its identity
+  // is proven by which script the shell itself just injected (see
+  // launchApp/pendingActivationId), not by anything the script states
+  // about itself — hence no id parameter here. So it never calls
+  // registerApp (which stays completely unrelated to this declare/
+  // activate lifecycle and is only ever used by static apps); it calls
+  // this instead.
+  function activateApp(behavior) {
+    var id = pendingActivationId;
+    if (!id || !apps[id]) return; // called outside a pending script load — nothing to attach to
+    apps[id].mount = behavior.mount;
+    apps[id].render = behavior.render;
+    apps[id]._activated = true;
+    pendingActivationId = null;
   }
 
   function goBack() {
@@ -525,9 +554,16 @@
   // live-reactive — a new app added while the page is already open
   // needs a reload to be discovered, same as you'd already expect for
   // a new process manifest.
+  //
+  // The id is derived from scriptPath's own folder ("app/aiChat"), not
+  // read from manifest.id — an app's manifest can no longer claim to be
+  // whatever id it likes; its identity is the one fact the shell already
+  // observed directly via the fs-watcher. manifest.id, if a manifest still
+  // has one, is simply ignored.
   function declareDynamicApp(manifest, scriptPath) {
-    apps[manifest.id] = {
-      id: manifest.id,
+    var id = 'app/' + scriptPath.match(/^app\/([^/]+)\//)[1];
+    apps[id] = {
+      id: id,
       name: manifest.name,
       icon: spirit.core.const.ICON[manifest.icon] || spirit.core.const.ICON.FILE,
       hidden: !!manifest.hidden,
@@ -538,7 +574,7 @@
     };
 
     (manifest.handlesExtensions || []).forEach(function (ext) {
-      registerExtensionHandler(ext, manifest.id, manifest.name);
+      registerExtensionHandler(ext, id, manifest.name);
     });
 
     if (!manifest.hidden) renderDesktop();
