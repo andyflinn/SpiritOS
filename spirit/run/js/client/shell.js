@@ -70,6 +70,41 @@
     return preferences.appOverrides[id] || {};
   }
 
+  // Strips punctuation/whitespace down to single-space-separated tokens,
+  // lowercased — "LM-Chat" and "LM Chat" both normalize to "lm chat" and
+  // so count as the same name, while genuinely different word order/
+  // content ("AI Chat" vs "Chat AI") still doesn't. Confirmed live: a user
+  // was able to name two apps "LM-Chat" and "LM Chat" before this existed,
+  // which read as the same name at a glance despite being distinct strings.
+  function normalizeForComparison(value) {
+    return String(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  // True if `candidateValue` (normalized) matches ANY of the values
+  // valuesFor(otherApp) returns, for some OTHER app — i.e. would collide
+  // if `id` adopted it. valuesFor should return both an app's CURRENT
+  // effective value and its true default/registered value, not just the
+  // former: otherwise an app's own default name/icon isn't reserved for
+  // it while overridden away from it, so a second app could grab "Foo"
+  // while its rightful owner is temporarily showing "Bar" — and that
+  // owner's later "Reset to default" would then itself collide, unable to
+  // reclaim its own identity. Generic over which property so the same
+  // shape covers name today and icon once icon overrides exist — icon
+  // collisions are a softer concern than name collisions (the label always
+  // renders alongside the icon everywhere, so two apps sharing one glyph
+  // is odd but not actually ambiguous the way two apps sharing a name is)
+  // — worth deciding deliberately when that property is actually built,
+  // not assumed to need identical enforcement.
+  function collidesWithAnotherApp(id, candidateValue, valuesFor) {
+    var normalized = normalizeForComparison(candidateValue);
+    return Object.keys(apps).some(function (otherId) {
+      if (otherId === id) return false;
+      return valuesFor(apps[otherId]).some(function (v) {
+        return normalizeForComparison(v) === normalized;
+      });
+    });
+  }
+
   // Merges patch into an app's override object; a property set to '' or
   // null clears that one property (reverting just it to default) rather
   // than clearing the whole override. Removes the app's entry entirely
@@ -85,6 +120,14 @@
   // nothing calls them out by a fixed name in core docs. Enforced here,
   // not just left to the UI, so nothing else that ever calls this can
   // bypass it either.
+  //
+  // Also rejects a name that would collide with any other app's current
+  // effective name OR true default name (case/punctuation/spacing-
+  // insensitive — see normalizeForComparison) — checked against the
+  // RESULT of applying patch (so clearing back to a default name is
+  // checked too, not just setting a new custom one), since two apps
+  // showing the same name is confusing regardless of which one has the
+  // override.
   function setAppOverride(id, patch) {
     var app = apps[id];
     if (patch.name !== undefined && app && !app._scriptPath) {
@@ -92,17 +135,28 @@
     }
 
     var current = preferences.appOverrides[id] || {};
+    var merged = {};
+    Object.keys(current).forEach(function (key) { merged[key] = current[key]; });
     Object.keys(patch).forEach(function (key) {
       if (patch[key] === null || patch[key] === '') {
-        delete current[key];
+        delete merged[key];
       } else {
-        current[key] = patch[key];
+        merged[key] = patch[key];
       }
     });
-    if (Object.keys(current).length === 0) {
+
+    if (patch.name !== undefined && app) {
+      var resultingName = merged.name || app.name;
+      var collides = collidesWithAnotherApp(id, resultingName, function (otherApp) {
+        return [effectiveName(otherApp), otherApp.name];
+      });
+      if (collides) return { ok: false, reason: 'name-collision' };
+    }
+
+    if (Object.keys(merged).length === 0) {
       delete preferences.appOverrides[id];
     } else {
-      preferences.appOverrides[id] = current;
+      preferences.appOverrides[id] = merged;
     }
     savePreferences();
     return { ok: true };

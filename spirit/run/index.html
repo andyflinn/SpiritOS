@@ -1038,11 +1038,18 @@
           // what's actually on screen. Dynamically-loaded apps (AI Chat,
           // Text Editor, anything installed later) aren't called out by a
           // fixed name in core docs the same way, so they stay renameable.
+          // Saves on change (fires on blur/Enter, not per keystroke) rather
+          // than requiring an explicit Save click — one less click, and
+          // still compatible with the focus-guard in renderAppManagerTable
+          // above, since the input has already blurred by the time change
+          // fires. Clearing the field to empty and blurring is equivalent
+          // to "Reset to default" (setAppOverride treats '' as "clear this
+          // property"); the explicit button stays too, as a one-click
+          // shortcut over select-all-and-delete.
           var nameFieldHtml = a.dynamic
             ? '<label class="field-label">Custom name' +
-              '<input type="text" id="app-manager-name-input" value="' + escapeHtml(override.name || '') + '" placeholder="' + escapeHtml(a.defaultName) + '"></label>' +
-              '<button type="button" class="cancel-btn" data-save-app-name="' + escapeHtml(a.id) + '">Save</button>' +
-              (override.name ? ' <button type="button" class="cancel-btn" data-reset-app-name="' + escapeHtml(a.id) + '">Reset to default</button>' : '')
+              '<input type="text" id="app-manager-name-input" data-app-id="' + escapeHtml(a.id) + '" value="' + escapeHtml(override.name || '') + '" placeholder="' + escapeHtml(a.defaultName) + '"></label>' +
+              (override.name ? '<button type="button" class="cancel-btn" data-reset-app-name="' + escapeHtml(a.id) + '">Reset to default</button>' : '')
             : '<div class="job-manifest-note">Built-in shell utility — name isn\'t customizable, to keep documentation and support consistent.</div>';
           var detailHtml = '<div class="stat-tile wide">' +
             fileInfoRow('Id', escapeHtml(a.id)) +
@@ -1055,9 +1062,21 @@
           return mainRow + '<tr class="job-log-row"><td colspan="5"><div class="job-log-panel">' + detailHtml + '</div></td></tr>';
         }
 
-        function renderAppManagerTable() {
+        function renderAppManagerTable(force) {
           var tbody = document.getElementById('app-manager-tbody');
           if (!tbody) return;
+          // Skip rebuilding while the name-edit input is focused, UNLESS
+          // force is set. render() fires on every job-updated tick
+          // (server-stats alone is ~every 2s, regardless of user action),
+          // and a full tbody.innerHTML rebuild destroys and recreates that
+          // input each time — kicking focus out from under anyone mid-edit
+          // before they can type anything, confirmed live via matching
+          // renderActive/focusout timestamps. force:true is for the
+          // opposite case — a real user action (change/reset/row-toggle)
+          // that must always take effect immediately, even if
+          // document.activeElement's transition away from the input hasn't
+          // fully settled by the time the handler runs.
+          if (!force && document.activeElement && document.activeElement.id === 'app-manager-name-input') return;
           var rows = listApps().sort(function (a, b) { return a.name.localeCompare(b.name); });
           tbody.innerHTML = rows.map(renderAppManagerRow).join('') || '<tr><td colspan="5">(no apps registered)</td></tr>';
         }
@@ -1076,19 +1095,10 @@
               '</tr></thead><tbody id="app-manager-tbody"></tbody></table>';
 
             document.getElementById('app-manager-tbody').addEventListener('click', function (event) {
-              var saveBtn = event.target.closest('[data-save-app-name]');
-              if (saveBtn) {
-                var input = document.getElementById('app-manager-name-input');
-                var result = setAppOverride(saveBtn.dataset.saveAppName, { name: input.value.trim() });
-                if (!result.ok) alert('Could not rename this app: ' + result.reason);
-                renderAppManagerTable();
-                return;
-              }
-
               var resetBtn = event.target.closest('[data-reset-app-name]');
               if (resetBtn) {
                 setAppOverride(resetBtn.dataset.resetAppName, { name: '' });
-                renderAppManagerTable();
+                renderAppManagerTable(true);
                 return;
               }
 
@@ -1096,8 +1106,23 @@
               if (row) {
                 var id = row.dataset.appRow;
                 expandedAppId = (expandedAppId === id) ? null : id; // opening one closes any other
-                renderAppManagerTable(); // re-render immediately — don't wait for the next live update
+                renderAppManagerTable(true); // re-render immediately — don't wait for the next live update
               }
+            });
+
+            // Saves on change rather than requiring an explicit Save click
+            // — change fires on blur/Enter. force:true here since this IS
+            // the user finishing their edit; it must show up right away
+            // regardless of exactly where focus has landed by this point.
+            document.getElementById('app-manager-tbody').addEventListener('change', function (event) {
+              if (event.target.id !== 'app-manager-name-input') return;
+              var result = setAppOverride(event.target.dataset.appId, { name: event.target.value.trim() });
+              if (!result.ok) {
+                alert(result.reason === 'name-collision'
+                  ? 'Another app is already showing that name — pick a different one.'
+                  : 'Could not rename this app: ' + result.reason);
+              }
+              renderAppManagerTable(true);
             });
           },
           render: function () {
