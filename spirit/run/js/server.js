@@ -169,15 +169,37 @@ function handleFsDelete(req, res) {
   });
 }
 
-// Generic outbound-request proxy — knows nothing about LM Studio or any
-// other specific service, unlike the two hardcoded handlers this replaced.
-// A local service (LM Studio's included) sends no Access-Control-Allow-
-// Origin header, so a browser fetch() straight to it is silently blocked by
-// CORS even though it's reachable (server-to-server requests aren't subject
-// to CORS at all). The caller supplies the target url/method/body/timeout
-// and owns all response-shape parsing — this just forwards and relays back
-// whatever the target actually returned, or a synthesized {error} on
-// timeout/unreachable.
+// Small, explicit allowlist of env var NAMES that /api/proxy is willing to
+// substitute into an outgoing header value, via a ${ENV:NAME} placeholder
+// (see substituteEnvPlaceholders, below) — e.g. a caller can send
+// {"headers": {"x-api-key": "${ENV:ANTHROPIC_API_KEY}"}} and the real
+// secret is filled in here, server-side, right before the outbound fetch,
+// so it never has to exist in browser-visible code. This is credential-
+// SCOPING infrastructure, not app-specific knowledge — the proxy still
+// knows nothing about what any particular API looks like or does; it just
+// knows which secrets this one mechanism is allowed to touch at all, so it
+// can't be used to leak an unrelated server env var to an arbitrary URL a
+// caller names. Add a name here only when something genuinely needs to
+// reference it this way.
+const PROXY_ENV_SUBSTITUTION_ALLOWLIST = ['ANTHROPIC_API_KEY'];
+
+function substituteEnvPlaceholders(value) {
+  if (typeof value !== 'string') return value;
+  return value.replace(/\$\{ENV:([A-Z0-9_]+)\}/g, (match, varName) => {
+    if (PROXY_ENV_SUBSTITUTION_ALLOWLIST.indexOf(varName) === -1) return match; // not allowlisted — leave the literal placeholder, let the target API reject the bad auth rather than silently substituting nothing
+    return process.env[varName] !== undefined ? process.env[varName] : match;
+  });
+}
+
+// Generic outbound-request proxy — knows nothing about LM Studio, Claude,
+// or any other specific service, unlike the two hardcoded handlers this
+// originally replaced. A local service (LM Studio's included) sends no
+// Access-Control-Allow-Origin header, so a browser fetch() straight to it
+// is silently blocked by CORS even though it's reachable (server-to-server
+// requests aren't subject to CORS at all). The caller supplies the target
+// url/method/headers/body/timeout and owns all response-shape parsing —
+// this just forwards and relays back whatever the target actually
+// returned, or a synthesized {error} on timeout/unreachable.
 function handleGenericProxy(req, res) {
   readJsonBody(req).then((body) => {
     if (!body.url) {
@@ -190,10 +212,10 @@ function handleGenericProxy(req, res) {
     const timeoutId = setTimeout(() => controller.abort(), body.timeoutMs || 10000);
 
     const fetchOptions = { method: body.method || 'GET', signal: controller.signal };
-    if (body.body !== undefined) {
-      fetchOptions.headers = { 'Content-Type': 'application/json' };
-      fetchOptions.body = JSON.stringify(body.body);
-    }
+    const headers = Object.assign({}, body.body !== undefined ? { 'Content-Type': 'application/json' } : {}, body.headers || {});
+    Object.keys(headers).forEach((key) => { headers[key] = substituteEnvPlaceholders(headers[key]); });
+    if (Object.keys(headers).length > 0) fetchOptions.headers = headers;
+    if (body.body !== undefined) fetchOptions.body = JSON.stringify(body.body);
 
     fetch(body.url, fetchOptions)
       .then((response) => response.text().then((text) => ({ status: response.status, text })))
