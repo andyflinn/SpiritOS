@@ -342,6 +342,10 @@
         var getAppOverride = spirit.shell.getAppOverride;
         var setAppOverride = spirit.shell.setAppOverride;
         var fileInfoRow = spirit.shell.fileInfoRow;
+        var listGroups = spirit.shell.listGroups;
+        var createGroup = spirit.shell.createGroup;
+        var updateGroup = spirit.shell.updateGroup;
+        var deleteGroup = spirit.shell.deleteGroup;
 
         function formatUptime(seconds) {
           var total = Math.floor(seconds);
@@ -1019,13 +1023,20 @@
         // each getting a separate screen.
         var expandedAppId = null;
 
-        function renderAppManagerRow(a) {
+        function locationLabel(a, groupsById) {
+          if (!a.group) return 'Desktop';
+          if (a.group === 'none') return 'None';
+          var g = groupsById[a.group];
+          return g ? g.name : a.group; // fallen-out-of-sync fallback — shouldn't happen, setAppOverride validates on write
+        }
+
+        function renderAppManagerRow(a, groupsById, groupList) {
           var isExpanded = a.id === expandedAppId;
           var mainRow = '<tr class="job-row" data-app-row="' + escapeHtml(a.id) + '">' +
             '<td>' + (isExpanded ? ICON.POINTDOWN : ICON.POINTRIGHT) + ' ' + escapeHtml(a.icon) + '</td>' +
             '<td>' + escapeHtml(a.name) + '</td>' +
             '<td>' + escapeHtml(a.id) + '</td>' +
-            '<td>' + (a.hidden ? 'No' : 'Yes') + '</td>' +
+            '<td>' + escapeHtml(locationLabel(a, groupsById)) + '</td>' +
             '<td>' + (a.dynamic ? 'Dynamic' : 'Built-in') + '</td>' +
             '</tr>';
 
@@ -1057,37 +1068,69 @@
           var iconFieldHtml = '<label class="field-label">Custom icon (paste any emoji)' +
             '<input type="text" id="app-manager-icon-input" data-app-id="' + escapeHtml(a.id) + '" value="' + escapeHtml(override.icon || '') + '" placeholder="' + escapeHtml(a.defaultIcon) + '"></label>' +
             (override.icon ? '<button type="button" class="cancel-btn" data-reset-app-icon="' + escapeHtml(a.id) + '">Reset to default</button>' : '');
+          // Locked to dynamic apps only, unlike icon — built-in apps' place
+          // in the shell is curated by code (Spirit's own fixed member
+          // list); groups exist to organize the open-ended, growing set of
+          // installed apps, not to override that curation. No collision
+          // check (any number of apps may share a group, or all be
+          // "none"). "" selects Desktop, which clears the override back to
+          // the default, same convention as clearing name/icon.
+          var groupFieldHtml = a.dynamic
+            ? '<label class="field-label">Location' +
+              '<select id="app-manager-group-input" data-app-id="' + escapeHtml(a.id) + '">' +
+                '<option value=""' + (!a.group ? ' selected' : '') + '>Desktop</option>' +
+                groupList.map(function (g) {
+                  return '<option value="' + escapeHtml(g.id) + '"' + (a.group === g.id ? ' selected' : '') + '>' + escapeHtml(g.name) + '</option>';
+                }).join('') +
+                '<option value="none"' + (a.group === 'none' ? ' selected' : '') + '>None</option>' +
+              '</select></label>'
+            : '';
           var detailHtml = '<div class="stat-tile wide">' +
             fileInfoRow('Id', escapeHtml(a.id)) +
             fileInfoRow('Default name', escapeHtml(a.defaultName)) +
             fileInfoRow('Default icon', escapeHtml(a.defaultIcon)) +
             fileInfoRow('Source', a.dynamic ? 'Dynamic (script loads on first launch)' : 'Built-in') +
-            fileInfoRow('On desktop by default', a.hidden ? 'No' : 'Yes') +
             nameFieldHtml +
             iconFieldHtml +
+            groupFieldHtml +
             '</div>';
 
-          return mainRow + '<tr class="job-log-row"><td colspan="5"><div class="job-log-panel">' + detailHtml + '</div></td></tr>';
+          // No .job-log-panel wrapper here, unlike Jobs' own expand panel —
+          // that class's max-height/overflow-y:auto is right for Jobs'
+          // genuinely unbounded, ever-growing log, but wrong for this
+          // panel's small, fixed set of fields: it clipped to a scrollbar
+          // once the icon/visibility fields were added, and the periodic
+          // re-render (every job-updated tick) recreated that scrollable
+          // div fresh each time, visibly resetting its scroll position
+          // every ~2s. detailHtml's own .stat-tile wide already provides
+          // background/padding, so nothing else is needed here.
+          return mainRow + '<tr class="job-log-row"><td colspan="5">' + detailHtml + '</td></tr>';
         }
 
         function renderAppManagerTable(force) {
           var tbody = document.getElementById('app-manager-tbody');
           if (!tbody) return;
-          // Skip rebuilding while a name/icon edit input is focused, UNLESS
-          // force is set. render() fires on every job-updated tick
+          // Skip rebuilding while a name/icon/location field is focused,
+          // UNLESS force is set. render() fires on every job-updated tick
           // (server-stats alone is ~every 2s, regardless of user action),
           // and a full tbody.innerHTML rebuild destroys and recreates those
-          // inputs each time — kicking focus out from under anyone mid-edit
-          // before they can type anything, confirmed live via matching
-          // renderActive/focusout timestamps. force:true is for the
-          // opposite case — a real user action (change/reset/row-toggle)
-          // that must always take effect immediately, even if
-          // document.activeElement's transition away from the input hasn't
-          // fully settled by the time the handler runs.
+          // fields each time — kicking focus out from under anyone mid-edit
+          // before they can act, confirmed live twice now: first via
+          // matching renderActive/focusout timestamps for the text inputs,
+          // then live again for the group <select> specifically — an open
+          // native dropdown counts as "focused" too, and was being
+          // collapsed out from under a selection in progress before this
+          // was added to the same guard. force:true is for the opposite
+          // case — a real user action (change/reset/row-toggle) that must
+          // always take effect immediately, even if document.activeElement's
+          // transition away from the field hasn't fully settled yet.
           var focusedId = document.activeElement && document.activeElement.id;
-          if (!force && (focusedId === 'app-manager-name-input' || focusedId === 'app-manager-icon-input')) return;
+          if (!force && (focusedId === 'app-manager-name-input' || focusedId === 'app-manager-icon-input' || focusedId === 'app-manager-group-input')) return;
+          var groupList = listGroups();
+          var groupsById = {};
+          groupList.forEach(function (g) { groupsById[g.id] = g; });
           var rows = listApps().sort(function (a, b) { return a.name.localeCompare(b.name); });
-          tbody.innerHTML = rows.map(renderAppManagerRow).join('') || '<tr><td colspan="5">(no apps registered)</td></tr>';
+          tbody.innerHTML = rows.map(function (a) { return renderAppManagerRow(a, groupsById, groupList); }).join('') || '<tr><td colspan="5">(no apps registered)</td></tr>';
         }
 
         registerApp({
@@ -1100,7 +1143,7 @@
 
             container.innerHTML =
               '<table class="jobs-table"><thead><tr>' +
-              '<th></th><th>Name</th><th>Id</th><th>On desktop?</th><th>Source</th>' +
+              '<th></th><th>Name</th><th>Id</th><th>Location</th><th>Source</th>' +
               '</tr></thead><tbody id="app-manager-tbody"></tbody></table>';
 
             document.getElementById('app-manager-tbody').addEventListener('click', function (event) {
@@ -1133,9 +1176,12 @@
             document.getElementById('app-manager-tbody').addEventListener('change', function (event) {
               var isName = event.target.id === 'app-manager-name-input';
               var isIcon = event.target.id === 'app-manager-icon-input';
-              if (!isName && !isIcon) return;
+              var isGroup = event.target.id === 'app-manager-group-input';
+              if (!isName && !isIcon && !isGroup) return;
 
-              var patch = isName ? { name: event.target.value.trim() } : { icon: event.target.value.trim() };
+              var patch = isName ? { name: event.target.value.trim() }
+                : isIcon ? { icon: event.target.value.trim() }
+                : { group: event.target.value };
               var result = setAppOverride(event.target.dataset.appId, patch);
               if (!result.ok) {
                 var messages = {
@@ -1152,12 +1198,139 @@
           },
         });
 
+        // ---- Groups app ----
+        // Manages user-created top-level app groups: create one, rename/
+        // re-icon an existing one, or delete one (its members revert to
+        // the Desktop, not orphaned — confirmed before deleting anything
+        // with a member, since that's the one destructive step here).
+        // Placement of individual apps into a group happens in the Apps
+        // table (its Location dropdown), not here — this screen manages
+        // the groups themselves, not membership.
+        var expandedGroupId = null;
+
+        function renderGroupManagerRow(g) {
+          var isExpanded = g.id === expandedGroupId;
+          var mainRow = '<tr class="job-row" data-group-row="' + escapeHtml(g.id) + '">' +
+            '<td>' + (isExpanded ? ICON.POINTDOWN : ICON.POINTRIGHT) + ' ' + escapeHtml(g.icon) + '</td>' +
+            '<td>' + escapeHtml(g.name) + '</td>' +
+            '<td>' + g.memberCount + '</td>' +
+            '</tr>';
+
+          if (!isExpanded) return mainRow;
+
+          var detailHtml = '<div class="stat-tile wide">' +
+            fileInfoRow('Id', escapeHtml(g.id)) +
+            fileInfoRow('Members', g.memberCount === 0 ? '(none — see the warning panel on the group itself)' : g.memberIds.map(escapeHtml).join(', ')) +
+            '<label class="field-label">Name<input type="text" id="group-manager-name-input" data-group-id="' + escapeHtml(g.id) + '" value="' + escapeHtml(g.name) + '"></label>' +
+            '<label class="field-label">Icon<input type="text" id="group-manager-icon-input" data-group-id="' + escapeHtml(g.id) + '" value="' + escapeHtml(g.icon) + '"></label>' +
+            '<button type="button" class="cancel-btn" data-delete-group="' + escapeHtml(g.id) + '">Delete group</button>' +
+            '</div>';
+
+          return mainRow + '<tr class="job-log-row"><td colspan="3">' + detailHtml + '</td></tr>';
+        }
+
+        function renderGroupManagerTable(force) {
+          var tbody = document.getElementById('group-manager-tbody');
+          if (!tbody) return;
+          // Same focus-preserving guard as the Apps table, same reason —
+          // render() fires on every job-updated tick regardless of user
+          // action, and would otherwise destroy a focused rename input.
+          var focusedId = document.activeElement && document.activeElement.id;
+          if (!force && (focusedId === 'group-manager-name-input' || focusedId === 'group-manager-icon-input')) return;
+          var groups = listGroups().sort(function (a, b) { return a.name.localeCompare(b.name); });
+          tbody.innerHTML = groups.map(renderGroupManagerRow).join('') || '<tr><td colspan="3">(no groups yet)</td></tr>';
+        }
+
+        registerApp({
+          id: 'group-manager',
+          name: 'Groups',
+          icon: ICON.GROUP,
+          hidden: true, // reachable via the "spirit" app group
+          mount: function (container) {
+            expandedGroupId = null; // fresh visit starts fully collapsed
+
+            container.innerHTML =
+              '<div class="stat-tile wide">' +
+                '<label class="field-label">New group name<input type="text" id="group-manager-new-name" placeholder="e.g. Media Tools"></label>' +
+                '<label class="field-label">New group icon (paste any emoji)<input type="text" id="group-manager-new-icon" placeholder="e.g. 🎨"></label>' +
+                '<button type="button" class="cancel-btn" id="group-manager-create">Create group</button>' +
+                '<div id="group-manager-create-error" class="job-start-error"></div>' +
+              '</div>' +
+              '<table class="jobs-table"><thead><tr><th></th><th>Name</th><th>Members</th></tr></thead><tbody id="group-manager-tbody"></tbody></table>';
+
+            document.getElementById('group-manager-create').addEventListener('click', function () {
+              var nameInput = document.getElementById('group-manager-new-name');
+              var iconInput = document.getElementById('group-manager-new-icon');
+              var errorEl = document.getElementById('group-manager-create-error');
+              var result = createGroup(nameInput.value.trim(), iconInput.value.trim());
+              if (!result.ok) {
+                var messages = {
+                  'name-and-icon-required': 'Both a name and an icon are required.',
+                  'name-collision': 'Another app or group is already using that name.',
+                  'icon-collision': 'Another app or group is already using that icon.',
+                };
+                errorEl.textContent = messages[result.reason] || ('Could not create group: ' + result.reason);
+                return;
+              }
+              errorEl.textContent = '';
+              nameInput.value = '';
+              iconInput.value = '';
+              renderGroupManagerTable(true);
+            });
+
+            document.getElementById('group-manager-tbody').addEventListener('click', function (event) {
+              var deleteBtn = event.target.closest('[data-delete-group]');
+              if (deleteBtn) {
+                var id = deleteBtn.dataset.deleteGroup;
+                var group = listGroups().filter(function (g) { return g.id === id; })[0];
+                var memberCount = group ? group.memberCount : 0;
+                var name = group ? group.name : id;
+                if (!confirm('Delete "' + name + '"? ' + memberCount + ' app(s) will move back to the desktop.')) return;
+                deleteGroup(id);
+                expandedGroupId = null;
+                renderGroupManagerTable(true);
+                return;
+              }
+
+              var row = event.target.closest('[data-group-row]');
+              if (row) {
+                var rowId = row.dataset.groupRow;
+                expandedGroupId = (expandedGroupId === rowId) ? null : rowId; // opening one closes any other
+                renderGroupManagerTable(true);
+              }
+            });
+
+            document.getElementById('group-manager-tbody').addEventListener('change', function (event) {
+              var isName = event.target.id === 'group-manager-name-input';
+              var isIcon = event.target.id === 'group-manager-icon-input';
+              if (!isName && !isIcon) return;
+
+              var patch = isName ? { name: event.target.value.trim() } : { icon: event.target.value.trim() };
+              var result = updateGroup(event.target.dataset.groupId, patch);
+              if (!result.ok) {
+                var messages = {
+                  'name-required': 'Name cannot be empty.',
+                  'icon-required': 'Icon cannot be empty.',
+                  'name-collision': 'Another app or group is already using that name.',
+                  'icon-collision': 'Another app or group is already using that icon.',
+                };
+                alert(messages[result.reason] || ('Could not update group: ' + result.reason));
+              }
+              renderGroupManagerTable(true);
+            });
+          },
+          render: function () {
+            renderGroupManagerTable();
+          },
+        });
+
         // ---- Spirit app (launcher/grouping template) ----
         // Hosts a sub-view of the machine-introspection apps (Stats,
-        // Processes, Jobs, Apps) — hidden from the real desktop below —
-        // using the same reusable icon-grid template a future grouping app
-        // could reuse. Files stays a front-page icon: it's a content-facing
-        // app you use, not a system-introspection tool.
+        // Processes, Jobs, Apps, Groups) — hidden from the real desktop
+        // below — using the same reusable icon-grid template user-created
+        // groups also build on (registerGroupApp, shell.js). Files stays a
+        // front-page icon: it's a content-facing app you use, not a
+        // system-introspection tool.
         registerApp({
           id: 'spirit',
           name: 'Spirit',
@@ -1168,7 +1341,7 @@
           render: function () {
             var grid = document.getElementById('spirit-group');
             if (!grid) return;
-            renderAppGroup(grid, ['stats', 'process-browser', 'jobs', 'app-manager']);
+            renderAppGroup(grid, ['stats', 'process-browser', 'jobs', 'app-manager', 'group-manager']);
           },
         });
 

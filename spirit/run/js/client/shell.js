@@ -27,17 +27,22 @@
   // .gitignore), not ordinary app config — hence root-level, not
   // app-scoped.
   var preferencesRaw = spirit.core.fs.loadFile('preferences.json');
-  var preferences = { defaultHandlers: {}, appOverrides: {} };
+  var preferences = { defaultHandlers: {}, appOverrides: {}, groups: {} };
   if (preferencesRaw != null) {
     try {
       preferences = JSON.parse(preferencesRaw);
       preferences.defaultHandlers = preferences.defaultHandlers || {};
-      // Sparse, per-app user overrides — {name?, icon?} so far — keyed by
+      // Sparse, per-app user overrides — {name?, icon?, group?} — keyed by
       // app id. A key's absence means "use the app's own default for that
       // property," so nothing changes for anyone until a property is
       // actually customized. Named distinctly from defaultHandlers, which
       // is a different kind of preference (file extension -> handler app).
       preferences.appOverrides = preferences.appOverrides || {};
+      // User-created group definitions ({name, icon}), keyed by a
+      // shell-generated id (never the group's own name — see createGroup).
+      // Membership lives in appOverrides[appId].group, not here — this is
+      // just the group's own identity.
+      preferences.groups = preferences.groups || {};
     } catch (e) { /* malformed — fall back to empty defaults */ }
   }
 
@@ -112,38 +117,44 @@
   // Merges patch into an app's override object; a property set to '' or
   // null clears that one property (reverting just it to default) rather
   // than clearing the whole override. Removes the app's entry entirely
-  // once no properties remain, keeping appOverrides sparse. Note for
-  // boolean properties (visible): false is a real, meaningful value, not
-  // "unset" — only '' or null clears, so `{visible: false}` correctly
-  // persists an explicit "hidden" choice rather than being mistaken for a
-  // reset-to-default.
+  // once no properties remain, keeping appOverrides sparse.
   //
-  // Renaming is locked for built-in shell utilities (Stats, Files,
-  // Processes, Jobs, Spirit, Apps, the viewers — anything not
-  // dynamically-loaded, i.e. no _scriptPath). Letting a user rename these
-  // would make any written documentation, support conversation, or future
-  // help screen that refers to "the Jobs app" silently stop matching what's
-  // actually on screen — a cost dynamically-loaded apps (AI Chat, Text
-  // Editor, anything installed later) don't carry the same way, since
-  // nothing calls them out by a fixed name in core docs. Enforced here,
-  // not just left to the UI, so nothing else that ever calls this can
-  // bypass it either.
+  // Renaming and regrouping are both locked for built-in shell utilities
+  // (Stats, Files, Processes, Jobs, Spirit, Apps, Groups, the viewers —
+  // anything not dynamically-loaded, i.e. no _scriptPath). For name: a
+  // written doc, support conversation, or future help screen that refers
+  // to "the Jobs app" should always match what's actually on screen — a
+  // cost dynamically-loaded apps (AI Chat, Text Editor, anything installed
+  // later) don't carry the same way, since nothing calls them out by a
+  // fixed name in core docs. For group: built-in apps' placement is
+  // curated by code (Spirit's own fixed member list) — reassigning them
+  // would fight that curation, and the whole point of groups is to
+  // organize the open-ended, growing set of installed apps, not the small
+  // fixed set the shell ships with. Both enforced here, not just left to
+  // the UI, so nothing else that ever calls this can bypass either lock.
   //
-  // Also rejects a name/icon that would collide with any other app's
-  // current effective value OR true default value — checked against the
-  // RESULT of applying patch (so clearing back to a default is checked
-  // too, not just setting a new custom one), since two apps showing the
-  // same name or icon is confusing regardless of which one has the
-  // override. Icon isn't locked to dynamic apps the way name is — the
-  // "written docs/support text goes stale" argument for the name lock is
-  // specifically about a fixed name being referenced in prose; nothing
-  // calls an app out by "the 📊 icon" the same way, so customizing a
-  // built-in's icon is just cosmetic personalization, not a documentation
-  // hazard.
+  // Also rejects a name/icon that would collide with any other app's (or
+  // group's — see collidesWithAnotherApp) current effective value OR true
+  // default value — checked against the RESULT of applying patch (so
+  // clearing back to a default is checked too), since two things showing
+  // the same name or icon is confusing regardless of which one has the
+  // override. Icon isn't locked to dynamic apps the way name/group are —
+  // the "written docs/support text goes stale" argument is specifically
+  // about a fixed name being referenced in prose; nothing calls an app out
+  // by "the 📊 icon" the same way, so customizing a built-in's icon is
+  // just cosmetic personalization, not a documentation hazard. group has
+  // no collision check at all — any number of apps may share a group, or
+  // all be "none," with no ambiguity.
   function setAppOverride(id, patch) {
     var app = apps[id];
     if (patch.name !== undefined && app && !app._scriptPath) {
       return { ok: false, reason: 'core-app-name-locked' };
+    }
+    if (patch.group !== undefined && app && !app._scriptPath) {
+      return { ok: false, reason: 'core-app-group-locked' };
+    }
+    if (patch.group && patch.group !== 'none' && !preferences.groups[patch.group]) {
+      return { ok: false, reason: 'group-not-found' }; // stale/bogus group id — e.g. deleted elsewhere
     }
 
     var current = preferences.appOverrides[id] || {};
@@ -179,7 +190,7 @@
       preferences.appOverrides[id] = merged;
     }
     savePreferences();
-    renderDesktop(); // reflect a name/icon change on the real desktop immediately, not just wherever this was called from
+    renderDesktop(); // reflect a name/icon/group change on the real desktop immediately, not just wherever this was called from
     return { ok: true };
   }
 
@@ -199,14 +210,18 @@
     return (override && override.icon) || app.icon;
   }
 
-  // Same idea again, for visibility — but unlike name/icon, false is a
-  // real, meaningful value (not "unset"), so this checks typeof rather
-  // than truthiness: an explicit override.visible === false must win over
-  // the app's own default, not get treated as absent.
-  function effectiveVisible(app) {
+  // Where a dynamic app currently lives: null means Desktop (the default —
+  // nothing stored), "none" means no icon anywhere, anything else is a
+  // real preferences.groups id. Built-in apps never have this set (locked
+  // in setAppOverride) so this is only ever meaningful for _scriptPath apps.
+  function effectiveGroup(app) {
     var override = preferences.appOverrides[app.id];
-    if (override && typeof override.visible === 'boolean') return override.visible;
-    return !app.hidden;
+    return (override && override.group) || null;
+  }
+
+  // Every app currently assigned to this group (effectiveGroup === groupId).
+  function membersOfGroup(groupId) {
+    return Object.keys(apps).filter(function (id) { return effectiveGroup(apps[id]) === groupId; });
   }
 
   function buildAppIcon(id) {
@@ -241,17 +256,20 @@
   function renderDesktop() {
     desktopEl.innerHTML = '';
     Object.keys(apps).forEach(function (id) {
-      if (effectiveVisible(apps[id])) desktopEl.appendChild(buildAppIcon(id));
+      var app = apps[id];
+      if (app.hidden) return; // built-in, coded hidden — untouched by any of this
+      if (app._scriptPath && effectiveGroup(app)) return; // dynamic app assigned to a real group, or "none" — either way, not on the desktop
+      desktopEl.appendChild(buildAppIcon(id)); // built-ins (non-hidden), unassigned dynamic apps, and groups themselves (always top-level)
     });
   }
 
-  // Enumerates every registered app (built-in + already-discovered dynamic
-  // apps), regardless of its own hidden flag — read-only aside from
+  // Enumerates every registered real app (built-in + already-discovered
+  // dynamic apps) — excludes groups (_isGroup), which get their own
+  // management screen rather than a row here. Read-only aside from
   // resolving name/icon overrides through effectiveName()/effectiveIcon(),
-  // same as the real icon rendering. The data behind the Apps list screen;
-  // a future user-controlled visibility toggle would build on this.
+  // same as the real icon rendering. The data behind the Apps list screen.
   function listApps() {
-    return Object.keys(apps).map(function (id) {
+    return Object.keys(apps).filter(function (id) { return !apps[id]._isGroup; }).map(function (id) {
       var app = apps[id];
       return {
         id: app.id,
@@ -259,8 +277,8 @@
         defaultName: app.name,
         icon: effectiveIcon(app),
         defaultIcon: app.icon,
-        visible: effectiveVisible(app),
-        hidden: !!app.hidden, // the app's own code-level default, distinct from `visible` (post-override)
+        group: effectiveGroup(app),
+        hidden: !!app.hidden, // the app's own code-level default
         dynamic: !!app._scriptPath,
       };
     });
@@ -286,6 +304,151 @@
     if (app.hidden) return; // reachable only via launchApp(id, params) from another app, no desktop icon
     renderDesktop();
   }
+
+  // Enumerates every user-created group with its current membership — the
+  // data behind the Groups management screen.
+  function listGroups() {
+    return Object.keys(preferences.groups).map(function (groupId) {
+      var groupDef = preferences.groups[groupId];
+      var memberIds = membersOfGroup(groupId);
+      return { id: groupId, name: groupDef.name, icon: groupDef.icon, memberIds: memberIds, memberCount: memberIds.length };
+    });
+  }
+
+  // Group ids are proven, not claimed — generated once by the shell
+  // itself and never derived from (or equal to) the group's own name,
+  // which is exactly the kind of user-editable, claimed label that must
+  // never double as an identifier. Renaming a group later only ever
+  // changes preferences.groups[id].name; the id, and therefore every
+  // member's .group reference, never moves.
+  //
+  // Collision-checked against the whole apps registry via the id '' —
+  // a brand-new group can't equal any existing id, so this only ever
+  // tests the candidate name/icon, exactly like renaming a real app does
+  // (see setAppOverride) — one shared, flat namespace, not two parallel
+  // rules that happen to agree.
+  function createGroup(name, icon) {
+    if (!name || !icon) return { ok: false, reason: 'name-and-icon-required' };
+
+    var nameCollides = collidesWithAnotherApp('', name, function (otherApp) {
+      return [effectiveName(otherApp), otherApp.name];
+    }, normalizeForComparison);
+    if (nameCollides) return { ok: false, reason: 'name-collision' };
+
+    var iconCollides = collidesWithAnotherApp('', icon, function (otherApp) {
+      return [effectiveIcon(otherApp), otherApp.icon];
+    }, normalizeIconForComparison);
+    if (iconCollides) return { ok: false, reason: 'icon-collision' };
+
+    var groupId = 'grp_' + Date.now().toString(36);
+    preferences.groups[groupId] = { name: name, icon: icon };
+    savePreferences();
+    registerGroupApp(groupId, preferences.groups[groupId]);
+    return { ok: true, id: groupId };
+  }
+
+  // Renames/re-icons an existing group. Not routed through setAppOverride
+  // — a group has no code-default to lock or reserve, it's a different
+  // category from an app — this mutates preferences.groups directly, and
+  // the already-registered pseudo-app in apps, so the change is visible
+  // immediately. A group's name/icon always has SOME value (unlike an
+  // app's optional override), so neither can be cleared to empty here.
+  function updateGroup(groupId, patch) {
+    var groupDef = preferences.groups[groupId];
+    if (!groupDef) return { ok: false, reason: 'not-found' };
+
+    if (patch.name !== undefined) {
+      if (!patch.name) return { ok: false, reason: 'name-required' };
+      var nameCollides = collidesWithAnotherApp(groupId, patch.name, function (otherApp) {
+        return [effectiveName(otherApp), otherApp.name];
+      }, normalizeForComparison);
+      if (nameCollides) return { ok: false, reason: 'name-collision' };
+      groupDef.name = patch.name;
+      apps[groupId].name = patch.name;
+    }
+
+    if (patch.icon !== undefined) {
+      if (!patch.icon) return { ok: false, reason: 'icon-required' };
+      var iconCollides = collidesWithAnotherApp(groupId, patch.icon, function (otherApp) {
+        return [effectiveIcon(otherApp), otherApp.icon];
+      }, normalizeIconForComparison);
+      if (iconCollides) return { ok: false, reason: 'icon-collision' };
+      groupDef.icon = patch.icon;
+      apps[groupId].icon = patch.icon;
+    }
+
+    savePreferences();
+    renderDesktop();
+    return { ok: true };
+  }
+
+  // Deletes a group, reverting every current member back to the Desktop
+  // (clearing their .group override) rather than orphaning them — "exists
+  // once or not at all" was never meant to mean "unreachable by
+  // accident." Navigates home if the deleted group was the active screen,
+  // since it no longer exists to render.
+  function deleteGroup(groupId) {
+    membersOfGroup(groupId).forEach(function (memberId) {
+      var override = preferences.appOverrides[memberId];
+      if (!override) return;
+      delete override.group;
+      if (Object.keys(override).length === 0) delete preferences.appOverrides[memberId];
+    });
+    delete preferences.groups[groupId];
+    delete apps[groupId];
+    savePreferences();
+    if (activeAppId === groupId) goHome();
+    renderDesktop();
+  }
+
+  // A group is not a new kind of rendering — it's data-driven registration
+  // of the exact same mechanism "spirit" already uses with a hardcoded
+  // member list, so it reuses buildAppIcon, launchApp's {replace:true}
+  // stack behavior, and renderDesktop for free. _isGroup marks it so
+  // listApps() can exclude it (it gets this own management screen, not a
+  // row in the Apps table). Empty membership shows a warning instead of a
+  // blank grid, with a way to populate it (straight to the Apps table) or
+  // delete it outright — no confirm needed there, since an empty group has
+  // nothing to lose.
+  function registerGroupApp(groupId, groupDef) {
+    registerApp({
+      id: groupId,
+      name: groupDef.name,
+      icon: groupDef.icon,
+      _isGroup: true,
+      mount: function (container) {
+        container.innerHTML = '<div id="' + groupId + '-content"></div>';
+        container.addEventListener('click', function (event) {
+          if (event.target.closest('[data-goto-apps]')) {
+            launchApp('app-manager');
+            return;
+          }
+          var deleteBtn = event.target.closest('[data-delete-empty-group]');
+          if (deleteBtn) deleteGroup(deleteBtn.dataset.deleteEmptyGroup);
+        });
+      },
+      render: function () {
+        var el = document.getElementById(groupId + '-content');
+        if (!el) return;
+        var memberIds = membersOfGroup(groupId);
+        if (memberIds.length === 0) {
+          el.innerHTML = '<div class="stat-tile wide">' +
+            '<div>This group has no apps in it yet.</div>' +
+            '<button type="button" class="cancel-btn" data-goto-apps>Populate it (Apps)</button> ' +
+            '<button type="button" class="cancel-btn" data-delete-empty-group="' + escapeHtml(groupId) + '">Delete this group</button>' +
+            '</div>';
+        } else {
+          el.innerHTML = '<div class="app-group-grid" id="' + groupId + '-grid"></div>';
+          renderAppGroup(document.getElementById(groupId + '-grid'), memberIds);
+        }
+      },
+    });
+  }
+
+  // Boot: register every stored group definition as a real pseudo-app.
+  Object.keys(preferences.groups).forEach(function (groupId) {
+    registerGroupApp(groupId, preferences.groups[groupId]);
+  });
 
   // Switches the visible screen without touching navStack — the stack
   // bookkeeping lives in launchApp/goBack, this just mounts/unmounts.
@@ -618,6 +781,10 @@
     listApps: listApps,
     getAppOverride: getAppOverride,
     setAppOverride: setAppOverride,
+    listGroups: listGroups,
+    createGroup: createGroup,
+    updateGroup: updateGroup,
+    deleteGroup: deleteGroup,
   };
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
