@@ -347,6 +347,35 @@
     return { ok: true, id: groupId };
   }
 
+  // Read-only version of the same check createGroup runs above — no write
+  // side effects, just "would this name/icon collide with anything in the
+  // apps registry". Exists because nothing today checks a dynamically-
+  // loaded app's OWN manifest-declared name/icon for collisions —
+  // declareDynamicApp (below) writes manifest.name/manifest.icon straight
+  // into the registry, which was fine while every manifest was hand-
+  // written by someone who could just look at the desktop first. A tool
+  // that generates manifests (App Builder) needs to validate BEFORE
+  // writing one, not discover the collision after the fact — same
+  // collidesWithAnotherApp logic, same normalizers, so this can never
+  // disagree with what setAppOverride/createGroup already enforce.
+  // excludeId defaults to '' (matches no real id) for a brand-new app;
+  // pass an existing app's own id when checking its own current identity
+  // isn't being classed as colliding with itself.
+  function checkIdentityAvailable(name, icon, excludeId) {
+    var id = excludeId || '';
+    var nameCollides = collidesWithAnotherApp(id, name, function (otherApp) {
+      return [effectiveName(otherApp), otherApp.name];
+    }, normalizeForComparison);
+    if (nameCollides) return { ok: false, reason: 'name-collision' };
+
+    var iconCollides = collidesWithAnotherApp(id, icon, function (otherApp) {
+      return [effectiveIcon(otherApp), otherApp.icon];
+    }, normalizeIconForComparison);
+    if (iconCollides) return { ok: false, reason: 'icon-collision' };
+
+    return { ok: true };
+  }
+
   // Renames/re-icons an existing group. Not routed through setAppOverride
   // — a group has no code-default to lock or reserve, it's a different
   // category from an app — this mutates preferences.groups directly, and
@@ -785,6 +814,7 @@
     createGroup: createGroup,
     updateGroup: updateGroup,
     deleteGroup: deleteGroup,
+    checkIdentityAvailable: checkIdentityAvailable,
   };
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----

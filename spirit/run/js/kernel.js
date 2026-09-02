@@ -176,7 +176,32 @@ if (isNode()) {
   let saveFile = spirit.core.fs.saveFile = function(filePath, content){
     const resolved = fsPath(ROOT_DIR, filePath);
     if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
-    if (APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return { ok: false, reason: 'app-entry-script-protected' };
+    if (APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return { ok: false, reason: 'app-entry-script-protected' }; // see saveAppScript, below, for the one deliberate exception
+    try {
+      fs.mkdirSync(path.dirname(resolved), { recursive: true });
+      fs.writeFileSync(resolved, content, 'utf8');
+      return { ok: true };
+    } catch (err) {
+      error(err);
+      return { ok: false, reason: 'error' };
+    }
+  };
+
+  // The one deliberate exception to saveFile's entry-script guard above —
+  // App Builder's whole purpose is writing an app's own app/<name>/<name>.js,
+  // which saveFile refuses unconditionally. Kept as a separate, narrowly-
+  // named function rather than a flag on saveFile so that invariant ("saveFile
+  // can never touch an entry script") stays true for every other caller
+  // without exception, and this one path is easy to find and audit. Only
+  // ever reached via a deliberate user gesture (an Apply click) in the UI —
+  // this function itself enforces no more than "the path really is shaped
+  // like an entry script", the same trust boundary already accepted for
+  // /api/jobs's spawn capability (this server only ever talks to your own
+  // browser tab).
+  let saveAppScript = spirit.core.fs.saveAppScript = function(filePath, content){
+    const resolved = fsPath(ROOT_DIR, filePath);
+    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    if (!APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return { ok: false, reason: 'not-an-app-entry-script' };
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
@@ -403,6 +428,23 @@ if (isNode()) {
         if (xhr.readyState !== 4) return;
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else reject(new Error('failed to save file: ' + xhr.status));
+      };
+      xhr.send(JSON.stringify({ path: filePath, content: content }));
+    });
+  };
+
+  // The one deliberate way to write an app's own entry script from the
+  // browser — see saveAppScript in the Node section above for what's
+  // actually enforced server-side. Same shape as saveFile, different route.
+  spirit.core.fs.saveAppScript = function(filePath, content) {
+    return new Promise(function (resolve, reject) {
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/fs/save-app-script', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error('failed to save app script: ' + xhr.status));
       };
       xhr.send(JSON.stringify({ path: filePath, content: content }));
     });

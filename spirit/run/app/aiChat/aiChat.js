@@ -26,17 +26,17 @@ if (!document.getElementById('ai-chat-styles')) {
 }
 
 // Claude models: unlike LM Studio's live-queried, locally-loaded set, this
-// is a small fixed list living directly in this app's own file — the
-// server/kernel never needs to know it exists (same "no app-specific code
-// in the kernel" principle, applied to a hosted backend instead of a local
-// one). No live discovery needed here: Anthropic's catalog doesn't churn
-// the way a local LM Studio install does, and all three support vision
-// natively, unlike LM Studio's mixed local model set.
-var CLAUDE_MODELS = [
-  { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (cheap, fast)' },
-  { id: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
-  { id: 'claude-opus-5', label: 'Claude Opus 5 (most capable)' },
-];
+// is a small fixed list living in a shared data file (app/shared/
+// claudeModels.json), not a hardcoded array — App Builder needs the same
+// list, and the model list (unlike the key-validity check below) is the
+// part that actually changes over time as Anthropic ships new models, so
+// it's the part worth keeping in exactly one place. The server/kernel
+// still never needs to know it exists (same "no app-specific code in the
+// kernel" principle, applied to a hosted backend instead of a local one).
+// No live discovery needed here: Anthropic's catalog doesn't churn the way
+// a local LM Studio install does, and all three support vision natively,
+// unlike LM Studio's mixed local model set.
+var CLAUDE_MODELS = JSON.parse(spirit.core.fs.loadFile('app/shared/claudeModels.json'));
 
 spirit.shell.activateApp({
   mount: function (container) {

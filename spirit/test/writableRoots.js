@@ -78,6 +78,33 @@ expectForbidden(
 // the exact <name>/<name>.js shape, not the whole folder.
 expectWritable('a non-entry-script file in a new app folder', 'app/__writableRootsProbeApp__/data.json');
 
+// ---- saveAppScript: the mirror-image exception (App Builder) ----
+// Exactly what saveFile refuses above, saveAppScript exists to allow — and
+// nothing else, confirmed by checking the other direction too.
+{
+  const scriptPath = 'app/__writableRootsProbeApp__/__writableRootsProbeApp__.js';
+  const saved = spirit.core.fs.saveAppScript(scriptPath, 'writableRoots.js probe');
+  if (saved.ok) {
+    test.check('saveAppScript accepts a real app entry-script path');
+  } else {
+    test.fail('saveAppScript should accept an entry-script path but returned ' + JSON.stringify(saved));
+  }
+  const deleted = spirit.core.fs.deleteFile(scriptPath);
+  if (!deleted.ok) {
+    test.fail('saveAppScript probe file could not be cleaned up: ' + JSON.stringify(deleted));
+  }
+}
+
+{
+  const nonScriptPath = 'app/__writableRootsProbeApp__/data.json';
+  const saved = spirit.core.fs.saveAppScript(nonScriptPath, 'writableRoots.js probe');
+  if (!saved.ok && saved.reason === 'not-an-app-entry-script') {
+    test.check('saveAppScript rejects a non-entry-script path even under app/ (not-an-app-entry-script)');
+  } else {
+    test.fail('saveAppScript should have rejected a non-entry-script path but got ' + JSON.stringify(saved));
+  }
+}
+
 // deleteFile only removes the file — clean up the now-empty folder it lived
 // in so this test leaves no trace on disk.
 try {
