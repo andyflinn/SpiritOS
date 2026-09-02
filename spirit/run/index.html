@@ -1022,7 +1022,7 @@
         function renderAppManagerRow(a) {
           var isExpanded = a.id === expandedAppId;
           var mainRow = '<tr class="job-row" data-app-row="' + escapeHtml(a.id) + '">' +
-            '<td>' + (isExpanded ? ICON.POINTDOWN : ICON.POINTRIGHT) + ' ' + a.icon + '</td>' +
+            '<td>' + (isExpanded ? ICON.POINTDOWN : ICON.POINTRIGHT) + ' ' + escapeHtml(a.icon) + '</td>' +
             '<td>' + escapeHtml(a.name) + '</td>' +
             '<td>' + escapeHtml(a.id) + '</td>' +
             '<td>' + (a.hidden ? 'No' : 'Yes') + '</td>' +
@@ -1051,12 +1051,20 @@
               '<input type="text" id="app-manager-name-input" data-app-id="' + escapeHtml(a.id) + '" value="' + escapeHtml(override.name || '') + '" placeholder="' + escapeHtml(a.defaultName) + '"></label>' +
               (override.name ? '<button type="button" class="cancel-btn" data-reset-app-name="' + escapeHtml(a.id) + '">Reset to default</button>' : '')
             : '<div class="job-manifest-note">Built-in shell utility — name isn\'t customizable, to keep documentation and support consistent.</div>';
+          // Not locked to dynamic apps the way name is — see
+          // setAppOverride's comment (shell.js) for why icon doesn't carry
+          // the same documentation-drift risk.
+          var iconFieldHtml = '<label class="field-label">Custom icon (paste any emoji)' +
+            '<input type="text" id="app-manager-icon-input" data-app-id="' + escapeHtml(a.id) + '" value="' + escapeHtml(override.icon || '') + '" placeholder="' + escapeHtml(a.defaultIcon) + '"></label>' +
+            (override.icon ? '<button type="button" class="cancel-btn" data-reset-app-icon="' + escapeHtml(a.id) + '">Reset to default</button>' : '');
           var detailHtml = '<div class="stat-tile wide">' +
             fileInfoRow('Id', escapeHtml(a.id)) +
             fileInfoRow('Default name', escapeHtml(a.defaultName)) +
+            fileInfoRow('Default icon', escapeHtml(a.defaultIcon)) +
             fileInfoRow('Source', a.dynamic ? 'Dynamic (script loads on first launch)' : 'Built-in') +
             fileInfoRow('On desktop by default', a.hidden ? 'No' : 'Yes') +
             nameFieldHtml +
+            iconFieldHtml +
             '</div>';
 
           return mainRow + '<tr class="job-log-row"><td colspan="5"><div class="job-log-panel">' + detailHtml + '</div></td></tr>';
@@ -1065,18 +1073,19 @@
         function renderAppManagerTable(force) {
           var tbody = document.getElementById('app-manager-tbody');
           if (!tbody) return;
-          // Skip rebuilding while the name-edit input is focused, UNLESS
+          // Skip rebuilding while a name/icon edit input is focused, UNLESS
           // force is set. render() fires on every job-updated tick
           // (server-stats alone is ~every 2s, regardless of user action),
-          // and a full tbody.innerHTML rebuild destroys and recreates that
-          // input each time — kicking focus out from under anyone mid-edit
+          // and a full tbody.innerHTML rebuild destroys and recreates those
+          // inputs each time — kicking focus out from under anyone mid-edit
           // before they can type anything, confirmed live via matching
           // renderActive/focusout timestamps. force:true is for the
           // opposite case — a real user action (change/reset/row-toggle)
           // that must always take effect immediately, even if
           // document.activeElement's transition away from the input hasn't
           // fully settled by the time the handler runs.
-          if (!force && document.activeElement && document.activeElement.id === 'app-manager-name-input') return;
+          var focusedId = document.activeElement && document.activeElement.id;
+          if (!force && (focusedId === 'app-manager-name-input' || focusedId === 'app-manager-icon-input')) return;
           var rows = listApps().sort(function (a, b) { return a.name.localeCompare(b.name); });
           tbody.innerHTML = rows.map(renderAppManagerRow).join('') || '<tr><td colspan="5">(no apps registered)</td></tr>';
         }
@@ -1095,9 +1104,16 @@
               '</tr></thead><tbody id="app-manager-tbody"></tbody></table>';
 
             document.getElementById('app-manager-tbody').addEventListener('click', function (event) {
-              var resetBtn = event.target.closest('[data-reset-app-name]');
-              if (resetBtn) {
-                setAppOverride(resetBtn.dataset.resetAppName, { name: '' });
+              var resetNameBtn = event.target.closest('[data-reset-app-name]');
+              if (resetNameBtn) {
+                setAppOverride(resetNameBtn.dataset.resetAppName, { name: '' });
+                renderAppManagerTable(true);
+                return;
+              }
+
+              var resetIconBtn = event.target.closest('[data-reset-app-icon]');
+              if (resetIconBtn) {
+                setAppOverride(resetIconBtn.dataset.resetAppIcon, { icon: '' });
                 renderAppManagerTable(true);
                 return;
               }
@@ -1115,12 +1131,18 @@
             // the user finishing their edit; it must show up right away
             // regardless of exactly where focus has landed by this point.
             document.getElementById('app-manager-tbody').addEventListener('change', function (event) {
-              if (event.target.id !== 'app-manager-name-input') return;
-              var result = setAppOverride(event.target.dataset.appId, { name: event.target.value.trim() });
+              var isName = event.target.id === 'app-manager-name-input';
+              var isIcon = event.target.id === 'app-manager-icon-input';
+              if (!isName && !isIcon) return;
+
+              var patch = isName ? { name: event.target.value.trim() } : { icon: event.target.value.trim() };
+              var result = setAppOverride(event.target.dataset.appId, patch);
               if (!result.ok) {
-                alert(result.reason === 'name-collision'
-                  ? 'Another app is already showing that name — pick a different one.'
-                  : 'Could not rename this app: ' + result.reason);
+                var messages = {
+                  'name-collision': 'Another app is already showing that name — pick a different one.',
+                  'icon-collision': 'Another app is already using that icon — pick a different one.',
+                };
+                alert(messages[result.reason] || ('Could not update this app: ' + result.reason));
               }
               renderAppManagerTable(true);
             });

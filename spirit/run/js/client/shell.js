@@ -80,27 +80,31 @@
     return String(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   }
 
-  // True if `candidateValue` (normalized) matches ANY of the values
-  // valuesFor(otherApp) returns, for some OTHER app — i.e. would collide
-  // if `id` adopted it. valuesFor should return both an app's CURRENT
-  // effective value and its true default/registered value, not just the
-  // former: otherwise an app's own default name/icon isn't reserved for
-  // it while overridden away from it, so a second app could grab "Foo"
-  // while its rightful owner is temporarily showing "Bar" — and that
-  // owner's later "Reset to default" would then itself collide, unable to
-  // reclaim its own identity. Generic over which property so the same
-  // shape covers name today and icon once icon overrides exist — icon
-  // collisions are a softer concern than name collisions (the label always
-  // renders alongside the icon everywhere, so two apps sharing one glyph
-  // is odd but not actually ambiguous the way two apps sharing a name is)
-  // — worth deciding deliberately when that property is actually built,
-  // not assumed to need identical enforcement.
-  function collidesWithAnotherApp(id, candidateValue, valuesFor) {
-    var normalized = normalizeForComparison(candidateValue);
+  // Icons are glyphs, not words — stripping "non-alphanumeric" characters
+  // (normalizeForComparison's approach) would reduce nearly every emoji to
+  // an empty string and make everything collide with everything. Just trim
+  // stray whitespace and compare the glyph itself.
+  function normalizeIconForComparison(value) {
+    return String(value).trim();
+  }
+
+  // True if `candidateValue` (normalized via `normalize`) matches ANY of
+  // the values valuesFor(otherApp) returns, for some OTHER app — i.e.
+  // would collide if `id` adopted it. valuesFor should return both an
+  // app's CURRENT effective value and its true default/registered value,
+  // not just the former: otherwise an app's own default name/icon isn't
+  // reserved for it while overridden away from it, so a second app could
+  // grab "Foo" while its rightful owner is temporarily showing "Bar" — and
+  // that owner's later "Reset to default" would then itself collide,
+  // unable to reclaim its own identity. `normalize` is passed in rather
+  // than hardcoded since name and icon need different rules (see
+  // normalizeForComparison vs normalizeIconForComparison, above/below).
+  function collidesWithAnotherApp(id, candidateValue, valuesFor, normalize) {
+    var normalized = normalize(candidateValue);
     return Object.keys(apps).some(function (otherId) {
       if (otherId === id) return false;
       return valuesFor(apps[otherId]).some(function (v) {
-        return normalizeForComparison(v) === normalized;
+        return normalize(v) === normalized;
       });
     });
   }
@@ -121,13 +125,17 @@
   // not just left to the UI, so nothing else that ever calls this can
   // bypass it either.
   //
-  // Also rejects a name that would collide with any other app's current
-  // effective name OR true default name (case/punctuation/spacing-
-  // insensitive — see normalizeForComparison) — checked against the
-  // RESULT of applying patch (so clearing back to a default name is
-  // checked too, not just setting a new custom one), since two apps
-  // showing the same name is confusing regardless of which one has the
-  // override.
+  // Also rejects a name/icon that would collide with any other app's
+  // current effective value OR true default value — checked against the
+  // RESULT of applying patch (so clearing back to a default is checked
+  // too, not just setting a new custom one), since two apps showing the
+  // same name or icon is confusing regardless of which one has the
+  // override. Icon isn't locked to dynamic apps the way name is — the
+  // "written docs/support text goes stale" argument for the name lock is
+  // specifically about a fixed name being referenced in prose; nothing
+  // calls an app out by "the 📊 icon" the same way, so customizing a
+  // built-in's icon is just cosmetic personalization, not a documentation
+  // hazard.
   function setAppOverride(id, patch) {
     var app = apps[id];
     if (patch.name !== undefined && app && !app._scriptPath) {
@@ -147,10 +155,18 @@
 
     if (patch.name !== undefined && app) {
       var resultingName = merged.name || app.name;
-      var collides = collidesWithAnotherApp(id, resultingName, function (otherApp) {
+      var nameCollides = collidesWithAnotherApp(id, resultingName, function (otherApp) {
         return [effectiveName(otherApp), otherApp.name];
-      });
-      if (collides) return { ok: false, reason: 'name-collision' };
+      }, normalizeForComparison);
+      if (nameCollides) return { ok: false, reason: 'name-collision' };
+    }
+
+    if (patch.icon !== undefined && app) {
+      var resultingIcon = merged.icon || app.icon;
+      var iconCollides = collidesWithAnotherApp(id, resultingIcon, function (otherApp) {
+        return [effectiveIcon(otherApp), otherApp.icon];
+      }, normalizeIconForComparison);
+      if (iconCollides) return { ok: false, reason: 'icon-collision' };
     }
 
     if (Object.keys(merged).length === 0) {
@@ -172,13 +188,19 @@
     return (override && override.name) || app.name;
   }
 
+  // Same idea as effectiveName, for icon.
+  function effectiveIcon(app) {
+    var override = preferences.appOverrides[app.id];
+    return (override && override.icon) || app.icon;
+  }
+
   function buildAppIcon(id) {
     var app = apps[id];
     if (!app) return document.createDocumentFragment(); // shouldn't happen — callers already check
 
     var iconEl = document.createElement('div');
     iconEl.className = 'app-icon';
-    iconEl.innerHTML = '<span class="icon">' + app.icon + '</span><span class="label">' + escapeHtml(effectiveName(app)) + '</span>';
+    iconEl.innerHTML = '<span class="icon">' + escapeHtml(effectiveIcon(app)) + '</span><span class="label">' + escapeHtml(effectiveName(app)) + '</span>';
     // {replace: true} is a no-op for a real desktop icon click — navStack
     // is always exactly length 1 whenever the desktop is actually visible,
     // and launchApp's replace branch requires length > 1 — but it's exactly
@@ -197,9 +219,9 @@
 
   // Enumerates every registered app (built-in + already-discovered dynamic
   // apps), regardless of its own hidden flag — read-only aside from
-  // resolving name overrides through effectiveName(), same as the real
-  // icon rendering. The data behind the Apps list screen; a future
-  // user-controlled visibility toggle would build on this.
+  // resolving name/icon overrides through effectiveName()/effectiveIcon(),
+  // same as the real icon rendering. The data behind the Apps list screen;
+  // a future user-controlled visibility toggle would build on this.
   function listApps() {
     return Object.keys(apps).map(function (id) {
       var app = apps[id];
@@ -207,7 +229,8 @@
         id: app.id,
         name: effectiveName(app),
         defaultName: app.name,
-        icon: app.icon,
+        icon: effectiveIcon(app),
+        defaultIcon: app.icon,
         hidden: !!app.hidden,
         dynamic: !!app._scriptPath,
       };
