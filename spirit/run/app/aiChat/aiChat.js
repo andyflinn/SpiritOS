@@ -18,7 +18,10 @@ if (!document.getElementById('ai-chat-styles')) {
     '.ai-chat-pending { font-style: italic; opacity: 0.6; }' +
     '.ai-chat-error-text { color: #ff8080; }' +
     '.ai-chat-empty { opacity: 0.6; font-style: italic; }' +
-    '.ai-chat-attached-image { max-width: 200px; display: block; margin-bottom: 6px; border-radius: 8px; }';
+    '.ai-chat-attached-image { max-width: 200px; display: block; margin-bottom: 6px; border-radius: 8px; }' +
+    '#ai-chat-config summary { cursor: pointer; font-weight: 600; padding: 4px 0; }' +
+    '.ai-chat-model-section { margin-top: 8px; }' +
+    '.ai-chat-model-section summary { cursor: pointer; font-size: 12px; opacity: 0.7; }';
   document.head.appendChild(styleEl);
 }
 
@@ -147,8 +150,26 @@ spirit.shell.activateApp({
       });
     }
 
+    // Collapsed/open state is a per-browser UI convenience, not app data —
+    // stored in localStorage rather than scopedFs, and remembered across
+    // reopens/reloads so a collapsed model table doesn't spring back open
+    // every time this crowds out the chat history it sits above.
+    var CONFIG_COLLAPSE_KEY = 'aiChat.configCollapsed';
+    var configCollapsed = false;
+    try { configCollapsed = localStorage.getItem(CONFIG_COLLAPSE_KEY) === 'true'; } catch (e) { /* ignore */ }
+
+    function getSectionCollapsed(section) {
+      try { return localStorage.getItem('aiChat.' + section + 'SectionCollapsed') === 'true'; } catch (e) { return false; }
+    }
+    function setSectionCollapsed(section, collapsed) {
+      try { localStorage.setItem('aiChat.' + section + 'SectionCollapsed', collapsed ? 'true' : 'false'); } catch (e) { /* ignore */ }
+    }
+
     container.innerHTML =
-      '<div class="stat-tile wide"><div id="ai-chat-models">loading models…</div></div>' +
+      '<details id="ai-chat-config" class="stat-tile wide"' + (configCollapsed ? '' : ' open') + '>' +
+        '<summary>Model configuration</summary>' +
+        '<div id="ai-chat-models">loading models…</div>' +
+      '</details>' +
       '<div id="ai-chat-history"></div>' +
       '<div id="ai-chat-attach" hidden>' +
         '<label>Attach image: <select id="ai-chat-attach-select"><option value="">(none)</option></select></label> ' +
@@ -159,6 +180,10 @@ spirit.shell.activateApp({
         '<button type="submit">Send</button>' +
       '</form>' +
       '<div id="ai-chat-error" class="job-start-error"></div>';
+
+    document.getElementById('ai-chat-config').addEventListener('toggle', function (event) {
+      try { localStorage.setItem(CONFIG_COLLAPSE_KEY, event.target.open ? 'false' : 'true'); } catch (e) { /* ignore */ }
+    });
 
     document.getElementById('ai-chat-attach-select').addEventListener('change', function (event) {
       attachedImagePath = event.target.value || null;
@@ -339,18 +364,37 @@ spirit.shell.activateApp({
           '</tr>';
       }).join('');
 
+      // Nested inside the outer #ai-chat-config panel — same localStorage-
+      // backed collapse convention, one key per backend section. modelsEl's
+      // innerHTML is fully rebuilt on every call (live model refresh,
+      // Load/Unload, etc.), so the open/closed state has to be re-read from
+      // storage each time rather than preserved from the outgoing DOM, and
+      // the toggle listeners re-attached each time too — a <details>
+      // element's own "toggle" event doesn't bubble, so delegation from a
+      // stable ancestor isn't an option here the way click/change are above.
+      var lmStudioSectionOpen = getSectionCollapsed('lmStudio') === false;
+      var claudeSectionOpen = getSectionCollapsed('claude') === false;
+
       modelsEl.innerHTML =
         '<div id="ai-chat-model-toolbar">Select: ' +
           '<button type="button" class="cancel-btn" data-select="all">All</button> ' +
           '<button type="button" class="cancel-btn" data-select="none">None</button> ' +
           '<button type="button" class="cancel-btn" data-select="vision">Vision-capable</button>' +
         '</div>' +
-        '<div style="font-size:12px; opacity:0.7; margin-top:8px;">LM Studio (local)</div>' +
-        (lmStudioError
-          ? '<div class="job-manifest-note">' + escapeHtml(lmStudioError) + '</div>'
-          : '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th>Loaded</th></tr></thead><tbody>' + lmStudioRows + '</tbody></table>') +
-        '<div style="font-size:12px; opacity:0.7; margin-top:12px;">Claude (hosted API — real cost per use)</div>' +
-        '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th></th></tr></thead><tbody>' + claudeRows + '</tbody></table>';
+        '<details class="ai-chat-model-section"' + (lmStudioSectionOpen ? ' open' : '') + '>' +
+          '<summary>LM Studio (local)</summary>' +
+          (lmStudioError
+            ? '<div class="job-manifest-note">' + escapeHtml(lmStudioError) + '</div>'
+            : '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th>Loaded</th></tr></thead><tbody>' + lmStudioRows + '</tbody></table>') +
+        '</details>' +
+        '<details class="ai-chat-model-section"' + (claudeSectionOpen ? ' open' : '') + '>' +
+          '<summary>Claude (hosted API — real cost per use)</summary>' +
+          '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th></th></tr></thead><tbody>' + claudeRows + '</tbody></table>' +
+        '</details>';
+
+      var sectionEls = modelsEl.querySelectorAll('.ai-chat-model-section');
+      sectionEls[0].addEventListener('toggle', function (event) { setSectionCollapsed('lmStudio', !event.target.open); });
+      sectionEls[1].addEventListener('toggle', function (event) { setSectionCollapsed('claude', !event.target.open); });
     }
 
     function loadModels() {
