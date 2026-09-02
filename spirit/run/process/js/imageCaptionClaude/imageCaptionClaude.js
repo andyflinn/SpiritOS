@@ -65,11 +65,16 @@ async function captionImage(fullPath) {
 }
 
 async function main() {
+  let args = {};
+  try { args = JSON.parse(process.argv[2] || '{}'); } catch (e) { /* fall through to defaults */ }
+  const maxFiles = args.maxFiles ? Number(args.maxFiles) : null;
+
   const rootDir = spirit.core.node.const.ROOT_DIR;
   const mediaDir = path.join(rootDir, 'media');
-  const images = findImages(mediaDir);
+  let images = findImages(mediaDir);
+  if (maxFiles) images = images.slice(0, maxFiles); // cheap way to test against real API cost before committing to the whole folder
 
-  await spirit.core.jobs.log('found ' + images.length + ' image(s) under media/');
+  await spirit.core.jobs.log('found ' + images.length + ' image(s) under media/' + (maxFiles ? ' (limited to first ' + maxFiles + ')' : ''));
 
   let processed = 0;
   let skipped = 0;

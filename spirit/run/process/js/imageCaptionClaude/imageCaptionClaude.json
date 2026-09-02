@@ -1,5 +1,7 @@
 {
   "label": "Image Caption (Claude, sync)",
   "description": "One Claude API request per image under media/ — real-time results, costs 2x the Batch API for the same work. Requires your own ANTHROPIC_API_KEY with billing configured at console.anthropic.com.",
-  "args": []
+  "args": [
+    { "name": "maxFiles", "type": "number", "label": "Limit to first N images (optional, useful for a cheap test run)", "default": "" }
+  ]
 }
