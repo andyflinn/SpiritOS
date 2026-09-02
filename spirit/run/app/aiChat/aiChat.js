@@ -43,6 +43,29 @@ spirit.shell.activateApp({
     var escapeHtml = spirit.shell.escapeHtml;
     var scopedFs = spirit.core.fs.createScopedFs('aiChat');
 
+    // Cheap key-validity check: count_tokens is documented as free (no
+    // token billing) and has its own rate limit separate from the Messages
+    // API, but still requires real auth — an invalid/missing key 401s here
+    // exactly as it would on a real message call. Lets the Claude section
+    // report "key invalid" without spending anything to find out.
+    var claudeKeyInvalid = false;
+    var lastModelRenderArgs = null; // [liveModels, probeByModel, lmStudioError] — replayed once the key check resolves, so it doesn't have to wait on/repeat the LM Studio fetch
+    function checkClaudeKeyValidity() {
+      return fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: 'https://api.anthropic.com/v1/messages/count_tokens',
+          method: 'POST',
+          timeoutMs: 15000,
+          headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+          body: { model: 'claude-haiku-4-5', messages: [{ role: 'user', content: 'hi' }] },
+        }),
+      })
+        .then(function (res) { return res.ok; })
+        .catch(function () { return false; });
+    }
+
     function loadConversation() {
       var raw = scopedFs.loadFile('conversation.json');
       if (raw == null) return { exchanges: [] };
@@ -330,6 +353,7 @@ spirit.shell.activateApp({
     // with your local LM Studio setup doesn't disappear when LM Studio is
     // simply not running.
     function renderModelTable(liveModels, probeByModel, lmStudioError) {
+      lastModelRenderArgs = [liveModels, probeByModel, lmStudioError];
       var modelsEl = document.getElementById('ai-chat-models');
 
       var lmStudioRows = liveModels.map(function (liveEntry) {
@@ -373,7 +397,15 @@ spirit.shell.activateApp({
       // element's own "toggle" event doesn't bubble, so delegation from a
       // stable ancestor isn't an option here the way click/change are above.
       var lmStudioSectionOpen = getSectionCollapsed('lmStudio') === false;
-      var claudeSectionOpen = getSectionCollapsed('claude') === false;
+      // An invalid key forces the section collapsed and overrides whatever
+      // the user's own stored preference is — there's nothing useful to see
+      // open, and the warning belongs in the title bar precisely so it's
+      // visible without opening it.
+      var claudeSectionOpen = claudeKeyInvalid ? false : getSectionCollapsed('claude') === false;
+      var claudeSummary = 'Claude (hosted API — real cost per use)' +
+        (claudeKeyInvalid
+          ? ' — ⚠ invalid API key — <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener">add credit ↗</a>'
+          : '');
 
       modelsEl.innerHTML =
         '<div id="ai-chat-model-toolbar">Select: ' +
@@ -388,13 +420,23 @@ spirit.shell.activateApp({
             : '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th>Loaded</th></tr></thead><tbody>' + lmStudioRows + '</tbody></table>') +
         '</details>' +
         '<details class="ai-chat-model-section"' + (claudeSectionOpen ? ' open' : '') + '>' +
-          '<summary>Claude (hosted API — real cost per use)</summary>' +
+          '<summary>' + claudeSummary + '</summary>' +
           '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th></th></tr></thead><tbody>' + claudeRows + '</tbody></table>' +
         '</details>';
 
       var sectionEls = modelsEl.querySelectorAll('.ai-chat-model-section');
       sectionEls[0].addEventListener('toggle', function (event) { setSectionCollapsed('lmStudio', !event.target.open); });
-      sectionEls[1].addEventListener('toggle', function (event) { setSectionCollapsed('claude', !event.target.open); });
+      if (claudeKeyInvalid) {
+        // Locked: block the toggle entirely (any click that isn't the "add
+        // credit" link) rather than just re-collapsing it on the next
+        // render — a bare toggle listener would still let it spring open
+        // for the instant between click and re-render.
+        sectionEls[1].querySelector('summary').addEventListener('click', function (event) {
+          if (!event.target.closest('a')) event.preventDefault();
+        });
+      } else {
+        sectionEls[1].addEventListener('toggle', function (event) { setSectionCollapsed('claude', !event.target.open); });
+      }
     }
 
     function loadModels() {
@@ -548,6 +590,10 @@ spirit.shell.activateApp({
     loadModels();
     loadMediaImages();
     renderHistory();
+    checkClaudeKeyValidity().then(function (valid) {
+      claudeKeyInvalid = !valid;
+      if (lastModelRenderArgs) renderModelTable(lastModelRenderArgs[0], lastModelRenderArgs[1], lastModelRenderArgs[2]);
+    });
   },
   render: function () {}, // static once mounted, same as Code Viewer/Text Editor
 });
