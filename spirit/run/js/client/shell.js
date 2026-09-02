@@ -27,11 +27,17 @@
   // .gitignore), not ordinary app config — hence root-level, not
   // app-scoped.
   var preferencesRaw = spirit.core.fs.loadFile('preferences.json');
-  var preferences = { defaultHandlers: {} };
+  var preferences = { defaultHandlers: {}, appOverrides: {} };
   if (preferencesRaw != null) {
     try {
       preferences = JSON.parse(preferencesRaw);
       preferences.defaultHandlers = preferences.defaultHandlers || {};
+      // Sparse, per-app user overrides — {name?, icon?} so far — keyed by
+      // app id. A key's absence means "use the app's own default for that
+      // property," so nothing changes for anyone until a property is
+      // actually customized. Named distinctly from defaultHandlers, which
+      // is a different kind of preference (file extension -> handler app).
+      preferences.appOverrides = preferences.appOverrides || {};
     } catch (e) { /* malformed — fall back to empty defaults */ }
   }
 
@@ -56,10 +62,23 @@
     return preferences.defaultHandlers[ext];
   }
 
-  function buildAppIcon(id, name, icon) {
+  // Single source of truth for "what name does the user actually see for
+  // this app" — an appOverrides.name entry wins if present, otherwise the
+  // app's own registered/manifest name. Used by both the icon renderer and
+  // listApps() so the Apps table never shows something different from
+  // what's actually on screen.
+  function effectiveName(app) {
+    var override = preferences.appOverrides[app.id];
+    return (override && override.name) || app.name;
+  }
+
+  function buildAppIcon(id) {
+    var app = apps[id];
+    if (!app) return document.createDocumentFragment(); // shouldn't happen — callers already check
+
     var iconEl = document.createElement('div');
     iconEl.className = 'app-icon';
-    iconEl.innerHTML = '<span class="icon">' + icon + '</span><span class="label">' + name + '</span>';
+    iconEl.innerHTML = '<span class="icon">' + app.icon + '</span><span class="label">' + escapeHtml(effectiveName(app)) + '</span>';
     // {replace: true} is a no-op for a real desktop icon click — navStack
     // is always exactly length 1 whenever the desktop is actually visible,
     // and launchApp's replace branch requires length > 1 — but it's exactly
@@ -72,8 +91,26 @@
     return iconEl;
   }
 
-  function createDesktopIcon(id, name, icon) {
-    desktopEl.appendChild(buildAppIcon(id, name, icon));
+  function createDesktopIcon(id) {
+    desktopEl.appendChild(buildAppIcon(id));
+  }
+
+  // Enumerates every registered app (built-in + already-discovered dynamic
+  // apps), regardless of its own hidden flag — read-only aside from
+  // resolving name overrides through effectiveName(), same as the real
+  // icon rendering. The data behind the Apps list screen; a future
+  // user-controlled visibility toggle would build on this.
+  function listApps() {
+    return Object.keys(apps).map(function (id) {
+      var app = apps[id];
+      return {
+        id: app.id,
+        name: effectiveName(app),
+        icon: app.icon,
+        hidden: !!app.hidden,
+        dynamic: !!app._scriptPath,
+      };
+    });
   }
 
   // Reusable grouping template: renders the same icon grid the real
@@ -86,16 +123,15 @@
   function renderAppGroup(container, appIds) {
     container.innerHTML = '';
     appIds.forEach(function (id) {
-      var app = apps[id];
-      if (!app) return;
-      container.appendChild(buildAppIcon(id, app.name, app.icon));
+      if (!apps[id]) return;
+      container.appendChild(buildAppIcon(id));
     });
   }
 
   function registerApp(app) {
     apps[app.id] = app;
     if (app.hidden) return; // reachable only via launchApp(id, params) from another app, no desktop icon
-    createDesktopIcon(app.id, app.name, app.icon);
+    createDesktopIcon(app.id);
   }
 
   // Switches the visible screen without touching navStack — the stack
@@ -367,7 +403,7 @@
       registerExtensionHandler(ext, manifest.id, manifest.name);
     });
 
-    if (!manifest.hidden) createDesktopIcon(manifest.id, manifest.name, apps[manifest.id].icon);
+    if (!manifest.hidden) createDesktopIcon(manifest.id);
   }
 
   function discoverDynamicApps(jobs) {
@@ -405,6 +441,7 @@
     fileInfoRow: fileInfoRow,
     renderFileInfoBubble: renderFileInfoBubble,
     renderAppGroup: renderAppGroup,
+    listApps: listApps,
   };
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
