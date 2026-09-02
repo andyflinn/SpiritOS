@@ -378,7 +378,7 @@
           name: 'Stats',
           icon: ICON.CHART,
           hidden: true, // reachable via the "spirit" app group, or launchApp('stats') from anywhere
-          mount: function (container) {
+          mount: function (container, api, params) {
             container.innerHTML = '<div class="stats-grid" id="stats-grid"></div>';
             document.getElementById('stats-grid').addEventListener('click', function (event) {
               var tile = event.target.closest('[data-launch-app]');
@@ -477,7 +477,7 @@
           id: 'files',
           name: 'Files',
           icon: ICON.FOLDER,
-          mount: function (container) {
+          mount: function (container, api, params) {
             // See the Processes app for why this must reset on every fresh
             // mount, not just persist: mount() always wipes the tree's DOM,
             // so a stale cache hit from a previous visit would leave it empty.
@@ -701,7 +701,7 @@
           name: 'Code Viewer',
           icon: ICON.CODE,
           hidden: true,
-          mount: function (container, params) {
+          mount: function (container, api, params) {
             setViewerTitle(params.path);
             var content = spirit.core.fs.loadFile(params.path);
             container.innerHTML =
@@ -727,7 +727,7 @@
           name: 'Media Viewer',
           icon: ICON.VIEW,
           hidden: true,
-          mount: function (container, params) {
+          mount: function (container, api, params) {
             setViewerTitle(params.path);
             var category = classifyMimeType(mimeTypeForName(params.path));
             var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
@@ -795,7 +795,7 @@
           name: 'Processes',
           icon: ICON.ROCKET,
           hidden: true, // reachable via the "spirit" app group, or launchApp('process-browser') from anywhere
-          mount: function (container) {
+          mount: function (container, api, params) {
             // Force the next render() to actually populate the list — mount()
             // always wipes the DOM clean, so a cache hit from a previous visit
             // (same fs-watcher job reference, nothing changed on disk) must
@@ -947,7 +947,7 @@
           name: 'Jobs',
           icon: ICON.LIST,
           hidden: true, // reachable via the "spirit" app group, or launchApp('jobs') from anywhere
-          mount: function (container) {
+          mount: function (container, api, params) {
             expandedJobId = null; // fresh visit starts fully collapsed
 
             container.innerHTML =
@@ -1138,7 +1138,7 @@
           name: 'Apps',
           icon: ICON.TABLE,
           hidden: true, // reachable via the "spirit" app group
-          mount: function (container) {
+          mount: function (container, api, params) {
             expandedAppId = null; // fresh visit starts fully collapsed
 
             container.innerHTML =
@@ -1246,7 +1246,7 @@
           name: 'Groups',
           icon: ICON.GROUP,
           hidden: true, // reachable via the "spirit" app group
-          mount: function (container) {
+          mount: function (container, api, params) {
             expandedGroupId = null; // fresh visit starts fully collapsed
 
             container.innerHTML =
@@ -1335,7 +1335,7 @@
           id: 'spirit',
           name: 'Spirit',
           icon: ICON.SPIRIT,
-          mount: function (container) {
+          mount: function (container, api, params) {
             container.innerHTML = '<div class="app-group-grid" id="spirit-group"></div>';
           },
           render: function () {

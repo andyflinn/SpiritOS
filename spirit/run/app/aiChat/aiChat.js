@@ -39,9 +39,9 @@ if (!document.getElementById('ai-chat-styles')) {
 var CLAUDE_MODELS = JSON.parse(spirit.core.fs.loadFile('app/shared/claudeModels.json'));
 
 spirit.shell.activateApp({
-  mount: function (container) {
-    var escapeHtml = spirit.shell.escapeHtml;
-    var scopedFs = spirit.core.fs.createScopedFs('aiChat');
+  mount: function (container, api) {
+    var escapeHtml = api.escapeHtml;
+    var scopedFs = api.fs;
 
     // Cheap key-validity check: count_tokens is documented as free (no
     // token billing) and has its own rate limit separate from the Messages
@@ -51,18 +51,13 @@ spirit.shell.activateApp({
     var claudeKeyInvalid = false;
     var lastModelRenderArgs = null; // [liveModels, probeByModel, lmStudioError] — replayed once the key check resolves, so it doesn't have to wait on/repeat the LM Studio fetch
     function checkClaudeKeyValidity() {
-      return fetch('/api/proxy', {
+      return api.fetchExternal('https://api.anthropic.com/v1/messages/count_tokens', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: 'https://api.anthropic.com/v1/messages/count_tokens',
-          method: 'POST',
-          timeoutMs: 15000,
-          headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-          body: { model: 'claude-haiku-4-5', messages: [{ role: 'user', content: 'hi' }] },
-        }),
+        timeoutMs: 15000,
+        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+        body: { model: 'claude-haiku-4-5', messages: [{ role: 'user', content: 'hi' }] },
       })
-        .then(function (res) { return res.ok; })
+        .then(function (body) { return !body.error; })
         .catch(function () { return false; });
     }
 
@@ -440,17 +435,11 @@ spirit.shell.activateApp({
     }
 
     function loadModels() {
-      // Goes through the server's generic /api/proxy route (not LM Studio
-      // directly — no Access-Control-Allow-Origin header, so a cross-origin
-      // browser fetch would be silently blocked by CORS). The proxy knows
-      // nothing about LM Studio; this caller owns parsing its raw response
-      // shape ({data: [{id, type, ...}]}).
-      fetch('/api/proxy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: 'http://localhost:1234/api/v0/models', timeoutMs: 2000 }),
-      })
-        .then(function (res) { return res.json(); })
+      // Goes through the generic api.fetchExternal (not LM Studio directly
+      // — no Access-Control-Allow-Origin header, so a cross-origin browser
+      // fetch would be silently blocked by CORS). This caller owns parsing
+      // the raw response shape ({data: [{id, type, ...}]}) either way.
+      api.fetchExternal('http://localhost:1234/api/v0/models', { timeoutMs: 2000 })
         .then(function (body) {
           var liveModels = body.data || [];
           if (liveModels.length === 0) throw new Error('no models currently loaded');
@@ -531,32 +520,26 @@ spirit.shell.activateApp({
           var messages = buildMessagesForTarget(target, prompt, imageDataUrl, backend);
           var startedAt = Date.now();
 
-          // Same generic proxy either way — this caller supplies the
-          // target, the per-backend request shape, and owns extracting the
-          // reply from whichever raw response shape comes back. Claude's
-          // secret never appears here: ${ENV:ANTHROPIC_API_KEY} is a
-          // placeholder the server substitutes, allowlisted in server.js.
-          var proxyBody = backend === 'claude'
+          // Same generic api.fetchExternal either way — this caller
+          // supplies the target, the per-backend request shape, and owns
+          // extracting the reply from whichever raw response shape comes
+          // back. Claude's secret never appears here: ${ENV:ANTHROPIC_API_KEY}
+          // is a placeholder the server substitutes, allowlisted in server.js.
+          var externalUrl = backend === 'claude' ? 'https://api.anthropic.com/v1/messages' : 'http://localhost:1234/v1/chat/completions';
+          var proxyOptions = backend === 'claude'
             ? {
-                url: 'https://api.anthropic.com/v1/messages',
                 method: 'POST',
                 timeoutMs: 300000,
                 headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
                 body: { model: model, max_tokens: 1024, messages: messages },
               }
             : {
-                url: 'http://localhost:1234/v1/chat/completions',
                 method: 'POST',
                 timeoutMs: 300000,
                 body: { model: model, temperature: 0.7, messages: messages },
               };
 
-          fetch('/api/proxy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(proxyBody),
-          })
-            .then(function (res) { return res.json(); })
+          api.fetchExternal(externalUrl, proxyOptions)
             .then(function (rawBody) {
               var responseEntry = { target: target, respondedAt: Date.now(), durationMs: Date.now() - startedAt };
               var extracted = backend === 'claude' ? extractClaudeText(rawBody) : extractLmStudioText(rawBody);

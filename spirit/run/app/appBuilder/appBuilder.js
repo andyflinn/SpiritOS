@@ -26,9 +26,9 @@ var CLAUDE_MODELS = JSON.parse(spirit.core.fs.loadFile('app/shared/claudeModels.
 var FOLDER_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9]*$/;
 
 spirit.shell.activateApp({
-  mount: function (container) {
-    var escapeHtml = spirit.shell.escapeHtml;
-    var scopedFs = spirit.core.fs.createScopedFs('appBuilder');
+  mount: function (container, api) {
+    var escapeHtml = api.escapeHtml;
+    var scopedFs = api.fs;
 
     function loadHistory() {
       var raw = scopedFs.loadFile('history.json');
@@ -60,18 +60,13 @@ spirit.shell.activateApp({
     // file for why this one function stays duplicated rather than shared).
     var claudeKeyInvalid = false;
     function checkClaudeKeyValidity() {
-      return fetch('/api/proxy', {
+      return api.fetchExternal('https://api.anthropic.com/v1/messages/count_tokens', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: 'https://api.anthropic.com/v1/messages/count_tokens',
-          method: 'POST',
-          timeoutMs: 15000,
-          headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-          body: { model: 'claude-haiku-4-5', messages: [{ role: 'user', content: 'hi' }] },
-        }),
+        timeoutMs: 15000,
+        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+        body: { model: 'claude-haiku-4-5', messages: [{ role: 'user', content: 'hi' }] },
       })
-        .then(function (res) { return res.ok; })
+        .then(function (body) { return !body.error; })
         .catch(function () { return false; });
     }
 
@@ -285,104 +280,56 @@ spirit.shell.activateApp({
     loadTarget('');
 
     // ---- prompt construction ----
-    // One single, uniform prompt frame — no JSON envelope, no system/user
-    // split, no separate prose describing the interface off to one side.
-    // The file itself carries everything: the interface (as commented
-    // const aliases, documented at their own point of use) and the
-    // modification boundary (as inline //-prefixed sentinel markers that
-    // read as ordinary comments belonging to the file, not as external
-    // scaffolding wrapped around it). "Return always the contents of the
-    // file, with or without modifications" is a stronger, harder
-    // constraint than the earlier "reproduce this header, it's a hard
-    // requirement" framing — that framing still let Claude treat an
-    // unmodified copy of an unrelated "reference example" as evidence
-    // nothing needed to change; this framing has no such out, because
-    // there's only ever one file, presented as already real, not as a
-    // template to draw from.
-    var PROMPT_PREAMBLE = [
-      'the line starting with the string "//FILE_BEGINNING",',
-      'is the start of an unfinished JavaScript file, a browser module.',
-      'Study the file and return always the contents of the file,',
-      'with or without modifications, and starting with the string "//FILE_BEGINNING".',
-      'You may only modify the part of the file after the line',
-      'starting with the string "//START_OF_MODIFIABLE_SECTION"',
-      'and before the line starting with the string "//END_OF_MODIFIABLE_SECTION".',
-      'You will modify that section or not, depending on the users\'s request,',
-      'which starts on the line following this one.',
-    ].join('\n');
-
-    // //FILE_BEGINNING is now the file's actual first line, not a wrapper
-    // prepended around it in buildMessages — consistent with START/END,
-    // both already permanent, literal parts of the saved file rather than
-    // scaffolding stripped away afterward. Caught live: the previous
-    // wording ("right after the line ... is the file") left it ambiguous
-    // whether the marker itself was part of what Claude should echo back,
-    // and it dropped the marker in its response. Framing FILE_BEGINNING
-    // as the file's own first line removes that ambiguity outright.
+    // The full contract (mount's signature, api.fs's exact shape, the
+    // //FILE_BEGINNING/START/END convention, the response format) now
+    // lives in one place only: preamble.md, a real, git-tracked, human-
+    // readable doc — not a hand-maintained JS string here that could say
+    // something different from what preamble.md says. It's loaded fresh
+    // and sent verbatim; this file no longer contains its own copy of
+    // that documentation at all.
+    //
+    // The skeleton below is just the minimal starting file for a new app —
+    // still self-documenting on its own (a few inline comments on api.fs,
+    // for a human who opens the generated file later and never reads
+    // preamble.md), but the exhaustive spec lives in the doc, not here.
+    // The modifiable zone wraps BOTH mount and render entirely (their own
+    // signatures included), not just mount's inner body — a single
+    // contiguous zone still, just moved outward, so validateResponse's
+    // before-START/after-END check needs no change at all to cover both
+    // functions. Only the surrounding activateApp({ ... }); call itself
+    // is fixed.
     var SKELETON_JS = [
       '//FILE_BEGINNING',
-      '// This file demonstrates the ENTIRE interface you (Claude) have',
-      '// access to when building a spirit app — every function you may',
-      '// call is aliased and documented below, at its only use. Do not',
-      '// call, import, or reference anything that isn\'t shown here.',
-      '',
-      '// Reads a text file\'s content as a string. path is relative to the',
-      '// project root (e.g. "media/notes.txt"). Returns null if the file',
-      '// doesn\'t exist. Synchronous.',
-      'const loadFile = spirit.core.fs.loadFile;',
-      '',
-      '// Writes a text file. Returns a Promise — resolves on success,',
-      '// rejects with an Error on failure (e.g. writing outside an',
-      '// allowed location). Only app/, media/, and published/ are writable.',
-      'const saveFile = spirit.core.fs.saveFile;',
-      '',
-      '// Scopes loadFile/saveFile/deleteFile to this app\'s own private',
-      '// folder (app/<folder>/), so filenames are just "notes.txt", not a',
-      '// full path:',
-      '//   var scopedFs = createScopedFs(\'<folder>\');',
-      '//   scopedFs.loadFile(\'notes.txt\');           // string or null',
-      '//   scopedFs.saveFile(\'notes.txt\', \'hello\');  // returns a Promise',
-      '//   scopedFs.deleteFile(\'notes.txt\');          // returns a Promise',
-      'const createScopedFs = spirit.core.fs.createScopedFs;',
-      '',
-      '// Escapes a string for safe insertion into innerHTML. Use this on',
-      '// any text you didn\'t write yourself as a literal.',
-      'const escapeHtml = spirit.shell.escapeHtml;',
-      '',
-      '// The ONLY way to call an external network API — a direct cross-',
-      '// origin fetch is blocked by this server\'s CORS policy on purpose:',
-      '//   fetch(\'/api/proxy\', {',
-      '//     method: \'POST\',',
-      '//     headers: { \'Content-Type\': \'application/json\' },',
-      '//     body: JSON.stringify({ url: \'https://example.com/api\', method: \'GET\', headers: {}, timeoutMs: 10000 }),',
-      '//   }).then(function (res) { return res.json(); }).then(function (data) { ... });',
-      '',
-      '// This activateApp call is the entire required shape of a spirit',
-      '// app — there is no other lifecycle hook and nothing else to',
-      '// extend. mount(container, params) runs once, the first time the',
-      '// app is opened; container is the <div> to render into; params is',
-      '// null unless this app was opened against a specific file (rare —',
-      '// ignore it unless the request calls for it). render(jobsById,',
-      '// params) runs again on every later live-update tick; leave it',
-      '// empty, as here, unless the app needs to react to background job',
-      '// changes. THIS SPECIFIC BODY (the "Do Nothing" div) IS ONLY AN',
-      '// EXAMPLE OF THE SHAPE — replace it with a real implementation of',
-      '// whatever is actually requested.',
       'spirit.shell.activateApp({',
-      '  mount: function (container, params) {',
       '',
       '//START_OF_MODIFIABLE_SECTION',
       '',
+      '  // api.fs.loadFile(filename): string or null. Synchronous.',
+      '  // api.fs.saveFile(filename, content): returns a Promise.',
+      '  // api.fs.deleteFile(filename): returns a Promise.',
+      '  // api.fs.fileStats(filename): {size, mtimeMs, birthtimeMs} or null.',
+      '  // api.fs.scanDirectory(): returns a Promise of this app\'s own files.',
+      '  // api.escapeHtml(str): returns str, safe to insert into innerHTML.',
+      '  // api.fetchExternal(url, {method, headers, body, timeoutMs}):',
+      '  //   returns a Promise of the parsed JSON response.',
+      '  // Full spec: app/appBuilder/preamble.md.',
+      '  mount: function (container, api, params) {',
       '    // This is where you implement the app\'s UI. The container is a',
-      '    // real DOM element to render into — you may expand this section',
-      '    // with as much code as needed (variables, event listeners,',
-      '    // multiple statements); you are not limited to replacing just',
-      '    // this one line.',
+      '    // real DOM element to render into — you may expand this with',
+      '    // as much code as needed (variables, event listeners, multiple',
+      '    // statements); you are not limited to replacing just this line.',
       '    container.innerHTML = \'<div class="stat-tile"><p>Do Nothing</p></div>\';',
+      '  },',
+      '',
+      '  // Runs again on every later background live-update tick — not in',
+      '  // response to anything the user did (mount\'s own event listeners',
+      '  // already handle that). Almost always stays empty; give it real',
+      '  // behavior only if the task genuinely needs to react to state',
+      '  // changing on its own, independent of user interaction.',
+      '  render: function (jobsById, params) {}',
+      '',
       '//END_OF_MODIFIABLE_SECTION',
       '',
-      '  },',
-      '  render: function (jobsById, params) {}',
       '});',
     ].join('\n');
 
@@ -405,16 +352,25 @@ spirit.shell.activateApp({
     // already IS the authoritative record of everything previously
     // applied, so re-narrating old prompts on top of it would be
     // redundant (and, on a heavily-iterated app, an unbounded cost/
-    // context-growth risk for no benefit). Synchronous — the one file
-    // this needs is a known, direct path, not a folder to enumerate.
+    // context-growth risk for no benefit).
+    //
+    // preamble.md is loaded fresh on every call (not cached in a
+    // variable) so an edit to that file takes effect on the very next
+    // Generate click, no reload of App Builder itself needed — the doc
+    // and the prompt are the same file, not synced copies. It's expected
+    // to end with a "## Current Task" heading; the live request and file
+    // are appended directly after that, so the whole thing reads as one
+    // continuous document, not a doc plus bolted-on scaffolding.
+    //
     // Returns { messages, program } — program (the exact file text that
     // was sent) is exposed separately from the full prompt so
     // validateResponse (below) can compare the response against exactly
     // what was sent, not the whole prompt (preamble + request included).
     function buildMessages(prompt) {
+      var preamble = spirit.core.fs.loadFile('app/appBuilder/preamble.md') || '';
       var scriptPath = 'app/' + currentFolder + '/' + currentFolder + '.js';
       var program = currentTarget ? (spirit.core.fs.loadFile(scriptPath) || SKELETON_JS) : SKELETON_JS;
-      var content = PROMPT_PREAMBLE + '\n\n' + prompt + '\n\n//USER_MESSAGE\n\n' + program;
+      var content = preamble + '\n' + prompt + '\n\n' + program;
       return { messages: [{ role: 'user', content: content }], program: program };
     }
 
@@ -476,6 +432,19 @@ spirit.shell.activateApp({
       var responseLineCount = content.split('\n').length;
       if (responseLineCount < sentHeaderLineCount) return { ok: false, reason: 'the response (' + responseLineCount + ' lines) is implausibly shorter than just the header (' + sentHeaderLineCount + ' lines) — it likely isn\'t the file at all' };
 
+      // Everything above only checks what's OUTSIDE the modifiable zone —
+      // by design, nothing constrains what happens inside it. Widening
+      // that zone to cover mount AND render (so both can be fully
+      // customized, not just mount's inner body) means there's now
+      // nothing stopping a response from silently dropping one of them
+      // entirely — the shell calls app.render(...) unconditionally
+      // (shell.js's switchTo), so a response missing it would still pass
+      // every check above and only fail at runtime, when the app is
+      // actually opened. Caught by testing this exact change before
+      // asking anyone to rely on it.
+      if (content.indexOf('mount:') === -1) return { ok: false, reason: 'the response has no "mount" function — the app would fail to open' };
+      if (content.indexOf('render:') === -1) return { ok: false, reason: 'the response has no "render" function — the app would fail to open' };
+
       return { ok: true };
     }
 
@@ -511,18 +480,12 @@ spirit.shell.activateApp({
       generateBtn.disabled = true;
       responseEl.innerHTML = '<div class="ai-chat-pending">Generating…</div>';
 
-      fetch('/api/proxy', {
+      api.fetchExternal('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: 'https://api.anthropic.com/v1/messages',
-          method: 'POST',
-          timeoutMs: 300000,
-          headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-          body: { model: model, max_tokens: 8192, messages: built.messages },
-        }),
+        timeoutMs: 300000,
+        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+        body: { model: model, max_tokens: 8192, messages: built.messages },
       })
-        .then(function (res) { return res.json(); })
         .then(function (rawBody) {
           var parsed = parseResponse(rawBody);
           var validation = parsed.error ? null : validateResponse(built.program, parsed.content);

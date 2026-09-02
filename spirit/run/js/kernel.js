@@ -485,6 +485,34 @@ if (isNode()) {
       loadFile: function(filename) { return spirit.core.fs.loadFile(safeName(filename)); },
       saveFile: function(filename, content) { return spirit.core.fs.saveFile(safeName(filename), content); },
       deleteFile: function(filename) { return spirit.core.fs.deleteFile(safeName(filename)); },
+      fileStats: function(filename) { return spirit.core.fs.statFile(safeName(filename)); },
+      // Lists this app's own folder — not a new server capability, just a
+      // scoped view of the fs-watcher job's already-live-updated snapshot
+      // (the same data /api/jobs already sends for the Files app and
+      // aiChat's media browser), filtered to this app's own files and
+      // re-rooted so relativePath matches the bare-filename convention
+      // every other method here uses (no leading "app/<appName>/"). No new
+      // route, no new jail logic — it can only ever narrow an already-safe
+      // listing, never expand what's visible. Async (unlike loadFile),
+      // since it goes over the same /api/jobs fetch every other scan of
+      // this data already uses.
+      scanDirectory: function() {
+        return fetch('/api/jobs')
+          .then(function (res) { return res.json(); })
+          .then(function (jobs) {
+            var fsWatcher = jobs.filter(function (j) { return j.type === 'fs-watcher'; })[0];
+            var all = (fsWatcher && fsWatcher.data && fsWatcher.data.files) || [];
+            return all
+              .filter(function (f) { return f.relativePath.indexOf(appRoot) === 0; })
+              .map(function (f) {
+                return {
+                  name: f.name,
+                  kind: f.kind,
+                  relativePath: f.relativePath.slice(appRoot.length),
+                };
+              });
+          });
+      },
     };
   };
 

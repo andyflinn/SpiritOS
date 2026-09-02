@@ -2,9 +2,9 @@
 // only (see textEditor.json for the id/name/icon/handlesExtensions this app
 // is already declared under before this script ever runs). Runs as a
 // separate top-level script, so it reaches the shell only through
-// spirit.shell (activateApp/renderOpenWith/escapeHtml) and spirit.core.*
-// (already globally reachable via window.spirit), never through
-// index.html's own private closures.
+// spirit.shell.activateApp and the api object mount() receives (fs,
+// escapeHtml, fetchExternal) — never through index.html's own private
+// closures.
 //
 // Client-side mirror of the kernel's own app-entry-script protection
 // (kernel.js's APP_ENTRY_SCRIPT_PATTERN) — catches ANY app's own script
@@ -13,11 +13,11 @@
 var APP_ENTRY_SCRIPT_PATTERN = /^app\/([^/]+)\/\1\.js$/;
 
 spirit.shell.activateApp({
-  mount: function (container, params) {
+  mount: function (container, api, params) {
     var initialPath = (params && params.path) || 'app/textEditor/notes.txt';
     container.innerHTML =
       '<div class="stat-tile wide">' +
-        '<label>Path (relative to project root)<input type="text" id="editor-path" placeholder="e.g. app/notes/todo.txt" value="' + spirit.shell.escapeHtml(initialPath) + '"></label>' +
+        '<label>Path (relative to project root)<input type="text" id="editor-path" placeholder="e.g. app/notes/todo.txt" value="' + api.escapeHtml(initialPath) + '"></label>' +
         '<button type="button" id="editor-load">Load</button>' +
         '<button type="button" id="editor-save">Save</button>' +
         '<span id="editor-status"></span>' +

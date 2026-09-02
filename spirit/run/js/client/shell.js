@@ -50,6 +50,38 @@
     spirit.core.fs.saveFile('preferences.json', JSON.stringify(preferences, null, 2));
   }
 
+  // Deleting an app's files by any means other than the shell's own UI
+  // (by hand, via Text Editor, from another tab) leaves its
+  // appOverrides/defaultHandlers entries behind forever otherwise —
+  // nothing else ever revisits them, since a deleted dynamic app simply
+  // never gets (re)declared again, it isn't actively un-declared. Called
+  // once, from onSnapshot below, after discoverDynamicApps has fully
+  // populated `apps` from the fresh fs-watcher scan — not any earlier,
+  // since a real still-existing dynamic app that just hasn't been
+  // discovered YET would otherwise look identical to a deleted one and
+  // have its overrides wrongly stripped. Deletion reaching the shell
+  // through its own UI (deleteGroup, etc.) already cleans up after
+  // itself; this only ever has anything to do on the rare path around it.
+  function pruneStalePreferences() {
+    var changed = false;
+
+    Object.keys(preferences.appOverrides).forEach(function (id) {
+      if (!apps[id]) {
+        delete preferences.appOverrides[id];
+        changed = true;
+      }
+    });
+
+    Object.keys(preferences.defaultHandlers).forEach(function (ext) {
+      if (!apps[preferences.defaultHandlers[ext]]) {
+        delete preferences.defaultHandlers[ext];
+        changed = true;
+      }
+    });
+
+    if (changed) savePreferences();
+  }
+
   // Called once per extension a handler app declares. First
   // declaration wins the default; later ones for the same extension
   // never overwrite an existing choice — that's what the "Set as
@@ -445,7 +477,7 @@
       name: groupDef.name,
       icon: groupDef.icon,
       _isGroup: true,
-      mount: function (container) {
+      mount: function (container, api, params) {
         container.innerHTML = '<div id="' + groupId + '-content"></div>';
         container.addEventListener('click', function (event) {
           if (event.target.closest('[data-goto-apps]')) {
@@ -479,6 +511,54 @@
     registerGroupApp(groupId, preferences.groups[groupId]);
   });
 
+  // Capability injection, not ambient authority: an app's mount() used to
+  // reach out to the global spirit.core.fs.createScopedFs('<itsOwnName>')
+  // itself — nothing stopped it from typing a DIFFERENT app's name there,
+  // the same claimed-identity gap proven identity (declareDynamicApp,
+  // above) already closed for the app's own id. Here the shell constructs
+  // the scoped handle itself, from the same proven _scriptPath it already
+  // trusts, and hands it in — the app is never given a string to name a
+  // folder with, so it can't get it wrong by accident or on purpose. Also
+  // shrinks what an app (or an LLM writing one) can see: api is a small,
+  // flat, explicitly-passed object, not an open-ended global namespace
+  // that invites guessing at siblings that were never actually documented.
+  // escapeHtml and fetchExternal have no per-app scoping concern (unlike
+  // fs, nothing about them differs app to app), but folding them into api
+  // too — rather than leaving them as "the two exceptions, still reached
+  // as globals" — closes the last crack in "everything reachable is a
+  // member of api, full stop": a contract with documented carve-outs
+  // invites exactly the "maybe there are other undocumented ones too"
+  // guessing this design exists to avoid. fetchExternal also hides the
+  // /api/proxy wire envelope entirely (method/headers/body/timeoutMs
+  // nested just so) behind a plain (url, options) call, the same way
+  // fs.loadFile already hides the jailed path resolver behind a bare
+  // filename — one less way to get a shape subtly wrong. Every app gets
+  // both; only fs is conditional on having a folder of its own.
+  function buildApiFor(app) {
+    var api = {
+      escapeHtml: escapeHtml,
+      fetchExternal: function (url, options) {
+        options = options || {};
+        return fetch('/api/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: url,
+            method: options.method || 'GET',
+            headers: options.headers || {},
+            body: options.body,
+            timeoutMs: options.timeoutMs || 10000,
+          }),
+        }).then(function (res) { return res.json(); });
+      },
+    };
+    if (app._scriptPath) {
+      var folder = app._scriptPath.match(/^app\/([^/]+)\//)[1];
+      api.fs = spirit.core.fs.createScopedFs(folder);
+    }
+    return api;
+  }
+
   // Switches the visible screen without touching navStack — the stack
   // bookkeeping lives in launchApp/goBack, this just mounts/unmounts.
   function switchTo(id, params) {
@@ -502,7 +582,7 @@
     desktopEl.hidden = true;
     containerEl.hidden = false;
 
-    app.mount(contentEl, params);
+    app.mount(contentEl, buildApiFor(app), params);
     app.render(jobsById, params);
   }
 
@@ -823,6 +903,7 @@
       jobsById.clear();
       jobs.forEach(function (job) { jobsById.set(job.id, job); });
       discoverDynamicApps(jobs);
+      pruneStalePreferences();
       renderActive();
     },
     onUpdate: function (job) {
