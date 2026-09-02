@@ -202,6 +202,26 @@
         margin-top: 12px;
       }
 
+      /* Same look as #job-manifest-form's fields, scoped by class instead
+         of that one form's id, so other edit forms (e.g. the Apps table's
+         per-app edit panel) can reuse it without duplicating the rules. */
+      .field-label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 8px 0;
+        font-size: 13px;
+      }
+
+      .field-label input {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        font: inherit;
+      }
+
       #job-manifest-form label {
         display: flex;
         flex-direction: column;
@@ -318,6 +338,10 @@
         var setViewerTitle = spirit.shell.setViewerTitle;
         var renderFileInfoBubble = spirit.shell.renderFileInfoBubble;
         var renderAppGroup = spirit.shell.renderAppGroup;
+        var listApps = spirit.shell.listApps;
+        var getAppOverride = spirit.shell.getAppOverride;
+        var setAppOverride = spirit.shell.setAppOverride;
+        var fileInfoRow = spirit.shell.fileInfoRow;
 
         function formatUptime(seconds) {
           var total = Math.floor(seconds);
@@ -984,12 +1008,109 @@
           },
         });
 
+        // ---- Apps list ----
+        // Lists every registered app (built-in + already-discovered
+        // dynamic apps) via listApps(), visually similar to the Jobs
+        // table — including the same click-a-row-to-expand pattern
+        // (expandedAppId mirrors Jobs' own expandedJobId). The expanded
+        // panel is the actual edit surface for appOverrides: currently
+        // just the name property (the only one built so far); more
+        // properties (icon next) will grow this same panel rather than
+        // each getting a separate screen.
+        var expandedAppId = null;
+
+        function renderAppManagerRow(a) {
+          var isExpanded = a.id === expandedAppId;
+          var mainRow = '<tr class="job-row" data-app-row="' + escapeHtml(a.id) + '">' +
+            '<td>' + (isExpanded ? ICON.POINTDOWN : ICON.POINTRIGHT) + ' ' + a.icon + '</td>' +
+            '<td>' + escapeHtml(a.name) + '</td>' +
+            '<td>' + escapeHtml(a.id) + '</td>' +
+            '<td>' + (a.hidden ? 'No' : 'Yes') + '</td>' +
+            '<td>' + (a.dynamic ? 'Dynamic' : 'Built-in') + '</td>' +
+            '</tr>';
+
+          if (!isExpanded) return mainRow;
+
+          var override = getAppOverride(a.id);
+          // Renaming is locked for built-in shell utilities (see
+          // setAppOverride's own comment, shell.js) — a written doc or
+          // support note referring to "the Jobs app" should always match
+          // what's actually on screen. Dynamically-loaded apps (AI Chat,
+          // Text Editor, anything installed later) aren't called out by a
+          // fixed name in core docs the same way, so they stay renameable.
+          var nameFieldHtml = a.dynamic
+            ? '<label class="field-label">Custom name' +
+              '<input type="text" id="app-manager-name-input" value="' + escapeHtml(override.name || '') + '" placeholder="' + escapeHtml(a.defaultName) + '"></label>' +
+              '<button type="button" class="cancel-btn" data-save-app-name="' + escapeHtml(a.id) + '">Save</button>' +
+              (override.name ? ' <button type="button" class="cancel-btn" data-reset-app-name="' + escapeHtml(a.id) + '">Reset to default</button>' : '')
+            : '<div class="job-manifest-note">Built-in shell utility — name isn\'t customizable, to keep documentation and support consistent.</div>';
+          var detailHtml = '<div class="stat-tile wide">' +
+            fileInfoRow('Id', escapeHtml(a.id)) +
+            fileInfoRow('Default name', escapeHtml(a.defaultName)) +
+            fileInfoRow('Source', a.dynamic ? 'Dynamic (script loads on first launch)' : 'Built-in') +
+            fileInfoRow('On desktop by default', a.hidden ? 'No' : 'Yes') +
+            nameFieldHtml +
+            '</div>';
+
+          return mainRow + '<tr class="job-log-row"><td colspan="5"><div class="job-log-panel">' + detailHtml + '</div></td></tr>';
+        }
+
+        function renderAppManagerTable() {
+          var tbody = document.getElementById('app-manager-tbody');
+          if (!tbody) return;
+          var rows = listApps().sort(function (a, b) { return a.name.localeCompare(b.name); });
+          tbody.innerHTML = rows.map(renderAppManagerRow).join('') || '<tr><td colspan="5">(no apps registered)</td></tr>';
+        }
+
+        registerApp({
+          id: 'app-manager',
+          name: 'Apps',
+          icon: ICON.TABLE,
+          hidden: true, // reachable via the "spirit" app group
+          mount: function (container) {
+            expandedAppId = null; // fresh visit starts fully collapsed
+
+            container.innerHTML =
+              '<table class="jobs-table"><thead><tr>' +
+              '<th></th><th>Name</th><th>Id</th><th>On desktop?</th><th>Source</th>' +
+              '</tr></thead><tbody id="app-manager-tbody"></tbody></table>';
+
+            document.getElementById('app-manager-tbody').addEventListener('click', function (event) {
+              var saveBtn = event.target.closest('[data-save-app-name]');
+              if (saveBtn) {
+                var input = document.getElementById('app-manager-name-input');
+                var result = setAppOverride(saveBtn.dataset.saveAppName, { name: input.value.trim() });
+                if (!result.ok) alert('Could not rename this app: ' + result.reason);
+                renderAppManagerTable();
+                return;
+              }
+
+              var resetBtn = event.target.closest('[data-reset-app-name]');
+              if (resetBtn) {
+                setAppOverride(resetBtn.dataset.resetAppName, { name: '' });
+                renderAppManagerTable();
+                return;
+              }
+
+              var row = event.target.closest('[data-app-row]');
+              if (row) {
+                var id = row.dataset.appRow;
+                expandedAppId = (expandedAppId === id) ? null : id; // opening one closes any other
+                renderAppManagerTable(); // re-render immediately — don't wait for the next live update
+              }
+            });
+          },
+          render: function () {
+            renderAppManagerTable();
+          },
+        });
+
         // ---- Spirit app (launcher/grouping template) ----
         // Hosts a sub-view of the machine-introspection apps (Stats,
-        // Processes, Jobs) — hidden from the real desktop below — using
-        // the same reusable icon-grid template a future grouping app could
-        // reuse. Files stays a front-page icon: it's a content-facing app
-        // you use, not a system-introspection tool.
+        // Processes, Jobs, Apps) — hidden from the real desktop below —
+        // using the same reusable icon-grid template a future grouping app
+        // could reuse. Files stays a front-page icon: it's a content-facing
+        // app you use, not a system-introspection tool.
         registerApp({
           id: 'spirit',
           name: 'Spirit',
@@ -1000,7 +1121,7 @@
           render: function () {
             var grid = document.getElementById('spirit-group');
             if (!grid) return;
-            renderAppGroup(grid, ['stats', 'process-browser', 'jobs']);
+            renderAppGroup(grid, ['stats', 'process-browser', 'jobs', 'app-manager']);
           },
         });
 

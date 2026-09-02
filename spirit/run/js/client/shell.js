@@ -62,6 +62,52 @@
     return preferences.defaultHandlers[ext];
   }
 
+  // Raw override object for one app — {} if nothing's been customized.
+  // For an edit UI to read current values from (e.g. pre-filling a "custom
+  // name" input), distinct from effectiveName()/listApps() which resolve
+  // the value actually shown.
+  function getAppOverride(id) {
+    return preferences.appOverrides[id] || {};
+  }
+
+  // Merges patch into an app's override object; a property set to '' or
+  // null clears that one property (reverting just it to default) rather
+  // than clearing the whole override. Removes the app's entry entirely
+  // once no properties remain, keeping appOverrides sparse.
+  //
+  // Renaming is locked for built-in shell utilities (Stats, Files,
+  // Processes, Jobs, Spirit, Apps, the viewers — anything not
+  // dynamically-loaded, i.e. no _scriptPath). Letting a user rename these
+  // would make any written documentation, support conversation, or future
+  // help screen that refers to "the Jobs app" silently stop matching what's
+  // actually on screen — a cost dynamically-loaded apps (AI Chat, Text
+  // Editor, anything installed later) don't carry the same way, since
+  // nothing calls them out by a fixed name in core docs. Enforced here,
+  // not just left to the UI, so nothing else that ever calls this can
+  // bypass it either.
+  function setAppOverride(id, patch) {
+    var app = apps[id];
+    if (patch.name !== undefined && app && !app._scriptPath) {
+      return { ok: false, reason: 'core-app-name-locked' };
+    }
+
+    var current = preferences.appOverrides[id] || {};
+    Object.keys(patch).forEach(function (key) {
+      if (patch[key] === null || patch[key] === '') {
+        delete current[key];
+      } else {
+        current[key] = patch[key];
+      }
+    });
+    if (Object.keys(current).length === 0) {
+      delete preferences.appOverrides[id];
+    } else {
+      preferences.appOverrides[id] = current;
+    }
+    savePreferences();
+    return { ok: true };
+  }
+
   // Single source of truth for "what name does the user actually see for
   // this app" — an appOverrides.name entry wins if present, otherwise the
   // app's own registered/manifest name. Used by both the icon renderer and
@@ -106,6 +152,7 @@
       return {
         id: app.id,
         name: effectiveName(app),
+        defaultName: app.name,
         icon: app.icon,
         hidden: !!app.hidden,
         dynamic: !!app._scriptPath,
@@ -442,6 +489,8 @@
     renderFileInfoBubble: renderFileInfoBubble,
     renderAppGroup: renderAppGroup,
     listApps: listApps,
+    getAppOverride: getAppOverride,
+    setAppOverride: setAppOverride,
   };
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
