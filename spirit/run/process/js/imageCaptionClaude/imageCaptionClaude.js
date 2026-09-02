@@ -72,6 +72,7 @@ async function main() {
   await spirit.core.jobs.log('found ' + images.length + ' image(s) under media/');
 
   let processed = 0;
+  let skipped = 0;
   let failed = 0;
 
   for (let i = 0; i < images.length; i++) {
@@ -80,21 +81,44 @@ async function main() {
     const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
     const percent = Math.round((i / images.length) * 100);
 
+    const existingRaw = spirit.core.fs.loadFile(sidecarPath);
+    let sidecar = {};
+    if (existingRaw != null) {
+      try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
+    }
+
+    // Skip anything already captioned and unchanged since — this is a
+    // paid API call per image, so this check matters more here than
+    // anywhere else it's used. See spirit.core.node.util.checkStaleness
+    // (kernel.js).
+    const priorRecord = (sidecar.spiritImageCaptionClaude && sidecar.spiritImageCaptionClaude.mtimeMs != null)
+      ? { mtimeMs: sidecar.spiritImageCaptionClaude.mtimeMs, contentHash: sidecar.spiritImageCaptionClaude.contentHash }
+      : null;
+    const staleness = spirit.core.node.util.checkStaleness(fullPath, priorRecord);
+
+    if (!staleness.stale) {
+      if (staleness.refreshRecord) {
+        sidecar.spiritImageCaptionClaude.mtimeMs = staleness.refreshRecord.mtimeMs;
+        sidecar.spiritImageCaptionClaude.contentHash = staleness.refreshRecord.contentHash;
+        spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
+      }
+      skipped++;
+      await spirit.core.jobs.log('skipping (already up to date) ' + (i + 1) + '/' + images.length + ': ' + relativePath);
+      continue;
+    }
+
     await spirit.core.jobs.log(percent + '% done, processing ' + relativePath);
 
     try {
       const result = await captionImage(fullPath);
 
-      const existingRaw = spirit.core.fs.loadFile(sidecarPath);
-      let sidecar = {};
-      if (existingRaw != null) {
-        try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
-      }
       sidecar.spiritImageCaptionClaude = {
         caption: result.caption,
         tags: result.tags,
         model: MODEL,
         computedAt: Date.now(),
+        mtimeMs: staleness.newRecord.mtimeMs,
+        contentHash: staleness.newRecord.contentHash,
       };
 
       const saveResult = spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
@@ -112,8 +136,8 @@ async function main() {
     }
   }
 
-  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + failed + ' failed, ' + images.length + ' total');
-  await spirit.core.jobs.complete({ total: images.length, processed: processed, failed: failed });
+  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + skipped + ' skipped (already up to date), ' + failed + ' failed, ' + images.length + ' total');
+  await spirit.core.jobs.complete({ total: images.length, processed: processed, skipped: skipped, failed: failed });
 }
 
 main()

@@ -108,6 +108,7 @@ async function main() {
   await spirit.core.jobs.log('using model "' + model + '", found ' + images.length + ' image(s) under media/');
 
   let processed = 0;
+  let skipped = 0;
   let failed = 0;
 
   for (let i = 0; i < images.length; i++) {
@@ -116,16 +117,39 @@ async function main() {
     const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
     const percent = Math.round((i / images.length) * 100);
 
+    const existingRaw = spirit.core.fs.loadFile(sidecarPath);
+    let sidecar = {};
+    if (existingRaw != null) {
+      try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
+    }
+
+    // Staleness is checked per MODEL, not just per file — results are
+    // keyed by model specifically so trying a different model on an
+    // unchanged image still runs; only re-running the SAME model against
+    // an unchanged image is skipped. See spirit.core.node.util.checkStaleness
+    // (kernel.js).
+    const existingForModel = sidecar.spiritImageCaptionLmStudio && sidecar.spiritImageCaptionLmStudio[model];
+    const priorRecord = (existingForModel && existingForModel.mtimeMs != null)
+      ? { mtimeMs: existingForModel.mtimeMs, contentHash: existingForModel.contentHash }
+      : null;
+    const staleness = spirit.core.node.util.checkStaleness(fullPath, priorRecord);
+
+    if (!staleness.stale) {
+      if (staleness.refreshRecord) {
+        existingForModel.mtimeMs = staleness.refreshRecord.mtimeMs;
+        existingForModel.contentHash = staleness.refreshRecord.contentHash;
+        spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
+      }
+      skipped++;
+      await spirit.core.jobs.log('skipping (already captioned by ' + model + ') ' + (i + 1) + '/' + images.length + ': ' + relativePath);
+      continue;
+    }
+
     await spirit.core.jobs.log(percent + '% done, processing ' + relativePath);
 
     try {
       const result = await captionImage(fullPath, model);
 
-      const existingRaw = spirit.core.fs.loadFile(sidecarPath);
-      let sidecar = {};
-      if (existingRaw != null) {
-        try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
-      }
       // Keyed by model id under one shared key, so trying several models
       // while you search for one that fits your machine leaves every
       // attempt's result available for comparison, rather than each new
@@ -135,6 +159,8 @@ async function main() {
         caption: result.caption,
         tags: result.tags,
         computedAt: Date.now(),
+        mtimeMs: staleness.newRecord.mtimeMs,
+        contentHash: staleness.newRecord.contentHash,
       };
 
       const saveResult = spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
@@ -149,8 +175,8 @@ async function main() {
     }
   }
 
-  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + failed + ' failed, ' + images.length + ' total (model: ' + model + ')');
-  await spirit.core.jobs.complete({ total: images.length, processed: processed, failed: failed, model: model });
+  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + skipped + ' skipped (already up to date), ' + failed + ' failed, ' + images.length + ' total (model: ' + model + ')');
+  await spirit.core.jobs.complete({ total: images.length, processed: processed, skipped: skipped, failed: failed, model: model });
 }
 
 main()

@@ -70,18 +70,56 @@ async function main() {
   const mediaDir = path.join(rootDir, 'media');
   const images = findImages(mediaDir);
 
-  await spirit.core.jobs.log('found ' + images.length + ' image(s) under media/ — submitting as one batch');
+  await spirit.core.jobs.log('found ' + images.length + ' image(s) under media/ — checking which need (re)captioning');
 
-  if (images.length === 0) {
-    await spirit.core.jobs.log('Completed: 0 processed, 0 failed, 0 total');
-    await spirit.core.jobs.complete({ total: 0, processed: 0, failed: 0 });
+  // Filtered BEFORE anything is submitted — a batch request is paid for
+  // the moment it's created, so this is the only place that matters for
+  // cost: by the time requests exist below, every one of them is for a
+  // genuinely stale image. See spirit.core.node.util.checkStaleness
+  // (kernel.js). Each stale image's own sidecarPath/newRecord is carried
+  // alongside it so the results loop (below) never needs to re-derive or
+  // re-hash anything a second time.
+  const staleImages = [];
+  let skipped = 0;
+  images.forEach((fullPath) => {
+    const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, '/');
+    const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
+    const existingRaw = spirit.core.fs.loadFile(sidecarPath);
+    let sidecar = {};
+    if (existingRaw != null) {
+      try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
+    }
+
+    const priorRecord = (sidecar.spiritImageCaptionClaude && sidecar.spiritImageCaptionClaude.mtimeMs != null)
+      ? { mtimeMs: sidecar.spiritImageCaptionClaude.mtimeMs, contentHash: sidecar.spiritImageCaptionClaude.contentHash }
+      : null;
+    const staleness = spirit.core.node.util.checkStaleness(fullPath, priorRecord);
+
+    if (!staleness.stale) {
+      if (staleness.refreshRecord) {
+        sidecar.spiritImageCaptionClaude.mtimeMs = staleness.refreshRecord.mtimeMs;
+        sidecar.spiritImageCaptionClaude.contentHash = staleness.refreshRecord.contentHash;
+        spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
+      }
+      skipped++;
+      return;
+    }
+
+    staleImages.push({ fullPath: fullPath, relativePath: relativePath, sidecarPath: sidecarPath, newRecord: staleness.newRecord });
+  });
+
+  await spirit.core.jobs.log(skipped + ' already up to date (skipped), ' + staleImages.length + ' need (re)captioning');
+
+  if (staleImages.length === 0) {
+    await spirit.core.jobs.log('Completed: 0 processed, ' + skipped + ' skipped (already up to date), 0 failed, ' + images.length + ' total');
+    await spirit.core.jobs.complete({ total: images.length, processed: 0, skipped: skipped, failed: 0 });
     return;
   }
 
-  // custom_id must be unique per request; index into `images` lets us map
-  // results back to a file — batch results arrive in ANY order, never rely
-  // on position, always key by custom_id.
-  const requests = images.map((fullPath, i) => buildBatchRequest(fullPath, 'image-' + i));
+  // custom_id must be unique per request; index into `staleImages` lets us
+  // map results back to a file — batch results arrive in ANY order, never
+  // rely on position, always key by custom_id.
+  const requests = staleImages.map((img, i) => buildBatchRequest(img.fullPath, 'image-' + i));
 
   let batch = await client.messages.batches.create({ requests });
   await spirit.core.jobs.log('batch ' + batch.id + ' submitted, status: ' + batch.processing_status);
@@ -99,9 +137,9 @@ async function main() {
 
   for await (const result of await client.messages.batches.results(batch.id)) {
     const index = Number(result.custom_id.replace('image-', ''));
-    const fullPath = images[index];
-    const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, '/');
-    const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
+    const img = staleImages[index];
+    const relativePath = img.relativePath;
+    const sidecarPath = img.sidecarPath;
 
     if (result.result.type !== 'succeeded') {
       failed++;
@@ -123,6 +161,8 @@ async function main() {
       model: MODEL,
       batchId: batch.id,
       computedAt: Date.now(),
+      mtimeMs: img.newRecord.mtimeMs,
+      contentHash: img.newRecord.contentHash,
     };
 
     const saveResult = spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
@@ -134,8 +174,8 @@ async function main() {
     }
   }
 
-  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + failed + ' failed, ' + images.length + ' total (batch ' + batch.id + ')');
-  await spirit.core.jobs.complete({ total: images.length, processed: processed, failed: failed, batchId: batch.id });
+  await spirit.core.jobs.log('Completed: ' + processed + ' processed, ' + skipped + ' skipped (already up to date), ' + failed + ' failed, ' + images.length + ' total (batch ' + batch.id + ')');
+  await spirit.core.jobs.complete({ total: images.length, processed: processed, skipped: skipped, failed: failed, batchId: batch.id });
 }
 
 main()
