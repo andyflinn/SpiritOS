@@ -81,8 +81,10 @@ spirit.shell.activateApp({
       '</div>' +
       '<div class="stat-tile wide"><div class="td-file-path">Current type</div><pre class="code-view" id="td-current-tree"></pre></div>' +
       '<div class="stat-tile wide">' +
-        '<textarea id="td-prompt" placeholder="Describe the type, or what should change" style="width:100%; min-height:60px; box-sizing:border-box;"></textarea>' +
-        '<button type="button" id="td-generate">Generate</button>' +
+        '<form id="td-form" class="start-job-form">' +
+          '<input type="text" id="td-prompt" placeholder="Describe the type, or what should change" style="flex:1">' +
+          '<button type="submit" id="td-generate">Generate</button>' +
+        '</form>' +
         '<div id="td-error" class="job-start-error"></div>' +
       '</div>' +
       '<div id="td-response"></div>';
@@ -257,11 +259,11 @@ spirit.shell.activateApp({
         '<div class="stat-tile wide td-file-block">' +
           '<div class="td-file-path">Proposed type</div>' +
           '<pre class="code-view">' + escapeHtml(JSON.stringify(proposedTree, null, 2)) + '</pre>' +
+          '<button type="button" class="cancel-btn" id="td-save">Save</button>' +
         '</div>' +
         '<div class="stat-tile wide td-file-block">' +
           '<div class="td-file-path">Compiled module preview — exactly what Save will write</div>' +
           '<pre class="code-view">' + escapeHtml(compiled) + '</pre>' +
-          '<button type="button" class="cancel-btn" id="td-save">Save</button>' +
         '</div>';
 
       document.getElementById('td-save').addEventListener('click', function () {
@@ -280,10 +282,14 @@ spirit.shell.activateApp({
       });
     }
 
-    generateBtn.addEventListener('click', function () {
-      var prompt = document.getElementById('td-prompt').value.trim();
+    document.getElementById('td-form').addEventListener('submit', function (event) {
+      event.preventDefault();
+      var promptInput = document.getElementById('td-prompt');
+      var prompt = promptInput.value.trim();
       errorEl.textContent = '';
       if (!prompt) { errorEl.textContent = 'Describe the type, or what should change.'; return; }
+      promptInput.value = '';
+      promptInput.focus(); // stays ready for the next request immediately, no re-click needed
 
       var typeName = currentTarget !== null ? currentTarget : nameInputEl.value.trim();
       var model = modelEl.value;
