@@ -551,6 +551,23 @@
           }),
         }).then(function (res) { return res.json(); });
       },
+      // The smallest possible app launcher — one small icon appended to
+      // this app's own titlebar (never replacing it; titleEl already has
+      // the plain app name set by switchTo before mount runs) that jumps
+      // straight to another app. A normal launchApp push, not {replace:
+      // true} (contrast buildAppIcon's desktop-tile click, below) — Back
+      // should return to the app that had this link, not skip past it.
+      addTitlebarLink: function (targetAppId) {
+        var target = apps[targetAppId];
+        if (!target) return;
+        var linkEl = document.createElement('button');
+        linkEl.type = 'button';
+        linkEl.className = 'titlebar-link';
+        linkEl.title = effectiveName(target);
+        linkEl.innerHTML = escapeHtml(effectiveIcon(target));
+        linkEl.addEventListener('click', function () { launchApp(targetAppId, null, {}); });
+        titleEl.appendChild(linkEl);
+      },
     };
     if (app._scriptPath) {
       var folder = app._scriptPath.match(/^app\/([^/]+)\//)[1];

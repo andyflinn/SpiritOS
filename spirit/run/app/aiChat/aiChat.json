@@ -1,6 +1,6 @@
 {
   "name": "AI Chat",
-  "description": "Chat with one or more local LM Studio models at once, with full history.",
+  "description": "Chat with one AI model (Claude or LM Studio) at a time, with full history. Configure which models are available in AI Manager.",
   "icon": "CHAT",
   "hidden": false,
   "owner": "system"

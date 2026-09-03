@@ -69,6 +69,23 @@ api.fetchExternal('https://example.com/api', { method: 'GET' })
   .then(function (data) { /* ... */ });
 ```
 
+### Common patterns: `data.json` and `state.json`
+
+Two filename conventions worth reaching for by default, both using
+nothing but `api.fs` above — no new capability, just a habit:
+
+- **`data.json`** — for an app that manages a persistent collection of
+  records (contacts, todo items, bookmarks, anything list-shaped). Load
+  it once in `mount` via `api.fs.loadFile('data.json')`, defaulting to
+  an empty list if it doesn't exist yet. Save via
+  `api.fs.saveFile('data.json', ...)` immediately after every add, edit,
+  or delete — not on a timer, not only when the app closes.
+- **`state.json`** — for disposable UI/session state worth remembering
+  across launches (which tab was selected, a filter, scroll position) —
+  the same load-at-mount, save-immediately-on-change idiom as above, in
+  a separate file. Keep it separate from `data.json`: state is fine to
+  lose, the user's actual data is not.
+
 ## render(jobsById, params)
 
 Runs again on every later live-update tick (roughly every couple of

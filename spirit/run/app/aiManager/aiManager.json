@@ -1,0 +1,7 @@
+{
+  "name": "AI Manager",
+  "description": "Checks Claude and LM Studio availability and writes the shared list every other app picks from.",
+  "icon": "SATELLITE",
+  "hidden": false,
+  "owner": "system"
+}

@@ -16,11 +16,6 @@ if (!document.getElementById('app-builder-styles')) {
   document.head.appendChild(styleEl);
 }
 
-// Same fixed list AI Chat uses, in a shared data file rather than
-// duplicated — see aiChat.js for why the model list (not the key check
-// below) is the part worth de-duplicating.
-var CLAUDE_MODELS = JSON.parse(spirit.core.fs.loadFile('app/shared/claudeModels.json'));
-
 // A safe app folder/file basename — same camelCase shape every existing
 // dynamic app already uses (aiChat, textEditor, appBuilder).
 var FOLDER_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9]*$/;
@@ -56,19 +51,16 @@ spirit.shell.activateApp({
       scopedFs.saveFile('log.jsonl', raw + JSON.stringify(entry) + '\n');
     }
 
-    // Cheap key-validity check — identical to aiChat.js's own (see that
-    // file for why this one function stays duplicated rather than shared).
-    var claudeKeyInvalid = false;
-    function checkClaudeKeyValidity() {
-      return api.fetchExternal('https://api.anthropic.com/v1/messages/count_tokens', {
-        method: 'POST',
-        timeoutMs: 15000,
-        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-        body: { model: 'claude-haiku-4-5', messages: [{ role: 'user', content: 'hi' }] },
-      })
-        .then(function (body) { return !body.error; })
-        .catch(function () { return false; });
-    }
+    // AI Manager (app/aiManager) owns the Claude key check and writes the
+    // merged status file — this app just reads it and filters to the
+    // Claude entries, since App Builder only ever talks to Claude. See
+    // design/decisions/0005-ai-manager-and-titlebar-launchers.md.
+    var aiStatus = null;
+    try {
+      var statusRaw = spirit.core.fs.loadFile('app/shared/aiStatus.json');
+      aiStatus = statusRaw ? JSON.parse(statusRaw) : null;
+    } catch (e) { aiStatus = null; }
+    var CLAUDE_AVAILABLE = ((aiStatus && aiStatus.available) || []).filter(function (e) { return e.backend === 'claude'; });
 
     // currentTarget is null for "+ New app", otherwise the real app id
     // ("app/<folder>") of an existing dynamic app being edited.
@@ -115,22 +107,16 @@ spirit.shell.activateApp({
 
     // ---- model select ----
     var modelEl = document.getElementById('ab-model');
-    modelEl.innerHTML = CLAUDE_MODELS.map(function (m) {
-      return '<option value="' + escapeHtml(m.id) + '">' + escapeHtml(m.label) + '</option>';
-    }).join('');
+    modelEl.innerHTML = CLAUDE_AVAILABLE.length === 0
+      ? '<option value="">(none available)</option>'
+      : CLAUDE_AVAILABLE.map(function (m) {
+          return '<option value="' + escapeHtml(m.id) + '">' + escapeHtml(m.label) + '</option>';
+        }).join('');
 
-    // ---- key validity ----
-    function renderKeyStatus() {
-      var el = document.getElementById('ab-key-status');
-      el.innerHTML = claudeKeyInvalid
-        ? '⚠ invalid API key — <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener">add credit ↗</a>'
-        : '';
-      updateGenerateEnabled();
-    }
-    checkClaudeKeyValidity().then(function (valid) {
-      claudeKeyInvalid = !valid;
-      renderKeyStatus();
-    });
+    // ---- availability status ----
+    document.getElementById('ab-key-status').innerHTML = CLAUDE_AVAILABLE.length === 0
+      ? '⚠ no Claude model available — configure in AI Manager'
+      : '';
 
     // ---- target select ----
     var targetEl = document.getElementById('ab-target');
@@ -144,6 +130,7 @@ spirit.shell.activateApp({
       }
     }
     renderTargetOptions();
+    api.addTitlebarLink('app/aiManager');
 
     // Refresh right when the dropdown is about to be opened, not via a
     // background subscription — spirit.core.jobs.subscribe opens its own
@@ -175,7 +162,7 @@ spirit.shell.activateApp({
     }
 
     function updateGenerateEnabled() {
-      generateBtn.disabled = claudeKeyInvalid || !identityOk || !targetConfirmed;
+      generateBtn.disabled = CLAUDE_AVAILABLE.length === 0 || !identityOk || !targetConfirmed;
     }
 
     function checkIdentity() {

@@ -4,6 +4,12 @@
 // spirit.shell (activateApp/escapeHtml) and spirit.core.* (already globally
 // reachable via window.spirit), never through index.html's own private
 // closures — same pattern as textEditor.js.
+//
+// Model availability (which Claude/LM Studio models can currently be used)
+// is no longer this app's concern — AI Manager (app/aiManager) owns the key
+// check, the LM Studio connection/load state, and writes the merged list to
+// app/shared/aiStatus.json. This app just reads that file and offers a
+// single-select dropdown; see design/decisions/0005-ai-manager-and-titlebar-launchers.md.
 
 if (!document.getElementById('ai-chat-styles')) {
   var styleEl = document.createElement('style');
@@ -18,48 +24,24 @@ if (!document.getElementById('ai-chat-styles')) {
     '.ai-chat-pending { font-style: italic; opacity: 0.6; }' +
     '.ai-chat-error-text { color: #ff8080; }' +
     '.ai-chat-empty { opacity: 0.6; font-style: italic; }' +
-    '.ai-chat-attached-image { max-width: 200px; display: block; margin-bottom: 6px; border-radius: 8px; }' +
-    '#ai-chat-config summary { cursor: pointer; font-weight: 600; padding: 4px 0; }' +
-    '.ai-chat-model-section { margin-top: 8px; }' +
-    '.ai-chat-model-section summary { cursor: pointer; font-size: 12px; opacity: 0.7; }';
+    '.ai-chat-attached-image { max-width: 200px; display: block; margin-bottom: 6px; border-radius: 8px; }';
   document.head.appendChild(styleEl);
 }
-
-// Claude models: unlike LM Studio's live-queried, locally-loaded set, this
-// is a small fixed list living in a shared data file (app/shared/
-// claudeModels.json), not a hardcoded array — App Builder needs the same
-// list, and the model list (unlike the key-validity check below) is the
-// part that actually changes over time as Anthropic ships new models, so
-// it's the part worth keeping in exactly one place. The server/kernel
-// still never needs to know it exists (same "no app-specific code in the
-// kernel" principle, applied to a hosted backend instead of a local one).
-// No live discovery needed here: Anthropic's catalog doesn't churn the way
-// a local LM Studio install does, and all three support vision natively,
-// unlike LM Studio's mixed local model set.
-var CLAUDE_MODELS = JSON.parse(spirit.core.fs.loadFile('app/shared/claudeModels.json'));
 
 spirit.shell.activateApp({
   mount: function (container, api) {
     var escapeHtml = api.escapeHtml;
     var scopedFs = api.fs;
 
-    // Cheap key-validity check: count_tokens is documented as free (no
-    // token billing) and has its own rate limit separate from the Messages
-    // API, but still requires real auth — an invalid/missing key 401s here
-    // exactly as it would on a real message call. Lets the Claude section
-    // report "key invalid" without spending anything to find out.
-    var claudeKeyInvalid = false;
-    var lastModelRenderArgs = null; // [liveModels, probeByModel, lmStudioError] — replayed once the key check resolves, so it doesn't have to wait on/repeat the LM Studio fetch
-    function checkClaudeKeyValidity() {
-      return api.fetchExternal('https://api.anthropic.com/v1/messages/count_tokens', {
-        method: 'POST',
-        timeoutMs: 15000,
-        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-        body: { model: 'claude-haiku-4-5', messages: [{ role: 'user', content: 'hi' }] },
-      })
-        .then(function (body) { return !body.error; })
-        .catch(function () { return false; });
-    }
+    // AI Manager's merged status file — read once at mount, unscoped since
+    // app/shared/ is outside this app's own folder (same pattern already
+    // used for app/shared/claudeModels.json before this change).
+    var aiStatus = null;
+    try {
+      var statusRaw = spirit.core.fs.loadFile('app/shared/aiStatus.json');
+      aiStatus = statusRaw ? JSON.parse(statusRaw) : null;
+    } catch (e) { aiStatus = null; }
+    var AVAILABLE = (aiStatus && aiStatus.available) || [];
 
     function loadConversation() {
       var raw = scopedFs.loadFile('conversation.json');
@@ -73,24 +55,19 @@ spirit.shell.activateApp({
       scopedFs.saveFile('conversation.json', JSON.stringify(conversation, null, 2));
     }
 
-    // Each target sees only its OWN prior thread, reconstructed from the
-    // exchange log rather than stored separately — so one model's answers
-    // never leak into another's context, and a target that wasn't asked (or
-    // whose answer errored) just leaves a gap rather than breaking the walk.
-    // Historical turns stay text-only even if they had an image attached —
-    // only the newest message ever includes one (see sendPrompt) — avoids
-    // re-fetching and re-encoding a base64 blob on every later turn for no
-    // real benefit once a model has already answered about it. History
-    // shape (plain-string content for old turns) is identical across
-    // backends; only the NEWEST turn's image block differs, since Claude's
-    // Messages API wants {type:'image', source:{type:'base64', media_type,
-    // data}} (raw base64, media type split out) where LM Studio's OpenAI-
-    // compatible endpoint wants {type:'image_url', image_url:{url}} (the
-    // full data: URL, unsplit) — backend is 'claude' or 'lm-studio'.
+    // Reconstructs this target's own prior thread from the exchange log.
+    // Tolerates both the current single-target exchange shape and the
+    // pre-single-select shape (targets[]/responses[]) already on disk from
+    // before this app moved off multi-select — old history keeps working,
+    // it's just never added to going forward. Historical turns stay
+    // text-only even if they had an image attached — only the newest
+    // message ever includes one (see sendPrompt).
     function buildMessagesForTarget(target, newPrompt, imageDataUrl, backend) {
       var messages = [];
       conversation.exchanges.forEach(function (exchange) {
-        var response = exchange.responses.filter(function (r) { return r.target === target && r.text != null; })[0];
+        var response = exchange.responses
+          ? exchange.responses.filter(function (r) { return r.target === target && r.text != null; })[0]
+          : (exchange.target === target && exchange.response && exchange.response.text != null ? exchange.response : null);
         if (!response) return;
         messages.push({ role: 'user', content: exchange.prompt });
         messages.push({ role: 'assistant', content: response.text });
@@ -146,17 +123,23 @@ spirit.shell.activateApp({
       if (previewEl) previewEl.style.display = 'none';
     }
 
-    // Only visible when every currently checked target is vision-capable —
+    function currentTargetEntry() {
+      var selectEl = document.getElementById('ai-chat-target');
+      if (!selectEl || !selectEl.value) return null;
+      var colonIndex = selectEl.value.indexOf(':');
+      var backend = selectEl.value.slice(0, colonIndex);
+      var id = selectEl.value.slice(colonIndex + 1);
+      return AVAILABLE.filter(function (e) { return e.backend === backend && e.id === id; })[0] || null;
+    }
+
+    // Only visible when the currently selected model is vision-capable —
     // sending an image to a model that can't use it would be pointless.
-    // Called on every checkbox change, including from the bulk-select
-    // buttons below, which set .checked programmatically and don't fire a
-    // native change event on their own.
     function updateAttachVisibility() {
-      var checked = Array.prototype.slice.call(document.querySelectorAll('.ai-chat-model-checkbox:checked'));
-      var allVisionCapable = checked.length > 0 && checked.every(function (cb) { return cb.dataset.visionCapable === 'true'; });
+      var entry = currentTargetEntry();
       var attachEl = document.getElementById('ai-chat-attach');
-      if (attachEl) attachEl.hidden = !allVisionCapable;
-      if (!allVisionCapable) clearAttachment();
+      var visionCapable = !!(entry && entry.visionCapable);
+      if (attachEl) attachEl.hidden = !visionCapable;
+      if (!visionCapable) clearAttachment();
     }
 
     function blobToDataUrl(blob) {
@@ -168,26 +151,17 @@ spirit.shell.activateApp({
       });
     }
 
-    // Collapsed/open state is a per-browser UI convenience, not app data —
-    // stored in localStorage rather than scopedFs, and remembered across
-    // reopens/reloads so a collapsed model table doesn't spring back open
-    // every time this crowds out the chat history it sits above.
-    var CONFIG_COLLAPSE_KEY = 'aiChat.configCollapsed';
-    var configCollapsed = false;
-    try { configCollapsed = localStorage.getItem(CONFIG_COLLAPSE_KEY) === 'true'; } catch (e) { /* ignore */ }
-
-    function getSectionCollapsed(section) {
-      try { return localStorage.getItem('aiChat.' + section + 'SectionCollapsed') === 'true'; } catch (e) { return false; }
-    }
-    function setSectionCollapsed(section, collapsed) {
-      try { localStorage.setItem('aiChat.' + section + 'SectionCollapsed', collapsed ? 'true' : 'false'); } catch (e) { /* ignore */ }
-    }
-
     container.innerHTML =
-      '<details id="ai-chat-config" class="stat-tile wide"' + (configCollapsed ? '' : ' open') + '>' +
-        '<summary>Model configuration</summary>' +
-        '<div id="ai-chat-models">loading models…</div>' +
-      '</details>' +
+      '<div id="ai-chat-target-row" class="stat-tile wide">' +
+        '<label>Model: <select id="ai-chat-target">' +
+          (AVAILABLE.length === 0
+            ? '<option value="">(none available)</option>'
+            : AVAILABLE.map(function (e) {
+                return '<option value="' + escapeHtml(e.backend + ':' + e.id) + '">' + escapeHtml(e.label) + '</option>';
+              }).join('')) +
+        '</select></label>' +
+        (AVAILABLE.length === 0 ? ' <span class="job-start-error">No AI backend available — configure one in AI Manager.</span>' : '') +
+      '</div>' +
       '<div id="ai-chat-history"></div>' +
       '<div id="ai-chat-attach" hidden>' +
         '<label>Attach image: <select id="ai-chat-attach-select"><option value="">(none)</option></select></label> ' +
@@ -195,13 +169,13 @@ spirit.shell.activateApp({
       '</div>' +
       '<form id="ai-chat-form" class="start-job-form">' +
         '<input type="text" id="ai-chat-prompt" placeholder="Ask something…" style="flex:1">' +
-        '<button type="submit">Send</button>' +
+        '<button type="submit"' + (AVAILABLE.length === 0 ? ' disabled' : '') + '>Send</button>' +
       '</form>' +
       '<div id="ai-chat-error" class="job-start-error"></div>';
 
-    document.getElementById('ai-chat-config').addEventListener('toggle', function (event) {
-      try { localStorage.setItem(CONFIG_COLLAPSE_KEY, event.target.open ? 'false' : 'true'); } catch (e) { /* ignore */ }
-    });
+    api.addTitlebarLink('app/aiManager');
+
+    document.getElementById('ai-chat-target').addEventListener('change', updateAttachVisibility);
 
     document.getElementById('ai-chat-attach-select').addEventListener('change', function (event) {
       attachedImagePath = event.target.value || null;
@@ -214,68 +188,6 @@ spirit.shell.activateApp({
       }
     });
 
-    // One-time delegated setup for everything inside #ai-chat-models — that
-    // container persists across renderModelTable's repeated calls (only its
-    // innerHTML is replaced), so binding here once, rather than per-render,
-    // avoids stacking duplicate listeners.
-    document.getElementById('ai-chat-models').addEventListener('click', function (event) {
-      var selectBtn = event.target.closest('[data-select]');
-      if (selectBtn) {
-        var mode = selectBtn.dataset.select;
-        document.querySelectorAll('.ai-chat-model-checkbox').forEach(function (cb) {
-          cb.checked = mode === 'all' || (mode === 'vision' && cb.dataset.visionCapable === 'true');
-        });
-        updateAttachVisibility(); // bulk-select sets .checked programmatically — no native change event to catch this otherwise
-        return;
-      }
-
-      var loadBtn = event.target.closest('[data-load-model]');
-      if (loadBtn) {
-        var loadModel = loadBtn.dataset.loadModel;
-        loadBtn.disabled = true;
-        loadBtn.textContent = 'Loading…';
-        // spirit.core.jobs.start is already fully generic (spawns any
-        // command) — no new server route needed for this, same mechanism
-        // every other process script in this project uses.
-        spirit.core.jobs.start({
-          command: 'node',
-          args: ['process/js/lmStudioLoadModel/lmStudioLoadModel.js', JSON.stringify({ model: loadModel })],
-          type: 'Load LM Studio Model: ' + loadModel,
-        });
-        return;
-      }
-
-      var unloadBtn = event.target.closest('[data-unload-model]');
-      if (unloadBtn) {
-        var unloadModel = unloadBtn.dataset.unloadModel;
-        unloadBtn.disabled = true;
-        unloadBtn.textContent = 'Unloading…';
-        spirit.core.jobs.start({
-          command: 'node',
-          args: ['process/js/lmStudioUnloadModel/lmStudioUnloadModel.js', JSON.stringify({ model: unloadModel })],
-          type: 'Unload LM Studio Model: ' + unloadModel,
-        });
-      }
-    });
-
-    document.getElementById('ai-chat-models').addEventListener('change', function (event) {
-      if (event.target.classList.contains('ai-chat-model-checkbox')) updateAttachVisibility();
-    });
-
-    // Auto-refreshes the model table once a load/unload job this app
-    // started finishes, so the "Loaded" state updates without a manual
-    // reload. spirit.core.jobs.subscribe is already a generic, existing
-    // browser API — every app can use it, not just the ones that built the
-    // Jobs system.
-    spirit.core.jobs.subscribe({
-      onUpdate: function (job) {
-        var isModelJob = job.type && (job.type.indexOf('Load LM Studio Model: ') === 0 || job.type.indexOf('Unload LM Studio Model: ') === 0);
-        if (isModelJob && (job.status === 'completed' || job.status === 'failed')) {
-          loadModels();
-        }
-      },
-    });
-
     function formatDuration(ms) {
       if (ms == null) return '';
       return ms < 1000 ? (ms + 'ms') : ((ms / 1000).toFixed(1) + 's');
@@ -284,179 +196,48 @@ spirit.shell.activateApp({
     function renderHistory() {
       var historyEl = document.getElementById('ai-chat-history');
       historyEl.innerHTML = conversation.exchanges.map(function (exchange) {
-        var responsesHtml = exchange.targets.map(function (target) {
-          var response = exchange.responses.filter(function (r) { return r.target === target; })[0];
-          var label = target.replace(/^[^:]+:/, ''); // strip whichever backend prefix precedes the first colon
-          if (!response) {
-            return '<div class="ai-chat-response"><div class="ai-chat-target">' + escapeHtml(label) + '</div><div class="ai-chat-pending">thinking…</div></div>';
-          }
-          var targetLabel = escapeHtml(label) +
-            (response.durationMs != null ? ' <span class="ai-chat-duration">(' + formatDuration(response.durationMs) + ')</span>' : '');
-          var body = response.error
+        // Old exchanges (pre-single-select) had multiple targets/responses
+        // per exchange — rendered exactly as before so existing history
+        // stays readable; only new exchanges use the single-target shape.
+        if (exchange.targets) {
+          var responsesHtml = exchange.targets.map(function (target) {
+            var response = exchange.responses.filter(function (r) { return r.target === target; })[0];
+            var label = target.replace(/^[^:]+:/, '');
+            if (!response) {
+              return '<div class="ai-chat-response"><div class="ai-chat-target">' + escapeHtml(label) + '</div><div class="ai-chat-pending">thinking…</div></div>';
+            }
+            var targetLabel = escapeHtml(label) +
+              (response.durationMs != null ? ' <span class="ai-chat-duration">(' + formatDuration(response.durationMs) + ')</span>' : '');
+            var body = response.error
+              ? '<div class="ai-chat-error-text">' + escapeHtml(response.error) + '</div>'
+              : '<div class="ai-chat-text">' + escapeHtml(response.text) + '</div>';
+            return '<div class="ai-chat-response"><div class="ai-chat-target">' + targetLabel + '</div>' + body + '</div>';
+          }).join('');
+
+          return '<div class="ai-chat-exchange">' +
+            (exchange.image ? '<img class="ai-chat-attached-image" src="/' + escapeHtml(exchange.image) + '">' : '') +
+            '<div class="ai-chat-prompt">' + escapeHtml(exchange.prompt) + '</div>' +
+            responsesHtml +
+            '</div>';
+        }
+
+        var label = (exchange.target || '').replace(/^[^:]+:/, '');
+        var response = exchange.response;
+        var body = !response
+          ? '<div class="ai-chat-pending">thinking…</div>'
+          : response.error
             ? '<div class="ai-chat-error-text">' + escapeHtml(response.error) + '</div>'
             : '<div class="ai-chat-text">' + escapeHtml(response.text) + '</div>';
-          return '<div class="ai-chat-response"><div class="ai-chat-target">' + targetLabel + '</div>' + body + '</div>';
-        }).join('');
+        var targetLabel = escapeHtml(label) +
+          (response && response.durationMs != null ? ' <span class="ai-chat-duration">(' + formatDuration(response.durationMs) + ')</span>' : '');
 
         return '<div class="ai-chat-exchange">' +
           (exchange.image ? '<img class="ai-chat-attached-image" src="/' + escapeHtml(exchange.image) + '">' : '') +
           '<div class="ai-chat-prompt">' + escapeHtml(exchange.prompt) + '</div>' +
-          responsesHtml +
+          '<div class="ai-chat-response"><div class="ai-chat-target">' + targetLabel + '</div>' + body + '</div>' +
           '</div>';
       }).join('') || '<div class="ai-chat-empty">(no messages yet)</div>';
       historyEl.scrollTop = historyEl.scrollHeight;
-    }
-
-    // Combines two independent signals: what LM Studio's own metadata
-    // *proclaims* (type === 'vlm', from its native /api/v0/models — a
-    // richer, LM-Studio-specific endpoint than the plain OpenAI-compatible
-    // /v1/models used to actually talk to a model) versus what the vision
-    // probe *actually tested* by attempting a real caption. Proclaimed
-    // vision support has already been shown this session to sometimes just
-    // be wrong, so these are shown as distinct states, not collapsed into one.
-    function visionIconFor(liveEntry, probeEntry) {
-      // The probe records a "not a vision model" skip as success:false too
-      // (it never attempted a real test) — its own vision flag (from
-      // `lms ls`, independent of the live /api/v0/models type field) is
-      // what actually distinguishes that from a genuine tested failure.
-      // Treating a correct skip as a warning would be a false alarm.
-      if (probeEntry && probeEntry.vision === false) {
-        return liveEntry.type === 'vlm' ? { icon: spirit.core.const.ICON.WARNING, title: 'proclaims vision, but lms ls disagrees' } : null;
-      }
-      if (probeEntry && probeEntry.success === true) {
-        return { icon: spirit.core.const.ICON.OK, title: 'verified working (vision probe)' };
-      }
-      if (probeEntry && probeEntry.success === false) {
-        return { icon: spirit.core.const.ICON.WARNING, title: 'tested, failed: ' + (probeEntry.reason || 'unknown') };
-      }
-      if (liveEntry.type === 'vlm') {
-        return { icon: spirit.core.const.ICON.VIEW, title: 'proclaimed vision-capable, not verified' };
-      }
-      return null;
-    }
-
-    // Builds/replaces the table's HTML only — event wiring lives in one
-    // delegated setup attached once in mount (below), not re-attached here.
-    // modelsEl itself persists across calls (only its innerHTML is
-    // replaced), so listeners bound directly to it here would otherwise
-    // stack a duplicate on every re-render — and this now re-renders
-    // repeatedly over a session's life (the "Load" auto-refresh below).
-    //
-    // Claude renders unconditionally, independent of LM Studio's own
-    // reachability — lmStudioError (a string, or null) only ever affects
-    // the LM Studio section, so a hosted backend that has nothing to do
-    // with your local LM Studio setup doesn't disappear when LM Studio is
-    // simply not running.
-    function renderModelTable(liveModels, probeByModel, lmStudioError) {
-      lastModelRenderArgs = [liveModels, probeByModel, lmStudioError];
-      var modelsEl = document.getElementById('ai-chat-models');
-
-      var lmStudioRows = liveModels.map(function (liveEntry) {
-        var visionState = visionIconFor(liveEntry, probeByModel[liveEntry.id]);
-        // LM Studio doesn't auto-load a model on request in this setup —
-        // sending to an unloaded one errors immediately ("Model is
-        // unloaded") rather than loading it. Repeated loads without
-        // unloading also create numbered duplicate instances (confirmed
-        // live: "model-name:2", "model-name:3", ...), each its own row here
-        // and each consuming its own memory — Unload is what cleans those up.
-        var loadedCell = liveEntry.state === 'loaded'
-          ? spirit.core.const.ICON.ON + ' <button type="button" class="cancel-btn" data-unload-model="' + escapeHtml(liveEntry.id) + '">Unload</button>'
-          : '<button type="button" class="cancel-btn" data-load-model="' + escapeHtml(liveEntry.id) + '">Load</button>';
-        return '<tr>' +
-          '<td><input type="checkbox" class="ai-chat-model-checkbox" data-target="' + escapeHtml('lm-studio:' + liveEntry.id) + '"' +
-            (visionState ? ' data-vision-capable="true"' : '') + '></td>' +
-          '<td>' + escapeHtml(liveEntry.id) + '</td>' +
-          '<td title="' + (visionState ? escapeHtml(visionState.title) : '') + '">' + (visionState ? visionState.icon : '') + '</td>' +
-          '<td title="' + (liveEntry.state === 'loaded' ? 'loaded, ready now' : 'not loaded') + '">' + loadedCell + '</td>' +
-          '</tr>';
-      }).join('');
-
-      // All three current Claude models support vision natively — no
-      // proclaimed-vs-tested distinction needed the way LM Studio's mixed
-      // local model set requires.
-      var claudeRows = CLAUDE_MODELS.map(function (m) {
-        return '<tr>' +
-          '<td><input type="checkbox" class="ai-chat-model-checkbox" data-target="' + escapeHtml('claude:' + m.id) + '" data-vision-capable="true"></td>' +
-          '<td>' + escapeHtml(m.label) + '</td>' +
-          '<td title="native vision support">' + spirit.core.const.ICON.OK + '</td>' +
-          '<td title="hosted API — always available, real cost per use">' + spirit.core.const.ICON.ON + '</td>' +
-          '</tr>';
-      }).join('');
-
-      // Nested inside the outer #ai-chat-config panel — same localStorage-
-      // backed collapse convention, one key per backend section. modelsEl's
-      // innerHTML is fully rebuilt on every call (live model refresh,
-      // Load/Unload, etc.), so the open/closed state has to be re-read from
-      // storage each time rather than preserved from the outgoing DOM, and
-      // the toggle listeners re-attached each time too — a <details>
-      // element's own "toggle" event doesn't bubble, so delegation from a
-      // stable ancestor isn't an option here the way click/change are above.
-      var lmStudioSectionOpen = getSectionCollapsed('lmStudio') === false;
-      // An invalid key forces the section collapsed and overrides whatever
-      // the user's own stored preference is — there's nothing useful to see
-      // open, and the warning belongs in the title bar precisely so it's
-      // visible without opening it.
-      var claudeSectionOpen = claudeKeyInvalid ? false : getSectionCollapsed('claude') === false;
-      var claudeSummary = 'Claude (hosted API — real cost per use)' +
-        (claudeKeyInvalid
-          ? ' — ⚠ invalid API key — <a href="https://console.anthropic.com/settings/billing" target="_blank" rel="noopener">add credit ↗</a>'
-          : '');
-
-      modelsEl.innerHTML =
-        '<div id="ai-chat-model-toolbar">Select: ' +
-          '<button type="button" class="cancel-btn" data-select="all">All</button> ' +
-          '<button type="button" class="cancel-btn" data-select="none">None</button> ' +
-          '<button type="button" class="cancel-btn" data-select="vision">Vision-capable</button>' +
-        '</div>' +
-        '<details class="ai-chat-model-section"' + (lmStudioSectionOpen ? ' open' : '') + '>' +
-          '<summary>LM Studio (local)</summary>' +
-          (lmStudioError
-            ? '<div class="job-manifest-note">' + escapeHtml(lmStudioError) + '</div>'
-            : '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th>Loaded</th></tr></thead><tbody>' + lmStudioRows + '</tbody></table>') +
-        '</details>' +
-        '<details class="ai-chat-model-section"' + (claudeSectionOpen ? ' open' : '') + '>' +
-          '<summary>' + claudeSummary + '</summary>' +
-          '<table class="jobs-table"><thead><tr><th></th><th>Model</th><th>Vision</th><th></th></tr></thead><tbody>' + claudeRows + '</tbody></table>' +
-        '</details>';
-
-      var sectionEls = modelsEl.querySelectorAll('.ai-chat-model-section');
-      sectionEls[0].addEventListener('toggle', function (event) { setSectionCollapsed('lmStudio', !event.target.open); });
-      if (claudeKeyInvalid) {
-        // Locked: block the toggle entirely (any click that isn't the "add
-        // credit" link) rather than just re-collapsing it on the next
-        // render — a bare toggle listener would still let it spring open
-        // for the instant between click and re-render.
-        sectionEls[1].querySelector('summary').addEventListener('click', function (event) {
-          if (!event.target.closest('a')) event.preventDefault();
-        });
-      } else {
-        sectionEls[1].addEventListener('toggle', function (event) { setSectionCollapsed('claude', !event.target.open); });
-      }
-    }
-
-    function loadModels() {
-      // Goes through the generic api.fetchExternal (not LM Studio directly
-      // — no Access-Control-Allow-Origin header, so a cross-origin browser
-      // fetch would be silently blocked by CORS). This caller owns parsing
-      // the raw response shape ({data: [{id, type, ...}]}) either way.
-      api.fetchExternal('http://localhost:1234/api/v0/models', { timeoutMs: 2000 })
-        .then(function (body) {
-          var liveModels = body.data || [];
-          if (liveModels.length === 0) throw new Error('no models currently loaded');
-
-          var probeRaw = spirit.core.fs.loadFile('process/js/lmStudioVisionProbe/results.json');
-          var probeByModel = {};
-          if (probeRaw != null) {
-            try {
-              JSON.parse(probeRaw).results.forEach(function (r) { probeByModel[r.model] = r; });
-            } catch (e) { /* malformed/missing probe data — proclaimed-only is fine */ }
-          }
-
-          renderModelTable(liveModels, probeByModel, null);
-        })
-        .catch(function () {
-          renderModelTable([], {}, 'LM Studio unreachable — start it and reload this app.');
-        });
     }
 
     // Normalizes each backend's raw response shape into one consistent
@@ -476,27 +257,24 @@ spirit.shell.activateApp({
       return { text: block.text };
     }
 
-    // Fires one request per checked target, concurrently — each resolves
-    // (or errors) and updates its own response slot independently, so a
-    // fast small model's answer shows up without waiting on a slow large
-    // one. The question itself is persisted before any answer arrives, so
-    // it's never lost even if every target then fails.
     function sendPrompt(prompt) {
-      var checked = Array.prototype.slice.call(document.querySelectorAll('.ai-chat-model-checkbox:checked'));
+      var target = document.getElementById('ai-chat-target').value;
       var errorEl = document.getElementById('ai-chat-error');
       errorEl.textContent = '';
-      if (checked.length === 0) {
-        errorEl.textContent = 'Check at least one model to send to.';
+      if (!target) {
+        errorEl.textContent = 'No model available to send to — configure one in AI Manager.';
         return;
       }
 
-      var targets = checked.map(function (cb) { return cb.dataset.target; });
+      var colonIndex = target.indexOf(':');
+      var backend = target.slice(0, colonIndex);
+      var model = target.slice(colonIndex + 1);
+
       var exchange = {
         id: 'exchange_' + Date.now(),
         timestamp: Date.now(),
         prompt: prompt,
-        targets: targets,
-        responses: [],
+        target: target,
       };
       if (attachedImagePath) exchange.image = attachedImagePath; // path only — never the bytes
       conversation.exchanges.push(exchange);
@@ -513,51 +291,42 @@ spirit.shell.activateApp({
         : Promise.resolve(null);
 
       imageDataUrlPromise.then(function (imageDataUrl) {
-        targets.forEach(function (target) {
-          var colonIndex = target.indexOf(':');
-          var backend = target.slice(0, colonIndex);
-          var model = target.slice(colonIndex + 1);
-          var messages = buildMessagesForTarget(target, prompt, imageDataUrl, backend);
-          var startedAt = Date.now();
+        var messages = buildMessagesForTarget(target, prompt, imageDataUrl, backend);
+        var startedAt = Date.now();
 
-          // Same generic api.fetchExternal either way — this caller
-          // supplies the target, the per-backend request shape, and owns
-          // extracting the reply from whichever raw response shape comes
-          // back. Claude's secret never appears here: ${ENV:ANTHROPIC_API_KEY}
-          // is a placeholder the server substitutes, allowlisted in server.js.
-          var externalUrl = backend === 'claude' ? 'https://api.anthropic.com/v1/messages' : 'http://localhost:1234/v1/chat/completions';
-          var proxyOptions = backend === 'claude'
-            ? {
-                method: 'POST',
-                timeoutMs: 300000,
-                headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-                body: { model: model, max_tokens: 1024, messages: messages },
-              }
-            : {
-                method: 'POST',
-                timeoutMs: 300000,
-                body: { model: model, temperature: 0.7, messages: messages },
-              };
+        // Same generic api.fetchExternal either way — this caller supplies
+        // the target, the per-backend request shape, and owns extracting
+        // the reply from whichever raw response shape comes back. Claude's
+        // secret never appears here: ${ENV:ANTHROPIC_API_KEY} is a
+        // placeholder the server substitutes, allowlisted in server.js.
+        var externalUrl = backend === 'claude' ? 'https://api.anthropic.com/v1/messages' : 'http://localhost:1234/v1/chat/completions';
+        var proxyOptions = backend === 'claude'
+          ? {
+              method: 'POST',
+              timeoutMs: 300000,
+              headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+              body: { model: model, max_tokens: 1024, messages: messages },
+            }
+          : {
+              method: 'POST',
+              timeoutMs: 300000,
+              body: { model: model, temperature: 0.7, messages: messages },
+            };
 
-          api.fetchExternal(externalUrl, proxyOptions)
-            .then(function (rawBody) {
-              var responseEntry = { target: target, respondedAt: Date.now(), durationMs: Date.now() - startedAt };
-              var extracted = backend === 'claude' ? extractClaudeText(rawBody) : extractLmStudioText(rawBody);
-              if (extracted.error) {
-                responseEntry.error = extracted.error;
-              } else {
-                responseEntry.text = extracted.text;
-              }
-              exchange.responses.push(responseEntry);
-              saveConversation();
-              renderHistory();
-            })
-            .catch(function (err) {
-              exchange.responses.push({ target: target, error: err.message, respondedAt: Date.now(), durationMs: Date.now() - startedAt });
-              saveConversation();
-              renderHistory();
-            });
-        });
+        api.fetchExternal(externalUrl, proxyOptions)
+          .then(function (rawBody) {
+            var extracted = backend === 'claude' ? extractClaudeText(rawBody) : extractLmStudioText(rawBody);
+            exchange.response = extracted.error
+              ? { error: extracted.error, respondedAt: Date.now(), durationMs: Date.now() - startedAt }
+              : { text: extracted.text, respondedAt: Date.now(), durationMs: Date.now() - startedAt };
+            saveConversation();
+            renderHistory();
+          })
+          .catch(function (err) {
+            exchange.response = { error: err.message, respondedAt: Date.now(), durationMs: Date.now() - startedAt };
+            saveConversation();
+            renderHistory();
+          });
       });
     }
 
@@ -570,13 +339,9 @@ spirit.shell.activateApp({
       sendPrompt(prompt);
     });
 
-    loadModels();
     loadMediaImages();
     renderHistory();
-    checkClaudeKeyValidity().then(function (valid) {
-      claudeKeyInvalid = !valid;
-      if (lastModelRenderArgs) renderModelTable(lastModelRenderArgs[0], lastModelRenderArgs[1], lastModelRenderArgs[2]);
-    });
+    updateAttachVisibility();
   },
   render: function () {}, // static once mounted, same as Code Viewer/Text Editor
 });
