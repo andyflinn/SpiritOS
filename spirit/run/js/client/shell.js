@@ -682,7 +682,7 @@
     // stack, collapse back to that occurrence instead of pushing a
     // duplicate — otherwise revisiting a screen would make the stack
     // (and the back button) walk through repeats on the way out. Two
-    // Code Viewer entries for two different files are NOT the same
+    // Text File Launcher entries for two different files are NOT the same
     // screen, so they correctly stay as distinct stack entries.
     var existingIndex = -1;
     for (var i = 0; i < navStack.length; i++) {
@@ -859,10 +859,10 @@
   }
 
   var CATEGORY_APP_HANDLERS = {
-    code: 'code-viewer',
-    image: 'media-viewer',
-    audio: 'media-viewer',
-    video: 'media-viewer',
+    code: 'text-file-launcher',
+    image: 'media-launcher',
+    audio: 'media-launcher',
+    video: 'media-launcher',
   };
 
   // Shared by both viewers: replaces the plain "app name" titlebar

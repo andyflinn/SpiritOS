@@ -522,8 +522,8 @@
           },
         });
 
-        // ---- Code Viewer app ----
-        // Only reachable via launchApp('code-viewer', { path }) from Files or
+        // ---- Text File Launcher app ----
+        // Only reachable via launchApp('text-file-launcher', { path }) from Files or
         // the Processes app — no desktop icon (hidden: true).
         // Cross-references a live LM Studio model list against the vision
         // probe's results.json (if it has ever been run), so the dropdown
@@ -716,13 +716,13 @@
             '<div id="open-with"></div>' +
             '<div id="job-manifest-form"></div>' +
             '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>';
-          renderOpenWith(document.getElementById('open-with'), 'code-viewer', path);
+          renderOpenWith(document.getElementById('open-with'), 'text-file-launcher', path);
           maybeRenderJobForm(document.getElementById('cv-body'), path);
         }
 
         registerApp({
-          id: 'code-viewer',
-          name: 'Code Viewer',
+          id: 'text-file-launcher',
+          name: 'Text File Launcher',
           icon: ICON.CODE,
           hidden: true,
           mount: function (container, api, params) {
@@ -735,7 +735,7 @@
           render: function () {}, // static between loadFile calls — the file's content doesn't live-update
         });
 
-        // ---- Media Viewer app (image/audio/video) ----
+        // ---- Media Launcher app (image/audio/video) ----
         var MEDIA_TAG_BY_CATEGORY = {
           image: { tag: 'img', extraAttrs: '' },
           audio: { tag: 'audio', extraAttrs: ' controls' },
@@ -751,12 +751,12 @@
             renderFileInfoBubble(path) +
             '<div id="open-with"></div>' +
             '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>';
-          renderOpenWith(document.getElementById('open-with'), 'media-viewer', path);
+          renderOpenWith(document.getElementById('open-with'), 'media-launcher', path);
         }
 
         registerApp({
-          id: 'media-viewer',
-          name: 'Media Viewer',
+          id: 'media-launcher',
+          name: 'Media Launcher',
           icon: ICON.VIEW,
           hidden: true,
           mount: function (container, api, params) {

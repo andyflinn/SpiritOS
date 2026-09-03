@@ -284,7 +284,7 @@ spirit.shell.activateApp({
 
       // Base64 conversion happens once here, in memory, only for this one
       // outgoing send — never persisted. Fetches the already-servable
-      // static file (the same route Media Viewer already relies on) as a
+      // static file (the same route Media Launcher already relies on) as a
       // blob and reads it as a data URL.
       var imageDataUrlPromise = exchange.image
         ? fetch('/' + exchange.image).then(function (r) { return r.blob(); }).then(blobToDataUrl)
@@ -343,5 +343,5 @@ spirit.shell.activateApp({
     renderHistory();
     updateAttachVisibility();
   },
-  render: function () {}, // static once mounted, same as Code Viewer/Text Editor
+  render: function () {}, // static once mounted, same as Text File Launcher/Text Editor
 });

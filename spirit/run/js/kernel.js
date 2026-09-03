@@ -433,9 +433,9 @@ if (isNode()) {
   // call site becoming promise-aware, not just these two functions. Known
   // synchronous call sites as of this writing, if this is ever revisited:
   //   - shell.js: renderFileInfoBubble, discoverDynamicApps, declareDynamicApp
-  //   - index.html: Code Viewer's mount (loadFile for file content),
+  //   - index.html: Text File Launcher's mount (loadFile for file content),
   //     maybeRenderJobForm (loadFile for manifest JSON)
-  // Current read: low real-world pain (Media Viewer never goes through
+  // Current read: low real-world pain (Media Launcher never goes through
   // loadFile — media loads via a plain <img>/<video src>, already async/
   // streamed by the browser; what's left is small text/JSON reads), so
   // deferred until it's actually felt, not fixed on foresight alone.

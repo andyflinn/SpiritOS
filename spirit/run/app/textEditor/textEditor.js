@@ -58,11 +58,11 @@ spirit.shell.activateApp({
     if (params && params.path) textEditorLoadPath(params.path); // arrived via "Open with" — load immediately, don't wait for a manual click
   },
   // Called by the shell when Text Editor is already mounted and gets
-  // reopened against a different file — e.g. picked from Code Viewer's
+  // reopened against a different file — e.g. picked from Text File Launcher's
   // "Open with" a second time. mount() itself won't run again, so without
   // this the newly-picked file would never actually load.
   loadFile: function (path) {
     textEditorLoadPath(path);
   },
-  render: function () {}, // static once mounted, same as Code Viewer
+  render: function () {}, // static once mounted, same as Text File Launcher
 });
