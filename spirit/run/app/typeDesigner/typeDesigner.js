@@ -88,6 +88,7 @@ spirit.shell.activateApp({
       '<div id="td-response"></div>';
 
     api.addTitlebarLink('app/aiManager');
+    api.addTitlebarLink('app/appBuilder');
 
     // ---- model select ----
     var modelEl = document.getElementById('td-model');

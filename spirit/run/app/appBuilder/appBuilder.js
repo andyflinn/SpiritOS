@@ -170,6 +170,7 @@ spirit.shell.activateApp({
     }
     renderTargetOptions();
     api.addTitlebarLink('app/aiManager');
+    api.addTitlebarLink('app/typeDesigner');
 
     // Refresh right when the dropdown is about to be opened, not via a
     // background subscription — spirit.core.jobs.subscribe opens its own
@@ -409,10 +410,33 @@ spirit.shell.activateApp({
     // Falls back to inserting the marker pair fresh, right after
     // //FILE_BEGINNING, for a real file that predates this feature and
     // has no markers yet.
+    // Strips comments and now-blank lines from a compiled type module
+    // before it ever reaches a Claude prompt or a generated app's file.
+    // Those comments explain the walker template's design to whoever
+    // reads walkerTemplate.js by hand (realm-crossing instanceof, why
+    // this file is a template not real code, etc.) — meaningless to
+    // Claude, pure token cost once spliced in. The canonical file under
+    // app/shared/types/ keeps its comments; only the copy used here is
+    // trimmed. Safe as a plain per-line "//" truncation only because the
+    // embedded SHAPE JSON is already guaranteed "//"-free
+    // (typeDesigner.js's validateTypeTree rejects it) and the walker
+    // template's own code has no "//" inside a string literal.
+    function stripComments(code) {
+      return code
+        .split('\n')
+        .map(function (line) {
+          var idx = line.indexOf('//');
+          return (idx === -1 ? line : line.slice(0, idx)).replace(/\s+$/, '');
+        })
+        .filter(function (line) { return line.trim() !== ''; })
+        .join('\n');
+    }
+
     function composeTypeModules(fileText, typeNames) {
       var sorted = typeNames.slice().sort();
       var moduleText = sorted.map(function (name) {
-        return spirit.core.fs.loadFile('app/shared/types/' + name + '.compiled.js') || '';
+        var compiled = spirit.core.fs.loadFile('app/shared/types/' + name + '.compiled.js') || '';
+        return stripComments(compiled);
       }).join('\n');
 
       var beginIdx = fileText.indexOf(TYPE_MODULES_BEGIN);

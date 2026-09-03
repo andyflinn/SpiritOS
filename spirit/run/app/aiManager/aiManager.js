@@ -172,6 +172,10 @@ spirit.shell.activateApp({
         '<button type="button" class="cancel-btn" id="ai-manager-recheck-lmstudio">Recheck</button>' +
       '</div>';
 
+    api.addTitlebarLink('app/aiChat');
+    api.addTitlebarLink('app/appBuilder');
+    api.addTitlebarLink('app/typeDesigner');
+
     document.getElementById('ai-manager-recheck-claude').addEventListener('click', checkClaude);
     document.getElementById('ai-manager-recheck-lmstudio').addEventListener('click', checkLmStudio);
 
