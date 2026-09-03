@@ -9,6 +9,13 @@ This directory contains the vision, principles, and architecture decisions for *
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)
 
+## Decisions
+- Dated Architecture Decision Records — why a specific technical choice was made, not
+  just what it is. See [decisions/](decisions/).
+
+## Reviews
+- Periodic point-in-time assessments of status against vision. See [reviews/](reviews/).
+
 ## Future Layer (not yet implemented)
 - [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)
 - [Compound Request & Transform System](transforms/COMPOUND-REQUEST-SYSTEM.md)
