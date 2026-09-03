@@ -613,6 +613,14 @@
       app._el = document.createElement('div');
       contentEl.appendChild(app._el);
       app.mount(app._el, buildApiFor(app), params);
+    } else if (params && params.path && typeof app.loadFile === 'function') {
+      // Revisiting an already-mounted app with a file — mount() itself
+      // only ever runs once now, so an app that cares which file it was
+      // opened against (e.g. Text Editor, via "Open with") needs this
+      // second chance to pick up a *different* file on a later visit.
+      // Optional: only apps that implement loadFile are affected; every
+      // other app is untouched.
+      app.loadFile(params.path);
     }
     app._el.hidden = false;
     app.render(jobsById, params);
@@ -697,6 +705,7 @@
     if (!id || !apps[id]) return; // called outside a pending script load — nothing to attach to
     apps[id].mount = behavior.mount;
     apps[id].render = behavior.render;
+    apps[id].loadFile = behavior.loadFile; // optional — only apps that care which file they're opened against define this
     apps[id]._activated = true;
     pendingActivationId = null;
   }

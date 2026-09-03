@@ -703,23 +703,36 @@
           });
         }
 
+        // Shared by mount (first open) and loadFile (every later "Open with"
+        // against a different file) — mount() itself only ever runs once
+        // now that apps stay persistently mounted across navigation, so a
+        // viewer that doesn't also implement loadFile would keep showing
+        // whichever file it first opened, forever.
+        function codeViewerLoadFile(path) {
+          setViewerTitle(path);
+          var content = spirit.core.fs.loadFile(path);
+          document.getElementById('cv-body').innerHTML =
+            renderFileInfoBubble(path) +
+            '<div id="open-with"></div>' +
+            '<div id="job-manifest-form"></div>' +
+            '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>';
+          renderOpenWith(document.getElementById('open-with'), 'code-viewer', path);
+          maybeRenderJobForm(document.getElementById('cv-body'), path);
+        }
+
         registerApp({
           id: 'code-viewer',
           name: 'Code Viewer',
           icon: ICON.CODE,
           hidden: true,
           mount: function (container, api, params) {
-            setViewerTitle(params.path);
-            var content = spirit.core.fs.loadFile(params.path);
-            container.innerHTML =
-              renderFileInfoBubble(params.path) +
-              '<div id="open-with"></div>' +
-              '<div id="job-manifest-form"></div>' +
-              '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>';
-            renderOpenWith(document.getElementById('open-with'), 'code-viewer', params.path);
-            maybeRenderJobForm(container, params.path);
+            container.innerHTML = '<div id="cv-body"></div>';
+            codeViewerLoadFile(params.path);
           },
-          render: function () {}, // static once mounted — the file's content doesn't live-update
+          loadFile: function (path) {
+            codeViewerLoadFile(path);
+          },
+          render: function () {}, // static between loadFile calls — the file's content doesn't live-update
         });
 
         // ---- Media Viewer app (image/audio/video) ----
@@ -729,20 +742,29 @@
           video: { tag: 'video', extraAttrs: ' controls' },
         };
 
+        // Same reasoning as codeViewerLoadFile, above.
+        function mediaViewerLoadFile(path) {
+          setViewerTitle(path);
+          var category = classifyMimeType(mimeTypeForName(path));
+          var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
+          document.getElementById('mv-body').innerHTML =
+            renderFileInfoBubble(path) +
+            '<div id="open-with"></div>' +
+            '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>';
+          renderOpenWith(document.getElementById('open-with'), 'media-viewer', path);
+        }
+
         registerApp({
           id: 'media-viewer',
           name: 'Media Viewer',
           icon: ICON.VIEW,
           hidden: true,
           mount: function (container, api, params) {
-            setViewerTitle(params.path);
-            var category = classifyMimeType(mimeTypeForName(params.path));
-            var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
-            container.innerHTML =
-              renderFileInfoBubble(params.path) +
-              '<div id="open-with"></div>' +
-              '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(params.path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>';
-            renderOpenWith(document.getElementById('open-with'), 'media-viewer', params.path);
+            container.innerHTML = '<div id="mv-body"></div>';
+            mediaViewerLoadFile(params.path);
+          },
+          loadFile: function (path) {
+            mediaViewerLoadFile(path);
           },
           render: function () {},
         });

@@ -12,6 +12,18 @@
 // message instead of a generic "Forbidden".
 var APP_ENTRY_SCRIPT_PATTERN = /^app\/([^/]+)\/\1\.js$/;
 
+// Hoisted out of mount() (rather than a closure inside it) so loadFile,
+// below, can call the same loading logic — mount() only ever runs once
+// per app now (shell.js keeps apps mounted across navigation), so a later
+// "Open with" against a different file has to go through loadFile instead.
+function textEditorLoadPath(path) {
+  var content = spirit.core.fs.loadFile(path);
+  var pathEl = document.getElementById('editor-path');
+  if (pathEl) pathEl.value = path;
+  document.getElementById('editor-content').value = content == null ? '' : content;
+  document.getElementById('editor-status').textContent = content == null ? 'not found (or empty) — you can still Save to create it' : 'loaded';
+}
+
 spirit.shell.activateApp({
   mount: function (container, api, params) {
     var initialPath = (params && params.path) || 'app/textEditor/notes.txt';
@@ -26,14 +38,8 @@ spirit.shell.activateApp({
 
     var statusEl = document.getElementById('editor-status');
 
-    function loadPath(path) {
-      var content = spirit.core.fs.loadFile(path);
-      document.getElementById('editor-content').value = content == null ? '' : content;
-      statusEl.textContent = content == null ? 'not found (or empty) — you can still Save to create it' : 'loaded';
-    }
-
     document.getElementById('editor-load').addEventListener('click', function () {
-      loadPath(document.getElementById('editor-path').value.trim());
+      textEditorLoadPath(document.getElementById('editor-path').value.trim());
     });
 
     document.getElementById('editor-save').addEventListener('click', function () {
@@ -49,7 +55,14 @@ spirit.shell.activateApp({
         .catch(function (err) { statusEl.textContent = 'save failed: ' + err.message; });
     });
 
-    if (params && params.path) loadPath(params.path); // arrived via "Open with" — load immediately, don't wait for a manual click
+    if (params && params.path) textEditorLoadPath(params.path); // arrived via "Open with" — load immediately, don't wait for a manual click
+  },
+  // Called by the shell when Text Editor is already mounted and gets
+  // reopened against a different file — e.g. picked from Code Viewer's
+  // "Open with" a second time. mount() itself won't run again, so without
+  // this the newly-picked file would never actually load.
+  loadFile: function (path) {
+    textEditorLoadPath(path);
   },
   render: function () {}, // static once mounted, same as Code Viewer
 });
