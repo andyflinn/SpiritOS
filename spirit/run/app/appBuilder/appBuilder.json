@@ -2,5 +2,6 @@
   "name": "App Builder",
   "description": "Ask Claude to create or edit a spirit app, review the proposed files, and apply them live — no server restart, no bash.",
   "icon": "IDEA",
-  "hidden": false
+  "hidden": false,
+  "owner": "system"
 }

@@ -2,5 +2,6 @@
   "name": "AI Chat",
   "description": "Chat with one or more local LM Studio models at once, with full history.",
   "icon": "CHAT",
-  "hidden": false
+  "hidden": false,
+  "owner": "system"
 }

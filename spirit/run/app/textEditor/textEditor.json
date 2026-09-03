@@ -3,5 +3,6 @@
   "description": "Edit any writable-root text file directly in the browser.",
   "icon": "EDIT",
   "hidden": false,
-  "handlesExtensions": [".txt", ".json"]
+  "handlesExtensions": [".txt", ".json"],
+  "owner": "system"
 }

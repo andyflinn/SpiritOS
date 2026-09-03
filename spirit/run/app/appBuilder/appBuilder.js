@@ -340,8 +340,15 @@ spirit.shell.activateApp({
     // touching. App Builder writes the manifest itself, deterministically,
     // every time Apply runs — one less thing for Claude to get wrong, and
     // one less thing for the user to ever see or think about.
+    //
+    // owner: 'user' here is documentation, not enforcement — saveAppManifest
+    // (kernel.js) force-sets this field unconditionally server-side and
+    // would silently override any other value sent here anyway. It's
+    // included explicitly so this function's output is self-explanatory on
+    // its own, without requiring a reader to also know what the kernel does
+    // to it afterward.
     function buildManifestContent(name, icon) {
-      return JSON.stringify({ name: name, icon: icon, hidden: false }, null, 2);
+      return JSON.stringify({ name: name, icon: icon, hidden: false, owner: 'user' }, null, 2);
     }
 
     // One uniform frame for both new and existing apps, no distinction —
@@ -548,9 +555,17 @@ spirit.shell.activateApp({
       document.getElementById('ab-apply').addEventListener('click', function (event) {
         var content = parsed.content;
         var manifestPath = 'app/' + folder + '/' + folder + '.json';
+        // NOTE: this write goes through saveAppManifest, which force-sets
+        // owner:'user' on whatever lands on disk — including when the folder
+        // already belongs to an existing system-tier app the user pointed
+        // App Builder at via the confirm-banner flow. That's intentional: an
+        // AI-driven edit resets an app's trust tier back to 'user' regardless
+        // of what it was before; only a direct human hand-edit to the
+        // manifest (outside this running server) can re-promote it to
+        // 'system'.
         Promise.all([
           spirit.core.fs.saveAppScript(scriptPath, content),
-          spirit.core.fs.saveFile(manifestPath, buildManifestContent(name, icon)),
+          spirit.core.fs.saveAppManifest(manifestPath, buildManifestContent(name, icon)),
         ]).then(function () {
           var id = currentTarget || ('app/' + folder);
           if (!history[id]) history[id] = [];

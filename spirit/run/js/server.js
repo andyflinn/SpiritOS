@@ -152,6 +152,21 @@ function writeFsResult(res, result) {
     res.end('Forbidden: /api/fs/save-app-script only accepts an app entry-script path (app/<name>/<name>.js)');
     return;
   }
+  if (result.reason === 'app-manifest-protected') {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden: an app\'s own manifest cannot be overwritten');
+    return;
+  }
+  if (result.reason === 'not-an-app-manifest') {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden: /api/fs/save-app-manifest only accepts an app manifest path (app/<name>/<name>.json)');
+    return;
+  }
+  if (result.reason === 'invalid-manifest-json') {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad request: manifest content is not valid JSON');
+    return;
+  }
   res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Internal error');
 }
@@ -172,6 +187,19 @@ function handleFsSave(req, res) {
 function handleFsSaveAppScript(req, res) {
   readJsonBody(req).then((body) => {
     writeFsResult(res, spirit.core.fs.saveAppScript(body.path, body.content));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+// The one deliberate way to write an app's own manifest — see
+// spirit.core.fs.saveAppManifest (kernel.js) for what's actually
+// enforced (owner is force-set there, not here). Kept as its own route,
+// same reasoning as handleFsSaveAppScript above.
+function handleFsSaveAppManifest(req, res) {
+  readJsonBody(req).then((body) => {
+    writeFsResult(res, spirit.core.fs.saveAppManifest(body.path, body.content));
   }).catch(() => {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Invalid JSON body');
@@ -351,6 +379,11 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/fs/save-app-script') {
       handleFsSaveAppScript(req, res);
+      return;
+    }
+
+    if (pathname === '/api/fs/save-app-manifest') {
+      handleFsSaveAppManifest(req, res);
       return;
     }
 

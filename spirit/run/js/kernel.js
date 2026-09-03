@@ -173,10 +173,22 @@ if (isNode()) {
   // filename shape is denied.
   const APP_ENTRY_SCRIPT_PATTERN = /^app\/([^/]+)\/\1\.js$/;
 
+  // Recognizes a dynamically-loaded app's own manifest (app/<name>/<name>.json).
+  // Like APP_ENTRY_SCRIPT_PATTERN, protected everywhere, from every tool — a
+  // manifest is introspectable (readable) by the app it describes, but never
+  // writable by it: it already carries name/icon (which a Tier-3 app could
+  // otherwise silently change, bypassing checkIdentityAvailable's collision
+  // check) and, as of this change, `owner` — the field recording which
+  // privilege tier produced the app. See saveAppManifest, below, for the one
+  // deliberate exception, which enforces the `owner` value itself rather than
+  // trusting the caller's content.
+  const MANIFEST_PATTERN = /^app\/([^/]+)\/\1\.json$/;
+
   let saveFile = spirit.core.fs.saveFile = function(filePath, content){
     const resolved = fsPath(ROOT_DIR, filePath);
     if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
     if (APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return { ok: false, reason: 'app-entry-script-protected' }; // see saveAppScript, below, for the one deliberate exception
+    if (MANIFEST_PATTERN.test(filePath)) return { ok: false, reason: 'app-manifest-protected' }; // see saveAppManifest, below, for the one deliberate exception
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
@@ -205,6 +217,39 @@ if (isNode()) {
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
+      return { ok: true };
+    } catch (err) {
+      error(err);
+      return { ok: false, reason: 'error' };
+    }
+  };
+
+  // The one deliberate exception to saveFile's manifest guard above — App
+  // Builder's Apply must write app/<name>/<name>.json alongside the entry
+  // script. Unlike saveAppScript (which writes raw, uninterpreted text),
+  // this function parses the incoming content as JSON and forcibly
+  // overwrites its "owner" key to 'user' before re-serializing — the
+  // caller's claimed value for that key, whatever it is, is discarded
+  // unconditionally. This is the actual security property: the kernel
+  // itself decides `owner` for anything reaching disk through this route.
+  // No browser-reachable path can ever produce "owner":"system" or
+  // "owner":"kernel" — those values are set only by a direct hand-edit to
+  // the file outside the running server (a human/git action, never
+  // something this process does on a caller's behalf).
+  let saveAppManifest = spirit.core.fs.saveAppManifest = function(filePath, content){
+    const resolved = fsPath(ROOT_DIR, filePath);
+    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    if (!MANIFEST_PATTERN.test(filePath)) return { ok: false, reason: 'not-an-app-manifest' };
+    let manifest;
+    try {
+      manifest = JSON.parse(content);
+    } catch (err) {
+      return { ok: false, reason: 'invalid-manifest-json' };
+    }
+    manifest.owner = 'user';
+    try {
+      fs.mkdirSync(path.dirname(resolved), { recursive: true });
+      fs.writeFileSync(resolved, JSON.stringify(manifest, null, 2), 'utf8');
       return { ok: true };
     } catch (err) {
       error(err);
@@ -445,6 +490,25 @@ if (isNode()) {
         if (xhr.readyState !== 4) return;
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else reject(new Error('failed to save app script: ' + xhr.status));
+      };
+      xhr.send(JSON.stringify({ path: filePath, content: content }));
+    });
+  };
+
+  // The one deliberate way to write an app's own manifest from the browser
+  // — see saveAppManifest in the Node section above for what's actually
+  // enforced server-side (owner is force-set there, not here). Same shape
+  // as saveAppScript's wrapper, different route; this function is a dumb
+  // HTTP passthrough and does no interpretation of `content` itself.
+  spirit.core.fs.saveAppManifest = function(filePath, content) {
+    return new Promise(function (resolve, reject) {
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/fs/save-app-manifest', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error('failed to save app manifest: ' + xhr.status));
       };
       xhr.send(JSON.stringify({ path: filePath, content: content }));
     });

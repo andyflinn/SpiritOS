@@ -1,13 +1,13 @@
 'use strict';
 
 // Exercises the writable-root matrix (isWithinWritableRoot + the
-// app-entry-script protection, kernel.js) via the real
+// app-entry-script and app-manifest protections, kernel.js) via the real
 // spirit.core.fs.saveFile/deleteFile API. Every negative case here is
 // verified to never touch disk (isWithinWritableRoot / the entry-script
-// check both run before any fs write), so this is safe to run against a
-// live checkout — the one exception is preferences.json, which is a real
-// file the running server reads/writes, so it's backed up and restored
-// rather than left holding this test's probe value.
+// and manifest checks all run before any fs write), so this is safe to run
+// against a live checkout — the one exception is preferences.json, which is
+// a real file the running server reads/writes, so it's backed up and
+// restored rather than left holding this test's probe value.
 const fs = require('fs');
 const path = require('path');
 const spirit = require('../run/js/kernel.js');
@@ -102,6 +102,64 @@ expectWritable('a non-entry-script file in a new app folder', 'app/__writableRoo
     test.check('saveAppScript rejects a non-entry-script path even under app/ (not-an-app-entry-script)');
   } else {
     test.fail('saveAppScript should have rejected a non-entry-script path but got ' + JSON.stringify(saved));
+  }
+}
+
+// ---- app manifests are protected too, even inside the writable app/ root ----
+expectForbidden(
+  'an app manifest (app/<name>/<name>.json)',
+  'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json',
+  'app-manifest-protected'
+);
+
+// A sibling file in that same folder is NOT a manifest and must still be
+// writable — confirms the protection is scoped to the exact <name>/<name>.json
+// shape, not the whole folder (mirrors the entry-script check above).
+expectWritable('a non-manifest file in a new app folder', 'app/__writableRootsProbeApp__/data.json');
+
+// ---- saveAppManifest: the mirror-image exception (App Builder) ----
+{
+  const manifestPath = 'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json';
+
+  // The adversarial case: even if the caller's JSON claims owner:"system",
+  // saveAppManifest must still force owner:"user" in what's actually written
+  // to disk — that's the actual security property under test, not just the
+  // {ok:true} return value.
+  const saved = spirit.core.fs.saveAppManifest(manifestPath, JSON.stringify({ name: 'Probe', icon: 'FILE', hidden: false, owner: 'system' }));
+  if (saved.ok) {
+    test.check('saveAppManifest accepts a real app manifest path');
+  } else {
+    test.fail('saveAppManifest should accept a manifest path but returned ' + JSON.stringify(saved));
+  }
+  const written = JSON.parse(spirit.core.fs.loadFile(manifestPath));
+  if (written.owner === 'user') {
+    test.check('saveAppManifest forces owner:"user" even when the caller claims owner:"system"');
+  } else {
+    test.fail('saveAppManifest should have forced owner:"user" but wrote owner:' + JSON.stringify(written.owner));
+  }
+  const deleted = spirit.core.fs.deleteFile(manifestPath);
+  if (!deleted.ok) {
+    test.fail('saveAppManifest probe file could not be cleaned up: ' + JSON.stringify(deleted));
+  }
+}
+
+{
+  const nonManifestPath = 'app/__writableRootsProbeApp__/data.json';
+  const saved = spirit.core.fs.saveAppManifest(nonManifestPath, JSON.stringify({ name: 'Probe' }));
+  if (!saved.ok && saved.reason === 'not-an-app-manifest') {
+    test.check('saveAppManifest rejects a non-manifest path even under app/ (not-an-app-manifest)');
+  } else {
+    test.fail('saveAppManifest should have rejected a non-manifest path but got ' + JSON.stringify(saved));
+  }
+}
+
+{
+  const manifestPath = 'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json';
+  const saved = spirit.core.fs.saveAppManifest(manifestPath, '{ not valid json');
+  if (!saved.ok && saved.reason === 'invalid-manifest-json') {
+    test.check('saveAppManifest rejects unparseable JSON content (invalid-manifest-json)');
+  } else {
+    test.fail('saveAppManifest should have rejected invalid JSON but got ' + JSON.stringify(saved));
   }
 }
 
