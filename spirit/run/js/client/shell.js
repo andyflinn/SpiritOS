@@ -636,6 +636,19 @@
     var appEntry = apps[id];
     if (!appEntry) return;
 
+    // A dynamically-loaded app's legal scope is its own folder — a
+    // dynamic app's id is already exactly 'app/<its own folder name>'
+    // (see declareDynamicApp), so this is a plain prefix check, no
+    // lookup needed. Never launch one against a file outside that
+    // folder, no matter how the launch was requested — this is the hard
+    // backstop; renderOpenWith (below) additionally never offers such an
+    // app as an option in the first place, so this should normally never
+    // even trigger.
+    if (appEntry._scriptPath && params && params.path && params.path.indexOf(id + '/') !== 0) {
+      console.warn('refusing to launch ' + id + ' against out-of-scope file: ' + params.path);
+      return;
+    }
+
     var top = navStack[navStack.length - 1];
     if (top.id === id && JSON.stringify(top.params) === JSON.stringify(params)) return; // already here
 
@@ -758,7 +771,15 @@
   // already-current default.
   function renderOpenWith(container, currentAppId, path) {
     var ext = path.substring(path.lastIndexOf('.'));
-    var handlers = extensionHandlers[ext] || [];
+    // Every entry here is a dynamically-loaded app (see registerExtensionHandler)
+    // whose id is exactly 'app/<its own folder name>' — never offer one as a
+    // handler for a file that isn't actually inside its own folder, even
+    // though it declared the extension. launchApp has the same check as a
+    // hard backstop; this is what keeps the option from ever appearing here
+    // in the first place.
+    var handlers = (extensionHandlers[ext] || []).filter(function (h) {
+      return path.indexOf(h.id + '/') === 0;
+    });
     // currentAppId (always a viewer) is never itself in
     // extensionHandlers, so even a single real handler is a genuine
     // alternative to the read-only viewer — suppress only when
