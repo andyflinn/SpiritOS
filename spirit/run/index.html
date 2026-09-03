@@ -460,7 +460,7 @@
           if (entry.kind === 'folder') {
             var kids = childrenByPath.get(entry.fullPath) || [];
             var kidsHtml = kids.map(function (k) { return renderTreeNode(k, childrenByPath); }).join('');
-            return '<details open><summary>' + ICON.FOLDER + ' ' + escapeHtml(entry.name) + '</summary>' +
+            return '<details><summary>' + ICON.FOLDER + ' ' + escapeHtml(entry.name) + '</summary>' +
               '<div class="tree-children">' + kidsHtml + '</div></details>';
           }
 
