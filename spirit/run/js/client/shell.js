@@ -534,6 +534,26 @@
   // fs.loadFile already hides the jailed path resolver behind a bare
   // filename — one less way to get a shape subtly wrong. Every app gets
   // both; only fs is conditional on having a folder of its own.
+  // Repaints app._titlebarLinks (recorded by api.addTitlebarLink, above)
+  // into titleEl — called both when a link is first registered (so it
+  // still shows up immediately during that first mount, same as before)
+  // and by switchTo on every later visit, since titleEl itself gets
+  // wiped and reset to plain text on every navigation.
+  function renderTitlebarLinks(app) {
+    Array.prototype.slice.call(titleEl.querySelectorAll('.titlebar-link')).forEach(function (el) { el.remove(); });
+    (app._titlebarLinks || []).forEach(function (targetAppId) {
+      var target = apps[targetAppId];
+      if (!target) return;
+      var linkEl = document.createElement('button');
+      linkEl.type = 'button';
+      linkEl.className = 'titlebar-link';
+      linkEl.title = effectiveName(target);
+      linkEl.innerHTML = escapeHtml(effectiveIcon(target));
+      linkEl.addEventListener('click', function () { launchApp(targetAppId, null, {}); });
+      titleEl.appendChild(linkEl);
+    });
+  }
+
   function buildApiFor(app) {
     var api = {
       escapeHtml: escapeHtml,
@@ -557,16 +577,21 @@
       // straight to another app. A normal launchApp push, not {replace:
       // true} (contrast buildAppIcon's desktop-tile click, below) — Back
       // should return to the app that had this link, not skip past it.
+      //
+      // Only recorded here (on the app itself) rather than painted once
+      // and forgotten — mount() only runs once now that apps stay
+      // persistently mounted, but titleEl is shared, single, page-wide
+      // chrome that switchTo wipes and rebuilds on every navigation (it
+      // has to, or a titlebar link would leak into whichever unrelated
+      // app you switch to next). renderTitlebarLinks (below) is what
+      // repaints these from the recorded list on every single visit, not
+      // just the first.
       addTitlebarLink: function (targetAppId) {
         var target = apps[targetAppId];
         if (!target) return;
-        var linkEl = document.createElement('button');
-        linkEl.type = 'button';
-        linkEl.className = 'titlebar-link';
-        linkEl.title = effectiveName(target);
-        linkEl.innerHTML = escapeHtml(effectiveIcon(target));
-        linkEl.addEventListener('click', function () { launchApp(targetAppId, null, {}); });
-        titleEl.appendChild(linkEl);
+        app._titlebarLinks = app._titlebarLinks || [];
+        if (app._titlebarLinks.indexOf(targetAppId) === -1) app._titlebarLinks.push(targetAppId);
+        renderTitlebarLinks(app);
       },
     };
     if (app._scriptPath) {
@@ -606,6 +631,7 @@
     activeAppId = id;
     activeParams = params;
     titleEl.textContent = app.name;
+    renderTitlebarLinks(app);
     desktopEl.hidden = true;
     containerEl.hidden = false;
 
