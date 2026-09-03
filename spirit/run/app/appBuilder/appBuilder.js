@@ -20,9 +20,66 @@ if (!document.getElementById('app-builder-styles')) {
 // dynamic app already uses (aiChat, textEditor, appBuilder).
 var FOLDER_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9]*$/;
 
+// Shared between mount and render (render is a sibling function, not
+// nested inside mount, and receives no api argument at all) — hoisted to
+// file scope, same reasoning/pattern as typeDesigner.js, so render can
+// actually refresh these instead of them freezing at whatever mount saw
+// the first time this app was opened.
+var appBuilderEscapeHtml = null;
+var appBuilderAvailable = [];
+var appBuilderIdentityOk = false;
+var appBuilderTargetConfirmed = true;
+
+function appBuilderUpdateGenerateEnabled() {
+  var generateBtn = document.getElementById('ab-generate');
+  if (generateBtn) generateBtn.disabled = appBuilderAvailable.length === 0 || !appBuilderIdentityOk || !appBuilderTargetConfirmed;
+}
+
+// AI Manager owns backend availability — this app just reads the shared
+// status file, same as Type Designer/AI Chat. See design/decisions/
+// 0005-ai-manager-and-titlebar-launchers.md. Both Claude and LM Studio
+// entries are offered (same combined-target convention as AI Chat/Type
+// Designer: dropdown value is "backend:id").
+//
+// Called at mount and again on every render (render fires on every visit
+// to an already-mounted app, plus each live job tick) — mount() itself
+// only ever runs once now that apps stay persistently mounted across
+// navigation, so without this the list would freeze at whatever it was
+// the first time this app was opened. Preserves the current selection
+// across refreshes, same as renderTargetOptions inside mount.
+function appBuilderRefreshModels() {
+  var modelEl = document.getElementById('ab-model');
+  if (!modelEl) return; // not mounted yet
+
+  var aiStatus = null;
+  try {
+    var statusRaw = spirit.core.fs.loadFile('app/shared/aiStatus.json');
+    aiStatus = statusRaw ? JSON.parse(statusRaw) : null;
+  } catch (e) { aiStatus = null; }
+  appBuilderAvailable = (aiStatus && aiStatus.available) || [];
+
+  var prior = modelEl.value;
+  modelEl.innerHTML = appBuilderAvailable.length === 0
+    ? '<option value="">(none available)</option>'
+    : appBuilderAvailable.map(function (e) {
+        return '<option value="' + appBuilderEscapeHtml(e.backend + ':' + e.id) + '">' + appBuilderEscapeHtml(e.label) + '</option>';
+      }).join('');
+  if (Array.prototype.some.call(modelEl.options, function (o) { return o.value === prior; })) {
+    modelEl.value = prior;
+  }
+  var keyStatusEl = document.getElementById('ab-key-status');
+  if (keyStatusEl) {
+    keyStatusEl.innerHTML = appBuilderAvailable.length === 0
+      ? '⚠ no AI model available — configure in AI Manager'
+      : '';
+  }
+  appBuilderUpdateGenerateEnabled();
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     var escapeHtml = api.escapeHtml;
+    appBuilderEscapeHtml = escapeHtml;
     var scopedFs = api.fs;
 
     function loadHistory() {
@@ -51,23 +108,10 @@ spirit.shell.activateApp({
       scopedFs.saveFile('log.jsonl', raw + JSON.stringify(entry) + '\n');
     }
 
-    // AI Manager (app/aiManager) owns the Claude key check and writes the
-    // merged status file — this app just reads it and filters to the
-    // Claude entries, since App Builder only ever talks to Claude. See
-    // design/decisions/0005-ai-manager-and-titlebar-launchers.md.
-    var aiStatus = null;
-    try {
-      var statusRaw = spirit.core.fs.loadFile('app/shared/aiStatus.json');
-      aiStatus = statusRaw ? JSON.parse(statusRaw) : null;
-    } catch (e) { aiStatus = null; }
-    var CLAUDE_AVAILABLE = ((aiStatus && aiStatus.available) || []).filter(function (e) { return e.backend === 'claude'; });
-
     // currentTarget is null for "+ New app", otherwise the real app id
     // ("app/<folder>") of an existing dynamic app being edited.
     var currentTarget = null;
     var currentFolder = null; // technical id segment — user-chosen for a new app, derived from currentTarget otherwise
-    var identityOk = false; // name/icon collision state for the current folder/name/icon
-    var targetConfirmed = true; // false while the "not built with App Builder" banner is blocking the form
 
     function dynamicApps() {
       return spirit.shell.listApps().filter(function (a) { return a.dynamic; });
@@ -111,16 +155,6 @@ spirit.shell.activateApp({
 
     // ---- model select ----
     var modelEl = document.getElementById('ab-model');
-    modelEl.innerHTML = CLAUDE_AVAILABLE.length === 0
-      ? '<option value="">(none available)</option>'
-      : CLAUDE_AVAILABLE.map(function (m) {
-          return '<option value="' + escapeHtml(m.id) + '">' + escapeHtml(m.label) + '</option>';
-        }).join('');
-
-    // ---- availability status ----
-    document.getElementById('ab-key-status').innerHTML = CLAUDE_AVAILABLE.length === 0
-      ? '⚠ no Claude model available — configure in AI Manager'
-      : '';
 
     // ---- uses-types checkboxes ----
     // Types have no live shell-side registry (unlike apps, via spirit.
@@ -192,50 +226,45 @@ spirit.shell.activateApp({
     var iconInputEl = document.getElementById('ab-icon');
     var confirmBannerEl = document.getElementById('ab-confirm-banner');
     var identityErrorEl = document.getElementById('ab-identity-error');
-    var generateBtn = document.getElementById('ab-generate');
 
     function setFormEnabled(enabled) {
       [nameInputEl, iconInputEl, folderInputEl, document.getElementById('ab-prompt')].forEach(function (el) {
         el.disabled = !enabled;
       });
-      updateGenerateEnabled();
-    }
-
-    function updateGenerateEnabled() {
-      generateBtn.disabled = CLAUDE_AVAILABLE.length === 0 || !identityOk || !targetConfirmed;
+      appBuilderUpdateGenerateEnabled();
     }
 
     function checkIdentity() {
       var name = nameInputEl.value.trim();
       var icon = iconInputEl.value.trim();
       if (!name || !icon) {
-        identityOk = false;
+        appBuilderIdentityOk = false;
         identityErrorEl.textContent = '';
-        updateGenerateEnabled();
+        appBuilderUpdateGenerateEnabled();
         return;
       }
       if (currentTarget === null) {
         var folder = folderInputEl.value.trim();
         if (!FOLDER_NAME_PATTERN.test(folder)) {
-          identityOk = false;
+          appBuilderIdentityOk = false;
           identityErrorEl.textContent = folder ? 'folder name must start with a letter and contain only letters/digits' : '';
-          updateGenerateEnabled();
+          appBuilderUpdateGenerateEnabled();
           return;
         }
         var newId = 'app/' + folder;
         if (dynamicApps().some(function (a) { return a.id === newId; })) {
-          identityOk = false;
+          appBuilderIdentityOk = false;
           identityErrorEl.textContent = 'an app already exists at ' + newId;
-          updateGenerateEnabled();
+          appBuilderUpdateGenerateEnabled();
           return;
         }
         currentFolder = folder;
       }
       var result = spirit.shell.checkIdentityAvailable(name, icon, currentTarget || '');
-      identityOk = result.ok;
+      appBuilderIdentityOk = result.ok;
       identityErrorEl.textContent = result.ok ? '' :
         (result.reason === 'name-collision' ? 'name "' + name + '" is already used by another app' : 'icon "' + icon + '" is already used by another app');
-      updateGenerateEnabled();
+      appBuilderUpdateGenerateEnabled();
     }
 
     [folderInputEl, nameInputEl, iconInputEl].forEach(function (el) {
@@ -250,7 +279,7 @@ spirit.shell.activateApp({
     function loadTarget(id) {
       currentTarget = id || null;
       confirmBannerEl.hidden = true;
-      targetConfirmed = true;
+      appBuilderTargetConfirmed = true;
 
       if (currentTarget === null) {
         currentFolder = null;
@@ -288,7 +317,7 @@ spirit.shell.activateApp({
       }
 
       if (!history[currentTarget]) {
-        targetConfirmed = false;
+        appBuilderTargetConfirmed = false;
         confirmBannerEl.hidden = false;
         setFormEnabled(false);
         return; // deliberately doesn't update lastGoodTarget — Cancel should NOT land back on the unconfirmed target
@@ -302,7 +331,7 @@ spirit.shell.activateApp({
 
     confirmBannerEl.addEventListener('click', function (event) {
       if (event.target.hasAttribute('data-confirm-edit')) {
-        targetConfirmed = true;
+        appBuilderTargetConfirmed = true;
         confirmBannerEl.hidden = true;
         setFormEnabled(true);
         checkIdentity();
@@ -313,6 +342,7 @@ spirit.shell.activateApp({
       }
     });
 
+    appBuilderRefreshModels();
     loadTarget('');
 
     // ---- prompt construction ----
@@ -491,11 +521,27 @@ spirit.shell.activateApp({
     // stripping an incidental markdown code fence (a model habit, not
     // something asked for) — whatever's left is exactly what gets shown
     // and, if applied, exactly what gets written.
-    function parseResponse(rawBody) {
-      if (rawBody.error) return { error: rawBody.error.message || JSON.stringify(rawBody.error) };
-      var block = (rawBody.content || []).filter(function (b) { return b.type === 'text'; })[0];
+    // Normalizes each backend's raw response shape into one {text}/{error}
+    // result before the shared fence-stripping logic below — same split
+    // AI Chat/Type Designer use (extractClaudeText/extractLmStudioText).
+    function extractLmStudioText(chatBody) {
+      var choice = chatBody.choices && chatBody.choices[0];
+      var text = choice && choice.message && choice.message.content;
+      if (chatBody.error || !text) return { error: chatBody.error || 'empty response' };
+      return { text: text };
+    }
+
+    function extractClaudeText(body) {
+      if (body.error) return { error: body.error.message || JSON.stringify(body.error) };
+      var block = (body.content || []).filter(function (b) { return b.type === 'text'; })[0];
       if (!block || !block.text) return { error: 'empty response' };
-      var text = block.text.trim();
+      return { text: block.text };
+    }
+
+    function parseResponse(rawBody, backend) {
+      var extracted = backend === 'claude' ? extractClaudeText(rawBody) : extractLmStudioText(rawBody);
+      if (extracted.error) return { error: extracted.error };
+      var text = extracted.text.trim();
       var fenceMatch = text.match(/^```(?:javascript|js)?\n([\s\S]*?)\n```$/);
       if (fenceMatch) text = fenceMatch[1];
       return { explanation: '', content: text };
@@ -568,6 +614,8 @@ spirit.shell.activateApp({
     // calls to Claude are back on.
     var DRY_RUN = false;
 
+    var generateBtn = document.getElementById('ab-generate');
+
     generateBtn.addEventListener('click', function () {
       var prompt = document.getElementById('ab-prompt').value.trim();
       errorEl.textContent = '';
@@ -576,7 +624,9 @@ spirit.shell.activateApp({
       var folder = currentFolder;
       var name = nameInputEl.value.trim();
       var icon = iconInputEl.value.trim();
-      var model = modelEl.value;
+      var colonIndex = modelEl.value.indexOf(':');
+      var backend = modelEl.value.slice(0, colonIndex);
+      var model = modelEl.value.slice(colonIndex + 1);
 
       var built = buildMessages(prompt);
       // Exactly what would be sent, no summary/reconstruction — one
@@ -591,14 +641,26 @@ spirit.shell.activateApp({
       generateBtn.disabled = true;
       responseEl.innerHTML = '<div class="ai-chat-pending">Generating…</div>';
 
-      api.fetchExternal('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        timeoutMs: 300000,
-        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-        body: { model: model, max_tokens: 8192, messages: built.messages },
-      })
+      // Same generic api.fetchExternal + per-backend request shape as AI
+      // Chat/Type Designer — Claude's secret never appears here:
+      // ${ENV:ANTHROPIC_API_KEY} is a placeholder the server substitutes.
+      var externalUrl = backend === 'claude' ? 'https://api.anthropic.com/v1/messages' : 'http://localhost:1234/v1/chat/completions';
+      var proxyOptions = backend === 'claude'
+        ? {
+            method: 'POST',
+            timeoutMs: 300000,
+            headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+            body: { model: model, max_tokens: 8192, messages: built.messages },
+          }
+        : {
+            method: 'POST',
+            timeoutMs: 300000,
+            body: { model: model, temperature: 0.7, messages: built.messages },
+          };
+
+      api.fetchExternal(externalUrl, proxyOptions)
         .then(function (rawBody) {
-          var parsed = parseResponse(rawBody);
+          var parsed = parseResponse(rawBody, backend);
           var validation = parsed.error ? null : validateResponse(built.program, parsed.content);
           appendLog({
             at: Date.now(),
@@ -630,7 +692,7 @@ spirit.shell.activateApp({
           errorEl.textContent = err.message;
           responseEl.innerHTML = '';
         })
-        .finally(function () { updateGenerateEnabled(); });
+        .finally(function () { appBuilderUpdateGenerateEnabled(); });
     });
 
     // One file, one Apply — Claude only ever produces the entry script;
@@ -693,5 +755,5 @@ spirit.shell.activateApp({
       });
     }
   },
-  render: function () {},
+  render: appBuilderRefreshModels,
 });

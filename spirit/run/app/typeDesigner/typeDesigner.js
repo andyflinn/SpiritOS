@@ -30,26 +30,72 @@ var PRIMITIVE_TOKENS = ['string', 'number', 'boolean', 'date'];
 // becomes a JS identifier fragment (__TYPE_NAME__Type) and a filename.
 var TYPE_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9]*$/;
 
+// Shared between mount and render (render is a sibling function, not
+// nested inside mount, and receives no api argument at all) — hoisted to
+// file scope so render can actually refresh these instead of them
+// freezing at whatever mount saw the first time this app was opened.
+var typeDesignerEscapeHtml = null;
+var typeDesignerAvailable = [];
+var typeDesignerIdentityOk = false;
+
+function typeDesignerUpdateGenerateEnabled() {
+  var generateBtn = document.getElementById('td-generate');
+  if (generateBtn) generateBtn.disabled = typeDesignerAvailable.length === 0 || !typeDesignerIdentityOk;
+}
+
+// AI Manager owns backend availability — this app just reads the shared
+// status file, same as App Builder/AI Chat. See design/decisions/
+// 0005-ai-manager-and-titlebar-launchers.md. Both Claude and LM Studio
+// entries are offered (same combined-target convention as AI Chat:
+// dropdown value is "backend:id") — Type Designer's prompt is
+// plain-text, so unlike AI Chat there's no per-backend message-shape
+// branching needed, only the send/parse logic in mount below.
+//
+// Called at mount and again on every render (render fires on every visit
+// to an already-mounted app, plus each live job tick) — mount() itself
+// only ever runs once now that apps stay persistently mounted across
+// navigation, so without this the list would freeze at whatever it was
+// the first time this app was opened. Preserves the current selection
+// across refreshes, same as renderTargetOptions inside mount.
+function typeDesignerRefreshModels() {
+  var modelEl = document.getElementById('td-model');
+  if (!modelEl) return; // not mounted yet
+
+  var aiStatus = null;
+  try {
+    var statusRaw = spirit.core.fs.loadFile('app/shared/aiStatus.json');
+    aiStatus = statusRaw ? JSON.parse(statusRaw) : null;
+  } catch (e) { aiStatus = null; }
+  typeDesignerAvailable = (aiStatus && aiStatus.available) || [];
+
+  var prior = modelEl.value;
+  modelEl.innerHTML = typeDesignerAvailable.length === 0
+    ? '<option value="">(none available)</option>'
+    : typeDesignerAvailable.map(function (e) {
+        return '<option value="' + typeDesignerEscapeHtml(e.backend + ':' + e.id) + '">' + typeDesignerEscapeHtml(e.label) + '</option>';
+      }).join('');
+  if (Array.prototype.some.call(modelEl.options, function (o) { return o.value === prior; })) {
+    modelEl.value = prior;
+  }
+  var availabilityEl = document.getElementById('td-availability');
+  if (availabilityEl) {
+    availabilityEl.innerHTML = typeDesignerAvailable.length === 0
+      ? '⚠ no AI model available — configure in AI Manager'
+      : '';
+  }
+  typeDesignerUpdateGenerateEnabled();
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     var escapeHtml = api.escapeHtml;
-
-    // AI Manager owns Claude availability — this app just reads the
-    // shared status file, same as App Builder. See
-    // design/decisions/0005-ai-manager-and-titlebar-launchers.md.
-    var aiStatus = null;
-    try {
-      var statusRaw = spirit.core.fs.loadFile('app/shared/aiStatus.json');
-      aiStatus = statusRaw ? JSON.parse(statusRaw) : null;
-    } catch (e) { aiStatus = null; }
-    var CLAUDE_AVAILABLE = ((aiStatus && aiStatus.available) || []).filter(function (e) { return e.backend === 'claude'; });
+    typeDesignerEscapeHtml = escapeHtml;
 
     // currentTarget is null for "+ New type", otherwise the real name of
     // an existing type being edited. currentTree is the in-memory draft —
     // nothing touches disk until Save.
     var currentTarget = null;
     var currentTree = {};
-    var identityOk = false;
 
     // Types have no live shell-side registry the way apps do (spirit.
     // shell.listApps()) — scanned fresh from the same raw fs-watcher
@@ -94,21 +140,12 @@ spirit.shell.activateApp({
 
     // ---- model select ----
     var modelEl = document.getElementById('td-model');
-    modelEl.innerHTML = CLAUDE_AVAILABLE.length === 0
-      ? '<option value="">(none available)</option>'
-      : CLAUDE_AVAILABLE.map(function (m) {
-          return '<option value="' + escapeHtml(m.id) + '">' + escapeHtml(m.label) + '</option>';
-        }).join('');
-    document.getElementById('td-availability').innerHTML = CLAUDE_AVAILABLE.length === 0
-      ? '⚠ no Claude model available — configure in AI Manager'
-      : '';
 
     // ---- target select ----
     var targetEl = document.getElementById('td-target');
     var nameRowEl = document.getElementById('td-name-row');
     var nameInputEl = document.getElementById('td-name');
     var identityErrorEl = document.getElementById('td-identity-error');
-    var generateBtn = document.getElementById('td-generate');
     var currentTreeEl = document.getElementById('td-current-tree');
     var responseEl = document.getElementById('td-response');
     var errorEl = document.getElementById('td-error');
@@ -117,28 +154,24 @@ spirit.shell.activateApp({
       currentTreeEl.textContent = JSON.stringify(currentTree, null, 2);
     }
 
-    function updateGenerateEnabled() {
-      generateBtn.disabled = CLAUDE_AVAILABLE.length === 0 || !identityOk;
-    }
-
     function checkIdentity(existingNames) {
-      if (currentTarget !== null) { identityOk = true; identityErrorEl.textContent = ''; updateGenerateEnabled(); return; }
+      if (currentTarget !== null) { typeDesignerIdentityOk = true; identityErrorEl.textContent = ''; typeDesignerUpdateGenerateEnabled(); return; }
       var name = nameInputEl.value.trim();
       if (!TYPE_NAME_PATTERN.test(name)) {
-        identityOk = false;
+        typeDesignerIdentityOk = false;
         identityErrorEl.textContent = name ? 'type name must start with a letter and contain only letters/digits' : '';
-        updateGenerateEnabled();
+        typeDesignerUpdateGenerateEnabled();
         return;
       }
       if (existingNames.indexOf(name) !== -1) {
-        identityOk = false;
+        typeDesignerIdentityOk = false;
         identityErrorEl.textContent = 'a type named "' + name + '" already exists';
-        updateGenerateEnabled();
+        typeDesignerUpdateGenerateEnabled();
         return;
       }
-      identityOk = true;
+      typeDesignerIdentityOk = true;
       identityErrorEl.textContent = '';
-      updateGenerateEnabled();
+      typeDesignerUpdateGenerateEnabled();
     }
 
     // No rename in v1 — same "immutable once chosen" precedent as an
@@ -159,8 +192,8 @@ spirit.shell.activateApp({
       var raw = spirit.core.fs.loadFile('app/shared/types/' + name + '.json');
       try { currentTree = raw ? JSON.parse(raw) : {}; } catch (e) { currentTree = {}; }
       renderCurrentTree();
-      identityOk = true;
-      updateGenerateEnabled();
+      typeDesignerIdentityOk = true;
+      typeDesignerUpdateGenerateEnabled();
     }
 
     function renderTargetOptions() {
@@ -184,6 +217,7 @@ spirit.shell.activateApp({
     targetEl.addEventListener('mousedown', renderTargetOptions);
     nameInputEl.addEventListener('input', function () { existingTypeNames().then(checkIdentity); });
 
+    typeDesignerRefreshModels();
     renderTargetOptions();
     loadTarget(null);
 
@@ -241,11 +275,27 @@ spirit.shell.activateApp({
       return { messages: [{ role: 'user', content: content }] };
     }
 
-    function parseResponse(rawBody) {
-      if (rawBody.error) return { error: rawBody.error.message || JSON.stringify(rawBody.error) };
-      var block = (rawBody.content || []).filter(function (b) { return b.type === 'text'; })[0];
+    // Normalizes each backend's raw response shape into one {text}/{error}
+    // result before the shared JSON-fence-stripping/parse logic below —
+    // same split AI Chat uses (extractClaudeText/extractLmStudioText).
+    function extractLmStudioText(chatBody) {
+      var choice = chatBody.choices && chatBody.choices[0];
+      var text = choice && choice.message && choice.message.content;
+      if (chatBody.error || !text) return { error: chatBody.error || 'empty response' };
+      return { text: text };
+    }
+
+    function extractClaudeText(body) {
+      if (body.error) return { error: body.error.message || JSON.stringify(body.error) };
+      var block = (body.content || []).filter(function (b) { return b.type === 'text'; })[0];
       if (!block || !block.text) return { error: 'empty response' };
-      var text = block.text.trim();
+      return { text: block.text };
+    }
+
+    function parseResponse(rawBody, backend) {
+      var extracted = backend === 'claude' ? extractClaudeText(rawBody) : extractLmStudioText(rawBody);
+      if (extracted.error) return { error: extracted.error };
+      var text = extracted.text.trim();
       var fenceMatch = text.match(/^```(?:json)?\n([\s\S]*?)\n```$/);
       if (fenceMatch) text = fenceMatch[1];
       var parsed;
@@ -292,20 +342,34 @@ spirit.shell.activateApp({
       promptInput.focus(); // stays ready for the next request immediately, no re-click needed
 
       var typeName = currentTarget !== null ? currentTarget : nameInputEl.value.trim();
-      var model = modelEl.value;
+      var colonIndex = modelEl.value.indexOf(':');
+      var backend = modelEl.value.slice(0, colonIndex);
+      var model = modelEl.value.slice(colonIndex + 1);
       var built = buildMessages(prompt);
 
-      generateBtn.disabled = true;
+      document.getElementById('td-generate').disabled = true;
       responseEl.innerHTML = '<div class="ai-chat-pending">Generating…</div>';
 
-      api.fetchExternal('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        timeoutMs: 300000,
-        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
-        body: { model: model, max_tokens: 4096, messages: built.messages },
-      })
+      // Same generic api.fetchExternal + per-backend request shape as AI
+      // Chat's sendPrompt — Claude's secret never appears here:
+      // ${ENV:ANTHROPIC_API_KEY} is a placeholder the server substitutes.
+      var externalUrl = backend === 'claude' ? 'https://api.anthropic.com/v1/messages' : 'http://localhost:1234/v1/chat/completions';
+      var proxyOptions = backend === 'claude'
+        ? {
+            method: 'POST',
+            timeoutMs: 300000,
+            headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}', 'anthropic-version': '2023-06-01' },
+            body: { model: model, max_tokens: 4096, messages: built.messages },
+          }
+        : {
+            method: 'POST',
+            timeoutMs: 300000,
+            body: { model: model, temperature: 0.7, messages: built.messages },
+          };
+
+      api.fetchExternal(externalUrl, proxyOptions)
         .then(function (rawBody) {
-          var parsed = parseResponse(rawBody);
+          var parsed = parseResponse(rawBody, backend);
           if (parsed.error) {
             errorEl.textContent = parsed.error;
             responseEl.innerHTML = '';
@@ -323,8 +387,8 @@ spirit.shell.activateApp({
           errorEl.textContent = err.message;
           responseEl.innerHTML = '';
         })
-        .finally(function () { updateGenerateEnabled(); });
+        .finally(function () { typeDesignerUpdateGenerateEnabled(); });
     });
   },
-  render: function () {},
+  render: typeDesignerRefreshModels,
 });
