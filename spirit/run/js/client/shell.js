@@ -578,9 +578,20 @@
 
   // Switches the visible screen without touching navStack — the stack
   // bookkeeping lives in launchApp/goBack, this just mounts/unmounts.
+  //
+  // Each app gets its own persistent wrapper div under #app-content,
+  // created and mount()ed once the first time it's opened, then only
+  // ever shown/hidden afterward — never cleared and rebuilt. Before
+  // this, every single navigation (including just going Home and back
+  // to a screen already open) tore down and remounted the whole app,
+  // discarding any in-progress DOM state for no reason.
   function switchTo(id, params) {
     if (activeAppId && apps[activeAppId] && typeof apps[activeAppId].unmount === 'function') {
       apps[activeAppId].unmount();
+    }
+
+    if (activeAppId && apps[activeAppId] && apps[activeAppId]._el) {
+      apps[activeAppId]._el.hidden = true;
     }
 
     if (id === 'desktop') {
@@ -595,11 +606,15 @@
     activeAppId = id;
     activeParams = params;
     titleEl.textContent = app.name;
-    contentEl.innerHTML = '';
     desktopEl.hidden = true;
     containerEl.hidden = false;
 
-    app.mount(contentEl, buildApiFor(app), params);
+    if (!app._el) {
+      app._el = document.createElement('div');
+      contentEl.appendChild(app._el);
+      app.mount(app._el, buildApiFor(app), params);
+    }
+    app._el.hidden = false;
     app.render(jobsById, params);
   }
 
