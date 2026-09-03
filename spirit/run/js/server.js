@@ -5,6 +5,48 @@ const spirit = require('./kernel');
 
 //console.log(JSON.stringify(spirit,null,2));
 
+// Job spawning (jobs.js's startProcessJob) passes relative script paths
+// like "process/js/lmStudioLoadModel/lmStudioLoadModel.js" straight to
+// child_process.spawn without ever setting an explicit cwd, so it
+// inherits whatever directory THIS process was started from. Every other
+// path in the app is resolved off ROOT_DIR (__dirname-relative, always
+// correct) — this is the one place actual process.cwd() matters, and
+// starting the server from the wrong place (e.g. `cd js && node
+// server.js` instead of `node js/server.js` from spirit/run) breaks job
+// spawning silently: scripts fail in well under a second with no useful
+// error, easy to mistake for a real bug in the spawned script itself.
+// Fail loud and immediately instead.
+(function verifyStartupCwd() {
+  var cwd = process.cwd();
+  var errors = [];
+
+  var REQUIRED_DIRS = ['app', 'js', 'process'];
+  var missing = REQUIRED_DIRS.filter(function (name) {
+    try { return !fs.statSync(path.join(cwd, name)).isDirectory(); }
+    catch (err) { return true; }
+  });
+  if (missing.length > 0) {
+    errors.push('expected ' + missing.join('/, ') + '/ under the current directory, but ' + (missing.length > 1 ? 'they weren\'t' : 'it wasn\'t') + ' found');
+  }
+
+  // Belt and suspenders: this project's own folder is always named
+  // "spirit", one level up from wherever the server actually runs
+  // (spirit/run) — catches starting from some unrelated folder that
+  // happens to also have app/js/process children.
+  if (path.basename(path.dirname(cwd)) !== 'spirit') {
+    errors.push('expected the current directory\'s parent to be named "spirit" (i.e. running from spirit/run), but it\'s "' + path.basename(path.dirname(cwd)) + '"');
+  }
+
+  if (errors.length > 0) {
+    console.error(
+      'Refusing to start: ' + errors.join('; ') + '. Current directory: ' + cwd + '\n' +
+      'Job spawning resolves script paths relative to wherever this process was started from — ' +
+      'run this as `node js/server.js` from spirit/run, not from inside js/.'
+    );
+    process.exit(1);
+  }
+})();
+
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
 const port = process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
