@@ -1,0 +1,7 @@
+{
+  "name": "Type Designer",
+  "description": "Design a named data type (fields, nested objects, arrays) via chat with Claude, then reuse it in App Builder.",
+  "icon": "OBJECT",
+  "hidden": false,
+  "owner": "system"
+}

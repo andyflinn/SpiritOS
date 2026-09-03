@@ -94,6 +94,10 @@ spirit.shell.activateApp({
         '</div>' +
       '</div>' +
       '<div class="stat-tile wide">' +
+        '<div class="ab-file-path">Uses types</div>' +
+        '<div id="ab-types-list">(none defined yet — see Type Designer)</div>' +
+      '</div>' +
+      '<div class="stat-tile wide">' +
         '<label>Model: <select id="ab-model"></select></label>' +
         '<div id="ab-key-status"></div>' +
       '</div>' +
@@ -117,6 +121,41 @@ spirit.shell.activateApp({
     document.getElementById('ab-key-status').innerHTML = CLAUDE_AVAILABLE.length === 0
       ? '⚠ no Claude model available — configure in AI Manager'
       : '';
+
+    // ---- uses-types checkboxes ----
+    // Types have no live shell-side registry (unlike apps, via spirit.
+    // shell.listApps()) — scanned once at mount from the same raw
+    // fs-watcher snapshot Type Designer itself uses. Not refreshed on
+    // every target switch (matches the project's existing "not
+    // live-reactive" convention for dynamic discovery elsewhere) — a
+    // type created while this app stays open needs a reload to appear.
+    var typesListEl = document.getElementById('ab-types-list');
+    function renderTypeCheckboxes(names) {
+      if (names.length === 0) return; // leave the "(none defined yet)" placeholder
+      typesListEl.innerHTML = names.map(function (n) {
+        return '<label style="margin-right:12px;"><input type="checkbox" class="ab-type-checkbox" value="' + escapeHtml(n) + '"> ' + escapeHtml(n) + '</label>';
+      }).join('');
+    }
+    fetch('/api/jobs')
+      .then(function (res) { return res.json(); })
+      .then(function (jobs) {
+        var fsWatcher = jobs.filter(function (j) { return j.type === 'fs-watcher'; })[0];
+        var files = (fsWatcher && fsWatcher.data && fsWatcher.data.files) || [];
+        var names = files
+          .filter(function (f) { return f.kind === 'file' && /^app\/shared\/types\/[^/]+\.json$/.test(f.relativePath); })
+          .map(function (f) { return f.relativePath.replace(/^app\/shared\/types\//, '').replace(/\.json$/, ''); })
+          .sort();
+        renderTypeCheckboxes(names);
+      });
+
+    function checkedTypes() {
+      return Array.prototype.slice.call(document.querySelectorAll('.ab-type-checkbox:checked')).map(function (cb) { return cb.value; });
+    }
+    function setCheckedTypes(usesTypes) {
+      document.querySelectorAll('.ab-type-checkbox').forEach(function (cb) {
+        cb.checked = usesTypes.indexOf(cb.value) !== -1;
+      });
+    }
 
     // ---- target select ----
     var targetEl = document.getElementById('ab-target');
@@ -218,6 +257,7 @@ spirit.shell.activateApp({
         folderInputEl.value = '';
         nameInputEl.value = '';
         iconInputEl.value = '';
+        setCheckedTypes([]);
         setFormEnabled(true);
         checkIdentity();
         lastGoodTarget = '';
@@ -236,6 +276,14 @@ spirit.shell.activateApp({
       if (app) {
         nameInputEl.value = app.name;
         iconInputEl.value = app.icon;
+      }
+      // usesTypes isn't part of the live app registry (declareDynamicApp
+      // only forwards id/name/icon/hidden/handlesExtensions) — read it off
+      // the raw manifest directly. Same lag-tolerance as above: only set
+      // it when the manifest actually loads, never blank on a lag.
+      var manifestRaw = spirit.core.fs.loadFile(currentTarget + '/' + currentFolder + '.json');
+      if (manifestRaw) {
+        try { setCheckedTypes(JSON.parse(manifestRaw).usesTypes || []); } catch (e) { /* malformed manifest — leave checkboxes as-is */ }
       }
 
       if (!history[currentTarget]) {
@@ -287,6 +335,8 @@ spirit.shell.activateApp({
     // is fixed.
     var SKELETON_JS = [
       '//FILE_BEGINNING',
+      '//TYPE_MODULES_BEGIN',
+      '//TYPE_MODULES_END',
       'spirit.shell.activateApp({',
       '',
       '//START_OF_MODIFIABLE_SECTION',
@@ -334,8 +384,47 @@ spirit.shell.activateApp({
     // included explicitly so this function's output is self-explanatory on
     // its own, without requiring a reader to also know what the kernel does
     // to it afterward.
-    function buildManifestContent(name, icon) {
-      return JSON.stringify({ name: name, icon: icon, hidden: false, owner: 'user' }, null, 2);
+    function buildManifestContent(name, icon, usesTypes) {
+      return JSON.stringify({ name: name, icon: icon, hidden: false, owner: 'user', usesTypes: usesTypes }, null, 2);
+    }
+
+    // Marks the span, inside the fixed (Claude-immutable) header, where a
+    // chosen type's compiled module gets concatenated — a third marker
+    // pair, distinct from START/END_OF_MODIFIABLE_SECTION below, which
+    // governs what Claude may edit. Placed between //FILE_BEGINNING and
+    // spirit.shell.activateApp({ in SKELETON_JS (above), so it's already
+    // part of the "header" validateResponse (below) diffs as one opaque
+    // string — no changes needed there at all; composing this span before
+    // validateResponse ever runs is what makes the diff enforce "the type
+    // module came back unchanged" for free.
+    var TYPE_MODULES_BEGIN = '//TYPE_MODULES_BEGIN';
+    var TYPE_MODULES_END = '//TYPE_MODULES_END';
+
+    // Replaces whatever currently sits between the markers with the
+    // concatenation (alphabetical by type name, so the composed header is
+    // deterministic regardless of checkbox-click order) of each checked
+    // type's already-compiled module. Re-run on every Generate call, not
+    // just at creation — an app's header always reflects the CURRENT
+    // compiled version of whatever types it uses, never a frozen copy.
+    // Falls back to inserting the marker pair fresh, right after
+    // //FILE_BEGINNING, for a real file that predates this feature and
+    // has no markers yet.
+    function composeTypeModules(fileText, typeNames) {
+      var sorted = typeNames.slice().sort();
+      var moduleText = sorted.map(function (name) {
+        return spirit.core.fs.loadFile('app/shared/types/' + name + '.compiled.js') || '';
+      }).join('\n');
+
+      var beginIdx = fileText.indexOf(TYPE_MODULES_BEGIN);
+      var endIdx = fileText.indexOf(TYPE_MODULES_END);
+      if (beginIdx === -1 || endIdx === -1) {
+        var firstNewline = fileText.indexOf('\n');
+        var insertAt = firstNewline === -1 ? fileText.length : firstNewline + 1;
+        return fileText.slice(0, insertAt) + TYPE_MODULES_BEGIN + '\n' + moduleText + '\n' + TYPE_MODULES_END + '\n' + fileText.slice(insertAt);
+      }
+      var before = fileText.slice(0, beginIdx + TYPE_MODULES_BEGIN.length);
+      var after = fileText.slice(endIdx);
+      return before + '\n' + moduleText + '\n' + after;
     }
 
     // One uniform frame for both new and existing apps, no distinction —
@@ -360,10 +449,14 @@ spirit.shell.activateApp({
     // was sent) is exposed separately from the full prompt so
     // validateResponse (below) can compare the response against exactly
     // what was sent, not the whole prompt (preamble + request included).
+    // program's header always carries the CURRENT compiled module for
+    // every checked type (composeTypeModules, above) — recomposed on
+    // every call, not just once at creation.
     function buildMessages(prompt) {
       var preamble = spirit.core.fs.loadFile('app/appBuilder/preamble.md') || '';
       var scriptPath = 'app/' + currentFolder + '/' + currentFolder + '.js';
       var program = currentTarget ? (spirit.core.fs.loadFile(scriptPath) || SKELETON_JS) : SKELETON_JS;
+      program = composeTypeModules(program, checkedTypes());
       var content = preamble + '\n' + prompt + '\n\n' + program;
       return { messages: [{ role: 'user', content: content }], program: program };
     }
@@ -552,7 +645,7 @@ spirit.shell.activateApp({
         // 'system'.
         Promise.all([
           spirit.core.fs.saveAppScript(scriptPath, content),
-          spirit.core.fs.saveAppManifest(manifestPath, buildManifestContent(name, icon)),
+          spirit.core.fs.saveAppManifest(manifestPath, buildManifestContent(name, icon, checkedTypes())),
         ]).then(function () {
           var id = currentTarget || ('app/' + folder);
           if (!history[id]) history[id] = [];
