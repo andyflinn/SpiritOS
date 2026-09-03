@@ -2,10 +2,11 @@
   "name": "spiritos",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
+  "description": "SpiritOS — a sovereign personal operating system. spirit/run/ is the whole product; this file exists only to give it a single, repo-root entry point.",
   "scripts": {
-    "dev:hxm": "cd packages/hxm && npm run dev"
+    "start": "node spirit/run/js/server.js"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
