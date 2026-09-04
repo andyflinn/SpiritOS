@@ -199,7 +199,7 @@ if (isNode()) {
   // the boot-asset allowlist in server.js's static route (a separate,
   // narrower exception), never through the generic fileServable-gated
   // path loadFile/scanFolder/the rest of the static route all share.
-  const UNSERVABLE_FILES = ['js/kernel.js', 'js/jobs.js', 'js/server.js'];
+  const UNSERVABLE_FILES = ['js/kernel.js', 'js/jobs.js', 'js/server.js', 'js/relay.js', 'js/hub.js'];
 
   // Consolidates what saveFile/deleteFile each used to inline-check
   // separately. Path-only, caller-independent by design — see kernel.js's
