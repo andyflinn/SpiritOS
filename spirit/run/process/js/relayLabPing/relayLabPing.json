@@ -1,0 +1,5 @@
+{
+  "label": "Relay Lab Ping",
+  "description": "Lab check: claim andy on the isolated relay, send one line to bert, read bert's inbox, log each hop. Requires the three temp nodes from spirit/test (relay :65430, andy :65431). 409 on a repeat claim is OK.",
+  "args": []
+}
