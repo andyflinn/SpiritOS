@@ -5,6 +5,24 @@ const spirit = require('./kernel');
 
 //console.log(JSON.stringify(spirit,null,2));
 
+// Checked before verifyStartupCwd below, on purpose — --help should work
+// regardless of which directory this was launched from, not get refused
+// alongside every other startup mistake.
+if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  console.log(
+    'Usage: node js/server.js [--port <number>]\n\n' +
+    '  --port <number>   Listen on this port instead of the default (' + spirit.core.node.const.DEFAULT_SPIRIT_PORT + ').\n' +
+    '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
+    '  --help, -h        Show this message and exit.\n\n' +
+    'Examples:\n' +
+    '  node js/server.js\n' +
+    '  node js/server.js --port 65431\n' +
+    '  PORT=65431 node js/server.js\n\n' +
+    'Must be run from spirit/run/ (this directory\'s parent must be named "spirit") — see the startup check below if that fails.'
+  );
+  process.exit(0);
+}
+
 // Job spawning (jobs.js's startProcessJob) passes relative script paths
 // like "process/js/lmStudioLoadModel/lmStudioLoadModel.js" straight to
 // child_process.spawn without ever setting an explicit cwd, so it
@@ -49,7 +67,20 @@ const spirit = require('./kernel');
 
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
-const port = process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
+
+// --port <n> / --port=<n> takes precedence over PORT, for running a
+// second instance ad hoc (e.g. an installer/reinstall test alongside a
+// dev instance already holding the default port) without having to set
+// an environment variable first.
+function portFromArgs(argv) {
+  const eqArg = argv.find((arg) => arg.startsWith('--port='));
+  if (eqArg) return Number(eqArg.slice('--port='.length));
+  const flagIndex = argv.indexOf('--port');
+  if (flagIndex !== -1 && argv[flagIndex + 1] !== undefined) return Number(argv[flagIndex + 1]);
+  return null;
+}
+
+const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 
 // The small, fixed set of paths the page needs to boot at all, served
 // unconditionally by the static route below, checked before fileServable —
@@ -533,6 +564,24 @@ const server = http.createServer((req, res) => {
 // with a 403 — this just makes it fail at the TCP level instead, with the
 // same net result. Revert to server.listen(port, ...) (no host) if this
 // node ever needs to be reachable from another device on purpose.
+// Without this, a failed listen() (most commonly EADDRINUSE — another
+// SpiritOS instance, or anything else, already on this port) surfaces as
+// a raw unhandled 'error' event and a Node internals stack trace, same
+// failure class verifyStartupCwd() above already fails loud and clear
+// for instead.
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(
+      `Refusing to start: port ${port} is already in use — probably another SpiritOS instance (or anything else) already listening there.\n\n` +
+      `Try a different port:\n` +
+      `    node js/server.js --port ${port + 1}`
+    );
+  } else {
+    console.error(`Refusing to start: ${err.message}`);
+  }
+  process.exit(1);
+});
+
 server.listen(port, '127.0.0.1', () => {
   console.log(`Server listening on http://localhost:${port}`);
 });
