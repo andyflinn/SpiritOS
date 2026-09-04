@@ -153,7 +153,6 @@ function readJsonBody(req) {
   });
 }
 
-
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
     const result = relay.claim(body && body.name);
@@ -163,11 +162,6 @@ function handleRelayClaim(req, res) {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Invalid JSON body');
   });
-}
-
-function handleRelayWho(res) {
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ peers: relay.who() }));
 }
 
 function handleSseConnection(req, res) {
@@ -468,9 +462,41 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = decodeURIComponent(url.pathname);
 
-if (req.method === 'GET' && pathname === '/api/relay/who') {
+  if (req.method === 'GET' && pathname === '/api/relay/who') {
     handleRelayWho(res);
     return;
+  }
+  
+  if (req.method === 'GET' && pathname === '/api/relay/who') {
+    handleRelayWho(res);
+    return;
+  }
+
+if (req.method === 'GET' && pathname === '/api/relay/inbox') {
+    handleRelayInbox(req, res, url);
+    return;
+  }
+  
+  function handleRelaySend(req, res) {
+  readJsonBody(req).then(function (body) {
+    var result = relay.send(body && body.from, body && body.to, body && body.text);
+    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(result.ok ? result.message : { error: result.error }));
+  }).catch(function () {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+  }
+
+  function handleRelayInbox(req, res, url) {
+    var result = relay.inbox(url.searchParams.get('name') || '');
+    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(result.ok ? { messages: result.messages } : { error: result.error }));
+  }
+
+  function handleRelayWho(res) {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ peers: relay.who() }));
   }
   
   if (req.method === 'GET' && pathname === '/api/events') {
@@ -542,7 +568,10 @@ if (req.method === 'GET' && pathname === '/api/relay/who') {
       return;
     }
 
-    if (pathname === '/api/fs/save-app-script') {
+    if (pathname === '/api/relay/send') {
+      handleRelaySend(req, res);
+      return;
+    }if (pathname === '/api/fs/save-app-script') {
       handleFsSaveAppScript(req, res);
       return;
     }
