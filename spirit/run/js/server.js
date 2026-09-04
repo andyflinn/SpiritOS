@@ -151,6 +151,23 @@ function readJsonBody(req) {
   });
 }
 
+
+function handleRelayClaim(req, res) {
+  readJsonBody(req).then(function (body) {
+    const result = relay.claim(body && body.name);
+    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(result.ok ? result.peer : { error: result.error }));
+  }).catch(function () {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+function handleRelayWho(res) {
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify({ peers: relay.who() }));
+}
+
 function handleSseConnection(req, res) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -449,6 +466,11 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = decodeURIComponent(url.pathname);
 
+if (req.method === 'GET' && pathname === '/api/relay/who') {
+    handleRelayWho(res);
+    return;
+  }
+  
   if (req.method === 'GET' && pathname === '/api/events') {
     handleSseConnection(req, res);
     return;
@@ -509,6 +531,11 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST') {
     if (pathname === '/api/fs/save') {
       handleFsSave(req, res);
+      return;
+    }
+
+    if (pathname === '/api/relay/claim') {
+      handleRelayClaim(req, res);
       return;
     }
 

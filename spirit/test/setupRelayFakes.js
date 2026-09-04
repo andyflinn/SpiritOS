@@ -1,7 +1,7 @@
 // Copies every tracked spirit/ file (test/ and anything gitignored already
 // excluded, same as install/microscopic/create.js) into each fake node's
 // own folder under the OS temp dir — never inside OneDrive (this repo
-// lives under OneDrive\repo\SpiritOS), so two "nodes" here are genuinely
+// lives under OneDrive\repo\SpiritOS), so the nodes here are genuinely
 // separate disks, not secretly shared by cloud sync. Only ever writes
 // tracked paths, so a target's own accumulated local state (relays.json,
 // preferences.json, ...) is never touched on rerun — each call refreshes
@@ -15,7 +15,7 @@ const { execSync } = require('child_process');
 
 const REPO_ROOT = path.join(__dirname, '..', '..');
 const FAKES_ROOT = path.join(os.tmpdir(), 'spiritos-relay-fakes');
-const NODE_NAMES = ['relay', 'buddy'];
+const NODE_NAMES = ['relay', 'andy', 'bert'];
 
 function setupRelayFakes() {
   const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', { cwd: REPO_ROOT, encoding: 'utf8' })
@@ -32,7 +32,7 @@ function setupRelayFakes() {
     });
     targets[name] = path.join(targetRoot, 'spirit', 'run');
   });
-  return targets; // { relay: '<tmp>/spiritos-relay-fakes/relay/spirit/run', buddy: '...' }
+  return targets; // { relay, andy, bert } → each '.../spiritos-relay-fakes/<name>/spirit/run'
 }
 
 module.exports = { setupRelayFakes, FAKES_ROOT };

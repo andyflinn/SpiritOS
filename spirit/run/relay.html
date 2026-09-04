@@ -1,8 +1,32 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>SpiritOS Relay</title></head>
+<head>
+  <meta charset="utf-8">
+  <title>SpiritOS Relay</title>
+</head>
 <body>
-<h1>SpiritOS Relay</h1>
-<p>This node is running in relay mode.</p>
+  <h1>SpiritOS Relay</h1>
+  <p>Claimed names on this process (gone when the process dies):</p>
+  <ul id="peers"><li>loading…</li></ul>
+  <script>
+    function render(peers) {
+      var ul = document.getElementById('peers');
+      if (!peers.length) {
+        ul.innerHTML = '<li>(none)</li>';
+        return;
+      }
+      ul.innerHTML = peers.map(function (p) {
+        return '<li>' + p.name + ' <small>' + p.claimedAt + '</small></li>';
+      }).join('');
+    }
+    function refresh() {
+      fetch('/api/relay/who')
+        .then(function (r) { return r.json(); })
+        .then(function (data) { render(data.peers || []); })
+        .catch(function () { document.getElementById('peers').innerHTML = '<li>who failed</li>'; });
+    }
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
 </body>
 </html>
