@@ -36,7 +36,6 @@ release
 preferences.json
 conversation.json
 history.json
-relays.json
 log.jsonl
 spirit/run/app/shared/aiStatus.json
 spirit/run/process/js/lmStudioVisionProbe/results.json

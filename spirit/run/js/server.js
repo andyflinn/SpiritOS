@@ -73,6 +73,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
+const hub = require('./hub').createHub(ROOT_DIR);
+
+
 // --port <n> / --port=<n> takes precedence over PORT, for running a
 // second instance ad hoc (e.g. an installer/reinstall test alongside a
 // dev instance already holding the default port) without having to set
@@ -466,13 +469,8 @@ const server = http.createServer((req, res) => {
     handleRelayWho(res);
     return;
   }
-  
-  if (req.method === 'GET' && pathname === '/api/relay/who') {
-    handleRelayWho(res);
-    return;
-  }
 
-if (req.method === 'GET' && pathname === '/api/relay/inbox') {
+  if (req.method === 'GET' && pathname === '/api/relay/inbox') {
     handleRelayInbox(req, res, url);
     return;
   }
@@ -571,7 +569,19 @@ if (req.method === 'GET' && pathname === '/api/relay/inbox') {
     if (pathname === '/api/relay/send') {
       handleRelaySend(req, res);
       return;
-    }if (pathname === '/api/fs/save-app-script') {
+    }
+    
+    if (pathname === '/api/hub/claim') {
+      hub.handleClaim(req, res, readJsonBody);
+      return;
+    }
+
+    if (pathname === '/api/hub/send') {
+      hub.handleSend(req, res, readJsonBody);
+      return;
+    }    
+    
+    if (pathname === '/api/fs/save-app-script') {
       handleFsSaveAppScript(req, res);
       return;
     }
