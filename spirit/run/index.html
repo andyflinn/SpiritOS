@@ -156,6 +156,11 @@
 
       .media-view { max-width: 100%; margin-top: 12px; display: block; }
 
+      /* renderAnnotationsSection's "More Information" cards (shell.js) */
+      .stat-tile.nested { margin-top: 8px; background: rgba(255, 255, 255, 0.04); }
+      .annotation-raw summary { cursor: pointer; font-size: 13px; opacity: 0.8; }
+      .annotation-raw pre { margin: 6px 0 0; }
+
       #process-search {
         width: 100%;
         padding: 6px 8px;
@@ -344,6 +349,7 @@
         var CATEGORY_APP_HANDLERS = spirit.shell.CATEGORY_APP_HANDLERS;
         var setViewerTitle = spirit.shell.setViewerTitle;
         var renderFileInfoBubble = spirit.shell.renderFileInfoBubble;
+        var renderAnnotationsSection = spirit.shell.renderAnnotationsSection;
         var renderAppGroup = spirit.shell.renderAppGroup;
         var listApps = spirit.shell.listApps;
         var getAppOverride = spirit.shell.getAppOverride;
@@ -715,7 +721,8 @@
             renderFileInfoBubble(path) +
             '<div id="open-with"></div>' +
             '<div id="job-manifest-form"></div>' +
-            '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>';
+            '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>' +
+            renderAnnotationsSection(path);
           renderOpenWith(document.getElementById('open-with'), 'text-file-launcher', path);
           maybeRenderJobForm(document.getElementById('cv-body'), path);
         }
@@ -750,7 +757,8 @@
           document.getElementById('mv-body').innerHTML =
             renderFileInfoBubble(path) +
             '<div id="open-with"></div>' +
-            '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>';
+            '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>' +
+            renderAnnotationsSection(path);
           renderOpenWith(document.getElementById('open-with'), 'media-launcher', path);
         }
 

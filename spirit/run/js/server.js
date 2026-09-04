@@ -51,6 +51,14 @@ const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
 const port = process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 
+// The small, fixed set of paths the page needs to boot at all, served
+// unconditionally by the static route below, checked before fileServable —
+// this is what lets js/kernel.js sit in kernel.js's UNSERVABLE_FILES
+// (blocking the *generic* read/list capability: loadFile, scanFolder, the
+// Files app, the fs-watcher) while still working as the page's own boot
+// script.
+const BOOT_ASSETS = ['index.html', 'js/kernel.js', 'js/client/shell.js', 'favicon.svg'];
+
 const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
 
@@ -209,6 +217,11 @@ function writeFsResult(res, result) {
     res.end('Bad request: manifest content is not valid JSON');
     return;
   }
+  if (result.reason === 'file-not-found') {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+    return;
+  }
   res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Internal error');
 }
@@ -251,6 +264,18 @@ function handleFsSaveAppManifest(req, res) {
 function handleFsDelete(req, res) {
   readJsonBody(req).then((body) => {
     writeFsResult(res, spirit.core.fs.deleteFile(body.path));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+// Writes into the target file's sidecar 'client' bucket only — see
+// spirit.core.fs.annotateFile (kernel.js) for why no bucket argument is
+// accepted here even in principle.
+function handleFsAnnotate(req, res) {
+  readJsonBody(req).then((body) => {
+    writeFsResult(res, spirit.core.fs.annotateFile(body.path, body.payload));
   }).catch(() => {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Invalid JSON body');
@@ -398,7 +423,14 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/fs/annotations') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(spirit.core.fs.getAnnotations(url.searchParams.get('path') || '')));
+    return;
+  }
+
   if (req.method === 'GET') {
+    const relativePath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
     const filePath = pathname === '/'
       ? path.join(ROOT_DIR, 'index.html')
       : fsPath(ROOT_DIR, pathname);
@@ -406,6 +438,17 @@ const server = http.createServer((req, res) => {
     if (!filePath) {
       res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Forbidden');
+      return;
+    }
+
+    // This route is a completely independent path to the filesystem from
+    // kernel.js's own loadFile — it's the raw route the browser's
+    // synchronous loadFile XHR hits directly. Boot assets bypass the
+    // generic gate unconditionally; everything else goes through the same
+    // fileServable check loadFile/scanFolder use.
+    if (BOOT_ASSETS.indexOf(relativePath) === -1 && !spirit.core.fs.fileServable(relativePath)) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Not found');
       return;
     }
 
@@ -431,6 +474,11 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/fs/delete') {
       handleFsDelete(req, res);
+      return;
+    }
+
+    if (pathname === '/api/fs/annotate') {
+      handleFsAnnotate(req, res);
       return;
     }
 

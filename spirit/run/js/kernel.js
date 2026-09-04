@@ -112,6 +112,8 @@ if (isNode()) {
   let loadFile = spirit.core.fs.loadFile =
   function(filePath){
 
+    if (!fileServable(filePath)) return null;
+
     filePath = fsPath(ROOT_DIR,filePath);
 
     try {
@@ -125,6 +127,7 @@ if (isNode()) {
   // the writable roots) — file metadata for display purposes (viewer info
   // bubbles), not a write capability.
   let statFile = spirit.core.fs.statFile = function(filePath){
+    if (!fileServable(filePath)) return null;
     const resolved = fsPath(ROOT_DIR, filePath);
     if (!resolved) return null;
     try {
@@ -184,11 +187,48 @@ if (isNode()) {
   // trusting the caller's content.
   const MANIFEST_PATTERN = /^app\/([^/]+)\/\1\.json$/;
 
+  // The one sidecar per annotated file gets a suffix, never a same-name
+  // extension swap — <file>.sidecar.json can never collide with the
+  // target itself, whatever the target's own extension is (a plain
+  // extension-replace, like an earlier hand-rolled convention this
+  // project also had, collides for any target that's already .json).
+  const SIDECAR_SUFFIX = '.sidecar.json';
+
+  // These three never reach a browser at all — jobs.js/server.js have no
+  // isBrowser() half to justify it, and kernel.js's is served only via
+  // the boot-asset allowlist in server.js's static route (a separate,
+  // narrower exception), never through the generic fileServable-gated
+  // path loadFile/scanFolder/the rest of the static route all share.
+  const UNSERVABLE_FILES = ['js/kernel.js', 'js/jobs.js', 'js/server.js'];
+
+  // Consolidates what saveFile/deleteFile each used to inline-check
+  // separately. Path-only, caller-independent by design — see kernel.js's
+  // own broader comments on this: nothing server-side can verify which
+  // app is really asking, only whether the path itself is allowed.
+  function fileWritable(filePath) {
+    const resolved = fsPath(ROOT_DIR, filePath);
+    if (!resolved || !isWithinWritableRoot(resolved)) return false;
+    if (APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return false;
+    if (MANIFEST_PATTERN.test(filePath)) return false;
+    if (filePath.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFile touches a sidecar's own path
+    return true;
+  }
+
+  // Same idea as fileWritable, for "can this path ever be read or listed
+  // at all" instead of "written". A sidecar is hidden from every generic
+  // consumer the same way — the only sanctioned way to see one is through
+  // getAnnotations, never loadFile/scanFolder/the static route.
+  function fileServable(filePath) {
+    if (UNSERVABLE_FILES.indexOf(filePath) !== -1) return false;
+    if (filePath.endsWith(SIDECAR_SUFFIX)) return false;
+    return true;
+  }
+  spirit.core.fs.fileWritable = fileWritable;
+  spirit.core.fs.fileServable = fileServable;
+
   let saveFile = spirit.core.fs.saveFile = function(filePath, content){
     const resolved = fsPath(ROOT_DIR, filePath);
-    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
-    if (APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return { ok: false, reason: 'app-entry-script-protected' }; // see saveAppScript, below, for the one deliberate exception
-    if (MANIFEST_PATTERN.test(filePath)) return { ok: false, reason: 'app-manifest-protected' }; // see saveAppManifest, below, for the one deliberate exception
+    if (!fileWritable(filePath)) return { ok: false, reason: 'forbidden' };
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
@@ -259,7 +299,7 @@ if (isNode()) {
 
   let deleteFile = spirit.core.fs.deleteFile = function(filePath){
     const resolved = fsPath(ROOT_DIR, filePath);
-    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    if (!fileWritable(filePath)) return { ok: false, reason: 'forbidden' };
     try {
       fs.unlinkSync(resolved);
       return { ok: true };
@@ -268,6 +308,61 @@ if (isNode()) {
       error(err);
       return { ok: false, reason: 'error' };
     }
+  };
+
+  // Per-file annotation interface: one sidecar JSON file colocated with the
+  // target (<file>.sidecar.json), exactly two top-level buckets. 'client' is
+  // the only bucket any external caller — a browser app or a spawned process
+  // script alike — can ever reach, because annotateFile (the only exported
+  // entry point) never accepts a bucket argument. 'server' is reserved for
+  // kernel.js/server.js/jobs.js's own internal use and is unused so far —
+  // nothing in this pass writes it; a future kernel-internal caller would
+  // reach it only via writeBucket('server', ...) directly, never through
+  // annotateFile. See fileWritable/fileServable above for why buckets aren't
+  // further subdivided per-caller: nothing server-side can verify which app
+  // is really asking.
+  function sidecarPathFor(filePath) {
+    return filePath + SIDECAR_SUFFIX;
+  }
+
+  function readSidecar(filePath) {
+    const resolved = fsPath(ROOT_DIR, sidecarPathFor(filePath));
+    try {
+      return JSON.parse(fs.readFileSync(resolved, 'utf8'));
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function writeBucket(bucket, filePath, payload) {
+    if (!fileWritable(filePath)) return { ok: false, reason: 'forbidden' };
+    const resolvedTarget = fsPath(ROOT_DIR, filePath);
+    let stat;
+    try {
+      stat = fs.statSync(resolvedTarget);
+    } catch (err) {
+      // target doesn't exist — stat stays undefined, handled below
+    }
+    if (!stat || !stat.isFile()) return { ok: false, reason: 'file-not-found' };
+    const sidecar = readSidecar(filePath);
+    sidecar[bucket] = payload;
+    const resolvedSidecar = fsPath(ROOT_DIR, sidecarPathFor(filePath));
+    fs.mkdirSync(path.dirname(resolvedSidecar), { recursive: true });
+    fs.writeFileSync(resolvedSidecar, JSON.stringify(sidecar, null, 2), 'utf8');
+    return { ok: true };
+  }
+
+  // The only entry point anything outside kernel.js's own code can reach —
+  // always writes 'client', wholesale (not a deep merge). A caller adding one
+  // key without disturbing its others must read-modify-write via
+  // getAnnotations(...).client first.
+  let annotateFile = spirit.core.fs.annotateFile = function(filePath, payload) {
+    return writeBucket('client', filePath, payload);
+  };
+
+  let getAnnotations = spirit.core.fs.getAnnotations = function(filePath) {
+    if (!fileServable(filePath)) return {};
+    return readSidecar(filePath); // {} if none — both buckets, whole
   };
 
   // Directories no tool should ever need to see: dependency trees and VCS
@@ -295,7 +390,16 @@ if (isNode()) {
                   result.push(entry);
 
               } else if (entry.isFile()) {
-                  result.push(entry);
+                  // fileServable expects a ROOT_DIR-relative, forward-slashed
+                  // path — the same shape jobs.js's mapEntry later derives
+                  // independently for the same entry. path.resolve (not a
+                  // plain join) is needed here because scanFolder is called
+                  // both with an absolute dirPath (jobs.js's fs-watcher) and
+                  // a relative one (loadFolder's './'), and entry.parentPath
+                  // inherits whichever style the initial call used.
+                  const fullPath = path.resolve(entry.parentPath, entry.name);
+                  const relativePath = path.relative(ROOT_DIR, fullPath).replace(/\\/g, '/');
+                  if (fileServable(relativePath)) result.push(entry);
               }
 
       }
@@ -460,6 +564,23 @@ if (isNode()) {
     xmlhttp.send();
     if (xmlhttp.status == 200) {
       try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = null; }
+    }
+    return result;
+  };
+
+  // Sync, same as loadFile/statFile — "More Information" data any tool has
+  // recorded about this file via annotateFile (kernel.js's Node side), via
+  // the /api/fs/annotations proxy (no direct filesystem access from the
+  // browser). Always resolves to an object — {} both when nothing's been
+  // recorded and when the request itself fails — so callers never need a
+  // null-check before reading .client.
+  spirit.core.fs.getAnnotations = function(filePath) {
+    let result = {};
+    let xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("GET", "/api/fs/annotations?path=" + encodeURIComponent(filePath), false);
+    xmlhttp.send();
+    if (xmlhttp.status == 200) {
+      try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = {}; }
     }
     return result;
   };

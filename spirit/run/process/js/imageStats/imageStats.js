@@ -62,21 +62,16 @@ async function main() {
   for (let i = 0; i < images.length; i++) {
     const fullPath = images[i];
     const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, '/');
-    const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
     const percent = Math.round((i / images.length) * 100);
 
-    const existingRaw = spirit.core.fs.loadFile(sidecarPath);
-    let sidecar = {};
-    if (existingRaw != null) {
-      try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
-    }
+    // Own key inside the sidecar's 'client' bucket — a sidecar may carry
+    // other tools' records too (see the untouched-other-keys note below).
+    const clientBucket = spirit.core.fs.getAnnotations(relativePath).client || {};
 
     // Two-tier staleness check (mtime cheap pre-filter, content hash to
     // confirm) — see spirit.core.node.util.checkStaleness (kernel.js).
-    // Recorded against THIS tool's own key, since a sidecar may carry
-    // other tools' records too (see the untouched-other-keys note below).
-    const priorRecord = (sidecar.spiritImageStats && sidecar.spiritImageStats.mtimeMs != null)
-      ? { mtimeMs: sidecar.spiritImageStats.mtimeMs, contentHash: sidecar.spiritImageStats.contentHash }
+    const priorRecord = (clientBucket.spiritImageStats && clientBucket.spiritImageStats.mtimeMs != null)
+      ? { mtimeMs: clientBucket.spiritImageStats.mtimeMs, contentHash: clientBucket.spiritImageStats.contentHash }
       : null;
     const staleness = spirit.core.node.util.checkStaleness(fullPath, priorRecord);
 
@@ -85,9 +80,9 @@ async function main() {
         // mtime moved but content didn't — update the stored record so
         // future runs go back to the cheap mtime-only path instead of
         // re-hashing this file forever.
-        sidecar.spiritImageStats.mtimeMs = staleness.refreshRecord.mtimeMs;
-        sidecar.spiritImageStats.contentHash = staleness.refreshRecord.contentHash;
-        spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
+        clientBucket.spiritImageStats.mtimeMs = staleness.refreshRecord.mtimeMs;
+        clientBucket.spiritImageStats.contentHash = staleness.refreshRecord.contentHash;
+        spirit.core.fs.annotateFile(relativePath, clientBucket);
       }
       skipped++;
       await spirit.core.jobs.log('skipping (already up to date) ' + (i + 1) + '/' + images.length + ': ' + relativePath);
@@ -100,10 +95,10 @@ async function main() {
       const imageStats = await computeStatsForImage(fullPath);
       imageStats.mtimeMs = staleness.newRecord.mtimeMs;
       imageStats.contentHash = staleness.newRecord.contentHash;
-      sidecar.spiritImageStats = imageStats; // this tool's own key — every other key is left untouched
+      clientBucket.spiritImageStats = imageStats; // this tool's own key — every other key is left untouched
 
-      const result = spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
-      if (!result.ok) throw new Error('saveFile failed: ' + result.reason);
+      const result = spirit.core.fs.annotateFile(relativePath, clientBucket);
+      if (!result.ok) throw new Error('annotateFile failed: ' + result.reason);
 
       processed++;
       await spirit.core.jobs.log('processed ' + processed + '/' + images.length + ': ' + relativePath);

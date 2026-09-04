@@ -83,29 +83,26 @@ async function main() {
   for (let i = 0; i < images.length; i++) {
     const fullPath = images[i];
     const relativePath = path.relative(rootDir, fullPath).replace(/\\/g, '/');
-    const sidecarPath = relativePath.replace(/\.[^.]+$/, '.json');
     const percent = Math.round((i / images.length) * 100);
 
-    const existingRaw = spirit.core.fs.loadFile(sidecarPath);
-    let sidecar = {};
-    if (existingRaw != null) {
-      try { sidecar = JSON.parse(existingRaw); } catch (e) { sidecar = {}; }
-    }
+    // Own key inside the sidecar's 'client' bucket — a sidecar may carry
+    // other tools' records too.
+    const clientBucket = spirit.core.fs.getAnnotations(relativePath).client || {};
 
     // Skip anything already captioned and unchanged since — this is a
     // paid API call per image, so this check matters more here than
     // anywhere else it's used. See spirit.core.node.util.checkStaleness
     // (kernel.js).
-    const priorRecord = (sidecar.spiritImageCaptionClaude && sidecar.spiritImageCaptionClaude.mtimeMs != null)
-      ? { mtimeMs: sidecar.spiritImageCaptionClaude.mtimeMs, contentHash: sidecar.spiritImageCaptionClaude.contentHash }
+    const priorRecord = (clientBucket.spiritImageCaptionClaude && clientBucket.spiritImageCaptionClaude.mtimeMs != null)
+      ? { mtimeMs: clientBucket.spiritImageCaptionClaude.mtimeMs, contentHash: clientBucket.spiritImageCaptionClaude.contentHash }
       : null;
     const staleness = spirit.core.node.util.checkStaleness(fullPath, priorRecord);
 
     if (!staleness.stale) {
       if (staleness.refreshRecord) {
-        sidecar.spiritImageCaptionClaude.mtimeMs = staleness.refreshRecord.mtimeMs;
-        sidecar.spiritImageCaptionClaude.contentHash = staleness.refreshRecord.contentHash;
-        spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
+        clientBucket.spiritImageCaptionClaude.mtimeMs = staleness.refreshRecord.mtimeMs;
+        clientBucket.spiritImageCaptionClaude.contentHash = staleness.refreshRecord.contentHash;
+        spirit.core.fs.annotateFile(relativePath, clientBucket);
       }
       skipped++;
       await spirit.core.jobs.log('skipping (already up to date) ' + (i + 1) + '/' + images.length + ': ' + relativePath);
@@ -117,7 +114,7 @@ async function main() {
     try {
       const result = await captionImage(fullPath);
 
-      sidecar.spiritImageCaptionClaude = {
+      clientBucket.spiritImageCaptionClaude = {
         caption: result.caption,
         tags: result.tags,
         model: MODEL,
@@ -126,8 +123,8 @@ async function main() {
         contentHash: staleness.newRecord.contentHash,
       };
 
-      const saveResult = spirit.core.fs.saveFile(sidecarPath, JSON.stringify(sidecar, null, 2));
-      if (!saveResult.ok) throw new Error('saveFile failed: ' + saveResult.reason);
+      const saveResult = spirit.core.fs.annotateFile(relativePath, clientBucket);
+      if (!saveResult.ok) throw new Error('annotateFile failed: ' + saveResult.reason);
 
       processed++;
       await spirit.core.jobs.log('processed ' + processed + '/' + images.length + ': ' + relativePath);
