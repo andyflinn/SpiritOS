@@ -2,6 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const spirit = require('./kernel');
+const createRelay = require('./relay');
+const relay = createRelay.createRelay();
 
 //console.log(JSON.stringify(spirit,null,2));
 
@@ -157,7 +159,7 @@ function handleRelayClaim(req, res) {
     const result = relay.claim(body && body.name);
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(result.ok ? result.peer : { error: result.error }));
-  }).catch(function () {
+  }).catch(function (err) {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Invalid JSON body');
   });
@@ -529,6 +531,7 @@ if (req.method === 'GET' && pathname === '/api/relay/who') {
   }
 
   if (req.method === 'POST') {
+    
     if (pathname === '/api/fs/save') {
       handleFsSave(req, res);
       return;
