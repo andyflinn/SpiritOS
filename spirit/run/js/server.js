@@ -10,13 +10,16 @@ const spirit = require('./kernel');
 // alongside every other startup mistake.
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(
-    'Usage: node js/server.js [--port <number>]\n\n' +
+    'Usage: node js/server.js [--port <number>] [--relay]\n\n' +
     '  --port <number>   Listen on this port instead of the default (' + spirit.core.node.const.DEFAULT_SPIRIT_PORT + ').\n' +
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
+    '  --relay           Serve relay.html instead of index.html at / and /index.html — every\n' +
+    '                    other route (app scripts, /api/*, etc.) still works exactly as normal.\n' +
     '  --help, -h        Show this message and exit.\n\n' +
     'Examples:\n' +
     '  node js/server.js\n' +
     '  node js/server.js --port 65431\n' +
+    '  node js/server.js --port 65430 --relay\n' +
     '  PORT=65431 node js/server.js\n\n' +
     'Must be run from spirit/run/ (this directory\'s parent must be named "spirit") — see the startup check below if that fails.'
   );
@@ -82,13 +85,28 @@ function portFromArgs(argv) {
 
 const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 
+// First step toward the public relay/hub vision (server #3) — deliberately
+// just a routing switch for now. The actual relay protocol (signed-
+// challenge auth against an allowed-public-keys list, message delivery) is
+// separate, later work. Nothing is removed in this mode: every existing
+// route, the full desktop shell, the job system, etc. all stay reachable
+// by their own path — this only changes what GET / and GET /index.html
+// resolve to, so a relay node's owner can still reach their own normal
+// SpiritOS UI directly if they want to, while a first-time visitor hitting
+// the root path gets a much smaller surface with room to grow into a real
+// relay UI later.
+const relayMode = process.argv.slice(2).includes('--relay');
+const HOME_PAGE = relayMode ? 'relay.html' : 'index.html';
+
 // The small, fixed set of paths the page needs to boot at all, served
 // unconditionally by the static route below, checked before fileServable —
 // this is what lets js/kernel.js sit in kernel.js's UNSERVABLE_FILES
 // (blocking the *generic* read/list capability: loadFile, scanFolder, the
 // Files app, the fs-watcher) while still working as the page's own boot
-// script.
-const BOOT_ASSETS = ['index.html', 'js/kernel.js', 'js/client/shell.js', 'favicon.svg'];
+// script. Both index.html and relay.html are listed unconditionally
+// (not just whichever HOME_PAGE resolved to) — either is reachable by its
+// own literal path regardless of mode, this just keeps both bootable.
+const BOOT_ASSETS = ['index.html', 'relay.html', 'js/kernel.js', 'js/client/shell.js', 'favicon.svg'];
 
 const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
@@ -461,9 +479,10 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET') {
-    const relativePath = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-    const filePath = pathname === '/'
-      ? path.join(ROOT_DIR, 'index.html')
+    const isHomeRequest = pathname === '/' || pathname === '/index.html';
+    const relativePath = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
+    const filePath = isHomeRequest
+      ? path.join(ROOT_DIR, HOME_PAGE)
       : fsPath(ROOT_DIR, pathname);
 
     if (!filePath) {
