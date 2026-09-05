@@ -22,7 +22,7 @@ const STATE_DIR = path.join(os.tmpdir(), 'spiritos-lab-master');
 const STATE_FILE = path.join(STATE_DIR, 'nodes.json');
 const PANEL_FILE = path.join(__dirname, 'labMastPanel.html');
 
-const children = Object.create(null); // id → ChildProcess we spawned
+const children = Object.create(null);
 
 function slugName(name) {
   return String(name || '')
@@ -98,8 +98,45 @@ function findNode(id) {
   return nodes.find(function (n) { return n.id === id; });
 }
 
+function pidsOnPort(port) {
+  const pids = {};
+  try {
+    if (process.platform === 'win32') {
+      const out = execSync('netstat -ano', { encoding: 'utf8' });
+      const re = new RegExp('[:.]' + port + '\\s+\\S+\\s+\\S+\\s+LISTENING\\s+(\\d+)', 'gi');
+      let m;
+      while ((m = re.exec(out))) pids[m[1]] = true;
+    } else {
+      const out = execSync('ss -tlnp', { encoding: 'utf8' });
+      const re = new RegExp(':' + port + '\\b.*pid=(\\d+)', 'gi');
+      let m;
+      while ((m = re.exec(out))) pids[m[1]] = true;
+    }
+  } catch (e) { /* tools missing */ }
+  return Object.keys(pids).map(Number).filter(function (pid) {
+    return pid > 0 && pid !== process.pid;
+  });
+}
+
+function portHasListener(port) {
+  return pidsOnPort(port).length > 0;
+}
+
+function killPids(pids) {
+  pids.forEach(function (pid) {
+    try {
+      if (process.platform === 'win32') {
+        execSync('taskkill /F /PID ' + pid, { stdio: 'ignore' });
+      } else {
+        process.kill(pid, 'SIGTERM');
+      }
+    } catch (e) { /* already gone */ }
+  });
+}
+
 function publicNode(n) {
   const child = children[n.id];
+  const mine = !!(child && child.exitCode == null);
   return {
     id: n.id,
     name: n.name,
@@ -107,8 +144,8 @@ function publicNode(n) {
     port: n.port,
     permanent: !!n.permanent,
     home: n.home,
-    pid: child && !child.killed ? child.pid : n.pid,
-    running: !!(child && child.exitCode == null),
+    pid: mine ? child.pid : (pidsOnPort(n.port)[0] || null),
+    running: mine || portHasListener(n.port),
     lastError: n.lastError || '',
     startedAt: n.startedAt,
   };
@@ -180,12 +217,13 @@ function startNode(node) {
 
 function stopNode(node) {
   const child = children[node.id];
-  if (!child || child.exitCode != null) {
-    node.running = false;
-    node.pid = null;
-    return { ok: true, note: 'not my child' };
+  if (child && child.exitCode == null) {
+    try { child.kill(); } catch (e) { /* already gone */ }
+    delete children[node.id];
   }
-  child.kill();
+  killPids(pidsOnPort(node.port));
+  node.running = false;
+  node.pid = null;
   return { ok: true };
 }
 
@@ -263,8 +301,8 @@ function handleStart(node) {
 }
 
 function handleStop(node) {
-  const result = stopNode(node);
-  return { status: 200, node: publicNode(node), note: result.note };
+  stopNode(node);
+  return { status: 200, node: publicNode(node) };
 }
 
 function handleRecycle(node) {
