@@ -1,14 +1,29 @@
 'use strict';
 
-// In-memory claimed presence + mailbox for --relay. Process lifetime only.
-// Names are believed as sent. Duplicate name → 409.
+const fs = require('fs');
+const path = require('path');
 
 var MAX_MESSAGES = 200;
+
+function loadAllow(rootDir) {
+  try {
+    var raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'allow.json'), 'utf8');
+    var parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.names)) return parsed.names;
+  } catch (e) { /* missing = open */ }
+  return null;
+}
+
+function allowed(list, name) {
+  if (list == null) return true;
+  return list.indexOf(name) !== -1;
+}
 
 function createRelay() {
   var peers = Object.create(null);
   var messages = [];
   var nextId = 1;
+  var allow = loadAllow(path.join(__dirname, '..'));
 
   function normalizeName(name) {
     if (typeof name !== 'string') return '';
@@ -18,6 +33,7 @@ function createRelay() {
   function claim(name) {
     var n = normalizeName(name);
     if (!n) return { ok: false, status: 400, error: 'name required' };
+    if (!allowed(allow, n)) return { ok: false, status: 403, error: 'name not allowed' };
     if (peers[n]) return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] };
     var peer = { name: n, claimedAt: new Date().toISOString() };
     peers[n] = peer;
@@ -32,6 +48,7 @@ function createRelay() {
     var f = normalizeName(from);
     var t = normalizeName(to);
     if (!f || !t) return { ok: false, status: 400, error: 'from and to required' };
+    if (!allowed(allow, f)) return { ok: false, status: 403, error: 'from not allowed' };
     if (typeof text !== 'string' || !text.trim()) {
       return { ok: false, status: 400, error: 'text required' };
     }
@@ -59,7 +76,7 @@ function createRelay() {
     };
   }
 
-  return { claim, who, send, inbox };
+  return { claim: claim, who: who, send: send, inbox: inbox };
 }
 
-module.exports = { createRelay };
+module.exports = { createRelay: createRelay };
