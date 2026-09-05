@@ -30,12 +30,40 @@ function expectWritable(label, filePath) {
   }
 }
 
-function expectForbidden(label, filePath, expectedReason) {
+// saveFile answers every refusal with the single reason 'forbidden' —
+// the entry-script and manifest checks moved behind fileWritable when it
+// was extracted as a shared predicate, so they no longer surface their own
+// distinct reason strings ('app-entry-script-protected' /
+// 'app-manifest-protected') to the caller. Which rule did the refusing is
+// pinned by the labels and by the sibling-file cases below, not by the
+// reason string.
+function expectForbidden(label, filePath) {
   const saved = spirit.core.fs.saveFile(filePath, 'writableRoots.js probe');
-  if (!saved.ok && saved.reason === expectedReason) {
-    test.check(label + ' is correctly forbidden (' + expectedReason + ')');
+  if (!saved.ok && saved.reason === 'forbidden') {
+    test.check(label + ' is correctly forbidden');
   } else {
-    test.fail(label + ' should have been forbidden with reason "' + expectedReason + '" but got ' + JSON.stringify(saved));
+    test.fail(label + ' should have been forbidden but got ' + JSON.stringify(saved));
+  }
+}
+
+// deleteFile shares fileWritable with saveFile, so anything saveFile
+// refuses is equally undeletable through the public API — including the
+// entry scripts and manifests saveAppScript/saveAppManifest just wrote.
+// Those probes have to be cleaned up with a direct fs call instead.
+function expectUndeletable(label, filePath) {
+  const deleted = spirit.core.fs.deleteFile(filePath);
+  if (!deleted.ok && deleted.reason === 'forbidden') {
+    test.check(label + ' cannot be removed through deleteFile either');
+  } else {
+    test.fail(label + ' should have been undeletable but deleteFile returned ' + JSON.stringify(deleted));
+  }
+}
+
+function cleanUpDirectly(label, filePath) {
+  try {
+    fs.unlinkSync(path.join(ROOT_DIR, filePath));
+  } catch (err) {
+    if (err.code !== 'ENOENT') test.fail(label + ' probe file could not be cleaned up: ' + err.message);
   }
 }
 
@@ -62,15 +90,14 @@ if (preferencesBackup !== null) {
 }
 
 // ---- everything else at root level, and process/, are NOT writable ----
-expectForbidden('a random root-level file', '__writableRootsProbe__.txt', 'forbidden');
-expectForbidden('process/ (scripts are browser-read-only by design)', 'process/js/__writableRootsProbe__/__writableRootsProbe__.json', 'forbidden');
-expectForbidden('js/ (the kernel itself)', 'js/__writableRootsProbe__.js', 'forbidden');
+expectForbidden('a random root-level file', '__writableRootsProbe__.txt');
+expectForbidden('process/ (scripts are browser-read-only by design)', 'process/js/__writableRootsProbe__/__writableRootsProbe__.json');
+expectForbidden('js/ (the kernel itself)', 'js/__writableRootsProbe__.js');
 
 // ---- app entry scripts are protected even inside the writable app/ root ----
 expectForbidden(
   'an app entry script (app/<name>/<name>.js)',
-  'app/__writableRootsProbeApp__/__writableRootsProbeApp__.js',
-  'app-entry-script-protected'
+  'app/__writableRootsProbeApp__/__writableRootsProbeApp__.js'
 );
 
 // A sibling file in that same (never-created) app folder is NOT an entry
@@ -89,10 +116,8 @@ expectWritable('a non-entry-script file in a new app folder', 'app/__writableRoo
   } else {
     test.fail('saveAppScript should accept an entry-script path but returned ' + JSON.stringify(saved));
   }
-  const deleted = spirit.core.fs.deleteFile(scriptPath);
-  if (!deleted.ok) {
-    test.fail('saveAppScript probe file could not be cleaned up: ' + JSON.stringify(deleted));
-  }
+  expectUndeletable('an app entry script written by saveAppScript', scriptPath);
+  cleanUpDirectly('saveAppScript', scriptPath);
 }
 
 {
@@ -108,8 +133,7 @@ expectWritable('a non-entry-script file in a new app folder', 'app/__writableRoo
 // ---- app manifests are protected too, even inside the writable app/ root ----
 expectForbidden(
   'an app manifest (app/<name>/<name>.json)',
-  'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json',
-  'app-manifest-protected'
+  'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json'
 );
 
 // A sibling file in that same folder is NOT a manifest and must still be
@@ -137,10 +161,8 @@ expectWritable('a non-manifest file in a new app folder', 'app/__writableRootsPr
   } else {
     test.fail('saveAppManifest should have forced owner:"user" but wrote owner:' + JSON.stringify(written.owner));
   }
-  const deleted = spirit.core.fs.deleteFile(manifestPath);
-  if (!deleted.ok) {
-    test.fail('saveAppManifest probe file could not be cleaned up: ' + JSON.stringify(deleted));
-  }
+  expectUndeletable('an app manifest written by saveAppManifest', manifestPath);
+  cleanUpDirectly('saveAppManifest', manifestPath);
 }
 
 {

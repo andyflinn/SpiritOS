@@ -177,12 +177,50 @@ Do not start App Builder. Do not loosen Host/loopback checks.
 
 ## Acceptance
 
-1. `UNSERVABLE_FILES` contains `js/relay.js` and `js/hub.js`.  
-2. New test file (or extended existing) is green on those rows.  
-3. From a running personal node, Files / `loadFile` cannot open `js/relay.js` or `js/hub.js`.  
-4. NATter can still save `relays.json`.  
-5. Relay Lab Ping still completes against `http://127.0.0.1:65430`.  
-6. No new public API, no BOOT_ASSETS change except if a comment is wrong.
+**Status: done as of 2026-09-05, except (5) — see below.**
+
+1. ✅ `UNSERVABLE_FILES` contains `js/relay.js` and `js/hub.js` — plus `js/relayAuth.js`,
+   which shipped after this note was written and is the same class.
+2. ✅ `spirit/test/servableAssets.js` (new, 68 checks) covers the fail-closed and
+   stay-open rows in-process; `spirit/test/labMaster/servableStatic.test.js` (new,
+   16 checks) covers the static-route rows over HTTP against a live node.
+3. ✅ Covered both ways: `loadFile`/`statFile` return null, and a real
+   `scanFolder(js/)` walk — the listing the Files app and the fs-watcher actually
+   consume — omits every Node-only module while still listing `js/client/shell.js`.
+4. ✅ `fileWritable('app/natter/relays.json') === true` and `GET
+   /app/natter/relays.json` → 200, both asserted.
+5. ⛔ **Not verified — blocked, and not by this cleanup.**
+   `process/js/relayLabPing/relayLabPing.js` hardcodes `RELAY =
+   'http://127.0.0.1:65430'`, but `labMaster.js`'s `portAllowedForLab` only allocates
+   65400–65429, so a lab-managed relay can never occupy that port. Automating this
+   row needs `relayLabPing.js` to read its relay URL from `app/natter/relays.json`
+   (the source `hub.js` already uses) instead of hardcoding it — a product change,
+   deliberately out of scope here. Everything else is already in place: `POST
+   /api/jobs` spawns the script and `GET /api/jobs` polls it, and
+   `relayHubPing.test.js` already has the `pointNatterAtRelay` wiring.
+6. ✅ No new public API. `kernel.js` and `server.js` were not touched in this pass at
+   all, so `BOOT_ASSETS` is unchanged.
+
+### Collateral fixed in the same pass
+
+Two sibling tests were already red, from the earlier extraction of `fileWritable` as a
+shared predicate rather than from this cleanup:
+
+- `pathJail.js` asserted `loadFile('js/kernel.js')` loads, which `UNSERVABLE_FILES`
+  contradicts. Split into the two questions it actually asks, exactly as the
+  "Watch existing tests" section above directs.
+- `writableRoots.js` still expected the distinct `app-entry-script-protected` /
+  `app-manifest-protected` reasons that collapsed into a single `forbidden`, and its
+  cleanup used `deleteFile` — which now shares `fileWritable` and so refuses the very
+  entry script and manifest `saveAppScript`/`saveAppManifest` had just written. It was
+  leaving `app/__writableRootsProbeApp__/` on disk on every run.
+
+### Also worth knowing
+
+`setupRelayFakes.js` and `labMaster.js`'s `copyTrackedSpirit` build node homes under the
+same `FAKES_ROOT` (`<tmp>/spiritos-relay-fakes`), keyed by name/slug — so a lab node
+named `relay`, `andy` or `bert` silently shares a home, `relay-state/mailbox.json`
+included, with the `startTest*.js` launchers' nodes.
 
 ---
 
