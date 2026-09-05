@@ -1,0 +1,17 @@
+[Unit]
+Description=SpiritOS public relay
+After=network.target
+Documentation=https://github.com/andyflinn/SpiritOS
+
+[Service]
+Type=simple
+WorkingDirectory=/root/SpiritOS/spirit/run
+ExecStart=/usr/bin/node js/server.js --relay --port 65430
+Restart=on-failure
+RestartSec=3
+# Do not pass PORT=80. --port wins over PORT, but keep both at 65430.
+Environment=PORT=65430
+# relay-state/ stays next to the process; git update never deletes it.
+
+[Install]
+WantedBy=multi-user.target

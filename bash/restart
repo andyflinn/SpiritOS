@@ -1,0 +1,7 @@
+#!/bin/bash
+source "$(dirname "$0")/lib.sh"
+need_root
+have systemctl || die "systemctl required"
+systemctl restart "$UNIT_NAME"
+ok "restarted $UNIT_NAME"
+systemctl --no-pager --full status "$UNIT_NAME" | sed -n '1,12p'

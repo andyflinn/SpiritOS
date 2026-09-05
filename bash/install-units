@@ -1,0 +1,16 @@
+#!/bin/bash
+source "$(dirname "$0")/lib.sh"
+need_root
+
+SRC="$REPO_ROOT/bash/systemd/${UNIT_NAME}.service"
+[ -f "$SRC" ] || die "missing $SRC"
+
+say "install $UNIT_NAME.service"
+# Rewrite WorkingDirectory to this clone, in case it is not /root/SpiritOS.
+tmp=$(mktemp)
+sed "s|/root/SpiritOS|$REPO_ROOT|g" "$SRC" > "$tmp"
+install -m 644 "$tmp" "/etc/systemd/system/${UNIT_NAME}.service"
+rm -f "$tmp"
+systemctl daemon-reload
+ok "installed /etc/systemd/system/${UNIT_NAME}.service"
+echo "    next: ./bash/start    then ./bash/boot-on"

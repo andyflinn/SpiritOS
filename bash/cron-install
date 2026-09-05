@@ -1,0 +1,15 @@
+#!/bin/bash
+source "$(dirname "$0")/lib.sh"
+need_root
+have crontab || die "crontab not installed"
+
+MARKER="# spirit-host-update"
+LINE="*/10 * * * * $REPO_ROOT/bash/update >> /var/log/spirit-host-update.log 2>&1 $MARKER"
+
+say "install update cron (every 10 min)"
+existing=$(crontab -l 2>/dev/null || true)
+filtered=$(printf '%s\n' "$existing" | grep -v "spirit-host-update" || true)
+printf '%s\n%s\n' "$filtered" "$LINE" | crontab -
+ok "crontab now contains:"
+crontab -l | grep spirit-host-update
+echo "    log: /var/log/spirit-host-update.log"

@@ -1,0 +1,29 @@
+#!/bin/bash
+# Refresh product code from origin/master. Never touches relay-state/.
+source "$(dirname "$0")/lib.sh"
+need_root
+[ -d "$REPO_ROOT/.git" ] || die "not a git clone: $REPO_ROOT"
+
+cd "$REPO_ROOT"
+say "fetch origin"
+git fetch origin
+
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse origin/master)
+
+if [ "$LOCAL" = "$REMOTE" ]; then
+  ok "already at $(git rev-parse --short HEAD) — no restart"
+  exit 0
+fi
+
+say "reset --hard origin/master"
+echo "    $(git rev-parse --short HEAD) -> $(git rev-parse --short origin/master)"
+git reset --hard origin/master
+
+if have systemctl && systemctl list-unit-files | grep -q "^${UNIT_NAME}.service"; then
+  say "restart $UNIT_NAME"
+  systemctl restart "$UNIT_NAME"
+  ok "restarted"
+else
+  warn "unit $UNIT_NAME not installed — code updated, process not restarted"
+fi

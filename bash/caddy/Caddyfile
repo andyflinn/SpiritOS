@@ -1,0 +1,5 @@
+# Public name only. Node stays on 127.0.0.1:__PORT__.
+__DOMAIN__ {
+	encode gzip
+	reverse_proxy 127.0.0.1:__PORT__
+}
