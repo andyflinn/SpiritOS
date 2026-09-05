@@ -5,6 +5,12 @@ const path = require('path');
 const auth = require('./relayAuth');
 
 var MAX_MESSAGES = 200;
+var MAX_TEXT = 1024;
+var NAME_RE = /^[A-Za-z0-9._-]{1,32}$/;
+var CLAIM_PER_MIN = 10;
+var SEND_PER_MIN = 30;
+var WINDOW_MS = 60 * 1000;
+
 var ROOT_DIR = path.join(__dirname, '..');
 var STATE_FILE = path.join(ROOT_DIR, 'relay-state', 'mailbox.json');
 
@@ -43,14 +49,32 @@ function createRelay() {
   var messages = loaded.messages;
   var nextId = loaded.nextId;
   var allow = auth.loadAllow(ROOT_DIR);
+  var claimHits = Object.create(null);
+  var sendHits = Object.create(null);
 
   function persist() {
     saveMailbox(peers, messages, nextId);
   }
 
+  function rateOk(bucket, key, limit) {
+    var now = Date.now();
+    var list = (bucket[key] || []).filter(function (t) { return now - t < WINDOW_MS; });
+    if (list.length >= limit) {
+      bucket[key] = list;
+      return false;
+    }
+    list.push(now);
+    bucket[key] = list;
+    return true;
+  }
+
   function normalizeName(name) {
     if (typeof name !== 'string') return '';
     return name.trim();
+  }
+
+  function nameOk(n) {
+    return !!n && NAME_RE.test(n);
   }
 
   function who() {
@@ -59,6 +83,10 @@ function createRelay() {
 
   function claim(name, sig) {
     var n = normalizeName(name);
+    if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
+    if (!rateOk(claimHits, n, CLAIM_PER_MIN)) {
+      return { ok: false, status: 429, error: 'too many claims' };
+    }
     var gate = auth.checkClaim(allow, n, sig);
     if (!gate.ok) return gate;
     if (peers[n]) return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] };
@@ -71,9 +99,17 @@ function createRelay() {
   function send(from, to, text, sig) {
     var f = normalizeName(from);
     var t = normalizeName(to);
-    if (!f || !t) return { ok: false, status: 400, error: 'from and to required' };
+    if (!nameOk(f) || !nameOk(t)) {
+      return { ok: false, status: 400, error: 'bad name' };
+    }
     if (typeof text !== 'string' || !text.trim()) {
       return { ok: false, status: 400, error: 'text required' };
+    }
+    if (text.length > MAX_TEXT) {
+      return { ok: false, status: 400, error: 'text too long' };
+    }
+    if (!rateOk(sendHits, f, SEND_PER_MIN)) {
+      return { ok: false, status: 429, error: 'too many sends' };
     }
     var gate = auth.checkSend(allow, f, sig, t, text);
     if (!gate.ok) return gate;
@@ -95,6 +131,7 @@ function createRelay() {
   function inbox(name) {
     var n = normalizeName(name);
     if (!n) return { ok: false, status: 400, error: 'name required' };
+    if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
     return {
       ok: true,
       status: 200,
