@@ -11,7 +11,7 @@ Node process (`--relay`) behind Caddy. Nothing else.
 
 ```
 ssh root@194.37.81.237
-cd /root/SpiritOS
+cd /opt/spirit-os
 ./bash/status
 ```
 
@@ -38,8 +38,8 @@ labMaster. Kill it.
 | Script | What it does |
 |---|---|
 | `./bash/help` | This map. |
-| `./bash/status` | Units, ports, git SHA, `who` over HTTPS. Warns if labMaster is running. |
-| `./bash/install-units` | Install systemd unit from `bash/systemd/`. |
+| `./bash/status` | Units, ports, git SHA, `who` over HTTPS. Warns if labMaster is running, or if the relay is still running as root. |
+| `./bash/install-units` | Create the `spirit` service account, own `relay-state/`, and install the systemd unit from `bash/systemd/` with this clone's own paths filled in. |
 | `./bash/start` `stop` `restart` | The relay Node process only. |
 | `./bash/boot-on` `boot-off` | Start relay at boot, or not. |
 | `./bash/update` | `git fetch` + hard reset to `origin/master` + restart **only if SHA changed**. Leaves `relay-state/` alone. |
@@ -57,19 +57,48 @@ Run any script with no args. They print what they are about to do.
 DNS for `spirit.andyflinn.com` must already point at this box.
 
 ```
-git clone https://github.com/andyflinn/SpiritOS.git /root/SpiritOS
-cd /root/SpiritOS
+git clone https://github.com/andyflinn/SpiritOS.git /opt/spirit-os
+cd /opt/spirit-os
 ./bash/http-to-https
 ./bash/cron-install
 ./bash/status
 ```
+
+Not `/root`. The relay runs as an unprivileged `spirit` account, which
+cannot traverse `/root` (mode 0700) — `install-units` refuses rather than
+installing a unit that dies at start with a bare `status=200/CHDIR`.
+
+## Moving an existing box off /root
+
+The relay used to run as root out of `/root/SpiritOS`, purely because
+that is where it was cloned. Nothing it does needs privilege: it binds a
+port above 1024, reads its own code, and writes one directory. Combined
+with the ten-minute `update` cron, root there meant anything reaching
+`origin/master` was root on this box inside ten minutes.
+
+```
+systemctl stop spirit-relay
+mv /root/SpiritOS /opt/spirit-os
+cd /opt/spirit-os
+./bash/install-units      # creates the spirit user, chowns relay-state/
+./bash/cron-install       # rewrites the cron line to the new path
+./bash/start
+./bash/status             # should now say: runs as spirit (unprivileged)
+```
+
+`relay-state/` moves with the directory — it is gitignored, so nothing
+else holds a copy of `identity.json`. After the move the code stays
+root-owned and read-only to the service account, and `relay-state/` is
+`spirit`-owned and mode 700; the running relay can rewrite its mailbox
+and nothing else, not even the app serving it.
 
 ## Environment knobs
 
 ```
 SPIRIT_RELAY_DOMAIN=spirit.andyflinn.com
 SPIRIT_RELAY_PORT=65430
-SPIRIT_CLONE_DIR=/root/SpiritOS
+SPIRIT_CLONE_DIR=/opt/spirit-os
+SPIRIT_RELAY_USER=spirit
 ```
 
 ## What this is not

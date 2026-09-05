@@ -8,7 +8,13 @@ RUN_DIR="$REPO_ROOT/spirit/run"
 UNIT_NAME="spirit-relay"
 NODE_PORT="${SPIRIT_RELAY_PORT:-65430}"
 DOMAIN="${SPIRIT_RELAY_DOMAIN:-spirit.andyflinn.com}"
-CLONE_DIR="${SPIRIT_CLONE_DIR:-/root/SpiritOS}"
+# /opt, not /root: the relay runs as an unprivileged account now, and that
+# account cannot traverse /root (0700). See bash/install-units, which
+# refuses to install a unit whose WorkingDirectory it could never reach.
+CLONE_DIR="${SPIRIT_CLONE_DIR:-/opt/spirit-os}"
+# The unprivileged account the relay process runs as. Owns relay-state/
+# and nothing else; the code stays root-owned and read-only to it.
+RELAY_USER="${SPIRIT_RELAY_USER:-spirit}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 

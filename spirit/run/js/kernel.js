@@ -67,6 +67,33 @@ let formatBytes = spirit.core.util.formatBytes = function(bytes, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+// Escapes a value for insertion into HTML — both element text AND
+// attribute values. Lives here, in the isomorphic half, rather than in
+// shell.js where it started, for two reasons: it has no per-app scoping
+// concern (unlike fs, nothing about it differs app to app), and down here
+// it can actually be tested. The old implementation was
+// `div.textContent = str; return div.innerHTML`, which needs a DOM, so it
+// could only ever run in a browser and no test could reach it.
+//
+// That DOM round-trip also escaped exactly three characters — & < > — and
+// left both quote marks alone, while roughly thirty call sites across
+// shell.js and index.html interpolate its output straight into an
+// attribute: value="…", data-path="…", data-app-id="…". A filename or a
+// custom app name containing a double quote closed the attribute early
+// and everything after it was parsed as markup. Escaping the quotes is
+// the whole point of this function existing separately.
+//
+// Ampersand first: escaping it after the others would double-escape the
+// entities they just introduced.
+let escapeHtml = spirit.core.util.escapeHtml = function(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
  // ******************************************************************
  // functions that can only run in the node environment
 

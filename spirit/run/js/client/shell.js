@@ -779,10 +779,14 @@
     return found;
   }
 
+  // Delegates to the kernel's own implementation (spirit.core.util.escapeHtml)
+  // rather than re-deriving one from the DOM — see kernel.js for why it
+  // moved and what the DOM version got wrong about attribute values.
+  // Kept as a local name because ~30 call sites in this file and
+  // index.html already read that way, and because it is handed to every
+  // app as api.escapeHtml.
   function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = String(str);
-    return div.innerHTML;
+    return spirit.core.util.escapeHtml(str);
   }
 
   // "Open with": lists every real handler app registered for this

@@ -5,13 +5,48 @@ Documentation=https://github.com/andyflinn/SpiritOS
 
 [Service]
 Type=simple
-WorkingDirectory=/root/SpiritOS/spirit/run
-ExecStart=/usr/bin/node js/server.js --relay --port 65430
+
+# Placeholders are filled in by bash/install-units from this clone's own
+# location and settings — do not hand-edit the installed copy in
+# /etc/systemd/system, it gets overwritten on the next install-units.
+User=__USER__
+Group=__USER__
+WorkingDirectory=__RUN_DIR__
+ExecStart=/usr/bin/node js/server.js --relay --port __PORT__
 Restart=on-failure
 RestartSec=3
-# Do not pass PORT=80. --port wins over PORT, but keep both at 65430.
-Environment=PORT=65430
-# relay-state/ stays next to the process; git update never deletes it.
+# Do not pass PORT=80. --port wins over PORT, but keep both the same.
+Environment=PORT=__PORT__
+
+# This process answers unauthenticated requests from the open internet.
+# It previously ran as root for no reason other than that the clone lived
+# in /root: nothing it does needs privilege — it binds 65430 (above 1024,
+# so no CAP_NET_BIND_SERVICE either), reads its own code, and writes one
+# directory. Combined with bash/cron-install pulling origin/master every
+# ten minutes, root here meant anything reaching that branch was root on
+# the box within ten minutes.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# ProtectSystem=strict makes the entire filesystem read-only, so name the
+# one directory the relay legitimately writes: relay-state/ holds
+# mailbox.json, allow.json and identity.json (a private key). Everything
+# else — including the code — stays read-only to this process, so a bug in
+# the request path cannot rewrite the app that is serving it.
+ReadWritePaths=__STATE_DIR__
+
+# Deliberately NOT set: MemoryDenyWriteExecute. V8 needs writable+
+# executable pages for JIT, and the process will not start with it.
 
 [Install]
 WantedBy=multi-user.target

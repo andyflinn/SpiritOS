@@ -30,6 +30,16 @@ say "systemd $UNIT_NAME"
 if have systemctl; then
   systemctl is-enabled "$UNIT_NAME" 2>/dev/null && ok "enabled at boot" || warn "not enabled at boot"
   systemctl is-active "$UNIT_NAME" 2>/dev/null && ok "active" || warn "not active"
+
+  # This process answers the open internet and needs no privilege at all.
+  # An old unit predating the hardening still says root — shout, the same
+  # way this script shouts about labMaster.
+  RUN_AS=$(systemctl show -p User --value "$UNIT_NAME" 2>/dev/null)
+  if [ -z "$RUN_AS" ] || [ "$RUN_AS" = "root" ]; then
+    warn "RUNS AS ROOT — reinstall the unit: ./bash/install-units"
+  else
+    ok "runs as $RUN_AS (unprivileged)"
+  fi
 else
   warn "no systemctl on this machine"
 fi
