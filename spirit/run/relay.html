@@ -3,30 +3,20 @@
 <head>
   <meta charset="utf-8">
   <title>SpiritOS Relay</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 36rem; margin: 12vh auto; padding: 0 1.5rem; line-height: 1.45; }
+    h1 { font-weight: normal; letter-spacing: 0.04em; }
+    p { color: #333; }
+    a { color: #111; }
+  </style>
 </head>
 <body>
-  <h1>SpiritOS Relay</h1>
-  <p>Claimed names on this process (gone when the process dies):</p>
-  <ul id="peers"><li>loading…</li></ul>
-  <script>
-    function render(peers) {
-      var ul = document.getElementById('peers');
-      if (!peers.length) {
-        ul.innerHTML = '<li>(none)</li>';
-        return;
-      }
-      ul.innerHTML = peers.map(function (p) {
-        return '<li>' + p.name + ' <small>' + p.claimedAt + '</small></li>';
-      }).join('');
-    }
-    function refresh() {
-      fetch('/api/relay/who')
-        .then(function (r) { return r.json(); })
-        .then(function (data) { render(data.peers || []); })
-        .catch(function () { document.getElementById('peers').innerHTML = '<li>who failed</li>'; });
-    }
-    refresh();
-    setInterval(refresh, 2000);
-  </script>
+  <h1>SpiritOS</h1>
+  <p>A personal node on your machine. This host is only a mailbox.</p>
+  <p>
+    <a href="https://github.com/andyflinn/SpiritOS">Source</a>
+    ·
+    <a href="https://github.com/sponsors/andyflinn">Support the work</a>
+  </p>
 </body>
 </html>

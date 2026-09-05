@@ -448,6 +448,15 @@ function isValidHost(hostHeader) {
   return !!hostHeader && VALID_HOSTS.indexOf(hostHeader.toLowerCase()) !== -1;
 }
 
+function isRelayPublicPath(method, pathname) {
+  if (pathname === '/' || pathname === '/index.html' || pathname === '/relay.html' || pathname === '/favicon.svg') {
+    return method === 'GET';
+  }
+  if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox')) return true;
+  if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send')) return true;
+  return false;
+}
+
 const server = http.createServer((req, res) => {
   if (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host)) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -464,6 +473,12 @@ const server = http.createServer((req, res) => {
 
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = decodeURIComponent(url.pathname);
+  
+  if (relayMode && !isRelayPublicPath(req.method, pathname)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+    return;
+  }
 
   if (req.method === 'GET' && pathname === '/api/relay/who') {
     handleRelayWho(res);
