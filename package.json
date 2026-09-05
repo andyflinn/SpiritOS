@@ -4,7 +4,7 @@
   "private": true,
   "description": "SpiritOS — a sovereign personal operating system. spirit/run/ is the whole product; this file exists only to give it a single, repo-root entry point.",
   "scripts": {
-    "start": "node spirit/run/js/server.js"
+    "start": "cd spirit/run && node js/server.js"
   },
   "engines": {
     "node": ">=18"

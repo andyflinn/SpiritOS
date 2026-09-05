@@ -8,7 +8,11 @@ git clone https://github.com/andyflinn/SpiritOS.git
 cd SpiritOS
 npm start
 ```
-Then open `http://localhost:65432`. No `npm install` needed — the server itself has zero external dependencies (only Node built-ins). The server binds to loopback only and pins its own root to `spirit/run/` regardless of the directory it's launched from, so `npm start` from the repo root and `node spirit/run/js/server.js` from anywhere are equivalent.
+Then open `http://localhost:65432`. No `npm install` needed — the server itself has zero external dependencies (only Node built-ins). A personal node binds loopback only, so nothing else on your network can reach it.
+
+`npm start` is `cd spirit/run && node js/server.js`, and the `cd` is not optional: file paths resolve off the script's own location, but job spawning hands script paths to `child_process.spawn` relative to the *working* directory. The server refuses to start from anywhere else rather than fail silently later, so run it that way (or use `npm start`) — `node spirit/run/js/server.js` from the repo root is rejected on purpose.
+
+**Running a public relay:** `node js/server.js --relay`, again from `spirit/run/`. A relay serves a static brochure plus the mailbox routes (`/api/relay/*`) and 404s everything else — Jobs, `/api/fs/*`, `/api/proxy`, `/api/hub/*`, the desktop shell — so it binds `0.0.0.0` and accepts any `Host`, since it's meant to be reached from the internet. The repo-root `Procfile` is exactly that command for a platform that assigns `PORT`; don't also pass `--port`, which wins over the environment. Its allow-list and key material live in `relay-state/`, which is gitignored and has to be created on the host. Personal nodes never take `--relay`.
 
 A few optional process scripts (`spirit/run/process/js/imageCaptionClaude/`, `imageCaptionClaudeBatch/`, `imageStats/`) have their own small dependencies — only needed if you actually use those specific features. Run `npm install` inside that script's own folder before using it; nothing else on the server depends on them.
 

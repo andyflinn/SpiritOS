@@ -15,8 +15,12 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
     'Usage: node js/server.js [--port <number>] [--relay]\n\n' +
     '  --port <number>   Listen on this port instead of the default (' + spirit.core.node.const.DEFAULT_SPIRIT_PORT + ').\n' +
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
-    '  --relay           Serve relay.html instead of index.html at / and /index.html — every\n' +
-    '                    other route (app scripts, /api/*, etc.) still works exactly as normal.\n' +
+    '  --relay           Run as a public relay: serve relay.html at / and /index.html, answer\n' +
+    '                    only the mailbox routes (/api/relay/*) and 404 everything else —\n' +
+    '                    Jobs, /api/fs/*, /api/proxy, /api/hub/* and the desktop shell.\n' +
+    '                    Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is\n' +
+    '                    meant to be reached from the internet. Do NOT pass this to a personal\n' +
+    '                    node; those stay loopback-only.\n' +
     '  --help, -h        Show this message and exit.\n\n' +
     'Examples:\n' +
     '  node js/server.js\n' +
@@ -93,13 +97,19 @@ const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.c
 // First step toward the public relay/hub vision (server #3) — deliberately
 // just a routing switch for now. The actual relay protocol (signed-
 // challenge auth against an allowed-public-keys list, message delivery) is
-// separate, later work. Nothing is removed in this mode: every existing
-// route, the full desktop shell, the job system, etc. all stay reachable
-// by their own path — this only changes what GET / and GET /index.html
-// resolve to, so a relay node's owner can still reach their own normal
-// SpiritOS UI directly if they want to, while a first-time visitor hitting
-// the root path gets a much smaller surface with room to grow into a real
-// relay UI later.
+// separate, later work.
+//
+// This started as nothing but a routing switch for GET / — everything else
+// stayed reachable. It isn't that any more. Phase B narrowed a --relay
+// process to the mailbox routes plus the brochure (isRelayPublicPath,
+// below; relaySurface.test.js proves Jobs/fs/proxy/hub/the desktop all
+// 404), and Phase F takes the last step: a --relay process binds 0.0.0.0
+// and drops the loopback + Host gate, because it is meant to be reached
+// from the internet.
+//
+// So this one flag is now the whole difference between "a personal node,
+// unroutable from outside this machine" and "a public server". A personal
+// node must never be started with it.
 const relayMode = process.argv.slice(2).includes('--relay');
 const HOME_PAGE = relayMode ? 'relay.html' : 'index.html';
 
@@ -458,7 +468,20 @@ function isRelayPublicPath(method, pathname) {
 }
 
 const server = http.createServer((req, res) => {
-  if (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host)) {
+  // Both halves of this gate are personal-node-only, and both have to be
+  // skipped together for a relay — fixing only the Host half would leave
+  // every external request dying on the loopback half instead, since
+  // remoteAddress is now a real client IP rather than 127.0.0.1. The Host
+  // half is equally meaningless there: VALID_HOSTS is built from
+  // localhost:<port>, but a deployed relay is reached as
+  // foo.herokuapp.com, and the platform assigns the internal port anyway.
+  //
+  // What stands in for this on a relay is not "nothing": isRelayPublicPath
+  // (below) reduces the answerable surface to the mailbox routes and the
+  // brochure, and the mailbox routes themselves are gated by the allow
+  // list and signature checks in relayAuth.js. The brochure does not hide
+  // those routes from curl and was never meant to — H/I/E are the gates.
+  if (!relayMode && (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host))) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden: this server only accepts connections from localhost');
     return;
@@ -666,13 +689,21 @@ const server = http.createServer((req, res) => {
   res.end('Method not allowed');
 });
 
-// Explicit 127.0.0.1 binding: belt-and-suspenders alongside the loopback +
-// Host checks above. Without this, Node binds all interfaces by default,
-// so a LAN request would still reach isLoopbackAddress and get rejected
-// with a 403 — this just makes it fail at the TCP level instead, with the
-// same net result. Revert to server.listen(port, ...) (no host) if this
-// node ever needs to be reachable from another device on purpose.
-// Without this, a failed listen() (most commonly EADDRINUSE — another
+// A personal node binds 127.0.0.1 explicitly: belt-and-suspenders
+// alongside the loopback + Host checks above. Without it, Node binds all
+// interfaces by default, so a LAN request would still reach
+// isLoopbackAddress and get rejected with a 403 — this just makes it fail
+// at the TCP level instead, with the same net result. That is the whole
+// reason a phone on the same wifi cannot reach :65432, and it stays true.
+//
+// A --relay process is the one case that genuinely needs to be reachable
+// from another machine, so it binds 0.0.0.0 — required by every platform
+// that health-checks the port it assigned (Heroku, Fly, a plain VPS).
+// Bind loopback there and the health check fails, the dyno is killed, and
+// it reads as "SpiritOS is broken" rather than as a bind mistake.
+const BIND_HOST = relayMode ? '0.0.0.0' : '127.0.0.1';
+
+// Without the handler below, a failed listen() (most commonly EADDRINUSE — another
 // SpiritOS instance, or anything else, already on this port) surfaces as
 // a raw unhandled 'error' event and a Node internals stack trace, same
 // failure class verifyStartupCwd() above already fails loud and clear
@@ -690,6 +721,10 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`Server listening on http://localhost:${port}`);
+server.listen(port, BIND_HOST, () => {
+  if (relayMode) {
+    console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
+  } else {
+    console.log(`Server listening on http://localhost:${port}`);
+  }
 });
