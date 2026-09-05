@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>labMaster</title>
+  <style>
+    body { font-family: sans-serif; margin: 1.5rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: left; }
+    .row-actions button { margin-right: 0.25rem; }
+    #status { margin: 0.5rem 0 1rem; min-height: 1.2em; }
+    label { margin-right: 0.75rem; }
+  </style>
+</head>
+<body>
+  <h1>labMaster</h1>
+  <p>Fixed bookmark: <code>http://localhost:65420</code>. Work node is port 65432 and cannot be deleted.</p>
+  <div>
+    <label>Name <input id="new-name" placeholder="andy"></label>
+    <label>Type
+      <select id="new-type">
+        <option value="avatar">avatar</option>
+        <option value="relay">relay</option>
+      </select>
+    </label>
+    <label>Port <input id="new-port" type="number" min="65400" max="65429" placeholder="65400"></label>
+    <button type="button" id="create">Create</button>
+  </div>
+  <div id="status"></div>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th><th>Type</th><th>Port</th><th>Running</th><th>Home</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <script>
+    var statusEl = document.getElementById('status');
+    function setStatus(t) { statusEl.textContent = t; }
+
+    function api(method, path, body) {
+      var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
+      if (body !== undefined) opts.body = JSON.stringify(body);
+      return fetch(path, opts).then(function (r) {
+        return r.text().then(function (t) {
+          var parsed;
+          try { parsed = t ? JSON.parse(t) : {}; } catch (e) { parsed = { raw: t }; }
+          return { status: r.status, body: parsed };
+        });
+      });
+    }
+
+    function render(nodes) {
+      var tbody = document.getElementById('tbody');
+      tbody.innerHTML = nodes.map(function (n) {
+        var del = n.permanent
+          ? ''
+          : '<button data-act="recycle" data-id="' + n.id + '">Recycle</button>' +
+            '<button data-act="delete" data-id="' + n.id + '">Delete</button>';
+
+            var label = n.name + (n.permanent ? ' <small>permanent</small>' : '');
+            var nameCell = n.running
+            ? '<a href="http://localhost:' + n.port + '" target="_blank" rel="noopener">' + label + '</a>'
+            : label;
+            return '<tr>' +
+            '<td>' + nameCell + '</td>' +
+          '<td>' + n.name + (n.permanent ? ' <small>permanent</small>' : '') + '</td>' +
+          '<td>' + n.type + '</td>' +
+          '<td>' + n.port + '</td>' +
+          '<td>' + (n.running ? 'yes' : 'no') + (n.lastError ? ' ' + n.lastError : '') + '</td>' +
+          '<td><small>' + n.home + '</small></td>' +
+          '<td class="row-actions">' +
+            '<button data-act="start" data-id="' + n.id + '">Start</button>' +
+            '<button data-act="stop" data-id="' + n.id + '">Stop</button>' +
+            del +
+          '</td></tr>';
+      }).join('');
+    }
+
+    function refresh() {
+      return api('GET', '/api/nodes').then(function (r) {
+        render((r.body && r.body.nodes) || []);
+      }).catch(function (e) { setStatus('refresh failed: ' + e.message); });
+    }
+
+    document.getElementById('create').addEventListener('click', function () {
+      var body = {
+        name: document.getElementById('new-name').value,
+        type: document.getElementById('new-type').value,
+        port: Number(document.getElementById('new-port').value)
+      };
+      api('POST', '/api/nodes', body).then(function (r) {
+        setStatus(r.status + ' ' + JSON.stringify(r.body));
+        return refresh();
+      });
+    });
+
+    document.getElementById('tbody').addEventListener('click', function (e) {
+      var act = e.target.getAttribute('data-act');
+      var id = e.target.getAttribute('data-id');
+      if (!act || !id) return;
+      api('POST', '/api/nodes/' + id + '/' + act, {}).then(function (r) {
+        setStatus(r.status + ' ' + JSON.stringify(r.body));
+        return refresh();
+      });
+    });
+
+    refresh();
+    setInterval(refresh, 3000);
+  </script>
+</body>
+</html>
