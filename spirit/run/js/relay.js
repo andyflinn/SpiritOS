@@ -10,6 +10,7 @@ var NAME_RE = /^[A-Za-z0-9._-]{1,32}$/;
 var CLAIM_PER_MIN = 10;
 var SEND_PER_MIN = 30;
 var WINDOW_MS = 60 * 1000;
+var RATE_KEY_SWEEP_AT = 1000;
 
 var ROOT_DIR = path.join(__dirname, '..');
 var STATE_FILE = path.join(ROOT_DIR, 'relay-state', 'mailbox.json');
@@ -56,15 +57,36 @@ function createRelay() {
     saveMailbox(peers, messages, nextId);
   }
 
-  function rateOk(bucket, key, limit) {
+  // Drops every key whose window has fully expired. Without this the
+  // buckets only ever grew: one entry per distinct key, kept forever, on a
+  // box with about a gigabyte of RAM.
+  function sweep(bucket) {
     var now = Date.now();
-    var list = (bucket[key] || []).filter(function (t) { return now - t < WINDOW_MS; });
+    Object.keys(bucket).forEach(function (k) {
+      var kept = bucket[k].filter(function (t) { return now - t < WINDOW_MS; });
+      if (kept.length === 0) delete bucket[k];
+      else bucket[k] = kept;
+    });
+  }
+
+  // `key` is the CALLER, not the name the caller claims to be. Keying on
+  // the claimed name made the limit meaningless: 30 sends per minute per
+  // name, with the name chosen by the sender, is 30 per minute per made-up
+  // string — rotate it and the budget resets, which is exactly what an
+  // abuser does and never what a real client does. An unidentified caller
+  // (a direct in-process call, no socket) shares one bucket rather than
+  // getting a free pass.
+  function rateOk(bucket, key, limit) {
+    if (Object.keys(bucket).length > RATE_KEY_SWEEP_AT) sweep(bucket);
+    var now = Date.now();
+    var k = key || '(unidentified)';
+    var list = (bucket[k] || []).filter(function (t) { return now - t < WINDOW_MS; });
     if (list.length >= limit) {
-      bucket[key] = list;
+      bucket[k] = list;
       return false;
     }
     list.push(now);
-    bucket[key] = list;
+    bucket[k] = list;
     return true;
   }
 
@@ -81,10 +103,10 @@ function createRelay() {
     return Object.keys(peers).sort().map(function (k) { return peers[k]; });
   }
 
-  function claim(name, sig) {
+  function claim(name, sig, clientKey) {
     var n = normalizeName(name);
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
-    if (!rateOk(claimHits, n, CLAIM_PER_MIN)) {
+    if (!rateOk(claimHits, clientKey, CLAIM_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many claims' };
     }
     var gate = auth.checkClaim(allow, n, sig);
@@ -96,7 +118,7 @@ function createRelay() {
     return { ok: true, status: 201, peer: peer };
   }
 
-  function send(from, to, text, sig) {
+  function send(from, to, text, sig, clientKey) {
     var f = normalizeName(from);
     var t = normalizeName(to);
     if (!nameOk(f) || !nameOk(t)) {
@@ -108,7 +130,7 @@ function createRelay() {
     if (text.length > MAX_TEXT) {
       return { ok: false, status: 400, error: 'text too long' };
     }
-    if (!rateOk(sendHits, f, SEND_PER_MIN)) {
+    if (!rateOk(sendHits, clientKey, SEND_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many sends' };
     }
     var gate = auth.checkSend(allow, f, sig, t, text);
@@ -128,10 +150,12 @@ function createRelay() {
     return { ok: true, status: 201, message: msg };
   }
 
-  function inbox(name) {
+  function inbox(name, sig) {
     var n = normalizeName(name);
     if (!n) return { ok: false, status: 400, error: 'name required' };
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
+    var gate = auth.checkInbox(allow, n, sig);
+    if (!gate.ok) return gate;
     return {
       ok: true,
       status: 200,

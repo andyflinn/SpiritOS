@@ -29,6 +29,13 @@ module.exports = function installJobs(spirit, port) {
 
   const jobsMap = new Map();
   const events = new EventEmitter();
+  // Every SSE connection (server.js's handleSseConnection) attaches two
+  // listeners here — job-updated and job-deleted — and detaches them when
+  // the client goes away. Node's default ceiling of 10 therefore starts
+  // printing MaxListenersExceededWarning at the sixth open tab, which
+  // reads like a leak and isn't one. There is no fixed upper bound worth
+  // guessing at, so remove the ceiling rather than raise it.
+  events.setMaxListeners(0);
   let nextId = 1;
 
   function createJob(kind, type, initialData) {
@@ -148,7 +155,11 @@ module.exports = function installJobs(spirit, port) {
     });
 
     watcher.on('error', function(err) {
-      updateJob(job.id, { status: 'error', logMessage: String(err) });
+      // 'failed', not 'error': only TERMINAL_STATUSES can be deleted, and
+      // 'error' was in neither that set nor anything the UI renders — a
+      // watcher that died left a row in Jobs that deleteJob refused
+      // forever, with no way to clear it short of restarting the server.
+      updateJob(job.id, { status: 'failed', logMessage: String(err) });
     });
 
     job._stop = function() {

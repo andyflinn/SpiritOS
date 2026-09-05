@@ -143,7 +143,16 @@ function createHub(rootDir) {
   function handleInbox(req, res, urlObj) {
     withRelay(res, function (url) {
       var name = urlObj.searchParams.get('name') || '';
-      relayRequest(url, 'GET', '/api/relay/inbox?name=' + encodeURIComponent(name), null)
+      // Signed for the same reason claim and send are: in keys mode the
+      // relay now proves who is reading a mailbox, not just who is writing
+      // to one. Unsigned when this node has no identity yet, which the
+      // relay still accepts in open and names mode.
+      var id = auth.loadIdentity(rootDir);
+      var query = '?name=' + encodeURIComponent(name);
+      if (id && id.privateKey) {
+        query += '&sig=' + encodeURIComponent(auth.sign(id.privateKey, auth.inboxMessage(name)));
+      }
+      relayRequest(url, 'GET', '/api/relay/inbox' + query, null)
         .then(function (r) {
           res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(r.text);

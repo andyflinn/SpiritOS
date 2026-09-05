@@ -205,12 +205,40 @@ if (isNode()) {
   // separately. Path-only, caller-independent by design — see kernel.js's
   // own broader comments on this: nothing server-side can verify which
   // app is really asking, only whether the path itself is allowed.
+  // The one shape every gate below depends on: a caller-supplied path
+  // reduced to its ROOT_DIR-relative, forward-slashed canonical form, or
+  // null if it escapes ROOT_DIR entirely.
+  //
+  // This exists because both gates used to pattern-match the raw string the
+  // caller handed in, while fsPath resolved that same string separately —
+  // so the two could disagree, and the filesystem always obeyed the second
+  // one. 'relay-state/identity.json' was denied while
+  // './relay-state/identity.json' was not, and both name the same file: on
+  // a relay, the Ed25519 PRIVATE KEY. The same gap let
+  // 'app/./natter/natter.js' through a guard that refused
+  // 'app/natter/natter.js'. Every pattern below now runs against this
+  // function's OUTPUT, never against the input, so a path gets exactly one
+  // verdict no matter how it is spelled.
+  //
+  // Note this deliberately resolves rather than rejecting dot segments
+  // outright: './index.html' and 'app/./natter/relays.json' are legitimate
+  // and have to keep working (pathJail.js and pathCanonicalization.js both
+  // assert it). Canonicalize, then check — don't blanket-refuse.
+  function canonicalPath(filePath) {
+    if (typeof filePath !== 'string') return null;
+    const resolved = fsPath(ROOT_DIR, filePath);
+    if (!resolved) return null;
+    return path.relative(ROOT_DIR, resolved).replace(/\\/g, '/');
+  }
+
   function fileWritable(filePath) {
+    const canonical = canonicalPath(filePath);
+    if (canonical === null) return false;
     const resolved = fsPath(ROOT_DIR, filePath);
     if (!resolved || !isWithinWritableRoot(resolved)) return false;
-    if (APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return false;
-    if (MANIFEST_PATTERN.test(filePath)) return false;
-    if (filePath.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFile touches a sidecar's own path
+    if (APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return false;
+    if (MANIFEST_PATTERN.test(canonical)) return false;
+    if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFile touches a sidecar's own path
     return true;
   }
 
@@ -219,9 +247,15 @@ if (isNode()) {
   // consumer the same way — the only sanctioned way to see one is through
   // getAnnotations, never loadFile/scanFolder/the static route.
   function fileServable(filePath) {
-    if (UNSERVABLE_FILES.indexOf(filePath) !== -1) return false;
-    if (filePath.endsWith(SIDECAR_SUFFIX)) return false;
-    if (filePath === 'relay-state' || filePath.indexOf('relay-state/') === 0) return false;
+    const canonical = canonicalPath(filePath);
+    // A path that escapes ROOT_DIR is now refused by the read gate itself,
+    // not only by fsPath further down inside loadFile — one verdict, made
+    // in one place, for every consumer (loadFile, statFile, scanFolder,
+    // getAnnotations, and server.js's static route alike).
+    if (canonical === null) return false;
+    if (UNSERVABLE_FILES.indexOf(canonical) !== -1) return false;
+    if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
+    if (canonical === 'relay-state' || canonical.indexOf('relay-state/') === 0) return false;
     return true;
   }
   spirit.core.fs.fileWritable = fileWritable;
@@ -252,9 +286,14 @@ if (isNode()) {
   // /api/jobs's spawn capability (this server only ever talks to your own
   // browser tab).
   let saveAppScript = spirit.core.fs.saveAppScript = function(filePath, content){
+    const canonical = canonicalPath(filePath);
     const resolved = fsPath(ROOT_DIR, filePath);
-    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
-    if (!APP_ENTRY_SCRIPT_PATTERN.test(filePath)) return { ok: false, reason: 'not-an-app-entry-script' };
+    if (canonical === null || !resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    // Matched against the canonical form for the same reason fileWritable
+    // is — here the pattern must MATCH to proceed, so a raw-string check
+    // failed closed rather than open, but a path deserves one verdict
+    // whichever direction the guard points.
+    if (!APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return { ok: false, reason: 'not-an-app-entry-script' };
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
@@ -278,9 +317,10 @@ if (isNode()) {
   // the file outside the running server (a human/git action, never
   // something this process does on a caller's behalf).
   let saveAppManifest = spirit.core.fs.saveAppManifest = function(filePath, content){
+    const canonical = canonicalPath(filePath);
     const resolved = fsPath(ROOT_DIR, filePath);
-    if (!resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
-    if (!MANIFEST_PATTERN.test(filePath)) return { ok: false, reason: 'not-an-app-manifest' };
+    if (canonical === null || !resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
+    if (!MANIFEST_PATTERN.test(canonical)) return { ok: false, reason: 'not-an-app-manifest' };
     let manifest;
     try {
       manifest = JSON.parse(content);
@@ -394,10 +434,11 @@ if (isNode()) {
                   // fileServable expects a ROOT_DIR-relative, forward-slashed
                   // path — the same shape jobs.js's mapEntry later derives
                   // independently for the same entry. path.resolve (not a
-                  // plain join) is needed here because scanFolder is called
-                  // both with an absolute dirPath (jobs.js's fs-watcher) and
-                  // a relative one (loadFolder's './'), and entry.parentPath
-                  // inherits whichever style the initial call used.
+                  // plain join) is kept deliberately: entry.parentPath
+                  // inherits whichever style the initial call used, so a
+                  // relative dirPath still resolves correctly even though
+                  // every caller today (jobs.js's fs-watcher,
+                  // servableAssets.js) passes an absolute one.
                   const fullPath = path.resolve(entry.parentPath, entry.name);
                   const relativePath = path.relative(ROOT_DIR, fullPath).replace(/\\/g, '/');
                   if (fileServable(relativePath)) result.push(entry);
@@ -457,29 +498,6 @@ if (isNode()) {
 
     return { stale: true, newRecord: { mtimeMs: currentMtimeMs, contentHash: currentHash } };
   };
-
-  let loadFolder = spirit.core.node.util.loadFolder = function(){
-
-      let result = scanFolder('./');
-
-      print('loadFolder is finished');
-      print(JSON.stringify(result,null,2));
-
-      for (let i = 0 ; i < result.length ; i++){
-          let entry = result[i];
-          if (entry.isDirectory()) {
-
-              print(`📁 Folder: ${entry.parentPath}${entry.name}`);
-
-          } else if (entry.isFile()) {
-
-              print(`📄 File:   ${entry.parentPath}${entry.name}`);
-
-          }
-  }
-
-      return result;
-  }
 
   // spirit.core.jobs: the external caller's API for the jobs subsystem
   // (distinct from spirit.core.node.jobs, the server's own registry,

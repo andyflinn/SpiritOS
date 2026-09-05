@@ -104,6 +104,10 @@ let weStartedMaster = false;
 let masterChild = null;
 const andyId = auth.generateIdentity('andy');
 const malloryId = auth.generateIdentity('andy'); // same name, wrong key
+// bert is the recipient, and reading a mailbox is now signature-gated in
+// keys mode exactly as claiming and sending are — so bert needs a real
+// key on the allow list to read bert's own inbox below.
+const bertId = auth.generateIdentity('bert');
 
 Promise.resolve()
   .then(function () { return masterUp(); })
@@ -128,9 +132,12 @@ Promise.resolve()
     if (r.status !== 201) throw new Error('create relay ' + r.status + ' ' + r.text);
     test.check('create relay row');
     writeJson(path.join(r.json.node.home, 'relay-state', 'allow.json'), {
-      keys: [{ name: 'andy', publicKey: andyId.publicKey }],
+      keys: [
+        { name: 'andy', publicKey: andyId.publicKey },
+        { name: 'bert', publicKey: bertId.publicKey },
+      ],
     });
-    test.check('allow.json has andy public key');
+    test.check('allow.json has andy and bert public keys');
     return json(MASTER + '/api/nodes', 'POST', {
       name: ANDY_NAME, type: 'avatar', port: ANDY_PORT,
     });
@@ -190,7 +197,16 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 403) test.check('unsigned send rejected');
     else test.fail('unsigned send → ' + r.status + ' ' + r.text);
+    // Reads are gated too, not just writes: a bare ?name= used to hand any
+    // caller that peer's whole mailbox even here, where every write is
+    // cryptographically proven.
     return json(RELAY_ORIGIN + '/api/relay/inbox?name=bert', 'GET', null);
+  })
+  .then(function (r) {
+    if (r.status === 403) test.check('unsigned inbox read rejected');
+    else test.fail('unsigned inbox read → ' + r.status + ' ' + r.text);
+    const bertSig = auth.sign(bertId.privateKey, auth.inboxMessage('bert'));
+    return json(RELAY_ORIGIN + '/api/relay/inbox?name=bert&sig=' + encodeURIComponent(bertSig), 'GET', null);
   })
   .then(function (r) {
     var hit = r.json && Array.isArray(r.json.messages) &&

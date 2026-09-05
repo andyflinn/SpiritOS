@@ -17,6 +17,15 @@ function sendMessage(from, to, text) {
   return 'send\n' + from + '\n' + to + '\n' + text;
 }
 
+// Reading a mailbox is as much a capability as writing to one. claim and
+// send were signature-gated from the start while inbox took a bare name
+// and handed over that peer's messages to anyone who asked — so on a relay
+// where every write was cryptographically proven, every read was still
+// anonymous, and any name was enough to drain someone's mail.
+function inboxMessage(name) {
+  return 'inbox\n' + name;
+}
+
 function generateIdentity(name) {
   const pair = crypto.generateKeyPairSync('ed25519');
   return {
@@ -119,9 +128,25 @@ function checkSend(allow, from, sig, to, text) {
   return { ok: true };
 }
 
+// Same shape as checkClaim: open and names mode have no key to verify
+// against, so they stay as permissive as they already are for claim/send.
+// Keys mode is where the guarantee is real.
+function checkInbox(allow, name, sig) {
+  if (!name) return { ok: false, status: 400, error: 'name required' };
+  if (allow.mode === 'open' || allow.mode === 'names') return { ok: true };
+  const pub = allow.byName[name];
+  if (!pub) return { ok: false, status: 403, error: 'name not allowed' };
+  if (!sig || !verify(pub, inboxMessage(name), sig)) {
+    return { ok: false, status: 403, error: 'bad inbox signature' };
+  }
+  return { ok: true };
+}
+
 module.exports = {
   claimMessage,
   sendMessage,
+  inboxMessage,
+  checkInbox,
   generateIdentity,
   sign,
   verify,
