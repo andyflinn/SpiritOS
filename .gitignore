@@ -44,3 +44,15 @@ spirit/currentIssues.md
 # Personal media that ended up in a folder named test/pix rather than real
 # test fixtures — unreferenced by any code or test (verified), 20MB.
 spirit/test/pix
+
+# Per-process relay state: mailbox.json, allow.json, and identity.json —
+# the last of which holds an Ed25519 PRIVATE KEY. relayAuth.js's header has
+# always said these "live on that process's spirit/run home, never in git",
+# but until now nothing enforced it. This is not hypothetical once a relay
+# runs on a public host and actually has an identity: a single `git add -A`
+# would stage the key, and because both setupRelayFakes.js and labMaster's
+# copyTrackedSpirit build node homes from `git ls-files`, a committed key
+# would then be sprayed into every fake node in the lab.
+# Unanchored on purpose — matches spirit/run/relay-state/ and any other
+# node home's copy, wherever it ends up.
+relay-state/
