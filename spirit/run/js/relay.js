@@ -1,16 +1,52 @@
-
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const auth = require('./relayAuth');
 
 var MAX_MESSAGES = 200;
+var ROOT_DIR = path.join(__dirname, '..');
+var STATE_FILE = path.join(ROOT_DIR, 'relay-state', 'mailbox.json');
+
+function loadMailbox() {
+  try {
+    var raw = fs.readFileSync(STATE_FILE, 'utf8');
+    var parsed = JSON.parse(raw);
+    var peers = Object.create(null);
+    if (parsed && parsed.peers && typeof parsed.peers === 'object') {
+      Object.keys(parsed.peers).forEach(function (k) {
+        peers[k] = parsed.peers[k];
+      });
+    }
+    return {
+      peers: peers,
+      messages: Array.isArray(parsed.messages) ? parsed.messages : [],
+      nextId: Number(parsed.nextId) > 0 ? Number(parsed.nextId) : 1,
+    };
+  } catch (e) {
+    return { peers: Object.create(null), messages: [], nextId: 1 };
+  }
+}
+
+function saveMailbox(peers, messages, nextId) {
+  fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+  fs.writeFileSync(STATE_FILE, JSON.stringify({
+    nextId: nextId,
+    peers: peers,
+    messages: messages,
+  }));
+}
 
 function createRelay() {
-  var peers = Object.create(null);
-  var messages = [];
-  var nextId = 1;
-  var allow = auth.loadAllow(path.join(__dirname, '..'));
+  var loaded = loadMailbox();
+  var peers = loaded.peers;
+  var messages = loaded.messages;
+  var nextId = loaded.nextId;
+  var allow = auth.loadAllow(ROOT_DIR);
+
+  function persist() {
+    saveMailbox(peers, messages, nextId);
+  }
 
   function normalizeName(name) {
     if (typeof name !== 'string') return '';
@@ -28,7 +64,8 @@ function createRelay() {
     if (peers[n]) return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] };
     var peer = { name: n, claimedAt: new Date().toISOString() };
     peers[n] = peer;
-    return { ok: true, status: 201, peer };
+    persist();
+    return { ok: true, status: 201, peer: peer };
   }
 
   function send(from, to, text, sig) {
@@ -51,9 +88,10 @@ function createRelay() {
     if (messages.length > MAX_MESSAGES) {
       messages = messages.slice(messages.length - MAX_MESSAGES);
     }
+    persist();
     return { ok: true, status: 201, message: msg };
   }
-  
+
   function inbox(name) {
     var n = normalizeName(name);
     if (!n) return { ok: false, status: 400, error: 'name required' };
