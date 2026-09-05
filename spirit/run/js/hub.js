@@ -4,6 +4,25 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const { URL } = require('url');
+const auth = require('./relayAuth');
+
+function signedClaim(rootDir, name) {
+  const id = auth.loadIdentity(rootDir);
+  const body = { name: name };
+  if (id && id.privateKey) {
+    body.sig = auth.sign(id.privateKey, auth.claimMessage(name));
+  }
+  return body;
+}
+
+function signedSend(rootDir, from, to, text) {
+  const id = auth.loadIdentity(rootDir);
+  const body = { from: from, to: to, text: text };
+  if (id && id.privateKey) {
+    body.sig = auth.sign(id.privateKey, auth.sendMessage(from, to, text));
+  }
+  return body;
+}
 
 function loadRelayUrl(rootDir) {
   var file = path.join(rootDir, 'app', 'natter', 'relays.json');
@@ -66,7 +85,7 @@ function createHub(rootDir) {
   function handleClaim(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       withRelay(res, function (url) {
-        relayRequest(url, 'POST', '/api/relay/claim', { name: body && body.name })
+        relayRequest(url, 'POST', '/api/relay/claim', signedClaim(rootDir, body && body.name))
           .then(function (r) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(r.text);
@@ -82,11 +101,12 @@ function createHub(rootDir) {
   function handleSend(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       withRelay(res, function (url) {
-        relayRequest(url, 'POST', '/api/relay/send', {
-          from: body && body.from,
-          to: body && body.to,
-          text: body && body.text
-        })
+        relayRequest(url, 'POST', '/api/relay/send', signedSend(
+          rootDir,
+          body && body.from,
+          body && body.to,
+          body && body.text
+        ))
           .then(function (r) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(r.text);
@@ -111,7 +131,7 @@ function createHub(rootDir) {
     });
   }
 
-  return { handleClaim, handleSend, handleInbox };
+  return { handleClaim: handleClaim, handleSend: handleSend, handleInbox: handleInbox };
 }
 
-module.exports = { createHub };
+module.exports = { createHub: createHub };

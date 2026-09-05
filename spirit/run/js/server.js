@@ -158,10 +158,10 @@ function readJsonBody(req) {
 
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
-    const result = relay.claim(body && body.name);
+    const result = relay.claim(body && body.name, body && body.sig);
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(result.ok ? result.peer : { error: result.error }));
-  }).catch(function (err) {
+  }).catch(function () {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Invalid JSON body');
   });
@@ -481,14 +481,14 @@ const server = http.createServer((req, res) => {
   }
   
   function handleRelaySend(req, res) {
-  readJsonBody(req).then(function (body) {
-    var result = relay.send(body && body.from, body && body.to, body && body.text);
-    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(result.ok ? result.message : { error: result.error }));
-  }).catch(function () {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
+    readJsonBody(req).then(function (body) {
+      const result = relay.send(body && body.from, body && body.to, body && body.text, body && body.sig);
+      res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(result.ok ? result.message : { error: result.error }));
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
   }
 
   function handleRelayInbox(req, res, url) {
