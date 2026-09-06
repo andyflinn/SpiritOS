@@ -1,12 +1,21 @@
 'use strict';
 
-// Perception only. Lives on a personal node, never on the VPS.
-//   relay-state/who.json
+// Perception only. Lives on a personal node, never on a --relay.
+// File: <rootDir>/relay-state/who.json
+//
 // [
-//   { "publicKey": "...", "publicLabel": "john", "myLabel": "lovelyJohn" }
+//   {
+//     "publicKey": "...",
+//     "publicLabel": "john",
+//     "myLabel": "lovelyJohn",
+//     "relays": ["http://127.0.0.1:65410"]
+//   }
 // ]
-// The wire still uses whatever the mailbox understands (today: public
-// labels). This book is how 65432 shows and types To.
+//
+// Identity = publicKey.
+// publicLabel = their caption on a mailbox (may collide, may change).
+// myLabel = your caption (never uploaded).
+// relays = mailboxes where you have seen this key.
 
 const fs = require('fs');
 const path = require('path');
@@ -29,13 +38,31 @@ function save(rootDir, rows) {
   fs.writeFileSync(bookPath(rootDir), JSON.stringify(rows, null, 2));
 }
 
+function normalizeRelays(list) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  list.forEach(function (url) {
+    const u = String(url || '').replace(/\/+$/, '');
+    if (u && out.indexOf(u) === -1) out.push(u);
+  });
+  return out;
+}
+
 function upsert(rootDir, row) {
   if (!row || !row.publicKey) throw new Error('publicKey required');
   const publicLabel = String(row.publicLabel || '').trim();
-  const myLabel = String(row.myLabel || publicLabel || '').trim();
   const rows = load(rootDir);
   const i = rows.findIndex(function (r) { return r.publicKey === row.publicKey; });
-  const next = { publicKey: row.publicKey, publicLabel: publicLabel, myLabel: myLabel };
+  const prev = i === -1 ? { relays: [], myLabel: '' } : rows[i];
+  const myLabel = String(
+    row.myLabel != null ? row.myLabel : (prev.myLabel || publicLabel)
+  ).trim();
+  const next = {
+    publicKey: row.publicKey,
+    publicLabel: publicLabel,
+    myLabel: myLabel,
+    relays: normalizeRelays(row.relays != null ? row.relays : prev.relays),
+  };
   if (i === -1) rows.push(next);
   else rows[i] = next;
   save(rootDir, rows);
@@ -60,22 +87,38 @@ function byPublicKey(rootDir, publicKey) {
   return load(rootDir).find(function (r) { return r.publicKey === publicKey; }) || null;
 }
 
-// Handshake: public who row -> private book, myLabel starts as publicLabel.
 function handshake(rootDir, peer) {
   if (!peer || !peer.publicKey) throw new Error('handshake needs publicKey');
+  const publicLabel = peer.publicLabel || peer.name || '';
   const existing = byPublicKey(rootDir, peer.publicKey);
   if (existing) {
-    existing.publicLabel = peer.publicLabel || peer.name || existing.publicLabel;
-    save(rootDir, load(rootDir).map(function (r) {
+    existing.publicLabel = publicLabel || existing.publicLabel;
+    if (peer.relay) {
+      existing.relays = normalizeRelays((existing.relays || []).concat([peer.relay]));
+    }
+    const rows = load(rootDir).map(function (r) {
       return r.publicKey === existing.publicKey ? existing : r;
-    }));
+    });
+    save(rootDir, rows);
     return existing;
   }
   return upsert(rootDir, {
     publicKey: peer.publicKey,
-    publicLabel: peer.publicLabel || peer.name || '',
-    myLabel: peer.publicLabel || peer.name || '',
+    publicLabel: publicLabel,
+    myLabel: publicLabel,
+    relays: peer.relay ? [peer.relay] : [],
   });
+}
+
+function addRoute(rootDir, publicKey, relayUrl) {
+  const url = String(relayUrl || '').replace(/\/+$/, '');
+  if (!url) return null;
+  const rows = load(rootDir);
+  const row = rows.find(function (r) { return r.publicKey === publicKey; });
+  if (!row) return null;
+  row.relays = normalizeRelays((row.relays || []).concat([url]));
+  save(rootDir, rows);
+  return row;
 }
 
 module.exports = {
@@ -85,4 +128,5 @@ module.exports = {
   byMyLabel: byMyLabel,
   byPublicKey: byPublicKey,
   handshake: handshake,
+  addRoute: addRoute,
 };

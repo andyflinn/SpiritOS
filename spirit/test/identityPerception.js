@@ -46,7 +46,9 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('john-work: ' + JSON.stringify(work));
   }
 
-  const publicJohns = whoBook.load(annie).filter(function (r) { return r.publicLabel === 'john'; });
+  const publicJohns = whoBook.load(annie).filter(function (r) {
+    return r.publicLabel === 'john';
+  });
   if (publicJohns.length === 2) {
     test.check('two public labels "john" stay two rows');
   } else {
@@ -59,6 +61,35 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.check('their public rename does not smash my caption');
   } else {
     test.fail('after rename: ' + JSON.stringify(afterRename));
+  }
+
+  whoBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
+  whoBook.addRoute(annie, johnA.publicKey, 'https://spirit.andyflinn.com');
+  whoBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
+  const routed = whoBook.byPublicKey(annie, johnA.publicKey);
+  if (routed.relays && routed.relays.length === 2) {
+    test.check('routes append per key and do not duplicate');
+  } else {
+    test.fail('routes: ' + JSON.stringify(routed));
+  }
+
+  const bRoutes = whoBook.byPublicKey(annie, johnB.publicKey).relays || [];
+  if (bRoutes.length === 0) {
+    test.check('john-work has no routes until seen elsewhere');
+  } else {
+    test.fail('john B should start with no routes');
+  }
+
+  whoBook.handshake(annie, {
+    publicKey: johnA.publicKey,
+    publicLabel: 'jonathan',
+    relay: 'http://127.0.0.1:65411',
+  });
+  const afterSeen = whoBook.byPublicKey(annie, johnA.publicKey);
+  if (afterSeen.relays.length === 3 && afterSeen.myLabel === 'lovelyJohn') {
+    test.check('handshake appends a new route and keeps my caption');
+  } else {
+    test.fail('after seen: ' + JSON.stringify(afterSeen));
   }
 }
 
@@ -75,8 +106,6 @@ test.startTest('Identity vs perception (sticks and stones)');
   else test.fail('annie claim: ' + JSON.stringify(first));
 
   const john = auth.generateIdentity('john');
-  // Today's wire: second "john" label is a NEW name only if allow is keys
-  // and that name is listed — after first owner, extra names are refused.
   const j = box.claim(
     'john',
     auth.sign(john.privateKey, auth.claimMessage('john')),
