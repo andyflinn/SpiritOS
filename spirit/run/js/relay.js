@@ -10,14 +10,14 @@ var NAME_RE = /^[A-Za-z0-9._-]{1,32}$/;
 var CLAIM_PER_MIN = 10;
 var SEND_PER_MIN = 30;
 var WINDOW_MS = 60 * 1000;
-var RATE_KEY_SWEEP_AT = 1000;
 
-var ROOT_DIR = path.join(__dirname, '..');
-var STATE_FILE = path.join(ROOT_DIR, 'relay-state', 'mailbox.json');
+function stateFile(rootDir) {
+  return path.join(rootDir, 'relay-state', 'mailbox.json');
+}
 
-function loadMailbox() {
+function loadMailbox(rootDir) {
   try {
-    var raw = fs.readFileSync(STATE_FILE, 'utf8');
+    var raw = fs.readFileSync(stateFile(rootDir), 'utf8');
     var parsed = JSON.parse(raw);
     var peers = Object.create(null);
     if (parsed && parsed.peers && typeof parsed.peers === 'object') {
@@ -35,58 +35,42 @@ function loadMailbox() {
   }
 }
 
-function saveMailbox(peers, messages, nextId) {
-  fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
-  fs.writeFileSync(STATE_FILE, JSON.stringify({
+function saveMailbox(rootDir, peers, messages, nextId) {
+  fs.mkdirSync(path.dirname(stateFile(rootDir)), { recursive: true });
+  fs.writeFileSync(stateFile(rootDir), JSON.stringify({
     nextId: nextId,
     peers: peers,
     messages: messages,
   }));
 }
 
-function createRelay() {
-  var loaded = loadMailbox();
+function createRelay(rootDir) {
+  rootDir = rootDir || path.join(__dirname, '..');
+  var loaded = loadMailbox(rootDir);
   var peers = loaded.peers;
   var messages = loaded.messages;
   var nextId = loaded.nextId;
-  var allow = auth.loadAllow(ROOT_DIR);
+  var allow = auth.loadAllow(rootDir);
   var claimHits = Object.create(null);
   var sendHits = Object.create(null);
 
   function persist() {
-    saveMailbox(peers, messages, nextId);
+    saveMailbox(rootDir, peers, messages, nextId);
   }
 
-  // Drops every key whose window has fully expired. Without this the
-  // buckets only ever grew: one entry per distinct key, kept forever, on a
-  // box with about a gigabyte of RAM.
-  function sweep(bucket) {
-    var now = Date.now();
-    Object.keys(bucket).forEach(function (k) {
-      var kept = bucket[k].filter(function (t) { return now - t < WINDOW_MS; });
-      if (kept.length === 0) delete bucket[k];
-      else bucket[k] = kept;
-    });
+  function reloadAllow() {
+    allow = auth.loadAllow(rootDir);
   }
 
-  // `key` is the CALLER, not the name the caller claims to be. Keying on
-  // the claimed name made the limit meaningless: 30 sends per minute per
-  // name, with the name chosen by the sender, is 30 per minute per made-up
-  // string — rotate it and the budget resets, which is exactly what an
-  // abuser does and never what a real client does. An unidentified caller
-  // (a direct in-process call, no socket) shares one bucket rather than
-  // getting a free pass.
   function rateOk(bucket, key, limit) {
-    if (Object.keys(bucket).length > RATE_KEY_SWEEP_AT) sweep(bucket);
     var now = Date.now();
-    var k = key || '(unidentified)';
-    var list = (bucket[k] || []).filter(function (t) { return now - t < WINDOW_MS; });
+    var list = (bucket[key] || []).filter(function (t) { return now - t < WINDOW_MS; });
     if (list.length >= limit) {
-      bucket[k] = list;
+      bucket[key] = list;
       return false;
     }
     list.push(now);
-    bucket[k] = list;
+    bucket[key] = list;
     return true;
   }
 
@@ -103,22 +87,75 @@ function createRelay() {
     return Object.keys(peers).sort().map(function (k) { return peers[k]; });
   }
 
-  function claim(name, sig, clientKey) {
-    var n = normalizeName(name);
-    if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
-    if (!rateOk(claimHits, clientKey, CLAIM_PER_MIN)) {
-      return { ok: false, status: 429, error: 'too many claims' };
-    }
-    var gate = auth.checkClaim(allow, n, sig);
-    if (!gate.ok) return gate;
-    if (peers[n]) return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] };
-    var peer = { name: n, claimedAt: new Date().toISOString() };
-    peers[n] = peer;
-    persist();
-    return { ok: true, status: 201, peer: peer };
+  function snapshot() {
+    return {
+      owner: auth.ownerName(allow),
+      mode: allow.mode,
+      reserved: auth.RESERVED_NAME,
+      peers: who(),
+      messages: messages.length,
+    };
   }
 
-  function send(from, to, text, sig, clientKey) {
+  function becomeOwner(name, publicKey) {
+    auth.writeAllowKeys(rootDir, [{ name: name, publicKey: publicKey }]);
+    reloadAllow();
+  }
+
+  function claim(name, sig, publicKey) {
+    var n = normalizeName(name);
+    if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
+    if (n === auth.RESERVED_NAME) {
+      return { ok: false, status: 400, error: 'name reserved' };
+    }
+    if (!rateOk(claimHits, n, CLAIM_PER_MIN)) {
+      return { ok: false, status: 429, error: 'too many claims' };
+    }
+
+    var pending = auth.loadPendingOwner(rootDir);
+    var firstOwner = Object.keys(peers).length === 0 &&
+      (pending || allow.mode === 'open');
+    if (pending && n !== pending) {
+      return { ok: false, status: 403, error: 'name not allowed' };
+    }
+    if (firstOwner) {
+      if (!publicKey || !sig) {
+        return { ok: false, status: 400, error: 'first claim needs publicKey and sig' };
+      }
+      if (!auth.verify(publicKey, auth.claimMessage(n), sig)) {
+        return { ok: false, status: 403, error: 'bad claim signature' };
+      }
+      becomeOwner(n, publicKey);
+      auth.clearPendingOwner(rootDir);
+    } else {
+      var gate = auth.checkClaim(allow, n, sig);
+      if (!gate.ok) return gate;
+    }
+
+    if (peers[n]) return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] };
+    var peer = { name: n, claimedAt: new Date().toISOString(), owner: firstOwner };
+    peers[n] = peer;
+    persist();
+    return { ok: true, status: 201, peer: peer, owner: firstOwner };
+  }
+
+  function replyFromRelay(to, text) {
+    var msg = {
+      id: String(nextId++),
+      from: auth.RESERVED_NAME,
+      to: to,
+      text: text,
+      sentAt: new Date().toISOString()
+    };
+    messages.push(msg);
+    if (messages.length > MAX_MESSAGES) {
+      messages = messages.slice(messages.length - MAX_MESSAGES);
+    }
+    persist();
+    return msg;
+  }
+
+  function send(from, to, text, sig) {
     var f = normalizeName(from);
     var t = normalizeName(to);
     if (!nameOk(f) || !nameOk(t)) {
@@ -130,7 +167,7 @@ function createRelay() {
     if (text.length > MAX_TEXT) {
       return { ok: false, status: 400, error: 'text too long' };
     }
-    if (!rateOk(sendHits, clientKey, SEND_PER_MIN)) {
+    if (!rateOk(sendHits, f, SEND_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many sends' };
     }
     var gate = auth.checkSend(allow, f, sig, t, text);
@@ -147,15 +184,20 @@ function createRelay() {
       messages = messages.slice(messages.length - MAX_MESSAGES);
     }
     persist();
+    if (t === auth.RESERVED_NAME) {
+      var snap = snapshot();
+      replyFromRelay(f, 'relay status mode=' + snap.mode +
+        ' owner=' + (snap.owner || '-') +
+        ' peers=' + snap.peers.length +
+        ' messages=' + snap.messages);
+    }
     return { ok: true, status: 201, message: msg };
   }
 
-  function inbox(name, sig) {
+  function inbox(name) {
     var n = normalizeName(name);
     if (!n) return { ok: false, status: 400, error: 'name required' };
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
-    var gate = auth.checkInbox(allow, n, sig);
-    if (!gate.ok) return gate;
     return {
       ok: true,
       status: 200,
@@ -163,7 +205,21 @@ function createRelay() {
     };
   }
 
-  return { claim: claim, who: who, send: send, inbox: inbox };
+  function status(name, sig) {
+    var n = normalizeName(name);
+    var gate = auth.checkOwner(allow, n, sig);
+    if (!gate.ok) return gate;
+    return { ok: true, status: 200, report: snapshot() };
+  }
+
+  return {
+    claim: claim,
+    who: who,
+    send: send,
+    inbox: inbox,
+    status: status,
+    snapshot: snapshot,
+  };
 }
 
 module.exports = { createRelay: createRelay };

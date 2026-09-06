@@ -9,6 +9,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+const RESERVED_NAME = 'relay';
+
 function claimMessage(name) {
   return 'claim\n' + name;
 }
@@ -17,13 +19,8 @@ function sendMessage(from, to, text) {
   return 'send\n' + from + '\n' + to + '\n' + text;
 }
 
-// Reading a mailbox is as much a capability as writing to one. claim and
-// send were signature-gated from the start while inbox took a bare name
-// and handed over that peer's messages to anyone who asked — so on a relay
-// where every write was cryptographically proven, every read was still
-// anonymous, and any name was enough to drain someone's mail.
-function inboxMessage(name) {
-  return 'inbox\n' + name;
+function statusMessage(name) {
+  return 'status\n' + name;
 }
 
 function generateIdentity(name) {
@@ -68,6 +65,33 @@ function verify(publicKeyB64, message, sigB64) {
   }
 }
 
+function pendingOwnerPath(rootDir) {
+  return path.join(rootDir, 'relay-state', 'pending-owner.json');
+}
+
+function loadPendingOwner(rootDir) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(pendingOwnerPath(rootDir), 'utf8'));
+    if (parsed && typeof parsed.name === 'string' && parsed.name.trim()) {
+      return parsed.name.trim();
+    }
+  } catch (e) { /* none */ }
+  return null;
+}
+
+function clearPendingOwner(rootDir) {
+  try { fs.unlinkSync(pendingOwnerPath(rootDir)); } catch (e) { /* already gone */ }
+}
+
+function writePendingOwner(rootDir, name) {
+  const dir = path.join(rootDir, 'relay-state');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(pendingOwnerPath(rootDir), JSON.stringify({
+    name: name,
+    createdAt: new Date().toISOString(),
+  }, null, 2));
+}
+
 function loadAllow(rootDir) {
   try {
     const raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'allow.json'), 'utf8');
@@ -86,6 +110,12 @@ function loadAllow(rootDir) {
   return { mode: 'open' };
 }
 
+function writeAllowKeys(rootDir, keys) {
+  const dir = path.join(rootDir, 'relay-state');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: keys }, null, 2));
+}
+
 function loadIdentity(rootDir) {
   try {
     const raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8');
@@ -95,8 +125,25 @@ function loadIdentity(rootDir) {
   return null;
 }
 
+function saveIdentity(rootDir, id) {
+  const dir = path.join(rootDir, 'relay-state');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'identity.json'), JSON.stringify(id, null, 2));
+}
+
+function ensureIdentity(rootDir, name) {
+  var existing = loadIdentity(rootDir);
+  if (existing && existing.privateKey && existing.publicKey) return existing;
+  var id = generateIdentity(name);
+  saveIdentity(rootDir, id);
+  return id;
+}
+
 function checkClaim(allow, name, sig) {
   if (!name) return { ok: false, status: 400, error: 'name required' };
+  if (name === RESERVED_NAME) {
+    return { ok: false, status: 400, error: 'name reserved' };
+  }
   if (allow.mode === 'open') return { ok: true };
   if (allow.mode === 'names') {
     if (allow.names.indexOf(name) === -1) {
@@ -128,30 +175,42 @@ function checkSend(allow, from, sig, to, text) {
   return { ok: true };
 }
 
-// Same shape as checkClaim: open and names mode have no key to verify
-// against, so they stay as permissive as they already are for claim/send.
-// Keys mode is where the guarantee is real.
-function checkInbox(allow, name, sig) {
-  if (!name) return { ok: false, status: 400, error: 'name required' };
-  if (allow.mode === 'open' || allow.mode === 'names') return { ok: true };
+function checkOwner(allow, name, sig) {
+  if (allow.mode !== 'keys') {
+    return { ok: false, status: 403, error: 'no owner key on this relay' };
+  }
   const pub = allow.byName[name];
-  if (!pub) return { ok: false, status: 403, error: 'name not allowed' };
-  if (!sig || !verify(pub, inboxMessage(name), sig)) {
-    return { ok: false, status: 403, error: 'bad inbox signature' };
+  if (!pub) return { ok: false, status: 403, error: 'not the owner' };
+  if (!sig || !verify(pub, statusMessage(name), sig)) {
+    return { ok: false, status: 403, error: 'bad status signature' };
   }
   return { ok: true };
 }
 
+function ownerName(allow) {
+  if (allow.mode !== 'keys') return null;
+  var names = Object.keys(allow.byName);
+  return names.length ? names[0] : null;
+}
+
 module.exports = {
+  RESERVED_NAME,
   claimMessage,
   sendMessage,
-  inboxMessage,
-  checkInbox,
+  statusMessage,
   generateIdentity,
   sign,
   verify,
   loadAllow,
+  writeAllowKeys,
   loadIdentity,
+  saveIdentity,
+  ensureIdentity,
   checkClaim,
   checkSend,
+  checkOwner,
+  ownerName,
+  loadPendingOwner,
+  writePendingOwner,
+  clearPendingOwner,
 };

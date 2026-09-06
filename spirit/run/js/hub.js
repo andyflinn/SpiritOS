@@ -7,22 +7,46 @@ const https = require('https');
 const { URL } = require('url');
 const auth = require('./relayAuth');
 
+function isLoopbackHost(hostname) {
+  var h = String(hostname || '').toLowerCase();
+  return h === 'localhost' || h === '127.0.0.1' || h === '::1';
+}
+
+function assertRelayUrl(relayUrl) {
+  var target;
+  try { target = new URL(relayUrl); }
+  catch (e) { throw new Error('bad relay url'); }
+  if (target.protocol === 'https:') return target;
+  if (target.protocol === 'http:' && isLoopbackHost(target.hostname)) return target;
+  throw new Error('relay url must be https (loopback http is allowed for lab relays)');
+}
+
 function signedClaim(rootDir, name) {
-  const id = auth.loadIdentity(rootDir);
-  const body = { name: name };
-  if (id && id.privateKey) {
-    body.sig = auth.sign(id.privateKey, auth.claimMessage(name));
-  }
+  const id = auth.ensureIdentity(rootDir, name);
+  const body = {
+    name: name,
+    publicKey: id.publicKey,
+    sig: auth.sign(id.privateKey, auth.claimMessage(name)),
+  };
   return body;
 }
 
 function signedSend(rootDir, from, to, text) {
-  const id = auth.loadIdentity(rootDir);
+  const id = auth.ensureIdentity(rootDir, from);
   const body = { from: from, to: to, text: text };
   if (id && id.privateKey) {
     body.sig = auth.sign(id.privateKey, auth.sendMessage(from, to, text));
   }
   return body;
+}
+
+function signedStatus(rootDir, name) {
+  const id = auth.loadIdentity(rootDir);
+  if (!id || !id.privateKey) return { name: name };
+  return {
+    name: name,
+    sig: auth.sign(id.privateKey, auth.statusMessage(name)),
+  };
 }
 
 function loadRelayUrl(rootDir) {
@@ -37,20 +61,6 @@ function loadRelayUrl(rootDir) {
   } catch (e) {
     return null;
   }
-}
-
-function isLoopbackHost(hostname) {
-  var h = String(hostname || '').toLowerCase();
-  return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-}
-
-function assertRelayUrl(relayUrl) {
-  var target;
-  try { target = new URL(relayUrl); }
-  catch (e) { throw new Error('bad relay url'); }
-  if (target.protocol === 'https:') return target;
-  if (target.protocol === 'http:' && isLoopbackHost(target.hostname)) return target;
-  throw new Error('relay url must be https (loopback http is allowed for lab relays)');
 }
 
 function relayRequest(relayUrl, method, pathname, bodyObj) {
@@ -143,16 +153,7 @@ function createHub(rootDir) {
   function handleInbox(req, res, urlObj) {
     withRelay(res, function (url) {
       var name = urlObj.searchParams.get('name') || '';
-      // Signed for the same reason claim and send are: in keys mode the
-      // relay now proves who is reading a mailbox, not just who is writing
-      // to one. Unsigned when this node has no identity yet, which the
-      // relay still accepts in open and names mode.
-      var id = auth.loadIdentity(rootDir);
-      var query = '?name=' + encodeURIComponent(name);
-      if (id && id.privateKey) {
-        query += '&sig=' + encodeURIComponent(auth.sign(id.privateKey, auth.inboxMessage(name)));
-      }
-      relayRequest(url, 'GET', '/api/relay/inbox' + query, null)
+      relayRequest(url, 'GET', '/api/relay/inbox?name=' + encodeURIComponent(name), null)
         .then(function (r) {
           res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(r.text);
@@ -161,7 +162,27 @@ function createHub(rootDir) {
     });
   }
 
-  return { handleClaim: handleClaim, handleSend: handleSend, handleInbox: handleInbox };
+  function handleStatus(req, res, urlObj) {
+    withRelay(res, function (url) {
+      var name = urlObj.searchParams.get('name') || '';
+      var signed = signedStatus(rootDir, name);
+      var q = '/api/relay/status?name=' + encodeURIComponent(name);
+      if (signed.sig) q += '&sig=' + encodeURIComponent(signed.sig);
+      relayRequest(url, 'GET', q, null)
+        .then(function (r) {
+          res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(r.text);
+        })
+        .catch(function (err) { fail(res, 502, String(err.message || err)); });
+    });
+  }
+
+  return {
+    handleClaim: handleClaim,
+    handleSend: handleSend,
+    handleInbox: handleInbox,
+    handleStatus: handleStatus,
+  };
 }
 
 module.exports = { createHub: createHub };
