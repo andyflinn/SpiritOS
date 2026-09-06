@@ -184,7 +184,13 @@ function handleRelayClaim(req, res) {
       clientKeyFor(req)
     );
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(result.ok ? result.peer : { error: result.error }));
+    // A 409 carries the peer that is already there so the caller can tell
+    // "that name is mine already" from "that name is someone else's". The
+    // key is public — /api/relay/who hands out the same thing.
+    var payload = result.ok
+      ? result.peer
+      : (result.peer ? { error: result.error, peer: result.peer } : { error: result.error });
+    res.end(JSON.stringify(payload));
   }).catch(function () {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Invalid JSON body');

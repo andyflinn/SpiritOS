@@ -60,8 +60,10 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('send to relay: ' + JSON.stringify(sent));
   }
 
+  // Reading a mailbox is signed too — andy proves the read with the key he
+  // claimed with. See relayGates.js for the unsigned and wrong-key cases.
   const box2 = createRelay(home);
-  const inbox = box2.inbox('andy');
+  const inbox = box2.inbox('andy', auth.sign(id.privateKey, auth.inboxMessage('andy')));
   const fromRelay = (inbox.messages || []).filter(function (m) { return m.from === 'relay'; });
   if (fromRelay.length === 1 && /owner=andy/.test(fromRelay[0].text)) {
     test.check('relay replies in owner inbox with status');

@@ -23,6 +23,17 @@ function statusMessage(name) {
   return 'status\n' + name;
 }
 
+// Reading a mailbox is as much a capability as writing to one. claim and
+// send were signature-gated from the start while inbox took a bare name
+// and handed over that peer's messages to anyone who asked — so on a relay
+// where every write was cryptographically proven, every read was still
+// anonymous, and any name was enough to drain someone's mail. Peer-by-key
+// re-opened that hole; this is the gate again, and checkInboxKey below is
+// how it is enforced now that a peer carries a key of its own.
+function inboxMessage(name) {
+  return 'inbox\n' + name;
+}
+
 function generateIdentity(name) {
   const pair = crypto.generateKeyPairSync('ed25519');
   return {
@@ -175,6 +186,32 @@ function checkSend(allow, from, sig, to, text) {
   return { ok: true };
 }
 
+// The peer resolved from the requested token carries a key of its own, so
+// the proof runs against that key rather than against the allow list.
+// `token` is whatever the caller asked for — a public label or a public
+// key — and has to be the same string the signature was made over.
+function checkInboxKey(publicKey, token, sig) {
+  if (!publicKey) return { ok: false, status: 403, error: 'name not allowed' };
+  if (!sig || !verify(publicKey, inboxMessage(token), sig)) {
+    return { ok: false, status: 403, error: 'bad inbox signature' };
+  }
+  return { ok: true };
+}
+
+// Keyless mailbox: open and names relays have no per-peer key, so this
+// falls back to the allow list exactly as claim and send do there. In keys
+// mode a name with no key behind it is nobody's mailbox to read.
+function checkInbox(allow, name, sig) {
+  if (!name) return { ok: false, status: 400, error: 'name required' };
+  if (allow.mode === 'open' || allow.mode === 'names') return { ok: true };
+  const pub = allow.byName[name];
+  if (!pub) return { ok: false, status: 403, error: 'name not allowed' };
+  if (!sig || !verify(pub, inboxMessage(name), sig)) {
+    return { ok: false, status: 403, error: 'bad inbox signature' };
+  }
+  return { ok: true };
+}
+
 function checkOwner(allow, name, sig) {
   if (allow.mode !== 'keys') {
     return { ok: false, status: 403, error: 'no owner key on this relay' };
@@ -198,6 +235,7 @@ module.exports = {
   claimMessage,
   sendMessage,
   statusMessage,
+  inboxMessage,
   generateIdentity,
   sign,
   verify,
@@ -208,6 +246,8 @@ module.exports = {
   ensureIdentity,
   checkClaim,
   checkSend,
+  checkInbox,
+  checkInboxKey,
   checkOwner,
   ownerName,
   loadPendingOwner,

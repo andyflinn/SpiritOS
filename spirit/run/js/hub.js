@@ -49,6 +49,20 @@ function signedStatus(rootDir, name) {
   };
 }
 
+// "Is the peer in this claim response us?" — the browser has no key of its
+// own, so the node answers it here. A 409 on a name someone else holds is
+// not a session; a 409 on our own key is.
+function markMine(rootDir, text) {
+  var id = auth.loadIdentity(rootDir);
+  var parsed;
+  try { parsed = JSON.parse(text); }
+  catch (e) { return text; }
+  if (!parsed || typeof parsed !== 'object') return text;
+  var peer = parsed.peer || parsed;
+  parsed.mine = !!(id && id.publicKey && peer && peer.publicKey === id.publicKey);
+  return JSON.stringify(parsed);
+}
+
 function loadRelayUrl(rootDir) {
   var file = path.join(rootDir, 'app', 'natter', 'relays.json');
   var raw;
@@ -119,7 +133,7 @@ function createHub(rootDir) {
         relayRequest(url, 'POST', '/api/relay/claim', signedClaim(rootDir, body && body.name))
           .then(function (r) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(r.text);
+            res.end(markMine(rootDir, r.text));
           })
           .catch(function (err) { fail(res, 502, String(err.message || err)); });
       });
@@ -153,7 +167,16 @@ function createHub(rootDir) {
   function handleInbox(req, res, urlObj) {
     withRelay(res, function (url) {
       var name = urlObj.searchParams.get('name') || '';
-      relayRequest(url, 'GET', '/api/relay/inbox?name=' + encodeURIComponent(name), null)
+      // Signed for the same reason claim and send are: in keys mode the
+      // relay proves who is READING a mailbox, not just who is writing to
+      // one. Unsigned when this node has no identity yet, which the relay
+      // still accepts in open and names mode.
+      var id = auth.loadIdentity(rootDir);
+      var query = '?name=' + encodeURIComponent(name);
+      if (id && id.privateKey) {
+        query += '&sig=' + encodeURIComponent(auth.sign(id.privateKey, auth.inboxMessage(name)));
+      }
+      relayRequest(url, 'GET', '/api/relay/inbox' + query, null)
         .then(function (r) {
           res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(r.text);

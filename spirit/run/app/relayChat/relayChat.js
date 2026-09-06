@@ -47,8 +47,13 @@ spirit.shell.activateApp({
       var name = document.getElementById('rc-name').value.trim();
       hubPost('/api/hub/claim', { name: name }).then(function (r) {
         setStatus(r.status + ' ' + r.text);
-        // 201 = new claim. 409 = name already on the mailbox — still us for this session.
-        if (r.status === 201 || r.status === 409) myName = name;
+        // 201 = new claim. 409 is only us when the peer already on the
+        // mailbox carries OUR key — the node sets `mine` for that. Any
+        // other 409 is somebody else's name, and sending as them would
+        // just fail the signature check on the relay.
+        var mine = false;
+        try { mine = !!JSON.parse(r.text).mine; } catch (e) { mine = false; }
+        if (r.status === 201 || (r.status === 409 && mine)) myName = name;
       });
     });
 
@@ -56,7 +61,7 @@ spirit.shell.activateApp({
       var to = document.getElementById('rc-to').value.trim();
       var text = document.getElementById('rc-text').value;
       if (!myName) {
-        setStatus('claim a name first (409 already-claimed is enough)');
+        setStatus('claim a name first');
         return;
       }
       hubPost('/api/hub/send', { from: myName, to: to, text: text }).then(function (r) {

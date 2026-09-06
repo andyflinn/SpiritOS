@@ -5,21 +5,23 @@
 // themselves are gated by the allow list and signature checks in
 // relayAuth.js"):
 //
-//   1. claim and send really are signature-gated in keys mode — the
-//      baseline, and it holds today;
-//   2. inbox is NOT. It takes a bare ?name= and hands over that peer's
-//      messages to anyone who asks, in every mode. On a public relay every
-//      mailbox is world-readable by name;
-//   3. rate limiting is keyed on the caller-supplied name, so rotating the
-//      name buys a fresh budget every time — 30/min is a limit on a
-//      cooperative sender, not on an abuser. The per-name buckets are also
-//      never pruned, which is the memory half of the same bug (not directly
-//      assertable from outside, so only the bypass is checked here);
+//   1. claim and send are signature-gated in keys mode;
+//   2. inbox is too — a read is proved against the key the peer claimed
+//      with, so a bare ?name= no longer drains a mailbox;
+//   3. rate limiting is keyed on the CALLER, not on the name the caller
+//      supplies, so rotating the name does not buy a fresh budget;
 //   4. a relay whose allow.json is missing runs fully open — any name, any
-//      sender, any reader — and says nothing about it at startup.
+//      sender, any reader — and says so at startup.
 //
-// Cases 2, 3 and 4 are EXPECTED TO FAIL until fixed. Case 1 documents the
-// part that already works, so a fix to the rest can't quietly regress it.
+// All four were audit findings, fixed in 5c64b17/a1bbac6. 2 and 3 then
+// regressed when peers became key-addressed: inbox lost its gate entirely
+// and the send limit moved back onto `from`. This file is the regression
+// guard for both, so it asserts the fixed behaviour rather than the bug.
+//
+// Claim takes (name, sig, publicKey, clientKey) since first-claim-is-owner:
+// a keys-mode claim proves possession of the key it presents. Extra signed
+// keys sitting on the mailbox after the owner is set is deliberate — it is
+// how two johns work — and waits on invites, not on this file.
 //
 // Runs relay.js out of an isolated fake node under the OS temp dir, never
 // the live checkout: createRelay() persists to relay-state/mailbox.json on
@@ -62,21 +64,29 @@ test.subHeading('Keys mode: what a signature is actually required for');
   resetState({ keys: [{ name: andy.name, publicKey: andy.publicKey }] });
   const relay = createRelay();
 
-  const unsigned = relay.claim('andy', null);
-  if (!unsigned.ok && unsigned.status === 403) {
-    test.check('claim without a signature is refused (403)');
+  const unsigned = relay.claim('andy', null, null);
+  if (!unsigned.ok && (unsigned.status === 400 || unsigned.status === 403)) {
+    test.check('claim without a signature is refused (' + unsigned.status + ')');
   } else {
     test.fail('claim without a signature returned ' + JSON.stringify(unsigned));
   }
 
-  const forged = relay.claim('andy', auth.sign(mallory.privateKey, auth.claimMessage('andy')));
+  const forged = relay.claim(
+    'andy',
+    auth.sign(mallory.privateKey, auth.claimMessage('andy')),
+    andy.publicKey
+  );
   if (!forged.ok && forged.status === 403) {
-    test.check('claim signed by the wrong key is refused (403)');
+    test.check("claim signed by the wrong key is refused (403)");
   } else {
     test.fail('claim signed by the wrong key returned ' + JSON.stringify(forged));
   }
 
-  const signed = relay.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')));
+  const signed = relay.claim(
+    'andy',
+    auth.sign(andy.privateKey, auth.claimMessage('andy')),
+    andy.publicKey
+  );
   if (signed.ok) {
     test.check('claim with a correct signature is accepted');
   } else {
@@ -93,16 +103,38 @@ test.subHeading('Keys mode: what a signature is actually required for');
   // Put one real message in andy's mailbox to read back below.
   relay.send('andy', 'andy', 'a private message', auth.sign(andy.privateKey, auth.sendMessage('andy', 'andy', 'a private message')));
 
-  // The gap. Nothing about inbox() consults allow.json or a signature, so
-  // in the mode where every write is cryptographically gated, every read
-  // is still anonymous.
+  // The gate that regressed: a bare ?name= used to hand this over.
   const stolen = relay.inbox('andy');
-  if (stolen.ok && stolen.messages.length > 0) {
-    test.fail('inbox handed over ' + stolen.messages.length + " of andy's message(s) with no signature at all");
-  } else if (!stolen.ok && stolen.status === 403) {
+  if (!stolen.ok && stolen.status === 403) {
     test.check("inbox refuses an unsigned read of another peer's mailbox (403)");
+  } else if (stolen.ok) {
+    test.fail('inbox handed over ' + stolen.messages.length + " of andy's message(s) with no signature at all");
   } else {
     test.fail('inbox returned ' + JSON.stringify(stolen));
+  }
+
+  const forgedRead = relay.inbox('andy', auth.sign(mallory.privateKey, auth.inboxMessage('andy')));
+  if (!forgedRead.ok && forgedRead.status === 403) {
+    test.check('inbox refuses a read signed by the wrong key (403)');
+  } else {
+    test.fail('inbox with a forged signature returned ' + JSON.stringify(forgedRead));
+  }
+
+  // Peers are key-addressed now, so the public key is also a valid token
+  // for the same mailbox. It has to be gated identically, or the gate is
+  // just a speed bump around a second name for the same box.
+  const byKey = relay.inbox(andy.publicKey);
+  if (!byKey.ok && byKey.status === 403) {
+    test.check("inbox refuses an unsigned read addressed by public key (403)");
+  } else {
+    test.fail('inbox by public key returned ' + JSON.stringify(byKey));
+  }
+
+  const ownRead = relay.inbox('andy', auth.sign(andy.privateKey, auth.inboxMessage('andy')));
+  if (ownRead.ok && ownRead.messages.length === 1) {
+    test.check('andy reads his own mailbox with his own signature');
+  } else {
+    test.fail('signed read returned ' + JSON.stringify(ownRead));
   }
 }
 
@@ -132,15 +164,29 @@ test.subHeading('Rate limiting survives a rotating sender name');
       ' sends were accepted by rotating the name — the 30/min limit never applied');
   }
 
-  // Same shape for claim: CLAIM_PER_MIN is also per name.
+  // Same shape for claim. Each squatter brings a real key, so nothing here
+  // can pass by being refused for a missing signature instead of by the
+  // rate limit — which is exactly how this assertion used to pass while
+  // the limit itself was broken.
   let claimsAccepted = 0;
+  let claimRefusal = null;
   for (let i = 0; i < 50; i++) {
-    if (relay.claim('squatter' + i, null).ok) claimsAccepted++;
+    const squatter = auth.generateIdentity('squatter' + i);
+    const r = relay.claim(
+      'squatter' + i,
+      auth.sign(squatter.privateKey, auth.claimMessage('squatter' + i)),
+      squatter.publicKey
+    );
+    if (r.ok) claimsAccepted++;
+    else if (claimRefusal === null) claimRefusal = r;
   }
   if (claimsAccepted >= 50) {
     test.fail('all 50 name claims succeeded from one caller — a squatter can take the whole namespace');
+  } else if (claimRefusal && claimRefusal.status === 429) {
+    test.check('a rotating-name claim flood was rate-limited after ' + claimsAccepted + ' claims');
   } else {
-    test.check('a rotating-name claim flood was refused after ' + claimsAccepted + ' claims');
+    test.fail('claim flood stopped after ' + claimsAccepted +
+      ' but not by the rate limit: ' + JSON.stringify(claimRefusal));
   }
 }
 
