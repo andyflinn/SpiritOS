@@ -256,6 +256,15 @@ function createRelay(rootDir) {
     return { ok: true, status: 201, peer: peer, owner: firstOwner };
   }
 
+  // allow.json is the authority on who the owner is; peer.owner is only
+  // the record written at claim time.
+  function isOwner(party) {
+    var key = party && party.peer && party.peer.publicKey;
+    if (!key) return false;
+    var owner = auth.ownerName(allow);
+    return !!owner && allow.byName[owner] === key;
+  }
+
   function replyFromRelay(to, text) {
     var msg = {
       id: String(nextId++),
@@ -324,7 +333,12 @@ function createRelay(rootDir) {
       messages = messages.slice(messages.length - MAX_MESSAGES);
     }
     persist();
-    if (toWire === auth.RESERVED_NAME || tTok === auth.RESERVED_NAME) {
+    // "I chat to my mailbox" is the owner's affair. The reply is a census
+    // — mode, owner, peer count, message count — and a stranger who
+    // claimed a key on the box, or anyone poking at an address they just
+    // acquired, does not get to enumerate it by sending one message.
+    // Same rule as GET /api/relay/status, which is owner-signed.
+    if ((toWire === auth.RESERVED_NAME || tTok === auth.RESERVED_NAME) && isOwner(src)) {
       var snap = snapshot();
       replyFromRelay(fromWire, 'relay status mode=' + snap.mode +
         ' owner=' + (snap.owner || '-') +

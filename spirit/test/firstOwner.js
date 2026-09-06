@@ -71,6 +71,20 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('inbox: ' + JSON.stringify(inbox));
   }
 
+  // A second signed key on the mailbox is fine (that is how two johns
+  // work) but it is not the owner, so chatting to `relay` gets it nothing.
+  const strangerSend = box2.send(
+    'groq', 'relay', 'status?',
+    auth.sign(stranger.privateKey, auth.sendMessage('groq', 'relay', 'status?'))
+  );
+  const strangerInbox = box2.inbox('groq', auth.sign(stranger.privateKey, auth.inboxMessage('groq')));
+  const census = (strangerInbox.messages || []).filter(function (m) { return m.from === 'relay'; });
+  if (strangerSend.ok && census.length === 0) {
+    test.check('a non-owner sending to relay gets no status line back');
+  } else {
+    test.fail('stranger census: ' + JSON.stringify(census) + ' send ' + JSON.stringify(strangerSend));
+  }
+
   const stSig = auth.sign(id.privateKey, auth.statusMessage('andy'));
   const st = box2.status('andy', stSig);
   if (st.ok && st.report && st.report.owner === 'andy' && st.report.mode === 'keys') {
