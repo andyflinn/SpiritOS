@@ -1,0 +1,6 @@
+#!/bin/bash
+source "$(dirname "$0")/lib.sh"
+need_root
+have systemctl || die "systemctl required"
+systemctl stop "$UNIT_NAME"
+ok "stopped $UNIT_NAME"

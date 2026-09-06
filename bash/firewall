@@ -1,0 +1,29 @@
+#!/bin/bash
+# Publish only 22, 80, 443. Node stays on localhost:65430.
+source "$(dirname "$0")/lib.sh"
+need_root
+
+if have ufw; then
+  say "ufw: allow 22/80/443, deny $NODE_PORT from the world"
+  ufw allow OpenSSH || ufw allow 22/tcp
+  ufw allow 80/tcp
+  ufw allow 443/tcp
+  # Node must not be reachable from outside once Caddy is in front.
+  ufw deny "$NODE_PORT"/tcp || true
+  ufw --force enable
+  ufw status verbose
+  ok "ufw applied"
+  exit 0
+fi
+
+if have firewall-cmd; then
+  say "firewalld: 22/80/443"
+  firewall-cmd --permanent --add-service=ssh
+  firewall-cmd --permanent --add-service=http
+  firewall-cmd --permanent --add-service=https
+  firewall-cmd --reload
+  ok "firewalld applied"
+  exit 0
+fi
+
+die "no ufw or firewalld. Install one of them, then rerun."

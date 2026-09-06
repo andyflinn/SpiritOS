@@ -1,0 +1,34 @@
+#!/bin/bash
+# One-shot cutover: Node leaves public :80, Caddy takes 80/443, Node on localhost.
+source "$(dirname "$0")/lib.sh"
+need_root
+
+say "1. install systemd unit (port $NODE_PORT, --relay)"
+"$REPO_ROOT/bash/install-units"
+
+say "2. stop anything still bound to public :80 that is not caddy"
+if have ss; then
+  ss -tlnp | grep ':80 ' || true
+fi
+# Old stitch: node js/server.js --relay on PORT=80. Stop our unit first so
+# we can re-start it on 65430; operator may still have a manual node on :80.
+if have systemctl; then
+  systemctl stop "$UNIT_NAME" 2>/dev/null || true
+fi
+
+say "3. firewall + tls"
+"$REPO_ROOT/bash/firewall"
+"$REPO_ROOT/bash/tls"
+
+say "4. start relay on 127.0.0.1:$NODE_PORT"
+"$REPO_ROOT/bash/start"
+"$REPO_ROOT/bash/boot-on"
+
+say "5. probe"
+"$REPO_ROOT/bash/status"
+
+echo
+ok "cutover attempted."
+echo "    personal nodes should set app/natter/relays.json url to"
+echo "    https://$DOMAIN"
+echo "    hub.js must use https for that URL (separate code change)."
