@@ -23,6 +23,10 @@
    Later names need that owner. A stranger cannot take `andy` without
    the key, and cannot take `eve` because it was never the pending name.
 
+   "Later names need that owner" is `invites.json` (consume-on-claim),
+   not today's keys mode — which still lets any signed key claim a free
+   name, and must, because that is how two johns work.
+
 Reserved name `relay`: owner sends to it; process replies in the owner
 inbox. `GET /api/relay/status` is owner-only (signed).
 
