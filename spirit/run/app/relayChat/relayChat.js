@@ -47,13 +47,18 @@ spirit.shell.activateApp({
       var name = document.getElementById('rc-name').value.trim();
       hubPost('/api/hub/claim', { name: name }).then(function (r) {
         setStatus(r.status + ' ' + r.text);
-        if (r.status === 201) myName = name;
+        // 201 = new claim. 409 = name already on the mailbox — still us for this session.
+        if (r.status === 201 || r.status === 409) myName = name;
       });
     });
 
     document.getElementById('rc-send').addEventListener('click', function () {
       var to = document.getElementById('rc-to').value.trim();
       var text = document.getElementById('rc-text').value;
+      if (!myName) {
+        setStatus('claim a name first (409 already-claimed is enough)');
+        return;
+      }
       hubPost('/api/hub/send', { from: myName, to: to, text: text }).then(function (r) {
         setStatus(r.status + ' ' + r.text);
         document.getElementById('rc-text').value = '';
