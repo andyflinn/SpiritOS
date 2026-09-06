@@ -46,8 +46,8 @@ test.startTest('First claim is owner; chat to reserved name relay');
     auth.sign(stranger.privateKey, auth.claimMessage('groq')),
     stranger.publicKey
   );
-  if (!bad.ok && bad.status === 403) {
-    test.check('second name without owner key is refused');
+  if (bad.ok && bad.status === 201) {
+    test.check('second signed key may claim after owner (peer-by-key)');
   } else {
     test.fail('stranger claim: ' + JSON.stringify(bad));
   }

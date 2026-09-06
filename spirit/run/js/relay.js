@@ -83,8 +83,67 @@ function createRelay(rootDir) {
     return !!n && NAME_RE.test(n);
   }
 
+  function peerId(peer) {
+    return (peer && peer.publicKey) || (peer && peer.name) || '';
+  }
+
+  function labelOf(peer) {
+    return (peer && (peer.publicLabel || peer.name)) || '';
+  }
+
+  function listPeers() {
+    return Object.keys(peers).map(function (k) { return peers[k]; });
+  }
+
+  function findByKey(publicKey) {
+    if (!publicKey) return null;
+    if (peers[publicKey]) return peers[publicKey];
+    var list = listPeers();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].publicKey === publicKey) return list[i];
+    }
+    return null;
+  }
+
+  function findByLabel(label) {
+    var n = normalizeName(label);
+    var hits = listPeers().filter(function (p) { return labelOf(p) === n; });
+    if (hits.length === 1) return hits[0];
+    if (peers[n] && !peers[n].publicKey) return peers[n];
+    return null;
+  }
+
+  function resolveParty(token) {
+    var t = normalizeName(token);
+    if (!t) return null;
+    if (t === auth.RESERVED_NAME) {
+      return { id: auth.RESERVED_NAME, label: auth.RESERVED_NAME, reserved: true };
+    }
+    var byKey = findByKey(t);
+    if (byKey) {
+      return { id: peerId(byKey), label: labelOf(byKey), peer: byKey };
+    }
+    var byLabel = findByLabel(t);
+    if (byLabel) {
+      return { id: peerId(byLabel), label: labelOf(byLabel), peer: byLabel };
+    }
+    var same = listPeers().filter(function (p) { return labelOf(p) === t; });
+    if (same.length > 1) return { ambiguous: true, label: t };
+    return null;
+  }
+
   function who() {
-    return Object.keys(peers).sort().map(function (k) { return peers[k]; });
+    return listPeers().map(function (p) {
+      return {
+        name: labelOf(p),
+        publicLabel: labelOf(p),
+        publicKey: p.publicKey || null,
+        claimedAt: p.claimedAt,
+        owner: !!p.owner,
+      };
+    }).sort(function (a, b) {
+      return String(a.publicLabel).localeCompare(String(b.publicLabel));
+    });
   }
 
   function snapshot() {
@@ -113,11 +172,11 @@ function createRelay(rootDir) {
     }
 
     var pending = auth.loadPendingOwner(rootDir);
-    var firstOwner = Object.keys(peers).length === 0 &&
-      (pending || allow.mode === 'open');
+    var firstOwner = listPeers().length === 0 && (pending || allow.mode === 'open');
     if (pending && n !== pending) {
       return { ok: false, status: 403, error: 'name not allowed' };
     }
+
     if (firstOwner) {
       if (!publicKey || !sig) {
         return { ok: false, status: 400, error: 'first claim needs publicKey and sig' };
@@ -127,14 +186,39 @@ function createRelay(rootDir) {
       }
       becomeOwner(n, publicKey);
       auth.clearPendingOwner(rootDir);
+    } else if (allow.mode === 'names') {
+      var namesGate = auth.checkClaim(allow, n, sig);
+      if (!namesGate.ok) return namesGate;
+      if (peers[n] || findByLabel(n)) {
+        return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] || findByLabel(n) };
+      }
+    } else if (allow.mode === 'keys') {
+      if (!publicKey || !sig) {
+        return { ok: false, status: 400, error: 'claim needs publicKey and sig' };
+      }
+      if (!auth.verify(publicKey, auth.claimMessage(n), sig)) {
+        return { ok: false, status: 403, error: 'bad claim signature' };
+      }
     } else {
       var gate = auth.checkClaim(allow, n, sig);
       if (!gate.ok) return gate;
     }
 
-    if (peers[n]) return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] };
-    var peer = { name: n, claimedAt: new Date().toISOString(), owner: firstOwner };
-    peers[n] = peer;
+    if (publicKey && findByKey(publicKey)) {
+      return { ok: false, status: 409, error: 'key already claimed', peer: findByKey(publicKey) };
+    }
+    if (!publicKey && (peers[n] || findByLabel(n))) {
+      return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] || findByLabel(n) };
+    }
+
+    var peer = {
+      name: n,
+      publicLabel: n,
+      publicKey: publicKey || null,
+      claimedAt: new Date().toISOString(),
+      owner: firstOwner,
+    };
+    peers[publicKey || n] = peer;
     persist();
     return { ok: true, status: 201, peer: peer, owner: firstOwner };
   }
@@ -156,26 +240,49 @@ function createRelay(rootDir) {
   }
 
   function send(from, to, text, sig) {
-    var f = normalizeName(from);
-    var t = normalizeName(to);
-    if (!nameOk(f) || !nameOk(t)) {
-      return { ok: false, status: 400, error: 'bad name' };
-    }
+    var fTok = normalizeName(from);
+    var tTok = normalizeName(to);
+    if (!fTok || !tTok) return { ok: false, status: 400, error: 'bad name' };
     if (typeof text !== 'string' || !text.trim()) {
       return { ok: false, status: 400, error: 'text required' };
     }
     if (text.length > MAX_TEXT) {
       return { ok: false, status: 400, error: 'text too long' };
     }
-    if (!rateOk(sendHits, f, SEND_PER_MIN)) {
+    if (!rateOk(sendHits, fTok, SEND_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many sends' };
     }
-    var gate = auth.checkSend(allow, f, sig, t, text);
-    if (!gate.ok) return gate;
+
+    var src = resolveParty(fTok);
+    var dst = resolveParty(tTok);
+    if (src && src.ambiguous) return { ok: false, status: 409, error: 'ambiguous from label' };
+    if (dst && dst.ambiguous) return { ok: false, status: 409, error: 'ambiguous to label' };
+
+    if (allow.mode === 'names') {
+      var namesSend = auth.checkSend(allow, fTok, sig, tTok, text);
+      if (!namesSend.ok) return namesSend;
+    } else if (allow.mode === 'keys') {
+      if (src && src.peer && src.peer.publicKey) {
+        if (!sig || !auth.verify(src.peer.publicKey, auth.sendMessage(fTok, tTok, text), sig)) {
+          return { ok: false, status: 403, error: 'bad send signature' };
+        }
+      } else {
+        var ownerSend = auth.checkSend(allow, fTok, sig, tTok, text);
+        if (!ownerSend.ok) return ownerSend;
+      }
+    } else {
+      var openSend = auth.checkSend(allow, fTok, sig, tTok, text);
+      if (!openSend.ok) return openSend;
+    }
+
+    var fromWire = (src && src.label) || fTok;
+    var toWire = (dst && dst.label) || tTok;
     var msg = {
       id: String(nextId++),
-      from: f,
-      to: t,
+      from: fromWire,
+      to: toWire,
+      fromKey: (src && src.peer && src.peer.publicKey) || null,
+      toKey: (dst && dst.peer && dst.peer.publicKey) || null,
       text: text,
       sentAt: new Date().toISOString()
     };
@@ -184,9 +291,9 @@ function createRelay(rootDir) {
       messages = messages.slice(messages.length - MAX_MESSAGES);
     }
     persist();
-    if (t === auth.RESERVED_NAME) {
+    if (toWire === auth.RESERVED_NAME || tTok === auth.RESERVED_NAME) {
       var snap = snapshot();
-      replyFromRelay(f, 'relay status mode=' + snap.mode +
+      replyFromRelay(fromWire, 'relay status mode=' + snap.mode +
         ' owner=' + (snap.owner || '-') +
         ' peers=' + snap.peers.length +
         ' messages=' + snap.messages);
@@ -197,11 +304,18 @@ function createRelay(rootDir) {
   function inbox(name) {
     var n = normalizeName(name);
     if (!n) return { ok: false, status: 400, error: 'name required' };
-    if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
+    var party = resolveParty(n);
+    if (party && party.ambiguous) {
+      return { ok: false, status: 409, error: 'ambiguous label' };
+    }
+    var label = (party && party.label) || n;
+    var key = (party && party.peer && party.peer.publicKey) || null;
     return {
       ok: true,
       status: 200,
-      messages: messages.filter(function (m) { return m.to === n; })
+      messages: messages.filter(function (m) {
+        return m.to === n || m.to === label || (key && m.toKey === key);
+      })
     };
   }
 

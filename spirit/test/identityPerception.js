@@ -105,18 +105,38 @@ test.startTest('Identity vs perception (sticks and stones)');
   if (first.ok) test.check('lab mailbox accepts first signed annie');
   else test.fail('annie claim: ' + JSON.stringify(first));
 
-  const john = auth.generateIdentity('john');
-  const j = box.claim(
+  const johnA = auth.generateIdentity('john');
+  const johnB = auth.generateIdentity('john');
+  const a = box.claim(
     'john',
-    auth.sign(john.privateKey, auth.claimMessage('john')),
-    john.publicKey
+    auth.sign(johnA.privateKey, auth.claimMessage('john')),
+    johnA.publicKey
   );
-  if (!j.ok && j.status === 403) {
-    test.check('keys-mode mailbox still unique-by-label (two johns need peer-by-key next)');
-  } else if (j.ok) {
-    test.check('unexpected: second label accepted — record it');
+  const b = box.claim(
+    'john',
+    auth.sign(johnB.privateKey, auth.claimMessage('john')),
+    johnB.publicKey
+  );
+  if (a.ok && b.ok && johnA.publicKey !== johnB.publicKey) {
+    test.check('two johns claim the same public label on one mailbox');
   } else {
-    test.fail('john claim: ' + JSON.stringify(j));
+    test.fail('two johns: ' + JSON.stringify({ a: a, b: b }));
+  }
+  const listed = box.who().filter(function (p) { return p.publicLabel === 'john'; });
+  if (listed.length === 2) {
+    test.check('who lists two johns as two keys');
+  } else {
+    test.fail('who johns: ' + JSON.stringify(box.who()));
+  }
+  const again = box.claim(
+    'john',
+    auth.sign(johnA.privateKey, auth.claimMessage('john')),
+    johnA.publicKey
+  );
+  if (!again.ok && again.status === 409) {
+    test.check('same key cannot claim twice');
+  } else {
+    test.fail('reclaim john A: ' + JSON.stringify(again));
   }
 }
 
