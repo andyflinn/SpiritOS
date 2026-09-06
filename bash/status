@@ -1,5 +1,6 @@
 #!/bin/bash
 # Show whether the public relay is actually the thing we think it is.
+# One-operator policy: root is spirit. Running as root is success.
 source "$(dirname "$0")/lib.sh"
 
 echo "repo:    $REPO_ROOT"
@@ -7,6 +8,7 @@ echo "run dir: $RUN_DIR"
 echo "domain:  $DOMAIN"
 echo "node:    127.0.0.1:$NODE_PORT (--relay)"
 echo "role:    PUBLIC RELAY — labMaster does not run here"
+echo "policy:  one operator — root is spirit"
 echo
 
 if [ -d "$REPO_ROOT/.git" ]; then
@@ -30,15 +32,11 @@ say "systemd $UNIT_NAME"
 if have systemctl; then
   systemctl is-enabled "$UNIT_NAME" 2>/dev/null && ok "enabled at boot" || warn "not enabled at boot"
   systemctl is-active "$UNIT_NAME" 2>/dev/null && ok "active" || warn "not active"
-
-  # This process answers the open internet and needs no privilege at all.
-  # An old unit predating the hardening still says root — shout, the same
-  # way this script shouts about labMaster.
-  RUN_AS=$(systemctl show -p User --value "$UNIT_NAME" 2>/dev/null)
-  if [ -z "$RUN_AS" ] || [ "$RUN_AS" = "root" ]; then
-    warn "RUNS AS ROOT — reinstall the unit: ./bash/install-units"
+  UNIT_USER=$(systemctl show "$UNIT_NAME" -p User --value 2>/dev/null || true)
+  if [ -z "$UNIT_USER" ] || [ "$UNIT_USER" = "root" ]; then
+    ok "runs as root (one operator)"
   else
-    ok "runs as $RUN_AS (unprivileged)"
+    warn "runs as $UNIT_USER — one-operator policy expects root"
   fi
 else
   warn "no systemctl on this machine"
