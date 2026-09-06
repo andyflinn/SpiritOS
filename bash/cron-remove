@@ -1,9 +1,0 @@
-#!/bin/bash
-source "$(dirname "$0")/lib.sh"
-need_root
-have crontab || die "crontab not installed"
-
-say "remove update cron"
-existing=$(crontab -l 2>/dev/null || true)
-printf '%s\n' "$existing" | grep -v "spirit-host-update" | crontab -
-ok "removed"

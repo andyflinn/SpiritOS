@@ -1,6 +1,0 @@
-#!/bin/bash
-source "$(dirname "$0")/lib.sh"
-need_root
-have systemctl || die "systemctl required"
-systemctl disable "$UNIT_NAME"
-ok "$UNIT_NAME will not start at boot"
