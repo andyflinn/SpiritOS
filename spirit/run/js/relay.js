@@ -102,13 +102,13 @@ function createRelay(rootDir) {
     reloadAllow();
   }
 
-  function claim(name, sig, publicKey) {
+  function claim(name, sig, publicKey, clientKey) {
     var n = normalizeName(name);
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
     if (n === auth.RESERVED_NAME) {
       return { ok: false, status: 400, error: 'name reserved' };
     }
-    if (!rateOk(claimHits, n, CLAIM_PER_MIN)) {
+    if (!rateOk(claimHits, clientKey || n, CLAIM_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many claims' };
     }
 

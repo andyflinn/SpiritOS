@@ -177,7 +177,12 @@ function clientKeyFor(req) {
 
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
-    const result = relay.claim(body && body.name, body && body.sig, clientKeyFor(req));
+    const result = relay.claim(
+      body && body.name,
+      body && body.sig,
+      body && body.publicKey,
+      clientKeyFor(req)
+    );
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(result.ok ? result.peer : { error: result.error }));
   }).catch(function () {
@@ -502,7 +507,7 @@ function isRelayPublicPath(method, pathname) {
   if (pathname === '/' || pathname === '/index.html' || pathname === '/relay.html' || pathname === '/favicon.svg') {
     return method === 'GET';
   }
-  if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox')) return true;
+  if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox' || pathname === '/api/relay/status')) return true;
   if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send')) return true;
   return false;
 }
@@ -577,6 +582,17 @@ const server = http.createServer((req, res) => {
     hub.handleInbox(req, res, url);
     return;
   }
+
+  if (req.method === 'GET' && pathname === '/api/relay/status') {
+    handleRelayStatus(req, res, url);
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/hub/status') {
+    hub.handleStatus(req, res, url);
+    return;
+  }
+
   
   function handleRelaySend(req, res) {
     readJsonBody(req).then(function (body) {
@@ -599,7 +615,16 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ peers: relay.who() }));
   }
-  
+
+  function handleRelayStatus(req, res, url) {
+    var result = relay.status(
+      url.searchParams.get('name') || '',
+      url.searchParams.get('sig') || ''
+    );
+    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(result.ok ? result.report : { error: result.error }));
+  }
+
   if (req.method === 'GET' && pathname === '/api/events') {
     handleSseConnection(req, res);
     return;
