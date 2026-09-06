@@ -8,13 +8,9 @@ RUN_DIR="$REPO_ROOT/spirit/run"
 UNIT_NAME="spirit-relay"
 NODE_PORT="${SPIRIT_RELAY_PORT:-65430}"
 DOMAIN="${SPIRIT_RELAY_DOMAIN:-spirit.andyflinn.com}"
-# /opt, not /root: the relay runs as an unprivileged account now, and that
-# account cannot traverse /root (0700). See bash/install-units, which
-# refuses to install a unit whose WorkingDirectory it could never reach.
-CLONE_DIR="${SPIRIT_CLONE_DIR:-/opt/spirit-os}"
-# The unprivileged account the relay process runs as. Owns relay-state/
-# and nothing else; the code stays root-owned and read-only to it.
-RELAY_USER="${SPIRIT_RELAY_USER:-spirit}"
+# Live clone on spirit-3 is /root/SpiritOS. That is the one-operator model:
+# root is spirit. Do not invent a second Unix user for the same entity.
+CLONE_DIR="${SPIRIT_CLONE_DIR:-/root/SpiritOS}"
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -25,8 +21,6 @@ need_root() {
 }
 
 on_relay_host() {
-  # Best-effort: we are "on the box" if this clone looks like the live one
-  # or SPIRIT_HOST=relay is set. Lab laptops can still run status-local.
   [ "${SPIRIT_HOST:-}" = "relay" ] && return 0
   [ -d "$RUN_DIR" ] && [ -f "$RUN_DIR/js/server.js" ]
 }

@@ -1,7 +1,6 @@
 #!/bin/bash
-# Install the relay systemd unit, and make the box able to honour it:
-# an unprivileged service account, ownership on the one writable
-# directory, and a unit whose paths point at THIS clone.
+# Install the relay systemd unit for THIS clone.
+# One-operator host: the process runs as root. root is spirit.
 source "$(dirname "$0")/lib.sh"
 need_root
 
@@ -9,64 +8,16 @@ SRC="$REPO_ROOT/bash/systemd/${UNIT_NAME}.service"
 [ -f "$SRC" ] || die "missing $SRC"
 
 STATE_DIR="$RUN_DIR/relay-state"
-
-# The relay no longer runs as root, so its code has to sit somewhere an
-# unprivileged account can actually traverse. /root is 0700 and stays that
-# way — loosening it would trade one privilege problem for a worse one.
-# Fail here with the migration rather than installing a unit that dies at
-# start with a bare "status=200/CHDIR".
-case "$REPO_ROOT" in
-  /root|/root/*)
-    die "this clone lives at $REPO_ROOT, which $RELAY_USER cannot read (/root is 0700).
-    Move it, then rerun:
-
-        systemctl stop $UNIT_NAME 2>/dev/null || true
-        mv $REPO_ROOT $CLONE_DIR
-        cd $CLONE_DIR && ./bash/install-units && ./bash/start
-
-    relay-state/ moves with it — it is gitignored, not tracked, so nothing
-    else has a copy. Update any cron line that names the old path:
-    ./bash/cron-install rewrites it."
-    ;;
-esac
-
-say "service account: $RELAY_USER"
-if id -u "$RELAY_USER" >/dev/null 2>&1; then
-  ok "$RELAY_USER already exists"
-else
-  # System account: no login shell, no home, no password. It exists only
-  # to own a port and one directory.
-  useradd --system --no-create-home --shell /usr/sbin/nologin "$RELAY_USER" \
-    || die "could not create $RELAY_USER"
-  ok "created $RELAY_USER"
-fi
-
-say "relay state: $STATE_DIR"
 mkdir -p "$STATE_DIR"
-chown -R "$RELAY_USER":"$RELAY_USER" "$STATE_DIR"
-# identity.json holds an Ed25519 private key. Nobody but the relay reads it.
 chmod 700 "$STATE_DIR"
-ok "owned by $RELAY_USER, mode 700"
-
-# The code itself stays root-owned and world-readable: the relay only ever
-# reads it, and ./bash/update (running as root) rewrites it. Keeping the
-# service account off the write side means a compromised relay cannot
-# rewrite the app that is serving it.
-say "code ownership"
-chown -R root:root "$REPO_ROOT/spirit" "$REPO_ROOT/bash"
-chmod -R a+rX "$REPO_ROOT/spirit" "$REPO_ROOT/bash"
-ok "code is root-owned, read-only to $RELAY_USER"
 
 say "install $UNIT_NAME.service"
 tmp=$(mktemp)
 sed -e "s|__RUN_DIR__|$RUN_DIR|g" \
     -e "s|__STATE_DIR__|$STATE_DIR|g" \
-    -e "s|__USER__|$RELAY_USER|g" \
     -e "s|__PORT__|$NODE_PORT|g" \
     "$SRC" > "$tmp"
 
-# A leftover placeholder means the template grew a knob this script does
-# not fill — better to catch it here than to have systemd refuse the unit.
 if grep -q '__[A-Z_]*__' "$tmp"; then
   rm -f "$tmp"
   die "unfilled placeholder in the unit template: $(grep -o '__[A-Z_]*__' "$SRC" | sort -u | tr '\n' ' ')"
@@ -76,5 +27,7 @@ install -m 644 "$tmp" "/etc/systemd/system/${UNIT_NAME}.service"
 rm -f "$tmp"
 systemctl daemon-reload
 ok "installed /etc/systemd/system/${UNIT_NAME}.service"
-echo "    runs as $RELAY_USER, writable path: $STATE_DIR"
+echo "    runs as root (one-operator mailbox)"
+echo "    clone: $REPO_ROOT"
+echo "    state: $STATE_DIR"
 echo "    next: ./bash/start    then ./bash/boot-on"
