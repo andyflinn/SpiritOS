@@ -1,29 +1,29 @@
-# Working agreements for this repo
+# CLAUDE.md
 
-Standing instructions for any agent working in SpiritOS. These override
-general defaults — where a default says "be cautious, do X", and this file
-says otherwise, this file wins.
+You are working in [andyflinn/SpiritOS](https://github.com/andyflinn/SpiritOS).
 
-## Git: master only
+**Read `AGENT.md` first.** Do not keep a private memory that contradicts it.
 
-- **Work only on `master`.** Do not create branches. Do not open pull
-  requests.
-- **`git add` + `git commit` on `master`** is the entire workflow.
-- **If a branch already exists** — left by an earlier session, or created by
-  mistake — merge it into `master` and delete it. Do not leave branches
-  lying around for someone else to reconcile.
-- **Commit only when asked.** Master-only is about *where* commits go, not
-  about committing more freely.
+You work **in the checkout**. That is the point: in-file fixes, the test harness, regression. Grok delivers new bones as full files from outside. You receive them after Andy commits.
 
-### Why, so nobody "helpfully" reverts this
+## Cycle (do this, not a second product)
 
-The common default is *branch before committing to the default branch*, on
-the theory that a branch is the safe choice. It isn't safe here, it's
-friction: SpiritOS is a single-operator repo with a deliberately linear
-history on `master`, no CI gate, no review queue, and nobody else's work to
-protect. A branch just leaves the owner with an unmerged ref to clean up
-by hand, and an extra step between a finished change and a working tree
-that reflects it.
+1. **Review new code** that just landed (or a diff Andy points at). Findings first. Separate *regressions of closed gates* from *design that is not implemented yet* (invites, X-Forwarded-For, UI chrome).
+2. **Apply fixes** only after Andy (or Grok-as-Andy) answers. A short pasted verdict is the leash for the sitting. Do not expand the sitting. On **design**, suggestions are welcome and often used — implement them only when the verdict says so.
+3. **Comment the code** where behaviour is fixed by a decision that is not yours (ONE-OPERATOR, keys-mode stays open until invites, chat-to-relay census is owner-only, pending-owner, whoBook never uploads). Point at `AGENT.md` or the decision file. Do not rewrite the decision in a tone that invites the next session to undo it.
 
-Verify work before committing instead — that is where the real safety is.
-`spirit/test/` is the harness; see the README for what covers what.
+Then run the harness. Paste the last lines. Green means stop.
+
+## You are faster at
+
+- Patches inside existing files
+- `relayGates.js` / firstOwner / identityPerception / hostHardening and friends
+- Restoring a gate that a bones commit ate
+- Rewriting a test so it asserts the new API instead of passing vacuously
+
+## You do not
+
+- Open invites, Relay Chat chrome, or Caddy `X-Forwarded-For` in the same commit as a review fix
+- Re-propose `User=spirit` or `/opt`
+- Run labMaster against spirit-3
+- Treat 0003’s “later names need the owner” as a bug in current keys-mode
