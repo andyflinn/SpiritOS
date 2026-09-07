@@ -1,12 +1,11 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 const auth = require('./relayAuth');
 const invites = require('./invites');
+const ownerBadge = require('./ownerBadge');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -44,15 +43,6 @@ function signedSend(rootDir, from, to, text) {
   return body;
 }
 
-function signedStatus(rootDir, name) {
-  const id = auth.loadIdentity(rootDir);
-  if (!id || !id.privateKey) return { name: name };
-  return {
-    name: name,
-    sig: auth.sign(id.privateKey, auth.statusMessage(name)),
-  };
-}
-
 // "Is the peer in this claim response us?" — the browser has no key of its
 // own, so the node answers it here. A 409 on a name someone else holds is
 // not a session; a 409 on our own key is.
@@ -67,18 +57,12 @@ function markMine(rootDir, text) {
   return JSON.stringify(parsed);
 }
 
+// Claim, send and inbox still speak to the first Natter row: one browser,
+// one session, one mailbox at a time. Minting is the call that had to stop
+// doing that — see handleInvite.
 function loadRelayUrl(rootDir) {
-  var file = path.join(rootDir, 'app', 'natter', 'relays.json');
-  var raw;
-  try { raw = fs.readFileSync(file, 'utf8'); }
-  catch (e) { return null; }
-  try {
-    var list = JSON.parse(raw);
-    if (!Array.isArray(list) || !list[0] || !list[0].url) return null;
-    return String(list[0].url).replace(/\/+$/, '');
-  } catch (e) {
-    return null;
-  }
+  var urls = ownerBadge.configuredUrls(rootDir);
+  return urls.length ? urls[0] : null;
 }
 
 function relayRequest(relayUrl, method, pathname, bodyObj) {
@@ -131,6 +115,22 @@ function createHub(rootDir) {
     fn(url);
   }
 
+  // The mailbox a mint is aimed at. Same scheme check withRelay does, so
+  // a plain-http row in Natter is refused here rather than at the socket.
+  function withChosenRelay(res, wanted, fn) {
+    var chosen = ownerBadge.chooseUrl(ownerBadge.configuredUrls(rootDir), wanted);
+    if (!chosen.ok) {
+      fail(res, chosen.status, chosen.error);
+      return;
+    }
+    try { assertRelayUrl(chosen.url); }
+    catch (e) {
+      fail(res, 503, String(e.message || e));
+      return;
+    }
+    fn(chosen.url);
+  }
+
   function handleClaim(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       withRelay(res, function (url) {
@@ -177,9 +177,14 @@ function createHub(rootDir) {
   // refuse the very claim it was made for. All the hub contributes is the
   // owner's name and a signature over the label and duration it is asking
   // for. The relay is what mints.
+  //
+  // Which mailbox is the caller's to say, not relays.json[0]'s to assume.
+  // A node may own several; minting on the first one listed would put the
+  // token on a mailbox the friend was never being invited to, and the
+  // owner would not find out until the claim failed somewhere else.
   function handleInvite(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
-      withRelay(res, function (url) {
+      withChosenRelay(res, body && body.url, function (url) {
         var id = auth.loadIdentity(rootDir);
         if (!id || !id.privateKey) {
           fail(res, 403, 'no identity on this node');
@@ -226,19 +231,26 @@ function createHub(rootDir) {
     });
   }
 
+  // Status is now asked of every Natter row, not just the first, because
+  // this is where the owner badge comes from: a signed 200 with a report
+  // on that URL. The answer is per row — owned, not owned, unreachable —
+  // and the caller is told which rows carry the badge and whether it has
+  // to ask the human to pick between them.
   function handleStatus(req, res, urlObj) {
-    withRelay(res, function (url) {
-      var name = urlObj.searchParams.get('name') || '';
-      var signed = signedStatus(rootDir, name);
-      var q = '/api/relay/status?name=' + encodeURIComponent(name);
-      if (signed.sig) q += '&sig=' + encodeURIComponent(signed.sig);
-      relayRequest(url, 'GET', q, null)
-        .then(function (r) {
-          res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(r.text);
-        })
-        .catch(function (err) { fail(res, 502, String(err.message || err)); });
-    });
+    var name = urlObj.searchParams.get('name') || '';
+    ownerBadge.probe(rootDir, name, function (url, method, pathname) {
+      return relayRequest(url, method, pathname, null);
+    })
+      .then(function (summary) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          name: name,
+          rows: summary.rows,
+          ownedUrls: summary.ownedUrls,
+          mustPick: summary.mustPick,
+        }));
+      })
+      .catch(function (err) { fail(res, 502, String(err.message || err)); });
   }
 
   return {
