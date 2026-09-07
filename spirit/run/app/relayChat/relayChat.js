@@ -22,7 +22,13 @@ spirit.shell.activateApp({
         '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
         '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
         '<button type="button" id="rc-claim">Claim</button>' +
-        '<label>To<input type="text" id="rc-to" placeholder="bert"></label>' +
+        // To is a list of PEOPLE, and a person is a key. Two johns are
+        // two rows here because the mailbox keeps them as two peers; a
+        // typed name cannot say which one you meant. The text box stays
+        // beside it for a name the list does not have yet (`relay`, or a
+        // peer this node has not refreshed since).
+        '<label>To<select id="rc-to-pick"><option value="">(pick a person)</option></select></label>' +
+        '<label>or type<input type="text" id="rc-to" placeholder="bert"></label>' +
         '<label>Text<input type="text" id="rc-text" placeholder="hello"></label>' +
         '<button type="button" id="rc-send">Send</button>' +
         '<span id="rc-status"></span>' +
@@ -102,6 +108,7 @@ spirit.shell.activateApp({
           document.getElementById('rc-name').value = label;
           refreshInbox();
           refreshBadges();
+          refreshPeople();
         })
         .catch(function (e) { setStatus('could not check ' + label + ': ' + e.message); });
     }
@@ -129,6 +136,34 @@ spirit.shell.activateApp({
           document.getElementById('rc-log').textContent = lines.join('\n') || '(empty)';
         })
         .catch(function (e) { setStatus('inbox failed: ' + e.message); });
+    }
+
+    // The people list, captioned by this node: myLabel where whoBook has
+    // one, otherwise the label the mailbox shows. The value of each row
+    // is the peer's public KEY — that is what send() resolves against,
+    // so picking a row cannot land on the other john.
+    function refreshPeople() {
+      // Like the inbox and the badges: nothing is asked of the mailbox
+      // until this node is bound to a name. An unbound node has nobody
+      // to write to, so a people list would be a question with no use
+      // for its answer.
+      if (!myName) return;
+      fetch('/api/hub/who')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var pick = document.getElementById('rc-to-pick');
+          var chosen = pick.value;
+          var people = (data && data.people) || [];
+          pick.innerHTML = '<option value="">(pick a person)</option>';
+          people.forEach(function (person) {
+            var opt = document.createElement('option');
+            opt.value = person.publicKey;
+            opt.textContent = person.caption + (person.mine ? ' — you' : '');
+            pick.appendChild(opt);
+          });
+          pick.value = chosen; // a refresh must not silently change who you were about to write to
+        })
+        .catch(function (e) { setStatus('people failed: ' + e.message); });
     }
 
     // The badge is one signed status per Natter row — the same census call
@@ -198,12 +233,16 @@ spirit.shell.activateApp({
         if (r.status === 201 || (r.status === 409 && mine)) {
           bind(name);
           refreshBadges();
+          refreshPeople();
         }
       });
     });
 
     document.getElementById('rc-send').addEventListener('click', function () {
-      var to = document.getElementById('rc-to').value.trim();
+      // The picked person wins: it is a key, and a key is unambiguous.
+      // The text box is the fallback for a name not on the list.
+      var picked = document.getElementById('rc-to-pick').value;
+      var to = picked || document.getElementById('rc-to').value.trim();
       var text = document.getElementById('rc-text').value;
       if (!myName) {
         setStatus('claim a name first');

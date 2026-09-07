@@ -6,6 +6,7 @@ const { URL } = require('url');
 const auth = require('./relayAuth');
 const invites = require('./invites');
 const ownerBadge = require('./ownerBadge');
+const whoBook = require('./whoBook');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -93,6 +94,58 @@ function relayRequest(relayUrl, method, pathname, bodyObj) {
     req.on('error', reject);
     req.end(payload);
   });
+}
+
+// The people list behind Relay Chat's To control (CYCLE-CHAT-2.md).
+//
+// A peer is a KEY. The mailbox's `who` hands back one row per key, so two
+// johns are two rows here and stay two rows on screen — the thing a typed
+// name cannot express, and the reason To stops being only a text box.
+//
+// Every peer is handshaken into whoBook on the way past, which is what
+// makes the caption yours: myLabel if this node has one for that key,
+// otherwise the label the mailbox shows. whoBook is never uploaded, so
+// the caption is perception and the key is identity.
+//
+// When two rows would read the same — two johns, neither renamed yet —
+// the caption carries a short piece of the key. A select with two
+// identical options is a control nobody can use, and the disambiguation
+// belongs where the collision is visible rather than in the app.
+//
+// The piece is the TAIL. These are Ed25519 public keys in base64 SPKI,
+// and every one of them starts "MCowBQYDK2VwAyEA" — the ASN.1 header,
+// identical for every key on every mailbox. A fragment taken from the
+// front would have distinguished nothing, which is exactly what
+// chatPeople.js caught.
+function buildPeople(rootDir, peers, relayUrl) {
+  var rows = (Array.isArray(peers) ? peers : [])
+    .filter(function (p) { return p && p.publicKey; })
+    .map(function (p) {
+      whoBook.handshake(rootDir, {
+        publicKey: p.publicKey,
+        publicLabel: p.publicLabel || p.name || '',
+        relay: relayUrl,
+      });
+      return {
+        publicKey: p.publicKey,
+        publicLabel: p.publicLabel || p.name || '',
+        caption: whoBook.labelForKey(rootDir, p.publicKey, p.publicLabel || p.name || ''),
+        owner: !!p.owner,
+      };
+    });
+
+  var seen = Object.create(null);
+  rows.forEach(function (r) { seen[r.caption] = (seen[r.caption] || 0) + 1; });
+  rows.forEach(function (r) {
+    if (seen[r.caption] > 1) {
+      r.caption = r.caption + ' (' + String(r.publicKey).slice(-6) + ')';
+      r.ambiguous = true;
+    }
+  });
+
+  var id = auth.loadIdentity(rootDir);
+  rows.forEach(function (r) { r.mine = !!(id && id.publicKey && r.publicKey === id.publicKey); });
+  return rows;
 }
 
 function createHub(rootDir) {
@@ -242,6 +295,35 @@ function createHub(rootDir) {
   // on that URL. The answer is per row — owned, not owned, unreachable —
   // and the caller is told which rows carry the badge and whether it has
   // to ask the human to pick between them.
+  // GET /api/hub/who — the mailbox's peers, captioned by this node.
+  // Unsigned, like the relay route it forwards: `who` is public on the
+  // mailbox (isRelayPublicPath, server.js), and the captions it comes
+  // back with never leave this machine.
+  function handleWho(req, res) {
+    withRelay(res, function (url) {
+      relayRequest(url, 'GET', '/api/relay/who', null)
+        .then(function (r) {
+          if (r.status !== 200) {
+            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(r.text);
+            return;
+          }
+          // The relay route answers { peers: [...] } (server.js
+          // handleRelayWho), not a bare array. Both shapes are accepted
+          // because a stub that guessed wrong is exactly how this got
+          // shipped once already: the harness passed against a fake that
+          // returned the array, and the live mailbox returned an object.
+          var parsed = null;
+          try { parsed = JSON.parse(r.text); }
+          catch (e) { parsed = null; }
+          var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ relay: url, people: buildPeople(rootDir, peers, url) }));
+        })
+        .catch(function (err) { fail(res, 502, String(err.message || err)); });
+    });
+  }
+
   function handleStatus(req, res, urlObj) {
     var name = urlObj.searchParams.get('name') || '';
     ownerBadge.probe(rootDir, name, function (url, method, pathname) {
@@ -264,8 +346,9 @@ function createHub(rootDir) {
     handleSend: handleSend,
     handleInbox: handleInbox,
     handleStatus: handleStatus,
+    handleWho: handleWho,
     handleInvite: handleInvite,
   };
 }
 
-module.exports = { createHub: createHub };
+module.exports = { createHub: createHub, buildPeople: buildPeople };

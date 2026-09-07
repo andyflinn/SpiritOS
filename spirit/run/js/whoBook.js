@@ -110,6 +110,18 @@ function handshake(rootDir, peer) {
   });
 }
 
+// What YOU call that key. myLabel if you have one, else the caption the
+// mailbox shows, else the key itself — a peer is never nameless, because
+// a row with no caption is a row nobody can pick.
+function labelForKey(rootDir, publicKey, fallbackPublicLabel) {
+  const row = byPublicKey(rootDir, publicKey);
+  const mine = row && String(row.myLabel || '').trim();
+  if (mine) return mine;
+  const theirs = String((row && row.publicLabel) || fallbackPublicLabel || '').trim();
+  if (theirs) return theirs;
+  return String(publicKey || '');
+}
+
 function addRoute(rootDir, publicKey, relayUrl) {
   const url = String(relayUrl || '').replace(/\/+$/, '');
   if (!url) return null;
@@ -128,5 +140,6 @@ module.exports = {
   byMyLabel: byMyLabel,
   byPublicKey: byPublicKey,
   handshake: handshake,
+  labelForKey: labelForKey,
   addRoute: addRoute,
 };

@@ -620,6 +620,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/hub/who') {
+    hub.handleWho(req, res);
+    return;
+  }
+
   
   function handleRelaySend(req, res) {
     readJsonBody(req).then(function (body) {
