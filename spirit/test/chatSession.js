@@ -29,6 +29,10 @@ const peerFile = require('../run/js/peerFile.js');
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'app', 'relayChat', 'relayChat.js');
 
+// The mailbox's own key (chat 5.1): what the To list carries for the
+// relay row, and what its archive is filed under.
+const MAILBOX_KEY = 'MCowBQYDK2VwAyEAmailboxmailboxmailboxmailboxmailb=';
+
 function fakeElement(id) {
   let html = '';
   const el = {
@@ -338,11 +342,24 @@ function threadMarksOwnLines() {
       }],
     });
     return settle().then(function () {
+      // A thread is one conversation now, so there is one to pick before
+      // there is anything to escape.
+      el(nasty, 'rc-to-pick').value = BERT;
+      el(nasty, 'rc-to-pick').fire('change');
       const html2 = el(nasty, 'rc-thread').innerHTML;
       if (html2.indexOf('<script>') === -1 && html2.indexOf('<img') === -1 && html2.indexOf('&lt;script&gt;') !== -1) {
         test.check('and both the text and the sender name are escaped');
       } else {
         test.fail('unescaped thread: ' + html2);
+      }
+
+      // The option text is escaped too: a caption comes off the mailbox
+      // the same way a message does.
+      const options = el(nasty, 'rc-to-pick').innerHTML;
+      if (options.indexOf('<img') === -1 && options.indexOf('&lt;img') !== -1) {
+        test.check('and so is a peer caption in the To list');
+      } else {
+        test.fail('unescaped option: ' + options);
       }
     });
   });
@@ -351,20 +368,76 @@ function threadMarksOwnLines() {
 // Chat 3.1 — the To control is the only way to say who a line is for,
 // so what it offers is the whole of what can be said.
 function composerOffersTheMailbox() {
-  test.subHeading('The reserved mailbox is in the list, and typing is not');
+  test.subHeading('The To list holds keys, and one selectable mailbox');
 
   const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
   const app = mountApp(store, {
     inboxStatus: 200,
     people: [{ publicKey: 'KEY-BERT', publicLabel: 'bert', caption: 'bert', mine: false }],
+    mailboxPublicKey: MAILBOX_KEY,
+    ownedUrls: ['https://spirit.example'],
+    rows: [
+      { url: 'https://spirit.example', label: 'spirit.example', owned: true },
+      { url: 'https://second.example', label: 'second.example', owned: false },
+    ],
   });
 
   return settle().then(function () {
-    const options = el(app, 'rc-to-pick').children.map(function (o) { return o.value; });
-    if (options.indexOf('relay') !== -1 && options.indexOf('KEY-BERT') !== -1) {
-      test.check('the mailbox and the peers are both pickable');
+    // Default filter is peers, so that is what the list holds: a peer,
+    // by key, and no mailbox row until it is asked for.
+    const peersOnly = el(app, 'rc-to-pick').innerHTML;
+    if (peersOnly.indexOf('value="KEY-BERT"') !== -1 && peersOnly.indexOf(MAILBOX_KEY) === -1) {
+      test.check('the peers filter shows peers, by key, and no relay row');
     } else {
-      test.fail('options: ' + JSON.stringify(options));
+      test.fail('peers filter: ' + peersOnly);
+    }
+
+    // A To value is a key — a peer's, or the mailbox's own. `relay` is
+    // what the WIRE calls the mailbox when a line is addressed to it,
+    // and it is never a value in this control.
+    el(app, 'rc-filter-all').fire('click');
+    const html = el(app, 'rc-to-pick').innerHTML;
+
+    if (html.indexOf('value="' + MAILBOX_KEY + '"') !== -1 && html.indexOf('value="KEY-BERT"') !== -1) {
+      test.check('and All shows the mailbox beside them, also by key');
+    } else {
+      test.fail('options: ' + html);
+    }
+
+    if (html.indexOf('value="relay"') === -1) {
+      test.check('the reserved caption is never a value here');
+    } else {
+      test.fail('the literal relay is still an option value');
+    }
+
+    if (/optgroup label="Peers"/.test(html) && /optgroup label="Relays"/.test(html)) {
+      test.check('peers and relays read as two kinds of row');
+    } else {
+      test.fail('no optgroups: ' + html);
+    }
+
+    // Only relays.json[0] is selectable: it is the one mailbox the hub
+    // speaks to, and a row that looked selected while sending somewhere
+    // else would be a promise this node cannot keep.
+    if (/second\.example.*not the mailbox this node speaks to/.test(html) && /disabled/.test(html)) {
+      test.check('a second Natter row is named and inert, with the reason');
+    } else {
+      test.fail('second relay row: ' + html);
+    }
+
+    // The filter is remembered; the search is not.
+    let saved = null;
+    try { saved = JSON.parse(app.store['view.json']); } catch (e) { saved = null; }
+    if (saved && saved.filter === 'all' && saved.search === undefined) {
+      test.check('the filter is written to view.json and the search is not');
+    } else {
+      test.fail('view.json: ' + JSON.stringify(app.store['view.json']));
+    }
+
+    if (app.store['session.json'].indexOf('filter') === -1) {
+      test.check('and session.json is still only who this node is');
+    } else {
+      test.fail('session.json grew a view: ' + app.store['session.json']);
     }
 
     // The ghost box is gone: there is no second control that could aim a
@@ -527,6 +600,141 @@ function claimRowHidesOnceBound() {
   });
 }
 
+// Chat 6 — what was on screen last time, and what happens when the
+// person who was on it is gone.
+function viewIsRemembered() {
+  test.subHeading('The last conversation comes back; a missing one is not replaced');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const JOHN = 'MCowBQYDK2VwAyEAjohnjohnjohnjohnjohnjohnjohnjohnjohn=';
+  const bound = { label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' };
+  const two = [
+    { publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false },
+    { publicKey: JOHN, publicLabel: 'john', caption: 'john', mine: false },
+  ];
+
+  // A node that was last looking at bert.
+  const store = {
+    'session.json': JSON.stringify(bound),
+    'view.json': JSON.stringify({ toKey: BERT, filter: 'peers', lastSeen: {} }),
+  };
+  const app = mountApp(store, { inboxStatus: 200, people: two });
+
+  return settle().then(function () {
+    if (el(app, 'rc-to-pick').value === BERT) {
+      test.check('the To that was open is selected again');
+    } else {
+      test.fail('restored To: ' + el(app, 'rc-to-pick').value);
+    }
+
+    // A remembered relay row with a peers filter: restore the To first,
+    // then widen the filter until that row can be seen. A conversation
+    // filtered out of its own list is one the app lost for you.
+    const MAILBOX = 'MCowBQYDK2VwAyEAmailboxmailboxmailboxmailboxmailb=';
+    const relayStore = {
+      'session.json': JSON.stringify(bound),
+      'view.json': JSON.stringify({ toKey: MAILBOX, filter: 'peers', lastSeen: {} }),
+    };
+    const onRelay = mountApp(relayStore, {
+      inboxStatus: 200,
+      people: two,
+      mailboxPublicKey: MAILBOX,
+      rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
+      ownedUrls: ['https://spirit.example'],
+    });
+
+    return settle().then(function () {
+      if (el(onRelay, 'rc-to-pick').value === MAILBOX) {
+        test.check('a remembered mailbox row widens the filter rather than vanishing');
+      } else {
+        test.fail('relay restore: ' + el(onRelay, 'rc-to-pick').innerHTML);
+      }
+
+      // And the one that matters: the peer is gone from the mailbox.
+      // Selecting the neighbour would be the app deciding who you meant.
+      const goneStore = {
+        'session.json': JSON.stringify(bound),
+        'view.json': JSON.stringify({ toKey: BERT, filter: 'peers', lastSeen: {} }),
+      };
+      const gone = mountApp(goneStore, {
+        inboxStatus: 200,
+        people: [{ publicKey: JOHN, publicLabel: 'john', caption: 'john', mine: false }],
+      });
+
+      return settle().then(function () {
+        if (el(gone, 'rc-to-pick').value === '') {
+          test.check('a To the mailbox no longer has selects nobody');
+        } else {
+          test.fail('picked a neighbour: ' + el(gone, 'rc-to-pick').value);
+        }
+
+        if (/is gone/.test(el(gone, 'rc-thread').innerHTML)) {
+          test.check('and the thread says so rather than showing an empty room');
+        } else {
+          test.fail('thread: ' + el(gone, 'rc-thread').innerHTML);
+        }
+
+        let saved = null;
+        try { saved = JSON.parse(goneStore['view.json']); } catch (e) { saved = null; }
+        if (saved && saved.toKey === '') {
+          test.check('the missing To is forgotten, so it is not asked about forever');
+        } else {
+          test.fail('view.json: ' + goneStore['view.json']);
+        }
+      });
+    });
+  });
+}
+
+// A dot on a row whose archive grew since it was last read. Without it,
+// a thread scoped to one peer hides mail from everyone else.
+function unreadDots() {
+  test.subHeading('A row with something new carries a mark');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const ME = 'MCowBQYDK2VwAyEAandyandyandyandyandyandyandyandyandya=';
+  const store = {
+    'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
+  };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false }],
+    messages: [{
+      id: '9', from: 'bert', to: 'andy', fromKey: BERT, toKey: ME,
+      text: 'while you were out', sentAt: '2026-09-08T09:00:00.000Z',
+    }],
+  });
+
+  return settle().then(function () {
+    if (/•\s*bert/.test(el(app, 'rc-to-pick').innerHTML)) {
+      test.check('an unread line marks its row');
+    } else {
+      test.fail('no mark: ' + el(app, 'rc-to-pick').innerHTML);
+    }
+
+    // Reading it is what clears it, and that is remembered — otherwise a
+    // reload lights every row up again.
+    el(app, 'rc-to-pick').value = BERT;
+    el(app, 'rc-to-pick').fire('change');
+
+    return settle().then(function () {
+      if (!/•/.test(el(app, 'rc-to-pick').innerHTML)) {
+        test.check('opening the conversation clears it');
+      } else {
+        test.fail('mark survived: ' + el(app, 'rc-to-pick').innerHTML);
+      }
+
+      let saved = null;
+      try { saved = JSON.parse(store['view.json']); } catch (e) { saved = null; }
+      if (saved && saved.lastSeen && saved.lastSeen[BERT] === '2026-09-08T09:00:00.000Z') {
+        test.check('and how far it was read is written down');
+      } else {
+        test.fail('lastSeen: ' + store['view.json']);
+      }
+    });
+  });
+}
+
 claimBinds()
   .then(claimRowHidesOnceBound)
   .then(enterSendsExactlyOnce)
@@ -535,6 +743,8 @@ claimBinds()
   .then(reloadRestores)
   .then(nothingStored)
   .then(threadMarksOwnLines)
+  .then(viewIsRemembered)
+  .then(unreadDots)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('chat 1 threw: ' + ((err && err.stack) || err));

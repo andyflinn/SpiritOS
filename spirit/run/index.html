@@ -369,6 +369,13 @@
          would float it over the invite panel that now sits below. Flow
          order is the layout: thread, composer, invite. */
       #rc-composer { margin: 10px 0 14px; }
+      #rc-to-bar { margin-bottom: 8px; }
+      #rc-to-bar input { flex: 1; min-width: 120px; }
+
+      /* The To control carries a caption, an owned marker and a URL on
+         one line, so it gets the width of the page rather than of its
+         longest option. */
+      .rc-wide { width: 100%; margin-bottom: 10px; }
 
       /* Present, not shouting: one line until it is wanted. */
       #rc-invite-panel > summary {
