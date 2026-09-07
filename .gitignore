@@ -57,3 +57,12 @@ spirit/test/pix
 # Unanchored on purpose — matches spirit/run/relay-state/ and any other
 # node home's copy, wherever it ends up.
 relay-state/
+
+# Relay Chat's remembered binding (chat 1): which public label this node
+# claimed, so a reload does not ask again. Per-node session state, like
+# relay-state above and preferences.json — never product code, and
+# meaningless in another clone. It also must not reach the lab:
+# setupRelayFakes.js builds fake nodes from `git ls-files`, so a
+# committed session.json would hand every fake node Andy's label.
+# Unanchored, to match the file wherever an app folder ends up.
+session.json
