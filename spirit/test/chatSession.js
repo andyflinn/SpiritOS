@@ -71,9 +71,15 @@ function fakeDocument() {
 // An api like the one buildApiFor hands an app: fs scoped to this app's
 // own folder, backed by a plain object so the test can see what was
 // written and hand back what a reload would find.
-function fakeApi(store) {
+function fakeApi(store, project) {
   return {
     escapeHtml: spirit.core.util.escapeHtml,
+    // The unscoped read a system app is handed (CLEANUP-PLAN step 6).
+    // Relay Chat uses it for one thing: whether Natter lists a mailbox
+    // at all, which decides whether there is anything to claim on.
+    readProject: function (path) {
+      return Object.prototype.hasOwnProperty.call(project || {}, path) ? project[path] : null;
+    },
     fs: {
       loadFile: function (name) { return Object.prototype.hasOwnProperty.call(store, name) ? store[name] : null; },
       saveFile: function (name, content) { store[name] = content; return Promise.resolve(); },
@@ -126,7 +132,9 @@ function fakeFetch(log, options) {
 function mountApp(store, options) {
   const doc = fakeDocument();
   const log = [];
-  const api = fakeApi(store);
+  const api = fakeApi(store, (options && options.project) || {
+    'app/natter/relays.json': JSON.stringify([{ label: 'spirit', url: 'https://spirit.example' }]),
+  });
   let behavior = null;
   const shellSpirit = {
     shell: { activateApp: function (b) { behavior = b; } },
@@ -735,6 +743,142 @@ function unreadDots() {
   });
 }
 
+// Chat 7 — nothing on the page that cannot work yet, and mail you are
+// not looking at is on its row rather than in the open thread.
+function unboundChrome() {
+  test.subHeading('What an unbound node is offered');
+
+  // No mailbox in Natter: a name on a mailbox that does not exist is not
+  // something this node can do, so it is not offered — the page says
+  // where to go instead.
+  const empty = mountApp({}, { project: { 'app/natter/relays.json': '[]' } });
+
+  return settle().then(function () {
+    if (el(empty, 'rc-claim-row').style.display === 'none') {
+      test.check('with no mailbox in Natter there is no Claim to press');
+    } else {
+      test.fail('claim row shown with an empty Natter');
+    }
+
+    const note = el(empty, 'rc-unbound').textContent;
+    if (/Natter/.test(note) && /https:\/\/spirit\.andyflinn\.com/.test(note)) {
+      test.check('and it says to open Natter and add one');
+    } else {
+      test.fail('note: ' + note);
+    }
+
+    // A mailbox, but no name yet: the form, and what the two ways in
+    // are. A token is for someone invited; the owner needs none.
+    const unbound = mountApp({}, {});
+    return settle().then(function () {
+      if (el(unbound, 'rc-claim-row').style.display !== 'none') {
+        test.check('with a mailbox listed the Claim form is there');
+      } else {
+        test.fail('claim row hidden though Natter has a URL');
+      }
+
+      const copy = el(unbound, 'rc-unbound').textContent;
+      if (/spoken word/.test(copy) && /own the mailbox/.test(copy)) {
+        test.check('and it explains the invited case and the owner case');
+      } else {
+        test.fail('copy: ' + copy);
+      }
+
+      // Bound: neither. The page is a conversation, not a form.
+      const bound = mountApp(
+        { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) },
+        { inboxStatus: 200 }
+      );
+      return settle().then(function () {
+        if (el(bound, 'rc-unbound').style.display === 'none' &&
+            el(bound, 'rc-claim-row').style.display === 'none') {
+          test.check('a bound node is shown neither the form nor the explanation');
+        } else {
+          test.fail('bound node still has unbound chrome');
+        }
+      });
+    });
+  });
+}
+
+// Bert says something while Andy is reading the mailbox thread. It goes
+// to Bert's row and to the title, and NOT into the conversation that is
+// open.
+function mailArrivesOnTheRow() {
+  test.subHeading('A line from someone else does not land in the open thread');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const ME = 'MCowBQYDK2VwAyEAandyandyandyandyandyandyandyandyandya=';
+  const MAILBOX = 'MCowBQYDK2VwAyEAmailboxmailboxmailboxmailboxmailb=';
+
+  const store = {
+    'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
+    'view.json': JSON.stringify({ toKey: MAILBOX, filter: 'relays', lastSeen: {} }),
+  };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    mailboxPublicKey: MAILBOX,
+    rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
+    ownedUrls: ['https://spirit.example'],
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false }],
+    messages: [{
+      id: '11', from: 'bert', to: 'andy', fromKey: BERT, toKey: ME,
+      text: 'first line from bert', sentAt: '2026-09-08T09:00:00.000Z',
+    }],
+  });
+
+  return settle().then(function () {
+    const thread = el(app, 'rc-thread').innerHTML;
+    if (thread.indexOf('first line from bert') === -1) {
+      test.check("Bert's line is not dumped into the mailbox thread Andy is reading");
+    } else {
+      test.fail('thread carried it: ' + thread);
+    }
+
+    // The filter Andy is on shows relays, so Bert's row is not in the
+    // list — and a mark on a row nobody can see is no signal at all. The
+    // list says how many are out of sight instead. The filter is left
+    // doing what it says: overriding it here is what made the buttons
+    // look broken on a node where everything was unread.
+    if (/1 more with new lines/.test(el(app, 'rc-hidden-unread').textContent)) {
+      test.check('the list says one conversation is out of sight');
+    } else {
+      test.fail('hidden note: ' + el(app, 'rc-hidden-unread').textContent);
+    }
+
+    el(app, 'rc-filter-all').fire('click');
+    if (/•\s*bert/.test(el(app, 'rc-to-pick').innerHTML)) {
+      test.check('and All brings his marked row into view');
+    } else {
+      test.fail('no mark: ' + el(app, 'rc-to-pick').innerHTML);
+    }
+
+    if (/Relay Chat \[andy\] · 1/.test(app.doc.title)) {
+      test.check('and the title counts it, for a tab that is not in front of you');
+    } else {
+      test.fail('title: ' + app.doc.title);
+    }
+
+    // Switching to Bert shows it and clears both marks.
+    el(app, 'rc-to-pick').value = BERT;
+    el(app, 'rc-to-pick').fire('change');
+
+    return settle().then(function () {
+      if (el(app, 'rc-thread').innerHTML.indexOf('first line from bert') !== -1) {
+        test.check('switching to Bert shows the line');
+      } else {
+        test.fail('thread after switch: ' + el(app, 'rc-thread').innerHTML);
+      }
+
+      if (!/•/.test(el(app, 'rc-to-pick').innerHTML) && app.doc.title === 'Relay Chat [andy]') {
+        test.check('and the mark and the count both go');
+      } else {
+        test.fail('marks left: ' + app.doc.title + ' ' + el(app, 'rc-to-pick').innerHTML);
+      }
+    });
+  });
+}
+
 claimBinds()
   .then(claimRowHidesOnceBound)
   .then(enterSendsExactlyOnce)
@@ -745,6 +889,8 @@ claimBinds()
   .then(threadMarksOwnLines)
   .then(viewIsRemembered)
   .then(unreadDots)
+  .then(unboundChrome)
+  .then(mailArrivesOnTheRow)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('chat 1 threw: ' + ((err && err.stack) || err));

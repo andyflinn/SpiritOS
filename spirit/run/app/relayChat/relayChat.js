@@ -45,6 +45,9 @@ spirit.shell.activateApp({
     // rarely, and hiding it from non-owners is chat 4, not this sitting.
     container.innerHTML =
       '<h3 id="rc-title">Relay Chat</h3>' +
+      // What an unbound node is told, before it is asked for anything.
+      // Chat 7: nothing on the page that cannot work yet.
+      '<div class="stat-tile wide job-manifest-note" id="rc-unbound" style="display:none"></div>' +
       '<div class="stat-tile wide" id="rc-claim-row">' +
         '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
         '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
@@ -68,6 +71,7 @@ spirit.shell.activateApp({
         '<input type="text" id="rc-search" placeholder="find someone">' +
       '</div>' +
       '<select id="rc-to-pick" class="rc-wide"><option value="">(pick a person)</option></select>' +
+      '<div class="job-log-empty" id="rc-hidden-unread" style="display:none"></div>' +
       '<div class="job-log-panel" id="rc-thread"></div>' +
       // Docked under the thread, where a chat composer belongs.
       '<div class="start-job-form" id="rc-composer">' +
@@ -91,8 +95,15 @@ spirit.shell.activateApp({
     // until the next navigation.
     function paintTitle() {
       var text = myName ? 'Relay Chat [' + myName + ']' : 'Relay Chat';
+      // Mail you are not looking at. The thread shows one conversation,
+      // so a line from anyone else would otherwise be invisible: it
+      // marks its own row, and the count rides in the title for the case
+      // where the app is not the tab in front of you.
+      var waiting = unseenCount();
+      if (waiting > 0) text += ' · ' + waiting;
       titleEl.textContent = text;
       document.title = text;
+      paintUnbound();
 
       // Claiming is what you do once. A bound node has nothing to do
       // with this row, and a chat that keeps asking your name at the top
@@ -107,7 +118,50 @@ spirit.shell.activateApp({
       // to be claimed on. When the hub learns to speak to a chosen relay
       // the way minting already does, this becomes a per-relay question
       // and this line is where it is asked.
-      document.getElementById('rc-claim-row').style.display = myName ? 'none' : '';
+      document.getElementById('rc-claim-row').style.display = (myName || !natterUrls()) ? 'none' : '';
+    }
+
+    // How many conversations have something in them this node has not
+    // read. Conversations, not lines: the number is a nudge to look, and
+    // a line count would be a number nobody can act on.
+    function unseenCount() {
+      return Object.keys(logs).filter(hasUnseen).length;
+    }
+
+    // How many mailboxes Natter lists — read straight off Natter's own
+    // file through api.readProject, the unscoped read the shell hands a
+    // system app (CLEANUP-PLAN step 6). No network, no mailbox contact,
+    // and an answer before this node has claimed anything.
+    function natterUrls() {
+      if (!api.readProject) return 1; // an older shell: assume a mailbox and show the form
+      var raw = null;
+      try { raw = api.readProject('app/natter/relays.json'); }
+      catch (e) { raw = null; }
+      if (!raw) return 0;
+      try {
+        var rows = JSON.parse(raw);
+        if (!Array.isArray(rows)) return 0;
+        return rows.filter(function (row) { return row && row.url; }).length;
+      } catch (e) {
+        return 0;
+      }
+    }
+
+    // Three states, three things to say, and the first one has no Claim
+    // button at all: a name on a mailbox that does not exist is not a
+    // thing this node can do yet, so it is not offered.
+    function paintUnbound() {
+      var note = document.getElementById('rc-unbound');
+      if (!note) return;
+      if (myName) {
+        note.style.display = 'none';
+        note.textContent = '';
+        return;
+      }
+      note.style.display = '';
+      note.textContent = natterUrls()
+        ? 'Chat needs a name on a public mailbox. If you were invited, enter that name and the spoken word, then Claim. If you own the mailbox, Claim the owner name with no token.'
+        : 'This node has no mailbox yet. Open Natter, add one (for example https://spirit.andyflinn.com), then come back.';
     }
 
     // What was on screen last time: who was selected, which filter, and
@@ -376,7 +430,11 @@ spirit.shell.activateApp({
           // the sender's name — a note to yourself is sent and received,
           // and both halves happened.
           recordMessages(data.messages || [], 'received');
+          // A line from someone you are not looking at goes to their
+          // row, never into the open thread.
           renderThread();
+          paintToList();
+          paintTitle();
         })
         .catch(function (e) { setStatus('inbox failed: ' + e.message); });
     }
@@ -452,12 +510,20 @@ spirit.shell.activateApp({
 
       var html = '<option value="">(pick a person)</option>';
 
-      if (view.filter !== 'relays') {
-        var peerRows = people.filter(function (person) {
-          // A row already chosen stays in the list whatever is typed:
-          // filtering must never silently change who you are writing to.
-          return person.publicKey === chosen || matches(person.caption);
-        });
+      // The filter decides what is in the list. It used to be overridden
+      // by "has something unread", so that a marked row could never be
+      // hidden — and on a node where everything is unread that swallowed
+      // the filter whole and made the buttons look broken. What is
+      // hidden is said underneath instead (hiddenUnread, below): a
+      // control that does what it says beats a control that quietly
+      // knows better.
+      var peerRows = (view.filter === 'relays') ? [] : people.filter(function (person) {
+        // A row already chosen stays in the list whatever is typed:
+        // filtering must never silently change who you are writing to.
+        return person.publicKey === chosen || matches(person.caption);
+      });
+
+      {
         if (peerRows.length) {
           html += '<optgroup label="Peers">' + peerRows.map(function (person) {
             var mark = hasUnseen(person.publicKey) ? '• ' : '';
@@ -467,9 +533,11 @@ spirit.shell.activateApp({
         }
       }
 
-      if (view.filter !== 'peers') {
+      {
         var relayHtml = '';
-        if (mailboxKey && relayRow && (mailboxKey === chosen || matches(relayRow.label) || matches(relayRow.url))) {
+        var relayWanted = mailboxKey && relayRow && view.filter !== 'peers' &&
+          (mailboxKey === chosen || matches(relayRow.label) || matches(relayRow.url));
+        if (relayWanted) {
           var relayMark = hasUnseen(mailboxKey) ? '• ' : '';
           var owned = relayRow.owned ? '★ ' : '';
           relayHtml += '<option value="' + api.escapeHtml(mailboxKey) + '">' +
@@ -479,6 +547,7 @@ spirit.shell.activateApp({
         // to the first URL only, so offering these would be a promise
         // the node cannot keep.
         otherRelays.forEach(function (row) {
+          if (view.filter === 'peers') return;
           if (!matches(row.label) && !matches(row.url)) return;
           relayHtml += '<option value="" disabled>' +
             api.escapeHtml((row.owned ? '★ ' : '') + row.label + '  ' + row.url +
@@ -504,7 +573,29 @@ spirit.shell.activateApp({
         pick.value = chosen; // a refresh must not silently change who you were about to write to
       }
 
+      paintHiddenUnread(peerRows);
       paintFilterButtons();
+    }
+
+    // Conversations with something new that this filter is not showing.
+    // The row cannot carry its own mark if it is not in the list, so the
+    // list says how many are out of sight rather than pretending there
+    // are none.
+    function paintHiddenUnread(shownPeers) {
+      var note = document.getElementById('rc-hidden-unread');
+      if (!note) return;
+      var shown = {};
+      shownPeers.forEach(function (person) { shown[person.publicKey] = true; });
+      if (view.filter !== 'peers' && mailboxKey) shown[mailboxKey] = true;
+
+      var hidden = Object.keys(logs).filter(function (key) {
+        return hasUnseen(key) && !shown[key];
+      }).length;
+
+      note.textContent = hidden
+        ? hidden + ' more with new lines — try All'
+        : '';
+      note.style.display = hidden ? '' : 'none';
     }
 
     function paintFilterButtons() {
@@ -640,8 +731,9 @@ spirit.shell.activateApp({
       missingTo = '';
       view.toKey = pickedPeerKey();
       saveView();
-      renderThread();
-      paintToList(); // reading it clears its dot
+      renderThread();   // reading it is what marks it read
+      paintToList();    // so its dot goes
+      paintTitle();     // and so does its share of the count
     });
 
     // The filter is what kind of row you want; it is remembered. The
