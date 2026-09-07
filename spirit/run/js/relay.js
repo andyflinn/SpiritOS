@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const auth = require('./relayAuth');
+const invites = require('./invites');
 
 var MAX_MESSAGES = 200;
 var MAX_TEXT = 1024;
@@ -184,7 +185,8 @@ function createRelay(rootDir) {
     reloadAllow();
   }
 
-  function claim(name, sig, publicKey, clientKey) {
+  function claim(name, sig, publicKey, clientKey, inviteToken) {
+    var inviteRow = null;
     var n = normalizeName(name);
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
     if (n === auth.RESERVED_NAME) {
@@ -221,7 +223,17 @@ function createRelay(rootDir) {
       auth.clearPendingOwner(rootDir);
     } else if (allow.mode === 'names') {
       var namesGate = auth.checkClaim(allow, n, sig);
-      if (!namesGate.ok) return namesGate;
+      if (!namesGate.ok) {
+        // An invite is the names-mode escape hatch: it is how the owner
+        // lets someone in without SSH-editing allow.json. The INVITE's
+        // error comes back, not the allow list's — "expired" and "not on
+        // the list" are different problems and only the first is one the
+        // claimer can do anything about. See INVITE-CYCLE1.md; keys-mode
+        // does not require an invite yet (cycle 4).
+        var invited = invites.match(rootDir, inviteToken, n);
+        if (!invited.ok) return invited;
+        inviteRow = invited.invite;
+      }
       if (peers[n] || findByLabel(n)) {
         return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] || findByLabel(n) };
       }
@@ -242,6 +254,19 @@ function createRelay(rootDir) {
     }
     if (!publicKey && (peers[n] || findByLabel(n))) {
       return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] || findByLabel(n) };
+    }
+
+    // Consume BEFORE the write, and only write if the row actually
+    // burned. The other order — persist the peer, then consume — leaves a
+    // claimed name behind a still-live token whenever the write to
+    // invites.json fails, which is the one failure a one-shot token
+    // cannot survive. Everything that can refuse this claim has already
+    // run, so a burn here is not spent on a claim that then 409s.
+    if (inviteRow) {
+      var burned = invites.consume(rootDir, inviteRow.token);
+      if (!burned) {
+        return { ok: false, status: 403, error: 'invite already used' };
+      }
     }
 
     var peer = {

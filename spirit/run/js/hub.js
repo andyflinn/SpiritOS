@@ -21,13 +21,16 @@ function assertRelayUrl(relayUrl) {
   throw new Error('relay url must be https (loopback http is allowed for lab relays)');
 }
 
-function signedClaim(rootDir, name) {
+// The invite is forwarded, never minted here — a token this node made up
+// would not be in the relay's invites.json. Minting is cycle 2.
+function signedClaim(rootDir, name, invite) {
   const id = auth.ensureIdentity(rootDir, name);
   const body = {
     name: name,
     publicKey: id.publicKey,
     sig: auth.sign(id.privateKey, auth.claimMessage(name)),
   };
+  if (invite) body.invite = invite;
   return body;
 }
 
@@ -130,7 +133,11 @@ function createHub(rootDir) {
   function handleClaim(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       withRelay(res, function (url) {
-        relayRequest(url, 'POST', '/api/relay/claim', signedClaim(rootDir, body && body.name))
+        relayRequest(url, 'POST', '/api/relay/claim', signedClaim(
+          rootDir,
+          body && body.name,
+          body && body.invite
+        ))
           .then(function (r) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(markMine(rootDir, r.text));

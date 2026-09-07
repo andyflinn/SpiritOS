@@ -181,7 +181,8 @@ function handleRelayClaim(req, res) {
       body && body.name,
       body && body.sig,
       body && body.publicKey,
-      clientKeyFor(req)
+      clientKeyFor(req),
+      body && body.invite
     );
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     // A 409 carries the peer that is already there so the caller can tell
