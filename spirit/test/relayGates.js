@@ -164,15 +164,22 @@ test.subHeading('Rate limiting survives a rotating sender name');
       ' sends were accepted by rotating the name — the 30/min limit never applied');
   }
 
-  // Same shape for claim. Each squatter brings a real key, so nothing here
-  // can pass by being refused for a missing signature instead of by the
-  // rate limit — which is exactly how this assertion used to pass while
-  // the limit itself was broken.
+  // Same shape for claim. The squatters have to be able to claim for this
+  // to test anything, so they run against a names-mode relay that allows
+  // every one of them — otherwise the first refusal is the cycle-4 invite
+  // lock, not the limit, and this assertion passes for the wrong reason.
+  // (It used to pass for exactly that kind of wrong reason: every claim
+  // was refused for a missing key while the limit itself was broken.)
+  const squatters = [];
+  for (let i = 0; i < 50; i++) squatters.push('squatter' + i);
+  resetState({ names: squatters });
+  const claimRelay = createRelay();
+
   let claimsAccepted = 0;
   let claimRefusal = null;
   for (let i = 0; i < 50; i++) {
     const squatter = auth.generateIdentity('squatter' + i);
-    const r = relay.claim(
+    const r = claimRelay.claim(
       'squatter' + i,
       auth.sign(squatter.privateKey, auth.claimMessage('squatter' + i)),
       squatter.publicKey

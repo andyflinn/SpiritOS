@@ -103,9 +103,25 @@ test.subHeading('Who may mint');
     test.fail('forged: ' + JSON.stringify(forged));
   }
 
-  // mallory may well hold a claimed key on this box (keys mode still lets
-  // an extra key claim) — that is not the owner key in allow.json.
-  r.box.claim('mallory', auth.sign(mallory.privateKey, auth.claimMessage('mallory')), mallory.publicKey);
+  // mallory may hold a properly invited, properly claimed key on this box
+  // — that is still not the owner key in allow.json. Since cycle 4 she
+  // needs an invite to get on at all, so mint her one: without it she
+  // would never become a peer and this check would pass for the wrong
+  // reason.
+  const mInvite = r.box.mint('andy', 'mallory', 7, auth.sign(r.owner.privateKey, invites.mintMessage('mallory', 7)));
+  const mClaim = r.box.claim(
+    'mallory',
+    auth.sign(mallory.privateKey, auth.claimMessage('mallory')),
+    mallory.publicKey,
+    '10.0.0.6',
+    mInvite.ok && mInvite.invite.token
+  );
+  if (mClaim.ok) {
+    test.check('an invited stranger becomes a peer');
+  } else {
+    test.fail('mallory claim: ' + JSON.stringify({ mint: mInvite, claim: mClaim }));
+  }
+
   const claimedStranger = r.box.mint('mallory', 'saint', 7, auth.sign(mallory.privateKey, invites.mintMessage('saint', 7)));
   if (!claimedStranger.ok && claimedStranger.status === 403) {
     test.check('a claimed non-owner peer still cannot mint');

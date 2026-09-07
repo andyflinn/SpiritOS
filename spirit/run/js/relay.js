@@ -244,13 +244,26 @@ function createRelay(rootDir) {
       if (!auth.verify(publicKey, auth.claimMessage(n), sig)) {
         return { ok: false, status: 403, error: 'bad claim signature' };
       }
-      // A token is not required here yet — that is cycle 4 — but one that
-      // is offered has to be real. Falling through to 201 on a bad token
-      // would turn a refused invite into a successful extra claim: the
-      // claimer would believe the invite worked, and the owner would find
-      // a peer on the box they never invited. Redeeming is the same
-      // consume-before-write below that names mode uses.
-      if (inviteToken) {
+      // This is the lock 0003 promised: after first-claim-is-owner, a new
+      // key gets on the box only with a live invite the owner minted for
+      // that exact label. It is NOT the first owner's path — firstOwner
+      // is handled above and needs no invite, because there is nobody to
+      // invite them yet.
+      //
+      // Two johns is still two keys; it is now also two invites. The
+      // label is not what is scarce, the token is.
+      //
+      // A key already in allow.json is not a NEW key — it is the owner,
+      // and the owner is never someone the box has to be invited into.
+      // Without this, a relay whose allow.json outlived its mailbox.json
+      // (a restore, a lost peer record) locks its own owner out: no peer,
+      // so no first-owner path, and no invite, because the only account
+      // that can mint one is the one being refused.
+      var allowed = allow.byName[n];
+      if (!allowed || allowed !== publicKey) {
+        if (!inviteToken) {
+          return { ok: false, status: 403, error: 'invite required' };
+        }
         var keysInvite = invites.match(rootDir, inviteToken, n);
         if (!keysInvite.ok) return keysInvite;
         inviteRow = keysInvite.invite;

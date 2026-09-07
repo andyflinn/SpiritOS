@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const invites = require('../run/js/invites');
 const { createRelay } = require('../run/js/relay');
 
 function tmpHome() {
@@ -40,16 +41,38 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('reserved claim: ' + JSON.stringify(reserved));
   }
 
+  // A second signed key is still how peer-by-key works, but since cycle 4
+  // it needs an invite the owner minted for that label. Signed but
+  // uninvited is refused.
   const stranger = auth.generateIdentity('groq');
-  const bad = box.claim(
+  const uninvited = box.claim(
     'groq',
     auth.sign(stranger.privateKey, auth.claimMessage('groq')),
     stranger.publicKey
   );
-  if (bad.ok && bad.status === 201) {
-    test.check('second signed key may claim after owner (peer-by-key)');
+  if (!uninvited.ok && uninvited.status === 403 && uninvited.error === 'invite required') {
+    test.check('second key without an invite is refused');
   } else {
-    test.fail('stranger claim: ' + JSON.stringify(bad));
+    test.fail('uninvited claim: ' + JSON.stringify(uninvited));
+  }
+
+  const groqInvite = box.mint(
+    'andy',
+    'groq',
+    7,
+    auth.sign(id.privateKey, invites.mintMessage('groq', 7))
+  );
+  const bad = box.claim(
+    'groq',
+    auth.sign(stranger.privateKey, auth.claimMessage('groq')),
+    stranger.publicKey,
+    '10.0.0.7',
+    groqInvite.ok && groqInvite.invite.token
+  );
+  if (bad.ok && bad.status === 201) {
+    test.check('second signed key with an invite claims after owner (peer-by-key)');
+  } else {
+    test.fail('invited claim: ' + JSON.stringify({ mint: groqInvite, claim: bad }));
   }
 
   const sendSig = auth.sign(id.privateKey, auth.sendMessage('andy', 'relay', 'status?'));

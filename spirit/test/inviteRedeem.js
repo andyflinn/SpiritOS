@@ -83,16 +83,19 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
     test.fail('after: ' + JSON.stringify(invites.load(home)));
   }
 
+  // Cycle 4 shut this door. The mint-and-burn above is untouched; what
+  // changed is that arriving with no token at all is now refused rather
+  // than waved through.
   const john = auth.generateIdentity('john');
-  const open = box.claim(
+  const noToken = box.claim(
     'john',
     auth.sign(john.privateKey, auth.claimMessage('john')),
     john.publicKey
   );
-  if (open.ok) {
-    test.check('keys-mode claim without token still open (cycle 4 not started)');
+  if (!noToken.ok && noToken.status === 403 && noToken.error === 'invite required') {
+    test.check('keys-mode claim without a token is refused (cycle 4 lock)');
   } else {
-    test.fail('open extra: ' + JSON.stringify(open));
+    test.fail('no token: ' + JSON.stringify(noToken));
   }
 }
 

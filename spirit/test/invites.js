@@ -135,14 +135,19 @@ test.startTest('Invites cycle 1 — consume on claim');
     auth.sign(annie.privateKey, auth.claimMessage('annie')),
     annie.publicKey
   );
+  // This block used to assert the opposite — that cycle 1 left keys-mode
+  // open. Cycle 4 closed it, so what it guards now is that the names-mode
+  // invite path above and the keys-mode lock are two different doors:
+  // names mode still admits an allow-listed name with no token at all,
+  // keys mode does not. inviteLock.js covers the lock itself.
   const john = auth.generateIdentity('john');
   const extra = box.claim(
     'john',
     auth.sign(john.privateKey, auth.claimMessage('john')),
     john.publicKey
   );
-  if (first.ok && extra.ok) {
-    test.check('cycle 1 does not require an invite in keys-mode after owner');
+  if (first.ok && !extra.ok && extra.error === 'invite required') {
+    test.check('keys-mode after owner needs an invite (cycle 4)');
   } else {
     test.fail('keys extra: ' + JSON.stringify({ first: first, extra: extra }));
   }

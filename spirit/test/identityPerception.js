@@ -6,6 +6,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
+const invites = require('../run/js/invites');
 const { createRelay } = require('../run/js/relay');
 
 function tmpHome() {
@@ -105,17 +106,35 @@ test.startTest('Identity vs perception (sticks and stones)');
   if (first.ok) test.check('lab mailbox accepts first signed annie');
   else test.fail('annie claim: ' + JSON.stringify(first));
 
+  // Since cycle 4 a second key needs an invite, so two johns is two keys
+  // AND two tokens. The label is not what is scarce — annie can mint
+  // 'john' as often as she likes — the token is.
+  function inviteFor(label) {
+    const minted = box.mint(
+      'annie',
+      label,
+      7,
+      auth.sign(annie.privateKey, invites.mintMessage(label, 7))
+    );
+    if (!minted.ok) throw new Error('mint ' + label + ': ' + JSON.stringify(minted));
+    return minted.invite.token;
+  }
+
   const johnA = auth.generateIdentity('john');
   const johnB = auth.generateIdentity('john');
   const a = box.claim(
     'john',
     auth.sign(johnA.privateKey, auth.claimMessage('john')),
-    johnA.publicKey
+    johnA.publicKey,
+    '10.0.0.1',
+    inviteFor('john')
   );
   const b = box.claim(
     'john',
     auth.sign(johnB.privateKey, auth.claimMessage('john')),
-    johnB.publicKey
+    johnB.publicKey,
+    '10.0.0.2',
+    inviteFor('john')
   );
   if (a.ok && b.ok && johnA.publicKey !== johnB.publicKey) {
     test.check('two johns claim the same public label on one mailbox');
@@ -128,15 +147,27 @@ test.startTest('Identity vs perception (sticks and stones)');
   } else {
     test.fail('who johns: ' + JSON.stringify(box.who()));
   }
+  // A fresh, valid token does not buy a key a second seat: the duplicate
+  // check runs after the invite check, and the token is not burned by the
+  // claim it fails.
+  const thirdToken = inviteFor('john');
   const again = box.claim(
     'john',
     auth.sign(johnA.privateKey, auth.claimMessage('john')),
-    johnA.publicKey
+    johnA.publicKey,
+    '10.0.0.3',
+    thirdToken
   );
   if (!again.ok && again.status === 409) {
-    test.check('same key cannot claim twice');
+    test.check('same key cannot claim twice, even with a live invite');
   } else {
     test.fail('reclaim john A: ' + JSON.stringify(again));
+  }
+  const unburned = invites.load(home).find(function (r) { return r.token === thirdToken; });
+  if (unburned && !unburned.consumedAt) {
+    test.check('the refused claim did not spend its invite');
+  } else {
+    test.fail('third token: ' + JSON.stringify(unburned));
   }
 }
 
