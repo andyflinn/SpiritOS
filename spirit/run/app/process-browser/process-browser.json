@@ -1,0 +1,8 @@
+{
+  "name": "Processes",
+  "description": "Every script under process/ that this node can run, searchable — open one to read it and start it as a job.",
+  "icon": "ROCKET",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}

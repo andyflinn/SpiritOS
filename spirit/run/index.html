@@ -702,98 +702,6 @@
           render: function () {},
         });
 
-        // ---- Processes app ----
-        var lastProcessBrowserJob = null;
-        var lastProcessBrowserEntries = null; // cached {label, description, relativePath} list, independent of the search filter
-
-        function renderProcessList() {
-          var listEl = document.getElementById('process-browser-list');
-          if (!listEl) return;
-
-          if (!lastProcessBrowserEntries) {
-            var job = lastProcessBrowserJob;
-            if (!job || !job.data || !Array.isArray(job.data.files)) {
-              listEl.textContent = 'waiting for file list…';
-              return;
-            }
-            // A script's own file always shares its basename with its
-            // enclosing folder (process/<lang>/<name>/<name>.<ext> — same
-            // convention app/<name>/<name>.js already relies on), which
-            // correctly excludes sibling assets living in the same folder
-            // (a test fixture, an npm package.json, etc.) that the old
-            // shape-only check let through. .json is still excluded
-            // separately since a manifest shares that same basename.
-            lastProcessBrowserEntries = job.data.files
-              .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/([^/]+)\/\1\.[^/.]+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
-              .map(function (f) {
-                var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.[^.]+$/, '.json'));
-                var manifest = null;
-                try { manifest = manifestRaw ? JSON.parse(manifestRaw) : null; } catch (e) {}
-                return {
-                  relativePath: f.relativePath,
-                  label: (manifest && manifest.label) || f.name,
-                  description: (manifest && manifest.description) || '',
-                };
-              });
-          }
-
-          var query = (document.getElementById('process-search').value || '').toLowerCase();
-          var filtered = lastProcessBrowserEntries.filter(function (e) {
-            return !query || e.label.toLowerCase().indexOf(query) !== -1 ||
-              e.description.toLowerCase().indexOf(query) !== -1 ||
-              e.relativePath.toLowerCase().indexOf(query) !== -1;
-          });
-
-          listEl.innerHTML = filtered.map(function (e) {
-            return '<div class="process-entry" data-process-path="' + escapeHtml(e.relativePath) + '">' +
-              '<div class="process-entry-label">' + escapeHtml(e.label) + '</div>' +
-              (e.description ? '<div class="process-entry-desc">' + escapeHtml(e.description) + '</div>' : '') +
-              '</div>';
-          }).join('') || '(no matching processes)';
-        }
-
-        registerApp({
-          id: 'process-browser',
-          name: 'Processes',
-          icon: ICON.ROCKET,
-          hidden: true, // reachable via the "spirit" app group, or launchApp('process-browser') from anywhere
-          mount: function (container, api, params) {
-            // Force the next render() to actually populate the list — mount()
-            // always wipes the DOM clean, so a cache hit from a previous visit
-            // (same fs-watcher job reference, nothing changed on disk) must
-            // not be allowed to skip repopulating a freshly-emptied container.
-            lastProcessBrowserJob = null;
-            lastProcessBrowserEntries = null;
-
-            container.innerHTML =
-              '<input type="text" id="process-search" placeholder="Search processes…">' +
-              '<div id="process-browser-list"></div>';
-
-            document.getElementById('process-search').addEventListener('input', function () {
-              renderProcessList();
-            });
-
-            document.getElementById('process-browser-list').addEventListener('click', function (event) {
-              var entry = event.target.closest('[data-process-path]');
-              if (!entry) return;
-              var mimeType = mimeTypeForName(entry.dataset.processPath);
-              var handlerId = CATEGORY_APP_HANDLERS[classifyMimeType(mimeType)];
-              if (!handlerId) {
-                alert('No viewer registered yet for this file type (' + mimeType + ').');
-                return;
-              }
-              launchApp(handlerId, { path: entry.dataset.processPath });
-            });
-          },
-          render: function () {
-            var job = findJobByType('fs-watcher');
-            if (job === lastProcessBrowserJob) return; // fs-watcher data unchanged — skip re-scanning/re-fetching manifests
-            lastProcessBrowserJob = job;
-            lastProcessBrowserEntries = null;
-            renderProcessList();
-          },
-        });
-
         // ---- Groups app ----
         // Manages user-created top-level app groups: create one, rename/
         // re-icon an existing one, or delete one (its members revert to
@@ -947,7 +855,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['app/stats', 'process-browser', 'app/jobs', 'app/apps', 'group-manager']
+            renderAppGroup(grid, ['app/stats', 'app/process-browser', 'app/jobs', 'app/apps', 'group-manager']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });

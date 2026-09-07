@@ -705,10 +705,10 @@ test.subHeading('Stats has moved out of index.html');
     test.fail('boot list: ' + JSON.stringify(booted.shell.INTRINSIC_APP_FOLDERS));
   }
 
-  if (html.indexOf("'app/stats', 'process-browser'") !== -1) {
+  if (spiritMemberIds().indexOf('app/stats') !== -1) {
     test.check("and the Spirit group names it by its new id");
   } else {
-    test.fail("index.html's Spirit member list was not repointed");
+    test.fail("Spirit member list: " + JSON.stringify(spiritMemberIds()));
   }
 
   const stats = appById(booted, 'app/stats');
@@ -803,10 +803,10 @@ test.subHeading('Jobs has moved out of index.html');
   // sites did, and a missed one is a dead tile with no error anywhere:
   // renderAppGroup skips ids it cannot find, and launchApp returns on
   // one it does not know.
-  if (html.indexOf("'app/stats', 'process-browser', 'app/jobs'") !== -1) {
+  if (spiritMemberIds().indexOf('app/jobs') !== -1) {
     test.check("the Spirit member list names it by its new id");
   } else {
-    test.fail('Spirit member list was not repointed');
+    test.fail('Spirit member list: ' + JSON.stringify(spiritMemberIds()));
   }
 
   if (html.indexOf("launchApp('app/jobs')") !== -1 && html.indexOf("launchApp('jobs')") === -1) {
@@ -901,6 +901,83 @@ test.subHeading('Apps has moved out of index.html');
     test.check('every id in the Spirit member list still resolves');
   } else {
     test.fail('unresolved: ' + JSON.stringify(missing));
+  }
+}
+
+test.subHeading('Processes has moved out of index.html');
+
+{
+  const PROCESS_SCRIPT = 'app/process-browser/process-browser.js';
+  const MOVED_SCRIPTS = [NATTER_SCRIPT, 'app/stats/stats.js', 'app/jobs/jobs.js', 'app/apps/apps.js', PROCESS_SCRIPT];
+  const manifest = JSON.parse(readRun('app/process-browser/process-browser.json'));
+  const html = readRun('index.html');
+
+  if (manifest.intrinsic === true && manifest.owner === 'system') {
+    test.check('app/process-browser has a manifest, intrinsic and system-owned');
+  } else {
+    test.fail('processes manifest: ' + JSON.stringify(manifest));
+  }
+
+  if (html.indexOf("id: 'process-browser'") === -1 && html.indexOf('function renderProcessList') === -1) {
+    test.check('and index.html no longer registers it, list and all');
+  } else {
+    test.fail('index.html still carries the Processes app');
+  }
+
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} }, MOVED_SCRIPTS, true);
+
+  if (booted.shell.APP_ID_RENAMES['process-browser'] === 'app/process-browser' &&
+      booted.shell.INTRINSIC_APP_FOLDERS.indexOf('process-browser') !== -1) {
+    test.check('the rename map and the boot list both carry it');
+  } else {
+    test.fail('lists: ' + JSON.stringify({
+      renames: booted.shell.APP_ID_RENAMES,
+      boot: booted.shell.INTRINSIC_APP_FOLDERS,
+    }));
+  }
+
+  const processes = appById(booted, 'app/process-browser');
+  const grid = spiritGroupLabels(booted);
+  if (processes && processes.intrinsic === true && grid.indexOf('Processes') !== -1) {
+    test.check('it is declared before any snapshot and sits in the Spirit grid');
+  } else {
+    test.fail('processes app: ' + JSON.stringify(processes) + ' grid: ' + grid);
+  }
+
+  // It opens a script through the viewer, and the viewer is what offers
+  // "start as a job" and jumps to Jobs. Both of those launches stay on
+  // spirit.shell until step 6 — what matters here is that the Jobs id
+  // they name is the moved one.
+  if (html.indexOf("launchApp('app/jobs')") !== -1) {
+    test.check("the viewer's start-and-watch launch still names app/jobs");
+  } else {
+    test.fail('the launch into Jobs is missing or misnamed');
+  }
+
+  const src = readRun(PROCESS_SCRIPT);
+  if (src.indexOf('spirit.core.fs.loadFile') !== -1 && !/api\.fs\.[a-zA-Z]/.test(src)) {
+    test.check('its unscoped manifest read is still spirit.core.fs, as step 6 expects');
+  } else {
+    test.fail('the process manifest read was changed ahead of step 6');
+  }
+
+  booted.snapshot(MOVED_SCRIPTS);
+  booted.shell.registerApp({ id: 'group-manager', name: 'Groups', icon: '◫', hidden: true, mount: function () {}, render: function () {} });
+  const known = booted.shell.listApps().map(function (a) { return a.id; });
+  const missing = spiritMemberIds().filter(function (id) { return known.indexOf(id) === -1; });
+  if (missing.length === 0) {
+    test.check('every id in the Spirit member list still resolves');
+  } else {
+    test.fail('unresolved: ' + JSON.stringify(missing));
+  }
+
+  // Four of the five are out; only Files and Groups still register
+  // themselves in index.html.
+  const stillInline = (html.match(/registerApp\(\{/g) || []).length;
+  if (stillInline === 5) {
+    test.check('five registerApp blocks remain: Files, the two viewers, Groups, and Spirit itself');
+  } else {
+    test.fail('registerApp blocks left in index.html: ' + stillInline);
   }
 }
 
