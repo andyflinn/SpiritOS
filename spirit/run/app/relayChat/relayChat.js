@@ -15,6 +15,7 @@ spirit.shell.activateApp({
     var statusEl;
     var titleEl;
     var ownedUrls = [];
+    var invitePainted = ''; // what the invite slot was last drawn for
     // Lines this node sent. The mailbox's inbox is per-RECIPIENT — it
     // returns what was addressed to you, never what you sent — so
     // without this a thread would show only the other half of the
@@ -30,7 +31,7 @@ spirit.shell.activateApp({
     // rarely, and hiding it from non-owners is chat 4, not this sitting.
     container.innerHTML =
       '<h3 id="rc-title">Relay Chat</h3>' +
-      '<div class="stat-tile wide">' +
+      '<div class="stat-tile wide" id="rc-claim-row">' +
         '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
         '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
         '<button type="button" id="rc-claim">Claim</button>' +
@@ -50,24 +51,11 @@ spirit.shell.activateApp({
         '<input type="text" id="rc-text" placeholder="say something">' +
         '<button type="button" id="rc-send">Send</button>' +
       '</div>' +
-      // Last, and folded: minting is what an owner does rarely, and the
-      // conversation is what the page is for. Still visible to everyone
-      // — hiding it from non-owners is chat 4, not this sitting.
-      // Create-invitation is not a second app and not an admin screen:
-      // it is this app, with one more row, shown only while this node's
-      // key owns a mailbox in Natter. See DICTIONARY.md.
-      '<details class="stat-tile wide" id="rc-invite-panel" style="display:none">' +
-        '<summary>Invite someone</summary>' +
-        '<label class="field-label">Invite<input type="text" id="rc-inv-label" placeholder="saint"></label>' +
-        '<label class="field-label">Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
-        // The token Andy speaks on the phone. Empty means the relay picks
-        // hex; typed, it is signed with the label and the days (A2), so
-        // it is his to say and nobody else's to substitute.
-        '<label class="field-label">Token<input type="text" id="rc-inv-token" placeholder="(optional, spoken)"></label>' +
-        '<label class="field-label" id="rc-inv-pick-wrap" style="display:none">Mailbox<select id="rc-inv-pick"></select></label>' +
-        '<button type="button" class="cancel-btn" id="rc-inv-go">Invite</button>' +
-        '<span id="rc-inv-out"></span>' +
-      '</details>';
+      // Last, and empty until this node owns a mailbox. Chat 4: the mint
+      // UI is not hidden for a friend, it is not built for them —
+      // ownedUrls decides, and a node that owns nothing has no invite
+      // markup at all to find. See paintInvitePanel below.
+      '<div id="rc-invite-slot"></div>';
 
     statusEl = document.getElementById('rc-status');
     titleEl = document.getElementById('rc-title');
@@ -82,6 +70,21 @@ spirit.shell.activateApp({
       var text = myName ? 'Relay Chat [' + myName + ']' : 'Relay Chat';
       titleEl.textContent = text;
       document.title = text;
+
+      // Claiming is what you do once. A bound node has nothing to do
+      // with this row, and a chat that keeps asking your name at the top
+      // of every visit reads as a form, so it goes away — and comes
+      // straight back the moment the mailbox stops recognising the
+      // label (the 403 in restoreSession calls unbind, which lands
+      // here).
+      //
+      // "Bound" is today's whole answer to "claimed on every relay this
+      // node uses": the hub claims, sends and reads on the first Natter
+      // row only (loadRelayUrl, hub.js), so there is exactly one mailbox
+      // to be claimed on. When the hub learns to speak to a chosen relay
+      // the way minting already does, this becomes a per-relay question
+      // and this line is where it is asked.
+      document.getElementById('rc-claim-row').style.display = myName ? 'none' : '';
     }
 
     function bind(label) {
@@ -97,6 +100,9 @@ spirit.shell.activateApp({
 
     function unbind() {
       myName = '';
+      ownedUrls = [];
+      invitePainted = '';
+      document.getElementById('rc-invite-slot').innerHTML = '';
       paintTitle();
       api.fs.deleteFile(RC_SESSION_FILE);
     }
@@ -230,6 +236,46 @@ spirit.shell.activateApp({
     // The badge is one signed status per Natter row — the same census call
     // the owner already had, asked of every URL instead of the first. A
     // node that owns nothing gets no panel and no picker.
+    // Create-invitation is not a second app and not an admin screen: it
+    // is this app, with one more panel, and only while this node's key
+    // owns a mailbox in Natter. A friend who claimed with a token owns
+    // nothing, so there is nothing here for them to be refused by.
+    //
+    // Painted rather than toggled: a `display: none` panel is still a
+    // mint form in the page, and the whole point of the owner badge is
+    // that the answer comes from the mailbox rather than from the app
+    // choosing what to reveal.
+    function paintInvitePanel(rows, mustPick) {
+      var slot = document.getElementById('rc-invite-slot');
+      if (!ownedUrls.length) {
+        slot.innerHTML = '';
+        return;
+      }
+      var owned = rows.filter(function (row) { return row.owned; });
+      slot.innerHTML =
+        '<details class="stat-tile wide" id="rc-invite-panel">' +
+          '<summary>Invite someone</summary>' +
+          '<label class="field-label">Invite<input type="text" id="rc-inv-label" placeholder="saint"></label>' +
+          '<label class="field-label">Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
+          // The token Andy speaks on the phone. Empty means the relay
+          // picks hex; typed, it is signed with the label and the days
+          // (A2), so it is his to say and nobody else's to substitute.
+          '<label class="field-label">Token<input type="text" id="rc-inv-token" placeholder="(optional, spoken)"></label>' +
+          (mustPick
+            ? '<label class="field-label">Mailbox<select id="rc-inv-pick">' +
+                owned.map(function (row) {
+                  return '<option value="' + api.escapeHtml(row.url) + '">' + api.escapeHtml(row.label) + '</option>';
+                }).join('') +
+              '</select></label>'
+            : '') +
+          '<button type="button" class="cancel-btn" id="rc-inv-go">Invite</button>' +
+          '<span id="rc-inv-out"></span>' +
+        '</details>';
+    }
+
+    // The badge is one signed status per Natter row — the same census call
+    // the owner already had, asked of every URL instead of the first. A
+    // node that owns nothing gets no panel and no picker.
     function refreshBadges() {
       if (!myName) return;
       fetch('/api/hub/status?name=' + encodeURIComponent(myName))
@@ -237,30 +283,28 @@ spirit.shell.activateApp({
         .then(function (data) {
           ownedUrls = (data && data.ownedUrls) || [];
           var rows = (data && data.rows) || [];
-          var panel = document.getElementById('rc-invite-panel');
-          var pickWrap = document.getElementById('rc-inv-pick-wrap');
-          var pick = document.getElementById('rc-inv-pick');
-          panel.style.display = ownedUrls.length ? '' : 'none';
-          pickWrap.style.display = (data && data.mustPick) ? '' : 'none';
-          pick.innerHTML = '';
-          rows.filter(function (row) { return row.owned; }).forEach(function (row) {
-            var opt = document.createElement('option');
-            opt.value = row.url;
-            opt.textContent = row.label;
-            pick.appendChild(opt);
-          });
+          var mustPick = !!(data && data.mustPick);
+          // Repainting on every refresh would wipe a half-typed invite,
+          // and this runs again on every claim. Only a change in what is
+          // owned changes what is drawn.
+          var sig = ownedUrls.join(',') + '|' + mustPick;
+          if (sig === invitePainted) return;
+          invitePainted = sig;
+          paintInvitePanel(rows, mustPick);
         })
         .catch(function (e) { setStatus('badge failed: ' + e.message); });
     }
 
-    document.getElementById('rc-inv-go').addEventListener('click', function () {
+    // Delegated: the button is painted and repainted by
+    // paintInvitePanel, so nothing may hold a reference to it.
+    document.getElementById('rc-invite-slot').addEventListener('click', function (event) {
+      if (!event.target || !event.target.closest || !event.target.closest('#rc-inv-go')) return;
       var out = document.getElementById('rc-inv-out');
       var spoken = document.getElementById('rc-inv-token').value.trim();
+      var picker = document.getElementById('rc-inv-pick');
       // Never relays.json[0] by habit: with one owned mailbox the node
       // knows which; with several the human has already said.
-      var url = ownedUrls.length === 1
-        ? ownedUrls[0]
-        : document.getElementById('rc-inv-pick').value;
+      var url = ownedUrls.length === 1 ? ownedUrls[0] : (picker && picker.value);
       hubPost('/api/hub/invite', {
         name: myName,
         label: document.getElementById('rc-inv-label').value.trim(),

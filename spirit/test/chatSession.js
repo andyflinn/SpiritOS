@@ -36,6 +36,9 @@ function fakeElement(id) {
     addEventListener: function (event, fn) { (el.listeners[event] = el.listeners[event] || []).push(fn); },
     appendChild: function (child) { el.children.push(child); return child; },
     fire: function (event, arg) { (el.listeners[event] || []).forEach(function (fn) { fn(arg || {}); }); },
+    // The app presses its own Send button when Enter is pressed, so the
+    // stub has to be able to be pressed that way too.
+    click: function () { el.fire('click'); },
   };
   Object.defineProperty(el, 'innerHTML', {
     get: function () { return html; },
@@ -78,7 +81,9 @@ function fakeFetch(log, options) {
     log.push({ url: url, method: (init && init.method) || 'GET' });
     const body = {
       messages: options.messages || [],
-      ownedUrls: [], rows: [], mustPick: false,
+      ownedUrls: options.ownedUrls || [],
+      rows: options.rows || [],
+      mustPick: !!options.mustPick,
       people: options.people || [],
       reservedName: 'relay',
     };
@@ -330,7 +335,160 @@ function composerOffersTheMailbox() {
   });
 }
 
+// Chat 4 — the mint UI belongs to whoever owns a mailbox, and to
+// nobody else. Not hidden for a friend: not built for them.
+function inviteOnlyForAnOwner() {
+  test.subHeading('Invite exists only when this node owns a mailbox');
+
+  const bound = { 'session.json': JSON.stringify({ label: 'saint', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const friend = mountApp(bound, { inboxStatus: 200, ownedUrls: [], rows: [] });
+
+  return settle().then(function () {
+    const html = friend.container.innerHTML + el(friend, 'rc-invite-slot').innerHTML;
+    if (html.indexOf('rc-invite-panel') === -1 && html.indexOf('rc-inv-go') === -1 && html.indexOf('rc-inv-token') === -1) {
+      test.check('a node that owns nothing has no invite markup at all');
+    } else {
+      test.fail('mint UI present for a non-owner: ' + html);
+    }
+
+    // The owner of one mailbox: panel, no picker — there is nothing to
+    // pick between.
+    const owner = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, {
+      inboxStatus: 200,
+      ownedUrls: ['https://spirit.example'],
+      rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
+    });
+    return settle().then(function () {
+      const slot = el(owner, 'rc-invite-slot').innerHTML;
+      if (slot.indexOf('rc-invite-panel') !== -1 && slot.indexOf('rc-inv-go') !== -1) {
+        test.check('an owner gets the panel');
+      } else {
+        test.fail('owner slot: ' + slot);
+      }
+      if (slot.indexOf('rc-inv-pick') === -1) {
+        test.check('and no mailbox picker, with only one mailbox owned');
+      } else {
+        test.fail('picker drawn for a single mailbox: ' + slot);
+      }
+
+      // Two owned mailboxes: the picker is a question that has to be
+      // asked (cycle A), and it is built from the owned rows.
+      const two = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, {
+        inboxStatus: 200,
+        ownedUrls: ['https://one.example', 'https://two.example'],
+        mustPick: true,
+        rows: [
+          { url: 'https://one.example', label: 'one', owned: true },
+          { url: 'https://two.example', label: 'two', owned: true },
+          { url: 'https://three.example', label: 'three', owned: false },
+        ],
+      });
+      return settle().then(function () {
+        const slot2 = el(two, 'rc-invite-slot').innerHTML;
+        const owned = (slot2.match(/<option/g) || []).length;
+        if (slot2.indexOf('rc-inv-pick') !== -1 && owned === 2) {
+          test.check('two owned mailboxes get a picker of exactly those two');
+        } else {
+          test.fail('picker options: ' + slot2);
+        }
+      });
+    });
+  });
+}
+
+// Enter sends, and sends ONCE. This exists because restoring a lost
+// block left two identical keydown handlers on the text box for a
+// while, and two handlers is two messages for one press — the kind of
+// thing nobody notices until a line is said twice to somebody.
+function enterSendsExactlyOnce() {
+  test.subHeading('Enter sends one message');
+
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, { inboxStatus: 200 });
+
+  return settle().then(function () {
+    el(app, 'rc-to-pick').value = 'relay';
+    el(app, 'rc-text').value = 'hello mailbox';
+    const before = app.log.filter(function (r) { return r.url === '/api/hub/send'; }).length;
+
+    el(app, 'rc-text').fire('keydown', { key: 'Enter', preventDefault: function () {} });
+
+    return settle().then(function () {
+      const sends = app.log.filter(function (r) { return r.url === '/api/hub/send'; }).length - before;
+      if (sends === 1) {
+        test.check('one Enter is one send');
+      } else {
+        test.fail('sends for one Enter: ' + sends);
+      }
+
+      // And a key that is not Enter says nothing at all.
+      el(app, 'rc-text').value = 'not yet';
+      el(app, 'rc-text').fire('keydown', { key: 'a', preventDefault: function () {} });
+      return settle().then(function () {
+        const after = app.log.filter(function (r) { return r.url === '/api/hub/send'; }).length - before;
+        if (after === 1) {
+          test.check('and an ordinary keystroke sends nothing');
+        } else {
+          test.fail('sends after a plain keystroke: ' + after);
+        }
+      });
+    });
+  });
+}
+
+// The claim row is setup, not conversation: once this node is bound it
+// has nothing to offer, and a chat that asks your name every visit reads
+// as a form. It has to come back the moment the binding stops being
+// true, or a node whose label was taken has no way back in.
+function claimRowHidesOnceBound() {
+  test.subHeading('The claim row goes away once you are bound');
+
+  const fresh = mountApp({}, {});
+  return settle().then(function () {
+    if (el(fresh, 'rc-claim-row').style.display !== 'none') {
+      test.check('an unclaimed node shows the claim row');
+    } else {
+      test.fail('claim row hidden on a node that never claimed');
+    }
+
+    fresh.doc.getElementById('rc-name').value = 'andy';
+    fresh.doc.getElementById('rc-claim').fire('click');
+    return settle();
+  }).then(function () {
+    if (el(fresh, 'rc-claim-row').style.display === 'none') {
+      test.check('and hides it as soon as the claim lands');
+    } else {
+      test.fail('claim row still shown after binding');
+    }
+
+    // A reload of a node that is still recognised: bound before the
+    // human sees anything, so the row never appears.
+    const back = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, { inboxStatus: 200 });
+    return settle().then(function () {
+      if (el(back, 'rc-claim-row').style.display === 'none') {
+        test.check('a restored session stays hidden too');
+      } else {
+        test.fail('claim row shown after a successful restore');
+      }
+
+      // ...and the way back: the mailbox no longer answers for that
+      // label, so the row returns without anyone asking for it.
+      const lost = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, { inboxStatus: 403 });
+      return settle().then(function () {
+        if (el(lost, 'rc-claim-row').style.display !== 'none') {
+          test.check('a label the mailbox has stopped recognising brings it back');
+        } else {
+          test.fail('no way to claim again after a 403');
+        }
+      });
+    });
+  });
+}
+
 claimBinds()
+  .then(claimRowHidesOnceBound)
+  .then(enterSendsExactlyOnce)
+  .then(inviteOnlyForAnOwner)
   .then(composerOffersTheMailbox)
   .then(reloadRestores)
   .then(nothingStored)
