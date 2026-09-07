@@ -32,6 +32,8 @@ Public face: [andyflinn.com](https://andyflinn.com). Andy Flinn is the one opera
 
 Andy looks at the spirit-shell whenever a cycle changes what a human sees. That is discipline, not a harness gate.
 
+**Do not show chrome that is not useful to Andy in that state.** A control whose every value would be refused, a form for a capability this node does not have, a field asking a question already answered — none of those are neutral. Each one is a thing to read, decide about and dismiss, and together they are what makes a screen read as a debug console instead of an app. Prefer not building it over hiding it: an intrinsic app has no Location picker in the markup, a node that owns no mailbox has no invite panel in the page, a node already bound has no claim row. When state changes, the chrome comes back on its own — the invite panel when a badge appears, the claim row when the mailbox stops recognising the label — so nothing is lost, only unasked. Where the answer is the mailbox's rather than the app's, ask the mailbox: that is what the owner badge is.
+
 - Target: every **app** will live at `app/<appName>/<appName>.js` plus sibling manifest. Today nine ids still live in `index.html` (stats, files, text-file-launcher, media-launcher, process-browser, jobs, app-manager, group-manager, spirit). They move only per `CLEANUP-PLAN.md`. Intrinsic still does not earn a seat in `index.html`.
 - Not apps (do not tidy into `app/`): `js/kernel.js`, `js/client/shell.js`, `index.html`, `js/ownerBadge.js` (script-tag helper). `js/client/browser.js` is unused by `index.html` / `relay.html` / `server.js` — do not assume it is loaded; do not delete it until Andy opens that sitting.
 - `mount(container, api, params)` — third argument is real; viewers use it.
