@@ -51,10 +51,26 @@ function normalizeDays(days) {
   return d;
 }
 
+// A spoken token is trimmed in one place, for the same reason days is
+// normalized in one place: the string that is signed has to be the string
+// that is stored, or the mint verifies against a token the row does not
+// contain.
+function normalizeToken(token) {
+  return String(token == null ? '' : token).trim();
+}
+
 // What the owner signs to mint. Days is normalized in here so the caller
 // cannot sign one number and store another.
-function mintMessage(label, days) {
-  return 'mint\n' + String(label || '').trim() + '\n' + normalizeDays(days);
+//
+// The token joins the message only when there is one. Two arguments still
+// mean "the relay picks the token" and still produce the cycle-2 message,
+// so every signature made before A2 verifies unchanged. When Andy does
+// speak a token it is inside what he signed: a signature for one token
+// mints no other, and a tokenless signature mints no spoken token at all.
+function mintMessage(label, days, token) {
+  var base = 'mint\n' + String(label || '').trim() + '\n' + normalizeDays(days);
+  var tok = normalizeToken(token);
+  return tok ? base + '\n' + tok : base;
 }
 
 function add(rootDir, opts) {
@@ -62,7 +78,7 @@ function add(rootDir, opts) {
   if (!label) throw new Error('invite label required');
   const days = normalizeDays(opts && opts.days);
   const row = {
-    token: (opts && opts.token) || newToken(),
+    token: normalizeToken(opts && opts.token) || newToken(),
     label: label,
     expiresAt: (opts && opts.expiresAt) || new Date(Date.now() + days * 86400000).toISOString(),
     invitedBy: (opts && opts.invitedBy) || '',
@@ -105,4 +121,5 @@ module.exports = {
   newToken: newToken,
   mintMessage: mintMessage,
   normalizeDays: normalizeDays,
+  normalizeToken: normalizeToken,
 };

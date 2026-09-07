@@ -20,11 +20,10 @@ spirit.shell.activateApp({
       '<div class="stat-tile wide" id="rc-invite-panel" style="display:none">' +
         '<label>Invite<input type="text" id="rc-inv-label" placeholder="saint"></label>' +
         '<label>Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
-        // A typed token is a wish until the relay will mint one: the mint
-        // signature covers label and days only, so an unsigned token from
-        // the page would be a token an owner never signed for. Andy has
-        // this for a later sitting (A2), not cycle B.
-        '<label>Token<input type="text" id="rc-inv-token" placeholder="(optional, not minted yet)"></label>' +
+        // The token Andy speaks on the phone. Empty means the relay picks
+        // hex; typed, it is signed with the label and the days (A2), so
+        // it is his to say and nobody else's to substitute.
+        '<label>Token<input type="text" id="rc-inv-token" placeholder="(optional, spoken)"></label>' +
         '<label id="rc-inv-pick-wrap" style="display:none">Mailbox<select id="rc-inv-pick"></select></label>' +
         '<button type="button" id="rc-inv-go">Invite</button>' +
         '<span id="rc-inv-out"></span>' +
@@ -88,7 +87,7 @@ spirit.shell.activateApp({
 
     document.getElementById('rc-inv-go').addEventListener('click', function () {
       var out = document.getElementById('rc-inv-out');
-      var wanted = document.getElementById('rc-inv-token').value.trim();
+      var spoken = document.getElementById('rc-inv-token').value.trim();
       // Never relays.json[0] by habit: with one owned mailbox the node
       // knows which; with several the human has already said.
       var url = ownedUrls.length === 1
@@ -98,14 +97,17 @@ spirit.shell.activateApp({
         name: myName,
         label: document.getElementById('rc-inv-label').value.trim(),
         days: Number(document.getElementById('rc-inv-days').value) || 7,
+        token: spoken,
         url: url
       }).then(function (r) {
         var token = '';
         try { token = JSON.parse(r.text).token || ''; } catch (e) { token = ''; }
         // Printed, not copied: Andy reads it off this screen onto a phone.
-        out.textContent = token
-          ? token + '  →  ' + url + (wanted && wanted !== token
-              ? '   (your token was not used — the relay mints, A2)' : '')
+        // What is shown is what the relay stored — the typed token when it
+        // took it, hex when the field was empty — never the field itself,
+        // which would show a token no mailbox has if the mint was refused.
+        out.textContent = (r.status === 201 && token)
+          ? token + '  →  ' + url
           : r.status + ' ' + r.text;
       });
     });

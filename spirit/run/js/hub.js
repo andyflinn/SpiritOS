@@ -192,11 +192,17 @@ function createHub(rootDir) {
         }
         var label = (body && body.label) || '';
         var days = body && body.days;
+        // The spoken token, when Andy typed one, is part of what is
+        // signed — not a field bolted on beside the signature. Empty
+        // still means the relay picks the hex, and signs as it did
+        // before A2.
+        var token = invites.normalizeToken(body && body.token);
         relayRequest(url, 'POST', '/api/relay/invite', {
           name: (body && body.name) || id.name,
           label: label,
           days: days,
-          sig: auth.sign(id.privateKey, invites.mintMessage(label, days)),
+          token: token,
+          sig: auth.sign(id.privateKey, invites.mintMessage(label, days, token)),
         })
           .then(function (r) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });

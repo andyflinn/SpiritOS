@@ -181,7 +181,8 @@ function handleRelayInvite(req, res) {
       body && body.name,
       body && body.label,
       body && body.days,
-      body && body.sig
+      body && body.sig,
+      body && body.token
     );
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(result.ok ? result.invite : { error: result.error }));

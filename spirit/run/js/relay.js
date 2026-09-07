@@ -323,9 +323,17 @@ function createRelay(rootDir) {
   // Note the shape this leaves until cycle 4: mint needs an owner key, so
   // it only works in keys mode, while an invite is only CONSUMED in names
   // mode. The two halves do not meet yet. See INVITE-CYCLE2.md.
-  function mint(ownerName, label, days, sig) {
+  //
+  // Cycle A2 adds the spoken token. It is optional and it is SIGNED: an
+  // empty field still means "the relay picks the hex", and a signature
+  // made over the two-argument message mints nothing but that hex. The
+  // token is held to the same rules as a name because it is typed by one
+  // human and read aloud to another, and because a token that could be
+  // any string could be a path, a header, or a megabyte.
+  function mint(ownerName, label, days, sig, token) {
     var owner = normalizeName(ownerName);
     var lbl = normalizeName(label);
+    var tok = invites.normalizeToken(token);
     if (allow.mode !== 'keys') {
       return { ok: false, status: 403, error: 'no owner key on this relay' };
     }
@@ -333,14 +341,16 @@ function createRelay(rootDir) {
     if (lbl === auth.RESERVED_NAME) {
       return { ok: false, status: 400, error: 'name reserved' };
     }
+    if (tok && !nameOk(tok)) return { ok: false, status: 400, error: 'bad token' };
     var pub = owner && allow.byName[owner];
     if (!pub) return { ok: false, status: 403, error: 'not the owner' };
-    if (!sig || !auth.verify(pub, invites.mintMessage(lbl, days), sig)) {
+    if (!sig || !auth.verify(pub, invites.mintMessage(lbl, days, tok), sig)) {
       return { ok: false, status: 403, error: 'bad mint signature' };
     }
     var row = invites.add(rootDir, {
       label: lbl,
       days: days,
+      token: tok,
       invitedBy: owner,
     });
     return {
