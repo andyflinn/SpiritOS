@@ -185,6 +185,12 @@
     if (patch.group !== undefined && app && !app._scriptPath) {
       return { ok: false, reason: 'core-app-group-locked' };
     }
+    // An intrinsic app has no location to set: Desktop is the only one.
+    // Locked here rather than only in the UI, for the same reason the
+    // built-in locks above are — nothing that calls this may bypass it.
+    if (patch.group !== undefined && app && app.intrinsic) {
+      return { ok: false, reason: 'intrinsic-app-group-locked' };
+    }
     if (patch.group && patch.group !== 'none' && !preferences.groups[patch.group]) {
       return { ok: false, reason: 'group-not-found' }; // stale/bogus group id — e.g. deleted elsewhere
     }
@@ -290,7 +296,11 @@
     Object.keys(apps).forEach(function (id) {
       var app = apps[id];
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
-      if (app._scriptPath && effectiveGroup(app)) return; // dynamic app assigned to a real group, or "none" — either way, not on the desktop
+      // An intrinsic app skips the grouping rule entirely: "none" is how
+      // a user takes an icon off the desktop, and Natter is not theirs to
+      // take off. setAppOverride refuses the override too, so this is the
+      // second of two locks, not the only one.
+      if (app._scriptPath && !app.intrinsic && effectiveGroup(app)) return; // dynamic app assigned to a real group, or "none" — either way, not on the desktop
       desktopEl.appendChild(buildAppIcon(id)); // built-ins (non-hidden), unassigned dynamic apps, and groups themselves (always top-level)
     });
   }
@@ -311,6 +321,7 @@
         defaultIcon: app.icon,
         group: effectiveGroup(app),
         hidden: !!app.hidden, // the app's own code-level default
+        intrinsic: !!app.intrinsic, // part of the node, not an installed app — always on the desktop
         dynamic: !!app._scriptPath,
       };
     });
@@ -973,13 +984,23 @@
   // whatever id it likes; its identity is the one fact the shell already
   // observed directly via the fs-watcher. manifest.id, if a manifest still
   // has one, is simply ignored.
+  // `intrinsic` is the manifest saying this app is part of how the node
+  // works, not something the operator installed: Natter is where a
+  // personal node learns of any public relay at all, so a shell with no
+  // way to reach it is a shell that cannot be pointed at a mailbox. An
+  // intrinsic app is always on the desktop — a manifest that asks to be
+  // both intrinsic and hidden is asking for two contradictory things, and
+  // being reachable wins. Only a hand-edited manifest can set the flag;
+  // saveAppManifest refuses to write one (kernel.js), so no app and no
+  // builder can make itself unremovable.
   function declareDynamicApp(manifest, scriptPath) {
     var id = 'app/' + scriptPath.match(/^app\/([^/]+)\//)[1];
     apps[id] = {
       id: id,
       name: manifest.name,
       icon: spirit.core.const.ICON[manifest.icon] || spirit.core.const.ICON.FILE,
-      hidden: !!manifest.hidden,
+      intrinsic: !!manifest.intrinsic,
+      hidden: !!manifest.hidden && !manifest.intrinsic,
       mount: function (container) { container.textContent = 'Loading ' + manifest.name + '…'; },
       render: function () {},
       _scriptPath: scriptPath,
@@ -990,7 +1011,7 @@
       registerExtensionHandler(ext, id, manifest.name);
     });
 
-    if (!manifest.hidden) renderDesktop();
+    if (!apps[id].hidden) renderDesktop();
   }
 
   function discoverDynamicApps(jobs) {

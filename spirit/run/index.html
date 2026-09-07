@@ -1117,7 +1117,13 @@
           // check (any number of apps may share a group, or all be
           // "none"). "" selects Desktop, which clears the override back to
           // the default, same convention as clearing name/icon.
-          var groupFieldHtml = a.dynamic
+          // An intrinsic app (Natter) gets a note instead of the control:
+          // there is no location for it but the desktop, and offering a
+          // picker whose "None" would be refused by setAppOverride is
+          // worse than offering nothing.
+          var groupFieldHtml = a.intrinsic
+            ? '<div class="job-manifest-note">Intrinsic shell app — always on the desktop. This is how this node knows any public relay.</div>'
+            : a.dynamic
             ? '<label class="field-label">Location' +
               '<select id="app-manager-group-input" data-app-id="' + escapeHtml(a.id) + '">' +
                 '<option value=""' + (!a.group ? ' selected' : '') + '>Desktop</option>' +

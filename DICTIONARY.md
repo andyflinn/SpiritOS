@@ -38,7 +38,7 @@ Format: **term** — aliases — meaning.
 
 **Relay Chat** — relayChat — The chat app, for any human. Claim / send / inbox against the mailbox in `relays.json`. Not an admin console: owner-only powers appear inside it only when this node’s key happens to own a mailbox.
 
-**Natter** — relays.json, relay list — The list of public relays this personal node uses (`app/natter/relays.json`). First URL is what hub calls today. A row carries an **owner badge** when this node’s local public key matches the owner on that mailbox.
+**Natter** — relays.json, relay list — The list of public relays this personal node uses (`app/natter/relays.json`). First URL is what hub calls today. A row carries an **owner badge** when this node’s local public key matches the owner on that mailbox. Natter is an **intrinsic shell app**: always on the desktop, no location control, and the App Builder cannot overwrite its script or manifest — a node with no relay list has no mailbox at all. Keeps its last row (`canRemoveMailbox`).
 
 **Owner badge** — owned row — The Natter mark meaning *this node’s key is `owner` on that mailbox*. Zero, one, or several rows may carry it. It is what unlocks create-invitation in Relay Chat. Decided (Andy): the badge is a **signed status 200** on that Natter URL — no extra endpoint unless one proves necessary.
 

@@ -312,6 +312,38 @@ if (isNode()) {
   // like an entry script", the same trust boundary already accepted for
   // /api/jobs's spawn capability (this server only ever talks to your own
   // browser tab).
+  // An app whose manifest says "intrinsic": true is part of how this node
+  // works rather than something the operator installed — Natter is where a
+  // personal node learns of any public relay, so an App Builder Apply that
+  // overwrote its script, or a manifest write that turned it into a user
+  // app, would take the node's only route to a mailbox with it.
+  //
+  // The flag is read from what is ON DISK, never from the content being
+  // written: a caller cannot clear it by sending a manifest without it,
+  // and cannot set it by sending one with it. Both of the App Builder
+  // exceptions below consult this, which is the only place they can be
+  // reached from a browser. A script and its sibling manifest answer the
+  // same question, so app/x/x.js is protected by app/x/x.json.
+  function intrinsicManifestFor(canonical) {
+    if (canonical === null) return null;
+    if (MANIFEST_PATTERN.test(canonical)) return canonical;
+    if (APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return canonical.replace(/\.js$/, '.json');
+    return null;
+  }
+
+  function isIntrinsicApp(canonical) {
+    const manifestPath = intrinsicManifestFor(canonical);
+    if (!manifestPath) return false;
+    const resolved = fsPath(ROOT_DIR, manifestPath);
+    if (!resolved) return false;
+    try {
+      return !!JSON.parse(fs.readFileSync(resolved, 'utf8')).intrinsic;
+    } catch (err) {
+      return false; // no manifest, or unreadable — not an intrinsic app
+    }
+  }
+  spirit.core.fs.isIntrinsicApp = isIntrinsicApp;
+
   let saveAppScript = spirit.core.fs.saveAppScript = function(filePath, content){
     const canonical = canonicalPath(filePath);
     const resolved = fsPath(ROOT_DIR, filePath);
@@ -321,6 +353,7 @@ if (isNode()) {
     // failed closed rather than open, but a path deserves one verdict
     // whichever direction the guard points.
     if (!APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return { ok: false, reason: 'not-an-app-entry-script' };
+    if (isIntrinsicApp(canonical)) return { ok: false, reason: 'intrinsic-app' };
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
@@ -348,6 +381,7 @@ if (isNode()) {
     const resolved = fsPath(ROOT_DIR, filePath);
     if (canonical === null || !resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
     if (!MANIFEST_PATTERN.test(canonical)) return { ok: false, reason: 'not-an-app-manifest' };
+    if (isIntrinsicApp(canonical)) return { ok: false, reason: 'intrinsic-app' };
     let manifest;
     try {
       manifest = JSON.parse(content);
