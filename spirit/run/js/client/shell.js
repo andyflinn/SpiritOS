@@ -1115,16 +1115,30 @@
   // itself unremovable.
   function declareDynamicApp(manifest, scriptPath) {
     var id = 'app/' + scriptPath.match(/^app\/([^/]+)\//)[1];
+    var existing = apps[id];
+    // Declaring twice is normal now: an intrinsic app is declared at boot
+    // from its manifest (declareIntrinsicApps, below) and again when the
+    // fs-watcher snapshot arrives, and every snapshot after a dropped SSE
+    // connection re-declares everything. Only the manifest-derived facts
+    // are refreshed — an app that has already loaded its script keeps the
+    // mount/render it supplied and the DOM it was mounted into, or a
+    // reconnect would leave a live app showing "Loading …" behind a
+    // wrapper nothing points at any more.
     apps[id] = {
       id: id,
       name: manifest.name,
       icon: spirit.core.const.ICON[manifest.icon] || spirit.core.const.ICON.FILE,
       intrinsic: !!manifest.intrinsic,
       hidden: !!manifest.hidden && !manifest.intrinsic,
-      mount: function (container) { container.textContent = 'Loading ' + manifest.name + '…'; },
-      render: function () {},
+      mount: (existing && existing._activated)
+        ? existing.mount
+        : function (container) { container.textContent = 'Loading ' + manifest.name + '…'; },
+      render: (existing && existing._activated) ? existing.render : function () {},
+      loadFile: existing && existing.loadFile,
       _scriptPath: scriptPath,
-      _activated: false,
+      _activated: !!(existing && existing._activated),
+      _el: existing && existing._el,
+      _titlebarLinks: existing && existing._titlebarLinks,
     };
 
     (manifest.handlesExtensions || []).forEach(function (ext) {
@@ -1132,6 +1146,38 @@
     });
 
     if (!apps[id].hidden) renderDesktop();
+  }
+
+  // The intrinsic apps this node cannot afford to be missing, read at
+  // boot straight from their manifests rather than waiting for the
+  // fs-watcher job to report them over SSE.
+  //
+  // Discovery is otherwise snapshot-driven, which is fine for installed
+  // apps — an app nobody can see for a second is a nuisance. It is not
+  // fine for the apps that ARE the node: a watcher that never reports,
+  // or a jobs stream that never connects, would leave Spirit empty and
+  // Natter unreachable, so a node with a broken watcher could not be
+  // pointed at a mailbox at all. Andy's decision for CLEANUP-PLAN step 4:
+  // eager manifest list at boot, entry scripts still lazy.
+  //
+  // Only the manifest decides. A folder listed here whose manifest is
+  // missing, unreadable, or not intrinsic is left to ordinary discovery —
+  // this list cannot promote an app, only hurry one that is already
+  // intrinsic. Each of the five adds its line here in the same commit as
+  // its move, alongside its APP_ID_RENAMES entry.
+  var INTRINSIC_APP_FOLDERS = ['natter'];
+
+  function declareIntrinsicApps() {
+    INTRINSIC_APP_FOLDERS.forEach(function (folder) {
+      var scriptPath = 'app/' + folder + '/' + folder + '.js';
+      var raw = spirit.core.fs.loadFile('app/' + folder + '/' + folder + '.json');
+      if (raw == null) return; // no manifest — the watcher will find it, or it is gone
+      var manifest;
+      try { manifest = JSON.parse(raw); }
+      catch (e) { return; } // malformed — same rule discovery already uses
+      if (!manifest || !manifest.intrinsic) return;
+      declareDynamicApp(manifest, scriptPath);
+    });
   }
 
   function discoverDynamicApps(jobs) {
@@ -1177,6 +1223,7 @@
     // migration nobody finds out about until the move it was written for.
     migrateAppIds: migrateAppIds,
     APP_ID_RENAMES: APP_ID_RENAMES,
+    INTRINSIC_APP_FOLDERS: INTRINSIC_APP_FOLDERS,
     getAppOverride: getAppOverride,
     setAppOverride: setAppOverride,
     listGroups: listGroups,
@@ -1185,6 +1232,14 @@
     deleteGroup: deleteGroup,
     checkIdentityAvailable: checkIdentityAvailable,
   };
+
+  // Before the subscription, not from it: that is the whole point of the
+  // eager read. This runs while index.html's own inline script has yet to
+  // register the built-ins (it follows this file), which is harmless —
+  // every registration repaints the desktop, and Spirit's grid is built
+  // at render time from whatever is registered by then. What matters is
+  // that it does not wait for a snapshot that may never come.
+  declareIntrinsicApps();
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
   spirit.core.jobs.subscribe({

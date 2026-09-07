@@ -50,6 +50,8 @@ function fakeElement(tag) {
     appendChild: function (child) { el.children.push(child); return child; },
     addEventListener: function () {},
     querySelector: function () { return fakeElement('div'); },
+    querySelectorAll: function () { return []; },
+    remove: function () {},
   };
   // Setting innerHTML drops the children, as it does in a browser — the
   // desktop is rebuilt that way (innerHTML = '' then appendChild), and a
@@ -140,6 +142,9 @@ function bootShell(preferences, appScripts, deferSnapshot) {
     desktop: doc.byId.desktop,
     saved: saved,
     snapshot: snapshot,
+    // Entry scripts are injected into document.body — one appended child
+    // per script the shell decided to fetch.
+    scripts: doc.body.children,
   };
 }
 
@@ -594,6 +599,102 @@ test.subHeading('The Spirit grid draws one tile per id');
     test.check('an unregistered id is still skipped');
   } else {
     test.fail('unknown id: ' + JSON.stringify(tiles(['app/natter', 'not-an-app', 'app/natter'])));
+  }
+}
+
+test.subHeading('Spirit is not empty before the first snapshot');
+
+{
+  // A node whose fs-watcher never reports — a failed job, a jobs stream
+  // that never connects — must still reach Natter, or it cannot be
+  // pointed at a mailbox at all. Deferred snapshot is exactly that node.
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true);
+
+  if (booted.shell.INTRINSIC_APP_FOLDERS.indexOf('natter') !== -1) {
+    test.check('natter is on the eager boot list');
+  } else {
+    test.fail('boot list: ' + JSON.stringify(booted.shell.INTRINSIC_APP_FOLDERS));
+  }
+
+  const natter = appById(booted, 'app/natter');
+  if (natter && natter.intrinsic === true && spiritGroupLabels(booted).indexOf('NATter') !== -1) {
+    test.check('it is declared and in the Spirit grid with no snapshot at all');
+  } else {
+    test.fail('before snapshot: ' + JSON.stringify(natter) + ' grid: ' + spiritGroupLabels(booted));
+  }
+
+  // Eager is about the MANIFEST. The entry script is still not fetched
+  // until the tile is opened — first paint must not pull every app's
+  // code, which is the other half of the decision.
+  if (booted.scripts.length === 0) {
+    test.check('and its entry script has not been fetched');
+  } else {
+    test.fail('scripts injected at boot: ' + JSON.stringify(booted.scripts));
+  }
+
+  // Ordinary apps are still the watcher's business — the boot list is a
+  // short-cut for the apps that are the node, not a second registry.
+  if (!appById(booted, 'app/relayChat')) {
+    test.check('an ordinary app still waits for the snapshot');
+  } else {
+    test.fail('relayChat declared before the snapshot');
+  }
+
+  booted.snapshot([NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+  if (appById(booted, 'app/relayChat') && spiritGroupLabels(booted).split('NATter').length === 2) {
+    test.check('and when the snapshot arrives, it lands — Natter still once');
+  } else {
+    test.fail('after snapshot: ' + spiritGroupLabels(booted));
+  }
+}
+
+test.subHeading('A re-declared app keeps the behaviour it loaded');
+
+{
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT], true);
+
+  // Opening a tile is what fetches the script, and the script is what
+  // supplies mount/render (through activateApp). Driven here the way the
+  // shell drives it, so what is asserted is behaviour and not a poke at
+  // the registry.
+  booted.shell.launchApp('app/natter');
+  const fetched = booted.scripts.length;
+  let mountCalls = 0;
+  booted.shell.activateApp({ mount: function () { mountCalls++; }, render: function () {} });
+
+  if (fetched === 1) {
+    test.check('opening the tile is what fetches the entry script');
+  } else {
+    test.fail('scripts after open: ' + fetched);
+  }
+
+  // A snapshot re-declares every app it sees — which, on a dropped SSE
+  // connection, includes apps the operator already has open.
+  booted.snapshot([NATTER_SCRIPT]);
+
+  if (booted.scripts.length === fetched) {
+    test.check('a re-declared app is not re-fetched');
+  } else {
+    test.fail('re-fetched: ' + booted.scripts.length + ' scripts');
+  }
+
+  // The script finishing its load is what mounts the app, and it must
+  // mount the behaviour activateApp supplied — not the "Loading …"
+  // placeholder a fresh declaration would have put back.
+  booted.scripts[0].onload();
+  if (mountCalls === 1) {
+    test.check('and it mounts with the behaviour its script supplied');
+  } else {
+    test.fail('mount calls: ' + mountCalls);
+  }
+
+  const after = appById(booted, 'app/natter');
+  if (after.name === 'NATter' && after.intrinsic === true) {
+    test.check('while the manifest facts are refreshed from disk');
+  } else {
+    test.fail('manifest facts: ' + JSON.stringify(after));
   }
 }
 
