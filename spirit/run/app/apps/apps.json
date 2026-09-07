@@ -1,0 +1,8 @@
+{
+  "name": "Apps",
+  "description": "Every app registered in this shell, with the per-app edit panel: custom name, custom icon, and where its tile lives.",
+  "icon": "TABLE",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}

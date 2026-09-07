@@ -178,21 +178,28 @@ function appById(booted, id) {
 // half the job; the other half is that the panel must not offer the
 // control at all, and that lives in markup no other test can see.
 function appManagerRow(app) {
-  const src = fs.readFileSync(path.join(RUN_DIR, 'index.html'), 'utf8');
+  // Moved out of index.html in CLEANUP-PLAN step 5.3 — it is an app now,
+  // and its row renderer moved with it.
+  const src = readRun('app/apps/apps.js');
   const start = src.indexOf('function locationLabel');
   const end = src.indexOf('function renderAppManagerTable');
   if (start === -1 || end === -1 || end < start) {
-    throw new Error('renderAppManagerRow could not be found in index.html — this test needs updating with it');
+    throw new Error('renderAppManagerRow could not be found in app/apps/apps.js — this test needs updating with it');
   }
-  const shellStub = { shell: { SPIRIT_GROUP_ID: 'spirit' } };
-  const render = new Function('spirit', 'ICON', 'escapeHtml', 'fileInfoRow', 'getAppOverride',
+  const shellStub = {
+    shell: {
+      SPIRIT_GROUP_ID: 'spirit',
+      getAppOverride: function () { return {}; },
+      fileInfoRow: function (k, v) { return k + '=' + v + ';'; },
+    },
+    core: { const: { ICON: { POINTDOWN: 'v', POINTRIGHT: '>' } }, util: { escapeHtml: spirit.core.util.escapeHtml } },
+  };
+  const render = new Function('spirit', 'APPS_ICON', 'appsEscapeHtml',
     'var expandedAppId = "EXPANDED";' + src.slice(start, end) + '\nreturn renderAppManagerRow;'
   )(
     shellStub,
     { POINTDOWN: 'v', POINTRIGHT: '>' },
-    spirit.core.util.escapeHtml,
-    function (k, v) { return k + '=' + v + ';'; },
-    function () { return {}; }
+    spirit.core.util.escapeHtml
   );
   const row = {};
   Object.keys(app).forEach(function (k) { row[k] = app[k]; });
@@ -833,6 +840,70 @@ test.subHeading('Jobs has moved out of index.html');
   }
 }
 
+test.subHeading('Apps has moved out of index.html');
+
+{
+  const APPS_SCRIPT = 'app/apps/apps.js';
+  const manifest = JSON.parse(readRun('app/apps/apps.json'));
+  const html = readRun('index.html');
+
+  if (manifest.intrinsic === true && manifest.owner === 'system') {
+    test.check('app/apps has a manifest, intrinsic and system-owned');
+  } else {
+    test.fail('apps manifest: ' + JSON.stringify(manifest));
+  }
+
+  if (html.indexOf("id: 'app-manager'") === -1 && html.indexOf('function renderAppManagerTable') === -1) {
+    test.check('and index.html no longer registers it, edit panel and all');
+  } else {
+    test.fail('index.html still carries the Apps app');
+  }
+
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/stats/stats.js', 'app/jobs/jobs.js', APPS_SCRIPT], true);
+
+  if (booted.shell.APP_ID_RENAMES['app-manager'] === 'app/apps' &&
+      booted.shell.INTRINSIC_APP_FOLDERS.indexOf('apps') !== -1) {
+    test.check('the rename map and the boot list both carry it');
+  } else {
+    test.fail('lists: ' + JSON.stringify({
+      renames: booted.shell.APP_ID_RENAMES,
+      boot: booted.shell.INTRINSIC_APP_FOLDERS,
+    }));
+  }
+
+  const appsApp = appById(booted, 'app/apps');
+  const grid = spiritGroupLabels(booted);
+  if (appsApp && appsApp.intrinsic === true && grid.indexOf('Apps') !== -1) {
+    test.check('it is declared before any snapshot and sits in the Spirit grid');
+  } else {
+    test.fail('apps app: ' + JSON.stringify(appsApp) + ' grid: ' + grid);
+  }
+
+  // Its id is not only in the Spirit list this time: the Groups app's
+  // empty-state link into Apps lives in shell.js itself.
+  const shellSrc = readRun('js/client/shell.js');
+  if (shellSrc.indexOf("launchApp('app/apps')") !== -1 && shellSrc.indexOf("launchApp('app-manager')") === -1) {
+    test.check("the shell's own \"go to Apps\" link was repointed");
+  } else {
+    test.fail('shell.js still launches the old app-manager id');
+  }
+
+  // Same guard as the last move, which is what makes it worth having:
+  // every id the Spirit list names must resolve once discovery has run.
+  booted.snapshot([NATTER_SCRIPT, 'app/stats/stats.js', 'app/jobs/jobs.js', APPS_SCRIPT]);
+  ['process-browser', 'group-manager'].forEach(function (id) {
+    booted.shell.registerApp({ id: id, name: id, icon: '▦', hidden: true, mount: function () {}, render: function () {} });
+  });
+  const known = booted.shell.listApps().map(function (a) { return a.id; });
+  const missing = spiritMemberIds().filter(function (id) { return known.indexOf(id) === -1; });
+  if (missing.length === 0) {
+    test.check('every id in the Spirit member list still resolves');
+  } else {
+    test.fail('unresolved: ' + JSON.stringify(missing));
+  }
+}
+
 test.subHeading('A re-declared app keeps the behaviour it loaded');
 
 {
@@ -901,9 +972,13 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // The map names exactly the apps that have moved, old id to new. It
   // only ever grows, one line per move, in that move's own commit — an
   // entry removed later is an operator's preferences silently pruned.
+  // Every value is a folder id. The folder need not be the old id —
+  // 'app-manager' became 'app/apps', because 'app-manager' was a poor
+  // name for a folder and the rename map is exactly what makes that
+  // free.
   const renames = empty.shell.APP_ID_RENAMES;
   const wellFormed = Object.keys(renames).every(function (oldId) {
-    return renames[oldId] === 'app/' + oldId;
+    return /^app\/[^/]+$/.test(renames[oldId]) && renames[oldId] !== oldId;
   });
   if (wellFormed && renames.stats === 'app/stats') {
     test.check('the rename map names the moved apps, old id to folder id');

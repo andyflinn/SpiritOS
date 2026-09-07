@@ -61,8 +61,8 @@
   //
   // One line per move, added in the same commit as the move — a map that
   // lands afterwards lands after prune has already thrown the overrides
-  // away. Stats and Jobs moved (CLEANUP-PLAN steps 5.1 and 5.2); Files,
-  // Processes, Apps and Groups keep their index.html ids until they
+  // away. Stats, Jobs and Apps moved (CLEANUP-PLAN steps 5.1 to 5.3);
+  // Files, Processes and Groups keep their index.html ids until they
   // follow.
   //
   // Entries stay forever. The operator whose preferences.json still says
@@ -70,6 +70,7 @@
   var APP_ID_RENAMES = {
     stats: 'app/stats',
     jobs: 'app/jobs',
+    'app-manager': 'app/apps',
   };
 
   // Runs at load, which is before any snapshot and therefore before
@@ -616,7 +617,7 @@
         container.innerHTML = '<div id="' + groupId + '-content"></div>';
         container.addEventListener('click', function (event) {
           if (event.target.closest('[data-goto-apps]')) {
-            launchApp('app-manager');
+            launchApp('app/apps');
             return;
           }
           var deleteBtn = event.target.closest('[data-delete-empty-group]');
@@ -1170,7 +1171,7 @@
   // this list cannot promote an app, only hurry one that is already
   // intrinsic. Each of the five adds its line here in the same commit as
   // its move, alongside its APP_ID_RENAMES entry.
-  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs'];
+  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {
