@@ -11,6 +11,13 @@
          node may be left with fewer relays). Node-only code inside it
          never runs here. -->
     <script src="/js/ownerBadge.js"></script>
+    <!-- One peer, one file, named by the peer's whole public key.
+         js/chatLog.js reads this at load, so it comes first. -->
+    <script src="/js/peerFile.js"></script>
+    <!-- The isomorphic half of js/chatLog.js: how a conversation is
+         filed on this node. Relay Chat holds the files through its own
+         scoped api.fs; this only decides names, shapes and merging. -->
+    <script src="/js/chatLog.js"></script>
     <style>
       * { box-sizing: border-box; }
 

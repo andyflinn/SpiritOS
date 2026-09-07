@@ -113,6 +113,19 @@ const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.c
 const relayMode = process.argv.slice(2).includes('--relay');
 const HOME_PAGE = relayMode ? 'relay.html' : 'index.html';
 
+// A mailbox is a party to conversations — the census reply comes FROM
+// it — and `relay` is the caption it answers to, not an identity. A node
+// that keeps one file per peer cannot file the mailbox anywhere without
+// a key, so the mailbox gets one: made once, on the first --relay boot,
+// into this process's own relay-state beside allow.json. It is handed
+// out through who and status (relay.mailboxPublicKey), and it is NOT the
+// owner's key — the owner is a peer who claimed, the mailbox is the box.
+// A personal node never reaches this line; its identity is made on its
+// first claim (hub.js).
+if (relayMode) {
+  require('./relayAuth').ensureIdentity(ROOT_DIR, 'relay');
+}
+
 // The small, fixed set of paths the page needs to boot at all, served
 // unconditionally by the static route below, checked before fileServable —
 // this is what lets js/kernel.js sit in kernel.js's UNSERVABLE_FILES
@@ -645,7 +658,14 @@ const server = http.createServer((req, res) => {
 
   function handleRelayWho(res) {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ peers: relay.who() }));
+    // The mailbox names itself here as well as listing its peers: it is
+    // a party to conversations (the census reply comes from it), and a
+    // party with no key is a party nothing can file (CYCLE-CHAT-5.1).
+    // Null on a mailbox that has not been restarted since it grew one.
+    res.end(JSON.stringify({
+      peers: relay.who(),
+      mailboxPublicKey: relay.mailboxPublicKey(),
+    }));
   }
 
   function handleRelayStatus(req, res, url) {

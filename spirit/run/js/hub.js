@@ -317,6 +317,10 @@ function createHub(rootDir) {
           try { parsed = JSON.parse(r.text); }
           catch (e) { parsed = null; }
           var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
+          // Null from a mailbox that has not been restarted since it grew
+          // a key of its own. The app treats that as "no log for this
+          // row" rather than inventing a name for it.
+          var mailboxKey = (parsed && parsed.mailboxPublicKey) || null;
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           // The reserved name travels with the people, because it is a
           // destination the app must offer and never a peer it could
@@ -326,6 +330,7 @@ function createHub(rootDir) {
           res.end(JSON.stringify({
             relay: url,
             reservedName: auth.RESERVED_NAME,
+            mailboxPublicKey: mailboxKey,
             people: buildPeople(rootDir, peers, url),
           }));
         })

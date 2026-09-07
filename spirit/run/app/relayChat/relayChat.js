@@ -16,13 +16,15 @@ spirit.shell.activateApp({
     var titleEl;
     var ownedUrls = [];
     var invitePainted = ''; // what the invite slot was last drawn for
-    // Lines this node sent. The mailbox's inbox is per-RECIPIENT — it
-    // returns what was addressed to you, never what you sent — so
-    // without this a thread would show only the other half of the
-    // conversation. Session-lifetime on purpose: these are echoes of
-    // what the relay accepted (id and all), not a second store, and a
-    // reload asks the mailbox again rather than trusting them.
-    var sentByMe = [];
+    // Chat 5: the conversation lives on this node, one file per peer,
+    // because the mailbox keeps messages by recipient and never hands
+    // back what you said. `logs` is what has been read off disk this
+    // visit, keyed by chatLog id — the files are the record, this is the
+    // cache.
+    var chatLog = window.spiritChatLog;
+    var logs = {};       // peer public key -> entries read off disk this visit
+    var captions = {};   // peer public key -> what this node calls them
+    var mailboxKey = ''; // the mailbox's own key, so `relay` is filed like any peer
 
     // Chat 3 — the page reads top to bottom as a conversation: who you
     // are, what was said, and the box you say the next thing in. The
@@ -151,21 +153,87 @@ spirit.shell.activateApp({
       });
     }
 
-    // One line per message: time, who, text. "Who" is the other party —
-    // your own lines are marked by class, not by repeating your name at
-    // yourself. Everything crossing this boundary came off a mailbox any
-    // peer can write to, so every piece of it is escaped.
-    function renderThread(fetched) {
+    // Reading and writing one peer's file. Loads are cached for the
+    // visit; writes go out immediately, because a line that is only in
+    // memory is a line a reload loses, which is the whole of chat 5.
+    function logFor(peerKey) {
+      if (!chatLog.isLoggable(peerKey)) return [];
+      if (!logs[peerKey]) {
+        var raw = null;
+        try { raw = api.fs.loadFile(chatLog.fileFor(peerKey)); }
+        catch (e) { raw = null; }
+        logs[peerKey] = chatLog.parse(raw).entries;
+      }
+      return logs[peerKey];
+    }
+
+    // Files each line under the peer it belongs to — whoever this node
+    // was NOT — as a thin entry: direction, time, words. A line whose
+    // other party has no key (the mailbox itself, a keyless peer) is not
+    // written anywhere: `relay` is a caption, and a file named after a
+    // caption is a file nothing can read back as a peer.
+    function recordMessages(messages, dir) {
+      var byPeer = {};
+      (messages || []).forEach(function (m) {
+        var peerKey = chatLog.peerKeyFor(m, dir, mailboxKey);
+        if (!peerKey) return;
+        (byPeer[peerKey] = byPeer[peerKey] || []).push(chatLog.entryFor(m, dir));
+      });
+
+      Object.keys(byPeer).forEach(function (peerKey) {
+        var before = logFor(peerKey);
+        var after = chatLog.merge(before, byPeer[peerKey]);
+        if (after.length === before.length) return; // nothing new to file
+        logs[peerKey] = after;
+        api.fs.saveFile(chatLog.fileFor(peerKey), chatLog.serialize(peerKey, after))
+          .catch(function (e) { setStatus('could not write the log: ' + e.message); });
+      });
+    }
+
+    // What the thread shows: one peer's archive while a peer is picked,
+    // everything this node holds otherwise. Both are read from the same
+    // files, so a hard reload shows what the send showed.
+    // The To list offers the mailbox under its reserved caption, since
+    // that is what a message is addressed to; its archive is under its
+    // key, like everyone else's.
+    function pickedPeerKey() {
+      var picked = document.getElementById('rc-to-pick').value;
+      if (!picked) return '';
+      return picked === 'relay' ? mailboxKey : picked;
+    }
+
+    function visibleEntries() {
+      var picked = pickedPeerKey();
+      if (picked) {
+        return logFor(picked).map(function (entry) {
+          return { entry: entry, peerKey: picked };
+        });
+      }
+      var all = [];
+      Object.keys(logs).forEach(function (peerKey) {
+        logs[peerKey].forEach(function (entry) { all.push({ entry: entry, peerKey: peerKey }); });
+      });
+      all.sort(function (a, b) { return String(a.entry.at).localeCompare(String(b.entry.at)); });
+      return all;
+    }
+
+    // A file knows a key; a human reads a caption. captions comes from
+    // the people list, so a peer this node has renamed in whoBook reads
+    // as that name here too.
+    function captionFor(peerKey) {
+      return captions[peerKey] || peerKey;
+    }
+
+    // One row per entry: time, who, text. Direction decides whose line
+    // it is — a `sent` entry is yours, and the caption names the other
+    // party rather than repeating your own name at you. Everything here
+    // came off a mailbox any peer can write to, so every piece of it is
+    // escaped.
+    function renderThread() {
       var thread = document.getElementById('rc-thread');
       if (!thread) return;
-
-      // Merge by id: a message that comes back from the mailbox (a note
-      // to yourself does) must not appear twice.
-      var seen = Object.create(null);
-      var messages = [];
-      (fetched || []).forEach(function (m) { seen[m.id] = true; messages.push(m); });
-      sentByMe.forEach(function (m) { if (!seen[m.id]) messages.push(m); });
-      messages.sort(function (a, b) { return String(a.sentAt).localeCompare(String(b.sentAt)); });
+      var rows = visibleEntries();
+      var picked = pickedPeerKey() || document.getElementById('rc-to-pick').value;
 
       // Same sticky-scroll rule the Jobs log uses: pin to the bottom
       // while you are reading the newest line, leave the scroll alone
@@ -173,27 +241,53 @@ spirit.shell.activateApp({
       var distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
       var stick = distanceFromBottom < 40;
 
-      thread.innerHTML = messages.map(function (m) {
-        var mine = !!myName && m.from === myName;
-        var when = new Date(m.sentAt);
-        var time = isNaN(when.getTime()) ? m.sentAt : when.toLocaleTimeString();
-        var who = mine ? m.to : m.from;
+      // A mailbox that has not been restarted since it grew a key of its
+      // own says so, rather than showing an empty room and letting the
+      // silence be read as "nothing was said".
+      var empty = (picked && !chatLog.isLoggable(picked))
+        ? '<div class="job-log-empty">(nothing is kept for this row — this mailbox has no key of its own yet)</div>'
+        : '<div class="job-log-empty">(nothing here yet)</div>';
+
+      thread.innerHTML = rows.map(function (row) {
+        var mine = row.entry.dir === 'sent';
+        var when = new Date(row.entry.at);
+        var time = isNaN(when.getTime()) ? row.entry.at : when.toLocaleTimeString();
+        var who = captionFor(row.peerKey);
         return '<div class="rc-msg ' + (mine ? 'me' : 'them') + '">' +
           '<span class="rc-time">' + api.escapeHtml(time) + '</span>' +
           '<span class="rc-who">' + api.escapeHtml(mine ? '→ ' + who : who) + '</span>' +
-          '<span class="rc-text">' + api.escapeHtml(m.text) + '</span>' +
+          '<span class="rc-text">' + api.escapeHtml(row.entry.text) + '</span>' +
           '</div>';
-      }).join('') || '<div class="job-log-empty">(nothing here yet)</div>';
+      }).join('') || empty;
 
       if (stick) thread.scrollTop = thread.scrollHeight;
     }
 
+    // The inbox is still where anything said TO this node arrives. Every
+    // line is filed before it is drawn, so the thread is a view of the
+    // files rather than of the last response.
     function refreshInbox() {
       if (!myName) return;
       fetch('/api/hub/inbox?name=' + encodeURIComponent(myName))
         .then(function (r) { return r.json(); })
-        .then(function (data) { renderThread(data.messages || []); })
+        .then(function (data) {
+          // Everything an inbox read returns was RECEIVED by this node:
+          // that is what the route is. Direction is never guessed from
+          // the sender's name — a note to yourself is sent and received,
+          // and both halves happened.
+          recordMessages(data.messages || [], 'received');
+          renderThread();
+        })
         .catch(function (e) { setStatus('inbox failed: ' + e.message); });
+    }
+
+    // Every peer this node knows of, read off disk once a visit, so the
+    // combined view after a reload is the whole record and not merely
+    // whatever the mailbox still holds for us.
+    function loadKnownLogs(people) {
+      (people || []).forEach(function (person) { logFor(person.publicKey); });
+      if (mailboxKey) logFor(mailboxKey);
+      renderThread();
     }
 
     // The people list, captioned by this node: myLabel where whoBook has
@@ -229,6 +323,16 @@ spirit.shell.activateApp({
             pick.appendChild(opt);
           });
           pick.value = chosen; // a refresh must not silently change who you were about to write to
+          captions = {};
+          people.forEach(function (person) { captions[person.publicKey] = person.caption; });
+          // The mailbox is a peer with a key like any other; the row in
+          // the To list still says `relay`, because that is the caption
+          // the mailbox answers to when a message is addressed.
+          mailboxKey = (data && data.mailboxPublicKey) || '';
+          if (mailboxKey) {
+            captions[mailboxKey] = (data.reservedName || 'relay') + ' (this mailbox)';
+          }
+          loadKnownLogs(people);
         })
         .catch(function (e) { setStatus('people failed: ' + e.message); });
     }
@@ -343,6 +447,12 @@ spirit.shell.activateApp({
       });
     });
 
+    // Picking a peer is picking a conversation: the thread narrows to
+    // that peer's file, and to everything again when nobody is picked.
+    document.getElementById('rc-to-pick').addEventListener('change', function () {
+      renderThread();
+    });
+
     // A chat that needs a mouse for every line reads as a form. Enter
     // sends; the button stays for anyone who wants it.
     document.getElementById('rc-text').addEventListener('keydown', function (event) {
@@ -371,8 +481,14 @@ spirit.shell.activateApp({
           var msg = null;
           try { msg = JSON.parse(r.text); } catch (e) { msg = null; }
           // What the relay stored, not what was typed: the wire may have
-          // resolved a key to a public label on the way through.
-          if (msg && msg.id) sentByMe.push(msg);
+          // resolved a key to a public label on the way through. Filed
+          // under the peer it was addressed to — this is the only copy
+          // of the line that will ever exist, since the mailbox keeps
+          // none for the sender.
+          if (msg) {
+            recordMessages([msg], 'sent');
+            renderThread();
+          }
           setStatus('');
           document.getElementById('rc-text').value = '';
         } else {

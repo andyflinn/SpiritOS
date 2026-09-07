@@ -66,3 +66,11 @@ relay-state/
 # committed session.json would hand every fake node Andy's label.
 # Unanchored, to match the file wherever an app folder ends up.
 session.json
+
+# Relay Chat's per-peer conversation logs (chat 5) land in
+# app/relayChat/logs/, already covered by the bare `logs` rule at the top
+# of this file. Named here for the reason rather than the pattern: the
+# mailbox keeps messages by recipient and grows no sender copy, so the
+# record of a conversation lives on the node that took part in it —
+# personal data, never product code, and it must not reach the lab,
+# since setupRelayFakes.js builds fake nodes from `git ls-files`.

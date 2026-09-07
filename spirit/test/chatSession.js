@@ -20,6 +20,11 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
+// The app reads its logging rules off the same global the shell hands
+// it in the browser (index.html loads js/chatLog.js as a script), so the
+// stub supplies the real module rather than a lookalike.
+const chatLog = require('../run/js/chatLog.js');
+const peerFile = require('../run/js/peerFile.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'app', 'relayChat', 'relayChat.js');
@@ -86,18 +91,24 @@ function fakeFetch(log, options) {
       mustPick: !!options.mustPick,
       people: options.people || [],
       reservedName: 'relay',
+      mailboxPublicKey: options.mailboxPublicKey || null,
     };
     let status = 200;
+    let payload = body;
 
     if (url.indexOf('/api/hub/inbox') === 0) {
       status = options.inboxStatus || 200;
     } else if (url.indexOf('/api/hub/claim') === 0) {
       status = options.claimStatus || 201;
+      if (options.claimBody) payload = options.claimBody;
+    } else if (url.indexOf('/api/hub/send') === 0) {
+      // What the relay answers a send with: the message it stored, which
+      // is the only copy of an outgoing line that will ever exist.
+      status = options.sendStatus || 201;
+      if (options.sendBody) payload = options.sendBody;
     }
 
-    const text = JSON.stringify(options.claimBody && url.indexOf('/api/hub/claim') === 0
-      ? options.claimBody
-      : body);
+    const text = JSON.stringify(payload);
 
     return Promise.resolve({
       status: status,
@@ -119,8 +130,9 @@ function mountApp(store, options) {
   };
 
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-  new Function('spirit', 'document', 'fetch', 'setInterval', src)(
-    shellSpirit, doc, fakeFetch(log, options || {}), function () { return 0; }
+  new Function('spirit', 'document', 'window', 'fetch', 'setInterval', src)(
+    shellSpirit, doc, { spiritChatLog: chatLog, spiritPeerFile: peerFile },
+    fakeFetch(log, options || {}), function () { return 0; }
   );
 
   const container = fakeElement('container');
@@ -273,16 +285,31 @@ function nothingStored() {
 function threadMarksOwnLines() {
   test.subHeading('Own lines and other lines carry different classes');
 
+  // Keyed, because that is what the mailbox sends and what chat 5.1
+  // files: a peer is a key, and a line whose other party has none is not
+  // written down at all.
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const ME = 'MCowBQYDK2VwAyEAandyandyandyandyandyandyandyandyandya=';
   const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
   const app = mountApp(store, {
     inboxStatus: 200,
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false }],
+    // An inbox read only ever returns what was addressed to this node.
+    // The other half of the thread arrives the only way it can: as the
+    // 201 the relay answers a send with.
     messages: [
-      { id: '1', from: 'relay', to: 'andy', text: 'relay status mode=keys', sentAt: '2026-09-07T10:00:00.000Z' },
-      { id: '2', from: 'andy', to: 'andy', text: 'note to self', sentAt: '2026-09-07T10:01:00.000Z' },
+      { id: '1', from: 'bert', to: 'andy', fromKey: BERT, toKey: ME, text: 'a word from bert', sentAt: '2026-09-07T10:00:00.000Z' },
     ],
+    sendBody: { id: '2', from: 'andy', to: 'bert', fromKey: ME, toKey: BERT, text: 'and one back', sentAt: '2026-09-07T10:01:00.000Z' },
   });
 
   return settle().then(function () {
+    // Say something back, so the thread has both halves in it.
+    el(app, 'rc-to-pick').value = BERT;
+    el(app, 'rc-text').value = 'and one back';
+    el(app, 'rc-send').fire('click');
+    return settle();
+  }).then(function () {
     const html = el(app, 'rc-thread').innerHTML;
     if (/rc-msg them/.test(html) && /rc-msg me/.test(html)) {
       test.check('a line from another peer and a line of your own render differently');
@@ -290,10 +317,25 @@ function threadMarksOwnLines() {
       test.fail('thread html: ' + html);
     }
 
+    // Both halves were filed, under the one peer, in the order they
+    // happened — which is what a reload will read back.
+    const filed = chatLog.parse(app.store[chatLog.fileFor(BERT)]);
+    if (filed.peerPublicKey === BERT &&
+        filed.entries.map(function (e) { return e.dir; }).join(',') === 'received,sent') {
+      test.check('and both are in that peer file, received then sent');
+    } else {
+      test.fail('filed: ' + JSON.stringify(filed));
+    }
+
     // Everything in a thread came off a mailbox any peer can write to.
     const nasty = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, {
       inboxStatus: 200,
-      messages: [{ id: '3', from: '<img src=x onerror=alert(1)>', to: 'andy', text: '<script>bad()</script>', sentAt: 'x' }],
+      people: [{ publicKey: BERT, publicLabel: '<img src=x onerror=alert(1)>', caption: '<img src=x onerror=alert(1)>', mine: false }],
+      messages: [{
+        id: '3', from: '<img src=x onerror=alert(1)>', to: 'andy',
+        fromKey: BERT, toKey: ME,
+        text: '<script>bad()</script>', sentAt: '2026-09-07T10:02:00.000Z',
+      }],
     });
     return settle().then(function () {
       const html2 = el(nasty, 'rc-thread').innerHTML;

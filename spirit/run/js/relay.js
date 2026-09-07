@@ -170,11 +170,26 @@ function createRelay(rootDir) {
     });
   }
 
+  // The mailbox's OWN key, not the owner's. `relay` is a caption — the
+  // reserved word a message can be addressed to — and a caption is not
+  // an identity: a node that keeps one file per peer cannot file the
+  // mailbox anywhere without one (CYCLE-CHAT-5.1). The keypair is made
+  // once, on the first --relay boot (server.js), and lives in this
+  // process's own relay-state like any other identity.
+  //
+  // Public, deliberately: it names the mailbox the way a peer's key
+  // names a peer, and it is the half that may be handed out.
+  function mailboxPublicKey() {
+    var id = auth.loadIdentity(rootDir);
+    return (id && id.publicKey) || null;
+  }
+
   function snapshot() {
     return {
       owner: auth.ownerName(allow),
       mode: allow.mode,
       reserved: auth.RESERVED_NAME,
+      mailboxPublicKey: mailboxPublicKey(),
       peers: who(),
       messages: messages.length,
     };
@@ -484,6 +499,7 @@ function createRelay(rootDir) {
   return {
     claim: claim,
     who: who,
+    mailboxPublicKey: mailboxPublicKey,
     send: send,
     inbox: inbox,
     status: status,
