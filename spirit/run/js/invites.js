@@ -38,10 +38,29 @@ function newToken() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+// One rule for how long an invite lives, used by BOTH the signed mint
+// message and the row that gets stored. If the two ever normalized
+// differently — client signs "99 days", relay clamps to 15 and verifies
+// against 15 — every mint would fail with a bad signature and the reason
+// would be invisible from either end.
+function normalizeDays(days) {
+  var d = Math.floor(Number(days));
+  if (!isFinite(d) || d <= 0) return 7;
+  if (d < 1) return 1;
+  if (d > 15) return 15;
+  return d;
+}
+
+// What the owner signs to mint. Days is normalized in here so the caller
+// cannot sign one number and store another.
+function mintMessage(label, days) {
+  return 'mint\n' + String(label || '').trim() + '\n' + normalizeDays(days);
+}
+
 function add(rootDir, opts) {
   const label = String((opts && opts.label) || '').trim();
   if (!label) throw new Error('invite label required');
-  const days = Number(opts && opts.days) > 0 ? Number(opts.days) : 7;
+  const days = normalizeDays(opts && opts.days);
   const row = {
     token: (opts && opts.token) || newToken(),
     label: label,
@@ -84,4 +103,6 @@ module.exports = {
   match: match,
   consume: consume,
   newToken: newToken,
+  mintMessage: mintMessage,
+  normalizeDays: normalizeDays,
 };

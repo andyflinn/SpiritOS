@@ -290,6 +290,47 @@ function createRelay(rootDir) {
     return !!owner && allow.byName[owner] === key;
   }
 
+  // Minting is not checkOwner(): that verifies auth.statusMessage(name),
+  // which says nothing about WHICH invite is being made. A signature that
+  // could be replayed from a status request into "mint me a token for any
+  // label, for any number of days" would not be a mint gate at all. The
+  // owner signs the label and the duration, and that is what is verified.
+  //
+  // Note the shape this leaves until cycle 4: mint needs an owner key, so
+  // it only works in keys mode, while an invite is only CONSUMED in names
+  // mode. The two halves do not meet yet. See INVITE-CYCLE2.md.
+  function mint(ownerName, label, days, sig) {
+    var owner = normalizeName(ownerName);
+    var lbl = normalizeName(label);
+    if (allow.mode !== 'keys') {
+      return { ok: false, status: 403, error: 'no owner key on this relay' };
+    }
+    if (!nameOk(lbl)) return { ok: false, status: 400, error: 'bad label' };
+    if (lbl === auth.RESERVED_NAME) {
+      return { ok: false, status: 400, error: 'name reserved' };
+    }
+    var pub = owner && allow.byName[owner];
+    if (!pub) return { ok: false, status: 403, error: 'not the owner' };
+    if (!sig || !auth.verify(pub, invites.mintMessage(lbl, days), sig)) {
+      return { ok: false, status: 403, error: 'bad mint signature' };
+    }
+    var row = invites.add(rootDir, {
+      label: lbl,
+      days: days,
+      invitedBy: owner,
+    });
+    return {
+      ok: true,
+      status: 201,
+      invite: {
+        token: row.token,
+        label: row.label,
+        expiresAt: row.expiresAt,
+        invitedBy: row.invitedBy,
+      },
+    };
+  }
+
   function replyFromRelay(to, text) {
     var msg = {
       id: String(nextId++),
@@ -412,6 +453,7 @@ function createRelay(rootDir) {
     send: send,
     inbox: inbox,
     status: status,
+    mint: mint,
     snapshot: snapshot,
   };
 }

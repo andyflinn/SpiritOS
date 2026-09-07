@@ -6,6 +6,7 @@ const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 const auth = require('./relayAuth');
+const invites = require('./invites');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -171,6 +172,39 @@ function createHub(rootDir) {
     });
   }
 
+  // The token is the relay's to generate, never this node's: a token
+  // invented here would not be in the relay's invites.json and would
+  // refuse the very claim it was made for. All the hub contributes is the
+  // owner's name and a signature over the label and duration it is asking
+  // for. The relay is what mints.
+  function handleInvite(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      withRelay(res, function (url) {
+        var id = auth.loadIdentity(rootDir);
+        if (!id || !id.privateKey) {
+          fail(res, 403, 'no identity on this node');
+          return;
+        }
+        var label = (body && body.label) || '';
+        var days = body && body.days;
+        relayRequest(url, 'POST', '/api/relay/invite', {
+          name: (body && body.name) || id.name,
+          label: label,
+          days: days,
+          sig: auth.sign(id.privateKey, invites.mintMessage(label, days)),
+        })
+          .then(function (r) {
+            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(r.text);
+          })
+          .catch(function (err) { fail(res, 502, String(err.message || err)); });
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
   function handleInbox(req, res, urlObj) {
     withRelay(res, function (url) {
       var name = urlObj.searchParams.get('name') || '';
@@ -212,6 +246,7 @@ function createHub(rootDir) {
     handleSend: handleSend,
     handleInbox: handleInbox,
     handleStatus: handleStatus,
+    handleInvite: handleInvite,
   };
 }
 

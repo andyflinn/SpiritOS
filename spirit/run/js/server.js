@@ -175,6 +175,22 @@ function clientKeyFor(req) {
   return req.socket.remoteAddress || '';
 }
 
+function handleRelayInvite(req, res) {
+  readJsonBody(req).then(function (body) {
+    const result = relay.mint(
+      body && body.name,
+      body && body.label,
+      body && body.days,
+      body && body.sig
+    );
+    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(result.ok ? result.invite : { error: result.error }));
+  }).catch(function () {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
     const result = relay.claim(
@@ -515,7 +531,10 @@ function isRelayPublicPath(method, pathname) {
     return method === 'GET';
   }
   if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox' || pathname === '/api/relay/status')) return true;
-  if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send')) return true;
+  // /api/relay/invite is public in the same sense claim and send are:
+  // reachable from the internet, and gated by the owner's signature
+  // inside relay.mint rather than by who can reach the socket.
+  if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send' || pathname === '/api/relay/invite')) return true;
   return false;
 }
 
@@ -705,7 +724,17 @@ const server = http.createServer((req, res) => {
       handleRelaySend(req, res);
       return;
     }
-    
+
+    if (pathname === '/api/relay/invite') {
+      handleRelayInvite(req, res);
+      return;
+    }
+
+    if (pathname === '/api/hub/invite') {
+      hub.handleInvite(req, res, readJsonBody);
+      return;
+    }
+
     if (pathname === '/api/hub/claim') {
       hub.handleClaim(req, res, readJsonBody);
       return;
