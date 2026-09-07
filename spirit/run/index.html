@@ -1102,15 +1102,26 @@
           // to "Reset to default" (setAppOverride treats '' as "clear this
           // property"); the explicit button stays too, as a one-click
           // shortcut over select-all-and-delete.
-          var nameFieldHtml = a.dynamic
+          // An intrinsic app gets one note in place of all three
+          // controls: name, icon and Location are locked in
+          // setAppOverride (shell.js), and a picker whose every value
+          // comes back refused is worse than no picker.
+          var nameFieldHtml = a.intrinsic
+            ? '<div class="job-manifest-note">Intrinsic shell app — name and icon stay as shipped, and it lives in the Spirit group. This is how this node knows any public relay.</div>'
+            : a.dynamic
             ? '<label class="field-label">Custom name' +
               '<input type="text" id="app-manager-name-input" data-app-id="' + escapeHtml(a.id) + '" value="' + escapeHtml(override.name || '') + '" placeholder="' + escapeHtml(a.defaultName) + '"></label>' +
               (override.name ? '<button type="button" class="cancel-btn" data-reset-app-name="' + escapeHtml(a.id) + '">Reset to default</button>' : '')
-            : '<div class="job-manifest-note">Built-in shell utility — name isn\'t customizable, to keep documentation and support consistent.</div>';
+            : '<div class="job-manifest-note">Built-in shell utility — name and icon stay as shipped. A shell app is its tile on a screen with no labels to read.</div>';
           // Not locked to dynamic apps the way name is — see
           // setAppOverride's comment (shell.js) for why icon doesn't carry
           // the same documentation-drift risk.
-          var iconFieldHtml = '<label class="field-label">Custom icon (paste any emoji)' +
+          // Built-ins are covered by their own note above, intrinsic apps
+          // by theirs: neither offers a control setAppOverride would
+          // refuse.
+          var iconFieldHtml = (a.intrinsic || !a.dynamic)
+            ? ''
+            : '<label class="field-label">Custom icon (paste any emoji)' +
             '<input type="text" id="app-manager-icon-input" data-app-id="' + escapeHtml(a.id) + '" value="' + escapeHtml(override.icon || '') + '" placeholder="' + escapeHtml(a.defaultIcon) + '"></label>' +
             (override.icon ? '<button type="button" class="cancel-btn" data-reset-app-icon="' + escapeHtml(a.id) + '">Reset to default</button>' : '');
           // Locked to dynamic apps only, unlike icon — built-in apps' place
@@ -1125,7 +1136,7 @@
           // picker whose "None" would be refused by setAppOverride is
           // worse than offering nothing.
           var groupFieldHtml = a.intrinsic
-            ? '<div class="job-manifest-note">Intrinsic shell app — lives in the Spirit group and cannot be moved out. This is how this node knows any public relay.</div>'
+            ? '' // the intrinsic note above already says where it lives
             : a.dynamic
             ? '<label class="field-label">Location' +
               '<select id="app-manager-group-input" data-app-id="' + escapeHtml(a.id) + '">' +

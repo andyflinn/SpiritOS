@@ -149,6 +149,33 @@ function appById(booted, id) {
   return booted.shell.listApps().filter(function (a) { return a.id === id; })[0] || null;
 }
 
+// The Apps panel's own row renderer, lifted out of index.html's inline
+// script with its handful of dependencies stubbed. Refusing the write is
+// half the job; the other half is that the panel must not offer the
+// control at all, and that lives in markup no other test can see.
+function appManagerRow(app) {
+  const src = fs.readFileSync(path.join(RUN_DIR, 'index.html'), 'utf8');
+  const start = src.indexOf('function locationLabel');
+  const end = src.indexOf('function renderAppManagerTable');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error('renderAppManagerRow could not be found in index.html — this test needs updating with it');
+  }
+  const shellStub = { shell: { SPIRIT_GROUP_ID: 'spirit' } };
+  const render = new Function('spirit', 'ICON', 'escapeHtml', 'fileInfoRow', 'getAppOverride',
+    'var expandedAppId = "EXPANDED";' + src.slice(start, end) + '\nreturn renderAppManagerRow;'
+  )(
+    shellStub,
+    { POINTDOWN: 'v', POINTRIGHT: '>' },
+    spirit.core.util.escapeHtml,
+    function (k, v) { return k + '=' + v + ';'; },
+    function () { return {}; }
+  );
+  const row = {};
+  Object.keys(app).forEach(function (k) { row[k] = app[k]; });
+  row.id = 'EXPANDED'; // expanded, so the edit panel is rendered
+  return render(row, {}, []);
+}
+
 test.startTest('Natter is intrinsic — always in the shell, never overwritten');
 
 {
@@ -378,6 +405,178 @@ test.subHeading('And there is no way to take it off');
     test.check('Relay Chat can still be taken off the desktop');
   } else {
     test.fail('relayChat move: ' + JSON.stringify(moved) + ' desktop: ' + desktopLabels(stale));
+  }
+}
+
+test.subHeading('Name and icon stay as shipped');
+
+{
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+
+  // The lock a built-in has had all along, arriving by a different route:
+  // theirs is "no _scriptPath", which stops being true the moment the
+  // five in index.html move into app/. Intrinsic is what has to carry it
+  // then, so it has to be true now (CLEANUP-PLAN step 1).
+  const renamed = booted.shell.setAppOverride('app/natter', { name: 'Mailboxes' });
+  const reIconed = booted.shell.setAppOverride('app/natter', { icon: '💀' });
+  if (!renamed.ok && renamed.reason === 'intrinsic-app-name-locked' &&
+      !reIconed.ok && reIconed.reason === 'intrinsic-app-icon-locked') {
+    test.check('a custom name and a custom icon are both refused');
+  } else {
+    test.fail('rename/re-icon: ' + JSON.stringify({ name: renamed, icon: reIconed }));
+  }
+
+  // Clearing is a write too — '' means "reset this property", and on an
+  // app that has no override to reset it is just another way in.
+  const cleared = booted.shell.setAppOverride('app/natter', { name: '' });
+  if (!cleared.ok && cleared.reason === 'intrinsic-app-name-locked') {
+    test.check('and so is a reset-to-default');
+  } else {
+    test.fail('clear: ' + JSON.stringify(cleared));
+  }
+
+  const natter = appById(booted, 'app/natter');
+  if (natter.name === 'NATter' && natter.icon === spirit.core.const.ICON.GLOBE) {
+    test.check('the shell still reports the shipped name and icon');
+  } else {
+    test.fail('after refusals: ' + JSON.stringify(natter));
+  }
+
+  // Refusing the write is half a lock. A preferences.json written before
+  // the app was pinned — or edited by hand — must not rename it either.
+  const stale = bootShell({
+    defaultHandlers: {},
+    appOverrides: { 'app/natter': { name: 'Mailboxes', icon: '💀' } },
+    groups: {},
+  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+
+  const staleNatter = appById(stale, 'app/natter');
+  if (staleNatter.name === 'NATter' && staleNatter.icon === spirit.core.const.ICON.GLOBE) {
+    test.check('a stored name/icon override is ignored on reload');
+  } else {
+    test.fail('stale override: ' + JSON.stringify(staleNatter));
+  }
+
+  if (spiritGroupLabels(stale).indexOf('NATter') !== -1 && spiritGroupLabels(stale).indexOf('Mailboxes') === -1) {
+    test.check('so the Spirit grid draws the shipped name, not the stored one');
+  } else {
+    test.fail('spirit grid: ' + spiritGroupLabels(stale));
+  }
+
+  // Relay Chat is still the operator's to rename — the lock is about
+  // being intrinsic, not about being an app.
+  const rcRenamed = stale.shell.setAppOverride('app/relayChat', { name: 'Chat' });
+  if (rcRenamed.ok && appById(stale, 'app/relayChat').name === 'Chat') {
+    test.check('Relay Chat can still be renamed');
+  } else {
+    test.fail('relayChat rename: ' + JSON.stringify(rcRenamed));
+  }
+}
+
+test.subHeading('The Apps panel offers no control it would refuse');
+
+{
+  const intrinsicRow = appManagerRow({
+    name: 'NATter', defaultName: 'NATter', icon: '🌐', defaultIcon: '🌐',
+    group: 'spirit', dynamic: true, intrinsic: true,
+  });
+
+  const controls = ['app-manager-name-input', 'app-manager-icon-input', 'app-manager-group-input'];
+  const offered = controls.filter(function (id) { return intrinsicRow.indexOf(id) !== -1; });
+  if (offered.length === 0) {
+    test.check('an intrinsic row has no name, icon or Location control');
+  } else {
+    test.fail('still offered: ' + offered.join(', '));
+  }
+
+  // Nor a Reset to default, which is the same write by another button.
+  if (intrinsicRow.indexOf('data-reset-app-name') === -1 && intrinsicRow.indexOf('data-reset-app-icon') === -1) {
+    test.check('and no Reset to default buttons');
+  } else {
+    test.fail('reset buttons present: ' + intrinsicRow);
+  }
+
+  if (intrinsicRow.indexOf('Intrinsic shell app') !== -1) {
+    test.check('it says why, in one note');
+  } else {
+    test.fail('no note: ' + intrinsicRow);
+  }
+
+  // And the panel is otherwise untouched: an ordinary app still gets all
+  // three, or this test would pass on a panel that renders nothing.
+  const ordinaryRow = appManagerRow({
+    name: 'Relay Chat', defaultName: 'Relay Chat', icon: '📄', defaultIcon: '📄',
+    group: null, dynamic: true, intrinsic: false,
+  });
+  const ordinaryOffered = controls.filter(function (id) { return ordinaryRow.indexOf(id) !== -1; });
+  if (ordinaryOffered.length === 3) {
+    test.check('an ordinary app still gets name, icon and Location');
+  } else {
+    test.fail('ordinary row offers only: ' + ordinaryOffered.join(', '));
+  }
+
+  // The five in index.html reach the same lock by the other route: no
+  // script path. Their icon was the one control still on offer, which is
+  // what Andy found in the Apps app.
+  const builtInRow = appManagerRow({
+    name: 'Jobs', defaultName: 'Jobs', icon: '⚙️', defaultIcon: '⚙️',
+    group: null, dynamic: false, intrinsic: false,
+  });
+  const builtInOffered = controls.filter(function (id) { return builtInRow.indexOf(id) !== -1; });
+  if (builtInOffered.length === 0) {
+    test.check('a built-in row offers no icon control either');
+  } else {
+    test.fail('built-in still offers: ' + builtInOffered.join(', '));
+  }
+
+  if (builtInRow.indexOf('data-reset-app-icon') === -1 && builtInRow.indexOf('Built-in shell utility') !== -1) {
+    test.check('and says so in its own note, with no Reset button');
+  } else {
+    test.fail('built-in note: ' + builtInRow);
+  }
+}
+
+test.subHeading('Built-ins are locked by having no folder — until they get one');
+
+{
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+
+  // Registered exactly as index.html registers the five: no script path,
+  // no manifest, no intrinsic flag.
+  booted.shell.registerApp({
+    id: 'jobs', name: 'Jobs', icon: '⚙️', hidden: true,
+    mount: function () {}, render: function () {},
+  });
+
+  const icon = booted.shell.setAppOverride('jobs', { icon: '💀' });
+  const name = booted.shell.setAppOverride('jobs', { name: 'Tasks' });
+  const group = booted.shell.setAppOverride('jobs', { group: 'none' });
+  if (!icon.ok && icon.reason === 'core-app-icon-locked' &&
+      !name.ok && name.reason === 'core-app-name-locked' &&
+      !group.ok && group.reason === 'core-app-group-locked') {
+    test.check('a built-in refuses icon as it already refused name and group');
+  } else {
+    test.fail('built-in patches: ' + JSON.stringify({ icon: icon, name: name, group: group }));
+  }
+
+  // Read side too: a preferences.json written before the icon was locked
+  // must not keep repainting it.
+  const stale = bootShell({
+    defaultHandlers: {},
+    appOverrides: { jobs: { icon: '💀', name: 'Tasks' } },
+    groups: {},
+  }, [NATTER_SCRIPT]);
+  stale.shell.registerApp({
+    id: 'jobs', name: 'Jobs', icon: '⚙️', hidden: true,
+    mount: function () {}, render: function () {},
+  });
+  const listed = stale.shell.listApps().filter(function (a) { return a.id === 'jobs'; })[0];
+  if (listed && listed.name === 'Jobs' && listed.icon === '⚙️') {
+    test.check('and a stored override for one is ignored on reload');
+  } else {
+    test.fail('stale built-in: ' + JSON.stringify(listed));
   }
 }
 

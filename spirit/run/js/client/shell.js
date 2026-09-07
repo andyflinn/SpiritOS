@@ -170,26 +170,49 @@
   // default value — checked against the RESULT of applying patch (so
   // clearing back to a default is checked too), since two things showing
   // the same name or icon is confusing regardless of which one has the
-  // override. Icon isn't locked to dynamic apps the way name/group are —
-  // the "written docs/support text goes stale" argument is specifically
-  // about a fixed name being referenced in prose; nothing calls an app out
-  // by "the 📊 icon" the same way, so customizing a built-in's icon is
-  // just cosmetic personalization, not a documentation hazard. group has
-  // no collision check at all — any number of apps may share a group, or
-  // all be "none," with no ambiguity.
+  // override. group has no collision check at all — any number of apps may
+  // share a group, or all be "none," with no ambiguity.
+  //
+  // Icon used to be the exception: the argument was that "written docs go
+  // stale" is about a name in prose and nothing calls an app out by its
+  // 📊, so a built-in's icon was cosmetic personalization. Andy's verdict
+  // (CLEANUP-PLAN step 1) is that it is not — a shell app IS its tile on
+  // a screen with no labels to read, and the five that are about to move
+  // into app/<name>/ must already be locked the way they will have to be
+  // afterwards. So icon is locked exactly where name is.
+  //
+  // Note what this lock is keyed on: `!app._scriptPath`, which stops
+  // being true the moment those five get a folder. `intrinsic` is what
+  // carries it then (below), and it has to be in place first — that is
+  // the whole reason step 1 comes before the moves.
   function setAppOverride(id, patch) {
     var app = apps[id];
     if (patch.name !== undefined && app && !app._scriptPath) {
       return { ok: false, reason: 'core-app-name-locked' };
     }
+    if (patch.icon !== undefined && app && !app._scriptPath) {
+      return { ok: false, reason: 'core-app-icon-locked' };
+    }
     if (patch.group !== undefined && app && !app._scriptPath) {
       return { ok: false, reason: 'core-app-group-locked' };
     }
-    // An intrinsic app has no location to set: Desktop is the only one.
+    // An intrinsic app has no location to set: Spirit is the only one.
     // Locked here rather than only in the UI, for the same reason the
     // built-in locks above are — nothing that calls this may bypass it.
     if (patch.group !== undefined && app && app.intrinsic) {
       return { ok: false, reason: 'intrinsic-app-group-locked' };
+    }
+    // Name and icon stay as shipped, for the same reason a built-in's
+    // name is locked: an intrinsic app is what this node IS, and a
+    // renamed Natter is a mailbox list nobody can be told to open. It
+    // also has to hold before the five in index.html move — their lock
+    // today is `!app._scriptPath`, which dies the moment they get one
+    // (CLEANUP-PLAN step 1, AGENT.md).
+    if (patch.name !== undefined && app && app.intrinsic) {
+      return { ok: false, reason: 'intrinsic-app-name-locked' };
+    }
+    if (patch.icon !== undefined && app && app.intrinsic) {
+      return { ok: false, reason: 'intrinsic-app-icon-locked' };
     }
     if (patch.group && patch.group !== 'none' && !preferences.groups[patch.group]) {
       return { ok: false, reason: 'group-not-found' }; // stale/bogus group id — e.g. deleted elsewhere
@@ -237,13 +260,21 @@
   // app's own registered/manifest name. Used by both the icon renderer and
   // listApps() so the Apps table never shows something different from
   // what's actually on screen.
+  //
+  // An intrinsic app reads its shipped name, override or not — the same
+  // both-sides lock effectiveGroup uses: refusing the write alone would
+  // still leave a preferences.json written before the app was pinned (or
+  // edited by hand) renaming it on every load.
   function effectiveName(app) {
+    if (app.intrinsic || !app._scriptPath) return app.name;
     var override = preferences.appOverrides[app.id];
     return (override && override.name) || app.name;
   }
 
-  // Same idea as effectiveName, for icon.
+  // Same idea as effectiveName, for icon — and for a built-in, which is
+  // locked by having no script path rather than by a manifest flag.
   function effectiveIcon(app) {
+    if (app.intrinsic || !app._scriptPath) return app.icon;
     var override = preferences.appOverrides[app.id];
     return (override && override.icon) || app.icon;
   }
