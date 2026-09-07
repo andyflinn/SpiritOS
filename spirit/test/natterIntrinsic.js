@@ -152,12 +152,20 @@ function desktopLabels(booted) {
   return booted.desktop.children.map(function (el) { return el.innerHTML; }).join(' | ');
 }
 
-// What the Spirit app's own icon grid would contain: its fixed built-in
-// members plus whatever the shell reports as intrinsic (index.html).
+// The Spirit app's fixed member list, read out of index.html rather than
+// copied here — this list is repointed by every move (step 5), and a
+// copy would keep passing while naming apps that no longer exist.
+function spiritMemberIds() {
+  const found = readRun('index.html').match(/renderAppGroup\(grid, \[([^\]]*)\]/);
+  if (!found) throw new Error("the Spirit app's member list could not be found in index.html");
+  return found[1].split(',').map(function (s) { return s.trim().replace(/^'|'$/g, ''); });
+}
+
+// What the Spirit app's own icon grid would contain: its fixed members
+// plus whatever the shell reports as intrinsic.
 function spiritGroupLabels(booted) {
   const grid = fakeElement('div');
-  booted.shell.renderAppGroup(grid, ['stats', 'process-browser', 'jobs', 'app-manager', 'group-manager']
-    .concat(booted.shell.listIntrinsicApps()));
+  booted.shell.renderAppGroup(grid, spiritMemberIds().concat(booted.shell.listIntrinsicApps()));
   return grid.children.map(function (el) { return el.innerHTML; }).join(' | ');
 }
 
@@ -744,6 +752,87 @@ test.subHeading('Stats has moved out of index.html');
   }
 }
 
+test.subHeading('Jobs has moved out of index.html');
+
+{
+  const JOBS_SCRIPT = 'app/jobs/jobs.js';
+  const manifest = JSON.parse(readRun('app/jobs/jobs.json'));
+  const html = readRun('index.html');
+
+  if (manifest.intrinsic === true && manifest.owner === 'system') {
+    test.check('app/jobs has a manifest, intrinsic and system-owned');
+  } else {
+    test.fail('jobs manifest: ' + JSON.stringify(manifest));
+  }
+
+  if (html.indexOf("id: 'jobs'") === -1 && html.indexOf('function renderJobRow') === -1) {
+    test.check('and index.html no longer registers it, table and all');
+  } else {
+    test.fail('index.html still carries the Jobs app');
+  }
+
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/stats/stats.js', JOBS_SCRIPT], true);
+
+  if (booted.shell.APP_ID_RENAMES.jobs === 'app/jobs' &&
+      booted.shell.INTRINSIC_APP_FOLDERS.indexOf('jobs') !== -1) {
+    test.check('the rename map and the boot list both carry it');
+  } else {
+    test.fail('lists: ' + JSON.stringify({
+      renames: booted.shell.APP_ID_RENAMES,
+      boot: booted.shell.INTRINSIC_APP_FOLDERS,
+    }));
+  }
+
+  const jobs = appById(booted, 'app/jobs');
+  const grid = spiritGroupLabels(booted);
+  if (jobs && jobs.intrinsic === true && grid.indexOf('Jobs') !== -1 && grid.split('Jobs').length === 2) {
+    test.check('it is declared before any snapshot and draws one Spirit tile');
+  } else {
+    test.fail('jobs app: ' + JSON.stringify(jobs) + ' grid: ' + grid);
+  }
+
+  // This is the first move where OTHER code names the moved app. Three
+  // sites did, and a missed one is a dead tile with no error anywhere:
+  // renderAppGroup skips ids it cannot find, and launchApp returns on
+  // one it does not know.
+  if (html.indexOf("'app/stats', 'process-browser', 'app/jobs'") !== -1) {
+    test.check("the Spirit member list names it by its new id");
+  } else {
+    test.fail('Spirit member list was not repointed');
+  }
+
+  if (html.indexOf("launchApp('app/jobs')") !== -1 && html.indexOf("launchApp('jobs')") === -1) {
+    test.check("the Process Browser's start-and-watch launch was repointed");
+  } else {
+    test.fail('index.html still launches the old jobs id');
+  }
+
+  const statsSrc = readRun('app/stats/stats.js');
+  if (statsSrc.indexOf("'app/jobs'") !== -1 && statsSrc.indexOf("false, 'jobs'") === -1) {
+    test.check("and the Stats app's Active jobs tile points at the new id");
+  } else {
+    test.fail('stats tile still points at the old jobs id');
+  }
+
+  // Every id the Spirit grid names must resolve to a registered app once
+  // discovery has run — the check that would have caught a missed
+  // rename, whichever of the five moves next.
+  booted.snapshot([NATTER_SCRIPT, 'app/stats/stats.js', JOBS_SCRIPT]);
+  booted.shell.registerApp({ id: 'process-browser', name: 'Processes', icon: '⚙', hidden: true, mount: function () {}, render: function () {} });
+  booted.shell.registerApp({ id: 'app-manager', name: 'Apps', icon: '▦', hidden: true, mount: function () {}, render: function () {} });
+  booted.shell.registerApp({ id: 'group-manager', name: 'Groups', icon: '◫', hidden: true, mount: function () {}, render: function () {} });
+
+  const memberIds = spiritMemberIds();
+  const known = booted.shell.listApps().map(function (a) { return a.id; });
+  const missing = memberIds.filter(function (id) { return known.indexOf(id) === -1; });
+  if (memberIds.length === 5 && missing.length === 0) {
+    test.check('every id in the Spirit member list resolves to a real app');
+  } else {
+    test.fail('unresolved Spirit members: ' + JSON.stringify(missing) + ' of ' + JSON.stringify(memberIds));
+  }
+}
+
 test.subHeading('A re-declared app keeps the behaviour it loaded');
 
 {
@@ -824,22 +913,26 @@ test.subHeading('An app that changes id keeps what the operator customised');
 
   // Deferred, so the migration runs where it runs in production: after
   // preferences are read, before the first snapshot prunes anything.
+  // 'ledger' is nobody's app and never will be: an id that has really
+  // moved is migrated at load by the production map, leaving an explicit
+  // call nothing to do, and this must test the mechanism rather than
+  // whichever apps happen to have moved by now.
   const booted = bootShell({
-    defaultHandlers: { '.md': 'jobs', '.txt': 'app/relayChat' },
-    appOverrides: { jobs: { icon: '💀', name: 'Tasks' }, 'app/relayChat': { name: 'Chat' } },
+    defaultHandlers: { '.md': 'ledger', '.txt': 'app/relayChat' },
+    appOverrides: { ledger: { icon: '💀', name: 'Tasks' }, 'app/relayChat': { name: 'Chat' } },
     groups: {},
   }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true);
 
-  const moved = booted.shell.migrateAppIds({ jobs: 'app/jobs' });
+  const moved = booted.shell.migrateAppIds({ ledger: 'app/ledger' });
   const prefs = booted.saved.preferences;
-  if (moved && prefs && prefs.appOverrides['app/jobs'] && prefs.appOverrides['app/jobs'].icon === '💀' &&
-      prefs.appOverrides.jobs === undefined) {
-    test.check("an override moves from 'jobs' to 'app/jobs'");
+  if (moved && prefs && prefs.appOverrides['app/ledger'] && prefs.appOverrides['app/ledger'].icon === '💀' &&
+      prefs.appOverrides.ledger === undefined) {
+    test.check("an override moves from 'ledger' to 'app/ledger'");
   } else {
     test.fail('overrides: ' + JSON.stringify(prefs && prefs.appOverrides));
   }
 
-  if (prefs.defaultHandlers['.md'] === 'app/jobs') {
+  if (prefs.defaultHandlers['.md'] === 'app/ledger') {
     test.check('and a default-handler choice pointing at it is repointed');
   } else {
     test.fail('handlers: ' + JSON.stringify(prefs.defaultHandlers));
@@ -854,12 +947,12 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // The point of the whole exercise: what was migrated survives the
   // prune that follows on the next snapshot.
   booted.shell.registerApp({
-    id: 'app/jobs', name: 'Jobs', icon: '⚙️', hidden: true,
+    id: 'app/ledger', name: 'Ledger', icon: '⚙️', hidden: true,
     mount: function () {}, render: function () {},
   });
   booted.snapshot([NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
   const afterPrune = booted.saved.preferences;
-  if (afterPrune.appOverrides['app/jobs'] && afterPrune.defaultHandlers['.md'] === 'app/jobs') {
+  if (afterPrune.appOverrides['app/ledger'] && afterPrune.defaultHandlers['.md'] === 'app/ledger') {
     test.check('and it survives the prune on the next snapshot');
   } else {
     test.fail('after prune: ' + JSON.stringify(afterPrune));
@@ -869,12 +962,12 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // intent; re-running the migration must not put the old one back.
   const both = bootShell({
     defaultHandlers: {},
-    appOverrides: { jobs: { name: 'Old' }, 'app/jobs': { name: 'New' } },
+    appOverrides: { ledger: { name: 'Old' }, 'app/ledger': { name: 'New' } },
     groups: {},
   }, [NATTER_SCRIPT], true);
-  both.shell.migrateAppIds({ jobs: 'app/jobs' });
+  both.shell.migrateAppIds({ ledger: 'app/ledger' });
   const merged = both.saved.preferences;
-  if (merged.appOverrides['app/jobs'].name === 'New' && merged.appOverrides.jobs === undefined) {
+  if (merged.appOverrides['app/ledger'].name === 'New' && merged.appOverrides.ledger === undefined) {
     test.check('a newer override under the new id wins, and the old key goes');
   } else {
     test.fail('merge: ' + JSON.stringify(merged.appOverrides));

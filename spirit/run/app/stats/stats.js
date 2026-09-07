@@ -14,10 +14,11 @@
 // formatUptime, tileHtml and countsHtml came with it: nothing else in
 // index.html used them.
 
-// Duplicated from index.html's Jobs app, which has its own copy for the
-// same reason — the canonical set lives in js/jobs.js and never reaches
-// the browser. Worth collapsing into one shared place when Jobs moves;
-// not worth a new shell export for one array today.
+// Duplicated from app/jobs/jobs.js, which has its own copy for the same
+// reason — the canonical set lives in js/jobs.js, node-side, and never
+// reaches the browser. Two copies is one too many: worth an isomorphic
+// kernel constant both this and js/jobs.js read, in a sitting allowed to
+// touch the kernel.
 var STATS_TERMINAL_STATUSES = ['completed', 'failed', 'cancelled', 'stopped'];
 
 function statsFormatUptime(seconds) {
@@ -99,7 +100,7 @@ spirit.shell.activateApp({
     Object.keys(d.jobs.byStatus).forEach(function (status) {
       if (STATS_TERMINAL_STATUSES.indexOf(status) === -1) activeJobs += d.jobs.byStatus[status];
     });
-    html += statsTileHtml(activeJobs, 'Active jobs', false, 'jobs');
+    html += statsTileHtml(activeJobs, 'Active jobs', false, 'app/jobs');
 
     html += '<div class="stat-tile wide clickable" data-launch-app="files"><div class="label">Files by MIME type</div>' +
       statsCountsHtml(d.filesystem.byMimeType) + '</div>';

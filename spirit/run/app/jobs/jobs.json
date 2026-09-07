@@ -1,0 +1,8 @@
+{
+  "name": "Jobs",
+  "description": "Every job this personal node is running or has run: start a process, watch its log live, cancel or delete it.",
+  "icon": "LIST",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}
