@@ -537,6 +537,55 @@ test.subHeading('The Apps panel offers no control it would refuse');
   }
 }
 
+test.subHeading('The Spirit grid draws one tile per id');
+
+{
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+
+  function tiles(ids) {
+    const grid = fakeElement('div');
+    booted.shell.renderAppGroup(grid, ids);
+    return grid.children.map(function (el) { return el.innerHTML; });
+  }
+
+  // The shape index.html builds: a fixed member list, union every
+  // intrinsic app. Today they do not overlap; as the five move into
+  // app/<name>/ and become intrinsic, they will — and an app in both
+  // halves must not get two tiles.
+  const overlapping = ['app/natter', 'app/relayChat'].concat(booted.shell.listIntrinsicApps());
+  const drawn = tiles(overlapping);
+  const natterTiles = drawn.filter(function (html) { return html.indexOf('NATter') !== -1; });
+  if (overlapping.filter(function (id) { return id === 'app/natter'; }).length === 2 && natterTiles.length === 1) {
+    test.check('an id named twice in the list draws one tile');
+  } else {
+    test.fail('list ' + JSON.stringify(overlapping) + ' drew ' + JSON.stringify(drawn));
+  }
+
+  if (drawn.length === 2) {
+    test.check('and the other member is still drawn, once');
+  } else {
+    test.fail('grid: ' + JSON.stringify(drawn));
+  }
+
+  // First mention wins, so a fixed list keeps its curated order and the
+  // intrinsic half only ever appends what is not already there.
+  const ordered = tiles(['app/relayChat', 'app/natter', 'app/relayChat']);
+  if (ordered.length === 2 && ordered[0].indexOf('Relay Chat') !== -1 && ordered[1].indexOf('NATter') !== -1) {
+    test.check('first mention wins, so the curated order survives');
+  } else {
+    test.fail('order: ' + JSON.stringify(ordered));
+  }
+
+  // Unchanged from before: an id nothing has registered is skipped, not
+  // drawn as an empty tile and not thrown over.
+  if (tiles(['app/natter', 'not-an-app', 'app/natter']).length === 1) {
+    test.check('an unregistered id is still skipped');
+  } else {
+    test.fail('unknown id: ' + JSON.stringify(tiles(['app/natter', 'not-an-app', 'app/natter'])));
+  }
+}
+
 test.subHeading('Built-ins are locked by having no folder — until they get one');
 
 {

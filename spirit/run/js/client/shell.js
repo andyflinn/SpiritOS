@@ -385,10 +385,20 @@
   // apps (Stats/Processes/Jobs, hidden from the real desktop) rather than
   // each such grouping app hand-rolling its own icon grid. Unregistered
   // or not-yet-registered ids are silently skipped rather than throwing.
+  // One tile per id, first mention wins. The Spirit app builds its grid
+  // from a fixed member list UNION listIntrinsicApps(), and those two
+  // halves overlap the moment an app is in both — which is exactly what
+  // happens as the five in index.html move into app/<name>/ and become
+  // intrinsic (CLEANUP-PLAN steps 2 and 5). Deduping here rather than at
+  // that one call site means every grid built on this template, user
+  // groups included, gets the same guarantee, and the caller may
+  // concatenate freely without knowing what is already in its list.
   function renderAppGroup(container, appIds) {
     container.innerHTML = '';
+    var drawn = Object.create(null);
     appIds.forEach(function (id) {
-      if (!apps[id]) return;
+      if (!apps[id] || drawn[id]) return;
+      drawn[id] = true;
       container.appendChild(buildAppIcon(id));
     });
   }

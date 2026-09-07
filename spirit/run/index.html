@@ -1408,6 +1408,11 @@
             // how the node works rather than something installed, so this
             // is their launcher home and the only one — the Location
             // picker cannot move them out (setAppOverride, shell.js).
+            //
+            // The two halves may overlap — they will, as the five below
+            // move into app/<name>/ and become intrinsic. renderAppGroup
+            // draws one tile per id, so this list does not have to know
+            // what is already in it.
             renderAppGroup(grid, ['stats', 'process-browser', 'jobs', 'app-manager', 'group-manager']
               .concat(spirit.shell.listIntrinsicApps()));
           },
