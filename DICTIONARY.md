@@ -36,9 +36,11 @@ Format: **term** — aliases — meaning.
 
 **Spirit-shell** — the shell, kernel UI, browser UI — HTML/JS served by the personal node. Apps mount here (Relay Chat, natter, …).
 
-**Relay Chat** — relayChat — The shell app for claim / send / inbox against the mailbox in `relays.json`.
+**Relay Chat** — relayChat — The chat app, for any human. Claim / send / inbox against the mailbox in `relays.json`. Not an admin console: owner-only powers appear inside it only when this node’s key happens to own a mailbox.
 
-**Natter** — relays.json, relay list — `app/natter/relays.json`: which mailbox URLs this personal node uses. First URL is what hub calls today.
+**Natter** — relays.json, relay list — The list of public relays this personal node uses (`app/natter/relays.json`). First URL is what hub calls today. A row carries an **owner badge** when this node’s local public key matches the owner on that mailbox.
+
+**Owner badge** — owned row — The Natter mark meaning *this node’s key is `owner` on that mailbox*. Zero, one, or several rows may carry it. It is what unlocks create-invitation in Relay Chat. Decided (Andy): the badge is a **signed status 200** on that Natter URL — no extra endpoint unless one proves necessary.
 
 **Hub** — hub.js — Personal-node code that signs and forwards claim/send/inbox/invite to the mailbox over HTTPS (or loopback HTTP for a lab relay).
 
@@ -84,6 +86,8 @@ Format: **term** — aliases — meaning.
 
 **Mint** — POST invite — Owner-signed create of an invite row. Works in keys-mode only.
 
+**Create-invitation** — the invite UI — Where a human mints. Lives in **Relay Chat**, and is shown only if at least one Natter URL carries the owner badge. Several owned rows → the user picks which mailbox to mint on; it is never guessed from “first URL”. Design only — cycle A.
+
 **Redeem** — consume on claim — Successful claim burns the token before the peer is written.
 
 **Cutover** — Kamatera cutover — Deliberate change of live `relay-state/` (usually names → keys + pending-owner). Never implied by a lab-green harness.
@@ -93,6 +97,8 @@ Format: **term** — aliases — meaning.
 **Sitting** — this turn’s work — One opened cycle. Green means stop.
 
 **Cycle** — numbered slice (invite 1–4, A, …) — Spec + test; Claude patches; harness; stop.
+
+**Cycle A** — the create-invitation UI slice — Relay Chat gains create-invitation behind the Natter owner badge. **Not open.** Nothing of A is implemented until Andy opens it; the words above are picture, not backlog.
 
 **Leash** — Paste to Claude — Short verdict Andy copies. No leash in a Grok reply means nothing is for Claude.
 
@@ -117,5 +123,7 @@ Format: **term** — aliases — meaning.
 | allow list | mailbox.json peers |
 | token | public label |
 | owner | anyone who claimed |
+| Natter | Relay Chat |
+| owner badge | owner (the key on the mailbox) |
 | VPS | work box |
 | GROQ | GROK.md |
