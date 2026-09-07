@@ -50,6 +50,59 @@
     spirit.core.fs.saveFile('preferences.json', JSON.stringify(preferences, null, 2));
   }
 
+  // An app's id is its folder once it is a dynamic app: 'jobs' becomes
+  // 'app/jobs' the day Jobs moves into app/jobs/. Everything the operator
+  // customised is keyed by that id — appOverrides by key, defaultHandlers
+  // by value — and pruneStalePreferences (below) deletes every entry
+  // naming an app it cannot find, then saves. So on the first load after
+  // a move, without this, the shell quietly throws away the custom names,
+  // icons, group placements and "open .md with" choices for every app
+  // that moved, and there is nothing to undo it with.
+  //
+  // Empty today, on purpose: nothing has moved yet (CLEANUP-PLAN step 3
+  // lands before step 5). Each move adds one line here in the same commit
+  // as the move, rather than a migration being written while five apps
+  // are in flight.
+  var APP_ID_RENAMES = {
+    // 'jobs': 'app/jobs',
+  };
+
+  // Runs at load, which is before any snapshot and therefore before
+  // pruneStalePreferences can see the old keys. Takes the map as an
+  // argument so a test can drive it with a non-identity one; production
+  // always passes the map above.
+  function migrateAppIds(renames) {
+    var map = renames || APP_ID_RENAMES;
+    var changed = false;
+
+    Object.keys(map).forEach(function (oldId) {
+      var newId = map[oldId];
+
+      if (preferences.appOverrides[oldId] !== undefined) {
+        // An override already stored under the new id wins — it was
+        // written by the operator after the move, so it is the newer
+        // intent, and re-running a migration must never undo it.
+        if (preferences.appOverrides[newId] === undefined) {
+          preferences.appOverrides[newId] = preferences.appOverrides[oldId];
+        }
+        delete preferences.appOverrides[oldId];
+        changed = true;
+      }
+
+      Object.keys(preferences.defaultHandlers).forEach(function (ext) {
+        if (preferences.defaultHandlers[ext] === oldId) {
+          preferences.defaultHandlers[ext] = newId;
+          changed = true;
+        }
+      });
+    });
+
+    if (changed) savePreferences();
+    return changed;
+  }
+
+  migrateAppIds();
+
   // Deleting an app's files by any means other than the shell's own UI
   // (by hand, via Text Editor, from another tab) leaves its
   // appOverrides/defaultHandlers entries behind forever otherwise —
@@ -62,6 +115,11 @@
   // have its overrides wrongly stripped. Deletion reaching the shell
   // through its own UI (deleteGroup, etc.) already cleans up after
   // itself; this only ever has anything to do on the rare path around it.
+  //
+  // An app whose ID changed is not a deleted app, and this cannot tell
+  // the difference — migrateAppIds (above) runs at load, before any
+  // snapshot reaches here, so by the time this runs the keys already name
+  // the apps that exist.
   function pruneStalePreferences() {
     var changed = false;
 
@@ -1115,6 +1173,10 @@
     listApps: listApps,
     listIntrinsicApps: listIntrinsicApps,
     SPIRIT_GROUP_ID: SPIRIT_GROUP_ID,
+    // Exported for the harness: a migration that cannot be exercised is a
+    // migration nobody finds out about until the move it was written for.
+    migrateAppIds: migrateAppIds,
+    APP_ID_RENAMES: APP_ID_RENAMES,
     getAppOverride: getAppOverride,
     setAppOverride: setAppOverride,
     listGroups: listGroups,

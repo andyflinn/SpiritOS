@@ -78,7 +78,12 @@ function fakeDocument() {
 
 // Boots the real shell.js against the real app manifests on disk, with
 // preferences supplied by the test rather than by preferences.json.
-function bootShell(preferences, appScripts) {
+// `deferSnapshot` leaves the shell where a real page is between load and
+// the first fs-watcher message: apps registered by index.html exist,
+// discovery and pruneStalePreferences have not run yet. That is the slot
+// migrateAppIds occupies in production, and the only way to exercise the
+// ordering from outside.
+function bootShell(preferences, appScripts, deferSnapshot) {
   const doc = fakeDocument();
   const saved = { preferences: null };
   const subscribers = [];
@@ -112,23 +117,29 @@ function bootShell(preferences, appScripts) {
   new Function('spirit', 'document', src)(shellSpirit, doc);
 
   // The one snapshot the shell discovers apps from: an fs-watcher job
-  // listing entry scripts, exactly as jobs.js delivers it.
-  subscribers.forEach(function (h) {
-    h.onSnapshot([{
-      id: 'fs-watcher-1',
-      type: 'fs-watcher',
-      data: {
-        files: appScripts.map(function (rel) {
-          return { kind: 'file', relativePath: rel };
-        }),
-      },
-    }]);
-  });
+  // listing entry scripts, exactly as jobs.js delivers it. Also what
+  // drives pruneStalePreferences, which is why a test can re-fire it.
+  function snapshot(scripts) {
+    subscribers.forEach(function (h) {
+      h.onSnapshot([{
+        id: 'fs-watcher-1',
+        type: 'fs-watcher',
+        data: {
+          files: scripts.map(function (rel) {
+            return { kind: 'file', relativePath: rel };
+          }),
+        },
+      }]);
+    });
+  }
+
+  if (!deferSnapshot) snapshot(appScripts);
 
   return {
     shell: shellSpirit.shell,
     desktop: doc.byId.desktop,
     saved: saved,
+    snapshot: snapshot,
   };
 }
 
@@ -583,6 +594,87 @@ test.subHeading('The Spirit grid draws one tile per id');
     test.check('an unregistered id is still skipped');
   } else {
     test.fail('unknown id: ' + JSON.stringify(tiles(['app/natter', 'not-an-app', 'app/natter'])));
+  }
+}
+
+test.subHeading('An app that changes id keeps what the operator customised');
+
+{
+  // Today the map is empty and this is a no-op — nothing has moved
+  // (CLEANUP-PLAN step 3 lands before step 5). What is under test is the
+  // mechanism the moves will use, and the ordering: the rewrite happens
+  // at load, before any snapshot, and pruneStalePreferences runs from a
+  // snapshot. An id that changed is not a deleted app, but prune cannot
+  // tell the difference — it would delete every override and handler
+  // choice belonging to a moved app, and save.
+  const empty = bootShell({
+    defaultHandlers: { '.md': 'jobs' },
+    appOverrides: { jobs: { icon: '💀' } },
+    groups: {},
+  }, [NATTER_SCRIPT]);
+
+  if (Object.keys(empty.shell.APP_ID_RENAMES).length === 0) {
+    test.check('the rename map is empty while nothing has moved');
+  } else {
+    test.fail('map: ' + JSON.stringify(empty.shell.APP_ID_RENAMES));
+  }
+
+  // Deferred, so the migration runs where it runs in production: after
+  // preferences are read, before the first snapshot prunes anything.
+  const booted = bootShell({
+    defaultHandlers: { '.md': 'jobs', '.txt': 'app/relayChat' },
+    appOverrides: { jobs: { icon: '💀', name: 'Tasks' }, 'app/relayChat': { name: 'Chat' } },
+    groups: {},
+  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true);
+
+  const moved = booted.shell.migrateAppIds({ jobs: 'app/jobs' });
+  const prefs = booted.saved.preferences;
+  if (moved && prefs && prefs.appOverrides['app/jobs'] && prefs.appOverrides['app/jobs'].icon === '💀' &&
+      prefs.appOverrides.jobs === undefined) {
+    test.check("an override moves from 'jobs' to 'app/jobs'");
+  } else {
+    test.fail('overrides: ' + JSON.stringify(prefs && prefs.appOverrides));
+  }
+
+  if (prefs.defaultHandlers['.md'] === 'app/jobs') {
+    test.check('and a default-handler choice pointing at it is repointed');
+  } else {
+    test.fail('handlers: ' + JSON.stringify(prefs.defaultHandlers));
+  }
+
+  if (prefs.appOverrides['app/relayChat'].name === 'Chat' && prefs.defaultHandlers['.txt'] === 'app/relayChat') {
+    test.check('an id that did not move is untouched');
+  } else {
+    test.fail('untouched: ' + JSON.stringify(prefs));
+  }
+
+  // The point of the whole exercise: what was migrated survives the
+  // prune that follows on the next snapshot.
+  booted.shell.registerApp({
+    id: 'app/jobs', name: 'Jobs', icon: '⚙️', hidden: true,
+    mount: function () {}, render: function () {},
+  });
+  booted.snapshot([NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+  const afterPrune = booted.saved.preferences;
+  if (afterPrune.appOverrides['app/jobs'] && afterPrune.defaultHandlers['.md'] === 'app/jobs') {
+    test.check('and it survives the prune on the next snapshot');
+  } else {
+    test.fail('after prune: ' + JSON.stringify(afterPrune));
+  }
+
+  // An override written under the new id after the move is the newer
+  // intent; re-running the migration must not put the old one back.
+  const both = bootShell({
+    defaultHandlers: {},
+    appOverrides: { jobs: { name: 'Old' }, 'app/jobs': { name: 'New' } },
+    groups: {},
+  }, [NATTER_SCRIPT], true);
+  both.shell.migrateAppIds({ jobs: 'app/jobs' });
+  const merged = both.saved.preferences;
+  if (merged.appOverrides['app/jobs'].name === 'New' && merged.appOverrides.jobs === undefined) {
+    test.check('a newer override under the new id wins, and the old key goes');
+  } else {
+    test.fail('merge: ' + JSON.stringify(merged.appOverrides));
   }
 }
 
