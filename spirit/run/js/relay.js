@@ -244,6 +244,17 @@ function createRelay(rootDir) {
       if (!auth.verify(publicKey, auth.claimMessage(n), sig)) {
         return { ok: false, status: 403, error: 'bad claim signature' };
       }
+      // A token is not required here yet — that is cycle 4 — but one that
+      // is offered has to be real. Falling through to 201 on a bad token
+      // would turn a refused invite into a successful extra claim: the
+      // claimer would believe the invite worked, and the owner would find
+      // a peer on the box they never invited. Redeeming is the same
+      // consume-before-write below that names mode uses.
+      if (inviteToken) {
+        var keysInvite = invites.match(rootDir, inviteToken, n);
+        if (!keysInvite.ok) return keysInvite;
+        inviteRow = keysInvite.invite;
+      }
     } else {
       var gate = auth.checkClaim(allow, n, sig);
       if (!gate.ok) return gate;
