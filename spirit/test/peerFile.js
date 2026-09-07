@@ -45,10 +45,19 @@ test.subHeading('Safe on the disks this runs on');
     test.fail('this key has no + / or = in it; pick another to prove the point');
   }
 
-  if (peerFile.fileName(key) === name + '.json' && peerFile.fileName(key).indexOf('/') === -1) {
-    test.check('fileName is one segment and carries no directory');
+  const file = peerFile.fileName(key);
+  if (file === 'peerfile-' + name + '.json' && !/[\\/]/.test(file)) {
+    test.check('fileName is one segment, prefixed peerfile-, carrying no directory');
   } else {
-    test.fail('fileName: ' + peerFile.fileName(key));
+    test.fail('fileName: ' + file);
+  }
+
+  // The prefix is what lets one .gitignore line (**/peerfile-*.json)
+  // cover every per-peer file an app ever keeps, wherever it keeps them.
+  if (file.indexOf(peerFile.PREFIX) === 0 && SAFE.test(file)) {
+    test.check('and the prefix is on the front, where a glob can see it');
+  } else {
+    test.fail('prefix missing from ' + file);
   }
 
   // Windows device names are letters. This encoding has none, but the
@@ -128,14 +137,22 @@ test.subHeading('Reversible — a folder of files can say whose they are');
   }
 
   if (peerFile.keyFromFileName(peerFile.fileName(key)) === key) {
-    test.check('and so does a whole filename, extension and all');
+    test.check('and so does a whole filename, prefix and extension and all');
   } else {
     test.fail('filename round trip failed');
   }
 
+  // The prefix is optional on the way back in, so a file written before
+  // it existed is not orphaned by the change that added it.
+  if (peerFile.keyFromFileName(peerFile.nameFromKey(key) + '.json') === key) {
+    test.check('a name written without the prefix still decodes');
+  } else {
+    test.fail('unprefixed name no longer decodes');
+  }
+
   // A name written by something else is not a key, and saying so beats
   // decoding half of it.
-  const nonsense = ['relay.json', 'k-KsoBSOllzvZhd0Rr6fOfXD0c', 'andy', '', 'zz', '4d4'];
+  const nonsense = ['relay.json', 'k-KsoBSOllzvZhd0Rr6fOfXD0c', 'andy', '', 'zz', '4d4', 'peerfile-zz.json', 'peerfile-.json'];
   const refused = nonsense.filter(function (n) { return peerFile.keyFromFileName(n) === ''; });
   if (refused.length === nonsense.length) {
     test.check('a name this module did not write decodes to nothing, not to a guess');

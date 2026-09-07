@@ -72,13 +72,23 @@ function peerFileKeyFromName(name) {
   return out;
 }
 
-// A single path segment. No directory: the caller owns the folder, so
-// nothing here can be talked into writing outside it.
+// Every file this module names carries the same prefix, so a per-peer
+// file is recognisable as one — by a human reading a folder, and by the
+// single .gitignore line that keeps every one of them out of git
+// (**/peerfile-*.json). Data belonging to a peer is personal by
+// definition; a rule that has to be written again for each new kind of
+// per-peer file is a rule that will eventually be forgotten.
+//
+// It is a prefix and not a folder: this returns one path segment, and
+// the caller owns the directory, so nothing here can be talked into
+// writing outside it.
+var PEER_FILE_PREFIX = 'peerfile-';
+
 function peerFileFileName(publicKey, extension) {
   var name = peerFileNameFromKey(publicKey);
   if (!name) return '';
   var ext = extension === undefined ? '.json' : String(extension || '');
-  return name + ext;
+  return PEER_FILE_PREFIX + name + ext;
 }
 
 function peerFileKeyFromFileName(fileName, extension) {
@@ -87,11 +97,17 @@ function peerFileKeyFromFileName(fileName, extension) {
   if (ext && f.slice(-ext.length).toLowerCase() === ext.toLowerCase()) {
     f = f.slice(0, f.length - ext.length);
   }
+  // The prefix is optional on the way back in: a name that never had one
+  // still decodes, so nothing written before this line is orphaned.
+  if (f.slice(0, PEER_FILE_PREFIX.length).toLowerCase() === PEER_FILE_PREFIX) {
+    f = f.slice(PEER_FILE_PREFIX.length);
+  }
   return peerFileKeyFromName(f);
 }
 
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
   module.exports = {
+    PREFIX: PEER_FILE_PREFIX,
     nameFromKey: peerFileNameFromKey,
     keyFromName: peerFileKeyFromName,
     fileName: peerFileFileName,
@@ -99,6 +115,7 @@ if (typeof process !== 'undefined' && process.versions && process.versions.node)
   };
 } else if (typeof window !== 'undefined') {
   window.spiritPeerFile = {
+    PREFIX: PEER_FILE_PREFIX,
     nameFromKey: peerFileNameFromKey,
     keyFromName: peerFileKeyFromName,
     fileName: peerFileFileName,
