@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const auth = require('./relayAuth');
 const invites = require('./invites');
+const relayConsole = require('./relayConsole');
 
 var MAX_MESSAGES = 200;
 var MAX_TEXT = 1024;
@@ -55,6 +56,9 @@ function createRelay(rootDir) {
   var allow = auth.loadAllow(rootDir);
   var claimHits = Object.create(null);
   var sendHits = Object.create(null);
+  // Console messages are never stored, so they must not spend the ids
+  // real mail is numbered with.
+  var consoleSeq = 1;
 
   function persist() {
     saveMailbox(rootDir, peers, messages, nextId);
@@ -380,20 +384,63 @@ function createRelay(rootDir) {
     };
   }
 
-  function replyFromRelay(to, text) {
-    var msg = {
-      id: String(nextId++),
-      from: auth.RESERVED_NAME,
-      to: to,
+  // "I chat to my mailbox" is still the owner's affair. The gate has not
+  // moved — it is the same isOwner() the census used, decided HERE and
+  // handed to the console as a boolean, because a second owner check in
+  // a second file is a second thing to get wrong. What a non-owner gets
+  // is the console's own answer ("that one is the owner's"), never a
+  // census.
+  //
+  // Neither message is pushed into `messages`: see the comment in send.
+  // They carry the keys anyway, so the personal node can file them under
+  // the right peer — a reply follows the sender's KEY, not their public
+  // label, which is what a label-addressed reply could never do when two
+  // peers share a caption.
+  function consoleExchange(src, fromWire, text) {
+    var senderKey = (src && src.peer && src.peer.publicKey) || null;
+    var at = new Date().toISOString();
+    var command = {
+      id: 'console-' + (consoleSeq++),
+      from: fromWire,
+      to: auth.RESERVED_NAME,
+      fromKey: senderKey,
+      toKey: mailboxPublicKey(),
       text: text,
-      sentAt: new Date().toISOString()
+      sentAt: at,
     };
-    messages.push(msg);
-    if (messages.length > MAX_MESSAGES) {
-      messages = messages.slice(messages.length - MAX_MESSAGES);
+
+    var answer = relayConsole.handle(text, {
+      isOwner: isOwner(src),
+      snapshot: snapshot,
+      peers: who,
+      invites: function () { return invites.load(rootDir); },
+      mailboxPublicKey: mailboxPublicKey,
+      now: Date.now(),
+      // The version this box is actually running answers "did my update
+      // land?" without an SSH session.
+      version: require('./kernel').core.const.VERSION,
+      senderKey: senderKey,
+      senderLabel: fromWire,
+    });
+
+    if (!answer || !answer.reply) {
+      return { ok: true, status: 201, message: command };
     }
-    persist();
-    return msg;
+
+    return {
+      ok: true,
+      status: 201,
+      message: command,
+      consoleReply: {
+        id: 'console-' + (consoleSeq++),
+        from: auth.RESERVED_NAME,
+        to: fromWire,
+        fromKey: mailboxPublicKey(),
+        toKey: senderKey,
+        text: answer.reply,
+        sentAt: new Date().toISOString(),
+      },
+    };
   }
 
   function send(from, to, text, sig, clientKey) {
@@ -434,6 +481,23 @@ function createRelay(rootDir) {
 
     var fromWire = (src && src.label) || fTok;
     var toWire = (dst && dst.label) || tTok;
+
+    // A line addressed to the reserved name is a console command, not
+    // mail, and every gate above has already run on it: the rate limit,
+    // the signature, the allow list. What changes is where it goes.
+    //
+    // Nothing about this exchange is persisted. `messages` is a
+    // 200-entry ring shared by every peer's undelivered mail, and a
+    // console that wrote two entries per command would quietly evict the
+    // oldest real thing anyone said — while the command itself could
+    // never be read back by anybody, since inbox('relay') is refused for
+    // everyone including the owner. So the answer rides home in this
+    // response, and the personal node keeps whatever record it wants
+    // (chat 5).
+    if (tTok === auth.RESERVED_NAME || toWire === auth.RESERVED_NAME) {
+      return consoleExchange(src, fromWire, text);
+    }
+
     var msg = {
       id: String(nextId++),
       from: fromWire,
@@ -448,18 +512,6 @@ function createRelay(rootDir) {
       messages = messages.slice(messages.length - MAX_MESSAGES);
     }
     persist();
-    // "I chat to my mailbox" is the owner's affair. The reply is a census
-    // — mode, owner, peer count, message count — and a stranger who
-    // claimed a key on the box, or anyone poking at an address they just
-    // acquired, does not get to enumerate it by sending one message.
-    // Same rule as GET /api/relay/status, which is owner-signed.
-    if ((toWire === auth.RESERVED_NAME || tTok === auth.RESERVED_NAME) && isOwner(src)) {
-      var snap = snapshot();
-      replyFromRelay(fromWire, 'relay status mode=' + snap.mode +
-        ' owner=' + (snap.owner || '-') +
-        ' peers=' + snap.peers.length +
-        ' messages=' + snap.messages);
-    }
     return { ok: true, status: 201, message: msg };
   }
 

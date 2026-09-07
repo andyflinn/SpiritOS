@@ -75,34 +75,47 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('invited claim: ' + JSON.stringify({ mint: groqInvite, claim: bad }));
   }
 
-  const sendSig = auth.sign(id.privateKey, auth.sendMessage('andy', 'relay', 'status?'));
-  const sent = box.send('andy', 'relay', 'status?', sendSig);
+  // Chatting to the mailbox is a console now (CYCLE-RELAY-CONSOLE): the
+  // gate is the same isOwner() the census always used, and the answer
+  // comes home in the send response instead of the mailbox — nothing of
+  // a console exchange is persisted, because `messages` is a 200-entry
+  // ring holding every peer's undelivered mail.
+  const sendSig = auth.sign(id.privateKey, auth.sendMessage('andy', 'relay', 'status'));
+  const sent = box.send('andy', 'relay', 'status', sendSig);
   if (sent.ok) {
     test.check('owner can send to reserved name relay');
   } else {
     test.fail('send to relay: ' + JSON.stringify(sent));
   }
 
-  // Reading a mailbox is signed too — andy proves the read with the key he
-  // claimed with. See relayGates.js for the unsigned and wrong-key cases.
+  if (sent.consoleReply && /owner andy/.test(sent.consoleReply.text)) {
+    test.check('and the mailbox answers the owner with the census');
+  } else {
+    test.fail('console reply: ' + JSON.stringify(sent));
+  }
+
+  // Not in the mailbox: the owner's own inbox holds no console traffic,
+  // so a friend's undelivered line is never evicted by one.
   const box2 = createRelay(home);
   const inbox = box2.inbox('andy', auth.sign(id.privateKey, auth.inboxMessage('andy')));
   const fromRelay = (inbox.messages || []).filter(function (m) { return m.from === 'relay'; });
-  if (fromRelay.length === 1 && /owner=andy/.test(fromRelay[0].text)) {
-    test.check('relay replies in owner inbox with status');
+  if (inbox.ok && fromRelay.length === 0) {
+    test.check('and none of it was stored in the mailbox');
   } else {
     test.fail('inbox: ' + JSON.stringify(inbox));
   }
 
   // A second signed key on the mailbox is fine (that is how two johns
-  // work) but it is not the owner, so chatting to `relay` gets it nothing.
+  // work) but it is not the owner, so chatting to `relay` gets it
+  // nothing but the console saying whose word that is.
   const strangerSend = box2.send(
-    'groq', 'relay', 'status?',
-    auth.sign(stranger.privateKey, auth.sendMessage('groq', 'relay', 'status?'))
+    'groq', 'relay', 'status',
+    auth.sign(stranger.privateKey, auth.sendMessage('groq', 'relay', 'status'))
   );
   const strangerInbox = box2.inbox('groq', auth.sign(stranger.privateKey, auth.inboxMessage('groq')));
   const census = (strangerInbox.messages || []).filter(function (m) { return m.from === 'relay'; });
-  if (strangerSend.ok && census.length === 0) {
+  const refused = strangerSend.consoleReply && strangerSend.consoleReply.text;
+  if (strangerSend.ok && census.length === 0 && !/owner=|owner andy/.test(String(refused))) {
     test.check('a non-owner sending to relay gets no status line back');
   } else {
     test.fail('stranger census: ' + JSON.stringify(census) + ' send ' + JSON.stringify(strangerSend));

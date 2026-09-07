@@ -487,6 +487,12 @@ spirit.shell.activateApp({
           // none for the sender.
           if (msg) {
             recordMessages([msg], 'sent');
+            // A word to the mailbox is answered in the same breath: the
+            // console does not post its reply into the mailbox (it would
+            // evict real mail from a 200-entry ring nobody could read it
+            // back out of), so the answer rides home on the send and is
+            // filed here like anything else received.
+            if (msg.consoleReply) recordMessages([msg.consoleReply], 'received');
             renderThread();
           }
           setStatus('');
