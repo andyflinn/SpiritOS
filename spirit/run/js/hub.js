@@ -318,7 +318,16 @@ function createHub(rootDir) {
           catch (e) { parsed = null; }
           var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ relay: url, people: buildPeople(rootDir, peers, url) }));
+          // The reserved name travels with the people, because it is a
+          // destination the app must offer and never a peer it could
+          // discover: `relay` cannot be claimed, so it is in no `who`.
+          // Naming it here keeps the constant on the node beside the
+          // relay that honours it (relayAuth.RESERVED_NAME).
+          res.end(JSON.stringify({
+            relay: url,
+            reservedName: auth.RESERVED_NAME,
+            people: buildPeople(rootDir, peers, url),
+          }));
         })
         .catch(function (err) { fail(res, 502, String(err.message || err)); });
     });

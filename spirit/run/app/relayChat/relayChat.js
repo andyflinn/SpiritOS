@@ -15,39 +15,59 @@ spirit.shell.activateApp({
     var statusEl;
     var titleEl;
     var ownedUrls = [];
+    // Lines this node sent. The mailbox's inbox is per-RECIPIENT — it
+    // returns what was addressed to you, never what you sent — so
+    // without this a thread would show only the other half of the
+    // conversation. Session-lifetime on purpose: these are echoes of
+    // what the relay accepted (id and all), not a second store, and a
+    // reload asks the mailbox again rather than trusting them.
+    var sentByMe = [];
 
+    // Chat 3 — the page reads top to bottom as a conversation: who you
+    // are, what was said, and the box you say the next thing in. The
+    // claim row stays above the thread because binding is what you do
+    // once; the invite folds away because minting is what an owner does
+    // rarely, and hiding it from non-owners is chat 4, not this sitting.
     container.innerHTML =
       '<h3 id="rc-title">Relay Chat</h3>' +
       '<div class="stat-tile wide">' +
         '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
         '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
         '<button type="button" id="rc-claim">Claim</button>' +
-        // To is a list of PEOPLE, and a person is a key. Two johns are
-        // two rows here because the mailbox keeps them as two peers; a
-        // typed name cannot say which one you meant. The text box stays
-        // beside it for a name the list does not have yet (`relay`, or a
-        // peer this node has not refreshed since).
-        '<label>To<select id="rc-to-pick"><option value="">(pick a person)</option></select></label>' +
-        '<label>or type<input type="text" id="rc-to" placeholder="bert"></label>' +
-        '<label>Text<input type="text" id="rc-text" placeholder="hello"></label>' +
-        '<button type="button" id="rc-send">Send</button>' +
         '<span id="rc-status"></span>' +
       '</div>' +
-      // Create-invitation is not a second app and not an admin screen: it
-      // is this app, with one more row, shown only while this node's key
-      // owns a mailbox in Natter. No badge, no row. See DICTIONARY.md.
-      '<div class="stat-tile wide" id="rc-invite-panel" style="display:none">' +
-        '<label>Invite<input type="text" id="rc-inv-label" placeholder="saint"></label>' +
-        '<label>Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
+      '<div class="job-log-panel" id="rc-thread"></div>' +
+      // Docked under the thread, where a chat composer belongs. To is a
+      // list of PEOPLE, and a person is a key: two johns are two rows
+      // because the mailbox keeps them as two peers, and a typed name
+      // could not say which one you meant. `relay` is in the list too —
+      // it is a real destination (the mailbox itself, which answers the
+      // owner with a census) and the only one that is a name rather than
+      // a key, so it comes from the node rather than from a string
+      // written here.
+      '<div class="start-job-form" id="rc-composer">' +
+        '<select id="rc-to-pick"><option value="">(pick a person)</option></select>' +
+        '<input type="text" id="rc-text" placeholder="say something">' +
+        '<button type="button" id="rc-send">Send</button>' +
+      '</div>' +
+      // Last, and folded: minting is what an owner does rarely, and the
+      // conversation is what the page is for. Still visible to everyone
+      // — hiding it from non-owners is chat 4, not this sitting.
+      // Create-invitation is not a second app and not an admin screen:
+      // it is this app, with one more row, shown only while this node's
+      // key owns a mailbox in Natter. See DICTIONARY.md.
+      '<details class="stat-tile wide" id="rc-invite-panel" style="display:none">' +
+        '<summary>Invite someone</summary>' +
+        '<label class="field-label">Invite<input type="text" id="rc-inv-label" placeholder="saint"></label>' +
+        '<label class="field-label">Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
         // The token Andy speaks on the phone. Empty means the relay picks
         // hex; typed, it is signed with the label and the days (A2), so
         // it is his to say and nobody else's to substitute.
-        '<label>Token<input type="text" id="rc-inv-token" placeholder="(optional, spoken)"></label>' +
-        '<label id="rc-inv-pick-wrap" style="display:none">Mailbox<select id="rc-inv-pick"></select></label>' +
-        '<button type="button" id="rc-inv-go">Invite</button>' +
+        '<label class="field-label">Token<input type="text" id="rc-inv-token" placeholder="(optional, spoken)"></label>' +
+        '<label class="field-label" id="rc-inv-pick-wrap" style="display:none">Mailbox<select id="rc-inv-pick"></select></label>' +
+        '<button type="button" class="cancel-btn" id="rc-inv-go">Invite</button>' +
         '<span id="rc-inv-out"></span>' +
-      '</div>' +
-      '<pre id="rc-log"></pre>';
+      '</details>';
 
     statusEl = document.getElementById('rc-status');
     titleEl = document.getElementById('rc-title');
@@ -125,16 +145,48 @@ spirit.shell.activateApp({
       });
     }
 
+    // One line per message: time, who, text. "Who" is the other party —
+    // your own lines are marked by class, not by repeating your name at
+    // yourself. Everything crossing this boundary came off a mailbox any
+    // peer can write to, so every piece of it is escaped.
+    function renderThread(fetched) {
+      var thread = document.getElementById('rc-thread');
+      if (!thread) return;
+
+      // Merge by id: a message that comes back from the mailbox (a note
+      // to yourself does) must not appear twice.
+      var seen = Object.create(null);
+      var messages = [];
+      (fetched || []).forEach(function (m) { seen[m.id] = true; messages.push(m); });
+      sentByMe.forEach(function (m) { if (!seen[m.id]) messages.push(m); });
+      messages.sort(function (a, b) { return String(a.sentAt).localeCompare(String(b.sentAt)); });
+
+      // Same sticky-scroll rule the Jobs log uses: pin to the bottom
+      // while you are reading the newest line, leave the scroll alone
+      // while you are reading back through older ones.
+      var distanceFromBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight;
+      var stick = distanceFromBottom < 40;
+
+      thread.innerHTML = messages.map(function (m) {
+        var mine = !!myName && m.from === myName;
+        var when = new Date(m.sentAt);
+        var time = isNaN(when.getTime()) ? m.sentAt : when.toLocaleTimeString();
+        var who = mine ? m.to : m.from;
+        return '<div class="rc-msg ' + (mine ? 'me' : 'them') + '">' +
+          '<span class="rc-time">' + api.escapeHtml(time) + '</span>' +
+          '<span class="rc-who">' + api.escapeHtml(mine ? '→ ' + who : who) + '</span>' +
+          '<span class="rc-text">' + api.escapeHtml(m.text) + '</span>' +
+          '</div>';
+      }).join('') || '<div class="job-log-empty">(nothing here yet)</div>';
+
+      if (stick) thread.scrollTop = thread.scrollHeight;
+    }
+
     function refreshInbox() {
       if (!myName) return;
       fetch('/api/hub/inbox?name=' + encodeURIComponent(myName))
         .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var lines = (data.messages || []).map(function (m) {
-            return m.sentAt + ' ' + m.from + ' → ' + m.to + ': ' + m.text;
-          });
-          document.getElementById('rc-log').textContent = lines.join('\n') || '(empty)';
-        })
+        .then(function (data) { renderThread(data.messages || []); })
         .catch(function (e) { setStatus('inbox failed: ' + e.message); });
     }
 
@@ -155,6 +207,15 @@ spirit.shell.activateApp({
           var chosen = pick.value;
           var people = (data && data.people) || [];
           pick.innerHTML = '<option value="">(pick a person)</option>';
+          // The mailbox itself, named by the node rather than by a
+          // literal here: `relay` is reserved, so it is never a peer in
+          // `who`, but it is the one destination that answers back.
+          if (data && data.reservedName) {
+            var box = document.createElement('option');
+            box.value = data.reservedName;
+            box.textContent = data.reservedName + ' (this mailbox)';
+            pick.appendChild(box);
+          }
           people.forEach(function (person) {
             var opt = document.createElement('option');
             opt.value = person.publicKey;
@@ -238,19 +299,41 @@ spirit.shell.activateApp({
       });
     });
 
+    // A chat that needs a mouse for every line reads as a form. Enter
+    // sends; the button stays for anyone who wants it.
+    document.getElementById('rc-text').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        document.getElementById('rc-send').click();
+      }
+    });
+
     document.getElementById('rc-send').addEventListener('click', function () {
-      // The picked person wins: it is a key, and a key is unambiguous.
-      // The text box is the fallback for a name not on the list.
-      var picked = document.getElementById('rc-to-pick').value;
-      var to = picked || document.getElementById('rc-to').value.trim();
+      // Whoever is picked, and only that: a key, or the reserved name of
+      // the mailbox. Nothing is typed at this control any more, so
+      // nothing can be aimed at a name that does not exist.
+      var to = document.getElementById('rc-to-pick').value;
       var text = document.getElementById('rc-text').value;
       if (!myName) {
         setStatus('claim a name first');
         return;
       }
+      if (!to) {
+        setStatus('pick who this is for');
+        return;
+      }
       hubPost('/api/hub/send', { from: myName, to: to, text: text }).then(function (r) {
-        setStatus(r.status + ' ' + r.text);
-        document.getElementById('rc-text').value = '';
+        if (r.status === 201) {
+          var msg = null;
+          try { msg = JSON.parse(r.text); } catch (e) { msg = null; }
+          // What the relay stored, not what was typed: the wire may have
+          // resolved a key to a public label on the way through.
+          if (msg && msg.id) sentByMe.push(msg);
+          setStatus('');
+          document.getElementById('rc-text').value = '';
+        } else {
+          setStatus(r.status + ' ' + r.text);
+        }
         refreshInbox();
       });
     });

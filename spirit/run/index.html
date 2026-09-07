@@ -215,6 +215,24 @@
 
       .start-job-form button:hover, .cancel-btn:hover { background: #16487a; }
 
+      /* A native dropdown paints its popup with the control's OWN
+         colours. A translucent background (rgba over a dark page) lands
+         as near-white behind near-white text once the OS draws the list
+         on its own layer — readable in the closed control, unreadable
+         open. Opaque on both the select and its options, everywhere in
+         the shell, since every app that grows a dropdown inherits this
+         problem. */
+      select {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: #0f3460;
+        color: #eee;
+        font: inherit;
+      }
+
+      select option { background: #16213e; color: #eee; }
+
       #job-manifest-form {
         margin-top: 12px;
       }
@@ -320,6 +338,40 @@
         font-family: ui-monospace, Consolas, monospace;
       }
       .job-log-empty { opacity: 0.6; font-style: italic; }
+
+      /* Relay Chat's thread (chat 3). Deliberately the same panel the
+         Jobs log already uses — this is the shell's bones, not a second
+         design system. Two message shapes, yours and theirs, told apart
+         by weight and a tint rather than by bubbles. */
+      #rc-thread { max-height: 55vh; margin-bottom: 12px; }
+
+      .rc-msg { display: flex; gap: 10px; padding: 3px 6px; border-radius: 6px; }
+      .rc-msg .rc-time {
+        opacity: 0.5;
+        font-family: ui-monospace, Consolas, monospace;
+        white-space: nowrap;
+      }
+      .rc-msg .rc-who { opacity: 0.85; font-weight: 600; white-space: nowrap; }
+      .rc-msg .rc-text { flex: 1; }
+      .rc-msg.me { background: rgba(255, 255, 255, 0.06); }
+      .rc-msg.me .rc-who { color: #8ec9ff; }
+      .rc-msg.them .rc-who { color: #ffd48a; }
+
+      /* The thread scrolls inside its own panel, so the composer is
+         always on screen without being pinned there — and pinning it
+         would float it over the invite panel that now sits below. Flow
+         order is the layout: thread, composer, invite. */
+      #rc-composer { margin: 10px 0 14px; }
+
+      /* Present, not shouting: one line until it is wanted. */
+      #rc-invite-panel > summary {
+        cursor: pointer;
+        font-size: 13px;
+        opacity: 0.8;
+        list-style: none;
+      }
+      #rc-invite-panel > summary::-webkit-details-marker { display: none; }
+      #rc-invite-panel[open] > summary { margin-bottom: 8px; }
 
       @media (max-width: 480px) {
         .app-icon .icon { font-size: 32px; }

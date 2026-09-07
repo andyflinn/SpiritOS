@@ -258,6 +258,16 @@ function runOverLoopback() {
       test.fail('hub who: ' + res.status + ' ' + res.text);
     }
 
+    // `relay` is a destination and never a peer: it cannot be claimed,
+    // so it appears in no `who`, and the To control would have no way to
+    // offer it unless the node named it.
+    const named = (data.people || []).some(function (p) { return p.publicLabel === 'relay'; });
+    if (data.reservedName === 'relay' && !named) {
+      test.check('the reserved destination travels with the list, outside it');
+    } else {
+      test.fail('reserved: ' + JSON.stringify({ reservedName: data.reservedName, named: named }));
+    }
+
     // Send to the SECOND john by key. A typed "john" could not have
     // said which, and the relay would have refused it as ambiguous.
     const target = johns[1].publicKey;
