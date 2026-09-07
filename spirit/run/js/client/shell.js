@@ -730,6 +730,42 @@
         if (app._titlebarLinks.indexOf(targetAppId) === -1) app._titlebarLinks.push(targetAppId);
         renderTitlebarLinks(app);
       },
+
+      // ---- The system-app surface (CLEANUP-PLAN step 6) ----
+      //
+      // The apps that moved out of index.html need things no app-scoped
+      // api could give them: opening another app, reading a file that is
+      // not their own, editing every OTHER app's overrides. They reached
+      // for `spirit.shell` and `spirit.core.fs` to get them, which works
+      // — those are globals on the page — and is exactly what should not
+      // become the habit. These are the same capabilities with a name
+      // and a doorway.
+      //
+      // This is intent, not containment. Every one of these is still
+      // reachable through the globals, and it always will be: the page
+      // has no module boundary to enforce anything. The real jail is
+      // server-side (fileServable/fileWritable, kernel.js). What this
+      // buys is that an app declares what it uses, and one place says
+      // what a system app is allowed to want.
+      launchApp: function (targetAppId, params) {
+        launchApp(targetAppId, params || null);
+      },
+      listApps: listApps,
+      listGroups: listGroups,
+      getAppOverride: getAppOverride,
+      setAppOverride: setAppOverride,
+
+      // An unscoped read, deliberately: the Process Browser lists files
+      // under process/, the Files app walks the whole tree, and neither
+      // is doing anything api.fs (scoped to app/<name>/) can express.
+      // Not a wider capability than the page already had — it is the
+      // same request the shell itself makes, and the server still
+      // refuses anything fileServable() refuses (relay-state, the node
+      // modules, sidecars). Read only: writing outside an app's own
+      // folder stays where it is.
+      readProject: function (projectPath) {
+        return spirit.core.fs.loadFile(projectPath);
+      },
     };
     if (app._scriptPath) {
       var folder = app._scriptPath.match(/^app\/([^/]+)\//)[1];

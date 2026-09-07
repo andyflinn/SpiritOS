@@ -6,22 +6,27 @@
 // the Spirit group's member list in index.html, both updated in this
 // same commit.
 //
-// It moved ahead of step 6, by Andy's decision, so it still reaches for
-// two globals that step 6 is meant to replace with `api` methods:
+// It moved ahead of step 6 and reached for globals in the meantime.
+// Step 6 gave those capabilities a doorway, and this app is the proof:
 //
-//   - spirit.core.fs.loadFile on process/<lang>/<name>/<name>.json,
-//     which is an unscoped read by nature — this app's whole job is
-//     listing files that are not its own. api.fs is scoped to
-//     app/process-browser/ and always will be (AGENT.md: scoped by
-//     convention, the jail is server-side fileWritable).
-//   - spirit.shell for the viewer lookup and the launch.
+//   - api.readProject reads process/<lang>/<name>/<name>.json. That is
+//     an unscoped read by nature — this app's whole job is listing files
+//     that are not its own, which api.fs (scoped to
+//     app/process-browser/) cannot express and should not.
+//   - api.launchApp opens the viewer for a script.
 //
-// Both are the same calls index.html made, from a different file. They
-// are not to be "fixed" by inventing a private route here; step 6 is
-// where a system app's api surface gets decided.
+// Still on spirit.shell, because step 6 did not name them: the viewer
+// lookup itself (mimeTypeForName, classifyMimeType,
+// CATEGORY_APP_HANDLERS). They are the obvious next three — "which app
+// opens this file" is the same kind of question as "open this app" —
+// but they wait for a sitting that opens them.
+//
+// `api` arrives at mount and render never gets one, so it is kept here.
+// Every app that needs api outside mount does the same; worth a shell
+// change one day, not this one.
 
-var PROCESS_ICON = spirit.core.const.ICON;
 var processEscapeHtml = spirit.core.util.escapeHtml;
+var processApi = null; // handed in at mount, kept for render's sake
 
 var lastProcessBrowserJob = null;
 var lastProcessBrowserEntries = null; // cached {label, description, relativePath} list, independent of the search filter
@@ -39,7 +44,7 @@ function processFindJob(jobsById, type) {
 
 function renderProcessList() {
   var listEl = document.getElementById('process-browser-list');
-  if (!listEl) return;
+  if (!listEl || !processApi) return;
 
   if (!lastProcessBrowserEntries) {
     var job = lastProcessBrowserJob;
@@ -57,7 +62,7 @@ function renderProcessList() {
     lastProcessBrowserEntries = job.data.files
       .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/([^/]+)\/\1\.[^/.]+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
       .map(function (f) {
-        var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.[^.]+$/, '.json'));
+        var manifestRaw = processApi.readProject(f.relativePath.replace(/\.[^.]+$/, '.json'));
         var manifest = null;
         try { manifest = manifestRaw ? JSON.parse(manifestRaw) : null; } catch (e) {}
         return {
@@ -84,7 +89,9 @@ function renderProcessList() {
 }
 
 spirit.shell.activateApp({
-  mount: function (container) {
+  mount: function (container, api) {
+    processApi = api;
+
     // Force the next render() to actually populate the list — mount()
     // always wipes the DOM clean, so a cache hit from a previous visit
     // (same fs-watcher job reference, nothing changed on disk) must
@@ -111,7 +118,7 @@ spirit.shell.activateApp({
       }
       // The viewer is what offers "start this as a job" and jumps to
       // Jobs afterwards; this app only ever opens the file.
-      spirit.shell.launchApp(handlerId, { path: entry.dataset.processPath });
+      api.launchApp(handlerId, { path: entry.dataset.processPath });
     });
   },
 

@@ -955,10 +955,10 @@ test.subHeading('Processes has moved out of index.html');
   }
 
   const src = readRun(PROCESS_SCRIPT);
-  if (src.indexOf('spirit.core.fs.loadFile') !== -1 && !/api\.fs\.[a-zA-Z]/.test(src)) {
-    test.check('its unscoped manifest read is still spirit.core.fs, as step 6 expects');
+  if (/\.readProject\(/.test(src) && src.indexOf('spirit.core.fs.loadFile') === -1) {
+    test.check('its unscoped manifest read goes through api.readProject (step 6)');
   } else {
-    test.fail('the process manifest read was changed ahead of step 6');
+    test.fail('the process manifest read is not on the api surface');
   }
 
   booted.snapshot(MOVED_SCRIPTS);
@@ -978,6 +978,74 @@ test.subHeading('Processes has moved out of index.html');
     test.check('five registerApp blocks remain: Files, the two viewers, Groups, and Spirit itself');
   } else {
     test.fail('registerApp blocks left in index.html: ' + stillInline);
+  }
+}
+
+test.subHeading('The system-app api surface');
+
+{
+  // The api object is built per app and handed to mount, so the only
+  // honest way to see it is to be mounted: open the tile, let the
+  // "script" activate, fire its onload, and keep what mount was given.
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/process-browser/process-browser.js'], true);
+
+  let handed = null;
+  booted.shell.launchApp('app/natter');
+  booted.shell.activateApp({ mount: function (container, api) { handed = api; }, render: function () {} });
+  booted.scripts[0].onload();
+
+  const named = ['launchApp', 'listApps', 'listGroups', 'getAppOverride', 'setAppOverride', 'readProject'];
+  const missing = named.filter(function (m) { return !handed || typeof handed[m] !== 'function'; });
+  if (missing.length === 0) {
+    test.check('an app is handed launchApp, listApps, listGroups, getAppOverride, setAppOverride and readProject');
+  } else {
+    test.fail('missing from api: ' + missing.join(', '));
+  }
+
+  // What was already there stays there — this is an addition, not a
+  // replacement, and api.fs is still the scoped one.
+  if (typeof handed.escapeHtml === 'function' && typeof handed.fetchExternal === 'function' &&
+      typeof handed.addTitlebarLink === 'function' && handed.fs) {
+    test.check('beside the api it already had, api.fs included');
+  } else {
+    test.fail('api lost something: ' + Object.keys(handed).join(', '));
+  }
+
+  // readProject reads a file that is not the app's own — the whole
+  // reason it exists, since api.fs cannot express it.
+  const read = handed.readProject('app/natter/natter.json');
+  if (read && JSON.parse(read).intrinsic === true) {
+    test.check("readProject reads a path outside the app's own folder");
+  } else {
+    test.fail('readProject returned: ' + JSON.stringify(read));
+  }
+
+  // The registry methods are the shell's own, not copies: what
+  // setAppOverride refuses through spirit.shell it refuses through api.
+  const refused = handed.setAppOverride('app/natter', { name: 'Mailboxes' });
+  if (!refused.ok && refused.reason === 'intrinsic-app-name-locked') {
+    test.check('setAppOverride through api honours the same locks');
+  } else {
+    test.fail('api.setAppOverride: ' + JSON.stringify(refused));
+  }
+
+  if (handed.listApps().some(function (a) { return a.id === 'app/natter'; }) &&
+      Array.isArray(handed.listGroups()) &&
+      typeof handed.getAppOverride('app/natter') === 'object') {
+    test.check('listApps, listGroups and getAppOverride answer as the shell does');
+  } else {
+    test.fail('registry methods disagree with the shell');
+  }
+
+  // And launchApp actually navigates: opening Processes through the api
+  // fetches its entry script, exactly as a desktop tile would.
+  const before = booted.scripts.length;
+  handed.launchApp('app/process-browser');
+  if (booted.scripts.length === before + 1) {
+    test.check('launchApp through api opens another app');
+  } else {
+    test.fail('scripts fetched: ' + before + ' → ' + booted.scripts.length);
   }
 }
 
