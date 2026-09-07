@@ -13,12 +13,28 @@
 // hub passes the one that speaks HTTPS, tests pass one that answers from a
 // relay object in the same process.
 
-const fs = require('fs');
-const path = require('path');
-const auth = require('./relayAuth');
+// Isomorphic, the way kernel.js is: the rules are shared, the filesystem
+// and the signing are node-only. Natter runs in the browser and has to
+// obey the same "how few mailboxes may this node be left with" rule the
+// node side knows, and a rule copied into a second file is a rule that
+// will be changed in one of them. Nothing below this line requires
+// anything unless it is running under node.
+const isNode = typeof process !== 'undefined' && !!process.versions && !!process.versions.node;
+const fs = isNode ? require('fs') : null;
+const path = isNode ? require('path') : null;
+const auth = isNode ? require('./relayAuth') : null;
 
 function normalizeUrl(u) {
   return String(u == null ? '' : u).trim().replace(/\/+$/, '');
+}
+
+// A personal node with no Natter row has no mailbox at all: Relay Chat
+// cannot claim, cannot send, cannot read an inbox, and the owner badge
+// has nothing to be a badge on. So the last row does not come off. This
+// is the count AFTER which a removal is allowed, not before — one row
+// left is the floor, not the error.
+function canRemoveMailbox(count) {
+  return Number(count) > 1;
 }
 
 // Natter rows, in file order, deduped by URL. A row with no url is not a
@@ -136,13 +152,25 @@ function chooseUrl(urls, wanted) {
   return { ok: false, status: 400, error: 'pick a mailbox url' };
 }
 
-module.exports = {
-  normalizeUrl: normalizeUrl,
-  loadRelays: loadRelays,
-  configuredUrls: configuredUrls,
-  statusPath: statusPath,
-  readBadge: readBadge,
-  summarize: summarize,
-  probe: probe,
-  chooseUrl: chooseUrl,
-};
+// The node side gets everything. The browser gets the rules it has to
+// obey and nothing that would need a filesystem — Natter reads
+// window.spiritOwnerBadge, and if this script never loaded it finds no
+// helper and draws no Remove at all, which is the safe way to be wrong.
+if (isNode) {
+  module.exports = {
+    normalizeUrl: normalizeUrl,
+    canRemoveMailbox: canRemoveMailbox,
+    loadRelays: loadRelays,
+    configuredUrls: configuredUrls,
+    statusPath: statusPath,
+    readBadge: readBadge,
+    summarize: summarize,
+    probe: probe,
+    chooseUrl: chooseUrl,
+  };
+} else if (typeof window !== 'undefined') {
+  window.spiritOwnerBadge = {
+    normalizeUrl: normalizeUrl,
+    canRemoveMailbox: canRemoveMailbox,
+  };
+}

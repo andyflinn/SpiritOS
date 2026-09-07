@@ -20,17 +20,41 @@ function natterLoadRelays(api) {
   }
 }
 
+// The rule itself lives in js/ownerBadge.js, whose isomorphic half the
+// shell loads (index.html) — one definition of "how few mailboxes this
+// node may be left with", shared with the hub that has to speak to them.
+// If that script did not load there is no helper and no Remove: losing
+// the button is a nuisance, losing the last relay is a node that cannot
+// claim, send or read anything.
+function natterCanRemove(count) {
+  var badge = (typeof window !== 'undefined' && window.spiritOwnerBadge) || null;
+  return !!(badge && badge.canRemoveMailbox(count));
+}
+
+// Removal decided in one place, so the button and the click agree. A
+// disabled-looking button that still deletes when clicked is the failure
+// this cycle is about.
+function natterRemoveAt(relays, index) {
+  if (!natterCanRemove(relays.length)) return null;
+  if (!(index >= 0 && index < relays.length)) return null;
+  return relays.splice(index, 1)[0];
+}
+
 function natterRenderList(container, api, relays) {
   var tbody = container.querySelector('#natter-tbody');
   if (relays.length === 0) {
     tbody.innerHTML = '<tr><td colspan="3">(no relays added yet)</td></tr>';
     return;
   }
+  var removable = natterCanRemove(relays.length);
   tbody.innerHTML = relays.map(function (relay, index) {
     return '<tr class="job-row">' +
       '<td>' + api.escapeHtml(relay.label) + '</td>' +
       '<td>' + api.escapeHtml(relay.url) + '</td>' +
-      '<td><button type="button" class="cancel-btn" data-remove-index="' + index + '">Remove</button></td>' +
+      '<td>' + (removable
+        ? '<button type="button" class="cancel-btn" data-remove-index="' + index + '">Remove</button>'
+        : '<span class="muted">last relay</span>') +
+      '</td>' +
       '</tr>';
   }).join('');
 }
@@ -77,7 +101,14 @@ spirit.shell.activateApp({
       var indexAttr = e.target.getAttribute('data-remove-index');
       if (indexAttr == null) return;
       var index = Number(indexAttr);
-      var removed = relays.splice(index, 1)[0];
+      var removed = natterRemoveAt(relays, index);
+      // A button that survived a stale render, or was put back by hand,
+      // still does not empty the list.
+      if (!removed) {
+        statusEl.textContent = 'a node keeps at least one relay';
+        natterRenderList(container, api, relays);
+        return;
+      }
       api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2)).then(function () {
         statusEl.textContent = 'saved';
         natterRenderList(container, api, relays);

@@ -6,6 +6,11 @@
     <title>SpiritOS</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script src="/js/kernel.js"></script>
+    <!-- The isomorphic half of js/ownerBadge.js: the mailbox rules the
+         browser has to obey too (Natter's Remove asks it whether this
+         node may be left with fewer relays). Node-only code inside it
+         never runs here. -->
+    <script src="/js/ownerBadge.js"></script>
     <style>
       * { box-sizing: border-box; }
 
