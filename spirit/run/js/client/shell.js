@@ -248,13 +248,34 @@
     return (override && override.icon) || app.icon;
   }
 
+  // The Spirit app's own id — the launcher that already hosts the
+  // machine-introspection apps (Stats, Processes, Jobs, Apps, Groups).
+  // It is not a preferences.groups entry and never becomes one: user
+  // groups are created and deleted by the operator, and this one is part
+  // of the shell.
+  var SPIRIT_GROUP_ID = 'spirit';
+
   // Where a dynamic app currently lives: null means Desktop (the default —
   // nothing stored), "none" means no icon anywhere, anything else is a
   // real preferences.groups id. Built-in apps never have this set (locked
   // in setAppOverride) so this is only ever meaningful for _scriptPath apps.
+  //
+  // An intrinsic app is in the Spirit group and the override is not
+  // consulted at all: a stored "none" from before it was pinned, or a
+  // hand-edited preferences.json, must not be able to strand it. This is
+  // the read side of the same lock setAppOverride enforces on the write
+  // side — both, because either alone leaves a way in.
   function effectiveGroup(app) {
+    if (app.intrinsic) return SPIRIT_GROUP_ID;
     var override = preferences.appOverrides[app.id];
     return (override && override.group) || null;
+  }
+
+  // Every intrinsic app, for the Spirit app's icon grid to append to its
+  // own fixed member list. Sorted by id so the grid does not reshuffle
+  // between reloads on discovery order.
+  function listIntrinsicApps() {
+    return Object.keys(apps).filter(function (id) { return apps[id].intrinsic; }).sort();
   }
 
   // Every app currently assigned to this group (effectiveGroup === groupId).
@@ -296,11 +317,10 @@
     Object.keys(apps).forEach(function (id) {
       var app = apps[id];
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
-      // An intrinsic app skips the grouping rule entirely: "none" is how
-      // a user takes an icon off the desktop, and Natter is not theirs to
-      // take off. setAppOverride refuses the override too, so this is the
-      // second of two locks, not the only one.
-      if (app._scriptPath && !app.intrinsic && effectiveGroup(app)) return; // dynamic app assigned to a real group, or "none" — either way, not on the desktop
+      // An intrinsic app is excluded here like any other grouped app —
+      // effectiveGroup returns Spirit for it, and that is where its icon
+      // is, one tap from the desktop and never at the operator's mercy.
+      if (app._scriptPath && effectiveGroup(app)) return; // dynamic app assigned to a real group, or "none" — either way, not on the desktop
       desktopEl.appendChild(buildAppIcon(id)); // built-ins (non-hidden), unassigned dynamic apps, and groups themselves (always top-level)
     });
   }
@@ -988,11 +1008,12 @@
   // works, not something the operator installed: Natter is where a
   // personal node learns of any public relay at all, so a shell with no
   // way to reach it is a shell that cannot be pointed at a mailbox. An
-  // intrinsic app is always on the desktop — a manifest that asks to be
-  // both intrinsic and hidden is asking for two contradictory things, and
-  // being reachable wins. Only a hand-edited manifest can set the flag;
-  // saveAppManifest refuses to write one (kernel.js), so no app and no
-  // builder can make itself unremovable.
+  // intrinsic app is always reachable, in the Spirit group (see
+  // effectiveGroup) — a manifest that asks to be both intrinsic and
+  // hidden is asking for two contradictory things, and being reachable
+  // wins. Only a hand-edited manifest can set the flag; saveAppManifest
+  // refuses to write one (kernel.js), so no app and no builder can make
+  // itself unremovable.
   function declareDynamicApp(manifest, scriptPath) {
     var id = 'app/' + scriptPath.match(/^app\/([^/]+)\//)[1];
     apps[id] = {
@@ -1051,6 +1072,8 @@
     renderAnnotationsSection: renderAnnotationsSection,
     renderAppGroup: renderAppGroup,
     listApps: listApps,
+    listIntrinsicApps: listIntrinsicApps,
+    SPIRIT_GROUP_ID: SPIRIT_GROUP_ID,
     getAppOverride: getAppOverride,
     setAppOverride: setAppOverride,
     listGroups: listGroups,

@@ -136,6 +136,15 @@ function desktopLabels(booted) {
   return booted.desktop.children.map(function (el) { return el.innerHTML; }).join(' | ');
 }
 
+// What the Spirit app's own icon grid would contain: its fixed built-in
+// members plus whatever the shell reports as intrinsic (index.html).
+function spiritGroupLabels(booted) {
+  const grid = fakeElement('div');
+  booted.shell.renderAppGroup(grid, ['stats', 'process-browser', 'jobs', 'app-manager', 'group-manager']
+    .concat(booted.shell.listIntrinsicApps()));
+  return grid.children.map(function (el) { return el.innerHTML; }).join(' | ');
+}
+
 function appById(booted, id) {
   return booted.shell.listApps().filter(function (a) { return a.id === id; })[0] || null;
 }
@@ -288,10 +297,30 @@ test.subHeading('The shell always draws it');
     test.fail('relayChat: ' + JSON.stringify(relayChat));
   }
 
-  if (desktopLabels(booted).indexOf('NATter') !== -1) {
-    test.check('Natter has a desktop icon without hunting for it');
+  if (natter && natter.group === booted.shell.SPIRIT_GROUP_ID) {
+    test.check('its location is the Spirit group');
+  } else {
+    test.fail('group: ' + JSON.stringify(natter));
+  }
+
+  if (spiritGroupLabels(booted).indexOf('NATter') !== -1) {
+    test.check('and its icon is in the Spirit grid, beside Stats and Jobs');
+  } else {
+    test.fail('spirit grid: ' + spiritGroupLabels(booted));
+  }
+
+  // One home, not two: a grouped app is not also loose on the desktop.
+  if (desktopLabels(booted).indexOf('NATter') === -1) {
+    test.check('so it is not a second time on the desktop root');
   } else {
     test.fail('desktop: ' + desktopLabels(booted));
+  }
+
+  // Relay Chat is ungrouped and stays where it was.
+  if (desktopLabels(booted).indexOf('Relay Chat') !== -1) {
+    test.check('Relay Chat is untouched on the desktop');
+  } else {
+    test.fail('relayChat desktop: ' + desktopLabels(booted));
   }
 }
 
@@ -308,24 +337,38 @@ test.subHeading('And there is no way to take it off');
     test.fail('override: ' + JSON.stringify(refused));
   }
 
-  if (desktopLabels(booted).indexOf('NATter') !== -1) {
-    test.check('and it is still on the desktop');
+  // Not just None — no group at all, including a real user group and a
+  // clear-back-to-Desktop, which is the other way out of Spirit.
+  const made = booted.shell.createGroup('Andy stuff', '📦');
+  const intoGroup = booted.shell.setAppOverride('app/natter', { group: made.id });
+  const toDesktop = booted.shell.setAppOverride('app/natter', { group: '' });
+  if (!intoGroup.ok && intoGroup.reason === 'intrinsic-app-group-locked' &&
+      !toDesktop.ok && toDesktop.reason === 'intrinsic-app-group-locked') {
+    test.check('a user group and a reset to Desktop are refused the same way');
   } else {
-    test.fail('desktop after refusal: ' + desktopLabels(booted));
+    test.fail('other moves: ' + JSON.stringify({ intoGroup: intoGroup, toDesktop: toDesktop }));
+  }
+
+  if (spiritGroupLabels(booted).indexOf('NATter') !== -1 && desktopLabels(booted).indexOf('NATter') === -1) {
+    test.check('and it is still in Spirit afterwards');
+  } else {
+    test.fail('after refusal — spirit: ' + spiritGroupLabels(booted) + ' desktop: ' + desktopLabels(booted));
   }
 
   // The same lock has to hold against a preferences.json that already
-  // says "none" — hand-edited, or written before the app was pinned.
+  // moved it — hand-edited, or written before the app was pinned. This is
+  // the reload Andy checks: nothing stored can strand it.
   const stale = bootShell({
     defaultHandlers: {},
     appOverrides: { 'app/natter': { group: 'none' } },
     groups: {},
   }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
 
-  if (desktopLabels(stale).indexOf('NATter') !== -1) {
-    test.check('a preferences file that already hid it is ignored');
+  const staleNatter = appById(stale, 'app/natter');
+  if (staleNatter.group === stale.shell.SPIRIT_GROUP_ID && spiritGroupLabels(stale).indexOf('NATter') !== -1) {
+    test.check('a preferences file that already said "none" is ignored on reload');
   } else {
-    test.fail('stale prefs desktop: ' + desktopLabels(stale));
+    test.fail('stale prefs: ' + JSON.stringify(staleNatter) + ' spirit: ' + spiritGroupLabels(stale));
   }
 
   // Relay Chat, by contrast, is the operator's to move — otherwise this
