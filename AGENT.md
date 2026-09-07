@@ -23,7 +23,7 @@ Public face: [andyflinn.com](https://andyflinn.com). Andy Flinn is the one opera
 ## Identity, invites, gates
 
 - Identity = keypair on the personal node. Perception = whoBook, never uploaded.
-- Live Kamatera stays names-mode until Andy cuts over (as of 2026-09-07; harness cannot see the VPS).
+- Live Kamatera is **keys-mode**, owner `andy`, cut over 2026-09-07 (`CUTOVER.md`). The harness cannot see the VPS, so this line is the only record.
 - Extra keys-mode claims need a live invite. Owner key may reclaim if mailbox.json is gone.
 - Reserved name `relay` cannot be claimed. Chat-to-relay census is owner-only (asserted in `firstOwner.js`, not `relayGates.js`).
 - Inbox signed. Send rate-limit on `clientKey`. No `X-Forwarded-For` unless asked.

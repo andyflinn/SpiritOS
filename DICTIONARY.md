@@ -76,9 +76,9 @@ Format: **term** — aliases — meaning.
 
 **Allow list** — allow.json — Who *may* claim/send. Modes: `open`, `names`, `keys`. Not the same as who has claimed (`mailbox.json`).
 
-**Names-mode** — names allow list — Only listed strings. Live Kamatera as of cycle 4 still this unless cut over.
+**Names-mode** — names allow list — Only listed strings. Not what live Kamatera runs any more (see Keys-mode).
 
-**Keys-mode** — keys allow list — After first-claim-is-owner. Extra claims need a live **invite** (cycle 4). Owner key may reclaim without invite if mailbox.json was lost.
+**Keys-mode** — keys allow list — After first-claim-is-owner. Extra claims need a live **invite** (cycle 4). Owner key may reclaim without invite if mailbox.json was lost. **Live Kamatera runs this since the cutover on 2026-09-07, owner `andy`.**
 
 **Invite** — invite row — `{ token, label, expiresAt, invitedBy, consumedAt }` in `invites.json`.
 
