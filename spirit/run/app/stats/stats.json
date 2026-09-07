@@ -1,0 +1,8 @@
+{
+  "name": "Stats",
+  "description": "Live server vitals for this personal node: memory, CPU, event loop, filesystem counts, requests and active jobs.",
+  "icon": "CHART",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}

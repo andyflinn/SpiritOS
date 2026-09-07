@@ -578,10 +578,14 @@ test.subHeading('The Spirit grid draws one tile per id');
     test.fail('list ' + JSON.stringify(overlapping) + ' drew ' + JSON.stringify(drawn));
   }
 
-  if (drawn.length === 2) {
-    test.check('and the other member is still drawn, once');
+  // Every distinct registered id in the list gets exactly one tile — the
+  // list itself grows as apps move and become intrinsic, so count the
+  // unique ids rather than a fixed number.
+  const unique = overlapping.filter(function (id, i) { return overlapping.indexOf(id) === i; });
+  if (drawn.length === unique.length) {
+    test.check('and every other member is drawn, once each');
   } else {
-    test.fail('grid: ' + JSON.stringify(drawn));
+    test.fail('ids ' + JSON.stringify(unique) + ' drew ' + JSON.stringify(drawn));
   }
 
   // First mention wins, so a fixed list keeps its curated order and the
@@ -646,6 +650,97 @@ test.subHeading('Spirit is not empty before the first snapshot');
     test.check('and when the snapshot arrives, it lands — Natter still once');
   } else {
     test.fail('after snapshot: ' + spiritGroupLabels(booted));
+  }
+}
+
+test.subHeading('Stats has moved out of index.html');
+
+{
+  const STATS_SCRIPT = 'app/stats/stats.js';
+  const manifest = JSON.parse(readRun('app/stats/stats.json'));
+
+  if (manifest.intrinsic === true && manifest.owner === 'system') {
+    test.check('app/stats has a manifest, intrinsic and system-owned');
+  } else {
+    test.fail('stats manifest: ' + JSON.stringify(manifest));
+  }
+
+  const html = readRun('index.html');
+  if (html.indexOf("id: 'stats'") === -1 && html.indexOf('function tileHtml') === -1) {
+    test.check('and index.html no longer registers it, helpers and all');
+  } else {
+    test.fail('index.html still carries the Stats app');
+  }
+
+  // The three places that know an id, moved together: without any one of
+  // them, the move is a Stats nobody can reach, a Spirit tile that draws
+  // nothing, or an operator's overrides pruned on first load.
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, STATS_SCRIPT], true);
+
+  if (booted.shell.APP_ID_RENAMES.stats === 'app/stats') {
+    test.check('the rename map carries stats → app/stats');
+  } else {
+    test.fail('renames: ' + JSON.stringify(booted.shell.APP_ID_RENAMES));
+  }
+
+  if (booted.shell.INTRINSIC_APP_FOLDERS.indexOf('stats') !== -1) {
+    test.check('the boot list carries it, so it survives a dead watcher');
+  } else {
+    test.fail('boot list: ' + JSON.stringify(booted.shell.INTRINSIC_APP_FOLDERS));
+  }
+
+  if (html.indexOf("'app/stats', 'process-browser'") !== -1) {
+    test.check("and the Spirit group names it by its new id");
+  } else {
+    test.fail("index.html's Spirit member list was not repointed");
+  }
+
+  const stats = appById(booted, 'app/stats');
+  if (stats && stats.intrinsic === true && stats.group === booted.shell.SPIRIT_GROUP_ID) {
+    test.check('it is declared before any snapshot, in the Spirit group');
+  } else {
+    test.fail('stats app: ' + JSON.stringify(stats));
+  }
+
+  const grid = spiritGroupLabels(booted);
+  if (grid.indexOf('Stats') !== -1 && grid.split('Stats').length === 2) {
+    test.check('and draws exactly one tile there');
+  } else {
+    test.fail('spirit grid: ' + grid);
+  }
+
+  // Same locks the rest of the intrinsic set has: it can no longer be
+  // renamed by having no script path, so the flag has to carry it.
+  const renamed = booted.shell.setAppOverride('app/stats', { name: 'Vitals' });
+  const moved = booted.shell.setAppOverride('app/stats', { group: 'none' });
+  if (!renamed.ok && renamed.reason === 'intrinsic-app-name-locked' &&
+      !moved.ok && moved.reason === 'intrinsic-app-group-locked') {
+    test.check('and it is locked as an intrinsic app, not as a built-in');
+  } else {
+    test.fail('locks: ' + JSON.stringify({ name: renamed, group: moved }));
+  }
+
+  // The operator's own customisations from before the move.
+  const carried = bootShell({
+    defaultHandlers: {},
+    appOverrides: { stats: { name: 'Vitals' } },
+    groups: {},
+  }, [NATTER_SCRIPT, STATS_SCRIPT], true);
+  const prefs = carried.saved.preferences;
+  if (prefs && prefs.appOverrides['app/stats'] && prefs.appOverrides.stats === undefined) {
+    test.check('a stored override under the old id is carried across at boot');
+  } else {
+    test.fail('carried: ' + JSON.stringify(prefs && prefs.appOverrides));
+  }
+
+  // ...and then ignored, because an intrinsic app shows its shipped name.
+  // Carrying it still matters: the flag could come off, and a silently
+  // deleted preference cannot come back.
+  if (appById(carried, 'app/stats').name === 'Stats') {
+    test.check('though the shipped name is what it shows, being intrinsic');
+  } else {
+    test.fail('name: ' + JSON.stringify(appById(carried, 'app/stats')));
   }
 }
 
@@ -714,10 +809,17 @@ test.subHeading('An app that changes id keeps what the operator customised');
     groups: {},
   }, [NATTER_SCRIPT]);
 
-  if (Object.keys(empty.shell.APP_ID_RENAMES).length === 0) {
-    test.check('the rename map is empty while nothing has moved');
+  // The map names exactly the apps that have moved, old id to new. It
+  // only ever grows, one line per move, in that move's own commit — an
+  // entry removed later is an operator's preferences silently pruned.
+  const renames = empty.shell.APP_ID_RENAMES;
+  const wellFormed = Object.keys(renames).every(function (oldId) {
+    return renames[oldId] === 'app/' + oldId;
+  });
+  if (wellFormed && renames.stats === 'app/stats') {
+    test.check('the rename map names the moved apps, old id to folder id');
   } else {
-    test.fail('map: ' + JSON.stringify(empty.shell.APP_ID_RENAMES));
+    test.fail('map: ' + JSON.stringify(renames));
   }
 
   // Deferred, so the migration runs where it runs in production: after

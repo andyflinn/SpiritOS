@@ -59,12 +59,15 @@
   // icons, group placements and "open .md with" choices for every app
   // that moved, and there is nothing to undo it with.
   //
-  // Empty today, on purpose: nothing has moved yet (CLEANUP-PLAN step 3
-  // lands before step 5). Each move adds one line here in the same commit
-  // as the move, rather than a migration being written while five apps
-  // are in flight.
+  // One line per move, added in the same commit as the move — a map that
+  // lands afterwards lands after prune has already thrown the overrides
+  // away. Stats moved in CLEANUP-PLAN step 5.1; the other four keep their
+  // index.html ids until they follow.
+  //
+  // Entries stay forever. The operator whose preferences.json still says
+  // 'stats' may be opening this shell for the first time in a year.
   var APP_ID_RENAMES = {
-    // 'jobs': 'app/jobs',
+    stats: 'app/stats',
   };
 
   // Runs at load, which is before any snapshot and therefore before
@@ -1165,7 +1168,7 @@
   // this list cannot promote an app, only hurry one that is already
   // intrinsic. Each of the five adds its line here in the same commit as
   // its move, alongside its APP_ID_RENAMES entry.
-  var INTRINSIC_APP_FOLDERS = ['natter'];
+  var INTRINSIC_APP_FOLDERS = ['natter', 'stats'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {

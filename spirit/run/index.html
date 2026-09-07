@@ -365,86 +365,6 @@
         var updateGroup = spirit.shell.updateGroup;
         var deleteGroup = spirit.shell.deleteGroup;
 
-        function formatUptime(seconds) {
-          var total = Math.floor(seconds);
-          var h = Math.floor(total / 3600);
-          var m = Math.floor((total % 3600) / 60);
-          var s = total % 60;
-          return h + 'h ' + m + 'm ' + s + 's';
-        }
-
-        function tileHtml(value, label, wide, launchAppId) {
-          var classes = 'stat-tile' + (wide ? ' wide' : '') + (launchAppId ? ' clickable' : '');
-          var attr = launchAppId ? ' data-launch-app="' + launchAppId + '"' : '';
-          return '<div class="' + classes + '"' + attr + '>' +
-            '<div class="value">' + value + '</div>' +
-            '<div class="label">' + label + '</div>' +
-            '</div>';
-        }
-
-        function countsHtml(counts) {
-          var keys = Object.keys(counts);
-          if (keys.length === 0) return '<div class="rows">(none)</div>';
-          return '<div class="rows">' + keys.map(function (k) {
-            return k + ': ' + counts[k];
-          }).join('<br>') + '</div>';
-        }
-
-        // ---- Stats app ----
-        registerApp({
-          id: 'stats',
-          name: 'Stats',
-          icon: ICON.CHART,
-          hidden: true, // reachable via the "spirit" app group, or launchApp('stats') from anywhere
-          mount: function (container, api, params) {
-            container.innerHTML = '<div class="stats-grid" id="stats-grid"></div>';
-            document.getElementById('stats-grid').addEventListener('click', function (event) {
-              var tile = event.target.closest('[data-launch-app]');
-              if (!tile) return;
-              launchApp(tile.dataset.launchApp);
-            });
-          },
-          render: function () {
-            var grid = document.getElementById('stats-grid');
-            if (!grid) return;
-
-            var job = findJobByType('server-stats');
-            if (!job || !job.data || !job.data.memory) {
-              grid.innerHTML = tileHtml('…', 'waiting for stats', true);
-              return;
-            }
-
-            var d = job.data;
-            var html = '';
-            html += tileHtml(spirit.core.util.formatBytes(d.memory.rss), 'Memory (RSS)');
-            html += tileHtml(spirit.core.util.formatBytes(d.memory.heapUsed), 'Heap used');
-            html += tileHtml(d.cpu.percent.toFixed(1) + '%', 'CPU');
-            html += tileHtml(formatUptime(d.uptimeSeconds), 'Uptime');
-            html += tileHtml(d.eventLoop.meanMs.toFixed(2) + ' ms', 'Event loop mean');
-            html += tileHtml(d.eventLoop.maxMs.toFixed(2) + ' ms', 'Event loop max');
-            html += tileHtml(d.eventLoop.p99Ms.toFixed(2) + ' ms', 'Event loop p99');
-            html += tileHtml(d.filesystem.files, 'Files', false, 'files');
-            html += tileHtml(d.filesystem.folders, 'Folders', false, 'files');
-            html += tileHtml(d.sseConnections, 'SSE connections');
-            html += tileHtml(d.requests.total, 'Requests total');
-
-            var activeJobs = 0;
-            Object.keys(d.jobs.byStatus).forEach(function (status) {
-              if (TERMINAL_STATUSES.indexOf(status) === -1) activeJobs += d.jobs.byStatus[status];
-            });
-            html += tileHtml(activeJobs, 'Active jobs', false, 'jobs');
-
-            html += '<div class="stat-tile wide clickable" data-launch-app="files"><div class="label">Files by MIME type</div>' +
-              countsHtml(d.filesystem.byMimeType) + '</div>';
-            html += '<div class="stat-tile wide"><div class="label">Requests by method</div>' +
-              countsHtml(d.requests.byMethod) + '</div>';
-            html += '<div class="stat-tile wide"><div class="label">Requests by status class</div>' +
-              countsHtml(d.requests.byStatusClass) + '</div>';
-
-            grid.innerHTML = html;
-          },
-        });
-
         // ---- Files app ----
         var lastFilesJob = null; // reference-equality cache — see mount()/render() below
 
@@ -1413,7 +1333,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['stats', 'process-browser', 'jobs', 'app-manager', 'group-manager']
+            renderAppGroup(grid, ['app/stats', 'process-browser', 'jobs', 'app-manager', 'group-manager']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });
