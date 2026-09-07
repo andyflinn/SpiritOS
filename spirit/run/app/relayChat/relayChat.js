@@ -1,10 +1,23 @@
+// Chat 1 — the app says who you are (CYCLE-CHAT-1.md).
+//
+// One claimed label per personal node, remembered in this app's own
+// folder (app/relayChat/session.json, via the scoped api.fs) so a reload
+// does not make you claim again. The file is a reminder, never a
+// credential: what proves the label is still yours is the mailbox
+// answering a SIGNED inbox read for it. A stored name whose peer now
+// carries somebody else's key comes back 403 and the app shows unbound,
+// which is also what happens after a cutover that emptied the mailbox.
+var RC_SESSION_FILE = 'session.json';
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     var myName = '';
     var statusEl;
+    var titleEl;
     var ownedUrls = [];
 
     container.innerHTML =
+      '<h3 id="rc-title">Relay Chat</h3>' +
       '<div class="stat-tile wide">' +
         '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
         '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
@@ -31,8 +44,67 @@ spirit.shell.activateApp({
       '<pre id="rc-log"></pre>';
 
     statusEl = document.getElementById('rc-status');
+    titleEl = document.getElementById('rc-title');
 
     function setStatus(t) { statusEl.textContent = t; }
+
+    // The heading lives inside this app's own container rather than in
+    // the shell titlebar: switchTo rewrites that titlebar from app.name
+    // on every visit, so anything written there would survive exactly
+    // until the next navigation.
+    function paintTitle() {
+      var text = myName ? 'Relay Chat [' + myName + ']' : 'Relay Chat';
+      titleEl.textContent = text;
+      document.title = text;
+    }
+
+    function bind(label) {
+      myName = label;
+      paintTitle();
+      api.fs.saveFile(RC_SESSION_FILE, JSON.stringify({
+        label: label,
+        boundAt: new Date().toISOString(),
+      }, null, 2)).catch(function (e) {
+        setStatus('could not remember this name: ' + e.message);
+      });
+    }
+
+    function unbind() {
+      myName = '';
+      paintTitle();
+      api.fs.deleteFile(RC_SESSION_FILE);
+    }
+
+    // Reload path. The stored label is only a question; the mailbox
+    // answers it. A signed inbox read is the cheapest form of "is this
+    // still me": the relay verifies the signature against the peer that
+    // holds that label, so somebody else's name comes back 403 without
+    // this node claiming anything or writing anything.
+    function restoreSession() {
+      var raw = null;
+      try { raw = api.fs.loadFile(RC_SESSION_FILE); }
+      catch (e) { raw = null; }
+      if (!raw) return;
+      var label = '';
+      try { label = (JSON.parse(raw) || {}).label || ''; }
+      catch (e) { return; }
+      if (!label) return;
+
+      fetch('/api/hub/inbox?name=' + encodeURIComponent(label))
+        .then(function (r) {
+          if (r.status !== 200) {
+            unbind();
+            setStatus(label + ' does not belong to this node any more (' + r.status + ') — claim again');
+            return;
+          }
+          myName = label;
+          paintTitle();
+          document.getElementById('rc-name').value = label;
+          refreshInbox();
+          refreshBadges();
+        })
+        .catch(function (e) { setStatus('could not check ' + label + ': ' + e.message); });
+    }
 
     function hubPost(path, obj) {
       return fetch(path, {
@@ -124,7 +196,7 @@ spirit.shell.activateApp({
         var mine = false;
         try { mine = !!JSON.parse(r.text).mine; } catch (e) { mine = false; }
         if (r.status === 201 || (r.status === 409 && mine)) {
-          myName = name;
+          bind(name);
           refreshBadges();
         }
       });
@@ -144,6 +216,8 @@ spirit.shell.activateApp({
       });
     });
 
+    paintTitle();
+    restoreSession();
     setInterval(refreshInbox, 2000);
   },
   render: function () {}
