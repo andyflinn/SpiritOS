@@ -91,7 +91,12 @@ function fakeDocument() {
 // discovery and pruneStalePreferences have not run yet. That is the slot
 // migrateAppIds occupies in production, and the only way to exercise the
 // ordering from outside.
+// `sessionLabel` defaults to a bound node, because that is the ordinary
+// shell: an unbound one shows Natter and nothing else (firstRun), so a
+// fixture that means to test app management must say it has a name. The
+// first-run and window-title sections pass '' on purpose.
 function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysRaw) {
+  if (sessionLabel === undefined) sessionLabel = BOUND;
   const doc = fakeDocument();
   const saved = { preferences: null };
   const subscribers = [];
@@ -109,7 +114,10 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
           // window title. Supplied by the test rather than fetched off
           // disk: the real file is Andy's own binding, and a test that
           // reads it passes or fails depending on whose clone it runs in.
-          if (rel === 'app/relayChat/session.json') {
+          // Natter's file since packet 3: claiming is what that app does,
+          // and the shell reads this one path for the window title and
+          // the first-run gate alike.
+          if (rel === 'app/natter/session.json') {
             return sessionLabel ? JSON.stringify({ label: sessionLabel, boundAt: '2026-09-07T00:00:00.000Z' }) : null;
           }
           // The shipped seed, unless a test is asking what happens
@@ -1276,7 +1284,7 @@ test.subHeading('The window title names the node, then the screen');
 
   // A node that has never claimed a name has nothing to be told apart
   // by, so it says what it is.
-  const fresh = withNotes(bootShell(prefs, scripts));
+  const fresh = withNotes(bootShell(prefs, scripts, false, ''));
   if (fresh.doc.title === 'SpiritOS') {
     test.check('an unclaimed node is plain SpiritOS');
   } else {
@@ -1711,9 +1719,10 @@ test.subHeading('Natter adds a relay on the shared row');
 
 test.subHeading('First run: one node, one mailbox, one thing to do');
 
-// A clone ships pointed at one public mailbox. Until this node has
-// claimed a name there is exactly one thing it can do, and a desktop of
-// apps that all need a mailbox is a menu of dead ends.
+// A clone ships pointed at one public mailbox, and until this node has
+// claimed a name on it there is exactly one thing it can do: bind. That
+// is Natter's job (packet 3), so Natter is the app a fresh node is shown
+// and the rest of the shell waits behind it.
 {
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
   const scripts = [NATTER_SCRIPT, 'app/relayChat/relayChat.js'];
@@ -1727,23 +1736,19 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
     test.fail('relays.json: ' + JSON.stringify(seeded));
   }
 
-  const fresh = bootShell(prefs, scripts);
+  const fresh = bootShell(prefs, scripts, false, '');
   const listed = fresh.shell.listApps().map(function (a) { return a.id; });
-  if (listed.length === 1 && listed[0] === 'app/relayChat') {
-    test.check('an unbound node lists one app');
+  if (listed.length === 1 && listed[0] === 'app/natter') {
+    test.check('an unbound node lists one app, and it is the one that binds');
   } else {
     test.fail('unbound list: ' + JSON.stringify(listed));
   }
 
-  if (desktopLabels(fresh).indexOf('Relay Chat') !== -1 && desktopLabels(fresh).indexOf('Natter') === -1) {
-    test.check('and puts one icon on the desktop');
-  } else {
-    test.fail('unbound desktop: ' + desktopLabels(fresh));
-  }
-
-  // The Spirit grid answers the same rule rather than a second id list.
-  if (spiritGroupLabels(fresh) === '') {
-    test.check('and the Spirit grid is empty rather than a wall of dead ends');
+  // Natter is intrinsic, so its tile is in Spirit rather than loose on
+  // the desktop — and Spirit is where an unbound node has to reach it.
+  if (spiritGroupLabels(fresh).indexOf('NATter') !== -1 &&
+      spiritGroupLabels(fresh).indexOf('Relay Chat') === -1) {
+    test.check('and the Spirit grid holds that one and nothing else');
   } else {
     test.fail('spirit grid unbound: ' + spiritGroupLabels(fresh));
   }
@@ -1765,222 +1770,34 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // Bound: the shell it has always been.
   const bound = bootShell(prefs, scripts, false, 'andy');
   const boundList = bound.shell.listApps().map(function (a) { return a.id; });
-  if (boundList.length > 1 && boundList.indexOf('app/natter') !== -1) {
+  if (boundList.length > 1 && boundList.indexOf('app/relayChat') !== -1) {
     test.check('a claimed name gives back the whole shell');
   } else {
     test.fail('bound list: ' + JSON.stringify(boundList));
   }
 
-  // The escape hatch. With no mailbox listed, Relay Chat's own copy says
-  // "open Natter and add one" — so hiding Natter there would be a screen
-  // telling you to open an app that is not on it.
+  // No escape hatch needed any more, and that is the point of moving the
+  // claim: the app an unbound node is shown IS the one with the URL list
+  // in it, so a node with no mailbox listed can add one where it stands.
   const stranded = bootShell(prefs, scripts, false, '', null);
   const strandedList = stranded.shell.listApps().map(function (a) { return a.id; });
-  if (strandedList.indexOf('app/relayChat') !== -1 && strandedList.indexOf('app/natter') !== -1 &&
-      strandedList.length === 2) {
-    test.check('with no mailbox listed, Natter comes back so there is a way out');
+  if (strandedList.length === 1 && strandedList[0] === 'app/natter') {
+    test.check('with no mailbox listed it is still Natter, which is where one is added');
   } else {
     test.fail('stranded list: ' + JSON.stringify(strandedList));
   }
 
-  // An empty relays.json is the same as none: the file existing is not
-  // the same as a mailbox being listed.
-  const empty = bootShell(prefs, scripts, false, '', '[]');
-  if (empty.shell.listApps().map(function (a) { return a.id; }).indexOf('app/natter') !== -1) {
-    test.check('and an empty list counts as no mailbox at all');
+  // The gate can only be trusted if the app it shows is always there.
+  // Natter is intrinsic, so it is declared at boot from its manifest —
+  // before any snapshot, and whatever the fs-watcher does or does not
+  // report. A first run whose one app waited on a watcher would be an
+  // empty desktop with no way out of it.
+  const early = bootShell(prefs, ['app/relayChat/relayChat.js'], true, '');
+  const earlyList = early.shell.listApps().map(function (a) { return a.id; });
+  if (earlyList.length === 1 && earlyList[0] === 'app/natter') {
+    test.check('and the app it shows is declared at boot, before any snapshot');
   } else {
-    test.fail('empty relays.json did not open the hatch');
-  }
-
-  // Fails open: Relay Chat is discovered, not intrinsic, so it does not
-  // exist until the fs-watcher snapshot arrives. Gating before then
-  // would paint an empty desktop — and if the snapshot never came, an
-  // empty desktop with no way out.
-  const early = bootShell(prefs, scripts, true);
-  if (early.shell.listApps().length > 1) {
-    test.check('before the snapshot, nothing is hidden — an empty desktop is worse');
-  } else {
-    test.fail('gated before Relay Chat existed: ' + JSON.stringify(early.shell.listApps().map(function (a) { return a.id; })));
-  }
-}
-
-test.subHeading('Files left index.html');
-
-// The fifth of the shell apps to move. Same app, same tree — what
-// changed is where it lives, and everything that names it.
-{
-  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
-  const FILES_SCRIPT = 'app/files/files.js';
-
-  const manifestFiles = manifest('app/files/files.json');
-  if (manifestFiles.intrinsic === true && manifestFiles.owner === 'system' && manifestFiles.name === 'Files') {
-    test.check('it ships a manifest that says intrinsic, and who owns it');
-  } else {
-    test.fail('files.json: ' + JSON.stringify(manifestFiles));
-  }
-
-  // Declared at boot from that manifest, before any snapshot: a node
-  // whose fs-watcher never reports must not lose the file browser.
-  const early = bootShell(prefs, [NATTER_SCRIPT, FILES_SCRIPT], true, BOUND);
-  const declared = early.shell.listApps().filter(function (a) { return a.id === 'app/files'; })[0];
-  if (declared && declared.intrinsic === true) {
-    test.check('and is declared eagerly, with the snapshot still deferred');
-  } else {
-    test.fail('files before the snapshot: ' + JSON.stringify(early.shell.listApps().map(function (a) { return a.id; })));
-  }
-
-  // Declared is not loaded. The script is fetched when somebody opens it.
-  const fetched = early.scripts.map(function (el) { return el.src || ''; });
-  if (!fetched.some(function (src) { return src.indexOf('app/files/files.js') !== -1; })) {
-    test.check('and its script is not fetched until it is opened');
-  } else {
-    test.fail('files.js was loaded at boot: ' + JSON.stringify(fetched));
-  }
-
-  // Intrinsic means the Spirit group, which is where the tile is now —
-  // and off the main desktop, which is the same existing rule rather
-  // than a new one.
-  if (declared.group === 'spirit') {
-    test.check('intrinsic puts it in the Spirit group');
-  } else {
-    test.fail('group: ' + declared.group);
-  }
-  if (desktopLabels(early).indexOf('Files') === -1) {
-    test.check('and therefore off the main desktop');
-  } else {
-    test.fail('Files still has a desktop tile: ' + desktopLabels(early));
-  }
-
-  // Once in the grid, though it is named in the fixed member list AND
-  // reported as intrinsic.
-  const inGrid = (spiritGroupLabels(early).match(/>Files</g) || []).length;
-  if (inGrid === 1) {
-    test.check('and appears in the Spirit grid exactly once');
-  } else {
-    test.fail('Files in the grid ' + inGrid + ' times: ' + spiritGroupLabels(early));
-  }
-
-  // The id moved with the folder, so the map has to carry the operator's
-  // overrides across — the same rule the four earlier moves followed.
-  const carried = bootShell({
-    defaultHandlers: {},
-    appOverrides: { files: { group: 'none' } },
-    groups: {},
-  }, [NATTER_SCRIPT, FILES_SCRIPT], true, BOUND);
-  carried.shell.migrateAppIds();
-  const moved = carried.saved.preferences;
-  if (moved && moved.appOverrides['app/files'] && moved.appOverrides.files === undefined) {
-    test.check('a stored override under the old id follows it to the new one');
-  } else {
-    test.fail('overrides after migrate: ' + JSON.stringify(moved && moved.appOverrides));
-  }
-
-  // Nothing may still name the old id.
-  const statsSrc = readRun('app/stats/stats.js');
-  if (statsSrc.indexOf("'app/files'") !== -1 && statsSrc.indexOf("false, 'files'") === -1 &&
-      statsSrc.indexOf('data-launch-app="files"') === -1) {
-    test.check("and the Stats tiles that open it point at the new id");
-  } else {
-    test.fail('stats still names the old files id');
-  }
-
-  // The two launchers stay where they are — this cycle moved one app.
-  const html = readRun('index.html');
-  if (/id: 'text-file-launcher'/.test(html) && /id: 'media-launcher'/.test(html)) {
-    test.check('the launchers it opens are still registered in index.html');
-  } else {
-    test.fail('a launcher went missing from index.html');
-  }
-
-  // And it opens them through the doorway, not the global.
-  // Through the api handed in at mount — kept as filesApi, because
-  // render() never gets one, which is the same thing Processes does.
-  const filesSrc = readRun('app/files/files.js');
-  if (filesSrc.indexOf('filesApi.launchApp(') !== -1 &&
-      filesSrc.indexOf('spirit.shell.launchApp') === -1) {
-    test.check('and Files opens them through api, not the global launcher');
-  } else {
-    test.fail('files.js reaches for spirit.shell.launchApp');
-  }
-}
-
-test.subHeading('Groups left index.html');
-
-// The sixth to move, and the last of the five the plan named. Same app —
-// create, rename, re-icon, delete — with its members still going back to
-// the desktop when a group goes.
-{
-  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
-  const GROUPS_SCRIPT = 'app/group-manager/group-manager.js';
-
-  const manifestGroups = manifest('app/group-manager/group-manager.json');
-  if (manifestGroups.intrinsic === true && manifestGroups.owner === 'system' && manifestGroups.name === 'Groups') {
-    test.check('it ships a manifest that says intrinsic, and keeps the name Groups');
-  } else {
-    test.fail('group-manager.json: ' + JSON.stringify(manifestGroups));
-  }
-
-  const early = bootShell(prefs, [NATTER_SCRIPT, GROUPS_SCRIPT], true, BOUND);
-  const declared = early.shell.listApps().filter(function (a) { return a.id === 'app/group-manager'; })[0];
-  if (declared && declared.intrinsic === true) {
-    test.check('and is declared eagerly, with the snapshot still deferred');
-  } else {
-    test.fail('groups before the snapshot: ' + JSON.stringify(early.shell.listApps().map(function (a) { return a.id; })));
-  }
-
-  const fetched = early.scripts.map(function (el) { return el.src || ''; });
-  if (!fetched.some(function (src) { return src.indexOf('group-manager.js') !== -1; })) {
-    test.check('and its script is not fetched until it is opened');
-  } else {
-    test.fail('group-manager.js was loaded at boot: ' + JSON.stringify(fetched));
-  }
-
-  // Where it already was: reachable through Spirit, never a desktop tile.
-  if (declared.group === 'spirit' && desktopLabels(early).indexOf('Groups') === -1) {
-    test.check('intrinsic keeps it in Spirit and off the desktop, as it always was');
-  } else {
-    test.fail('group ' + declared.group + ' / desktop ' + desktopLabels(early));
-  }
-
-  const inGrid = (spiritGroupLabels(early).match(/>Groups</g) || []).length;
-  if (inGrid === 1) {
-    test.check('and it appears in the Spirit grid exactly once');
-  } else {
-    test.fail('Groups in the grid ' + inGrid + ' times: ' + spiritGroupLabels(early));
-  }
-
-  // The id moved with the folder — deliberately, because a manifest that
-  // could name its own id could claim somebody else's, and saveAppManifest
-  // lets an app write its manifest. So the map carries the overrides.
-  const carried = bootShell({
-    defaultHandlers: {},
-    appOverrides: { 'group-manager': { group: 'none' } },
-    groups: {},
-  }, [NATTER_SCRIPT, GROUPS_SCRIPT], true, BOUND);
-  carried.shell.migrateAppIds();
-  const moved = carried.saved.preferences;
-  if (moved && moved.appOverrides['app/group-manager'] && moved.appOverrides['group-manager'] === undefined) {
-    test.check('a stored override under the old id follows it to the new one');
-  } else {
-    test.fail('overrides after migrate: ' + JSON.stringify(moved && moved.appOverrides));
-  }
-
-  // The Spirit app itself stays in index.html: it is the grid the others
-  // are reached through, not one of them.
-  const html = readRun('index.html');
-  if (/id: 'spirit'/.test(html) && !/id: 'group-manager'/.test(html)) {
-    test.check('Spirit still registers itself here, and Groups no longer does');
-  } else {
-    test.fail('index.html registrations are wrong after the move');
-  }
-
-  // It reads groups through the doorway. The three writers have no api
-  // method yet and are named in the file's own comment.
-  const src = readRun('app/group-manager/group-manager.js');
-  if (src.indexOf('groupsApi.listGroups()') !== -1 && src.indexOf('spirit.shell.listGroups') === -1) {
-    test.check('and lists groups through api, not the global');
-  } else {
-    test.fail('group-manager.js reaches for spirit.shell.listGroups');
+    test.fail('with the snapshot deferred: ' + JSON.stringify(earlyList));
   }
 }
 

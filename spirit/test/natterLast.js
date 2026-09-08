@@ -323,10 +323,14 @@ test.subHeading('A star means owned, and opens what that mailbox says');
   // uses for a caption that never leaves this node, not with an example
   // built from somebody's name.
   const src = fs.readFileSync(path.join(RUN_DIR, 'app', 'natter', 'natter.js'), 'utf8');
-  if (src.indexOf('Private label') !== -1 && src.toLowerCase().indexOf('andy') === -1) {
+  // The hints, not the whole file: this app names the public mailbox in
+  // its own copy now (spirit.andyflinn.com), and a domain is not a
+  // person's name standing in for a field label.
+  const hints = (src.match(/placeholder="[^"]*"/g) || []).join(' ').toLowerCase();
+  if (src.indexOf('Private label') !== -1 && hints.indexOf('andy') === -1) {
     test.check('the label field is named, not exemplified with a person');
   } else {
-    test.fail('the label field still names a person');
+    test.fail('a placeholder still names a person: ' + hints);
   }
 }
 

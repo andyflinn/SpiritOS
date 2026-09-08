@@ -1,13 +1,15 @@
-// Chat 1 — the app says who you are (CYCLE-CHAT-1.md).
+// Relay Chat — the conversation, and only that.
 //
-// One claimed label per personal node, remembered in this app's own
-// folder (app/relayChat/session.json, via the scoped api.fs) so a reload
-// does not make you claim again. The file is a reminder, never a
-// credential: what proves the label is still yours is the mailbox
-// answering a SIGNED inbox read for it. A stored name whose peer now
-// carries somebody else's key comes back 403 and the app shows unbound,
-// which is also what happens after a cutover that emptied the mailbox.
-var RC_SESSION_FILE = 'session.json';
+// Three jobs used to share this window (ARCHITECTURAL-CONCERNS.md).
+// Adding and blocking people left for Contacts (packet 2); claiming a
+// name, redeeming a token and minting an invite left for Natter, which
+// also keeps the binding file (packet 3). What is left is the thread,
+// who it is with, and how loudly mail arrives.
+//
+// Who this node is comes from the shell — api.nodeLabel(), the same
+// accessor the window title uses — so this app never reads or writes a
+// binding and cannot disagree with the titlebar about whether there is
+// a name.
 
 // What this node does with mail from somebody it has not added. The hub
 // enforces it (js/hub.js, unknownPolicy); this list is what the panel
@@ -26,8 +28,6 @@ spirit.shell.activateApp({
     var myTail = ''; // the end of this node's own key, for the footer
     var statusEl;
     var titleEl;
-    var ownedUrls = [];
-    var invitePainted = ''; // what the invite slot was last drawn for
     // Chat 5: the conversation lives on this node, one file per peer,
     // because the mailbox keeps messages by recipient and never hands
     // back what you said. `logs` is what has been read off disk this
@@ -45,14 +45,15 @@ spirit.shell.activateApp({
     var search = '';     // a gesture, never remembered
 
     // Chat 6: what was on screen last time. Deliberately not
-    // session.json — that file is who this node IS ({label, boundAt}),
-    // and a check asserts it stays that. This is what it was looking at.
+    // the binding — that file is who this node IS ({label, boundAt}) and
+    // lives with the app that claims it. This is what chat was looking
+    // at.
     // Settings. Separate from view.json for the same reason view.json is
-    // separate from session.json: this is what this node has DECIDED,
+    // separate from the binding: this is what this node has DECIDED,
     // not what it was looking at and not who it is. A remembered filter
     // may be reset without touching a policy about strangers.
     var RC_PREFS_FILE = 'prefs.json';
-    var prefs = { unknown: 'silent', mintedLabels: [], dnd: false };
+    var prefs = { unknown: 'silent', dnd: false };
     var unknownWaiting = 0; // what Hold has to say, and only while it is > 0
 
     var RC_VIEW_FILE = 'view.json';
@@ -71,24 +72,10 @@ spirit.shell.activateApp({
     // rarely, and hiding it from non-owners is chat 4, not this sitting.
     container.innerHTML =
       '<h3 id="rc-title">Relay Chat</h3>' +
-      // What an unbound node is told, and what it can do about it — one
-      // tile, because they are one thought. Two tiles of different
-      // widths read as two unrelated things on a page that has only one
-      // thing to say (chat 7).
-      '<div class="stat-tile wide" id="rc-claim-row">' +
-        '<div id="rc-unbound"></div>' +
-        '<div id="rc-claim-fields">' +
-          // The dictionary's word for it: this one DOES go on the wire —
-          // it is the caption peers see on the mailbox — which is the
-          // whole difference from Natter's private label, and the reason
-          // the two fields must not both read "name". No hardcoded
-          // person in the hint either.
-          '<label>Public label<input type="text" id="rc-name" placeholder="the name peers see"></label>' +
-          '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
-          '<button type="button" id="rc-claim">Claim</button>' +
-        '</div>' +
-        '<span id="rc-status"></span>' +
-      '</div>' +
+      // Claiming moved to Natter (packet 3): binding this node to a
+      // mailbox is what that app is for, and it is the app a fresh node
+      // is shown. What is left here is the status line chat writes to.
+      '<span id="rc-status"></span>' +
       // Who you are talking to, chosen before what you say. A To value
       // is always a KEY — a peer's, or the mailbox's own — never a
       // caption: two johns are two peers and one word, and `relay` names
@@ -157,15 +144,6 @@ spirit.shell.activateApp({
           '<div class="job-log-empty" id="rc-hold-line"></div>' +
         '</details>' +
       '</details>' +
-      // Under Add, and empty until this node owns a mailbox. Chat 4: the
-      // mint UI is not hidden for a friend, it is not built for them —
-      // ownedUrls decides, and a node that owns nothing has no invite
-      // markup at all to find. See paintInvitePanel below.
-      //
-      // The two ways somebody new arrives, in the order they happen: you
-      // confirm a key somebody already has, or you mint the token that
-      // gets them one.
-      '<div id="rc-invite-slot"></div>' +
       // Fine print at the foot of the page: who this node is here, and
       // what its key ends with. The other half of adding somebody is
       // being added, and that question arrives with somebody already on
@@ -204,26 +182,7 @@ spirit.shell.activateApp({
       // steady line on the page: a person reading their key ending to
       // somebody on the phone should not have it move when mail lands.
       paintMyTail(myTail);
-      paintUnbound();
 
-      // Claiming is what you do once. A bound node has nothing to do
-      // with this row, and a chat that keeps asking your name at the top
-      // of every visit reads as a form, so it goes away — and comes
-      // straight back the moment the mailbox stops recognising the
-      // label (the 403 in restoreSession calls unbind, which lands
-      // here).
-      //
-      // "Bound" is today's whole answer to "claimed on every relay this
-      // node uses": the hub claims, sends and reads on the first Natter
-      // row only (loadRelayUrl, hub.js), so there is exactly one mailbox
-      // to be claimed on. When the hub learns to speak to a chosen relay
-      // the way minting already does, this becomes a per-relay question
-      // and this line is where it is asked.
-      // The tile goes when there is a name; the FIELDS go when there is
-      // no mailbox to claim on. The instruction stays either way, which
-      // is why they share one tile.
-      document.getElementById('rc-claim-row').style.display = myName ? 'none' : '';
-      document.getElementById('rc-claim-fields').style.display = natterUrls() ? '' : 'none';
     }
 
     // How many conversations have something in them this node has not
@@ -278,50 +237,21 @@ spirit.shell.activateApp({
     // Everything that only means something once this node has a name.
     // While it has none, none of it can do anything: a To list with
     // nobody in it, a thread of nothing, a composer that would refuse
-    // the line. AGENT.md — do not show chrome that is not useful in that
-    // state — and here the instruction for getting in is the page, not a
-    // footnote beside a dead form.
-    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-row', 'rc-to-pick', 'rc-settings-panel', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
+    // the line. In practice an unbound node is shown Natter and never
+    // this app (firstRun, shell.js), so this is a belt for a brace.
+    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-row', 'rc-to-pick', 'rc-settings-panel', 'rc-thread', 'rc-composer'];
 
     function showBoundChrome(show) {
       RC_BOUND_ONLY.forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.style.display = show ? '' : 'none';
       });
-    }
-
-    function paintUnbound() {
-      var note = document.getElementById('rc-unbound');
-      if (!note) return;
-      showBoundChrome(!!myName);
-      if (myName) {
-        // innerHTML, to match what the unbound branch writes. A real DOM
-        // clears one when you set the other; nothing else does, and a
-        // node that binds after being unbound must not keep the
-        // paragraph telling it how to bind.
-        note.innerHTML = '';
-        // showBoundChrome puts everything back; the thread and composer
-        // only stay if there is somebody to use them on.
-        paintAddressable();
-        return;
-      }
-      // innerHTML rather than textContent, for the one bold sentence.
-      // Every character here is written in this file — nothing from a
-      // mailbox, a peer or a file reaches it — so there is nothing to
-      // escape. Anything interpolated in later must be.
-      note.innerHTML = natterUrls()
-        ? 'Chat needs a name on a public mailbox. If you were invited, enter that name and the spoken word, ' +
-          'then Claim. If you own the mailbox, Claim the owner name with no token. ' +
-          // The way in for somebody holding neither. Loud on purpose: on
-          // a fresh node this paragraph IS the page, and this is the one
-          // sentence that gets a stranger from reading it to using it.
-          '<strong>If you have no invite yet, ask countinn@gmail.com, he will give you an invite within 24 hours.</strong>'
-        : 'This node has no mailbox yet. Open Natter, add one (for example https://spirit.andyflinn.com), then come back.';
+      if (show) paintAddressable();
     }
 
     // What was on screen last time: who was selected, which filter, and
-    // how far each conversation had been read. Not session.json — that
-    // is who this node is, and it stays two fields.
+    // how far each conversation had been read. Not the binding — that is
+    // who this node is, and it lives in Natter.
     function loadView() {
       var raw = null;
       try { raw = api.fs.loadFile(RC_VIEW_FILE); }
@@ -362,12 +292,6 @@ spirit.shell.activateApp({
         // strangers; being unreachable by default is the wrong kind of
         // safe.
         dnd: parsed.dnd === true,
-        // Labels this node minted an invite for. Not secrets — the token
-        // is the secret and is never written here — just enough to
-        // recognise the person when they turn up on the mailbox.
-        mintedLabels: Array.isArray(parsed.mintedLabels)
-          ? parsed.mintedLabels.map(String).slice(-50)
-          : [],
       };
     }
 
@@ -399,73 +323,27 @@ spirit.shell.activateApp({
       renderThread();
     }
 
-    function bind(label) {
-      myName = label;
-      paintTitle();
-      api.fs.saveFile(RC_SESSION_FILE, JSON.stringify({
-        label: label,
-        boundAt: new Date().toISOString(),
-      }, null, 2)).then(function () {
-        // A node with no name has one thing it can do, and the shell
-        // shows only this app while that is true (firstRun in shell.js).
-        // Claiming ends that, so the shell is told rather than left to
-        // notice the file.
-        if (typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
-      }).catch(function (e) {
-        setStatus('could not remember this name: ' + e.message);
-      });
-    }
-
-    function unbind() {
-      myName = '';
-      ownedUrls = [];
-      invitePainted = '';
-      document.getElementById('rc-invite-slot').innerHTML = '';
-      paintTitle();
-      api.fs.deleteFile(RC_SESSION_FILE);
-      // Symmetrical, and abrupt on purpose: a node that is no longer on
-      // the mailbox goes back to first run, even if somebody was looking
-      // at Stats when the mailbox stopped recognising it.
-      if (typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
-    }
-
-    // Reload path. The stored label is only a question; the mailbox
-    // answers it. A signed inbox read is the cheapest form of "is this
-    // still me": the relay verifies the signature against the peer that
-    // holds that label, so somebody else's name comes back 403 without
-    // this node claiming anything or writing anything.
+    // Who this node is, asked of the shell rather than read off disk.
+    // The binding is Natter's file now (packet 3), and the shell has one
+    // accessor for it — the same one the window title uses — so chat
+    // cannot disagree with the titlebar about whether there is a name.
     function restoreSession() {
-      var raw = null;
-      try { raw = api.fs.loadFile(RC_SESSION_FILE); }
-      catch (e) { raw = null; }
-      if (!raw) return;
-      var label = '';
-      try { label = (JSON.parse(raw) || {}).label || ''; }
-      catch (e) { return; }
-      if (!label) return;
-
-      // A probe, not a mail read: all it wants is whether the mailbox
-      // still answers a signed read for this label. It states the policy
-      // anyway, so that every request for an inbox says which one it was
-      // made under and none of them can quietly take the default.
-      fetch('/api/hub/inbox?name=' + encodeURIComponent(label) +
-        '&unknown=' + encodeURIComponent(prefs.unknown))
-        .then(function (r) {
-          if (r.status !== 200) {
-            unbind();
-            setStatus(label + ' does not belong to this node any more (' + r.status + ') — claim again');
-            return;
-          }
-          myName = label;
-          paintTitle();
-          document.getElementById('rc-name').value = label;
-          refreshInbox();
-          refreshBadges();
-          // The people list is what the remembered To is looked up in,
-          // so the selection is restored once it has arrived.
-          refreshPeople().then(selectRestoredTo);
-        })
-        .catch(function (e) { setStatus('could not check ' + label + ': ' + e.message); });
+      myName = (typeof api.nodeLabel === 'function' && api.nodeLabel()) || '';
+      showBoundChrome(!!myName);
+      paintTitle();
+      if (!myName) {
+        // Not reachable in practice: an unbound node is shown Natter and
+        // nothing else. Said anyway, because 'shown' is a shell rule and
+        // this is what this app would otherwise be — a chat window with
+        // nobody to be.
+        setStatus('claim a name in Natter first');
+        return;
+      }
+      refreshInbox();
+      refreshBadges();
+      // The people list is what the remembered To is looked up in, so
+      // the selection is restored once it has arrived.
+      refreshPeople().then(selectRestoredTo);
     }
 
     function hubPost(path, obj) {
@@ -986,204 +864,24 @@ spirit.shell.activateApp({
       if (typeof pick.focus === 'function') pick.focus();
     }
 
-    function rememberMinted(label) {
-      var wanted = String(label || '').trim();
-      if (!wanted || prefs.mintedLabels.indexOf(wanted) !== -1) return;
-      prefs.mintedLabels.push(wanted);
-      if (prefs.mintedLabels.length > 50) prefs.mintedLabels = prefs.mintedLabels.slice(-50);
-      savePrefs();
-    }
-
-    // The smallest owner-side invite acquire that needs no new field on
-    // the mailbox. The wire still does not say which key consumed a
-    // token — but the owner census already names every peer and its key,
-    // and in keys mode only the key that redeemed the token can hold
-    // that label. So a label this node minted, now claimed, IS the
-    // person invited, and the census is the proof.
-    //
-    // Owner-only, because a census is: which is exactly the case that
-    // needed it. A friend still adds people by handle.
-    function acquireInvited(rows) {
-      if (!prefs.mintedLabels.length) return;
-      var claimed = {};
-      (rows || []).forEach(function (row) {
-        var peers = (row && row.report && row.report.peers) || [];
-        peers.forEach(function (peer) {
-          var label = (peer && (peer.publicLabel || peer.name)) || '';
-          if (label && peer.publicKey) claimed[label] = peer.publicKey;
-        });
-      });
-      prefs.mintedLabels.slice().forEach(function (label) {
-        var key = claimed[label];
-        if (!key) return;
-        // Done with, either way: once the label is claimed the invite has
-        // been used, and a list that only grows would keep re-asking the
-        // hub about people it already knows.
-        prefs.mintedLabels = prefs.mintedLabels.filter(function (l) { return l !== label; });
-        savePrefs();
-        hubPost('/api/hub/contact', { publicKey: key, via: 'invite' })
-          .then(function () { refreshPeople(); })
-          .catch(function () { /* the next badge refresh will try again if it failed */ });
-      });
-    }
-
-    // The badge is one signed status per Natter row — the same census call
-    // the owner already had, asked of every URL instead of the first. A
-    // node that owns nothing gets no panel and no picker.
-    // Create-invitation is not a second app and not an admin screen: it
-    // is this app, with one more panel, and only while this node's key
-    // owns a mailbox in Natter. A friend who claimed with a token owns
-    // nothing, so there is nothing here for them to be refused by.
-    //
-    // Painted rather than toggled: a `display: none` panel is still a
-    // mint form in the page, and the whole point of the owner badge is
-    // that the answer comes from the mailbox rather than from the app
-    // choosing what to reveal.
-    function paintInvitePanel(rows, mustPick) {
-      var slot = document.getElementById('rc-invite-slot');
-      if (!ownedUrls.length) {
-        slot.innerHTML = '';
-        return;
-      }
-      var owned = rows.filter(function (row) { return row.owned; });
-      slot.innerHTML =
-        '<details class="stat-tile wide" id="rc-invite-panel">' +
-          '<summary>Invite someone to a relay</summary>' +
-          // DICTIONARY.md, "Label (invite)": the public caption the token
-          // unlocks. `saint` is the dictionary's own example, not a
-          // person on this node.
-          '<label class="field-label">Public label<input type="text" id="rc-inv-label" placeholder="e.g. saint"></label>' +
-          '<label class="field-label">Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
-          // The token Andy speaks on the phone. Empty means the relay
-          // picks hex; typed, it is signed with the label and the days
-          // (A2), so it is his to say and nobody else's to substitute.
-          '<label class="field-label">Token<input type="text" id="rc-inv-token" placeholder="(optional, spoken)"></label>' +
-          (mustPick
-            ? '<label class="field-label">Mailbox<select id="rc-inv-pick">' +
-                owned.map(function (row) {
-                  return '<option value="' + api.escapeHtml(row.url) + '">' + api.escapeHtml(row.label) + '</option>';
-                }).join('') +
-              '</select></label>'
-            : '') +
-          '<button type="button" class="cancel-btn" id="rc-inv-go">Invite</button>' +
-          '<span id="rc-inv-out"></span>' +
-        '</details>';
-
-      // Closing the panel ends the call. What is in these fields belongs
-      // to one invitation — a name, a number of days, and a token that
-      // was just read down a phone — and the minted token is the whole
-      // point of clearing: it stays on screen after a 201, and the next
-      // person to open this panel is starting a different invitation, not
-      // reading the last one.
-      //
-      // Attached here rather than delegated on the slot, unlike the
-      // Invite button below: `toggle` does not bubble, so delegation
-      // would have to listen in the capture phase to see it at all. The
-      // panel is repainted only when what this node owns changes, so
-      // there is no listener pile-up to worry about.
-      var panel = document.getElementById('rc-invite-panel');
-      if (panel) {
-        panel.addEventListener('toggle', function () {
-          if (panel.open) return;
-          var label = document.getElementById('rc-inv-label');
-          var days = document.getElementById('rc-inv-days');
-          var token = document.getElementById('rc-inv-token');
-          var out = document.getElementById('rc-inv-out');
-          if (label) label.value = '';
-          if (token) token.value = '';
-          if (days) days.value = '7'; // the default the panel is drawn with
-          if (out) out.textContent = '';
-        });
-      }
-    }
-
-    // The badge is one signed status per Natter row — the same census call
-    // the owner already had, asked of every URL instead of the first. A
-    // node that owns nothing gets no panel and no picker.
     function refreshBadges() {
       if (!myName) return;
+      // The Relays group in the To list comes from this probe: it asks
+      // every Natter row whether this node owns it, and the first row is
+      // the one the hub speaks to. Owning a mailbox is Natter's business
+      // now (packet 3) and the mint panel went with it, so what is left
+      // here is only which mailbox this chat is pointed at.
       fetch('/api/hub/status?name=' + encodeURIComponent(myName))
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          ownedUrls = (data && data.ownedUrls) || [];
           var rows = (data && data.rows) || [];
-          var mustPick = !!(data && data.mustPick);
-
-          // The badge probe is also where the Relays group comes from:
-          // it already asks every Natter row whether this node owns it.
-          // The first row is the one the hub speaks to; the rest are
-          // named and inert.
           relayRow = rows.length ? rows[0] : null;
           otherRelays = rows.slice(1);
-          acquireInvited(rows);
           if (mailboxKey && relayRow) captions[mailboxKey] = relayCaption(relayRow.url);
           paintToList();
-          // Repainting on every refresh would wipe a half-typed invite,
-          // and this runs again on every claim. Only a change in what is
-          // owned changes what is drawn.
-          var sig = ownedUrls.join(',') + '|' + mustPick;
-          if (sig === invitePainted) return;
-          invitePainted = sig;
-          paintInvitePanel(rows, mustPick);
         })
         .catch(function (e) { setStatus('badge failed: ' + e.message); });
     }
-
-    // Delegated: the button is painted and repainted by
-    // paintInvitePanel, so nothing may hold a reference to it.
-    document.getElementById('rc-invite-slot').addEventListener('click', function (event) {
-      if (!event.target || !event.target.closest || !event.target.closest('#rc-inv-go')) return;
-      var out = document.getElementById('rc-inv-out');
-      var spoken = document.getElementById('rc-inv-token').value.trim();
-      var picker = document.getElementById('rc-inv-pick');
-      // Never relays.json[0] by habit: with one owned mailbox the node
-      // knows which; with several the human has already said.
-      var url = ownedUrls.length === 1 ? ownedUrls[0] : (picker && picker.value);
-      var mintedLabel = document.getElementById('rc-inv-label').value.trim();
-      hubPost('/api/hub/invite', {
-        name: myName,
-        label: mintedLabel,
-        days: Number(document.getElementById('rc-inv-days').value) || 7,
-        token: spoken,
-        url: url
-      }).then(function (r) {
-        var token = '';
-        try { token = JSON.parse(r.text).token || ''; } catch (e) { token = ''; }
-        // Silent plus invite would be a brick: the owner mints a token,
-        // the friend redeems it and writes, and the first thing this node
-        // does is drop the line it was waiting for. So the label is
-        // remembered — never the token, which is the secret — and
-        // recognised when it turns up claimed on the owner's own census
-        // (rememberMinted / acquireInvited below).
-        if (r.status === 201 && token) rememberMinted(mintedLabel);
-        // Printed, not copied: Andy reads it off this screen onto a phone.
-        // What is shown is what the relay stored — the typed token when it
-        // took it, hex when the field was empty — never the field itself,
-        // which would show a token no mailbox has if the mint was refused.
-        out.textContent = (r.status === 201 && token)
-          ? token + '  →  ' + url
-          : r.status + ' ' + r.text;
-      });
-    });
-
-    document.getElementById('rc-claim').addEventListener('click', function () {
-      var name = document.getElementById('rc-name').value.trim();
-      var invite = document.getElementById('rc-invite').value.trim();
-      hubPost('/api/hub/claim', invite ? { name: name, invite: invite } : { name: name }).then(function (r) {
-        setStatus(r.status + ' ' + r.text);
-        // 201 = new claim. 409 is only us when the peer already on the
-        // mailbox carries OUR key — the node sets `mine` for that. Any
-        // other 409 is somebody else's name, and sending as them would
-        // just fail the signature check on the relay.
-        var mine = false;
-        try { mine = !!JSON.parse(r.text).mine; } catch (e) { mine = false; }
-        if (r.status === 201 || (r.status === 409 && mine)) {
-          bind(name);
-          refreshBadges();
-          refreshPeople().then(selectRestoredTo);
-        }
-      });
-    });
 
     // A short name to choose by, and a sentence explaining what it
     // costs. The name is what the heading repeats back and what somebody

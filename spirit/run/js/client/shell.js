@@ -30,41 +30,31 @@
   //
   // A clone ships pointed at one public mailbox and nothing else, so
   // until this node has claimed a name there is exactly one thing it can
-  // do. A desktop of apps that all need a mailbox is a menu of dead
-  // ends; showing one icon is the whole instruction.
+  // do: bind to a mailbox. A desktop of apps that all need one is a menu
+  // of dead ends; showing one icon is the whole instruction.
+  //
+  // That app is Natter — the relay list is also where a claim happens
+  // (packet 3), which is why the escape hatch this rule used to carry
+  // could go: an unbound node cannot be sent to an app it is not shown,
+  // because the app it is shown IS the one with the URL list in it.
   //
   // "Bound" is readNodeLabel() below — the same accessor the window
   // title uses, so the two can never disagree about whether this node
   // has a name.
-  var RELAY_CHAT_ID = 'app/relayChat';
   var NATTER_ID = 'app/natter';
-
-  // The escape hatch. With no mailbox listed, Relay Chat's own copy says
-  // "open Natter and add one" — and a first run that hides Natter would
-  // be a screen telling you to open an app that is not there, with a
-  // text editor as the only way out.
-  function natterHasUrl() {
-    try {
-      var raw = spirit.core.fs.loadFile('app/natter/relays.json');
-      if (raw == null) return false;
-      var parsed = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.some(function (row) { return row && row.url; });
-    } catch (e) {
-      return false;
-    }
-  }
 
   // Whether the first-run rule applies at all.
   //
-  // Fails OPEN, deliberately: Relay Chat is a discovered app, not an
-  // intrinsic one, so it does not exist until the fs-watcher snapshot
-  // arrives. Gating before then would paint an empty desktop — and if
+  // Fails OPEN, deliberately: if the binder is not registered yet there
+  // is nothing to show, and an empty desktop that never fills is worse
+  // than a moment of the full one. Natter is intrinsic and declared at
+  // boot, so in practice this holds from the first paint. Gating before then would paint an empty desktop — and if
   // that snapshot never came, an empty desktop with no way out. Better a
   // moment of the full desktop that then collapses to one icon than a
   // node with nothing on it.
   function firstRun() {
     if (readNodeLabel()) return false;
-    return !!apps[RELAY_CHAT_ID];
+    return !!apps[NATTER_ID];
   }
 
   // One rule, asked by everything that lists apps — the desktop, the
@@ -73,9 +63,7 @@
   // registered, and launchApp by id keeps working, which is what viewers
   // and app-to-app jumps depend on.
   function shownOnFirstRun(id) {
-    if (id === RELAY_CHAT_ID) return true;
-    if (id === NATTER_ID && !natterHasUrl()) return true;
-    return false;
+    return id === NATTER_ID;
   }
 
   function hiddenByFirstRun(id) {
@@ -111,7 +99,7 @@
   function readNodeLabel() {
     if (nodeLabel) return nodeLabel;
     try {
-      var raw = spirit.core.fs.loadFile('app/relayChat/session.json');
+      var raw = spirit.core.fs.loadFile('app/natter/session.json');
       if (raw == null) return '';
       var parsed = JSON.parse(raw);
       nodeLabel = String((parsed && parsed.label) || '').trim();

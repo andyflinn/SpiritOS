@@ -92,6 +92,15 @@ function fakeDocument() {
 function fakeApi(store, project) {
   return {
     escapeHtml: spirit.core.util.escapeHtml,
+    launchApp: function () {},
+    // What the shell answers when an app asks who this node is. The
+    // binding file itself belongs to Natter now (packet 3) — chat never
+    // reads it — so this stands in for readNodeLabel, and the store key
+    // below is just where these fixtures keep the answer.
+    nodeLabel: function () {
+      try { return (JSON.parse(store['session.json'] || '{}') || {}).label || ''; }
+      catch (e) { return ''; }
+    },
     // The unscoped read a system app is handed (CLEANUP-PLAN step 6).
     // Relay Chat uses it for one thing: whether Natter lists a mailbox
     // at all, which decides whether there is anything to claim on.
@@ -320,10 +329,12 @@ function noAddressBookInChat() {
       test.fail('relayChat.js still carries address-book verbs');
     }
 
-    if ((src.match(/api\/hub\/contact/g) || []).length === 1 && /via: 'invite'/.test(src)) {
-      test.check('the one contact write left is the invite it just minted');
+    // And now not even that one: minting moved to Natter with the rest
+    // of binding (packet 3), so the invite's own acquire went with it.
+    if (src.indexOf('/api/hub/contact') === -1 && src.indexOf('/api/hub/invite') === -1) {
+      test.check('and it neither mints an invite nor writes a contact at all');
     } else {
-      test.fail('unexpected contact writes in relayChat.js');
+      test.fail('relayChat.js still writes contacts or mints');
     }
   });
 }
@@ -347,99 +358,40 @@ function noTailNoLine() {
   });
 }
 
-function claimBinds() {
-  test.subHeading('Claim binds the chrome');
-
-  const store = {};
-  const app = mountApp(store, { claimStatus: 201, claimBody: { peer: { name: 'andy' } } });
-
-  // The heading inside the app. The browser tab is the shell's — it says
-  // which NODE this window is, so several of them can be told apart —
-  // and this app must not write to it.
-  if (titleOf(app) === 'Relay Chat' && app.doc.title === 'SpiritOS') {
-    test.check('before any claim the chrome is plain "Relay Chat", and the tab belongs to the shell');
-  } else {
-    test.fail('unbound title: ' + titleOf(app) + ' / ' + app.doc.title);
-  }
-
-  el(app, 'rc-name').value = 'andy';
-  el(app, 'rc-claim').fire('click');
-
-  return settle().then(function () {
-    if (titleOf(app) === 'Relay Chat [andy]' && app.doc.title === 'SpiritOS') {
-      test.check('a 201 claim puts the label in the heading and the tab title');
-    } else {
-      test.fail('bound title: ' + titleOf(app) + ' / ' + app.doc.title);
-    }
-
-    let stored = null;
-    try { stored = JSON.parse(store['session.json']); } catch (e) { stored = null; }
-    if (stored && stored.label === 'andy' && stored.boundAt) {
-      test.check('and the binding is written to this app\'s own session.json');
-    } else {
-      test.fail('session.json: ' + JSON.stringify(store));
-    }
-
-    // A 409 on someone else's name is not a session — the node only
-    // treats a conflict as its own when the peer carries its key.
-    const other = mountApp({}, { claimStatus: 409, claimBody: { mine: false, peer: { name: 'andy' } } });
-    el(other, 'rc-name').value = 'andy';
-    el(other, 'rc-claim').fire('click');
-    return settle().then(function () {
-      if (titleOf(other) === 'Relay Chat' && other.store['session.json'] === undefined) {
-        test.check('a 409 that is not ours binds nothing and writes nothing');
-      } else {
-        test.fail('foreign 409: ' + titleOf(other) + ' ' + JSON.stringify(other.store));
-      }
-    });
-  });
-}
-
 function reloadRestores() {
-  test.subHeading('Reload restores it, if the mailbox agrees');
+  test.subHeading('Reload comes back to the name the node is bound to');
 
-  // A reload is a fresh mount against the same node's files.
+  // A reload is a fresh mount against the same node. The binding itself
+  // is Natter's now (packet 3): chat asks the shell who this node is and
+  // does not verify, re-claim or expire anything — that check belongs to
+  // the app that owns the file (spirit/test/natterBind.js).
   const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
   const app = mountApp(store, { inboxStatus: 200 });
 
   return settle().then(function () {
     if (titleOf(app) === 'Relay Chat [andy]') {
-      test.check('a stored label the mailbox still answers for comes back bound');
+      test.check('the name the shell reports is the name the chrome shows');
     } else {
       test.fail('restored title: ' + titleOf(app));
     }
 
-    if (el(app, 'rc-name').value === 'andy') {
-      test.check('and the name field is filled in, so Claim is not the next move');
-    } else {
-      test.fail('name field: ' + el(app, 'rc-name').value);
-    }
-
-    // It asked, and it asked the signed way — an inbox read, not a
-    // second claim.
+    // It reads mail and claims nothing — claiming is not this app's to do.
     const asked = app.log.filter(function (r) { return r.url.indexOf('/api/hub/inbox') === 0; });
     const claimed = app.log.filter(function (r) { return r.url.indexOf('/api/hub/claim') === 0; });
     if (asked.length >= 1 && claimed.length === 0) {
-      test.check('restoring asks the mailbox with a signed inbox read, and claims nothing');
+      test.check('it reads the inbox and claims nothing');
     } else {
-      test.fail('calls: ' + JSON.stringify(app.log));
+      test.fail('calls: ' + JSON.stringify(app.log.map(function (c) { return c.url; })));
     }
 
-    // The other answer: the label is not this node's any more — a
-    // cutover that emptied the mailbox, or somebody else holding it.
-    const stale = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
-    const gone = mountApp(stale, { inboxStatus: 403 });
+    // No name from the shell is a chat window with nobody to be. It says
+    // so rather than pretending, and points at the app that fixes it.
+    const nameless = mountApp({}, { inboxStatus: 200 });
     return settle().then(function () {
-      if (titleOf(gone) === 'Relay Chat') {
-        test.check('a 403 shows unbound rather than a name this node cannot use');
+      if (titleOf(nameless) === 'Relay Chat' && /Natter/.test(el(nameless, 'rc-status').textContent)) {
+        test.check('and with no name it says where a name comes from');
       } else {
-        test.fail('stale title: ' + titleOf(gone));
-      }
-
-      if (stale['session.json'] === undefined) {
-        test.check('and the stale file is dropped, so it is not re-checked forever');
-      } else {
-        test.fail('session.json survived a 403: ' + JSON.stringify(stale));
+        test.fail('nameless: ' + titleOf(nameless) + ' / ' + el(nameless, 'rc-status').textContent);
       }
     });
   });
@@ -638,77 +590,6 @@ function composerOffersTheMailbox() {
 
 // Chat 4 — the mint UI belongs to whoever owns a mailbox, and to
 // nobody else. Not hidden for a friend: not built for them.
-function inviteOnlyForAnOwner() {
-  test.subHeading('Invite exists only when this node owns a mailbox');
-
-  const bound = { 'session.json': JSON.stringify({ label: 'saint', boundAt: '2026-09-07T00:00:00.000Z' }) };
-  const friend = mountApp(bound, { inboxStatus: 200, ownedUrls: [], rows: [] });
-
-  return settle().then(function () {
-    const html = friend.container.innerHTML + el(friend, 'rc-invite-slot').innerHTML;
-    if (html.indexOf('rc-invite-panel') === -1 && html.indexOf('rc-inv-go') === -1 && html.indexOf('rc-inv-token') === -1) {
-      test.check('a node that owns nothing has no invite markup at all');
-    } else {
-      test.fail('mint UI present for a non-owner: ' + html);
-    }
-
-    // The owner of one mailbox: panel, no picker — there is nothing to
-    // pick between.
-    const owner = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, {
-      inboxStatus: 200,
-      ownedUrls: ['https://spirit.example'],
-      rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
-    });
-    return settle().then(function () {
-      const slot = el(owner, 'rc-invite-slot').innerHTML;
-      if (slot.indexOf('rc-invite-panel') !== -1 && slot.indexOf('rc-inv-go') !== -1) {
-        test.check('an owner gets the panel');
-      } else {
-        test.fail('owner slot: ' + slot);
-      }
-      // It says what it does. "Invite someone" beside "Add someone by
-      // handle" reads as two ways to do one thing; the relay is the
-      // difference, and it is what the invite is for.
-      if (slot.indexOf('<summary>Invite someone to a relay</summary>') !== -1) {
-        test.check('and it says what it invites them to');
-      } else {
-        test.fail('summary: ' + slot);
-      }
-      if (slot.indexOf('rc-inv-pick') === -1) {
-        test.check('and no mailbox picker, with only one mailbox owned');
-      } else {
-        test.fail('picker drawn for a single mailbox: ' + slot);
-      }
-
-      // Two owned mailboxes: the picker is a question that has to be
-      // asked (cycle A), and it is built from the owned rows.
-      const two = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, {
-        inboxStatus: 200,
-        ownedUrls: ['https://one.example', 'https://two.example'],
-        mustPick: true,
-        rows: [
-          { url: 'https://one.example', label: 'one', owned: true },
-          { url: 'https://two.example', label: 'two', owned: true },
-          { url: 'https://three.example', label: 'three', owned: false },
-        ],
-      });
-      return settle().then(function () {
-        const slot2 = el(two, 'rc-invite-slot').innerHTML;
-        const owned = (slot2.match(/<option/g) || []).length;
-        if (slot2.indexOf('rc-inv-pick') !== -1 && owned === 2) {
-          test.check('two owned mailboxes get a picker of exactly those two');
-        } else {
-          test.fail('picker options: ' + slot2);
-        }
-      });
-    });
-  });
-}
-
-// Enter sends, and sends ONCE. This exists because restoring a lost
-// block left two identical keydown handlers on the text box for a
-// while, and two handlers is two messages for one press — the kind of
-// thing nobody notices until a line is said twice to somebody.
 function enterSendsExactlyOnce() {
   test.subHeading('Enter sends one message');
 
@@ -749,53 +630,6 @@ function enterSendsExactlyOnce() {
 // has nothing to offer, and a chat that asks your name every visit reads
 // as a form. It has to come back the moment the binding stops being
 // true, or a node whose label was taken has no way back in.
-function claimRowHidesOnceBound() {
-  test.subHeading('The claim row goes away once you are bound');
-
-  const fresh = mountApp({}, {});
-  return settle().then(function () {
-    if (el(fresh, 'rc-claim-row').style.display !== 'none') {
-      test.check('an unclaimed node shows the claim row');
-    } else {
-      test.fail('claim row hidden on a node that never claimed');
-    }
-
-    fresh.doc.getElementById('rc-name').value = 'andy';
-    fresh.doc.getElementById('rc-claim').fire('click');
-    return settle();
-  }).then(function () {
-    if (el(fresh, 'rc-claim-row').style.display === 'none') {
-      test.check('and hides it as soon as the claim lands');
-    } else {
-      test.fail('claim row still shown after binding');
-    }
-
-    // A reload of a node that is still recognised: bound before the
-    // human sees anything, so the row never appears.
-    const back = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, { inboxStatus: 200 });
-    return settle().then(function () {
-      if (el(back, 'rc-claim-row').style.display === 'none') {
-        test.check('a restored session stays hidden too');
-      } else {
-        test.fail('claim row shown after a successful restore');
-      }
-
-      // ...and the way back: the mailbox no longer answers for that
-      // label, so the row returns without anyone asking for it.
-      const lost = mountApp({ 'session.json': JSON.stringify({ label: 'andy' }) }, { inboxStatus: 403 });
-      return settle().then(function () {
-        if (el(lost, 'rc-claim-row').style.display !== 'none') {
-          test.check('a label the mailbox has stopped recognising brings it back');
-        } else {
-          test.fail('no way to claim again after a 403');
-        }
-      });
-    });
-  });
-}
-
-// Chat 6 — what was on screen last time, and what happens when the
-// person who was on it is gone.
 function viewIsRemembered() {
   test.subHeading('The last conversation comes back; a missing one is not replaced');
 
@@ -933,127 +767,6 @@ function unreadDots() {
 // not looking at is on its row rather than in the open thread.
 // The way in for somebody who has neither an invite nor a mailbox of
 // their own. On a fresh node this paragraph is the whole page.
-function unboundSaysHowToGetIn() {
-  test.subHeading('The paragraph that gets a stranger from reading to using');
-
-  const app = mountApp({}, { inboxStatus: 200 });
-
-  return settle().then(function () {
-    const note = el(app, 'rc-unbound').innerHTML;
-    if (/<strong>[^<]*countinn@gmail\.com[^<]*<\/strong>/.test(note)) {
-      test.check('an unbound node says who to ask, and says it loudly');
-    } else {
-      test.fail('unbound copy: ' + note);
-    }
-
-    if (/within 24 hours/.test(note) && /If you were invited/.test(note)) {
-      test.check('and it is added to the claim instructions, not instead of them');
-    } else {
-      test.fail('copy lost its first half: ' + note);
-    }
-
-    // A node with no mailbox listed has a different problem and gets the
-    // other sentence — being told to ask for an invite would be an
-    // answer to a question it has not reached yet.
-    const noRelay = mountApp({}, { inboxStatus: 200, project: {} });
-    return settle().then(function () {
-      if (/no mailbox yet/.test(el(noRelay, 'rc-unbound').innerHTML)) {
-        test.check('and a node with nowhere to claim still hears about Natter first');
-      } else {
-        test.fail('no-relay copy: ' + el(noRelay, 'rc-unbound').innerHTML);
-      }
-    });
-  });
-}
-
-function unboundChrome() {
-  test.subHeading('What an unbound node is offered');
-
-  // No mailbox in Natter: a name on a mailbox that does not exist is not
-  // something this node can do, so it is not offered — the page says
-  // where to go instead.
-  const empty = mountApp({}, { project: { 'app/natter/relays.json': '[]' } });
-
-  return settle().then(function () {
-    // The instruction and the form share one tile — two bubbles of
-    // different widths read as two unrelated things — so what goes is
-    // the FIELDS, not the tile that carries the sentence.
-    if (el(empty, 'rc-claim-fields').style.display === 'none' &&
-        el(empty, 'rc-claim-row').style.display !== 'none') {
-      test.check('with no mailbox in Natter there is no Claim to press, but there is still the sentence');
-    } else {
-      test.fail('claim fields shown with an empty Natter');
-    }
-
-    const note = el(empty, 'rc-unbound').innerHTML;
-    if (/Natter/.test(note) && /https:\/\/spirit\.andyflinn\.com/.test(note)) {
-      test.check('and it says to open Natter and add one');
-    } else {
-      test.fail('note: ' + note);
-    }
-
-    // A mailbox, but no name yet: the form, and what the two ways in
-    // are. A token is for someone invited; the owner needs none.
-    const unbound = mountApp({}, {});
-    return settle().then(function () {
-      if (el(unbound, 'rc-claim-row').style.display !== 'none') {
-        test.check('with a mailbox listed the Claim form is there');
-      } else {
-        test.fail('claim row hidden though Natter has a URL');
-      }
-
-        const copy = el(unbound, 'rc-unbound').innerHTML;
-      if (/spoken word/.test(copy) && /own the mailbox/.test(copy)) {
-        test.check('and it explains the invited case and the owner case');
-      } else {
-        test.fail('copy: ' + copy);
-      }
-
-      // While there is no name, the instruction for getting one IS the
-      // page. A To list with nobody in it, a thread of nothing and a
-      // composer that would refuse the line are not neutral: they are
-      // things to read and dismiss around the only sentence that
-      // matters.
-      const deadChrome = ['rc-to-bar', 'rc-to-pick', 'rc-thread', 'rc-composer', 'rc-invite-slot']
-        .filter(function (id) { return el(unbound, id).style.display !== 'none'; });
-      if (deadChrome.length === 0) {
-        test.check('and nothing else is on the page while it cannot work');
-      } else {
-        test.fail('still shown while unbound: ' + deadChrome.join(', '));
-      }
-
-      // Bound, with somebody to write to: neither. The page is a
-      // conversation, not a form.
-      const bound = mountApp(
-        { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) },
-        {
-          inboxStatus: 200,
-          people: [{ publicKey: 'KEY-BERT', publicLabel: 'bert', caption: 'bert', mine: false }],
-        }
-      );
-      return settle().then(function () {
-        if (el(bound, 'rc-claim-row').style.display === 'none' &&
-            el(bound, 'rc-unbound').innerHTML === '') {
-          test.check('a bound node is shown neither the form nor the explanation');
-        } else {
-          test.fail('bound node still has unbound chrome');
-        }
-
-        const missing = ['rc-to-bar', 'rc-to-pick', 'rc-thread', 'rc-composer']
-          .filter(function (id) { return el(bound, id).style.display === 'none'; });
-        if (missing.length === 0) {
-          test.check('and gets the whole app back once it has a name and a contact');
-        } else {
-          test.fail('hidden from a bound node: ' + missing.join(', '));
-        }
-      });
-    });
-  });
-}
-
-// Bert says something while Andy is reading the mailbox thread. It goes
-// to Bert's row and to the title, and NOT into the conversation that is
-// open.
 function mailArrivesOnTheRow() {
   test.subHeading('A line from someone else does not land in the open thread');
 
@@ -1209,54 +922,6 @@ function newFilterSnapsBack() {
 // done. The minted token is the reason: it stays on screen after a 201,
 // and the next person to open this panel is starting a different
 // invitation rather than reading the last one.
-function invitePanelForgetsTheCall() {
-  test.subHeading('Closing the invite panel ends the call');
-
-  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
-  const app = mountApp(store, {
-    inboxStatus: 200,
-    ownedUrls: ['https://spirit.example'],
-    rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
-  });
-
-  return settle().then(function () {
-    el(app, 'rc-inv-label').value = 'bert';
-    el(app, 'rc-inv-days').value = '3';
-    el(app, 'rc-inv-token').value = 'saint-bernard';
-    el(app, 'rc-inv-out').textContent = 'saint-bernard  →  https://spirit.example';
-
-    // Opened, not closed: nothing is touched while the call is on.
-    el(app, 'rc-invite-panel').open = true;
-    el(app, 'rc-invite-panel').fire('toggle');
-    if (el(app, 'rc-inv-label').value === 'bert' && el(app, 'rc-inv-out').textContent !== '') {
-      test.check('opening it leaves what is there alone');
-    } else {
-      test.fail('opening cleared the panel');
-    }
-
-    el(app, 'rc-invite-panel').open = false;
-    el(app, 'rc-invite-panel').fire('toggle');
-
-    const cleared = ['rc-inv-label', 'rc-inv-token'].every(function (id) { return el(app, id).value === ''; });
-    if (cleared && el(app, 'rc-inv-days').value === '7') {
-      test.check('closing it empties the fields and puts the days back');
-    } else {
-      test.fail('after collapse: label ' + el(app, 'rc-inv-label').value +
-        ', token ' + el(app, 'rc-inv-token').value + ', days ' + el(app, 'rc-inv-days').value);
-    }
-
-    // The one that matters: a token somebody spoke aloud does not sit on
-    // the screen waiting for the next person to open the panel.
-    if (el(app, 'rc-inv-out').textContent === '') {
-      test.check('and the minted token is not left on the screen');
-    } else {
-      test.fail('token still shown: ' + el(app, 'rc-inv-out').textContent);
-    }
-  });
-}
-
-// The settings panel: three answers to "somebody you have not added just
-// wrote to you", the tightest of them factory.
 function settingsPanel() {
   test.subHeading('What to do about people you have not added');
 
@@ -1696,11 +1361,8 @@ function sendsAndReadsPackets() {
   });
 }
 
-claimBinds()
-  .then(claimRowHidesOnceBound)
+reloadRestores()
   .then(enterSendsExactlyOnce)
-  .then(inviteOnlyForAnOwner)
-  .then(invitePanelForgetsTheCall)
   .then(settingsPanel)
   .then(heldRowsPointAtContacts)
   .then(noAddressBookInChat)
@@ -1709,13 +1371,10 @@ claimBinds()
   .then(sendsAndReadsPackets)
   .then(holdLine)
   .then(composerOffersTheMailbox)
-  .then(reloadRestores)
   .then(nothingStored)
   .then(threadMarksOwnLines)
   .then(viewIsRemembered)
   .then(unreadDots)
-  .then(unboundChrome)
-  .then(unboundSaysHowToGetIn)
   .then(mailArrivesOnTheRow)
   .then(newFilterSnapsBack)
   .then(nobodyToWriteTo)

@@ -285,18 +285,29 @@ test.subHeading('Two peers, two files — and a reload finds them');
   }
 }
 
-test.subHeading('session.json is still a label');
+test.subHeading('The binding is still a label, wherever it lives');
 
 {
+  // It moved to Natter with the claim that writes it (packet 3), and the
+  // rule that mattered moved with it: this file says who this node IS,
+  // and a conversation is not part of who you are. A log that crept in
+  // here would be a log the shell reads on every paint.
   const fs = require('fs');
   const path = require('path');
-  const app = fs.readFileSync(path.join(__dirname, '..', 'run', 'app', 'relayChat', 'relayChat.js'), 'utf8');
-  const bind = app.slice(app.indexOf('function bind('), app.indexOf('function unbind('));
+  const app = fs.readFileSync(path.join(__dirname, '..', 'run', 'app', 'natter', 'natter.js'), 'utf8');
+  const bind = app.slice(app.indexOf('function natterBind('), app.indexOf('function natterUnbind('));
   const extras = ['messages', 'entries', 'log', 'peers'].filter(function (k) { return bind.indexOf(k + ':') !== -1; });
   if (bind.indexOf('label:') !== -1 && bind.indexOf('boundAt:') !== -1 && extras.length === 0) {
-    test.check('bind writes label and boundAt, and nothing else');
+    test.check('the binder writes label and boundAt, and nothing else');
   } else {
-    test.fail('session.json grew: ' + extras.join(', '));
+    test.fail('the binding grew: ' + extras.join(', '));
+  }
+
+  const chat = fs.readFileSync(path.join(__dirname, '..', 'run', 'app', 'relayChat', 'relayChat.js'), 'utf8');
+  if (chat.indexOf('session.json') === -1) {
+    test.check('and chat writes no binding at all');
+  } else {
+    test.fail('relayChat.js still names a session file');
   }
 }
 
