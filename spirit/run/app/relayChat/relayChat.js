@@ -85,19 +85,6 @@ spirit.shell.activateApp({
         '<input type="text" id="rc-search" placeholder="find someone">' +
       '</div>' +
       '<select id="rc-to-pick" class="rc-wide"><option value="">(pick a person)</option></select>' +
-      // Contacts cut 2. Folded away beside To, like Invite: adding
-      // somebody is rare, and the conversation is what the page is for.
-      // A handle is a word somebody said out loud, so it may belong to
-      // several keys — every one of them is listed, and a human picks by
-      // the END of the key, on the phone, before anything is written.
-      '<details class="stat-tile wide" id="rc-add-panel">' +
-        '<summary>Add someone by handle</summary>' +
-        '<div class="start-job-form">' +
-          '<input type="text" id="rc-add-handle" placeholder="the name you were told">' +
-          '<button type="button" id="rc-add-find">Find</button>' +
-        '</div>' +
-        '<div id="rc-add-out"></div>' +
-      '</details>' +
       '<div class="job-log-panel" id="rc-thread"></div>' +
       // Docked under the thread, where a chat composer belongs.
       '<div class="start-job-form" id="rc-composer">' +
@@ -109,6 +96,21 @@ spirit.shell.activateApp({
       // ownedUrls decides, and a node that owns nothing has no invite
       // markup at all to find. See paintInvitePanel below.
       '<div id="rc-invite-slot"></div>' +
+      // Contacts cut 2. Folded away at the foot of the page, next to the
+      // footer it points at: adding somebody is rare, the conversation is
+      // what the page is for, and the two halves of that phone call now
+      // sit together — the rows Adam reads, and the line Bert reads.
+      // A handle is a word somebody said out loud, so it may belong to
+      // several keys — every one of them is listed, and a human picks by
+      // the END of the key, on the phone, before anything is written.
+      '<details class="stat-tile wide" id="rc-add-panel">' +
+        '<summary>Add someone by handle</summary>' +
+        '<div class="start-job-form">' +
+          '<input type="text" id="rc-add-handle" placeholder="the name you were told">' +
+          '<button type="button" id="rc-add-find">Find</button>' +
+        '</div>' +
+        '<div id="rc-add-out"></div>' +
+      '</details>' +
       // Fine print at the foot of the page: who this node is here, and
       // what its key ends with. The other half of adding somebody is
       // being added, and that question arrives with somebody already on
