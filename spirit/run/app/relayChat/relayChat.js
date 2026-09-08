@@ -763,6 +763,33 @@ spirit.shell.activateApp({
           '<button type="button" class="cancel-btn" id="rc-inv-go">Invite</button>' +
           '<span id="rc-inv-out"></span>' +
         '</details>';
+
+      // Closing the panel ends the call. What is in these fields belongs
+      // to one invitation — a name, a number of days, and a token that
+      // was just read down a phone — and the minted token is the whole
+      // point of clearing: it stays on screen after a 201, and the next
+      // person to open this panel is starting a different invitation, not
+      // reading the last one.
+      //
+      // Attached here rather than delegated on the slot, unlike the
+      // Invite button below: `toggle` does not bubble, so delegation
+      // would have to listen in the capture phase to see it at all. The
+      // panel is repainted only when what this node owns changes, so
+      // there is no listener pile-up to worry about.
+      var panel = document.getElementById('rc-invite-panel');
+      if (panel) {
+        panel.addEventListener('toggle', function () {
+          if (panel.open) return;
+          var label = document.getElementById('rc-inv-label');
+          var days = document.getElementById('rc-inv-days');
+          var token = document.getElementById('rc-inv-token');
+          var out = document.getElementById('rc-inv-out');
+          if (label) label.value = '';
+          if (token) token.value = '';
+          if (days) days.value = '7'; // the default the panel is drawn with
+          if (out) out.textContent = '';
+        });
+      }
     }
 
     // The badge is one signed status per Natter row — the same census call

@@ -1528,4 +1528,111 @@ test.subHeading('The viewer keeps one rhythm down the page');
   }
 }
 
+test.subHeading('Every control an app puts on the page has one shape');
+
+// Andy: rounded boxes for buttons, inputs and selects, and the app has
+// to be usable on a small portrait screen. Both of those are one rule
+// set rather than five near-identical copies beside five forms, which is
+// what used to be here — each 6px padding, 6px radius, drifting apart an
+// edit at a time.
+{
+  const css = readRun('index.html');
+
+  // The copies are gone. Named by the old shared value: any control rule
+  // still carrying it is one that escaped the consolidation.
+  const forms = ['#process-search', '.field-label input', '#job-manifest-form input'];
+  const strays = forms.filter(function (selector) {
+    const at = css.indexOf(selector + ' {');
+    if (at === -1) return false;
+    return css.slice(at, css.indexOf('}', at)).indexOf('border-radius') !== -1;
+  });
+  if (strays.length === 0) {
+    test.check('no form keeps a control look of its own');
+  } else {
+    test.fail('still styling their own controls: ' + strays.join(', '));
+  }
+
+  // A control under 16px makes iOS zoom the page on focus, which leaves
+  // a portrait phone scrolled sideways in a layout nobody asked for. It
+  // is also the reading size (UI_DESIGN_STYLE.md), so one number serves
+  // both and neither can be lowered without noticing the other.
+  const at = css.indexOf('#app-content input,');
+  const block = at === -1 ? '' : css.slice(at, css.indexOf('}', at));
+  const size = /font-size:\s*(\d+)px/.exec(block);
+  const title = /#app-title \{[^}]*font-size:\s*(\d+)px/.exec(css);
+  if (size && title && size[1] === title[1]) {
+    test.check('a control is set at reading size, which is also what stops a phone zooming');
+  } else {
+    test.fail('control font-size ' + (size && size[1]) + ' vs title ' + (title && title[1]));
+  }
+
+  // Big enough to hit with a thumb.
+  const touch = /min-height:\s*(\d+)px/.exec(block);
+  if (touch && Number(touch[1]) >= 44) {
+    test.check('and tall enough to hit on a portrait screen');
+  } else {
+    test.fail('control min-height: ' + (touch && touch[1]));
+  }
+
+  // Rounded, and the same roundness as the panels they sit in.
+  const radius = /border-radius:\s*(\d+)px/.exec(block);
+  const tileAt = css.indexOf('.stat-tile {');
+  const tileRadius = /border-radius:\s*(\d+)px/.exec(css.slice(tileAt, css.indexOf('}', tileAt)));
+  if (radius && tileRadius && radius[1] === tileRadius[1]) {
+    test.check('and as round as the tile it sits in');
+  } else {
+    test.fail('control radius ' + (radius && radius[1]) + ' vs tile ' + (tileRadius && tileRadius[1]));
+  }
+}
+
+test.subHeading('Stats counts read like a file bubble, and Chat spaces its two offers');
+
+// Andy re-classified the three count blocks in Stats — Files by MIME
+// type, Requests by method, Requests by status class — to the same style
+// as the file info bubble in the launchers. One row type, one voice.
+{
+  const stats = readRun('app/stats/stats.js');
+  if (stats.indexOf('file-info-row') !== -1 && stats.indexOf("join('<br>')") === -1) {
+    test.check('a count is a label and a value on one line, not a run-on');
+  } else {
+    test.fail('stats counts still render their own way');
+  }
+
+  // byMethod is keyed by whatever verb a request arrived with, so the
+  // string is a client's choice, and it goes into innerHTML. The <br>
+  // version interpolated it raw.
+  const fn = stats.slice(stats.indexOf('function statsCountsHtml'), stats.indexOf('function statsFindJob'));
+  if (fn.indexOf('escapeHtml') !== -1 && /escape\(k\)/.test(fn)) {
+    test.check('and a request method cannot write markup into the page');
+  } else {
+    test.fail('statsCountsHtml does not escape its keys');
+  }
+
+  // Add someone by handle and Invite someone to a relay are two offers,
+  // not one block. Same 12px as every other gap (UI_DESIGN_STYLE.md §3),
+  // and on the panel above rather than the slot below, which is empty
+  // for a node that owns no mailbox.
+  const css = readRun('index.html');
+  // Read by splitting rather than by a built RegExp: a property name
+  // interpolated into a pattern string needs its escapes doubled, and a
+  // pattern that quietly stops matching returns null for both sides —
+  // which compares equal and passes while asserting nothing.
+  function value(selector, property) {
+    const at = css.indexOf(selector + ' {');
+    if (at === -1) return null;
+    const block = css.slice(at, css.indexOf('}', at));
+    const declAt = block.indexOf(property + ':');
+    if (declAt === -1) return null;
+    const decl = block.slice(declAt + property.length + 1, block.indexOf(';', declAt)).trim();
+    return /^[0-9]+px$/.test(decl) ? decl : null;
+  }
+  const gap = value('#rc-add-panel', 'margin-bottom');
+  if (gap !== null && gap === value('#open-with', 'margin-top')) {
+    test.check('the two folded panels are a block apart, like every other pair');
+  } else {
+    test.fail('add-panel gap ' + value('#rc-add-panel', 'margin-bottom') +
+      ' vs the rhythm ' + value('#open-with', 'margin-top'));
+  }
+}
+
 test.reportSuccessFailureCount();

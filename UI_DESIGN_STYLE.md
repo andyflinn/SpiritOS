@@ -73,6 +73,25 @@ CSS regressions are invisible until somebody looks. Where a rule is a *relations
 
 The shell does not invent restrictions the server does not impose (`AGENT.md`, and the memory of the Open-with folder rule that refused a perfectly readable file). If chrome needs a verdict — is this writable? — publish the verdict from the enforcing function rather than mirroring its constants in the browser.
 
+## 9. One shape for every control
+
+Buttons, inputs, selects and text areas an app puts on the page share one rule set (`#app-content input, select, button, textarea:not(.code-view)`): **rounded box, 10px radius — the same roundness as the `.stat-tile` they sit in — dark fill, 1px translucent border, reading-size text, 44px minimum height.** Buttons drop the border and take the accent fill.
+
+Two of those numbers are doing double duty, which is why they are not free to drift:
+
+- **16px** is the reading size of §2 *and* the threshold under which iOS zooms the whole page when a field takes focus — leaving a portrait phone scrolled sideways in a layout nobody asked for.
+- **44px** is the smallest comfortable touch target on a phone.
+
+A form does not style its own controls. `#process-search`, `.field-label`, `#job-manifest-form` and the Relay Chat rows each carried a private copy of the same six declarations, at 6px padding and 6px radius, drifting one edit at a time; now they declare only what is particular to them (a width, a margin, `flex: 1`).
+
+The titlebar keeps small buttons (`.cancel-btn` outside `#app-content`, e.g. the viewer's bail-out): chrome you press once is not a field you fill in.
+
+`select` also gets `color-scheme: dark` and opaque `option` colours globally, because a native dropdown paints its popup with the control's own colours — a translucent background reads fine closed and is unreadable open.
+
+## 10. Aiming at a small portrait screen
+
+Not finished, but it is the target, and it decides the numbers above. What already holds: controls are thumb-sized, `.start-job-form` wraps so an input takes the width and its button drops beneath it (two full-width targets instead of one squeezed pair), `.rc-wide` takes the page width rather than the width of its longest option, and the desktop shrinks its icons under 480px.
+
 ---
 
 ## Open questions — the tree disagrees with itself
@@ -81,4 +100,5 @@ The shell does not invent restrictions the server does not impose (`AGENT.md`, a
 - **`.job-manifest-note`** is fine print at 12px sitting *mid-page* in the text launcher, which §2 forbids. It moves to the foot or it stops being a note.
 - **Files' own detail panel** shows Name/Path/MIME through `.label`/`.rows` at 12 and 13px — the same information as `.file-info-row`, in a different shape. Deliberately left out of the last change; unresolved.
 - **22px figures** (`.stat-tile .value`) are a third size that probably earns its place — a number read as a figure is not prose. Worth stating as a rule or removing.
+- **Wide content on a narrow screen.** `.jobs-table` and `.job-last-log` (fixed 300px) will overflow a portrait phone rather than scrolling inside their own container, and the thread, the Files tree and the code view have not been looked at on one at all. §10 is a target, not a claim.
 - **`<details>` markers**: Invite and Add someone by handle now both show the default triangle, after the invite line stopped being shrunk. Whether folded panels show a marker at all is unstated.

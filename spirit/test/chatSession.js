@@ -1156,10 +1156,61 @@ function newFilterSnapsBack() {
   });
 }
 
+// Andy: the fields clear when the panel is collapsed — the phone call is
+// done. The minted token is the reason: it stays on screen after a 201,
+// and the next person to open this panel is starting a different
+// invitation rather than reading the last one.
+function invitePanelForgetsTheCall() {
+  test.subHeading('Closing the invite panel ends the call');
+
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    ownedUrls: ['https://spirit.example'],
+    rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
+  });
+
+  return settle().then(function () {
+    el(app, 'rc-inv-label').value = 'bert';
+    el(app, 'rc-inv-days').value = '3';
+    el(app, 'rc-inv-token').value = 'saint-bernard';
+    el(app, 'rc-inv-out').textContent = 'saint-bernard  →  https://spirit.example';
+
+    // Opened, not closed: nothing is touched while the call is on.
+    el(app, 'rc-invite-panel').open = true;
+    el(app, 'rc-invite-panel').fire('toggle');
+    if (el(app, 'rc-inv-label').value === 'bert' && el(app, 'rc-inv-out').textContent !== '') {
+      test.check('opening it leaves what is there alone');
+    } else {
+      test.fail('opening cleared the panel');
+    }
+
+    el(app, 'rc-invite-panel').open = false;
+    el(app, 'rc-invite-panel').fire('toggle');
+
+    const cleared = ['rc-inv-label', 'rc-inv-token'].every(function (id) { return el(app, id).value === ''; });
+    if (cleared && el(app, 'rc-inv-days').value === '7') {
+      test.check('closing it empties the fields and puts the days back');
+    } else {
+      test.fail('after collapse: label ' + el(app, 'rc-inv-label').value +
+        ', token ' + el(app, 'rc-inv-token').value + ', days ' + el(app, 'rc-inv-days').value);
+    }
+
+    // The one that matters: a token somebody spoke aloud does not sit on
+    // the screen waiting for the next person to open the panel.
+    if (el(app, 'rc-inv-out').textContent === '') {
+      test.check('and the minted token is not left on the screen');
+    } else {
+      test.fail('token still shown: ' + el(app, 'rc-inv-out').textContent);
+    }
+  });
+}
+
 claimBinds()
   .then(claimRowHidesOnceBound)
   .then(enterSendsExactlyOnce)
   .then(inviteOnlyForAnOwner)
+  .then(invitePanelForgetsTheCall)
   .then(composerOffersTheMailbox)
   .then(reloadRestores)
   .then(nothingStored)

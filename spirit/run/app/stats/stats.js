@@ -38,12 +38,26 @@ function statsTileHtml(value, label, wide, launchAppId) {
     '</div>';
 }
 
+// The same rows the launchers show a file's Path and Size in
+// (.file-info-row, renderFileInfoBubble in shell.js): a label and its
+// value on one line, at reading size. These used to be 13px text joined
+// with <br> — "text/plain: 4" as a run-on line, where the count is the
+// part being read and it sat wherever the label happened to end. One row
+// type, one voice (UI_DESIGN_STYLE.md).
+//
+// Escaped, which the <br> version was not: byMethod is keyed by whatever
+// verb a request arrived with, so a client on loopback chooses that
+// string, and it was going into innerHTML as it stood.
 function statsCountsHtml(counts) {
   var keys = Object.keys(counts);
-  if (keys.length === 0) return '<div class="rows">(none)</div>';
-  return '<div class="rows">' + keys.map(function (k) {
-    return k + ': ' + counts[k];
-  }).join('<br>') + '</div>';
+  var escape = spirit.core.util.escapeHtml;
+  if (keys.length === 0) return '<div class="file-info-row">(none)</div>';
+  return keys.map(function (k) {
+    return '<div class="file-info-row">' +
+      '<span class="file-info-label">' + escape(k) + '</span>' +
+      '<span>' + escape(String(counts[k])) + '</span>' +
+      '</div>';
+  }).join('');
 }
 
 // The shell hands render() the job map it already keeps, so this app

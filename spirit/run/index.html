@@ -195,16 +195,9 @@
       .annotation-raw summary { cursor: pointer; font-size: 13px; opacity: 0.8; }
       .annotation-raw pre { margin: 6px 0 0; }
 
-      #process-search {
-        width: 100%;
-        padding: 6px 8px;
-        margin-bottom: 12px;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.06);
-        color: inherit;
-        font: inherit;
-      }
+      /* Only what is particular to it; the look comes from the control
+         rules above. Same for every field below. */
+      #process-search { width: 100%; margin-bottom: 12px; }
 
       .process-entry {
         cursor: pointer;
@@ -223,18 +216,17 @@
         flex-wrap: wrap;
       }
 
-      .start-job-form input {
-        padding: 6px 8px;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.06);
-        color: inherit;
-        font: inherit;
-      }
+      /* A form row wraps rather than scrolls: on a portrait phone the
+         input takes the width and the button drops under it, which is
+         two full-width targets instead of one squeezed pair. */
+      .start-job-form input { flex: 1; min-width: 140px; }
 
-      .start-job-form button, .cancel-btn {
+      /* The titlebar's own bail-out button (setViewerTitle) is chrome,
+         not a field, so it keeps the small shape. Inside an app,
+         #app-content button wins on specificity. */
+      .cancel-btn {
         padding: 6px 12px;
-        border-radius: 6px;
+        border-radius: 8px;
         border: none;
         background: #0f3460;
         color: inherit;
@@ -242,7 +234,48 @@
         font: inherit;
       }
 
-      .start-job-form button:hover, .cancel-btn:hover { background: #16487a; }
+      .cancel-btn:hover { background: #16487a; }
+
+      /* ---- Controls ----------------------------------------------
+         One look for every input, select and button an app puts on the
+         page: a rounded box, a dark fill, reading-size text, and a
+         target big enough for a thumb.
+         This used to be five near-identical copies living beside their
+         own forms — #process-search, .start-job-form, .field-label,
+         #job-manifest-form and the Relay Chat rows — each 6px padding
+         and 6px radius, drifting one edit at a time. Scoped to
+         #app-content because that is where an app's own markup lives;
+         the titlebar keeps its small buttons, which are chrome rather
+         than something you fill in.
+         16px is not only the reading size: any control smaller than
+         that makes iOS zoom the whole page on focus, which leaves you
+         scrolled sideways in a layout you did not ask for. 44px is the
+         smallest target that is comfortable to hit on a portrait
+         phone. Both of those are why this file cares about the size at
+         all — see UI_DESIGN_STYLE.md. */
+      #app-content input,
+      #app-content select,
+      #app-content button,
+      #app-content textarea:not(.code-view) {
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        font: inherit;
+        font-size: 16px;
+        min-height: 44px;
+        max-width: 100%;
+      }
+
+      #app-content button {
+        border: none;
+        background: #0f3460;
+        cursor: pointer;
+        padding: 10px 16px;
+      }
+
+      #app-content button:hover { background: #16487a; }
 
       /* A native dropdown paints its popup with the control's OWN
          colours. A translucent background (rgba over a dark page) lands
@@ -250,15 +283,20 @@
          on its own layer — readable in the closed control, unreadable
          open. Opaque on both the select and its options, everywhere in
          the shell, since every app that grows a dropdown inherits this
-         problem. */
+         problem. color-scheme asks the browser for dark popup chrome;
+         the option colours are the belt-and-suspenders for engines that
+         only honour explicit colours. */
       select {
-        padding: 6px 8px;
-        border-radius: 6px;
+        padding: 10px 12px;
+        border-radius: 10px;
         border: 1px solid rgba(255, 255, 255, 0.2);
         background: #0f3460;
         color: #eee;
         font: inherit;
+        color-scheme: dark;
       }
+
+      #app-content select { background: #0f3460; }
 
       select option { background: #16213e; color: #eee; }
 
@@ -277,15 +315,6 @@
         font-size: 13px;
       }
 
-      .field-label input {
-        padding: 6px 8px;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.06);
-        color: inherit;
-        font: inherit;
-      }
-
       #job-manifest-form label {
         display: flex;
         flex-direction: column;
@@ -294,36 +323,7 @@
         font-size: 13px;
       }
 
-      #job-manifest-form input, #job-manifest-form select {
-        padding: 6px 8px;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(255, 255, 255, 0.06);
-        color: inherit;
-        font: inherit;
-        color-scheme: dark; /* tells the browser to render this select's native open-dropdown popup in dark chrome, not the OS default light one */
-      }
-
-      /* Belt-and-suspenders for browsers that don't fully honor color-scheme
-         on the popup: most engines do respect explicit background/color on
-         <option> itself. */
-      #job-manifest-form select option {
-        background: #16213e;
-        color: #eee;
-      }
-
-      #job-manifest-form button {
-        margin-top: 8px;
-        padding: 6px 12px;
-        border-radius: 6px;
-        border: none;
-        background: #0f3460;
-        color: inherit;
-        cursor: pointer;
-        font: inherit;
-      }
-
-      #job-manifest-form button:hover { background: #16487a; }
+      #job-manifest-form button { margin-top: 8px; }
 
       .job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 8px; min-height: 1em; }
 
@@ -429,6 +429,13 @@
       }
       #rc-invite-panel[open] > summary,
       #rc-add-panel[open] > summary { margin-bottom: 8px; }
+
+      /* The two folded panels are separate offers, not one block: the
+         same 12px that separates blocks everywhere else (§3). On the
+         panel above rather than the slot below, because the slot is
+         empty for a node that owns no mailbox and an empty div would
+         still hold its margin. */
+      #rc-add-panel { margin-bottom: 12px; }
 
       @media (max-width: 480px) {
         .app-icon .icon { font-size: 32px; }
