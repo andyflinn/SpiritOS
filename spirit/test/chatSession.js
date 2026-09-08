@@ -1543,6 +1543,161 @@ function blockedOffersTheWayBack() {
   });
 }
 
+// Do not disturb silences notifications and nothing else: the count goes,
+// the information stays.
+function doNotDisturb() {
+  test.subHeading('Not being interrupted is not being unreachable');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const line = {
+    id: 'm1', from: 'bert', to: 'andy', fromKey: BERT, toKey: 'KEY-ANDY',
+    text: 'are you there', sentAt: '2026-09-08T10:00:00.000Z',
+  };
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    messages: [line],
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false, held: false, blocked: false }],
+  });
+
+  return settle().then(function () {
+    // Loud by default: being unreachable unless you ask is the wrong
+    // kind of safe.
+    if (/· 1/.test(titleOf(app))) {
+      test.check('mail announces itself until told not to');
+    } else {
+      test.fail('title: ' + titleOf(app));
+    }
+
+    el(app, 'rc-dnd-toggle').fire('change', { target: { checked: true } });
+    return settle().then(function () {
+      if (titleOf(app) === 'Relay Chat [andy]') {
+        test.check('switched on, the heading stops counting at you');
+      } else {
+        test.fail('title with dnd: ' + titleOf(app));
+      }
+
+      // The other announcement: a button that appears on its own,
+      // carrying a number that grows, is a notification whatever else it
+      // is also good for.
+      if (el(app, 'rc-filter-new').style.display === 'none') {
+        test.check('and the New button stops appearing too');
+      } else {
+        test.fail('New button visible under dnd');
+      }
+
+      // The information is all still there — this is about being
+      // interrupted, not about being unreachable.
+      if (/•\s*bert/.test(el(app, 'rc-to-pick').innerHTML)) {
+        test.check('and the row is still marked unread');
+      } else {
+        test.fail('list: ' + el(app, 'rc-to-pick').innerHTML);
+      }
+
+      // Named through the real module rather than rebuilt here: the file
+      // name is peerFile's business, and a test that spells it out again
+      // is a second answer to the same question.
+      const filed = app.store[chatLog.fileFor(BERT)] || '';
+      if (/are you there/.test(filed)) {
+        test.check('and the line was filed exactly as it would have been');
+      } else {
+        test.fail('logs: ' + Object.keys(app.store).join(', '));
+      }
+
+      let saved = null;
+      try { saved = JSON.parse(app.store['prefs.json']); } catch (e) { saved = null; }
+      if (saved && saved.dnd === true) {
+        test.check('and the switch is remembered on this node');
+      } else {
+        test.fail('prefs: ' + app.store['prefs.json']);
+      }
+
+      // Nothing was lost while it was on.
+      el(app, 'rc-dnd-toggle').fire('change', { target: { checked: false } });
+      return settle().then(function () {
+        if (/· 1/.test(titleOf(app)) && el(app, 'rc-filter-new').style.display !== 'none') {
+          test.check('switching it off brings back both, and the count that was there all along');
+        } else {
+          test.fail('after: ' + titleOf(app) + ' / new button ' + el(app, 'rc-filter-new').style.display);
+        }
+
+        // Standing in `new` when the button that took you there goes
+        // would leave a filter nothing can turn off.
+        el(app, 'rc-filter-new').fire('click');
+        el(app, 'rc-dnd-toggle').fire('change', { target: { checked: true } });
+        return settle().then(function () {
+          let saved = null;
+          try { saved = JSON.parse(app.store['view.json']); } catch (e) { saved = null; }
+          if (saved && saved.filter !== 'new') {
+            test.check('and switching it on does not strand you in a filter you cannot leave');
+          } else {
+            test.fail('filter after dnd: ' + (saved && saved.filter));
+          }
+        });
+      });
+    });
+  });
+}
+
+// Pressing New is asking who wrote to you, and the answer is in the list.
+function newOpensTheList() {
+  test.subHeading('New asks a question the list answers');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    messages: [{
+      id: 'm1', from: 'bert', to: 'andy', fromKey: BERT, toKey: 'KEY-ANDY',
+      text: 'anybody home', sentAt: '2026-09-08T10:00:00.000Z',
+    }],
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false, held: false, blocked: false }],
+  });
+
+  return settle().then(function () {
+    // What a browser that has showPicker does.
+    let opened = 0;
+    el(app, 'rc-to-pick').showPicker = function () { opened += 1; };
+    el(app, 'rc-filter-new').fire('click');
+
+    return settle().then(function () {
+      if (opened === 1) {
+        test.check('pressing it drops the list open');
+      } else {
+        test.fail('showPicker calls: ' + opened);
+      }
+
+      // Narrowing a list you are already reading is not the same
+      // question, so it does not reopen the control under you.
+      el(app, 'rc-filter-all').fire('click');
+      if (opened === 1) {
+        test.check('and the other filters leave the control alone');
+      } else {
+        test.fail('a plain filter opened the list too');
+      }
+
+      // A browser without it, and a browser that refuses: neither may
+      // take the click down with it.
+      const older = mountApp(
+        { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) },
+        { inboxStatus: 200 }
+      );
+      return settle().then(function () {
+        let focused = 0;
+        el(older, 'rc-to-pick').focus = function () { focused += 1; };
+        el(older, 'rc-filter-new').fire('click');
+        el(older, 'rc-to-pick').showPicker = function () { throw new Error('NotAllowedError'); };
+        el(older, 'rc-filter-new').fire('click');
+        if (focused >= 1) {
+          test.check('and where it cannot open, it puts the keyboard there instead');
+        } else {
+          test.fail('no fallback: focus called ' + focused);
+        }
+      });
+    });
+  });
+}
+
 claimBinds()
   .then(claimRowHidesOnceBound)
   .then(enterSendsExactlyOnce)
@@ -1552,6 +1707,8 @@ claimBinds()
   .then(heldRowsAndTheStrip)
   .then(blockingTakesTwo)
   .then(blockedOffersTheWayBack)
+  .then(doNotDisturb)
+  .then(newOpensTheList)
   .then(holdLine)
   .then(composerOffersTheMailbox)
   .then(reloadRestores)

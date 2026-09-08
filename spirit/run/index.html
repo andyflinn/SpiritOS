@@ -511,6 +511,25 @@
         margin-top: 2px;
       }
 
+      /* A checkbox is not a text field either, and for the same reason.
+         Same size as a radio, so a list of settings reads as one list. */
+      #app-content input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        min-height: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: none;
+        accent-color: #8ec9ff;
+      }
+
+      /* A setting that is a single switch, sitting among the folds. It
+         is a .rc-choice for its layout and a .stat-tile.nested for its
+         weight — the same card as a section, so the panel reads as a
+         list of settings rather than a mixture of shapes. */
+      #rc-dnd { margin-bottom: 12px; }
+
       /* A radio is not a text field. The shared control rule gives every
          input in an app a padded 44px box with a border, which is right
          for something you type in and absurd for something you tick —

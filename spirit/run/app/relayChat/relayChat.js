@@ -46,7 +46,7 @@ spirit.shell.activateApp({
     // not what it was looking at and not who it is. A remembered filter
     // may be reset without touching a policy about strangers.
     var RC_PREFS_FILE = 'prefs.json';
-    var prefs = { unknown: 'silent', mintedLabels: [] };
+    var prefs = { unknown: 'silent', mintedLabels: [], dnd: false };
     var unknownWaiting = 0; // what Hold has to say, and only while it is > 0
 
     var RC_VIEW_FILE = 'view.json';
@@ -131,6 +131,18 @@ spirit.shell.activateApp({
       // makes the second one cost nothing.
       '<details class="stat-tile wide" id="rc-settings-panel">' +
         '<summary>Settings</summary>' +
+        // A single switch needs no fold, and a fold that does not fold
+        // reads as a broken one — so it is drawn as a peer of the
+        // section headings instead, in the same two-column shape the
+        // radios use: control, title, and the fine print under the
+        // title.
+        '<label class="rc-choice stat-tile nested" id="rc-dnd">' +
+          '<input type="checkbox" id="rc-dnd-toggle">' +
+          '<span class="rc-choice-title">Do not disturb</span>' +
+          '<span class="rc-choice-note">Nothing announces itself: no count beside the title, and no sound ' +
+          'or notification when those exist. Everything still arrives, is filed, and is marked unread in ' +
+          'your list — this is about being interrupted, not about being unreachable.</span>' +
+        '</label>' +
         '<details class="stat-tile nested" id="rc-unknown-section">' +
           '<summary id="rc-unknown-summary">Messages from people I have not added</summary>' +
           '<div id="rc-unknown-choices"></div>' +
@@ -189,7 +201,7 @@ spirit.shell.activateApp({
       // marks its own row, and the count rides in the title for the case
       // where the app is not the tab in front of you.
       var waiting = unseenCount();
-      if (waiting > 0) text += ' · ' + waiting;
+      if (waiting > 0 && !quiet()) text += ' · ' + waiting;
       titleEl.textContent = text;
       // The tab belongs to the shell (paintWindowTitle in shell.js): it
       // says which NODE you are looking at, which is what several open
@@ -228,6 +240,26 @@ spirit.shell.activateApp({
     // a line count would be a number nobody can act on.
     function unseenCount() {
       return Object.keys(logs).filter(hasUnseen).length;
+    }
+
+    // Do not disturb. One accessor rather than a check at each site,
+    // because the sites that matter most do not exist yet: a sound and a
+    // desktop notification are the whole reason this switch is worth
+    // having, and each of them has to ask something. This is what they
+    // ask.
+    //
+    // It silences NOTIFICATIONS, never information. The dropdown keeps
+    // its marks, the New filter still finds unread rows, the thread and
+    // the logs are untouched, and view.json goes on remembering how far
+    // each conversation was read — so switching it off simply shows the
+    // count that was accumulating all along. Nothing is lost while it is
+    // on, and nothing about the wire or the disk changes either way.
+    //
+    // Unrelated to the radio above it: that one decides whether a
+    // stranger arrives at all, this one decides how loudly the people
+    // you already know do.
+    function quiet() {
+      return prefs.dnd === true;
     }
 
     // How many mailboxes Natter lists — read straight off Natter's own
@@ -322,6 +354,10 @@ spirit.shell.activateApp({
       if (!parsed || typeof parsed !== 'object') return;
       prefs = {
         unknown: RC_UNKNOWN_CHOICES.indexOf(parsed.unknown) === -1 ? 'silent' : parsed.unknown,
+        // False unless it says otherwise. Silence-by-default is right for
+        // strangers; being unreachable by default is the wrong kind of
+        // safe.
+        dnd: parsed.dnd === true,
         // Labels this node minted an invite for. Not secrets — the token
         // is the secret and is never written here — just enough to
         // recognise the person when they turn up on the mailbox.
@@ -866,7 +902,9 @@ spirit.shell.activateApp({
     // there, and this one is on the page only while it means something.
     function snapBackFromNew() {
       if (view.filter !== 'new') return;
-      if (unseenCount() > 0) return;
+      // Standing in `new` when the button that took you there has just
+      // gone would leave a filter nothing can turn off.
+      if (unseenCount() > 0 && !quiet()) return;
       view.filter = filterBeforeNew || 'peers';
       filterBeforeNew = '';
       saveView();
@@ -884,11 +922,31 @@ spirit.shell.activateApp({
       // to press it for. It stays in the tab as well: the two answer
       // different questions — one for when you are looking at the app,
       // one for when you are not.
+      // Not while you have asked not to be disturbed: a button that
+      // appears on its own, carrying a number that grows, is a
+      // notification whatever else it is also good for. The rows keep
+      // their marks — reading a list is not being interrupted — so
+      // nothing is hidden, only unannounced.
       var waiting = unseenCount();
       var newButton = document.getElementById('rc-filter-new');
       if (!newButton) return;
-      newButton.style.display = waiting > 0 ? '' : 'none';
+      newButton.style.display = (waiting > 0 && !quiet()) ? '' : 'none';
       newButton.textContent = 'New ' + waiting;
+    }
+
+    // Drop the To list open. A native <select> cannot simply be told to
+    // open: showPicker() is the only way, it needs a real user gesture
+    // (a click is one), and it is not in every browser. So this is a
+    // request rather than a promise — where it is refused or missing,
+    // focus at least puts the keyboard on the control, and nothing here
+    // may throw on the way past.
+    function openToList() {
+      var pick = document.getElementById('rc-to-pick');
+      if (!pick) return;
+      try {
+        if (typeof pick.showPicker === 'function') { pick.showPicker(); return; }
+      } catch (e) { /* refused: not a gesture, or not allowed here */ }
+      if (typeof pick.focus === 'function') pick.focus();
     }
 
     function rememberMinted(label) {
@@ -1129,6 +1187,9 @@ spirit.shell.activateApp({
           '</label>';
       }).join('');
 
+      var dnd = document.getElementById('rc-dnd-toggle');
+      if (dnd) dnd.checked = quiet();
+
       var summary = document.getElementById('rc-unknown-summary');
       if (summary) {
         var current = RC_UNKNOWN_LABELS[prefs.unknown];
@@ -1291,6 +1352,10 @@ spirit.shell.activateApp({
           saveView();
         }
         paintToList();
+        // Pressing New is asking "who wrote to me?", and the answer is
+        // in the list — so open it. Only for New: the other three are
+        // ways of narrowing a list you are already reading.
+        if (name === 'new') openToList();
       });
     });
 
@@ -1363,6 +1428,17 @@ spirit.shell.activateApp({
         }
         refreshInbox();
       });
+    });
+
+    document.getElementById('rc-dnd-toggle').addEventListener('change', function (event) {
+      prefs.dnd = !!(event.target && event.target.checked);
+      savePrefs();
+      // Nothing to re-fetch: this changes how the same facts are shown.
+      // Both announcements answer to it — the count beside the title and
+      // the New button — so switching it off brings back exactly what was
+      // accumulating while it was on.
+      paintTitle();
+      paintToList();
     });
 
     // A change of policy is a change to what the next inbox read will
