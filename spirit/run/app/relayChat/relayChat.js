@@ -36,6 +36,11 @@ spirit.shell.activateApp({
     // and a check asserts it stays that. This is what it was looking at.
     var RC_VIEW_FILE = 'view.json';
     var view = { toKey: '', filter: 'peers', lastSeen: {} };
+    // `new` is a place to stand, not a place to be left. It is never
+    // written to view.json — a reload into a filter that has emptied is
+    // a list with no way out — and when the last unread clears, the
+    // filter snaps back to whichever real one was showing before.
+    var filterBeforeNew = '';
     var missingTo = '';  // a remembered To the mailbox no longer has
 
     // Chat 3 — the page reads top to bottom as a conversation: who you
@@ -45,13 +50,17 @@ spirit.shell.activateApp({
     // rarely, and hiding it from non-owners is chat 4, not this sitting.
     container.innerHTML =
       '<h3 id="rc-title">Relay Chat</h3>' +
-      // What an unbound node is told, before it is asked for anything.
-      // Chat 7: nothing on the page that cannot work yet.
-      '<div class="stat-tile wide job-manifest-note" id="rc-unbound" style="display:none"></div>' +
+      // What an unbound node is told, and what it can do about it — one
+      // tile, because they are one thought. Two tiles of different
+      // widths read as two unrelated things on a page that has only one
+      // thing to say (chat 7).
       '<div class="stat-tile wide" id="rc-claim-row">' +
-        '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
-        '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
-        '<button type="button" id="rc-claim">Claim</button>' +
+        '<div id="rc-unbound"></div>' +
+        '<div id="rc-claim-fields">' +
+          '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
+          '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
+          '<button type="button" id="rc-claim">Claim</button>' +
+        '</div>' +
         '<span id="rc-status"></span>' +
       '</div>' +
       // Who you are talking to, chosen before what you say. A To value
@@ -68,10 +77,13 @@ spirit.shell.activateApp({
         '<button type="button" class="cancel-btn" data-filter="peers" id="rc-filter-peers">Peers</button>' +
         '<button type="button" class="cancel-btn" data-filter="relays" id="rc-filter-relays">Relays</button>' +
         '<button type="button" class="cancel-btn" data-filter="all" id="rc-filter-all">All</button>' +
+        // Only on the page while it means something, which is the whole
+        // of its design: the count stops being a notice you have to act
+        // on somewhere else and becomes the thing you press.
+        '<button type="button" class="cancel-btn" data-filter="new" id="rc-filter-new" style="display:none">New</button>' +
         '<input type="text" id="rc-search" placeholder="find someone">' +
       '</div>' +
       '<select id="rc-to-pick" class="rc-wide"><option value="">(pick a person)</option></select>' +
-      '<div class="job-log-empty" id="rc-hidden-unread" style="display:none"></div>' +
       '<div class="job-log-panel" id="rc-thread"></div>' +
       // Docked under the thread, where a chat composer belongs.
       '<div class="start-job-form" id="rc-composer">' +
@@ -118,7 +130,11 @@ spirit.shell.activateApp({
       // to be claimed on. When the hub learns to speak to a chosen relay
       // the way minting already does, this becomes a per-relay question
       // and this line is where it is asked.
-      document.getElementById('rc-claim-row').style.display = (myName || !natterUrls()) ? 'none' : '';
+      // The tile goes when there is a name; the FIELDS go when there is
+      // no mailbox to claim on. The instruction stays either way, which
+      // is why they share one tile.
+      document.getElementById('rc-claim-row').style.display = myName ? 'none' : '';
+      document.getElementById('rc-claim-fields').style.display = natterUrls() ? '' : 'none';
     }
 
     // How many conversations have something in them this node has not
@@ -150,15 +166,29 @@ spirit.shell.activateApp({
     // Three states, three things to say, and the first one has no Claim
     // button at all: a name on a mailbox that does not exist is not a
     // thing this node can do yet, so it is not offered.
+    // Everything that only means something once this node has a name.
+    // While it has none, none of it can do anything: a To list with
+    // nobody in it, a thread of nothing, a composer that would refuse
+    // the line. AGENT.md — do not show chrome that is not useful in that
+    // state — and here the instruction for getting in is the page, not a
+    // footnote beside a dead form.
+    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-pick', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
+
+    function showBoundChrome(show) {
+      RC_BOUND_ONLY.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = show ? '' : 'none';
+      });
+    }
+
     function paintUnbound() {
       var note = document.getElementById('rc-unbound');
       if (!note) return;
+      showBoundChrome(!!myName);
       if (myName) {
-        note.style.display = 'none';
         note.textContent = '';
         return;
       }
-      note.style.display = '';
       note.textContent = natterUrls()
         ? 'Chat needs a name on a public mailbox. If you were invited, enter that name and the spoken word, then Claim. If you own the mailbox, Claim the owner name with no token.'
         : 'This node has no mailbox yet. Open Natter, add one (for example https://spirit.andyflinn.com), then come back.';
@@ -520,7 +550,9 @@ spirit.shell.activateApp({
       var peerRows = (view.filter === 'relays') ? [] : people.filter(function (person) {
         // A row already chosen stays in the list whatever is typed:
         // filtering must never silently change who you are writing to.
-        return person.publicKey === chosen || matches(person.caption);
+        if (person.publicKey === chosen) return true;
+        if (view.filter === 'new' && !hasUnseen(person.publicKey)) return false;
+        return matches(person.caption);
       });
 
       {
@@ -535,8 +567,12 @@ spirit.shell.activateApp({
 
       {
         var relayHtml = '';
+        // The mailbox is a conversation like any other, so it answers to
+        // `new` on the same terms as a peer.
         var relayWanted = mailboxKey && relayRow && view.filter !== 'peers' &&
-          (mailboxKey === chosen || matches(relayRow.label) || matches(relayRow.url));
+          (mailboxKey === chosen ||
+            ((view.filter !== 'new' || hasUnseen(mailboxKey)) &&
+              (matches(relayRow.label) || matches(relayRow.url))));
         if (relayWanted) {
           var relayMark = hasUnseen(mailboxKey) ? '• ' : '';
           var owned = relayRow.owned ? '★ ' : '';
@@ -547,7 +583,7 @@ spirit.shell.activateApp({
         // to the first URL only, so offering these would be a promise
         // the node cannot keep.
         otherRelays.forEach(function (row) {
-          if (view.filter === 'peers') return;
+          if (view.filter === 'peers' || view.filter === 'new') return;
           if (!matches(row.label) && !matches(row.url)) return;
           relayHtml += '<option value="" disabled>' +
             api.escapeHtml((row.owned ? '★ ' : '') + row.label + '  ' + row.url +
@@ -573,36 +609,44 @@ spirit.shell.activateApp({
         pick.value = chosen; // a refresh must not silently change who you were about to write to
       }
 
-      paintHiddenUnread(peerRows);
+      snapBackFromNew();
       paintFilterButtons();
     }
 
-    // Conversations with something new that this filter is not showing.
-    // The row cannot carry its own mark if it is not in the list, so the
-    // list says how many are out of sight rather than pretending there
-    // are none.
-    function paintHiddenUnread(shownPeers) {
-      var note = document.getElementById('rc-hidden-unread');
-      if (!note) return;
-      var shown = {};
-      shownPeers.forEach(function (person) { shown[person.publicKey] = true; });
-      if (view.filter !== 'peers' && mailboxKey) shown[mailboxKey] = true;
-
-      var hidden = Object.keys(logs).filter(function (key) {
-        return hasUnseen(key) && !shown[key];
-      }).length;
-
-      note.textContent = hidden
-        ? hidden + ' more with new lines — try All'
-        : '';
-      note.style.display = hidden ? '' : 'none';
+    // `new` is only ever a place to stand while there is something to
+    // stand on. Read the last unread and it snaps back to whichever real
+    // filter was showing when it was pressed: a filter that means
+    // "nothing" is worse than no filter at all.
+    //
+    // This replaces the line that used to sit under the list saying how
+    // many marked rows the filter was hiding. A notice telling you to go
+    // and look somewhere else is worse than a button that takes you
+    // there, and this one is on the page only while it means something.
+    function snapBackFromNew() {
+      if (view.filter !== 'new') return;
+      if (unseenCount() > 0) return;
+      view.filter = filterBeforeNew || 'peers';
+      filterBeforeNew = '';
+      saveView();
+      paintToList();
     }
 
     function paintFilterButtons() {
-      ['peers', 'relays', 'all'].forEach(function (name) {
+      ['peers', 'relays', 'all', 'new'].forEach(function (name) {
         var button = document.getElementById('rc-filter-' + name);
         if (button) button.style.opacity = (view.filter === name) ? '1' : '0.55';
       });
+
+      // The count is on the button because that is where it can be acted
+      // on, and the button is on the page only while there is something
+      // to press it for. It stays in the tab as well: the two answer
+      // different questions — one for when you are looking at the app,
+      // one for when you are not.
+      var waiting = unseenCount();
+      var newButton = document.getElementById('rc-filter-new');
+      if (!newButton) return;
+      newButton.style.display = waiting > 0 ? '' : 'none';
+      newButton.textContent = 'New ' + waiting;
     }
 
     // The badge is one signed status per Natter row — the same census call
@@ -738,10 +782,19 @@ spirit.shell.activateApp({
 
     // The filter is what kind of row you want; it is remembered. The
     // search is which one you mean; it is not.
-    ['peers', 'relays', 'all'].forEach(function (name) {
+    ['peers', 'relays', 'all', 'new'].forEach(function (name) {
       document.getElementById('rc-filter-' + name).addEventListener('click', function () {
-        view.filter = name;
-        saveView();
+        if (name === 'new') {
+          // Remember where to come back to, and write nothing down: a
+          // reload into a filter that has since emptied is a list with
+          // no way out.
+          if (view.filter !== 'new') filterBeforeNew = view.filter;
+          view.filter = 'new';
+        } else {
+          filterBeforeNew = '';
+          view.filter = name;
+          saveView();
+        }
         paintToList();
       });
     });

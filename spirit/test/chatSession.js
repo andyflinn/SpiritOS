@@ -754,10 +754,14 @@ function unboundChrome() {
   const empty = mountApp({}, { project: { 'app/natter/relays.json': '[]' } });
 
   return settle().then(function () {
-    if (el(empty, 'rc-claim-row').style.display === 'none') {
-      test.check('with no mailbox in Natter there is no Claim to press');
+    // The instruction and the form share one tile — two bubbles of
+    // different widths read as two unrelated things — so what goes is
+    // the FIELDS, not the tile that carries the sentence.
+    if (el(empty, 'rc-claim-fields').style.display === 'none' &&
+        el(empty, 'rc-claim-row').style.display !== 'none') {
+      test.check('with no mailbox in Natter there is no Claim to press, but there is still the sentence');
     } else {
-      test.fail('claim row shown with an empty Natter');
+      test.fail('claim fields shown with an empty Natter');
     }
 
     const note = el(empty, 'rc-unbound').textContent;
@@ -777,11 +781,24 @@ function unboundChrome() {
         test.fail('claim row hidden though Natter has a URL');
       }
 
-      const copy = el(unbound, 'rc-unbound').textContent;
+        const copy = el(unbound, 'rc-unbound').textContent;
       if (/spoken word/.test(copy) && /own the mailbox/.test(copy)) {
         test.check('and it explains the invited case and the owner case');
       } else {
         test.fail('copy: ' + copy);
+      }
+
+      // While there is no name, the instruction for getting one IS the
+      // page. A To list with nobody in it, a thread of nothing and a
+      // composer that would refuse the line are not neutral: they are
+      // things to read and dismiss around the only sentence that
+      // matters.
+      const deadChrome = ['rc-to-bar', 'rc-to-pick', 'rc-thread', 'rc-composer', 'rc-invite-slot']
+        .filter(function (id) { return el(unbound, id).style.display !== 'none'; });
+      if (deadChrome.length === 0) {
+        test.check('and nothing else is on the page while it cannot work');
+      } else {
+        test.fail('still shown while unbound: ' + deadChrome.join(', '));
       }
 
       // Bound: neither. The page is a conversation, not a form.
@@ -790,11 +807,19 @@ function unboundChrome() {
         { inboxStatus: 200 }
       );
       return settle().then(function () {
-        if (el(bound, 'rc-unbound').style.display === 'none' &&
-            el(bound, 'rc-claim-row').style.display === 'none') {
+        if (el(bound, 'rc-claim-row').style.display === 'none' &&
+            el(bound, 'rc-unbound').textContent === '') {
           test.check('a bound node is shown neither the form nor the explanation');
         } else {
           test.fail('bound node still has unbound chrome');
+        }
+
+        const missing = ['rc-to-bar', 'rc-to-pick', 'rc-thread', 'rc-composer']
+          .filter(function (id) { return el(bound, id).style.display === 'none'; });
+        if (missing.length === 0) {
+          test.check('and gets the whole app back the moment it has a name');
+        } else {
+          test.fail('hidden from a bound node: ' + missing.join(', '));
         }
       });
     });
@@ -808,6 +833,7 @@ function mailArrivesOnTheRow() {
   test.subHeading('A line from someone else does not land in the open thread');
 
   const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const CAROL = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
   const ME = 'MCowBQYDK2VwAyEAandyandyandyandyandyandyandyandyandya=';
   const MAILBOX = 'MCowBQYDK2VwAyEAmailboxmailboxmailboxmailboxmailb=';
 
@@ -820,7 +846,10 @@ function mailArrivesOnTheRow() {
     mailboxPublicKey: MAILBOX,
     rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
     ownedUrls: ['https://spirit.example'],
-    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false }],
+    people: [
+      { publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false },
+      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', mine: false },
+    ],
     messages: [{
       id: '11', from: 'bert', to: 'andy', fromKey: BERT, toKey: ME,
       text: 'first line from bert', sentAt: '2026-09-08T09:00:00.000Z',
@@ -837,13 +866,30 @@ function mailArrivesOnTheRow() {
 
     // The filter Andy is on shows relays, so Bert's row is not in the
     // list — and a mark on a row nobody can see is no signal at all. The
-    // list says how many are out of sight instead. The filter is left
-    // doing what it says: overriding it here is what made the buttons
-    // look broken on a node where everything was unread.
-    if (/1 more with new lines/.test(el(app, 'rc-hidden-unread').textContent)) {
-      test.check('the list says one conversation is out of sight');
+    // count moves onto a button that only exists while it means
+    // something, so the way to the marked row is one press rather than a
+    // notice telling you to go and look.
+    if (el(app, 'rc-filter-new').style.display !== 'none' &&
+        el(app, 'rc-filter-new').textContent === 'New 1') {
+      test.check('a New button appears, carrying the count');
     } else {
-      test.fail('hidden note: ' + el(app, 'rc-hidden-unread').textContent);
+      test.fail('new button: ' + el(app, 'rc-filter-new').style.display + ' ' + el(app, 'rc-filter-new').textContent);
+    }
+
+    // It shows exactly the conversations with something in them, and it
+    // is never written down: a reload into a filter that has emptied is
+    // a list with no way out.
+    el(app, 'rc-filter-new').fire('click');
+    const onlyNew = el(app, 'rc-to-pick').innerHTML;
+    let saved = null;
+    try { saved = JSON.parse(app.store['view.json']); } catch (e) { saved = null; }
+    // Bert has something to say; Carol does not. The mailbox row is
+    // there only because it is the one selected, which is the rule that
+    // stops a filter changing who you are writing to.
+    if (/•\s*bert/.test(onlyNew) && onlyNew.indexOf(CAROL) === -1 && saved && saved.filter !== 'new') {
+      test.check('New lists what is unread, leaves out what is not, and is not remembered');
+    } else {
+      test.fail('new filter: ' + onlyNew + ' saved ' + JSON.stringify(saved && saved.filter));
     }
 
     el(app, 'rc-filter-all').fire('click');
@@ -875,6 +921,57 @@ function mailArrivesOnTheRow() {
       } else {
         test.fail('marks left: ' + app.doc.title + ' ' + el(app, 'rc-to-pick').innerHTML);
       }
+
+      // Nothing unread, nothing to press: the button leaves the page
+      // rather than sitting there reading "New 0".
+      if (el(app, 'rc-filter-new').style.display === 'none') {
+        test.check('and the New button goes with it');
+      } else {
+        test.fail('New button still shown: ' + el(app, 'rc-filter-new').textContent);
+      }
+    });
+  });
+}
+
+// Reading the last unread while standing in New: the filter has nothing
+// left to mean, so it snaps back to whichever real one was showing.
+function newFilterSnapsBack() {
+  test.subHeading('New is a place to stand, not a place to be left');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const ME = 'MCowBQYDK2VwAyEAandyandyandyandyandyandyandyandyandya=';
+  const store = {
+    'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
+    'view.json': JSON.stringify({ toKey: '', filter: 'all', lastSeen: {} }),
+  };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false }],
+    messages: [{
+      id: '21', from: 'bert', to: 'andy', fromKey: BERT, toKey: ME,
+      text: 'one thing', sentAt: '2026-09-08T10:00:00.000Z',
+    }],
+  });
+
+  return settle().then(function () {
+    el(app, 'rc-filter-new').fire('click');
+    el(app, 'rc-to-pick').value = BERT;
+    el(app, 'rc-to-pick').fire('change');
+
+    return settle().then(function () {
+      let saved = null;
+      try { saved = JSON.parse(app.store['view.json']); } catch (e) { saved = null; }
+      if (saved && saved.filter === 'all') {
+        test.check('reading the last one returns the filter it was pressed from');
+      } else {
+        test.fail('filter after snap-back: ' + JSON.stringify(saved && saved.filter));
+      }
+
+      if (el(app, 'rc-to-pick').value === BERT) {
+        test.check('and the conversation stays open through it');
+      } else {
+        test.fail('selection lost: ' + el(app, 'rc-to-pick').value);
+      }
     });
   });
 }
@@ -891,6 +988,7 @@ claimBinds()
   .then(unreadDots)
   .then(unboundChrome)
   .then(mailArrivesOnTheRow)
+  .then(newFilterSnapsBack)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('chat 1 threw: ' + ((err && err.stack) || err));

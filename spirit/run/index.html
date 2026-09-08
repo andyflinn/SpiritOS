@@ -377,6 +377,24 @@
          longest option. */
       .rc-wide { width: 100%; margin-bottom: 10px; }
 
+      /* What an unbound node has to read. It is not a footnote to a page
+         of controls — while this shows, it IS the page, so it is set at
+         reading size rather than at the 12px of .job-manifest-note. It
+         shares the claim tile rather than owning one of its own: two
+         bubbles of different widths read as two unrelated things. */
+      #rc-unbound {
+        font-size: 16px;
+        line-height: 1.55;
+        margin-bottom: 12px;
+      }
+
+      #rc-claim-fields {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+      }
+
       /* Present, not shouting: one line until it is wanted. */
       #rc-invite-panel > summary {
         cursor: pointer;
