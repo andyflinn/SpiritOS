@@ -26,6 +26,62 @@
   // dataset this project is building toward (see preferences.json in
   // .gitignore), not ordinary app config — hence root-level, not
   // app-scoped.
+  // ---- First run ----
+  //
+  // A clone ships pointed at one public mailbox and nothing else, so
+  // until this node has claimed a name there is exactly one thing it can
+  // do. A desktop of apps that all need a mailbox is a menu of dead
+  // ends; showing one icon is the whole instruction.
+  //
+  // "Bound" is readNodeLabel() below — the same accessor the window
+  // title uses, so the two can never disagree about whether this node
+  // has a name.
+  var RELAY_CHAT_ID = 'app/relayChat';
+  var NATTER_ID = 'app/natter';
+
+  // The escape hatch. With no mailbox listed, Relay Chat's own copy says
+  // "open Natter and add one" — and a first run that hides Natter would
+  // be a screen telling you to open an app that is not there, with a
+  // text editor as the only way out.
+  function natterHasUrl() {
+    try {
+      var raw = spirit.core.fs.loadFile('app/natter/relays.json');
+      if (raw == null) return false;
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) && parsed.some(function (row) { return row && row.url; });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Whether the first-run rule applies at all.
+  //
+  // Fails OPEN, deliberately: Relay Chat is a discovered app, not an
+  // intrinsic one, so it does not exist until the fs-watcher snapshot
+  // arrives. Gating before then would paint an empty desktop — and if
+  // that snapshot never came, an empty desktop with no way out. Better a
+  // moment of the full desktop that then collapses to one icon than a
+  // node with nothing on it.
+  function firstRun() {
+    if (readNodeLabel()) return false;
+    return !!apps[RELAY_CHAT_ID];
+  }
+
+  // One rule, asked by everything that lists apps — the desktop, the
+  // Apps manager and the Spirit grid — rather than three id lists that
+  // drift apart. Hidden here means not SHOWN: every app stays
+  // registered, and launchApp by id keeps working, which is what viewers
+  // and app-to-app jumps depend on.
+  function shownOnFirstRun(id) {
+    if (id === RELAY_CHAT_ID) return true;
+    if (id === NATTER_ID && !natterHasUrl()) return true;
+    return false;
+  }
+
+  function hiddenByFirstRun(id) {
+    return firstRun() && !shownOnFirstRun(id);
+  }
+
   // ---- The window title ----
   //
   // The browser tab is the only place that says WHICH node you are
@@ -464,6 +520,7 @@
     Object.keys(apps).forEach(function (id) {
       var app = apps[id];
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
+      if (hiddenByFirstRun(id)) return; // an unbound node has one thing to do
       // An intrinsic app is excluded here like any other grouped app —
       // effectiveGroup returns Spirit for it, and that is where its icon
       // is, one tap from the desktop and never at the operator's mercy.
@@ -478,7 +535,10 @@
   // resolving name/icon overrides through effectiveName()/effectiveIcon(),
   // same as the real icon rendering. The data behind the Apps list screen.
   function listApps() {
-    return Object.keys(apps).filter(function (id) { return !apps[id]._isGroup; }).map(function (id) {
+    return Object.keys(apps)
+      .filter(function (id) { return !apps[id]._isGroup; })
+      .filter(function (id) { return !hiddenByFirstRun(id); })
+      .map(function (id) {
       var app = apps[id];
       return {
         id: app.id,
@@ -512,7 +572,10 @@
   function renderAppGroup(container, appIds) {
     container.innerHTML = '';
     var drawn = Object.create(null);
-    appIds.forEach(function (id) {
+    // Filtered here rather than where the member list is written, so
+    // index.html keeps the one list of ids and this stays the one rule
+    // about showing them.
+    appIds.filter(function (id) { return !hiddenByFirstRun(id); }).forEach(function (id) {
       if (!apps[id] || drawn[id]) return;
       drawn[id] = true;
       container.appendChild(buildAppIcon(id));
@@ -848,6 +911,22 @@
       // knows that shape (readNodeLabel above), and an app that needs to
       // ask its mailbox a signed question needs the name it signs as.
       nodeLabel: function () { return readNodeLabel(); },
+
+      // "That file changed" — said by the app that changed it. Claiming
+      // a name is what turns a first-run node into an ordinary one, and
+      // losing it turns it back, so both the title and the app list have
+      // to be repainted at that moment.
+      //
+      // Told rather than noticed: writing session.json does happen to
+      // move the fs-watcher's file list, and the snapshot that follows
+      // would repaint the desktop — but only because the file is NEW,
+      // and only while that watcher is alive. A claim is not the place
+      // to depend on either.
+      nodeLabelChanged: function () {
+        nodeLabel = '';
+        paintWindowTitle(activeAppId && apps[activeAppId] ? apps[activeAppId].name : '');
+        renderDesktop();
+      },
     };
     if (app._scriptPath) {
       var folder = app._scriptPath.match(/^app\/([^/]+)\//)[1];

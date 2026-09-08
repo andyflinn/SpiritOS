@@ -401,7 +401,13 @@ spirit.shell.activateApp({
       api.fs.saveFile(RC_SESSION_FILE, JSON.stringify({
         label: label,
         boundAt: new Date().toISOString(),
-      }, null, 2)).catch(function (e) {
+      }, null, 2)).then(function () {
+        // A node with no name has one thing it can do, and the shell
+        // shows only this app while that is true (firstRun in shell.js).
+        // Claiming ends that, so the shell is told rather than left to
+        // notice the file.
+        if (typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
+      }).catch(function (e) {
         setStatus('could not remember this name: ' + e.message);
       });
     }
@@ -413,6 +419,10 @@ spirit.shell.activateApp({
       document.getElementById('rc-invite-slot').innerHTML = '';
       paintTitle();
       api.fs.deleteFile(RC_SESSION_FILE);
+      // Symmetrical, and abrupt on purpose: a node that is no longer on
+      // the mailbox goes back to first run, even if somebody was looking
+      // at Stats when the mailbox stopped recognising it.
+      if (typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
     }
 
     // Reload path. The stored label is only a question; the mailbox

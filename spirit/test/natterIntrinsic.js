@@ -25,6 +25,12 @@ const spirit = require('../run/js/kernel.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const NATTER_SCRIPT = 'app/natter/natter.js';
+
+// A node that has claimed a name, which is the ordinary shell. Said
+// explicitly by every fixture that is not about first run: an unbound
+// node shows one app, so a test of app management on one would be
+// inspecting a screen that deliberately has nothing on it.
+const BOUND = 'andy';
 const NATTER_MANIFEST = 'app/natter/natter.json';
 
 function readRun(rel) {
@@ -85,7 +91,7 @@ function fakeDocument() {
 // discovery and pruneStalePreferences have not run yet. That is the slot
 // migrateAppIds occupies in production, and the only way to exercise the
 // ordering from outside.
-function bootShell(preferences, appScripts, deferSnapshot, sessionLabel) {
+function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysRaw) {
   const doc = fakeDocument();
   const saved = { preferences: null };
   const subscribers = [];
@@ -106,6 +112,10 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel) {
           if (rel === 'app/relayChat/session.json') {
             return sessionLabel ? JSON.stringify({ label: sessionLabel, boundAt: '2026-09-07T00:00:00.000Z' }) : null;
           }
+          // The shipped seed, unless a test is asking what happens
+          // without one. `null` here means the file is gone, which is
+          // the case the escape hatch exists for.
+          if (rel === 'app/natter/relays.json' && relaysRaw !== undefined) return relaysRaw;
           try { return readRun(rel); } catch (e) { return null; }
         },
         saveFile: function (rel, content) {
@@ -347,7 +357,7 @@ test.subHeading('The shell always draws it');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   const natter = appById(booted, 'app/natter');
   if (natter && natter.intrinsic === true) {
@@ -394,7 +404,7 @@ test.subHeading('And there is no way to take it off');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   const refused = booted.shell.setAppOverride('app/natter', { group: 'none' });
   if (!refused.ok && refused.reason === 'intrinsic-app-group-locked') {
@@ -428,7 +438,7 @@ test.subHeading('And there is no way to take it off');
     defaultHandlers: {},
     appOverrides: { 'app/natter': { group: 'none' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   const staleNatter = appById(stale, 'app/natter');
   if (staleNatter.group === stale.shell.SPIRIT_GROUP_ID && spiritGroupLabels(stale).indexOf('NATter') !== -1) {
@@ -451,7 +461,7 @@ test.subHeading('Name and icon stay as shipped');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   // The lock a built-in has had all along, arriving by a different route:
   // theirs is "no _scriptPath", which stops being true the moment the
@@ -488,7 +498,7 @@ test.subHeading('Name and icon stay as shipped');
     defaultHandlers: {},
     appOverrides: { 'app/natter': { name: 'Mailboxes', icon: '💀' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   const staleNatter = appById(stale, 'app/natter');
   if (staleNatter.name === 'NATter' && staleNatter.icon === spirit.core.const.ICON.GLOBE) {
@@ -580,7 +590,7 @@ test.subHeading('The Spirit grid draws one tile per id');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   function tiles(ids) {
     const grid = fakeElement('div');
@@ -636,7 +646,7 @@ test.subHeading('Spirit is not empty before the first snapshot');
   // that never connects — must still reach Natter, or it cannot be
   // pointed at a mailbox at all. Deferred snapshot is exactly that node.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true);
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true, BOUND);
 
   if (booted.shell.INTRINSIC_APP_FOLDERS.indexOf('natter') !== -1) {
     test.check('natter is on the eager boot list');
@@ -1149,7 +1159,7 @@ test.subHeading('An app that changes id keeps what the operator customised');
     defaultHandlers: { '.md': 'ledger', '.txt': 'app/relayChat' },
     appOverrides: { ledger: { icon: '💀', name: 'Tasks' }, 'app/relayChat': { name: 'Chat' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true);
+  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true, BOUND);
 
   const moved = booted.shell.migrateAppIds({ ledger: 'app/ledger' });
   const prefs = booted.saved.preferences;
@@ -1206,7 +1216,7 @@ test.subHeading('Built-ins are locked by having no folder — until they get one
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   // Registered exactly as index.html registers the five: no script path,
   // no manifest, no intrinsic flag.
@@ -1695,6 +1705,101 @@ test.subHeading('Natter adds a relay on the shared row');
     test.check('and leaves a block of space under itself, before the list');
   } else {
     test.fail('row margin-bottom: ' + value('.start-job-form', 'margin-bottom'));
+  }
+}
+
+test.subHeading('First run: one node, one mailbox, one thing to do');
+
+// A clone ships pointed at one public mailbox. Until this node has
+// claimed a name there is exactly one thing it can do, and a desktop of
+// apps that all need a mailbox is a menu of dead ends.
+{
+  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
+  const scripts = [NATTER_SCRIPT, 'app/relayChat/relayChat.js'];
+
+  // The seed is a check, not a write: a fresh clone already points at
+  // the one public mailbox, so nobody has to type a URL.
+  const seeded = JSON.parse(readRun('app/natter/relays.json'));
+  if (Array.isArray(seeded) && seeded.some(function (row) { return row.url === 'https://spirit.andyflinn.com'; })) {
+    test.check('the repo ships pointed at the public mailbox');
+  } else {
+    test.fail('relays.json: ' + JSON.stringify(seeded));
+  }
+
+  const fresh = bootShell(prefs, scripts);
+  const listed = fresh.shell.listApps().map(function (a) { return a.id; });
+  if (listed.length === 1 && listed[0] === 'app/relayChat') {
+    test.check('an unbound node lists one app');
+  } else {
+    test.fail('unbound list: ' + JSON.stringify(listed));
+  }
+
+  if (desktopLabels(fresh).indexOf('Relay Chat') !== -1 && desktopLabels(fresh).indexOf('Natter') === -1) {
+    test.check('and puts one icon on the desktop');
+  } else {
+    test.fail('unbound desktop: ' + desktopLabels(fresh));
+  }
+
+  // The Spirit grid answers the same rule rather than a second id list.
+  if (spiritGroupLabels(fresh) === '') {
+    test.check('and the Spirit grid is empty rather than a wall of dead ends');
+  } else {
+    test.fail('spirit grid unbound: ' + spiritGroupLabels(fresh));
+  }
+
+  // Hidden means not shown. Everything stays registered, because
+  // launchApp by id is what viewers and app-to-app jumps run on.
+  let opened = false;
+  fresh.shell.registerApp({
+    id: 'app/stats-probe', name: 'Probe', icon: '📊', hidden: true,
+    mount: function () { opened = true; }, render: function () {},
+  });
+  fresh.shell.launchApp('app/stats-probe');
+  if (opened) {
+    test.check('and an app that is not shown can still be launched by id');
+  } else {
+    test.fail('a hidden app could not be launched');
+  }
+
+  // Bound: the shell it has always been.
+  const bound = bootShell(prefs, scripts, false, 'andy');
+  const boundList = bound.shell.listApps().map(function (a) { return a.id; });
+  if (boundList.length > 1 && boundList.indexOf('app/natter') !== -1) {
+    test.check('a claimed name gives back the whole shell');
+  } else {
+    test.fail('bound list: ' + JSON.stringify(boundList));
+  }
+
+  // The escape hatch. With no mailbox listed, Relay Chat's own copy says
+  // "open Natter and add one" — so hiding Natter there would be a screen
+  // telling you to open an app that is not on it.
+  const stranded = bootShell(prefs, scripts, false, '', null);
+  const strandedList = stranded.shell.listApps().map(function (a) { return a.id; });
+  if (strandedList.indexOf('app/relayChat') !== -1 && strandedList.indexOf('app/natter') !== -1 &&
+      strandedList.length === 2) {
+    test.check('with no mailbox listed, Natter comes back so there is a way out');
+  } else {
+    test.fail('stranded list: ' + JSON.stringify(strandedList));
+  }
+
+  // An empty relays.json is the same as none: the file existing is not
+  // the same as a mailbox being listed.
+  const empty = bootShell(prefs, scripts, false, '', '[]');
+  if (empty.shell.listApps().map(function (a) { return a.id; }).indexOf('app/natter') !== -1) {
+    test.check('and an empty list counts as no mailbox at all');
+  } else {
+    test.fail('empty relays.json did not open the hatch');
+  }
+
+  // Fails open: Relay Chat is discovered, not intrinsic, so it does not
+  // exist until the fs-watcher snapshot arrives. Gating before then
+  // would paint an empty desktop — and if the snapshot never came, an
+  // empty desktop with no way out.
+  const early = bootShell(prefs, scripts, true);
+  if (early.shell.listApps().length > 1) {
+    test.check('before the snapshot, nothing is hidden — an empty desktop is worse');
+  } else {
+    test.fail('gated before Relay Chat existed: ' + JSON.stringify(early.shell.listApps().map(function (a) { return a.id; })));
   }
 }
 
