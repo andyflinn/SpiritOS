@@ -591,109 +591,10 @@
         var deleteGroup = spirit.shell.deleteGroup;
 
         // ---- Files app ----
-        var lastFilesJob = null; // reference-equality cache — see mount()/render() below
-
-        function buildTree(files) {
-          var byPath = new Map();
-          files.forEach(function (entry) { byPath.set(entry.fullPath, entry); });
-
-          var roots = [];
-          var childrenByPath = new Map();
-
-          files.forEach(function (entry) {
-            if (byPath.has(entry.parentPath)) {
-              if (!childrenByPath.has(entry.parentPath)) childrenByPath.set(entry.parentPath, []);
-              childrenByPath.get(entry.parentPath).push(entry);
-            } else {
-              roots.push(entry);
-            }
-          });
-
-          return { roots: roots, childrenByPath: childrenByPath };
-        }
-
-        // Which folders were open before the last rebuild, by relative
-        // path. A <details> built fresh is a <details> that is closed, so
-        // without this every genuine change to the tree — one new file
-        // anywhere — costs you every folder you had opened to get where
-        // you were. Read off the DOM rather than kept in a variable: the
-        // DOM is where the user's clicks actually landed.
-        function openTreePaths(treeEl) {
-          var open = new Set();
-          Array.prototype.slice.call(treeEl.querySelectorAll('details[open]')).forEach(function (el) {
-            if (el.dataset.path) open.add(el.dataset.path);
-          });
-          return open;
-        }
-
-        function renderTreeNode(entry, childrenByPath, openPaths) {
-          if (entry.kind === 'folder') {
-            var kids = childrenByPath.get(entry.fullPath) || [];
-            var kidsHtml = kids.map(function (k) { return renderTreeNode(k, childrenByPath, openPaths); }).join('');
-            var isOpen = openPaths && openPaths.has(entry.relativePath);
-            return '<details data-path="' + escapeHtml(entry.relativePath) + '"' + (isOpen ? ' open' : '') + '>' +
-              '<summary>' + ICON.FOLDER + ' ' + escapeHtml(entry.name) + '</summary>' +
-              '<div class="tree-children">' + kidsHtml + '</div></details>';
-          }
-
-          var mimeType = mimeTypeForName(entry.name);
-          return '<div class="file-row" data-name="' + escapeHtml(entry.name) + '" data-path="' +
-            escapeHtml(entry.relativePath) + '" data-mime="' + escapeHtml(mimeType) + '">' +
-            iconForFile(mimeType) + ' ' + escapeHtml(entry.name) + '</div>';
-        }
-
-        function showFileDetail(name, path, mimeType) {
-          var detailEl = document.getElementById('file-detail');
-          if (!detailEl) return;
-          detailEl.innerHTML = '<div class="stat-tile wide">' +
-            '<div class="label">Name</div><div class="rows">' + escapeHtml(name) + '</div>' +
-            '<div class="label">Path</div><div class="rows">' + escapeHtml(path) + '</div>' +
-            '<div class="label">MIME type</div><div class="rows">' + escapeHtml(mimeType) + '</div>' +
-            '</div>';
-        }
-
-        registerApp({
-          id: 'files',
-          name: 'Files',
-          icon: ICON.FOLDER,
-          mount: function (container, api, params) {
-            // See the Processes app for why this must reset on every fresh
-            // mount, not just persist: mount() always wipes the tree's DOM,
-            // so a stale cache hit from a previous visit would leave it empty.
-            lastFilesJob = null;
-
-            container.innerHTML = '<div id="file-tree"></div><div id="file-detail"></div>';
-            document.getElementById('file-tree').addEventListener('click', function (event) {
-              var row = event.target.closest('.file-row');
-              if (!row) return;
-              var handlerId = CATEGORY_APP_HANDLERS[classifyMimeType(row.dataset.mime)];
-              if (handlerId) {
-                launchApp(handlerId, { path: row.dataset.path });
-                return;
-              }
-              showFileDetail(row.dataset.name, row.dataset.path, row.dataset.mime);
-            });
-          },
-          render: function () {
-            var treeEl = document.getElementById('file-tree');
-            if (!treeEl) return;
-
-            var job = findJobByType('fs-watcher');
-            if (job === lastFilesJob) return; // fs-watcher data unchanged (e.g. an unrelated stats tick) — leave the tree (and any collapsed folders) alone
-            lastFilesJob = job;
-
-            if (!job || !job.data || !Array.isArray(job.data.files)) {
-              treeEl.textContent = 'waiting for file list…';
-              return;
-            }
-
-            var openPaths = openTreePaths(treeEl);
-            var tree = buildTree(job.data.files);
-            treeEl.innerHTML = tree.roots.map(function (r) {
-              return renderTreeNode(r, tree.childrenByPath, openPaths);
-            }).join('') || '(empty)';
-          },
-        });
+        // Moved to app/files/files.js + files.json (CLEANUP-PLAN). It is
+        // intrinsic now, so it is declared at boot from its manifest and
+        // its tile lives in the Spirit group; the two launchers below
+        // stay here, and Files opens them through api.launchApp.
 
         // ---- Text File Launcher app ----
         // Only reachable via launchApp('text-file-launcher', { path }) from Files or
@@ -1097,7 +998,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['app/stats', 'app/process-browser', 'app/jobs', 'app/apps', 'group-manager']
+            renderAppGroup(grid, ['app/stats', 'app/process-browser', 'app/jobs', 'app/apps', 'app/files', 'group-manager']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });

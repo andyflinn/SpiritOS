@@ -851,7 +851,7 @@ test.subHeading('Jobs has moved out of index.html');
   const memberIds = spiritMemberIds();
   const known = booted.shell.listApps().map(function (a) { return a.id; });
   const missing = memberIds.filter(function (id) { return known.indexOf(id) === -1; });
-  if (memberIds.length === 5 && missing.length === 0) {
+  if (memberIds.length === 6 && missing.length === 0) {
     test.check('every id in the Spirit member list resolves to a real app');
   } else {
     test.fail('unresolved Spirit members: ' + JSON.stringify(missing) + ' of ' + JSON.stringify(memberIds));
@@ -989,11 +989,11 @@ test.subHeading('Processes has moved out of index.html');
     test.fail('unresolved: ' + JSON.stringify(missing));
   }
 
-  // Four of the five are out; only Files and Groups still register
-  // themselves in index.html.
+  // Five of the five are out; only Groups still registers itself beside
+  // the two viewers and Spirit.
   const stillInline = (html.match(/registerApp\(\{/g) || []).length;
-  if (stillInline === 5) {
-    test.check('five registerApp blocks remain: Files, the two viewers, Groups, and Spirit itself');
+  if (stillInline === 4) {
+    test.check('four registerApp blocks remain: the two viewers, Groups, and Spirit itself');
   } else {
     test.fail('registerApp blocks left in index.html: ' + stillInline);
   }
@@ -1800,6 +1800,106 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
     test.check('before the snapshot, nothing is hidden — an empty desktop is worse');
   } else {
     test.fail('gated before Relay Chat existed: ' + JSON.stringify(early.shell.listApps().map(function (a) { return a.id; })));
+  }
+}
+
+test.subHeading('Files left index.html');
+
+// The fifth of the shell apps to move. Same app, same tree — what
+// changed is where it lives, and everything that names it.
+{
+  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
+  const FILES_SCRIPT = 'app/files/files.js';
+
+  const manifestFiles = manifest('app/files/files.json');
+  if (manifestFiles.intrinsic === true && manifestFiles.owner === 'system' && manifestFiles.name === 'Files') {
+    test.check('it ships a manifest that says intrinsic, and who owns it');
+  } else {
+    test.fail('files.json: ' + JSON.stringify(manifestFiles));
+  }
+
+  // Declared at boot from that manifest, before any snapshot: a node
+  // whose fs-watcher never reports must not lose the file browser.
+  const early = bootShell(prefs, [NATTER_SCRIPT, FILES_SCRIPT], true, BOUND);
+  const declared = early.shell.listApps().filter(function (a) { return a.id === 'app/files'; })[0];
+  if (declared && declared.intrinsic === true) {
+    test.check('and is declared eagerly, with the snapshot still deferred');
+  } else {
+    test.fail('files before the snapshot: ' + JSON.stringify(early.shell.listApps().map(function (a) { return a.id; })));
+  }
+
+  // Declared is not loaded. The script is fetched when somebody opens it.
+  const fetched = early.scripts.map(function (el) { return el.src || ''; });
+  if (!fetched.some(function (src) { return src.indexOf('app/files/files.js') !== -1; })) {
+    test.check('and its script is not fetched until it is opened');
+  } else {
+    test.fail('files.js was loaded at boot: ' + JSON.stringify(fetched));
+  }
+
+  // Intrinsic means the Spirit group, which is where the tile is now —
+  // and off the main desktop, which is the same existing rule rather
+  // than a new one.
+  if (declared.group === 'spirit') {
+    test.check('intrinsic puts it in the Spirit group');
+  } else {
+    test.fail('group: ' + declared.group);
+  }
+  if (desktopLabels(early).indexOf('Files') === -1) {
+    test.check('and therefore off the main desktop');
+  } else {
+    test.fail('Files still has a desktop tile: ' + desktopLabels(early));
+  }
+
+  // Once in the grid, though it is named in the fixed member list AND
+  // reported as intrinsic.
+  const inGrid = (spiritGroupLabels(early).match(/>Files</g) || []).length;
+  if (inGrid === 1) {
+    test.check('and appears in the Spirit grid exactly once');
+  } else {
+    test.fail('Files in the grid ' + inGrid + ' times: ' + spiritGroupLabels(early));
+  }
+
+  // The id moved with the folder, so the map has to carry the operator's
+  // overrides across — the same rule the four earlier moves followed.
+  const carried = bootShell({
+    defaultHandlers: {},
+    appOverrides: { files: { group: 'none' } },
+    groups: {},
+  }, [NATTER_SCRIPT, FILES_SCRIPT], true, BOUND);
+  carried.shell.migrateAppIds();
+  const moved = carried.saved.preferences;
+  if (moved && moved.appOverrides['app/files'] && moved.appOverrides.files === undefined) {
+    test.check('a stored override under the old id follows it to the new one');
+  } else {
+    test.fail('overrides after migrate: ' + JSON.stringify(moved && moved.appOverrides));
+  }
+
+  // Nothing may still name the old id.
+  const statsSrc = readRun('app/stats/stats.js');
+  if (statsSrc.indexOf("'app/files'") !== -1 && statsSrc.indexOf("false, 'files'") === -1 &&
+      statsSrc.indexOf('data-launch-app="files"') === -1) {
+    test.check("and the Stats tiles that open it point at the new id");
+  } else {
+    test.fail('stats still names the old files id');
+  }
+
+  // The two launchers stay where they are — this cycle moved one app.
+  const html = readRun('index.html');
+  if (/id: 'text-file-launcher'/.test(html) && /id: 'media-launcher'/.test(html)) {
+    test.check('the launchers it opens are still registered in index.html');
+  } else {
+    test.fail('a launcher went missing from index.html');
+  }
+
+  // And it opens them through the doorway, not the global.
+  // Through the api handed in at mount — kept as filesApi, because
+  // render() never gets one, which is the same thing Processes does.
+  const filesSrc = readRun('app/files/files.js');
+  if (filesSrc.indexOf('filesApi.launchApp(') !== -1 &&
+      filesSrc.indexOf('spirit.shell.launchApp') === -1) {
+    test.check('and Files opens them through api, not the global launcher');
+  } else {
+    test.fail('files.js reaches for spirit.shell.launchApp');
   }
 }
 

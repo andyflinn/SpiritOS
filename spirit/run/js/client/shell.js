@@ -179,6 +179,7 @@
     jobs: 'app/jobs',
     'app-manager': 'app/apps',
     'process-browser': 'app/process-browser',
+    files: 'app/files',
   };
 
   // Runs at load, which is before any snapshot and therefore before
@@ -1448,7 +1449,7 @@
   // this list cannot promote an app, only hurry one that is already
   // intrinsic. Each of the five adds its line here in the same commit as
   // its move, alongside its APP_ID_RENAMES entry.
-  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps', 'process-browser'];
+  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps', 'process-browser', 'files'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {
