@@ -155,6 +155,32 @@ function unboundIsThePage() {
       test.fail('claim row hidden while unbound');
     }
 
+    // A claim happens ON a mailbox, and the form never said which. The
+    // heading does — there is no URL field and there should not be: the
+    // hub claims on the first Natter row only, so a box offering any
+    // other would be ignored.
+    if (el(app, 'natter-bind-heading').textContent === 'Claim a name on spirit') {
+      test.check('the heading names the mailbox the claim will happen on');
+    } else {
+      test.fail('bind heading: ' + el(app, 'natter-bind-heading').textContent);
+    }
+
+    // And a name, not an invite: the owner of a mailbox claims with no
+    // token at all.
+    if (el(app, 'natter-bind-heading').textContent.indexOf('invite') === -1) {
+      test.check('and calls it a name, because an owner needs no invite');
+    } else {
+      test.fail('heading promises an invite: ' + el(app, 'natter-bind-heading').textContent);
+    }
+
+    // Adding a mailbox is not the first thing a new node does — claiming
+    // a name on the one it ships with is.
+    if (el(app, 'natter-add-row').style.display === 'none') {
+      test.check('and adding a relay is not offered before there is a name');
+    } else {
+      test.fail('add row shown while unbound with a mailbox listed');
+    }
+
     // A different problem, and a different sentence: nothing to claim on
     // yet. Reachable here because this is also the app that adds one.
     const empty = mountApp({ relays: [] });
@@ -164,6 +190,23 @@ function unboundIsThePage() {
         test.check('with no mailbox listed it says so, and offers no name to claim');
       } else {
         test.fail('empty-list copy: ' + copy + ' / fields ' + el(empty, 'natter-bind-fields').style.display);
+      }
+
+      // ...and with nothing listed, adding one IS the first thing, so it
+      // comes back. Hiding the only control that could fix an empty list
+      // would leave the node with no way forward and no way to say so.
+      if (el(empty, 'natter-add-row').style.display !== 'none') {
+        test.check('but with nothing listed it is the only way forward, so it is offered');
+      } else {
+        test.fail('add row hidden with an empty list');
+      }
+
+      // The heading degrades to the step that comes first, rather than
+      // naming a mailbox that is not there.
+      if (/Add a mailbox below/.test(el(empty, 'natter-bind-heading').textContent)) {
+        test.check('and the heading asks for one instead of naming none');
+      } else {
+        test.fail('empty heading: ' + el(empty, 'natter-bind-heading').textContent);
       }
     });
   });
@@ -204,8 +247,14 @@ function claimBinds() {
         test.fail('nodeLabelChanged called ' + app.told() + ' times');
       }
 
+      if (el(app, 'natter-add-row').style.display !== 'none') {
+        test.check('and adding a mailbox becomes available once there is a name');
+      } else {
+        test.fail('add row still hidden after binding');
+      }
+
       if (el(app, 'natter-bind-row').style.display === 'none') {
-        test.check('and the form goes, because claiming is what you do once');
+        test.check('and the claim form goes, because claiming is what you do once');
       } else {
         test.fail('claim row still shown after binding');
       }
@@ -263,53 +312,125 @@ function refusalDoesNotBind() {
   });
 }
 
-function inviteOnlyForAnOwner() {
-  test.subHeading('Minting is offered only where this node owns the mailbox');
+// A click on a row, and a click on the Invite inside it. Both are
+// delegated on the table, so the test hands the handler what the browser
+// would: the element the click landed on, answering closest().
+function rowTarget(url) {
+  const node = { dataset: {}, getAttribute: function () { return null; } };
+  node.closest = function (selector) { return selector === '[data-row-url]' ? node : null; };
+  node.getAttribute = function (name) { return name === 'data-row-url' ? url : null; };
+  return node;
+}
 
-  const friend = mountApp({ label: 'bert', rows: [{ url: 'https://spirit.example', label: 'spirit', owned: false }] });
+function mintTarget(url, fields) {
+  const panel = {
+    querySelector: function (selector) { return fields[selector.replace('.', '')]; },
+  };
+  const node = {
+    parentNode: panel,
+    dataset: {},
+    getAttribute: function (name) { return name === 'data-mint-url' ? url : null; },
+  };
+  node.closest = function (selector) { return selector === '[data-mint-url]' ? node : null; };
+  return node;
+}
+
+function inviteLivesInTheRowItMintsOn() {
+  test.subHeading('Minting happens inside the mailbox it mints on');
+
+  const OWNED = 'https://spirit.example';
+  const friend = mountApp({
+    label: 'bert',
+    rows: [{ url: OWNED, label: 'spirit', owned: false, error: 'not owner' }],
+  });
 
   return settle().then(function () {
-    // Not hidden — not built. A node that owns nothing has no invite
-    // markup at all to find.
-    if (el(friend, 'natter-invite-slot').innerHTML === '') {
-      test.check('a node that owns nothing has no mint panel at all');
+    // Not hidden — not built. A mailbox somebody else owns has no mint
+    // markup at all to find, because the panel returns before it.
+    const tbody = friend.doc.getElementById('natter-tbody');
+    tbody.fire('click', { target: rowTarget(OWNED) });
+    if (tbody.innerHTML.indexOf('natter-inv-go') === -1) {
+      test.check('a mailbox this node does not own offers no mint at all');
     } else {
-      test.fail('friend slot: ' + el(friend, 'natter-invite-slot').innerHTML);
+      test.fail('mint offered on an unowned row: ' + tbody.innerHTML);
     }
 
     const owner = mountApp({
       label: 'andy',
-      ownedUrls: ['https://spirit.example'],
-      rows: [{ url: 'https://spirit.example', label: 'spirit', owned: true }],
+      rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
     });
     return settle().then(function () {
-      const slot = el(owner, 'natter-invite-slot').innerHTML;
-      if (/natter-invite-panel/.test(slot) && /natter-inv-go/.test(slot) && slot.indexOf('natter-inv-pick') === -1) {
-        test.check('an owner gets the panel, and no picker with one mailbox to pick');
+      const rows = owner.doc.getElementById('natter-tbody');
+      rows.fire('click', { target: rowTarget(OWNED) });
+      const panel = rows.innerHTML;
+
+      // In the row's own panel, under what that mailbox reports.
+      if (/natter-inv-go/.test(panel) && /data-mint-url="https:\/\/spirit.example"/.test(panel)) {
+        test.check('an owned row opens onto the mint for that mailbox');
       } else {
-        test.fail('owner slot: ' + slot);
+        test.fail('owned row panel: ' + panel);
       }
 
-      el(owner, 'natter-inv-label').value = 'saint';
-      el(owner, 'natter-inv-days').value = '7';
-      el(owner, 'natter-invite-slot').fire('click', {
-        target: { closest: function (sel) { return sel === '#natter-inv-go' ? {} : null; } },
+      // Two blocks, and the facts are one line rather than four rows:
+      // the row above is the heading, and label-over-value stacked made
+      // a list out of what is one reading.
+      const facts = (panel.match(/natter-fact"/g) || []).length;
+      if (/natter-facts/.test(panel) && facts === 4 && panel.indexOf('file-info-row') === -1) {
+        test.check('and what the mailbox reports is one row of four facts');
+      } else {
+        test.fail('report layout: ' + panel);
+      }
+
+      // The mint is its own tile, so it carries its own space and a row
+      // without one leaves no gap behind.
+      if (/stat-tile wide natter-mint/.test(panel)) {
+        test.check('with the mint as a second block, spaced by itself');
+      } else {
+        test.fail('mint is not its own block: ' + panel);
+      }
+
+      // And it is the one block here that gets a heading: the facts
+      // above are a reading of the row that opened them, but this is a
+      // thing to do. The mark is the shell's own ★ — the same one the
+      // row carries for owning the mailbox.
+      if (panel.indexOf(spirit.core.const.ICON.STAR + ' Invite someone to this relay') !== -1) {
+        test.check('and says what it is, with the mark that means owned');
+      } else {
+        test.fail('mint heading: ' + panel);
+      }
+
+      // And no picker, ever again: the row is which mailbox. A question
+      // nobody has to ask cannot be answered wrongly.
+      if (panel.indexOf('natter-inv-pick') === -1 && panel.indexOf('Mailbox<select') === -1) {
+        test.check('and asks no "which mailbox", because the row already said');
+      } else {
+        test.fail('a picker survived: ' + panel);
+      }
+
+      const out = { textContent: '' };
+      rows.fire('click', {
+        target: mintTarget(OWNED, {
+          'natter-inv-label': { value: 'saint' },
+          'natter-inv-days': { value: '7' },
+          'natter-inv-token': { value: '' },
+          'natter-inv-out': out,
+        }),
       });
 
       return settle().then(function () {
         const mints = owner.log.filter(function (c) { return c.url.indexOf('/api/hub/invite') === 0; });
         const body = mints.length ? JSON.parse(mints[0].body) : null;
-        if (body && body.label === 'saint' && body.days === 7 && body.url === 'https://spirit.example') {
-          test.check('and minting names the mailbox it is minting on');
+        if (body && body.label === 'saint' && body.days === 7 && body.url === OWNED) {
+          test.check('minting names the mailbox whose row it was pressed in');
         } else {
           test.fail('mint body: ' + JSON.stringify(body));
         }
 
         // Printed, not copied: it is read off this screen onto a phone.
-        if (/saint-bernard/.test(el(owner, 'natter-inv-out').textContent)) {
+        if (/saint-bernard/.test(out.textContent)) {
           test.check('and the token the relay stored is shown to be read out');
         } else {
-          test.fail('mint output: ' + el(owner, 'natter-inv-out').textContent);
+          test.fail('mint output: ' + out.textContent);
         }
 
         // The label is remembered so the invited key can be recognised
@@ -320,6 +441,16 @@ function inviteOnlyForAnOwner() {
           test.check('the label is remembered for the census, and the token is not');
         } else {
           test.fail('minted.json: ' + minted);
+        }
+
+        // Closing the row rebuilds the table, so the fields and the
+        // minted token go with it — a rule the old free-floating panel
+        // had to enforce by hand on every toggle.
+        rows.fire('click', { target: rowTarget(OWNED) });
+        if (rows.innerHTML.indexOf('natter-inv-go') === -1) {
+          test.check('and closing the row takes the call with it');
+        } else {
+          test.fail('mint survived the row closing');
         }
       });
     });
@@ -378,7 +509,7 @@ unboundIsThePage()
   .then(claimBinds)
   .then(tokenGoesWithTheName)
   .then(refusalDoesNotBind)
-  .then(inviteOnlyForAnOwner)
+  .then(inviteLivesInTheRowItMintsOn)
   .then(staleBindingIsDropped)
   .then(chatKeepsNoBinding)
   .then(function () { test.reportSuccessFailureCount(); })

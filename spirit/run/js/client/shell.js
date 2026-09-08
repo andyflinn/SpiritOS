@@ -70,6 +70,35 @@
     return firstRun() && !shownOnFirstRun(id);
   }
 
+  // An unbound node does not get a desktop with one icon on it — it gets
+  // the binder, open.
+  //
+  // Natter is intrinsic, so its tile lives in the Spirit group, and the
+  // gate hides Spirit along with everything else. The desktop of an
+  // unbound node is therefore EMPTY: somebody opening 127.0.0.1:65432 on
+  // a fresh clone saw a black page and had nothing to click. Drawing a
+  // tile would mean a second rule about where an intrinsic app's icon
+  // sits, for a tile that vanishes after the first claim; opening the
+  // app needs no icon at all.
+  //
+  // launchApp does the lazy script fetch a click would have done, so
+  // this is the same path by a different trigger.
+  function openBinderIfUnbound() {
+    if (!firstRun()) return;
+    if (activeAppId === NATTER_ID) return; // already there; do not restack
+    launchApp(NATTER_ID);
+  }
+
+  // Back and Home while unbound would land on that same empty desktop.
+  // There is nowhere else to be until this node has a name, so the two
+  // buttons are not drawn — the same rule as every other control that
+  // could not do anything in the state it is offered in.
+  function paintTitlebarChrome() {
+    var nowhereElse = firstRun();
+    if (closeBtn) closeBtn.style.display = nowhereElse ? 'none' : '';
+    if (homeBtn) homeBtn.style.display = nowhereElse ? 'none' : '';
+  }
+
   // ---- The window title ----
   //
   // The browser tab is the only place that says WHICH node you are
@@ -942,6 +971,10 @@
         nodeLabel = '';
         paintWindowTitle(activeAppId && apps[activeAppId] ? apps[activeAppId].name : '');
         renderDesktop();
+        paintTitlebarChrome();
+        // Symmetrical with boot: a node that has just lost its name has
+        // one thing to do again, and the desktop behind it is empty.
+        openBinderIfUnbound();
       },
     };
     if (app._scriptPath) {
@@ -1587,6 +1620,10 @@
   // First paint: the tab says which node this is before anything is
   // opened.
   paintWindowTitle('');
+  paintTitlebarChrome();
+
+  // And on a node with no name, the binder is what "opened" means.
+  openBinderIfUnbound();
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
   spirit.core.jobs.subscribe({

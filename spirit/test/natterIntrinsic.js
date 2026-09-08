@@ -52,6 +52,9 @@ function fakeElement(tag) {
     className: '',
     textContent: '',
     hidden: false,
+    // Real elements have one, and the shell hides chrome with it — the
+    // titlebar's Back and Home while this node has no name.
+    style: {},
     children: [],
     appendChild: function (child) { el.children.push(child); return child; },
     addEventListener: function () {},
@@ -494,7 +497,7 @@ test.subHeading('Name and icon stay as shipped');
   }
 
   const natter = appById(booted, 'app/natter');
-  if (natter.name === 'NATter' && natter.icon === spirit.core.const.ICON.GLOBE) {
+  if (natter.name === 'NATter' && natter.icon === spirit.core.const.ICON[manifest('app/natter/natter.json').icon]) {
     test.check('the shell still reports the shipped name and icon');
   } else {
     test.fail('after refusals: ' + JSON.stringify(natter));
@@ -509,7 +512,7 @@ test.subHeading('Name and icon stay as shipped');
   }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
 
   const staleNatter = appById(stale, 'app/natter');
-  if (staleNatter.name === 'NATter' && staleNatter.icon === spirit.core.const.ICON.GLOBE) {
+  if (staleNatter.name === 'NATter' && staleNatter.icon === spirit.core.const.ICON[manifest('app/natter/natter.json').icon]) {
     test.check('a stored name/icon override is ignored on reload');
   } else {
     test.fail('stale override: ' + JSON.stringify(staleNatter));
@@ -1660,13 +1663,27 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
       return /^[0-9]+px$/.test(decl) ? decl : null;
     }
   }
+  // Space belongs to the block that FOLLOWS it: a block carries the gap
+  // above itself, never below. Then a block that is not on the page
+  // contributes nothing — no trailing margin left hanging where it used
+  // to be, and no :empty rule to cancel one. The panels at the foot of
+  // Relay Chat are .stat-tile details, so one rule spaces every pair of
+  // them and neither has to know what comes next.
   const rhythm = value('#open-with', 'margin-top');
-  const panels = ['#rc-settings-panel', '#rc-add-panel'];
-  const flush = panels.filter(function (selector) { return value(selector, 'margin-bottom') !== rhythm; });
-  if (rhythm !== null && flush.length === 0) {
-    test.check('every folded panel is a block apart from the next, like any other pair');
+  if (rhythm !== null && value('.stat-tile + details.stat-tile', 'margin-top') === rhythm) {
+    test.check('a block takes its space from above, at the same block spacing');
   } else {
-    test.fail('flush against what follows: ' + flush.join(', ') + ' (rhythm ' + rhythm + ')');
+    test.fail('stacked blocks: ' + value('.stat-tile + details.stat-tile', 'margin-top') +
+      ' vs the rhythm ' + rhythm);
+  }
+
+  // And nothing carries it downward any more: a margin-bottom on a panel
+  // is a gap that survives the panel.
+  if (css.indexOf('#rc-add-panel { margin-bottom') === -1 &&
+      css.indexOf('#rc-settings-panel,') === -1) {
+    test.check('and no panel pushes the next one down from behind');
+  } else {
+    test.fail('a panel still carries a trailing margin');
   }
 }
 
@@ -1678,8 +1695,11 @@ test.subHeading('Natter adds a relay on the shared row');
 // with no spacing rules, so a caption, its input and the next caption
 // ran together.
 {
+  // The row is inside its own tile now, under a heading — but it is
+  // still the shared row class doing the laying out, and still the
+  // shared caption-over-input pair.
   const natter = readRun('app/natter/natter.js');
-  if (natter.indexOf('stat-tile wide start-job-form') !== -1 &&
+  if (natter.indexOf("'<div class=\"start-job-form\">'") !== -1 &&
       natter.indexOf('<label class="field-label">Private label') !== -1) {
     test.check('the Add line is the shared row, with the shared caption pairs');
   } else {
@@ -1753,6 +1773,36 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
     test.fail('spirit grid unbound: ' + spiritGroupLabels(fresh));
   }
 
+  // And it is not a desktop with one icon on it — it is that app, open.
+  // Natter is intrinsic, so its tile is in the Spirit group and the gate
+  // hides Spirit with everything else: the desktop of an unbound node is
+  // EMPTY, and somebody opening 127.0.0.1:65432 on a fresh clone saw a
+  // black page with nothing to click.
+  if (desktopLabels(fresh) === '') {
+    test.check('the desktop of an unbound node has nothing on it');
+  } else {
+    test.fail('unbound desktop: ' + desktopLabels(fresh));
+  }
+
+  // The observable is the script fetch, which is the lazy load a click
+  // would have done — the harness cannot execute the injected script, so
+  // the title it would then paint is not visible here.
+  const autoOpened = fresh.scripts.map(function (script) { return script.src || ''; });
+  if (autoOpened.some(function (src) { return src.indexOf('app/natter/natter.js') !== -1; })) {
+    test.check('so the shell opens the binder itself, without being clicked');
+  } else {
+    test.fail('nothing was opened: ' + JSON.stringify(autoOpened));
+  }
+
+  // Back and Home would land on that same empty desktop. There is
+  // nowhere else to be until this node has a name.
+  if (fresh.doc.byId['app-close'].style.display === 'none' &&
+      fresh.doc.byId['app-home'].style.display === 'none') {
+    test.check('and Back and Home are not offered, because there is nowhere else');
+  } else {
+    test.fail('titlebar chrome shown while unbound');
+  }
+
   // Hidden means not shown. Everything stays registered, because
   // launchApp by id is what viewers and app-to-app jumps run on.
   let opened = false;
@@ -1774,6 +1824,16 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
     test.check('a claimed name gives back the whole shell');
   } else {
     test.fail('bound list: ' + JSON.stringify(boundList));
+  }
+
+  // And it opens nothing on its own: a node with a name has a desktop to
+  // choose from, and choosing is the user's.
+  const boundOpened = bound.scripts.map(function (script) { return script.src || ''; });
+  if (!boundOpened.some(function (src) { return src.indexOf('app/natter/natter.js') !== -1; }) &&
+      bound.doc.byId['app-close'].style.display !== 'none') {
+    test.check('a bound node is opened into nothing, and keeps its Back and Home');
+  } else {
+    test.fail('bound boot opened: ' + JSON.stringify(boundOpened));
   }
 
   // No escape hatch needed any more, and that is the point of moving the

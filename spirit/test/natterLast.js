@@ -35,7 +35,14 @@ function browserBadge() {
 // out. Returns its module-level functions so they can be exercised.
 function loadNatter(win) {
   const src = fs.readFileSync(path.join(RUN_DIR, 'app', 'natter', 'natter.js'), 'utf8');
-  const spirit = { shell: { activateApp: function () {} } };
+  // The page always hands an app the kernel's shared halves; this stub
+  // used to give only `shell`, which was enough until the app reached
+  // for a mark (ICON.STAR) at load time.
+  const kernel = require('../run/js/kernel.js');
+  const spirit = {
+    shell: { activateApp: function () {} },
+    core: { const: { ICON: kernel.core.const.ICON }, util: { escapeHtml: kernel.core.util.escapeHtml } },
+  };
   const tail = '\nreturn {' +
     ' canRemove: natterCanRemove,' +
     ' removeAt: natterRemoveAt,' +

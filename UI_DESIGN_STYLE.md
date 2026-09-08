@@ -36,7 +36,11 @@ Match the size, **never the weight**: `#app-title` keeps its 600, or the block b
 
 A row of controls is `.start-job-form`: gapped, wrapping, `align-items: flex-end` so a caption-over-input pair lines its input up with the button beside it, and a block of space beneath it before whatever it feeds. A form does not lay itself out; if a screen needs a row, it uses that class (Natter's Add line, the Jobs start form, the Relay Chat composer and To bar, the AI chat form).
 
-A block that can be empty **collapses its own margin** (`#open-with:empty`). Otherwise absence produces a *bigger* gap than presence, and the emptiest screens get the loosest layout.
+**Space belongs to the block that follows it.** A block carries the gap *above* itself, never below — then a block that is not on the page contributes nothing, and there is no trailing margin left hanging where it used to be. That is what makes the spacing automatic in a stack that grows and shrinks: `.stat-tile + .stat-tile` and its siblings space every pair, and neither block has to know what comes next.
+
+It also retires two hacks that existed only because space was carried downward: `#open-with:empty`, which had to cancel a margin on a block that renders as nothing, and the 12px that sat on the panel *above* Relay Chat's invite slot because the slot is empty for a node that owns no mailbox. The same idea applies across a row: a control takes the gap to its left, so a control that is not drawn takes no space with it.
+
+A block that can still be empty **collapses to nothing** (`#rc-peer-strip:empty { display: none }`), which is the row version of the same rule.
 
 ## 4. One row type, one voice
 

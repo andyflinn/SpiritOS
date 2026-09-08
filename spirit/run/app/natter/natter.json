@@ -1,7 +1,7 @@
 {
   "name": "NATter",
   "description": "Maintains a list of known relay URLs for peer-to-peer connections (Server #3's future public-IP hub nodes).",
-  "icon": "GLOBE",
+  "icon": "BUG",
   "hidden": false,
   "intrinsic": true,
   "owner": "system"

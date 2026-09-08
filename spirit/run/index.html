@@ -477,6 +477,68 @@
          radios reads as part of the title otherwise. */
       #rc-unknown-choices { margin-top: 12px; }
 
+      /* What a mailbox reports, on one line. The row it opened from is
+         the heading, so there is none here — and four label-over-value
+         rows made a list out of what is one reading. Wraps rather than
+         scrolls: on a narrow screen the facts stack, they do not vanish
+         off the side. */
+      .natter-facts { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+      .natter-fact { display: flex; flex-direction: column; }
+      /* Reading size for both halves, the same as a file info row: a
+         caption is not fine print when it is the only thing naming the
+         number above it. Dimmed rather than shrunk, as .file-info-label
+         is. */
+      .natter-fact-value { font-size: 16px; }
+      .natter-fact-label { font-size: 16px; opacity: 0.7; }
+
+      /* Every block inside an expanded row takes its space above,
+         including the FIRST one — a table row sits above it, and a row
+         cannot carry a margin down to it. The td gives the last block
+         the same at the bottom for the same reason: what follows is
+         another row, which has nothing to carry. */
+      .job-log-row > td > .stat-tile { margin-top: 12px; }
+      .job-log-row > td { padding-bottom: 12px; }
+
+      .natter-mint { margin-top: 12px; }
+
+      /* The relay list reads at heading size: these rows are the subject
+         of this app, not a table of records to scan. The shared
+         .jobs-table stays 13px for Jobs, which is a log. */
+      .natter-table th, .natter-table td { font-size: 16px; }
+
+      /* Names the mailbox a claim will happen on, which the form itself
+         cannot ask about — see natterPaintBind. Same weight as the mint
+         heading: both are the title of a thing to do. */
+      .natter-bind-heading { font-size: 16px; margin-bottom: 12px; }
+
+      /* The one heading in that panel: the facts above are a reading of
+         the row that opened them, but this is a thing to do. Reading
+         size, and the same ★ the row carries for owning the mailbox. */
+      .natter-mint-heading { font-size: 16px; margin-bottom: 12px; }
+
+      /* All the labels in this panel read at the same size — the form's
+         captions included. Scoped here rather than changed shell-wide:
+         .field-label is shared with Jobs, Contacts and the claim row,
+         and none of those asked. */
+      .natter-mint .field-label { font-size: 16px; }
+
+      /* ---- Space belongs to the block that follows it ----
+         A block carries the gap ABOVE itself, never below. Then a block
+         that is not on the page contributes nothing: no trailing margin
+         left hanging where it used to be, and no :empty rule to cancel
+         one — the two hacks this replaces (#open-with:empty, and the
+         12px that had to sit on the panel ABOVE the invite slot because
+         the slot is empty for a node that owns no mailbox).
+         The first block in a stack has nothing above it to be separated
+         from, so it takes the space back. */
+      .stat-tile + .stat-tile,
+      .stat-tile + details.stat-tile,
+      details.stat-tile + .stat-tile,
+      details.stat-tile + details.stat-tile,
+      .stat-tile + .jobs-table,
+      .jobs-table + .stat-tile,
+      .jobs-table + details.stat-tile { margin-top: 12px; }
+
       /* A question inside Settings. .stat-tile.nested is already the
          shell's word for a card inside a card (it is what the annotation
          sections use), so a sub-panel needs no look of its own — only
@@ -488,8 +550,8 @@
          else (§3). On each panel rather than the slot below them,
          because the invite slot is empty for a node that owns no mailbox
          and an empty div would still hold its margin. */
-      #rc-settings-panel,
-      #rc-add-panel { margin-bottom: 12px; }
+      /* Both are .stat-tile details, so the rule above already spaces
+         them from whatever precedes them. Nothing to carry downward. */
 
       /* A choice is a button, a name and a sentence. Two columns: the
          button in the first, the name and its explanation stacked in the

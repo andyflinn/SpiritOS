@@ -9,6 +9,10 @@
 // preferences — this is this app's own data, not a shell display setting.
 var RELAYS_FILENAME = 'relays.json';
 
+// The shell's own marks, so ★ here is the same ★ that means "this node
+// owns it" on the row above and in Relay Chat's To list.
+var natterIcon = spirit.core.const.ICON;
+
 // The binding this node has, if it has one: { label, boundAt }. It lives
 // here now (packet 3) because claiming is what this app does — the chat
 // window used to hold both the claim form and the file, and neither was
@@ -20,8 +24,6 @@ var NATTER_SESSION_FILE = 'session.json';
 // What this app is called on the wire when it mints. Nothing to do with
 // packets — mint and claim are hub routes, not messages.
 var natterMyName = '';
-var natterOwnedUrls = [];
-var natterMustPick = false;
 var natterMintedLabels = [];
 
 function natterLoadRelays(api) {
@@ -77,6 +79,14 @@ var natterExpandedUrl = null;
 // Peers by count, not by key. The census names every peer and carries a
 // 48-character key for each; a wall of those is machine detail wearing a
 // person's clothes (UI_DESIGN_STYLE.md §6).
+// What that mailbox says about itself, on one line and under no heading
+// of its own: the row it opened from is the heading, and repeating the
+// mailbox's name inside its own panel would be the app telling you what
+// you just clicked.
+//
+// Four facts, four columns — value at reading size, caption beneath it
+// as fine print. Label-and-value stacked in four rows made a list out of
+// what is really one reading (UI_DESIGN_STYLE.md).
 function natterReportHtml(api, badge) {
   if (!badge) return '<div class="job-log-empty">asking that mailbox…</div>';
   if (!badge.owned) {
@@ -84,16 +94,52 @@ function natterReportHtml(api, badge) {
   }
   var report = badge.report || {};
   var peers = Array.isArray(report.peers) ? report.peers.length : 0;
-  function row(label, value) {
-    return '<div class="file-info-row">' +
-      '<span class="file-info-label">' + api.escapeHtml(label) + '</span>' +
-      '<span>' + api.escapeHtml(String(value)) + '</span>' +
+  function fact(label, value) {
+    return '<div class="natter-fact">' +
+      '<span class="natter-fact-value">' + api.escapeHtml(String(value)) + '</span>' +
+      '<span class="natter-fact-label">' + api.escapeHtml(label) + '</span>' +
       '</div>';
   }
-  return row('Owner', report.owner || '(none)') +
-    row('Mode', report.mode || '(unknown)') +
-    row('Peers', peers) +
-    row('Messages', report.messages == null ? '(unknown)' : report.messages);
+  return '<div class="natter-facts">' +
+    fact('Owner', report.owner || '(none)') +
+    fact('Mode', report.mode || '(unknown)') +
+    fact('Peers', peers) +
+    fact('Messages', report.messages == null ? '(unknown)' : report.messages) +
+    '</div>';
+}
+
+// Minting belongs to the mailbox it mints on, so it lives inside that
+// mailbox's own panel rather than in a bubble at the foot of the app.
+//
+// That is what kills the picker: a mint used to have to ask WHICH owned
+// mailbox, because the form floated free of all of them. Opened from a
+// row, the row is the answer, and a question nobody has to ask cannot be
+// answered wrongly. It also means the fields clear on their own — closing
+// the row rebuilds the table, and the minted token goes with it, which
+// was a rule the old panel had to enforce by hand.
+//
+// Only for a row this node owns: a mailbox somebody else owns has no
+// mint markup at all to find, because natterReportHtml above returns
+// before it.
+function natterMintHtml(api, badge) {
+  if (!badge || !badge.owned) return '';
+  return '<div class="stat-tile wide natter-mint">' +
+    // The one block in this panel that DOES need a heading: the strip
+    // above it is a reading of the mailbox the row already named, but
+    // this is a thing to do, and a form with no title is a form you have
+    // to work out. ★ is the same mark the row carries for owning it.
+    '<div class="natter-mint-heading">' + natterIcon.STAR + ' Invite someone to this relay</div>' +
+    // DICTIONARY.md, "Label (invite)": the public caption the token
+    // unlocks. `saint` is the dictionary's own example, not a person.
+    '<label class="field-label">Public label<input type="text" class="natter-inv-label" placeholder="e.g. saint"></label>' +
+    '<label class="field-label">Days<input type="number" class="natter-inv-days" min="1" max="15" value="7"></label>' +
+    // The token spoken on the phone. Empty means the relay picks hex;
+    // typed, it is signed with the label and the days (cycle A2), so it
+    // is the owner's to say and nobody else's to substitute.
+    '<label class="field-label">Token<input type="text" class="natter-inv-token" placeholder="(optional, spoken)"></label>' +
+    '<button type="button" class="cancel-btn natter-inv-go" data-mint-url="' + api.escapeHtml(badge.url || '') + '">Invite</button>' +
+    '<span class="natter-inv-out"></span>' +
+    '</div>';
 }
 
 function natterRenderList(container, api, relays) {
@@ -128,9 +174,14 @@ function natterRenderList(container, api, relays) {
       '</td>' +
       '</tr>';
     if (!open) return mainRow;
-    return mainRow + '<tr class="job-log-row"><td colspan="3"><div class="stat-tile wide">' +
-      natterReportHtml(api, badge) +
-      '</div></td></tr>';
+    // Two blocks, because they are two thoughts: what this mailbox
+    // reports, and the one thing you can do with it. The second takes
+    // its own space above (UI_DESIGN_STYLE.md), so a row that offers no
+    // mint leaves no gap where one would have been.
+    return mainRow + '<tr class="job-log-row"><td colspan="3">' +
+      '<div class="stat-tile wide">' + natterReportHtml(api, badge) + '</div>' +
+      natterMintHtml(api, badge) +
+      '</td></tr>';
   }).join('');
 }
 
@@ -153,11 +204,8 @@ function natterProbe(api, container, relays) {
       rows.forEach(function (row) {
         if (row && row.url) natterBadgeByUrl[row.url] = row;
       });
-      natterOwnedUrls = (data && data.ownedUrls) || [];
-      natterMustPick = !!(data && data.mustPick);
       natterAcquireInvited(rows);
       natterRenderList(container, api, relays);
-      natterPaintInvite(api, rows);
     })
     .catch(function () { /* a mailbox that cannot be reached is not one this node owns */ });
 }
@@ -186,16 +234,48 @@ function natterPaintBind(api, relays) {
   var row = document.getElementById('natter-bind-row');
   var note = document.getElementById('natter-bind-note');
   var fields = document.getElementById('natter-bind-fields');
+  var heading = document.getElementById('natter-bind-heading');
   if (!row || !note || !fields) return;
 
+  var addRowBound = document.getElementById('natter-add-row');
   if (natterMyName) {
-    // Bound: the claim form is not hidden, it has nothing left to ask.
+    // Bound: the claim form is not hidden, it has nothing left to ask —
+    // and adding a mailbox becomes available, which is what this app is
+    // for once a node has a name.
     row.style.display = 'none';
     note.innerHTML = '';
+    if (addRowBound) addRowBound.style.display = '';
     return;
   }
   row.style.display = '';
   fields.style.display = relays.length ? '' : 'none';
+
+  // Adding a mailbox is not the first thing a new node does — claiming a
+  // name on the one it ships with is. So the Add row waits until this
+  // node is bound.
+  //
+  // Unless there is nothing listed: then adding one IS the first thing,
+  // and hiding the only control that could do it would leave a node
+  // whose relays.json is missing with no way forward and no way to say
+  // so. Same shape as the escape hatch the shell used to need, now that
+  // this app is the one an unbound node is shown.
+  var addRow = document.getElementById('natter-add-row');
+  if (addRow) addRow.style.display = (natterMyName || !relays.length) ? '' : 'none';
+
+  // The heading names the mailbox, because a claim happens ON one and
+  // this form never said which. There is no field for it and there
+  // should not be: the hub claims, sends and reads on the FIRST Natter
+  // row only (loadRelayUrl, hub.js), so a URL box would be a control
+  // whose every other value is silently ignored. When the hub learns to
+  // speak to a chosen mailbox, this line is where the choice goes.
+  //
+  // "a name", not "an invite": the owner of a mailbox claims with no
+  // token at all, and the token field already says it is optional.
+  if (heading) {
+    heading.textContent = relays.length
+      ? 'Claim a name on ' + ((relays[0] && (relays[0].label || relays[0].url)) || 'this relay')
+      : 'Add a mailbox below, then claim a name on it';
+  }
 
   // innerHTML for the one bold sentence. Every character is written in
   // this file — nothing from a mailbox, a peer or a file reaches it — so
@@ -211,54 +291,34 @@ function natterPaintBind(api, relays) {
 // The mint panel, and only for a mailbox this node owns. Not hidden for a
 // friend — not built for them: ownedUrls decides, and a node that owns
 // nothing has no invite markup at all to find.
-function natterPaintInvite(api, rows) {
-  var slot = document.getElementById('natter-invite-slot');
-  if (!slot) return;
-  if (!natterMyName || !natterOwnedUrls.length) {
-    slot.innerHTML = '';
-    return;
-  }
-  var owned = (rows || []).filter(function (row) { return row.owned; });
-  slot.innerHTML =
-    '<details class="stat-tile wide" id="natter-invite-panel">' +
-      '<summary>Invite someone to a relay</summary>' +
-      // DICTIONARY.md, "Label (invite)": the public caption the token
-      // unlocks. `saint` is the dictionary own example, not a person.
-      '<label class="field-label">Public label<input type="text" id="natter-inv-label" placeholder="e.g. saint"></label>' +
-      '<label class="field-label">Days<input type="number" id="natter-inv-days" min="1" max="15" value="7"></label>' +
-      // The token spoken on the phone. Empty means the relay picks hex;
-      // typed, it is signed with the label and the days (cycle A2), so it
-      // is the owner's to say and nobody else's to substitute.
-      '<label class="field-label">Token<input type="text" id="natter-inv-token" placeholder="(optional, spoken)"></label>' +
-      (natterMustPick
-        ? '<label class="field-label">Mailbox<select id="natter-inv-pick">' +
-            owned.map(function (row) {
-              return '<option value="' + api.escapeHtml(row.url) + '">' + api.escapeHtml(row.label) + '</option>';
-            }).join('') +
-          '</select></label>'
-        : '') +
-      '<button type="button" class="cancel-btn" id="natter-inv-go">Invite</button>' +
-      '<span id="natter-inv-out"></span>' +
-    '</details>';
+// One mint, on the mailbox whose row it was pressed in. `url` comes off
+// the button rather than a picker or relays.json[0]: the row is which
+// mailbox, and the hub still checks that URL is one this node lists.
+function natterMint(api, button) {
+  var panel = button.parentNode;
+  function field(cls) { return panel.querySelector('.' + cls); }
+  var out = field('natter-inv-out');
+  var label = field('natter-inv-label').value.trim();
+  var days = Number(field('natter-inv-days').value) || 7;
+  var spoken = field('natter-inv-token').value.trim();
+  var url = button.getAttribute('data-mint-url');
 
-  // Closing the panel ends the call: the minted token stays on screen
-  // after a 201, and whoever opens this next is starting a different
-  // invitation rather than reading the last one. Attached here rather
-  // than delegated, because `toggle` does not bubble.
-  var panel = document.getElementById('natter-invite-panel');
-  if (panel) {
-    panel.addEventListener('toggle', function () {
-      if (panel.open) return;
-      var label = document.getElementById('natter-inv-label');
-      var days = document.getElementById('natter-inv-days');
-      var token = document.getElementById('natter-inv-token');
-      var out = document.getElementById('natter-inv-out');
-      if (label) label.value = '';
-      if (token) token.value = '';
-      if (days) days.value = '7';
-      if (out) out.textContent = '';
-    });
-  }
+  natterPost('/api/hub/invite', {
+    name: natterMyName,
+    label: label,
+    days: days,
+    token: spoken,
+    url: url,
+  }).then(function (r) {
+    var token = '';
+    try { token = JSON.parse(r.text).token || ''; } catch (e) { token = ''; }
+    if (r.status === 201 && token) natterRememberMinted(api, label);
+    // Printed, not copied: it is read off this screen onto a phone. What
+    // is shown is what the relay stored — the typed token when it took
+    // it, hex when the field was empty — never the field, which would
+    // show a token no mailbox has if the mint was refused.
+    out.textContent = (r.status === 201 && token) ? token + '  ->  ' + url : r.status + ' ' + r.text;
+  });
 }
 
 // A label this node minted an invite for. Not the token — that is the
@@ -318,8 +378,6 @@ function natterBind(api, container, relays, label) {
 // recognises goes back to first run.
 function natterUnbind(api, relays) {
   natterMyName = '';
-  natterOwnedUrls = [];
-  natterPaintInvite(api, []);
   api.fs.deleteFile(NATTER_SESSION_FILE);
   if (typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
   natterPaintBind(api, relays);
@@ -359,6 +417,7 @@ spirit.shell.activateApp({
       // First, because on a fresh node this is the whole page: a name on
       // a public mailbox is what everything else waits for.
       '<div class="stat-tile wide" id="natter-bind-row">' +
+        '<div class="natter-bind-heading" id="natter-bind-heading"></div>' +
         '<div id="natter-bind-note"></div>' +
         '<div class="start-job-form" id="natter-bind-fields">' +
           '<label class="field-label">Public label<input type="text" id="natter-name" placeholder="the name peers see"></label>' +
@@ -367,7 +426,9 @@ spirit.shell.activateApp({
         '</div>' +
         '<div class="job-manifest-note" id="natter-bind-status"></div>' +
       '</div>' +
-      '<div class="stat-tile wide start-job-form">' +
+      '<div class="stat-tile wide" id="natter-add-row">' +
+        '<div class="natter-bind-heading">Add a relay this node can use</div>' +
+        '<div class="start-job-form">' +
         // The dictionary's word rather than an example with a person's
         // name in it. This caption is yours, it stays on this node and
         // never goes on the wire — DICTIONARY.md calls that a private
@@ -377,12 +438,10 @@ spirit.shell.activateApp({
         '<label class="field-label">URL<input type="text" id="natter-url" placeholder="https://example.com"></label>' +
         '<button type="button" id="natter-add">Add</button>' +
         '<span id="natter-status"></span>' +
+        '</div>' +
       '</div>' +
-      '<table class="jobs-table"><thead><tr><th>Label</th><th>URL</th><th></th></tr></thead><tbody id="natter-tbody"></tbody></table>' +
-      // Last, and empty until this node owns a mailbox. See
-      // natterPaintInvite: a node that owns nothing has no invite markup
-      // at all to find.
-      '<div id="natter-invite-slot"></div>';
+      '<table class="jobs-table natter-table"><thead><tr><th>Label</th><th>URL</th><th></th></tr></thead><tbody id="natter-tbody"></tbody></table>' +
+      '';
 
     statusEl = document.getElementById('natter-status');
     // A fresh visit starts fully collapsed, like the Jobs table.
@@ -421,58 +480,16 @@ spirit.shell.activateApp({
         });
     });
 
-    // Delegated: the panel is painted and repainted by natterPaintInvite,
-    // so nothing may hold a reference to its button.
-    document.getElementById('natter-invite-slot').addEventListener('click', function (event) {
-      if (!event.target || !event.target.closest) return;
-      if (!event.target.closest('#natter-inv-go')) return;
-      var out = document.getElementById('natter-inv-out');
-      var spoken = document.getElementById('natter-inv-token').value.trim();
-      var picker = document.getElementById('natter-inv-pick');
-      // Never relays.json[0] by habit: with one owned mailbox the node
-      // knows which; with several the human has already said.
-      var url = natterOwnedUrls.length === 1 ? natterOwnedUrls[0] : (picker && picker.value);
-      var mintedLabel = document.getElementById('natter-inv-label').value.trim();
-      natterPost('/api/hub/invite', {
-        name: natterMyName,
-        label: mintedLabel,
-        days: Number(document.getElementById('natter-inv-days').value) || 7,
-        token: spoken,
-        url: url,
-      }).then(function (r) {
-        var token = '';
-        try { token = JSON.parse(r.text).token || ''; } catch (e) { token = ''; }
-        if (r.status === 201 && token) natterRememberMinted(api, mintedLabel);
-        // Printed, not copied: it is read off this screen onto a phone.
-        // What is shown is what the relay stored — the typed token when
-        // it took it, hex when the field was empty — never the field,
-        // which would show a token no mailbox has if the mint failed.
-        out.textContent = (r.status === 201 && token) ? token + '  ->  ' + url : r.status + ' ' + r.text;
-      });
-    });
-
-    document.getElementById('natter-add').addEventListener('click', function () {
-      var labelInput = document.getElementById('natter-label');
-      var urlInput = document.getElementById('natter-url');
-      var label = labelInput.value.trim();
-      var url = urlInput.value.trim();
-      if (!label || !url) {
-        statusEl.textContent = 'both a label and a URL are required';
+    container.querySelector('#natter-tbody').addEventListener('click', function (e) {
+      // Minting, from inside the row it mints on. Answered before the
+      // row toggle below, or pressing Invite would fold the panel it was
+      // pressed in.
+      var mintBtn = e.target.closest && e.target.closest('[data-mint-url]');
+      if (mintBtn) {
+        natterMint(api, mintBtn);
         return;
       }
-      relays.push({ label: label, url: url });
-      api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2)).then(function () {
-        labelInput.value = '';
-        urlInput.value = '';
-        statusEl.textContent = 'saved';
-        natterRenderList(container, api, relays);
-      }).catch(function (err) {
-        relays.pop();
-        statusEl.textContent = 'save failed: ' + err.message;
-      });
-    });
 
-    container.querySelector('#natter-tbody').addEventListener('click', function (e) {
       var indexAttr = e.target.getAttribute('data-remove-index');
 
       // The row opens what its mailbox says — but only where the click
