@@ -7,6 +7,7 @@ const auth = require('./relayAuth');
 const invites = require('./invites');
 const ownerBadge = require('./ownerBadge');
 const whoBook = require('./whoBook');
+const packet = require('./packet');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -319,6 +320,27 @@ function holdFromInbox(rootDir, messages, relayUrl) {
   });
 }
 
+// Every message comes back with what its text turned out to be. A line
+// written before packets existed decodes as legacy, which is how a live
+// mailbox full of plain strings keeps painting as chat; anything that IS
+// an envelope arrives named, so the reader can tell its own traffic from
+// another app's without parsing anything itself.
+//
+// The message is copied rather than edited: `text` stays exactly what the
+// mailbox stored, because that is what was signed.
+function decorateWithPacket(message) {
+  var decoded = packet.decode(message && message.text);
+  var out = {};
+  Object.keys(message || {}).forEach(function (key) { out[key] = message[key]; });
+  out.packet = {
+    legacy: !!decoded.legacy,
+    app: decoded.app,
+    id: decoded.id || null,
+    body: decoded.body,
+  };
+  return out;
+}
+
 function createHub(rootDir) {
   function fail(res, status, msg) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -375,14 +397,37 @@ function createHub(rootDir) {
     });
   }
 
+  // What the app hands in, and what the mailbox gets.
+  //
+  // An app says { app, body }; a caller that has not moved yet says
+  // { text } and is sent exactly as before. The envelope is built here
+  // rather than in the browser so that one place decides what a packet
+  // looks like, and so the size limit is enforced before anything leaves
+  // the machine.
+  function outgoingText(body) {
+    if (body && body.app !== undefined) {
+      return packet.encode(body.app, body.body === undefined ? '' : body.body);
+    }
+    // Legacy caller: a bare string, wired as it always was.
+    return { ok: true, text: String((body && body.text) || '') };
+  }
+
   function handleSend(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
+      var wrapped = outgoingText(body);
+      if (!wrapped.ok) {
+        // Refused here, not at the mailbox: an oversize packet is the
+        // app's mistake, and spending a rate-limited send to be told so
+        // would be this node's.
+        fail(res, 400, wrapped.error);
+        return;
+      }
       withRelay(res, function (url) {
         relayRequest(url, 'POST', '/api/relay/send', signedSend(
           rootDir,
           body && body.from,
           body && body.to,
-          body && body.text
+          wrapped.text
         ))
           .then(function (r) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -489,7 +534,8 @@ function createHub(rootDir) {
           // row or counted in a title by some later change that forgot
           // about this one.
           var split = partitionInbox(rootDir, parsed.messages);
-          var body = { messages: policy === 'acquire' ? parsed.messages : split.known };
+          var kept = policy === 'acquire' ? parsed.messages : split.known;
+          var body = { messages: kept.map(decorateWithPacket) };
           // Hold says how many, never who: a name would be the thing the
           // setting exists to withhold.
           if (policy === 'hold') body.unknown = split.unknown;
@@ -733,4 +779,5 @@ module.exports = {
   partitionInbox: partitionInbox,
   holdFromInbox: holdFromInbox,
   unknownPolicy: unknownPolicy,
+  decorateWithPacket: decorateWithPacket,
 };

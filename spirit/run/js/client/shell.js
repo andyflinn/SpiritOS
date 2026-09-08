@@ -907,6 +907,32 @@
       // For work outside a callback — a timer, a fetch that lands late.
       isVisible: function () { return activeAppId === app.id; },
 
+      // Say something to a peer. `toId` is a public key — labels are for
+      // display and a label is not an identity. `body` is a string or
+      // anything JSON can carry. The node wraps it, signs the send and
+      // routes it; the app never names an HTTP path and never sees a
+      // signature.
+      sendMessagePacket: function (packetApp, toId, body) {
+        return fetch('/api/hub/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: readNodeLabel(),
+            to: toId,
+            app: packetApp,
+            body: body,
+          }),
+        }).then(function (r) {
+          return r.text().then(function (t) { return { status: r.status, text: t }; });
+        });
+      },
+
+      onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },
+
+      // Handing the poll's catch to the shell to route. Temporary seam —
+      // see deliverPackets above.
+      deliverPackets: function (messages) { return deliverPackets(messages); },
+
       // The public label this node claimed, or '' if it has not. The
       // shell reads it for the window title and hands it on rather than
       // letting each app parse another app's session file: one accessor
@@ -1107,6 +1133,50 @@
     if (activeAppId && apps[activeAppId]) {
       apps[activeAppId].render(jobsById, activeParams);
     }
+  }
+
+  // ---- Packets (api.sendMessagePacket / api.onPacket) ----
+  //
+  // One door for every app. An app says who and what; the envelope, the
+  // signature and the route are the node's business
+  // (ARCHITECTURAL-CONCERNS.md). Relay Chat is the only client today,
+  // and the point of the door is that Chess is not a different kind of
+  // thing when it arrives — it is another `app` string.
+  //
+  // The packet name is not the shell app id: an app declares what it is
+  // called on the wire when it subscribes, so a folder can be renamed
+  // without every peer's stored traffic becoming unreadable.
+  var packetHandlers = Object.create(null);
+
+  function onPacketFor(appId, handler) {
+    if (typeof handler !== 'function' || !appId) return function () {};
+    var name = String(appId);
+    (packetHandlers[name] = packetHandlers[name] || []).push(handler);
+    return function off() {
+      packetHandlers[name] = (packetHandlers[name] || []).filter(function (fn) { return fn !== handler; });
+    };
+  }
+
+  // Fan-in, minimal and honest about where it lives. Whoever polls the
+  // mailbox hands the decoded messages here and the shell routes them by
+  // `app`; today that poller is Relay Chat, because the inbox loop is
+  // still its. When the packet layer grows its own poll, this is the
+  // seam that moves and the handlers do not.
+  //
+  // A packet for an app nobody is listening to is DROPPED — not held,
+  // not queued, not announced. There is no hold store yet, and inventing
+  // one quietly would be inventing the part that has to be designed.
+  function deliverPackets(messages) {
+    var routed = [];
+    (Array.isArray(messages) ? messages : []).forEach(function (message) {
+      var info = message && message.packet;
+      if (!info || info.legacy || !info.app) return; // legacy lines belong to whoever polls
+      var listeners = packetHandlers[info.app] || [];
+      if (!listeners.length) return; // nobody home: dropped on purpose
+      routed.push(message);
+      listeners.slice().forEach(function (fn) { fn(info.body, message); });
+    });
+    return routed;
   }
 
   // ---- Subscriptions (api.onFiles / api.onJobs) ----

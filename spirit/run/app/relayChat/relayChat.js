@@ -14,6 +14,12 @@ var RC_SESSION_FILE = 'session.json';
 // offers and what a stored value is checked against.
 var RC_UNKNOWN_CHOICES = ['silent', 'hold', 'acquire'];
 
+// What this app is called on the wire. Not the shell app id and not the
+// folder: a packet names the CONVERSATION KIND, so this app can be
+// renamed or moved without a peer's stored traffic becoming unreadable
+// (ARCHITECTURAL-CONCERNS.md, packet 1).
+var RC_PACKET_APP = 'relay-chat';
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     var myName = '';
@@ -508,9 +514,47 @@ spirit.shell.activateApp({
     // other party has no key (the mailbox itself, a keyless peer) is not
     // written anywhere: `relay` is a caption, and a file named after a
     // caption is a file nothing can read back as a peer.
+    // What a message says, once the envelope is off.
+    //
+    //   a packet for this app  -> its body is the line
+    //   a plain string         -> the line itself; every live mailbox is
+    //                             full of them, and they are chat
+    //   a packet for any other -> not ours. Dropped: no row, no peerfile,
+    //                             no mark. Sitting 2 can hold; holding it
+    //                             today would mean inventing the store
+    //                             that still has to be designed.
+    //
+    // null means "not a chat line", which is the only thing keeping
+    // another app's traffic out of a chat archive.
+    function chatLineFrom(message) {
+      var info = message && message.packet;
+      if (!info) {
+        // Nothing decoded came with it (a send response, an older
+        // shape): read the text the same way the hub would have.
+        var decoded = window.spiritPacket.decode(message && message.text);
+        info = { legacy: decoded.legacy, app: decoded.app, body: decoded.body };
+      }
+      if (info.legacy) return String(info.body == null ? '' : info.body);
+      if (info.app !== RC_PACKET_APP) return null;
+      return typeof info.body === 'string' ? info.body : JSON.stringify(info.body);
+    }
+
+    // The message as the archive should hold it: the chat line, never the
+    // envelope it travelled in. peerfile stays chat-only.
+    function asChatMessage(message) {
+      var line = chatLineFrom(message);
+      if (line === null) return null;
+      var copy = {};
+      Object.keys(message || {}).forEach(function (key) { copy[key] = message[key]; });
+      copy.text = line;
+      return copy;
+    }
+
     function recordMessages(messages, dir) {
       var byPeer = {};
-      (messages || []).forEach(function (m) {
+      (messages || []).forEach(function (raw) {
+        var m = asChatMessage(raw);
+        if (!m) return; // another app's packet is not a line in this thread
         var peerKey = chatLog.peerKeyFor(m, dir, mailboxKey);
         if (!peerKey) return;
         (byPeer[peerKey] = byPeer[peerKey] || []).push(chatLog.entryFor(m, dir));
@@ -644,6 +688,11 @@ spirit.shell.activateApp({
         .then(function (data) {
           unknownWaiting = Number(data && data.unknown) || 0;
           paintHoldLine();
+          // Fan-in: the shell routes anything addressed to another app,
+          // and drops what nobody is listening for. This app's own
+          // packets and the legacy plain lines are recorded below, the
+          // way they always were.
+          if (typeof api.deliverPackets === 'function') api.deliverPackets(data && data.messages);
           // Everything an inbox read returns was RECEIVED by this node:
           // that is what the route is. Direction is never guessed from
           // the sender's name — a note to yourself is sent and received,
@@ -1425,7 +1474,10 @@ spirit.shell.activateApp({
           : 'accept them first, then you can write');
         return;
       }
-      hubPost('/api/hub/send', { from: myName, to: to, text: text }).then(function (r) {
+      // The envelope is the hub's to build; this says who and what.
+      // The mailbox still stores a string in `text`, still signed the
+      // same way, so nothing on spirit-3 has to move for this.
+      hubPost('/api/hub/send', { from: myName, to: to, app: RC_PACKET_APP, body: text }).then(function (r) {
         if (r.status === 201) {
           var msg = null;
           try { msg = JSON.parse(r.text); } catch (e) { msg = null; }
@@ -1452,6 +1504,21 @@ spirit.shell.activateApp({
         refreshInbox();
       });
     });
+
+    // The door, from the receiving side. Nothing routes through it yet
+    // that this app would not have seen anyway — RC still owns the poll,
+    // and hands its catch to the shell to fan out (api.deliverPackets) —
+    // but the handler is where a second client's traffic would go, and
+    // registering it now is what makes the routing real rather than a
+    // shape to be filled in later.
+    if (typeof api.onPacket === 'function') {
+      api.onPacket(RC_PACKET_APP, function () {
+        // Chat lines are recorded by refreshInbox, which sees every
+        // message including the legacy ones this handler never gets.
+        // Nothing to do here yet; the subscription is what claims the
+        // name, and a second app cannot quietly take it.
+      });
+    }
 
     document.getElementById('rc-dnd-toggle').addEventListener('change', function (event) {
       prefs.dnd = !!(event.target && event.target.checked);

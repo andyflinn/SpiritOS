@@ -18,6 +18,10 @@
          filed on this node. Relay Chat holds the files through its own
          scoped api.fs; this only decides names, shapes and merging. -->
     <script src="/js/chatLog.js"></script>
+    <!-- The envelope every app's traffic travels in, inside the mailbox's
+         own `text` field. Isomorphic: the hub wraps with it in node, the
+         apps read it here. -->
+    <script src="/js/packet.js"></script>
     <style>
       * { box-sizing: border-box; }
 

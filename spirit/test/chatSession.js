@@ -25,6 +25,10 @@ const spirit = require('../run/js/kernel.js');
 // stub supplies the real module rather than a lookalike.
 const chatLog = require('../run/js/chatLog.js');
 const peerFile = require('../run/js/peerFile.js');
+// index.html loads this by script tag beside the other two; the app
+// reads envelopes with it, so the stub hands over the real module rather
+// than a lookalike.
+const packet = require('../run/js/packet.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'app', 'relayChat', 'relayChat.js');
@@ -107,7 +111,7 @@ function fakeApi(store, project) {
 // more" — the only two answers the reload path cares about.
 function fakeFetch(log, options) {
   return function (url, init) {
-    log.push({ url: url, method: (init && init.method) || 'GET' });
+    log.push({ url: url, method: (init && init.method) || 'GET', body: init && init.body });
     const body = {
       messages: options.messages || [],
       ownedUrls: options.ownedUrls || [],
@@ -160,7 +164,7 @@ function mountApp(store, options) {
 
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   new Function('spirit', 'document', 'window', 'fetch', 'setInterval', src)(
-    shellSpirit, doc, { spiritChatLog: chatLog, spiritPeerFile: peerFile },
+    shellSpirit, doc, { spiritChatLog: chatLog, spiritPeerFile: peerFile, spiritPacket: packet },
     fakeFetch(log, options || {}), function () { return 0; }
   );
 
@@ -1733,6 +1737,79 @@ function newOpensTheList() {
   });
 }
 
+// Packet 1: what goes out is an envelope, what comes back may be one of
+// three things, and only one of them is a line in this thread.
+function sendsAndReadsPackets() {
+  test.subHeading('Chat is one client of the packet door');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const chess = JSON.stringify({ app: 'chess', v: 1, id: 'g1', body: { move: 'e4' } });
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false, held: false, blocked: false }],
+    messages: [
+      // A line from before packets existed: still mail, still chat.
+      { id: 'm1', from: 'bert', to: 'andy', fromKey: BERT, toKey: 'KEY-ANDY',
+        text: 'sent before packets', sentAt: '2026-09-08T10:00:00.000Z',
+        packet: { legacy: true, app: null, id: null, body: 'sent before packets' } },
+      // This app's own traffic, wrapped.
+      { id: 'm2', from: 'bert', to: 'andy', fromKey: BERT, toKey: 'KEY-ANDY',
+        text: '{"app":"relay-chat","v":1,"id":"p1","body":"and one after"}',
+        sentAt: '2026-09-08T10:01:00.000Z',
+        packet: { legacy: false, app: 'relay-chat', id: 'p1', body: 'and one after' } },
+      // Somebody else's app. Not a chat line, and not this app's to keep.
+      { id: 'm3', from: 'bert', to: 'andy', fromKey: BERT, toKey: 'KEY-ANDY',
+        text: chess, sentAt: '2026-09-08T10:02:00.000Z',
+        packet: { legacy: false, app: 'chess', id: 'g1', body: { move: 'e4' } } },
+    ],
+  });
+
+  return settle().then(function () {
+    el(app, 'rc-to-pick').value = BERT;
+    el(app, 'rc-to-pick').fire('change');
+
+    return settle().then(function () {
+      const thread = el(app, 'rc-thread').innerHTML;
+      if (/sent before packets/.test(thread) && /and one after/.test(thread)) {
+        test.check('a legacy line and a packet line both paint as chat');
+      } else {
+        test.fail('thread: ' + thread);
+      }
+
+      // The one that matters: another app's packet is dropped, not held,
+      // not shown, and above all not filed.
+      if (thread.indexOf('e4') === -1 && thread.indexOf('chess') === -1) {
+        test.check('and another app’s packet is not in the thread');
+      } else {
+        test.fail('chess leaked into the thread: ' + thread);
+      }
+
+      const filed = app.store[chatLog.fileFor(BERT)] || '';
+      if (/and one after/.test(filed) && filed.indexOf('chess') === -1 && filed.indexOf('"app"') === -1) {
+        test.check('the archive holds the line, never the envelope it came in');
+      } else {
+        test.fail('peerfile: ' + filed);
+      }
+
+      // Outbound: the app says who and what, the node wraps it. The
+      // mailbox still receives a string in `text`, which is why nothing
+      // on spirit-3 has to move.
+      el(app, 'rc-text').value = 'a new line';
+      el(app, 'rc-send').fire('click');
+      return settle().then(function () {
+        const send = app.log.filter(function (c) { return c.url.indexOf('/api/hub/send') === 0; }).pop();
+        const body = send && send.body ? JSON.parse(send.body) : null;
+        if (body && body.app === 'relay-chat' && body.body === 'a new line' && body.text === undefined) {
+          test.check('and a send says app and body, not a wire string');
+        } else {
+          test.fail('send body: ' + (send && send.body));
+        }
+      });
+    });
+  });
+}
+
 claimBinds()
   .then(claimRowHidesOnceBound)
   .then(enterSendsExactlyOnce)
@@ -1744,6 +1821,7 @@ claimBinds()
   .then(blockedOffersTheWayBack)
   .then(doNotDisturb)
   .then(newOpensTheList)
+  .then(sendsAndReadsPackets)
   .then(holdLine)
   .then(composerOffersTheMailbox)
   .then(reloadRestores)
