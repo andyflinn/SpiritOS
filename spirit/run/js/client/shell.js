@@ -916,18 +916,14 @@
     var appEntry = apps[id];
     if (!appEntry) return;
 
-    // A dynamically-loaded app's legal scope is its own folder — a
-    // dynamic app's id is already exactly 'app/<its own folder name>'
-    // (see declareDynamicApp), so this is a plain prefix check, no
-    // lookup needed. Never launch one against a file outside that
-    // folder, no matter how the launch was requested — this is the hard
-    // backstop; renderOpenWith (below) additionally never offers such an
-    // app as an option in the first place, so this should normally never
-    // even trigger.
-    if (appEntry._scriptPath && params && params.path && params.path.indexOf(id + '/') !== 0) {
-      console.warn('refusing to launch ' + id + ' against out-of-scope file: ' + params.path);
-      return;
-    }
+    // There was a check here refusing to launch a dynamically-loaded app
+    // against a file outside its own folder. It went with the same rule
+    // in renderOpenWith (above): it was the shell inventing a permission
+    // the server does not impose, on a page where an app can reach
+    // spirit.core.fs directly anyway. Reads are gated by fileServable and
+    // writes by fileWritable, both server-side, both applied to whatever
+    // the app actually asks for — which is where a refusal can mean
+    // something.
 
     var top = navStack[navStack.length - 1];
     if (top.id === id && JSON.stringify(top.params) === JSON.stringify(params)) return; // already here
@@ -1119,15 +1115,25 @@
   // already-current default.
   function renderOpenWith(container, currentAppId, path) {
     var ext = path.substring(path.lastIndexOf('.'));
-    // Every entry here is a dynamically-loaded app (see registerExtensionHandler)
-    // whose id is exactly 'app/<its own folder name>' — never offer one as a
-    // handler for a file that isn't actually inside its own folder, even
-    // though it declared the extension. launchApp has the same check as a
-    // hard backstop; this is what keeps the option from ever appearing here
-    // in the first place.
-    var handlers = (extensionHandlers[ext] || []).filter(function (h) {
-      return path.indexOf(h.id + '/') === 0;
-    });
+    // Every entry here is a dynamically-loaded app that declared this
+    // extension (see registerExtensionHandler), and every one of them is
+    // offered.
+    //
+    // This used to keep only handlers whose own folder the file sat in,
+    // which meant media/dummy.txt — readable by anyone, writable by
+    // anyone, since media is a writable root — could not be opened with
+    // the one app that declares .txt. That prefix was a client-side
+    // stand-in for a capability nobody had published, and it had drifted
+    // stricter than both server gates.
+    //
+    // The server is the only jail. A path in the fs-watcher list has
+    // already passed fileServable, so it is readable by construction; a
+    // save is answered by fileWritable when it is attempted. The page has
+    // no module boundary — an app can call spirit.core.fs itself — so a
+    // rule here protected nothing and only refused working cases. See
+    // AGENT.md: the shell mediates what apps would otherwise contend for,
+    // and does not invent permissions the server does not impose.
+    var handlers = (extensionHandlers[ext] || []).slice();
     // currentAppId (always a viewer) is never itself in
     // extensionHandlers, so even a single real handler is a genuine
     // alternative to the read-only viewer — suppress only when

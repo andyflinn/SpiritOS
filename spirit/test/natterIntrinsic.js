@@ -1396,4 +1396,70 @@ test.subHeading('An app can subscribe, instead of being broadcast at');
   }
 }
 
+test.subHeading('Open with offers what declared the extension');
+
+// Nothing covered this, which is how it broke in silence: clicking a
+// .txt in media/ opened the read-only viewer with no way out of it, even
+// though app/textEditor declares .txt and media is a writable root.
+//
+// renderOpenWith used to keep only handlers whose own folder the file sat
+// in — a client-side stand-in for a capability nobody had published, and
+// stricter than both server gates. The server is the only jail: a path in
+// the file list has already passed fileServable, and a save is answered
+// by fileWritable when it is attempted.
+{
+  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
+  const booted = bootShell(prefs, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, 'andy');
+
+  // The real manifest, so this test fails if textEditor stops declaring
+  // the extension rather than passing against a fixture that agrees with
+  // itself.
+  const declared = manifest('app/textEditor/textEditor.json').handlesExtensions || [];
+  if (declared.indexOf('.txt') !== -1) {
+    test.check('the sample handler declares .txt, as this test assumes');
+  } else {
+    test.fail('textEditor no longer declares .txt: ' + JSON.stringify(declared));
+  }
+
+  // The file Andy clicked.
+  const out = fakeElement('div');
+  booted.shell.renderOpenWith(out, 'text-file-launcher', 'media/dummy.txt');
+  if (out.innerHTML.indexOf('app/textEditor') !== -1 && out.innerHTML.indexOf('open-with-select') !== -1) {
+    test.check('a file outside the handler own folder is still offered to it');
+  } else {
+    test.fail('media/dummy.txt open-with: ' + out.innerHTML);
+  }
+
+  // And the title agrees with the panel. It always asked "Open x?"
+  // whenever anything declared the extension, so while the panel filtered
+  // by folder the two disagreed: the titlebar put a question on screen
+  // that nothing below it could answer.
+  booted.shell.setViewerTitle('media/dummy.txt');
+  if (booted.doc.byId['app-title'].innerHTML.indexOf('Open ') === 0) {
+    test.check('and the titlebar asks the question the panel can answer');
+  } else {
+    test.fail('viewer title: ' + booted.doc.byId['app-title'].innerHTML);
+  }
+
+  // The app own folder was never the problem, and still works.
+  const inside = fakeElement('div');
+  booted.shell.renderOpenWith(inside, 'text-file-launcher', 'app/textEditor/notes.txt');
+  if (inside.innerHTML.indexOf('app/textEditor') !== -1) {
+    test.check('and a file inside it is offered exactly as before');
+  } else {
+    test.fail('own-folder open-with: ' + inside.innerHTML);
+  }
+
+  // Nobody declared .png, so there is nothing to offer and no control to
+  // read and dismiss. AGENT.md: do not show chrome that cannot do
+  // anything in that state.
+  const none = fakeElement('div');
+  booted.shell.renderOpenWith(none, 'media-launcher', 'media/001.jpg');
+  if (none.innerHTML === '') {
+    test.check('an extension nobody handles gets no control at all');
+  } else {
+    test.fail('unhandled extension offered: ' + none.innerHTML);
+  }
+}
+
 test.reportSuccessFailureCount();
