@@ -171,4 +171,42 @@ test.startTest('Identity vs perception (sticks and stones)');
   }
 }
 
+test.subHeading('Knowing somebody, and merely seeing them');
+
+{
+  const annie2 = tmpHome();
+  const seen = auth.generateIdentity('stranger').publicKey;
+  const wrote = auth.generateIdentity('bert').publicKey;
+
+  whoBook.handshake(annie2, { publicKey: seen, publicLabel: 'stranger' });
+  whoBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bert' }, 'message');
+
+  const known = whoBook.contacts(annie2).map(function (r) { return r.publicKey; });
+  if (known.length === 1 && known[0] === wrote) {
+    test.check('a census row is not a contact; a message is');
+  } else {
+    test.fail('contacts: ' + JSON.stringify(known));
+  }
+
+  // Every row written before the field is exactly what a census row is,
+  // so it reads as one without anything being migrated.
+  if (whoBook.acquiredVia({ publicKey: 'x', publicLabel: 'old' }) === 'census') {
+    test.check('a row with no acquiredVia reads as census');
+  } else {
+    test.fail('a fieldless row was treated as acquired');
+  }
+
+  // Perception is still the caption and never the identity: renaming a
+  // contact does not change what the mailbox calls them, and seeing them
+  // again in a census does not unknow them.
+  whoBook.setMyLabel(annie2, wrote, 'bertie');
+  whoBook.handshake(annie2, { publicKey: wrote, publicLabel: 'bertram' });
+  const row = whoBook.byPublicKey(annie2, wrote);
+  if (row.myLabel === 'bertie' && row.publicLabel === 'bertram' && whoBook.acquiredVia(row) === 'message') {
+    test.check('a census sync corrects the public label and leaves the rest alone');
+  } else {
+    test.fail('after sync: ' + JSON.stringify(row));
+  }
+}
+
 test.reportSuccessFailureCount();

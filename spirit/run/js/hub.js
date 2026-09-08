@@ -96,56 +96,94 @@ function relayRequest(relayUrl, method, pathname, bodyObj) {
   });
 }
 
-// The people list behind Relay Chat's To control (CYCLE-CHAT-2.md).
+// The people list behind Relay Chat's To control (CYCLE-CONTACTS-IMPL).
 //
-// A peer is a KEY. The mailbox's `who` hands back one row per key, so two
-// johns are two rows here and stay two rows on screen — the thing a typed
-// name cannot express, and the reason To stops being only a text box.
+// CONTACTS, not the census. Everyone who ever claimed on a public
+// mailbox is in `who`; that is a fact about the mailbox, not an address
+// book, and a To list built from it means "everyone who exists" — which
+// is how a friend picks a stranger's john. So the list is whoBook rows
+// this node actually acquired: somebody wrote to it, or consumed an
+// invite it minted, or a human confirmed the key out of band.
 //
-// Every peer is handshaken into whoBook on the way past, which is what
-// makes the caption yours: myLabel if this node has one for that key,
-// otherwise the label the mailbox shows. whoBook is never uploaded, so
-// the caption is perception and the key is identity.
+// A peer is a KEY. Two johns are two contacts and stay two rows; the
+// caption is this node's own (myLabel where it has one) and never
+// decides identity.
 //
-// When two rows would read the same — two johns, neither renamed yet —
-// the caption carries a short piece of the key. A select with two
-// identical options is a control nobody can use, and the disambiguation
-// belongs where the collision is visible rather than in the app.
-//
-// The piece is the TAIL. These are Ed25519 public keys in base64 SPKI,
-// and every one of them starts "MCowBQYDK2VwAyEA" — the ASN.1 header,
-// identical for every key on every mailbox. A fragment taken from the
-// front would have distinguished nothing, which is exactly what
-// chatPeople.js caught.
+// The census is still walked, because it is what keeps a contact's
+// public caption and its routes current — but handshake only ever
+// updates, never promotes. Nobody enters the To list by appearing on a
+// mailbox.
 function buildPeople(rootDir, peers, relayUrl) {
-  var rows = (Array.isArray(peers) ? peers : [])
+  var census = Object.create(null);
+  (Array.isArray(peers) ? peers : [])
     .filter(function (p) { return p && p.publicKey; })
-    .map(function (p) {
+    .forEach(function (p) {
       whoBook.handshake(rootDir, {
         publicKey: p.publicKey,
         publicLabel: p.publicLabel || p.name || '',
         relay: relayUrl,
       });
+      census[p.publicKey] = p;
+    });
+
+  var id = auth.loadIdentity(rootDir);
+  var myKey = (id && id.publicKey) || '';
+
+  var rows = whoBook.contacts(rootDir)
+    // No self row. Claiming a name is not meeting somebody, and a list
+    // of people to write to that opens with yourself reads as a mistake.
+    .filter(function (row) { return row.publicKey !== myKey; })
+    .map(function (row) {
+      var seen = census[row.publicKey];
       return {
-        publicKey: p.publicKey,
-        publicLabel: p.publicLabel || p.name || '',
-        caption: whoBook.labelForKey(rootDir, p.publicKey, p.publicLabel || p.name || ''),
-        owner: !!p.owner,
+        publicKey: row.publicKey,
+        publicLabel: (seen && (seen.publicLabel || seen.name)) || row.publicLabel || '',
+        caption: whoBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
+        acquiredVia: whoBook.acquiredVia(row),
+        // Whether this contact is on the mailbox this node is pointed at
+        // right now. A contact you acquired elsewhere is still a contact;
+        // it just has nowhere to be written to from here.
+        onMailbox: !!seen,
+        owner: !!(seen && seen.owner),
       };
     });
 
-  var seen = Object.create(null);
-  rows.forEach(function (r) { seen[r.caption] = (seen[r.caption] || 0) + 1; });
+  // When two rows would read the same — two johns, neither renamed yet —
+  // the caption carries a piece of the key. The TAIL: every Ed25519 SPKI
+  // key opens with the same ASN.1 header, so a fragment from the front
+  // would distinguish nothing.
+  var seenCaption = Object.create(null);
+  rows.forEach(function (r) { seenCaption[r.caption] = (seenCaption[r.caption] || 0) + 1; });
   rows.forEach(function (r) {
-    if (seen[r.caption] > 1) {
+    if (seenCaption[r.caption] > 1) {
       r.caption = r.caption + ' (' + String(r.publicKey).slice(-6) + ')';
       r.ambiguous = true;
     }
   });
 
-  var id = auth.loadIdentity(rootDir);
-  rows.forEach(function (r) { r.mine = !!(id && id.publicKey && r.publicKey === id.publicKey); });
+  rows.sort(function (a, b) { return String(a.caption).localeCompare(String(b.caption)); });
   return rows;
+}
+
+// Somebody wrote to this node, and the mailbox carried their key. That
+// is how a stranger becomes someone you can answer.
+//
+// Weak on purpose: anyone the mailbox admits can write, so this proves a
+// key exists and is reachable, not that it belongs to the person you
+// think. It is enough to reply to, and Add-by-handle (cut 2) upgrades
+// the same row rather than making a second one. It never downgrades a
+// row acquired more strongly, and it never files this node's own key.
+function acquireFromInbox(rootDir, messages, relayUrl) {
+  var id = auth.loadIdentity(rootDir);
+  var myKey = (id && id.publicKey) || '';
+  (Array.isArray(messages) ? messages : []).forEach(function (m) {
+    if (!m || !m.fromKey || m.fromKey === myKey) return;
+    whoBook.acquire(rootDir, {
+      publicKey: m.fromKey,
+      publicLabel: m.from || '',
+      relay: relayUrl,
+    }, 'message');
+  });
 }
 
 function createHub(rootDir) {
@@ -283,6 +321,17 @@ function createHub(rootDir) {
       }
       relayRequest(url, 'GET', '/api/relay/inbox' + query, null)
         .then(function (r) {
+          // Reading your mail is also how you come to know who wrote it.
+          // Done here rather than in the app: it is a fact about this
+          // node's address book, and the browser is a view of it.
+          if (r.status === 200) {
+            var parsed = null;
+            try { parsed = JSON.parse(r.text); }
+            catch (e) { parsed = null; }
+            if (parsed && Array.isArray(parsed.messages)) {
+              acquireFromInbox(rootDir, parsed.messages, url);
+            }
+          }
           res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(r.text);
         })
@@ -290,11 +339,6 @@ function createHub(rootDir) {
     });
   }
 
-  // Status is now asked of every Natter row, not just the first, because
-  // this is where the owner badge comes from: a signed 200 with a report
-  // on that URL. The answer is per row — owned, not owned, unreachable —
-  // and the caller is told which rows carry the badge and whether it has
-  // to ask the human to pick between them.
   // GET /api/hub/who — the mailbox's peers, captioned by this node.
   // Unsigned, like the relay route it forwards: `who` is public on the
   // mailbox (isRelayPublicPath, server.js), and the captions it comes
@@ -365,4 +409,4 @@ function createHub(rootDir) {
   };
 }
 
-module.exports = { createHub: createHub, buildPeople: buildPeople };
+module.exports = { createHub: createHub, buildPeople: buildPeople, acquireFromInbox: acquireFromInbox };

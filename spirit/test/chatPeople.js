@@ -1,18 +1,23 @@
 'use strict';
 
-// Chat 2 — the To control is a list of people (CYCLE-CHAT-2.md).
+// Contacts — the To control lists people this node ACQUIRED
+// (CYCLE-CONTACTS-IMPL.md, replacing chat 2's "To is the census").
 //
-// A person is a KEY. The mailbox's `who` returns one row per key, so two
-// johns are two rows and stay two rows: the thing a typed name cannot
-// express, and the whole reason To stops being only a text box.
+// A mailbox census is not an address book. Everyone who ever claimed on
+// a public relay is in `who`, and a To list built from it means
+// "everyone who exists" — which is how a friend picks a stranger's john.
+// So a whoBook row carries how it arrived, and only some ways count:
 //
-// The caption is this node's own: whoBook's myLabel when it has one for
-// that key, otherwise the label the mailbox shows. whoBook is never
-// uploaded, so the caption is perception and the key is identity.
+//   census  — seen in `who`. Not a contact. Also what a row with no
+//             field at all is, since that is exactly what those were.
+//   message — they wrote to you and the mailbox carried their key.
+//   invite  — a token this node minted was consumed by that key.
+//   handle  — confirmed out of band (cut 2, not this sitting).
 //
-// The last section runs the real hub against a throwaway relay on
-// loopback, because "picking a row sends to that key" is a claim about
-// what actually crosses the wire.
+// A person is still a KEY: two johns are two contacts, two rows, two
+// captions. The last section runs the real hub against a throwaway relay
+// on loopback, because "reading your mail is how you come to know who
+// wrote it" is a claim about what happens on a fetch.
 
 const fs = require('fs');
 const os = require('os');
@@ -23,10 +28,12 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
 const { createRelay } = require('../run/js/relay');
-const { createHub, buildPeople } = require('../run/js/hub');
+const { createHub, buildPeople, acquireFromInbox } = require('../run/js/hub');
+
+const RELAY_URL = 'https://mailbox.example';
 
 function tmpHome(tag) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-chat2-' + tag + '-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-contacts-' + tag + '-'));
 }
 
 function nodeHome(id, urls) {
@@ -39,133 +46,154 @@ function nodeHome(id, urls) {
   return home;
 }
 
-// What /api/relay/who hands back: one row per key, publicLabel and all.
+// What /api/relay/who hands back: one row per key.
 function peer(label, key, owner) {
-  return { name: label, publicLabel: label, publicKey: key, claimedAt: '2026-09-07T00:00:00.000Z', owner: !!owner };
+  return { name: label, publicLabel: label, publicKey: key, claimedAt: '2026-09-08T00:00:00.000Z', owner: !!owner };
 }
 
-test.startTest('Relay Chat — To is a list of people, and a person is a key');
+// What an inbox read hands back: a line, with the sender's key on it.
+function line(id, fromLabel, fromKey, toKey, text) {
+  return {
+    id: String(id), from: fromLabel, to: 'andy',
+    fromKey: fromKey, toKey: toKey, text: text,
+    sentAt: '2026-09-08T10:0' + id + ':00.000Z',
+  };
+}
+
+test.startTest('Contacts — the To list is who this node knows, not who exists');
+
+test.subHeading('A census is not an address book');
 
 {
-  const home = nodeHome(null, ['https://mailbox.example']);
+  const home = nodeHome(null, [RELAY_URL]);
   const johnA = auth.generateIdentity('john').publicKey;
   const johnB = auth.generateIdentity('john').publicKey;
+  const census = [peer('andy', 'KEY-ANDY', true), peer('john', johnA), peer('john', johnB)];
 
-  const people = buildPeople(home, [peer('andy', 'KEY-ANDY', true), peer('john', johnA), peer('john', johnB)], 'https://mailbox.example');
-
-  if (people.length === 3) {
-    test.check('three peers on the mailbox are three rows');
+  const people = buildPeople(home, census, RELAY_URL);
+  if (people.length === 0) {
+    test.check('three peers on the mailbox are nobody in the To list');
   } else {
-    test.fail('rows: ' + JSON.stringify(people));
+    test.fail('census leaked into To: ' + JSON.stringify(people));
   }
 
-  const johns = people.filter(function (p) { return p.publicLabel === 'john'; });
-  if (johns.length === 2 && johns[0].publicKey !== johns[1].publicKey) {
-    test.check('two johns stay two rows, one per key');
-  } else {
-    test.fail('johns: ' + JSON.stringify(johns));
-  }
-
-  // Two rows a human cannot tell apart is a control nobody can use, so a
-  // caption that would collide carries a piece of the key.
-  if (johns[0].caption !== johns[1].caption && johns.every(function (p) { return p.ambiguous; })) {
-    test.check('and their captions differ, because identical options cannot be picked between');
-  } else {
-    test.fail('captions: ' + JSON.stringify(johns.map(function (p) { return p.caption; })));
-  }
-
-  // Every Ed25519 key in base64 SPKI opens with the same ASN.1 header,
-  // so a fragment taken from the front of the key distinguishes nothing.
-  // This is the check that caught it.
-  if (johns[0].publicKey.slice(0, 12) === johns[1].publicKey.slice(0, 12)) {
-    test.check('two different keys really do share a long common prefix');
-  } else {
-    test.fail('keys no longer share a prefix — the tail rule may be pointless now');
-  }
-
-  if (people[0].caption === 'andy' && !people[0].ambiguous) {
-    test.check('an unambiguous caption is left alone');
-  } else {
-    test.fail('andy row: ' + JSON.stringify(people[0]));
-  }
-
-  // Every peer is now in whoBook, keyed by key, with the mailbox it was
-  // seen on — that is what makes the caption this node's to change.
+  // Walked, though: the census is what keeps a caption and its routes
+  // current. It is written down as census, which is the whole difference.
   const book = whoBook.load(home);
-  if (book.length === 3 && book.every(function (r) { return r.relays.indexOf('https://mailbox.example') !== -1; })) {
-    test.check('each peer is handshaken into whoBook with the mailbox it was seen on');
+  if (book.length === 3 && book.every(function (row) { return whoBook.acquiredVia(row) === 'census'; })) {
+    test.check('but they are in whoBook, marked census');
   } else {
-    test.fail('whoBook: ' + JSON.stringify(book));
+    test.fail('whoBook: ' + JSON.stringify(book.map(function (r) { return r.acquiredVia; })));
+  }
+
+  // A row written before the field existed is exactly what a census row
+  // is, so that is how it reads — nothing has to be migrated.
+  const legacy = nodeHome(null, [RELAY_URL]);
+  fs.mkdirSync(path.join(legacy, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(legacy, 'relay-state', 'who.json'), JSON.stringify([
+    { publicKey: johnA, publicLabel: 'john', myLabel: 'john', relays: [] },
+  ]));
+  if (whoBook.contacts(legacy).length === 0 && buildPeople(legacy, [], RELAY_URL).length === 0) {
+    test.check('a row from before the field is a census row, and stays out of To');
+  } else {
+    test.fail('a legacy row was treated as a contact');
   }
 }
 
-test.subHeading('The caption is myLabel when this node has one');
-
-{
-  const home = nodeHome(null, ['https://mailbox.example']);
-  const johnA = auth.generateIdentity('john').publicKey;
-  const johnB = auth.generateIdentity('john').publicKey;
-  const rows = [peer('john', johnA), peer('john', johnB)];
-
-  buildPeople(home, rows, 'https://mailbox.example');
-  whoBook.setMyLabel(home, johnA, 'lovelyJohn');
-  whoBook.setMyLabel(home, johnB, 'otherJohn');
-
-  const people = buildPeople(home, rows, 'https://mailbox.example');
-  const captions = people.map(function (p) { return p.caption; }).sort();
-  if (captions[0] === 'lovelyJohn' && captions[1] === 'otherJohn') {
-    test.check('private captions win over the public label');
-  } else {
-    test.fail('captions: ' + JSON.stringify(captions));
-  }
-
-  if (people.every(function (p) { return !p.ambiguous; })) {
-    test.check('and once they read differently, no key fragment is added');
-  } else {
-    test.fail('still ambiguous: ' + JSON.stringify(people));
-  }
-
-  // The public label is still what the mailbox shows. Renaming is
-  // perception; it must not rewrite what the peer is called on the wire.
-  if (people.every(function (p) { return p.publicLabel === 'john'; })) {
-    test.check('the public label is untouched — myLabel never leaves this node');
-  } else {
-    test.fail('public labels: ' + JSON.stringify(people));
-  }
-
-  // A relabelled peer that comes back from `who` keeps this node's
-  // caption: handshake refreshes publicLabel, never myLabel.
-  const renamed = buildPeople(home, [peer('johnny', johnA)], 'https://mailbox.example');
-  if (renamed[0].caption === 'lovelyJohn' && renamed[0].publicLabel === 'johnny') {
-    test.check('a peer who renames themselves on the mailbox keeps your caption');
-  } else {
-    test.fail('renamed: ' + JSON.stringify(renamed));
-  }
-}
-
-test.subHeading('Who is me');
+test.subHeading('A message is how a stranger becomes someone you can answer');
 
 {
   const me = auth.generateIdentity('andy');
-  const home = nodeHome(me, ['https://mailbox.example']);
-  const people = buildPeople(home, [peer('andy', me.publicKey, true), peer('bert', 'KEY-BERT')], 'https://mailbox.example');
+  const home = nodeHome(me, [RELAY_URL]);
+  const johnA = auth.generateIdentity('john').publicKey;
+  const johnB = auth.generateIdentity('john').publicKey;
+  const census = [peer('andy', me.publicKey, true), peer('john', johnA), peer('john', johnB)];
 
-  const mine = people.filter(function (p) { return p.mine; });
-  if (mine.length === 1 && mine[0].publicKey === me.publicKey) {
-    test.check('the row carrying this node\'s own key is marked mine');
+  buildPeople(home, census, RELAY_URL); // the census, as any refresh would
+  acquireFromInbox(home, [
+    line(1, 'john', johnA, me.publicKey, 'hello'),
+    line(2, 'john', johnB, me.publicKey, 'also hello'),
+  ], RELAY_URL);
+
+  const people = buildPeople(home, census, RELAY_URL);
+  if (people.length === 2) {
+    test.check('the two who wrote are contacts; the rest of the mailbox is not');
   } else {
-    test.fail('mine: ' + JSON.stringify(people));
+    test.fail('contacts: ' + JSON.stringify(people.map(function (p) { return p.caption; })));
   }
 
-  if (people[0].owner === true && people[1].owner === false) {
-    test.check("and the mailbox's owner flag is carried through");
+  if (people.every(function (p) { return p.acquiredVia === 'message'; })) {
+    test.check('and they carry the weak acquire that they are');
   } else {
-    test.fail('owner flags: ' + JSON.stringify(people));
+    test.fail('acquiredVia: ' + JSON.stringify(people.map(function (p) { return p.acquiredVia; })));
+  }
+
+  // Two johns are two keys and two rows, and a caption that would read
+  // the same carries a piece of the key — the TAIL, since every Ed25519
+  // SPKI key opens with the same ASN.1 header.
+  if (people[0].publicKey !== people[1].publicKey &&
+      people[0].caption !== people[1].caption &&
+      people.every(function (p) { return p.ambiguous; })) {
+    test.check('two johns stay two rows, told apart by key tail');
+  } else {
+    test.fail('johns: ' + JSON.stringify(people));
+  }
+
+  // Claiming a name is not meeting somebody.
+  if (!people.some(function (p) { return p.publicKey === me.publicKey; })) {
+    test.check('and this node is not in its own To list');
+  } else {
+    test.fail('self row present');
+  }
+
+  // A private caption wins, and never leaves this node.
+  whoBook.setMyLabel(home, johnA, 'lovelyJohn');
+  const renamed = buildPeople(home, census, RELAY_URL);
+  const lovely = renamed.filter(function (p) { return p.caption === 'lovelyJohn'; })[0];
+  if (lovely && lovely.publicKey === johnA && lovely.publicLabel === 'john') {
+    test.check('myLabel is the caption; the public label is untouched');
+  } else {
+    test.fail('captions: ' + JSON.stringify(renamed.map(function (p) { return [p.caption, p.publicLabel]; })));
+  }
+}
+
+test.subHeading('Ranks never fall');
+
+{
+  const home = nodeHome(auth.generateIdentity('andy'), [RELAY_URL]);
+  const bert = auth.generateIdentity('bert').publicKey;
+
+  whoBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'handle');
+  acquireFromInbox(home, [line(3, 'bert', bert, 'KEY-ME', 'hi')], RELAY_URL);
+  if (whoBook.acquiredVia(whoBook.byPublicKey(home, bert)) === 'handle') {
+    test.check('a message does not demote a key confirmed out of band');
+  } else {
+    test.fail('downgraded to: ' + whoBook.acquiredVia(whoBook.byPublicKey(home, bert)));
+  }
+
+  // A census sync corrects the public caption of somebody you know, and
+  // does not turn them back into a stranger.
+  buildPeople(home, [peer('bertram', bert)], RELAY_URL);
+  const row = whoBook.byPublicKey(home, bert);
+  if (whoBook.acquiredVia(row) === 'handle' && row.publicLabel === 'bertram') {
+    test.check('and a census sync updates the label without demoting the row');
+  } else {
+    test.fail('after census: ' + JSON.stringify(row));
+  }
+
+  // Your own key is never filed by reading your own mail back.
+  const me = auth.generateIdentity('andy');
+  const own = nodeHome(me, [RELAY_URL]);
+  acquireFromInbox(own, [line(4, 'andy', me.publicKey, me.publicKey, 'note to self')], RELAY_URL);
+  if (whoBook.contacts(own).length === 0) {
+    test.check('and a note to yourself does not make you your own contact');
+  } else {
+    test.fail('self acquired: ' + JSON.stringify(whoBook.contacts(own)));
   }
 }
 
 // ---------------------------------------------------------------------
-// The real hub, over loopback: picking a row sends to that key.
+// The real hub, over loopback: reading mail is how a contact appears.
 // ---------------------------------------------------------------------
 
 function relayServer(box) {
@@ -174,10 +202,13 @@ function relayServer(box) {
       const url = new URL(req.url, 'http://127.0.0.1');
       if (req.method === 'GET' && url.pathname === '/api/relay/who') {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        // The shape server.js actually sends — { peers: [...] }, not a
-        // bare array. This stub said array first, the harness went green,
-        // and the live mailbox returned an empty people list.
-        res.end(JSON.stringify({ peers: box.who() }));
+        res.end(JSON.stringify({ peers: box.who(), mailboxPublicKey: box.mailboxPublicKey() }));
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/api/relay/inbox') {
+        const r = box.inbox(url.searchParams.get('name') || '', url.searchParams.get('sig') || '');
+        res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(r.ok ? { messages: r.messages } : { error: r.error }));
         return;
       }
       if (req.method === 'POST' && url.pathname === '/api/relay/send') {
@@ -218,23 +249,35 @@ function fakeRes() {
   return out;
 }
 
-function runOverLoopback() {
-  test.subHeading('Picking a row sends to that key, not to that name');
+function hubWho(hub) {
+  const res = fakeRes();
+  hub.handleWho({}, res);
+  return res.wait().then(function (r) {
+    let data = {};
+    try { data = JSON.parse(r.text); } catch (e) { data = {}; }
+    return data;
+  });
+}
 
-  // A mailbox with two johns on it, which is only reachable at all
-  // because each claimed with an invite (keys mode, cycle 4).
+function hubInbox(hub, name) {
+  const res = fakeRes();
+  hub.handleInbox({}, res, new URL('http://127.0.0.1/api/hub/inbox?name=' + encodeURIComponent(name)));
+  return res.wait();
+}
+
+function runOverLoopback() {
+  test.subHeading('Through the hub: mail arrives, a contact appears');
+
   const relayHome = tmpHome('box');
+  auth.saveIdentity(relayHome, auth.generateIdentity('relay'));
   const box = createRelay(relayHome);
   const andy = auth.generateIdentity('andy');
   box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey, '10.0.0.1');
 
   const invites = require('../run/js/invites');
-  const johnA = auth.generateIdentity('john');
-  const johnB = auth.generateIdentity('john');
-  [johnA, johnB].forEach(function (j) {
-    const minted = box.mint('andy', 'john', 7, auth.sign(andy.privateKey, invites.mintMessage('john', 7)));
-    box.claim('john', auth.sign(j.privateKey, auth.claimMessage('john')), j.publicKey, '10.0.0.2', minted.ok && minted.invite.token);
-  });
+  const bert = auth.generateIdentity('bert');
+  const minted = box.mint('andy', 'bert', 7, auth.sign(andy.privateKey, invites.mintMessage('bert', 7)));
+  box.claim('bert', auth.sign(bert.privateKey, auth.claimMessage('bert')), bert.publicKey, '10.0.0.2', minted.invite.token);
 
   let server;
   let hub;
@@ -244,75 +287,53 @@ function runOverLoopback() {
     server = s;
     home = nodeHome(andy, [server.url]);
     hub = createHub(home);
+    return hubWho(hub);
+  }).then(function (data) {
+    // Bert is on the mailbox. Andy has never heard from him.
+    if (data.people && data.people.length === 0) {
+      test.check('a mailbox full of peers is an empty To list until somebody writes');
+    } else {
+      test.fail('who returned: ' + JSON.stringify(data.people));
+    }
 
-    const res = fakeRes();
-    hub.handleWho({}, res);
-    return res.wait();
+    box.send('bert', 'andy', 'first line from bert',
+      auth.sign(bert.privateKey, auth.sendMessage('bert', 'andy', 'first line from bert')), '10.0.0.2');
+    return hubInbox(hub, 'andy');
   }).then(function (res) {
-    let data = {};
-    try { data = JSON.parse(res.text); } catch (e) { data = {}; }
-    const johns = (data.people || []).filter(function (p) { return p.publicLabel === 'john'; });
-    if (res.status === 200 && data.people.length === 3 && johns.length === 2) {
-      test.check('GET /api/hub/who lists every peer the mailbox has, johns included');
+    if (res.status === 200 && /first line from bert/.test(res.text)) {
+      test.check('the inbox read comes back with his line');
     } else {
-      test.fail('hub who: ' + res.status + ' ' + res.text);
+      test.fail('inbox: ' + res.status + ' ' + res.text);
+    }
+    return hubWho(hub);
+  }).then(function (data) {
+    const rows = data.people || [];
+    if (rows.length === 1 && rows[0].publicKey === bert.publicKey && rows[0].acquiredVia === 'message') {
+      test.check('and reading it is what put Bert in the To list');
+    } else {
+      test.fail('after inbox: ' + JSON.stringify(rows));
     }
 
-    // `relay` is a destination and never a peer: it cannot be claimed,
-    // so it appears in no `who`, and the To control would have no way to
-    // offer it unless the node named it.
-    const named = (data.people || []).some(function (p) { return p.publicLabel === 'relay'; });
-    if (data.reservedName === 'relay' && !named) {
-      test.check('the reserved destination travels with the list, outside it');
+    if (!rows.some(function (r) { return r.publicKey === andy.publicKey; })) {
+      test.check('Andy is still not in his own list');
     } else {
-      test.fail('reserved: ' + JSON.stringify({ reservedName: data.reservedName, named: named }));
+      test.fail('self row appeared');
     }
 
-    // Send to the SECOND john by key. A typed "john" could not have
-    // said which, and the relay would have refused it as ambiguous.
-    const target = johns[1].publicKey;
-    const res2 = fakeRes();
-    hub.handleSend({}, res2, function () {
-      return Promise.resolve({ from: 'andy', to: target, text: 'for the second john' });
-    });
-    return res2.wait().then(function (sent) {
-      if (sent.status === 201) {
-        test.check('a send addressed to a picked key is accepted');
-      } else {
-        test.fail('send by key: ' + sent.status + ' ' + sent.text);
-      }
+    const bertRow = whoBook.byPublicKey(home, bert.publicKey);
+    if (bertRow && bertRow.relays.indexOf(server.url) !== -1) {
+      test.check('with the mailbox it was seen on recorded against it');
+    } else {
+      test.fail('whoBook row: ' + JSON.stringify(bertRow));
+    }
 
-      const delivered = box.inbox(target, auth.sign(
-        (johns[1].publicKey === johnA.publicKey ? johnA : johnB).privateKey,
-        auth.inboxMessage(target)
-      ));
-      if (delivered.ok && delivered.messages.length === 1 && delivered.messages[0].text === 'for the second john') {
-        test.check('and it lands in that john\'s inbox, not the other one');
-      } else {
-        test.fail('delivery: ' + JSON.stringify(delivered));
-      }
-
-      // The control this replaces: the ambiguous name the mailbox
-      // itself refuses.
-      const res3 = fakeRes();
-      hub.handleSend({}, res3, function () {
-        return Promise.resolve({ from: 'andy', to: 'john', text: 'which john?' });
-      });
-      return res3.wait();
-    }).then(function (ambiguous) {
-      if (ambiguous.status === 409) {
-        test.check('while the typed name "john" is refused as ambiguous — what the list exists to avoid');
-      } else {
-        test.fail('typed name: ' + ambiguous.status + ' ' + ambiguous.text);
-      }
-      server.server.close();
-    });
+    server.server.close();
   });
 }
 
 runOverLoopback()
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
-    test.fail('chat 2 threw: ' + ((err && err.stack) || err));
+    test.fail('contacts threw: ' + ((err && err.stack) || err));
     test.reportSuccessFailureCount();
   });

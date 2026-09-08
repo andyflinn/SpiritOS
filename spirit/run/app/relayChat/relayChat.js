@@ -538,7 +538,13 @@ spirit.shell.activateApp({
         return !needle || String(text).toLowerCase().indexOf(needle) !== -1;
       }
 
-      var html = '<option value="">(pick a person)</option>';
+      // Contacts, not the census: a mailbox full of peers is an empty
+      // list until somebody writes to this node or it redeems an invite.
+      // Said plainly, or an empty control reads as a broken one and the
+      // first fix anyone reaches for is to refill it from `who`.
+      var html = '<option value="">' +
+        (people.length ? '(pick a person)' : '(nobody yet — a contact appears when someone writes to you)') +
+        '</option>';
 
       // The filter decides what is in the list. It used to be overridden
       // by "has something unread", so that a marked row could never be
