@@ -91,11 +91,6 @@ spirit.shell.activateApp({
         '<input type="text" id="rc-text" placeholder="say something">' +
         '<button type="button" id="rc-send">Send</button>' +
       '</div>' +
-      // Last, and empty until this node owns a mailbox. Chat 4: the mint
-      // UI is not hidden for a friend, it is not built for them —
-      // ownedUrls decides, and a node that owns nothing has no invite
-      // markup at all to find. See paintInvitePanel below.
-      '<div id="rc-invite-slot"></div>' +
       // Contacts cut 2. Folded away at the foot of the page, next to the
       // footer it points at: adding somebody is rare, the conversation is
       // what the page is for, and the two halves of that phone call now
@@ -111,6 +106,15 @@ spirit.shell.activateApp({
         '</div>' +
         '<div id="rc-add-out"></div>' +
       '</details>' +
+      // Under Add, and empty until this node owns a mailbox. Chat 4: the
+      // mint UI is not hidden for a friend, it is not built for them —
+      // ownedUrls decides, and a node that owns nothing has no invite
+      // markup at all to find. See paintInvitePanel below.
+      //
+      // The two ways somebody new arrives, in the order they happen: you
+      // confirm a key somebody already has, or you mint the token that
+      // gets them one.
+      '<div id="rc-invite-slot"></div>' +
       // Fine print at the foot of the page: who this node is here, and
       // what its key ends with. The other half of adding somebody is
       // being added, and that question arrives with somebody already on
@@ -139,7 +143,12 @@ spirit.shell.activateApp({
       var waiting = unseenCount();
       if (waiting > 0) text += ' · ' + waiting;
       titleEl.textContent = text;
-      document.title = text;
+      // The tab belongs to the shell (paintWindowTitle in shell.js): it
+      // says which NODE you are looking at, which is what several open
+      // windows need to be told apart. This app said "Relay Chat [andy]"
+      // there and would now be fighting the shell for the same string,
+      // one writer per navigation, last one wins.
+
       // The unread count rides in the title only. The footer is the one
       // steady line on the page: a person reading their key ending to
       // somebody on the phone should not have it move when mail lands.
@@ -737,7 +746,7 @@ spirit.shell.activateApp({
       var owned = rows.filter(function (row) { return row.owned; });
       slot.innerHTML =
         '<details class="stat-tile wide" id="rc-invite-panel">' +
-          '<summary>Invite someone</summary>' +
+          '<summary>Invite someone to a relay</summary>' +
           '<label class="field-label">Invite<input type="text" id="rc-inv-label" placeholder="saint"></label>' +
           '<label class="field-label">Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
           // The token Andy speaks on the phone. Empty means the relay

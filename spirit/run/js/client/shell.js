@@ -26,6 +26,57 @@
   // dataset this project is building toward (see preferences.json in
   // .gitignore), not ordinary app config — hence root-level, not
   // app-scoped.
+  // ---- The window title ----
+  //
+  // The browser tab is the only place that says WHICH node you are
+  // looking at. Testing means several of them open at once — andy, bert,
+  // jim — and identical tabs reading "SpiritOS" are unusable for that.
+  // So the shell owns document.title, and it reads:
+  //
+  //   SpiritOS                          no public label, no app open
+  //   spirit - andy                     a claimed label, no app open
+  //   spirit - Relay Chat               an app, before this node claimed
+  //   spirit - andy - Relay Chat        the ordinary case
+  //   spirit - andy - media/dog.png     a viewer, showing what it shows
+  //
+  // The label is the one Relay Chat claimed and stored. The shell reads
+  // that file directly: reading across app folders is what a component
+  // above the app layer is for, and the alternative — asking the mailbox
+  // at boot — would put a network round trip in front of the first
+  // paint, to answer a question a local file already answers. A stale
+  // label costs nothing here; a slow boot costs every boot.
+  //
+  // Nothing is cached once found for good: an unbound node re-reads on
+  // each paint, so claiming a name in Relay Chat titles the tab on the
+  // next navigation instead of waiting for a reload. A node that already
+  // has its label never reads again.
+  var nodeLabel = '';
+
+  function readNodeLabel() {
+    if (nodeLabel) return nodeLabel;
+    try {
+      var raw = spirit.core.fs.loadFile('app/relayChat/session.json');
+      if (raw == null) return '';
+      var parsed = JSON.parse(raw);
+      nodeLabel = String((parsed && parsed.label) || '').trim();
+    } catch (e) {
+      nodeLabel = '';
+    }
+    return nodeLabel;
+  }
+
+  // `detail` is whatever the screen is actually showing: an app's name,
+  // or a viewer's file. Nothing else goes in — an unread count or any
+  // other number that changes on its own would make the tab move while
+  // somebody is reading it, and finding the right tab is the whole job.
+  function paintWindowTitle(detail) {
+    var label = readNodeLabel();
+    var parts = [];
+    if (label) parts.push(label);
+    if (detail) parts.push(detail);
+    document.title = parts.length ? ['spirit'].concat(parts).join(' - ') : 'SpiritOS';
+  }
+
   var preferencesRaw = spirit.core.fs.loadFile('preferences.json');
   var preferences = { defaultHandlers: {}, appOverrides: {}, groups: {} };
   if (preferencesRaw != null) {
@@ -797,6 +848,7 @@
       activeParams = null;
       containerEl.hidden = true;
       desktopEl.hidden = false;
+      paintWindowTitle('');
       return;
     }
 
@@ -804,6 +856,11 @@
     activeAppId = id;
     activeParams = params;
     titleEl.textContent = app.name;
+    // A file, when there is one: the launchers are not a special case,
+    // they are apps whose displayed subject happens to be a path. Full
+    // path as given, not the basename — two dog.png in two folders are
+    // two tabs.
+    paintWindowTitle((params && params.path) || app.name);
     renderTitlebarLinks(app);
     desktopEl.hidden = true;
     containerEl.hidden = false;
@@ -1057,6 +1114,9 @@
 
     titleEl.innerHTML = (hasHandler ? 'Open ' : '') + escapeHtml(filename) + (hasHandler ? '?' : '') +
       ' <button type="button" class="cancel-btn" id="viewer-no-btn">' + ICON.ERROR + '</button>';
+    // The viewers retitle themselves after switchTo has run, so the tab
+    // is told again here rather than left saying the app name.
+    paintWindowTitle(path);
     document.getElementById('viewer-no-btn').addEventListener('click', goBack);
   }
 
@@ -1283,6 +1343,10 @@
   // at render time from whatever is registered by then. What matters is
   // that it does not wait for a snapshot that may never come.
   declareIntrinsicApps();
+
+  // First paint: the tab says which node this is before anything is
+  // opened.
+  paintWindowTitle('');
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
   spirit.core.jobs.subscribe({

@@ -395,15 +395,18 @@
         align-items: flex-end;
       }
 
-      /* Present, not shouting: one line until it is wanted. */
-      #rc-invite-panel > summary {
+      /* The two folded panels at the foot of Relay Chat are the same
+         kind of thing — a rare job, one line until it is wanted — so
+         they read as a pair. The invite line used to be shrunk to 13px
+         to keep it secondary; sitting next to Add someone by handle that
+         made it look like a footnote to the panel above rather than the
+         other way in. Same size, same marker, same weight. */
+      #rc-invite-panel > summary,
+      #rc-add-panel > summary {
         cursor: pointer;
-        font-size: 13px;
-        opacity: 0.8;
-        list-style: none;
       }
-      #rc-invite-panel > summary::-webkit-details-marker { display: none; }
-      #rc-invite-panel[open] > summary { margin-bottom: 8px; }
+      #rc-invite-panel[open] > summary,
+      #rc-add-panel[open] > summary { margin-bottom: 8px; }
 
       @media (max-width: 480px) {
         .app-icon .icon { font-size: 32px; }

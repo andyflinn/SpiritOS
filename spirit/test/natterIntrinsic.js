@@ -85,7 +85,7 @@ function fakeDocument() {
 // discovery and pruneStalePreferences have not run yet. That is the slot
 // migrateAppIds occupies in production, and the only way to exercise the
 // ordering from outside.
-function bootShell(preferences, appScripts, deferSnapshot) {
+function bootShell(preferences, appScripts, deferSnapshot, sessionLabel) {
   const doc = fakeDocument();
   const saved = { preferences: null };
   const subscribers = [];
@@ -99,6 +99,13 @@ function bootShell(preferences, appScripts, deferSnapshot) {
       fs: {
         loadFile: function (rel) {
           if (rel === 'preferences.json') return JSON.stringify(preferences);
+          // The label Relay Chat claimed, which the shell reads for the
+          // window title. Supplied by the test rather than fetched off
+          // disk: the real file is Andy's own binding, and a test that
+          // reads it passes or fails depending on whose clone it runs in.
+          if (rel === 'app/relayChat/session.json') {
+            return sessionLabel ? JSON.stringify({ label: sessionLabel, boundAt: '2026-09-07T00:00:00.000Z' }) : null;
+          }
           try { return readRun(rel); } catch (e) { return null; }
         },
         saveFile: function (rel, content) {
@@ -139,6 +146,7 @@ function bootShell(preferences, appScripts, deferSnapshot) {
 
   return {
     shell: shellSpirit.shell,
+    doc: doc,
     desktop: doc.byId.desktop,
     saved: saved,
     snapshot: snapshot,
@@ -1234,6 +1242,76 @@ test.subHeading('Built-ins are locked by having no folder — until they get one
     test.check('and a stored override for one is ignored on reload');
   } else {
     test.fail('stale built-in: ' + JSON.stringify(listed));
+  }
+}
+
+test.subHeading('The window title names the node, then the screen');
+
+// Several nodes are open at once whenever this is being tested — andy,
+// bert, jim — and identical tabs reading "SpiritOS" cannot be told
+// apart. The shell owns document.title and builds it from two things:
+// the label this node claimed, and whatever the screen is showing.
+{
+  const scripts = [NATTER_SCRIPT, 'app/relayChat/relayChat.js'];
+  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
+
+  function withNotes(booted) {
+    booted.shell.registerApp({
+      id: 'notes', name: 'Notes', icon: '📓',
+      mount: function () {}, render: function () {},
+    });
+    return booted;
+  }
+
+  // A node that has never claimed a name has nothing to be told apart
+  // by, so it says what it is.
+  const fresh = withNotes(bootShell(prefs, scripts));
+  if (fresh.doc.title === 'SpiritOS') {
+    test.check('an unclaimed node is plain SpiritOS');
+  } else {
+    test.fail('fresh title: ' + fresh.doc.title);
+  }
+
+  fresh.shell.launchApp('notes');
+  if (fresh.doc.title === 'spirit - Notes') {
+    test.check('and names the app it opens, with no label to give');
+  } else {
+    test.fail('fresh app title: ' + fresh.doc.title);
+  }
+
+  // Claimed: the label leads, because that is the question a wall of
+  // tabs is being scanned to answer.
+  const bound = withNotes(bootShell(prefs, scripts, false, 'andy'));
+  if (bound.doc.title === 'spirit - andy') {
+    test.check('a claimed node says whose it is before anything is open');
+  } else {
+    test.fail('bound title: ' + bound.doc.title);
+  }
+
+  bound.shell.launchApp('notes');
+  if (bound.doc.title === 'spirit - andy - Notes') {
+    test.check('then node, then app');
+  } else {
+    test.fail('bound app title: ' + bound.doc.title);
+  }
+
+  // The launchers are not a special case: an app whose subject is a file
+  // says the file. Full path, not the basename — two dog.png in two
+  // folders are two tabs.
+  bound.shell.setViewerTitle('media/dog.png');
+  if (bound.doc.title === 'spirit - andy - media/dog.png') {
+    test.check('a viewer says the file it is viewing, path and all');
+  } else {
+    test.fail('viewer title: ' + bound.doc.title);
+  }
+
+  // Relay Chat used to write this string itself ("Relay Chat [andy] · 3")
+  // and would now be fighting the shell for it on every navigation.
+  const chat = readRun('app/relayChat/relayChat.js');
+  if (chat.indexOf('document.title') === -1) {
+    test.check('and no app writes the tab behind the shell');
+  } else {
+    test.fail('Relay Chat still writes document.title');
   }
 }
 

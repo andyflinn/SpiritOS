@@ -339,8 +339,11 @@ function claimBinds() {
   const store = {};
   const app = mountApp(store, { claimStatus: 201, claimBody: { peer: { name: 'andy' } } });
 
-  if (titleOf(app) === 'Relay Chat' && app.doc.title === 'Relay Chat') {
-    test.check('before any claim the chrome is plain "Relay Chat"');
+  // The heading inside the app. The browser tab is the shell's — it says
+  // which NODE this window is, so several of them can be told apart —
+  // and this app must not write to it.
+  if (titleOf(app) === 'Relay Chat' && app.doc.title === 'SpiritOS') {
+    test.check('before any claim the chrome is plain "Relay Chat", and the tab belongs to the shell');
   } else {
     test.fail('unbound title: ' + titleOf(app) + ' / ' + app.doc.title);
   }
@@ -349,7 +352,7 @@ function claimBinds() {
   el(app, 'rc-claim').fire('click');
 
   return settle().then(function () {
-    if (titleOf(app) === 'Relay Chat [andy]' && app.doc.title === 'Relay Chat [andy]') {
+    if (titleOf(app) === 'Relay Chat [andy]' && app.doc.title === 'SpiritOS') {
       test.check('a 201 claim puts the label in the heading and the tab title');
     } else {
       test.fail('bound title: ' + titleOf(app) + ' / ' + app.doc.title);
@@ -648,6 +651,14 @@ function inviteOnlyForAnOwner() {
         test.check('an owner gets the panel');
       } else {
         test.fail('owner slot: ' + slot);
+      }
+      // It says what it does. "Invite someone" beside "Add someone by
+      // handle" reads as two ways to do one thing; the relay is the
+      // difference, and it is what the invite is for.
+      if (slot.indexOf('<summary>Invite someone to a relay</summary>') !== -1) {
+        test.check('and it says what it invites them to');
+      } else {
+        test.fail('summary: ' + slot);
       }
       if (slot.indexOf('rc-inv-pick') === -1) {
         test.check('and no mailbox picker, with only one mailbox owned');
@@ -1064,10 +1075,14 @@ function mailArrivesOnTheRow() {
       test.fail('no mark: ' + el(app, 'rc-to-pick').innerHTML);
     }
 
-    if (/Relay Chat \[andy\] · 1/.test(app.doc.title)) {
-      test.check('and the title counts it, for a tab that is not in front of you');
+    // The count rides in the app's own heading. It used to ride in the
+    // browser tab as well; the tab now names the node instead, and a
+    // number that changes on its own has no business in a label somebody
+    // is scanning to find the right window.
+    if (/Relay Chat \[andy\] · 1/.test(titleOf(app)) && app.doc.title === 'SpiritOS') {
+      test.check('and the heading counts it, without touching the tab');
     } else {
-      test.fail('title: ' + app.doc.title);
+      test.fail('heading: ' + titleOf(app) + ' / tab: ' + app.doc.title);
     }
 
     // Switching to Bert shows it and clears both marks.
@@ -1081,10 +1096,10 @@ function mailArrivesOnTheRow() {
         test.fail('thread after switch: ' + el(app, 'rc-thread').innerHTML);
       }
 
-      if (!/•/.test(el(app, 'rc-to-pick').innerHTML) && app.doc.title === 'Relay Chat [andy]') {
+      if (!/•/.test(el(app, 'rc-to-pick').innerHTML) && titleOf(app) === 'Relay Chat [andy]') {
         test.check('and the mark and the count both go');
       } else {
-        test.fail('marks left: ' + app.doc.title + ' ' + el(app, 'rc-to-pick').innerHTML);
+        test.fail('marks left: ' + titleOf(app) + ' ' + el(app, 'rc-to-pick').innerHTML);
       }
 
       // Nothing unread, nothing to press: the button leaves the page
