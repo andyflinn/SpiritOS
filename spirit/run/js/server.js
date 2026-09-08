@@ -638,6 +638,14 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // The candidates behind a handle somebody heard out loud. Matches
+  // only: the census is filtered on this node and never handed to the
+  // page (CYCLE-CONTACTS-2).
+  if (req.method === 'GET' && pathname === '/api/hub/handle') {
+    hub.handleHandle(req, res, url);
+    return;
+  }
+
   
   function handleRelaySend(req, res) {
     readJsonBody(req).then(function (body) {
@@ -765,6 +773,12 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/hub/invite') {
       hub.handleInvite(req, res, readJsonBody);
+      return;
+    }
+
+    // A human confirmed one of those candidates by its key tail.
+    if (pathname === '/api/hub/contact') {
+      hub.handleContact(req, res, readJsonBody);
       return;
     }
 

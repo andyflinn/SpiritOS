@@ -54,6 +54,20 @@ function fakeElement(id) {
     set: function (v) { html = String(v); el.children.length = 0; },
     enumerable: true,
   });
+  // A <select> is asked what it offers, not only what it reads as: the
+  // app decides whether there is anybody to write to by looking at its
+  // own options, so the stub builds them from the markup the way a
+  // browser does.
+  Object.defineProperty(el, 'options', {
+    get: function () {
+      return html.split('<option').slice(1).map(function (part) {
+        const tag = part.split('>')[0];
+        const m = /value="([^"]*)"/.exec(tag);
+        return { value: m ? m[1] : '', disabled: tag.indexOf('disabled') !== -1 };
+      });
+    },
+    enumerable: true,
+  });
   return el;
 }
 
@@ -102,6 +116,8 @@ function fakeFetch(log, options) {
       people: options.people || [],
       reservedName: 'relay',
       mailboxPublicKey: options.mailboxPublicKey || null,
+      selfTail: options.selfTail || null,
+      matches: options.matches || [],
     };
     let status = 200;
     let payload = body;
@@ -171,6 +187,151 @@ function settle() {
 }
 
 test.startTest('Relay Chat — bound to a name, and still bound after a reload');
+
+// A bound node with an empty address book. It has a name and a mailbox
+// and still nobody to say anything to, so the three controls for saying
+// something are not on the page.
+function nobodyToWriteTo() {
+  test.subHeading('A name, a mailbox, and nobody yet');
+
+  const store = { 'session.json': JSON.stringify({ label: 'jim', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [],
+    selfTail: 'Zv0gX0=',
+    mailboxPublicKey: MAILBOX_KEY,
+    rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: false }],
+  });
+
+  return settle().then(function () {
+    const dead = ['rc-thread', 'rc-composer']
+      .filter(function (id) { return el(app, id).style.display !== 'none'; });
+    if (dead.length === 0) {
+      test.check('no thread, no say-something box, no Send');
+    } else {
+      test.fail('still shown with nobody to write to: ' + dead.join(', '));
+    }
+
+    // What IS on the page is the way out of that state: the list saying
+    // so, and the panel for adding somebody.
+    const alive = ['rc-to-pick', 'rc-add-panel', 'rc-to-bar']
+      .filter(function (id) { return el(app, id).style.display === 'none'; });
+    if (alive.length === 0 && /nobody yet/.test(el(app, 'rc-to-pick').innerHTML)) {
+      test.check('but the list and Add someone by handle stay');
+    } else {
+      test.fail('hidden too: ' + alive.join(', ') + ' / ' + el(app, 'rc-to-pick').innerHTML);
+    }
+
+    // The mailbox is somebody to write to — it is where `whoami` is
+    // typed. Under All it is in the list, so the composer is back.
+    el(app, 'rc-filter-all').fire('click');
+    return settle().then(function () {
+      if (el(app, 'rc-composer').style.display !== 'none' &&
+          el(app, 'rc-to-pick').innerHTML.indexOf(MAILBOX_KEY) !== -1) {
+        test.check('and it comes back for the mailbox under All');
+      } else {
+        test.fail('composer stayed hidden with the mailbox listed');
+      }
+    });
+  });
+}
+
+// Contacts cut 2 — adding somebody by handle ends in a spoken tail, so
+// both people need one on screen: the one adding reads the rows, the one
+// being added reads their own.
+function ownTailIsReadable() {
+  test.subHeading('Your own key, in fine print at the foot of the page');
+
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    selfTail: 'mjowM=',
+    people: [{ publicKey: 'KEY-BERT', publicLabel: 'bert', caption: 'bert', mine: false }],
+    rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: false }],
+  });
+
+  return settle().then(function () {
+    // Read out over the phone by somebody who was told "the bottom of
+    // your chat app" and nothing else, so it has to say whose key it is
+    // and what it ends with, on the page, with nothing to open.
+    const foot = el(app, 'rc-footer').textContent;
+    if (foot.indexOf('mjowM=') !== -1 && foot.indexOf('andy') !== -1) {
+      test.check('the footer names this node and what its key ends with');
+    } else {
+      test.fail('footer: ' + foot);
+    }
+
+    // The unread count moves; the footer does not. Somebody mid-sentence
+    // on the phone should not have the line change under them.
+    const before = el(app, 'rc-footer').textContent;
+    app.doc.title = '';
+    el(app, 'rc-filter-all').fire('click');
+    return settle().then(function () {
+      if (el(app, 'rc-footer').textContent === before) {
+        test.check('and it stays put while the rest of the page moves');
+      } else {
+        test.fail('footer moved: ' + el(app, 'rc-footer').textContent);
+      }
+    });
+  });
+}
+
+// The two halves of the phone call, one on each screen: Adam reads the
+// rows, Bert reads the footer. This is the sentence that sends him there.
+function addPanelSaysWhereToLook() {
+  test.subHeading('Adding somebody says where they will find their own ending');
+
+  const store = { 'session.json': JSON.stringify({ label: 'adam', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    selfTail: 'aaaaa=',
+    matches: [
+      { publicKey: 'KEY-BERT-ONE', publicLabel: 'bert', tail: 'mjowM=', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-BERT-TWO', publicLabel: 'bert', tail: 'Zv0gX0=', acquiredVia: 'census', owner: false },
+    ],
+  });
+
+  return settle().then(function () {
+    el(app, 'rc-add-handle').value = 'bert';
+    el(app, 'rc-add-find').fire('click');
+    return settle().then(function () {
+      const out = el(app, 'rc-add-out').innerHTML;
+      if (out.indexOf('fine print at the bottom of their chat app') !== -1) {
+        test.check('it tells you where to send them for their key ending');
+      } else {
+        test.fail('instruction: ' + out);
+      }
+
+      // Two berts, two endings, two Confirms: a handle is a word, and
+      // the question is which key it means.
+      const confirms = out.split('data-add-key=').length - 1;
+      if (confirms === 2 && out.indexOf('mjowM=') !== -1 && out.indexOf('Zv0gX0=') !== -1) {
+        test.check('and every key behind the word is listed by its ending');
+      } else {
+        test.fail('rows: ' + out);
+      }
+    });
+  });
+}
+
+// A node nobody has told its key cannot invent one.
+function noTailNoLine() {
+  test.subHeading('And says nothing when there is nothing to say');
+
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: false }],
+  });
+
+  return settle().then(function () {
+    if (el(app, 'rc-footer').textContent === '') {
+      test.check('no key, no promise about one');
+    } else {
+      test.fail('invented a tail: ' + el(app, 'rc-footer').textContent);
+    }
+  });
+}
 
 function claimBinds() {
   test.subHeading('Claim binds the chrome');
@@ -801,10 +962,14 @@ function unboundChrome() {
         test.fail('still shown while unbound: ' + deadChrome.join(', '));
       }
 
-      // Bound: neither. The page is a conversation, not a form.
+      // Bound, with somebody to write to: neither. The page is a
+      // conversation, not a form.
       const bound = mountApp(
         { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) },
-        { inboxStatus: 200 }
+        {
+          inboxStatus: 200,
+          people: [{ publicKey: 'KEY-BERT', publicLabel: 'bert', caption: 'bert', mine: false }],
+        }
       );
       return settle().then(function () {
         if (el(bound, 'rc-claim-row').style.display === 'none' &&
@@ -817,7 +982,7 @@ function unboundChrome() {
         const missing = ['rc-to-bar', 'rc-to-pick', 'rc-thread', 'rc-composer']
           .filter(function (id) { return el(bound, id).style.display === 'none'; });
         if (missing.length === 0) {
-          test.check('and gets the whole app back the moment it has a name');
+          test.check('and gets the whole app back once it has a name and a contact');
         } else {
           test.fail('hidden from a bound node: ' + missing.join(', '));
         }
@@ -989,6 +1154,10 @@ claimBinds()
   .then(unboundChrome)
   .then(mailArrivesOnTheRow)
   .then(newFilterSnapsBack)
+  .then(nobodyToWriteTo)
+  .then(ownTailIsReadable)
+  .then(addPanelSaysWhereToLook)
+  .then(noTailNoLine)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('chat 1 threw: ' + ((err && err.stack) || err));

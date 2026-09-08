@@ -12,6 +12,7 @@ var RC_SESSION_FILE = 'session.json';
 spirit.shell.activateApp({
   mount: function (container, api) {
     var myName = '';
+    var myTail = ''; // the end of this node's own key, for the footer
     var statusEl;
     var titleEl;
     var ownedUrls = [];
@@ -84,6 +85,19 @@ spirit.shell.activateApp({
         '<input type="text" id="rc-search" placeholder="find someone">' +
       '</div>' +
       '<select id="rc-to-pick" class="rc-wide"><option value="">(pick a person)</option></select>' +
+      // Contacts cut 2. Folded away beside To, like Invite: adding
+      // somebody is rare, and the conversation is what the page is for.
+      // A handle is a word somebody said out loud, so it may belong to
+      // several keys — every one of them is listed, and a human picks by
+      // the END of the key, on the phone, before anything is written.
+      '<details class="stat-tile wide" id="rc-add-panel">' +
+        '<summary>Add someone by handle</summary>' +
+        '<div class="start-job-form">' +
+          '<input type="text" id="rc-add-handle" placeholder="the name you were told">' +
+          '<button type="button" id="rc-add-find">Find</button>' +
+        '</div>' +
+        '<div id="rc-add-out"></div>' +
+      '</details>' +
       '<div class="job-log-panel" id="rc-thread"></div>' +
       // Docked under the thread, where a chat composer belongs.
       '<div class="start-job-form" id="rc-composer">' +
@@ -94,7 +108,16 @@ spirit.shell.activateApp({
       // UI is not hidden for a friend, it is not built for them —
       // ownedUrls decides, and a node that owns nothing has no invite
       // markup at all to find. See paintInvitePanel below.
-      '<div id="rc-invite-slot"></div>';
+      '<div id="rc-invite-slot"></div>' +
+      // Fine print at the foot of the page: who this node is here, and
+      // what its key ends with. The other half of adding somebody is
+      // being added, and that question arrives with somebody already on
+      // the phone — so the answer is on the page, not behind a panel
+      // called Add someone, not behind `whoami` at the mailbox. It is
+      // one short line, it is never interacted with, and it is the only
+      // place a person can read their own ending without being told
+      // where to look.
+      '<div class="job-manifest-note" id="rc-footer"></div>';
 
     statusEl = document.getElementById('rc-status');
     titleEl = document.getElementById('rc-title');
@@ -115,6 +138,10 @@ spirit.shell.activateApp({
       if (waiting > 0) text += ' · ' + waiting;
       titleEl.textContent = text;
       document.title = text;
+      // The unread count rides in the title only. The footer is the one
+      // steady line on the page: a person reading their key ending to
+      // somebody on the phone should not have it move when mail lands.
+      paintMyTail(myTail);
       paintUnbound();
 
       // Claiming is what you do once. A bound node has nothing to do
@@ -172,7 +199,7 @@ spirit.shell.activateApp({
     // the line. AGENT.md — do not show chrome that is not useful in that
     // state — and here the instruction for getting in is the page, not a
     // footnote beside a dead form.
-    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-pick', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
+    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-pick', 'rc-add-panel', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
 
     function showBoundChrome(show) {
       RC_BOUND_ONLY.forEach(function (id) {
@@ -187,6 +214,9 @@ spirit.shell.activateApp({
       showBoundChrome(!!myName);
       if (myName) {
         note.textContent = '';
+        // showBoundChrome puts everything back; the thread and composer
+        // only stay if there is somebody to use them on.
+        paintAddressable();
         return;
       }
       note.textContent = natterUrls()
@@ -494,6 +524,7 @@ spirit.shell.activateApp({
           people = (data && data.people) || [];
           reservedName = (data && data.reservedName) || 'relay';
           mailboxKey = (data && data.mailboxPublicKey) || '';
+          paintMyTail(data && data.selfTail);
 
           captions = {};
           people.forEach(function (person) { captions[person.publicKey] = person.caption; });
@@ -617,6 +648,34 @@ spirit.shell.activateApp({
 
       snapBackFromNew();
       paintFilterButtons();
+      paintAddressable();
+    }
+
+    // A thread and a composer are for saying something to somebody. With
+    // nobody in the list they are three controls that cannot be used: an
+    // empty log, a box that takes a line, and a Send that would refuse
+    // it. AGENT.md — do not show chrome that is not useful in that
+    // state. So the page for a freshly bound node with no contacts is
+    // the one thing that can move it forward: the list saying a contact
+    // appears when somebody writes, and Add someone by handle under it.
+    //
+    // The test is the To control itself, not "how many contacts exist":
+    // the mailbox is addressable too, and under the Relays or All filter
+    // it is somebody to write to. So this follows the filter — switch to
+    // All on a node with no peers and the composer comes back for the
+    // mailbox row, which is where `whoami` is typed.
+    function paintAddressable() {
+      var pick = document.getElementById('rc-to-pick');
+      if (!pick) return;
+      var options = pick.options || [];
+      var can = false;
+      for (var i = 0; i < options.length; i += 1) {
+        if (options[i].value && !options[i].disabled) { can = true; break; }
+      }
+      ['rc-thread', 'rc-composer'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = can ? '' : 'none';
+      });
     }
 
     // `new` is only ever a place to stand while there is something to
@@ -771,6 +830,86 @@ spirit.shell.activateApp({
           refreshBadges();
           refreshPeople().then(selectRestoredTo);
         }
+      });
+    });
+
+    // The footer. Same six characters, same words, as the row the other
+    // side is reading off their screen while they add you — so a phone
+    // call is two people comparing one string, not one of them hunting
+    // for a key. Nothing here until the node knows its own key, because
+    // a footer that says `key ends` and then nothing is worse than no
+    // footer at all.
+    function paintMyTail(tail) {
+      var foot = document.getElementById('rc-footer');
+      if (!foot) return;
+      myTail = tail || '';
+      foot.textContent = myTail
+        ? (myName || 'this node') + ' · key ends ' + myTail
+        : '';
+    }
+
+    // Every key the mailbox has under that handle. Never one: a handle
+    // is a caption, and two johns are two keys — the whole reason this
+    // asks rather than picks.
+    function findByHandle() {
+      var handle = document.getElementById('rc-add-handle').value.trim();
+      var out = document.getElementById('rc-add-out');
+      if (!handle) {
+        out.innerHTML = '<div class="job-log-empty">Type the name you were told.</div>';
+        return;
+      }
+      out.innerHTML = '<div class="job-log-empty">looking…</div>';
+      fetch('/api/hub/handle?handle=' + encodeURIComponent(handle))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var matches = (data && data.matches) || [];
+          if (!matches.length) {
+            out.innerHTML = '<div class="job-log-empty">Nobody on this mailbox is called ' +
+              api.escapeHtml(handle) + '.</div>';
+            return;
+          }
+          // One match is still a question. A lone john today is not a
+          // lone john next month, and the confirm is the habit that
+          // protects the person, not the count.
+          out.innerHTML =
+            '<div class="job-log-empty">Ask them what their key ends with. They can see it in fine print ' +
+            'at the bottom of their chat app, then confirm the one that matches.</div>' +
+            matches.map(function (row) {
+              var known = row.acquiredVia === 'handle'
+                ? ' — already confirmed'
+                : (row.acquiredVia && row.acquiredVia !== 'census' ? ' — already a contact' : '');
+              return '<div class="rc-msg them">' +
+                '<span class="rc-who">' + api.escapeHtml(row.publicLabel) + '</span>' +
+                '<span class="rc-text">ends …' + api.escapeHtml(row.tail) + api.escapeHtml(known) + '</span>' +
+                '<button type="button" class="cancel-btn" data-add-key="' + api.escapeHtml(row.publicKey) + '">Confirm</button>' +
+                '</div>';
+            }).join('');
+        })
+        .catch(function (e) { out.innerHTML = '<div class="job-log-empty">could not ask: ' + api.escapeHtml(e.message) + '</div>'; });
+    }
+
+    document.getElementById('rc-add-find').addEventListener('click', findByHandle);
+    document.getElementById('rc-add-handle').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        findByHandle();
+      }
+    });
+
+    // Confirming is what writes the contact. Delegated, because the rows
+    // are painted and repainted.
+    document.getElementById('rc-add-out').addEventListener('click', function (event) {
+      var button = event.target && event.target.closest && event.target.closest('[data-add-key]');
+      if (!button) return;
+      var out = document.getElementById('rc-add-out');
+      hubPost('/api/hub/contact', { publicKey: button.dataset.addKey }).then(function (r) {
+        if (r.status !== 201) {
+          out.innerHTML = '<div class="job-log-empty">' + api.escapeHtml(r.status + ' ' + r.text) + '</div>';
+          return;
+        }
+        out.innerHTML = '<div class="job-log-empty">added — they are in your list now</div>';
+        document.getElementById('rc-add-handle').value = '';
+        refreshPeople();
       });
     });
 

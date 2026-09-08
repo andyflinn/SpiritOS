@@ -67,6 +67,12 @@ relay-state/
 # Unanchored, to match the file wherever an app folder ends up.
 session.json
 
+# Relay Chat's remembered view (chat 6): who was selected, which filter,
+# and how far each conversation had been read. Same class as
+# session.json above — this node's state about itself, never product
+# code, and it names peer keys, so it must not reach the lab either.
+view.json
+
 # Anything js/peerFile.js names: one file per peer, wherever an app
 # keeps them. Chat logs are the first (app/relayChat/logs/, also caught
 # by the bare `logs` rule above); whoBook sidecars and whatever comes

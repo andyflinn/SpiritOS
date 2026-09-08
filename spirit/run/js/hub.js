@@ -156,13 +156,55 @@ function buildPeople(rootDir, peers, relayUrl) {
   rows.forEach(function (r) { seenCaption[r.caption] = (seenCaption[r.caption] || 0) + 1; });
   rows.forEach(function (r) {
     if (seenCaption[r.caption] > 1) {
-      r.caption = r.caption + ' (' + String(r.publicKey).slice(-6) + ')';
+      r.caption = r.caption + ' (' + keyTail(r.publicKey) + ')';
       r.ambiguous = true;
     }
   });
 
   rows.sort(function (a, b) { return String(a.caption).localeCompare(String(b.caption)); });
   return rows;
+}
+
+// The end of a key, for a human to read down a telephone. From the END
+// on purpose: every Ed25519 SPKI key opens with the same ASN.1 header,
+// so a fragment from the front names every peer on every mailbox
+// equally. Six characters is what buildPeople already uses to tell two
+// johns apart, and relayConsole uses the same rule from its own copy.
+function keyTail(publicKey) {
+  return String(publicKey || '').slice(-6);
+}
+
+// Every peer on the mailbox whose PUBLIC LABEL is the handle a human
+// heard. Not a search: an exact caption, case-insensitively, because a
+// handle is a word somebody said out loud and a substring match would
+// hand back strangers who merely contain it.
+//
+// Two johns are two candidates, and stay two. Nothing here picks one:
+// picking is the human's job, done against a key tail on a phone call,
+// which is what makes this an acquisition rather than a guess.
+function handleMatches(rootDir, peers, handle) {
+  var want = String(handle || '').trim().toLowerCase();
+  if (!want) return [];
+  var id = auth.loadIdentity(rootDir);
+  var myKey = (id && id.publicKey) || '';
+
+  return (Array.isArray(peers) ? peers : [])
+    .filter(function (p) { return p && p.publicKey && p.publicKey !== myKey; })
+    .filter(function (p) {
+      return String(p.publicLabel || p.name || '').trim().toLowerCase() === want;
+    })
+    .map(function (p) {
+      var row = whoBook.byPublicKey(rootDir, p.publicKey);
+      return {
+        publicKey: p.publicKey,
+        publicLabel: p.publicLabel || p.name || '',
+        tail: keyTail(p.publicKey),
+        // What this node already thinks of them, so the UI can say
+        // "already a contact" instead of offering the same person twice.
+        acquiredVia: row ? whoBook.acquiredVia(row) : null,
+        owner: !!p.owner,
+      };
+    });
 }
 
 // Somebody wrote to this node, and the mailbox carried their key. That
@@ -371,14 +413,101 @@ function createHub(rootDir) {
           // discover: `relay` cannot be claimed, so it is in no `who`.
           // Naming it here keeps the constant on the node beside the
           // relay that honours it (relayAuth.RESERVED_NAME).
+          // This node's own key travels with the list, because being
+          // added is the other half of adding: the person confirming a
+          // tail has to hear it from somebody, and until now the only
+          // way to read your own was to type `whoami` at the mailbox.
+          var self = auth.loadIdentity(rootDir);
           res.end(JSON.stringify({
             relay: url,
             reservedName: auth.RESERVED_NAME,
             mailboxPublicKey: mailboxKey,
+            selfPublicKey: (self && self.publicKey) || null,
+            selfTail: self && self.publicKey ? keyTail(self.publicKey) : null,
             people: buildPeople(rootDir, peers, url),
           }));
         })
         .catch(function (err) { fail(res, 502, String(err.message || err)); });
+    });
+  }
+
+  // GET /api/hub/handle?handle=bert — the candidates behind a handle.
+  //
+  // The filtering happens HERE, and only the matches go back. The node
+  // has to fetch the census to answer at all, but the browser holding a
+  // copy of it is how `To` gets refilled from `who` by accident six
+  // weeks from now. Downloading is not acquiring.
+  function handleHandle(req, res, urlObj) {
+    var handle = urlObj.searchParams.get('handle') || '';
+    withRelay(res, function (url) {
+      relayRequest(url, 'GET', '/api/relay/who', null)
+        .then(function (r) {
+          if (r.status !== 200) {
+            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(r.text);
+            return;
+          }
+          var parsed = null;
+          try { parsed = JSON.parse(r.text); }
+          catch (e) { parsed = null; }
+          var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            handle: handle,
+            matches: handleMatches(rootDir, peers, handle),
+          }));
+        })
+        .catch(function (err) { fail(res, 502, String(err.message || err)); });
+    });
+  }
+
+  // POST /api/hub/contact — a human confirmed one of those candidates.
+  //
+  // The key is checked against the census before it is written: a stale
+  // page, or a mistyped paste, must not put a contact in the book for
+  // somebody who is not there. The label comes from the mailbox rather
+  // than from the browser, for the same reason.
+  function handleContact(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var publicKey = String((body && body.publicKey) || '').trim();
+      if (!publicKey) {
+        fail(res, 400, 'publicKey required');
+        return;
+      }
+      withRelay(res, function (url) {
+        relayRequest(url, 'GET', '/api/relay/who', null)
+          .then(function (r) {
+            var parsed = null;
+            try { parsed = JSON.parse(r.text); }
+            catch (e) { parsed = null; }
+            var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
+            var found = peers.filter(function (p) { return p && p.publicKey === publicKey; })[0];
+            if (!found) {
+              fail(res, 404, 'no peer on this mailbox with that key');
+              return;
+            }
+            var id = auth.loadIdentity(rootDir);
+            if (id && id.publicKey === publicKey) {
+              fail(res, 400, 'that key is this node');
+              return;
+            }
+            var row = whoBook.acquire(rootDir, {
+              publicKey: publicKey,
+              publicLabel: found.publicLabel || found.name || '',
+              relay: url,
+            }, 'handle');
+            res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({
+              publicKey: row.publicKey,
+              publicLabel: row.publicLabel,
+              acquiredVia: whoBook.acquiredVia(row),
+            }));
+          })
+          .catch(function (err) { fail(res, 502, String(err.message || err)); });
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
     });
   }
 
@@ -405,8 +534,16 @@ function createHub(rootDir) {
     handleInbox: handleInbox,
     handleStatus: handleStatus,
     handleWho: handleWho,
+    handleHandle: handleHandle,
+    handleContact: handleContact,
     handleInvite: handleInvite,
   };
 }
 
-module.exports = { createHub: createHub, buildPeople: buildPeople, acquireFromInbox: acquireFromInbox };
+module.exports = {
+  createHub: createHub,
+  buildPeople: buildPeople,
+  acquireFromInbox: acquireFromInbox,
+  handleMatches: handleMatches,
+  keyTail: keyTail,
+};

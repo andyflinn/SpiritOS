@@ -28,7 +28,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
 const { createRelay } = require('../run/js/relay');
-const { createHub, buildPeople, acquireFromInbox } = require('../run/js/hub');
+const { createHub, buildPeople, acquireFromInbox, handleMatches, keyTail } = require('../run/js/hub');
 
 const RELAY_URL = 'https://mailbox.example';
 
@@ -192,6 +192,124 @@ test.subHeading('Ranks never fall');
   }
 }
 
+test.subHeading('Add by handle: every key behind the word');
+
+{
+  const me = auth.generateIdentity('andy');
+  const home = nodeHome(me, [RELAY_URL]);
+  const johnA = auth.generateIdentity('john').publicKey;
+  const johnB = auth.generateIdentity('john').publicKey;
+  const bert = auth.generateIdentity('bert').publicKey;
+  const census = [
+    peer('andy', me.publicKey, true),
+    peer('john', johnA),
+    peer('john', johnB),
+    peer('bert', bert),
+  ];
+
+  const johns = handleMatches(home, census, 'john');
+  if (johns.length === 2 && johns[0].publicKey !== johns[1].publicKey) {
+    test.check('a handle two people answer to gives two candidates');
+  } else {
+    test.fail('john matches: ' + JSON.stringify(johns));
+  }
+
+  // The tail is from the END. A fragment from the front names every peer
+  // on every mailbox equally, since all these keys share a header.
+  if (johns.every(function (m) { return m.tail === m.publicKey.slice(-6) && m.tail === keyTail(m.publicKey); }) &&
+      johnA.slice(0, 12) === johnB.slice(0, 12)) {
+    test.check('each candidate carries the end of its key, which is the part that differs');
+  } else {
+    test.fail('tails: ' + JSON.stringify(johns.map(function (m) { return m.tail; })));
+  }
+
+  // A handle is a word said out loud, not a search: `joh` is not john,
+  // and a substring match would hand back strangers who merely contain
+  // the word.
+  if (handleMatches(home, census, 'joh').length === 0 && handleMatches(home, census, 'JOHN').length === 2) {
+    test.check('the handle matches the whole caption, case aside');
+  } else {
+    test.fail('partial or case handling is wrong');
+  }
+
+  if (handleMatches(home, census, 'nobody').length === 0) {
+    test.check('a handle nobody answers to is no candidates');
+  } else {
+    test.fail('invented a match');
+  }
+
+  // Never yourself: you cannot be added to your own address book.
+  if (handleMatches(home, census, 'andy').length === 0) {
+    test.check('and this node is never a candidate for itself');
+  } else {
+    test.fail('self offered as a candidate');
+  }
+
+  // One match is still a question, so the candidate still carries its
+  // tail — the UI has everything it needs to make somebody confirm.
+  const one = handleMatches(home, census, 'bert');
+  if (one.length === 1 && one[0].tail === bert.slice(-6)) {
+    test.check('a lone match is still shown by its key tail');
+  } else {
+    test.fail('bert: ' + JSON.stringify(one));
+  }
+
+  // What this node already thinks of a candidate rides along, so the UI
+  // can say "already a contact" instead of offering the same person as
+  // though they were new.
+  acquireFromInbox(home, [line(5, 'bert', bert, me.publicKey, 'hi')], RELAY_URL);
+  if (handleMatches(home, census, 'bert')[0].acquiredVia === 'message') {
+    test.check('a candidate says how this node already knows them');
+  } else {
+    test.fail('acquiredVia missing from a candidate');
+  }
+}
+
+test.subHeading('Confirming writes handle, and nothing else changes');
+
+{
+  const home = nodeHome(auth.generateIdentity('andy'), [RELAY_URL]);
+  const johnA = auth.generateIdentity('john').publicKey;
+  const johnB = auth.generateIdentity('john').publicKey;
+
+  whoBook.handshake(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL });
+  whoBook.handshake(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL });
+
+  // The upgrade a confirm performs: census to handle, in place, on one
+  // key. Identity is the key, so the other john is untouched.
+  whoBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'handle');
+
+  const contacts = whoBook.contacts(home);
+  if (contacts.length === 1 && contacts[0].publicKey === johnA && whoBook.acquiredVia(contacts[0]) === 'handle') {
+    test.check('confirming one john makes one contact, marked handle');
+  } else {
+    test.fail('contacts: ' + JSON.stringify(contacts));
+  }
+
+  if (whoBook.acquiredVia(whoBook.byPublicKey(home, johnB)) === 'census') {
+    test.check('and the other john is still a stranger');
+  } else {
+    test.fail('the wrong john was promoted');
+  }
+
+  // A message afterwards does not undo the confirmation.
+  acquireFromInbox(home, [line(6, 'john', johnA, 'KEY-ME', 'hello again')], RELAY_URL);
+  if (whoBook.acquiredVia(whoBook.byPublicKey(home, johnA)) === 'handle') {
+    test.check('and a later message cannot demote it');
+  } else {
+    test.fail('handle was downgraded by a message');
+  }
+
+  // To is still contacts only: the census that was walked to find the
+  // candidates does not follow them in.
+  const people = buildPeople(home, [peer('john', johnA), peer('john', johnB)], RELAY_URL);
+  if (people.length === 1 && people[0].publicKey === johnA) {
+    test.check('the To list gains the confirmed key and no more');
+  } else {
+    test.fail('To after confirm: ' + JSON.stringify(people.map(function (p) { return p.caption; })));
+  }
+}
+
 // ---------------------------------------------------------------------
 // The real hub, over loopback: reading mail is how a contact appears.
 // ---------------------------------------------------------------------
@@ -294,6 +412,20 @@ function runOverLoopback() {
       test.check('a mailbox full of peers is an empty To list until somebody writes');
     } else {
       test.fail('who returned: ' + JSON.stringify(data.people));
+    }
+
+    // Being added is the other half of adding. The tail somebody reads
+    // out over the phone has to be readable on their own screen, and it
+    // is their key, not the mailbox's.
+    if (data.selfPublicKey === andy.publicKey && data.selfTail === andy.publicKey.slice(-6)) {
+      test.check('who tells this node the end of its own key');
+    } else {
+      test.fail('selfTail was ' + JSON.stringify(data.selfTail));
+    }
+    if (data.selfTail !== data.mailboxPublicKey) {
+      test.check('and that is your key, not the mailbox you are on');
+    } else {
+      test.fail('self and mailbox are the same key');
     }
 
     box.send('bert', 'andy', 'first line from bert',
