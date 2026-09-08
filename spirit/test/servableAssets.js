@@ -179,4 +179,42 @@ test.subHeading('scanFolder listings honour the same gate');
   }
 }
 
+// A folder can be refused by the predicate and still be listed, if the
+// walk only ever asks about files — which is exactly what happened:
+// identity.json, who.json, allow.json and mailbox.json were all correctly
+// invisible while the empty folder holding them appeared in every
+// listing, in the Files tree and in the fs-watcher payload. One verdict,
+// asked by every consumer, including about directories.
+test.subHeading('A refused folder is not listed either');
+{
+  const entries = spirit.core.node.util.scanFolder(ROOT_DIR);
+  const names = entries.map(function (e) { return e.name; });
+
+  if (names.indexOf('relay-state') === -1) {
+    test.check('scanFolder(run/) does not list the relay-state folder');
+  } else {
+    test.fail('relay-state is still a row in the tree');
+  }
+
+  // Refused whole: nothing below it is walked either, so no later change
+  // to the file branch can start reporting its contents.
+  const inside = entries.filter(function (e) {
+    return String(e.parentPath || '').split(path.sep).join('/').indexOf('/relay-state') !== -1;
+  });
+  if (inside.length === 0) {
+    test.check('and nothing underneath it was walked at all');
+  } else {
+    test.fail('entries from inside relay-state: ' + inside.map(function (e) { return e.name; }).join(', '));
+  }
+
+  // The rest of the tree is untouched — this narrows one folder, it does
+  // not start hiding things nobody asked to hide.
+  const kept = ['app', 'js', 'index.html'].filter(function (name) { return names.indexOf(name) === -1; });
+  if (kept.length === 0) {
+    test.check('and everything else is still listed');
+  } else {
+    test.fail('the walk lost: ' + kept.join(', '));
+  }
+}
+
 test.reportSuccessFailureCount();

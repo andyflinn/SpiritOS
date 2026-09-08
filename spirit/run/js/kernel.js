@@ -487,6 +487,23 @@ if (isNode()) {
               if (entry.isDirectory()) {
                   if (SCAN_EXCLUDED_DIR_NAMES.has(entry.name)) continue;
 
+                  // A directory is asked the same question a file is.
+                  // fileServable already refuses `relay-state` and
+                  // everything under it, but only files were ever asked —
+                  // so the identity key, the whoBook, the allow list and
+                  // the mailbox were all correctly hidden while the empty
+                  // folder holding them stayed in every listing. A row
+                  // that can never be opened is a tease, and one verdict
+                  // that half its callers do not consult is the shape of
+                  // bug this gate exists to avoid.
+                  //
+                  // Refused means refused whole: neither the folder nor
+                  // anything below it is walked, so nothing inside can be
+                  // reported by some later change to the file branch.
+                  const dirFull = path.resolve(entry.parentPath, entry.name);
+                  const dirRelative = path.relative(ROOT_DIR, dirFull).split(path.sep).join('/');
+                  if (!fileServable(dirRelative)) continue;
+
                   let subfolder = path.join(entry.parentPath, entry.name);
                   scanFolder(subfolder,result);
                   result.push(entry);
