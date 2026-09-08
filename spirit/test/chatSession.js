@@ -225,7 +225,7 @@ function nobodyToWriteTo() {
 
     // What IS on the page is the way out of that state: the list saying
     // so, and the panel for adding somebody.
-    const alive = ['rc-to-pick', 'rc-add-panel', 'rc-to-bar']
+    const alive = ['rc-to-pick', 'rc-to-bar']
       .filter(function (id) { return el(app, id).style.display === 'none'; });
     if (alive.length === 0 && /nobody yet/.test(el(app, 'rc-to-pick').innerHTML)) {
       test.check('but the list and Add someone by handle stay');
@@ -287,41 +287,44 @@ function ownTailIsReadable() {
   });
 }
 
-// The two halves of the phone call, one on each screen: Adam reads the
-// rows, Bert reads the footer. This is the sentence that sends him there.
-function addPanelSaysWhereToLook() {
-  test.subHeading('Adding somebody says where they will find their own ending');
+// Adding somebody moved to Contacts with the rest of the address book
+// (packet 2). What chat must not do is grow it back.
+function noAddressBookInChat() {
+  test.subHeading('The chat window does not edit the address book');
 
-  const store = { 'session.json': JSON.stringify({ label: 'adam', boundAt: '2026-09-07T00:00:00.000Z' }) };
-  const app = mountApp(store, {
-    inboxStatus: 200,
-    selfTail: 'aaaaa=',
-    matches: [
-      { publicKey: 'KEY-BERT-ONE', publicLabel: 'bert', tail: 'mjowM=', acquiredVia: 'census', owner: false },
-      { publicKey: 'KEY-BERT-TWO', publicLabel: 'bert', tail: 'Zv0gX0=', acquiredVia: 'census', owner: false },
-    ],
-  });
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, { inboxStatus: 200 });
 
   return settle().then(function () {
-    el(app, 'rc-add-handle').value = 'bert';
-    el(app, 'rc-add-find').fire('click');
-    return settle().then(function () {
-      const out = el(app, 'rc-add-out').innerHTML;
-      if (out.indexOf('fine print at the bottom of their chat app') !== -1) {
-        test.check('it tells you where to send them for their key ending');
-      } else {
-        test.fail('instruction: ' + out);
-      }
+    const page = app.container.innerHTML;
+    const grown = ['rc-add-panel', 'rc-add-handle', 'rc-add-find', 'rc-add-out']
+      .filter(function (id) { return page.indexOf(id) !== -1; });
+    if (grown.length === 0) {
+      test.check('no add-by-handle chrome anywhere in the chat page');
+    } else {
+      test.fail('still in the chat window: ' + grown.join(', '));
+    }
 
-      // Two berts, two endings, two Confirms: a handle is a word, and
-      // the question is which key it means.
-      const confirms = out.split('data-add-key=').length - 1;
-      if (confirms === 2 && out.indexOf('mjowM=') !== -1 && out.indexOf('Zv0gX0=') !== -1) {
-        test.check('and every key behind the word is listed by its ending');
-      } else {
-        test.fail('rows: ' + out);
-      }
-    });
+    // And the source no longer knows how: a panel nobody mounts is a
+    // panel somebody mounts again.
+    //
+    // One write stays, and it is not address-book UI: acquireInvited
+    // files the key that claimed a label this node minted an invite for.
+    // Invite stays in chat by this cycle's own note, and that acquire is
+    // the invite's consequence rather than a way to edit the book — it
+    // has no control, and a human is never asked.
+    const src = fs.readFileSync(APP_SCRIPT, 'utf8');
+    if (src.indexOf('findByHandle') === -1 && src.indexOf('/api/hub/peer') === -1) {
+      test.check('and it offers no way to add, accept, block or rename anybody');
+    } else {
+      test.fail('relayChat.js still carries address-book verbs');
+    }
+
+    if ((src.match(/api\/hub\/contact/g) || []).length === 1 && /via: 'invite'/.test(src)) {
+      test.check('the one contact write left is the invite it just minted');
+    } else {
+      test.fail('unexpected contact writes in relayChat.js');
+    }
   });
 }
 
@@ -1400,8 +1403,8 @@ function holdLine() {
 
 // Hold puts somebody in the list without letting them in: a × row you
 // can pick, so you can say yes, and no composer while they are open.
-function heldRowsAndTheStrip() {
-  test.subHeading('Held in the list, and the one decision about them');
+function heldRowsPointAtContacts() {
+  test.subHeading('Chat shows who is waiting, and sends you where it is decided');
 
   const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
   const HELD = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
@@ -1415,167 +1418,50 @@ function heldRowsAndTheStrip() {
   });
 
   return settle().then(function () {
-    // The decision sits beside the name, not under it: one line, the
-    // select taking the width and the button at its right.
-    const row = app.container.innerHTML;
-    const rowAt = row.indexOf('id="rc-to-row"');
-    const inside = rowAt === -1 ? '' : row.slice(rowAt, row.indexOf('</div>', rowAt));
-    if (inside.indexOf('id="rc-to-pick"') !== -1 && inside.indexOf('id="rc-peer-strip"') !== -1) {
-      test.check('the To control and its button share a line');
-    } else {
-      test.fail('to row: ' + row.slice(rowAt, rowAt + 300));
-    }
-
     const list = el(app, 'rc-to-pick').innerHTML;
-    if (/optgroup label="Blocked"/.test(list) && /×\s*carol/.test(list)) {
-      test.check('somebody held is listed apart, and marked');
+    if (/optgroup label="Blocked"/.test(list) && /carol/.test(list)) {
+      test.check('somebody waiting is still listed here, and still marked');
     } else {
       test.fail('list: ' + list);
     }
 
-    // Last of everything: the bottom of a list is where you go looking
-    // for somebody on purpose, and these are rows you open to change
-    // your mind about rather than to talk to.
-    if (list.indexOf('label="Blocked"') > list.indexOf('label="Peers"')) {
-      test.check('and that group is the last one in the list');
-    } else {
-      test.fail('group order: ' + list);
-    }
-
-    // Selectable, because picking them is how they get accepted — a
-    // disabled option could never be chosen at all.
-    el(app, 'rc-to-pick').value = HELD;
-    el(app, 'rc-to-pick').fire('change');
-    return settle().then(function () {
-      // Both, side by side: somebody can be a nuisance before you have
-      // decided to talk to them, so saying no must not require saying
-      // yes first.
-      const offered = el(app, 'rc-peer-strip').innerHTML;
-      if (offered.indexOf('rc-peer-accept') !== -1 && offered.indexOf('rc-peer-block') !== -1) {
-        test.check('picking them offers both answers, yes and no');
-      } else {
-        test.fail('strip: ' + offered);
-      }
-
-      if (el(app, 'rc-composer').style.display === 'none') {
-        test.check('and there is nothing to type at somebody you have not accepted');
-      } else {
-        test.fail('composer shown for a held row');
-      }
-
-      // Enter and a stale page reach the send path directly, so the
-      // refusal cannot live only in what is on screen.
-      const before = app.log.length;
-      el(app, 'rc-text').value = 'hello';
-      el(app, 'rc-send').fire('click');
-      const sends = app.log.slice(before).filter(function (c) { return c.url.indexOf('/api/hub/send') === 0; });
-      if (sends.length === 0 && /accept them first/.test(el(app, 'rc-status').textContent)) {
-        test.check('and the send itself refuses, not merely the missing box');
-      } else {
-        test.fail('sends: ' + sends.length + ' status: ' + el(app, 'rc-status').textContent);
-      }
-
-      // Accept goes to this node, never to the mailbox.
-      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-accept') });
-      return settle().then(function () {
-        const accepted = app.log.filter(function (c) { return c.url === '/api/hub/peer'; });
-        if (accepted.length === 1 && accepted[0].method === 'POST') {
-          test.check('accepting is one call, and it is a local one');
-        } else {
-          test.fail('peer calls: ' + JSON.stringify(accepted));
-        }
-      });
-    });
-  });
-}
-
-// Blocking a contact takes two presses of the same button: a button that
-// says what it is about to do is the confirmation.
-function blockingTakesTwo() {
-  test.subHeading('Block says what it is about to do, then does it');
-
-  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
-  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
-  const app = mountApp(store, {
-    inboxStatus: 200,
-    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false, held: false, blocked: false }],
-  });
-
-  return settle().then(function () {
+    // A contact is somebody to write to, and that is all this window has
+    // to say about them: no Block, no rename, no strip at all.
     el(app, 'rc-to-pick').value = BERT;
     el(app, 'rc-to-pick').fire('change');
     return settle().then(function () {
-      const forContact = el(app, 'rc-peer-strip').innerHTML;
-      if (forContact.indexOf('rc-peer-block') !== -1 && forContact.indexOf('rc-peer-accept') === -1) {
-        test.check('a contact can be blocked, and has nothing to accept');
+      if (el(app, 'rc-peer-strip').innerHTML === '') {
+        test.check('and a contact gets no verbs in the chat window');
       } else {
-        test.fail('strip for a contact: ' + forContact);
+        test.fail('strip for a contact: ' + el(app, 'rc-peer-strip').innerHTML);
       }
 
-      const before = app.log.length;
-      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-block') });
-      const armed = el(app, 'rc-peer-strip').innerHTML;
-      const posted = app.log.slice(before).filter(function (c) { return c.url === '/api/hub/peer'; });
-      if (posted.length === 0 && /Really block\?/.test(armed)) {
-        test.check('the first press only asks');
-      } else {
-        test.fail('first press posted ' + posted.length + ': ' + armed);
-      }
-
-      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-block') });
+      // Somebody held has nothing to type at — and would be a dead end
+      // without the way out, now that the deciding has moved.
+      el(app, 'rc-to-pick').value = HELD;
+      el(app, 'rc-to-pick').fire('change');
       return settle().then(function () {
-        const sent = app.log.filter(function (c) { return c.url === '/api/hub/peer'; });
-        if (sent.length === 1) {
-          test.check('and the second one does it');
+        const strip = el(app, 'rc-peer-strip').innerHTML;
+        if (/rc-open-contacts/.test(strip) && /Not added/.test(strip) &&
+            strip.indexOf('rc-peer-accept') === -1 && strip.indexOf('rc-peer-block') === -1) {
+          test.check('a held row offers the way to Contacts, and no decision of its own');
         } else {
-          test.fail('after two presses: ' + sent.length);
+          test.fail('held strip: ' + strip);
         }
-      });
-    });
-  });
-}
 
-// Somebody blocked has one thing on the strip: the way back.
-function blockedOffersTheWayBack() {
-  test.subHeading('A blocked row can always be undone');
-
-  const DAVE = 'MCowBQYDK2VwAyEAdavedavedavedavedavedavedavedavedave=';
-  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
-  const app = mountApp(store, {
-    inboxStatus: 200,
-    people: [{ publicKey: DAVE, publicLabel: 'dave', caption: 'dave', mine: false, held: true, blocked: true }],
-  });
-
-  return settle().then(function () {
-    el(app, 'rc-to-pick').value = DAVE;
-    el(app, 'rc-to-pick').fire('change');
-    return settle().then(function () {
-      // Which state somebody is in is in the buttons: Unblock is only
-      // ever offered to somebody blocked. The select beside it already
-      // carries the name and the ×.
-      // The row itself says refused, in the shell's own word for it.
-      const listed = el(app, 'rc-to-pick').innerHTML;
-      if (listed.indexOf(spirit.core.const.ICON.NO) !== -1 && listed.indexOf('× dave') === -1) {
-        test.check('a blocked row is marked refused, not merely not-added');
-      } else {
-        test.fail('blocked row: ' + listed);
-      }
-
-      const strip = el(app, 'rc-peer-strip').innerHTML;
-      if (strip.indexOf('rc-peer-unblock') !== -1 && strip.indexOf('rc-peer-block"') === -1 &&
-          strip.indexOf('rc-peer-accept') === -1) {
-        test.check('it offers only the way back');
-      } else {
-        test.fail('blocked strip: ' + strip);
-      }
-
-      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-unblock') });
-      return settle().then(function () {
-        const calls = app.log.filter(function (c) { return c.url === '/api/hub/peer'; });
-        if (calls.length === 1) {
-          test.check('and undoing it is one call, like doing it');
+        if (el(app, 'rc-composer').style.display === 'none') {
+          test.check('and there is still nothing to type at somebody unaccepted');
         } else {
-          test.fail('unblock calls: ' + calls.length);
+          test.fail('composer shown for a held row');
+        }
+
+        let opened = '';
+        app.api.launchApp = function (id) { opened = id; };
+        el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-open-contacts') });
+        if (opened === 'app/contacts') {
+          test.check('and pressing it opens the app that owns the decision');
+        } else {
+          test.fail('launched: ' + opened);
         }
       });
     });
@@ -1816,9 +1702,8 @@ claimBinds()
   .then(inviteOnlyForAnOwner)
   .then(invitePanelForgetsTheCall)
   .then(settingsPanel)
-  .then(heldRowsAndTheStrip)
-  .then(blockingTakesTwo)
-  .then(blockedOffersTheWayBack)
+  .then(heldRowsPointAtContacts)
+  .then(noAddressBookInChat)
   .then(doNotDisturb)
   .then(newOpensTheList)
   .then(sendsAndReadsPackets)
@@ -1835,7 +1720,6 @@ claimBinds()
   .then(newFilterSnapsBack)
   .then(nobodyToWriteTo)
   .then(ownTailIsReadable)
-  .then(addPanelSaysWhereToLook)
   .then(noTailNoLine)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {

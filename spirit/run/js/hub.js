@@ -144,6 +144,10 @@ function buildPeople(rootDir, peers, relayUrl) {
         publicKey: row.publicKey,
         publicLabel: (seen && (seen.publicLabel || seen.name)) || row.publicLabel || '',
         caption: whoBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
+        // The raw one, beside the resolved caption: an editor has to
+        // show what is stored, not what is shown, or clearing the field
+        // would look like clearing the name.
+        myLabel: row.myLabel || '',
         acquiredVia: whoBook.acquiredVia(row),
         // One question the app asks about every row: may this be written
         // to? Held and blocked both answer no, and they are drawn the
@@ -653,8 +657,8 @@ function createHub(rootDir) {
       // and `unblock` only takes the block off. Somebody who was blocked
       // while still waiting goes back to waiting, not into the address
       // book — undoing a no is not the same as saying yes.
-      if (['block', 'unblock', 'accept'].indexOf(action) === -1) {
-        fail(res, 400, 'action must be block, unblock or accept');
+      if (['block', 'unblock', 'accept', 'label'].indexOf(action) === -1) {
+        fail(res, 400, 'action must be block, unblock, accept or label');
         return;
       }
       var id = auth.loadIdentity(rootDir);
@@ -669,6 +673,21 @@ function createHub(rootDir) {
       if (action === 'block' && !whoBook.byPublicKey(rootDir, publicKey)) {
         whoBook.hold(rootDir, { publicKey: publicKey, publicLabel: String((body && body.publicLabel) || '') });
       }
+      // What YOU call that key. Never uploaded, never seen by the peer,
+      // and the reason whoBook keeps publicLabel separate: the mailbox's
+      // caption is theirs and can change under you, this one is yours.
+      if (action === 'label') {
+        var row = whoBook.setMyLabel(rootDir, publicKey, String((body && body.myLabel) || ''));
+        if (!row) { fail(res, 404, 'no row for that key'); return; }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          publicKey: row.publicKey,
+          myLabel: row.myLabel || '',
+          caption: whoBook.labelForKey(rootDir, publicKey, row.publicLabel || ''),
+        }));
+        return;
+      }
+
       var row;
       if (action === 'block') row = whoBook.setBlocked(rootDir, publicKey, true);
       else if (action === 'unblock') row = whoBook.setBlocked(rootDir, publicKey, false);

@@ -851,7 +851,7 @@ test.subHeading('Jobs has moved out of index.html');
   const memberIds = spiritMemberIds();
   const known = booted.shell.listApps().map(function (a) { return a.id; });
   const missing = memberIds.filter(function (id) { return known.indexOf(id) === -1; });
-  if (memberIds.length === 6 && missing.length === 0) {
+  if (memberIds.length === 7 && missing.length === 0) {
     test.check('every id in the Spirit member list resolves to a real app');
   } else {
     test.fail('unresolved Spirit members: ' + JSON.stringify(missing) + ' of ' + JSON.stringify(memberIds));
@@ -1981,6 +1981,56 @@ test.subHeading('Groups left index.html');
     test.check('and lists groups through api, not the global');
   } else {
     test.fail('group-manager.js reaches for spirit.shell.listGroups');
+  }
+}
+
+test.subHeading('Contacts is its own app');
+
+// Packet 2: whoBook stayed the store, the view left Relay Chat. Chat is
+// one reader of that book; Chess will be another, and neither is a
+// reason to open a chat window to add somebody.
+{
+  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
+  const CONTACTS_SCRIPT = 'app/contacts/contacts.js';
+
+  const manifestContacts = manifest('app/contacts/contacts.json');
+  if (manifestContacts.intrinsic === true && manifestContacts.owner === 'system' &&
+      manifestContacts.name === 'Contacts') {
+    test.check('it ships a manifest that says intrinsic, and who owns it');
+  } else {
+    test.fail('contacts.json: ' + JSON.stringify(manifestContacts));
+  }
+
+  const early = bootShell(prefs, [NATTER_SCRIPT, CONTACTS_SCRIPT], true, BOUND);
+  const declared = early.shell.listApps().filter(function (a) { return a.id === 'app/contacts'; })[0];
+  if (declared && declared.intrinsic === true && declared.group === 'spirit') {
+    test.check('declared eagerly with the snapshot deferred, and in the Spirit group');
+  } else {
+    test.fail('contacts app: ' + JSON.stringify(declared));
+  }
+
+  const fetched = early.scripts.map(function (script) { return script.src || ''; });
+  if (!fetched.some(function (src) { return src.indexOf('contacts.js') !== -1; })) {
+    test.check('and its script is not fetched until it is opened');
+  } else {
+    test.fail('contacts.js was loaded at boot');
+  }
+
+  const inGrid = (spiritGroupLabels(early).match(/>Contacts</g) || []).length;
+  if (inGrid === 1) {
+    test.check('and it appears in the Spirit grid exactly once');
+  } else {
+    test.fail('Contacts in the grid ' + inGrid + ' times: ' + spiritGroupLabels(early));
+  }
+
+  // The move, from the other end: the chat app must not still be able to
+  // edit the book. One write is left and it is the invite's own, which
+  // this cycle keeps in chat.
+  const chat = readRun('app/relayChat/relayChat.js');
+  if (chat.indexOf('rc-add-panel') === -1 && chat.indexOf('/api/hub/peer') === -1) {
+    test.check('and Relay Chat no longer adds, accepts, blocks or renames');
+  } else {
+    test.fail('relayChat.js still carries address-book verbs');
   }
 }
 

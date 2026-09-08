@@ -157,21 +157,6 @@ spirit.shell.activateApp({
           '<div class="job-log-empty" id="rc-hold-line"></div>' +
         '</details>' +
       '</details>' +
-      // Contacts cut 2. Folded away at the foot of the page, next to the
-      // footer it points at: adding somebody is rare, the conversation is
-      // what the page is for, and the two halves of that phone call now
-      // sit together — the rows Adam reads, and the line Bert reads.
-      // A handle is a word somebody said out loud, so it may belong to
-      // several keys — every one of them is listed, and a human picks by
-      // the END of the key, on the phone, before anything is written.
-      '<details class="stat-tile wide" id="rc-add-panel">' +
-        '<summary>Add someone by handle</summary>' +
-        '<div class="start-job-form">' +
-          '<input type="text" id="rc-add-handle" placeholder="the name you were told">' +
-          '<button type="button" id="rc-add-find">Find</button>' +
-        '</div>' +
-        '<div id="rc-add-out"></div>' +
-      '</details>' +
       // Under Add, and empty until this node owns a mailbox. Chat 4: the
       // mint UI is not hidden for a friend, it is not built for them —
       // ownedUrls decides, and a node that owns nothing has no invite
@@ -296,7 +281,7 @@ spirit.shell.activateApp({
     // the line. AGENT.md — do not show chrome that is not useful in that
     // state — and here the instruction for getting in is the page, not a
     // footnote beside a dead form.
-    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-row', 'rc-to-pick', 'rc-settings-panel', 'rc-add-panel', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
+    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-row', 'rc-to-pick', 'rc-settings-panel', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
 
     function showBoundChrome(show) {
       RC_BOUND_ONLY.forEach(function (id) {
@@ -893,42 +878,22 @@ spirit.shell.activateApp({
     //   held       → Accept: they wrote, and you say yes.
     //   blocked    → Unblock, which is the same yes said later.
     //   the relay  → nothing. There is no accepting a mailbox.
-    var blockArmed = ''; // the key whose Block has been pressed once
     function paintPeerStrip() {
       var strip = document.getElementById('rc-peer-strip');
       if (!strip) return;
       var key = pickedPeerKey();
       var person = people.filter(function (p) { return p.publicKey === key; })[0];
-      if (!key || !person || key === mailboxKey) {
+      if (!key || !person || key === mailboxKey || !person.held) {
         strip.innerHTML = '';
-        blockArmed = '';
         return;
       }
-      if (blockArmed && blockArmed !== key) blockArmed = '';
-
-      // Anybody can be blocked, not only somebody you added. An
-      // ordinary personal node can become a nuisance while you are still
-      // deciding whether to talk to it, so Accept and Block sit side by
-      // side on a row that is waiting.
-      var buttons = '';
-      if (person.blocked) {
-        // One decision at a time: unblocking puts them back where they
-        // were, and if that is "waiting" the next press is Accept.
-        buttons = '<button type="button" class="cancel-btn" id="rc-peer-unblock">Unblock</button>';
-      } else {
-        if (person.held) {
-          buttons += '<button type="button" class="cancel-btn" id="rc-peer-accept">Accept</button>';
-        }
-        buttons += '<button type="button" class="cancel-btn" id="rc-peer-block">' +
-          (blockArmed === key ? 'Really block?' : 'Block') + '</button>';
-      }
-
-      // No caption: the control to the left of these buttons is already
-      // the name, and repeating it would be the app telling you what you
-      // just picked. Which state they are in is in the buttons — Unblock
-      // is only offered to somebody blocked, Accept only to somebody
-      // waiting.
-      strip.innerHTML = buttons;
+      // Somebody waiting or refused is not somebody to write to, and the
+      // decision about them is not chat's to take (packet 2): accepting,
+      // blocking and renaming all live in Contacts now. What is left here
+      // is the way there, because a row you cannot act on and cannot
+      // leave is a dead end.
+      strip.innerHTML = '<button type="button" class="cancel-btn" id="rc-open-contacts">' +
+        (person.blocked ? 'Blocked — open Contacts' : 'Not added — open Contacts') + '</button>';
     }
 
     // A thread and a composer are for saying something to somebody. With
@@ -1297,71 +1262,6 @@ spirit.shell.activateApp({
         : '';
     }
 
-    // Every key the mailbox has under that handle. Never one: a handle
-    // is a caption, and two johns are two keys — the whole reason this
-    // asks rather than picks.
-    function findByHandle() {
-      var handle = document.getElementById('rc-add-handle').value.trim();
-      var out = document.getElementById('rc-add-out');
-      if (!handle) {
-        out.innerHTML = '<div class="job-log-empty">Type the name you were told.</div>';
-        return;
-      }
-      out.innerHTML = '<div class="job-log-empty">looking…</div>';
-      fetch('/api/hub/handle?handle=' + encodeURIComponent(handle))
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var matches = (data && data.matches) || [];
-          if (!matches.length) {
-            out.innerHTML = '<div class="job-log-empty">Nobody on this mailbox is called ' +
-              api.escapeHtml(handle) + '.</div>';
-            return;
-          }
-          // One match is still a question. A lone john today is not a
-          // lone john next month, and the confirm is the habit that
-          // protects the person, not the count.
-          out.innerHTML =
-            '<div class="job-log-empty">Ask them what their key ends with. They can see it in fine print ' +
-            'at the bottom of their chat app, then confirm the one that matches.</div>' +
-            matches.map(function (row) {
-              var known = row.acquiredVia === 'handle'
-                ? ' — already confirmed'
-                : (row.acquiredVia && row.acquiredVia !== 'census' ? ' — already a contact' : '');
-              return '<div class="rc-msg them">' +
-                '<span class="rc-who">' + api.escapeHtml(row.publicLabel) + '</span>' +
-                '<span class="rc-text">ends …' + api.escapeHtml(row.tail) + api.escapeHtml(known) + '</span>' +
-                '<button type="button" class="cancel-btn" data-add-key="' + api.escapeHtml(row.publicKey) + '">Confirm</button>' +
-                '</div>';
-            }).join('');
-        })
-        .catch(function (e) { out.innerHTML = '<div class="job-log-empty">could not ask: ' + api.escapeHtml(e.message) + '</div>'; });
-    }
-
-    document.getElementById('rc-add-find').addEventListener('click', findByHandle);
-    document.getElementById('rc-add-handle').addEventListener('keydown', function (event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        findByHandle();
-      }
-    });
-
-    // Confirming is what writes the contact. Delegated, because the rows
-    // are painted and repainted.
-    document.getElementById('rc-add-out').addEventListener('click', function (event) {
-      var button = event.target && event.target.closest && event.target.closest('[data-add-key]');
-      if (!button) return;
-      var out = document.getElementById('rc-add-out');
-      hubPost('/api/hub/contact', { publicKey: button.dataset.addKey }).then(function (r) {
-        if (r.status !== 201) {
-          out.innerHTML = '<div class="job-log-empty">' + api.escapeHtml(r.status + ' ' + r.text) + '</div>';
-          return;
-        }
-        out.innerHTML = '<div class="job-log-empty">added — they are in your list now</div>';
-        document.getElementById('rc-add-handle').value = '';
-        refreshPeople();
-      });
-    });
-
     // Picking a peer is picking a conversation, and it is remembered:
     // the thread narrows to that peer's archive and comes back to it on
     // the next visit.
@@ -1374,38 +1274,12 @@ spirit.shell.activateApp({
       paintTitle();     // and so does its share of the count
     });
 
-    // Delegated: the strip is repainted on every list paint, so nothing
-    // may hold a reference to its buttons.
+    // The strip is repainted on every list paint, so the click is
+    // delegated and holds no reference to the button.
     document.getElementById('rc-peer-strip').addEventListener('click', function (event) {
-      var target = event.target;
-      if (!target || !target.closest) return;
-      var key = pickedPeerKey();
-      if (!key) return;
-
-      if (target.closest('#rc-peer-accept') || target.closest('#rc-peer-unblock')) {
-        var yes = target.closest('#rc-peer-accept') ? 'accept' : 'unblock';
-        hubPost('/api/hub/peer', { publicKey: key, action: yes }).then(function (r) {
-          if (r.status !== 200) { setStatus(yes + ' failed: ' + r.status + ' ' + r.text); return; }
-          refreshPeople().then(function () { refreshInbox(); });
-        });
-        return;
-      }
-
-      if (target.closest('#rc-peer-block')) {
-        // Two presses, in the same button. A confirm dialog for this
-        // would be a second thing to read; a button that says what it is
-        // about to do is the confirmation.
-        if (blockArmed !== key) {
-          blockArmed = key;
-          paintPeerStrip();
-          return;
-        }
-        blockArmed = '';
-        hubPost('/api/hub/peer', { publicKey: key, action: 'block' }).then(function (r) {
-          if (r.status !== 200) { setStatus('block failed: ' + r.status + ' ' + r.text); return; }
-          refreshPeople();
-        });
-      }
+      if (!event.target || !event.target.closest) return;
+      if (!event.target.closest('#rc-open-contacts')) return;
+      api.launchApp('app/contacts');
     });
 
     // The filter is what kind of row you want; it is remembered. The

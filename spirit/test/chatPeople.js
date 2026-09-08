@@ -675,6 +675,20 @@ function heldAndBlocked() {
     test.fail('blocked stranger: ' + JSON.stringify(shut));
   }
 
+  // What YOU call that key, which the address book edits and the wire
+  // never sees. The caption follows it; publicLabel does not move.
+  const named = auth.generateIdentity('bert');
+  whoBook.acquire(home, { publicKey: named.publicKey, publicLabel: 'bert' }, 'handle');
+  whoBook.setMyLabel(home, named.publicKey, 'lovelyBert');
+  const relabelled = buildPeople(home, [peer('bert', named.publicKey)], RELAY_URL)
+    .filter(function (p) { return p.publicKey === named.publicKey; })[0];
+  if (relabelled && relabelled.caption === 'lovelyBert' && relabelled.myLabel === 'lovelyBert' &&
+      relabelled.publicLabel === 'bert') {
+    test.check('a private label captions the row without touching their own name');
+  } else {
+    test.fail('after relabel: ' + JSON.stringify(relabelled));
+  }
+
   // Accepting is the way back, and it is one call.
   whoBook.accept(home, stranger.publicKey);
   if (partitionInbox(home, inbox).known.length === 1) {
