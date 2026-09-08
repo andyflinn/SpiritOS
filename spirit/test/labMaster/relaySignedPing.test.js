@@ -20,7 +20,7 @@ const RELAY_ORIGIN = 'http://127.0.0.1:' + RELAY_PORT;
 const ANDY_ORIGIN = 'http://127.0.0.1:' + ANDY_PORT;
 const TEXT = 'signed ping ' + Date.now();
 
-function request(urlString, method, bodyObj) {
+function request(urlString, method, bodyObj, extraHeaders) {
   return new Promise(function (resolve, reject) {
     const url = new URL(urlString);
     const payload = bodyObj == null ? '' : JSON.stringify(bodyObj);
@@ -30,11 +30,11 @@ function request(urlString, method, bodyObj) {
       port: url.port,
       path: url.pathname + url.search,
       method: method,
-      headers: {
+      headers: Object.assign({
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(payload),
         'Host': url.host,
-      },
+      }, extraHeaders || {}),
     }, function (res) {
       let chunks = '';
       res.on('data', function (c) { chunks += c; });
@@ -46,8 +46,8 @@ function request(urlString, method, bodyObj) {
   });
 }
 
-function json(urlString, method, bodyObj) {
-  return request(urlString, method, bodyObj).then(function (r) {
+function json(urlString, method, bodyObj, extraHeaders) {
+  return request(urlString, method, bodyObj, extraHeaders).then(function (r) {
     let parsed = null;
     try { parsed = r.text ? JSON.parse(r.text) : null; } catch (e) { parsed = null; }
     return { status: r.status, text: r.text, json: parsed };
@@ -205,8 +205,12 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 403) test.check('unsigned inbox read rejected');
     else test.fail('unsigned inbox read → ' + r.status + ' ' + r.text);
-    const bertSig = auth.sign(bertId.privateKey, auth.inboxMessage('bert'));
-    return json(RELAY_ORIGIN + '/api/relay/inbox?name=bert&sig=' + encodeURIComponent(bertSig), 'GET', null);
+    // In a header, and signed for this minute. The relay refuses a query
+    // `sig` outright now — a signature on a URL is a signature in an
+    // access log — and the bytes carry the minute so a captured one
+    // expires. See spirit/test/inboxSig.js.
+    const bertSig = auth.sign(bertId.privateKey, auth.inboxMessage('bert', Date.now()));
+    return json(RELAY_ORIGIN + '/api/relay/inbox?name=bert', 'GET', null, { 'X-Spirit-Sig': bertSig });
   })
   .then(function (r) {
     var hit = r.json && Array.isArray(r.json.messages) &&

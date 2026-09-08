@@ -66,7 +66,7 @@ function loadRelayUrl(rootDir) {
   return urls.length ? urls[0] : null;
 }
 
-function relayRequest(relayUrl, method, pathname, bodyObj) {
+function relayRequest(relayUrl, method, pathname, bodyObj, extraHeaders) {
   return new Promise(function (resolve, reject) {
     var target;
     try { target = assertRelayUrl(relayUrl + pathname); }
@@ -79,11 +79,11 @@ function relayRequest(relayUrl, method, pathname, bodyObj) {
       port: target.port,
       path: target.pathname + target.search,
       method: method,
-      headers: {
+      headers: Object.assign({
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(payload),
         'Host': target.host
-      }
+      }, extraHeaders || {})
     }, function (res) {
       var chunks = '';
       res.on('data', function (c) { chunks += c; });
@@ -449,11 +449,16 @@ function createHub(rootDir) {
       // still accepts in open and names mode.
       var id = auth.loadIdentity(rootDir);
       var query = '?name=' + encodeURIComponent(name);
+      // In a header, never on the URL: the relay refuses a query `sig`
+      // outright, because a signature that has been in a URL is already
+      // in an access log. Signed for this minute — the relay accepts the
+      // one either side of its own clock and nothing further out.
+      var headers = {};
       if (id && id.privateKey) {
-        query += '&sig=' + encodeURIComponent(auth.sign(id.privateKey, auth.inboxMessage(name)));
+        headers['X-Spirit-Sig'] = auth.sign(id.privateKey, auth.inboxMessage(name, Date.now()));
       }
       var policy = unknownPolicy(urlObj.searchParams.get('unknown'));
-      relayRequest(url, 'GET', '/api/relay/inbox' + query, null)
+      relayRequest(url, 'GET', '/api/relay/inbox' + query, null, headers)
         .then(function (r) {
           if (r.status !== 200) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });

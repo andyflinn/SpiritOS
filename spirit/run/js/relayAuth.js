@@ -30,8 +30,32 @@ function statusMessage(name) {
 // anonymous, and any name was enough to drain someone's mail. Peer-by-key
 // re-opened that hole; this is the gate again, and checkInboxKey below is
 // how it is enforced now that a peer carries a key of its own.
-function inboxMessage(name) {
-  return 'inbox\n' + name;
+//
+// The bytes carry the minute they were made in, because without one the
+// signature is a permanent read token: `inbox\n<label>` never changes, it
+// travelled in the query string, and a query string is written to every
+// access log a request passes through. One line of a proxy log was a
+// standing licence to drain that mailbox, with no way to revoke it short
+// of changing the key.
+//
+// `unix-minute` is decimal and unpadded. The window below is what makes a
+// captured line die on its own.
+function inboxMessage(name, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'inbox\n' + name + '\n' + minute;
+}
+
+// Previous, current and next: enough for two clocks a minute apart, and
+// short enough that a captured signature is worthless before anybody has
+// finished reading the log it landed in. Next as well as previous,
+// because the SIGNER may be the one running fast.
+function inboxSignatureOk(publicKey, token, sig, atMs) {
+  if (!publicKey || !sig) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, inboxMessage(token, now + step * 60000), sig)) return true;
+  }
+  return false;
 }
 
 function generateIdentity(name) {
@@ -190,9 +214,13 @@ function checkSend(allow, from, sig, to, text) {
 // the proof runs against that key rather than against the allow list.
 // `token` is whatever the caller asked for — a public label or a public
 // key — and has to be the same string the signature was made over.
-function checkInboxKey(publicKey, token, sig) {
+function checkInboxKey(publicKey, token, sig, atMs) {
   if (!publicKey) return { ok: false, status: 403, error: 'name not allowed' };
-  if (!sig || !verify(publicKey, inboxMessage(token), sig)) {
+  // Missing and wrong are told apart, because they are different
+  // mistakes: one is a caller that has not been updated, the other is a
+  // signature that does not hold. Same status, no new family.
+  if (!sig) return { ok: false, status: 403, error: 'inbox signature required' };
+  if (!inboxSignatureOk(publicKey, token, sig, atMs)) {
     return { ok: false, status: 403, error: 'bad inbox signature' };
   }
   return { ok: true };
@@ -201,12 +229,16 @@ function checkInboxKey(publicKey, token, sig) {
 // Keyless mailbox: open and names relays have no per-peer key, so this
 // falls back to the allow list exactly as claim and send do there. In keys
 // mode a name with no key behind it is nobody's mailbox to read.
-function checkInbox(allow, name, sig) {
+function checkInbox(allow, name, sig, atMs) {
   if (!name) return { ok: false, status: 400, error: 'name required' };
+  // An open or names relay has no per-peer key to check against, so it
+  // never asked for a signature and still does not. The window is a
+  // property of the proof, not of the route.
   if (allow.mode === 'open' || allow.mode === 'names') return { ok: true };
   const pub = allow.byName[name];
   if (!pub) return { ok: false, status: 403, error: 'name not allowed' };
-  if (!sig || !verify(pub, inboxMessage(name), sig)) {
+  if (!sig) return { ok: false, status: 403, error: 'inbox signature required' };
+  if (!inboxSignatureOk(pub, name, sig, atMs)) {
     return { ok: false, status: 403, error: 'bad inbox signature' };
   }
   return { ok: true };
@@ -236,6 +268,7 @@ module.exports = {
   sendMessage,
   statusMessage,
   inboxMessage,
+  inboxSignatureOk,
   generateIdentity,
   sign,
   verify,

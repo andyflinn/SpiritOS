@@ -515,7 +515,10 @@ function createRelay(rootDir) {
     return { ok: true, status: 201, message: msg };
   }
 
-  function inbox(name, sig) {
+  // `atMs` is the clock the signature window is measured against —
+  // injected so a test can stand a minute either side of a signature
+  // without sleeping through it.
+  function inbox(name, sig, atMs) {
     var n = normalizeName(name);
     if (!n) return { ok: false, status: 400, error: 'name required' };
     var party = resolveParty(n);
@@ -529,8 +532,8 @@ function createRelay(rootDir) {
     // back to the allow list, which in keys mode is the owner and nobody
     // else.
     var gate = key
-      ? auth.checkInboxKey(key, n, sig)
-      : auth.checkInbox(allow, n, sig);
+      ? auth.checkInboxKey(key, n, sig, atMs)
+      : auth.checkInbox(allow, n, sig, atMs);
     if (!gate.ok) return gate;
     return {
       ok: true,
@@ -560,4 +563,28 @@ function createRelay(rootDir) {
   };
 }
 
-module.exports = { createRelay: createRelay };
+// Where the proof of a read is allowed to travel.
+//
+// A query string is written to every access log the request passes
+// through — Caddy's on this box, and whatever sits in front of it — so a
+// signature there is a read credential sitting in a log file. The signed
+// bytes carry a minute now (relayAuth.inboxMessage), which makes a
+// captured one expire; this is what stops it being written down at all.
+//
+// A request that still puts `sig` on the query is refused even when the
+// header is perfectly good. Accepting it "just this once" is how a caller
+// stays unfixed, and a signature that has been in a URL is already in a
+// log whatever happens next. `name` may stay on the query: it is the
+// mailbox being asked for, not the permission to read it.
+//
+// A function rather than four lines in the route, so a test can drive
+// the decision itself instead of reading the source and hoping.
+function inboxSignatureFrom(querySig, headers) {
+  if (querySig) {
+    return { ok: false, status: 403, error: 'inbox signature must be a header' };
+  }
+  var h = headers || {};
+  return { ok: true, sig: h['x-spirit-sig'] || h['X-Spirit-Sig'] || '' };
+}
+
+module.exports = { createRelay: createRelay, inboxSignatureFrom: inboxSignatureFrom };

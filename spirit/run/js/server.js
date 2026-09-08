@@ -665,8 +665,16 @@ const server = http.createServer((req, res) => {
     });
   }
 
+  // The proof of a read arrives in a header and nowhere else — the rule
+  // itself is relay.inboxSignatureFrom, where a test can drive it.
   function handleRelayInbox(req, res, url) {
-    var result = relay.inbox(url.searchParams.get('name') || '', url.searchParams.get('sig') || '');
+    var from = createRelay.inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
+    if (!from.ok) {
+      res.writeHead(from.status, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: from.error }));
+      return;
+    }
+    var result = relay.inbox(url.searchParams.get('name') || '', from.sig);
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(result.ok ? { messages: result.messages } : { error: result.error }));
   }

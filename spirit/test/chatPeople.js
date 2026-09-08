@@ -324,7 +324,18 @@ function relayServer(box) {
         return;
       }
       if (req.method === 'GET' && url.pathname === '/api/relay/inbox') {
-        const r = box.inbox(url.searchParams.get('name') || '', url.searchParams.get('sig') || '');
+        // Header only, exactly as the real route is: the hub signs for
+        // this minute and puts it in X-Spirit-Sig, and a query `sig` is
+        // refused outright (spirit/test/inboxSig.js). A stub that still
+        // read the query would go on passing while the thing it stands
+        // in for had stopped working.
+        const from = require('../run/js/relay.js').inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
+        if (!from.ok) {
+          res.writeHead(from.status, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: from.error }));
+          return;
+        }
+        const r = box.inbox(url.searchParams.get('name') || '', from.sig);
         res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(r.ok ? { messages: r.messages } : { error: r.error }));
         return;
