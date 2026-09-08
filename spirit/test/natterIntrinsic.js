@@ -989,11 +989,12 @@ test.subHeading('Processes has moved out of index.html');
     test.fail('unresolved: ' + JSON.stringify(missing));
   }
 
-  // Five of the five are out; only Groups still registers itself beside
-  // the two viewers and Spirit.
+  // Every app that was going to move has moved. What is left registers
+  // itself here because it is not an app in that sense: two viewers with
+  // no icon of their own, and the Spirit grid that holds the others.
   const stillInline = (html.match(/registerApp\(\{/g) || []).length;
-  if (stillInline === 4) {
-    test.check('four registerApp blocks remain: the two viewers, Groups, and Spirit itself');
+  if (stillInline === 3) {
+    test.check('three registerApp blocks remain: the two viewers and Spirit itself');
   } else {
     test.fail('registerApp blocks left in index.html: ' + stillInline);
   }
@@ -1900,6 +1901,86 @@ test.subHeading('Files left index.html');
     test.check('and Files opens them through api, not the global launcher');
   } else {
     test.fail('files.js reaches for spirit.shell.launchApp');
+  }
+}
+
+test.subHeading('Groups left index.html');
+
+// The sixth to move, and the last of the five the plan named. Same app —
+// create, rename, re-icon, delete — with its members still going back to
+// the desktop when a group goes.
+{
+  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
+  const GROUPS_SCRIPT = 'app/group-manager/group-manager.js';
+
+  const manifestGroups = manifest('app/group-manager/group-manager.json');
+  if (manifestGroups.intrinsic === true && manifestGroups.owner === 'system' && manifestGroups.name === 'Groups') {
+    test.check('it ships a manifest that says intrinsic, and keeps the name Groups');
+  } else {
+    test.fail('group-manager.json: ' + JSON.stringify(manifestGroups));
+  }
+
+  const early = bootShell(prefs, [NATTER_SCRIPT, GROUPS_SCRIPT], true, BOUND);
+  const declared = early.shell.listApps().filter(function (a) { return a.id === 'app/group-manager'; })[0];
+  if (declared && declared.intrinsic === true) {
+    test.check('and is declared eagerly, with the snapshot still deferred');
+  } else {
+    test.fail('groups before the snapshot: ' + JSON.stringify(early.shell.listApps().map(function (a) { return a.id; })));
+  }
+
+  const fetched = early.scripts.map(function (el) { return el.src || ''; });
+  if (!fetched.some(function (src) { return src.indexOf('group-manager.js') !== -1; })) {
+    test.check('and its script is not fetched until it is opened');
+  } else {
+    test.fail('group-manager.js was loaded at boot: ' + JSON.stringify(fetched));
+  }
+
+  // Where it already was: reachable through Spirit, never a desktop tile.
+  if (declared.group === 'spirit' && desktopLabels(early).indexOf('Groups') === -1) {
+    test.check('intrinsic keeps it in Spirit and off the desktop, as it always was');
+  } else {
+    test.fail('group ' + declared.group + ' / desktop ' + desktopLabels(early));
+  }
+
+  const inGrid = (spiritGroupLabels(early).match(/>Groups</g) || []).length;
+  if (inGrid === 1) {
+    test.check('and it appears in the Spirit grid exactly once');
+  } else {
+    test.fail('Groups in the grid ' + inGrid + ' times: ' + spiritGroupLabels(early));
+  }
+
+  // The id moved with the folder — deliberately, because a manifest that
+  // could name its own id could claim somebody else's, and saveAppManifest
+  // lets an app write its manifest. So the map carries the overrides.
+  const carried = bootShell({
+    defaultHandlers: {},
+    appOverrides: { 'group-manager': { group: 'none' } },
+    groups: {},
+  }, [NATTER_SCRIPT, GROUPS_SCRIPT], true, BOUND);
+  carried.shell.migrateAppIds();
+  const moved = carried.saved.preferences;
+  if (moved && moved.appOverrides['app/group-manager'] && moved.appOverrides['group-manager'] === undefined) {
+    test.check('a stored override under the old id follows it to the new one');
+  } else {
+    test.fail('overrides after migrate: ' + JSON.stringify(moved && moved.appOverrides));
+  }
+
+  // The Spirit app itself stays in index.html: it is the grid the others
+  // are reached through, not one of them.
+  const html = readRun('index.html');
+  if (/id: 'spirit'/.test(html) && !/id: 'group-manager'/.test(html)) {
+    test.check('Spirit still registers itself here, and Groups no longer does');
+  } else {
+    test.fail('index.html registrations are wrong after the move');
+  }
+
+  // It reads groups through the doorway. The three writers have no api
+  // method yet and are named in the file's own comment.
+  const src = readRun('app/group-manager/group-manager.js');
+  if (src.indexOf('groupsApi.listGroups()') !== -1 && src.indexOf('spirit.shell.listGroups') === -1) {
+    test.check('and lists groups through api, not the global');
+  } else {
+    test.fail('group-manager.js reaches for spirit.shell.listGroups');
   }
 }
 

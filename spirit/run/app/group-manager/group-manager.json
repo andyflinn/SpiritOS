@@ -1,0 +1,8 @@
+{
+  "name": "Groups",
+  "description": "The app groups this node has: create one, rename or re-icon it, or delete it and send its members back to the desktop.",
+  "icon": "GROUP",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}

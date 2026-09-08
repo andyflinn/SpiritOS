@@ -846,130 +846,10 @@
         });
 
         // ---- Groups app ----
-        // Manages user-created top-level app groups: create one, rename/
-        // re-icon an existing one, or delete one (its members revert to
-        // the Desktop, not orphaned — confirmed before deleting anything
-        // with a member, since that's the one destructive step here).
-        // Placement of individual apps into a group happens in the Apps
-        // table (its Location dropdown), not here — this screen manages
-        // the groups themselves, not membership.
-        var expandedGroupId = null;
-
-        function renderGroupManagerRow(g) {
-          var isExpanded = g.id === expandedGroupId;
-          var mainRow = '<tr class="job-row" data-group-row="' + escapeHtml(g.id) + '">' +
-            '<td>' + (isExpanded ? ICON.POINTDOWN : ICON.POINTRIGHT) + ' ' + escapeHtml(g.icon) + '</td>' +
-            '<td>' + escapeHtml(g.name) + '</td>' +
-            '<td>' + g.memberCount + '</td>' +
-            '</tr>';
-
-          if (!isExpanded) return mainRow;
-
-          var detailHtml = '<div class="stat-tile wide">' +
-            fileInfoRow('Id', escapeHtml(g.id)) +
-            fileInfoRow('Members', g.memberCount === 0 ? '(none — see the warning panel on the group itself)' : g.memberIds.map(escapeHtml).join(', ')) +
-            '<label class="field-label">Name<input type="text" id="group-manager-name-input" data-group-id="' + escapeHtml(g.id) + '" value="' + escapeHtml(g.name) + '"></label>' +
-            '<label class="field-label">Icon<input type="text" id="group-manager-icon-input" data-group-id="' + escapeHtml(g.id) + '" value="' + escapeHtml(g.icon) + '"></label>' +
-            '<button type="button" class="cancel-btn" data-delete-group="' + escapeHtml(g.id) + '">Delete group</button>' +
-            '</div>';
-
-          return mainRow + '<tr class="job-log-row"><td colspan="3">' + detailHtml + '</td></tr>';
-        }
-
-        function renderGroupManagerTable(force) {
-          var tbody = document.getElementById('group-manager-tbody');
-          if (!tbody) return;
-          // Same focus-preserving guard as the Apps table, same reason —
-          // render() fires on every job-updated tick regardless of user
-          // action, and would otherwise destroy a focused rename input.
-          var focusedId = document.activeElement && document.activeElement.id;
-          if (!force && (focusedId === 'group-manager-name-input' || focusedId === 'group-manager-icon-input')) return;
-          var groups = listGroups().sort(function (a, b) { return a.name.localeCompare(b.name); });
-          tbody.innerHTML = groups.map(renderGroupManagerRow).join('') || '<tr><td colspan="3">(no groups yet)</td></tr>';
-        }
-
-        registerApp({
-          id: 'group-manager',
-          name: 'Groups',
-          icon: ICON.GROUP,
-          hidden: true, // reachable via the "spirit" app group
-          mount: function (container, api, params) {
-            expandedGroupId = null; // fresh visit starts fully collapsed
-
-            container.innerHTML =
-              '<div class="stat-tile wide">' +
-                '<label class="field-label">New group name<input type="text" id="group-manager-new-name" placeholder="e.g. Media Tools"></label>' +
-                '<label class="field-label">New group icon (paste any emoji)<input type="text" id="group-manager-new-icon" placeholder="e.g. 🎨"></label>' +
-                '<button type="button" class="cancel-btn" id="group-manager-create">Create group</button>' +
-                '<div id="group-manager-create-error" class="job-start-error"></div>' +
-              '</div>' +
-              '<table class="jobs-table"><thead><tr><th></th><th>Name</th><th>Members</th></tr></thead><tbody id="group-manager-tbody"></tbody></table>';
-
-            document.getElementById('group-manager-create').addEventListener('click', function () {
-              var nameInput = document.getElementById('group-manager-new-name');
-              var iconInput = document.getElementById('group-manager-new-icon');
-              var errorEl = document.getElementById('group-manager-create-error');
-              var result = createGroup(nameInput.value.trim(), iconInput.value.trim());
-              if (!result.ok) {
-                var messages = {
-                  'name-and-icon-required': 'Both a name and an icon are required.',
-                  'name-collision': 'Another app or group is already using that name.',
-                  'icon-collision': 'Another app or group is already using that icon.',
-                };
-                errorEl.textContent = messages[result.reason] || ('Could not create group: ' + result.reason);
-                return;
-              }
-              errorEl.textContent = '';
-              nameInput.value = '';
-              iconInput.value = '';
-              renderGroupManagerTable(true);
-            });
-
-            document.getElementById('group-manager-tbody').addEventListener('click', function (event) {
-              var deleteBtn = event.target.closest('[data-delete-group]');
-              if (deleteBtn) {
-                var id = deleteBtn.dataset.deleteGroup;
-                var group = listGroups().filter(function (g) { return g.id === id; })[0];
-                var memberCount = group ? group.memberCount : 0;
-                var name = group ? group.name : id;
-                if (!confirm('Delete "' + name + '"? ' + memberCount + ' app(s) will move back to the desktop.')) return;
-                deleteGroup(id);
-                expandedGroupId = null;
-                renderGroupManagerTable(true);
-                return;
-              }
-
-              var row = event.target.closest('[data-group-row]');
-              if (row) {
-                var rowId = row.dataset.groupRow;
-                expandedGroupId = (expandedGroupId === rowId) ? null : rowId; // opening one closes any other
-                renderGroupManagerTable(true);
-              }
-            });
-
-            document.getElementById('group-manager-tbody').addEventListener('change', function (event) {
-              var isName = event.target.id === 'group-manager-name-input';
-              var isIcon = event.target.id === 'group-manager-icon-input';
-              if (!isName && !isIcon) return;
-
-              var patch = isName ? { name: event.target.value.trim() } : { icon: event.target.value.trim() };
-              var result = updateGroup(event.target.dataset.groupId, patch);
-              if (!result.ok) {
-                var messages = {
-                  'name-required': 'Name cannot be empty.',
-                  'icon-required': 'Icon cannot be empty.',
-                  'name-collision': 'Another app or group is already using that name.',
-                  'icon-collision': 'Another app or group is already using that icon.',
-                };
-                alert(messages[result.reason] || ('Could not update group: ' + result.reason));
-              }
-              renderGroupManagerTable(true);
-            });
-          },
-          render: function () {
-            renderGroupManagerTable();
-          },
-        });
+        // Moved to app/group-manager/group-manager.js + its manifest
+        // (CLEANUP-PLAN). Intrinsic, so it is declared at boot from that
+        // manifest and reached through the Spirit group, exactly as it
+        // was when it registered here hidden.
 
         // ---- Spirit app (launcher/grouping template) ----
         // Hosts a sub-view of the machine-introspection apps (Stats,
@@ -998,7 +878,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['app/stats', 'app/process-browser', 'app/jobs', 'app/apps', 'app/files', 'group-manager']
+            renderAppGroup(grid, ['app/stats', 'app/process-browser', 'app/jobs', 'app/apps', 'app/files', 'app/group-manager']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });
