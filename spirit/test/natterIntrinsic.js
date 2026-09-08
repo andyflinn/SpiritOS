@@ -1635,4 +1635,51 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
   }
 }
 
+test.subHeading('Natter adds a relay on the shared row');
+
+// Andy: horizontal spacing between the elements of that line, the same
+// as the space between blocks — and there was none at all between the
+// Add line and the list below it. The line was a tile of bare <label>s
+// with no spacing rules, so a caption, its input and the next caption
+// ran together.
+{
+  const natter = readRun('app/natter/natter.js');
+  if (natter.indexOf('stat-tile wide start-job-form') !== -1 &&
+      natter.indexOf('<label class="field-label">Private label') !== -1) {
+    test.check('the Add line is the shared row, with the shared caption pairs');
+  } else {
+    test.fail('Natter still styles its own line');
+  }
+
+  // One spacing scale: what separates controls across a row is what
+  // separates blocks down a page. Two gaps that are nearly the same read
+  // as a mistake rather than a distinction.
+  const css = readRun('index.html');
+  function value(selector, property) {
+    const at = css.indexOf(selector + ' {');
+    if (at === -1) return null;
+    const block = css.slice(at, css.indexOf('}', at));
+    const declAt = block.indexOf(property + ':');
+    if (declAt === -1) return null;
+    const decl = block.slice(declAt + property.length + 1, block.indexOf(';', declAt)).trim();
+    return /^[0-9]+px$/.test(decl) ? decl : null;
+  }
+  const rhythm = value('#open-with', 'margin-top');
+  const rows = ['.start-job-form', '#rc-claim-fields'];
+  const off = rows.filter(function (selector) { return value(selector, 'gap') !== rhythm; });
+  if (rhythm !== null && off.length === 0) {
+    test.check('and a row gaps its controls by the same block spacing');
+  } else {
+    test.fail('rows off the scale: ' + off.join(', ') + ' (rhythm ' + rhythm + ')');
+  }
+
+  // The list needs air under the line it is added from; the shared row
+  // brings it, so Natter does not have to know about it.
+  if (value('.start-job-form', 'margin-bottom') === rhythm) {
+    test.check('and leaves a block of space under itself, before the list');
+  } else {
+    test.fail('row margin-bottom: ' + value('.start-job-form', 'margin-bottom'));
+  }
+}
+
 test.reportSuccessFailureCount();

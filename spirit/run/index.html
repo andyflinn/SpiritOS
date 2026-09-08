@@ -199,6 +199,13 @@
          rules above. Same for every field below. */
       #process-search { width: 100%; margin-bottom: 12px; }
 
+      /* The ownership mark: ★ means this node owns that mailbox, the
+         same as in Relay Chat's To list. It is a mark and not a control
+         — what opens the row is the row (.natter-openable) — so it takes
+         no hit area of its own and the whole width is the target. */
+      .natter-star { color: #ffd48a; font-size: 18px; line-height: 1; }
+      .natter-openable { cursor: pointer; }
+
       .process-entry {
         cursor: pointer;
         padding: 8px;
@@ -209,12 +216,26 @@
       .process-entry-label { font-weight: 600; }
       .process-entry-desc { font-size: 12px; opacity: 0.75; margin-top: 2px; }
 
+      /* One spacing scale: the 12px that separates blocks down a page
+         (UI_DESIGN_STYLE.md) is also what separates controls across a
+         row. Two gaps that are nearly the same read as a mistake rather
+         than a distinction — this was 8px beside 12px everywhere else.
+         flex-end so a caption-over-input pair (.field-label) lines its
+         input up with the button beside it rather than floating above
+         it; wrap so a narrow screen gets full-width targets stacked
+         instead of one squeezed row. */
       .start-job-form {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         margin-bottom: 12px;
         flex-wrap: wrap;
+        align-items: flex-end;
       }
+
+      /* Inside a row the gap does the spacing, so the pair drops its own
+         vertical margins — otherwise it sits 8px higher than the button
+         it is meant to line up with. */
+      .start-job-form .field-label { margin: 0; }
 
       /* A form row wraps rather than scrolls: on a portrait phone the
          input takes the width and the button drops under it, which is
@@ -391,7 +412,7 @@
          would float it over the invite panel that now sits below. Flow
          order is the layout: thread, composer, invite. */
       #rc-composer { margin: 10px 0 14px; }
-      #rc-to-bar { margin-bottom: 8px; }
+      #rc-to-bar { margin-bottom: 12px; }
       #rc-to-bar input { flex: 1; min-width: 120px; }
 
       /* The To control carries a caption, an owned marker and a URL on
@@ -410,9 +431,12 @@
         margin-bottom: 12px;
       }
 
+      /* Same row, same gap as .start-job-form above — this one is not a
+         .start-job-form only because it lives inside the unbound tile
+         with the paragraph that explains it. */
       #rc-claim-fields {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         flex-wrap: wrap;
         align-items: flex-end;
       }

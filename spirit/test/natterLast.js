@@ -39,7 +39,13 @@ function loadNatter(win) {
   const tail = '\nreturn {' +
     ' canRemove: natterCanRemove,' +
     ' removeAt: natterRemoveAt,' +
-    ' renderList: natterRenderList' +
+    ' renderList: natterRenderList,' +
+    ' reportHtml: natterReportHtml,' +
+    // Setters rather than the variables themselves: these are module
+    // state the app owns, and a test that could only read them would be
+    // reduced to asserting the markup it had just written.
+    ' badges: function (byUrl) { natterBadgeByUrl = byUrl; },' +
+    ' expand: function (url) { natterExpandedUrl = url; }' +
     '};';
   return new Function('window', 'spirit', 'document', src + tail)(win, spirit, undefined);
 }
@@ -215,6 +221,112 @@ test.subHeading('The shell actually loads the isomorphic half');
     test.check('and the server will serve it');
   } else {
     test.fail('js/ownerBadge.js is not servable, so that script tag 404s');
+  }
+}
+
+
+// ---------------------------------------------------------------------
+// The ownership mark, and what a mailbox says about itself.
+// ---------------------------------------------------------------------
+
+test.subHeading('A star means owned, and opens what that mailbox says');
+
+{
+  const natter = loadNatter(browserBadge());
+  const relays = [
+    { label: 'mine', url: 'https://spirit.example' },
+    { label: 'theirs', url: 'https://other.example' },
+  ];
+
+  // Before any probe answers, nothing is owned and nothing is starred.
+  if (renderHtml(natter, relays).indexOf('natter-star') === -1) {
+    test.check('a node that has not asked yet stars nothing');
+  } else {
+    test.fail('starred before the probe answered');
+  }
+
+  natter.badges({
+    'https://spirit.example': {
+      url: 'https://spirit.example',
+      owned: true,
+      report: { owner: 'andy', mode: 'keys', peers: [{ name: 'bert' }, { name: 'jim' }], messages: 12 },
+    },
+    'https://other.example': { url: 'https://other.example', owned: false, error: 'not owner' },
+  });
+
+  const listed = renderHtml(natter, relays);
+  const stars = (listed.match(/natter-star/g) || []).length;
+  if (stars === 1 && listed.indexOf('data-row-url="https://spirit.example"') !== -1) {
+    test.check('the owned row gets the star, and the other does not');
+  } else {
+    test.fail('stars: ' + stars + ' in ' + listed);
+  }
+
+  // The star says the row can be opened; the row is what opens it, so
+  // the whole width is the target and the star holds no click of its own.
+  if (listed.indexOf('data-row-url="https://other.example"') === -1 &&
+      listed.indexOf('<span class="natter-star">') !== -1) {
+    test.check('the mark is a mark, and only an owned row is openable');
+  } else {
+    test.fail('row markup: ' + listed);
+  }
+
+  if (listed.indexOf('job-log-row') === -1) {
+    test.check('and nothing is expanded until the star is pressed');
+  } else {
+    test.fail('a panel was open on first render');
+  }
+
+  natter.expand('https://spirit.example');
+  const open = renderHtml(natter, relays);
+  if ((open.match(/job-log-row/g) || []).length === 1 &&
+      open.indexOf('andy') !== -1 && open.indexOf('keys') !== -1 && open.indexOf('>12<') !== -1) {
+    test.check('pressing it shows what the mailbox reported');
+  } else {
+    test.fail('panel: ' + open);
+  }
+
+  // Peers by count, not by key (UI_DESIGN_STYLE.md) — and the panel shows
+  // only what the probe returned, which is what keeps live invite tokens
+  // off a screen anybody can glance at.
+  if (open.indexOf('>2<') !== -1 && open.indexOf('bert') === -1) {
+    test.check('peers are counted, not listed one key at a time');
+  } else {
+    test.fail('peers rendered as names or keys: ' + open);
+  }
+
+  // One at a time: what is expanded is a single value, so a second row
+  // cannot also be open.
+  natter.badges({
+    'https://spirit.example': { url: 'https://spirit.example', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } },
+    'https://other.example': { url: 'https://other.example', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 5 } },
+  });
+  natter.expand('https://other.example');
+  const second = renderHtml(natter, relays);
+  if ((second.match(/job-log-row/g) || []).length === 1 && second.indexOf('>5<') !== -1) {
+    test.check('opening one closes the other');
+  } else {
+    test.fail('two panels open at once: ' + second);
+  }
+
+  // A row this node does not own says why, rather than showing a census
+  // it never received.
+  const plain = { escapeHtml: function (v) { return String(v == null ? '' : v); } };
+  if (natter.reportHtml(plain, { owned: false, error: 'not owner' }).indexOf('not owner') !== -1 &&
+      natter.reportHtml(plain, null).indexOf('asking') !== -1) {
+    test.check('an unowned row says so, and an unanswered one says it is asking');
+  } else {
+    test.fail('unowned report: ' + natter.reportHtml(plain, { owned: false, error: 'not owner' }));
+  }
+
+  // Nomenclature: the field is captioned with the word the dictionary
+  // uses for a caption that never leaves this node, not with an example
+  // built from somebody's name.
+  const src = fs.readFileSync(path.join(RUN_DIR, 'app', 'natter', 'natter.js'), 'utf8');
+  if (src.indexOf('Private label') !== -1 && src.toLowerCase().indexOf('andy') === -1) {
+    test.check('the label field is named, not exemplified with a person');
+  } else {
+    test.fail('the label field still names a person');
   }
 }
 

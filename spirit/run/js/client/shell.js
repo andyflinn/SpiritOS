@@ -841,6 +841,13 @@
 
       // For work outside a callback — a timer, a fetch that lands late.
       isVisible: function () { return activeAppId === app.id; },
+
+      // The public label this node claimed, or '' if it has not. The
+      // shell reads it for the window title and hands it on rather than
+      // letting each app parse another app's session file: one accessor
+      // knows that shape (readNodeLabel above), and an app that needs to
+      // ask its mailbox a signed question needs the name it signs as.
+      nodeLabel: function () { return readNodeLabel(); },
     };
     if (app._scriptPath) {
       var folder = app._scriptPath.match(/^app\/([^/]+)\//)[1];

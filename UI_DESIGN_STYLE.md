@@ -30,9 +30,11 @@ State changes bring the chrome back on its own. Nothing is lost, only unasked.
 
 Match the size, **never the weight**: `#app-title` keeps its 600, or the block beneath starts competing with the thing it describes.
 
-## 3. One rhythm down a page
+## 3. One rhythm, down a page and across a row
 
-Sibling blocks in a viewer are evenly spaced — **12px** today (`.code-view`, `.media-view`, `#open-with`).
+**12px** is the spacing scale. It separates sibling blocks down a page (`.code-view`, `.media-view`, `#open-with`, the two folded panels in Relay Chat) *and* the controls across a row (`.start-job-form`, `#rc-claim-fields`). Two gaps that are nearly the same read as a mistake rather than a distinction — this used to be 8px on rows and 12px everywhere else.
+
+A row of controls is `.start-job-form`: gapped, wrapping, `align-items: flex-end` so a caption-over-input pair lines its input up with the button beside it, and a block of space beneath it before whatever it feeds. A form does not lay itself out; if a screen needs a row, it uses that class (Natter's Add line, the Jobs start form, the Relay Chat composer and To bar, the AI chat form).
 
 A block that can be empty **collapses its own margin** (`#open-with:empty`). Otherwise absence produces a *bigger* gap than presence, and the emptiest screens get the loosest layout.
 

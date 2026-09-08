@@ -58,7 +58,12 @@ spirit.shell.activateApp({
       '<div class="stat-tile wide" id="rc-claim-row">' +
         '<div id="rc-unbound"></div>' +
         '<div id="rc-claim-fields">' +
-          '<label>Your name<input type="text" id="rc-name" placeholder="andy"></label>' +
+          // The dictionary's word for it: this one DOES go on the wire —
+          // it is the caption peers see on the mailbox — which is the
+          // whole difference from Natter's private label, and the reason
+          // the two fields must not both read "name". No hardcoded
+          // person in the hint either.
+          '<label>Public label<input type="text" id="rc-name" placeholder="the name peers see"></label>' +
           '<label>Invite token<input type="text" id="rc-invite" placeholder="(only if you were invited)"></label>' +
           '<button type="button" id="rc-claim">Claim</button>' +
         '</div>' +
@@ -747,7 +752,10 @@ spirit.shell.activateApp({
       slot.innerHTML =
         '<details class="stat-tile wide" id="rc-invite-panel">' +
           '<summary>Invite someone to a relay</summary>' +
-          '<label class="field-label">Invite<input type="text" id="rc-inv-label" placeholder="saint"></label>' +
+          // DICTIONARY.md, "Label (invite)": the public caption the token
+          // unlocks. `saint` is the dictionary's own example, not a
+          // person on this node.
+          '<label class="field-label">Public label<input type="text" id="rc-inv-label" placeholder="e.g. saint"></label>' +
           '<label class="field-label">Days<input type="number" id="rc-inv-days" min="1" max="15" value="7"></label>' +
           // The token Andy speaks on the phone. Empty means the relay
           // picks hex; typed, it is signed with the label and the days
