@@ -304,14 +304,27 @@ spirit.shell.activateApp({
       if (!note) return;
       showBoundChrome(!!myName);
       if (myName) {
-        note.textContent = '';
+        // innerHTML, to match what the unbound branch writes. A real DOM
+        // clears one when you set the other; nothing else does, and a
+        // node that binds after being unbound must not keep the
+        // paragraph telling it how to bind.
+        note.innerHTML = '';
         // showBoundChrome puts everything back; the thread and composer
         // only stay if there is somebody to use them on.
         paintAddressable();
         return;
       }
-      note.textContent = natterUrls()
-        ? 'Chat needs a name on a public mailbox. If you were invited, enter that name and the spoken word, then Claim. If you own the mailbox, Claim the owner name with no token.'
+      // innerHTML rather than textContent, for the one bold sentence.
+      // Every character here is written in this file — nothing from a
+      // mailbox, a peer or a file reaches it — so there is nothing to
+      // escape. Anything interpolated in later must be.
+      note.innerHTML = natterUrls()
+        ? 'Chat needs a name on a public mailbox. If you were invited, enter that name and the spoken word, ' +
+          'then Claim. If you own the mailbox, Claim the owner name with no token. ' +
+          // The way in for somebody holding neither. Loud on purpose: on
+          // a fresh node this paragraph IS the page, and this is the one
+          // sentence that gets a stranger from reading it to using it.
+          '<strong>If you have no invite yet, ask countinn@gmail.com, he will give you an invite within 24 hours.</strong>'
         : 'This node has no mailbox yet. Open Natter, add one (for example https://spirit.andyflinn.com), then come back.';
     }
 

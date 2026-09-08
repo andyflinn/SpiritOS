@@ -924,6 +924,41 @@ function unreadDots() {
 
 // Chat 7 — nothing on the page that cannot work yet, and mail you are
 // not looking at is on its row rather than in the open thread.
+// The way in for somebody who has neither an invite nor a mailbox of
+// their own. On a fresh node this paragraph is the whole page.
+function unboundSaysHowToGetIn() {
+  test.subHeading('The paragraph that gets a stranger from reading to using');
+
+  const app = mountApp({}, { inboxStatus: 200 });
+
+  return settle().then(function () {
+    const note = el(app, 'rc-unbound').innerHTML;
+    if (/<strong>[^<]*countinn@gmail\.com[^<]*<\/strong>/.test(note)) {
+      test.check('an unbound node says who to ask, and says it loudly');
+    } else {
+      test.fail('unbound copy: ' + note);
+    }
+
+    if (/within 24 hours/.test(note) && /If you were invited/.test(note)) {
+      test.check('and it is added to the claim instructions, not instead of them');
+    } else {
+      test.fail('copy lost its first half: ' + note);
+    }
+
+    // A node with no mailbox listed has a different problem and gets the
+    // other sentence — being told to ask for an invite would be an
+    // answer to a question it has not reached yet.
+    const noRelay = mountApp({}, { inboxStatus: 200, project: {} });
+    return settle().then(function () {
+      if (/no mailbox yet/.test(el(noRelay, 'rc-unbound').innerHTML)) {
+        test.check('and a node with nowhere to claim still hears about Natter first');
+      } else {
+        test.fail('no-relay copy: ' + el(noRelay, 'rc-unbound').innerHTML);
+      }
+    });
+  });
+}
+
 function unboundChrome() {
   test.subHeading('What an unbound node is offered');
 
@@ -943,7 +978,7 @@ function unboundChrome() {
       test.fail('claim fields shown with an empty Natter');
     }
 
-    const note = el(empty, 'rc-unbound').textContent;
+    const note = el(empty, 'rc-unbound').innerHTML;
     if (/Natter/.test(note) && /https:\/\/spirit\.andyflinn\.com/.test(note)) {
       test.check('and it says to open Natter and add one');
     } else {
@@ -960,7 +995,7 @@ function unboundChrome() {
         test.fail('claim row hidden though Natter has a URL');
       }
 
-        const copy = el(unbound, 'rc-unbound').textContent;
+        const copy = el(unbound, 'rc-unbound').innerHTML;
       if (/spoken word/.test(copy) && /own the mailbox/.test(copy)) {
         test.check('and it explains the invited case and the owner case');
       } else {
@@ -991,7 +1026,7 @@ function unboundChrome() {
       );
       return settle().then(function () {
         if (el(bound, 'rc-claim-row').style.display === 'none' &&
-            el(bound, 'rc-unbound').textContent === '') {
+            el(bound, 'rc-unbound').innerHTML === '') {
           test.check('a bound node is shown neither the form nor the explanation');
         } else {
           test.fail('bound node still has unbound chrome');
@@ -1717,6 +1752,7 @@ claimBinds()
   .then(viewIsRemembered)
   .then(unreadDots)
   .then(unboundChrome)
+  .then(unboundSaysHowToGetIn)
   .then(mailArrivesOnTheRow)
   .then(newFilterSnapsBack)
   .then(nobodyToWriteTo)
