@@ -73,6 +73,14 @@ session.json
 # code, and it names peer keys, so it must not reach the lab either.
 view.json
 
+# Relay Chat's settings (chat settings cycle): what this node has decided
+# about mail from people it has not added, and the labels it has minted
+# invites for. Same class as session.json and view.json above — this
+# node's own state, meaningless in another clone, and it must not reach
+# the lab either, since setupRelayFakes.js builds fake nodes from
+# `git ls-files`.
+prefs.json
+
 # Anything js/peerFile.js names: one file per peer, wherever an app
 # keeps them. Chat logs are the first (app/relayChat/logs/, also caught
 # by the bare `logs` rule above); whoBook sidecars and whatever comes

@@ -28,7 +28,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
 const { createRelay } = require('../run/js/relay');
-const { createHub, buildPeople, acquireFromInbox, handleMatches, keyTail } = require('../run/js/hub');
+const { createHub, buildPeople, acquireFromInbox, handleMatches, keyTail, partitionInbox, unknownPolicy, holdFromInbox } = require('../run/js/hub');
 
 const RELAY_URL = 'https://mailbox.example';
 
@@ -377,9 +377,13 @@ function hubWho(hub) {
   });
 }
 
-function hubInbox(hub, name) {
+// `unknown` is the app's setting travelling with the request. Left out
+// on purpose in one place below, to check what a request that says
+// nothing gets.
+function hubInbox(hub, name, unknown) {
   const res = fakeRes();
-  hub.handleInbox({}, res, new URL('http://127.0.0.1/api/hub/inbox?name=' + encodeURIComponent(name)));
+  const query = '?name=' + encodeURIComponent(name) + (unknown ? '&unknown=' + unknown : '');
+  hub.handleInbox({}, res, new URL('http://127.0.0.1/api/hub/inbox' + query));
   return res.wait();
 }
 
@@ -430,10 +434,27 @@ function runOverLoopback() {
 
     box.send('bert', 'andy', 'first line from bert',
       auth.sign(bert.privateKey, auth.sendMessage('bert', 'andy', 'first line from bert')), '10.0.0.2');
+    // Said nothing about the policy, so silence: bert is on the mailbox
+    // and has written, and this node has still never added him.
     return hubInbox(hub, 'andy');
   }).then(function (res) {
+    if (res.status === 200 && !/first line from bert/.test(res.text)) {
+      test.check('a read that names no policy hears nothing from a stranger');
+    } else {
+      test.fail('silent read: ' + res.status + ' ' + res.text);
+    }
+    return hubWho(hub);
+  }).then(function (data) {
+    if (data.people && data.people.length === 0) {
+      test.check('and the dropped line put nobody in the To list');
+    } else {
+      test.fail('who after a silent read: ' + JSON.stringify(data.people));
+    }
+    // The same mail, with the node asking to hear it.
+    return hubInbox(hub, 'andy', 'acquire');
+  }).then(function (res) {
     if (res.status === 200 && /first line from bert/.test(res.text)) {
-      test.check('the inbox read comes back with his line');
+      test.check('with Acquire the same read comes back with his line');
     } else {
       test.fail('inbox: ' + res.status + ' ' + res.text);
     }
@@ -463,7 +484,198 @@ function runOverLoopback() {
   });
 }
 
+// ---------------------------------------------------------------------
+// Mail from somebody you have not added.
+// ---------------------------------------------------------------------
+
+function unknownMail() {
+  test.subHeading('A stranger writes, and the factory setting is silence');
+
+  const home = tmpHome('policy');
+  const me = auth.generateIdentity('andy');
+  auth.saveIdentity(home, me);
+
+  const bert = auth.generateIdentity('bert');
+  const stranger = auth.generateIdentity('carol');
+
+  // Bert is a contact; carol is a name on the same mailbox and nothing
+  // more. Exactly the case cut 1 was about, now with a policy over it.
+  whoBook.acquire(home, { publicKey: bert.publicKey, publicLabel: 'bert', relay: RELAY_URL }, 'handle');
+
+  const inbox = [
+    line(1, 'bert', bert.publicKey, me.publicKey, 'from a contact'),
+    line(2, 'carol', stranger.publicKey, me.publicKey, 'from a stranger'),
+    line(3, 'andy', me.publicKey, me.publicKey, 'a note to myself'),
+  ];
+
+  const split = partitionInbox(home, inbox);
+  const texts = split.known.map(function (m) { return m.text; });
+  if (texts.indexOf('from a contact') !== -1 && texts.indexOf('from a stranger') === -1) {
+    test.check('a contact is heard and a stranger is not');
+  } else {
+    test.fail('kept: ' + JSON.stringify(texts));
+  }
+
+  if (texts.indexOf('a note to myself') !== -1) {
+    test.check('and this node still hears itself');
+  } else {
+    test.fail('own line dropped: ' + JSON.stringify(texts));
+  }
+
+  if (split.unknown === 1) {
+    test.check('how many were dropped is known, which is all Hold ever says');
+  } else {
+    test.fail('unknown count: ' + split.unknown);
+  }
+
+  // The mailbox is not a contact and never will be — it is a caption,
+  // not a person — but a node that stopped hearing its own mailbox would
+  // have a relay console answering into silence. `relay` is reserved, so
+  // no stranger can wear the name.
+  const withRelay = partitionInbox(home, inbox.concat([
+    { id: '9', from: 'relay', to: 'andy', fromKey: null, toKey: me.publicKey, text: 'relay status mode=keys' },
+  ]));
+  if (withRelay.known.some(function (m) { return m.from === 'relay'; }) && withRelay.unknown === 1) {
+    test.check('the mailbox is always heard, and is nobody the count is about');
+  } else {
+    test.fail('relay line: ' + JSON.stringify(withRelay));
+  }
+
+  const twice = partitionInbox(home, inbox.concat([line(4, 'carol', stranger.publicKey, me.publicKey, 'again')]));
+  if (twice.unknown === 1) {
+    test.check('and it counts people, not lines');
+  } else {
+    test.fail('counted lines: ' + twice.unknown);
+  }
+
+  // Silence is what an unrecognised answer means: a prefs.json edited by
+  // hand into nonsense must not quietly open a node up.
+  const factory = ['', null, undefined, 'everything', 'SILENT'].every(function (v) {
+    return unknownPolicy(v) === 'silent';
+  });
+  if (factory && unknownPolicy('acquire') === 'acquire' && unknownPolicy('hold') === 'hold') {
+    test.check('anything but a real choice reads as silence');
+  } else {
+    test.fail('policy defaults are wrong');
+  }
+
+  if (whoBook.byPublicKey(home, stranger.publicKey) === null) {
+    test.check('a dropped line leaves nothing behind on disk');
+  } else {
+    test.fail('the stranger was filed anyway');
+  }
+
+  // Acquire is still available, and still exactly what cut 1 did.
+  acquireFromInbox(home, inbox, RELAY_URL);
+  if (whoBook.acquiredVia(whoBook.byPublicKey(home, stranger.publicKey)) === 'message') {
+    test.check('choosing Acquire is what lets a stranger in');
+  } else {
+    test.fail('acquire did not file the stranger');
+  }
+
+  if (partitionInbox(home, inbox).unknown === 0) {
+    test.check('and once added, they are somebody this node hears');
+  } else {
+    test.fail('still unknown after being acquired');
+  }
+}
+
+// ---------------------------------------------------------------------
+// Hold: seen, not heard.
+// ---------------------------------------------------------------------
+
+function heldAndBlocked() {
+  test.subHeading('Somebody waiting is in the list and not in the conversation');
+
+  const home = tmpHome('held');
+  const me = auth.generateIdentity('andy');
+  auth.saveIdentity(home, me);
+  const stranger = auth.generateIdentity('carol');
+  const inbox = [line(1, 'carol', stranger.publicKey, me.publicKey, 'hello?')];
+
+  holdFromInbox(home, inbox, RELAY_URL);
+
+  // The row is what Hold buys: somebody to say yes to. The message is
+  // still dropped — holding is not hearing.
+  const row = whoBook.byPublicKey(home, stranger.publicKey);
+  if (row && whoBook.acquiredVia(row) === 'hold' && partitionInbox(home, inbox).known.length === 0) {
+    test.check('a held sender gets a row, and their line still does not arrive');
+  } else {
+    test.fail('held: ' + JSON.stringify(row));
+  }
+
+  // And it is in the To list, marked, because a row nobody can see is a
+  // person nobody can accept.
+  const people = buildPeople(home, [peer('carol', stranger.publicKey)], RELAY_URL);
+  const carol = people.filter(function (p) { return p.publicKey === stranger.publicKey; })[0];
+  if (carol && carol.held === true && carol.blocked === false) {
+    test.check('and appears in To as somebody not added yet');
+  } else {
+    test.fail('people: ' + JSON.stringify(people));
+  }
+
+  // Somebody already decided about is not re-held: a blocked row must
+  // not climb back out by writing again.
+  whoBook.setBlocked(home, stranger.publicKey, true);
+  whoBook.acquire(home, { publicKey: stranger.publicKey, publicLabel: 'carol' }, 'handle');
+  holdFromInbox(home, inbox, RELAY_URL);
+  const afterBlock = whoBook.byPublicKey(home, stranger.publicKey);
+  if (whoBook.isBlocked(afterBlock) && whoBook.acquiredVia(afterBlock) === 'handle') {
+    test.check('writing again neither unblocks nor demotes anybody');
+  } else {
+    test.fail('after writing while blocked: ' + JSON.stringify(afterBlock));
+  }
+
+  // A blocked contact is out of the listening set and still on screen.
+  const blockedPeople = buildPeople(home, [peer('carol', stranger.publicKey)], RELAY_URL);
+  const shown = blockedPeople.filter(function (p) { return p.publicKey === stranger.publicKey; })[0];
+  if (partitionInbox(home, inbox).known.length === 0 && shown && shown.held && shown.blocked) {
+    test.check('a blocked contact is silent, listed, and says which it is');
+  } else {
+    test.fail('blocked in To: ' + JSON.stringify(shown));
+  }
+
+  // Unblocking is not accepting. Somebody blocked while still waiting
+  // goes back to waiting: undoing a no is not saying yes.
+  const waiting = tmpHome('waiting');
+  auth.saveIdentity(waiting, me);
+  whoBook.hold(waiting, { publicKey: stranger.publicKey, publicLabel: 'carol' });
+  whoBook.setBlocked(waiting, stranger.publicKey, true);
+  whoBook.setBlocked(waiting, stranger.publicKey, false);
+  const backToWaiting = whoBook.byPublicKey(waiting, stranger.publicKey);
+  if (whoBook.acquiredVia(backToWaiting) === 'hold' && !whoBook.listens(backToWaiting)) {
+    test.check('unblocking somebody who was never accepted leaves them waiting');
+  } else {
+    test.fail('after unblock: ' + JSON.stringify(backToWaiting));
+  }
+
+  // And a nuisance nobody has ever added can still be blocked: being on
+  // a list is not what makes somebody one.
+  const fresh = tmpHome('nuisance');
+  auth.saveIdentity(fresh, me);
+  const nuisance = auth.generateIdentity('dave');
+  whoBook.hold(fresh, { publicKey: nuisance.publicKey, publicLabel: 'dave' });
+  whoBook.setBlocked(fresh, nuisance.publicKey, true);
+  const shut = whoBook.byPublicKey(fresh, nuisance.publicKey);
+  if (whoBook.isBlocked(shut) && !whoBook.listens(shut) &&
+      whoBook.addressBook(fresh).length === 1) {
+    test.check('somebody never added can be blocked, and stays visible to undo');
+  } else {
+    test.fail('blocked stranger: ' + JSON.stringify(shut));
+  }
+
+  // Accepting is the way back, and it is one call.
+  whoBook.accept(home, stranger.publicKey);
+  if (partitionInbox(home, inbox).known.length === 1) {
+    test.check('and accepting them is what lets the next line through');
+  } else {
+    test.fail('still silent after accept');
+  }
+}
+
 runOverLoopback()
+  .then(unknownMail)
+  .then(heldAndBlocked)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contacts threw: ' + ((err && err.stack) || err));

@@ -42,7 +42,12 @@ const fs = require('fs');
 const path = require('path');
 
 const ACQUIRED_CENSUS = 'census';
-const ACQUIRED_RANK = { census: 0, message: 1, invite: 2, handle: 3 };
+const ACQUIRED_HOLD = 'hold';
+const ACQUIRED_RANK = { census: 0, hold: 1, message: 2, invite: 3, handle: 4 };
+// The ways of arriving that mean this node will listen. `hold` is not one
+// of them: a held row exists so a human can see who is waiting and say
+// yes, and until they do it is a name, not a correspondent.
+const ACQUIRED_LISTENING = ['message', 'invite', 'handle'];
 
 // A row with no field predates the field, and what it was is a census
 // row: it was written by handshake from `who`.
@@ -55,9 +60,31 @@ function acquiredRank(via) {
   return ACQUIRED_RANK[via] === undefined ? 0 : ACQUIRED_RANK[via];
 }
 
-// Who this node actually knows: everything but the census. What the To
-// list is built from, and never `who`.
+// Blocked is a flag, not a rank. Blocking somebody must not erase HOW
+// they were acquired — unblocking would otherwise have to invent a new
+// answer — and it must outrank every way of arriving, including a key
+// confirmed by phone. So it sits beside the rank rather than in it.
+function isBlocked(row) {
+  return !!(row && row.blocked);
+}
+
+// Whether this node listens to that row: acquired one of the ways that
+// count, and not blocked. The one question the inbox asks.
+function listens(row) {
+  return ACQUIRED_LISTENING.indexOf(acquiredVia(row)) !== -1 && !isBlocked(row);
+}
+
+// Who this node listens to. What the inbox is filtered against.
 function contacts(rootDir) {
+  return load(rootDir).filter(listens);
+}
+
+// Everyone this node has a row for beyond the census: the people it
+// listens to, plus the ones waiting to be accepted and the ones it has
+// blocked. What the To list is built from — a held row that cannot be
+// seen cannot be accepted, and a blocked row that vanishes cannot be
+// unblocked.
+function addressBook(rootDir) {
   return load(rootDir).filter(function (row) { return acquiredVia(row) !== ACQUIRED_CENSUS; });
 }
 
@@ -108,6 +135,10 @@ function upsert(rootDir, row) {
     publicLabel: publicLabel,
     myLabel: myLabel,
     acquiredVia: via,
+    // Carried, never quietly cleared: a message from somebody you
+    // blocked must not unblock them, and that is exactly the path that
+    // would do it if this were dropped on every upsert.
+    blocked: row.blocked === undefined ? isBlocked(prev) : !!row.blocked,
     relays: normalizeRelays(row.relays != null ? row.relays : prev.relays),
   };
   if (i === -1) rows.push(next);
@@ -178,6 +209,40 @@ function acquire(rootDir, peer, via) {
   });
 }
 
+// Somebody wrote and this node is holding them: a row so a human can
+// see there is somebody there, and nothing more. Never a downgrade — a
+// contact who writes again is still a contact.
+function hold(rootDir, peer) {
+  return acquire(rootDir, peer, ACQUIRED_HOLD);
+}
+
+// Block silences a row without forgetting it. Unblock is the same call,
+// which is why this takes the value rather than being two functions: the
+// row has to stay visible either way, or there is no way back.
+function setBlocked(rootDir, publicKey, blocked) {
+  const rows = load(rootDir);
+  const row = rows.find(function (r) { return r.publicKey === publicKey; });
+  if (!row) return null;
+  row.blocked = !!blocked;
+  save(rootDir, rows);
+  return row;
+}
+
+// Saying yes to somebody who was waiting. They wrote to this node and a
+// human agreed to hear them, which is exactly what `message` means — so
+// accepting does not inflate into `handle`, which is reserved for a key
+// confirmed out of band. An already-acquired row keeps its rank and only
+// loses the block.
+function accept(rootDir, publicKey) {
+  const existing = byPublicKey(rootDir, publicKey);
+  if (!existing) return null;
+  setBlocked(rootDir, publicKey, false);
+  if (acquiredVia(existing) === ACQUIRED_HOLD) {
+    return acquire(rootDir, { publicKey: publicKey, publicLabel: existing.publicLabel }, 'message');
+  }
+  return byPublicKey(rootDir, publicKey);
+}
+
 // What YOU call that key. myLabel if you have one, else the caption the
 // mailbox shows, else the key itself — a peer is never nameless, because
 // a row with no caption is a row nobody can pick.
@@ -203,8 +268,15 @@ function addRoute(rootDir, publicKey, relayUrl) {
 
 module.exports = {
   CENSUS: ACQUIRED_CENSUS,
+  HOLD: ACQUIRED_HOLD,
   load: load,
   contacts: contacts,
+  addressBook: addressBook,
+  listens: listens,
+  isBlocked: isBlocked,
+  hold: hold,
+  setBlocked: setBlocked,
+  accept: accept,
   acquiredVia: acquiredVia,
   acquire: acquire,
   upsert: upsert,

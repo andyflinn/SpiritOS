@@ -448,18 +448,84 @@
          made it look like a footnote to the panel above rather than the
          other way in. Same size, same marker, same weight. */
       #rc-invite-panel > summary,
-      #rc-add-panel > summary {
+      #rc-add-panel > summary,
+      #rc-settings-panel > summary,
+      #rc-unknown-section > summary {
         cursor: pointer;
       }
       #rc-invite-panel[open] > summary,
-      #rc-add-panel[open] > summary { margin-bottom: 8px; }
+      #rc-add-panel[open] > summary,
+      #rc-settings-panel[open] > summary,
+      #rc-unknown-section[open] > summary { margin-bottom: 8px; }
 
-      /* The two folded panels are separate offers, not one block: the
-         same 12px that separates blocks everywhere else (§3). On the
-         panel above rather than the slot below, because the slot is
-         empty for a node that owns no mailbox and an empty div would
-         still hold its margin. */
+      /* The open conversation and the decision about it share a line:
+         the To control takes the width, the button sits at its right.
+         The select keeps its full width when there is no button, because
+         an empty span takes no room (:empty) and the row's gap goes with
+         it. */
+      #rc-to-row { align-items: center; }
+      #rc-to-row #rc-to-pick { flex: 1; width: auto; margin-bottom: 0; }
+      #rc-peer-strip:empty { display: none; }
+
+      /* The choices are a block, and a block sits a block below the
+         heading that introduces it (§3). This is on top of the 8px every
+         summary keeps between itself and its body, because a list of
+         radios reads as part of the title otherwise. */
+      #rc-unknown-choices { margin-top: 12px; }
+
+      /* A question inside Settings. .stat-tile.nested is already the
+         shell's word for a card inside a card (it is what the annotation
+         sections use), so a sub-panel needs no look of its own — only
+         the space that keeps two of them apart once there are two. */
+      #rc-settings-panel > details + details { margin-top: 12px; }
+
+      /* The folded panels at the foot of Relay Chat are separate offers,
+         not one block: the same 12px that separates blocks everywhere
+         else (§3). On each panel rather than the slot below them,
+         because the invite slot is empty for a node that owns no mailbox
+         and an empty div would still hold its margin. */
+      #rc-settings-panel,
       #rc-add-panel { margin-bottom: 12px; }
+
+      /* A choice is a button, a name and a sentence. Two columns: the
+         button in the first, the name and its explanation stacked in the
+         second — so the explanation is left-aligned with the name it
+         belongs to rather than with the button, and the name sits on the
+         button's own line. */
+      .rc-choice {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 10px;
+        align-items: center;
+        margin-bottom: 12px;
+        cursor: pointer;
+      }
+
+      .rc-choice-title { font-size: 16px; }
+
+      /* Fine print, under the name and never under the button. */
+      .rc-choice-note {
+        grid-column: 2;
+        font-size: 12px;
+        opacity: 0.75;
+        margin-top: 2px;
+      }
+
+      /* A radio is not a text field. The shared control rule gives every
+         input in an app a padded 44px box with a border, which is right
+         for something you type in and absurd for something you tick —
+         so this one takes back its own shape and keeps a size that is
+         still findable with a thumb. */
+      #app-content input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        min-height: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: none;
+        accent-color: #8ec9ff;
+      }
 
       @media (max-width: 480px) {
         .app-icon .icon { font-size: 32px; }

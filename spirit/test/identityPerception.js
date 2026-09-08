@@ -209,4 +209,73 @@ test.subHeading('Knowing somebody, and merely seeing them');
   }
 }
 
+
+test.subHeading('Waiting to be let in, and shut out again');
+
+{
+  const home = tmpHome('hold');
+
+  // Held: a row exists so somebody can be seen waiting, and that is all
+  // it is. Not somebody this node listens to.
+  whoBook.hold(home, { publicKey: 'KEY-CAROL', publicLabel: 'carol', relay: 'https://spirit.example' });
+  const carol = whoBook.byPublicKey(home, 'KEY-CAROL');
+  if (whoBook.acquiredVia(carol) === 'hold' && whoBook.listens(carol) === false) {
+    test.check('a held row is a name, not a correspondent');
+  } else {
+    test.fail('held row: ' + JSON.stringify(carol));
+  }
+
+  // Visible in the address book, absent from the people this node hears.
+  if (whoBook.addressBook(home).length === 1 && whoBook.contacts(home).length === 0) {
+    test.check('and it is in the list you can see, not the list you can write to');
+  } else {
+    test.fail('book ' + whoBook.addressBook(home).length + ', contacts ' + whoBook.contacts(home).length);
+  }
+
+  // Accepting is saying yes to somebody who wrote: that is what
+  // `message` means. It does not inflate into `handle`, which is a key
+  // confirmed out of band and nothing else.
+  whoBook.accept(home, 'KEY-CAROL');
+  const accepted = whoBook.byPublicKey(home, 'KEY-CAROL');
+  if (whoBook.acquiredVia(accepted) === 'message' && whoBook.listens(accepted)) {
+    test.check('accepting makes them somebody you hear, at the rank that is true');
+  } else {
+    test.fail('after accept: ' + JSON.stringify(accepted));
+  }
+
+  // Blocking a contact keeps how they were acquired. Unblocking has to
+  // put something back, and inventing it later would be a guess.
+  whoBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'handle');
+  whoBook.setBlocked(home, 'KEY-BERT', true);
+  const blocked = whoBook.byPublicKey(home, 'KEY-BERT');
+  if (whoBook.acquiredVia(blocked) === 'handle' && whoBook.listens(blocked) === false) {
+    test.check('blocking silences a contact without forgetting how they got in');
+  } else {
+    test.fail('blocked row: ' + JSON.stringify(blocked));
+  }
+
+  // The path that would quietly undo it: they write again.
+  whoBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'message');
+  if (whoBook.isBlocked(whoBook.byPublicKey(home, 'KEY-BERT'))) {
+    test.check('and writing again does not unblock anybody');
+  } else {
+    test.fail('a message cleared the block');
+  }
+
+  // Still listed, or there would be no way back.
+  if (whoBook.addressBook(home).some(function (r) { return r.publicKey === 'KEY-BERT'; })) {
+    test.check('a blocked row stays visible, because a block must be undoable');
+  } else {
+    test.fail('blocked row vanished from the address book');
+  }
+
+  whoBook.accept(home, 'KEY-BERT');
+  const unblocked = whoBook.byPublicKey(home, 'KEY-BERT');
+  if (!whoBook.isBlocked(unblocked) && whoBook.acquiredVia(unblocked) === 'handle') {
+    test.check('and unblocking gives back exactly what was there before');
+  } else {
+    test.fail('after unblock: ' + JSON.stringify(unblocked));
+  }
+}
+
 test.reportSuccessFailureCount();

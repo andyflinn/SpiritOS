@@ -129,7 +129,11 @@ function buildPeople(rootDir, peers, relayUrl) {
   var id = auth.loadIdentity(rootDir);
   var myKey = (id && id.publicKey) || '';
 
-  var rows = whoBook.contacts(rootDir)
+  // The address book, not just the people this node listens to: somebody
+  // held is waiting to be accepted and somebody blocked has to stay
+  // visible to be unblocked. A row you cannot see is a decision you
+  // cannot reverse.
+  var rows = whoBook.addressBook(rootDir)
     // No self row. Claiming a name is not meeting somebody, and a list
     // of people to write to that opens with yourself reads as a mistake.
     .filter(function (row) { return row.publicKey !== myKey; })
@@ -140,6 +144,12 @@ function buildPeople(rootDir, peers, relayUrl) {
         publicLabel: (seen && (seen.publicLabel || seen.name)) || row.publicLabel || '',
         caption: whoBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
         acquiredVia: whoBook.acquiredVia(row),
+        // One question the app asks about every row: may this be written
+        // to? Held and blocked both answer no, and they are drawn the
+        // same way — a × and no composer — because to the person looking
+        // at the list they are the same fact.
+        held: !whoBook.listens(row),
+        blocked: whoBook.isBlocked(row),
         // Whether this contact is on the mailbox this node is pointed at
         // right now. A contact you acquired elsewhere is still a contact;
         // it just has nowhere to be written to from here.
@@ -225,6 +235,87 @@ function acquireFromInbox(rootDir, messages, relayUrl) {
       publicLabel: m.from || '',
       relay: relayUrl,
     }, 'message');
+  });
+}
+
+// What this node does with mail from somebody it has not added.
+//
+//   silent  — it never happened. Not acquired, and not passed on either,
+//             so the app writes no peerfile-*, marks no row and counts
+//             nothing. The factory setting.
+//   hold    — the same, except the count comes back, so the app can say
+//             "N from people you have not added" without saying who.
+//   acquire — the old behaviour: writing to this node makes you someone
+//             it can answer (whoBook 'message').
+//
+// The policy arrives as a query parameter from the app rather than being
+// read out of app/relayChat/prefs.json here. It is a preference, not a
+// gate: the mailbox has already accepted the message, and nothing on
+// this node is protected by the answer. One copy of the setting, owned
+// by the app that draws the control.
+var UNKNOWN_POLICIES = ['silent', 'hold', 'acquire'];
+
+function unknownPolicy(wanted) {
+  return UNKNOWN_POLICIES.indexOf(String(wanted || '')) === -1 ? 'silent' : String(wanted);
+}
+
+// Who this node will listen to: everyone it has actually acquired, plus
+// itself — a note to yourself is sent and received, and both halves
+// happened.
+//
+// The mailbox needs no exception here. A relay console answer rides back
+// on the send response (relay.js, consoleReply) and is never stored in
+// the ring, so it does not arrive through an inbox read and cannot be
+// dropped by one.
+function listenSet(rootDir) {
+  var allowed = Object.create(null);
+  whoBook.contacts(rootDir).forEach(function (row) { allowed[row.publicKey] = true; });
+  var id = auth.loadIdentity(rootDir);
+  if (id && id.publicKey) allowed[id.publicKey] = true;
+  return allowed;
+}
+
+// Splits an inbox into what this node asked to hear and what it did not.
+function partitionInbox(rootDir, messages) {
+  var allowed = listenSet(rootDir);
+  var known = [];
+  var unknownKeys = Object.create(null);
+  (Array.isArray(messages) ? messages : []).forEach(function (m) {
+    if (!m) return;
+    // The mailbox always gets through. `relay` is a reserved name no
+    // peer can claim, so it cannot be worn by a stranger, and a node
+    // that stopped hearing its own mailbox would have a relay console
+    // that answered into silence. Live mailboxes hold such lines with no
+    // fromKey at all — they predate the mailbox having a key — so the
+    // name is what is checked, not the key.
+    if (m.from === auth.RESERVED_NAME) { known.push(m); return; }
+    // A message with no key cannot be matched against an address book.
+    // In keys mode there is always one; in open or names mode there may
+    // not be, and refusing to show mail because the mailbox is lax would
+    // make a lab node look broken.
+    if (!m.fromKey || allowed[m.fromKey]) known.push(m);
+    else unknownKeys[m.fromKey] = true;
+  });
+  return { known: known, unknown: Object.keys(unknownKeys).length };
+}
+
+// Hold: the sender gets a row and nothing else. Their line is still
+// dropped, nothing is filed under them and no count moves — the row
+// exists so a human can see somebody is waiting and say yes.
+function holdFromInbox(rootDir, messages, relayUrl) {
+  var id = auth.loadIdentity(rootDir);
+  var myKey = (id && id.publicKey) || '';
+  (Array.isArray(messages) ? messages : []).forEach(function (m) {
+    if (!m || !m.fromKey || m.fromKey === myKey) return;
+    var existing = whoBook.byPublicKey(rootDir, m.fromKey);
+    // Never touch somebody already decided about: a blocked row must not
+    // climb back out of the block by writing again.
+    if (existing && whoBook.acquiredVia(existing) !== whoBook.CENSUS) return;
+    whoBook.hold(rootDir, {
+      publicKey: m.fromKey,
+      publicLabel: m.from || '',
+      relay: relayUrl,
+    });
   });
 }
 
@@ -361,21 +452,44 @@ function createHub(rootDir) {
       if (id && id.privateKey) {
         query += '&sig=' + encodeURIComponent(auth.sign(id.privateKey, auth.inboxMessage(name)));
       }
+      var policy = unknownPolicy(urlObj.searchParams.get('unknown'));
       relayRequest(url, 'GET', '/api/relay/inbox' + query, null)
         .then(function (r) {
-          // Reading your mail is also how you come to know who wrote it.
-          // Done here rather than in the app: it is a fact about this
-          // node's address book, and the browser is a view of it.
-          if (r.status === 200) {
-            var parsed = null;
-            try { parsed = JSON.parse(r.text); }
-            catch (e) { parsed = null; }
-            if (parsed && Array.isArray(parsed.messages)) {
-              acquireFromInbox(rootDir, parsed.messages, url);
-            }
+          if (r.status !== 200) {
+            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(r.text);
+            return;
           }
-          res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(r.text);
+          var parsed = null;
+          try { parsed = JSON.parse(r.text); }
+          catch (e) { parsed = null; }
+          if (!parsed || !Array.isArray(parsed.messages)) {
+            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(r.text);
+            return;
+          }
+
+          // Reading your mail is also how you come to know who wrote it —
+          // when that is what you asked for. Done here rather than in the
+          // app either way: it is a fact about this node's address book,
+          // and the browser is a view of it.
+          if (policy === 'acquire') {
+            acquireFromInbox(rootDir, parsed.messages, url);
+          } else if (policy === 'hold') {
+            holdFromInbox(rootDir, parsed.messages, url);
+          }
+
+          // The drop happens here, not in the app. A message the browser
+          // never receives cannot be written to a peerfile, marked on a
+          // row or counted in a title by some later change that forgot
+          // about this one.
+          var split = partitionInbox(rootDir, parsed.messages);
+          var body = { messages: policy === 'acquire' ? parsed.messages : split.known };
+          // Hold says how many, never who: a name would be the thing the
+          // setting exists to withhold.
+          if (policy === 'hold') body.unknown = split.unknown;
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify(body));
         })
         .catch(function (err) { fail(res, 502, String(err.message || err)); });
     });
@@ -467,6 +581,61 @@ function createHub(rootDir) {
   // page, or a mistyped paste, must not put a contact in the book for
   // somebody who is not there. The label comes from the mailbox rather
   // than from the browser, for the same reason.
+  // Yes or no about a person. No mailbox call: whether this node listens
+  // is its own business — the mailbox has no opinion and is not asked
+  // for one.
+  //
+  // Any key can be blocked, not only a contact. An ordinary personal
+  // node can become a nuisance, and being on somebody's list is not what
+  // makes them one; a row this node has never acquired is blocked just
+  // the same, which is why block does not require a rank.
+  //
+  // Block is deliberately not a delete. The row stays, marked, because a
+  // list you can be removed from silently is a list nobody can undo a
+  // mistake in.
+  function handlePeer(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var publicKey = String((body && body.publicKey) || '').trim();
+      var action = String((body && body.action) || '');
+      if (!publicKey) { fail(res, 400, 'publicKey required'); return; }
+      // Three, and they are not two: `accept` says listen to this person
+      // and `unblock` only takes the block off. Somebody who was blocked
+      // while still waiting goes back to waiting, not into the address
+      // book — undoing a no is not the same as saying yes.
+      if (['block', 'unblock', 'accept'].indexOf(action) === -1) {
+        fail(res, 400, 'action must be block, unblock or accept');
+        return;
+      }
+      var id = auth.loadIdentity(rootDir);
+      if (id && id.publicKey === publicKey) {
+        fail(res, 400, 'that key is this node');
+        return;
+      }
+      // Blocking somebody this node has no row for is a real case: they
+      // are in the census, they have been picked in the list, and they
+      // have never been acquired. A row is made so the block has
+      // somewhere to live and somewhere to be undone from.
+      if (action === 'block' && !whoBook.byPublicKey(rootDir, publicKey)) {
+        whoBook.hold(rootDir, { publicKey: publicKey, publicLabel: String((body && body.publicLabel) || '') });
+      }
+      var row;
+      if (action === 'block') row = whoBook.setBlocked(rootDir, publicKey, true);
+      else if (action === 'unblock') row = whoBook.setBlocked(rootDir, publicKey, false);
+      else row = whoBook.accept(rootDir, publicKey);
+      if (!row) { fail(res, 404, 'no row for that key'); return; }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        publicKey: row.publicKey,
+        acquiredVia: whoBook.acquiredVia(row),
+        blocked: whoBook.isBlocked(row),
+        held: !whoBook.listens(row),
+      }));
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
   function handleContact(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       var publicKey = String((body && body.publicKey) || '').trim();
@@ -491,11 +660,20 @@ function createHub(rootDir) {
               fail(res, 400, 'that key is this node');
               return;
             }
+            // How the key was confirmed. `handle` is a human comparing
+            // key endings out loud (cut 2). `invite` is the owner
+            // recognising a label they minted, now claimed on their own
+            // mailbox — the census is what proves the two are the same
+            // key, and only the owner can read one. Nothing else is
+            // accepted here: a page cannot promote a stranger by asking
+            // nicely.
+            var wanted = String((body && body.via) || 'handle');
+            var via = (wanted === 'invite') ? 'invite' : 'handle';
             var row = whoBook.acquire(rootDir, {
               publicKey: publicKey,
               publicLabel: found.publicLabel || found.name || '',
               relay: url,
-            }, 'handle');
+            }, via);
             res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify({
               publicKey: row.publicKey,
@@ -536,6 +714,7 @@ function createHub(rootDir) {
     handleWho: handleWho,
     handleHandle: handleHandle,
     handleContact: handleContact,
+    handlePeer: handlePeer,
     handleInvite: handleInvite,
   };
 }
@@ -546,4 +725,7 @@ module.exports = {
   acquireFromInbox: acquireFromInbox,
   handleMatches: handleMatches,
   keyTail: keyTail,
+  partitionInbox: partitionInbox,
+  holdFromInbox: holdFromInbox,
+  unknownPolicy: unknownPolicy,
 };

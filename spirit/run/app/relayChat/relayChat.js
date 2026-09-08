@@ -9,6 +9,11 @@
 // which is also what happens after a cutover that emptied the mailbox.
 var RC_SESSION_FILE = 'session.json';
 
+// What this node does with mail from somebody it has not added. The hub
+// enforces it (js/hub.js, unknownPolicy); this list is what the panel
+// offers and what a stored value is checked against.
+var RC_UNKNOWN_CHOICES = ['silent', 'hold', 'acquire'];
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     var myName = '';
@@ -22,6 +27,7 @@ spirit.shell.activateApp({
     // back what you said. `logs` is what has been read off disk this
     // visit, keyed by chatLog id — the files are the record, this is the
     // cache.
+    var ICON = spirit.core.const.ICON;
     var chatLog = window.spiritChatLog;
     var logs = {};       // peer public key -> entries read off disk this visit
     var captions = {};   // peer public key -> what this node calls them
@@ -35,6 +41,14 @@ spirit.shell.activateApp({
     // Chat 6: what was on screen last time. Deliberately not
     // session.json — that file is who this node IS ({label, boundAt}),
     // and a check asserts it stays that. This is what it was looking at.
+    // Settings. Separate from view.json for the same reason view.json is
+    // separate from session.json: this is what this node has DECIDED,
+    // not what it was looking at and not who it is. A remembered filter
+    // may be reset without touching a policy about strangers.
+    var RC_PREFS_FILE = 'prefs.json';
+    var prefs = { unknown: 'silent', mintedLabels: [] };
+    var unknownWaiting = 0; // what Hold has to say, and only while it is > 0
+
     var RC_VIEW_FILE = 'view.json';
     var view = { toKey: '', filter: 'peers', lastSeen: {} };
     // `new` is a place to stand, not a place to be left. It is never
@@ -89,13 +103,42 @@ spirit.shell.activateApp({
         '<button type="button" class="cancel-btn" data-filter="new" id="rc-filter-new" style="display:none">New</button>' +
         '<input type="text" id="rc-search" placeholder="find someone">' +
       '</div>' +
-      '<select id="rc-to-pick" class="rc-wide"><option value="">(pick a person)</option></select>' +
+      // The open conversation and the decision about it, on one line: the
+      // select already says who this is, so the button beside it needs
+      // no second caption. Empty for the mailbox and for
+      // nobody-selected — there is nothing to accept or refuse about a
+      // relay.
+      '<div class="start-job-form" id="rc-to-row">' +
+        '<select id="rc-to-pick" class="rc-wide"><option value="">(pick a person)</option></select>' +
+        '<span id="rc-peer-strip"></span>' +
+      '</div>' +
       '<div class="job-log-panel" id="rc-thread"></div>' +
       // Docked under the thread, where a chat composer belongs.
       '<div class="start-job-form" id="rc-composer">' +
         '<input type="text" id="rc-text" placeholder="say something">' +
         '<button type="button" id="rc-send">Send</button>' +
       '</div>' +
+      // Settings. Folded away like the other rare jobs, and last of the
+      // three because it is the one you touch least. Three radios and a
+      // line: the sound toggle and the Refuse reply are not drawn,
+      // because neither is built, and a control that silently does
+      // nothing is worse than one that is not there.
+      // Settings is the outer fold: one titlebar that puts the whole of
+      // the configuration away. Inside it, one fold per question, each
+      // headed by what it asks and the short form of its current answer
+      // — so the panel can be read closed, and only the question being
+      // changed is open. There is one question today; the shape is what
+      // makes the second one cost nothing.
+      '<details class="stat-tile wide" id="rc-settings-panel">' +
+        '<summary>Settings</summary>' +
+        '<details class="stat-tile nested" id="rc-unknown-section">' +
+          '<summary id="rc-unknown-summary">Messages from people I have not added</summary>' +
+          '<div id="rc-unknown-choices"></div>' +
+          // Only while there is something to say (Hold). AGENT.md: no
+          // chrome that cannot do anything in that state.
+          '<div class="job-log-empty" id="rc-hold-line"></div>' +
+        '</details>' +
+      '</details>' +
       // Contacts cut 2. Folded away at the foot of the page, next to the
       // footer it points at: adding somebody is rare, the conversation is
       // what the page is for, and the two halves of that phone call now
@@ -215,7 +258,7 @@ spirit.shell.activateApp({
     // the line. AGENT.md — do not show chrome that is not useful in that
     // state — and here the instruction for getting in is the page, not a
     // footnote beside a dead form.
-    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-pick', 'rc-add-panel', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
+    var RC_BOUND_ONLY = ['rc-to-bar', 'rc-to-row', 'rc-to-pick', 'rc-settings-panel', 'rc-add-panel', 'rc-thread', 'rc-composer', 'rc-invite-slot'];
 
     function showBoundChrome(show) {
       RC_BOUND_ONLY.forEach(function (id) {
@@ -262,6 +305,35 @@ spirit.shell.activateApp({
     function saveView() {
       api.fs.saveFile(RC_VIEW_FILE, JSON.stringify(view, null, 2))
         .catch(function (e) { setStatus('could not remember the view: ' + e.message); });
+    }
+
+    // Factory is the tightest setting that still lets two people who
+    // added each other talk. A file that is missing, empty or nonsense
+    // therefore reads as silent — the safe answer is also the default
+    // answer, so a broken prefs.json cannot quietly open a node up.
+    function loadPrefs() {
+      var raw = null;
+      try { raw = api.fs.loadFile(RC_PREFS_FILE); }
+      catch (e) { raw = null; }
+      if (!raw) return;
+      var parsed = null;
+      try { parsed = JSON.parse(raw); }
+      catch (e) { return; }
+      if (!parsed || typeof parsed !== 'object') return;
+      prefs = {
+        unknown: RC_UNKNOWN_CHOICES.indexOf(parsed.unknown) === -1 ? 'silent' : parsed.unknown,
+        // Labels this node minted an invite for. Not secrets — the token
+        // is the secret and is never written here — just enough to
+        // recognise the person when they turn up on the mailbox.
+        mintedLabels: Array.isArray(parsed.mintedLabels)
+          ? parsed.mintedLabels.map(String).slice(-50)
+          : [],
+      };
+    }
+
+    function savePrefs() {
+      api.fs.saveFile(RC_PREFS_FILE, JSON.stringify(prefs, null, 2))
+        .catch(function (e) { setStatus('could not remember the setting: ' + e.message); });
     }
 
     // Restore the To first, then widen the filter until that row can be
@@ -322,7 +394,12 @@ spirit.shell.activateApp({
       catch (e) { return; }
       if (!label) return;
 
-      fetch('/api/hub/inbox?name=' + encodeURIComponent(label))
+      // A probe, not a mail read: all it wants is whether the mailbox
+      // still answers a signed read for this label. It states the policy
+      // anyway, so that every request for an inbox says which one it was
+      // made under and none of them can quietly take the default.
+      fetch('/api/hub/inbox?name=' + encodeURIComponent(label) +
+        '&unknown=' + encodeURIComponent(prefs.unknown))
         .then(function (r) {
           if (r.status !== 200) {
             unbind();
@@ -498,9 +575,16 @@ spirit.shell.activateApp({
     // files rather than of the last response.
     function refreshInbox() {
       if (!myName) return;
-      fetch('/api/hub/inbox?name=' + encodeURIComponent(myName))
+      // The policy travels with the request. The hub does not open this
+      // app's prefs.json: one copy of the setting, owned by the app that
+      // draws the control, and the hub is where it is applied so that a
+      // dropped message never reaches the browser at all.
+      fetch('/api/hub/inbox?name=' + encodeURIComponent(myName) +
+        '&unknown=' + encodeURIComponent(prefs.unknown))
         .then(function (r) { return r.json(); })
         .then(function (data) {
+          unknownWaiting = Number(data && data.unknown) || 0;
+          paintHoldLine();
           // Everything an inbox read returns was RECEIVED by this node:
           // that is what the route is. Direction is never guessed from
           // the sender's name — a note to yourself is sent and received,
@@ -580,6 +664,7 @@ spirit.shell.activateApp({
       var pick = document.getElementById('rc-to-pick');
       var chosen = pick.value;
       var needle = search.toLowerCase();
+      var blockedHtml = ''; // built with the peers, appended last of all
 
       function matches(text) {
         return !needle || String(text).toLowerCase().indexOf(needle) !== -1;
@@ -609,12 +694,32 @@ spirit.shell.activateApp({
       });
 
       {
-        if (peerRows.length) {
-          html += '<optgroup label="Peers">' + peerRows.map(function (person) {
-            var mark = hasUnseen(person.publicKey) ? '• ' : '';
-            var text = mark + person.caption + (person.mine ? ' — you' : '');
-            return '<option value="' + api.escapeHtml(person.publicKey) + '">' + api.escapeHtml(text) + '</option>';
-          }).join('') + '</optgroup>';
+        // Two groups, because they are two kinds of row. Somebody held or
+        // blocked is still selectable — picking them is how you accept
+        // them — but they carry a × and the composer goes away while they
+        // are chosen, so the list never offers a send that would be
+        // refused.
+        // Three marks, three facts, and never two at once: somebody
+        // blocked is refused (ICON.NO), somebody held is waiting for an
+        // answer (×), and somebody you can write to may have unread mail
+        // (•). A blocked row cannot be unread — nothing arrives from it
+        // — so the marks cannot collide.
+        function optionFor(person) {
+          var mark = '';
+          if (person.blocked) mark = ICON.NO + ' ';
+          else if (person.held) mark = '× ';
+          else if (hasUnseen(person.publicKey)) mark = '• ';
+          var text = mark + person.caption + (person.mine ? ' — you' : '');
+          return '<option value="' + api.escapeHtml(person.publicKey) + '">' + api.escapeHtml(text) + '</option>';
+        }
+        var canWrite = peerRows.filter(function (person) { return !person.held; });
+        // Held and blocked together, and last of everything (below,
+        // after the relays): the bottom of a list is where you look for
+        // somebody on purpose, and these are rows you open to change
+        // your mind about rather than to talk to.
+        blockedHtml = peerRows.filter(function (person) { return person.held; }).map(optionFor).join('');
+        if (canWrite.length) {
+          html += '<optgroup label="Peers">' + canWrite.map(optionFor).join('') + '</optgroup>';
         }
       }
 
@@ -645,6 +750,8 @@ spirit.shell.activateApp({
         if (relayHtml) html += '<optgroup label="Relays">' + relayHtml + '</optgroup>';
       }
 
+      if (blockedHtml) html += '<optgroup label="Blocked">' + blockedHtml + '</optgroup>';
+
       pick.innerHTML = html;
 
       // A To that is no longer on the mailbox: say which one, and select
@@ -664,7 +771,56 @@ spirit.shell.activateApp({
 
       snapBackFromNew();
       paintFilterButtons();
+      paintPeerStrip();
       paintAddressable();
+    }
+
+    // The strip under the To control: the open peer, and the one thing
+    // you can decide about them.
+    //
+    //   a contact  → Block, in two presses. A block is not a delete —
+    //                the row stays, marked, because a list you can be
+    //                removed from silently is a list nobody can undo a
+    //                mistake in.
+    //   held       → Accept: they wrote, and you say yes.
+    //   blocked    → Unblock, which is the same yes said later.
+    //   the relay  → nothing. There is no accepting a mailbox.
+    var blockArmed = ''; // the key whose Block has been pressed once
+    function paintPeerStrip() {
+      var strip = document.getElementById('rc-peer-strip');
+      if (!strip) return;
+      var key = pickedPeerKey();
+      var person = people.filter(function (p) { return p.publicKey === key; })[0];
+      if (!key || !person || key === mailboxKey) {
+        strip.innerHTML = '';
+        blockArmed = '';
+        return;
+      }
+      if (blockArmed && blockArmed !== key) blockArmed = '';
+
+      // Anybody can be blocked, not only somebody you added. An
+      // ordinary personal node can become a nuisance while you are still
+      // deciding whether to talk to it, so Accept and Block sit side by
+      // side on a row that is waiting.
+      var buttons = '';
+      if (person.blocked) {
+        // One decision at a time: unblocking puts them back where they
+        // were, and if that is "waiting" the next press is Accept.
+        buttons = '<button type="button" class="cancel-btn" id="rc-peer-unblock">Unblock</button>';
+      } else {
+        if (person.held) {
+          buttons += '<button type="button" class="cancel-btn" id="rc-peer-accept">Accept</button>';
+        }
+        buttons += '<button type="button" class="cancel-btn" id="rc-peer-block">' +
+          (blockArmed === key ? 'Really block?' : 'Block') + '</button>';
+      }
+
+      // No caption: the control to the left of these buttons is already
+      // the name, and repeating it would be the app telling you what you
+      // just picked. Which state they are in is in the buttons — Unblock
+      // is only offered to somebody blocked, Accept only to somebody
+      // waiting.
+      strip.innerHTML = buttons;
     }
 
     // A thread and a composer are for saying something to somebody. With
@@ -688,6 +844,11 @@ spirit.shell.activateApp({
       for (var i = 0; i < options.length; i += 1) {
         if (options[i].value && !options[i].disabled) { can = true; break; }
       }
+      // Somebody held is somebody you have not agreed to talk to yet, so
+      // there is nothing to type at them. The strip says what to do
+      // instead.
+      var open = people.filter(function (p) { return p.publicKey === pickedPeerKey(); })[0];
+      if (open && open.held) can = false;
       ['rc-thread', 'rc-composer'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.style.display = can ? '' : 'none';
@@ -728,6 +889,47 @@ spirit.shell.activateApp({
       if (!newButton) return;
       newButton.style.display = waiting > 0 ? '' : 'none';
       newButton.textContent = 'New ' + waiting;
+    }
+
+    function rememberMinted(label) {
+      var wanted = String(label || '').trim();
+      if (!wanted || prefs.mintedLabels.indexOf(wanted) !== -1) return;
+      prefs.mintedLabels.push(wanted);
+      if (prefs.mintedLabels.length > 50) prefs.mintedLabels = prefs.mintedLabels.slice(-50);
+      savePrefs();
+    }
+
+    // The smallest owner-side invite acquire that needs no new field on
+    // the mailbox. The wire still does not say which key consumed a
+    // token — but the owner census already names every peer and its key,
+    // and in keys mode only the key that redeemed the token can hold
+    // that label. So a label this node minted, now claimed, IS the
+    // person invited, and the census is the proof.
+    //
+    // Owner-only, because a census is: which is exactly the case that
+    // needed it. A friend still adds people by handle.
+    function acquireInvited(rows) {
+      if (!prefs.mintedLabels.length) return;
+      var claimed = {};
+      (rows || []).forEach(function (row) {
+        var peers = (row && row.report && row.report.peers) || [];
+        peers.forEach(function (peer) {
+          var label = (peer && (peer.publicLabel || peer.name)) || '';
+          if (label && peer.publicKey) claimed[label] = peer.publicKey;
+        });
+      });
+      prefs.mintedLabels.slice().forEach(function (label) {
+        var key = claimed[label];
+        if (!key) return;
+        // Done with, either way: once the label is claimed the invite has
+        // been used, and a list that only grows would keep re-asking the
+        // hub about people it already knows.
+        prefs.mintedLabels = prefs.mintedLabels.filter(function (l) { return l !== label; });
+        savePrefs();
+        hubPost('/api/hub/contact', { publicKey: key, via: 'invite' })
+          .then(function () { refreshPeople(); })
+          .catch(function () { /* the next badge refresh will try again if it failed */ });
+      });
     }
 
     // The badge is one signed status per Natter row — the same census call
@@ -818,6 +1020,7 @@ spirit.shell.activateApp({
           // named and inert.
           relayRow = rows.length ? rows[0] : null;
           otherRelays = rows.slice(1);
+          acquireInvited(rows);
           if (mailboxKey && relayRow) captions[mailboxKey] = relayCaption(relayRow.url);
           paintToList();
           // Repainting on every refresh would wipe a half-typed invite,
@@ -841,15 +1044,23 @@ spirit.shell.activateApp({
       // Never relays.json[0] by habit: with one owned mailbox the node
       // knows which; with several the human has already said.
       var url = ownedUrls.length === 1 ? ownedUrls[0] : (picker && picker.value);
+      var mintedLabel = document.getElementById('rc-inv-label').value.trim();
       hubPost('/api/hub/invite', {
         name: myName,
-        label: document.getElementById('rc-inv-label').value.trim(),
+        label: mintedLabel,
         days: Number(document.getElementById('rc-inv-days').value) || 7,
         token: spoken,
         url: url
       }).then(function (r) {
         var token = '';
         try { token = JSON.parse(r.text).token || ''; } catch (e) { token = ''; }
+        // Silent plus invite would be a brick: the owner mints a token,
+        // the friend redeems it and writes, and the first thing this node
+        // does is drop the line it was waiting for. So the label is
+        // remembered — never the token, which is the secret — and
+        // recognised when it turns up claimed on the owner's own census
+        // (rememberMinted / acquireInvited below).
+        if (r.status === 201 && token) rememberMinted(mintedLabel);
         // Printed, not copied: Andy reads it off this screen onto a phone.
         // What is shown is what the relay stored — the typed token when it
         // took it, hex when the field was empty — never the field itself,
@@ -878,6 +1089,65 @@ spirit.shell.activateApp({
         }
       });
     });
+
+    // A short name to choose by, and a sentence explaining what it
+    // costs. The name is what the heading repeats back and what somebody
+    // remembers having picked; the sentence is read once.
+    //
+    // The stored values do not change with the wording: 'acquire' is
+    // what the hub is asked for and what prefs.json holds, whatever the
+    // radio happens to be called on screen.
+    var RC_UNKNOWN_LABELS = {
+      silent: {
+        title: 'Silent',
+        note: 'Their message is dropped here. No row, no mark, nothing written down, and they are told nothing.',
+      },
+      hold: {
+        title: 'Hold',
+        note: 'Their message is dropped, but they appear in your list marked ×, so you can accept them.',
+      },
+      acquire: {
+        title: 'Add them',
+        note: 'Writing to you is enough to be added: they appear in your list and you can answer.',
+      },
+    };
+
+    function paintSettings() {
+      var box = document.getElementById('rc-unknown-choices');
+      if (!box) return;
+      box.innerHTML = RC_UNKNOWN_CHOICES.map(function (choice) {
+        var text = RC_UNKNOWN_LABELS[choice];
+        // The note sits in the same label as the radio, so reading it
+        // and choosing it are the same gesture, and it is laid out
+        // under the title rather than under the button (rc-choice, in
+        // index.html).
+        return '<label class="rc-choice">' +
+          '<input type="radio" name="rc-unknown" value="' + choice + '"' +
+          (prefs.unknown === choice ? ' checked' : '') + '>' +
+          '<span class="rc-choice-title">' + api.escapeHtml(text.title) + '</span>' +
+          '<span class="rc-choice-note">' + api.escapeHtml(text.note) + '</span>' +
+          '</label>';
+      }).join('');
+
+      var summary = document.getElementById('rc-unknown-summary');
+      if (summary) {
+        var current = RC_UNKNOWN_LABELS[prefs.unknown];
+        summary.textContent = 'Messages from people I have not added' +
+          (current ? ' — ' + current.title : '');
+      }
+      paintHoldLine();
+    }
+
+    // How many, never who — a name is exactly what Hold exists to
+    // withhold. On the page only while there is a number to give, so a
+    // quiet mailbox says nothing at all.
+    function paintHoldLine() {
+      var line = document.getElementById('rc-hold-line');
+      if (!line) return;
+      line.textContent = (prefs.unknown === 'hold' && unknownWaiting > 0)
+        ? unknownWaiting + ' from people you have not added'
+        : '';
+    }
 
     // The footer. Same six characters, same words, as the row the other
     // side is reading off their screen while they add you — so a phone
@@ -967,8 +1237,42 @@ spirit.shell.activateApp({
       view.toKey = pickedPeerKey();
       saveView();
       renderThread();   // reading it is what marks it read
-      paintToList();    // so its dot goes
+      paintToList();    // so its dot goes, and the strip follows the pick
       paintTitle();     // and so does its share of the count
+    });
+
+    // Delegated: the strip is repainted on every list paint, so nothing
+    // may hold a reference to its buttons.
+    document.getElementById('rc-peer-strip').addEventListener('click', function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+      var key = pickedPeerKey();
+      if (!key) return;
+
+      if (target.closest('#rc-peer-accept') || target.closest('#rc-peer-unblock')) {
+        var yes = target.closest('#rc-peer-accept') ? 'accept' : 'unblock';
+        hubPost('/api/hub/peer', { publicKey: key, action: yes }).then(function (r) {
+          if (r.status !== 200) { setStatus(yes + ' failed: ' + r.status + ' ' + r.text); return; }
+          refreshPeople().then(function () { refreshInbox(); });
+        });
+        return;
+      }
+
+      if (target.closest('#rc-peer-block')) {
+        // Two presses, in the same button. A confirm dialog for this
+        // would be a second thing to read; a button that says what it is
+        // about to do is the confirmation.
+        if (blockArmed !== key) {
+          blockArmed = key;
+          paintPeerStrip();
+          return;
+        }
+        blockArmed = '';
+        hubPost('/api/hub/peer', { publicKey: key, action: 'block' }).then(function (r) {
+          if (r.status !== 200) { setStatus('block failed: ' + r.status + ' ' + r.text); return; }
+          refreshPeople();
+        });
+      }
     });
 
     // The filter is what kind of row you want; it is remembered. The
@@ -1022,6 +1326,17 @@ spirit.shell.activateApp({
         setStatus('pick who this is for');
         return;
       }
+      // The composer is already hidden for a held row, but Enter, a
+      // stale page and a second window all reach this line too. The last
+      // word about who may be written to belongs here, not to whether a
+      // control happens to be on screen.
+      var open = people.filter(function (p) { return p.publicKey === picked; })[0];
+      if (open && open.held) {
+        setStatus(open.blocked
+          ? 'that person is blocked — unblock them first'
+          : 'accept them first, then you can write');
+        return;
+      }
       hubPost('/api/hub/send', { from: myName, to: to, text: text }).then(function (r) {
         if (r.status === 201) {
           var msg = null;
@@ -1050,8 +1365,26 @@ spirit.shell.activateApp({
       });
     });
 
+    // A change of policy is a change to what the next inbox read will
+    // even return, so it takes effect on the spot rather than at the
+    // next poll.
+    document.getElementById('rc-unknown-choices').addEventListener('change', function (event) {
+      var choice = event.target && event.target.value;
+      if (RC_UNKNOWN_CHOICES.indexOf(choice) === -1) return;
+      prefs.unknown = choice;
+      savePrefs();
+      paintSettings(); // the heading carries the answer, so it moves with it
+      // Nothing is held under any setting but Hold, and a stale count
+      // under Silent would be the one thing Silent promises not to say.
+      unknownWaiting = 0;
+      paintHoldLine();
+      refreshInbox();
+    });
+
     paintTitle();
     loadView();
+    loadPrefs();
+    paintSettings();
     paintFilterButtons();
     renderThread();
     restoreSession();

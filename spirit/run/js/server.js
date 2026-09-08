@@ -782,6 +782,14 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    // Yes or no about somebody already in the book: accept the person
+    // who was being held, or block a contact. Nothing leaves this node —
+    // whether it listens is not the mailbox's business.
+    if (pathname === '/api/hub/peer') {
+      hub.handlePeer(req, res, readJsonBody);
+      return;
+    }
+
     if (pathname === '/api/hub/claim') {
       hub.handleClaim(req, res, readJsonBody);
       return;

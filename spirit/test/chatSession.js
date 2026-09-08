@@ -118,6 +118,7 @@ function fakeFetch(log, options) {
       mailboxPublicKey: options.mailboxPublicKey || null,
       selfTail: options.selfTail || null,
       matches: options.matches || [],
+      unknown: options.unknown || 0,
     };
     let status = 200;
     let payload = body;
@@ -173,6 +174,12 @@ function mountApp(store, options) {
 // inside its handlers, so byId is only populated where it has looked.
 function el(app, id) {
   return app.doc.getElementById(id);
+}
+
+// What a click hands a delegated listener: the element it landed on,
+// which answers closest() for the id it is inside.
+function closestStub(id) {
+  return { closest: function (selector) { return selector === '#' + id ? { id: id } : null; } };
 }
 
 function titleOf(app) {
@@ -1206,11 +1213,346 @@ function invitePanelForgetsTheCall() {
   });
 }
 
+// The settings panel: three answers to "somebody you have not added just
+// wrote to you", the tightest of them factory.
+function settingsPanel() {
+  test.subHeading('What to do about people you have not added');
+
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, { inboxStatus: 200 });
+
+  return settle().then(function () {
+    const choices = el(app, 'rc-unknown-choices').innerHTML;
+    const radios = (choices.match(/type="radio"/g) || []).length;
+    if (radios === 3 && /value="silent"[^>]*checked/.test(choices)) {
+      test.check('three choices, and the tightest is the one already made');
+    } else {
+      test.fail('choices: ' + choices);
+    }
+
+    // Short names to choose by, each with its own sentence: the name is
+    // what gets remembered, the sentence is read once.
+    if (/rc-choice-title">Silent/.test(choices) &&
+        /rc-choice-title">Hold/.test(choices) &&
+        /rc-choice-title">Add them/.test(choices) &&
+        (choices.match(/rc-choice-note/g) || []).length === 3) {
+      test.check('each choice is a short name with its own explanation');
+    } else {
+      test.fail('choice copy: ' + choices);
+    }
+
+    // Settings folds the whole configuration away; each question inside
+    // it folds separately. One question today, and the shape is what
+    // makes the second one cost nothing.
+    const panel = app.container.innerHTML;
+    const at = panel.indexOf('id="rc-settings-panel"');
+    const inner = panel.slice(at, panel.indexOf('</details>', at));
+    if (at !== -1 && inner.indexOf('id="rc-unknown-section"') !== -1 && inner.indexOf('<details') !== -1) {
+      test.check('the question is a fold inside the Settings fold');
+    } else {
+      test.fail('settings markup: ' + panel.slice(at, at + 400));
+    }
+
+    // The choices stand off from the heading that introduces them.
+    const css = require('fs').readFileSync(require('path').join(RUN_DIR, 'index.html'), 'utf8');
+    const gapAt = css.indexOf('#rc-unknown-choices {');
+    const gap = gapAt === -1 ? '' : css.slice(gapAt, css.indexOf('}', gapAt));
+    if (/margin-top:\s*12px/.test(gap)) {
+      test.check('and the first choice does not sit against the title');
+    } else {
+      test.fail('choices gap: ' + gap);
+    }
+
+    // A folded panel still answers the question it exists for.
+    if (el(app, 'rc-unknown-summary').textContent === 'Messages from people I have not added — Silent') {
+      test.check('and the heading says both the question and the answer');
+    } else {
+      test.fail('summary: ' + el(app, 'rc-unknown-summary').textContent);
+    }
+
+    // Neither is built, so neither is drawn: a control that silently
+    // does nothing is worse than one that is not there.
+    if (choices.indexOf('refuse') === -1 && choices.toLowerCase().indexOf('sound') === -1) {
+      test.check('no Refuse, no sound toggle');
+    } else {
+      test.fail('unbuilt controls were drawn: ' + choices);
+    }
+
+    // The policy travels with the read; the hub never opens prefs.json.
+    const asked = app.log.filter(function (call) { return call.url.indexOf('/api/hub/inbox') === 0; });
+    if (asked.length && asked.every(function (call) { return call.url.indexOf('unknown=silent') !== -1; })) {
+      test.check('and every inbox read says which policy it was made under');
+    } else {
+      test.fail('inbox calls: ' + JSON.stringify(asked.map(function (c) { return c.url; })));
+    }
+
+    // Choosing is remembered, on this node, in its own file.
+    el(app, 'rc-unknown-choices').fire('change', { target: { value: 'acquire' } });
+    return settle().then(function () {
+      let saved = null;
+      try { saved = JSON.parse(app.store['prefs.json']); } catch (e) { saved = null; }
+      if (saved && saved.unknown === 'acquire') {
+        test.check('a choice is written to prefs.json, not to session or view');
+      } else {
+        test.fail('prefs.json: ' + app.store['prefs.json']);
+      }
+      if (!/unknown/.test(app.store['view.json'] || '') && !/unknown/.test(app.store['session.json'])) {
+        test.check('and neither of the other two files learns about it');
+      } else {
+        test.fail('the setting leaked into another file');
+      }
+
+      if (el(app, 'rc-unknown-summary').textContent === 'Messages from people I have not added — Add them') {
+        test.check('and the heading moves with the answer');
+      } else {
+        test.fail('summary after the change: ' + el(app, 'rc-unknown-summary').textContent);
+      }
+
+      // It takes effect on the spot: the next read is made under the new
+      // policy, not the one the page was opened with.
+      const later = app.log.filter(function (call) { return call.url.indexOf('/api/hub/inbox') === 0; }).pop();
+      if (later && later.url.indexOf('unknown=acquire') !== -1) {
+        test.check('and the very next read is made under it');
+      } else {
+        test.fail('read after the change: ' + (later && later.url));
+      }
+    });
+  });
+}
+
+// Hold is a number and never a name — the name is the thing it withholds.
+function holdLine() {
+  test.subHeading('Hold says how many, and never who');
+
+  const store = {
+    'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
+    'prefs.json': JSON.stringify({ unknown: 'hold', mintedLabels: [] }),
+  };
+  const app = mountApp(store, { inboxStatus: 200, unknown: 2 });
+
+  return settle().then(function () {
+    if (/2 from people you have not added/.test(el(app, 'rc-hold-line').textContent)) {
+      test.check('two waiting says so');
+    } else {
+      test.fail('hold line: ' + el(app, 'rc-hold-line').textContent);
+    }
+
+    // A stored choice is what the panel shows on the way back in.
+    if (/value="hold"[^>]*checked/.test(el(app, 'rc-unknown-choices').innerHTML)) {
+      test.check('and a reload comes back to the setting that was made');
+    } else {
+      test.fail('restored panel: ' + el(app, 'rc-unknown-choices').innerHTML);
+    }
+
+    // Quiet mailbox, quiet page.
+    const quiet = mountApp({
+      'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
+      'prefs.json': JSON.stringify({ unknown: 'hold', mintedLabels: [] }),
+    }, { inboxStatus: 200, unknown: 0 });
+    return settle().then(function () {
+      if (el(quiet, 'rc-hold-line').textContent === '') {
+        test.check('nothing waiting says nothing at all');
+      } else {
+        test.fail('hold line with nothing held: ' + el(quiet, 'rc-hold-line').textContent);
+      }
+    });
+  });
+}
+
+// Hold puts somebody in the list without letting them in: a × row you
+// can pick, so you can say yes, and no composer while they are open.
+function heldRowsAndTheStrip() {
+  test.subHeading('Held in the list, and the one decision about them');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const HELD = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [
+      { publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false, held: false, blocked: false },
+      { publicKey: HELD, publicLabel: 'carol', caption: 'carol', mine: false, held: true, blocked: false },
+    ],
+  });
+
+  return settle().then(function () {
+    // The decision sits beside the name, not under it: one line, the
+    // select taking the width and the button at its right.
+    const row = app.container.innerHTML;
+    const rowAt = row.indexOf('id="rc-to-row"');
+    const inside = rowAt === -1 ? '' : row.slice(rowAt, row.indexOf('</div>', rowAt));
+    if (inside.indexOf('id="rc-to-pick"') !== -1 && inside.indexOf('id="rc-peer-strip"') !== -1) {
+      test.check('the To control and its button share a line');
+    } else {
+      test.fail('to row: ' + row.slice(rowAt, rowAt + 300));
+    }
+
+    const list = el(app, 'rc-to-pick').innerHTML;
+    if (/optgroup label="Blocked"/.test(list) && /×\s*carol/.test(list)) {
+      test.check('somebody held is listed apart, and marked');
+    } else {
+      test.fail('list: ' + list);
+    }
+
+    // Last of everything: the bottom of a list is where you go looking
+    // for somebody on purpose, and these are rows you open to change
+    // your mind about rather than to talk to.
+    if (list.indexOf('label="Blocked"') > list.indexOf('label="Peers"')) {
+      test.check('and that group is the last one in the list');
+    } else {
+      test.fail('group order: ' + list);
+    }
+
+    // Selectable, because picking them is how they get accepted — a
+    // disabled option could never be chosen at all.
+    el(app, 'rc-to-pick').value = HELD;
+    el(app, 'rc-to-pick').fire('change');
+    return settle().then(function () {
+      // Both, side by side: somebody can be a nuisance before you have
+      // decided to talk to them, so saying no must not require saying
+      // yes first.
+      const offered = el(app, 'rc-peer-strip').innerHTML;
+      if (offered.indexOf('rc-peer-accept') !== -1 && offered.indexOf('rc-peer-block') !== -1) {
+        test.check('picking them offers both answers, yes and no');
+      } else {
+        test.fail('strip: ' + offered);
+      }
+
+      if (el(app, 'rc-composer').style.display === 'none') {
+        test.check('and there is nothing to type at somebody you have not accepted');
+      } else {
+        test.fail('composer shown for a held row');
+      }
+
+      // Enter and a stale page reach the send path directly, so the
+      // refusal cannot live only in what is on screen.
+      const before = app.log.length;
+      el(app, 'rc-text').value = 'hello';
+      el(app, 'rc-send').fire('click');
+      const sends = app.log.slice(before).filter(function (c) { return c.url.indexOf('/api/hub/send') === 0; });
+      if (sends.length === 0 && /accept them first/.test(el(app, 'rc-status').textContent)) {
+        test.check('and the send itself refuses, not merely the missing box');
+      } else {
+        test.fail('sends: ' + sends.length + ' status: ' + el(app, 'rc-status').textContent);
+      }
+
+      // Accept goes to this node, never to the mailbox.
+      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-accept') });
+      return settle().then(function () {
+        const accepted = app.log.filter(function (c) { return c.url === '/api/hub/peer'; });
+        if (accepted.length === 1 && accepted[0].method === 'POST') {
+          test.check('accepting is one call, and it is a local one');
+        } else {
+          test.fail('peer calls: ' + JSON.stringify(accepted));
+        }
+      });
+    });
+  });
+}
+
+// Blocking a contact takes two presses of the same button: a button that
+// says what it is about to do is the confirmation.
+function blockingTakesTwo() {
+  test.subHeading('Block says what it is about to do, then does it');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false, held: false, blocked: false }],
+  });
+
+  return settle().then(function () {
+    el(app, 'rc-to-pick').value = BERT;
+    el(app, 'rc-to-pick').fire('change');
+    return settle().then(function () {
+      const forContact = el(app, 'rc-peer-strip').innerHTML;
+      if (forContact.indexOf('rc-peer-block') !== -1 && forContact.indexOf('rc-peer-accept') === -1) {
+        test.check('a contact can be blocked, and has nothing to accept');
+      } else {
+        test.fail('strip for a contact: ' + forContact);
+      }
+
+      const before = app.log.length;
+      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-block') });
+      const armed = el(app, 'rc-peer-strip').innerHTML;
+      const posted = app.log.slice(before).filter(function (c) { return c.url === '/api/hub/peer'; });
+      if (posted.length === 0 && /Really block\?/.test(armed)) {
+        test.check('the first press only asks');
+      } else {
+        test.fail('first press posted ' + posted.length + ': ' + armed);
+      }
+
+      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-block') });
+      return settle().then(function () {
+        const sent = app.log.filter(function (c) { return c.url === '/api/hub/peer'; });
+        if (sent.length === 1) {
+          test.check('and the second one does it');
+        } else {
+          test.fail('after two presses: ' + sent.length);
+        }
+      });
+    });
+  });
+}
+
+// Somebody blocked has one thing on the strip: the way back.
+function blockedOffersTheWayBack() {
+  test.subHeading('A blocked row can always be undone');
+
+  const DAVE = 'MCowBQYDK2VwAyEAdavedavedavedavedavedavedavedavedave=';
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [{ publicKey: DAVE, publicLabel: 'dave', caption: 'dave', mine: false, held: true, blocked: true }],
+  });
+
+  return settle().then(function () {
+    el(app, 'rc-to-pick').value = DAVE;
+    el(app, 'rc-to-pick').fire('change');
+    return settle().then(function () {
+      // Which state somebody is in is in the buttons: Unblock is only
+      // ever offered to somebody blocked. The select beside it already
+      // carries the name and the ×.
+      // The row itself says refused, in the shell's own word for it.
+      const listed = el(app, 'rc-to-pick').innerHTML;
+      if (listed.indexOf(spirit.core.const.ICON.NO) !== -1 && listed.indexOf('× dave') === -1) {
+        test.check('a blocked row is marked refused, not merely not-added');
+      } else {
+        test.fail('blocked row: ' + listed);
+      }
+
+      const strip = el(app, 'rc-peer-strip').innerHTML;
+      if (strip.indexOf('rc-peer-unblock') !== -1 && strip.indexOf('rc-peer-block"') === -1 &&
+          strip.indexOf('rc-peer-accept') === -1) {
+        test.check('it offers only the way back');
+      } else {
+        test.fail('blocked strip: ' + strip);
+      }
+
+      el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-peer-unblock') });
+      return settle().then(function () {
+        const calls = app.log.filter(function (c) { return c.url === '/api/hub/peer'; });
+        if (calls.length === 1) {
+          test.check('and undoing it is one call, like doing it');
+        } else {
+          test.fail('unblock calls: ' + calls.length);
+        }
+      });
+    });
+  });
+}
+
 claimBinds()
   .then(claimRowHidesOnceBound)
   .then(enterSendsExactlyOnce)
   .then(inviteOnlyForAnOwner)
   .then(invitePanelForgetsTheCall)
+  .then(settingsPanel)
+  .then(heldRowsAndTheStrip)
+  .then(blockingTakesTwo)
+  .then(blockedOffersTheWayBack)
+  .then(holdLine)
   .then(composerOffersTheMailbox)
   .then(reloadRestores)
   .then(nothingStored)

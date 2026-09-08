@@ -1617,21 +1617,37 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
   // interpolated into a pattern string needs its escapes doubled, and a
   // pattern that quietly stops matching returns null for both sides —
   // which compares equal and passes while asserting nothing.
+  //
+  // A selector may share its rule with others ("#a,\n#b { … }"), so what
+  // counts as a selector position is: the next non-space character is a
+  // comma or the rule's own brace. Looking only for "<selector> {" reads
+  // a grouped rule as missing, which is a green test turning red for a
+  // change that was correct.
   function value(selector, property) {
-    const at = css.indexOf(selector + ' {');
-    if (at === -1) return null;
-    const block = css.slice(at, css.indexOf('}', at));
-    const declAt = block.indexOf(property + ':');
-    if (declAt === -1) return null;
-    const decl = block.slice(declAt + property.length + 1, block.indexOf(';', declAt)).trim();
-    return /^[0-9]+px$/.test(decl) ? decl : null;
+    let from = 0;
+    for (;;) {
+      const at = css.indexOf(selector, from);
+      if (at === -1) return null;
+      from = at + selector.length;
+      const next = css.slice(from).replace(/^[ \r\n\t]+/, '')[0];
+      if (next !== ',' && next !== '{') continue;
+      const open = css.indexOf('{', at);
+      const close = css.indexOf('}', open);
+      if (open === -1 || close === -1) return null;
+      const block = css.slice(open, close);
+      const declAt = block.indexOf(property + ':');
+      if (declAt === -1) continue;
+      const decl = block.slice(declAt + property.length + 1, block.indexOf(';', declAt)).trim();
+      return /^[0-9]+px$/.test(decl) ? decl : null;
+    }
   }
-  const gap = value('#rc-add-panel', 'margin-bottom');
-  if (gap !== null && gap === value('#open-with', 'margin-top')) {
-    test.check('the two folded panels are a block apart, like every other pair');
+  const rhythm = value('#open-with', 'margin-top');
+  const panels = ['#rc-settings-panel', '#rc-add-panel'];
+  const flush = panels.filter(function (selector) { return value(selector, 'margin-bottom') !== rhythm; });
+  if (rhythm !== null && flush.length === 0) {
+    test.check('every folded panel is a block apart from the next, like any other pair');
   } else {
-    test.fail('add-panel gap ' + value('#rc-add-panel', 'margin-bottom') +
-      ' vs the rhythm ' + value('#open-with', 'margin-top'));
+    test.fail('flush against what follows: ' + flush.join(', ') + ' (rhythm ' + rhythm + ')');
   }
 }
 
