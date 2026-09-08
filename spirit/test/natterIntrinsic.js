@@ -1462,4 +1462,70 @@ test.subHeading('Open with offers what declared the extension');
   }
 }
 
+test.subHeading('A file info row reads at the size of the titlebar');
+
+// Andy's rule: what earns a place in the flow reads at reading size, and
+// what does not is fine print, which belongs at the bottom of a page
+// rather than shrunk in the middle of one. The bubble in both launchers
+// was 13px under a 16px title.
+//
+// Asserted as "the same as the titlebar" rather than "16px", because the
+// rule is the relationship. One row type serves the launchers, the Apps
+// detail rows and the Groups panel, so this covers all three.
+{
+  const css = readRun('index.html');
+  const title = /#app-title\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
+  const row = /\.file-info-row\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
+  if (title && row && title[1] === row[1]) {
+    test.check('an info row is the size of the title above it');
+  } else {
+    test.fail('title ' + (title && title[1]) + 'px vs row ' + (row && row[1]) + 'px');
+  }
+
+  // Size only. The titlebar keeps its weight, or the block under it
+  // competes with the thing it is describing.
+  const rowRule = /\.file-info-row\s*\{([^}]*)\}/.exec(css);
+  if (rowRule && rowRule[1].indexOf('font-weight') === -1) {
+    test.check('and does not borrow its weight as well');
+  } else {
+    test.fail('info row rule: ' + (rowRule && rowRule[1]));
+  }
+}
+
+test.subHeading('The viewer keeps one rhythm down the page');
+
+// The info bubble, the Open with line and the preview are three blocks
+// in both launchers, and they should be evenly spaced. Asserted as a
+// relationship again, not a number: whatever the preview's gap is, the
+// Open with line has the same one above it.
+{
+  const css = readRun('index.html');
+  // Located by text rather than a built regex: the selectors carry '.'
+  // and '#', and escaping them into a RegExp string is a knot for no
+  // gain when the rule block starts at a known string and ends at the
+  // next '}'.
+  function gap(selector) {
+    const at = css.indexOf(selector + ' {');
+    if (at === -1) return null;
+    const block = css.slice(at, css.indexOf('}', at));
+    const found = /margin-top:\s*(\d+)px/.exec(block);
+    return found ? found[1] : null;
+  }
+  const openWith = gap('#open-with');
+  if (openWith && openWith === gap('.code-view') && openWith === gap('.media-view')) {
+    test.check('Open with sits the same distance below the bubble as the preview does below it');
+  } else {
+    test.fail('gaps: open-with ' + openWith + ', code ' + gap('.code-view') + ', media ' + gap('.media-view'));
+  }
+
+  // renderOpenWith writes '' when nothing handles the extension, and an
+  // empty div still occupies its margin — which would open a bigger gap
+  // on exactly the files that have less to show.
+  if (/#open-with:empty\s*\{[^}]*margin-top:\s*0/.test(css)) {
+    test.check('and takes no space at all when there is nothing to offer');
+  } else {
+    test.fail('an empty Open with still holds its margin');
+  }
+}
+
 test.reportSuccessFailureCount();

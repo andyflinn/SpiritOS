@@ -130,8 +130,18 @@
       /* Label and value on the same line — dedicated to the file info
          bubble (renderFileInfoBubble), separate from .stat-tile .label/.rows
          above (stacked label-over-value), which other apps rely on as-is. */
-      .file-info-row { display: flex; gap: 8px; font-size: 13px; margin-top: 4px; }
-      .file-info-row .file-info-label { opacity: 0.7; min-width: 70px; }
+      /* Reading size, the same as #app-title: a Path, an Id, a Members
+         list are what the screen is about, not a footnote to it. If a
+         line deserves to be smaller than this it is fine print, and fine
+         print belongs at the bottom of a page rather than shrunk in the
+         middle of one. Size only — the titlebar keeps its 600 weight, or
+         the block below it starts competing with it.
+         One row type, one voice: this is the launchers' info bubble, the
+         Apps detail rows and the Groups panel alike. The label column
+         grew with the text; at 16px "Default name" and "Changed" no
+         longer fit 70px, and the values stopped aligning. */
+      .file-info-row { display: flex; gap: 8px; font-size: 16px; margin-top: 4px; }
+      .file-info-row .file-info-label { opacity: 0.7; min-width: 90px; }
 
       #file-tree summary {
         cursor: pointer;
@@ -167,6 +177,18 @@
       textarea.code-view { width: 100%; box-sizing: border-box; resize: vertical; color: inherit; border: none; }
 
       .media-view { max-width: 100%; margin-top: 12px; display: block; }
+
+      /* One rhythm down the viewer: the info bubble, the Open with line
+         and the preview are three blocks, evenly spaced. The preview
+         carries its own 12px (.code-view and .media-view above) and this
+         is the matching gap above it — both launchers share this id, so
+         they space identically.
+         :empty because renderOpenWith writes '' when nothing declared
+         the extension. An empty div still occupies its margin, which
+         would push the preview 24px down on exactly the files that have
+         no Open with — a bigger gap where there is less to see. */
+      #open-with { margin-top: 12px; }
+      #open-with:empty { margin-top: 0; }
 
       /* renderAnnotationsSection's "More Information" cards (shell.js) */
       .stat-tile.nested { margin-top: 8px; background: rgba(255, 255, 255, 0.04); }
