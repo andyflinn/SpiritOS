@@ -28,27 +28,28 @@
 var processEscapeHtml = spirit.core.util.escapeHtml;
 var processApi = null; // handed in at mount, kept for render's sake
 
-var lastProcessBrowserJob = null;
+var processFiles = null; // the file list, as last delivered by api.onFiles
+var processStale = false; // a list arrived while this app was off screen
 var lastProcessBrowserEntries = null; // cached {label, description, relativePath} list, independent of the search filter
 
-// The shell hands render() the job map it already keeps, so this app
-// needs no subscription of its own — same as app/stats/stats.js.
-function processFindJob(jobsById, type) {
-  var found = null;
-  if (!jobsById || typeof jobsById.forEach !== 'function') return null;
-  jobsById.forEach(function (job) {
-    if (job && job.type === type) found = job;
-  });
-  return found;
-}
+// This app used to be handed the whole job map on every job event and
+// keep `lastProcessBrowserJob` to tell "my job moved" from "a stats tick
+// happened" — an object-identity cache, in an app, for a question the
+// shell was better placed to answer. The Files app carried the same four
+// lines. api.onFiles is that question answered once: it is called only
+// when the list says something new, never on an unrelated job.
+//
+// The subscription is permanent and arrives whether or not this app is on
+// screen. Re-reading every process manifest for a page nobody is looking
+// at is work with no reader, so the callback records what came and stops
+// there; render(), which switchTo calls on every visit, is the catch-up.
 
 function renderProcessList() {
   var listEl = document.getElementById('process-browser-list');
   if (!listEl || !processApi) return;
 
   if (!lastProcessBrowserEntries) {
-    var job = lastProcessBrowserJob;
-    if (!job || !job.data || !Array.isArray(job.data.files)) {
+    if (!Array.isArray(processFiles)) {
       listEl.textContent = 'waiting for file list…';
       return;
     }
@@ -59,7 +60,7 @@ function renderProcessList() {
     // (a test fixture, an npm package.json, etc.) that the old
     // shape-only check let through. .json is still excluded
     // separately since a manifest shares that same basename.
-    lastProcessBrowserEntries = job.data.files
+    lastProcessBrowserEntries = processFiles
       .filter(function (f) { return f.kind === 'file' && /^process\/[^/]+\/([^/]+)\/\1\.[^/.]+$/.test(f.relativePath) && !/\.json$/.test(f.relativePath); })
       .map(function (f) {
         var manifestRaw = processApi.readProject(f.relativePath.replace(/\.[^.]+$/, '.json'));
@@ -92,18 +93,28 @@ spirit.shell.activateApp({
   mount: function (container, api) {
     processApi = api;
 
-    // Force the next render() to actually populate the list — mount()
-    // always wipes the DOM clean, so a cache hit from a previous visit
-    // (same fs-watcher job reference, nothing changed on disk) must
-    // not be allowed to skip repopulating a freshly-emptied container.
-    lastProcessBrowserJob = null;
+    // mount() always wipes the DOM clean, so whatever was worked out on
+    // a previous visit must not be allowed to stand in for repopulating a
+    // freshly-emptied container.
     lastProcessBrowserEntries = null;
+    processStale = true;
 
     container.innerHTML =
       '<input type="text" id="process-search" placeholder="Search processes…">' +
       '<div id="process-browser-list"></div>';
 
     document.getElementById('process-search').addEventListener('input', function () {
+      renderProcessList();
+    });
+
+    // Once, for the life of the page. Delivered immediately with what the
+    // shell already knows, so the list is there before the first rescan.
+    api.onFiles(function (files, ctx) {
+      processFiles = files;
+      lastProcessBrowserEntries = null; // the manifests are re-read from the new list
+      processStale = true;
+      if (!ctx.visible) return; // this app's choice: nothing to paint for nobody
+      processStale = false;
       renderProcessList();
     });
 
@@ -122,11 +133,13 @@ spirit.shell.activateApp({
     });
   },
 
-  render: function (jobsById) {
-    var job = processFindJob(jobsById, 'fs-watcher');
-    if (job === lastProcessBrowserJob) return; // fs-watcher data unchanged — skip re-scanning/re-fetching manifests
-    lastProcessBrowserJob = job;
-    lastProcessBrowserEntries = null;
+  // Called by switchTo on every visit, and by the shell on every job
+  // event. Both are the same question — "is what is on screen out of
+  // date?" — and the answer is no unless a file list arrived while this
+  // app was not being looked at.
+  render: function () {
+    if (!processStale) return;
+    processStale = false;
     renderProcessList();
   },
 });

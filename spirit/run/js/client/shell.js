@@ -817,6 +817,30 @@
       readProject: function (projectPath) {
         return spirit.core.fs.loadFile(projectPath);
       },
+
+      // The file list, whenever it says something new — never on a stats
+      // tick, and never twice for the same content. Called back straight
+      // away with what is already known, so a freshly mounted app paints
+      // now rather than at the next rescan. Returns an unsubscribe.
+      onFiles: function (fn) {
+        var stop = subscribeTo(fileSubscribers, app.id, fn);
+        var files = currentFiles();
+        if (files && typeof fn === 'function') {
+          fn(files, { visible: activeAppId === app.id });
+        }
+        return stop;
+      },
+
+      // Every job event, with the job that moved (null on a snapshot).
+      // The raw stream: use onFiles unless you want the jobs themselves.
+      onJobs: function (fn) {
+        var stop = subscribeTo(jobSubscribers, app.id, fn);
+        if (typeof fn === 'function') fn(jobsById, null, { visible: activeAppId === app.id });
+        return stop;
+      },
+
+      // For work outside a callback — a timer, a fetch that lands late.
+      isVisible: function () { return activeAppId === app.id; },
     };
     if (app._scriptPath) {
       var folder = app._scriptPath.match(/^app\/([^/]+)\//)[1];
@@ -999,6 +1023,70 @@
     if (activeAppId && apps[activeAppId]) {
       apps[activeAppId].render(jobsById, activeParams);
     }
+  }
+
+  // ---- Subscriptions (api.onFiles / api.onJobs) ----
+  //
+  // Before this, the shell broadcast: every job event repainted whichever
+  // app was on screen, with no word about what had changed, so an app
+  // that cared about one job had to keep an identity cache and compare
+  // objects. Two apps had written the same four lines (Files, Processes)
+  // and the next one would have copied them.
+  //
+  // The page still holds exactly ONE EventSource — the one at the foot of
+  // this file. These are fan-outs from it, not new connections: an app
+  // opening its own would multiply the server's sseConnections by the
+  // number of apps in the page.
+  //
+  // A subscription is permanent and does not care whether its app is on
+  // screen. Whether to DO anything while invisible is the app's decision,
+  // which is why `ctx.visible` rides along with every delivery: an app
+  // that only paints returns early and costs a boolean, and an app that
+  // wants to keep counting while you are somewhere else simply does not.
+  // The catch-up on the way back is the existing render(): switchTo calls
+  // it on every visit, so "skip while hidden, repaint when shown" needs
+  // nothing new.
+  var fileSubscribers = [];
+  var jobSubscribers = [];
+  // What the last delivered file list said. The signature lives here so
+  // no app has to hold one again: a reconnect re-delivers every job as a
+  // fresh object with identical content, and that is not a change.
+  var lastFilesJson = null;
+
+  function currentFiles() {
+    var job = findJobByType('fs-watcher');
+    return (job && job.data && Array.isArray(job.data.files)) ? job.data.files : null;
+  }
+
+  function contextFor(entry) {
+    return { visible: activeAppId === entry.appId };
+  }
+
+  function notifyFileSubscribers() {
+    var files = currentFiles();
+    if (!files) return;
+    var asJson = JSON.stringify(files);
+    if (asJson === lastFilesJson) return;
+    lastFilesJson = asJson;
+    fileSubscribers.slice().forEach(function (entry) {
+      entry.fn(files, contextFor(entry));
+    });
+  }
+
+  function notifyJobSubscribers(changed) {
+    jobSubscribers.slice().forEach(function (entry) {
+      entry.fn(jobsById, changed || null, contextFor(entry));
+    });
+  }
+
+  function subscribeTo(list, appId, fn) {
+    if (typeof fn !== 'function') return function () {};
+    var entry = { appId: appId, fn: fn };
+    list.push(entry);
+    return function unsubscribe() {
+      var at = list.indexOf(entry);
+      if (at !== -1) list.splice(at, 1);
+    };
   }
 
   function findJobByType(type) {
@@ -1355,14 +1443,20 @@
       jobs.forEach(function (job) { jobsById.set(job.id, job); });
       discoverDynamicApps(jobs);
       pruneStalePreferences();
+      notifyFileSubscribers();
+      notifyJobSubscribers(null);
       renderActive();
     },
     onUpdate: function (job) {
       jobsById.set(job.id, job);
+      notifyFileSubscribers();
+      notifyJobSubscribers(job);
       renderActive();
     },
     onDelete: function (id) {
       jobsById.delete(id);
+      notifyFileSubscribers();
+      notifyJobSubscribers(null);
       renderActive();
     },
   });

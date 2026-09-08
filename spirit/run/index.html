@@ -474,11 +474,27 @@
           return { roots: roots, childrenByPath: childrenByPath };
         }
 
-        function renderTreeNode(entry, childrenByPath) {
+        // Which folders were open before the last rebuild, by relative
+        // path. A <details> built fresh is a <details> that is closed, so
+        // without this every genuine change to the tree — one new file
+        // anywhere — costs you every folder you had opened to get where
+        // you were. Read off the DOM rather than kept in a variable: the
+        // DOM is where the user's clicks actually landed.
+        function openTreePaths(treeEl) {
+          var open = new Set();
+          Array.prototype.slice.call(treeEl.querySelectorAll('details[open]')).forEach(function (el) {
+            if (el.dataset.path) open.add(el.dataset.path);
+          });
+          return open;
+        }
+
+        function renderTreeNode(entry, childrenByPath, openPaths) {
           if (entry.kind === 'folder') {
             var kids = childrenByPath.get(entry.fullPath) || [];
-            var kidsHtml = kids.map(function (k) { return renderTreeNode(k, childrenByPath); }).join('');
-            return '<details><summary>' + ICON.FOLDER + ' ' + escapeHtml(entry.name) + '</summary>' +
+            var kidsHtml = kids.map(function (k) { return renderTreeNode(k, childrenByPath, openPaths); }).join('');
+            var isOpen = openPaths && openPaths.has(entry.relativePath);
+            return '<details data-path="' + escapeHtml(entry.relativePath) + '"' + (isOpen ? ' open' : '') + '>' +
+              '<summary>' + ICON.FOLDER + ' ' + escapeHtml(entry.name) + '</summary>' +
               '<div class="tree-children">' + kidsHtml + '</div></details>';
           }
 
@@ -533,9 +549,10 @@
               return;
             }
 
+            var openPaths = openTreePaths(treeEl);
             var tree = buildTree(job.data.files);
             treeEl.innerHTML = tree.roots.map(function (r) {
-              return renderTreeNode(r, tree.childrenByPath);
+              return renderTreeNode(r, tree.childrenByPath, openPaths);
             }).join('') || '(empty)';
           },
         });

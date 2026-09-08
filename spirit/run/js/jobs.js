@@ -141,11 +141,33 @@ module.exports = function installJobs(spirit, port) {
     const job = createJob('permanent', 'fs-watcher', { files: files });
 
     let pending = null;
+    // What the last emitted list said. A rescan that says the same thing
+    // is not news: the payload carries name/parentPath/fullPath/
+    // relativePath/kind and no mtime or size, so rewriting a file that
+    // already existed produces a byte-identical list.
+    //
+    // That happens constantly. Relay Chat polls its inbox every two
+    // seconds and each poll rewrites relay-state/who.json, which is
+    // inside rootDir, which wakes this watcher, which rescans and — until
+    // now — emitted an update every two seconds forever. Every subscriber
+    // repainted from it: the Files tree rebuilt its markup and every open
+    // folder in it collapsed, because a <details> built fresh is a
+    // <details> that is closed.
+    //
+    // So the comparison happens once, here, rather than in each consumer
+    // (and each consumer that forgot). Note this makes lastEvent trail
+    // the truth when a write changes no names — nothing reads it, and a
+    // record of "somebody touched a file we cannot see the effect of" is
+    // not worth waking every app in the page for.
+    let lastFilesJson = JSON.stringify(job.data.files);
     function scheduleRescan(eventType, filename) {
       if (pending) return;
       pending = setTimeout(function() {
         pending = null;
         const rescannedFiles = scanFolder(rootDir).map(function(entry) { return mapEntry(entry, rootDir); });
+        const asJson = JSON.stringify(rescannedFiles);
+        if (asJson === lastFilesJson) return;
+        lastFilesJson = asJson;
         updateJob(job.id, { data: { files: rescannedFiles, lastEvent: { eventType: eventType, filename: filename } } });
       }, RESCAN_DEBOUNCE_MS);
     }

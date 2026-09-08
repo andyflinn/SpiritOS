@@ -1315,4 +1315,85 @@ test.subHeading('The window title names the node, then the screen');
   }
 }
 
+test.subHeading('An app can subscribe, instead of being broadcast at');
+
+// The shell used to repaint whichever app was on screen on every job
+// event, with no word about what had changed — so an app that cared
+// about one job kept an object-identity cache and compared references.
+// Two apps had written the same four lines. api.onFiles is that question
+// answered once, in the one place that can answer it.
+{
+  const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
+  const booted = bootShell(prefs, [NATTER_SCRIPT], false, 'andy');
+
+  const seen = { notes: [], ledger: [] };
+  function subscriber(id) {
+    return {
+      id: id, name: id, icon: '📓',
+      mount: function (container, api) {
+        api.onFiles(function (files, ctx) {
+          seen[id].push({ count: files.length, visible: ctx.visible });
+        });
+      },
+      render: function () {},
+    };
+  }
+  booted.shell.registerApp(subscriber('notes'));
+  booted.shell.registerApp(subscriber('ledger'));
+
+  // Mounting subscribes, and the shell answers immediately with what it
+  // already knows: an app that had to wait for the next rescan to paint
+  // would be blank for as long as nothing on disk moved.
+  booted.shell.launchApp('notes');
+  if (seen.notes.length === 1 && seen.notes[0].count > 0 && seen.notes[0].visible === true) {
+    test.check('subscribing delivers what is already known, straight away');
+  } else {
+    test.fail('first delivery: ' + JSON.stringify(seen.notes));
+  }
+
+  // The same list again is not news. This is the whole bug: a snapshot
+  // on reconnect, or a rescan after a file was rewritten, arrives as
+  // fresh objects saying exactly what the last one said.
+  booted.snapshot([NATTER_SCRIPT]);
+  if (seen.notes.length === 1) {
+    test.check('and the same list again says nothing');
+  } else {
+    test.fail('re-delivered: ' + JSON.stringify(seen.notes));
+  }
+
+  // A different list is.
+  booted.shell.launchApp('ledger');
+  booted.snapshot([NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+  const lastNotes = seen.notes[seen.notes.length - 1];
+  const lastLedger = seen.ledger[seen.ledger.length - 1];
+  if (seen.notes.length === 2 && seen.ledger.length === 2) {
+    test.check('a list that changed reaches every subscriber, on screen or not');
+  } else {
+    test.fail('after a change: notes ' + JSON.stringify(seen.notes) + ' ledger ' + JSON.stringify(seen.ledger));
+  }
+
+  // Permanent, and honest about the state it arrives in. Whether to do
+  // anything while invisible is the app's decision, not the shell's.
+  if (lastNotes.visible === false && lastLedger.visible === true) {
+    test.check('and each is told whether anybody is looking at it');
+  } else {
+    test.fail('visibility: notes ' + lastNotes.visible + ', ledger ' + lastLedger.visible);
+  }
+
+  // The proof app. Processes kept `lastProcessBrowserJob` to tell its own
+  // job moving from a stats tick; that cache is what onFiles replaces.
+  // Named by what the code does, not by a word that also appears in the
+  // comment explaining why it used to: processFindJob existed only to
+  // find the job behind the identity cache, and render() no longer takes
+  // the job map at all.
+  const proc = readRun('app/process-browser/process-browser.js');
+  if (proc.indexOf('api.onFiles(') !== -1 &&
+      proc.indexOf('function processFindJob') === -1 &&
+      /render: function \(\)/.test(proc)) {
+    test.check('and Processes asks instead of caching a job reference');
+  } else {
+    test.fail('Processes still reads the job map');
+  }
+}
+
 test.reportSuccessFailureCount();
