@@ -44,6 +44,8 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 - Intrinsic apps sit in the **Spirit** group and cannot be moved or hidden. **Name and icon lock is not true in the tree yet** — later sitting, and it must land *before* Stats/Processes/Jobs/Apps/Groups move.
 - First paint must not depend on a failed fs-watcher leaving an empty shell. Decide eager manifest read vs snapshot before that move.
 - Natter is the reference *shape* (folder + manifest + `api.fs`). It still uses `spiritOwnerBadge` for the last-relay rule.
+- **A UI tweak that stays in the app and off the wire is in-file work.** Layout, copy, marks, CSS, what a filter shows, what a row says — patch the app, run the neighbours, hand it to Andy to look at.
+- **A tweak that needs bones surgery is not a tweak.** `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, mailbox identity, a new persist shape — stop and call a team review (Andy + Grok) before writing any of it. The tell is that the UI change cannot be made without changing what crosses the wire or what is stored. **Do not patch `relay.js` so a dropdown works.**
 
 ## What you do not do unless asked
 

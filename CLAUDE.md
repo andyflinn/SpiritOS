@@ -27,3 +27,4 @@ Then run the harness. Paste the last lines. Green means stop.
 - Re-propose `User=spirit` or `/opt`
 - Run labMaster against spirit-3
 - Treat 0003’s “later names need the owner” as a bug in current keys-mode
+- Reach into the bones to finish a UI tweak. Layout, copy, marks and CSS stay in the app and off the wire — that is in-file work. The moment a tweak needs `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, mailbox identity or a new persist shape, **stop and call a team review (Andy + Grok)**. Do not patch `relay.js` so a dropdown works.
