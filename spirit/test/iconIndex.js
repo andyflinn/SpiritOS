@@ -257,17 +257,15 @@ test.subHeading('No two shipped apps paint the same picture');
 
   // A manifest's `icon` must be a KEY — kernel.js resolves it through
   // ICON[...] and falls back to FILE when it cannot. A manifest carrying
-  // the glyph itself therefore shows 📄 and says nothing about it.
+  // the glyph itself therefore paints 📄 and says nothing about it, which
+  // is a failure with no symptom: the app just quietly wears the wrong
+  // face. Relay Chat carried a literal "☀️" and showed 📄 for exactly
+  // that reason, and nothing said so until this check was written.
   //
-  // Relay Chat carries a literal "☀️" and so paints 📄 today. It is
-  // reported and unfixed: changing it changes a visible app icon, which
-  // is Andy's call and not this cycle's. Pinned at exactly that one so
-  // the wart cannot quietly become two — the day it is fixed, this
-  // becomes `=== 0` and the message below is the whole of the change.
-  if (literalIcons.length === 1 && literalIcons[0].indexOf('relayChat') !== -1) {
-    test.check('and the one manifest naming a glyph instead of a key is still only Relay Chat');
-  } else if (literalIcons.length === 0) {
-    test.fail('Relay Chat was fixed — drop this check and assert literalIcons.length === 0');
+  // Now that it is fixed there is no known case left, so this is the
+  // whole rule rather than a pin at one exception.
+  if (literalIcons.length === 0) {
+    test.check('and every manifest names an ICON key, not a glyph of its own');
   } else {
     test.fail('manifests naming a glyph instead of an ICON key: ' + literalIcons.join(', '));
   }
