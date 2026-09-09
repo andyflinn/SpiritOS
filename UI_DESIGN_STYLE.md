@@ -42,6 +42,19 @@ It also retires two hacks that existed only because space was carried downward: 
 
 A block that can still be empty **collapses to nothing** (`#rc-peer-strip:empty { display: none }`), which is the row version of the same rule.
 
+### The two halves, stated so they can be checked
+
+**Down a page: a fold carries its own leading space, always.** Every `<details>` panel brings the 12px above it and never relies on the block before it to leave room. Folds are the case that keeps breaking — they appear and disappear with state, so the one above may not be there — and it is why Natter's mint bubble arrived with no gap.
+
+**Across a row: leading space goes on the left, except for the first element on the line.** Which is what `gap` on the flex container already does, and `gap` is the mechanism — not `margin-left` with a `:first-child` exception. That literal reading breaks twice: `.start-job-form` wraps (§10), so the first element on the *second* visual line is not `:first-child` and would be indented; and `display: none` does not change `:first-child`, so hiding the first control would indent the whole row, which §1 does constantly. Use `margin-left` only where there is no flex row to put a gap on.
+
+**Every sitting that touches an app checks both**, along with whatever else has been decided since. A rule nobody re-reads is how the mint bubble lost its space in the first place — the statement was already here.
+
+Two standing exceptions, both decided:
+
+- **Stats is not an accordion app.** It is a living, ticking, output-only panel and reads as one; spacing rules written for folds that come and go do not get applied to it.
+- **A settings panel keeps its `> details + details` rule while it holds one question.** `#rc-settings-panel` has a single item today and the rule matches no pair — it is not orphaned, it is waiting. A second configuration item is expected (a sound on incoming, for one), and this is the shape that makes it cost nothing. Same for the other settings panels.
+
 ## 4. One row type, one voice
 
 The same kind of information looks the same wherever it appears. `.file-info-row` is label-plus-value on one line, and it serves the launchers, Apps and Groups alike; changing it changes all three on purpose.
