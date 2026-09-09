@@ -296,7 +296,14 @@ function natterPaintBind(api, relays) {
 // the button rather than a picker or relays.json[0]: the row is which
 // mailbox, and the hub still checks that URL is one this node lists.
 function natterMint(api, button) {
-  var panel = button.parentNode;
+  // The panel, not the button's parent. When the fields and the button
+  // became a .start-job-form row (§3), the button's parent stopped being
+  // the panel and the answer span became a sibling of that row rather
+  // than a child of it — so the lookup found nothing, assigning to it
+  // threw inside the promise, and a mint that had genuinely succeeded
+  // said nothing at all. Asking for the panel is what the code meant
+  // both before and after.
+  var panel = button.closest('.natter-mint');
   function field(cls) { return panel.querySelector('.' + cls); }
   var out = field('natter-inv-out');
   var label = field('natter-inv-label').value.trim();
@@ -318,7 +325,12 @@ function natterMint(api, button) {
     // is shown is what the relay stored — the typed token when it took
     // it, hex when the field was empty — never the field, which would
     // show a token no mailbox has if the mint was refused.
-    out.textContent = (r.status === 201 && token) ? token + '  ->  ' + url : r.status + ' ' + r.text;
+    //
+    // The class says which of the two it is, so a refusal does not read
+    // as a token somebody might try to speak down a phone.
+    var ok = r.status === 201 && token;
+    out.className = 'natter-inv-out ' + (ok ? 'is-token' : 'is-error');
+    out.textContent = ok ? token + '  ->  ' + url : r.status + ' ' + r.text;
   });
 }
 

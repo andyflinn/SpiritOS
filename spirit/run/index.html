@@ -760,6 +760,19 @@
          (Andy). Three callers, one class (§4). */
       .panel-heading { font-size: 16px; margin: 0; }
 
+      /* What a mint answered. Reading size, because it is read aloud down
+         a phone — and it takes the space above it like any block, which
+         nothing inside a panel does for it. Collapsed until there is an
+         answer (§3, §1). */
+      .natter-inv-out { display: block; font-size: 16px; margin-top: 12px; }
+      .natter-inv-out:empty { display: none; }
+
+      /* A token is a thing to read out; a refusal is a thing to fix. The
+         wrong one spoken down a phone wastes somebody's time, so they do
+         not look alike. */
+      .natter-inv-out.is-token { font-family: ui-monospace, Consolas, monospace; }
+      .natter-inv-out.is-error { color: #ff8080; }
+
       /* The one heading in that panel: the facts above are a reading of
          the row that opened them, but this is a thing to do. Reading
          size, and the same ★ the row carries for owning the mailbox. */

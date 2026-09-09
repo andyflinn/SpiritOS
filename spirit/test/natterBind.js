@@ -334,15 +334,36 @@ function rowTarget(url) {
 }
 
 function mintTarget(url, fields) {
+  // Shaped like the real thing, because a stub that is not costs a bug.
+  //
+  // This used to answer the panel for parentNode, so every lookup worked
+  // whichever way the code asked. Then the fields and the button became a
+  // row inside the panel (§3), the answer span stayed a sibling of that
+  // row — and the browser stopped finding it while this test went on
+  // passing. A mint succeeded and said nothing.
+  //
+  // So the row knows only what the row contains.
+  const row = {
+    querySelector: function (selector) {
+      const name = selector.replace('.', '');
+      return name === 'natter-inv-out' ? null : (fields[name] || null);
+    },
+  };
   const panel = {
-    querySelector: function (selector) { return fields[selector.replace('.', '')]; },
+    querySelector: function (selector) { return fields[selector.replace('.', '')] || null; },
   };
   const node = {
-    parentNode: panel,
+    parentNode: row,
     dataset: {},
     getAttribute: function (name) { return name === 'data-mint-url' ? url : null; },
   };
-  node.closest = function (selector) { return selector === '[data-mint-url]' ? node : null; };
+  // Both questions the real element is asked: which mint button this is,
+  // and which panel it is in.
+  node.closest = function (selector) {
+    if (selector === '[data-mint-url]') return node;
+    if (selector === '.natter-mint') return panel;
+    return null;
+  };
   return node;
 }
 
@@ -442,6 +463,15 @@ function inviteLivesInTheRowItMintsOn() {
           test.check('and the token the relay stored is shown to be read out');
         } else {
           test.fail('mint output: ' + out.textContent);
+        }
+
+        // Which of the two answers it is, said in the markup: a refusal
+        // must not read as a token somebody might try to speak down a
+        // phone.
+        if (/is-token/.test(out.className) && !/is-error/.test(out.className)) {
+          test.check('and it is marked as a token rather than as a refusal');
+        } else {
+          test.fail('answer class: ' + out.className);
         }
 
         // The label is remembered so the invited key can be recognised
