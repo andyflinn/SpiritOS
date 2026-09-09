@@ -55,6 +55,29 @@ Two standing exceptions, both decided:
 - **Stats is not an accordion app.** It is a living, ticking, output-only panel and reads as one; spacing rules written for folds that come and go do not get applied to it.
 - **A settings panel keeps its `> details + details` rule while it holds one question.** `#rc-settings-panel` has a single item today and the rule matches no pair — it is not orphaned, it is waiting. A second configuration item is expected (a sound on incoming, for one), and this is the shape that makes it cost nothing. Same for the other settings panels.
 
+### Opening one fold closes its siblings
+
+**One panel open at a time.** This is already the house rule for every row expander — Apps, Groups, Jobs, Natter's relay rows and Contacts' own rows all say *"opening one closes any other"* — and folds now say it too. It is the same argument as the spacing above: a portrait screen has one screenful, and a fold left open behind you is chrome you are not using (§1).
+
+**Use `<details name="…">`.** The browser does it: same `name` on siblings and it closes the others itself. No JS, no state, no listener per app. On anything too old to know the attribute the folds stay independent, which is exactly today's behaviour — the fallback is the status quo, so it cannot break a screen.
+
+**Names are the app's id prefix, not its app id.** App ids are folder-derived and have moved before (`app-manager` → `app/apps`; `APP_ID_RENAMES` carries the overrides). A fold group named from one would silently regroup on the next folder move, and nothing asserts which folds are a group. The `rc-` / `contacts-` / `natter-` prefixes are hand-written, stable, and already name every element in their app:
+
+| app | fold group |
+|---|---|
+| Relay Chat | `rc-settings`, and `rc-settings-question` for the folds inside it |
+| Contacts | `contacts-panels` |
+| Natter | `natter-panels` |
+| Apps | `app-manager-panels` |
+| Groups | `group-manager-panels` |
+
+**One group per level.** A nested fold needs its own name or opening the child closes the parent it lives in.
+
+Two things this rule does not do:
+
+- **A tree is not an accordion.** `app/files/files.js` builds a `<details>` per folder. Exclusive folders would mean never having two open, and every step down would collapse the path you came by. The tree is already delicate about open state — it tracks `isOpen` by hand, because a rebuilt `<details>` is a closed one.
+- **The shell does not stamp `name` automatically.** It knows whose container it is mounting, so it is tempting — but the tree's folder folds live in that same container, and "direct children only" stops being true the day someone wraps their panels in a div. One attribute, written where the fold is written.
+
 ## 4. One row type, one voice
 
 The same kind of information looks the same wherever it appears. `.file-info-row` is label-plus-value on one line, and it serves the launchers, Apps and Groups alike; changing it changes all three on purpose.
