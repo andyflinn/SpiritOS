@@ -151,9 +151,25 @@ function mountApp(options) {
   // used to live.
   const store = opts.store || {};
   const project = opts.project || {};
+  const launched = [];
+  const called = [];
+  // What the dialog will answer. The shell settles the promise when the
+  // screen leaves the stack; here the test says what it decided.
+  let answer = opts.dialogResult === undefined ? null : opts.dialogResult;
   const api = {
     escapeHtml: spirit.core.util.escapeHtml,
-    launchApp: function () {},
+    launchApp: function (id, params, options) {
+      launched.push({ id: id, params: params, options: options });
+    },
+    // Recorded rather than dropped: opening a row IS a call now, and
+    // which dialog it names with which params is the whole of what the
+    // click decides. It answers a promise, because that is the contract
+    // — the code that opens the screen is the code that acts on what it
+    // decided.
+    callDialog: function (id, params) {
+      called.push({ id: id, params: params });
+      return Promise.resolve(answer);
+    },
     readProject: function (path) {
       return Object.prototype.hasOwnProperty.call(project, path) ? project[path] : null;
     },
@@ -165,7 +181,11 @@ function mountApp(options) {
     },
   };
   behavior.mount(container, api, null);
-  return { doc: doc, log: log, container: container, behavior: behavior, store: store };
+  return {
+    doc: doc, log: log, container: container, behavior: behavior, store: store,
+    launched: launched, called: called,
+    answers: function (result) { answer = result; },
+  };
 }
 
 function el(app, id) { return app.doc.getElementById(id); }
@@ -413,124 +433,106 @@ function listsTheBook() {
   });
 }
 
-function decidesAboutOnePerson() {
-  test.subHeading('Accept, block, unblock — one row at a time');
+// The panel these three suites used to describe is a screen of its own
+// now (app/contactsDetails), and so are its tests — spirit/test/
+// contactsDetails.js. What stays here is the one thing a row does.
+function aRowOpensThePerson() {
+  test.subHeading('A row opens the person, and that is all a row does');
 
   const app = mountApp({
     people: [
-      { publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '', acquiredVia: 'handle', held: false, blocked: false },
-      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', acquiredVia: 'hold', held: true, blocked: false },
-      { publicKey: DAVE, publicLabel: 'dave', caption: 'dave', myLabel: '', acquiredVia: 'message', held: true, blocked: true },
+      { publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: 'Bertie', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false },
+      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'hold', held: true, blocked: false },
     ],
   });
 
   return settle().then(function () {
-    // Closed until asked, like the Jobs and Groups tables.
-    if (el(app, 'contacts-tbody').innerHTML.indexOf('data-contact-accept') === -1) {
-      test.check('a row offers nothing until it is opened');
-    } else {
-      test.fail('verbs before opening: ' + el(app, 'contacts-tbody').innerHTML);
-    }
-
     el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', CAROL) });
-    const waiting = el(app, 'contacts-tbody').innerHTML;
-    if (/data-contact-accept/.test(waiting) && /data-contact-block/.test(waiting) &&
-        waiting.indexOf('data-contact-unblock') === -1) {
-      test.check('somebody waiting can be accepted or blocked, and not unblocked');
+
+    // The KEY alone. The dialog re-fetches its row, because the counters
+    // move while the screen is open and a row captured at launch would
+    // sit there going stale.
+    if (app.called.length === 1 && app.called[0].id === 'app/contactsDetails' &&
+        JSON.stringify(app.called[0].params) === JSON.stringify({ key: CAROL })) {
+      test.check('clicking a row calls the dialog for that key and nothing else');
     } else {
-      test.fail('open held row: ' + waiting);
+      test.fail('called: ' + JSON.stringify(app.called));
     }
 
-    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-accept', CAROL) });
+    // callDialog, not launchApp. The shell refuses a dialog through the
+    // launch door precisely so there is one way in — the way that hands
+    // the dialog its subject and hands back what it decided.
+    if (app.launched.length === 0) {
+      test.check('and it goes through callDialog rather than the launch door');
+    } else {
+      test.fail('launched: ' + JSON.stringify(app.launched));
+    }
+
+    // Nothing expands in place any more. The old panel put a six-fact
+    // bubble and a form inside a colspan="4" — the widest thing on the
+    // page inside the narrowest.
+    const rows = el(app, 'contacts-tbody').innerHTML;
+    if (rows.indexOf('job-log-row') === -1 && rows.indexOf('fact-row') === -1 &&
+        rows.indexOf('contacts-label-input') === -1) {
+      test.check('and no row expands in place, so the table keeps its shape');
+    } else {
+      test.fail('a row still expands: ' + rows);
+    }
+  });
+}
+
+function refreshesWhenTheDialogChangedSomething() {
+  test.subHeading('What the dialog decided reaches the table');
+
+  const people = [
+    { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'hold', held: true, blocked: false },
+  ];
+  const app = mountApp({ people: people });
+
+  return settle().then(function () {
+    const before = el(app, 'contacts-tbody').innerHTML;
+    if (before.indexOf(spirit.core.const.ICON.WAITING) !== -1) {
+      test.check('carol is listed as waiting');
+    } else {
+      test.fail('before: ' + before);
+    }
+
+    // The dialog blocked her. render() repaints from a list this app
+    // already fetched and does not fetch again, so without the answer,
+    // the row behind you would still read as waiting.
+    people[0].held = true;
+    people[0].blocked = true;
+    app.answers({ changed: true, key: CAROL });
+    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', CAROL) });
+
     return settle().then(function () {
-      const calls = posted(app, '/api/hub/peer');
-      if (calls.length === 1 && calls[0].action === 'accept' && calls[0].publicKey === CAROL) {
-        test.check('and accepting says so to this node, and to nobody else');
+      const after = el(app, 'contacts-tbody').innerHTML;
+      if (after.indexOf(spirit.core.const.ICON.NO) !== -1) {
+        test.check('and an answer saying something changed re-reads the book, so the mark is right');
       } else {
-        test.fail('peer calls: ' + JSON.stringify(calls));
-      }
-
-      // Blocked: one way back, and no second decision to make first.
-      el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', DAVE) });
-      const blocked = el(app, 'contacts-tbody').innerHTML;
-      if (/data-contact-unblock/.test(blocked) && blocked.indexOf('data-contact-accept') === -1) {
-        test.check('somebody refused is offered only the way back');
-      } else {
-        test.fail('open blocked row: ' + blocked);
-      }
-
-      // Opening one closes any other, so the page is never two open
-      // arguments at once.
-      if ((blocked.match(/job-log-row/g) || []).length === 1) {
-        test.check('and opening one row closes the other');
-      } else {
-        test.fail('two rows open: ' + blocked);
+        test.fail('after: ' + after);
       }
     });
   });
 }
 
-function renamesLocally() {
-  test.subHeading('What you call them is yours');
-
+// Back is not a cancel here in the sense of undoing anything — the hub
+// verbs already happened — it is simply a leave with nothing to report.
+// A dialog that decided nothing must not make the table re-fetch.
+function saysNothingWhenNothingHappened() {
   const app = mountApp({
-    people: [
-      { publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '', acquiredVia: 'handle', held: false, blocked: false },
-    ],
+    people: [{ publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'message', held: false, blocked: false }],
+    dialogResult: null,
   });
-
   return settle().then(function () {
-    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', BERT) });
-    const open = el(app, 'contacts-tbody').innerHTML;
-    if (/contacts-label-input/.test(open) && /placeholder="bert"/.test(open)) {
-      test.check('the field shows what is stored, with their own name behind it');
-    } else {
-      test.fail('label field: ' + open);
-    }
-
-    // The caption names the fact it edits, and says whose — with a panel
-    // open there are two names on screen and the field is about one.
-    if (/field-label grow">Change My Label for bert</.test(open)) {
-      test.check('and its caption is Change My Label for their handle');
-    } else {
-      test.fail('caption: ' + open);
-    }
-
-    const input = el(app, 'contacts-label-input');
-    input.value = ' lovelyBert ';
-    input.dataset.contactKey = BERT;
-    // Return commits WITHOUT blurring: `change` fires while the field is
-    // still the active element. That is the state the repaint has to
-    // survive, and asserting the POST alone never noticed it did not.
-    app.doc.activeElement = input;
-    el(app, 'contacts-tbody').fire('change', { target: input });
+    const reads = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', CAROL) });
     return settle().then(function () {
-      const calls = posted(app, '/api/hub/peer');
-      if (calls.length === 1 && calls[0].action === 'label' && calls[0].myLabel === 'lovelyBert') {
-        test.check('and renaming posts the label, trimmed, for this node only');
+      const after = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+      if (after === reads) {
+        test.check('and a dialog answering null costs the table nothing');
       } else {
-        test.fail('label calls: ' + JSON.stringify(calls));
-      }
-
-      // The whole visible half of the bug (Andy): the label saved and My
-      // Label in the bubble one line above went on reading (none).
-      const after = el(app, 'contacts-tbody').innerHTML;
-      if (/My Label<\/span><span class="fact-value">lovelyBert</.test(after)) {
-        test.check('and My Label in the bubble above says so, though Return left the field focused');
-      } else {
-        test.fail('bubble after commit: ' + after);
-      }
-
-      // The guard it steps around is still there for what it was for:
-      // any repaint this field did not ask for leaves a half-typed name
-      // alone. Only the commit passes `true`.
-      const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-      if (/!committed && focusedId === 'contacts-label-input'/.test(src) &&
-          (src.match(/contactsRefresh\(true\)/g) || []).length === 1) {
-        test.check('and the focus guard still stands for every repaint the field did not ask for');
-      } else {
-        test.fail('guard: ' + /!committed/.test(src) + ', forced refreshes: ' +
-          (src.match(/contactsRefresh\(true\)/g) || []).length);
+        test.fail('re-read on an empty result: ' + reads + ' then ' + after);
       }
     });
   });
@@ -580,125 +582,6 @@ function addsByHandle() {
 // The row that opened is the heading, so what is under it is one reading
 // rather than a list: three facts across, then what you call them and
 // what you decide about them on one line (Andy).
-function theRowBubbleReadsAcrossNotDown() {
-  test.subHeading('An open row is one line of facts, and one line of decisions');
-
-  const app = mountApp({
-    people: [{
-      publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: 'Bertie',
-      acquiredVia: 'handle', held: false, blocked: false, bytesHeld: 2048,
-      // What the node counted, as buildPeople hands it over: a plain
-      // integer and two raw per-day figures. The rounding is the app's,
-      // which is why the fixture carries a number that has to be
-      // rounded rather than one that is already short.
-      unansweredInbound: 4, inboundPerDay: 0.42857142857, outboundPerDay: 0.0714285,
-    }],
-  });
-
-  return settle().then(function () {
-    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', BERT) });
-    const panel = el(app, 'contacts-tbody').innerHTML;
-
-    // The same shape a mailbox report uses in Natter — one class, both
-    // places, because the shape is not either app's (§4). Three of them,
-    // and none of the stacked rows they replaced.
-    const facts = (panel.match(/class="fact"/g) || []).length;
-    if (/class="fact-row"/.test(panel) && facts === 6 && panel.indexOf('file-info-row') === -1) {
-      test.check('its facts read across one line, not down the panel');
-    } else {
-      test.fail(facts + ' facts, file-info-row present: ' + (panel.indexOf('file-info-row') !== -1));
-    }
-
-    // The order Andy asked for, and the reading each one gives. Order is
-    // asserted by position, not by presence: six labels in a bubble say
-    // nothing about which is first, and first is what he specified.
-    //
-    // Who they are, then what they cost. The three verbs that answer the
-    // second half are on the row underneath — accept, block, wait.
-    const labels = (panel.match(/class="fact-label">([^<]*)</g) || [])
-      .map(function (m) { return m.slice(m.indexOf('>') + 1, -1); });
-    if (labels.join(' | ') === 'Public Handle | My Label | Unanswered inbound | ' +
-        'Inbound rate | Outbound rate | Storage') {
-      test.check('and they read in Andy\'s order, all six');
-    } else {
-      test.fail('labels: ' + labels.join(' | '));
-    }
-
-    // Their handle and your name for them are two different answers and
-    // the panel shows both — that is the whole reason the book keeps
-    // myLabel beside publicLabel rather than overwriting it. And the
-    // size is the shell's own formatting, not a raw byte count.
-    if (/Public Handle<\/span><span class="fact-value">bert</.test(panel) &&
-        /My Label<\/span><span class="fact-value">Bertie</.test(panel) &&
-        /Storage<\/span><span class="fact-value">2 KB</.test(panel)) {
-      test.check('and each carries its own value, the size formatted as the shell formats sizes');
-    } else {
-      test.fail('values: ' + panel);
-    }
-
-    // A rate carries its unit, to one decimal (packet 7). Without the
-    // unit a bare 0.2 beside a byte count is a number nobody can act on,
-    // and per day is the whole difference between a rate and a total —
-    // which is what the counters exist to be.
-    if (/Unanswered inbound<\/span><span class="fact-value">4</.test(panel) &&
-        /Inbound rate<\/span><span class="fact-value">0\.4 \/ day</.test(panel) &&
-        /Outbound rate<\/span><span class="fact-value">0\.1 \/ day</.test(panel)) {
-      test.check('and a rate says per day, to one decimal, while unanswered is a plain count');
-    } else {
-      test.fail('counters: ' + panel);
-    }
-
-    // Six characters of a key are what two people compare down a phone
-    // while one adds the other. Once somebody is in this list that is
-    // done — so no Key column, and none in the panel either (Andy).
-    //
-    // Asked about what is DISPLAYED, not about the key itself: the whole
-    // key is still in data-contact-key, because the rename input has to
-    // name whose label it is setting. "ends …" is the display form, used
-    // by the row that had it and by the footer that still does.
-    if (panel.indexOf('Key ends') === -1 && panel.indexOf('ends …') === -1) {
-      test.check('and the key ending is gone from both the row and the panel');
-    } else {
-      test.fail('facts: ' + panel);
-    }
-
-    // "How" stays in the table's second column — it is not redundant
-    // there, because accept promotes hold to message and the column is
-    // where you watch that happen (Andy). It is redundant one line
-    // under itself, which is why the bubble no longer repeats it.
-    if (/<td>handle<\/td>/.test(el(app, 'contacts-tbody').innerHTML) &&
-        panel.indexOf('fact-label">How<') === -1) {
-      test.check('and How is the column it always was, not a fact repeated beneath it');
-    } else {
-      test.fail('How: column/panel');
-    }
-
-    // The caption and its input take the width; the buttons fill the end.
-    // Both inside ONE row, or they are two lines however they look.
-    const row = /<div class="start-job-form card">([\s\S]*?)<\/div>\s*<\/div>/.exec(panel);
-    const inRow = row ? row[1] : '';
-    if (/field-label grow/.test(inRow) && /contacts-label-input/.test(inRow) &&
-        /data-contact-block/.test(inRow)) {
-      test.check('and the name field and the buttons share one row, the field taking the width');
-    } else {
-      test.fail('decision row: ' + inRow);
-    }
-
-    // `grow` is opt-in and has to exist, or the field does not take the
-    // width and the buttons sit against it instead of at the end.
-    const css = fs.readFileSync(path.join(RUN_DIR, 'index.html'), 'utf8');
-    if (/\.start-job-form > \.field-label\.grow\s*\{[^}]*flex:\s*1/.test(css)) {
-      test.check('and the rule that makes it take the width is there to do it');
-    } else {
-      test.fail('no .field-label.grow rule in the stylesheet');
-    }
-  });
-}
-
-// UI_DESIGN_STYLE.md §3, held by the harness rather than by whoever
-// remembers to look. The rule was written, and then the very next sitting
-// to touch this app did not run it — which is the failure mode the rule
-// exists for, so it stops being a thing to remember.
 function foldsObeyTheSpacingRules() {
   test.subHeading('The folds are one group, and the block below a heading carries its own space');
 
@@ -830,11 +713,11 @@ function theHandleColumnStillIdentifies() {
 
 listsTheBook()
   .then(theHandleColumnStillIdentifies)
-  .then(decidesAboutOnePerson)
-  .then(renamesLocally)
+  .then(aRowOpensThePerson)
+  .then(refreshesWhenTheDialogChangedSomething)
+  .then(saysNothingWhenNothingHappened)
   .then(addsByHandle)
   .then(strangerPolicy)
-  .then(theRowBubbleReadsAcrossNotDown)
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)
   .then(function () { test.reportSuccessFailureCount(); })

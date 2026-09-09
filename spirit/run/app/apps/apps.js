@@ -186,7 +186,18 @@ function renderAppManagerTable(force) {
   var groupList = spirit.shell.listGroups();
   var groupsById = {};
   groupList.forEach(function (g) { groupsById[g.id] = g; });
-  var rows = spirit.shell.listApps().sort(function (a, b) { return a.name.localeCompare(b.name); });
+  // A hidden app is a screen another app pushes, not something anybody
+  // installs — the two today are the file launchers, and the details
+  // screens will be the rest (Andy). Listing them here offered a rename
+  // and an icon for a thing with no icon anywhere to show.
+  //
+  // `rows` is also what fillIconSelectors excludes from, so dropping them
+  // here is what frees their glyphs: a screen nobody picks out of a
+  // gallery does not need a unique one, and Contacts Details wearing the
+  // rolodex its parent wears is right rather than a collision.
+  var rows = spirit.shell.listApps()
+    .filter(function (a) { return !a.hidden; })
+    .sort(function (a, b) { return a.name.localeCompare(b.name); });
   tbody.innerHTML = rows.map(function (a) { return renderAppManagerRow(a, groupsById, groupList); }).join('') || '<tr><td colspan="3">(no apps registered)</td></tr>';
   fillIconSelectors(tbody, rows, groupList);
 }

@@ -234,16 +234,37 @@ test.subHeading('No two shipped apps paint the same picture');
     if (!fs.existsSync(manifestPath)) return;
     const shipped = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     if (!shipped.icon) return;
+    // A literal is still a mistake whether or not anybody sees it: the
+    // manifest names a KEY in the icon table, and one that resolves to
+    // nothing paints as FILE either way.
     if (!ICON[shipped.icon]) literalIcons.push('app/' + folder + ' → ' + JSON.stringify(shipped.icon));
+    // Hidden apps are exempt, and this is the rule rather than an
+    // exception to it (Andy): a glyph has to be unique among apps a
+    // person PICKS BETWEEN in a gallery. A launcher or a dialog is a
+    // screen its parent pushes — it appears on no desktop and in no app
+    // list, so it competes with nothing and costs the shell no glyph.
+    //
+    // It also makes the right thing possible: Contacts Details wears the
+    // rolodex Contacts wears, because to anyone looking at it that screen
+    // IS Contacts. Two icons there would have said they were two things.
+    if (shipped.hidden) return;
     claim(ICON[shipped.icon] || ICON.FILE, 'app/' + folder + ' (' + shipped.icon + ')');
   });
 
   // The built-ins still registered from index.html, which have no
   // manifest to read — they name their icon as ICON.SOMETHING inline.
+  //
+  // Read per registerApp block rather than by sweeping the whole file for
+  // `icon: ICON.X`, so the hidden rule above applies here too — the two
+  // launchers are registered here and are exactly the kind of screen it
+  // exempts.
   const inline = fs.readFileSync(path.join(RUN_DIR, 'index.html'), 'utf8');
-  (inline.match(/icon: ICON\.[A-Z0-9_]+/g) || []).forEach(function (found) {
-    const key = found.split('.')[1];
-    claim(ICON[key], 'index.html (' + key + ')');
+  inline.split('registerApp({').slice(1).forEach(function (block) {
+    const decl = block.slice(0, block.indexOf('mount:'));
+    const found = /icon: ICON\.([A-Z0-9_]+)/.exec(decl);
+    if (!found) return;
+    if (/hidden:\s*true/.test(decl)) return;
+    claim(ICON[found[1]], 'index.html (' + found[1] + ')');
   });
 
   const collisions = Object.keys(byGlyph).filter(function (g) { return byGlyph[g].length > 1; });

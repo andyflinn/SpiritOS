@@ -98,6 +98,47 @@
         z-index: 1;
       }
 
+      /* A dialog is greyscale, and the greys are not picked by eye.
+         Each one is the value whose RELATIVE LUMINANCE equals the colour
+         it replaces (WCAG: 0.2126R + 0.7152G + 0.0722B on linearized
+         channels), so every contrast ratio in the window is preserved
+         exactly — text is as readable, a button is as distinct from its
+         background, and nothing needs re-checking. Only the hue is gone.
+
+           #1a1a2e -> #1c1c1c   the page behind
+           #16213e -> #222222   the window
+           #0f3460 -> #343434   titlebar, buttons, inputs, select
+           #16487a -> #464646   button hover
+           #8ec9ff -> #c3c3c3   accent (radio, checkbox)
+
+         Why say it at all: a dialog is the only screen you cannot launch
+         out of, and Back is its one exit (Andy). Draining the colour is
+         how the window says so without a word of chrome, and it costs no
+         layout — the same page, in the same places, in grey.
+
+         Set on #app-container because that is the one ancestor the
+         titlebar and the content share; switchTo puts the class there
+         when the screen it is mounting declares type dialog. */
+      #app-container.is-dialog { background: #222222; }
+      #app-container.is-dialog #app-header { background: #343434; }
+
+      #app-container.is-dialog #app-content button,
+      #app-container.is-dialog #app-content input,
+      #app-container.is-dialog #app-content select,
+      #app-container.is-dialog #app-content textarea:not(.code-view),
+      #app-container.is-dialog .cancel-btn { background: #343434; }
+
+      #app-container.is-dialog #app-content button:hover,
+      #app-container.is-dialog .cancel-btn:hover,
+      #app-container.is-dialog .icon-selector-field:hover { background: #464646; }
+
+      #app-container.is-dialog select option { background: #222222; }
+      #app-container.is-dialog .icon-selector-rows { background: #222222; }
+      #app-container.is-dialog .icon-selector-row.is-active { background: #343434; }
+
+      #app-container.is-dialog input[type="radio"],
+      #app-container.is-dialog input[type="checkbox"] { accent-color: #c3c3c3; }
+
       #app-close, #app-home, .titlebar-link {
         cursor: pointer;
         font-size: 22px;
@@ -1201,6 +1242,11 @@
           name: 'Text File Launcher',
           icon: ICON.CODE,
           hidden: true,
+          // A launcher, not a dialog: it finishes with the file it was
+          // showing, so it MAY launch — and every one of its launches
+          // replaces its own stack entry. That is what keeps at most one
+          // hidden app on the stack (assertOneHiddenApp, shell.js).
+          type: 'launcher',
           mount: function (container, api, params) {
             container.innerHTML = '<div id="cv-body" class="stack"></div>';
             codeViewerLoadFile(params.path);
@@ -1238,6 +1284,7 @@
           name: 'Media Launcher',
           icon: ICON.VIEW,
           hidden: true,
+          type: 'launcher', // as above: launches, and every launch replaces
           mount: function (container, api, params) {
             container.innerHTML = '<div id="mv-body" class="stack"></div>';
             mediaViewerLoadFile(params.path);

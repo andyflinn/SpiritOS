@@ -1057,8 +1057,133 @@
       // server-side (fileServable/fileWritable, kernel.js). What this
       // buys is that an app declares what it uses, and one place says
       // what a system app is allowed to want.
+      // The doorway, and now the place the dialog rule is enforced.
+      //
+      // A dialog can only return. That is not a permission the way
+      // api.fs is one — the page has no module boundary, and a dialog
+      // that wanted to could reach spirit.shell.launchApp directly. It
+      // is a NAVIGATION contract, and the nav stack has no server side:
+      // the shell owns it outright, so the shell is the only place the
+      // rule can live. This is the shell mediating what apps would
+      // otherwise contend for (AGENT.md), not inventing a refusal the
+      // server does not impose (§8) — the two are different, and the
+      // Open-with folder rule was the second one.
+      //
+      // Loud, not silent. A dialog reaching for launchApp means somebody
+      // added a button that should not exist, which is a programming
+      // error and not a situation a user is in. Returning quietly would
+      // ship exactly the bug this project is worst at finding: a button
+      // that does nothing, discoverable only by pressing it.
       launchApp: function (targetAppId, params) {
+        if (app.type === 'dialog') {
+          throw new Error(
+            'A dialog can only return: ' + app.id + ' tried to launch ' + targetAppId + '. ' +
+            'Say it with api.setDialogResult(result) and let the app underneath act on it.');
+        }
+        // One door per kind. A dialog is opened with callDialog, which
+        // guarantees things launchApp cannot — see below — so letting it
+        // through here would be a second way in that skips them.
+        var target = apps[targetAppId];
+        if (target && target.type === 'dialog') {
+          throw new Error(
+            'Open a dialog with api.callDialog(' + JSON.stringify(targetAppId) + ', params), ' +
+            'which hands it its subject and gives you back what it decided.');
+        }
         launchApp(targetAppId, params || null);
+      },
+
+      // Ask a dialog a question and get the answer back.
+      //
+      //   api.callDialog('app/contactsDetails', { key: k })
+      //      .then(function (result) { ... });
+      //
+      // A separate verb from launchApp because it is a separate contract,
+      // and because the shell knowing it is opening a DIALOG at this
+      // moment is what lets it guarantee three things (Andy):
+      //
+      //   1. the dialog is handed its subject every time — switchTo calls
+      //      open(params) whether or not the pane exists, so a dialog
+      //      physically cannot show you the row it was opened on last;
+      //   2. the dialog is never driven by the job tick, so no dialog
+      //      needs the focus guard that a tick repaint would otherwise
+      //      make every one of them need;
+      //   3. the answer is a return value, so the code that opens the
+      //      dialog is the code that handles what it decided — three
+      //      lines apart instead of a hook at the bottom of the file.
+      //
+      // The promise settles whichever way the dialog leaves the stack
+      // (settleDialogs). A dialog that decided nothing answers null,
+      // which is what Back on an untouched screen means.
+      callDialog: function (targetAppId, params) {
+        if (app.type === 'dialog') {
+          throw new Error('A dialog can only return: ' + app.id + ' tried to open ' + targetAppId + '.');
+        }
+        var target = apps[targetAppId];
+        if (!target) return Promise.resolve(null);
+        if (target.type !== 'dialog') {
+          throw new Error(
+            targetAppId + ' is a ' + target.type + ', not a dialog. ' +
+            'Use api.launchApp for a screen you navigate to.');
+        }
+        return new Promise(function (resolve) {
+          pendingDialogs[targetAppId] = resolve;
+          launchApp(targetAppId, params || null);
+        });
+      },
+
+      // How a dialog gets out, and the only way it can say anything.
+      //
+      // There is one slot rather than a stack of them, and that is safe
+      // because of an invariant the shell already has: a hidden app is
+      // only ever entered from a visible one, and only ever left by
+      // replacing itself, so at most one is open and it is always the
+      // TOP (Andy). The app that receives the result is therefore always
+      // the entry directly beneath, with nothing to search and no
+      // nesting to reason about. assertOneHiddenApp keeps that true.
+      //
+      // Back is a cancel: pressing the chrome button pops with no result
+      // and the parent is told nothing, which is what a person who
+      // changed their mind means by it.
+      // Said as it happens, delivered when the screen is popped — by a
+      // Done button, or by Back, or by anything else that pops it. Set it
+      // whenever the answer changes rather than on the way out, because
+      // the way out is usually Back and Back is not this app's to
+      // intercept.
+      setDialogResult: function (result) {
+        if (app.type !== 'dialog') {
+          throw new Error('setDialogResult is for dialogs; ' + app.id + ' is a ' + app.type);
+        }
+        app._dialogResult = result === undefined ? null : result;
+      },
+
+      // Leave now, saying this. For a dialog that has a Done button of
+      // its own; everything else sets the result and lets the person
+      // press Back, which answers the caller's promise just the same.
+      closeDialog: function (result) {
+        if (app.type !== 'dialog') {
+          throw new Error('closeDialog is for dialogs; ' + app.id + ' is a ' + app.type);
+        }
+        if (activeAppId !== app.id) return; // already closed, or never open
+        if (result !== undefined) app._dialogResult = result;
+        goBack();
+      },
+
+      // The titlebar says which ROW you are looking at, not which app.
+      //
+      // A dialog is opened against one thing and shows only that thing,
+      // so its name ("Contact") is the least useful word available; the
+      // row's own identity is what tells you whose panel this is. It
+      // cannot be the row itself — #app-header is one sticky flex line,
+      // and four columns will not fit — so it is the identity: a mark
+      // and a name.
+      //
+      // Only the app currently on screen may write it. A late fetch
+      // resolving after somebody pressed Back must not retitle whatever
+      // they went back to.
+      setScreenTitle: function (text) {
+        if (activeAppId !== app.id) return;
+        titleEl.textContent = String(text == null ? '' : text);
+        renderTitlebarLinks(app);
       },
       listApps: listApps,
       listGroups: listGroups,
@@ -1197,6 +1322,7 @@
     if (id === 'desktop') {
       activeAppId = null;
       activeParams = null;
+      containerEl.className = '';
       containerEl.hidden = true;
       desktopEl.hidden = false;
       paintWindowTitle('');
@@ -1206,6 +1332,16 @@
     var app = apps[id];
     activeAppId = id;
     activeParams = params;
+    // The whole window goes greyscale for a dialog, titlebar included —
+    // which is why the class goes on the container rather than on the
+    // pane: the header is not inside the pane. The greys are luminance
+    // matches for the colours they replace, so nothing about contrast
+    // changes; see the block in index.html.
+    //
+    // className rather than classList.toggle: #app-container carries no
+    // other class, and an assignment is the one form the test harness's
+    // fake elements answer.
+    containerEl.className = app.type === 'dialog' ? 'is-dialog' : '';
     titleEl.textContent = app.name;
     // A file, when there is one: the launchers are not a special case,
     // they are apps whose displayed subject happens to be a path. Full
@@ -1235,7 +1371,60 @@
       app.loadFile(params.path);
     }
     app._el.hidden = false;
+
+    // A dialog is OPENED, never rendered.
+    //
+    // open(params) runs on every entry, mounted or not — which is the
+    // whole reason a dialog cannot show you the last row it was opened
+    // for. mount() runs once per pane and the pane is shared by every
+    // subject the dialog is ever called on, and loadFile (the launchers'
+    // second chance) only fires when params.path is set, so anything
+    // opened on a key had no hook at all. This is that hook, generalized
+    // and compulsory.
+    //
+    // And it is NOT followed by render, here or on the job tick
+    // (renderActive). A dialog shows one subject and repaints when it
+    // decides something; a tick repaint redrew identical markup from a
+    // cached row every two seconds and its only observable effect was
+    // destroying whatever field somebody was typing in. A dialog that
+    // genuinely wants live data asks for it with api.onJobs, which is
+    // opt-in and says so.
+    if (app.type === 'dialog') {
+      if (typeof app.open === 'function') app.open(params);
+      return;
+    }
     app.render(jobsById, params);
+  }
+
+  // At most one hidden app on the stack, and it is always the top.
+  //
+  // That is not a rule of its own — it is what two rules already produce
+  // (Andy). A hidden app is only ever entered from a VISIBLE one (Files
+  // and Processes push a launcher), and a launcher only ever leaves by
+  // REPLACING itself: Open with, Open ⟨app⟩ and Start Job are the three
+  // {replace:true} callers in the tree. Add a dialog that cannot launch
+  // at all, and there is no path that puts two of them on the stack.
+  //
+  // Checked rather than assumed, because closeDialog LEANS on it: it
+  // hands its result to the entry directly beneath, which is only the
+  // right app while this holds. The day somebody adds a fourth launch
+  // that forgot {replace:true}, this says so — and says which two, which
+  // an enforcement that silently replaced would not.
+  //
+  // Complains and carries on. Refusing would swallow a navigation and
+  // leave a dead button; a wrong stack entry is a slightly wrong Back.
+  // The first is invisible, the second is not.
+  function assertOneHiddenApp(justLaunched) {
+    var open = navStack.filter(function (entry) {
+      return apps[entry.id] && apps[entry.id].hidden;
+    }).map(function (entry) { return entry.id; });
+    if (open.length > 1) {
+      console.error(
+        'Two hidden apps on the nav stack (' + open.join(', ') + ') after launching ' +
+        justLaunched + '. One is only ever entered from a visible app, and a launcher ' +
+        'leaves by replacing itself — so one of those launches is missing {replace:true}, ' +
+        'or a dialog launched something.');
+    }
   }
 
   // Launching an app pushes onto the nav stack, so a later back-press
@@ -1287,6 +1476,12 @@
       navStack.push({ id: id, params: params });
     }
 
+    assertOneHiddenApp(id);
+    // A launch can collapse the stack past an open dialog (the
+    // de-duplication above truncates), which is the third way one can
+    // leave without being popped.
+    settleDialogs();
+
     // Manifest-declared dynamic apps are declared (icon, id, name) at
     // discovery time but their script isn't fetched until first use —
     // do that now, then mount once it finishes loading and has called
@@ -1325,10 +1520,40 @@
     var id = pendingActivationId;
     if (!id || !apps[id]) return; // called outside a pending script load — nothing to attach to
     apps[id].mount = behavior.mount;
-    apps[id].render = behavior.render;
+    // Optional, and a dialog defines none of it: the shell does not tick
+    // it, so there is nothing for render to do that open does not.
+    apps[id].render = behavior.render || function () {};
     apps[id].loadFile = behavior.loadFile; // optional — only apps that care which file they're opened against define this
+    apps[id].open = behavior.open;         // dialogs only — called on every entry
     apps[id]._activated = true;
     pendingActivationId = null;
+  }
+
+  // One entry per open dialog: its resolve, waiting for the screen to
+  // leave the stack. At most one is ever in here (assertOneHiddenApp),
+  // but it is keyed by id rather than held as a single slot so that a
+  // stray never resolves the wrong caller.
+  var pendingDialogs = Object.create(null);
+
+  // A dialog's promise settles when the dialog is no longer ON the
+  // stack, whichever way it left: Back, Home, or a launch that collapsed
+  // the stack past it. One function called from all three, because a
+  // promise that never settles is a .then that never runs and nothing
+  // says so — the one new failure mode this mechanism has.
+  function settleDialogs() {
+    Object.keys(pendingDialogs).forEach(function (id) {
+      for (var i = 0; i < navStack.length; i++) {
+        if (navStack[i].id === id) return; // still open
+      }
+      var pending = pendingDialogs[id];
+      delete pendingDialogs[id];
+      var app = apps[id];
+      // Whatever it last said, or null for a dialog that decided nothing
+      // — which is what Back on an untouched screen means.
+      var result = (app && app._dialogResult !== undefined) ? app._dialogResult : null;
+      if (app) app._dialogResult = undefined;
+      pending(result);
+    });
   }
 
   function goBack() {
@@ -1336,21 +1561,31 @@
     navStack.pop();
     var top = navStack[navStack.length - 1];
     switchTo(top.id, top.params);
+    // After the switch, so the caller's .then runs against a screen that
+    // is already back on show and can act rather than be interrupted
+    // mid-mount.
+    settleDialogs();
   }
 
   function goHome() {
     if (navStack.length <= 1) return; // already at the bottom of the stack
     navStack.length = 1; // navStack[0] is always {id:'desktop', params:null}
     switchTo('desktop', null);
+    // Home over a dialog is a leave, not a cancel of the writes it
+    // already made — but it is a leave with nothing more to say.
+    settleDialogs();
   }
 
   closeBtn.addEventListener('click', goBack);
   homeBtn.addEventListener('click', goHome);
 
   function renderActive() {
-    if (activeAppId && apps[activeAppId]) {
-      apps[activeAppId].render(jobsById, activeParams);
-    }
+    if (!activeAppId || !apps[activeAppId]) return;
+    // See switchTo: a dialog is never driven by the tick. This is what
+    // makes the focus guard every other screen carries unnecessary in
+    // one, rather than one more thing each new dialog has to remember.
+    if (apps[activeAppId].type === 'dialog') return;
+    apps[activeAppId].render(jobsById, activeParams);
   }
 
   // ---- Packets (api.sendMessagePacket / api.onPacket) ----
@@ -1824,7 +2059,19 @@
       name: manifest.name,
       icon: spirit.core.const.ICON[manifest.icon] || spirit.core.const.ICON.FILE,
       intrinsic: !!manifest.intrinsic,
-      hidden: !!manifest.hidden && !manifest.intrinsic,
+      // `&& !manifest.intrinsic` used to be here, and it meant an
+      // intrinsic app could not be hidden. That was right while
+      // "intrinsic" meant "part of the node, so always on the desktop".
+      // A dialog is the first thing that is both: part of the node, and
+      // a screen its parent pushes rather than anything you launch
+      // (Andy). Nothing already shipped changes — every manifest in the
+      // tree says hidden:false.
+      hidden: !!manifest.hidden,
+      // 'app' | 'launcher' | 'dialog'. What it decides is what may be
+      // launched FROM here — see buildApiFor. A launcher finishes with
+      // the file it was showing and steps out of its own way; a dialog
+      // can only return.
+      type: manifest.type || 'app',
       mount: (existing && existing._activated)
         ? existing.mount
         : function (container) { container.textContent = 'Loading ' + manifest.name + '…'; },

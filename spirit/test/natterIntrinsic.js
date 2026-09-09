@@ -930,6 +930,386 @@ test.subHeading('Jobs has moved out of index.html');
   }
 }
 
+test.subHeading('A dialog can only return');
+
+{
+  // The shell owns the nav stack outright — there is no server side to
+  // it — so the shell is the only place the dialog rule can live. That
+  // is the shell MEDIATING what apps would otherwise contend for
+  // (AGENT.md), not inventing a refusal the server does not impose (§8);
+  // the Open-with folder rule was the second kind and was deleted.
+  //
+  // The doorway is where it goes, and the doorway is the real route:
+  // four of the five launches in app/ already go through api.launchApp,
+  // and buildApiFor's own comment asks for exactly that.
+  const shellSrc = readRun('js/client/shell.js');
+
+  // Matched on the throw, not on the word "dialog" — this file is full
+  // of prose about dialogs, and a grep for the word finds the prose.
+  if (/app\.type === 'dialog'[\s\S]{0,200}throw new Error/.test(shellSrc)) {
+    test.check('api.launchApp throws for a dialog rather than returning quietly');
+  } else {
+    test.fail('the dialog rule is not enforced at the doorway');
+  }
+
+  // Loud on purpose. A dialog reaching for launchApp means somebody
+  // added a button that should not exist — a programming error, not a
+  // situation a user is in — and a silent return would ship a button
+  // that does nothing, which is the bug class this project is worst at
+  // finding.
+  const quiet = /app\.type === 'dialog'\)\s*\{\s*return;/.test(shellSrc);
+  if (!quiet) {
+    test.check('and it does not fail silently, which is how a dead button ships');
+  } else {
+    test.fail('the dialog rule returns quietly');
+  }
+
+  // Every dialog in the tree, by its own manifest. The rule is only
+  // worth having if something checks the apps rather than the shell.
+  const dialogs = fs.readdirSync(path.join(RUN_DIR, 'app')).filter(function (folder) {
+    const manifestPath = path.join(RUN_DIR, 'app', folder, folder + '.json');
+    if (!fs.existsSync(manifestPath)) return false;
+    return JSON.parse(fs.readFileSync(manifestPath, 'utf8')).type === 'dialog';
+  });
+  const launchers = dialogs.filter(function (folder) {
+    return readRun('app/' + folder + '/' + folder + '.js').indexOf('launchApp') !== -1;
+  });
+  if (dialogs.length > 0 && launchers.length === 0) {
+    test.check('and no dialog in the tree reaches for it — ' + dialogs.length + ' checked');
+  } else {
+    test.fail(dialogs.length + ' dialogs, launching: ' + launchers.join(', '));
+  }
+
+  // The filter is only as good as the doorway being the route, so the
+  // global stays a NAMED exception rather than quietly becoming the way
+  // around it. Stats is the one: an intrinsic panel of tiles, each of
+  // which is a launch, and it is not a dialog and never will be.
+  const globals = fs.readdirSync(path.join(RUN_DIR, 'app')).filter(function (folder) {
+    const script = path.join(RUN_DIR, 'app', folder, folder + '.js');
+    if (!fs.existsSync(script)) return false;
+    // With its open paren. Contacts' own comment explains why it uses
+    // the doorway instead, and a check for the bare name reads that
+    // explanation as a use — the third time a source grep has found its
+    // own prose this week.
+    return fs.readFileSync(script, 'utf8').indexOf('spirit.shell.launchApp(') !== -1;
+  });
+  if (globals.length === 1 && globals[0] === 'stats') {
+    test.check('and spirit.shell.launchApp keeps its one named caller outside the shell');
+  } else {
+    test.fail('apps going round the doorway: ' + JSON.stringify(globals));
+  }
+}
+
+test.subHeading('A dialog is the same window with the colour drained out');
+
+{
+  // Andy asked for greyscale "with the same luminance ratios as normal
+  // app windows", and that is a checkable claim rather than a taste: a
+  // grey has the same relative luminance as the colour it replaces, so
+  // every contrast ratio in the window survives the change. Text stays
+  // as readable and a button stays as distinct from its background —
+  // nothing has to be re-eyeballed, which is the whole point of matching
+  // luminance rather than picking greys that look about right.
+  const css = readRun('index.html');
+  const shellSrc = readRun('js/client/shell.js');
+
+  function linear(c) {
+    const v = c / 255;
+    return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  }
+  function luminance(hex) {
+    const h = hex.replace('#', '');
+    const n = h.length === 3
+      ? [h[0] + h[0], h[1] + h[1], h[2] + h[2]]
+      : [h.slice(0, 2), h.slice(2, 4), h.slice(4, 6)];
+    const [r, g, b] = n.map(function (p) { return linear(parseInt(p, 16)); });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  // The pairs the stylesheet claims, checked against the arithmetic.
+  const pairs = [
+    ['#16213e', '#222222', 'the window'],
+    ['#0f3460', '#343434', 'titlebar, buttons, inputs'],
+    ['#16487a', '#464646', 'button hover'],
+    ['#8ec9ff', '#c3c3c3', 'accent'],
+  ];
+  // Within half a step of 8-bit grey: the nearest integer grey cannot
+  // hit an arbitrary luminance exactly, and demanding it did would be a
+  // test that no correct answer passes.
+  const off = pairs.filter(function (pair) {
+    const want = luminance(pair[0]);
+    const got = luminance(pair[1]);
+    const nudged = luminance('#' + [1, 1, 1].map(function () {
+      const v = parseInt(pair[1].slice(1, 3), 16) + 1;
+      return (v > 255 ? 255 : v).toString(16).padStart(2, '0');
+    }).join(''));
+    return Math.abs(got - want) > Math.abs(nudged - got);
+  });
+  if (off.length === 0) {
+    test.check('every dialog grey is the luminance match of the colour it replaces');
+  } else {
+    test.fail('greys picked by eye: ' + off.map(function (p) { return p[0] + '→' + p[1] + ' (' + p[2] + ')'; }).join(', '));
+  }
+
+  // And the stylesheet actually uses them, on the one ancestor the
+  // titlebar and the content share. On the pane it would have left the
+  // titlebar blue above a grey window, which reads as a rendering fault
+  // rather than a mode.
+  if (/#app-container\.is-dialog \{ background: #222222; \}/.test(css) &&
+      /#app-container\.is-dialog #app-header \{ background: #343434; \}/.test(css)) {
+    test.check('and the whole window takes it, titlebar included');
+  } else {
+    test.fail('the greyscale block is not on #app-container');
+  }
+
+  // Set from the declared type, and cleared on the way out — a window
+  // that stayed grey after Back would be worse than one that never
+  // changed.
+  if (/containerEl\.className = app\.type === 'dialog' \? 'is-dialog' : '';/.test(shellSrc) &&
+      /activeParams = null;\s*\n\s*containerEl\.className = '';/.test(shellSrc)) {
+    test.check('and switchTo sets it from the manifest type and clears it at the desktop');
+  } else {
+    test.fail('is-dialog is not driven by switchTo');
+  }
+}
+
+test.subHeading('A dialog is called, not launched');
+
+{
+  // callDialog is a separate verb from launchApp because it is a
+  // separate contract, and because the shell knowing it is opening a
+  // DIALOG at that moment is what lets it guarantee three things (Andy).
+  // Each one turns something every future dialog would have to remember
+  // into something none of them can get wrong.
+  const shellSrc = readRun('js/client/shell.js');
+
+  // 1. The subject arrives on EVERY entry, mounted or not. mount() runs
+  //    once per pane and the pane is shared by every row a dialog is
+  //    opened for, so without this the second open shows the first row.
+  if (/if \(app\.type === 'dialog'\) \{[\s\S]{0,200}app\.open\(params\);[\s\S]{0,40}return;/.test(shellSrc)) {
+    test.check('switchTo hands a dialog its subject through open(params) on every entry');
+  } else {
+    test.fail('a dialog is not opened with its params');
+  }
+
+  // 2. And is NOT rendered — here or on the tick. That repaint redrew
+  //    identical markup from a cached row every two seconds, and its one
+  //    observable effect was destroying the field somebody was typing
+  //    in. Gone, so no dialog needs a focus guard.
+  const renderActive = shellSrc.slice(shellSrc.indexOf('function renderActive'));
+  const fn = renderActive.slice(0, renderActive.indexOf('\n  }\n') + 5);
+  if (/type === 'dialog'\) return;/.test(fn)) {
+    test.check('and the job tick steps over a dialog rather than repainting it');
+  } else {
+    test.fail('renderActive still ticks dialogs: ' + fn);
+  }
+
+  // 3. The answer is a return value, so the code that opens the dialog
+  //    is the code that acts on what it decided.
+  if (/callDialog: function \(targetAppId, params\)/.test(shellSrc) &&
+      /return new Promise\(function \(resolve\) \{[\s\S]{0,120}pendingDialogs\[targetAppId\] = resolve;/.test(shellSrc)) {
+    test.check('and callDialog answers a promise rather than calling a hook back');
+  } else {
+    test.fail('callDialog does not return a promise');
+  }
+
+  // One door in. launchApp refuses a dialog target, or there would be a
+  // second way that skips all three of the above.
+  if (/target && target\.type === 'dialog'\) \{[\s\S]{0,200}throw new Error/.test(shellSrc)) {
+    test.check('and launchApp refuses a dialog, so there is one way in and it is this one');
+  } else {
+    test.fail('launchApp still lets a dialog through');
+  }
+
+  // The promise settles wherever the dialog leaves the stack — Back,
+  // Home, or a launch that collapses the stack past it. A promise that
+  // never settles is a .then that never runs and nothing says so, which
+  // is the one new failure mode this mechanism has.
+  const exits = (shellSrc.match(/settleDialogs\(\);/g) || []).length;
+  const inBack = /function goBack[\s\S]*?settleDialogs\(\);/.test(shellSrc);
+  const inHome = /function goHome[\s\S]*?settleDialogs\(\);/.test(shellSrc);
+  if (exits === 3 && inBack && inHome) {
+    test.check('and it settles at all three exits, so no caller waits forever');
+  } else {
+    test.fail(exits + ' settle points, back ' + inBack + ', home ' + inHome);
+  }
+
+  // No dialog carries a focus guard any more. One here would be dead
+  // code hiding the fact that the shell is doing the work — and the day
+  // somebody deletes the renderActive line, a guard would keep the
+  // symptom invisible.
+  const guarded = fs.readdirSync(path.join(RUN_DIR, 'app')).filter(function (folder) {
+    const manifestPath = path.join(RUN_DIR, 'app', folder, folder + '.json');
+    const script = path.join(RUN_DIR, 'app', folder, folder + '.js');
+    if (!fs.existsSync(manifestPath) || !fs.existsSync(script)) return false;
+    if (JSON.parse(fs.readFileSync(manifestPath, 'utf8')).type !== 'dialog') return false;
+    return fs.readFileSync(script, 'utf8').indexOf('activeElement') !== -1;
+  });
+  if (guarded.length === 0) {
+    test.check('and no dialog guards its focus, because nothing repaints it behind your back');
+  } else {
+    test.fail('dialogs still guarding focus: ' + guarded.join(', '));
+  }
+}
+
+test.subHeading('At most one hidden app, and always the top');
+
+{
+  // Not a rule of its own — what two rules already produce (Andy). A
+  // hidden app is only ever entered from a VISIBLE one, and a launcher
+  // only ever leaves by REPLACING itself. Add a dialog that cannot
+  // launch and there is no path that stacks two.
+  //
+  // Checked because closeDialog LEANS on it: the result goes to the
+  // entry directly beneath, which is the right app only while this
+  // holds.
+  const shellSrc = readRun('js/client/shell.js');
+  if (/function assertOneHiddenApp/.test(shellSrc) &&
+      /assertOneHiddenApp\(id\);/.test(shellSrc)) {
+    test.check('launchApp checks it on every push rather than assuming it');
+  } else {
+    test.fail('nothing asserts the one-hidden-app invariant');
+  }
+
+  // Complains and carries on. Refusing would swallow a navigation and
+  // leave a dead button; a wrong stack entry is a slightly wrong Back,
+  // and only one of those is invisible.
+  const body = shellSrc.slice(shellSrc.indexOf('function assertOneHiddenApp'));
+  const fn = body.slice(0, body.indexOf('\n  }\n') + 5);
+  if (fn.indexOf('console.error') !== -1 && fn.indexOf('return;') === -1) {
+    test.check('and it complains rather than refusing, so no navigation is swallowed');
+  } else {
+    test.fail('assertOneHiddenApp refuses: ' + fn);
+  }
+
+  // The three that keep it true, counted where they are written. A
+  // fourth has to be a decision rather than a habit.
+  const inline = readRun('index.html');
+  const replaces = (shellSrc.match(/\{ replace: true \}/g) || []).length +
+    (inline.match(/\{ replace: true \}/g) || []).length;
+  if (replaces === 3) {
+    test.check('and the three {replace:true} launches that produce it are still three');
+  } else {
+    test.fail(replaces + ' replace-launches, expected 3');
+  }
+
+  // A launcher may launch; a dialog may not. Both are declared, so the
+  // shell is reading a fact rather than guessing from a name.
+  const launcherTypes = (inline.match(/type: 'launcher'/g) || []).length;
+  if (launcherTypes === 2) {
+    test.check('and both file launchers declare themselves launchers, not dialogs');
+  } else {
+    test.fail(launcherTypes + ' declared launchers, expected 2');
+  }
+}
+
+test.subHeading('A screen another app pushes is not something you install');
+
+{
+  // The Apps table and the icon picker's exclusion list are built from
+  // ONE array, so this drives the real function rather than the row
+  // renderer the rest of this file lifts — the filter under test is in
+  // renderAppManagerTable, and testing it anywhere else would test a
+  // copy of it.
+  //
+  // The two hidden apps today are the file launchers: screens Files
+  // pushes for one file, with no desktop icon and nothing to install.
+  // The details screens Andy is proposing are the same kind of thing.
+  const src = readRun('app/apps/apps.js');
+  const start = src.indexOf('function locationLabel');
+  const end = src.indexOf('\n// The api the shell hands in at mount');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error('renderAppManagerTable could not be found in app/apps/apps.js — this test needs updating with it');
+  }
+
+  const listed = [
+    { id: 'contacts', name: 'Contacts', icon: '📇', defaultIcon: '📇', group: null, hidden: false, intrinsic: true, dynamic: true },
+    { id: 'files', name: 'Files', icon: '📁', defaultIcon: '📁', group: null, hidden: false, intrinsic: true, dynamic: true },
+    { id: 'text-file-launcher', name: 'Text File Launcher', icon: '📝', defaultIcon: '📝', group: null, hidden: true, intrinsic: false, dynamic: false },
+    { id: 'media-launcher', name: 'Media Launcher', icon: '🖼️', defaultIcon: '🖼️', group: null, hidden: true, intrinsic: false, dynamic: false },
+  ];
+
+  // One slot per row the table drew, so the count of slots is the count
+  // of rows and the glyphs offered to each are recorded as handed over.
+  const excluded = [];
+  const slots = [];
+  function slotFor(appId, glyph) {
+    return {
+      id: 'app-manager-icon-input',
+      dataset: { appId: appId, iconSlot: glyph },
+      appendChild: function () {},
+      removeAttribute: function () {},
+    };
+  }
+
+  const tbody = {
+    innerHTML: '',
+    // null, not a fresh element: a truthy answer here is the "somebody
+    // has the picker open" guard, and it would refuse the repaint.
+    querySelector: function () { return null; },
+    querySelectorAll: function () { return slots; },
+  };
+
+  const shellStub = {
+    shell: {
+      SPIRIT_GROUP_ID: 'spirit',
+      listApps: function () { return listed.slice(); },
+      listGroups: function () { return []; },
+      getAppOverride: function () { return {}; },
+      fileInfoRow: function (k, v) { return k + '=' + v + ';'; },
+      factRow: function () { return ''; },
+    },
+    core: { const: { ICON: { POINTDOWN: 'v', POINTRIGHT: '>' } }, util: { escapeHtml: spirit.core.util.escapeHtml } },
+  };
+
+  const run = new Function('spirit', 'document', 'appsApi', 'APPS_ICON', 'appsEscapeHtml',
+    'var expandedAppId = null;' + src.slice(start, end) +
+    '\nreturn renderAppManagerTable;'
+  )(
+    shellStub,
+    { getElementById: function () { return tbody; } },
+    { ui: { elements: { createIconSelector: function (taken) {
+      excluded.push(taken);
+      return { id: '', dataset: {} };
+    } } } },
+    { POINTDOWN: 'v', POINTRIGHT: '>' },
+    spirit.core.util.escapeHtml
+  );
+
+  // The slots the real markup would have produced, one per drawn row.
+  listed.filter(function (a) { return !a.hidden; })
+    .forEach(function (a) { slots.push(slotFor(a.id, a.icon)); });
+
+  run(true);
+
+  if (tbody.innerHTML.indexOf('Contacts') !== -1 && tbody.innerHTML.indexOf('Files') !== -1 &&
+      tbody.innerHTML.indexOf('Launcher') === -1) {
+    test.check('the two visible apps are listed and neither launcher is');
+  } else {
+    test.fail('rows: ' + tbody.innerHTML.slice(0, 400));
+  }
+
+  // The half Andy asked for by name. `rows` feeds both the table and the
+  // exclusion, so a screen nobody picks out of a gallery no longer costs
+  // the shell a unique glyph — Contacts Details can wear the rolodex its
+  // parent wears, and 📝 and 🖼️ go back to being free for real apps.
+  const offered = excluded.length ? excluded.join(' ') : '(none)';
+  if (excluded.length === 2 && offered.indexOf('📝') === -1 && offered.indexOf('🖼️') === -1) {
+    test.check('and a hidden app\'s glyph is not withheld from anybody, because it needs no unique one');
+  } else {
+    test.fail(excluded.length + ' pickers, excluding: ' + offered);
+  }
+
+  // Still excluded from each other, though. Two apps a person picks
+  // between in a gallery must not wear one glyph, and that has not
+  // changed — only who counts as "in the gallery" has.
+  if (excluded[0].indexOf('📁') !== -1 && excluded[1].indexOf('📇') !== -1) {
+    test.check('while two apps you can actually see still exclude each other');
+  } else {
+    test.fail('visible apps stopped colliding: ' + JSON.stringify(excluded));
+  }
+}
+
 test.subHeading('Apps has moved out of index.html');
 
 {
@@ -1643,7 +2023,20 @@ test.subHeading('Every control an app puts on the page has one shape');
   // a portrait phone scrolled sideways in a layout nobody asked for. It
   // is also the reading size (UI_DESIGN_STYLE.md), so one number serves
   // both and neither can be lowered without noticing the other.
-  const at = css.indexOf('#app-content input,');
+  //
+  // Anchored on the selector AS WRITTEN — at the start of its own line,
+  // with no ancestor in front of it. `indexOf('#app-content input,')`
+  // also finds it inside a longer selector, and the greyscale block
+  // above has one: #app-container.is-dialog #app-content input. That
+  // block sets a background and nothing else, so this read every number
+  // below as missing.
+  const lines = css.split('\n');
+  let at = -1;
+  for (let i = 0; i < lines.length && at === -1; i++) {
+    if (lines[i].trim().indexOf('#app-content input,') === 0) {
+      at = css.indexOf(lines[i]);
+    }
+  }
   const block = at === -1 ? '' : css.slice(at, css.indexOf('}', at));
   const size = /font-size:\s*(\d+)px/.exec(block);
   const title = /#app-title \{[^}]*font-size:\s*(\d+)px/.exec(css);

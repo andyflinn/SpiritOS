@@ -1,0 +1,9 @@
+{
+  "name": "Contact",
+  "description": "One person from the address book: what they are called, what they cost, and what you have decided about them.",
+  "icon": "ROLODEX",
+  "hidden": true,
+  "type": "dialog",
+  "intrinsic": true,
+  "owner": "system"
+}

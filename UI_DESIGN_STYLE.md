@@ -124,6 +124,80 @@ Three callers pass `{replace: true}` to `launchApp`, and every one is a launcher
 
 So Back returns to whatever opened the launcher — Processes, or Files — rather than to a file you are done with. **Everything else pushes**, and a group screen pushing is exactly what makes Back *into* it mean going back to where you were. A test counts the three across `shell.js` and `index.html`, so a fourth has to be a decision rather than a habit.
 
+### A row that needs more than a row gets a screen
+
+**A table row carries only what you need to decide whether to look closer** (Andy). Everything else is a screen of its own — a **dialog**: a hidden app the table pushes for one row.
+
+The row expansion it replaces was three problems in one. It put a six-fact bubble and a form inside a `colspan="4"`, so the widest thing on the page lived inside the narrowest; it reflowed everything beneath it on open and changed the page height on close, so a long list lost your place twice per look; and it made you read one person's numbers with their neighbours still listed above and below. A phone has one screenful, so all three land hardest exactly where §10 is aiming.
+
+Every app now declares which of three it is, and the shell reads the declaration rather than guessing from a name:
+
+| `type` | may launch | Back means | example |
+|---|---|---|---|
+| `app` | yes | back to whatever opened it | Contacts, Files |
+| `launcher` | yes, and **every launch replaces** its own entry | back past it | the two file launchers |
+| `dialog` | **no** — it returns, and the app beneath acts | back to its parent, always | Contacts Details |
+
+**Why a separate app id and not a second view.** Panes are one per app id and are hidden, never destroyed. A separate id means the table's pane — and its scroll position — survives untouched behind the dialog. A second view of the same app would share one pane, and preserving scroll would become every table's own problem to solve.
+
+**Discovery stays flat** (`app/<name>/<name>.js`), so a dialog is a *sibling* folder, not a child. The cost is real and worth stating: `api.fs` is scoped to the folder the script lives in, so a dialog cannot write its parent's files. It does not need to — a dialog **reads anything (`api.readProject`) and writes only its own folder; anything that changes the parent's data goes through a hub verb.** Contacts Details writes nothing at all.
+
+**A dialog modifies data in real time.** Nothing is staged and there is no OK/Cancel: press Return on a label and it is on disk before the panel repaints. The result a dialog returns is not a commit — it is news for a stale cache, or an instruction the parent must act on.
+
+**A dialog is *called*, not launched**, and the answer is a return value:
+
+```js
+api.callDialog('app/contactsDetails', { key: k })
+   .then(function (result) { if (result && result.changed) refresh(); });
+```
+
+A separate verb from `launchApp` because it is a separate contract — and because the shell knowing it is opening a **dialog at that moment** is what lets it guarantee three things. Each one turns something every future dialog would have to remember into something none of them can get wrong:
+
+| the shell guarantees | so a dialog never has to |
+|---|---|
+| `open(params)` runs on **every** entry, mounted or not | re-read its subject in `render` — see the traps below |
+| a dialog is **never driven by the job tick** | carry a focus guard |
+| the answer comes back as a promise | declare a hook far from the click that caused it |
+
+`launchApp` **refuses a dialog target**, so there is one way in and it is the one that makes those promises.
+
+**The result is set as things happen (`api.setDialogResult`) and the promise settles when the screen leaves the stack** — by Back, by Home, or by a launch that collapses the stack past it. All three call one `settleDialogs()`, because **a promise that never settles is a `.then` that never runs and nothing says so** — the single new failure mode this mechanism has, and the reason it is worth a test that pops a dialog each way.
+
+Collecting the result only from an explicit `closeDialog()` was the first attempt and it was wrong: **Back *is* the exit**, so that version lost the result every time somebody left the way the chrome button invites them to. It would have shipped as *"blocking somebody leaves an unmarked row behind you, unless you press the right button."*
+
+**Three things enforce it**, all in the shell, because the nav stack has no server side — this is the shell *mediating* (`AGENT.md`), not inventing a refusal the server does not impose (§8):
+
+1. `api.launchApp` **throws** for a dialog. Not a silent return: a dialog reaching for it means somebody added a button that should not exist, and a quiet no-op ships a button that does nothing.
+2. `assertOneHiddenApp` complains on every push if two hidden apps would sit on the stack — and complains rather than refuses, because a wrong stack entry is a slightly wrong Back while a refused navigation is a dead button.
+3. A test counts it: no `launchApp` in any dialog's source, and `spirit.shell.launchApp` keeps its one named caller outside the shell (`stats`).
+
+**At most one hidden app is open, and it is always the top.** That is not a rule of its own — it is what the other two produce. A hidden app is only ever entered from a visible one, and a launcher only ever leaves by replacing itself. It is *asserted* rather than assumed because the return path leans on it: the result goes to the entry directly beneath, which is the right app only while this holds.
+
+**A dialog is the same window with the colour drained out.** Greyscale, and the greys are computed rather than chosen — each is the value whose **relative luminance** equals the colour it replaces (`0.2126R + 0.7152G + 0.0722B`, linearized), so every contrast ratio survives and nothing needs re-checking:
+
+| | | |
+|---|---|---|
+| `#16213e` → `#222222` | the window |
+| `#0f3460` → `#343434` | titlebar, buttons, inputs, select |
+| `#16487a` → `#464646` | button hover |
+| `#8ec9ff` → `#c3c3c3` | accent |
+
+The class goes on `#app-container`, the one ancestor the titlebar and the content share — on the pane it leaves a blue titlebar above a grey window, which reads as a rendering fault rather than a mode. A test recomputes the pairs, so a later tidy-up cannot quietly pick greys by eye.
+
+**The titlebar says which row, not which app.** "Contact" is the least useful word available on a screen that shows one person, so it carries the row's identity and its mark — `⌛ carol`, `bert (Bertie)`. It cannot be the row itself: `#app-header` is one sticky flex line and four columns will not fit.
+
+### Two traps that used to be every dialog's, and are now the shell's
+
+Both bit the first dialog, neither was visible until somebody used the screen, and both are the reason `callDialog` exists rather than a note in this file saying *remember to*. Written down because the fix is a **guarantee**, and a guarantee nobody can explain gets deleted by the next person tidying up.
+
+**The tick destroyed your field.** `render()` fires on every job event — roughly every two seconds, for as long as the screen is open — and a repaint that rebuilds by `innerHTML` destroys the input and takes the focus with it. A text box that dies mid-word. The first fix was a focus guard inside the dialog; the real fix is that **the shell does not tick a dialog at all** (`switchTo` and `renderActive` both step over one). Look at what that repaint was doing: redrawing identical markup from a cached row, forever, unable to show anything new because nothing re-fetches. Pure cost, and its only observable effect was the bug. A dialog that genuinely wants live data asks with `api.onJobs`, which is opt-in and says so.
+
+So **a focus guard in a dialog is now a smell**: it is dead code, and worse, it would hide the symptom on the day somebody deletes the `renderActive` line. A test asserts no dialog has one.
+
+**The second open showed the first row.** `mount()` runs once per **pane**, and every subject a dialog is ever opened on shares that pane. The launchers get a second chance through `loadFile` — but the shell calls that **only when `params.path` is set**, so a dialog opened on a key, an id, or a row had no hook at all, and opening carol after bert showed you bert with carol's name in the titlebar. `open(params)` is that hook generalized, made compulsory, and called on every entry — so a dialog *physically cannot* show the previous subject.
+
+What the shell still cannot do for you: **`open()` must let go of the last subject's state.** It can promise the call; it cannot know what is stale inside. The example is a half-armed two-press Block — two presses have to mean two presses about the *same* person.
+
 ### Opening one fold closes its siblings
 
 **One panel open at a time.** This is already the house rule for every row expander — Apps, Groups, Jobs, Natter's relay rows and Contacts' own rows all say *"opening one closes any other"* — and folds now say it too. It is the same argument as the spacing above: a portrait screen has one screenful, and a fold left open behind you is chrome you are not using (§1).
@@ -219,6 +293,19 @@ CSS regressions are invisible until somebody looks. Where a rule is a *relations
 
 The fix is to match where the thing is **built**, not where it is discussed: a quoted opening (`/['"]<details/`), a quoted path (`"'/api/hub/peer'"`), a header cell (`<th>Last log</th>`) rather than the prose. And prove it: a check nobody has watched fail is a check nobody knows the meaning of. Every claim in this file that could be asserted was, and several were confirmed by breaking the thing on purpose and watching the message.
 
+**Comments are only half of it — real code shadows an anchor too**, and that half is newer and sneakier. Four more in one sitting, and the general lesson is worth more than the four:
+
+| the anchor | what shadowed it |
+|---|---|
+| `applyInboxBatch(rootDir,` | the function's own **definition** — two call sites read as three |
+| `spirit.shell.launchApp` | a comment saying *use `api.launchApp`, not this* |
+| `api.fs` | a comment explaining what the scope is and why |
+| `#app-content input,` | a **longer selector containing it**: `#app-container.is-dialog #app-content input` |
+
+**Anchor on the form as written.** A call gets its open paren (`.saveFile(`, `spirit.shell.launchApp(`) — prose almost never carries one. A selector is matched at the start of its own line, so an ancestor in front of it does not count. The last case is the one to remember, because it is not a comment at all: adding a *correct* rule broke a *correct* test, and the failure said `control font-size null`, which points nowhere near the cause.
+
+And when a check must read the shell's own source, prefer a shape that cannot be shadowed: split into lines and test `line.trim().indexOf(x) === 0`, rather than `indexOf` over the whole file.
+
 **Two ways to ship a silently wrong program that `node --check` accepts.** Both cost real time in one sitting:
 
 - A shell heredoc turned a regex backreference `\1` into a literal **0x01 control byte**. The regex stayed valid — it simply matched `app/foo/.js` instead of `app/<name>/<name>.js`. Found by reading, not by any test.
@@ -231,6 +318,7 @@ Two harness facts worth keeping, both found by writing such a check:
 - A manifest-declared app **never reaches `switchTo`** in node — `launchApp` injects a `<script>` and returns — so a test that needs a mounted app registers a static one.
 - A regex written into a test through a shell heredoc can have its escapes eaten (`\n` becoming a real newline inside the pattern). Where the markup is built by concatenation across many lines, `indexOf` ordering says the same thing and cannot be mangled.
 - **A stub must be shaped like the thing it stands for.** Natter's mint stub answered the panel for `parentNode`, so every lookup worked whichever way the code asked. When the fields and the button moved into a row, the browser stopped finding the answer span and the test went on passing — a mint succeeded and said nothing. A stub that is more permissive than the DOM does not merely fail to catch a bug; it hides one.
+- **And a stub that cannot express the failure makes a test that cannot fail.** The first version of the dialog's focus-guard test compared `innerHTML` before and after a tick, and compared the input element. Both were vacuous: a tick paints *identical* markup, and the document stub mints one element per id and hands it back forever. In a browser the difference is a real node being destroyed and taking the focus with it — nothing this stub has. It passed with the guard **and** without it. Rewritten to measure whether the repaint **ran** (`setScreenTitle` sits after the guard, so it leaves a mark), it failed the moment the guard came out. When the real failure is something the stub cannot model, find the observable edge that it *can*, and check the test fails without the fix before believing it.
 - **An id is only unique if nothing else claims it.** Apps stay mounted, so every visited app's markup is in the document at once and `getElementById` answers with whichever came first. Both launchers drew `<div id="open-with">`; opening a text file and then an image wrote the image viewer's handlers into the text viewer's pane, silently. A check now reads every id built in `index.html` and requires each to be built once.
 
 ## 8. Reach for what the server already answered
@@ -289,6 +377,6 @@ Not finished, but it is the target, and it decides the numbers above. What alrea
 - **`.job-manifest-note`** is fine print at 12px sitting *mid-page* in the text launcher, which §2 forbids. It moves to the foot or it stops being a note.
 - **Files' own detail panel** shows Name/Path/MIME through `.label`/`.rows` at 12 and 13px — the same information as `.file-info-row`, in a different shape, and now also unlike the `.fact-row` every other panel reads with. Andy: Files waits until more useless information is culled from its interface (§1), because there is no point laying out what should not be there.
 - **22px figures** (`.stat-tile .value`) are a third size that probably earns its place — a number read as a figure is not prose. It now has a sibling to be distinguished from: `.fact-value` is 16px with its caption *above* it, `.stat-tile .value` is 22px with its caption *below*. Both are defensible and the difference is which half you came looking for, but neither is written as a rule.
-- **Wide content on a narrow screen.** `.jobs-table` will overflow a portrait phone rather than scrolling inside its own container, and the thread, the Files tree and the code view have not been looked at on one at all. §10 is a target, not a claim. Culling columns helps and is not the fix: Apps went five to three and Jobs six to five, both with nothing lost, and both tables are still fixed-width.
+- **Wide content on a narrow screen.** `#app-container` sets only `overflow-y`, and CSS computes the other axis to `auto` — so the **whole page** slides sideways rather than a table scrolling inside its own box, and `#app-header` is `sticky; top: 0`, which pins vertically only: Back, Home and the title slide off the left while you read. In the entire stylesheet exactly two things scope their own overflow (`.code-view`, `.icon-selector-rows`). The rule to adopt is *the page never scrolls sideways; wide content scrolls inside its own box* — `#app-container { overflow-x: hidden }` plus a `.scroll-x` wrapper, and the two halves must land together or the first hides content instead of revealing it. **Dialogs shrank this and did not solve it**: the row expansion was the widest thing in the table, and with it gone Contacts is four short text columns — still wider than a portrait phone, but the fix may now be two lines of CSS rather than six app edits. Re-measure before doing it. Culling columns helps and is not the fix: Apps went five to three and Jobs six to five, both with nothing lost, and both tables are still fixed-width.
 - **What else is a column nobody can act on?** Apps shed Id and Source, Jobs shed Last log — each was on screen twice or unreadable where it stood. Processes and Stats have not been asked the same question.
 - **`<details>` markers**: Invite and Add someone by handle now both show the default triangle, after the invite line stopped being shrunk. Whether folded panels show a marker at all is unstated.

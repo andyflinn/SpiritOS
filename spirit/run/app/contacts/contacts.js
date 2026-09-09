@@ -72,7 +72,6 @@ var CONTACTS_UNKNOWN_LABELS = {
 
 var contactsPeople = [];
 var contactsSelfTail = '';
-var contactsEditing = ''; // the key whose row is open for editing
 
 function contactsPost(path, body) {
   return fetch(path, {
@@ -87,22 +86,6 @@ function contactsPost(path, body) {
 function contactsStatus(text) {
   var el = document.getElementById('contacts-status');
   if (el) el.textContent = text || '';
-}
-
-// A rate is messages per day across peerStats' window, and one decimal
-// is the whole of it (packet 7). The number is there to be compared with
-// the one beside it and with what it was last week — 0.2 against 3.1
-// says everything a reader needs, and 0.214285… only says that a
-// computer divided something.
-//
-// The unit rides with the figure. A bare "0.2" in a bubble beside a byte
-// count is a number nobody can act on: per day is what makes it a rate
-// rather than a total, and the difference between those two is the point
-// of the whole packet.
-function contactsRate(perDay) {
-  var n = Number(perDay);
-  if (!isFinite(n) || n < 0) n = 0;
-  return n.toFixed(1) + ' / day';
 }
 
 // The Handle column: their own name, and nothing else on an ordinary
@@ -124,16 +107,6 @@ function contactsHandleCell(person) {
   return (handle ? handle + ' ' : '') + '…' + tail;
 }
 
-// A contact who has never claimed a handle has nothing to name here, and
-// "Change My Label for " trailing off into nothing is worse than the
-// shorter sentence. The field is the same field either way.
-function contactsRenameCaption(person) {
-  var handle = person.publicLabel || '';
-  return handle
-    ? 'Change My Label for ' + contactsEscapeHtml(handle)
-    : 'Change My Label';
-}
-
 // One row per key.
 //
 //   ❌ NO       this node refuses them.
@@ -149,119 +122,41 @@ function contactsRenameCaption(person) {
 // per-peer log file, which api.fs will not let this app read — Contacts
 // genuinely cannot know it, and do not "fix" that by widening a scope.
 // The two refusals being separate is the point (packet 2).
+// A row is what you need to decide whether to look closer, and no more
+// (Andy). Everything else — the six facts, the rename, the decisions —
+// is a screen of its own now: app/contactsDetails, the first dialog.
+//
+// What that bought, in the order it matters:
+//
+//   - the table keeps its shape. The old expansion put a six-fact bubble
+//     and a form inside a colspan="4", so the widest thing on the page
+//     lived inside the narrowest, and that is what pushed this app off a
+//     portrait screen;
+//   - the table keeps its place. Expanding a row reflowed everything
+//     under it and collapsing changed the page height, so a long list
+//     lost your position twice per look;
+//   - one person at a time, with their neighbours not listed above and
+//     below them while you read their numbers.
 function contactsRowHtml(person) {
   var mark = '';
   if (person.blocked) mark = contactsIcon.NO;
   else if (person.held) mark = contactsIcon.WAITING;
 
-  var open = contactsEditing === person.publicKey;
-  var row = '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
+  return '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
     '<td>' + mark + '</td>' +
     '<td>' + contactsHandleCell(person) + '</td>' +
     '<td>' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
     '<td>' + contactsEscapeHtml(person.acquiredVia || '') + '</td>' +
     '</tr>';
-
-  if (!open) return row;
-
-  // What you can decide about one person, in the one place those
-  // decisions live. Accept is offered only to somebody waiting, Unblock
-  // only to somebody refused — the buttons are how the two states are
-  // told apart, exactly as they were on the chat strip.
-  var buttons = '';
-  if (person.blocked) {
-    buttons = '<button type="button" class="cancel-btn" data-contact-unblock="' + contactsEscapeHtml(person.publicKey) + '">Unblock</button>';
-  } else {
-    if (person.held) {
-      buttons += '<button type="button" class="cancel-btn" data-contact-accept="' + contactsEscapeHtml(person.publicKey) + '">Accept</button>';
-    }
-    buttons += '<button type="button" class="cancel-btn" data-contact-block="' + contactsEscapeHtml(person.publicKey) + '">Block</button>';
-  }
-
-  // Who they are, and what they cost, as one reading. The row that
-  // opened is the heading, so three rows stacked down the panel made a
-  // list out of it.
-  //
-  // Andy's order: who they are, then what they cost. The question this
-  // panel exists to answer is "how much is that contact a drain on my
-  // attention and my resources", and the three verbs that answer it are
-  // the ones on the row below — accept, block, leave waiting.
-  //
-  // The three middle numbers are counted by the NODE when a packet moves
-  // (peerStats.js, packet 7), never derived here and never derived from
-  // chat's log: that ring caps at 500, so a total taken from it stops
-  // rising exactly when somebody becomes worth looking at, and it would
-  // speak for the whole node while measuring one app.
-  //
-  // Zeros are drawn, unlike the blanks that stood here before the
-  // counters existed. That is the difference between a fact that was
-  // measured and came out nothing, and a fact nobody measured.
-  //
-  // Rates are per day over a 14-day window (peerStats.WINDOW_DAYS), not
-  // lifetime. A lifetime total only ever grows, so it ranks contacts by
-  // how long they have been in the book — the opposite of the question.
-  //
-  // "How" is not here: it is the fourth column of the table above, and a
-  // fact repeated one line under itself says nothing twice.
-  var detail = '<div class="stat-tile wide">' +
-    spirit.shell.factRow([
-      // Theirs, and it can change under you — which is why the book
-      // keeps myLabel separately rather than overwriting this.
-      ['Public Handle', person.publicLabel || '(none)'],
-      ['My Label', person.myLabel || '(none)'],
-      // Since the last thing you sent them. Replying is what resets it,
-      // which is exactly the behaviour the number describes: high
-      // because you are neglecting somebody, or high because somebody is
-      // haranguing you. Those are opposite actions, and the row below
-      // has a button for each.
-      ['Unanswered inbound', String(person.unansweredInbound || 0)],
-      ['Inbound rate', contactsRate(person.inboundPerDay)],
-      ['Outbound rate', contactsRate(person.outboundPerDay)],
-      ['Storage', spirit.core.util.formatBytes(person.bytesHeld || 0)],
-    ]) +
-    // What you call them and what you decide about them, on one line: the
-    // caption and its input take the width (.field-label.grow) and the
-    // buttons fill the end. align-items:flex-end on the row is what lines
-    // a button up with the input rather than with the caption above it.
-    //
-    // myLabel: what YOU call that key. Never uploaded, and the reason the
-    // book keeps their caption separately — theirs can change under you.
-    //
-    // The caption names the fact it edits — "Change My Label", the same
-    // words the bubble one line above uses — and then says whose, so
-    // that with a panel open there is no doubt which of the two names on
-    // screen the field is about. Their handle and not their caption: the
-    // caption is already myLabel resolved, so it would answer with what
-    // you are in the middle of changing.
-    '<div class="start-job-form card">' +
-      '<label class="field-label grow">' + contactsRenameCaption(person) +
-        '<input type="text" id="contacts-label-input" data-contact-key="' + contactsEscapeHtml(person.publicKey) + '"' +
-        ' value="' + contactsEscapeHtml(person.myLabel || '') + '" placeholder="' + contactsEscapeHtml(person.publicLabel || '') + '">' +
-      '</label>' +
-      buttons +
-    '</div>' +
-    '</div>';
-
-  return row + '<tr class="job-log-row"><td colspan="4">' + detail + '</td></tr>';
 }
 
-// `committed` says this repaint was asked for by the field that just
-// changed, and it is the whole reason the guard below takes an argument.
-function contactsRender(committed) {
+function contactsRender() {
   var tbody = document.getElementById('contacts-tbody');
   if (!tbody) return;
-  // Same focus guard the Apps and Groups tables use, same reason: a
-  // repaint arriving while somebody is typing a name would take the name
-  // out of the field.
-  //
-  // But Return in that field fires `change` WITHOUT blurring it, so the
-  // field still has focus when its own save comes back — and guarded
-  // blindly, the one repaint that was actually asked for became the only
-  // one ever refused. The label saved, and the facts bubble one line
-  // above it went on showing the old one (Andy). A commit is not
-  // somebody mid-word: it redraws.
-  var focusedId = document.activeElement && document.activeElement.id;
-  if (!committed && focusedId === 'contacts-label-input') return;
+  // The focus guard that stood here went with the field it guarded. It
+  // existed because a repaint arriving while somebody was typing a name
+  // would take the name — and the rename input is on the dialog now,
+  // inside a pane this table's repaints cannot reach.
 
   if (!contactsPeople.length) {
     tbody.innerHTML = '<tr><td colspan="4">(nobody yet — add someone by handle below)</td></tr>';
@@ -278,13 +173,13 @@ function contactsPaintSelf() {
     : '';
 }
 
-function contactsRefresh(committed) {
+function contactsRefresh() {
   return fetch('/api/hub/who')
     .then(function (r) { return r.json(); })
     .then(function (data) {
       contactsPeople = (data && data.people) || [];
       contactsSelfTail = (data && data.selfTail) || '';
-      contactsRender(committed);
+      contactsRender();
       contactsPaintSelf();
     })
     .catch(function (e) { contactsStatus('could not read the book: ' + e.message); });
@@ -392,7 +287,6 @@ function contactsPaintUnknown() {
 spirit.shell.activateApp({
   mount: function (container, api) {
     contactsApi = api;
-    contactsEditing = '';
 
     container.innerHTML =
       // No Key column, and none in the panel either (Andy). Six
@@ -482,41 +376,31 @@ spirit.shell.activateApp({
       });
     });
 
+    // A row opens the person, and that is all a row does now.
+    //
+    // callDialog rather than launchApp, because this is a question with
+    // an answer. The shell hands the dialog its subject on every call
+    // and gives back what it decided, so the code that opens the screen
+    // is the code three lines below that acts on it — rather than a hook
+    // declared at the bottom of the file, far from the click.
+    //
+    // The key alone. The dialog re-fetches the row rather than being
+    // handed one, because the numbers move while it is open.
+    //
+    // The answer matters because render() repaints from a list this app
+    // fetched and does not fetch again: without re-reading, blocking
+    // somebody on their own screen would leave an unmarked row behind
+    // you, and the mark is the whole of what a row says about that
+    // decision. A dialog that decided nothing answers null, and costs
+    // this table nothing.
     document.getElementById('contacts-tbody').addEventListener('click', function (event) {
       var target = event.target;
       if (!target || !target.closest) return;
-
-      var verb = target.closest('[data-contact-accept]') || target.closest('[data-contact-block]') ||
-        target.closest('[data-contact-unblock]');
-      if (verb) {
-        var key = verb.dataset.contactAccept || verb.dataset.contactBlock || verb.dataset.contactUnblock;
-        var action = verb.dataset.contactAccept ? 'accept' : (verb.dataset.contactBlock ? 'block' : 'unblock');
-        contactsPost('/api/hub/peer', { publicKey: key, action: action }).then(function (r) {
-          if (r.status !== 200) { contactsStatus(action + ' failed: ' + r.status + ' ' + r.text); return; }
-          contactsStatus('');
-          contactsRefresh();
-        });
-        return;
-      }
-
       var row = target.closest('[data-contact-row]');
-      if (row) {
-        var rowKey = row.dataset.contactRow;
-        contactsEditing = (contactsEditing === rowKey) ? '' : rowKey; // opening one closes any other
-        contactsRender();
-      }
-    });
-
-    document.getElementById('contacts-tbody').addEventListener('change', function (event) {
-      if (!event.target || event.target.id !== 'contacts-label-input') return;
-      var key = event.target.dataset.contactKey;
-      contactsPost('/api/hub/peer', { publicKey: key, action: 'label', myLabel: event.target.value.trim() })
-        .then(function (r) {
-          if (r.status !== 200) { contactsStatus('rename failed: ' + r.status + ' ' + r.text); return; }
-          contactsStatus('');
-          // Committed: redraw even though Return left the field focused,
-          // or My Label in the bubble above keeps the old answer.
-          contactsRefresh(true);
+      if (!row) return;
+      contactsApi.callDialog('app/contactsDetails', { key: row.dataset.contactRow })
+        .then(function (result) {
+          if (result && result.changed) contactsRefresh();
         });
     });
 
