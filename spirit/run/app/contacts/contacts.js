@@ -89,6 +89,35 @@ function contactsStatus(text) {
   if (el) el.textContent = text || '';
 }
 
+// The Handle column: their own name, and nothing else on an ordinary
+// row. No key endings for people you have already acquired — you did
+// that comparing down a telephone and it is finished (Andy).
+//
+// Two rows are the exception, because on those the handle is not an
+// answer. Nobody claimed one, so the cell would be empty; or somebody
+// else claimed the same one, which is `ambiguous` — the node's own
+// verdict (buildPeople), not a second opinion formed here, so the table
+// and the To list can never disagree about which rows read alike. The
+// tail comes down with the row for the same reason: six from the end is
+// one rule and it lives in hub.js.
+function contactsHandleCell(person) {
+  var handle = contactsEscapeHtml(person.publicLabel || '');
+  var tail = contactsEscapeHtml(person.tail || '');
+  if (handle && !person.ambiguous) return handle;
+  if (!tail) return handle;
+  return (handle ? handle + ' ' : '') + '…' + tail;
+}
+
+// A contact who has never claimed a handle has nothing to name here, and
+// "Change My Label for " trailing off into nothing is worse than the
+// shorter sentence. The field is the same field either way.
+function contactsRenameCaption(person) {
+  var handle = person.publicLabel || '';
+  return handle
+    ? 'Change My Label for ' + contactsEscapeHtml(handle)
+    : 'Change My Label';
+}
+
 // One row per key.
 //
 //   ❌ NO       this node refuses them.
@@ -106,12 +135,14 @@ function contactsStatus(text) {
 // The two refusals being separate is the point (packet 2).
 function contactsRowHtml(person) {
   var mark = '';
-  if (person.blocked) mark = contactsIcon.NO + ' ';
-  else if (person.held) mark = contactsIcon.WAITING + ' ';
+  if (person.blocked) mark = contactsIcon.NO;
+  else if (person.held) mark = contactsIcon.WAITING;
 
   var open = contactsEditing === person.publicKey;
   var row = '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
-    '<td>' + mark + contactsEscapeHtml(person.caption) + '</td>' +
+    '<td>' + mark + '</td>' +
+    '<td>' + contactsHandleCell(person) + '</td>' +
+    '<td>' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
     '<td>' + contactsEscapeHtml(person.acquiredVia || '') + '</td>' +
     '</tr>';
 
@@ -131,12 +162,38 @@ function contactsRowHtml(person) {
     buttons += '<button type="button" class="cancel-btn" data-contact-block="' + contactsEscapeHtml(person.publicKey) + '">Block</button>';
   }
 
-  // Who they are, as one reading. The row that opened is the heading, so
-  // three rows stacked down the panel made a list out of it.
+  // Who they are, and what they cost, as one reading. The row that
+  // opened is the heading, so three rows stacked down the panel made a
+  // list out of it.
+  //
+  // The order Andy asked for is: Public Handle, My Label, Unanswered
+  // inbound, Inbound rate, Outbound rate, Storage — who they are, then
+  // how much of your attention and your disk they are taking, which is
+  // the question this panel is for.
+  //
+  // THREE OF THOSE SIX ARE NOT DRAWN, and not by oversight. Unanswered
+  // inbound and the two rates have to be counted when a packet moves,
+  // by the node, into the book. They cannot be recovered afterwards from
+  // chat's archive: CHAT_LOG_CAP rings at 500, so any count taken from
+  // it stops rising exactly when a contact becomes worth flagging, and
+  // it would count only chat while claiming to speak for the node. That
+  // makes them a whoBook schema change, which is a team review and not
+  // this app's to invent (AGENT.md, CLAUDE.md). When the counters land
+  // they slot in here, in this order, and nothing else moves.
+  //
+  // Storage does not need them: it is what the node already has on disk
+  // for that key, summed over every app that keeps a per-peer file
+  // (hub.js, bytesHeldByPeer). Nothing is stored, so nothing can drift.
+  //
+  // "How" is not here — it is the second column of the table above, and
+  // a fact repeated one line under itself says nothing twice.
   var detail = '<div class="stat-tile wide">' +
     spirit.shell.factRow([
-      ['Their name', person.publicLabel || '(none)'],
-      ['How', person.acquiredVia || ''],
+      // Theirs, and it can change under you — which is why the book
+      // keeps myLabel separately rather than overwriting this.
+      ['Public Handle', person.publicLabel || '(none)'],
+      ['My Label', person.myLabel || '(none)'],
+      ['Storage', spirit.core.util.formatBytes(person.bytesHeld || 0)],
     ]) +
     // What you call them and what you decide about them, on one line: the
     // caption and its input take the width (.field-label.grow) and the
@@ -145,8 +202,15 @@ function contactsRowHtml(person) {
     //
     // myLabel: what YOU call that key. Never uploaded, and the reason the
     // book keeps their caption separately — theirs can change under you.
+    //
+    // The caption names the fact it edits — "Change My Label", the same
+    // words the bubble one line above uses — and then says whose, so
+    // that with a panel open there is no doubt which of the two names on
+    // screen the field is about. Their handle and not their caption: the
+    // caption is already myLabel resolved, so it would answer with what
+    // you are in the middle of changing.
     '<div class="start-job-form card">' +
-      '<label class="field-label grow">Your name for them' +
+      '<label class="field-label grow">' + contactsRenameCaption(person) +
         '<input type="text" id="contacts-label-input" data-contact-key="' + contactsEscapeHtml(person.publicKey) + '"' +
         ' value="' + contactsEscapeHtml(person.myLabel || '') + '" placeholder="' + contactsEscapeHtml(person.publicLabel || '') + '">' +
       '</label>' +
@@ -154,19 +218,29 @@ function contactsRowHtml(person) {
     '</div>' +
     '</div>';
 
-  return row + '<tr class="job-log-row"><td colspan="2">' + detail + '</td></tr>';
+  return row + '<tr class="job-log-row"><td colspan="4">' + detail + '</td></tr>';
 }
 
-function contactsRender() {
+// `committed` says this repaint was asked for by the field that just
+// changed, and it is the whole reason the guard below takes an argument.
+function contactsRender(committed) {
   var tbody = document.getElementById('contacts-tbody');
   if (!tbody) return;
   // Same focus guard the Apps and Groups tables use, same reason: a
-  // repaint while somebody is typing a name would take the name.
+  // repaint arriving while somebody is typing a name would take the name
+  // out of the field.
+  //
+  // But Return in that field fires `change` WITHOUT blurring it, so the
+  // field still has focus when its own save comes back — and guarded
+  // blindly, the one repaint that was actually asked for became the only
+  // one ever refused. The label saved, and the facts bubble one line
+  // above it went on showing the old one (Andy). A commit is not
+  // somebody mid-word: it redraws.
   var focusedId = document.activeElement && document.activeElement.id;
-  if (focusedId === 'contacts-label-input') return;
+  if (!committed && focusedId === 'contacts-label-input') return;
 
   if (!contactsPeople.length) {
-    tbody.innerHTML = '<tr><td colspan="2">(nobody yet — add someone by handle below)</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4">(nobody yet — add someone by handle below)</td></tr>';
     return;
   }
   tbody.innerHTML = contactsPeople.map(contactsRowHtml).join('');
@@ -180,13 +254,13 @@ function contactsPaintSelf() {
     : '';
 }
 
-function contactsRefresh() {
+function contactsRefresh(committed) {
   return fetch('/api/hub/who')
     .then(function (r) { return r.json(); })
     .then(function (data) {
       contactsPeople = (data && data.people) || [];
       contactsSelfTail = (data && data.selfTail) || '';
-      contactsRender();
+      contactsRender(committed);
       contactsPaintSelf();
     })
     .catch(function (e) { contactsStatus('could not read the book: ' + e.message); });
@@ -306,7 +380,17 @@ spirit.shell.activateApp({
       // acquiring: the candidates under Add-someone-by-handle, where
       // picking the right key IS the decision, and the footer, which is
       // your own tail for somebody else to add you by.
-      '<table class="jobs-table"><thead><tr><th>Name</th><th>How</th></tr></thead>' +
+      // The mark gets a column of its own, and that column has no
+      // heading (Andy): there is no word for it, and a mark sharing a
+      // cell with a name pushed every name in the table a glyph to the
+      // right or not, depending on the row. Its own column and the
+      // handles line up down the page whatever anyone is marked.
+      //
+      // Handle then Label, in that order, because Handle is theirs and
+      // is what somebody told you on the phone, and Label is what you
+      // decided afterwards. The bubble under an open row reads the same
+      // way for the same reason.
+      '<table class="jobs-table"><thead><tr><th></th><th>Handle</th><th>Label</th><th>How</th></tr></thead>' +
         '<tbody id="contacts-tbody"></tbody></table>' +
       // name= makes the two folds one exclusive group: opening either
       // closes the other, done by the browser with no JS and no state.
@@ -406,7 +490,9 @@ spirit.shell.activateApp({
         .then(function (r) {
           if (r.status !== 200) { contactsStatus('rename failed: ' + r.status + ' ' + r.text); return; }
           contactsStatus('');
-          contactsRefresh();
+          // Committed: redraw even though Return left the field focused,
+          // or My Label in the bubble above keeps the old answer.
+          contactsRefresh(true);
         });
     });
 

@@ -10,6 +10,7 @@ const invites = require('./invites');
 const ownerBadge = require('./ownerBadge');
 const whoBook = require('./whoBook');
 const packet = require('./packet');
+const peerFile = require('./peerFile');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -99,6 +100,55 @@ function relayRequest(relayUrl, method, pathname, bodyObj, extraHeaders) {
   });
 }
 
+// How much disk this node is carrying on one peer's behalf.
+//
+// NOT "chat's log for them". Any per-peer file, whoever wrote it.
+// peerFile.js is the single answer to "which file is this peer's" — its
+// own header says so — and every name it makes carries the `peerfile-`
+// prefix precisely so that a per-peer file is recognisable as one. So a
+// walk that looks for that prefix and asks peerFile whose it is stays
+// right the day Chess or a contact-card app keeps its own, and needs no
+// edit here. That is also why this is not in Contacts: Contacts must not
+// know where chat files things (its own comment above says the scope
+// stays shut), and a number that meant "chat only" while being labelled
+// Storage would be a lie the first time a second app wrote anything.
+//
+// Counted, never remembered. A stored counter drifts the moment a log
+// rings (CHAT_LOG_CAP trims at 500), a file is deleted by hand, or an
+// app is uninstalled — and it is the drift, not the count, that people
+// then argue with. A size is the file's own answer and cannot disagree.
+//
+// One walk answers every row: buildPeople calls this once, not per peer.
+// Names only — no file is opened, so nothing here can read a message.
+var PEER_FILE_ROOT = 'app';
+var PEER_FILE_DEPTH = 4;
+
+function bytesHeldByPeer(rootDir) {
+  var totals = Object.create(null);
+
+  function walk(dir, depth) {
+    var entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
+    catch (e) { return; }
+    entries.forEach(function (entry) {
+      var full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (depth > 0) walk(full, depth - 1);
+        return;
+      }
+      if (entry.name.slice(0, peerFile.PREFIX.length) !== peerFile.PREFIX) return;
+      var key = peerFile.keyFromFileName(entry.name);
+      if (!key) return;
+      var size = 0;
+      try { size = fs.statSync(full).size; } catch (e) { return; }
+      totals[key] = (totals[key] || 0) + size;
+    });
+  }
+
+  walk(path.join(rootDir, PEER_FILE_ROOT), PEER_FILE_DEPTH);
+  return totals;
+}
+
 // The people list behind Relay Chat's To control (CYCLE-CONTACTS-IMPL).
 //
 // CONTACTS, not the census. Everyone who ever claimed on a public
@@ -136,6 +186,8 @@ function buildPeople(rootDir, peers, relayUrl) {
   // held is waiting to be accepted and somebody blocked has to stay
   // visible to be unblocked. A row you cannot see is a decision you
   // cannot reverse.
+  var bytesHeld = bytesHeldByPeer(rootDir);
+
   var rows = whoBook.addressBook(rootDir)
     // No self row. Claiming a name is not meeting somebody, and a list
     // of people to write to that opens with yourself reads as a mistake.
@@ -144,6 +196,12 @@ function buildPeople(rootDir, peers, relayUrl) {
       var seen = census[row.publicKey];
       return {
         publicKey: row.publicKey,
+        // The end of the key, from the one rule that decides what a tail
+        // is (keyTail below) — the same field /api/hub/handle already
+        // sends with a match. An app that needs to tell two rows apart
+        // must not carve its own out of the key: a fourth copy of "six
+        // from the end" is a fourth thing to get wrong.
+        tail: keyTail(row.publicKey),
         publicLabel: (seen && (seen.publicLabel || seen.name)) || row.publicLabel || '',
         caption: whoBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
         // The raw one, beside the resolved caption: an editor has to
@@ -162,6 +220,11 @@ function buildPeople(rootDir, peers, relayUrl) {
         // it just has nowhere to be written to from here.
         onMailbox: !!seen,
         owner: !!(seen && seen.owner),
+        // Bytes this node is carrying for them, across every app that
+        // keeps a file per peer. Always a number, 0 for somebody who has
+        // cost nothing yet — an absent field would make the app decide
+        // between "none" and "not asked", which are not the same answer.
+        bytesHeld: bytesHeld[row.publicKey] || 0,
       };
     });
 

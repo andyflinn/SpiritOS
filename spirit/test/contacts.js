@@ -22,6 +22,11 @@ const APP_SCRIPT = path.join(RUN_DIR, 'app', 'contacts', 'contacts.js');
 const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
 const CAROL = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
 const DAVE = 'MCowBQYDK2VwAyEAdavedavedavedavedavedavedavedavedave=';
+// Two keys behind one handle — the case a handle alone cannot answer.
+// Same SPKI header as every other key, which is why what tells them
+// apart comes off the END.
+const JOHN_A = 'MCowBQYDK2VwAyEAjohnjohnjohnjohnjohnjohnjohnaaajoh=';
+const JOHN_B = 'MCowBQYDK2VwAyEAjohnjohnjohnjohnjohnjohnjohnbbbjoh=';
 
 function fakeElement(id) {
   let html = '';
@@ -82,7 +87,22 @@ function mountApp(options) {
     };
     let status = 200;
     if (url.indexOf('/api/hub/contact') === 0) status = opts.contactStatus || 201;
-    if (url.indexOf('/api/hub/peer') === 0) status = opts.peerStatus || 200;
+    if (url.indexOf('/api/hub/peer') === 0) {
+      status = opts.peerStatus || 200;
+      // The node keeps what it is told and the next read hands it back —
+      // whoBook.label, then buildPeople. A stub that answered the same
+      // fixture forever is how a panel that never repaints passed this
+      // suite: the POST was asserted, and nothing ever asked what the
+      // screen said afterwards.
+      const sent = JSON.parse((init && init.body) || '{}');
+      if (status === 200 && sent.action === 'label') {
+        (opts.people || []).forEach(function (p) {
+          if (p.publicKey !== sent.publicKey) return;
+          p.myLabel = sent.myLabel;
+          p.caption = sent.myLabel || p.publicLabel;
+        });
+      }
+    }
     const text = JSON.stringify(payload);
     return Promise.resolve({
       status: status,
@@ -111,7 +131,12 @@ function mountApp(options) {
 
     },
     core: {
-      util: { escapeHtml: spirit.core.util.escapeHtml },
+      util: {
+        escapeHtml: spirit.core.util.escapeHtml,
+        // The real one. A stub that rounded differently would let the
+        // panel say a size the browser never shows.
+        formatBytes: spirit.core.util.formatBytes,
+      },
       const: { ICON: spirit.core.const.ICON },
     },
   };
@@ -280,9 +305,12 @@ function listsTheBook() {
   const app = mountApp({
     selfTail: 'XD+0c=',
     people: [
-      { publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '', acquiredVia: 'handle', held: false, blocked: false },
-      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', acquiredVia: 'hold', held: true, blocked: false },
-      { publicKey: DAVE, publicLabel: 'dave', caption: 'dave', myLabel: '', acquiredVia: 'message', held: true, blocked: true },
+      // Bert is the one who has been renamed, so Handle and Label carry
+      // different words and the columns cannot pass by both showing the
+      // same thing.
+      { publicKey: BERT, publicLabel: 'bert', caption: 'Bertie', myLabel: 'Bertie', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false },
+      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'hold', held: true, blocked: false },
+      { publicKey: DAVE, publicLabel: 'dave', caption: 'dave', myLabel: '', tail: 'edave=', acquiredVia: 'message', held: true, blocked: true },
     ],
   });
 
@@ -310,12 +338,61 @@ function listsTheBook() {
     // itself.
     //
     // Waiting is the same ⌛ everywhere, because it names no app.
-    if (rows.indexOf(ICONS.NO + ' dave') !== -1 &&
-        rows.indexOf(ICONS.WAITING + ' carol') !== -1 &&
+    //
+    // In its own cell now, not glued to the front of a name: the mark
+    // column has no heading and every handle starts at the same x
+    // whether or not the row beside it is marked (Andy).
+    if (rows.indexOf('<td>' + ICONS.NO + '</td><td>dave</td>') !== -1 &&
+        rows.indexOf('<td>' + ICONS.WAITING + '</td><td>carol</td>') !== -1 &&
         rows.indexOf(ICONS.ROLODEX) === -1) {
       test.check('and refused wears the plain no here, where the rolodex would point at itself');
     } else {
       test.fail('marks: ' + rows);
+    }
+
+    // Four columns, and the first one unnamed — a mark has no word, and
+    // giving it one would only widen the column it is trying to keep
+    // narrow. Read off the source so the header and the rows cannot
+    // drift apart silently.
+    const src = fs.readFileSync(APP_SCRIPT, 'utf8');
+    if (src.indexOf('<tr><th></th><th>Handle</th><th>Label</th><th>How</th></tr>') !== -1) {
+      test.check('the header is an unnamed mark column, then Handle, Label and How');
+    } else {
+      test.fail('header: ' + (/<thead>[\s\S]*?<\/thead>/.exec(src) || [''])[0]);
+    }
+
+    // A column added is two numbers to keep in step: the header and every
+    // colspan under it. Same check jobs.js carries, same reason — a
+    // colspan one short shows only as a panel that stops before the edge
+    // of the table.
+    const headers = (src.match(/<th>/g) || []).length;
+    const spans = (src.match(/colspan="(\d+)"/g) || []).map(function (m) {
+      return Number(/\d+/.exec(m)[0]);
+    });
+    if (headers === 4 && spans.length === 2 && spans.every(function (n) { return n === headers; })) {
+      test.check('and every colspan under it spans all ' + headers);
+    } else {
+      test.fail(headers + ' headers vs colspans ' + JSON.stringify(spans));
+    }
+
+    // Their name and yours are two answers and the table shows both, in
+    // that order — theirs is what you were told, yours is what you
+    // decided afterwards. Bert has been renamed, so the two words differ
+    // and a row that printed one twice would fail here.
+    if (rows.indexOf('<td>bert</td><td>Bertie</td>') !== -1 &&
+        rows.indexOf('<td>carol</td><td></td>') !== -1) {
+      test.check('Handle carries theirs and Label carries yours, empty when you have not chosen one');
+    } else {
+      test.fail('handle/label columns: ' + rows);
+    }
+
+    // And no key endings on ordinary rows: you compared those down a
+    // telephone while adding them and it is finished (Andy). The footer
+    // still says where YOUR own ending is, which is a different job.
+    if (rows.indexOf('…') === -1 && el(app, 'contacts-self').textContent.indexOf('XD+0c=') !== -1) {
+      test.check('and no row wears a key ending, though the footer still tells you yours');
+    } else {
+      test.fail('endings in rows: ' + rows);
     }
 
     // How each key got here is the whole point of the book: `handle` is
@@ -411,9 +488,21 @@ function renamesLocally() {
       test.fail('label field: ' + open);
     }
 
+    // The caption names the fact it edits, and says whose — with a panel
+    // open there are two names on screen and the field is about one.
+    if (/field-label grow">Change My Label for bert</.test(open)) {
+      test.check('and its caption is Change My Label for their handle');
+    } else {
+      test.fail('caption: ' + open);
+    }
+
     const input = el(app, 'contacts-label-input');
     input.value = ' lovelyBert ';
     input.dataset.contactKey = BERT;
+    // Return commits WITHOUT blurring: `change` fires while the field is
+    // still the active element. That is the state the repaint has to
+    // survive, and asserting the POST alone never noticed it did not.
+    app.doc.activeElement = input;
     el(app, 'contacts-tbody').fire('change', { target: input });
     return settle().then(function () {
       const calls = posted(app, '/api/hub/peer');
@@ -421,6 +510,27 @@ function renamesLocally() {
         test.check('and renaming posts the label, trimmed, for this node only');
       } else {
         test.fail('label calls: ' + JSON.stringify(calls));
+      }
+
+      // The whole visible half of the bug (Andy): the label saved and My
+      // Label in the bubble one line above went on reading (none).
+      const after = el(app, 'contacts-tbody').innerHTML;
+      if (/My Label<\/span><span class="fact-value">lovelyBert</.test(after)) {
+        test.check('and My Label in the bubble above says so, though Return left the field focused');
+      } else {
+        test.fail('bubble after commit: ' + after);
+      }
+
+      // The guard it steps around is still there for what it was for:
+      // any repaint this field did not ask for leaves a half-typed name
+      // alone. Only the commit passes `true`.
+      const src = fs.readFileSync(APP_SCRIPT, 'utf8');
+      if (/!committed && focusedId === 'contacts-label-input'/.test(src) &&
+          (src.match(/contactsRefresh\(true\)/g) || []).length === 1) {
+        test.check('and the focus guard still stands for every repaint the field did not ask for');
+      } else {
+        test.fail('guard: ' + /!committed/.test(src) + ', forced refreshes: ' +
+          (src.match(/contactsRefresh\(true\)/g) || []).length);
       }
     });
   });
@@ -475,8 +585,8 @@ function theRowBubbleReadsAcrossNotDown() {
 
   const app = mountApp({
     people: [{
-      publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '',
-      acquiredVia: 'handle', held: false, blocked: false,
+      publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: 'Bertie',
+      acquiredVia: 'handle', held: false, blocked: false, bytesHeld: 2048,
     }],
   });
 
@@ -488,10 +598,45 @@ function theRowBubbleReadsAcrossNotDown() {
     // places, because the shape is not either app's (§4). Three of them,
     // and none of the stacked rows they replaced.
     const facts = (panel.match(/class="fact"/g) || []).length;
-    if (/class="fact-row"/.test(panel) && facts === 2 && panel.indexOf('file-info-row') === -1) {
+    if (/class="fact-row"/.test(panel) && facts === 3 && panel.indexOf('file-info-row') === -1) {
       test.check('its facts read across one line, not down the panel');
     } else {
       test.fail(facts + ' facts, file-info-row present: ' + (panel.indexOf('file-info-row') !== -1));
+    }
+
+    // The order Andy asked for, and the reading each one gives. Order is
+    // asserted by position, not by presence: three labels in a bubble
+    // say nothing about which is first, and first is what he specified.
+    const labels = (panel.match(/class="fact-label">([^<]*)</g) || [])
+      .map(function (m) { return m.slice(m.indexOf('>') + 1, -1); });
+    if (labels.join(' | ') === 'Public Handle | My Label | Storage') {
+      test.check('and they read Public Handle, My Label, Storage, in that order');
+    } else {
+      test.fail('labels: ' + labels.join(' | '));
+    }
+
+    // Their handle and your name for them are two different answers and
+    // the panel shows both — that is the whole reason the book keeps
+    // myLabel beside publicLabel rather than overwriting it. And the
+    // size is the shell's own formatting, not a raw byte count.
+    if (/Public Handle<\/span><span class="fact-value">bert</.test(panel) &&
+        /My Label<\/span><span class="fact-value">Bertie</.test(panel) &&
+        /Storage<\/span><span class="fact-value">2 KB</.test(panel)) {
+      test.check('and each carries its own value, the size formatted as the shell formats sizes');
+    } else {
+      test.fail('values: ' + panel);
+    }
+
+    // Unanswered inbound and the two rates are the other three Andy
+    // asked for. They have to be counted when a packet moves — chat's
+    // log rings at 500, so nothing honest can be recovered from it — so
+    // they are a whoBook change and a team review, not this app's to
+    // guess at. Drawing them empty would be worse than not drawing them
+    // (§1): a fact with nothing in it still claims to have been measured.
+    if (panel.indexOf('Unanswered') === -1 && panel.indexOf('rate') === -1) {
+      test.check('and the three facts that need counters the node does not keep are absent, not blank');
+    } else {
+      test.fail('placeholder facts drawn: ' + panel);
     }
 
     // Six characters of a key are what two people compare down a phone
@@ -502,11 +647,21 @@ function theRowBubbleReadsAcrossNotDown() {
     // key is still in data-contact-key, because the rename input has to
     // name whose label it is setting. "ends …" is the display form, used
     // by the row that had it and by the footer that still does.
-    if (/Their name/.test(panel) && /How/.test(panel) &&
-        panel.indexOf('Key ends') === -1 && panel.indexOf('ends …') === -1) {
+    if (panel.indexOf('Key ends') === -1 && panel.indexOf('ends …') === -1) {
       test.check('and the key ending is gone from both the row and the panel');
     } else {
       test.fail('facts: ' + panel);
+    }
+
+    // "How" stays in the table's second column — it is not redundant
+    // there, because accept promotes hold to message and the column is
+    // where you watch that happen (Andy). It is redundant one line
+    // under itself, which is why the bubble no longer repeats it.
+    if (/<td>handle<\/td>/.test(el(app, 'contacts-tbody').innerHTML) &&
+        panel.indexOf('fact-label">How<') === -1) {
+      test.check('and How is the column it always was, not a fact repeated beneath it');
+    } else {
+      test.fail('How: column/panel');
     }
 
     // The caption and its input take the width; the buttons fill the end.
@@ -619,7 +774,53 @@ function sendsNothing() {
   return Promise.resolve();
 }
 
+// The two rows where the handle column is not an answer by itself. Both
+// are the node's verdict, not this app's: `ambiguous` is set by
+// buildPeople and `tail` comes down with the row, so the table and the
+// To list can never disagree about which rows read alike.
+function theHandleColumnStillIdentifies() {
+  test.subHeading('A handle that names nobody says which key it is');
+
+  const app = mountApp({
+    people: [
+      // Two people who claimed the same word and neither renamed. The
+      // node saw the collision and said so.
+      { publicKey: JOHN_A, publicLabel: 'john', caption: 'john (aaajoh=)', myLabel: '', tail: 'aaajoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
+      { publicKey: JOHN_B, publicLabel: 'john', caption: 'john (bbbjoh=)', myLabel: '', tail: 'bbbjoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
+      // And somebody who never claimed a handle at all: the cell would
+      // otherwise be empty, which names nobody rather than everybody.
+      { publicKey: CAROL, publicLabel: '', caption: CAROL, myLabel: '', tail: 'lcaro=', acquiredVia: 'message', held: false, blocked: false },
+    ],
+  });
+
+  return settle().then(function () {
+    const rows = el(app, 'contacts-tbody').innerHTML;
+    if (rows.indexOf('<td>john …aaajoh=</td>') !== -1 &&
+        rows.indexOf('<td>john …bbbjoh=</td>') !== -1) {
+      test.check('two people behind one word are told apart by the end of the key');
+    } else {
+      test.fail('ambiguous rows: ' + rows);
+    }
+
+    if (rows.indexOf('<td>…lcaro=</td>') !== -1) {
+      test.check('and a contact who never claimed a handle is their key ending, not a blank');
+    } else {
+      test.fail('nameless row: ' + rows);
+    }
+
+    // The whole key is never in a cell — it is 44 characters and it was
+    // what the old caption fell back to. It stays in data-contact-row,
+    // because the row has to say whose panel it opens.
+    if (rows.indexOf('<td>' + CAROL) === -1 && rows.indexOf('data-contact-row="' + CAROL + '"') !== -1) {
+      test.check('and never the whole key, which is what the caption used to fall back to');
+    } else {
+      test.fail('whole key in a cell: ' + rows);
+    }
+  });
+}
+
 listsTheBook()
+  .then(theHandleColumnStillIdentifies)
   .then(decidesAboutOnePerson)
   .then(renamesLocally)
   .then(addsByHandle)

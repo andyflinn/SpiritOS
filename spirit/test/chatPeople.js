@@ -27,6 +27,7 @@ const { URL } = require('url');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
+const peerFile = require('../run/js/peerFile');
 const { createRelay } = require('../run/js/relay');
 const { createHub, buildPeople, acquireFromInbox, handleMatches, keyTail, partitionInbox, unknownPolicy, holdFromInbox } = require('../run/js/hub');
 
@@ -312,6 +313,17 @@ test.subHeading('Confirming writes handle, and nothing else changes');
   // To is still contacts only: the census that was walked to find the
   // candidates does not follow them in.
   const people = buildPeople(home, [peer('john', johnA), peer('john', johnB)], RELAY_URL);
+
+  // Every row carries its tail, not only the ambiguous ones. Contacts
+  // puts it in the Handle column when the handle cannot identify a row —
+  // two johns, or nobody who claimed a word at all — and an app that had
+  // to slice it out of the key itself would be the fourth place holding
+  // an opinion about how long a tail is.
+  if (people.length && people.every(function (p) { return p.tail === keyTail(p.publicKey); })) {
+    test.check('every row carries the key ending, cut by the one rule that decides what an ending is');
+  } else {
+    test.fail('tails: ' + JSON.stringify(people.map(function (p) { return p.tail; })));
+  }
   if (people.length === 1 && people[0].publicKey === johnA) {
     test.check('the To list gains the confirmed key and no more');
   } else {
@@ -737,6 +749,64 @@ function heldAndBlocked() {
     test.check('and accepting them is what lets the next line through');
   } else {
     test.fail('still silent after accept');
+  }
+}
+
+test.subHeading('What a contact costs in disk is counted, not remembered');
+
+{
+  const home = nodeHome(null, [RELAY_URL]);
+  const bert = auth.generateIdentity('bert').publicKey;
+  const carol = auth.generateIdentity('carol').publicKey;
+  whoBook.handshake(home, { publicKey: bert, publicLabel: 'bert', relay: RELAY_URL });
+  whoBook.handshake(home, { publicKey: carol, publicLabel: 'carol', relay: RELAY_URL });
+  whoBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
+  whoBook.acquire(home, { publicKey: carol, publicLabel: 'carol' }, 'message');
+
+  const byKey = {};
+  buildPeople(home, [], RELAY_URL).forEach(function (p) { byKey[p.publicKey] = p; });
+  if (byKey[bert] && byKey[bert].bytesHeld === 0 && byKey[carol].bytesHeld === 0) {
+    test.check('somebody who has cost nothing reads 0, not absent');
+  } else {
+    test.fail('empty: ' + JSON.stringify([byKey[bert], byKey[carol]].map(function (p) { return p && p.bytesHeld; })));
+  }
+
+  // Written where chat writes one, and named the way peerFile names one.
+  const logs = path.join(home, 'app', 'relayChat', 'logs');
+  fs.mkdirSync(logs, { recursive: true });
+  fs.writeFileSync(path.join(logs, peerFile.fileName(bert)), 'x'.repeat(300));
+
+  // And one written by an app that does not exist yet. This is the whole
+  // point of the walk: Storage means what the NODE holds for that key,
+  // so a second app keeping its own per-peer file has to land in the
+  // same number without hub.js being edited again.
+  const cards = path.join(home, 'app', 'chess', 'games');
+  fs.mkdirSync(cards, { recursive: true });
+  fs.writeFileSync(path.join(cards, peerFile.fileName(bert)), 'y'.repeat(700));
+
+  // A file in the same folder that is not a peer file at all, and a peer
+  // file belonging to somebody else. Neither may be counted here.
+  fs.writeFileSync(path.join(logs, 'index.json'), 'z'.repeat(9999));
+  fs.writeFileSync(path.join(logs, peerFile.fileName(carol)), 'c'.repeat(120));
+
+  const after = {};
+  buildPeople(home, [], RELAY_URL).forEach(function (p) { after[p.publicKey] = p; });
+  if (after[bert].bytesHeld === 1000 && after[carol].bytesHeld === 120) {
+    test.check('two apps holding files for one key sum into one number, and nobody else\'s is added');
+  } else {
+    test.fail('bytesHeld: bert ' + after[bert].bytesHeld + ', carol ' + after[carol].bytesHeld);
+  }
+
+  // Nothing is written down, so nothing can drift. Trimming a log is
+  // what CHAT_LOG_CAP does at 500, and a stored counter would keep
+  // reporting the bytes that trim just freed.
+  fs.writeFileSync(path.join(logs, peerFile.fileName(bert)), 'x'.repeat(10));
+  const trimmed = buildPeople(home, [], RELAY_URL)
+    .filter(function (p) { return p.publicKey === bert; })[0];
+  if (trimmed.bytesHeld === 710) {
+    test.check('and a log that is trimmed makes the number fall, because it was never stored');
+  } else {
+    test.fail('after trim: ' + trimmed.bytesHeld);
   }
 }
 
