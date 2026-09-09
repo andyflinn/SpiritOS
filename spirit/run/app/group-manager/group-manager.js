@@ -65,13 +65,19 @@ function renderGroupManagerRow(g) {
     spirit.shell.fileInfoRow('Members', g.memberCount === 0
       ? '(none — see the warning panel on the group itself)'
       : g.memberIds.map(groupsEscapeHtml).join(', ')) +
-    '<label class="field-label">Name<input type="text" id="group-manager-name-input" data-group-id="' + groupsEscapeHtml(g.id) + '" value="' + groupsEscapeHtml(g.name) + '"></label>' +
+    // Name and icon share a line for the same reason (§3). Delete does
+    // NOT join them: it is the row's verb rather than the field's, and a
+    // button that erases a group should not sit a thumb-width from a
+    // picker somebody is adjusting.
+    '<div class="start-job-form">' +
+    '<label class="field-label grow">Name<input type="text" id="group-manager-name-input" data-group-id="' + groupsEscapeHtml(g.id) + '" value="' + groupsEscapeHtml(g.name) + '"></label>' +
     // A slot for the icon picker, filled by fillGroupIconSelectors once
     // this markup is in the page — the row is a string and the picker is
     // an element. Same shape the Apps panel uses, including keeping the
     // id here so the delegated `change` handler and anything reading this
     // markup still see the control being offered.
     '<label class="field-label">Icon<div id="group-manager-icon-input" data-group-id="' + groupsEscapeHtml(g.id) + '" data-group-icon-slot="' + groupsEscapeHtml(g.icon) + '"></div></label>' +
+    '</div>' +
     '<button type="button" class="cancel-btn" data-delete-group="' + groupsEscapeHtml(g.id) + '">Delete group</button>' +
     '</div>';
 
@@ -168,7 +174,12 @@ spirit.shell.activateApp({
 
     container.innerHTML =
       '<div class="stat-tile wide">' +
-        '<label class="field-label">New group name<input type="text" id="group-manager-new-name" placeholder="e.g. Media Tools"></label>' +
+        // Name, icon and the one button that acts on them, on one line
+        // (§3). The name takes the width; the picker sits at its own, and
+        // Create ends the row. It wraps on a narrow screen rather than
+        // squeezing, so a phone still gets full-width targets.
+        '<div class="start-job-form">' +
+        '<label class="field-label grow">New group name<input type="text" id="group-manager-new-name" placeholder="e.g. Media Tools"></label>' +
         // A slot, filled by refreshCreateIconSelector on every render. The
         // field used to read "paste any emoji" and take anything at all,
         // then be refused afterwards if something was already showing it.
@@ -176,6 +187,9 @@ spirit.shell.activateApp({
         // list, so there is nothing left to refuse.
         '<label class="field-label">New group icon<div id="group-manager-new-icon"></div></label>' +
         '<button type="button" class="cancel-btn" id="group-manager-create">Create group</button>' +
+        '</div>' +
+        // Under the row, not in it: this is something to read when it
+        // appears, not a control on the line.
         '<div id="group-manager-create-error" class="job-start-error"></div>' +
       '</div>' +
       '<table class="jobs-table"><thead><tr><th></th><th>Name</th><th>Members</th></tr></thead><tbody id="group-manager-tbody"></tbody></table>';

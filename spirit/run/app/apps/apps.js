@@ -69,9 +69,15 @@ function renderAppManagerRow(a, groupsById, groupList) {
   var nameFieldHtml = a.intrinsic
     ? '<div class="job-manifest-note">Intrinsic shell app — part of how this node works, not something installed. Name and icon stay as shipped, and it lives in the Spirit group.</div>'
     : a.dynamic
-    ? '<label class="field-label">Custom name' +
+    // The field and its one button are one gesture, so they share a line
+    // — stacking them spends a whole row on saying so twice (§3). Reset
+    // is only there while there is something to reset, and the row wraps
+    // on a narrow screen rather than squeezing.
+    ? '<div class="start-job-form">' +
+      '<label class="field-label grow">Custom name' +
       '<input type="text" id="app-manager-name-input" data-app-id="' + appsEscapeHtml(a.id) + '" value="' + appsEscapeHtml(override.name || '') + '" placeholder="' + appsEscapeHtml(a.defaultName) + '"></label>' +
-      (override.name ? '<button type="button" class="cancel-btn" data-reset-app-name="' + appsEscapeHtml(a.id) + '">Reset to default</button>' : '')
+      (override.name ? '<button type="button" class="cancel-btn" data-reset-app-name="' + appsEscapeHtml(a.id) + '">Reset to default</button>' : '') +
+      '</div>'
     : '<div class="job-manifest-note">Built-in shell utility — name and icon stay as shipped. A shell app is its tile on a screen with no labels to read.</div>';
   // Not locked to dynamic apps the way name is — see
   // setAppOverride's comment (shell.js) for why icon doesn't carry
@@ -94,9 +100,11 @@ function renderAppManagerRow(a, groupsById, groupList) {
   // the list, so there is nothing left to refuse.
   var iconFieldHtml = (a.intrinsic || !a.dynamic)
     ? ''
-    : '<label class="field-label">Custom icon' +
+    : '<div class="start-job-form">' +
+    '<label class="field-label grow">Custom icon' +
     '<div id="app-manager-icon-input" data-app-id="' + appsEscapeHtml(a.id) + '" data-icon-slot="' + appsEscapeHtml(override.icon || a.defaultIcon || '') + '"></div></label>' +
-    (override.icon ? '<button type="button" class="cancel-btn" data-reset-app-icon="' + appsEscapeHtml(a.id) + '">Reset to default</button>' : '');
+    (override.icon ? '<button type="button" class="cancel-btn" data-reset-app-icon="' + appsEscapeHtml(a.id) + '">Reset to default</button>' : '') +
+    '</div>';
   // Locked to dynamic apps only, unlike icon — built-in apps' place
   // in the shell is curated by code (Spirit's own fixed member
   // list); groups exist to organize the open-ended, growing set of

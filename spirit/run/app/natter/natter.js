@@ -131,13 +131,20 @@ function natterMintHtml(api, badge) {
     '<div class="natter-mint-heading">' + natterIcon.STAR + ' Invite someone to this relay</div>' +
     // DICTIONARY.md, "Label (invite)": the public caption the token
     // unlocks. `saint` is the dictionary's own example, not a person.
-    '<label class="field-label">Public label<input type="text" class="natter-inv-label" placeholder="e.g. saint"></label>' +
+    // The three fields and the one button that spends them, on one line
+    // (§3). Label and token take the width; Days is a number and sits at
+    // its own. Wraps on a narrow screen rather than squeezing.
+    '<div class="start-job-form">' +
+    '<label class="field-label grow">Public label<input type="text" class="natter-inv-label" placeholder="e.g. saint"></label>' +
     '<label class="field-label">Days<input type="number" class="natter-inv-days" min="1" max="15" value="7"></label>' +
     // The token spoken on the phone. Empty means the relay picks hex;
     // typed, it is signed with the label and the days (cycle A2), so it
     // is the owner's to say and nobody else's to substitute.
-    '<label class="field-label">Token<input type="text" class="natter-inv-token" placeholder="(optional, spoken)"></label>' +
+    '<label class="field-label grow">Token<input type="text" class="natter-inv-token" placeholder="(optional, spoken)"></label>' +
     '<button type="button" class="cancel-btn natter-inv-go" data-mint-url="' + api.escapeHtml(badge.url || '') + '">Invite</button>' +
+    '</div>' +
+    // Under the row: the minted token is read off this screen onto a
+    // phone, and it is long. It is an answer, not a control.
     '<span class="natter-inv-out"></span>' +
     '</div>';
 }

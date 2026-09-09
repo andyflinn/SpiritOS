@@ -55,6 +55,24 @@ Two standing exceptions, both decided:
 - **Stats is not an accordion app.** It is a living, ticking, output-only panel and reads as one; spacing rules written for folds that come and go do not get applied to it.
 - **A settings panel keeps its `> details + details` rule while it holds one question.** `#rc-settings-panel` has a single item today and the rule matches no pair — it is not orphaned, it is waiting. A second configuration item is expected (a sound on incoming, for one), and this is the shape that makes it cost nothing. Same for the other settings panels.
 
+### A form is one wrapping row, and the button ends it
+
+**The button goes at the end of the last field, on its line — never stacked underneath.** A form and the one button that spends it are one gesture; a button floating below three stacked fields reads as belonging to the panel, while a button at the end of the last field reads as finishing the form. On a portrait screen (§10) the stacked version also costs a whole row of height to say one thing twice.
+
+The row is `.start-job-form` — 12px gaps, `align-items: flex-end` so a button lines up with the input rather than with the caption above it, and **wrapping**, which is what makes the whole thing work: fields share a line while there is room and stack themselves when there is not. Natter's mint is the reference case (Andy).
+
+**How many fields share a line is not a rule — it is a consequence.** Nothing counts inputs. Each control declares the width below which it stops being readable, and the row wraps when it cannot honour them all. `.start-job-form input` floors at 140px; `.icon-selector` floors at 260px, which is its longest line of names plus the glyph column, and its dropdown floors independently because the list is pinned to the field's edges and would otherwise inherit any squeeze.
+
+So: **a control that needs width says so itself.** That is the whole mechanism, and it is why Groups' create form can be name + icon + Create on a desktop and three stacked blocks on a phone with no app knowing anything about either.
+
+`.field-label.grow` gives one field the slack. Opt-in, because a row of several fields is usually meant to share it evenly rather than have one swallow it.
+
+Where it applies: the Apps panel's Custom name and Custom icon with their Reset, the Groups create form and row panel, Natter's mint and add-relay rows, Contacts' add-by-handle, and the contact row's "Your name for them" beside Block/Unblock.
+
+**Not for a destructive button.** Groups' Delete stays on its own line rather than riding beside the icon picker — it is the row's verb, not the field's, and a button that erases something should not sit a thumb-width from a control you are adjusting.
+
+**Not for an answer.** A minted token, a validation error — these are things to read when they appear, not controls on the line. They go under the row.
+
 ### Opening one fold closes its siblings
 
 **One panel open at a time.** This is already the house rule for every row expander — Apps, Groups, Jobs, Natter's relay rows and Contacts' own rows all say *"opening one closes any other"* — and folds now say it too. It is the same argument as the spacing above: a portrait screen has one screenful, and a fold left open behind you is chrome you are not using (§1).

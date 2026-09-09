@@ -271,6 +271,36 @@ test.subHeading('No two shipped apps paint the same picture');
   }
 }
 
+test.subHeading('The picker declares the width it needs');
+
+{
+  // A row does not count its fields — each control says the width below
+  // which it stops being readable, and .start-job-form wraps when it
+  // cannot honour them all (UI_DESIGN_STYLE.md §3). Without a floor here,
+  // flex squeezed this to the glyph and its caret: the names are the
+  // whole reason the list is worth reading, and .icon-selector-name is
+  // deliberately min-width:0 so they will shrink away if allowed.
+  const css = require('fs').readFileSync(
+    require('path').join(__dirname, '..', 'run', 'index.html'), 'utf8');
+
+  const field = /\.icon-selector\s*\{[^}]*min-width:\s*(\d+)px/.exec(css);
+  if (field && Number(field[1]) >= 200) {
+    test.check('the closed field floors at a width its names fit in — ' + field[1] + 'px');
+  } else {
+    test.fail('field min-width: ' + (field && field[1]));
+  }
+
+  // Its own, not inherited. The list is pinned to the field's edges, so
+  // it would take any squeeze the field took — and a line of names that
+  // scrolls sideways is a line nobody reads.
+  const list = /\.icon-selector-list\s*\{[^}]*min-width:\s*(\d+)px/.exec(css);
+  if (list && field && list[1] === field[1]) {
+    test.check('and the dropdown floors at the same width on its own account');
+  } else {
+    test.fail('list min-width: ' + (list && list[1]) + ' vs field ' + (field && field[1]));
+  }
+}
+
 test.subHeading('An icon is picked from the pool, never typed');
 
 {

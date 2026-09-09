@@ -582,6 +582,7 @@ test.subHeading('The Apps panel offers no control it would refuse');
   const ordinaryOffered = controls.filter(function (id) { return ordinaryRow.indexOf(id) !== -1; });
   if (ordinaryOffered.length === 3) {
     test.check('an ordinary app still gets name, icon and Location');
+
   } else {
     test.fail('ordinary row offers only: ' + ordinaryOffered.join(', '));
   }
@@ -593,6 +594,19 @@ test.subHeading('The Apps panel offers no control it would refuse');
     name: 'Jobs', defaultName: 'Jobs', icon: '⚙️', defaultIcon: '⚙️',
     group: null, dynamic: false, intrinsic: false,
   });
+  // A field with a single button under it puts the button on the field's
+  // own line (§3) — stacking them spends a whole row of height on saying
+  // one thing twice, which on a portrait screen is the difference between
+  // seeing the next block and not. Both editable fields are wrapped, and
+  // the field is the one that takes the width.
+  const wrapped = (ordinaryRow.match(/<div class="start-job-form">/g) || []).length;
+  const grows = (ordinaryRow.match(/class="field-label grow"/g) || []).length;
+  if (wrapped >= 2 && grows === 2) {
+    test.check('and each editable field is a row, with the field taking the width');
+  } else {
+    test.fail('rows ' + wrapped + ', growing fields ' + grows);
+  }
+
   const builtInOffered = controls.filter(function (id) { return builtInRow.indexOf(id) !== -1; });
   if (builtInOffered.length === 0) {
     test.check('a built-in row offers no icon control either');
@@ -1765,6 +1779,28 @@ test.subHeading('Natter adds a relay on the shared row');
     test.check('and a row gaps its controls by the same block spacing');
   } else {
     test.fail('rows off the scale: ' + off.join(', ') + ' (rhythm ' + rhythm + ')');
+  }
+
+  // What follows a row takes its space FROM the row, in the §3 direction.
+  // Removing the row's margin-bottom without this left a Delete, an error
+  // line and a minted token flush against the row above them — they sit
+  // inside a panel rather than in the pane's own stack, so nothing else
+  // was going to space them.
+  if (value('.start-job-form + *', 'margin-top') === rhythm) {
+    test.check('and whatever follows a row takes a block of space from it');
+  } else {
+    test.fail('after a row: ' + value('.start-job-form + *', 'margin-top'));
+  }
+
+  // A button beside captioned fields reserves the caption's line, so a
+  // wrapped row keeps an even rhythm instead of the button appearing to
+  // hug the field above it. Scoped with :has(), or a row of bare inputs
+  // (Jobs) would have its button pushed out of line with them.
+  const captioned = /\.start-job-form:has\(\.field-label\) > button\s*\{[^}]*margin-top:\s*(\d+)px/.exec(css);
+  if (captioned && Number(captioned[1]) > 0) {
+    test.check('and a button beside captioned fields reserves a caption of its own');
+  } else {
+    test.fail('captioned-row button: ' + (captioned && captioned[1]));
   }
 
   // And carries NO space under itself. The list below a row still gets

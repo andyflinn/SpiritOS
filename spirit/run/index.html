@@ -249,6 +249,28 @@
          it is meant to line up with. */
       .start-job-form .field-label { margin: 0; }
 
+      /* Whatever follows a row takes its space from it (§3). The row used
+         to push this down with a margin-bottom; carried that way it left
+         its gap behind on screens where the row is not drawn, which is
+         the hack #open-with:empty existed for. Turning it round left the
+         followers flush — a Delete under a Groups row, an error line
+         under Create, a minted token under Invite — because those sit
+         inside a panel rather than in the pane's own stack. */
+      .start-job-form + * { margin-top: 12px; }
+
+      /* A button in a row of CAPTIONED fields reserves the caption's
+         line, so wrapping keeps the rhythm (Andy). On one line
+         align-items:flex-end already lines the button up with the
+         inputs; the moment the row wraps and the button lands alone, its
+         line is a caption shorter than every other, and the block reads
+         as if the button were hugging the field above it.
+         20px is the 13px caption line plus the 4px .field-label gap.
+         :has() so a row of BARE inputs is untouched — Jobs' start form
+         has no captions, and a top margin there would push its button
+         out of line with its own inputs. Where :has() is not understood
+         nothing happens, which is exactly today's behaviour. */
+      .start-job-form:has(.field-label) > button { margin-top: 20px; }
+
       /* The field that should take whatever the row does not: a caption
          and its input filling the line, with the buttons pushed to the
          end. Opt-in rather than the default for every label in a row —
@@ -373,7 +395,17 @@
          type-ahead can only match a prefix of the whole option text, so
          the only typeable prefix would have been the emoji itself. The
          filter here reads every name on every line instead. */
-      .icon-selector { position: relative; }
+      /* A floor, so a row can never squeeze the words off it. Without
+         one, flex shrinks this to the glyph and its caret — the names
+         are the whole reason the list is readable, and the dropdown is
+         pinned to the field's edges, so a squashed field gives a
+         squashed list.
+         260px is `Arrowright, Forward` — the longest line in the pool —
+         plus the glyph column, the gap, the padding and the caret.
+         With it declared, .start-job-form's own wrap does the rest: a
+         row that cannot fit this at its minimum drops it onto its own
+         line, and nothing has to count how many fields are in the row. */
+      .icon-selector { position: relative; min-width: 260px; }
 
       /* Reads at the size the titlebar does — this is the row's content,
          not its fine print. */
@@ -411,7 +443,12 @@
 
       /* Over the panel, not in it: opening the list must not push the
          rest of the row down the page. */
+      /* Its own floor as well as the field's. The list is pinned to the
+         field's edges, so it would otherwise inherit any squeeze — and a
+         line of names that has to scroll sideways is a line nobody
+         reads. */
       .icon-selector-list {
+        min-width: 260px;
         position: absolute;
         z-index: 20;
         left: 0;
