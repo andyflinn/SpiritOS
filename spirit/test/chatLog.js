@@ -285,6 +285,63 @@ test.subHeading('Two peers, two files — and a reload finds them');
   }
 }
 
+test.subHeading('The header carries chat\'s own refusal, and only chat\'s');
+
+{
+  // Two blocks exist and they are not the same switch. whoBook's makes
+  // listens() false and the node stops accepting that peer at all; this
+  // one lives in chat's own file and only decides what chat shows. It
+  // rides in the header because that is the app's own store — a mere app
+  // must not be able to reach a node-global switch (Andy).
+  const carried = chatLog.parse(chatLog.serialize(BERT, [], true));
+  if (carried.blocked === true && carried.peerPublicKey === BERT) {
+    test.check('a refusal written into the header comes back out of it');
+  } else {
+    test.fail('round trip: ' + JSON.stringify(carried));
+  }
+
+  // The entries travel with it, or a block would cost you the archive.
+  const withLines = chatLog.parse(chatLog.serialize(BERT, [
+    { dir: 'received', at: '2026-09-07T10:01:00.000Z', text: 'morning' },
+  ], true));
+  if (withLines.blocked === true && withLines.entries.length === 1) {
+    test.check('and the conversation is still in the file beside it');
+  } else {
+    test.fail('with lines: ' + JSON.stringify(withLines));
+  }
+
+  // The trap: every writer must carry the flag. A save that passed only
+  // the entries would erase the block the first time the blocked peer
+  // wrote again — which is exactly what recordMessages does on every
+  // inbox read.
+  const dropped = chatLog.parse(chatLog.serialize(BERT, withLines.entries));
+  if (dropped.blocked === false) {
+    test.check('and serializing without it is a lifted block, so every writer must pass it');
+  } else {
+    test.fail('a flag appeared from nowhere: ' + JSON.stringify(dropped));
+  }
+
+  // Every log written before this field existed. It has no `blocked`,
+  // and what it meant was no.
+  const old = chatLog.parse(JSON.stringify({
+    peerPublicKey: BERT,
+    entries: [{ dir: 'sent', at: '2026-09-07T10:01:00.000Z', text: 'morning' }],
+  }));
+  if (old.blocked === false && old.entries.length === 1) {
+    test.check('an older file with no such field reads as not refused');
+  } else {
+    test.fail('old file: ' + JSON.stringify(old));
+  }
+
+  // And the shapes that are not files at all still answer, since a
+  // missing log is the ordinary case for a peer nobody has written to.
+  if (chatLog.parse(null).blocked === false && chatLog.parse('{oops').blocked === false) {
+    test.check('and a missing or broken file refuses nobody');
+  } else {
+    test.fail('empty/broken: ' + JSON.stringify([chatLog.parse(null), chatLog.parse('{oops')]));
+  }
+}
+
 test.subHeading('The binding is still a label, wherever it lives');
 
 {

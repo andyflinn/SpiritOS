@@ -12,7 +12,22 @@
 // an archive, not a mailbox dump:
 //
 //   { "peerPublicKey": "<full key>",
+//     "blocked": false,
 //     "entries": [ { "dir": "sent"|"received", "at": "...", "text": "..." } ] }
+//
+// `blocked` is CHAT's refusal of that peer, and it lives here because
+// this is chat's own file. It is not the node's block: whoBook's
+// `blocked` makes listens() false and the inbox stops accepting them at
+// all, and that switch belongs to Contacts. This one only decides what
+// this app shows — their lines keep arriving on every inbox read and
+// keep being written into this very file, so unblocking finds the whole
+// backlog rather than a conversation with a hole in it.
+//
+// The two are deliberately not one switch, and neither undoes the other:
+// you may lift what you decided, not what somebody else decided.
+//
+// An older file has no such field and parses as false, which is what it
+// was.
 //
 // The mailbox's own message id is useful in memory and is deliberately
 // not persisted: an archive of a conversation should still make sense
@@ -125,22 +140,24 @@ function chatLogMerge(existing, incoming, cap) {
 // Parsed defensively: this is a plain file on a disk, and a shell that
 // cannot open a chat because one archive went malformed is a bad trade.
 function chatLogParse(raw) {
-  if (raw == null) return { peerPublicKey: '', entries: [] };
+  if (raw == null) return { peerPublicKey: '', blocked: false, entries: [] };
   try {
     var parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return { peerPublicKey: '', entries: [] };
+    if (!parsed || typeof parsed !== 'object') return { peerPublicKey: '', blocked: false, entries: [] };
     return {
       peerPublicKey: String(parsed.peerPublicKey || ''),
+      blocked: !!parsed.blocked,
       entries: Array.isArray(parsed.entries) ? parsed.entries : [],
     };
   } catch (e) {
-    return { peerPublicKey: '', entries: [] };
+    return { peerPublicKey: '', blocked: false, entries: [] };
   }
 }
 
-function chatLogSerialize(publicKey, entries) {
+function chatLogSerialize(publicKey, entries, blocked) {
   return JSON.stringify({
     peerPublicKey: String(publicKey || ''),
+    blocked: !!blocked,
     entries: Array.isArray(entries) ? entries : [],
   }, null, 2);
 }

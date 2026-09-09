@@ -1911,11 +1911,15 @@ test.subHeading('Contacts is its own app');
   }
 
   // The move, from the other end: the chat app must not still be able to
-  // edit the book. One write is left and it is the invite's own, which
-  // this cycle keeps in chat.
+  // edit the book. Three of the four verbs stayed moved; blocking came
+  // back (Andy), because refusing somebody is what you want in the
+  // middle of a conversation with them. It goes through api.blockId, so
+  // chat still names no hub path of its own — the quoted form is what
+  // this asks about, since the file mentions the path in a comment
+  // explaining why it does not call it.
   const chat = readRun('app/relayChat/relayChat.js');
   if (chat.indexOf('rc-add-panel') === -1 && chat.indexOf('/api/hub/peer') === -1) {
-    test.check('and Relay Chat no longer adds, accepts, blocks or renames');
+    test.check('and Relay Chat still adds, accepts, renames and blocks nobody on the node');
   } else {
     test.fail('relayChat.js still carries address-book verbs');
   }

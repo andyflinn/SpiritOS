@@ -195,6 +195,26 @@ function closestStub(id) {
   return { closest: function (selector) { return selector === '#' + id ? { id: id } : null; } };
 }
 
+// The same idea for a button found by data-attribute rather than id —
+// what the browser hands a delegated handler: the element clicked,
+// answering closest() and the attribute the handler reads off it.
+// Chat's own refusal of a peer, read back out of the file it lives in.
+// Named through chatLog rather than spelled out again here — where the
+// flag sits is that module's business, and a second answer to the same
+// question is a second thing to get wrong.
+function blockedHereInStore(app, peerKey) {
+  try { return !!JSON.parse(app.store[chatLog.fileFor(peerKey)] || 'null').blocked; }
+  catch (e) { return false; }
+}
+
+function dataStub(attr, value) {
+  const node = {
+    getAttribute: function (name) { return name === attr ? value : null; },
+  };
+  node.closest = function (selector) { return selector === '[' + attr + ']' ? node : null; };
+  return node;
+}
+
 function titleOf(app) {
   return el(app, 'rc-title').textContent;
 }
@@ -319,16 +339,36 @@ function noAddressBookInChat() {
     // And the source no longer knows how: a panel nobody mounts is a
     // panel somebody mounts again.
     //
-    // One write stays, and it is not address-book UI: acquireInvited
+    // Blocking came BACK to chat (Andy), and it is the only one of the
+    // four that did: refusing somebody is what you want in the middle of
+    // a conversation with them, while adding, accepting and renaming
+    // stay Contacts' verbs. So the claim narrowed rather than held.
+    //
+    // One other write stays and is not address-book UI: acquireInvited
     // files the key that claimed a label this node minted an invite for.
-    // Invite stays in chat by this cycle's own note, and that acquire is
-    // the invite's consequence rather than a way to edit the book — it
-    // has no control, and a human is never asked.
+    // It has no control, and a human is never asked.
     const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-    if (src.indexOf('findByHandle') === -1 && src.indexOf('/api/hub/peer') === -1) {
-      test.check('and it offers no way to add, accept, block or rename anybody');
+    if (src.indexOf('findByHandle') === -1 && src.indexOf("'accept'") === -1) {
+      test.check('and it offers no way to add, accept or rename anybody');
     } else {
       test.fail('relayChat.js still carries address-book verbs');
+    }
+
+    // The refusal it DOES carry is its own, written to its own log. It
+    // asks the shell for nothing and the hub for nothing: a mere app must
+    // not be able to reach a node-global switch, and the way to be sure
+    // of that is that no such reach exists in the source. Matched on the
+    // quoted path, because the file names /api/hub/peer in a comment
+    // explaining why it does not call it — a check that greps the whole
+    // source for a bare path is one a comment can fail, or pass, for no
+    // reason anybody meant.
+    if (src.indexOf("'/api/hub/peer'") === -1 && src.indexOf('blockId') === -1 &&
+        src.indexOf('blockedHere') !== -1) {
+      test.check('and its refusal is its own file, not a call on the node');
+    } else {
+      test.fail('how chat blocks: quoted path ' + (src.indexOf("'/api/hub/peer'") !== -1) +
+        ', blockId ' + (src.indexOf('blockId') !== -1) +
+        ', blockedHere ' + (src.indexOf('blockedHere') !== -1));
     }
 
     // And now not even that one: minting moved to Natter with the rest
@@ -926,8 +966,11 @@ function newFilterSnapsBack() {
       // written down any more (there is one, and it is a place to stand
       // rather than a setting), so what has to be true is that the read
       // peer is on offer again — which is what `new` was hiding.
+      // '0.55' exactly, not merely "not 1": paintFilterButtons writes one
+      // of two values, and an unset style would satisfy `!== '1'` while
+      // asserting nothing.
       if (el(app, 'rc-to-pick').innerHTML.indexOf(BERT) !== -1 &&
-          el(app, 'rc-filter-new').style.opacity !== '1') {
+          el(app, 'rc-filter-new').style.opacity === '0.55') {
         test.check('reading the last one drops the filter and shows everyone again');
       } else {
         test.fail('after snap-back: ' + el(app, 'rc-to-pick').innerHTML +
@@ -1094,7 +1137,7 @@ function holdLine() {
 // Hold puts somebody in the list without letting them in: a × row you
 // can pick, so you can say yes, and no composer while they are open.
 function heldRowsPointAtContacts() {
-  test.subHeading('Chat shows who is waiting, and sends you where it is decided');
+  test.subHeading('Chat refuses a peer, and sends you where the rest is decided');
 
   const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
   const HELD = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
@@ -1115,15 +1158,78 @@ function heldRowsPointAtContacts() {
       test.fail('list: ' + list);
     }
 
-    // A contact is somebody to write to, and that is all this window has
-    // to say about them: no Block, no rename, no strip at all.
+    // A contact is somebody to write to, and the one decision chat has
+    // about them is the refusal — beside the To control, on its row.
+    // Accepting and renaming are still Contacts' verbs and are not here.
     el(app, 'rc-to-pick').value = BERT;
     el(app, 'rc-to-pick').fire('change');
     return settle().then(function () {
-      if (el(app, 'rc-peer-strip').innerHTML === '') {
-        test.check('and a contact gets no verbs in the chat window');
+      const contactStrip = el(app, 'rc-peer-strip').innerHTML;
+      // "here" is in the caption on purpose: this refusal is chat's own
+      // and stops no message arriving, so the word has to carry the
+      // scope or the button promises what the app cannot do.
+      if (/data-rc-block="/.test(contactStrip) && />Block here</.test(contactStrip) &&
+          contactStrip.indexOf('accept') === -1 && contactStrip.indexOf('label') === -1) {
+        test.check('and a contact gets Block here beside the To control, and nothing else');
       } else {
-        test.fail('strip for a contact: ' + el(app, 'rc-peer-strip').innerHTML);
+        test.fail('strip for a contact: ' + contactStrip);
+      }
+
+      // One press arms and says so. This control sits a thumb-width from
+      // the To picker, and a refusal nobody meant is a bad thing to
+      // reach by accident — so the first press must not be the block.
+      el(app, 'rc-peer-strip').fire('click', { target: dataStub('data-rc-block', BERT) });
+      if (/Press again/.test(el(app, 'rc-peer-strip').innerHTML) && !blockedHereInStore(app, BERT)) {
+        test.check('one press arms it and says so, and blocks nobody');
+      } else {
+        test.fail('after one press: ' + el(app, 'rc-peer-strip').innerHTML +
+          ' / file ' + app.store[chatLog.fileFor(BERT)]);
+      }
+
+      // Arming belongs to the person it was pressed on. Moving the To
+      // takes the half-pressed refusal with it, or coming back to a
+      // primed button would leave a block one press from happening to
+      // somebody who was never the subject.
+      el(app, 'rc-to-pick').value = HELD;
+      el(app, 'rc-to-pick').fire('change');
+      el(app, 'rc-to-pick').value = BERT;
+      el(app, 'rc-to-pick').fire('change');
+      if (!/Press again/.test(el(app, 'rc-peer-strip').innerHTML)) {
+        test.check('and changing who is open disarms it');
+      } else {
+        test.fail('still armed after the To moved: ' + el(app, 'rc-peer-strip').innerHTML);
+      }
+
+      // Two presses, and what it writes is chat's OWN file. No shell
+      // surface, no hub call — the app can reach nothing but its own log,
+      // which is the whole reason the flag lives there.
+      el(app, 'rc-peer-strip').fire('click', { target: dataStub('data-rc-block', BERT) });
+      el(app, 'rc-peer-strip').fire('click', { target: dataStub('data-rc-block', BERT) });
+      if (blockedHereInStore(app, BERT)) {
+        test.check('the second press writes the refusal into chat\'s own log');
+      } else {
+        test.fail('after two presses: ' + app.store[chatLog.fileFor(BERT)]);
+      }
+
+      // Nothing left the app. A node-global switch reached by a mere app
+      // is the thing this design exists to avoid, so the absence is the
+      // property — checked against a log that DID record other calls.
+      const peerPosts = app.log.filter(function (c) { return c.url.indexOf('/api/hub/peer') === 0; });
+      if (peerPosts.length === 0 && app.log.length > 0) {
+        test.check('and asks the hub for nothing — the node\'s block is not chat\'s to set');
+      } else {
+        test.fail('hub calls: ' + JSON.stringify(app.log.map(function (c) { return c.url; })));
+      }
+
+      // ❌ and no × : a refusal is the whole of why the row is not a
+      // conversation, so it replaces the waiting mark rather than
+      // stacking with it. And 📇 is absent — the node has refused nobody.
+      const marked = el(app, 'rc-to-pick').innerHTML;
+      const bertLine = marked.slice(marked.indexOf(BERT));
+      if (bertLine.indexOf('❌') !== -1 && bertLine.indexOf('📇') === -1) {
+        test.check('and the row wears ❌ for this app\'s refusal, and no rolodex');
+      } else {
+        test.fail('marks: ' + marked);
       }
 
       // Somebody held has nothing to type at — and would be a dead end
@@ -1155,6 +1261,195 @@ function heldRowsPointAtContacts() {
         }
       });
     });
+  });
+}
+
+// Two refusals exist, they are different facts, and neither undoes the
+// other: you may lift what you decided, not what somebody else decided.
+// This is the whole of what the strip and the marks are for.
+function blockedRowsUnblock() {
+  test.subHeading('Chat lifts its own refusal, and never the node\'s');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const bound = { label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' };
+  const person = { publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false };
+
+  // Refused here and nowhere else: a log file that already carries the
+  // flag, which is what a reload finds.
+  const mineStore = {
+    'session.json': JSON.stringify(bound),
+    [chatLog.fileFor(BERT)]: chatLog.serialize(BERT, [], true),
+  };
+  const mine = mountApp(mineStore, { inboxStatus: 200, people: [Object.assign({}, person, { held: false, blocked: false })] });
+
+  return settle().then(function () {
+    // Still listed, at the bottom: a row that vanished could never be
+    // unblocked, and a list you can be removed from silently is a list
+    // nobody can undo a mistake in.
+    const list = el(mine, 'rc-to-pick').innerHTML;
+    if (/optgroup label="Blocked"/.test(list) && list.indexOf(BERT) !== -1) {
+      test.check('a peer refused here is still listed, at the bottom');
+    } else {
+      test.fail('list: ' + list);
+    }
+
+    el(mine, 'rc-to-pick').value = BERT;
+    el(mine, 'rc-to-pick').fire('change');
+    return settle().then(function () {
+      const strip = el(mine, 'rc-peer-strip').innerHTML;
+      if (/data-rc-unblock="/.test(strip) && />Unblock here</.test(strip)) {
+        test.check('and offers Unblock here beside the To control');
+      } else {
+        test.fail('own-block strip: ' + strip);
+      }
+
+      el(mine, 'rc-peer-strip').fire('click', { target: dataStub('data-rc-unblock', BERT) });
+      if (!blockedHereInStore(mine, BERT)) {
+        test.check('which takes it off in one press, in chat\'s own file');
+      } else {
+        test.fail('after unblock: ' + mine.store[chatLog.fileFor(BERT)]);
+      }
+
+      // The other refusal: the node's, set in Contacts. Chat marks it and
+      // offers nothing — the rolodex on the row IS the pointer to where
+      // it is lifted, so a route would be a second way of saying it.
+      const theirsStore = { 'session.json': JSON.stringify(bound) };
+      const theirs = mountApp(theirsStore, {
+        inboxStatus: 200,
+        people: [Object.assign({}, person, { held: true, blocked: true })],
+      });
+      return settle().then(function () {
+        const theirList = theirs.doc.byId['rc-to-pick'].innerHTML;
+        const theirLine = theirList.slice(theirList.indexOf(BERT));
+        if (theirLine.indexOf('📇') !== -1 && theirLine.indexOf('❌') === -1) {
+          test.check('a peer the NODE refuses wears 📇, and not chat\'s mark');
+        } else {
+          test.fail('marks: ' + theirList);
+        }
+
+        el(theirs, 'rc-to-pick').value = BERT;
+        el(theirs, 'rc-to-pick').fire('change');
+        return settle().then(function () {
+          // No verb — chat has none to offer about a refusal that is not
+          // its own — but the way to where the verb lives, wearing the
+          // same picture the row wears.
+          const theirStrip = el(theirs, 'rc-peer-strip').innerHTML;
+          if (theirStrip.indexOf('rc-open-contacts') !== -1 && theirStrip.indexOf('📇') !== -1 &&
+              theirStrip.indexOf('data-rc-unblock') === -1 && theirStrip.indexOf('data-rc-block') === -1) {
+            test.check('and chat offers no verb about them, only the way to Contacts');
+          } else {
+            test.fail('strip for a node-blocked row: ' + theirStrip);
+          }
+
+          // And it goes there. The id is the one a waiting row's sentence
+          // uses, so a single handler answers both routes.
+          let opened = '';
+          theirs.api.launchApp = function (id) { opened = id; };
+          el(theirs, 'rc-peer-strip').fire('click', { target: closestStub('rc-open-contacts') });
+          if (opened === 'app/contacts') {
+            test.check('and pressing it opens the app that owns the refusal');
+          } else {
+            test.fail('launched: ' + opened);
+          }
+
+          if (el(theirs, 'rc-composer').style.display === 'none') {
+            test.check('and there is nothing to type at them while it stands');
+          } else {
+            test.fail('composer shown for a node-blocked row');
+          }
+
+          // Both at once. The node's mark wins the strip whatever chat
+          // decided, or pressing Unblock here would lift chat's flag and
+          // the person would stay gone — a button that appears to fail.
+          const bothStore = {
+            'session.json': JSON.stringify(bound),
+            [chatLog.fileFor(BERT)]: chatLog.serialize(BERT, [], true),
+          };
+          const both = mountApp(bothStore, {
+            inboxStatus: 200,
+            people: [Object.assign({}, person, { held: true, blocked: true })],
+          });
+          return settle().then(function () {
+            const bothList = both.doc.byId['rc-to-pick'].innerHTML;
+            const bothLine = bothList.slice(bothList.indexOf(BERT));
+            if (bothLine.indexOf('📇') !== -1 && bothLine.indexOf('❌') !== -1) {
+              test.check('a peer refused by both wears both marks');
+            } else {
+              test.fail('marks: ' + bothList);
+            }
+
+            el(both, 'rc-to-pick').value = BERT;
+            el(both, 'rc-to-pick').fire('change');
+            return settle().then(function () {
+              // The node's refusal wins the strip whatever chat decided:
+              // an Unblock here would lift chat's flag and the person
+              // would stay gone, which is a button that appears to fail.
+              const bothStrip = el(both, 'rc-peer-strip').innerHTML;
+              if (bothStrip.indexOf('rc-open-contacts') !== -1 && bothStrip.indexOf('data-rc-unblock') === -1) {
+                test.check('and still offers no verb: the node\'s refusal wins the strip');
+              } else {
+                test.fail('strip with both: ' + bothStrip);
+              }
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
+// The trap this design creates, and the reason it is a test rather than a
+// comment: recordMessages writes the log on every inbox read, and a save
+// that carried only the entries would erase the block the first time the
+// blocked peer wrote again.
+function blockSurvivesTheNextMessage() {
+  test.subHeading('A refused peer\'s mail is filed, counts for nothing, and does not lift the block');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const ME = 'MCowBQYDK2VwAyEAandyandyandyandyandyandyandyandyandya=';
+  const store = {
+    'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
+    [chatLog.fileFor(BERT)]: chatLog.serialize(BERT, [], true),
+  };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false, held: false, blocked: false }],
+    messages: [{
+      id: '31', from: 'bert', to: 'andy', fromKey: BERT, toKey: ME,
+      text: 'still here', sentAt: '2026-09-08T11:00:00.000Z',
+    }],
+  });
+
+  return settle().then(function () {
+    const filed = app.store[chatLog.fileFor(BERT)] || '';
+
+    // Filed, because a chat block stops this app showing them and never
+    // the mailbox accepting them. Unblocking has to find the backlog
+    // rather than a conversation with a silent hole in it.
+    if (/still here/.test(filed)) {
+      test.check('their line is filed while the refusal stands');
+    } else {
+      test.fail('log: ' + filed);
+    }
+
+    // And the refusal is still in the header beside it. This is the one
+    // that would otherwise ship broken.
+    if (blockedHereInStore(app, BERT)) {
+      test.check('and writing it did not erase the refusal it was written under');
+    } else {
+      test.fail('the block was lost on the next message: ' + filed);
+    }
+
+    // No dot, no count, no New button. Their lines keep arriving, but
+    // asking for attention on behalf of somebody already refused is what
+    // a mark would be.
+    const list = el(app, 'rc-to-pick').innerHTML;
+    const line = list.slice(list.indexOf(BERT));
+    if (line.indexOf('•') === -1 && el(app, 'rc-filter-new').style.display === 'none') {
+      test.check('and it lights nothing: no dot on the row, no New to press');
+    } else {
+      test.fail('marks: ' + list + ' / New ' + el(app, 'rc-filter-new').style.display);
+    }
   });
 }
 
@@ -1394,6 +1689,8 @@ reloadRestores()
   .then(enterSendsExactlyOnce)
   .then(settingsPanel)
   .then(heldRowsPointAtContacts)
+  .then(blockedRowsUnblock)
+  .then(blockSurvivesTheNextMessage)
   .then(noAddressBookInChat)
   .then(doNotDisturb)
   .then(newOpensTheList)

@@ -36,6 +36,12 @@ spirit.shell.activateApp({
     var ICON = spirit.core.const.ICON;
     var chatLog = window.spiritChatLog;
     var logs = {};       // peer public key -> entries read off disk this visit
+    // peer public key -> chat's own refusal of them, off the same file's
+    // header. Read for free: logFor already parses the whole file for
+    // every peer on mount (loadKnownLogs) and used to keep only the
+    // entries. This is NOT the node's block — that is whoBook's, it lives
+    // in Contacts, and nothing here may lift it.
+    var blockedHere = {};
     var captions = {};   // peer public key -> what this node calls them
     // The mailbox's own key. Not somebody to write to any more — the To
     // list is people, full stop — but still what an old console exchange
@@ -70,6 +76,10 @@ spirit.shell.activateApp({
     // remember. An old file still loads; the field is simply not read.
     var filter = '';     // '' is everyone, 'new' is unread only
     var missingTo = '';  // a remembered To the mailbox no longer has
+    // The peer whose Block has been pressed once. Not remembered
+    // anywhere: an armed refusal that survived a reload would be waiting
+    // for a press nobody knew they were half way through.
+    var blockArmed = '';
 
     // Chat 3 — the page reads top to bottom as a conversation: who you
     // are, what was said, and the box you say the next thing in. The
@@ -366,9 +376,31 @@ spirit.shell.activateApp({
         var raw = null;
         try { raw = api.fs.loadFile(chatLog.fileFor(peerKey)); }
         catch (e) { raw = null; }
-        logs[peerKey] = chatLog.parse(raw).entries;
+        var parsed = chatLog.parse(raw);
+        logs[peerKey] = parsed.entries;
+        blockedHere[peerKey] = parsed.blocked;
       }
       return logs[peerKey];
+    }
+
+    // Chat's own refusal of a peer. Asked through logFor so the file is
+    // read if this is the first question about them this visit — the
+    // answer is in the header and there is no second place to look.
+    function isBlockedHere(peerKey) {
+      if (!chatLog.isLoggable(peerKey)) return false;
+      logFor(peerKey);
+      return !!blockedHere[peerKey];
+    }
+
+    // One writer for the file, so the flag and the entries can never be
+    // saved apart. That is not tidiness: recordMessages writes on every
+    // inbox read, and a save that carried only the entries would erase a
+    // block the first time the blocked peer wrote again.
+    function saveLog(peerKey) {
+      return api.fs.saveFile(
+        chatLog.fileFor(peerKey),
+        chatLog.serialize(peerKey, logs[peerKey] || [], blockedHere[peerKey])
+      );
     }
 
     // Files each line under the peer it belongs to — whoever this node
@@ -427,7 +459,11 @@ spirit.shell.activateApp({
         var after = chatLog.merge(before, byPeer[peerKey]);
         if (after.length === before.length) return; // nothing new to file
         logs[peerKey] = after;
-        api.fs.saveFile(chatLog.fileFor(peerKey), chatLog.serialize(peerKey, after))
+        // Through saveLog, or this line would drop the header — see
+        // there. A blocked peer's mail is still filed on purpose: the
+        // block stops this app showing them, never the mailbox accepting
+        // them, so the record has to stay whole for when it is lifted.
+        saveLog(peerKey)
           .catch(function (e) { setStatus('could not write the log: ' + e.message); });
       });
     }
@@ -462,6 +498,14 @@ spirit.shell.activateApp({
     // to one peer would hide a line from anyone else with nothing on
     // screen to say so.
     function hasUnseen(peerKey) {
+      // Somebody refused here is not somebody with news. Their lines are
+      // still arriving and still being filed — a chat block cannot stop
+      // that — but a • on the row and a count on the New button would be
+      // this app asking for attention on behalf of a person the operator
+      // has already said no to. One answer here covers the mark, the
+      // count, the New button and the New filter, so pressing New can
+      // never land on a row with no composer.
+      if (isBlockedHere(peerKey)) return false;
       var newest = newestAt(peerKey);
       if (!newest) return false;
       var seen = view.lastSeen[peerKey] || '';
@@ -668,25 +712,46 @@ spirit.shell.activateApp({
         // them — but they carry a × and the composer goes away while they
         // are chosen, so the list never offers a send that would be
         // refused.
-        // Three marks, three facts, and never two at once: somebody
-        // blocked is refused (ICON.NO), somebody held is waiting for an
-        // answer (×), and somebody you can write to may have unread mail
-        // (•). A blocked row cannot be unread — nothing arrives from it
-        // — so the marks cannot collide.
+        // The marks say who refused this row, which is the same thing as
+        // saying whether there is anything to be done about it here
+        // (Andy). Two refusals exist and they are different facts, so
+        // they get different pictures and a row carrying both wears both:
+        //
+        //   📇 ROLODEX  the node refuses them — set in Contacts, and only
+        //               Contacts can lift it. Wherever this shows, the
+        //               strip offers nothing.
+        //   ❌ NO       this app refuses them — set here, lifted here.
+        //   📇 ❌       both, and they are undone in that order.
+        //   ×          waiting: nobody has refused them, nobody has said
+        //               yes either.
+        //   •          unread, and only on a row that is none of the above.
+        //
+        // A block mark replaces × and suppresses •: a refusal is the
+        // whole of why a row is not a conversation, and hasUnseen already
+        // answers false for one refused here.
         function optionFor(person) {
           var mark = '';
-          if (person.blocked) mark = ICON.NO + ' ';
-          else if (person.held) mark = '× ';
-          else if (hasUnseen(person.publicKey)) mark = '• ';
+          if (person.blocked) mark += ICON.ROLODEX + ' ';
+          if (isBlockedHere(person.publicKey)) mark += ICON.NO + ' ';
+          if (!mark && person.held) mark = '× ';
+          else if (!mark && hasUnseen(person.publicKey)) mark = '• ';
           var text = mark + person.caption + (person.mine ? ' — you' : '');
           return '<option value="' + api.escapeHtml(person.publicKey) + '">' + api.escapeHtml(text) + '</option>';
         }
-        var canWrite = peerRows.filter(function (person) { return !person.held; });
+        // Refused here counts as held for the list, so the row drops to
+        // the bottom group with the others you are not talking to — and
+        // stays visible, because a row that vanished could never be
+        // unblocked.
+        var canWrite = peerRows.filter(function (person) {
+          return !person.held && !isBlockedHere(person.publicKey);
+        });
         // Held and blocked together, and last of everything: the bottom
         // of a list is where you look for somebody on purpose, and these
         // are rows you open to change your mind about rather than to
         // talk to.
-        blockedHtml = peerRows.filter(function (person) { return person.held; }).map(optionFor).join('');
+        blockedHtml = peerRows.filter(function (person) {
+          return person.held || isBlockedHere(person.publicKey);
+        }).map(optionFor).join('');
         if (canWrite.length) {
           html += '<optgroup label="Peers">' + canWrite.map(optionFor).join('') + '</optgroup>';
         }
@@ -713,35 +778,106 @@ spirit.shell.activateApp({
 
       snapBackFromNew();
       paintFilterButtons();
+      // Arming belongs to the row it was pressed on: a To that has moved
+      // takes the half-pressed refusal with it.
+      if (blockArmed && blockArmed !== pick.value) blockArmed = '';
       paintPeerStrip();
       paintAddressable();
     }
 
-    // The strip under the To control: the open peer, and the one thing
-    // you can decide about them.
+    // The strip beside the To control — same row, to its right — holding
+    // whatever this app may decide about whoever is open. Which is: its
+    // own refusal, and nothing else.
     //
-    //   a contact  → Block, in two presses. A block is not a delete —
+    //   blocked in Contacts → the Contacts icon, and nothing else. The
+    //                node refuses them and chat has no authority to undo
+    //                that (Andy), so there is no verb to offer — only the
+    //                way to where the verb lives. It is the app's own
+    //                picture rather than a sentence because the row is
+    //                already wearing that picture: 📇 on the row, 📇 to
+    //                press, and the two are the same fact said once.
+    //   blocked here → Unblock here, in one press. Undoing a no is the
+    //                safe direction; making it as hard as the no would
+    //                punish whoever changed their mind.
+    //   waiting    → the way to Contacts. Accepting is that app's verb
+    //                (packet 2) and stays there. This row keeps a route
+    //                where the 📇 row gets none, because × names no app:
+    //                somebody has to be told where the yes is said.
+    //   a contact  → Block here, in two presses. A block is not a delete:
     //                the row stays, marked, because a list you can be
     //                removed from silently is a list nobody can undo a
-    //                mistake in.
-    //   held       → Accept: they wrote, and you say yes.
-    //   blocked    → Unblock, which is the same yes said later.
+    //                mistake in. Two presses because this control sits a
+    //                thumb-width from the To picker, and a refusal
+    //                nobody meant is a bad thing to reach by accident.
+    //
+    // "here" is in every caption on purpose. This refusal is chat's, it
+    // lives in chat's own log file, and it does not stop a single message
+    // arriving — the words have to carry that or the button promises
+    // something the app cannot do.
     function paintPeerStrip() {
       var strip = document.getElementById('rc-peer-strip');
       if (!strip) return;
       var key = pickedPeerKey();
       var person = people.filter(function (p) { return p.publicKey === key; })[0];
-      if (!key || !person || !person.held) {
+      if (!key || !person) {
         strip.innerHTML = '';
         return;
       }
-      // Somebody waiting or refused is not somebody to write to, and the
-      // decision about them is not chat's to take (packet 2): accepting,
-      // blocking and renaming all live in Contacts now. What is left here
-      // is the way there, because a row you cannot act on and cannot
-      // leave is a dead end.
-      strip.innerHTML = '<button type="button" class="cancel-btn" id="rc-open-contacts">' +
-        (person.blocked ? 'Blocked — open Contacts' : 'Not added — open Contacts') + '</button>';
+      if (person.blocked) {
+        // The same id the sentence below uses, so one handler answers
+        // both routes — the strip only ever holds one of them.
+        //
+        // ICON.ROLODEX rather than a lookup through listApps: it is the
+        // same constant the mark on the row uses, so the picture you
+        // press cannot drift from the picture you saw. Safe because
+        // Contacts is intrinsic and its icon is locked as shipped
+        // (intrinsic-app-icon-locked, setAppOverride).
+        strip.innerHTML = '<button type="button" class="cancel-btn" id="rc-open-contacts" ' +
+          'title="Open Contacts">' + ICON.ROLODEX + '</button>';
+        return;
+      }
+      if (isBlockedHere(key)) {
+        strip.innerHTML = '<button type="button" class="cancel-btn" data-rc-unblock="' +
+          api.escapeHtml(key) + '">Unblock here</button>';
+        return;
+      }
+      if (person.held) {
+        // Waiting, not refused. There is nothing to unblock and the yes
+        // is not chat's to say, so this is the way to where it is said —
+        // a row you cannot act on and cannot leave is a dead end.
+        strip.innerHTML = '<button type="button" class="cancel-btn" id="rc-open-contacts">' +
+          'Not added — open Contacts</button>';
+        return;
+      }
+      // Armed means the first press has happened and the button is now
+      // asking. It is keyed to the peer, so arming one and then picking
+      // somebody else disarms rather than following the selection —
+      // "press again" has to mean the person it was pressed about.
+      var armed = blockArmed === key;
+      strip.innerHTML = '<button type="button" class="cancel-btn" data-rc-block="' +
+        api.escapeHtml(key) + '">' + (armed ? 'Press again to block' : 'Block here') + '</button>';
+    }
+
+    // One refusal, or one taking-back of it. A write to this app's own
+    // file and nothing else: no shell surface, no hub call, no capability
+    // the rest of the page could borrow. That is the whole point of
+    // keeping it in the header — a mere app must not be able to reach a
+    // node-global switch (Andy), and chat cannot, because the only thing
+    // it holds is its own log.
+    //
+    // logFor first, so a peer never written to before has a file to hold
+    // the flag; the entries are empty and that is a true record.
+    function setBlockedHere(key, blocked) {
+      if (!chatLog.isLoggable(key)) return;
+      logFor(key);
+      blockedHere[key] = !!blocked;
+      saveLog(key)
+        .then(function () { setStatus(''); })
+        .catch(function (e) { setStatus('could not write the log: ' + e.message); });
+      // Painted from what is now true rather than after the write lands:
+      // the flag is already in memory, and a list that waited on the disk
+      // would lag a press behind.
+      paintToList();
     }
 
     // A thread and a composer are for saying something to somebody. With
@@ -921,8 +1057,28 @@ spirit.shell.activateApp({
     // delegated and holds no reference to the button.
     document.getElementById('rc-peer-strip').addEventListener('click', function (event) {
       if (!event.target || !event.target.closest) return;
-      if (!event.target.closest('#rc-open-contacts')) return;
-      api.launchApp('app/contacts');
+
+      if (event.target.closest('#rc-open-contacts')) {
+        api.launchApp('app/contacts');
+        return;
+      }
+
+      var blockBtn = event.target.closest('[data-rc-block]');
+      if (blockBtn) {
+        var blockKey = blockBtn.getAttribute('data-rc-block');
+        // First press arms and says so; second press is the refusal.
+        if (blockArmed !== blockKey) {
+          blockArmed = blockKey;
+          paintPeerStrip();
+          return;
+        }
+        blockArmed = '';
+        setBlockedHere(blockKey, true);
+        return;
+      }
+
+      var unblockBtn = event.target.closest('[data-rc-unblock]');
+      if (unblockBtn) setBlockedHere(unblockBtn.getAttribute('data-rc-unblock'), false);
     });
 
     // The one filter left, and neither it nor the search is written
