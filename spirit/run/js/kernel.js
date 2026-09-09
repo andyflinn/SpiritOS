@@ -948,6 +948,11 @@ const ICON = spirit.core.const.ICON = {
     ANIMAL: '🐾',
     PERSON: '👤',
     GROUP: '👥',
+    // A card index: the address book, and distinct from GROUP, which is
+    // the app that manages app groups. Two apps may not resolve to the
+    // same glyph — see the check in spirit/test/natterIntrinsic.js.
+    // Emoji 1.0 (2010), so it renders everywhere without a fallback.
+    ROLODEX: '📇',
     MUSIC: '🎵',
     VIDEO: '🎬',
     DOCUMENT: '📄',
