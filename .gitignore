@@ -81,6 +81,24 @@ view.json
 # `git ls-files`.
 prefs.json
 
+# Scratch a person made while trying the Text Editor out. Not product
+# code and not this node's state either — just a file somebody typed in
+# to see whether saving worked. Unanchored, like the names above,
+# because the next one will be made wherever the editor was pointed.
+notes.txt
+
+# The labels this node has minted invites for (natterRememberMinted).
+# Same class as session.json, view.json and prefs.json above: this node's
+# own state, meaningless in another clone. It also names people — a label
+# is what somebody will be called on a mailbox once they claim — and it
+# must not reach the lab, since setupRelayFakes.js builds fake nodes from
+# `git ls-files`.
+#
+# The token is deliberately NOT in it: that is the secret, spoken down a
+# phone and never written here. This is the half that lets an owner
+# recognise the key when it turns up on their census.
+minted.json
+
 # Anything js/peerFile.js names: one file per peer, wherever an app
 # keeps them. Chat logs are the first (app/relayChat/logs/, also caught
 # by the bare `logs` rule above); whoBook sidecars and whatever comes
