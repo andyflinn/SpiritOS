@@ -22,6 +22,8 @@ Where it already applies:
 
 State changes bring the chrome back on its own. Nothing is lost, only unasked.
 
+**And nothing holds space for something that is not there.** `min-height: 1em` on an error line reserves a row for a message nobody has written, so the layout will not jump when one arrives — which is this rule broken in CSS, and it was half of 48px of nothing under the Jobs form. Use `:empty { display: none }` instead (`#rc-peer-strip`, `.job-start-error`): the block collapses, its margins go with it, and the panel grows at the moment an error appears, which is the moment you want the eye pulled anyway.
+
 ## 2. Two sizes, and fine print lives at the bottom
 
 **Reading size is the titlebar size** (`#app-title`, 16px). Anything that earns a place in the flow is set at it — the file info rows in both launchers, the Apps detail rows, the Groups panel, all through `.file-info-row`.
@@ -34,13 +36,37 @@ Match the size, **never the weight**: `#app-title` keeps its 600, or the block b
 
 **12px** is the spacing scale. It separates sibling blocks down a page (`.code-view`, `.media-view`, `#open-with`, the two folded panels in Relay Chat) *and* the controls across a row (`.start-job-form`, `#rc-claim-fields`). Two gaps that are nearly the same read as a mistake rather than a distinction — this used to be 8px on rows and 12px everywhere else.
 
-A row of controls is `.start-job-form`: gapped, wrapping, `align-items: flex-end` so a caption-over-input pair lines its input up with the button beside it, and a block of space beneath it before whatever it feeds. A form does not lay itself out; if a screen needs a row, it uses that class (Natter's Add line, the Jobs start form, the Relay Chat composer and To bar, the AI chat form).
+A row of controls is `.start-job-form`: gapped, wrapping, `align-items: flex-end` so a caption-over-input pair lines its input up with the button beside it. A form does not lay itself out; if a screen needs a row, it uses that class (Natter's Add line, the Jobs start form, the Relay Chat composer and To bar, the AI chat form).
 
-**Space belongs to the block that follows it.** A block carries the gap *above* itself, never below — then a block that is not on the page contributes nothing, and there is no trailing margin left hanging where it used to be. That is what makes the spacing automatic in a stack that grows and shrinks: `.stat-tile + .stat-tile` and its siblings space every pair, and neither block has to know what comes next.
+**Space belongs to the block that follows it.** A block carries the gap *above* itself, never below — then a block that is not on the page contributes nothing, and there is no trailing margin left hanging where it used to be.
+
+Said once, for every kind of block:
+
+```css
+#app-content > .app-pane > * + *,
+.job-log-row > td > * { margin-top: 12px; }
+```
+
+This was seven selectors naming which *kinds* of block space themselves from which — panel after panel, table after panel, fold after table. That list is quadratic in block types and its omissions are silent: two blocks simply sit flush and the page reads a little cramped. `> * + *` names no types, so a new sort of block is spaced the day it is added, by nobody. Put it on containers that hold **blocks** — never on a panel's contents, where a `.file-info-row` sits 4px under the row above it and is not a block. Stats needs no exception: it renders one child, so this never matches there.
+
+**`.app-pane` is the wrapper the rule reaches through.** Every app is mounted into its own div under `#app-content` (`switchTo`, shell.js), and while that div was anonymous the rule landed on *it* — one 12px above the whole app and none between its blocks. The pane itself takes no margin: it is not a block, it is the box the blocks are in.
 
 It also retires two hacks that existed only because space was carried downward: `#open-with:empty`, which had to cancel a margin on a block that renders as nothing, and the 12px that sat on the panel *above* Relay Chat's invite slot because the slot is empty for a node that owns no mailbox. The same idea applies across a row: a control takes the gap to its left, so a control that is not drawn takes no space with it.
 
 A block that can still be empty **collapses to nothing** (`#rc-peer-strip:empty { display: none }`), which is the row version of the same rule.
+
+### Who supplies the first gap is the container
+
+The rule above spaces every block *after* the first. What sits above the first one is the box it is in, and **the answer depends on the box** — which is the single thing this file failed to say, and it was rediscovered three times in one sitting:
+
+| box | above the first block | so |
+|---|---|---|
+| `#app-content` | 16px of padding | that padding **is** the gap. A margin as well is 28px where 16 was meant. |
+| a `.stat-tile` panel | 12px of padding | same. A form that opens its panel takes none: `.start-job-form:first-child { margin-top: 0 }` |
+| `.job-log-row > td` | 6px of cell padding | not a gap. There the first block **does** bring its own — hence `> *`, not `> * + *`. |
+| a `<details>` | its `<summary>` | the summary is the first child and belongs against the top edge, so the rhythm starts at the body: `> * + *`. |
+
+Written as one sentence: **a container with real padding has already left the room; one without it has not.** Guessing wrong is invisible in code review and obvious on screen, which is why it cost three passes.
 
 ### The two halves, stated so they can be checked
 
@@ -73,6 +99,16 @@ Where it applies: the Apps panel's Custom name and Custom icon with their Reset,
 
 **Not for an answer.** A minted token, a validation error — these are things to read when they appear, not controls on the line. They go under the row.
 
+### A reading is a card, and so is a form beside it
+
+A handful of short facts read as **one thing**, not as a list of rows, wherever a row has already supplied the heading — a mailbox report in Natter, a contact's row, an app's defaults. `spirit.shell.factRow([[label, value], …])` builds it; it lives in the shell because it had been copied into three apps and the fourth was about to be.
+
+It sits in a bubble of its own, on the same card-inside-a-card ground `.stat-tile.nested` uses, so a reading is visibly not the controls beside it. **Caption above value, caption the small bold half, both centred on each other** — you scan the captions to find the one you want, then read the value at reading size.
+
+That is deliberately **the opposite way round from `.stat-tile`**, where a 22px figure sits over a 12px caption. There the number is what is being read and the caption only names it. Here the caption is how you find your way and the value is the answer. Two inversions of the same two elements, and the difference is which half you came looking for.
+
+**A form is a card too — but only where it shares the panel with something else.** `.start-job-form.card`, asked for rather than automatic. "Any form inside a panel" cannot tell a panel that *holds* a form alongside a reading from a panel that *is* the form, and the second is two boxes around one object (Jobs, the Groups create form, Contacts' add-by-handle were all that). Marked in the markup because a `card` class is greppable and a descendant selector is not.
+
 ### Opening one fold closes its siblings
 
 **One panel open at a time.** This is already the house rule for every row expander — Apps, Groups, Jobs, Natter's relay rows and Contacts' own rows all say *"opening one closes any other"* — and folds now say it too. It is the same argument as the spacing above: a portrait screen has one screenful, and a fold left open behind you is chrome you are not using (§1).
@@ -99,6 +135,13 @@ Two things this rule does not do:
 ## 4. One row type, one voice
 
 The same kind of information looks the same wherever it appears. `.file-info-row` is label-plus-value on one line, and it serves the launchers, Apps and Groups alike; changing it changes all three on purpose.
+
+**Style by what a thing IS, never by a list of the ids that happen to be it.** An id list is correct on the day it is written and silently wrong afterwards, because panels move between apps and nothing tells the stylesheet. Both times this bit, the symptom was a screen quietly missing something rather than an error:
+
+- `#rc-invite-panel > summary, #rc-add-panel > summary, …` — three of the four had left Relay Chat (invite to Natter, the other two to Contacts), so **Contacts' folds had no pointer cursor at all**: a fold that did not look clickable. It is `details.stat-tile > summary` now.
+- `#rc-unknown-choices { margin-top: 12px }` stayed behind when its panel moved, pointing at an element that no longer existed, while the panel's new home had no leading space.
+
+The same argument retires a *name* that belongs to one app: `.natter-facts` became `.fact-row` when Contacts and Apps wanted it. The shape was never Natter's, so neither was the name.
 
 Before adding a class, check whether one of these already says it:
 
@@ -129,6 +172,15 @@ A key is 48 characters and all Ed25519 keys share the prefix `MCowBQYDK2VwAyEA` 
 
 CSS regressions are invisible until somebody looks. Where a rule is a *relationship* — an info row is the size of the titlebar; Open with sits the same distance below the bubble as the preview does below it — assert that, not the pixel value. Changing both deliberately then stays green; changing one does not. See `spirit/test/natterIntrinsic.js`.
 
+**A source check must not be able to match its own comment.** Four of these in one sitting: a fold count that found the sentence in `files.js` explaining why a rebuilt `<details>` comes back closed; a "chat never calls `/api/hub/peer`" check that found the comment saying it does not; a "Last log is gone" check that found the comment naming the column it removed. Every one is a check that can fail — or pass — for a reason nobody meant.
+
+The fix is to match where the thing is **built**, not where it is discussed: a quoted opening (`/['"]<details/`), a quoted path (`"'/api/hub/peer'"`), a header cell (`<th>Last log</th>`) rather than the prose. And prove it: a check nobody has watched fail is a check nobody knows the meaning of. Every claim in this file that could be asserted was, and several were confirmed by breaking the thing on purpose and watching the message.
+
+Two harness facts worth keeping, both found by writing such a check:
+
+- A manifest-declared app **never reaches `switchTo`** in node — `launchApp` injects a `<script>` and returns — so a test that needs a mounted app registers a static one.
+- A regex written into a test through a shell heredoc can have its escapes eaten (`\n` becoming a real newline inside the pattern). Where the markup is built by concatenation across many lines, `indexOf` ordering says the same thing and cannot be mangled.
+
 ## 8. Reach for what the server already answered
 
 The shell does not invent restrictions the server does not impose (`AGENT.md`, and the memory of the Open-with folder rule that refused a perfectly readable file). If chrome needs a verdict — is this writable? — publish the verdict from the enforcing function rather than mirroring its constants in the browser.
@@ -158,7 +210,8 @@ Not finished, but it is the target, and it decides the numbers above. What alrea
 
 - **Is 13px still a size?** It is the de-facto body size (`.stat-tile .rows`, `.jobs-table`, `.code-view`, `.process-entry`, `.annotation-raw summary`) but §2 says reading size is 16. Either 13 is a third tier with a job, or those are all waiting to grow.
 - **`.job-manifest-note`** is fine print at 12px sitting *mid-page* in the text launcher, which §2 forbids. It moves to the foot or it stops being a note.
-- **Files' own detail panel** shows Name/Path/MIME through `.label`/`.rows` at 12 and 13px — the same information as `.file-info-row`, in a different shape. Deliberately left out of the last change; unresolved.
-- **22px figures** (`.stat-tile .value`) are a third size that probably earns its place — a number read as a figure is not prose. Worth stating as a rule or removing.
-- **Wide content on a narrow screen.** `.jobs-table` and `.job-last-log` (fixed 300px) will overflow a portrait phone rather than scrolling inside their own container, and the thread, the Files tree and the code view have not been looked at on one at all. §10 is a target, not a claim.
+- **Files' own detail panel** shows Name/Path/MIME through `.label`/`.rows` at 12 and 13px — the same information as `.file-info-row`, in a different shape, and now also unlike the `.fact-row` every other panel reads with. Andy: Files waits until more useless information is culled from its interface (§1), because there is no point laying out what should not be there.
+- **22px figures** (`.stat-tile .value`) are a third size that probably earns its place — a number read as a figure is not prose. It now has a sibling to be distinguished from: `.fact-value` is 16px with its caption *above* it, `.stat-tile .value` is 22px with its caption *below*. Both are defensible and the difference is which half you came looking for, but neither is written as a rule.
+- **Wide content on a narrow screen.** `.jobs-table` will overflow a portrait phone rather than scrolling inside its own container, and the thread, the Files tree and the code view have not been looked at on one at all. §10 is a target, not a claim. Culling columns helps and is not the fix: Apps went five to three and Jobs six to five, both with nothing lost, and both tables are still fixed-width.
+- **What else is a column nobody can act on?** Apps shed Id and Source, Jobs shed Last log — each was on screen twice or unreadable where it stood. Processes and Stats have not been asked the same question.
 - **`<details>` markers**: Invite and Add someone by handle now both show the default triangle, after the invite line stopped being shrunk. Whether folded panels show a marker at all is unstated.
