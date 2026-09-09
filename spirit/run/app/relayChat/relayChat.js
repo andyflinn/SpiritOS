@@ -37,11 +37,12 @@ spirit.shell.activateApp({
     var chatLog = window.spiritChatLog;
     var logs = {};       // peer public key -> entries read off disk this visit
     var captions = {};   // peer public key -> what this node calls them
-    var mailboxKey = ''; // the mailbox's own key, so `relay` is filed like any peer
+    // The mailbox's own key. Not somebody to write to any more — the To
+    // list is people, full stop — but still what an old console exchange
+    // on disk is filed under, so chatLog keeps being handed it rather
+    // than filing yesterday's lines under nothing.
+    var mailboxKey = '';
     var people = [];     // the mailbox's peers, captioned by this node
-    var relayRow = null;   // the ONE mailbox this node speaks to: { url, label, owned }
-    var otherRelays = [];  // Natter rows the hub does not speak to, shown inert
-    var reservedName = 'relay'; // what the wire calls the mailbox when addressing it
     var search = '';     // a gesture, never remembered
 
     // Chat 6: what was on screen last time. Deliberately not
@@ -57,12 +58,17 @@ spirit.shell.activateApp({
     var unknownWaiting = 0; // what Hold has to say, and only while it is > 0
 
     var RC_VIEW_FILE = 'view.json';
-    var view = { toKey: '', filter: 'peers', lastSeen: {} };
-    // `new` is a place to stand, not a place to be left. It is never
-    // written to view.json — a reload into a filter that has emptied is
-    // a list with no way out — and when the last unread clears, the
-    // filter snaps back to whichever real one was showing before.
-    var filterBeforeNew = '';
+    var view = { toKey: '', lastSeen: {} };
+    // The only filter left, and it is never written down. `new` is a
+    // place to stand, not a place to be left — a reload into a filter
+    // that has since emptied is a list with no way out — so it lives
+    // here and clears when the last unread does.
+    //
+    // view.json used to carry a `filter` too, back when the list held
+    // two kinds of thing and Peers / Relays / All chose between them.
+    // The list is people now, so there is nothing left for it to
+    // remember. An old file still loads; the field is simply not read.
+    var filter = '';     // '' is everyone, 'new' is unread only
     var missingTo = '';  // a remembered To the mailbox no longer has
 
     // Chat 3 — the page reads top to bottom as a conversation: who you
@@ -77,22 +83,18 @@ spirit.shell.activateApp({
       // is shown. What is left here is the status line chat writes to.
       '<span id="rc-status"></span>' +
       // Who you are talking to, chosen before what you say. A To value
-      // is always a KEY — a peer's, or the mailbox's own — never a
-      // caption: two johns are two peers and one word, and `relay` names
-      // whichever mailbox the hub happens to be pointed at.
+      // is always a KEY, never a caption: two johns are two peers and
+      // one word.
       //
-      // The filter and the search do the same job from two directions:
-      // the filter is what kind of row you want, the search is which one
-      // you mean. Only the filter is remembered — a search is a gesture,
-      // and reopening the app into a filtered list nobody asked for is
-      // worse than typing three letters again.
+      // Peers / Relays / All used to stand here. They existed to tell
+      // two kinds of row apart, and there is only one kind now — a
+      // mailbox is not somebody you talk to (see paintToList). What is
+      // left is New, and the search, which were never about that.
       '<div class="start-job-form" id="rc-to-bar">' +
-        '<button type="button" class="cancel-btn" data-filter="peers" id="rc-filter-peers">Peers</button>' +
-        '<button type="button" class="cancel-btn" data-filter="relays" id="rc-filter-relays">Relays</button>' +
-        '<button type="button" class="cancel-btn" data-filter="all" id="rc-filter-all">All</button>' +
         // Only on the page while it means something, which is the whole
         // of its design: the count stops being a notice you have to act
-        // on somewhere else and becomes the thing you press.
+        // on somewhere else and becomes the thing you press. It toggles,
+        // because it is now the only way in and so must be the way out.
         '<button type="button" class="cancel-btn" data-filter="new" id="rc-filter-new" style="display:none">New</button>' +
         '<input type="text" id="rc-search" placeholder="find someone">' +
       '</div>' +
@@ -263,7 +265,6 @@ spirit.shell.activateApp({
       if (!parsed || typeof parsed !== 'object') return;
       view = {
         toKey: String(parsed.toKey || ''),
-        filter: ['peers', 'relays', 'all'].indexOf(parsed.filter) === -1 ? 'peers' : parsed.filter,
         lastSeen: (parsed.lastSeen && typeof parsed.lastSeen === 'object') ? parsed.lastSeen : {},
       };
     }
@@ -300,9 +301,11 @@ spirit.shell.activateApp({
         .catch(function (e) { setStatus('could not remember the setting: ' + e.message); });
     }
 
-    // Restore the To first, then widen the filter until that row can be
-    // seen. A remembered conversation that is filtered out of its own
-    // list is a conversation the app lost on your behalf.
+    // A remembered conversation, if the list still has it. It used to
+    // have to widen the filter to get there — a To could be filtered out
+    // of its own list by the kind of row it was. With one kind of row
+    // left, only `new` can hide it, and paintToList keeps the chosen row
+    // whatever is filtered.
     function selectRestoredTo() {
       if (!view.toKey) return;
 
@@ -315,9 +318,6 @@ spirit.shell.activateApp({
         return;
       }
 
-      var isRelay = !!mailboxKey && view.toKey === mailboxKey;
-      if (isRelay && view.filter === 'peers') view.filter = 'relays';
-      if (!isRelay && view.filter === 'relays') view.filter = 'peers';
       paintToList();
       document.getElementById('rc-to-pick').value = view.toKey;
       renderThread();
@@ -340,7 +340,6 @@ spirit.shell.activateApp({
         return;
       }
       refreshInbox();
-      refreshBadges();
       // The people list is what the remembered To is looked up in, so
       // the selection is restored once it has arrived.
       refreshPeople().then(selectRestoredTo);
@@ -575,7 +574,6 @@ spirit.shell.activateApp({
     // whatever the mailbox still holds for us.
     function loadKnownLogs(people) {
       (people || []).forEach(function (person) { logFor(person.publicKey); });
-      if (mailboxKey) logFor(mailboxKey);
       renderThread();
     }
 
@@ -593,13 +591,11 @@ spirit.shell.activateApp({
         .then(function (r) { return r.json(); })
         .then(function (data) {
           people = (data && data.people) || [];
-          reservedName = (data && data.reservedName) || 'relay';
           mailboxKey = (data && data.mailboxPublicKey) || '';
           paintMyTail(data && data.selfTail);
 
           captions = {};
           people.forEach(function (person) { captions[person.publicKey] = person.caption; });
-          if (mailboxKey) captions[mailboxKey] = relayCaption(data && data.relay);
 
           loadKnownLogs(people);
           paintToList();
@@ -614,23 +610,25 @@ spirit.shell.activateApp({
     // to rest on.
     function isKnownKey(key) {
       if (!key) return false;
-      if (mailboxKey && key === mailboxKey) return true;
       return people.some(function (person) { return person.publicKey === key; });
     }
 
-    function relayCaption(url) {
-      var label = (relayRow && relayRow.label) || url || 'this mailbox';
-      return label + ' (this mailbox)';
-    }
-
-    // The To list: peers in one group, the mailbox in the other, and a
-    // key for a value in both.
+    // The To list: people, and a key for a value.
     //
-    // Exactly ONE relay is selectable — the first Natter row, which is
-    // the only mailbox the hub speaks to (loadRelayUrl, hub.js). Another
-    // Natter row would look selected and still send here, so it is shown
-    // inert with the reason rather than offered: a control whose only
-    // interesting value is refused is worse than no control.
+    // Relays used to be in here too. Chatting to a mailbox reaches the
+    // console (relayConsole.js), and for a mailbox you do not own the
+    // whole of what it will answer is `help` and `whoami` — one
+    // diagnostic word, for a row offered to everybody whether they own
+    // the thing or not. What it cost to carry was three filter buttons,
+    // a rule that flipped the filter when the KIND of your selection
+    // changed, and inert rows captioned to explain why they could not be
+    // picked. A list that has to apologise for its own contents.
+    //
+    // The console is untouched on the wire; it is simply not something
+    // this app offers. Where it is genuinely useful — an owned mailbox,
+    // answering status / peers / invites — its home is the row in Natter
+    // that already reports on that mailbox, the same way the mint moved
+    // into the row it mints on and stopped needing a picker.
     function paintToList() {
       var pick = document.getElementById('rc-to-pick');
       var chosen = pick.value;
@@ -656,11 +654,11 @@ spirit.shell.activateApp({
       // hidden is said underneath instead (hiddenUnread, below): a
       // control that does what it says beats a control that quietly
       // knows better.
-      var peerRows = (view.filter === 'relays') ? [] : people.filter(function (person) {
+      var peerRows = people.filter(function (person) {
         // A row already chosen stays in the list whatever is typed:
         // filtering must never silently change who you are writing to.
         if (person.publicKey === chosen) return true;
-        if (view.filter === 'new' && !hasUnseen(person.publicKey)) return false;
+        if (filter === 'new' && !hasUnseen(person.publicKey)) return false;
         return matches(person.caption);
       });
 
@@ -684,41 +682,14 @@ spirit.shell.activateApp({
           return '<option value="' + api.escapeHtml(person.publicKey) + '">' + api.escapeHtml(text) + '</option>';
         }
         var canWrite = peerRows.filter(function (person) { return !person.held; });
-        // Held and blocked together, and last of everything (below,
-        // after the relays): the bottom of a list is where you look for
-        // somebody on purpose, and these are rows you open to change
-        // your mind about rather than to talk to.
+        // Held and blocked together, and last of everything: the bottom
+        // of a list is where you look for somebody on purpose, and these
+        // are rows you open to change your mind about rather than to
+        // talk to.
         blockedHtml = peerRows.filter(function (person) { return person.held; }).map(optionFor).join('');
         if (canWrite.length) {
           html += '<optgroup label="Peers">' + canWrite.map(optionFor).join('') + '</optgroup>';
         }
-      }
-
-      {
-        var relayHtml = '';
-        // The mailbox is a conversation like any other, so it answers to
-        // `new` on the same terms as a peer.
-        var relayWanted = mailboxKey && relayRow && view.filter !== 'peers' &&
-          (mailboxKey === chosen ||
-            ((view.filter !== 'new' || hasUnseen(mailboxKey)) &&
-              (matches(relayRow.label) || matches(relayRow.url))));
-        if (relayWanted) {
-          var relayMark = hasUnseen(mailboxKey) ? '• ' : '';
-          var owned = relayRow.owned ? '★ ' : '';
-          relayHtml += '<option value="' + api.escapeHtml(mailboxKey) + '">' +
-            api.escapeHtml(relayMark + owned + relayRow.label + '  ' + relayRow.url) + '</option>';
-        }
-        // Every other Natter row, named and unselectable. The hub sends
-        // to the first URL only, so offering these would be a promise
-        // the node cannot keep.
-        otherRelays.forEach(function (row) {
-          if (view.filter === 'peers' || view.filter === 'new') return;
-          if (!matches(row.label) && !matches(row.url)) return;
-          relayHtml += '<option value="" disabled>' +
-            api.escapeHtml((row.owned ? '★ ' : '') + row.label + '  ' + row.url +
-              '  — not the mailbox this node speaks to') + '</option>';
-        });
-        if (relayHtml) html += '<optgroup label="Relays">' + relayHtml + '</optgroup>';
       }
 
       if (blockedHtml) html += '<optgroup label="Blocked">' + blockedHtml + '</optgroup>';
@@ -755,13 +726,12 @@ spirit.shell.activateApp({
     //                mistake in.
     //   held       → Accept: they wrote, and you say yes.
     //   blocked    → Unblock, which is the same yes said later.
-    //   the relay  → nothing. There is no accepting a mailbox.
     function paintPeerStrip() {
       var strip = document.getElementById('rc-peer-strip');
       if (!strip) return;
       var key = pickedPeerKey();
       var person = people.filter(function (p) { return p.publicKey === key; })[0];
-      if (!key || !person || key === mailboxKey || !person.held) {
+      if (!key || !person || !person.held) {
         strip.innerHTML = '';
         return;
       }
@@ -783,10 +753,9 @@ spirit.shell.activateApp({
     // appears when somebody writes, and Add someone by handle under it.
     //
     // The test is the To control itself, not "how many contacts exist":
-    // the mailbox is addressable too, and under the Relays or All filter
-    // it is somebody to write to. So this follows the filter — switch to
-    // All on a node with no peers and the composer comes back for the
-    // mailbox row, which is where `whoami` is typed.
+    // what matters is whether the list currently holds somebody who can
+    // be written to, which is a question about the filter as much as
+    // about the contacts.
     function paintAddressable() {
       var pick = document.getElementById('rc-to-pick');
       if (!pick) return;
@@ -807,30 +776,25 @@ spirit.shell.activateApp({
     }
 
     // `new` is only ever a place to stand while there is something to
-    // stand on. Read the last unread and it snaps back to whichever real
-    // filter was showing when it was pressed: a filter that means
-    // "nothing" is worse than no filter at all.
+    // stand on. Read the last unread and it drops back to everyone: a
+    // filter that means "nothing" is worse than no filter at all.
     //
     // This replaces the line that used to sit under the list saying how
     // many marked rows the filter was hiding. A notice telling you to go
     // and look somewhere else is worse than a button that takes you
     // there, and this one is on the page only while it means something.
     function snapBackFromNew() {
-      if (view.filter !== 'new') return;
+      if (filter !== 'new') return;
       // Standing in `new` when the button that took you there has just
       // gone would leave a filter nothing can turn off.
       if (unseenCount() > 0 && !quiet()) return;
-      view.filter = filterBeforeNew || 'peers';
-      filterBeforeNew = '';
-      saveView();
+      filter = '';
       paintToList();
     }
 
     function paintFilterButtons() {
-      ['peers', 'relays', 'all', 'new'].forEach(function (name) {
-        var button = document.getElementById('rc-filter-' + name);
-        if (button) button.style.opacity = (view.filter === name) ? '1' : '0.55';
-      });
+      var pressed = document.getElementById('rc-filter-new');
+      if (pressed) pressed.style.opacity = (filter === 'new') ? '1' : '0.55';
 
       // The count is on the button because that is where it can be acted
       // on, and the button is on the page only while there is something
@@ -862,25 +826,6 @@ spirit.shell.activateApp({
         if (typeof pick.showPicker === 'function') { pick.showPicker(); return; }
       } catch (e) { /* refused: not a gesture, or not allowed here */ }
       if (typeof pick.focus === 'function') pick.focus();
-    }
-
-    function refreshBadges() {
-      if (!myName) return;
-      // The Relays group in the To list comes from this probe: it asks
-      // every Natter row whether this node owns it, and the first row is
-      // the one the hub speaks to. Owning a mailbox is Natter's business
-      // now (packet 3) and the mint panel went with it, so what is left
-      // here is only which mailbox this chat is pointed at.
-      fetch('/api/hub/status?name=' + encodeURIComponent(myName))
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          var rows = (data && data.rows) || [];
-          relayRow = rows.length ? rows[0] : null;
-          otherRelays = rows.slice(1);
-          if (mailboxKey && relayRow) captions[mailboxKey] = relayCaption(relayRow.url);
-          paintToList();
-        })
-        .catch(function (e) { setStatus('badge failed: ' + e.message); });
     }
 
     // A short name to choose by, and a sentence explaining what it
@@ -980,27 +925,21 @@ spirit.shell.activateApp({
       api.launchApp('app/contacts');
     });
 
-    // The filter is what kind of row you want; it is remembered. The
-    // search is which one you mean; it is not.
-    ['peers', 'relays', 'all', 'new'].forEach(function (name) {
-      document.getElementById('rc-filter-' + name).addEventListener('click', function () {
-        if (name === 'new') {
-          // Remember where to come back to, and write nothing down: a
-          // reload into a filter that has since emptied is a list with
-          // no way out.
-          if (view.filter !== 'new') filterBeforeNew = view.filter;
-          view.filter = 'new';
-        } else {
-          filterBeforeNew = '';
-          view.filter = name;
-          saveView();
-        }
+    // The one filter left, and neither it nor the search is written
+    // down. It toggles: with Peers / Relays / All gone it is the only
+    // way into `new`, so it has to be the way out too, or the list has a
+    // door that only opens inwards.
+    document.getElementById('rc-filter-new').addEventListener('click', function () {
+      if (filter === 'new') {
+        filter = '';
         paintToList();
-        // Pressing New is asking "who wrote to me?", and the answer is
-        // in the list — so open it. Only for New: the other three are
-        // ways of narrowing a list you are already reading.
-        if (name === 'new') openToList();
-      });
+        return;
+      }
+      filter = 'new';
+      paintToList();
+      // Pressing New is asking "who wrote to me?", and the answer is in
+      // the list — so open it.
+      openToList();
     });
 
     document.getElementById('rc-search').addEventListener('input', function (event) {
@@ -1020,12 +959,12 @@ spirit.shell.activateApp({
     document.getElementById('rc-send').addEventListener('click', function () {
       // Whoever is picked, and only that. The control holds keys, which
       // is what a conversation is filed under and what a peer actually
-      // is — but the WIRE addresses the mailbox by its reserved caption,
-      // because that is the word relay.js resolves and the one the
-      // console answers to. Translating here keeps the key in the UI and
-      // leaves relay.js alone.
+      // is. There used to be a translation here, turning the mailbox's
+      // key into the reserved caption relay.js resolves — the mailbox is
+      // not in the list any more, so the only address left is a peer's
+      // own key.
       var picked = pickedPeerKey();
-      var to = (mailboxKey && picked === mailboxKey) ? reservedName : picked;
+      var to = picked;
       var text = document.getElementById('rc-text').value;
       if (!myName) {
         setStatus('claim a name first');

@@ -242,17 +242,19 @@ function nobodyToWriteTo() {
       test.fail('hidden too: ' + alive.join(', ') + ' / ' + el(app, 'rc-to-pick').innerHTML);
     }
 
-    // The mailbox is somebody to write to — it is where `whoami` is
-    // typed. Under All it is in the list, so the composer is back.
-    el(app, 'rc-filter-all').fire('click');
-    return settle().then(function () {
-      if (el(app, 'rc-composer').style.display !== 'none' &&
-          el(app, 'rc-to-pick').innerHTML.indexOf(MAILBOX_KEY) !== -1) {
-        test.check('and it comes back for the mailbox under All');
-      } else {
-        test.fail('composer stayed hidden with the mailbox listed');
-      }
-    });
+    // The mailbox used to be the way out of this state: under All it was
+    // a row, so the composer came back and `whoami` could be typed at
+    // it. It is not somebody to write to any more, so a node with no
+    // contacts has nothing to say to anyone — which is the honest
+    // reading of no contacts, and the panel below is the way forward.
+    //
+    // Asserted against a fixture that DOES supply mailboxPublicKey and a
+    // Natter row, so this cannot pass merely because nothing was there.
+    if (el(app, 'rc-to-pick').innerHTML.indexOf(MAILBOX_KEY) === -1) {
+      test.check('and the mailbox is not the way out of it, though its key was supplied');
+    } else {
+      test.fail('a mailbox row survived: ' + el(app, 'rc-to-pick').innerHTML);
+    }
   });
 }
 
@@ -505,8 +507,14 @@ function threadMarksOwnLines() {
 
 // Chat 3.1 — the To control is the only way to say who a line is for,
 // so what it offers is the whole of what can be said.
+//
+// It used to offer mailboxes too. Chatting to one reaches the console,
+// and for a mailbox this node does not own the whole of what it answers
+// is `help` and `whoami`. The console is untouched on the wire; it is
+// simply not something this app offers, and everything that existed to
+// tell a relay row from a person row went with it.
 function composerOffersTheMailbox() {
-  test.subHeading('The To list holds keys, and one selectable mailbox');
+  test.subHeading('The To list is people, and holds their keys');
 
   const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
   const app = mountApp(store, {
@@ -521,23 +529,13 @@ function composerOffersTheMailbox() {
   });
 
   return settle().then(function () {
-    // Default filter is peers, so that is what the list holds: a peer,
-    // by key, and no mailbox row until it is asked for.
-    const peersOnly = el(app, 'rc-to-pick').innerHTML;
-    if (peersOnly.indexOf('value="KEY-BERT"') !== -1 && peersOnly.indexOf(MAILBOX_KEY) === -1) {
-      test.check('the peers filter shows peers, by key, and no relay row');
-    } else {
-      test.fail('peers filter: ' + peersOnly);
-    }
-
-    // A To value is a key — a peer's, or the mailbox's own. `relay` is
-    // what the WIRE calls the mailbox when a line is addressed to it,
-    // and it is never a value in this control.
-    el(app, 'rc-filter-all').fire('click');
     const html = el(app, 'rc-to-pick').innerHTML;
 
-    if (html.indexOf('value="' + MAILBOX_KEY + '"') !== -1 && html.indexOf('value="KEY-BERT"') !== -1) {
-      test.check('and All shows the mailbox beside them, also by key');
+    // A To value is a peer's KEY. `relay` is what the WIRE calls a
+    // mailbox when a line is addressed to it, and it was never a value
+    // in this control even when mailboxes were listed.
+    if (html.indexOf('value="KEY-BERT"') !== -1) {
+      test.check('a peer is offered by key');
     } else {
       test.fail('options: ' + html);
     }
@@ -548,34 +546,48 @@ function composerOffersTheMailbox() {
       test.fail('the literal relay is still an option value');
     }
 
-    if (/optgroup label="Peers"/.test(html) && /optgroup label="Relays"/.test(html)) {
-      test.check('peers and relays read as two kinds of row');
+    // The mailbox is fed to the app the whole time — mailboxPublicKey is
+    // in the fixture, and two Natter rows with it. None of it reaches
+    // the list. Checked against a key the app definitely knows, so this
+    // cannot pass merely because nothing was supplied.
+    if (html.indexOf(MAILBOX_KEY) === -1) {
+      test.check('and the mailbox is not offered, though the app was told its key');
     } else {
-      test.fail('no optgroups: ' + html);
+      test.fail('a mailbox row survived: ' + html);
     }
 
-    // Only relays.json[0] is selectable: it is the one mailbox the hub
-    // speaks to, and a row that looked selected while sending somewhere
-    // else would be a promise this node cannot keep.
-    if (/second\.example.*not the mailbox this node speaks to/.test(html) && /disabled/.test(html)) {
-      test.check('a second Natter row is named and inert, with the reason');
+    if (html.indexOf('second.example') === -1 && html.indexOf('disabled') === -1) {
+      test.check('nor is any other Natter row, inert or otherwise');
     } else {
-      test.fail('second relay row: ' + html);
+      test.fail('a relay row survived: ' + html);
     }
 
-    // The filter is remembered; the search is not.
+    // Peers and Relays were two groups because there were two kinds of
+    // row. One kind, one group — and Blocked, which is a state rather
+    // than a kind.
+    if (/optgroup label="Peers"/.test(html) && !/optgroup label="Relays"/.test(html)) {
+      test.check('one kind of row, so no Relays group to tell it apart from');
+    } else {
+      test.fail('optgroups: ' + html);
+    }
+
+    // Peers / Relays / All existed to choose between the two kinds. With
+    // one kind there is nothing to choose, so the buttons are gone and
+    // view.json has no filter left to carry.
+    const bar = app.container.innerHTML;
+    if (bar.indexOf('rc-filter-peers') === -1 && bar.indexOf('rc-filter-relays') === -1 &&
+        bar.indexOf('rc-filter-all') === -1 && bar.indexOf('rc-filter-new') !== -1) {
+      test.check('and only New is left of the filter bar');
+    } else {
+      test.fail('filter bar: ' + bar.slice(bar.indexOf('rc-to-bar'), bar.indexOf('rc-to-row')));
+    }
+
     let saved = null;
-    try { saved = JSON.parse(app.store['view.json']); } catch (e) { saved = null; }
-    if (saved && saved.filter === 'all' && saved.search === undefined) {
-      test.check('the filter is written to view.json and the search is not');
+    try { saved = JSON.parse(app.store['view.json'] || 'null'); } catch (e) { saved = null; }
+    if (!saved || (saved.filter === undefined && saved.search === undefined)) {
+      test.check('and view.json carries neither a filter nor a search');
     } else {
       test.fail('view.json: ' + JSON.stringify(app.store['view.json']));
-    }
-
-    if (app.store['session.json'].indexOf('filter') === -1) {
-      test.check('and session.json is still only who this node is');
-    } else {
-      test.fail('session.json grew a view: ' + app.store['session.json']);
     }
 
     // The ghost box is gone: there is no second control that could aim a
@@ -655,9 +667,10 @@ function viewIsRemembered() {
       test.fail('restored To: ' + el(app, 'rc-to-pick').value);
     }
 
-    // A remembered relay row with a peers filter: restore the To first,
-    // then widen the filter until that row can be seen. A conversation
-    // filtered out of its own list is one the app lost for you.
+    // A view.json left over from when mailboxes were listed. The row it
+    // names is not in the list any more, so it takes the same path a
+    // peer who left the mailbox takes: select nobody and say so. Picking
+    // the neighbouring row would be the app deciding who you meant.
     const MAILBOX = 'MCowBQYDK2VwAyEAmailboxmailboxmailboxmailboxmailb=';
     const relayStore = {
       'session.json': JSON.stringify(bound),
@@ -672,10 +685,18 @@ function viewIsRemembered() {
     });
 
     return settle().then(function () {
-      if (el(onRelay, 'rc-to-pick').value === MAILBOX) {
-        test.check('a remembered mailbox row widens the filter rather than vanishing');
+      if (el(onRelay, 'rc-to-pick').value === '') {
+        test.check('a remembered mailbox row is a To that is gone, and selects nobody');
       } else {
-        test.fail('relay restore: ' + el(onRelay, 'rc-to-pick').innerHTML);
+        test.fail('relay restore: ' + el(onRelay, 'rc-to-pick').value);
+      }
+
+      // And the stale filter beside it changes nothing: view.json has no
+      // filter to honour any more, so an old one is read past.
+      if (el(onRelay, 'rc-to-pick').innerHTML.indexOf('bert') !== -1) {
+        test.check('and a stale filter in that file does not hide the people who are there');
+      } else {
+        test.fail('list under a stale filter: ' + el(onRelay, 'rc-to-pick').innerHTML);
       }
 
       // And the one that matters: the peer is gone from the mailbox.
@@ -901,12 +922,16 @@ function newFilterSnapsBack() {
     el(app, 'rc-to-pick').fire('change');
 
     return settle().then(function () {
-      let saved = null;
-      try { saved = JSON.parse(app.store['view.json']); } catch (e) { saved = null; }
-      if (saved && saved.filter === 'all') {
-        test.check('reading the last one returns the filter it was pressed from');
+      // Observed in the list rather than in view.json: the filter is not
+      // written down any more (there is one, and it is a place to stand
+      // rather than a setting), so what has to be true is that the read
+      // peer is on offer again — which is what `new` was hiding.
+      if (el(app, 'rc-to-pick').innerHTML.indexOf(BERT) !== -1 &&
+          el(app, 'rc-filter-new').style.opacity !== '1') {
+        test.check('reading the last one drops the filter and shows everyone again');
       } else {
-        test.fail('filter after snap-back: ' + JSON.stringify(saved && saved.filter));
+        test.fail('after snap-back: ' + el(app, 'rc-to-pick').innerHTML +
+          ' / New opacity ' + el(app, 'rc-filter-new').style.opacity);
       }
 
       if (el(app, 'rc-to-pick').value === BERT) {
@@ -1216,12 +1241,16 @@ function doNotDisturb() {
         el(app, 'rc-filter-new').fire('click');
         el(app, 'rc-dnd-toggle').fire('change', { target: { checked: true } });
         return settle().then(function () {
-          let saved = null;
-          try { saved = JSON.parse(app.store['view.json']); } catch (e) { saved = null; }
-          if (saved && saved.filter !== 'new') {
+          // Read off the list, not view.json — the filter is a place to
+          // stand and is never written down. Stranded would mean the
+          // button gone AND the list still narrowed to unread; what has
+          // to be true is that everyone is on offer again.
+          const hidden = el(app, 'rc-filter-new').style.display === 'none';
+          const showsEveryone = el(app, 'rc-to-pick').innerHTML.indexOf(BERT) !== -1;
+          if (hidden && showsEveryone) {
             test.check('and switching it on does not strand you in a filter you cannot leave');
           } else {
-            test.fail('filter after dnd: ' + (saved && saved.filter));
+            test.fail('after dnd: New hidden ' + hidden + ', list ' + el(app, 'rc-to-pick').innerHTML);
           }
         });
       });
