@@ -896,7 +896,10 @@ test.subHeading('Jobs has moved out of index.html');
     test.fail('Spirit member list: ' + JSON.stringify(spiritMemberIds()));
   }
 
-  if (html.indexOf("launchApp('app/jobs')") !== -1 && html.indexOf("launchApp('jobs')") === -1) {
+  // The id it names, not how it navigates — the call gained a
+  // {replace: true} when starting a job stopped leaving the viewer on
+  // the stack behind it.
+  if (html.indexOf("launchApp('app/jobs'") !== -1 && html.indexOf("launchApp('jobs'") === -1) {
     test.check("the Process Browser's start-and-watch launch was repointed");
   } else {
     test.fail('index.html still launches the old jobs id');
@@ -1035,7 +1038,7 @@ test.subHeading('Processes has moved out of index.html');
   // "start as a job" and jumps to Jobs. Both of those launches stay on
   // spirit.shell until step 6 — what matters here is that the Jobs id
   // they name is the moved one.
-  if (html.indexOf("launchApp('app/jobs')") !== -1) {
+  if (html.indexOf("launchApp('app/jobs'") !== -1) {
     test.check("the viewer's start-and-watch launch still names app/jobs");
   } else {
     test.fail('the launch into Jobs is missing or misnamed');
@@ -2231,19 +2234,26 @@ test.subHeading('A group screen is a place you can go back to');
     test.fail('after re-entering Natter: ' + stack());
   }
 
-  // Two callers elide themselves, and both are in a viewer: picking a
-  // handler from Open with, and opening the app whose source you were
-  // reading. In both the viewer is a step on the way rather than a
-  // destination, so Back returns to wherever you came from rather than to
-  // the file you have finished with.
+  // The rule, stated as one sentence: A VIEWER STEPS OUT OF ITS OWN WAY,
+  // and nothing else does. Three callers elide themselves and all three
+  // are a launcher finishing with the file it was showing —
   //
-  // Counted rather than listed, so a third has to be a decision:
-  // everything else pushes, and a group screen pushing is what makes Back
-  // into it mean going back to where you were.
+  //   Open with       another handler for the same file
+  //   Open <app>      the app whose source you were reading
+  //   Start Job       the job the form on that script just started
+  //
+  // — so Back returns to whatever opened the launcher (Processes, Files)
+  // rather than to a file you are done with. Everything else pushes, and
+  // a group screen pushing is what makes Back into it mean going back to
+  // where you were.
+  //
+  // Counted across both files, so a fourth has to be a decision.
   const shellSrc = readRun('js/client/shell.js');
-  const replaceCalls = shellSrc.match(/launchApp\([^)]*\{ replace: true \}\)/g) || [];
-  if (replaceCalls.length === 2) {
-    test.check('and exactly two callers replace their own entry, both of them a viewer');
+  const shellReplaces = shellSrc.match(/launchApp\([^)]*\{ replace: true \}\)/g) || [];
+  const viewerReplaces = readRun('index.html').match(/launchApp\([^)]*\{ replace: true \}\)/g) || [];
+  const replaceCalls = shellReplaces.concat(viewerReplaces);
+  if (replaceCalls.length === 3) {
+    test.check('and exactly three callers replace their own entry, every one of them a viewer');
   } else {
     test.fail('callers passing replace: ' + replaceCalls.length + ' — ' + replaceCalls.join(' | '));
   }

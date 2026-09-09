@@ -1063,7 +1063,15 @@
               args: [scriptPath, JSON.stringify(values)],
               type: manifest.label || match[2],
             });
-            launchApp('app/jobs'); // navigate immediately, don't wait on the request — the Jobs app picks up the new job live via SSE either way
+            // Navigate immediately, don't wait on the request — the Jobs
+            // app picks up the new job live via SSE either way.
+            //
+            // {replace: true}: starting the job is finishing with the
+            // viewer, so Back from Jobs returns to whatever opened it —
+            // Processes, or Files — rather than to the form you have
+            // just spent (Andy). The third of three, and all three are a
+            // viewer stepping out of its own way.
+            launchApp('app/jobs', null, { replace: true });
           });
 
           // Populate any LM-Studio-model dropdowns live, without blocking the
