@@ -1112,9 +1112,13 @@ function heldRowsPointAtContacts() {
   });
 
   return settle().then(function () {
+    // Three sections, and waiting is its own — lumping it under Blocked
+    // is what made somebody merely waiting look refused (Andy).
     const list = el(app, 'rc-to-pick').innerHTML;
-    if (/optgroup label="Blocked"/.test(list) && /carol/.test(list)) {
-      test.check('somebody waiting is still listed here, and still marked');
+    if (/optgroup label="Waiting for approval"/.test(list) &&
+        /Waiting for approval[\s\S]*carol/.test(list) &&
+        !/optgroup label="Blocked"/.test(list)) {
+      test.check('somebody waiting has a section of their own, not the blocked one');
     } else {
       test.fail('list: ' + list);
     }
@@ -1198,10 +1202,13 @@ function heldRowsPointAtContacts() {
       el(app, 'rc-to-pick').value = HELD;
       el(app, 'rc-to-pick').fire('change');
       return settle().then(function () {
+        // Waiting and node-blocked ask the same question here — the
+        // decision is over there, to Accept or to Unblock — so they get
+        // the same button, and the row's own mark says which (Andy).
         const strip = el(app, 'rc-peer-strip').innerHTML;
-        if (/rc-open-contacts/.test(strip) && /Not added/.test(strip) &&
-            strip.indexOf('rc-peer-accept') === -1 && strip.indexOf('rc-peer-block') === -1) {
-          test.check('a held row offers the way to Contacts, and no decision of its own');
+        if (/rc-open-contacts/.test(strip) && strip.indexOf(spirit.core.const.ICON.ROLODEX) !== -1 &&
+            strip.indexOf('data-rc-block') === -1 && strip.indexOf('data-rc-unblock') === -1) {
+          test.check('a waiting row offers the way to Contacts, and no decision of its own');
         } else {
           test.fail('held strip: ' + strip);
         }

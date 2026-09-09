@@ -89,12 +89,21 @@ function contactsStatus(text) {
   if (el) el.textContent = text || '';
 }
 
-// One row per key. The marks are the shell's, and mean here what they
-// mean in the chat To list: ❌ refused, × waiting for an answer.
+// One row per key, marked the way the chat To list marks the same
+// person. A mark says WHO refused them, and that does not change with
+// which app you are standing in — one vocabulary to learn, not two.
+//
+//   📇 ROLODEX  this node refuses them: set here, lifted here.
+//   ⌛ WAITING   they wrote and nobody has decided yet.
+//
+// There is no ❌ here. That is chat's own refusal, and it lives in
+// chat's per-peer log file, which api.fs will not let this app read.
+// Contacts genuinely cannot know it — do not "fix" that by widening a
+// scope; the two refusals being separate is the point (packet 2).
 function contactsRowHtml(person) {
   var mark = '';
-  if (person.blocked) mark = contactsIcon.NO + ' ';
-  else if (person.held) mark = '× ';
+  if (person.blocked) mark = contactsIcon.ROLODEX + ' ';
+  else if (person.held) mark = contactsIcon.WAITING + ' ';
 
   var open = contactsEditing === person.publicKey;
   var row = '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +

@@ -953,6 +953,16 @@ const ICON = spirit.core.const.ICON = {
     // same glyph — see the check in spirit/test/natterIntrinsic.js.
     // Emoji 1.0 (2010), so it renders everywhere without a fallback.
     ROLODEX: '📇',
+    // Waiting for a person to decide, not refused by anybody. The one
+    // mark in the shell that used to be a hand-typed × — a cross, which
+    // reads as NO one column away from ❌, which is one.
+    // ⏳ is LOADING already; ⌛ is the same hourglass, spent, and free.
+    WAITING: '⌛',
+    // Waiting for a person to decide, not refused by anybody. The one
+    // mark in the shell that used to be a hand-typed × — a cross, which
+    // reads as NO one column away from ❌, which is one.
+    // ⏳ is LOADING already; ⌛ is the same hourglass, spent, and free.
+    WAITING: '⌛',
     MUSIC: '🎵',
     VIDEO: '🎬',
     DOCUMENT: '📄',

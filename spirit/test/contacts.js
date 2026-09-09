@@ -294,11 +294,19 @@ function listsTheBook() {
       test.fail('rows: ' + rows);
     }
 
-    // The same three marks the chat list uses, meaning the same three
-    // things. A blocked row can never also be unread, so they cannot
-    // collide.
-    if (rows.indexOf(spirit.core.const.ICON.NO) !== -1 && /×\s*carol/.test(rows)) {
-      test.check('and are marked refused and waiting the same way chat marks them');
+    // The same marks the chat list uses, meaning the same things: a mark
+    // says WHO refused somebody, and that does not change with which app
+    // you are standing in.
+    //
+    // 📇 for the node's refusal, not ❌ — ❌ is chat's own, and it lives
+    // in chat's per-peer log where api.fs will not let this app look. And
+    // ⌛ for waiting, which is not a refusal at all: the typed × it
+    // replaced read as NO one column from the ❌ that is one.
+    const ICONS = spirit.core.const.ICON;
+    if (rows.indexOf(ICONS.ROLODEX + ' dave') !== -1 &&
+        rows.indexOf(ICONS.WAITING + ' carol') !== -1 &&
+        rows.indexOf(ICONS.NO) === -1) {
+      test.check('and are marked refused and waiting the way chat marks them');
     } else {
       test.fail('marks: ' + rows);
     }

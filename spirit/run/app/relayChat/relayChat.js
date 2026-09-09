@@ -702,53 +702,59 @@ spirit.shell.activateApp({
       });
 
       {
-        // Two groups, because they are two kinds of row. Somebody held or
-        // blocked is still selectable — picking them is how you accept
-        // them — but they carry a × and the composer goes away while they
-        // are chosen, so the list never offers a send that would be
-        // refused.
         // The marks say who refused this row, which is the same thing as
         // saying whether there is anything to be done about it here
         // (Andy). Two refusals exist and they are different facts, so
         // they get different pictures and a row carrying both wears both:
         //
         //   📇 ROLODEX  the node refuses them — set in Contacts, and only
-        //               Contacts can lift it. Wherever this shows, the
-        //               strip offers nothing.
+        //               Contacts can lift it.
         //   ❌ NO       this app refuses them — set here, lifted here.
         //   📇 ❌       both, and they are undone in that order.
-        //   ×          waiting: nobody has refused them, nobody has said
-        //               yes either.
+        //   ⌛ WAITING   they wrote and nobody has decided yet. NOT a
+        //               refusal: nobody has said no, and nobody has said
+        //               yes. This used to be a typed ×, which reads as NO
+        //               one column from the ❌ that is one — and that is
+        //               exactly how a waiting row got read as blocked.
         //   •          unread, and only on a row that is none of the above.
         //
-        // A block mark replaces × and suppresses •: a refusal is the
-        // whole of why a row is not a conversation, and hasUnseen already
-        // answers false for one refused here.
+        // A refusal mark suppresses • too: a refusal is the whole of why a
+        // row is not a conversation, and hasUnseen already answers false
+        // for one refused here.
         function optionFor(person) {
           var mark = '';
           if (person.blocked) mark += ICON.ROLODEX + ' ';
           if (isBlockedHere(person.publicKey)) mark += ICON.NO + ' ';
-          if (!mark && person.held) mark = '× ';
+          if (!mark && person.held) mark = ICON.WAITING + ' ';
           else if (!mark && hasUnseen(person.publicKey)) mark = '• ';
           var text = mark + person.caption + (person.mine ? ' — you' : '');
           return '<option value="' + api.escapeHtml(person.publicKey) + '">' + api.escapeHtml(text) + '</option>';
         }
-        // Refused here counts as held for the list, so the row drops to
-        // the bottom group with the others you are not talking to — and
-        // stays visible, because a row that vanished could never be
-        // unblocked.
-        var canWrite = peerRows.filter(function (person) {
-          return !person.held && !isBlockedHere(person.publicKey);
-        });
-        // Held and blocked together, and last of everything: the bottom
-        // of a list is where you look for somebody on purpose, and these
-        // are rows you open to change your mind about rather than to
-        // talk to.
-        blockedHtml = peerRows.filter(function (person) {
-          return person.held || isBlockedHere(person.publicKey);
-        }).map(optionFor).join('');
+
+        // Three sections, because there are three states — and lumping
+        // two of them together is what made somebody merely waiting look
+        // refused (Andy). They partition the list: every row is in
+        // exactly one.
+        //
+        // `held` is true for a refused row as well as a waiting one, since
+        // the node stops listening either way. So refused is asked first,
+        // and waiting is whatever is left of held.
+        function refused(person) {
+          return person.blocked || isBlockedHere(person.publicKey);
+        }
+        var canWrite = peerRows.filter(function (p) { return !p.held && !refused(p); });
+        var waiting = peerRows.filter(function (p) { return p.held && !refused(p); });
+
+        // Last of everything: the bottom of a list is where you look for
+        // somebody on purpose, and these are rows you open to change your
+        // mind about rather than to talk to. They stay visible, because a
+        // row that vanished could never be unblocked.
+        blockedHtml = peerRows.filter(refused).map(optionFor).join('');
         if (canWrite.length) {
           html += '<optgroup label="Peers">' + canWrite.map(optionFor).join('') + '</optgroup>';
+        }
+        if (waiting.length) {
+          html += '<optgroup label="Waiting for approval">' + waiting.map(optionFor).join('') + '</optgroup>';
         }
       }
 
@@ -784,20 +790,17 @@ spirit.shell.activateApp({
     // whatever this app may decide about whoever is open. Which is: its
     // own refusal, and nothing else.
     //
-    //   blocked in Contacts → the Contacts icon, and nothing else. The
-    //                node refuses them and chat has no authority to undo
-    //                that (Andy), so there is no verb to offer — only the
-    //                way to where the verb lives. It is the app's own
-    //                picture rather than a sentence because the row is
-    //                already wearing that picture: 📇 on the row, 📇 to
-    //                press, and the two are the same fact said once.
+    //   blocked in Contacts,
+    //   or waiting  → the Contacts icon, and no verb. The two are one
+    //                question here: the decision is over there — Unblock,
+    //                or Accept — and the row's own mark says which (Andy).
+    //                Chat has no authority to undo the node's refusal, and
+    //                no business saying the yes on its behalf. An icon
+    //                rather than a sentence because the row already wears
+    //                that picture: 📇 on the row, 📇 to press.
     //   blocked here → Unblock here, in one press. Undoing a no is the
     //                safe direction; making it as hard as the no would
     //                punish whoever changed their mind.
-    //   waiting    → the way to Contacts. Accepting is that app's verb
-    //                (packet 2) and stays there. This row keeps a route
-    //                where the 📇 row gets none, because × names no app:
-    //                somebody has to be told where the yes is said.
     //   a contact  → Block here, in two presses. A block is not a delete:
     //                the row stays, marked, because a list you can be
     //                removed from silently is a list nobody can undo a
@@ -818,9 +821,11 @@ spirit.shell.activateApp({
         strip.innerHTML = '';
         return;
       }
-      if (person.blocked) {
-        // The same id the sentence below uses, so one handler answers
-        // both routes — the strip only ever holds one of them.
+      // Waiting is held-and-not-refused: nobody has said no, nobody has
+      // said yes. It goes to Contacts for the same reason a node block
+      // does — that is where the answer is given.
+      if (person.blocked || (person.held && !isBlockedHere(key))) {
+        // One id, so one handler answers however this row got here.
         //
         // ICON.ROLODEX rather than a lookup through listApps: it is the
         // same constant the mark on the row uses, so the picture you
@@ -834,14 +839,6 @@ spirit.shell.activateApp({
       if (isBlockedHere(key)) {
         strip.innerHTML = '<button type="button" class="cancel-btn" data-rc-unblock="' +
           api.escapeHtml(key) + '">Unblock here</button>';
-        return;
-      }
-      if (person.held) {
-        // Waiting, not refused. There is nothing to unblock and the yes
-        // is not chat's to say, so this is the way to where it is said —
-        // a row you cannot act on and cannot leave is a dead end.
-        strip.innerHTML = '<button type="button" class="cancel-btn" id="rc-open-contacts">' +
-          'Not added — open Contacts</button>';
         return;
       }
       // Armed means the first press has happened and the button is now
@@ -895,11 +892,13 @@ spirit.shell.activateApp({
       for (var i = 0; i < options.length; i += 1) {
         if (options[i].value && !options[i].disabled) { can = true; break; }
       }
-      // Somebody held is somebody you have not agreed to talk to yet, so
-      // there is nothing to type at them. The strip says what to do
-      // instead.
-      var open = people.filter(function (p) { return p.publicKey === pickedPeerKey(); })[0];
-      if (open && open.held) can = false;
+      // Nothing to type at somebody you have not agreed to talk to, and
+      // nothing to type at somebody you refused here either — that second
+      // one used to slip through, because a peer blocked only in chat is
+      // not `held` and this asked about nothing else.
+      var openKey = pickedPeerKey();
+      var open = people.filter(function (p) { return p.publicKey === openKey; })[0];
+      if (open && (open.held || isBlockedHere(openKey))) can = false;
       ['rc-thread', 'rc-composer'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) el.style.display = can ? '' : 'none';
