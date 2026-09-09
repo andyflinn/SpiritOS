@@ -230,6 +230,17 @@ function appManagerRow(app) {
       SPIRIT_GROUP_ID: 'spirit',
       getAppOverride: function () { return {}; },
       fileInfoRow: function (k, v) { return k + '=' + v + ';'; },
+      // The shared facts bubble (factRow, shell.js). Real output, not a
+      // placeholder — the tests read what a panel actually renders.
+      factRow: function (pairs) {
+        return '<div class="fact-row">' + (pairs || []).map(function (pair) {
+          return '<div class="fact">' +
+            '<span class="fact-label">' + spirit.core.util.escapeHtml(String(pair[0])) + '</span>' +
+            '<span class="fact-value">' + spirit.core.util.escapeHtml(String(pair[1])) + '</span>' +
+            '</div>';
+        }).join('') + '</div>';
+      },
+
     },
     core: { const: { ICON: { POINTDOWN: 'v', POINTRIGHT: '>' } }, util: { escapeHtml: spirit.core.util.escapeHtml } },
   };
@@ -576,6 +587,7 @@ test.subHeading('The Apps panel offers no control it would refuse');
   // And the panel is otherwise untouched: an ordinary app still gets all
   // three, or this test would pass on a panel that renders nothing.
   const ordinaryRow = appManagerRow({
+    id: 'app/relay-chat',
     name: 'Relay Chat', defaultName: 'Relay Chat', icon: '📄', defaultIcon: '📄',
     group: null, dynamic: true, intrinsic: false,
   });
@@ -599,6 +611,28 @@ test.subHeading('The Apps panel offers no control it would refuse');
   // one thing twice, which on a portrait screen is the difference between
   // seeing the next block and not. Both editable fields are wrapped, and
   // the field is the one that takes the width.
+  // Id and Source are gone from both the table and the panel (Andy):
+  // twice on screen for two facts nobody can act on. What is left of the
+  // panel's read-only half is what a Reset would bring back, across one
+  // line rather than down four.
+  const facts = (ordinaryRow.match(/class="fact"/g) || []).length;
+  if (/class="fact-row"/.test(ordinaryRow) && facts === 2 &&
+      ordinaryRow.indexOf('file-info-row') === -1) {
+    test.check('the panel reads its defaults across one line, not down a list');
+  } else {
+    test.fail(facts + ' facts, file-info-row present: ' + (ordinaryRow.indexOf('file-info-row') !== -1));
+  }
+
+  // Checked against a fixture that DOES carry an id and a source, so this
+  // cannot pass merely because nothing was supplied. `Dynamic` is the
+  // word the dropped column used; the panel explains the lock in a
+  // sentence instead.
+  if (ordinaryRow.indexOf('app/relay-chat') === -1 && ordinaryRow.indexOf('>Dynamic<') === -1) {
+    test.check('and neither the id nor the source is anywhere on the row');
+  } else {
+    test.fail('id or source survived: ' + ordinaryRow);
+  }
+
   const wrapped = (ordinaryRow.match(/<div class="start-job-form">/g) || []).length;
   const grows = (ordinaryRow.match(/class="field-label grow"/g) || []).length;
   if (wrapped >= 2 && grows === 2) {
@@ -1718,6 +1752,83 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
     }
   }
 
+  // Every fold looks clickable, by class rather than by a list of ids
+  // that goes stale the moment a panel moves app. Three of the four ids
+  // this replaced named panels that had already left Relay Chat, and the
+  // two that arrived in Contacts had no pointer cursor at all.
+  if (/details\.stat-tile > summary\s*\{[^}]*cursor:\s*pointer/.test(css) &&
+      css.indexOf('#rc-add-panel') === -1 && css.indexOf('#rc-invite-panel') === -1 &&
+      css.indexOf('#rc-unknown-section') === -1) {
+    test.check('a fold is clickable by what it IS, and no stale panel ids are left');
+  } else {
+    test.fail('summary styling still names ids: ' +
+      ['#rc-add-panel', '#rc-invite-panel', '#rc-unknown-section']
+        .filter(function (id) { return css.indexOf(id) !== -1; }).join(', '));
+  }
+
+  // A form inside a panel is its own bubble too, on the same ground as
+  // the facts beside it — a panel holds a reading and things to do, and
+  // each is a card (Andy). Not at the top level of a pane, where a form
+  // is already a block in the stack.
+  const nestedCard = /\.stat-tile\.nested\s*\{([^}]*)\}/.exec(css);
+  const cardGround = nestedCard && /background:\s*([^;]+);/.exec(nestedCard[1]);
+  const formBubble = /\.stat-tile \.start-job-form\s*\{([^}]*)\}/.exec(css);
+  if (formBubble && cardGround && formBubble[1].indexOf(cardGround[1].trim()) !== -1) {
+    test.check('and a form inside a panel is a bubble on that same ground');
+  } else {
+    test.fail('.stat-tile .start-job-form: ' + (formBubble && formBubble[1].replace(/\s+/g, ' ').trim()));
+  }
+
+  // And it takes its space from above like any block. Nothing was doing
+  // that inside a panel, so a form sat flush under whatever it followed.
+  const blockGap = value('#open-with', 'margin-top');
+  if (blockGap !== null && value('.start-job-form', 'margin-top') === blockGap) {
+    test.check('and takes a block of space above it, as a block does');
+  } else {
+    test.fail('form margin-top: ' + value('.start-job-form', 'margin-top') +
+      ' vs the block gap ' + blockGap);
+  }
+
+  // A reading is its own bubble, so it is visibly not the controls beside
+  // it (Andy) — the same card-inside-a-card ground .stat-tile.nested
+  // uses, at the roundness of the panel it sits in.
+  const bubble = /\.fact-row\s*\{([^}]*)\}/.exec(css);
+  const nested = /\.stat-tile\.nested\s*\{([^}]*)\}/.exec(css);
+  const ground = nested && /background:\s*([^;]+);/.exec(nested[1]);
+  if (bubble && ground && bubble[1].indexOf(ground[1].trim()) !== -1 &&
+      /border-radius/.test(bubble[1]) && /padding/.test(bubble[1])) {
+    test.check('a facts bubble sits on the same ground as any card inside a card');
+  } else {
+    test.fail('fact-row: ' + (bubble && bubble[1].replace(/\s+/g, ' ').trim()));
+  }
+
+  // The pair centres on itself, so a short caption over a long value
+  // reads as one block rather than two ragged lines (Andy).
+  const factBlock = /\.fact\s*\{([^}]*)\}/.exec(css);
+  if (factBlock && /align-items:\s*center/.test(factBlock[1]) &&
+      /text-align:\s*center/.test(factBlock[1])) {
+    test.check('and a fact centres its caption and value on each other');
+  } else {
+    test.fail('.fact: ' + (factBlock && factBlock[1].replace(/\s+/g, ' ').trim()));
+  }
+
+  // Caption above value, and the caption is the small bold half. The
+  // opposite way round from .stat-tile, where the figure is what is being
+  // read and the caption only names it — so this asserts the relationship
+  // rather than the numbers (§7).
+  const label = /\.fact-label\s*\{([^}]*)\}/.exec(css);
+  const factValue = /\.fact-value\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
+  const labelSize = label && /font-size:\s*(\d+)px/.exec(label[1]);
+  const title = /#app-title\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
+  if (labelSize && factValue && title &&
+      factValue[1] === title[1] && Number(labelSize[1]) < Number(factValue[1]) &&
+      /font-weight:\s*[6-9]00/.test(label[1])) {
+    test.check('its value reads at titlebar size and its caption is smaller and bold');
+  } else {
+    test.fail('label ' + (labelSize && labelSize[1]) + ' / value ' +
+      (factValue && factValue[1]) + ' / title ' + (title && title[1]));
+  }
+
   // Asked of the stack rule itself now. It used to be a list of seven
   // pairs naming which kinds of block space themselves from which — a
   // list that is quadratic in block types and whose omissions are
@@ -2086,6 +2197,71 @@ test.subHeading('A group screen is a place you can go back to');
     test.check('and exactly one caller still replaces its own entry — Open with');
   } else {
     test.fail('callers passing replace: ' + replaceCalls.length + ' — ' + replaceCalls.join(' | '));
+  }
+}
+
+test.subHeading('Sibling folds are one exclusive group, in every app');
+
+{
+  // UI_DESIGN_STYLE.md §3: opening one fold closes its siblings, done by
+  // the browser through <details name="…">. Checked across the whole
+  // tree rather than per app, because the way this rule fails is that
+  // somebody adds a SECOND fold to an app that had one and never learns
+  // there was a rule. Contacts is the only app with siblings today; this
+  // is here for the app that grows a second one.
+  const fs = require('fs');
+  const path = require('path');
+  const RUN = path.join(__dirname, '..', 'run');
+
+  // Two kinds of <details> are not accordions and are exempt by name:
+  // the Files tree, where exclusive folders would collapse the path you
+  // came down, and an annotation's raw-JSON disclosure, which is a value
+  // on a data card rather than a panel.
+  // Matched only where a string literal OPENS one. Plain /<details/
+  // also finds the sentence in files.js that explains why a rebuilt fold
+  // comes back closed — a check a comment can fail is a check a comment
+  // can also silently pass.
+  function panelFolds(src) {
+    return (src.match(/['\"]<details[^>]*>/g) || []).filter(function (tag) {
+      return tag.indexOf('data-path') === -1 && tag.indexOf('annotation-raw') === -1;
+    });
+  }
+
+  const files = fs.readdirSync(path.join(RUN, 'app'))
+    .map(function (folder) { return ['app/' + folder, path.join(RUN, 'app', folder, folder + '.js')]; })
+    .filter(function (pair) { return fs.existsSync(pair[1]); })
+    .concat([['js/client/shell.js', path.join(RUN, 'js', 'client', 'shell.js')]]);
+
+  const offenders = [];
+  let grouped = 0;
+  files.forEach(function (pair) {
+    const folds = panelFolds(fs.readFileSync(pair[1], 'utf8'));
+    if (folds.length < 2) return;
+    const names = folds.map(function (tag) {
+      const found = /name="([^"]+)"/.exec(tag);
+      return found ? found[1] : '';
+    });
+    if (names.some(function (n) { return !n; }) || new Set(names).size !== 1) {
+      offenders.push(pair[0] + ' ' + JSON.stringify(names));
+    } else {
+      grouped += 1;
+    }
+  });
+
+  if (offenders.length === 0) {
+    test.check('every app with more than one panel fold groups them — ' + grouped + ' such app(s)');
+  } else {
+    test.fail('ungrouped folds: ' + offenders.join('; '));
+  }
+
+  // And the exemptions are real rather than assumed: the tree still
+  // builds folds, and they still carry no group.
+  const tree = fs.readFileSync(path.join(RUN, 'app', 'files', 'files.js'), 'utf8');
+  const treeFolds = (tree.match(/['\"]<details[^>]*>/g) || []);
+  if (treeFolds.length && treeFolds.every(function (t) { return t.indexOf('name=') === -1; })) {
+    test.check('and the Files tree is left alone — a folder is not a panel');
+  } else {
+    test.fail('tree folds: ' + JSON.stringify(treeFolds));
   }
 }
 

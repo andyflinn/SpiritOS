@@ -94,18 +94,12 @@ function natterReportHtml(api, badge) {
   }
   var report = badge.report || {};
   var peers = Array.isArray(report.peers) ? report.peers.length : 0;
-  function fact(label, value) {
-    return '<div class="fact">' +
-      '<span class="fact-value">' + api.escapeHtml(String(value)) + '</span>' +
-      '<span class="fact-label">' + api.escapeHtml(label) + '</span>' +
-      '</div>';
-  }
-  return '<div class="fact-row">' +
-    fact('Owner', report.owner || '(none)') +
-    fact('Mode', report.mode || '(unknown)') +
-    fact('Peers', peers) +
-    fact('Messages', report.messages == null ? '(unknown)' : report.messages) +
-    '</div>';
+  return spirit.shell.factRow([
+      ['Owner', report.owner || '(none)'],
+      ['Mode', report.mode || '(unknown)'],
+      ['Peers', peers],
+      ['Messages', report.messages == null ? '(unknown)' : report.messages],
+    ]);
 }
 
 // Minting belongs to the mailbox it mints on, so it lives inside that

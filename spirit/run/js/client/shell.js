@@ -1599,6 +1599,29 @@
     return '<div class="file-info-row"><span class="file-info-label">' + label + ':</span><span>' + value + '</span></div>';
   }
 
+  // A handful of short facts as ONE reading rather than a list of rows,
+  // in a bubble of their own so they are visibly not the controls beside
+  // them. Used wherever a row has already supplied the heading: a
+  // mailbox report in Natter, a contact's row, an app's defaults.
+  //
+  // Label above value, and the label is the small bold half — you scan
+  // the captions to find the one you want and then read the value at
+  // reading size. That is the opposite way round from .stat-tile's
+  // figure-over-caption, where the number is the thing being read.
+  //
+  // Here rather than hand-written in each app: it was copied into three
+  // of them and the fourth was about to be, and a pattern that is going
+  // everywhere should have one place to be changed. Values are escaped
+  // here, so callers pass plain strings.
+  function factRow(pairs) {
+    return '<div class="fact-row">' + (pairs || []).map(function (pair) {
+      return '<div class="fact">' +
+        '<span class="fact-label">' + escapeHtml(String(pair[0])) + '</span>' +
+        '<span class="fact-value">' + escapeHtml(String(pair[1])) + '</span>' +
+        '</div>';
+    }).join('') + '</div>';
+  }
+
   function renderFileInfoBubble(path) {
     var stats = spirit.core.fs.statFile(path);
     var rows = fileInfoRow('Path', escapeHtml(path));
@@ -1786,6 +1809,7 @@
     CATEGORY_APP_HANDLERS: CATEGORY_APP_HANDLERS,
     setViewerTitle: setViewerTitle,
     fileInfoRow: fileInfoRow,
+    factRow: factRow,
     renderFileInfoBubble: renderFileInfoBubble,
     renderAnnotationsSection: renderAnnotationsSection,
     renderAppGroup: renderAppGroup,

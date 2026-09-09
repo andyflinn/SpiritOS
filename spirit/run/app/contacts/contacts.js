@@ -119,23 +119,14 @@ function contactsRowHtml(person) {
     buttons += '<button type="button" class="cancel-btn" data-contact-block="' + contactsEscapeHtml(person.publicKey) + '">Block</button>';
   }
 
-  // Who they are, on one line. The row that opened is the heading, so
-  // three label-over-value rows stacked down the panel made a list out of
-  // what is one reading — the same shape a mailbox report uses in Natter
-  // (.fact-row, index.html).
-  function fact(label, value) {
-    return '<div class="fact">' +
-      '<span class="fact-value">' + contactsEscapeHtml(String(value)) + '</span>' +
-      '<span class="fact-label">' + contactsEscapeHtml(label) + '</span>' +
-      '</div>';
-  }
-
+  // Who they are, as one reading. The row that opened is the heading, so
+  // three rows stacked down the panel made a list out of it.
   var detail = '<div class="stat-tile wide">' +
-    '<div class="fact-row">' +
-      fact('Their name', person.publicLabel || '(none)') +
-      fact('How', person.acquiredVia || '') +
-      fact('Key ends', String(person.publicKey || '').slice(-6)) +
-    '</div>' +
+    spirit.shell.factRow([
+      ['Their name', person.publicLabel || '(none)'],
+      ['How', person.acquiredVia || ''],
+      ['Key ends', String(person.publicKey || '').slice(-6)],
+    ]) +
     // What you call them and what you decide about them, on one line: the
     // caption and its input take the width (.field-label.grow) and the
     // buttons fill the end. align-items:flex-end on the row is what lines

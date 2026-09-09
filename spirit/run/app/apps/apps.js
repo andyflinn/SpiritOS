@@ -37,12 +37,18 @@ function locationLabel(a, groupsById) {
 
 function renderAppManagerRow(a, groupsById, groupList) {
   var isExpanded = a.id === expandedAppId;
+  // What it is called and where it lives — the second of which is the
+  // one thing on this screen you can change.
+  //
+  // Id and Source used to be columns here and rows in the panel below,
+  // which is twice on screen for two facts nobody can act on (Andy). An
+  // id is not how a person addresses an app, and "Dynamic / Built-in"
+  // only ever explained why some rows offer a name and icon control —
+  // which the panel now says in words instead of leaving you to infer.
   var mainRow = '<tr class="job-row" data-app-row="' + appsEscapeHtml(a.id) + '">' +
     '<td>' + (isExpanded ? APPS_ICON.POINTDOWN : APPS_ICON.POINTRIGHT) + ' ' + appsEscapeHtml(a.icon) + '</td>' +
     '<td>' + appsEscapeHtml(a.name) + '</td>' +
-    '<td>' + appsEscapeHtml(a.id) + '</td>' +
     '<td>' + appsEscapeHtml(locationLabel(a, groupsById)) + '</td>' +
-    '<td>' + (a.dynamic ? 'Dynamic' : 'Built-in') + '</td>' +
     '</tr>';
 
   if (!isExpanded) return mainRow;
@@ -128,11 +134,13 @@ function renderAppManagerRow(a, groupsById, groupList) {
         '<option value="none"' + (a.group === 'none' ? ' selected' : '') + '>None</option>' +
       '</select></label>'
     : '';
+  // What a Reset would bring back, as one reading. The row that opened
+  // is the heading, so stacking these made a list out of it.
   var detailHtml = '<div class="stat-tile wide">' +
-    spirit.shell.fileInfoRow('Id', appsEscapeHtml(a.id)) +
-    spirit.shell.fileInfoRow('Default name', appsEscapeHtml(a.defaultName)) +
-    spirit.shell.fileInfoRow('Default icon', appsEscapeHtml(a.defaultIcon)) +
-    spirit.shell.fileInfoRow('Source', a.dynamic ? 'Dynamic (script loads on first launch)' : 'Built-in') +
+    spirit.shell.factRow([
+      ['Default name', a.defaultName],
+      ['Default icon', a.defaultIcon],
+    ]) +
     nameFieldHtml +
     iconFieldHtml +
     groupFieldHtml +
@@ -147,7 +155,7 @@ function renderAppManagerRow(a, groupsById, groupList) {
   // div fresh each time, visibly resetting its scroll position
   // every ~2s. detailHtml's own .stat-tile wide already provides
   // background/padding, so nothing else is needed here.
-  return mainRow + '<tr class="job-log-row"><td colspan="5">' + detailHtml + '</td></tr>';
+  return mainRow + '<tr class="job-log-row"><td colspan="3">' + detailHtml + '</td></tr>';
 }
 
 function renderAppManagerTable(force) {
@@ -179,7 +187,7 @@ function renderAppManagerTable(force) {
   var groupsById = {};
   groupList.forEach(function (g) { groupsById[g.id] = g; });
   var rows = spirit.shell.listApps().sort(function (a, b) { return a.name.localeCompare(b.name); });
-  tbody.innerHTML = rows.map(function (a) { return renderAppManagerRow(a, groupsById, groupList); }).join('') || '<tr><td colspan="5">(no apps registered)</td></tr>';
+  tbody.innerHTML = rows.map(function (a) { return renderAppManagerRow(a, groupsById, groupList); }).join('') || '<tr><td colspan="3">(no apps registered)</td></tr>';
   fillIconSelectors(tbody, rows, groupList);
 }
 
@@ -241,7 +249,7 @@ spirit.shell.activateApp({
 
     container.innerHTML =
       '<table class="jobs-table"><thead><tr>' +
-      '<th></th><th>Name</th><th>Id</th><th>Location</th><th>Source</th>' +
+      '<th></th><th>Name</th><th>Location</th>' +
       '</tr></thead><tbody id="app-manager-tbody"></tbody></table>';
 
     document.getElementById('app-manager-tbody').addEventListener('click', function (event) {

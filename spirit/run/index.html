@@ -236,12 +236,31 @@
       /* No margin-bottom: whatever follows a row carries its own space
          above it (§3). Carried downward, a row that is not on the page
          leaves its gap behind — which is the hack #open-with:empty had to
-         exist for. */
+         exist for.
+         margin-top because a row IS a block and takes its space from
+         above like one. At the top level of a pane the stack rule already
+         said so and wins on specificity with the same number; inside a
+         panel nothing did, so a form sat flush under whatever it
+         followed — a facts bubble, a heading, another form. */
       .start-job-form {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
         align-items: flex-end;
+        margin-top: 12px;
+      }
+
+      /* Inside a panel a form is its own bubble, on the same ground the
+         facts bubble uses. A panel holds a reading and one or more
+         things to do; giving each its own card is what stops them
+         reading as one undifferentiated column (Andy).
+         Not at the top level of a pane: there a form is already a block
+         in the stack, and Relay Chat's To bar and composer are chrome
+         rather than a form inside a card. */
+      .stat-tile .start-job-form {
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 12px;
       }
 
       /* Inside a row the gap does the spacing, so the pair drops its own
@@ -582,22 +601,21 @@
         align-items: flex-end;
       }
 
-      /* The two folded panels at the foot of Relay Chat are the same
-         kind of thing — a rare job, one line until it is wanted — so
-         they read as a pair. The invite line used to be shrunk to 13px
-         to keep it secondary; sitting next to Add someone by handle that
-         made it look like a footnote to the panel above rather than the
-         other way in. Same size, same marker, same weight. */
-      #rc-invite-panel > summary,
-      #rc-add-panel > summary,
-      #rc-settings-panel > summary,
-      #rc-unknown-section > summary {
+      /* Every folded panel, said once. This was a list of ids — and by
+         the time anybody looked, three of the four named panels had
+         moved out of Relay Chat (invite to Natter, add-someone and the
+         stranger policy to Contacts) and the two that arrived in
+         Contacts were left with no pointer cursor at all: a fold that
+         does not look clickable.
+         A rare job, one line until it is wanted. Same size, same marker,
+         same weight, wherever it is.
+         The [open] half went with the list: it pushed the body down with
+         a margin-bottom on the summary, and a fold's body carries its
+         own space above it now (§3) — .start-job-form, the choices
+         block, a nested tile all bring theirs. */
+      details.stat-tile > summary {
         cursor: pointer;
       }
-      #rc-invite-panel[open] > summary,
-      #rc-add-panel[open] > summary,
-      #rc-settings-panel[open] > summary,
-      #rc-unknown-section[open] > summary { margin-bottom: 8px; }
 
       /* The open conversation and the decision about it share a line:
          the To control takes the width, the button sits at its right.
@@ -629,14 +647,37 @@
 
          Wraps rather than scrolls: on a narrow screen the facts stack,
          they do not vanish off the side. */
-      .fact-row { display: flex; flex-wrap: wrap; gap: 12px 24px; }
-      .fact { display: flex; flex-direction: column; }
-      /* Reading size for both halves, the same as a file info row: a
-         caption is not fine print when it is the only thing naming the
-         value above it. Dimmed rather than shrunk, as .file-info-label
-         is. */
+      /* A bubble of its own, so a reading is visibly not the controls
+         beside it. Same card-inside-a-card ground .stat-tile.nested uses,
+         and the same 10px roundness as the panel it sits in. */
+      .fact-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      /* Label and value centre on each other, not on the left edge — a
+         short caption over a long value, or the other way round, reads as
+         one block rather than two ragged lines. align-items is the
+         horizontal axis here because the fact is a column; text-align
+         carries it into a value that wraps. */
+      .fact {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      /* Caption above value, and the caption is the small bold half: you
+         scan the labels to find the one you want, then read the value at
+         reading size (§2). The opposite way round from .stat-tile's
+         figure-over-caption, where the number is the thing being read and
+         the caption only says what it is. */
+      .fact-label { font-size: 12px; font-weight: 600; opacity: 0.75; }
       .fact-value { font-size: 16px; }
-      .fact-label { font-size: 16px; opacity: 0.7; }
 
       /* The other half of the rule above: the td gives the last block
          the same space at the bottom, because what follows is another
@@ -653,12 +694,12 @@
       /* Names the mailbox a claim will happen on, which the form itself
          cannot ask about — see natterPaintBind. Same weight as the mint
          heading: both are the title of a thing to do. */
-      .natter-bind-heading { font-size: 16px; margin-bottom: 12px; }
+      .natter-bind-heading { font-size: 16px; }
 
       /* The one heading in that panel: the facts above are a reading of
          the row that opened them, but this is a thing to do. Reading
          size, and the same ★ the row carries for owning the mailbox. */
-      .natter-mint-heading { font-size: 16px; margin-bottom: 12px; }
+      .natter-mint-heading { font-size: 16px; }
 
       /* All the labels in this panel read at the same size — the form's
          captions included. Scoped here rather than changed shell-wide:

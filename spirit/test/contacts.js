@@ -98,6 +98,17 @@ function mountApp(options) {
       fileInfoRow: function (label, value) {
         return '<div class="file-info-row"><span>' + label + '</span><span>' + value + '</span></div>';
       },
+      // The shared facts bubble (factRow, shell.js). Real output, not a
+      // placeholder — the tests read what a panel actually renders.
+      factRow: function (pairs) {
+        return '<div class="fact-row">' + (pairs || []).map(function (pair) {
+          return '<div class="fact">' +
+            '<span class="fact-label">' + spirit.core.util.escapeHtml(String(pair[0])) + '</span>' +
+            '<span class="fact-value">' + spirit.core.util.escapeHtml(String(pair[1])) + '</span>' +
+            '</div>';
+        }).join('') + '</div>';
+      },
+
     },
     core: {
       util: { escapeHtml: spirit.core.util.escapeHtml },
