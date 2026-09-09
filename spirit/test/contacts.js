@@ -587,6 +587,11 @@ function theRowBubbleReadsAcrossNotDown() {
     people: [{
       publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: 'Bertie',
       acquiredVia: 'handle', held: false, blocked: false, bytesHeld: 2048,
+      // What the node counted, as buildPeople hands it over: a plain
+      // integer and two raw per-day figures. The rounding is the app's,
+      // which is why the fixture carries a number that has to be
+      // rounded rather than one that is already short.
+      unansweredInbound: 4, inboundPerDay: 0.42857142857, outboundPerDay: 0.0714285,
     }],
   });
 
@@ -598,19 +603,23 @@ function theRowBubbleReadsAcrossNotDown() {
     // places, because the shape is not either app's (§4). Three of them,
     // and none of the stacked rows they replaced.
     const facts = (panel.match(/class="fact"/g) || []).length;
-    if (/class="fact-row"/.test(panel) && facts === 3 && panel.indexOf('file-info-row') === -1) {
+    if (/class="fact-row"/.test(panel) && facts === 6 && panel.indexOf('file-info-row') === -1) {
       test.check('its facts read across one line, not down the panel');
     } else {
       test.fail(facts + ' facts, file-info-row present: ' + (panel.indexOf('file-info-row') !== -1));
     }
 
     // The order Andy asked for, and the reading each one gives. Order is
-    // asserted by position, not by presence: three labels in a bubble
-    // say nothing about which is first, and first is what he specified.
+    // asserted by position, not by presence: six labels in a bubble say
+    // nothing about which is first, and first is what he specified.
+    //
+    // Who they are, then what they cost. The three verbs that answer the
+    // second half are on the row underneath — accept, block, wait.
     const labels = (panel.match(/class="fact-label">([^<]*)</g) || [])
       .map(function (m) { return m.slice(m.indexOf('>') + 1, -1); });
-    if (labels.join(' | ') === 'Public Handle | My Label | Storage') {
-      test.check('and they read Public Handle, My Label, Storage, in that order');
+    if (labels.join(' | ') === 'Public Handle | My Label | Unanswered inbound | ' +
+        'Inbound rate | Outbound rate | Storage') {
+      test.check('and they read in Andy\'s order, all six');
     } else {
       test.fail('labels: ' + labels.join(' | '));
     }
@@ -627,16 +636,16 @@ function theRowBubbleReadsAcrossNotDown() {
       test.fail('values: ' + panel);
     }
 
-    // Unanswered inbound and the two rates are the other three Andy
-    // asked for. They have to be counted when a packet moves — chat's
-    // log rings at 500, so nothing honest can be recovered from it — so
-    // they are a whoBook change and a team review, not this app's to
-    // guess at. Drawing them empty would be worse than not drawing them
-    // (§1): a fact with nothing in it still claims to have been measured.
-    if (panel.indexOf('Unanswered') === -1 && panel.indexOf('rate') === -1) {
-      test.check('and the three facts that need counters the node does not keep are absent, not blank');
+    // A rate carries its unit, to one decimal (packet 7). Without the
+    // unit a bare 0.2 beside a byte count is a number nobody can act on,
+    // and per day is the whole difference between a rate and a total —
+    // which is what the counters exist to be.
+    if (/Unanswered inbound<\/span><span class="fact-value">4</.test(panel) &&
+        /Inbound rate<\/span><span class="fact-value">0\.4 \/ day</.test(panel) &&
+        /Outbound rate<\/span><span class="fact-value">0\.1 \/ day</.test(panel)) {
+      test.check('and a rate says per day, to one decimal, while unanswered is a plain count');
     } else {
-      test.fail('placeholder facts drawn: ' + panel);
+      test.fail('counters: ' + panel);
     }
 
     // Six characters of a key are what two people compare down a phone

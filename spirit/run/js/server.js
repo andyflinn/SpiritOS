@@ -905,6 +905,33 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
+// The personal node reading its own mail without being asked (packet 7).
+//
+// Counters that only advanced while Relay Chat was open would make
+// Contacts lie every time Andy closed it, and lie the wrong way: quiet,
+// for somebody who had been writing all afternoon. The sweep calls the
+// SAME apply function the browser's poll uses (hub.applyInboxBatch, via
+// sweepInbox) — two paths into one function, or the counts and the
+// address book drift apart and only one of them is ever looked at.
+//
+// A --relay stays quiet. It is a mailbox; it has no book, nobody to
+// count, and nothing to pull from. It also holds other people's keys,
+// which is the reason counting never happens there at all.
+//
+// unref'd: the http server is what keeps this process alive, and a timer
+// that outlived it would hold a node open with nothing listening.
+const INBOX_SWEEP_MS = 60000;
+if (!relayMode) {
+  const sweep = setInterval(() => {
+    // Silent on failure on purpose. The mailbox being unreachable for a
+    // minute is ordinary — a closed laptop lid, a relay restarting — and
+    // a line of console every 60 seconds would bury the job output this
+    // window exists to show.
+    hub.sweepInbox().catch(() => {});
+  }, INBOX_SWEEP_MS);
+  sweep.unref();
+}
+
 server.listen(port, BIND_HOST, () => {
   if (relayMode) {
     console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);

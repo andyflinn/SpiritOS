@@ -11,6 +11,7 @@ const ownerBadge = require('./ownerBadge');
 const whoBook = require('./whoBook');
 const packet = require('./packet');
 const peerFile = require('./peerFile');
+const peerStats = require('./peerStats');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -194,6 +195,7 @@ function buildPeople(rootDir, peers, relayUrl) {
     .filter(function (row) { return row.publicKey !== myKey; })
     .map(function (row) {
       var seen = census[row.publicKey];
+      var stats = peerStats.readSummary(rootDir, row.publicKey);
       return {
         publicKey: row.publicKey,
         // The end of the key, from the one rule that decides what a tail
@@ -225,6 +227,19 @@ function buildPeople(rootDir, peers, relayUrl) {
         // cost nothing yet — an absent field would make the app decide
         // between "none" and "not asked", which are not the same answer.
         bytesHeld: bytesHeld[row.publicKey] || 0,
+        // What they cost in attention. Computed from the sidecar
+        // (peerStats), never from a field on the row: a whoBook row is
+        // what a human decided, and a packet counter is not a decision.
+        //
+        // A missing sidecar summarises as zeros, and zeros are the true
+        // answer — the counters start when counting starts. NOT
+        // backfilled from chat's log: that ring caps at 500, so a total
+        // taken from it stops rising exactly when somebody becomes worth
+        // looking at, and it would speak for the node while measuring one
+        // app (packet 7).
+        unansweredInbound: stats.unansweredInbound,
+        inboundPerDay: stats.inboundPerDay,
+        outboundPerDay: stats.outboundPerDay,
       };
     });
 
@@ -433,6 +448,84 @@ function decorateWithPacket(message) {
   return out;
 }
 
+// One delivered batch, counted. Packet 7, and the rules are Grok's:
+//
+//   no fromKey, or our own          skip — not somebody else's traffic
+//   no whoBook row                  skip — a silent stranger gets no row,
+//                                   and a sidecar without a row would be
+//                                   a hidden second book
+//   row.blocked                     skip — refused at the door is
+//                                   refused; the numbers freeze where
+//                                   they are and the sidecar stays,
+//                                   because bytesHeld is still true
+//
+// Called AFTER policy has run, which is the whole reason it is a separate
+// pass rather than folded into partitionInbox: under `hold` the row for a
+// waiting stranger is created by holdFromInbox in this same batch, and
+// that line is exactly the one worth counting. The hourglass is
+// consideration, and a line you dropped was still a demand on your
+// attention — the count is the only trace hold is allowed to keep. The
+// body is never written anywhere.
+function countInbound(rootDir, messages) {
+  var id = auth.loadIdentity(rootDir);
+  var myKey = (id && id.publicKey) || '';
+  (Array.isArray(messages) ? messages : []).forEach(function (m) {
+    if (!m || !m.fromKey || m.fromKey === myKey) return;
+    var row = whoBook.byPublicKey(rootDir, m.fromKey);
+    if (!row) return;
+    if (whoBook.isBlocked(row)) return;
+    // The id goes with it so a mailbox that does NOT consume on read
+    // cannot count one line twice. peerStats keeps a bounded list of
+    // them — a cap, not a transcript.
+    peerStats.noteIn(rootDir, m.fromKey, m.id);
+  });
+}
+
+// Everything that happens to a fetched inbox batch, in one function,
+// because there are two callers and they must not drift: Relay Chat's
+// poll and the personal node's own 60-second sweep.
+//
+// The sweep exists because counters that only advance while a chat window
+// is open would make Contacts lie every time Andy closes it — and lie in
+// the direction that matters, reading "quiet" for somebody who has been
+// writing all afternoon. What the numbers mean, exactly, is "arrived at
+// this node": the relay stores and this node pulls, so a machine that was
+// off counts when it next pulls, and nothing on spirit-3 counts anything.
+//
+// Returns the response body /api/hub/inbox sends. The sweep throws it
+// away and keeps only the side effects, which is the point.
+function applyInboxBatch(rootDir, messages, relayUrl) {
+  // Off the file, never off the request. A client still sending ?unknown=
+  // is not consulted — see unknownPolicy (packet 5).
+  var policy = unknownPolicy(rootDir);
+
+  // Reading your mail is also how you come to know who wrote it — when
+  // that is what you asked for. Done here rather than in the app either
+  // way: it is a fact about this node's address book, and the browser is
+  // a view of it.
+  if (policy === 'acquire') {
+    acquireFromInbox(rootDir, messages, relayUrl);
+  } else if (policy === 'hold') {
+    holdFromInbox(rootDir, messages, relayUrl);
+  }
+
+  // After policy, so a row created a few lines above is a row this pass
+  // can see. Before the drop, because a held line is dropped and still
+  // counts.
+  countInbound(rootDir, messages);
+
+  // The drop happens here, not in the app. A message the browser never
+  // receives cannot be written to a peerfile, marked on a row or counted
+  // in a title by some later change that forgot about this one.
+  var split = partitionInbox(rootDir, messages);
+  var kept = policy === 'acquire' ? messages : split.known;
+  var body = { messages: kept.map(decorateWithPacket) };
+  // Hold says how many, never who: a name would be the thing the setting
+  // exists to withhold.
+  if (policy === 'hold') body.unknown = split.unknown;
+  return body;
+}
+
 function createHub(rootDir) {
   function fail(res, status, msg) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -522,6 +615,21 @@ function createHub(rootDir) {
           wrapped.text
         ))
           .then(function (r) {
+            // Counted only when the mailbox took it (201). A refused send
+            // is not a reply, and what unansweredInbound measures is
+            // whether Andy answered — so a 403 must leave the count where
+            // it stood rather than clearing it (packet 7).
+            //
+            // `to` has to be in the book before a sidecar is written for
+            // it. The send hands `to` straight to the relay, and a legacy
+            // caller may still pass a caption; a caption would name a
+            // peerfile under a key nobody holds, which bytesHeld would
+            // then count against nobody. Blocked is not checked: if a send
+            // to them was allowed at all, it happened.
+            if (r.status === 201 && body && body.to &&
+                whoBook.byPublicKey(rootDir, body.to)) {
+              peerStats.noteOut(rootDir, body.to);
+            }
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(r.text);
           })
@@ -577,27 +685,31 @@ function createHub(rootDir) {
     });
   }
 
+  // The request half of an inbox read, extracted so the browser's poll
+  // and the node's own sweep ask the mailbox the same question. The apply
+  // half is applyInboxBatch, above and outside this closure.
+  function inboxRequest(url, name) {
+    // Signed for the same reason claim and send are: in keys mode the
+    // relay proves who is READING a mailbox, not just who is writing to
+    // one. Unsigned when this node has no identity yet, which the relay
+    // still accepts in open and names mode.
+    var id = auth.loadIdentity(rootDir);
+    var query = '?name=' + encodeURIComponent(name);
+    // In a header, never on the URL: the relay refuses a query `sig`
+    // outright, because a signature that has been in a URL is already
+    // in an access log. Signed for this minute — the relay accepts the
+    // one either side of its own clock and nothing further out.
+    var headers = {};
+    if (id && id.privateKey) {
+      headers['X-Spirit-Sig'] = auth.sign(id.privateKey, auth.inboxMessage(name, Date.now()));
+    }
+    return relayRequest(url, 'GET', '/api/relay/inbox' + query, null, headers);
+  }
+
   function handleInbox(req, res, urlObj) {
     withRelay(res, function (url) {
       var name = urlObj.searchParams.get('name') || '';
-      // Signed for the same reason claim and send are: in keys mode the
-      // relay proves who is READING a mailbox, not just who is writing to
-      // one. Unsigned when this node has no identity yet, which the relay
-      // still accepts in open and names mode.
-      var id = auth.loadIdentity(rootDir);
-      var query = '?name=' + encodeURIComponent(name);
-      // In a header, never on the URL: the relay refuses a query `sig`
-      // outright, because a signature that has been in a URL is already
-      // in an access log. Signed for this minute — the relay accepts the
-      // one either side of its own clock and nothing further out.
-      var headers = {};
-      if (id && id.privateKey) {
-        headers['X-Spirit-Sig'] = auth.sign(id.privateKey, auth.inboxMessage(name, Date.now()));
-      }
-      // Off the file, never off the request. A client still sending
-      // ?unknown= is not consulted — see unknownPolicy.
-      var policy = unknownPolicy(rootDir);
-      relayRequest(url, 'GET', '/api/relay/inbox' + query, null, headers)
+      inboxRequest(url, name)
         .then(function (r) {
           if (r.status !== 200) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -613,30 +725,40 @@ function createHub(rootDir) {
             return;
           }
 
-          // Reading your mail is also how you come to know who wrote it —
-          // when that is what you asked for. Done here rather than in the
-          // app either way: it is a fact about this node's address book,
-          // and the browser is a view of it.
-          if (policy === 'acquire') {
-            acquireFromInbox(rootDir, parsed.messages, url);
-          } else if (policy === 'hold') {
-            holdFromInbox(rootDir, parsed.messages, url);
-          }
-
-          // The drop happens here, not in the app. A message the browser
-          // never receives cannot be written to a peerfile, marked on a
-          // row or counted in a title by some later change that forgot
-          // about this one.
-          var split = partitionInbox(rootDir, parsed.messages);
-          var kept = policy === 'acquire' ? parsed.messages : split.known;
-          var body = { messages: kept.map(decorateWithPacket) };
-          // Hold says how many, never who: a name would be the thing the
-          // setting exists to withhold.
-          if (policy === 'hold') body.unknown = split.unknown;
+          var body = applyInboxBatch(rootDir, parsed.messages, url);
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify(body));
         })
         .catch(function (err) { fail(res, 502, String(err.message || err)); });
+    });
+  }
+
+  // The personal node reading its own mail with nobody watching.
+  //
+  // Called on a timer by server.js when this is NOT a --relay (packet 7).
+  // No HTTP, no app involved, and it answers to nothing: the caller keeps
+  // the side effects — rows for people who wrote, and the counters — and
+  // throws the body away.
+  //
+  // Silent by design. A node with no identity has no mailbox to read and
+  // no name to sign with; a node with no relay row has nowhere to ask. In
+  // both cases there is nothing wrong, so there is nothing to say, and a
+  // sweep that logged every minute would bury the console it shares with
+  // the jobs it is meant to make visible.
+  function sweepInbox() {
+    var url = loadRelayUrl(rootDir);
+    if (!url) return Promise.resolve(null);
+    try { assertRelayUrl(url); }
+    catch (e) { return Promise.resolve(null); }
+    var id = auth.loadIdentity(rootDir);
+    if (!id || !id.name) return Promise.resolve(null);
+    return inboxRequest(url, id.name).then(function (r) {
+      if (r.status !== 200) return null;
+      var parsed = null;
+      try { parsed = JSON.parse(r.text); }
+      catch (e) { return null; }
+      if (!parsed || !Array.isArray(parsed.messages)) return null;
+      return applyInboxBatch(rootDir, parsed.messages, url);
     });
   }
 
@@ -870,6 +992,9 @@ function createHub(rootDir) {
     handleClaim: handleClaim,
     handleSend: handleSend,
     handleInbox: handleInbox,
+    // The same read, with nobody watching. server.js calls it on a timer
+    // in personal mode only — see the comment on sweepInbox.
+    sweepInbox: sweepInbox,
     handleStatus: handleStatus,
     handleWho: handleWho,
     handleHandle: handleHandle,
@@ -887,6 +1012,8 @@ module.exports = {
   keyTail: keyTail,
   partitionInbox: partitionInbox,
   holdFromInbox: holdFromInbox,
+  applyInboxBatch: applyInboxBatch,
+  countInbound: countInbound,
   unknownPolicy: unknownPolicy,
   decorateWithPacket: decorateWithPacket,
 };

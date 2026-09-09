@@ -89,6 +89,22 @@ function contactsStatus(text) {
   if (el) el.textContent = text || '';
 }
 
+// A rate is messages per day across peerStats' window, and one decimal
+// is the whole of it (packet 7). The number is there to be compared with
+// the one beside it and with what it was last week — 0.2 against 3.1
+// says everything a reader needs, and 0.214285… only says that a
+// computer divided something.
+//
+// The unit rides with the figure. A bare "0.2" in a bubble beside a byte
+// count is a number nobody can act on: per day is what makes it a rate
+// rather than a total, and the difference between those two is the point
+// of the whole packet.
+function contactsRate(perDay) {
+  var n = Number(perDay);
+  if (!isFinite(n) || n < 0) n = 0;
+  return n.toFixed(1) + ' / day';
+}
+
 // The Handle column: their own name, and nothing else on an ordinary
 // row. No key endings for people you have already acquired — you did
 // that comparing down a telephone and it is finished (Andy).
@@ -166,33 +182,41 @@ function contactsRowHtml(person) {
   // opened is the heading, so three rows stacked down the panel made a
   // list out of it.
   //
-  // The order Andy asked for is: Public Handle, My Label, Unanswered
-  // inbound, Inbound rate, Outbound rate, Storage — who they are, then
-  // how much of your attention and your disk they are taking, which is
-  // the question this panel is for.
+  // Andy's order: who they are, then what they cost. The question this
+  // panel exists to answer is "how much is that contact a drain on my
+  // attention and my resources", and the three verbs that answer it are
+  // the ones on the row below — accept, block, leave waiting.
   //
-  // THREE OF THOSE SIX ARE NOT DRAWN, and not by oversight. Unanswered
-  // inbound and the two rates have to be counted when a packet moves,
-  // by the node, into the book. They cannot be recovered afterwards from
-  // chat's archive: CHAT_LOG_CAP rings at 500, so any count taken from
-  // it stops rising exactly when a contact becomes worth flagging, and
-  // it would count only chat while claiming to speak for the node. That
-  // makes them a whoBook schema change, which is a team review and not
-  // this app's to invent (AGENT.md, CLAUDE.md). When the counters land
-  // they slot in here, in this order, and nothing else moves.
+  // The three middle numbers are counted by the NODE when a packet moves
+  // (peerStats.js, packet 7), never derived here and never derived from
+  // chat's log: that ring caps at 500, so a total taken from it stops
+  // rising exactly when somebody becomes worth looking at, and it would
+  // speak for the whole node while measuring one app.
   //
-  // Storage does not need them: it is what the node already has on disk
-  // for that key, summed over every app that keeps a per-peer file
-  // (hub.js, bytesHeldByPeer). Nothing is stored, so nothing can drift.
+  // Zeros are drawn, unlike the blanks that stood here before the
+  // counters existed. That is the difference between a fact that was
+  // measured and came out nothing, and a fact nobody measured.
   //
-  // "How" is not here — it is the second column of the table above, and
-  // a fact repeated one line under itself says nothing twice.
+  // Rates are per day over a 14-day window (peerStats.WINDOW_DAYS), not
+  // lifetime. A lifetime total only ever grows, so it ranks contacts by
+  // how long they have been in the book — the opposite of the question.
+  //
+  // "How" is not here: it is the fourth column of the table above, and a
+  // fact repeated one line under itself says nothing twice.
   var detail = '<div class="stat-tile wide">' +
     spirit.shell.factRow([
       // Theirs, and it can change under you — which is why the book
       // keeps myLabel separately rather than overwriting this.
       ['Public Handle', person.publicLabel || '(none)'],
       ['My Label', person.myLabel || '(none)'],
+      // Since the last thing you sent them. Replying is what resets it,
+      // which is exactly the behaviour the number describes: high
+      // because you are neglecting somebody, or high because somebody is
+      // haranguing you. Those are opposite actions, and the row below
+      // has a button for each.
+      ['Unanswered inbound', String(person.unansweredInbound || 0)],
+      ['Inbound rate', contactsRate(person.inboundPerDay)],
+      ['Outbound rate', contactsRate(person.outboundPerDay)],
       ['Storage', spirit.core.util.formatBytes(person.bytesHeld || 0)],
     ]) +
     // What you call them and what you decide about them, on one line: the

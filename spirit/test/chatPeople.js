@@ -28,7 +28,9 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
 const peerFile = require('../run/js/peerFile');
+const peerStats = require('../run/js/peerStats');
 const { createRelay } = require('../run/js/relay');
+const hub = require('../run/js/hub');
 const { createHub, buildPeople, acquireFromInbox, handleMatches, keyTail, partitionInbox, unknownPolicy, holdFromInbox } = require('../run/js/hub');
 
 const RELAY_URL = 'https://mailbox.example';
@@ -807,6 +809,195 @@ test.subHeading('What a contact costs in disk is counted, not remembered');
     test.check('and a log that is trimmed makes the number fall, because it was never stored');
   } else {
     test.fail('after trim: ' + trimmed.bytesHeld);
+  }
+}
+
+test.subHeading('Who is counted, and who is not');
+
+{
+  // The eligibility rules are the hub's, not peerStats' (packet 7).
+  // peerStats knows how to count; whether a key MAY be counted is a
+  // question about the address book, and a sidecar with an opinion about
+  // blocked or held would be a second book nobody could see.
+  const me = auth.generateIdentity('andy');
+  const home = nodeHome(me, [RELAY_URL]);
+
+  const friend = auth.generateIdentity('bert').publicKey;
+  const waiting = auth.generateIdentity('carol').publicKey;
+  const refused = auth.generateIdentity('dave').publicKey;
+  const stranger = auth.generateIdentity('eve').publicKey;
+
+  whoBook.acquire(home, { publicKey: friend, publicLabel: 'bert' }, 'message');
+  whoBook.hold(home, { publicKey: waiting, publicLabel: 'carol' });
+  whoBook.acquire(home, { publicKey: refused, publicLabel: 'dave' }, 'message');
+  whoBook.setBlocked(home, refused, true);
+
+  setUnknownPolicy(home, 'silent');
+  hub.applyInboxBatch(home, [
+    line(1, 'bert', friend, me.publicKey, 'hello'),
+    line(2, 'carol', waiting, me.publicKey, 'let me in'),
+    line(3, 'dave', refused, me.publicKey, 'still here'),
+    line(4, 'eve', stranger, me.publicKey, 'who am i'),
+    // Our own line coming back off the mailbox. Counting it would make
+    // writing to somebody look like them writing to us.
+    line(5, 'andy', me.publicKey, me.publicKey, 'note to self'),
+  ], RELAY_URL);
+
+  const count = function (key) { return peerStats.readSummary(home, key).unansweredInbound; };
+
+  if (count(friend) === 1) {
+    test.check('a contact who writes is counted');
+  } else {
+    test.fail('friend: ' + count(friend));
+  }
+
+  // Grok's answer, and the one that is not obvious: the hourglass is
+  // consideration, and a line you dropped unread was still a demand on
+  // your attention. The count is the only trace hold is allowed to keep
+  // — the body is never written anywhere.
+  if (count(waiting) === 1) {
+    test.check('and somebody waiting is counted, because a dropped line was still a demand');
+  } else {
+    test.fail('waiting: ' + count(waiting));
+  }
+
+  if (count(refused) === 0 && count(stranger) === 0 && count(me.publicKey) === 0) {
+    test.check('and a blocked key, a silent stranger and our own key are all counted as nothing');
+  } else {
+    test.fail('refused ' + count(refused) + ', stranger ' + count(stranger) + ', self ' + count(me.publicKey));
+  }
+
+  // A silent stranger gets no row and no sidecar. A file for somebody
+  // the book does not list would be a hidden second book — the exact
+  // thing `silent` is chosen to avoid.
+  if (!fs.existsSync(peerStats.statsPath(home, stranger))) {
+    test.check('and no file is written for a stranger the book refused to list');
+  } else {
+    test.fail('sidecar written for a silent stranger');
+  }
+
+  // Blocked freezes where it stood — it does not fall to zero and the
+  // file is not deleted, because bytesHeld is still telling the truth
+  // about disk that is really being used.
+  peerStats.noteIn(home, refused, 'earlier');
+  const frozen = count(refused);
+  hub.applyInboxBatch(home, [line(6, 'dave', refused, me.publicKey, 'again')], RELAY_URL);
+  if (count(refused) === frozen && frozen === 1) {
+    test.check('and a blocked key\'s numbers freeze rather than fall, file and all');
+  } else {
+    test.fail('frozen at ' + frozen + ', now ' + count(refused));
+  }
+}
+
+test.subHeading('A row created this batch is a row this batch can count');
+
+{
+  // Order matters and is easy to get backwards: policy runs first,
+  // because under `hold` the row for a waiting stranger is made by
+  // holdFromInbox in this same call. Count before policy and the very
+  // first line from somebody new is the one that never counts.
+  const me = auth.generateIdentity('andy');
+  const home = nodeHome(me, [RELAY_URL]);
+  const newcomer = auth.generateIdentity('frank').publicKey;
+
+  setUnknownPolicy(home, 'hold');
+  hub.applyInboxBatch(home, [line(1, 'frank', newcomer, me.publicKey, 'hello?')], RELAY_URL);
+
+  const row = whoBook.byPublicKey(home, newcomer);
+  if (row && whoBook.acquiredVia(row) === whoBook.HOLD &&
+      peerStats.readSummary(home, newcomer).unansweredInbound === 1) {
+    test.check('under List them, the line that creates the row is the line that counts it');
+  } else {
+    test.fail('row ' + (row && whoBook.acquiredVia(row)) + ', count ' +
+      peerStats.readSummary(home, newcomer).unansweredInbound);
+  }
+
+  // And the line itself is still dropped. Counting is not delivering.
+  const body = hub.applyInboxBatch(home, [line(2, 'frank', newcomer, me.publicKey, 'still?')], RELAY_URL);
+  if (body.messages.length === 0 && body.unknown === 1 &&
+      peerStats.readSummary(home, newcomer).unansweredInbound === 2) {
+    test.check('and the line is still dropped — counted is not delivered');
+  } else {
+    test.fail('delivered ' + body.messages.length + ', unknown ' + body.unknown);
+  }
+}
+
+test.subHeading('The poll and the sweep are one function');
+
+{
+  // Two callers, one apply path, or the address book and the counters
+  // drift apart and only one of them is ever looked at. The sweep exists
+  // because counters that advanced only while a chat window was open
+  // would make Contacts read "quiet" for somebody who had been writing
+  // all afternoon.
+  // Matched on the CALL, not on the name: `applyInboxBatch(rootDir,` also
+  // matches the function's own definition, which is how this check first
+  // read three call sites where there are two. A grep that finds itself
+  // is the recurring way a source check passes while saying nothing.
+  const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8');
+  const applies = (src.match(/applyInboxBatch\(rootDir, parsed\.messages, url\)/g) || []).length;
+  const inHandleInbox = /function handleInbox[\s\S]*?applyInboxBatch\(rootDir, parsed\.messages, url\)/.test(src);
+  const inSweep = /function sweepInbox[\s\S]*?applyInboxBatch\(rootDir, parsed\.messages, url\)/.test(src);
+  if (applies === 2 && inHandleInbox && inSweep) {
+    test.check('handleInbox and sweepInbox both go through applyInboxBatch, and nothing else does');
+  } else {
+    test.fail(applies + ' call sites, inbox ' + inHandleInbox + ', sweep ' + inSweep);
+  }
+
+  // And the sweep is personal-node only. A --relay is a mailbox: no
+  // book, nobody to count, and other people's keys on it.
+  const server = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
+  if (/if \(!relayMode\) \{[\s\S]*?hub\.sweepInbox\(\)/.test(server)) {
+    test.check('and the timer that drives it runs on a personal node only, never on a --relay');
+  } else {
+    test.fail('sweep is not gated on !relayMode');
+  }
+}
+
+test.subHeading('What buildPeople hands the app');
+
+{
+  const home = nodeHome(null, [RELAY_URL]);
+  const bert = auth.generateIdentity('bert').publicKey;
+  whoBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
+
+  const fresh = buildPeople(home, [], RELAY_URL)[0];
+  if (fresh.unansweredInbound === 0 && fresh.inboundPerDay === 0 && fresh.outboundPerDay === 0) {
+    test.check('a contact from before any of this counted reads zeros, not undefined');
+  } else {
+    test.fail('fresh: ' + JSON.stringify(fresh));
+  }
+
+  // Zeros are the TRUE answer, and the reason they are true is that
+  // nothing was backfilled. Chat's ring caps at 500, so a total taken
+  // from it stops rising exactly when somebody becomes worth looking at.
+  peerStats.noteIn(home, bert, 'm1');
+  peerStats.noteIn(home, bert, 'm2');
+  peerStats.noteOut(home, bert);
+  const counted = buildPeople(home, [], RELAY_URL)[0];
+  if (counted.unansweredInbound === 0 && counted.inboundPerDay > 0 && counted.outboundPerDay > 0) {
+    test.check('and once counted, the reply has cleared unanswered while both rates stand');
+  } else {
+    test.fail('counted: ' + JSON.stringify(counted));
+  }
+
+  // The counters are in the sidecar and NOT on the row. who.json is what
+  // a human decided; a packet counter is not a decision, and a book that
+  // changed without one would be the wrong kind of record.
+  const book = JSON.stringify(whoBook.load(home));
+  if (book.indexOf('unansweredInbound') === -1 && book.indexOf('inboundPerDay') === -1 &&
+      book.indexOf('days') === -1) {
+    test.check('and who.json grew no counter fields — the book is still only decisions');
+  } else {
+    test.fail('counters leaked into who.json: ' + book);
+  }
+
+  // The sidecar lives where bytesHeld already looks, so what the
+  // counting costs is itself part of what the contact costs.
+  if (counted.bytesHeld > 0) {
+    test.check('and the sidecar counts toward that contact\'s own storage, as any peerfile does');
+  } else {
+    test.fail('bytesHeld: ' + counted.bytesHeld);
   }
 }
 
