@@ -11,9 +11,21 @@
 // binding and cannot disagree with the titlebar about whether there is
 // a name.
 
-// What this node does with mail from somebody it has not added. The hub
-// enforces it (js/hub.js, unknownPolicy); this list is what the panel
-// offers and what a stored value is checked against.
+// What this node does with mail from somebody it has not added. The
+// control moved to Contacts (Andy): it is a question about the address
+// book, and adding, accepting and renaming all went there in packet 2 —
+// this was the piece that stayed behind.
+//
+// Chat still has to carry the answer, because chat is what polls the
+// inbox and the hub takes the policy as a query parameter. So it is read
+// here and written there: one copy of the setting, owned by the app that
+// draws the control, reached read-only through the unscoped read a
+// system app already has.
+//
+// Read on every poll rather than cached, so changing it in Contacts
+// takes effect on chat's next inbox read without the two apps having to
+// talk to each other.
+var RC_UNKNOWN_FILE = 'app/contacts/prefs.json';
 var RC_UNKNOWN_CHOICES = ['silent', 'hold', 'acquire'];
 
 // What this app is called on the wire. Not the shell app id and not the
@@ -60,8 +72,9 @@ spirit.shell.activateApp({
     // not what it was looking at and not who it is. A remembered filter
     // may be reset without touching a policy about strangers.
     var RC_PREFS_FILE = 'prefs.json';
-    var prefs = { unknown: 'silent', dnd: false };
-    var unknownWaiting = 0; // what Hold has to say, and only while it is > 0
+    // What is left after the stranger policy moved to Contacts: this app's
+    // own notifications, which are nobody else's business.
+    var prefs = { dnd: false };
 
     var RC_VIEW_FILE = 'view.json';
     var view = { toKey: '', lastSeen: {} };
@@ -123,17 +136,16 @@ spirit.shell.activateApp({
         '<input type="text" id="rc-text" placeholder="say something">' +
         '<button type="button" id="rc-send">Send</button>' +
       '</div>' +
-      // Settings. Folded away like the other rare jobs, and last of the
-      // three because it is the one you touch least. Three radios and a
-      // line: the sound toggle and the Refuse reply are not drawn,
-      // because neither is built, and a control that silently does
-      // nothing is worse than one that is not there.
-      // Settings is the outer fold: one titlebar that puts the whole of
-      // the configuration away. Inside it, one fold per question, each
-      // headed by what it asks and the short form of its current answer
-      // — so the panel can be read closed, and only the question being
-      // changed is open. There is one question today; the shape is what
-      // makes the second one cost nothing.
+      // Settings. Folded away like the other rare jobs, and last because
+      // it is the one you touch least. The sound toggle and the Refuse
+      // reply are not drawn, because neither is built, and a control that
+      // silently does nothing is worse than one that is not there.
+      //
+      // One switch left in it. "Messages from people I have not added"
+      // moved to Contacts (Andy) — it asks what to do about somebody who
+      // is not in the address book, which is a question about the address
+      // book, not about a chat window. What remains is this app's own
+      // notifications, and that is the right size for this app to keep.
       '<details class="stat-tile wide" id="rc-settings-panel">' +
         '<summary>Settings</summary>' +
         // A single switch needs no fold, and a fold that does not fold
@@ -148,13 +160,6 @@ spirit.shell.activateApp({
           'or notification when those exist. Everything still arrives, is filed, and is marked unread in ' +
           'your list — this is about being interrupted, not about being unreachable.</span>' +
         '</label>' +
-        '<details class="stat-tile nested" id="rc-unknown-section">' +
-          '<summary id="rc-unknown-summary">Messages from people I have not added</summary>' +
-          '<div id="rc-unknown-choices"></div>' +
-          // Only while there is something to say (Hold). AGENT.md: no
-          // chrome that cannot do anything in that state.
-          '<div class="job-log-empty" id="rc-hold-line"></div>' +
-        '</details>' +
       '</details>' +
       // Fine print at the foot of the page: who this node is here, and
       // what its key ends with. The other half of adding somebody is
@@ -284,10 +289,6 @@ spirit.shell.activateApp({
         .catch(function (e) { setStatus('could not remember the view: ' + e.message); });
     }
 
-    // Factory is the tightest setting that still lets two people who
-    // added each other talk. A file that is missing, empty or nonsense
-    // therefore reads as silent — the safe answer is also the default
-    // answer, so a broken prefs.json cannot quietly open a node up.
     function loadPrefs() {
       var raw = null;
       try { raw = api.fs.loadFile(RC_PREFS_FILE); }
@@ -298,10 +299,12 @@ spirit.shell.activateApp({
       catch (e) { return; }
       if (!parsed || typeof parsed !== 'object') return;
       prefs = {
-        unknown: RC_UNKNOWN_CHOICES.indexOf(parsed.unknown) === -1 ? 'silent' : parsed.unknown,
-        // False unless it says otherwise. Silence-by-default is right for
-        // strangers; being unreachable by default is the wrong kind of
-        // safe.
+        // False unless it says otherwise: being unreachable by default is
+        // the wrong kind of safe.
+        //
+        // An `unknown` in an older file is read past. It moved to
+        // app/contacts/prefs.json, Contacts adopts it once, and a second
+        // live answer is exactly what a leftover here would be.
         dnd: parsed.dnd === true,
       };
     }
@@ -582,18 +585,37 @@ spirit.shell.activateApp({
     // The inbox is still where anything said TO this node arrives. Every
     // line is filed before it is drawn, so the thread is a view of the
     // files rather than of the last response.
+    // The node's policy about strangers, off the file Contacts owns.
+    // Anything missing, unreadable or unrecognised reads as `silent`:
+    // the tightest setting that still lets two people who added each
+    // other talk, so the safe answer is also the default and a broken
+    // file cannot quietly open a node up.
+    function unknownChoice() {
+      var raw = null;
+      try { raw = api.readProject(RC_UNKNOWN_FILE); }
+      catch (e) { raw = null; }
+      var parsed = null;
+      try { parsed = JSON.parse(raw); }
+      catch (e) { parsed = null; }
+      var wanted = parsed && parsed.unknown;
+      return RC_UNKNOWN_CHOICES.indexOf(wanted) === -1 ? 'silent' : wanted;
+    }
+
     function refreshInbox() {
       if (!myName) return;
-      // The policy travels with the request. The hub does not open this
-      // app's prefs.json: one copy of the setting, owned by the app that
-      // draws the control, and the hub is where it is applied so that a
-      // dropped message never reaches the browser at all.
+      // The policy travels with the request. The hub does not open any
+      // app's prefs.json — it is applied there so a dropped message never
+      // reaches the browser at all, but the answer comes from whoever
+      // asks, and that is this app.
+      //
+      // Which is the seam worth knowing about: the control is in Contacts
+      // and the polling is here, so two apps have to stay honest about
+      // one node-level setting. Whether the hub should read it itself is
+      // the open question (see unknownChoice, top of file).
       fetch('/api/hub/inbox?name=' + encodeURIComponent(myName) +
-        '&unknown=' + encodeURIComponent(prefs.unknown))
+        '&unknown=' + encodeURIComponent(unknownChoice()))
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          unknownWaiting = Number(data && data.unknown) || 0;
-          paintHoldLine();
           // Fan-in: the shell routes anything addressed to another app,
           // and drops what nobody is listening for. This app's own
           // packets and the legacy plain lines are recorded below, the
@@ -964,66 +986,9 @@ spirit.shell.activateApp({
       if (typeof pick.focus === 'function') pick.focus();
     }
 
-    // A short name to choose by, and a sentence explaining what it
-    // costs. The name is what the heading repeats back and what somebody
-    // remembers having picked; the sentence is read once.
-    //
-    // The stored values do not change with the wording: 'acquire' is
-    // what the hub is asked for and what prefs.json holds, whatever the
-    // radio happens to be called on screen.
-    var RC_UNKNOWN_LABELS = {
-      silent: {
-        title: 'Silent',
-        note: 'Their message is dropped here. No row, no mark, nothing written down, and they are told nothing.',
-      },
-      hold: {
-        title: 'Hold',
-        note: 'Their message is dropped, but they appear in your list marked ×, so you can accept them.',
-      },
-      acquire: {
-        title: 'Add them',
-        note: 'Writing to you is enough to be added: they appear in your list and you can answer.',
-      },
-    };
-
     function paintSettings() {
-      var box = document.getElementById('rc-unknown-choices');
-      if (!box) return;
-      box.innerHTML = RC_UNKNOWN_CHOICES.map(function (choice) {
-        var text = RC_UNKNOWN_LABELS[choice];
-        // The note sits in the same label as the radio, so reading it
-        // and choosing it are the same gesture, and it is laid out
-        // under the title rather than under the button (rc-choice, in
-        // index.html).
-        return '<label class="rc-choice">' +
-          '<input type="radio" name="rc-unknown" value="' + choice + '"' +
-          (prefs.unknown === choice ? ' checked' : '') + '>' +
-          '<span class="rc-choice-title">' + api.escapeHtml(text.title) + '</span>' +
-          '<span class="rc-choice-note">' + api.escapeHtml(text.note) + '</span>' +
-          '</label>';
-      }).join('');
-
       var dnd = document.getElementById('rc-dnd-toggle');
       if (dnd) dnd.checked = quiet();
-
-      var summary = document.getElementById('rc-unknown-summary');
-      if (summary) {
-        var current = RC_UNKNOWN_LABELS[prefs.unknown];
-        summary.textContent = 'Messages from people I have not added' +
-          (current ? ' — ' + current.title : '');
-      }
-      paintHoldLine();
-    }
-
-    // How many, never who — a name is exactly what Hold exists to
-    // withhold. On the page only while there is a number to give, so a
-    // quiet mailbox says nothing at all.
-    function paintHoldLine() {
-      var line = document.getElementById('rc-hold-line');
-      if (!line) return;
-      line.textContent = (prefs.unknown === 'hold' && unknownWaiting > 0)
-        ? unknownWaiting + ' from people you have not added'
-        : '';
     }
 
     // The footer. Same six characters, same words, as the row the other
@@ -1196,22 +1161,6 @@ spirit.shell.activateApp({
       // accumulating while it was on.
       paintTitle();
       paintToList();
-    });
-
-    // A change of policy is a change to what the next inbox read will
-    // even return, so it takes effect on the spot rather than at the
-    // next poll.
-    document.getElementById('rc-unknown-choices').addEventListener('change', function (event) {
-      var choice = event.target && event.target.value;
-      if (RC_UNKNOWN_CHOICES.indexOf(choice) === -1) return;
-      prefs.unknown = choice;
-      savePrefs();
-      paintSettings(); // the heading carries the answer, so it moves with it
-      // Nothing is held under any setting but Hold, and a stale count
-      // under Silent would be the one thing Silent promises not to say.
-      unknownWaiting = 0;
-      paintHoldLine();
-      refreshInbox();
     });
 
     paintTitle();

@@ -109,8 +109,27 @@ function mountApp(options) {
   new Function('spirit', 'document', 'window', 'fetch', src)(shellSpirit, doc, {}, fakeFetch);
 
   const container = fakeElement('container');
-  behavior.mount(container, { escapeHtml: spirit.core.util.escapeHtml, launchApp: function () {} }, null);
-  return { doc: doc, log: log, container: container, behavior: behavior };
+  // This app keeps one file of its own now — the stranger policy that
+  // moved here from chat. `store` is that folder; `project` is the
+  // unscoped read, which it uses once to adopt the value from where it
+  // used to live.
+  const store = opts.store || {};
+  const project = opts.project || {};
+  const api = {
+    escapeHtml: spirit.core.util.escapeHtml,
+    launchApp: function () {},
+    readProject: function (path) {
+      return Object.prototype.hasOwnProperty.call(project, path) ? project[path] : null;
+    },
+    fs: {
+      loadFile: function (name) {
+        return Object.prototype.hasOwnProperty.call(store, name) ? store[name] : null;
+      },
+      saveFile: function (name, content) { store[name] = content; return Promise.resolve(); },
+    },
+  };
+  behavior.mount(container, api, null);
+  return { doc: doc, log: log, container: container, behavior: behavior, store: store };
 }
 
 function el(app, id) { return app.doc.getElementById(id); }
@@ -125,6 +144,117 @@ function posted(app, path) {
 }
 
 test.startTest('Contacts — the address book, in its own window');
+
+// The last piece of packet 2 to move (Andy). It asks what to do about
+// somebody who is not in the address book, which is a question about the
+// address book — beside a chat thread it read as a setting about chat.
+function strangerPolicy() {
+  test.subHeading('What to do about people you have not added');
+
+  const app = mountApp({});
+
+  return settle().then(function () {
+    const choices = el(app, 'contacts-unknown-choices').innerHTML;
+
+    // Three answers, and the middle one checked by nothing yet: a file
+    // that is missing reads as silent, which is the tightest setting that
+    // still lets two people who added each other talk. The safe answer is
+    // also the default, so a broken prefs.json cannot open a node up.
+    if (/value="silent"[^>]*checked/.test(choices) &&
+        /value="hold"/.test(choices) && /value="acquire"/.test(choices)) {
+      test.check('three choices, and a node with no file kept is silent');
+    } else {
+      test.fail('choices: ' + choices);
+    }
+
+    // Each one says what it costs, in the same label as its radio, so
+    // reading it and choosing it are one gesture.
+    if (/Silent/.test(choices) && /Hold/.test(choices) && /Add them/.test(choices) &&
+        /dropped/.test(choices)) {
+      test.check('and each says in a sentence what it does');
+    } else {
+      test.fail('choice copy: ' + choices);
+    }
+
+    // Neither is built, so neither is drawn.
+    if (choices.indexOf('refuse') === -1 && choices.toLowerCase().indexOf('sound') === -1) {
+      test.check('no Refuse, no sound toggle');
+    } else {
+      test.fail('unbuilt controls were drawn: ' + choices);
+    }
+
+    // No count of who is waiting. Under Hold the hub writes them into the
+    // book, so they are rows in the table above — more than a number, and
+    // something you can act on.
+    if (app.container.innerHTML.indexOf('hold-line') === -1) {
+      test.check('and no tally of who is waiting — they are rows in the table');
+    } else {
+      test.fail('a hold count came across with the panel');
+    }
+
+    // Choosing is remembered, in this app's own file.
+    el(app, 'contacts-unknown-choices').fire('change', { target: { value: 'acquire' } });
+    return settle().then(function () {
+      let saved = null;
+      try { saved = JSON.parse(app.store['prefs.json']); } catch (e) { saved = null; }
+      if (saved && saved.unknown === 'acquire') {
+        test.check('a choice is written to this app\'s own prefs.json');
+      } else {
+        test.fail('prefs.json: ' + app.store['prefs.json']);
+      }
+
+      if (el(app, 'contacts-unknown-summary').textContent ===
+          'Messages from people I have not added — Add them') {
+        test.check('and the heading carries the answer, so the fold reads closed');
+      } else {
+        test.fail('summary: ' + el(app, 'contacts-unknown-summary').textContent);
+      }
+
+      // A stored value comes back chosen.
+      const back = mountApp({ store: { 'prefs.json': JSON.stringify({ unknown: 'hold' }) } });
+      return settle().then(function () {
+        if (/value="hold"[^>]*checked/.test(el(back, 'contacts-unknown-choices').innerHTML)) {
+          test.check('a remembered choice comes back checked');
+        } else {
+          test.fail('restored: ' + el(back, 'contacts-unknown-choices').innerHTML);
+        }
+
+        // Nonsense in the file is not a policy. Same reason as a missing
+        // one: the default is the safe answer.
+        const bogus = mountApp({ store: { 'prefs.json': JSON.stringify({ unknown: 'whatever' }) } });
+        return settle().then(function () {
+          if (/value="silent"[^>]*checked/.test(el(bogus, 'contacts-unknown-choices').innerHTML)) {
+            test.check('and a value nobody offered degrades to silent');
+          } else {
+            test.fail('bogus: ' + el(bogus, 'contacts-unknown-choices').innerHTML);
+          }
+
+          // The one-time adoption. Without it a deliberate Hold reverts
+          // to Silent on the first load after the move — a change of
+          // behaviour nobody asked for.
+          const moved = mountApp({
+            project: { 'app/relayChat/prefs.json': JSON.stringify({ unknown: 'hold', dnd: true }) },
+          });
+          return settle().then(function () {
+            if (/value="hold"[^>]*checked/.test(el(moved, 'contacts-unknown-choices').innerHTML)) {
+              test.check('and a value left in chat\'s old file is adopted once, not lost');
+            } else {
+              test.fail('adoption: ' + el(moved, 'contacts-unknown-choices').innerHTML);
+            }
+
+            // One-way. The old file is read and never written, so the two
+            // apps can never end up with two live answers.
+            if (moved.store['app/relayChat/prefs.json'] === undefined) {
+              test.check('and chat\'s file is read, never written back to');
+            } else {
+              test.fail('wrote to the old file: ' + moved.store['app/relayChat/prefs.json']);
+            }
+          });
+        });
+      });
+    });
+  });
+}
 
 function listsTheBook() {
   test.subHeading('Everyone this node has a row for');
@@ -317,11 +447,23 @@ function sendsNothing() {
     test.fail('contacts.js sends something');
   }
 
-  // And it owns no store of its own: whoBook stayed where it was.
-  if (src.indexOf('api.fs') === -1 && src.indexOf('saveFile') === -1) {
-    test.check('and it keeps nothing on disk — whoBook is still the store');
+  // The book itself is still whoBook's: this app reads it over the hub
+  // and never keeps a copy. The one file it does own is its own
+  // preference — where the stranger policy moved to (Andy) — and the
+  // claim narrowed rather than held, so it is asserted narrowly: exactly
+  // one write, and it is that file.
+  const writes = src.match(/saveFile\(([A-Za-z_]+)/g) || [];
+  if (writes.length === 1 && writes[0] === 'saveFile(CONTACTS_PREFS_FILE') {
+    test.check('and the only thing it keeps on disk is its own preference — whoBook is still the book');
   } else {
-    test.fail('contacts.js writes its own files');
+    test.fail('contacts.js writes: ' + JSON.stringify(writes));
+  }
+
+  // No peer, no label, no key of anybody's in a file of this app's own.
+  if (src.indexOf('logs/') === -1 && src.indexOf('peerFile') === -1) {
+    test.check('and nothing about a person is written down here at all');
+  } else {
+    test.fail('contacts.js files something about a peer');
   }
 
   return Promise.resolve();
@@ -331,6 +473,7 @@ listsTheBook()
   .then(decidesAboutOnePerson)
   .then(renamesLocally)
   .then(addsByHandle)
+  .then(strangerPolicy)
   .then(sendsNothing)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {

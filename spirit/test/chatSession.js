@@ -990,146 +990,107 @@ function newFilterSnapsBack() {
 // done. The minted token is the reason: it stays on screen after a 201,
 // and the next person to open this panel is starting a different
 // invitation rather than reading the last one.
-function settingsPanel() {
-  test.subHeading('What to do about people you have not added');
+// "Messages from people I have not added" moved to Contacts (Andy): it
+// asks what to do about somebody who is not in the address book, which is
+// a question about the address book. Chat keeps its own notifications,
+// and keeps CARRYING the policy, because chat is what polls the inbox and
+// the hub takes it as a query parameter.
+function settingsOnlyDisturb() {
+  test.subHeading('Settings keeps what is chat\'s, and reads the rest');
 
   const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
   const app = mountApp(store, { inboxStatus: 200 });
 
   return settle().then(function () {
-    const choices = el(app, 'rc-unknown-choices').innerHTML;
-    const radios = (choices.match(/type="radio"/g) || []).length;
-    if (radios === 3 && /value="silent"[^>]*checked/.test(choices)) {
-      test.check('three choices, and the tightest is the one already made');
-    } else {
-      test.fail('choices: ' + choices);
-    }
-
-    // Short names to choose by, each with its own sentence: the name is
-    // what gets remembered, the sentence is read once.
-    if (/rc-choice-title">Silent/.test(choices) &&
-        /rc-choice-title">Hold/.test(choices) &&
-        /rc-choice-title">Add them/.test(choices) &&
-        (choices.match(/rc-choice-note/g) || []).length === 3) {
-      test.check('each choice is a short name with its own explanation');
-    } else {
-      test.fail('choice copy: ' + choices);
-    }
-
-    // Settings folds the whole configuration away; each question inside
-    // it folds separately. One question today, and the shape is what
-    // makes the second one cost nothing.
     const panel = app.container.innerHTML;
-    const at = panel.indexOf('id="rc-settings-panel"');
-    const inner = panel.slice(at, panel.indexOf('</details>', at));
-    if (at !== -1 && inner.indexOf('id="rc-unknown-section"') !== -1 && inner.indexOf('<details') !== -1) {
-      test.check('the question is a fold inside the Settings fold');
+
+    // The switch that is genuinely this app's: being interrupted is a
+    // chat question.
+    if (panel.indexOf('rc-dnd-toggle') !== -1 && /Do not disturb/.test(panel)) {
+      test.check('Do not disturb is still here');
     } else {
-      test.fail('settings markup: ' + panel.slice(at, at + 400));
+      test.fail('settings: ' + panel);
     }
 
-    // The choices stand off from the heading that introduces them.
-    const css = require('fs').readFileSync(require('path').join(RUN_DIR, 'index.html'), 'utf8');
-    const gapAt = css.indexOf('#rc-unknown-choices {');
-    const gap = gapAt === -1 ? '' : css.slice(gapAt, css.indexOf('}', gapAt));
-    if (/margin-top:\s*12px/.test(gap)) {
-      test.check('and the first choice does not sit against the title');
+    // And the section that was not. Checked on the markup this app
+    // actually builds, so a comment mentioning the old ids cannot satisfy
+    // it — the trap the /api/hub/peer grep fell into earlier.
+    const strays = ['rc-unknown-choices', 'rc-unknown-summary', 'rc-unknown-section', 'rc-hold-line']
+      .filter(function (id) { return panel.indexOf(id) !== -1; });
+    if (strays.length === 0) {
+      test.check('and the stranger policy is not drawn here any more');
     } else {
-      test.fail('choices gap: ' + gap);
+      test.fail('still in the chat page: ' + strays.join(', '));
     }
 
-    // A folded panel still answers the question it exists for.
-    if (el(app, 'rc-unknown-summary').textContent === 'Messages from people I have not added — Silent') {
-      test.check('and the heading says both the question and the answer');
-    } else {
-      test.fail('summary: ' + el(app, 'rc-unknown-summary').textContent);
-    }
-
-    // Neither is built, so neither is drawn: a control that silently
-    // does nothing is worse than one that is not there.
-    if (choices.indexOf('refuse') === -1 && choices.toLowerCase().indexOf('sound') === -1) {
-      test.check('no Refuse, no sound toggle');
-    } else {
-      test.fail('unbuilt controls were drawn: ' + choices);
-    }
-
-    // The policy travels with the read; the hub never opens prefs.json.
-    const asked = app.log.filter(function (call) { return call.url.indexOf('/api/hub/inbox') === 0; });
-    if (asked.length && asked.every(function (call) { return call.url.indexOf('unknown=silent') !== -1; })) {
-      test.check('and every inbox read says which policy it was made under');
-    } else {
-      test.fail('inbox calls: ' + JSON.stringify(asked.map(function (c) { return c.url; })));
-    }
-
-    // Choosing is remembered, on this node, in its own file.
-    el(app, 'rc-unknown-choices').fire('change', { target: { value: 'acquire' } });
+    // Its own file is its own business now.
+    el(app, 'rc-dnd-toggle').fire('change', { target: { checked: true } });
     return settle().then(function () {
       let saved = null;
       try { saved = JSON.parse(app.store['prefs.json']); } catch (e) { saved = null; }
-      if (saved && saved.unknown === 'acquire') {
-        test.check('a choice is written to prefs.json, not to session or view');
+      if (saved && saved.dnd === true && saved.unknown === undefined) {
+        test.check('and chat\'s prefs.json holds the switch and no policy');
       } else {
         test.fail('prefs.json: ' + app.store['prefs.json']);
-      }
-      if (!/unknown/.test(app.store['view.json'] || '') && !/unknown/.test(app.store['session.json'])) {
-        test.check('and neither of the other two files learns about it');
-      } else {
-        test.fail('the setting leaked into another file');
-      }
-
-      if (el(app, 'rc-unknown-summary').textContent === 'Messages from people I have not added — Add them') {
-        test.check('and the heading moves with the answer');
-      } else {
-        test.fail('summary after the change: ' + el(app, 'rc-unknown-summary').textContent);
-      }
-
-      // It takes effect on the spot: the next read is made under the new
-      // policy, not the one the page was opened with.
-      const later = app.log.filter(function (call) { return call.url.indexOf('/api/hub/inbox') === 0; }).pop();
-      if (later && later.url.indexOf('unknown=acquire') !== -1) {
-        test.check('and the very next read is made under it');
-      } else {
-        test.fail('read after the change: ' + (later && later.url));
       }
     });
   });
 }
 
-// Hold is a number and never a name — the name is the thing it withholds.
-function holdLine() {
-  test.subHeading('Hold says how many, and never who');
+// Chat is the app that polls, so it is the app that has to carry the
+// answer — read off the file Contacts owns, unscoped and read-only.
+//
+// This is the seam to take to Grok: the control is in one app and the
+// polling in another, so two apps have to stay honest about one
+// node-level setting.
+function policyTravelsFromContacts() {
+  test.subHeading('The policy rides on the read, from the file Contacts owns');
 
-  const store = {
-    'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
-    'prefs.json': JSON.stringify({ unknown: 'hold', mintedLabels: [] }),
-  };
-  const app = mountApp(store, { inboxStatus: 200, unknown: 2 });
+  const bound = { label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' };
+
+  // Nothing kept anywhere: silent, because a missing file is the safe
+  // answer and the safe answer is the default.
+  const bare = mountApp({ 'session.json': JSON.stringify(bound) }, { inboxStatus: 200 });
 
   return settle().then(function () {
-    if (/2 from people you have not added/.test(el(app, 'rc-hold-line').textContent)) {
-      test.check('two waiting says so');
+    const asked = bare.log.filter(function (c) { return c.url.indexOf('/api/hub/inbox') === 0; });
+    if (asked.length && asked.every(function (c) { return c.url.indexOf('unknown=silent') !== -1; })) {
+      test.check('with no file anywhere, every read is made under silent');
     } else {
-      test.fail('hold line: ' + el(app, 'rc-hold-line').textContent);
+      test.fail('inbox calls: ' + JSON.stringify(asked.map(function (c) { return c.url; })));
     }
 
-    // A stored choice is what the panel shows on the way back in.
-    if (/value="hold"[^>]*checked/.test(el(app, 'rc-unknown-choices').innerHTML)) {
-      test.check('and a reload comes back to the setting that was made');
-    } else {
-      test.fail('restored panel: ' + el(app, 'rc-unknown-choices').innerHTML);
-    }
-
-    // Quiet mailbox, quiet page.
-    const quiet = mountApp({
-      'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }),
-      'prefs.json': JSON.stringify({ unknown: 'hold', mintedLabels: [] }),
-    }, { inboxStatus: 200, unknown: 0 });
+    // Contacts' file is what decides it — not chat's own, which no longer
+    // carries the field at all.
+    const app = mountApp({ 'session.json': JSON.stringify(bound) }, {
+      inboxStatus: 200,
+      project: {
+        'app/natter/relays.json': JSON.stringify([{ label: 'spirit', url: 'https://spirit.example' }]),
+        'app/contacts/prefs.json': JSON.stringify({ unknown: 'acquire' }),
+      },
+    });
     return settle().then(function () {
-      if (el(quiet, 'rc-hold-line').textContent === '') {
-        test.check('nothing waiting says nothing at all');
+      const reads = app.log.filter(function (c) { return c.url.indexOf('/api/hub/inbox') === 0; });
+      if (reads.length && reads.every(function (c) { return c.url.indexOf('unknown=acquire') !== -1; })) {
+        test.check('and Contacts\' choice is what every read is made under');
       } else {
-        test.fail('hold line with nothing held: ' + el(quiet, 'rc-hold-line').textContent);
+        test.fail('inbox calls: ' + JSON.stringify(reads.map(function (c) { return c.url; })));
       }
+
+      // A leftover in chat's own file decides nothing. There is one copy
+      // of this setting, and it is not here.
+      const stale = mountApp({
+        'session.json': JSON.stringify(bound),
+        'prefs.json': JSON.stringify({ dnd: false, unknown: 'acquire' }),
+      }, { inboxStatus: 200 });
+      return settle().then(function () {
+        const staleReads = stale.log.filter(function (c) { return c.url.indexOf('/api/hub/inbox') === 0; });
+        if (staleReads.length && staleReads.every(function (c) { return c.url.indexOf('unknown=silent') !== -1; })) {
+          test.check('and an unknown left in chat\'s own file is read past, not obeyed');
+        } else {
+          test.fail('stale reads: ' + JSON.stringify(staleReads.map(function (c) { return c.url; })));
+        }
+      });
     });
   });
 }
@@ -1687,7 +1648,8 @@ function sendsAndReadsPackets() {
 
 reloadRestores()
   .then(enterSendsExactlyOnce)
-  .then(settingsPanel)
+  .then(settingsOnlyDisturb)
+  .then(policyTravelsFromContacts)
   .then(heldRowsPointAtContacts)
   .then(blockedRowsUnblock)
   .then(blockSurvivesTheNextMessage)
@@ -1695,7 +1657,6 @@ reloadRestores()
   .then(doNotDisturb)
   .then(newOpensTheList)
   .then(sendsAndReadsPackets)
-  .then(holdLine)
   .then(composerOffersTheMailbox)
   .then(nothingStored)
   .then(threadMarksOwnLines)

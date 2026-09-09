@@ -23,6 +23,47 @@ var contactsEscapeHtml = spirit.core.util.escapeHtml;
 var contactsIcon = spirit.core.const.ICON;
 var contactsApi = null;
 
+// What this node does with mail from somebody it has not added. It moved
+// here from Relay Chat (Andy): the question is what to do about a person
+// who is not in the address book, and this app is the address book.
+// Adding, accepting and renaming came over in packet 2; this was the
+// piece that stayed behind, and beside a chat thread it read as a setting
+// about chat rather than about people.
+//
+// The hub is where it is APPLIED — a dropped message never reaches the
+// browser at all (js/hub.js, unknownPolicy) — but it arrives there as a
+// query parameter from whoever polls the inbox, which is Relay Chat. So
+// this app owns the value and chat reads it back, unscoped and read-only
+// (RC_UNKNOWN_FILE, relayChat.js). Whether the hub should read it itself
+// rather than trust the caller is the open question.
+var CONTACTS_PREFS_FILE = 'prefs.json';
+// Where the value used to live, for the one-time adoption below.
+var CONTACTS_OLD_PREFS_FILE = 'app/relayChat/prefs.json';
+var CONTACTS_UNKNOWN_CHOICES = ['silent', 'hold', 'acquire'];
+var contactsPrefs = { unknown: 'silent' };
+
+// A short name to choose by, and a sentence saying what it costs. The
+// name is what the heading repeats back and what somebody remembers
+// having picked; the sentence is read once.
+//
+// The stored values do not change with the wording: 'acquire' is what the
+// hub is asked for and what prefs.json holds, whatever the radio happens
+// to be called on screen.
+var CONTACTS_UNKNOWN_LABELS = {
+  silent: {
+    title: 'Silent',
+    note: 'Their message is dropped and nothing is written down. They get no row here, and they are told nothing.',
+  },
+  hold: {
+    title: 'Hold',
+    note: 'Their message is dropped, but they get a row here marked ×, so you can accept them afterwards.',
+  },
+  acquire: {
+    title: 'Add them',
+    note: 'Writing to you is enough to be added: they get a row here like anybody else, and you can answer.',
+  },
+};
+
 var contactsPeople = [];
 var contactsSelfTail = '';
 var contactsEditing = ''; // the key whose row is open for editing
@@ -163,6 +204,65 @@ function contactsFindByHandle() {
     .catch(function (e) { out.innerHTML = '<div class="job-log-empty">could not ask: ' + contactsEscapeHtml(e.message) + '</div>'; });
 }
 
+// Factory is the tightest setting that still lets two people who added
+// each other talk. A file that is missing, empty or nonsense therefore
+// reads as silent — the safe answer is also the default answer, so a
+// broken prefs.json cannot quietly open a node up.
+//
+// When this app has no file of its own, the value is adopted once from
+// where it used to live. Without that, a deliberate Hold or Add-them
+// would silently revert to Silent on the first load after the move, which
+// is a change of behaviour nobody asked for. Read-only and one-way: the
+// old file is never written, and chat has already stopped reading its own
+// copy, so there is no moment with two live answers.
+function contactsLoadPrefs() {
+  var raw = null;
+  try { raw = contactsApi.fs.loadFile(CONTACTS_PREFS_FILE); }
+  catch (e) { raw = null; }
+  if (!raw) {
+    try { raw = contactsApi.readProject(CONTACTS_OLD_PREFS_FILE); }
+    catch (e) { raw = null; }
+  }
+  var parsed = null;
+  try { parsed = JSON.parse(raw); }
+  catch (e) { parsed = null; }
+  var wanted = parsed && parsed.unknown;
+  contactsPrefs = {
+    unknown: CONTACTS_UNKNOWN_CHOICES.indexOf(wanted) === -1 ? 'silent' : wanted,
+  };
+}
+
+function contactsSavePrefs() {
+  contactsApi.fs.saveFile(CONTACTS_PREFS_FILE, JSON.stringify(contactsPrefs, null, 2))
+    .catch(function (e) { contactsStatus('could not remember the setting: ' + e.message); });
+}
+
+// The heading carries the current answer, so the fold can be read closed
+// and only the question being changed is open.
+function contactsPaintUnknown() {
+  var box = document.getElementById('contacts-unknown-choices');
+  if (!box) return;
+  box.innerHTML = CONTACTS_UNKNOWN_CHOICES.map(function (choice) {
+    var text = CONTACTS_UNKNOWN_LABELS[choice];
+    // The note sits in the same label as the radio, so reading it and
+    // choosing it are the same gesture, laid out under the title rather
+    // than under the button (rc-choice, in index.html).
+    return '<label class="rc-choice">' +
+      '<input type="radio" name="contacts-unknown" value="' + choice + '"' +
+      (contactsPrefs.unknown === choice ? ' checked' : '') + '>' +
+      '<span class="rc-choice-title">' + contactsEscapeHtml(text.title) + '</span>' +
+      '<span class="rc-choice-note">' + contactsEscapeHtml(text.note) + '</span>' +
+      '</label>';
+  }).join('');
+
+  var summary = document.getElementById('contacts-unknown-summary');
+  var current = CONTACTS_UNKNOWN_LABELS[contactsPrefs.unknown];
+  if (summary) {
+    summary.textContent = 'Messages from people I have not added' +
+      (current ? ' — ' + current.title : '');
+  }
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     contactsApi = api;
@@ -179,8 +279,32 @@ spirit.shell.activateApp({
         '</div>' +
         '<div id="contacts-add-out"></div>' +
       '</details>' +
+      // Under Add-someone, because adding is what you come here to do and
+      // this is the standing answer for people you have not. No count of
+      // who is waiting: under Hold the hub writes them into the book, so
+      // they are rows in the table above — which is more than a number,
+      // and something you can act on.
+      '<details class="stat-tile wide" id="contacts-unknown-section">' +
+        '<summary id="contacts-unknown-summary">Messages from people I have not added</summary>' +
+        '<div id="contacts-unknown-choices"></div>' +
+      '</details>' +
       '<div class="job-manifest-note" id="contacts-status"></div>' +
       '<div class="job-manifest-note" id="contacts-self"></div>';
+
+    contactsLoadPrefs();
+    contactsPaintUnknown();
+
+    // A change of policy changes what the next inbox read will even
+    // return, so it is written on the spot. Relay Chat picks it up on its
+    // next poll — it reads this file rather than being told, so neither
+    // app has to know the other is running.
+    document.getElementById('contacts-unknown-choices').addEventListener('change', function (event) {
+      var choice = event.target && event.target.value;
+      if (CONTACTS_UNKNOWN_CHOICES.indexOf(choice) === -1) return;
+      contactsPrefs.unknown = choice;
+      contactsSavePrefs();
+      contactsPaintUnknown(); // the heading carries the answer, so it moves with it
+    });
 
     document.getElementById('contacts-add-find').addEventListener('click', contactsFindByHandle);
     document.getElementById('contacts-add-handle').addEventListener('keydown', function (event) {
