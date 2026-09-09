@@ -271,4 +271,53 @@ test.subHeading('No two shipped apps paint the same picture');
   }
 }
 
+test.subHeading('An icon is picked from the pool, never typed');
+
+{
+  const fs = require('fs');
+  const path = require('path');
+  const RUN_DIR = path.join(__dirname, '..', 'run');
+
+  // The two panels that let an operator set an icon: an app's override,
+  // and a group's. Both used to be a text box captioned "paste any emoji"
+  // that took anything at all and was refused afterwards if something
+  // else was already showing it. Both are the picker now, which is not
+  // offered a taken glyph in the first place.
+  //
+  // Checked on the source because the alternative is a full DOM for two
+  // apps; narrow enough to mean something — an <input> whose id ends in
+  // -icon-input is exactly the control that was removed, and re-adding
+  // one is exactly the regression.
+  [
+    ['app/apps/apps.js', 'the Apps panel'],
+    ['app/group-manager/group-manager.js', 'the Groups panel'],
+  ].forEach(function (pair) {
+    const src = fs.readFileSync(path.join(RUN_DIR, pair[0]), 'utf8');
+    const typedIn = src.match(/<input[^>]*id="[a-z-]*icon[a-z-]*"/g) || [];
+    const picks = src.indexOf('createIconSelector') !== -1;
+
+    if (picks && typedIn.length === 0) {
+      test.check(pair[1] + ' offers the picker and no icon text field');
+    } else {
+      test.fail(pair[1] + ': createIconSelector ' + picks + ', typed fields ' + JSON.stringify(typedIn));
+    }
+  });
+
+  // And it comes through api, not the globals. buildApiFor's own comment
+  // asks apps to use the doorway; a widget the shell builds is exactly
+  // the kind of thing that has no excuse to reach around it (unlike
+  // setAppOverride, which no app-scoped api can express).
+  [
+    ['app/apps/apps.js', 'the Apps panel'],
+    ['app/group-manager/group-manager.js', 'the Groups panel'],
+  ].forEach(function (pair) {
+    const src = fs.readFileSync(path.join(RUN_DIR, pair[0]), 'utf8');
+    if (src.indexOf('spirit.shell.ui') === -1 && /\bui\.elements\.createIconSelector/.test(src)) {
+      test.check('and reaches it through api, not spirit.shell — ' + pair[1]);
+    } else {
+      test.fail(pair[1] + ' reaches the selector through the globals');
+    }
+  });
+}
+
 test.reportSuccessFailureCount();
