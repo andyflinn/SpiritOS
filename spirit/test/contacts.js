@@ -303,10 +303,17 @@ function listsTheBook() {
     // ⌛ for waiting, which is not a refusal at all: the typed × it
     // replaced read as NO one column from the ❌ that is one.
     const ICONS = spirit.core.const.ICON;
-    if (rows.indexOf(ICONS.ROLODEX + ' dave') !== -1 &&
+    // Refused wears the plain no, not the rolodex the chat list uses for
+    // the same person (Andy). In chat that mark says WHICH app refused
+    // them, because the answer is elsewhere; here you are already in that
+    // app, and a mark pointing at Contacts drawn in Contacts points at
+    // itself.
+    //
+    // Waiting is the same ⌛ everywhere, because it names no app.
+    if (rows.indexOf(ICONS.NO + ' dave') !== -1 &&
         rows.indexOf(ICONS.WAITING + ' carol') !== -1 &&
-        rows.indexOf(ICONS.NO) === -1) {
-      test.check('and are marked refused and waiting the way chat marks them');
+        rows.indexOf(ICONS.ROLODEX) === -1) {
+      test.check('and refused wears the plain no here, where the rolodex would point at itself');
     } else {
       test.fail('marks: ' + rows);
     }
@@ -481,14 +488,23 @@ function theRowBubbleReadsAcrossNotDown() {
     // places, because the shape is not either app's (§4). Three of them,
     // and none of the stacked rows they replaced.
     const facts = (panel.match(/class="fact"/g) || []).length;
-    if (/class="fact-row"/.test(panel) && facts === 3 && panel.indexOf('file-info-row') === -1) {
-      test.check('three facts on one line, not three rows down the panel');
+    if (/class="fact-row"/.test(panel) && facts === 2 && panel.indexOf('file-info-row') === -1) {
+      test.check('its facts read across one line, not down the panel');
     } else {
       test.fail(facts + ' facts, file-info-row present: ' + (panel.indexOf('file-info-row') !== -1));
     }
 
-    if (/Their name/.test(panel) && /How/.test(panel) && /Key ends/.test(panel)) {
-      test.check('and they are still the three that were there');
+    // Six characters of a key are what two people compare down a phone
+    // while one adds the other. Once somebody is in this list that is
+    // done — so no Key column, and none in the panel either (Andy).
+    //
+    // Asked about what is DISPLAYED, not about the key itself: the whole
+    // key is still in data-contact-key, because the rename input has to
+    // name whose label it is setting. "ends …" is the display form, used
+    // by the row that had it and by the footer that still does.
+    if (/Their name/.test(panel) && /How/.test(panel) &&
+        panel.indexOf('Key ends') === -1 && panel.indexOf('ends …') === -1) {
+      test.check('and the key ending is gone from both the row and the panel');
     } else {
       test.fail('facts: ' + panel);
     }

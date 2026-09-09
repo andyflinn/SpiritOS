@@ -89,27 +89,30 @@ function contactsStatus(text) {
   if (el) el.textContent = text || '';
 }
 
-// One row per key, marked the way the chat To list marks the same
-// person. A mark says WHO refused them, and that does not change with
-// which app you are standing in — one vocabulary to learn, not two.
+// One row per key.
 //
-//   📇 ROLODEX  this node refuses them: set here, lifted here.
+//   ❌ NO       this node refuses them.
 //   ⌛ WAITING   they wrote and nobody has decided yet.
 //
-// There is no ❌ here. That is chat's own refusal, and it lives in
-// chat's per-peer log file, which api.fs will not let this app read.
-// Contacts genuinely cannot know it — do not "fix" that by widening a
-// scope; the two refusals being separate is the point (packet 2).
+// ❌ rather than the 📇 the chat list uses for the same person, and that
+// is not an inconsistency (Andy). In chat the rolodex says WHICH app
+// refused them, because the answer is somewhere else and you have to be
+// sent there. Here you are already in that app: a mark pointing at
+// Contacts, drawn in Contacts, points at itself.
+//
+// Chat's own refusal has no mark here at all. It lives in chat's
+// per-peer log file, which api.fs will not let this app read — Contacts
+// genuinely cannot know it, and do not "fix" that by widening a scope.
+// The two refusals being separate is the point (packet 2).
 function contactsRowHtml(person) {
   var mark = '';
-  if (person.blocked) mark = contactsIcon.ROLODEX + ' ';
+  if (person.blocked) mark = contactsIcon.NO + ' ';
   else if (person.held) mark = contactsIcon.WAITING + ' ';
 
   var open = contactsEditing === person.publicKey;
   var row = '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
     '<td>' + mark + contactsEscapeHtml(person.caption) + '</td>' +
     '<td>' + contactsEscapeHtml(person.acquiredVia || '') + '</td>' +
-    '<td>ends …' + contactsEscapeHtml(String(person.publicKey || '').slice(-6)) + '</td>' +
     '</tr>';
 
   if (!open) return row;
@@ -134,7 +137,6 @@ function contactsRowHtml(person) {
     spirit.shell.factRow([
       ['Their name', person.publicLabel || '(none)'],
       ['How', person.acquiredVia || ''],
-      ['Key ends', String(person.publicKey || '').slice(-6)],
     ]) +
     // What you call them and what you decide about them, on one line: the
     // caption and its input take the width (.field-label.grow) and the
@@ -152,7 +154,7 @@ function contactsRowHtml(person) {
     '</div>' +
     '</div>';
 
-  return row + '<tr class="job-log-row"><td colspan="3">' + detail + '</td></tr>';
+  return row + '<tr class="job-log-row"><td colspan="2">' + detail + '</td></tr>';
 }
 
 function contactsRender() {
@@ -164,7 +166,7 @@ function contactsRender() {
   if (focusedId === 'contacts-label-input') return;
 
   if (!contactsPeople.length) {
-    tbody.innerHTML = '<tr><td colspan="3">(nobody yet — add someone by handle below)</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="2">(nobody yet — add someone by handle below)</td></tr>';
     return;
   }
   tbody.innerHTML = contactsPeople.map(contactsRowHtml).join('');
@@ -295,7 +297,16 @@ spirit.shell.activateApp({
     contactsEditing = '';
 
     container.innerHTML =
-      '<table class="jobs-table"><thead><tr><th>Name</th><th>How</th><th>Key</th></tr></thead>' +
+      // No Key column, and none in the panel either (Andy). Six
+      // characters of somebody's key are what two people compare down a
+      // phone while one adds the other; once they are in this list that
+      // is done, and it is a column nobody reads.
+      //
+      // The two places a tail still earns its space are both about
+      // acquiring: the candidates under Add-someone-by-handle, where
+      // picking the right key IS the decision, and the footer, which is
+      // your own tail for somebody else to add you by.
+      '<table class="jobs-table"><thead><tr><th>Name</th><th>How</th></tr></thead>' +
         '<tbody id="contacts-tbody"></tbody></table>' +
       // name= makes the two folds one exclusive group: opening either
       // closes the other, done by the browser with no JS and no state.
