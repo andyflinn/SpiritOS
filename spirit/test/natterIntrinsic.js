@@ -1594,7 +1594,7 @@ test.subHeading('The viewer keeps one rhythm down the page');
     const found = /margin-top:\s*(\d+)px/.exec(block);
     return found ? found[1] : null;
   }
-  const openWith = gap('#open-with');
+  const openWith = gap('.open-with');
   if (openWith && openWith === gap('.code-view') && openWith === gap('.media-view')) {
     test.check('Open with sits the same distance below the bubble as the preview does below it');
   } else {
@@ -1608,7 +1608,7 @@ test.subHeading('The viewer keeps one rhythm down the page');
   // :empty{margin-top:0} as a hack that existed only because space was
   // carried downward, and this is the answer every other can-be-empty
   // block already gives (#rc-peer-strip, .job-start-error).
-  if (/#open-with:empty\s*\{[^}]*display:\s*none/.test(css)) {
+  if (/\.open-with:empty\s*\{[^}]*display:\s*none/.test(css)) {
     test.check('and takes no space at all when there is nothing to offer');
   } else {
     test.fail('an empty Open with still holds its margin');
@@ -1828,7 +1828,7 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
     test.fail('.job-start-error: ' + (errorRule && errorRule[1].replace(/\s+/g, ' ').trim()));
   }
 
-  const blockGap = value('#open-with', 'margin-top');
+  const blockGap = value('.open-with', 'margin-top');
   if (blockGap !== null && value('.start-job-form', 'margin-top') === blockGap) {
     test.check('and takes a block of space above it, as a block does');
   } else {
@@ -1880,7 +1880,7 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
   // pairs naming which kinds of block space themselves from which — a
   // list that is quadratic in block types and whose omissions are
   // silent. `> * + *` says the same thing once, for every kind.
-  const rhythm = value('#open-with', 'margin-top');
+  const rhythm = value('.open-with', 'margin-top');
   if (rhythm !== null && value('#app-content > .app-pane > * + *', 'margin-top') === rhythm) {
     test.check('a block takes its space from above, at the same block spacing');
   } else {
@@ -1930,7 +1930,7 @@ test.subHeading('Natter adds a relay on the shared row');
     const decl = block.slice(declAt + property.length + 1, block.indexOf(';', declAt)).trim();
     return /^[0-9]+px$/.test(decl) ? decl : null;
   }
-  const rhythm = value('#open-with', 'margin-top');
+  const rhythm = value('.open-with', 'margin-top');
   const rows = ['.start-job-form', '#rc-claim-fields'];
   const off = rows.filter(function (selector) { return value(selector, 'gap') !== rhythm; });
   if (rhythm !== null && off.length === 0) {
@@ -2424,6 +2424,51 @@ test.subHeading('The process form obeys the same rules as every other form');
     test.check('and its note collapses until there is a message');
   } else {
     test.fail('.job-manifest-note: ' + (noteRule && noteRule[1].replace(/\s+/g, ' ').trim()));
+  }
+}
+
+test.subHeading('No two panes claim the same id');
+
+{
+  // Apps stay mounted: switchTo keeps one pane per app under #app-content
+  // and only hides the ones you are not looking at (shell.js). So every
+  // visited app's markup is in the document at once, and
+  // getElementById answers with whichever came first.
+  //
+  // Both launchers drew a <div id="open-with">. Open a text file and then
+  // an image and the image viewer's handlers were written into the text
+  // viewer's pane — no error, no console, just an Open with in the wrong
+  // place and none where you were looking.
+  //
+  // Only index.html is asked, because that is where two apps are built in
+  // one file and where the collision is easy to make. Ids inside a row
+  // template repeat by design and are not this.
+  const html = readRun('index.html');
+  const script = html.slice(html.indexOf("<script src=\"/js/client/shell.js\">"));
+
+  const seen = Object.create(null);
+  (script.match(/id="[A-Za-z][A-Za-z0-9_-]*"/g) || []).forEach(function (attr) {
+    const id = attr.slice(4, -1);
+    seen[id] = (seen[id] || 0) + 1;
+  });
+  const twice = Object.keys(seen).filter(function (id) { return seen[id] > 1; });
+  const total = Object.keys(seen).length;
+
+  if (total > 5 && twice.length === 0) {
+    test.check('every id built in index.html is built once — ' + total + ' of them');
+  } else {
+    test.fail(total + ' ids, claimed twice: ' + (twice.join(', ') || '(found too few to be reading anything)'));
+  }
+
+  // And the two that collided are told apart by pane, while their look
+  // comes from a class — style by what a thing IS (§4), so a third
+  // launcher needs an id and no CSS.
+  if (script.indexOf('id="cv-open-with" class="open-with"') !== -1 &&
+      script.indexOf('id="mv-open-with" class="open-with"') !== -1 &&
+      /\.open-with\s*\{/.test(html)) {
+    test.check('and the two Open withs differ by id, while one class dresses both');
+  } else {
+    test.fail('open-with ids/class not as expected');
   }
 }
 

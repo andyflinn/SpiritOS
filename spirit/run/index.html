@@ -231,8 +231,12 @@
          only existed because space was carried downward; with the block
          below carrying its own, this is the same answer every other
          can-be-empty block gives (#rc-peer-strip, .job-start-error). */
-      #open-with { margin-top: 12px; }
-      #open-with:empty { display: none; }
+      /* Styled by what it IS (§4), so one rule serves both launchers and
+         a third one would need no CSS at all. The ids differ only because
+         both panes stay mounted and each has to be found by name — see
+         the comment where they are built. */
+      .open-with { margin-top: 12px; }
+      .open-with:empty { display: none; }
 
       /* Which app a file IS, when it is one. Collapsed when it is not,
          like every other block that can be empty (§3). */
@@ -1178,12 +1182,17 @@
             // Before Open with: which app this file IS outranks what else
             // could open it.
             '<div id="app-of-file"></div>' +
-            '<div id="open-with"></div>' +
+            // cv-, not a bare id: BOTH launchers draw an Open with, both
+            // stay mounted once visited (switchTo keeps a pane per app),
+            // and getElementById answers with whichever is first in the
+            // document. Open a text file and then an image and the image
+            // viewer's handlers were written into the text viewer's pane.
+            '<div id="cv-open-with" class="open-with"></div>' +
             '<div id="job-manifest-form"></div>' +
             '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>' +
             renderAnnotationsSection(path);
           renderAppOfFile(document.getElementById('app-of-file'), path);
-          renderOpenWith(document.getElementById('open-with'), 'text-file-launcher', path);
+          renderOpenWith(document.getElementById('cv-open-with'), 'text-file-launcher', path);
           maybeRenderJobForm(document.getElementById('cv-body'), path);
         }
 
@@ -1216,10 +1225,12 @@
           var tagInfo = MEDIA_TAG_BY_CATEGORY[category] || MEDIA_TAG_BY_CATEGORY.image;
           document.getElementById('mv-body').innerHTML =
             renderFileInfoBubble(path) +
-            '<div id="open-with"></div>' +
+            // mv-, for the reason above: two panes are alive at once and
+            // a bare id belongs to whichever mounted first.
+            '<div id="mv-open-with" class="open-with"></div>' +
             '<' + tagInfo.tag + ' class="media-view" src="/' + encodeURI(path) + '"' + tagInfo.extraAttrs + '></' + tagInfo.tag + '>' +
             renderAnnotationsSection(path);
-          renderOpenWith(document.getElementById('open-with'), 'media-launcher', path);
+          renderOpenWith(document.getElementById('mv-open-with'), 'media-launcher', path);
         }
 
         registerApp({

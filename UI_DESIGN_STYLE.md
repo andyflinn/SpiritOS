@@ -34,7 +34,7 @@ Match the size, **never the weight**: `#app-title` keeps its 600, or the block b
 
 ## 3. One rhythm, down a page and across a row
 
-**12px** is the spacing scale. It separates sibling blocks down a page (`.code-view`, `.media-view`, `#open-with`, the two folded panels in Relay Chat) *and* the controls across a row (`.start-job-form`, `#rc-claim-fields`). Two gaps that are nearly the same read as a mistake rather than a distinction — this used to be 8px on rows and 12px everywhere else.
+**12px** is the spacing scale. It separates sibling blocks down a page (`.code-view`, `.media-view`, `.open-with`, the two folded panels in Relay Chat) *and* the controls across a row (`.start-job-form`, `#rc-claim-fields`). Two gaps that are nearly the same read as a mistake rather than a distinction — this used to be 8px on rows and 12px everywhere else.
 
 A row of controls is `.start-job-form`: gapped, wrapping, `align-items: flex-end` so a caption-over-input pair lines its input up with the button beside it. A form does not lay itself out; if a screen needs a row, it uses that class (Natter's Add line, the Jobs start form, the Relay Chat composer and To bar, the AI chat form).
 
@@ -44,6 +44,7 @@ Said once, for every kind of block:
 
 ```css
 #app-content > .app-pane > * + *,
+.stack > * + *,
 .job-log-row > td > * { margin-top: 12px; }
 ```
 
@@ -51,7 +52,9 @@ This was seven selectors naming which *kinds* of block space themselves from whi
 
 **`.app-pane` is the wrapper the rule reaches through.** Every app is mounted into its own div under `#app-content` (`switchTo`, shell.js), and while that div was anonymous the rule landed on *it* — one 12px above the whole app and none between its blocks. The pane itself takes no margin: it is not a block, it is the box the blocks are in.
 
-It also retires two hacks that existed only because space was carried downward: `#open-with:empty`, which had to cancel a margin on a block that renders as nothing, and the 12px that sat on the panel *above* Relay Chat's invite slot because the slot is empty for a node that owns no mailbox. The same idea applies across a row: a control takes the gap to its left, so a control that is not drawn takes no space with it.
+**`.stack` is any other box that holds blocks.** Both launchers write their whole page into a wrapper (`#cv-body`, `#mv-body`) so a later `loadFile` can replace it — and while those wrappers said nothing, the rule stopped at the pane's only child: the path bubble and the facts bubble under it sat flush, and so did the annotation cards. Same failure `.app-pane` had, one level deeper. Say what a box **is** and the rule finds it; name boxes in a list and the list goes stale (§4).
+
+It also retires two hacks that existed only because space was carried downward: `.open-with:empty`, which had to cancel a margin on a block that renders as nothing, and the 12px that sat on the panel *above* Relay Chat's invite slot because the slot is empty for a node that owns no mailbox. The same idea applies across a row: a control takes the gap to its left, so a control that is not drawn takes no space with it.
 
 A block that can still be empty **collapses to nothing** (`#rc-peer-strip:empty { display: none }`), which is the row version of the same rule.
 
@@ -109,6 +112,18 @@ That is deliberately **the opposite way round from `.stat-tile`**, where a 22px 
 
 **A form is a card too — but only where it shares the panel with something else.** `.start-job-form.card`, asked for rather than automatic. "Any form inside a panel" cannot tell a panel that *holds* a form alongside a reading from a panel that *is* the form, and the second is two boxes around one object (Jobs, the Groups create form, Contacts' add-by-handle were all that). Marked in the markup because a `card` class is greppable and a descendant selector is not.
 
+### A viewer steps out of its own way, and nothing else does
+
+Three callers pass `{replace: true}` to `launchApp`, and every one is a launcher finishing with the file it was showing:
+
+| where | you leave for |
+|---|---|
+| Open with | another handler for the same file |
+| Open ⟨app⟩ | the app whose source you were reading |
+| Start Job | the job the form on that script just started |
+
+So Back returns to whatever opened the launcher — Processes, or Files — rather than to a file you are done with. **Everything else pushes**, and a group screen pushing is exactly what makes Back *into* it mean going back to where you were. A test counts the three across `shell.js` and `index.html`, so a fourth has to be a decision rather than a habit.
+
 ### Opening one fold closes its siblings
 
 **One panel open at a time.** This is already the house rule for every row expander — Apps, Groups, Jobs, Natter's relay rows and Contacts' own rows all say *"opening one closes any other"* — and folds now say it too. It is the same argument as the spacing above: a portrait screen has one screenful, and a fold left open behind you is chrome you are not using (§1).
@@ -143,6 +158,20 @@ The same kind of information looks the same wherever it appears. `.file-info-row
 
 The same argument retires a *name* that belongs to one app: `.natter-facts` became `.fact-row` when Contacts and Apps wanted it. The shape was never Natter's, so neither was the name.
 
+**A mark says who refused somebody**, and there are three answers plus two states that are not refusals:
+
+| mark | means | where |
+|---|---|---|
+| `📇 ROLODEX` | the node refuses them | Relay Chat only |
+| `❌ NO` | *chat* refuses them, in Relay Chat — *the node* refuses them, in Contacts | both, differently |
+| `⌛ WAITING` | they wrote, nobody has decided | both |
+| `× ` | — | retired |
+| `•` | unread, and only on a row that is none of the above | Relay Chat |
+
+The `❌` split is the one that looks wrong and is not. In chat the rolodex says **which app** refused them, because the answer is somewhere else and you have to be sent there. In Contacts you are already in that app: a mark pointing at Contacts, drawn in Contacts, points at itself. Contacts can never show chat's refusal at all — that flag lives in chat's per-peer log, which `api.fs` will not let Contacts read, and the two refusals being separate is the point (packet 2).
+
+`⌛` replaced a hand-typed `×`, the only character ever used as a mark. A cross reads as **no**, one column from the `❌` that is one — which is exactly how a waiting row got read as blocked on a live node. Nothing about waiting is a refusal: nobody has said no, and nobody has said yes.
+
 Before adding a class, check whether one of these already says it:
 
 | class | what it is for |
@@ -176,10 +205,19 @@ CSS regressions are invisible until somebody looks. Where a rule is a *relations
 
 The fix is to match where the thing is **built**, not where it is discussed: a quoted opening (`/['"]<details/`), a quoted path (`"'/api/hub/peer'"`), a header cell (`<th>Last log</th>`) rather than the prose. And prove it: a check nobody has watched fail is a check nobody knows the meaning of. Every claim in this file that could be asserted was, and several were confirmed by breaking the thing on purpose and watching the message.
 
+**Two ways to ship a silently wrong program that `node --check` accepts.** Both cost real time in one sitting:
+
+- A shell heredoc turned a regex backreference `\1` into a literal **0x01 control byte**. The regex stayed valid — it simply matched `app/foo/.js` instead of `app/<name>/<name>.js`. Found by reading, not by any test.
+- `io.open(path, 'w')` **truncates before it writes**, so a write that fails partway — a Unicode error, an exception building the content — leaves an empty file. That emptied a 2400-line test file. Build the content first, write to a temp file, then rename.
+
+The rule that follows: when a script writes source, write it to a temp path and `os.replace`, and keep regexes out of heredocs entirely.
+
 Two harness facts worth keeping, both found by writing such a check:
 
 - A manifest-declared app **never reaches `switchTo`** in node — `launchApp` injects a `<script>` and returns — so a test that needs a mounted app registers a static one.
 - A regex written into a test through a shell heredoc can have its escapes eaten (`\n` becoming a real newline inside the pattern). Where the markup is built by concatenation across many lines, `indexOf` ordering says the same thing and cannot be mangled.
+- **A stub must be shaped like the thing it stands for.** Natter's mint stub answered the panel for `parentNode`, so every lookup worked whichever way the code asked. When the fields and the button moved into a row, the browser stopped finding the answer span and the test went on passing — a mint succeeded and said nothing. A stub that is more permissive than the DOM does not merely fail to catch a bug; it hides one.
+- **An id is only unique if nothing else claims it.** Apps stay mounted, so every visited app's markup is in the document at once and `getElementById` answers with whichever came first. Both launchers drew `<div id="open-with">`; opening a text file and then an image wrote the image viewer's handlers into the text viewer's pane, silently. A check now reads every id built in `index.html` and requires each to be built once.
 
 ## 8. Reach for what the server already answered
 
