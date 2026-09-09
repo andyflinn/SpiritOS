@@ -246,6 +246,13 @@
          it is meant to line up with. */
       .start-job-form .field-label { margin: 0; }
 
+      /* The field that should take whatever the row does not: a caption
+         and its input filling the line, with the buttons pushed to the
+         end. Opt-in rather than the default for every label in a row —
+         Natter's bind line puts three of them side by side on purpose,
+         and they are meant to share the width evenly. */
+      .start-job-form > .field-label.grow { flex: 1; }
+
       /* A form row wraps rather than scrolls: on a portrait phone the
          input takes the width and the button drops under it, which is
          two full-width targets instead of one squeezed pair. */
@@ -561,19 +568,35 @@
       #rc-to-row #rc-to-pick { flex: 1; width: auto; margin-bottom: 0; }
       #rc-peer-strip:empty { display: none; }
 
-      /* What a mailbox reports, on one line. The row it opened from is
-         the heading, so there is none here — and four label-over-value
-         rows made a list out of what is one reading. Wraps rather than
-         scrolls: on a narrow screen the facts stack, they do not vanish
-         off the side. */
-      .natter-facts { display: flex; flex-wrap: wrap; gap: 12px 24px; }
-      .natter-fact { display: flex; flex-direction: column; }
+      /* The choices are a block, and a block carries the gap above itself
+         (§3). On top of the space a summary keeps from its body, because
+         a list of radios reads as part of the title otherwise.
+
+         This rule followed the panel from Relay Chat to Contacts; the
+         chat copy was left behind pointing at an element that no longer
+         existed. */
+      #contacts-unknown-choices { margin-top: 12px; }
+
+      /* A handful of short facts read as ONE line, not as a list. Used
+         where a row has already supplied the heading, so the facts under
+         it are a single reading rather than four label-over-value rows
+         stacked into a table: what a mailbox reports in Natter, and who a
+         contact is in the row that opened.
+
+         Was .natter-facts, named for the one app that had it. One row
+         type, one voice (§4) — the shape is not Natter's, so neither is
+         the name.
+
+         Wraps rather than scrolls: on a narrow screen the facts stack,
+         they do not vanish off the side. */
+      .fact-row { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+      .fact { display: flex; flex-direction: column; }
       /* Reading size for both halves, the same as a file info row: a
          caption is not fine print when it is the only thing naming the
-         number above it. Dimmed rather than shrunk, as .file-info-label
+         value above it. Dimmed rather than shrunk, as .file-info-label
          is. */
-      .natter-fact-value { font-size: 16px; }
-      .natter-fact-label { font-size: 16px; opacity: 0.7; }
+      .fact-value { font-size: 16px; }
+      .fact-label { font-size: 16px; opacity: 0.7; }
 
       /* Every block inside an expanded row takes its space above,
          including the FIRST one — a table row sits above it, and a row

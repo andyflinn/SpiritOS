@@ -374,8 +374,8 @@ function inviteLivesInTheRowItMintsOn() {
       // Two blocks, and the facts are one line rather than four rows:
       // the row above is the heading, and label-over-value stacked made
       // a list out of what is one reading.
-      const facts = (panel.match(/natter-fact"/g) || []).length;
-      if (/natter-facts/.test(panel) && facts === 4 && panel.indexOf('file-info-row') === -1) {
+      const facts = (panel.match(/class="fact"/g) || []).length;
+      if (/class="fact-row"/.test(panel) && facts === 4 && panel.indexOf('file-info-row') === -1) {
         test.check('and what the mailbox reports is one row of four facts');
       } else {
         test.fail('report layout: ' + panel);

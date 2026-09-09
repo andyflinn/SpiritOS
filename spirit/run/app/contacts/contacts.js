@@ -49,18 +49,24 @@ var contactsPrefs = { unknown: 'silent' };
 // The stored values do not change with the wording: 'acquire' is what the
 // hub is asked for and what prefs.json holds, whatever the radio happens
 // to be called on screen.
+//
+// The words describe the BOOK, because that is what the setting decides.
+// They used to sound like a choice about whether a message body is kept
+// or dropped, which is only true of `acquire` — the other two drop the
+// line either way, and what actually differs between them is whether the
+// person gets a row (packet 4).
 var CONTACTS_UNKNOWN_LABELS = {
   silent: {
-    title: 'Silent',
-    note: 'Their message is dropped and nothing is written down. They get no row here, and they are told nothing.',
+    title: 'Ignore',
+    note: 'No row. The line is not kept. They are not told.',
   },
   hold: {
-    title: 'Hold',
-    note: 'Their message is dropped, but they get a row here marked ×, so you can accept them afterwards.',
+    title: 'List them',
+    note: 'A waiting row (×). The line is not kept. You accept or block later.',
   },
   acquire: {
     title: 'Add them',
-    note: 'Writing to you is enough to be added: they get a row here like anybody else, and you can answer.',
+    note: 'Writing is enough: they get a row and the line is kept.',
   },
 };
 
@@ -113,17 +119,37 @@ function contactsRowHtml(person) {
     buttons += '<button type="button" class="cancel-btn" data-contact-block="' + contactsEscapeHtml(person.publicKey) + '">Block</button>';
   }
 
+  // Who they are, on one line. The row that opened is the heading, so
+  // three label-over-value rows stacked down the panel made a list out of
+  // what is one reading — the same shape a mailbox report uses in Natter
+  // (.fact-row, index.html).
+  function fact(label, value) {
+    return '<div class="fact">' +
+      '<span class="fact-value">' + contactsEscapeHtml(String(value)) + '</span>' +
+      '<span class="fact-label">' + contactsEscapeHtml(label) + '</span>' +
+      '</div>';
+  }
+
   var detail = '<div class="stat-tile wide">' +
-    spirit.shell.fileInfoRow('Their name', contactsEscapeHtml(person.publicLabel || '(none)')) +
-    spirit.shell.fileInfoRow('How', contactsEscapeHtml(person.acquiredVia || '')) +
-    spirit.shell.fileInfoRow('Key ends', contactsEscapeHtml(String(person.publicKey || '').slice(-6))) +
+    '<div class="fact-row">' +
+      fact('Their name', person.publicLabel || '(none)') +
+      fact('How', person.acquiredVia || '') +
+      fact('Key ends', String(person.publicKey || '').slice(-6)) +
+    '</div>' +
+    // What you call them and what you decide about them, on one line: the
+    // caption and its input take the width (.field-label.grow) and the
+    // buttons fill the end. align-items:flex-end on the row is what lines
+    // a button up with the input rather than with the caption above it.
+    //
     // myLabel: what YOU call that key. Never uploaded, and the reason the
     // book keeps their caption separately — theirs can change under you.
-    '<label class="field-label">Your name for them' +
-      '<input type="text" id="contacts-label-input" data-contact-key="' + contactsEscapeHtml(person.publicKey) + '"' +
-      ' value="' + contactsEscapeHtml(person.myLabel || '') + '" placeholder="' + contactsEscapeHtml(person.publicLabel || '') + '">' +
-    '</label>' +
-    '<div class="start-job-form">' + buttons + '</div>' +
+    '<div class="start-job-form">' +
+      '<label class="field-label grow">Your name for them' +
+        '<input type="text" id="contacts-label-input" data-contact-key="' + contactsEscapeHtml(person.publicKey) + '"' +
+        ' value="' + contactsEscapeHtml(person.myLabel || '') + '" placeholder="' + contactsEscapeHtml(person.publicLabel || '') + '">' +
+      '</label>' +
+      buttons +
+    '</div>' +
     '</div>';
 
   return row + '<tr class="job-log-row"><td colspan="3">' + detail + '</td></tr>';
@@ -258,7 +284,7 @@ function contactsPaintUnknown() {
   var summary = document.getElementById('contacts-unknown-summary');
   var current = CONTACTS_UNKNOWN_LABELS[contactsPrefs.unknown];
   if (summary) {
-    summary.textContent = 'Messages from people I have not added' +
+    summary.textContent = 'People who write and are not in this book' +
       (current ? ' — ' + current.title : '');
   }
 }
@@ -271,7 +297,13 @@ spirit.shell.activateApp({
     container.innerHTML =
       '<table class="jobs-table"><thead><tr><th>Name</th><th>How</th><th>Key</th></tr></thead>' +
         '<tbody id="contacts-tbody"></tbody></table>' +
-      '<details class="stat-tile wide" id="contacts-add-panel">' +
+      // name= makes the two folds one exclusive group: opening either
+      // closes the other, done by the browser with no JS and no state.
+      // Named from this app's id prefix rather than its app id, because
+      // app ids are folder-derived and have moved before — a group named
+      // from one would silently regroup on the next move. See
+      // UI_DESIGN_STYLE.md §3.
+      '<details class="stat-tile wide" name="contacts-panels" id="contacts-add-panel">' +
         '<summary>Add someone by handle</summary>' +
         '<div class="start-job-form">' +
           '<input type="text" id="contacts-add-handle" placeholder="the name you were told">' +
@@ -284,8 +316,8 @@ spirit.shell.activateApp({
       // who is waiting: under Hold the hub writes them into the book, so
       // they are rows in the table above — which is more than a number,
       // and something you can act on.
-      '<details class="stat-tile wide" id="contacts-unknown-section">' +
-        '<summary id="contacts-unknown-summary">Messages from people I have not added</summary>' +
+      '<details class="stat-tile wide" name="contacts-panels" id="contacts-unknown-section">' +
+        '<summary id="contacts-unknown-summary">People who write and are not in this book</summary>' +
         '<div id="contacts-unknown-choices"></div>' +
       '</details>' +
       '<div class="job-manifest-note" id="contacts-status"></div>' +

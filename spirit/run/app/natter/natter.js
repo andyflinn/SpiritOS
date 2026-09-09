@@ -95,12 +95,12 @@ function natterReportHtml(api, badge) {
   var report = badge.report || {};
   var peers = Array.isArray(report.peers) ? report.peers.length : 0;
   function fact(label, value) {
-    return '<div class="natter-fact">' +
-      '<span class="natter-fact-value">' + api.escapeHtml(String(value)) + '</span>' +
-      '<span class="natter-fact-label">' + api.escapeHtml(label) + '</span>' +
+    return '<div class="fact">' +
+      '<span class="fact-value">' + api.escapeHtml(String(value)) + '</span>' +
+      '<span class="fact-label">' + api.escapeHtml(label) + '</span>' +
       '</div>';
   }
-  return '<div class="natter-facts">' +
+  return '<div class="fact-row">' +
     fact('Owner', report.owner || '(none)') +
     fact('Mode', report.mode || '(unknown)') +
     fact('Peers', peers) +

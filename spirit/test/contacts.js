@@ -169,9 +169,16 @@ function strangerPolicy() {
 
     // Each one says what it costs, in the same label as its radio, so
     // reading it and choosing it are one gesture.
-    if (/Silent/.test(choices) && /Hold/.test(choices) && /Add them/.test(choices) &&
-        /dropped/.test(choices)) {
-      test.check('and each says in a sentence what it does');
+    //
+    // And what it says is what happens to the BOOK (packet 4). The old
+    // wording read as a choice about keeping or dropping a message body,
+    // which is only true of `acquire` — the other two drop the line
+    // either way, and the difference between them is whether the person
+    // gets a row. Asserted on the row words, because that is the part
+    // that was wrong.
+    if (/Ignore/.test(choices) && /List them/.test(choices) && /Add them/.test(choices) &&
+        /No row\./.test(choices) && /A waiting row/.test(choices) && /they get a row/.test(choices)) {
+      test.check('and each says in a sentence what it does to the book');
     } else {
       test.fail('choice copy: ' + choices);
     }
@@ -204,7 +211,7 @@ function strangerPolicy() {
       }
 
       if (el(app, 'contacts-unknown-summary').textContent ===
-          'Messages from people I have not added — Add them') {
+          'People who write and are not in this book — Add them') {
         test.check('and the heading carries the answer, so the fold reads closed');
       } else {
         test.fail('summary: ' + el(app, 'contacts-unknown-summary').textContent);
@@ -434,6 +441,114 @@ function addsByHandle() {
   });
 }
 
+// The row that opened is the heading, so what is under it is one reading
+// rather than a list: three facts across, then what you call them and
+// what you decide about them on one line (Andy).
+function theRowBubbleReadsAcrossNotDown() {
+  test.subHeading('An open row is one line of facts, and one line of decisions');
+
+  const app = mountApp({
+    people: [{
+      publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '',
+      acquiredVia: 'handle', held: false, blocked: false,
+    }],
+  });
+
+  return settle().then(function () {
+    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', BERT) });
+    const panel = el(app, 'contacts-tbody').innerHTML;
+
+    // The same shape a mailbox report uses in Natter — one class, both
+    // places, because the shape is not either app's (§4). Three of them,
+    // and none of the stacked rows they replaced.
+    const facts = (panel.match(/class="fact"/g) || []).length;
+    if (/class="fact-row"/.test(panel) && facts === 3 && panel.indexOf('file-info-row') === -1) {
+      test.check('three facts on one line, not three rows down the panel');
+    } else {
+      test.fail(facts + ' facts, file-info-row present: ' + (panel.indexOf('file-info-row') !== -1));
+    }
+
+    if (/Their name/.test(panel) && /How/.test(panel) && /Key ends/.test(panel)) {
+      test.check('and they are still the three that were there');
+    } else {
+      test.fail('facts: ' + panel);
+    }
+
+    // The caption and its input take the width; the buttons fill the end.
+    // Both inside ONE row, or they are two lines however they look.
+    const row = /<div class="start-job-form">([\s\S]*?)<\/div>\s*<\/div>/.exec(panel);
+    const inRow = row ? row[1] : '';
+    if (/field-label grow/.test(inRow) && /contacts-label-input/.test(inRow) &&
+        /data-contact-block/.test(inRow)) {
+      test.check('and the name field and the buttons share one row, the field taking the width');
+    } else {
+      test.fail('decision row: ' + inRow);
+    }
+
+    // `grow` is opt-in and has to exist, or the field does not take the
+    // width and the buttons sit against it instead of at the end.
+    const css = fs.readFileSync(path.join(RUN_DIR, 'index.html'), 'utf8');
+    if (/\.start-job-form > \.field-label\.grow\s*\{[^}]*flex:\s*1/.test(css)) {
+      test.check('and the rule that makes it take the width is there to do it');
+    } else {
+      test.fail('no .field-label.grow rule in the stylesheet');
+    }
+  });
+}
+
+// UI_DESIGN_STYLE.md §3, held by the harness rather than by whoever
+// remembers to look. The rule was written, and then the very next sitting
+// to touch this app did not run it — which is the failure mode the rule
+// exists for, so it stops being a thing to remember.
+function foldsObeyTheSpacingRules() {
+  test.subHeading('The folds are one group, and the block below a heading carries its own space');
+
+  const src = fs.readFileSync(APP_SCRIPT, 'utf8');
+  const css = fs.readFileSync(path.join(RUN_DIR, 'index.html'), 'utf8');
+
+  // Opening one fold closes its sibling, done by the browser: same name,
+  // no JS, no state. Read off the markup rather than counted, so the
+  // check says WHICH group as well as how many.
+  const named = (src.match(/<details[^>]*name="([^"]+)"/g) || [])
+    .map(function (tag) { return /name="([^"]+)"/.exec(tag)[1]; });
+  const folds = (src.match(/<details/g) || []).length;
+
+  if (folds === 2 && named.length === 2 && named[0] === named[1]) {
+    test.check('both folds are in one exclusive group, so opening one closes the other');
+  } else {
+    test.fail(folds + ' folds, names: ' + JSON.stringify(named));
+  }
+
+  // Named from this app's stable id prefix, never from its app id: app
+  // ids are folder-derived and have moved before (APP_ID_RENAMES), and a
+  // group named from one would silently regroup on the next move with
+  // nothing to catch it.
+  if (named[0] === 'contacts-panels' && named[0].indexOf('/') === -1) {
+    test.check('and named from the id prefix, not the folder-derived app id');
+  } else {
+    test.fail('group name: ' + named[0]);
+  }
+
+  // A block carries the gap above itself. The radios sit under a summary
+  // and would read as part of it otherwise — this rule followed the panel
+  // over from Relay Chat, where its copy was left behind pointing at an
+  // element that no longer existed.
+  const gap = /#contacts-unknown-choices\s*\{[^}]*margin-top:\s*(\d+)px/.exec(css);
+  const scale = /\.stat-tile \+ \.stat-tile[^{]*\{[^}]*margin-top:\s*(\d+)px/.exec(css);
+  if (gap && scale && gap[1] === scale[1]) {
+    test.check('and the choices carry the same leading space as any other block');
+  } else {
+    test.fail('choices ' + (gap && gap[1]) + 'px vs the block scale ' + (scale && scale[1]) + 'px');
+  }
+
+  // The one it replaced is gone, not duplicated.
+  if (css.indexOf('#rc-unknown-choices') === -1) {
+    test.check('and the copy it left behind in chat is gone');
+  } else {
+    test.fail('#rc-unknown-choices is still in the stylesheet');
+  }
+}
+
 function sendsNothing() {
   test.subHeading('It reads the book — it does not talk to anybody');
 
@@ -474,6 +589,8 @@ listsTheBook()
   .then(renamesLocally)
   .then(addsByHandle)
   .then(strangerPolicy)
+  .then(theRowBubbleReadsAcrossNotDown)
+  .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
