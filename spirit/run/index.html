@@ -22,6 +22,11 @@
          own `text` field. Isomorphic: the hub wraps with it in node, the
          apps read it here. -->
     <script src="/js/packet.js"></script>
+    <!-- The ICON table read the other way round — one line per glyph,
+         carrying every name it is keyed under. What the icon selector
+         chooses from, and isomorphic so the grouping and the filtering
+         can be asserted in node rather than only looked at. -->
+    <script src="/js/iconIndex.js"></script>
     <style>
       * { box-sizing: border-box; }
 
@@ -351,6 +356,91 @@
       #job-manifest-form button { margin-top: 8px; }
 
       .job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 8px; min-height: 1em; }
+
+      /* The icon selector (createIconSelector, shell.js). A closed field
+         that drops a list we paint, rather than a native <select>: the
+         glyph has to lead every line for the column to scan, and native
+         type-ahead can only match a prefix of the whole option text, so
+         the only typeable prefix would have been the emoji itself. The
+         filter here reads every name on every line instead. */
+      .icon-selector { position: relative; }
+
+      /* Reads at the size the titlebar does — this is the row's content,
+         not its fine print. */
+      .icon-selector-field {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 8px;
+        background: #0f3460;
+        color: inherit;
+        font: inherit;
+        font-size: 16px;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .icon-selector-field:hover { background: #16487a; }
+
+      /* One fixed column for the picture, so 129 of them line up down the
+         left edge and the eye can run the list without reading it. */
+      .icon-selector-glyph {
+        flex: 0 0 auto;
+        width: 24px;
+        font-size: 20px;
+        line-height: 1;
+        text-align: center;
+      }
+
+      .icon-selector-name { flex: 1; min-width: 0; }
+
+      .icon-selector-caret { flex: 0 0 auto; opacity: 0.6; font-size: 12px; }
+
+      /* Over the panel, not in it: opening the list must not push the
+         rest of the row down the page. */
+      .icon-selector-list {
+        position: absolute;
+        z-index: 20;
+        left: 0;
+        right: 0;
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 8px;
+        background: #16213e;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      }
+
+      .icon-selector-filter {
+        width: 100%;
+        margin-bottom: 12px;
+        font-size: 16px;
+      }
+
+      .icon-selector-rows { max-height: 40vh; overflow-y: auto; }
+
+      /* One row type, one voice: the same shape as the closed field, so
+         picking a line and then reading it back says the same thing. */
+      .icon-selector-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: 16px;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .icon-selector-row:hover,
+      .icon-selector-row.is-active { background: #0f3460; }
 
       .job-start-error {
         color: #ff8080;

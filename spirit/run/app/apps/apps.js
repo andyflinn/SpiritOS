@@ -79,10 +79,23 @@ function renderAppManagerRow(a, groupsById, groupList) {
   // Built-ins are covered by their own note above, intrinsic apps
   // by theirs: neither offers a control setAppOverride would
   // refuse.
+  // A slot, not a control: the icon picker is a DOM element the shell
+  // builds (api.ui.elements.createIconSelector), and this row is a string.
+  // fillIconSelectors below plants it here once the table is in the page.
+  //
+  // It keeps the id the <input> had, because the id IS the contract with
+  // the delegated `change` handler below and with the harness — the
+  // selector's root carries .value and fires a bubbling change, so
+  // nothing downstream can tell it changed shape.
+  //
+  // The field used to read "paste any emoji" and take anything at all,
+  // then refuse it afterwards if another app was already showing it.
+  // Andy's verdict: the pool is the vocabulary. Taken glyphs are not on
+  // the list, so there is nothing left to refuse.
   var iconFieldHtml = (a.intrinsic || !a.dynamic)
     ? ''
-    : '<label class="field-label">Custom icon (paste any emoji)' +
-    '<input type="text" id="app-manager-icon-input" data-app-id="' + appsEscapeHtml(a.id) + '" value="' + appsEscapeHtml(override.icon || '') + '" placeholder="' + appsEscapeHtml(a.defaultIcon) + '"></label>' +
+    : '<label class="field-label">Custom icon' +
+    '<div id="app-manager-icon-input" data-app-id="' + appsEscapeHtml(a.id) + '" data-icon-slot="' + appsEscapeHtml(override.icon || a.defaultIcon || '') + '"></div></label>' +
     (override.icon ? '<button type="button" class="cancel-btn" data-reset-app-icon="' + appsEscapeHtml(a.id) + '">Reset to default</button>' : '');
   // Locked to dynamic apps only, unlike icon — built-in apps' place
   // in the shell is curated by code (Spirit's own fixed member
@@ -148,15 +161,74 @@ function renderAppManagerTable(force) {
   // transition away from the field hasn't fully settled yet.
   var focusedId = document.activeElement && document.activeElement.id;
   if (!force && (focusedId === 'app-manager-name-input' || focusedId === 'app-manager-icon-input' || focusedId === 'app-manager-group-input')) return;
+  // The icon picker is no longer the focused element itself — focus sits
+  // on the filter input inside it, whose id is not one of the three
+  // above. Same failure the <select> had when it was added to that guard:
+  // a tick repaints the table and the list a person is reading closes
+  // under them. The open list says so on its root, so ask that.
+  if (!force && tbody.querySelector('[data-open]')) return;
   var groupList = spirit.shell.listGroups();
   var groupsById = {};
   groupList.forEach(function (g) { groupsById[g.id] = g; });
   var rows = spirit.shell.listApps().sort(function (a, b) { return a.name.localeCompare(b.name); });
   tbody.innerHTML = rows.map(function (a) { return renderAppManagerRow(a, groupsById, groupList); }).join('') || '<tr><td colspan="5">(no apps registered)</td></tr>';
+  fillIconSelectors(tbody, rows, groupList);
 }
 
+// Plants a real icon picker in each row's slot, once the table markup is
+// in the page. Rows are built as strings and the picker is an element, so
+// this is the seam between the two.
+//
+// What it excludes is every glyph anything else is already showing: each
+// other app's current icon AND its shipped default (a default is what a
+// Reset would bring back, so it is just as taken), plus every group's.
+// Groups are registered as pseudo-apps and collide in setAppOverride the
+// same way, but listApps() filters them out — hence both calls.
+//
+// The app's own glyph is deliberately NOT excluded: it is the one this
+// row is already showing, and a list that dropped it could not show what
+// is currently set.
+function fillIconSelectors(tbody, rows, groupList) {
+  var slots = tbody.querySelectorAll('[data-icon-slot]');
+  Array.prototype.forEach.call(slots, function (slot) {
+    var id = slot.dataset.appId;
+    var taken = [];
+    rows.forEach(function (other) {
+      if (other.id === id) return;
+      taken.push(other.icon, other.defaultIcon);
+    });
+    groupList.forEach(function (g) { taken.push(g.icon); });
+
+    var selector = appsApi.ui.elements.createIconSelector(taken, {
+      value: slot.dataset.iconSlot,
+    });
+    // The id and the app it edits move from the wrapper onto the control
+    // itself, because the delegated `change` handler below reads
+    // event.target.id and event.target.dataset.appId — and event.target
+    // is the thing that fired, which is the selector. The markup carries
+    // them so the row a test reads still says the control is offered;
+    // this is where they end up once there is a real control to carry
+    // them. Off the wrapper, not copied: two elements answering to one id
+    // is how the guard above starts matching the wrong one.
+    selector.id = slot.id;
+    selector.dataset.appId = id;
+    slot.removeAttribute('id');
+    slot.appendChild(selector);
+  });
+}
+
+// The api the shell hands in at mount. This app has always reached for
+// spirit.shell instead — the comment at the top of this file says why,
+// and that part has not changed: managing every OTHER app's overrides is
+// not something an app-scoped api can express. The icon picker is not
+// that: it is a widget the shell offers, and buildApiFor's own comment
+// asks apps to come through the doorway rather than the globals. So this
+// one goes through api.
+var appsApi = null;
+
 spirit.shell.activateApp({
-  mount: function (container) {
+  mount: function (container, api) {
+    appsApi = api;
     expandedAppId = null; // fresh visit starts fully collapsed
 
     container.innerHTML =
@@ -202,6 +274,11 @@ spirit.shell.activateApp({
         : { group: event.target.value };
       var result = spirit.shell.setAppOverride(event.target.dataset.appId, patch);
       if (!result.ok) {
+        // icon-collision is unreachable from this panel now — the picker
+        // is not offered a glyph anything else is showing. It stays
+        // because setAppOverride is the enforcer and this panel is not
+        // the only caller; a refusal nobody can trigger is cheaper than
+        // an unexplained failure if one ever can.
         var messages = {
           'name-collision': 'Another app is already showing that name — pick a different one.',
           'icon-collision': 'Another app is already using that icon — pick a different one.',
