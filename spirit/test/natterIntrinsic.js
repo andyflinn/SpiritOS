@@ -47,6 +47,7 @@ function manifest(rel) {
 
 function fakeElement(tag) {
   let html = '';
+  const listeners = {};
   const el = {
     tag: tag,
     className: '',
@@ -57,7 +58,16 @@ function fakeElement(tag) {
     style: {},
     children: [],
     appendChild: function (child) { el.children.push(child); return child; },
-    addEventListener: function () {},
+    // Recorded rather than dropped: an icon tile IS its click handler —
+    // which screen it pushes and whether the screen it was pressed on
+    // survives on the stack is the whole of what buildAppIcon decides,
+    // and a stub that discarded the listener could not ask.
+    addEventListener: function (type, fn) {
+      (listeners[type] = listeners[type] || []).push(fn);
+    },
+    fire: function (type, event) {
+      (listeners[type] || []).forEach(function (fn) { fn(event || {}); });
+    },
     querySelector: function () { return fakeElement('div'); },
     querySelectorAll: function () { return []; },
     remove: function () {},
@@ -1908,6 +1918,102 @@ test.subHeading('Contacts is its own app');
     test.check('and Relay Chat no longer adds, accepts, blocks or renames');
   } else {
     test.fail('relayChat.js still carries address-book verbs');
+  }
+}
+
+test.subHeading('A group screen is a place you can go back to');
+
+{
+  // A real registered group, because that is the same template Spirit is
+  // built on — registerGroupApp (shell.js) exists to say so, and its grid
+  // is painted by the same renderAppGroup / buildAppIcon pair Spirit's
+  // own render() calls. Testing the shared path rather than a hand-made
+  // stand-in for Spirit means index.html cannot drift away from what is
+  // asserted here.
+  const booted = bootShell({
+    defaultHandlers: {},
+    appOverrides: {},
+    groups: { g1: { name: 'Tools', icon: '🧰' } },
+  }, [NATTER_SCRIPT, 'app/contacts/contacts.js'], false, BOUND);
+
+  function stack() { return booted.shell.navStackIds().join(' > '); }
+
+  // The tile the group's own grid draws, which is the thing under test:
+  // renderAppGroup -> buildAppIcon -> its click handler.
+  function tileFor(id) {
+    const grid = fakeElement('div');
+    booted.shell.renderAppGroup(grid, [id]);
+    if (grid.children.length !== 1) throw new Error('no tile drawn for ' + id);
+    return grid.children[0];
+  }
+
+  booted.shell.launchApp('g1');
+  if (stack() === 'desktop > g1') {
+    test.check('opening a group puts the group on the stack');
+  } else {
+    test.fail('after opening the group: ' + stack());
+  }
+
+  tileFor('app/contacts').fire('click');
+  // The regression this section exists for. buildAppIcon used to pass
+  // {replace: true}, which overwrote the group's own entry — so Spirit
+  // vanished the moment you tapped something in it and Back skipped
+  // straight home. Three deep, not two.
+  if (stack() === 'desktop > g1 > app/contacts') {
+    test.check('and launching from its grid leaves the group underneath, not replaced');
+  } else {
+    test.fail('after the tile click: ' + stack());
+  }
+
+  booted.shell.goBack();
+  if (stack() === 'desktop > g1') {
+    test.check('so Back lands on the group, not the desktop');
+  } else {
+    test.fail('after Back: ' + stack());
+  }
+
+  booted.shell.goBack();
+  if (stack() === 'desktop') {
+    test.check('and Back again leaves the group for the desktop');
+  } else {
+    test.fail('after the second Back: ' + stack());
+  }
+
+  // The desktop was never affected either way: replace needed a stack
+  // deeper than one, and the desktop is only ever visible at exactly
+  // one. Asserted so the claim "desktop behaviour is unchanged" is
+  // something the harness holds rather than something a comment says.
+  tileFor('app/natter').fire('click');
+  if (stack() === 'desktop > app/natter') {
+    test.check('and a tile pressed from the desktop still just pushes');
+  } else {
+    test.fail('from the desktop: ' + stack());
+  }
+
+  // Revisiting a screen already on the stack still collapses back to it
+  // rather than stacking a duplicate — the other half of launchApp, and
+  // the half that has to keep working now that every grid pushes. The
+  // stack is desktop > app/natter here, so opening the group and then
+  // going back to Natter must land on the entry already there rather
+  // than making a second one.
+  booted.shell.launchApp('g1');
+  booted.shell.launchApp('app/natter');
+  if (stack() === 'desktop > app/natter') {
+    test.check('and re-entering a screen already open collapses back to it');
+  } else {
+    test.fail('after re-entering Natter: ' + stack());
+  }
+
+  // "Open with" is the one caller that still elides itself, and it must:
+  // the read-only preview is a step on the way to the handler, not a
+  // destination. Read off the source, because the only other way to
+  // reach it is a full viewer render.
+  const shellSrc = readRun('js/client/shell.js');
+  const replaceCalls = shellSrc.match(/launchApp\([^)]*\{ replace: true \}\)/g) || [];
+  if (replaceCalls.length === 1) {
+    test.check('and exactly one caller still replaces its own entry — Open with');
+  } else {
+    test.fail('callers passing replace: ' + replaceCalls.length + ' — ' + replaceCalls.join(' | '));
   }
 }
 

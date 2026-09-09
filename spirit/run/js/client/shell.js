@@ -512,15 +512,23 @@
     var iconEl = document.createElement('div');
     iconEl.className = 'app-icon';
     iconEl.innerHTML = '<span class="icon">' + escapeHtml(effectiveIcon(app)) + '</span><span class="label">' + escapeHtml(effectiveName(app)) + '</span>';
-    // {replace: true} is a no-op for a real desktop icon click — navStack
-    // is always exactly length 1 whenever the desktop is actually visible,
-    // and launchApp's replace branch requires length > 1 — but it's exactly
-    // right for a grouping app's icon grid (e.g. "spirit"): same stack
-    // behavior as picking a handler from "Open with" (renderOpenWith,
-    // above) — the launched app replaces the group screen's own stack
-    // entry, so Back skips the group menu and returns to wherever it was
-    // opened from, rather than back through it.
-    iconEl.addEventListener('click', function () { launchApp(id, null, { replace: true }); });
+    // A plain push, from the desktop and from a group grid alike. This
+    // used to pass {replace: true}, which was a no-op on the desktop
+    // (navStack is exactly length 1 whenever the desktop is visible, and
+    // launchApp's replace branch requires length > 1) but on a group grid
+    // overwrote the grid's own stack entry — so Spirit vanished the
+    // moment you tapped something in it, and Back from Stats landed on
+    // the desktop rather than back in Spirit.
+    //
+    // Andy's verdict: a group screen is a real place you can go back to,
+    // Spirit included, and it is treated like any other app. That is one
+    // rule for every grid, so a user's own group behaves the way Spirit
+    // does rather than having its own answer.
+    //
+    // "Open with" is the one caller that still elides itself
+    // (renderOpenWith, below) and it should: the read-only preview is a
+    // step on the way to the handler, not a destination.
+    iconEl.addEventListener('click', function () { launchApp(id, null); });
     return iconEl;
   }
 
@@ -844,9 +852,10 @@
       // The smallest possible app launcher — one small icon appended to
       // this app's own titlebar (never replacing it; titleEl already has
       // the plain app name set by switchTo before mount runs) that jumps
-      // straight to another app. A normal launchApp push, not {replace:
-      // true} (contrast buildAppIcon's desktop-tile click, below) — Back
-      // should return to the app that had this link, not skip past it.
+      // straight to another app. A normal launchApp push — Back should
+      // return to the app that had this link, not skip past it. Nothing
+      // to contrast with any more: icon tiles push too (buildAppIcon,
+      // above), and renderOpenWith is the only caller left that replaces.
       //
       // Only recorded here (on the app itself) rather than painted once
       // and forgotten — mount() only runs once now that apps stay
@@ -1598,6 +1607,14 @@
     // Exported for the harness: a migration that cannot be exercised is a
     // migration nobody finds out about until the move it was written for.
     migrateAppIds: migrateAppIds,
+    // Same reason. Which screens are on the stack, and stepping back one,
+    // are the whole of what "Back" means, and until now no test could see
+    // either — the {replace: true} that made Spirit disappear from its own
+    // stack sat there unexamined because nothing could ask.
+    goBack: goBack,
+    navStackIds: function () {
+      return navStack.map(function (entry) { return entry.id; });
+    },
     APP_ID_RENAMES: APP_ID_RENAMES,
     INTRINSIC_APP_FOLDERS: INTRINSIC_APP_FOLDERS,
     getAppOverride: getAppOverride,
