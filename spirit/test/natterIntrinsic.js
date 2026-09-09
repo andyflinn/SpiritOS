@@ -2240,6 +2240,56 @@ test.subHeading('A group screen is a place you can go back to');
   }
 }
 
+test.subHeading('The Processes screen offers one control and one list');
+
+{
+  const src = readRun('app/process-browser/process-browser.js');
+  const css = readRun('index.html');
+
+  // The search box is the one control this screen offers, so it sits in a
+  // panel — the shape the Jobs and Groups forms have. Read as an
+  // ordering, because the markup is built by concatenation and a regex
+  // across it would be asserting the source's formatting.
+  const panelAt = src.indexOf('<div class="stat-tile wide">');
+  const searchAt = src.indexOf('id="process-search"');
+  const listAt = src.indexOf('id="process-browser-list"');
+  if (panelAt !== -1 && panelAt < searchAt && searchAt < listAt) {
+    test.check('the search box has a panel of its own, above the list');
+  } else {
+    test.fail('search is not panelled: ' + [panelAt, searchAt, listAt].join(','));
+  }
+
+  // And no caption over it. Jobs needed three, because its placeholders
+  // were the captions and left the moment you typed; one search box is
+  // not ambiguous, and a word that cannot do anything is §1.
+  if (src.indexOf('field-label') === -1) {
+    test.check('and no caption over it — one search box is not ambiguous');
+  } else {
+    test.fail('a caption was added to the search box');
+  }
+
+  // §3: the box does not push the list down. The list is a block in the
+  // pane's stack and carries its own space above it.
+  const searchRule = /#process-search\s*\{([^}]*)\}/.exec(css);
+  if (searchRule && !/margin-bottom/.test(searchRule[1])) {
+    test.check('and pushes nothing down: the list brings its own space');
+  } else {
+    test.fail('#process-search: ' + (searchRule && searchRule[1].replace(/\s+/g, ' ').trim()));
+  }
+
+  // §2: the description is the sentence saying what a process DOES, which
+  // is why the list is worth reading. Fine print belongs at the foot of a
+  // page, not shrunk in the middle of one — so it reads at the size the
+  // titlebar does and is told apart by weight and dimming instead.
+  const desc = /\.process-entry-desc\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
+  const title = /#app-title\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
+  if (desc && title && desc[1] === title[1]) {
+    test.check('and a process description reads at the size of the titlebar');
+  } else {
+    test.fail('description ' + (desc && desc[1]) + 'px vs title ' + (title && title[1]) + 'px');
+  }
+}
+
 test.subHeading('The Jobs screen offers one action and one table');
 
 {

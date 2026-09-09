@@ -99,8 +99,20 @@ spirit.shell.activateApp({
     lastProcessBrowserEntries = null;
     processStale = true;
 
+    // The search box is the one control this screen offers, so it sits in
+    // a panel of its own — the same shape the Jobs start form and the
+    // Groups create form have. The list below is the list, as a table is
+    // in those apps.
+    //
+    // No caption over it, unlike Jobs' three fields: there the
+    // placeholders were carrying the captions and vanished the moment you
+    // typed, and you could not tell which box was which. One search box
+    // is not ambiguous, and a "Search" label above a box that says
+    // "Search processes…" is a word that cannot do anything (§1).
     container.innerHTML =
-      '<input type="text" id="process-search" placeholder="Search processes…">' +
+      '<div class="stat-tile wide">' +
+        '<input type="text" id="process-search" placeholder="Search processes…">' +
+      '</div>' +
       '<div id="process-browser-list"></div>';
 
     document.getElementById('process-search').addEventListener('input', function () {

@@ -206,7 +206,9 @@
 
       /* Only what is particular to it; the look comes from the control
          rules above. Same for every field below. */
-      #process-search { width: 100%; margin-bottom: 12px; }
+      /* No margin-bottom: the list below carries its own space above it
+         (§3), and it is a block in the pane's own stack. */
+      #process-search { width: 100%; }
 
       /* The ownership mark: ★ means this node owns that mailbox, the
          same as in Relay Chat's To list. It is a mark and not a control
@@ -223,7 +225,12 @@
 
       .process-entry:hover { background: rgba(255, 255, 255, 0.08); }
       .process-entry-label { font-weight: 600; }
-      .process-entry-desc { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+      /* Reading size, not fine print. This is the sentence that says what
+         a process DOES — the reason the list is worth reading at all — and
+         §2 puts fine print at the foot of a page rather than shrunk in the
+         middle of one. Told apart from its label the way §2 says: same
+         size, different weight, and dimmed rather than shrunk. */
+      .process-entry-desc { font-size: 16px; opacity: 0.75; margin-top: 2px; }
 
       /* One spacing scale: the 12px that separates blocks down a page
          (UI_DESIGN_STYLE.md) is also what separates controls across a
