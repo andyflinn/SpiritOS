@@ -1601,7 +1601,11 @@ test.subHeading('The viewer keeps one rhythm down the page');
   // renderOpenWith writes '' when nothing handles the extension, and an
   // empty div still occupies its margin — which would open a bigger gap
   // on exactly the files that have less to show.
-  if (/#open-with:empty\s*\{[^}]*margin-top:\s*0/.test(css)) {
+  // Collapsed rather than margin-cancelled. §3 named the old
+  // :empty{margin-top:0} as a hack that existed only because space was
+  // carried downward, and this is the answer every other can-be-empty
+  // block already gives (#rc-peer-strip, .job-start-error).
+  if (/#open-with:empty\s*\{[^}]*display:\s*none/.test(css)) {
     test.check('and takes no space at all when there is nothing to offer');
   } else {
     test.fail('an empty Open with still holds its margin');
@@ -2227,16 +2231,343 @@ test.subHeading('A group screen is a place you can go back to');
     test.fail('after re-entering Natter: ' + stack());
   }
 
-  // "Open with" is the one caller that still elides itself, and it must:
-  // the read-only preview is a step on the way to the handler, not a
-  // destination. Read off the source, because the only other way to
-  // reach it is a full viewer render.
+  // Two callers elide themselves, and both are in a viewer: picking a
+  // handler from Open with, and opening the app whose source you were
+  // reading. In both the viewer is a step on the way rather than a
+  // destination, so Back returns to wherever you came from rather than to
+  // the file you have finished with.
+  //
+  // Counted rather than listed, so a third has to be a decision:
+  // everything else pushes, and a group screen pushing is what makes Back
+  // into it mean going back to where you were.
   const shellSrc = readRun('js/client/shell.js');
   const replaceCalls = shellSrc.match(/launchApp\([^)]*\{ replace: true \}\)/g) || [];
-  if (replaceCalls.length === 1) {
-    test.check('and exactly one caller still replaces its own entry — Open with');
+  if (replaceCalls.length === 2) {
+    test.check('and exactly two callers replace their own entry, both of them a viewer');
   } else {
     test.fail('callers passing replace: ' + replaceCalls.length + ' — ' + replaceCalls.join(' | '));
+  }
+}
+
+test.subHeading('A viewer says which file, then what is known about it');
+
+{
+  const shellSrc2 = readRun('js/client/shell.js');
+  const css2 = readRun('index.html');
+  const body = shellSrc2.slice(shellSrc2.indexOf('function renderFileInfoBubble'),
+    shellSrc2.indexOf('function prettifyAnnotationKey'));
+
+  // The path is the title of the screen, so it has a bubble of its own
+  // and no caption: "Path:" was a word saying what the only thing in the
+  // bubble obviously is, and it took 90px of the width the path needed
+  // most (Andy).
+  if (/class="stat-tile wide file-path"/.test(body) && body.indexOf("'Path'") === -1 &&
+      body.indexOf('fileInfoRow') === -1) {
+    test.check('the path is its own bubble, with no caption in front of it');
+  } else {
+    test.fail('info bubble: ' + body.replace(/\s+/g, ' ').slice(0, 200));
+  }
+
+  // Everything else is a reading about that file, so it is a facts bubble
+  // like every other reading in the shell.
+  const wanted = ['MIME type', 'Size', 'Changed', 'Created'];
+  const missingFacts = wanted.filter(function (label) { return body.indexOf("'" + label + "'") === -1; });
+  if (/factRow\(/.test(body) && missingFacts.length === 0) {
+    test.check('and the rest is one facts bubble: ' + wanted.join(', '));
+  } else {
+    test.fail('facts: ' + (missingFacts.length ? 'missing ' + missingFacts.join(', ') : 'no factRow'));
+  }
+
+  // Size, Changed and Created come from statFile and are absent when it
+  // fails — a race with the file being deleted — rather than shown as
+  // blanks. The MIME type is worked out from the name, so it is always
+  // there. §1, and what this function already did before the split.
+  const guarded = body.indexOf('if (stats)');
+  const mimeAt = body.indexOf("'MIME type'");
+  if (guarded !== -1 && mimeAt !== -1 && mimeAt < guarded) {
+    test.check('and a file whose stat call fails still says which file it is');
+  } else {
+    test.fail('stat guard at ' + guarded + ', mime at ' + mimeAt);
+  }
+
+  // Both launchers, not one: they share renderFileInfoBubble and they
+  // share the wrapper problem. Each writes its whole page into a div so a
+  // later loadFile can replace it, and while that div said nothing the
+  // stack rule stopped at the pane's only child — the two bubbles sat
+  // flush, and so did the annotation cards below them.
+  const wrappers = ['cv-body', 'mv-body'].filter(function (id) {
+    return css2.indexOf('<div id="' + id + '" class="stack">') !== -1;
+  });
+  if (wrappers.length === 2 && /\.stack > \* \+ \*/.test(css2)) {
+    test.check('and both launchers say their wrapper holds blocks, so the rule reaches inside');
+  } else {
+    test.fail('stacked wrappers: ' + wrappers.join(', '));
+  }
+
+  // The bubble echoes the titlebar, which shows the same path — so it
+  // reads at the same size and the weight does the telling apart (§2).
+  const pathSize = /\.file-path\s*\{[^}]*font-size:\s*(\d+)px/.exec(css2);
+  const titleSize = /#app-title\s*\{[^}]*font-size:\s*(\d+)px/.exec(css2);
+  const fileWeight = /\.path-file\s*\{[^}]*font-weight:\s*(\d+)/.exec(css2);
+  if (pathSize && titleSize && pathSize[1] === titleSize[1] && fileWeight) {
+    test.check('reading at the titlebar size, with the filename carrying the weight');
+  } else {
+    test.fail('path ' + (pathSize && pathSize[1]) + ' vs title ' + (titleSize && titleSize[1]));
+  }
+}
+
+test.subHeading('A path always fits, however narrow the pane');
+
+{
+  const css3 = readRun('index.html');
+  const shellSrc3 = readRun('js/client/shell.js');
+  const fnBody = shellSrc3.slice(shellSrc3.indexOf('function pathValue'),
+    shellSrc3.indexOf('function renderFileInfoBubble'));
+  const pathValue = new Function('escapeHtml', fnBody + '; return pathValue;')(
+    spirit.core.util.escapeHtml);
+
+  // A break opportunity after every slash, and none anywhere else. The
+  // spans do NOT provide this — an element boundary is not a line break
+  // opportunity — so if <wbr> ever goes, the path stops folding and
+  // nothing else says so.
+  const out = pathValue('spirit/run/app/relayChat/relayChat.js');
+  if ((out.match(/<wbr>/g) || []).length === 4) {
+    test.check('a four-deep path offers a break after each of its slashes');
+  } else {
+    test.fail('breaks: ' + out);
+  }
+
+  if (/class="path-dir">spirit\//.test(out) && /class="path-file">relayChat\.js</.test(out)) {
+    test.check('and its directories and its filename are told apart');
+  } else {
+    test.fail('segments: ' + out);
+  }
+
+  const bare = pathValue('notes.txt');
+  if (bare.indexOf('<wbr>') === -1 && bare.indexOf('path-dir') === -1) {
+    test.check('while a bare filename gets no directory and no break');
+  } else {
+    test.fail('bare: ' + bare);
+  }
+
+  // The markup is built AFTER escaping, per segment, so a filename cannot
+  // become part of the structure.
+  const nasty = pathValue('media/<script>alert(1)</script>.txt');
+  if (nasty.indexOf('<script') === -1 && nasty.indexOf('&lt;script') !== -1) {
+    test.check('and a filename with markup in it stays a filename');
+  } else {
+    test.fail('escaping: ' + nasty);
+  }
+
+  // min-width:0 is what actually lets it shrink — a flex item refuses to
+  // go below min-content otherwise, and for a path with no spaces that is
+  // the whole string. overflow-wrap:anywhere rather than break-word,
+  // because only `anywhere` affects min-content sizing.
+  const valueRule = /\.file-info-value, \.fact-value\s*\{([^}]*)\}/.exec(css3);
+  if (valueRule && /min-width:\s*0/.test(valueRule[1]) &&
+      /overflow-wrap:\s*anywhere/.test(valueRule[1])) {
+    test.check('and the value may shrink, with somewhere to break when it must');
+  } else {
+    test.fail('value rule: ' + (valueRule && valueRule[1].replace(/\s+/g, ' ').trim()));
+  }
+}
+
+test.subHeading('The process form obeys the same rules as every other form');
+
+{
+  const html4 = readRun('index.html');
+  const form = html4.slice(html4.indexOf('var argsHtml ='), html4.indexOf('job-manifest-note"></div>'));
+
+  // Captioned fields, through the shared class rather than a private copy
+  // of it. #job-manifest-form label was byte-for-byte .field-label under
+  // an id — the duplication §9 was written against, and .field-label's own
+  // comment says it was made FROM this form and this form never followed.
+  const privateCopy = /#job-manifest-form label\s*\{/.test(html4);
+  if (/class="field-label"/.test(form) && !privateCopy) {
+    test.check('its fields use the shared caption class, not a private copy under an id');
+  } else {
+    test.fail('field-label in form: ' + /class="field-label"/.test(form) +
+      ', private copy still in css: ' + privateCopy);
+  }
+
+  if (/class="start-job-form card"/.test(form) &&
+      form.indexOf('start-job-form card') < form.indexOf('start-manifest-job')) {
+    test.check('and it is a row that wraps, with Start at the end of it');
+  } else {
+    test.fail('form shape: ' + form.replace(/\s+/g, ' ').slice(0, 160));
+  }
+
+  // The heading was a bare <h3>, whose default top margin was the space
+  // above the panel nobody asked for. One class for the three panels that
+  // want a heading, and it carries no margin of its own.
+  const headingRule = /\.panel-heading\s*\{([^}]*)\}/.exec(html4);
+  if (/class="panel-heading"/.test(form) && headingRule && /margin:\s*0/.test(headingRule[1]) &&
+      html4.indexOf('.natter-mint-heading {') === -1) {
+    test.check('and its heading brings no margin, through the class all three panels share');
+  } else {
+    test.fail('panel-heading: ' + (headingRule && headingRule[1].replace(/\s+/g, ' ').trim()));
+  }
+
+  const noteRule = /\.job-manifest-note\s*\{([^}]*)\}/.exec(html4);
+  if (noteRule && !/min-height/.test(noteRule[1]) &&
+      /\.job-manifest-note:empty\s*\{[^}]*display:\s*none/.test(html4)) {
+    test.check('and its note collapses until there is a message');
+  } else {
+    test.fail('.job-manifest-note: ' + (noteRule && noteRule[1].replace(/\s+/g, ' ').trim()));
+  }
+}
+
+test.subHeading('index.html calls nothing it has not taken off spirit.shell');
+
+{
+  // index.html's inline script is a separate top-level script with no
+  // closure access to shell.js — window.spirit is all it can see — so it
+  // pulls each function it uses into a local first. Add a shell function,
+  // call it from there, forget the local, and you get a ReferenceError at
+  // the moment that code runs: the viewer renders its file bubble and
+  // then stops, half a screen drawn, nothing in the console anybody was
+  // watching. That is how renderAppOfFile shipped.
+  const html = readRun('index.html');
+  const shellSrc = readRun('js/client/shell.js');
+
+  // What the shell offers, off its own export block.
+  const exportBlock = shellSrc.slice(shellSrc.indexOf('spirit.shell = {'),
+    shellSrc.indexOf('};', shellSrc.indexOf('spirit.shell = {')));
+  const exported = (exportBlock.match(/^\s*([A-Za-z_][A-Za-z0-9_]*):/gm) || [])
+    .map(function (line) { return line.replace(/[\s:]/g, ''); });
+
+  // What index.html took a local for.
+  const imported = (html.match(/var\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*spirit\.shell\./g) || [])
+    .map(function (line) { return /var\s+([A-Za-z_][A-Za-z0-9_]*)/.exec(line)[1]; });
+
+  // Calls through the global are fine and are not what this asks about,
+  // so they are removed before looking for bare ones.
+  const bare = html.replace(/spirit\.shell\.[A-Za-z0-9_]+/g, '');
+  const missing = exported.filter(function (name) {
+    return imported.indexOf(name) === -1 &&
+      new RegExp('(^|[^.\\w])' + name + '\\s*\\(').test(bare);
+  });
+
+  if (exported.length > 5 && missing.length === 0) {
+    test.check('every shell function it calls bare is one it took a local for — ' +
+      exported.length + ' offered, ' + imported.length + ' taken');
+  } else {
+    test.fail('called without a local: ' + (missing.join(', ') || '(export block not found)'));
+  }
+}
+
+test.subHeading("A file that IS an app says so, and offers the way back");
+
+{
+  const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+    [NATTER_SCRIPT, 'app/contacts/contacts.js'], false, BOUND);
+
+  function bubbleFor(path) {
+    const box = fakeElement('div');
+    booted.shell.renderAppOfFile(box, path);
+    return box.innerHTML;
+  }
+
+  // The entry script of a declared app: its icon, its name, and one way
+  // back to it.
+  const natter = bubbleFor('app/natter/natter.js');
+  const app = appById(booted, 'app/natter');
+  if (natter.indexOf(app.name) !== -1 && natter.indexOf(app.icon) !== -1 &&
+      /id="app-of-file-open"/.test(natter)) {
+    test.check('an app entry script shows the app, by the name and icon the desktop shows');
+  } else {
+    test.fail('bubble: ' + natter);
+  }
+
+  // A form like every other: the identity takes the width, the button
+  // ends the row, and the panel IS the form so there is no card in it.
+  if (/class="start-job-form"/.test(natter) && /class="stat-tile wide"/.test(natter) &&
+      natter.indexOf('start-job-form card') === -1) {
+    test.check('and it is one bubble with the button at the end of the row');
+  } else {
+    test.fail('shape: ' + natter);
+  }
+
+  // A sibling in the same folder is not the app. The match is the same
+  // folder-derived shape declareDynamicApp uses to work out an id, so a
+  // helper or a fixture living beside the entry script offers nothing.
+  const sibling = bubbleFor('app/natter/helper.js');
+  if (sibling === '') {
+    test.check('while a sibling file in that folder is not the app, and offers nothing');
+  } else {
+    test.fail('sibling: ' + sibling);
+  }
+
+  // The registry is asked as well as the path. A folder matching the
+  // shape is only an app if the shell declared one from it — a file
+  // sitting where an app used to be must offer nothing to open.
+  const gone = bubbleFor('app/ghost/ghost.js');
+  if (gone === '') {
+    test.check('and a path that looks like an app but is not declared offers nothing');
+  } else {
+    test.fail('undeclared: ' + gone);
+  }
+
+  // Pressing it takes the viewer off the stack with it: you were reading
+  // the source on the way to the app, so Back should return to wherever
+  // you came from rather than to the file you have finished with (Andy).
+  {
+    booted.shell.registerApp({
+      id: 'stack-probe', name: 'Probe', icon: 'P', hidden: true,
+      mount: function () {}, render: function () {},
+    });
+    booted.shell.launchApp('stack-probe');
+    const before = booted.shell.navStackIds().join(' > ');
+
+    const box = fakeElement('div');
+    booted.shell.renderAppOfFile(box, 'app/natter/natter.js');
+    booted.doc.byId['app-of-file-open'].fire('click');
+    const after = booted.shell.navStackIds().join(' > ');
+
+    if (before === 'desktop > stack-probe' && after === 'desktop > app/natter') {
+      test.check('and pressing it puts the app where the viewer was, not on top of it');
+    } else {
+      test.fail('stack: ' + before + '  ->  ' + after);
+    }
+  }
+
+  // Nothing else in the tree is mistaken for one — process scripts share
+  // the same <name>/<name>.<ext> convention on purpose.
+  const outside = ['process/js/probe/probe.js', 'media/dummy.txt', 'app/natter/natter.json']
+    .filter(function (p) { return bubbleFor(p) !== ''; });
+  if (outside.length === 0) {
+    test.check('nor is a process script, which shares the same naming convention');
+  } else {
+    test.fail('claimed: ' + outside.join(', '));
+  }
+}
+
+test.subHeading('Open with is a form like the others');
+
+{
+  const shellSrc5 = readRun('js/client/shell.js');
+  const owBody = shellSrc5.slice(shellSrc5.indexOf('var defaultId = preferences.defaultHandlers'),
+    shellSrc5.indexOf('open-with-go'));
+
+  // A caption over its control rather than written inline beside it, and
+  // the buttons at the end of a row rather than separated from it by
+  // literal spaces in the markup (§3).
+  //
+  // The old form is matched as the SOURCE STRING it was — quote and all —
+  // not as the phrase. The comment above renderOpenWith's markup explains
+  // what it stopped doing and names the old wording, so a check looking
+  // for the prose finds the explanation and fails. §7 exists for this.
+  if (/class="field-label grow">Open with/.test(owBody) &&
+      /class="start-job-form"/.test(owBody) && owBody.indexOf("'<label>Open with") === -1) {
+    test.check('its caption sits over the control, in a row that wraps');
+  } else {
+    test.fail('open-with markup: ' + owBody.replace(/\s+/g, ' ').slice(-200));
+  }
+
+  if (/class="stat-tile wide"/.test(owBody) && owBody.indexOf('start-job-form card') === -1) {
+    test.check('and it is one bubble, not a bubble inside a bubble');
+  } else {
+    test.fail('panelling: ' + owBody.replace(/\s+/g, ' ').slice(-200));
   }
 }
 

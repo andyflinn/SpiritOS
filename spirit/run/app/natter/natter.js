@@ -122,7 +122,7 @@ function natterMintHtml(api, badge) {
     // above it is a reading of the mailbox the row already named, but
     // this is a thing to do, and a form with no title is a form you have
     // to work out. ★ is the same mark the row carries for owning it.
-    '<div class="natter-mint-heading">' + natterIcon.STAR + ' Invite someone to this relay</div>' +
+    '<div class="panel-heading">' + natterIcon.STAR + ' Invite someone to this relay</div>' +
     // DICTIONARY.md, "Label (invite)": the public caption the token
     // unlocks. `saint` is the dictionary's own example, not a person.
     // The three fields and the one button that spends them, on one line
@@ -418,7 +418,7 @@ spirit.shell.activateApp({
       // First, because on a fresh node this is the whole page: a name on
       // a public mailbox is what everything else waits for.
       '<div class="stat-tile wide" id="natter-bind-row">' +
-        '<div class="natter-bind-heading" id="natter-bind-heading"></div>' +
+        '<div class="panel-heading" id="natter-bind-heading"></div>' +
         '<div id="natter-bind-note"></div>' +
         '<div class="start-job-form" id="natter-bind-fields">' +
           '<label class="field-label">Public label<input type="text" id="natter-name" placeholder="the name peers see"></label>' +
@@ -428,7 +428,7 @@ spirit.shell.activateApp({
         '<div class="job-manifest-note" id="natter-bind-status"></div>' +
       '</div>' +
       '<div class="stat-tile wide" id="natter-add-row">' +
-        '<div class="natter-bind-heading">Add a relay this node can use</div>' +
+        '<div class="panel-heading">Add a relay this node can use</div>' +
         '<div class="start-job-form">' +
         // The dictionary's word rather than an example with a person's
         // name in it. This caption is yours, it stays on this node and

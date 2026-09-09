@@ -1518,12 +1518,27 @@
 
     var defaultId = preferences.defaultHandlers[ext];
 
-    container.innerHTML = '<label>Open with: <select id="open-with-select">' +
-      handlers.map(function (h) {
-        return '<option value="' + escapeHtml(h.id) + '"' + (h.id === defaultId ? ' selected' : '') + '>' + escapeHtml(h.name) + '</option>';
-      }).join('') + '</select></label>' +
-      ' <button type="button" id="open-with-go">Open</button>' +
-      (handlers.length > 1 ? ' <button type="button" id="open-with-set-default">Set as default</button>' : '');
+    // The shell's own form shape (§3), which this predated: a caption
+    // over its control rather than "Open with: " written inline, and the
+    // buttons at the end of the row rather than separated from it by
+    // literal spaces in the markup.
+    //
+    // Its own panel, because it is a thing to do among the readings above
+    // it — and no .card inside, because the panel IS the form.
+    //
+    // The select grows: a handler is named "Text File Launcher", and at
+    // its natural width the two buttons would crowd it.
+    container.innerHTML = '<div class="stat-tile wide">' +
+      '<div class="start-job-form">' +
+        '<label class="field-label grow">Open with' +
+          '<select id="open-with-select">' +
+          handlers.map(function (h) {
+            return '<option value="' + escapeHtml(h.id) + '"' + (h.id === defaultId ? ' selected' : '') + '>' + escapeHtml(h.name) + '</option>';
+          }).join('') + '</select></label>' +
+        '<button type="button" id="open-with-go">Open</button>' +
+        (handlers.length > 1 ? '<button type="button" id="open-with-set-default">Set as default</button>' : '') +
+      '</div>' +
+      '</div>';
 
     document.getElementById('open-with-go').addEventListener('click', function () {
       var selectedId = document.getElementById('open-with-select').value;
@@ -1596,7 +1611,32 @@
   // simply omitted if the stat call fails (e.g. a race with the file
   // being deleted) rather than showing misleading blanks.
   function fileInfoRow(label, value) {
-    return '<div class="file-info-row"><span class="file-info-label">' + label + ':</span><span>' + value + '</span></div>';
+    return '<div class="file-info-row"><span class="file-info-label">' + label +
+      ':</span><span class="file-info-value">' + value + '</span></div>';
+  }
+
+  // A path that always fits, however narrow the pane (Andy: it is the most
+  // vital thing in the bubble, so it must never run off the side).
+  //
+  // One span per directory and one for the file, with a <wbr> between
+  // them. The spans are for reading — the directories dim, the filename
+  // stays at full strength, so the eye lands on the part you came for.
+  // They are NOT what makes it wrap: an element boundary is not a line
+  // break opportunity, so <span>run/</span><span>app/</span> breaks in
+  // exactly the places `run/app/` does, which is nowhere. <wbr> is the
+  // break opportunity, and the browser prefers those points over any
+  // other — so it folds after a slash and only splits a segment if one
+  // is longer than the line, which .file-info-value's overflow-wrap
+  // catches.
+  //
+  // Escaped per segment, then the markup added, so a filename with a <
+  // in it cannot become part of the structure.
+  function pathValue(path) {
+    var parts = String(path == null ? '' : path).split('/');
+    var file = parts.pop();
+    return parts.map(function (dir) {
+      return '<span class="path-dir">' + escapeHtml(dir) + '/</span><wbr>';
+    }).join('') + '<span class="path-file">' + escapeHtml(file) + '</span>';
   }
 
   // A handful of short facts as ONE reading rather than a list of rows,
@@ -1622,16 +1662,75 @@
     }).join('') + '</div>';
   }
 
+  // Two bubbles, because they answer two different questions (Andy).
+  //
+  // The path is the title of the screen — which file this is — so it gets
+  // a bubble of its own and no caption. "Path:" in front of it was a word
+  // saying what the only thing in the bubble obviously is, and it cost
+  // 90px of the width that the path itself needed most.
+  //
+  // Everything else is a reading about that file, so it is a facts bubble
+  // like every other reading in the shell. Size, Changed and Created come
+  // from statFile and are simply absent when the call fails (a race with
+  // the file being deleted) rather than shown as blanks — §1, and what
+  // this function already did.
+  // Reading an app's own entry script? Then say which app, and offer to
+  // go there (Andy).
+  //
+  // The match is app/<name>/<name>.js — the same folder-derived shape
+  // declareDynamicApp uses to work out an id, so a sibling file in the
+  // folder (a helper, a test fixture) is correctly not the app. The
+  // registry is asked as well as the path: a folder matching the shape is
+  // only an app if the shell actually declared one from it, and a file
+  // sitting where an app used to be should offer nothing.
+  //
+  // Its name and icon come through effectiveName/effectiveIcon, so what
+  // this bubble says is what the desktop tile says — including an
+  // operator's override.
+  //
+  // Written into a container and wired here, the way renderOpenWith is:
+  // it is one button, and a delegated listener somewhere else would be a
+  // second place to look.
+  function renderAppOfFile(container, path) {
+    var found = /^app\/([^/]+)\/\1\.js$/.exec(String(path || ''));
+    var app = found && apps['app/' + found[1]];
+    if (!app) { container.innerHTML = ''; return; }
+
+    var name = effectiveName(app);
+    container.innerHTML = '<div class="stat-tile wide">' +
+      '<div class="start-job-form">' +
+        '<span class="app-of-file">' +
+          '<span class="app-of-file-icon">' + escapeHtml(effectiveIcon(app)) + '</span>' +
+          escapeHtml(name) +
+        '</span>' +
+        '<button type="button" id="app-of-file-open">Open ' + escapeHtml(name) + '</button>' +
+      '</div>' +
+      '</div>';
+
+    // {replace: true}, like picking a handler from Open with just above:
+    // you were reading the source on the way to the app, so Back should
+    // return to wherever you came from rather than to the file you have
+    // finished with (Andy).
+    //
+    // Contrast an icon tile, which pushes — a group screen IS a
+    // destination, and Back into it is going back to where you were.
+    document.getElementById('app-of-file-open').addEventListener('click', function () {
+      launchApp(app.id, null, { replace: true });
+    });
+  }
+
   function renderFileInfoBubble(path) {
     var stats = spirit.core.fs.statFile(path);
-    var rows = fileInfoRow('Path', escapeHtml(path));
+    var facts = [['MIME type', mimeTypeForName(path)]];
     if (stats) {
-      rows +=
-        fileInfoRow('Size', spirit.core.util.formatBytes(stats.size)) +
-        fileInfoRow('Changed', new Date(stats.mtimeMs).toLocaleString()) +
-        fileInfoRow('Created', new Date(stats.birthtimeMs).toLocaleString());
+      facts.push(
+        ['Size', spirit.core.util.formatBytes(stats.size)],
+        ['Changed', new Date(stats.mtimeMs).toLocaleString()],
+        ['Created', new Date(stats.birthtimeMs).toLocaleString()]
+      );
     }
-    return '<div class="stat-tile wide">' + rows + '</div>';
+    return '<div class="stat-tile wide file-path">' + pathValue(path) + '</div>' +
+      factRow(facts);
   }
 
   // Turns e.g. "spiritImageStats" / "computedAt" into "Spirit Image Stats" /
@@ -1802,6 +1901,7 @@
     escapeHtml: escapeHtml,
     activateApp: activateApp,
     renderOpenWith: renderOpenWith,
+    renderAppOfFile: renderAppOfFile,
     findJobByType: findJobByType,
     mimeTypeForName: mimeTypeForName,
     classifyMimeType: classifyMimeType,
@@ -1810,6 +1910,7 @@
     setViewerTitle: setViewerTitle,
     fileInfoRow: fileInfoRow,
     factRow: factRow,
+    pathValue: pathValue,
     renderFileInfoBubble: renderFileInfoBubble,
     renderAnnotationsSection: renderAnnotationsSection,
     renderAppGroup: renderAppGroup,

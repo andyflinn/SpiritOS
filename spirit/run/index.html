@@ -149,8 +149,38 @@
          Apps detail rows and the Groups panel alike. The label column
          grew with the text; at 16px "Default name" and "Changed" no
          longer fit 70px, and the values stopped aligning. */
-      .file-info-row { display: flex; gap: 8px; font-size: 16px; margin-top: 4px; }
+      /* Wrapping, so on a genuinely narrow pane the value drops to its
+         own line and gets the width instead of fighting a 90px label for
+         it — the same thing .start-job-form does, and what §10 asks. */
+      .file-info-row { display: flex; flex-wrap: wrap; gap: 8px; font-size: 16px; margin-top: 4px; }
       .file-info-row .file-info-label { opacity: 0.7; min-width: 90px; }
+
+      /* min-width:0 is what actually lets a long value shrink. A flex
+         item defaults to min-width:auto and refuses to go below its
+         min-content width, which for a path with no spaces is the whole
+         string — so the row pushed out of the pane and no wrapping rule
+         was ever consulted.
+         overflow-wrap:anywhere rather than break-word: only `anywhere`
+         affects min-content sizing, so only `anywhere` works inside a
+         flex row. It is the fallback for one segment longer than the
+         line; <wbr> (pathValue, shell.js) is what makes it fold after a
+         slash by preference. */
+      .file-info-value, .fact-value { min-width: 0; overflow-wrap: anywhere; }
+
+      /* The directories step back so the filename reads first — §2's own
+         move, distinguished by dimming rather than by shrinking. The
+         filename carries the weight because it is the subject: in the
+         path bubble it IS the title of the screen. */
+      .path-dir { opacity: 0.6; }
+      .path-file { font-weight: 600; }
+
+      /* Which file this is, as the title of the screen — its own bubble
+         with no caption, because "Path:" was a word saying what the only
+         thing in the bubble obviously is, and it took 90px of the width
+         the path itself needed most (Andy). Reading size, like the
+         titlebar it echoes: same size, and the weight above does the
+         telling apart (§2). */
+      .file-path { font-size: 16px; }
 
       #file-tree summary {
         cursor: pointer;
@@ -196,8 +226,22 @@
          the extension. An empty div still occupies its margin, which
          would push the preview 24px down on exactly the files that have
          no Open with — a bigger gap where there is less to see. */
+      /* Collapsed rather than margin-cancelled when nothing declared the
+         extension. §3 named the old :empty{margin-top:0} as a hack that
+         only existed because space was carried downward; with the block
+         below carrying its own, this is the same answer every other
+         can-be-empty block gives (#rc-peer-strip, .job-start-error). */
       #open-with { margin-top: 12px; }
-      #open-with:empty { margin-top: 0; }
+      #open-with:empty { display: none; }
+
+      /* Which app a file IS, when it is one. Collapsed when it is not,
+         like every other block that can be empty (§3). */
+      #app-of-file:empty { display: none; }
+
+      /* The identity takes the width so the button ends the row — the
+         same job .field-label.grow does for a captioned field. */
+      .app-of-file { flex: 1; min-width: 0; font-size: 16px; }
+      .app-of-file-icon { font-size: 20px; margin-right: 8px; vertical-align: middle; }
 
       /* renderAnnotationsSection's "More Information" cards (shell.js) */
       .stat-tile.nested { margin-top: 8px; background: rgba(255, 255, 255, 0.04); }
@@ -398,10 +442,6 @@
 
       select option { background: #16213e; color: #eee; }
 
-      #job-manifest-form {
-        margin-top: 12px;
-      }
-
       /* Same look as #job-manifest-form's fields, scoped by class instead
          of that one form's id, so other edit forms (e.g. the Apps table's
          per-app edit panel) can reuse it without duplicating the rules. */
@@ -413,17 +453,15 @@
         font-size: 13px;
       }
 
-      #job-manifest-form label {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        margin: 8px 0;
-        font-size: 13px;
-      }
+      /* No min-height: a note that reserves a line for a message nobody
+         has written is §1 in CSS, and it was the empty space under the
+         process form. Collapsed when empty, like every other block that
+         can be (§3). Its size is still the open question §2 names — 12px
+         mid-page — and it is shared with the Apps and Contacts notes, so
+         it is not this sitting's to settle. */
+      .job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 12px; }
 
-      #job-manifest-form button { margin-top: 8px; }
-
-      .job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 8px; min-height: 1em; }
+      .job-manifest-note:empty { display: none; }
 
       /* The icon selector (createIconSelector, shell.js). A closed field
          that drops a list we paint, rather than a native <select>: the
@@ -715,12 +753,17 @@
       /* Names the mailbox a claim will happen on, which the form itself
          cannot ask about — see natterPaintBind. Same weight as the mint
          heading: both are the title of a thing to do. */
-      .natter-bind-heading { font-size: 16px; }
+      /* A heading inside a panel: reading size, and no browser margin of
+         its own. Was .natter-bind-heading and .natter-mint-heading, two
+         names for one look — and the process form used a bare <h3>, whose
+         default ~21px top margin was the space nobody asked for above it
+         (Andy). Three callers, one class (§4). */
+      .panel-heading { font-size: 16px; margin: 0; }
 
       /* The one heading in that panel: the facts above are a reading of
          the row that opened them, but this is a thing to do. Reading
          size, and the same ★ the row carries for owning the mailbox. */
-      .natter-mint-heading { font-size: 16px; }
+
 
       /* All the labels in this panel read at the same size — the form's
          captions included. Scoped here rather than changed shell-wide:
@@ -762,7 +805,17 @@
          has always stated, and that the first pass at this quietly took
          away by writing `+ *` for both. */
       #app-content > .app-pane > * + *,
+      .stack > * + *,
       .job-log-row > td > * { margin-top: 12px; }
+
+      /* .stack is any OTHER box that holds blocks. Both launchers write
+         their whole page into a wrapper (#cv-body, #mv-body) so a later
+         loadFile can replace it, and while that wrapper said nothing the
+         rule stopped at the pane's only child — the path bubble and the
+         facts bubble under it sat flush, and so did the annotation cards.
+         The same thing .app-pane was before it was named. Say what a box
+         is and the rule finds it; name boxes in a list and the list goes
+         stale (§4). */
 
       /* And the pane itself takes none. It is not a block, it is the
          box the blocks are in — every app has one and they are siblings
@@ -876,6 +929,7 @@
         var launchApp = spirit.shell.launchApp;
         var escapeHtml = spirit.shell.escapeHtml;
         var renderOpenWith = spirit.shell.renderOpenWith;
+        var renderAppOfFile = spirit.shell.renderAppOfFile;
         var findJobByType = spirit.shell.findJobByType;
         var mimeTypeForName = spirit.shell.mimeTypeForName;
         var classifyMimeType = spirit.shell.classifyMimeType;
@@ -972,21 +1026,30 @@
               // live fetch below resolves — never blocks starting the job
               // on that fetch, since the default is already a valid value.
               var lmFilter = arg.type === 'lm-studio-model' ? 'vision' : (arg.type === 'lm-studio-model-unloaded' ? 'unloaded' : 'loaded');
-              return '<label>' + escapeHtml(arg.label || arg.name) +
+              return '<label class="field-label">' + escapeHtml(arg.label || arg.name) +
                 '<select data-arg-name="' + escapeHtml(arg.name) + '" data-lm-studio-model-select data-lm-studio-filter="' + lmFilter + '" disabled>' +
                 '<option value="' + escapeHtml(arg.default || '') + '">' + escapeHtml(arg.default || '(loading models…)') + '</option>' +
                 '</select></label>';
             }
             var inputType = arg.type === 'number' ? 'number' : 'text';
-            return '<label>' + escapeHtml(arg.label || arg.name) +
+            return '<label class="field-label">' + escapeHtml(arg.label || arg.name) +
               '<input type="' + inputType + '" data-arg-name="' + escapeHtml(arg.name) +
               '" value="' + escapeHtml(arg.default != null ? arg.default : '') + '"></label>';
           }).join('');
 
+          // The shell's own form shape, which this predated: captioned
+          // fields in a wrapping row with the button at the end of the
+          // last one (§3). It was stacked labels with a private copy of
+          // .field-label under an id, and a bare <h3> whose default top
+          // margin was the space above the panel nobody asked for.
           formEl.innerHTML = '<div class="stat-tile wide">' +
-            '<h3>' + escapeHtml(manifest.label || scriptPath) + '</h3>' +
-            argsHtml +
-            '<button type="button" id="start-manifest-job">' + ICON.RUN + ' Start Job</button>' +
+            '<div class="panel-heading">' + escapeHtml(manifest.label || scriptPath) + '</div>' +
+            '<div class="start-job-form card">' +
+              argsHtml +
+              '<button type="button" id="start-manifest-job">' + ICON.RUN + ' Start Job</button>' +
+            '</div>' +
+            // Under the row: something to read when it appears, not a
+            // control on the line.
             '<div id="job-manifest-note" class="job-manifest-note"></div>' +
             '</div>';
 
@@ -1091,10 +1154,14 @@
           var content = spirit.core.fs.loadFile(path);
           document.getElementById('cv-body').innerHTML =
             renderFileInfoBubble(path) +
+            // Before Open with: which app this file IS outranks what else
+            // could open it.
+            '<div id="app-of-file"></div>' +
             '<div id="open-with"></div>' +
             '<div id="job-manifest-form"></div>' +
             '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>' +
             renderAnnotationsSection(path);
+          renderAppOfFile(document.getElementById('app-of-file'), path);
           renderOpenWith(document.getElementById('open-with'), 'text-file-launcher', path);
           maybeRenderJobForm(document.getElementById('cv-body'), path);
         }
@@ -1105,7 +1172,7 @@
           icon: ICON.CODE,
           hidden: true,
           mount: function (container, api, params) {
-            container.innerHTML = '<div id="cv-body"></div>';
+            container.innerHTML = '<div id="cv-body" class="stack"></div>';
             codeViewerLoadFile(params.path);
           },
           loadFile: function (path) {
@@ -1140,7 +1207,7 @@
           icon: ICON.VIEW,
           hidden: true,
           mount: function (container, api, params) {
-            container.innerHTML = '<div id="mv-body"></div>';
+            container.innerHTML = '<div id="mv-body" class="stack"></div>';
             mediaViewerLoadFile(params.path);
           },
           loadFile: function (path) {
