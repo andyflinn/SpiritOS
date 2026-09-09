@@ -43,7 +43,6 @@ function formatLogEntries(job) {
 
 function renderJobRow(job) {
   var icon = STATUS_ICON[job.status] || '';
-  var lastLog = job.log && job.log.length ? job.log[job.log.length - 1].message : '';
   var isTerminal = TERMINAL_STATUSES.indexOf(job.status) !== -1;
   var canCancel = job.kind === 'process' && !isTerminal;
   var isExpanded = job.id === expandedJobId;
@@ -59,13 +58,16 @@ function renderJobRow(job) {
     '<td>' + jobsEscapeHtml(job.id) + '</td>' +
     '<td>' + jobsEscapeHtml(job.kind) + ' / ' + jobsEscapeHtml(job.type) + '</td>' +
     '<td>' + new Date(job.updatedAt).toLocaleTimeString() + '</td>' +
-    '<td><div class="job-last-log">' + jobsEscapeHtml(lastLog) + '</div></td>' +
     '<td>' + actionHtml + '</td>' +
     '</tr>';
 
   if (!isExpanded) return mainRow;
 
-  return mainRow + '<tr class="job-log-row"><td colspan="6"><div class="job-log-panel">' +
+  // Last log used to be a column: one line of output, clipped to 300px,
+  // which is enough to tell you something happened and never enough to
+  // read (Andy). Opening the row shows the whole log, which is what you
+  // wanted the moment the column made you curious.
+  return mainRow + '<tr class="job-log-row"><td colspan="5"><div class="job-log-panel">' +
     formatLogEntries(job) + '</div></td></tr>';
 }
 
@@ -119,7 +121,7 @@ function renderJobsTable(jobsById) {
   rows.sort(function (a, b) { return a.createdAt - b.createdAt; });
 
   tbody.innerHTML = rows.map(renderJobRow).join('') ||
-    '<tr><td colspan="6">(no jobs)</td></tr>';
+    '<tr><td colspan="5">(no jobs)</td></tr>';
 
   var newPanel = tbody.querySelector('.job-log-panel');
   if (newPanel) {
@@ -132,15 +134,30 @@ spirit.shell.activateApp({
     expandedJobId = null; // fresh visit starts fully collapsed
 
     container.innerHTML =
-      '<form id="start-job-form" class="start-job-form">' +
-      '<input type="text" id="job-command" placeholder="command (e.g. node)" required>' +
-      '<input type="text" id="job-args" placeholder="args (space-separated)">' +
-      '<input type="text" id="job-type" placeholder="label (optional)">' +
-      '<button type="submit">Start</button>' +
-      '</form>' +
-      '<div id="job-start-error" class="job-start-error"></div>' +
+      // The form is a thing to do, so it gets a panel of its own with
+      // its error under it — the same shape the Groups create form has.
+      // A bare row at the top of a pane read as chrome rather than as
+      // the one action this screen offers.
+      '<div class="stat-tile wide">' +
+        // Captions over the inputs, as every other form in the shell has
+        // (Andy). Three bare boxes with the caption hidden inside them as
+        // placeholder text told you what to type only until you started
+        // typing — and a form beside Groups' create form, which does
+        // caption them, read as a different kind of thing.
+        //
+        // Arguments is the field that grows: a command is a word and a
+        // label is a word, while an argument string is whatever it is.
+        '<form id="start-job-form" class="start-job-form">' +
+        '<label class="field-label">Command<input type="text" id="job-command" placeholder="node" required></label>' +
+        '<label class="field-label grow">Arguments<input type="text" id="job-args" placeholder="space-separated"></label>' +
+        '<label class="field-label">Label<input type="text" id="job-type" placeholder="optional"></label>' +
+        '<button type="submit">Start</button>' +
+        '</form>' +
+        // Under the row, not in it: something to read when it appears.
+        '<div id="job-start-error" class="job-start-error"></div>' +
+      '</div>' +
       '<table class="jobs-table"><thead><tr>' +
-      '<th>Status</th><th>Id</th><th>Kind / Type</th><th>Updated</th><th>Last log</th><th></th>' +
+      '<th>Status</th><th>Id</th><th>Kind / Type</th><th>Updated</th><th></th>' +
       '</tr></thead><tbody id="jobs-tbody"></tbody></table>';
 
     document.getElementById('start-job-form').addEventListener('submit', function (event) {

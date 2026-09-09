@@ -79,7 +79,7 @@ function renderAppManagerRow(a, groupsById, groupList) {
     // — stacking them spends a whole row on saying so twice (§3). Reset
     // is only there while there is something to reset, and the row wraps
     // on a narrow screen rather than squeezing.
-    ? '<div class="start-job-form">' +
+    ? '<div class="start-job-form card">' +
       '<label class="field-label grow">Custom name' +
       '<input type="text" id="app-manager-name-input" data-app-id="' + appsEscapeHtml(a.id) + '" value="' + appsEscapeHtml(override.name || '') + '" placeholder="' + appsEscapeHtml(a.defaultName) + '"></label>' +
       (override.name ? '<button type="button" class="cancel-btn" data-reset-app-name="' + appsEscapeHtml(a.id) + '">Reset to default</button>' : '') +
@@ -106,7 +106,7 @@ function renderAppManagerRow(a, groupsById, groupList) {
   // the list, so there is nothing left to refuse.
   var iconFieldHtml = (a.intrinsic || !a.dynamic)
     ? ''
-    : '<div class="start-job-form">' +
+    : '<div class="start-job-form card">' +
     '<label class="field-label grow">Custom icon' +
     '<div id="app-manager-icon-input" data-app-id="' + appsEscapeHtml(a.id) + '" data-icon-slot="' + appsEscapeHtml(override.icon || a.defaultIcon || '') + '"></div></label>' +
     (override.icon ? '<button type="button" class="cancel-btn" data-reset-app-icon="' + appsEscapeHtml(a.id) + '">Reset to default</button>' : '') +

@@ -250,14 +250,21 @@
         margin-top: 12px;
       }
 
-      /* Inside a panel a form is its own bubble, on the same ground the
-         facts bubble uses. A panel holds a reading and one or more
-         things to do; giving each its own card is what stops them
-         reading as one undifferentiated column (Andy).
-         Not at the top level of a pane: there a form is already a block
-         in the stack, and Relay Chat's To bar and composer are chrome
-         rather than a form inside a card. */
-      .stat-tile .start-job-form {
+      /* Unless it opens the box it is in — then the box's padding is the
+         leading edge and a margin on top of it is that space twice. The
+         same answer #app-content already gave: who supplies the first gap
+         is the container, and only where the container supplies none does
+         the first block bring its own. */
+      .start-job-form:first-child { margin-top: 0; }
+
+      /* A form is its own card only where it SHARES a panel with
+         something else — a reading above it, another form beside it.
+         Where the panel is the form, two boxes around one object is what
+         you see, and Jobs, the Groups create form and Contacts'
+         add-by-handle were all exactly that (Andy).
+         So it is asked for rather than automatic. `.stat-tile .start-job-form`
+         was the first try and it could not tell the two cases apart. */
+      .start-job-form.card {
         background: rgba(255, 255, 255, 0.04);
         border-radius: 10px;
         padding: 12px;
@@ -284,10 +291,13 @@
          line is a caption shorter than every other, and the block reads
          as if the button were hugging the field above it.
          20px is the 13px caption line plus the 4px .field-label gap.
-         :has() so a row of BARE inputs is untouched — Jobs' start form
-         has no captions, and a top margin there would push its button
-         out of line with its own inputs. Where :has() is not understood
-         nothing happens, which is exactly today's behaviour. */
+         :has() so a row of BARE inputs is untouched — Contacts'
+         add-by-handle is a search box and its button with nothing
+         written over either, and a top margin there would push the
+         button out of line with the input it belongs to. (Jobs' form was
+         the example until it got captions of its own.) Where :has() is
+         not understood nothing happens, which is exactly today's
+         behaviour. */
       .start-job-form:has(.field-label) > button { margin-top: 20px; }
 
       /* The field that should take whatever the row does not: a caption
@@ -508,12 +518,21 @@
       .icon-selector-row:hover,
       .icon-selector-row.is-active { background: #0f3460; }
 
+      /* No min-height and no margin under it. Reserving a line for a
+         message that is not there is exactly what §1 forbids, and here it
+         was the bottom half of 48px of nothing below the Jobs form: the
+         row's 12px, a blank line held open, 8px beneath it, then the
+         panel's own padding.
+         Collapsed when empty, the way #rc-peer-strip is — a block that
+         can be empty collapses to nothing (§3), and its margin goes with
+         it. The panel grows when an error appears, which is the moment
+         you want the eye pulled anyway. */
       .job-start-error {
         color: #ff8080;
         font-size: 13px;
-        margin-bottom: 8px;
-        min-height: 1em;
       }
+
+      .job-start-error:empty { display: none; }
 
       .jobs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 
@@ -525,11 +544,6 @@
 
       .job-row { cursor: pointer; }
       .job-row:hover { background: rgba(255, 255, 255, 0.06); }
-
-      /* Fixed width + no wrap + ellipsis: a fast-changing last-log message
-         must never change row height, or the whole table jiggles as it
-         flips between wrapping and not. */
-      .job-last-log { max-width: 300px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
       .job-log-row td { padding: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 

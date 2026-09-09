@@ -128,7 +128,7 @@ function natterMintHtml(api, badge) {
     // The three fields and the one button that spends them, on one line
     // (§3). Label and token take the width; Days is a number and sits at
     // its own. Wraps on a narrow screen rather than squeezing.
-    '<div class="start-job-form">' +
+    '<div class="start-job-form card">' +
     '<label class="field-label grow">Public label<input type="text" class="natter-inv-label" placeholder="e.g. saint"></label>' +
     '<label class="field-label">Days<input type="number" class="natter-inv-days" min="1" max="15" value="7"></label>' +
     // The token spoken on the phone. Empty means the relay picks hex;

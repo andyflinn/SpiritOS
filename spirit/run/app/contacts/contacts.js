@@ -134,7 +134,7 @@ function contactsRowHtml(person) {
     //
     // myLabel: what YOU call that key. Never uploaded, and the reason the
     // book keeps their caption separately — theirs can change under you.
-    '<div class="start-job-form">' +
+    '<div class="start-job-form card">' +
       '<label class="field-label grow">Your name for them' +
         '<input type="text" id="contacts-label-input" data-contact-key="' + contactsEscapeHtml(person.publicKey) + '"' +
         ' value="' + contactsEscapeHtml(person.myLabel || '') + '" placeholder="' + contactsEscapeHtml(person.publicLabel || '') + '">' +

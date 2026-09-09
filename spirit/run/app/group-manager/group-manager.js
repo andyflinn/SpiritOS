@@ -69,7 +69,7 @@ function renderGroupManagerRow(g) {
     // NOT join them: it is the row's verb rather than the field's, and a
     // button that erases a group should not sit a thumb-width from a
     // picker somebody is adjusting.
-    '<div class="start-job-form">' +
+    '<div class="start-job-form card">' +
     '<label class="field-label grow">Name<input type="text" id="group-manager-name-input" data-group-id="' + groupsEscapeHtml(g.id) + '" value="' + groupsEscapeHtml(g.name) + '"></label>' +
     // A slot for the icon picker, filled by fillGroupIconSelectors once
     // this markup is in the page — the row is a string and the picker is

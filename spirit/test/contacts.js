@@ -487,7 +487,7 @@ function theRowBubbleReadsAcrossNotDown() {
 
     // The caption and its input take the width; the buttons fill the end.
     // Both inside ONE row, or they are two lines however they look.
-    const row = /<div class="start-job-form">([\s\S]*?)<\/div>\s*<\/div>/.exec(panel);
+    const row = /<div class="start-job-form card">([\s\S]*?)<\/div>\s*<\/div>/.exec(panel);
     const inRow = row ? row[1] : '';
     if (/field-label grow/.test(inRow) && /contacts-label-input/.test(inRow) &&
         /data-contact-block/.test(inRow)) {

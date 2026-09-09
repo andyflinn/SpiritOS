@@ -633,7 +633,7 @@ test.subHeading('The Apps panel offers no control it would refuse');
     test.fail('id or source survived: ' + ordinaryRow);
   }
 
-  const wrapped = (ordinaryRow.match(/<div class="start-job-form">/g) || []).length;
+  const wrapped = (ordinaryRow.match(/<div class="start-job-form card">/g) || []).length;
   const grows = (ordinaryRow.match(/class="field-label grow"/g) || []).length;
   if (wrapped >= 2 && grows === 2) {
     test.check('and each editable field is a row, with the field taking the width');
@@ -1766,21 +1766,61 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
         .filter(function (id) { return css.indexOf(id) !== -1; }).join(', '));
   }
 
-  // A form inside a panel is its own bubble too, on the same ground as
-  // the facts beside it — a panel holds a reading and things to do, and
-  // each is a card (Andy). Not at the top level of a pane, where a form
-  // is already a block in the stack.
+  // A form is its own card where it SHARES a panel with something else —
+  // a reading above it, another form beside it. Asked for rather than
+  // automatic, because "any form inside a panel" cannot tell that case
+  // from a panel that IS the form, and the second one is two boxes
+  // around one object (Andy).
   const nestedCard = /\.stat-tile\.nested\s*\{([^}]*)\}/.exec(css);
   const cardGround = nestedCard && /background:\s*([^;]+);/.exec(nestedCard[1]);
-  const formBubble = /\.stat-tile \.start-job-form\s*\{([^}]*)\}/.exec(css);
+  const formBubble = /\.start-job-form\.card\s*\{([^}]*)\}/.exec(css);
   if (formBubble && cardGround && formBubble[1].indexOf(cardGround[1].trim()) !== -1) {
-    test.check('and a form inside a panel is a bubble on that same ground');
+    test.check('and a form asked to be a card sits on that same ground');
   } else {
-    test.fail('.stat-tile .start-job-form: ' + (formBubble && formBubble[1].replace(/\s+/g, ' ').trim()));
+    test.fail('.start-job-form.card: ' + (formBubble && formBubble[1].replace(/\s+/g, ' ').trim()));
+  }
+
+  // And the panels that ARE a form do not ask. Two boxes around one
+  // object is what the automatic version produced, and it is what a
+  // reader sees rather than anything a size check would catch.
+  const soloFormApps = [
+    ['app/jobs/jobs.js', 'start-job-form'],
+    ['app/group-manager/group-manager.js', 'group-manager-new-name'],
+  ];
+  const doubled = soloFormApps.filter(function (pair) {
+    const src = readRun(pair[0]);
+    const at = src.indexOf(pair[1]);
+    return at !== -1 && src.lastIndexOf('start-job-form card', at) > src.lastIndexOf('stat-tile wide', at);
+  });
+  if (doubled.length === 0) {
+    test.check('while a panel that is only a form asks for no card of its own');
+  } else {
+    test.fail('doubled bubbles in: ' + doubled.map(function (p) { return p[0]; }).join(', '));
   }
 
   // And it takes its space from above like any block. Nothing was doing
   // that inside a panel, so a form sat flush under whatever it followed.
+  // A form that opens its box takes none: the box's padding is already
+  // the leading edge, and a margin on top of it is that gap twice. Same
+  // answer #app-content gave — who supplies the FIRST gap is the
+  // container.
+  if (/\.start-job-form:first-child\s*\{[^}]*margin-top:\s*0/.test(css)) {
+    test.check('and none when it opens the box, whose padding is the edge');
+  } else {
+    test.fail('no :first-child reset on .start-job-form');
+  }
+
+  // An error line that reserves a row for a message that is not there is
+  // §1 broken in CSS, and it was the bottom half of 48px of nothing under
+  // the Jobs form. Collapsed when empty, like #rc-peer-strip.
+  const errorRule = /\.job-start-error\s*\{([^}]*)\}/.exec(css);
+  if (errorRule && !/min-height/.test(errorRule[1]) && !/margin/.test(errorRule[1]) &&
+      /\.job-start-error:empty\s*\{[^}]*display:\s*none/.test(css)) {
+    test.check('and an error line holds no space until there is an error');
+  } else {
+    test.fail('.job-start-error: ' + (errorRule && errorRule[1].replace(/\s+/g, ' ').trim()));
+  }
+
   const blockGap = value('#open-with', 'margin-top');
   if (blockGap !== null && value('.start-job-form', 'margin-top') === blockGap) {
     test.check('and takes a block of space above it, as a block does');
@@ -2197,6 +2237,73 @@ test.subHeading('A group screen is a place you can go back to');
     test.check('and exactly one caller still replaces its own entry — Open with');
   } else {
     test.fail('callers passing replace: ' + replaceCalls.length + ' — ' + replaceCalls.join(' | '));
+  }
+}
+
+test.subHeading('The Jobs screen offers one action and one table');
+
+{
+  const src = readRun('app/jobs/jobs.js');
+  const css = readRun('index.html');
+
+  // The form is the one thing this screen asks you to do, so it sits in
+  // a panel of its own with its error under it — the shape the Groups
+  // create form has. A bare row at the top of a pane read as chrome.
+  // Read as an ordering rather than a shape: the markup is built by
+  // string concatenation across many lines, so a regex spanning it would
+  // be matching the source's formatting rather than the page's.
+  const panelAt = src.indexOf('<div class="stat-tile wide">');
+  const formAt = src.indexOf('start-job-form"');
+  const errorAt = src.indexOf('job-start-error"');
+  const tableAt = src.indexOf('<table class="jobs-table">');
+  if (panelAt !== -1 && panelAt < formAt && formAt < errorAt && errorAt < tableAt) {
+    test.check('the start form and its error share a panel of their own');
+  } else {
+    test.fail('start form is not panelled');
+  }
+
+  // A column of one clipped line — enough to say something happened,
+  // never enough to read (Andy). Opening the row shows the whole log,
+  // which is what the column made you want.
+  //
+  // Matched on the header cell and the class, not on the words: the
+  // comment above this check names the column it removed, and a grep for
+  // the prose finds itself. That is the fourth time today.
+  const leftovers = [['jobs.js', src], ['index.html', css]]
+    .filter(function (pair) {
+      return pair[1].indexOf('<th>Last log</th>') !== -1 ||
+        pair[1].indexOf('job-last-log') !== -1;
+    })
+    .map(function (pair) { return pair[0]; });
+  if (leftovers.length === 0) {
+    test.check('and Last log is gone from the header, the row and the stylesheet');
+  } else {
+    test.fail('last-log leftovers in: ' + leftovers.join(', '));
+  }
+
+  // Captions over the inputs, as every other form in the shell has. A
+  // placeholder is the caption hidden inside the box, and it leaves the
+  // moment you type in it.
+  const jobFields = (src.match(/class="field-label/g) || []).length;
+  const bare = /<input type="text" id="job-command"/.test(src) &&
+    src.indexOf('<label class="field-label">Command') === -1;
+  if (jobFields === 3 && !bare) {
+    test.check('and all three inputs are captioned, not left to their placeholders');
+  } else {
+    test.fail(jobFields + ' captions, bare command input: ' + bare);
+  }
+
+  // A column removed is two numbers to keep in step: the header and
+  // every colspan under it. Read rather than assumed, because a colspan
+  // that is one too wide only shows as a panel bleeding past the table.
+  const headers = (src.match(/<th>/g) || []).length;
+  const spans = (src.match(/colspan="(\d+)"/g) || []).map(function (m) {
+    return Number(/\d+/.exec(m)[0]);
+  });
+  if (headers === 5 && spans.length && spans.every(function (n) { return n === headers; })) {
+    test.check('and every colspan still matches the ' + headers + ' columns above it');
+  } else {
+    test.fail(headers + ' headers vs colspans ' + JSON.stringify(spans));
   }
 }
 
