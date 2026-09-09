@@ -1218,6 +1218,11 @@
 
     if (!app._el) {
       app._el = document.createElement('div');
+      app._el.className = 'app-pane';
+      // Named, because the stack rule has to reach the app's own blocks
+      // and this wrapper sits between them and #app-content. Unnamed, the
+      // rule landed on the pane — one 12px above the whole app and none
+      // between its blocks, which is exactly what it looked like.
       contentEl.appendChild(app._el);
       app.mount(app._el, buildApiFor(app), params);
     } else if (params && params.path && typeof app.loadFile === 'function') {

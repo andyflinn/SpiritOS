@@ -233,10 +233,13 @@
          input up with the button beside it rather than floating above
          it; wrap so a narrow screen gets full-width targets stacked
          instead of one squeezed row. */
+      /* No margin-bottom: whatever follows a row carries its own space
+         above it (§3). Carried downward, a row that is not on the page
+         leaves its gap behind — which is the hack #open-with:empty had to
+         exist for. */
       .start-job-form {
         display: flex;
         gap: 12px;
-        margin-bottom: 12px;
         flex-wrap: wrap;
         align-items: flex-end;
       }
@@ -598,12 +601,9 @@
       .fact-value { font-size: 16px; }
       .fact-label { font-size: 16px; opacity: 0.7; }
 
-      /* Every block inside an expanded row takes its space above,
-         including the FIRST one — a table row sits above it, and a row
-         cannot carry a margin down to it. The td gives the last block
-         the same at the bottom for the same reason: what follows is
-         another row, which has nothing to carry. */
-      .job-log-row > td > .stat-tile { margin-top: 12px; }
+      /* The other half of the rule above: the td gives the last block
+         the same space at the bottom, because what follows is another
+         row and a row has nothing to carry. */
       .job-log-row > td { padding-bottom: 12px; }
 
       .natter-mint { margin-top: 12px; }
@@ -638,19 +638,51 @@
          the slot is empty for a node that owns no mailbox).
          The first block in a stack has nothing above it to be separated
          from, so it takes the space back. */
-      .stat-tile + .stat-tile,
-      .stat-tile + details.stat-tile,
-      details.stat-tile + .stat-tile,
-      details.stat-tile + details.stat-tile,
-      .stat-tile + .jobs-table,
-      .jobs-table + .stat-tile,
-      .jobs-table + details.stat-tile { margin-top: 12px; }
+      /* §3, said once instead of once per pair.
+         This used to be seven selectors naming which KINDS of block space
+         themselves from which other kinds — .stat-tile after .stat-tile,
+         a table after a panel, a fold after a table. That list is
+         quadratic in block types and the gaps it misses are silent: two
+         blocks simply sit flush and the page reads a little cramped.
+         It is how Natter's mint bubble arrived with no space above a
+         rule that already forbade it.
+         `> * + *` names no types, so a new kind of block is spaced the
+         day it is added, by nobody.
+         On containers that hold BLOCKS, never on a panel's contents — a
+         .file-info-row is 4px from the row above it and is not a block.
+         Stats needs no exception: it renders one child, so this never
+         matches there. */
+      /* §3, said once instead of once per pair.
+         Who supplies the space above the FIRST block is the box it sits
+         in, and the two boxes answer differently:
+         #app-content has 16px of padding, and that padding IS the space
+         under the titlebar. A margin on the first block as well is 28px
+         where 16 was meant — visible, and nobody asked for it.
+         An expanded row has 6px of cell padding, which is not a gap, so
+         there the first block does bring its own — the rule that comment
+         has always stated, and that the first pass at this quietly took
+         away by writing `+ *` for both. */
+      #app-content > .app-pane > * + *,
+      .job-log-row > td > * { margin-top: 12px; }
+
+      /* And the pane itself takes none. It is not a block, it is the
+         box the blocks are in — every app has one and they are siblings
+         under #app-content, all hidden but the open one (switchTo,
+         shell.js). A margin here is a gap above the whole app and none
+         between anything in it. */
+      #app-content > .app-pane { margin-top: 0; }
+
+      /* A fold is the other case: its <summary> IS the first child, and
+         it belongs against the panel's own top edge. So here `+ *` is
+         right — it starts the rhythm at the body, one block below the
+         heading that introduces it. */
+      #rc-settings-panel > * + * { margin-top: 12px; }
 
       /* A question inside Settings. .stat-tile.nested is already the
          shell's word for a card inside a card (it is what the annotation
-         sections use), so a sub-panel needs no look of its own — only
-         the space that keeps two of them apart once there are two. */
-      #rc-settings-panel > details + details { margin-top: 12px; }
+         sections use), so a sub-panel needs no look of its own — the
+         space comes from the stack rule above, which also puts the first
+         one clear of the summary. */
 
       /* The folded panels at the foot of Relay Chat are separate offers,
          not one block: the same 12px that separates blocks everywhere

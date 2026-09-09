@@ -1679,11 +1679,40 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
   // to be, and no :empty rule to cancel one. The panels at the foot of
   // Relay Chat are .stat-tile details, so one rule spaces every pair of
   // them and neither has to know what comes next.
+  // The wrapper the rule reaches through. Every app is mounted into its
+  // own div under #app-content (switchTo, shell.js), and while that div
+  // was anonymous the stack rule landed on IT — one 12px above the whole
+  // app and none between its blocks. Asserted on the boot the shell
+  // actually does, not on the source line, so removing the class shows
+  // up here rather than as a screen that quietly stops spacing itself.
+  {
+    const mounted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+      [NATTER_SCRIPT], false, BOUND);
+    // A static app, because a manifest-declared one waits for a script
+    // this harness never fetches — launchApp injects a <script> and
+    // returns, so switchTo (which makes the pane) is not reached.
+    mounted.shell.registerApp({
+      id: 'pane-probe', name: 'Probe', icon: '🧪', hidden: true,
+      mount: function () {}, render: function () {},
+    });
+    mounted.shell.launchApp('pane-probe');
+    const panes = mounted.doc.byId['app-content'].children;
+    if (panes.length && panes.every(function (el) { return el.className === 'app-pane'; })) {
+      test.check('an app is mounted into a named pane, which is what the stack rule reaches through');
+    } else {
+      test.fail('panes: ' + JSON.stringify(panes.map(function (el) { return el.className; })));
+    }
+  }
+
+  // Asked of the stack rule itself now. It used to be a list of seven
+  // pairs naming which kinds of block space themselves from which — a
+  // list that is quadratic in block types and whose omissions are
+  // silent. `> * + *` says the same thing once, for every kind.
   const rhythm = value('#open-with', 'margin-top');
-  if (rhythm !== null && value('.stat-tile + details.stat-tile', 'margin-top') === rhythm) {
+  if (rhythm !== null && value('#app-content > .app-pane > * + *', 'margin-top') === rhythm) {
     test.check('a block takes its space from above, at the same block spacing');
   } else {
-    test.fail('stacked blocks: ' + value('.stat-tile + details.stat-tile', 'margin-top') +
+    test.fail('stacked blocks: ' + value('#app-content > .app-pane > * + *', 'margin-top') +
       ' vs the rhythm ' + rhythm);
   }
 
@@ -1738,10 +1767,13 @@ test.subHeading('Natter adds a relay on the shared row');
     test.fail('rows off the scale: ' + off.join(', ') + ' (rhythm ' + rhythm + ')');
   }
 
-  // The list needs air under the line it is added from; the shared row
-  // brings it, so Natter does not have to know about it.
-  if (value('.start-job-form', 'margin-bottom') === rhythm) {
-    test.check('and leaves a block of space under itself, before the list');
+  // And carries NO space under itself. The list below a row still gets
+  // its air, but from its own margin-top through the stack rule — a row
+  // that pushed space downward would leave the gap behind on a screen
+  // where the row is not drawn, which is the whole of §3 and the reason
+  // #open-with:empty had to exist.
+  if (value('.start-job-form', 'margin-bottom') === null) {
+    test.check('and leaves no space under itself — what follows brings its own');
   } else {
     test.fail('row margin-bottom: ' + value('.start-job-form', 'margin-bottom'));
   }

@@ -534,7 +534,7 @@ function foldsObeyTheSpacingRules() {
   // over from Relay Chat, where its copy was left behind pointing at an
   // element that no longer existed.
   const gap = /#contacts-unknown-choices\s*\{[^}]*margin-top:\s*(\d+)px/.exec(css);
-  const scale = /\.stat-tile \+ \.stat-tile[^{]*\{[^}]*margin-top:\s*(\d+)px/.exec(css);
+  const scale = /#app-content > \.app-pane > \*[^{]*\{[^}]*margin-top:\s*(\d+)px/.exec(css);
   if (gap && scale && gap[1] === scale[1]) {
     test.check('and the choices carry the same leading space as any other block');
   } else {
