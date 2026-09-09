@@ -186,6 +186,17 @@ The class goes on `#app-container`, the one ancestor the titlebar and the conten
 
 **The titlebar says which row, not which app.** "Contact" is the least useful word available on a screen that shows one person, so it carries the row's identity and its mark — `⌛ carol`, `bert (Bertie)`. It cannot be the row itself: `#app-header` is one sticky flex line and four columns will not fit.
 
+**A control that means *the decision is elsewhere* carries its subject with it.** Any app that can name a peer can open the peer's card — the dialog is a screen *about a subject*, not one table's row expanded, and discovery being flat is what makes that true rather than generous.
+
+Relay Chat is the first caller with no table of its own. When the open conversation is with somebody the node is holding or has refused, chat offers 📇 and no verb, because the answer is Contacts' to give. That button used to `launchApp('app/contacts')` and hand you a list to search — for a row that is *marked*, and otherwise looks like every other row. It now calls the same dialog with the key it was already holding.
+
+Two things it settles that a second table never would have:
+
+- **The answer does real work.** In a table, `{changed:true}` repaints a list. In chat, the person whose card you just changed is the one sitting in the **To** control: only the re-read turns 📇 back into *Block here*, drops the mark from the row, and gives the composer back. The return value is the mechanism earning its keep, not tidying up after itself.
+- **Opening a screen is not gaining authority.** Blocking at the node level is the node's decision and chat may not make it (`AGENT.md` — a mere app must not reach a node-global switch). It still cannot: the dialog does its own write, from its own screen, exactly as when Contacts opened it. Chat points; it does not press. That distinction is a comment in `relayChat.js`, because the next reader will see chat apparently opening a blocking screen and reasonably try to undo it.
+
+The key rides **on the button**, not read from the control beside it at click time — the strip is repainted on every list paint and the click is delegated, so what the press opens must be what the button was *drawn for*. The same reason the two-press Block carries its key.
+
 ### Two traps that used to be every dialog's, and are now the shell's
 
 Both bit the first dialog, neither was visible until somebody used the screen, and both are the reason `callDialog` exists rather than a note in this file saying *remember to*. Written down because the fix is a **guarantee**, and a guarantee nobody can explain gets deleted by the next person tidying up.

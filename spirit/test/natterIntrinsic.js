@@ -2533,11 +2533,16 @@ test.subHeading('Contacts is its own app');
   // edit the book. Three of the four verbs stayed moved; blocking came
   // back (Andy), because refusing somebody is what you want in the
   // middle of a conversation with them. It goes through api.blockId, so
-  // chat still names no hub path of its own — the quoted form is what
-  // this asks about, since the file mentions the path in a comment
-  // explaining why it does not call it.
+  // chat still names no hub path of its own — the QUOTED form is what
+  // this asks about, since the file now mentions the path in prose,
+  // explaining why opening a peer's card gives chat no authority it did
+  // not have: the dialog makes that call, from its own screen, exactly
+  // as it does when Contacts opens it. A comment saying why a call is
+  // not made is the opposite of the thing this guards against, and a
+  // check that cannot tell the two apart would push it out of the file.
   const chat = readRun('app/relayChat/relayChat.js');
-  if (chat.indexOf('rc-add-panel') === -1 && chat.indexOf('/api/hub/peer') === -1) {
+  const quotedPeerPath = /['"]\/api\/hub\/peer/.test(chat);
+  if (chat.indexOf('rc-add-panel') === -1 && !quotedPeerPath) {
     test.check('and Relay Chat still adds, accepts, renames and blocks nobody on the node');
   } else {
     test.fail('relayChat.js still carries address-book verbs');

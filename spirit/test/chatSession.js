@@ -93,6 +93,10 @@ function fakeApi(store, project) {
   return {
     escapeHtml: spirit.core.util.escapeHtml,
     launchApp: function () {},
+    // A dialog is asked a question and answers it. Answering null by
+    // default is the quiet case — a screen somebody looked at and left —
+    // so a test that cares about the answer says so by replacing this.
+    callDialog: function () { return Promise.resolve(null); },
     // What the shell answers when an app asks who this node is. The
     // binding file itself belongs to Natter now (packet 3) — chat never
     // reads it — so this stands in for readNodeLabel, and the store key
@@ -190,9 +194,18 @@ function el(app, id) {
 }
 
 // What a click hands a delegated listener: the element it landed on,
-// which answers closest() for the id it is inside.
-function closestStub(id) {
-  return { closest: function (selector) { return selector === '#' + id ? { id: id } : null; } };
+// which answers closest() for the id it is inside — and the attributes
+// that element carries, because a button drawn for one person carries
+// which person, and the handler reads it back off the node rather than
+// off the control beside it.
+function closestStub(id, attrs) {
+  const node = {
+    id: id,
+    getAttribute: function (name) {
+      return Object.prototype.hasOwnProperty.call(attrs || {}, name) ? attrs[name] : null;
+    },
+  };
+  return { closest: function (selector) { return selector === '#' + id ? node : null; } };
 }
 
 // The same idea for a button found by data-attribute rather than id —
@@ -1219,14 +1232,64 @@ function heldRowsPointAtContacts() {
           test.fail('composer shown for a held row');
         }
 
-        let opened = '';
-        app.api.launchApp = function (id) { opened = id; };
-        el(app, 'rc-peer-strip').fire('click', { target: closestStub('rc-open-contacts') });
-        if (opened === 'app/contacts') {
-          test.check('and pressing it opens the app that owns the decision');
+        // The button was drawn for one person and carries which, so it
+        // opens that person's card rather than a table to search — the
+        // row you would be hunting for is marked, and otherwise looks
+        // like every other row.
+        let called = null;
+        let launched = '';
+        const whoBefore = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+        app.api.launchApp = function (id) { launched = id; };
+        app.api.callDialog = function (id, params) {
+          called = { id: id, params: params };
+          return Promise.resolve(null);
+        };
+        el(app, 'rc-peer-strip').fire('click', {
+          target: closestStub('rc-open-contacts', { 'data-rc-card': HELD }),
+        });
+        if (called && called.id === 'app/contactsDetails' &&
+            JSON.stringify(called.params) === JSON.stringify({ key: HELD })) {
+          test.check('and pressing it opens that peer\'s card, carrying the key it was drawn for');
         } else {
-          test.fail('launched: ' + opened);
+          test.fail('called: ' + JSON.stringify(called));
         }
+
+        // callDialog, not launchApp: the launch door refuses a dialog on
+        // purpose, so this is the one way in — the way that hands the
+        // screen its subject and hands back what it decided.
+        if (launched === '') {
+          test.check('and goes through callDialog rather than the launch door');
+        } else {
+          test.fail('launched: ' + launched);
+        }
+
+        return settle().then(function () {
+          const whoAfter = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+          if (whoAfter === whoBefore) {
+            test.check('and a card that decided nothing costs the list nothing');
+          } else {
+            test.fail('who reads: ' + whoBefore + ' -> ' + whoAfter);
+          }
+
+          // And the other way, which is why the answer matters more here
+          // than it does in a table. The peer just accepted is the one
+          // sitting in the To control, and chat's copy of the list still
+          // says waiting: without the re-read the strip goes on offering
+          // 📇 for somebody whose card has nothing left to decide, and
+          // the composer stays shut against a contact.
+          app.api.callDialog = function () { return Promise.resolve({ changed: true, key: HELD }); };
+          el(app, 'rc-peer-strip').fire('click', {
+            target: closestStub('rc-open-contacts', { 'data-rc-card': HELD }),
+          });
+          return settle().then(function () {
+            const whoFinally = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+            if (whoFinally === whoAfter + 1) {
+              test.check('while an answer saying something changed re-reads the book behind the To control');
+            } else {
+              test.fail('who reads: ' + whoAfter + ' -> ' + whoFinally);
+            }
+          });
+        });
       });
     });
   });
@@ -1309,15 +1372,24 @@ function blockedRowsUnblock() {
             test.fail('strip for a node-blocked row: ' + theirStrip);
           }
 
-          // And it goes there. The id is the one a waiting row's sentence
-          // uses, so a single handler answers both routes.
-          let opened = '';
-          theirs.api.launchApp = function (id) { opened = id; };
-          el(theirs, 'rc-peer-strip').fire('click', { target: closestStub('rc-open-contacts') });
-          if (opened === 'app/contacts') {
-            test.check('and pressing it opens the app that owns the refusal');
+          // And it goes there. One id, so one handler answers both routes
+          // — and both carry the key, because the screen is the peer's
+          // and not the app's. Discovery is flat: app/contactsDetails was
+          // never Contacts' property, and chat is the first caller of it
+          // with no table of its own.
+          let called = null;
+          theirs.api.callDialog = function (id, params) {
+            called = { id: id, params: params };
+            return Promise.resolve(null);
+          };
+          el(theirs, 'rc-peer-strip').fire('click', {
+            target: closestStub('rc-open-contacts', { 'data-rc-card': BERT }),
+          });
+          if (called && called.id === 'app/contactsDetails' &&
+              JSON.stringify(called.params) === JSON.stringify({ key: BERT })) {
+            test.check('and pressing it opens the card where the refusal is lifted');
           } else {
-            test.fail('launched: ' + opened);
+            test.fail('called: ' + JSON.stringify(called));
           }
 
           if (el(theirs, 'rc-composer').style.display === 'none') {

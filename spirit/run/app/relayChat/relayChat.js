@@ -832,8 +832,20 @@ spirit.shell.activateApp({
         // press cannot drift from the picture you saw. Safe because
         // Contacts is intrinsic and its icon is locked as shipped
         // (intrinsic-app-icon-locked, setAppOverride).
+        //
+        // The key rides on the button, the way the block button's does.
+        // The strip is repainted on every list paint and the click is
+        // delegated, so what the press opens has to be what the button
+        // was drawn for, not whatever the To control reads as by the
+        // time the press lands.
+        //
+        // And the caption is in the title, because this no longer opens
+        // "Contacts" — it opens one person's card, and the words have to
+        // say which person or the button promises a list.
         strip.innerHTML = '<button type="button" class="cancel-btn" id="rc-open-contacts" ' +
-          'title="Open Contacts">' + ICON.ROLODEX + '</button>';
+          'data-rc-card="' + api.escapeHtml(key) + '" ' +
+          'title="Contact card for ' + api.escapeHtml(person.caption || 'this peer') + '">' +
+          ICON.ROLODEX + '</button>';
         return;
       }
       if (isBlockedHere(key)) {
@@ -848,6 +860,37 @@ spirit.shell.activateApp({
       var armed = blockArmed === key;
       strip.innerHTML = '<button type="button" class="cancel-btn" data-rc-block="' +
         api.escapeHtml(key) + '">' + (armed ? 'Press again to block' : 'Block here') + '</button>';
+    }
+
+    // The decision is over there — and this carries the subject with it.
+    // The button is drawn for one person and knows which, so it opens
+    // that person's card rather than a table to search through. The row
+    // you would otherwise be hunting for is marked × or ⌛ and looks like
+    // every other row apart from that.
+    //
+    // callDialog, not launchApp: app/contactsDetails is a dialog and the
+    // launch door refuses one on purpose, so that a dialog is always
+    // handed its subject and always hands back what it decided. Discovery
+    // is flat, so that screen was never Contacts' property — any app that
+    // can name a peer can open the peer's card, and this is the first
+    // caller that has no table of its own.
+    //
+    // This gives chat no authority it did not have. The dialog does its
+    // own write, to /api/hub/peer, exactly as it does when Contacts opens
+    // it; chat points at the decision and does not make it. The rule
+    // above still holds — a mere app must not reach a node-global switch
+    // (Andy) — and chat still cannot: it holds nothing but its own log.
+    //
+    // The answer is not cosmetic here, which is the difference from the
+    // table. The person may have just been accepted or refused, and they
+    // are sitting in the To control: only a re-read turns 📇 into Block
+    // here, drops the mark from the row, and gives the composer back.
+    function openContactCard(key) {
+      if (!key) return;
+      api.callDialog('app/contactsDetails', { key: key })
+        .then(function (result) {
+          if (result && result.changed) refreshPeople();
+        });
     }
 
     // One refusal, or one taking-back of it. A write to this app's own
@@ -995,8 +1038,9 @@ spirit.shell.activateApp({
     document.getElementById('rc-peer-strip').addEventListener('click', function (event) {
       if (!event.target || !event.target.closest) return;
 
-      if (event.target.closest('#rc-open-contacts')) {
-        api.launchApp('app/contacts');
+      var cardBtn = event.target.closest('#rc-open-contacts');
+      if (cardBtn) {
+        openContactCard(cardBtn.getAttribute('data-rc-card'));
         return;
       }
 
