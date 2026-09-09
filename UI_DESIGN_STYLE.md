@@ -172,6 +172,16 @@ The `❌` split is the one that looks wrong and is not. In chat the rolodex says
 
 `⌛` replaced a hand-typed `×`, the only character ever used as a mark. A cross reads as **no**, one column from the `❌` that is one — which is exactly how a waiting row got read as blocked on a live node. Nothing about waiting is a refusal: nobody has said no, and nobody has said yes.
 
+**In a table, a mark takes its own column, and that column has no heading.** Glued to the front of a name it moves every name on the row a glyph to the right, so the column of names zig-zags by exactly who happens to be blocked — the reader's eye stops being able to run down it, which is the only thing a column of names is for. Given a cell of its own, the names line up whatever anybody is marked.
+
+No heading, because there is no word for the column. "Status" would be a heading over a cell that is usually empty, and it would set the column's width from the word rather than from the glyph. An empty `<th>` holds the place and says nothing:
+
+```html
+<tr><th></th><th>Handle</th><th>Label</th><th>How</th></tr>
+```
+
+A column added or removed is **two** numbers to keep in step — the header and every `colspan` beneath it. A `colspan` one short shows up only as a detail panel that stops before the edge of its table, which is easy to look straight past; both Jobs and Contacts have a test that counts `<th>` and requires every `colspan` to match.
+
 Before adding a class, check whether one of these already says it:
 
 | class | what it is for |
@@ -196,6 +206,10 @@ The same reason keeps the key ending out of the title and in the footer: somebod
 ## 6. Human-facing machine values
 
 A key is 48 characters and all Ed25519 keys share the prefix `MCowBQYDK2VwAyEA` — so a fragment shown to a person is taken from the **end**, six characters, and the same six in the same words on both screens ("ends …mjowM=" beside "key ends mjowM="). Never show a prefix, never abbreviate in the middle.
+
+**An ending is shown where it does a job, and nowhere else.** Its job is being read down a telephone while two people add each other, so it belongs on the screens where that is happening: the footer that tells you your own, and the list of keys behind one handle that you are choosing between. Once somebody is *in* the book that is finished, and Contacts shed its whole Key column for saying it again forever (Andy).
+
+The exception is a row the handle does not identify — nobody claimed one, or somebody else claimed the same — where the alternative is a blank cell or two rows that read alike. Both cases are the **node's** verdict, not a second opinion the app forms: `buildPeople` sets `ambiguous`, and `tail` comes down on every row already cut by `keyTail`. An app slicing six characters off a key for itself would be the fourth copy of that rule in the tree, and the first one free to disagree with the To list about which rows collide.
 
 ## 7. Test the relationship, not the number
 
@@ -237,6 +251,31 @@ A form does not style its own controls. `#process-search`, `.field-label`, `#job
 The titlebar keeps small buttons (`.cancel-btn` outside `#app-content`, e.g. the viewer's bail-out): chrome you press once is not a field you fill in.
 
 `select` also gets `color-scheme: dark` and opaque `option` colours globally, because a native dropdown paints its popup with the control's own colours — a translucent background reads fine closed and is unreadable open.
+
+### A field that commits redraws, even though it still has focus
+
+Every table in the shell with an inline editor carries the same guard, in the same words: *do not repaint while somebody is typing a name, or the repaint takes the name.* It is right, and stated like that it is also wrong, because it cannot tell two situations apart:
+
+| | the field has focus | should it repaint? |
+|---|---|---|
+| a refresh arrives from somewhere else | mid-word | **no** — it would take the half-typed name |
+| the field's own save comes back | **still focused** | **yes** — it is the only thing that can show the new value |
+
+The second one is not a corner case, it is **Return**. `change` fires on Return *without* blurring, so the field is still `document.activeElement` when its own `POST` resolves — and a guard written as "focused means don't" refuses precisely the one repaint that was asked for. In Contacts the label saved correctly every time and the facts bubble one line above it went on showing the old one. Blurring instead (clicking away, Tab) worked, which is what made it look intermittent rather than broken.
+
+So the guard takes an argument, and the caller that just committed passes it:
+
+```js
+function contactsRender(committed) {
+  ...
+  if (!committed && focusedId === 'contacts-label-input') return;
+}
+```
+
+Two things this cost that are worth keeping:
+
+- **Assert what the screen says, not what was sent.** The suite checked that the rename posted the right body and never asked what the panel read afterwards. A test that stops at the request cannot see a view that never updates.
+- **A stub that answers the same fixture forever cannot fail this.** The fake `fetch` returned the mounting fixture on every read, so even a correct repaint would have redrawn the old value — the test would have passed either way. It now stores what it is told and hands it back, the way `whoBook.label` then `buildPeople` do. (§7 already says a stub must be shaped like the thing it stands for; this is the same lesson arriving from the other side.)
 
 ## 10. Aiming at a small portrait screen
 
