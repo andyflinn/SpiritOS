@@ -1037,60 +1037,60 @@ function settingsOnlyDisturb() {
   });
 }
 
-// Chat is the app that polls, so it is the app that has to carry the
-// answer — read off the file Contacts owns, unscoped and read-only.
+// The node's policy about strangers is not this app's business at all
+// (packet 5). Chat polls; it does not decide, and it does not carry.
 //
-// This is the seam to take to Grok: the control is in one app and the
-// polling in another, so two apps have to stay honest about one
-// node-level setting.
-function policyTravelsFromContacts() {
-  test.subHeading('The policy rides on the read, from the file Contacts owns');
+// That seam is closed: for one cycle the control was in Contacts and the
+// answer travelled to the hub through whichever app happened to poll,
+// which meant a node-level setting depending on two apps staying honest.
+// The hub reads app/contacts/prefs.json itself now.
+function policyIsNotChatsToCarry() {
+  test.subHeading('The poll says nothing about strangers, because it decides nothing');
 
   const bound = { label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' };
 
-  // Nothing kept anywhere: silent, because a missing file is the safe
-  // answer and the safe answer is the default.
-  const bare = mountApp({ 'session.json': JSON.stringify(bound) }, { inboxStatus: 200 });
+  // A node that has a policy, and a very deliberate one — the app still
+  // must not mention it. Checked against a fixture that DOES supply the
+  // file, so the absence means something rather than passing because
+  // nothing was there.
+  const app = mountApp({ 'session.json': JSON.stringify(bound) }, {
+    inboxStatus: 200,
+    project: {
+      'app/natter/relays.json': JSON.stringify([{ label: 'spirit', url: 'https://spirit.example' }]),
+      'app/contacts/prefs.json': JSON.stringify({ unknown: 'acquire' }),
+    },
+  });
 
   return settle().then(function () {
-    const asked = bare.log.filter(function (c) { return c.url.indexOf('/api/hub/inbox') === 0; });
-    if (asked.length && asked.every(function (c) { return c.url.indexOf('unknown=silent') !== -1; })) {
-      test.check('with no file anywhere, every read is made under silent');
+    const reads = app.log.filter(function (c) { return c.url.indexOf('/api/hub/inbox') === 0; });
+    if (reads.length && reads.every(function (c) { return c.url.indexOf('unknown=') === -1; })) {
+      test.check('an inbox read names the node and nothing else');
     } else {
-      test.fail('inbox calls: ' + JSON.stringify(asked.map(function (c) { return c.url; })));
+      test.fail('inbox calls: ' + JSON.stringify(reads.map(function (c) { return c.url; })));
     }
 
-    // Contacts' file is what decides it — not chat's own, which no longer
-    // carries the field at all.
-    const app = mountApp({ 'session.json': JSON.stringify(bound) }, {
-      inboxStatus: 200,
-      project: {
-        'app/natter/relays.json': JSON.stringify([{ label: 'spirit', url: 'https://spirit.example' }]),
-        'app/contacts/prefs.json': JSON.stringify({ unknown: 'acquire' }),
-      },
-    });
-    return settle().then(function () {
-      const reads = app.log.filter(function (c) { return c.url.indexOf('/api/hub/inbox') === 0; });
-      if (reads.length && reads.every(function (c) { return c.url.indexOf('unknown=acquire') !== -1; })) {
-        test.check('and Contacts\' choice is what every read is made under');
-      } else {
-        test.fail('inbox calls: ' + JSON.stringify(reads.map(function (c) { return c.url; })));
-      }
+    // And the app no longer knows how to have an opinion: no list of the
+    // three values, no read of the file, nothing to go stale.
+    const src = fs.readFileSync(APP_SCRIPT, 'utf8');
+    const traces = ['RC_UNKNOWN_FILE', 'RC_UNKNOWN_CHOICES', 'unknownChoice']
+      .filter(function (name) { return src.indexOf(name) !== -1; });
+    if (traces.length === 0) {
+      test.check('and the app keeps no copy of the policy, nor a way to read one');
+    } else {
+      test.fail('still in relayChat.js: ' + traces.join(', '));
+    }
 
-      // A leftover in chat's own file decides nothing. There is one copy
-      // of this setting, and it is not here.
-      const stale = mountApp({
-        'session.json': JSON.stringify(bound),
-        'prefs.json': JSON.stringify({ dnd: false, unknown: 'acquire' }),
-      }, { inboxStatus: 200 });
-      return settle().then(function () {
-        const staleReads = stale.log.filter(function (c) { return c.url.indexOf('/api/hub/inbox') === 0; });
-        if (staleReads.length && staleReads.every(function (c) { return c.url.indexOf('unknown=silent') !== -1; })) {
-          test.check('and an unknown left in chat\'s own file is read past, not obeyed');
-        } else {
-          test.fail('stale reads: ' + JSON.stringify(staleReads.map(function (c) { return c.url; })));
-        }
-      });
+    // Its own prefs.json is down to the one switch that is genuinely
+    // chat's: being interrupted is a chat question.
+    el(app, 'rc-dnd-toggle').fire('change', { target: { checked: true } });
+    return settle().then(function () {
+      let saved = null;
+      try { saved = JSON.parse(app.store['prefs.json']); } catch (e) { saved = null; }
+      if (saved && saved.dnd === true && saved.unknown === undefined) {
+        test.check('while its own prefs.json holds the switch and no policy');
+      } else {
+        test.fail('prefs.json: ' + app.store['prefs.json']);
+      }
     });
   });
 }
@@ -1649,7 +1649,7 @@ function sendsAndReadsPackets() {
 reloadRestores()
   .then(enterSendsExactlyOnce)
   .then(settingsOnlyDisturb)
-  .then(policyTravelsFromContacts)
+  .then(policyIsNotChatsToCarry)
   .then(heldRowsPointAtContacts)
   .then(blockedRowsUnblock)
   .then(blockSurvivesTheNextMessage)

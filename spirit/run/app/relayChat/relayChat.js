@@ -11,22 +11,17 @@
 // binding and cannot disagree with the titlebar about whether there is
 // a name.
 
-// What this node does with mail from somebody it has not added. The
-// control moved to Contacts (Andy): it is a question about the address
-// book, and adding, accepting and renaming all went there in packet 2 —
-// this was the piece that stayed behind.
+// What this node does with mail from somebody it has not added is not
+// this app's business at all any more (packet 5).
 //
-// Chat still has to carry the answer, because chat is what polls the
-// inbox and the hub takes the policy as a query parameter. So it is read
-// here and written there: one copy of the setting, owned by the app that
-// draws the control, reached read-only through the unscoped read a
-// system app already has.
+// The control went to Contacts with packet 2's other address-book verbs.
+// For one cycle chat still carried the answer to the hub, because chat is
+// what polls — which meant a node-level policy travelling through an app
+// with no say in it, and a second poller or a stale tab would have been a
+// second answer. The hub reads app/contacts/prefs.json itself now.
 //
-// Read on every poll rather than cached, so changing it in Contacts
-// takes effect on chat's next inbox read without the two apps having to
-// talk to each other.
-var RC_UNKNOWN_FILE = 'app/contacts/prefs.json';
-var RC_UNKNOWN_CHOICES = ['silent', 'hold', 'acquire'];
+// So: Contacts writes it, the hub reads it, this app polls and says
+// nothing about it.
 
 // What this app is called on the wire. Not the shell app id and not the
 // folder: a packet names the CONVERSATION KIND, so this app can be
@@ -585,35 +580,13 @@ spirit.shell.activateApp({
     // The inbox is still where anything said TO this node arrives. Every
     // line is filed before it is drawn, so the thread is a view of the
     // files rather than of the last response.
-    // The node's policy about strangers, off the file Contacts owns.
-    // Anything missing, unreadable or unrecognised reads as `silent`:
-    // the tightest setting that still lets two people who added each
-    // other talk, so the safe answer is also the default and a broken
-    // file cannot quietly open a node up.
-    function unknownChoice() {
-      var raw = null;
-      try { raw = api.readProject(RC_UNKNOWN_FILE); }
-      catch (e) { raw = null; }
-      var parsed = null;
-      try { parsed = JSON.parse(raw); }
-      catch (e) { parsed = null; }
-      var wanted = parsed && parsed.unknown;
-      return RC_UNKNOWN_CHOICES.indexOf(wanted) === -1 ? 'silent' : wanted;
-    }
-
     function refreshInbox() {
       if (!myName) return;
-      // The policy travels with the request. The hub does not open any
-      // app's prefs.json — it is applied there so a dropped message never
-      // reaches the browser at all, but the answer comes from whoever
-      // asks, and that is this app.
-      //
-      // Which is the seam worth knowing about: the control is in Contacts
-      // and the polling is here, so two apps have to stay honest about
-      // one node-level setting. Whether the hub should read it itself is
-      // the open question (see unknownChoice, top of file).
-      fetch('/api/hub/inbox?name=' + encodeURIComponent(myName) +
-        '&unknown=' + encodeURIComponent(unknownChoice()))
+      // No policy on the request. The hub reads app/contacts/prefs.json
+      // itself (packet 5, hub.js unknownPolicy) and ignores a ?unknown=
+      // if an older client still sends one — so this app cannot get the
+      // node's answer about strangers wrong, or stale, by polling.
+      fetch('/api/hub/inbox?name=' + encodeURIComponent(myName))
         .then(function (r) { return r.json(); })
         .then(function (data) {
           // Fan-in: the shell routes anything addressed to another app,

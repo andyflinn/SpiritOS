@@ -46,6 +46,15 @@ function nodeHome(id, urls) {
   return home;
 }
 
+// The node's policy about strangers, written where Contacts writes it
+// and where the hub now reads it (packet 5). No argument means no file,
+// which is what a node that has never opened Contacts looks like.
+function setUnknownPolicy(home, unknown) {
+  const dir = path.join(home, 'app', 'contacts');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'prefs.json'), JSON.stringify({ unknown: unknown }, null, 2));
+}
+
 // What /api/relay/who hands back: one row per key.
 function peer(label, key, owner) {
   return { name: label, publicLabel: label, publicKey: key, claimedAt: '2026-09-08T00:00:00.000Z', owner: !!owner };
@@ -461,11 +470,14 @@ function runOverLoopback() {
     } else {
       test.fail('who after a silent read: ' + JSON.stringify(data.people));
     }
-    // The same mail, with the node asking to hear it.
-    return hubInbox(hub, 'andy', 'acquire');
+    // The same mail, with the node asking to hear it — said in the file
+    // Contacts writes, not on the request. And the request lies: it asks
+    // for silence, which the hub does not consult (packet 5).
+    setUnknownPolicy(home, 'acquire');
+    return hubInbox(hub, 'andy', 'silent');
   }).then(function (res) {
     if (res.status === 200 && /first line from bert/.test(res.text)) {
-      test.check('with Acquire the same read comes back with his line');
+      test.check('with Acquire in the file the same read comes back with his line');
     } else {
       test.fail('inbox: ' + res.status + ' ' + res.text);
     }
@@ -473,7 +485,7 @@ function runOverLoopback() {
   }).then(function (data) {
     const rows = data.people || [];
     if (rows.length === 1 && rows[0].publicKey === bert.publicKey && rows[0].acquiredVia === 'message') {
-      test.check('and reading it is what put Bert in the To list');
+      test.check('and reading it is what put Bert in the To list — the file won, the query lost');
     } else {
       test.fail('after inbox: ' + JSON.stringify(rows));
     }
@@ -559,15 +571,45 @@ function unknownMail() {
     test.fail('counted lines: ' + twice.unknown);
   }
 
-  // Silence is what an unrecognised answer means: a prefs.json edited by
-  // hand into nonsense must not quietly open a node up.
-  const factory = ['', null, undefined, 'everything', 'SILENT'].every(function (v) {
-    return unknownPolicy(v) === 'silent';
+  // The policy is read off this node's own disk (packet 5), so these are
+  // files rather than values off a wire.
+  //
+  // Silence is what anything else means: no file, an empty one, one that
+  // is not JSON, or one edited by hand into nonsense. A node that has
+  // never opened Contacts, and a node whose prefs.json somebody broke,
+  // must both end up at the tightest setting rather than quietly open.
+  const bare = tmpHome('policy-none');
+  const brokenHome = tmpHome('policy-broken');
+  fs.mkdirSync(path.join(brokenHome, 'app', 'contacts'), { recursive: true });
+  fs.writeFileSync(path.join(brokenHome, 'app', 'contacts', 'prefs.json'), '{oops');
+
+  const nonsense = tmpHome('policy-nonsense');
+  setUnknownPolicy(nonsense, 'everything');
+  const shouty = tmpHome('policy-shouty');
+  setUnknownPolicy(shouty, 'SILENT');
+
+  const factory = [bare, brokenHome, nonsense, shouty].every(function (h) {
+    return unknownPolicy(h) === 'silent';
   });
-  if (factory && unknownPolicy('acquire') === 'acquire' && unknownPolicy('hold') === 'hold') {
-    test.check('anything but a real choice reads as silence');
+
+  const acquireHome = tmpHome('policy-acquire');
+  setUnknownPolicy(acquireHome, 'acquire');
+  const holdHome = tmpHome('policy-hold');
+  setUnknownPolicy(holdHome, 'hold');
+
+  if (factory && unknownPolicy(acquireHome) === 'acquire' && unknownPolicy(holdHome) === 'hold') {
+    test.check('anything but a real choice in that file reads as silence');
   } else {
     test.fail('policy defaults are wrong');
+  }
+
+  // And nothing on the request is consulted. The old shape passed the
+  // policy in from the poller; a value that looks like one must now be
+  // read as a path, find nothing, and answer silent.
+  if (unknownPolicy('acquire') === 'silent' && unknownPolicy('') === 'silent') {
+    test.check('and a policy handed in on the request decides nothing at all');
+  } else {
+    test.fail('a wire value still steered the policy');
   }
 
   if (whoBook.byPublicKey(home, stranger.publicKey) === null) {

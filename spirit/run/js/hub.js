@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const http = require('http');
 const https = require('https');
 const { URL } = require('url');
@@ -253,15 +255,38 @@ function acquireFromInbox(rootDir, messages, relayUrl) {
 //   acquire — the old behaviour: writing to this node makes you someone
 //             it can answer (whoBook 'message').
 //
-// The policy arrives as a query parameter from the app rather than being
-// read out of app/relayChat/prefs.json here. It is a preference, not a
-// gate: the mailbox has already accepted the message, and nothing on
-// this node is protected by the answer. One copy of the setting, owned
-// by the app that draws the control.
+// This node's policy about its own book, so the hub reads it here rather
+// than taking it from whoever asked (packet 5).
+//
+// It used to arrive as a ?unknown= query parameter, on the argument that
+// there should be one copy of the setting owned by the app that draws
+// the control. That held while one app both drew it and polled. It does
+// not now: Contacts draws the radios and Relay Chat polls the inbox, so
+// the policy was travelling through an app that has no say in it, and a
+// second poller — or a stale tab — would have been a second answer.
+//
+// One file: app/contacts/prefs.json. Contacts writes it, the hub reads
+// it, Relay Chat polls and says nothing about it.
+//
+// Read per request rather than cached: it is one small file, an inbox
+// poll is already a network round trip, and a cache would mean a change
+// in Contacts not taking effect until something invalidated it.
 var UNKNOWN_POLICIES = ['silent', 'hold', 'acquire'];
+var UNKNOWN_PREFS_FILE = ['app', 'contacts', 'prefs.json'];
 
-function unknownPolicy(wanted) {
-  return UNKNOWN_POLICIES.indexOf(String(wanted || '')) === -1 ? 'silent' : String(wanted);
+// Missing, empty, unreadable, not JSON, or not one of the three all read
+// as `silent` — the tightest setting that still lets two people who
+// added each other talk. The safe answer is also the default, so a
+// broken file cannot quietly open a node up.
+function unknownPolicy(rootDir) {
+  var raw = null;
+  try { raw = fs.readFileSync(path.join.apply(path, [rootDir].concat(UNKNOWN_PREFS_FILE)), 'utf8'); }
+  catch (e) { return 'silent'; }
+  var parsed = null;
+  try { parsed = JSON.parse(raw); }
+  catch (e) { return 'silent'; }
+  var wanted = parsed && parsed.unknown;
+  return UNKNOWN_POLICIES.indexOf(wanted) === -1 ? 'silent' : wanted;
 }
 
 // Who this node will listen to: everyone it has actually acquired, plus
@@ -506,7 +531,9 @@ function createHub(rootDir) {
       if (id && id.privateKey) {
         headers['X-Spirit-Sig'] = auth.sign(id.privateKey, auth.inboxMessage(name, Date.now()));
       }
-      var policy = unknownPolicy(urlObj.searchParams.get('unknown'));
+      // Off the file, never off the request. A client still sending
+      // ?unknown= is not consulted — see unknownPolicy.
+      var policy = unknownPolicy(rootDir);
       relayRequest(url, 'GET', '/api/relay/inbox' + query, null, headers)
         .then(function (r) {
           if (r.status !== 200) {
