@@ -958,11 +958,6 @@ const ICON = spirit.core.const.ICON = {
     // reads as NO one column away from ❌, which is one.
     // ⏳ is LOADING already; ⌛ is the same hourglass, spent, and free.
     WAITING: '⌛',
-    // Waiting for a person to decide, not refused by anybody. The one
-    // mark in the shell that used to be a hand-typed × — a cross, which
-    // reads as NO one column away from ❌, which is one.
-    // ⏳ is LOADING already; ⌛ is the same hourglass, spent, and free.
-    WAITING: '⌛',
     MUSIC: '🎵',
     VIDEO: '🎬',
     DOCUMENT: '📄',
@@ -1017,7 +1012,12 @@ const ICON = spirit.core.const.ICON = {
     UNLOCK: '🔓',
     PAUSED: '⏸️',
     PLAY: '▶️',
-    STOP: '⏹️',
+    // Not STOP. That name is taken further down by the orange circle, and
+    // this line lost silently to it — an object literal keeps the LAST
+    // value, so every caller writing ICON.STOP has been getting 🟠 while
+    // this glyph sat here unreachable. Named for what it is, which is
+    // also what the emoji is called.
+    STOP_BUTTON: '⏹️',
     RECORD: '⏺️',
     REWIND: '⏪',
     FASTFORWARD: '⏩',
@@ -1051,6 +1051,27 @@ const ICON = spirit.core.const.ICON = {
     FISH: '🐟',
     MENU: '📋',
     LIST: '📋',
+    // The circles, named for what they look like.
+    //
+    // A meaning-name earns its keep when the picture behind it can change
+    // centrally — a theme, a redrawn set. These are emoji: there is
+    // nothing to re-theme, so the indirection buys nothing and costs the
+    // drift it already caused (see STOP_BUTTON above). Declared FIRST so
+    // the colour is the canonical name in the icon chooser, which reads
+    // declaration order.
+    RED_CIRCLE: '🔴',
+    ORANGE_CIRCLE: '🟠',
+    YELLOW_CIRCLE: '🟡',
+    GREEN_CIRCLE: '🟢',
+    BLUE_CIRCLE: '🔵',
+    PURPLE_CIRCLE: '🟣',
+    BROWN_CIRCLE: '🟤',
+    BLACK_CIRCLE: '⚫',
+    WHITE_CIRCLE: '⚪',
+    // Kept, and now aliases of the four above rather than the only names
+    // for them. Every existing caller keeps the glyph it has always had.
+    // Whether these survive a repo-wide tightening is a later question —
+    // design/cleanup/2026-09-11-icon-convention.md.
     OFF: '🔴',
     ON: '🟢',
     YES: '✅',

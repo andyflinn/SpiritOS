@@ -2,7 +2,7 @@
 
 // The ICON table, read the other way round.
 //
-// kernel.js keys glyphs by name — 151 keys over 129 distinct glyphs,
+// kernel.js keys glyphs by name — 162 keys over 136 distinct glyphs,
 // because aliases are deliberate: NO, ERROR and DELETE are all ❌, and an
 // app that means "delete" should be able to say so. That is the right
 // shape for writing code. It is the wrong shape for offering a choice,
@@ -15,13 +15,29 @@
 // grouping, the ordering, the exclusion and the filtering be asserted in
 // node instead of only being looked at.
 
-// A key as it is shown to a person: SPIRIT -> "Spirit", DELETE -> "Delete".
+// A key as it is shown to a person: SPIRIT -> "Spirit", DELETE -> "Delete",
+// BLUE_CIRCLE -> "Blue circle".
+//
+// The underscore is a separator in the table, not something to read. Left
+// in, a two-word key reads as "Blue_circle" — the only place in the shell
+// where an identifier leaks into a label.
+//
 // Acronym-shaped keys read a little oddly this way (OK becomes "Ok"), and
 // that is left alone on purpose — a display-override map would be a second
 // table to keep in step with the first, and is not worth it for one word.
 function iconTitleCase(key) {
-  var text = String(key);
+  var text = String(key).replace(/_/g, ' ');
   return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+}
+
+// What a name looks like for searching: lowercase, and underscores flat.
+//
+// Both sides go through this, so a person may type what they SEE. Without
+// it the chooser offers "Blue circle" and then finds nothing when that is
+// typed back — a label you can read and cannot search for, which is worse
+// than the raw key it replaced.
+function iconSearchable(text) {
+  return String(text == null ? '' : text).toLowerCase().replace(/_/g, ' ');
 }
 
 // Every glyph in `iconTable`, once, with the names it is keyed under.
@@ -99,11 +115,11 @@ function iconKeyFor(iconTable, glyph) {
 //
 // An empty filter matches everything: the closed list is the whole pool.
 function iconMatches(choice, filterText) {
-  var needle = String(filterText == null ? '' : filterText).trim().toLowerCase();
+  var needle = iconSearchable(filterText).trim();
   if (!needle) return true;
   if (choice.glyph === needle) return true;
   return choice.keys.some(function (key) {
-    return key.toLowerCase().indexOf(needle) !== -1;
+    return iconSearchable(key).indexOf(needle) !== -1;
   });
 }
 

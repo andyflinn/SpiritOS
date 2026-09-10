@@ -371,4 +371,54 @@ test.subHeading('An icon is picked from the pool, never typed');
   });
 }
 
+test.subHeading('An underscore is a separator, not something to read');
+
+{
+  // Its own table: SAMPLE's counts are asserted above and would move.
+  const UNDERSCORED = {
+    BLUE_CIRCLE: '🔵',
+    START: '🔵',
+    RED_CIRCLE: '🔴',
+    ROLODEX: '📇',
+  };
+
+  if (iconIndex.titleCase('BLUE_CIRCLE') === 'Blue circle') {
+    test.check('BLUE_CIRCLE reads as "Blue circle"');
+  } else {
+    test.fail('titleCase: ' + iconIndex.titleCase('BLUE_CIRCLE'));
+  }
+
+  const blue = iconIndex.choices(UNDERSCORED, []).filter(function (c) { return c.glyph === '🔵'; })[0];
+  if (blue && blue.label === 'Blue circle, Start') {
+    test.check('and a line of them reads as a sentence, not as identifiers');
+  } else {
+    test.fail('label: ' + (blue && blue.label));
+  }
+
+  // The half that matters. A label a person can read and cannot type back
+  // is worse than the raw key it replaced, so both sides of the search are
+  // flattened: what is shown is what may be typed.
+  if (iconIndex.matches(blue, 'blue circle')) {
+    test.check('and is found by what the list actually shows');
+  } else {
+    test.fail('typing the visible name found nothing');
+  }
+
+  // The underscore still works, because somebody who knows the key should
+  // not be punished for using it.
+  if (iconIndex.matches(blue, 'blue_circle') && iconIndex.matches(blue, 'circle')) {
+    test.check('and by the raw key, and by one word of it');
+  } else {
+    test.fail('underscore or partial search stopped matching');
+  }
+
+  // Still a filter, not a sieve that passes everything.
+  const rolodex = iconIndex.choices(UNDERSCORED, []).filter(function (c) { return c.glyph === '📇'; })[0];
+  if (!iconIndex.matches(rolodex, 'blue circle')) {
+    test.check('and does not match something else that happens to have a space in it');
+  } else {
+    test.fail('the space made the filter match everything');
+  }
+}
+
 test.reportSuccessFailureCount();

@@ -17,6 +17,8 @@ This directory contains the vision, principles, and architecture decisions for *
 - [Peer Devices](relay/PEER-DEVICES.md) — every identity attaching its own
   browsers. Designed, not built; the owner-only version shipped as device
   cycles 1–5.
+- [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
+  in Natter for attaching a browser. In design.
 
 ## Reviews
 - Periodic point-in-time assessments of status against vision. See [reviews/](reviews/).
