@@ -147,7 +147,8 @@ function natterMintHtml(api, badge) {
 // when a row opens, because both can change without this app: the window
 // closes on its own across a restart, and a password minted on first ask
 // does not exist until something asks.
-var natterDevice = { password: '', listening: false, loaded: false };
+var natterDevice = { password: '', listening: false, loaded: false, ownedUrls: [], lastEvent: null };
+var natterDeviceTimer = null;
 
 // Adding one of Andy's own handhelds, from the row that names the mailbox
 // it will be added to — the same reasoning that killed the mint picker.
@@ -170,18 +171,78 @@ function natterDeviceHtml(api, badge) {
     // phone by a human; this is 128 characters and goes through the
     // clipboard into a browser's password manager, which is the whole
     // reason it can afford to be that long.
+    //
+    // And copying is what OPENS the window. There used to be a second
+    // button for that, and it was chrome nobody could act on: it meant
+    // nothing until the password had been taken, and forgetting it made
+    // a correct password on the other device read as `not now` with no
+    // way to see why (Andy — "I never realized I had to start listening
+    // with the listening button"). Taking the password IS the intent to
+    // add a device, so it is the one press, and the only control left is
+    // the one that undoes it.
     '<button type="button" class="cancel-btn natter-dev-copy" data-device-copy="1">Copy password</button>' +
-    '<button type="button" class="cancel-btn natter-dev-listen" data-device-listen="' +
-      (on ? 'off' : 'on') + '">' + (on ? 'Listening off' : 'Listening on') + '</button>' +
+    // Present only once there is something to stop. Rendered rather than
+    // hidden-by-class so the two states cannot both be pressable.
+    '<button type="button" class="cancel-btn natter-dev-listen" data-device-listen="off"' +
+      (on ? '' : ' hidden') + '>Listening off</button>' +
     '</div>' +
-    // One line, and it says the two things a person standing here needs:
-    // where to type the password, and that it is refused unless this
-    // window is open. Without the second half, "not now" on the phone
-    // reads as a broken form.
-    '<span class="natter-dev-note muted">Open ' + api.escapeHtml(host) +
-    '/device on that device and paste the password. It only works while listening is on.</span>' +
+    // Says the sequence before it happens, so the copy is not a surprise
+    // that turns something on.
+    '<span class="natter-dev-note muted">Copy the password, then open ' + api.escapeHtml(host) +
+    '/device on that device and paste it. Copying opens the window; it stays open until you' +
+    ' press Listening off.</span>' +
+    // What is actually happening, refreshed in place while the row is
+    // open. A button alone said only what was last pressed, which is not
+    // the same question as whether anything is still listening.
+    '<span class="natter-dev-state muted">' + api.escapeHtml(natterDeviceStateText()) + '</span>' +
     '<span class="natter-dev-out"></span>' +
     '</div>';
+}
+
+// One sentence for the whole window: whether it is open, who is being
+// asked, and what came back last.
+function natterDeviceStateText() {
+  if (!natterDevice.loaded) return '';
+  if (!natterDevice.listening) {
+    return 'Not listening — copy the password to open the window.';
+  }
+  var where = natterDevice.ownedUrls.length
+    ? natterDevice.ownedUrls.join(', ')
+    : '(no mailbox answered — nothing is being asked)';
+  return 'Listening — asking ' + where + ' every 2s. ' + natterDeviceEventText();
+}
+
+function natterDeviceEventText() {
+  var e = natterDevice.lastEvent;
+  if (!e || !e.did) return 'No pass has finished yet.';
+  var ago = Math.max(0, Math.round((Date.now() - e.atMs) / 1000));
+  var what = e.did === 'installed' ? 'a device was added'
+    : e.did === 'rejected' ? 'a wrong password was refused'
+    : e.did === 'unreachable' ? 'the mailbox could not be reached'
+    // Not the same as an empty slot, and the difference is the one worth
+    // printing: the mailbox answered and would not have us. The usual
+    // cause is a relay running older code than this node.
+    : e.did === 'refused' ? 'THE MAILBOX REFUSED THE POLL — is it running this version?'
+    : e.did === 'quiet' ? 'the window is shut'
+    : 'nothing was waiting';
+  // Seconds, not a clock time: the only thing worth knowing is whether
+  // this is still beating. A number that keeps climbing says it is not.
+  return 'Last pass ' + ago + 's ago — ' + what + '.';
+}
+
+// Painted into the existing panel, never by re-rendering the table.
+// natterRenderList rebuilds the whole tbody, so a two-second poll that
+// called it would destroy the Invite fields under whoever was typing in
+// them — the same repaint-kills-the-field trap the dialogs hit.
+function natterDevicePaint(container) {
+  var panel = container.querySelector('.natter-device');
+  if (!panel) return;
+  // The stop control exists only while there is something to stop. It
+  // never becomes a start button: copying is the start.
+  var btn = panel.querySelector('.natter-dev-listen');
+  if (btn) btn.hidden = !natterDevice.listening;
+  var state = panel.querySelector('.natter-dev-state');
+  if (state) state.textContent = natterDeviceStateText();
 }
 
 function natterRenderList(container, api, relays) {
@@ -262,15 +323,45 @@ function natterProbe(api, container, relays) {
 // password on first ask, and `listening` is the live timer, so a cached
 // answer would go stale exactly where it matters.
 function natterLoadDevice(api, container, relays) {
+  return natterReadDevice().then(function () {
+    natterRenderList(container, api, relays);
+    natterDeviceWatch(container);
+  });
+}
+
+function natterReadDevice() {
   return fetch('/api/hub/device')
     .then(function (r) { return r.json(); })
     .then(function (d) {
       natterDevice.password = (d && d.password) || '';
       natterDevice.listening = !!(d && d.listening);
+      natterDevice.ownedUrls = (d && d.ownedUrls) || [];
+      natterDevice.lastEvent = (d && d.lastEvent) || null;
       natterDevice.loaded = true;
-      natterRenderList(container, api, relays);
     })
     .catch(function () { /* the panel simply reads as closed */ });
+}
+
+// While the row is open, ask again on the tick's own cadence. The window
+// can close without this app touching it — the node restarting is enough
+// — and a panel painted once would go on claiming it was open for as
+// long as the row stayed expanded.
+function natterDeviceWatch(container) {
+  natterDeviceUnwatch();
+  natterDeviceTimer = setInterval(function () {
+    if (!container.querySelector('.natter-device')) {
+      natterDeviceUnwatch();
+      return;
+    }
+    natterReadDevice().then(function () { natterDevicePaint(container); });
+  }, 2000);
+}
+
+function natterDeviceUnwatch() {
+  if (natterDeviceTimer) {
+    clearInterval(natterDeviceTimer);
+    natterDeviceTimer = null;
+  }
 }
 
 // The window, opened or shut from the row. The button repaints from what
@@ -280,20 +371,29 @@ function natterLoadDevice(api, container, relays) {
 // design can tell.
 function natterDeviceListen(api, container, relays, button) {
   var out = button.closest('.natter-device').querySelector('.natter-dev-out');
-  var want = button.getAttribute('data-device-listen') === 'on';
   out.textContent = '';
-  natterPost('/api/hub/device-listen', { on: want }).then(function (r) {
+  return natterDeviceSetListening(api, container, relays, false, out);
+}
+
+function natterDeviceSetListening(api, container, relays, want, out) {
+  return natterPost('/api/hub/device-listen', { on: want }).then(function (r) {
     var body = {};
     try { body = JSON.parse(r.text); } catch (e) { body = {}; }
     natterDevice.listening = !!body.listening;
+    natterDevice.ownedUrls = body.ownedUrls || [];
     if (want && !natterDevice.listening) {
-      out.textContent = 'no mailbox this node owns answered';
+      out.textContent = 'copied, but no mailbox this node owns answered — nothing is listening';
     }
-    natterRenderList(container, api, relays);
+    // Painted in place, and the watch restarted so the sentence stays
+    // true from here. Re-rendering the list would fold nothing but would
+    // take the Invite fields with it.
+    natterDevicePaint(container);
+    if (natterDevice.listening) natterDeviceWatch(container);
+    else natterDeviceUnwatch();
   });
 }
 
-function natterDeviceCopy(button) {
+function natterDeviceCopy(api, container, relays, button) {
   var out = button.closest('.natter-device').querySelector('.natter-dev-out');
   if (!natterDevice.password) {
     out.textContent = 'no password yet';
@@ -308,8 +408,12 @@ function natterDeviceCopy(button) {
     : Promise.reject(new Error('no clipboard'));
   copy.then(function () {
     out.textContent = 'copied';
+    // Only now. A window opened after a copy that failed would claim to
+    // be waiting for a password nobody has — the state has to stay true
+    // to what actually happened.
+    return natterDeviceSetListening(api, container, relays, true, out);
   }).catch(function () {
-    out.textContent = 'could not copy — this browser refused the clipboard';
+    out.textContent = 'could not copy — this browser refused the clipboard, so the window stayed shut';
   });
 }
 
@@ -605,7 +709,7 @@ spirit.shell.activateApp({
       // panel it was pressed in.
       var copyBtn = e.target.closest && e.target.closest('[data-device-copy]');
       if (copyBtn) {
-        natterDeviceCopy(copyBtn);
+        natterDeviceCopy(api, container, relays, copyBtn);
         return;
       }
 
@@ -632,6 +736,9 @@ spirit.shell.activateApp({
         if (natterExpandedUrl) {
           natterProbe(api, container, relays);
           natterLoadDevice(api, container, relays);
+        } else {
+          // The panel is gone, so nothing is left to paint into.
+          natterDeviceUnwatch();
         }
         return;
       }

@@ -982,6 +982,15 @@ function createHub(rootDir) {
   var DEVICE_TICK_MS = 2000;
   var deviceTimer = null;
   var deviceUrls = [];
+  // What the last pass did, and when. The tick has always answered this
+  // and it was thrown away, which left the window with no outside signs
+  // at all: a button that said "on" and a page that said "not now", with
+  // nothing in between to tell you which end had stopped (Andy — "I
+  // can't see whether or who is listening").
+  //
+  // In memory, not on disk. It describes a poll that is running now; a
+  // copy of it surviving a restart would outlive the timer it describes.
+  var deviceLastEvent = null;
 
   function stopDeviceTimer() {
     if (deviceTimer) {
@@ -1005,9 +1014,13 @@ function createHub(rootDir) {
     return relayRequest(url, method, pathname, bodyObj, headers)
       .then(function (r) {
         try { return JSON.parse(r.text); }
-        catch (e) { return { ok: false }; }
+        // Named, not a bare {ok:false}. An answer nobody can read and no
+        // answer at all are both "this did not work", and a caller that
+        // cannot see which reports the reassuring one — which is exactly
+        // how a window stayed silent while nothing could be taken.
+        catch (e) { return { ok: false, error: 'unreachable' }; }
       })
-      .catch(function () { return { ok: false }; });
+      .catch(function () { return { ok: false, error: 'unreachable' }; });
   }
 
   function startDeviceTimer() {
@@ -1026,7 +1039,16 @@ function createHub(rootDir) {
         deviceTimer = setInterval(function () {
           Promise.resolve()
             .then(function () { return deviceTick.tick(rootDir, deviceUrls, deviceRequest); })
-            .catch(function () {});
+            .then(function (r) {
+              // Every pass, including the boring ones. `empty` is the
+              // heartbeat that proves the poll is alive and reaching a
+              // mailbox — without it, "nothing has happened" and "this
+              // stopped working an hour ago" look identical.
+              if (r && r.did) deviceLastEvent = { did: r.did, atMs: Date.now() };
+            })
+            .catch(function () {
+              deviceLastEvent = { did: 'unreachable', atMs: Date.now() };
+            });
         }, DEVICE_TICK_MS);
         if (deviceTimer.unref) deviceTimer.unref();
         return deviceUrls;
@@ -1052,6 +1074,10 @@ function createHub(rootDir) {
     res.end(JSON.stringify({
       password: doc.password,
       listening: !!deviceTimer,
+      // Who is being asked, and what the last answer was. Both are about
+      // the timer rather than the file, so they go quiet together with it.
+      ownedUrls: deviceTimer ? deviceUrls : [],
+      lastEvent: deviceLastEvent,
     }));
   }
 

@@ -107,8 +107,21 @@ function mountApp(options) {
   };
 
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-  new Function('spirit', 'document', 'window', 'fetch', src)(
-    shellSpirit, doc, { spiritOwnerBadge: { canRemoveMailbox: function (n) { return n > 1; } } }, fakeFetch
+  // setInterval is injected, as chatSession does for Relay Chat's poll.
+  // The device panel re-asks the hub every two seconds while a row is
+  // open, and a real interval here keeps node's event loop alive after
+  // the assertions are done — the suite passes and then hangs forever,
+  // which is a worse failure than a red line because nothing says why.
+  //
+  // The ticks are not what this suite is about, so they are counted and
+  // dropped. clearInterval takes the same treatment so the app's own
+  // cleanup path still runs without throwing.
+  let intervalsStarted = 0;
+  const fakeSetInterval = function () { intervalsStarted += 1; return intervalsStarted; };
+  const fakeClearInterval = function () {};
+  new Function('spirit', 'document', 'window', 'fetch', 'setInterval', 'clearInterval', src)(
+    shellSpirit, doc, { spiritOwnerBadge: { canRemoveMailbox: function (n) { return n > 1; } } },
+    fakeFetch, fakeSetInterval, fakeClearInterval
   );
 
   const container = fakeElement('container');

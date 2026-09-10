@@ -18,25 +18,30 @@
 </head>
 <body>
   <h1>Add this device</h1>
-  <p>Owner only. Works only while the listening window is open on the personal node.</p>
+  <p>Owner only. Adding a device to <strong id="host">this node</strong>.
+     Works only while the listening window is open on the personal node.</p>
   <form id="f" autocomplete="on">
     <!--
-      The node this password belongs to, and the reason it is here at all:
-      a password field with no username beside it is one Chrome saves
+      A password field with no username beside it is one Chrome saves
       unreliably and offers back even less reliably. Remembering it IS the
       distribution plan — copied once on the desktop, synced to the phone,
       never typed — so a form the password manager half-understands breaks
       the design rather than merely warning about it.
 
-      Readonly and filled from the address bar, so it states a fact and
-      cannot become a second thing to get wrong. Visible rather than
-      hidden because it earns the line: it says WHICH mailbox this device
-      is being added to, which is the one question a person standing on a
-      phone cannot answer from a page that looks identical on every relay.
+      A CONSTANT, and deliberately not the hostname. Chrome keys saved
+      passwords by origin already, so the host says nothing a saved entry
+      does not know — and on a domain that has collected a dozen other
+      logins it leaves this one indistinguishable from the rest in the
+      picker (Andy: "difficult to select from 13 usernames"). One
+      distinctive word makes it the obvious row.
+
+      Readonly, so it states a fact and cannot become a second thing to
+      get wrong. Which node this is now sits in the sentence above, where
+      it reads as information rather than as a field to fill in.
     -->
-    <label>Node
-      <input id="host" type="text" name="username" autocomplete="username"
-             readonly tabindex="-1">
+    <label>Account
+      <input id="user" type="text" name="username" autocomplete="username"
+             value="spirit-device" readonly tabindex="-1">
     </label>
     <label>Password
       <input id="pw" type="password" name="password" autocomplete="current-password" required>
@@ -51,8 +56,9 @@
 
       // Whatever host actually served this page. Not baked in: the same
       // file is served by every relay its owner runs, and a hardcoded
-      // name would be wrong on all but one of them.
-      document.getElementById('host').value = location.host;
+      // name would be wrong on all but one of them. In the sentence
+      // rather than in the username field — see the comment on the form.
+      document.getElementById('host').textContent = location.host;
 
       function b64(buf) {
         var u = new Uint8Array(buf);

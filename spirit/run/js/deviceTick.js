@@ -25,10 +25,23 @@ async function tick(rootDir, ownedUrls, requestFn) {
   if (!id || !id.privateKey || !id.name) return { ok: false, error: 'no identity' };
   var urls = Array.isArray(ownedUrls) ? ownedUrls : [];
   var sig = relayAuth.sign(id.privateKey, deviceAuth.deviceTakeMessage(id.name));
+  var refused = false;
+  var unreachable = false;
   var i;
   for (i = 0; i < urls.length; i++) {
     var url = urls[i];
     var held = await requestFn(url, 'GET', takePath(id.name), null, { 'X-Spirit-Sig': sig });
+    // A refusal is not an empty slot, and they must not report the same.
+    // The ROUTE says `not now` to both on purpose — it faces the internet
+    // and owes it no detail — but this caller is the owner, and the two
+    // mean opposite things: an empty slot is "nobody is enrolling", a
+    // refusal is "this mailbox and this node no longer agree", which is
+    // what a relay running older code looks like from here.
+    //
+    // Collapsing them is what made the window silent: every poll came
+    // back reassuring while nothing could ever have been taken.
+    if (held && held.error === 'unreachable') unreachable = true;
+    else if (held && held.error) refused = true;
     if (!held || !held.password || !held.devicePublicKey) continue;
     var accept = deviceAuth.passwordsEqual(doc.password, held.password);
     if (accept) {
@@ -50,7 +63,9 @@ async function tick(rootDir, ownedUrls, requestFn) {
     });
     return { ok: true, did: accept ? 'installed' : 'rejected' };
   }
-  return { ok: true, did: 'empty' };
+  // Three different silences, told apart: nobody was enrolling, the
+  // mailbox would not have us, or it never answered.
+  return { ok: true, did: unreachable ? 'unreachable' : refused ? 'refused' : 'empty' };
 }
 
 module.exports = { tick: tick };
