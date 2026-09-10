@@ -12,6 +12,8 @@ const whoBook = require('./whoBook');
 const packet = require('./packet');
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
+const deviceAuth = require('./deviceAuth');
+const deviceTick = require('./deviceTick');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -971,6 +973,102 @@ function createHub(rootDir) {
     });
   }
 
+  // ---- the listening window ------------------------------------------
+  //
+  // The timer exists ONLY while the window is open, and that is the
+  // security control rather than a nicety: with it closed nothing on this
+  // node asks any mailbox what is pending, so a stolen password buys a
+  // held POST that expires unanswered.
+  var DEVICE_TICK_MS = 2000;
+  var deviceTimer = null;
+  var deviceUrls = [];
+
+  function stopDeviceTimer() {
+    if (deviceTimer) {
+      clearInterval(deviceTimer);
+      deviceTimer = null;
+    }
+    deviceUrls = [];
+  }
+
+  // deviceTick wants parsed JSON or {ok:false}; relayRequest answers
+  // {status, text}. The adapter lives here because that module is
+  // deliberately socket-free — its own header says so — which is what
+  // lets a test drive the whole handshake with no network at all.
+  function deviceRequest(url, method, pathname, bodyObj) {
+    return relayRequest(url, method, pathname, bodyObj)
+      .then(function (r) {
+        try { return JSON.parse(r.text); }
+        catch (e) { return { ok: false }; }
+      })
+      .catch(function () { return { ok: false }; });
+  }
+
+  function startDeviceTimer() {
+    stopDeviceTimer();
+    var id = auth.loadIdentity(rootDir);
+    var name = (id && id.name) || '';
+    // Probed once, as the window opens, rather than on every tick. A
+    // two-second poll that also asked every mailbox who owns it would be
+    // three requests where one was wanted, and which relays this node
+    // owns does not change inside a window somebody is standing at.
+    return ownerBadge.probe(rootDir, name, function (url, method, pathname) {
+      return relayRequest(url, method, pathname, null);
+    })
+      .then(function (summary) {
+        deviceUrls = (summary && summary.ownedUrls) || [];
+        deviceTimer = setInterval(function () {
+          Promise.resolve()
+            .then(function () { return deviceTick.tick(rootDir, deviceUrls, deviceRequest); })
+            .catch(function () {});
+        }, DEVICE_TICK_MS);
+        if (deviceTimer.unref) deviceTimer.unref();
+        return deviceUrls;
+      })
+      .catch(function () {
+        deviceUrls = [];
+        return [];
+      });
+  }
+
+  // The password, so the shell can offer to copy it, and whether the
+  // window is open.
+  //
+  // `listening` is the TIMER, not the file. They agree except across a
+  // restart, where the file can say open while nothing is polling — and
+  // a Natter row reading "Listening on" beside a form answering "not now"
+  // is the one confusing state this whole design can produce. So the
+  // answer is the live one: after a restart the window is shut, and
+  // pressing the button opens it again.
+  function handleDevice(req, res) {
+    var doc = deviceAuth.ensurePassword(rootDir);
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      password: doc.password,
+      listening: !!deviceTimer,
+    }));
+  }
+
+  function handleDeviceListen(req, res, readBody) {
+    readBody(req).then(function (body) {
+      var on = !!(body && body.on);
+      deviceAuth.setListening(rootDir, on);
+      if (!on) {
+        stopDeviceTimer();
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ listening: false, ownedUrls: [] }));
+        return;
+      }
+      startDeviceTimer().then(function (urls) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ listening: !!deviceTimer, ownedUrls: urls }));
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
   function handleStatus(req, res, urlObj) {
     var name = urlObj.searchParams.get('name') || '';
     ownerBadge.probe(rootDir, name, function (url, method, pathname) {
@@ -1001,6 +1099,8 @@ function createHub(rootDir) {
     handleContact: handleContact,
     handlePeer: handlePeer,
     handleInvite: handleInvite,
+    handleDevice: handleDevice,
+    handleDeviceListen: handleDeviceListen,
   };
 }
 

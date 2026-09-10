@@ -205,6 +205,91 @@ function handleRelayInvite(req, res) {
   });
 }
 
+// One answer for every way this can fail, and it says nothing.
+//
+// Wrong password, no window open, somebody else mid-handshake, the wait
+// expiring — all of it comes back as `not now`. A form that distinguished
+// them would answer questions nobody standing at it is entitled to ask:
+// "is this the right password but the wrong moment" is exactly what a
+// caller with the wrong password wants to know.
+//
+// The status is the queue's, so a rate limit still reads as 429; the
+// STRING never varies (DEVICE-CYCLE3.md).
+function deviceRefusal(res, status) {
+  res.writeHead(status || 403, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify({ error: 'not now' }));
+}
+
+// The browser's half. This request is HELD — the relay does not answer
+// until the personal node has taken the offer and replied, or the wait
+// runs out. Nothing here reads the password: it goes into RAM and the
+// node compares it (DEVICE-CYCLE2.md).
+function handleDeviceOffer(req, res) {
+  readJsonBody(req).then(function (body) {
+    return relay.deviceOffer(body && body.password, body && body.devicePublicKey);
+  }).then(function (result) {
+    if (!result || !result.ok) {
+      deviceRefusal(res, result && result.status);
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: true, devicePublicKey: result.devicePublicKey }));
+  }).catch(function () {
+    deviceRefusal(res, 403);
+  });
+}
+
+// The personal node's half, both ends gated by the owner's house key
+// inside relay.devicePending / relay.deviceAnswer.
+function handleDevicePending(req, res, url) {
+  const result = relay.devicePending(
+    url.searchParams.get('name') || '',
+    url.searchParams.get('sig') || ''
+  );
+  if (result && result.ok === false) {
+    deviceRefusal(res, result.status);
+    return;
+  }
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(result || {}));
+}
+
+function handleSetDevice(req, res) {
+  readJsonBody(req).then(function (body) {
+    const result = relay.setDevice(
+      body && body.name,
+      body && body.devicePublicKey,
+      body && body.sig
+    );
+    if (!result || !result.ok) {
+      deviceRefusal(res, result && result.status);
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: true }));
+  }).catch(function () {
+    deviceRefusal(res, 403);
+  });
+}
+
+function handleDeviceAnswer(req, res) {
+  readJsonBody(req).then(function (body) {
+    const result = relay.deviceAnswer(
+      body && body.name,
+      body && body.accepted,
+      body && body.sig
+    );
+    if (!result || !result.ok) {
+      deviceRefusal(res, result && result.status);
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: true }));
+  }).catch(function () {
+    deviceRefusal(res, 403);
+  });
+}
+
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
     const result = relay.claim(
@@ -544,7 +629,17 @@ function isRelayPublicPath(method, pathname) {
   if (pathname === '/' || pathname === '/index.html' || pathname === '/relay.html' || pathname === '/favicon.svg') {
     return method === 'GET';
   }
+  // The enroll page. Unlisted rather than hidden: nothing links to it,
+  // the brochure does not mention it, and it carries noindex — but it is
+  // reachable by anyone who types it, exactly like every other route
+  // here. What protects it is the password and the window, not obscurity.
+  if (method === 'GET' && (pathname === '/device' || pathname === '/device.html')) return true;
   if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox' || pathname === '/api/relay/status')) return true;
+  // Public in the same sense the rest is: reachable from the internet,
+  // and gated inside relay.js. device-pending answers the owner's house
+  // signature and nobody else's.
+  if (method === 'GET' && pathname === '/api/relay/device-pending') return true;
+  if (method === 'POST' && (pathname === '/api/relay/device' || pathname === '/api/relay/set-device' || pathname === '/api/relay/device-answer')) return true;
   // /api/relay/invite is public in the same sense claim and send are:
   // reachable from the internet, and gated by the owner's signature
   // inside relay.mint rather than by who can reach the socket.
@@ -628,6 +723,21 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/api/relay/device-pending') {
+    handleDevicePending(req, res, url);
+    return;
+  }
+
+  // The address a human types on a phone should not have a file
+  // extension in it. Relay-only: a personal node has no mailbox for a
+  // handheld to enroll against, so it has no enroll page — the file is
+  // still reachable at /device.html over loopback, because fsPath would
+  // serve it anyway and pretending otherwise would be theatre.
+  if (relayMode && req.method === 'GET' && pathname === '/device') {
+    sendFile(res, path.join(ROOT_DIR, 'device.html'));
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/hub/status') {
     hub.handleStatus(req, res, url);
     return;
@@ -635,6 +745,15 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && pathname === '/api/hub/who') {
     hub.handleWho(req, res);
+    return;
+  }
+
+  // The door password, and whether the window is open. Loopback only,
+  // like every /api/hub route — the gate is the one at the top of this
+  // handler, and it is why the password can be answered in the clear to
+  // a page on this machine and nowhere else.
+  if (req.method === 'GET' && pathname === '/api/hub/device') {
+    hub.handleDevice(req, res);
     return;
   }
 
@@ -779,8 +898,28 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    if (pathname === '/api/relay/device') {
+      handleDeviceOffer(req, res);
+      return;
+    }
+
+    if (pathname === '/api/relay/set-device') {
+      handleSetDevice(req, res);
+      return;
+    }
+
+    if (pathname === '/api/relay/device-answer') {
+      handleDeviceAnswer(req, res);
+      return;
+    }
+
     if (pathname === '/api/hub/invite') {
       hub.handleInvite(req, res, readJsonBody);
+      return;
+    }
+
+    if (pathname === '/api/hub/device-listen') {
+      hub.handleDeviceListen(req, res, readJsonBody);
       return;
     }
 

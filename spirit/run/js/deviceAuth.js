@@ -1,13 +1,22 @@
 'use strict';
 
 // spirit/run/js/deviceAuth.js
-// Personal node only. Password + the one device public key.
-// Never written on a --relay. Never put in mailbox.json.
+// device.json is PERSONAL NODE ONLY — the password lives there and
+// nowhere else. It is never written on a --relay and never put in
+// mailbox.json.
 //
-// allow.json on a mailbox is a different file. This module only:
-//   - mints / stores the door password
-//   - remembers the current device public key locally
-//   - names the bytes the house key must sign to install that device
+// The MODULE is loaded on a relay too, for the two pure functions a
+// mailbox needs: keysForName (is this key the owner's?) and the message
+// bytes a signature is made over. Those carry no secret. The distinction
+// matters because "personal node only" read as a claim about the module
+// would make the relay's own require() look like a mistake.
+//
+// So this module:
+//   - mints / stores the door password            (personal node)
+//   - remembers the current device public key     (personal node)
+//   - remembers whether the window is open        (personal node)
+//   - names the bytes the house key must sign     (both)
+//   - answers which keys are one name's           (both)
 //
 // Key encoding matches relayAuth.generateIdentity (SPKI / PKCS8 base64).
 
@@ -22,7 +31,7 @@ function devicePath(rootDir) {
 }
 
 function emptyDoc() {
-  return { password: null, devicePublicKey: null };
+  return { password: null, devicePublicKey: null, listening: false };
 }
 
 function load(rootDir) {
@@ -33,7 +42,11 @@ function load(rootDir) {
       password: typeof parsed.password === 'string' ? parsed.password : null,
       devicePublicKey: typeof parsed.devicePublicKey === 'string'
         ? parsed.devicePublicKey
-        : null
+        : null,
+      // Closed unless the file says otherwise. An older device.json has
+      // no such field, and a window that defaulted open would be one
+      // nobody remembered opening.
+      listening: parsed.listening === true
     };
   } catch (e) {
     return emptyDoc();
@@ -46,7 +59,8 @@ function save(rootDir, doc) {
   var tmp = file + '.tmp';
   var body = {
     password: doc && doc.password ? doc.password : null,
-    devicePublicKey: doc && doc.devicePublicKey ? doc.devicePublicKey : null
+    devicePublicKey: doc && doc.devicePublicKey ? doc.devicePublicKey : null,
+    listening: !!(doc && doc.listening)
   };
   fs.writeFileSync(tmp, JSON.stringify(body, null, 2));
   fs.renameSync(tmp, file);
@@ -81,10 +95,32 @@ function passwordsEqual(stored, given) {
   }
 }
 
+// The window. Closed, the password is inert: nothing on the personal
+// node is asking any mailbox what is waiting, so a stolen password buys
+// a held POST that expires unanswered.
+function setListening(rootDir, on) {
+  var doc = ensurePassword(rootDir);
+  doc.listening = !!on;
+  save(rootDir, doc);
+  return load(rootDir);
+}
+
 // House key signs this to install a device on a mailbox. A status
 // signature must not verify as this message.
 function setDeviceMessage(devicePublicKey) {
   return 'set-device\n' + String(devicePublicKey || '');
+}
+
+// House key signs this to ask a mailbox what is waiting, and to answer
+// it. Its own bytes for the same reason set-device has its own: the
+// owner signs `status` constantly, for every census, and a captured one
+// must not be replayable as "hand me the pending device request".
+//
+// Reading the slot is as much a capability as writing to it — what it
+// returns is a password somebody is trying, and that is not a thing to
+// hand to whoever asks.
+function deviceTakeMessage(name) {
+  return 'device-take\n' + String(name || '');
 }
 
 // allow.byName stays the owner string. Extra device key is sibling field.
@@ -116,8 +152,10 @@ module.exports = {
   generatePassword: generatePassword,
   ensurePassword: ensurePassword,
   setDevicePublicKey: setDevicePublicKey,
+  setListening: setListening,
   passwordsEqual: passwordsEqual,
   setDeviceMessage: setDeviceMessage,
+  deviceTakeMessage: deviceTakeMessage,
   keysForName: keysForName,
   parseKeyRow: parseKeyRow
 };

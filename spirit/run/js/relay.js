@@ -659,6 +659,44 @@ function createRelay(rootDir) {
     return { ok: true, status: 200 };
   }
 
+  // What is waiting, and the answer to it. Both are the owner's, proved
+  // with the HOUSE key and never with the device key: the slot holds a
+  // password somebody is trying, so answering a device key would let a
+  // borrowed phone read the credential that installs its successor.
+  //
+  // deviceTakeMessage has its own bytes for the same reason set-device
+  // does — the owner signs `status` for every census, and a captured one
+  // must not be replayable as "hand me what is pending".
+  function deviceGate(name, sig) {
+    var n = normalizeName(name);
+    var owner = auth.ownerName(allow);
+    if (!n || !owner || n !== owner) {
+      return { ok: false, status: 403, error: 'not the owner' };
+    }
+    var house = allow.byName && allow.byName[n];
+    if (!house) return { ok: false, status: 403, error: 'not the owner' };
+    if (!sig || !auth.verify(house, deviceAuth.deviceTakeMessage(n), sig)) {
+      return { ok: false, status: 403, error: 'bad device-take signature' };
+    }
+    return { ok: true };
+  }
+
+  function devicePending(name, sig) {
+    var gate = deviceGate(name, sig);
+    if (!gate.ok) return gate;
+    // An empty object, not a refusal. "Nobody is waiting" is the ordinary
+    // answer to a poll that runs every two seconds while the window is
+    // open, and a 403 there would make the quiet case indistinguishable
+    // from a credential that has stopped working.
+    return deviceQueue.take() || {};
+  }
+
+  function deviceAnswer(name, accepted, sig) {
+    var gate = deviceGate(name, sig);
+    if (!gate.ok) return gate;
+    return deviceQueue.reply(!!accepted);
+  }
+
   return {
     claim: claim,
     who: who,
@@ -675,6 +713,12 @@ function createRelay(rootDir) {
     deviceOffer: deviceQueue.offer,
     deviceTake: deviceQueue.take,
     deviceReply: deviceQueue.reply,
+    // The same two ends, behind the owner's signature — this is what a
+    // route may call. deviceTake / deviceReply above are in-process and
+    // ungated, and stay that way for the tests that drive the queue
+    // directly.
+    devicePending: devicePending,
+    deviceAnswer: deviceAnswer,
   };
 }
 

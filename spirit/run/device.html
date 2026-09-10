@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>SpiritOS — add this device</title>
+  <style>
+    body { font: 16px/1.4 system-ui, sans-serif; max-width: 28rem; margin: 2rem auto; padding: 0 1rem; }
+    form { display: flex; flex-direction: column; gap: 0.75rem; }
+    input[type="password"] { font: inherit; padding: 0.5rem; }
+    button { font: inherit; padding: 0.5rem 0.75rem; width: fit-content; }
+    #out { margin-top: 1rem; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Add this device</h1>
+  <p>Owner only. Works only while the listening window is open on the personal node.</p>
+  <form id="f" autocomplete="on">
+    <label>Password
+      <input id="pw" type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit">Add this device</button>
+  </form>
+  <p id="out"></p>
+  <script>
+    (function () {
+      var out = document.getElementById('out');
+      function say(t) { out.textContent = t; }
+
+      function b64(buf) {
+        var u = new Uint8Array(buf);
+        var s = '';
+        for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+        return btoa(s);
+      }
+
+      async function devicePublicKey() {
+        if (!crypto.subtle || typeof crypto.subtle.generateKey !== 'function') {
+          throw new Error('this browser cannot sign');
+        }
+        var pair = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
+        var spki = await crypto.subtle.exportKey('spki', pair.publicKey);
+        var pkcs8 = await crypto.subtle.exportKey('pkcs8', pair.privateKey);
+        var pub = b64(spki);
+        var priv = b64(pkcs8);
+        try {
+          sessionStorage.setItem('spirit-device-public', pub);
+          sessionStorage.setItem('spirit-device-private', priv);
+        } catch (e) {}
+        return pub;
+      }
+
+      document.getElementById('f').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        say('waiting…');
+        devicePublicKey().then(function (devicePublicKey) {
+          return fetch('/api/relay/device', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              password: document.getElementById('pw').value,
+              devicePublicKey: devicePublicKey
+            })
+          });
+        }).then(function (res) {
+          return res.text().then(function (t) {
+            var body = t;
+            try { body = JSON.parse(t); } catch (e) {}
+            if (res.ok && body && body.ok) say('this tab is the device');
+            else say((body && body.error) || 'not now');
+          });
+        }).catch(function (e) {
+          say(e && e.message ? e.message : 'not now');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
