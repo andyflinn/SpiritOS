@@ -232,8 +232,21 @@ function handleDeviceOffer(req, res) {
       deviceRefusal(res, result && result.status);
       return;
     }
+    // The owner's label goes back with the yes, because from here the
+    // page has to sign as somebody: every line it sends is
+    // `send\n<from>\nrelay\n<text>`, and `from` is this mailbox's owner.
+    //
+    // Nothing is given away by saying it. The label is already public —
+    // /api/relay/who hands the whole peer list, names and keys, to anyone
+    // who asks — and this answer only ever follows a password the node
+    // itself accepted. An empty name simply leaves the page unable to
+    // sign, which is the honest outcome for a mailbox with no owner.
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: true, devicePublicKey: result.devicePublicKey }));
+    res.end(JSON.stringify({
+      ok: true,
+      devicePublicKey: result.devicePublicKey,
+      name: (relay.snapshot() || {}).owner || '',
+    }));
   }).catch(function () {
     deviceRefusal(res, 403);
   });

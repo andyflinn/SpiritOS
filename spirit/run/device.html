@@ -4,40 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>SpiritOS — add this device</title>
+  <title>SpiritOS — this device</title>
   <style>
     body { font: 16px/1.4 system-ui, sans-serif; max-width: 28rem; margin: 2rem auto; padding: 0 1rem; }
-    form { display: flex; flex-direction: column; gap: 0.75rem; }
-    input[type="password"], input[type="text"] { font: inherit; padding: 0.5rem; }
+    form, #console { display: flex; flex-direction: column; gap: 0.75rem; }
+    input, textarea { font: inherit; padding: 0.5rem; width: 100%; box-sizing: border-box; }
+    button { font: inherit; padding: 0.5rem 0.75rem; width: fit-content; }
+    #log { white-space: pre-wrap; min-height: 8rem; border: 1px solid #ccc; padding: 0.5rem; }
+    .hide { display: none !important; }
     /* Stated, not asked: it reads as the fact it is rather than a field
        somebody is meant to fill in. */
     input[readonly] { background: #f2f2f2; color: #555; border-style: dotted; }
-    button { font: inherit; padding: 0.5rem 0.75rem; width: fit-content; }
-    #out { margin-top: 1rem; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <h1>Add this device</h1>
-  <p>Owner only. Adding a device to <strong id="host">this node</strong>.
-     Works only while the listening window is open on the personal node.</p>
-  <form id="f" autocomplete="on">
+  <h1>This device</h1>
+
+  <form id="enroll" autocomplete="on">
+    <p>Owner only. Adding a device to <strong id="host">this node</strong>.
+       Works only while listening is on at the personal node.</p>
     <!--
-      A password field with no username beside it is one Chrome saves
-      unreliably and offers back even less reliably. Remembering it IS the
-      distribution plan — copied once on the desktop, synced to the phone,
-      never typed — so a form the password manager half-understands breaks
-      the design rather than merely warning about it.
+      Restored after the cycle-5 drop replaced this page (df891bf).
+      Chrome saves a lone password field unreliably and offers it back
+      less reliably still — and remembering it IS how the password gets
+      to the other device, copied once and synced, never typed.
 
-      A CONSTANT, and deliberately not the hostname. Chrome keys saved
-      passwords by origin already, so the host says nothing a saved entry
-      does not know — and on a domain that has collected a dozen other
-      logins it leaves this one indistinguishable from the rest in the
-      picker (Andy: "difficult to select from 13 usernames"). One
-      distinctive word makes it the obvious row.
-
-      Readonly, so it states a fact and cannot become a second thing to
-      get wrong. Which node this is now sits in the sentence above, where
-      it reads as information rather than as a field to fill in.
+      A CONSTANT, deliberately not the hostname: Chrome keys by origin
+      already, so the host adds nothing a saved entry does not know, and
+      on a domain carrying a dozen other logins it left this one
+      indistinguishable in the picker (Andy: "difficult to select from 13
+      usernames"). Which node it is belongs in the sentence above, where
+      it reads as information rather than a field to fill in.
     -->
     <label>Account
       <input id="user" type="text" name="username" autocomplete="username"
@@ -47,18 +44,33 @@
       <input id="pw" type="password" name="password" autocomplete="current-password" required>
     </label>
     <button type="submit">Add this device</button>
+    <p id="enroll-out"></p>
   </form>
-  <p id="out"></p>
+
+  <div id="console" class="hide">
+    <p id="who"></p>
+    <textarea id="line" rows="3" placeholder="help"></textarea>
+    <button type="button" id="go">Send to relay</button>
+    <div id="log"></div>
+  </div>
+
   <script>
     (function () {
-      var out = document.getElementById('out');
-      function say(t) { out.textContent = t; }
+      var enroll = document.getElementById('enroll');
+      var enrollOut = document.getElementById('enroll-out');
+      var consoleEl = document.getElementById('console');
+      var whoEl = document.getElementById('who');
+      var lineEl = document.getElementById('line');
+      var logEl = document.getElementById('log');
 
       // Whatever host actually served this page. Not baked in: the same
-      // file is served by every relay its owner runs, and a hardcoded
-      // name would be wrong on all but one of them. In the sentence
-      // rather than in the username field — see the comment on the form.
+      // file is served by every relay its owner runs.
       document.getElementById('host').textContent = location.host;
+
+      function sayEnroll(t) { enrollOut.textContent = t; }
+      function sayLog(t) {
+        logEl.textContent = (logEl.textContent ? logEl.textContent + '\n' : '') + t;
+      }
 
       function b64(buf) {
         var u = new Uint8Array(buf);
@@ -67,43 +79,134 @@
         return btoa(s);
       }
 
-      async function devicePublicKey() {
+      function fromB64(s) {
+        var bin = atob(s);
+        var u = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        return u.buffer;
+      }
+
+      function store(pub, priv, name) {
+        try {
+          sessionStorage.setItem('spirit-device-public', pub);
+          sessionStorage.setItem('spirit-device-private', priv);
+          if (name) sessionStorage.setItem('spirit-device-name', name);
+        } catch (e) {}
+      }
+
+      function loadStore() {
+        try {
+          return {
+            pub: sessionStorage.getItem('spirit-device-public'),
+            priv: sessionStorage.getItem('spirit-device-private'),
+            name: sessionStorage.getItem('spirit-device-name')
+          };
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function showConsole(name) {
+        enroll.classList.add('hide');
+        consoleEl.classList.remove('hide');
+        whoEl.textContent = name ? ('signed in as ' + name) : 'signed in';
+      }
+
+      async function devicePair() {
         if (!crypto.subtle || typeof crypto.subtle.generateKey !== 'function') {
           throw new Error('this browser cannot sign');
         }
         var pair = await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify']);
         var spki = await crypto.subtle.exportKey('spki', pair.publicKey);
         var pkcs8 = await crypto.subtle.exportKey('pkcs8', pair.privateKey);
-        var pub = b64(spki);
-        var priv = b64(pkcs8);
-        try {
-          sessionStorage.setItem('spirit-device-public', pub);
-          sessionStorage.setItem('spirit-device-private', priv);
-        } catch (e) {}
-        return pub;
+        return { pub: b64(spki), priv: b64(pkcs8) };
       }
 
-      document.getElementById('f').addEventListener('submit', function (ev) {
+      async function signLine(privB64, message) {
+        var key = await crypto.subtle.importKey(
+          'pkcs8',
+          fromB64(privB64),
+          { name: 'Ed25519' },
+          false,
+          ['sign']
+        );
+        var bytes = new TextEncoder().encode(message);
+        var sig = await crypto.subtle.sign({ name: 'Ed25519' }, key, bytes);
+        return b64(sig);
+      }
+
+      function sendMessage(from, to, text) {
+        return 'send\n' + from + '\n' + to + '\n' + text;
+      }
+
+      enroll.addEventListener('submit', function (ev) {
         ev.preventDefault();
-        say('waiting…');
-        devicePublicKey().then(function (devicePublicKey) {
+        sayEnroll('waiting…');
+        var pair;
+        devicePair().then(function (p) {
+          pair = p;
+          store(p.pub, p.priv, null);
           return fetch('/api/relay/device', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               password: document.getElementById('pw').value,
-              devicePublicKey: devicePublicKey
+              devicePublicKey: p.pub
             })
           });
         }).then(function (res) {
           return res.text().then(function (t) {
             var body = t;
             try { body = JSON.parse(t); } catch (e) {}
-            if (res.ok && body && body.ok) say('this tab is the device');
-            else say((body && body.error) || 'not now');
+            if (res.ok && body && body.ok) {
+              var name = body.name || '';
+              store(pair.pub, pair.priv, name);
+              showConsole(name);
+              sayLog('this tab is the device');
+            } else {
+              sayEnroll((body && body.error) || 'not now');
+            }
           });
         }).catch(function (e) {
-          say(e && e.message ? e.message : 'not now');
+          sayEnroll(e && e.message ? e.message : 'not now');
+        });
+      });
+
+      document.getElementById('go').addEventListener('click', function () {
+        var st = loadStore();
+        var text = lineEl.value || '';
+        if (!st.priv || !st.name) {
+          sayLog('not now');
+          return;
+        }
+        if (!text.trim()) return;
+        var msg = sendMessage(st.name, 'relay', text);
+        signLine(st.priv, msg).then(function (sig) {
+          return fetch('/api/relay/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: st.name,
+              to: 'relay',
+              text: text,
+              sig: sig
+            })
+          });
+        }).then(function (res) {
+          return res.text().then(function (t) {
+            var body = t;
+            try { body = JSON.parse(t); } catch (e) {}
+            if (res.ok && body && body.consoleReply && body.consoleReply.text) {
+              sayLog('> ' + text + '\n' + body.consoleReply.text);
+            } else if (res.ok) {
+              sayLog('> ' + text);
+            } else {
+              sayLog((body && body.error) || 'not now');
+            }
+            lineEl.value = '';
+          });
+        }).catch(function (e) {
+          sayLog(e && e.message ? e.message : 'not now');
         });
       });
     })();
