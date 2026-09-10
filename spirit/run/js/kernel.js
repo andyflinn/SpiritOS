@@ -979,7 +979,7 @@ const ICON = spirit.core.const.ICON = {
     CODE: '💻',
     BUG: '🐛',
     IDEA: '💡',
-    UDLOAD: '⬆️',
+    UPLOAD: '⬆️',
     DOWNLOAD: '⬇️',
     EGGPLANT: '🍆',
     VICTORY: '✌️',
