@@ -2,12 +2,17 @@
 
 // Shared by relay.js (verify) and hub.js (sign). Node crypto only.
 // Files live on that process's spirit/run home, never in git:
-//   relay-state/allow.json     { "names": [...] }  OR  { "keys": [{ "name", "publicKey" }] }
+//   relay-state/allow.json     { "names": [...] }  OR  { "keys": [{ "name", "publicKey", "devicePublicKey"? }] }
 //   relay-state/identity.json  { "name", "publicKey", "privateKey" }
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+// The device slot's shape and the one parser for an allow row. deviceAuth
+// requires nothing from here, so this is a one-way edge: the module that
+// owns the personal node's password also owns how a device key is spelled
+// in a mailbox's allow list, and there is one answer to that question.
+const deviceAuth = require('./deviceAuth');
 
 const RESERVED_NAME = 'relay';
 
@@ -133,10 +138,20 @@ function loadAllow(rootDir) {
     const parsed = JSON.parse(raw);
     if (parsed && Array.isArray(parsed.keys) && parsed.keys.length) {
       const byName = Object.create(null);
-      parsed.keys.forEach(function (row) {
-        if (row && row.name && row.publicKey) byName[row.name] = row.publicKey;
+      // The device slot rides alongside rather than inside byName, which
+      // stays the HOUSE key string and nothing else. Every existing
+      // reader — firstOwner's reclaim test, mint, ownerName — asks it
+      // "which key is this name's" and would get a different kind of
+      // answer if it became a list. The keys branch below is where "or
+      // the device" is spelled out, once, deliberately.
+      const deviceByName = Object.create(null);
+      parsed.keys.forEach(function (raw) {
+        const row = deviceAuth.parseKeyRow(raw);
+        if (!row) return;
+        byName[row.name] = row.publicKey;
+        deviceByName[row.name] = row.devicePublicKey;
       });
-      return { mode: 'keys', byName: byName };
+      return { mode: 'keys', byName: byName, deviceByName: deviceByName };
     }
     if (parsed && Array.isArray(parsed.names)) {
       return { mode: 'names', names: parsed.names };
@@ -145,10 +160,21 @@ function loadAllow(rootDir) {
   return { mode: 'open' };
 }
 
+// A row carries devicePublicKey only when there is one. Writing `null`
+// would be a different file for the same fact, and the reclaim path
+// (becomeOwner) hands over a house key alone — an empty slot it invented
+// on the way past is a slot nobody asked for.
 function writeAllowKeys(rootDir, keys) {
   const dir = path.join(rootDir, 'relay-state');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: keys }, null, 2));
+  const rows = (keys || []).map(function (raw) {
+    const row = deviceAuth.parseKeyRow(raw);
+    if (!row) return null;
+    const out = { name: row.name, publicKey: row.publicKey };
+    if (row.devicePublicKey) out.devicePublicKey = row.devicePublicKey;
+    return out;
+  }).filter(Boolean);
+  fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: rows }, null, 2));
 }
 
 function loadIdentity(rootDir) {
@@ -202,11 +228,28 @@ function checkSend(allow, from, sig, to, text) {
     }
     return { ok: true };
   }
-  const pub = allow.byName[from];
-  if (!pub) return { ok: false, status: 403, error: 'from not allowed' };
-  if (!sig || !verify(pub, sendMessage(from, to, text), sig)) {
-    return { ok: false, status: 403, error: 'bad send signature' };
-  }
+  // Either key is this name. A device is Andy on a handheld, not a second
+  // party: it gets no peer row and claims no label, because two rows
+  // wearing one label make resolveParty ambiguous and the owner's own
+  // inbox stops answering (DEVICE-CYCLE1.md, and the walk-through in
+  // design/reviews/2026-09-10-owner-devices.md §4). So the second key
+  // lives on the owner RECORD, and every gate that asked "is this the
+  // owner's signature" now asks it of both strings.
+  //
+  // There is no lesser rung to put a device on. allow.json in keys mode
+  // is the owner record — ownerName() is its first name, and nothing else
+  // is ever written to it — so a device key is a full copy of the owner's
+  // authority on this box. That is the decision, not an oversight.
+  //
+  // keysForName puts the house key first, so the ordinary case still
+  // proves on the first try and the device costs a verify only when the
+  // house key was not the signer.
+  const sendKeys = deviceAuth.keysForName(allow, from);
+  if (!sendKeys.length) return { ok: false, status: 403, error: 'from not allowed' };
+  const sendProved = !!sig && sendKeys.some(function (pub) {
+    return verify(pub, sendMessage(from, to, text), sig);
+  });
+  if (!sendProved) return { ok: false, status: 403, error: 'bad send signature' };
   return { ok: true };
 }
 
@@ -235,12 +278,17 @@ function checkInbox(allow, name, sig, atMs) {
   // never asked for a signature and still does not. The window is a
   // property of the proof, not of the route.
   if (allow.mode === 'open' || allow.mode === 'names') return { ok: true };
-  const pub = allow.byName[name];
-  if (!pub) return { ok: false, status: 403, error: 'name not allowed' };
+  // Either key, as in checkSend. Kept as a predicate over the keys rather
+  // than one message verified once, because a read is proved differently
+  // from a send: inboxSignatureOk carries a time window that verify()
+  // knows nothing about.
+  const inboxKeys = deviceAuth.keysForName(allow, name);
+  if (!inboxKeys.length) return { ok: false, status: 403, error: 'name not allowed' };
   if (!sig) return { ok: false, status: 403, error: 'inbox signature required' };
-  if (!inboxSignatureOk(pub, name, sig, atMs)) {
-    return { ok: false, status: 403, error: 'bad inbox signature' };
-  }
+  const inboxProved = inboxKeys.some(function (pub) {
+    return inboxSignatureOk(pub, name, sig, atMs);
+  });
+  if (!inboxProved) return { ok: false, status: 403, error: 'bad inbox signature' };
   return { ok: true };
 }
 
@@ -248,11 +296,16 @@ function checkOwner(allow, name, sig) {
   if (allow.mode !== 'keys') {
     return { ok: false, status: 403, error: 'no owner key on this relay' };
   }
-  const pub = allow.byName[name];
-  if (!pub) return { ok: false, status: 403, error: 'not the owner' };
-  if (!sig || !verify(pub, statusMessage(name), sig)) {
-    return { ok: false, status: 403, error: 'bad status signature' };
-  }
+  // Either key, as in checkSend — this is the gate that makes a handheld
+  // useful at all: the census, minting and the console all come through
+  // here, and being the owner from a hotel room is the whole point of the
+  // device slot.
+  const ownerKeys = deviceAuth.keysForName(allow, name);
+  if (!ownerKeys.length) return { ok: false, status: 403, error: 'not the owner' };
+  const ownerProved = !!sig && ownerKeys.some(function (pub) {
+    return verify(pub, statusMessage(name), sig);
+  });
+  if (!ownerProved) return { ok: false, status: 403, error: 'bad status signature' };
   return { ok: true };
 }
 
