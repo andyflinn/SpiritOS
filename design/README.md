@@ -13,6 +13,11 @@ This directory contains the vision, principles, and architecture decisions for *
 - Dated Architecture Decision Records — why a specific technical choice was made, not
   just what it is. See [decisions/](decisions/).
 
+## Relay
+- [Peer Devices](relay/PEER-DEVICES.md) — every identity attaching its own
+  browsers. Designed, not built; the owner-only version shipped as device
+  cycles 1–5.
+
 ## Reviews
 - Periodic point-in-time assessments of status against vision. See [reviews/](reviews/).
 

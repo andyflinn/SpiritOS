@@ -14,6 +14,37 @@ You work **in the checkout**. That is the point: in-file fixes, the test harness
 
 Then run the harness. Paste the last lines. Green means stop.
 
+## Co-design (the other cycle — it produces a document, not a patch)
+
+Andy also opens work the other way round: a **sketch in the repo root**, plain
+English, vision first. "I call a secret a password" is the register, and it is
+deliberate — an intention with no mechanism attached can still be argued from
+what the code actually does. **That root file is scaffolding. Andy deletes it
+once the thinking has moved.** Do not link to it or depend on it surviving.
+
+1. **Check every premise against the tree before answering.** The value is not
+   opinion, it is that each claim carries a file and a line, and the document
+   says which commit it was verified at. "One row in `allow.json`,
+   `ownerName()` is `Object.keys(byName)[0]`" is costable; "the allow list is
+   small" is not.
+2. **Corrections run both ways.** Say plainly when a premise is wrong, and
+   accept it as plainly when yours is. When something is overturned, **mark the
+   supersession in place** — *"this corrects an earlier note"* — rather than
+   silently editing. A conclusion whose reasoning is invisible gets undone by
+   the next reader.
+3. **Do not build.** No patch, no test, no cycle. Feasibility and shape only,
+   until a packet says otherwise.
+4. **The durable result lands under `design/`** — `design/<area>/<NAME>.md`,
+   linked from `design/README.md`. Brief, no transcript of the back-and-forth:
+   vision, feasibility, proposed shape, **decided / recommended / open kept
+   apart**, so a third party can act without re-deriving it.
+5. **"Or not" is a real outcome.** Say what waiting costs. Usually nothing —
+   and Andy cancels features once the cost is visible, which is the process
+   working, not a wasted sitting.
+
+Attribution in these documents marks **authority, not authorship**: name a
+decision so a later session does not relitigate it, and nothing else.
+
 ## You are faster at
 
 - Patches inside existing files
