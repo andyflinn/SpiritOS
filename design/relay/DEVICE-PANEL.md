@@ -136,25 +136,81 @@ have us; usually a version mismatch) and `unreachable`.
 **Add a third bubble state: just succeeded.** It is also the right place for
 the bookmark advice, which lands better once the thing has worked.
 
-## 7. Open — to be settled next
+## 7. The rule that settles the rest
 
-**The visibility rule fights the roaming premise.** The panel is meant to stop
-listening when it is "exited and/or becomes invisible", *and* to stay listening
-while its owner walks around with a phone. Those cannot both hold — a screen
-lock or a tab switch ends the second one.
+> **No routine failure should require being physically at home.**
 
-And a concrete flaw either way: the desktop flow is *press start → open the
-relay page in a new tab*, which makes the shell tab hidden **at the exact moment
-listening is needed**. If hidden ⇒ stop, the first paste always fails.
+The frustration this exists to prevent: being locked out of one's own node while
+away, with the only remedy a journey. Three things force that today, and only
+one of them is the listening window — the key lives in `sessionStorage` so a
+closed tab loses it; there is one slot so a hotel tablet displaces the phone;
+and the window is off by default and can only be opened locally.
 
-Also unresolved:
+Leaving the window open is a workaround for all three, and a poor one: it only
+helps if the need was predicted before leaving.
 
-- Whether an unattended open window is an acceptable posture. It is a
-  deliberate change from "open for thirty seconds", and the machine must stay
-  awake for it to mean anything — a sleeping host freezes the 2 s timer.
-- The link target: `Relay-URL/<key>/device/` is the **peer** form from
-  PEER-DEVICES.md and does not exist. Today it is `/device`.
+### Resolved
+
+**Visibility is a shell fact, not a browser fact.** Listening stops when the
+panel leaves the **shell** — the row collapses, Natter stops being the active
+app, the dialog closes. Never `document.visibilityState`, OS focus, or tab
+visibility. This also disposes of the flaw in the earlier draft for free:
+opening the relay page in another browser tab does not change the shell's state,
+so nothing stops at the moment listening is needed.
+
+**The node long-polls; it does not poll on a timer.** The relay holds
+`device-pending` open for ~25s and answers early when an offer lands. It already
+does exactly this for the browser's side of the handshake.
+
+| | 2s poll | 60s poll | long-poll |
+|---|---|---|---|
+| requests/min | 30 | 1 | **~2.4** |
+| enrolment latency | 2s | up to 60s | **instant** |
+
+Better on both axes, which is unusual enough to take. Per request the relay
+spends an allowlist check, a name compare, up to three Ed25519 verifies and a
+RAM read — about 0.3ms, negligible. The cost that would *not* have been
+negligible is TLS: a 2s poll without connection reuse is 1 800 handshakes an
+hour on a 1 GB box. `relayRequest` passes no agent, so it uses Node's global
+agent, which has kept connections alive since v19 — **worth measuring once
+rather than assuming**, since it is the whole difference between microscopic and
+not. Long-polling makes the question nearly moot either way.
+
+It also removes the fast/slow distinction: there is only one mode.
+
+**`listening` persists, is honoured at boot, and defaults on.** The flag is
+already in `device.json`; the node simply does not act on it at startup. A
+restart while its owner is away must not shut the door, and a door that is shut
+unless the need was predicted fails the rule above by construction. The switch
+stays, so it can be closed deliberately.
+
+**One roaming device per identity.** Not a limitation — the thing that keeps it
+simple: one field, one key, no device list, no pruning screen, and revocation is
+just enrolling somewhere else.
+
+### The security trade, stated plainly
+
+The old claim was *"a stolen password is inert unless the window is open."* It
+becomes *"a stolen password can enrol whenever the node is up."*
+
+What still holds: it is 128 hex characters; it never leaves the owner's machines
+except into their password manager; the relay cannot check it; and any use
+displaces the owner's device, so it is noticed. Cycle 4 removed the reason the
+window mattered most, by taking the poll's credential out of access logs.
+
+Worth it against a journey home.
+
+### Still open
+
+- **The copy affordance.** Binding the copy to *start* leaves it homeless once
+  listening defaults on — there is rarely a start to press. Deferred
+  deliberately: the UI is going to be worked over, and this is a complaint worth
+  raising when it actually bites rather than designing around now.
+- The link target is `/device` until the keyed form of PEER-DEVICES.md exists.
 - `target="_new"` is not a standard keyword; `_blank` with `rel="noopener"` is.
-- If this moves into `natterDetails` as a dialog: the shell does not tick
-  dialogs, so the 2 s poll must be the dialog's own timer. The upside is that
-  dialog-close is exactly one exit, which is where "stop listening" belongs.
+- If this becomes a dialog in `natterDetails`, dialog-close is exactly one exit,
+  which is where the shell-scoped stop belongs.
+- **`device-pending` has no rate limit.** A wrong name is refused before any
+  crypto, but a right name with a bad signature costs three verifies per
+  request — the one unlimited crypto path on the box. Small, and not this
+  panel's to fix.

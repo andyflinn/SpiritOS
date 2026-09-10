@@ -115,10 +115,24 @@ later visit.
 Ordering rule, worth stating in the UI: **teach the desktop first, then enrol
 the phone**, because one slot means the phone displaces the desktop.
 
+**One roaming device per identity.** Everyone gets one, and it is a feature
+rather than a limit: one field on the row, no device list, no pruning screen,
+and revocation is enrolling somewhere else.
+
 **Per-identity slots.** `deviceHandshake` has one `pending` and one 10/min
 bucket for the whole box. With members that must become one slot per identity —
 not only for contention, but because `devicePending` returns the password
 somebody is *trying*, and a shared slot would show it to every other member.
+
+**Each node long-polls its own slot.** The relay holds `device-pending` open for
+~25s rather than being polled on a timer: ~2.4 requests a minute per identity
+instead of 30, and enrolment lands instantly rather than within a poll interval.
+See [DEVICE-PANEL.md §7](DEVICE-PANEL.md) for the costing. One idle socket per
+identity, which a relay carries by the thousand.
+
+**Listening stays on.** The flag persists, is honoured at boot, and defaults on,
+because a person locked out of their own node while away must not need to travel
+home to fix it. That rule applies to every identity, not only the owner.
 
 **Per-identity gates.** `devicePending` / `deviceAnswer` currently verify the
 house key. They must verify the key that owns *that* identity, and never answer
@@ -151,7 +165,8 @@ Mechanically it is five modifications of things that already exist:
 2. `devicePending` / `deviceAnswer` gated per identity
 3. a slot and a rate bucket per identity
 4. `set-device` for a peer row, signed by that peer's key
-5. the enrolling peer's node needs "relays I hold a claim on", not `ownedUrls`
+5. the enrolling peer's node needs "relays I hold a claim on", not `ownedUrls` —
+   the badge currently answers a different question
 
 None of it is hard. All of it is surface, on the one box facing the internet.
 
