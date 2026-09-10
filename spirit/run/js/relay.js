@@ -5,6 +5,11 @@ const path = require('path');
 const auth = require('./relayAuth');
 const invites = require('./invites');
 const relayConsole = require('./relayConsole');
+// keysForName and the set-device bytes. The device slot's shape is one
+// module's answer whether it is read here or on the personal node
+// (DEVICE-CYCLE1.md).
+const deviceAuth = require('./deviceAuth');
+const deviceHandshake = require('./deviceHandshake');
 
 var MAX_MESSAGES = 200;
 var MAX_TEXT = 1024;
@@ -59,6 +64,16 @@ function createRelay(rootDir) {
   // Console messages are never stored, so they must not spend the ids
   // real mail is numbered with.
   var consoleSeq = 1;
+
+  // One in-RAM slot for a browser trying to become this owner's device.
+  // Nothing about it is persisted and nothing about it is checked here:
+  // the relay holds the POST body and hands it to the personal node,
+  // which owns the password and is the only thing that may compare it
+  // (DEVICE-CYCLE2.md). A mailbox that could check the password could
+  // also install a device without knowing one.
+  // Defaults, deliberately: the wait and the rate limit are the module's
+  // to state once. A test that needs a short wait builds its own queue.
+  var deviceQueue = deviceHandshake.createQueue();
 
   function persist() {
     saveMailbox(rootDir, peers, messages, nextId);
@@ -467,7 +482,24 @@ function createRelay(rootDir) {
       if (!namesSend.ok) return namesSend;
     } else if (allow.mode === 'keys') {
       if (src && src.peer && src.peer.publicKey) {
-        if (!sig || !auth.verify(src.peer.publicKey, auth.sendMessage(fTok, tTok, text), sig)) {
+        // The peer's own key, OR a device key standing for the same
+        // name. Both, not just the device list: keysForName only ever
+        // answers for the owner (allow.byName holds one row), so
+        // replacing this key with that list would have taken every
+        // ordinary peer's ability to send with it.
+        //
+        // A device is the owner on a handheld, so it signs as the owner
+        // and the owner's row is what it speaks for. The device key
+        // itself never reaches the wire — see fromKey below.
+        var sendKeys = [src.peer.publicKey].concat(
+          deviceAuth.keysForName(allow, fTok).filter(function (k) {
+            return k !== src.peer.publicKey;
+          })
+        );
+        var sendProved = !!sig && sendKeys.some(function (pub) {
+          return auth.verify(pub, auth.sendMessage(fTok, tTok, text), sig);
+        });
+        if (!sendProved) {
           return { ok: false, status: 403, error: 'bad send signature' };
         }
       } else {
@@ -512,7 +544,14 @@ function createRelay(rootDir) {
       messages = messages.slice(messages.length - MAX_MESSAGES);
     }
     persist();
-    return { ok: true, status: 201, message: msg };
+    // fromKey is lifted out of the message as well as sitting inside it:
+    // it is the answer to "whose line is this on the wire", and after the
+    // device slot that is a question with a wrong answer available. It is
+    // the HOUSE key whoever signed, because the peer row is what a line
+    // is sent from and a device has no row. So a handheld is invisible to
+    // everyone downstream — which is the point of a device being Andy
+    // rather than a second person.
+    return { ok: true, status: 201, message: msg, fromKey: msg.fromKey };
   }
 
   // `atMs` is the clock the signature window is measured against —
@@ -534,6 +573,27 @@ function createRelay(rootDir) {
     var gate = key
       ? auth.checkInboxKey(key, n, sig, atMs)
       : auth.checkInbox(allow, n, sig, atMs);
+    // Or this owner's device. Tried only after the peer row's own key has
+    // failed, so the ordinary read costs nothing extra and the common
+    // answer is unchanged.
+    //
+    // This is where cycle 1 stopped short: checkInbox learned about the
+    // device slot, but a keys-mode peer always HAS a key, so the branch
+    // that actually runs is checkInboxKey against the house key alone —
+    // and a phone could own the box without reading its mail.
+    //
+    // Nothing about the FILTER moves. The messages handed back are still
+    // the house row's, matched on its label and its key, because a device
+    // has no row and nothing is addressed to it. It is reading Andy's
+    // mail, not its own.
+    if (!gate.ok && key) {
+      var deviceKeys = deviceAuth.keysForName(allow, label).filter(function (k) {
+        return k !== key;
+      });
+      if (deviceKeys.some(function (pub) { return auth.checkInboxKey(pub, n, sig, atMs).ok; })) {
+        gate = { ok: true };
+      }
+    }
     if (!gate.ok) return gate;
     return {
       ok: true,
@@ -551,6 +611,54 @@ function createRelay(rootDir) {
     return { ok: true, status: 200, report: snapshot() };
   }
 
+  // Install (or replace) this owner's device key on the owner record.
+  //
+  // Signed by the HOUSE key, never by the current device: a device that
+  // could name its successor would only have to be borrowed once. The
+  // house key is the one thing that stays at home.
+  //
+  // The bytes are their own message (deviceAuth.setDeviceMessage), so a
+  // captured `status` signature — which the owner makes constantly, for
+  // every census — cannot be replayed as "install this key". That is
+  // asserted in deviceInbox.js rather than left to reading.
+  //
+  // No peer row is written and no label is claimed. A second row wearing
+  // `andy` would make resolveParty ambiguous and stop the owner's own
+  // inbox resolving at all (design/reviews/2026-09-10-owner-devices.md).
+  function setDevice(name, devicePublicKey, sig) {
+    var n = normalizeName(name);
+    var owner = auth.ownerName(allow);
+    if (!n || !owner || n !== owner) {
+      return { ok: false, status: 403, error: 'not the owner' };
+    }
+    if (typeof devicePublicKey !== 'string' || !devicePublicKey) {
+      return { ok: false, status: 400, error: 'devicePublicKey required' };
+    }
+    var house = allow.byName && allow.byName[n];
+    if (!house) return { ok: false, status: 403, error: 'not the owner' };
+    if (!sig || !auth.verify(house, deviceAuth.setDeviceMessage(devicePublicKey), sig)) {
+      return { ok: false, status: 403, error: 'bad set-device signature' };
+    }
+
+    // Every row rewritten, not just this one. In practice keys mode holds
+    // exactly one — becomeOwner writes one and nothing else has ever
+    // written this file — but allow.json is the file an operator edits by
+    // hand on the box when all else fails, and a verb that silently drops
+    // what it did not expect is a bad thing to point at a live VPS.
+    var rows = Object.keys(allow.byName).map(function (rowName) {
+      return {
+        name: rowName,
+        publicKey: allow.byName[rowName],
+        devicePublicKey: rowName === n
+          ? devicePublicKey
+          : (allow.deviceByName && allow.deviceByName[rowName]) || null,
+      };
+    });
+    auth.writeAllowKeys(rootDir, rows);
+    reloadAllow();
+    return { ok: true, status: 200 };
+  }
+
   return {
     claim: claim,
     who: who,
@@ -560,6 +668,13 @@ function createRelay(rootDir) {
     status: status,
     mint: mint,
     snapshot: snapshot,
+    setDevice: setDevice,
+    // The held POST, and the two ends the personal node works: what is
+    // waiting, and the answer. Nothing here reads the password — see the
+    // queue's comment where it is created.
+    deviceOffer: deviceQueue.offer,
+    deviceTake: deviceQueue.take,
+    deviceReply: deviceQueue.reply,
   };
 }
 
