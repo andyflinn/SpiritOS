@@ -8,7 +8,10 @@
   <style>
     body { font: 16px/1.4 system-ui, sans-serif; max-width: 28rem; margin: 2rem auto; padding: 0 1rem; }
     form { display: flex; flex-direction: column; gap: 0.75rem; }
-    input[type="password"] { font: inherit; padding: 0.5rem; }
+    input[type="password"], input[type="text"] { font: inherit; padding: 0.5rem; }
+    /* Stated, not asked: it reads as the fact it is rather than a field
+       somebody is meant to fill in. */
+    input[readonly] { background: #f2f2f2; color: #555; border-style: dotted; }
     button { font: inherit; padding: 0.5rem 0.75rem; width: fit-content; }
     #out { margin-top: 1rem; white-space: pre-wrap; }
   </style>
@@ -17,6 +20,24 @@
   <h1>Add this device</h1>
   <p>Owner only. Works only while the listening window is open on the personal node.</p>
   <form id="f" autocomplete="on">
+    <!--
+      The node this password belongs to, and the reason it is here at all:
+      a password field with no username beside it is one Chrome saves
+      unreliably and offers back even less reliably. Remembering it IS the
+      distribution plan — copied once on the desktop, synced to the phone,
+      never typed — so a form the password manager half-understands breaks
+      the design rather than merely warning about it.
+
+      Readonly and filled from the address bar, so it states a fact and
+      cannot become a second thing to get wrong. Visible rather than
+      hidden because it earns the line: it says WHICH mailbox this device
+      is being added to, which is the one question a person standing on a
+      phone cannot answer from a page that looks identical on every relay.
+    -->
+    <label>Node
+      <input id="host" type="text" name="username" autocomplete="username"
+             readonly tabindex="-1">
+    </label>
     <label>Password
       <input id="pw" type="password" name="password" autocomplete="current-password" required>
     </label>
@@ -27,6 +48,11 @@
     (function () {
       var out = document.getElementById('out');
       function say(t) { out.textContent = t; }
+
+      // Whatever host actually served this page. Not baked in: the same
+      // file is served by every relay its owner runs, and a hardcoded
+      // name would be wrong on all but one of them.
+      document.getElementById('host').value = location.host;
 
       function b64(buf) {
         var u = new Uint8Array(buf);
