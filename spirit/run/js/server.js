@@ -241,10 +241,32 @@ function handleDeviceOffer(req, res) {
 
 // The personal node's half, both ends gated by the owner's house key
 // inside relay.devicePending / relay.deviceAnswer.
+//
+// The proof must arrive as a HEADER. This route is polled every two
+// seconds for as long as a window is open, and a query string is written
+// to every access log the request passes through — so a signature there
+// is a read credential sitting in a log file, and what this one unlocks
+// is the pending {password, devicePublicKey}. That is the same rule the
+// inbox route already enforces, through the same function, which is why
+// it is reused rather than restated.
+//
+// A request that puts `sig` on the query is refused even when the header
+// is perfectly good: a signature that has been in a URL is already in a
+// log whatever happens next. `name` may stay on the query — it is the
+// mailbox being asked for, not the permission to read it.
+//
+// The refusal is `not now` like every other device answer. The inbox
+// route says something more specific because its caller is ours to fix;
+// this one is reachable from the internet and tells it nothing.
 function handleDevicePending(req, res, url) {
+  const from = createRelay.inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
+  if (!from.ok) {
+    deviceRefusal(res, from.status);
+    return;
+  }
   const result = relay.devicePending(
     url.searchParams.get('name') || '',
-    url.searchParams.get('sig') || ''
+    from.sig
   );
   if (result && result.ok === false) {
     deviceRefusal(res, result.status);

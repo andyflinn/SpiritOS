@@ -995,8 +995,14 @@ function createHub(rootDir) {
   // {status, text}. The adapter lives here because that module is
   // deliberately socket-free — its own header says so — which is what
   // lets a test drive the whole handshake with no network at all.
-  function deviceRequest(url, method, pathname, bodyObj) {
-    return relayRequest(url, method, pathname, bodyObj)
+  //
+  // The fifth argument is headers, and it is how the device-take proof
+  // travels: X-Spirit-Sig, never `sig` on the query, because this runs
+  // every two seconds while a window is open and a query string is
+  // written to every access log in the path. relayRequest already takes
+  // extra headers, so this is a pass-through and not a new mechanism.
+  function deviceRequest(url, method, pathname, bodyObj, headers) {
+    return relayRequest(url, method, pathname, bodyObj, headers)
       .then(function (r) {
         try { return JSON.parse(r.text); }
         catch (e) { return { ok: false }; }

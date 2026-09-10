@@ -2,16 +2,19 @@
 
 // spirit/run/js/deviceTick.js
 // Personal node. One pass over owned mailbox URLs while listening.
-// requestFn(url, method, path, body) must return a Promise of parsed JSON
-// or { ok:false }. No sockets in this file.
+// requestFn(url, method, path, body, headers) must return a Promise of
+// parsed JSON or { ok:false }. No sockets in this file.
 
 const deviceAuth = require('./deviceAuth');
 const relayAuth = require('./relayAuth');
 
-function takePath(name, sig) {
-  return '/api/relay/device-pending?name=' +
-    encodeURIComponent(name) +
-    '&sig=' + encodeURIComponent(sig);
+// `name` only. The proof rides in X-Spirit-Sig, because this path is
+// requested every two seconds while a window is open and a query string
+// lands in every access log on the way — where it would sit as a live
+// credential for the RAM slot. The relay refuses a query `sig` outright,
+// through the same function the inbox route uses.
+function takePath(name) {
+  return '/api/relay/device-pending?name=' + encodeURIComponent(name);
 }
 
 async function tick(rootDir, ownedUrls, requestFn) {
@@ -25,7 +28,7 @@ async function tick(rootDir, ownedUrls, requestFn) {
   var i;
   for (i = 0; i < urls.length; i++) {
     var url = urls[i];
-    var held = await requestFn(url, 'GET', takePath(id.name, sig), null);
+    var held = await requestFn(url, 'GET', takePath(id.name), null, { 'X-Spirit-Sig': sig });
     if (!held || !held.password || !held.devicePublicKey) continue;
     var accept = deviceAuth.passwordsEqual(doc.password, held.password);
     if (accept) {

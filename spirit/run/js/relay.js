@@ -667,6 +667,12 @@ function createRelay(rootDir) {
   // deviceTakeMessage has its own bytes for the same reason set-device
   // does — the owner signs `status` for every census, and a captured one
   // must not be replayable as "hand me what is pending".
+  //
+  // And it carries a minute now, checked ±1 the way an inbox read is: the
+  // proof travels in a header rather than the query (server.js reuses
+  // inboxSignatureFrom for that), and it dies on its own if it is written
+  // down anyway. Both halves are needed — the header keeps it out of the
+  // log, the minute makes the copy in yesterday's log worthless.
   function deviceGate(name, sig) {
     var n = normalizeName(name);
     var owner = auth.ownerName(allow);
@@ -675,7 +681,7 @@ function createRelay(rootDir) {
     }
     var house = allow.byName && allow.byName[n];
     if (!house) return { ok: false, status: 403, error: 'not the owner' };
-    if (!sig || !auth.verify(house, deviceAuth.deviceTakeMessage(n), sig)) {
+    if (!deviceAuth.deviceTakeSignatureOk(house, n, sig)) {
       return { ok: false, status: 403, error: 'bad device-take signature' };
     }
     return { ok: true };

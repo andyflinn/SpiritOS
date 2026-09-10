@@ -119,8 +119,37 @@ function setDeviceMessage(devicePublicKey) {
 // Reading the slot is as much a capability as writing to it — what it
 // returns is a password somebody is trying, and that is not a thing to
 // hand to whoever asks.
-function deviceTakeMessage(name) {
-  return 'device-take\n' + String(name || '');
+//
+// The minute is the same device relayAuth.inboxMessage uses, and it is
+// here for the same reason: a signature with no expiry is a standing
+// licence, and this one polls every two seconds while a window is open,
+// so it is written down over and over by whatever logs requests. Now a
+// captured one is worthless before anybody has finished reading the line
+// it landed in. `unix-minute`, decimal and unpadded.
+function deviceTakeMessage(name, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'device-take\n' + String(name || '') + '\n' + minute;
+}
+
+// Previous, current and next, exactly as inboxSignatureOk: enough for two
+// clocks a minute apart, in both directions, because the SIGNER may be
+// the one running fast.
+//
+// relayAuth is required HERE rather than at the top of the file. It
+// requires this module (for keysForName and parseKeyRow), and it assigns
+// module.exports at its end — so a top-level require from this side would
+// capture the half-built object and never see the finished one. Asked for
+// at call time, the cache hands back the complete module.
+function deviceTakeSignatureOk(publicKey, name, sig, atMs) {
+  if (!publicKey || !sig) return false;
+  var relayAuth = require('./relayAuth');
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (relayAuth.verify(publicKey, deviceTakeMessage(name, now + step * 60000), sig)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // allow.byName stays the owner string. Extra device key is sibling field.
@@ -156,6 +185,7 @@ module.exports = {
   passwordsEqual: passwordsEqual,
   setDeviceMessage: setDeviceMessage,
   deviceTakeMessage: deviceTakeMessage,
+  deviceTakeSignatureOk: deviceTakeSignatureOk,
   keysForName: keysForName,
   parseKeyRow: parseKeyRow
 };

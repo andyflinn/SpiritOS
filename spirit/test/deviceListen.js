@@ -47,9 +47,17 @@ async function run() {
 
   const offerP = box.deviceOffer(doc.password, phone.publicKey);
 
-  async function requestFn(url, method, pth, body) {
+  // The fifth argument is headers. The proof arrives there now, never on
+  // the path — so this stands in for the route by reading it off the
+  // header and handing it to the gated call, the way server.js does.
+  async function requestFn(url, method, pth, body, headers) {
     if (method === 'GET' && /device-pending/.test(pth)) {
-      const held = box.deviceTake();
+      if (/[?&]sig=/.test(pth)) {
+        test.fail('the tick put a signature on the query string');
+        return {};
+      }
+      const sig = (headers && (headers['X-Spirit-Sig'] || headers['x-spirit-sig'])) || '';
+      const held = box.devicePending('andy', sig);
       return held || {};
     }
     if (method === 'POST' && /set-device/.test(pth)) {
@@ -94,9 +102,10 @@ async function run() {
   const live = deviceAuth.load(wrongHome).password;
   const offerWrong = wrongBox.deviceOffer(live.split('').reverse().join(''), phone.publicKey);
 
-  async function rejectFn(url, method, pth, body) {
+  async function rejectFn(url, method, pth, body, headers) {
     if (method === 'GET' && /device-pending/.test(pth)) {
-      return wrongBox.deviceTake() || {};
+      const sig = (headers && (headers['X-Spirit-Sig'] || headers['x-spirit-sig'])) || '';
+      return wrongBox.devicePending('andy', sig) || {};
     }
     if (method === 'POST' && /set-device/.test(pth)) {
       test.fail('setDevice must not run on a wrong password');
