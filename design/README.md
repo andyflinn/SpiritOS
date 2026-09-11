@@ -12,6 +12,8 @@ This directory contains the vision, principles, and architecture decisions for *
 ## Decisions
 - Dated Architecture Decision Records — why a specific technical choice was made, not
   just what it is. See [decisions/](decisions/).
+- [0006 — Fast and true, not guaranteed](decisions/0006-fast-and-true-not-guaranteed.md)
+  — a relay delivers or refuses, and stores nothing. Changes what a relay *is*.
 
 ## Relay
 - [Peer Devices](relay/PEER-DEVICES.md) — every identity attaching its own
@@ -19,6 +21,8 @@ This directory contains the vision, principles, and architecture decisions for *
   cycles 1–5.
 - [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
   in Natter for attaching a browser. In design.
+- [The relay doorbell](relay/EVENT-STREAM.md) — one held connection per identity
+  instead of polling. An arc, justified by chat rather than by devices.
 
 ## Reviews
 - Periodic point-in-time assessments of status against vision. See [reviews/](reviews/).

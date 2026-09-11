@@ -8,8 +8,11 @@
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: left; }
     .row-actions button { margin-right: 0.25rem; }
-    #status { margin: 0.5rem 0 1rem; min-height: 1.2em; }
+    /* Below the table, and able to hold several lines: recycle-all
+       answers once per node and a one-line box would show only the last. */
+    #status { margin: 1rem 0 0; min-height: 1.2em; white-space: pre-wrap; font-family: monospace; }
     label { margin-right: 0.75rem; }
+    .bulk { margin: 0.75rem 0; }
   </style>
 </head>
 <body>
@@ -26,7 +29,10 @@
     <label>Port <input id="new-port" type="number" min="65400" max="65429" placeholder="65400"></label>
     <button type="button" id="create">Create</button>
   </div>
-  <div id="status"></div>
+  <div class="bulk">
+    <button type="button" id="recycle-all">Recycle all</button>
+    <small>every node but the work node, one at a time</small>
+  </div>
   <table>
     <thead>
       <tr>
@@ -35,6 +41,7 @@
     </thead>
     <tbody id="tbody"></tbody>
   </table>
+  <div id="status"></div>
   <script>
     var statusEl = document.getElementById('status');
     function setStatus(t) { statusEl.textContent = t; }
@@ -63,9 +70,11 @@
             var nameCell = n.running
             ? '<a href="http://localhost:' + n.port + '" target="_blank" rel="noopener">' + label + '</a>'
             : label;
-            return '<tr>' +
-            '<td>' + nameCell + '</td>' +
-          '<td>' + n.name + (n.permanent ? ' <small>permanent</small>' : '') + '</td>' +
+        // Six cells for six headings. There were seven: `label` was drawn
+        // once as a link and again as plain text, so Type sat under Name,
+        // Port under Type, and the last column had no heading at all.
+        return '<tr>' +
+          '<td>' + nameCell + '</td>' +
           '<td>' + n.type + '</td>' +
           '<td>' + n.port + '</td>' +
           '<td>' + (n.running ? 'yes' : 'no') + (n.lastError ? ' ' + n.lastError : '') + '</td>' +
@@ -83,6 +92,41 @@
         render((r.body && r.body.nodes) || []);
       }).catch(function (e) { setStatus('refresh failed: ' + e.message); });
     }
+
+    // One at a time, on purpose: a recycle stops a process, recopies the
+    // tree and starts it again, and firing a dozen at once would have them
+    // competing over the same fakes root. Sequential is also what makes the
+    // answers readable — one line per node, in the order it was done.
+    document.getElementById('recycle-all').addEventListener('click', function () {
+      var button = this;
+      button.disabled = true;
+      setStatus('recycling…');
+      api('GET', '/api/nodes').then(function (r) {
+        var all = (r.body && r.body.nodes) || [];
+        // The work node refuses recycle server-side (403, "cannot recycle
+        // work node"). Skipping it here means the log reports what was
+        // done rather than one guaranteed failure every time.
+        var targets = all.filter(function (n) { return !n.permanent; });
+        if (!targets.length) return ['nothing to recycle'];
+        var lines = [];
+        return targets.reduce(function (chain, n) {
+          return chain.then(function () {
+            return api('POST', '/api/nodes/' + n.id + '/recycle', {}).then(function (res) {
+              lines.push(n.name + ' (' + n.port + ') → ' + res.status + ' ' +
+                (res.body && res.body.error ? res.body.error : 'ok'));
+              setStatus(lines.join('\n'));
+            });
+          });
+        }, Promise.resolve()).then(function () { return lines; });
+      }).then(function (lines) {
+        setStatus(lines.join('\n'));
+        button.disabled = false;
+        return refresh();
+      }).catch(function (e) {
+        setStatus('recycle all failed: ' + e.message);
+        button.disabled = false;
+      });
+    });
 
     document.getElementById('create').addEventListener('click', function () {
       var body = {

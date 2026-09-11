@@ -158,25 +158,28 @@ visibility. This also disposes of the flaw in the earlier draft for free:
 opening the relay page in another browser tab does not change the shell's state,
 so nothing stops at the moment listening is needed.
 
-**The node long-polls; it does not poll on a timer.** The relay holds
-`device-pending` open for ~25s and answers early when an offer lands. It already
-does exactly this for the browser's side of the handshake.
+**INTERIM: the node polls every 60s. Not every 2s.**
 
-| | 2s poll | 60s poll | long-poll |
-|---|---|---|---|
-| requests/min | 30 | 1 | **~2.4** |
-| enrolment latency | 2s | up to 60s | **instant** |
+A 2s timer that never stops is 30 relay requests a minute, forever — which is
+exactly the load that must stay microscopic. Default-on and a 2s timer do not
+belong in the same design, and the earlier draft of this section had both.
 
-Better on both axes, which is unusual enough to take. Per request the relay
-spends an allowlist check, a name compare, up to three Ed25519 verifies and a
-RAM read — about 0.3ms, negligible. The cost that would *not* have been
-negligible is TLS: a 2s poll without connection reuse is 1 800 handshakes an
-hour on a 1 GB box. `relayRequest` passes no agent, so it uses Node's global
-agent, which has kept connections alive since v19 — **worth measuring once
-rather than assuming**, since it is the whole difference between microscopic and
-not. Long-polling makes the question nearly moot either way.
+At 60s it is one request a minute: an allowlist check, a name compare, up to
+three Ed25519 verifies and a RAM read, about 0.3ms of relay CPU. Enrolment lands
+within a minute, which is nothing in a hotel room. The panel may still speed the
+poll while it is open, since that is bounded by a person standing there.
 
-It also removes the fast/slow distinction: there is only one mode.
+The cost that would *not* be negligible is TLS — a 2s poll without connection
+reuse is 1 800 handshakes an hour on a 1 GB box. `relayRequest` passes no agent,
+so it uses Node's global agent, keep-alive since v19: **worth measuring once
+rather than assuming.** At 60s it barely matters either way.
+
+**ARC: the doorbell replaces the poll.** A long-poll was considered and dropped —
+it is about a cycle of work that the event stream replaces, and it optimises the
+wrong traffic. See [EVENT-STREAM.md](EVENT-STREAM.md): with chat open the node
+already calls the relay 30 times a minute, so devices are a rounding error on
+the real number. Do the 60s interim now; take the latency to zero when the
+stream lands, for every app at once.
 
 **`listening` persists, is honoured at boot, and defaults on.** The flag is
 already in `device.json`; the node simply does not act on it at startup. A

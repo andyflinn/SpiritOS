@@ -124,11 +124,11 @@ bucket for the whole box. With members that must become one slot per identity �
 not only for contention, but because `devicePending` returns the password
 somebody is *trying*, and a shared slot would show it to every other member.
 
-**Each node long-polls its own slot.** The relay holds `device-pending` open for
-~25s rather than being polled on a timer: ~2.4 requests a minute per identity
-instead of 30, and enrolment lands instantly rather than within a poll interval.
-See [DEVICE-PANEL.md §7](DEVICE-PANEL.md) for the costing. One idle socket per
-identity, which a relay carries by the thousand.
+**Each node watches its own slot — interim by poll, then by doorbell.** Interim:
+one request a minute per identity, which is negligible. Arc: one held connection
+per identity carrying every notification, not just this one — see
+[EVENT-STREAM.md](EVENT-STREAM.md). Either way the slot is per identity, and
+`devicePending` answers only the key that owns it.
 
 **Listening stays on.** The flag persists, is honoured at boot, and defaults on,
 because a person locked out of their own node while away must not need to travel
