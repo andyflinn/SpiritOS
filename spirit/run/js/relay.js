@@ -687,20 +687,71 @@ function createRelay(rootDir) {
     return { ok: true };
   }
 
+  // B1: every queue call carries a name now, because the slot and the
+  // rate bucket are per identity. Today's page does not send one —
+  // device.html posts {password, devicePublicKey} and is frozen for this
+  // sitting — so an omitted name RESOLVES to the owner label, which is
+  // exactly who that page enrols.
+  //
+  // Resolved, not a global fallback slot: the offer lands in the owner's
+  // slot like any other, and a mailbox with no owner yet resolves to ''
+  // and is answered `not now` by the queue.
+  function deviceNameOr(name) {
+    var n = normalizeName(name);
+    return n || auth.ownerName(allow) || '';
+  }
+
+  function deviceOffer(name, password, devicePublicKey) {
+    return deviceQueue.offer(deviceNameOr(name), password, devicePublicKey);
+  }
+
+  function deviceTake(name) {
+    return deviceQueue.take(deviceNameOr(name));
+  }
+
+  function deviceReply(name, accepted) {
+    return deviceQueue.reply(deviceNameOr(name), !!accepted);
+  }
+
   function devicePending(name, sig) {
-    var gate = deviceGate(name, sig);
+    var n = normalizeName(name);
+
+    // A name this box does not know is refused before it touches the
+    // queue at all — "wrong name fails before crypto, as today"
+    // (DEVICE-B1.md), and today it failed without leaving anything
+    // behind. That second half matters now that the queue keeps a map
+    // keyed by name: `queueFor` mints an entry on first use, so reaching
+    // the bucket with an arbitrary name would let a stranger grow that
+    // map with input they choose. Duplicates the cheap half of
+    // deviceGate deliberately; B2 replaces both with the peer-aware
+    // test, and they should collapse into one there.
+    var owner = auth.ownerName(allow);
+    if (!n || !owner || n !== owner) {
+      return { ok: false, status: 403, error: 'not the owner' };
+    }
+
+    // THEN the bucket, and therefore still before any crypto. A right
+    // name with a bad signature costs three Ed25519 verifies, and nothing
+    // limited how often a stranger could make the box do that — the one
+    // unlimited crypto path on it. Per identity, so one node's polling
+    // cannot spend another's allowance.
+    if (!deviceQueue.pendingRateOk(n)) {
+      return { ok: false, status: 429, error: deviceHandshake.ERROR_NOT_NOW };
+    }
+
+    var gate = deviceGate(n, sig);
     if (!gate.ok) return gate;
     // An empty object, not a refusal. "Nobody is waiting" is the ordinary
     // answer to a poll that runs every two seconds while the window is
     // open, and a 403 there would make the quiet case indistinguishable
     // from a credential that has stopped working.
-    return deviceQueue.take() || {};
+    return deviceQueue.take(n) || {};
   }
 
   function deviceAnswer(name, accepted, sig) {
     var gate = deviceGate(name, sig);
     if (!gate.ok) return gate;
-    return deviceQueue.reply(!!accepted);
+    return deviceQueue.reply(normalizeName(name), !!accepted);
   }
 
   return {
@@ -716,9 +767,9 @@ function createRelay(rootDir) {
     // The held POST, and the two ends the personal node works: what is
     // waiting, and the answer. Nothing here reads the password — see the
     // queue's comment where it is created.
-    deviceOffer: deviceQueue.offer,
-    deviceTake: deviceQueue.take,
-    deviceReply: deviceQueue.reply,
+    deviceOffer: deviceOffer,
+    deviceTake: deviceTake,
+    deviceReply: deviceReply,
     // The same two ends, behind the owner's signature — this is what a
     // route may call. deviceTake / deviceReply above are in-process and
     // ungated, and stay that way for the tests that drive the queue

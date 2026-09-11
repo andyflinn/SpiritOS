@@ -1,46 +1,48 @@
 'use strict';
 
 // spirit/run/js/deviceHandshake.js
-// One in-RAM slot per mailbox process. Never written to disk.
-// The relay does not check the password. It holds the POST body
-// until the personal node takes it and replies, or the wait expires.
+// One in-RAM slot PER IDENTITY, and one offer bucket + one pending
+// bucket PER IDENTITY. Never written to disk. The relay does not check
+// the password. It holds the POST body until that identity's node takes
+// it and replies, or the wait expires.
+//
+// Per-identity slot and per-identity rate land together. A per-identity
+// slot with a shared bucket is the same bug wearing a better name.
+//
+// LONGER THAN ONE NODE PASS, PLUS A MARGIN. Written down rather than
+// imported: this module runs on the RELAY and DEVICE_TICK_MS belongs to
+// a personal node. spirit/test/deviceRendezvous.js holds the two together.
+// A per-identity slot changes who is waiting, not the arithmetic.
+//
+// DEFAULT_WAIT_MS = 66000. Do not lower it without changing DEVICE_TICK_MS
+// and the rendezvous test in the same commit.
 
-// LONGER THAN ONE NODE PASS, PLUS A MARGIN. This is the whole guarantee:
-// hub.js looks every DEVICE_TICK_MS (60s), and a hold that outlasts one
-// of those cannot be missed, whatever moment the browser pressed the
-// button. A hold SHORTER than the pass makes enrolment a coin toss on the
-// phase between two clocks nobody can see — which is exactly what 25s
-// against 60s was, and exactly how it behaved: reliable just before a
-// pass, reliable-in-the-other-direction just after (Andy, 2026-09-11).
-//
-// The margin is Andy's rule — "ten percent longer than the poll interval"
-// — and it is there for drift and a slow pass, not for luck.
-//
-// Written down rather than imported: this module runs on the RELAY and
-// DEVICE_TICK_MS belongs to a personal node, which the relay never reads.
-// spirit/test/deviceRendezvous.js holds the two to each other so the rule
-// cannot be broken by changing either one alone.
-//
-// The cost is one held request, because there is one pending slot — not
-// one per enroller. A 66s hold occupies that slot 2.6x longer than a 25s
-// one did, and the slot was already the limit on concurrent enrolment.
 var DEFAULT_WAIT_MS = 66000;
 var ERROR_NOT_NOW = 'not now';
 
-function createQueue(opts) {
+function normalizeName(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function createOne(opts) {
   opts = opts || {};
   var waitMs = opts.waitMs || DEFAULT_WAIT_MS;
   var nowFn = opts.now || Date.now;
   var pending = null;
-  var hits = [];
+  var offerHits = [];
+  var pendingHits = [];
   var perMin = opts.perMin || 10;
 
-  function rateOk() {
+  function prune(hits, t) {
+    return hits.filter(function (h) { return t - h < 60000; });
+  }
+
+  function rateOk(hits) {
     var t = nowFn();
-    hits = hits.filter(function (h) { return t - h < 60000; });
-    if (hits.length >= perMin) return false;
+    hits = prune(hits, t);
+    if (hits.length >= perMin) return { ok: false, hits: hits };
     hits.push(t);
-    return true;
+    return { ok: true, hits: hits };
   }
 
   function clearTimer(slot) {
@@ -60,7 +62,9 @@ function createQueue(opts) {
 
   function offer(password, devicePublicKey) {
     return new Promise(function (resolve) {
-      if (!rateOk()) {
+      var gated = rateOk(offerHits);
+      offerHits = gated.hits;
+      if (!gated.ok) {
         resolve({ ok: false, status: 429, error: ERROR_NOT_NOW });
         return;
       }
@@ -90,7 +94,7 @@ function createQueue(opts) {
     });
   }
 
-  function take() {
+  function take(nameIgnored) {
     if (!pending || pending.done) return null;
     return {
       password: pending.password,
@@ -99,7 +103,9 @@ function createQueue(opts) {
   }
 
   function reply(accepted) {
-    if (!pending || pending.done) return { ok: false, status: 403, error: ERROR_NOT_NOW };
+    if (!pending || pending.done) {
+      return { ok: false, status: 403, error: ERROR_NOT_NOW };
+    }
     var slot = pending;
     slot.done = true;
     clearTimer(slot);
@@ -116,20 +122,89 @@ function createQueue(opts) {
     return { ok: true, status: 200 };
   }
 
+  function pendingRateOk() {
+    var gated = rateOk(pendingHits);
+    pendingHits = gated.hits;
+    return gated.ok;
+  }
+
   function reset() {
     if (pending && !pending.done) fail(pending, 403);
     pending = null;
-    hits = [];
+    offerHits = [];
+    pendingHits = [];
   }
 
   return {
     offer: offer,
     take: take,
     reply: reply,
+    pendingRateOk: pendingRateOk,
     reset: reset,
-    ERROR_NOT_NOW: ERROR_NOT_NOW,
     waitMs: waitMs
   };
 }
 
-module.exports = { createQueue: createQueue, ERROR_NOT_NOW: ERROR_NOT_NOW };
+function createQueue(opts) {
+  var byName = Object.create(null);
+
+  function queueFor(name) {
+    var key = normalizeName(name);
+    if (!key) return null;
+    if (!byName[key]) byName[key] = createOne(opts);
+    return byName[key];
+  }
+
+  function offer(name, password, devicePublicKey) {
+    var q = queueFor(name);
+    if (!q) {
+      return Promise.resolve({ ok: false, status: 403, error: ERROR_NOT_NOW });
+    }
+    return q.offer(password, devicePublicKey);
+  }
+
+  function take(name) {
+    var q = queueFor(name);
+    if (!q) return null;
+    return q.take();
+  }
+
+  function reply(name, accepted) {
+    var q = queueFor(name);
+    if (!q) return { ok: false, status: 403, error: ERROR_NOT_NOW };
+    return q.reply(accepted);
+  }
+
+  function pendingRateOk(name) {
+    var q = queueFor(name);
+    if (!q) return false;
+    return q.pendingRateOk();
+  }
+
+  function reset(name) {
+    if (name == null || name === '') {
+      Object.keys(byName).forEach(function (k) { byName[k].reset(); });
+      byName = Object.create(null);
+      return;
+    }
+    var q = queueFor(name);
+    if (q) q.reset();
+  }
+
+  return {
+    offer: offer,
+    take: take,
+    reply: reply,
+    pendingRateOk: pendingRateOk,
+    reset: reset,
+    queueFor: queueFor,
+    ERROR_NOT_NOW: ERROR_NOT_NOW,
+    waitMs: (opts && opts.waitMs) || DEFAULT_WAIT_MS
+  };
+}
+
+module.exports = {
+  createQueue: createQueue,
+  ERROR_NOT_NOW: ERROR_NOT_NOW,
+  DEFAULT_WAIT_MS: DEFAULT_WAIT_MS
+};

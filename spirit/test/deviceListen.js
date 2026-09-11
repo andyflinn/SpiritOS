@@ -46,7 +46,9 @@ async function run() {
   if (doc.listening && doc.password) test.check('listening stored');
   else test.fail('doc: ' + JSON.stringify(doc));
 
-  const offerP = box.deviceOffer(doc.password, phone.publicKey);
+  // B1: name first. Omitted resolves to the owner label, which is the
+  // path today's device.html takes — exercised in deviceHandshakeTest.js.
+  const offerP = box.deviceOffer('andy', doc.password, phone.publicKey);
 
   // The fifth argument is headers. The proof arrives there now, never on
   // the path — so this stands in for the route by reading it off the
@@ -65,7 +67,7 @@ async function run() {
       return box.setDevice(body.name, body.devicePublicKey, body.sig);
     }
     if (method === 'POST' && /device-answer/.test(pth)) {
-      return box.deviceReply(!!body.accepted);
+      return box.deviceReply(body.name, !!body.accepted);
     }
     return { ok: false };
   }
@@ -101,7 +103,11 @@ async function run() {
   deviceAuth.ensurePassword(wrongHome);
   deviceAuth.setListening(wrongHome, true);
   const live = deviceAuth.load(wrongHome).password;
-  const offerWrong = wrongBox.deviceOffer(live.split('').reverse().join(''), phone.publicKey);
+  const offerWrong = wrongBox.deviceOffer(
+    'andy',
+    live.split('').reverse().join(''),
+    phone.publicKey
+  );
 
   async function rejectFn(url, method, pth, body, headers) {
     if (method === 'GET' && /device-pending/.test(pth)) {
@@ -113,7 +119,7 @@ async function run() {
       return { ok: false };
     }
     if (method === 'POST' && /device-answer/.test(pth)) {
-      return wrongBox.deviceReply(!!body.accepted);
+      return wrongBox.deviceReply(body.name, !!body.accepted);
     }
     return { ok: false };
   }

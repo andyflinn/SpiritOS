@@ -61,7 +61,7 @@ async function run() {
   {
     const q = deviceHandshake.createQueue({ waitMs: HOLD });
     const began = Date.now();
-    const answer = await q.offer('password', 'key');
+    const answer = await q.offer('andy', 'password', 'key');
     const took = Date.now() - began;
 
     if (answer && answer.ok === false && answer.error === deviceHandshake.ERROR_NOT_NOW) {
@@ -85,9 +85,9 @@ async function run() {
   {
     // A refusal, for contrast: the node answered. This is the fast one.
     const q = deviceHandshake.createQueue({ waitMs: HOLD });
-    const offered = q.offer('password', 'key');
+    const offered = q.offer('andy', 'password', 'key');
     await sleep(5);
-    q.reply(false);
+    q.reply('andy', false);
     const began = Date.now();
     const answer = await offered;
     void began;
@@ -106,15 +106,15 @@ async function run() {
     const q = deviceHandshake.createQueue({ waitMs: HOLD });
     let collected = 0;
     const node = setInterval(function () {
-      const held = q.take();
+      const held = q.take('andy');
       if (held) {
         collected += 1;
-        q.reply(true);
+        q.reply('andy', true);
       }
     }, PERIOD);
 
     // One offer, the way the page used to work.
-    const lone = await q.offer('password', 'key');
+    const lone = await q.offer('andy', 'password', 'key');
     if (lone && lone.ok === false) {
       test.check('a lone offer made at the wrong moment is lost, every time');
     } else {
@@ -130,7 +130,7 @@ async function run() {
     let got = null;
     while (Date.now() - began < PERIOD * 3) {
       attempts += 1;
-      const answer = await q.offer('password', 'key');
+      const answer = await q.offer('andy', 'password', 'key');
       if (answer && answer.ok) { got = answer; break; }
     }
     clearInterval(node);
@@ -215,7 +215,7 @@ async function run() {
       // after that. setInterval alone would put the first pass at
       // offset + period and quietly test a different question.
       function pass() {
-        if (q.take()) q.reply(true);
+        if (q.take('andy')) q.reply('andy', true);
       }
       const arm = setTimeout(function () {
         pass();
@@ -226,7 +226,7 @@ async function run() {
       try {
         while (Date.now() - began < budget) {
           attempts += 1;
-          const answer = await q.offer('password', 'key');
+          const answer = await q.offer('andy', 'password', 'key');
           if (answer && answer.ok) return { ok: true, attempts: attempts };
         }
         return { ok: false, attempts: attempts };

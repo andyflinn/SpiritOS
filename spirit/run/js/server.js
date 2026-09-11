@@ -226,7 +226,13 @@ function deviceRefusal(res, status) {
 // node compares it (DEVICE-CYCLE2.md).
 function handleDeviceOffer(req, res) {
   readJsonBody(req).then(function (body) {
-    return relay.deviceOffer(body && body.password, body && body.devicePublicKey);
+    // The name may be absent, and is on today's page: relay.js resolves
+    // an omitted one to the owner label, which is who this page enrols.
+    return relay.deviceOffer(
+      body && body.name,
+      body && body.password,
+      body && body.devicePublicKey
+    );
   }).then(function (result) {
     if (!result || !result.ok) {
       deviceRefusal(res, result && result.status);
