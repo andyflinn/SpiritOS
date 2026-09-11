@@ -151,12 +151,35 @@ helps if the need was predicted before leaving.
 
 ### Resolved
 
-**Visibility is a shell fact, not a browser fact.** Listening stops when the
-panel leaves the **shell** — the row collapses, Natter stops being the active
-app, the dialog closes. Never `document.visibilityState`, OS focus, or tab
-visibility. This also disposes of the flaw in the earlier draft for free:
-opening the relay page in another browser tab does not change the shell's state,
-so nothing stops at the moment listening is needed.
+**Visibility is a shell fact, not a browser fact.** `api.isVisible()` — is this
+the active app — never `document.visibilityState`, OS focus, or tab visibility.
+That also disposes of a flaw for free: opening the relay page in another browser
+tab does not change the shell's state, so nothing goes quiet at the moment
+listening is needed.
+
+**What it governs is the PANEL, not the door** — correcting an earlier draft of
+this section, which said listening itself stops when the panel leaves the shell.
+That cannot stand beside the paragraph below: a door that shuts the moment
+somebody clicks another app is a door that is only ever open while being
+watched, which is the failure this whole section exists to prevent. The two
+were written a conversation apart and never reconciled.
+
+**Andy settled it on 2026-09-11: "no journey home wins."** The rule at the top
+of this section outranks the tidiness of stopping a timer, so the door stays a
+deliberate act in both directions.
+
+So, as built:
+
+| | stops when the panel leaves the shell | closed by |
+|---|---|---|
+| the panel's own poll of `/api/hub/device` | **yes** | leaving Natter, or collapsing the row |
+| **the door** (`listening`) | **no** | the button, and nothing else |
+
+The panel's poll is loopback and costs the relay nothing, but panes are hidden
+and never destroyed — so without the check it runs for the life of the page.
+`render()` is the way back in: the shell calls it on every visit, and on the job
+tick while the app is active, so it fires exactly when Natter is on screen and
+never while it is not.
 
 **INTERIM: the node polls every 60s. Not every 2s.**
 

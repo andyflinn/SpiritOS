@@ -975,11 +975,22 @@ function createHub(rootDir) {
 
   // ---- the listening window ------------------------------------------
   //
-  // The timer exists ONLY while the window is open, and that is the
-  // security control rather than a nicety: with it closed nothing on this
-  // node asks any mailbox what is pending, so a stolen password buys a
-  // held POST that expires unanswered.
-  var DEVICE_TICK_MS = 2000;
+  // The timer exists ONLY while the window is open: with it closed nothing
+  // on this node asks any mailbox what is pending, so a stolen password
+  // buys a held POST that expires unanswered.
+  //
+  // Sixty seconds, not two. The window is meant to survive a restart and
+  // an absent owner (DEVICE-PANEL.md section 7), so this timer runs for
+  // days rather than for the minute somebody stands at the panel — and a
+  // 2s poll that never stops is thirty relay requests a minute, forever,
+  // which is the load that was supposed to stay microscopic. At 60s it is
+  // one request a minute and an enrolment lands within a minute, which is
+  // nothing in a hotel room.
+  //
+  // The arc that takes the latency back to zero is the event stream
+  // (design/relay/EVENT-STREAM.md), and it does it for every app at once
+  // rather than for this one.
+  var DEVICE_TICK_MS = 60000;
   var deviceTimer = null;
   var deviceUrls = [];
   // What the last pass did, and when. The tick has always answered this
@@ -1059,15 +1070,38 @@ function createHub(rootDir) {
       });
   }
 
+  // Start polling again if the file says the window was left open.
+  //
+  // The flag has always persisted; the node simply did not act on it at
+  // startup, so every restart shut the door silently. That is the failure
+  // this whole design exists to prevent: being locked out of one's own
+  // node while away, with the only remedy a journey home
+  // (DEVICE-PANEL.md section 7). A power cut must not cost a flight.
+  //
+  // Called by server.js in personal mode only — a --relay has no device
+  // of its own to enrol and must never poll anybody.
+  //
+  // Silent, and never rejects. Failing to reach a mailbox at boot is
+  // ordinary, and nothing is watching the console at that moment anyway.
+  function resumeListening() {
+    var doc = deviceAuth.load(rootDir);
+    // A password as well as the flag. `listening` defaults on, so a node
+    // that has never opened the panel would otherwise spin a timer for a
+    // door that cannot be opened — the tick already answers `quiet` in
+    // that state, and a timer whose every pass is a no-op is noise.
+    if (!doc.listening || !doc.password) return Promise.resolve([]);
+    return startDeviceTimer().catch(function () { return []; });
+  }
+
   // The password, so the shell can offer to copy it, and whether the
   // window is open.
   //
-  // `listening` is the TIMER, not the file. They agree except across a
-  // restart, where the file can say open while nothing is polling — and
-  // a Natter row reading "Listening on" beside a form answering "not now"
-  // is the one confusing state this whole design can produce. So the
-  // answer is the live one: after a restart the window is shut, and
-  // pressing the button opens it again.
+  // `listening` is the TIMER, not the file — the live answer rather than
+  // the stored intention. They used to disagree across a restart, which
+  // put a Natter row reading "Listening on" beside a form answering "not
+  // now"; resumeListening closes that gap, and reporting the timer keeps
+  // the panel honest if it ever reopens (no relay answered the probe, so
+  // the flag is set and nothing is polling).
   function handleDevice(req, res) {
     var doc = deviceAuth.ensurePassword(rootDir);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1133,6 +1167,8 @@ function createHub(rootDir) {
     handleInvite: handleInvite,
     handleDevice: handleDevice,
     handleDeviceListen: handleDeviceListen,
+    // Boot-time only. server.js calls it once, in personal mode.
+    resumeListening: resumeListening,
   };
 }
 

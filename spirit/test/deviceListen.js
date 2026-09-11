@@ -11,6 +11,7 @@ const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
 const deviceTick = require('../run/js/deviceTick');
 const { createRelay } = require('../run/js/relay');
+const { createHub } = require('../run/js/hub');
 
 function tmpHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-listen-'));
@@ -128,9 +129,87 @@ async function run() {
     test.fail('browserNo: ' + JSON.stringify(browserNo));
   }
 
+  await bootBehaviour();
+
   if (typeof test.reportSuccessFailureCount === 'function') {
     test.reportSuccessFailureCount();
   }
+}
+
+// The window has to survive a restart. Until now the flag persisted and
+// nothing read it at startup, so every restart shut the door silently —
+// and the owner of that door is routinely nowhere near the machine.
+async function bootBehaviour() {
+  test.subHeading('The window survives a restart');
+
+  // An older device.json has no `listening` field. Absent means nobody
+  // decided, and the default that cannot strand anybody is open.
+  const bare = tmpHome();
+  fs.mkdirSync(path.join(bare, 'relay-state'), { recursive: true });
+  fs.writeFileSync(
+    path.join(bare, 'relay-state', 'device.json'),
+    JSON.stringify({ password: 'x'.repeat(deviceAuth.PASSWORD_HEX_LEN), devicePublicKey: null })
+  );
+  if (deviceAuth.load(bare).listening === true) {
+    test.check('a file with no listening field reads as open');
+  } else {
+    test.fail('bare doc: ' + JSON.stringify(deviceAuth.load(bare)));
+  }
+
+  // Written down, and honoured. The switch has to mean something or it is
+  // chrome.
+  deviceAuth.setListening(bare, false);
+  if (deviceAuth.load(bare).listening === false) {
+    test.check('and an explicit false is kept, so the switch still shuts it');
+  } else {
+    test.fail('after setListening(false): ' + JSON.stringify(deviceAuth.load(bare)));
+  }
+
+  // Shut is shut: boot must not reopen a door somebody closed on purpose.
+  const shut = createHub(bare);
+  const shutUrls = await shut.resumeListening();
+  if (Array.isArray(shutUrls) && shutUrls.length === 0 && !listeningOf(shut)) {
+    test.check('and resuming a shut window starts nothing');
+  } else {
+    test.fail('shut resume: ' + JSON.stringify(shutUrls) + ' listening=' + listeningOf(shut));
+  }
+
+  // Default-on costs nothing on a node nobody has configured: the door
+  // needs a password to open, and a timer whose every pass is a no-op is
+  // noise on every fake peer in the lab.
+  const fresh = tmpHome();
+  const freshHub = createHub(fresh);
+  await freshHub.resumeListening();
+  if (!listeningOf(freshHub)) {
+    test.check('and a node with no password starts nothing, though it defaults open');
+  } else {
+    test.fail('a passwordless node started a timer');
+  }
+
+  // The case this exists for: the flag says open, a password exists, the
+  // process restarts. The door comes back by itself.
+  const kept = tmpHome();
+  deviceAuth.ensurePassword(kept);
+  deviceAuth.setListening(kept, true);
+  const keptHub = createHub(kept);
+  await keptHub.resumeListening();
+  if (listeningOf(keptHub)) {
+    test.check('but a window left open comes back open after a restart');
+  } else {
+    test.fail('a kept-open window did not resume');
+  }
+}
+
+// What /api/hub/device reports, which is the TIMER and not the file — the
+// live answer, so the panel cannot claim to be listening while nothing is.
+function listeningOf(hub) {
+  let body = '';
+  hub.handleDevice({}, {
+    writeHead: function () {},
+    end: function (text) { body = text; },
+  });
+  try { return JSON.parse(body).listening === true; }
+  catch (e) { return false; }
 }
 
 run().catch(function (e) {

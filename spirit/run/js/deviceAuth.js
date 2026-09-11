@@ -31,7 +31,10 @@ function devicePath(rootDir) {
 }
 
 function emptyDoc() {
-  return { password: null, devicePublicKey: null, listening: false };
+  // listening true for the same reason load() defaults it that way — and
+  // inert here regardless, since there is no password to open anything
+  // with until ensurePassword has run.
+  return { password: null, devicePublicKey: null, listening: true };
 }
 
 function load(rootDir) {
@@ -43,10 +46,17 @@ function load(rootDir) {
       devicePublicKey: typeof parsed.devicePublicKey === 'string'
         ? parsed.devicePublicKey
         : null,
-      // Closed unless the file says otherwise. An older device.json has
-      // no such field, and a window that defaulted open would be one
-      // nobody remembered opening.
-      listening: parsed.listening === true
+      // Open unless the file says otherwise. A door that is shut unless
+      // its owner predicted needing it fails the rule this design exists
+      // for — being locked out of one's own node while away, with the
+      // only remedy a journey (DEVICE-PANEL.md section 7). `false` is
+      // written down and honoured; absent means nobody has decided, and
+      // the useful default is the one that cannot strand anybody.
+      //
+      // It costs nothing on a node that has never been configured: the
+      // door needs a password to open, and resumeListening will not spin
+      // a timer for a node that has none.
+      listening: parsed.listening !== false
     };
   } catch (e) {
     return emptyDoc();

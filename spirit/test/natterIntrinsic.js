@@ -3206,4 +3206,51 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
   }
 }
 
+test.subHeading('The device panel asks the SHELL whether it is on screen');
+
+{
+  const natter = readRun('app/natter/natter.js');
+
+  // Panes are hidden and never destroyed, so the panel's element still
+  // answers querySelector long after Natter stopped being the active app.
+  // Without asking, its poll runs for the life of the page.
+  //
+  // Anchored on the call with its parens and the negation it is used in,
+  // not on the bare name: the file explains this decision in prose above
+  // the code, and a check a comment can satisfy guards nothing.
+  if (/\|\|\s*!api\.isVisible\(\)\)/.test(natter)) {
+    test.check('the device watch stops when Natter is not the active app');
+  } else {
+    test.fail('natter.js never asks api.isVisible() in the watch');
+  }
+
+  // The wrong question, twice over: it says nothing about which app is on
+  // screen, and it goes false the moment somebody opens the relay's
+  // /device page in another tab — the one moment this panel must not go
+  // quiet (design/relay/DEVICE-PANEL.md section 7).
+  //
+  // Anchored on USE, not on the name. natter.js names both in prose to
+  // explain why it does not call them, and a comment saying why a thing
+  // is not done is the opposite of the thing this guards against — the
+  // same lesson the /api/hub/peer check learned.
+  const readsBrowserVisibility =
+    /document\.visibilityState\s*[=!)]/.test(natter) ||
+    /addEventListener\(\s*['"]visibilitychange/.test(natter);
+  if (!readsBrowserVisibility) {
+    test.check('and never asks the BROWSER, which would go false at the worst moment');
+  } else {
+    test.fail('natter.js reaches for document visibility');
+  }
+
+  // render() is the only hook the shell gives an app on the way back onto
+  // the screen. It was an empty function; a poll that stops and cannot
+  // start again is a panel that goes stale until the row is reopened.
+  const render = natter.slice(natter.indexOf('  render: function ()'), 400 + natter.indexOf('  render: function ()'));
+  if (/natterDeviceWatch\(/.test(render)) {
+    test.check('and render() starts it again, so coming back is enough');
+  } else {
+    test.fail('render() does not restart the device watch: ' + render.slice(0, 200));
+  }
+}
+
 test.reportSuccessFailureCount();

@@ -1104,6 +1104,17 @@ if (!relayMode) {
     hub.sweepInbox().catch(() => {});
   }, INBOX_SWEEP_MS);
   sweep.unref();
+
+  // The device window, if it was left open. The flag has always survived
+  // a restart in relay-state/device.json; until now nothing read it at
+  // startup, so every restart shut the door without saying so — and the
+  // owner of that door is routinely nowhere near this machine
+  // (design/relay/DEVICE-PANEL.md section 7). A power cut must not cost a
+  // flight home.
+  //
+  // Personal mode only, like the sweep above. A --relay has no device of
+  // its own to enrol and must never poll anybody.
+  hub.resumeListening().catch(() => {});
 }
 
 server.listen(port, BIND_HOST, () => {

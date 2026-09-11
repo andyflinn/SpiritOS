@@ -149,6 +149,10 @@ function natterMintHtml(api, badge) {
 // does not exist until something asks.
 var natterDevice = { password: '', listening: false, loaded: false, ownedUrls: [], lastEvent: null };
 var natterDeviceTimer = null;
+// What the watch needs to be restarted from render(). Set when it starts,
+// and never cleared: it describes where the panel lives, not whether the
+// poll is running.
+var natterDeviceCtx = null;
 
 // Adding one of Andy's own handhelds, from the row that names the mailbox
 // it will be added to — the same reasoning that killed the mint picker.
@@ -325,7 +329,7 @@ function natterProbe(api, container, relays) {
 function natterLoadDevice(api, container, relays) {
   return natterReadDevice().then(function () {
     natterRenderList(container, api, relays);
-    natterDeviceWatch(container);
+    natterDeviceWatch(api, container);
   });
 }
 
@@ -342,14 +346,29 @@ function natterReadDevice() {
     .catch(function () { /* the panel simply reads as closed */ });
 }
 
-// While the row is open, ask again on the tick's own cadence. The window
-// can close without this app touching it — the node restarting is enough
-// — and a panel painted once would go on claiming it was open for as
-// long as the row stayed expanded.
-function natterDeviceWatch(container) {
+// While the row is open AND Natter is the app on screen, ask again on the
+// tick's own cadence. The window can close without this app touching it —
+// the node restarting is enough — and a panel painted once would go on
+// claiming it was open for as long as the row stayed expanded.
+//
+// Visibility here is the SHELL's, never the browser's. `api.isVisible()`
+// answers "is Natter the active app" (shell.js, buildApiFor — its own
+// comment offers it for exactly this, "work outside a callback, a timer").
+// document.visibilityState would be the wrong question twice over: it says
+// nothing about which app is on screen, and it goes false the moment
+// somebody opens the relay's /device page in another tab — which is the
+// one moment this panel must not go quiet.
+//
+// It has to be asked, not assumed: panes are hidden and never destroyed,
+// so `.natter-device` still answers querySelector long after Natter
+// stopped being on screen, and this poll would otherwise run for the life
+// of the page.
+function natterDeviceWatch(api, container) {
   natterDeviceUnwatch();
+  // Kept so render() can start it again on the way back in.
+  natterDeviceCtx = { api: api, container: container };
   natterDeviceTimer = setInterval(function () {
-    if (!container.querySelector('.natter-device')) {
+    if (!container.querySelector('.natter-device') || !api.isVisible()) {
       natterDeviceUnwatch();
       return;
     }
@@ -388,7 +407,7 @@ function natterDeviceSetListening(api, container, relays, want, out) {
     // true from here. Re-rendering the list would fold nothing but would
     // take the Invite fields with it.
     natterDevicePaint(container);
-    if (natterDevice.listening) natterDeviceWatch(container);
+    if (natterDevice.listening) natterDeviceWatch(api, container);
     else natterDeviceUnwatch();
   });
 }
@@ -760,5 +779,17 @@ spirit.shell.activateApp({
       });
     });
   },
-  render: function () {},
+  // The only hook the shell gives an app on the way back onto the screen:
+  // switchTo calls render on every visit, and renderActive calls it on the
+  // job tick while the app is active — so it fires exactly when Natter is
+  // visible and never while it is not.
+  //
+  // Idempotent on purpose, because of that second caller: it starts the
+  // device poll again only if the panel is on screen and nothing is
+  // already polling.
+  render: function () {
+    if (natterDeviceTimer || !natterDeviceCtx || !natterExpandedUrl) return;
+    if (!natterDeviceCtx.container.querySelector('.natter-device')) return;
+    natterDeviceWatch(natterDeviceCtx.api, natterDeviceCtx.container);
+  },
 });
