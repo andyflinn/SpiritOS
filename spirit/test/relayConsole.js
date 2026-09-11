@@ -40,7 +40,7 @@ function say(box, id, label, text) {
 
 function ringSize(home) {
   try {
-    return JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'mailbox.json'), 'utf8')).messages.length;
+    return JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'routingTable.json'), 'utf8')).messages.length;
   } catch (e) {
     return -1;
   }

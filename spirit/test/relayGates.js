@@ -24,7 +24,7 @@
 // how two johns work — and waits on invites, not on this file.
 //
 // Runs relay.js out of an isolated fake node under the OS temp dir, never
-// the live checkout: createRelay() persists to relay-state/mailbox.json on
+// the live checkout: createRelay() persists to relay-state/routingTable.json on
 // every send, and loadAllow reads relay-state/allow.json — this test writes
 // both.
 const fs = require('fs');

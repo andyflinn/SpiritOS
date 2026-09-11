@@ -3,7 +3,7 @@
 // spirit/test/removePeer.js
 // A relay can forget somebody.
 //
-// Until this existed a relay could only accumulate. mailbox.json never
+// Until this existed a relay could only accumulate. The routing table never
 // shrank, so an invitation was irreversible and the only remedy for any
 // mistake — a wrong guest, a lost key, a name that should never have been
 // given — was an SSH session on the box.
@@ -164,9 +164,75 @@ function run() {
   // exists to end.
   const reopened = createRelay(L.home);
   if (labels(reopened) === 'andy') {
-    test.check('a reopened mailbox has not remembered them again');
+    test.check('a reopened relay has not remembered them again');
   } else {
     test.fail('removal did not persist: ' + labels(reopened));
+  }
+
+  test.subHeading('And it still reads a relay that predates the rename');
+
+  // THE ROSTER IS THE THING AT RISK. mailbox.json became routingTable.json
+  // because a relay is not a mailbox and that file is a routing table —
+  // but spirit-3 has a live mailbox.json with everybody's rows in it, and
+  // a rename that could not read it would drop the whole roster on the
+  // next update. Every peer silently off the relay, and nothing on the
+  // outside saying so.
+  //
+  // Built by hand rather than through world.build: the case IS a home
+  // that only the old code has ever written.
+  const legacyHome = world.tmpHome();
+  fs.mkdirSync(path.join(legacyHome, 'relay-state'), { recursive: true });
+  const carried = {
+    nextId: 7,
+    peers: {},
+    messages: [{ id: '1', from: 'bert', to: 'andy', text: 'still here' }],
+  };
+  carried.peers[L.owner.publicKey] = {
+    name: 'andy', publicLabel: 'andy', publicKey: L.owner.publicKey,
+    claimedAt: new Date().toISOString(), owner: true,
+  };
+  fs.writeFileSync(
+    path.join(legacyHome, 'relay-state', 'mailbox.json'),
+    JSON.stringify(carried)
+  );
+  // The owner record is its own file and always was — allow.json is what
+  // answers "who owns this box", and the rename does not touch it. A
+  // relay with a routing table and no allow list is not a state any real
+  // box has been in.
+  auth.writeAllowKeys(legacyHome, [{ name: 'andy', publicKey: L.owner.publicKey }]);
+
+  const migrated = createRelay(legacyHome);
+  if (labels(migrated) === 'andy') {
+    test.check('a relay whose only state is the old filename opens with its roster');
+  } else {
+    test.fail('the roster was dropped: ' + labels(migrated));
+  }
+
+  // Read, not adopted silently. The next write goes to the new name.
+  const minted = migrated.mint('andy', 'saint', 7,
+    auth.sign(L.owner.privateKey, invites.mintMessage('saint', 7)));
+  if (!minted.ok) test.fail('mint on a migrated relay: ' + JSON.stringify(minted));
+
+  const after = migrated.send('andy', 'andy', 'written after the rename',
+    auth.sign(L.owner.privateKey, auth.sendMessage('andy', 'andy', 'written after the rename')));
+  if (!after.ok) test.fail('send on a migrated relay: ' + JSON.stringify(after));
+
+  const newFile = path.join(legacyHome, 'relay-state', 'routingTable.json');
+  if (fs.existsSync(newFile) &&
+      fs.readFileSync(newFile, 'utf8').indexOf('written after the rename') !== -1) {
+    test.check('and the next write lands in routingTable.json');
+  } else {
+    test.fail('nothing was written to the new name');
+  }
+
+  // LEFT WHERE IT IS, not deleted. A rollback to older code then finds
+  // the state it expects, and deleting somebody's only copy of a roster
+  // to tidy up is not a trade worth making.
+  const legacyRaw = fs.readFileSync(path.join(legacyHome, 'relay-state', 'mailbox.json'), 'utf8');
+  if (legacyRaw === JSON.stringify(carried)) {
+    test.check('while the old file is left untouched, so a rollback still works');
+  } else {
+    test.fail('the legacy file was written to or removed');
   }
 
   test.subHeading('And the box stops accumulating expired invites');

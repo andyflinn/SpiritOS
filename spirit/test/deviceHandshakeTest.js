@@ -150,11 +150,11 @@ async function run() {
     test.fail('unknown names reached the rate bucket ' + strangerRate + ' times');
   }
 
-  const disk = path.join(nodeHome, 'relay-state', 'mailbox.json');
+  const disk = path.join(nodeHome, 'relay-state', 'routingTable.json');
   let mailbox = '';
   try { mailbox = fs.readFileSync(disk, 'utf8'); } catch (e) { mailbox = ''; }
-  if (mailbox.indexOf(door) === -1) test.check('password not in mailbox.json');
-  else test.fail('password leaked into mailbox.json');
+  if (mailbox.indexOf(door) === -1) test.check('password not in the routing table');
+  else test.fail('password leaked into the routing table');
 }
 
 // The tally runs after the promise settles either way — a suite whose

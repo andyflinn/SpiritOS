@@ -14,6 +14,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const peerPost = require('../run/js/peerPost');
+const trafficLog = require('../run/js/trafficLog');
 const routerTable = require('../run/js/router');
 
 function tmpHome(name) {
@@ -77,12 +78,114 @@ function fakeRelay() {
 function nodeFor(name, relay) {
   const home = tmpHome(name);
   const id = auth.loadIdentity(home);
-  const P = peerPost.createPeerPost({ rootDir: home, request: relay.request, waitMs: 800 });
+  // A REAL traffic log, not a stub. The module has its own suite; what
+  // this one is for is the wiring — that the four things worth writing
+  // down are actually written down by the code that does the crossing,
+  // rather than by a test that calls note() itself.
+  const traffic = trafficLog.createTrafficLog({ rootDir: home });
+  const P = peerPost.createPeerPost({
+    rootDir: home, request: relay.request, waitMs: 800, traffic: traffic,
+  });
   relay.listen(id.publicKey, function (event, body) {
     if (event === 'request') P.onRequest('http://relay', body);
     else if (event === 'reply') P.onReply(body);
   });
-  return { name: name, home: home, id: id, P: P };
+  return { name: name, home: home, id: id, P: P, traffic: traffic };
+}
+
+// WHAT CROSSED, WRITTEN DOWN. Decision 0006 ends with a relay that
+// remembers nothing, and this is what is left — a refusal nobody recorded
+// is indistinguishable from nothing having been tried.
+//
+// Checked HERE, through a real exchange, because trafficLog's own suite
+// can only prove the module keeps what it is handed. Only this one can
+// prove the crossings hand it anything.
+async function whatCrossedIsWrittenDown() {
+  test.subHeading('And every crossing leaves a record');
+
+  const relay = fakeRelay();
+  const bert = nodeFor('bert-log', relay);
+  const john = nodeFor('john-log', relay);
+
+  // A string no other part of this suite produces, so finding it in a
+  // log means it travelled rather than coincided.
+  const SECRET = 'quince-lantern-41b7';
+  const sent = JSON.stringify({ app: 'relay-chat', v: 1, body: SECRET });
+
+  const answer = await bert.P.post('http://relay', john.id.publicKey, sent);
+  if (!answer.ok) { test.fail('the exchange itself failed: ' + JSON.stringify(answer)); return; }
+
+  const out = bert.traffic.read();
+  const posted = out.filter(function (r) { return r.dir === 'out' && r.outcome === 'sent'; })[0];
+  const closed = out.filter(function (r) { return r.outcome === 'receipted'; })[0];
+
+  if (posted && posted.payload === sent) {
+    test.check('the sender kept the packet it sent, byte for byte');
+  } else {
+    test.fail('outbound payload: ' + JSON.stringify(posted));
+  }
+
+  // THE PAIR. post() returns before the answer exists, so the exchange is
+  // two entries and the hash is what joins them — which is what a hash is
+  // for.
+  if (closed && posted && closed.hash === posted.hash && posted.hash) {
+    test.check('and the outcome is a second entry joined to it by hash');
+  } else {
+    test.fail('pair not joined: ' + JSON.stringify({ posted: posted, closed: closed }));
+  }
+
+  // A receipt CAME BACK — it crossed the WAN inward, and saying it was
+  // outbound would be a small lie repeated forever.
+  if (closed && closed.dir === 'in' && closed.kind === 'reply') {
+    test.check('and a receipt is recorded as having arrived, not as having left');
+  } else {
+    test.fail('receipt direction: ' + JSON.stringify(closed));
+  }
+
+  // The other end of the same exchange.
+  const inbound = john.traffic.read()
+    .filter(function (r) { return r.dir === 'in' && r.kind === 'request'; })[0];
+  if (inbound && inbound.payload === sent && inbound.peer === bert.id.publicKey) {
+    test.check('the receiver kept what arrived, and who it was from');
+  } else {
+    test.fail('inbound entry: ' + JSON.stringify(inbound));
+  }
+
+  if (inbound && inbound.relay === 'http://relay' && posted.relay === 'http://relay') {
+    test.check('and both ends recorded which relay carried it');
+  } else {
+    test.fail('relay missing: ' + JSON.stringify({ out: posted.relay, in: inbound && inbound.relay }));
+  }
+
+  // NOTHING OPENED THE ENVELOPE. The payload above names its app; that is
+  // the shell's to read, and a log that did it would be the middle layer
+  // doing the top layer's work.
+  const everyField = [].concat(out, john.traffic.read()).reduce(function (all, row) {
+    return all.concat(Object.keys(row));
+  }, []);
+  if (everyField.indexOf('app') === -1) {
+    test.check('and no entry anywhere grew an `app` field');
+  } else {
+    test.fail('something read the envelope: ' + everyField.join(','));
+  }
+
+  // A REFUSAL IS THE ENTRY THAT MATTERS MOST. It is the whole reason this
+  // log exists: once a relay stores nothing, this is the only evidence
+  // that a thing was tried and did not land.
+  const stranger = auth.generateIdentity('nobody');
+  const refused = await bert.P.post('http://relay', stranger.publicKey, '{"ping":1}');
+  if (refused.ok) { test.fail('a post to nobody succeeded'); return; }
+
+  const failure = bert.traffic.read().filter(function (r) {
+    return r.outcome === 'refused' || r.outcome === 'no-answer';
+  })[0];
+  if (failure && failure.peer === stranger.publicKey) {
+    test.check('a post that went nowhere is on the record, with who it was for');
+  } else {
+    test.fail('no refusal logged: ' + JSON.stringify(bert.traffic.read().map(function (r) {
+      return r.outcome;
+    })));
+  }
 }
 
 test.startTest('Peer post — a node asks a node');
@@ -221,6 +324,8 @@ async function run() {
   } else {
     test.fail('a forged receipt was believed');
   }
+
+  await whatCrossedIsWrittenDown();
 
   test.reportSuccessFailureCount();
 }

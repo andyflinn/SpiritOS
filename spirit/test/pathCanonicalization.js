@@ -91,6 +91,11 @@ function expectEverySpellingUnwritable(label, canonical) {
 // the whole signed-claim scheme rests on.
 test.subHeading('relay-state/ is unreadable in every spelling');
 expectEverySpellingUnservable('relay-state/identity.json', 'relay-state/identity.json');
+expectEverySpellingUnservable('relay-state/routingTable.json', 'relay-state/routingTable.json');
+// BOTH NAMES. A relay that has been through the rename holds the new file
+// and still has the old one beside it — nothing deletes it, so a rollback
+// finds the state it expects. Two files on disk are two files that must
+// stay unreadable.
 expectEverySpellingUnservable('relay-state/mailbox.json', 'relay-state/mailbox.json');
 expectEverySpellingUnservable('relay-state/allow.json', 'relay-state/allow.json');
 

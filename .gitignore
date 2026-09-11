@@ -46,7 +46,7 @@ spirit/currentIssues.md
 # test fixtures — unreferenced by any code or test (verified), 20MB.
 spirit/test/pix
 
-# Per-process relay state: mailbox.json, allow.json, and identity.json —
+# Per-process relay state: routingTable.json, allow.json, and identity.json —
 # the last of which holds an Ed25519 PRIVATE KEY. relayAuth.js's header has
 # always said these "live on that process's spirit/run home, never in git",
 # but until now nothing enforced it. This is not hypothetical once a relay

@@ -8,7 +8,7 @@
 // Everything here is LOCAL, deliberately and for one reason: there is no
 // verb anywhere that removes a peer from a relay. The owner console is
 // `status peers search invites key version`, and relay.js never deletes
-// from `peers` — mailbox.json only grows. So an invite issued on a live
+// from `peers` — the routing table only grows. So an invite issued on a live
 // relay creates a resident permanently, visible in /api/relay/who, in
 // Contacts, and in every presence roster. In a lab the whole world is
 // deletable, so nothing has to be lived with.
@@ -288,7 +288,7 @@ function createWorld(opts) {
     return true;
   }
 
-  // GAP 2, CLOSED. This used to edit the relay's mailbox.json by hand and
+  // GAP 2, CLOSED. This used to edit the relay's routing table by hand and
   // restart it, because nothing removed a peer — it bypassed every gate,
   // needed the relay's disk, and was the single reason this helper could
   // never be pointed at a relay it did not own the filesystem of.

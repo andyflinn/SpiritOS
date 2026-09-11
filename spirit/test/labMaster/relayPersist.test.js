@@ -1,6 +1,6 @@
 'use strict';
 
-// Phase C: mailbox.json survives stop + start. Do not Recycle (that recopies
+// Phase C: routingTable.json survives stop + start. Do not Recycle (that recopies
 // code; it must not be required to wipe mail).
 //
 //   node spirit/test/labMaster/relayPersist.test.js
@@ -96,7 +96,7 @@ function waitWho() {
   }, 10000, 'who');
 }
 
-test.startTest('mailbox.json survives relay stop + start');
+test.startTest('routingTable.json survives relay stop + start');
 
 let weStartedMaster = false;
 let masterChild = null;

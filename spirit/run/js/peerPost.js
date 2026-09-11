@@ -35,6 +35,21 @@ function createPeerPost(opts) {
   var setT = opts.setTimeoutImpl || setTimeout;
   var clearT = opts.clearTimeoutImpl || clearTimeout;
 
+  // WHAT CROSSED THE WAN, written down. This node's own record of what it
+  // sent and what it received — the evidence that survives a relay which
+  // delivers or refuses and stores nothing (decision 0006).
+  //
+  // Passed in rather than constructed here so the caller owns the
+  // `relayMode` gate: that file is correct on a personal node and is the
+  // worst thing in the system on a relay. A peerPost built without one
+  // simply writes nothing, which is what every test that does not care
+  // about the log gets.
+  var traffic = opts.traffic || null;
+  function note(entry) {
+    if (!traffic) return;
+    try { traffic.note(entry); } catch (e) { /* a witness, never a participant */ }
+  }
+
   // hash -> { resolve, timer, relayUrl, at }
   var waiting = Object.create(null);
   // What arrived for us, in order, with an id an app can ask for again.
@@ -46,11 +61,39 @@ function createPeerPost(opts) {
     return auth.loadIdentity(rootDir);
   }
 
+  // HOW AN EXCHANGE ENDED. post() returns before the answer exists, so
+  // the outbound side writes twice and the hash is what joins the pair —
+  // which is exactly what a hash is for.
+  //
+  // The second entry is not always outbound, and saying it was would be
+  // a small lie repeated forever: a receipt that came back CROSSED THE
+  // WAN INWARD. A refusal did not — nothing arrived, our request simply
+  // failed. So the direction follows what actually happened.
+  function noteOutcome(hash, slot, answer) {
+    var arrived = !!(answer && answer.ok);
+    note({
+      dir: arrived ? 'in' : 'out',
+      kind: arrived ? 'reply' : 'request',
+      peer: arrived ? (answer.from || slot.toKey) : slot.toKey,
+      relay: slot.relayUrl,
+      hash: hash,
+      outcome: arrived ? 'receipted'
+        : (answer && answer.stillOpen) ? 'no-answer' : 'refused',
+      status: answer && answer.status,
+      ms: Date.now() - slot.at,
+      // A receipt usually carries nothing, but an app that answers with
+      // something has sent bytes across the WAN and they are logged like
+      // any other.
+      payload: (answer && typeof answer.text === 'string') ? answer.text : undefined,
+    });
+  }
+
   function settle(hash, answer) {
     var slot = waiting[hash];
     if (!slot) return false;
     delete waiting[hash];
     if (slot.timer) clearT(slot.timer);
+    noteOutcome(hash, slot, answer);
     slot.resolve(answer);
     return true;
   }
@@ -78,6 +121,9 @@ function createPeerPost(opts) {
       waiting[hash] = {
         resolve: resolve,
         relayUrl: relayUrl,
+        // Kept for the log: the resolving entry has to name who this was
+        // with, and by then the caller's arguments are long gone.
+        toKey: toKey,
         at: Date.now(),
         timer: setT(function () {
           // Not a failure of the request — a failure to wait for it. The
@@ -90,6 +136,14 @@ function createPeerPost(opts) {
           });
         }, waitMs),
       };
+    });
+
+    // THE BYTES LEAVING. Written before the transport is touched, so an
+    // attempt that never got out of the building is still on the record —
+    // settle() then writes how it ended. Two entries, one hash.
+    note({
+      dir: 'out', kind: 'request', peer: toKey, relay: relayUrl,
+      hash: hash, outcome: 'sent', payload: text,
     });
 
     return Promise.resolve()
@@ -152,6 +206,16 @@ function createPeerPost(opts) {
       relay: relayUrl,
     };
     mailbox.push(item);
+
+    // SOMEBODY ELSE'S PACKET, ARRIVING. Logged after it is filed and
+    // before the receipt goes out, for the same reason the receipt waits:
+    // the record of what arrived must not depend on whether the answer
+    // got out. The payload is kept whole and is not looked into.
+    note({
+      dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+      hash: hash, outcome: 'delivered', payload: body.text,
+    });
+
     if (onArrival) { try { onArrival(item); } catch (e) { /* not ours */ } }
 
     // A RECEIPT IS NOT A REPLY. This node is always up and can always

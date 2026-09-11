@@ -30,13 +30,46 @@ var SEND_PER_MIN = 30;
 var WINDOW_MS = 60 * 1000;
 var RATE_KEY_SWEEP_AT = 1000;
 
+// A RELAY IS NOT A MAILBOX, AND THIS FILE IS THE PROOF.
+//
+// It was called mailbox.json, and what it holds is `peers` — name to
+// public key, when they claimed, and which device keys may speak as
+// them. That is a routing table. The relay had taken the name of a thing
+// it is not.
+//
+// There are no mailboxes in the system (Andy). An application may have
+// something it chooses to call one; this layer does not, and the word
+// belongs nowhere near a box whose whole job is to route and forget.
+//
+// The `messages` ring is still in here and is the one thing in this file
+// that is not routing. Decision 0006 deletes it; until it does, a file
+// called routingTable.json that still contains mail leaves the inversion
+// visible, which is the right way for it to be.
 function stateFile(rootDir) {
+  return path.join(rootDir, 'relay-state', 'routingTable.json');
+}
+
+// WHAT A LIVE RELAY IS ALREADY CALLING IT. spirit-3 has a mailbox.json
+// with everybody's rows in it, and a rename that could not read it would
+// drop the whole roster on the next update — every peer silently off the
+// relay, with nothing on the outside saying so.
+//
+// Read once, on the way in. Nothing writes it again: the next persist()
+// lands in routingTable.json, and the old file is left exactly where it
+// is rather than deleted, so a rollback to older code finds the state it
+// expects.
+function legacyStateFile(rootDir) {
   return path.join(rootDir, 'relay-state', 'mailbox.json');
 }
 
-function loadMailbox(rootDir) {
+function loadRoutingTable(rootDir) {
   try {
-    var raw = fs.readFileSync(stateFile(rootDir), 'utf8');
+    var where = stateFile(rootDir);
+    if (!fs.existsSync(where)) {
+      var legacy = legacyStateFile(rootDir);
+      if (fs.existsSync(legacy)) where = legacy;
+    }
+    var raw = fs.readFileSync(where, 'utf8');
     var parsed = JSON.parse(raw);
     var peers = Object.create(null);
     if (parsed && parsed.peers && typeof parsed.peers === 'object') {
@@ -54,7 +87,7 @@ function loadMailbox(rootDir) {
   }
 }
 
-function saveMailbox(rootDir, peers, messages, nextId) {
+function saveRoutingTable(rootDir, peers, messages, nextId) {
   fs.mkdirSync(path.dirname(stateFile(rootDir)), { recursive: true });
   fs.writeFileSync(stateFile(rootDir), JSON.stringify({
     nextId: nextId,
@@ -65,7 +98,7 @@ function saveMailbox(rootDir, peers, messages, nextId) {
 
 function createRelay(rootDir) {
   rootDir = rootDir || path.join(__dirname, '..');
-  var loaded = loadMailbox(rootDir);
+  var loaded = loadRoutingTable(rootDir);
   var peers = loaded.peers;
   var messages = loaded.messages;
   var nextId = loaded.nextId;
@@ -94,7 +127,7 @@ function createRelay(rootDir) {
   var routes = routerTable.createRouter();
 
   function persist() {
-    saveMailbox(rootDir, peers, messages, nextId);
+    saveRoutingTable(rootDir, peers, messages, nextId);
   }
 
   function reloadAllow() {
@@ -307,7 +340,7 @@ function createRelay(rootDir) {
       //
       // A key already in allow.json is not a NEW key — it is the owner,
       // and the owner is never someone the box has to be invited into.
-      // Without this, a relay whose allow.json outlived its mailbox.json
+      // Without this, a relay whose allow.json outlived its routing table
       // (a restore, a lost peer record) locks its own owner out: no peer,
       // so no first-owner path, and no invite, because the only account
       // that can mint one is the one being refused.
@@ -661,7 +694,7 @@ function createRelay(rootDir) {
   // inbox resolving at all (design/reviews/2026-09-10-owner-devices.md).
   // B2: any identity installs its OWN device, proved with its OWN row
   // key. The owner still lands in allow.json; a peer lands on its row in
-  // mailbox.json. Two rooms, one rule — nobody installs a key on a row
+  // the routing table. Two rooms, one rule — nobody installs a key on a row
   // they cannot sign for.
   function setDevice(token, devicePublicKey, sig) {
     var who = deviceIdentity(token);
@@ -847,7 +880,7 @@ function createRelay(rootDir) {
   }
 
   // FORGETTING SOMEBODY. Until this existed a relay could only
-  // accumulate: mailbox.json never shrank, so an invitation was
+  // accumulate: the routing table never shrank, so an invitation was
   // irreversible and the only remedy for any mistake — a wrong guest, a
   // lost key, a name that should never have been given — was an SSH
   // session on the box.

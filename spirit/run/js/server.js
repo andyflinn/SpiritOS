@@ -1391,9 +1391,26 @@ if (!relayMode) {
   // matches it must meet in the same table, so the thing that posts and
   // the thing that hears the reply are the same object — presence owns
   // the socket, this owns the correlation.
+  // THIS NODE'S OWN RECORD OF WHAT CROSSED THE WAN. Decision 0006 takes
+  // the relay out of the business of remembering anything, and this is
+  // what is left when it does — a refusal nobody wrote down cannot be
+  // told apart from nothing having been tried.
+  //
+  // Built HERE rather than inside peerPost so the gate is visible at the
+  // one place that knows which kind of process this is. The block it
+  // sits in is already personal-mode only; `relayMode` is passed anyway,
+  // because the file it writes would hold everybody's messages on a
+  // relay — not metadata, the content — and that is the worst thing in
+  // the system, not a softer version of the ring 0006 deletes. A guard
+  // that only holds while the surrounding code stays where it is, is not
+  // a guard.
   peerRouter = require('./peerPost').createPeerPost({
     rootDir: ROOT_DIR,
     request: require('./hub').relayRequest,
+    traffic: require('./trafficLog').createTrafficLog({
+      rootDir: ROOT_DIR,
+      relayMode: relayMode,
+    }),
   });
 
   presence = require('./presenceNode').createPresence({
