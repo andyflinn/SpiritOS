@@ -20,8 +20,15 @@
 var DEFAULT_WAIT_MS = 66000;
 var ERROR_NOT_NOW = 'not now';
 
+// B2: TRIM ONLY. The id handed in here is a PUBLIC KEY, and keys are
+// standard base64 — `toLowerCase()` is lossy on them, so two distinct
+// keys could collide into one slot. Labels cannot be the id: they
+// duplicate by design (relay.js, at the claim path — "two johns is still
+// two keys"), and a slot keyed by label cannot tell them apart.
+//
+// Every B1 caller is unaffected: its ids were already lower case.
 function normalizeName(name) {
-  return String(name || '').trim().toLowerCase();
+  return String(name || '').trim();
 }
 
 function createOne(opts) {

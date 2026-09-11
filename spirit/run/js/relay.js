@@ -492,6 +492,10 @@ function createRelay(rootDir) {
         // and the owner's row is what it speaks for. The device key
         // itself never reaches the wire — see fromKey below.
         var sendKeys = [src.peer.publicKey].concat(
+          // B2: and this peer's own handheld. A device speaks for the row
+          // it was installed on and for no other — it is not in the
+          // allow list, so keysForName below would never find it.
+          src.peer.devicePublicKey ? [src.peer.devicePublicKey] : [],
           deviceAuth.keysForName(allow, fTok).filter(function (k) {
             return k !== src.peer.publicKey;
           })
@@ -587,7 +591,14 @@ function createRelay(rootDir) {
     // has no row and nothing is addressed to it. It is reading Andy's
     // mail, not its own.
     if (!gate.ok && key) {
-      var deviceKeys = deviceAuth.keysForName(allow, label).filter(function (k) {
+      // This row's own handheld first (B2), then the allow list's — a
+      // peer's device is on the peer row and nowhere else, so
+      // keysForName cannot see it. Tried only after the row key has
+      // failed, so the ordinary read still costs one verify.
+      var peerDevice = (party && party.peer && party.peer.devicePublicKey) || null;
+      var deviceKeys = (peerDevice ? [peerDevice] : []).concat(
+        deviceAuth.keysForName(allow, label)
+      ).filter(function (k) {
         return k !== key;
       });
       if (deviceKeys.some(function (pub) { return auth.checkInboxKey(pub, n, sig, atMs).ok; })) {
@@ -625,20 +636,30 @@ function createRelay(rootDir) {
   // No peer row is written and no label is claimed. A second row wearing
   // `andy` would make resolveParty ambiguous and stop the owner's own
   // inbox resolving at all (design/reviews/2026-09-10-owner-devices.md).
-  function setDevice(name, devicePublicKey, sig) {
-    var n = normalizeName(name);
-    var owner = auth.ownerName(allow);
-    if (!n || !owner || n !== owner) {
-      return { ok: false, status: 403, error: 'not the owner' };
-    }
+  // B2: any identity installs its OWN device, proved with its OWN row
+  // key. The owner still lands in allow.json; a peer lands on its row in
+  // mailbox.json. Two rooms, one rule — nobody installs a key on a row
+  // they cannot sign for.
+  function setDevice(token, devicePublicKey, sig) {
+    var who = deviceIdentity(token);
+    if (!who) return { ok: false, status: 403, error: 'no such identity' };
     if (typeof devicePublicKey !== 'string' || !devicePublicKey) {
       return { ok: false, status: 400, error: 'devicePublicKey required' };
     }
-    var house = allow.byName && allow.byName[n];
-    if (!house) return { ok: false, status: 403, error: 'not the owner' };
-    if (!sig || !auth.verify(house, deviceAuth.setDeviceMessage(devicePublicKey), sig)) {
+    if (!sig || !auth.verify(who.publicKey, deviceAuth.setDeviceMessage(devicePublicKey), sig)) {
       return { ok: false, status: 403, error: 'bad set-device signature' };
     }
+
+    if (!who.owner) {
+      // One slot, and the next enrolment replaces the last — the same
+      // rule the owner has had since cycle 5, and the thing that makes a
+      // stolen password noticeable rather than silent.
+      who.peer.devicePublicKey = devicePublicKey;
+      persist();
+      return { ok: true, status: 200 };
+    }
+
+    var n = who.label;
 
     // Every row rewritten, not just this one. In practice keys mode holds
     // exactly one — becomeOwner writes one and nothing else has ever
@@ -673,85 +694,137 @@ function createRelay(rootDir) {
   // inboxSignatureFrom for that), and it dies on its own if it is written
   // down anyway. Both halves are needed — the header keeps it out of the
   // log, the minute makes the copy in yesterday's log worthless.
-  function deviceGate(name, sig) {
-    var n = normalizeName(name);
-    var owner = auth.ownerName(allow);
-    if (!n || !owner || n !== owner) {
-      return { ok: false, status: 403, error: 'not the owner' };
-    }
-    var house = allow.byName && allow.byName[n];
-    if (!house) return { ok: false, status: 403, error: 'not the owner' };
-    if (!deviceAuth.deviceTakeSignatureOk(house, n, sig)) {
+  // B2: ANY identity with a row, proved with that row's own key — not
+  // the owner's house key. The row is selected by key first, so two peers
+  // wearing the same label sign the same message bytes and each still
+  // verifies only against their own row. The ambiguity disappears without
+  // the signed message changing shape.
+  //
+  // Still never the DEVICE key: the slot holds a password somebody is
+  // trying, so answering a device key would let a borrowed phone read the
+  // credential that installs its successor.
+  function deviceGate(token, sig) {
+    var who = deviceIdentity(token);
+    if (!who) return { ok: false, status: 403, error: 'no such identity' };
+    // The label, not the id, because that is what the node signed —
+    // deviceTakeMessage has always carried a name and nothing about B2
+    // needs it to carry a key.
+    if (!deviceAuth.deviceTakeSignatureOk(who.publicKey, who.label, sig)) {
       return { ok: false, status: 403, error: 'bad device-take signature' };
     }
-    return { ok: true };
+    return { ok: true, who: who };
   }
 
-  // B1: every queue call carries a name now, because the slot and the
-  // rate bucket are per identity. Today's page does not send one —
-  // device.html posts {password, devicePublicKey} and is frozen for this
-  // sitting — so an omitted name RESOLVES to the owner label, which is
-  // exactly who that page enrols.
+  // WHO A DEVICE SLOT BELONGS TO. B1 keyed it by normalized label, which
+  // is right while the owner is the only enroller — allow.json in keys
+  // mode holds exactly one row and its label is unique. It does not
+  // survive peers: labels duplicate on purpose ("two johns is still two
+  // keys", at the claim path above), so a slot keyed by label cannot tell
+  // two of them apart.
   //
-  // Resolved, not a global fallback slot: the offer lands in the owner's
-  // slot like any other, and a mailbox with no owner yet resolves to ''
-  // and is answered `not now` by the queue.
-  function deviceNameOr(name) {
-    var n = normalizeName(name);
-    return n || auth.ownerName(allow) || '';
-  }
+  // So the id IS the public key, which is the unique thing. The label
+  // stays a display name. This is the same answer PEER-DEVICES.md §5
+  // reached for the URL, carried inward.
+  //
+  // A token may be either — a key resolves directly, a label only when it
+  // is unambiguous. A duplicate label resolves to NOTHING, which is the
+  // honest answer and the same one resolveParty gives the inbox.
+  function deviceIdentity(token) {
+    var t = String(token == null ? '' : token).trim();
 
-  function deviceOffer(name, password, devicePublicKey) {
-    return deviceQueue.offer(deviceNameOr(name), password, devicePublicKey);
-  }
-
-  function deviceTake(name) {
-    return deviceQueue.take(deviceNameOr(name));
-  }
-
-  function deviceReply(name, accepted) {
-    return deviceQueue.reply(deviceNameOr(name), !!accepted);
-  }
-
-  function devicePending(name, sig) {
-    var n = normalizeName(name);
-
-    // A name this box does not know is refused before it touches the
-    // queue at all — "wrong name fails before crypto, as today"
-    // (DEVICE-B1.md), and today it failed without leaving anything
-    // behind. That second half matters now that the queue keeps a map
-    // keyed by name: `queueFor` mints an entry on first use, so reaching
-    // the bucket with an arbitrary name would let a stranger grow that
-    // map with input they choose. Duplicates the cheap half of
-    // deviceGate deliberately; B2 replaces both with the peer-aware
-    // test, and they should collapse into one there.
-    var owner = auth.ownerName(allow);
-    if (!n || !owner || n !== owner) {
-      return { ok: false, status: 403, error: 'not the owner' };
+    // The owner first, by label, because allow.json is the authority on
+    // who the owner is and holds exactly one row.
+    var ownerLabel = auth.ownerName(allow);
+    if (ownerLabel) {
+      var ownerKey = allow.byName && allow.byName[ownerLabel];
+      if (ownerKey && (t === ownerKey || normalizeName(t) === ownerLabel)) {
+        return { id: ownerKey, label: ownerLabel, publicKey: ownerKey, owner: true };
+      }
     }
+    if (!t) return null;
 
-    // THEN the bucket, and therefore still before any crypto. A right
-    // name with a bad signature costs three Ed25519 verifies, and nothing
-    // limited how often a stranger could make the box do that — the one
-    // unlimited crypto path on it. Per identity, so one node's polling
-    // cannot spend another's allowance.
-    if (!deviceQueue.pendingRateOk(n)) {
+    var peer = findByKey(t) || findByLabel(t);
+    if (!peer || !peer.publicKey) return null;
+    return {
+      id: peer.publicKey,
+      label: labelOf(peer),
+      publicKey: peer.publicKey,
+      owner: false,
+      peer: peer,
+    };
+  }
+
+  // An omitted token still means the owner, so today's frozen device.html
+  // — which posts {password, devicePublicKey} and no name — keeps working
+  // unchanged. Resolved, never a fallback slot: it lands in the owner's
+  // slot like any other, and a mailbox with no owner resolves to null and
+  // is answered `not now`.
+  function deviceIdentityOr(token) {
+    var t = String(token == null ? '' : token).trim();
+    if (!t) {
+      var ownerLabel = auth.ownerName(allow);
+      return ownerLabel ? deviceIdentity(ownerLabel) : null;
+    }
+    return deviceIdentity(t);
+  }
+
+  function deviceOffer(token, password, devicePublicKey) {
+    var who = deviceIdentityOr(token);
+    if (!who) {
+      return Promise.resolve({
+        ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW,
+      });
+    }
+    return deviceQueue.offer(who.id, password, devicePublicKey);
+  }
+
+  function deviceTake(token) {
+    var who = deviceIdentityOr(token);
+    if (!who) return null;
+    return deviceQueue.take(who.id);
+  }
+
+  function deviceReply(token, accepted) {
+    var who = deviceIdentityOr(token);
+    if (!who) {
+      return { ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW };
+    }
+    return deviceQueue.reply(who.id, !!accepted);
+  }
+
+  function devicePending(token, sig) {
+    // A token this box does not know is refused before it touches the
+    // queue at all — B1's rule, kept: `queueFor` mints a map entry on
+    // first use, so reaching the bucket with arbitrary input would let a
+    // stranger grow that map with ids they choose. B1 said this check
+    // and deviceGate's cheap half should collapse into one here, and
+    // they have: deviceIdentity IS the test, for the owner and every
+    // peer alike.
+    var who = deviceIdentity(token);
+    if (!who) return { ok: false, status: 403, error: 'no such identity' };
+
+    // THEN the bucket, and therefore still before any crypto. A known
+    // identity with a bad signature costs three Ed25519 verifies, and
+    // nothing limited how often a stranger could make the box do that —
+    // the one unlimited crypto path on it. Per identity, so one node's
+    // polling cannot spend another's allowance.
+    if (!deviceQueue.pendingRateOk(who.id)) {
       return { ok: false, status: 429, error: deviceHandshake.ERROR_NOT_NOW };
     }
 
-    var gate = deviceGate(n, sig);
+    var gate = deviceGate(token, sig);
     if (!gate.ok) return gate;
     // An empty object, not a refusal. "Nobody is waiting" is the ordinary
-    // answer to a poll that runs every two seconds while the window is
-    // open, and a 403 there would make the quiet case indistinguishable
-    // from a credential that has stopped working.
-    return deviceQueue.take(n) || {};
+    // answer to a poll that runs while a window is open, and a 403 there
+    // would make the quiet case indistinguishable from a credential that
+    // has stopped working.
+    return deviceQueue.take(who.id) || {};
   }
 
-  function deviceAnswer(name, accepted, sig) {
-    var gate = deviceGate(name, sig);
+  function deviceAnswer(token, accepted, sig) {
+    var gate = deviceGate(token, sig);
     if (!gate.ok) return gate;
-    return deviceQueue.reply(normalizeName(name), !!accepted);
+    return deviceQueue.reply(gate.who.id, !!accepted);
   }
 
   return {

@@ -195,6 +195,14 @@
       // — it cannot tell a wrong password from an absent node, and will
       // not guess — but the browser knows how long it waited.
 
+      // 429 means the relay has taken too many attempts for this name in
+      // the last minute. That is the ONE refusal it names precisely —
+      // everything else it answers `not now` to, on purpose — and it is
+      // temporary, so it is a reason to wait rather than to stop. Twenty
+      // seconds because the bucket is a rolling minute: a third of it is
+      // usually enough for a slot to fall out.
+      var ENROLL_RATE_WAIT_MS = 20000;
+
       var enrollStop = null;
 
       function enrollClock(ms) {
@@ -211,6 +219,7 @@
         var began = Date.now();
         var attempt = 0;
         var cancelled = false;
+        var holdOffUntil = 0;
 
         // A page that says "waiting…" for two minutes is indistinguishable
         // from a page that has died. So: which attempt, how long it has
@@ -224,16 +233,31 @@
         function paint() {
           var gone = Date.now() - began;
           var left = Math.max(0, ENROLL_BUDGET_MS - gone);
-          sayEnroll('Waiting for your personal node — attempt ' + attempt + ', ' +
-            enrollClock(gone) + ' gone, giving up in ' + enrollClock(left) + '.\n' +
+          var head = 'attempt ' + attempt + ', ' + enrollClock(gone) + ' gone, giving up in ' +
+            enrollClock(left) + '.';
+
+          // Holding off is a different wait and has to read as one, or the
+          // counter says "waiting for your node" while the relay is the
+          // thing that has not let us through yet.
+          if (holdOffUntil > Date.now()) {
+            sayEnroll('This relay has taken too many enrolment attempts for this name in the ' +
+              'last minute — ' + head + '\n' +
+              'Knocking again in ' + Math.ceil((holdOffUntil - Date.now()) / 1000) +
+              's. Nothing is wrong and nothing needs re-typing.');
+            return;
+          }
+
+          sayEnroll('Waiting for your personal node — ' + head + '\n' +
             'It looks about once every ' + Math.round(ENROLL_PERIOD_HINT_MS / 1000) +
             's, and the relay holds this request open past one of those — so it ' +
             'should finish inside a minute, whenever you pressed the button.');
         }
         var ticker = setInterval(paint, 1000);
+        var holdOff = null;
 
         function finish(text) {
           clearInterval(ticker);
+          if (holdOff) { clearTimeout(holdOff); holdOff = null; }
           enrollStop = null;
           enrollButton('Add this device');
           sayEnroll(text);
@@ -274,14 +298,48 @@
             }
 
             var took = Date.now() - sent;
+
+            // The one refusal the relay names precisely, and it is not a
+            // stop. Waiting it out is what a person would do anyway, and
+            // the password is already typed.
+            if (r.res.status === 429) {
+              if (Date.now() - began >= ENROLL_BUDGET_MS) {
+                finish('Gave up after ' + enrollClock(Date.now() - began) + '. This relay kept ' +
+                  'refusing on rate — too many enrolment attempts for this name in the last ' +
+                  'minute. Leave it a minute and press the button again.');
+                return;
+              }
+              holdOffUntil = Date.now() + ENROLL_RATE_WAIT_MS;
+              paint();
+              holdOff = setTimeout(function () {
+                holdOff = null;
+                holdOffUntil = 0;
+                attemptOnce();
+              }, ENROLL_RATE_WAIT_MS);
+              return;
+            }
+
             if (took < ENROLL_ANSWERED_MS) {
-              // Three ways to be refused this fast, and the relay will
-              // not say which. Named in the order they actually happen,
-              // rather than hidden behind one word.
+              // Refused at once rather than nobody coming. The relay says
+              // `not now` to every cause on purpose — it faces the
+              // internet and owes it no detail — so this lists them, and
+              // the ORDER matters: the first draft led with "the password
+              // is wrong", which is the one cause that leaves a trace
+              // somewhere else, and it is usually not the one.
+              //
+              // The last line is the actual diagnosis, and it costs
+              // nothing: the node reports what it saw. `a wrong password
+              // was refused` means the password reached it. Anything else
+              // means it never did, and then it is this relay holding a
+              // slot or counting attempts, not the password.
               finish('Refused in ' + Math.round(took / 1000) + 's — something answered straight ' +
-                'away rather than nobody coming. Usually the password is wrong: copy it again ' +
-                'from Natter and try once more. It can also mean another device is enrolling ' +
-                'right now, or that this relay has seen too many attempts in the last minute.');
+                'away rather than nobody coming. Most likely another attempt of yours is still ' +
+                'running: this page keeps knocking for three minutes, and one held slot per ' +
+                'name means a second tab is refused at once. Close any other copy of this page ' +
+                'and press the button again — the password is still filled in.\n' +
+                'If there is no other tab, the password is wrong. Your personal node\'s panel ' +
+                'in Natter says which: "a wrong password was refused" means it arrived and was ' +
+                'read; anything else means it never got there.');
               return;
             }
 

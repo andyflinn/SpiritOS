@@ -318,6 +318,27 @@ async function run() {
     } else {
       test.fail('device.html shows no countdown to failure');
     }
+
+    // The clock alone cannot tell a wrong password from a rate refusal —
+    // both come back at once, and the relay says `not now` to both. The
+    // STATUS can: 429 is the one refusal it names precisely. A page that
+    // reads only the clock tells somebody their password is wrong when
+    // the relay was merely counting, which is what it did to Andy.
+    if (/res\.status === 429/.test(page)) {
+      test.check('the page reads the status, not only its own stopwatch');
+    } else {
+      test.fail('device.html cannot tell a rate refusal from a refusal');
+    }
+
+    // And a rate refusal is temporary, so it is a reason to wait rather
+    // than to stop. The password is already typed; stopping would make a
+    // person retype nothing and press the same button anyway.
+    const rate = page.slice(page.indexOf('res.status === 429'));
+    if (/ENROLL_RATE_WAIT_MS/.test(rate) && /attemptOnce\(\);/.test(rate.slice(0, 900))) {
+      test.check('and waits it out instead of stopping, since nothing needs re-typing');
+    } else {
+      test.fail('a rate refusal ends the run rather than pausing it');
+    }
   }
 
   test.reportSuccessFailureCount();
