@@ -614,6 +614,21 @@
     // about showing them.
     appIds.filter(function (id) { return !hiddenByFirstRun(id); }).forEach(function (id) {
       if (!apps[id] || drawn[id]) return;
+      // A HIDDEN APP HAS NO ICON HERE EITHER.
+      //
+      // renderDesktop has always skipped these; this grid did not, and
+      // an app that is both `intrinsic` and `hidden` lands in exactly
+      // this grid — effectiveGroup sends every intrinsic app to Spirit.
+      // So a dialog got a tile, which is the one thing a dialog must not
+      // have.
+      //
+      // Not cosmetic. The shell's single dialog-result slot is safe
+      // because of an invariant stated at callDialog: "a hidden app is
+      // only ever entered from a visible one, and only ever left by
+      // replacing itself". A tile is a way in from the desktop with no
+      // parent underneath, which is precisely the case that invariant
+      // says cannot arise.
+      if (apps[id].hidden) return;
       drawn[id] = true;
       container.appendChild(buildAppIcon(id));
     });

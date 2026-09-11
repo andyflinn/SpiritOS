@@ -127,8 +127,19 @@ function mountApp(options) {
   const container = fakeElement('container');
   container.byId = function () { return doc.getElementById('natter-tbody'); };
 
+  const called = [];
   const api = {
     escapeHtml: spirit.core.util.escapeHtml,
+    // Opening a mailbox IS a call now: the panel that used to unfold
+    // inside the row is app/natterDetails, pushed for the row it was
+    // opened from. Recorded rather than dropped, because which dialog a
+    // row names with which params is the whole of what the click does.
+    callDialog: function (id, params) {
+      called.push({ id: id, params: params });
+      // What the screen decided. A dialog that decided nothing answers
+      // null, and costs this list nothing.
+      return Promise.resolve(opts.dialogResult || null);
+    },
     // The shell's own accessor, which reads the file this app writes.
     nodeLabel: function () { return label; },
     nodeLabelChanged: function () { told += 1; label = store['session.json']
@@ -145,6 +156,7 @@ function mountApp(options) {
   return {
     doc: doc, log: log, store: store, container: container,
     told: function () { return told; },
+    called: called,
   };
 }
 
@@ -210,8 +222,8 @@ function unboundIsThePage() {
     const empty = mountApp({ relays: [] });
     return settle().then(function () {
       const copy = el(empty, 'natter-bind-note').innerHTML;
-      if (/no mailbox listed yet/.test(copy) && el(empty, 'natter-bind-fields').style.display === 'none') {
-        test.check('with no mailbox listed it says so, and offers no name to claim');
+      if (/no relay listed yet/.test(copy) && el(empty, 'natter-bind-fields').style.display === 'none') {
+        test.check('with no relay listed it says so, and offers no name to claim');
       } else {
         test.fail('empty-list copy: ' + copy + ' / fields ' + el(empty, 'natter-bind-fields').style.display);
       }
@@ -226,8 +238,8 @@ function unboundIsThePage() {
       }
 
       // The heading degrades to the step that comes first, rather than
-      // naming a mailbox that is not there.
-      if (/Add a mailbox below/.test(el(empty, 'natter-bind-heading').textContent)) {
+      // naming a relay that is not there.
+      if (/Add a relay below/.test(el(empty, 'natter-bind-heading').textContent)) {
         test.check('and the heading asks for one instead of naming none');
       } else {
         test.fail('empty heading: ' + el(empty, 'natter-bind-heading').textContent);
@@ -339,6 +351,8 @@ function refusalDoesNotBind() {
 // A click on a row, and a click on the Invite inside it. Both are
 // delegated on the table, so the test hands the handler what the browser
 // would: the element the click landed on, answering closest().
+const OWNED = 'https://spirit.example';
+
 function rowTarget(url) {
   const node = { dataset: {}, getAttribute: function () { return null; } };
   node.closest = function (selector) { return selector === '[data-row-url]' ? node : null; };
@@ -380,133 +394,81 @@ function mintTarget(url, fields) {
   return node;
 }
 
-function inviteLivesInTheRowItMintsOn() {
-  test.subHeading('Minting happens inside the mailbox it mints on');
+// THE PANEL MOVED, AND SO DID ITS CHECKS. What a mailbox reports, the
+// mint, and the device window are app/natterDetails now, covered by
+// spirit/test/natterDetails.js. A row does not unfold; it opens a screen.
+//
+// What is left for THIS suite is the half that is still the list's: that
+// a row opens the right mailbox, that Remove is answered ahead of it, and
+// that a mint made over there is remembered here.
+function aRowOpensTheMailbox() {
+  test.subHeading('A row opens its mailbox, and that is all a row does');
 
-  const OWNED = 'https://spirit.example';
-  const friend = mountApp({
-    label: 'bert',
-    rows: [{ url: OWNED, label: 'spirit', owned: false, error: 'not owner' }],
+  const app = mountApp({
+    label: 'andy',
+    rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
   });
 
   return settle().then(function () {
-    // Not hidden — not built. A mailbox somebody else owns has no mint
-    // markup at all to find, because the panel returns before it.
-    const tbody = friend.doc.getElementById('natter-tbody');
-    tbody.fire('click', { target: rowTarget(OWNED) });
-    if (tbody.innerHTML.indexOf('natter-inv-go') === -1) {
-      test.check('a mailbox this node does not own offers no mint at all');
+    const tbody = app.doc.getElementById('natter-tbody');
+
+    // ONE ROW PER MAILBOX. The second <tr> the expansion used to add is
+    // gone, and with it the colspan that made the widest thing on the
+    // page live inside the narrowest.
+    const rowCount = (tbody.innerHTML.match(/<tr/g) || []).length;
+    if (rowCount === 1 && tbody.innerHTML.indexOf('colspan') === -1) {
+      test.check('a mailbox is one row, with nothing folded underneath it');
     } else {
-      test.fail('mint offered on an unowned row: ' + tbody.innerHTML);
+      test.fail(rowCount + ' rows: ' + tbody.innerHTML);
     }
 
-    const owner = mountApp({
-      label: 'andy',
-      rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
-    });
+    tbody.fire('click', { target: rowTarget(OWNED) });
+    const call = app.called[app.called.length - 1] || {};
+    if (call.id === 'app/natterDetails' && call.params && call.params.url === OWNED) {
+      test.check('and clicking it calls the mailbox screen for THAT url');
+    } else {
+      test.fail('call: ' + JSON.stringify(call));
+    }
+
+    // The screen signs a status ask of its own, and needs this node's
+    // name to do it. Handed over rather than re-read, because the shell
+    // already told this app what it is called.
+    if (call.params && call.params.label === 'andy') {
+      test.check('and hands it this node\'s name, which is what signs a status ask');
+    } else {
+      test.fail('no label in params: ' + JSON.stringify(call.params));
+    }
+  });
+}
+
+// minted.json is the LIST's file, and the screen cannot write it: a
+// dialog's api.fs is scoped to its own folder. So the label comes back as
+// the dialog's answer and this app records it — which is the whole reason
+// a dialog returns anything.
+function aMintOverThereIsRememberedHere() {
+  const app = mountApp({
+    label: 'andy',
+    rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
+    dialogResult: { changed: true, url: OWNED, minted: 'saint' },
+  });
+
+  return settle().then(function () {
+    app.doc.getElementById('natter-tbody').fire('click', { target: rowTarget(OWNED) });
     return settle().then(function () {
-      const rows = owner.doc.getElementById('natter-tbody');
-      rows.fire('click', { target: rowTarget(OWNED) });
-      const panel = rows.innerHTML;
-
-      // In the row's own panel, under what that mailbox reports.
-      if (/natter-inv-go/.test(panel) && /data-mint-url="https:\/\/spirit.example"/.test(panel)) {
-        test.check('an owned row opens onto the mint for that mailbox');
+      const minted = app.store['minted.json'] || '';
+      if (/saint/.test(minted)) {
+        test.check('a label minted on that screen is remembered by this one');
       } else {
-        test.fail('owned row panel: ' + panel);
+        test.fail('minted.json: ' + minted);
       }
 
-      // Two blocks, and the facts are one line rather than four rows:
-      // the row above is the heading, and label-over-value stacked made
-      // a list out of what is one reading.
-      const facts = (panel.match(/class="fact"/g) || []).length;
-      if (/class="fact-row"/.test(panel) && facts === 4 && panel.indexOf('file-info-row') === -1) {
-        test.check('and what the mailbox reports is one row of four facts');
+      // Never the token. It is the spoken secret and it does not leave
+      // the screen it was read off.
+      if (minted.indexOf('saint-bernard') === -1) {
+        test.check('and the token is not, because that is the spoken secret');
       } else {
-        test.fail('report layout: ' + panel);
+        test.fail('a token reached minted.json: ' + minted);
       }
-
-      // The mint is its own tile, so it carries its own space and a row
-      // without one leaves no gap behind.
-      if (/stat-tile wide natter-mint/.test(panel)) {
-        test.check('with the mint as a second block, spaced by itself');
-      } else {
-        test.fail('mint is not its own block: ' + panel);
-      }
-
-      // And it is the one block here that gets a heading: the facts
-      // above are a reading of the row that opened them, but this is a
-      // thing to do. The mark is the shell's own ★ — the same one the
-      // row carries for owning the mailbox.
-      if (panel.indexOf(spirit.core.const.ICON.STAR + ' Invite someone to this relay') !== -1) {
-        test.check('and says what it is, with the mark that means owned');
-      } else {
-        test.fail('mint heading: ' + panel);
-      }
-
-      // And no picker, ever again: the row is which mailbox. A question
-      // nobody has to ask cannot be answered wrongly.
-      if (panel.indexOf('natter-inv-pick') === -1 && panel.indexOf('Mailbox<select') === -1) {
-        test.check('and asks no "which mailbox", because the row already said');
-      } else {
-        test.fail('a picker survived: ' + panel);
-      }
-
-      const out = { textContent: '' };
-      rows.fire('click', {
-        target: mintTarget(OWNED, {
-          'natter-inv-label': { value: 'saint' },
-          'natter-inv-days': { value: '7' },
-          'natter-inv-token': { value: '' },
-          'natter-inv-out': out,
-        }),
-      });
-
-      return settle().then(function () {
-        const mints = owner.log.filter(function (c) { return c.url.indexOf('/api/hub/invite') === 0; });
-        const body = mints.length ? JSON.parse(mints[0].body) : null;
-        if (body && body.label === 'saint' && body.days === 7 && body.url === OWNED) {
-          test.check('minting names the mailbox whose row it was pressed in');
-        } else {
-          test.fail('mint body: ' + JSON.stringify(body));
-        }
-
-        // Printed, not copied: it is read off this screen onto a phone.
-        if (/saint-bernard/.test(out.textContent)) {
-          test.check('and the token the relay stored is shown to be read out');
-        } else {
-          test.fail('mint output: ' + out.textContent);
-        }
-
-        // Which of the two answers it is, said in the markup: a refusal
-        // must not read as a token somebody might try to speak down a
-        // phone.
-        if (/is-token/.test(out.className) && !/is-error/.test(out.className)) {
-          test.check('and it is marked as a token rather than as a refusal');
-        } else {
-          test.fail('answer class: ' + out.className);
-        }
-
-        // The label is remembered so the invited key can be recognised
-        // when it turns up claimed on this owner's own census. Never the
-        // token — that is the secret.
-        const minted = owner.store['minted.json'] || '';
-        if (/saint/.test(minted) && minted.indexOf('saint-bernard') === -1) {
-          test.check('the label is remembered for the census, and the token is not');
-        } else {
-          test.fail('minted.json: ' + minted);
-        }
-
-        // Closing the row rebuilds the table, so the fields and the
-        // minted token go with it — a rule the old free-floating panel
-        // had to enforce by hand on every toggle.
-        rows.fire('click', { target: rowTarget(OWNED) });
-        if (rows.innerHTML.indexOf('natter-inv-go') === -1) {
-          test.check('and closing the row takes the call with it');
-        } else {
-          test.fail('mint survived the row closing');
-        }
-      });
     });
   });
 }
@@ -563,7 +525,8 @@ unboundIsThePage()
   .then(claimBinds)
   .then(tokenGoesWithTheName)
   .then(refusalDoesNotBind)
-  .then(inviteLivesInTheRowItMintsOn)
+  .then(aRowOpensTheMailbox)
+  .then(aMintOverThereIsRememberedHere)
   .then(staleBindingIsDropped)
   .then(chatKeepsNoBinding)
   .then(function () { test.reportSuccessFailureCount(); })

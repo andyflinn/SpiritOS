@@ -111,20 +111,31 @@ async function main() {
   const results = [];
   let next = 0;
 
-  async function lane() {
-    while (next < files.length) {
-      const mine = files[next++];
-      results.push(await runOne(mine));
-    }
-  }
-
   // visualScenarios goes last on its own, after everything else has
   // finished, so it reads a settled tree.
   const body = files.filter(function (f) { return f !== LAST; });
   const tail = files.filter(function (f) { return f === LAST; });
 
+  // SUITES THAT SHARE THE FAKE NODE HOMES GO FIRST, ONE AT A TIME.
+  //
+  // setupRelayFakes() rewrites %TEMP%/spiritos-relay-fakes/{relay,andy,bert}
+  // with copyFileSync on every call. Two suites calling it at once means one
+  // is overwriting js/relay.js while the other is require()ing it out of the
+  // same folder — which throws somewhere that looks nothing like the cause.
+  //
+  // Found the moment this runner started six at a time: relayGates failed
+  // about one run in five, and passed every time it was run alone.
+  //
+  // Detected from the source rather than listed, for the same reason the
+  // suites are discovered rather than listed — a list is a second place to
+  // forget something.
+  const shared = body.filter(function (f) {
+    return /setupRelayFakes/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
+  });
+  for (const f of shared) results.push(await runOne(f));
+
   const lanes = [];
-  const all = body;
+  const all = body.filter(function (f) { return shared.indexOf(f) === -1; });
   next = 0;
   for (let i = 0; i < Math.min(LANES, all.length); i++) {
     lanes.push((async function () {

@@ -58,12 +58,14 @@ function loadNatter(win) {
     ' canRemove: natterCanRemove,' +
     ' removeAt: natterRemoveAt,' +
     ' renderList: natterRenderList,' +
-    ' reportHtml: natterReportHtml,' +
-    // Setters rather than the variables themselves: these are module
-    // state the app owns, and a test that could only read them would be
-    // reduced to asserting the markup it had just written.
-    ' badges: function (byUrl) { natterBadgeByUrl = byUrl; },' +
-    ' expand: function (url) { natterExpandedUrl = url; }' +
+    // A setter rather than the variable itself: this is module state the
+    // app owns, and a test that could only read it would be reduced to
+    // asserting the markup it had just written.
+    //
+    // `reportHtml` and `expand` were exported here too, and went with the
+    // panel — what a mailbox reports is app/natterDetails now, and there
+    // is nothing left to expand.
+    ' badges: function (byUrl) { natterBadgeByUrl = byUrl; }' +
     '};';
   return new Function('window', 'spirit', 'document', src + tail)(win, spirit, undefined);
 }
@@ -149,24 +151,29 @@ test.subHeading('Natter asks it, on the row and on the click');
     { label: 'lab', url: 'http://127.0.0.1:65430' },
   ];
 
-  if (countRemoveButtons(renderHtml(natter, two)) === 2) {
-    test.check('two relays: both rows offer Remove');
+  // THE BUTTON MOVED, THE RULE DID NOT. Remove is on the mailbox's own
+  // screen (app/natterDetails) — a destructive control inside the row it
+  // would delete was a tap that could mean two things. What is checked
+  // HERE is the half that stayed: removeAt, which is the list's own
+  // guard and answers to nothing a screen decided.
+  //
+  // The markup checks went with the button, to
+  // spirit/test/natterDetails.js.
+  const rows = renderHtml(natter, two);
+  if (rows.indexOf('<button') === -1) {
+    test.check('a row carries no control at all — the row IS the control');
   } else {
-    test.fail('two rows: ' + renderHtml(natter, two));
+    test.fail('a button survived in the table: ' + rows);
   }
 
-  const one = [two[0]];
-  const lastHtml = renderHtml(natter, one);
-  if (countRemoveButtons(lastHtml) === 0) {
-    test.check('one relay: no Remove control is drawn at all');
+  // Four cells: what we know, whether it is yours, what you call it, and
+  // where it is. The first two are marks and have no heading, which is
+  // the same rule the mark column in Contacts follows.
+  const cells = (rows.match(/<td/g) || []).length;
+  if (cells === 8) {
+    test.check('and two mailboxes are four cells each — mark, star, label, url');
   } else {
-    test.fail('single row still offers Remove: ' + lastHtml);
-  }
-
-  if (lastHtml.indexOf('<button') === -1 && lastHtml.indexOf('spirit.andyflinn.com') !== -1) {
-    test.check('the row is still listed, it just has no button');
-  } else {
-    test.fail('single row html: ' + lastHtml);
+    test.fail(cells + ' cells across two rows: ' + rows);
   }
 
   // The click path is the one that actually deletes, and it is not
@@ -289,52 +296,41 @@ test.subHeading('A star means owned, and opens what that mailbox says');
     test.fail('row markup: ' + listed);
   }
 
-  if (listed.indexOf('job-log-row') === -1) {
-    test.check('and nothing is expanded until the star is pressed');
+  // A TABLE, AND ONLY A TABLE. The expansion that used to follow a row
+  // is app/natterDetails, so there is no second <tr>, no colspan, and
+  // nothing on this page that can be open or shut.
+  //
+  // Checked as an absence because that is what the move means: the
+  // panel's own behaviour — what it reports, peers by count, an unowned
+  // mailbox saying why — moved to spirit/test/natterDetails.js with the
+  // code, and re-asserting it here would be asserting it twice about one
+  // of the two.
+  if (listed.indexOf('job-log-row') === -1 && listed.indexOf('colspan') === -1) {
+    test.check('a row folds out into nothing, because the panel is a screen now');
   } else {
-    test.fail('a panel was open on first render');
+    test.fail('something unfolded in the table: ' + listed);
   }
 
-  natter.expand('https://spirit.example');
-  const open = renderHtml(natter, relays);
-  if ((open.match(/job-log-row/g) || []).length === 1 &&
-      open.indexOf('andy') !== -1 && open.indexOf('keys') !== -1 && open.indexOf('>12<') !== -1) {
-    test.check('pressing it shows what the mailbox reported');
-  } else {
-    test.fail('panel: ' + open);
-  }
-
-  // Peers by count, not by key (UI_DESIGN_STYLE.md) — and the panel shows
-  // only what the probe returned, which is what keeps live invite tokens
-  // off a screen anybody can glance at.
-  if (open.indexOf('>2<') !== -1 && open.indexOf('bert') === -1) {
-    test.check('peers are counted, not listed one key at a time');
-  } else {
-    test.fail('peers rendered as names or keys: ' + open);
-  }
-
-  // One at a time: what is expanded is a single value, so a second row
-  // cannot also be open.
+  // One <tr> per mailbox, whatever the badges say. Two mailboxes, two
+  // rows, and no arithmetic about which of them is open.
   natter.badges({
     'https://spirit.example': { url: 'https://spirit.example', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } },
     'https://other.example': { url: 'https://other.example', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 5 } },
   });
-  natter.expand('https://other.example');
-  const second = renderHtml(natter, relays);
-  if ((second.match(/job-log-row/g) || []).length === 1 && second.indexOf('>5<') !== -1) {
-    test.check('opening one closes the other');
+  const both = renderHtml(natter, relays);
+  if ((both.match(/<tr/g) || []).length === 2) {
+    test.check('and two mailboxes are two rows, with nothing to open or close');
   } else {
-    test.fail('two panels open at once: ' + second);
+    test.fail('rows: ' + both);
   }
 
-  // A row this node does not own says why, rather than showing a census
-  // it never received.
-  const plain = { escapeHtml: function (v) { return String(v == null ? '' : v); } };
-  if (natter.reportHtml(plain, { owned: false, error: 'not owner' }).indexOf('not owner') !== -1 &&
-      natter.reportHtml(plain, null).indexOf('asking') !== -1) {
-    test.check('an unowned row says so, and an unanswered one says it is asking');
+  // Both openable, and each naming its own url — which is the whole of
+  // what a row carries now.
+  if (both.indexOf('data-row-url="https://spirit.example"') !== -1 &&
+      both.indexOf('data-row-url="https://other.example"') !== -1) {
+    test.check('and each row names the mailbox it would open');
   } else {
-    test.fail('unowned report: ' + natter.reportHtml(plain, { owned: false, error: 'not owner' }));
+    test.fail('row urls: ' + both);
   }
 
   // Nomenclature: the field is captioned with the word the dictionary

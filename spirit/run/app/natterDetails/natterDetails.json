@@ -1,0 +1,9 @@
+{
+  "name": "Mailbox",
+  "description": "One relay from the Natter list: what it says about itself, who may be invited to it, and attaching one of your own devices.",
+  "icon": "BUG",
+  "hidden": true,
+  "type": "dialog",
+  "intrinsic": true,
+  "owner": "system"
+}

@@ -75,7 +75,16 @@ async function run() {
     // purpose, because it cannot tell them apart and will not guess.
     // device.html reads that difference off its own stopwatch, so the
     // difference has to be real.
-    if (took >= HOLD) {
+    // A MILLISECOND OF SLACK, because setTimeout is allowed to fire a
+    // shade early and Date.now() on Windows moves in ~1ms steps. Asked
+    // exactly, this failed roughly one run in ten once the harness
+    // started several suites at once — a red line that said nothing
+    // about the product and taught you to re-run instead of read.
+    //
+    // The thing being checked is not the millisecond: it is that an
+    // unattended offer waits out the hold rather than answering at once,
+    // and 39 against 40 says that just as well as 40 does.
+    if (took >= HOLD - 2) {
       test.check('and it takes the whole hold to say so, which is how it differs from a refusal');
     } else {
       test.fail('expiry came back in ' + took + 'ms, under the ' + HOLD + 'ms hold');
@@ -268,16 +277,21 @@ async function run() {
   test.subHeading('And the panel is still holding the news when you look');
 
   {
-    const natter = fs.readFileSync(path.join(RUN_DIR, 'app', 'natter', 'natter.js'), 'utf8');
+    // THE PANEL IS ITS OWN APP NOW (app/natterDetails). Both numbers
+    // below describe that panel's behaviour, so they are read from where
+    // the panel lives — a window this suite checks against a file that
+    // no longer holds it would pass by finding nothing.
+    const natter = fs.readFileSync(
+      path.join(RUN_DIR, 'app', 'natterDetails', 'natterDetails.js'), 'utf8');
     const page = fs.readFileSync(path.join(RUN_DIR, 'device.html'), 'utf8');
     const period = nodePeriodMs();
 
     // The other half of a safe window: enrolling reliably is worth
     // nothing if the panel that started it has already forgotten by the
     // time its owner looks back. `installed` is the headline for
-    // NATTER_DEV_FRESH_MS, and that has to outlast a node pass — the
+    // ND_FRESH_MS, and that has to outlast a node pass — the
     // person may well have been on the other device for one.
-    const freshMatch = natter.match(/NATTER_DEV_FRESH_MS\s*=\s*([0-9 *]+);/);
+    const freshMatch = natter.match(/ND_FRESH_MS\s*=\s*([0-9 *]+);/);
     const fresh = freshMatch ? Function('return ' + freshMatch[1])() : 0;
     if (fresh >= period * 2) {
       test.check('a success stays the headline for ' + Math.round(fresh / 1000) + 's, past two node passes');
@@ -287,7 +301,7 @@ async function run() {
 
     // The panel asks the hub far more often than the hub learns anything,
     // so nothing can be enrolled and shown stale. Loopback, and free.
-    const watch = natter.slice(natter.indexOf('function natterDeviceWatch('));
+    const watch = natter.slice(natter.indexOf('function ndWatch('));
     const pollMatch = watch.match(/\}, (\d+)\);/);
     const poll = pollMatch ? Number(pollMatch[1]) : 0;
     if (poll > 0 && poll * 4 <= period) {

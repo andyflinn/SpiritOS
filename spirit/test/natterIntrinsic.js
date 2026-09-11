@@ -388,8 +388,14 @@ test.subHeading('An ordinary app is still writable through them');
 test.subHeading('The shell always draws it');
 
 {
+  // The dialogs are in the snapshot deliberately. They are discovered
+  // the ordinary way — INTRINSIC_APP_FOLDERS does not name them — and
+  // the check further down about hidden apps needs at least one to exist
+  // or it would be asserting something about an empty list.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
+    [NATTER_SCRIPT, 'app/relayChat/relayChat.js',
+      'app/contactsDetails/contactsDetails.js',
+      'app/natterDetails/natterDetails.js'], false, BOUND);
 
   const natter = appById(booted, 'app/natter');
   if (natter && natter.intrinsic === true) {
@@ -415,6 +421,35 @@ test.subHeading('The shell always draws it');
     test.check('and its icon is in the Spirit grid, beside Stats and Jobs');
   } else {
     test.fail('spirit grid: ' + spiritGroupLabels(booted));
+  }
+
+  // A DIALOG GETS NO TILE, HERE LEAST OF ALL.
+  //
+  // effectiveGroup sends every intrinsic app to Spirit, and a dialog is
+  // both intrinsic and hidden — so this grid is exactly where one
+  // surfaces. renderDesktop has always skipped hidden apps; this grid
+  // did not, and both dialogs in the tree had a launchable icon in it.
+  //
+  // Not cosmetic: the shell's single dialog-result slot is safe only
+  // because "a hidden app is only ever entered from a visible one"
+  // (callDialog). A tile is a way in from the desktop with no parent
+  // underneath to be answered.
+  //
+  // Matched on the whole label cell, not on a substring of the grid:
+  // "Contact" is inside "Contacts", so an indexOf here reported the
+  // dialog as present whenever its parent app was — a false positive
+  // that would have condemned a fix that works.
+  const grid = spiritGroupLabels(booted);
+  const dialogs = booted.shell.listApps().filter(function (a) { return a.hidden; });
+  const leaked = dialogs.filter(function (a) {
+    return grid.indexOf('<span class="label">' + a.name + '</span>') !== -1;
+  });
+  if (dialogs.length && !leaked.length) {
+    test.check('and no hidden app has a tile in it — ' + dialogs.length + ' dialog(s) checked');
+  } else if (!dialogs.length) {
+    test.fail('no hidden apps registered, so this check proved nothing');
+  } else {
+    test.fail('hidden apps with a tile: ' + leaked.map(function (a) { return a.name; }).join(', '));
   }
 
   // One home, not two: a grouped app is not also loose on the desktop.
@@ -3223,8 +3258,12 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
 
 test.subHeading('The device panel asks the SHELL whether it is on screen');
 
+// READ FROM app/natterDetails NOW. The panel left the list and became a
+// dialog, and these checks followed it — a test that stays behind when
+// its subject moves passes against a file that no longer has the
+// behaviour, which is the loudest kind of quiet.
 {
-  const natter = readRun('app/natter/natter.js');
+  const natter = readRun('app/natterDetails/natterDetails.js');
 
   // Panes are hidden and never destroyed, so the panel's element still
   // answers querySelector long after Natter stopped being the active app.
@@ -3233,10 +3272,10 @@ test.subHeading('The device panel asks the SHELL whether it is on screen');
   // Anchored on the call with its parens and the negation it is used in,
   // not on the bare name: the file explains this decision in prose above
   // the code, and a check a comment can satisfy guards nothing.
-  if (/\|\|\s*!api\.isVisible\(\)\)/.test(natter)) {
-    test.check('the device watch stops when Natter is not the active app');
+  if (/!ndApi\.isVisible\(\)\)/.test(natter)) {
+    test.check('the device watch stops when the mailbox screen is not the active app');
   } else {
-    test.fail('natter.js never asks api.isVisible() in the watch');
+    test.fail('natterDetails.js never asks api.isVisible() in the watch');
   }
 
   // The wrong question, twice over: it says nothing about which app is on
@@ -3254,14 +3293,14 @@ test.subHeading('The device panel asks the SHELL whether it is on screen');
   if (!readsBrowserVisibility) {
     test.check('and never asks the BROWSER, which would go false at the worst moment');
   } else {
-    test.fail('natter.js reaches for document visibility');
+    test.fail('natterDetails.js reaches for document visibility');
   }
 
   // render() is the only hook the shell gives an app on the way back onto
   // the screen. It was an empty function; a poll that stops and cannot
   // start again is a panel that goes stale until the row is reopened.
   const render = natter.slice(natter.indexOf('  render: function ()'), 400 + natter.indexOf('  render: function ()'));
-  if (/natterDeviceWatch\(/.test(render)) {
+  if (/ndWatch\(/.test(render)) {
     test.check('and render() starts it again, so coming back is enough');
   } else {
     test.fail('render() does not restart the device watch: ' + render.slice(0, 200));
@@ -3271,7 +3310,7 @@ test.subHeading('The device panel asks the SHELL whether it is on screen');
 test.subHeading('The device panel is one control, and says what happened');
 
 {
-  const natter = readRun('app/natter/natter.js');
+  const natter = readRun('app/natterDetails/natterDetails.js');
   const ICON = spirit.core.const.ICON;
 
   // One control, start/stop. There were two — Copy and "Listening off" —
@@ -3295,8 +3334,8 @@ test.subHeading('The device panel is one control, and says what happened');
   // the check is against the GLYPH the table actually holds, not against
   // a name that could drift again underneath it.
   const saysRed = /red button/.test(natter);
-  const usesRed = natter.indexOf('natterIcon.RED_CIRCLE') !== -1;
-  const usesBlue = natter.indexOf('natterIcon.BLUE_CIRCLE') !== -1;
+  const usesRed = natter.indexOf('ndIcon.RED_CIRCLE') !== -1;
+  const usesBlue = natter.indexOf('ndIcon.BLUE_CIRCLE') !== -1;
   if (saysRed && usesRed && usesBlue && ICON.STOP !== ICON.RED_CIRCLE) {
     test.check('and its colours are the ones the copy names — ICON.STOP is orange, so it is not used');
   } else {
@@ -3312,7 +3351,7 @@ test.subHeading('The device panel is one control, and says what happened');
   if (showsSuccess) {
     test.check('a finished enrolment gets said out loud, in the panel that started it');
   } else {
-    test.fail('natter.js never turns lastEvent.installed into a bubble state');
+    test.fail('natterDetails.js never turns lastEvent.installed into a bubble state');
   }
 
   // Both failures the channel already carries. `refused` is the one worth
@@ -3323,7 +3362,7 @@ test.subHeading('The device panel is one control, and says what happened');
   if (showsTrouble) {
     test.check('and so do refused and unreachable, which are different silences');
   } else {
-    test.fail('natter.js does not distinguish the failure states in the panel');
+    test.fail('natterDetails.js does not distinguish the failure states in the panel');
   }
 
   // Starting is the point, and the copy rides along (DEVICE-PANEL.md §2).
@@ -3334,21 +3373,21 @@ test.subHeading('The device panel is one control, and says what happened');
   //
   // Anchored on the shape: a settled pair (onOk, onFail) and THEN the
   // start, so the start cannot be reached only on success.
-  const startAt = natter.indexOf('function natterDeviceStart(');
+  const startAt = natter.indexOf('function ndDeviceStart(');
   const startBody = startAt === -1 ? '' : natter.slice(startAt, natter.indexOf('\n}', startAt));
   const startsAnyway =
-    /\}\)\.then\(function \(\) \{[\s\S]*natterDeviceSetListening\([^;]*true/.test(startBody) &&
+    /\}\)\.then\(function \(\) \{[\s\S]*ndSetListening\(\s*true/.test(startBody) &&
     !/\.catch\(/.test(startBody);
   if (startsAnyway) {
     test.check('and a refused clipboard still opens the window, then says the copy failed');
   } else {
-    test.fail('natterDeviceStart gates listening on the clipboard: ' + startBody.slice(0, 300));
+    test.fail('ndDeviceStart gates listening on the clipboard: ' + startBody.slice(0, 300));
   }
 
   // target="_new" is not a standard keyword, and the tab must not get a
   // handle on the shell that opened it.
   //
-  // Comments stripped first, because natter.js names _new in prose to say
+  // Comments stripped first, because the file names _new in prose to say
   // why it is not used — and a check its own explanation can fail is the
   // /api/hub/peer trap wearing the other face. A line comment is the only
   // place either spelling appears outside markup here.

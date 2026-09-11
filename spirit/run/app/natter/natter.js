@@ -65,401 +65,188 @@ function natterRemoveAt(relays, index) {
 // authority: it shows what was already fetched to draw the star.
 var natterBadgeByUrl = Object.create(null);
 
-// The one expanded row, or null. Same rule as the Jobs table: opening one
-// closes any other, because two open panels in a list of mailboxes is a
-// page you have to scroll to compare rather than a thing you are looking
-// at.
-var natterExpandedUrl = null;
-
-// Never the invites: a live token is a spoken secret, and a panel that
-// opens on a click is visible to whoever is looking at the screen. The
-// rule holds by construction as long as this shows what the probe
-// returned and fetches nothing of its own — `report` carries no tokens.
+// THE PANEL LEFT THIS FILE. What a mailbox says, inviting somebody to
+// it, and attaching a device are one screen now — app/natterDetails —
+// pushed for the row it was opened from, the same way Contacts pushes
+// app/contactsDetails for a person.
 //
-// Peers by count, not by key. The census names every peer and carries a
-// 48-character key for each; a wall of those is machine detail wearing a
-// person's clothes (UI_DESIGN_STYLE.md §6).
-// What that mailbox says about itself, on one line and under no heading
-// of its own: the row it opened from is the heading, and repeating the
-// mailbox's name inside its own panel would be the app telling you what
-// you just clicked.
-//
-// Four facts, four columns — value at reading size, caption beneath it
-// as fine print. Label-and-value stacked in four rows made a list out of
-// what is really one reading (UI_DESIGN_STYLE.md).
-function natterReportHtml(api, badge) {
-  if (!badge) return '<div class="job-log-empty">asking that mailbox…</div>';
+// This app keeps the LIST: what is on it, which rows are starred, adding
+// and removing, and claiming a name. What went with the panel is every
+// piece of state it needed — the expanded URL, the device password, the
+// two-second poll and the context it had to be restarted from — none of
+// which a table has any business holding.
 
-  // A MEMBER'S VIEW, from the public census rather than the owner-only
-  // report. This used to print the 403 — "not the owner" — which was
-  // true and was also the app telling somebody off for the ordinary
-  // case of being on a mailbox somebody else runs.
-  //
-  // Three facts, not four: Mode and Messages are things the mailbox
-  // tells its owner, and a member asking for them would be asking for
-  // an endpoint that does not exist. What a member gets instead is the
-  // one fact an owner never needs — the name they wear HERE, which with
-  // one browser across several relays is a per-relay answer.
-  if (!badge.owned && badge.claimed) {
-    var c = badge.census || {};
-    return spirit.shell.factRow([
-      ['Owner', c.owner || '(unknown)'],
-      ['Peers', c.peers == null ? '(unknown)' : c.peers],
-      ['You', c.myLabel || '(unknown)'],
-    ]);
-  }
 
-  if (!badge.owned) {
-    return '<div class="job-log-empty">' + api.escapeHtml(badge.error || 'not owner') + '</div>';
-  }
-  var report = badge.report || {};
-  var peers = Array.isArray(report.peers) ? report.peers.length : 0;
-  return spirit.shell.factRow([
-      ['Owner', report.owner || '(none)'],
-      ['Mode', report.mode || '(unknown)'],
-      ['Peers', peers],
-      ['Messages', report.messages == null ? '(unknown)' : report.messages],
-    ]);
-}
 
-// Minting belongs to the mailbox it mints on, so it lives inside that
-// mailbox's own panel rather than in a bubble at the foot of the app.
-//
-// That is what kills the picker: a mint used to have to ask WHICH owned
-// mailbox, because the form floated free of all of them. Opened from a
-// row, the row is the answer, and a question nobody has to ask cannot be
-// answered wrongly. It also means the fields clear on their own — closing
-// the row rebuilds the table, and the minted token goes with it, which
-// was a rule the old panel had to enforce by hand.
-//
-// Only for a row this node owns: a mailbox somebody else owns has no
-// mint markup at all to find, because natterReportHtml above returns
-// before it.
-function natterMintHtml(api, badge) {
-  if (!badge || !badge.owned) return '';
-  return '<div class="stat-tile wide natter-mint">' +
-    // The one block in this panel that DOES need a heading: the strip
-    // above it is a reading of the mailbox the row already named, but
-    // this is a thing to do, and a form with no title is a form you have
-    // to work out. ★ is the same mark the row carries for owning it.
-    '<div class="panel-heading">' + natterIcon.STAR + ' Invite someone to this relay</div>' +
-    // DICTIONARY.md, "Label (invite)": the public caption the token
-    // unlocks. `saint` is the dictionary's own example, not a person.
-    // The three fields and the one button that spends them, on one line
-    // (§3). Label and token take the width; Days is a number and sits at
-    // its own. Wraps on a narrow screen rather than squeezing.
-    '<div class="start-job-form card">' +
-    '<label class="field-label grow">Public label<input type="text" class="natter-inv-label" placeholder="e.g. saint"></label>' +
-    '<label class="field-label">Days<input type="number" class="natter-inv-days" min="1" max="15" value="7"></label>' +
-    // The token spoken on the phone. Empty means the relay picks hex;
-    // typed, it is signed with the label and the days (cycle A2), so it
-    // is the owner's to say and nobody else's to substitute.
-    '<label class="field-label grow">Token<input type="text" class="natter-inv-token" placeholder="(optional, spoken)"></label>' +
-    '<button type="button" class="cancel-btn natter-inv-go" data-mint-url="' + api.escapeHtml(badge.url || '') + '">Invite</button>' +
-    '</div>' +
-    // Under the row: the minted token is read off this screen onto a
-    // phone, and it is long. It is an answer, not a control.
-    '<span class="natter-inv-out"></span>' +
-    '</div>';
-}
 
-// The door password and whether the window is open. Read from the hub
-// when a row opens, because both can change without this app: the window
-// closes on its own across a restart, and a password minted on first ask
-// does not exist until something asks.
-var natterDevice = {
-  password: '', listening: false, loaded: false,
-  relayUrls: [], publicKey: '', lastEvent: null,
-};
-var natterDeviceTimer = null;
-// What the watch needs to be restarted from render(). Set when it starts,
-// and never cleared: it describes where the panel lives, not whether the
-// poll is running.
-var natterDeviceCtx = null;
 
-// Adding one of Andy's own handhelds, from the row that names the mailbox
-// it will be added to — the same reasoning that killed the mint picker.
-// The row is which relay, so the address in the sentence below can be
-// that relay's and not a question.
-//
-// Rows this node HAS, which since B2 is not the same as rows it owns. A
-// peer owns no relay and still has a slot of its own there, so gating
-// this on the star would keep the feature at the owner for want of one
-// word — which is exactly where it sat until B2.
-//
-// Still not every row: a mailbox this node has no claim on cannot take
-// its device, and showing the panel there would be chrome nobody can act
-// on (AGENT.md — do not show chrome that is not useful in that state).
-function natterDeviceHtml(api, badge) {
-  if (!badge || !(badge.owned || badge.claimed)) return '';
-  var host = natterDeviceHost(badge);
-  // The host is kept on the panel because the two-second repaint has only
-  // the container to work from, and re-deriving it would mean carrying the
-  // row's badge into a timer that outlives the render that made it.
-  return '<div class="stat-tile wide natter-device" data-device-host="' +
-      api.escapeHtml(host) + '">' +
-    // NO STAR, unlike the Invite panel above. ★ means "you own this
-    // mailbox" everywhere in this app and in Relay Chat's To list — one
-    // mark, one meaning. Invite is genuinely owner-only and keeps it;
-    // since B2 this panel is not, and a peer seeing the owned mark on a
-    // panel that has nothing to do with owning would be the mark
-    // starting to mean two things.
-    '<div class="panel-heading">Add one of my own devices</div>' +
-    // One control and one sentence about it. The transient word about what
-    // the last press did sits on the same line, because it is about the
-    // press and not about what to do next.
-    '<div class="natter-dev-row">' +
-      natterDeviceButtonHtml() +
-      '<span class="natter-dev-say">' + api.escapeHtml(natterDeviceSay()) + '</span>' +
-      '<span class="natter-dev-out muted"></span>' +
-    '</div>' +
-    '<div class="stat-tile nested natter-dev-bubble" data-mood="' + natterDeviceMood() + '">' +
-      natterDeviceBubbleHtml(api, host) +
-    '</div>' +
-    '</div>';
-}
-
-function natterDeviceHost(badge) {
-  try { return new URL(badge.url).origin; }
-  catch (e) { return String((badge && badge.url) || ''); }
-}
-
-// WHERE TO OPEN IT. `/<key>/device` names whose enrolment this is, which
-// is what lets a relay hold a slot per identity rather than one for the
-// box. Base64url, matching deviceAuth.keyToUrl — the same bytes, `-` and
-// `_` for `+` and `/`, padding dropped, because a `/` in a path segment
-// is not in the segment at all.
-//
-// Falls back to the bare `/device` when this node has no key yet, which
-// the relay still reads as the owner.
-function natterDeviceUrl(host) {
-  var key = natterDevice.publicKey;
-  if (!key) return host + '/device';
-  var seg = String(key).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return host + '/' + seg + '/device';
-}
-
-// The control is a glyph, not a word. `Listening off` was ambiguous in the
-// way only button labels manage to be — it could be the state or the
-// action, and Andy read it as the state ("I never realized I had to start
-// listening"). A blue dot beside a red dot cannot be read two ways.
-//
-// Blue and red specifically, and NOT ICON.START/ICON.STOP: those are
-// aliases, and ICON.STOP is the ORANGE circle, which would make the
-// bubble's "press the red button" a lie. See design/relay/DEVICE-PANEL.md §5.
-function natterDeviceButtonHtml() {
-  var on = !!natterDevice.listening;
-  return '<button type="button" class="natter-dev-toggle' + (on ? ' beating' : '') + '"' +
-    ' data-device-toggle="' + (on ? 'stop' : 'start') + '"' +
-    ' title="' + (on ? 'Click to stop listening' : 'Click to start listening') + '">' +
-    (on ? natterIcon.RED_CIRCLE : natterIcon.BLUE_CIRCLE) +
-    '</button>';
-}
-
-// The sentence beside the control says what the control does next, and
-// nothing else. What is HAPPENING — who is being asked, what came back —
-// belongs in the bubble below, where there is room to say it in prose.
-function natterDeviceSay() {
-  if (!natterDevice.loaded) return '';
-  return natterDevice.listening
-    ? 'Now listening, press the red button to stop.'
-    : 'Press the blue button to start listening.';
-}
 
 // How long a finished pass stays the headline. Long enough that stepping
 // away to the other device and back still answers "did it work?", short
 // enough that yesterday's success is not reported as news.
 var NATTER_DEV_FRESH_MS = 5 * 60 * 1000;
 
-// Four things the bubble can be about, most urgent first. Success outranks
-// the standing instructions because the standing instructions are what was
-// just completed; trouble outranks them because following them again will
-// not help.
-function natterDeviceMood() {
-  if (!natterDevice.loaded) return 'off';
-  var e = natterDevice.lastEvent;
-  var fresh = !!(e && e.did && e.atMs && (Date.now() - e.atMs) < NATTER_DEV_FRESH_MS);
-  if (fresh && e.did === 'installed') return 'added';
-  if (fresh && (e.did === 'refused' || e.did === 'unreachable' || e.did === 'rejected')) {
-    return 'trouble';
-  }
-  return natterDevice.listening ? 'listening' : 'off';
+
+
+
+
+
+
+// WHAT WE KNOW ABOUT THIS RELAY, in the leftmost column and with no
+// heading — there is no word for it, and a heading would only widen a
+// column that is one glyph wide.
+//
+// The same three marks Contacts uses for a peer, and for the same
+// reason (design/cleanup/2026-09-11-icon-convention.md). What differs is
+// what counts as KNOWING, and Andy settled it:
+//
+//   "we can verify its existence by connecting to the URL, and if we're
+//    bound to it, it supplies us with information. not only that. if
+//    we're not bound to it, we know that, too."
+//
+// Both halves of that are knowledge, so both are answers:
+//
+//   GREEN  it answered, and this node is on it — it will carry for you
+//   RED    we asked and cannot use it: it did not answer, or it
+//          answered and this node is not on it
+//   WHITE  nobody has asked yet
+//
+// White used to cover "did not answer" as well, on the grounds that an
+// unreachable relay has told us nothing. That was wrong: failing to
+// connect IS the answer to "can this carry a message for me", and it is
+// no. The distinction white was protecting — down versus not-mine — is
+// real but belongs in the tooltip, not in the glyph, because the glyph
+// is answering a narrower question than it looked.
+//
+// So white now means exactly one thing: this has not been asked. That is
+// the state of every row for the first moment after a reload, which is
+// the one moment a screenful of red would be a lie.
+function natterStatusMark(badge) {
+  if (!badge) return natterIcon.WHITE_CIRCLE;
+  if (badge.owned || badge.claimed) return natterIcon.GREEN_CIRCLE;
+  return natterIcon.RED_CIRCLE;
 }
 
-// Document-toned prose, not form chrome: while this row is open, this
-// paragraph is the page. Each state says the one thing to do next.
-function natterDeviceBubbleHtml(api, host) {
-  var target = natterDeviceUrl(host);
-  var where = api.escapeHtml(target);
-  // _blank with rel="noopener", not target="_new" — the latter is not a
-  // standard keyword, and the new tab must not get a handle on the shell.
-  var link = '<a href="' + where + '" target="_blank" rel="noopener">' + where + '</a>';
-  var keep = '<div><strong>Be sure to (a) bookmark that site and (b) let the browser\'s ' +
-    'password manager memorise the password, so it reaches your other devices of the ' +
-    'same browser brand.</strong></div>';
-  var beat = '<div class="natter-dev-beat muted">' +
-    api.escapeHtml(natterDeviceBeatText()) + '</div>';
-
-  switch (natterDeviceMood()) {
-    // The channel that carries this was already there and unspent: the
-    // node learns of an enrolment within a pass and the panel said
-    // nothing, so the only way to answer "did it work?" was to switch
-    // devices and try. The bookmark advice lands better here too, once
-    // the thing has actually worked.
-    case 'added':
-      return '<div class="natter-dev-loud">A device was added just now.</div>' +
-        '<div>It can read this node\'s mailbox from ' + link + ' from here on.</div>' +
-        keep + beat;
-
-    case 'trouble':
-      return '<div class="natter-dev-loud">' +
-          api.escapeHtml(natterDeviceTroubleText()) + '</div>' +
-        '<div>' + api.escapeHtml(natterDeviceTroubleAdvice()) + '</div>' +
-        beat;
-
-    case 'listening':
-      return '<div>Navigate to this website on the other device to finish a device ' +
-        'connection: ' + link + '</div>' + keep + beat;
-
-    default:
-      return '<div>When you start listening by pressing the blue button, a secret ' +
-        'password will be copied to your clipboard, which you can paste into the ' +
-        'password field at ' + where + ' to finish a device connection.</div>';
-  }
-}
-
-function natterDeviceTroubleText() {
-  var did = (natterDevice.lastEvent || {}).did;
-  if (did === 'rejected') return 'A wrong password was refused.';
-  if (did === 'unreachable') return 'The mailbox could not be reached.';
-  // Not the same as an empty slot, and the difference is the one worth
-  // printing: the mailbox answered and would not have us.
-  return 'The mailbox refused the poll.';
-}
-
-function natterDeviceTroubleAdvice() {
-  var did = (natterDevice.lastEvent || {}).did;
-  if (did === 'rejected') {
-    return 'Somebody pasted a password this node does not hold. If that was you, press ' +
-      'the red button and start again, so a fresh one reaches your clipboard.';
-  }
-  if (did === 'unreachable') {
-    return 'The relay did not answer at all. It is usually restarting; this node keeps ' +
-      'asking once a minute and will carry on by itself.';
-  }
-  return 'The relay answered and would not have this node. The usual cause is a relay ' +
-    'running older code than this one.';
-}
-
-// Fine print, and the only line that changes on its own. Seconds rather
-// than a clock time, because the only question is whether this is still
-// beating — a number that keeps climbing says it is not.
-function natterDeviceBeatText() {
-  if (!natterDevice.listening) return '';
-  var where = natterDevice.relayUrls.length
-    ? natterDevice.relayUrls.join(', ')
-    : '(no mailbox answered — nothing is being asked)';
-  var e = natterDevice.lastEvent;
-  if (!e || !e.did) {
-    return 'This node asks ' + where + ' once a minute. No pass has finished yet.';
-  }
-  var ago = Math.max(0, Math.round((Date.now() - e.atMs) / 1000));
-  var what = e.did === 'installed' ? 'a device was added'
-    : e.did === 'rejected' ? 'a wrong password was refused'
-    : e.did === 'unreachable' ? 'the mailbox could not be reached'
-    : e.did === 'refused' ? 'the mailbox refused the poll'
-    : e.did === 'quiet' ? 'the window is shut'
-    : 'nothing was waiting';
-  return 'This node asks ' + where + ' once a minute. Last pass ' + ago + 's ago — ' + what + '.';
-}
-
-// Painted into the existing panel, never by re-rendering the table.
-// natterRenderList rebuilds the whole tbody, so a two-second poll that
-// called it would destroy the Invite fields under whoever was typing in
-// them — the same repaint-kills-the-field trap the dialogs hit.
-function natterDevicePaint(api, container) {
-  var panel = container.querySelector('.natter-device');
-  if (!panel) return;
-  var on = !!natterDevice.listening;
-
-  var btn = panel.querySelector('.natter-dev-toggle');
-  if (btn) {
-    btn.textContent = on ? natterIcon.RED_CIRCLE : natterIcon.BLUE_CIRCLE;
-    btn.title = on ? 'Click to stop listening' : 'Click to start listening';
-    btn.setAttribute('data-device-toggle', on ? 'stop' : 'start');
-    // Toggled rather than rewritten: replacing the element would restart
-    // the animation every two seconds, and a heartbeat that resets on a
-    // timer is a stutter.
-    btn.classList.toggle('beating', on);
-  }
-
-  var say = panel.querySelector('.natter-dev-say');
-  if (say) say.textContent = natterDeviceSay();
-
-  var bubble = panel.querySelector('.natter-dev-bubble');
-  if (!bubble) return;
-  var mood = natterDeviceMood();
-  // Rewritten only when the state actually changes. A two-second innerHTML
-  // would rebuild the link under whoever was reaching for it.
-  if (bubble.getAttribute('data-mood') !== mood) {
-    bubble.setAttribute('data-mood', mood);
-    bubble.innerHTML = natterDeviceBubbleHtml(api, panel.getAttribute('data-device-host') || '');
-  }
-  var beat = bubble.querySelector('.natter-dev-beat');
-  if (beat) beat.textContent = natterDeviceBeatText();
+// The glyph says usable or not; the words say which kind of not. Three
+// reds are three different afternoons — a relay that is down, one that
+// never took your claim, and one somebody else runs.
+function natterStatusTitle(badge) {
+  if (!badge) return 'not asked yet';
+  if (!badge.status) return 'no answer — ' + (badge.error || 'this relay could not be reached');
+  if (badge.owned) return 'you own this relay';
+  if (badge.claimed) return 'this relay carries for you';
+  return 'it answered, and you are not on it';
 }
 
 function natterRenderList(container, api, relays) {
   var tbody = container.querySelector('#natter-tbody');
   if (relays.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3">(no relays added yet)</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4">(no relays added yet)</td></tr>';
     return;
   }
-  var removable = natterCanRemove(relays.length);
-  tbody.innerHTML = relays.map(function (relay, index) {
+  tbody.innerHTML = relays.map(function (relay) {
     var badge = natterBadgeByUrl[relay.url];
     var owned = !!(badge && badge.owned);
     // B2: a row this node HAS is openable, whether or not it owns the
     // mailbox. A peer owns nothing and still has a device slot there, so
     // gating the row on the star would hide the only control it has.
-    // The star keeps its own meaning — see below.
     var mine = owned || !!(badge && badge.claimed);
-    var open = mine && natterExpandedUrl === relay.url;
-    // ★ means owned, here and in Relay Chat's To list — one mark, one
-    // meaning, wherever a mailbox is named. A row this node does not own
-    // has no star and nothing to open.
+    // ★ MEANS OWNED, AND ONLY THAT — one mark, one meaning, here and in
+    // Relay Chat's To list. It has a column of its own now rather than
+    // sitting in front of a name: a mark sharing a cell with a label
+    // pushed every label in the table a glyph to the right or not,
+    // depending on the row. Its own column, and the labels line up down
+    // the page whatever anyone is marked.
     //
-    // The star only says the row can be opened; the row itself is the
-    // control, which gives a phone the whole width of it to aim at. The
-    // one thing that must not toggle is Remove, so the click handler
-    // answers that first (mount, below) — otherwise a tap meant for a
-    // panel would delete a mailbox.
-    // The star still means OWNED and nothing else — one mark, one
-    // meaning, here and in Relay Chat's To list. What changed is that
-    // openable is now a wider set than starred, so a peer's row opens
-    // without pretending to be a mailbox they own.
-    var star = owned ? '<span class="natter-star">★</span> ' : '';
-    var mainRow = '<tr class="job-row' + (mine ? ' natter-openable' : '') + '"' +
+    // Headerless, like the status column beside it and like the mark
+    // column in Contacts. There is no word for it.
+    var star = owned ? '<span class="natter-star">' + natterIcon.STAR + '</span>' : '';
+    // One row per mailbox, and four cells: what we know, whether it is
+    // yours, what you call it, and where it is. Only the Remove button
+    // left — a destructive control is worth a moment's thought, and it
+    // has one on the mailbox's own screen.
+    return '<tr class="job-row' + (mine ? ' natter-openable' : '') + '"' +
       (mine ? ' data-row-url="' + api.escapeHtml(relay.url) + '"' : '') +
-      (mine ? ' title="' + (open ? 'Hide' : 'Show') + ' what this mailbox says"' : '') + '>' +
-      '<td>' + star + api.escapeHtml(relay.label) + '</td>' +
+      (mine ? ' title="Open this relay"' : '') + '>' +
+      '<td title="' + api.escapeHtml(natterStatusTitle(badge)) + '">' +
+        natterStatusMark(badge) + '</td>' +
+      '<td>' + star + '</td>' +
+      '<td>' + api.escapeHtml(relay.label) + '</td>' +
       '<td>' + api.escapeHtml(relay.url) + '</td>' +
-      '<td>' + (removable
-        ? '<button type="button" class="cancel-btn" data-remove-index="' + index + '">Remove</button>'
-        : '<span class="muted">last relay</span>') +
-      '</td>' +
       '</tr>';
-    if (!open) return mainRow;
-    // Two blocks, because they are two thoughts: what this mailbox
-    // reports, and the one thing you can do with it. The second takes
-    // its own space above (UI_DESIGN_STYLE.md), so a row that offers no
-    // mint leaves no gap where one would have been.
-    return mainRow + '<tr class="job-log-row"><td colspan="3">' +
-      '<div class="stat-tile wide">' + natterReportHtml(api, badge) + '</div>' +
-      natterMintHtml(api, badge) +
-      natterDeviceHtml(api, badge) +
-      '</td></tr>';
   }).join('');
+}
+
+// A ROW OPENS THE MAILBOX, and that is all a row does now.
+//
+// callDialog rather than launchApp, because this is a question with an
+// answer. The shell hands the dialog its subject on every call and gives
+// back what it decided, so the code that opens the screen is the code
+// three lines below that acts on it — rather than a hook declared at the
+// bottom of the file, far from the click.
+//
+// The URL alone, plus this node's name so the screen can sign a status
+// ask of its own. The dialog re-fetches the badge rather than being
+// handed one, because the numbers move while it is open.
+//
+// What comes back matters for one reason: a mint made over there is a
+// label this app has to start watching the census for, and minted.json
+// is Natter's file — the dialog's own api.fs is scoped to its folder and
+// cannot write it. So the dialog RETURNS the label and this records it,
+// which is the dialog contract doing exactly what it is for.
+function natterOpenMailbox(api, container, relays, url) {
+  // `canRemove` rather than letting the screen work it out: the rule is
+  // about the LIST — a node with no mailbox at all can neither claim,
+  // send, nor read — and the list is the only thing that knows how long
+  // it is. A screen that counted rows would be a second place for that
+  // rule to live, and a second place is where it drifts.
+  api.callDialog('app/natterDetails', {
+    url: url,
+    label: natterMyName,
+    canRemove: natterCanRemove(relays.length),
+  }).then(function (result) {
+    if (!result) return;
+    if (result.minted) natterRememberMinted(api, result.minted);
+    // REMOVAL IS RETURNED, NOT DONE. relays.json is this app's file —
+    // the screen's own api.fs is scoped to its folder — so the screen
+    // says what it decided and this performs it, under the same guard
+    // that has always stood here.
+    if (result.removed) {
+      natterRemoveUrl(api, container, relays, result.removed);
+      return;
+    }
+    if (result.changed) natterProbe(api, container, relays);
+  });
+}
+
+// By URL, not by index. An index is a position in a list that repaints,
+// and the screen that asked was opened from a row whose position nothing
+// promises to keep.
+function natterRemoveUrl(api, container, relays, url) {
+  var index = -1;
+  // Looked up rather than closed over: this function used to live inside
+  // mount(), where `statusEl` was a local, and moving it out of that
+  // closure left the name resolving to nothing. The element is the same
+  // one either way and the id has never moved.
+  var statusEl = document.getElementById('natter-status');
+  relays.forEach(function (relay, i) { if (relay.url === url) index = i; });
+  if (index === -1) return;
+  var removed = natterRemoveAt(relays, index);
+  // The last mailbox does not come off, whatever a screen decided. The
+  // guard lives here because the file lives here.
+  function say(text) { if (statusEl) statusEl.textContent = text; }
+  if (!removed) {
+    say('a node keeps at least one relay');
+    natterRenderList(container, api, relays);
+    return;
+  }
+  api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2)).then(function () {
+    say('removed ' + url);
+    natterRenderList(container, api, relays);
+  }).catch(function (err) {
+    relays.splice(index, 0, removed);
+    say('remove failed: ' + err.message);
+  });
 }
 
 // One signed status per row, the same call the owner badge makes: the
@@ -487,135 +274,12 @@ function natterProbe(api, container, relays) {
     .catch(function () { /* a mailbox that cannot be reached is not one this node owns */ });
 }
 
-// ---- Binding this node to a mailbox (packet 3) ----
-//
-// This is the app a fresh node is shown, and until a claim succeeds it is
-// the only one (firstRun in js/client/shell.js). So the copy here is not
-// a footnote beside a form — while it shows, it IS the page.
-// Asked once per row-open rather than held from mount: the hub mints the
-// password on first ask, and `listening` is the live timer, so a cached
-// answer would go stale exactly where it matters.
-function natterLoadDevice(api, container, relays) {
-  return natterReadDevice().then(function () {
-    natterRenderList(container, api, relays);
-    natterDeviceWatch(api, container);
-  });
-}
 
-function natterReadDevice() {
-  return fetch('/api/hub/device')
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-      natterDevice.password = (d && d.password) || '';
-      natterDevice.listening = !!(d && d.listening);
-      natterDevice.relayUrls = (d && d.relayUrls) || [];
-      natterDevice.publicKey = (d && d.publicKey) || '';
-      natterDevice.lastEvent = (d && d.lastEvent) || null;
-      natterDevice.loaded = true;
-    })
-    .catch(function () { /* the panel simply reads as closed */ });
-}
 
-// While the row is open AND Natter is the app on screen, ask again on the
-// tick's own cadence. The window can close without this app touching it —
-// the node restarting is enough — and a panel painted once would go on
-// claiming it was open for as long as the row stayed expanded.
-//
-// Visibility here is the SHELL's, never the browser's. `api.isVisible()`
-// answers "is Natter the active app" (shell.js, buildApiFor — its own
-// comment offers it for exactly this, "work outside a callback, a timer").
-// document.visibilityState would be the wrong question twice over: it says
-// nothing about which app is on screen, and it goes false the moment
-// somebody opens the relay's /device page in another tab — which is the
-// one moment this panel must not go quiet.
-//
-// It has to be asked, not assumed: panes are hidden and never destroyed,
-// so `.natter-device` still answers querySelector long after Natter
-// stopped being on screen, and this poll would otherwise run for the life
-// of the page.
-function natterDeviceWatch(api, container) {
-  natterDeviceUnwatch();
-  // Kept so render() can start it again on the way back in.
-  natterDeviceCtx = { api: api, container: container };
-  natterDeviceTimer = setInterval(function () {
-    if (!container.querySelector('.natter-device') || !api.isVisible()) {
-      natterDeviceUnwatch();
-      return;
-    }
-    natterReadDevice().then(function () { natterDevicePaint(api, container); });
-  }, 2000);
-}
 
-function natterDeviceUnwatch() {
-  if (natterDeviceTimer) {
-    clearInterval(natterDeviceTimer);
-    natterDeviceTimer = null;
-  }
-}
 
-// The window, opened or shut from the row, on ONE control. The button
-// repaints from what the hub answers rather than from what was pressed:
-// starting the timer probes for owned mailboxes and can come back with
-// none, and a button that said "listening" while nothing was polling is
-// the one lie this design can tell.
-function natterDeviceToggle(api, container, relays, button) {
-  var out = button.closest('.natter-device').querySelector('.natter-dev-out');
-  out.textContent = '';
-  if (natterDevice.listening) {
-    return natterDeviceSetListening(api, container, relays, false, out);
-  }
-  return natterDeviceStart(api, container, relays, out);
-}
 
-// Starting IS taking the password: one press, one meaning. There used to
-// be two buttons and the copy was the one that opened the window, which
-// nobody could guess (Andy — "I never realized I had to start listening").
-//
-// This reverses one thing deliberately, and DEVICE-PANEL.md §2 is where
-// the reversal was decided: the old code refused to open the window when
-// the clipboard failed, on the grounds that a window waiting for a
-// password nobody holds is a lie. Under one control, start is the point.
-// So it starts, and says the copy failed — the password is still on the
-// node and still reachable, where a door that silently stayed shut was
-// the failure this panel exists to prevent.
-function natterDeviceStart(api, container, relays, out) {
-  // The clipboard is the whole transport here — the password goes from
-  // this screen into a browser's password manager and syncs to the
-  // handheld from there, which is why 128 characters costs nothing.
-  var copy = natterDevice.password && navigator.clipboard && navigator.clipboard.writeText
-    ? navigator.clipboard.writeText(natterDevice.password)
-    : Promise.reject(new Error('no clipboard'));
-  return copy.then(function () {
-    out.textContent = 'password copied';
-  }, function () {
-    out.textContent = natterDevice.password
-      ? 'could not copy — this browser refused the clipboard'
-      : 'no password on this node yet';
-  }).then(function () {
-    return natterDeviceSetListening(api, container, relays, true, out);
-  });
-}
 
-function natterDeviceSetListening(api, container, relays, want, out) {
-  return natterPost('/api/hub/device-listen', { on: want }).then(function (r) {
-    var body = {};
-    try { body = JSON.parse(r.text); } catch (e) { body = {}; }
-    natterDevice.listening = !!body.listening;
-    natterDevice.relayUrls = body.relayUrls || [];
-    if (want && !natterDevice.listening) {
-      // Appended rather than replacing, because what the clipboard did is
-      // still the other half of what just happened.
-      out.textContent = (out.textContent ? out.textContent + ' — but ' : '') +
-        'no mailbox this node owns answered, so nothing is listening';
-    }
-    // Painted in place, and the watch restarted so the sentence stays
-    // true from here. Re-rendering the list would fold nothing but would
-    // take the Invite fields with it.
-    natterDevicePaint(api, container);
-    if (natterDevice.listening) natterDeviceWatch(api, container);
-    else natterDeviceUnwatch();
-  });
-}
 
 function natterPost(path, body) {
   return fetch(path, {
@@ -676,64 +340,20 @@ function natterPaintBind(api, relays) {
   if (heading) {
     heading.textContent = relays.length
       ? 'Claim a name on ' + ((relays[0] && (relays[0].label || relays[0].url)) || 'this relay')
-      : 'Add a mailbox below, then claim a name on it';
+      : 'Add a relay below, then claim a name on it';
   }
 
   // innerHTML for the one bold sentence. Every character is written in
   // this file — nothing from a mailbox, a peer or a file reaches it — so
   // there is nothing to escape. Anything interpolated later must be.
   note.innerHTML = relays.length
-    ? 'This node needs a name on a public mailbox before it can do anything else. ' +
-      'If you were invited, enter that name and the spoken word, then Claim. If you own the mailbox, ' +
+    ? 'This node needs a name on a public relay before it can do anything else. ' +
+      'If you were invited, enter that name and the spoken word, then Claim. If you own the relay, ' +
       'Claim the owner name with no token. ' +
       '<strong>If you have no invite yet, ask countinn@gmail.com, he will give you an invite within 24 hours.</strong>'
-    : 'This node has no mailbox listed yet. Add one above (for example https://spirit.andyflinn.com), then claim a name on it.';
+    : 'This node has no relay listed yet. Add one above (for example https://spirit.andyflinn.com), then claim a name on it.';
 }
 
-// The mint panel, and only for a mailbox this node owns. Not hidden for a
-// friend — not built for them: ownedUrls decides, and a node that owns
-// nothing has no invite markup at all to find.
-// One mint, on the mailbox whose row it was pressed in. `url` comes off
-// the button rather than a picker or relays.json[0]: the row is which
-// mailbox, and the hub still checks that URL is one this node lists.
-function natterMint(api, button) {
-  // The panel, not the button's parent. When the fields and the button
-  // became a .start-job-form row (§3), the button's parent stopped being
-  // the panel and the answer span became a sibling of that row rather
-  // than a child of it — so the lookup found nothing, assigning to it
-  // threw inside the promise, and a mint that had genuinely succeeded
-  // said nothing at all. Asking for the panel is what the code meant
-  // both before and after.
-  var panel = button.closest('.natter-mint');
-  function field(cls) { return panel.querySelector('.' + cls); }
-  var out = field('natter-inv-out');
-  var label = field('natter-inv-label').value.trim();
-  var days = Number(field('natter-inv-days').value) || 7;
-  var spoken = field('natter-inv-token').value.trim();
-  var url = button.getAttribute('data-mint-url');
-
-  natterPost('/api/hub/invite', {
-    name: natterMyName,
-    label: label,
-    days: days,
-    token: spoken,
-    url: url,
-  }).then(function (r) {
-    var token = '';
-    try { token = JSON.parse(r.text).token || ''; } catch (e) { token = ''; }
-    if (r.status === 201 && token) natterRememberMinted(api, label);
-    // Printed, not copied: it is read off this screen onto a phone. What
-    // is shown is what the relay stored — the typed token when it took
-    // it, hex when the field was empty — never the field, which would
-    // show a token no mailbox has if the mint was refused.
-    //
-    // The class says which of the two it is, so a refusal does not read
-    // as a token somebody might try to speak down a phone.
-    var ok = r.status === 201 && token;
-    out.className = 'natter-inv-out ' + (ok ? 'is-token' : 'is-error');
-    out.textContent = ok ? token + '  ->  ' + url : r.status + ' ' + r.text;
-  });
-}
 
 // A label this node minted an invite for. Not the token — that is the
 // secret — just enough to recognise the person when they turn up claimed
@@ -854,12 +474,15 @@ spirit.shell.activateApp({
         '<span id="natter-status"></span>' +
         '</div>' +
       '</div>' +
-      '<table class="jobs-table natter-table"><thead><tr><th>Label</th><th>URL</th><th></th></tr></thead><tbody id="natter-tbody"></tbody></table>' +
+      // Two headerless columns, then the one word there IS a word for.
+      // The status mark and the owned star have no heading for the same
+      // reason the mark column in Contacts has none: naming them would
+      // only widen a column that is one glyph wide, and the glyph is
+      // what is read.
+      '<table class="jobs-table natter-table"><thead><tr><th></th><th></th><th>Label</th><th>URL</th></tr></thead><tbody id="natter-tbody"></tbody></table>' +
       '';
 
     statusEl = document.getElementById('natter-status');
-    // A fresh visit starts fully collapsed, like the Jobs table.
-    natterExpandedUrl = null;
 
     // What this node is called, as the shell reads it — one accessor,
     // one answer, and the same one the window title uses.
@@ -894,77 +517,24 @@ spirit.shell.activateApp({
         });
     });
 
+    // ONE THING A ROW DOES. There were three branches here, answered in
+    // a careful order because Invite, the device toggle and Remove all
+    // sat INSIDE the row that opened — so each had to be caught before
+    // it triggered the row. All three are on the mailbox's own screen
+    // now, and a row has nothing on it to press but itself.
     container.querySelector('#natter-tbody').addEventListener('click', function (e) {
-      // Minting, from inside the row it mints on. Answered before the
-      // row toggle below, or pressing Invite would fold the panel it was
-      // pressed in.
-      var mintBtn = e.target.closest && e.target.closest('[data-mint-url]');
-      if (mintBtn) {
-        natterMint(api, mintBtn);
-        return;
-      }
-
-      // Answered before the row toggle, for the same reason Invite is:
-      // pressing it inside the panel must not fold the panel it was
-      // pressed in.
-      var devBtn = e.target.closest && e.target.closest('[data-device-toggle]');
-      if (devBtn) {
-        natterDeviceToggle(api, container, relays, devBtn);
-        return;
-      }
-
-      var indexAttr = e.target.getAttribute('data-remove-index');
-
-      // The row opens what its mailbox says — but only where the click
-      // was not Remove. Answered in that order deliberately: the
-      // destructive control sits inside the openable row, and a tap that
-      // could mean either must mean the one that cannot be undone by
-      // tapping again.
-      if (indexAttr == null) {
-        var row = e.target.closest && e.target.closest('[data-row-url]');
-        var rowUrl = row && row.getAttribute('data-row-url');
-        if (!rowUrl) return;
-        // Opening one closes any other.
-        natterExpandedUrl = (natterExpandedUrl === rowUrl) ? null : rowUrl;
-        natterRenderList(container, api, relays);
-        if (natterExpandedUrl) {
-          natterProbe(api, container, relays);
-          natterLoadDevice(api, container, relays);
-        } else {
-          // The panel is gone, so nothing is left to paint into.
-          natterDeviceUnwatch();
-        }
-        return;
-      }
-      var index = Number(indexAttr);
-      var removed = natterRemoveAt(relays, index);
-      // A button that survived a stale render, or was put back by hand,
-      // still does not empty the list.
-      if (!removed) {
-        statusEl.textContent = 'a node keeps at least one relay';
-        natterRenderList(container, api, relays);
-        return;
-      }
-      api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2)).then(function () {
-        statusEl.textContent = 'saved';
-        natterRenderList(container, api, relays);
-      }).catch(function (err) {
-        relays.splice(index, 0, removed);
-        statusEl.textContent = 'remove failed: ' + err.message;
-      });
+      var row = e.target.closest && e.target.closest('[data-row-url]');
+      var rowUrl = row && row.getAttribute('data-row-url');
+      if (!rowUrl) return;
+      natterOpenMailbox(api, container, relays, rowUrl);
     });
   },
-  // The only hook the shell gives an app on the way back onto the screen:
-  // switchTo calls render on every visit, and renderActive calls it on the
-  // job tick while the app is active — so it fires exactly when Natter is
-  // visible and never while it is not.
+  // Nothing to do on the way back in. This used to restart the device
+  // poll, which is the one thing in this app that ran on a timer; the
+  // poll went with the panel, and app/natterDetails restarts its own.
   //
-  // Idempotent on purpose, because of that second caller: it starts the
-  // device poll again only if the panel is on screen and nothing is
-  // already polling.
-  render: function () {
-    if (natterDeviceTimer || !natterDeviceCtx || !natterExpandedUrl) return;
-    if (!natterDeviceCtx.container.querySelector('.natter-device')) return;
-    natterDeviceWatch(natterDeviceCtx.api, natterDeviceCtx.container);
-  },
+  // Kept rather than dropped because the shell calls render on every
+  // visit and on the job tick while this app is active — a list that
+  // repainted itself on either would take the Add fields with it.
+  render: function () {},
 });
