@@ -20,7 +20,8 @@ This directory contains the vision, principles, and architecture decisions for *
   browsers. Designed, not built; the owner-only version shipped as device
   cycles 1–5.
 - [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
-  in Natter for attaching a browser. In design.
+  in Natter for attaching a browser. Built; §7 also carries the rendezvous rule,
+  which is why enrolment is certain rather than likely.
 - [The relay doorbell](relay/EVENT-STREAM.md) — one held connection per identity
   instead of polling. An arc, justified by chat rather than by devices.
 
