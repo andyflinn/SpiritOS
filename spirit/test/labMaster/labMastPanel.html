@@ -36,7 +36,7 @@
   <table>
     <thead>
       <tr>
-        <th>Name</th><th>Type</th><th>Port</th><th>Running</th><th>Home</th><th></th>
+        <th>Name</th><th>Type</th><th>Port</th><th>Running</th><th>Connected to</th><th>Home</th><th></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -70,14 +70,24 @@
             var nameCell = n.running
             ? '<a href="http://localhost:' + n.port + '" target="_blank" rel="noopener">' + label + '</a>'
             : label;
-        // Six cells for six headings. There were seven: `label` was drawn
-        // once as a link and again as plain text, so Type sat under Name,
-        // Port under Type, and the last column had no heading at all.
+        // Seven cells for seven headings. Count them against the <th>
+        // row above before adding one: an earlier version drew `label`
+        // twice and every column after it sat under the wrong heading.
+        var link = links[n.id];
+        var linkCell = '<small>—</small>';
+        if (link && link.relays && link.relays.length) {
+          linkCell = '<small>' + link.relays.map(function (r) {
+            var host = r.url.replace(/^https?:\/\//, '');
+            return (r.up ? '\u25CF ' : '\u25CB ') + host;
+          }).join('<br>') +
+            '<br>' + link.reachable + ' of ' + link.known + ' reachable</small>';
+        }
         return '<tr>' +
           '<td>' + nameCell + '</td>' +
           '<td>' + n.type + '</td>' +
           '<td>' + n.port + '</td>' +
           '<td>' + (n.running ? 'yes' : 'no') + (n.lastError ? ' ' + n.lastError : '') + '</td>' +
+          '<td>' + linkCell + '</td>' +
           '<td><small>' + n.home + '</small></td>' +
           '<td class="row-actions">' +
             '<button data-act="start" data-id="' + n.id + '">Start</button>' +
@@ -87,9 +97,19 @@
       }).join('');
     }
 
+    // What each node says about its own connections. Asked alongside the
+    // node list rather than folded into it, so a slow or wedged node
+    // delays one cell instead of the whole table.
+    var links = {};
+
     function refresh() {
       return api('GET', '/api/nodes').then(function (r) {
-        render((r.body && r.body.nodes) || []);
+        var rows = (r.body && r.body.nodes) || [];
+        render(rows);
+        return api('GET', '/api/links').then(function (l) {
+          links = (l.body && l.body.links) || {};
+          render(rows);
+        }).catch(function () { /* the column stays blank, the table does not */ });
       }).catch(function (e) { setStatus('refresh failed: ' + e.message); });
     }
 

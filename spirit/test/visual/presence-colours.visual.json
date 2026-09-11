@@ -1,0 +1,45 @@
+{
+  "title": "Presence colours",
+  "why": "Green, red and white all on screen at once, which is the only way to see that the third one is honest rather than a bug.",
+  "covers": ["presenceStream.js", "presenceNode.js", "presenceWire.js"],
+  "look": [
+    "Contacts — one of each colour",
+    "labMaster — the Connected to column, one node deliberately down"
+  ],
+
+  "peers": [
+    {
+      "name": "bella",
+      "on": ["lab", "live"],
+      "running": true,
+      "expect": "green — her node is up and holding both streams"
+    },
+    {
+      "name": "carlos",
+      "on": ["lab", "live"],
+      "running": false,
+      "expect": "red — he has a row on both relays and his node is down. A relay SAYS he is absent, which is what makes this different from white."
+    },
+    {
+      "name": "dina",
+      "on": ["lab"],
+      "running": true,
+      "expect": "white after the removal below — still in your contacts, named by no relay you are connected to"
+    }
+  ],
+
+  "knows": [["bella", "carlos"]],
+
+  "messages": [
+    { "from": "bella", "text": "morning" },
+    { "from": "carlos", "text": "are you about?" }
+  ],
+
+  "then": [
+    {
+      "remove": "dina",
+      "from": "lab",
+      "why": "She stays in whoBook and leaves the roster, which is exactly the state white means. Without this step the scenario can only show two colours, and a three-colour rule with two colours on screen is untested by eye."
+    }
+  ]
+}

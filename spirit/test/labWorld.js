@@ -123,10 +123,18 @@ async function answering(url) {
   return false;
 }
 
-// opts: { peers: 1..3 }
+// opts: { peers: 1..3, owner, peerNames }
+//
+// `owner` lets a caller supply an existing identity to own the lab relay
+// instead of one being made here — which is what lets Andy's own node own
+// it, so the owner-only surfaces (invites, the device panel, the census)
+// are the ones he actually sees. His identity is READ, never written: the
+// key that owns spirit.andyflinn.com lives in that file and regenerating
+// it would cost him the relay he already has.
 function createWorld(opts) {
   opts = opts || {};
   const wanted = Math.max(1, Math.min(3, opts.peers || 2));
+  const names = opts.peerNames || null;
 
   let relay = null;
   let owner = null;
@@ -152,6 +160,12 @@ function createWorld(opts) {
     const up = await ensureMaster();
     if (!up.ok) return { ok: false, error: up.error };
 
+    // A WORLD STARTS EMPTY. Anything still standing from an interrupted
+    // run holds a port this one wants, and the failure that produces
+    // names the wrong thing entirely — a recycle that 404s, when the real
+    // trouble is a different node sitting on the port.
+    await destroy();
+
     relay = await ensureNode('relay', 'relay', RELAY_PORT);
     if (!relay.ok) return relay;
     relay.url = 'http://127.0.0.1:' + RELAY_PORT;
@@ -162,11 +176,12 @@ function createWorld(opts) {
     // The relay's owner is whoever claims first. Made here rather than
     // borrowed from the work node: a suite must not need Andy's key, and
     // must never write to his node's state.
-    owner = auth.generateIdentity('labowner');
+    owner = opts.owner || auth.generateIdentity('labowner');
+    const ownerName = owner.name || 'labowner';
     const claimed = await post(relay.url + '/api/relay/claim', {
-      name: 'labowner',
+      name: ownerName,
       publicKey: owner.publicKey,
-      sig: auth.sign(owner.privateKey, auth.claimMessage('labowner')),
+      sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
     });
     if (!claimed.ok) {
       return { ok: false, error: 'lab owner could not claim: ' +
@@ -174,13 +189,13 @@ function createWorld(opts) {
     }
 
     for (let i = 0; i < wanted; i += 1) {
-      const name = 'peer' + (i + 1);
+      const name = (names && names[i]) || ('peer' + (i + 1));
       const node = await ensureNode(name, 'avatar', PEER_PORTS[i]);
       if (!node.ok) return node;
 
       const id = auth.generateIdentity(name);
       const minted = await post(relay.url + '/api/relay/invite', {
-        name: 'labowner',
+        name: owner.name || 'labowner',
         label: name,
         days: 1,
         sig: auth.sign(owner.privateKey, invites.mintMessage(name, 1)),
@@ -204,6 +219,18 @@ function createWorld(opts) {
       fs.writeFileSync(
         path.join(node.home, 'app', 'natter', 'relays.json'),
         JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
+      );
+      // AND session.json, or the shell believes this node has no name.
+      // firstRun() is decided by exactly one thing — a label in this file
+      // — and an unbound node shows Natter alone and nothing else. So a
+      // fake peer with a key, a claim and a relay still opened to a
+      // one-app screen, because the file that says "I am somebody" was
+      // never written. GAP 1 again: a node cannot be told who it is from
+      // outside itself, so every file that means "bound" has to be
+      // written by hand here.
+      fs.writeFileSync(
+        path.join(node.home, 'app', 'natter', 'session.json'),
+        JSON.stringify({ label: name, boundAt: new Date().toISOString() }, null, 2)
       );
       // It has to be restarted to read what was just written to it.
       await master('POST', '/api/nodes/' + node.id + '/stop');
@@ -253,18 +280,31 @@ function createWorld(opts) {
     const p = peers.filter(function (x) { return x.name === name; })[0];
     if (!p || !relay) return false;
     const done = await post(relay.url + '/api/relay/remove-peer', {
-      name: 'labowner',
+      name: owner.name || 'labowner',
       key: p.id.publicKey,
       sig: auth.sign(owner.privateKey, auth.removePeerMessage(p.id.publicKey)),
     });
     return !!(done && done.ok);
   }
 
+  // BY PATTERN, never from what this object happens to remember.
+  //
+  // It was the other way and that was worse than useless: a teardown run
+  // in a fresh process had an empty peer list, deleted nothing, and
+  // reported success — so the next build found stale nodes holding the
+  // ports it wanted and failed with a message about something else
+  // entirely.
+  //
+  // The `lw-` prefix is what makes this possible, and it is the same
+  // reasoning as `lab-` on the live relay: a disposable thing should be
+  // identifiable as disposable without anybody having kept a list.
   async function destroy() {
-    for (const p of peers) {
-      await master('POST', '/api/nodes/' + p.node.id + '/delete');
+    const listed = await master('GET', '/api/nodes');
+    const rows = (listed.body && listed.body.nodes) || [];
+    for (const row of rows) {
+      if (String(row.id || '').indexOf(PREFIX) !== 0) continue;
+      await master('POST', '/api/nodes/' + row.id + '/delete');
     }
-    if (relay) await master('POST', '/api/nodes/' + relay.id + '/delete');
     peers.length = 0;
     if (startedMaster) {
       try { startedMaster.kill(); } catch (e) { /* gone */ }

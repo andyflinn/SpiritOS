@@ -254,6 +254,39 @@ async function run() {
     test.fail('bert after losing b: ' + JSON.stringify(after));
   }
 
+  test.subHeading('Gone is not absent, and the difference is a colour');
+
+  // Found by a visual scenario, which is what visual scenarios are for:
+  // it exhibited a state no test here explored, and the state was wrong.
+  // A peer removed from a relay showed RED — merely away — for ever, on
+  // the strength of a relay that had forgotten them.
+  //
+  // Absent is a statement about a MEMBER. Gone means there is no row, so
+  // the only true thing left is to stop answering for that key at all.
+  // Keys of their own, so removing one here cannot quietly change what a
+  // later check in this file is asserting about bert or zoe.
+  P._change('http://a', { key: 'gonzo', present: false });
+  if (P.table().gonzo === false) test.check('a member who is away is absent — red');
+  else test.fail('setup: ' + JSON.stringify(P.table()));
+
+  P._change('http://a', { key: 'gonzo', present: false, gone: true });
+  if (!('gonzo' in P.table())) {
+    test.check('and a member who is REMOVED leaves the table entirely — white, not red');
+  } else {
+    test.fail('a removed peer stayed known: ' + JSON.stringify(P.table()));
+  }
+
+  // And only for the relay that said so. Somebody removed from one relay
+  // is still whatever another relay says they are.
+  P._change('http://a', { key: 'hattie', present: true });
+  P._change('http://b', { key: 'hattie', present: false });
+  P._change('http://a', { key: 'hattie', present: false, gone: true });
+  if (P.table().hattie === false) {
+    test.check('while another relay that still holds them keeps answering');
+  } else {
+    test.fail('gone on one relay erased the other: ' + JSON.stringify(P.table()));
+  }
+
   test.subHeading('The per-relay detail stays here');
 
   // Andy's ruling: the shell gets one merged set and apps filter it. The

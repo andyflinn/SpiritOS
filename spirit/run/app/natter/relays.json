@@ -1,5 +1,9 @@
 [
   {
+    "label": "lab",
+    "url": "http://127.0.0.1:65425"
+  },
+  {
     "label": "spirit.andyflinn.com",
     "url": "https://spirit.andyflinn.com"
   }

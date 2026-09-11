@@ -118,3 +118,9 @@ minted.json
 # Written by labMaster (and any future packaging step) so a copied tree
 # can say which commit it came from. Never a checkout, so never tracked.
 spirit/run/build.json
+
+# Transient: labPopulate copies relays.json here before putting a lab
+# row in front of it, and --down restores from it. Never a committed file —
+# staged once by reflex, it made git ls-files name a path that the teardown
+# had already deleted, and every lab node then failed to build.
+spirit/run/app/natter/relays.json.before-lab

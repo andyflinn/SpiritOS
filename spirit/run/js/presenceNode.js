@@ -90,7 +90,19 @@ function createPresence(opts) {
   function onChange(url, body) {
     if (!body || !body.key) return;
     if (!byRelay[url]) byRelay[url] = Object.create(null);
-    byRelay[url][body.key] = !!body.present;
+
+    // `gone` is not `present: false`. Absent means a member of that relay
+    // is not connected — red, and honestly so. Gone means the relay no
+    // longer has a row for this key at all, and the only truthful thing
+    // left is to stop answering for them: the key leaves this relay's
+    // set, and if no other relay names it the merge drops it entirely,
+    // which is white.
+    //
+    // Keeping the key at `false` would show a removed person as merely
+    // away, for ever, on the strength of a relay that has forgotten them.
+    if (body.gone) delete byRelay[url][body.key];
+    else byRelay[url][body.key] = !!body.present;
+
     publish();
   }
 

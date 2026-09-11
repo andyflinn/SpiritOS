@@ -915,8 +915,20 @@ function createRelay(rootDir) {
     // matters.
     if (presentNow.isPresent(key)) {
       presentNow.disconnect(key, null);
-      presentNow.broadcast('presence', { key: key, present: false });
     }
+
+    // GONE, NOT ABSENT — and the difference is a colour on somebody's
+    // screen. `present: false` is a statement ABOUT A MEMBER: this person
+    // has a row here and is not connected. A removed peer has no row, so
+    // the only true thing left to say is "I no longer know this key" —
+    // and a node that heard `present: false` would keep showing them red,
+    // which claims knowledge the relay no longer has.
+    //
+    // Broadcast unconditionally, not only when they were connected:
+    // somebody removed while away would otherwise stay absent-and-known
+    // in every peer's table for ever, because nothing would ever correct
+    // it.
+    presentNow.broadcast('presence', { key: key, present: false, gone: true });
 
     void asked;
     return {

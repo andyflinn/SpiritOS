@@ -104,7 +104,13 @@ function pidsOnPort(port) {
   try {
     if (process.platform === 'win32') {
       const out = execSync('netstat -ano', { encoding: 'utf8' });
-      const re = new RegExp('[:.]' + port + '\\s+\\S+\\s+\\S+\\s+LISTENING\\s+(\\d+)', 'gi');
+      // ONE column between the port and the state, not two. Windows
+      // netstat prints `TCP  <local>  <foreign>  LISTENING  <pid>`, so
+      // after the port there is exactly one non-space token before
+      // LISTENING. With two, this matched nothing at all — so `running`
+      // said no for every node labMaster had not started itself, and the
+      // panel quietly reported a healthy network as dead.
+      const re = new RegExp('[:.]' + port + '\\s+\\S+\\s+LISTENING\\s+(\\d+)', 'gi');
       let m;
       while ((m = re.exec(out))) pids[m[1]] = true;
     } else {
@@ -213,11 +219,30 @@ function copyTrackedSpirit(id) {
     console.warn('labMaster: ' + missing.length + ' untracked file(s) under spirit/ will NOT ' +
       'reach ' + id + ' — `git add` them first:\n  ' + missing.join('\n  '));
   }
+  // A TRACKED FILE THAT IS NOT ON DISK IS SKIPPED, not fatal.
+  //
+  // `git ls-files` reads the INDEX, and the index happily lists a file
+  // that has since been deleted from the working tree — a `git rm` not
+  // yet committed, a transient file somebody staged by reflex with
+  // `git add -A`. One of those made every node creation fail with an
+  // ENOENT about a path nobody recognised, which is a long way from
+  // "a file in the index is missing".
+  //
+  // Counted and reported rather than silently ignored: a fake node built
+  // without something it needs is the bug missingFromCopy already exists
+  // to prevent from the other direction.
+  const absent = [];
   relativePaths.forEach(function (relPath) {
+    const source = path.join(REPO_ROOT, relPath);
+    if (!fs.existsSync(source)) { absent.push(relPath); return; }
     const dest = path.join(targetRoot, relPath);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(path.join(REPO_ROOT, relPath), dest);
+    fs.copyFileSync(source, dest);
   });
+  if (absent.length) {
+    console.warn('labMaster: ' + absent.length + ' file(s) are in the index but not on disk, ' +
+      'so ' + id + ' was built without them:\n  ' + absent.join('\n  '));
+  }
   const runDir = path.join(targetRoot, 'spirit', 'run');
   if (stamp) {
     buildStamp.write(runDir, Object.assign({}, stamp, { untracked: missing.length }));
@@ -417,6 +442,60 @@ const server = http.createServer(function (req, res) {
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Invalid JSON body');
+    });
+    return;
+  }
+
+  // WHICH RELAYS IS EACH NODE ACTUALLY HOLDING OPEN.
+  //
+  // The table said id, name, type, port and running, and none of those
+  // answers the question the panel is usually being asked: is my little
+  // network actually talking to anything? Andy looked at it, saw no
+  // column for it, and reasonably concluded nothing was connected — when
+  // in fact every node was.
+  //
+  // Read from each node's own relay-presence job over loopback. A node
+  // that is not running, or is running older code, simply reports
+  // nothing; this is a convenience, never a source of truth about
+  // anything but itself.
+  if (req.method === 'GET' && pathname === '/api/links') {
+    Promise.all(nodes.map(function (n) {
+      // The same test publicNode uses for `running`: a child we spawned,
+    // or a listener on the port. Asking only the second was how this
+    // column came back empty for every node while every node was up.
+    const child = children[n.id];
+    const alive = !!(child && child.exitCode == null) || portHasListener(n.port);
+    if (!alive) return Promise.resolve([n.id, null]);
+      return fetch('http://127.0.0.1:' + n.port + '/api/jobs')
+        .then(function (res) { return res.json(); })
+        .then(function (jobs) {
+          const job = (jobs || []).filter(function (j) { return j.type === 'relay-presence'; })[0];
+          if (!job) return [n.id, null];
+          // The log is the record of what happened; the last line about
+          // each URL is its current state.
+          const state = Object.create(null);
+          (job.log || []).forEach(function (line) {
+            const connected = /^connected to (.+)$/.exec(line.message || '');
+            const lost = /^lost (\S+?):/.exec(line.message || '');
+            if (connected) state[connected[1]] = true;
+            else if (lost) state[lost[1]] = false;
+          });
+          const presence = (job.data && job.data.presence) || {};
+          return [n.id, {
+            relays: Object.keys(state).map(function (url) {
+              return { url: url, up: state[url] };
+            }),
+            reachable: Object.keys(presence).filter(function (k) { return presence[k]; }).length,
+            known: Object.keys(presence).length,
+          }];
+        })
+        .catch(function () { return [n.id, null]; });
+    })).then(function (pairs) {
+      const out = Object.create(null);
+      pairs.forEach(function (pair) { out[pair[0]] = pair[1]; });
+      sendJson(res, 200, { links: out });
+    }).catch(function () {
+      sendJson(res, 200, { links: {} });
     });
     return;
   }
