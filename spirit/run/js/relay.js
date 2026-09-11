@@ -827,7 +827,54 @@ function createRelay(rootDir) {
         ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW,
       });
     }
-    return deviceQueue.offer(who.id, password, devicePublicKey);
+    var waiting = deviceQueue.offer(who.id, password, devicePublicKey);
+
+    // THE DOORBELL.
+    //
+    // Until now an offer sat in this slot until the node happened to ask
+    // — `devicePending`, once a minute — so enrolment took anywhere from
+    // no time at all to a full minute depending on where in that cycle
+    // somebody pressed the button. Uniformly 0-60s, averaging 30.
+    //
+    // That was never a decision. Device cycle 2 landed on 2026-09-10 and
+    // presence landed on the 11th: when this was built there was no
+    // stream to push down, and polling was the only mechanism in the
+    // building. The stream arrived the next day and nothing came back to
+    // rewire the one part that predated it.
+    //
+    // A DOORBELL, NOT A NEW TRANSPORT. Everything else stays exactly as
+    // it was: the slot still holds the offer, the browser's POST is
+    // still held against it, and the node still answers with the same
+    // two POSTs. The only thing that changes is how the node finds out —
+    // rung, instead of discovering it on a later round of the building.
+    // A measured round trip to a peer through this relay is ~125ms.
+    //
+    // RUNG ONLY IF THIS OFFER IS THE ONE PARKED. `offer` refuses a busy
+    // slot, a bad password and a flood, and all three come back as the
+    // same `not now` — so the fact that we were called says nothing.
+    // take() is a peek: if the live slot is ours, we parked it.
+    var parked = deviceQueue.take(who.id);
+    var mine = parked && parked.devicePublicKey === devicePublicKey;
+
+    // PUSH WHEN PRESENT, POLL WHEN NOT. A node that is not holding a
+    // stream gets exactly today's behaviour, which is why the tick and
+    // the 66-second hold both stay. False negatives only: the worst a
+    // missed bell can do is cost the minute it always cost.
+    if (mine && presentNow.isPresent(who.id)) {
+      // NOT SIGNED, deliberately. The stream was authenticated when it
+      // opened — the node proved it holds this key — so a push onto it
+      // is already addressed to the one identity entitled to the offer,
+      // and it arrives over the same TLS connection the poll's answer
+      // would have. A relay signature here would prove something the
+      // transport has already proved, and the password inside is checked
+      // by the node against its own either way.
+      presentNow.send(who.id, 'device', {
+        password: parked.password,
+        devicePublicKey: parked.devicePublicKey,
+      });
+    }
+
+    return waiting;
   }
 
   function deviceTake(token) {

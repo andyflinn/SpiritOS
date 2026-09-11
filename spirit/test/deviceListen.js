@@ -24,6 +24,27 @@ const SCENARIO = require('./scenario').OWNER_ONLY;
 // built as one.
 const tmpHome = world.tmpHome;
 
+// What a held stream looks like from the relay's side. Same shape
+// presenceStream.js uses, because it is the same sink.
+function fakeSink() {
+  const sink = {
+    lines: [],
+    closed: false,
+    write: function (chunk) { sink.lines.push(chunk); },
+    close: function () { sink.closed = true; },
+  };
+  sink.events = function () {
+    return sink.lines.map(function (chunk) {
+      const ev = /event: (.*)/.exec(chunk);
+      const data = /data: (.*)/.exec(chunk);
+      let parsed = null;
+      try { parsed = data ? JSON.parse(data[1]) : null; } catch (e) { parsed = null; }
+      return { event: ev ? ev[1] : '', data: parsed };
+    }).filter(function (e) { return e.event; });
+  };
+  return sink;
+}
+
 // A DEVICE BELONGS TO THE IDENTITY, NOT TO THE MAILBOX THAT ENROLLED IT.
 //
 // Andy attached a browser to a lab peer who was on two relays, and it
@@ -167,6 +188,149 @@ async function oneDeviceEveryMailbox() {
   }
 }
 
+// THE DOORBELL — the relay's half.
+//
+// An offer used to sit in the relay's slot until the node next asked,
+// which is once a minute: uniformly 0-60 seconds from pressing the
+// button to being enrolled, averaging thirty. Andy lived it — "works
+// reliably when I click 10 seconds before the node polls, fails reliably
+// 10 seconds after."
+//
+// That was never a decision. Device cycle 2 landed on 2026-09-10 and
+// presence on the 11th, so when this was built there was no stream to
+// push down. This is the day-late rewiring.
+//
+// PHASE ONE IS THE RELAY ONLY. What is checked here is that the bell
+// rings on the stream the node is already holding, and that everything
+// else is exactly as it was — the slot, the held POST, the poll.
+async function theRelayRingsTheBell() {
+  test.subHeading('An offer reaches a connected node at once, not on its next poll');
+
+  const W = world.build(SCENARIO);
+  if (!W.ok) { test.fail(W.error); return; }
+  const box = W.box;
+  const owner = W.owner;
+  const phone = auth.generateIdentity('device');
+
+  const home = W.ownerHome();
+  deviceAuth.ensurePassword(home);
+  deviceAuth.setListening(home, true);
+  const password = deviceAuth.load(home).password;
+
+  // The node, holding the stream it already holds for presence.
+  const sink = fakeSink();
+  const opened = box.streamOpen(
+    owner.publicKey,
+    auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)),
+    sink
+  );
+  if (!opened || opened.ok === false) {
+    test.fail('the node could not hold a stream: ' + JSON.stringify(opened));
+    return;
+  }
+
+  const before = sink.events().length;
+  const offering = box.deviceOffer('andy', password, phone.publicKey);
+
+  const rung = sink.events().slice(before).filter(function (e) { return e.event === 'device'; });
+  if (rung.length === 1) {
+    test.check('the offer arrives on the stream the moment it is made');
+  } else {
+    test.fail('no bell: ' + JSON.stringify(sink.events().slice(before)));
+  }
+
+  // It carries what the poll would have answered with, and nothing more.
+  // The node compares the password against its own; it cannot do that
+  // with a notification that only says "something happened".
+  const bell = rung[0] && rung[0].data;
+  if (bell && bell.password === password && bell.devicePublicKey === phone.publicKey) {
+    test.check('and carries exactly what the poll would have handed back');
+  } else {
+    test.fail('payload: ' + JSON.stringify(bell));
+  }
+
+  // THE SLOT IS UNCHANGED. A doorbell, not a new transport: the offer is
+  // still parked, so a node that missed the bell still finds it by
+  // asking, and the browser's POST is still held against that slot.
+  const stillThere = box.devicePending(
+    owner.publicKey,
+    auth.sign(owner.privateKey, deviceAuth.deviceTakeMessage('andy'))
+  );
+  if (stillThere && stillThere.password === password) {
+    test.check('and the slot still holds it, so the poll remains the fallback');
+  } else {
+    test.fail('the bell consumed the offer: ' + JSON.stringify(stillThere));
+  }
+
+  // And the exchange still completes the way it always did.
+  box.deviceReply('andy', true);
+  const browser = await offering;
+  if (browser && browser.ok) {
+    test.check('and the browser is still answered by the same held POST');
+  } else {
+    test.fail('browser: ' + JSON.stringify(browser));
+  }
+
+  test.subHeading('And it rings for nobody else, and for nothing refused');
+
+  // A SECOND OFFER WHILE ONE IS LIVE IS REFUSED, and a refusal must not
+  // ring. `offer` answers a busy slot, a bad password and a flood with
+  // the same `not now`, so being called says nothing about being parked.
+  const W2 = world.build(SCENARIO);
+  if (!W2.ok) { test.fail(W2.error); return; }
+  const home2 = W2.ownerHome();
+  deviceAuth.ensurePassword(home2);
+  const pw2 = deviceAuth.load(home2).password;
+  const sink2 = fakeSink();
+  W2.box.streamOpen(
+    W2.owner.publicKey,
+    auth.sign(W2.owner.privateKey, auth.streamMessage(W2.owner.publicKey)),
+    sink2
+  );
+
+  const first = W2.box.deviceOffer('andy', pw2, 'pk-first');
+  const mark = sink2.events().length;
+  const second = await W2.box.deviceOffer('andy', pw2, 'pk-second');
+  const after = sink2.events().slice(mark).filter(function (e) { return e.event === 'device'; });
+
+  if (second && second.ok === false && after.length === 0) {
+    test.check('a second offer is refused and rings nothing');
+  } else {
+    test.fail('refused=' + JSON.stringify(second) + ' rang=' + JSON.stringify(after));
+  }
+
+  W2.box.deviceReply('andy', false);
+  await first;
+
+  // A PEER'S STREAM IS NOT THE OWNER'S. The push is addressed to one
+  // identity, and the stream it goes down is the one that proved it
+  // holds that key — which is the whole reason it needs no signature.
+  // Its own world, with somebody in it: the stock scenario is an owner
+  // alone, and the thing being checked is that a PEER holding a stream
+  // is not rung for the owner's offer.
+  const W3 = world.build({ title: 'An owner and one member', peers: ['bert'] });
+  if (!W3.ok) { test.fail(W3.error); return; }
+  const home3 = W3.ownerHome();
+  deviceAuth.ensurePassword(home3);
+  const bert = W3.peer('bert');
+  const bertSink = fakeSink();
+  W3.box.streamOpen(
+    bert.publicKey,
+    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
+    bertSink
+  );
+  const bertMark = bertSink.events().length;
+  const forOwner = W3.box.deviceOffer('andy', deviceAuth.load(home3).password, 'pk-owner');
+  const leaked = bertSink.events().slice(bertMark).filter(function (e) { return e.event === 'device'; });
+  if (leaked.length === 0) {
+    test.check("and an offer for the owner never reaches a peer's stream");
+  } else {
+    test.fail('it rang the wrong node: ' + JSON.stringify(leaked));
+  }
+  W3.box.deviceReply('andy', false);
+  await forOwner;
+}
+
 test.startTest('Device cycle 3 — listen and tick');
 
 async function run() {
@@ -289,6 +453,7 @@ async function run() {
   }
 
   await oneDeviceEveryMailbox();
+  await theRelayRingsTheBell();
   await bootBehaviour();
 
   if (typeof test.reportSuccessFailureCount === 'function') {
