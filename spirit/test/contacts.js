@@ -112,6 +112,7 @@ function mountApp(options) {
   };
 
   let behavior = null;
+  const jobFeed = [];
   const shellSpirit = {
     shell: {
       activateApp: function (b) { behavior = b; },
@@ -138,6 +139,16 @@ function mountApp(options) {
         formatBytes: spirit.core.util.formatBytes,
       },
       const: { ICON: spirit.core.const.ICON },
+      // The channel presence arrives on. Captured rather than faked
+      // away, so a test can push a relay-presence payload and read the
+      // colour that comes out — which is the only part of the dot this
+      // side of the browser can be held to.
+      jobs: {
+        subscribe: function (handlers) {
+          jobFeed.push(handlers || {});
+          return function () {};
+        },
+      },
     },
   };
 
@@ -185,6 +196,29 @@ function mountApp(options) {
     doc: doc, log: log, container: container, behavior: behavior, store: store,
     launched: launched, called: called,
     answers: function (result) { answer = result; },
+    // A SECOND MOUNT OF THE SAME LOADED SCRIPT, which is what walking
+    // into an app twice actually is. mountApp() re-evaluates the source,
+    // so two mountApp calls are two module instances and would prove
+    // nothing about a module-level guard.
+    remount: function () { behavior.mount(container, api, null); },
+    // How many EventSources this app asked the shell for. One, forever —
+    // the shell has no unmount hook, so a subscription per mount would
+    // be a socket per visit.
+    subscriptions: function () { return jobFeed.length; },
+    // Deliver a presence payload the way the shell would.
+    presence: function (table, how) {
+      const job = { id: 'j1', type: 'relay-presence', data: { presence: table } };
+      jobFeed.forEach(function (h) {
+        if (how === 'snapshot') { if (h.onSnapshot) h.onSnapshot([job]); }
+        else if (h.onUpdate) h.onUpdate(job);
+      });
+    },
+    // Something else on the same channel, which must change nothing.
+    otherJob: function () {
+      jobFeed.forEach(function (h) {
+        if (h.onUpdate) h.onUpdate({ id: 'j2', type: 'server-stats', data: { cpu: 3 } });
+      });
+    },
   };
 }
 
@@ -370,13 +404,20 @@ function listsTheBook() {
       test.fail('marks: ' + rows);
     }
 
-    // Four columns, and the first one unnamed — a mark has no word, and
-    // giving it one would only widen the column it is trying to keep
-    // narrow. Read off the source so the header and the rows cannot
-    // drift apart silently.
-    const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-    if (src.indexOf('<tr><th></th><th>Handle</th><th>Label</th><th>How</th></tr>') !== -1) {
-      test.check('the header is an unnamed mark column, then Handle, Label and How');
+    // Five columns, and the first TWO unnamed — the dot has no word and
+    // neither does the mark, and giving either one would only widen the
+    // column it is trying to keep narrow. Read off the source so the
+    // header and the rows cannot drift apart silently.
+    const rawSrc = fs.readFileSync(APP_SCRIPT, 'utf8');
+    // COMMENTS STRIPPED FIRST. This file discusses its own markup at
+    // length — there is a `colspan="4"` inside a comment about the
+    // layout that used to be here — and a test that greps the source
+    // including its comments is a test a comment can satisfy or break.
+    // That has been the cause three times in this repo now.
+    const src = rawSrc.replace(/^\s*\/\/.*$/gm, '');
+
+    if (src.indexOf('<tr><th></th><th></th><th>Handle</th><th>Label</th><th>How</th></tr>') !== -1) {
+      test.check('the header is a dot column, a mark column, then Handle, Label and How');
     } else {
       test.fail('header: ' + (/<thead>[\s\S]*?<\/thead>/.exec(src) || [''])[0]);
     }
@@ -385,11 +426,15 @@ function listsTheBook() {
     // colspan under it. Same check jobs.js carries, same reason — a
     // colspan one short shows only as a panel that stops before the edge
     // of the table.
-    const headers = (src.match(/<th>/g) || []).length;
+    //
+    // `<th` and not `<th>`: a heading that carries an attribute is still
+    // a heading, and counting only the bare ones would undercount the
+    // moment anybody adds one.
+    const headers = (src.match(/<th[\s>]/g) || []).length;
     const spans = (src.match(/colspan="(\d+)"/g) || []).map(function (m) {
       return Number(/\d+/.exec(m)[0]);
     });
-    if (headers === 4 && spans.length === 2 && spans.every(function (n) { return n === headers; })) {
+    if (headers === 5 && spans.length && spans.every(function (n) { return n === headers; })) {
       test.check('and every colspan under it spans all ' + headers);
     } else {
       test.fail(headers + ' headers vs colspans ' + JSON.stringify(spans));
@@ -711,6 +756,150 @@ function theHandleColumnStillIdentifies() {
   });
 }
 
+// PRESENCE.md Stage 4 — the dot, and that is the boundary.
+//
+// The column is the one place presence and whoBook meet: presence
+// arrives keyed by public key because a key is all a relay and this node
+// agree about, and the book says who that is. Everything below is that
+// join and the three marks it produces.
+//
+// The eyeball test (presenceShow.js) watches the colours change on a
+// real screen and can be run once in a sitting. This runs every case in
+// a millisecond, which is the half of the pair that catches the ones
+// nobody would think to look at.
+function theDotColumn() {
+  test.subHeading('The leftmost dot, and the third colour that makes the other two honest');
+
+  const app = mountApp({
+    people: [
+      { publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false },
+      { publicKey: CAROL, publicLabel: 'carol', caption: 'carol', myLabel: '', tail: 'lcaro=', acquiredVia: 'handle', held: false, blocked: false },
+      { publicKey: DAVE, publicLabel: 'dave', caption: 'dave', myLabel: '', tail: 'edave=', acquiredVia: 'handle', held: false, blocked: false },
+    ],
+  });
+  const ICONS = spirit.core.const.ICON;
+
+  function rows() { return el(app, 'contacts-tbody').innerHTML; }
+  function dotFor(key) {
+    // The FIRST cell of that person's row, which is what "leftmost"
+    // means and is the only thing a person reading down the page sees.
+    const row = new RegExp('data-contact-row="' + key.replace(/[+/=]/g, '\\$&') +
+      '"><td[^>]*>([^<]*)</td>').exec(rows());
+    return row ? row[1] : '(no row)';
+  }
+
+  return settle().then(function () {
+    // BEFORE ANY PAYLOAD. A screenful of red on load would be a lie that
+    // corrects itself a second later, and that is worse than white,
+    // because the lie is the one that looks like information.
+    if (dotFor(BERT) === ICONS.WHITE_CIRCLE && dotFor(DAVE) === ICONS.WHITE_CIRCLE) {
+      test.check('before any payload every dot is white — nothing is known, and it says so');
+    } else {
+      test.fail('on load: ' + dotFor(BERT) + ' ' + dotFor(DAVE));
+    }
+
+    // The three marks, from one payload, which is the picture the whole
+    // scenario exists to put on a screen at once.
+    const table = {};
+    table[BERT] = true;
+    table[CAROL] = false;
+    app.presence(table);
+
+    if (dotFor(BERT) === ICONS.GREEN_CIRCLE) {
+      test.check('a key a relay says is present goes green');
+    } else {
+      test.fail('bert: ' + dotFor(BERT));
+    }
+    if (dotFor(CAROL) === ICONS.RED_CIRCLE) {
+      test.check('a key a relay says is absent goes red');
+    } else {
+      test.fail('carol: ' + dotFor(CAROL));
+    }
+    // THE ONE THAT MATTERS. Dave is in the book and in no payload. He is
+    // not offline — he is unseen, and red here would be the column
+    // claiming knowledge it does not have.
+    if (dotFor(DAVE) === ICONS.WHITE_CIRCLE) {
+      test.check('and a key NO relay mentions stays white — unseen is not offline');
+    } else {
+      test.fail('dave: ' + dotFor(DAVE));
+    }
+
+    // Still listed. Whatever the dot says, the row is the address book's
+    // and presence has no vote on who is in it.
+    if (rows().indexOf('dave') !== -1) {
+      test.check('and they are still in the list, because presence does not decide membership');
+    } else {
+      test.fail('dave left the table');
+    }
+
+    // A REMOVED PEER GOES WHITE, NOT RED. The node deletes a key it is
+    // told is gone rather than marking it absent, so the key falls out
+    // of the payload — which is exactly the state above. Asserted as a
+    // transition because that is how it is met: green, then nothing.
+    const after = {};
+    after[CAROL] = false;
+    app.presence(after);
+    if (dotFor(BERT) === ICONS.WHITE_CIRCLE && dotFor(CAROL) === ICONS.RED_CIRCLE) {
+      test.check('a key that DROPS OUT of the payload goes white, not red — that is removal');
+    } else {
+      test.fail('after removal: bert=' + dotFor(BERT) + ' carol=' + dotFor(CAROL));
+    }
+
+    // Words as well as colour, on the cell rather than a heading.
+    const titled = /<td title="([^"]*)">/.exec(rows());
+    if (titled && /present|absent|not known/.test(titled[1])) {
+      test.check('and every dot carries the words too, so colour is never the only carrier');
+    } else {
+      test.fail('no title on the dot cell: ' + rows().slice(0, 120));
+    }
+
+    // Nothing else on that channel may move this column. server-stats
+    // ticks every two seconds.
+    const before = rows();
+    app.otherJob();
+    if (rows() === before) {
+      test.check('and another job on the same channel repaints nothing');
+    } else {
+      test.fail('a server-stats tick changed the table');
+    }
+
+    // The snapshot path, which is how an app mounted after the last
+    // change learns anything at all. Without it, "nothing has happened
+    // yet" and "nobody is here" look identical.
+    const late = mountApp({
+      people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', myLabel: '', tail: 'bertb=', acquiredVia: 'handle', held: false, blocked: false }],
+    });
+    return settle().then(function () {
+      const snap = {};
+      snap[BERT] = true;
+      late.presence(snap, 'snapshot');
+      if (el(late, 'contacts-tbody').innerHTML.indexOf(ICONS.GREEN_CIRCLE) !== -1) {
+        test.check('and the snapshot fills the column in, so a late mount is not blank forever');
+      } else {
+        test.fail('snapshot ignored: ' + el(late, 'contacts-tbody').innerHTML);
+      }
+
+      // ONE SOCKET PER PAGE, NOT ONE PER MOUNT. The shell has no unmount
+      // hook, so a subscription taken in mount() is never given back —
+      // four visits to Contacts would leave four EventSources each
+      // repainting the same table.
+      //
+      // Re-mounting the SAME loaded script, because that is what walking
+      // into the app a second time is. Two mountApp() calls would be two
+      // module instances and would prove nothing.
+      const opened = late.subscriptions();
+      late.remount();
+      late.remount();
+      if (late.subscriptions() === opened) {
+        test.check('and walking in twice more opens no further subscription');
+      } else {
+        test.fail('two more mounts asked for ' +
+          (late.subscriptions() - opened) + ' more subscription(s)');
+      }
+    });
+  });
+}
+
 listsTheBook()
   .then(theHandleColumnStillIdentifies)
   .then(aRowOpensThePerson)
@@ -720,6 +909,7 @@ listsTheBook()
   .then(strangerPolicy)
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)
+  .then(theDotColumn)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contacts threw: ' + ((err && err.stack) || err));

@@ -1714,6 +1714,10 @@ test.subHeading('The window title names the node, then the screen');
 // bert, jim — and identical tabs reading "SpiritOS" cannot be told
 // apart. The shell owns document.title and builds it from two things:
 // the label this node claimed, and whatever the screen is showing.
+//
+// And ONLY those two. The word "spirit" used to lead every title and was
+// dropped (Andy): the favicon is a ghost saying the same thing, and a
+// truncated tab should spend its characters on the half that differs.
 {
   const scripts = [NATTER_SCRIPT, 'app/relayChat/relayChat.js'];
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
@@ -1736,7 +1740,7 @@ test.subHeading('The window title names the node, then the screen');
   }
 
   fresh.shell.launchApp('notes');
-  if (fresh.doc.title === 'spirit - Notes') {
+  if (fresh.doc.title === 'Notes') {
     test.check('and names the app it opens, with no label to give');
   } else {
     test.fail('fresh app title: ' + fresh.doc.title);
@@ -1745,14 +1749,14 @@ test.subHeading('The window title names the node, then the screen');
   // Claimed: the label leads, because that is the question a wall of
   // tabs is being scanned to answer.
   const bound = withNotes(bootShell(prefs, scripts, false, 'andy'));
-  if (bound.doc.title === 'spirit - andy') {
+  if (bound.doc.title === 'andy') {
     test.check('a claimed node says whose it is before anything is open');
   } else {
     test.fail('bound title: ' + bound.doc.title);
   }
 
   bound.shell.launchApp('notes');
-  if (bound.doc.title === 'spirit - andy - Notes') {
+  if (bound.doc.title === 'andy - Notes') {
     test.check('then node, then app');
   } else {
     test.fail('bound app title: ' + bound.doc.title);
@@ -1762,10 +1766,21 @@ test.subHeading('The window title names the node, then the screen');
   // says the file. Full path, not the basename — two dog.png in two
   // folders are two tabs.
   bound.shell.setViewerTitle('media/dog.png');
-  if (bound.doc.title === 'spirit - andy - media/dog.png') {
+  if (bound.doc.title === 'andy - media/dog.png') {
     test.check('a viewer says the file it is viewing, path and all');
   } else {
     test.fail('viewer title: ' + bound.doc.title);
+  }
+
+  // THE BRAND IS SAID ONCE, BY THE PICTURE. Checked as an absence,
+  // because the word creeping back into a title is exactly the kind of
+  // change nobody notices in a screenshot — and the tab it would truncate
+  // is the one belonging to whoever has the most tabs open.
+  if (bound.doc.title.indexOf('spirit') === -1 &&
+      fresh.doc.title.indexOf('spirit - ') === -1) {
+    test.check('and no title leads with the word the favicon already says');
+  } else {
+    test.fail('the brand is back: ' + bound.doc.title + ' / ' + fresh.doc.title);
   }
 
   // Relay Chat used to write this string itself ("Relay Chat [andy] · 3")

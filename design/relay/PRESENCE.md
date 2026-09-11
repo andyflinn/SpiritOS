@@ -275,6 +275,20 @@ and mutates it in place.
 
 Each ends green with its own tests, and is worth having on its own.
 
+> **All four are built as of 2026-09-11, and the arc is closed** — except
+> Stage 3, which was deliberately skipped rather than done. Stage 4 reads
+> the `relay-presence` job off the shell's existing jobs channel, so the
+> fold Stage 3 proposes would today have exactly one subscriber to fold.
+> Do it when a second app wants presence, not before.
+>
+> The column is `contactsPresenceMark` in
+> [`app/contacts/contacts.js`](../../spirit/run/app/contacts/contacts.js),
+> covered by `spirit/test/contacts.js`, and demonstrated on a real screen
+> by [`spirit/test/presenceShow.js`](../../spirit/test/presenceShow.js) —
+> which moves the world one step at a time and asks a person what colour
+> they see, because nothing between the job payload and the pixel has an
+> automated witness.
+
 ### Stage 1 — the relay speaks presence
 
 `GET /api/relay/stream`, authenticated once the way an inbox read is —

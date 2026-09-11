@@ -106,11 +106,21 @@
   // jim — and identical tabs reading "SpiritOS" are unusable for that.
   // So the shell owns document.title, and it reads:
   //
-  //   SpiritOS                          no public label, no app open
-  //   spirit - andy                     a claimed label, no app open
-  //   spirit - Relay Chat               an app, before this node claimed
-  //   spirit - andy - Relay Chat        the ordinary case
-  //   spirit - andy - media/dog.png     a viewer, showing what it shows
+  //   SpiritOS                   no public label, no app open
+  //   andy                       a claimed label, no app open
+  //   Relay Chat                 an app, before this node claimed
+  //   andy - Relay Chat          the ordinary case
+  //   andy - media/dog.png       a viewer, showing what it shows
+  //
+  // THE WORD "spirit" USED TO LEAD EVERY ONE OF THOSE, and it went
+  // (Andy): favicon.svg is a ghost in the tab already, so the brand was
+  // being said twice — once in a picture and once in the eight
+  // characters in front of the only part that differs between tabs. With
+  // a dozen tabs open the browser truncates from the right, so those
+  // eight characters were spent pushing the label out of view.
+  //
+  // The bare "SpiritOS" stays for a node with nothing to say: no label,
+  // no app, and an empty title shows the URL instead.
   //
   // The label is the one Relay Chat claimed and stored. The shell reads
   // that file directly: reading across app folders is what a component
@@ -147,7 +157,7 @@
     var parts = [];
     if (label) parts.push(label);
     if (detail) parts.push(detail);
-    document.title = parts.length ? ['spirit'].concat(parts).join(' - ') : 'SpiritOS';
+    document.title = parts.length ? parts.join(' - ') : 'SpiritOS';
   }
 
   var preferencesRaw = spirit.core.fs.loadFile('preferences.json');

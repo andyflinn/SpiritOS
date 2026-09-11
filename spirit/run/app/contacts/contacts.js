@@ -137,12 +137,55 @@ function contactsHandleCell(person) {
 //     lost your position twice per look;
 //   - one person at a time, with their neighbours not listed above and
 //     below them while you read their numbers.
+// PRESENCE, AND THE JOIN HAPPENS HERE AND ONLY HERE (PRESENCE.md, Stage
+// 4). Presence arrives keyed by public key because a key is the only
+// thing a relay and this node agree about; whoBook says who that is.
+//
+// Three marks, and the third is the point of the other two:
+//
+//   GREEN  a relay we are connected to says this key is present
+//   RED    a relay we are connected to says this key is absent
+//   WHITE  no relay mentions this key at all
+//
+// White is NOT a dimmer red. A contact we share no relay with is not
+// offline, they are UNSEEN, and painting them red would be this column
+// claiming knowledge it does not have. That is also why a removed peer
+// goes white rather than red: they have no row anywhere any more, so
+// nobody is in a position to say they are absent.
+//
+// FALSE NEGATIVES ONLY. Anything unknown, stale or unreachable reads as
+// white — the mark that promises nothing.
+var contactsPresence = Object.create(null);
+var contactsPresenceSeen = false;
+
+function contactsPresenceMark(publicKey) {
+  // Before the first payload arrives nothing is known about anybody, and
+  // a screenful of red on load would be a lie that corrects itself a
+  // second later — which is worse than a screenful of white that fills
+  // in, because the lie is the one that looks like information.
+  if (!contactsPresenceSeen) return contactsIcon.WHITE_CIRCLE;
+  var state = contactsPresence[publicKey];
+  if (state === true) return contactsIcon.GREEN_CIRCLE;
+  if (state === false) return contactsIcon.RED_CIRCLE;
+  return contactsIcon.WHITE_CIRCLE;
+}
+
+function contactsPresenceTitle(publicKey) {
+  if (!contactsPresenceSeen) return 'not known yet';
+  var state = contactsPresence[publicKey];
+  if (state === true) return 'present — a relay you share is holding their connection';
+  if (state === false) return 'absent — a relay you share says they are not connected';
+  return 'not known — no relay you are connected to mentions this key';
+}
+
 function contactsRowHtml(person) {
   var mark = '';
   if (person.blocked) mark = contactsIcon.NO;
   else if (person.held) mark = contactsIcon.WAITING;
 
   return '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
+    '<td title="' + contactsEscapeHtml(contactsPresenceTitle(person.publicKey)) + '">' +
+      contactsPresenceMark(person.publicKey) + '</td>' +
     '<td>' + mark + '</td>' +
     '<td>' + contactsHandleCell(person) + '</td>' +
     '<td>' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
@@ -159,7 +202,7 @@ function contactsRender() {
   // inside a pane this table's repaints cannot reach.
 
   if (!contactsPeople.length) {
-    tbody.innerHTML = '<tr><td colspan="4">(nobody yet — add someone by handle below)</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5">(nobody yet — add someone by handle below)</td></tr>';
     return;
   }
   tbody.innerHTML = contactsPeople.map(contactsRowHtml).join('');
@@ -284,6 +327,54 @@ function contactsPaintUnknown() {
   }
 }
 
+// THE WIRE, AND IT IS ALREADY THERE. The node holds one connection per
+// relay and publishes what it hears as a permanent `relay-presence` job,
+// so the shell's existing jobs channel carries this — no new shell
+// surface, no second socket of our own, and nothing added to the bones
+// so that a column could work.
+//
+// PRESENCE.md Stage 3 proposes spirit.core.presence.subscribe() to fold
+// several app subscriptions into one EventSource. Contacts is the only
+// app that consumes this arc — the document says so — so that fold would
+// today have exactly one thing to fold. Left undone deliberately; if a
+// second app ever wants presence, do Stage 3 then rather than opening a
+// third socket.
+// ONCE PER PAGE, NOT ONCE PER MOUNT.
+//
+// The shell loads an app's script once and mounts it on every entry, and
+// activateApp takes mount/render/loadFile/open — there is no unmount
+// hook. So a subscription opened in mount() and never closed would be a
+// new EventSource every time somebody walked into Contacts, each one
+// feeding its own repaint of a table that is drawn once.
+//
+// Guarded here rather than solved by adding a lifecycle hook to the
+// shell: a column does not get to change the app contract. That the
+// contract has no unmount is worth raising on its own, away from this.
+var contactsWatching = false;
+
+function contactsWatchPresence() {
+  if (contactsWatching) return;
+  contactsWatching = true;
+
+  function take(job) {
+    if (!job || job.type !== 'relay-presence') return;
+    var table = (job.data && job.data.presence) || null;
+    if (!table) return;
+    contactsPresence = table;
+    contactsPresenceSeen = true;
+    contactsRender();
+  }
+
+  spirit.core.jobs.subscribe({
+    // The snapshot matters as much as the updates: an app mounted after
+    // the job last changed would otherwise sit white until something
+    // moved, and "nothing has happened yet" would look identical to
+    // "nobody is here".
+    onSnapshot: function (jobs) { (jobs || []).forEach(take); },
+    onUpdate: take,
+  });
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     contactsApi = api;
@@ -304,11 +395,16 @@ spirit.shell.activateApp({
       // right or not, depending on the row. Its own column and the
       // handles line up down the page whatever anyone is marked.
       //
+      // The dot gets the same treatment, leftmost, and for the same
+      // reason — there is no word for it either. What the colour means
+      // rides on each cell's title rather than on a heading, so hovering
+      // a dot answers the question at the place the question is asked.
+      //
       // Handle then Label, in that order, because Handle is theirs and
       // is what somebody told you on the phone, and Label is what you
       // decided afterwards. The bubble under an open row reads the same
       // way for the same reason.
-      '<table class="jobs-table"><thead><tr><th></th><th>Handle</th><th>Label</th><th>How</th></tr></thead>' +
+      '<table class="jobs-table"><thead><tr><th></th><th></th><th>Handle</th><th>Label</th><th>How</th></tr></thead>' +
         '<tbody id="contacts-tbody"></tbody></table>' +
       // name= makes the two folds one exclusive group: opening either
       // closes the other, done by the browser with no JS and no state.
@@ -405,6 +501,7 @@ spirit.shell.activateApp({
     });
 
     contactsRefresh();
+    contactsWatchPresence();
   },
 
   render: function () {
