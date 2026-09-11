@@ -147,7 +147,10 @@ function natterMintHtml(api, badge) {
 // when a row opens, because both can change without this app: the window
 // closes on its own across a restart, and a password minted on first ask
 // does not exist until something asks.
-var natterDevice = { password: '', listening: false, loaded: false, ownedUrls: [], lastEvent: null };
+var natterDevice = {
+  password: '', listening: false, loaded: false,
+  relayUrls: [], publicKey: '', lastEvent: null,
+};
 var natterDeviceTimer = null;
 // What the watch needs to be restarted from render(). Set when it starts,
 // and never cleared: it describes where the panel lives, not whether the
@@ -159,19 +162,29 @@ var natterDeviceCtx = null;
 // The row is which relay, so the address in the sentence below can be
 // that relay's and not a question.
 //
-// Owner rows only. A mailbox somebody else owns cannot take this node's
-// device, and a node that owns nothing gets no markup at all: the panel
-// is built inside a branch that has already returned for a row without a
-// star (AGENT.md — do not show chrome that is not useful in that state).
+// Rows this node HAS, which since B2 is not the same as rows it owns. A
+// peer owns no relay and still has a slot of its own there, so gating
+// this on the star would keep the feature at the owner for want of one
+// word — which is exactly where it sat until B2.
+//
+// Still not every row: a mailbox this node has no claim on cannot take
+// its device, and showing the panel there would be chrome nobody can act
+// on (AGENT.md — do not show chrome that is not useful in that state).
 function natterDeviceHtml(api, badge) {
-  if (!badge || !badge.owned) return '';
+  if (!badge || !(badge.owned || badge.claimed)) return '';
   var host = natterDeviceHost(badge);
   // The host is kept on the panel because the two-second repaint has only
   // the container to work from, and re-deriving it would mean carrying the
   // row's badge into a timer that outlives the render that made it.
   return '<div class="stat-tile wide natter-device" data-device-host="' +
       api.escapeHtml(host) + '">' +
-    '<div class="panel-heading">' + natterIcon.STAR + ' Add one of my own devices</div>' +
+    // NO STAR, unlike the Invite panel above. ★ means "you own this
+    // mailbox" everywhere in this app and in Relay Chat's To list — one
+    // mark, one meaning. Invite is genuinely owner-only and keeps it;
+    // since B2 this panel is not, and a peer seeing the owned mark on a
+    // panel that has nothing to do with owning would be the mark
+    // starting to mean two things.
+    '<div class="panel-heading">Add one of my own devices</div>' +
     // One control and one sentence about it. The transient word about what
     // the last press did sits on the same line, because it is about the
     // press and not about what to do next.
@@ -189,6 +202,21 @@ function natterDeviceHtml(api, badge) {
 function natterDeviceHost(badge) {
   try { return new URL(badge.url).origin; }
   catch (e) { return String((badge && badge.url) || ''); }
+}
+
+// WHERE TO OPEN IT. `/<key>/device` names whose enrolment this is, which
+// is what lets a relay hold a slot per identity rather than one for the
+// box. Base64url, matching deviceAuth.keyToUrl — the same bytes, `-` and
+// `_` for `+` and `/`, padding dropped, because a `/` in a path segment
+// is not in the segment at all.
+//
+// Falls back to the bare `/device` when this node has no key yet, which
+// the relay still reads as the owner.
+function natterDeviceUrl(host) {
+  var key = natterDevice.publicKey;
+  if (!key) return host + '/device';
+  var seg = String(key).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return host + '/' + seg + '/device';
 }
 
 // The control is a glyph, not a word. `Listening off` was ambiguous in the
@@ -241,11 +269,11 @@ function natterDeviceMood() {
 // Document-toned prose, not form chrome: while this row is open, this
 // paragraph is the page. Each state says the one thing to do next.
 function natterDeviceBubbleHtml(api, host) {
-  var where = api.escapeHtml(host + '/device');
+  var target = natterDeviceUrl(host);
+  var where = api.escapeHtml(target);
   // _blank with rel="noopener", not target="_new" — the latter is not a
   // standard keyword, and the new tab must not get a handle on the shell.
-  var link = '<a href="' + api.escapeHtml(host) + '/device" target="_blank" rel="noopener">' +
-    where + '</a>';
+  var link = '<a href="' + where + '" target="_blank" rel="noopener">' + where + '</a>';
   var keep = '<div><strong>Be sure to (a) bookmark that site and (b) let the browser\'s ' +
     'password manager memorise the password, so it reaches your other devices of the ' +
     'same browser brand.</strong></div>';
@@ -308,8 +336,8 @@ function natterDeviceTroubleAdvice() {
 // beating — a number that keeps climbing says it is not.
 function natterDeviceBeatText() {
   if (!natterDevice.listening) return '';
-  var where = natterDevice.ownedUrls.length
-    ? natterDevice.ownedUrls.join(', ')
+  var where = natterDevice.relayUrls.length
+    ? natterDevice.relayUrls.join(', ')
     : '(no mailbox answered — nothing is being asked)';
   var e = natterDevice.lastEvent;
   if (!e || !e.did) {
@@ -371,7 +399,12 @@ function natterRenderList(container, api, relays) {
   tbody.innerHTML = relays.map(function (relay, index) {
     var badge = natterBadgeByUrl[relay.url];
     var owned = !!(badge && badge.owned);
-    var open = owned && natterExpandedUrl === relay.url;
+    // B2: a row this node HAS is openable, whether or not it owns the
+    // mailbox. A peer owns nothing and still has a device slot there, so
+    // gating the row on the star would hide the only control it has.
+    // The star keeps its own meaning — see below.
+    var mine = owned || !!(badge && badge.claimed);
+    var open = mine && natterExpandedUrl === relay.url;
     // ★ means owned, here and in Relay Chat's To list — one mark, one
     // meaning, wherever a mailbox is named. A row this node does not own
     // has no star and nothing to open.
@@ -381,10 +414,14 @@ function natterRenderList(container, api, relays) {
     // one thing that must not toggle is Remove, so the click handler
     // answers that first (mount, below) — otherwise a tap meant for a
     // panel would delete a mailbox.
+    // The star still means OWNED and nothing else — one mark, one
+    // meaning, here and in Relay Chat's To list. What changed is that
+    // openable is now a wider set than starred, so a peer's row opens
+    // without pretending to be a mailbox they own.
     var star = owned ? '<span class="natter-star">★</span> ' : '';
-    var mainRow = '<tr class="job-row' + (owned ? ' natter-openable' : '') + '"' +
-      (owned ? ' data-row-url="' + api.escapeHtml(relay.url) + '"' : '') +
-      (owned ? ' title="' + (open ? 'Hide' : 'Show') + ' what this mailbox says"' : '') + '>' +
+    var mainRow = '<tr class="job-row' + (mine ? ' natter-openable' : '') + '"' +
+      (mine ? ' data-row-url="' + api.escapeHtml(relay.url) + '"' : '') +
+      (mine ? ' title="' + (open ? 'Hide' : 'Show') + ' what this mailbox says"' : '') + '>' +
       '<td>' + star + api.escapeHtml(relay.label) + '</td>' +
       '<td>' + api.escapeHtml(relay.url) + '</td>' +
       '<td>' + (removable
@@ -451,7 +488,8 @@ function natterReadDevice() {
     .then(function (d) {
       natterDevice.password = (d && d.password) || '';
       natterDevice.listening = !!(d && d.listening);
-      natterDevice.ownedUrls = (d && d.ownedUrls) || [];
+      natterDevice.relayUrls = (d && d.relayUrls) || [];
+      natterDevice.publicKey = (d && d.publicKey) || '';
       natterDevice.lastEvent = (d && d.lastEvent) || null;
       natterDevice.loaded = true;
     })
@@ -543,7 +581,7 @@ function natterDeviceSetListening(api, container, relays, want, out) {
     var body = {};
     try { body = JSON.parse(r.text); } catch (e) { body = {}; }
     natterDevice.listening = !!body.listening;
-    natterDevice.ownedUrls = body.ownedUrls || [];
+    natterDevice.relayUrls = body.relayUrls || [];
     if (want && !natterDevice.listening) {
       // Appended rather than replacing, because what the clipboard did is
       // still the other half of what just happened.

@@ -13,8 +13,17 @@ const relayAuth = require('./relayAuth');
 // lands in every access log on the way — where it would sit as a live
 // credential for the RAM slot. The relay refuses a query `sig` outright,
 // through the same function the inbox route uses.
-function takePath(name) {
-  return '/api/relay/device-pending?name=' + encodeURIComponent(name);
+// The token is this node's PUBLIC KEY, not its label. Labels duplicate
+// on purpose — two johns is two keys and two invites — so a label
+// identifies nobody on a relay that has both, and the relay answers a
+// duplicate with nothing at all. The key is the unique thing (B2).
+//
+// The signed message still carries the LABEL: deviceTakeMessage has
+// always named a name, and the relay verifies it against the label on
+// the row it found by key. Nothing is ambiguous there, because the row
+// was already chosen.
+function takePath(token) {
+  return '/api/relay/device-pending?name=' + encodeURIComponent(token);
 }
 
 async function tick(rootDir, ownedUrls, requestFn) {
@@ -25,12 +34,13 @@ async function tick(rootDir, ownedUrls, requestFn) {
   if (!id || !id.privateKey || !id.name) return { ok: false, error: 'no identity' };
   var urls = Array.isArray(ownedUrls) ? ownedUrls : [];
   var sig = relayAuth.sign(id.privateKey, deviceAuth.deviceTakeMessage(id.name));
+  var token = id.publicKey || id.name;
   var refused = false;
   var unreachable = false;
   var i;
   for (i = 0; i < urls.length; i++) {
     var url = urls[i];
-    var held = await requestFn(url, 'GET', takePath(id.name), null, { 'X-Spirit-Sig': sig });
+    var held = await requestFn(url, 'GET', takePath(token), null, { 'X-Spirit-Sig': sig });
     // A refusal is not an empty slot, and they must not report the same.
     // The ROUTE says `not now` to both on purpose — it faces the internet
     // and owes it no detail — but this caller is the owner, and the two

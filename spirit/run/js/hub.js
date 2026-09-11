@@ -1044,9 +1044,13 @@ function createHub(rootDir) {
     // owns does not change inside a window somebody is standing at.
     return ownerBadge.probe(rootDir, name, function (url, method, pathname) {
       return relayRequest(url, method, pathname, null);
-    })
+    }, id && id.publicKey)
       .then(function (summary) {
-        deviceUrls = (summary && summary.ownedUrls) || [];
+        // CLAIMED, not owned (B2). A peer owns no relay and would have
+        // got an empty list here, so its timer never started and its
+        // window could never be collected — the whole feature stopped at
+        // the owner for want of one word.
+        deviceUrls = (summary && summary.claimedUrls) || [];
 
         function pass() {
           return Promise.resolve()
@@ -1126,9 +1130,18 @@ function createHub(rootDir) {
     res.end(JSON.stringify({
       password: doc.password,
       listening: !!deviceTimer,
+      // Whose page to open, and it is this node's own public key. Public
+      // already — every relay's /api/relay/who hands it to anyone — and
+      // the panel needs it to build the per-key link.
+      publicKey: (auth.loadIdentity(rootDir) || {}).publicKey || '',
       // Who is being asked, and what the last answer was. Both are about
       // the timer rather than the file, so they go quiet together with it.
-      ownedUrls: deviceTimer ? deviceUrls : [],
+      //
+      // `relayUrls`, not `ownedUrls`: since B2 these are the relays this
+      // node holds a ROW on, which for a peer is every one of them and
+      // none of them owned. The old name would have been a lie the first
+      // time a peer opened the panel.
+      relayUrls: deviceTimer ? deviceUrls : [],
       lastEvent: deviceLastEvent,
     }));
   }
@@ -1140,12 +1153,12 @@ function createHub(rootDir) {
       if (!on) {
         stopDeviceTimer();
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ listening: false, ownedUrls: [] }));
+        res.end(JSON.stringify({ listening: false, relayUrls: [] }));
         return;
       }
       startDeviceTimer().then(function (urls) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ listening: !!deviceTimer, ownedUrls: urls }));
+        res.end(JSON.stringify({ listening: !!deviceTimer, relayUrls: urls }));
       });
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });

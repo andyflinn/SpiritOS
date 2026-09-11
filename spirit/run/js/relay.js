@@ -754,18 +754,14 @@ function createRelay(rootDir) {
     };
   }
 
-  // An omitted token still means the owner, so today's frozen device.html
-  // — which posts {password, devicePublicKey} and no name — keeps working
-  // unchanged. Resolved, never a fallback slot: it lands in the owner's
-  // slot like any other, and a mailbox with no owner resolves to null and
-  // is answered `not now`.
+  // AN OMITTED TOKEN IS NOBODY. B1 resolved it to the owner so the bare
+  // /device page kept working; B3 gave every page a key in its address
+  // and Andy retired that page, which leaves this a way to enrol without
+  // naming anyone — an implicit identity in a design whose whole point is
+  // that identity is explicit. So it refuses, like any other token that
+  // resolves to no row.
   function deviceIdentityOr(token) {
-    var t = String(token == null ? '' : token).trim();
-    if (!t) {
-      var ownerLabel = auth.ownerName(allow);
-      return ownerLabel ? deviceIdentity(ownerLabel) : null;
-    }
-    return deviceIdentity(t);
+    return deviceIdentity(token);
   }
 
   function deviceOffer(token, password, devicePublicKey) {
@@ -849,6 +845,14 @@ function createRelay(rootDir) {
     // directly.
     devicePending: devicePending,
     deviceAnswer: deviceAnswer,
+    // Does anybody here hold this key or label? Answers a LABEL, never a
+    // key and never a device key — the routing layer needs to know an
+    // identity exists and what to call it, and nothing more. Everything
+    // it could return is already public at /api/relay/who.
+    deviceIdentityPublic: function (token) {
+      var who = deviceIdentity(token);
+      return who ? { label: who.label, owner: !!who.owner } : null;
+    },
   };
 }
 

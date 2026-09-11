@@ -26,6 +26,38 @@ const crypto = require('crypto');
 
 const PASSWORD_HEX_LEN = 128;
 
+// A KEY IN A URL SEGMENT. Keys are stored as standard base64 — the
+// alphabet includes `+`, `/` and `=`, and a `/` in a path segment is not
+// in the segment at all, it splits it. So the URL carries base64url:
+// the same bytes, `-` and `_` for `+` and `/`, padding dropped.
+//
+// Lossless and canonical — one key produces exactly one segment and back
+// again — which matters because the segment IS the identity the relay
+// looks up. Hex would also work and is what PEER-DEVICES.md first said;
+// base64url is 58 characters against 88 for the same bytes, and nobody
+// types either.
+//
+// It is a LOCATOR, not a credential. Every key here is already public at
+// /api/relay/who — putting one in a URL gives away nothing, and grants
+// nothing either.
+function keyToUrl(publicKey) {
+  return String(publicKey == null ? '' : publicKey)
+    .trim()
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+// Back to the stored form. Padding is restored because base64 decoders
+// on the other side of this are stricter than they look.
+function keyFromUrl(segment) {
+  var s = String(segment == null ? '' : segment).trim();
+  if (!s || !/^[A-Za-z0-9_-]+$/.test(s)) return '';
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4 !== 0) s += '=';
+  return s;
+}
+
 function devicePath(rootDir) {
   return path.join(rootDir, 'relay-state', 'device.json');
 }
@@ -184,6 +216,8 @@ function parseKeyRow(row) {
 }
 
 module.exports = {
+  keyToUrl: keyToUrl,
+  keyFromUrl: keyFromUrl,
   PASSWORD_HEX_LEN: PASSWORD_HEX_LEN,
   devicePath: devicePath,
   load: load,

@@ -94,9 +94,16 @@ function readBadge(answer) {
 function summarize(rows) {
   var ownedUrls = rows.filter(function (r) { return r.owned; })
     .map(function (r) { return r.url; });
+  // A DIFFERENT QUESTION from owning, and the one a device needs. B2 gave
+  // every identity with a row its own slot; this is how a node finds the
+  // relays where it HAS a row. Owning implies claiming — the owner holds
+  // a peer row from first claim — so the owned ones are in here too.
+  var claimedUrls = rows.filter(function (r) { return r.owned || r.claimed; })
+    .map(function (r) { return r.url; });
   return {
     rows: rows,
     ownedUrls: ownedUrls,
+    claimedUrls: claimedUrls,
     // The picker is a question, not a default. One owned mailbox needs no
     // question; two do, and answering it by taking the first URL is the
     // habit this cycle exists to break.
@@ -105,7 +112,23 @@ function summarize(rows) {
 }
 
 // request(url, method, pathname) -> Promise<{ status, text }>
-function probe(rootDir, name, request) {
+// Is one of this relay's rows ours? Asked of the PUBLIC census, which
+// hands every label and key to anyone — so this costs no signature, adds
+// no endpoint, and tells the relay nothing it did not publish.
+//
+// Only asked when the owner badge already said no: owning implies a row,
+// so the second request is skipped on the mailboxes that matter most.
+function claimedFrom(answer, myKey) {
+  if (!myKey || !answer) return false;
+  var parsed = null;
+  try { parsed = JSON.parse(answer.text); }
+  catch (e) { return false; }
+  var list = (parsed && parsed.peers) || [];
+  if (!Array.isArray(list)) return false;
+  return list.some(function (p) { return p && p.publicKey === myKey; });
+}
+
+function probe(rootDir, name, request, myKey) {
   var relays = loadRelays(rootDir);
   var query = statusPath(rootDir, name);
   return Promise.all(relays.map(function (relay) {
@@ -115,7 +138,14 @@ function probe(rootDir, name, request) {
         var badge = readBadge(answer);
         badge.url = relay.url;
         badge.label = relay.label;
-        return badge;
+        if (badge.owned || !myKey) return badge;
+        return Promise.resolve()
+          .then(function () { return request(relay.url, 'GET', '/api/relay/who'); })
+          .then(function (census) {
+            badge.claimed = claimedFrom(census, myKey);
+            return badge;
+          })
+          .catch(function () { return badge; });
       })
       .catch(function (err) {
         // A mailbox that is down is not a mailbox we own. It says so on

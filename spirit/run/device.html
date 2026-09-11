@@ -24,20 +24,28 @@
   <h1>This device</h1>
 
   <form id="enroll" autocomplete="on">
-    <p>Owner only. Adding a device to <strong id="host">this node</strong>.
-       Works only while listening is on at the personal node.</p>
+    <p>Adding a device for <strong id="who-for">this identity</strong> on
+       <strong id="host">this relay</strong>.
+       Works only while listening is on at that personal node.</p>
     <!--
       Restored after the cycle-5 drop replaced this page (df891bf).
       Chrome saves a lone password field unreliably and offers it back
       less reliably still — and remembering it IS how the password gets
       to the other device, copied once and synced, never typed.
 
-      A CONSTANT, deliberately not the hostname: Chrome keys by origin
-      already, so the host adds nothing a saved entry does not know, and
-      on a domain carrying a dozen other logins it left this one
-      indistinguishable in the picker (Andy: "difficult to select from 13
-      usernames"). Which node it is belongs in the sentence above, where
-      it reads as information rather than a field to fill in.
+      Was a constant, and is now THE PUBLIC LABEL of whoever this page is
+      for — filled in below from /api/relay/who once the key in the
+      address resolves. The constant was right while the page named
+      nobody: the host adds nothing a saved entry does not already know,
+      because browsers key by origin. But a relay carries many
+      identities on ONE origin, so the origin cannot separate them and
+      the username is the only field that can. That is the picker
+      problem Andy actually had — "difficult to select from 13
+      usernames" — and it is the reason PEER-DEVICES.md section 5 asks
+      for the label here.
+
+      Hidden in the accessibility sense, not display:none — the field is
+      present and readable, stated rather than asked.
     -->
     <label>Account
       <input id="user" type="text" name="username" autocomplete="username"
@@ -69,6 +77,54 @@
       // Whatever host actually served this page. Not baked in: the same
       // file is served by every relay its owner runs.
       document.getElementById('host').textContent = location.host;
+
+      // WHOSE PAGE THIS IS, read off our own address. `/<key>/device`
+      // carries the identity; the bare `/device` carries none and the
+      // relay reads that as the owner, which is what it has always done.
+      //
+      // The segment is a base64url key (deviceAuth.keyToUrl). It is sent
+      // back untouched — the relay is the one place that translates it,
+      // so the page never has to know the stored form.
+      //
+      // A locator, not a credential: every key here is already public at
+      // /api/relay/who, and holding one in the URL grants nothing. What
+      // authorises is the password, and after that the signature.
+      var enrollFor = (function () {
+        var m = /^\/([A-Za-z0-9_-]{16,512})\/device\/?$/.exec(location.pathname);
+        return m ? m[1] : '';
+      })();
+
+      // The key in the address is not something a person can read. The
+      // LABEL is, and the relay publishes it — /api/relay/who hands the
+      // whole census to anyone, so this costs no signature and reveals
+      // nothing that was not already public.
+      //
+      // It lands in two places: the sentence at the top, so you can see
+      // whose enrolment this is before typing a password into it, and
+      // the username field, so the browser's password manager can tell
+      // this account from the others on the same origin.
+      function segOf(key) {
+        return String(key == null ? '' : key)
+          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+
+      if (enrollFor) {
+        fetch('/api/relay/who')
+          .then(function (r) { return r.json(); })
+          .then(function (body) {
+            var list = (body && body.peers) || [];
+            var row = null;
+            for (var i = 0; i < list.length; i++) {
+              if (list[i] && segOf(list[i].publicKey) === enrollFor) { row = list[i]; break; }
+            }
+            if (!row) return;
+            var label = row.publicLabel || row.name || '';
+            if (!label) return;
+            document.getElementById('who-for').textContent = label;
+            document.getElementById('user').value = label;
+          })
+          .catch(function () { /* the sentence stays generic */ });
+      }
 
       function sayEnroll(t) { enrollOut.textContent = t; }
       function sayLog(t) {
@@ -276,7 +332,11 @@
           fetch('/api/relay/device', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: password, devicePublicKey: pair.pub })
+            body: JSON.stringify({
+              name: enrollFor,
+              password: password,
+              devicePublicKey: pair.pub
+            })
           }).then(function (res) {
             return res.text().then(function (t) { return { res: res, text: t }; });
           }).then(function (r) {

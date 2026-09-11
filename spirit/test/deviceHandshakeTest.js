@@ -80,10 +80,18 @@ async function run() {
 
   deviceAuth.ensurePassword(nodeHome);
   const door = deviceAuth.load(nodeHome).password;
-  // Through relay.js, where an omitted name resolves to the owner label —
-  // the path today's frozen device.html actually takes.
-  const offerP = box.deviceOffer(null, door, phone.publicKey);
-  const held = box.deviceTake(null);
+  // Through relay.js, naming the owner. An omitted token used to mean
+  // the owner by implication; it means nobody now — the bare /device
+  // page that needed it is gone, and every page carries a key.
+  const anonymous = await box.deviceOffer(null, door, phone.publicKey);
+  if (anonymous && anonymous.ok === false) {
+    test.check('an offer that names nobody is refused');
+  } else {
+    test.fail('anonymous offer: ' + JSON.stringify(anonymous));
+  }
+
+  const offerP = box.deviceOffer('andy', door, phone.publicKey);
+  const held = box.deviceTake('andy');
   if (!held || held.password !== door) {
     test.fail('relay take: ' + JSON.stringify(held));
   } else {
@@ -104,7 +112,7 @@ async function run() {
   if (!installed.ok) test.fail('install: ' + JSON.stringify(installed));
   else test.check('node wrote the device key');
 
-  box.deviceReply(null, true);
+  box.deviceReply('andy', true);
   const browser = await offerP;
   if (browser.ok) test.check('browser POST completes');
   else test.fail('browser: ' + JSON.stringify(browser));

@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const spirit = require('./kernel');
 const createRelay = require('./relay');
+// For keyFromUrl only — translating a URL segment back to the stored key
+// form. No secret reaches this side of the wire.
+const deviceAuth = require('./deviceAuth');
 const relay = createRelay.createRelay();
 
 //console.log(JSON.stringify(spirit,null,2));
@@ -226,10 +229,14 @@ function deviceRefusal(res, status) {
 // node compares it (DEVICE-CYCLE2.md).
 function handleDeviceOffer(req, res) {
   readJsonBody(req).then(function (body) {
-    // The name may be absent, and is on today's page: relay.js resolves
-    // an omitted one to the owner label, which is who this page enrols.
+    // The name may be absent, and is on the bare /device page: relay.js
+    // resolves an omitted one to the owner label, which is who that page
+    // enrols. A per-key page sends its own segment, which is decoded to
+    // the stored key form here — the one place that translation happens.
+    const asked = (body && body.name) || '';
+    const asKey = deviceAuth.keyFromUrl(asked);
     return relay.deviceOffer(
-      body && body.name,
+      asKey && relay.deviceIdentityPublic(asKey) ? asKey : asked,
       body && body.password,
       body && body.devicePublicKey
     );
@@ -661,6 +668,21 @@ function isLoopbackAddress(address) {
 // your own node" trust boundary already accepted for /api/jobs's spawn
 // capability. If that stronger claim is ever wanted, the next lock is
 // validating Origin/Referer, not this Host check.
+// `/<key>/device`, and nothing else beneath `/<key>/`. A CLOSED set of
+// surfaces, deliberately: if an arbitrary suffix resolved to a file, the
+// URL would be building a filesystem path out of input a stranger picked,
+// which is where directory traversal lives. Shared assets stay at the
+// root, where they are literals and belong to nobody.
+//
+// Returns the stored-form key, or '' — the caller still has to ask the
+// relay whether anybody owns it.
+const DEVICE_PAGE_PATH = /^\/([A-Za-z0-9_-]{16,512})\/device$/;
+function devicePageKey(pathname) {
+  const m = DEVICE_PAGE_PATH.exec(pathname || '');
+  if (!m) return '';
+  return deviceAuth.keyFromUrl(m[1]);
+}
+
 const VALID_HOSTS = ['localhost:' + port, '127.0.0.1:' + port, '[::1]:' + port];
 function isValidHost(hostHeader) {
   return !!hostHeader && VALID_HOSTS.indexOf(hostHeader.toLowerCase()) !== -1;
@@ -670,11 +692,22 @@ function isRelayPublicPath(method, pathname) {
   if (pathname === '/' || pathname === '/index.html' || pathname === '/relay.html' || pathname === '/favicon.svg') {
     return method === 'GET';
   }
-  // The enroll page. Unlisted rather than hidden: nothing links to it,
-  // the brochure does not mention it, and it carries noindex — but it is
-  // reachable by anyone who types it, exactly like every other route
-  // here. What protects it is the password and the window, not obscurity.
-  if (method === 'GET' && (pathname === '/device' || pathname === '/device.html')) return true;
+  // The enroll page, and ONLY addressed by whose it is. The bare /device
+  // is gone from a relay (Andy, 2026-09-11: "should /device still work?
+  // I think not"): it meant "the owner" by implication, which is the one
+  // thing the key-addressed form removes. Two ways to reach one page is
+  // drift waiting to happen, and the implicit one names nobody.
+  //
+  // /device.html goes with it, for the same reason and by the same
+  // reasoning that made it public in the first place — it is the same
+  // page without an identity.
+  //
+  // Unlisted rather than hidden: nothing links to these, they carry
+  // noindex, and they are reachable by anyone who types one. What
+  // protects them is the password and the window, not obscurity. The key
+  // in the path is a LOCATOR — every one is already public at
+  // /api/relay/who, and holding one grants nothing.
+  if (method === 'GET' && devicePageKey(pathname)) return true;
   if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox' || pathname === '/api/relay/status')) return true;
   // Public in the same sense the rest is: reachable from the internet,
   // and gated inside relay.js. device-pending answers the owner's house
@@ -769,12 +802,25 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // The address a human types on a phone should not have a file
-  // extension in it. Relay-only: a personal node has no mailbox for a
-  // handheld to enroll against, so it has no enroll page — the file is
-  // still reachable at /device.html over loopback, because fsPath would
-  // serve it anyway and pretending otherwise would be theatre.
-  if (relayMode && req.method === 'GET' && pathname === '/device') {
+  // The bare /device is no longer a route on a relay — see
+  // isRelayPublicPath. Over loopback the file is still reachable at
+  // /device.html, because fsPath would serve it anyway and pretending
+  // otherwise would be theatre; a personal node has no mailbox for a
+  // handheld to enrol against, so there is nothing there to protect.
+
+  // The same file for everybody. The key lives only in the URL, and the
+  // page reads it off its own address — nothing is templated and nothing
+  // is generated per person.
+  //
+  // An identity nobody holds is a 404 here rather than a working-looking
+  // form that can never succeed. It leaks nothing: /api/relay/who already
+  // hands out every key to anyone who asks.
+  if (relayMode && req.method === 'GET' && devicePageKey(pathname)) {
+    if (!relay.deviceIdentityPublic(devicePageKey(pathname))) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('no such identity here');
+      return;
+    }
     sendFile(res, path.join(ROOT_DIR, 'device.html'));
     return;
   }
