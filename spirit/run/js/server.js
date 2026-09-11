@@ -742,6 +742,10 @@ function isRelayPublicPath(method, pathname) {
   // from the internet, gated inside relay.removePeer by a signature that
   // is either the owner's or the departing peer's own.
   if (method === 'POST' && pathname === '/api/relay/remove-peer') return true;
+  // The router. Public in the same sense send is: reachable from the
+  // internet, gated inside relay.js by a signature, and refused instantly
+  // if the peer is not there to receive it (decision 0006).
+  if (method === 'POST' && (pathname === '/api/relay/post' || pathname === '/api/relay/reply')) return true;
   return false;
 }
 
@@ -1097,6 +1101,34 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/relay/send') {
       handleRelaySend(req, res);
+      return;
+    }
+
+    if (pathname === '/api/relay/post') {
+      readJsonBody(req).then(function (body) {
+        const result = relay.routePost(
+          body && body.from, body && body.to, body && body.text, body && body.sig
+        );
+        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(result.ok ? result : { error: result.error, inFlight: !!result.inFlight }));
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
+      return;
+    }
+
+    if (pathname === '/api/relay/reply') {
+      readJsonBody(req).then(function (body) {
+        const result = relay.routeReply(
+          body && body.from, body && body.hash, body && body.text, body && body.sig
+        );
+        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(result.ok ? result : { error: result.error }));
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
       return;
     }
 

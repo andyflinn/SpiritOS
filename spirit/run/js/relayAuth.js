@@ -113,6 +113,59 @@ function removePeerSignatureOk(publicKey, key, sig, atMs) {
   return false;
 }
 
+// A REQUEST, and the hash is taken over exactly these bytes — which are
+// exactly the bytes that were signed. That binding is deliberate: there
+// is then no question about what the hash covers, and no canonical-JSON
+// rule for two implementations to disagree about.
+//
+// `from` and `to` are KEYS, not labels (B2). The requester is inside the
+// hashed bytes on purpose: it makes it impossible for two different
+// senders to produce the same hash, which is the first of the three
+// things that stop a false positive (ROUTER.md §4).
+function postMessage(from, to, text, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'post\n' + String(from || '') + '\n' + String(to || '') + '\n' +
+    minute + '\n' + String(text == null ? '' : text);
+}
+
+// Returns THE MESSAGE THAT VERIFIED, not a boolean — and that is the
+// whole trick. The signature is accepted across ±1 minute, so three
+// different strings could have produced it, and the hash must be taken
+// over whichever one actually did. Recovering it here means the minute
+// never has to be transmitted: the requester, the relay and the target
+// each arrive at the same string by finding the one that checks out.
+function postSignatureFor(publicKey, from, to, text, sig, atMs) {
+  if (!publicKey || !sig) return '';
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    var message = postMessage(from, to, text, now + step * 60000);
+    if (verify(publicKey, message, sig)) return message;
+  }
+  return '';
+}
+
+// The name of a request, everywhere in the chain.
+function requestHash(message) {
+  return crypto.createHash('sha256').update(String(message || ''), 'utf8').digest('hex');
+}
+
+// "I received exactly those bytes." The hash is INSIDE the signed
+// message rather than beside it: attached alongside a signature over
+// something else, the relay could swap it (ROUTER.md §2).
+function receiptMessage(hash, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'receipt\n' + String(hash || '') + '\n' + minute;
+}
+
+function receiptSignatureOk(publicKey, hash, sig, atMs) {
+  if (!publicKey || !sig) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, receiptMessage(hash, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
 function generateIdentity(name) {
   const pair = crypto.generateKeyPairSync('ed25519');
   return {
@@ -376,6 +429,11 @@ module.exports = {
   streamSignatureOk,
   removePeerMessage,
   removePeerSignatureOk,
+  postMessage,
+  postSignatureFor,
+  requestHash,
+  receiptMessage,
+  receiptSignatureOk,
   generateIdentity,
   sign,
   verify,

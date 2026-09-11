@@ -298,10 +298,18 @@ function run() {
     test.fail('key-b starved: ' + JSON.stringify(other));
   }
 
-  test.subHeading('Nothing but presence travels on it');
+  test.subHeading('Presence work puts nothing but presence on the wire');
 
-  // The fence, asserted rather than trusted. If a later cycle puts a
-  // message on this wire it will fail here first.
+  // THE FENCE MOVED, deliberately and once. PRESENCE.md §6 scoped this
+  // wire to presence alone, and this check asserted it — so that a later
+  // cycle could not put a message on it by accident. ROUTER.md is that
+  // cycle, and it does so on purpose: `request` and `reply` now travel
+  // here too.
+  //
+  // What this still guards, and it is worth keeping: PRESENCE operations
+  // emit presence events and nothing else. A roster or a disconnect that
+  // started carrying a body would fail here, which is the accident the
+  // original fence was really about.
   const seen = {};
   bertSink.events().concat(johnSink.events()).forEach(function (e) {
     if (e.event) seen[e.event] = true;
@@ -310,7 +318,7 @@ function run() {
     return name === 'roster' || name === 'presence';
   });
   if (allowed) {
-    test.check('only roster and presence events were ever written: ' +
+    test.check('this suite drove only presence, and only presence was written: ' +
       Object.keys(seen).join(', '));
   } else {
     test.fail('unexpected events on the wire: ' + Object.keys(seen).join(', '));

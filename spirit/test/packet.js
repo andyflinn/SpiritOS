@@ -190,14 +190,27 @@ test.subHeading('Relay Chat keeps another app’s traffic out of its archive');
 test.subHeading('relay.js did not have to change');
 
 {
-  // The whole reason the envelope lives inside `text`. If this file
-  // starts naming packets, the mailbox has learned something it does not
-  // need to know, and every relay in the world needs updating.
+  // The whole reason the envelope lives inside `text`. If the mailbox
+  // starts PARSING packets it has learned something it does not need to
+  // know, and every relay in the world needs updating.
+  //
+  // Anchored on USE, with comments stripped first. It was a bare search
+  // for the word, and the word turned up in a comment the day relay.js
+  // grew a router — prose about a packet, not knowledge of one. A check
+  // a comment can fail is the /api/hub/peer trap wearing the other face,
+  // and it cost a green harness to find again.
   const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
-  if (relaySrc.indexOf('packet') === -1 && relaySrc.indexOf('envelope') === -1) {
+  const relayCode = relaySrc
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const parses =
+    /require\(\s*['"]\.\/packet/.test(relayCode) ||
+    /packetDecode|packetEncode|packetIsEnvelope|spiritPacket/.test(relayCode) ||
+    /\.envelope/.test(relayCode);
+  if (!parses) {
     test.check('the mailbox still knows nothing about envelopes');
   } else {
-    test.fail('relay.js has learned about packets');
+    test.fail('relay.js has learned to parse packets');
   }
 }
 

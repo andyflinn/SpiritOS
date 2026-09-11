@@ -11,11 +11,18 @@ const relayConsole = require('./relayConsole');
 const deviceAuth = require('./deviceAuth');
 const deviceHandshake = require('./deviceHandshake');
 const presence = require('./presence');
+const routerTable = require('./router');
 // Once, at load, for the same reason server.js does it: the answer must
 // describe the code that is running, not the code on disk.
 const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 
 var MAX_MESSAGES = 200;
+// What a routed request may carry. Larger than packet.js's 1024-byte
+// chat envelope because this is meant to feel like an API call, and
+// small enough that the relay's exposure is a number rather than a hope:
+// the table caps concurrent requests, and this caps what each one can
+// push through a socket.
+var MAX_ROUTED_TEXT = 16384;
 var MAX_TEXT = 1024;
 var NAME_RE = /^[A-Za-z0-9._-]{1,32}$/;
 var CLAIM_PER_MIN = 10;
@@ -81,6 +88,10 @@ function createRelay(rootDir) {
   // Who is holding a stream open right now. In RAM, never persisted —
   // presence is true only while a socket is open (PRESENCE.md §4).
   var presentNow = presence.createRegistry();
+  // Pending requests: hash -> who asked, who was asked. No bodies, never
+  // disk. `open()` performs the delivery itself, so nothing here can
+  // forward a request it could not match the reply to (ROUTER.md §4b).
+  var routes = routerTable.createRouter();
 
   function persist() {
     saveMailbox(rootDir, peers, messages, nextId);
@@ -917,6 +928,91 @@ function createRelay(rootDir) {
     };
   }
 
+  // A PEER DROPS A PACKET ON A PEER. Nothing is held open: this returns
+  // at once, the body rides the target's already-open stream, and the
+  // answer comes back the same way (design/relay/ROUTER.md).
+  //
+  // The relay reads the body but can neither forge nor alter it
+  // undetectably: the hash is taken over exactly the bytes that were
+  // signed, so a tampered forward cannot match what either end computes.
+  function routePost(fromToken, toToken, text, sig) {
+    var who = deviceIdentity(fromToken);
+    if (!who) return { ok: false, status: 403, error: 'no such identity' };
+    var target = deviceIdentity(toToken);
+    if (!target) return { ok: false, status: 404, error: 'no such peer' };
+
+    if (typeof text !== 'string' || !text) {
+      return { ok: false, status: 400, error: 'text required' };
+    }
+    if (text.length > MAX_ROUTED_TEXT) {
+      return { ok: false, status: 413, error: 'too big' };
+    }
+
+    // The message that VERIFIED, not a yes/no — the ±1 minute window
+    // means three strings could have made this signature and the hash
+    // must be over whichever one did. Recovering it is what lets the
+    // minute stay off the wire entirely.
+    var signed = auth.postSignatureFor(who.publicKey, who.id, target.id, text, sig);
+    if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
+
+    // DELIVER OR REFUSE, and refuse instantly (decision 0006). Presence
+    // is what makes this answerable at all, and it is why that arc came
+    // first.
+    if (!presentNow.isPresent(target.id)) {
+      return { ok: false, status: 503, error: 'peer not reachable' };
+    }
+
+    var hash = auth.requestHash(signed);
+
+    // NO HASH IS SENT. The target derives it from the bytes it holds,
+    // which is what makes it evidence rather than an echo (ROUTER.md §2).
+    return withStatus(routes.open(hash, who.id, target.id, function () {
+      return presentNow.send(target.id, 'request', {
+        from: who.id,
+        to: target.id,
+        text: text,
+        sig: sig,
+      });
+    }), hash);
+  }
+
+  function withStatus(result, hash) {
+    if (!result || !result.ok) return result;
+    return { ok: true, status: 202, hash: hash };
+  }
+
+  // The answer, coming back. The hash finds the request; being its
+  // target is the permission — anyone who saw the bytes could compute
+  // the hash, so the two are never the same check.
+  function routeReply(fromToken, hash, text, sig) {
+    var who = deviceIdentity(fromToken);
+    if (!who) return { ok: false, status: 403, error: 'no such identity' };
+    if (!hash) return { ok: false, status: 400, error: 'hash required' };
+    if (typeof text === 'string' && text.length > MAX_ROUTED_TEXT) {
+      return { ok: false, status: 413, error: 'too big' };
+    }
+
+    // Signed over the hash, so the relay cannot manufacture a receipt
+    // for a request nobody answered.
+    if (!auth.receiptSignatureOk(who.publicKey, hash, sig)) {
+      return { ok: false, status: 403, error: 'bad receipt signature' };
+    }
+
+    var matched = routes.answer(hash, who.id);
+    if (!matched.ok) return matched;
+
+    // The request is over either way. If the requester has gone, the
+    // answer is dropped — 0006, unchanged — but the TARGET is told, so
+    // it knows its work did not land rather than assuming it did.
+    var landed = presentNow.send(matched.requester, 'reply', {
+      hash: hash,
+      from: who.id,
+      text: typeof text === 'string' ? text : '',
+      sig: sig,
+    });
+    return { ok: true, status: 200, delivered: !!landed };
+  }
+
   // THE ROSTER WITH STATES, and never the list of the connected. If this
   // sent only who is here, a key a node did not hear about would be
   // ambiguous between a member who is away and somebody this relay has
@@ -1009,6 +1105,9 @@ function createRelay(rootDir) {
     // the registry below is in-process and ungated, for tests that drive
     // it directly — the same split deviceTake/devicePending already has.
     removePeer: removePeer,
+    routePost: routePost,
+    routeReply: routeReply,
+    routes: routes,
     streamOpen: streamOpen,
     streamClose: streamClose,
     streamRoster: streamRoster,

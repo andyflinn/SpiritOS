@@ -362,7 +362,16 @@ path.
   §4's first line — the recipient is a **node**, and a node is up nearly
   always. If presence meant *a browser is open*, that step would break
   messaging outright. The two decisions hold each other up.
-- **Messages on the wire.** The relay still stores, chat still polls.
+- **Messages on the wire.** ~~Out of scope.~~ **Opened 2026-09-11 by
+  [ROUTER.md](ROUTER.md)**, which is the cycle this fence existed to stop
+  happening by accident. `request` and `reply` now travel on this
+  connection, deliberately, and `presenceStream.js`'s fence check was
+  narrowed in the same commit to what it was really guarding: presence
+  operations emit presence events and nothing else.
+
+  What has NOT changed: the relay still stores the last 200 messages for
+  the old `send` path, and chat still polls it. The router carries
+  nothing to disk, so the two coexist until the stored path is retired.
 - **Device offers on the wire.** The 60s poll stays exactly as it is.
 - **Removing the message buffer.** Blocked on the next item, not on this.
 - **The handheld mail client** — and with it the multi-device race, where
