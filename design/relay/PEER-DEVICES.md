@@ -30,9 +30,10 @@ For the **owner only**:
   never on a relay.
 - A browser at `/device` posts `{password, devicePublicKey}` — it generates its
   own Ed25519 keypair in WebCrypto and keeps the private half.
-- The relay holds that POST in RAM for ≤25s. **It cannot check the password and
-  never stores it.**
-- While a listening window is open, the node polls the relay every 2s, compares
+- The relay holds that POST in RAM for ≤66s. **It cannot check the password and
+  never stores it.** That number is not free-standing: it must exceed the node's
+  poll interval, see the rendezvous rule below.
+- While a listening window is open, the node polls the relay every 60s, compares
   the password at home, and installs the device key.
 - The key lands as a second key on the owner record (`allow.json`), so every
   gate that asked "is this the owner's signature" now asks it of both.
@@ -129,6 +130,15 @@ one request a minute per identity, which is negligible. Arc: one held connection
 per identity carrying every notification, not just this one — see
 [EVENT-STREAM.md](EVENT-STREAM.md). Either way the slot is per identity, and
 `devicePending` answers only the key that owns it.
+
+**The rendezvous rule, and it generalises.** Enrolment is a meeting between two
+clocks nothing synchronises: the relay's hold and the node's pass. **The hold
+must outlast one pass, plus a margin** — Andy's rule, "ten percent longer than
+the poll interval" — or whether an enrolment works is decided by the phase
+between them. This bit for real on the owner path (2026-09-11,
+[DEVICE-PANEL.md](DEVICE-PANEL.md) §7), and every peer inherits it: a per-identity
+slot changes who is waiting, not the arithmetic. Anything built here should take
+the pair of constants from one place, or a check that reads both.
 
 **Listening stays on.** The flag persists, is honoured at boot, and defaults on,
 because a person locked out of their own node while away must not need to travel

@@ -47,7 +47,10 @@ asynchronous messaging alive under a synchronous wire, and it moves the archive
 to the machine that should have owned it all along.
 
 Device offers ride the same wire: the offer arrives as an event rather than
-being polled for.
+being polled for. **That also retires the rendezvous rule** — the hold-longer-
+than-the-pass arithmetic that enrolment needs today
+([DEVICE-PANEL.md](DEVICE-PANEL.md) §7) exists only because two clocks have to
+meet by luck. A connection that is already open has no phase to get wrong.
 
 ## 3. The model, stated
 

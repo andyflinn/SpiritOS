@@ -1,11 +1,12 @@
 # The "Add one of my own devices" panel
 
-**Status: in design. Verified against `c9f3104` (2026-09-11).**
+**Status: BUILT at `aed0f69` (2026-09-11). Sections 2–6 are as shipped;
+section 7 carries one rule added after use.**
 
 The panel a bound personal node shows in Natter — soon `natterDetails` — for a
 relay it is bound to. Device cycles 1–5 built the machinery
-(`2dbffbb`…`756013b`); this is about the surface, which is the part still called
-horrid.
+(`2dbffbb`…`756013b`); this is about the surface, which is the part that was
+called horrid.
 
 See [PEER-DEVICES.md](PEER-DEVICES.md) for the wider design this eventually
 serves.
@@ -66,7 +67,15 @@ Both items the height of a normal control, so the row sits in the form rhythm.
 > manager memorise the password, so it reaches your other devices of the same
 > browser brand.**
 
-## 4. Decided
+## 4. Decided — and built
+
+All of it shipped in `aed0f69`, with one consequence the draft did not carry:
+under a single control, a failed clipboard write must **still start**. The old
+code refused to open the window when the copy failed, on the grounds that a
+window waiting for a password nobody holds is a lie. With one button that
+leaves no way to start at all — which is the failure this panel exists to
+prevent — so it starts and reports the copy failed. §2 anticipated this; it is
+recorded here because it reverses working code.
 
 - One control, start/stop, with the copy as part of starting.
 - Icon, not a state label.
@@ -136,6 +145,12 @@ have us; usually a version mismatch) and `unreachable`.
 **Add a third bubble state: just succeeded.** It is also the right place for
 the bookmark advice, which lands better once the thing has worked.
 
+**Built as four**, because the failures needed telling apart in words rather
+than in a status line: *added*, *trouble* (`refused` / `unreachable` /
+`rejected`, each with what to do about it), *listening*, *off*. A success stays
+the headline for five minutes — longer than a node pass, so stepping over to the
+other device and back cannot miss it.
+
 ## 7. The rule that settles the rest
 
 > **No routine failure should require being physically at home.**
@@ -180,6 +195,37 @@ and never destroyed — so without the check it runs for the life of the page.
 `render()` is the way back in: the shell calls it on every visit, and on the job
 tick while the app is active, so it fires exactly when Natter is on screen and
 never while it is not.
+
+**The hold must outlast the pass.** Added 2026-09-11 after the 60s change shipped
+and broke enrolment — a cost the paragraph below did not price.
+
+The relay holds one offer in RAM for `waitMs` while the node looks every
+`DEVICE_TICK_MS`. Nothing synchronises those two clocks, so if the hold is
+**shorter** than the pass, whether an enrolment works is decided by the phase
+between them: press just before a pass and it lands, press just after and the
+offer expires before anything comes to collect it. At 25s against 2s that was
+invisible. At 25s against 60s it was a coin toss, and Andy found it by feel —
+*"works reliably when I click 10 seconds before the node polls, fails reliably
+10 seconds after."*
+
+> **The rule (Andy): one hold outlasts one pass, plus a margin — "ten percent
+> longer than the poll interval".** The margin is for drift and a slow pass, not
+> for luck.
+
+So `DEFAULT_WAIT_MS` is **66s**. An offer still open when the node looks cannot
+be missed, whatever moment the button was pressed — certain rather than likely.
+The cost is one held request, and there is one pending slot either way, so
+nothing about concurrency changes.
+
+The browser also knocks again, within a 180s budget, and that is **cover, not
+the guarantee**: a minute-long request is the kind a hotel portal or a phone
+changing masts will cut. Naming which is which matters — a retry quietly
+carrying a guarantee is how this breaks again.
+
+Both constants live on different machines, so nothing but a check that reads
+both can hold them together: `spirit/test/deviceRendezvous.js` sweeps every
+phase offset at the real ratios and asserts **one** knock suffices from each.
+Restoring 25s fails it, naming the offsets that lose.
 
 **INTERIM: the node polls every 60s. Not every 2s.**
 
@@ -228,10 +274,13 @@ Worth it against a journey home.
 
 ### Still open
 
-- **The copy affordance.** Binding the copy to *start* leaves it homeless once
-  listening defaults on — there is rarely a start to press. Deferred
-  deliberately: the UI is going to be worked over, and this is a complaint worth
-  raising when it actually bites rather than designing around now.
+- **The copy affordance — now biting, no longer hypothetical.** Binding the copy
+  to *start* leaves it homeless once listening defaults on, and after `c6f85c0`
+  a node that was left open comes back open: the panel shows the stop control and
+  there is **no way to reach the password at all**. The workaround is to stop and
+  start again, or to take it from the password manager where it already is. It
+  was deferred on the grounds that it was worth raising when it actually bit;
+  it now does, on the first visit after a restart.
 - The link target is `/device` until the keyed form of PEER-DEVICES.md exists.
 - `target="_new"` is not a standard keyword; `_blank` with `rel="noopener"` is.
 - If this becomes a dialog in `natterDetails`, dialog-close is exactly one exit,
