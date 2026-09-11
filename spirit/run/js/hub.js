@@ -1047,8 +1047,9 @@ function createHub(rootDir) {
     })
       .then(function (summary) {
         deviceUrls = (summary && summary.ownedUrls) || [];
-        deviceTimer = setInterval(function () {
-          Promise.resolve()
+
+        function pass() {
+          return Promise.resolve()
             .then(function () { return deviceTick.tick(rootDir, deviceUrls, deviceRequest); })
             .then(function (r) {
               // Every pass, including the boring ones. `empty` is the
@@ -1060,8 +1061,25 @@ function createHub(rootDir) {
             .catch(function () {
               deviceLastEvent = { did: 'unreachable', atMs: Date.now() };
             });
-        }, DEVICE_TICK_MS);
+        }
+
+        deviceTimer = setInterval(pass, DEVICE_TICK_MS);
         if (deviceTimer.unref) deviceTimer.unref();
+
+        // AT ONCE, and then on the interval. setInterval alone puts the
+        // first pass a full DEVICE_TICK_MS after the button, which is the
+        // one gap the rendezvous rule does not cover: the hold outlasts a
+        // pass (66s against 60s), but it cannot outlast a pass that has
+        // not started. Offer first, press Start second, and a browser
+        // already waiting had ~6s of margin instead of a guarantee.
+        //
+        // Found by Grok reviewing the "certain, not likely" claim — the
+        // sweep in deviceRendezvous.js models a node ALREADY ticking, so
+        // it could not see this. Not awaited: the caller is a button that
+        // wants ownedUrls back now, and `pass` reports through
+        // deviceLastEvent rather than a return value.
+        pass();
+
         return deviceUrls;
       })
       .catch(function () {

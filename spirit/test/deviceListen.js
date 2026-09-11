@@ -189,6 +189,7 @@ async function bootBehaviour() {
   // The case this exists for: the flag says open, a password exists, the
   // process restarts. The door comes back by itself.
   const kept = tmpHome();
+  auth.saveIdentity(kept, auth.generateIdentity('andy'));
   deviceAuth.ensurePassword(kept);
   deviceAuth.setListening(kept, true);
   const keptHub = createHub(kept);
@@ -198,10 +199,44 @@ async function bootBehaviour() {
   } else {
     test.fail('a kept-open window did not resume');
   }
+
+  // AT ONCE, not one tick later. setInterval alone puts the first pass a
+  // whole DEVICE_TICK_MS after the window opens, and that is the one gap
+  // the rendezvous rule cannot cover: a hold that outlasts a pass still
+  // cannot outlast a pass that has not started. It matters most in the
+  // order a person actually uses — open the relay page on the phone
+  // first, then start listening at home.
+  //
+  // Asserted on the EVENT rather than on a timer, because the event is
+  // what the panel shows and what proved the poll was alive on spirit-3.
+  await settle();
+  const first = lastEventOf(keptHub);
+  if (first && first.did) {
+    test.check('and it looks straight away rather than a minute later — first pass: ' + first.did);
+  } else {
+    test.fail('no pass had happened by the time the window was open');
+  }
+}
+
+// Long enough for a pass with no relays to fall through deviceTick and
+// land in deviceLastEvent; far short of a tick, so passing here cannot
+// mean the interval fired.
+function settle() {
+  return new Promise(function (resolve) { setTimeout(resolve, 250); });
 }
 
 // What /api/hub/device reports, which is the TIMER and not the file — the
 // live answer, so the panel cannot claim to be listening while nothing is.
+function lastEventOf(hub) {
+  let body = '';
+  hub.handleDevice({}, {
+    writeHead: function () {},
+    end: function (text) { body = text; },
+  });
+  try { return JSON.parse(body).lastEvent; }
+  catch (e) { return null; }
+}
+
 function listeningOf(hub) {
   let body = '';
   hub.handleDevice({}, {

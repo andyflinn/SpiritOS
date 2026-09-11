@@ -227,6 +227,34 @@ both can hold them together: `spirit/test/deviceRendezvous.js` sweeps every
 phase offset at the real ratios and asserts **one** knock suffices from each.
 Restoring 25s fails it, naming the offsets that lose.
 
+**And the first pass must be immediate.** Grok, reviewing the "certain" claim:
+`startDeviceTimer` was `setInterval` only, so the first pass came a whole
+`DEVICE_TICK_MS` after the button. The hold outlasts a pass, but it cannot
+outlast a pass that has not started — so the order a person actually uses (open
+the relay page on the phone, *then* start listening at home) had about six
+seconds of margin rather than a guarantee. Fixed by firing one pass on start and
+then the interval. The sweep could not see it: it models a node already ticking,
+which is the honest scope of a phase test. `deviceListen.js` covers it instead,
+on the event rather than on a timer.
+
+**What spirit-3 actually does with a 66s hold** (Grok, against the live host):
+the Caddyfile is a bare `reverse_proxy 127.0.0.1:65430`, Caddy's transport
+default for `response_header_timeout` is *no timeout*, and Node's
+`headersTimeout` bounds receiving headers rather than writing a response. So the
+relay is not what cuts a long hold. **If a `response_header_timeout` is ever set
+on this route it must be set above `DEFAULT_WAIT_MS`**, or it silently restores
+the coin toss.
+
+**The coupled constants stay arithmetic.** Considered and declined for now:
+negotiating the period on the wire. The event stream retires the pair outright,
+a node on older code is one release of skew, and the rendezvous test is the
+tripwire. *If* it is ever negotiated: **the relay advertises its hold and the
+node sizes its tick**, never the reverse — the box owns the slot, and a public
+relay must not let every personal node dictate how long it holds a socket
+(Grok). The third copy of the number, in `device.html`, is now named
+`ENROLL_PERIOD_HINT_MS` and marked prose: nothing computes with it, and if it
+disagrees with `hub.js` it is the sentence that is wrong.
+
 **INTERIM: the node polls every 60s. Not every 2s.**
 
 A 2s timer that never stops is 30 relay requests a minute, forever — which is
@@ -250,11 +278,21 @@ already calls the relay 30 times a minute, so devices are a rounding error on
 the real number. Do the 60s interim now; take the latency to zero when the
 stream lands, for every app at once.
 
-**`listening` persists, is honoured at boot, and defaults on.** The flag is
-already in `device.json`; the node simply does not act on it at startup. A
-restart while its owner is away must not shut the door, and a door that is shut
-unless the need was predicted fails the rule above by construction. The switch
-stays, so it can be closed deliberately.
+**`listening` persists, is honoured at boot, and defaults on.** Shipped law,
+not a hedge — Andy settled it and Grok took the same sentence: *no journey home
+wins.* A restart while its owner is away must not shut the door, and a door that
+is shut unless the need was predicted fails the rule above by construction. The
+switch stays, so it can be closed deliberately.
+
+Three things have to stay true or the trade below is a lie, and each is already
+held by a test: **the next enrolment displaces the last** and the old tab
+notices (cycle 5); **the password is never on a relay**, which is what makes it
+uncheckable there; and **the poll's credential is not in the access log** —
+cycle 4 moved it from the query string into a header, and
+`spirit/test/deviceListen.js` fails if it goes back. One more that is a
+non-obvious consequence: **do not start a timer on a node with no password
+yet.** `resumeListening` requires the flag *and* a password; default-on without
+that is a timer beating against a door that cannot open.
 
 **One roaming device per identity.** Not a limitation — the thing that keeps it
 simple: one field, one key, no device list, no pruning screen, and revocation is
@@ -274,13 +312,21 @@ Worth it against a journey home.
 
 ### Still open
 
-- **The copy affordance — now biting, no longer hypothetical.** Binding the copy
-  to *start* leaves it homeless once listening defaults on, and after `c6f85c0`
-  a node that was left open comes back open: the panel shows the stop control and
-  there is **no way to reach the password at all**. The workaround is to stop and
-  start again, or to take it from the password manager where it already is. It
-  was deferred on the grounds that it was worth raising when it actually bit;
-  it now does, on the first visit after a restart.
+- **The copy affordance — the next panel sitting, and the shape is decided.**
+  Binding the copy to *start* leaves it homeless once listening defaults on, and
+  after `c6f85c0` a node that was left open comes back open: the panel shows the
+  stop control and there is **no way to reach the password at all**. It was
+  deferred on the grounds that it was worth raising when it actually bit; it now
+  does, on the first visit after a restart. The answer both reviewers reached
+  independently: **a copy control that does not toggle the door.** One control
+  still governs listening; copying stops being a side effect of opening and
+  becomes something available in either state.
+
+  The reversal that made this necessary is accepted, not merely shipped: a
+  single button that refuses to start when the clipboard says no is a door that
+  cannot be opened at all on a locked-down browser. Opening without a copy is
+  recoverable — the password manager, or stop-then-start. Refusing is not
+  (Grok).
 - The link target is `/device` until the keyed form of PEER-DEVICES.md exists.
 - `target="_new"` is not a standard keyword; `_blank` with `rel="noopener"` is.
 - If this becomes a dialog in `natterDetails`, dialog-close is exactly one exit,
@@ -288,4 +334,5 @@ Worth it against a journey home.
 - **`device-pending` has no rate limit.** A wrong name is refused before any
   crypto, but a right name with a bad signature costs three verifies per
   request — the one unlimited crypto path on the box. Small, and not this
-  panel's to fix.
+  panel's to fix. Now owned, in [PEER-DEVICES.md](PEER-DEVICES.md) §8: a line on
+  the next device sitting rather than a cycle of its own.

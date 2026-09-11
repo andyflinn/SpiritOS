@@ -297,13 +297,16 @@ async function run() {
     }
 
     // device.html says the period out loud because it cannot ask for it —
-    // it is served by the relay, not the node. A sentence that states a
-    // constant held somewhere else is a sentence that goes quietly wrong,
-    // so it is held to the real one here.
-    const saidMatch = page.match(/ENROLL_NODE_PERIOD_MS\s*=\s*(\d+)/);
+    // it is served by the relay, not the node. That copy is PROSE and is
+    // named so (ENROLL_PERIOD_HINT_MS): nothing computes with it, and if
+    // it ever disagrees with hub.js it is the sentence that is wrong, not
+    // the node. Held here anyway, because a hint that lies is worse than
+    // no hint.
+    const saidMatch = page.match(/ENROLL_PERIOD_HINT_MS\s*=\s*(\d+)/);
     const said = saidMatch ? Number(saidMatch[1]) : 0;
     if (said === period) {
-      test.check('and the page tells the truth about it — ' + Math.round(said / 1000) + 's, the node\'s own figure');
+      test.check('and the sentence it says out loud is still true — ' +
+        Math.round(said / 1000) + 's, the node\'s own figure');
     } else {
       test.fail('device.html says ' + said + 'ms, hub.js ticks at ' + period + 'ms');
     }

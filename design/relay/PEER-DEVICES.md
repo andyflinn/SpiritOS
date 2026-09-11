@@ -190,6 +190,22 @@ the per-identity slot all stay available, and none gets harder.
 
 ## 8. Open
 
+- **The slot and the rate limit are per PROCESS, not per identity — a blocker
+  for this document.** `createQueue()` is called once in `createRelay`, so one
+  pending slot and one `perMin: 10` window serve every identity on the relay.
+  Correct while the owner is the only enroller; wrong the moment peers enrol,
+  because two peers at once means one refuses the other, and one peer's retries
+  spend everyone's allowance. §5 already says the slot should be per identity —
+  this records that the code is not, and that the rate limit needs the same
+  treatment. **They land together or not at all** (Grok): a per-identity slot
+  with a shared bucket is the same bug wearing a better name. Do not enlarge
+  `createQueue` before this sitting opens.
+- **`device-pending` has no rate limit.** A wrong name is refused before any
+  crypto, but a right name with a bad signature costs three Ed25519 verifies per
+  request — the one unlimited crypto path on the box. Small, real, and owned as
+  a line on the next device sitting rather than a cycle of its own: the same
+  bucket shape as `send`, keyed by name, refusing before the verifies pile up.
+  Keep the cheap wrong-name rejection first.
 - **Perception on a handheld.** `whoBook` never leaves a personal node, so a
   device sees handles and key tails where the shell shows captions and marks.
   Either it syncs to one's own devices — a rule change — or a handheld is
