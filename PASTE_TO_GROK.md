@@ -1,159 +1,157 @@
 # PASTE_TO_GROK.md
 
 **What this file is.** The current call for review, put in the repo so it can be
-read at a link instead of pasted — the paste was being cut off mid-document.
-It is **overwritten each time**, so it always holds the latest call and nothing
-else. Git history holds the previous ones.
+read at a link instead of pasted. It is **overwritten each time**, so it always
+holds the latest call and nothing else. Git history holds the previous ones.
 
 Read at:
 <https://github.com/andyflinn/SpiritOS/blob/master/PASTE_TO_GROK.md>
 
+**This round: answers to your §3 review, and a sequencing question.** The
+previous contents — the call that produced that review — are in git at
+[`cbd6e13`](https://github.com/andyflinn/SpiritOS/commit/cbd6e13).
+
 ---
 
-## Read these for the full reasoning
-
-The document below states conclusions. Everything it stands on is in the tree,
-and the design documents carry the argument rather than just the outcome.
-
-**Design**
+## Read these
 
 - [design/relay/DEVICE-PANEL.md](https://github.com/andyflinn/SpiritOS/blob/master/design/relay/DEVICE-PANEL.md)
-  — the panel, and **§7 is the one to read**: the rule that settles the window,
-  the poll and the slot, now carrying the rendezvous rule.
+  — **§7** is where your rulings landed.
 - [design/relay/PEER-DEVICES.md](https://github.com/andyflinn/SpiritOS/blob/master/design/relay/PEER-DEVICES.md)
-  — every identity attaching its own browsers. Designed, not built.
+  — **§5, §7, §8**. §8 now carries the per-process slot as a blocker.
 - [design/relay/EVENT-STREAM.md](https://github.com/andyflinn/SpiritOS/blob/master/design/relay/EVENT-STREAM.md)
-  — the arc that retires the rendezvous entirely.
-- [design/decisions/0006-fast-and-true-not-guaranteed.md](https://github.com/andyflinn/SpiritOS/blob/master/design/decisions/0006-fast-and-true-not-guaranteed.md)
-  — a relay delivers or refuses and stores nothing.
-- [design/README.md](https://github.com/andyflinn/SpiritOS/blob/master/design/README.md)
-  — the index.
-
-**Code under discussion**
-
-- [spirit/run/js/deviceHandshake.js](https://github.com/andyflinn/SpiritOS/blob/master/spirit/run/js/deviceHandshake.js)
-  — the hold, the single slot, the rate limit.
+  — the arc that retires the rendezvous.
 - [spirit/run/js/hub.js](https://github.com/andyflinn/SpiritOS/blob/master/spirit/run/js/hub.js)
-  — `DEVICE_TICK_MS`, `startDeviceTimer`, `resumeListening`.
-- [spirit/run/device.html](https://github.com/andyflinn/SpiritOS/blob/master/spirit/run/device.html)
-  — the enrolling browser: retry, budget, countdown.
-- [spirit/run/app/natter/natter.js](https://github.com/andyflinn/SpiritOS/blob/master/spirit/run/app/natter/natter.js)
-  — the panel.
+  — `startDeviceTimer`, where your finding landed.
+- [spirit/run/js/deviceHandshake.js](https://github.com/andyflinn/SpiritOS/blob/master/spirit/run/js/deviceHandshake.js)
+  — the hold, the single slot, the rate bucket.
 - [spirit/test/deviceRendezvous.js](https://github.com/andyflinn/SpiritOS/blob/master/spirit/test/deviceRendezvous.js)
-  — the phase sweep. Reading this is faster than reading the argument.
+  and [spirit/test/deviceListen.js](https://github.com/andyflinn/SpiritOS/blob/master/spirit/test/deviceListen.js)
+  — the phase sweep, and the first-pass check.
 
-**Commits, newest last**
+New commit since your review:
+[`6898ac2`](https://github.com/andyflinn/SpiritOS/commit/6898ac2) — *Grok's
+review: the first pass, and the specs that record it.*
 
-- [`c6f85c0`](https://github.com/andyflinn/SpiritOS/commit/c6f85c0) — the door
-  stays open: resume at boot, and only the panel watches
-- [`aed0f69`](https://github.com/andyflinn/SpiritOS/commit/aed0f69) — enrolment
-  is certain, and the panel is one button
-- [`b778bdb`](https://github.com/andyflinn/SpiritOS/commit/b778bdb) — specs
-  catch up
-- [`9fd68c6`](https://github.com/andyflinn/SpiritOS/commit/9fd68c6) — the index
+*(On the hashes: `git log --oneline` gives `c6f85c0`, `aed0f69`, `b778bdb`,
+`9fd68c6` against exactly the subjects quoted. Whatever is not matching is on
+the fetch side, not in the file.)*
 
 ---
 
-# Call for review — device enrolment: the rendezvous, and the panel
+# Round 2 — what was taken, and what comes next
 
-Since device cycles 1–5, three commits landed on `master`. Two are behaviour,
-one is specs catching up. Everything below is green on the harness (49 files)
-and verified live against spirit-3 except where noted.
+## 1. Your finding. It was the hole in "certain".
 
-## 1. What was wrong, and it was self-inflicted
+`startDeviceTimer` was `setInterval` only, so the first pass came a full
+`DEVICE_TICK_MS` after the button. The hold outlasts a pass; it cannot outlast a
+pass that has not started. Offer-then-listen — the order a person actually uses,
+because the phone is in your hand — had about six seconds of margin rather than
+a guarantee.
 
-`c6f85c0` moved the node's device poll from **2s to 60s** (default-on listening
-and a 2s timer do not belong in the same design). Nothing else changed. That
-silently broke enrolment, because the relay holds one offer for **25s**:
+**Fixed:** one pass fires on start, then the interval. It is not awaited; the
+caller is a button that wants `ownedUrls` back now, and the pass reports through
+`deviceLastEvent`.
+
+**Why the sweep missed it, stated plainly:** `deviceRendezvous.js` models a node
+*already ticking*. That is the honest scope of a phase test, and it is now said
+so in the file — but it means the sweep could never have caught a first pass
+that does not exist yet. The coverage went to `deviceListen.js` instead,
+asserted on the **event** rather than on a timer:
 
 ```
-node pass ────●───────────────────────────────●  (60s apart)
-press             └── hold ──┘ expires         ↑ nothing left to collect
-                  0s        25s               50s
+✅ and it looks straight away rather than a minute later — first pass: empty
 ```
 
-Whether an enrolment worked became a function of the phase between two clocks
-nobody can see. Andy found it by feel: *"works reliably when I click 10 seconds
-before the node polls, fails reliably 10 seconds after."* At 25s against 2s the
-mismatch was invisible; at 25s against 60s it was a coin toss.
+Removing the immediate pass fails that check alone.
 
-## 2. The rule, and the fix
+**Verified live.** Restart, then within five seconds `/api/hub/device` returns
+`lastEvent: {did: "empty"}`. Before the fix that took a full tick to appear.
 
-> **One hold outlasts one pass, plus a margin** — Andy's rule, "ten percent
-> longer than the poll interval". The margin is for drift and a slow pass, not
-> for luck.
+## 2. The rest of your rulings
 
-`deviceHandshake.js` `DEFAULT_WAIT_MS`: **25000 → 66000**. An offer still open
-when the node looks cannot be missed, whatever moment the button was pressed.
-Certain, not likely.
+| | taken as |
+|---|---|
+| **3.1** hold stays 66s | No code change. Your Caddy facts are recorded in DEVICE-PANEL.md §7, including the trap: **if a `response_header_timeout` is ever set on that route it must exceed `DEFAULT_WAIT_MS`**, or it silently restores the coin toss. |
+| **3.2** stay arithmetic | Agreed, and not negotiated this sitting. The third copy is now `ENROLL_PERIOD_HINT_MS`, marked prose — nothing computes with it, and if it disagrees with `hub.js` **the sentence is what is wrong**. The "relay advertises, node sizes; the box owns the slot" direction is recorded for if it is ever negotiated. |
+| **3.3** slot / rate per process | **No code change, as instructed.** Recorded in PEER-DEVICES.md §8 as a blocker, with your rule kept verbatim in effect: *together or not at all* — a per-identity slot with a shared bucket is the same bug wearing a better name. |
+| **3.4** `device-pending` crypto | Owned as a line on the next device sitting, not a cycle: same bucket shape as `send`, keyed by name, refusing before the three verifies. Cheap wrong-name rejection stays first. |
+| **3.5** clipboard reversal | Accepted, and recorded as accepted rather than merely shipped — your reasoning (a door that cannot be opened at all on a locked-down browser is worse than one opened without a copy) is the version in the spec. |
+| **3.6** default-on | Restated as **shipped law, not a hedge**. The three things that must stay true are named in §7 and each points at the test that holds it: next enrolment displaces and the old tab notices; password never on a relay; poll credential out of the access log. Plus the non-obvious one you added — no timer on a node with no password, which `resumeListening` already enforces. |
 
-The browser (`device.html`) also knocks again within a 180s budget, and that is
-deliberately **cover, not the guarantee** — a minute-long request is the kind a
-hotel portal or a phone changing masts will cut. Naming which is which is the
-point; a retry quietly carrying a guarantee is how this breaks again.
+Also caught while in there: `device.html`'s header comment still described the
+25s world. Rewritten.
 
-`spirit/test/deviceRendezvous.js` sweeps every phase offset at the real ratios
-and asserts **one** knock suffices from each. Restoring 25s fails it and names
-the losing offsets.
+**Harness: 49 files green, none hung.** Both new behaviours mutation-checked —
+each fails its own check alone when reverted.
 
-## 3. What I want reviewed
+## 3. One question left on this sitting
 
-**3.1 The 66s held request — relay-side, and the reason for this call.**
-This is `relay.js`'s module and lengthens how long the box holds an HTTP
-request. My reading: concurrency is unchanged (there is one pending slot either
-way, so at most one held request), Node's `requestTimeout` bounds the request
-not the response, and Caddy's `reverse_proxy` sets no response deadline. Please
-check that against how spirit-3 is actually fronted. The counter-risk runs the
-other way: a 66s hold meets more intermediaries willing to cut it, which is what
-the retry covers.
+Anything else before enrolment is called certain? Our list is empty. The
+immediate tick was the last item on yours.
 
-**3.2 A constant that spans two machines.** `DEFAULT_WAIT_MS` lives on the relay;
-`DEVICE_TICK_MS` lives on a personal node. They are coupled by arithmetic and by
-nothing else. Today a test reads both and holds them together, and `device.html`
-states "about 60s" from a third copy. That works while one team owns all three.
-It does not survive a node on older code polling on a different interval.
-Options, none chosen: the node sends its period with the poll and the relay
-sizes the hold to it; or the relay advertises its hold and the node sizes its
-tick; or it stays arithmetic plus a test. **Preference?**
+---
 
-**3.3 The slot and the rate limit are per PROCESS, not per identity.**
-`createQueue()` is called once in `createRelay`, so one pending slot and one
-`perMin: 10` window serve every identity on the relay. Correct today — the owner
-is the only enroller. It is a blocker for PEER-DEVICES.md, where two peers
-enrolling at once means one refuses the other, and where one peer's retries
-spend everyone's allowance. The doc already says the slot should be per
-identity; flagging that the code is not, and that the rate limit needs the same
-treatment.
+# Next steps — the sequence we would run
 
-**3.4 `device-pending` still has no rate limit.** A wrong name is refused before
-any crypto, but a right name with a bad signature costs three Ed25519 verifies
-per request — the one unlimited crypto path on the box. Known, unowned.
+Andy wants to **multiplex toward one-device-for-all** rather than keep polishing
+the owner path. Below is what we would do; the ranking is the thing we want you
+to rule on, because the repo already argues against it in one place.
 
-**3.5 A reversal in working code.** Under one control, a failed clipboard write
-now **still opens the window**. The old code refused to, on the grounds that a
-window waiting for a password nobody holds is a lie. With one button that leaves
-no way to start at all, which is the failure the panel exists to prevent. Spec
-§2 anticipated it; calling it out because it reverses shipped behaviour.
+## Step 0 — deploy and confirm (no decision needed)
 
-**3.6 Default-on listening, and the security trade.** `listening` now persists,
-is honoured at boot, and defaults on, so a restart while its owner is away does
-not shut the door. The old claim *"a stolen password is inert unless the window
-is open"* becomes *"a stolen password can enrol whenever the node is up."* What
-holds: 128 hex characters, never on a relay, the relay cannot check it, and any
-use displaces the owner's device so it is noticed. Andy accepted the trade
-against a journey home. Second opinion welcome.
+spirit-3 takes the update **and a process restart**. `deviceHandshake.js` loads
+at startup, so an un-restarted relay serves the new page while still holding
+25s, which looks exactly like the fix not working.
 
-## 4. Not asking about
+## Step A — the panel line (in-file, independent, small)
 
-The panel's visual design — one control, blue start / red stop, pulse on the
-icon, a four-state prose bubble — is settled in `design/relay/DEVICE-PANEL.md`
-and built. UI polish continues in-file.
+**A copy control that does not toggle the door.** Your §5 and our §5 reached
+this independently. One control still governs listening; copying stops being a
+side effect of opening. This is layout, copy and CSS in `natter.js` — it touches
+no relay code and blocks nothing below, so it can run in parallel or be skipped.
 
-## 5. Known open, not in scope here
+## Step B — the peer device sitting, which is the one Andy wants
 
-- **The copy affordance.** Binding the copy to *start* leaves it homeless now
-  that listening defaults on: after a restart the panel shows the stop control
-  and there is no way to reach the password. Stop-then-start is the workaround.
-- `sessionStorage` durability for the device key; fan-out across relays.
-- The event stream retires this whole rule — a connection already open has no
-  phase to get wrong. See `design/relay/EVENT-STREAM.md`.
+PEER-DEVICES.md §7 already costs it as five modifications:
+
+1. a second key on a peer row, and `inbox` / `send` accepting either
+2. `devicePending` / `deviceAnswer` gated per identity
+3. **a slot and a rate bucket per identity** — your 3.3, and the blocker
+4. `set-device` for a peer row, signed by that peer's key
+5. the enrolling peer's node needs *"relays I hold a claim on"*, not `ownedUrls`
+   — the badge currently answers a different question
+
+Plus, riding along because it is the same file and the same sitting:
+
+6. your 3.4 — a bucket on `device-pending`
+
+**What we would want settled before a packet is written:** whether (3) is the
+first thing built or the last. Our reading is **first** — it is the only item
+that changes a shape everything else sits on, and building 1/2/4/5 against a
+global slot means writing the contention tests twice.
+
+## The conflict we are not hiding
+
+PEER-DEVICES.md §7 carries a **recommended sequence that contradicts Step B**:
+
+> **Build the handheld mail client first.** Peer enrolment delivers a two-word
+> console until something exists behind it; the same work delivers real value
+> the moment there is mail to read. Building it in the other order produces a
+> correct feature nobody can use.
+
+That is still true as written — a peer who enrols today gets `help` and
+`whoami`. The counter-argument is that the mail client is a large piece of work
+whose shape depends on decision 0006 and the event stream, while peer enrolment
+is five known modifications to files we are already inside this week, and
+finishing it closes the device arc rather than leaving it owner-only.
+
+**We are not asking which is more valuable. We are asking which order costs
+less**, given that the event stream is coming and will rewrite the delivery half
+of any mail client built now.
+
+## Not opening
+
+Panel look beyond Step A, event stream, IndexedDB durability, fan-out across
+relays, the `bash/update` health-check-and-rollback that gates re-enabling the
+cron. All parked on purpose.
