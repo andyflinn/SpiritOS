@@ -30,6 +30,10 @@ function createPresence(opts) {
   const rootDir = opts.rootDir || path.join(__dirname, '..');
   const jobs = opts.jobs;
   const openStream = opts.connectImpl || sseClient.connect;
+  // Given rather than made here, because a node has ONE of these and the
+  // hub needs the same instance to post from — an outbound request and
+  // the answer that matches it must meet in the same table.
+  const router = opts.router || null;
 
   // relay url -> { key -> bool }. THE PER-RELAY DETAIL LIVES HERE AND
   // NOWHERE ELSE. Andy's ruling: the shell gets one merged set and apps
@@ -141,6 +145,13 @@ function createPresence(opts) {
       onEvent: function (msg) {
         if (msg.event === 'roster') onRoster(url, msg.data);
         else if (msg.event === 'presence') onChange(url, msg.data);
+        // The same socket carries the router now (ROUTER.md). This file
+        // owns the connection and nothing else about them: it hands each
+        // one to peerPost and forms no opinion, which is why the fence
+        // in PRESENCE.md §6 could be opened without this module growing
+        // a second subject.
+        else if (msg.event === 'request' && router) router.onRequest(url, msg.data);
+        else if (msg.event === 'reply' && router) router.onReply(msg.data);
       },
       onOpen: function () { publish('connected to ' + url); },
       onClose: function (reason) { forget(url); publish('lost ' + url + ': ' + reason); },
@@ -184,6 +195,14 @@ function createPresence(opts) {
   return {
     start: start,
     stop: stop,
+    // Which relay to send through. A node on two relays can reach a peer
+    // by either, so the caller says nothing and this answers with the
+    // ones that currently name that key as present.
+    relaysNaming: function (key) {
+      return Object.keys(byRelay).filter(function (url) {
+        return byRelay[url][key] === true;
+      });
+    },
     // In-process readers, for tests and for whatever needs the answer
     // without waiting for a job event.
     table: merge,

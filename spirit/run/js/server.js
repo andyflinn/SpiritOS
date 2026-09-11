@@ -151,6 +151,7 @@ jobs.startFsWatcherJob(ROOT_DIR);
 // Held here rather than inside the boot block so a later shutdown path
 // has something to close. Null on a relay, which holds no streams.
 let presence = null;
+let peerRouter = null;
 
 const requestCounters = { total: 0, byMethod: {}, byStatusClass: {} };
 jobs.startStatsJob({ requestCounters: requestCounters });
@@ -1175,6 +1176,52 @@ const server = http.createServer((req, res) => {
     }
 
     // A human confirmed one of those candidates by its key tail.
+    // SPIRIT-POST: ask a peer something as though they were a server.
+    //
+    // The app never signs, never learns what a relay is, and cannot forge
+    // a sender — this node holds the key. It says WHO, not where: a peer
+    // reachable on two relays is reachable, and picking which one is not
+    // an app's problem.
+    //
+    // Held open while the round trip happens, which is safe precisely
+    // here and nowhere else: loopback has no proxy to time it out. The
+    // relay itself never holds anything (ROUTER.md).
+    if (pathname === '/api/hub/post') {
+      readJsonBody(req).then(function (body) {
+        if (!peerRouter || !presence) {
+          res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'this node is not connected to a relay' }));
+          return;
+        }
+        const to = String((body && body.to) || '').trim();
+        const text = typeof (body && body.text) === 'string' ? body.text : '';
+        // Which relay to go through. Normally none of an app's business —
+        // a peer reachable two ways is reachable — but a caller may name
+        // one, which is how the cost of each path gets measured rather
+        // than assumed. An unreachable choice is refused like any other.
+        const wanted = String((body && body.via) || '').trim();
+        const where = presence.relaysNaming(to)
+          .filter(function (url) { return !wanted || url === wanted; });
+        if (!where.length) {
+          // Truthfully, and at once. Presence is what makes this
+          // answerable rather than a guess — and it is why that arc had
+          // to come first.
+          res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'that peer is not reachable right now' }));
+          return;
+        }
+        return peerRouter.post(where[0], to, text).then(function (answer) {
+          res.writeHead(answer.ok ? 200 : (answer.status || 502),
+            { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify(answer));
+        });
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
+      return;
+    }
+
     if (pathname === '/api/hub/contact') {
       hub.handleContact(req, res, readJsonBody);
       return;
@@ -1340,9 +1387,19 @@ if (!relayMode) {
   // Published as a permanent job, beside fs-watcher and server-stats, so
   // the shell receives it on the channel it already has. Personal mode
   // only: a relay serves this wire, it does not hold one.
+  // ONE router per node, shared. An outbound request and the answer that
+  // matches it must meet in the same table, so the thing that posts and
+  // the thing that hears the reply are the same object — presence owns
+  // the socket, this owns the correlation.
+  peerRouter = require('./peerPost').createPeerPost({
+    rootDir: ROOT_DIR,
+    request: require('./hub').relayRequest,
+  });
+
   presence = require('./presenceNode').createPresence({
     rootDir: ROOT_DIR,
     jobs: jobs,
+    router: peerRouter,
   });
   presence.start(require('./hub').relayRequest).catch(() => {});
 }
