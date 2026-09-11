@@ -24,6 +24,14 @@ later.
 
 ## 2. The shape: a wire, not a mailbox
 
+> **Read this section as the destination, not as a description.** It is
+> written as though decision 0006 already holds. It does not: the relay
+> stores the last 200 messages on disk and `inbox` filters rather than
+> drains, so a reader gets the whole backlog on every poll (`relay.js`,
+> verified at `8dcc28b`). [PRESENCE.md](PRESENCE.md) splits the arc — the
+> wire first, carrying presence only; the message later — and is the
+> route to what follows.
+
 Superseded by [decision 0006 — fast and true, not guaranteed](../decisions/0006-fast-and-true-not-guaranteed.md).
 An earlier draft here proposed a **doorbell**: the stream would carry *"something
 changed"* and the client would fetch content with a separate signed read. That

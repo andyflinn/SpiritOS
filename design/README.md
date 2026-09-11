@@ -22,8 +22,10 @@ This directory contains the vision, principles, and architecture decisions for *
 - [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
   in Natter for attaching a browser. Built; §7 also carries the rendezvous rule,
   which is why enrolment is certain rather than likely.
+- [Presence](relay/PRESENCE.md) — the first cut of that wire, carrying who is
+  reachable and nothing else. Staged, and the precondition for decision 0006.
 - [The relay doorbell](relay/EVENT-STREAM.md) — one held connection per identity
-  instead of polling. An arc, justified by chat rather than by devices.
+  instead of polling. The destination; PRESENCE.md is the route to it.
 
 ## Reviews
 - Periodic point-in-time assessments of status against vision. See [reviews/](reviews/).

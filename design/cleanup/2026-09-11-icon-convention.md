@@ -72,4 +72,26 @@ the ICON literal — `iconIndex.js` guards glyph collisions between apps, which 
 a different thing. A test that reads `kernel.js` as text and refuses a repeated
 key would have caught `STOP` on the day it landed.
 
+**5. Decide whether a colour may mean an ACTION in one place and a STATE
+in another.** This keeps recurring and there is no rule to point at, so it
+gets re-argued every time:
+
+| | |
+|---|---|
+| 🔴 as an action | Natter's device panel — *press the red button to stop* |
+| 🔴 as a state | Contacts' presence column — *this peer is absent* ([PRESENCE.md](../relay/PRESENCE.md) §4) |
+| 🔵 as an action | the same panel — *press to start* |
+| 🟢 as a state | the same column — *present* |
+
+Settled case by case so far, and the same way each time: a glyph inside a
+**button** is read as a thing to press, a glyph in a **cell** as a thing
+that is true. That has been enough. It is written down here because the
+next person to meet it should find a rule rather than rediscover the
+reasoning.
+
+Not the same hazard as ★, which was a genuine collision: ★ meant a status
+in both places it appeared, so two meanings fought. Worth stating the
+distinction, because "one mark, one meaning" read too literally would ban
+something that is not actually confusing.
+
 Item 4 is the one worth doing regardless of the rest.
