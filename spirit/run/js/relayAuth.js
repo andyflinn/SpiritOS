@@ -63,6 +63,33 @@ function inboxSignatureOk(publicKey, token, sig, atMs) {
   return false;
 }
 
+// ITS OWN VERB, and that is the point of it. The owner signs `status` for
+// every census and `inbox` every two seconds, so a captured signature is
+// always available to somebody reading a log — and what this one opens is
+// a STANDING grant rather than a single read, which makes it a far better
+// prize than either. Same reason deviceGate gave `device-take` its own
+// bytes.
+//
+// The token is a public KEY, not a label. Labels duplicate by design, so
+// a signature naming one identifies nobody on a relay holding two johns
+// (PEER-DEVICES.md, and B2 carried it inward).
+function streamMessage(key, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'stream\n' + String(key || '') + '\n' + minute;
+}
+
+// Previous, current and next, exactly as inboxSignatureOk: enough for two
+// clocks a minute apart, in both directions, because the SIGNER may be
+// the one running fast.
+function streamSignatureOk(publicKey, key, sig, atMs) {
+  if (!publicKey || !sig) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, streamMessage(key, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
 function generateIdentity(name) {
   const pair = crypto.generateKeyPairSync('ed25519');
   return {
@@ -322,6 +349,8 @@ module.exports = {
   statusMessage,
   inboxMessage,
   inboxSignatureOk,
+  streamMessage,
+  streamSignatureOk,
   generateIdentity,
   sign,
   verify,

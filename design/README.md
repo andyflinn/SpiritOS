@@ -8,6 +8,11 @@ This directory contains the vision, principles, and architecture decisions for *
 
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)
+- [Icon convention](cleanup/2026-09-11-icon-convention.md) — what the circles
+  fixed, and what is still outstanding repo-wide.
+- [The live surface has no tests](cleanup/2026-09-11-live-surface-tests.md) —
+  the harness proves logic in process and has never seen TLS, Caddy or a held
+  connection. Presence is the first thing that depends on all three.
 
 ## Decisions
 - Dated Architecture Decision Records — why a specific technical choice was made, not

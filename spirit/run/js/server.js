@@ -713,6 +713,10 @@ function isRelayPublicPath(method, pathname) {
   // and gated inside relay.js. device-pending answers the owner's house
   // signature and nobody else's.
   if (method === 'GET' && pathname === '/api/relay/device-pending') return true;
+  // The presence wire. Public in the same sense the rest is: reachable
+  // from the internet, and gated inside relay.streamOpen, which refuses
+  // an identity this box does not hold before it allocates anything.
+  if (method === 'GET' && pathname === '/api/relay/stream') return true;
   if (method === 'POST' && (pathname === '/api/relay/device' || pathname === '/api/relay/set-device' || pathname === '/api/relay/device-answer')) return true;
   // /api/relay/invite is public in the same sense claim and send are:
   // reachable from the internet, and gated by the owner's signature
@@ -794,6 +798,72 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'GET' && pathname === '/api/relay/status') {
     handleRelayStatus(req, res, url);
+    return;
+  }
+
+  // One held connection per identity, carrying who is reachable. The
+  // signature is a HEADER for the same reason device-pending's is: a
+  // query string is written to every access log the request passes, and
+  // this one buys a STANDING grant rather than a single read. Same
+  // function enforces it, so there is one rule and not two.
+  //
+  // Headers, heartbeat and teardown are handleSseConnection's, because
+  // it is the same protocol and that handler has already paid for its
+  // lessons — especially the last one.
+  if (relayMode && req.method === 'GET' && pathname === '/api/relay/stream') {
+    const from = createRelay.inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
+    if (!from.ok) {
+      deviceRefusal(res, from.status);
+      return;
+    }
+    const token = url.searchParams.get('key') || '';
+
+    // A sink, not a response: relay.js and presence.js hold this and
+    // neither knows what http is.
+    const sink = {
+      write: function (chunk) { res.write(chunk); },
+      close: function () { try { res.end(); } catch (e) { /* gone */ } },
+    };
+
+    // Written BEFORE streamOpen, because streamOpen's first act is to
+    // send the roster down this sink and a write before the head is a
+    // 200 with no headers.
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+
+    const opened = relay.streamOpen(token, from.sig, sink);
+    if (!opened || !opened.ok) {
+      // The head is already out, so the refusal has to travel as an
+      // event and then a close. A node reads this and backs off; there
+      // is nothing to be gained by pretending the status line could
+      // still say 403.
+      sink.write('event: refused\ndata: ' +
+        JSON.stringify({ status: (opened && opened.status) || 403 }) + '\n\n');
+      sink.close();
+      return;
+    }
+
+    const heartbeat = setInterval(() => {
+      try { res.write(':\n\n'); } catch (e) { /* teardown will follow */ }
+    }, 20000);
+
+    // Bound to 'error' as well as 'close', and once-guarded, exactly as
+    // the jobs stream is. The bug that comment records is worse here: a
+    // socket that dies without a clean close would leave a peer reading
+    // as PRESENT forever, which is the relay lying — and lying is the
+    // one thing this design cannot afford.
+    let torndown = false;
+    function teardown() {
+      if (torndown) return;
+      torndown = true;
+      clearInterval(heartbeat);
+      relay.streamClose(token, sink);
+    }
+    req.on('close', teardown);
+    req.on('error', teardown);
     return;
   }
 

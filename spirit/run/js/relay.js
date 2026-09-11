@@ -10,6 +10,7 @@ const relayConsole = require('./relayConsole');
 // (DEVICE-CYCLE1.md).
 const deviceAuth = require('./deviceAuth');
 const deviceHandshake = require('./deviceHandshake');
+const presence = require('./presence');
 
 var MAX_MESSAGES = 200;
 var MAX_TEXT = 1024;
@@ -74,6 +75,9 @@ function createRelay(rootDir) {
   // Defaults, deliberately: the wait and the rate limit are the module's
   // to state once. A test that needs a short wait builds its own queue.
   var deviceQueue = deviceHandshake.createQueue();
+  // Who is holding a stream open right now. In RAM, never persisted —
+  // presence is true only while a socket is open (PRESENCE.md §4).
+  var presentNow = presence.createRegistry();
 
   function persist() {
     saveMailbox(rootDir, peers, messages, nextId);
@@ -823,6 +827,72 @@ function createRelay(rootDir) {
     return deviceQueue.reply(gate.who.id, !!accepted);
   }
 
+  // THE ROSTER WITH STATES, and never the list of the connected. If this
+  // sent only who is here, a key a node did not hear about would be
+  // ambiguous between a member who is away and somebody this relay has
+  // never heard of — and the first is red while the second is white
+  // (PRESENCE.md §4). Both halves are already here: who() is the roster,
+  // the registry is the subset.
+  //
+  // Nothing secret: /api/relay/who hands the same labels and keys to
+  // anyone who asks. What is new is liveness, which is disclosure and is
+  // intended.
+  function streamRoster() {
+    return {
+      members: who().map(function (p) {
+        return {
+          key: p.publicKey || '',
+          label: p.publicLabel || p.name || '',
+          present: presentNow.isPresent(p.publicKey || ''),
+        };
+      }),
+    };
+  }
+
+  // The gate. Order is load-bearing at every step.
+  function streamOpen(token, sig, sink) {
+    // 1. Unknown identity first, before any bucket and before any crypto.
+    //    B1's rule: a registry keyed by caller-chosen input grows when a
+    //    stranger reaches it, so a stranger must not reach it.
+    var who_ = deviceIdentity(token);
+    if (!who_) return { ok: false, status: 403, error: 'no such identity' };
+
+    // 2. The signature, against THAT identity's own row key. Never the
+    //    owner's house key — owning the relay is not owning a row — and
+    //    never a device key, for the reason deviceGate gives: a borrowed
+    //    phone must not open the wire its owner is on.
+    if (!auth.streamSignatureOk(who_.publicKey, who_.id, sig)) {
+      return { ok: false, status: 403, error: 'bad stream signature' };
+    }
+
+    // 3. AUTHENTICATE, THEN TOSS. connect() evicts any live connection
+    //    for this identity, so it must be unreachable until the caller
+    //    has proved they are that identity — otherwise anybody could
+    //    knock any peer offline by connecting badly in their name.
+    var opened = presentNow.connect(who_.id, sink);
+    if (!opened.ok) return opened;
+
+    // 4. The roster, then the fact that this one arrived. Order matters
+    //    for the newcomer too: it must see itself present in its own
+    //    first snapshot rather than learn it from a change it will never
+    //    be sent.
+    presentNow.send(who_.id, 'roster', streamRoster());
+    presentNow.broadcast('presence', { key: who_.id, present: true });
+    return { ok: true, status: 200, id: who_.id, label: who_.label };
+  }
+
+  // Idempotent, because both `close` and `error` fire on a dying socket
+  // and both call this. The broadcast happens only if this sink was
+  // actually the live one — a teardown arriving after the same identity
+  // reconnected must not announce an absence that is not true.
+  function streamClose(token, sink) {
+    var who_ = deviceIdentity(token);
+    if (!who_) return false;
+    if (!presentNow.disconnect(who_.id, sink)) return false;
+    presentNow.broadcast('presence', { key: who_.id, present: false });
+    return true;
+  }
+
   return {
     claim: claim,
     who: who,
@@ -845,6 +915,13 @@ function createRelay(rootDir) {
     // directly.
     devicePending: devicePending,
     deviceAnswer: deviceAnswer,
+    // The presence wire. streamOpen is the gated entry a route may call;
+    // the registry below is in-process and ungated, for tests that drive
+    // it directly — the same split deviceTake/devicePending already has.
+    streamOpen: streamOpen,
+    streamClose: streamClose,
+    streamRoster: streamRoster,
+    presence: presentNow,
     // Does anybody here hold this key or label? Answers a LABEL, never a
     // key and never a device key — the routing layer needs to know an
     // identity exists and what to call it, and nothing more. Everything
