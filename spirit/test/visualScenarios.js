@@ -25,17 +25,12 @@ const test = require('./testSupport.js');
 const DIR = path.join(__dirname, 'visual');
 const SUITES = __dirname;
 
-// The vocabulary the builder understands. A scenario using anything else
-// would be quietly ignored, which is the failure mode this list exists to
-// prevent — a field somebody added in good faith that never did anything.
-const TOP = ['title', 'why', 'covers', 'look', 'peers', 'knows', 'messages', 'then'];
-const PEER = ['name', 'on', 'running', 'expect'];
-const THEN = ['remove', 'from', 'why'];
-const RELAYS = ['lab', 'live'];
-
-function unknown(obj, allowed) {
-  return Object.keys(obj || {}).filter(function (k) { return allowed.indexOf(k) === -1; });
-}
+// The vocabulary lives in scenario.js, with the builders that read it.
+// It was duplicated here, and a field list kept in two places is a field
+// list that agrees with itself until the day it matters: a scenario would
+// have passed this check and then been half-ignored by whichever builder
+// had not been told about the new field.
+const scenario = require('./scenario');
 
 test.startTest('Visual scenarios — readable, and still true');
 
@@ -71,14 +66,19 @@ function run() {
   test.subHeading('Each says what it is for');
 
   // A scenario whose purpose is not written down is one nobody dares
-  // delete and nobody remembers to update.
-  const unexplained = scenarios.filter(function (s) {
-    return !s.doc.title || !s.doc.why || !Array.isArray(s.doc.look) || !s.doc.look.length;
+  // delete and nobody remembers to update. These are the demands that
+  // apply because somebody is going to LOOK at it — a suite's own
+  // scenario owes none of them, and scenario.js keeps the two apart.
+  let unexplained = [];
+  scenarios.forEach(function (s) {
+    scenario.exhibitProblems(s.doc).forEach(function (why) {
+      unexplained.push(s.file + ': ' + why);
+    });
   });
   if (!unexplained.length) {
-    test.check('each carries a title, a reason, and what to look at');
+    test.check('each carries a title, a reason, what to look at, and peers to see');
   } else {
-    test.fail('unexplained: ' + unexplained.map(function (s) { return s.file; }).join(', '));
+    unexplained.slice(0, 6).forEach(function (u) { test.fail(u); });
   }
 
   test.subHeading('Each is anchored to suites that actually exist');
@@ -107,54 +107,14 @@ function run() {
     test.fail('dangling: ' + danglers.join(', '));
   }
 
-  test.subHeading('Each describes a world the builder can make');
+  test.subHeading('Each describes a world both builders can make');
 
+  // Asked of the SAME validator the builders use, so a scenario cannot
+  // pass here and then be half-understood by the thing that builds it.
   let problems = [];
   scenarios.forEach(function (s) {
-    const doc = s.doc;
-    const where = s.file + ': ';
-
-    unknown(doc, TOP).forEach(function (k) {
-      problems.push(where + 'unknown field `' + k + '`');
-    });
-
-    const names = [];
-    (doc.peers || []).forEach(function (p) {
-      unknown(p, PEER).forEach(function (k) {
-        problems.push(where + 'peer `' + p.name + '` has unknown field `' + k + '`');
-      });
-      if (!p.name) problems.push(where + 'a peer has no name');
-      if (names.indexOf(p.name) !== -1) problems.push(where + 'two peers named ' + p.name);
-      names.push(p.name);
-      (p.on || []).forEach(function (r) {
-        if (RELAYS.indexOf(r) === -1) problems.push(where + p.name + ' is on unknown relay `' + r + '`');
-      });
-      if (!(p.on || []).length) problems.push(where + p.name + ' is on no relay');
-    });
-
-    if (!names.length) problems.push(where + 'no peers');
-
-    // Everyone referenced anywhere must be somebody the world contains.
-    (doc.knows || []).forEach(function (pair) {
-      (pair || []).forEach(function (n) {
-        if (names.indexOf(n) === -1) problems.push(where + '`knows` names a stranger: ' + n);
-      });
-    });
-    (doc.messages || []).forEach(function (m) {
-      if (names.indexOf(m && m.from) === -1) {
-        problems.push(where + '`messages` from a stranger: ' + (m && m.from));
-      }
-    });
-    (doc.then || []).forEach(function (step) {
-      unknown(step, THEN).forEach(function (k) {
-        problems.push(where + '`then` step has unknown field `' + k + '`');
-      });
-      if (names.indexOf(step.remove) === -1) {
-        problems.push(where + '`then` removes a stranger: ' + step.remove);
-      }
-      if (RELAYS.indexOf(step.from) === -1) {
-        problems.push(where + '`then` removes from unknown relay `' + step.from + '`');
-      }
+    scenario.problems(s.doc).forEach(function (why) {
+      problems.push(s.file + ': ' + why);
     });
   });
 
@@ -162,6 +122,21 @@ function run() {
     test.check('no unknown fields, no strangers, no relay nobody defined');
   } else {
     problems.slice(0, 6).forEach(function (p) { test.fail(p); });
+  }
+
+  // And the fast builder will actually make them. Checking the
+  // description parses is not the same as checking a world comes out,
+  // and this costs a few milliseconds because nothing here opens a
+  // socket or spawns anything.
+  let unbuildable = [];
+  scenarios.forEach(function (s) {
+    const made = require('./world').build(s.doc);
+    if (!made.ok) unbuildable.push(s.file + ': ' + made.error);
+  });
+  if (!unbuildable.length) {
+    test.check('and every one of them builds in process, in milliseconds');
+  } else {
+    unbuildable.forEach(function (u) { test.fail(u); });
   }
 
   test.subHeading('Between them they show every state worth seeing');

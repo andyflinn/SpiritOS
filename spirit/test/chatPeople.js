@@ -30,6 +30,7 @@ const whoBook = require('../run/js/whoBook');
 const peerFile = require('../run/js/peerFile');
 const peerStats = require('../run/js/peerStats');
 const { createRelay } = require('../run/js/relay');
+const world = require('./world');
 const hub = require('../run/js/hub');
 const { createHub, buildPeople, acquireFromInbox, handleMatches, keyTail, partitionInbox, unknownPolicy, holdFromInbox } = require('../run/js/hub');
 
@@ -424,16 +425,16 @@ function hubInbox(hub, name, unknown) {
 function runOverLoopback() {
   test.subHeading('Through the hub: mail arrives, a contact appears');
 
-  const relayHome = tmpHome('box');
-  auth.saveIdentity(relayHome, auth.generateIdentity('relay'));
-  const box = createRelay(relayHome);
-  const andy = auth.generateIdentity('andy');
-  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey, '10.0.0.1');
-
-  const invites = require('../run/js/invites');
-  const bert = auth.generateIdentity('bert');
-  const minted = box.mint('andy', 'bert', 7, auth.sign(andy.privateKey, invites.mintMessage('bert', 7)));
-  box.claim('bert', auth.sign(bert.privateKey, auth.claimMessage('bert')), bert.publicKey, '10.0.0.2', minted.invite.token);
+  // The whole fixture in one line: a relay with a key of its own, an
+  // owner on it, and bert invited and claimed. It was fifteen lines here
+  // and fifteen more in five other files, and the mint-then-claim dance
+  // is not what this suite is about.
+  const L = world.build({ title: 'Andy and bert on one relay', peers: ['bert'] });
+  if (!L.ok) { test.fail(L.error); return; }
+  const relayHome = L.home;
+  const box = L.box;
+  const andy = L.owner;
+  const bert = L.peer('bert');
 
   let server;
   let hub;

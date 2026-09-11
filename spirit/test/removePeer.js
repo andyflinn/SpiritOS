@@ -14,43 +14,21 @@
 // governance. A thing alone in the jungle that cannot forget cannot
 // correct itself.
 
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
+const world = require('./world');
 const { createRelay } = require('../run/js/relay');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-forget-'));
-}
-
-function lab() {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const house = auth.generateIdentity('andy');
-  auth.saveIdentity(home, house);
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) throw new Error('owner claim: ' + JSON.stringify(claimed));
-
-  function joinAs(label) {
-    const who = auth.generateIdentity(label);
-    const minted = box.mint('andy', label, 7,
-      auth.sign(house.privateKey, invites.mintMessage(label, 7)));
-    if (!minted.ok) throw new Error('mint: ' + JSON.stringify(minted));
-    const joined = box.claim(label,
-      auth.sign(who.privateKey, auth.claimMessage(label)),
-      who.publicKey, '10.0.0.1', minted.invite.token);
-    if (!joined.ok) throw new Error('join: ' + JSON.stringify(joined));
-    return who;
-  }
-  return { home: home, box: box, house: house, joinAs: joinAs };
-}
+// A scenario, in the vocabulary the visual builder reads. The suite then
+// explores it — every refusal, every signature that should not work —
+// which is the part looking at one world cannot do.
+const SCENARIO = {
+  title: 'An owner and two members',
+  peers: ['bert', 'john'],
+};
 
 function labels(box) {
   return box.who().map(function (p) { return p.publicLabel || p.name; }).sort().join(',');
@@ -63,19 +41,18 @@ function removalSig(id, key) {
 test.startTest('A relay can forget somebody');
 
 function run() {
-  let L;
-  try { L = lab(); }
-  catch (e) { test.fail('lab: ' + (e && e.message)); test.reportSuccessFailureCount(); return; }
+  const L = world.build(SCENARIO);
+  if (!L.ok) { test.fail(L.error); test.reportSuccessFailureCount(); return; }
 
-  const bert = L.joinAs('bert');
-  const john = L.joinAs('john');
+  const bert = L.peer('bert');
+  const john = L.peer('john');
 
   test.subHeading('Its own verb, because removal is the one that destroys');
 
   // A census signature is the owner's most abundant credential. It must
   // not be spendable as "delete this person".
   const asStatus = L.box.removePeer('andy', bert.publicKey,
-    auth.sign(L.house.privateKey, auth.statusMessage
+    auth.sign(L.owner.privateKey, auth.statusMessage
       ? auth.statusMessage('andy')
       : auth.claimMessage('andy')));
   if (asStatus && asStatus.ok === false && asStatus.status === 403) {
@@ -85,14 +62,14 @@ function run() {
   }
 
   const stale = L.box.removePeer('andy', bert.publicKey,
-    auth.sign(L.house.privateKey, auth.removePeerMessage(bert.publicKey, Date.now() - 120000)));
+    auth.sign(L.owner.privateKey, auth.removePeerMessage(bert.publicKey, Date.now() - 120000)));
   if (stale && stale.ok === false) test.check('and a signature two minutes old does not either');
   else test.fail('stale accepted: ' + JSON.stringify(stale));
 
   // The KEY, not the label. A signature naming a duplicated label would
   // be an instruction to remove whichever john the relay found first.
   const byLabel = L.box.removePeer('andy', 'bert',
-    auth.sign(L.house.privateKey, auth.removePeerMessage('bert')));
+    auth.sign(L.owner.privateKey, auth.removePeerMessage('bert')));
   if (byLabel && byLabel.ok === false && byLabel.status === 404) {
     test.check('and a label is not a peer — removal is by key');
   } else {
@@ -120,8 +97,8 @@ function run() {
   // The owner's own row. ownerName() reads it, allow.json holds only it,
   // and a relay that forgot its owner would hand itself to whoever
   // claimed next.
-  const selfDestruct = L.box.removePeer('andy', L.house.publicKey,
-    removalSig(L.house, L.house.publicKey));
+  const selfDestruct = L.box.removePeer('andy', L.owner.publicKey,
+    removalSig(L.owner, L.owner.publicKey));
   if (selfDestruct && selfDestruct.ok === false && selfDestruct.status === 403) {
     test.check('and the owner cannot remove themselves, which would orphan the box');
   } else {
@@ -141,16 +118,16 @@ function run() {
 
   // Mail first, so there is something to forget.
   const sent = L.box.send('andy', 'bert', 'are you there',
-    auth.sign(L.house.privateKey, auth.sendMessage('andy', 'bert', 'are you there')));
+    auth.sign(L.owner.privateKey, auth.sendMessage('andy', 'bert', 'are you there')));
   if (!sent.ok) test.fail('send: ' + JSON.stringify(sent));
 
   // A live invite for the same label. Without revoking it, "un-invite"
   // is a lie: they walk straight back in with the token they hold.
   const spare = L.box.mint('andy', 'bert', 7,
-    auth.sign(L.house.privateKey, invites.mintMessage('bert', 7)));
+    auth.sign(L.owner.privateKey, invites.mintMessage('bert', 7)));
   const spareToken = spare.ok && spare.invite.token;
 
-  const gone = L.box.removePeer('andy', bert.publicKey, removalSig(L.house, bert.publicKey));
+  const gone = L.box.removePeer('andy', bert.publicKey, removalSig(L.owner, bert.publicKey));
   if (gone && gone.ok && labels(L.box) === 'andy') {
     test.check('the owner removes a member, and the roster is one shorter');
   } else {
@@ -194,7 +171,7 @@ function run() {
 
   test.subHeading('And the box stops accumulating expired invites');
 
-  const old = tmpHome();
+  const old = world.tmpHome();
   invites.add(old, { label: 'ghost', days: 1, expiresAt: new Date(Date.now() - 86400000).toISOString() });
   invites.add(old, { label: 'live', days: 7 });
   const swept = invites.sweepExpired(old);

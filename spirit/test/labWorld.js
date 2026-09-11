@@ -133,7 +133,15 @@ async function answering(url) {
 // it would cost him the relay he already has.
 function createWorld(opts) {
   opts = opts || {};
-  const wanted = Math.max(1, Math.min(3, opts.peers || 2));
+  // NOT CLAMPED. It was `Math.min(PEER_PORTS.length, ...)`, so a scenario
+  // with five peers built three and reported success — and the world
+  // Andy then looked at was not the scenario he asked for, with nothing
+  // anywhere saying so.
+  //
+  // A lab has as many peers as it has ports. Wanting more than that is a
+  // refusal with a reason, which build() gives below: the failure that
+  // names itself beats the success that lies.
+  const wanted = Math.max(1, opts.peers || 2);
   const names = opts.peerNames || null;
 
   let relay = null;
@@ -148,6 +156,17 @@ function createWorld(opts) {
     // will report the failure somewhere else entirely.
     //
     // `git add` is enough. A commit is not required.
+    if (wanted > PEER_PORTS.length) {
+      return {
+        ok: false,
+        error: 'this scenario wants ' + wanted + ' peers and the lab has ' +
+          PEER_PORTS.length + ' ports (' + PEER_PORTS.join(', ') + '). Add ports to ' +
+          'PEER_PORTS in labWorld.js, or look at a smaller scenario — building ' +
+          PEER_PORTS.length + ' of them and calling it done would show you a ' +
+          'different world than the one you asked for.',
+      };
+    }
+
     const missing = buildStamp.missingFromCopy(REPO_ROOT);
     if (missing.length) {
       return {

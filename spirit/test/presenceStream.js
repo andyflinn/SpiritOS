@@ -14,7 +14,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const presence = require('../run/js/presence');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
 
 function tmpHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presence-'));
@@ -46,37 +46,17 @@ function fakeSink() {
   return sink;
 }
 
-function lab() {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const house = auth.generateIdentity('andy');
-  auth.saveIdentity(home, house);
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) throw new Error('owner claim: ' + JSON.stringify(claimed));
-
-  function joinAs(label) {
-    const who = auth.generateIdentity(label);
-    const minted = box.mint(
-      'andy', label, 7,
-      auth.sign(house.privateKey, invites.mintMessage(label, 7))
-    );
-    if (!minted.ok) throw new Error('mint: ' + JSON.stringify(minted));
-    const joined = box.claim(
-      label,
-      auth.sign(who.privateKey, auth.claimMessage(label)),
-      who.publicKey,
-      '10.0.0.1',
-      minted.invite.token
-    );
-    if (!joined.ok) throw new Error('join: ' + JSON.stringify(joined));
-    return who;
-  }
-  return { home: home, box: box, house: house, joinAs: joinAs };
-}
+// The cast this suite needs, in the shared vocabulary.
+//
+// `zoe` exists for one check that turns on a FRESH connect budget — the
+// forged-connect test, which passed once while the ordering was wrong
+// because the rate limit refused the attack before the authorisation
+// check could fail to. Her budget is untouched because she is a
+// different identity, not because she joins later.
+const SCENARIO = {
+  title: 'An owner and three members on one relay',
+  peers: ['bert', 'john', 'zoe'],
+};
 
 function openFor(box, id, sink, atMs) {
   return box.streamOpen(
@@ -89,12 +69,11 @@ function openFor(box, id, sink, atMs) {
 test.startTest('Presence 1 — the relay speaks presence');
 
 function run() {
-  let L;
-  try { L = lab(); }
-  catch (e) { test.fail('lab: ' + (e && e.message)); test.reportSuccessFailureCount(); return; }
+  const L = world.build(SCENARIO);
+  if (!L.ok) { test.fail(L.error); test.reportSuccessFailureCount(); return; }
 
-  const bert = L.joinAs('bert');
-  const john = L.joinAs('john');
+  const bert = L.peer('bert');
+  const john = L.peer('john');
 
   test.subHeading('Two members, and each sees the other');
 
@@ -134,7 +113,7 @@ function run() {
   // member who is away from somebody this relay never heard of — the
   // first is red and the second white (PRESENCE.md section 4).
   const andyRow = (johnRoster && johnRoster.members || []).filter(function (m) {
-    return m.key === L.house.publicKey;
+    return m.key === L.owner.publicKey;
   })[0];
   if (andyRow && andyRow.present === false) {
     test.check('a member who is not connected is IN the roster, marked absent');
@@ -241,7 +220,7 @@ function run() {
   // the registry, and the test was green for a reason it was not
   // testing. A rate limit is not an authorisation check and must never
   // be mistaken for one.
-  const zoe = L.joinAs('zoe');
+  const zoe = L.peer('zoe');
   const zoeLive = fakeSink();
   openFor(L.box, zoe, zoeLive);
   const impostor = L.box.streamOpen(

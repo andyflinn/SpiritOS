@@ -3,18 +3,15 @@
 // spirit/test/deviceHandshake.js
 // Cycle 2. RAM slot only. Password never written.
 
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
+const world = require('./world');
 const { createQueue } = require('../run/js/deviceHandshake');
-const { createRelay } = require('../run/js/relay');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-hs-'));
-}
+const SCENARIO = require('./scenario').OWNER_ONLY;
 
 test.startTest('Device cycle 2 — RAM handshake');
 
@@ -66,17 +63,13 @@ async function run() {
     test.fail('empty: ' + JSON.stringify(emptyPw));
   }
 
-  const nodeHome = tmpHome();
-  const box = createRelay(nodeHome);
-  const house = auth.generateIdentity('andy');
+  const L = world.build(SCENARIO);
+  if (!L.ok) { test.fail(L.error); return; }
+  const nodeHome = L.home;
+  const box = L.box;
+  const house = L.owner;
   const phone = auth.generateIdentity('device');
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) test.fail('claim: ' + JSON.stringify(claimed));
-  else test.check('lab owner');
+  test.check('lab owner');
 
   deviceAuth.ensurePassword(nodeHome);
   const door = deviceAuth.load(nodeHome).password;

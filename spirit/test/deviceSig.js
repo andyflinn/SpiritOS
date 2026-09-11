@@ -3,34 +3,25 @@
 // spirit/test/deviceSig.js
 // Cycle 4. device-take is a header plus a minute, same as inbox.
 
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
-// Both named: inboxSignatureFrom is a SIBLING export of createRelay, not
-// a property hung off it — a free function precisely so a test can drive
-// the decision itself rather than standing up a mailbox to ask it.
-const { createRelay, inboxSignatureFrom } = require('../run/js/relay');
+const world = require('./world');
+// inboxSignatureFrom is a SIBLING export of relay.js, not a property hung
+// off a mailbox — a free function precisely so a test can drive the
+// decision itself rather than standing one up to ask it.
+const { inboxSignatureFrom } = require('../run/js/relay');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-sig-'));
-}
+const SCENARIO = require('./scenario').OWNER_ONLY;
 
 test.startTest('Device cycle 4 — device-take header and minute');
 
 {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const house = auth.generateIdentity('andy');
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) test.fail('claim: ' + JSON.stringify(claimed));
-  else test.check('owner');
+  const L = world.build(SCENARIO);
+  const box = L.box;
+  const house = L.owner;
+  if (L.ok) test.check('owner');
+  else test.fail(L.error);
 
   const msg = deviceAuth.deviceTakeMessage('andy');
   if (/^device-take\nandy\n\d+$/.test(msg)) test.check('take message has a minute');

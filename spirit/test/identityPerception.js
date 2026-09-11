@@ -7,11 +7,13 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
 const invites = require('../run/js/invites');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
+const scenario = require('./scenario');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bones-'));
-}
+// Bare directories for the node-side checks — a node with an address book
+// and nothing else — and a relay nobody has claimed for the block below,
+// where annie claiming it is the thing being watched.
+const tmpHome = world.tmpHome;
 
 test.startTest('Identity vs perception (sticks and stones)');
 
@@ -95,8 +97,9 @@ test.startTest('Identity vs perception (sticks and stones)');
 }
 
 {
-  const home = tmpHome();
-  const box = createRelay(home);
+  const made = world.build(scenario.UNCLAIMED);
+  const home = made.home;
+  const box = made.box;
   const annie = auth.generateIdentity('annie');
   const first = box.claim(
     'annie',

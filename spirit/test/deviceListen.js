@@ -3,36 +3,47 @@
 // spirit/test/deviceListen.js
 // Cycle 3. Listening flag + one tick installs the slot. No browser.
 
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
 const deviceTick = require('../run/js/deviceTick');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
 const { createHub } = require('../run/js/hub');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-listen-'));
-}
+// An owner, a relay, and nobody else. Built TWICE below, and the second
+// has to be its own build rather than a second door onto the first: a
+// wrong password is only refused meaningfully by a door that was
+// genuinely open, which means its own home, password and slot.
+const SCENARIO = require('./scenario').OWNER_ONLY;
+
+// Several checks below want nothing but a bare directory — a node with no
+// key, no relay and no history, which is what a restart finds on a
+// machine nobody has configured. That is not a world and should not be
+// built as one.
+const tmpHome = world.tmpHome;
 
 test.startTest('Device cycle 3 — listen and tick');
 
 async function run() {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const house = auth.generateIdentity('andy');
-  auth.saveIdentity(home, house);
+  const L = world.build(SCENARIO);
+  const box = L.box;
+  const house = L.owner;
   const phone = auth.generateIdentity('device');
 
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) test.fail('claim: ' + JSON.stringify(claimed));
-  else test.check('house owns the lab mailbox');
+  // THE OWNER'S NODE, which is not the relay's directory. The tick reads
+  // an identity out of the home it is given and signs device-take with
+  // it, and relay-state/identity.json inside a RELAY home is the
+  // mailbox's own key, never the owner's (relay.js, mailboxPublicKey).
+  //
+  // This suite used to hand the tick the relay's home and it worked,
+  // because the builder was wrongly saving the owner there. It is two
+  // machines in production and it is two homes here.
+  const home = L.ownerHome();
+
+  if (L.ok) test.check('house owns the lab mailbox');
+  else { test.fail(L.error); return; }
 
   const quiet = await deviceTick.tick(home, ['http://relay'], function () {
     return Promise.resolve({});
@@ -92,14 +103,13 @@ async function run() {
   if (after && after.did === 'quiet') test.check('close window stops the tick');
   else test.fail('after: ' + JSON.stringify(after));
 
-  const wrongHome = tmpHome();
-  const wrongBox = createRelay(wrongHome);
-  wrongBox.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  auth.saveIdentity(wrongHome, house);
+  // A second world, not a second door onto the first. The refusal being
+  // checked is "this password is wrong", and it is only worth anything if
+  // the door it was offered to was open and ready to accept a right one.
+  const W = world.build(SCENARIO);
+  if (!W.ok) { test.fail(W.error); return; }
+  const wrongHome = W.ownerHome();
+  const wrongBox = W.box;
   deviceAuth.ensurePassword(wrongHome);
   deviceAuth.setListening(wrongHome, true);
   const live = deviceAuth.load(wrongHome).password;

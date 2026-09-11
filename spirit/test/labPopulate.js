@@ -38,6 +38,7 @@
 const fs = require('fs');
 const path = require('path');
 const auth = require('../run/js/relayAuth');
+const scenarioGrammar = require('./scenario');
 const labWorld = require('./labWorld');
 
 const WORK_RUN = path.join(__dirname, '..', 'run');
@@ -71,10 +72,30 @@ function listScenarios() {
   } catch (e) { return []; }
 }
 
+// THROUGH THE SHARED VOCABULARY, the same one world.js reads. Raw, this
+// function handed back whatever JSON was on disk, so `peers: ["bert"]` —
+// perfectly legal, and what the fast builder accepts — arrived here as a
+// string whose `.name` was undefined, and the lab quietly built a peer
+// called "lab-undefined".
+//
+// Normalising here is what makes "we both can use the same scenario"
+// true rather than nearly true: everything downstream now sees names,
+// labels, relays and flags filled in identically on both sides.
 function loadScenario(name) {
   const file = path.join(SCENARIOS, name + '.visual.json');
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+  let doc = null;
+  try { doc = JSON.parse(fs.readFileSync(file, 'utf8')); }
   catch (e) { return null; }
+
+  // Refused rather than half-built. A lab world is forty seconds and
+  // four processes; finding out then is finding out too late.
+  const wrong = scenarioGrammar.problems(doc);
+  if (wrong.length) {
+    console.log('That scenario does not read:');
+    wrong.forEach(function (w) { console.log('  - ' + w); });
+    return null;
+  }
+  return scenarioGrammar.normalize(doc);
 }
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

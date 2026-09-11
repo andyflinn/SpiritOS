@@ -3,34 +3,29 @@
 // spirit/test/deviceDisplace.js
 // Cycle 5. Second handshake replaces the slot. Old device is out.
 
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-displace-'));
-}
+const SCENARIO = require('./scenario').OWNER_ONLY;
 
 test.startTest('Device cycle 5 — replace the slot, console send as device');
 
 {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const house = auth.generateIdentity('andy');
+  const L = world.build(SCENARIO);
+  const home = L.home;
+  const box = L.box;
+  const house = L.owner;
+
+  // Two device keys, made here rather than in the scenario: neither is a
+  // peer and neither joins the relay. They are candidates for the one
+  // slot the owner's row holds, which is the whole subject of this file.
   const phone = auth.generateIdentity('phone');
   const tablet = auth.generateIdentity('tablet');
 
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) test.fail('claim: ' + JSON.stringify(claimed));
-  else test.check('house owns the mailbox');
+  if (L.ok) test.check('house owns the mailbox');
+  else test.fail(L.error);
 
   const first = box.setDevice(
     'andy',

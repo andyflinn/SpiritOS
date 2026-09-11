@@ -13,17 +13,15 @@
 // is open; a ping says the node processed something and signed for it. A
 // node whose event loop is wedged shows green and answers nothing.
 
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-router-'));
-}
+// THE WORLD IS A SCENARIO, and the same vocabulary the visual builder
+// reads. What this suite does with it — hundreds of orderings, every
+// refusal — is the part a person looking at one world never could.
 
 function fakeSink() {
   const sink = { lines: [], closed: false };
@@ -45,22 +43,10 @@ function fakeSink() {
   return sink;
 }
 
-function lab() {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const house = auth.generateIdentity('andy');
-  auth.saveIdentity(home, house);
-  box.claim('andy', auth.sign(house.privateKey, auth.claimMessage('andy')), house.publicKey);
-  function joinAs(label) {
-    const who = auth.generateIdentity(label);
-    const minted = box.mint('andy', label, 7,
-      auth.sign(house.privateKey, invites.mintMessage(label, 7)));
-    box.claim(label, auth.sign(who.privateKey, auth.claimMessage(label)),
-      who.publicKey, '10.0.0.1', minted.invite.token);
-    return who;
-  }
-  return { home: home, box: box, house: house, joinAs: joinAs };
-}
+const SCENARIO = {
+  title: 'Two peers and somebody who never connects',
+  peers: ['bert', 'john', 'ghost'],
+};
 
 function openStream(box, id, sink) {
   return box.streamOpen(
@@ -84,12 +70,15 @@ function ping(box, from, to, text) {
 test.startTest('Router — a ping and an ack between peers');
 
 function run() {
-  let L;
-  try { L = lab(); }
-  catch (e) { test.fail('lab: ' + (e && e.message)); test.reportSuccessFailureCount(); return; }
+  const L = world.build(SCENARIO);
+  if (!L.ok) {
+    test.fail(L.error);
+    test.reportSuccessFailureCount();
+    return;
+  }
 
-  const bert = L.joinAs('bert');
-  const john = L.joinAs('john');
+  const bert = L.peer('bert');
+  const john = L.peer('john');
   const bertSink = fakeSink();
   const johnSink = fakeSink();
   openStream(L.box, bert, bertSink);
@@ -133,8 +122,8 @@ function run() {
 
   test.subHeading('Only the target may answer, and only once');
 
-  const impostorSig = auth.sign(L.house.privateKey, auth.receiptMessage(sent.hash));
-  const impostor = L.box.routeReply(L.house.publicKey, sent.hash, '', impostorSig);
+  const impostorSig = auth.sign(L.owner.privateKey, auth.receiptMessage(sent.hash));
+  const impostor = L.box.routeReply(L.owner.publicKey, sent.hash, '', impostorSig);
   if (impostor.ok === false && impostor.status === 403) {
     test.check('a member who was not asked cannot answer');
   } else {
@@ -191,7 +180,7 @@ function run() {
 
   test.subHeading('Refused instantly rather than held');
 
-  const absent = L.joinAs('ghost');
+  const absent = L.peer('ghost');
   const nowhere = ping(L.box, bert, absent, '{"ping":1}');
   if (nowhere.result.ok === false && nowhere.result.status === 503) {
     test.check('a peer who is not connected is an immediate error, not a wait');

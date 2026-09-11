@@ -1,22 +1,21 @@
 'use strict';
 
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
-const { createRelay } = require('../run/js/relay');
-
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-redeem-'));
-}
+// A relay nobody has claimed, which is the only world in which the act of
+// claiming can be watched happening. The claims themselves stay written
+// out below: they are the subject of this file, and a helper that made
+// them would be a helper that hid them.
+const UNCLAIMED = require('./scenario').UNCLAIMED;
+const world = require('./world');
 
 test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
 
 {
-  const home = tmpHome();
-  const box = createRelay(home);
+  const made = world.build(UNCLAIMED);
+  const home = made.home;
+  const box = made.box;
   const andy = auth.generateIdentity('andy');
   const owner = box.claim(
     'andy',

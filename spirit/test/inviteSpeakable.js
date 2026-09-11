@@ -20,18 +20,18 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
+const scenario = require('./scenario');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-invite-spoken-'));
-}
-
+// A relay with an owner on it and nobody else, built from the scenario
+// every suite shares. It was four lines written out here, and the same
+// four written out in five other files — where two of them saved the
+// mailbox a key of its own and three forgot, so `mailboxPublicKey` was
+// null in some suites and not others for no reason anybody had chosen.
 function ownedRelay() {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const owner = auth.generateIdentity('andy');
-  box.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey);
-  return { home: home, box: box, owner: owner };
+  const made = world.build(scenario.OWNER_ONLY);
+  if (!made.ok) throw new Error(made.error);
+  return made;
 }
 
 // Mint the way the hub does: sign exactly the message the relay will

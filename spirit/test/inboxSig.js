@@ -23,7 +23,8 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth.js');
-const { createRelay } = require('../run/js/relay.js');
+const world = require('./world');
+const scenario = require('./scenario');
 const invites = require('../run/js/invites.js');
 
 const MINUTE = 60000;
@@ -31,21 +32,15 @@ const MINUTE = 60000;
 // that runs at noon.
 const NOW = Date.parse('2026-09-08T10:30:20.000Z');
 
-function tmpHome(tag) {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-inbox-' + tag + '-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  return home;
-}
-
 // A keys-mode mailbox with one claimed peer, which is the only mode where
-// a read is proved at all.
+// a read is proved at all. `andy` is the owner; the builder names it
+// `owner`, and this file has called it andy since before there was a
+// builder.
 function mailbox() {
-  const home = tmpHome('box');
-  auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const box = createRelay(home);
-  const andy = auth.generateIdentity('andy');
-  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey, '10.0.0.1');
-  return { home: home, box: box, andy: andy };
+  const made = world.build(scenario.OWNER_ONLY);
+  if (!made.ok) throw new Error(made.error);
+  made.andy = made.owner;
+  return made;
 }
 
 function signFor(id, name, atMs) {

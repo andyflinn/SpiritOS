@@ -13,6 +13,14 @@ This directory contains the vision, principles, and architecture decisions for *
 - [The live surface has no tests](cleanup/2026-09-11-live-surface-tests.md) —
   the harness proves logic in process and has never seen TLS, Caddy or a held
   connection. Presence is the first thing that depends on all three.
+- [A scenario is a scenario](cleanup/2026-09-11-scenarios-and-suites.md) — one
+  vocabulary read by two builders, so the world a suite explores and the world
+  Andy looks at cannot drift apart. Plus `npm test`, and the four bugs the
+  refactor found that were not failing.
+- [labMaster](cleanup/2026-09-11-labmaster.md) — the control plane that runs a
+  little network of fake nodes on one laptop, `labPopulate` for building a whole
+  world from a scenario in one command, and the four things both learned the
+  hard way.
 
 ## Decisions
 - Dated Architecture Decision Records — why a specific technical choice was made, not

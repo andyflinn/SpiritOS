@@ -10,72 +10,37 @@
 // so a slot keyed by label cannot tell them apart, and the id is the
 // public key instead.
 
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
-const invites = require('../run/js/invites');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-peers-'));
-}
+// TWO JOHNS, and the scenario says so in one line. Both wear the label
+// `john`; neither can share a name, because a name is how this suite
+// refers to somebody and a label is what goes on the wire. That
+// distinction is the whole subject of this file.
+const SCENARIO = {
+  title: 'Two peers wearing one label',
+  peers: [
+    { name: 'johnA', label: 'john' },
+    { name: 'johnB', label: 'john' },
+  ],
+};
 
 test.startTest('Device B2 — a device for any identity');
 
-// Two johns, one relay. The owner mints an invite for each, which is the
-// only way a second key wearing a label already on the box gets on it.
-function lab() {
-  const home = tmpHome();
-  const box = createRelay(home);
-
-  const house = auth.generateIdentity('andy');
-  auth.saveIdentity(home, house);
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) throw new Error('owner claim: ' + JSON.stringify(claimed));
-
-  function joinAs(label) {
-    const who = auth.generateIdentity(label);
-    const minted = box.mint(
-      'andy',
-      label,
-      7,
-      auth.sign(house.privateKey, invites.mintMessage(label, 7))
-    );
-    if (!minted || !minted.ok) throw new Error('mint: ' + JSON.stringify(minted));
-    // claim(name, sig, publicKey, ip, inviteToken) — the token is last.
-    const joined = box.claim(
-      label,
-      auth.sign(who.privateKey, auth.claimMessage(label)),
-      who.publicKey,
-      '10.0.0.1',
-      minted.invite.token
-    );
-    if (!joined || !joined.ok) throw new Error('join ' + label + ': ' + JSON.stringify(joined));
-    return who;
-  }
-
-  return { home: home, box: box, house: house, joinAs: joinAs };
-}
+// The owner mints an invite for each, which is the only way a second key
+// wearing a label already on the box gets on it — world.build does that
+// for every peer in the scenario.
 
 async function run() {
-  let L;
-  try {
-    L = lab();
-  } catch (e) {
-    test.fail('lab setup: ' + (e && e.message ? e.message : e));
-    test.reportSuccessFailureCount();
-    return;
-  }
+  const L = world.build(SCENARIO);
+  if (!L.ok) { test.fail(L.error); test.reportSuccessFailureCount(); return; }
 
-  const johnA = L.joinAs('john');
-  const johnB = L.joinAs('john');
+  const johnA = L.peer('johnA');
+  const johnB = L.peer('johnB');
   if (johnA.publicKey !== johnB.publicKey) {
     test.check('two peers share a label and differ by key');
   } else {
@@ -139,7 +104,7 @@ async function run() {
   const byOwner = L.box.setDevice(
     johnA.publicKey,
     phoneB.publicKey,
-    auth.sign(L.house.privateKey, deviceAuth.setDeviceMessage(phoneB.publicKey))
+    auth.sign(L.owner.privateKey, deviceAuth.setDeviceMessage(phoneB.publicKey))
   );
   if (byOwner && byOwner.ok === false) {
     test.check('and neither can the owner of the relay');
@@ -210,7 +175,7 @@ async function run() {
   const ownerInstall = L.box.setDevice(
     'andy',
     ownerPhone.publicKey,
-    auth.sign(L.house.privateKey, deviceAuth.setDeviceMessage(ownerPhone.publicKey))
+    auth.sign(L.owner.privateKey, deviceAuth.setDeviceMessage(ownerPhone.publicKey))
   );
   if (ownerInstall && ownerInstall.ok) test.check('and the owner still lands in allow.json');
   else test.fail('owner install: ' + JSON.stringify(ownerInstall));
@@ -296,7 +261,7 @@ async function run() {
   // polled — the feature stopped at the owner for want of one word.
   // `claimed` is the other question, asked of the PUBLIC census.
   const ownerBadge = require('../run/js/ownerBadge');
-  const nodeHome = tmpHome();
+  const nodeHome = world.tmpHome();
   fs.mkdirSync(path.join(nodeHome, 'app', 'natter'), { recursive: true });
   fs.writeFileSync(
     path.join(nodeHome, 'app', 'natter', 'relays.json'),

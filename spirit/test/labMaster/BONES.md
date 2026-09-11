@@ -1,5 +1,14 @@
 # Bones — identity vs perception (lab only)
 
+> **Superseded, 2026-09-11, for the labMaster recipe below.** Ports, the
+> `install-public-relay.js` step and the "until peers are keyed by public key"
+> caveat are all out of date — peers have been keyed by public key since invite
+> cycle 4. See [design/cleanup/2026-09-11-labmaster.md](../../../design/cleanup/2026-09-11-labmaster.md)
+> for how labMaster actually works, and `labPopulate.js` for building this whole
+> world in one command.
+>
+> Kept for the identity-vs-perception thinking it records, which still stands.
+
 Not spirit-3. Not pretty UI.
 
 ## What this pack is

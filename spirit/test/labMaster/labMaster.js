@@ -2,6 +2,13 @@
 
 // Local lab control plane. Always http://127.0.0.1:65420
 // Not copied into fake nodes (lives under spirit/test/).
+//
+// What it is, why each guard is here, the HTTP surface, and how
+// labPopulate builds a whole world from a scenario in one command:
+//   design/cleanup/2026-09-11-labmaster.md
+//
+// 127.0.0.1 only, no auth, deliberately. It spawns processes and deletes
+// directories on this machine; it has no business listening anywhere else.
 
 const http = require('http');
 const fs = require('fs');

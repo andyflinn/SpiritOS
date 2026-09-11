@@ -22,21 +22,16 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const relayConsole = require('../run/js/relayConsole');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
+const scenario = require('./scenario');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-console-'));
-}
-
-// A mailbox with a key of its own (made on the first --relay boot in
-// production; here by hand), an owner, and one invited friend.
+// A mailbox with a key of its own — made on the first --relay boot in
+// production (server.js, ensureIdentity(ROOT_DIR, 'relay')) and by the
+// builder here — plus an owner, and nobody else yet.
 function ownedBox() {
-  const home = tmpHome();
-  auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const box = createRelay(home);
-  const owner = auth.generateIdentity('andy');
-  box.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey, '10.0.0.1');
-  return { home: home, box: box, owner: owner };
+  const made = world.build(scenario.OWNER_ONLY);
+  if (!made.ok) throw new Error(made.error);
+  return made;
 }
 
 function say(box, id, label, text) {

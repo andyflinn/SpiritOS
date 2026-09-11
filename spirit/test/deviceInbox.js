@@ -4,32 +4,22 @@
 // Cycle 2. Device key may send, read, and sit on the owner record.
 // No second peer row. fromKey on the wire stays the house key.
 
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
-const { createRelay } = require('../run/js/relay');
+const world = require('./world');
 
-function tmpHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-inbox-'));
-}
+const SCENARIO = require('./scenario').OWNER_ONLY;
 
 test.startTest('Device cycle 2 — inbox and send as the owner device');
 
 {
-  const home = tmpHome();
-  const box = createRelay(home);
-  const house = auth.generateIdentity('andy');
+  const L = world.build(SCENARIO);
+  const box = L.box;
+  const house = L.owner;
   const phone = auth.generateIdentity('device');
-  const claimed = box.claim(
-    'andy',
-    auth.sign(house.privateKey, auth.claimMessage('andy')),
-    house.publicKey
-  );
-  if (!claimed.ok) test.fail('claim: ' + JSON.stringify(claimed));
-  else test.check('house is owner');
+  if (L.ok) test.check('house is owner');
+  else test.fail(L.error);
 
   const set = box.setDevice(
     'andy',
