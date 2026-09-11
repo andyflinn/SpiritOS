@@ -965,6 +965,76 @@
         .app-icon .icon { font-size: 32px; }
         .app-icon .label { font-size: 11px; }
       }
+
+      /* ---- Natter's device panel ---- */
+
+      /* One control and one sentence about it, on a line that wraps —
+         same gap and the same wrap as .start-job-form, because it is the
+         same kind of row. align-items:center rather than flex-end: there
+         is no field here whose baseline the button has to meet, and a
+         wrapped sentence should sit against the middle of the icon. */
+      .natter-dev-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      /* The control is the glyph. Not a .cancel-btn with a word in it —
+         "Listening off" could be read as the state or as the action, and
+         a blue dot beside a red dot cannot. The button keeps a control's
+         height so the row sits in the form rhythm, and gives back the
+         shared input chrome for the same reason a radio does. */
+      .natter-dev-toggle {
+        font-size: 22px;
+        line-height: 1;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0;
+        border: none;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        cursor: pointer;
+      }
+      .natter-dev-toggle:hover { background: rgba(255, 255, 255, 0.16); }
+
+      /* A heartbeat, on the icon and never on the sentence — a pulsing
+         line of text is harder to read, a pulsing dot is a pulse. It
+         says the same thing the age counter says, without being read. */
+      .natter-dev-toggle.beating { animation: natter-dev-beat 2s ease-in-out infinite; }
+      @keyframes natter-dev-beat {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.45; }
+      }
+
+      /* Whoever cannot take the animation gets the panel without it. The
+         state is still written out in words beside it, so nothing is
+         lost. */
+      @media (prefers-reduced-motion: reduce) {
+        .natter-dev-toggle.beating { animation: none; }
+      }
+
+      .natter-dev-say { font-size: 16px; }
+
+      /* The bubble: prose about what to do next, not form chrome. It is a
+         .stat-tile.nested for its weight — the shell's word for a card
+         inside a card — and reading size, because while the row is open
+         this paragraph IS the page. */
+      .natter-dev-bubble {
+        font-size: 16px;
+        line-height: 1.45;
+        padding: 12px;
+        border-radius: 10px;
+      }
+      .natter-dev-bubble > * + * { margin-top: 8px; }
+      .natter-dev-bubble a { word-break: break-all; }
+
+      /* Trouble states borrow the panel's own ground rather than shouting
+         in red: the sentence already names the problem, and a red card
+         for "the mailbox could not be reached" outranks a great deal of
+         the screen for something that is usually a relay restarting. */
+      .natter-dev-bubble .natter-dev-loud { font-weight: 600; }
+
     </style>
   </head>
   <body>

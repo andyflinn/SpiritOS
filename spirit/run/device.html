@@ -11,6 +11,9 @@
     input, textarea { font: inherit; padding: 0.5rem; width: 100%; box-sizing: border-box; }
     button { font: inherit; padding: 0.5rem 0.75rem; width: fit-content; }
     #log { white-space: pre-wrap; min-height: 8rem; border: 1px solid #ccc; padding: 0.5rem; }
+    /* Two lines while waiting: what is happening, and the fact that
+       explains it. Neither is worth a second element. */
+    #enroll-out { white-space: pre-line; }
     .hide { display: none !important; }
     /* Stated, not asked: it reads as the fact it is rather than a field
        somebody is meant to fill in. */
@@ -139,35 +142,173 @@
         return 'send\n' + from + '\n' + to + '\n' + text;
       }
 
-      enroll.addEventListener('submit', function (ev) {
-        ev.preventDefault();
-        sayEnroll('waiting…');
-        var pair;
-        devicePair().then(function (p) {
-          pair = p;
-          store(p.pub, p.priv, null);
-          return fetch('/api/relay/device', {
+      // ---- Enrolment is a rendezvous, so it keeps knocking ----
+      //
+      // The relay holds one offer for 25s (deviceHandshake.js). A
+      // listening node looks every 60s (hub.js DEVICE_TICK_MS). Nothing
+      // makes those line up, so a single offer is a coin toss on the
+      // gap: press the button just before a pass and it works, press it
+      // just after and the hold expires 35s before anything comes to
+      // collect it. Andy found it exactly that way — "reliably" either
+      // side of a pass — and it is reliable, which is the tell.
+      //
+      // So one press means keep offering until a pass lands. Serially,
+      // never in parallel: the relay has ONE pending slot, and a second
+      // offer while one is held is refused at once, so overlapping
+      // attempts would lock out everyone including ourselves.
+      var ENROLL_BUDGET_MS = 180000;
+      // Cover, not the guarantee. The guarantee is that the relay holds
+      // one offer longer than one node pass (deviceHandshake.js), so a
+      // single attempt cannot miss whatever moment the button was
+      // pressed. This budget is for the case that breaks it: a network
+      // that cuts a minute-long request — a hotel portal, a phone
+      // changing masts — where knocking again is the only way through.
+      // Two passes and change, so a cut connection gets more than one
+      // more chance.
+
+      var ENROLL_NODE_PERIOD_MS = 60000;
+      // hub.js DEVICE_TICK_MS, written down a second time because this
+      // page is served by the RELAY and has no way to ask the node. So
+      // it is only ever "about": a node on older code looks more often,
+      // which can only help, and spirit/test/deviceRendezvous.js holds
+      // this copy to the real one so the sentence cannot quietly go
+      // stale. It is here to be SAID — a wait nobody can see the shape
+      // of is the thing that made this feel like a coin toss.
+
+      var ENROLL_ANSWERED_MS = 20000;
+      // Under the hold, so the two silences can be told apart by the
+      // clock alone. A refusal that comes back in three seconds means
+      // something was there and said no; one that takes the full hold
+      // means nobody came. The relay says "not now" to both on purpose
+      // — it cannot tell a wrong password from an absent node, and will
+      // not guess — but the browser knows how long it waited.
+
+      var enrollStop = null;
+
+      function enrollClock(ms) {
+        var s = Math.max(0, Math.round(ms / 1000));
+        return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+      }
+
+      function enrollButton(label) {
+        var b = enroll.querySelector('button[type="submit"]');
+        if (b) b.textContent = label;
+      }
+
+      function enrollRun(password, pair) {
+        var began = Date.now();
+        var attempt = 0;
+        var cancelled = false;
+
+        // A page that says "waiting…" for two minutes is indistinguishable
+        // from a page that has died. So: which attempt, how long it has
+        // been, how long is left before it gives up, and the one fact
+        // that explains all three — the node looks on its own clock,
+        // about once a minute, and this page waits out several of those.
+        //
+        // Counting DOWN as well as up is the half that matters: elapsed
+        // time alone still leaves somebody guessing whether to keep
+        // watching.
+        function paint() {
+          var gone = Date.now() - began;
+          var left = Math.max(0, ENROLL_BUDGET_MS - gone);
+          sayEnroll('Waiting for your personal node — attempt ' + attempt + ', ' +
+            enrollClock(gone) + ' gone, giving up in ' + enrollClock(left) + '.\n' +
+            'It looks about once every ' + Math.round(ENROLL_NODE_PERIOD_MS / 1000) +
+            's, and the relay holds this request open past one of those — so it ' +
+            'should finish inside a minute, whenever you pressed the button.');
+        }
+        var ticker = setInterval(paint, 1000);
+
+        function finish(text) {
+          clearInterval(ticker);
+          enrollStop = null;
+          enrollButton('Add this device');
+          sayEnroll(text);
+        }
+
+        enrollStop = function () {
+          cancelled = true;
+          finish('Stopped after ' + enrollClock(Date.now() - began) + '. Nothing was changed.');
+        };
+
+        function attemptOnce() {
+          if (cancelled) return;
+          attempt += 1;
+          paint();
+          var sent = Date.now();
+          fetch('/api/relay/device', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              password: document.getElementById('pw').value,
-              devicePublicKey: p.pub
-            })
-          });
-        }).then(function (res) {
-          return res.text().then(function (t) {
-            var body = t;
-            try { body = JSON.parse(t); } catch (e) {}
-            if (res.ok && body && body.ok) {
+            body: JSON.stringify({ password: password, devicePublicKey: pair.pub })
+          }).then(function (res) {
+            return res.text().then(function (t) { return { res: res, text: t }; });
+          }).then(function (r) {
+            if (cancelled) return;
+            var body = r.text;
+            try { body = JSON.parse(r.text); } catch (e) {}
+
+            if (r.res.ok && body && body.ok) {
               var name = body.name || '';
+              clearInterval(ticker);
+              enrollStop = null;
+              enrollButton('Add this device');
               store(pair.pub, pair.priv, name);
               showConsole(name);
+              sayEnroll('Added after ' + enrollClock(Date.now() - began) +
+                ', on attempt ' + attempt + '.');
               sayLog('this tab is the device');
-            } else {
-              sayEnroll((body && body.error) || 'not now');
+              return;
             }
+
+            var took = Date.now() - sent;
+            if (took < ENROLL_ANSWERED_MS) {
+              // Three ways to be refused this fast, and the relay will
+              // not say which. Named in the order they actually happen,
+              // rather than hidden behind one word.
+              finish('Refused in ' + Math.round(took / 1000) + 's — something answered straight ' +
+                'away rather than nobody coming. Usually the password is wrong: copy it again ' +
+                'from Natter and try once more. It can also mean another device is enrolling ' +
+                'right now, or that this relay has seen too many attempts in the last minute.');
+              return;
+            }
+
+            if (Date.now() - began >= ENROLL_BUDGET_MS) {
+              finish('Gave up after ' + enrollClock(Date.now() - began) + ' and ' + attempt +
+                ' attempts. Nothing came to collect it, so the personal node is not listening ' +
+                '— or it is bound to a different relay than this one.');
+              return;
+            }
+            attemptOnce();
+          }).catch(function (e) {
+            finish('Network error after ' + enrollClock(Date.now() - began) + ': ' +
+              (e && e.message ? e.message : 'the request failed') + '.');
           });
+        }
+
+        attemptOnce();
+      }
+
+      enroll.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        // One button, two meanings, and the label says which — the same
+        // reasoning as Natter's panel. A three-minute wait with no way
+        // out would be worse than the coin toss it replaces.
+        if (enrollStop) {
+          enrollStop();
+          return;
+        }
+        var password = document.getElementById('pw').value;
+        sayEnroll('Waiting for your personal node…');
+        enrollButton('Stop waiting');
+        // Generated ONCE and reused for every attempt. A fresh pair per
+        // attempt would work, but it would mean the key this tab keeps is
+        // whichever one happened to be in flight when a pass landed.
+        devicePair().then(function (pair) {
+          store(pair.pub, pair.priv, null);
+          enrollRun(password, pair);
         }).catch(function (e) {
+          enrollButton('Add this device');
           sayEnroll(e && e.message ? e.message : 'not now');
         });
       });

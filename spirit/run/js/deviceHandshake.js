@@ -5,7 +5,26 @@
 // The relay does not check the password. It holds the POST body
 // until the personal node takes it and replies, or the wait expires.
 
-var DEFAULT_WAIT_MS = 25000;
+// LONGER THAN ONE NODE PASS, PLUS A MARGIN. This is the whole guarantee:
+// hub.js looks every DEVICE_TICK_MS (60s), and a hold that outlasts one
+// of those cannot be missed, whatever moment the browser pressed the
+// button. A hold SHORTER than the pass makes enrolment a coin toss on the
+// phase between two clocks nobody can see — which is exactly what 25s
+// against 60s was, and exactly how it behaved: reliable just before a
+// pass, reliable-in-the-other-direction just after (Andy, 2026-09-11).
+//
+// The margin is Andy's rule — "ten percent longer than the poll interval"
+// — and it is there for drift and a slow pass, not for luck.
+//
+// Written down rather than imported: this module runs on the RELAY and
+// DEVICE_TICK_MS belongs to a personal node, which the relay never reads.
+// spirit/test/deviceRendezvous.js holds the two to each other so the rule
+// cannot be broken by changing either one alone.
+//
+// The cost is one held request, because there is one pending slot — not
+// one per enroller. A 66s hold occupies that slot 2.6x longer than a 25s
+// one did, and the slot was already the limit on concurrent enrolment.
+var DEFAULT_WAIT_MS = 66000;
 var ERROR_NOT_NOW = 'not now';
 
 function createQueue(opts) {

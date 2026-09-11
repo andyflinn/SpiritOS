@@ -3253,4 +3253,121 @@ test.subHeading('The device panel asks the SHELL whether it is on screen');
   }
 }
 
+test.subHeading('The device panel is one control, and says what happened');
+
+{
+  const natter = readRun('app/natter/natter.js');
+  const ICON = spirit.core.const.ICON;
+
+  // One control, start/stop. There were two — Copy and "Listening off" —
+  // and the second was chrome nobody could act on, because copying was
+  // what actually opened the window. Andy: "I never realized that I had
+  // to start listening with the listening button."
+  //
+  // Counted at the delegation rather than in the markup: the markup can
+  // carry an attribute that nothing listens for, but a second branch here
+  // is a second button in the hand.
+  const branches = natter.match(/closest\(\s*['"]\[data-device-/g) || [];
+  if (branches.length === 1) {
+    test.check('one device control, so there is no second press to forget');
+  } else {
+    test.fail(branches.length + ' device click branches, expected 1');
+  }
+
+  // The bubble tells the reader to press "the red button". ICON.STOP is
+  // the ORANGE circle — it drifted there, last-wins, and the aliases were
+  // kept only so old callers rendered the same (DEVICE-PANEL.md §5). So
+  // the check is against the GLYPH the table actually holds, not against
+  // a name that could drift again underneath it.
+  const saysRed = /red button/.test(natter);
+  const usesRed = natter.indexOf('natterIcon.RED_CIRCLE') !== -1;
+  const usesBlue = natter.indexOf('natterIcon.BLUE_CIRCLE') !== -1;
+  if (saysRed && usesRed && usesBlue && ICON.STOP !== ICON.RED_CIRCLE) {
+    test.check('and its colours are the ones the copy names — ICON.STOP is orange, so it is not used');
+  } else {
+    test.fail('red=' + saysRed + ' RED_CIRCLE=' + usesRed + ' BLUE_CIRCLE=' + usesBlue +
+      ' ICON.STOP=' + ICON.STOP);
+  }
+
+  // The node learns of an enrolment within a pass and the panel used to
+  // say nothing, so the only way to answer "did it work?" was to switch
+  // devices and try. Anchored on the branch that renders it, not on the
+  // word: prose about success would satisfy a looser check.
+  const showsSuccess = /did === 'installed'/.test(natter) && /case 'added':/.test(natter);
+  if (showsSuccess) {
+    test.check('a finished enrolment gets said out loud, in the panel that started it');
+  } else {
+    test.fail('natter.js never turns lastEvent.installed into a bubble state');
+  }
+
+  // Both failures the channel already carries. `refused` is the one worth
+  // distinguishing — the mailbox answered and would not have us, usually
+  // an older relay — and it is invisible unless the panel prints it.
+  const showsTrouble = /'refused'/.test(natter) && /'unreachable'/.test(natter) &&
+    /case 'trouble':/.test(natter);
+  if (showsTrouble) {
+    test.check('and so do refused and unreachable, which are different silences');
+  } else {
+    test.fail('natter.js does not distinguish the failure states in the panel');
+  }
+
+  // Starting is the point, and the copy rides along (DEVICE-PANEL.md §2).
+  // The old code refused to open the window when the clipboard failed.
+  // Under one control that leaves the person with no way to start at all,
+  // which is the failure this panel exists to prevent — so the window
+  // opens and the copy reports itself.
+  //
+  // Anchored on the shape: a settled pair (onOk, onFail) and THEN the
+  // start, so the start cannot be reached only on success.
+  const startAt = natter.indexOf('function natterDeviceStart(');
+  const startBody = startAt === -1 ? '' : natter.slice(startAt, natter.indexOf('\n}', startAt));
+  const startsAnyway =
+    /\}\)\.then\(function \(\) \{[\s\S]*natterDeviceSetListening\([^;]*true/.test(startBody) &&
+    !/\.catch\(/.test(startBody);
+  if (startsAnyway) {
+    test.check('and a refused clipboard still opens the window, then says the copy failed');
+  } else {
+    test.fail('natterDeviceStart gates listening on the clipboard: ' + startBody.slice(0, 300));
+  }
+
+  // target="_new" is not a standard keyword, and the tab must not get a
+  // handle on the shell that opened it.
+  //
+  // Comments stripped first, because natter.js names _new in prose to say
+  // why it is not used — and a check its own explanation can fail is the
+  // /api/hub/peer trap wearing the other face. A line comment is the only
+  // place either spelling appears outside markup here.
+  const code = natter.replace(/(^|[^:])\/\/.*$/gm, '$1');
+  if (/target="_blank" rel="noopener"/.test(code) && !/target="?_new/.test(code)) {
+    test.check('and the link out opens a tab that cannot reach back');
+  } else {
+    test.fail('device link target is wrong');
+  }
+}
+
+{
+  const css = readRun('index.html');
+
+  // A heartbeat on the icon, never on the sentence: a pulsing line of
+  // text is harder to read, a pulsing dot is a pulse.
+  const beats = /\.natter-dev-toggle\.beating\s*\{[^}]*animation:/.test(css) &&
+    /@keyframes natter-dev-beat/.test(css);
+  const saysNothingPulses = !/\.natter-dev-say[^{]*\{[^}]*animation:/.test(css);
+  if (beats && saysNothingPulses) {
+    test.check('the animation is on the icon and not on the words beside it');
+  } else {
+    test.fail('beats=' + beats + ' sentence-is-still=' + saysNothingPulses);
+  }
+
+  // And it is given up on request. The state is written out in words
+  // regardless, so nothing is lost by switching it off.
+  const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
+  if (css.indexOf('prefers-reduced-motion') !== -1 &&
+      /\.natter-dev-toggle\.beating\s*\{\s*animation:\s*none/.test(reduced)) {
+    test.check('and it stops for anyone who asked motion to stop');
+  } else {
+    test.fail('the device heartbeat ignores prefers-reduced-motion');
+  }
+}
+
 test.reportSuccessFailureCount();
