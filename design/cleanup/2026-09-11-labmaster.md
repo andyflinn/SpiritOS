@@ -51,10 +51,15 @@ the work node. Requests outside that range are refused rather than clamped.
 `http://127.0.0.1:65420` — a table with a row per node.
 
 - **Create** — name, type, port. The name is slugged into an id.
-- **Start / Stop** — spawn or kill.
-- **Recycle** — stop, rebuild the home from the tracked tree, start again.
+- **Start / Stop** — spawn or kill. Neither touches the home, so a stopped and
+  started node comes back on **the code it already had**.
+- **Refresh** — stop, copy the tracked tree **over the top**, start. New code,
+  same node: its key, its relay rows, its device slot and its session all
+  survive.
+- **Recycle** — stop, **erase the home**, rebuild from the tracked tree, start.
+  New code and a **new identity**.
 - **Recycle all** — the same for every non-permanent row.
-- **Delete** — stop, **and erase the directory**.
+- **Delete** — stop, erase the directory, drop the row.
 - **Relays column** — which relays each node is actually holding open.
 
 That last column exists because of a specific afternoon: the table showed id,
@@ -64,6 +69,26 @@ and reasonably concluded nothing was connected — when in fact every node was. 
 is read from each node's own `relay-presence` job over loopback, and a node
 running older code simply reports nothing. **A convenience, never a source of
 truth** about anything but itself.
+
+> **Refresh and Recycle are not synonyms, and the difference is a whole lab
+> world.**
+>
+> Recycle wipes deliberately: `relay-state/`, `device.json`, `session.json` and
+> `minted.json` are none of them tracked, so without the wipe a "new" relay
+> could boot owned by a previous run's key (below). The cost is that a recycled
+> peer has no key and is therefore **on no relay any more**, and a recycled
+> relay has no `allow.json` and so has no owner and an empty roster. The rows
+> for the old keys stay on every *other* relay, held by nobody.
+>
+> That used to be the only way to get new code into a lab node — Start rebuilds
+> only when `js/server.js` is missing, so stopping and starting ran the old
+> code. Between "destroy it" and "leave it alone" there was nothing, and the
+> thing wanted most of the time was neither. **Refresh is that middle**, and it
+> is safe for the same reason `setupRelayFakes` gives for its own behaviour:
+> only tracked paths are written, and a node's own state is not among them.
+>
+> After a Recycle, re-run `labPopulate` — the world is gone, and nothing on the
+> panel says so.
 
 ### The HTTP surface
 
@@ -76,7 +101,8 @@ GET  /api/links                 which relays each node holds open
 POST /api/nodes/<id>            { name } — rename
 POST /api/nodes/<id>/start
 POST /api/nodes/<id>/stop
-POST /api/nodes/<id>/recycle
+POST /api/nodes/<id>/refresh    new code, same identity
+POST /api/nodes/<id>/recycle    new code, new identity
 POST /api/nodes/<id>/delete
 ```
 

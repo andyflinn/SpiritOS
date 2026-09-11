@@ -89,6 +89,26 @@ var natterExpandedUrl = null;
 // what is really one reading (UI_DESIGN_STYLE.md).
 function natterReportHtml(api, badge) {
   if (!badge) return '<div class="job-log-empty">asking that mailbox…</div>';
+
+  // A MEMBER'S VIEW, from the public census rather than the owner-only
+  // report. This used to print the 403 — "not the owner" — which was
+  // true and was also the app telling somebody off for the ordinary
+  // case of being on a mailbox somebody else runs.
+  //
+  // Three facts, not four: Mode and Messages are things the mailbox
+  // tells its owner, and a member asking for them would be asking for
+  // an endpoint that does not exist. What a member gets instead is the
+  // one fact an owner never needs — the name they wear HERE, which with
+  // one browser across several relays is a per-relay answer.
+  if (!badge.owned && badge.claimed) {
+    var c = badge.census || {};
+    return spirit.shell.factRow([
+      ['Owner', c.owner || '(unknown)'],
+      ['Peers', c.peers == null ? '(unknown)' : c.peers],
+      ['You', c.myLabel || '(unknown)'],
+    ]);
+  }
+
   if (!badge.owned) {
     return '<div class="job-log-empty">' + api.escapeHtml(badge.error || 'not owner') + '</div>';
   }

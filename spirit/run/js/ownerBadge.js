@@ -128,6 +128,44 @@ function claimedFrom(answer, myKey) {
   return list.some(function (p) { return p && p.publicKey === myKey; });
 }
 
+// WHAT A MEMBER MAY SAY ABOUT A MAILBOX IT DOES NOT OWN.
+//
+// The census is already fetched to answer claimedFrom above, and was
+// then thrown away — so a member's panel had nothing to show but the
+// 403 from the owner-only status call, and opened onto the words "not
+// the owner". An error is the wrong thing to put in front of somebody in
+// the ordinary case of being a member.
+//
+// Only what /api/relay/who already hands to anyone who asks. No second
+// call, no signature, and nothing here the mailbox did not publish —
+// which is also why there is no question about a member reading it.
+//
+// Deliberately NOT the peer list itself: a wall of 48-character keys is
+// machine detail wearing a person's clothes (UI_DESIGN_STYLE.md §6), and
+// the count is what a person is actually asking.
+function censusFacts(answer, myKey) {
+  var parsed = null;
+  try { parsed = JSON.parse(answer && answer.text); }
+  catch (e) { return null; }
+  var list = (parsed && parsed.peers) || [];
+  if (!Array.isArray(list)) return null;
+
+  var owner = '';
+  var mine = '';
+  list.forEach(function (p) {
+    if (!p) return;
+    if (p.owner) owner = p.publicLabel || p.name || '';
+    // YOUR OWN LABEL ON THIS BOX, which is the fact that only exists
+    // once a node is on more than one. Nothing says two mailboxes gave
+    // you the same name, and with one browser now serving every relay
+    // this node holds, "who am I here" is a question with a per-relay
+    // answer.
+    if (p.publicKey === myKey) mine = p.publicLabel || p.name || '';
+  });
+
+  return { owner: owner, peers: list.length, myLabel: mine };
+}
+
 function probe(rootDir, name, request, myKey) {
   var relays = loadRelays(rootDir);
   var query = statusPath(rootDir, name);
@@ -143,6 +181,10 @@ function probe(rootDir, name, request, myKey) {
           .then(function () { return request(relay.url, 'GET', '/api/relay/who'); })
           .then(function (census) {
             badge.claimed = claimedFrom(census, myKey);
+            // Kept only for a row this node is actually on. A mailbox it
+            // merely lists tells it nothing, and a panel is not offered
+            // for one.
+            if (badge.claimed) badge.census = censusFacts(census, myKey);
             return badge;
           })
           .catch(function () { return badge; });
@@ -188,6 +230,7 @@ function chooseUrl(urls, wanted) {
 // helper and draws no Remove at all, which is the safe way to be wrong.
 if (isNode) {
   module.exports = {
+    censusFacts: censusFacts,
     normalizeUrl: normalizeUrl,
     canRemoveMailbox: canRemoveMailbox,
     loadRelays: loadRelays,

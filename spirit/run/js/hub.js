@@ -1168,15 +1168,33 @@ function createHub(rootDir) {
 
   function handleStatus(req, res, urlObj) {
     var name = urlObj.searchParams.get('name') || '';
+    // THE KEY, or every row comes back saying nothing about whether this
+    // node is ON that relay.
+    //
+    // probe() computes `claimed` only when it is given a key to look for
+    // in the census — `if (badge.owned || !myKey) return badge` — so
+    // three arguments meant `claimed` was never set on any row, and
+    // Natter's `owned || claimed` quietly collapsed to `owned`. Every
+    // mailbox this node is merely BOUND to drew no panel at all.
+    //
+    // This is the same omission the device timer above already carries a
+    // comment about: "the whole feature stopped at the owner for want of
+    // one word." It was fixed there and missed here, which is what a
+    // default parameter that means "answer less" will do.
+    var me = auth.loadIdentity(rootDir);
     ownerBadge.probe(rootDir, name, function (url, method, pathname) {
       return relayRequest(url, method, pathname, null);
-    })
+    }, me && me.publicKey)
       .then(function (summary) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           name: name,
           rows: summary.rows,
           ownedUrls: summary.ownedUrls,
+          // The rows this node HAS, owned or not — the set Natter opens a
+          // panel for. Already computed by summarize() and simply never
+          // sent, so the browser had to infer it and could not.
+          claimedUrls: summary.claimedUrls,
           mustPick: summary.mustPick,
         }));
       })

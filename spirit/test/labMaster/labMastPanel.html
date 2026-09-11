@@ -61,9 +61,19 @@
     function render(nodes) {
       var tbody = document.getElementById('tbody');
       tbody.innerHTML = nodes.map(function (n) {
+        // REFRESH BEFORE RECYCLE, and titled, because the two read as
+        // synonyms and are not: Refresh keeps the node's key and its
+        // relay rows, Recycle destroys them. Somebody reaching for new
+        // code wants the first one nearly every time, and reaching for
+        // the second took their whole lab world away without saying so.
         var del = n.permanent
           ? ''
-          : '<button data-act="recycle" data-id="' + n.id + '">Recycle</button>' +
+          : '<button data-act="refresh" data-id="' + n.id + '" ' +
+              'title="New code, same node: keeps its key, its relay rows and its device slot">' +
+              'Refresh</button>' +
+            '<button data-act="recycle" data-id="' + n.id + '" ' +
+              'title="WIPES this node — new key, off every relay it was on. Rebuild the world after.">' +
+              'Recycle</button>' +
             '<button data-act="delete" data-id="' + n.id + '">Delete</button>';
 
             var label = n.name + (n.permanent ? ' <small>permanent</small>' : '');

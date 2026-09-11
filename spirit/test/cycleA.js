@@ -272,6 +272,21 @@ function relayServer(box) {
         reply(r, r.report);
         return;
       }
+      // THE PUBLIC CENSUS, which probe() reads to answer "do I have a
+      // row here". The fake did not serve it, so claimedFrom() saw a 404
+      // in every test and answered false — and a suite cannot notice a
+      // flag that is false because the question was never asked.
+      //
+      // Same shape as the wire (server.js, handleRelayWho): peers, and
+      // the mailbox's own key beside them.
+      if (req.method === 'GET' && url.pathname === '/api/relay/who') {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          peers: box.who(),
+          mailboxPublicKey: box.mailboxPublicKey(),
+        }));
+        return;
+      }
       if (req.method === 'POST' && url.pathname === '/api/relay/invite') {
         let raw = '';
         req.on('data', function (c) { raw += c; });
@@ -381,9 +396,149 @@ function runHubOnLoopback() {
   });
 }
 
+// B2, and the half of it that never reached the browser.
+//
+// Andy: "now that we've got the one-device-for-all going, it would be
+// nice if the natter app would show a dropdown panel for every relay it
+// either owns or is bound to. this has not happened yet."
+//
+// It had not, and the reason was one argument. Natter decides whether a
+// row opens with `owned || claimed`, and `claimed` is computed by
+// ownerBadge.probe ONLY when it is handed a key to look for:
+//
+//     if (badge.owned || !myKey) return badge;
+//
+// handleStatus called it with three arguments, so every row came back
+// with `claimed` undefined and `owned || claimed` quietly became
+// `owned`. A peer saw no panel on any mailbox, and an owner saw panels
+// everywhere — which is exactly the shape of "it works for me".
+//
+// The device timer in the same file already carried the fix AND the
+// lesson — "the whole feature stopped at the owner for want of one
+// word" — so this is the same omission, made twice, caught once.
+function boundNodeSeesItsRow() {
+  test.subHeading('A node that owns no mailbox still knows which ones it is on');
+
+  const owner = auth.generateIdentity('andy');
+  const guest = auth.generateIdentity('bert');
+  const lab = ownedBox(owner, 'andy');
+
+  // bert joins the way anyone joins a keys-mode box: the owner mints,
+  // bert redeems. He owns nothing afterwards and has a row.
+  const minted = lab.box.mint('andy', 'bert', 7,
+    auth.sign(owner.privateKey, invites.mintMessage('bert', 7)));
+  const joined = lab.box.claim('bert',
+    auth.sign(guest.privateKey, auth.claimMessage('bert')),
+    guest.publicKey, '10.0.0.7', minted.ok && minted.invite.token);
+  if (!joined.ok) {
+    test.fail('bert could not join: ' + JSON.stringify(joined));
+    return Promise.resolve();
+  }
+
+  let server;
+  return relayServer(lab.box).then(function (s) {
+    server = s;
+    const hub = createHub(nodeHome(guest, [server.url]));
+    const res = fakeRes();
+    hub.handleStatus({}, res, new URL('http://x/api/hub/status?name=bert'));
+    return res.wait();
+  }).then(function (res) {
+    let body = null;
+    try { body = JSON.parse(res.text); } catch (e) { body = null; }
+    const row = (body && body.rows && body.rows[0]) || {};
+
+    // NOT the owner. If this ever goes true the test below stops meaning
+    // anything, because owning implies a row and the flag would be set
+    // for the wrong reason.
+    if (row.owned === false) {
+      test.check('bert owns nothing, so no star and no mint');
+    } else {
+      test.fail('bert came back owning something: ' + res.text);
+    }
+
+    // The flag Natter opens a panel on.
+    if (row.claimed === true) {
+      test.check('and the row says he is ON it — which is what opens the panel');
+    } else {
+      test.fail('claimed was ' + JSON.stringify(row.claimed) + ': ' + res.text);
+    }
+
+    // WHAT THE PANEL ACTUALLY SHOWS once it opens. Without this the row
+    // opens onto the 403 from the owner-only status call — the words
+    // "not the owner" — which is the app telling somebody off for the
+    // ordinary case of being a member.
+    //
+    // All three come from the PUBLIC census, which was already fetched
+    // to decide `claimed` and was being thrown away.
+    const facts = row.census || {};
+    if (facts.owner === 'andy' && facts.peers === 2) {
+      test.check('and the panel can say who runs it and how many are on it');
+    } else {
+      test.fail('census: ' + JSON.stringify(facts));
+    }
+
+    // The fact an owner never needs. One browser now serves every relay
+    // this node holds, and nothing says two mailboxes gave it the same
+    // name — so "who am I here" has a per-relay answer, and this is it.
+    if (facts.myLabel === 'bert') {
+      test.check('and what YOU are called on that particular mailbox');
+    } else {
+      test.fail('myLabel: ' + JSON.stringify(facts.myLabel));
+    }
+
+    // Sent, not merely computed. summarize() has always produced this
+    // and handleStatus has always dropped it, so the browser had to
+    // infer the set and could not.
+    if (Array.isArray(body.claimedUrls) && body.claimedUrls.indexOf(server.url) !== -1 &&
+        (body.ownedUrls || []).length === 0) {
+      test.check('and claimedUrls reaches the browser, with ownedUrls empty beside it');
+    } else {
+      test.fail('urls: ' + JSON.stringify({ claimed: body.claimedUrls, owned: body.ownedUrls }));
+    }
+
+    server.server.close();
+  }).catch(function (err) {
+    if (server) server.server.close();
+    throw err;
+  });
+}
+
+// A stranger — no row, no ownership — must come back with neither. The
+// check above passes just as well if `claimed` were hardcoded true, and
+// this is the half that says it is not.
+function aStrangerIsOnNothing() {
+  const owner = auth.generateIdentity('andy');
+  const nobody = auth.generateIdentity('mallory');
+  const lab = ownedBox(owner, 'andy');
+
+  let server;
+  return relayServer(lab.box).then(function (s) {
+    server = s;
+    const hub = createHub(nodeHome(nobody, [server.url]));
+    const res = fakeRes();
+    hub.handleStatus({}, res, new URL('http://x/api/hub/status?name=mallory'));
+    return res.wait();
+  }).then(function (res) {
+    let body = null;
+    try { body = JSON.parse(res.text); } catch (e) { body = null; }
+    const row = (body && body.rows && body.rows[0]) || {};
+    if (!row.owned && !row.claimed && (body.claimedUrls || []).length === 0) {
+      test.check('and somebody with no row on it is neither owner nor member');
+    } else {
+      test.fail('a stranger was let in: ' + res.text);
+    }
+    server.server.close();
+  }).catch(function (err) {
+    if (server) server.server.close();
+    throw err;
+  });
+}
+
 runBadgeProbe()
   .then(runChooseUrl)
   .then(runHubOnLoopback)
+  .then(boundNodeSeesItsRow)
+  .then(aStrangerIsOnNothing)
   .then(function () {
     test.reportSuccessFailureCount();
   })

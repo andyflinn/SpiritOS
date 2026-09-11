@@ -26,6 +26,47 @@ function takePath(token) {
   return '/api/relay/device-pending?name=' + encodeURIComponent(token);
 }
 
+// A DEVICE BELONGS TO THE IDENTITY, NOT TO THE MAILBOX THAT ENROLLED IT.
+//
+// The handshake happens on one relay — whichever one served the page the
+// password was typed into — and the slot used to be installed only
+// there. So "add this device" produced a browser that could read one
+// mailbox and was a stranger to every other mailbox the same person
+// held, which is not what the words say and not what anybody expects
+// after enrolling once.
+//
+// Signed PER RELAY rather than once: setDeviceMessage carries a minute,
+// and a fan-out across a loopback box and one on the far side of the
+// internet can straddle a minute boundary. One signature reused would
+// then be accepted by the first relay and stale at the last — a failure
+// that appears only sometimes, only on slow links, and only for the
+// mailbox listed last.
+//
+// Every relay is TOLD; none is asked twice. A relay that refuses or
+// cannot be reached is reported, never retried here: the tick comes
+// round again, and a device slot is not worth a retry loop inside a
+// function that already runs on a timer.
+async function installEverywhere(requestFn, id, urls, deviceKey) {
+  const on = [];
+  const missed = [];
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    let answer = null;
+    try {
+      answer = await requestFn(url, 'POST', '/api/relay/set-device', {
+        name: id.name,
+        devicePublicKey: deviceKey,
+        sig: relayAuth.sign(id.privateKey, deviceAuth.setDeviceMessage(deviceKey)),
+      });
+    } catch (e) {
+      answer = null;
+    }
+    if (answer && answer.ok) on.push(url);
+    else missed.push(url);
+  }
+  return { on: on, missed: missed };
+}
+
 async function tick(rootDir, ownedUrls, requestFn) {
   var doc = deviceAuth.load(rootDir);
   if (!doc.listening) return { ok: true, did: 'quiet' };
@@ -54,24 +95,40 @@ async function tick(rootDir, ownedUrls, requestFn) {
     else if (held && held.error) refused = true;
     if (!held || !held.password || !held.devicePublicKey) continue;
     var accept = deviceAuth.passwordsEqual(doc.password, held.password);
+    var spread = { on: [], missed: [] };
     if (accept) {
-      var setSig = relayAuth.sign(
-        id.privateKey,
-        deviceAuth.setDeviceMessage(held.devicePublicKey)
-      );
-      await requestFn(url, 'POST', '/api/relay/set-device', {
-        name: id.name,
-        devicePublicKey: held.devicePublicKey,
-        sig: setSig
-      });
-      deviceAuth.setDevicePublicKey(rootDir, held.devicePublicKey);
+      // THE ENROLLING RELAY FIRST, and it is not a special case — it is
+      // simply first in the list handed to installEverywhere, so the one
+      // the person is actually standing in front of is the one that has
+      // the slot by the time they are told yes.
+      var others = urls.filter(function (u) { return u !== url; });
+      spread = await installEverywhere(requestFn, id, [url].concat(others), held.devicePublicKey);
+      // Written down locally only if SOMEWHERE took it. A node that
+      // recorded a device no relay knows about would show an attached
+      // device in its own panel that could read nothing anywhere.
+      if (spread.on.length) deviceAuth.setDevicePublicKey(rootDir, held.devicePublicKey);
     }
+    // ANSWERED ON THE RELAY THAT ASKED, whatever happened elsewhere. A
+    // browser is holding that POST open and it is enrolling HERE; making
+    // it wait on a mailbox in another country, or fail because one was
+    // down, would be this node's bookkeeping leaking into somebody's
+    // enrolment.
     await requestFn(url, 'POST', '/api/relay/device-answer', {
       name: id.name,
       accepted: accept,
       sig: relayAuth.sign(id.privateKey, deviceAuth.deviceTakeMessage(id.name))
     });
-    return { ok: true, did: accept ? 'installed' : 'rejected' };
+    if (!accept) return { ok: true, did: 'rejected' };
+    return {
+      ok: true,
+      did: spread.on.length ? 'installed' : 'rejected',
+      // Which mailboxes this device can actually speak to, and which
+      // could not be told. The second is the one worth surfacing: a
+      // device that works on two relays out of three is a device that
+      // will fail somewhere the person has no reason to expect.
+      installedOn: spread.on,
+      missedOn: spread.missed,
+    };
   }
   // Three different silences, told apart: nobody was enrolling, the
   // mailbox would not have us, or it never answered.

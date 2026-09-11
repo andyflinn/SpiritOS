@@ -24,6 +24,149 @@ const SCENARIO = require('./scenario').OWNER_ONLY;
 // built as one.
 const tmpHome = world.tmpHome;
 
+// A DEVICE BELONGS TO THE IDENTITY, NOT TO THE MAILBOX THAT ENROLLED IT.
+//
+// Andy attached a browser to a lab peer who was on two relays, and it
+// worked — on one of them. The handshake happens wherever the password
+// was typed, and the slot was installed only there, so the enrolled
+// browser could read one mailbox and was a stranger to the other. That
+// is not what "add this device" says.
+//
+// Two relays, one identity on both, the offer arriving on the SECOND —
+// deliberately not the first, because installing on "the one that had
+// the offer" and installing on "the first in the list" look identical
+// in a world where those are the same relay.
+async function oneDeviceEveryMailbox() {
+  test.subHeading('A device enrolled on one mailbox works on all of them');
+
+  const W = world.build({
+    title: 'An owner with two mailboxes',
+    relays: ['lab', 'other'],
+    peers: [],
+  });
+  if (!W.ok) { test.fail(W.error); return; }
+
+  const first = W.relay('lab');
+  const second = W.relay('other');
+  const home = W.ownerHome();
+  const urls = ['http://first', 'http://second'];
+  const boxFor = { 'http://first': first, 'http://second': second };
+  const phone = auth.generateIdentity('device');
+
+  deviceAuth.ensurePassword(home);
+  deviceAuth.setListening(home, true);
+  const password = deviceAuth.load(home).password;
+
+  // The browser knocks on the SECOND mailbox.
+  const offering = second.deviceOffer('andy', password, phone.publicKey);
+
+  const setDeviceHits = [];
+  async function requestFn(url, method, pth, body, headers) {
+    const box = boxFor[url];
+    if (!box) return { ok: false, error: 'unreachable' };
+    if (method === 'GET' && /device-pending/.test(pth)) {
+      const sig = (headers && (headers['X-Spirit-Sig'] || headers['x-spirit-sig'])) || '';
+      return box.devicePending('andy', sig) || {};
+    }
+    if (method === 'POST' && /set-device/.test(pth)) {
+      setDeviceHits.push(url);
+      return box.setDevice(body.name, body.devicePublicKey, body.sig);
+    }
+    if (method === 'POST' && /device-answer/.test(pth)) {
+      return box.deviceReply(body.name, !!body.accepted);
+    }
+    return { ok: false };
+  }
+
+  const did = await deviceTick.tick(home, urls, requestFn);
+  const browser = await offering;
+
+  if (did && did.did === 'installed') {
+    test.check('the tick takes the offer from whichever mailbox is holding it');
+  } else {
+    test.fail('tick: ' + JSON.stringify(did));
+  }
+
+  if (browser && browser.ok) {
+    test.check('and the browser waiting on THAT mailbox is answered by it');
+  } else {
+    test.fail('browser: ' + JSON.stringify(browser));
+  }
+
+  // THE WHOLE POINT, and PROVED BY USE rather than by reading the slot
+  // off a row. who() deliberately does not publish device keys — they
+  // are nobody else's business — so there is nothing to inspect, and a
+  // read the relay accepts is a better claim than a field anyway.
+  const readFirst = first.inbox('andy', auth.sign(phone.privateKey, auth.inboxMessage('andy')));
+  const readSecond = second.inbox('andy', auth.sign(phone.privateKey, auth.inboxMessage('andy')));
+  if (readFirst.ok && readSecond.ok) {
+    test.check('and the enrolled browser can read the inbox on BOTH, not only the enrolling one');
+  } else {
+    test.fail('reads: first=' + JSON.stringify(readFirst.ok) + ' second=' + JSON.stringify(readSecond.ok));
+  }
+
+  // The other direction, so the check above cannot pass by the relay
+  // being lax: a browser that enrolled nowhere is refused by both.
+  const nobody = auth.generateIdentity('uninvited');
+  const noFirst = first.inbox('andy', auth.sign(nobody.privateKey, auth.inboxMessage('andy')));
+  const noSecond = second.inbox('andy', auth.sign(nobody.privateKey, auth.inboxMessage('andy')));
+  if (!noFirst.ok && !noSecond.ok) {
+    test.check('while a key that enrolled nowhere is refused by both');
+  } else {
+    test.fail('a stranger read an inbox: ' + JSON.stringify({ first: noFirst.ok, second: noSecond.ok }));
+  }
+
+  // Said out loud, because a device on two mailboxes out of three is a
+  // device that fails somewhere the person has no reason to expect.
+  if ((did.installedOn || []).length === 2 && (did.missedOn || []).length === 0) {
+    test.check('and the tick says which mailboxes took it, and which did not');
+  } else {
+    test.fail('spread: ' + JSON.stringify({ on: did.installedOn, missed: did.missedOn }));
+  }
+
+  // A MAILBOX THAT IS DOWN MUST NOT SINK THE ENROLMENT. The browser is
+  // standing in front of one relay; another being unreachable is this
+  // node's bookkeeping and not that person's problem.
+  const W2 = world.build({ relays: ['lab', 'other'], peers: [] });
+  if (!W2.ok) { test.fail(W2.error); return; }
+  const live = W2.relay('lab');
+  const home2 = W2.ownerHome();
+  deviceAuth.ensurePassword(home2);
+  deviceAuth.setListening(home2, true);
+  const phone2 = auth.generateIdentity('device2');
+  const offering2 = live.deviceOffer('andy', deviceAuth.load(home2).password, phone2.publicKey);
+
+  async function halfDown(url, method, pth, body, headers) {
+    if (url === 'http://down') return { ok: false, error: 'unreachable' };
+    if (method === 'GET' && /device-pending/.test(pth)) {
+      const sig = (headers && (headers['X-Spirit-Sig'] || headers['x-spirit-sig'])) || '';
+      return live.devicePending('andy', sig) || {};
+    }
+    if (method === 'POST' && /set-device/.test(pth)) {
+      return live.setDevice(body.name, body.devicePublicKey, body.sig);
+    }
+    if (method === 'POST' && /device-answer/.test(pth)) {
+      return live.deviceReply(body.name, !!body.accepted);
+    }
+    return { ok: false };
+  }
+
+  const partial = await deviceTick.tick(home2, ['http://up', 'http://down'], halfDown);
+  const browser2 = await offering2;
+  if (partial.did === 'installed' && browser2 && browser2.ok &&
+      (partial.missedOn || []).indexOf('http://down') !== -1) {
+    test.check('and one unreachable mailbox does not fail the enrolment — it is named instead');
+  } else {
+    test.fail('partial: ' + JSON.stringify(partial) + ' browser=' + JSON.stringify(browser2));
+  }
+
+  if (deviceAuth.load(home2).devicePublicKey === phone2.publicKey) {
+    test.check('and the node records the device, because somewhere took it');
+  } else {
+    test.fail('node did not record a device that one mailbox holds');
+  }
+}
+
 test.startTest('Device cycle 3 — listen and tick');
 
 async function run() {
@@ -145,6 +288,7 @@ async function run() {
     test.fail('browserNo: ' + JSON.stringify(browserNo));
   }
 
+  await oneDeviceEveryMailbox();
   await bootBehaviour();
 
   if (typeof test.reportSuccessFailureCount === 'function') {

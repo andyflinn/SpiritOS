@@ -200,15 +200,34 @@ function wipeHome(id) {
   return true;
 }
 
-function copyTrackedSpirit(id) {
+// copyTrackedSpirit(id)          wipe, then copy — a genuinely new node
+// copyTrackedSpirit(id, true)    copy over the top — new code, same node
+//
+// THE SECOND ONE EXISTS BECAUSE THERE WAS NO WAY TO DO IT.
+//
+// Recycle was the only way to get new code into a lab node, and recycle
+// wipes — so updating a node destroyed its identity, which took it off
+// every relay it was on and left rows behind that nobody held a key for.
+// Start does not refresh: it rebuilds only when js/server.js is missing,
+// so stopping and starting ran the old code.
+//
+// Between "destroy it" and "leave it alone" there was nothing, and the
+// thing actually wanted most of the time — new code, same node, still a
+// member — was the one thing that could not be asked for.
+//
+// Copying over the top is safe for the same reason setupRelayFakes says
+// it is: only tracked paths are written, and a node's own state
+// (relay-state, session.json, device.json, minted.json) is none of them.
+function copyTrackedSpirit(id, keepState) {
   const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', {
     cwd: REPO_ROOT,
     encoding: 'utf8',
   }).split('\n').filter(Boolean);
 
   // Cleared first, so what lands is exactly the tracked tree and nothing
-  // a previous life left behind.
-  wipeHome(id);
+  // a previous life left behind — unless the caller is refreshing, in
+  // which case what a previous life left behind IS the point.
+  if (!keepState) wipeHome(id);
   const targetRoot = path.join(FAKES_ROOT, id);
   // A copy is a tree, not a repository, so it cannot answer "which
   // commit am I" by itself. Stamped here, with the commit it was taken
@@ -407,6 +426,25 @@ function handleRecycle(node) {
   return { status: 200, node: publicNode(node) };
 }
 
+// NEW CODE, SAME NODE. Stop, copy the tracked tree over the top, start.
+// Its key, its relay rows, its device slot and its session all survive,
+// so a world built by labPopulate is still a world afterwards.
+//
+// This is what somebody means nine times out of ten when they reach for
+// Recycle, and until it existed they got a wiped node instead — which
+// looks like nothing at all until the next thing that needed the world
+// quietly has no world.
+function handleRefresh(node) {
+  if (node.permanent) return { status: 403, error: 'the work node is your checkout' };
+  stopNode(node);
+  try { node.home = copyTrackedSpirit(node.id, true).replace(/\\/g, '/'); }
+  catch (err) { return { status: 500, error: String(err.message || err) }; }
+  saveDesired(nodes);
+  const started = startNode(node);
+  if (!started.ok) return { status: started.status || 500, error: started.error };
+  return { status: 200, node: publicNode(node) };
+}
+
 function handleDelete(node) {
   if (node.permanent) return { status: 403, error: 'cannot delete work node' };
   stopNode(node);
@@ -507,7 +545,7 @@ const server = http.createServer(function (req, res) {
     return;
   }
 
-  const action = pathname.match(/^\/api\/nodes\/([^/]+)(?:\/(start|stop|recycle|delete))?$/);
+  const action = pathname.match(/^\/api\/nodes\/([^/]+)(?:\/(start|stop|recycle|refresh|delete))?$/);
   if (req.method === 'POST' && action) {
     const id = action[1];
     const verb = action[2] || 'rename';
@@ -522,6 +560,7 @@ const server = http.createServer(function (req, res) {
       else if (verb === 'start') result = handleStart(node);
       else if (verb === 'stop') result = handleStop(node);
       else if (verb === 'recycle') result = handleRecycle(node);
+      else if (verb === 'refresh') result = handleRefresh(node);
       else if (verb === 'delete') result = handleDelete(node);
       else result = { status: 404, error: 'not found' };
       sendJson(res, result.status, result.node || result.ok ? result : { error: result.error });
