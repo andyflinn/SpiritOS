@@ -32,13 +32,65 @@ var PACKET_VERSION = 1;
 // mailbox counting it against a rate limit.
 var PACKET_MAX_TEXT = 1024;
 
-function packetRandomId(random) {
-  var pick = typeof random === 'function' ? random : Math.random;
-  var out = '';
-  while (out.length < 16) {
-    out += Math.floor(pick() * 0x100000000).toString(16);
+// 128 bits. It was 64, from Math.random, and both halves were wrong for
+// what this field is about to become (design/relay/ROUTER.md §6).
+//
+// Math.random is not a CSPRNG — V8's is xorshift128+, seeded per context,
+// and its future output is recoverable from enough of its past. That was
+// harmless while `id` was only an app-level tag for recognising your own
+// traffic across a re-read. It stops being harmless the moment the hash
+// of an envelope becomes a ROUTING KEY: a predictable id is a predictable
+// hash, the id becomes a nonce in a construction that depends on
+// unpredictability, and a guessable sequence lets an observer count and
+// correlate somebody's traffic.
+//
+// (The old one lost entropy a second way, quietly: it built the string
+// from `.toString(16)` of each draw, so any value with leading zeros
+// contributed fewer than its 32 bits.)
+//
+// 128 bits rather than 64 because it is the same line of code and the
+// envelope caps at 1024 bytes, so sixteen more characters cost nothing.
+// The collision odds were never the argument — unpredictability was.
+var PACKET_ID_BYTES = 16;
+
+// Isomorphic, the way ownerBadge.js is: the rule is shared, the source of
+// randomness is not. Required lazily because this file is also loaded by
+// a <script> tag, where a top-level require would be a syntax error at
+// the wrong moment.
+function packetSecureHex(bytes) {
+  if (typeof process !== 'undefined' && process.versions && process.versions.node) {
+    try { return require('crypto').randomBytes(bytes).toString('hex'); }
+    catch (e) { return ''; }
   }
-  return out.slice(0, 16);
+  var webcrypto = (typeof globalThis !== 'undefined' && globalThis.crypto) || null;
+  if (webcrypto && typeof webcrypto.getRandomValues === 'function') {
+    var buf = new Uint8Array(bytes);
+    webcrypto.getRandomValues(buf);
+    var out = '';
+    for (var i = 0; i < buf.length; i += 1) {
+      out += (buf[i] < 16 ? '0' : '') + buf[i].toString(16);
+    }
+    return out;
+  }
+  // NO FALLBACK TO Math.random. A silent downgrade to a predictable
+  // source is the exact bug this replaced, and it would be invisible
+  // afterwards. Nothing here can sign without crypto.subtle anyway, so a
+  // context without randomness was never going to get a packet sent.
+  return '';
+}
+
+// `random` stays a TEST SEAM and nothing else: a function returning 0..1,
+// used only where a suite needs a predictable string. Production never
+// passes it, and anything that does has opted out of the paragraph above.
+function packetRandomId(random) {
+  if (typeof random === 'function') {
+    var out = '';
+    while (out.length < PACKET_ID_BYTES * 2) {
+      out += Math.floor(random() * 0x100000000).toString(16);
+    }
+    return out.slice(0, PACKET_ID_BYTES * 2);
+  }
+  return packetSecureHex(PACKET_ID_BYTES);
 }
 
 // Wraps a body for the wire. `opts.id` and `opts.random` are injectable
@@ -49,10 +101,18 @@ function packetEncode(app, body, opts) {
   if (!appId) return { ok: false, error: 'app required' };
   if (body === undefined) return { ok: false, error: 'body required' };
 
+  var newId = options.id || packetRandomId(options.random);
+  // Refused rather than sent with a weak one. An envelope without a
+  // unique, unguessable id is one the router cannot key on safely, and
+  // "probably random enough" is not a thing this can report later.
+  if (!newId) {
+    return { ok: false, error: 'no secure randomness available for a packet id' };
+  }
+
   var envelope = {
     app: appId,
     v: PACKET_VERSION,
-    id: options.id || packetRandomId(options.random),
+    id: newId,
     body: body,
   };
 
@@ -115,6 +175,8 @@ function packetDecode(text) {
 var packetApi = {
   VERSION: PACKET_VERSION,
   MAX_TEXT: PACKET_MAX_TEXT,
+  ID_BYTES: PACKET_ID_BYTES,
+  randomId: packetRandomId,
   encode: packetEncode,
   decode: packetDecode,
   isEnvelope: packetIsEnvelope,

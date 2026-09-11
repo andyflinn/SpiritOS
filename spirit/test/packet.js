@@ -201,4 +201,90 @@ test.subHeading('relay.js did not have to change');
   }
 }
 
+test.subHeading('The id is a nonce, not a label');
+
+// It was 64 bits from Math.random, which was harmless while `id` only
+// helped an app recognise its own traffic across a re-read. The router
+// makes the hash of an envelope a ROUTING KEY, and a predictable id is a
+// predictable hash (design/relay/ROUTER.md section 6).
+//
+// Asserted on the OUTPUT rather than on which function was called: a
+// comment naming crypto would satisfy a grep, and a weak source would
+// not survive these.
+{
+  const seen = new Set();
+  let shortest = Infinity;
+  let nonHex = 0;
+  for (let n = 0; n < 2000; n += 1) {
+    const made = packet.encode('t', 'x');
+    if (!made.ok) { nonHex += 1; continue; }
+    const id = made.envelope.id;
+    seen.add(id);
+    shortest = Math.min(shortest, id.length);
+    if (!/^[0-9a-f]+$/.test(id)) nonHex += 1;
+  }
+  if (seen.size === 2000 && nonHex === 0) {
+    test.check('two thousand sends, two thousand distinct hex ids');
+  } else {
+    test.fail('distinct=' + seen.size + ' bad=' + nonHex);
+  }
+
+  // 128 bits. The collision odds were never the argument — a 64-bit id
+  // is fine for collisions and useless for unpredictability — but a
+  // length that silently shrank would be the first sign of a fallback.
+  if (shortest === packet.ID_BYTES * 2 && packet.ID_BYTES >= 16) {
+    test.check('and each is ' + shortest + ' hex characters, ' +
+      (packet.ID_BYTES * 8) + ' bits');
+  } else {
+    test.fail('shortest=' + shortest + ' ID_BYTES=' + packet.ID_BYTES);
+  }
+
+  // The old generator built its string from toString(16) of each draw,
+  // so any value with leading zeros contributed fewer than its 32 bits.
+  // A fixed-width encoding is what stops that, and it shows up as every
+  // id being exactly the same length.
+  const lengths = new Set(Array.from(seen).map(function (id) { return id.length; }));
+  if (lengths.size === 1) {
+    test.check('and all of them the same length, so no draw lost its leading zeros');
+  } else {
+    test.fail('ragged id lengths: ' + Array.from(lengths).join(', '));
+  }
+}
+
+test.subHeading('A weak source is refused, never substituted');
+
+// THE bug this replaced would be invisible if it came back: a silent
+// fall back to Math.random looks exactly like working code. So the
+// absence of randomness has to be an error a caller sees.
+{
+  const saved = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
+  const hadProcess = globalThis.process;
+  try {
+    // Both sources removed: no node crypto (process hidden, so the node
+    // branch is not taken) and no web crypto.
+    delete globalThis.crypto;
+    globalThis.process = undefined;
+    const starved = packet.encode('t', 'x');
+    if (starved && starved.ok === false && /randomness/.test(starved.error || '')) {
+      test.check('with no secure source, a packet is refused and says why');
+    } else {
+      test.fail('a packet was made without randomness: ' + JSON.stringify(starved));
+    }
+  } finally {
+    globalThis.process = hadProcess;
+    if (saved) Object.defineProperty(globalThis, 'crypto', saved);
+  }
+}
+
+// And the seam a test uses is still there, so exact-string assertions
+// above keep working.
+{
+  const fixed = packet.encode('t', 'x', { random: function () { return 0.5; } });
+  if (fixed.ok && fixed.envelope.id.length === packet.ID_BYTES * 2) {
+    test.check('and the injectable seam still produces a full-width id');
+  } else {
+    test.fail('seam: ' + JSON.stringify(fixed));
+  }
+}
+
 test.reportSuccessFailureCount();
