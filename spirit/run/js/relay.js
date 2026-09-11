@@ -11,6 +11,9 @@ const relayConsole = require('./relayConsole');
 const deviceAuth = require('./deviceAuth');
 const deviceHandshake = require('./deviceHandshake');
 const presence = require('./presence');
+// Once, at load, for the same reason server.js does it: the answer must
+// describe the code that is running, not the code on disk.
+const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 
 var MAX_MESSAGES = 200;
 var MAX_TEXT = 1024;
@@ -436,8 +439,13 @@ function createRelay(rootDir) {
       mailboxPublicKey: mailboxPublicKey,
       now: Date.now(),
       // The version this box is actually running answers "did my update
-      // land?" without an SSH session.
-      version: require('./kernel').core.const.VERSION,
+      // land?" without an SSH session — and it could not, until B-stamp:
+      // it reported kernel.js's VERSION, a constant unchanged since the
+      // directory reorganisation, so it said the same thing before and
+      // after every deploy. Now it carries the commit, resolved once as
+      // this process loaded (js/buildStamp.js).
+      version: require('./kernel').core.const.VERSION + ' ' + RUNNING.commit +
+        (RUNNING.dirty ? '+dirty' : ''),
       senderKey: senderKey,
       senderLabel: fromWire,
     });
@@ -827,6 +835,88 @@ function createRelay(rootDir) {
     return deviceQueue.reply(gate.who.id, !!accepted);
   }
 
+  // FORGETTING SOMEBODY. Until this existed a relay could only
+  // accumulate: mailbox.json never shrank, so an invitation was
+  // irreversible and the only remedy for any mistake — a wrong guest, a
+  // lost key, a name that should never have been given — was an SSH
+  // session on the box.
+  //
+  // Which is Andy's own rule wearing a different costume. "No routine
+  // failure should require being physically at home" was built into the
+  // device arc for the OWNER and left standing for the relay's own
+  // governance. A thing alone in the jungle that cannot forget cannot
+  // correct itself.
+  //
+  // Signed by the OWNER, or by the peer themselves — leaving is not a
+  // favour anybody should have to ask for. Never by a device key: a
+  // borrowed handheld must not be able to delete the row it is borrowing
+  // (the same rule deviceGate states for the pending slot).
+  function removePeer(byToken, peerKey, sig) {
+    var key = String(peerKey == null ? '' : peerKey).trim();
+    if (!key) return { ok: false, status: 400, error: 'peer key required' };
+
+    var target = findByKey(key);
+    if (!target) return { ok: false, status: 404, error: 'no such peer' };
+
+    var owner = auth.ownerName(allow);
+    var ownerKey = owner && allow.byName && allow.byName[owner];
+    var asked = deviceIdentity(byToken);
+
+    // Two ways to be allowed, and both prove possession of a HOUSE key.
+    var byOwner = !!ownerKey && auth.removePeerSignatureOk(ownerKey, key, sig);
+    var bySelf = auth.removePeerSignatureOk(target.publicKey, key, sig);
+    if (!byOwner && !bySelf) {
+      return { ok: false, status: 403, error: 'bad remove-peer signature' };
+    }
+
+    // The owner's own row is not removable. It is the only row allow.json
+    // holds, ownerName() reads it, and a relay that forgot its owner
+    // could never be administered again — first-claim would hand the box
+    // to whoever asked next.
+    if (ownerKey && key === ownerKey) {
+      return { ok: false, status: 403, error: 'the owner cannot be removed' };
+    }
+
+    var label = labelOf(target);
+    delete peers[key];
+    // Some older rows are keyed by name rather than by key.
+    Object.keys(peers).forEach(function (k) {
+      if (peers[k] && peers[k].publicKey === key) delete peers[k];
+    });
+
+    // Their mail goes with them. Leaving it would keep a removed person's
+    // words on a box they have been removed from, addressed to a row that
+    // no longer exists — and "forget" that leaves the letters behind is
+    // not forgetting.
+    var before = messages.length;
+    messages = messages.filter(function (m) {
+      return m.fromKey !== key && m.toKey !== key;
+    });
+    persist();
+
+    // And the invite, or the name is a lie: a live token for that label
+    // walks them straight back in.
+    var revoked = invites.revokeLabel(rootDir, label);
+    invites.sweepExpired(rootDir);
+
+    // If they are holding a stream, it ends now. A removed peer that
+    // keeps receiving the roster is still a member in every way that
+    // matters.
+    if (presentNow.isPresent(key)) {
+      presentNow.disconnect(key, null);
+      presentNow.broadcast('presence', { key: key, present: false });
+    }
+
+    void asked;
+    return {
+      ok: true,
+      status: 200,
+      removed: { key: key, label: label },
+      messagesDropped: before - messages.length,
+      invitesRevoked: revoked,
+    };
+  }
+
   // THE ROSTER WITH STATES, and never the list of the connected. If this
   // sent only who is here, a key a node did not hear about would be
   // ambiguous between a member who is away and somebody this relay has
@@ -918,6 +1008,7 @@ function createRelay(rootDir) {
     // The presence wire. streamOpen is the gated entry a route may call;
     // the registry below is in-process and ungated, for tests that drive
     // it directly — the same split deviceTake/devicePending already has.
+    removePeer: removePeer,
     streamOpen: streamOpen,
     streamClose: streamClose,
     streamRoster: streamRoster,

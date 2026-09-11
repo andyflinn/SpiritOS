@@ -114,3 +114,7 @@ minted.json
 # is listed separately above: that is one file about this node, not a
 # file about a peer.
 **/peerfile-*.json
+
+# Written by labMaster (and any future packaging step) so a copied tree
+# can say which commit it came from. Never a checkout, so never tracked.
+spirit/run/build.json

@@ -90,6 +90,29 @@ function streamSignatureOk(publicKey, key, sig, atMs) {
   return false;
 }
 
+// FORGETTING SOMEBODY IS ITS OWN VERB, for the reason every other one
+// is: the owner signs `status` for each census and `invite` whenever they
+// add a member, and neither of those may be replayable as "delete this
+// person". Removal is the only owner action that destroys, so it is the
+// one that least deserves a shared signature.
+//
+// The key, not the label. Labels duplicate by design, so a signature
+// naming one would be an instruction to remove whichever john the relay
+// happened to find first.
+function removePeerMessage(key, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'remove-peer\n' + String(key || '') + '\n' + minute;
+}
+
+function removePeerSignatureOk(publicKey, key, sig, atMs) {
+  if (!publicKey || !sig) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, removePeerMessage(key, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
 function generateIdentity(name) {
   const pair = crypto.generateKeyPairSync('ed25519');
   return {
@@ -351,6 +374,8 @@ module.exports = {
   inboxSignatureOk,
   streamMessage,
   streamSignatureOk,
+  removePeerMessage,
+  removePeerSignatureOk,
   generateIdentity,
   sign,
   verify,

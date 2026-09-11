@@ -6,6 +6,12 @@ const createRelay = require('./relay');
 // For keyFromUrl only — translating a URL segment back to the stored key
 // form. No secret reaches this side of the wire.
 const deviceAuth = require('./deviceAuth');
+// Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
+// again later would report whatever is on disk now, which is the lie
+// this is meant to catch.
+const buildStamp = require('./buildStamp');
+const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
+const STARTED_AT = new Date().toISOString();
 const relay = createRelay.createRelay();
 
 //console.log(JSON.stringify(spirit,null,2));
@@ -721,11 +727,21 @@ function isRelayPublicPath(method, pathname) {
   // from the internet, and gated inside relay.streamOpen, which refuses
   // an identity this box does not hold before it allocates anything.
   if (method === 'GET' && pathname === '/api/relay/stream') return true;
+  // WHAT IS THIS BOX MADE OF. Public, deliberately: the question a
+  // deploy check asks must not need a private key, or the check cannot
+  // run from anywhere but the owner's own machine — and a relay you
+  // cannot identify is one you cannot harden. What it gives away is a
+  // commit id for code the repository already holds.
+  if (method === 'GET' && pathname === '/api/version') return true;
   if (method === 'POST' && (pathname === '/api/relay/device' || pathname === '/api/relay/set-device' || pathname === '/api/relay/device-answer')) return true;
   // /api/relay/invite is public in the same sense claim and send are:
   // reachable from the internet, and gated by the owner's signature
   // inside relay.mint rather than by who can reach the socket.
   if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send' || pathname === '/api/relay/invite')) return true;
+  // Forgetting somebody. Public in the same sense mint is — reachable
+  // from the internet, gated inside relay.removePeer by a signature that
+  // is either the owner's or the departing peer's own.
+  if (method === 'POST' && pathname === '/api/relay/remove-peer') return true;
   return false;
 }
 
@@ -876,6 +892,28 @@ const server = http.createServer((req, res) => {
     }
     req.on('close', teardown);
     req.on('error', teardown);
+    return;
+  }
+
+  // Answers in both modes and needs nothing. `startedAt` rides along
+  // because "which commit" and "since when" are the two halves of the
+  // same question: a matching commit with an old start time means the
+  // code landed and nothing picked it up.
+  if (req.method === 'GET' && pathname === '/api/version') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({
+      version: spirit.core.const.VERSION,
+      commit: BUILD.commit,
+      dirty: BUILD.dirty,
+      committedAt: BUILD.at,
+      source: BUILD.source,
+      // Only ever non-zero on a COPIED tree, and then it is a warning
+      // about this very process: files existed that a copy could not
+      // carry, so something it needs may simply not be here.
+      untracked: BUILD.untracked || 0,
+      startedAt: STARTED_AT,
+      relay: relayMode,
+    }));
     return;
   }
 
@@ -1059,6 +1097,18 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/relay/send') {
       handleRelaySend(req, res);
+      return;
+    }
+
+    if (pathname === '/api/relay/remove-peer') {
+      readJsonBody(req).then(function (body) {
+        const result = relay.removePeer(body && body.name, body && body.key, body && body.sig);
+        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(result.ok ? result : { error: result.error }));
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
       return;
     }
 

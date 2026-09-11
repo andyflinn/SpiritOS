@@ -24,6 +24,7 @@ const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const hub = require('../run/js/hub');
 const presenceNode = require('../run/js/presenceNode');
+const buildStamp = require('../run/js/buildStamp');
 const { createRelay } = require('../run/js/relay');
 
 // A port is CHOSEN AT RUN TIME, not written down, and the server is
@@ -67,7 +68,16 @@ function buildRelayHome() {
   fs.cpSync(REPO_RUN, runDir, { recursive: true });
   fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
   fs.cpSync(path.join(home, 'relay-state'), path.join(runDir, 'relay-state'), { recursive: true });
-  return { runDir: runDir, house: house, bert: bert };
+
+  // A COPY IS A TREE, NOT A REPOSITORY, so it cannot answer "which
+  // commit am I" by itself — it reported `unknown`, honestly, until this
+  // line. Stamped the way labMaster stamps its fakes, which is what lets
+  // the assertion below be the strong one: not "it said a commit" but
+  // "it is running the commit I am testing".
+  const mine = buildStamp.fromGit(path.join(__dirname, '..', '..'));
+  if (mine) buildStamp.write(runDir, mine);
+
+  return { runDir: runDir, house: house, bert: bert, stamp: mine };
 }
 
 // A personal node, driven through its REAL entry point — start(), the
@@ -142,6 +152,32 @@ async function run() {
   child = up.kid;
   PORT = up.port;
   BASE = up.base;
+
+  test.subHeading('The box will say what it is made of');
+
+  // Public on purpose: the question a deploy check asks must not need a
+  // private key, or it can only be asked from the owner's own machine.
+  const v1 = await (await fetch(BASE + '/api/version')).json();
+  const expected = lab.stamp && lab.stamp.commit;
+  if (v1 && v1.relay === true && expected && v1.commit === expected) {
+    test.check('the relay under test is running the commit under test: ' + v1.commit);
+  } else {
+    test.fail('version: ' + JSON.stringify(v1) + ' expected ' + expected);
+  }
+
+  // THE property, and the only one worth a spawned server to prove. The
+  // answer must describe the code that was LOADED, not the code on disk
+  // now — a process that re-read git per request would report a new
+  // commit the instant somebody pulled, without restarting, which is
+  // exactly the lie this exists to catch. A startedAt that never moves
+  // is that promise, observable from outside.
+  await sleep(400);
+  const v2 = await (await fetch(BASE + '/api/version')).json();
+  if (v2.startedAt === v1.startedAt && v2.commit === v1.commit) {
+    test.check('and the answer is taken once, at load — startedAt does not drift');
+  } else {
+    test.fail('answer moved: ' + JSON.stringify(v1) + ' -> ' + JSON.stringify(v2));
+  }
 
   test.subHeading('The route and the reader agree about the protocol');
 

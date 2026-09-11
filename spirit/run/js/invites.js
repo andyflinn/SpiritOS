@@ -113,9 +113,52 @@ function consume(rootDir, token) {
   return row;
 }
 
+// UN-INVITING HAS TO INCLUDE THE INVITE, or the name is a lie: removing
+// a peer while a live invite for their label is still on the box means
+// they walk straight back in with the token they already have.
+//
+// Only UNUSED rows, and only for that label. A caveat worth stating
+// rather than hiding: labels duplicate, so revoking `john` cancels a
+// pending invite for a DIFFERENT john too. That is the safe direction to
+// err — an invite is cheap to reissue and a stranger who walks back in
+// is not — but it is a real edge and the owner should be told the count.
+function revokeLabel(rootDir, label) {
+  const n = String(label || '').trim();
+  if (!n) return 0;
+  const rows = load(rootDir);
+  const kept = rows.filter(function (r) {
+    return !(r.label === n && !r.consumedAt);
+  });
+  const gone = rows.length - kept.length;
+  if (gone) save(rootDir, kept);
+  return gone;
+}
+
+// The other half of "cannot forget": an expired invite is refused for
+// ever but was never removed, so invites.json only grew. Nothing
+// dangerous — every row needed the owner's signature to exist — but a box
+// alone in the jungle that can only accumulate is one that eventually
+// cannot be read.
+//
+// Swept on write rather than on a timer: the only moments this file
+// matters are the moments something touches it.
+function sweepExpired(rootDir, nowMs) {
+  const now = nowMs == null ? Date.now() : nowMs;
+  const rows = load(rootDir);
+  const kept = rows.filter(function (r) {
+    if (r.consumedAt) return true;
+    return Date.parse(r.expiresAt) >= now;
+  });
+  const gone = rows.length - kept.length;
+  if (gone) save(rootDir, kept);
+  return gone;
+}
+
 module.exports = {
   load: load,
   add: add,
+  revokeLabel: revokeLabel,
+  sweepExpired: sweepExpired,
   match: match,
   consume: consume,
   newToken: newToken,

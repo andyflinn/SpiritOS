@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawn, execSync } = require('child_process');
+const buildStamp = require('../../run/js/buildStamp');
 
 const MASTER_PORT = 65420;
 const WORK_PORT = 65432;
@@ -151,19 +152,77 @@ function publicNode(n) {
   };
 }
 
+// The one destructive operation in this file, so it is written to be
+// hard to misuse rather than short.
+//
+// Three guards, none of them theatre: the id must be a slug (so it can
+// carry no separators and no ..), the resolved path must sit strictly
+// INSIDE the fakes root, and it must not be the work home. A tool that
+// deletes directories on a developer's machine earns all three — and the
+// work node is a real checkout, not a copy.
+function homeRootFor(id) {
+  const slug = slugName(id);
+  if (!slug) return null;
+  const target = path.resolve(FAKES_ROOT, slug);
+  const inside = path.resolve(FAKES_ROOT) + path.sep;
+  if (!target.startsWith(inside)) return null;
+  if (target === path.resolve(WORK_HOME)) return null;
+  return target;
+}
+
+// A NODE THAT IS RECREATED OR RECYCLED MUST BE CLEAN. It was not:
+// copyTrackedSpirit writes the git-tracked files over whatever is
+// already there, and relay-state, device.json, session.json and
+// minted.json are none of them tracked — so they survived. A "new" lab
+// relay could boot owned by a previous run's key, and be unclaimable by
+// the suite that had just asked for it.
+//
+// That cost an afternoon of debugging a relay that remembered something
+// it should not have.
+function wipeHome(id) {
+  const target = homeRootFor(id);
+  if (!target) return false;
+  try { fs.rmSync(target, { recursive: true, force: true }); }
+  catch (err) { return false; }
+  return true;
+}
+
 function copyTrackedSpirit(id) {
   const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', {
     cwd: REPO_ROOT,
     encoding: 'utf8',
   }).split('\n').filter(Boolean);
 
+  // Cleared first, so what lands is exactly the tracked tree and nothing
+  // a previous life left behind.
+  wipeHome(id);
   const targetRoot = path.join(FAKES_ROOT, id);
+  // A copy is a tree, not a repository, so it cannot answer "which
+  // commit am I" by itself. Stamped here, with the commit it was taken
+  // from — otherwise every fake node reports `unknown` and a suite
+  // cannot tell a node running the code under test from one running
+  // whatever was there last week.
+  const stamp = buildStamp.fromGit(REPO_ROOT);
+
+  // Said out loud, because the alternative is a fake node that runs
+  // without a module you just wrote and fails somewhere unrelated. The
+  // count rides along in the stamp too, so the node itself can admit it
+  // may be incomplete (GET /api/version).
+  const missing = buildStamp.missingFromCopy(REPO_ROOT);
+  if (missing.length) {
+    console.warn('labMaster: ' + missing.length + ' untracked file(s) under spirit/ will NOT ' +
+      'reach ' + id + ' — `git add` them first:\n  ' + missing.join('\n  '));
+  }
   relativePaths.forEach(function (relPath) {
     const dest = path.join(targetRoot, relPath);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(path.join(REPO_ROOT, relPath), dest);
   });
-  return path.join(targetRoot, 'spirit', 'run');
+  const runDir = path.join(targetRoot, 'spirit', 'run');
+  if (stamp) {
+    buildStamp.write(runDir, Object.assign({}, stamp, { untracked: missing.length }));
+  }
+  return runDir;
 }
 
 function portAllowedForLab(port) {
@@ -319,9 +378,14 @@ function handleRecycle(node) {
 function handleDelete(node) {
   if (node.permanent) return { status: 403, error: 'cannot delete work node' };
   stopNode(node);
+  // The disk goes too. Dropping only the table row left the home behind,
+  // so a node created again under the same name inherited the identity,
+  // the mailbox and the device slot of the one that was deleted — which
+  // is the opposite of what "delete" says.
+  const wiped = wipeHome(node.id);
   nodes = nodes.filter(function (n) { return n.id !== node.id; });
   saveDesired(nodes);
-  return { status: 200, ok: true, id: node.id };
+  return { status: 200, ok: true, id: node.id, wiped: wiped };
 }
 
 const server = http.createServer(function (req, res) {
