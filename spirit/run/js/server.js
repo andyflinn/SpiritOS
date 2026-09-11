@@ -824,29 +824,37 @@ const server = http.createServer((req, res) => {
 
     // A sink, not a response: relay.js and presence.js hold this and
     // neither knows what http is.
+    //
+    // THE HEAD IS WRITTEN LAZILY, on the first write, and that is not a
+    // micro-optimisation. It shipped the other way — head first, so the
+    // roster had somewhere to go — and a refusal then had to travel as
+    // an event inside a 200, because the status line was already spent.
+    // A client cannot see a status the server has committed to, so every
+    // refusal looked to it like a connection that opened and closed, it
+    // reset its backoff on that, and a stale credential became a
+    // one-per-second hammer against a relay that was refusing it.
+    //
+    // Written this way the gate answers first and a refusal is a 403 that
+    // says so.
+    let headed = false;
     const sink = {
-      write: function (chunk) { res.write(chunk); },
+      write: function (chunk) {
+        if (!headed) {
+          headed = true;
+          res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+          });
+        }
+        res.write(chunk);
+      },
       close: function () { try { res.end(); } catch (e) { /* gone */ } },
     };
 
-    // Written BEFORE streamOpen, because streamOpen's first act is to
-    // send the roster down this sink and a write before the head is a
-    // 200 with no headers.
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    });
-
     const opened = relay.streamOpen(token, from.sig, sink);
     if (!opened || !opened.ok) {
-      // The head is already out, so the refusal has to travel as an
-      // event and then a close. A node reads this and backs off; there
-      // is nothing to be gained by pretending the status line could
-      // still say 403.
-      sink.write('event: refused\ndata: ' +
-        JSON.stringify({ status: (opened && opened.status) || 403 }) + '\n\n');
-      sink.close();
+      deviceRefusal(res, opened && opened.status);
       return;
     }
 

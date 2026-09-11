@@ -26,10 +26,22 @@ const hub = require('../run/js/hub');
 const presenceNode = require('../run/js/presenceNode');
 const { createRelay } = require('../run/js/relay');
 
-// Outside labMaster's 65400-65429 and away from the work node's 65432.
-const PORT = 65435;
-const BASE = 'http://127.0.0.1:' + PORT;
+// A port is CHOSEN AT RUN TIME, not written down, and the server is
+// waited for rather than slept at.
+//
+// It was a constant, 65435, and that is inside Windows' ephemeral range
+// (49152-65535) — where any outbound connection this machine makes can
+// take it first. It did: a browser's socket to Google held it, the spawn
+// failed to bind, `stdio: 'ignore'` swallowed the error, and the suite
+// reported five product failures for a server that was never listening.
+//
+// A test that can fail for a reason it does not name is worse than no
+// test, because it teaches you to distrust the ones that are telling the
+// truth.
+let PORT = 0;
+let BASE = '';
 const REPO_RUN = path.join(__dirname, '..', 'run');
+const PORT_CANDIDATES = [48731, 48732, 48733, 48734, 48735];
 
 let child = null;
 const opened = [];
@@ -98,12 +110,38 @@ function cleanup() {
 
 test.startTest('Presence wire — a real socket, end to end');
 
+// Answers when the relay is actually serving, or null if it never does.
+async function awaitRelay(runDir, port) {
+  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
+    { cwd: runDir, stdio: 'ignore' });
+  const base = 'http://127.0.0.1:' + port;
+  for (let n = 0; n < 25; n += 1) {
+    await sleep(200);
+    try {
+      const res = await fetch(base + '/api/relay/who');
+      if (res.ok) return { kid: kid, base: base, port: port };
+    } catch (e) { /* not up yet, or this port was taken */ }
+  }
+  try { kid.kill(); } catch (e) { /* gone */ }
+  return null;
+}
+
 async function run() {
   const lab = buildRelayHome();
-  child = spawn(process.execPath, ['js/server.js', '--port', String(PORT), '--relay'],
-    { cwd: lab.runDir, stdio: 'ignore' });
 
-  await sleep(2500);
+  let up = null;
+  for (const candidate of PORT_CANDIDATES) {
+    up = await awaitRelay(lab.runDir, candidate);
+    if (up) break;
+  }
+  if (!up) {
+    test.fail('no relay came up on any of ' + PORT_CANDIDATES.join(', ') +
+      ' — this suite needs one free port and says so rather than timing out');
+    return;
+  }
+  child = up.kid;
+  PORT = up.port;
+  BASE = up.base;
 
   test.subHeading('The route and the reader agree about the protocol');
 

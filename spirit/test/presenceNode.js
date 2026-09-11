@@ -97,6 +97,67 @@ async function run() {
   if (attempts === settled) test.check('and close() ends it rather than the current attempt');
   else test.fail('kept retrying after close: ' + settled + ' -> ' + attempts);
 
+  test.subHeading('The credential is made fresh for every attempt');
+
+  // THE live bug, and the reason this check exists. streamMessage carries
+  // a unix minute and is checked ±1, so a signature captured once is
+  // refused by every reconnect more than two minutes later — and a held
+  // connection reconnects for years. It shipped as a constant, survived
+  // every lab test, and failed on the real relay within three minutes,
+  // because nothing in the lab runs long enough for the minute to roll.
+  let madeHeaders = 0;
+  const reSigning = sseClient.connect({
+    url: 'http://relay/api/relay/stream',
+    retryMs: 5,
+    headers: function () { madeHeaders += 1; return { 'X-Spirit-Sig': 'sig-' + madeHeaders }; },
+    fetchImpl: function () { return Promise.reject(new Error('down')); },
+    setTimeoutImpl: function (fn) { return setTimeout(fn, 0); },
+    clearTimeoutImpl: clearTimeout,
+  });
+  await new Promise(function (r) { setTimeout(r, 50); });
+  reSigning.close();
+  if (madeHeaders > 2) {
+    test.check('headers are built per attempt, not captured once — ' + madeHeaders + ' times');
+  } else {
+    test.fail('headers built ' + madeHeaders + ' time(s): a stale credential reconnects forever');
+  }
+
+  // And the node must be passing a function rather than an object, or the
+  // client's ability to re-sign buys nothing. Asserted on the call, not
+  // on the source: a comment cannot satisfy it.
+  let sawHeaders = null;
+  const spyHome = tmpHome();
+  auth.saveIdentity(spyHome, auth.generateIdentity('spy'));
+  // A relay to hold a row on, or the probe finds nothing to connect to
+  // and openTo never runs.
+  fs.mkdirSync(path.join(spyHome, 'app', 'natter'), { recursive: true });
+  fs.writeFileSync(
+    path.join(spyHome, 'app', 'natter', 'relays.json'),
+    JSON.stringify([{ label: 'spy-relay', url: 'http://relay' }])
+  );
+  const spy = presenceNode.createPresence({
+    rootDir: spyHome,
+    jobs: fakeJobs(),
+    connectImpl: function (o) { sawHeaders = o.headers; return { close: function () {} }; },
+  });
+  await spy.start(function () {
+    return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
+      { name: 'spy', publicLabel: 'spy', publicKey: auth.loadIdentity(spyHome).publicKey },
+    ] }) });
+  });
+  if (typeof sawHeaders === 'function') {
+    const one = sawHeaders();
+    const two = sawHeaders();
+    test.check('the node hands the client a header FUNCTION, and it signs each time');
+    if (one['X-Spirit-Sig'] && two['X-Spirit-Sig']) {
+      test.check('and every call produces a usable signature');
+    } else {
+      test.fail('signature missing: ' + JSON.stringify(one));
+    }
+  } else {
+    test.fail('the node captured its headers: ' + JSON.stringify(sawHeaders));
+  }
+
   test.subHeading('Merging what several relays say');
 
   const home = tmpHome();

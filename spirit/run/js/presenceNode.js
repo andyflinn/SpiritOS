@@ -105,13 +105,27 @@ function createPresence(opts) {
 
   function openTo(url) {
     if (streams[url]) return;
-    const sig = auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey));
     streams[url] = openStream({
       url: streamUrl(url, identity.publicKey),
-      // The signature is a HEADER. A query string lands in every access
-      // log the request passes, and the relay refuses one there even
-      // when the header is good.
-      headers: { 'X-Spirit-Sig': sig },
+      // SIGNED PER ATTEMPT, not once. streamMessage carries a unix
+      // minute and is checked ±1, so a signature captured at connect
+      // time is refused by every reconnect more than two minutes later —
+      // and a held connection is reconnected for years.
+      //
+      // This shipped as a constant and was caught only on the live relay,
+      // because the lab never runs long enough for the minute to roll.
+      //
+      // A HEADER, never the query string: a query lands in every access
+      // log the request passes, and the relay refuses one there even when
+      // the header is good.
+      headers: function () {
+        return {
+          'X-Spirit-Sig': auth.sign(
+            identity.privateKey,
+            auth.streamMessage(identity.publicKey)
+          ),
+        };
+      },
       onEvent: function (msg) {
         if (msg.event === 'roster') onRoster(url, msg.data);
         else if (msg.event === 'presence') onChange(url, msg.data);

@@ -52,7 +52,11 @@ function parseChunk(text) {
 
 // opts:
 //   url        absolute, including query
-//   headers    sent once, on the request — this is the whole point
+//   headers    an object, or a FUNCTION returning one. Prefer the
+//              function: a header computed once and reused for the life
+//              of a reconnect loop is a header that goes stale, and this
+//              client's whole reason for existing is that it can send a
+//              signed one (see below).
 //   onEvent    ({event, data})
 //   onOpen     ()                  — a connection was accepted
 //   onClose    (reason)            — it ended, for any reason
@@ -97,7 +101,7 @@ function connect(opts) {
     var res;
     try {
       res = await doFetch(opts.url, {
-        headers: opts.headers || {},
+        headers: (typeof opts.headers === 'function' ? opts.headers() : opts.headers) || {},
         signal: controller ? controller.signal : undefined,
       });
     } catch (e) {
@@ -110,10 +114,15 @@ function connect(opts) {
       return;
     }
 
-    // A connection that was ACCEPTED resets the backoff. Not one that was
-    // merely attempted: a relay refusing every time would otherwise be
-    // retried at one second forever.
-    retryMs = firstRetry;
+    // NOT reset here, and that cost a live incident. A refusal can arrive
+    // as a 200 whose body closes at once — this client cannot see a status
+    // the server has already committed to — so "the server accepted my
+    // socket" is not evidence that anything worked. Resetting on it turned
+    // a stale credential into a one-per-second hammer that then spent the
+    // relay's rate limit, which guaranteed the refusals continued.
+    //
+    // The backoff resets when something ARRIVES. A stream that delivers is
+    // a stream that works, and nothing weaker is worth believing.
     say(opts.onOpen);
 
     var reader = res.body.getReader();
@@ -131,7 +140,9 @@ function connect(opts) {
         buffer = parts.pop();
         parts.forEach(function (raw) {
           var msg = parseChunk(raw);
-          if (msg) say(opts.onEvent, msg);
+          if (!msg) return;
+          retryMs = firstRetry;
+          say(opts.onEvent, msg);
         });
       }
     } catch (e) {
