@@ -1205,6 +1205,11 @@ function createHub(rootDir) {
 
 module.exports = {
   createHub: createHub,
+  // This node's outbound request to a relay, with the URL assertion that
+  // goes with it. Exported for presenceNode, which needs the same
+  // primitive to probe which relays it holds a row on and must not grow
+  // a second one that asserts less.
+  relayRequest: relayRequest,
   buildPeople: buildPeople,
   acquireFromInbox: acquireFromInbox,
   handleMatches: handleMatches,

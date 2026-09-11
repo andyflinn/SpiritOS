@@ -142,6 +142,10 @@ const BOOT_ASSETS = ['index.html', 'relay.html', 'js/kernel.js', 'js/client/shel
 const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
 
+// Held here rather than inside the boot block so a later shutdown path
+// has something to close. Null on a relay, which holds no streams.
+let presence = null;
+
 const requestCounters = { total: 0, byMethod: {}, byStatusClass: {} };
 jobs.startStatsJob({ requestCounters: requestCounters });
 
@@ -1237,6 +1241,20 @@ if (!relayMode) {
   // Personal mode only, like the sweep above. A --relay has no device of
   // its own to enrol and must never poll anybody.
   hub.resumeListening().catch(() => {});
+
+  // Presence: one held connection to every relay this node holds a ROW
+  // on — not only the ones it owns, since B2 gave every identity its own
+  // standing on a mailbox. The connection's existence IS the presence,
+  // so there is nothing to announce and nothing to expire.
+  //
+  // Published as a permanent job, beside fs-watcher and server-stats, so
+  // the shell receives it on the channel it already has. Personal mode
+  // only: a relay serves this wire, it does not hold one.
+  presence = require('./presenceNode').createPresence({
+    rootDir: ROOT_DIR,
+    jobs: jobs,
+  });
+  presence.start(require('./hub').relayRequest).catch(() => {});
 }
 
 server.listen(port, BIND_HOST, () => {
