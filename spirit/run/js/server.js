@@ -21,6 +21,12 @@ const relay = createRelay.createRelay();
 // the other, which is the point of putting a seam between them.
 const arrivals = require('./arrivals').createArrivals();
 
+// How often a relay tells its owner how it is doing. Not a poll: the
+// owner already holds a stream, and this only decides how stale the
+// memory figure may get. Long enough to be free, short enough that a
+// person watching believes the number.
+const RELAY_STATUS_MS = 10000;
+
 //console.log(JSON.stringify(spirit,null,2));
 
 // Checked before verifyStartupCwd below, on purpose — --help should work
@@ -897,7 +903,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET' && pathname === '/api/hub/status') {
-    hub.handleStatus(req, res, url);
+    hub.handleStatus(req, res, url, { presence: presence });
     return;
   }
 
@@ -1407,6 +1413,22 @@ server.listen(port, BIND_HOST, () => {
         '    (a { "keys": [...] } list) to require signed claims and sends.'
       );
     }
+
+    // THE HEARTBEAT BEHIND THE MONITOR. relay.js pushes a report on every
+    // presence change already; this covers the figures that move when
+    // nothing else does — memory, uptime, requests in flight. Without it
+    // a monitor on a quiet relay would look frozen, which is the one
+    // thing a monitor must never look like when the box is fine.
+    //
+    // Ten seconds, to ONE sink, and only while the owner is connected —
+    // statusToOwner is silent otherwise, so an unattended relay spends
+    // nothing on this but the timer itself. unref() so it never holds the
+    // process open on its own.
+    var statusTimer = setInterval(function () {
+      try { relay.statusToOwner(); }
+      catch (e) { /* a monitor must not be able to take the relay down */ }
+    }, RELAY_STATUS_MS);
+    if (typeof statusTimer.unref === 'function') statusTimer.unref();
   } else {
     console.log(`Server listening on http://localhost:${port}`);
   }

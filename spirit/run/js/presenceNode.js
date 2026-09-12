@@ -86,6 +86,12 @@ function createPresence(opts) {
     return true;
   }
 
+  // The last thing each owned relay said about itself. Deliberately not
+  // a job and not a file: it is a live reading, it is worthless the
+  // moment it is stale, and writing it down would make a node keep a
+  // history of a box that is supposed to keep nothing.
+  const statusByRelay = Object.create(null);
+
   function onRoster(url, body) {
     const set = Object.create(null);
     ((body && body.members) || []).forEach(function (m) {
@@ -189,6 +195,17 @@ function createPresence(opts) {
         // a second subject.
         else if (msg.event === 'request' && router) router.onRequest(url, msg.data);
         else if (msg.event === 'reply' && router) router.onReply(msg.data);
+        // A RELAY TELLING ITS OWNER HOW IT IS DOING. Only a relay this
+        // node OWNS ever sends one — the rule is enforced at the far end,
+        // where the owner's key is, and this side does not second-guess
+        // it: a relay that sent one to a non-owner would be a relay
+        // publishing its own invite labels, which is its bug to have and
+        // not something a node can undo by ignoring the message.
+        //
+        // Kept, not acted on. The latest report per relay, overwritten
+        // each time, so nothing accumulates and a node that never looks
+        // holds exactly one object per relay it owns.
+        else if (msg.event === 'relay-status') statusByRelay[url] = msg.data;
       },
       onOpen: function () { publish('connected to ' + url); },
       onClose: function (reason) { forget(url); publish('lost ' + url + ': ' + reason); },
@@ -244,9 +261,15 @@ function createPresence(opts) {
     // without waiting for a job event.
     table: merge,
     detail: function () { return byRelay; },
+    // What each owned relay last said about itself, or {} before any
+    // report has arrived. A caller must treat an absent entry as "not
+    // told yet" rather than as "nothing to tell" — they look identical
+    // here and mean very different things.
+    relayStatus: function () { return statusByRelay; },
     jobId: function () { return job && job.id; },
     // Fed by tests standing in for a relay.
     _roster: onRoster,
+    _status: function (url, data) { statusByRelay[url] = data; },
     _change: onChange,
     _forget: forget,
   };

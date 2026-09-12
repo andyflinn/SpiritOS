@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 10 requirements, 5 done.**
+**Status: OPEN — 10 requirements, 6 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -385,10 +385,40 @@ nothing on anyone's behalf. But it is a second kind of traffic on a
 stream that has carried only peer traffic, and the owner's node must be
 free to ignore it.
 
-**Verify:** not written. Must assert that the event reaches the owner's
-sink and **no other sink** — the negative half, or it passes against a
-broadcast.
-**Status:** OPEN
+Built as [`relayStatus.js`](../../spirit/run/js/relayStatus.js) (the
+report, pure) plus `relay.statusToOwner()` (the delivery). The split is
+deliberate: the rule that must never be got wrong lives next to the key
+it depends on, and the part that formats numbers is testable without a
+relay at all.
+
+Pushed on every presence change, and on a 10-second timer in `server.js`
+for the figures that move when nothing else does — a monitor on a quiet
+relay that looked frozen would be worse than none.
+
+**What it carries that nothing else could answer:** requests in flight,
+memory (rss *and* heap — the gap is the interesting figure on a box made
+of sockets), uptime, and **live invites**, which are in no census and on
+no public route. Labels and expiry only: the token is a credential and a
+monitor is a view, not a place to leave secrets on a screen.
+
+Reachable rather than merely held — `presenceNode` keeps the latest
+report per owned relay and `/api/hub/status` returns it under
+`relayStatus`, keyed by url and **absent** rather than empty for a relay
+that has not spoken. "Not told yet" and "told me nothing" look identical
+to a careless reader and mean very different things.
+
+**Verify:** `spirit/test/relayStatus.js` — "the owner gets a report
+without asking, as soon as its stream is open" **and its negative half**,
+"a peer who is not the owner gets none at all — this is send(), never
+broadcast()", plus "no invite label anywhere in a non-owner's stream".
+Every other event on this stream travels by `broadcast`, which cannot
+express a recipient, so the wrong function is the familiar one and one
+word away.
+
+Verified live over real HTTP against a relay started from the repo: the
+report arrives at stream-open and again on the tick, memory moving
+between them, and no token in either.
+**Status:** DONE
 
 ### R10 — a packet that arrives while no page is open is not lost
 **Found by building R3, and it is the reason R8 cannot simply follow.**

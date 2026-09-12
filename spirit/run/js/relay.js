@@ -11,6 +11,7 @@ const relayConsole = require('./relayConsole');
 const deviceAuth = require('./deviceAuth');
 const presence = require('./presence');
 const routerTable = require('./router');
+const relayStatus = require('./relayStatus');
 // Once, at load, for the same reason server.js does it: the answer must
 // describe the code that is running, not the code on disk.
 const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
@@ -1248,6 +1249,48 @@ function createRelay(rootDir) {
   // Nothing secret: /api/relay/who hands the same labels and keys to
   // anyone who asks. What is new is liveness, which is disclosure and is
   // intended.
+  // THE RELAY'S OWN CONDITION, TO ITS OWNER AND TO NOBODY ELSE.
+  //
+  // The delivery rule lives here rather than in relayStatus.js because
+  // this is the only place that knows who the owner is, and because
+  // getting it wrong is the whole risk: this report carries live invite
+  // labels, which are in no census and on no public route.
+  //
+  // `presentNow.send(id, ...)` addresses ONE sink. The mistake to avoid
+  // is broadcast(), which walks every sink and cannot express a
+  // recipient at all — it is how every other event on this stream
+  // travels, so reaching for the familiar one would publish an owner's
+  // invites to every connected peer. spirit/test/relayStatus.js asserts
+  // the negative half for exactly that reason.
+  //
+  // Silent when the owner is not connected. A relay does not queue and
+  // does not retry (0006); the next report is along shortly, and one the
+  // owner was not there for is not worth keeping.
+  function statusToOwner() {
+    var ownerLabel = auth.ownerName(allow);
+    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    if (!ownerKey) return false;
+    if (!presentNow.isPresent(ownerKey)) return false;
+
+    var mem = {};
+    try { mem = process.memoryUsage(); } catch (e) { mem = {}; }
+
+    return !!presentNow.send(ownerKey, 'relay-status', relayStatus.report({
+      snapshot: snapshot(),
+      present: presentNow.present(),
+      routes: routes.size(),
+      invites: invites.load(rootDir),
+      version: require('./kernel').core.const.VERSION + ' ' + RUNNING.commit +
+        (RUNNING.dirty ? '+dirty' : ''),
+      proc: {
+        rss: mem.rss,
+        heapUsed: mem.heapUsed,
+        heapTotal: mem.heapTotal,
+        uptime: (function () { try { return process.uptime(); } catch (e) { return 0; } })(),
+      },
+    }));
+  }
+
   function streamRoster() {
     return {
       members: who().map(function (p) {
@@ -1289,6 +1332,13 @@ function createRelay(rootDir) {
     //    be sent.
     presentNow.send(who_.id, 'roster', streamRoster());
     presentNow.broadcast('presence', { key: who_.id, present: true });
+
+    // 5. And the owner learns what its box now looks like. Sent after the
+    //    roster so an owner opening its own stream gets the membership
+    //    first and the condition second, and sent on every arrival
+    //    because "who is connected" is half of what the report says.
+    //    Silent when the owner is not here — see statusToOwner.
+    statusToOwner();
     return { ok: true, status: 200, id: who_.id, label: who_.label };
   }
 
@@ -1301,6 +1351,10 @@ function createRelay(rootDir) {
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
     presentNow.broadcast('presence', { key: who_.id, present: false });
+    // Somebody leaving changes the report as much as somebody arriving.
+    // A no-op when the leaver IS the owner, which is correct: there is
+    // nobody left to tell.
+    statusToOwner();
     return true;
   }
 
@@ -1313,6 +1367,11 @@ function createRelay(rootDir) {
     status: status,
     mint: mint,
     snapshot: snapshot,
+    // Pushed on every presence change from inside this file; server.js
+    // also calls it on a timer, because memory and uptime move when
+    // nothing else does — and a monitor that only updates when a peer
+    // connects would look frozen on a quiet relay.
+    statusToOwner: statusToOwner,
     setDevice: setDevice,
     // The whole device surface, now that the slot and its two verbs are
     // gone: one call, which posts the offer to the node and resolves when

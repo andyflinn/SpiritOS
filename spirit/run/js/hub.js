@@ -1296,7 +1296,7 @@ function createHub(rootDir) {
     }));
   }
 
-  function handleStatus(req, res, urlObj) {
+  function handleStatus(req, res, urlObj, deps) {
     var name = urlObj.searchParams.get('name') || '';
     // THE KEY, or every row comes back saying nothing about whether this
     // node is ON that relay.
@@ -1326,6 +1326,19 @@ function createHub(rootDir) {
           // sent, so the browser had to infer it and could not.
           claimedUrls: summary.claimedUrls,
           mustPick: summary.mustPick,
+          // WHAT EACH OWNED RELAY LAST SAID ABOUT ITSELF, pushed down
+          // the stream rather than asked for. Everything else on this
+          // response was fetched by probe() making requests; this was
+          // already here when the question arrived.
+          //
+          // Keyed by relay url, and ABSENT rather than empty for a relay
+          // that has not reported. The two look identical to a careless
+          // reader and mean very different things — "not told yet"
+          // versus "told me nothing" — so a monitor must not draw zeros
+          // for a relay that has simply not spoken.
+          relayStatus: (deps && deps.presence && deps.presence.relayStatus)
+            ? deps.presence.relayStatus()
+            : {},
         }));
       })
       .catch(function (err) { fail(res, 502, String(err.message || err)); });
