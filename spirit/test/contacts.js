@@ -86,6 +86,31 @@ function mountApp(options) {
       matches: opts.matches || [],
     };
     let status = 200;
+    // THE NODE HOLDS THE STRANGER POLICY, so the fake holds it too: a GET
+    // answers what is set and a POST changes it. A stub that answered a
+    // fixture forever would let a panel that never repaints pass, which
+    // is the trap this harness already learned once on /api/hub/peer.
+    if (url.indexOf('/api/hub/unknown-senders') === 0) {
+      if ((init && init.method) === 'POST') {
+        const sent = JSON.parse((init && init.body) || '{}');
+        if (opts.policyRefuses) {
+          const bad = JSON.stringify({ ok: false, error: 'refused' });
+          return Promise.resolve({
+            status: 400,
+            text: function () { return Promise.resolve(bad); },
+            json: function () { return Promise.resolve(JSON.parse(bad)); },
+          });
+        }
+        opts.policy = sent.policy;
+      }
+      if (opts.deaf) return Promise.reject(new Error('no answer'));
+      const body = JSON.stringify({ ok: true, policy: opts.policy || 'silent' });
+      return Promise.resolve({
+        status: 200,
+        text: function () { return Promise.resolve(body); },
+        json: function () { return Promise.resolve(JSON.parse(body)); },
+      });
+    }
     if (url.indexOf('/api/hub/contact') === 0) status = opts.contactStatus || 201;
     if (url.indexOf('/api/hub/peer') === 0) {
       status = opts.peerStatus || 200;
@@ -289,15 +314,31 @@ function strangerPolicy() {
       test.fail('a hold count came across with the panel');
     }
 
-    // Choosing is remembered, in this app's own file.
+    // CHOOSING IS ASKED FOR, NOT WRITTEN. The setting stopped being this
+    // app's file when it stopped being this app's business: it is what
+    // the NODE does about a stranger, and a node-global answer stored
+    // inside one of its readers was wrong as a location and wrong as a
+    // layer — api.fs is scoped to app/<name>/, and a jail an app can
+    // write is not a jail.
     el(app, 'contacts-unknown-choices').fire('change', { target: { value: 'acquire' } });
     return settle().then(function () {
-      let saved = null;
-      try { saved = JSON.parse(app.store['prefs.json']); } catch (e) { saved = null; }
-      if (saved && saved.unknown === 'acquire') {
-        test.check('a choice is written to this app\'s own prefs.json');
+      const posts = app.log.filter(function (c) {
+        return c.url.indexOf('/api/hub/unknown-senders') === 0 && c.method === 'POST';
+      });
+      const sent = posts.length ? JSON.parse(posts[0].body) : null;
+      if (posts.length === 1 && sent && sent.policy === 'acquire') {
+        test.check('a choice is POSTed to the node, which is what holds it');
       } else {
-        test.fail('prefs.json: ' + app.store['prefs.json']);
+        test.fail('posts: ' + JSON.stringify(posts));
+      }
+
+      // THE FILE IS GONE, and this is the check that keeps it gone. The
+      // value has already moved between two apps' folders — relayChat's,
+      // then contacts' — which was the tell that it belonged to neither.
+      if (Object.keys(app.store).length === 0) {
+        test.check('and this app writes no file at all any more');
+      } else {
+        test.fail('contacts.js wrote: ' + JSON.stringify(Object.keys(app.store)));
       }
 
       if (el(app, 'contacts-unknown-summary').textContent ===
@@ -307,45 +348,66 @@ function strangerPolicy() {
         test.fail('summary: ' + el(app, 'contacts-unknown-summary').textContent);
       }
 
-      // A stored value comes back chosen.
-      const back = mountApp({ store: { 'prefs.json': JSON.stringify({ unknown: 'hold' }) } });
+      // What the node says is what the radios show — on first paint, not
+      // after a correction. The read is a round trip now, so painting
+      // before it lands would draw `silent` every time.
+      const back = mountApp({ policy: 'hold' });
       return settle().then(function () {
         if (/value="hold"[^>]*checked/.test(el(back, 'contacts-unknown-choices').innerHTML)) {
-          test.check('a remembered choice comes back checked');
+          test.check('and what the node holds is what comes back checked');
         } else {
           test.fail('restored: ' + el(back, 'contacts-unknown-choices').innerHTML);
         }
 
-        // Nonsense in the file is not a policy. Same reason as a missing
-        // one: the default is the safe answer.
-        const bogus = mountApp({ store: { 'prefs.json': JSON.stringify({ unknown: 'whatever' }) } });
+        // Nonsense from the node is not a policy either. Same reason as a
+        // missing one: the default is the safe answer, and being wrong
+        // towards `silent` costs a message rather than a stranger a row.
+        const bogus = mountApp({ policy: 'whatever' });
         return settle().then(function () {
           if (/value="silent"[^>]*checked/.test(el(bogus, 'contacts-unknown-choices').innerHTML)) {
-            test.check('and a value nobody offered degrades to silent');
+            test.check('a value nobody offered degrades to silent');
           } else {
             test.fail('bogus: ' + el(bogus, 'contacts-unknown-choices').innerHTML);
           }
 
-          // The one-time adoption. Without it a deliberate Hold reverts
-          // to Silent on the first load after the move — a change of
-          // behaviour nobody asked for.
-          const moved = mountApp({
-            project: { 'app/relayChat/prefs.json': JSON.stringify({ unknown: 'hold', dnd: true }) },
-          });
+          // A NODE THAT WILL NOT ANSWER reads as the tightest setting,
+          // not as whatever was on screen. The old file could not fail
+          // this way; a round trip can.
+          const mute = mountApp({ policy: 'acquire', deaf: true });
           return settle().then(function () {
-            if (/value="hold"[^>]*checked/.test(el(moved, 'contacts-unknown-choices').innerHTML)) {
-              test.check('and a value left in chat\'s old file is adopted once, not lost');
+            // deaf is honoured by the harness below; with no answer at
+            // all the app must still paint something, and it must be the
+            // safe thing.
+            const drawn = el(mute, 'contacts-unknown-choices').innerHTML;
+            if (/value="silent"[^>]*checked/.test(drawn)) {
+              test.check('and a node that does not answer reads as silent, never as the last thing seen');
             } else {
-              test.fail('adoption: ' + el(moved, 'contacts-unknown-choices').innerHTML);
+              test.fail('deaf node: ' + drawn);
             }
 
-            // One-way. The old file is read and never written, so the two
-            // apps can never end up with two live answers.
-            if (moved.store['app/relayChat/prefs.json'] === undefined) {
-              test.check('and chat\'s file is read, never written back to');
-            } else {
-              test.fail('wrote to the old file: ' + moved.store['app/relayChat/prefs.json']);
-            }
+            // A REFUSED CHANGE MUST NOT SHOW AS MADE. The radio reflects
+            // what the node will actually do, which is why the repaint
+            // happens from the answer rather than from the click — a
+            // control that lies about a security setting is worse than
+            // one that is hard to use.
+            const refused = mountApp({ policy: 'silent', policyRefuses: true });
+            return settle().then(function () {
+              el(refused, 'contacts-unknown-choices').fire('change', { target: { value: 'acquire' } });
+              return settle().then(function () {
+                const drawn2 = el(refused, 'contacts-unknown-choices').innerHTML;
+                if (/value="silent"[^>]*checked/.test(drawn2)) {
+                  test.check('a refused change repaints as unchanged, rather than showing a radio that lies');
+                } else {
+                  test.fail('after refusal: ' + drawn2);
+                }
+
+                if (/could not remember/.test(el(refused, 'contacts-status').textContent)) {
+                  test.check('and says so, rather than failing quietly');
+                } else {
+                  test.fail('status: ' + el(refused, 'contacts-status').textContent);
+                }
+              });
+            });
           });
         });
       });
@@ -689,16 +751,20 @@ function sendsNothing() {
     test.fail('contacts.js sends something');
   }
 
-  // The book itself is still whoBook's: this app reads it over the hub
-  // and never keeps a copy. The one file it does own is its own
-  // preference — where the stranger policy moved to (Andy) — and the
-  // claim narrowed rather than held, so it is asserted narrowly: exactly
-  // one write, and it is that file.
-  const writes = src.match(/saveFile\(([A-Za-z_]+)/g) || [];
-  if (writes.length === 1 && writes[0] === 'saveFile(CONTACTS_PREFS_FILE') {
-    test.check('and the only thing it keeps on disk is its own preference — whoBook is still the book');
+  // THIS APP KEEPS NOTHING ON DISK, and the claim got stronger rather
+  // than being relaxed. It used to own exactly one file — the stranger
+  // policy, which had already moved here from relayChat's folder. Moving
+  // twice between apps was the tell that it belonged to neither: it is
+  // what the NODE does about a stranger, so it lives in preferences.json
+  // and is reached through /api/hub/unknown-senders.
+  //
+  // What that leaves is an app that draws and asks, and stores nothing at
+  // all. whoBook is still the book; now nothing here is.
+  const writes = src.match(/saveFile\(/g) || [];
+  if (writes.length === 0) {
+    test.check('and it keeps nothing on disk — it draws the control, the node holds the value');
   } else {
-    test.fail('contacts.js writes: ' + JSON.stringify(writes));
+    test.fail('contacts.js writes: ' + JSON.stringify(src.match(/saveFile\([A-Za-z_'"./]*/g)));
   }
 
   // No peer, no label, no key of anybody's in a file of this app's own.

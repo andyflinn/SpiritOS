@@ -18,7 +18,8 @@
 // For one cycle chat still carried the answer to the hub, because chat is
 // what polls — which meant a node-level policy travelling through an app
 // with no say in it, and a second poller or a stale tab would have been a
-// second answer. The hub reads app/contacts/prefs.json itself now.
+// second answer. The hub holds it itself now — preferences.json, set
+// through /api/hub/unknown-senders, and no app's file at all.
 //
 // So: Contacts writes it, the hub reads it, this app polls and says
 // nothing about it.
@@ -582,7 +583,7 @@ spirit.shell.activateApp({
     // files rather than of the last response.
     function refreshInbox() {
       if (!myName) return;
-      // No policy on the request. The hub reads app/contacts/prefs.json
+      // No policy on the request. The hub reads preferences.json
       // itself (packet 5, hub.js unknownPolicy) and ignores a ?unknown=
       // if an older client still sends one — so this app cannot get the
       // node's answer about strangers wrong, or stale, by polling.

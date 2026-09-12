@@ -81,7 +81,7 @@ anyone can read, and it can address nobody but the node that owns it.
 | | a peer | a device |
 |---|---|---|
 | key | permanent identity | temporary session key |
-| may address | any peer on the relay | **its owner, and nothing else — ever** |
+| may address | any peer on the relay | **its owner — and only because the node's key is the address it posts to** |
 | reaches a peer by | posting | **asking its node to** |
 | appears in the census | to everyone | **to its owner, and to nobody else** |
 | authority toward peers | signs as itself | **none — it petitions** |
@@ -206,140 +206,203 @@ for free.
 
 ---
 
-## 2. The relay holds the pairing, in RAM, and may not publish it
+## 2. The address is the destination; the pairing is only a cache
 
-For the relay to route *to* a device the relay must be able to address
-it. There is no way around that, and the alternative — a device with no
-routable key — forces it to poll for anything the node wants to say,
-which is the mechanism deleted on 2026-09-12.
+**Revised three times on 2026-09-12, each time narrowing it.** The earlier
+versions are recorded at the end of this section rather than deleted,
+because two of them were wrong in a way worth not repeating: they built
+machinery for a property the addressing already had.
 
-So the relay keeps `deviceKey → ownerKey`. Two rules govern it.
+### What the relay must guarantee
 
-### RAM only
+> Andy: what the relay is NOT allowed to do is: expose the temporary
+> device ID to any other peer
 
-The tree already argues this, in [presence.js](../../spirit/run/js/presence.js):
+> the connected device must only appear on the census for its owning node
+
+> a device key only resolves for its owner AND the relay
+
+Two questions, and separating them is what shrank this section:
+
+| | |
+|---|---|
+| **destination** — can a device reach anyone but its node? | **No, structurally.** The node's key is in the path |
+| **authenticity** — is this really that node's device? | the session key, checked against a pairing the relay caches |
+
+### Destination: the path, not a comparison
+
+Andy:
+
+> when the device posts for a login/connect: the last path segment on that
+> post is the public key of the associated node, or at least the path of
+> that page is made unique by the pub key of the node
+
+> can a static device page post to the relay with a relative path?
+> ./device? and that gets translated to a path for the server?
+
+**Yes, and this is the whole of the destination rule.**
+
+`DEVICE_PAGE_PATH` is `/^\/([A-Za-z0-9_-]{16,512})\/device$/` and
+`devicePageKey()` (`server.js:651`) decodes that segment back to the
+node's public key. There is **no trailing slash**, so a page served at
+`/KEY/device` resolves relative URLs against `/KEY/`:
+
+| from the page | resolves to |
+|---|---|
+| `./device` | `/KEY/device` — the same URL that served it |
+| `./enrol` | `/KEY/enrol` |
+| `/api/relay/device` *(what it does today)* | `/api/relay/device` — **the key is gone** |
+
+So `GET /KEY/device` serves the page and `POST /KEY/device` is the
+enrolment: one path, two methods, and the server already knows how to read
+the node out of it.
+
+**Why this is stronger than a check.** A body field is something a caller
+chooses. With the node in the path, a device page cannot address a
+different node by changing a field — it would have to be served from a
+different URL, which is a different page. **The wrong destination is not
+refused, it is unrepresentable.**
+
+That matters because a comparison can be forgotten. Grok's review found
+exactly that: `routePost` appeared to reject device keys and in fact
+rejected them by accident, because nothing resolved them. A check that
+only seems to exist is the failure mode of checks. An address space has no
+line to delete.
+
+**And relative posting is what stops the page dropping it.** Today
+`device.html:92` regexes `enrollFor` out of `location.pathname` and sends
+it as a **body field** to an absolute path — so the key leaves the
+address, travels through JavaScript, and returns as data the server must
+trust. Posting relatively removes the parsing step, and therefore removes
+the parsing step's bugs.
+
+Three things to get right when this is built:
+
+- `isRelayPublicPath` allows **GET only** for `devicePageKey`
+  (`server.js:681`). POST needs adding — as a second method on a path that
+  already exists, not as a new route.
+- Any verb beyond `/device` (a `/KEY/connect`, say) means widening that
+  regex. Keep it a **closed list** of segments, never a wildcard.
+- The page tolerates a trailing slash (`\/device\/?$`) and the server does
+  not. Harmless while the page only reads the key; once the path is
+  load-bearing the two must agree, because a page at `/KEY/device/` would
+  resolve `./enrol` to `/KEY/device/enrol` and miss.
+
+### Authenticity: ask the node the path already names
+
+The path says which node a device claims to belong to. It does not say the
+device is genuinely that node's. For that the relay needs the device's
+public key — and the way it gets one is to ask:
+
+> Relay: *a device claiming key D wants to connect — is that yours?*
+> Node: checks `relay-state/device.json`, answers signed.
+> Relay: caches `D → node`, opens the stream.
+
+No new transport. `post(toKey, text)` has been generic since the poll was
+deleted, and `answerRelay` on the node already dispatches on the payload's
+shape, so this is a second question beside `device-offer`.
+
+**The relay never has to guess whom to ask**, which is the other thing the
+path buys: the question is addressed by the request that provoked it.
+
+Three consequences, all good:
+
+- **It self-heals.** A relay restart drops the cache; the device
+  reconnects; the relay asks again. A restart already drops every presence
+  stream and everyone reconnects, so a device becomes the same class of
+  event rather than a special one needing a re-typed password.
+- **It works on a relay that never saw the enrolment.** The device key
+  lives on the node, so any relay can ask — which is B2's "one device,
+  every relay" without `installEverywhere`'s fan-out.
+- **Revocation becomes authoritative rather than eventual.** The node
+  forgets the device locally and the next connect anywhere is refused,
+  because a relay that does not know asks. That is the red button reduced
+  to one local write.
+
+One gap to close on purpose: a device **already connected** keeps its
+stream, because the relay holds the cache. So revoking should also have
+the node tell its connected relays to drop — cheap, since it holds streams
+to all of them, and the one case where an announce verb earns itself. A
+short cache lifetime would also work and is worse: a lifetime is a guess,
+a drop is immediate.
+
+### The pairing is RAM, and only for the return path
+
+`deviceKey → ownerKey`, in memory, never on disk.
+
+**It exists for one reason: the node has to be able to reach BACK.** A
+device reads a stream, so the relay needs a sink under the device's key to
+push down. Nothing else needs it — the destination rule above is
+addressing, not lookup.
+
+Why RAM is right, in the tree's own words
+([presence.js](../../spirit/run/js/presence.js)):
 
 > In RAM, never written to disk — presence is true only while a socket is
 > open, and written down it is a record of something that has stopped
 > being true.
 
-A session key is that kind of fact. Consequences, all of them wanted:
+A session key is that kind of fact. It satisfies
+[0006](../decisions/0006-fast-and-true-not-guaranteed.md) — a cache is not
+storage on anyone's behalf — and
+[0007](../decisions/0007-a-relay-survives-and-earns-its-keep.md), since
+nothing accumulates and the bound is live connections.
 
-- A relay restart drops every device. **Free revocation**, and no
-  accumulation of stale device keys on a public box.
-- It satisfies 0006 — a RAM pairing is not storage on anyone's behalf.
-- It satisfies [0007](../decisions/0007-a-relay-survives-and-earns-its-keep.md)
-  — nothing to fill, bounded by live connections.
+### Never exposed to another peer
 
-**Repopulation costs nothing, because the lifecycle already exists.** A
-node holds one connection to every relay it has a row on and reconnects
-with backoff ([presenceNode.js](../../spirit/run/js/presenceNode.js)). The
-device registration rides that reconnect. The node announces the pairing
-**signed with the house key** — it is the only party entitled to, or
-anybody could register a device against anybody's node.
-
-### Visible to its owner, and to nobody else
-
-Andy, in two statements that belong together:
-
-> what the relay is NOT allowed to do is: expose the temporary device ID
-> to any other peer
-
-> the connected device must only appear on the census for its owning node
-
-So it is not invisible — it is **scoped**. And the second half is not a
-courtesy: presence is how a node knows whether its own device is live.
-Without it the node posts into a 503 it cannot explain, the panel cannot
-say *"one device attached"* before somebody walks out of a hotel, and
-after the red button there is nothing to confirm the device is gone.
-
-**One rule produces all of it: a device key resolves for its owner and for
-the relay, and for nobody else** (Andy's addendum, and the first draft of
-this rule was wrong without it — see below).
-
-That is a rule about *resolution*, not about publication, and stating it
-that way is what makes it hold. `deviceIdentity` (`relay.js:748`) is the
-single lookup behind the census, the roster and the router — and
-`routePost` already knows who is asking (`fromToken`). Scope the lookup
-and everything downstream follows, including the oracle problem: a device
-key asked about by anyone else is *"no such peer"*, which is both the safe
-answer and the true one.
-
-### Why the relay is on that list
-
-Because the relay is not an observer of the pairing, it is the party that
-holds it. Drop it from the rule and routing becomes impossible in both
-directions:
-
-- **Device → node.** The device POSTs, and the relay must resolve *the
-  device's own key* to verify the signature and to enforce the rule that
-  makes the session key safe: **a packet signed by a device's session key
-  may be addressed to its paired owner and to nothing else.** The asker
-  here is the device, so "resolves only for its owner" would refuse the
-  device its own identity.
-
-  **And that limit is the whole of it**, because the device has no other
-  channel. It asks its node to act and reads the answer; it never
-  addresses a peer and never posts anything its owner signed. One rule,
-  no exception — which is what makes the rest of this section a complete
-  description rather than most of one.
-- **Node → device.** The relay must resolve the device key to find the
-  sink to push down.
-
-**It resolves to route; it never resolves to answer.** That distinction
-already has a seam in the code — `deviceIdentity` is the internal lookup,
-`deviceIdentityPublic` (`relay.js:1272`) is the outward face that returns
-a label and deliberately no keys at all. The scoped rule lands on that
-existing split rather than needing a new one.
-
-And it gives nothing away that matters: the relay holds the device's
-**public** key. It can route to it and verify its signatures; it cannot
-forge one. With the payload sealed to the node (§5) what the relay knows
-is *"device D is talking to node N"* — the same association it has for any
-two peers, and no more.
+Four existing surfaces would leak a device ID, every one of them doing the
+right thing for a peer:
 
 | surface | audience |
 |---|---|
 | `who()` → `/api/relay/who` (`relay.js:253`) | **anyone on the internet**, unauthenticated |
 | `streamRoster()` (`relay.js:1186`) | every peer, on connect |
-| `presence.broadcast('presence', …)` (`relay.js:1226`, `:1238`, `:1057`) | **every** connected sink, on connect, disconnect and removal |
-| `deviceIdentityPublic` (`relay.js:1272`) | anyone — it confirms whether a key exists on this box |
+| `presence.broadcast('presence', …)` (`:1226`, `:1238`, `:1057`) | **every** connected sink, on connect, disconnect and removal |
+| `deviceIdentityPublic` (`:1272`) | anyone — it confirms whether a key exists on this box |
 
 The last is the quiet one: absent from the roster, a lookup that still
 resolves a device key is an oracle for confirming a guessed one.
 
-**The defence must be structural, not a filter.** The pairing lives in its
-own table that `who()` cannot reach. Then leaking requires writing new
-code rather than forgetting to filter — and a filter on `who()` is one
-refactor away from being dropped.
+**Structural, not a filter.** The pairing lives in its own table that
+`who()` cannot reach, and a device's connection registers a sink
+**without broadcasting** — which is why §3 says devices need their own
+entry point. Then leaking requires writing new code rather than forgetting
+to filter, and a filter on `who()` is one refactor from being dropped.
 
-Where the scoped view lands, given that:
+Where the scoped view lands:
 
 | surface | what changes |
 |---|---|
-| `/api/relay/who` | **nothing.** It is unauthenticated — it does not know who is asking and must never carry a scoped answer |
-| `streamRoster()` | takes the viewer: `streamRoster(who_.id)`. It is **already sent per connection** (`relay.js:1225`), it merely computes the same answer for everyone today |
-| the presence event | **stops being a broadcast.** A device appearing or leaving is `presentNow.send(ownerKey, …)`, not `broadcast(…)` — one word, and the whole difference in exposure |
-| `deviceIdentity` | resolves a device key for its owner and for the relay's own routing; *"no such peer"* to everyone else |
+| `/api/relay/who` | **nothing.** Unauthenticated: it does not know who is asking and must never carry a scoped answer |
+| `streamRoster()` | takes the viewer. Already sent per connection (`relay.js:1225`); it merely computes one answer for everyone today |
+| the presence event | **stops being a broadcast.** `presentNow.send(ownerKey, …)`, not `broadcast(…)` — one word, and the whole difference in exposure |
+| `deviceIdentity` | resolves a device key for its owner and for the relay's own routing; *"no such peer"* to everybody else |
 
-The stream is the right home for the scoped view because it is **the only
-authenticated view a node has**. `streamOpen` verified a signature to open
-it; `/api/relay/who` verified nothing and is reachable by anyone on the
-internet. Putting a per-viewer answer on the unauthenticated route would
-mean inventing an authenticated mode for it, and the authenticated channel
-already exists.
+The stream is the right home for the scoped view because it is the only
+**authenticated** view a node has — `streamOpen` verified a signature to
+open it, where `/api/relay/who` verified nothing.
+
+#### Why the relay is on the "resolves for" list
+
+Because it is not an observer of the pairing, it is the party that holds
+it. It resolves a device key **to route**; it never resolves one **to
+answer** — and that split already has a seam, between `deviceIdentity`
+(internal) and `deviceIdentityPublic` (the outward face, which returns a
+label and deliberately no keys).
+
+It concedes nothing that matters: the relay holds the device's **public**
+key. It can route to it and verify its signatures; it cannot forge one.
 
 ### The reverse direction, which nobody has ruled on
 
-If the device connects and is sent a roster, **what is in it?** The full
-census would hand a seized phone the entire membership of the relay —
-every label and every key its owner can see. Under *"a device can only
-talk to its owning personal node"* the answer that follows is: **the
-device's roster is its owner and nothing else.** Stated here because it
-follows from the premise rather than from a decision, and it should be
-decided rather than inherited.
+If the device is sent a roster, **what is in it?** The full census would
+hand a seized phone every label and key its owner can see. Under *"a
+device can only talk to its owning node"* the answer that follows is **its
+owner and nothing else** — stated here because it follows from the premise
+rather than from a decision, and inheriting it by default would be the
+expensive way to find out.
 
-### The test this needs, and it is a negative one
+### The test this needs, and it is two claims
 
 Andy: *"if there was one step in the device architecture that should be
 tested, it is."*
@@ -349,18 +412,41 @@ temporary ID appears in **none** of: the public census, that peer's
 roster, any presence event that peer receives, or a `deviceIdentityPublic`
 lookup. False negatives only, never false positives (ROUTER.md §4).
 
-**And the positive half in the same test, because scoping is two claims
-and only one of them is about hiding:** the owner's own roster *does*
-carry the device, and the owner *does* get its presence events. A check
-that only proves absence would pass just as happily against a device
-nobody can see at all, including its owner — which is a different bug
-wearing the same green tick.
+**And the positive half in the same test**, because scoping is two claims
+and only one is about hiding: the owner's own roster *does* carry the
+device, and the owner *does* get its presence events. A check that only
+proves absence passes just as happily against a device its own owner
+cannot see — the same green tick, a different bug.
 
-It fails loudly if a future change starts treating a device as a peer —
-which is exactly how this would go wrong, because treating it as a peer is
-the convenient thing to do.
+Add a third, for the destination: a device request arriving at `/KEY/…`
+reaches that node and there is **no request it can make** that reaches
+another. If that one is hard to write, the addressing is wrong.
 
----
+### What the earlier drafts of this section said, and why they were worse
+
+Recorded rather than deleted — both were machinery for a property the
+addressing already had.
+
+**Draft 1: the node announces the pairing.** On each stream reconnect the
+node would tell every relay "this key is my device", signed with the house
+key. It worked and it self-healed, and it invented a verb, a signature to
+verify, and a registry for the relay to maintain.
+
+**Draft 2: the relay learns the pairing at enrolment.** Cheaper — the
+relay already holds `who.id` and gets `devicePublicKey` back in the node's
+accepted answer, so the pairing could be recorded with no new message at
+all. Better than draft 1, and it had one real cost: a relay restart
+orphaned the device, since nothing would re-establish the pairing until
+somebody re-typed a password.
+
+**Both were answering the destination question with state.** Andy's
+correction — the node's key is already in the path — means the destination
+needs no state, and asking the node at connect makes authenticity
+self-healing. What is left in RAM is a cache for the return path, which is
+the only thing that ever needed to be remembered.
+
+The general lesson, since it has now happened twice in this document:
+**check what the addressing already guarantees before designing a check.**
 
 ## 3. Read stream, write POST
 
@@ -449,18 +535,44 @@ Two things that buys beyond tidiness:
   about identity (`answer.name = who.label`). Carrying the node's answer
   verbatim removes the opportunity rather than fixing the line.
 
-### And the session key can close the last gap
+### And the session key can close the last gap — WITHDRAWN
 
-[TRANSPORT.md](TRANSPORT.md) admits, in its own list of what has not been
-shown: *"Confidentiality. The relay reads everything. Untamperable is not
-private."*
+**This claim is withdrawn. It is kept because the reason it fails is the
+useful part.**
 
-A session key the relay does not hold — Andy: *"only its owning personal
-node should know its public key"* — makes the device↔node channel **the
-first thing in the system a relay genuinely cannot read.** The relay still
-learns the association (it must, to route), which is the same metadata it
-has for any two peers talking. The content is not its business and would
-no longer be available to it.
+It said that a session key the relay does not hold would make the
+device↔node channel *"the first thing in the system a relay genuinely
+cannot read"*, answering the confidentiality gap
+[TRANSPORT.md](TRANSPORT.md) admits: *"the relay reads everything.
+Untamperable is not private."*
+
+Grok's reason for withdrawing it was that a password-derived key is
+indefensible while the relay has seen the password. True — and **not the
+real obstacle**, because that part is fixable: the browser already knows
+the node's public key from the path it was served at (§2), so it could
+seal to the node directly and the relay would carry ciphertext it never
+composed. §5 above already says the relay should carry rather than
+compose.
+
+**The real obstacle is the key type.** Every identity in this system is
+**Ed25519** — `crypto.generateKeyPairSync('ed25519')` on the node,
+`crypto.subtle.generateKey({ name: 'Ed25519' })` in the browser. Ed25519
+is a **signature** scheme. There is no encrypt operation for it and
+WebCrypto exposes none. **There is nothing to seal to.**
+
+Sealing would need an **X25519** key alongside every Ed25519 identity,
+published wherever the signing key is, pinned the same way, with browser
+support confirmed the way Ed25519 was on 2026-09-10. That touches
+`generateIdentity`, the census, the device URL's shape and pinning.
+
+**And the device channel is not uniquely unsealed — nothing is.**
+TRANSPORT.md's admission holds for every packet in the system for exactly
+this reason. So sealing this channel means introducing encryption to the
+SYSTEM, which is a far larger decision than a device feature and must not
+ride in on one.
+
+Standing position until that sitting: the device↔node payload is
+TRANSPORT.md's — **untamperable, not private.**
 
 This does not make the system private. It makes one channel private, and
 that channel is the one a person uses from a hotel room.
@@ -1022,9 +1134,63 @@ it. `streamOpen` has the same shape, and there it is worse — a device
 accepted as a peer would be announced by `presence.broadcast`, which is
 leak surface #2 firing on connect.
 
-**What this costs: one explicit check, at two call sites.** The earlier
-claim in this document that the router "already enforces this" described a
-coincidence and should not have been written as a property.
+**The earlier claim in this document that the router "already enforces
+this" described a coincidence** and should not have been written as a
+property. Grok is right about that, and about the danger: §2 makes device
+keys resolve, so the coincidence stops holding.
+
+**But the cost turned out to be smaller than "one explicit check at two
+call sites", and §2 has been rewritten around why.** Andy: the node's
+public key is already in the path of every device request
+(`devicePageKey`, `server.js:651`). So a device's destination is not
+something it supplies and then has compared — it is the address the
+request arrived at. There is no route to anywhere else to refuse.
+
+That disposes of this finding in the strongest available way: a check can
+be forgotten in a refactor, which is precisely what this finding IS. An
+address space has no line to delete. What remains for `routePost` and
+`streamOpen` is to refuse a device key as a *peer* — which they will do by
+resolving device keys only for the owner and the relay, not by comparing
+sender to target.
+
+#### THESE TWO MUST LAND IN THE SAME CYCLE
+
+Not as a preference — as a requirement, because the order is a hole.
+
+Today a device can only reach its own node, and the reason is that a
+device key resolves nowhere. **§2 makes device keys resolve.** Build the
+pairing first and the accident stops holding with nothing underneath it:
+`routePost` would accept a device as a sender to any peer, and
+`streamOpen` would accept one as a peer and announce it to everybody
+(`presence.broadcast`, leak surface #2, on connect).
+
+So the pairing and the destination restriction are one change. Splitting
+them across two sittings would open, for however long the gap lasted,
+exactly the hole the architecture exists to close.
+
+#### AND THE NODE'S OWN DOOR HAS TO LEARN ITS DEVICE
+
+Found by Andy asking whether the relay does everything possible — it does
+not, and neither, it turns out, does the node.
+
+`hub.frontDoor` (built 2026-09-12, the answer to the review) knows two
+sets: `listenSet` — contacts and self — and `relayKeys.acceptedKeys`, the
+relays this node accepted. **A device's session key is in neither.**
+
+So as the tree stands, the moment a device posts to its own node, its own
+node refuses it: the front door is a stranger-gate and a session key
+looks exactly like a stranger. The node does know the key — it is in
+`relay-state/device.json` — it simply is not asked.
+
+**A third known-set, and it belongs with the device cycle**, for the same
+reason the relay exception belonged with the router path: a gate that is
+right about peers is wrong about the one party that is neither a peer nor
+a relay. That is now twice this shape has appeared in one afternoon, and
+it is worth stating as a rule rather than as two incidents:
+
+> **Every new party needs adding to every gate that predates it.** A
+> device is the third kind of sender in this system, after a peer and a
+> relay, and each gate was written when there were fewer.
 
 ### 1b. The second defence Andy named — and it is missing for everybody
 
@@ -1214,6 +1380,12 @@ bug today — the current page carries the *owner's* key, which is public —
 but it is the obvious way to build the device shell and it would put a
 session credential in every log on the route. The same lesson cycle 4
 learned for `?sig=`.
+
+**Answered by §2 as rewritten, by construction rather than by care.** The
+path carries the NODE's public key, which is a locator and already public
+at `/api/relay/who`; the session key never appears in a URL at all,
+because the device posts relatively and proves itself with a signature.
+So there is no hex in the path that is worth capturing from a log.
 
 ## Open
 

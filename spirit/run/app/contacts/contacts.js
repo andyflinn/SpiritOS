@@ -31,14 +31,21 @@ var contactsApi = null;
 // about chat rather than about people.
 //
 // The hub is where it is APPLIED — a dropped message never reaches the
-// browser at all (js/hub.js, unknownPolicy) — but it arrives there as a
-// query parameter from whoever polls the inbox, which is Relay Chat. So
-// this app owns the value and chat reads it back, unscoped and read-only
-// (RC_UNKNOWN_FILE, relayChat.js). Whether the hub should read it itself
-// rather than trust the caller is the open question.
-var CONTACTS_PREFS_FILE = 'prefs.json';
-// Where the value used to live, for the one-time adoption below.
-var CONTACTS_OLD_PREFS_FILE = 'app/relayChat/prefs.json';
+// browser at all (js/hub.js, unknownPolicy) — and since 2026-09-12 it is
+// also where it is HELD. It used to travel as a query parameter from
+// whoever polled the inbox, then as this app's own file; the open
+// question in both arrangements was whether the node should read it
+// itself rather than trust a caller, and the answer turned out to be
+// that the node should OWN it. This app draws the control and asks.
+// NO FILE HERE ANY MORE. It was app/contacts/prefs.json, and before that
+// app/relayChat/prefs.json — it has now moved twice between apps, which
+// was the tell that it belonged to neither. It is preferences.json on the
+// node, reached through /api/hub/unknown-senders, and this app no longer
+// stores it at all.
+//
+// The old files are not read here either: hub.js honours
+// app/contacts/prefs.json when preferences.json says nothing, so the
+// migration happens once, on the node, where the value now lives.
 var CONTACTS_UNKNOWN_CHOICES = ['silent', 'hold', 'acquire'];
 var contactsPrefs = { unknown: 'silent' };
 
@@ -279,26 +286,54 @@ function contactsFindByHandle() {
 // is a change of behaviour nobody asked for. Read-only and one-way: the
 // old file is never written, and chat has already stopped reading its own
 // copy, so there is no moment with two live answers.
+// ASKED, NOT READ. The setting stopped being this app's file: it is what
+// the NODE does about a stranger, and a node-global answer stored inside
+// one of its readers was wrong twice over — wrong as a location, and
+// wrong as a layer, because api.fs is scoped to app/<name>/ and a jail
+// that an app can write is not a jail.
+//
+// So this app draws the control and nothing else. The node holds the
+// value, applies it, and is the only thing that can change it. What the
+// radios show is always what the node last said, never what this app
+// believes it asked for.
 function contactsLoadPrefs() {
-  var raw = null;
-  try { raw = contactsApi.fs.loadFile(CONTACTS_PREFS_FILE); }
-  catch (e) { raw = null; }
-  if (!raw) {
-    try { raw = contactsApi.readProject(CONTACTS_OLD_PREFS_FILE); }
-    catch (e) { raw = null; }
-  }
-  var parsed = null;
-  try { parsed = JSON.parse(raw); }
-  catch (e) { parsed = null; }
-  var wanted = parsed && parsed.unknown;
-  contactsPrefs = {
-    unknown: CONTACTS_UNKNOWN_CHOICES.indexOf(wanted) === -1 ? 'silent' : wanted,
-  };
+  return fetch('/api/hub/unknown-senders')
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      var wanted = d && d.policy;
+      contactsPrefs = {
+        unknown: CONTACTS_UNKNOWN_CHOICES.indexOf(wanted) === -1 ? 'silent' : wanted,
+      };
+    })
+    .catch(function () {
+      // A node that will not answer reads as the tightest setting rather
+      // than as whatever was on screen before. Being wrong towards
+      // `silent` costs a message; being wrong the other way costs a
+      // stranger a row in the book.
+      contactsPrefs = { unknown: 'silent' };
+    });
 }
 
+// PAINTED FROM THE ANSWER, not from the press. The node is asked to
+// change it and replies with what it will actually do — so a refused or
+// unwritable setting shows as unchanged instead of showing a radio that
+// lies.
 function contactsSavePrefs() {
-  contactsApi.fs.saveFile(CONTACTS_PREFS_FILE, JSON.stringify(contactsPrefs, null, 2))
-    .catch(function (e) { contactsStatus('could not remember the setting: ' + e.message); });
+  return fetch('/api/hub/unknown-senders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ policy: contactsPrefs.unknown }),
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d || d.ok !== true) throw new Error((d && d.error) || 'refused');
+      contactsPrefs.unknown = d.policy;
+    })
+    .catch(function (e) {
+      contactsStatus('could not remember the setting: ' + (e && e.message ? e.message : 'no answer'));
+      return contactsLoadPrefs();
+    })
+    .then(function () { contactsPaintUnknown(); });
 }
 
 // The heading carries the current answer, so the fold can be read closed
@@ -432,19 +467,21 @@ spirit.shell.activateApp({
       '<div class="job-manifest-note" id="contacts-status"></div>' +
       '<div class="job-manifest-note" id="contacts-self"></div>';
 
-    contactsLoadPrefs();
-    contactsPaintUnknown();
+    // Painted when the node answers, not before. The read is a round trip
+    // now rather than a file, so painting on the next line would draw
+    // `silent` every time and then correct itself.
+    contactsLoadPrefs().then(contactsPaintUnknown);
 
     // A change of policy changes what the next inbox read will even
-    // return, so it is written on the spot. Relay Chat picks it up on its
-    // next poll — it reads this file rather than being told, so neither
-    // app has to know the other is running.
+    // return, so it is sent on the spot. Nothing else has to be told:
+    // every reader asks the node, and the node is the one that holds it.
     document.getElementById('contacts-unknown-choices').addEventListener('change', function (event) {
       var choice = event.target && event.target.value;
       if (CONTACTS_UNKNOWN_CHOICES.indexOf(choice) === -1) return;
       contactsPrefs.unknown = choice;
+      // The repaint happens inside, from what the node answered rather
+      // than from what was clicked.
       contactsSavePrefs();
-      contactsPaintUnknown(); // the heading carries the answer, so it moves with it
     });
 
     document.getElementById('contacts-add-find').addEventListener('click', contactsFindByHandle);

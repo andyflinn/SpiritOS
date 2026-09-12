@@ -9,6 +9,7 @@ const auth = require('./relayAuth');
 const invites = require('./invites');
 const ownerBadge = require('./ownerBadge');
 const whoBook = require('./whoBook');
+const relayKeys = require('./relayKeys');
 const packet = require('./packet');
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
@@ -344,28 +345,92 @@ function acquireFromInbox(rootDir, messages, relayUrl) {
 // the policy was travelling through an app that has no say in it, and a
 // second poller — or a stale tab — would have been a second answer.
 //
-// One file: app/contacts/prefs.json. Contacts writes it, the hub reads
-// it, Relay Chat polls and says nothing about it.
+// ONE FILE, AND IT IS THE NODE'S. It was app/contacts/prefs.json, which
+// was wrong twice over (Andy: "app/contacts/prefs.json is the wrong place
+// for that file, it's a node-global").
+//
+// Wrong as a LOCATION: who this node will hear from is a fact about its
+// front door, not about one app. Contacts draws the radios; it does not
+// own the door, any more than Relay Chat owns it by polling.
+//
+// Wrong as a LAYER: api.fs is scoped to app/<name>/, so Contacts can
+// write its own prefs — right for a preference and exactly why nothing
+// load-bearing may live there. preferences.json is node-global and sits
+// in kernel.js's WRITABLE_ROOT_FILES, so a write to it passes the kernel.
+//
+// The SAFETY FLOOR is not here at all and must not be: it is not a
+// setting, so it has no file. See peerPost, where an unknown sender is
+// bounded whatever this answers.
 //
 // Read per request rather than cached: it is one small file, an inbox
 // poll is already a network round trip, and a cache would mean a change
-// in Contacts not taking effect until something invalidated it.
+// not taking effect until something invalidated it.
 var UNKNOWN_POLICIES = ['silent', 'hold', 'acquire'];
-var UNKNOWN_PREFS_FILE = ['app', 'contacts', 'prefs.json'];
+var UNKNOWN_PREFS_FILE = ['preferences.json'];
+// Where it used to live. Read when the new home says nothing, so a node
+// that had chosen `acquire` does not silently fall back to `silent` on
+// the day this moved — the same courtesy routingTable.json paid
+// mailbox.json. Nothing writes this name again.
+var LEGACY_UNKNOWN_PREFS_FILE = ['app', 'contacts', 'prefs.json'];
+
+// SETTING IT IS THE NODE'S JOB, not an app's. Contacts draws the radios
+// and posts here; it cannot write the file itself, and that is the point
+// — api.fs is scoped to app/<name>/, so a node-global setting written by
+// an app would be a setting living inside one of its readers.
+//
+// The write PRESERVES everything else in the file. preferences.json is
+// shared with the shell (defaultHandlers, appOverrides, groups), which
+// parses it whole and writes it back whole; a setter that rebuilt the
+// object would take the operator's groups with it.
+//
+// Temp-file and rename, so a crash leaves the old file or the new one and
+// never half of either — the same discipline routingTable.json and
+// traffic.json use.
+function writeUnknownPolicy(rootDir, wanted) {
+  if (UNKNOWN_POLICIES.indexOf(wanted) === -1) return false;
+  var file = path.join(rootDir, 'preferences.json');
+  var doc = {};
+  try {
+    var parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) doc = parsed;
+  } catch (e) {
+    // A missing or broken preferences.json is not a reason to refuse a
+    // security setting. Starting from {} loses the shell's own keys,
+    // which is bad — but it is what the shell itself does with a file it
+    // cannot parse, and refusing here would leave the node stuck on
+    // `silent` with no way out.
+    doc = {};
+  }
+  doc.unknownSenders = wanted;
+  var tmp = file + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(doc, null, 2));
+  fs.renameSync(tmp, file);
+  return true;
+}
+
+function readUnknown(rootDir, where, field) {
+  var raw = null;
+  try { raw = fs.readFileSync(path.join.apply(path, [rootDir].concat(where)), 'utf8'); }
+  catch (e) { return null; }
+  var parsed = null;
+  try { parsed = JSON.parse(raw); }
+  catch (e) { return null; }
+  var wanted = parsed && parsed[field];
+  return UNKNOWN_POLICIES.indexOf(wanted) === -1 ? null : wanted;
+}
 
 // Missing, empty, unreadable, not JSON, or not one of the three all read
 // as `silent` — the tightest setting that still lets two people who
 // added each other talk. The safe answer is also the default, so a
 // broken file cannot quietly open a node up.
+//
+// `unknownSenders` rather than `unknown`: at node-global scope a key
+// called `unknown` says nothing about what is unknown.
 function unknownPolicy(rootDir) {
-  var raw = null;
-  try { raw = fs.readFileSync(path.join.apply(path, [rootDir].concat(UNKNOWN_PREFS_FILE)), 'utf8'); }
-  catch (e) { return 'silent'; }
-  var parsed = null;
-  try { parsed = JSON.parse(raw); }
-  catch (e) { return 'silent'; }
-  var wanted = parsed && parsed.unknown;
-  return UNKNOWN_POLICIES.indexOf(wanted) === -1 ? 'silent' : wanted;
+  var here = readUnknown(rootDir, UNKNOWN_PREFS_FILE, 'unknownSenders');
+  if (here) return here;
+  var legacy = readUnknown(rootDir, LEGACY_UNKNOWN_PREFS_FILE, 'unknown');
+  return legacy || 'silent';
 }
 
 // Who this node will listen to: everyone it has actually acquired, plus
@@ -382,6 +447,100 @@ function listenSet(rootDir) {
   var id = auth.loadIdentity(rootDir);
   if (id && id.publicKey) allowed[id.publicKey] = true;
   return allowed;
+}
+
+// ── THE FRONT DOOR, FOR THE ROUTER PATH ──────────────────────────────
+//
+// listenSet above is the same question, and for a long time it was asked
+// on one transport only: hub.js:389, the `inbox` read. peerPost.onRequest
+// — where packets actually arrive now — checked that a signature matched
+// the sender it claimed and that the packet was addressed here, and
+// nothing else. A signature proves possession of a key; it proves nothing
+// about whether this node has ever heard of the holder.
+//
+// Andy: "no node, by protocol, should accept requests from unknown."
+//
+// THE EXCEPTION THE INBOX DID NOT NEED. listenSet's own comment says "the
+// mailbox needs no exception here", which was true of a path relay
+// traffic never travelled. This is not that path: a relay posts here in
+// its own name to carry a device enrolment, and a relay is not a contact
+// — its key is in no whoBook. relayKeys.js is what makes that answerable
+// without trusting whatever claims to be a relay, because it holds the
+// keys this node has actually accepted.
+//
+// Answers one of four, and the split between the first and the rest is
+// what makes the floor work:
+//
+//   'known'  already in the book — not a stranger, not rationed
+//   'admit'  a stranger this node's policy welcomes
+//   'hold'   a stranger to file for a human to decide about
+//   'drop'   a stranger to ignore
+//
+// PURE. It writes nothing, and that is a correction of the first version
+// of this function, which acquired the row here and returned 'known'. The
+// effect was that under `acquire` a stranger became known in the same
+// breath — so the floor, which only binds a non-'known' verdict, never
+// bound at all. "acquire still acquires, but the cost is bounded" was not
+// what the code did. The test found it.
+//
+// So the book write moved behind the floor (peerPost calls `remember`
+// once a stranger is within budget), and an over-budget stranger now gets
+// no row either — which is right: a row is a record of somebody worth
+// knowing about, and a flood is not.
+//
+// The FLOOR itself is not here and must not be: how much an unknown
+// sender may spend is an invariant in peerPost, with no file and no
+// setting behind it.
+function frontDoor(rootDir, from) {
+  var key = String(from == null ? '' : from).trim();
+  if (!key) return 'drop';
+
+  // Itself and everyone it has acquired — the same set the inbox uses,
+  // asked here for the first time.
+  //
+  // "Acquired" is narrower than "on record", deliberately: whoBook's
+  // ACQUIRED_LISTENING is ['message', 'invite', 'handle'], so somebody
+  // merely SEEN in a relay's census is not somebody this node agreed to
+  // hear. Having noticed a stranger exists is not an introduction.
+  if (listenSet(rootDir)[key]) return 'known';
+
+  // A RELAY THIS NODE ACCEPTED is known, and only one it accepted. The
+  // pin is what makes this safe: without relayKeys, "is this a relay?"
+  // could only be answered by asking the thing that wants in.
+  if (relayKeys.acceptedKeys(rootDir)[key]) return 'known';
+
+  var policy = unknownPolicy(rootDir);
+  if (policy === 'acquire') return 'admit';
+  if (policy === 'hold') return 'hold';
+  return 'drop';
+}
+
+// WHAT TO WRITE DOWN ABOUT A STRANGER WHO GOT THROUGH THE FLOOR. Called
+// by peerPost after the budget allowed it, never before — so a flood
+// leaves no rows behind.
+//
+// `'message'` is the acquisition route, the same one acquireFromInbox
+// uses for the same event on the old transport: this person wrote. It
+// matters because ACQUIRED_LISTENING contains 'message' and not 'census',
+// so writing is what makes somebody heard next time.
+function remember(rootDir, from, verdict) {
+  var key = String(from == null ? '' : from).trim();
+  if (!key) return false;
+  try {
+    if (verdict === 'admit') {
+      whoBook.acquire(rootDir, { publicKey: key, publicLabel: '', relays: [] }, 'message');
+      return true;
+    }
+    if (verdict === 'hold') {
+      whoBook.hold(rootDir, { publicKey: key, publicLabel: '', relays: [] });
+      return true;
+    }
+  } catch (e) {
+    // A book that cannot be written is not a reason to change what
+    // happens to the packet. The verdict already stands.
+    return false;
+  }
+  return false;
 }
 
 // Splits an inbox into what this node asked to hear and what it did not.
@@ -652,6 +811,72 @@ function createHub(rootDir) {
   // A node may own several; minting on the first one listed would put the
   // token on a mailbox the friend was never being invited to, and the
   // owner would not find out until the claim failed somewhere else.
+  // What this node will do about somebody it has never heard of.
+  //
+  // GET answers what is set; POST changes it. Both are about the
+  // PREFERENCE and neither can reach the floor — an unknown sender is
+  // bounded, and reaches no app before a decision, whatever this says.
+  // That is in code, in peerPost, and there is deliberately no route to
+  // it.
+  // A NEW DOOR PASSWORD. POST only: this changes something, and a GET
+  // that rotated a secret would fire on a page reload.
+  //
+  // It answers with the new password, because the caller is this node's
+  // own loopback browser and the whole point is to put it on somebody's
+  // clipboard. Nothing else on this box hands a secret back, and it is
+  // worth being explicit that this one does and why.
+  //
+  // WHAT IT DOES NOT DO is detach a device already attached — that is
+  // revocation, a different verb, and this route performs one of the two.
+  // The answer says so, so a caller cannot build a "remove my devices"
+  // button on top of it by accident.
+  function handleRotatePassword(req, res, readJsonBody) {
+    readJsonBody(req).then(function () {
+      var doc = deviceAuth.rotatePassword(rootDir);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        ok: true,
+        password: doc.password,
+        // Said out loud in the answer rather than left to the caller to
+        // know: every request depending on the old password is now
+        // refused, and any device already attached is still attached.
+        devicesDetached: false,
+        devicePublicKey: doc.devicePublicKey || '',
+      }));
+    }).catch(function () {
+      fail(res, 400, 'bad body');
+    });
+  }
+
+  function handleUnknownSenders(req, res, readJsonBody) {
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: true, policy: unknownPolicy(rootDir) }));
+      return;
+    }
+    readJsonBody(req).then(function (body) {
+      var wanted = body && body.policy;
+      if (UNKNOWN_POLICIES.indexOf(wanted) === -1) {
+        // Named, unlike most refusals on this box: the caller is this
+        // node's own browser, it is ours to fix, and a typo in a radio
+        // value should say which values exist.
+        fail(res, 400, 'policy must be one of: ' + UNKNOWN_POLICIES.join(', '));
+        return;
+      }
+      if (!writeUnknownPolicy(rootDir, wanted)) {
+        fail(res, 500, 'could not write preferences.json');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      // Answered from a fresh READ rather than from what was asked for,
+      // so the caller is told what the node will actually do rather than
+      // what it requested.
+      res.end(JSON.stringify({ ok: true, policy: unknownPolicy(rootDir) }));
+    }).catch(function () {
+      fail(res, 400, 'bad body');
+    });
+  }
+
   function handleInvite(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       withChosenRelay(res, body && body.url, function (url) {
@@ -1062,6 +1287,8 @@ function createHub(rootDir) {
     handleContact: handleContact,
     handlePeer: handlePeer,
     handleInvite: handleInvite,
+    handleUnknownSenders: handleUnknownSenders,
+    handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,
   };
 }
@@ -1074,6 +1301,12 @@ module.exports = {
   // a second one that asserts less.
   relayRequest: relayRequest,
   buildPeople: buildPeople,
+  // The node's own judgement about who it will hear from, exported for
+  // the same reason relayRequest is: peerPost needs it and must not grow
+  // a second answer to the same question.
+  frontDoor: frontDoor,
+  remember: remember,
+  unknownPolicy: unknownPolicy,
   acquireFromInbox: acquireFromInbox,
   handleMatches: handleMatches,
   keyTail: keyTail,

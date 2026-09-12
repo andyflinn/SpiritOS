@@ -125,6 +125,40 @@ function ensurePassword(rootDir) {
   return load(rootDir);
 }
 
+// A NEW PASSWORD, AND THE OLD ONE DEAD.
+//
+// Grok, reviewing DEVICE.md: a relay is handed the enrolment password in
+// cleartext, so a crooked relay that carries ONE legitimate enrolment
+// keeps it and can enrol a device of its own afterwards, at leisure. That
+// is a standing capability, not an attempt — and rotation is the only
+// answer available, because sealing the channel would need a primitive
+// the bootstrap cannot provide (the relay is inside it).
+//
+// Andy: "the red-button rotate password can easily deny all requests from
+// the old password, that's kind of the point."
+//
+// TOTAL WITHIN ITS SCOPE, and worth saying without hedging. The password
+// is compared in exactly one place — deviceTick.answerOffer — so after
+// this every request that depends on the old one is denied, which is the
+// whole of what the password ever did. Whoever captured it holds a dead
+// string.
+//
+// WHAT IT IS NOT is a different verb, not a shortfall: it does not
+// detach a device already attached. That is revocation. Saying rotation
+// does not revoke is like saying new locks do not evict a tenant — true,
+// and not a criticism of locks. The red button performs both; this is one
+// of the two.
+//
+// The device key is left exactly as it is, deliberately. A caller that
+// wants both says so by calling both, and a caller that wanted only a
+// fresh password has not silently lost its phone.
+function rotatePassword(rootDir) {
+  var doc = load(rootDir);
+  doc.password = generatePassword();
+  save(rootDir, doc);
+  return load(rootDir);
+}
+
 function setDevicePublicKey(rootDir, publicKey) {
   var doc = ensurePassword(rootDir);
   doc.devicePublicKey = publicKey ? String(publicKey) : null;
@@ -193,6 +227,7 @@ module.exports = {
   save: save,
   generatePassword: generatePassword,
   ensurePassword: ensurePassword,
+  rotatePassword: rotatePassword,
   setDevicePublicKey: setDevicePublicKey,
   passwordsEqual: passwordsEqual,
   setDeviceMessage: setDeviceMessage,

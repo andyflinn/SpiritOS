@@ -535,6 +535,95 @@ async function aPeerIsNamedAsThemselves() {
   }
 }
 
+// ROTATION, AND WHAT IT IS TOTAL ABOUT.
+//
+// Grok's finding: a relay is handed the enrolment password in cleartext,
+// so one legitimate enrolment leaves a crooked relay holding it — able to
+// enrol a device of its own afterwards, at leisure. Sealing the channel
+// would need a primitive the bootstrap cannot provide, so rotation is the
+// only answer available.
+//
+// Andy: "the red-button rotate password can easily deny all requests from
+// the old password, that's kind of the point." The password is compared
+// in exactly one place, so that is the whole of what it does — and the
+// thing it does NOT do is a different verb, not a shortfall.
+async function rotationKillsTheOldPassword() {
+  test.subHeading('A rotated password, and what rotation is and is not');
+
+  const W = world.build(SCENARIO);
+  if (!W.ok) { test.fail(W.error); return; }
+  const home = W.ownerHome();
+  const phone = auth.generateIdentity('device');
+
+  deviceAuth.ensurePassword(home);
+  const old = deviceAuth.load(home).password;
+
+  const rotated = deviceAuth.rotatePassword(home);
+  if (rotated.password && rotated.password !== old &&
+      rotated.password.length === deviceAuth.PASSWORD_HEX_LEN) {
+    test.check('a rotation mints a different password of the same length');
+  } else {
+    test.fail('rotated: ' + JSON.stringify(rotated.password && rotated.password.slice(0, 8)));
+  }
+
+  // THE WHOLE POINT, proved by use rather than by comparing strings: an
+  // enrolment carrying the old password is refused.
+  const held = streaming(W.box, W.owner);
+  const stale = W.box.deviceOffer('andy', old, phone.publicKey);
+  const askedStale = offerOn(held);
+  const saidStale = await deviceTick.answerOffer(
+    home, ['http://relay'], askedStale.carried,
+    async function () { return { ok: true }; }, 'http://relay'
+  );
+  replyTo(W.box, W.owner, askedStale.req, answerText(saidStale));
+  const browserStale = await stale;
+
+  if (saidStale.accepted === false && saidStale.why === 'wrong password' &&
+      browserStale.ok === false) {
+    test.check('and every request depending on the old one is denied — a captured password is a dead string');
+  } else {
+    test.fail('stale offer: ' + JSON.stringify(saidStale));
+  }
+
+  // And the new one works, so this is not a check that simply breaks
+  // enrolment.
+  const fresh = W.box.deviceOffer('andy', rotated.password, phone.publicKey);
+  const askedFresh = offerOn(held);
+  const saidFresh = await deviceTick.answerOffer(
+    home, ['http://relay'], askedFresh.carried,
+    async function () { return { ok: true }; }, 'http://relay'
+  );
+  replyTo(W.box, W.owner, askedFresh.req, answerText(saidFresh));
+  if (saidFresh.accepted === true && (await fresh).ok) {
+    test.check('while the new one enrols normally');
+  } else {
+    test.fail('fresh offer: ' + JSON.stringify(saidFresh));
+  }
+
+  // WHAT IT IS NOT. Rotation is not revocation: a device already attached
+  // stays attached, because those are different files on different
+  // machines. A rotate control that felt like "remove my devices" would
+  // be the trap the red button has to avoid.
+  const attached = deviceAuth.load(home).devicePublicKey;
+  const again = deviceAuth.rotatePassword(home);
+  if (again.devicePublicKey === attached && attached === phone.publicKey) {
+    test.check('and it leaves an attached device attached — rotation is not revocation');
+  } else {
+    test.fail('device key moved: ' + JSON.stringify(again.devicePublicKey));
+  }
+
+  // A node with no password yet rotates into having one rather than
+  // refusing: there is no state in which "give me a new password" is a
+  // question without an answer.
+  const bare = world.tmpHome('rotate-bare');
+  const made = deviceAuth.rotatePassword(bare);
+  if (made.password && made.password.length === deviceAuth.PASSWORD_HEX_LEN) {
+    test.check('and a node with nothing set rotates into having one');
+  } else {
+    test.fail('bare rotate: ' + JSON.stringify(made));
+  }
+}
+
 // WHAT THE PANEL IS TOLD, which since the poll went is two facts.
 //
 // It reported `listening` and `lastEvent` — whether the timer was running
@@ -690,6 +779,7 @@ async function run() {
     test.fail('browserNo: ' + JSON.stringify(browserNo));
   }
 
+  await rotationKillsTheOldPassword();
   await theRelayPostsAsItself();
   await oneDeviceEveryRelay();
   await aPeerIsNamedAsThemselves();

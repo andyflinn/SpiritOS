@@ -27,6 +27,38 @@ const auth = require('./relayAuth');
 // tick. It only decides how long a caller stares at a spinner.
 var DEFAULT_WAIT_MS = 8000;
 
+// ── THE FLOOR ────────────────────────────────────────────────────────
+//
+// What a sender this node has never heard of may spend. Constants, in
+// code, with no way to configure them — and that is the point rather
+// than an omission.
+//
+// Andy asked whether a node should safeguard itself against unknown keys
+// REGARDLESS of the user's wishes. It should, and the reason is a
+// distinction between two questions that a single setting was answering
+// at once:
+//
+//   "let strangers reach me"        — a preference, and the user's
+//   "let strangers spend anything"  — not a question anybody was asked
+//
+// So the PREFERENCE decides who you talk to (hub.js, unknownPolicy:
+// silent / hold / acquire) and the FLOOR decides what a stranger can
+// spend. `acquire` still acquires. What is bounded is the cost, never the
+// contact.
+//
+// It lives here rather than in a file because a floor in a file is a
+// floor somebody can lower. AGENT.md: the server is the only jail —
+// decision 0003 shows the shape an invariant has, reading `intrinsic`
+// from disk and never from the content being written.
+var UNKNOWN_PER_MIN = 6;
+// A stranger's whole budget of payload for a minute, across every
+// stranger. Sized as "enough for a first hello, nothing like enough to
+// fill a disk": the traffic log keeps 24 hours, so this is what an
+// unknown sender may add to it, and 64KB a minute is under 100MB a day
+// in the pathological case of somebody spending all of it forever.
+var UNKNOWN_BYTES_PER_MIN = 65536;
+var UNKNOWN_WINDOW_MS = 60000;
+
 function createPeerPost(opts) {
   opts = opts || {};
   var rootDir = opts.rootDir;
@@ -56,6 +88,70 @@ function createPeerPost(opts) {
   var mailbox = [];
   var nextItem = 1;
   var onArrival = opts.onArrival || null;
+
+  // WHO THIS NODE WILL HEAR, asked rather than decided here.
+  //
+  // Handed in for the same reason `traffic` is: the answer needs the
+  // node's own address book, its relays and its preference, and none of
+  // that belongs in the file that moves packets. Given nothing, every
+  // sender is admitted — which is what every existing test gets, and
+  // what this file did unconditionally until 2026-09-12.
+  //
+  // It answers 'known' | 'admit' | 'hold' | 'drop'. A hook that throws is
+  // treated as 'drop': a front door whose judgement failed must not fall
+  // open.
+  //
+  // 'known' and 'admit' both end in delivery; only 'known' escapes the
+  // floor. That distinction is the whole reason there are four words and
+  // not three — a stranger the policy welcomes is still a stranger, and
+  // "let strangers reach me" was never consent to unbounded strangers.
+  var VERDICTS = ['known', 'admit', 'hold', 'drop'];
+  var admit = typeof opts.admit === 'function' ? opts.admit : null;
+  function judge(from) {
+    if (!admit) return 'known';
+    try {
+      var said = admit(from);
+      return VERDICTS.indexOf(said) === -1 ? 'drop' : said;
+    } catch (e) {
+      return 'drop';
+    }
+  }
+
+  // What to write down about a stranger who got through the budget.
+  // Called only after the floor allowed them, so a flood leaves no rows
+  // behind — a row is a record of somebody worth knowing about.
+  var remember = typeof opts.remember === 'function' ? opts.remember : null;
+
+  // The floor's books: requests per unknown sender, and bytes across all
+  // of them. Both in RAM and both per-minute — a stranger's budget is not
+  // a thing to persist, and a restart resetting it costs nothing that
+  // matters.
+  var unknownHits = Object.create(null);
+  var unknownBytes = [];
+  function withinFloor(from, bytes) {
+    var now = Date.now();
+    var cutoff = now - UNKNOWN_WINDOW_MS;
+
+    // Swept on the way past rather than on a timer: the only thing that
+    // grows this map is a stranger arriving, so the only moment it needs
+    // tidying is when one does.
+    Object.keys(unknownHits).forEach(function (k) {
+      unknownHits[k] = unknownHits[k].filter(function (t) { return t > cutoff; });
+      if (!unknownHits[k].length) delete unknownHits[k];
+    });
+    unknownBytes = unknownBytes.filter(function (e) { return e.at > cutoff; });
+
+    var mine = unknownHits[from] || [];
+    if (mine.length >= UNKNOWN_PER_MIN) return false;
+
+    var spent = unknownBytes.reduce(function (n, e) { return n + e.n; }, 0);
+    if (spent + bytes > UNKNOWN_BYTES_PER_MIN) return false;
+
+    mine.push(now);
+    unknownHits[from] = mine;
+    unknownBytes.push({ at: now, n: bytes });
+    return true;
+  }
   // WHO COMPOSES AN ANSWER. Optional: with nobody home the reply is the
   // empty receipt this file has always sent, which is why every existing
   // caller is unaffected by its arrival.
@@ -198,6 +294,52 @@ function createPeerPost(opts) {
 
     var hash = auth.requestHash(verified);
 
+    // ── THE FRONT DOOR ───────────────────────────────────────────────
+    //
+    // A signature proves the sender holds the key they claim. It proves
+    // NOTHING about whether this node has ever heard of them, and until
+    // 2026-09-12 nothing here asked.
+    //
+    // The rule existed and was on the wrong transport: hub.js's
+    // `listenSet` — "everyone it has actually acquired, plus itself" —
+    // was wired to the `inbox` path and nowhere else. Its own comment
+    // said "the mailbox needs no exception here", which was true of a
+    // path relay traffic never arrived on. This is not that path: a relay
+    // posts here in its own name for a device enrolment, so the exception
+    // the inbox did not need is one this door does.
+    //
+    // Andy: "no node, by protocol, should accept requests from unknown."
+    var verdict = judge(body.from);
+
+    // THE FLOOR, and it binds before the preference is honoured. An
+    // unknown sender over budget is refused outright — including under
+    // `acquire`, because what the user consented to was hearing from
+    // strangers, not to unbounded strangers.
+    //
+    // Refused BEFORE the log, and logged without the payload: the record
+    // still says truthfully that something arrived and was refused, and a
+    // stranger cannot make this node write their bytes to its own disk by
+    // sending enough of them.
+    if (verdict !== 'known') {
+      var bytes = typeof body.text === 'string' ? body.text.length : 0;
+      if (!withinFloor(body.from, bytes)) {
+        note({
+          dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+          hash: hash, outcome: 'refused',
+        });
+        // No receipt. A receipt means "this arrived and is filed", and
+        // over the floor nothing is filed — saying otherwise would be the
+        // one lie this file must not tell.
+        return null;
+      }
+      // WITHIN BUDGET, so now the node may write them down. After the
+      // floor and never before: an over-budget stranger leaves no trace
+      // but a refusal in the log.
+      if (remember && verdict !== 'drop') {
+        try { remember(body.from, verdict); } catch (e) { /* the verdict stands */ }
+      }
+    }
+
     // FILED FIRST, ANSWERED SECOND. A receipt says "this arrived", and
     // it must not be able to say so about something that was then
     // dropped on the floor.
@@ -209,18 +351,41 @@ function createPeerPost(opts) {
       at: new Date().toISOString(),
       relay: relayUrl,
     };
-    mailbox.push(item);
+    // A DROP KEEPS NOTHING. `silent` is the tightest setting and means
+    // what it says: no row, no line kept, and nothing for an app to be
+    // handed. The receipt still goes out, below — the bytes did arrive,
+    // and a sender who is being ignored is not owed the distinction
+    // between "ignored" and "unreachable".
+    if (verdict !== 'drop') mailbox.push(item);
 
     // SOMEBODY ELSE'S PACKET, ARRIVING. Logged after it is filed and
     // before the receipt goes out, for the same reason the receipt waits:
     // the record of what arrived must not depend on whether the answer
     // got out. The payload is kept whole and is not looked into.
-    note({
-      dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
-      hash: hash, outcome: 'delivered', payload: body.text,
-    });
+    //
+    // A dropped packet is still logged, and WITHOUT its payload: that
+    // something was ignored is this node's own business to know, and
+    // keeping the text of a line the operator asked not to keep would be
+    // the log contradicting the setting.
+    note(verdict === 'drop'
+      ? {
+        dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+        hash: hash, outcome: 'ignored',
+      }
+      : {
+        dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+        hash: hash, outcome: 'delivered', payload: body.text,
+      });
 
-    if (onArrival) { try { onArrival(item); } catch (e) { /* not ours */ } }
+    // APPS SEE ADMITTED SENDERS ONLY, and the order is the whole of it.
+    // onArrival is app delivery — code running on somebody else's input —
+    // so a stranger reaches it only once this node has decided to hear
+    // them. `hold` files the packet and tells no app: the person is a
+    // waiting row to accept or block, which is a decision a human makes
+    // rather than an app being handed the line first and asked after.
+    if ((verdict === 'known' || verdict === 'admit') && onArrival) {
+      try { onArrival(item); } catch (e) { /* not ours */ }
+    }
 
     // A RECEIPT IS NOT A REPLY, and until now it could only ever be one.
     // This node is always up and can always say "received"; whether
@@ -244,7 +409,11 @@ function createPeerPost(opts) {
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash));
     return Promise.resolve()
       .then(function () {
-        if (!answer) return '';
+        // NOT ANSWERED UNLESS ADMITTED. `answer` is what decides a device
+        // enrolment, and composing an answer for a sender this node would
+        // not hear from would put the front door's judgement behind the
+        // one verb that acts on a request.
+        if (!answer || (verdict !== 'known' && verdict !== 'admit')) return '';
         return answer(item);
       })
       .catch(function () { return ''; })

@@ -34,6 +34,34 @@
 // signed it.
 
 const deviceTick = require('./deviceTick');
+const relayKeys = require('./relayKeys');
+
+// ── WHAT A RELAY MAY SPEND ON THIS NODE'S PASSWORD ───────────────────
+//
+// Grok, reviewing DEVICE.md: `DEVICE_PER_MIN` binds callers of the
+// relay's own `deviceOffer` and does nothing about a crooked relay, while
+// `deviceTick.answerOffer` had no counter, no backoff and no delay. So
+// the only thing rate-limiting password guesses against a node was the
+// box that benefits from not doing it.
+//
+// Andy's ruling settles the shape rather than moving the limit: "all
+// servers, node and relay, must be designed to survive… it is the
+// responsibility of the node-code to safeguard itself, same goes for the
+// satellite." A SERVER DOES NOT DELEGATE ITS OWN SURVIVAL — so both
+// sides keep a counter, defending different things. The relay's protects
+// the relay from its callers. This one protects the node from its relays.
+//
+// FAILURES, NOT ATTEMPTS, and keyed by the relay it arrived on (Grok).
+// Counting attempts would throttle somebody enrolling three devices in a
+// minute, which is a thing people do; counting failures throttles
+// guessing, which is the thing this is for. Five is generous for a
+// mistyped paste and tight for a search.
+//
+// In RAM and per process: a guessing budget is not a thing to persist,
+// and a restart resetting it costs nothing next to a password of 128 hex
+// characters.
+var ENROL_FAILS_PER_MIN = 5;
+var ENROL_WINDOW_MS = 60000;
 
 // opts: { rootDir, request, urls }
 //
@@ -45,6 +73,26 @@ function createAnswerer(opts) {
   opts = opts || {};
   var rootDir = opts.rootDir;
   var urlsFn = typeof opts.urls === 'function' ? opts.urls : function () { return []; };
+  // Told when a relay answers with a key other than the one on record.
+  // Optional, and unwired today: refusing is the safety property and
+  // surfacing it to a person is a panel that does not exist yet. The hook
+  // is here so that when it does, nothing in this file has to change.
+  var onKeyChanged = typeof opts.onKeyChanged === 'function' ? opts.onKeyChanged : null;
+
+  // relay url -> timestamps of refused enrolments. See the constants
+  // above for why this is failures rather than attempts.
+  var enrolFails = Object.create(null);
+  function enrolBudgetLeft(url) {
+    var cutoff = Date.now() - ENROL_WINDOW_MS;
+    var list = (enrolFails[url] || []).filter(function (t) { return t > cutoff; });
+    if (list.length) enrolFails[url] = list; else delete enrolFails[url];
+    return list.length < ENROL_FAILS_PER_MIN;
+  }
+  function noteEnrolFail(url) {
+    var list = enrolFails[url] || [];
+    list.push(Date.now());
+    enrolFails[url] = list;
+  }
 
   // TWO CONVENTIONS WEAR THE SAME SIGNATURE, and mixing them is a bug
   // that looks like a refusal. `relayRequest` answers { status, text };
@@ -69,15 +117,31 @@ function createAnswerer(opts) {
   }
   var request = asJson;
 
-  // relayUrl -> that relay's own public key. Fetched once and kept: a
-  // relay's key is made on its first --relay boot and does not change
-  // while it is the same relay.
+  // relayUrl -> that relay's own public key, for this process. A relay's
+  // key is made on its first --relay boot and does not change while it is
+  // the same relay, so one fetch per run is enough.
   //
   // A wrong answer here fails CLOSED — an unknown key matches nothing,
   // so the request is treated as a stranger's and receipted rather than
   // acted on. That is the safe direction for a lookup that can fail.
   var keyOf = Object.create(null);
 
+  // AND THE PIN THAT OUTLIVES THE PROCESS. This cache used to be the
+  // whole of it: forgotten on restart, believing whatever answered next
+  // time, so a relay swapped underneath this node was accepted in
+  // silence. relayKeys.js writes the same pin down.
+  //
+  // Trust on FIRST use, and only first: a relay nobody has met is
+  // accepted and recorded, because requiring a human before the first
+  // word would mean no first word. A relay that ANSWERS DIFFERENTLY than
+  // the one on record is refused, and stays refused until somebody
+  // accepts the change on purpose — which is the one thing this cannot
+  // decide for itself, since a rebuilt relay and a substituted one look
+  // identical from here.
+  //
+  // The re-check happens once per process rather than per request, which
+  // is exactly where the old gap was: a restart is when a substitution
+  // used to become invisible, and a restart is now when it is caught.
   function relayKey(url) {
     if (keyOf[url]) return Promise.resolve(keyOf[url]);
     return Promise.resolve()
@@ -87,8 +151,24 @@ function createAnswerer(opts) {
         // and nothing here the relay did not already publish to anyone
         // who asked.
         var key = answer && answer.mailboxPublicKey;
-        if (typeof key === 'string' && key) keyOf[url] = key;
-        return keyOf[url] || '';
+        if (typeof key !== 'string' || !key) return '';
+
+        var verdict = relayKeys.check(rootDir, url, key);
+        if (verdict === 'changed') {
+          // Refused, and said out loud rather than merely failing. A
+          // silent fail-closed here would look exactly like a relay
+          // being down, and the two want very different answers from a
+          // person.
+          if (onKeyChanged) {
+            try { onKeyChanged(url, relayKeys.pinned(rootDir, url), key); }
+            catch (e) { /* a witness, never a participant */ }
+          }
+          return '';
+        }
+        if (verdict === 'new') relayKeys.accept(rootDir, url, key);
+
+        keyOf[url] = key;
+        return key;
       })
       .catch(function () { return ''; });
   }
@@ -112,9 +192,23 @@ function createAnswerer(opts) {
       // it and to occupy the slot while doing so.
       if (!key || item.from !== key) return '';
 
+      // AND THE BUDGET, before the password is compared. Over it, this
+      // node stops answering that relay's enrolments for the rest of the
+      // minute — which is the only thing a node can do about a relay
+      // that will not limit itself.
+      //
+      // The empty answer is the same refusal a wrong password gets, on
+      // purpose: telling a relay "you are being throttled" tells a
+      // crooked one exactly when to resume.
+      if (!enrolBudgetLeft(item.relay)) return '';
+
       return deviceTick.answerOffer(
         rootDir, urlsFn(), asked, request, item.relay
       ).then(function (decided) {
+        // A refusal is what gets counted. A successful enrolment spends
+        // nothing, so somebody attaching several devices in a minute is
+        // never throttled for it.
+        if (!decided || !decided.accepted) noteEnrolFail(item.relay);
         // The reply is the relay's own shape, not a packet, for the same
         // reason the question was: this is protocol between a node and
         // its relay, and the relay must be able to read it without ever

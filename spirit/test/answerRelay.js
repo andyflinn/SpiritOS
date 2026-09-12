@@ -325,6 +325,185 @@ async function run() {
     }
   }
 
+  test.subHeading('A relay that answers with a different key than last time');
+
+  // THE GAP THIS CLOSES. The cache above is per process: it was the whole
+  // of the pin, so a restart forgot which relay this was and believed
+  // whatever answered next. A substituted relay was accepted in silence.
+  //
+  // Two answerers over ONE home is how a restart is written down — same
+  // node, same disk, new process — which is exactly the moment the old
+  // code stopped looking.
+  {
+    const node = nodeWithPassword();
+    const impostor = auth.generateIdentity('impostor-relay');
+
+    const honest = fakeRelay({ mailboxKey: relayId.publicKey });
+    const first = answerRelay.createAnswerer({
+      rootDir: node.home, request: honest.request,
+      urls: function () { return [RELAY_URL]; },
+    });
+    const ok = JSON.parse(await first.answer(
+      arriving(relayId.publicKey, offer(node.password, phone.publicKey))
+    ));
+    if (ok.accepted === true) {
+      test.check('first contact is accepted and pinned — trust on FIRST use, and only first');
+    } else {
+      test.fail('honest relay refused: ' + JSON.stringify(ok));
+    }
+
+    // The restart. Same home, new process, and the box at that address
+    // now answers with a key of its own.
+    const swapped = fakeRelay({ mailboxKey: impostor.publicKey });
+    const changes = [];
+    const second = answerRelay.createAnswerer({
+      rootDir: node.home, request: swapped.request,
+      urls: function () { return [RELAY_URL]; },
+      onKeyChanged: function (url, had, got) { changes.push({ url: url, had: had, got: got }); },
+    });
+    const after = await second.answer(
+      arriving(impostor.publicKey, offer(node.password, phone.publicKey))
+    );
+
+    // Refused even though the password is CORRECT. That is the point: the
+    // password proves the sender read this node's panel, and a relay that
+    // carried one real enrolment has seen it. Continuity is the separate
+    // question, and it is the one being asked here.
+    if (after === '') {
+      test.check('a substituted relay is refused, with the right password in hand');
+    } else {
+      test.fail('the impostor was answered: ' + after);
+    }
+
+    if (changes.length === 1 && changes[0].had === relayId.publicKey &&
+        changes[0].got === impostor.publicKey) {
+      test.check('and it is reported rather than merely failing — a refusal is not a relay being down');
+    } else {
+      test.fail('onKeyChanged: ' + JSON.stringify(changes));
+    }
+
+    // And the pin does not move by being attacked. Only an explicit
+    // accept moves it, which is a decision this layer cannot make.
+    const relayKeys = require('../run/js/relayKeys');
+    if (relayKeys.pinned(node.home, RELAY_URL) === relayId.publicKey) {
+      test.check('and the pin still names the relay that was accepted');
+    } else {
+      test.fail('the pin moved: ' + relayKeys.pinned(node.home, RELAY_URL).slice(-12));
+    }
+
+    // The honest relay still works across the same restart, which is what
+    // stops this being a check that simply refuses everything after one
+    // run.
+    const third = answerRelay.createAnswerer({
+      rootDir: node.home, request: fakeRelay({ mailboxKey: relayId.publicKey }).request,
+      urls: function () { return [RELAY_URL]; },
+    });
+    const again = JSON.parse(await third.answer(
+      arriving(relayId.publicKey, offer(node.password, phone.publicKey))
+    ));
+    if (again.accepted === true) {
+      test.check('while the relay that was accepted is still trusted after a restart');
+    } else {
+      test.fail('the honest relay stopped working: ' + JSON.stringify(again));
+    }
+  }
+
+  test.subHeading('A relay that will not limit itself is limited here');
+
+  // THE INVERSION GROK FOUND. DEVICE_PER_MIN binds callers of the relay's
+  // own deviceOffer; a crooked relay never calls it, and posts to the
+  // node directly. Until this counter existed, the only thing rationing
+  // password guesses against a node was the box that benefits from not
+  // rationing them.
+  //
+  // Andy: a server does not delegate its own survival. So both sides
+  // keep one — the relay's protects the relay, this one protects the node.
+  {
+    const node = nodeWithPassword();
+    const relay = fakeRelay({ mailboxKey: relayId.publicKey });
+    const A = answerRelay.createAnswerer({
+      rootDir: node.home, request: relay.request,
+      urls: function () { return [RELAY_URL]; },
+    });
+
+    // Wrong every time, which is what guessing looks like.
+    const said = [];
+    for (let n = 0; n < 8; n += 1) {
+      /* eslint-disable no-await-in-loop */
+      said.push(await A.answer(
+        arriving(relayId.publicKey, offer('x'.repeat(128), phone.publicKey))
+      ));
+    }
+
+    // The first five are answered with a composed no; after that the node
+    // stops composing anything at all for that relay.
+    const answered = said.filter(function (t) { return t !== ''; }).length;
+    if (answered === 5) {
+      test.check('five wrong passwords are answered, and the sixth is not answered at all');
+    } else {
+      test.fail('answered ' + answered + ' of 8: ' + JSON.stringify(said.map(function (t) { return t === '' ? '-' : 'no'; })));
+    }
+
+    // SILENTLY, and on purpose: telling a relay it is being throttled
+    // tells a crooked one exactly when to resume. The empty answer is the
+    // same refusal a wrong password gets.
+    if (said[5] === '' && said[6] === '' && said[7] === '') {
+      test.check('and the refusal looks identical to a wrong password — no resume signal');
+    } else {
+      test.fail('throttled answers leaked something: ' + JSON.stringify(said.slice(5)));
+    }
+  }
+
+  // SUCCESS SPENDS NOTHING. Somebody attaching three devices in a minute
+  // is doing a normal thing, and counting attempts rather than failures
+  // would throttle them for it.
+  {
+    const node = nodeWithPassword();
+    const relay = fakeRelay({ mailboxKey: relayId.publicKey });
+    const A = answerRelay.createAnswerer({
+      rootDir: node.home, request: relay.request,
+      urls: function () { return [RELAY_URL]; },
+    });
+    let yes = 0;
+    for (let n = 0; n < 8; n += 1) {
+      /* eslint-disable no-await-in-loop */
+      const got = await A.answer(
+        arriving(relayId.publicKey, offer(node.password, auth.generateIdentity('d' + n).publicKey))
+      );
+      try { if (JSON.parse(got).accepted === true) yes += 1; } catch (e) { /* not a yes */ }
+    }
+    if (yes === 8) {
+      test.check('while eight correct enrolments in a row all succeed — failures are what count');
+    } else {
+      test.fail('correct enrolments accepted: ' + yes + ' of 8');
+    }
+  }
+
+  // PER RELAY, so one relay burning its budget cannot stop another from
+  // carrying a legitimate enrolment.
+  {
+    const node = nodeWithPassword();
+    const relay = fakeRelay({ mailboxKey: relayId.publicKey, otherKey: relayId.publicKey });
+    const A = answerRelay.createAnswerer({
+      rootDir: node.home, request: relay.request,
+      urls: function () { return [RELAY_URL, OTHER_URL]; },
+    });
+    for (let n = 0; n < 6; n += 1) {
+      /* eslint-disable no-await-in-loop */
+      await A.answer(arriving(relayId.publicKey, offer('x'.repeat(128), phone.publicKey)));
+    }
+    const elsewhere = await A.answer(
+      arriving(relayId.publicKey, offer(node.password, phone.publicKey), OTHER_URL)
+    );
+    let ok = null;
+    try { ok = JSON.parse(elsewhere); } catch (e) { ok = null; }
+    if (ok && ok.accepted === true) {
+      test.check('and the budget is per relay — one burning its own does not shut the others');
+    } else {
+      test.fail('other relay was throttled too: ' + JSON.stringify(elsewhere));
+    }
+  }
+
   test.reportSuccessFailureCount();
 }
 

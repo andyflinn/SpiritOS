@@ -900,6 +900,13 @@ const server = http.createServer((req, res) => {
   // The candidates behind a handle somebody heard out loud. Matches
   // only: the census is filtered on this node and never handed to the
   // page (CYCLE-CONTACTS-2).
+  // What this node does about a sender it has never heard of. The GET is
+  // here beside the other hub reads; the POST is below with the writes.
+  if (req.method === 'GET' && pathname === '/api/hub/unknown-senders') {
+    hub.handleUnknownSenders(req, res, readJsonBody);
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/hub/handle') {
     hub.handleHandle(req, res, url);
     return;
@@ -1137,6 +1144,24 @@ const server = http.createServer((req, res) => {
     // Yes or no about somebody already in the book: accept the person
     // who was being held, or block a contact. Nothing leaves this node —
     // whether it listens is not the mailbox's business.
+    // The node's front door, set by the person whose node it is. Contacts
+    // draws the control and posts here rather than writing a file: the
+    // setting is node-global, and api.fs is scoped to app/<name>/, so an
+    // app writing it would put a node-wide answer inside one of the apps
+    // that reads it.
+    if (pathname === '/api/hub/unknown-senders') {
+      hub.handleUnknownSenders(req, res, readJsonBody);
+      return;
+    }
+
+    // A NEW DOOR PASSWORD. The only answer to a relay that carried one
+    // real enrolment and kept the password it was handed — see
+    // deviceAuth.rotatePassword. POST only, because it changes a secret.
+    if (pathname === '/api/hub/rotate-password') {
+      hub.handleRotatePassword(req, res, readJsonBody);
+      return;
+    }
+
     if (pathname === '/api/hub/peer') {
       hub.handlePeer(req, res, readJsonBody);
       return;
@@ -1338,6 +1363,22 @@ if (!relayMode) {
     rootDir: ROOT_DIR,
     request: require('./hub').relayRequest,
     answer: answerer.answer,
+    // WHO THIS NODE WILL HEAR FROM. The same question listenSet has
+    // always answered for the `inbox` read, asked on the path packets
+    // actually arrive on — which until now asked nobody.
+    //
+    // Read per request rather than captured: the address book changes
+    // while the process runs, and a node that acquired somebody an hour
+    // ago must hear them now.
+    admit: function (from) {
+      return require('./hub').frontDoor(ROOT_DIR, from);
+    },
+    // And what to write down about a stranger who got through the floor.
+    // Separate from the judgement on purpose: the verdict is decided
+    // before the budget is checked, the row is written after.
+    remember: function (from, verdict) {
+      return require('./hub').remember(ROOT_DIR, from, verdict);
+    },
     traffic: require('./trafficLog').createTrafficLog({
       rootDir: ROOT_DIR,
       relayMode: relayMode,
