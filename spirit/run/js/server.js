@@ -1152,39 +1152,11 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    // The router. peerRouter and presence are handed in rather than
+    // reached for: they are built at the foot of this file and hub.js
+    // must not hold state it cannot see created.
     if (pathname === '/api/hub/post') {
-      readJsonBody(req).then(function (body) {
-        if (!peerRouter || !presence) {
-          res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ error: 'this node is not connected to a relay' }));
-          return;
-        }
-        const to = String((body && body.to) || '').trim();
-        const text = typeof (body && body.text) === 'string' ? body.text : '';
-        // Which relay to go through. Normally none of an app's business —
-        // a peer reachable two ways is reachable — but a caller may name
-        // one, which is how the cost of each path gets measured rather
-        // than assumed. An unreachable choice is refused like any other.
-        const wanted = String((body && body.via) || '').trim();
-        const where = presence.relaysNaming(to)
-          .filter(function (url) { return !wanted || url === wanted; });
-        if (!where.length) {
-          // Truthfully, and at once. Presence is what makes this
-          // answerable rather than a guess — and it is why that arc had
-          // to come first.
-          res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ error: 'that peer is not reachable right now' }));
-          return;
-        }
-        return peerRouter.post(where[0], to, text).then(function (answer) {
-          res.writeHead(answer.ok ? 200 : (answer.status || 502),
-            { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify(answer));
-        });
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
+      hub.handlePost(req, res, readJsonBody, { router: peerRouter, presence: presence });
       return;
     }
 

@@ -753,6 +753,67 @@ function createHub(rootDir) {
     return { ok: true, text: String((body && body.text) || '') };
   }
 
+  // POST TO A PEER, AND WAIT FOR THE ANSWER. The router's half of the
+  // boundary, and the one verb an app should ever need.
+  //
+  // ── WHY IT MOVED HERE ──────────────────────────────────────────────
+  //
+  // Until 2026-09-13 this was the only /api/hub/* route written out
+  // INSIDE server.js's route table — every other one named a handler in
+  // this file. That was backwards twice over: the compliant path was the
+  // one without a home, and the lines in the switchboard were not
+  // plumbing. They decide whether this node is attached to a relay at
+  // all, WHICH RELAY to send through, and what "unreachable" means to a
+  // caller. A routing rule living in the web server could only ever be
+  // exercised by making an HTTP request, which is why its behaviour was
+  // only ever seen live.
+  //
+  // `deps` rather than a closure: peerRouter and presence are built at
+  // the foot of server.js, long after createHub runs, and a setter would
+  // make this file hold state it has no business holding. Handed in at
+  // call time, they are also what lets a suite drive this as a function.
+  function handlePost(req, res, readJsonBody, deps) {
+    var router = deps && deps.router;
+    var presence = deps && deps.presence;
+
+    // RETURNED, unlike the older handlers beside it, which fire and
+    // forget. server.js ignores it; a suite awaits it. A handler whose
+    // completion cannot be observed can only be tested by sleeping, and
+    // a test that sleeps is a test that will one day be flaky on a
+    // slower machine.
+    return readJsonBody(req).then(function (body) {
+      if (!router || !presence) {
+        fail(res, 503, 'this node is not connected to a relay');
+        return;
+      }
+      var to = String((body && body.to) || '').trim();
+      var text = typeof (body && body.text) === 'string' ? body.text : '';
+      // Which relay to go through. Normally none of an app's business —
+      // a peer reachable two ways is reachable — but a caller may name
+      // one, which is how the cost of each path gets measured rather
+      // than assumed. An unreachable choice is refused like any other.
+      var wanted = String((body && body.via) || '').trim();
+      var where = presence.relaysNaming(to).filter(function (url) {
+        return !wanted || url === wanted;
+      });
+      if (!where.length) {
+        // Truthfully, and at once. Presence is what makes this
+        // answerable rather than a guess — and it is why that arc had
+        // to come first.
+        fail(res, 503, 'that peer is not reachable right now');
+        return;
+      }
+      return router.post(where[0], to, text).then(function (answer) {
+        res.writeHead(answer.ok ? 200 : (answer.status || 502),
+          { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(answer));
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
   function handleSend(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       var wrapped = outgoingText(body);
@@ -1272,6 +1333,10 @@ function createHub(rootDir) {
 
   return {
     handleClaim: handleClaim,
+    // The router. handleSend/handleInbox below are the ring it replaces —
+    // listed next to each other on purpose, so the two transports are
+    // visible as two transports until one of them goes.
+    handlePost: handlePost,
     handleSend: handleSend,
     handleInbox: handleInbox,
     // The same read, with nobody watching. server.js calls it on a timer

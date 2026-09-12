@@ -129,10 +129,19 @@ expectWritable('app/natter/relays.json (app data)', 'app/natter/relays.json');
 // ---- process scripts: readable, never writable ----
 // Processes/Jobs list them, the Code Viewer shows them; writes are already
 // impossible since process/ isn't a writable root.
+// The specimen was relayLabPing until 2026-09-13, when that script was
+// deleted from run/ for pointing at a lab. The RULE is about process/ as
+// a directory and outlives any one script in it, so the specimen moved
+// rather than the check — a rule whose only witness gets deleted is a
+// rule that silently stops being tested.
+//
+// imageStats is the deliberate choice: it talks to no external service
+// and depends on no lab, so it is the process script least likely to be
+// the next one deleted.
 test.subHeading('Process scripts are read-only, not hidden');
-expectLoads('process/js/relayLabPing/relayLabPing.js', 'process/js/relayLabPing/relayLabPing.js');
-expectNotWritable('process/js/relayLabPing/relayLabPing.js', 'process/js/relayLabPing/relayLabPing.js');
-expectLoads('process/js/relayLabPing/relayLabPing.json', 'process/js/relayLabPing/relayLabPing.json');
+expectLoads('process/js/imageStats/imageStats.js', 'process/js/imageStats/imageStats.js');
+expectNotWritable('process/js/imageStats/imageStats.js', 'process/js/imageStats/imageStats.js');
+expectLoads('process/js/imageStats/imageStats.json', 'process/js/imageStats/imageStats.json');
 
 // ---- sidecars and relay state are invisible to every generic consumer ----
 test.subHeading('Sidecars and relay-state are invisible');

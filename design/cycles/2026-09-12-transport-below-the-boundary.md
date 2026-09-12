@@ -1,11 +1,11 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 10 requirements, 2 done.**
+**Status: OPEN — 10 requirements, 5 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
-costed the whole job (R3–R9). R3 and R4 are built; R10 was found by
-building them, and it blocks R8.
+costed the whole job (R3–R9). Done: R1, R2, R3, R4, R6. R10 was found by
+building R3, and it blocks R8.
 
 ---
 
@@ -124,13 +124,17 @@ place `run/` declares a dependency on `test/`.
 
 Deleting: `relayLabPing.js` and `relayLabPing.json`.
 
-**Carries a consequence:** `spirit/test/servableAssets.js:133-135` uses it
-as the specimen for *"process scripts are readable, never writable"*. That
-rule is about `process/` as a directory and must survive — the specimen
-re-points at a script that stays.
+**Carried a consequence, and it was honoured in the same commit:**
+`servableAssets.js` used it as the specimen for *"process scripts are
+readable, never writable"*. That rule is about `process/` as a directory
+and outlives any script in it, so the specimen moved to `imageStats` —
+which talks to no external service and depends on no lab, making it the
+process script least likely to be the next one deleted.
 
-**Verify:** not written.
-**Status:** OPEN
+**Verify:** `spirit/test/runStandsAlone.js` — "nothing under spirit/run/
+names the harness, in code or in a manifest string"; the specimen itself
+in `spirit/test/servableAssets.js` — "process/js/imageStats/imageStats.js"
+**Status:** DONE
 
 ### R2 — `run/` operates with `test/` deleted
 > Are we agreed that node and relay must be fully operational, even if the test folder was completely deleted?
@@ -140,10 +144,26 @@ R1's manifest string. Stated as a requirement because it is the kind of
 rule that decays silently — a single `require('../test/…')` added in
 haste would not fail anything until somebody shipped.
 
-**Verify:** not written. Wants a check that no file under `spirit/run/`
-requires a test path or references one at runtime — comments excepted,
-`buildStamp`'s `':!spirit/test'` exclusion pathspec excepted.
-**Status:** OPEN
+Built as [`runStandsAlone.js`](../../spirit/test/runStandsAlone.js): 539
+files scanned, comments stripped, JSON read whole — because the only
+violation in the tree was a *description string* in a manifest, which is
+a sentence a user reads.
+
+**False negatives only, on purpose.** A `//` inside a string truncates
+that line, so a reference after one on the same line would be missed. A
+suite that cried wolf about `https://` would be deleted by the third
+person who tripped over it, and then the rule would have nothing at all.
+
+One exemption, named as an exact file rather than a pattern:
+`buildStamp.js` names the directory in order to **exclude** it
+(`':!spirit/test'`), and a check asserts that exemption is still earned —
+an exemption nobody needs is a hole nobody is watching.
+
+**Verify:** `spirit/test/runStandsAlone.js` — "nothing under spirit/run/
+names the harness, in code or in a manifest string", plus "the scanner
+catches the sentence that was actually in the tree". Proven able to fail:
+a planted `require('../../test/…')` in `chatLog.js` turned it red.
+**Status:** DONE
 
 ---
 
@@ -272,9 +292,21 @@ first match, `via` override), and what "unreachable" means. That rule
 lives in the web server rather than the transport layer, and can only be
 reached over HTTP — every other hub verb can be called as a function.
 
-**Verify:** not written. `hub.handlePost` exists and is exercised without
-a listening server.
-**Status:** OPEN
+Moved to `hub.handlePost`, with `peerRouter` and `presence` handed in as
+`deps` at call time rather than closed over — they are built at the foot
+of `server.js`, long after `createHub` runs, and a setter would make
+`hub.js` hold state it cannot see created.
+
+It **returns** its promise, unlike the older handlers beside it. A
+handler whose completion cannot be observed can only be tested by
+sleeping, and a test that sleeps is one that goes flaky on a slower
+machine.
+
+**Verify:** `spirit/test/hubPost.js` — "with two relays naming the peer,
+the first is used and the app is not asked" and "a `via` no relay matches
+is refused, never silently rerouted". The routing rule had never been
+stated anywhere but in a web server's switch statement.
+**Status:** DONE
 
 ### R7 — the relay console is deleted
 > console exchange is not something i like to see at all. it's near
