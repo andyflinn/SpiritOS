@@ -580,8 +580,7 @@ should not offer the cheaper one.
 
 ### Rotation is essential, for a reason we created ourselves
 
-It does not revoke — different file, different machine — but it must
-happen, and the reason is our own advice. The panel says *"let that
+The reason it is essential is our own advice. The panel says *"let that
 browser's password manager memorise the password."* So the seized phone
 very likely holds the 128 hex characters ready to autofill, and without
 rotation the attacker enrols **a fresh device of their own**, at leisure,
@@ -589,6 +588,20 @@ indistinguishable from a legitimate one.
 
 **The bookmark-and-save advice and the panic button are joined**, and
 neither document said so until now.
+
+**And rotation is total within its scope** — Andy: *"the red-button
+rotate password can easily deny all requests from the old password,
+that's kind of the point."* Exactly so, and an earlier draft here hedged
+it into sounding partial. The password is compared in **one place**,
+`deviceTick.js:85`. After rotation every request that depends on the old
+one is denied, and that is the whole of what the password ever did. What
+the attacker keeps is a dead string.
+
+Rotation not detaching an attached device is **a different verb, not a
+shortfall** — that is revocation, and the button performs both. Saying
+rotation does not revoke is like saying new locks do not evict a tenant:
+true, and not a criticism of locks. The only place the distinction needs
+saying aloud is the UI, if rotate is ever offered *on its own*.
 
 ### What it cannot do
 
