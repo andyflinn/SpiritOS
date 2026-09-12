@@ -152,6 +152,16 @@ async function run() {
 
   test.subHeading('An enrolment, end to end, at real latency');
 
+  // A FRESH SUBJECT HAS NO device.json. The password is minted on first
+  // ask — the panel's GET /api/hub/device is what asks in the product —
+  // so a node that has never had a device opened on it has nothing to
+  // read. This used to pass only because a PREVIOUS run of this file had
+  // left one behind, which is a test depending on its own history.
+  //
+  // Minted here the way the panel would, so the suite works on a lab
+  // rebuilt thirty seconds ago.
+  deviceAuth.ensurePassword(SUBJECT);
+
   const before = deviceDoc().devicePublicKey || '';
   const impostorKey = auth.generateIdentity('impostor-device').publicKey;
 
@@ -171,7 +181,15 @@ async function run() {
       }),
     }));
     const composed = tried && typeof tried.text === 'string' && tried.text.length > 0;
-    if (!composed && deviceDoc().devicePublicKey === before) {
+    // NORMALISED ON BOTH SIDES. `before` turns a missing key into '', and
+    // this did not — so on a subject that has never had a device the
+    // comparison was null === '' and the negative failed for no reason.
+    //
+    // The second place in this file that depended on its own history: it
+    // passed for months because a PREVIOUS run had always left a device
+    // key behind. A suite that only works on a lab it has already touched
+    // is a suite that cannot be trusted the first time it matters.
+    if (!composed && (deviceDoc().devicePublicKey || '') === before) {
       test.check('a PEER posting that offer gets a bare receipt, and changes nothing');
     } else {
       test.fail('a peer was answered: ' + JSON.stringify(tried && tried.text));

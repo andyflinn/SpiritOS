@@ -237,6 +237,103 @@ async function run() {
     test.fail('a device read another row: ' + JSON.stringify(stolen));
   }
 
+  test.subHeading('A device is the owner\'s window, not the owner\'s credentials');
+
+  // WHAT A DEVICE MAY DO, and what it may NOT, which nothing tested until
+  // 2026-09-12. It survived because no suite asked: relayAuth's own
+  // comment called it "the decision, not an oversight" \u2014 "a device key is
+  // a full copy of the owner's authority on this box" \u2014 and the reasoning
+  // was that being the owner from a hotel room is the point of a device.
+  //
+  // Andy, shown what that actually reached: "needs fixing."
+  //
+  // It reached ADMIN. checkOwner took either key, so a device could read
+  // the owner-only report; and the console decided owner powers from the
+  // ROW rather than the signer, so a device got `status peers search
+  // invites key version` \u2014 and `invites` lists LIVE TOKENS. A seized
+  // phone could hand out access to the relay.
+  //
+  // The split now: a device keeps what a device is for, and loses the
+  // power to administer the box.
+  {
+    const D = world.build(require('./scenario').OWNER_ONLY);
+    if (!D.ok) { test.fail(D.error); return; }
+    const handheld = auth.generateIdentity('handheld');
+    D.box.setDevice(
+      'andy', handheld.publicKey,
+      auth.sign(D.owner.privateKey, deviceAuth.setDeviceMessage(handheld.publicKey))
+    );
+
+    // KEPT: reading and sending its owner's mail. That is the feature,
+    // and it is bounded by being the owner's own traffic.
+    const read = D.box.inbox('andy', auth.sign(handheld.privateKey, auth.inboxMessage('andy')));
+    const sent = D.box.send(
+      'andy', 'andy', 'from the handheld',
+      auth.sign(handheld.privateKey, auth.sendMessage('andy', 'andy', 'from the handheld'))
+    );
+    if (read.ok && sent.ok) {
+      test.check('a device still reads and sends its owner\'s mail — that is what it is for');
+    } else {
+      test.fail('read=' + read.ok + ' send=' + sent.ok);
+    }
+
+    // LOST: the owner-only report. The house key still opens it, so this
+    // is not a check that simply broke `status`.
+    const houseReport = D.box.status('andy', auth.sign(D.owner.privateKey, auth.statusMessage('andy')));
+    const deviceReport = D.box.status('andy', auth.sign(handheld.privateKey, auth.statusMessage('andy')));
+    if (houseReport.ok && deviceReport.ok === false) {
+      test.check('but the owner-only report takes the house key alone');
+    } else {
+      test.fail('status: house=' + houseReport.ok + ' device=' + deviceReport.ok);
+    }
+
+    // LOST: the console's owner words. THE SHARP ONE \u2014 `invites` lists
+    // live tokens, so this is the difference between a stolen phone that
+    // can read your mail and one that can give strangers a relay.
+    function consoleSay(signer, word) {
+      const r = D.box.send(
+        'andy', 'relay', word,
+        auth.sign(signer.privateKey, auth.sendMessage('andy', 'relay', word))
+      );
+      return r.ok ? ((r.consoleReply && r.consoleReply.text) || '') : 'refused';
+    }
+    const houseInvites = consoleSay(D.owner, 'invites');
+    const deviceInvites = consoleSay(handheld, 'invites');
+    if (houseInvites && !/owner/i.test(houseInvites) && /owner/i.test(deviceInvites)) {
+      test.check('and the console refuses a handheld the owner words — `invites` lists live tokens');
+    } else {
+      test.fail('invites: house=' + JSON.stringify(houseInvites) +
+        ' device=' + JSON.stringify(deviceInvites));
+    }
+
+    // DECIDED BY THE SIGNER, not by the row, and that is the mechanism.
+    // A device signs as its owner's LABEL, so the row was always the
+    // owner's and isOwner(src) was always true. Nothing in the result
+    // could tell them apart until send reported which key proved it.
+    const houseWhoami = consoleSay(D.owner, 'whoami');
+    const deviceWhoami = consoleSay(handheld, 'whoami');
+    if (/owner/i.test(houseWhoami) && !/owner/i.test(deviceWhoami)) {
+      test.check('and says so plainly: the same label, and only one of them is the owner here');
+    } else {
+      test.fail('whoami: house=' + JSON.stringify(houseWhoami) +
+        ' device=' + JSON.stringify(deviceWhoami));
+    }
+
+    // A device cannot mint, and never could \u2014 mint reads allow.byName
+    // directly rather than keysForName. Asserted because an earlier note
+    // of mine claimed it could, and a corrected claim is worth a check.
+    const minted = D.box.mint(
+      'andy', 'stranger', 7,
+      auth.sign(handheld.privateKey, require('../run/js/invites').mintMessage('stranger', 7, '')),
+      ''
+    );
+    if (minted.ok === false) {
+      test.check('and cannot mint an invite, which it never could — mint always took the house key');
+    } else {
+      test.fail('a handheld minted an invite: ' + JSON.stringify(minted));
+    }
+  }
+
   test.subHeading('The owner is an identity like any other');
 
   const ownerPhone = auth.generateIdentity('owner-phone');

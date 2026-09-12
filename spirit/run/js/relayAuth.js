@@ -399,16 +399,31 @@ function checkOwner(allow, name, sig) {
   if (allow.mode !== 'keys') {
     return { ok: false, status: 403, error: 'no owner key on this relay' };
   }
-  // Either key, as in checkSend — this is the gate that makes a handheld
-  // useful at all: the census, minting and the console all come through
-  // here, and being the owner from a hotel room is the whole point of the
-  // device slot.
-  const ownerKeys = deviceAuth.keysForName(allow, name);
-  if (!ownerKeys.length) return { ok: false, status: 403, error: 'not the owner' };
-  const ownerProved = !!sig && ownerKeys.some(function (pub) {
-    return verify(pub, statusMessage(name), sig);
-  });
-  if (!ownerProved) return { ok: false, status: 403, error: 'bad status signature' };
+  // THE HOUSE KEY ONLY, and this REVERSES a decision. It used to accept
+  // either key, on the reasoning that "being the owner from a hotel room
+  // is the whole point of the device slot" — and that sentence was true
+  // of a design in which a device had nowhere else to go.
+  //
+  // Andy, 2026-09-12, shown what a device key actually reaches: "needs
+  // fixing."
+  //
+  // What it reached was ADMIN. This gate is the owner-only report, and
+  // through the console's isOwner it was also `status peers search
+  // invites key version` — and `invites` lists LIVE TOKENS. A seized
+  // phone could hand out access to the relay. That is not "the owner
+  // from a hotel room"; it is the owner's admin console in somebody
+  // else's pocket.
+  //
+  // What a device KEEPS is what a device is for: sending and reading its
+  // owner's mail (checkSend, checkInbox). What it LOSES is the power to
+  // administer the box. A device is the owner's window, not the owner's
+  // credentials — design/relay/DEVICE.md, where authority lives on the
+  // node and a device only ever asks.
+  const ownerPub = allow.byName && allow.byName[name];
+  if (!ownerPub) return { ok: false, status: 403, error: 'not the owner' };
+  if (!sig || !verify(ownerPub, statusMessage(name), sig)) {
+    return { ok: false, status: 403, error: 'bad status signature' };
+  }
   return { ok: true };
 }
 

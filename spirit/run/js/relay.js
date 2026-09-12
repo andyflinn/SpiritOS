@@ -486,7 +486,7 @@ function createRelay(rootDir) {
   // the right peer — a reply follows the sender's KEY, not their public
   // label, which is what a label-addressed reply could never do when two
   // peers share a caption.
-  function consoleExchange(src, fromWire, text) {
+  function consoleExchange(src, fromWire, text, signedByHouseKey) {
     var senderKey = (src && src.peer && src.peer.publicKey) || null;
     var at = new Date().toISOString();
     var command = {
@@ -500,7 +500,12 @@ function createRelay(rootDir) {
     };
 
     var answer = relayConsole.handle(text, {
-      isOwner: isOwner(src),
+      // OWNER OF THE ROW *AND* SIGNED BY THE HOUSE KEY. The row alone was
+      // never enough: a device signs as its owner's label, so isOwner(src)
+      // was true for a handheld and the console handed it `invites` — a
+      // list of live tokens. A device is the owner's window, not the
+      // owner's credentials.
+      isOwner: isOwner(src) && signedByHouseKey !== false,
       snapshot: snapshot,
       peers: who,
       invites: function () { return invites.load(rootDir); },
@@ -554,6 +559,11 @@ function createRelay(rootDir) {
 
     var src = resolveParty(fTok);
     var dst = resolveParty(tTok);
+    // Whether the SIGNER was the identity's own key rather than a device
+    // standing for it. True by default: names mode and open mode have no
+    // device keys to tell apart, and the owner branch below proves the
+    // house key or nothing.
+    var signedByHouseKey = true;
     if (src && src.ambiguous) return { ok: false, status: 409, error: 'ambiguous from label' };
     if (dst && dst.ambiguous) return { ok: false, status: 409, error: 'ambiguous to label' };
 
@@ -580,12 +590,26 @@ function createRelay(rootDir) {
             return k !== src.peer.publicKey;
           })
         );
-        var sendProved = !!sig && sendKeys.some(function (pub) {
-          return auth.verify(pub, auth.sendMessage(fTok, tTok, text), sig);
-        });
-        if (!sendProved) {
+        // WHICH KEY PROVED IT, not merely that one did. The console below
+        // decides owner powers, and it used to decide them from the ROW —
+        // so a device signing as its owner's label got the owner's words,
+        // and nothing in this result could tell the two apart.
+        var provedWith = '';
+        if (sig) {
+          for (var si = 0; si < sendKeys.length; si += 1) {
+            if (auth.verify(sendKeys[si], auth.sendMessage(fTok, tTok, text), sig)) {
+              provedWith = sendKeys[si];
+              break;
+            }
+          }
+        }
+        if (!provedWith) {
           return { ok: false, status: 403, error: 'bad send signature' };
         }
+        // The identity's own key is the first entry by construction above,
+        // so this reads as "the signer was the identity itself, not its
+        // handheld".
+        signedByHouseKey = provedWith === src.peer.publicKey;
       } else {
         var ownerSend = auth.checkSend(allow, fTok, sig, tTok, text);
         if (!ownerSend.ok) return ownerSend;
@@ -611,7 +635,7 @@ function createRelay(rootDir) {
     // response, and the personal node keeps whatever record it wants
     // (chat 5).
     if (tTok === auth.RESERVED_NAME || toWire === auth.RESERVED_NAME) {
-      return consoleExchange(src, fromWire, text);
+      return consoleExchange(src, fromWire, text, signedByHouseKey);
     }
 
     var msg = {
