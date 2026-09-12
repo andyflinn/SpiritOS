@@ -33,8 +33,10 @@ This directory contains the vision, principles, and architecture decisions for *
   browsers. Designed, not built; the owner-only version shipped as device
   cycles 1–5.
 - [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
-  in Natter for attaching a browser. Built; §7 also carries the rendezvous rule,
-  which is why enrolment is certain rather than likely.
+  in Natter for attaching a browser. Built; §7 carries the rendezvous rule, which
+  made enrolment certain while it depended on a poll. Since 2026-09-12 enrolment
+  rides the transport instead, and that rule guards the fallback rather than the
+  path.
 - [The transport, and what it has been shown to do](relay/TRANSPORT.md) — one
   mechanism now carrying peer-to-peer, relay-to-node and browser-to-node alike:
   the measurements, and an explicit list of what has *not* been proven.
