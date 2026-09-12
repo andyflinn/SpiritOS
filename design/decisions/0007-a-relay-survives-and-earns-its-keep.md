@@ -21,6 +21,47 @@ Everything else a relay might do is subordinate to those two. A feature
 that does not help it survive or help it pay for itself is not a feature
 a relay should have, however useful it would be somewhere else.
 
+## Amended 2026-09-12 — "survive" is every server's job
+
+Andy, after the first draft of this decision:
+
+> all servers node and relay MUST be designed to survive and do their
+> job…. it's the responsibility of the node-code to safeguard itself,
+> same goes for the satellite
+
+So the title is narrower than the rule. **Survive** belongs to every
+server in the system; **earn its keep** is the half that is a relay's
+alone, because a node is paid for by the person whose node it is.
+
+### The principle, and it settles three open questions at once
+
+> **A server does not delegate its own survival.**
+
+Each of these was open before that sentence and is closed by it:
+
+- **The enrolment rate limit.** Grok's finding was that `DEVICE_PER_MIN`
+  binds callers of the relay's `deviceOffer` and does nothing about a
+  crooked relay, while `deviceTick.answerOffer` has no counter at all. The
+  question was *"move it, or add one?"* — and the answer is **both keep
+  one, because they defend different things.** The relay limits to protect
+  itself from its callers; the node limits to protect itself from its
+  relays. Neither is redundant.
+- **The floor on unknown senders** ([DEVICE.md](../relay/DEVICE.md) §1c).
+  A node that leaves its front door to whichever guest lists its relays'
+  owners keep has delegated its own survival to people it did not choose.
+- **`listenSet` on the router path.** Same reason. The relay decides who
+  may be *present*; only the node can decide who it will *hear*.
+
+### And it names the pattern behind all three
+
+Twice now a gate has lived on a transport being retired and not been
+carried to the transport replacing it — `deviceHandshake.js` took the
+enrolment rate limit with it, and `listenSet` never left the `inbox` path.
+Neither went red, because **nothing fails when a check is merely absent.**
+
+Standing question for any retirement from here: **what did the old path
+check that the new one does not?**
+
 ## What this settles that was open
 
 [The Peerlink review](../reviews/2026-09-12-peerlink-world-view.md) §2
@@ -82,6 +123,86 @@ The one thing worth carrying forward as design rather than packaging: a
 relay-only entry point would make the claim **testable** — "a relay loads
 no app code" is a check, where "a relay does not use app code" is a hope.
 Worth having when the build exists. Not before.
+
+## Separate repos, eventually — and the seams are already there
+
+Andy:
+
+> While it is smart to prototype in a common repo, sooner or later, there
+> have to be repos: SpiritOS-shared, SpiritOS-satellite or relay,
+> SpiritOS-shell, or another form of well organized structuring that
+> separates concerns that are unique to component
+
+**A direction, not a cycle.** Recorded because the measurement is cheap
+now and will not be later — and because it turns out to be an observation
+rather than a proposal.
+
+### The kernel is the common root (Andy)
+
+> kernel should be the common root.
+
+**And it already is, which a first reading of the `require` graph
+misses.** `kernel.js` opens with `isNode()` / `isBrowser()` (lines 7–12),
+defines the `spirit.core` namespace everything hangs off, and exports to
+both environments — `module.exports = spirit` at :624 for Node, the global
+for the browser. It is not the shell's kernel that a relay happens to
+borrow. It is the floor.
+
+So the layering is four, not a flat list of four peers:
+
+```
+kernel                      ← the common root
+  + relayAuth, deviceAuth, packet, buildStamp, invites   ← the protocol
+      ├── satellite   relay, presence, router, relayConsole
+      ├── node        hub, peerPost, presenceNode, answerRelay,
+      │               deviceTick, trafficLog, whoBook, ownerBadge,
+      │               peerFile, peerStats, sseClient
+      └── shell       client/shell.js, index.html, app/*
+```
+
+Taken from the `require` graph at `4a0d51e`, not from a diagram. Four
+modules — `presence.js`, `invites.js`, `trafficLog.js`, `whoBook.js` —
+require **nothing at all** and are already portable as they stand.
+
+**A correction recorded rather than edited away:** an earlier draft of
+this section put `kernel` in the shell column and called `relay.js:515`'s
+`require('./kernel')` a seam violation. That had the direction backwards.
+Depending on the common root is what every component is supposed to do;
+it is the only dependency that may point that way.
+
+### The real question is whether the root is lean
+
+What a relay genuinely does not need is sitting **inside** the root rather
+than being wrongly reached for: the `ICON` table (`kernel.js:901`),
+`MIME_TYPES` (`:1091`), and the browser half of `spirit.core.jobs`
+(`:804`). A relay loads all of it to reach `VERSION`.
+
+That is not a layering error, it is a **weight** question, and it is
+exactly what a split would answer — the root that a satellite links
+against should contain what a satellite can use. `isNode()` already marks
+most of the boundary; nothing enforces it.
+
+Worth not fixing piecemeal. A lone `require` tidied away is a fossil in
+waiting; the same change made as part of a split is structural.
+
+### What the split would buy, and cost
+
+**Buy.** The relay build stops being a flag and becomes a build — *"a
+relay loads no app code"* turns from a test into a fact. The trust root in
+[DEVICE.md](../relay/DEVICE.md) §7 becomes auditable by construction
+rather than by discipline, because the apps are not in the repository to
+ship. And the components' dependencies become visible instead of
+conventional.
+
+**Cost, and it is real.** The shared module **is the wire protocol**, so a
+change to `relayAuth.js` becomes a three-repo change. Version skew between
+node and relay stops being implicit — though it already exists and has
+already bitten: spirit-3 ran one build behind for a day and a fixed bug
+appeared not to be fixed. **Separate repos make that skew visible rather
+than creating it, which is an argument for.** The harness would have to
+span repos or be split, and `labWorld` / `labMaster` build a relay and
+nodes from one tree via `git ls-files`, which is the piece that would need
+real rework.
 
 ## Survive
 

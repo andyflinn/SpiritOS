@@ -1,6 +1,12 @@
 # What a device is
 
-**Status: design, not built. Against `4a0d51e` (2026-09-12).**
+**Status: design, not built. Against `4a0d51e` (2026-09-12).
+REVIEWED by Grok at `d515f70` — see "Review: what this document got wrong"
+near the end. Three claims below are superseded there and are NOT safe to
+build from: the router's rejection of device keys (2), the confidentiality
+of the device channel (5, 7), and what a crooked relay cannot do (7).
+None of the three touches the design; all three are places this document
+described the tree wrongly.**
 
 **Architecture: Andy Flinn.** Every decision in this document is his, in
 the order he made them, and the quotations below are the record rather
@@ -474,6 +480,63 @@ The scenario, which is the spec:
 Under the architecture above this is small, and the reason it is small is
 the reason the architecture is right.
 
+### What it costs to press — and this is the design argument
+
+Andy:
+
+> isn't the red button in a hotel room on the device something that cannot
+> damage the node? it simply forces a trip home before ever using a device
+> again
+
+**Exactly that, and it should decide the button's shape.**
+
+Everything the button touches is devices. The node's own operation is
+untouched: peers still reach it, its rows on every relay stand, presence
+continues, nothing is deleted, nothing is lost. The password gates
+enrolment and nothing else.
+
+And the recovery is **bounded and known**: the new password can be read
+from `/api/hub/device`, which is a personal-node route, and a personal
+node refuses every non-loopback connection (`server.js:723`). So it is
+readable **from a browser on that machine and nowhere else**. One trip
+home, and everything works again.
+
+That asymmetry is the whole case for making it easy to press:
+
+| | cost |
+|---|---|
+| pressed when it was not needed | **one trip home** |
+| not pressed when it was needed | the identity |
+
+So: **no confirmation dialog, no "are you sure", no second press.** A
+destructive action normally earns a confirmation; this one has no
+destruction in it to confirm. And a dialog is precisely what fails in the
+only situation it exists for — somebody is at the door and there is time
+for one press.
+
+It is also **safe against its own misuse**, which is rare in a control
+like this: anyone who presses it maliciously has to be holding the device,
+and all they achieve is locking that device out and sending its owner
+home. There is no version of pressing it that helps an attacker.
+
+### The trip home is not a cost, it is the proof
+
+There is an apparent conflict with DEVICE-PANEL.md §7 — *"no routine
+failure should require being physically at home"* — and it dissolves on
+the word **routine**. That rule exists so a closed tab, a restart or a
+shut window cannot strand somebody. The red button is the emergency, not a
+routine failure, and it is deliberate rather than suffered.
+
+More than that, the journey is **the property, not the price**:
+
+> **If a device could be re-enrolled from the road, so could whoever took
+> the phone.**
+
+A panic button that is remotely recoverable has not revoked anything — it
+has just added a step for the attacker. Requiring presence at the node is
+the only thing that makes the revocation mean something, and it is
+therefore not a limitation to be engineered away later.
+
 ### It is a local write, not a fan-out
 
 The node holds the device's key; the node stops honouring it. **One string
@@ -505,9 +568,15 @@ show and nobody left to read it. The honest per-relay result belongs in
 the panel at home.
 
 **Revoke everything, not "this one."** A device cannot be trusted to name
-which device it is *not*. Re-enrolling the good phone takes thirty
-seconds; the failure mode of guessing wrong is losing your own access
-rather than keeping theirs.
+which device it is *not*, and the failure mode of guessing wrong is
+keeping theirs rather than losing yours.
+
+**And it is free, once the trip home is already paid.** Any press at all
+rotates the password, and the new one can only be read at the node — so
+revoking one device and revoking all of them have the **same recovery
+cost**. There is no saving to be had by being selective, only a risk. A
+control with a cheaper and a more thorough option, priced identically,
+should not offer the cheaper one.
 
 ### Rotation is essential, for a reason we created ourselves
 
@@ -903,6 +972,236 @@ Listed so the size is visible, not as a plan:
 None of it blocks anything above. All of it is worth having written down
 before somebody builds the first module and discovers the order.
 
+## Review — what this document got wrong
+
+**Grok, against `d515f70`, 2026-09-12. Recorded rather than edited away:
+the reasoning that was wrong is more useful than a document that never
+shows it.** Verified line by line before recording; one correction of the
+correction is noted.
+
+### 1. `routePost` and `streamOpen` reject device keys BY ACCIDENT, and §2 would break it
+
+**The most serious finding here.** Both call `deviceIdentity(token)` and
+refuse when it returns null (`relay.js:1060`, `:1181`). A device key
+returns null today only because it is **in no table** — not in
+`allow.json`, not in the peer roster.
+
+That is an absence, not a gate.
+
+**The design is not in question. The implementation site is.** §2
+postulates the rule plainly — *a packet signed by a device's session key
+may be addressed to its paired owner and to nothing else* — and that rule
+is structural rather than defensive: **routing a device only to its owner
+is what makes the node the sole place where requests are granted or
+refused.** Route it anywhere else and the node is bypassed, which is the
+whole architecture gone.
+
+The problem is that **`routePost` has nowhere for that rule to live.** Its
+checks are each independent — both tokens resolve, the signature verifies,
+the target is present, the text is not too large — and **it never compares
+the sender to the target.** Nothing in it could express "this sender may
+only reach that one peer".
+
+So the rule is enforced today only by accident: device keys reach no check
+because they resolve to nothing. §2 requires them to resolve, and the
+moment they do, the accident stops holding and there is no gate underneath
+it. `streamOpen` has the same shape, and there it is worse — a device
+accepted as a peer would be announced by `presence.broadcast`, which is
+leak surface #2 firing on connect.
+
+**What this costs: one explicit check, at two call sites.** The earlier
+claim in this document that the router "already enforces this" described a
+coincidence and should not have been written as a property.
+
+### 1b. The second defence Andy named — and it is missing for everybody
+
+Andy, on being told the relay has nowhere to enforce §2's routing rule:
+
+> if the device, by any chance, attempts to post to any peer other than
+> its own owner node, that peer could not possibly verify the originator
+> of the request, and no node, by protocol, should accept requests from
+> unknown
+
+**Correct, and it is the right shape: two independent defences.** The
+relay routes a device only to its owner; and even if that failed, the far
+end refuses a sender it does not know. A device session key is by design
+held only by its owner node and the relay, so to any other node it is a
+stranger's key and should bounce.
+
+**The rule exists. It is on the wrong transport.**
+
+`hub.js:379` — `listenSet`, *"who this node will listen to: everyone it
+has actually acquired, plus itself"*, built from `whoBook.contacts()`,
+with `unknownPolicy` (`hub.js:360`) offering `acquire` / `hold` /
+`silent`. A considered position, with a UI behind it.
+
+It is applied in **one** place, `hub.js:389` — the `inbox` path. The
+router path never consults it: `peerPost.js`, `answerRelay.js` and
+`presenceNode.js` contain no reference to `listenSet`,
+`whoBook.contacts`, or `unknownPolicy`.
+
+What `peerPost.onRequest` actually checks is **two things**: that the
+signature verifies against the `from` the packet claims, and that `to` is
+this node. That proves the sender holds the key they say they hold. It
+proves nothing about whether this node has ever heard of them.
+
+**How far that actually reaches — corrected by Andy, and it is narrower
+than first written here.** An earlier draft of this section said *any key
+that can reach a relay this node is on*. That is wrong:
+
+> the relay, as it sits, is incapable of relaying packets of keys unknown
+> to itself
+
+Correct. `routePost` resolves the sender through `deviceIdentity` and
+answers **403 `no such identity`** to a key with no row on that relay
+(`relay.js:1061`). In keys-mode a row requires an invite minted by the
+relay's owner. So a stranger on the internet cannot post to anybody
+through a relay; they must first be admitted to it.
+
+**The relay's membership roll is doing security work**, which is
+[0007](../decisions/0007-a-relay-survives-and-earns-its-keep.md)'s *"the
+roll is the ledger"* earning its keep in a way that decision did not
+claim.
+
+**What remains is still real, and it is the union.** A node on several
+relays accepts from **everyone the owner of each of those relays
+admitted** — and it never consented to any of those guest lists. If this
+node is a peer on somebody else's relay, everyone they invited can post to
+it. That is precisely the gap `listenSet` exists to close: the node's own
+judgement about who it will hear, as distinct from the relay owner's
+judgement about who may be present.
+
+So on the router path, an admitted-elsewhere key is accepted, written to
+`relay-state/traffic.json` **with the payload**, handed to `onArrival` for
+the apps, and receipted — all before any policy, because no policy is
+consulted. Not the internet. Still not this node's decision.
+
+**This is the same failure as the rate limit, and that makes twice.** A
+gate that exists on the transport being retired, not carried across to the
+transport replacing it — and invisible because nothing goes red when a
+check is simply absent. Worth naming as a pattern before the third one:
+**when a path is replaced, its gates do not come along on their own.**
+
+For this design the consequence is narrow and good: Andy's second defence
+is the right one, and it costs nothing new — `listenSet` and
+`unknownPolicy` already exist and already have a considered answer for
+strangers. They need wiring to `onRequest`. That is a cycle, and it is not
+a device cycle: it protects every node against every unknown sender, of
+which a misrouted device is one small case.
+
+### 1c. Where the policy lives is wrong, and the floor should not live in a file at all
+
+Andy:
+
+> `app/contacts/prefs.json` is the wrong place for that file, it's a
+> node-global
+
+**Right, and it is wrong twice over.**
+
+**Wrong as a location.** Who this node will hear from is a fact about the
+node's front door, not about one app. Contacts is a *view* of the whoBook;
+it does not own the door. A node-global setting already has a home —
+`preferences.json` at the run root, and `kernel.js:184` lists it in
+`WRITABLE_ROOT_FILES`, so writes to it pass the kernel rather than an
+app's own `api.fs`.
+
+**Wrong as a layer.** `api.fs` is scoped to `app/<name>/` by convention,
+so Contacts can write its own prefs — correct for a preference, and the
+reason a *safety floor* must not be there. AGENT.md's model is that **the
+server is the only jail**, and a rule enforced by reading an app's JSON is
+enforced outside it.
+
+So the split, and it falls out cleanly once the two are separated:
+
+| | where |
+|---|---|
+| the **preference** — `silent` / `hold` / `acquire` | `preferences.json`, node-global, the user's to set |
+| the **floor** — an unknown sender reaches no app before a decision, and spends bounded rate and bytes whatever the policy says | **code.** It is not a setting, so it needs no file and must not have one |
+
+The repo already knows this difference: decision 0003 reads `intrinsic`
+**from disk, never from the content being written** — *"a caller cannot
+clear it by sending a manifest without it."* That is the shape an
+invariant has. `unknownPolicy` does not have it and should not, because it
+is a preference and preferences are meant to be changed.
+
+Said the other way round, which is the version worth keeping: **the
+preference decides who you talk to; the floor decides what a stranger can
+spend.** A person can consent to hearing from strangers. Nobody is being
+asked to consent to unbounded strangers, so nobody can.
+
+One thing not to move: this is the same sitting as the review's finding
+that `relay-state/` is the wrong name for a personal node's private
+directory. Both are "a file in the wrong place because of where the code
+grew". Worth doing together or not at all.
+
+### 2. Replay after one real enrolment — the third consequence of the relay signing as a party
+
+Asked for in the request and answered. §7 claimed a crooked relay is *"a
+censor and an eavesdropper, never an impersonator"*. It holds for peer
+packets. It does **not** hold for enrolment, and not only because the
+relay signs:
+
+**The relay is handed the password in cleartext.** `deviceOffer`
+(`relay.js:~806`) composes `{relay:'device-offer', password, …}` itself,
+so a crooked relay that carries **one legitimate enrolment** keeps the
+password and can enrol a device of its own afterwards, at any time, until
+the password is rotated.
+
+Fabricating offers without the password fails. Replaying one it was given
+does not. That is a standing capability, not an attempt.
+
+### 3. §5's sealed channel is a requirement with no primitive
+
+Follows directly from #2 and demolishes the §7 claim that this would be
+*"the first thing in the system a relay genuinely cannot read"*.
+
+**A password-derived channel key is indefensible while the relay has seen
+the password** — and it has, because the relay carries the enrolment that
+would establish the seal. The bootstrap cannot be sealed by the thing it
+bootstraps.
+
+**Standing position until a later sitting: the device↔node payload is
+TRANSPORT.md's position — untamperable, not private.** Everything in this
+document that assumed confidentiality is unsupported, including §7's
+answer to TRANSPORT.md's admitted gap.
+
+### 4. The rate limit — right conclusion, and my line number was right
+
+Grok: *"`DEVICE_PER_MIN` binds HTTP `deviceOffer` callers, not a crooked
+relay and not `answerOffer`."* **Correct, and sharper than the request put
+it.** A crooked relay never calls `deviceOffer` at all; it posts to the
+node directly, and `deviceTick.answerOffer` has no counter, no backoff and
+no delay.
+
+**The missing half: a node-side failure counter keyed by `item.relay`** —
+which `answerRelay` already holds. Not built.
+
+*Correction to the correction:* the leash says *"line `:813` in the
+request is not that check."* It is — `relay.js:813` is
+`rateOk(deviceHits, who.id, DEVICE_PER_MIN)`. The architectural point
+stands; the citation was sound.
+
+### 5. Ordering on the retirement
+
+`send`/`inbox`/`status` must not go while Relay Chat still `hubPost`s
+`/api/hub/send` and polls `/api/hub/inbox` every 2s. **`consoleExchange`
+moves to the relay-as-party post first; then the routes can die.**
+
+### 6. Pinning, and what a device does instead
+
+Pin `mailboxPublicKey` **on disk** on the node; a key change is an
+**explicit accept**, not a warning. A device has no disk and cannot pin —
+it **fail-closes on a bookmark mismatch**, which is what makes §7's
+"bookmark as certificate" operational rather than a metaphor.
+
+### 7. A fifth leak surface
+
+`/device/<hex>` in access logs, **if the hex is the session id**. Not a
+bug today — the current page carries the *owner's* key, which is public —
+but it is the obvious way to build the device shell and it would put a
+session credential in every log on the route. The same lesson cycle 4
+learned for `?sig=`.
+
 ## Open
 
 - **What a node's policy is** when a device asks it to sign. "Everything"
@@ -919,5 +1218,24 @@ before somebody builds the first module and discovers the order.
 Not open, and §7 is where they live rather than here: module delivery,
 `deviceCapable`, and what `api.hub` would have to become. They are the
 horizon, not the backlog.
-- **Password rotation has no mechanism at all** today. It was open before
-  this scenario and is now load-bearing for it.
+- **Password rotation — SCHEDULED, no longer open.** There was no
+  mechanism at all: open before the hotel-room scenario, load-bearing for
+  it, and load-bearing again after Grok's finding that a relay which
+  carried one legitimate enrolment holds that password until it changes.
+  It is now **item 6 of the cycle answering that review** — the only
+  available answer to that finding, since sealing the channel needs a
+  primitive we do not have.
+
+  It is **mitigation, not a fix**, and must say so: rotation cannot un-see
+  a password. It stops a captured one being a permanent key to the front
+  door, and it does **not** detach devices already attached — different
+  files on different machines, which is the distinction this whole
+  document turns on.
+
+  **Open inside it: where the control lives.** Andy's specification for
+  the panel was a Copy button, a link and a paragraph — *"thats all"* — so
+  a rotate control is a second control in a panel deliberately given one.
+  It is also a different kind of act: enrolling a device is routine,
+  rotating a password is a security action taken when something has gone
+  wrong. Whether it belongs in that panel, quieter, or somewhere else is a
+  UI decision and is Andy's.
