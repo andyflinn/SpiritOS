@@ -827,54 +827,166 @@ function createRelay(rootDir) {
         ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW,
       });
     }
-    var waiting = deviceQueue.offer(who.id, password, devicePublicKey);
+    // A DEVICE ENROLMENT IS AN ORDINARY POST, and the relay is the one
+    // making it. Everything specific to devices is these few lines;
+    // everything else is `post` below, the same act this relay performs
+    // for any peer.
+    //
+    // NOT AN APP PACKET, and that is a rule rather than a shortcut. The
+    // app envelope lives inside `text` precisely so a relay never learns
+    // it: change the envelope and no relay in the world needs updating.
+    // A relay that could parse one would have made the envelope part of
+    // the relay protocol.
+    //
+    // This is not app-to-app traffic anyway. It is the relay speaking to
+    // a node about the node's own enrolment — protocol, like the answer
+    // `device-pending` has always given — so it gets the relay's own
+    // shape, which the relay is entitled to read because it wrote the
+    // question. Reading the answer to your own question is not learning
+    // somebody else's format.
+    var wrapped = JSON.stringify({
+      relay: 'device-offer',
+      password: password,
+      devicePublicKey: devicePublicKey,
+    });
 
-    // THE DOORBELL.
+    // NOT REACHABLE IS NOT YET A REFUSAL. The poll is still there for a
+    // node that holds no stream, and while it is, this takes that road
+    // rather than telling a browser no on the strength of one that is
+    // merely newer. When the poll goes, this goes with it and post()'s
+    // 503 travels as it does for any other post.
     //
-    // Until now an offer sat in this slot until the node happened to ask
-    // — `devicePending`, once a minute — so enrolment took anywhere from
-    // no time at all to a full minute depending on where in that cycle
-    // somebody pressed the button. Uniformly 0-60s, averaging 30.
-    //
-    // That was never a decision. Device cycle 2 landed on 2026-09-10 and
-    // presence landed on the 11th: when this was built there was no
-    // stream to push down, and polling was the only mechanism in the
-    // building. The stream arrived the next day and nothing came back to
-    // rewire the one part that predated it.
-    //
-    // A DOORBELL, NOT A NEW TRANSPORT. Everything else stays exactly as
-    // it was: the slot still holds the offer, the browser's POST is
-    // still held against it, and the node still answers with the same
-    // two POSTs. The only thing that changes is how the node finds out —
-    // rung, instead of discovering it on a later round of the building.
-    // A measured round trip to a peer through this relay is ~125ms.
-    //
-    // RUNG ONLY IF THIS OFFER IS THE ONE PARKED. `offer` refuses a busy
-    // slot, a bad password and a flood, and all three come back as the
-    // same `not now` — so the fact that we were called says nothing.
-    // take() is a peek: if the live slot is ours, we parked it.
-    var parked = deviceQueue.take(who.id);
-    var mine = parked && parked.devicePublicKey === devicePublicKey;
+    // DECIDED HERE AND NOW, not inside a .then. Parking has always been
+    // synchronous — a poll arriving in the same tick finds the slot —
+    // and doing it a microtask later made an offer that was not yet
+    // there when something asked for it.
+    if (!presentNow.isPresent(who.id)) {
+      return deviceQueue.offer(who.id, password, devicePublicKey);
+    }
 
-    // PUSH WHEN PRESENT, POLL WHEN NOT. A node that is not holding a
-    // stream gets exactly today's behaviour, which is why the tick and
-    // the 66-second hold both stay. False negatives only: the worst a
-    // missed bell can do is cost the minute it always cost.
-    if (mine && presentNow.isPresent(who.id)) {
-      // NOT SIGNED, deliberately. The stream was authenticated when it
-      // opened — the node proved it holds this key — so a push onto it
-      // is already addressed to the one identity entitled to the offer,
-      // and it arrives over the same TLS connection the poll's answer
-      // would have. A relay signature here would prove something the
-      // transport has already proved, and the password inside is checked
-      // by the node against its own either way.
-      presentNow.send(who.id, 'device', {
-        password: parked.password,
-        devicePublicKey: parked.devicePublicKey,
+    return post(who.id, wrapped).then(deviceAnswerFrom);
+  }
+
+  // THE RELAY POSTING AS ITSELF.
+  //
+  // Andy: "the relay already had a spirit style post with reply
+  // implemented, in the relaying... you could have a generic function on
+  // the relay that presents the exact same interface as the personal
+  // node side."
+  //
+  // That is this, and it is deliberately the same shape as
+  // peerPost.post() on a node — sign, hash, register, deliver, wait —
+  // because it is the same act. What the relay does when it proxies
+  // somebody else's post (routePost, below) and what it does when it
+  // makes one of its own differ in exactly two places: who signed it,
+  // and where the answer goes.
+  //
+  // The relay signs with its own key. Not ceremony: for a device
+  // enrolment there IS no end-to-end signature to carry, because the
+  // browser has no identity yet — that being the thing it is enrolling —
+  // so the relay vouching for it is the only attestation there can be.
+  // A hop is not an origin, and TLS can only speak to the hop.
+  function post(toKey, text) {
+    var mine = auth.loadIdentity(rootDir);
+    if (!mine || !mine.privateKey) {
+      return Promise.resolve({ ok: false, status: 503, error: 'this relay has no identity' });
+    }
+    if (typeof text !== 'string' || !text) {
+      return Promise.resolve({ ok: false, status: 400, error: 'text required' });
+    }
+    if (text.length > MAX_ROUTED_TEXT) {
+      return Promise.resolve({ ok: false, status: 413, error: 'too big' });
+    }
+
+    // DELIVER OR REFUSE, AND REFUSE INSTANTLY (0006). The same line
+    // routePost draws, for the same reason, and drawn here rather than
+    // in the caller so that every post this relay makes obeys it.
+    if (!presentNow.isPresent(toKey)) {
+      return Promise.resolve({ ok: false, status: 503, error: 'peer not reachable' });
+    }
+
+    var signed = auth.postMessage(mine.publicKey, toKey, text);
+    var sig = auth.sign(mine.privateKey, signed);
+    var hash = auth.requestHash(signed);
+
+    // REGISTERED BEFORE IT IS SENT, the rule the whole router turns on:
+    // nothing leaves until the thing that will match its answer exists.
+    var waiting = new Promise(function (resolve) {
+      awaitingReply[hash] = {
+        resolve: resolve,
+        timer: setTimeout(function () {
+          if (!awaitingReply[hash]) return;
+          delete awaitingReply[hash];
+          // Named, because cancel() refuses a hash that is not this
+          // requester's — the same rule that stops one node cancelling
+          // another's route.
+          routes.cancel(hash, mine.publicKey);
+          resolve({ ok: false, status: 504, hash: hash, error: 'no answer yet' });
+        }, deviceHandshake.DEFAULT_WAIT_MS),
+      };
+    });
+
+    var opened = routes.open(hash, mine.publicKey, toKey, function () {
+      // NO HASH IS SENT, exactly as in routePost: the target derives it
+      // from the bytes it holds, which is what makes it evidence rather
+      // than an echo.
+      return presentNow.send(toKey, 'request', {
+        from: mine.publicKey,
+        to: toKey,
+        text: text,
+        sig: sig,
+      });
+    });
+    if (!opened.ok) {
+      settleHere(hash, {
+        ok: false, status: opened.status || 503,
+        error: opened.error || 'could not be sent',
       });
     }
 
     return waiting;
+  }
+
+  // Answers this relay is waiting for, by the hash of the request it
+  // made. Not a second router table — the router's own table holds the
+  // route; this holds only what is waiting at the near end of it, which
+  // for a relay is never a socket.
+  var awaitingReply = Object.create(null);
+
+  function settleHere(hash, answer) {
+    var slot = awaitingReply[hash];
+    if (!slot) return false;
+    delete awaitingReply[hash];
+    if (slot.timer) clearTimeout(slot.timer);
+    slot.resolve(answer);
+    return true;
+  }
+
+  // WHAT THE NODE SAID, TURNED BACK INTO WHAT THE BROWSER ASKED.
+  //
+  // The node answers with a packet, because that is what an answer is on
+  // this wire. This is the relay reading a reply to a request it made
+  // itself — which is the one payload it is entitled to open, having
+  // written the question.
+  //
+  // Anything it cannot read is a no. A page that gets `not now` tries
+  // again; a page told yes on the strength of an answer nobody could
+  // parse would be enrolled against a node that never agreed.
+  function deviceAnswerFrom(answer) {
+    if (!answer || !answer.ok) {
+      return { ok: false, status: answer && answer.status, error: deviceHandshake.ERROR_NOT_NOW };
+    }
+    var said = null;
+    try { said = JSON.parse(answer.text); } catch (e) { said = null; }
+    // THE SHAPE IS PART OF THE CHECK. The bare receipt every node sends
+    // for every request is an empty string, and an empty string must not
+    // read as consent — a browser told yes on the strength of an answer
+    // nobody composed would be enrolled against a node that never
+    // agreed.
+    if (!said || said.relay !== 'device-answer' || said.accepted !== true) {
+      return { ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW };
+    }
+    return { ok: true, status: 200, devicePublicKey: said.devicePublicKey || '' };
   }
 
   function deviceTake(token) {
@@ -1092,6 +1204,28 @@ function createRelay(rootDir) {
 
     var matched = routes.answer(hash, who.id);
     if (!matched.ok) return matched;
+
+    // THE ONE ASYMMETRY IN THE WHOLE ARRANGEMENT.
+    //
+    // Every other requester is a node holding a stream, and the answer
+    // is pushed down it. When the requester is THIS RELAY — which it is
+    // for a device enrolment, where the relay posts on a browser's
+    // behalf — there is no stream to push to, because a relay does not
+    // hold one to itself. Its far end is a browser holding a POST open.
+    //
+    // So the answer resolves that instead. Same hash, same table, same
+    // `answer()` check that the replier is the target; only the last
+    // hop differs, and it differs because the thing waiting is a
+    // connection rather than a socket.
+    if (awaitingReply[hash]) {
+      settleHere(hash, {
+        ok: true, status: 200, hash: hash,
+        from: who.id,
+        text: typeof text === 'string' ? text : '',
+        sig: sig,
+      });
+      return { ok: true, status: 200, delivered: true };
+    }
 
     // The request is over either way. If the requester has gone, the
     // answer is dropped — 0006, unchanged — but the TARGET is told, so

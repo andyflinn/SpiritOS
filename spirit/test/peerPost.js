@@ -75,7 +75,7 @@ function fakeRelay() {
   return R;
 }
 
-function nodeFor(name, relay) {
+function nodeFor(name, relay, answer) {
   const home = tmpHome(name);
   const id = auth.loadIdentity(home);
   // A REAL traffic log, not a stub. The module has its own suite; what
@@ -85,6 +85,7 @@ function nodeFor(name, relay) {
   const traffic = trafficLog.createTrafficLog({ rootDir: home });
   const P = peerPost.createPeerPost({
     rootDir: home, request: relay.request, waitMs: 800, traffic: traffic,
+    answer: answer || null,
   });
   relay.listen(id.publicKey, function (event, body) {
     if (event === 'request') P.onRequest('http://relay', body);
@@ -185,6 +186,99 @@ async function whatCrossedIsWrittenDown() {
     test.fail('no refusal logged: ' + JSON.stringify(bert.traffic.read().map(function (r) {
       return r.outcome;
     })));
+  }
+}
+
+// A NODE THAT ANSWERS, rather than only acknowledging.
+//
+// Until now `onRequest` sent an empty receipt and could send nothing
+// else: "a receipt is not a reply ... whether an app is home to compose
+// an answer is a different question", and this file answered it by never
+// asking. The reply's `text` has been on the wire from the start and has
+// always been ''.
+//
+// This is the first real use of it, and it is not about devices — an
+// answer is what a request is FOR. Devices are simply the first thing
+// that needs one.
+async function aNodeCanAnswer() {
+  test.subHeading('A request can be answered, not merely acknowledged');
+
+  const relay = fakeRelay();
+  const asked = [];
+  const bert = nodeFor('bert-ans', relay);
+  const john = nodeFor('john-ans', relay, function (item) {
+    asked.push(item);
+    return JSON.stringify({ pong: JSON.parse(item.text).ping });
+  });
+
+  const answer = await bert.P.post('http://relay', john.id.publicKey, '{"ping":7}');
+
+  if (answer.ok && answer.text === '{"pong":7}') {
+    test.check('the answer comes back to the asker, in the reply the receipt always had room for');
+  } else {
+    test.fail('answer: ' + JSON.stringify(answer));
+  }
+
+  // The answerer is handed the item it is answering, hash and all, so it
+  // can tell one request from another.
+  if (asked.length === 1 && asked[0].from === bert.id.publicKey && asked[0].hash === answer.hash) {
+    test.check('and the answerer was handed the request it is answering');
+  } else {
+    test.fail('asked: ' + JSON.stringify(asked));
+  }
+
+  // STILL SIGNED AS A RECEIPT. The signature is over the hash and
+  // nothing else, so an answer cannot be moved onto a different request
+  // — the thing that made the receipt trustworthy is untouched by its
+  // having gained a body.
+  if (answer.receipt === true && answer.from === john.id.publicKey) {
+    test.check('and it is still the answerer signing over the hash, body or no body');
+  } else {
+    test.fail('receipt shape: ' + JSON.stringify(answer));
+  }
+
+  test.subHeading('And an answerer that fails cannot cost the receipt');
+
+  // The receipt is the load-bearing half: it says the bytes arrived. An
+  // answerer that throws, or returns something that is not a string,
+  // must not be able to turn that into silence — the asker would read it
+  // as "never got there", which is the one thing that must stay true.
+  const thrower = nodeFor('thrower', relay, function () { throw new Error('no'); });
+  const toThrower = await bert.P.post('http://relay', thrower.id.publicKey, '{"ping":1}');
+  if (toThrower.ok && toThrower.text === '') {
+    test.check('an answerer that throws still leaves the plain receipt behind');
+  } else {
+    test.fail('after a throw: ' + JSON.stringify(toThrower));
+  }
+
+  const nonsense = nodeFor('nonsense', relay, function () { return { not: 'a string' }; });
+  const toNonsense = await bert.P.post('http://relay', nonsense.id.publicKey, '{"ping":1}');
+  if (toNonsense.ok && toNonsense.text === '') {
+    test.check('and so does one that answers with something that is not text');
+  } else {
+    test.fail('after nonsense: ' + JSON.stringify(toNonsense));
+  }
+
+  // An answer may take a moment — installing something, asking a file.
+  const slow = nodeFor('slow', relay, function () {
+    return new Promise(function (r) { setTimeout(function () { r('later'); }, 40); });
+  });
+  const toSlow = await bert.P.post('http://relay', slow.id.publicKey, '{"ping":1}');
+  if (toSlow.ok && toSlow.text === 'later') {
+    test.check('and an answer that takes a moment is waited for, not dropped');
+  } else {
+    test.fail('after a slow answer: ' + JSON.stringify(toSlow));
+  }
+
+  // WHAT WENT OUT IS ON THE RECORD. An answer is bytes crossing the WAN
+  // like any other, and the log keeps it whole.
+  const said = slow.traffic.read().filter(function (r) {
+    return r.dir === 'out' && r.kind === 'reply';
+  })[0];
+  if (said && said.payload === 'later') {
+    test.check('and the answerer wrote down what it said');
+  } else {
+    test.fail('no outbound reply logged: ' + JSON.stringify(slow.traffic.read()));
   }
 }
 
@@ -325,6 +419,7 @@ async function run() {
     test.fail('a forged receipt was believed');
   }
 
+  await aNodeCanAnswer();
   await whatCrossedIsWrittenDown();
 
   test.reportSuccessFailureCount();

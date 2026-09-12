@@ -188,23 +188,33 @@ async function oneDeviceEveryMailbox() {
   }
 }
 
-// THE DOORBELL — the relay's half.
+// THE RELAY POSTS, AS ITSELF.
 //
 // An offer used to sit in the relay's slot until the node next asked,
 // which is once a minute: uniformly 0-60 seconds from pressing the
-// button to being enrolled, averaging thirty. Andy lived it — "works
-// reliably when I click 10 seconds before the node polls, fails reliably
-// 10 seconds after."
+// button to being enrolled. Andy lived it — "works reliably when I click
+// 10 seconds before the node polls, fails reliably 10 seconds after."
 //
 // That was never a decision. Device cycle 2 landed on 2026-09-10 and
 // presence on the 11th, so when this was built there was no stream to
-// push down. This is the day-late rewiring.
+// push down.
 //
-// PHASE ONE IS THE RELAY ONLY. What is checked here is that the bell
-// rings on the stream the node is already holding, and that everything
-// else is exactly as it was — the slot, the held POST, the poll.
-async function theRelayRingsTheBell() {
-  test.subHeading('An offer reaches a connected node at once, not on its next poll');
+// The first attempt at fixing it invented a `device` event: a bespoke,
+// unsigned push sitting in the middle of a channel whose every other
+// packet is signed and verified. Andy: "it simply creates a standard
+// spirit POST request with its own signature, and treats the transaction
+// simply like the far end of any spirit post... EXACT SAME procedure."
+//
+// So there is no device transport. There is a relay making an ordinary
+// post, and these checks are about it being ordinary.
+//
+// What it carries is NOT an app packet: the envelope lives inside `text`
+// so that a relay never learns it, and spirit/test/packet.js holds that
+// line. This is the relay talking to a node about the node's own
+// enrolment — protocol, in the relay's own shape.
+
+async function theRelayPostsAsItself() {
+  test.subHeading('An enrolment is an ordinary post, and the relay makes it');
 
   const W = world.build(SCENARIO);
   if (!W.ok) { test.fail(W.error); return; }
@@ -214,7 +224,6 @@ async function theRelayRingsTheBell() {
 
   const home = W.ownerHome();
   deviceAuth.ensurePassword(home);
-  deviceAuth.setListening(home, true);
   const password = deviceAuth.load(home).password;
 
   // The node, holding the stream it already holds for presence.
@@ -231,56 +240,94 @@ async function theRelayRingsTheBell() {
 
   const before = sink.events().length;
   const offering = box.deviceOffer('andy', password, phone.publicKey);
+  const arrived = sink.events().slice(before).filter(function (e) { return e.event === 'request'; });
 
-  const rung = sink.events().slice(before).filter(function (e) { return e.event === 'device'; });
-  if (rung.length === 1) {
-    test.check('the offer arrives on the stream the moment it is made');
+  // NOT A DEVICE EVENT. The same `request` a peer's post arrives as, so
+  // the node needs no second reader and no second rule.
+  if (arrived.length === 1) {
+    test.check('it arrives as a `request`, the same event any post arrives as');
   } else {
-    test.fail('no bell: ' + JSON.stringify(sink.events().slice(before)));
+    test.fail('events: ' + JSON.stringify(sink.events().slice(before)));
   }
 
-  // It carries what the poll would have answered with, and nothing more.
-  // The node compares the password against its own; it cannot do that
-  // with a notification that only says "something happened".
-  const bell = rung[0] && rung[0].data;
-  if (bell && bell.password === password && bell.devicePublicKey === phone.publicKey) {
-    test.check('and carries exactly what the poll would have handed back');
-  } else {
-    test.fail('payload: ' + JSON.stringify(bell));
-  }
+  const req = arrived[0] && arrived[0].data;
 
-  // THE SLOT IS UNCHANGED. A doorbell, not a new transport: the offer is
-  // still parked, so a node that missed the bell still finds it by
-  // asking, and the browser's POST is still held against that slot.
-  const stillThere = box.devicePending(
-    owner.publicKey,
-    auth.sign(owner.privateKey, deviceAuth.deviceTakeMessage('andy'))
+  // SIGNED BY THE RELAY, which is the whole point. A device page has no
+  // identity yet — that is what it is enrolling — so there is no
+  // end-to-end signature to carry, and the relay vouching for it is the
+  // only attestation there can be.
+  const mailboxKey = box.snapshot().mailboxPublicKey;
+  const verified = req && auth.postSignatureFor(
+    req.from, req.from, req.to, req.text, req.sig
   );
-  if (stillThere && stillThere.password === password) {
-    test.check('and the slot still holds it, so the poll remains the fallback');
+  if (req && req.from === mailboxKey && verified) {
+    test.check('signed by the relay itself, and it verifies against the relay key');
   } else {
-    test.fail('the bell consumed the offer: ' + JSON.stringify(stillThere));
+    test.fail('signature: from=' + (req && String(req.from).slice(-12)) +
+      ' relay=' + String(mailboxKey).slice(-12) + ' verified=' + !!verified);
   }
 
-  // And the exchange still completes the way it always did.
-  box.deviceReply('andy', true);
+  // The node must be able to tell the relay apart from anybody else, and
+  // the census is where it learns that key — no new endpoint.
+  if (mailboxKey && req.to === owner.publicKey) {
+    test.check('and addressed to the identity being enrolled, from a key the census publishes');
+  } else {
+    test.fail('addressing: to=' + (req && req.to));
+  }
+
+  // The payload is an ordinary packet, so the node routes it the way it
+  // routes anything.
+  let carried = null;
+  try { carried = JSON.parse(req.text); } catch (e) { carried = null; }
+  if (carried && carried.relay === 'device-offer' &&
+      carried.password === password &&
+      carried.devicePublicKey === phone.publicKey) {
+    test.check('carrying the password and the key being offered, in the relay\'s own shape');
+  } else {
+    test.fail('payload: ' + req.text.slice(0, 160));
+  }
+
+  // AND NOT AN APP ENVELOPE. If this ever became one, every relay would
+  // have to learn a format it has no business knowing.
+  if (!carried || carried.app === undefined) {
+    test.check('and not an app packet, which no relay may be taught to read');
+  } else {
+    test.fail('the relay sent an app envelope: ' + req.text.slice(0, 120));
+  }
+
+  // NO HASH ON THE WIRE, exactly as for a peer's post: the node derives
+  // it from the bytes it holds, which is what makes it evidence.
+  if (!('hash' in req)) {
+    test.check('and no hash travels — the far end computes it, as it always does');
+  } else {
+    test.fail('a hash was sent: ' + JSON.stringify(req));
+  }
+
+  // THE ANSWER COMES BACK AS A REPLY, and resolves the browser's POST.
+  // This is the one asymmetry: the relay has no stream to be answered
+  // on, so routeReply settles the held connection instead.
+  const hash = auth.requestHash(verified);
+  const said = JSON.stringify({
+    relay: 'device-answer', accepted: true, devicePublicKey: phone.publicKey,
+  });
+  box.routeReply(
+    owner.publicKey, hash, said,
+    auth.sign(owner.privateKey, auth.receiptMessage(hash))
+  );
+
   const browser = await offering;
-  if (browser && browser.ok) {
-    test.check('and the browser is still answered by the same held POST');
+  if (browser && browser.ok && browser.devicePublicKey === phone.publicKey) {
+    test.check("and the node's reply is what answers the browser that was waiting");
   } else {
     test.fail('browser: ' + JSON.stringify(browser));
   }
 
-  test.subHeading('And it rings for nobody else, and for nothing refused');
+  test.subHeading('A no is a no, and an unreadable answer is also a no');
 
-  // A SECOND OFFER WHILE ONE IS LIVE IS REFUSED, and a refusal must not
-  // ring. `offer` answers a busy slot, a bad password and a flood with
-  // the same `not now`, so being called says nothing about being parked.
   const W2 = world.build(SCENARIO);
   if (!W2.ok) { test.fail(W2.error); return; }
   const home2 = W2.ownerHome();
   deviceAuth.ensurePassword(home2);
-  const pw2 = deviceAuth.load(home2).password;
   const sink2 = fakeSink();
   W2.box.streamOpen(
     W2.owner.publicKey,
@@ -288,47 +335,67 @@ async function theRelayRingsTheBell() {
     sink2
   );
 
-  const first = W2.box.deviceOffer('andy', pw2, 'pk-first');
-  const mark = sink2.events().length;
-  const second = await W2.box.deviceOffer('andy', pw2, 'pk-second');
-  const after = sink2.events().slice(mark).filter(function (e) { return e.event === 'device'; });
-
-  if (second && second.ok === false && after.length === 0) {
-    test.check('a second offer is refused and rings nothing');
-  } else {
-    test.fail('refused=' + JSON.stringify(second) + ' rang=' + JSON.stringify(after));
+  async function answerWith(text) {
+    const mark = sink2.events().length;
+    const waiting = W2.box.deviceOffer('andy', deviceAuth.load(home2).password, 'pk-x');
+    const ev = sink2.events().slice(mark).filter(function (e) { return e.event === 'request'; })[0];
+    const v = auth.postSignatureFor(ev.data.from, ev.data.from, ev.data.to, ev.data.text, ev.data.sig);
+    const h = auth.requestHash(v);
+    W2.box.routeReply(
+      W2.owner.publicKey, h, text,
+      auth.sign(W2.owner.privateKey, auth.receiptMessage(h))
+    );
+    return waiting;
   }
 
-  W2.box.deviceReply('andy', false);
-  await first;
+  const refused = await answerWith(JSON.stringify({ relay: 'device-answer', accepted: false }));
+  if (refused && refused.ok === false) {
+    test.check('a node that says no leaves the browser refused');
+  } else {
+    test.fail('after a no: ' + JSON.stringify(refused));
+  }
 
-  // A PEER'S STREAM IS NOT THE OWNER'S. The push is addressed to one
-  // identity, and the stream it goes down is the one that proved it
-  // holds that key — which is the whole reason it needs no signature.
-  // Its own world, with somebody in it: the stock scenario is an owner
-  // alone, and the thing being checked is that a PEER holding a stream
-  // is not rung for the owner's offer.
-  const W3 = world.build({ title: 'An owner and one member', peers: ['bert'] });
+  // ANYTHING IT CANNOT READ IS A NO. A page told yes on the strength of
+  // an answer nobody could parse would be enrolled against a node that
+  // never agreed.
+  const garbled = await answerWith('not a packet at all');
+  if (garbled && garbled.ok === false) {
+    test.check('and an answer it cannot read is refused rather than believed');
+  } else {
+    test.fail('after nonsense: ' + JSON.stringify(garbled));
+  }
+
+  // THE EMPTY RECEIPT IS NOT A YES. Every node already answers a request
+  // with a bare receipt; a device offer must not read that as consent.
+  const bare = await answerWith('');
+  if (bare && bare.ok === false) {
+    test.check('and a bare receipt — which every node sends — is not consent');
+  } else {
+    test.fail('a plain receipt enrolled a device: ' + JSON.stringify(bare));
+  }
+
+  test.subHeading('And a node holding no stream still gets the old road');
+
+  // The poll has not gone. Until it does, a node that is not streaming
+  // falls back to it rather than being told no on the strength of a road
+  // that is merely the newer one.
+  const W3 = world.build(SCENARIO);
   if (!W3.ok) { test.fail(W3.error); return; }
   const home3 = W3.ownerHome();
   deviceAuth.ensurePassword(home3);
-  const bert = W3.peer('bert');
-  const bertSink = fakeSink();
-  W3.box.streamOpen(
-    bert.publicKey,
-    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
-    bertSink
+  const pw3 = deviceAuth.load(home3).password;
+  const parked = W3.box.deviceOffer('andy', pw3, 'pk-parked');
+  const pending = W3.box.devicePending(
+    W3.owner.publicKey,
+    auth.sign(W3.owner.privateKey, deviceAuth.deviceTakeMessage('andy'))
   );
-  const bertMark = bertSink.events().length;
-  const forOwner = W3.box.deviceOffer('andy', deviceAuth.load(home3).password, 'pk-owner');
-  const leaked = bertSink.events().slice(bertMark).filter(function (e) { return e.event === 'device'; });
-  if (leaked.length === 0) {
-    test.check("and an offer for the owner never reaches a peer's stream");
+  if (pending && pending.password === pw3 && pending.devicePublicKey === 'pk-parked') {
+    test.check('with nobody streaming the offer is parked, and the poll finds it');
   } else {
-    test.fail('it rang the wrong node: ' + JSON.stringify(leaked));
+    test.fail('not parked: ' + JSON.stringify(pending));
   }
   W3.box.deviceReply('andy', false);
-  await forOwner;
+  await parked;
 }
 
 test.startTest('Device cycle 3 — listen and tick');
@@ -453,7 +520,7 @@ async function run() {
   }
 
   await oneDeviceEveryMailbox();
-  await theRelayRingsTheBell();
+  await theRelayPostsAsItself();
   await bootBehaviour();
 
   if (typeof test.reportSuccessFailureCount === 'function') {

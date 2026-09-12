@@ -56,6 +56,10 @@ function createPeerPost(opts) {
   var mailbox = [];
   var nextItem = 1;
   var onArrival = opts.onArrival || null;
+  // WHO COMPOSES AN ANSWER. Optional: with nobody home the reply is the
+  // empty receipt this file has always sent, which is why every existing
+  // caller is unaffected by its arrival.
+  var answer = opts.answer || null;
 
   function me() {
     return auth.loadIdentity(rootDir);
@@ -218,14 +222,44 @@ function createPeerPost(opts) {
 
     if (onArrival) { try { onArrival(item); } catch (e) { /* not ours */ } }
 
-    // A RECEIPT IS NOT A REPLY. This node is always up and can always
-    // say "received". Whether an app is home to compose an answer is a
-    // different question, and answering it here would be a guess.
+    // A RECEIPT IS NOT A REPLY, and until now it could only ever be one.
+    // This node is always up and can always say "received"; whether
+    // anything is home to compose an ANSWER was a different question,
+    // and this file answered it by never asking.
+    //
+    // `answer` is where that question now gets asked. It is handed the
+    // item and may give back a string, which travels as the reply's text
+    // — the wire has always carried one, and it has always been ''.
+    // Anything else, including a throw, leaves the receipt exactly as it
+    // was: empty, and meaning only that the bytes arrived.
+    //
+    // AWAITED, and that is a real cost to have chosen on purpose. A
+    // receipt sent at once says "this arrived" as early as it can be
+    // said; waiting for an answer delays it. That is right only because
+    // the far end is a held connection that wants the ANSWER — being
+    // told its request arrived, and then nothing, is not what it is
+    // waiting for. An answerer that hangs is holding somebody's browser
+    // open, which is the reason this hook belongs to the node's own code
+    // and not to anything an app can register freely.
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash));
     return Promise.resolve()
       .then(function () {
+        if (!answer) return '';
+        return answer(item);
+      })
+      .catch(function () { return ''; })
+      .then(function (said) {
+        var text = typeof said === 'string' ? said : '';
         return request(relayUrl, 'POST', '/api/relay/reply', {
-          from: id.publicKey, hash: hash, text: '', sig: receipt,
+          from: id.publicKey, hash: hash, text: text, sig: receipt,
+        }).then(function () {
+          if (text) {
+            note({
+              dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
+              hash: hash, outcome: 'answered', payload: text,
+            });
+          }
+          return item;
         });
       })
       .then(function () { return item; })
