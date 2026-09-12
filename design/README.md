@@ -27,11 +27,21 @@ This directory contains the vision, principles, and architecture decisions for *
   just what it is. See [decisions/](decisions/).
 - [0006 — Fast and true, not guaranteed](decisions/0006-fast-and-true-not-guaranteed.md)
   — a relay delivers or refuses, and stores nothing. Changes what a relay *is*.
+- [0007 — A relay survives and earns its keep](decisions/0007-a-relay-survives-and-earns-its-keep.md)
+  — a relay is a box that must justify its own cost. Settles satellite-vs-ground-station
+  from the Peerlink review (ground station: the roll is the ledger), and retires the
+  byte-counting it nearly became — packaging is a deployment problem.
 
 ## Relay
 - [Peer Devices](relay/PEER-DEVICES.md) — every identity attaching its own
   browsers. Designed, not built; the owner-only version shipped as device
   cycles 1–5.
+- [What a device is](relay/DEVICE.md) — a node-shaped thing with a temporary key
+  instead of an identity, no disk, and exactly one correspondent: its own node,
+  which acts on its behalf and hands back the result. The relay holds the pairing
+  in RAM and may never publish it. Design only, and it supersedes the device model
+  in the two documents below. §6 is the red button, which this architecture
+  reduces to a local write; **§7 is future layer and depends on nothing above it.**
 - [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
   in Natter for attaching a browser. **§1–7 superseded on 2026-09-12** and kept
   as the record: a switch, a poll, four states and a rendezvous rule, every one

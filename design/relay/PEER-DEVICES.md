@@ -2,6 +2,15 @@
 
 **Status: designed, not built. Verified against `756013b` (2026-09-10).**
 
+**The device MODEL here is superseded — see [DEVICE.md](DEVICE.md)
+(2026-09-12).** This document assumes a device key installed in a relay's
+`allow.json`, equal to the house key there, and fanned out to every relay
+the identity holds a row on. A device holds no authority toward anyone: it
+petitions its own node, the node signs, and the relay keeps the pairing in
+RAM and may never publish it. What survives here is everything about
+*per-identity* enrolment — B2's reasoning, the keyed URL, two johns — and
+§8's note about the unrated path, which was fixed on 2026-09-12.
+
 The owner-only version of this shipped as device cycles 1–5 (`2dbffbb`…`756013b`).
 This document is about extending it to every claimed peer, and about what that
 turns out to mean.

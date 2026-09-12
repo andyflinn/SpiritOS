@@ -4,6 +4,14 @@
 longer exists; §8 is what stands. They are kept whole rather than edited,
 because what they were solving is the reason §8 is as short as it is.**
 
+**And §8's own model of a device is superseded in turn — see
+[DEVICE.md](DEVICE.md), the same day.** What §8 describes as built is
+accurate; what it assumes a device *is* — a key installed on each relay —
+is not the architecture. Two things in §8 survive and matter there: the
+password-manager advice, which turns out to be what makes password
+rotation load-bearing in a panic, and the note that rotation has no
+mechanism at all.
+
 Everything from §2 to §7 is about a WINDOW and a POLL — a switch that
 opened a door, a timer that looked once a minute, four bubble states
 reporting on that timer, and an arithmetic rule holding two constants on
