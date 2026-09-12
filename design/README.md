@@ -52,6 +52,12 @@ This directory contains the vision, principles, and architecture decisions for *
 
 ## Reviews
 - Periodic point-in-time assessments of status against vision. See [reviews/](reviews/).
+- [Peerlink — the system reviewed against its own world view](reviews/2026-09-12-peerlink-world-view.md)
+  — "nodes are people, relays are satellites, and we are Peerlink", tested claim
+  by claim against the tree. One third of it is the oldest principle in the repo;
+  one third is new and measurably ~70% true; one third is a name with a hard
+  boundary around it. The finding that outranks the rest: Relay Chat still polls
+  a 200-entry ring on the relay every two seconds.
 
 ## Future Layer (not yet implemented)
 - [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)
