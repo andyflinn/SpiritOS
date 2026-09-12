@@ -40,6 +40,11 @@ const NOT_A_SUITE = [
   // Fails on purpose: it is the worked example of what a failing check
   // looks like, and it would be the one permanent red in every run.
   'testTemplate.js',
+  // TALKS TO ANOTHER CONTINENT. Every other suite runs in process in
+  // milliseconds and could run a thousand times; this one opens sockets
+  // to a live relay and changes state on a box other people use. Run by
+  // hand: `node spirit/test/liveRelay.js`.
+  'liveRelay.js',
 ];
 
 // Last, always. It reads the other suites off disk to check that every
