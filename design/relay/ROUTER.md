@@ -1,6 +1,12 @@
 # The relay as a router — a peer drops a packet on a peer and gets a receipt
 
-**Status: in design. Verified against `b6670b7` (2026-09-11).**
+**Status: BUILT, and carrying every direction of traffic in the system.
+Verified against `d087375` (2026-09-12).**
+
+> What it turned out to be, once the device arc joined it — the
+> measurements, the four directions it carries, and what has NOT been
+> shown — is in [TRANSPORT.md](TRANSPORT.md). This document stays the
+> design: why it is shaped this way.
 
 Andy: *"it would be AWESOME if peers can drop packets on peers, and simply
 get a receipt that it arrived."*

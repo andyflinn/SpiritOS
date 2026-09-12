@@ -35,6 +35,9 @@ This directory contains the vision, principles, and architecture decisions for *
 - [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
   in Natter for attaching a browser. Built; §7 also carries the rendezvous rule,
   which is why enrolment is certain rather than likely.
+- [The transport, and what it has been shown to do](relay/TRANSPORT.md) — one
+  mechanism now carrying peer-to-peer, relay-to-node and browser-to-node alike:
+  the measurements, and an explicit list of what has *not* been proven.
 - [The relay as a router](relay/ROUTER.md) — a peer drops a packet on a peer
   and gets a signed receipt. Decision 0006 implemented, plus the receipt.
 - [The data architecture behind a verified ping](relay/ROUTER-PACKETS.md) —
