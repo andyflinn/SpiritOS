@@ -30,7 +30,14 @@ build/Release
 # https://docs.npmjs.com/misc/faq#should-i-check-my-node-modules-folder-into-git
 node_modules
 
-CYCLE*
+# Root-level scaffolding sketches only (CYCLE-CONTACTS-2.md and friends) —
+# the plain-English co-design files Andy deletes once the thinking has moved.
+# Anchored and extension-bound on purpose: as a bare `CYCLE*` this also
+# swallowed design/cycles/ and spirit/test/cycleRequirements.js (core.ignorecase
+# is true here), so the one mechanism built to stop an agreement being lost was
+# itself unsaveable, and silently — an ignored path shows in `git status` as
+# nothing at all.
+/CYCLE-*.md
 media
 published
 release

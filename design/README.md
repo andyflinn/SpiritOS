@@ -22,6 +22,20 @@ This directory contains the vision, principles, and architecture decisions for *
   world from a scenario in one command, and the four things both learned the
   hard way.
 
+## Cycles — what was agreed, and how it is known to be done
+- [The method](cycles/README.md) — an agreement becomes a requirement the moment
+  it is made, and a requirement is not done until something verifies it. Written
+  after a confinement Andy and Claude had settled in detail was reported as part
+  of a green sitting it was not in.
+- [2026-09-12 — the device, and a node defending itself](cycles/2026-09-12-device-and-node-defence.md)
+  — **OPEN.** 16 requirements: 10 done, 2 deferred, 4 still open.
+- [2026-09-12 — app-building removed](cycles/2026-09-12-app-building-removed.md)
+  — **OPEN.** Implements 0008. Five requirements, none built: the two `/api/fs/`
+  doors and their handling code, the absolute refusal that replaces them, three
+  test specimens that must outlive their subjects, and the two apps.
+- `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
+  verification that exists nor a recorded deferral.
+
 ## Decisions
 - Dated Architecture Decision Records — why a specific technical choice was made, not
   just what it is. See [decisions/](decisions/).
@@ -31,6 +45,15 @@ This directory contains the vision, principles, and architecture decisions for *
   — a relay is a box that must justify its own cost. Settles satellite-vs-ground-station
   from the Peerlink review (ground station: the roll is the ledger), and retires the
   byte-counting it nearly became — packaging is a deployment problem.
+- [0008 — App-building is out of scope](decisions/0008-app-building-is-out-of-scope.md)
+  — production code is written in VS Code. App Builder and Type Designer go, and
+  with them the two doors through which a browser can write an app's own code.
+  Withdraws 0004 entire; 0003's manifest protection becomes structural rather
+  than enforced.
+
+## Andy's frames
+- [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
+  both servers dispatch and the function it lands in. Illustration only.
 
 ## Relay
 - [Peer Devices](relay/PEER-DEVICES.md) — every identity attaching its own

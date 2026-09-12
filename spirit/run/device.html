@@ -24,9 +24,23 @@
   <h1>This device</h1>
 
   <form id="enroll" autocomplete="on">
+    <!--
+      THERE IS NO LISTENING. This said "works only while listening is on
+      at that personal node", which was true of a design with a window
+      and a poll behind it and has been false since 2026-09-12 — a node
+      with a password can be enrolled to, always. The sentence outlived
+      the mechanism by a day and told somebody to go and switch on a
+      control that no longer exists.
+
+      What replaces it is the one thing a person standing here can
+      actually act on: the password has to be the one that node is
+      showing NOW. A browser offers the saved one, and a rotated password
+      makes the saved one wrong while looking exactly as right.
+    -->
     <p>Adding a device for <strong id="who-for">this identity</strong> on
        <strong id="host">this relay</strong>.
-       Works only while listening is on at that personal node.</p>
+       Use the password that node is showing now — if it was changed, the
+       one your browser saved is out of date.</p>
     <!--
       Restored after the cycle-5 drop replaced this page (df891bf).
       Chrome saves a lone password field unreliably and offers it back
@@ -357,9 +371,12 @@
             if (took < ENROLL_WAIT_MS) {
               finish('Refused in ' + Math.round(took / 1000) + 's — something answered, rather ' +
                 'than nobody being there.\n' +
-                'Either your personal node is not connected to THIS relay, or the password is ' +
-                'wrong. Check the panel in Natter on your own node: the password is shown there, ' +
-                'and so is the list of relays it is on.');
+                'Most likely the password is out of date: if your browser filled this in, that ' +
+                'is the one it SAVED, and a node whose password has changed refuses it while it ' +
+                'still looks right. Open the panel in Natter on your own node, copy the password ' +
+                'it is showing now, and paste it over what is in the field.\n' +
+                'If that is already what you did, then your node is not connected to THIS relay ' +
+                '— the same panel lists the relays it is on.');
               return;
             }
 
