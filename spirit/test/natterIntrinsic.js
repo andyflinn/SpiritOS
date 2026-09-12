@@ -283,105 +283,71 @@ test.startTest('Natter is intrinsic — always in the shell, never overwritten')
   }
 }
 
-test.subHeading('The two App Builder exceptions refuse it');
+test.subHeading('The doors that could have overwritten it are gone');
+
+// WHAT USED TO BE HERE, AND WHY IT IS NOT.
+//
+// Two sections stood here until 2026-09-13. They proved that
+// saveAppScript and saveAppManifest -- the two exceptions to
+// fileWritable's refusal, which existed for App Builder -- refused an
+// INTRINSIC app while still accepting an ordinary one, and that the
+// guard read the manifest on disk rather than the name "natter".
+//
+// Decision 0008 deleted app-building, and both doors with it. So the
+// attack vector those checks defended against no longer exists.
+//
+// That is NOT the same as the protection being weakened, and the
+// difference is worth stating rather than leaving to be inferred: a
+// door that refuses you is strictly weaker than no door. What used to
+// be enforced by a check inside two functions is now enforced by there
+// being no function -- fileWritable refuses every app entry script and
+// every manifest, for every caller, with no exception to carve out.
+//
+// The checks below are what is left to assert, and they are the
+// stronger claims.
 
 {
   const scriptBefore = readRun(NATTER_SCRIPT);
   const manifestBefore = readRun(NATTER_MANIFEST);
 
-  const script = spirit.core.fs.saveAppScript(NATTER_SCRIPT, '// pwned\n');
-  if (!script.ok && script.reason === 'intrinsic-app') {
-    test.check('saveAppScript refuses the intrinsic entry script');
-  } else {
-    test.fail('saveAppScript: ' + JSON.stringify(script));
-  }
-
-  // The manifest write is the more interesting one: it would have forced
-  // owner:'user', which is exactly how Natter would stop being the
-  // node's own app.
-  const written = spirit.core.fs.saveAppManifest(NATTER_MANIFEST, JSON.stringify({
-    name: 'NATter', icon: 'GLOBE', hidden: true, intrinsic: false,
-  }));
-  if (!written.ok && written.reason === 'intrinsic-app') {
-    test.check('saveAppManifest refuses the intrinsic manifest');
-  } else {
-    test.fail('saveAppManifest: ' + JSON.stringify(written));
-  }
-
-  if (readRun(NATTER_SCRIPT) === scriptBefore && readRun(NATTER_MANIFEST) === manifestBefore) {
-    test.check('neither file changed on disk');
-  } else {
-    test.fail('a refused write still reached the disk');
-  }
-
-  // The flag is read from disk, never from the content offered: a caller
-  // cannot clear it by simply not sending it.
-  const clearing = spirit.core.fs.saveAppManifest(NATTER_MANIFEST, JSON.stringify({ name: 'NATter' }));
-  if (!clearing.ok && clearing.reason === 'intrinsic-app' && manifest(NATTER_MANIFEST).intrinsic === true) {
-    test.check('a manifest that simply omits the flag does not clear it');
-  } else {
-    test.fail('clearing: ' + JSON.stringify(clearing));
-  }
-
-  // And the ordinary guard is unchanged: saveFile never writes either
-  // file, intrinsic or not.
+  // The ordinary guard, unchanged since before any of this: saveFile
+  // never writes an app entry script, intrinsic or not.
   const viaSaveFile = spirit.core.fs.saveFile(NATTER_SCRIPT, '// pwned\n');
   if (!viaSaveFile.ok && readRun(NATTER_SCRIPT) === scriptBefore) {
-    test.check('saveFile still refuses an app entry script, as it always did');
+    test.check('saveFile refuses the intrinsic entry script, as it always did');
   } else {
     test.fail('saveFile: ' + JSON.stringify(viaSaveFile));
   }
-}
 
-test.subHeading('An ordinary app is still writable through them');
+  const manifestWrite = spirit.core.fs.saveFile(NATTER_MANIFEST, JSON.stringify({
+    name: 'NATter', icon: 'GLOBE', hidden: true, intrinsic: false,
+  }));
+  if (!manifestWrite.ok && readRun(NATTER_MANIFEST) === manifestBefore) {
+    test.check('and the manifest, which is how NATter would stop being the node\'s own app');
+  } else {
+    test.fail('saveFile on the manifest: ' + JSON.stringify(manifestWrite));
+  }
 
-{
-  // The lock has to be about intrinsic, not about app/ — App Builder must
-  // still work. Written into a throwaway app folder and removed again.
-  const probeDir = path.join(RUN_DIR, 'app', 'zzIntrinsicProbe');
-  try {
-    fs.mkdirSync(probeDir, { recursive: true });
-    const okManifest = spirit.core.fs.saveAppManifest(
-      'app/zzIntrinsicProbe/zzIntrinsicProbe.json',
-      JSON.stringify({ name: 'Probe', icon: 'FILE' })
-    );
-    const okScript = spirit.core.fs.saveAppScript('app/zzIntrinsicProbe/zzIntrinsicProbe.js', '// probe\n');
+  // AND THERE IS NOTHING ELSE TO TRY. The two functions that could
+  // once write these paths are gone from the kernel entirely, so this
+  // is a closed set rather than the two cases somebody thought of.
+  const doors = ['saveAppScript', 'saveAppManifest'].filter(function (name) {
+    return typeof spirit.core.fs[name] === 'function';
+  });
+  if (!doors.length) {
+    test.check('and no other door exists to try — saveAppScript and saveAppManifest are gone (0008)');
+  } else {
+    test.fail('these doors are back and this suite needs its refusals again: ' + doors.join(', '));
+  }
 
-    if (okManifest.ok && okScript.ok) {
-      test.check('a non-intrinsic app is written by both, unchanged from before this cycle');
-    } else {
-      test.fail('probe writes: ' + JSON.stringify({ manifest: okManifest, script: okScript }));
-    }
-
-    const stored = JSON.parse(fs.readFileSync(path.join(probeDir, 'zzIntrinsicProbe.json'), 'utf8'));
-    if (stored.owner === 'user') {
-      test.check('and it is still stamped owner:user by the kernel');
-    } else {
-      test.fail('probe owner: ' + JSON.stringify(stored));
-    }
-
-    // Pin the probe the only way anything can be pinned — by what is on
-    // disk — and the same two calls that just succeeded are refused. That
-    // is the proof the guard reads the manifest rather than the name
-    // "natter". (This route can pin an app nobody had pinned yet; it can
-    // never unpin one, which is the direction that matters.)
-    const pinning = spirit.core.fs.saveAppManifest(
-      'app/zzIntrinsicProbe/zzIntrinsicProbe.json',
-      JSON.stringify({ name: 'Probe', icon: 'FILE', intrinsic: true })
-    );
-    const afterScript = spirit.core.fs.saveAppScript('app/zzIntrinsicProbe/zzIntrinsicProbe.js', '// again\n');
-    const afterManifest = spirit.core.fs.saveAppManifest(
-      'app/zzIntrinsicProbe/zzIntrinsicProbe.json',
-      JSON.stringify({ name: 'Probe', icon: 'FILE' })
-    );
-    if (pinning.ok && !afterScript.ok && afterScript.reason === 'intrinsic-app' &&
-        !afterManifest.ok && afterManifest.reason === 'intrinsic-app') {
-      test.check('the guard is the manifest on disk, not the name "natter"');
-    } else {
-      test.fail('after pinning: ' + JSON.stringify({ pinning: pinning, script: afterScript, manifest: afterManifest }));
-    }
-  } finally {
-    fs.rmSync(probeDir, { recursive: true, force: true });
+  // The flag itself still matters to the SHELL, which reads
+  // manifest.intrinsic in declareIntrinsicApps to decide what a node
+  // may not uninstall. Asserted here so that deleting the writers did
+  // not quietly delete the meaning.
+  if (manifest(NATTER_MANIFEST).intrinsic === true) {
+    test.check('and NATter is still marked intrinsic on disk, which is what the shell reads');
+  } else {
+    test.fail('NATter manifest lost its intrinsic flag');
   }
 }
 

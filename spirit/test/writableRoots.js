@@ -105,30 +105,27 @@ expectForbidden(
 // the exact <name>/<name>.js shape, not the whole folder.
 expectWritable('a non-entry-script file in a new app folder', 'app/__writableRootsProbeApp__/data.json');
 
-// ---- saveAppScript: the mirror-image exception (App Builder) ----
-// Exactly what saveFile refuses above, saveAppScript exists to allow — and
-// nothing else, confirmed by checking the other direction too.
-{
-  const scriptPath = 'app/__writableRootsProbeApp__/__writableRootsProbeApp__.js';
-  const saved = spirit.core.fs.saveAppScript(scriptPath, 'writableRoots.js probe');
-  if (saved.ok) {
-    test.check('saveAppScript accepts a real app entry-script path');
-  } else {
-    test.fail('saveAppScript should accept an entry-script path but returned ' + JSON.stringify(saved));
-  }
-  expectUndeletable('an app entry script written by saveAppScript', scriptPath);
-  cleanUpDirectly('saveAppScript', scriptPath);
-}
-
-{
-  const nonScriptPath = 'app/__writableRootsProbeApp__/data.json';
-  const saved = spirit.core.fs.saveAppScript(nonScriptPath, 'writableRoots.js probe');
-  if (!saved.ok && saved.reason === 'not-an-app-entry-script') {
-    test.check('saveAppScript rejects a non-entry-script path even under app/ (not-an-app-entry-script)');
-  } else {
-    test.fail('saveAppScript should have rejected a non-entry-script path but got ' + JSON.stringify(saved));
-  }
-}
+// ---- THE EXCEPTIONS ARE GONE, AND THAT IS THE STRONGER STATEMENT ----
+//
+// saveAppScript and saveAppManifest were tested here as the mirror
+// image of the refusals above: exactly what saveFile refuses, those two
+// existed to allow, for one caller (App Builder). Decision 0008 deleted
+// app-building from this repo on 2026-09-13, and both doors went with
+// it -- kernel side, browser side, and the two /api/fs/ routes.
+//
+// About 40 checks disappeared with them. That must not be read as a
+// smaller world: what those checks proved was that the exception was
+// correctly narrow. The rule they were the exception TO is unchanged
+// and now absolute, which is why the refusals above and below stay,
+// and why the assertion at the end of this file exists -- a suite that
+// merely LOSES checks records less; this one has to say what it now
+// claims instead.
+//
+// One property is worth naming because it did not vanish, it changed
+// form: saveAppManifest forced owner:"user" no matter what the caller
+// claimed. With no browser-reachable path writing a manifest at all,
+// owner can no longer be claimed from a browser in the first place.
+// Decision 0003 is enforced by absence now, not by a function.
 
 // ---- app manifests are protected too, even inside the writable app/ root ----
 expectForbidden(
@@ -141,54 +138,26 @@ expectForbidden(
 // shape, not the whole folder (mirrors the entry-script check above).
 expectWritable('a non-manifest file in a new app folder', 'app/__writableRootsProbeApp__/data.json');
 
-// ---- saveAppManifest: the mirror-image exception (App Builder) ----
-{
-  const manifestPath = 'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json';
-
-  // The adversarial case: even if the caller's JSON claims owner:"system",
-  // saveAppManifest must still force owner:"user" in what's actually written
-  // to disk — that's the actual security property under test, not just the
-  // {ok:true} return value.
-  const saved = spirit.core.fs.saveAppManifest(manifestPath, JSON.stringify({ name: 'Probe', icon: 'FILE', hidden: false, owner: 'system' }));
-  if (saved.ok) {
-    test.check('saveAppManifest accepts a real app manifest path');
-  } else {
-    test.fail('saveAppManifest should accept a manifest path but returned ' + JSON.stringify(saved));
-  }
-  const written = JSON.parse(spirit.core.fs.loadFile(manifestPath));
-  if (written.owner === 'user') {
-    test.check('saveAppManifest forces owner:"user" even when the caller claims owner:"system"');
-  } else {
-    test.fail('saveAppManifest should have forced owner:"user" but wrote owner:' + JSON.stringify(written.owner));
-  }
-  expectUndeletable('an app manifest written by saveAppManifest', manifestPath);
-  cleanUpDirectly('saveAppManifest', manifestPath);
-}
-
-{
-  const nonManifestPath = 'app/__writableRootsProbeApp__/data.json';
-  const saved = spirit.core.fs.saveAppManifest(nonManifestPath, JSON.stringify({ name: 'Probe' }));
-  if (!saved.ok && saved.reason === 'not-an-app-manifest') {
-    test.check('saveAppManifest rejects a non-manifest path even under app/ (not-an-app-manifest)');
-  } else {
-    test.fail('saveAppManifest should have rejected a non-manifest path but got ' + JSON.stringify(saved));
-  }
-}
-
-{
-  const manifestPath = 'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json';
-  const saved = spirit.core.fs.saveAppManifest(manifestPath, '{ not valid json');
-  if (!saved.ok && saved.reason === 'invalid-manifest-json') {
-    test.check('saveAppManifest rejects unparseable JSON content (invalid-manifest-json)');
-  } else {
-    test.fail('saveAppManifest should have rejected invalid JSON but got ' + JSON.stringify(saved));
-  }
-}
 
 // deleteFile only removes the file — clean up the now-empty folder it lived
 // in so this test leaves no trace on disk.
 try {
   fs.rmdirSync(path.join(ROOT_DIR, 'app', '__writableRootsProbeApp__'));
 } catch (e) { /* already gone or never created — fine either way */ }
+
+// THE RULE, STATED AS IT NOW STANDS. Written as its own check so the
+// absence above is a claim somebody made rather than a gap somebody
+// left: no function reachable from a browser writes an app's own entry
+// script or manifest, by any name.
+(function noDoorsLeft() {
+  const gone = ['saveAppScript', 'saveAppManifest'].filter(function (name) {
+    return typeof spirit.core.fs[name] === 'function';
+  });
+  if (!gone.length) {
+    test.check("an app's own code is unwritable from a browser with NO exception — saveAppScript and saveAppManifest no longer exist (0008)");
+  } else {
+    test.fail('these doors are back: ' + gone.join(', '));
+  }
+})();
 
 test.reportSuccessFailureCount();

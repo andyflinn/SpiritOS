@@ -209,9 +209,13 @@ if (isNode()) {
   // writable by it: it already carries name/icon (which a Tier-3 app could
   // otherwise silently change, bypassing checkIdentityAvailable's collision
   // check) and, as of this change, `owner` — the field recording which
-  // privilege tier produced the app. See saveAppManifest, below, for the one
-  // deliberate exception, which enforces the `owner` value itself rather than
-  // trusting the caller's content.
+  // privilege tier produced the app.
+  //
+  // There was ONE deliberate exception until 2026-09-13 — saveAppManifest,
+  // which enforced the `owner` value itself rather than trusting the
+  // caller's content. Decision 0008 removed it with app-building, and the
+  // refusal now has no exceptions at all: `owner` cannot be claimed from a
+  // browser because no browser-reachable path writes a manifest.
   const MANIFEST_PATTERN = /^app\/([^/]+)\/\1\.json$/;
 
   // The one sidecar per annotated file gets a suffix, never a same-name
@@ -318,86 +322,40 @@ if (isNode()) {
   // overwrote its script, or a manifest write that turned it into a user
   // app, would take the node's only route to a mailbox with it.
   //
-  // The flag is read from what is ON DISK, never from the content being
-  // written: a caller cannot clear it by sending a manifest without it,
-  // and cannot set it by sending one with it. Both of the App Builder
-  // exceptions below consult this, which is the only place they can be
-  // reached from a browser. A script and its sibling manifest answer the
-  // same question, so app/x/x.js is protected by app/x/x.json.
-  function intrinsicManifestFor(canonical) {
-    if (canonical === null) return null;
-    if (MANIFEST_PATTERN.test(canonical)) return canonical;
-    if (APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return canonical.replace(/\.js$/, '.json');
-    return null;
-  }
+  // intrinsicManifestFor and isIntrinsicApp stood here until 2026-09-13.
+  //
+  // They answered one question for one pair of callers: may THIS door
+  // overwrite an app that the node treats as its own? saveAppScript and
+  // saveAppManifest were those callers and they are gone (decision 0008),
+  // which left this exported on spirit.core.fs with nothing in the tree
+  // calling it -- kernel API that looks load-bearing and is not.
+  //
+  // THE FLAG ITSELF STILL MEANS SOMETHING, and this is the distinction
+  // worth keeping: `intrinsic` in a manifest is read by the SHELL
+  // (declareIntrinsicApps) to decide which apps a person may not remove.
+  // What is deleted here is a write-time guard for writers that no longer
+  // exist, not the concept. spirit/test/natterIntrinsic.js asserts the
+  // flag is still on disk and still refused a write, through saveFile.
 
-  function isIntrinsicApp(canonical) {
-    const manifestPath = intrinsicManifestFor(canonical);
-    if (!manifestPath) return false;
-    const resolved = fsPath(ROOT_DIR, manifestPath);
-    if (!resolved) return false;
-    try {
-      return !!JSON.parse(fs.readFileSync(resolved, 'utf8')).intrinsic;
-    } catch (err) {
-      return false; // no manifest, or unreadable — not an intrinsic app
-    }
-  }
-  spirit.core.fs.isIntrinsicApp = isIntrinsicApp;
-
-  let saveAppScript = spirit.core.fs.saveAppScript = function(filePath, content){
-    const canonical = canonicalPath(filePath);
-    const resolved = fsPath(ROOT_DIR, filePath);
-    if (canonical === null || !resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
-    // Matched against the canonical form for the same reason fileWritable
-    // is — here the pattern must MATCH to proceed, so a raw-string check
-    // failed closed rather than open, but a path deserves one verdict
-    // whichever direction the guard points.
-    if (!APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return { ok: false, reason: 'not-an-app-entry-script' };
-    if (isIntrinsicApp(canonical)) return { ok: false, reason: 'intrinsic-app' };
-    try {
-      fs.mkdirSync(path.dirname(resolved), { recursive: true });
-      fs.writeFileSync(resolved, content, 'utf8');
-      return { ok: true };
-    } catch (err) {
-      error(err);
-      return { ok: false, reason: 'error' };
-    }
-  };
-
-  // The one deliberate exception to saveFile's manifest guard above — App
-  // Builder's Apply must write app/<name>/<name>.json alongside the entry
-  // script. Unlike saveAppScript (which writes raw, uninterpreted text),
-  // this function parses the incoming content as JSON and forcibly
-  // overwrites its "owner" key to 'user' before re-serializing — the
-  // caller's claimed value for that key, whatever it is, is discarded
-  // unconditionally. This is the actual security property: the kernel
-  // itself decides `owner` for anything reaching disk through this route.
-  // No browser-reachable path can ever produce "owner":"system" or
-  // "owner":"kernel" — those values are set only by a direct hand-edit to
-  // the file outside the running server (a human/git action, never
-  // something this process does on a caller's behalf).
-  let saveAppManifest = spirit.core.fs.saveAppManifest = function(filePath, content){
-    const canonical = canonicalPath(filePath);
-    const resolved = fsPath(ROOT_DIR, filePath);
-    if (canonical === null || !resolved || !isWithinWritableRoot(resolved)) return { ok: false, reason: 'forbidden' };
-    if (!MANIFEST_PATTERN.test(canonical)) return { ok: false, reason: 'not-an-app-manifest' };
-    if (isIntrinsicApp(canonical)) return { ok: false, reason: 'intrinsic-app' };
-    let manifest;
-    try {
-      manifest = JSON.parse(content);
-    } catch (err) {
-      return { ok: false, reason: 'invalid-manifest-json' };
-    }
-    manifest.owner = 'user';
-    try {
-      fs.mkdirSync(path.dirname(resolved), { recursive: true });
-      fs.writeFileSync(resolved, JSON.stringify(manifest, null, 2), 'utf8');
-      return { ok: true };
-    } catch (err) {
-      error(err);
-      return { ok: false, reason: 'error' };
-    }
-  };
+  // saveAppScript and saveAppManifest stood here until 2026-09-13.
+  //
+  // They were the two named exceptions to fileWritable's refusal — the
+  // only way a browser could write an app's own entry script or its
+  // manifest — and they existed for exactly one caller, App Builder's
+  // Apply. Decision 0008 removed app-building from this repo: production
+  // code is written in VS Code, so nothing generates an app any more.
+  //
+  // What that leaves is STRONGER than what was here. fileWritable already
+  // refused both path shapes for every other caller; with the exceptions
+  // gone the refusal has none at all, and saveAppManifest's forcing of
+  // `owner: "user"` becomes structural rather than enforced — no
+  // browser-reachable path writes a manifest, so none can claim
+  // "owner":"system" (decision 0003).
+  //
+  // APP_ENTRY_SCRIPT_PATTERN and MANIFEST_PATTERN stay. They are how the
+  // system knows what an app's own code IS, and fileWritable is built on
+  // them — deleting them with their callers would have removed the
+  // refusal along with its exceptions.
 
   let deleteFile = spirit.core.fs.deleteFile = function(filePath){
     const resolved = fsPath(ROOT_DIR, filePath);
@@ -696,41 +654,10 @@ if (isNode()) {
     });
   };
 
-  // The one deliberate way to write an app's own entry script from the
-  // browser — see saveAppScript in the Node section above for what's
-  // actually enforced server-side. Same shape as saveFile, different route.
-  spirit.core.fs.saveAppScript = function(filePath, content) {
-    return new Promise(function (resolve, reject) {
-      let xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/fs/save-app-script', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState !== 4) return;
-        if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error('failed to save app script: ' + xhr.status));
-      };
-      xhr.send(JSON.stringify({ path: filePath, content: content }));
-    });
-  };
-
-  // The one deliberate way to write an app's own manifest from the browser
-  // — see saveAppManifest in the Node section above for what's actually
-  // enforced server-side (owner is force-set there, not here). Same shape
-  // as saveAppScript's wrapper, different route; this function is a dumb
-  // HTTP passthrough and does no interpretation of `content` itself.
-  spirit.core.fs.saveAppManifest = function(filePath, content) {
-    return new Promise(function (resolve, reject) {
-      let xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/fs/save-app-manifest', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState !== 4) return;
-        if (xhr.status >= 200 && xhr.status < 300) resolve();
-        else reject(new Error('failed to save app manifest: ' + xhr.status));
-      };
-      xhr.send(JSON.stringify({ path: filePath, content: content }));
-    });
-  };
+  // The browser wrappers for saveAppScript / saveAppManifest stood here
+  // until 2026-09-13 (decision 0008). Their routes are gone, so a page
+  // has no way to write an app's own code at all — which is the point,
+  // not a side effect.
 
   spirit.core.fs.deleteFile = function(filePath) {
     return new Promise(function (resolve, reject) {

@@ -460,31 +460,14 @@ function writeFsResult(res, result) {
     res.end('Forbidden');
     return;
   }
-  if (result.reason === 'app-entry-script-protected') {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Forbidden: an app\'s own entry script cannot be overwritten');
-    return;
-  }
-  if (result.reason === 'not-an-app-entry-script') {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Forbidden: /api/fs/save-app-script only accepts an app entry-script path (app/<name>/<name>.js)');
-    return;
-  }
-  if (result.reason === 'app-manifest-protected') {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Forbidden: an app\'s own manifest cannot be overwritten');
-    return;
-  }
-  if (result.reason === 'not-an-app-manifest') {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Forbidden: /api/fs/save-app-manifest only accepts an app manifest path (app/<name>/<name>.json)');
-    return;
-  }
-  if (result.reason === 'invalid-manifest-json') {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Bad request: manifest content is not valid JSON');
-    return;
-  }
+  // Five branches stood here for the two app-building routes until
+  // 2026-09-13 (decision 0008). Two of them --
+  // 'app-entry-script-protected' and 'app-manifest-protected' -- were
+  // ALREADY dead: those checks moved behind fileWritable when it became
+  // a shared predicate, and saveFile has answered every refusal with
+  // plain 'forbidden' ever since. They were known dead (writableRoots.js
+  // says so in a comment) and left anyway, which is how a handler grows
+  // branches nothing can reach.
   if (result.reason === 'file-not-found') {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
@@ -503,31 +486,14 @@ function handleFsSave(req, res) {
   });
 }
 
-// The one deliberate way to write an app's own entry script — see
-// spirit.core.fs.saveAppScript (kernel.js) for what's actually enforced.
-// Kept as its own route rather than a flag on /api/fs/save so that route
-// keeps refusing entry scripts unconditionally for every other caller.
-function handleFsSaveAppScript(req, res) {
-  readJsonBody(req).then((body) => {
-    writeFsResult(res, spirit.core.fs.saveAppScript(body.path, body.content));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
-}
-
-// The one deliberate way to write an app's own manifest — see
-// spirit.core.fs.saveAppManifest (kernel.js) for what's actually
-// enforced (owner is force-set there, not here). Kept as its own route,
-// same reasoning as handleFsSaveAppScript above.
-function handleFsSaveAppManifest(req, res) {
-  readJsonBody(req).then((body) => {
-    writeFsResult(res, spirit.core.fs.saveAppManifest(body.path, body.content));
-  }).catch(() => {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
-}
+// handleFsSaveAppScript and handleFsSaveAppManifest stood here until
+// 2026-09-13. They were four-line wrappers over the kernel functions of
+// the same name, kept as their own routes rather than a flag on
+// /api/fs/save so THAT route could keep refusing entry scripts and
+// manifests unconditionally for every other caller.
+//
+// With them gone the refusal has no exceptions at all, which is a
+// stronger guarantee than the one this comment used to describe.
 
 function handleFsDelete(req, res) {
   readJsonBody(req).then((body) => {
@@ -1201,16 +1167,6 @@ const server = http.createServer((req, res) => {
       return;
     }    
     
-    if (pathname === '/api/fs/save-app-script') {
-      handleFsSaveAppScript(req, res);
-      return;
-    }
-
-    if (pathname === '/api/fs/save-app-manifest') {
-      handleFsSaveAppManifest(req, res);
-      return;
-    }
-
     if (pathname === '/api/fs/delete') {
       handleFsDelete(req, res);
       return;

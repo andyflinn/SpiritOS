@@ -1,6 +1,6 @@
 # 2026-09-12 — app-building removed
 
-**Status: OPEN — agreed, not built.**
+**Status: CLOSED — all five requirements built and verified.**
 
 Implements [decision 0008](../decisions/0008-app-building-is-out-of-scope.md)
 under [the method](README.md). Measured at `7734ecc`.
@@ -47,13 +47,22 @@ save functions goes.
 ### R1 — the two routes and their handlers are gone
 > that means: save-app-script and save-app-manifest will be removed (including the handling code) from the server
 
-All four sites above. `POST /api/fs/save-app-script` and
-`/api/fs/save-app-manifest` reach the fall-through `405`, and
-`spirit.core.fs.saveAppScript` / `saveAppManifest` do not exist on either
-side of the boundary.
+All four sites, plus a fifth that only became visible once the others
+went: **`isIntrinsicApp` and `intrinsicManifestFor` were left with no
+caller in the tree.** They answered one question for one pair of callers
+— may THIS door overwrite an app the node treats as its own — and were
+exported on `spirit.core.fs`, so what remained was kernel API that looks
+load-bearing and is not. Removed with them.
 
-**Verify:** not written.
-**Status:** OPEN
+The FLAG is untouched, and the distinction matters: `intrinsic` in a
+manifest is still read by the shell (`declareIntrinsicApps`) to decide
+which apps a person may not remove. A write-time guard for writers that
+no longer exist was deleted; the concept was not.
+
+**Verify:** `spirit/test/writableRoots.js` — "an app's own code is
+unwritable from a browser with NO exception — saveAppScript and
+saveAppManifest no longer exist (0008)"
+**Status:** DONE
 
 ### R2 — an app's own code is unwritable from the browser, with no exception
 The rule `writableRoots.js` has always stated as "refused, except through
@@ -61,11 +70,14 @@ these two doors" becomes "refused". Stated as its own requirement because
 it is the *reason* R1 is safe, and because a suite that merely loses 40
 checks records a smaller world rather than a stronger one.
 
-**Verify:** not written. Wants the refusal restated in
-`spirit/test/writableRoots.js` as absolute, and the mirror-image
-exception half (~lines 108-186) removed rather than left passing
-vacuously.
-**Status:** OPEN
+The exception half of `writableRoots.js` is gone and the rule is stated
+in its place — as a check, not a comment, so the ~40 checks that
+disappeared read as a stronger claim rather than a smaller world.
+
+**Verify:** `spirit/test/writableRoots.js` — the same check as R1, plus
+the surviving refusals either side of it ("an app entry script … is
+correctly forbidden", "an app manifest … is correctly forbidden")
+**Status:** DONE
 
 ### R3 — the specimens outlive their subjects
 Three suites use a doomed app or a doomed function as the specimen for a
