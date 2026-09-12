@@ -100,11 +100,25 @@ The titlebar lines are **cosmetic** — `addTitlebarLink` returns early on
 an unknown app id and `renderTitlebarLinks` skips it again, so AI Manager
 mounts either way.
 
-**Verify:** not written. Wants a check that no manifest, preference or
-titlebar link names an app folder that does not exist — which is the
-general rule, and catches the next one too.
+Both deleted, with the two `preferences.json` blocks and the two
+titlebar lines. `spirit/test/typeWalker.js` (125 checks' worth of walker
+template) went with `walkerTemplate.js`.
 
-**Status:** OPEN
+**Leftover data is deliberately NOT deleted.** `git rm` removed the code
+and left `app/appBuilder/log.jsonl` — 264KB of generated history — and
+`history.json` behind. That is the owner's data, not the repo's to sweep
+up, and it registers nothing: every consumer defines an app by its entry
+script (`discoverDynamicApps`), not by its directory. The verification
+uses the same definition, which is what stops it reporting "still
+present" for as long as somebody's old logs survive.
+
+**Verify:** `spirit/test/appReferences.js` — "every app named in
+preferences, the shell, index.html or an app script exists on disk", plus
+"App Builder and Type Designer are gone". The general rule is the point;
+it catches the *next* deletion, which is the only kind of check worth
+writing after the fact.
+
+**Status:** DONE
 
 ### R5 — AI Manager and AI Chat still mount
 > AI manager and AI chat stay for now, we only maintain them enough to be mounted in the shell

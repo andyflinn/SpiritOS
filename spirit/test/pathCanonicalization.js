@@ -115,9 +115,17 @@ expectEverySpellingUnservable('a media sidecar', 'media/001.jpg.sidecar.json');
 // ---- an app's own entry script and manifest stay protected ----
 // kernel.js says these are "protected everywhere, from every tool". That
 // has to hold for every spelling, or the guarantee is only about strings.
+// TWO SPECIMENS, AND THE PAIR IS THE POINT. natter is intrinsic and so
+// carries a second protection of its own (isIntrinsicApp); textEditor
+// carries none. Together they prove the refusal comes from
+// APP_ENTRY_SCRIPT_PATTERN — the path shape — and not from being special.
+//
+// The non-intrinsic half was app/appBuilder/appBuilder.js until
+// 2026-09-13, when decision 0008 deleted that app. The rule outlives any
+// app, so the specimen moved rather than the check.
 test.subHeading('App entry scripts stay unwritable in every spelling');
-expectEverySpellingUnwritable('app/natter/natter.js', 'app/natter/natter.js');
-expectEverySpellingUnwritable('app/appBuilder/appBuilder.js', 'app/appBuilder/appBuilder.js');
+expectEverySpellingUnwritable('app/natter/natter.js (intrinsic)', 'app/natter/natter.js');
+expectEverySpellingUnwritable('app/textEditor/textEditor.js (not intrinsic)', 'app/textEditor/textEditor.js');
 
 test.subHeading('App manifests stay unwritable in every spelling');
 expectEverySpellingUnwritable('app/natter/natter.json', 'app/natter/natter.json');

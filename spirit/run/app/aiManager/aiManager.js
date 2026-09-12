@@ -172,9 +172,12 @@ spirit.shell.activateApp({
         '<button type="button" class="cancel-btn" id="ai-manager-recheck-lmstudio">Recheck</button>' +
       '</div>';
 
+    // App Builder and Type Designer were linked here until 2026-09-13.
+    // Decision 0008: SpiritOS does not generate code, and this app's own
+    // reason to exist is no longer "every codeBuilder needs to know if
+    // the key is valid" (0005) but AI Chat, which reads the status file
+    // this app writes.
     api.addTitlebarLink('app/aiChat');
-    api.addTitlebarLink('app/appBuilder');
-    api.addTitlebarLink('app/typeDesigner');
 
     document.getElementById('ai-manager-recheck-claude').addEventListener('click', checkClaude);
     document.getElementById('ai-manager-recheck-lmstudio').addEventListener('click', checkLmStudio);
