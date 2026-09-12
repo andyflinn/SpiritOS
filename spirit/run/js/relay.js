@@ -860,11 +860,32 @@ function createRelay(rootDir) {
     // synchronous — a poll arriving in the same tick finds the slot —
     // and doing it a microtask later made an offer that was not yet
     // there when something asked for it.
-    if (!presentNow.isPresent(who.id)) {
-      return deviceQueue.offer(who.id, password, devicePublicKey);
+    // WHOSE ENROLMENT THIS WAS, carried back with the yes.
+    //
+    // The page has to sign as somebody once it is enrolled, and it was
+    // being told the wrong somebody: the answer named
+    // `snapshot().owner` — this RELAY's owner — so every device page on
+    // the box came back "signed in as andy", including bella's. Andy saw
+    // it the first time two enrolments ran back to back.
+    //
+    // True when it was written, and quietly false since B2. The bare
+    // /device page enrolled the owner and nobody else, so the owner's
+    // label was the only answer there was. B2 gave every identity with a
+    // row its own page and its own slot, and this line did not follow.
+    //
+    // It is the label of the identity that was ENROLLED, which is the
+    // one `who` has been holding since the first line of this function.
+    function named(answer) {
+      if (!answer || !answer.ok) return answer;
+      answer.name = who.label;
+      return answer;
     }
 
-    return post(who.id, wrapped).then(deviceAnswerFrom);
+    if (!presentNow.isPresent(who.id)) {
+      return deviceQueue.offer(who.id, password, devicePublicKey).then(named);
+    }
+
+    return post(who.id, wrapped).then(deviceAnswerFrom).then(named);
   }
 
   // THE RELAY POSTING AS ITSELF.

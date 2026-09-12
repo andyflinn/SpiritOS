@@ -322,6 +322,10 @@ async function theRelayPostsAsItself() {
     test.fail('browser: ' + JSON.stringify(browser));
   }
 
+  // WHOSE ENROLMENT IT WAS — checked below, on a PEER, because in a
+  // world where the owner is the one enrolling the wrong answer and the
+  // right answer are the same word.
+
   test.subHeading('A no is a no, and an unreadable answer is also a no');
 
   const W2 = world.build(SCENARIO);
@@ -396,6 +400,76 @@ async function theRelayPostsAsItself() {
   }
   W3.box.deviceReply('andy', false);
   await parked;
+}
+
+// A PEER'S DEVICE IS THE PEER'S, and the page has to be told whose it is.
+//
+// The answer carried `snapshot().owner` — this RELAY's owner — so every
+// device page on a box came back "signed in as andy", bella's included.
+// Andy caught it the first time two enrolments ran back to back, and it
+// was sitting in the output of the live test twice before that, in a
+// line I read past: {"ok":true,...,"name":"andy"} for BELLA.
+//
+// True when it was written. The bare /device page enrolled the owner and
+// nobody else, so the owner's label was the only answer there was. B2
+// gave every identity with a row its own /<key>/device page and its own
+// slot, and this line did not follow — a fact that stopped being true
+// without anything going red.
+//
+// IT NEEDS A PEER TO CATCH IT. With the owner enrolling, "the relay's
+// owner" and "who was enrolled" are the same string, and a test built
+// that way passes against the bug.
+async function aPeerIsNamedAsThemselves() {
+  test.subHeading("A peer's enrolment says the peer, not the relay's owner");
+
+  const W = world.build({ title: 'An owner and a member', peers: ['bert'] });
+  if (!W.ok) { test.fail(W.error); return; }
+
+  const bert = W.peer('bert');
+  const home = world.tmpHome('bert-device');
+  auth.saveIdentity(home, bert);
+  deviceAuth.ensurePassword(home);
+  deviceAuth.setListening(home, true);
+  const password = deviceAuth.load(home).password;
+  const phone = auth.generateIdentity('berts-phone');
+
+  const sink = fakeSink();
+  W.box.streamOpen(
+    bert.publicKey,
+    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
+    sink
+  );
+
+  const mark = sink.events().length;
+  const offering = W.box.deviceOffer(bert.publicKey, password, phone.publicKey);
+  const req = sink.events().slice(mark)
+    .filter(function (e) { return e.event === 'request'; })[0];
+  if (!req) { test.fail('no request reached bert'); return; }
+
+  const verified = auth.postSignatureFor(
+    req.data.from, req.data.from, req.data.to, req.data.text, req.data.sig
+  );
+  W.box.routeReply(
+    bert.publicKey, auth.requestHash(verified),
+    JSON.stringify({ relay: 'device-answer', accepted: true, devicePublicKey: phone.publicKey }),
+    auth.sign(bert.privateKey, auth.receiptMessage(auth.requestHash(verified)))
+  );
+
+  const browser = await offering;
+  if (browser && browser.ok && browser.name === 'bert') {
+    test.check("the page is told it is signed in as bert, whose device it is");
+  } else {
+    test.fail('name: ' + JSON.stringify(browser && browser.name) +
+      ' (the relay owner is ' + (W.box.snapshot() || {}).owner + ')');
+  }
+
+  // And said out loud, because this is the shape of the bug: the two
+  // must not be the same string in this test, or it proves nothing.
+  if ((W.box.snapshot() || {}).owner === 'andy' && browser.name === 'bert') {
+    test.check('and the relay owner is somebody else entirely, which is the point');
+  } else {
+    test.fail('the test cannot tell the two apart');
+  }
 }
 
 test.startTest('Device cycle 3 — listen and tick');
@@ -521,6 +595,7 @@ async function run() {
 
   await oneDeviceEveryMailbox();
   await theRelayPostsAsItself();
+  await aPeerIsNamedAsThemselves();
   await bootBehaviour();
 
   if (typeof test.reportSuccessFailureCount === 'function') {

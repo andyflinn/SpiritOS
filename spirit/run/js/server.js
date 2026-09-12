@@ -256,20 +256,32 @@ function handleDeviceOffer(req, res) {
       deviceRefusal(res, result && result.status);
       return;
     }
-    // The owner's label goes back with the yes, because from here the
-    // page has to sign as somebody: every line it sends is
-    // `send\n<from>\nrelay\n<text>`, and `from` is this mailbox's owner.
+    // THE ENROLLED IDENTITY'S label goes back with the yes, because from
+    // here the page has to sign as somebody: every line it sends is
+    // `send\n<from>\nrelay\n<text>`, and `from` is whoever this device
+    // now belongs to.
+    //
+    // It said the mailbox's OWNER until 2026-09-12, and that was true
+    // when it was written — the bare /device page enrolled the owner and
+    // nobody else, so there was only one answer it could be. B2 gave
+    // every identity with a row its own /<key>/device page and its own
+    // slot, and this did not follow: every page on the box came back
+    // "signed in as andy", bella's included.
     //
     // Nothing is given away by saying it. The label is already public —
     // /api/relay/who hands the whole peer list, names and keys, to anyone
     // who asks — and this answer only ever follows a password the node
     // itself accepted. An empty name simply leaves the page unable to
-    // sign, which is the honest outcome for a mailbox with no owner.
+    // sign, which is the honest outcome for an enrolment that named
+    // nobody.
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
       ok: true,
       devicePublicKey: result.devicePublicKey,
-      name: (relay.snapshot() || {}).owner || '',
+      // WHOEVER WAS ENROLLED, which is not the same as whoever owns this
+      // relay. It read `snapshot().owner` and therefore said "andy" to
+      // every page on the box, bella's included.
+      name: result.name || '',
     }));
   }).catch(function () {
     deviceRefusal(res, 403);
