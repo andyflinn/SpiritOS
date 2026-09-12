@@ -33,6 +33,11 @@ This directory contains the vision, principles, and architecture decisions for *
   — **OPEN.** Implements 0008. Five requirements, none built: the two `/api/fs/`
   doors and their handling code, the absolute refusal that replaces them, three
   test specimens that must outlive their subjects, and the two apps.
+- [2026-09-12 — transport, below the node boundary](cycles/2026-09-12-transport-below-the-boundary.md)
+  — **OPEN.** Eight requirements, none built. What "complete compliance" costs:
+  four connections and one deletion. The deletion is easy; the first connection
+  does not exist — the router has no arrival interface, and the shell's packet
+  fan-out is fed by Relay Chat's poll, the app the cycle exists to retire.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 
