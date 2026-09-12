@@ -30,6 +30,10 @@ function createPresence(opts) {
   const rootDir = opts.rootDir || path.join(__dirname, '..');
   const jobs = opts.jobs;
   const openStream = opts.connectImpl || sseClient.connect;
+  // Establishes which key a relay answers with, and refuses it if that
+  // changed. Injected rather than required, so this file keeps knowing
+  // nothing about enrolment — see pinRelay below for why it is here.
+  const pin = typeof opts.pinRelay === 'function' ? opts.pinRelay : null;
   // Given rather than made here, because a node has ONE of these and the
   // hub needs the same instance to post from — an outbound request and
   // the answer that matches it must meet in the same table.
@@ -119,8 +123,41 @@ function createPresence(opts) {
     publish();
   }
 
+  // WHO THAT RELAY IS, established BEFORE the stream carries anything.
+  //
+  // A device enrolment arrives as a post from the relay in its own name,
+  // and hub.frontDoor admits it only if this node has accepted that
+  // relay's key (relayKeys.js). The pin used to be established lazily,
+  // by answerRelay on the first enrolment — which deadlocked: the door
+  // refused the offer because nothing was pinned, so the code that pins
+  // never ran, so nothing was ever pinned. A node could never accept its
+  // first enrolment.
+  //
+  // It belongs here for a reason stronger than fixing that. AN OFFER CAN
+  // ONLY ARRIVE ON A STREAM THIS NODE ALREADY HOLDS, so pinning as the
+  // stream opens is not merely earlier — it is exactly sufficient. There
+  // is no window in which an offer can arrive unpinned.
+  //
+  // Trust on FIRST use and only first. A relay answering a key other than
+  // the one on record keeps carrying peer traffic — that is signed end to
+  // end and it cannot forge any of it — and loses only its standing as a
+  // PARTY, which is the one thing its own key buys. Proportionate: a
+  // substituted relay stops being able to drive an enrolment and does not
+  // take the node offline.
+  function pinRelay(url) {
+    if (!pin) return Promise.resolve();
+    return Promise.resolve()
+      .then(function () { return pin(url); })
+      .catch(function () { /* a relay that will not say is simply not pinned */ });
+  }
+
   function openTo(url) {
     if (streams[url]) return;
+    // Fired alongside the connect rather than awaited: the stream is what
+    // presence is for, and a census that is slow to answer must not delay
+    // it. The pin lands before anything can be posted down the stream,
+    // because a post needs the stream to be open at the far end first.
+    pinRelay(url);
     streams[url] = openStream({
       url: streamUrl(url, identity.publicKey),
       // SIGNED PER ATTEMPT, not once. streamMessage carries a unix

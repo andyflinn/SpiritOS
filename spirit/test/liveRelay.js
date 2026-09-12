@@ -255,6 +255,147 @@ async function run() {
     test.fail('an unenrolled key read the inbox');
   }
 
+  // ── The six node-side fixes, against a real relay ────────────────
+  //
+  // Added after Grok's review of DEVICE.md. Each of these is node-side,
+  // so spirit-3 needed no change for them — but the thing each one
+  // reasons about is a REAL relay's real key, and a fake that agrees
+  // with itself is how the two-conventions bug shipped.
+
+  test.subHeading('The relay it accepted, and one that answers differently');
+
+  {
+    const relayKeys = require('../run/js/relayKeys');
+    const answerRelay = require('../run/js/answerRelay');
+    const hub = require('../run/js/hub');
+
+    // A FRESH HOME, so this is genuinely first contact. Not the subject's:
+    // pinning is about a node meeting a relay, and reusing a home that has
+    // already met it would test the cache rather than the pin.
+    const meeting = path.join(FAKES, 'lw-pin-' + Date.now(), 'spirit', 'run');
+    fs.mkdirSync(path.join(meeting, 'relay-state'), { recursive: true });
+    auth.saveIdentity(meeting, auth.generateIdentity('pin-probe'));
+
+    const census = parsed(await get(RELAY + '/api/relay/who'));
+    const realKey = census && census.mailboxPublicKey;
+    if (!realKey) { test.fail('no mailboxPublicKey from the census'); return; }
+
+    // First contact: nothing on record, so it is accepted and written down.
+    if (relayKeys.check(meeting, RELAY, realKey) === 'new') {
+      test.check('a relay this node has never met reads as new');
+    } else {
+      test.fail('first contact: ' + relayKeys.check(meeting, RELAY, realKey));
+    }
+    relayKeys.accept(meeting, RELAY, realKey);
+    if (relayKeys.check(meeting, RELAY, realKey) === 'match' &&
+        relayKeys.pinned(meeting, RELAY) === realKey) {
+      test.check('and once accepted it is pinned on disk to the key spirit-3 actually publishes');
+    } else {
+      test.fail('pin: ' + relayKeys.pinned(meeting, RELAY).slice(-12));
+    }
+
+    // THE SUBSTITUTION, done the only way it can be done to a relay we do
+    // not control: corrupt the pin rather than the relay. The refusal is
+    // node-side, so this exercises exactly the code that matters.
+    const impostorKey = auth.generateIdentity('other-relay').publicKey;
+    relayKeys.accept(meeting, RELAY, impostorKey);
+    const A = answerRelay.createAnswerer({
+      rootDir: meeting,
+      request: require('../run/js/hub').relayRequest,
+      urls: function () { return [RELAY]; },
+    });
+    const changes = [];
+    const B = answerRelay.createAnswerer({
+      rootDir: meeting,
+      request: require('../run/js/hub').relayRequest,
+      urls: function () { return [RELAY]; },
+      onKeyChanged: function (url, had, got) { changes.push({ had: had, got: got }); },
+    });
+    const key = await B.relayKey(RELAY);
+    if (key === '' && changes.length === 1 && changes[0].got === realKey) {
+      test.check('and a relay answering a key other than the pin is refused, and says which');
+    } else {
+      test.fail('substitution: key=' + String(key).slice(-12) + ' changes=' + changes.length);
+    }
+
+    // THE FRONT DOOR AND THE REAL RELAY KEY. This is the exception the
+    // inbox path never needed: a relay posts in its own name to carry an
+    // enrolment, and a relay is not a contact. If frontDoor got this
+    // wrong, every enrolment would be refused at the door — so it is
+    // checked against the key spirit-3 actually publishes, not a fixture.
+    relayKeys.accept(meeting, RELAY, realKey);
+    if (hub.frontDoor(meeting, realKey) === 'known') {
+      test.check("the front door knows spirit-3's own key, so an enrolment it carries is not refused");
+    } else {
+      test.fail('frontDoor on the real relay key: ' + hub.frontDoor(meeting, realKey));
+    }
+    // And only because it was accepted. A relay's key is not special by
+    // being a relay's — it is special by having been pinned.
+    if (hub.frontDoor(meeting, impostorKey) === 'drop') {
+      test.check('and refuses a key claiming to be a relay that this node never accepted');
+    } else {
+      test.fail('impostor relay key: ' + hub.frontDoor(meeting, impostorKey));
+    }
+  }
+
+  test.subHeading('A rotated password, against the real device route');
+
+  {
+    // THE ANSWER TO GROK'S BEST FINDING, tested where it matters. A relay
+    // is handed the enrolment password in cleartext, so one legitimate
+    // enrolment leaves a crooked relay holding it. Rotation is the only
+    // available answer, and this is it happening over the wire.
+    //
+    // The subject is lab-bella, never Andy: enrolling displaces whatever
+    // device that identity had.
+    const before = deviceDoc().password;
+    const rotated = deviceAuth.rotatePassword(SUBJECT);
+    const phone = auth.generateIdentity('post-rotation-phone');
+
+    if (rotated.password && rotated.password !== before) {
+      test.check('the password rotates to a different one');
+    } else {
+      test.fail('rotation did not change it');
+    }
+
+    // The old one is dead on the real route. Refused as `not now`, the
+    // same word every other cause gets — the relay faces the internet and
+    // owes it no detail.
+    const stale = await post(RELAY + '/api/relay/device', {
+      name: subject.name, password: before, devicePublicKey: phone.publicKey,
+    });
+    if (stale.status !== 200) {
+      test.check('and the OLD password is refused by the real relay (' + stale.status +
+        ') — a captured one is a dead string');
+    } else {
+      test.fail('the old password still enrolled: ' + stale.text.slice(0, 120));
+    }
+
+    // And the new one works, so this is not a check that simply breaks
+    // enrolment.
+    const fresh = await post(RELAY + '/api/relay/device', {
+      name: subject.name, password: rotated.password, devicePublicKey: phone.publicKey,
+    });
+    const freshBody = parsed(fresh);
+    if (fresh.status === 200 && freshBody && freshBody.ok) {
+      test.check('while the new one enrols normally, end to end');
+    } else {
+      test.fail('new password refused: ' + fresh.status + ' ' + fresh.text.slice(0, 120));
+    }
+
+    // WHAT ROTATION IS NOT. A device already attached stays attached —
+    // that is revocation, a different verb. Checked because a rotate
+    // control that felt like "remove my devices" is the trap the red
+    // button has to avoid.
+    const attached = deviceDoc().devicePublicKey;
+    deviceAuth.rotatePassword(SUBJECT);
+    if (deviceDoc().devicePublicKey === attached) {
+      test.check('and rotating again leaves the attached device attached — not revocation');
+    } else {
+      test.fail('rotation detached a device');
+    }
+  }
+
   test.reportSuccessFailureCount();
 }
 

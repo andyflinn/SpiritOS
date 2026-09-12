@@ -1389,6 +1389,16 @@ if (!relayMode) {
     rootDir: ROOT_DIR,
     jobs: jobs,
     router: peerRouter,
+    // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the
+    // census, accepts a key never seen before, and refuses one that
+    // changed — so by the time any enrolment can be posted down that
+    // stream, hub.frontDoor already knows whether to admit the relay as a
+    // party.
+    //
+    // Pinning used to happen lazily inside answerRelay, on the first
+    // enrolment, and deadlocked: the door refused the offer because
+    // nothing was pinned, so the pinner never ran.
+    pinRelay: answerer.relayKey,
   });
   presence.start(require('./hub').relayRequest).catch(() => {});
 }

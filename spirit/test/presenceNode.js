@@ -97,6 +97,91 @@ async function run() {
   if (attempts === settled) test.check('and close() ends it rather than the current attempt');
   else test.fail('kept retrying after close: ' + settled + ' -> ' + attempts);
 
+  test.subHeading('Who the relay is, pinned as the stream opens');
+
+  // ── WHO THE RELAY IS, PINNED BEFORE THE STREAM CARRIES ANYTHING ──
+  //
+  // THE BUG THIS EXISTS FOR, and it shipped for about an hour on
+  // 2026-09-12 before the live pass caught it by accident.
+  //
+  // hub.frontDoor admits a relay as a PARTY only if this node has
+  // accepted its key (relayKeys.js) — a device enrolment arrives as a
+  // post from the relay in its own name, and a relay is not a contact.
+  // The pin was established lazily, by answerRelay, on the first
+  // enrolment. Which deadlocked: the door refused the offer because
+  // nothing was pinned, so the code that pins never ran, so nothing was
+  // ever pinned. A node could never accept its first enrolment.
+  //
+  // INVISIBLE TO EVERY SUITE INCLUDING THE LIVE ONE, because the bug was
+  // not in a module. liveRelay.js calls answerRelay.answer() directly and
+  // never goes through peerPost.onRequest, so it proved the answerer
+  // works while the door in front of it refused every caller. A suite
+  // that drives each module cannot see the wiring between two.
+  //
+  // So the check is about the WIRING: opening a stream pins the relay
+  // first. It belongs here rather than being earlier-for-safety, because
+  // an offer can only arrive on a stream this node already holds — which
+  // makes pinning at stream-open exactly sufficient rather than merely
+  // sooner.
+  {
+    const pinHome = tmpHome();
+    auth.saveIdentity(pinHome, auth.generateIdentity('pinner'));
+    // A relay to hold a row on, or the probe finds nothing to connect to
+    // and openTo never runs.
+    fs.mkdirSync(path.join(pinHome, 'app', 'natter'), { recursive: true });
+    fs.writeFileSync(
+      path.join(pinHome, 'app', 'natter', 'relays.json'),
+      JSON.stringify([{ label: 'one', url: 'http://relay-one' }, { label: 'two', url: 'http://relay-two' }])
+    );
+    const pinned = [];
+    const opened = [];
+    const P = presenceNode.createPresence({
+      rootDir: pinHome,
+      jobs: fakeJobs(),
+      connectImpl: function (o) { opened.push(o.url); return { close: function () {} }; },
+      pinRelay: function (url) { pinned.push(url); return Promise.resolve('k'); },
+    });
+    await P.start(function () {
+      return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
+        { name: 'pinner', publicLabel: 'pinner', publicKey: auth.loadIdentity(pinHome).publicKey },
+      ] }) });
+    });
+
+    if (pinned.length && opened.length && pinned.length === opened.length) {
+      test.check('every relay it opens a stream to is pinned as well — ' + pinned.length + ' of ' + opened.length);
+    } else {
+      test.fail('pinned ' + pinned.length + ' of ' + opened.length + ' streams');
+    }
+
+    // AND IT SURVIVES A RELAY THAT WILL NOT SAY. A census that fails must
+    // not stop the stream: presence is what the stream is for, and an
+    // unpinned relay simply does not get party standing.
+    const deafHome = tmpHome();
+    auth.saveIdentity(deafHome, auth.generateIdentity('pinner2'));
+    fs.mkdirSync(path.join(deafHome, 'app', 'natter'), { recursive: true });
+    fs.writeFileSync(
+      path.join(deafHome, 'app', 'natter', 'relays.json'),
+      JSON.stringify([{ label: 'deaf', url: 'http://relay-deaf' }])
+    );
+    const deafOpened = [];
+    const D = presenceNode.createPresence({
+      rootDir: deafHome,
+      jobs: fakeJobs(),
+      connectImpl: function (o) { deafOpened.push(o.url); return { close: function () {} }; },
+      pinRelay: function () { return Promise.reject(new Error('census down')); },
+    });
+    await D.start(function () {
+      return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
+        { name: 'pinner2', publicLabel: 'pinner2', publicKey: auth.loadIdentity(deafHome).publicKey },
+      ] }) });
+    });
+    if (deafOpened.length) {
+      test.check('and a relay whose census will not answer still gets its stream opened');
+    } else {
+      test.fail('a failed pin stopped the stream');
+    }
+  }
+
   test.subHeading('The credential is made fresh for every attempt');
 
   // THE live bug, and the reason this check exists. streamMessage carries
