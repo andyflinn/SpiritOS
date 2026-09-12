@@ -45,6 +45,13 @@ const NOT_A_SUITE = [
   // to a live relay and changes state on a box other people use. Run by
   // hand: `node spirit/test/liveRelay.js`.
   'liveRelay.js',
+  // SPAWNS A RELAY AND THREE NODES through labMaster and waits for
+  // streams to settle — seconds, not milliseconds, and real processes on
+  // real ports. It proves the front door is WIRED, which the in-process
+  // suites cannot: frontDoor.js drives the module, this one posts from
+  // one node to another and reads what the receiving node wrote down.
+  // Run by hand: `node spirit/test/liveFrontDoor.js`.
+  'liveFrontDoor.js',
 ];
 
 // Last, always. It reads the other suites off disk to check that every
