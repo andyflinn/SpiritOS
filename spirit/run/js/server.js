@@ -1404,9 +1404,31 @@ if (!relayMode) {
   // the system, not a softer version of the ring 0006 deletes. A guard
   // that only holds while the surrounding code stays where it is, is not
   // a guard.
+  // WHAT THIS NODE ANSWERS WHEN ITS RELAY ASKS.
+  //
+  // Almost everything on that stream is a peer's request and gets the
+  // plain receipt. The exception is a device enrolment, which the relay
+  // posts as itself because the browser doing the enrolling has no
+  // identity yet — and answerRelay is where that is checked against the
+  // key of the relay it arrived on before anything is acted on.
+  //
+  // `urls` is a function because which relays this node holds a row on
+  // is presence's answer and changes while the process runs — and
+  // because presence does not exist yet on this line.
+  const answerer = require('./answerRelay').createAnswerer({
+    rootDir: ROOT_DIR,
+    request: require('./hub').relayRequest,
+    urls: function () {
+      const me = require('./relayAuth').loadIdentity(ROOT_DIR);
+      if (!me || !me.publicKey || !presence) return [];
+      return presence.relaysNaming(me.publicKey);
+    },
+  });
+
   peerRouter = require('./peerPost').createPeerPost({
     rootDir: ROOT_DIR,
     request: require('./hub').relayRequest,
+    answer: answerer.answer,
     traffic: require('./trafficLog').createTrafficLog({
       rootDir: ROOT_DIR,
       relayMode: relayMode,

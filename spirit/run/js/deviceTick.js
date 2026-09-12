@@ -67,6 +67,57 @@ async function installEverywhere(requestFn, id, urls, deviceKey) {
   return { on: on, missed: missed };
 }
 
+// AN OFFER THAT ARRIVED, rather than one this node went and fetched.
+//
+// Everything below the first line of `tick` is the same work: compare
+// the password against the one only this node holds, install the key
+// everywhere this identity has a row, write it down. What differs is how
+// the offer got here — polled for, or handed over by a relay that posted
+// it. So the work lives here once and both roads call it.
+//
+// It answers with a decision rather than a wire format. Turning that
+// into bytes belongs to whoever is speaking, which is the caller.
+async function answerOffer(rootDir, urls, offer, requestFn, fromUrl) {
+  var doc = deviceAuth.load(rootDir);
+  // The window still decides. A node that is not listening declines, and
+  // declines the same way whether it was asked or told.
+  if (!doc.listening) return { accepted: false, why: 'quiet' };
+  if (!doc.password) return { accepted: false, why: 'quiet' };
+
+  var id = relayAuth.loadIdentity(rootDir);
+  if (!id || !id.privateKey || !id.name) return { accepted: false, why: 'no identity' };
+  if (!offer || !offer.password || !offer.devicePublicKey) {
+    return { accepted: false, why: 'nothing offered' };
+  }
+
+  // THE ONE COMPARISON THAT MATTERS, and it happens here and nowhere
+  // else. A relay that could check the password could install a device
+  // without knowing one (DEVICE-CYCLE2.md).
+  if (!deviceAuth.passwordsEqual(doc.password, offer.password)) {
+    return { accepted: false, why: 'wrong password' };
+  }
+
+  // The enrolling relay first, so the one the person is standing in
+  // front of holds the slot by the time they are told yes.
+  var list = Array.isArray(urls) ? urls : [];
+  var others = list.filter(function (u) { return u !== fromUrl; });
+  var spread = await installEverywhere(
+    requestFn, id, (fromUrl ? [fromUrl] : []).concat(others), offer.devicePublicKey
+  );
+
+  // Recorded locally only if somewhere took it. A node that remembered a
+  // device no relay knows about would show one attached that could read
+  // nothing anywhere.
+  if (!spread.on.length) return { accepted: false, why: 'no relay took it' };
+  deviceAuth.setDevicePublicKey(rootDir, offer.devicePublicKey);
+  return {
+    accepted: true,
+    devicePublicKey: offer.devicePublicKey,
+    installedOn: spread.on,
+    missedOn: spread.missed,
+  };
+}
+
 async function tick(rootDir, ownedUrls, requestFn) {
   var doc = deviceAuth.load(rootDir);
   if (!doc.listening) return { ok: true, did: 'quiet' };
@@ -135,4 +186,4 @@ async function tick(rootDir, ownedUrls, requestFn) {
   return { ok: true, did: unreachable ? 'unreachable' : refused ? 'refused' : 'empty' };
 }
 
-module.exports = { tick: tick };
+module.exports = { tick: tick, answerOffer: answerOffer };
