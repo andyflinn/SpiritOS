@@ -610,6 +610,47 @@ function createRelay(rootDir) {
         // so this reads as "the signer was the identity itself, not its
         // handheld".
         signedByHouseKey = provedWith === src.peer.publicKey;
+
+        // ── A DEVICE REACHES ITS OWN IDENTITY, AND NOTHING ELSE ──────
+        //
+        // Andy: "i don't want the relay to allow a device posting to
+        // anybody but its owner node, and i know that is cheap. and i
+        // know that if a relay allows device post to target peers other
+        // than its owner's node, it must end in failure anyway."
+        //
+        // Both halves are right, and the second is the argument. A peer
+        // receiving this has no way to verify that a DEVICE composed it —
+        // it sees the owner's label and a signature it cannot attribute
+        // (design/relay/DEVICE.md: a device holds no authority toward
+        // anyone, and the node is the only thing that can sign for it).
+        // So allowing it does not enable a feature; it permits a
+        // guaranteed failure with the owner's authority attached.
+        //
+        // Grok's review said not to build this yet. Andy's call, made
+        // knowing that: it is cheap, and the alternative is a live hole.
+        //
+        // NARROWLY: `to` must be the same identity as `from`. A device is
+        // its owner's window, so the only correspondent it has is the
+        // identity it was installed on.
+        //
+        // ONE EXCEPTION, and it is not a peer: the reserved `relay` name,
+        // which is the console. It carries no owner powers for a handheld
+        // any more (see isOwner below), so what a device reaches there is
+        // `help` and `whoami` — facts the public census already publishes.
+        // It is kept because it is the device page's only working
+        // function today; when the device channel exists it should go,
+        // because a device's correspondent is its NODE and not a relay.
+        if (!signedByHouseKey) {
+          var toSelf = !!(dst && dst.peer && dst.peer.publicKey === src.peer.publicKey);
+          var toConsole = !!(dst && dst.reserved);
+          if (!toSelf && !toConsole) {
+            return {
+              ok: false,
+              status: 403,
+              error: 'a device may only reach its own identity',
+            };
+          }
+        }
       } else {
         var ownerSend = auth.checkSend(allow, fTok, sig, tTok, text);
         if (!ownerSend.ok) return ownerSend;

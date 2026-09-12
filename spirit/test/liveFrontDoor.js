@@ -300,6 +300,152 @@ async function run() {
       test.fail('pins: ' + JSON.stringify(Object.keys(pins)) +
         ' relayKey=' + String(relayKey).slice(-12));
     }
+    test.subHeading("A device is the owner's window, not the owner's credentials");
+
+    // WHY THIS IS HERE AND NOT IN liveRelay.js. The check needs a device
+    // enrolled as the RELAY'S OWNER, because what is being tested is
+    // whether an owner's handheld gets the owner's admin. On spirit-3 the
+    // owner is Andy, so proving it there would mean displacing the phone
+    // in his pocket — and liveRelay.js will not do that, for the same
+    // reason it never has.
+    //
+    // A lab relay's owner is a generated `labowner` with its own private
+    // key, so this is a real relay process, real HTTP, real signatures,
+    // and nobody's actual device is touched.
+    {
+      const ownerId = W.owner();
+      const relayUrl = 'http://127.0.0.1:65425';
+      const handheld = require('../run/js/relayAuth').generateIdentity('handheld');
+      const deviceAuth = require('../run/js/deviceAuth');
+      const auth = require('../run/js/relayAuth');
+
+      async function relayPost(pathname, body) {
+        try {
+          const res = await fetch(relayUrl + pathname, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const text = await res.text();
+          let parsed = null;
+          try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+          return { status: res.status, body: parsed, text: text };
+        } catch (e) {
+          return { status: 0, body: null, text: String(e.message || e) };
+        }
+      }
+
+      // Installed through the real verb, owner-signed.
+      const install = await relayPost('/api/relay/set-device', {
+        name: ownerId.name || 'labowner',
+        devicePublicKey: handheld.publicKey,
+        sig: auth.sign(ownerId.privateKey, deviceAuth.setDeviceMessage(handheld.publicKey)),
+      });
+      if (install.status === 200 && install.body && install.body.ok) {
+        test.check("a handheld is installed on the lab relay's own owner record");
+      } else {
+        test.fail('set-device: ' + install.status + ' ' + install.text.slice(0, 120));
+      }
+
+      const ownerName = ownerId.name || 'labowner';
+
+      // KEPT: sending as its owner. That is what a device is for.
+      const sent = await relayPost('/api/relay/send', {
+        from: ownerName, to: ownerName, text: 'from the handheld',
+        sig: auth.sign(handheld.privateKey, auth.sendMessage(ownerName, ownerName, 'from the handheld')),
+      });
+      // 201, not 200: a send CREATES a message. Asserted as "not a
+      // refusal" rather than as one number, because what matters here is
+      // that the device was allowed at all.
+      if (sent.status === 201) {
+        test.check('and it still sends as its owner over the real route');
+      } else {
+        test.fail('send: ' + sent.status + ' ' + sent.text.slice(0, 120));
+      }
+
+      // CONFINED, over the wire: a handheld reaches its own identity and
+      // nothing else. Andy: "if a relay allows device post to target
+      // peers other than its owner's node, it must end in failure
+      // anyway" — the receiving peer cannot tell a device composed it,
+      // so permitting it buys nothing and spends the owner's authority.
+      const someoneElse = await relayPost('/api/relay/send', {
+        from: ownerName, to: 'alfa', text: 'reaching past my owner',
+        sig: auth.sign(handheld.privateKey, auth.sendMessage(ownerName, 'alfa', 'reaching past my owner')),
+      });
+      if (someoneElse.status === 403) {
+        test.check('and cannot reach another peer on the relay at all (403)');
+      } else {
+        test.fail('device reached a peer: ' + someoneElse.status + ' ' + someoneElse.text.slice(0, 120));
+      }
+
+      // THE HOUSE KEY STILL CAN, so this is not a check that simply broke
+      // sending to peers.
+      const houseElsewhere = await relayPost('/api/relay/send', {
+        from: ownerName, to: 'alfa', text: 'from the owner',
+        sig: auth.sign(ownerId.privateKey, auth.sendMessage(ownerName, 'alfa', 'from the owner')),
+      });
+      if (houseElsewhere.status === 201) {
+        test.check('while the identity itself still reaches its peers, as it always did');
+      } else {
+        test.fail('the house key was confined too: ' + houseElsewhere.status);
+      }
+
+      // LOST: the owner-only report. The house key still opens it, so
+      // this is not a check that simply broke `status`.
+      async function statusAs(signer) {
+        const q = '?name=' + encodeURIComponent(ownerName) +
+          '&sig=' + encodeURIComponent(auth.sign(signer.privateKey, auth.statusMessage(ownerName)));
+        try {
+          const res = await fetch(relayUrl + '/api/relay/status' + q);
+          return res.status;
+        } catch (e) { return 0; }
+      }
+      const houseStatus = await statusAs(ownerId);
+      const deviceStatus = await statusAs(handheld);
+      if (houseStatus === 200 && deviceStatus !== 200) {
+        test.check('while the owner-only report takes the house key alone — ' +
+          houseStatus + ' for the owner, ' + deviceStatus + ' for the handheld');
+      } else {
+        test.fail('status: house=' + houseStatus + ' device=' + deviceStatus);
+      }
+
+      // LOST: the console's owner words. THE SHARP ONE — `invites` lists
+      // live tokens, which is the difference between a stolen phone that
+      // reads your mail and one that gives strangers your relay.
+      async function consoleAs(signer, word) {
+        const r = await relayPost('/api/relay/send', {
+          from: ownerName, to: 'relay', text: word,
+          sig: auth.sign(signer.privateKey, auth.sendMessage(ownerName, 'relay', word)),
+        });
+        return (r.body && r.body.consoleReply && r.body.consoleReply.text) || '';
+      }
+      const houseInvites = await consoleAs(ownerId, 'invites');
+      const deviceInvites = await consoleAs(handheld, 'invites');
+      // MATCHED ON THE WHOLE PHRASE. `/owner/i` is the substring trap:
+      // the owner here is called `labowner`, so a bare /owner/ matches
+      // inside the label and every one of these checks passes for the
+      // wrong reason. The fourth time this shape has cost a sitting —
+      // 'Contact' inside 'Contacts' was the last one.
+      if (houseInvites && !/that one is the owner's/i.test(houseInvites) &&
+          /that one is the owner's/i.test(deviceInvites)) {
+        test.check("and the console refuses the handheld the owner's words, over the wire");
+      } else {
+        test.fail('invites: house=' + JSON.stringify(houseInvites) +
+          ' device=' + JSON.stringify(deviceInvites));
+      }
+
+      // DECIDED BY THE SIGNER, not the row. A device signs as its owner's
+      // LABEL, so the row was always the owner's — which is why this was
+      // invisible until send reported which key proved it.
+      const houseWho = await consoleAs(ownerId, 'whoami');
+      const deviceWho = await consoleAs(handheld, 'whoami');
+      if (/owner of this mailbox/i.test(houseWho) && !/owner of this mailbox/i.test(deviceWho)) {
+        test.check('and the same label answers differently depending on which key signed it');
+      } else {
+        test.fail('whoami: house=' + JSON.stringify(houseWho) + ' device=' + JSON.stringify(deviceWho));
+      }
+    }
+
   } finally {
     // A lab is deletable, which is the whole reason this runs locally.
     await W.destroy();

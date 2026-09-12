@@ -277,6 +277,68 @@ async function run() {
       test.fail('read=' + read.ok + ' send=' + sent.ok);
     }
 
+    // ── CONFINED: A DEVICE REACHES ITS OWN IDENTITY AND NOTHING ELSE ──
+    //
+    // Andy: "i don't want the relay to allow a device posting to anybody
+    // but its owner node, and i know that is cheap. and i know that if a
+    // relay allows device post to target peers other than its owner's
+    // node, it must end in failure anyway."
+    //
+    // The second half is the argument. A peer receiving that has no way
+    // to tell a DEVICE composed it — it sees the owner's label and a
+    // signature it cannot attribute. So allowing it enables no feature;
+    // it permits a guaranteed failure carrying the owner's authority.
+    {
+      const other = world.build({ title: 'owner and a peer', peers: ['bella'] });
+      const oPhone = auth.generateIdentity('o-phone');
+      other.box.setDevice(
+        'andy', oPhone.publicKey,
+        auth.sign(other.owner.privateKey, deviceAuth.setDeviceMessage(oPhone.publicKey))
+      );
+      function sendAs(signer, to, text) {
+        return other.box.send(
+          'andy', to, text,
+          auth.sign(signer.privateKey, auth.sendMessage('andy', to, text))
+        );
+      }
+
+      const atPeer = sendAs(oPhone, 'bella', 'hello bella');
+      if (atPeer.ok === false && atPeer.status === 403) {
+        test.check('a handheld cannot reach another peer at all — not refused late, refused here');
+      } else {
+        test.fail('device reached a peer: ' + JSON.stringify(atPeer));
+      }
+
+      // AND THE HOUSE KEY STILL CAN, so this is not a check that simply
+      // broke sending to peers.
+      const houseAtPeer = sendAs(other.owner, 'bella', 'hello bella');
+      if (houseAtPeer.ok) {
+        test.check('while the identity itself still reaches its peers as before');
+      } else {
+        test.fail('the house key was confined too: ' + JSON.stringify(houseAtPeer));
+      }
+
+      // Its own identity is the one correspondent it has — a note to
+      // yourself from your own phone.
+      const atSelf = sendAs(oPhone, 'andy', 'note to self');
+      if (atSelf.ok) {
+        test.check('and it still reaches the identity it belongs to, which is its whole reach');
+      } else {
+        test.fail('device could not reach its own identity: ' + JSON.stringify(atSelf));
+      }
+
+      // The reserved name is not a peer. Kept because it is the device
+      // page's only working function today, and harmless now the owner
+      // words are gone: what a handheld gets there is `help` and
+      // `whoami`, which the public census already publishes.
+      const atConsole = sendAs(oPhone, 'relay', 'whoami');
+      if (atConsole.ok) {
+        test.check('and the relay console, which is not a peer and carries it no powers');
+      } else {
+        test.fail('device refused the console: ' + JSON.stringify(atConsole));
+      }
+    }
+
     // LOST: the owner-only report. The house key still opens it, so this
     // is not a check that simply broke `status`.
     const houseReport = D.box.status('andy', auth.sign(D.owner.privateKey, auth.statusMessage('andy')));
