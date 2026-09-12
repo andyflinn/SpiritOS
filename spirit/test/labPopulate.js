@@ -48,6 +48,23 @@ const MASTER = 'http://127.0.0.1:65420';
 const RELAYS = path.join(WORK_RUN, 'app', 'natter', 'relays.json');
 const BACKUP = path.join(WORK_RUN, 'app', 'natter', 'relays.json.before-lab');
 
+// THE FILE THAT SAYS THIS NODE KNOWS WHO IT IS, and it is the one that
+// mattered most while being the one nothing protected.
+//
+// firstRun() is decided by exactly one thing — a label in session.json —
+// so without it a node with its identity, its contacts, its relays and
+// its mail all intact still opens to Natter alone and behaves like a
+// stranger to itself. Andy hit precisely that after a lab cycle:
+// "it wont show the shell, it brings me directly to natter, indicating
+// to me that I'm not hooked up with my satellite."
+//
+// It is gitignored, so no commit can bring it back, and it is untracked,
+// so anything that clears a home to lay the tracked tree down takes it.
+// relays.json got a byte-for-byte backup and this did not — and of the
+// two, this is the one whose absence makes the node unusable.
+const SESSION = path.join(WORK_RUN, 'app', 'natter', 'session.json');
+const SESSION_BACKUP = path.join(WORK_RUN, 'app', 'natter', 'session.json.before-lab');
+
 const invites = require('../run/js/invites');
 
 // THE `lab-` PREFIX IS A SAFETY FEATURE, not a style. These identities
@@ -157,7 +174,12 @@ function readRelays() {
 
 function writeRelays(rows) {
   fs.mkdirSync(path.dirname(RELAYS), { recursive: true });
-  fs.writeFileSync(RELAYS, JSON.stringify(rows, null, 2));
+  // TRAILING NEWLINE KEPT, because relays.json is a TRACKED file and this
+  // is the only writer that drops it. Without it every lab build leaves a
+  // one-line whitespace diff in git status — noise that has to be
+  // unstaged by hand each time, and the kind that eventually gets
+  // committed by reflex.
+  fs.writeFileSync(RELAYS, JSON.stringify(rows, null, 2) + '\n');
 }
 
 // Remove anything named `lab-*` from the live relay. By PATTERN and not
@@ -229,6 +251,23 @@ async function down() {
     console.log('  live relay: skipped, no identity to sign a removal with');
   }
 
+  // THE BINDING FIRST, because it is the one that decides whether the
+  // shell opens at all. Restored whether or not it is currently missing:
+  // a session.json that was replaced is as wrong as one that was removed.
+  if (fs.existsSync(SESSION_BACKUP)) {
+    fs.copyFileSync(SESSION_BACKUP, SESSION);
+    fs.unlinkSync(SESSION_BACKUP);
+    console.log('  session.json restored — this node knows its own name again');
+  } else if (!fs.existsSync(SESSION)) {
+    // No backup and no file: say so rather than leaving somebody to
+    // discover it by being dropped into Natter. Not written from the
+    // identity, deliberately — binding is a decision a person makes in
+    // Natter, and inventing one here would be this tool deciding who
+    // somebody is.
+    console.log('  session.json is MISSING and there was no backup —');
+    console.log('    the shell will open on Natter until you bind a name there.');
+  }
+
   if (fs.existsSync(BACKUP)) {
     // Byte for byte, so nothing about the real relay row can drift
     // through a build-and-teardown cycle.
@@ -293,6 +332,42 @@ async function up(scenarioName) {
     owner: me,
   });
 
+  // STALE LAB ROWS GO FIRST, on the live relay as well as locally.
+  //
+  // labMaster recycles a lab NODE before laying its tree down (GAP 5), so
+  // a second build starts from an empty home. The live relay had no such
+  // courtesy: every build mints new invites and claims with NEW KEYS, and
+  // spirit-3's routing table only grows — so building twice without a
+  // --down in between left `lab-bella` on it twice, wearing one label with
+  // two keys.
+  //
+  // That is not a hypothetical. It happened three times in one afternoon
+  // to the person who wrote the warning about it, which is the tell that
+  // the answer is code rather than discipline. And the duplicates are not
+  // merely untidy: a duplicate label resolves to NOBODY (findByLabel), so
+  // the second build silently breaks enrolment, inbox reads by label and
+  // the device page on the very identities it just created.
+  //
+  // Possible at all only because remove-peer exists — before GAP 2 closed,
+  // this could only have been a warning.
+  const swept = await clearLive(me);
+  if (swept.removed) {
+    console.log('live relay: ' + swept.removed + ' stale lab-* row(s) cleared before building');
+  }
+  // AND THE ADDRESS BOOK, for the same reason and by the function that
+  // already predicted this: "without this a third run leaves you with
+  // three lab-bellas, two of them dead, and the colour beside each is an
+  // honest answer to a question about somebody who no longer exists."
+  //
+  // It was written and then only ever called from --down, so the failure
+  // it describes happened anyway. A sweep that runs on the way down but
+  // not on the way up protects a teardown and not a rebuild, and a
+  // rebuild is the common case.
+  const forgotten = forgetLabContacts();
+  if (forgotten) {
+    console.log('contacts  : ' + forgotten + ' stale lab-* row(s) forgotten before building');
+  }
+
   console.log('building  : a lab relay you own, plus ' + PEOPLE.length + ' peers');
   const built = await world.build();
   if (!built.ok) {
@@ -307,6 +382,13 @@ async function up(scenarioName) {
   // list, one row down, and --down puts the order back.
   if (!fs.existsSync(BACKUP) && fs.existsSync(RELAYS)) {
     fs.copyFileSync(RELAYS, BACKUP);
+  }
+  // And the binding, for the same reason and with more at stake. This
+  // tool does not write session.json — but it restarts and rebuilds
+  // around a home whose untracked files nothing else is keeping, and a
+  // backup that is never needed costs one copy.
+  if (!fs.existsSync(SESSION_BACKUP) && fs.existsSync(SESSION)) {
+    fs.copyFileSync(SESSION, SESSION_BACKUP);
   }
   const rows = readRelays().filter(function (r) {
     return String(r && r.url || '') !== relayUrl;

@@ -791,6 +791,30 @@ const server = http.createServer((req, res) => {
   // Headers, heartbeat and teardown are handleSseConnection's, because
   // it is the same protocol and that handler has already paid for its
   // lessons — especially the last one.
+  // THE DEVICE PAGE. One file for everybody: the key lives only in the
+  // URL, and the page reads it off its own address — nothing is templated
+  // and nothing is generated per person.
+  //
+  // An identity nobody holds is a 404 here rather than a working-looking
+  // form that can never succeed. It leaks nothing: /api/relay/who already
+  // hands out every key to anyone who asks.
+  //
+  // RESTORED 2026-09-12. It was deleted by accident in the same commit
+  // that removed the poll — the cut ran from the `device-pending` route to
+  // the next one and this sat between them, so every keyed device URL
+  // 404'd from that moment. Nothing caught it: no suite asks for the page,
+  // and relayProbe's surface list does not name it. Andy found it by
+  // clicking the link in natterDetails.
+  if (relayMode && req.method === 'GET' && devicePageKey(pathname)) {
+    if (!relay.deviceIdentityPublic(devicePageKey(pathname))) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('no such identity here');
+      return;
+    }
+    sendFile(res, path.join(ROOT_DIR, 'device.html'));
+    return;
+  }
+
   if (relayMode && req.method === 'GET' && pathname === '/api/relay/stream') {
     const from = createRelay.inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
     if (!from.ok) {

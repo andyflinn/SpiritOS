@@ -229,6 +229,9 @@ async function run() {
     test.fail('departure not seen: ' + JSON.stringify(seen));
   }
 
+  // While the relay is still alive, and before it is killed below.
+  await theDevicePageIsServed(up, lab.house.publicKey);
+
   test.subHeading('The relay going away does not take the node with it');
 
   child.kill();
@@ -246,6 +249,74 @@ async function run() {
     test.check('and the dead relay stopped asserting anything at all');
   } else {
     test.fail('stale presence outlived the relay: ' + JSON.stringify(seen));
+  }
+}
+
+// ── THE DEVICE PAGE IS SERVED, not merely allowed ────────────────────
+//
+// This suite already spawns a real --relay over a real socket, which is
+// the only place in the harness that can ask a relay for a URL and see
+// what comes back. It is put here for that reason and no other.
+//
+// THE BUG IT EXISTS FOR. `devicePageKey` decides which paths look like a
+// device page, and `isRelayPublicPath` uses it to let them through the
+// relay's 404-everything gate. The HANDLER that answers them was deleted
+// by accident on 2026-09-12, in the same commit that removed the poll:
+// the cut ran from the `device-pending` route to the next one and this
+// sat between them.
+//
+// So every keyed device URL 404'd from that moment, and NOTHING NOTICED.
+// No suite asked a relay for the page; relayProbe's surface list does not
+// name it; and `isRelayPublicPath` still said yes, so the gate was intact
+// and only the answer was missing. Andy found it by clicking the link in
+// natterDetails.
+//
+// ALLOWED IS NOT SERVED, and that is the general shape worth guarding: a
+// permission with nothing behind it looks exactly like a working route
+// from every angle except a request.
+async function theDevicePageIsServed(up, ownerKey) {
+  test.subHeading('The device page is served, not merely permitted');
+
+  function segOf(key) {
+    return String(key).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  const mine = await fetch(up.base + '/' + segOf(ownerKey) + '/device');
+  const body = mine.ok ? await mine.text() : '';
+  if (mine.status === 200 && /<html/i.test(body)) {
+    test.check('an identity this relay holds is handed the page, over a real socket');
+  } else {
+    test.fail('own key: ' + mine.status + ' ' + body.slice(0, 80));
+  }
+
+  // The page carries no per-person anything: one file for everybody, and
+  // the key lives only in the URL. If this ever became templated, the
+  // relay would be generating something about a person.
+  if (body.indexOf(ownerKey) === -1) {
+    test.check('and the page is the same file for everybody — the key is in the address, not the body');
+  } else {
+    test.fail('the served page embedded the identity key');
+  }
+
+  // AN IDENTITY NOBODY HOLDS IS A 404, rather than a working-looking form
+  // that can never succeed. It leaks nothing: /api/relay/who already
+  // hands every key to anyone who asks.
+  const stranger = 'MCowBQYDK2VwAyEA' + 'x'.repeat(43);
+  const nope = await fetch(up.base + '/' + stranger + '/device');
+  if (nope.status === 404) {
+    test.check('while a key this relay never heard of is 404, not an unusable form');
+  } else {
+    test.fail('stranger key: ' + nope.status);
+  }
+
+  // And it is the KEYED path that is served. A bare /device is not a
+  // page: every enrolment names whose it is, which is what lets one relay
+  // hold a device per identity rather than one for the box.
+  const bare = await fetch(up.base + '/device');
+  if (bare.status === 404) {
+    test.check('and a bare /device names nobody, so it is nothing');
+  } else {
+    test.fail('bare /device answered ' + bare.status);
   }
 }
 

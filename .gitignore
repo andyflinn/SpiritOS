@@ -124,3 +124,10 @@ spirit/run/build.json
 # staged once by reflex, it made git ls-files name a path that the teardown
 # had already deleted, and every lab node then failed to build.
 spirit/run/app/natter/relays.json.before-lab
+# And the binding, backed up the same way for a better reason: session.json
+# is what firstRun() reads, so a node that loses it opens to Natter alone
+# and behaves like a stranger to itself with its identity, contacts, relays
+# and mail all still there. Ignored for the same hard reason as the line
+# above — missingFromCopy uses --exclude-standard, so an untracked backup
+# refuses every lab build until it is deleted.
+spirit/run/app/natter/session.json.before-lab

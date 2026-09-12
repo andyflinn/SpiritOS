@@ -1,0 +1,32 @@
+{
+  "title": "Two peers on spirit-3",
+  "why": "The everyday working world, but reachable the way a real one is: both peers hold rows on the public relay, so presence, posting and the router are exercised over TLS and Caddy rather than over loopback. The lab relay still exists underneath — labWorld builds one and every peer claims there first — so this is 'also on spirit-3', which is the honest description of what a node with two relays actually has.",
+  "covers": ["presenceNode.js", "peerPost.js", "frontDoor.js", "relayKeys.js"],
+  "look": [
+    "Contacts — two people, both green, reached through the public relay",
+    "Natter — two rows, the lab one and spirit.andyflinn.com",
+    "Chat — mail waiting from both"
+  ],
+
+  "peers": [
+    {
+      "name": "bella",
+      "on": ["lab", "live"],
+      "running": true,
+      "expect": "green — her node holds a stream to spirit-3 as well as to the lab relay"
+    },
+    {
+      "name": "carlos",
+      "on": ["lab", "live"],
+      "running": true,
+      "expect": "green — same, and the second one is what makes presence a merge rather than a single answer"
+    }
+  ],
+
+  "knows": [["bella", "carlos"]],
+
+  "messages": [
+    { "from": "bella", "text": "morning" },
+    { "from": "carlos", "text": "are you about?" }
+  ]
+}
