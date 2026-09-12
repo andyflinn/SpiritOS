@@ -172,6 +172,29 @@ function packetDecode(text) {
   };
 }
 
+// A MESSAGE, WITH ITS ENVELOPE READ. Every field the message already had
+// is kept untouched and `packet` is added beside them — the reader of a
+// decorated message can still see the raw `text`, which is what makes
+// this additive rather than a translation.
+//
+// It lives here, and not where it was born (hub.decorateWithPacket, on
+// the `inbox` path), because the router grew a second arrival path in
+// 2026-09-13 and two transports building `message.packet` in two files
+// is one drift away from an app seeing a different shape depending on
+// which road a line travelled. One function, both callers.
+function packetDecorate(message) {
+  var decoded = packetDecode(message && message.text);
+  var out = {};
+  Object.keys(message || {}).forEach(function (key) { out[key] = message[key]; });
+  out.packet = {
+    legacy: !!decoded.legacy,
+    app: decoded.app,
+    id: decoded.id || null,
+    body: decoded.body,
+  };
+  return out;
+}
+
 var packetApi = {
   VERSION: PACKET_VERSION,
   MAX_TEXT: PACKET_MAX_TEXT,
@@ -179,6 +202,7 @@ var packetApi = {
   randomId: packetRandomId,
   encode: packetEncode,
   decode: packetDecode,
+  decorate: packetDecorate,
   isEnvelope: packetIsEnvelope,
 };
 

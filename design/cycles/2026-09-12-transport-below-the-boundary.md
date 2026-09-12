@@ -1,11 +1,11 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 9 requirements, none built.**
+**Status: OPEN — 10 requirements, 2 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
-costed the whole job (R3–R9). Nothing has been implemented — this is the
-list an implementation will be reported against.
+costed the whole job (R3–R9). R3 and R4 are built; R10 was found by
+building them, and it blocks R8.
 
 ---
 
@@ -204,11 +204,23 @@ already exists as an SSE for Jobs
 ([server.js:335](../../spirit/run/js/server.js#L335)); a `packet` event on
 it needs no new route.
 
-**Verify:** not written. Must assert that a packet posted by a peer
-reaches a registered handler in the page — end to end, not that the hook
-is called. A test of the hook alone would have passed for months while
-the feature did not exist.
-**Status:** OPEN
+Built as [`arrivals.js`](../../spirit/run/js/arrivals.js) — a seam, not a
+feature: peerPost's front door has already decided who may be heard, and
+the shell decides which app wants it, so this holds subscribers, decodes
+the envelope once, and hands each of them the same message. `server.js`
+subscribes from `handleSseConnection` (a `packet` event on the
+`/api/events` stream the page already holds) and notes into it from
+`createPeerPost`.
+
+`decorateWithPacket` moved from `hub.js` into
+[`packet.decorate`](../../spirit/run/js/packet.js) on the way, so the
+ring and the router build `message.packet` with one function rather than
+two that can drift.
+
+**Verify:** `spirit/test/arrivals.js` — "a real post from a known peer
+comes out of the seam as a chess packet", and its negative half "a
+stranger reaches no app at all — the front door binds before the seam"
+**Status:** DONE
 
 ### R4 — the shell's packet fan-out has a source of its own
 The shell already routes on `packet.app` into `packetHandlers`
@@ -221,9 +233,15 @@ So every app's `api.onPacket` depends on Relay Chat running — the app
 this cycle exists to retire. Recorded as its own requirement because it
 is invisible from either file alone.
 
-**Verify:** not written. Wants a check that packets arrive with Relay
-Chat absent.
-**Status:** OPEN — blocks on R3
+Now two sources, and the handlers cannot tell them apart — the router's
+`packet` event and the ring's `api.deliverPackets`. The ring's half goes
+with R8; nothing above it changes when it does.
+
+**Verify:** `spirit/test/arrivals.js` — "the shell subscribes to `packet`
+on the node event stream" and "a packet on that stream reaches the app
+that asked for it, body first", both against the real `shell.js` booted
+in Node with no Relay Chat present at all
+**Status:** DONE
 
 ### R5 — `api.sendMessagePacket` posts on the router
 [`shell.js:1274`](../../spirit/run/js/client/shell.js#L1274) is already
@@ -340,6 +358,35 @@ sink and **no other sink** — the negative half, or it passes against a
 broadcast.
 **Status:** OPEN
 
+### R10 — a packet that arrives while no page is open is not lost
+**Found by building R3, and it is the reason R8 cannot simply follow.**
+
+The seam delivers live. With no browser open there is no subscriber, and
+the packet is **dropped** — not held, not queued, not counted as
+pending. The ring being retired does not have that hole: the relay held
+200 messages and the far end collected them whenever it next looked.
+
+So as things stand today, a live push is **strictly less** than a poll
+against a buffer, and deleting the ring would be the one migration that
+makes the system worse. That is not a reason to keep the ring; it is a
+reason this has to be answered first.
+
+The bytes are not actually lost —
+[`trafficLog`](../../spirit/run/js/trafficLog.js) already keeps every
+packet that crossed the WAN for 24 hours, payload included. What is
+missing is delivery: what counts as already-seen, and by whom, when a
+page opens. That is a design question and it has not been asked yet.
+
+Recorded rather than solved on the spot, for the reason the shell gives
+about its own missing hold store: *"inventing one quietly would be
+inventing the part that has to be designed."*
+
+**Verify:** `spirit/test/arrivals.js` names the gap today — "with no page
+open the packet is dropped, and says so (0 delivered) rather than
+throwing". That check must be **replaced**, not deleted, when this is
+answered.
+**Status:** OPEN — blocks R8
+
 ### R8 — the ring is deleted
 > `send` / `inbox` / `status` are retired
 
@@ -358,7 +405,7 @@ arrives as a header and never on a query string, and the stream reuses
 it. Rename, do not delete.
 
 **Verify:** not written.
-**Status:** OPEN — blocks on R5 and R7
+**Status:** OPEN — blocks on R5, R7 and R10
 
 ---
 

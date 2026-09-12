@@ -1635,11 +1635,18 @@
     };
   }
 
-  // Fan-in, minimal and honest about where it lives. Whoever polls the
-  // mailbox hands the decoded messages here and the shell routes them by
-  // `app`; today that poller is Relay Chat, because the inbox loop is
-  // still its. When the packet layer grows its own poll, this is the
-  // seam that moves and the handlers do not.
+  // Fan-in. Two sources now, and the handlers below cannot tell them
+  // apart — which was the whole promise of this seam:
+  //
+  //   the ROUTER   — a `packet` event on /api/events, pushed the instant
+  //                  a peer's post lands (server.js, arrivals.js). No
+  //                  poll, no app in the middle.
+  //   the RING     — Relay Chat's inbox loop, still calling
+  //                  api.deliverPackets with whatever it caught.
+  //
+  // The ring's half is what made this fan-out parasitic: every app's
+  // api.onPacket depended on Relay Chat running, including apps that had
+  // nothing to do with chat. It goes when the ring does.
   //
   // A packet for an app nobody is listening to is DROPPED — not held,
   // not queued, not announced. There is no hold store yet, and inventing
@@ -2250,5 +2257,14 @@
       notifyJobSubscribers(null);
       renderActive();
     },
+    // One packet, pushed the moment it landed. deliverPackets takes a
+    // batch because the ring delivers batches; a router arrival is
+    // always one, and wrapping it here rather than teaching the fan-out
+    // about two shapes keeps the seam where the comment above says it is.
+    //
+    // No renderActive(). An arriving packet is not a repaint — the app
+    // that wanted it decides what to do, and an app that is not on
+    // screen must not drag the screen to it.
+    onPacket: function (message) { deliverPackets([message]); },
   });
 })();

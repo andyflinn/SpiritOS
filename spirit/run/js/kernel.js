@@ -814,6 +814,19 @@ if (isNode()) {
       source.addEventListener('job-deleted', function(e) {
         if (handlers.onDelete) handlers.onDelete(JSON.parse(e.data));
       });
+      // A PACKET FROM A PEER. `/api/events` is the node's event stream and
+      // jobs were only its first customer, which is why this belongs on
+      // the one connection the page already holds rather than on a second
+      // EventSource of its own — one per tab is the budget, and an app
+      // opening another multiplies the server's sseConnections by the
+      // number of apps in the page.
+      //
+      // Nothing is interpreted here. The message arrives already carrying
+      // its decoded envelope (packet.decorate, server side); the shell
+      // routes it by packet.app and this is a wire, not a reader.
+      source.addEventListener('packet', function(e) {
+        if (handlers.onPacket) handlers.onPacket(JSON.parse(e.data));
+      });
       return function unsubscribe() { source.close(); };
     },
     start: function(options) {

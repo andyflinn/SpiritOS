@@ -14,6 +14,13 @@ const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
 const relay = createRelay.createRelay();
 
+// THE ROUTER'S ARRIVAL SEAM. Declared up here because the two halves sit
+// far apart and both need it: handleSseConnection subscribes (a browser
+// opening a page), and the peerRouter built at the foot of this file
+// notes into it (a packet landing off the stream). Neither knows about
+// the other, which is the point of putting a seam between them.
+const arrivals = require('./arrivals').createArrivals();
+
 //console.log(JSON.stringify(spirit,null,2));
 
 // Checked before verifyStartupCwd below, on purpose — --help should work
@@ -351,6 +358,23 @@ function handleSseConnection(req, res) {
   };
   jobs.events.on('job-deleted', onJobDeleted);
 
+  // A PACKET FROM A PEER, arriving over the router. This connection is
+  // already open, already per-page and already torn down properly, so
+  // the alternative — a second EventSource for packets — would have
+  // bought nothing but another socket per tab.
+  //
+  // The route is named `/api/events` and not `/api/jobs/events` for
+  // exactly this reason: it is the node's event stream, and jobs were
+  // only its first customer.
+  //
+  // Nothing is filtered here. peerPost's front door decided who may be
+  // heard before this was ever called, and the shell decides which app
+  // wants it; a third opinion in the middle would be a third thing to
+  // get wrong.
+  const offArrival = arrivals.subscribe((message) => {
+    res.write('event: packet\ndata: ' + JSON.stringify(message) + '\n\n');
+  });
+
   const heartbeat = setInterval(() => {
     res.write(':\n\n');
   }, 20000);
@@ -366,6 +390,10 @@ function handleSseConnection(req, res) {
     clearInterval(heartbeat);
     jobs.events.off('job-updated', onJobUpdated);
     jobs.events.off('job-deleted', onJobDeleted);
+    // Same reason the heartbeat is cleared, and the same failure if it
+    // is not: a subscriber that outlives its socket writes packets into
+    // a dead response for ever, and holds the message in memory to do it.
+    offArrival();
   }
   req.on('close', teardown);
   req.on('error', teardown);
@@ -1403,6 +1431,13 @@ if (!relayMode) {
     remember: function (from, verdict) {
       return require('./hub').remember(ROOT_DIR, from, verdict);
     },
+    // AND WHERE AN ADMITTED PACKET GOES. The hook has existed since the
+    // router landed and had no caller but a test, so until 2026-09-13 a
+    // peer's packet was admitted, logged, receipted and dropped — which
+    // is the whole reason chat still polled a ring. See arrivals.js,
+    // including what it deliberately does NOT do about a packet that
+    // arrives while no browser is open.
+    onArrival: arrivals.note,
     traffic: require('./trafficLog').createTrafficLog({
       rootDir: ROOT_DIR,
       relayMode: relayMode,

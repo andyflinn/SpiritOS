@@ -595,17 +595,13 @@ function holdFromInbox(rootDir, messages, relayUrl) {
 //
 // The message is copied rather than edited: `text` stays exactly what the
 // mailbox stored, because that is what was signed.
+// Moved into packet.js on 2026-09-13 and kept here as the name the inbox
+// path and spirit/test/packet.js already call. The router's arrival seam
+// (arrivals.js) needs the identical shape, and two transports each
+// building `message.packet` would be one edit away from handing apps two
+// different shapes depending on which road a line travelled.
 function decorateWithPacket(message) {
-  var decoded = packet.decode(message && message.text);
-  var out = {};
-  Object.keys(message || {}).forEach(function (key) { out[key] = message[key]; });
-  out.packet = {
-    legacy: !!decoded.legacy,
-    app: decoded.app,
-    id: decoded.id || null,
-    body: decoded.body,
-  };
-  return out;
+  return packet.decorate(message);
 }
 
 // One delivered batch, counted. Packet 7, and the rules are Grok's:
