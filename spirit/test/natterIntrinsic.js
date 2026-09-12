@@ -3256,132 +3256,123 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
   }
 }
 
-test.subHeading('The device panel asks the SHELL whether it is on screen');
+test.subHeading('The device panel holds no live fact, so nothing watches it');
 
-// READ FROM app/natterDetails NOW. The panel left the list and became a
+// READ FROM app/natterDetails. The panel left the list and became a
 // dialog, and these checks followed it — a test that stays behind when
 // its subject moves passes against a file that no longer has the
 // behaviour, which is the loudest kind of quiet.
+//
+// WHAT THEY GUARD CHANGED ON 2026-09-12. They used to hold a poll
+// honest: that it asked the shell whether this screen was on top, that
+// render() restarted it, that its heartbeat stopped for
+// prefers-reduced-motion. Every one of those was a rule about a two-
+// second timer keeping one sentence true — "listening, last pass 12s
+// ago" — and the timer it described is gone with the poll it reported on.
+//
+// Andy: "no backstop, no 'listening mode' on the personal node. the
+// ability to setup one-device-for-all-peers just IS."
+//
+// So they guard the opposite now, and that is the point of writing them
+// down: none of what was removed would go red on its own if it came back.
+// A toggle, a mood, a repaint — each would simply be a panel doing more
+// than it needs to, which is exactly what nobody notices.
 {
   const natter = readRun('app/natterDetails/natterDetails.js');
 
-  // Panes are hidden and never destroyed, so the panel's element still
-  // answers querySelector long after Natter stopped being the active app.
-  // Without asking, its poll runs for the life of the page.
-  //
-  // Anchored on the call with its parens and the negation it is used in,
-  // not on the bare name: the file explains this decision in prose above
-  // the code, and a check a comment can satisfy guards nothing.
-  if (/!ndApi\.isVisible\(\)\)/.test(natter)) {
-    test.check('the device watch stops when the mailbox screen is not the active app');
+  // NOTHING REPEATS. The panel shows a password and an address; neither
+  // can change while somebody reads them, so there is nothing for a timer
+  // to keep true. Anchored on the calls, because the file explains the
+  // deletion in prose and a check a comment can satisfy guards nothing.
+  const repeats = /setInterval\s*\(/.test(natter) || /setTimeout\s*\(/.test(natter);
+  if (!repeats) {
+    test.check('no timer of any kind — the dialog asks the hub once and stops');
   } else {
-    test.fail('natterDetails.js never asks api.isVisible() in the watch');
+    test.fail('natterDetails.js still schedules something');
   }
 
-  // The wrong question, twice over: it says nothing about which app is on
-  // screen, and it goes false the moment somebody opens the relay's
-  // /device page in another tab — the one moment this panel must not go
-  // quiet (design/relay/DEVICE-PANEL.md section 7).
-  //
-  // Anchored on USE, not on the name. natter.js names both in prose to
-  // explain why it does not call them, and a comment saying why a thing
-  // is not done is the opposite of the thing this guards against — the
-  // same lesson the /api/hub/peer check learned.
-  const readsBrowserVisibility =
-    /document\.visibilityState\s*[=!)]/.test(natter) ||
-    /addEventListener\(\s*['"]visibilitychange/.test(natter);
-  if (!readsBrowserVisibility) {
-    test.check('and never asks the BROWSER, which would go false at the worst moment');
+  // And nothing needs asking on the way back onto the screen, so the one
+  // hook the shell offers for that is not implemented at all. An empty
+  // render() would be the same thing said less clearly.
+  if (!/\brender:\s*function/.test(natter) && !/isVisible\(/.test(natter)) {
+    test.check('and no render hook and no visibility question, because neither has work to do');
   } else {
-    test.fail('natterDetails.js reaches for document visibility');
+    test.fail('natterDetails.js still has a render hook or a visibility check');
   }
 
-  // render() is the only hook the shell gives an app on the way back onto
-  // the screen. It was an empty function; a poll that stops and cannot
-  // start again is a panel that goes stale until the row is reopened.
-  const render = natter.slice(natter.indexOf('  render: function ()'), 400 + natter.indexOf('  render: function ()'));
-  if (/ndWatch\(/.test(render)) {
-    test.check('and render() starts it again, so coming back is enough');
-  } else {
-    test.fail('render() does not restart the device watch: ' + render.slice(0, 200));
-  }
-}
-
-test.subHeading('The device panel is one control, and says what happened');
-
-{
-  const natter = readRun('app/natterDetails/natterDetails.js');
+  // THE WINDOW, AND EVERY TRACE OF IT. This is the check that stops it
+  // growing back: a switch, a mood, a report of the last pass. None of
+  // these would fail on their own — they would just be a panel with a
+  // state a person can get wrong.
   const ICON = spirit.core.const.ICON;
+  const fossils = [
+    ['a listening switch', /data-device-toggle|device-listen|setListening/],
+    ['a mood', /data-mood|ndDeviceMood/],
+    ['a report of the last pass', /lastEvent|ndDeviceBeat/],
+    ['the start\/stop glyphs', /RED_CIRCLE|BLUE_CIRCLE/],
+  ].filter(function (f) { return f[1].test(natter); });
+  if (!fossils.length && ICON.STOP !== ICON.RED_CIRCLE) {
+    test.check('and no switch, no mood, no last-pass line — there is no state to show');
+  } else {
+    test.fail('the window grew back: ' + fossils.map(function (f) { return f[0]; }).join(', '));
+  }
 
-  // One control, start/stop. There were two — Copy and "Listening off" —
-  // and the second was chrome nobody could act on, because copying was
-  // what actually opened the window. Andy: "I never realized that I had
-  // to start listening with the listening button."
+  // ONE CONTROL, and it copies. There were two once — Copy and
+  // "Listening off" — and the second was chrome nobody could act on,
+  // because copying was what actually opened the window. Andy: "I never
+  // realized that I had to start listening with the listening button."
   //
   // Counted at the delegation rather than in the markup: the markup can
-  // carry an attribute that nothing listens for, but a second branch here
-  // is a second button in the hand.
-  const branches = natter.match(/closest\(\s*['"]\[data-device-/g) || [];
-  if (branches.length === 1) {
-    test.check('one device control, so there is no second press to forget');
+  // carry a class nothing listens for, but a branch here is a button in
+  // the hand.
+  const branches = natter.match(/closest\(\s*['"]\.natter-dev-/g) || [];
+  if (branches.length === 1 && /navigator\.clipboard/.test(natter)) {
+    test.check('one control in the whole panel, and pressing it copies the password');
   } else {
     test.fail(branches.length + ' device click branches, expected 1');
   }
 
-  // The bubble tells the reader to press "the red button". ICON.STOP is
-  // the ORANGE circle — it drifted there, last-wins, and the aliases were
-  // kept only so old callers rendered the same (DEVICE-PANEL.md §5). So
-  // the check is against the GLYPH the table actually holds, not against
-  // a name that could drift again underneath it.
-  const saysRed = /red button/.test(natter);
-  const usesRed = natter.indexOf('ndIcon.RED_CIRCLE') !== -1;
-  const usesBlue = natter.indexOf('ndIcon.BLUE_CIRCLE') !== -1;
-  if (saysRed && usesRed && usesBlue && ICON.STOP !== ICON.RED_CIRCLE) {
-    test.check('and its colours are the ones the copy names — ICON.STOP is orange, so it is not used');
+  // AND IT SAYS WHEN IT FAILED. A copy button that fails quietly sends
+  // somebody to the other device to paste whatever was there before.
+  const copyAt = natter.indexOf('function ndDeviceCopy(');
+  const copyBody = copyAt === -1 ? '' : natter.slice(copyAt, natter.indexOf('\n}', copyAt));
+  if (/could not copy/.test(copyBody) && /copied/.test(copyBody)) {
+    test.check('and says which of the two happened, rather than going quiet');
   } else {
-    test.fail('red=' + saysRed + ' RED_CIRCLE=' + usesRed + ' BLUE_CIRCLE=' + usesBlue +
-      ' ICON.STOP=' + ICON.STOP);
+    test.fail('ndDeviceCopy reports nothing: ' + copyBody.slice(0, 200));
   }
 
-  // The node learns of an enrolment within a pass and the panel used to
-  // say nothing, so the only way to answer "did it work?" was to switch
-  // devices and try. Anchored on the branch that renders it, not on the
-  // word: prose about success would satisfy a looser check.
-  const showsSuccess = /did === 'installed'/.test(natter) && /case 'added':/.test(natter);
-  if (showsSuccess) {
-    test.check('a finished enrolment gets said out loud, in the panel that started it');
+  // THE ADDRESS IS HIDDEN, AND BY A NUMBER SOMEBODY CAN TURN. Andy asked
+  // for exactly that — the URL hidden, its length on the display
+  // controllable — so the check is that the shortening is governed by a
+  // named constant rather than by a literal buried in a slice.
+  const shortAt = natter.indexOf('function ndShortUrl(');
+  const shortBody = shortAt === -1 ? '' : natter.slice(shortAt, natter.indexOf('\n}', shortAt));
+  if (/var ND_LINK_CHARS = \d+;/.test(natter) && /ND_LINK_CHARS/.test(shortBody) &&
+      !/\bslice\(0,\s*\d/.test(shortBody)) {
+    test.check('the displayed length is one named constant, not a number inside the cut');
   } else {
-    test.fail('natterDetails.js never turns lastEvent.installed into a bubble state');
+    test.fail('ndShortUrl: ' + shortBody.slice(0, 200));
   }
 
-  // Both failures the channel already carries. `refused` is the one worth
-  // distinguishing — the mailbox answered and would not have us, usually
-  // an older relay — and it is invisible unless the panel prints it.
-  const showsTrouble = /'refused'/.test(natter) && /'unreachable'/.test(natter) &&
-    /case 'trouble':/.test(natter);
-  if (showsTrouble) {
-    test.check('and so do refused and unreachable, which are different silences');
+  // And what is hidden is only the DISPLAY. The href carries the whole
+  // address: a key in a URL is a locator, not a credential — every one of
+  // them is public at /api/relay/who already — so shortening it is about
+  // the panel being readable, and a link that went to the short form
+  // would go nowhere.
+  if (/href="' \+ full \+ '"/.test(natter) && /title="' \+ full \+ '"/.test(natter)) {
+    test.check('while the link itself, and its title, carry the address whole');
   } else {
-    test.fail('natterDetails.js does not distinguish the failure states in the panel');
+    test.fail('the link does not use the full address');
   }
 
-  // Starting is the point, and the copy rides along (DEVICE-PANEL.md §2).
-  // The old code refused to open the window when the clipboard failed.
-  // Under one control that leaves the person with no way to start at all,
-  // which is the failure this panel exists to prevent — so the window
-  // opens and the copy reports itself.
-  //
-  // Anchored on the shape: a settled pair (onOk, onFail) and THEN the
-  // start, so the start cannot be reached only on success.
-  const startAt = natter.indexOf('function ndDeviceStart(');
-  const startBody = startAt === -1 ? '' : natter.slice(startAt, natter.indexOf('\n}', startAt));
-  const startsAnyway =
-    /\}\)\.then\(function \(\) \{[\s\S]*ndSetListening\(\s*true/.test(startBody) &&
-    !/\.catch\(/.test(startBody);
-  if (startsAnyway) {
-    test.check('and a refused clipboard still opens the window, then says the copy failed');
+  // THE TWO REMINDERS, which are Andy's, and are both about the OTHER
+  // device — which is why they are the ones forgotten at the moment they
+  // matter.
+  if (/bookmark that page/i.test(natter) && /password manager/i.test(natter)) {
+    test.check('and the panel says to bookmark that page and to save the password');
   } else {
-    test.fail('ndDeviceStart gates listening on the clipboard: ' + startBody.slice(0, 300));
+    test.fail('a reminder is missing from the panel');
   }
 
   // target="_new" is not a standard keyword, and the tab must not get a
@@ -3389,10 +3380,10 @@ test.subHeading('The device panel is one control, and says what happened');
   //
   // Comments stripped first, because the file names _new in prose to say
   // why it is not used — and a check its own explanation can fail is the
-  // /api/hub/peer trap wearing the other face. A line comment is the only
-  // place either spelling appears outside markup here.
+  // /api/hub/peer trap wearing the other face.
   const code = natter.replace(/(^|[^:])\/\/.*$/gm, '$1');
-  if (/target="_blank" rel="noopener"/.test(code) && !/target="?_new/.test(code)) {
+  if (/target="_blank"' \+\s*\n?\s*' rel="noopener"|target="_blank" rel="noopener"/.test(code) &&
+      !/target="?_new/.test(code)) {
     test.check('and the link out opens a tab that cannot reach back');
   } else {
     test.fail('device link target is wrong');
@@ -3402,25 +3393,37 @@ test.subHeading('The device panel is one control, and says what happened');
 {
   const css = readRun('index.html');
 
-  // A heartbeat on the icon, never on the sentence: a pulsing line of
-  // text is harder to read, a pulsing dot is a pulse.
-  const beats = /\.natter-dev-toggle\.beating\s*\{[^}]*animation:/.test(css) &&
-    /@keyframes natter-dev-beat/.test(css);
-  const saysNothingPulses = !/\.natter-dev-say[^{]*\{[^}]*animation:/.test(css);
-  if (beats && saysNothingPulses) {
-    test.check('the animation is on the icon and not on the words beside it');
+  // THE STYLES WENT WITH THE CONTROL. A rule for an element nothing
+  // renders is the cheapest kind of fossil and the hardest to date — it
+  // reads as a decision until somebody checks whether the class still
+  // exists.
+  const gone = ['.natter-dev-toggle', 'natter-dev-beat', '.natter-dev-say', '.natter-dev-loud']
+    .filter(function (sel) { return css.indexOf(sel) !== -1; });
+  if (!gone.length) {
+    test.check('and no CSS is left for a button, a heartbeat or a mood that nothing renders');
   } else {
-    test.fail('beats=' + beats + ' sentence-is-still=' + saysNothingPulses);
+    test.fail('orphaned device styles: ' + gone.join(', '));
   }
 
-  // And it is given up on request. The state is written out in words
-  // regardless, so nothing is lost by switching it off.
-  const reduced = css.slice(css.indexOf('prefers-reduced-motion'));
-  if (css.indexOf('prefers-reduced-motion') !== -1 &&
-      /\.natter-dev-toggle\.beating\s*\{\s*animation:\s*none/.test(reduced)) {
-    test.check('and it stops for anyone who asked motion to stop');
+  // NOTHING IN THIS PANEL MOVES, which is why there is no
+  // prefers-reduced-motion rule to check any more. The heartbeat said "the
+  // poll is alive"; a panel with no state to report has nothing to say by
+  // pulsing.
+  const devCss = css.slice(css.indexOf("Natter's device panel"));
+  const panelCss = devCss.slice(0, devCss.indexOf('</style>'));
+  if (!/animation:/.test(panelCss)) {
+    test.check('and nothing in the panel animates, because nothing in it is live');
   } else {
-    test.fail('the device heartbeat ignores prefers-reduced-motion');
+    test.fail('the device panel still animates something');
+  }
+
+  // The address is held to one line by the stylesheet as well as by the
+  // markup. ndShortUrl already elides it; this stops a long one from
+  // pushing the row apart on a narrow screen if the constant is raised.
+  if (/\.natter-dev-link\s*\{[^}]*text-overflow:\s*ellipsis/.test(css)) {
+    test.check('and the address is held to one line however long the constant is set');
+  } else {
+    test.fail('.natter-dev-link can grow the row');
   }
 }
 

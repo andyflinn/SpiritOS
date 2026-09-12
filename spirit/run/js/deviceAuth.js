@@ -3,18 +3,17 @@
 // spirit/run/js/deviceAuth.js
 // device.json is PERSONAL NODE ONLY — the password lives there and
 // nowhere else. It is never written on a --relay and never put in
-// mailbox.json.
+// routingTable.json.
 //
-// The MODULE is loaded on a relay too, for the two pure functions a
-// mailbox needs: keysForName (is this key the owner's?) and the message
-// bytes a signature is made over. Those carry no secret. The distinction
-// matters because "personal node only" read as a claim about the module
-// would make the relay's own require() look like a mistake.
+// The MODULE is loaded on a relay too, for the two pure functions a row
+// needs: keysForName (is this key the owner's?) and the message bytes a
+// signature is made over. Those carry no secret. The distinction matters
+// because "personal node only" read as a claim about the module would
+// make the relay's own require() look like a mistake.
 //
 // So this module:
 //   - mints / stores the door password            (personal node)
 //   - remembers the current device public key     (personal node)
-//   - remembers whether the window is open        (personal node)
 //   - names the bytes the house key must sign     (both)
 //   - answers which keys are one name's           (both)
 //
@@ -62,11 +61,29 @@ function devicePath(rootDir) {
   return path.join(rootDir, 'relay-state', 'device.json');
 }
 
+// THERE IS NO WINDOW ANY MORE (Andy: "no backstop, no listening mode on
+// the personal node. the ability to setup one-device-for-all-peers just
+// IS").
+//
+// `listening` was a second gate behind the password, and it existed for
+// a cost that no longer exists. While enrolment depended on a poll, an
+// open window meant a timer on every node forever — "a timer whose every
+// pass is a no-op is noise on every fake peer in the lab". Nothing polls
+// now: an offer arrives on a stream the node is already holding, and an
+// idle node costs nothing at all.
+//
+// What the gate bought was thin, and worth stating rather than mourned.
+// It never protected the password; it only meant an attacker holding one
+// had to catch a window somebody had opened — and somebody who holds the
+// password can simply wait for the next one. What remains is the
+// password itself, and the fact that there is ONE slot: a new enrolment
+// displaces the old device, so an intrusion is visible rather than
+// silent.
+//
+// A file written by older code still has the field. It is read as
+// nothing and dropped on the next write.
 function emptyDoc() {
-  // listening true for the same reason load() defaults it that way — and
-  // inert here regardless, since there is no password to open anything
-  // with until ensurePassword has run.
-  return { password: null, devicePublicKey: null, listening: true };
+  return { password: null, devicePublicKey: null };
 }
 
 function load(rootDir) {
@@ -78,17 +95,6 @@ function load(rootDir) {
       devicePublicKey: typeof parsed.devicePublicKey === 'string'
         ? parsed.devicePublicKey
         : null,
-      // Open unless the file says otherwise. A door that is shut unless
-      // its owner predicted needing it fails the rule this design exists
-      // for — being locked out of one's own node while away, with the
-      // only remedy a journey (DEVICE-PANEL.md section 7). `false` is
-      // written down and honoured; absent means nobody has decided, and
-      // the useful default is the one that cannot strand anybody.
-      //
-      // It costs nothing on a node that has never been configured: the
-      // door needs a password to open, and resumeListening will not spin
-      // a timer for a node that has none.
-      listening: parsed.listening !== false
     };
   } catch (e) {
     return emptyDoc();
@@ -102,7 +108,6 @@ function save(rootDir, doc) {
   var body = {
     password: doc && doc.password ? doc.password : null,
     devicePublicKey: doc && doc.devicePublicKey ? doc.devicePublicKey : null,
-    listening: !!(doc && doc.listening)
   };
   fs.writeFileSync(tmp, JSON.stringify(body, null, 2));
   fs.renameSync(tmp, file);
@@ -137,62 +142,26 @@ function passwordsEqual(stored, given) {
   }
 }
 
-// The window. Closed, the password is inert: nothing on the personal
-// node is asking any mailbox what is waiting, so a stolen password buys
-// a held POST that expires unanswered.
-function setListening(rootDir, on) {
-  var doc = ensurePassword(rootDir);
-  doc.listening = !!on;
-  save(rootDir, doc);
-  return load(rootDir);
-}
-
 // House key signs this to install a device on a mailbox. A status
 // signature must not verify as this message.
 function setDeviceMessage(devicePublicKey) {
   return 'set-device\n' + String(devicePublicKey || '');
 }
 
-// House key signs this to ask a mailbox what is waiting, and to answer
-// it. Its own bytes for the same reason set-device has its own: the
-// owner signs `status` constantly, for every census, and a captured one
-// must not be replayable as "hand me the pending device request".
+// THERE IS NO `device-take` MESSAGE ANY MORE. It signed two verbs that no
+// longer exist — "hand me the pending device request" and "here is my
+// answer to it" — both of which were reads and writes against a RAM slot
+// on the relay, reached by a poll.
 //
-// Reading the slot is as much a capability as writing to it — what it
-// returns is a password somebody is trying, and that is not a thing to
-// hand to whoever asks.
+// Nothing is parked to be fetched now, so nothing has to be authorised to
+// fetch it: the offer is posted to the node on the stream it is already
+// holding, and the node's answer comes back on the same round trip. The
+// authority that used to live in this signature lives in that stream —
+// only the node holding it receives the offer at all.
 //
-// The minute is the same device relayAuth.inboxMessage uses, and it is
-// here for the same reason: a signature with no expiry is a standing
-// licence, and this one polls every two seconds while a window is open,
-// so it is written down over and over by whatever logs requests. Now a
-// captured one is worthless before anybody has finished reading the line
-// it landed in. `unix-minute`, decimal and unpadded.
-function deviceTakeMessage(name, atMs) {
-  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
-  return 'device-take\n' + String(name || '') + '\n' + minute;
-}
-
-// Previous, current and next, exactly as inboxSignatureOk: enough for two
-// clocks a minute apart, in both directions, because the SIGNER may be
-// the one running fast.
-//
-// relayAuth is required HERE rather than at the top of the file. It
-// requires this module (for keysForName and parseKeyRow), and it assigns
-// module.exports at its end — so a top-level require from this side would
-// capture the half-built object and never see the finished one. Asked for
-// at call time, the cache hands back the complete module.
-function deviceTakeSignatureOk(publicKey, name, sig, atMs) {
-  if (!publicKey || !sig) return false;
-  var relayAuth = require('./relayAuth');
-  var now = atMs == null ? Date.now() : atMs;
-  for (var step = -1; step <= 1; step += 1) {
-    if (relayAuth.verify(publicKey, deviceTakeMessage(name, now + step * 60000), sig)) {
-      return true;
-    }
-  }
-  return false;
-}
+// The minute-scoped shape it used survives where it is still needed, in
+// relayAuth.inboxMessage / inboxSignatureOk, and inboxSig.js is where it
+// is proven.
 
 // allow.byName stays the owner string. Extra device key is sibling field.
 function keysForName(allow, name) {
@@ -225,11 +194,8 @@ module.exports = {
   generatePassword: generatePassword,
   ensurePassword: ensurePassword,
   setDevicePublicKey: setDevicePublicKey,
-  setListening: setListening,
   passwordsEqual: passwordsEqual,
   setDeviceMessage: setDeviceMessage,
-  deviceTakeMessage: deviceTakeMessage,
-  deviceTakeSignatureOk: deviceTakeSignatureOk,
   keysForName: keysForName,
   parseKeyRow: parseKeyRow
 };

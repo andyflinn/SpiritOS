@@ -221,23 +221,27 @@ function handleRelayInvite(req, res) {
 
 // One answer for every way this can fail, and it says nothing.
 //
-// Wrong password, no window open, somebody else mid-handshake, the wait
-// expiring — all of it comes back as `not now`. A form that distinguished
-// them would answer questions nobody standing at it is entitled to ask:
-// "is this the right password but the wrong moment" is exactly what a
-// caller with the wrong password wants to know.
+// Wrong password, a node that is not connected, a node that took the
+// offer and went quiet — all of it comes back as `not now`. A form that
+// distinguished them would answer questions nobody standing at it is
+// entitled to ask: "is this the right password but the wrong moment" is
+// exactly what a caller with the wrong password wants to know.
 //
-// The status is the queue's, so a rate limit still reads as 429; the
-// STRING never varies (DEVICE-CYCLE3.md).
+// The STATUS still varies, and only for the rate limit — 429, which the
+// page waits out rather than gives up on. The STRING never varies
+// (DEVICE-CYCLE3.md).
 function deviceRefusal(res, status) {
   res.writeHead(status || 403, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify({ error: 'not now' }));
 }
 
 // The browser's half. This request is HELD — the relay does not answer
-// until the personal node has taken the offer and replied, or the wait
-// runs out. Nothing here reads the password: it goes into RAM and the
-// node compares it (DEVICE-CYCLE2.md).
+// until the personal node has been posted to and replied, or the wait
+// runs out. It used to be held past a poll; it is now held for a round
+// trip, which is under a second when the node is there.
+//
+// Nothing here reads the password: it is carried to the node and the node
+// compares it (DEVICE-CYCLE2.md).
 function handleDeviceOffer(req, res) {
   readJsonBody(req).then(function (body) {
     // The name may be absent, and is on the bare /device page: relay.js
@@ -288,43 +292,6 @@ function handleDeviceOffer(req, res) {
   });
 }
 
-// The personal node's half, both ends gated by the owner's house key
-// inside relay.devicePending / relay.deviceAnswer.
-//
-// The proof must arrive as a HEADER. This route is polled every two
-// seconds for as long as a window is open, and a query string is written
-// to every access log the request passes through — so a signature there
-// is a read credential sitting in a log file, and what this one unlocks
-// is the pending {password, devicePublicKey}. That is the same rule the
-// inbox route already enforces, through the same function, which is why
-// it is reused rather than restated.
-//
-// A request that puts `sig` on the query is refused even when the header
-// is perfectly good: a signature that has been in a URL is already in a
-// log whatever happens next. `name` may stay on the query — it is the
-// mailbox being asked for, not the permission to read it.
-//
-// The refusal is `not now` like every other device answer. The inbox
-// route says something more specific because its caller is ours to fix;
-// this one is reachable from the internet and tells it nothing.
-function handleDevicePending(req, res, url) {
-  const from = createRelay.inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
-  if (!from.ok) {
-    deviceRefusal(res, from.status);
-    return;
-  }
-  const result = relay.devicePending(
-    url.searchParams.get('name') || '',
-    from.sig
-  );
-  if (result && result.ok === false) {
-    deviceRefusal(res, result.status);
-    return;
-  }
-  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(result || {}));
-}
-
 function handleSetDevice(req, res) {
   readJsonBody(req).then(function (body) {
     const result = relay.setDevice(
@@ -342,25 +309,6 @@ function handleSetDevice(req, res) {
     deviceRefusal(res, 403);
   });
 }
-
-function handleDeviceAnswer(req, res) {
-  readJsonBody(req).then(function (body) {
-    const result = relay.deviceAnswer(
-      body && body.name,
-      body && body.accepted,
-      body && body.sig
-    );
-    if (!result || !result.ok) {
-      deviceRefusal(res, result && result.status);
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: true }));
-  }).catch(function () {
-    deviceRefusal(res, 403);
-  });
-}
-
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
     const result = relay.claim(
@@ -732,10 +680,6 @@ function isRelayPublicPath(method, pathname) {
   // /api/relay/who, and holding one grants nothing.
   if (method === 'GET' && devicePageKey(pathname)) return true;
   if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox' || pathname === '/api/relay/status')) return true;
-  // Public in the same sense the rest is: reachable from the internet,
-  // and gated inside relay.js. device-pending answers the owner's house
-  // signature and nobody else's.
-  if (method === 'GET' && pathname === '/api/relay/device-pending') return true;
   // The presence wire. Public in the same sense the rest is: reachable
   // from the internet, and gated inside relay.streamOpen, which refuses
   // an identity this box does not hold before it allocates anything.
@@ -746,7 +690,7 @@ function isRelayPublicPath(method, pathname) {
   // cannot identify is one you cannot harden. What it gives away is a
   // commit id for code the repository already holds.
   if (method === 'GET' && pathname === '/api/version') return true;
-  if (method === 'POST' && (pathname === '/api/relay/device' || pathname === '/api/relay/set-device' || pathname === '/api/relay/device-answer')) return true;
+  if (method === 'POST' && (pathname === '/api/relay/device' || pathname === '/api/relay/set-device')) return true;
   // /api/relay/invite is public in the same sense claim and send are:
   // reachable from the internet, and gated by the owner's signature
   // inside relay.mint rather than by who can reach the socket.
@@ -931,34 +875,6 @@ const server = http.createServer((req, res) => {
       startedAt: STARTED_AT,
       relay: relayMode,
     }));
-    return;
-  }
-
-  if (req.method === 'GET' && pathname === '/api/relay/device-pending') {
-    handleDevicePending(req, res, url);
-    return;
-  }
-
-  // The bare /device is no longer a route on a relay — see
-  // isRelayPublicPath. Over loopback the file is still reachable at
-  // /device.html, because fsPath would serve it anyway and pretending
-  // otherwise would be theatre; a personal node has no mailbox for a
-  // handheld to enrol against, so there is nothing there to protect.
-
-  // The same file for everybody. The key lives only in the URL, and the
-  // page reads it off its own address — nothing is templated and nothing
-  // is generated per person.
-  //
-  // An identity nobody holds is a 404 here rather than a working-looking
-  // form that can never succeed. It leaks nothing: /api/relay/who already
-  // hands out every key to anyone who asks.
-  if (relayMode && req.method === 'GET' && devicePageKey(pathname)) {
-    if (!relay.deviceIdentityPublic(devicePageKey(pathname))) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('no such identity here');
-      return;
-    }
-    sendFile(res, path.join(ROOT_DIR, 'device.html'));
     return;
   }
 
@@ -1172,32 +1088,11 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/relay/device-answer') {
-      handleDeviceAnswer(req, res);
-      return;
-    }
-
     if (pathname === '/api/hub/invite') {
       hub.handleInvite(req, res, readJsonBody);
       return;
     }
 
-    if (pathname === '/api/hub/device-listen') {
-      hub.handleDeviceListen(req, res, readJsonBody);
-      return;
-    }
-
-    // A human confirmed one of those candidates by its key tail.
-    // SPIRIT-POST: ask a peer something as though they were a server.
-    //
-    // The app never signs, never learns what a relay is, and cannot forge
-    // a sender — this node holds the key. It says WHO, not where: a peer
-    // reachable on two relays is reachable, and picking which one is not
-    // an app's problem.
-    //
-    // Held open while the round trip happens, which is safe precisely
-    // here and nowhere else: loopback has no proxy to time it out. The
-    // relay itself never holds anything (ROUTER.md).
     if (pathname === '/api/hub/post') {
       readJsonBody(req).then(function (body) {
         if (!peerRouter || !presence) {
@@ -1389,7 +1284,9 @@ if (!relayMode) {
   //
   // Personal mode only, like the sweep above. A --relay has no device of
   // its own to enrol and must never poll anybody.
-  hub.resumeListening().catch(() => {});
+  // NOTHING TO RESUME. This asked the node to reopen a device window
+  // that had been left open across a restart — the window is gone, and
+  // an offer now arrives on a stream rather than being waited for.
 
   // Presence: one held connection to every relay this node holds a ROW
   // on — not only the ones it owns, since B2 gave every identity its own

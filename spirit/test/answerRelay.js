@@ -64,12 +64,14 @@ function fakeRelay(opts) {
   };
 }
 
-// A node with a device window open and a password of its own.
-function nodeWithWindow() {
+// A node with an identity and a password of its own, which is all there
+// is to be ready now. There was a `listening` flag in front of the
+// password and it is gone: a node that has a password can be enrolled
+// to, always.
+function nodeWithPassword() {
   const home = world.tmpHome('answer');
   auth.saveIdentity(home, auth.generateIdentity('andy'));
   deviceAuth.ensurePassword(home);
-  deviceAuth.setListening(home, true);
   return { home: home, password: deviceAuth.load(home).password };
 }
 
@@ -94,7 +96,7 @@ async function run() {
   test.subHeading('A real offer, from the relay it arrived on');
 
   {
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
       rootDir: node.home,
@@ -140,7 +142,7 @@ async function run() {
   test.subHeading('THE CHECK: from must be the key of the relay it came on');
 
   {
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
       rootDir: node.home,
@@ -172,7 +174,7 @@ async function run() {
     // THE SUBTLE ONE. The key is right, but it belongs to a DIFFERENT
     // relay — so a node on two relays cannot have one of them enrol
     // devices in the other's name.
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey, otherKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
       rootDir: node.home,
@@ -194,7 +196,7 @@ async function run() {
   test.subHeading('What is refused, and what a refusal costs');
 
   {
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
       rootDir: node.home, request: relay.request,
@@ -220,31 +222,31 @@ async function run() {
   }
 
   {
-    // A SHUT WINDOW DECLINES THE SAME WAY. The window still decides, and
-    // it decides identically whether the node was asked or told.
-    const home = world.tmpHome('answer-shut');
+    // A NODE WITH NO PASSWORD DECLINES, and it is the last state that
+    // still declines before comparing anything. The window used to be
+    // that state; what is left is the honest version of it — there is
+    // nothing to compare an offer against, so there is no way to say yes.
+    const home = world.tmpHome('answer-nopw');
     auth.saveIdentity(home, auth.generateIdentity('andy'));
-    deviceAuth.ensurePassword(home);
-    deviceAuth.setListening(home, false);
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
       rootDir: home, request: relay.request,
       urls: function () { return [RELAY_URL]; },
     });
     const said = JSON.parse(await A.answer(
-      arriving(relayId.publicKey, offer(deviceAuth.load(home).password, phone.publicKey))
+      arriving(relayId.publicKey, offer('a'.repeat(deviceAuth.PASSWORD_HEX_LEN), phone.publicKey))
     ));
     if (said.accepted === false) {
-      test.check('a node that is not listening declines, however it was asked');
+      test.check('a node with no password of its own declines, however it was asked');
     } else {
-      test.fail('a shut window enrolled: ' + JSON.stringify(said));
+      test.fail('a passwordless node enrolled: ' + JSON.stringify(said));
     }
   }
 
   {
     // A RELAY THAT TAKES NOTHING IS NOT A YES. If the install fails
     // everywhere, the browser must not be told it has a device.
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey, installFails: true });
     const A = answerRelay.createAnswerer({
       rootDir: node.home, request: relay.request,
@@ -263,7 +265,7 @@ async function run() {
   test.subHeading('Everything else on the wire is somebody else\'s');
 
   {
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
       rootDir: node.home, request: relay.request,
@@ -289,7 +291,7 @@ async function run() {
     // A CENSUS THAT CANNOT BE REACHED FAILS CLOSED. An unknown relay key
     // matches nothing, so the request is treated as a stranger's rather
     // than acted on — the safe direction for a lookup that can fail.
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey, censusFails: true });
     const A = answerRelay.createAnswerer({
       rootDir: node.home, request: relay.request,
@@ -307,7 +309,7 @@ async function run() {
     // ASKED ONCE. A relay's key is made on its first --relay boot and
     // does not change while it is the same relay, so a census per
     // enrolment would be a round trip spent on a constant.
-    const node = nodeWithWindow();
+    const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
       rootDir: node.home, request: relay.request,

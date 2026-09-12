@@ -22,7 +22,6 @@ const fs = require('fs');
 const path = require('path');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
-const deviceAuth = require('../run/js/deviceAuth');
 const scenario = require('./scenario');
 const { createRelay } = require('../run/js/relay');
 
@@ -252,10 +251,6 @@ function assemble(s) {
       stream: function (name) {
         const who = cast[name] || { id: owner, label: s.owner };
         return auth.sign(who.id.privateKey, auth.streamMessage(who.id.publicKey));
-      },
-      deviceTake: function (name) {
-        const who = cast[name] || { id: owner, label: s.owner };
-        return auth.sign(who.id.privateKey, deviceAuth.deviceTakeMessage(who.label));
       },
     },
   };

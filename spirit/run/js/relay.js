@@ -9,7 +9,6 @@ const relayConsole = require('./relayConsole');
 // module's answer whether it is read here or on the personal node
 // (DEVICE-CYCLE1.md).
 const deviceAuth = require('./deviceAuth');
-const deviceHandshake = require('./deviceHandshake');
 const presence = require('./presence');
 const routerTable = require('./router');
 // Once, at load, for the same reason server.js does it: the answer must
@@ -23,6 +22,27 @@ var MAX_MESSAGES = 200;
 // the table caps concurrent requests, and this caps what each one can
 // push through a socket.
 var MAX_ROUTED_TEXT = 16384;
+// WHAT THE ONE REFUSAL IS CALLED, and how long this relay will hold a
+// browser's POST while the node answers.
+//
+// Both came from deviceHandshake.js, which was the RAM slot and the
+// sixty-six seconds that had to outlast a sixty-second poll. There is no
+// poll: an answer arrives in a round trip — 365ms through spirit-3 — and
+// this is the backstop for a node that stops mid-exchange, not a window
+// anybody waits out.
+//
+// The word stays deliberately incurious. The route says `not now` to a
+// bad password, an unknown identity and a flood alike: it faces the
+// internet and owes it no detail.
+var DEVICE_REFUSAL = 'not now';
+var ROUTE_WAIT_MS = 15000;
+// Ten a minute per identity, which is what deviceHandshake.js allowed and
+// is still the right number: a person pressing a button spends one, and
+// the page itself no longer retries except on a 429. It is NAMED in the
+// refusal — the one thing this route ever says precisely — because it is
+// temporary and a page that knows it is rate-limited waits rather than
+// gives up. Everything else gets `not now`.
+var DEVICE_PER_MIN = 10;
 var MAX_TEXT = 1024;
 var NAME_RE = /^[A-Za-z0-9._-]{1,32}$/;
 var CLAIM_PER_MIN = 10;
@@ -105,19 +125,23 @@ function createRelay(rootDir) {
   var allow = auth.loadAllow(rootDir);
   var claimHits = Object.create(null);
   var sendHits = Object.create(null);
+  // Enrolment attempts, per identity being enrolled. The limit lived in
+  // deviceHandshake.js and came back here when that file went, because
+  // the thing it bounds did not go anywhere: /api/relay/device is a
+  // public POST carrying a password guess, and now every one of them
+  // costs a post to the node as well. Keyed by TARGET rather than by
+  // caller — the caller is whoever the internet sent, and what needs a
+  // ceiling is how often one person's node can be made to answer.
+  var deviceHits = Object.create(null);
   // Console messages are never stored, so they must not spend the ids
   // real mail is numbered with.
   var consoleSeq = 1;
 
-  // One in-RAM slot for a browser trying to become this owner's device.
-  // Nothing about it is persisted and nothing about it is checked here:
-  // the relay holds the POST body and hands it to the personal node,
-  // which owns the password and is the only thing that may compare it
-  // (DEVICE-CYCLE2.md). A mailbox that could check the password could
-  // also install a device without knowing one.
-  // Defaults, deliberately: the wait and the rate limit are the module's
-  // to state once. A test that needs a short wait builds its own queue.
-  var deviceQueue = deviceHandshake.createQueue();
+  // THE RAM SLOT IS GONE, and so is the poll that read it. An offer is
+  // no longer parked for a node to come and find: it is posted to the
+  // node on the stream it already holds, and answered in a round trip.
+  // What waits now is the browser's own POST, held in `awaitingReply`
+  // below and keyed by the hash of the request made on its behalf.
   // Who is holding a stream open right now. In RAM, never persisted —
   // presence is true only while a socket is open (PRESENCE.md §4).
   var presentNow = presence.createRegistry();
@@ -735,56 +759,6 @@ function createRelay(rootDir) {
     reloadAllow();
     return { ok: true, status: 200 };
   }
-
-  // What is waiting, and the answer to it. Both are the owner's, proved
-  // with the HOUSE key and never with the device key: the slot holds a
-  // password somebody is trying, so answering a device key would let a
-  // borrowed phone read the credential that installs its successor.
-  //
-  // deviceTakeMessage has its own bytes for the same reason set-device
-  // does — the owner signs `status` for every census, and a captured one
-  // must not be replayable as "hand me what is pending".
-  //
-  // And it carries a minute now, checked ±1 the way an inbox read is: the
-  // proof travels in a header rather than the query (server.js reuses
-  // inboxSignatureFrom for that), and it dies on its own if it is written
-  // down anyway. Both halves are needed — the header keeps it out of the
-  // log, the minute makes the copy in yesterday's log worthless.
-  // B2: ANY identity with a row, proved with that row's own key — not
-  // the owner's house key. The row is selected by key first, so two peers
-  // wearing the same label sign the same message bytes and each still
-  // verifies only against their own row. The ambiguity disappears without
-  // the signed message changing shape.
-  //
-  // Still never the DEVICE key: the slot holds a password somebody is
-  // trying, so answering a device key would let a borrowed phone read the
-  // credential that installs its successor.
-  function deviceGate(token, sig) {
-    var who = deviceIdentity(token);
-    if (!who) return { ok: false, status: 403, error: 'no such identity' };
-    // The label, not the id, because that is what the node signed —
-    // deviceTakeMessage has always carried a name and nothing about B2
-    // needs it to carry a key.
-    if (!deviceAuth.deviceTakeSignatureOk(who.publicKey, who.label, sig)) {
-      return { ok: false, status: 403, error: 'bad device-take signature' };
-    }
-    return { ok: true, who: who };
-  }
-
-  // WHO A DEVICE SLOT BELONGS TO. B1 keyed it by normalized label, which
-  // is right while the owner is the only enroller — allow.json in keys
-  // mode holds exactly one row and its label is unique. It does not
-  // survive peers: labels duplicate on purpose ("two johns is still two
-  // keys", at the claim path above), so a slot keyed by label cannot tell
-  // two of them apart.
-  //
-  // So the id IS the public key, which is the unique thing. The label
-  // stays a display name. This is the same answer PEER-DEVICES.md §5
-  // reached for the URL, carried inward.
-  //
-  // A token may be either — a key resolves directly, a label only when it
-  // is unambiguous. A duplicate label resolves to NOTHING, which is the
-  // honest answer and the same one resolveParty gives the inbox.
   function deviceIdentity(token) {
     var t = String(token == null ? '' : token).trim();
 
@@ -824,7 +798,21 @@ function createRelay(rootDir) {
     var who = deviceIdentityOr(token);
     if (!who) {
       return Promise.resolve({
-        ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW,
+        ok: false, status: 403, error: DEVICE_REFUSAL,
+      });
+    }
+
+    // THE FLOOD GATE, and it comes before the post rather than after: the
+    // whole point is that a caller cannot make this relay spend a post on
+    // somebody's node by asking often enough.
+    //
+    // After the identity check, and that order is load-bearing for the
+    // same reason it is at the claim path — a bucket keyed by
+    // caller-chosen input grows when a stranger reaches it, so a stranger
+    // must not reach it.
+    if (!rateOk(deviceHits, who.id, DEVICE_PER_MIN)) {
+      return Promise.resolve({
+        ok: false, status: 429, error: 'too many device attempts',
       });
     }
     // A DEVICE ENROLMENT IS AN ORDINARY POST, and the relay is the one
@@ -850,16 +838,6 @@ function createRelay(rootDir) {
       devicePublicKey: devicePublicKey,
     });
 
-    // NOT REACHABLE IS NOT YET A REFUSAL. The poll is still there for a
-    // node that holds no stream, and while it is, this takes that road
-    // rather than telling a browser no on the strength of one that is
-    // merely newer. When the poll goes, this goes with it and post()'s
-    // 503 travels as it does for any other post.
-    //
-    // DECIDED HERE AND NOW, not inside a .then. Parking has always been
-    // synchronous — a poll arriving in the same tick finds the slot —
-    // and doing it a microtask later made an offer that was not yet
-    // there when something asked for it.
     // WHOSE ENROLMENT THIS WAS, carried back with the yes.
     //
     // The page has to sign as somebody once it is enrolled, and it was
@@ -881,10 +859,11 @@ function createRelay(rootDir) {
       return answer;
     }
 
-    if (!presentNow.isPresent(who.id)) {
-      return deviceQueue.offer(who.id, password, devicePublicKey).then(named);
-    }
-
+    // DELIVER OR REFUSE, with nothing behind it any more. post() draws
+    // that line for every post this relay makes, and an enrolment is one:
+    // a node holding no stream cannot answer, and saying so at once is
+    // the whole of decision 0006. The poll that used to catch this case
+    // is gone, and with it the only thing on this box that still waited.
     return post(who.id, wrapped).then(deviceAnswerFrom).then(named);
   }
 
@@ -943,7 +922,7 @@ function createRelay(rootDir) {
           // another's route.
           routes.cancel(hash, mine.publicKey);
           resolve({ ok: false, status: 504, hash: hash, error: 'no answer yet' });
-        }, deviceHandshake.DEFAULT_WAIT_MS),
+        }, ROUTE_WAIT_MS),
       };
     });
 
@@ -995,7 +974,7 @@ function createRelay(rootDir) {
   // parse would be enrolled against a node that never agreed.
   function deviceAnswerFrom(answer) {
     if (!answer || !answer.ok) {
-      return { ok: false, status: answer && answer.status, error: deviceHandshake.ERROR_NOT_NOW };
+      return { ok: false, status: answer && answer.status, error: DEVICE_REFUSAL };
     }
     var said = null;
     try { said = JSON.parse(answer.text); } catch (e) { said = null; }
@@ -1005,76 +984,10 @@ function createRelay(rootDir) {
     // nobody composed would be enrolled against a node that never
     // agreed.
     if (!said || said.relay !== 'device-answer' || said.accepted !== true) {
-      return { ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW };
+      return { ok: false, status: 403, error: DEVICE_REFUSAL };
     }
     return { ok: true, status: 200, devicePublicKey: said.devicePublicKey || '' };
   }
-
-  function deviceTake(token) {
-    var who = deviceIdentityOr(token);
-    if (!who) return null;
-    return deviceQueue.take(who.id);
-  }
-
-  function deviceReply(token, accepted) {
-    var who = deviceIdentityOr(token);
-    if (!who) {
-      return { ok: false, status: 403, error: deviceHandshake.ERROR_NOT_NOW };
-    }
-    return deviceQueue.reply(who.id, !!accepted);
-  }
-
-  function devicePending(token, sig) {
-    // A token this box does not know is refused before it touches the
-    // queue at all — B1's rule, kept: `queueFor` mints a map entry on
-    // first use, so reaching the bucket with arbitrary input would let a
-    // stranger grow that map with ids they choose. B1 said this check
-    // and deviceGate's cheap half should collapse into one here, and
-    // they have: deviceIdentity IS the test, for the owner and every
-    // peer alike.
-    var who = deviceIdentity(token);
-    if (!who) return { ok: false, status: 403, error: 'no such identity' };
-
-    // THEN the bucket, and therefore still before any crypto. A known
-    // identity with a bad signature costs three Ed25519 verifies, and
-    // nothing limited how often a stranger could make the box do that —
-    // the one unlimited crypto path on it. Per identity, so one node's
-    // polling cannot spend another's allowance.
-    if (!deviceQueue.pendingRateOk(who.id)) {
-      return { ok: false, status: 429, error: deviceHandshake.ERROR_NOT_NOW };
-    }
-
-    var gate = deviceGate(token, sig);
-    if (!gate.ok) return gate;
-    // An empty object, not a refusal. "Nobody is waiting" is the ordinary
-    // answer to a poll that runs while a window is open, and a 403 there
-    // would make the quiet case indistinguishable from a credential that
-    // has stopped working.
-    return deviceQueue.take(who.id) || {};
-  }
-
-  function deviceAnswer(token, accepted, sig) {
-    var gate = deviceGate(token, sig);
-    if (!gate.ok) return gate;
-    return deviceQueue.reply(gate.who.id, !!accepted);
-  }
-
-  // FORGETTING SOMEBODY. Until this existed a relay could only
-  // accumulate: the routing table never shrank, so an invitation was
-  // irreversible and the only remedy for any mistake — a wrong guest, a
-  // lost key, a name that should never have been given — was an SSH
-  // session on the box.
-  //
-  // Which is Andy's own rule wearing a different costume. "No routine
-  // failure should require being physically at home" was built into the
-  // device arc for the OWNER and left standing for the relay's own
-  // governance. A thing alone in the jungle that cannot forget cannot
-  // correct itself.
-  //
-  // Signed by the OWNER, or by the peer themselves — leaving is not a
-  // favour anybody should have to ask for. Never by a device key: a
-  // borrowed handheld must not be able to delete the row it is borrowing
-  // (the same rule deviceGate states for the pending slot).
   function removePeer(byToken, peerKey, sig) {
     var key = String(peerKey == null ? '' : peerKey).trim();
     if (!key) return { ok: false, status: 400, error: 'peer key required' };
@@ -1336,21 +1249,14 @@ function createRelay(rootDir) {
     mint: mint,
     snapshot: snapshot,
     setDevice: setDevice,
-    // The held POST, and the two ends the personal node works: what is
-    // waiting, and the answer. Nothing here reads the password — see the
-    // queue's comment where it is created.
+    // The whole device surface, now that the slot and its two verbs are
+    // gone: one call, which posts the offer to the node and resolves when
+    // the node answers. Nothing here reads the password — it is a string
+    // this relay carries and does not compare.
     deviceOffer: deviceOffer,
-    deviceTake: deviceTake,
-    deviceReply: deviceReply,
-    // The same two ends, behind the owner's signature — this is what a
-    // route may call. deviceTake / deviceReply above are in-process and
-    // ungated, and stay that way for the tests that drive the queue
-    // directly.
-    devicePending: devicePending,
-    deviceAnswer: deviceAnswer,
     // The presence wire. streamOpen is the gated entry a route may call;
     // the registry below is in-process and ungated, for tests that drive
-    // it directly — the same split deviceTake/devicePending already has.
+    // it directly.
     removePeer: removePeer,
     routePost: routePost,
     routeReply: routeReply,

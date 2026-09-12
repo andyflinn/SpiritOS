@@ -13,7 +13,6 @@ const packet = require('./packet');
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
 const deviceAuth = require('./deviceAuth');
-const deviceTick = require('./deviceTick');
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -973,197 +972,46 @@ function createHub(rootDir) {
     });
   }
 
-  // ---- the listening window ------------------------------------------
+  // ---- THE POLL AND THE WINDOW ARE GONE --------------------------------
   //
-  // The timer exists ONLY while the window is open: with it closed nothing
-  // on this node asks any mailbox what is pending, so a stolen password
-  // buys a held POST that expires unanswered.
+  // Andy: "no backstop, no listening mode on the personal node. the
+  // ability to setup one-device-for-all-peers just IS."
   //
-  // Sixty seconds, not two. The window is meant to survive a restart and
-  // an absent owner (DEVICE-PANEL.md section 7), so this timer runs for
-  // days rather than for the minute somebody stands at the panel — and a
-  // 2s poll that never stops is thirty relay requests a minute, forever,
-  // which is the load that was supposed to stay microscopic. At 60s it is
-  // one request a minute and an enrolment lands within a minute, which is
-  // nothing in a hotel room.
+  // What stood here was a 60-second timer asking every relay whether
+  // anybody was enrolling, and a flag deciding whether it ran at all. It
+  // was never a design: device cycle 2 landed 2026-09-10 and presence on
+  // the 11th, so when the handshake was built there was no stream to push
+  // down and polling was the only mechanism there was.
   //
-  // The arc that takes the latency back to zero is the event stream
-  // (design/relay/EVENT-STREAM.md), and it does it for every app at once
-  // rather than for this one.
-  var DEVICE_TICK_MS = 60000;
-  var deviceTimer = null;
-  var deviceUrls = [];
-  // What the last pass did, and when. The tick has always answered this
-  // and it was thrown away, which left the window with no outside signs
-  // at all: a button that said "on" and a page that said "not now", with
-  // nothing in between to tell you which end had stopped (Andy — "I
-  // can't see whether or who is listening").
+  // An offer now arrives on the stream this node already holds, and is
+  // answered in a round trip — 365ms through spirit-3, against 0-60
+  // seconds of waiting for the next pass. answerRelay.js decides; nothing
+  // here asks anybody anything.
   //
-  // In memory, not on disk. It describes a poll that is running now; a
-  // copy of it surviving a restart would outlive the timer it describes.
-  var deviceLastEvent = null;
+  // The window went with it. It cost a timer on every node forever and
+  // bought thin protection: it never guarded the password, only meant an
+  // attacker holding one had to catch a window somebody opened — and
+  // somebody who holds the password can wait for the next. One slot
+  // remains, so an intrusion displaces the real device and is visible.
 
-  function stopDeviceTimer() {
-    if (deviceTimer) {
-      clearInterval(deviceTimer);
-      deviceTimer = null;
-    }
-    deviceUrls = [];
-  }
-
-  // deviceTick wants parsed JSON or {ok:false}; relayRequest answers
-  // {status, text}. The adapter lives here because that module is
-  // deliberately socket-free — its own header says so — which is what
-  // lets a test drive the whole handshake with no network at all.
+  // WHAT THE PANEL NEEDS, and it is now two facts and a list.
   //
-  // The fifth argument is headers, and it is how the device-take proof
-  // travels: X-Spirit-Sig, never `sig` on the query, because this runs
-  // every two seconds while a window is open and a query string is
-  // written to every access log in the path. relayRequest already takes
-  // extra headers, so this is a pass-through and not a new mechanism.
-  function deviceRequest(url, method, pathname, bodyObj, headers) {
-    return relayRequest(url, method, pathname, bodyObj, headers)
-      .then(function (r) {
-        try { return JSON.parse(r.text); }
-        // Named, not a bare {ok:false}. An answer nobody can read and no
-        // answer at all are both "this did not work", and a caller that
-        // cannot see which reports the reassuring one — which is exactly
-        // how a window stayed silent while nothing could be taken.
-        catch (e) { return { ok: false, error: 'unreachable' }; }
-      })
-      .catch(function () { return { ok: false, error: 'unreachable' }; });
-  }
-
-  function startDeviceTimer() {
-    stopDeviceTimer();
-    var id = auth.loadIdentity(rootDir);
-    var name = (id && id.name) || '';
-    // Probed once, as the window opens, rather than on every tick. A
-    // two-second poll that also asked every mailbox who owns it would be
-    // three requests where one was wanted, and which relays this node
-    // owns does not change inside a window somebody is standing at.
-    return ownerBadge.probe(rootDir, name, function (url, method, pathname) {
-      return relayRequest(url, method, pathname, null);
-    }, id && id.publicKey)
-      .then(function (summary) {
-        // CLAIMED, not owned (B2). A peer owns no relay and would have
-        // got an empty list here, so its timer never started and its
-        // window could never be collected — the whole feature stopped at
-        // the owner for want of one word.
-        deviceUrls = (summary && summary.claimedUrls) || [];
-
-        function pass() {
-          return Promise.resolve()
-            .then(function () { return deviceTick.tick(rootDir, deviceUrls, deviceRequest); })
-            .then(function (r) {
-              // Every pass, including the boring ones. `empty` is the
-              // heartbeat that proves the poll is alive and reaching a
-              // mailbox — without it, "nothing has happened" and "this
-              // stopped working an hour ago" look identical.
-              if (r && r.did) deviceLastEvent = { did: r.did, atMs: Date.now() };
-            })
-            .catch(function () {
-              deviceLastEvent = { did: 'unreachable', atMs: Date.now() };
-            });
-        }
-
-        deviceTimer = setInterval(pass, DEVICE_TICK_MS);
-        if (deviceTimer.unref) deviceTimer.unref();
-
-        // AT ONCE, and then on the interval. setInterval alone puts the
-        // first pass a full DEVICE_TICK_MS after the button, which is the
-        // one gap the rendezvous rule does not cover: the hold outlasts a
-        // pass (66s against 60s), but it cannot outlast a pass that has
-        // not started. Offer first, press Start second, and a browser
-        // already waiting had ~6s of margin instead of a guarantee.
-        //
-        // Found by Grok reviewing the "certain, not likely" claim — the
-        // sweep in deviceRendezvous.js models a node ALREADY ticking, so
-        // it could not see this. Not awaited: the caller is a button that
-        // wants ownedUrls back now, and `pass` reports through
-        // deviceLastEvent rather than a return value.
-        pass();
-
-        return deviceUrls;
-      })
-      .catch(function () {
-        deviceUrls = [];
-        return [];
-      });
-  }
-
-  // Start polling again if the file says the window was left open.
-  //
-  // The flag has always persisted; the node simply did not act on it at
-  // startup, so every restart shut the door silently. That is the failure
-  // this whole design exists to prevent: being locked out of one's own
-  // node while away, with the only remedy a journey home
-  // (DEVICE-PANEL.md section 7). A power cut must not cost a flight.
-  //
-  // Called by server.js in personal mode only — a --relay has no device
-  // of its own to enrol and must never poll anybody.
-  //
-  // Silent, and never rejects. Failing to reach a mailbox at boot is
-  // ordinary, and nothing is watching the console at that moment anyway.
-  function resumeListening() {
-    var doc = deviceAuth.load(rootDir);
-    // A password as well as the flag. `listening` defaults on, so a node
-    // that has never opened the panel would otherwise spin a timer for a
-    // door that cannot be opened — the tick already answers `quiet` in
-    // that state, and a timer whose every pass is a no-op is noise.
-    if (!doc.listening || !doc.password) return Promise.resolve([]);
-    return startDeviceTimer().catch(function () { return []; });
-  }
-
-  // The password, so the shell can offer to copy it, and whether the
-  // window is open.
-  //
-  // `listening` is the TIMER, not the file — the live answer rather than
-  // the stored intention. They used to disagree across a restart, which
-  // put a Natter row reading "Listening on" beside a form answering "not
-  // now"; resumeListening closes that gap, and reporting the timer keeps
-  // the panel honest if it ever reopens (no relay answered the probe, so
-  // the flag is set and nothing is polling).
+  // `listening` and `lastEvent` went with the timer. Both described a
+  // poll: whether it was running, and what its last pass did. There is no
+  // pass. A node with a password can be enrolled to, always, and there is
+  // nothing about that state worth reporting because there is no other
+  // state.
   function handleDevice(req, res) {
     var doc = deviceAuth.ensurePassword(rootDir);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({
       password: doc.password,
-      listening: !!deviceTimer,
       // Whose page to open, and it is this node's own public key. Public
       // already — every relay's /api/relay/who hands it to anyone — and
       // the panel needs it to build the per-key link.
       publicKey: (auth.loadIdentity(rootDir) || {}).publicKey || '',
-      // Who is being asked, and what the last answer was. Both are about
-      // the timer rather than the file, so they go quiet together with it.
-      //
-      // `relayUrls`, not `ownedUrls`: since B2 these are the relays this
-      // node holds a ROW on, which for a peer is every one of them and
-      // none of them owned. The old name would have been a lie the first
-      // time a peer opened the panel.
-      relayUrls: deviceTimer ? deviceUrls : [],
-      lastEvent: deviceLastEvent,
+      devicePublicKey: doc.devicePublicKey || '',
     }));
-  }
-
-  function handleDeviceListen(req, res, readBody) {
-    readBody(req).then(function (body) {
-      var on = !!(body && body.on);
-      deviceAuth.setListening(rootDir, on);
-      if (!on) {
-        stopDeviceTimer();
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ listening: false, relayUrls: [] }));
-        return;
-      }
-      startDeviceTimer().then(function (urls) {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ listening: !!deviceTimer, relayUrls: urls }));
-      });
-    }).catch(function () {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Invalid JSON body');
-    });
   }
 
   function handleStatus(req, res, urlObj) {
@@ -1215,9 +1063,6 @@ function createHub(rootDir) {
     handlePeer: handlePeer,
     handleInvite: handleInvite,
     handleDevice: handleDevice,
-    handleDeviceListen: handleDeviceListen,
-    // Boot-time only. server.js calls it once, in personal mode.
-    resumeListening: resumeListening,
   };
 }
 

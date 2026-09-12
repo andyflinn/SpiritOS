@@ -1,7 +1,19 @@
 # The "Add one of my own devices" panel
 
-**Status: BUILT at `aed0f69` (2026-09-11). Sections 2–6 are as shipped;
-section 7 carries one rule added after use.**
+**Status: SUPERSEDED on 2026-09-12. Sections 1–7 describe a panel that no
+longer exists; §8 is what stands. They are kept whole rather than edited,
+because what they were solving is the reason §8 is as short as it is.**
+
+Everything from §2 to §7 is about a WINDOW and a POLL — a switch that
+opened a door, a timer that looked once a minute, four bubble states
+reporting on that timer, and an arithmetic rule holding two constants on
+two machines in step. None of that exists. The relay now hands an offer to
+the node on the connection it is already holding, and the node answers in
+one round trip.
+
+Read §1 and §8. The rest is the record of a problem that was dissolved
+rather than solved, and it is worth keeping for that: nearly every hard
+decision in it was a consequence of the poll, not of the feature.
 
 The panel a bound personal node shows in Natter — soon `natterDetails` — for a
 relay it is bound to. Device cycles 1–5 built the machinery
@@ -336,3 +348,79 @@ Worth it against a journey home.
   request — the one unlimited crypto path on the box. Small, and not this
   panel's to fix. Now owned, in [PEER-DEVICES.md](PEER-DEVICES.md) §8: a line on
   the next device sitting rather than a cycle of its own.
+
+---
+
+## 8. What it is now — one button and a link
+
+**Decided by Andy, 2026-09-12:**
+
+> i want no backstop, no 'listening mode' on the personal node. the
+> ability to setup one-device-for-all-peers just IS. I want the absolute
+> minimum of UI for this in the personal node. A Copy Button, A Link to an
+> URL (where the URL is actually hidden, and controllable in length on the
+> display. and a panel below explaining how to use that, with a reminder
+> to bookmark the page when there, and to save the password in the
+> passord manager. thats all.
+
+Built that day. Three things, and nothing else:
+
+1. **A Copy button.** It puts the password on the clipboard and says
+   whether that worked. It is the only control on the panel.
+2. **A link**, whose text is the address shortened by one named constant
+   (`ND_LINK_CHARS`, currently 52) with the key in the middle elided. The
+   `href` and the `title` carry the address whole — a key in a URL is a
+   locator and not a credential, so hiding it is about the panel being
+   readable and nothing else.
+3. **A paragraph below**, saying what to do in the order it is done, and
+   carrying both of Andy's reminders: **bookmark that page while you are
+   there**, and **let the password manager memorise the password**. Both
+   are about the *other* device, which is why they are the ones forgotten
+   at the moment they matter.
+
+### What went, and why none of it is missed
+
+| gone | it existed because |
+|---|---|
+| the start/stop control (§2, §3, §5) | there was a door to open |
+| four bubble moods (§6) | a poll had passes to report on |
+| the two-second repaint, `api.isVisible()`, `render()` (§7) | one sentence about the poll had to stay true |
+| `listening`, persisted and resumed at boot (§7) | a door left shut stranded its owner |
+| the 66s-vs-60s rendezvous rule (§7) | two clocks on two machines had to be held in step |
+| the browser's 180s retry budget | a node might not have looked yet |
+
+The panel now states no fact that can go stale while somebody reads it,
+which is what made every one of those deletable at once.
+
+### The security trade, restated
+
+§7 traded *"a stolen password is inert unless the window is open"* for
+*"a stolen password can enrol whenever the node is up."* That trade is now
+simply the position, with the window gone.
+
+What holds it up is unchanged and worth saying in one place: it is 128 hex
+characters; it never leaves the owner's machines except into their
+password manager; the relay cannot check it, because the relay does not
+have it; any use displaces the owner's existing device, so an intrusion is
+visible rather than silent; and the enrolment route is rate-limited to ten
+attempts a minute per identity.
+
+**That last one came back with this change and nearly did not.** The limit
+lived in `deviceHandshake.js`, which was deleted whole — and
+`/api/relay/device` is a public POST carrying a password guess that now
+costs a post to somebody's node as well. It is `DEVICE_PER_MIN` in
+`relay.js`, keyed by the identity being enrolled rather than by the
+caller, and `spirit/test/deviceEnrol.js` fails if it goes again. Nothing
+else in the suite counts attempts, so losing it would have been silent.
+
+### What is still open
+
+- **The key still lives in `sessionStorage`**, so a closed tab on the
+  enrolled device loses it and has to enrol again. §7 named this as one of
+  the three things that forced a journey home; the other two are now
+  answered, and this one is not.
+- **One roaming device per identity.** Unchanged, and still not a
+  limitation: one field, one key, no device list, and revocation is just
+  enrolling somewhere else.
+- **Password rotation.** There is no way to mint a new one, which matters
+  more now that a password is the whole gate rather than half of it.

@@ -75,7 +75,7 @@ function mintTarget(fields) {
   return node;
 }
 
-function deviceTarget(out) {
+function copyTarget(out) {
   const panel = {
     querySelector: function (selector) {
       return selector === '.natter-dev-out' ? out : null;
@@ -83,7 +83,7 @@ function deviceTarget(out) {
   };
   const node = { getAttribute: function () { return null; } };
   node.closest = function (selector) {
-    if (selector === '[data-device-toggle]') return node;
+    if (selector === '.natter-dev-copy') return node;
     if (selector === '.natter-device') return panel;
     return null;
   };
@@ -115,11 +115,8 @@ function mountApp(opts) {
     let text = '{}';
     if (url.indexOf('/api/hub/status') === 0) {
       text = JSON.stringify({ rows: opts.rows || [] });
-    } else if (url.indexOf('/api/hub/device') === 0 && url.indexOf('device-listen') === -1) {
+    } else if (url.indexOf('/api/hub/device') === 0) {
       text = JSON.stringify(opts.device || {});
-    } else if (url.indexOf('/api/hub/device-listen') === 0) {
-      const want = JSON.parse((init && init.body) || '{}').on;
-      text = JSON.stringify({ listening: !!want, relayUrls: want ? [OWNED] : [] });
     } else if (url.indexOf('/api/hub/invite') === 0) {
       text = JSON.stringify({ token: 'saint-bernard' });
     }
@@ -398,111 +395,132 @@ function aStrangersMailbox() {
   });
 }
 
-function theDeviceWindow() {
+function theDevicePanel() {
   test.subHeading('Attaching one of my own devices');
+
+  // A LONG KEY ON PURPOSE. The address is a host plus 58 characters of
+  // base64url plus `/device`, and what this panel had to stop doing was
+  // printing all of it — so a short fake key would test the wrong thing.
+  const KEY = 'MCowBQYDK2VwAyEAbella+key/with+slashes+and+padding+to+be+long=';
 
   const app = mountApp({
     rows: [{
       url: OWNED, label: 'spirit', owned: true,
       report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 },
     }],
-    device: {
-      password: 'p'.repeat(128), listening: false, relayUrls: [],
-      publicKey: 'MCowBQYDK2VwAyEAbella+key/with+slashes=', lastEvent: null,
-    },
+    device: { password: 'p'.repeat(128), publicKey: KEY },
   });
 
   return settle().then(function () {
     const panel = app.body().innerHTML;
 
-    // ONE control, and it is a glyph. `Listening off` was ambiguous in
-    // the way only button labels manage to be — it could be the state or
-    // the action, and Andy read it as the state.
-    //
-    // Blue and red specifically, and NOT ICON.START/ICON.STOP: those are
-    // aliases, and ICON.STOP is the ORANGE circle, which would make the
-    // bubble's "press the red button" a lie.
+    // NOTHING TO SWITCH ON. Andy: "no backstop, no 'listening mode' on
+    // the personal node. the ability to setup one-device-for-all-peers
+    // just IS." The panel had a toggle, four moods and a two-second
+    // repaint, all of them about a poll — and this is the check that
+    // stops any of it coming back, because none of it would go red.
     const ICONS = spirit.core.const.ICON;
-    const toggles = (panel.match(/data-device-toggle/g) || []).length;
-    if (toggles === 1 && panel.indexOf(ICONS.BLUE_CIRCLE) !== -1 &&
-        panel.indexOf(ICONS.STOP) === -1) {
-      test.check('the window is one glyph, blue for shut, and never the orange STOP alias');
+    if (panel.indexOf('data-device-toggle') === -1 &&
+        panel.indexOf('data-mood') === -1 &&
+        panel.indexOf(ICONS.BLUE_CIRCLE) === -1 &&
+        panel.indexOf(ICONS.RED_CIRCLE) === -1 &&
+        !/listen/i.test(panel)) {
+      test.check('there is no switch, no state and no word about listening');
     } else {
-      test.fail('toggles=' + toggles + ' blue=' + (panel.indexOf(ICONS.BLUE_CIRCLE) !== -1) +
-        ' orange=' + (panel.indexOf(ICONS.STOP) !== -1));
+      test.fail('the window came back: ' +
+        panel.slice(panel.indexOf('natter-device'), panel.indexOf('natter-device') + 400));
     }
 
     // WHERE TO OPEN IT. `/<key>/device` names whose enrolment this is,
-    // which is what lets a relay hold a slot per identity rather than
-    // one for the box. Base64url — the same bytes, `-` and `_` for `+`
-    // and `/` — because a `/` in a path segment is not in the segment.
-    if (panel.indexOf('https://spirit.example/MCowBQYDK2VwAyEAbella-key_with-slashes/device') !== -1) {
-      test.check('and the link names this identity in base64url, not the bare /device');
+    // which is what lets a relay answer per identity rather than one for
+    // the box. Base64url — the same bytes, `-` and `_` for `+` and `/` —
+    // because a `/` in a path segment is not in the segment.
+    const target = 'https://spirit.example/' +
+      KEY.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') + '/device';
+    if (panel.indexOf('href="' + target + '"') !== -1) {
+      test.check('the link GOES to this identity in base64url, not to the bare /device');
     } else {
-      test.fail('device link target: ' + (/https:\/\/spirit[^"]*/.exec(panel) || [''])[0]);
+      test.fail('device link target: ' + (/href="https:\/\/spirit[^"]*/.exec(panel) || [''])[0]);
     }
 
-    // Pressing it starts listening AND takes the password: one press,
-    // one meaning. There used to be two buttons and the copy was the one
-    // that opened the window, which nobody could guess.
+    // AND DOES NOT SHOW IT. Andy asked for the URL hidden and its length
+    // on the display controllable. The href and the title carry it whole
+    // — it is a locator, not a credential — and the text is a label.
+    const shown = />([^<]*…[^<]*)<\/a>/.exec(panel);
+    if (shown && shown[1].length < target.length && shown[1].indexOf(KEY.slice(20, 40)) === -1) {
+      test.check('and shows it shortened — ' + shown[1].length + ' characters, not ' +
+        target.length + ', with the key elided');
+    } else {
+      test.fail('displayed link text: ' + JSON.stringify(shown && shown[1]));
+    }
+
+    // The whole address is still ONE hover away, and the check is that
+    // the two differ: a title equal to the text would mean nothing was
+    // hidden, and a missing title would mean it could not be recovered.
+    const title = /title="(https:\/\/[^"]*)"/.exec(panel);
+    if (title && title[1] === target && shown && title[1] !== shown[1]) {
+      test.check('and the full address is on the title, so nothing is lost by hiding it');
+    } else {
+      test.fail('title: ' + JSON.stringify(title && title[1]));
+    }
+
+    // THE TWO REMINDERS, which are Andy's and are both about the OTHER
+    // device — which is why they are the ones forgotten at the moment
+    // they matter.
+    if (/bookmark/i.test(panel) && /password manager/i.test(panel)) {
+      test.check('and the panel below says to bookmark that page and save the password');
+    } else {
+      test.fail('the reminders are not both there');
+    }
+
+    // ONE BUTTON, and it copies. It used to also open the window, because
+    // there were once two buttons and the copy was the one that opened it
+    // — which nobody could guess.
     const out = { textContent: '' };
-    app.body().fire('click', { target: deviceTarget(out) });
+    app.body().fire('click', { target: copyTarget(out) });
 
     return settle().then(function () {
-      const asked = app.log.filter(function (c) { return c.url.indexOf('/api/hub/device-listen') === 0; });
-      const body = asked.length ? JSON.parse(asked[0].body) : null;
-      if (body && body.on === true) {
-        test.check('one press opens the window');
-      } else {
-        test.fail('device-listen: ' + JSON.stringify(body));
-      }
-
       if (/copied/.test(out.textContent)) {
-        test.check('and the same press puts the password on the clipboard');
+        test.check('and the one button puts the password on the clipboard');
       } else {
         test.fail('clipboard word: ' + out.textContent);
+      }
+
+      // THE PASSWORD IS NOT ON THE PAGE. It goes to the clipboard and
+      // from there into a password manager; 128 characters of hex printed
+      // in a panel is a secret sitting on a screen for no reason.
+      if (panel.indexOf('p'.repeat(64)) === -1) {
+        test.check('and the password itself is nowhere in the markup');
+      } else {
+        test.fail('the password was printed on the page');
       }
     });
   });
 }
 
-function theDeviceBubbleSaysWhatHappened() {
-  test.subHeading('And says what the last pass did');
+// A panel that asks the hub once and never again. The poll it replaced
+// re-asked every two seconds for as long as the screen was up, and the
+// only reason it did was to keep a sentence about the poll true.
+function thePanelAsksOnce() {
+  test.subHeading('And asks once, because nothing it shows can change');
 
-  // A finished enrolment is the headline, because the standing
-  // instructions are what was just completed.
-  const added = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
-    device: {
-      password: 'p'.repeat(128), listening: true, relayUrls: [OWNED],
-      publicKey: 'k', lastEvent: { did: 'installed', atMs: Date.now() },
-    },
+  const app = mountApp({
+    rows: [{
+      url: OWNED, label: 'spirit', owned: true,
+      report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 },
+    }],
+    device: { password: 'p'.repeat(128), publicKey: 'k' },
   });
 
   return settle().then(function () {
-    const panel = added.body().innerHTML;
-    if (/data-mood="added"/.test(panel) && /A device was added just now/.test(panel)) {
-      test.check('a device that just arrived is the headline, not the instructions');
-    } else {
-      test.fail('added mood: ' + panel.slice(panel.indexOf('natter-dev-bubble'), 400));
-    }
-
-    // The three failures are told apart, because following the standing
-    // instructions again will not help with any of them.
-    const trouble = mountApp({
-      rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
-      device: {
-        password: 'p'.repeat(128), listening: true, relayUrls: [OWNED],
-        publicKey: 'k', lastEvent: { did: 'rejected', atMs: Date.now() },
-      },
-    });
-
     return settle().then(function () {
-      const panel2 = trouble.body().innerHTML;
-      if (/data-mood="trouble"/.test(panel2) && /wrong password was refused/.test(panel2)) {
-        test.check('and a refusal says which refusal it was, and what to do about it');
+      const asks = app.log.filter(function (c) {
+        return c.url.indexOf('/api/hub/device') === 0;
+      });
+      if (asks.length === 1) {
+        test.check('one ask for the password and the key, and no timer behind it');
       } else {
-        test.fail('trouble mood: ' + panel2.slice(panel2.indexOf('natter-dev-bubble'), 400));
+        test.fail('asked ' + asks.length + ' times');
       }
     });
   });
@@ -625,8 +643,8 @@ ownedMailbox()
   .then(mintingNamesThisMailbox)
   .then(someoneElsesMailbox)
   .then(aStrangersMailbox)
-  .then(theDeviceWindow)
-  .then(theDeviceBubbleSaysWhatHappened)
+  .then(theDevicePanel)
+  .then(thePanelAsksOnce)
   .then(openingAnotherMailboxLetsGoOfTheLast)
   .then(takingAMailboxOffTheList)
   .then(theLastMailboxDoesNotComeOff)

@@ -198,58 +198,31 @@
         return 'send\n' + from + '\n' + to + '\n' + text;
       }
 
-      // ---- Enrolment is a rendezvous, and the hold is what settles it ----
+      // ---- Enrolment is one round trip -----------------------------
       //
-      // The relay holds one offer for 66s (deviceHandshake.js) while a
-      // listening node looks every 60s (hub.js DEVICE_TICK_MS). Nothing
-      // synchronises those two clocks, so the guarantee has to come from
-      // the arithmetic: an offer still open when the node looks cannot be
-      // missed, whatever moment the button was pressed.
+      // It was a RENDEZVOUS: the relay held one offer for 66 seconds
+      // while a listening node looked every 60, and the guarantee came
+      // from the arithmetic rather than from the two ever being
+      // coordinated. Andy found the failure exactly the way that shape
+      // predicts — "works reliably when I click 10 seconds before the
+      // node polls, fails reliably 10 seconds after."
       //
-      // It used to be 25s against 60s, and then it was a coin toss on the
-      // phase — press just before a pass and it worked, press just after
-      // and the hold expired 35s before anything came to collect it. Andy
-      // found it exactly that way, reliable in both directions, which is
-      // the tell.
+      // There is no poll. The relay posts the offer down the stream the
+      // node is already holding, and the node answers on the same round
+      // trip — 365ms through spirit.andyflinn.com, measured. So this page
+      // asks ONCE, and everything below is about reading the answer
+      // rather than about waiting for one.
       //
-      // So this page knocking again is COVER, not the guarantee: a
-      // minute-long request is the kind a hotel portal or a phone
-      // changing masts will cut. Serially, never in parallel — the relay
-      // has ONE pending slot, and a second offer while one is held is
-      // refused at once, so overlapping attempts would lock out everyone
-      // including ourselves.
-      var ENROLL_BUDGET_MS = 180000;
-      // Cover, not the guarantee. The guarantee is that the relay holds
-      // one offer longer than one node pass (deviceHandshake.js), so a
-      // single attempt cannot miss whatever moment the button was
-      // pressed. This budget is for the case that breaks it: a network
-      // that cuts a minute-long request — a hotel portal, a phone
-      // changing masts — where knocking again is the only way through.
-      // Two passes and change, so a cut connection gets more than one
-      // more chance.
+      // The three-minute budget existed for a node that had not looked
+      // yet. There is no such state now: a node that is not reachable is
+      // refused at once, which is decision 0006 — a relay delivers or
+      // refuses, and buffers nothing on anyone's behalf.
 
-      // PROSE, NOT A CONSTANT. Nothing on this page computes with it —
-      // it is here to be said out loud, because a wait nobody can see the
-      // shape of is what made enrolment feel like a coin toss.
-      //
-      // It cannot be anything more: the page is served by the RELAY, and
-      // the period belongs to a personal node the relay never reads. The
-      // real coupling is elsewhere and it is arithmetic — the relay's
-      // hold must exceed the node's pass (deviceHandshake.js), checked in
-      // spirit/test/deviceRendezvous.js. This sentence is held to the
-      // same number by that file so it cannot quietly go stale, but if
-      // the two ever disagree it is the SENTENCE that is wrong.
-      //
-      // Grok, reviewing: "kill the third copy or mark it as prose."
-      var ENROLL_PERIOD_HINT_MS = 60000;
-
-      var ENROLL_ANSWERED_MS = 20000;
-      // Under the hold, so the two silences can be told apart by the
-      // clock alone. A refusal that comes back in three seconds means
-      // something was there and said no; one that takes the full hold
-      // means nobody came. The relay says "not now" to both on purpose
-      // — it cannot tell a wrong password from an absent node, and will
-      // not guess — but the browser knows how long it waited.
+      // How long the relay will wait on a node that took the offer and
+      // then went quiet (ROUTE_WAIT_MS, relay.js). Past this the silence
+      // is the relay giving up rather than the network being slow, and
+      // this page has nothing left to learn by waiting longer.
+      var ENROLL_WAIT_MS = 15000;
 
       // 429 means the relay has taken too many attempts for this name in
       // the last minute. That is the ONE refusal it names precisely —
@@ -258,6 +231,12 @@
       // seconds because the bucket is a rolling minute: a third of it is
       // usually enough for a slot to fall out.
       var ENROLL_RATE_WAIT_MS = 20000;
+
+      // THE ONLY THING LEFT WORTH RETRYING FOR, and the budget is sized
+      // for it alone: two hold-offs and change. Every other answer this
+      // page can get has already happened by the time it arrives, and
+      // asking the same question again would only spend the rate limit.
+      var ENROLL_BUDGET_MS = 60000;
 
       var enrollStop = null;
 
@@ -277,36 +256,21 @@
         var cancelled = false;
         var holdOffUntil = 0;
 
-        // A page that says "waiting…" for two minutes is indistinguishable
-        // from a page that has died. So: which attempt, how long it has
-        // been, how long is left before it gives up, and the one fact
-        // that explains all three — the node looks on its own clock,
-        // about once a minute, and this page waits out several of those.
-        //
-        // Counting DOWN as well as up is the half that matters: elapsed
-        // time alone still leaves somebody guessing whether to keep
-        // watching.
+        // A second or two of "asking…" needs no countdown. What it does
+        // need is to not lie: the old text said the node looks about once
+        // a minute and this page waits out several of those, and nothing
+        // in that sentence is true any more.
         function paint() {
-          var gone = Date.now() - began;
-          var left = Math.max(0, ENROLL_BUDGET_MS - gone);
-          var head = 'attempt ' + attempt + ', ' + enrollClock(gone) + ' gone, giving up in ' +
-            enrollClock(left) + '.';
-
-          // Holding off is a different wait and has to read as one, or the
-          // counter says "waiting for your node" while the relay is the
-          // thing that has not let us through yet.
           if (holdOffUntil > Date.now()) {
             sayEnroll('This relay has taken too many enrolment attempts for this name in the ' +
-              'last minute — ' + head + '\n' +
+              'last minute.\n' +
               'Knocking again in ' + Math.ceil((holdOffUntil - Date.now()) / 1000) +
               's. Nothing is wrong and nothing needs re-typing.');
             return;
           }
-
-          sayEnroll('Waiting for your personal node — ' + head + '\n' +
-            'It looks about once every ' + Math.round(ENROLL_PERIOD_HINT_MS / 1000) +
-            's, and the relay holds this request open past one of those — so it ' +
-            'should finish inside a minute, whenever you pressed the button.');
+          sayEnroll('Asking your personal node — ' + enrollClock(Date.now() - began) + ' gone.\n' +
+            'It is asked directly, over the connection it already holds to this relay, so ' +
+            'this normally takes under a second.');
         }
         var ticker = setInterval(paint, 1000);
         var holdOff = null;
@@ -351,8 +315,7 @@
               enrollButton('Add this device');
               store(pair.pub, pair.priv, name);
               showConsole(name);
-              sayEnroll('Added after ' + enrollClock(Date.now() - began) +
-                ', on attempt ' + attempt + '.');
+              sayEnroll('Added in ' + Math.round((Date.now() - began) / 1000) + 's.');
               sayLog('this tab is the device');
               return;
             }
@@ -379,37 +342,30 @@
               return;
             }
 
-            if (took < ENROLL_ANSWERED_MS) {
-              // Refused at once rather than nobody coming. The relay says
-              // `not now` to every cause on purpose — it faces the
-              // internet and owes it no detail — so this lists them, and
-              // the ORDER matters: the first draft led with "the password
-              // is wrong", which is the one cause that leaves a trace
-              // somewhere else, and it is usually not the one.
-              //
-              // The last line is the actual diagnosis, and it costs
-              // nothing: the node reports what it saw. `a wrong password
-              // was refused` means the password reached it. Anything else
-              // means it never did, and then it is this relay holding a
-              // slot or counting attempts, not the password.
-              finish('Refused in ' + Math.round(took / 1000) + 's — something answered straight ' +
-                'away rather than nobody coming. Most likely another attempt of yours is still ' +
-                'running: this page keeps knocking for three minutes, and one held slot per ' +
-                'name means a second tab is refused at once. Close any other copy of this page ' +
-                'and press the button again — the password is still filled in.\n' +
-                'If there is no other tab, the password is wrong. Your personal node\'s panel ' +
-                'in Natter says which: "a wrong password was refused" means it arrived and was ' +
-                'read; anything else means it never got there.');
+            // A NO, AND IT IS THE END OF IT. The relay says `not now` to
+            // every cause on purpose — it faces the internet and owes it
+            // no detail — so this lists them, and knocking again would
+            // produce the identical answer.
+            //
+            // The ORDER matters. The first draft led with "the password
+            // is wrong", which is the one cause that leaves a trace
+            // somewhere else, and it is usually not the one.
+            //
+            // The clock separates the last case from the others: under
+            // the relay's wait means something answered, at or past it
+            // means the node took the offer and never came back.
+            if (took < ENROLL_WAIT_MS) {
+              finish('Refused in ' + Math.round(took / 1000) + 's — something answered, rather ' +
+                'than nobody being there.\n' +
+                'Either your personal node is not connected to THIS relay, or the password is ' +
+                'wrong. Check the panel in Natter on your own node: the password is shown there, ' +
+                'and so is the list of relays it is on.');
               return;
             }
 
-            if (Date.now() - began >= ENROLL_BUDGET_MS) {
-              finish('Gave up after ' + enrollClock(Date.now() - began) + ' and ' + attempt +
-                ' attempts. Nothing came to collect it, so the personal node is not listening ' +
-                '— or it is bound to a different relay than this one.');
-              return;
-            }
-            attemptOnce();
+            finish('No answer after ' + enrollClock(took) + '. Your personal node is reachable ' +
+              'through this relay but did not answer — it may have been shut down mid-request. ' +
+              'Press the button again; the password is still filled in.');
           }).catch(function (e) {
             finish('Network error after ' + enrollClock(Date.now() - began) + ': ' +
               (e && e.message ? e.message : 'the request failed') + '.');
@@ -421,19 +377,21 @@
 
       enroll.addEventListener('submit', function (ev) {
         ev.preventDefault();
-        // One button, two meanings, and the label says which — the same
-        // reasoning as Natter's panel. A three-minute wait with no way
-        // out would be worse than the coin toss it replaces.
+        // One button, two meanings, and the label says which. It is a
+        // second's wait now rather than three minutes, and the way out
+        // stays because the one case that still retries — a rate-limited
+        // relay — holds this page for twenty seconds at a time.
         if (enrollStop) {
           enrollStop();
           return;
         }
         var password = document.getElementById('pw').value;
-        sayEnroll('Waiting for your personal node…');
+        sayEnroll('Asking your personal node…');
         enrollButton('Stop waiting');
-        // Generated ONCE and reused for every attempt. A fresh pair per
-        // attempt would work, but it would mean the key this tab keeps is
-        // whichever one happened to be in flight when a pass landed.
+        // Generated ONCE and reused, which now matters only for the
+        // rate-limit retry. A fresh pair per attempt would work and would
+        // mean the key this tab keeps is whichever one happened to be in
+        // flight when an answer landed.
         devicePair().then(function (pair) {
           store(pair.pub, pair.priv, null);
           enrollRun(password, pair);

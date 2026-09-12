@@ -16,12 +16,12 @@
 //     destroyed, so the list is where you left it;
 //   - one thing on screen, rather than one mailbox's panel with other
 //     mailboxes listed above and below it;
-//   - THE REPAINT PROBLEM GOES AWAY. The device panel polls every two
-//     seconds, and the row expansion lived inside a tbody that
-//     natterRenderList rebuilds wholesale — so the poll could not call
-//     render without destroying the Invite fields under whoever was
-//     typing in them. That constraint shaped a lot of code. Here the
-//     panel owns its own container and nothing else repaints it.
+//   - THE REPAINT PROBLEM GOES AWAY. The row expansion lived inside a
+//     tbody that natterRenderList rebuilds wholesale, so anything that
+//     repainted took the Invite fields with it, under whoever was typing
+//     in them. The device panel polled every two seconds and that
+//     constraint shaped a lot of code — the poll is gone now, but the
+//     Invite form is still a form inside a list that repaints.
 //
 // A sibling folder, not a child: discovery is flat and stays flat
 // (app/<name>/<name>.js). The cost is that api.fs here is scoped to
@@ -43,15 +43,17 @@ var ndChanged = false;  // has anything happened the list must repaint for?
 var ndCanRemove = false; // may this mailbox come off the list at all?
 var ndRemoveArmed = false; // Remove has been pressed once
 
-// The door password and whether the window is open. Read from the hub
-// when this screen opens, because both can change without this app: the
-// window closes on its own across a restart, and a password minted on
-// first ask does not exist until something asks.
-var ndDevice = {
-  password: '', listening: false, loaded: false,
-  relayUrls: [], publicKey: '', lastEvent: null,
-};
-var ndTimer = null;
+// THE PASSWORD AND THE KEY, and there is nothing else left to hold.
+//
+// It used to keep a window's state too — open or shut, which relays were
+// being asked, what the last pass did — and all of that described a poll
+// that no longer exists. Andy: "no backstop, no 'listening mode' on the
+// personal node. the ability to setup one-device-for-all-peers just IS."
+//
+// Both are still READ rather than assumed: a password is minted on first
+// ask, so it does not exist until something asks, and a node that has not
+// claimed anywhere has no key yet.
+var ndDevice = { password: '', publicKey: '', loaded: false };
 
 function ndPost(path, body) {
   return fetch(path, {
@@ -90,13 +92,10 @@ function ndReadDevice() {
     .then(function (r) { return r.json(); })
     .then(function (d) {
       ndDevice.password = (d && d.password) || '';
-      ndDevice.listening = !!(d && d.listening);
-      ndDevice.relayUrls = (d && d.relayUrls) || [];
       ndDevice.publicKey = (d && d.publicKey) || '';
-      ndDevice.lastEvent = (d && d.lastEvent) || null;
       ndDevice.loaded = true;
     })
-    .catch(function () { /* the panel simply reads as closed */ });
+    .catch(function () { /* the panel simply says it could not ask */ });
 }
 
 // ---- the three blocks ------------------------------------------------
@@ -194,175 +193,100 @@ function ndDeviceUrl(host) {
   return host + '/' + seg + '/device';
 }
 
-// The control is a glyph, not a word. `Listening off` was ambiguous in
-// the way only button labels manage to be — it could be the state or the
-// action, and Andy read it as the state ("I never realized I had to
-// start listening"). A blue dot beside a red dot cannot be read two ways.
+// HOW MUCH OF THE ADDRESS TO SHOW, and it is the one number this panel
+// has. Andy asked for the URL to be hidden and its length on the display
+// to be controllable, so this is that control: the full address is what
+// the link GOES to and what hovering it reveals, and this is only how
+// much of it takes up room on the page.
 //
-// Blue and red specifically, and NOT ICON.START/ICON.STOP: those are
-// aliases, and ICON.STOP is the ORANGE circle, which would make the
-// bubble's "press the red button" a lie. See design/relay/DEVICE-PANEL.md §5.
-function ndDeviceButtonHtml() {
-  var on = !!ndDevice.listening;
-  return '<button type="button" class="natter-dev-toggle' + (on ? ' beating' : '') + '"' +
-    ' data-device-toggle="' + (on ? 'stop' : 'start') + '"' +
-    ' title="' + (on ? 'Click to stop listening' : 'Click to start listening') + '">' +
-    (on ? ndIcon.RED_CIRCLE : ndIcon.BLUE_CIRCLE) +
-    '</button>';
+// It is long because it carries a key: a host, then 58 characters of
+// base64url nobody reads and nobody could check by eye, then `/device`.
+// Printing the whole thing made the panel look like an error message.
+var ND_LINK_CHARS = 52;
+
+// Middle-elided rather than cut short, because the two ends are the parts
+// that mean anything — which relay it is at the front, and `/device` at
+// the back. What goes is the key in the middle, which is the part that
+// was never readable.
+function ndShortUrl(url) {
+  var s = String(url || '');
+  if (s.length <= ND_LINK_CHARS) return s;
+  var keep = ND_LINK_CHARS - 1;
+  var head = Math.ceil(keep * 0.7);
+  return s.slice(0, head) + '…' + s.slice(s.length - (keep - head));
 }
 
-// The sentence beside the control says what the control does next, and
-// nothing else. What is HAPPENING — who is being asked, what came back —
-// belongs in the bubble below, where there is room to say it in prose.
-function ndDeviceSay() {
-  if (!ndDevice.loaded) return '';
-  return ndDevice.listening
-    ? 'Now listening, press the red button to stop.'
-    : 'Press the blue button to start listening.';
-}
-
-// How long a finished pass stays the headline. Long enough that stepping
-// away to the other device and back still answers "did it work?", short
-// enough that yesterday's success is not reported as news.
-var ND_FRESH_MS = 5 * 60 * 1000;
-
-// Four things the bubble can be about, most urgent first. Success
-// outranks the standing instructions because the standing instructions
-// are what was just completed; trouble outranks them because following
-// them again will not help.
-function ndDeviceMood() {
-  if (!ndDevice.loaded) return 'off';
-  var e = ndDevice.lastEvent;
-  var fresh = !!(e && e.did && e.atMs && (Date.now() - e.atMs) < ND_FRESH_MS);
-  if (fresh && e.did === 'installed') return 'added';
-  if (fresh && (e.did === 'refused' || e.did === 'unreachable' || e.did === 'rejected')) {
-    return 'trouble';
-  }
-  return ndDevice.listening ? 'listening' : 'off';
-}
-
-// Fine print, and the only line that changes on its own. Seconds rather
-// than a clock time, because the only question is whether this is still
-// beating — a number that keeps climbing says it is not.
-function ndDeviceBeatText() {
-  if (!ndDevice.listening) return '';
-  var where = ndDevice.relayUrls.length
-    ? ndDevice.relayUrls.join(', ')
-    : '(no relay answered — nothing is being asked)';
-  var e = ndDevice.lastEvent;
-  if (!e || !e.did) {
-    return 'This node asks ' + where + ' once a minute. No pass has finished yet.';
-  }
-  var ago = Math.max(0, Math.round((Date.now() - e.atMs) / 1000));
-  var what = e.did === 'installed' ? 'a device was added'
-    : e.did === 'rejected' ? 'a wrong password was refused'
-    : e.did === 'unreachable' ? 'the relay could not be reached'
-    : e.did === 'refused' ? 'the relay refused the poll'
-    : e.did === 'quiet' ? 'the window is shut'
-    : 'nothing was waiting';
-  return 'This node asks ' + where + ' once a minute. Last pass ' + ago + 's ago — ' + what + '.';
-}
-
-function ndDeviceTroubleText() {
-  var did = (ndDevice.lastEvent || {}).did;
-  if (did === 'rejected') return 'A wrong password was refused.';
-  if (did === 'unreachable') return 'The relay could not be reached.';
-  // Not the same as an empty slot, and the difference is the one worth
-  // printing: the mailbox answered and would not have us.
-  return 'The relay refused the poll.';
-}
-
-function ndDeviceTroubleAdvice() {
-  var did = (ndDevice.lastEvent || {}).did;
-  if (did === 'rejected') {
-    return 'Somebody pasted a password this node does not hold. If that was you, press ' +
-      'the red button and start again, so a fresh one reaches your clipboard.';
-  }
-  if (did === 'unreachable') {
-    return 'The relay did not answer at all. It is usually restarting; this node keeps ' +
-      'asking once a minute and will carry on by itself.';
-  }
-  return 'The relay answered and would not have this node. The usual cause is a relay ' +
-    'running older code than this one.';
-}
-
-// Document-toned prose, not form chrome: while this screen is open, this
-// paragraph is the page. Each state says the one thing to do next.
-function ndDeviceBubbleHtml(host) {
-  var target = ndDeviceUrl(host);
-  var where = ndEscapeHtml(target);
-  // _blank with rel="noopener", not target="_new" — the latter is not a
-  // standard keyword, and the new tab must not get a handle on the shell.
-  var link = '<a href="' + where + '" target="_blank" rel="noopener">' + where + '</a>';
-  var keep = '<div><strong>Be sure to (a) bookmark that site and (b) let the browser\'s ' +
-    'password manager memorise the password, so it reaches your other devices of the ' +
-    'same browser brand.</strong></div>';
-  var beat = '<div class="natter-dev-beat muted">' +
-    ndEscapeHtml(ndDeviceBeatText()) + '</div>';
-
-  switch (ndDeviceMood()) {
-    // The channel that carries this was already there and unspent: the
-    // node learns of an enrolment within a pass and the panel said
-    // nothing, so the only way to answer "did it work?" was to switch
-    // devices and try.
-    case 'added':
-      return '<div class="natter-dev-loud">A device was added just now.</div>' +
-        '<div>It can read this node\'s inbox through ' + link + ' from here on.</div>' +
-        keep + beat;
-
-    case 'trouble':
-      return '<div class="natter-dev-loud">' +
-          ndEscapeHtml(ndDeviceTroubleText()) + '</div>' +
-        '<div>' + ndEscapeHtml(ndDeviceTroubleAdvice()) + '</div>' +
-        beat;
-
-    case 'listening':
-      return '<div>Navigate to this website on the other device to finish a device ' +
-        'connection: ' + link + '</div>' + keep + beat;
-
-    default:
-      return '<div>When you start listening by pressing the blue button, a secret ' +
-        'password will be copied to your clipboard, which you can paste into the ' +
-        'password field at ' + where + ' to finish a device connection.</div>';
-  }
+// WHAT TO DO WITH IT, in the order it is done, and it does not change.
+//
+// This panel used to have four moods and a line that repainted every two
+// seconds — whether the window was open, which relays were being asked,
+// how long ago the last pass ran and what it did. Every one of those was
+// about the poll. There is no poll and there is no window: the relay
+// hands the offer to this node on the connection it already holds, and
+// the node answers in the same round trip.
+//
+// So the panel is static, and that is the feature rather than a
+// simplification. There is no state here a person can get wrong, nothing
+// to arm before walking to the other room, and nothing to watch.
+//
+// The two reminders are Andy's, and both are about the OTHER device
+// rather than this one, which is why they are easy to forget at the
+// moment they matter.
+function ndDeviceBubbleHtml() {
+  return '<div>Open that link on the other device — phone, tablet, a second ' +
+      'browser — paste the password into the one field there, and press ' +
+      '<strong>Add this device</strong>. It takes about a second.</div>' +
+    '<div><strong>While you are there, bookmark that page.</strong> Its address ' +
+      'carries your key, and it is not one anybody could retype.</div>' +
+    '<div><strong>And let that browser\'s password manager memorise the ' +
+      'password</strong> when it offers to, so it reaches your other devices of ' +
+      'the same browser brand without passing through anything else.</div>' +
+    '<div class="muted">The password does not expire and there is nothing to ' +
+      'switch on here — a node with a password can always be enrolled to. Anybody ' +
+      'holding it can add a device to this node, so keep it where you keep ' +
+      'passwords. Adding a device replaces the one before it.</div>';
 }
 
 // Adding one of Andy's own handhelds, from the screen that names the
-// mailbox it will be added to — the same reasoning that killed the mint
-// picker.
+// relay it will be added through — the same reasoning that killed the
+// mint picker.
 //
-// Mailboxes this node HAS, which since B2 is not the same as ones it
-// owns. A peer owns no relay and still has a slot of its own there, so
-// gating this on the star would keep the feature at the owner for want
-// of one word — which is exactly where it sat until B2.
+// Relays this node HAS, which since B2 is not the same as ones it owns. A
+// peer owns no relay and still holds a row there, so gating this on the
+// star would keep the feature at the owner for want of one word — which
+// is exactly where it sat until B2.
 //
-// Still not every mailbox: one this node has no claim on cannot take its
-// device, and showing the panel there would be chrome nobody can act on
-// (AGENT.md — do not show chrome that is not useful in that state).
+// Still not every relay: one this node has no claim on cannot carry its
+// enrolment, and showing the panel there would be chrome nobody can act
+// on (AGENT.md — do not show chrome that is not useful in that state).
 function ndDeviceHtml() {
   if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
-  var host = ndDeviceHost();
-  // The host is kept on the panel because the two-second repaint has
-  // only the container to work from.
-  return '<div class="stat-tile wide natter-device" data-device-host="' +
-      ndEscapeHtml(host) + '">' +
+  var target = ndDeviceUrl(ndDeviceHost());
+  var full = ndEscapeHtml(target);
+  return '<div class="stat-tile wide natter-device">' +
     // NO STAR, unlike the Invite panel above. ★ means "you own this
-    // mailbox" everywhere in this app and in Relay Chat's To list — one
+    // relay" everywhere in this app and in Relay Chat's To list — one
     // mark, one meaning. Invite is genuinely owner-only and keeps it;
     // since B2 this panel is not, and a peer seeing the owned mark on a
-    // panel that has nothing to do with owning would be the mark
-    // starting to mean two things.
+    // panel that has nothing to do with owning would be the mark starting
+    // to mean two things.
     '<div class="panel-heading">Add one of my own devices</div>' +
-    // One control and one sentence about it. The transient word about
-    // what the last press did sits on the same line, because it is about
-    // the press and not about what to do next.
     '<div class="natter-dev-row">' +
-      ndDeviceButtonHtml() +
-      '<span class="natter-dev-say">' + ndEscapeHtml(ndDeviceSay()) + '</span>' +
+      '<button type="button" class="cancel-btn natter-dev-copy">' +
+        ndIcon.KEY + ' Copy password</button>' +
+      // _blank with rel="noopener", not target="_new" — the latter is not
+      // a standard keyword, and the new tab must not get a handle on the
+      // shell. The title carries the address in full: it is a LOCATOR and
+      // not a credential (deviceAuth.js), public at /api/relay/who
+      // already, so hiding it is about the page not being readable rather
+      // than about the address being secret.
+      '<a class="natter-dev-link" href="' + full + '" target="_blank"' +
+        ' rel="noopener" title="' + full + '">' +
+        ndEscapeHtml(ndShortUrl(target)) + '</a>' +
       '<span class="natter-dev-out muted"></span>' +
     '</div>' +
-    '<div class="stat-tile nested natter-dev-bubble" data-mood="' + ndDeviceMood() + '">' +
-      ndDeviceBubbleHtml(host) +
+    '<div class="stat-tile nested natter-dev-bubble">' +
+      ndDeviceBubbleHtml() +
     '</div>' +
     '</div>';
 }
@@ -412,77 +336,17 @@ function ndRender() {
     ndRemoveHtml();
 }
 
-// Painted into the existing panel, never by re-rendering the screen.
-// ndRender rebuilds everything, so a two-second poll that called it would
-// destroy the Invite fields under whoever was typing in them — the same
-// repaint-kills-the-field trap the row expansion had.
-function ndDevicePaint() {
-  var body = ndBody();
-  var panel = body && body.querySelector('.natter-device');
-  if (!panel) return;
-  var on = !!ndDevice.listening;
-
-  var btn = panel.querySelector('.natter-dev-toggle');
-  if (btn) {
-    btn.textContent = on ? ndIcon.RED_CIRCLE : ndIcon.BLUE_CIRCLE;
-    btn.title = on ? 'Click to stop listening' : 'Click to start listening';
-    btn.setAttribute('data-device-toggle', on ? 'stop' : 'start');
-    // Toggled rather than rewritten: replacing the element would restart
-    // the animation every two seconds, and a heartbeat that resets on a
-    // timer is a stutter.
-    btn.classList.toggle('beating', on);
-  }
-
-  var say = panel.querySelector('.natter-dev-say');
-  if (say) say.textContent = ndDeviceSay();
-
-  var bubble = panel.querySelector('.natter-dev-bubble');
-  if (!bubble) return;
-  var mood = ndDeviceMood();
-  // Rewritten only when the state actually changes. A two-second
-  // innerHTML would rebuild the link under whoever was reaching for it.
-  if (bubble.getAttribute('data-mood') !== mood) {
-    bubble.setAttribute('data-mood', mood);
-    bubble.innerHTML = ndDeviceBubbleHtml(panel.getAttribute('data-device-host') || '');
-  }
-  var beat = bubble.querySelector('.natter-dev-beat');
-  if (beat) beat.textContent = ndDeviceBeatText();
-}
-
-// While this screen is the app on screen, ask again on the tick's own
-// cadence. The window can close without this app touching it — the node
-// restarting is enough — and a panel painted once would go on claiming
-// it was open for as long as the screen stayed up.
+// NOTHING REPAINTS THIS SCREEN ANY MORE except ndRender, and ndRender
+// runs only when something was pressed.
 //
-// Visibility here is the SHELL's, never the browser's. `api.isVisible()`
-// answers "is this app the active one" (shell.js, buildApiFor).
-// document.visibilityState would be the wrong question twice over: it
-// says nothing about which app is on screen, and it goes false the
-// moment somebody opens the relay's /device page in another tab — which
-// is the one moment this panel must not go quiet.
+// There was a two-second poll here, and a paint function careful enough
+// not to destroy the Invite fields under whoever was typing in them, and
+// a visibility check so it stopped when this screen was not the one on
+// screen. All of it existed to keep one sentence true — "listening,
+// last pass 12s ago" — about a timer that no longer runs.
 //
-// It has to be asked, not assumed: panes are hidden and never destroyed,
-// so `.natter-device` still answers querySelector long after this screen
-// stopped being on screen, and this poll would otherwise run for the
-// life of the page.
-function ndWatch() {
-  ndUnwatch();
-  ndTimer = setInterval(function () {
-    var body = ndBody();
-    if (!body || !body.querySelector('.natter-device') || !ndApi || !ndApi.isVisible()) {
-      ndUnwatch();
-      return;
-    }
-    ndReadDevice().then(ndDevicePaint);
-  }, 2000);
-}
-
-function ndUnwatch() {
-  if (ndTimer) {
-    clearInterval(ndTimer);
-    ndTimer = null;
-  }
-}
+// The panel below states no fact that can go stale while it is read. That
+// is what made all of this deletable.
 
 // ---- the two things this screen does ---------------------------------
 
@@ -530,65 +394,31 @@ function ndMint(button) {
   });
 }
 
-// The window, opened or shut, on ONE control. The button repaints from
-// what the hub answers rather than from what was pressed: starting the
-// timer probes for mailboxes and can come back with none, and a button
-// that said "listening" while nothing was polling is the one lie this
-// design can tell.
-function ndDeviceToggle(button) {
+// COPYING THE PASSWORD, and it is now the only thing this panel does.
+//
+// It used to be half of a control that also opened a window, because
+// there were once two buttons and the copy was the one that opened it,
+// which nobody could guess (Andy — "I never realized I had to start
+// listening"). There is no window to open. One button, one meaning.
+//
+// The clipboard is the whole transport: the password goes from this
+// screen into a browser's password manager on the other device and syncs
+// from there, which is why 128 characters costs nothing to use.
+function ndDeviceCopy(button) {
   var out = button.closest('.natter-device').querySelector('.natter-dev-out');
   out.textContent = '';
-  if (ndDevice.listening) return ndSetListening(false, out);
-  return ndDeviceStart(out);
-}
-
-// Starting IS taking the password: one press, one meaning. There used to
-// be two buttons and the copy was the one that opened the window, which
-// nobody could guess (Andy — "I never realized I had to start listening").
-//
-// This reverses one thing deliberately, and DEVICE-PANEL.md §2 is where
-// the reversal was decided: the old code refused to open the window when
-// the clipboard failed, on the grounds that a window waiting for a
-// password nobody holds is a lie. Under one control, start is the point.
-// So it starts, and says the copy failed — the password is still on the
-// node and still reachable, where a door that silently stayed shut was
-// the failure this panel exists to prevent.
-function ndDeviceStart(out) {
-  // The clipboard is the whole transport here — the password goes from
-  // this screen into a browser's password manager and syncs to the
-  // handheld from there, which is why 128 characters costs nothing.
   var copy = ndDevice.password && navigator.clipboard && navigator.clipboard.writeText
     ? navigator.clipboard.writeText(ndDevice.password)
     : Promise.reject(new Error('no clipboard'));
   return copy.then(function () {
     out.textContent = 'password copied';
   }, function () {
+    // Said out loud rather than silently doing nothing. A copy button
+    // that fails quietly sends somebody to the other device to paste
+    // whatever was on the clipboard before.
     out.textContent = ndDevice.password
       ? 'could not copy — this browser refused the clipboard'
       : 'no password on this node yet';
-  }).then(function () {
-    return ndSetListening(true, out);
-  });
-}
-
-function ndSetListening(want, out) {
-  return ndPost('/api/hub/device-listen', { on: want }).then(function (r) {
-    var body = {};
-    try { body = JSON.parse(r.text); } catch (e) { body = {}; }
-    ndDevice.listening = !!body.listening;
-    ndDevice.relayUrls = body.relayUrls || [];
-    if (want && !ndDevice.listening) {
-      // Appended rather than replacing, because what the clipboard did
-      // is still the other half of what just happened.
-      out.textContent = (out.textContent ? out.textContent + ' — but ' : '') +
-        'no relay this node owns answered, so nothing is listening';
-    }
-    // Painted in place, and the watch restarted so the sentence stays
-    // true from here. Re-rendering would fold nothing but would take the
-    // Invite fields with it.
-    ndDevicePaint();
-    if (ndDevice.listening) ndWatch();
-    else ndUnwatch();
   });
 }
 
@@ -609,8 +439,8 @@ spirit.shell.activateApp({
       var mintBtn = target.closest('.natter-inv-go');
       if (mintBtn) { ndMint(mintBtn); return; }
 
-      var devBtn = target.closest('[data-device-toggle]');
-      if (devBtn) { ndDeviceToggle(devBtn); return; }
+      var copyBtn = target.closest('.natter-dev-copy');
+      if (copyBtn) { ndDeviceCopy(copyBtn); return; }
 
       var forget = target.closest('.natter-forget-go');
       if (forget) {
@@ -636,7 +466,6 @@ spirit.shell.activateApp({
   // would happily go on painting one mailbox's panel while another
   // mailbox's screen is up.
   open: function (params) {
-    ndUnwatch();
     ndUrl = (params && params.url) || '';
     ndLabel = (params && params.label) || '';
     ndCanRemove = !!(params && params.canRemove);
@@ -650,22 +479,13 @@ spirit.shell.activateApp({
     ndDevice.loaded = false;
 
     ndRender();
+    // The password first, then the badge — the panel needs both to paint,
+    // and ndLoad is the one that calls ndRender when it lands. No `render`
+    // hook and nothing to restart on the way back onto the screen: this
+    // dialog holds no live fact, which is the whole of what changed here.
     ndReadDevice().then(function () {
       return ndLoad();
-    }).then(function () {
-      ndWatch();
     });
-  },
-
-  // The only hook the shell gives an app on the way back onto the
-  // screen: switchTo calls render on every visit. Idempotent on purpose
-  // — it starts the device poll again only if the panel is on screen and
-  // nothing is already polling.
-  render: function () {
-    if (ndTimer) return;
-    var body = ndBody();
-    if (!body || !body.querySelector('.natter-device')) return;
-    ndWatch();
   },
 
 });

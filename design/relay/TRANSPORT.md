@@ -1,6 +1,7 @@
 # The transport, and what it has been shown to do
 
-**Status: built and proven live. Verified against `d087375` (2026-09-12).**
+**Status: built and proven live. Verified against `d087375` (2026-09-12);
+the poll it replaced was deleted the same day — see "What it retired".**
 
 Andy, on accepting the device page onto it:
 
@@ -102,8 +103,23 @@ seconds after."*
 The 66-second hold at the relay, and the rule that had to exist because
 of it — one hold must outlast one poll plus a margin. Holding a
 connection open at the relay is the thing the router exists to avoid, and
-the device handshake was the last place still doing it. The hold survives
-as a backstop reached only when nobody is home.
+the device handshake was the last place still doing it.
+
+**And then the poll itself, later the same day.** The first version of
+this note said the hold survived as a backstop for a node that was not
+streaming. Andy: *"i want no backstop, no 'listening mode' on the personal
+node. the ability to setup one-device-for-all-peers just IS."*
+
+So `deviceHandshake.js` is gone entirely, and with it the RAM slot, the
+two poll verbs (`device-pending`, `device-answer`), the `listening` flag
+and everything that read it. An offer to a node holding no stream is
+refused at once — which is decision 0006 applying to the relay's own
+posts, not a special rule for devices.
+
+What that cost, said plainly rather than discovered later: the enrolment
+rate limit lived in the deleted file and had to be rebuilt in `relay.js`
+as `DEVICE_PER_MIN`. `/api/relay/device` is a public POST carrying a
+password guess, and it now costs a post to somebody's node as well.
 
 That whole arrangement was never a decision. Device cycle 2 landed
 2026-09-10 and presence on the 11th: when the handshake was built there
@@ -120,10 +136,10 @@ explaining its reasoning. All real. None of it the actual reason.
   (PRESENCE.md §8), and still is.
 - **Confidentiality.** The relay reads everything. Untamperable is not
   private, and nothing here should be quoted as though it were.
-- **The old road is still there.** A node holding no stream still falls
-  back to the poll; `send`/`inbox` and the relay's message ring still
-  exist beside all of this. The transport is proven; the *retirement* of
-  what it replaces has not happened.
+- **The old road is half gone.** The device poll was retired on
+  2026-09-12 and there is no fallback behind it. `send`/`inbox` and the
+  relay's message ring still exist beside all of this, and chat still
+  rides them — that retirement has not happened.
 - **Failure under loss.** Everything measured ran on links that worked.
   A dropped stream mid-exchange resolves as a 504 by design, but that
   path has been reasoned about rather than exercised.
@@ -134,7 +150,12 @@ explaining its reasoning. All real. None of it the actual reason.
 
 `peerPost.js` (node), `relay.js` — `post`, `routePost`, `routeReply`
 (relay), `answerRelay.js` (what a node answers when its relay asks),
-`router.js` (the pending table), `presence.js` (who is holding a stream).
+`deviceTick.js` (what it decides), `router.js` (the pending table),
+`presence.js` (who is holding a stream).
 
-Proven by `spirit/test/liveRelay.js`, which runs by hand against a real
-relay because none of the above can be shown in process.
+In process: `spirit/test/deviceEnrol.js` walks a whole enrolment down the
+stream and back, `spirit/test/answerRelay.js` holds the sender check, and
+`spirit/test/routerPost.js` the router itself.
+
+Proven live by `spirit/test/liveRelay.js`, which runs by hand against a
+real relay because the numbers above cannot be shown in process.

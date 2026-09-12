@@ -31,7 +31,6 @@ const SURFACE = [
   ['GET', '/api/relay/who'],
   ['GET', '/api/relay/status'],
   ['GET', '/api/relay/stream'],
-  ['GET', '/api/relay/device-pending'],
   ['POST', '/api/relay/claim'],
   ['POST', '/api/relay/send'],
   ['POST', '/api/relay/invite'],

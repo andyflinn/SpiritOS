@@ -17,6 +17,70 @@ const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
 const world = require('./world');
 
+// WHAT A HELD STREAM LOOKS LIKE from the relay's side. The same sink
+// presenceStream.js uses, because it is the same sink.
+function fakeSink() {
+  const sink = {
+    lines: [],
+    closed: false,
+    write: function (chunk) { sink.lines.push(chunk); },
+    close: function () { sink.closed = true; },
+  };
+  sink.events = function () {
+    return sink.lines.map(function (chunk) {
+      const ev = /event: (.*)/.exec(chunk);
+      const data = /data: (.*)/.exec(chunk);
+      let parsed = null;
+      try { parsed = data ? JSON.parse(data[1]) : null; } catch (e) { parsed = null; }
+      return { event: ev ? ev[1] : '', data: parsed };
+    }).filter(function (e) { return e.event; });
+  };
+  return sink;
+}
+
+// A NODE STANDING ON THE RELAY'S STREAM, which since the poll went is the
+// only way an offer reaches anybody at all. There is no slot to park one
+// in and no second road to it.
+function streaming(box, id) {
+  const sink = fakeSink();
+  const opened = box.streamOpen(
+    id.publicKey,
+    auth.sign(id.privateKey, auth.streamMessage(id.publicKey)),
+    sink
+  );
+  return { sink: sink, opened: opened, mark: sink.events().length };
+}
+
+// The last request to land on this sink, and what it carried.
+function offerOn(held) {
+  const arrived = held.sink.events().slice(held.mark)
+    .filter(function (e) { return e.event === 'request'; });
+  held.mark = held.sink.events().length;
+  if (!arrived.length) return null;
+  const req = arrived[arrived.length - 1].data;
+  let carried = null;
+  try { carried = JSON.parse(req.text); } catch (e) { carried = null; }
+  return { req: req, carried: carried };
+}
+
+// The node answering, which is what settles the browser's held POST —
+// the one asymmetry in the router, because a relay holds no stream to
+// itself and its far end is a connection instead.
+function replyTo(box, id, req, accepted, deviceKey) {
+  const hash = auth.requestHash(
+    auth.postSignatureFor(req.from, req.from, req.to, req.text, req.sig)
+  );
+  return box.routeReply(
+    id.publicKey, hash,
+    JSON.stringify({
+      relay: 'device-answer',
+      accepted: !!accepted,
+      devicePublicKey: deviceKey || '',
+    }),
+    auth.sign(id.privateKey, auth.receiptMessage(hash))
+  );
+}
+
 // TWO JOHNS, and the scenario says so in one line. Both wear the label
 // `john`; neither can share a name, because a name is how this suite
 // refers to somebody and a label is what goes on the wire. That
@@ -47,41 +111,64 @@ async function run() {
     test.fail('the two johns got the same key');
   }
 
-  test.subHeading('Each john has a slot of their own');
+  test.subHeading('Each john is offered to on their own stream');
 
   const phoneA = auth.generateIdentity('phone-a');
   const phoneB = auth.generateIdentity('phone-b');
 
-  // Addressed by KEY, which is what the per-key URL will carry.
+  // BOTH JOHNS ARE HOME. There is no slot any more — an offer is posted
+  // to the node on the stream it is already holding — so "each john gets
+  // their own" is now a statement about which SOCKET it went down, which
+  // is a stronger claim than which slot it landed in.
+  const heldA = streaming(L.box, johnA);
+  const heldB = streaming(L.box, johnB);
+  if (heldA.opened.ok && heldB.opened.ok) {
+    test.check('both johns hold a stream, each signed as themselves');
+  } else {
+    test.fail('streams: ' + JSON.stringify([heldA.opened, heldB.opened]));
+  }
+
+  // Addressed by KEY, which is what the per-key URL carries.
   const offerA = L.box.deviceOffer(johnA.publicKey, 'pw-a', phoneA.publicKey);
   const offerB = L.box.deviceOffer(johnB.publicKey, 'pw-b', phoneB.publicKey);
 
-  const heldA = L.box.deviceTake(johnA.publicKey);
-  const heldB = L.box.deviceTake(johnB.publicKey);
-  if (heldA && heldA.password === 'pw-a' && heldB && heldB.password === 'pw-b') {
-    test.check('each slot holds its own offer, though the labels are identical');
+  const gotA = offerOn(heldA);
+  const gotB = offerOn(heldB);
+  if (gotA && gotA.carried && gotA.carried.password === 'pw-a' &&
+      gotB && gotB.carried && gotB.carried.password === 'pw-b') {
+    test.check('each hears its own offer, though the labels are identical');
   } else {
-    test.fail('A: ' + JSON.stringify(heldA) + ' B: ' + JSON.stringify(heldB));
+    test.fail('A: ' + JSON.stringify(gotA && gotA.carried) +
+      ' B: ' + JSON.stringify(gotB && gotB.carried));
+  }
+
+  // And not the other's — the check above would pass if both sinks got
+  // both, which is exactly the confusion a label-keyed route would cause.
+  if (gotA.req.to === johnA.publicKey && gotB.req.to === johnB.publicKey) {
+    test.check('and only its own — the address on the wire is the key');
+  } else {
+    test.fail('addressing: ' + JSON.stringify([gotA.req.to, gotB.req.to]));
   }
 
   // The label is ambiguous, so it must resolve to nobody rather than to
   // whichever john happens to be first — the same answer resolveParty
   // gives the inbox, and the reason a duplicate label 409s there.
-  const byLabel = L.box.deviceTake('john');
-  if (byLabel == null) {
+  const byLabel = await L.box.deviceOffer('john', 'pw-x', 'pk-x');
+  if (byLabel && byLabel.ok === false) {
     test.check('and the shared label reaches neither of them');
   } else {
-    test.fail('a duplicate label resolved to a slot: ' + JSON.stringify(byLabel));
+    test.fail('a duplicate label resolved: ' + JSON.stringify(byLabel));
   }
 
   test.subHeading('A peer installs its own device, with its own key');
 
-  // The node's half: it took the offer, compared the password at home,
+  // The node's half: it heard the offer, compared the password at home,
   // and now installs the key it was given.
+  const offeredKey = gotA.carried.devicePublicKey;
   const installed = L.box.setDevice(
     johnA.publicKey,
-    heldA.devicePublicKey,
-    auth.sign(johnA.privateKey, deviceAuth.setDeviceMessage(heldA.devicePublicKey))
+    offeredKey,
+    auth.sign(johnA.privateKey, deviceAuth.setDeviceMessage(offeredKey))
   );
   if (installed && installed.ok) test.check('john A installed a device on his own row');
   else test.fail('install A: ' + JSON.stringify(installed));
@@ -112,8 +199,8 @@ async function run() {
     test.fail('owner installed on a peer row: ' + JSON.stringify(byOwner));
   }
 
-  L.box.deviceReply(johnA.publicKey, true);
-  L.box.deviceReply(johnB.publicKey, false);
+  replyTo(L.box, johnA, gotA.req, true, phoneA.publicKey);
+  replyTo(L.box, johnB, gotB.req, false, '');
   const settled = await Promise.all([offerA, offerB]);
   if (settled[0] && settled[0].ok && settled[1] && settled[1].ok === false) {
     test.check('each browser hears its own answer');
@@ -165,12 +252,13 @@ async function run() {
     test.fail('nameless offer: ' + JSON.stringify(nameless));
   }
 
+  const ownerStream = streaming(L.box, L.owner);
   const ownerOffer = L.box.deviceOffer('andy', 'pw-owner', ownerPhone.publicKey);
-  const ownerHeld = L.box.deviceTake('andy');
-  if (ownerHeld && ownerHeld.password === 'pw-owner') {
-    test.check('and the owner, named, gets a slot like everybody else');
+  const ownerGot = offerOn(ownerStream);
+  if (ownerGot && ownerGot.carried && ownerGot.carried.password === 'pw-owner') {
+    test.check('and the owner, named, is offered to like everybody else');
   } else {
-    test.fail('owner held: ' + JSON.stringify(ownerHeld));
+    test.fail('owner got: ' + JSON.stringify(ownerGot && ownerGot.carried));
   }
   const ownerInstall = L.box.setDevice(
     'andy',
@@ -188,7 +276,7 @@ async function run() {
     test.fail('allow.json holds the wrong keys');
   }
 
-  L.box.deviceReply('andy', false);
+  replyTo(L.box, L.owner, ownerGot.req, false, '');
   await ownerOffer;
 
   test.subHeading('A key survives being a URL segment');

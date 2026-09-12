@@ -5,9 +5,9 @@
 // disk — presence is true only while a socket is open, and written down
 // it is a record of something that has stopped being true.
 //
-// A registry beside deviceHandshake.js rather than another subsystem
-// inside relay.js, for the same reason that one is its own file: the
-// mailbox should not grow a second thing it has to remember.
+// Its own file rather than another subsystem inside relay.js, for the
+// same reason the device handshake was its own file while it existed: the
+// relay should not grow a second thing it has to remember.
 //
 // THE CONNECTION IS THE PRESENCE. There is no announce message, no
 // heartbeat protocol, no last-seen timestamp and no timeout to tune. A
@@ -23,8 +23,8 @@ var DEFAULT_PER_MIN = 6;
 function createRegistry(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
-  // Six rather than deviceHandshake's ten, because the traffic is a
-  // different kind. A device offer is a person pressing a button; a
+  // Six rather than the ten a device enrolment gets, because the traffic
+  // is a different kind. A device offer is a person pressing a button; a
   // connect is a machine in a loop. A healthy node spends one of these
   // and holds it for days, a flapping network spends a handful, and a
   // backoff bug spends all six in a second — which is the case this
