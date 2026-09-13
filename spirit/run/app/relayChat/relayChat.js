@@ -1137,12 +1137,10 @@ spirit.shell.activateApp({
           // none for the sender.
           if (msg) {
             recordMessages([msg], 'sent');
-            // A word to the mailbox is answered in the same breath: the
-            // console does not post its reply into the mailbox (it would
-            // evict real mail from a 200-entry ring nobody could read it
-            // back out of), so the answer rides home on the send and is
-            // filed here like anything else received.
-            if (msg.consoleReply) recordMessages([msg.consoleReply], 'received');
+            // A word to the relay used to be answered in the same
+            // breath, and filed here like anything else received. The
+            // relay console is gone (2026-09-13) — nothing answers the
+            // reserved name any more, so there is no reply to file.
             renderThread();
           }
           setStatus('');

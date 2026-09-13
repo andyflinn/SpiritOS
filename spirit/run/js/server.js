@@ -941,14 +941,11 @@ const server = http.createServer((req, res) => {
     readJsonBody(req).then(function (body) {
       const result = relay.send(body && body.from, body && body.to, body && body.text, body && body.sig, clientKeyFor(req));
       res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-      // A console exchange comes home in this response rather than
-      // through the mailbox, so the answer rides on the message it
-      // answers. An ordinary send is unchanged: one message object, no
-      // extra field, nothing for an older client to trip over.
-      const payload = (result.ok && result.consoleReply)
-        ? Object.assign({}, result.message, { consoleReply: result.consoleReply })
-        : (result.ok ? result.message : { error: result.error });
-      res.end(JSON.stringify(payload));
+      // A console exchange used to come home in this response, riding on
+      // the message it answered. The console is gone (2026-09-13), so a
+      // send is one message object and nothing else — which is what it
+      // always was for every line that was not a console command.
+      res.end(JSON.stringify(result.ok ? result.message : { error: result.error }));
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Invalid JSON body');

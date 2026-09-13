@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 10 requirements, 6 done.**
+**Status: OPEN — 10 requirements, 7 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -357,10 +357,28 @@ identity* — one clause shorter. R7 of
 [the device cycle](2026-09-12-device-and-node-defence.md) must still pass
 afterwards.
 
-**Verify:** not written. Wants `spirit/test/devicePeers.js` still green
-with the carve-out gone, and a check that `relay` is still an
-unclaimable name.
-**Status:** OPEN — unblocks R8
+**One thing the deletion exposed, and it needed fixing rather than
+noting:** with the console gone, a line to `relay` did not error — it
+fell through and became an ordinary ring entry addressed to a name no
+peer holds, `toKey` null, which nobody can ever read back because
+`inbox('relay')` is refused for everyone including the owner. A junk sink
+that looks like a delivery is precisely what removing the console was
+meant to stop, so the reserved name is now **refused outright (404)**.
+
+**And the device page lost its only post-enrolment function.** Its
+"Send to relay" box posted to `/api/relay/send` addressed to `relay`; it
+went with the console rather than being left to write into a ring nobody
+reads. An enrolled device now says who it is and nothing more — which is
+honest about where the device arc actually is, and consistent with the
+architecture: a device's correspondent is its node, not a relay.
+
+**Verify:** `spirit/test/firstOwner.js` — "a line to the reserved name is
+refused — nothing answers to it now" and "the name itself is still
+unclaimable, which was never about the console";
+`spirit/test/devicePeers.js` — "not the relay either — the last exception
+to its confinement is gone"; `spirit/test/liveFrontDoor.js` — "the
+handheld cannot reach the reserved name over the wire either — 403"
+**Status:** DONE — R8 unblocked
 
 ### R9 — the relay streams its own condition to its owner
 > permitting a real-time monitor in shell for the relay memory status etc....

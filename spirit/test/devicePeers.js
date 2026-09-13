@@ -327,15 +327,23 @@ async function run() {
         test.fail('device could not reach its own identity: ' + JSON.stringify(atSelf));
       }
 
-      // The reserved name is not a peer. Kept because it is the device
-      // page's only working function today, and harmless now the owner
-      // words are gone: what a handheld gets there is `help` and
-      // `whoami`, which the public census already publishes.
-      const atConsole = sendAs(oPhone, 'relay', 'whoami');
-      if (atConsole.ok) {
-        test.check('and the relay console, which is not a peer and carries it no powers');
+      // AND THE CARVE-OUT IS GONE, which makes this rule one clause
+      // shorter than it was.
+      //
+      // `relay` was the one destination a device could reach besides
+      // itself, kept because it was the device page's only working
+      // function. The comment in relay.js said what to do about it —
+      // "when the device channel exists it should go, because a
+      // device's correspondent is its NODE and not a relay" — and
+      // deleting the console (2026-09-13) settled it early.
+      //
+      // So the confinement now reads as it always should have: to
+      // itself, and nowhere else.
+      const atRelay = sendAs(oPhone, 'relay', 'whoami');
+      if (!atRelay.ok) {
+        test.check('and not the relay either — the last exception to its confinement is gone');
       } else {
-        test.fail('device refused the console: ' + JSON.stringify(atConsole));
+        test.fail('a device still reached the reserved name: ' + JSON.stringify(atRelay));
       }
     }
 
@@ -349,36 +357,30 @@ async function run() {
       test.fail('status: house=' + houseReport.ok + ' device=' + deviceReport.ok);
     }
 
-    // LOST: the console's owner words. THE SHARP ONE \u2014 `invites` lists
-    // live tokens, so this is the difference between a stolen phone that
-    // can read your mail and one that can give strangers a relay.
-    function consoleSay(signer, word) {
-      const r = D.box.send(
-        'andy', 'relay', word,
-        auth.sign(signer.privateKey, auth.sendMessage('andy', 'relay', word))
-      );
-      return r.ok ? ((r.consoleReply && r.consoleReply.text) || '') : 'refused';
-    }
-    const houseInvites = consoleSay(D.owner, 'invites');
-    const deviceInvites = consoleSay(handheld, 'invites');
-    if (houseInvites && !/owner/i.test(houseInvites) && /owner/i.test(deviceInvites)) {
-      test.check('and the console refuses a handheld the owner words — `invites` lists live tokens');
+    // LOST WITH THE CONSOLE: its owner words. Two checks stood here —
+    // that a handheld asking `invites` was refused the live token list,
+    // and that `whoami` told the house key and the device apart despite
+    // both signing as the same label.
+    //
+    // They are gone because the console is, and the thing they guarded
+    // moved rather than vanished: live invites now travel in the
+    // relay's own status report, which goes to the OWNER'S SINK and to
+    // no other. A device holds no stream at all (streamOpen refuses a
+    // device key outright), so it cannot be a recipient of one — which
+    // is a stronger answer than a console refusing it a word.
+    //
+    // spirit/test/relayStatus.js is where that is now proven, including
+    // the negative half. Asserted here too, at the one thing THIS suite
+    // is about: a device cannot open the wire its owner is on.
+    const deviceStream = D.box.streamOpen(
+      'andy',
+      auth.sign(handheld.privateKey, auth.streamMessage(handheld.publicKey)),
+      { write: function () { return true; }, close: function () {} }
+    );
+    if (!deviceStream.ok) {
+      test.check('and a handheld cannot open the stream its owner is on, so it can receive no report either');
     } else {
-      test.fail('invites: house=' + JSON.stringify(houseInvites) +
-        ' device=' + JSON.stringify(deviceInvites));
-    }
-
-    // DECIDED BY THE SIGNER, not by the row, and that is the mechanism.
-    // A device signs as its owner's LABEL, so the row was always the
-    // owner's and isOwner(src) was always true. Nothing in the result
-    // could tell them apart until send reported which key proved it.
-    const houseWhoami = consoleSay(D.owner, 'whoami');
-    const deviceWhoami = consoleSay(handheld, 'whoami');
-    if (/owner/i.test(houseWhoami) && !/owner/i.test(deviceWhoami)) {
-      test.check('and says so plainly: the same label, and only one of them is the owner here');
-    } else {
-      test.fail('whoami: house=' + JSON.stringify(houseWhoami) +
-        ' device=' + JSON.stringify(deviceWhoami));
+      test.fail('a device opened a stream: ' + JSON.stringify(deviceStream));
     }
 
     // A device cannot mint, and never could \u2014 mint reads allow.byName

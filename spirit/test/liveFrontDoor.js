@@ -409,40 +409,30 @@ async function run() {
         test.fail('status: house=' + houseStatus + ' device=' + deviceStatus);
       }
 
-      // LOST: the console's owner words. THE SHARP ONE — `invites` lists
-      // live tokens, which is the difference between a stolen phone that
-      // reads your mail and one that gives strangers your relay.
-      async function consoleAs(signer, word) {
-        const r = await relayPost('/api/relay/send', {
-          from: ownerName, to: 'relay', text: word,
-          sig: auth.sign(signer.privateKey, auth.sendMessage(ownerName, 'relay', word)),
-        });
-        return (r.body && r.body.consoleReply && r.body.consoleReply.text) || '';
-      }
-      const houseInvites = await consoleAs(ownerId, 'invites');
-      const deviceInvites = await consoleAs(handheld, 'invites');
-      // MATCHED ON THE WHOLE PHRASE. `/owner/i` is the substring trap:
-      // the owner here is called `labowner`, so a bare /owner/ matches
-      // inside the label and every one of these checks passes for the
-      // wrong reason. The fourth time this shape has cost a sitting —
-      // 'Contact' inside 'Contacts' was the last one.
-      if (houseInvites && !/that one is the owner's/i.test(houseInvites) &&
-          /that one is the owner's/i.test(deviceInvites)) {
-        test.check("and the console refuses the handheld the owner's words, over the wire");
+      // LOST WITH THE CONSOLE: its owner words, over the wire.
+      //
+      // Two checks stood here — a handheld refused `invites` (the
+      // live token list) and `whoami` telling the house key and the
+      // device apart despite both signing as the same label.
+      //
+      // The thing they guarded moved rather than vanished. Live
+      // invites now travel in the relay's own status report, which
+      // goes to the owner's sink alone, and a device cannot open a
+      // stream at all — so it is not a recipient of anything, which
+      // beats a console refusing it a word.
+      //
+      // Over the wire, what is left to prove is the confinement
+      // itself, one clause shorter than it was: the reserved name
+      // was the handheld's last permitted destination besides its own
+      // identity, and it is not a destination any more.
+      const atRelay = await relayPost('/api/relay/send', {
+        from: ownerName, to: 'relay', text: 'whoami',
+        sig: auth.sign(handheld.privateKey, auth.sendMessage(ownerName, 'relay', 'whoami')),
+      });
+      if (atRelay.status !== 200 && atRelay.status !== 201) {
+        test.check('and the handheld cannot reach the reserved name over the wire either — ' + atRelay.status);
       } else {
-        test.fail('invites: house=' + JSON.stringify(houseInvites) +
-          ' device=' + JSON.stringify(deviceInvites));
-      }
-
-      // DECIDED BY THE SIGNER, not the row. A device signs as its owner's
-      // LABEL, so the row was always the owner's — which is why this was
-      // invisible until send reported which key proved it.
-      const houseWho = await consoleAs(ownerId, 'whoami');
-      const deviceWho = await consoleAs(handheld, 'whoami');
-      if (/owner of this mailbox/i.test(houseWho) && !/owner of this mailbox/i.test(deviceWho)) {
-        test.check('and the same label answers differently depending on which key signed it');
-      } else {
-        test.fail('whoami: house=' + JSON.stringify(houseWho) + ' device=' + JSON.stringify(deviceWho));
+        test.fail('a handheld reached the reserved name: ' + JSON.stringify(atRelay));
       }
     }
 

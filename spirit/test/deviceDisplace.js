@@ -10,7 +10,7 @@ const world = require('./world');
 
 const SCENARIO = require('./scenario').OWNER_ONLY;
 
-test.startTest('Device cycle 5 — replace the slot, console send as device');
+test.startTest('Device cycle 5 — replace the slot, and the replacement is confined too');
 
 {
   const L = world.build(SCENARIO);
@@ -77,16 +77,36 @@ test.startTest('Device cycle 5 — replace the slot, console send as device');
   if (houseRead.ok) test.check('house can still read');
   else test.fail('house read: ' + JSON.stringify(houseRead));
 
-  const consoleSend = box.send(
+  // THE TABLET USED TO GET A CONSOLE REPLY HERE, which was the last
+  // thing a device could do that reached past its owner's identity.
+  // The console is gone (2026-09-13) and the reserved name answers
+  // nothing, so the check is now that the displaced-in tablet is
+  // confined exactly like any other device: to the identity it was
+  // installed on, and nowhere else.
+  const atRelay = box.send(
     'andy',
     'relay',
     'help',
     auth.sign(tablet.privateKey, auth.sendMessage('andy', 'relay', 'help'))
   );
-  if (consoleSend.ok && consoleSend.consoleReply && consoleSend.consoleReply.text) {
-    test.check('tablet console returns in the send');
+  if (!atRelay.ok) {
+    test.check('the tablet cannot reach the reserved name either — nothing answers to it');
   } else {
-    test.fail('console: ' + JSON.stringify(consoleSend));
+    test.fail('tablet reached the reserved name: ' + JSON.stringify(atRelay));
+  }
+
+  // AND IT CAN STILL DO ITS ONE JOB, so this is not a check that
+  // simply broke the replaced slot.
+  const atSelf = box.send(
+    'andy',
+    'andy',
+    'note to self',
+    auth.sign(tablet.privateKey, auth.sendMessage('andy', 'andy', 'note to self'))
+  );
+  if (atSelf.ok) {
+    test.check('while still reaching the identity it belongs to');
+  } else {
+    test.fail('tablet could not reach its own identity: ' + JSON.stringify(atSelf));
   }
 
   if (typeof test.reportSuccessFailureCount === 'function') {

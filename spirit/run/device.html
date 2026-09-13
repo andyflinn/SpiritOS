@@ -7,7 +7,7 @@
   <title>SpiritOS — this device</title>
   <style>
     body { font: 16px/1.4 system-ui, sans-serif; max-width: 28rem; margin: 2rem auto; padding: 0 1rem; }
-    form, #console { display: flex; flex-direction: column; gap: 0.75rem; }
+    form, #attached { display: flex; flex-direction: column; gap: 0.75rem; }
     input, textarea { font: inherit; padding: 0.5rem; width: 100%; box-sizing: border-box; }
     button { font: inherit; padding: 0.5rem 0.75rem; width: fit-content; }
     #log { white-space: pre-wrap; min-height: 8rem; border: 1px solid #ccc; padding: 0.5rem; }
@@ -72,10 +72,8 @@
     <p id="enroll-out"></p>
   </form>
 
-  <div id="console" class="hide">
+  <div id="attached" class="hide">
     <p id="who"></p>
-    <textarea id="line" rows="3" placeholder="help"></textarea>
-    <button type="button" id="go">Send to relay</button>
     <div id="log"></div>
   </div>
 
@@ -83,9 +81,8 @@
     (function () {
       var enroll = document.getElementById('enroll');
       var enrollOut = document.getElementById('enroll-out');
-      var consoleEl = document.getElementById('console');
+      var attachedEl = document.getElementById('attached');
       var whoEl = document.getElementById('who');
-      var lineEl = document.getElementById('line');
       var logEl = document.getElementById('log');
 
       // Whatever host actually served this page. Not baked in: the same
@@ -179,9 +176,9 @@
         }
       }
 
-      function showConsole(name) {
+      function showAttached(name) {
         enroll.classList.add('hide');
-        consoleEl.classList.remove('hide');
+        attachedEl.classList.remove('hide');
         whoEl.textContent = name ? ('signed in as ' + name) : 'signed in';
       }
 
@@ -328,7 +325,7 @@
               enrollStop = null;
               enrollButton('Add this device');
               store(pair.pub, pair.priv, name);
-              showConsole(name);
+              showAttached(name);
               sayEnroll('Added in ' + Math.round((Date.now() - began) / 1000) + 's.');
               sayLog('this tab is the device');
               return;
@@ -418,43 +415,20 @@
         });
       });
 
-      document.getElementById('go').addEventListener('click', function () {
-        var st = loadStore();
-        var text = lineEl.value || '';
-        if (!st.priv || !st.name) {
-          sayLog('not now');
-          return;
-        }
-        if (!text.trim()) return;
-        var msg = sendMessage(st.name, 'relay', text);
-        signLine(st.priv, msg).then(function (sig) {
-          return fetch('/api/relay/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: st.name,
-              to: 'relay',
-              text: text,
-              sig: sig
-            })
-          });
-        }).then(function (res) {
-          return res.text().then(function (t) {
-            var body = t;
-            try { body = JSON.parse(t); } catch (e) {}
-            if (res.ok && body && body.consoleReply && body.consoleReply.text) {
-              sayLog('> ' + text + '\n' + body.consoleReply.text);
-            } else if (res.ok) {
-              sayLog('> ' + text);
-            } else {
-              sayLog((body && body.error) || 'not now');
-            }
-            lineEl.value = '';
-          });
-        }).catch(function (e) {
-          sayLog(e && e.message ? e.message : 'not now');
-        });
-      });
+      // A 'Send to relay' box stood here until 2026-09-13. It posted to
+      // /api/relay/send addressed to the reserved name `relay`, and the
+      // relay console answered on the same response.
+      //
+      // The console is gone, and this box went with it rather than being
+      // left to post into a 200-entry ring nobody can read back. It was
+      // also the one thing a device could do that reached PAST its own
+      // node to the relay, which the device architecture says it should
+      // never have: a device's correspondent is the node that owns it.
+      //
+      // So an enrolled device now says who it is and nothing more. That
+      // is honest about where the device arc actually is — see
+      // design/relay/DEVICE.md, whose §7 is explicitly future layer.
+
     })();
   </script>
 </body>

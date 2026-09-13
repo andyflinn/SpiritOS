@@ -78,50 +78,52 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('invited claim: ' + JSON.stringify({ mint: groqInvite, claim: bad }));
   }
 
-  // Chatting to the mailbox is a console now (CYCLE-RELAY-CONSOLE): the
-  // gate is the same isOwner() the census always used, and the answer
-  // comes home in the send response instead of the mailbox — nothing of
-  // a console exchange is persisted, because `messages` is a 200-entry
-  // ring holding every peer's undelivered mail.
+  // THE RESERVED NAME ANSWERS NOTHING, and that is the whole of what
+  // is left to check here.
+  //
+  // Chatting to the relay was a console (CYCLE-RELAY-CONSOLE) until
+  // 2026-09-13. Three checks stood here: that the owner could send to
+  // `relay`, that the census came back on the send response, and that a
+  // non-owner got nothing. All three described a feature that is gone.
+  //
+  // What replaced them is one check, and it is the one that matters —
+  // a line to `relay` must be REFUSED rather than quietly filed. With
+  // the console removed and no refusal, such a line becomes an ordinary
+  // ring entry addressed to a name no peer holds, with toKey null, that
+  // nobody can ever read back because inbox('relay') is refused for
+  // everyone including the owner. A junk sink that looks like a
+  // delivery is exactly what deleting the console was meant to stop.
   const sendSig = auth.sign(id.privateKey, auth.sendMessage('andy', 'relay', 'status'));
   const sent = box.send('andy', 'relay', 'status', sendSig);
-  if (sent.ok) {
-    test.check('owner can send to reserved name relay');
+  if (!sent.ok && sent.status === 404) {
+    test.check('a line to the reserved name is refused — nothing answers to it now');
   } else {
     test.fail('send to relay: ' + JSON.stringify(sent));
   }
 
-  if (sent.consoleReply && /owner andy/.test(sent.consoleReply.text)) {
-    test.check('and the mailbox answers the owner with the census');
-  } else {
-    test.fail('console reply: ' + JSON.stringify(sent));
-  }
-
-  // Not in the mailbox: the owner's own inbox holds no console traffic,
-  // so a friend's undelivered line is never evicted by one.
+  // And nothing of it reached the ring. The owner is the one whose
+  // inbox it would land in, so this is where a silent junk entry would
+  // show up.
   const box2 = createRelay(home);
   const inbox = box2.inbox('andy', auth.sign(id.privateKey, auth.inboxMessage('andy')));
-  const fromRelay = (inbox.messages || []).filter(function (m) { return m.from === 'relay'; });
-  if (inbox.ok && fromRelay.length === 0) {
-    test.check('and none of it was stored in the mailbox');
+  const toRelay = (inbox.messages || []).filter(function (m) { return m.to === 'relay' || m.from === 'relay'; });
+  if (inbox.ok && toRelay.length === 0) {
+    test.check('and nothing addressed to it was stored');
   } else {
     test.fail('inbox: ' + JSON.stringify(inbox));
   }
 
-  // A second signed key on the mailbox is fine (that is how two johns
-  // work) but it is not the owner, so chatting to `relay` gets it
-  // nothing but the console saying whose word that is.
-  const strangerSend = box2.send(
-    'groq', 'relay', 'status',
-    auth.sign(stranger.privateKey, auth.sendMessage('groq', 'relay', 'status'))
+  // The name is still RESERVED, which is a different rule and must
+  // outlive the console: nobody may claim it.
+  const grab = box2.claim(
+    'relay',
+    auth.sign(stranger.privateKey, auth.claimMessage('relay')),
+    stranger.publicKey
   );
-  const strangerInbox = box2.inbox('groq', auth.sign(stranger.privateKey, auth.inboxMessage('groq')));
-  const census = (strangerInbox.messages || []).filter(function (m) { return m.from === 'relay'; });
-  const refused = strangerSend.consoleReply && strangerSend.consoleReply.text;
-  if (strangerSend.ok && census.length === 0 && !/owner=|owner andy/.test(String(refused))) {
-    test.check('a non-owner sending to relay gets no status line back');
+  if (!grab.ok) {
+    test.check('and the name itself is still unclaimable, which was never about the console');
   } else {
-    test.fail('stranger census: ' + JSON.stringify(census) + ' send ' + JSON.stringify(strangerSend));
+    test.fail('the reserved name was claimed: ' + JSON.stringify(grab));
   }
 
   const stSig = auth.sign(id.privateKey, auth.statusMessage('andy'));

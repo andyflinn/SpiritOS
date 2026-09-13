@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const auth = require('./relayAuth');
 const invites = require('./invites');
-const relayConsole = require('./relayConsole');
 // keysForName and the set-device bytes. The device slot's shape is one
 // module's answer whether it is read here or on the personal node
 // (DEVICE-CYCLE1.md).
@@ -134,9 +133,6 @@ function createRelay(rootDir) {
   // caller — the caller is whoever the internet sent, and what needs a
   // ceiling is how often one person's node can be made to answer.
   var deviceHits = Object.create(null);
-  // Console messages are never stored, so they must not spend the ids
-  // real mail is numbered with.
-  var consoleSeq = 1;
 
   // THE RAM SLOT IS GONE, and so is the poll that read it. An offer is
   // no longer parked for a node to come and find: it is posted to the
@@ -235,9 +231,11 @@ function createRelay(rootDir) {
   function resolveParty(token) {
     var t = normalizeName(token);
     if (!t) return null;
-    if (t === auth.RESERVED_NAME) {
-      return { id: auth.RESERVED_NAME, label: auth.RESERVED_NAME, reserved: true };
-    }
+    // `relay` resolved to an addressable party here until 2026-09-13:
+    // it was the console, and the console is gone. The name stays
+    // RESERVED — nobody may claim it and no invite may be labelled
+    // with it — because that is a namespace rule and has nothing to
+    // do with whether there is anything at the other end of it.
     var byKey = findByKey(t);
     if (byKey) {
       return { id: peerId(byKey), label: labelOf(byKey), peer: byKey };
@@ -265,10 +263,13 @@ function createRelay(rootDir) {
     });
   }
 
-  // The mailbox's OWN key, not the owner's. `relay` is a caption — the
-  // reserved word a message can be addressed to — and a caption is not
-  // an identity: a node that keeps one file per peer cannot file the
-  // mailbox anywhere without one (CYCLE-CHAT-5.1). The keypair is made
+  // The mailbox's OWN key, not the owner's. `relay` is a caption — a
+  // reserved word nobody may claim — and a caption is not an identity: a
+  // node that keeps one file per peer cannot file the relay anywhere
+  // without one (CYCLE-CHAT-5.1). Until 2026-09-13 a line could be
+  // ADDRESSED to that caption, because the console was at the other end;
+  // it no longer can, and the key is what the relay signs with. The
+  // keypair is made
   // once, on the first --relay boot (server.js), and lives in this
   // process's own relay-state like any other identity.
   //
@@ -283,6 +284,9 @@ function createRelay(rootDir) {
     return {
       owner: auth.ownerName(allow),
       mode: allow.mode,
+      // The name nobody may claim. Still reported, because a browser
+      // building a claim form needs to know which name will be refused —
+      // it is a namespace fact and was never about the console.
       reserved: auth.RESERVED_NAME,
       mailboxPublicKey: mailboxPublicKey(),
       peers: who(),
@@ -474,75 +478,12 @@ function createRelay(rootDir) {
       },
     };
   }
-
-  // "I chat to my mailbox" is still the owner's affair. The gate has not
-  // moved — it is the same isOwner() the census used, decided HERE and
-  // handed to the console as a boolean, because a second owner check in
-  // a second file is a second thing to get wrong. What a non-owner gets
-  // is the console's own answer ("that one is the owner's"), never a
-  // census.
-  //
-  // Neither message is pushed into `messages`: see the comment in send.
-  // They carry the keys anyway, so the personal node can file them under
-  // the right peer — a reply follows the sender's KEY, not their public
-  // label, which is what a label-addressed reply could never do when two
-  // peers share a caption.
-  function consoleExchange(src, fromWire, text, signedByHouseKey) {
-    var senderKey = (src && src.peer && src.peer.publicKey) || null;
-    var at = new Date().toISOString();
-    var command = {
-      id: 'console-' + (consoleSeq++),
-      from: fromWire,
-      to: auth.RESERVED_NAME,
-      fromKey: senderKey,
-      toKey: mailboxPublicKey(),
-      text: text,
-      sentAt: at,
-    };
-
-    var answer = relayConsole.handle(text, {
-      // OWNER OF THE ROW *AND* SIGNED BY THE HOUSE KEY. The row alone was
-      // never enough: a device signs as its owner's label, so isOwner(src)
-      // was true for a handheld and the console handed it `invites` — a
-      // list of live tokens. A device is the owner's window, not the
-      // owner's credentials.
-      isOwner: isOwner(src) && signedByHouseKey !== false,
-      snapshot: snapshot,
-      peers: who,
-      invites: function () { return invites.load(rootDir); },
-      mailboxPublicKey: mailboxPublicKey,
-      now: Date.now(),
-      // The version this box is actually running answers "did my update
-      // land?" without an SSH session — and it could not, until B-stamp:
-      // it reported kernel.js's VERSION, a constant unchanged since the
-      // directory reorganisation, so it said the same thing before and
-      // after every deploy. Now it carries the commit, resolved once as
-      // this process loaded (js/buildStamp.js).
-      version: require('./kernel').core.const.VERSION + ' ' + RUNNING.commit +
-        (RUNNING.dirty ? '+dirty' : ''),
-      senderKey: senderKey,
-      senderLabel: fromWire,
-    });
-
-    if (!answer || !answer.reply) {
-      return { ok: true, status: 201, message: command };
-    }
-
-    return {
-      ok: true,
-      status: 201,
-      message: command,
-      consoleReply: {
-        id: 'console-' + (consoleSeq++),
-        from: auth.RESERVED_NAME,
-        to: fromWire,
-        fromKey: mailboxPublicKey(),
-        toKey: senderKey,
-        text: answer.reply,
-        sentAt: new Date().toISOString(),
-      },
-    };
-  }
+  // consoleExchange stood here until 2026-09-13 — 56 lines, reached
+  // THROUGH send(), and not peer transport at all. It is what stood
+  // between the relay and deleting the ring; deleting it is the home
+  // it needed. See relayStatus.js for what replaced what it told an
+  // owner, and decision 0007 for why that is more than the console
+  // ever managed.
 
   function send(from, to, text, sig, clientKey) {
     var fTok = normalizeName(from);
@@ -634,17 +575,17 @@ function createRelay(rootDir) {
         // its owner's window, so the only correspondent it has is the
         // identity it was installed on.
         //
-        // ONE EXCEPTION, and it is not a peer: the reserved `relay` name,
-        // which is the console. It carries no owner powers for a handheld
-        // any more (see isOwner below), so what a device reaches there is
-        // `help` and `whoami` — facts the public census already publishes.
-        // It is kept because it is the device page's only working
-        // function today; when the device channel exists it should go,
-        // because a device's correspondent is its NODE and not a relay.
+        // It had ONE exception until 2026-09-13: the reserved `relay`
+        // name, the console, kept because it was the device page's
+        // only working function. The comment here said what to do
+        // about it — "when the device channel exists it should go,
+        // because a device's correspondent is its NODE and not a
+        // relay" — and deleting the console settles it early. The rule
+        // is now what it always should have read as: to itself, and
+        // nowhere else.
         if (!signedByHouseKey) {
           var toSelf = !!(dst && dst.peer && dst.peer.publicKey === src.peer.publicKey);
-          var toConsole = !!(dst && dst.reserved);
-          if (!toSelf && !toConsole) {
+          if (!toSelf) {
             return {
               ok: false,
               status: 403,
@@ -664,20 +605,18 @@ function createRelay(rootDir) {
     var fromWire = (src && src.label) || fTok;
     var toWire = (dst && dst.label) || tTok;
 
-    // A line addressed to the reserved name is a console command, not
-    // mail, and every gate above has already run on it: the rate limit,
-    // the signature, the allow list. What changes is where it goes.
+    // A line addressed to the reserved name was a console command and
+    // was answered here without touching the ring. The console is gone.
     //
-    // Nothing about this exchange is persisted. `messages` is a
-    // 200-entry ring shared by every peer's undelivered mail, and a
-    // console that wrote two entries per command would quietly evict the
-    // oldest real thing anyone said — while the command itself could
-    // never be read back by anybody, since inbox('relay') is refused for
-    // everyone including the owner. So the answer rides home in this
-    // response, and the personal node keeps whatever record it wants
-    // (chat 5).
+    // REFUSED, rather than left to fall through. Without this it does
+    // not error — it becomes an ordinary ring entry addressed to a name
+    // no peer holds, with toKey null, which nobody can ever read back
+    // because inbox('relay') is refused for everyone including the
+    // owner. That is a junk sink that looks like a delivery, and the
+    // whole point of removing the console is to stop something looking
+    // like it works.
     if (tTok === auth.RESERVED_NAME || toWire === auth.RESERVED_NAME) {
-      return consoleExchange(src, fromWire, text, signedByHouseKey);
+      return { ok: false, status: 404, error: 'nothing answers to that name' };
     }
 
     var msg = {
