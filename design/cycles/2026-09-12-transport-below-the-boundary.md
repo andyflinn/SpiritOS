@@ -704,6 +704,51 @@ files in the core indefinitely, a plugin behind this api block if anyone
 ever wants one.
 
 ---
+### Why this panel exists, which is not what it looks like
+
+> When i proposed this panel, it was in part exactly to prove the protocol
+> capable….. i said that at the beginning.
+
+He did — *"the current crown bubble, which must prove many things"* — and
+it was read as a feature with a rationale attached rather than as the
+rationale itself. The corrections that followed (post it, put the whole
+panel through protocol, the relay must be addressable, the roster already
+answers this) were not scope growing. They were the brief being restated
+until it was heard.
+
+**Worth recording because the work only makes sense read that way.** A
+monitor panel is a modest feature. A monitor panel that a relay serves as
+a PEER, over the same router any two people use, answering a packet with
+a signed reply correlated by hash, is an argument that the protocol is
+enough — and the argument is what was asked for.
+
+**What it proved, in the order it proved it:**
+
+- a relay can be an **endpoint**, not only a wire — and for exactly one
+  party, without publishing that it is
+- a **control verb can be a packet**: post → hash → signed reply, the
+  same shape as any peer exchange, with no second kind of door
+- the **census is genuinely per-recipient**, which R11 needs for devices
+  and which nothing had exercised
+- **source-side filtering** can change live without restarting a stream
+
+**What it exposed, which is the more useful half:**
+
+- `routeReply` would refuse the relay's own identity — it begins with
+  `deviceIdentity`, so the relay could not answer at its own door
+- the node could not address a relay at all, and the fix was a rule
+  already agreed for something else
+- **four hand-rolled owner verbs exist only because the relay was not
+  addressable** — `monitorMessage`, `mintMessage`, `removePeerMessage`
+  and `claimMessage`. Three of them can now become packets. `claim`
+  cannot and never will: you cannot post to a relay you have no row on.
+- the **mint-replay hole is now fixable rather than merely known** —
+  `postMessage` binds sender, recipient and text and registers the hash
+  before anything is sent, which is precisely what `mintMessage` lacks
+
+The last two are not done. They are what this panel argued for, and they
+are the reason it was proposed.
+
 ### R17 — a relay streams its activity only while somebody watches
 > The relay needs an api startMonitorStream() and stopMonitorStream(), triggered by this new panel opening and closing. (visibility at shell-scope)
 
