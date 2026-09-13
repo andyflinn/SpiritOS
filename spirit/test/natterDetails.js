@@ -90,14 +90,6 @@ function copyTarget(out) {
   return node;
 }
 
-function forgetTarget() {
-  const node = { getAttribute: function () { return null; } };
-  node.closest = function (selector) {
-    return selector === '.natter-forget-go' ? node : null;
-  };
-  return node;
-}
-
 // opts: { rows, device, label, canRemove }
 function mountApp(opts) {
   opts = opts || {};
@@ -557,64 +549,28 @@ function openingAnotherMailboxLetsGoOfTheLast() {
   });
 }
 
-function takingAMailboxOffTheList() {
-  test.subHeading('Taking this mailbox off the list');
+// THREE SECTIONS STOOD HERE until 2026-09-13, and they proved a control
+// this screen no longer has: two presses to take a relay off the list,
+// the last relay offering no control at all, and arming for one mailbox
+// not half-arming the next.
+//
+//   Andy: "the 'Take this relay off the list' should be gone for now.
+//   It's nothing that bites us until there is more than one known
+//   satellite in space…."
+//
+// They are replaced rather than deleted, because a suite that merely
+// loses checks records a smaller world. What is left to assert is that
+// the surface is gone and the RULE is not:
+//
+//   natterCanRemove and natterRemoveAt still hold "a node keeps at least
+//   one relay", and spirit/test/natterLast.js still proves it. When there
+//   is a second satellite, the panel is rewritten against a rule that was
+//   never lost.
+function noRemovalSurfaceForNow() {
+  test.subHeading('Taking a relay off the list is not offered');
 
   const app = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
-  });
-
-  return settle().then(function () {
-    // TWO PRESSES, like Block in app/contactsDetails. This is the one
-    // control here that takes something away, and it sits at the end of
-    // a screen somebody may have been tabbing down.
-    app.body().fire('click', { target: forgetTarget() });
-    if (app.answers.length === 0 && /Press again/.test(app.body().innerHTML)) {
-      test.check('one press decides nothing, and the button says what the next one will do');
-    } else {
-      test.fail('first press: ' + JSON.stringify(app.answers) + ' | ' + app.body().innerHTML.slice(-200));
-    }
-
-    app.body().fire('click', { target: forgetTarget() });
-    const said = app.answers[app.answers.length - 1] || {};
-    if (said.removed === OWNED && said.changed === true) {
-      test.check('and the second RETURNS it, for the list to perform');
-    } else {
-      test.fail('second press: ' + JSON.stringify(said));
-    }
-
-    // Nothing here writes relays.json. It is the list's file, and this
-    // app's api.fs is scoped to its own folder — so there is no call to
-    // make and no second place for the last-mailbox rule to live.
-    const wrote = app.log.filter(function (c) { return /relays\.json/.test(c.url); });
-    if (!wrote.length) {
-      test.check('and this screen writes nothing — the file belongs to the list');
-    } else {
-      test.fail('the screen wrote: ' + JSON.stringify(wrote));
-    }
-  });
-}
-
-function theLastMailboxDoesNotComeOff() {
-  const app = mountApp({
-    canRemove: false,
-    rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
-  });
-
-  return settle().then(function () {
-    const panel = app.body().innerHTML;
-    // Not a disabled button: no control at all, and a sentence saying
-    // why. A node with no mailbox can neither claim, send nor read.
-    if (panel.indexOf('natter-forget-go') === -1 && /keeps at least one/.test(panel)) {
-      test.check('the last mailbox offers no control, and says why rather than greying one out');
-    } else {
-      test.fail('last mailbox: ' + panel.slice(-300));
-    }
-  });
-}
-
-function armingIsAboutONEMailbox() {
-  const app = mountApp({
+    canRemove: true,
     rows: [
       { url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } },
       { url: THEIRS, label: 'theirs', owned: false, claimed: true, census: { owner: 'carol', peers: 4, myLabel: 'bert' } },
@@ -622,22 +578,39 @@ function armingIsAboutONEMailbox() {
   });
 
   return settle().then(function () {
-    app.body().fire('click', { target: forgetTarget() });
-    // Armed for one mailbox, then opened on another. Two presses must
-    // mean two presses about the SAME thing — the shell can promise
-    // open() runs, it cannot know what is stale inside.
-    app.behavior.open({ url: THEIRS, label: 'andy', canRemove: true });
-    return settle().then(function () {
-      app.body().fire('click', { target: forgetTarget() });
-      const said = app.answers[app.answers.length - 1] || {};
-      if (!said.removed) {
-        test.check('and arming it for one mailbox does not half-arm the next');
-      } else {
-        test.fail('a single press removed ' + said.removed + ' after a change of subject');
-      }
-    });
+    const panel = app.body().innerHTML;
+
+    // EVEN WITH canRemove TRUE. The old screen showed the control when
+    // the list said it could; this one shows it never, so a caller still
+    // passing the flag cannot bring it back by accident.
+    if (panel.indexOf('natter-forget-go') === -1 &&
+        panel.indexOf('Take this relay off the list') === -1) {
+      test.check('no removal control, even for a node that lists two relays');
+    } else {
+      test.fail('the panel came back: ' + panel.slice(-300));
+    }
+
+    // AND NO PARAGRAPH IN ITS PLACE. The version that could not remove
+    // explained why instead, which is a sentence answering a question
+    // nobody asked while there is one satellite.
+    if (!/keeps at least one/.test(panel)) {
+      test.check('and no paragraph explaining a control that is not there');
+    } else {
+      test.fail('the explanation outlived the control');
+    }
+
+    // Nothing this screen ever did wrote relays.json — it returned an
+    // answer for the list to perform. With no answer to return, there is
+    // still nothing written, and that is worth keeping said.
+    const wrote = app.log.filter(function (c) { return /relays\.json/.test(c.url); });
+    if (!wrote.length) {
+      test.check('and this screen still writes nothing — the file belongs to the list');
+    } else {
+      test.fail('the screen wrote: ' + JSON.stringify(wrote));
+    }
   });
 }
+
 
 ownedMailbox()
   .then(mintingNamesThisMailbox)
@@ -646,9 +619,7 @@ ownedMailbox()
   .then(theDevicePanel)
   .then(thePanelAsksOnce)
   .then(openingAnotherMailboxLetsGoOfTheLast)
-  .then(takingAMailboxOffTheList)
-  .then(theLastMailboxDoesNotComeOff)
-  .then(armingIsAboutONEMailbox)
+  .then(noRemovalSurfaceForNow)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('natterDetails threw: ' + ((err && err.stack) || err));

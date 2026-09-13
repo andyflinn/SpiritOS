@@ -43,6 +43,12 @@ function natterLoadRelays(api) {
 // If that script did not load there is no helper and no Remove: losing
 // the button is a nuisance, losing the last relay is a node that cannot
 // claim, send or read anything.
+// KEPT DELIBERATELY WITHOUT A CALLER, and this is the one place that says
+// so. The "Take this relay off the list" panel went on 2026-09-13 because
+// one satellite makes it a way to break your own node — but the RULE it
+// enforced is worth more than the button, and spirit/test/natterLast.js
+// still proves it. When there is a second satellite the panel comes back
+// and finds its rule already standing.
 function natterCanRemove(count) {
   var badge = (typeof window !== 'undefined' && window.spiritOwnerBadge) || null;
   return !!(badge && badge.canRemoveMailbox(count));
@@ -203,7 +209,6 @@ function natterOpenMailbox(api, container, relays, url) {
   api.callDialog('app/natterDetails', {
     url: url,
     label: natterMyName,
-    canRemove: natterCanRemove(relays.length),
   }).then(function (result) {
     if (!result) return;
     if (result.minted) natterRememberMinted(api, result.minted);
@@ -211,41 +216,7 @@ function natterOpenMailbox(api, container, relays, url) {
     // the screen's own api.fs is scoped to its folder — so the screen
     // says what it decided and this performs it, under the same guard
     // that has always stood here.
-    if (result.removed) {
-      natterRemoveUrl(api, container, relays, result.removed);
-      return;
-    }
     if (result.changed) natterProbe(api, container, relays);
-  });
-}
-
-// By URL, not by index. An index is a position in a list that repaints,
-// and the screen that asked was opened from a row whose position nothing
-// promises to keep.
-function natterRemoveUrl(api, container, relays, url) {
-  var index = -1;
-  // Looked up rather than closed over: this function used to live inside
-  // mount(), where `statusEl` was a local, and moving it out of that
-  // closure left the name resolving to nothing. The element is the same
-  // one either way and the id has never moved.
-  var statusEl = document.getElementById('natter-status');
-  relays.forEach(function (relay, i) { if (relay.url === url) index = i; });
-  if (index === -1) return;
-  var removed = natterRemoveAt(relays, index);
-  // The last mailbox does not come off, whatever a screen decided. The
-  // guard lives here because the file lives here.
-  function say(text) { if (statusEl) statusEl.textContent = text; }
-  if (!removed) {
-    say('a node keeps at least one relay');
-    natterRenderList(container, api, relays);
-    return;
-  }
-  api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2)).then(function () {
-    say('removed ' + url);
-    natterRenderList(container, api, relays);
-  }).catch(function (err) {
-    relays.splice(index, 0, removed);
-    say('remove failed: ' + err.message);
   });
 }
 

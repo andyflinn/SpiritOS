@@ -40,8 +40,6 @@ var ndBadge = null;     // what that mailbox last said about itself
 var ndLabel = '';       // this node's own name, needed to sign a status ask
 var ndMinted = '';      // a label minted while this screen was open
 var ndChanged = false;  // has anything happened the list must repaint for?
-var ndCanRemove = false; // may this mailbox come off the list at all?
-var ndRemoveArmed = false; // Remove has been pressed once
 
 // THE PASSWORD AND THE KEY, and there is nothing else left to hold.
 //
@@ -290,39 +288,22 @@ function ndDeviceHtml() {
     '</div>' +
     '</div>';
 }
-
-// TAKING A MAILBOX OFF THE LIST, from the screen that is that mailbox —
-// the same reasoning that put Invite here. In a row it was a button
-// inside the thing it would delete, so every tap that could mean either
-// had to be disambiguated before it could be obeyed.
+// "Take this relay off the list" stood here until 2026-09-13.
 //
-// TWO PRESSES, like Block in app/contactsDetails. This is the one
-// control here that takes something away, and it sits at the end of a
-// screen somebody may have been tabbing down. The second press is not a
-// dialog and not a checkbox: it is the same button, saying what it will
-// do this time.
+//   Andy: "the 'Take this relay off the list' should be gone for now.
+//   It's nothing that bites us until there is more than one known
+//   satellite in space…."
 //
-// `canRemove` comes from the list, not from a count taken here. The rule
-// is about the LIST — a node with no mailbox can neither claim, send nor
-// read — and a screen that counted rows would be a second place for that
-// rule to live.
-function ndRemoveHtml() {
-  if (!ndCanRemove) {
-    return '<div class="stat-tile wide">' +
-      '<div class="job-log-empty">This is the last relay on the list, and a node ' +
-      'keeps at least one — it could not claim a name, send, or read without it.</div>' +
-      '</div>';
-  }
-  return '<div class="stat-tile wide natter-forget">' +
-    '<div class="panel-heading">Take this relay off the list</div>' +
-    '<div>' + ndEscapeHtml(ndUrl) + ' stays exactly as it is. This node simply stops ' +
-      'listing it — nothing is removed from the relay itself, and your row on it ' +
-      '(if you have one) is untouched. Adding it back is the URL and nothing else.</div>' +
-    '<button type="button" class="cancel-btn natter-forget-go">' +
-      (ndRemoveArmed ? 'Press again to take it off' : 'Take it off this list') +
-    '</button>' +
-    '</div>';
-}
+// With one real relay the control is a way to break your own node, and
+// with one real relay the explanation it showed instead ("this is the
+// last one, a node keeps at least one") is a paragraph answering a
+// question nobody asked.
+//
+// THE RULE IT ENFORCED IS NOT GONE. natterCanRemove and natterRemoveAt in
+// natter.js still hold "a node keeps at least one relay", and
+// spirit/test/natterLast.js still proves it. What went is the surface —
+// so when there is a second satellite, this is a panel to write again and
+// not a rule to rediscover.
 
 // ---- painting --------------------------------------------------------
 
@@ -332,8 +313,7 @@ function ndRender() {
   body.innerHTML =
     '<div class="stat-tile wide">' + ndReportHtml() + '</div>' +
     ndMintHtml() +
-    ndDeviceHtml() +
-    ndRemoveHtml();
+    ndDeviceHtml();
 }
 
 // NOTHING REPAINTS THIS SCREEN ANY MORE except ndRender, and ndRender
@@ -442,18 +422,6 @@ spirit.shell.activateApp({
       var copyBtn = target.closest('.natter-dev-copy');
       if (copyBtn) { ndDeviceCopy(copyBtn); return; }
 
-      var forget = target.closest('.natter-forget-go');
-      if (forget) {
-        if (!ndRemoveArmed) { ndRemoveArmed = true; ndRender(); return; }
-        ndRemoveArmed = false;
-        // ANSWERED, NOT DONE. relays.json belongs to the list, and this
-        // app's api.fs is scoped to its own folder. The list performs it
-        // under the guard that has always stood there — which is also
-        // what makes `canRemove` advice rather than permission.
-        ndChanged = true;
-        if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, removed: ndUrl });
-        ndRender();
-      }
     });
   },
 
@@ -468,14 +436,12 @@ spirit.shell.activateApp({
   open: function (params) {
     ndUrl = (params && params.url) || '';
     ndLabel = (params && params.label) || '';
-    ndCanRemove = !!(params && params.canRemove);
     ndBadge = null;
     ndMinted = '';
     ndChanged = false;
     // A half-armed Remove must mean two presses about the SAME mailbox.
     // Arming it for one and then opening another has to disarm — the
     // shell can promise open() runs, it cannot know what is stale here.
-    ndRemoveArmed = false;
     ndDevice.loaded = false;
 
     ndRender();
