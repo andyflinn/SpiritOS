@@ -909,6 +909,41 @@ function createHub(rootDir) {
     res.end(JSON.stringify({ rows: rows.map(rowAsMessage) }));
   }
 
+  // START OR STOP WATCHING A RELAY THIS NODE OWNS.
+  //
+  // Proxied rather than posted from the page for the same reason claim
+  // and invite are: the browser holds no key, and the signature has to be
+  // made where the identity lives.
+  //
+  // `filter` rides through untouched — it is the caller's preference
+  // about their own stream, and this node has no opinion about what
+  // somebody wants to watch.
+  function handleMonitor(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var on = !!(body && body.on);
+      withChosenRelay(res, body && body.url, function (url) {
+        var id = auth.loadIdentity(rootDir);
+        if (!id || !id.privateKey) {
+          fail(res, 403, 'no identity on this node');
+          return;
+        }
+        relayRequest(url, 'POST', '/api/relay/monitor', {
+          on: on,
+          filter: (body && body.filter) || null,
+          sig: auth.sign(id.privateKey, auth.monitorMessage(on)),
+        })
+          .then(function (r) {
+            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(r.text);
+          })
+          .catch(function (err) { fail(res, 502, String(err.message || err)); });
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
   function handleSend(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       var wrapped = outgoingText(body);
@@ -1448,6 +1483,7 @@ function createHub(rootDir) {
     // The other half of the same concept: the live push carries what
     // arrives now, this carries what arrived while nobody was looking.
     handleArrivals: handleArrivals,
+    handleMonitor: handleMonitor,
     handleSend: handleSend,
     handleInbox: handleInbox,
     // The same read, with nobody watching. server.js calls it on a timer

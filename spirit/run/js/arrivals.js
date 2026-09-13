@@ -77,6 +77,40 @@ const packet = require('./packet.js');
 // opts: { traffic } — the log, as an api block. Without one this runs
 // entirely in memory and holds nothing back, which is what the
 // seam-level checks want and what a relay would get if one ever built it.
+// SUBSCRIBERS, AND NOTHING ELSE. The bookkeeping every live channel to an
+// open page needs: hold the handlers, hand each of them the same thing,
+// contain one that throws.
+//
+// Split out when a relay's activity needed the same seam and did not fit
+// through createArrivals — that one decodes a packet envelope and drops
+// anything without `text`, so a monitor row would have vanished silently.
+// A fan-out that quietly discards what it does not recognise is worse
+// than no fan-out.
+function createFanOut() {
+  var subscribers = [];
+
+  function subscribe(fn) {
+    if (typeof fn !== 'function') return function () {};
+    subscribers.push(fn);
+    return function unsubscribe() {
+      subscribers = subscribers.filter(function (other) { return other !== fn; });
+    };
+  }
+
+  // Returns how many took it, so a caller can tell "nobody is watching"
+  // from "it went out" — which is the whole question a monitor asks.
+  function note(row) {
+    var delivered = 0;
+    subscribers.slice().forEach(function (fn) {
+      try { fn(row); delivered += 1; }
+      catch (e) { /* one bad page does not rob the others */ }
+    });
+    return delivered;
+  }
+
+  return { note: note, subscribe: subscribe, count: function () { return subscribers.length; } };
+}
+
 function createArrivals(opts) {
   var o = opts || {};
   var traffic = o.traffic || null;
@@ -199,4 +233,4 @@ function createArrivals(opts) {
   return { note: note, subscribe: subscribe, count: count, pending: pending };
 }
 
-module.exports = { createArrivals: createArrivals };
+module.exports = { createArrivals: createArrivals, createFanOut: createFanOut };

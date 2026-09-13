@@ -99,6 +99,28 @@ function streamSignatureOk(publicKey, key, sig, atMs) {
 // The key, not the label. Labels duplicate by design, so a signature
 // naming one would be an instruction to remove whichever john the relay
 // happened to find first.
+// WATCHING, OR NOT WATCHING. The flag is inside the signed bytes, so a
+// captured "start" cannot be replayed as a "stop" or the other way round
+// — the same reason remove-peer is its own verb rather than a replayed
+// status.
+//
+// A minute, like every other owner verb here: enough for two clocks a
+// minute apart in either direction, and short enough that a captured
+// proof dies.
+function monitorMessage(on, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'monitor\n' + (on ? 'on' : 'off') + '\n' + minute;
+}
+
+function monitorSignatureOk(publicKey, on, sig, atMs) {
+  if (!publicKey || !sig) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, monitorMessage(on, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
 function removePeerMessage(key, atMs) {
   var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
   return 'remove-peer\n' + String(key || '') + '\n' + minute;
@@ -443,6 +465,8 @@ module.exports = {
   streamMessage,
   streamSignatureOk,
   removePeerMessage,
+  monitorMessage,
+  monitorSignatureOk,
   removePeerSignatureOk,
   postMessage,
   postSignatureFor,

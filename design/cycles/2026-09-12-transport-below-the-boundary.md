@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 16 requirements, 13 done.**
+**Status: OPEN — 17 requirements, 13 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -702,6 +702,77 @@ have formed you honestly.
 **Status:** OPEN — and 0009 settles the database question separately:
 files in the core indefinitely, a plugin behind this api block if anyone
 ever wants one.
+
+---
+### R17 — a relay streams its activity only while somebody watches
+> The relay needs an api startMonitorStream() and stopMonitorStream(), triggered by this new panel opening and closing. (visibility at shell-scope)
+
+**This corrects R9, which shipped wrong.** Its timer pushes a status
+report every ten seconds for ever, watched or not — and a relay spending
+cycles on telemetry nobody reads is exactly what
+[0007](../decisions/0007-a-relay-survives-and-earns-its-keep.md) says a
+relay must not do. On-demand is the leaner answer and it makes the
+standing timer indefensible.
+
+**Two bubbles, two questions.** "What this relay says" is what it *is* —
+owner, mode, peers, memory, uptime, invites: facts that hold still.
+"Running statistics for this relay" is what it is *doing*, while you
+watch.
+
+**Agreed with Andy:**
+
+- **Events, not faster snapshots.** *"an obsessive techie, who wants to
+  see the water boil… the post/response count change, when they
+  happen"* — so the relay emits per routed request and reply, and the
+  panel keeps a ring console of the last N.
+- **Start and stop follow visibility at shell scope**, which
+  `api.isVisible()` already answers and the shell already flips on every
+  navigation — walking away stops the stream.
+- **Plus a button in the same bubble** that forces it on or off, so the
+  automatic behaviour is never the only behaviour.
+- **The owner's needs come first.** *"It has much diagnostic value, and
+  the need to survive and do a job for the owner, prioritizes the owners
+  needs."* So this is not throttled into uselessness to be polite: a
+  relay exists to do a job for its owner, and being able to see whether
+  it is doing it is part of that job.
+
+**A monitor nobody stopped must die on its own.** It lives on the
+owner's presence: when their stream drops, monitoring goes with it. A
+browser that crashes must not leave a relay pushing into nothing, and a
+timer to notice would be a second thing to get wrong.
+
+**0006 is not violated** — the monitor is RAM, transient, and stores
+nothing on anyone's behalf, exactly like presence. But it is a THIRD
+thing a relay does, after routing and reporting, and that belongs in the
+record rather than arriving as a feature.
+
+**And filtering happens at the source**, which Andy added while it was
+being built:
+> The monitoring api has filtering-at-the-source options, so the noise of the stream can be controlled and targeted.
+
+By `kinds` (post / reply / refused) and by `peer`. At the relay, before a
+row is built — a filtered event is not serialised and never touches a
+socket, so it costs nothing rather than costing less. A relay that pushed
+everything and let the panel discard it would spend the work anyway.
+
+The filter is **not** in the signed bytes, and that is deliberate rather
+than an oversight: the signature proves the owner asked to watch, and a
+filter can only ever NARROW what that same owner's own sink receives.
+There is nothing to escalate to — a forged filter shows its forger less.
+
+**R9's standing timer is deleted with this.** It pushed every ten seconds
+for ever, watched or not, which this makes indefensible rather than
+merely wasteful. A relay nobody is watching now does exactly nothing
+about being watched.
+
+**Verify:** `spirit/test/relayMonitor.js` — "a relay routing traffic
+pushes no activity at all until somebody asks", "the events go to the
+owner and to nobody else — send(), never broadcast()", "a monitor dies
+with the stream it was watching on — no timer, no orphan", "a peer filter
+drops traffic between two other people, at the relay", and "a filter
+nobody can read is no filter, rather than silence".
+**Status:** DONE — relay and node side. The panel that drives it is app
+work and is not this requirement.
 
 ---
 

@@ -1102,6 +1102,7 @@ function createRelay(rootDir) {
     // is what makes this answerable at all, and it is why that arc came
     // first.
     if (!presentNow.isPresent(target.id)) {
+      monitorEvent('refused', who.id, target.id, { why: 'peer not reachable' });
       return { ok: false, status: 503, error: 'peer not reachable' };
     }
 
@@ -1109,6 +1110,11 @@ function createRelay(rootDir) {
 
     // NO HASH IS SENT. The target derives it from the bytes it holds,
     // which is what makes it evidence rather than an echo (ROUTER.md §2).
+    // WATCHED, IF ANYBODY IS. Facts only — who, to whom, how big, which
+    // hash — and never the text: a monitor carrying payloads would make
+    // the owner's screen a place everybody else's words pass through,
+    // which is what 0006 just emptied off this box.
+    monitorEvent('post', who.id, target.id, { bytes: text.length, hash: hash });
     return withStatus(routes.open(hash, who.id, target.id, function () {
       return presentNow.send(target.id, 'request', {
         from: who.id,
@@ -1142,7 +1148,13 @@ function createRelay(rootDir) {
     }
 
     var matched = routes.answer(hash, who.id);
-    if (!matched.ok) return matched;
+    if (!matched.ok) {
+      monitorEvent('refused', who.id, '', { why: matched.error || 'no such route', hash: hash });
+      return matched;
+    }
+    monitorEvent('reply', who.id, matched.requester || '', {
+      bytes: typeof text === 'string' ? text.length : 0, hash: hash,
+    });
 
     // THE ONE ASYMMETRY IN THE WHOLE ARRANGEMENT.
     //
@@ -1205,6 +1217,99 @@ function createRelay(rootDir) {
   // Silent when the owner is not connected. A relay does not queue and
   // does not retry (0006); the next report is along shortly, and one the
   // owner was not there for is not worth keeping.
+  // IS ANYBODY WATCHING. RAM, transient, and nothing is stored on
+  // anyone's behalf — the same shape as presence, and 0006 is untouched.
+  //
+  // A relay does not push activity nobody reads. R9 shipped with a ten
+  // second timer that ran for ever, watched or not, and a box that must
+  // survive and earn its keep (0007) has no business spending cycles on
+  // telemetry for an empty room.
+  var monitoring = false;
+
+  // WHAT THIS WATCHER ASKED TO SEE.
+  //
+  //   Andy: "The monitoring api has filtering-at-the-source options, so
+  //   the noise of the stream can be controlled and targeted."
+  //
+  // At the SOURCE, which is the whole point: a relay that pushed
+  // everything and let a panel throw most of it away would spend the
+  // work anyway, on a box that has to earn its keep. A filtered-out
+  // event costs nothing here — it is not built, not serialised, and
+  // never touches a socket.
+  //
+  // NOT IN THE SIGNED BYTES, deliberately, and it is worth saying why
+  // rather than leaving it to look like an oversight: the signature
+  // proves the OWNER asked to watch, and the filter can only ever
+  // NARROW what that same owner's own sink receives. There is nothing to
+  // escalate to — a forged filter shows its forger less.
+  var monitorFilter = null;
+
+  function monitorWants(kind, from, to) {
+    if (!monitorFilter) return true;
+    if (monitorFilter.kinds && monitorFilter.kinds.indexOf(kind) === -1) return false;
+    if (monitorFilter.peer && monitorFilter.peer !== from && monitorFilter.peer !== to) return false;
+    return true;
+  }
+
+  // The shapes a caller may ask for, read defensively: a filter this does
+  // not understand is no filter, never an empty one. Refusing everything
+  // because a field was misspelled would look exactly like a quiet relay.
+  function readMonitorFilter(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var out = {};
+    if (Array.isArray(raw.kinds) && raw.kinds.length) {
+      out.kinds = raw.kinds.map(String).filter(function (k) {
+        return k === 'post' || k === 'reply' || k === 'refused';
+      });
+      if (!out.kinds.length) delete out.kinds;
+    }
+    if (typeof raw.peer === 'string' && raw.peer) out.peer = raw.peer;
+    return Object.keys(out).length ? out : null;
+  }
+
+  // WHO MAY ASK, and it is the house key alone. The events carry who is
+  // talking to whom on this relay, which is the owner's to see about
+  // their own box and nobody else's to ask for.
+  function setMonitor(on, sig, filter, atMs) {
+    var ownerLabel = auth.ownerName(allow);
+    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    if (!ownerKey) return { ok: false, status: 403, error: 'no owner key on this relay' };
+    if (!auth.monitorSignatureOk(ownerKey, !!on, sig, atMs)) {
+      return { ok: false, status: 403, error: 'bad monitor signature' };
+    }
+    monitoring = !!on;
+    monitorFilter = monitoring ? readMonitorFilter(filter) : null;
+    // The first thing a watcher gets is the state it just asked for, so
+    // the panel has something to draw before anything happens.
+    if (monitoring) statusToOwner();
+    return { ok: true, status: 200, monitoring: monitoring, filter: monitorFilter };
+  }
+
+  // ONE ROUTED THING HAPPENED. Sent only while somebody is watching, only
+  // to the owner's sink, and never stored.
+  //
+  // Facts, not payloads: who, which direction, what came of it. A monitor
+  // that carried the text would make an owner's screen a place everybody
+  // else's words pass through, which is the thing 0006 just emptied off
+  // the relay.
+  function monitorEvent(kind, from, to, extra) {
+    if (!monitoring) return false;
+    // Before anything is built. A filtered event must cost nothing, or
+    // the filter is a courtesy rather than a control.
+    if (!monitorWants(kind, from, to)) return false;
+    var ownerLabel = auth.ownerName(allow);
+    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    if (!ownerKey || !presentNow.isPresent(ownerKey)) return false;
+    var row = {
+      at: new Date().toISOString(),
+      kind: kind,
+      from: from || '',
+      to: to || '',
+    };
+    if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
+    return !!presentNow.send(ownerKey, 'relay-event', row);
+  }
+
   function statusToOwner() {
     var ownerLabel = auth.ownerName(allow);
     var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
@@ -1289,6 +1394,15 @@ function createRelay(rootDir) {
     var who_ = deviceIdentity(token);
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
+
+    // A MONITOR DIES WITH THE STREAM IT WAS WATCHING ON. A browser that
+    // crashed must not leave this relay pushing into nothing, and a timer
+    // to notice would be a second thing to get wrong: the socket closing
+    // IS the notice.
+    var ownerLabel = auth.ownerName(allow);
+    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    if (monitoring && ownerKey && who_.id === ownerKey) monitoring = false;
+
     presentNow.broadcast('presence', { key: who_.id, present: false });
     // Somebody leaving changes the report as much as somebody arriving.
     // A no-op when the leaver IS the owner, which is correct: there is
@@ -1311,6 +1425,11 @@ function createRelay(rootDir) {
     // nothing else does — and a monitor that only updates when a peer
     // connects would look frozen on a quiet relay.
     statusToOwner: statusToOwner,
+    // Watching, on demand. See setMonitor: the owner's key alone, the
+    // flag inside the signed bytes, and it dies with their stream.
+    setMonitor: setMonitor,
+    monitoring: function () { return monitoring; },
+    monitorFilter: function () { return monitorFilter; },
     setDevice: setDevice,
     // The whole device surface, now that the slot and its two verbs are
     // gone: one call, which posts the offer to the node and resolves when

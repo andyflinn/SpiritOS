@@ -91,6 +91,7 @@ function createPresence(opts) {
   // moment it is stale, and writing it down would make a node keep a
   // history of a box that is supposed to keep nothing.
   const statusByRelay = Object.create(null);
+  const onRelayEvent = opts.onRelayEvent || null;
 
   function onRoster(url, body) {
     const set = Object.create(null);
@@ -206,6 +207,16 @@ function createPresence(opts) {
         // each time, so nothing accumulates and a node that never looks
         // holds exactly one object per relay it owns.
         else if (msg.event === 'relay-status') statusByRelay[url] = msg.data;
+        // A WATCHED RELAY REPORTING ONE THING IT DID. Only arrives while
+        // this node asked for it, and only from a relay it owns — the
+        // rule is enforced at the far end where the owner's key is.
+        // Handed straight on: nothing here forms an opinion about it.
+        else if (msg.event === 'relay-event' && onRelayEvent) {
+          var row = {};
+          Object.keys(msg.data || {}).forEach(function (k) { row[k] = msg.data[k]; });
+          row.relay = url;
+          try { onRelayEvent(row); } catch (e) { /* a witness, never a participant */ }
+        }
       },
       onOpen: function () { publish('connected to ' + url); },
       onClose: function (reason) { forget(url); publish('lost ' + url + ': ' + reason); },

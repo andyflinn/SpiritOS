@@ -15,12 +15,6 @@ const STARTED_AT = new Date().toISOString();
 const relay = createRelay.createRelay();
 
 
-// How often a relay tells its owner how it is doing. Not a poll: the
-// owner already holds a stream, and this only decides how stale the
-// memory figure may get. Long enough to be free, short enough that a
-// person watching believes the number.
-const RELAY_STATUS_MS = 10000;
-
 //console.log(JSON.stringify(spirit,null,2));
 
 // Checked before verifyStartupCwd below, on purpose — --help should work
@@ -143,6 +137,11 @@ const trafficLog = require('./trafficLog').createTrafficLog({
 // opening a page), and the peerRouter built at the foot of this file
 // notes into it (a packet landing off the stream). Neither knows about
 // the other, which is the point of putting a seam between them.
+// A RELAY'S OWN ACTIVITY, ON ITS WAY TO A PANEL. The same seam shape as
+// arrivals and for the same reason: presenceNode receives, server.js
+// fans out, and neither knows about the other.
+const relayEvents = require('./arrivals').createFanOut();
+
 const arrivals = require('./arrivals').createArrivals({
   // A packet that lands while no page is open waits IN THE LOG — a row
   // that is admitted and not yet taken. The seam keeps nothing of its
@@ -394,6 +393,14 @@ function handleSseConnection(req, res) {
   // heard before this was ever called, and the shell decides which app
   // wants it; a third opinion in the middle would be a third thing to
   // get wrong.
+  // WHAT A WATCHED RELAY IS DOING. Rides the one stream the page already
+  // holds, like `packet` does — a second EventSource per tab to watch a
+  // relay would be a second socket for a panel somebody has open for a
+  // minute.
+  const offRelayEvent = relayEvents.subscribe((row) => {
+    res.write('event: relay-event\ndata: ' + JSON.stringify(row) + '\n\n');
+  });
+
   const offArrival = arrivals.subscribe((message) => {
     res.write('event: packet\ndata: ' + JSON.stringify(message) + '\n\n');
   });
@@ -417,6 +424,7 @@ function handleSseConnection(req, res) {
     // is not: a subscriber that outlives its socket writes packets into
     // a dead response for ever, and holds the message in memory to do it.
     offArrival();
+    offRelayEvent();
   }
   req.on('close', teardown);
   req.on('error', teardown);
@@ -716,6 +724,10 @@ function isRelayPublicPath(method, pathname) {
   // from the internet, gated inside relay.removePeer by a signature that
   // is either the owner's or the departing peer's own.
   if (method === 'POST' && pathname === '/api/relay/remove-peer') return true;
+  // Watching this relay work. Public in the same sense remove-peer is:
+  // reachable from the internet, and gated inside relay.setMonitor by the
+  // owner's own signature over the flag.
+  if (method === 'POST' && pathname === '/api/relay/monitor') return true;
   // The router. Public in the same sense send is: reachable from the
   // internet, gated inside relay.js by a signature, and refused instantly
   // if the peer is not there to receive it (decision 0006).
@@ -1112,6 +1124,18 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    if (pathname === '/api/relay/monitor') {
+      readJsonBody(req).then(function (body) {
+        const result = relay.setMonitor(body && body.on, body && body.sig, body && body.filter);
+        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(result.ok ? result : { error: result.error }));
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
+      return;
+    }
+
     if (pathname === '/api/relay/remove-peer') {
       readJsonBody(req).then(function (body) {
         const result = relay.removePeer(body && body.name, body && body.key, body && body.sig);
@@ -1149,6 +1173,15 @@ const server = http.createServer((req, res) => {
     // must not hold state it cannot see created.
     if (pathname === '/api/hub/post') {
       hub.handlePost(req, res, readJsonBody, { router: peerRouter, presence: presence });
+      return;
+    }
+
+    // Start or stop watching a relay this node owns. The signature is
+    // made here, from this node's identity, because the browser has no
+    // key — the same reason claim and invite are proxied rather than
+    // posted from the page.
+    if (pathname === '/api/hub/monitor') {
+      hub.handleMonitor(req, res, readJsonBody);
       return;
     }
 
@@ -1403,6 +1436,9 @@ if (!relayMode) {
     rootDir: ROOT_DIR,
     jobs: jobs,
     router: peerRouter,
+    // Straight onto the page's stream. presenceNode receives it, this
+    // hands it to whoever has a panel open.
+    onRelayEvent: relayEvents.note,
     // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the
     // census, accepts a key never seen before, and refuses one that
     // changed — so by the time any enrolment can be posted down that
@@ -1435,21 +1471,18 @@ server.listen(port, BIND_HOST, () => {
       );
     }
 
-    // THE HEARTBEAT BEHIND THE MONITOR. relay.js pushes a report on every
-    // presence change already; this covers the figures that move when
-    // nothing else does — memory, uptime, requests in flight. Without it
-    // a monitor on a quiet relay would look frozen, which is the one
-    // thing a monitor must never look like when the box is fine.
+    // THE HEARTBEAT STOOD HERE, and it was wrong from the day it shipped.
     //
-    // Ten seconds, to ONE sink, and only while the owner is connected —
-    // statusToOwner is silent otherwise, so an unattended relay spends
-    // nothing on this but the timer itself. unref() so it never holds the
-    // process open on its own.
-    var statusTimer = setInterval(function () {
-      try { relay.statusToOwner(); }
-      catch (e) { /* a monitor must not be able to take the relay down */ }
-    }, RELAY_STATUS_MS);
-    if (typeof statusTimer.unref === 'function') statusTimer.unref();
+    // R9 pushed a status report every ten seconds for ever, watched or
+    // not, so a relay with nobody looking at it spent cycles on telemetry
+    // for an empty room. A box that must survive and earn its keep (0007)
+    // has no business doing that, and the monitor verbs make it
+    // indefensible rather than merely wasteful.
+    //
+    // What replaced it: relay.setMonitor starts and stops on demand, the
+    // owner's panel asks when it opens and again when it closes, and the
+    // whole thing dies on its own if their stream drops. A relay nobody
+    // is watching now does exactly nothing about being watched.
   } else {
     console.log(`Server listening on http://localhost:${port}`);
   }
