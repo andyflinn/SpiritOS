@@ -70,6 +70,15 @@ This directory contains the vision, principles, and architecture decisions for *
   where a different answer may live. Also records the gap it exists for — the log
   holds what crossed the WAN, and experience is larger than that.
 
+- [0010 — If the protocol cannot carry it, stop](decisions/0010-fix-the-protocol-or-name-the-cheat.md)
+  — no code until it is decided: fix the protocol, name the cheat, or do not do
+  the thing. Narrowed to the two shapes a new way of speaking has in this tree —
+  a new `<verb>Message()` and a new `/api/relay/*` route — so most work is
+  untouched. Carries the register of all 24, sorted into protocol, bootstrap,
+  dying, and **five named cheats**, one of them a day old.
+  `spirit/test/protocolSurface.js` goes red if the tree holds a door the register
+  does not, or the register names one the tree has lost.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.
