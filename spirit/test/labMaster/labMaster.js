@@ -543,6 +543,59 @@ async function waitForNode(port, ms) {
 
 // spirit/run's own identity, read and never written. This is the owner of
 // spirit-3, which is what lets the mint below be signed at all.
+// WHAT MAKES THE SHELL OPEN NORMALLY, and it is not the relay.
+//
+// firstRun() in shell.js is decided by exactly one thing — a label in
+// app/natter/session.json — so a node with its identity, its contacts,
+// its relays and its mail all intact still opens to Natter alone and
+// behaves like a stranger to itself without it:
+//
+//   Andy: "it wont show the shell it bring me directly to natter,
+//   indicating to me that Im not hooked up with my satellite."
+//
+// It is gitignored, so no commit restores it, and untracked, so anything
+// that lays down a fresh tracked tree omits it — which is why a freshly
+// created lab node has never had one. labPopulate deliberately does not
+// WRITE this file, only back it up; that restraint is right for a tool
+// that reshapes an existing world, and wrong for a button whose whole job
+// is to produce a working one.
+//
+// A backup is preferred over an invention: the work node's own binding is
+// the true one, and re-inventing a label would be this tool deciding
+// somebody's name for them.
+function writeSession(home, label, steps, who) {
+  const dir = path.join(home, 'app', 'natter');
+  const file = path.join(dir, 'session.json');
+  const backup = path.join(dir, 'session.json.before-lab');
+  try {
+    if (fs.existsSync(file)) {
+      const held = readJson(file, null);
+      if (held && held.label) {
+        steps.push(who + ' is bound in the shell as ' + held.label);
+        return held.label;
+      }
+    }
+    if (fs.existsSync(backup)) {
+      const saved = readJson(backup, null);
+      if (saved && saved.label) {
+        fs.writeFileSync(file, JSON.stringify(saved, null, 2) + '\n');
+        steps.push(who + ' session.json restored from its before-lab backup as ' + saved.label);
+        return saved.label;
+      }
+    }
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({
+      label: label,
+      boundAt: new Date().toISOString(),
+    }, null, 2) + '\n');
+    steps.push(who + ' session.json written as ' + label + ' — the shell will open its desktop now');
+    return label;
+  } catch (e) {
+    steps.push(who + ' session.json could not be written: ' + String(e.message || e));
+    return '';
+  }
+}
+
 function workIdentity() {
   const id = readJson(liveWorldPaths().identity, null);
   if (!id || !id.publicKey || !id.privateKey || !id.name) return null;
@@ -566,11 +619,16 @@ async function liveWorldReport(peerNode, peerName) {
       name: me ? me.name : '',
       onRelay: !!(me && rows.some(function (r) { return r.publicKey === me.publicKey; })),
       inRelaysJson: relays.some(function (r) { return r && r.url === LIVE_RELAY; }),
+      // Whether the SHELL thinks this node is bound, which is a different
+      // question from whether the relay does — and the one a person sees.
+      boundInShell: !!(readJson(liveWorldPaths().session, {}) || {}).label,
     },
     peer: {
       name: peerName,
       running: !!peerNode,
       onRelay: rows.some(function (r) { return r.name === peerName; }),
+      boundInShell: !!(peerNode && (readJson(
+        path.join(peerNode.home, 'app', 'natter', 'session.json'), {}) || {}).label),
     },
   };
 }
@@ -651,6 +709,11 @@ async function buildLiveWorld(body) {
   } else {
     steps.push('work node already dials spirit-3 first');
   }
+
+  // 2b. And the shell's own idea of being bound. A row on a relay and a
+  //     label in session.json are different facts, and only the second
+  //     decides whether this node opens a desktop or opens Natter alone.
+  const workBound = writeSession(WORK_HOME, me.name, steps, 'work node');
 
   // 3. The peer gets a row on spirit-3, the real way: the owner mints an
   //    invite, the peer consumes it. A hand-written allow entry would
@@ -755,6 +818,20 @@ async function buildLiveWorld(body) {
     }
   }
 
+  // 4c. The same for the peer, which has NEVER had one: session.json is
+  //     gitignored, so copyTrackedSpirit cannot bring it, and a fresh lab
+  //     node therefore always opens to Natter alone until somebody claims
+  //     through the UI by hand.
+  const peerBound = writeSession(peer.home, peerName, steps, peerName);
+  if (peerBound) {
+    handleStop(peer);
+    const freeAgain = Date.now() + 8000;
+    while (portHasListener(peer.port) && Date.now() < freeAgain) await napFor(200);
+    handleStart(peer);
+    const readable = await waitForNode(peer.port, 20000);
+    if (!readable) return { status: 502, error: peerName + ' did not come back after its session was written' };
+  }
+
   // 5. They know each other, through their own nodes — the route a
   //    person uses, so this exercises the real path.
   //
@@ -839,7 +916,7 @@ const server = http.createServer(function (req, res) {
           const state = Object.create(null);
           (job.log || []).forEach(function (line) {
             const connected = /^connected to (.+)$/.exec(line.message || '');
-            const lost = /^lost (\S+?):/.exec(line.message || '');
+            const lost = /^lost (.+?): /.exec(line.message || '');
             if (connected) state[connected[1]] = true;
             else if (lost) state[lost[1]] = false;
           });

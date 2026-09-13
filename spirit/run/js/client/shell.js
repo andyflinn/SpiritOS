@@ -52,9 +52,60 @@
   // that snapshot never came, an empty desktop with no way out. Better a
   // moment of the full desktop that then collapses to one icon than a
   // node with nothing on it.
+  //
+  // AND THE REAL CONDITION IS NOT THE LABEL.
+  //
+  //   Andy: "it can't be a first-run if the node is already bound to a
+  //   public relay, that's the real condition that needs checking"
+  //
+  // This asked one thing — a label in session.json — and that file is
+  // gitignored and untracked, so anything that lays down a fresh tracked
+  // tree omits it. A node with its identity, its rows on a relay, its
+  // contacts and its mail all intact would open to Natter alone and
+  // behave like a stranger to itself, because one untracked file was
+  // missing. It happened to Andy's own node twice, and every freshly
+  // created lab node has always started that way.
+  //
+  // A node HOLDING A STREAM TO A RELAY has manifestly been set up. The
+  // label says what it calls itself; the stream says it exists as a peer
+  // — and the second is the fact a first-run screen is actually asking
+  // about. Either one is enough, and neither is required to be the other.
   function firstRun() {
     if (readNodeLabel()) return false;
+    if (boundToARelay()) return false;
     return !!apps[NATTER_ID];
+  }
+
+  // Read off the presence job the node already keeps, rather than asked
+  // for over HTTP: the shell has this in the same snapshot it learns
+  // everything else from, so no new route and no new round trip.
+  //
+  // The LOG rather than `data.presence`, because presence is who else is
+  // reachable — legitimately empty on a relay where nobody else is home —
+  // while "connected to <url>" is this node's own attachment, which is
+  // the question. Last line per url wins, so a relay that dropped is not
+  // counted as held.
+  //
+  // The lost pattern needs the SPACE after the colon. presenceNode writes
+  // `lost <url>: <reason>`, and a url has a colon of its own: `\S+?`
+  // matched at the one in "https:" and recorded losing a relay called
+  // "https", leaving the real url marked connected for ever. Caught by
+  // the dropped-relay check in natterIntrinsic.
+  //
+  // Unknown reads as NOT bound, which keeps the existing fail-open
+  // behaviour intact: before the first snapshot there is no job, so this
+  // answers false and the label rule decides alone, exactly as it did.
+  function boundToARelay() {
+    var job = findJobByType('relay-presence');
+    if (!job) return false;
+    var open = Object.create(null);
+    (job.log || []).forEach(function (line) {
+      var connected = /^connected to (.+)$/.exec((line && line.message) || '');
+      var lost = /^lost (.+?): /.exec((line && line.message) || '');
+      if (connected) open[connected[1]] = true;
+      else if (lost) open[lost[1]] = false;
+    });
+    return Object.keys(open).some(function (url) { return open[url]; });
   }
 
   // One rule, asked by everything that lists apps — the desktop, the

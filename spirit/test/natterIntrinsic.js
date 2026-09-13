@@ -108,7 +108,7 @@ function fakeDocument() {
 // shell: an unbound one shows Natter and nothing else (firstRun), so a
 // fixture that means to test app management must say it has a name. The
 // first-run and window-title sections pass '' on purpose.
-function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysRaw) {
+function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysRaw, heldRelay) {
   if (sessionLabel === undefined) sessionLabel = BOUND;
   const doc = fakeDocument();
   const saved = { preferences: null };
@@ -159,21 +159,34 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
   // The one snapshot the shell discovers apps from: an fs-watcher job
   // listing entry scripts, exactly as jobs.js delivers it. Also what
   // drives pruneStalePreferences, which is why a test can re-fire it.
-  function snapshot(scripts) {
-    subscribers.forEach(function (h) {
-      h.onSnapshot([{
-        id: 'fs-watcher-1',
-        type: 'fs-watcher',
-        data: {
-          files: scripts.map(function (rel) {
-            return { kind: 'file', relativePath: rel };
-          }),
-        },
-      }]);
-    });
+  // `heldRelay` is a url this node is holding a stream to, or '' for a
+  // node attached to nothing. It rides in the relay-presence job's LOG,
+  // which is where presenceNode really writes it — "connected to <url>"
+  // when a stream opens, "lost <url>: reason" when it drops.
+  function snapshot(scripts, heldRelay) {
+    const jobs = [{
+      id: 'fs-watcher-1',
+      type: 'fs-watcher',
+      data: {
+        files: scripts.map(function (rel) {
+          return { kind: 'file', relativePath: rel };
+        }),
+      },
+    }];
+    if (heldRelay !== undefined) {
+      jobs.push({
+        id: 'relay-presence-1',
+        type: 'relay-presence',
+        data: { presence: {} },
+        log: heldRelay
+          ? [{ timestamp: 1, message: 'connected to ' + heldRelay }]
+          : [],
+      });
+    }
+    subscribers.forEach(function (h) { h.onSnapshot(jobs); });
   }
 
-  if (!deferSnapshot) snapshot(appScripts);
+  if (!deferSnapshot) snapshot(appScripts, heldRelay);
 
   return {
     shell: shellSpirit.shell,
@@ -184,6 +197,21 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
     // Entry scripts are injected into document.body — one appended child
     // per script the shell decided to fetch.
     scripts: doc.body.children,
+    // For the first-run checks: fire a relay-presence job carrying an
+    // exact log, so "connected then lost" can be driven rather than
+    // approximated.
+    snapshotWithLog: function (log) {
+      subscribers.forEach(function (h) {
+        h.onSnapshot([
+          {
+            id: 'fs-watcher-1',
+            type: 'fs-watcher',
+            data: { files: appScripts.map(function (rel) { return { kind: 'file', relativePath: rel }; }) },
+          },
+          { id: 'relay-presence-1', type: 'relay-presence', data: { presence: {} }, log: log },
+        ]);
+      });
+    },
   };
 }
 
@@ -2407,6 +2435,51 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
     test.check('an unbound node lists one app, and it is the one that binds');
   } else {
     test.fail('unbound list: ' + JSON.stringify(listed));
+  }
+
+  // ── A NODE ON A RELAY IS NOT A FIRST RUN ──────────────────────────
+  //
+  //   Andy: "it can't be a first-run if the node is already bound to a
+  //   public relay, that's the real condition that needs checking"
+  //
+  // The gate asked one thing — a label in session.json — and that file is
+  // gitignored and untracked, so anything laying down a fresh tracked
+  // tree omits it. A node with its identity, its rows on a relay, its
+  // contacts and its mail intact still opened to Natter alone. It cost
+  // Andy's own node twice, and every freshly created lab node has always
+  // started that way.
+  const attached = bootShell(prefs, scripts, false, '', undefined, 'https://spirit.andyflinn.com');
+  const attachedList = attached.shell.listApps().map(function (a) { return a.id; });
+  if (attachedList.length > 1) {
+    test.check('a node with NO session label but a stream to a relay gets its whole desktop — ' +
+      attachedList.length + ' apps');
+  } else {
+    test.fail('a node holding a relay was still treated as first-run: ' + JSON.stringify(attachedList));
+  }
+
+  // AND THE LABEL STILL WORKS ON ITS OWN, so this is not a check that
+  // simply broke the old rule: either fact is enough, neither requires
+  // the other.
+  const named = bootShell(prefs, scripts, false, BOUND, undefined, '');
+  if (named.shell.listApps().length > 1) {
+    test.check('and a node with a label but no relay held is not first-run either');
+  } else {
+    test.fail('a labelled node was treated as first-run');
+  }
+
+  // A DROPPED RELAY IS NOT A HELD ONE. The log's last word per url wins,
+  // or a node that connected once and lost it would look attached for
+  // ever.
+  const dropped = bootShell(prefs, scripts, true, '', undefined);
+  dropped.snapshotWithLog([
+    { timestamp: 1, message: 'connected to https://spirit.andyflinn.com' },
+    { timestamp: 2, message: 'lost https://spirit.andyflinn.com: socket closed' },
+  ]);
+  const droppedList = dropped.shell.listApps().map(function (a) { return a.id; });
+  if (droppedList.length === 1 && droppedList[0] === 'app/natter') {
+    test.check('while a node that CONNECTED and then lost it is first-run again');
+  } else {
+    test.fail('a dropped relay still counted as held: ' + JSON.stringify(droppedList));
   }
 
   // Natter is intrinsic, so its tile is in Spirit rather than loose on

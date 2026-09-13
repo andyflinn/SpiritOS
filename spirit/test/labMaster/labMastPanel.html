@@ -167,11 +167,13 @@
         lines.push('  ' + (rep.reachable ? 'spirit-3 answered' : 'spirit-3 did NOT answer'));
         if (rep.work) {
           lines.push('  ' + rep.work.name + ': row ' + (rep.work.onRelay ? 'yes' : 'NO') +
-            ', dials it ' + (rep.work.inRelaysJson ? 'yes' : 'NO'));
+            ', dials it ' + (rep.work.inRelaysJson ? 'yes' : 'NO') +
+            ', shell bound ' + (rep.work.boundInShell ? 'yes' : 'NO'));
         }
         if (rep.peer) {
           lines.push('  ' + rep.peer.name + ': row ' + (rep.peer.onRelay ? 'yes' : 'NO') +
-            ', running ' + (rep.peer.running ? 'yes' : 'NO'));
+            ', running ' + (rep.peer.running ? 'yes' : 'NO') +
+            ', shell bound ' + (rep.peer.boundInShell ? 'yes' : 'NO'));
         }
         out.textContent = lines.join('\n');
         return refresh();
