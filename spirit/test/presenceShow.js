@@ -135,10 +135,11 @@ async function removeFromLab(label) {
   })[0];
   if (!row) return label + ' has no row on the lab relay already — nothing to remove';
 
-  const done = await post(url + '/api/relay/remove-peer', {
-    name: me.name,
+  // Through this node's own door: the relay route is gone (decision
+  // 0010), and the post's answer comes back on the stream the node holds.
+  const done = await post(WORK_URL + '/api/hub/remove-peer', {
+    url: url,
     key: row.publicKey,
-    sig: auth.sign(me.privateKey, auth.removePeerMessage(row.publicKey)),
   });
   return done.ok
     ? 'removed ' + label + " from the lab relay — they stay in your contacts"

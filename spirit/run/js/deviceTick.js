@@ -13,46 +13,26 @@
 
 const deviceAuth = require('./deviceAuth');
 const relayAuth = require('./relayAuth');
-// A DEVICE BELONGS TO THE IDENTITY, NOT TO THE MAILBOX THAT ENROLLED IT.
+// installEverywhere() STOOD HERE — one pass over every relay this
+// identity had a row on, installing the device key.
 //
-// The handshake happens on one relay — whichever one served the page the
-// password was typed into — and the slot used to be installed only
-// there. So "add this device" produced a browser that could read one
-// mailbox and was a stranger to every other mailbox the same person
-// held, which is not what the words say and not what anybody expects
-// after enrolling once.
+// A DEVICE BELONGS TO THE IDENTITY, AND THE IDENTITY IS THIS NODE. The
+// original note under that heading was about the enrolling relay not
+// being the only one told; the answer turned out to be that no relay
+// needs telling. The binding is this node's file, and a relay that held a
+// copy was holding a credential it never read.
 //
-// Signed PER RELAY rather than once: setDeviceMessage carries a minute,
-// and a fan-out across a loopback box and one on the far side of the
-// internet can straddle a minute boundary. One signature reused would
-// then be accepted by the first relay and stale at the last — a failure
-// that appears only sometimes, only on slow links, and only for the
-// mailbox listed last.
+// What that deleted, and none of it needed fixing first:
 //
-// Every relay is TOLD; none is asked twice. A relay that refuses or
-// cannot be reached is reported, never retried here: the tick comes
-// round again, and a device slot is not worth a retry loop inside a
-// function that already runs on a timer.
-async function installEverywhere(requestFn, id, urls, deviceKey) {
-  const on = [];
-  const missed = [];
-  for (let i = 0; i < urls.length; i++) {
-    const url = urls[i];
-    let answer = null;
-    try {
-      answer = await requestFn(url, 'POST', '/api/relay/set-device', {
-        name: id.name,
-        devicePublicKey: deviceKey,
-        sig: relayAuth.sign(id.privateKey, deviceAuth.setDeviceMessage(deviceKey)),
-      });
-    } catch (e) {
-      answer = null;
-    }
-    if (answer && answer.ok) on.push(url);
-    else missed.push(url);
-  }
-  return { on: on, missed: missed };
-}
+//   `missedOn` — a relay unreachable during enrolment kept the OLD device
+//     key, for ever, because nothing retried. There is no copy to strand.
+//   the per-relay re-signing — setDeviceMessage carried no recipient, so
+//     one signature straddling a minute boundary failed on the last
+//     mailbox. No signature, no window, no failure.
+//   the red button's hardest part — revoking is one local write now, not
+//     a reconcile across every relay that might be down.
+//
+// See deviceAuth.js.
 
 // AN OFFER THAT ARRIVED, rather than one this node went and fetched.
 //
@@ -64,7 +44,13 @@ async function installEverywhere(requestFn, id, urls, deviceKey) {
 //
 // It answers with a decision rather than a wire format. Turning that
 // into bytes belongs to whoever is speaking, which is the caller.
-async function answerOffer(rootDir, urls, offer, requestFn, fromUrl) {
+// It answers with a DECISION rather than a wire format. Turning that into
+// bytes belongs to whoever is speaking, which is the caller.
+//
+// It used to take the relay list, a poster and the enrolling relay's url,
+// because it installed the key everywhere. It installs it nowhere but
+// here now, so none of the three is an argument any more.
+async function answerOffer(rootDir, offer) {
   var doc = deviceAuth.load(rootDir);
   // THE PASSWORD IS THE WHOLE GATE NOW. There was a `listening` flag in
   // front of it and it is gone (Andy: "the ability to setup
@@ -86,24 +72,18 @@ async function answerOffer(rootDir, urls, offer, requestFn, fromUrl) {
     return { accepted: false, why: 'wrong password' };
   }
 
-  // The enrolling relay first, so the one the person is standing in
-  // front of holds the slot by the time they are told yes.
-  var list = Array.isArray(urls) ? urls : [];
-  var others = list.filter(function (u) { return u !== fromUrl; });
-  var spread = await installEverywhere(
-    requestFn, id, (fromUrl ? [fromUrl] : []).concat(others), offer.devicePublicKey
-  );
-
-  // Recorded locally only if somewhere took it. A node that remembered a
-  // device no relay knows about would show one attached that could read
-  // nothing anywhere.
-  if (!spread.on.length) return { accepted: false, why: 'no relay took it' };
+  // WRITTEN DOWN HERE AND NOWHERE ELSE. The password matched, so this
+  // browser is this node's device — and that sentence is entirely about
+  // the two of them. No relay is told, because no relay keeps one.
+  //
+  // The old shape recorded locally only "if somewhere took it", on the
+  // reasoning that a node remembering a device no relay knew about would
+  // show one attached that could read nothing. That is now backwards: the
+  // node's record IS the attachment.
   deviceAuth.setDevicePublicKey(rootDir, offer.devicePublicKey);
   return {
     accepted: true,
     devicePublicKey: offer.devicePublicKey,
-    installedOn: spread.on,
-    missedOn: spread.missed,
   };
 }
 module.exports = { answerOffer: answerOffer };

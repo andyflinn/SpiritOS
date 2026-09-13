@@ -34,7 +34,6 @@ const SURFACE = [
   ['POST', '/api/relay/claim'],
   ['POST', '/api/relay/send'],
   ['POST', '/api/relay/device'],
-  ['POST', '/api/relay/remove-peer'],
   ['POST', '/api/relay/post'],
   ['POST', '/api/relay/reply'],
 
@@ -43,10 +42,13 @@ const SURFACE = [
   // and a door that has been removed is the clearest possible signal
   // about which code a box is running.
   //
-  // Both were collapsed into posts on 2026-09-13 (decision 0010). A relay
-  // still answering either of them is running code from before that.
+  // All four were collapsed into posts on 2026-09-13 (decision 0010),
+  // which is the day the register emptied. A relay still answering any of
+  // them is running code from before that.
   ['POST', '/api/relay/invite'],
   ['POST', '/api/relay/monitor'],
+  ['POST', '/api/relay/remove-peer'],
+  ['POST', '/api/relay/set-device'],
 ];
 
 function usage() {

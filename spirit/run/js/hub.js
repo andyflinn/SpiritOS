@@ -1019,6 +1019,17 @@ function createHub(rootDir) {
         // Said out loud in the answer rather than left to the caller to
         // know: every request depending on the old password is now
         // refused, and any device already attached is still attached.
+        //
+        // SO THIS IS NOT THE RED BUTTON, and the field exists to stop
+        // anybody believing it is. Rotating shuts the DOOR; it does not
+        // touch the devices already inside, on this node or on any relay.
+        //
+        // Nothing detaches a device today. setDevicePublicKey(root, null)
+        // would clear this node's own record and is never called with
+        // null; the relays hold the key independently; and relay's
+        // installDevice refuses an empty key, so "forget my device" is
+        // not expressible as a request. See the note on the one-slot rule
+        // in relay.js for the shape the button will need.
         devicesDetached: false,
         devicePublicKey: doc.devicePublicKey || '',
       }));

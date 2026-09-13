@@ -363,15 +363,16 @@ async function oneDeviceEveryRelay() {
   deviceAuth.ensurePassword(home);
   const password = deviceAuth.load(home).password;
 
+  // THE POSTER, not a requester. Enrolment installs its key by posting to
+  // each relay's own key now (decision 0010) — there is no
+  // /api/relay/set-device to intercept, so this drives the real thing:
+  // routePost into the real box, as the owner, with the real packet.
   const setDeviceHits = [];
-  async function requestFn(url, method, pth, body) {
+  async function requestFn(url, text) {
     const box = boxFor[url];
-    if (!box) return { ok: false, error: 'unreachable' };
-    if (method === 'POST' && /set-device/.test(pth)) {
-      setDeviceHits.push(url);
-      return box.setDevice(body.name, body.devicePublicKey, body.sig);
-    }
-    return { ok: false };
+    if (!box) return null;
+    setDeviceHits.push(url);
+    return world.ask(box, owner, JSON.parse(text).body).answer;
   }
 
   // The browser knocks on the SECOND relay, and the node is streaming on
@@ -381,9 +382,7 @@ async function oneDeviceEveryRelay() {
   const got = offerOn(held);
   if (!got) { test.fail('the offer never reached the node'); return; }
 
-  const did = await deviceTick.answerOffer(
-    home, urls, got.carried, requestFn, 'http://second'
-  );
+  const did = await deviceTick.answerOffer(home, got.carried);
   replyTo(second, owner, got.req, answerText(did));
   const browser = await offering;
 
@@ -399,43 +398,55 @@ async function oneDeviceEveryRelay() {
     test.fail('browser: ' + JSON.stringify(browser));
   }
 
-  // THE ENROLLING RELAY FIRST, so the one the person is standing in front
-  // of holds the key by the time they are told yes.
-  if (setDeviceHits[0] === 'http://second') {
-    test.check('and it is told first, before the ones nobody is looking at');
-  } else {
-    test.fail('order: ' + JSON.stringify(setDeviceHits));
-  }
-
-  // THE WHOLE POINT, and PROVED BY USE rather than by reading a field off
-  // a row. who() deliberately does not publish device keys — they are
-  // nobody else's business — so there is nothing to inspect, and a read
-  // the relay accepts is a better claim than a field anyway.
+  // ── FOUR CHECKS STOOD HERE ABOUT THE SPREAD ─────────────────────────
+  //
+  // That the enrolling relay was told first; that the enrolled browser
+  // could then read BOTH relays; that a stranger could read neither; and
+  // that the decision reported which relays took it and which did not.
+  //
+  // A relay is told nothing now. Andy:
+  //
+  //   "the device key is used to mirror/fake the protocol for the one leg
+  //   of the route where it's not actually compliant... and to safely tie
+  //   a device to its node."
+  //
+  // Both jobs are the NODE's, so there is no spread: one file, on the
+  // machine that decided. What that deletes rather than fixes is the
+  // failure this section was built around — a relay unreachable during
+  // enrolment kept the OLD key for ever, because nothing retried and
+  // nothing read `missedOn`.
+  //
+  // What survives is the half that was always true, and it is the
+  // stronger half: a device key opens nothing on a relay, whether it
+  // enrolled there or not.
   const readFirst = first.inbox('andy', auth.sign(phone.privateKey, auth.inboxMessage('andy')));
   const readSecond = second.inbox('andy', auth.sign(phone.privateKey, auth.inboxMessage('andy')));
-  if (readFirst.ok && readSecond.ok) {
-    test.check('and the enrolled browser reads BOTH, not only the enrolling one');
-  } else {
-    test.fail('reads: first=' + JSON.stringify(readFirst.ok) + ' second=' + JSON.stringify(readSecond.ok));
-  }
-
-  // The other direction, so the check above cannot pass by the relay
-  // being lax: a browser that enrolled nowhere is refused by both.
   const nobody = auth.generateIdentity('uninvited');
   const noFirst = first.inbox('andy', auth.sign(nobody.privateKey, auth.inboxMessage('andy')));
   const noSecond = second.inbox('andy', auth.sign(nobody.privateKey, auth.inboxMessage('andy')));
-  if (!noFirst.ok && !noSecond.ok) {
-    test.check('while a key that enrolled nowhere is refused by both');
+
+  if (!readFirst.ok && !readSecond.ok && !noFirst.ok && !noSecond.ok) {
+    test.check('an enrolled device reads neither relay — and neither does a stranger, so the box is not merely lax');
   } else {
-    test.fail('a stranger read an inbox: ' + JSON.stringify({ first: noFirst.ok, second: noSecond.ok }));
+    test.fail('reads: enrolled=' + readFirst.ok + '/' + readSecond.ok +
+      ' stranger=' + noFirst.ok + '/' + noSecond.ok);
   }
 
-  // Said out loud, because a device on two relays out of three is a
-  // device that fails somewhere the person has no reason to expect.
-  if ((did.installedOn || []).length === 2 && (did.missedOn || []).length === 0) {
-    test.check('and the decision says which relays took it, and which did not');
+  // AND THE BINDING IS WHERE IT BELONGS. The thing the spread was trying
+  // to achieve — "this browser is this person's" — is one line in the
+  // node's own file, true everywhere at once because it is in one place.
+  if (deviceAuth.load(home).devicePublicKey === phone.publicKey) {
+    test.check('and the binding is one line in the node\'s own file, not a copy per relay');
   } else {
-    test.fail('spread: ' + JSON.stringify({ on: did.installedOn, missed: did.missedOn }));
+    test.fail('binding: ' + JSON.stringify(deviceAuth.load(home)));
+  }
+
+  // Nothing to spread, so nothing to miss: the hits list the fake relays
+  // recorded is empty, and that IS the assertion.
+  if (setDeviceHits.length === 0) {
+    test.check('and no relay was told anything at all');
+  } else {
+    test.fail('relays were told: ' + JSON.stringify(setDeviceHits));
   }
 
   // A RELAY THAT IS DOWN MUST NOT SINK THE ENROLMENT. The browser is
@@ -448,26 +459,30 @@ async function oneDeviceEveryRelay() {
   deviceAuth.ensurePassword(home2);
   const phone2 = auth.generateIdentity('device2');
 
-  async function halfDown(url, method, pth, body) {
-    if (url === 'http://down') return { ok: false, error: 'unreachable' };
-    if (method === 'POST' && /set-device/.test(pth)) {
-      return live.setDevice(body.name, body.devicePublicKey, body.sig);
-    }
-    return { ok: false };
+  async function halfDown(url, text) {
+    if (url === 'http://down') return null;
+    return world.ask(live, W2.owner, JSON.parse(text).body).answer;
   }
 
   const held2 = streaming(live, W2.owner);
   const offering2 = live.deviceOffer('andy', deviceAuth.load(home2).password, phone2.publicKey);
   const got2 = offerOn(held2);
-  const partial = await deviceTick.answerOffer(
-    home2, ['http://up', 'http://down'], got2.carried, halfDown, 'http://up'
-  );
+  const partial = await deviceTick.answerOffer(home2, got2.carried);
   replyTo(live, W2.owner, got2.req, answerText(partial));
   const browser2 = await offering2;
 
+  // A RELAY THAT IS DOWN CANNOT AFFECT THE ENROLMENT AT ALL NOW, which
+  // is a stronger statement than the one this check used to make.
+  //
+  // It used to assert that an unreachable relay did not FAIL the
+  // enrolment and was NAMED in `missedOn` instead — a partial success the
+  // person was told about. There is no partial: the node decides, the
+  // node writes, and no relay is consulted. `http://down` being down is
+  // not a fact this path can observe.
   if (partial.accepted && browser2 && browser2.ok &&
-      (partial.missedOn || []).indexOf('http://down') !== -1) {
-    test.check('and one unreachable relay does not fail the enrolment — it is named instead');
+      partial.missedOn === undefined &&
+      deviceAuth.load(home2).devicePublicKey === phone2.publicKey) {
+    test.check('and a relay being down is not even observable — there is no spread to be partial');
   } else {
     test.fail('partial: ' + JSON.stringify(partial) + ' browser=' + JSON.stringify(browser2));
   }
@@ -571,10 +586,7 @@ async function rotationKillsTheOldPassword() {
   const held = streaming(W.box, W.owner);
   const stale = W.box.deviceOffer('andy', old, phone.publicKey);
   const askedStale = offerOn(held);
-  const saidStale = await deviceTick.answerOffer(
-    home, ['http://relay'], askedStale.carried,
-    async function () { return { ok: true }; }, 'http://relay'
-  );
+  const saidStale = await deviceTick.answerOffer(home, askedStale.carried);
   replyTo(W.box, W.owner, askedStale.req, answerText(saidStale));
   const browserStale = await stale;
 
@@ -589,10 +601,7 @@ async function rotationKillsTheOldPassword() {
   // enrolment.
   const fresh = W.box.deviceOffer('andy', rotated.password, phone.publicKey);
   const askedFresh = offerOn(held);
-  const saidFresh = await deviceTick.answerOffer(
-    home, ['http://relay'], askedFresh.carried,
-    async function () { return { ok: true }; }, 'http://relay'
-  );
+  const saidFresh = await deviceTick.answerOffer(home, askedFresh.carried);
   replyTo(W.box, W.owner, askedFresh.req, answerText(saidFresh));
   if (saidFresh.accepted === true && (await fresh).ok) {
     test.check('while the new one enrols normally');
@@ -709,19 +718,14 @@ async function run() {
   deviceAuth.ensurePassword(home);
   const password = deviceAuth.load(home).password;
 
-  async function requestFn(url, method, pth, body) {
-    if (method === 'POST' && /set-device/.test(pth)) {
-      return box.setDevice(body.name, body.devicePublicKey, body.sig);
-    }
-    return { ok: false };
+  async function requestFn(url, text) {
+    return world.ask(box, L.owner, JSON.parse(text).body).answer;
   }
 
   const held = streaming(box, L.owner);
   const offering = box.deviceOffer('andy', password, phone.publicKey);
   const got = offerOn(held);
-  const did = await deviceTick.answerOffer(
-    home, ['http://relay'], got.carried, requestFn, 'http://relay'
-  );
+  const did = await deviceTick.answerOffer(home, got.carried);
   replyTo(box, L.owner, got.req, answerText(did));
 
   if (did && did.accepted) test.check('the right password installs the device');
@@ -731,12 +735,19 @@ async function run() {
   if (browser && browser.ok) test.check('and the held POST completes');
   else test.fail('browser: ' + JSON.stringify(browser));
 
+  // AND THE NODE HAS THE BINDING FROM THEN ON, which is what "enrolled"
+  // means. It used to be checked by having the device read the relay's
+  // inbox — a capability that has been removed, because a device's
+  // correspondent is its node and never a relay.
   const phoneInbox = box.inbox(
-    'andy',
-    auth.sign(phone.privateKey, auth.inboxMessage('andy'))
+    'andy', auth.sign(phone.privateKey, auth.inboxMessage('andy'))
   );
-  if (phoneInbox.ok) test.check('and the device can read from then on');
-  else test.fail('inbox: ' + JSON.stringify(phoneInbox));
+  if (deviceAuth.load(home).devicePublicKey === phone.publicKey && !phoneInbox.ok) {
+    test.check('and the node holds the binding from then on — while the relay still knows nothing');
+  } else {
+    test.fail('binding=' + JSON.stringify(deviceAuth.load(home).devicePublicKey) +
+      ' relayRead=' + phoneInbox.ok);
+  }
 
   // A second world, not a second door onto the first. The refusal being
   // checked is "this password is wrong", and it is only worth anything if
@@ -761,9 +772,7 @@ async function run() {
     'andy', live.split('').reverse().join(''), phone.publicKey
   );
   const gotW = offerOn(heldW);
-  const rejected = await deviceTick.answerOffer(
-    wrongHome, ['http://relay'], gotW.carried, rejectFn, 'http://relay'
-  );
+  const rejected = await deviceTick.answerOffer(wrongHome, gotW.carried);
   replyTo(W.box, W.owner, gotW.req, answerText(rejected));
 
   if (rejected && rejected.accepted === false && rejected.why === 'wrong password') {

@@ -16,6 +16,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
 const world = require('./world');
+const deviceTick = require('../run/js/deviceTick');
 
 // WHAT A HELD STREAM LOOKS LIKE from the relay's side. The same sink
 // presenceStream.js uses, because it is the same sink.
@@ -160,81 +161,82 @@ async function run() {
     test.fail('a duplicate label resolved: ' + JSON.stringify(byLabel));
   }
 
-  test.subHeading('A peer installs its own device, with its own key');
+  test.subHeading('Enrolment binds a device to its NODE, and to no relay');
 
-  // The node's half: it heard the offer, compared the password at home,
-  // and now installs the key it was given.
-  const offeredKey = gotA.carried.devicePublicKey;
-  const installed = L.box.setDevice(
-    johnA.publicKey,
-    offeredKey,
-    auth.sign(johnA.privateKey, deviceAuth.setDeviceMessage(offeredKey))
-  );
-  if (installed && installed.ok) test.check('john A installed a device on his own row');
-  else test.fail('install A: ' + JSON.stringify(installed));
+  // ── WHAT THIS SECTION USED TO SAY ────────────────────────────────────
+  //
+  // Three checks stood here about installing a device key ON THE RELAY —
+  // that a peer could install on its own row, that another peer could
+  // not, and that the owner could not install on a peer's.
+  //
+  // A relay does not hold a device key any more, so none of the three is
+  // a question. Andy:
+  //
+  //   "the device key is used to mirror/fake the protocol for the one leg
+  //   of the route where it's not actually compliant... and to safely tie
+  //   a device to its node."
+  //
+  // Both jobs are the NODE's. The relay is a conduit that carries the
+  // browser's offer and learns whether it was accepted. What is asserted
+  // here now is the binding itself, and the absence of any copy.
+  {
+    const N = world.build(require('./scenario').OWNER_ONLY);
+    if (!N.ok) { test.fail(N.error); return; }
+    const home = N.ownerHome();
+    const phone = auth.generateIdentity('handheld');
+    deviceAuth.ensurePassword(home);
 
-  // The signature is the whole gate. B's own key is a perfectly good key
-  // and proves nothing about A's row.
-  const crossed = L.box.setDevice(
-    johnA.publicKey,
-    phoneB.publicKey,
-    auth.sign(johnB.privateKey, deviceAuth.setDeviceMessage(phoneB.publicKey))
-  );
-  if (crossed && crossed.ok === false && crossed.status === 403) {
-    test.check('and john B cannot install one on it');
-  } else {
-    test.fail('cross-install: ' + JSON.stringify(crossed));
-  }
+    const decided = await deviceTick.answerOffer(home, {
+      password: deviceAuth.load(home).password,
+      devicePublicKey: phone.publicKey,
+    });
 
-  // The owner is not privileged here either. Owning the relay is not
-  // owning a peer's row.
-  const byOwner = L.box.setDevice(
-    johnA.publicKey,
-    phoneB.publicKey,
-    auth.sign(L.owner.privateKey, deviceAuth.setDeviceMessage(phoneB.publicKey))
-  );
-  if (byOwner && byOwner.ok === false) {
-    test.check('and neither can the owner of the relay');
-  } else {
-    test.fail('owner installed on a peer row: ' + JSON.stringify(byOwner));
-  }
+    if (decided && decided.accepted &&
+        deviceAuth.load(home).devicePublicKey === phone.publicKey) {
+      test.check('the right password binds the device to the node, in the node\'s own file');
+    } else {
+      test.fail('binding: ' + JSON.stringify(decided));
+    }
 
-  replyTo(L.box, johnA, gotA.req, true, phoneA.publicKey);
-  replyTo(L.box, johnB, gotB.req, false, '');
-  const settled = await Promise.all([offerA, offerB]);
-  if (settled[0] && settled[0].ok && settled[1] && settled[1].ok === false) {
-    test.check('each browser hears its own answer');
-  } else {
-    test.fail('settled: ' + JSON.stringify(settled));
-  }
+    // THE PASSWORD IS THE WHOLE GATE, and it is compared in one place —
+    // here, on the node. The relay never learns whether it matched.
+    const wrong = await deviceTick.answerOffer(home, {
+      password: 'not-the-password',
+      devicePublicKey: auth.generateIdentity('other').publicKey,
+    });
+    if (wrong && wrong.accepted === false &&
+        deviceAuth.load(home).devicePublicKey === phone.publicKey) {
+      test.check('and a wrong password binds nothing, leaving the one that is there');
+    } else {
+      test.fail('wrong password: ' + JSON.stringify(wrong));
+    }
 
-  test.subHeading('The installed device reads that row, and only that row');
+    // ONE SLOT. The next enrolment REPLACES the last — which is what
+    // makes a stolen password noticeable, and what makes "disconnect them
+    // ALL" a single write rather than an enumeration.
+    const second = auth.generateIdentity('tablet');
+    await deviceTick.answerOffer(home, {
+      password: deviceAuth.load(home).password,
+      devicePublicKey: second.publicKey,
+    });
+    if (deviceAuth.load(home).devicePublicKey === second.publicKey) {
+      test.check('a second enrolment replaces the first — one device per peer, by shape');
+    } else {
+      test.fail('slot: ' + JSON.stringify(deviceAuth.load(home)));
+    }
 
-  const readA = L.box.inbox(
-    'john',
-    auth.sign(phoneA.privateKey, auth.inboxMessage('john'))
-  );
-  // A duplicate label cannot be read by NAME at all — that is the
-  // ambiguity rule, and it predates devices. The key is the way in.
-  const readByKey = L.box.inbox(
-    johnA.publicKey,
-    auth.sign(phoneA.privateKey, auth.inboxMessage(johnA.publicKey))
-  );
-  if (readByKey && readByKey.ok) {
-    test.check("john A's phone reads john A's mail");
-  } else {
-    test.fail('device inbox: ' + JSON.stringify(readByKey) + ' (by label: ' +
-      JSON.stringify(readA && readA.error) + ')');
-  }
-
-  const stolen = L.box.inbox(
-    johnB.publicKey,
-    auth.sign(phoneA.privateKey, auth.inboxMessage(johnB.publicKey))
-  );
-  if (stolen && stolen.ok === false) {
-    test.check("and cannot read john B's");
-  } else {
-    test.fail('a device read another row: ' + JSON.stringify(stolen));
+    // AND NO RELAY KEPT A COPY. This is the check the whole change rests
+    // on: nothing to strand on a relay that was unreachable, nothing to
+    // reconcile, nothing held on somebody's behalf.
+    const onDisk = fs.readFileSync(
+      path.join(N.home, 'relay-state', 'allow.json'), 'utf8');
+    const rowsHaveDevice = /devicePublicKey/.test(onDisk) ||
+      N.box.who().some(function (r) { return r.devicePublicKey; });
+    if (!rowsHaveDevice) {
+      test.check('and no relay holds a copy — the binding exists in exactly one place');
+    } else {
+      test.fail('a relay kept a device key: ' + onDisk);
+    }
   }
 
   test.subHeading('A device is the owner\'s window, not the owner\'s credentials');
@@ -259,20 +261,27 @@ async function run() {
     const D = world.build(require('./scenario').OWNER_ONLY);
     if (!D.ok) { test.fail(D.error); return; }
     const handheld = auth.generateIdentity('handheld');
-    D.box.setDevice(
-      'andy', handheld.publicKey,
-      auth.sign(D.owner.privateKey, deviceAuth.setDeviceMessage(handheld.publicKey))
-    );
 
-    // KEPT: reading and sending its owner's mail. That is the feature,
-    // and it is bounded by being the owner's own traffic.
+    // A DEVICE PROVES NOTHING TO A RELAY, and that is the whole of it
+    // now. This check read the other way until 2026-09-13 — "a device
+    // still reads and sends its owner's mail, that is what it is for" —
+    // on the strength of two gates that honoured a device key.
+    //
+    // Nothing ever used them. No app, no shell, no device page:
+    // device.html's own sendMessage helper had one occurrence in the
+    // tree, its own definition. They were the last trace of a design
+    // where the ring was how everything moved.
+    //
+    // A device's correspondent is the node that owns it. It speaks to a
+    // relay exactly once, to be enrolled, and the relay carries that to
+    // the node without learning the answer.
     const read = D.box.inbox('andy', auth.sign(handheld.privateKey, auth.inboxMessage('andy')));
     const sent = D.box.send(
       'andy', 'andy', 'from the handheld',
       auth.sign(handheld.privateKey, auth.sendMessage('andy', 'andy', 'from the handheld'))
     );
-    if (read.ok && sent.ok) {
-      test.check('a device still reads and sends its owner\'s mail — that is what it is for');
+    if (read.ok === false && sent.ok === false) {
+      test.check('a device key proves nothing to a relay — not a read, not a send');
     } else {
       test.fail('read=' + read.ok + ' send=' + sent.ok);
     }
@@ -291,10 +300,7 @@ async function run() {
     {
       const other = world.build({ title: 'owner and a peer', peers: ['bella'] });
       const oPhone = auth.generateIdentity('o-phone');
-      other.box.setDevice(
-        'andy', oPhone.publicKey,
-        auth.sign(other.owner.privateKey, deviceAuth.setDeviceMessage(oPhone.publicKey))
-      );
+      world.ask(other.box, other.owner, { setDevice: { key: oPhone.publicKey } });
       function sendAs(signer, to, text) {
         return other.box.send(
           'andy', to, text,
@@ -318,13 +324,19 @@ async function run() {
         test.fail('the house key was confined too: ' + JSON.stringify(houseAtPeer));
       }
 
-      // Its own identity is the one correspondent it has — a note to
-      // yourself from your own phone.
+      // ITS OWN IDENTITY WAS THE ONE CORRESPONDENT IT HAD — a note to
+      // yourself from your own phone — and now it has none, on this wire.
+      //
+      // That is not a loss of function: it is the confinement completed.
+      // A device's correspondent is the NODE that owns it, and a node is
+      // not reachable by signing as it on a relay. Whatever a device ends
+      // up able to do, it will do through its node (DEVICE.md §7), and
+      // the relay will carry it the way deviceOffer already does.
       const atSelf = sendAs(oPhone, 'andy', 'note to self');
-      if (atSelf.ok) {
-        test.check('and it still reaches the identity it belongs to, which is its whole reach');
+      if (atSelf.ok === false) {
+        test.check('and not even its own identity — a device key proves nothing to a relay at all');
       } else {
-        test.fail('device could not reach its own identity: ' + JSON.stringify(atSelf));
+        test.fail('a device still reached a relay: ' + JSON.stringify(atSelf));
       }
 
       // AND THE CARVE-OUT IS GONE, which makes this rule one clause
@@ -438,20 +450,20 @@ async function run() {
   } else {
     test.fail('owner got: ' + JSON.stringify(ownerGot && ownerGot.carried));
   }
-  const ownerInstall = L.box.setDevice(
-    'andy',
-    ownerPhone.publicKey,
-    auth.sign(L.owner.privateKey, deviceAuth.setDeviceMessage(ownerPhone.publicKey))
-  );
-  if (ownerInstall && ownerInstall.ok) test.check('and the owner still lands in allow.json');
-  else test.fail('owner install: ' + JSON.stringify(ownerInstall));
-
+  // AND NOBODY'S DEVICE IS WRITTEN INTO allow.json, which is a stronger
+  // statement than the one that stood here.
+  //
+  // It used to check that the OWNER's device landed in allow.json and a
+  // PEER's did not — the two rooms rule, with the owner's device in the
+  // owner's room. A relay keeps no device key at all now, so the rule it
+  // was protecting has nothing left to protect: no room holds one.
   const allowRaw = fs.readFileSync(path.join(L.home, 'relay-state', 'allow.json'), 'utf8');
-  if (allowRaw.indexOf(ownerPhone.publicKey) !== -1 &&
-      allowRaw.indexOf(phoneA.publicKey) === -1) {
-    test.check("and a peer's device is NOT written into the owner's room");
+  if (allowRaw.indexOf(ownerPhone.publicKey) === -1 &&
+      allowRaw.indexOf(phoneA.publicKey) === -1 &&
+      allowRaw.indexOf('devicePublicKey') === -1) {
+    test.check("and allow.json holds no device key at all — not the owner's, not a peer's");
   } else {
-    test.fail('allow.json holds the wrong keys');
+    test.fail('allow.json holds a device key: ' + allowRaw);
   }
 
   replyTo(L.box, L.owner, ownerGot.req, false, '');

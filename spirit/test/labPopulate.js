@@ -197,10 +197,14 @@ async function clearLive(me) {
   for (const row of rows) {
     const label = row.publicLabel || row.name || '';
     if (label.indexOf('lab-') !== 0 || !row.publicKey) continue;
-    const done = await post(LIVE_RELAY + '/api/relay/remove-peer', {
-      name: me.name,
+    // THROUGH THE NODE'S OWN DOOR. /api/relay/remove-peer is gone
+    // (decision 0010) and the reply to a post lands on the asker's
+    // STREAM — which the work node is already holding. Signing from here
+    // would mean opening a second stream with Andy's key and knocking his
+    // running node off the relay.
+    const done = await post(WORK_URL + '/api/hub/remove-peer', {
+      url: LIVE_RELAY,
       key: row.publicKey,
-      sig: auth.sign(me.privateKey, auth.removePeerMessage(row.publicKey)),
     });
     if (done.ok) removed += 1;
     else console.log('  could not remove ' + label + ': ' + JSON.stringify(done.body));
@@ -530,10 +534,9 @@ async function up(scenarioName) {
     const peer = world.peer(NAME_PREFIX + step.remove);
     if (!peer) continue;
     const relayUrlFor = step.from === 'live' ? LIVE_RELAY : world.relay().url;
-    const done = await post(relayUrlFor + '/api/relay/remove-peer', {
-      name: me.name,
+    const done = await post(WORK_URL + '/api/hub/remove-peer', {
+      url: relayUrlFor,
       key: peer.id.publicKey,
-      sig: auth.sign(me.privateKey, auth.removePeerMessage(peer.id.publicKey)),
     });
     if (done.ok) left += 1;
     else console.log('  remove ' + step.remove + ': ' + JSON.stringify(done.body));

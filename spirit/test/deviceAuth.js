@@ -48,12 +48,14 @@ try {
   ok('#1.7 password match', deviceAuth.passwordsEqual(first.password, first.password));
   ok('#1.8 password reject', !deviceAuth.passwordsEqual(first.password, first.password.slice(0, -1) + '0'));
 
-  const msg = deviceAuth.setDeviceMessage(phone.publicKey);
-  ok('#1.9 set-device bytes', msg === 'set-device\n' + phone.publicKey);
-  const good = relayAuth.sign(house.privateKey, msg);
-  const statusSig = relayAuth.sign(house.privateKey, relayAuth.statusMessage('andy'));
-  ok('#1.10 house signs set-device', relayAuth.verify(house.publicKey, msg, good));
-  ok('#1.11 status sig is not set-device', !relayAuth.verify(house.publicKey, msg, statusSig));
+  // THE setDeviceMessage CHECKS STOOD HERE — its byte shape, that the
+  // house key signs it, and that a `status` signature does not verify as
+  // it.
+  //
+  // The format is gone (decision 0010). Enrolment is a post, which binds
+  // sender, recipient and the exact text — so a status signature cannot
+  // be replayed into it for a broader reason than before: it is not a
+  // post signature at all. devicePeers.js asks that on the new path.
 
   const oldRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-allow-old-'));
   writeAllow(oldRoot, [{ name: 'andy', publicKey: house.publicKey }]);

@@ -222,15 +222,26 @@ test.subHeading('Who may mint');
     test.fail('mallory claim: ' + JSON.stringify({ mint: mInvite, claim: mClaim }));
   }
 
-  // THE CHECK THE NARROWING RESTS ON. A peer on this box, properly
-  // claimed, signing correctly as herself — and the relay is not
-  // addressable by her. Same wording an unknown key gets.
+  // THE CHECK THE GATING RESTS ON. A peer on this box, properly claimed,
+  // signing correctly as herself — and she may ADDRESS the relay, because
+  // that door opened so that set-device and self-removal could stop being
+  // cheats. What refuses her is the verb: minting is an owner verb, and
+  // answerSelf decides that one verb at a time.
+  //
+  // Nothing about the relay's key was ever secret — it is published
+  // unsigned in /api/relay/who — so the refusal never protected it. It
+  // protects the four owner verbs, which check nothing themselves.
+  const heard = heardBy(r, mallory);
+  const before = invites.load(r.home).length;
   const claimedStranger = askMint(r, mallory, 'saint', 7);
-  if (!claimedStranger.ok && claimedStranger.status === 404 &&
-      claimedStranger.error === 'no such peer') {
-    test.check('a claimed non-owner peer still cannot mint — the box answers nobody but its owner');
+  const said = heard.length ? heard[heard.length - 1].body : null;
+
+  if (claimedStranger.ok && said && said.ok === false && said.error === 'no such peer' &&
+      invites.load(r.home).length === before) {
+    test.check('a claimed non-owner peer still cannot mint — the verb refuses, and nothing is written');
   } else {
-    test.fail('claimed stranger: ' + JSON.stringify(claimedStranger));
+    test.fail('claimed stranger: ' + JSON.stringify(claimedStranger) +
+      ' said: ' + JSON.stringify(said));
   }
 
   // `mint without a signature is refused` stood here. There is no
@@ -393,9 +404,11 @@ function askRevoke(r, who, label) {
 }
 
 {
-  // NOBODY ELSE MAY, and the refusal is the ordinary one: a peer cannot
-  // address the relay at all, so it says `no such peer` — the same answer
-  // an unknown key gets, and nothing about revoke is discoverable.
+  // NOBODY ELSE MAY. The peer CAN address the relay — that door opened so
+  // set-device and self-removal could stop being cheats — so the post
+  // lands and the VERB is what refuses. It answers `no such peer`, the
+  // same thing a verb nobody has heard of gets, so nothing about revoke
+  // is discoverable by asking.
   const r = ownedRelay();
   const mallory = auth.generateIdentity('mallory');
   const minted = r.box.mint('andy', 'mallory', 7);
@@ -403,13 +416,16 @@ function askRevoke(r, who, label) {
     mallory.publicKey, '10.0.0.6', minted.invite.token);
 
   r.box.mint('andy', 'saint', 7, 'blue-fish');
+  const heard = heardBy(r, mallory);
   const theirs = askRevoke(r, mallory, 'saint');
   const survived = invites.load(r.home).some(function (row) { return row.label === 'saint'; });
+  const said = heard.length ? heard[heard.length - 1].body : null;
 
-  if (!theirs.ok && theirs.status === 404 && theirs.error === 'no such peer' && survived) {
-    test.check('a peer cannot revoke the owner\'s invites — the box answers nobody but its owner');
+  if (theirs.ok && survived && said && said.ok === false && said.error === 'no such peer') {
+    test.check('a peer cannot revoke the owner\'s invites — the verb refuses, and says nothing');
   } else {
-    test.fail('peer revoke: ' + JSON.stringify(theirs) + ' survived: ' + survived);
+    test.fail('peer revoke: ' + JSON.stringify(theirs) + ' said: ' + JSON.stringify(said) +
+      ' survived: ' + survived);
   }
 }
 

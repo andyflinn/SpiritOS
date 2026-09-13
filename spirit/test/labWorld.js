@@ -212,7 +212,7 @@ function createWorld(opts) {
       if (!node.ok) return node;
 
       const id = auth.generateIdentity(name);
-      const minted = await mintOn(relay.url, owner, name, 1);
+      const minted = await askOn(relay.url, owner, { invite: { label: name, days: 1, token: '' } });
       if (!minted.ok) return { ok: false, error: 'mint ' + name + ': ' + minted.error };
       const token = minted.invite.token;
       const joined = await post(relay.url + '/api/relay/claim', {
@@ -267,9 +267,10 @@ function createWorld(opts) {
     return { ok: res.ok, status: res.status, body: parsed };
   }
 
-  // MINTING, WHICH NOW NEEDS A STREAM. There is no /api/relay/invite any
-  // more (decision 0010): a mint is a post to the relay, and a relay
-  // answers a post on the asker's stream rather than in the response.
+  // ASKING A RELAY ANYTHING, WHICH NOW NEEDS A STREAM. Decision 0010
+  // emptied the register — mint, revoke, remove-peer and set-device are
+  // all posts — and a relay answers a post on the asker's stream rather
+  // than in the response.
   //
   // So this holds one for the length of one mint. It is more code than
   // the old two-line POST and it is the honest amount — a real node does
@@ -279,7 +280,7 @@ function createWorld(opts) {
   // NOT A GAP, deliberately, and worth saying because the list at the
   // bottom is where cheats go: nothing here reaches past the protocol.
   // It speaks the protocol by hand because there is no node to speak it.
-  async function mintOn(relayUrl, ownerId, label, days) {
+  async function askOn(relayUrl, ownerId, body) {
     // The census already carries it — no second endpoint, which is the
     // same reason answerRelay.relayKey reads it there on a real node.
     let relayKey = '';
@@ -302,9 +303,7 @@ function createWorld(opts) {
     // Read the stream until the reply to THIS hash arrives. Matched by
     // hash and not by "the next reply", because a roster and a presence
     // event arrive down the same pipe.
-    const text = JSON.stringify({
-      app: 'relay', v: 1, body: { invite: { label: label, days: days, token: '' } },
-    });
+    const text = JSON.stringify({ app: 'relay', v: 1, body: body });
     const sig = auth.sign(ownerId.privateKey,
       auth.postMessage(ownerId.publicKey, relayKey, text));
 
@@ -345,10 +344,10 @@ function createWorld(opts) {
     ]);
     stop.abort();
 
-    if (!answered || !answered.ok || !answered.invite) {
-      return { ok: false, error: 'the relay did not answer the mint: ' + JSON.stringify(answered) };
+    if (!answered || !answered.ok) {
+      return { ok: false, error: 'the relay refused or did not answer: ' + JSON.stringify(answered) };
     }
-    return { ok: true, invite: answered.invite };
+    return answered;
   }
 
   // Going away and coming back, which is what presence is about. Real
@@ -372,16 +371,13 @@ function createWorld(opts) {
   // needed the relay's disk, and was the single reason this helper could
   // never be pointed at a relay it did not own the filesystem of.
   //
-  // Now it is one owner-signed request over the wire, which means these
-  // suites can clean up after themselves anywhere.
+  // Now it is one owner-signed POST over the wire, which means these
+  // suites can clean up after themselves anywhere. The route it used is
+  // gone (decision 0010) — both halves of remove-peer are packets.
   async function evictPeer(name) {
     const p = peers.filter(function (x) { return x.name === name; })[0];
     if (!p || !relay) return false;
-    const done = await post(relay.url + '/api/relay/remove-peer', {
-      name: owner.name || 'labowner',
-      key: p.id.publicKey,
-      sig: auth.sign(owner.privateKey, auth.removePeerMessage(p.id.publicKey)),
-    });
+    const done = await askOn(relay.url, owner, { removePeer: { key: p.id.publicKey } });
     return !!(done && done.ok);
   }
 
@@ -422,6 +418,9 @@ function createWorld(opts) {
     stopPeer: stopPeer,
     startPeer: startPeer,
     evictPeer: evictPeer,
+    // Asking the lab relay anything, as its owner. The only way to ask a
+    // relay anything since decision 0010 emptied the register.
+    askOn: askOn,
   };
 }
 

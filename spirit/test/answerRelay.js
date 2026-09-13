@@ -47,6 +47,20 @@ function fakeRelay(opts) {
   }
   return {
     calls: calls,
+    // ENROLMENT IS A POST NOW (decision 0010): there is no
+    // /api/relay/set-device to intercept, so the fake grows the seam the
+    // real node uses instead. Recorded as a call so the assertions below
+    // can still ask "was it installed, and where".
+    post: function (url, key, text) {
+      calls.push({ url: url, method: 'POST', pathname: '/api/relay/post', body: text });
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        text: JSON.stringify({
+          app: 'relay', v: 1, body: { ok: !opts.installFails },
+        }),
+      });
+    },
     request: function (url, method, pathname, body) {
       calls.push({ url: url, method: method, pathname: pathname, body: body });
       if (method === 'GET' && /\/api\/relay\/who$/.test(pathname)) {
@@ -56,9 +70,7 @@ function fakeRelay(opts) {
           mailboxPublicKey: url === OTHER_URL ? opts.otherKey : opts.mailboxKey,
         });
       }
-      if (method === 'POST' && /set-device$/.test(pathname)) {
-        return said(opts.installFails ? { ok: false } : { ok: true });
-      }
+
       return said({ ok: false });
     },
   };
@@ -101,6 +113,7 @@ async function run() {
     const A = answerRelay.createAnswerer({
       rootDir: node.home,
       request: relay.request,
+      post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
 
@@ -114,13 +127,22 @@ async function run() {
       test.fail('answer: ' + said);
     }
 
-    // The decision is only half of it — the key has to be installed, or
-    // the browser is told yes about a device no relay will honour.
-    const installed = relay.calls.filter(function (c) { return /set-device$/.test(c.pathname); });
-    if (installed.length === 1 && installed[0].body.devicePublicKey === phone.publicKey) {
-      test.check('and installs the key on the relay that asked');
+    // THE DECISION IS THE WHOLE OF IT NOW, and the relay is told nothing.
+    //
+    // This used to check that the key was also INSTALLED on the relay
+    // that asked — "or the browser is told yes about a device no relay
+    // will honour". A relay honours no device key any more: the binding
+    // is the node's, and the relay's copy was read only by the ring, by
+    // nobody (deviceAuth.js).
+    //
+    // So what is asserted is the silence, plus the write that matters.
+    const installed = relay.calls.filter(function (c) { return /\/api\/relay\/post$/.test(c.pathname); });
+    if (installed.length === 0 &&
+        deviceAuth.load(node.home).devicePublicKey === phone.publicKey) {
+      test.check('and writes the binding down without telling any relay about it');
     } else {
-      test.fail('set-device calls: ' + JSON.stringify(installed.map(function (c) { return c.body; })));
+      test.fail('posts: ' + JSON.stringify(installed.map(function (c) { return c.body; })) +
+        ' bound: ' + JSON.stringify(deviceAuth.load(node.home).devicePublicKey));
     }
 
     if (deviceAuth.load(node.home).devicePublicKey === phone.publicKey) {
@@ -147,6 +169,7 @@ async function run() {
     const A = answerRelay.createAnswerer({
       rootDir: node.home,
       request: relay.request,
+      post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
 
@@ -162,7 +185,7 @@ async function run() {
       test.fail('a stranger was answered: ' + said);
     }
 
-    const installed = relay.calls.filter(function (c) { return /set-device$/.test(c.pathname); });
+    const installed = relay.calls.filter(function (c) { return /\/api\/relay\/post$/.test(c.pathname); });
     if (!installed.length && !deviceAuth.load(node.home).devicePublicKey) {
       test.check('and nothing was installed, and nothing was written down');
     } else {
@@ -179,6 +202,7 @@ async function run() {
     const A = answerRelay.createAnswerer({
       rootDir: node.home,
       request: relay.request,
+      post: relay.post,
       urls: function () { return [RELAY_URL, OTHER_URL]; },
     });
 
@@ -199,7 +223,7 @@ async function run() {
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
 
@@ -230,7 +254,7 @@ async function run() {
     auth.saveIdentity(home, auth.generateIdentity('andy'));
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: home, request: relay.request,
+      rootDir: home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
     const said = JSON.parse(await A.answer(
@@ -244,21 +268,32 @@ async function run() {
   }
 
   {
-    // A RELAY THAT TAKES NOTHING IS NOT A YES. If the install fails
-    // everywhere, the browser must not be told it has a device.
+    // "A RELAY THAT TAKES NOTHING IS NOT A YES" STOOD HERE — if the
+    // install failed everywhere, the browser must not be told it has a
+    // device.
+    //
+    // There is no install and no everywhere. The node decides and the
+    // node writes; a relay's willingness was never consulted and cannot
+    // be. So the case this guarded cannot arise, and asserting it would
+    // mean simulating a step that no longer exists.
+    //
+    // What replaced the worry, rather than the check: the enrolment is
+    // accepted on the strength of the password alone, compared in one
+    // place, and the binding is one line in one file. There is no second
+    // party whose silence could make a yes a lie.
     const node = nodeWithPassword();
-    const relay = fakeRelay({ mailboxKey: relayId.publicKey, installFails: true });
+    const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
     const said = JSON.parse(await A.answer(
-      arriving(relayId.publicKey, offer(node.password, phone.publicKey))
+      arriving(relayId.publicKey, offer('not-the-password', phone.publicKey))
     ));
     if (said.accepted === false && !deviceAuth.load(node.home).devicePublicKey) {
-      test.check('and an install that landed nowhere is a no, with nothing written down');
+      test.check('a wrong password is a no, with nothing written down — the password is the whole gate');
     } else {
-      test.fail('accepted with no install: ' + JSON.stringify(said));
+      test.fail('accepted a wrong password: ' + JSON.stringify(said));
     }
   }
 
@@ -268,7 +303,7 @@ async function run() {
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
 
@@ -294,7 +329,7 @@ async function run() {
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey, censusFails: true });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
     const said = await A.answer(arriving(relayId.publicKey, offer(node.password, phone.publicKey)));
@@ -312,7 +347,7 @@ async function run() {
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
     await A.answer(arriving(relayId.publicKey, offer('wrong', phone.publicKey)));
@@ -340,7 +375,7 @@ async function run() {
 
     const honest = fakeRelay({ mailboxKey: relayId.publicKey });
     const first = answerRelay.createAnswerer({
-      rootDir: node.home, request: honest.request,
+      rootDir: node.home, request: honest.request, post: honest.post,
       urls: function () { return [RELAY_URL]; },
     });
     const ok = JSON.parse(await first.answer(
@@ -357,7 +392,7 @@ async function run() {
     const swapped = fakeRelay({ mailboxKey: impostor.publicKey });
     const changes = [];
     const second = answerRelay.createAnswerer({
-      rootDir: node.home, request: swapped.request,
+      rootDir: node.home, request: swapped.request, post: swapped.post,
       urls: function () { return [RELAY_URL]; },
       onKeyChanged: function (url, had, got) { changes.push({ url: url, had: had, got: got }); },
     });
@@ -395,7 +430,7 @@ async function run() {
     // stops this being a check that simply refuses everything after one
     // run.
     const third = answerRelay.createAnswerer({
-      rootDir: node.home, request: fakeRelay({ mailboxKey: relayId.publicKey }).request,
+      rootDir: node.home, request: fakeRelay({ mailboxKey: relayId.publicKey }).request, post: fakeRelay({ mailboxKey: relayId.publicKey }).post,
       urls: function () { return [RELAY_URL]; },
     });
     const again = JSON.parse(await third.answer(
@@ -422,7 +457,7 @@ async function run() {
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
 
@@ -461,7 +496,7 @@ async function run() {
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
     });
     let yes = 0;
@@ -485,7 +520,7 @@ async function run() {
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey, otherKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({
-      rootDir: node.home, request: relay.request,
+      rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL, OTHER_URL]; },
     });
     for (let n = 0; n < 6; n += 1) {

@@ -393,16 +393,17 @@ async function run() {
         }
       }
 
-      // Installed through the real verb, owner-signed.
-      const install = await relayPost('/api/relay/set-device', {
-        name: ownerId.name || 'labowner',
-        devicePublicKey: handheld.publicKey,
-        sig: auth.sign(ownerId.privateKey, deviceAuth.setDeviceMessage(handheld.publicKey)),
+      // INSTALLED THROUGH THE REAL VERB, which is a post now: there is no
+      // /api/relay/set-device any more, because installing a key on your
+      // own row was never an owner verb and never needed a door only the
+      // owner could knock on (decision 0010).
+      const install = await W.askOn(relayUrl, ownerId, {
+        setDevice: { key: handheld.publicKey },
       });
-      if (install.status === 200 && install.body && install.body.ok) {
+      if (install && install.ok) {
         test.check("a handheld is installed on the lab relay's own owner record");
       } else {
-        test.fail('set-device: ' + install.status + ' ' + install.text.slice(0, 120));
+        test.fail('set-device: ' + JSON.stringify(install));
       }
 
       const ownerName = ownerId.name || 'labowner';

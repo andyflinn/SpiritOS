@@ -179,19 +179,28 @@ test.subHeading('Silent until asked');
       ', andy heard ' + events(w.heard.andy).length);
   }
 
-  // A non-owner cannot turn it on for themselves either. There is no gate
-  // left to check that with — the collapse took it — so what refuses them
-  // is the relay declining to be addressed at all. See `andNobodyElseCan`
-  // below for the wording, which is the load-bearing half.
+  // A NON-OWNER CANNOT TOUCH IT, and note where the refusal now lives.
+  //
+  // The relay IS addressable by a peer — the destination opened so that
+  // set-device and self-removal could stop being cheats — so the post
+  // itself succeeds and comes back 202 with a hash. What refuses is the
+  // VERB: monitor is an owner verb, and answerSelf checks that per verb.
   //
   // Asked as a STOP, because the owner's is already running here: the
   // interesting refusal is a peer reaching into somebody else's monitor,
   // not a peer failing to get their own.
   const theirs = askMonitor(w, w.bella, false);
-  if (!theirs.ok && w.box.monitoring() === true) {
-    test.check("and a peer cannot touch the owner's: the box is not addressable by them");
+  const bellaHeard = w.heard.bella.filter(function (m) { return m.event === 'reply'; });
+  let refused = null;
+  try { refused = JSON.parse(bellaHeard[bellaHeard.length - 1].data.text).body; }
+  catch (e) { refused = null; }
+
+  if (theirs.ok && w.box.monitoring() === true &&
+      refused && refused.ok === false && refused.error === 'no such peer') {
+    test.check("a peer's monitor request is refused per-verb, and the owner's keeps running");
   } else {
-    test.fail('a peer reached the monitor: ' + JSON.stringify(theirs));
+    test.fail('a peer reached the monitor: ' + JSON.stringify(theirs) +
+      ' said: ' + JSON.stringify(refused) + ' monitoring=' + w.box.monitoring());
   }
 
   fs.rmSync(w.home, { recursive: true, force: true });
@@ -365,9 +374,11 @@ test.subHeading('The relay as a peer, for its owner');
 //   Andy: "The relay must be an addressable peer for the owner… This
 //   entire panel should, of course, go through protocol."
 //
-// R18. The narrowing is what makes it safe: every other sender keeps the
-// answer they get today, so no caller learns this key means anything
-// here.
+// R18. The narrowing is what makes it safe, and NOT because it hides
+// anything: the relay's key is published unsigned in /api/relay/who.
+// postedToSelf is the only gate on everything answerSelf can do — four
+// owner verbs that verify nothing themselves, because the post's
+// signature is their proof.
 
 (function theOwnerCanPostToIt() {
   const w = world();
@@ -416,14 +427,22 @@ test.subHeading('The relay as a peer, for its owner');
   const theirs = w.box.routePost(w.bella.publicKey, relayKey, packet,
     auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, relayKey, packet)));
 
-  // THE CHECK THE NARROWING RESTS ON, and it is about the WORDING as much
-  // as the refusal: a peer gets `no such peer`, which is exactly what an
-  // unknown key gets. A distinct error here would tell any peer that this
-  // key means something on this box.
-  if (!theirs.ok && theirs.status === 404 && theirs.error === 'no such peer') {
-    test.check('a peer posting to the relay gets `no such peer` — the same answer an unknown key gets');
+  // THE CHECK THE GATING RESTS ON, and it is about the WORDING as much as
+  // the refusal.
+  //
+  // The post lands — a peer may address the relay. The VERB is refused,
+  // and it answers `no such peer`: exactly what a verb nobody has heard
+  // of gets. So the set of things this box will do for somebody else
+  // cannot be enumerated by asking it.
+  const bellaSaw = w.heard.bella.filter(function (m) { return m.event === 'reply'; });
+  let said = null;
+  try { said = JSON.parse(bellaSaw[bellaSaw.length - 1].data.text).body; }
+  catch (e) { said = null; }
+
+  if (theirs.ok && said && said.ok === false && said.error === 'no such peer') {
+    test.check('a peer asking an owner verb gets `no such peer` — indistinguishable from an unknown verb');
   } else {
-    test.fail('peer post: ' + JSON.stringify(theirs));
+    test.fail('peer post: ' + JSON.stringify(theirs) + ' said: ' + JSON.stringify(said));
   }
 
   if (w.box.monitoring() === false) {

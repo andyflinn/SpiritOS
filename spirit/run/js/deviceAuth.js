@@ -176,11 +176,19 @@ function passwordsEqual(stored, given) {
   }
 }
 
-// House key signs this to install a device on a mailbox. A status
-// signature must not verify as this message.
-function setDeviceMessage(devicePublicKey) {
-  return 'set-device\n' + String(devicePublicKey || '');
-}
+// setDeviceMessage STOOD HERE — its own format so that a `status`
+// signature, which an owner makes constantly, could never be replayed as
+// "install this key".
+//
+// A post keeps that property and adds the one this could not have: it
+// binds the RECIPIENT, so a signature made for one relay cannot install a
+// key on another. setDeviceMessage carried only the device key, which is
+// why deviceTick had to re-sign per relay and why straddling a minute
+// boundary was a real failure mode — "a failure that appears only
+// sometimes, only on slow links, and only for the mailbox listed last".
+//
+// Enrolment is a packet now (relay.answerSelf, body.setDevice), and there
+// is nothing left to hand-roll. Decision 0010.
 
 // THERE IS NO `device-take` MESSAGE ANY MORE. It signed two verbs that no
 // longer exist — "hand me the pending device request" and "here is my
@@ -198,16 +206,49 @@ function setDeviceMessage(devicePublicKey) {
 // is proven.
 
 // allow.byName stays the owner string. Extra device key is sibling field.
-function keysForName(allow, name) {
-  if (!allow || allow.mode !== 'keys' || !name) return [];
-  var owner = allow.byName && allow.byName[name];
-  var device = allow.deviceByName && allow.deviceByName[name];
-  var out = [];
-  if (typeof owner === 'string' && owner) out.push(owner);
-  if (typeof device === 'string' && device && device !== owner) out.push(device);
-  return out;
-}
-
+// keysForName STOOD HERE — the relay's copy of a device key, and the two
+// gates that honoured it.
+//
+// ── WHY IT IS GONE ───────────────────────────────────────────────────
+//
+//   Andy: "the device key is used to mirror/fake the protocol for the one
+//   leg of the route where it's not actually compliant... and to safely
+//   tie a device to its node."
+//
+// Two jobs, and NEITHER of them is the relay's:
+//
+//   1. A STAND-IN ON THE LEG THAT IS NOT PROTOCOL. A browser on a phone
+//      has no row, no stream and cannot post. deviceOffer is the shape
+//      that leg takes: the relay turns the browser's request into an
+//      ORDINARY POST to the owning node, and the node answers on its own
+//      stream. The relay is a CONDUIT. device.html states the rule — "a
+//      device's correspondent is the node that owns it".
+//
+//   2. THE BINDING, safely. The browser makes the keypair and keeps the
+//      private half; the password proves the human and is compared in
+//      exactly ONE place, the owning node (deviceTick.answerOffer). The
+//      relay carries the question and never learns the answer.
+//
+// So the binding lives in the node's relay-state/device.json, and always
+// did. The copy each relay kept was read in exactly two places — inside
+// `send` and inside `inbox` — and NOTHING EVER EXERCISED EITHER. No app,
+// no shell, no device page: device.html's own `sendMessage` helper had a
+// single occurrence in the tree, its own definition.
+//
+// A relay holding a credential it never reads is storing something on
+// somebody's behalf, which is what decision 0006 emptied it for.
+//
+// ── WHAT WENT WITH IT ────────────────────────────────────────────────
+//
+// Three hazards, deleted rather than fixed:
+//
+//   a device left working on a relay that was unreachable when a new one
+//     was enrolled — there is no copy to leave behind now
+//   a revocation that had to reach every relay — the red button is one
+//     node-local write
+//   a device key that was "a full copy of the owner's authority on this
+//     box", which is what the note here used to have to justify
+//
 function parseKeyRow(row) {
   if (!row || typeof row !== 'object') return null;
   if (typeof row.name !== 'string' || !row.name.trim()) return null;
@@ -230,7 +271,5 @@ module.exports = {
   rotatePassword: rotatePassword,
   setDevicePublicKey: setDevicePublicKey,
   passwordsEqual: passwordsEqual,
-  setDeviceMessage: setDeviceMessage,
-  keysForName: keysForName,
   parseKeyRow: parseKeyRow
 };

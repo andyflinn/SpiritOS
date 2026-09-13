@@ -90,38 +90,19 @@ function streamSignatureOk(publicKey, key, sig, atMs) {
   return false;
 }
 
-// FORGETTING SOMEBODY IS ITS OWN VERB, for the reason every other one
-// is: the owner signs `status` for each census and `invite` whenever they
-// add a member, and neither of those may be replayable as "delete this
-// person". Removal is the only owner action that destroys, so it is the
-// one that least deserves a shared signature.
+// removePeerMessage and removePeerSignatureOk STOOD HERE, under a note
+// arguing that removal — the one owner action that destroys — least
+// deserved a shared signature, and that it had to name the KEY because
+// labels duplicate.
 //
-// The key, not the label. Labels duplicate by design, so a signature
-// naming one would be an instruction to remove whichever john the relay
-// happened to find first.
-function removePeerMessage(key, atMs) {
-  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
-  return 'remove-peer\n' + String(key || '') + '\n' + minute;
-}
-
-function removePeerSignatureOk(publicKey, key, sig, atMs) {
-  if (!publicKey || !sig) return false;
-  var now = atMs == null ? Date.now() : atMs;
-  for (var step = -1; step <= 1; step += 1) {
-    if (verify(publicKey, removePeerMessage(key, now + step * 60000), sig)) return true;
-  }
-  return false;
-}
-
-// A REQUEST, and the hash is taken over exactly these bytes — which are
-// exactly the bytes that were signed. That binding is deliberate: there
-// is then no question about what the hash covers, and no canonical-JSON
-// rule for two implementations to disagree about.
+// Both claims were right and a post keeps both, for free: it binds
+// sender, recipient and the exact text, carries a minute, and has its
+// hash registered before anything is answered. Removal names a key
+// because the packet says `key`. There is nothing left here to sign.
 //
-// `from` and `to` are KEYS, not labels (B2). The requester is inside the
-// hashed bytes on purpose: it makes it impossible for two different
-// senders to produce the same hash, which is the first of the three
-// things that stop a false positive (ROUTER.md §4).
+// Both ways in are packets now — the owner naming anybody, a peer naming
+// themselves — see relay.answerSelf. Decision 0010.
+
 function postMessage(from, to, text, atMs) {
   var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
   return 'post\n' + String(from || '') + '\n' + String(to || '') + '\n' +
@@ -241,20 +222,17 @@ function loadAllow(rootDir) {
     const parsed = JSON.parse(raw);
     if (parsed && Array.isArray(parsed.keys) && parsed.keys.length) {
       const byName = Object.create(null);
-      // The device slot rides alongside rather than inside byName, which
-      // stays the HOUSE key string and nothing else. Every existing
-      // reader — firstOwner's reclaim test, mint, ownerName — asks it
-      // "which key is this name's" and would get a different kind of
-      // answer if it became a list. The keys branch below is where "or
-      // the device" is spelled out, once, deliberately.
-      const deviceByName = Object.create(null);
+      // A ROW IS A NAME AND A HOUSE KEY. `deviceByName` rode alongside
+      // until 2026-09-13 and is gone: a relay keeps no device key, because
+      // the binding between a device and its node is the NODE's (see
+      // deviceAuth.js). A stale `devicePublicKey` in an allow.json written
+      // by older code is read and dropped here, which is the migration.
       parsed.keys.forEach(function (raw) {
         const row = deviceAuth.parseKeyRow(raw);
         if (!row) return;
         byName[row.name] = row.publicKey;
-        deviceByName[row.name] = row.devicePublicKey;
       });
-      return { mode: 'keys', byName: byName, deviceByName: deviceByName };
+      return { mode: 'keys', byName: byName };
     }
     if (parsed && Array.isArray(parsed.names)) {
       return { mode: 'names', names: parsed.names };
@@ -263,19 +241,16 @@ function loadAllow(rootDir) {
   return { mode: 'open' };
 }
 
-// A row carries devicePublicKey only when there is one. Writing `null`
-// would be a different file for the same fact, and the reclaim path
-// (becomeOwner) hands over a house key alone — an empty slot it invented
-// on the way past is a slot nobody asked for.
+// A row is a name and a house key. It carried a devicePublicKey until
+// 2026-09-13; anything still passing one has it dropped here, which is how
+// the field leaves a live allow.json on the next write.
 function writeAllowKeys(rootDir, keys) {
   const dir = path.join(rootDir, 'relay-state');
   fs.mkdirSync(dir, { recursive: true });
   const rows = (keys || []).map(function (raw) {
     const row = deviceAuth.parseKeyRow(raw);
     if (!row) return null;
-    const out = { name: row.name, publicKey: row.publicKey };
-    if (row.devicePublicKey) out.devicePublicKey = row.devicePublicKey;
-    return out;
+    return { name: row.name, publicKey: row.publicKey };
   }).filter(Boolean);
   fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: rows }, null, 2));
 }
@@ -365,15 +340,15 @@ function checkSend(allow, from, sig, to, text) {
   // is ever written to it — so a device key is a full copy of the owner's
   // authority on this box. That is the decision, not an oversight.
   //
-  // keysForName puts the house key first, so the ordinary case still
-  // proves on the first try and the device costs a verify only when the
-  // house key was not the signer.
-  const sendKeys = deviceAuth.keysForName(allow, from);
-  if (!sendKeys.length) return { ok: false, status: 403, error: 'from not allowed' };
-  const sendProved = !!sig && sendKeys.some(function (pub) {
-    return verify(pub, sendMessage(from, to, text), sig);
-  });
-  if (!sendProved) return { ok: false, status: 403, error: 'bad send signature' };
+  // THE ROW'S OWN KEY, and nothing else. A device key was accepted here
+  // until 2026-09-13, on the reasoning quoted above — and the relay does
+  // not hold one any more, because the binding belongs to the node. See
+  // deviceAuth.js for the whole of why.
+  const from_ = allow.byName && allow.byName[from];
+  if (!from_) return { ok: false, status: 403, error: 'from not allowed' };
+  if (!sig || !verify(from_, sendMessage(from, to, text), sig)) {
+    return { ok: false, status: 403, error: 'bad send signature' };
+  }
   return { ok: true };
 }
 
@@ -402,17 +377,13 @@ function checkInbox(allow, name, sig, atMs) {
   // never asked for a signature and still does not. The window is a
   // property of the proof, not of the route.
   if (allow.mode === 'open' || allow.mode === 'names') return { ok: true };
-  // Either key, as in checkSend. Kept as a predicate over the keys rather
-  // than one message verified once, because a read is proved differently
-  // from a send: inboxSignatureOk carries a time window that verify()
-  // knows nothing about.
-  const inboxKeys = deviceAuth.keysForName(allow, name);
-  if (!inboxKeys.length) return { ok: false, status: 403, error: 'name not allowed' };
+  // The row's own key, as in checkSend — no device fallback any more.
+  const reader = allow.byName && allow.byName[name];
+  if (!reader) return { ok: false, status: 403, error: 'name not allowed' };
   if (!sig) return { ok: false, status: 403, error: 'inbox signature required' };
-  const inboxProved = inboxKeys.some(function (pub) {
-    return inboxSignatureOk(pub, name, sig, atMs);
-  });
-  if (!inboxProved) return { ok: false, status: 403, error: 'bad inbox signature' };
+  if (!inboxSignatureOk(reader, name, sig, atMs)) {
+    return { ok: false, status: 403, error: 'bad inbox signature' };
+  }
   return { ok: true };
 }
 
@@ -463,8 +434,6 @@ module.exports = {
   inboxSignatureOk,
   streamMessage,
   streamSignatureOk,
-  removePeerMessage,
-  removePeerSignatureOk,
   postMessage,
   postSignatureFor,
   requestHash,

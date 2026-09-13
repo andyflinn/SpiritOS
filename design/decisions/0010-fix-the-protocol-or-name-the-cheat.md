@@ -20,6 +20,67 @@ What is not allowed is the fourth outcome, which is what happens by
 default: a new signed message format and a new route appear, the feature
 works, and nobody ever calls it a decision.
 
+## And the standing half, which this decision was missing
+
+Everything above is REACTIVE — it fires when something new is being
+added. Written that way, it let a named cheat sit indefinitely: the
+register said what each one cost, nobody was extending anything, and the
+rule was satisfied.
+
+That is not the rule.
+
+> **Andy: "first priority will always be: keeping the protocol clean,
+> anything that can be done by protocol MUST be done by protocol."**
+
+So there is a second, standing obligation, and it runs the other way:
+
+**A cheat that has BECOME expressible as a packet must be collapsed.**
+Not "may be", and not "is listed as open". The burden is on the cheat.
+
+Two consequences worth stating, because they are the ones that were
+quietly being avoided:
+
+- **"Cheat by arrangement" does not survive this.** If a thing is only
+  un-postable because of the ORDER in which this node does its work, the
+  order is what has to be argued for — not the cheat. `GET
+  /api/relay/status` is exactly that case; see the register.
+- **A narrowing that blocks a collapse is itself a thing to re-examine.**
+  `set-device` and the self half of `remove-peer` were stuck for one
+  reason: a relay answered its owner and nobody else. That was the right
+  call when it was made and it was not a fact of nature. Opening it
+  deleted both — and `set-device` twice over, since the reasoning that
+  opened the door then showed the relay had no business holding a device
+  key at all.
+
+### The exceptions, granted
+
+**Granted by Andy, 2026-09-13.** Asked whether GET on a relay would be
+for static files only, the answer is: static files, **plus three things
+that must work before a post is possible.**
+
+| granted | why it can never be a post |
+|---|---|
+| the brochure — `/`, `/index.html`, `/relay.html`, `/favicon.svg`, and the key-addressed enrolment page | files |
+| `GET /api/relay/who` | it is where a node learns the relay's KEY. You cannot post to an address you are still asking for |
+| `GET /api/relay/stream` | it is the wire itself. Posts are answered on this connection, so you cannot post to open the channel that carries the answer |
+| `GET /api/version` | deliberately credential-free: *"the question a deploy check asks must not need a private key, or the check cannot run from anywhere but the owner's own machine."* A post needs a row; needing nothing is the point |
+
+They share a shape, and it is worth naming because it is what makes them
+principled rather than convenient: **each one sits before or beneath the
+protocol.** `who` is before you have an address, `stream` is the channel
+the protocol runs on, `version` is before you have any relationship at
+all. A protocol cannot express its own preconditions. That is not a gap
+in this rule — it is where the rule bottoms out.
+
+So, stated whole:
+
+> **GET on a relay is for static files, and for the three things that
+> must work before a post is possible. Everything else must be a post.**
+
+Everything not on that list has to earn its exemption, and two are
+outstanding: `GET /api/relay/inbox`, which dies with the ring (R8), and
+`GET /api/relay/status`, which owes an argument — see the register.
+
 ## The narrowing, because a rule that fires on everything is ignored
 
 **It applies to one thing: a new way of speaking on the wire.** In this
@@ -108,81 +169,87 @@ Not cheats — they predate the router and are already sentenced.
 
 ### Cheats, named
 
-Each could be a packet now that a relay is addressable by its owner
-(R18). Each exists because it could not be, when it was written.
+**There are none left.**
 
-| | costs | undone by |
-|---|---|---|
-| `POST /api/relay/remove-peer` · `removePeerMessage` | a second door, and a minute window hand-rolled per verb — **now carrying the self path alone** | nothing, until a relay answers more than its owner |
-| `GET /api/relay/status` · `statusMessage` | a second door; also replayable into other verbs if the message shape ever drifts | **nothing. It is bootstrap** — see below |
-| `POST /api/relay/set-device` · `setDeviceMessage` | a second door | **nothing, as things stand** — see below |
+That line is the whole point of this decision, so it is worth saying what
+it cost to get to and what it does not mean.
 
-Three cheats. Two more were listed here when this decision was written
-and are **collapsed**: `POST /api/relay/monitor` · `monitorMessage` (the
-worked example above) and `POST /api/relay/invite` · `mintMessage`, which
-took the real hole with it. They are off this list because the list is of
-things that exist; `spirit/test/protocolSurface.js` goes red in that
-direction too, which is what stops the register drifting into a
-description of a world that has moved.
+Five were named when this was written. `monitor` and `invite` collapsed
+the same day, because the relay had just become addressable by its owner.
+The other three were parked behind one sentence — *a relay is addressable
+by its owner and by nobody else* — and that sentence turned out to be the
+thing to examine rather than to plan around:
 
-### What stopped the other three — one sentence, and it is the same one
+- **monitor** — the worked example. A packet the same day it was named.
+- **invite** — a packet, and the mint-replay hole went with the format
+  rather than needing a fix of its own.
+- **remove-peer** — the owner's half first, because it only ever needed
+  the relay to be addressable; the self half followed the moment the
+  destination opened to peers at all.
+- **set-device** — never an owner verb in the first place, so it only
+  needed a door a peer could knock on. It got one, and then did not need
+  it either: a relay keeps no device key, because the binding between a
+  device and its node belongs to the node. Deleted rather than
+  collapsed.
+- **status** — still on the wire, and reclassified rather than collapsed.
+  See below.
 
-**A relay is addressable by its owner and by nobody else.** That
-narrowing is what made R18 cheap and safe, and it is exactly what the
-three survivors run into:
+*(Written as prose and not a table on purpose: `protocolSurface.js` reads
+table rows as the register, so a deleted name in a cell would read as a
+claim that it still exists.)*
 
-- **`set-device` is not an owner verb.** Every peer installs its own
-  device key on its own row — `relay.setDevice` resolves the caller with
-  `deviceIdentity` and verifies against whatever row key that finds (B2:
-  *"nobody installs a key on a row they cannot sign for"*). A peer cannot
-  address the relay, so there is nowhere for that request to go.
-- **`remove-peer` is half an owner verb, and that half HAS collapsed.**
-  The owner's way in is a post (`body.removePeer`), reached through
-  `/api/hub/remove-peer` — the node-side interface this verb never had.
-  `bySelf` cannot follow: a peer taking themselves off a relay signs with
-  their own key, and a peer cannot address the relay at all.
+**What opened them all was one question of Andy's:**
 
-  An earlier note here said collapsing only the owner half would "buy
-  nothing" because the route and the format stand either way. **That was
-  wrong, and this corrects it.** It buys two things. The route now carries
-  one caller instead of two, so what it is *for* is legible — an exit, not
-  an administration channel. And the owner's path stopped needing a signed
-  verb, which is the thing that would otherwise have been copied the next
-  time somebody added an owner action.
-- **`status` is bootstrap, and this is the argument the decision asked
-  for.** `presenceNode.start` calls `ownerBadge.probe`, which reads
-  `GET /api/relay/status`, **to learn which relays to open streams to**.
-  A relay's answer to a post is delivered on the asker's stream. So a
-  posted `status` would need the stream that its own answer is what
-  decides to open. That is circular, not merely awkward, and it puts
-  `status` beside `claim` and `who` rather than beside the cheats.
+> *"if `who` discloses the relay's key, why does the protocol forbid
+> non-owner peers to obtain it as a destination?"*
 
-Which leaves one question, and it is a protocol decision rather than a
-tidy-up: **should a relay be addressable by every peer on it, for verbs
-about their own row?** That would collapse `set-device` and the rest of
-`remove-peer`. It also widens R18's narrowing, which was chosen on
-purpose — today a peer posting to the relay's key gets `no such peer`,
-the same answer an unknown key gets, and learns nothing. **Open. No code
-until it is decided.**
+It does not, and there was never a protocol reason. The key is published
+unsigned in `/api/relay/who` — a node needs it to pin the box and to post
+THROUGH it — so the refusal hid nothing. `postedToSelf` was doing
+something else entirely: gating four owner verbs that check nothing
+themselves, in one undifferentiated *is this the owner*.
 
-## What this costs
+Splitting that gate per verb is the whole change:
 
-**It will stop work.** That is the point, and the cost is real: the next
-time something needs a word the protocol does not have, the answer is a
-conversation rather than a commit.
+```
+OWNER VERBS     monitor, invite, revoke, removing SOMEBODY ELSE
+OWN-ROW VERBS   removing YOURSELF
+```
 
-The alternative is what the register above already shows — five doors,
-four signed formats that each hand-rolled their own replay window, and one
-genuine hole that survived because nobody had to justify the door it came
-through.
+Both kinds are proved by the same signature — the post's, checked once in
+`routePost`. Only *which row it has to be* differs. With that split the
+destination could open to any peer, and the last two cheats had nowhere
+left to hide.
 
-## Open
+**Both kinds of refusal answer `no such peer`**, deliberately: an owner
+verb asked by a peer and a verb nobody has heard of are indistinguishable,
+so the set of things this box will do for somebody else cannot be
+enumerated by asking.
 
-- **Whether a relay should be addressable by every peer on it**, for
-  verbs about that peer's own row. It is the one thing standing between
-  `set-device` and `remove-peer` and a collapse, and it widens a
-  narrowing that was chosen deliberately. Nothing gets built until this
-  is decided.
+### `GET /api/relay/status` — not a cheat, and not yet bootstrap either
+
+| | |
+|---|---|
+| `GET /api/relay/status` · `statusMessage` | the owner badge, and the only thing still on this wire that neither the protocol nor bootstrap has claimed |
+
+It stays on the wire, and it is off the cheat list because "cheat" was
+the wrong word for it. A cheat is a verb invented because the protocol
+could not carry it. `status` is a **read taken before this node has
+anything to post with**, which is a different thing.
+
+`presenceNode.start` calls `ownerBadge.probe`, which reads it to learn
+which relays to open streams to; a relay answers a post on the asker's
+stream, so a posted `status` would need a stream that does not exist yet.
+
+**That is circular as ORDERED, not by nature** — an earlier draft here
+said otherwise and was corrected. `streamOpen` refuses a token with no
+row, and that refusal already answers "do I have a row here", so the order
+could be: read `who` for the key, try a stream to each configured relay,
+then post. What that costs is a connection attempt per row at boot and
+disturbing an ordering with a deadlock scar on it.
+
+**Open, and owed an argument.** Under the standing rule above, the
+arrangement is what has to be defended — not the read.
 
 ## What a missing door taught this decision
 
@@ -219,13 +286,38 @@ exist.
   a side effect**, which is what this decision predicted would happen and
   the reason it was worth writing down rather than fixing the hole alone.
 - **`/api/hub/remove-peer`** — the interface `relay.removePeer` never
-  had, and the owner's half of remove-peer collapsed into a post on the
-  way. The public route now carries the departing peer alone.
+  had. Adding it collapsed the owner's half of remove-peer into a post on
+  the way.
 - **`GET /api/hub/arrivals`** — deleted with `hub.rowAsMessage`. No
   caller, and catch-up was already solved on the live channel.
-- **Whether `GET /api/relay/status` is bootstrap** — it is, and the
-  argument is in the register above: the stream a posted `status` would
-  be answered on is the stream that `status` is what decides to open.
-  It stays in the "Cheats, named" table with that reasoning beside it
-  rather than being moved, so the next reader sees why it was argued
-  rather than finding it quietly reclassified.
+- **`/api/relay/remove-peer` · `removePeerMessage`** — deleted outright
+  once the destination opened to peers. `relay.removePeer` split into
+  `forgetPeer` (the act) and nothing else: the gate moved into
+  `answerSelf`, one verb at a time.
+- **`/api/relay/set-device` · `setDeviceMessage`** — deleted, with
+  `handleSetDevice`. `relay.setDevice` became `installDevice(who, key)`,
+  and `deviceTick` posts. The per-relay re-signing that format forced —
+  because it carried no recipient — went with it.
+- **Whether a relay should be addressable by more than its owner** — YES,
+  and it was one question of Andy's that settled it. See "Cheats, named"
+  above; the answer emptied that list.
+- **Whether `GET /api/relay/status` is bootstrap** — **not settled.** An
+  earlier entry here said it was, on the strength of a claim this
+  decision itself later corrected. It has its own section above now,
+  and it owes an argument rather than a classification.
+
+## What is left
+
+Two things, and they are the whole of it:
+
+1. **`GET /api/relay/status`** — the last thing on this wire that neither
+   the protocol nor bootstrap has claimed. Moving it is a reordering of
+   `presenceNode.start`, not a protocol change.
+2. **`POST /api/relay/send` · `GET /api/relay/inbox`** — the ring, already
+   sentenced (R8). Andy inspected what it was holding on spirit-3 before
+   deciding: 77 messages, 15 of them telemetry from a console that no
+   longer exists. *"they are all noise."* So the deletion needs no
+   migration.
+
+Everything else on this relay is either the protocol, a granted
+exception, or gone.

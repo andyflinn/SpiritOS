@@ -165,10 +165,11 @@ function assemble(s) {
     const target = step.from === scenario.LIVE ? first : step.from;
     const box = boxes[target];
     if (!box) return;
-    box.removePeer(
-      s.owner, who.id.publicKey,
-      auth.sign(owner.privateKey, auth.removePeerMessage(who.id.publicKey))
-    );
+    // Straight to the act. A suite BUILDING a world is not exercising the
+    // gate — it is arranging a situation — and going through a post here
+    // would mean opening a stream for the owner in every scenario that
+    // removes anybody. The gate has a suite of its own (removePeer.js).
+    box.forgetPeer(who.id.publicKey);
   });
 
   return {
@@ -254,4 +255,42 @@ function assemble(s) {
   };
 }
 
-module.exports = { build: build, tmpHome: tmpHome };
+// ASKING A RELAY SOMETHING, AS A PEER DOES — one place, because after
+// decision 0010 emptied the register there is only one way to ask a relay
+// anything, and thirty call sites were spelling it out longhand.
+//
+// Opens a stream for the asker (a relay answers a post on the asker's
+// wire and nowhere else), posts, and hands back both halves: what the
+// TRANSPORT said, and what the relay ANSWERED. Suites need both, and
+// conflating them is exactly the mistake that shipped once — a delivered
+// refusal is not a failed delivery.
+//
+// The stream is left open. These are throwaway boxes in a temp dir and
+// nothing here outlives the process.
+function ask(box, id, body) {
+  const said = [];
+  box.streamOpen(id.publicKey,
+    auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), {
+      write: function (chunk) {
+        const ev = /^event: (.+)$/m.exec(String(chunk));
+        const da = /^data: (.+)$/m.exec(String(chunk));
+        if (!ev || ev[1] !== 'reply' || !da) return;
+        try { said.push(JSON.parse(JSON.parse(da[1]).text).body); }
+        catch (e) { /* a malformed reply is no reply */ }
+      },
+      close: function () {},
+    });
+
+  const to = box.mailboxPublicKey();
+  const text = JSON.stringify({ app: 'relay', v: 1, body: body });
+  const sent = box.routePost(id.publicKey, to, text,
+    auth.sign(id.privateKey, auth.postMessage(id.publicKey, to, text)));
+
+  return {
+    sent: sent,
+    answer: said.length ? said[said.length - 1] : null,
+    ok: !!(sent && sent.ok && said.length && said[said.length - 1].ok),
+  };
+}
+
+module.exports = { build: build, tmpHome: tmpHome, ask: ask };

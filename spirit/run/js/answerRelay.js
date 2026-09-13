@@ -202,9 +202,7 @@ function createAnswerer(opts) {
       // crooked one exactly when to resume.
       if (!enrolBudgetLeft(item.relay)) return '';
 
-      return deviceTick.answerOffer(
-        rootDir, urlsFn(), asked, request, item.relay
-      ).then(function (decided) {
+      return deviceTick.answerOffer(rootDir, asked).then(function (decided) {
         // A refusal is what gets counted. A successful enrolment spends
         // nothing, so somebody attaching several devices in a minute is
         // never throttled for it.

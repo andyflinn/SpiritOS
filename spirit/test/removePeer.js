@@ -34,8 +34,10 @@ function labels(box) {
   return box.who().map(function (p) { return p.publicLabel || p.name; }).sort().join(',');
 }
 
-function removalSig(id, key) {
-  return auth.sign(id.privateKey, auth.removePeerMessage(key));
+// Asking a relay to forget somebody. The only way to ask, since decision
+// 0010 emptied the register: a post, gated per verb by who signed it.
+function askRemove(box, who, key) {
+  return world.ask(box, who, { removePeer: { key: key } });
 }
 
 test.startTest('A relay can forget somebody');
@@ -47,69 +49,100 @@ function run() {
   const bert = L.peer('bert');
   const john = L.peer('john');
 
-  test.subHeading('Its own verb, because removal is the one that destroys');
+  test.subHeading('Removal is a post, and it is still the one that destroys');
+
+  // ── WHAT THESE CHECKS BECAME ────────────────────────────────────────
+  //
+  // Three stood here about removePeerMessage: that a census signature
+  // could not be spent as a removal, that a two-minute-old one was dead,
+  // and that it named a KEY because labels duplicate.
+  //
+  // The format is gone (decision 0010) and all three properties came with
+  // the post rather than being re-argued: postMessage binds sender,
+  // recipient and the exact text, carries a minute, and the removal names
+  // a key because the packet field says `key`. What is asked here now is
+  // that they still hold on the new path.
+  const boxKey = L.box.mailboxPublicKey();
+  const wanted = JSON.stringify({
+    app: 'relay', v: 1, body: { removePeer: { key: bert.publicKey } },
+  });
 
   // A census signature is the owner's most abundant credential. It must
-  // not be spendable as "delete this person".
-  const asStatus = L.box.removePeer('andy', bert.publicKey,
-    auth.sign(L.owner.privateKey, auth.statusMessage
-      ? auth.statusMessage('andy')
-      : auth.claimMessage('andy')));
+  // not be spendable as "delete this person" — and now it cannot even be
+  // presented as one, because it is not a post signature at all.
+  const asStatus = L.box.routePost(L.owner.publicKey, boxKey, wanted,
+    auth.sign(L.owner.privateKey, auth.statusMessage('andy')));
   if (asStatus && asStatus.ok === false && asStatus.status === 403) {
     test.check('a signature made for another verb does not remove anyone');
   } else {
     test.fail('wrong verb accepted: ' + JSON.stringify(asStatus));
   }
 
-  const stale = L.box.removePeer('andy', bert.publicKey,
-    auth.sign(L.owner.privateKey, auth.removePeerMessage(bert.publicKey, Date.now() - 120000)));
+  const stale = L.box.routePost(L.owner.publicKey, boxKey, wanted,
+    auth.sign(L.owner.privateKey,
+      auth.postMessage(L.owner.publicKey, boxKey, wanted, Date.now() - 120000)));
   if (stale && stale.ok === false) test.check('and a signature two minutes old does not either');
   else test.fail('stale accepted: ' + JSON.stringify(stale));
 
-  // The KEY, not the label. A signature naming a duplicated label would
-  // be an instruction to remove whichever john the relay found first.
-  const byLabel = L.box.removePeer('andy', 'bert',
-    auth.sign(L.owner.privateKey, auth.removePeerMessage('bert')));
-  if (byLabel && byLabel.ok === false && byLabel.status === 404) {
+  // The KEY, not the label. A label names whichever john this box found
+  // first, so the packet field is a key and a label finds nobody.
+  const byLabel = askRemove(L.box, L.owner, 'bert');
+  if (byLabel.answer && byLabel.answer.ok === false && byLabel.answer.status === 404) {
     test.check('and a label is not a peer — removal is by key');
   } else {
-    test.fail('label removed somebody: ' + JSON.stringify(byLabel));
+    test.fail('label removed somebody: ' + JSON.stringify(byLabel.answer));
   }
 
   test.subHeading('Who may forget whom');
 
+  // A stranger has no row, so the post never reaches a verb at all.
   const stranger = auth.generateIdentity('nobody');
-  const byStranger = L.box.removePeer('andy', bert.publicKey,
-    removalSig(stranger, bert.publicKey));
-  if (byStranger && byStranger.ok === false) {
-    test.check('a stranger removes nobody');
+  const byStranger = askRemove(L.box, stranger, bert.publicKey);
+  if (byStranger.sent && byStranger.sent.ok === false && labels(L.box).indexOf('bert') !== -1) {
+    test.check('a stranger removes nobody — no row, so no post');
   } else {
-    test.fail('stranger removed a peer: ' + JSON.stringify(byStranger));
+    test.fail('stranger removed a peer: ' + JSON.stringify(byStranger.sent));
   }
 
-  const byPeer = L.box.removePeer('andy', bert.publicKey, removalSig(john, bert.publicKey));
-  if (byPeer && byPeer.ok === false) {
-    test.check('and one member cannot remove another');
+  // A MEMBER MAY ADDRESS THE RELAY — that door opened so leaving could be
+  // a post — and naming SOMEBODY ELSE is the owner's verb. The refusal is
+  // `no such peer`: the same answer a verb nobody has heard of gets, so a
+  // peer cannot enumerate what this box would do for someone else.
+  const byPeer = askRemove(L.box, john, bert.publicKey);
+  if (byPeer.sent && byPeer.sent.ok && byPeer.answer &&
+      byPeer.answer.ok === false && byPeer.answer.error === 'no such peer' &&
+      labels(L.box).indexOf('bert') !== -1) {
+    test.check('and one member cannot remove another — the verb refuses, and says nothing');
   } else {
     test.fail('peer removed a peer: ' + JSON.stringify(byPeer));
   }
 
   // The owner's own row. ownerName() reads it, allow.json holds only it,
   // and a relay that forgot its owner would hand itself to whoever
-  // claimed next.
-  const selfDestruct = L.box.removePeer('andy', L.owner.publicKey,
-    removalSig(L.owner, L.owner.publicKey));
-  if (selfDestruct && selfDestruct.ok === false && selfDestruct.status === 403) {
+  // claimed next. That guard lives with the ACT (forgetPeer) rather than
+  // with either gate, so no way in can reach past it.
+  const selfDestruct = askRemove(L.box, L.owner, L.owner.publicKey);
+  if (selfDestruct.answer && selfDestruct.answer.ok === false &&
+      selfDestruct.answer.status === 403) {
     test.check('and the owner cannot remove themselves, which would orphan the box');
   } else {
-    test.fail('the owner removed themselves: ' + JSON.stringify(selfDestruct));
+    test.fail('the owner removed themselves: ' + JSON.stringify(selfDestruct.answer));
   }
 
   test.subHeading('Leaving is not a favour you have to ask for');
 
-  const left = L.box.removePeer('john', john.publicKey, removalSig(john, john.publicKey));
-  if (left && left.ok && labels(L.box).indexOf('john') === -1) {
-    test.check('a member can remove themselves, signed with their own key');
+  // AND THIS IS WHAT OPENED THE DOOR. Leaving is a verb about your OWN
+  // row, so it needs no house key and no route of its own — which is
+  // exactly the argument that removed the last two cheats from 0010's
+  // register. The post's signature proves the row; there is no field to
+  // name somebody else's.
+  //
+  // The ANSWER is lost, and that is correct: forgetPeer drops this
+  // caller's stream, so the reply has nowhere to go. The stream closing
+  // IS the receipt. False negative, never false positive (ROUTER.md §4).
+  const left = askRemove(L.box, john, john.publicKey);
+  if (left.sent && left.sent.ok && labels(L.box).indexOf('john') === -1) {
+    test.check('a member can remove themselves, proved by the post and nothing else');
   } else {
     test.fail('self-removal: ' + JSON.stringify(left) + ' roster=' + labels(L.box));
   }
@@ -126,7 +159,8 @@ function run() {
   const spare = L.box.mint('andy', 'bert', 7);
   const spareToken = spare.ok && spare.invite.token;
 
-  const gone = L.box.removePeer('andy', bert.publicKey, removalSig(L.owner, bert.publicKey));
+  const removed = askRemove(L.box, L.owner, bert.publicKey);
+  const gone = removed.answer;
   if (gone && gone.ok && labels(L.box) === 'andy') {
     test.check('the owner removes a member, and the roster is one shorter');
   } else {
@@ -246,72 +280,50 @@ function run() {
     test.fail('swept=' + swept + ' left=' + leftRows);
   }
 
-  test.subHeading('The owner asks as a post; the departing peer still has a door');
+  test.subHeading('Both ways in are posts, and neither has a door');
 
   //   Andy: "api/hub/remove-peer must be the interface"
+  //   Andy: "anything that can be done by protocol MUST be done by protocol"
   //
-  // The verb worked, was signed and was thorough, and nothing under run/
-  // could reach it — a person had no way to remove anybody from their own
-  // relay. The interface is /api/hub/remove-peer, and the wire under it
-  // is an ordinary post, so the owner's half needs no signed verb.
+  // The first sentence built the node-side interface this verb never had.
+  // The second took the route away underneath it.
   //
-  // What keeps /api/relay/remove-peer alive is the OTHER signer: a peer
-  // taking themselves off cannot address the relay at all, because it
-  // answers its owner and nobody else. Both halves are checked here, in
-  // one place, because the whole point is that they do the same thing by
-  // different proofs.
+  // /api/relay/remove-peer and removePeerMessage are both gone. The owner
+  // naming anybody and a peer naming themselves are the same post, gated
+  // per verb by who signed it — which is the whole of what the route's
+  // `byOwner || bySelf` used to decide, done once and in one place.
   const P = world.build(SCENARIO);
   if (!P.ok) { test.fail(P.error); test.reportSuccessFailureCount(); return; }
   const anna = P.peer('bert');
   const leaver = P.peer('john');
-  const relayKey = P.box.mailboxPublicKey();
 
-  function asPost(who, bodyObj) {
-    const text = JSON.stringify({ app: 'relay', v: 1, body: bodyObj });
-    return P.box.routePost(who.publicKey, relayKey, text,
-      auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, text)));
-  }
-
-  const heard = [];
-  P.box.streamOpen(P.owner.publicKey,
-    auth.sign(P.owner.privateKey, auth.streamMessage(P.owner.publicKey)), {
-      write: function (chunk) {
-        const ev = /^event: (.+)$/m.exec(String(chunk));
-        const da = /^data: (.+)$/m.exec(String(chunk));
-        if (!ev || ev[1] !== 'reply' || !da) return;
-        try { heard.push(JSON.parse(JSON.parse(da[1]).text)); } catch (e) { /* not it */ }
-      },
-      close: function () {},
-    });
-
-  const posted = asPost(P.owner, { removePeer: { key: anna.publicKey } });
-  const answer = heard[0] && heard[0].body;
-  if (posted.ok && answer && answer.ok && answer.removed &&
-      answer.removed.key === anna.publicKey && labels(P.box).indexOf('bert') === -1) {
-    test.check('the owner removes by posting to the relay — no signed verb in it at all');
+  const posted = askRemove(P.box, P.owner, anna.publicKey);
+  if (posted.ok && posted.answer.removed &&
+      posted.answer.removed.key === anna.publicKey &&
+      labels(P.box).indexOf('bert') === -1) {
+    test.check('the owner removes by posting — no signed verb, no route');
   } else {
-    test.fail('owner post: ' + JSON.stringify(posted) + ' said: ' + JSON.stringify(heard));
+    test.fail('owner post: ' + JSON.stringify(posted));
   }
 
-  // AND A PEER CANNOT DO IT THAT WAY, which is why the route survives
-  // rather than being tidied away with the owner's half.
-  const theirs = asPost(leaver, { removePeer: { key: leaver.publicKey } });
-  if (!theirs.ok && theirs.status === 404 && theirs.error === 'no such peer' &&
-      labels(P.box).indexOf('john') !== -1) {
-    test.check('a peer posting the same request gets `no such peer` — the box answers its owner alone');
-  } else {
-    test.fail('peer post: ' + JSON.stringify(theirs) + ' labels: ' + labels(P.box));
-  }
-
-  // SO THE DEPARTING PEER USES THE DOOR, with their own key, exactly as
-  // before. This is the whole reason decision 0010 still lists
-  // remove-peer: half of it cannot be a packet.
-  const walkedOut = P.box.removePeer(leaver.publicKey, leaver.publicKey,
-    removalSig(leaver, leaver.publicKey));
-  if (walkedOut.ok && labels(P.box).indexOf('john') === -1) {
-    test.check('and leaving still works through the public route, signed by the one leaving');
+  // THE HALF THAT COULD NOT MOVE UNTIL THE DESTINATION OPENED. A peer
+  // could not address the relay at all, so leaving had to keep a public
+  // door. It does not any more.
+  const walkedOut = askRemove(P.box, leaver, leaver.publicKey);
+  if (walkedOut.sent && walkedOut.sent.ok && labels(P.box).indexOf('john') === -1) {
+    test.check('and leaving is the same post, proved by the row that is leaving');
   } else {
     test.fail('self-removal: ' + JSON.stringify(walkedOut) + ' labels: ' + labels(P.box));
+  }
+
+  // AND THE ANSWER TO IT IS LOST, on purpose. forgetPeer drops the
+  // caller's stream, so there is nowhere to deliver the reply — a peer
+  // that has been forgotten cannot be told anything, and a relay that
+  // could still reach them would not have forgotten them.
+  if (!walkedOut.answer) {
+    test.check("the leaver hears nothing back — the stream closing IS the receipt");
+  } else {
+    test.fail('a removed peer was still answered: ' + JSON.stringify(walkedOut.answer));
   }
 
   test.reportSuccessFailureCount();

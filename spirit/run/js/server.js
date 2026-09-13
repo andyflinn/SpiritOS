@@ -319,23 +319,11 @@ function handleDeviceOffer(req, res) {
   });
 }
 
-function handleSetDevice(req, res) {
-  readJsonBody(req).then(function (body) {
-    const result = relay.setDevice(
-      body && body.name,
-      body && body.devicePublicKey,
-      body && body.sig
-    );
-    if (!result || !result.ok) {
-      deviceRefusal(res, result && result.status);
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: true }));
-  }).catch(function () {
-    deviceRefusal(res, 403);
-  });
-}
+// handleSetDevice STOOD HERE, and POST /api/relay/set-device with it.
+// Enrolment is a post now — relay.answerSelf, body.setDevice — because
+// installing a key on your own row was never an owner verb and so could
+// never have gone through a door only the owner may knock on.
+
 function handleRelayClaim(req, res) {
   readJsonBody(req).then(function (body) {
     const result = relay.claim(
@@ -713,12 +701,8 @@ function isRelayPublicPath(method, pathname) {
   // cannot identify is one you cannot harden. What it gives away is a
   // commit id for code the repository already holds.
   if (method === 'GET' && pathname === '/api/version') return true;
-  if (method === 'POST' && (pathname === '/api/relay/device' || pathname === '/api/relay/set-device')) return true;
+  if (method === 'POST' && pathname === '/api/relay/device') return true;
   if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send')) return true;
-  // Forgetting somebody. Public in the same sense mint is — reachable
-  // from the internet, gated inside relay.removePeer by a signature that
-  // is either the owner's or the departing peer's own.
-  if (method === 'POST' && pathname === '/api/relay/remove-peer') return true;
   // The router. Public in the same sense send is: reachable from the
   // internet, gated inside relay.js by a signature, and refused instantly
   // if the peer is not there to receive it (decision 0006).
@@ -1115,25 +1099,8 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/relay/remove-peer') {
-      readJsonBody(req).then(function (body) {
-        const result = relay.removePeer(body && body.name, body && body.key, body && body.sig);
-        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(result.ok ? result : { error: result.error }));
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
-      return;
-    }
-
     if (pathname === '/api/relay/device') {
       handleDeviceOffer(req, res);
-      return;
-    }
-
-    if (pathname === '/api/relay/set-device') {
-      handleSetDevice(req, res);
       return;
     }
 
