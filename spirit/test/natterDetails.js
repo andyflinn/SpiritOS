@@ -619,22 +619,82 @@ function theRedIsExplained() {
         test.fail('stranger relay: ' + said.slice(0, 400));
       }
 
-      // 3. A LOOPBACK RELAY IS A LAB FIXTURE, and that is worth saying
-      //    on a screen where somebody is wondering why a relay does
-      //    nothing for them. It is also the same line the removal rule
-      //    draws: no peer can reach you at 127.0.0.1.
-      // Opened ON the lab url, or the screen asks about one relay and is
-      // handed the badge of another.
-      const lab = mountApp({
-        url: 'http://127.0.0.1:65425',
-        rows: [{ url: 'http://127.0.0.1:65425', label: 'lab', owned: false, status: 0, error: 'ECONNREFUSED' }],
+      return labRelayIsExplained();
+    });
+  });
+}
+
+// A LOCAL RELAY IS EXPLAINED WHETHER IT IS GREEN OR NOT.
+//
+//   Andy: "another bubble that should automatically appear if the URL is
+//   local to this machine… a lay person readable explanation"
+//
+// This started as a sentence inside the red explanation, and that was
+// wrong in the case that matters most: a lab relay that is RUNNING shows
+// a green circle and a perfectly good report, and is still useless for
+// reaching anybody. Green answers "did it reply". It has never answered
+// "can a peer get to me here", and those two come apart exactly here.
+function labRelayIsExplained() {
+  test.subHeading('A relay only this machine can reach says so');
+
+  const LAB = 'http://127.0.0.1:65425';
+
+  // DOWN: two bubbles, and they are about different things — one says
+  // nothing answered, the other says it would not have helped.
+  const down = mountApp({
+    url: LAB,
+    rows: [{ url: LAB, label: 'lab', owned: false, status: 0, error: 'ECONNREFUSED' }],
+  });
+
+  return settle().then(function () {
+    const html = down.body().innerHTML;
+    if (/Why this relay is not useful/.test(html) && /did not answer/.test(html)) {
+      test.check('a local relay that is down gets both bubbles — what happened, and why it would not have mattered');
+    } else {
+      test.fail('down lab: ' + html.slice(0, 400));
+    }
+
+    // THE CASE THE SPLIT EXISTS FOR. Running, owned, green, a full
+    // report — and still nobody else can reach it.
+    const up = mountApp({
+      url: LAB,
+      rows: [{ url: LAB, label: 'lab', owned: true, status: 200,
+        report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
+    });
+    return settle().then(function () {
+      const green = up.body().innerHTML;
+      if (/Why this relay is not useful/.test(green)) {
+        test.check('and a lab relay that is UP and owned still says it — green means it replied, not that a peer can reach you');
+      } else {
+        test.fail('green lab: ' + green.slice(0, 400));
+      }
+
+      // PLAIN WORDS. "Loopback" and "publicly routable" are the correct
+      // terms and neither of them tells anybody what to do next.
+      //
+      // Scoped to THIS bubble's own text. The first version of this check
+      // read to the end of the panel and counted the relay's url, printed
+      // further down by another bubble entirely, as jargon.
+      const from = green.indexOf('Why this relay is not useful');
+      const bubble = green.slice(from, green.indexOf('</div>', green.indexOf('class="muted"', from)));
+      const jargon = /loopback|publicly routable|\bNAT\b|port forward/i.test(bubble);
+      if (!jargon && /nobody else on the internet can/i.test(bubble)) {
+        test.check('in words a person can act on, with none of the right technical terms in it');
+      } else {
+        test.fail('jargon or no explanation: ' + bubble.slice(0, 400));
+      }
+
+      // AND A PUBLIC RELAY DOES NOT GET IT, or the bubble would be
+      // furniture rather than a warning.
+      const pub = mountApp({
+        rows: [{ url: OWNED, label: 'spirit', owned: true, status: 200,
+          report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
       });
       return settle().then(function () {
-        const labSaid = lab.body().innerHTML;
-        if (/loopback/i.test(labSaid) && /peer could ever reach/i.test(labSaid)) {
-          test.check('and a loopback relay is named as a lab fixture no peer could reach');
+        if (!/Why this relay is not useful/.test(pub.body().innerHTML)) {
+          test.check('while a public relay never shows it');
         } else {
-          test.fail('lab relay: ' + labSaid.slice(0, 400));
+          test.fail('the bubble appeared on a public relay');
         }
       });
     });

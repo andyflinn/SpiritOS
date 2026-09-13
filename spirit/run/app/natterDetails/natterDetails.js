@@ -118,43 +118,66 @@ function ndIsLoopback(url) {
   return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]';
 }
 
-// WHY THE CIRCLE IS NOT GREEN, in the three shapes it actually comes in.
+// WHY THE CIRCLE IS NOT GREEN, in the shapes it actually comes in.
 //
-// The glyph answers "usable or not". These are three different
-// afternoons and three different next moves, and until now the only
-// place that distinction existed was a tooltip on a row that could not
-// be opened.
+// The glyph answers "usable or not". These are different afternoons with
+// different next moves, and until now the only place that distinction
+// existed was a tooltip on a row that could not be opened.
+//
+// RETURNS THE INSIDE OF THE BUBBLE, not a bubble. ndRender already wraps
+// this in a stat-tile, and returning another one nested a tile inside a
+// tile — which is why the heading did not read as a heading. The other
+// branches of ndReportHtml return bare content for the same reason.
 function ndWhyNotGreen() {
-  var lab = ndIsLoopback(ndUrl);
-
   // 1. Nothing answered. A URL that is wrong and a box that is down look
   //    identical from here, and saying so is more useful than picking.
   if (!ndBadge.status) {
-    return '<div class="stat-tile wide">' +
-      '<div class="panel-heading">This relay did not answer</div>' +
+    return '<div class="panel-heading">This relay did not answer</div>' +
       '<div>' + ndEscapeHtml(ndBadge.error || 'no answer') + '</div>' +
       '<div class="muted">Nothing is wrong with your node. A relay that is ' +
         'switched off and an address with a typo in it look the same from here, ' +
         'so this does not guess between them. If the address is right, it will ' +
-        'go green by itself when the relay comes back.' +
-        (lab ? ' This one is a loopback address — a lab relay on this machine, ' +
-               'not something a peer could ever reach.' : '') +
-      '</div>' +
-      '</div>';
+        'go green by itself when the relay comes back.</div>';
   }
 
   // 2. It answered, and has no row for you. The only state with an
   //    actual next move, so the next move is the paragraph.
-  return '<div class="stat-tile wide">' +
-    '<div class="panel-heading">This relay answered, and you are not on it</div>' +
+  return '<div class="panel-heading">This relay answered, and you are not on it</div>' +
     '<div>It is running and reachable. It simply has no row in your name, ' +
       'so this node cannot send through it or be reached on it.</div>' +
     '<div class="muted">Rows are not self-service: whoever owns this relay ' +
       'mints an invite and gives you the token, and Natter claims a name with ' +
-      'it. Until then the relay is listed here and does nothing for you.' +
-      (lab ? ' This one is a loopback address — a lab relay on this machine, ' +
-             'not something a peer could ever reach.' : '') +
-    '</div>' +
+      'it. Until then the relay is listed here and does nothing for you.</div>';
+}
+
+// A BUBBLE OF ITS OWN, and it appears whether the relay is green or not.
+//
+//   Andy: "another bubble that should automatically appear if the URL is
+//   local to this machine… a lay person readable explanation"
+//
+// This started as a sentence inside the red explanation, and that was
+// wrong in the case that matters most: a lab relay that is RUNNING shows
+// a green circle and a perfectly good report, and is still useless for
+// reaching anybody. Green answers "did it reply"; it has never answered
+// "can a peer get to me here", and those come apart exactly here.
+//
+// Plain words on purpose. "Loopback" and "publicly routable" are the
+// correct terms and neither of them tells somebody what to do next.
+function ndLocalHtml() {
+  if (!ndIsLoopback(ndUrl)) return '';
+  return '<div class="stat-tile wide">' +
+    '<div class="panel-heading">Why this relay is not useful</div>' +
+    '<div>This address points back at the machine you are on. ' +
+      'Only programs running on this same computer can reach it — ' +
+      'nobody else on the internet can, however well it is working.</div>' +
+    '<div class="muted">A relay is the thing your friends\' nodes connect ' +
+      'to in order to find yours. One that only this machine can reach has ' +
+      'nobody to introduce you to: it is fine for trying things out on your ' +
+      'own, and it cannot carry a single message to or from anyone else.' +
+      '<br><br>' +
+      'It stays in the list and costs you nothing. What it cannot do is be ' +
+      'the relay you rely on — for that you want an address other people ' +
+      'can reach, which is what the public one in this list is for.</div>' +
     '</div>';
 }
 
@@ -365,6 +388,7 @@ function ndRender() {
   if (!body) return;
   body.innerHTML =
     '<div class="stat-tile wide">' + ndReportHtml() + '</div>' +
+    ndLocalHtml() +
     ndMintHtml() +
     ndDeviceHtml();
 }
