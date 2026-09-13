@@ -299,6 +299,32 @@ function createRelay(rootDir) {
     reloadAllow();
   }
 
+  // EVERY ATTEMPT TIDIES UP AFTER ITSELF.
+  //
+  //   Andy: "when an invite is redeemed, the success should depend on an
+  //   expiry check, after any attempt to redeem token the invite list
+  //   should be cleaned up."
+  //
+  // The expiry check was always there — invites.match refuses a row past
+  // its expiresAt, and that is what decides the claim. What was missing is
+  // the second half: nothing swept. sweepExpired ran only when somebody
+  // was removed, so a relay nobody administers kept dead invites for ever.
+  //
+  // AFTER, not before, and whatever the attempt decided: a good token, a
+  // wrong label, an expired row, a token that was never real. The point is
+  // that somebody touched the file, not that they were entitled to.
+  //
+  // Cheap on a refusal too, which is what makes it safe to do on the
+  // unauthenticated path: sweepExpired writes only when a row actually
+  // went, so a stranger hammering bad tokens costs one write and then
+  // none. And it cannot take the row this attempt just matched — match
+  // already refused anything expired.
+  function redeem(token, label) {
+    var found = invites.match(rootDir, token, label);
+    invites.sweepExpired(rootDir);
+    return found;
+  }
+
   function claim(name, sig, publicKey, clientKey, inviteToken) {
     var inviteRow = null;
     var n = normalizeName(name);
@@ -344,7 +370,7 @@ function createRelay(rootDir) {
         // the list" are different problems and only the first is one the
         // claimer can do anything about. See INVITE-CYCLE1.md; keys-mode
         // does not require an invite yet (cycle 4).
-        var invited = invites.match(rootDir, inviteToken, n);
+        var invited = redeem(inviteToken, n);
         if (!invited.ok) return invited;
         inviteRow = invited.invite;
       }
@@ -378,7 +404,7 @@ function createRelay(rootDir) {
         if (!inviteToken) {
           return { ok: false, status: 403, error: 'invite required' };
         }
-        var keysInvite = invites.match(rootDir, inviteToken, n);
+        var keysInvite = redeem(inviteToken, n);
         if (!keysInvite.ok) return keysInvite;
         inviteRow = keysInvite.invite;
       }
@@ -444,7 +470,21 @@ function createRelay(rootDir) {
   // token is held to the same rules as a name because it is typed by one
   // human and read aloud to another, and because a token that could be
   // any string could be a path, a header, or a megabyte.
-  function mint(ownerName, label, days, sig, token) {
+  // NO SIGNATURE ARGUMENT, and that is decision 0010's second collapse.
+  //
+  // This is reached from answerSelf and from nowhere else. answerSelf is
+  // reached from a post this relay already verified was signed by the
+  // owner, over bytes that bind sender, recipient and this exact text —
+  // so the label, the day count and the spoken token are all inside what
+  // was signed, which is every property mintMessage was hand-rolling.
+  //
+  // AND IT CLOSES A REAL HOLE rather than merely tidying one. The mint
+  // signature carried no clock and no relay identity: it never expired,
+  // it worked on every relay where the signer was owner, and each replay
+  // minted a fresh token. A post cannot be replayed at all — the hash is
+  // registered before anything is sent, and a second arrival of the same
+  // bytes is `already in flight` and then nothing.
+  function mint(ownerName, label, days, token) {
     var owner = normalizeName(ownerName);
     var lbl = normalizeName(label);
     var tok = invites.normalizeToken(token);
@@ -456,10 +496,12 @@ function createRelay(rootDir) {
       return { ok: false, status: 400, error: 'name reserved' };
     }
     if (tok && !nameOk(tok)) return { ok: false, status: 400, error: 'bad token' };
-    var pub = owner && allow.byName[owner];
-    if (!pub) return { ok: false, status: 403, error: 'not the owner' };
-    if (!sig || !auth.verify(pub, invites.mintMessage(lbl, days, tok), sig)) {
-      return { ok: false, status: 403, error: 'bad mint signature' };
+    // NOT A GATE — the caller's identity was settled before this ran.
+    // This asks whether the name is on this relay at all, because it is
+    // written into the row as `invitedBy` and a row cannot truthfully
+    // name an inviter who is not here.
+    if (!owner || !allow.byName[owner]) {
+      return { ok: false, status: 403, error: 'not the owner' };
     }
     var row = invites.add(rootDir, {
       label: lbl,
@@ -1038,7 +1080,7 @@ function createRelay(rootDir) {
 
     // And the invite, or the name is a lie: a live token for that label
     // walks them straight back in.
-    var revoked = invites.revokeLabel(rootDir, label);
+    var revoked = invites.revokeInvite(rootDir, label);
     invites.sweepExpired(rootDir);
 
     // If they are holding a stream, it ends now. A removed peer that
@@ -1117,13 +1159,37 @@ function createRelay(rootDir) {
     var out = { ok: false, error: 'unknown request' };
 
     if (body && body.monitor) {
-      // Already proved: this arrived signed by the owner. setMonitor
-      // wants its own signature because it is also a public route; here
-      // the post IS the proof, so the flag is applied directly.
+      // Already proved: this arrived signed by the owner, over bytes that
+      // bind sender, recipient and this exact text. So a captured `on`
+      // cannot be replayed as an `off` — the flag is inside what was
+      // signed, which is what monitorMessage hand-rolled before the post
+      // covered it for free.
       monitoring = !!body.monitor.on;
       monitorFilter = monitoring ? readMonitorFilter(body.monitor.filter) : null;
       if (monitoring) statusToOwner();
       out = { ok: true, monitoring: monitoring, filter: monitorFilter };
+    }
+
+    // TAKING ONE BACK, by label — the only handle an unclaimed invite
+    // has, and the only one the owner's report gives them.
+    //
+    // NO SELF PATH, unlike remove-peer: an unclaimed invitee has no
+    // identity on this relay and can sign nothing. So this is purely an
+    // owner verb about the owner's own box, which is why it could be born
+    // as a packet and never needs a door of its own (decision 0010).
+    if (body && body.revoke) {
+      var gone = invites.revokeInvite(rootDir, String(body.revoke.label || ''));
+      invites.sweepExpired(rootDir);
+      out = { ok: true, revoked: gone };
+    }
+
+    // MINTING AN INVITE, asked for the same way. The owner's name is not
+    // taken from the packet: it is read from allow.json here, because the
+    // only sender who reaches this line is the owner and a name the
+    // caller supplied would be a second opinion about that.
+    if (body && body.invite) {
+      var ask = body.invite;
+      out = mint(auth.ownerName(allow), ask.label, ask.days, ask.token);
     }
 
     var mine = auth.loadIdentity(rootDir);
@@ -1364,23 +1430,18 @@ function createRelay(rootDir) {
     return Object.keys(out).length ? out : null;
   }
 
-  // WHO MAY ASK, and it is the house key alone. The events carry who is
-  // talking to whom on this relay, which is the owner's to see about
-  // their own box and nobody else's to ask for.
-  function setMonitor(on, sig, filter, atMs) {
-    var ownerLabel = auth.ownerName(allow);
-    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
-    if (!ownerKey) return { ok: false, status: 403, error: 'no owner key on this relay' };
-    if (!auth.monitorSignatureOk(ownerKey, !!on, sig, atMs)) {
-      return { ok: false, status: 403, error: 'bad monitor signature' };
-    }
-    monitoring = !!on;
-    monitorFilter = monitoring ? readMonitorFilter(filter) : null;
-    // The first thing a watcher gets is the state it just asked for, so
-    // the panel has something to draw before anything happens.
-    if (monitoring) statusToOwner();
-    return { ok: true, status: 200, monitoring: monitoring, filter: monitorFilter };
-  }
+  // setMonitor STOOD HERE, with its own signed message and its own
+  // public route, and it was the worked example in decision 0010: a verb
+  // added by hand because the protocol had no way to say the thing, on a
+  // morning when the relay was not yet a peer.
+  //
+  // It is said as a packet now (answerSelf), so the gate went with the
+  // door. Four things went and nothing replaced them: the route, the
+  // signed format, the node's proxy verb, and this.
+  //
+  // WHERE THE GATE WENT, since a reader will look for it: into the post's
+  // own signature, which proved the owner before answerSelf ever ran. A
+  // second check here would be a second place to decide who the owner is.
 
   // ONE ROUTED THING HAPPENED. Sent only while somebody is watching, only
   // to the owner's sink, and never stored.
@@ -1420,7 +1481,19 @@ function createRelay(rootDir) {
       snapshot: snapshot(),
       present: presentNow.present(),
       routes: routes.size(),
-      invites: invites.load(rootDir),
+      // SWEPT BEFORE IT IS READ.
+      //
+      //   Andy: "anytime the UI askes for a list of pending invites, the
+      //   list should be cleaned up before its returned."
+      //
+      // This report is the only place an owner ever sees invites, so this
+      // is that moment. relayStatus.liveInvites already filters expired
+      // rows out of the DISPLAY — what this fixes is the FILE, which was
+      // the half nothing was doing.
+      invites: (function () {
+        invites.sweepExpired(rootDir);
+        return invites.load(rootDir);
+      }()),
       version: require('./kernel').core.const.VERSION + ' ' + RUNNING.commit +
         (RUNNING.dirty ? '+dirty' : ''),
       proc: {
@@ -1547,9 +1620,9 @@ function createRelay(rootDir) {
     // nothing else does — and a monitor that only updates when a peer
     // connects would look frozen on a quiet relay.
     statusToOwner: statusToOwner,
-    // Watching, on demand. See setMonitor: the owner's key alone, the
-    // flag inside the signed bytes, and it dies with their stream.
-    setMonitor: setMonitor,
+    // Watching, on demand — asked for as a packet (answerSelf), never as
+    // a verb of its own. Read-only from out here, and it dies with the
+    // owner's stream.
     monitoring: function () { return monitoring; },
     monitorFilter: function () { return monitorFilter; },
     setDevice: setDevice,

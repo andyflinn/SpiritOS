@@ -116,9 +116,7 @@ test.startTest('Identity vs perception (sticks and stones)');
     const minted = box.mint(
       'annie',
       label,
-      7,
-      auth.sign(annie.privateKey, invites.mintMessage(label, 7))
-    );
+      7);
     if (!minted.ok) throw new Error('mint ' + label + ': ' + JSON.stringify(minted));
     return minted.invite.token;
   }
@@ -278,6 +276,78 @@ test.subHeading('Waiting to be let in, and shut out again');
     test.check('and unblocking gives back exactly what was there before');
   } else {
     test.fail('after unblock: ' + JSON.stringify(unblocked));
+  }
+}
+
+test.subHeading('A key that cannot sign is not an identity');
+
+// WHAT THIS IS FOR, and it is a crash rather than a nicety.
+//
+// loadIdentity checked that `privateKey` was a non-empty string. A torn
+// or truncated identity.json passed that, and threw
+// ERR_OSSL_ASN1_NOT_ENOUGH_DATA at the first sign() — synchronously,
+// inside an http handler, with nothing waiting. The node died, and a
+// person watching saw the shell stop responding rather than an error.
+//
+// Found 2026-09-13 by serverSurface.js's hub sweep. Asserted here as
+// well, at the unit, because the integration check can only say "the
+// process survived" and this can say why.
+{
+  const good = auth.generateIdentity('andy');
+
+  const whole = world.tmpHome();
+  auth.saveIdentity(whole, good);
+  if (auth.loadIdentity(whole)) {
+    test.check('a real identity loads');
+  } else {
+    test.fail('a generated identity did not load back');
+  }
+
+  // Every way this file has been seen wrong. A string that is not a key,
+  // a base64 key cut in half, and the field present but empty.
+  const half = good.privateKey.slice(0, Math.floor(good.privateKey.length / 2));
+  const wrong = [
+    ['not a key at all', 'SENTINEL-PRIVATE-KEY-must-never-be-served'],
+    ['a truncated key', half],
+    ['base64 of nothing', ''],
+  ];
+
+  const loaded = wrong.filter(function (row) {
+    const home = world.tmpHome();
+    fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+    fs.writeFileSync(path.join(home, 'relay-state', 'identity.json'),
+      JSON.stringify({ name: 'andy', publicKey: good.publicKey, privateKey: row[1] }), 'utf8');
+    // The claim is BOTH halves: null, and no throw getting there.
+    let answered;
+    try { answered = auth.loadIdentity(home); }
+    catch (e) { return true; }
+    return answered !== null;
+  });
+
+  if (!loaded.length) {
+    test.check('a malformed private key reads as no identity — ' + wrong.length +
+      ' ways, none of them a throw');
+  } else {
+    test.fail('loaded anyway: ' + loaded.map(function (r) { return r[0]; }).join(', '));
+  }
+
+  // AND THE POINT OF ANSWERING null RATHER THAN THROWING: null is a state
+  // every caller already handles, and handles by saying so.
+  const broken = world.tmpHome();
+  fs.mkdirSync(path.join(broken, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(broken, 'relay-state', 'identity.json'),
+    JSON.stringify({ name: 'andy', publicKey: good.publicKey, privateKey: 'rubbish' }), 'utf8');
+
+  let threw = false;
+  try {
+    const id = auth.loadIdentity(broken);
+    if (id) auth.sign(id.privateKey, auth.statusMessage('andy'));
+  } catch (e) { threw = true; }
+
+  if (!threw) {
+    test.check('so the signing that used to kill the node never happens');
+  } else {
+    test.fail('signing still throws through loadIdentity');
   }
 }
 

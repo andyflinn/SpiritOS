@@ -28,9 +28,7 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
   const minted = box.mint(
     'andy',
     'saint',
-    7,
-    auth.sign(andy.privateKey, invites.mintMessage('saint', 7))
-  );
+    7);
   if (!minted.ok || !minted.invite) {
     test.fail('mint: ' + JSON.stringify(minted));
   } else {
@@ -54,7 +52,7 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
   const rowBefore = invites.load(home).find(function (r) {
     return minted.invite && r.token === minted.invite.token;
   });
-  if (rowBefore && !rowBefore.consumedAt) {
+  if (rowBefore) {
     test.check('token still live before redeem');
   } else {
     test.fail('before: ' + JSON.stringify(invites.load(home)));
@@ -73,13 +71,27 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
     test.fail('redeem: ' + JSON.stringify(redeemed));
   }
 
+  // BURNED MEANS GONE, not marked. The row used to survive with a
+  // `consumedAt` stamp, which made invites.json a permanent record of who
+  // invited whom — and kept a spent token in the clear for ever. A
+  // claimed invite is deleted now; the label lives on the peer's row.
   const rowAfter = invites.load(home).find(function (r) {
     return minted.invite && r.token === minted.invite.token;
   });
-  if (rowAfter && rowAfter.consumedAt) {
-    test.check('same box burned the token it minted');
+  if (!rowAfter) {
+    test.check('same box burned the token it minted — the row is gone, not stamped');
   } else {
     test.fail('after: ' + JSON.stringify(invites.load(home)));
+  }
+
+  // AND THE LABEL MOVED TO THE KEY, which is the other half of it: the
+  // invite is not lost, it became a row. Checked here because "deleted"
+  // and "deleted and forgotten" would look identical without it.
+  const onCensus = box.who().filter(function (r) { return r.publicKey === saint.publicKey; });
+  if (onCensus.length === 1 && onCensus[0].publicLabel === 'saint') {
+    test.check('and the label moved to the key that claimed it');
+  } else {
+    test.fail('census: ' + JSON.stringify(box.who()));
   }
 
   // Cycle 4 shut this door. The mint-and-burn above is untouched; what

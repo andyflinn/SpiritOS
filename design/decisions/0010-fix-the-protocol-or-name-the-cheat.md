@@ -44,10 +44,10 @@ the protocol had no way to say it. It worked. It was tested. It was also
 a cheat, and nobody called it one.
 
 Hours later the same day Andy said the panel should go through protocol,
-the relay became addressable by its owner (R18), and **the same verb is
-now expressible as a packet** — post to the relay, get a signed reply
-correlated by hash. The route and the message format are redundant, and
-they are only redundant because the protocol was fixed afterwards.
+the relay became addressable by its owner (R18), and **the same verb
+became expressible as a packet** — post to the relay, get a signed reply
+correlated by hash. The route and the message format were redundant, and
+they were only redundant because the protocol was fixed afterwards.
 
 Had this decision existed that morning, the order would have been:
 notice the protocol cannot say it → decide → fix it → then write the
@@ -55,6 +55,25 @@ feature once.
 
 **That is the whole cost of not having this rule: the feature gets built
 twice, and the first build leaves a door open behind it.**
+
+**Collapsed the same day.** `/api/relay/monitor`, `monitorMessage`,
+`monitorSignatureOk`, `relay.setMonitor`, `hub.handleMonitor` and
+`/api/hub/monitor` are gone. Nothing replaced them: the panel posts to
+the relay the way it posts to a person, and `spirit/test/relayMonitor.js`
+makes the same twenty checks it made before, through the packet.
+
+Two things fell out that are worth having on the record, because they are
+the argument for collapsing the other four:
+
+- **The hand-rolled replay window was redundant too.** `monitorMessage`
+  put the flag inside the signed bytes so a captured `start` could not be
+  replayed as a `stop`. `postMessage` binds sender, recipient and the
+  exact text, so it already covered that — the verb was buying a property
+  the transport gives away.
+- **The gate went with the door.** `setMonitor` re-derived the owner from
+  `allow.byName` to decide who may ask. The post's own signature had
+  already proved it. Two places deciding who the owner is, is one place
+  to get it wrong, and every cheat below has its own copy of that code.
 
 ## The register
 
@@ -94,14 +113,49 @@ Each could be a packet now that a relay is addressable by its owner
 
 | | costs | undone by |
 |---|---|---|
-| `POST /api/relay/invite` · `mintMessage` | **a real hole:** the signed bytes carry no clock and no relay identity, so a mint signature never expires, works on every relay where you are owner, and each replay mints a fresh token | posting it — `postMessage` binds sender, recipient and text, and the hash is registered before anything is sent |
-| `POST /api/relay/remove-peer` · `removePeerMessage` | a second door, and a minute window hand-rolled per verb | posting it |
-| `GET /api/relay/status` · `statusMessage` | a second door; also replayable into other verbs if the message shape ever drifts | posting it |
-| `POST /api/relay/set-device` · `setDeviceMessage` | a second door | posting it |
-| `POST /api/relay/monitor` · `monitorMessage` | **already redundant** — the packet path works and is tested | deleting it |
+| `POST /api/relay/remove-peer` · `removePeerMessage` | a second door, and a minute window hand-rolled per verb | **posting only half of it** — see below |
+| `GET /api/relay/status` · `statusMessage` | a second door; also replayable into other verbs if the message shape ever drifts | **nothing. It is bootstrap** — see below |
+| `POST /api/relay/set-device` · `setDeviceMessage` | a second door | **nothing, as things stand** — see below |
 
-Five cheats, four of them older than this decision and one of them a
-day old.
+Three cheats. Two more were listed here when this decision was written
+and are **collapsed**: `POST /api/relay/monitor` · `monitorMessage` (the
+worked example above) and `POST /api/relay/invite` · `mintMessage`, which
+took the real hole with it. They are off this list because the list is of
+things that exist; `spirit/test/protocolSurface.js` goes red in that
+direction too, which is what stops the register drifting into a
+description of a world that has moved.
+
+### What stopped the other three — one sentence, and it is the same one
+
+**A relay is addressable by its owner and by nobody else.** That
+narrowing is what made R18 cheap and safe, and it is exactly what the
+three survivors run into:
+
+- **`set-device` is not an owner verb.** Every peer installs its own
+  device key on its own row — `relay.setDevice` resolves the caller with
+  `deviceIdentity` and verifies against whatever row key that finds (B2:
+  *"nobody installs a key on a row they cannot sign for"*). A peer cannot
+  address the relay, so there is nowhere for that request to go.
+- **`remove-peer` is half an owner verb.** `byOwner` could collapse
+  today. `bySelf` — a peer taking themselves off a relay, signed with
+  their own key — cannot, for the same reason. Collapsing only the owner
+  half would leave the route and the signed format standing anyway and
+  buy nothing.
+- **`status` is bootstrap, and this is the argument the decision asked
+  for.** `presenceNode.start` calls `ownerBadge.probe`, which reads
+  `GET /api/relay/status`, **to learn which relays to open streams to**.
+  A relay's answer to a post is delivered on the asker's stream. So a
+  posted `status` would need the stream that its own answer is what
+  decides to open. That is circular, not merely awkward, and it puts
+  `status` beside `claim` and `who` rather than beside the cheats.
+
+Which leaves one question, and it is a protocol decision rather than a
+tidy-up: **should a relay be addressable by every peer on it, for verbs
+about their own row?** That would collapse `set-device` and the rest of
+`remove-peer`. It also widens R18's narrowing, which was chosen on
+purpose — today a peer posting to the relay's key gets `no such peer`,
+the same answer an unknown key gets, and learns nothing. **Open. No code
+until it is decided.**
 
 ## What this costs
 
@@ -116,10 +170,25 @@ through.
 
 ## Open
 
-- **Collapsing the four older cheats** into packets. Now possible, not
-  done, and it closes the mint-replay hole as a side effect rather than
-  needing its own fix.
-- **Deleting `/api/relay/monitor`**, which is redundant today.
-- Whether `GET /api/relay/status` is bootstrap rather than a cheat: a
-  node reads it before it holds a stream. Probably bootstrap, and it is
-  listed as a cheat until somebody argues it properly.
+- **Whether a relay should be addressable by every peer on it**, for
+  verbs about that peer's own row. It is the one thing standing between
+  `set-device` and `remove-peer` and a collapse, and it widens a
+  narrowing that was chosen deliberately. Nothing gets built until this
+  is decided.
+
+## Closed since this was written
+
+- **`/api/relay/monitor` · `monitorMessage`** — deleted, with
+  `relay.setMonitor`, `hub.handleMonitor` and `/api/hub/monitor`. Nothing
+  replaced them.
+- **`/api/relay/invite` · `mintMessage`** — deleted. `hub.handleInvite`
+  keeps its door and posts underneath it; `relay.mint` takes no signature
+  because the post already carried one. **The mint-replay hole closed as
+  a side effect**, which is what this decision predicted would happen and
+  the reason it was worth writing down rather than fixing the hole alone.
+- **Whether `GET /api/relay/status` is bootstrap** — it is, and the
+  argument is in the register above: the stream a posted `status` would
+  be answered on is the stream that `status` is what decides to open.
+  It stays in the "Cheats, named" table with that reasoning beside it
+  rather than being moved, so the next reader sees why it was argued
+  rather than finding it quietly reclassified.

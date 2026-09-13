@@ -77,15 +77,28 @@ inTree.routes.sort();
 const doc = readOr(DECISION, '');
 const registered = { messages: [], routes: [] };
 
-// Read out of the tables, which is where a human writes them. Backticked,
-// because a name in prose is a mention and a name in a cell is an entry.
-(doc.match(/`([a-zA-Z]+Message)`/g) || []).forEach(function (q) {
-  const n = q.replace(/`/g, '');
-  if (registered.messages.indexOf(n) === -1) registered.messages.push(n);
+// Read out of the TABLE ROWS, which is where a human writes them, and out
+// of nowhere else. A name in a cell is an entry; the same name in a
+// paragraph is a mention.
+//
+// That distinction only became load-bearing when the first cheat
+// collapsed: the worked example has to be able to say which verbs were
+// deleted, by name, without those names reading as a claim that they are
+// still here. A scanner that read the whole file would have made the
+// register unable to describe its own history.
+const rows = doc.split('\n').filter(function (line) {
+  return /^\s*\|/.test(line) && !/^\s*\|[\s|:-]*$/.test(line);
 });
-(doc.match(/`(?:GET|POST) (\/api\/relay\/[a-z-]+)`/g) || []).forEach(function (q) {
-  const n = /(\/api\/relay\/[a-z-]+)/.exec(q)[1];
-  if (registered.routes.indexOf(n) === -1) registered.routes.push(n);
+
+rows.forEach(function (line) {
+  (line.match(/`([a-zA-Z]+Message)`/g) || []).forEach(function (q) {
+    const n = q.replace(/`/g, '');
+    if (registered.messages.indexOf(n) === -1) registered.messages.push(n);
+  });
+  (line.match(/`(?:GET|POST) (\/api\/relay\/[a-z-]+)`/g) || []).forEach(function (q) {
+    const n = /(\/api\/relay\/[a-z-]+)/.exec(q)[1];
+    if (registered.routes.indexOf(n) === -1) registered.routes.push(n);
+  });
 });
 
 registered.messages.sort();

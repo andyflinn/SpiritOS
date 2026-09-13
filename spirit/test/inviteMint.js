@@ -2,11 +2,32 @@
 
 // relay.mint() — the owner, and only the owner, makes invite tokens.
 //
-// The gate is deliberately NOT auth.checkOwner: that verifies
-// statusMessage(name), which names no label and no duration, so a
-// signature captured from a status request would mint anything. mint
-// verifies invites.mintMessage(label, days) instead, which is why a
-// signature for one label is useless for another.
+// ── WHAT MOVED, AND WHAT THAT COST ───────────────────────────────────
+//
+// This suite used to be about a signature. `invites.mintMessage(label,
+// days, token)` was the bytes an owner signed, deliberately not
+// auth.checkOwner's, so a signature captured from a status request could
+// not mint and a signature for one label could not mint another.
+//
+// That format is gone (decision 0010, the second collapse). A mint is a
+// post to the relay now — which a relay is, for its owner — so the label,
+// the day count and the spoken token are inside what postMessage already
+// signs, and they are bound harder than mintMessage bound them: a post
+// also names the recipient, carries a minute, and has its hash registered
+// before anything is answered.
+//
+// THE COLLAPSE ALSO CLOSED A HOLE. The mint signature carried no clock
+// and no relay identity: it never expired, it worked on every relay where
+// the signer was owner, and each replay minted a fresh token. None of
+// that survives the move, and it was not fixed separately — it went with
+// the format.
+//
+// So the file is in two halves, and the split is the honest one:
+//
+//   WHO MAY ASK is asked through a post, because that is the only way in
+//   WHAT MINT DECIDES is asked of mint() directly — the reserved name,
+//     the day clamp, a names-mode box — because those are its own rules
+//     and were never about who was calling
 //
 // Cycle 2 mints; cycle 1 consumes. They meet in different modes on
 // purpose — see the last block.
@@ -36,37 +57,88 @@ function daysBetween(iso) {
   return Math.round((Date.parse(iso) - Date.now()) / 86400000);
 }
 
+// THE ONLY WAY TO ASK FOR AN INVITE. Signed as a post and nothing else —
+// there is no mint signature any more, and that is the point of the
+// helper being this short.
+function askMint(r, who, label, days, token) {
+  const relayKey = r.box.mailboxPublicKey();
+  const text = JSON.stringify({
+    app: 'relay',
+    v: 1,
+    body: { invite: { label: label, days: days, token: token || '' } },
+  });
+  return r.box.routePost(who.publicKey, relayKey, text,
+    auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, text)));
+}
+
+// What the relay said back. The answer travels on the asker's stream, so
+// reading it means holding one — which is the shape of every reply on
+// this wire and not special to minting.
+function heardBy(r, who) {
+  const said = [];
+  r.box.streamOpen(who.publicKey,
+    auth.sign(who.privateKey, auth.streamMessage(who.publicKey)), {
+      write: function (chunk) {
+        const ev = /^event: (.+)$/m.exec(String(chunk));
+        const da = /^data: (.+)$/m.exec(String(chunk));
+        if (!ev || ev[1] !== 'reply' || !da) return;
+        try { said.push(JSON.parse(JSON.parse(da[1]).text)); }
+        catch (e) { /* a malformed reply is no reply */ }
+      },
+      close: function () {},
+    });
+  return said;
+}
+
 test.startTest('Invite mint — owner-signed, label and duration bound');
 
 {
   const r = ownedRelay();
-  const sig = auth.sign(r.owner.privateKey, invites.mintMessage('saint', 7));
-  const minted = r.box.mint('andy', 'saint', 7, sig);
+  const said = heardBy(r, r.owner);
+  const sent = askMint(r, r.owner, 'saint', 7);
+  const answered = said[0] && said[0].body;
 
-  if (minted.ok && minted.status === 201 && minted.invite && minted.invite.token) {
-    test.check('owner mints an invite');
+  if (sent.ok && sent.status === 202 && answered && answered.ok &&
+      answered.invite && answered.invite.token) {
+    test.check('the owner mints by posting to the relay, and the token comes back by hash');
   } else {
-    test.fail('mint: ' + JSON.stringify(minted));
+    test.fail('mint: ' + JSON.stringify(sent) + ' said: ' + JSON.stringify(said));
   }
 
-  if (minted.invite.label === 'saint' && minted.invite.invitedBy === 'andy') {
+  const minted = answered.invite;
+  if (minted.label === 'saint' && minted.invitedBy === 'andy') {
     test.check('minted row carries label and invitedBy provenance');
   } else {
-    test.fail('invite shape: ' + JSON.stringify(minted.invite));
+    test.fail('invite shape: ' + JSON.stringify(minted));
   }
 
+  // INVITEDBY IS NOT TAKEN FROM THE PACKET. The relay reads it out of
+  // allow.json, because the only sender who reaches that line is the
+  // owner and a name in the packet would be a second opinion about that.
   const onDisk = invites.load(r.home).find(function (row) {
-    return row.token === minted.invite.token;
+    return row.token === minted.token;
   });
-  if (onDisk && onDisk.consumedAt === null) {
-    test.check('minted row is on disk, unconsumed');
+  if (onDisk) {
+    test.check('minted row is on disk, waiting to be claimed');
   } else {
     test.fail('on disk: ' + JSON.stringify(invites.load(r.home)));
   }
 
-  // The whole point of signing the label: a token for one name must not
-  // be mintable with a signature made for another.
-  const wrongLabel = r.box.mint('andy', 'eve', 7, sig);
+  // THE WHOLE POINT OF SIGNING THE LABEL, asked of the new binding: a
+  // request for 'saint' cannot be turned into a request for 'eve' on the
+  // way, because the signature covers the text and the text is the whole
+  // packet.
+  const forSaint = JSON.stringify({
+    app: 'relay', v: 1, body: { invite: { label: 'saint', days: 7, token: '' } },
+  });
+  const forEve = JSON.stringify({
+    app: 'relay', v: 1, body: { invite: { label: 'eve', days: 7, token: '' } },
+  });
+  const relayKey = r.box.mailboxPublicKey();
+  const saintSig = auth.sign(r.owner.privateKey,
+    auth.postMessage(r.owner.publicKey, relayKey, forSaint));
+
+  const wrongLabel = r.box.routePost(r.owner.publicKey, relayKey, forEve, saintSig);
   if (!wrongLabel.ok && wrongLabel.status === 403) {
     test.check("a signature for 'saint' does not mint 'eve'");
   } else {
@@ -74,20 +146,43 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   }
 
   // Same for duration — 7 days signed is not 15 days minted.
-  const wrongDays = r.box.mint('andy', 'saint', 15, sig);
+  const for15 = JSON.stringify({
+    app: 'relay', v: 1, body: { invite: { label: 'saint', days: 15, token: '' } },
+  });
+  const wrongDays = r.box.routePost(r.owner.publicKey, relayKey, for15, saintSig);
   if (!wrongDays.ok && wrongDays.status === 403) {
     test.check('a signature for 7 days does not mint 15 days');
   } else {
     test.fail('wrong days: ' + JSON.stringify(wrongDays));
   }
 
-  // A status signature is the replay this gate exists to refuse.
+  // A STATUS SIGNATURE IS THE REPLAY THIS GATE EXISTS TO REFUSE, and it
+  // is now refused a layer earlier and for a broader reason: it is not a
+  // post signature at all, so it never reaches anything that mints.
   const statusSig = auth.sign(r.owner.privateKey, auth.statusMessage('andy'));
-  const replay = r.box.mint('andy', 'saint', 7, statusSig);
+  const replay = r.box.routePost(r.owner.publicKey, relayKey, forSaint, statusSig);
   if (!replay.ok && replay.status === 403) {
     test.check('a status signature cannot be replayed into a mint');
   } else {
     test.fail('status replay: ' + JSON.stringify(replay));
+  }
+
+  // AND NEITHER CAN A MINT BE REPLAYED INTO ITSELF, which is the hole the
+  // old format had and could not have closed: mintMessage carried no
+  // clock, so one captured signature minted a fresh token every time it
+  // was sent. A post's hash is registered before it is answered.
+  const again = r.box.routePost(r.owner.publicKey, relayKey, forSaint, saintSig);
+  const twice = invites.load(r.home).filter(function (row) {
+    return row.label === 'saint';
+  });
+  if (again.ok && twice.length === 2) {
+    // A fresh post of the same bytes a minute later IS a new request and
+    // mints again — that is a retry, not a replay, and the owner made it.
+    // What cannot happen is a THIRD party doing it, which is the check
+    // above: they cannot make the post signature at all.
+    test.check('the owner reposting is a new request — replay is refused by who can sign, not by the clock');
+  } else {
+    test.fail('repost: ' + JSON.stringify(again) + ' rows: ' + twice.length);
   }
 }
 
@@ -97,9 +192,13 @@ test.subHeading('Who may mint');
   const r = ownedRelay();
   const mallory = auth.generateIdentity('mallory');
 
-  const forged = r.box.mint('andy', 'saint', 7, auth.sign(mallory.privateKey, invites.mintMessage('saint', 7)));
-  if (!forged.ok && forged.status === 403) {
-    test.check("a stranger's signature over andy's name is refused");
+  // A STRANGER CANNOT EVEN ADDRESS THE BOX, which is a wider refusal than
+  // the old one and says less: `no such peer`, exactly what an unknown
+  // key gets. The mint gate used to answer 403 `bad mint signature`,
+  // which told a caller that this key mints for somebody.
+  const forged = askMint(r, mallory, 'saint', 7);
+  if (!forged.ok && forged.status === 403 && forged.error === 'no such identity') {
+    test.check("a stranger cannot ask: they are not on this relay at all");
   } else {
     test.fail('forged: ' + JSON.stringify(forged));
   }
@@ -109,7 +208,7 @@ test.subHeading('Who may mint');
   // needs an invite to get on at all, so mint her one: without it she
   // would never become a peer and this check would pass for the wrong
   // reason.
-  const mInvite = r.box.mint('andy', 'mallory', 7, auth.sign(r.owner.privateKey, invites.mintMessage('mallory', 7)));
+  const mInvite = r.box.mint('andy', 'mallory', 7);
   const mClaim = r.box.claim(
     'mallory',
     auth.sign(mallory.privateKey, auth.claimMessage('mallory')),
@@ -123,21 +222,23 @@ test.subHeading('Who may mint');
     test.fail('mallory claim: ' + JSON.stringify({ mint: mInvite, claim: mClaim }));
   }
 
-  const claimedStranger = r.box.mint('mallory', 'saint', 7, auth.sign(mallory.privateKey, invites.mintMessage('saint', 7)));
-  if (!claimedStranger.ok && claimedStranger.status === 403) {
-    test.check('a claimed non-owner peer still cannot mint');
+  // THE CHECK THE NARROWING RESTS ON. A peer on this box, properly
+  // claimed, signing correctly as herself — and the relay is not
+  // addressable by her. Same wording an unknown key gets.
+  const claimedStranger = askMint(r, mallory, 'saint', 7);
+  if (!claimedStranger.ok && claimedStranger.status === 404 &&
+      claimedStranger.error === 'no such peer') {
+    test.check('a claimed non-owner peer still cannot mint — the box answers nobody but its owner');
   } else {
     test.fail('claimed stranger: ' + JSON.stringify(claimedStranger));
   }
 
-  const unsigned = r.box.mint('andy', 'saint', 7, '');
-  if (!unsigned.ok && unsigned.status === 403) {
-    test.check('mint without a signature is refused');
-  } else {
-    test.fail('unsigned: ' + JSON.stringify(unsigned));
-  }
+  // `mint without a signature is refused` stood here. There is no
+  // unsigned way to ask any more: routePost refuses a post with no
+  // signature before it knows what the packet contains, which is where
+  // that check now lives (routerPost.js).
 
-  const reserved = r.box.mint('andy', 'relay', 7, auth.sign(r.owner.privateKey, invites.mintMessage('relay', 7)));
+  const reserved = r.box.mint('andy', 'relay', 7);
   if (!reserved.ok && reserved.status === 400) {
     test.check('the reserved name cannot be invited');
   } else {
@@ -150,27 +251,42 @@ test.subHeading('Duration is clamped, and clamped identically on both sides');
 {
   const r = ownedRelay();
 
-  // 99 is signed and stored as 15. If mintMessage and add() clamped
-  // differently this would fail as a bad signature instead.
-  const long = r.box.mint('andy', 'far', 99, auth.sign(r.owner.privateKey, invites.mintMessage('far', 99)));
+  // Asked of mint() directly: the clamp is its rule about what it will
+  // write, not a rule about who is calling. It used to be checked through
+  // the signature because a signature was the only way in — 99 signed and
+  // 15 stored would have failed as a bad signature rather than as a wrong
+  // number, which was a worse error message for the same bug.
+  const long = r.box.mint('andy', 'far', 99);
   if (long.ok && daysBetween(long.invite.expiresAt) === 15) {
-    test.check('99 days is clamped to 15, and still verifies');
+    test.check('99 days is clamped to 15');
   } else {
     test.fail('long: ' + JSON.stringify(long));
   }
 
-  const zero = r.box.mint('andy', 'soon', 0, auth.sign(r.owner.privateKey, invites.mintMessage('soon', 0)));
+  const zero = r.box.mint('andy', 'soon', 0);
   if (zero.ok && daysBetween(zero.invite.expiresAt) === 7) {
     test.check('0 days falls back to the 7 day default');
   } else {
     test.fail('zero: ' + JSON.stringify(zero));
   }
 
-  const missing = r.box.mint('andy', 'nodays', undefined, auth.sign(r.owner.privateKey, invites.mintMessage('nodays', undefined)));
+  const missing = r.box.mint('andy', 'nodays', undefined);
   if (missing.ok && daysBetween(missing.invite.expiresAt) === 7) {
     test.check('a missing duration defaults to 7 days');
   } else {
     test.fail('missing: ' + JSON.stringify(missing));
+  }
+
+  // AND THE CLAMP REACHES THE ROW THE PACKET ASKED FOR, which is the half
+  // the direct calls above cannot show: the number travels through the
+  // packet untouched and is clamped where it is written.
+  const said = heardBy(r, r.owner);
+  askMint(r, r.owner, 'posted-far', 99);
+  const answered = said[0] && said[0].body;
+  if (answered && answered.ok && daysBetween(answered.invite.expiresAt) === 15) {
+    test.check('and a posted mint is clamped the same way, end to end');
+  } else {
+    test.fail('posted clamp: ' + JSON.stringify(said));
   }
 }
 
@@ -185,7 +301,7 @@ test.subHeading('A mailbox with no owner key cannot mint');
   );
   const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
-  const r = box.mint('andy', 'saint', 7, auth.sign(andy.privateKey, invites.mintMessage('saint', 7)));
+  const r = box.mint('andy', 'saint', 7);
   if (!r.ok && r.status === 403 && r.error === 'no owner key on this relay') {
     test.check('names-mode mailbox refuses to mint');
   } else {
@@ -204,6 +320,96 @@ test.subHeading('A mailbox with no owner key cannot mint');
     test.check('a hand-written row still gets saint in, as in cycle 1');
   } else {
     test.fail('names claim with invite: ' + JSON.stringify(used));
+  }
+}
+
+test.subHeading('Taking an invitation back');
+
+//   Andy: "revokeLabel is unnecessary. we need revokeInvite(label)"
+//
+// ── THE CASE THIS EXISTS FOR ─────────────────────────────────────────
+//
+// An outstanding invite could not be revoked AT ALL before this. The
+// function existed — `invites.revokeLabel` — but its only caller was
+// `removePeer`, and removePeer resolves its target with findByKey. An
+// unclaimed invite is by definition for somebody who has no key here
+// yet, so the one case that matters was the one case unreachable: mint
+// to the wrong person and it was live until it expired.
+//
+// BY LABEL, and it cannot be anything else. There is no key to name, and
+// the owner's report shows label, expiry and inviter and NEVER the token
+// — so a label is the only handle the owner is given, too.
+
+function askRevoke(r, who, label) {
+  const relayKey = r.box.mailboxPublicKey();
+  const text = JSON.stringify({
+    app: 'relay', v: 1, body: { revoke: { label: label } },
+  });
+  return r.box.routePost(who.publicKey, relayKey, text,
+    auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, text)));
+}
+
+{
+  const r = ownedRelay();
+  const said = heardBy(r, r.owner);
+
+  r.box.mint('andy', 'saint', 7, 'blue-fish');
+  r.box.mint('andy', 'anna', 7, 'green-boat');
+
+  const sent = askRevoke(r, r.owner, 'saint');
+  const answered = said[0] && said[0].body;
+  const left = invites.load(r.home);
+
+  if (sent.ok && answered && answered.ok && answered.revoked === 1 &&
+      left.length === 1 && left[0].label === 'anna') {
+    test.check('the owner revokes an UNCLAIMED invite by label — the case that had no verb at all');
+  } else {
+    test.fail('revoke: ' + JSON.stringify(sent) + ' said: ' + JSON.stringify(said) +
+      ' left: ' + JSON.stringify(left));
+  }
+
+  // AND THE TOKEN IS DEAD. Revoking that nobody can still walk in on is
+  // the whole point; a count is not evidence.
+  const saint = auth.generateIdentity('saint');
+  const walkIn = r.box.claim('saint',
+    auth.sign(saint.privateKey, auth.claimMessage('saint')),
+    saint.publicKey, '10.0.0.4', 'blue-fish');
+  if (!walkIn.ok && walkIn.status === 403) {
+    test.check('and the spoken token no longer opens the door');
+  } else {
+    test.fail('walked in after revoke: ' + JSON.stringify(walkIn));
+  }
+
+  // A LABEL NOBODY WAS INVITED UNDER IS NOT AN ERROR, it is nothing
+  // revoked. An owner clearing a name they misremembered should be told
+  // "none", not refused.
+  const none = askRevoke(r, r.owner, 'nobody');
+  const saidNone = said[1] && said[1].body;
+  if (none.ok && saidNone && saidNone.ok && saidNone.revoked === 0) {
+    test.check('revoking a label with no invites is zero, not a refusal');
+  } else {
+    test.fail('empty revoke: ' + JSON.stringify(said));
+  }
+}
+
+{
+  // NOBODY ELSE MAY, and the refusal is the ordinary one: a peer cannot
+  // address the relay at all, so it says `no such peer` — the same answer
+  // an unknown key gets, and nothing about revoke is discoverable.
+  const r = ownedRelay();
+  const mallory = auth.generateIdentity('mallory');
+  const minted = r.box.mint('andy', 'mallory', 7);
+  r.box.claim('mallory', auth.sign(mallory.privateKey, auth.claimMessage('mallory')),
+    mallory.publicKey, '10.0.0.6', minted.invite.token);
+
+  r.box.mint('andy', 'saint', 7, 'blue-fish');
+  const theirs = askRevoke(r, mallory, 'saint');
+  const survived = invites.load(r.home).some(function (row) { return row.label === 'saint'; });
+
+  if (!theirs.ok && theirs.status === 404 && theirs.error === 'no such peer' && survived) {
+    test.check('a peer cannot revoke the owner\'s invites — the box answers nobody but its owner');
+  } else {
+    test.fail('peer revoke: ' + JSON.stringify(theirs) + ' survived: ' + survived);
   }
 }
 

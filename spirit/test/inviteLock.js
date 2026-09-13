@@ -40,15 +40,11 @@ test.startTest('Invites cycle 4 — keys-mode extra claim needs invite');
   const m1 = box.mint(
     'andy',
     'john',
-    7,
-    auth.sign(andy.privateKey, invites.mintMessage('john', 7))
-  );
+    7);
   const m2 = box.mint(
     'andy',
     'john',
-    7,
-    auth.sign(andy.privateKey, invites.mintMessage('john', 7))
-  );
+    7);
   if (m1.ok && m2.ok && m1.invite.token !== m2.invite.token) {
     test.check('owner can mint two invites for the same label');
   } else {

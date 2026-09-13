@@ -52,7 +52,7 @@ function signFor(id, name, atMs) {
 // with this cycle — it is simply what claiming costs here, and a fixture
 // that skipped it would be testing a mailbox that does not exist.
 function invited(m, label, id, ip) {
-  const minted = m.box.mint('andy', label, 7, auth.sign(m.andy.privateKey, invites.mintMessage(label, 7)));
+  const minted = m.box.mint('andy', label, 7);
   const token = minted && minted.invite && minted.invite.token;
   return m.box.claim(label, auth.sign(id.privateKey, auth.claimMessage(label)), id.publicKey, ip, token);
 }

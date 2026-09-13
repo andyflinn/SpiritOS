@@ -156,8 +156,7 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
   // could actually have joined.
   relay.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey);
 
-  const minted = relay.mint('andy', 'bella', 7,
-    auth.sign(owner.privateKey, require('../run/js/invites').mintMessage('bella', 7, '')), '');
+  const minted = relay.mint('andy', 'bella', 7, '');
   if (!minted.ok) {
     test.fail('could not mint bella an invite: ' + JSON.stringify(minted));
     test.reportSuccessFailureCount();

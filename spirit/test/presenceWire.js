@@ -56,8 +56,7 @@ function buildRelayHome() {
   auth.saveIdentity(home, house);
   box.claim('andy', auth.sign(house.privateKey, auth.claimMessage('andy')), house.publicKey);
   const bert = auth.generateIdentity('bert');
-  const minted = box.mint('andy', 'bert', 7,
-    auth.sign(house.privateKey, invites.mintMessage('bert', 7)));
+  const minted = box.mint('andy', 'bert', 7);
   box.claim('bert', auth.sign(bert.privateKey, auth.claimMessage('bert')),
     bert.publicKey, '10.0.0.1', minted.invite.token);
 

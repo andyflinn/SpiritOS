@@ -5,12 +5,24 @@
 // The whole cycle is one sentence: the spoken token is INSIDE what the
 // owner signs. Everything here is a consequence of that.
 //
-//   - Two arguments still mean "the relay picks the token", byte for byte
-//     the cycle-2 message, so every signature made before A2 still works.
-//   - A signature made without a token mints no spoken token, and a
-//     signature for one token mints no other.
-//   - The token is held to the name rules, because it is typed by one
-//     human, read aloud to another, and then arrives back as a claim.
+// ── WHAT CHANGED UNDERNEATH IT ───────────────────────────────────────
+//
+// The sentence is unchanged and the mechanism is gone. A2 built
+// `invites.mintMessage(label, days, token)` — a third field appended to
+// the signed bytes, with an elaborate rule that an absent, empty or blank
+// token had to produce the cycle-2 message byte for byte so that pre-A2
+// signatures kept verifying.
+//
+// Decision 0010's second collapse deleted that format. A mint is a post
+// now, and postMessage signs the WHOLE packet — so the token is inside
+// what was signed because everything is, and the byte-compatibility rule
+// has nothing left to be compatible with. Six checks about the shape of
+// those bytes went with them; what they were protecting is the one check
+// under "the token is part of the request" below.
+//
+// What survives is everything about the token itself, which was never
+// about signing: the trimming, the character rules, the hex fallback, and
+// the friend on the other end of the telephone claiming with the words.
 //
 // See CYCLE-A2.md. relay.js keeps minting hex when the field is empty.
 
@@ -34,57 +46,75 @@ function ownedRelay() {
   return made;
 }
 
-// Mint the way the hub does: sign exactly the message the relay will
-// rebuild, token and all.
+// The token's own rules, asked of mint() directly — they are rules about
+// what may be written down, and were never about who was asking.
 function mintAs(r, label, days, token) {
-  return r.box.mint(
-    'andy',
-    label,
-    days,
-    auth.sign(r.owner.privateKey, invites.mintMessage(label, days, token)),
-    token
-  );
+  return r.box.mint('andy', label, days, token);
+}
+
+// A packet asking for one, which is the only way in from outside.
+function invitePacket(label, days, token) {
+  return JSON.stringify({
+    app: 'relay',
+    v: 1,
+    body: { invite: { label: label, days: days, token: token || '' } },
+  });
 }
 
 test.startTest('Invite A2 — a spoken token is signed, or it is not a token');
 
+test.subHeading('The token is part of the request');
+
 {
-  const plain = invites.mintMessage('saint', 7);
-  if (plain === 'mint\nsaint\n7') {
-    test.check('the two-argument message is still the cycle-2 message, byte for byte');
+  const r = ownedRelay();
+  const relayKey = r.box.mailboxPublicKey();
+
+  // THE REPLAY THIS CYCLE EXISTS TO REFUSE, and the only check left that
+  // is about signing: an owner-signed mint for "saint, 7 days, relay
+  // picks the token" must not become "saint, 7 days, and the token is one
+  // I chose".
+  //
+  // A2 bought this with a third field and a compatibility rule. It is now
+  // free: the token is in the text, and the signature is over the text.
+  const tokenless = invitePacket('saint', 7, '');
+  const spoken = invitePacket('saint', 7, 'blue-fish');
+  const forTokenless = auth.sign(r.owner.privateKey,
+    auth.postMessage(r.owner.publicKey, relayKey, tokenless));
+
+  const smuggled = r.box.routePost(r.owner.publicKey, relayKey, spoken, forTokenless);
+  if (!smuggled.ok && smuggled.status === 403) {
+    test.check('a tokenless signature cannot mint a spoken token');
   } else {
-    test.fail('plain: ' + JSON.stringify(plain));
+    test.fail('smuggled: ' + JSON.stringify(smuggled));
   }
 
-  // Every old caller passes two arguments, or three with nothing in the
-  // third. Neither may drift, or every signature minted before A2 breaks.
-  const empties = [undefined, null, '', '   '].every(function (t) {
-    return invites.mintMessage('saint', 7, t) === plain;
-  });
-  if (empties) {
-    test.check('an absent, empty or blank token is the same message as no token at all');
+  if (invites.load(r.home).length === 0) {
+    test.check('and it wrote no row on the way out');
   } else {
-    test.fail('empty token forms differ from the two-argument message');
+    test.fail('rows after refusal: ' + JSON.stringify(invites.load(r.home)));
   }
 
-  const spoken = invites.mintMessage('saint', 7, 'blue-fish');
-  if (spoken === plain + '\nblue-fish') {
-    test.check('a spoken token is appended to the message it is minted with');
+  // The mirror image: a signature that names a token is not a licence to
+  // mint a different one, nor to mint the hex the relay would have picked.
+  const forBlue = auth.sign(r.owner.privateKey,
+    auth.postMessage(r.owner.publicKey, relayKey, spoken));
+  const swapped = r.box.routePost(r.owner.publicKey, relayKey,
+    invitePacket('saint', 7, 'red-fish'), forBlue);
+  const dropped = r.box.routePost(r.owner.publicKey, relayKey, tokenless, forBlue);
+  if (!swapped.ok && swapped.status === 403 && !dropped.ok && dropped.status === 403) {
+    test.check("a signature for one token mints neither another nor the relay's hex");
   } else {
-    test.fail('spoken: ' + JSON.stringify(spoken));
+    test.fail('swap/drop: ' + JSON.stringify([swapped, dropped]));
   }
 
-  if (invites.mintMessage('saint', 7, '  blue-fish  ') === spoken) {
-    test.check('the token is trimmed in the message, as it is in the row');
+  // And the request that WAS signed goes through, so the three refusals
+  // above are about the signature and not about the packet being wrong.
+  const honest = r.box.routePost(r.owner.publicKey, relayKey, spoken, forBlue);
+  const row = invites.load(r.home).find(function (x) { return x.token === 'blue-fish'; });
+  if (honest.ok && row && row.label === 'saint') {
+    test.check('and the request that was actually signed mints the token it named');
   } else {
-    test.fail('untrimmed token signed differently');
-  }
-
-  // Days is still normalized inside the message, with a token as without.
-  if (invites.mintMessage('far', 99, 'blue') === 'mint\nfar\n15\nblue') {
-    test.check('days is still clamped inside the signed message');
-  } else {
-    test.fail('clamp with token: ' + JSON.stringify(invites.mintMessage('far', 99, 'blue')));
+    test.fail('honest: ' + JSON.stringify(honest) + ' rows: ' + JSON.stringify(invites.load(r.home)));
   }
 }
 
@@ -101,8 +131,8 @@ test.subHeading('The relay stores the token that was spoken');
   }
 
   const onDisk = invites.load(r.home).find(function (row) { return row.token === 'blue-fish'; });
-  if (onDisk && onDisk.label === 'saint' && onDisk.consumedAt === null) {
-    test.check('it is on disk under that token, unconsumed');
+  if (onDisk && onDisk.label === 'saint') {
+    test.check('it is on disk under that token, waiting to be claimed');
   } else {
     test.fail('on disk: ' + JSON.stringify(invites.load(r.home)));
   }
@@ -146,63 +176,6 @@ test.subHeading('The relay stores the token that was spoken');
   }
 }
 
-test.subHeading('A signature made without a token mints no token');
-
-{
-  const r = ownedRelay();
-
-  // The replay this cycle exists to refuse: an owner-signed mint for
-  // "saint, 7 days, relay picks the token" must not become "saint, 7
-  // days, and the token is one I chose".
-  const tokenless = auth.sign(r.owner.privateKey, invites.mintMessage('saint', 7));
-  const smuggled = r.box.mint('andy', 'saint', 7, tokenless, 'blue-fish');
-  if (!smuggled.ok && smuggled.status === 403) {
-    test.check('a tokenless signature cannot mint a spoken token');
-  } else {
-    test.fail('smuggled: ' + JSON.stringify(smuggled));
-  }
-
-  if (invites.load(r.home).length === 0) {
-    test.check('and it wrote no row on the way out');
-  } else {
-    test.fail('rows after refusal: ' + JSON.stringify(invites.load(r.home)));
-  }
-
-  // The mirror image: a signature that names a token is not a licence to
-  // mint a different one, nor to mint the hex the relay would have picked.
-  const forBlue = auth.sign(r.owner.privateKey, invites.mintMessage('saint', 7, 'blue-fish'));
-  const swapped = r.box.mint('andy', 'saint', 7, forBlue, 'red-fish');
-  const dropped = r.box.mint('andy', 'saint', 7, forBlue, '');
-  if (!swapped.ok && swapped.status === 403 && !dropped.ok && dropped.status === 403) {
-    test.check("a signature for one token mints neither another nor the relay's hex");
-  } else {
-    test.fail('swap/drop: ' + JSON.stringify([swapped, dropped]));
-  }
-
-  // A status signature was never a mint, and a token does not make it one.
-  const statusSig = auth.sign(r.owner.privateKey, auth.statusMessage('andy'));
-  const replay = r.box.mint('andy', 'saint', 7, statusSig, 'blue-fish');
-  if (!replay.ok && replay.status === 403) {
-    test.check('a status signature cannot be replayed into a spoken mint');
-  } else {
-    test.fail('status replay: ' + JSON.stringify(replay));
-  }
-
-  const mallory = auth.generateIdentity('mallory');
-  const forged = r.box.mint(
-    'andy',
-    'saint',
-    7,
-    auth.sign(mallory.privateKey, invites.mintMessage('saint', 7, 'blue-fish')),
-    'blue-fish'
-  );
-  if (!forged.ok && forged.status === 403) {
-    test.check('a stranger cannot mint a spoken token either');
-  } else {
-    test.fail('forged: ' + JSON.stringify(forged));
-  }
-}
-
 test.subHeading('What a token may be');
 
 {
@@ -234,6 +207,22 @@ test.subHeading('What a token may be');
   } else {
     test.fail('32 chars: ' + JSON.stringify(longest));
   }
+
+  // AND A BAD TOKEN IS REFUSED THROUGH THE PACKET TOO, which is the path
+  // a person's typing actually takes. The rule lives in mint(); this says
+  // nothing on the way in quietly widens it.
+  const relayKey = r.box.mailboxPublicKey();
+  const nasty = invitePacket('saint', 7, '../etc/passwd');
+  r.box.routePost(r.owner.publicKey, relayKey, nasty,
+    auth.sign(r.owner.privateKey, auth.postMessage(r.owner.publicKey, relayKey, nasty)));
+  const slipped = invites.load(r.home).some(function (row) {
+    return String(row.token).indexOf('..') !== -1;
+  });
+  if (!slipped) {
+    test.check('and a posted token is held to the same rules — nothing widens on the way in');
+  } else {
+    test.fail('a posted token got past the rules: ' + JSON.stringify(invites.load(r.home)));
+  }
 }
 
 test.subHeading('An empty field still means hex');
@@ -247,15 +236,10 @@ test.subHeading('An empty field still means hex');
     test.fail('auto: ' + JSON.stringify(auto));
   }
 
-  // Signed with two arguments, from a caller that has never heard of A2.
-  const old = r.box.mint(
-    'andy',
-    'anna',
-    7,
-    auth.sign(r.owner.privateKey, invites.mintMessage('anna', 7))
-  );
+  // A caller that has never heard of A2 passes no token at all.
+  const old = r.box.mint('andy', 'anna', 7);
   if (old.ok && old.status === 201 && old.invite.token) {
-    test.check('a pre-A2 caller mints unchanged, four arguments and all');
+    test.check('a caller that names no token mints unchanged');
   } else {
     test.fail('old caller: ' + JSON.stringify(old));
   }

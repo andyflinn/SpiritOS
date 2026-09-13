@@ -65,7 +65,6 @@ const BACKUP = path.join(WORK_RUN, 'app', 'natter', 'relays.json.before-lab');
 const SESSION = path.join(WORK_RUN, 'app', 'natter', 'session.json');
 const SESSION_BACKUP = path.join(WORK_RUN, 'app', 'natter', 'session.json.before-lab');
 
-const invites = require('../run/js/invites');
 
 // THE `lab-` PREFIX IS A SAFETY FEATURE, not a style. These identities
 // also get rows on the live relay, and `--down` removes them from there
@@ -424,11 +423,21 @@ async function up(scenarioName) {
   for (const peer of world.peers()) {
     const wants = byName[peer.name] || {};
     if ((wants.on || []).indexOf('live') === -1) continue;
-    const minted = await post(LIVE_RELAY + '/api/relay/invite', {
+    // THROUGH THE WORK NODE'S OWN DOOR, not the relay's. There is no
+    // /api/relay/invite any more (decision 0010): a mint is a post to the
+    // relay, and the relay answers on the asker's STREAM — which the work
+    // node is already holding. Opening a second stream with Andy's key
+    // from here would displace the first and knock his running node off
+    // the relay it is bound to.
+    //
+    // So this asks the node to mint, which is what Natter's own button
+    // does. Andy's rule, and the reason this reads better than the two
+    // lines it replaces: production code must go through the API.
+    const minted = await post(WORK_URL + '/api/hub/invite', {
       name: me.name,
       label: peer.name,
       days: 1,
-      sig: auth.sign(me.privateKey, invites.mintMessage(peer.name, 1)),
+      url: LIVE_RELAY,
     });
     const token = minted.body && minted.body.token;
     if (!token) {

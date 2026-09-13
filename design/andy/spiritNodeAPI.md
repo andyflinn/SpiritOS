@@ -1,18 +1,25 @@
 # The node API — route hierarchy
 
-Measured at `e52a8ac`, 2026-09-13. Every route both servers dispatch and
-the function it lands in. Illustration only: no argument, no proposal,
-nothing about what should change.
+Measured at working tree, 2026-09-13. Every route both servers dispatch
+and the function it lands in. Illustration only: no argument, no
+proposal, nothing about what should change.
 
 One file, [`spirit/run/js/server.js`](../../spirit/run/js/server.js),
 serves both. Which server you get is `--relay` on the command line.
 
-**Changed since the first version of this page** (which was POST only, at
-`7734ecc`): `/api/hub/post` has a handler instead of being written out in
-the route table; `/api/hub/arrivals` is new; both `/api/fs/save-app-*`
-routes are gone. The GET side is included now, because the two halves of
-one idea — post to a peer, find out what arrived — sit on opposite sides
-of the method.
+**Changed since the second version of this page** (at `e52a8ac`): the
+relay lost two doors and the node lost one, all three to decision 0010's
+collapse — `POST /api/relay/invite`, `POST /api/relay/monitor`, and
+`POST /api/hub/monitor`. Nothing replaced them. Both relay verbs are said
+as posts now, because a relay is an addressable peer for its owner, and
+`/api/hub/invite` stayed exactly where it was with a post underneath it.
+
+**Changed since the first version** (which was POST only, at `7734ecc`):
+`/api/hub/post` has a handler instead of being written out in the route
+table; `/api/hub/arrivals` is new; both `/api/fs/save-app-*` routes are
+gone. The GET side is included now, because the two halves of one idea —
+post to a peer, find out what arrived — sit on opposite sides of the
+method.
 
 ---
 
@@ -25,7 +32,6 @@ is 404 before dispatch, so this is the whole surface.
 ```
 POST /api/relay/
   ├── claim                 handleRelayClaim   → relay.claim
-  ├── invite                handleRelayInvite  → relay.mint
   ├── remove-peer           (inline)           → relay.removePeer
   │
   ├── post                  (inline)           → relay.routePost
@@ -44,11 +50,35 @@ GET  /api/relay/
 GET  /api/version                                                    ← public
 ```
 
-Eight POST, four GET, plus `/api/version`. All of `relay.js`.
+Seven POST, four GET, plus `/api/version`. All of `relay.js`.
 
-**`relay` is no longer an addressable destination.** It is still a
+**`relay` is no longer an addressable destination BY NAME.** It is still a
 reserved name nobody may claim and no invite may be labelled with — a
 namespace rule that outlived the console it used to serve.
+
+**Its KEY is addressable, by its owner and by nobody else.** A post to
+the relay's own public key is answered by `relay.answerSelf`, which is
+where two verbs went that used to have doors of their own:
+
+```
+POST /api/relay/post  → relay.routePost
+                          ├── postedToSelf?  → relay.answerSelf
+                          │                     ├── body.monitor  → start/stop watching
+                          │                     ├── body.invite   → relay.mint
+                          │                     └── body.revoke   → invites.revokeInvite
+                          └── otherwise      → the peer it names
+```
+
+Every other sender posting to that key gets `404 no such peer` — the same
+answer an unknown key gets, so nothing about this is discoverable from
+outside. See decision 0010.
+
+`body.revoke` is worth noting as the first verb **designed** after 0010
+rather than collapsed into it: it takes an invitation back by label, it
+has no self path (an unclaimed invitee has no identity here and can sign
+nothing), and so it was born as a packet and never needed a door. Before
+it, an unclaimed invite could not be revoked at all — `invites.revokeLabel`
+existed but only `removePeer` called it, and removePeer needs a row.
 
 ---
 
@@ -63,7 +93,7 @@ from nowhere else.
 POST /api/hub/
   ├── claim                 hub.handleClaim
   ├── peer                  hub.handlePeer              ← whoBook only, never the WAN
-  ├── invite                hub.handleInvite
+  ├── invite                hub.handleInvite            ← posts to the relay
   │
   ├── post                  hub.handlePost              ← the router
   ├── send                  hub.handleSend              ← the ring
@@ -110,6 +140,18 @@ Anything else under POST is `405`.
 written out inside the route table; the rules it enforces — is this node
 attached to a relay, which relay to send through, what `via` overrides —
 could only be exercised by making an HTTP request until it moved.
+
+**`/api/hub/invite` is unchanged as a door and different underneath.** It
+still takes a url and a label and still answers 201 with the invite. What
+it does with them is post to that relay rather than call a route on it,
+so it needs `router` and `relayKey` handed in the way `/api/hub/post`
+needs `router` and `presence`. This is the line decision 0010 draws: a
+node may shape its own door however suits the browser; what it may not do
+is invent a word to say over the WAN.
+
+**`POST /api/hub/monitor` is gone**, and nothing took its place. The panel
+that wanted it posts to the relay through `/api/hub/post` like any app
+posting to any peer.
 
 **`/api/fs/save-app-script` and `/api/fs/save-app-manifest` are gone**
 (decision 0008). `saveFile` refuses an app's own entry script and
@@ -159,3 +201,10 @@ something now names a handler.**
 label are `whoBook` writes. Taking somebody off a relay is
 `/api/relay/remove-peer`, and **nothing under `run/` calls it** — the
 verb exists, is signed, works, and has no door on the node side.
+
+**Three of the relay's POST routes are named cheats**, which is a claim
+this page can make because there is a register that says so and a test
+that keeps it honest: `remove-peer`, `set-device`, and the GET `status`.
+Each is a way of speaking on the wire that the protocol cannot carry as a
+post, and each is listed in decision 0010 with the reason. `invite` and
+`monitor` were on that list until they came off it by being deleted.

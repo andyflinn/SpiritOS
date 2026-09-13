@@ -740,17 +740,28 @@ async function buildLiveWorld(body) {
     steps.push(peerName + ' already has a row on spirit-3');
   } else {
     const auth = require('../../run/js/relayAuth');
-    const invites = require('../../run/js/invites');
-    const minted = await livePost(LIVE_RELAY + '/api/relay/invite', {
+    // ASKED OF THE WORK NODE, not of spirit-3 directly.
+    //
+    // /api/relay/invite is gone (decision 0010): a mint is a post to the
+    // relay, and the relay answers on the ASKER'S STREAM rather than in
+    // the response. The work node is already holding that stream; minting
+    // from here with Andy's key would mean opening a second one and
+    // displacing the first, which would knock his running node off the
+    // relay this button exists to bind things to.
+    //
+    // So the node mints, which is what Natter's own button does. One less
+    // thing this file does by hand, which is the direction the GAPS list
+    // has always pointed.
+    const minted = await livePost('http://127.0.0.1:' + WORK_PORT + '/api/hub/invite', {
       name: me.name,
       label: peerName,
       days: 7,
       token: '',
-      sig: auth.sign(me.privateKey, invites.mintMessage(peerName, 7, '')),
+      url: LIVE_RELAY,
     });
     // The route answers with the invite ITSELF, not {invite:{…}} — the
-    // relay's mint returns {ok,status,invite} and server.js passes the
-    // inner object straight through.
+    // hub unwraps the relay's answer and passes the inner object straight
+    // through, exactly as the deleted relay route did.
     const token = minted.body && minted.body.token;
     if (!minted.ok || !token) {
       return { status: 502, error: 'spirit-3 refused the invite: ' + minted.text };

@@ -99,28 +99,6 @@ function streamSignatureOk(publicKey, key, sig, atMs) {
 // The key, not the label. Labels duplicate by design, so a signature
 // naming one would be an instruction to remove whichever john the relay
 // happened to find first.
-// WATCHING, OR NOT WATCHING. The flag is inside the signed bytes, so a
-// captured "start" cannot be replayed as a "stop" or the other way round
-// — the same reason remove-peer is its own verb rather than a replayed
-// status.
-//
-// A minute, like every other owner verb here: enough for two clocks a
-// minute apart in either direction, and short enough that a captured
-// proof dies.
-function monitorMessage(on, atMs) {
-  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
-  return 'monitor\n' + (on ? 'on' : 'off') + '\n' + minute;
-}
-
-function monitorSignatureOk(publicKey, on, sig, atMs) {
-  if (!publicKey || !sig) return false;
-  var now = atMs == null ? Date.now() : atMs;
-  for (var step = -1; step <= 1; step += 1) {
-    if (verify(publicKey, monitorMessage(on, now + step * 60000), sig)) return true;
-  }
-  return false;
-}
-
 function removePeerMessage(key, atMs) {
   var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
   return 'remove-peer\n' + String(key || '') + '\n' + minute;
@@ -302,12 +280,33 @@ function writeAllowKeys(rootDir, keys) {
   fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: rows }, null, 2));
 }
 
+// A KEY THAT CANNOT SIGN IS NOT AN IDENTITY.
+//
+// This used to check that `privateKey` was a non-empty string and stop
+// there, so a torn or truncated identity.json loaded fine and threw
+// ERR_OSSL_ASN1_NOT_ENOUGH_DATA at the first sign() — synchronously,
+// inside an http handler, with nothing waiting to catch it. The node
+// died. Found on 2026-09-13 by serverSurface.js's hub sweep, which was
+// the first thing ever to call those routes against a booted process.
+//
+// Answering `null` is the fix rather than a try/catch at each signing
+// site, because null is a state every caller ALREADY handles and handles
+// well: "no identity on this node", said out loud, with a status. There
+// were eleven signing sites and one of this.
+//
+// The parse is done once, here, and the result thrown away — crypto
+// caches nothing for us, but a malformed key fails identically every
+// time, so proving it once at load proves it for the process.
 function loadIdentity(rootDir) {
   try {
     const raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8');
     const parsed = JSON.parse(raw);
-    if (parsed && parsed.name && parsed.privateKey) return parsed;
-  } catch (e) { /* none */ }
+    if (!parsed || !parsed.name || !parsed.privateKey) return null;
+    // Not a format check — an actual parse by the thing that will use it.
+    // Anything this accepts, sign() accepts.
+    privateKeyFromB64(parsed.privateKey);
+    return parsed;
+  } catch (e) { /* none, or none usable */ }
   return null;
 }
 
@@ -465,8 +464,6 @@ module.exports = {
   streamMessage,
   streamSignatureOk,
   removePeerMessage,
-  monitorMessage,
-  monitorSignatureOk,
   removePeerSignatureOk,
   postMessage,
   postSignatureFor,

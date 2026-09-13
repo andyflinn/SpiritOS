@@ -42,6 +42,11 @@ function writeRelays(home, rows) {
 // after this the key in identity.json is the key in allow.json.
 function ownedBox(id, name) {
   var home = tmpHome('box');
+  // A KEY OF ITS OWN, which a relay needs to be addressable at all: the
+  // mint is a post to this box now, and a box with no identity cannot
+  // sign the answer. Before decision 0010's second collapse these fixtures
+  // never needed one, because minting arrived through a route.
+  auth.saveIdentity(home, auth.generateIdentity('relay'));
   var box = createRelay(home);
   box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)), id.publicKey, '10.0.0.1');
   return { home: home, box: box };
@@ -287,17 +292,11 @@ function relayServer(box) {
         }));
         return;
       }
-      if (req.method === 'POST' && url.pathname === '/api/relay/invite') {
-        let raw = '';
-        req.on('data', function (c) { raw += c; });
-        req.on('end', function () {
-          let body = {};
-          try { body = JSON.parse(raw); } catch (e) { body = {}; }
-          const r = box.mint(body.name, body.label, body.days, body.sig);
-          reply(r, r.invite);
-        });
-        return;
-      }
+      // /api/relay/invite STOOD HERE and is gone from the wire entirely
+      // (decision 0010). A mint is a post now, and a post does not come
+      // back in the HTTP response — the relay answers on the owner's
+      // stream. So the seam this suite fakes moved from the transport to
+      // the router: see routerTo() below.
       res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end('{"error":"no such route"}');
     });
@@ -324,9 +323,46 @@ function fakeRes() {
   return out;
 }
 
-function hubInvite(hub, body) {
+// THE ROUTER, faked at the seam hub.handleInvite actually uses now.
+//
+// It does the two things peerPost does that this suite depends on: it
+// posts to the box the url names, and it hands back the reply that box
+// signed. The reply arrives on the owner's stream rather than in the
+// post's response — which is the one real consequence of the collapse,
+// and the reason this fake has to hold a sink at all.
+//
+// Kept deliberately thin: what is under test is that the hub picks the
+// right mailbox, so this proves nothing about the transport and does not
+// pretend to. routerPost.js and relayMonitor.js do that.
+function routerTo(boxes, owner) {
+  return {
+    post: function (url, key, text) {
+      const box = boxes[url];
+      if (!box) return Promise.resolve({ ok: false, status: 502, error: 'no such relay' });
+
+      let answered = '';
+      box.streamOpen('andy',
+        auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), {
+          write: function (chunk) {
+            const ev = /^event: (.+)$/m.exec(String(chunk));
+            const da = /^data: (.+)$/m.exec(String(chunk));
+            if (!ev || ev[1] !== 'reply' || !da) return;
+            try { answered = JSON.parse(da[1]).text || ''; } catch (e) { answered = ''; }
+          },
+          close: function () {},
+        });
+
+      const sent = box.routePost(owner.publicKey, key, text,
+        auth.sign(owner.privateKey, auth.postMessage(owner.publicKey, key, text)));
+      if (!sent.ok) return Promise.resolve(sent);
+      return Promise.resolve({ ok: true, status: 200, hash: sent.hash, text: answered });
+    },
+  };
+}
+
+function hubInvite(hub, body, deps) {
   const res = fakeRes();
-  hub.handleInvite({}, res, function () { return Promise.resolve(body); });
+  hub.handleInvite({}, res, function () { return Promise.resolve(body); }, deps);
   return res.wait();
 }
 
@@ -338,11 +374,24 @@ function runHubOnLoopback() {
   const second = ownedBox(owner, 'andy');
   let servers;
   let hub;
+  let deps;
 
   return Promise.all([relayServer(first.box), relayServer(second.box)]).then(function (s) {
     servers = s;
     hub = createHub(nodeHome(owner, [servers[0].url, servers[1].url]));
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: servers[1].url });
+
+    const boxes = {};
+    boxes[servers[0].url] = first.box;
+    boxes[servers[1].url] = second.box;
+    deps = {
+      router: routerTo(boxes, owner),
+      // The url→key pin, which on a real node is answerRelay.relayKey.
+      relayKey: function (url) {
+        return boxes[url] ? boxes[url].mailboxPublicKey() : '';
+      },
+    };
+
+    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: servers[1].url }, deps);
   }).then(function (res) {
     let token = '';
     try { token = JSON.parse(res.text).token || ''; } catch (e) { token = ''; }
@@ -363,7 +412,7 @@ function runHubOnLoopback() {
       test.fail('token landed wrong: onFirst=' + onFirst + ' onSecond=' + onSecond);
     }
 
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7 });
+    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7 }, deps);
   }).then(function (res) {
     if (res.status === 400 && /pick a mailbox/.test(res.text)) {
       test.check('two mailboxes and no choice is refused, not guessed');
@@ -371,12 +420,60 @@ function runHubOnLoopback() {
       test.fail('unaimed mint: ' + res.status + ' ' + res.text);
     }
 
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: 'https://evil.example' });
+    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: 'https://evil.example' }, deps);
   }).then(function (res) {
     if (res.status === 403) {
       test.check('a mint aimed off the Natter list never leaves the node');
     } else {
       test.fail('foreign mint: ' + res.status + ' ' + res.text);
+    }
+
+    // ── A DELIVERED REFUSAL IS NOT A DELIVERY ───────────────────────
+    //
+    // Found live, on the first real mint through the collapsed path: a
+    // relay running older code answered `unknown request`, and this node
+    // handed the browser HTTP 200 with an error in the body. The post HAD
+    // succeeded — status 200 — and the code reached past the relay's
+    // verdict to the transport's number behind it.
+    //
+    // Two failures that look alike in a promise and are not: nothing
+    // answered, and something answered no. This asks for the second,
+    // which is the one that was wrong.
+    const refusing = {
+      router: {
+        post: function () {
+          return Promise.resolve({
+            ok: true, status: 200,
+            text: JSON.stringify({ app: 'relay', v: 1, body: { ok: false, error: 'unknown request' } }),
+          });
+        },
+      },
+      relayKey: function () { return 'MCowBQYDK2VwAyEAnot-a-real-key='; },
+    };
+    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: servers[0].url }, refusing);
+  }).then(function (res) {
+    if (res.status === 502 && /unknown request/.test(res.text)) {
+      test.check("a relay that answers 'no' is a 502 carrying its reason — not the post's own 200");
+    } else {
+      test.fail('delivered refusal: ' + res.status + ' ' + res.text);
+    }
+
+    // And the other one still reports the transport's own number, because
+    // there it is the only number there is.
+    const unreachable = {
+      router: {
+        post: function () {
+          return Promise.resolve({ ok: false, status: 503, error: 'that peer is not reachable right now' });
+        },
+      },
+      relayKey: function () { return 'MCowBQYDK2VwAyEAnot-a-real-key='; },
+    };
+    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: servers[0].url }, unreachable);
+  }).then(function (res) {
+    if (res.status === 503 && /not reachable/.test(res.text)) {
+      test.check('and a post that never arrived keeps the transport\'s status, which is all it has');
+    } else {
+      test.fail('undelivered: ' + res.status + ' ' + res.text);
     }
 
     // And the badge itself, over the same loopback: both mailboxes owned,
@@ -425,8 +522,7 @@ function boundNodeSeesItsRow() {
 
   // bert joins the way anyone joins a keys-mode box: the owner mints,
   // bert redeems. He owns nothing afterwards and has a row.
-  const minted = lab.box.mint('andy', 'bert', 7,
-    auth.sign(owner.privateKey, invites.mintMessage('bert', 7)));
+  const minted = lab.box.mint('andy', 'bert', 7);
   const joined = lab.box.claim('bert',
     auth.sign(guest.privateKey, auth.claimMessage('bert')),
     guest.publicKey, '10.0.0.7', minted.ok && minted.invite.token);

@@ -181,6 +181,17 @@ jobs.startFsWatcherJob(ROOT_DIR);
 // has something to close. Null on a relay, which holds no streams.
 let presence = null;
 let peerRouter = null;
+// AND THE URL→KEY PIN, out here for a different reason: a REQUEST needs
+// it. The answerer itself is built inside the boot block and was only
+// ever read from inside it, so `const answerer` was enough — until
+// /api/hub/invite started posting to the relay instead of calling a route
+// on it, and needed to know which key that url is.
+//
+// The failure was a ReferenceError that killed the process on the first
+// mint, because a route handler runs long after the block that declares
+// a const inside it has finished. `peerRouter` is up here for exactly
+// this reason and has been since the router landed.
+let pinnedRelayKey = null;
 
 const requestCounters = { total: 0, byMethod: {}, byStatusClass: {} };
 jobs.startStatsJob({ requestCounters: requestCounters });
@@ -231,22 +242,9 @@ function clientKeyFor(req) {
   return req.socket.remoteAddress || '';
 }
 
-function handleRelayInvite(req, res) {
-  readJsonBody(req).then(function (body) {
-    const result = relay.mint(
-      body && body.name,
-      body && body.label,
-      body && body.days,
-      body && body.sig,
-      body && body.token
-    );
-    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(result.ok ? result.invite : { error: result.error }));
-  }).catch(function () {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
-}
+// handleRelayInvite STOOD HERE. See hub.handleInvite for what a node
+// does instead: the browser's door is unchanged, the wire underneath it
+// is a post to the relay.
 
 // One answer for every way this can fail, and it says nothing.
 //
@@ -716,18 +714,11 @@ function isRelayPublicPath(method, pathname) {
   // commit id for code the repository already holds.
   if (method === 'GET' && pathname === '/api/version') return true;
   if (method === 'POST' && (pathname === '/api/relay/device' || pathname === '/api/relay/set-device')) return true;
-  // /api/relay/invite is public in the same sense claim and send are:
-  // reachable from the internet, and gated by the owner's signature
-  // inside relay.mint rather than by who can reach the socket.
-  if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send' || pathname === '/api/relay/invite')) return true;
+  if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send')) return true;
   // Forgetting somebody. Public in the same sense mint is — reachable
   // from the internet, gated inside relay.removePeer by a signature that
   // is either the owner's or the departing peer's own.
   if (method === 'POST' && pathname === '/api/relay/remove-peer') return true;
-  // Watching this relay work. Public in the same sense remove-peer is:
-  // reachable from the internet, and gated inside relay.setMonitor by the
-  // owner's own signature over the flag.
-  if (method === 'POST' && pathname === '/api/relay/monitor') return true;
   // The router. Public in the same sense send is: reachable from the
   // internet, gated inside relay.js by a signature, and refused instantly
   // if the peer is not there to receive it (decision 0006).
@@ -1124,18 +1115,6 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/relay/monitor') {
-      readJsonBody(req).then(function (body) {
-        const result = relay.setMonitor(body && body.on, body && body.sig, body && body.filter);
-        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(result.ok ? result : { error: result.error }));
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
-      return;
-    }
-
     if (pathname === '/api/relay/remove-peer') {
       readJsonBody(req).then(function (body) {
         const result = relay.removePeer(body && body.name, body && body.key, body && body.sig);
@@ -1145,11 +1124,6 @@ const server = http.createServer((req, res) => {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Invalid JSON body');
       });
-      return;
-    }
-
-    if (pathname === '/api/relay/invite') {
-      handleRelayInvite(req, res);
       return;
     }
 
@@ -1163,8 +1137,13 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    // Minting, which goes out as a post now rather than a signed verb —
+    // so it needs the router and the url→key pin, handed in for the same
+    // reason handlePost's are: hub.js must not hold state it cannot see
+    // created.
     if (pathname === '/api/hub/invite') {
-      hub.handleInvite(req, res, readJsonBody);
+      hub.handleInvite(req, res, readJsonBody,
+        { router: peerRouter, relayKey: pinnedRelayKey });
       return;
     }
 
@@ -1173,15 +1152,6 @@ const server = http.createServer((req, res) => {
     // must not hold state it cannot see created.
     if (pathname === '/api/hub/post') {
       hub.handlePost(req, res, readJsonBody, { router: peerRouter, presence: presence });
-      return;
-    }
-
-    // Start or stop watching a relay this node owns. The signature is
-    // made here, from this node's identity, because the browser has no
-    // key — the same reason claim and invite are proxied rather than
-    // posted from the page.
-    if (pathname === '/api/hub/monitor') {
-      hub.handleMonitor(req, res, readJsonBody);
       return;
     }
 
@@ -1450,6 +1420,9 @@ if (!relayMode) {
     // nothing was pinned, so the pinner never ran.
     pinRelay: answerer.relayKey,
   });
+  // The same function, reachable from a request. See the declaration for
+  // why a const inside this block was not enough.
+  pinnedRelayKey = answerer.relayKey;
   presence.start(require('./hub').relayRequest).catch(() => {});
 }
 
@@ -1479,10 +1452,12 @@ server.listen(port, BIND_HOST, () => {
     // has no business doing that, and the monitor verbs make it
     // indefensible rather than merely wasteful.
     //
-    // What replaced it: relay.setMonitor starts and stops on demand, the
-    // owner's panel asks when it opens and again when it closes, and the
-    // whole thing dies on its own if their stream drops. A relay nobody
-    // is watching now does exactly nothing about being watched.
+    // What replaced it: the owner POSTS to the relay — it is an
+    // addressable peer for them and nobody else — and the relay answers
+    // by hash on their own stream. The panel asks when it opens and again
+    // when it closes, and the whole thing dies on its own if that stream
+    // drops. A relay nobody is watching now does exactly nothing about
+    // being watched, and there is no verb here for it to do it with.
   } else {
     console.log(`Server listening on http://localhost:${port}`);
   }

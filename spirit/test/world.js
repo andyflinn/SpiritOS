@@ -128,9 +128,7 @@ function assemble(s) {
       let token = null;
       if (owner) {
         const minted = box.mint(
-          s.owner, p.label, 7,
-          auth.sign(owner.privateKey, invites.mintMessage(p.label, 7))
-        );
+          s.owner, p.label, 7);
         if (!minted.ok) throw new Error('mint for ' + p.name + ': ' + minted.error);
         token = minted.invite.token;
       }

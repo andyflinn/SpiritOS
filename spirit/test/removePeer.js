@@ -123,8 +123,7 @@ function run() {
 
   // A live invite for the same label. Without revoking it, "un-invite"
   // is a lie: they walk straight back in with the token they hold.
-  const spare = L.box.mint('andy', 'bert', 7,
-    auth.sign(L.owner.privateKey, invites.mintMessage('bert', 7)));
+  const spare = L.box.mint('andy', 'bert', 7);
   const spareToken = spare.ok && spare.invite.token;
 
   const gone = L.box.removePeer('andy', bert.publicKey, removalSig(L.owner, bert.publicKey));
@@ -209,8 +208,7 @@ function run() {
   }
 
   // Read, not adopted silently. The next write goes to the new name.
-  const minted = migrated.mint('andy', 'saint', 7,
-    auth.sign(L.owner.privateKey, invites.mintMessage('saint', 7)));
+  const minted = migrated.mint('andy', 'saint', 7);
   if (!minted.ok) test.fail('mint on a migrated relay: ' + JSON.stringify(minted));
 
   const after = migrated.send('andy', 'andy', 'written after the rename',

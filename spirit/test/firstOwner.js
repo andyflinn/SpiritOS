@@ -62,9 +62,7 @@ test.startTest('First claim is owner; chat to reserved name relay');
   const groqInvite = box.mint(
     'andy',
     'groq',
-    7,
-    auth.sign(id.privateKey, invites.mintMessage('groq', 7))
-  );
+    7);
   const bad = box.claim(
     'groq',
     auth.sign(stranger.privateKey, auth.claimMessage('groq')),

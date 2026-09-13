@@ -33,11 +33,20 @@ const SURFACE = [
   ['GET', '/api/relay/stream'],
   ['POST', '/api/relay/claim'],
   ['POST', '/api/relay/send'],
-  ['POST', '/api/relay/invite'],
   ['POST', '/api/relay/device'],
   ['POST', '/api/relay/remove-peer'],
   ['POST', '/api/relay/post'],
   ['POST', '/api/relay/reply'],
+
+  // ROUTES THAT SHOULD ANSWER 404 NOW, and they are on this list for
+  // exactly that: a fingerprint is for telling one deploy from another,
+  // and a door that has been removed is the clearest possible signal
+  // about which code a box is running.
+  //
+  // Both were collapsed into posts on 2026-09-13 (decision 0010). A relay
+  // still answering either of them is running code from before that.
+  ['POST', '/api/relay/invite'],
+  ['POST', '/api/relay/monitor'],
 ];
 
 function usage() {

@@ -7,6 +7,14 @@
 //   stopMonitorStream(), triggered by this new panel opening and
 //   closing."
 //
+//   Andy: "This entire panel should, of course, go through protocol."
+//
+// So there is no such api, and that is the point: both are posts to the
+// relay, which is an addressable peer for its owner (R18). The route and
+// the signed format this suite was first written against are gone —
+// decision 0010's first collapse — and every check below still holds
+// without them.
+//
 // ── WHAT THIS CORRECTS ───────────────────────────────────────────────
 //
 // R9 shipped a status push on a ten second timer that runs for ever,
@@ -70,8 +78,7 @@ function world() {
   // fixture that writes the row directly proves the delivery rule against
   // a relay nobody could have joined.
   [['bella', bella], ['carl', carl]].forEach(function (pair) {
-    const minted = box.mint('andy', pair[0], 7,
-      auth.sign(owner.privateKey, require('../run/js/invites').mintMessage(pair[0], 7, '')), '');
+    const minted = box.mint('andy', pair[0], 7, '');
     box.claim(pair[0], auth.sign(pair[1].privateKey, auth.claimMessage(pair[0])),
       pair[1].publicKey, null, minted.invite.token);
   });
@@ -93,8 +100,26 @@ function events(bag) {
   return bag.filter(function (m) { return m.event === 'relay-event'; });
 }
 
+// ASKED FOR AS A PACKET, because there is no other way to ask.
+//
+// This helper is the whole of decision 0010's first collapse: a verb that
+// had its own route and its own signed format is now a post addressed to
+// the relay, indistinguishable on the wire from a post to a person.
+//
+// Note what it does NOT take: a signature of its own. The post's carries
+// it, over bytes that already bind sender, recipient and this exact text.
+function askMonitor(w, who, on, filter) {
+  const packet = JSON.stringify({
+    app: 'relay', v: 1, body: { monitor: { on: !!on, filter: filter || null } },
+  });
+  const relayKey = w.box.mailboxPublicKey();
+  return w.box.routePost((who || w.owner).publicKey, relayKey, packet,
+    auth.sign((who || w.owner).privateKey,
+      auth.postMessage((who || w.owner).publicKey, relayKey, packet)));
+}
+
 function startMonitor(w, filter) {
-  return w.box.setMonitor(true, auth.sign(w.owner.privateKey, auth.monitorMessage(true)), filter);
+  return askMonitor(w, w.owner, true, filter);
 }
 
 // ---------------------------------------------------------------------
@@ -112,8 +137,8 @@ test.subHeading('Silent until asked');
   }
 
   const started = startMonitor(w);
-  if (started.ok && w.box.monitoring() === true) {
-    test.check('and the owner can start it with a signature over the flag');
+  if (started.ok && started.status === 202 && w.box.monitoring() === true) {
+    test.check('and the owner starts it by posting to the relay — a packet, not a verb');
   } else {
     test.fail('start: ' + JSON.stringify(started));
   }
@@ -154,12 +179,19 @@ test.subHeading('Silent until asked');
       ', andy heard ' + events(w.heard.andy).length);
   }
 
-  // A non-owner cannot turn it on for themselves either.
-  const theirs = w.box.setMonitor(true, auth.sign(w.bella.privateKey, auth.monitorMessage(true)));
-  if (!theirs.ok && theirs.status === 403) {
-    test.check('and a peer cannot start one — the house key alone');
+  // A non-owner cannot turn it on for themselves either. There is no gate
+  // left to check that with — the collapse took it — so what refuses them
+  // is the relay declining to be addressed at all. See `andNobodyElseCan`
+  // below for the wording, which is the load-bearing half.
+  //
+  // Asked as a STOP, because the owner's is already running here: the
+  // interesting refusal is a peer reaching into somebody else's monitor,
+  // not a peer failing to get their own.
+  const theirs = askMonitor(w, w.bella, false);
+  if (!theirs.ok && w.box.monitoring() === true) {
+    test.check("and a peer cannot touch the owner's: the box is not addressable by them");
   } else {
-    test.fail('a peer started a monitor: ' + JSON.stringify(theirs));
+    test.fail('a peer reached the monitor: ' + JSON.stringify(theirs));
   }
 
   fs.rmSync(w.home, { recursive: true, force: true });
@@ -175,7 +207,7 @@ test.subHeading('Stopping, both ways');
   post(w, w.bella, w.owner, 'one');
   const before = events(w.heard.andy).length;
 
-  const stopped = w.box.setMonitor(false, auth.sign(w.owner.privateKey, auth.monitorMessage(false)));
+  const stopped = askMonitor(w, w.owner, false);
   post(w, w.bella, w.owner, 'two');
 
   if (stopped.ok && w.box.monitoring() === false && events(w.heard.andy).length === before) {
@@ -184,13 +216,25 @@ test.subHeading('Stopping, both ways');
     test.fail('after stop: ' + events(w.heard.andy).length + ' vs ' + before);
   }
 
-  // THE FLAG IS IN THE SIGNED BYTES, so a captured `start` cannot be
-  // replayed as a `stop`, or the other way round.
-  const wrongWay = w.box.setMonitor(true, auth.sign(w.owner.privateKey, auth.monitorMessage(false)));
-  if (!wrongWay.ok) {
-    test.check('and a signature for `off` will not turn it on');
+  // THE FLAG IS IN THE SIGNED BYTES, and this is the check that used to
+  // justify monitorMessage having a verb of its own — a captured `start`
+  // must not be replayable as a `stop`, or the other way round.
+  //
+  // It still holds, and now nothing here arranges for it: postMessage
+  // binds sender, recipient and the exact text, so the flag was covered
+  // the moment the packet became the request. The hand-rolled format was
+  // buying a property the transport already had.
+  const onText = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true, filter: null } } });
+  const offText = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: false, filter: null } } });
+  const relayKey = w.box.mailboxPublicKey();
+  const capturedOff = auth.sign(w.owner.privateKey,
+    auth.postMessage(w.owner.publicKey, relayKey, offText));
+
+  const wrongWay = w.box.routePost(w.owner.publicKey, relayKey, onText, capturedOff);
+  if (!wrongWay.ok && w.box.monitoring() === false) {
+    test.check('and a signature captured off an `off` will not carry an `on` — the post covers the flag');
   } else {
-    test.fail('a stop signature started a monitor');
+    test.fail('a stop signature started a monitor: ' + JSON.stringify(wrongWay));
   }
 
   fs.rmSync(w.home, { recursive: true, force: true });
@@ -284,10 +328,10 @@ test.subHeading('Filtered at the source');
   //   Andy: "as the stream comes in, i want to check/uncheck filters
   //   while the stream runs"
   //
-  // No new mechanism: asking again with a different filter replaces it,
+  // No new mechanism: posting again with a different filter replaces it,
   // and the stream never stops. Checked because it is now a promise the
   // panel's checkboxes depend on rather than a happy accident of how
-  // setMonitor was written — a later tidy-up that made `start` refuse
+  // answerSelf was written — a later tidy-up that made `start` refuse
   // while already started would break every checkbox and look like a
   // panel bug.
   const w = world();

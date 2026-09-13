@@ -241,8 +241,8 @@ async function run() {
 
   // WHAT A DEVICE MAY DO, and what it may NOT, which nothing tested until
   // 2026-09-12. It survived because no suite asked: relayAuth's own
-  // comment called it "the decision, not an oversight" \u2014 "a device key is
-  // a full copy of the owner's authority on this box" \u2014 and the reasoning
+  // comment called it "the decision, not an oversight" — "a device key is
+  // a full copy of the owner's authority on this box" — and the reasoning
   // was that being the owner from a hotel room is the point of a device.
   //
   // Andy, shown what that actually reached: "needs fixing."
@@ -250,7 +250,7 @@ async function run() {
   // It reached ADMIN. checkOwner took either key, so a device could read
   // the owner-only report; and the console decided owner powers from the
   // ROW rather than the signer, so a device got `status peers search
-  // invites key version` \u2014 and `invites` lists LIVE TOKENS. A seized
+  // invites key version` — and `invites` lists LIVE TOKENS. A seized
   // phone could hand out access to the relay.
   //
   // The split now: a device keeps what a device is for, and loses the
@@ -383,18 +383,35 @@ async function run() {
       test.fail('a device opened a stream: ' + JSON.stringify(deviceStream));
     }
 
-    // A device cannot mint, and never could \u2014 mint reads allow.byName
-    // directly rather than keysForName. Asserted because an earlier note
-    // of mine claimed it could, and a corrected claim is worth a check.
-    const minted = D.box.mint(
-      'andy', 'stranger', 7,
-      auth.sign(handheld.privateKey, require('../run/js/invites').mintMessage('stranger', 7, '')),
-      ''
-    );
-    if (minted.ok === false) {
-      test.check('and cannot mint an invite, which it never could — mint always took the house key');
+    // A DEVICE CANNOT MINT, and never could. What changed on 2026-09-13
+    // is WHERE that is true, which is exactly the kind of thing a
+    // collapse can lose quietly.
+    //
+    // It used to be refused by the mint signature, which verified against
+    // allow.byName rather than keysForName. That whole signed format is
+    // gone (decision 0010) and minting is a post to the relay now — so
+    // this asks the question again on the new path instead of assuming
+    // the answer travelled with it.
+    //
+    // It holds, on a different mechanism: postSignatureFor verifies
+    // against the ROW key alone and never consults keysForName, so a
+    // handheld signing as `andy` cannot make the bytes. The router path
+    // never admitted a device key in the first place.
+    const relayKey = D.box.mailboxPublicKey();
+    const wanted = JSON.stringify({
+      app: 'relay', v: 1, body: { invite: { label: 'stranger', days: 7, token: '' } },
+    });
+    const minted = D.box.routePost('andy', relayKey, wanted,
+      auth.sign(handheld.privateKey, auth.postMessage('andy', relayKey, wanted)));
+
+    // THE SECOND HALF IS WHAT MAKES THE FIRST MEAN ANYTHING: it proves
+    // the refusal came from who signed, and not from a relay that refuses
+    // every mint for some unrelated reason.
+    const byTheHouse = D.box.mint('andy', 'stranger', 7, '');
+    if (minted.ok === false && byTheHouse.ok === true) {
+      test.check('and cannot mint an invite: a device key does not sign a post, which is the only way to ask');
     } else {
-      test.fail('a handheld minted an invite: ' + JSON.stringify(minted));
+      test.fail('handheld: ' + JSON.stringify(minted) + ' house: ' + JSON.stringify(byTheHouse));
     }
   }
 
