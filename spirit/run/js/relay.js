@@ -15,6 +15,26 @@ const relayStatus = require('./relayStatus');
 // describe the code that is running, not the code on disk.
 const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 
+// THE RING NEVER KEPT ITS PROMISE, and this line is why.
+//
+//   Andy: "the ring was a lie all along. it was unable to promise
+//   reliable delivery anyways, because it dropped entries on overflow."
+//
+// Store-and-forward is only worth the storing if the store holds. This
+// one is 200 entries GLOBAL — one array for every peer on the box,
+// filtered per reader at read time — so it is worse than unreliable:
+//
+//   a peer sending 200 messages TO THEMSELVES silently evicts every
+//   other peer's undelivered mail
+//
+// Not an attack that needs cleverness, and nothing anywhere is told. So
+// the ring offered a guarantee it could not make and could not even
+// notice breaking, which is the strongest argument for R8 — stronger
+// than "the router is better", because it does not depend on the router
+// being better.
+//
+// The router's answer to the same problem is to make no promise it
+// cannot keep: delivered down a held stream, or refused at once.
 var MAX_MESSAGES = 200;
 // What a routed request may carry. Larger than packet.js's 1024-byte
 // chat envelope because this is meant to feel like an API call, and

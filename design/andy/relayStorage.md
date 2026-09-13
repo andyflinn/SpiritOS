@@ -34,9 +34,27 @@ somebody else's behalf*, which is what 0006 forbids.
   deletes. A message leaves only when 200 newer ones push it off the end.
 - It exists because **before the router there was no held stream** — a
   peer that was not connected had no other way to receive.
+- **And it never kept the promise it was made for.** Andy: *"the ring was
+  a lie all along. it was unable to promise reliable delivery anyways,
+  because it dropped entries on overflow."* The cap is 200 **global** —
+  one array for every peer, filtered per reader — so a peer sending 200
+  messages to themselves evicts everybody else's undelivered mail, and
+  nothing is told. A store that any caller can empty for everyone else is
+  not storage, and this is the strongest case for R8 because it does not
+  depend on the router being better.
 - Sentenced (R8). Andy inspected spirit-3's — 77 messages, 15 of them
   telemetry from a console that no longer exists — and said: *"they are
-  all noise."* So the deletion needs no migration.
+  all noise... scrap testing data of relay chat has absolutely no value
+  to me."* So the deletion needs no migration.
+
+**Nothing writes to it any more.** `/api/hub/send` — the node's write
+door — was deleted on 2026-09-13 with `hub.handleSend` and `signedSend`;
+it had no caller, and `hubPost.js` already asserted that nothing above the
+boundary names it. Relay Chat sends through `/api/hub/post`, the router.
+What remains of the ring is `relay.send`, `/api/relay/send`,
+`sendMessage`, `checkSend`, the `messages` array and `inbox` — one lump,
+because splitting it leaves a signed format guarding an unreachable
+function. It goes when Relay Chat's receive path moves off the poll.
 
 ### What a relay no longer reads
 

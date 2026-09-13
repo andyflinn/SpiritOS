@@ -24,7 +24,7 @@ relay holds today and where each part lands:
 | `messages` — the 200-entry ring | **gone**; delivered or refused |
 | `identity.json` — the mailbox's own keypair | stays; it is the relay's, not a user's |
 | `allow.json` — the owner record and device slot | **stays, and is the irreducible part** |
-| `mailbox.json` — claimed peers | in question, see below |
+| `routingTable.json` — claimed peers | in question, see below |
 | `invites.json` — tokens, expiry, consumption | **in question; this is a service** |
 | the RAM handshake slot | already transient, already right |
 

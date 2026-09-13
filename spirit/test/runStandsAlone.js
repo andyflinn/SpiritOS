@@ -49,7 +49,18 @@ test.startTest('run/ stands alone — the product does not need the harness');
 const SKIP_DIRS = ['node_modules'];
 
 function walk(dir, out) {
-  fs.readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
+  // A DIRECTORY CAN VANISH UNDER A SCAN, and twice on 2026-09-13 one did:
+  // the fs-watcher job creates and removes `spirit/run/fswatch-test` to
+  // prove it is watching, and a sweep that caught the gap died with
+  // ENOENT and reported a product failure for a control file.
+  //
+  // Missing reads as empty. A scanner that cannot survive the tree moving
+  // is a scanner that lies intermittently, which is worse than one that
+  // misses a file nobody had when it looked.
+  let entries = [];
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); }
+  catch (e) { return out; }
+  entries.forEach(function (entry) {
     if (entry.isDirectory()) {
       if (SKIP_DIRS.indexOf(entry.name) !== -1) return;
       walk(path.join(dir, entry.name), out);

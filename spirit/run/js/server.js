@@ -1166,10 +1166,10 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/hub/send') {
-      hub.handleSend(req, res, readJsonBody);
-      return;
-    }    
+    // POST /api/hub/send STOOD HERE — the node's door onto the ring,
+    // with no caller. hubPost.js asserts nothing names it; see hub.js
+    // for what is left of the ring and why it goes together.
+
     
     if (pathname === '/api/fs/delete') {
       handleFsDelete(req, res);

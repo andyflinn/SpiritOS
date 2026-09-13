@@ -42,14 +42,8 @@ function signedClaim(rootDir, name, invite) {
   return body;
 }
 
-function signedSend(rootDir, from, to, text) {
-  const id = auth.ensureIdentity(rootDir, from);
-  const body = { from: from, to: to, text: text };
-  if (id && id.privateKey) {
-    body.sig = auth.sign(id.privateKey, auth.sendMessage(from, to, text));
-  }
-  return body;
-}
+// signedSend STOOD HERE — the bytes handleSend put on the wire. Its one
+// caller went with the door; see there.
 
 // "Is the peer in this claim response us?" — the browser has no key of its
 // own, so the node answers it here. A 409 on a name someone else holds is
@@ -936,49 +930,25 @@ function createHub(rootDir) {
   // A verb here would have been a third place to shape one request, and
   // the only thing it added was a second door on the relay to receive it.
 
-  function handleSend(req, res, readJsonBody) {
-    readJsonBody(req).then(function (body) {
-      var wrapped = outgoingText(body);
-      if (!wrapped.ok) {
-        // Refused here, not at the mailbox: an oversize packet is the
-        // app's mistake, and spending a rate-limited send to be told so
-        // would be this node's.
-        fail(res, 400, wrapped.error);
-        return;
-      }
-      withRelay(res, function (url) {
-        relayRequest(url, 'POST', '/api/relay/send', signedSend(
-          rootDir,
-          body && body.from,
-          body && body.to,
-          wrapped.text
-        ))
-          .then(function (r) {
-            // Counted only when the mailbox took it (201). A refused send
-            // is not a reply, and what unansweredInbound measures is
-            // whether Andy answered — so a 403 must leave the count where
-            // it stood rather than clearing it (packet 7).
-            //
-            // `to` has to be in the book before a sidecar is written for
-            // it. The send hands `to` straight to the relay, and a legacy
-            // caller may still pass a caption; a caption would name a
-            // peerfile under a key nobody holds, which bytesHeld would
-            // then count against nobody. Blocked is not checked: if a send
-            // to them was allowed at all, it happened.
-            if (r.status === 201 && body && body.to &&
-                whoBook.byPublicKey(rootDir, body.to)) {
-              peerStats.noteOut(rootDir, body.to);
-            }
-            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(r.text);
-          })
-          .catch(function (err) { fail(res, 502, String(err.message || err)); });
-      });
-    }).catch(function () {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Invalid JSON body');
-    });
-  }
+  // handleSend STOOD HERE, and POST /api/hub/send with it.
+  //
+  //   Andy: "the ring was a lie all along. it was unable to promise
+  //   reliable delivery anyways, because it dropped entries on overflow."
+  //
+  // This was the node's door onto that ring, and it had NO CALLER — not
+  // the shell, not an app, not device.html. hubPost.js had already been
+  // asserting that for a while: "nothing above the boundary names
+  // /api/hub/send". Relay Chat sends through /api/hub/post, the router.
+  //
+  // So this is the door half of R8, taken early because it costs nothing
+  // and because a door nobody knocks on is the same impurity as a verb
+  // nobody can reach.
+  //
+  // What is left of the ring goes together, because splitting it leaves a
+  // signed format guarding an unreachable function: relay.send,
+  // /api/relay/send (which the lab and live harness scripts still use to
+  // make traffic), sendMessage, checkSend, the `messages` array and
+  // inbox. That waits on Relay Chat's receive path moving off its poll.
 
   // The token is the relay's to generate, never this node's: a token
   // invented here would not be in the relay's invites.json and would
@@ -1597,7 +1567,6 @@ function createHub(rootDir) {
     handlePost: handlePost,
     // The other half of the same concept: the live push carries what
     // arrives now, this carries what arrived while nobody was looking.
-    handleSend: handleSend,
     handleInbox: handleInbox,
     // The same read, with nobody watching. server.js calls it on a timer
     // in personal mode only — see the comment on sweepInbox.
