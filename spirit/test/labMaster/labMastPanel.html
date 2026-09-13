@@ -8,6 +8,10 @@
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 0.35rem 0.5rem; text-align: left; }
     .row-actions button { margin-right: 0.25rem; }
+    .bulk.live { margin-top: 1rem; padding: 0.75rem; border: 1px solid #c9a227; background: #fffbe9; }
+    .bulk.live small { display: block; margin-top: 0.35rem; }
+    .live-out { margin-top: 0.5rem; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; }
+    .live-out .bad { color: #a32; }
     /* Below the table, and able to hold several lines: recycle-all
        answers once per node and a one-line box would show only the last. */
     #status { margin: 1rem 0 0; min-height: 1.2em; white-space: pre-wrap; font-family: monospace; }
@@ -32,6 +36,21 @@
   <div class="bulk">
     <button type="button" id="recycle-all">Recycle all</button>
     <small>every node but the work node, one at a time</small>
+  </div>
+
+  <!-- THE ONE CONTROL THAT REACHES A REAL BOX, and it says so. Everything
+       else on this page spawns and deletes processes on this machine; this
+       claims a name on a public relay on the internet. It is a button
+       somebody presses, never something that happens on its own. -->
+  <div class="bulk live">
+    <button type="button" id="live-world">Build the spirit-3 world</button>
+    <label>peer <input id="live-peer" value="jazz" size="8"></label>
+    <small>
+      reaches <strong>spirit.andyflinn.com</strong>: mints an owner invite,
+      claims a row for that peer, points both nodes at it, and introduces them.
+      Reads the work node identity and never writes it.
+    </small>
+    <div id="live-out" class="live-out"></div>
   </div>
   <table>
     <thead>
@@ -122,6 +141,46 @@
         }).catch(function () { /* the column stays blank, the table does not */ });
       }).catch(function (e) { setStatus('refresh failed: ' + e.message); });
     }
+
+    // THE LIVE WORLD. Sequential by nature — it mints, claims, restarts and
+    // waits for a stream — so the button disables itself and reports each
+    // step as the server did it rather than pretending to be instant.
+    //
+    // Every line it prints is something that happened, in order. A failure
+    // stops at the step that failed and says which, because "it did not
+    // work" is the least useful thing a control plane can tell you.
+    document.getElementById('live-world').addEventListener('click', function () {
+      var button = this;
+      var out = document.getElementById('live-out');
+      var peer = (document.getElementById('live-peer').value || 'jazz').trim();
+      button.disabled = true;
+      out.textContent = 'building — minting, claiming and restarting takes a few seconds…';
+      api('POST', '/api/live-world', { peer: peer }).then(function (r) {
+        var body = r.body || {};
+        if (r.status !== 200) {
+          out.innerHTML = '<span class="bad">' + (body.error || ('failed with ' + r.status)) + '</span>';
+          return;
+        }
+        var lines = (body.steps || []).map(function (t) { return '  ' + t; });
+        var rep = body.report || {};
+        lines.push('');
+        lines.push('  ' + (rep.reachable ? 'spirit-3 answered' : 'spirit-3 did NOT answer'));
+        if (rep.work) {
+          lines.push('  ' + rep.work.name + ': row ' + (rep.work.onRelay ? 'yes' : 'NO') +
+            ', dials it ' + (rep.work.inRelaysJson ? 'yes' : 'NO'));
+        }
+        if (rep.peer) {
+          lines.push('  ' + rep.peer.name + ': row ' + (rep.peer.onRelay ? 'yes' : 'NO') +
+            ', running ' + (rep.peer.running ? 'yes' : 'NO'));
+        }
+        out.textContent = lines.join('\n');
+        return refresh();
+      }).catch(function (e) {
+        out.innerHTML = '<span class="bad">' + e.message + '</span>';
+      }).then(function () {
+        button.disabled = false;
+      });
+    });
 
     // One at a time, on purpose: a recycle stops a process, recopies the
     // tree and starts it again, and firing a dozen at once would have them

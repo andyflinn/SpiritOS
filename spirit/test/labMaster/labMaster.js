@@ -458,6 +458,324 @@ function handleDelete(node) {
   return { status: 200, ok: true, id: node.id, wiped: wiped };
 }
 
+// ── A WORKING WORLD ON THE LIVE RELAY ────────────────────────────────
+//
+//   Andy: "i need a button on labMaster page that allows me to create a
+//   working environment with andy and jazz properly bound to spirit-3"
+//
+// AGENTS.md/CLAUDE.md say "do not run labMaster against spirit-3", and
+// that rule is right: a control plane that spawns fake nodes must not
+// scatter them across a live public relay on its own initiative. This is
+// the sanctioned exception — a button somebody presses, that says in the
+// panel exactly what it is about to do to a real box.
+//
+// WHAT IT DOES NOT TOUCH, because these are the ways this has gone wrong
+// before:
+//
+//   - the work node's identity.json: READ ONLY, always. Its key is the
+//     owner of spirit-3 and regenerating it would cost Andy his relay.
+//   - the work node's device slot: never written. A device enrolment is
+//     a person's phone, not a fixture.
+//   - the work node's relays.json: only ever ADDED to, and only if
+//     spirit-3 is missing from it.
+//
+// What it does do: make sure a peer node exists and runs, get it a row
+// on spirit-3 through an owner-minted invite (the real join path, not a
+// hand-written file), point it at spirit-3, and introduce the two nodes
+// to each other through their own /api/hub/contact — the same route a
+// person uses.
+const LIVE_RELAY = 'https://spirit.andyflinn.com';
+const LIVE_LABEL = 'spirit';
+
+function liveWorldPaths() {
+  const run = path.join(WORK_HOME);
+  return {
+    identity: path.join(run, 'relay-state', 'identity.json'),
+    relays: path.join(run, 'app', 'natter', 'relays.json'),
+    session: path.join(run, 'app', 'natter', 'session.json'),
+  };
+}
+
+function readJson(file, fallback) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+  catch (e) { return fallback; }
+}
+
+function livePost(url, body) {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }).then(function (res) {
+    return res.text().then(function (text) {
+      let parsed = null;
+      try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+      return { status: res.status, ok: res.ok, body: parsed, text: text };
+    });
+  }).catch(function (err) {
+    return { status: 0, ok: false, body: null, text: String(err.message || err) };
+  });
+}
+
+function napFor(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+// WAIT FOR THE NODE TO ACTUALLY ANSWER, rather than for a number of
+// milliseconds to pass.
+//
+// This was a fixed sleep and it cost two runs of the button. stopNode
+// kills by PID, which is asynchronous; a restart that slept 700ms
+// sometimes had the old process still holding the port, so the new child
+// died on EADDRINUSE and the next step failed with "fetch failed" — a
+// message about the wrong thing entirely, two steps later.
+//
+// A sleep is a guess about somebody else's machine. This asks.
+async function waitForNode(port, ms) {
+  const until = Date.now() + (ms || 15000);
+  while (Date.now() < until) {
+    const ok = await fetch('http://127.0.0.1:' + port + '/api/version')
+      .then(function (r) { return r.ok; })
+      .catch(function () { return false; });
+    if (ok) return true;
+    await napFor(250);
+  }
+  return false;
+}
+
+// spirit/run's own identity, read and never written. This is the owner of
+// spirit-3, which is what lets the mint below be signed at all.
+function workIdentity() {
+  const id = readJson(liveWorldPaths().identity, null);
+  if (!id || !id.publicKey || !id.privateKey || !id.name) return null;
+  return id;
+}
+
+// Bound means three things, and the panel should be able to say which
+// one is missing rather than just "not bound":
+//   a row on the relay, a line in relays.json, and a stream actually open.
+async function liveWorldReport(peerNode, peerName) {
+  const me = workIdentity();
+  const relays = readJson(liveWorldPaths().relays, []);
+  const census = await fetch(LIVE_RELAY + '/api/relay/who')
+    .then(function (r) { return r.json(); })
+    .catch(function () { return null; });
+  const rows = (census && census.peers) || [];
+  return {
+    relay: LIVE_RELAY,
+    reachable: !!census,
+    work: {
+      name: me ? me.name : '',
+      onRelay: !!(me && rows.some(function (r) { return r.publicKey === me.publicKey; })),
+      inRelaysJson: relays.some(function (r) { return r && r.url === LIVE_RELAY; }),
+    },
+    peer: {
+      name: peerName,
+      running: !!peerNode,
+      onRelay: rows.some(function (r) { return r.name === peerName; }),
+    },
+  };
+}
+
+async function buildLiveWorld(body) {
+  const peerName = slugName((body && body.peer) || 'jazz') || 'jazz';
+  const port = Number(body && body.port) || 65400;
+  const steps = [];
+
+  const me = workIdentity();
+  if (!me) {
+    return { status: 409, error: 'the work node has no identity yet — open it once and claim a name first' };
+  }
+  steps.push('work node is ' + me.name + ', and its identity was read and not touched');
+
+  // 0. THE WORK NODE IS RUNNING. Assumed until now, and that assumption
+  //    cost three runs of this button: killing labMaster takes its
+  //    spawned children with it, so the node this world is built AROUND
+  //    was simply absent, and the failure surfaced two steps later as
+  //    "contacts: fetch failed" — a message about the wrong thing.
+  //
+  //    "Create a working environment" has to include the half you are
+  //    standing on.
+  const workNode = findNode(WORK_ID);
+  if (workNode && !portHasListener(WORK_PORT)) {
+    handleStart(workNode);
+    const workUp = await waitForNode(WORK_PORT, 20000);
+    if (!workUp) return { status: 502, error: 'the work node did not come up on ' + WORK_PORT };
+    steps.push('work node was down — started it on ' + WORK_PORT);
+  } else {
+    steps.push('work node is up on ' + WORK_PORT);
+  }
+
+  // 1. The peer node exists and is running.
+  let peer = findNode(slugName(peerName));
+  if (!peer) {
+    const made = handleCreate({ name: peerName, type: 'avatar', port: port });
+    if (!made.node) return { status: made.status, error: 'could not create ' + peerName + ': ' + made.error };
+    peer = findNode(slugName(peerName));
+    steps.push('created ' + peerName + ' on port ' + port);
+  } else {
+    steps.push(peerName + ' already existed on port ' + peer.port);
+  }
+  if (!portHasListener(peer.port)) {
+    handleStart(peer);
+    const up = await waitForNode(peer.port, 20000);
+    steps.push(up ? 'started ' + peerName
+      : 'started ' + peerName + ' but it never answered on ' + peer.port);
+    if (!up) return { status: 502, error: peerName + ' did not come up on ' + peer.port };
+  }
+
+  // 2. spirit-3 is in the WORK node's relays.json. Added, never replaced.
+  const paths = liveWorldPaths();
+  // SPIRIT-3 GOES FIRST, and that turns out to be the whole of "properly
+  // bound".
+  //
+  // hub.loadRelayUrl takes relays[0] and nothing else, so claim, send,
+  // invite and contact all dial whatever sits at the front. This node's
+  // front entry was a lab relay on 65425 that was not running, so every
+  // one of those verbs was being refused by a dead box on loopback while
+  // the row on spirit-3 sat there unused.
+  //
+  // labPopulate does the exact opposite deliberately, and says so: the
+  // lab relay goes first when a LAB world is being built. The two are a
+  // pair, and pressing one undoes the other's ordering — which is right,
+  // because they are asking for different worlds.
+  //
+  // Nothing is dropped. The lab relay keeps its row, just not the front.
+  const relays = readJson(paths.relays, []).filter(function (r) { return r && r.url; });
+  const others = relays.filter(function (r) { return r.url !== LIVE_RELAY; });
+  const wasFirst = relays.length > 0 && relays[0].url === LIVE_RELAY;
+  if (!wasFirst) {
+    const ordered = [{ label: LIVE_LABEL, url: LIVE_RELAY }].concat(others);
+    fs.writeFileSync(paths.relays, JSON.stringify(ordered, null, 2) + '\n');
+    steps.push('spirit-3 moved to the FRONT of the work relays.json -- loadRelayUrl ' +
+      'takes relays[0], so this is what every /api/hub verb now dials' +
+      (others.length ? ' (' + others.length + ' other row(s) kept, just not first)' : ''));
+  } else {
+    steps.push('work node already dials spirit-3 first');
+  }
+
+  // 3. The peer gets a row on spirit-3, the real way: the owner mints an
+  //    invite, the peer consumes it. A hand-written allow entry would
+  //    prove nothing about whether joining works.
+  const peerIdFile = path.join(peer.home, 'relay-state', 'identity.json');
+  let peerId = readJson(peerIdFile, null);
+  if (!peerId || !peerId.publicKey) {
+    // The node makes its own on first claim; poke it so it exists.
+    await livePost('http://127.0.0.1:' + peer.port + '/api/hub/claim', { name: peerName });
+    await napFor(800);
+    peerId = readJson(peerIdFile, null);
+  }
+  if (!peerId || !peerId.publicKey) {
+    return { status: 502, error: peerName + ' has no identity yet — is it running?' };
+  }
+
+  const census = await fetch(LIVE_RELAY + '/api/relay/who')
+    .then(function (r) { return r.json(); })
+    .catch(function () { return null; });
+  if (!census) return { status: 502, error: 'spirit-3 did not answer /api/relay/who' };
+
+  const already = (census.peers || []).some(function (r) { return r.publicKey === peerId.publicKey; });
+  if (already) {
+    steps.push(peerName + ' already has a row on spirit-3');
+  } else {
+    const auth = require('../../run/js/relayAuth');
+    const invites = require('../../run/js/invites');
+    const minted = await livePost(LIVE_RELAY + '/api/relay/invite', {
+      name: me.name,
+      label: peerName,
+      days: 7,
+      token: '',
+      sig: auth.sign(me.privateKey, invites.mintMessage(peerName, 7, '')),
+    });
+    // The route answers with the invite ITSELF, not {invite:{…}} — the
+    // relay's mint returns {ok,status,invite} and server.js passes the
+    // inner object straight through.
+    const token = minted.body && minted.body.token;
+    if (!minted.ok || !token) {
+      return { status: 502, error: 'spirit-3 refused the invite: ' + minted.text };
+    }
+    const joined = await livePost(LIVE_RELAY + '/api/relay/claim', {
+      name: peerName,
+      publicKey: peerId.publicKey,
+      sig: auth.sign(peerId.privateKey, auth.claimMessage(peerName)),
+      invite: token,
+    });
+    if (!joined.ok && !(joined.body && joined.body.error === 'name taken')) {
+      return { status: 502, error: 'spirit-3 refused the claim: ' + joined.text };
+    }
+    steps.push(peerName + ' claimed a row on spirit-3 with an owner-minted invite');
+  }
+
+  // 4. The peer's own node learns about spirit-3, so it holds a stream
+  //    there — a row without a stream is a name, not a presence.
+  // THE SAME ORDERING, ON THE PEER, and it is not optional either.
+  //
+  // A lab node's tree is copied from spirit/run, so it inherits the same
+  // relays.json — lab relay first. That is why the contact step below kept
+  // failing with ECONNREFUSED 65425 even after the work node was fixed:
+  // it was the PEER dialling a dead box, not the work node.
+  //
+  // A row on spirit-3 and a stream to spirit-3 are different things, and
+  // neither is "properly bound" on its own. This is the second.
+  const theirRelays = path.join(peer.home, 'app', 'natter', 'relays.json');
+  const theirRows = readJson(theirRelays, []).filter(function (r) { return r && r.url; });
+  const theirOthers = theirRows.filter(function (r) { return r.url !== LIVE_RELAY; });
+  const theirFirst = theirRows.length > 0 && theirRows[0].url === LIVE_RELAY;
+  if (!theirFirst) {
+    fs.writeFileSync(theirRelays, JSON.stringify(
+      [{ label: LIVE_LABEL, url: LIVE_RELAY }].concat(theirOthers), null, 2) + '\n');
+    handleStop(peer);
+    const freePeer = Date.now() + 8000;
+    while (portHasListener(peer.port) && Date.now() < freePeer) await napFor(200);
+    handleStart(peer);
+    const backUp = await waitForNode(peer.port, 20000);
+    steps.push(backUp
+      ? peerName + ' dials spirit-3 FIRST now, and was restarted to read it'
+      : peerName + ' was restarted but never answered on ' + peer.port);
+    if (!backUp) return { status: 502, error: peerName + ' did not come back up on ' + peer.port };
+  } else {
+    steps.push(peerName + ' already dials spirit-3 first');
+  }
+
+  // 4b. The work node is restarted if its order changed -- relays.json is
+  //     read at boot, so a reordering nobody restarted for is a file that
+  //     disagrees with the running process.
+  if (!wasFirst) {
+    const work = findNode(WORK_ID);
+    if (work) {
+      handleStop(work);
+      // The port has to be FREE before the next one binds it, or the new
+      // child dies on EADDRINUSE and every later step reports something
+      // unrelated.
+      const free = Date.now() + 8000;
+      while (portHasListener(work.port) && Date.now() < free) await napFor(200);
+      handleStart(work);
+      const up = await waitForNode(work.port, 20000);
+      steps.push(up ? 'work node restarted so it reads the new order'
+        : 'work node was restarted but never answered on ' + work.port);
+      if (!up) return { status: 502, error: 'the work node did not come back up on ' + work.port };
+    }
+  }
+
+  // 5. They know each other, through their own nodes — the route a
+  //    person uses, so this exercises the real path.
+  //
+  //    A short wait first: both nodes answer HTTP before their relay
+  //    streams are open, and a contact written while presence is still
+  //    settling is correct but looks wrong in the panel a second later.
+  await napFor(2000);
+  const there = await livePost('http://127.0.0.1:' + peer.port + '/api/hub/contact', {
+    publicKey: me.publicKey,
+  });
+  const back = await livePost('http://127.0.0.1:' + WORK_PORT + '/api/hub/contact', {
+    publicKey: peerId.publicKey,
+  });
+  steps.push(there.ok && back.ok
+    ? 'the two nodes have each other in their address books'
+    : 'contacts: ' + (there.ok ? back.text : there.text));
+
+  const report = await liveWorldReport(peer, peerName);
+  return { status: 200, ok: true, steps: steps, report: report };
+}
+
 const server = http.createServer(function (req, res) {
   const url = new URL(req.url, 'http://127.0.0.1:' + MASTER_PORT);
   const pathname = decodeURIComponent(url.pathname);
@@ -541,6 +859,25 @@ const server = http.createServer(function (req, res) {
       sendJson(res, 200, { links: out });
     }).catch(function () {
       sendJson(res, 200, { links: {} });
+    });
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/live-world') {
+    const peerName = slugName(url.searchParams.get('peer') || 'jazz') || 'jazz';
+    liveWorldReport(findNode(peerName), peerName)
+      .then(function (report) { sendJson(res, 200, report); })
+      .catch(function (err) { sendJson(res, 500, { error: String(err.message || err) }); });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/live-world') {
+    readJsonBody(req).then(function (body) {
+      return buildLiveWorld(body);
+    }).then(function (result) {
+      sendJson(res, result.status, result.ok ? result : { error: result.error });
+    }).catch(function (err) {
+      sendJson(res, 500, { error: String(err.message || err) });
     });
     return;
   }
