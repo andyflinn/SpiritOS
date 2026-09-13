@@ -91,6 +91,16 @@ function copyTarget(out) {
 }
 
 // opts: { rows, device, label, canRemove }
+// A click lands on the bar, and the app reads data-fold off it via
+// closest(). The fake element answers both.
+function foldTarget(id) {
+  const el = fakeElement('div');
+  el.className = 'panel-heading nd-fold';
+  el.getAttribute = function (name) { return name === 'data-fold' ? id : null; };
+  el.closest = function (sel) { return sel === '.nd-fold' ? el : null; };
+  return el;
+}
+
 function mountApp(opts) {
   opts = opts || {};
   const elements = Object.create(null);
@@ -102,6 +112,7 @@ function mountApp(opts) {
   };
 
   const log = [];
+  const titles = [];
   const fakeFetch = function (url, init) {
     log.push({ url: url, body: init && init.body });
     let text = '{}';
@@ -160,17 +171,21 @@ function mountApp(opts) {
     escapeHtml: spirit.core.util.escapeHtml,
     isVisible: function () { return true; },
     setDialogResult: function (result) { answers.push(result); },
+    // Recorded rather than applied: this harness has no titlebar, and
+    // what is being checked is what the screen ASKED for.
+    setScreenTitle: function (text) { titles.push(String(text)); },
   };
 
   behavior.mount(container, api);
   behavior.open({
     url: opts.url || OWNED,
     label: opts.label || 'andy',
+    relayLabel: opts.relayLabel,
     canRemove: opts.canRemove !== false,
   });
 
   return {
-    doc: doc, log: log, behavior: behavior, answers: answers,
+    doc: doc, log: log, behavior: behavior, answers: answers, titles: titles,
     body: function () { return doc.getElementById('nd-body'); },
     intervals: function () { return intervalsStarted; },
   };
@@ -580,6 +595,120 @@ function openingAnotherMailboxLetsGoOfTheLast() {
 // The three reds are three different afternoons, and these are two of
 // them. (The third, "somebody else runs it", is the claimed-not-owned
 // case and already had its own member's view.)
+// FOLDING, THE MARKS, AND THE TITLE OF THE SCREEN.
+//
+//   Andy: "All panels in natterDetails must be foldable, and the Titlebar
+//   should have the current titles, ICON.LINK 'Add one of my own
+//   devices', ICON.WARNING for any of the diagnostics, The Title of the
+//   entire Dialog should say 'Relay Details for <relay label>'"
+//
+// A screen with a device panel, an invite form and two diagnostics was a
+// page to scroll past to reach the thing you came for. The marks are part
+// of the bar rather than decoration: a reader scanning FOLDED bars can
+// tell a warning from a thing-to-do without opening either.
+function panelsFoldAndAreMarked() {
+  test.subHeading('Every panel folds, and its bar says what it is');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', owned: true, status: 200,
+      report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
+    device: { password: 'hunter2', publicKey: 'KEY' },
+  });
+
+  return settle().then(function () {
+    const html = app.body().innerHTML;
+
+    // EVERY panel, not most of them. A page where three fold and one does
+    // not is a page with a bug somebody has to find.
+    const bars = (html.match(/class="panel-heading nd-fold"/g) || []).length;
+    const bodies = (html.match(/class="nd-panel-body"/g) || []).length;
+    if (bars >= 3 && bars === bodies) {
+      test.check('every panel has a folding title bar and a body — ' + bars + ' of them');
+    } else {
+      test.fail('bars ' + bars + ' bodies ' + bodies);
+    }
+
+    // THE MARKS. ⚠️ means "something is wrong here", 🔗 means "a thing to
+    // do". One meaning each, which is what makes a folded bar readable.
+    const ICON = spirit.core.const.ICON;
+    const deviceBar = html.slice(html.indexOf('Add one of my own devices') - 200,
+      html.indexOf('Add one of my own devices'));
+    if (deviceBar.indexOf(ICON.LINK) !== -1) {
+      test.check('the device panel wears ' + ICON.LINK + ' — a thing to do, not a warning');
+    } else {
+      test.fail('device bar: ' + deviceBar.slice(-120));
+    }
+
+    // FOLDING IT SHUTS IT. The body goes; the bar stays, or there is
+    // nothing left to press to bring it back.
+    const bar = fakeElement('bar');
+    bar.attrs = { 'data-fold': 'device' };
+    app.body().fire('click', { target: foldTarget('device') });
+    const shut = app.body().innerHTML;
+    if (shut.indexOf('Add one of my own devices') !== -1 &&
+        shut.indexOf('natter-dev-copy') === -1) {
+      test.check('folding a panel hides its body and keeps its bar');
+    } else {
+      test.fail('after fold: ' + shut.slice(0, 300));
+    }
+
+    // AND THE MARK FLIPS, so a shut panel does not look like an empty one.
+    const barSlice = shut.slice(shut.indexOf('Add one of my own devices') - 200,
+      shut.indexOf('Add one of my own devices'));
+    if (barSlice.indexOf(ICON.POINTRIGHT) !== -1) {
+      test.check('and its mark points right, so shut does not read as empty');
+    } else {
+      test.fail('shut bar: ' + barSlice.slice(-120));
+    }
+
+    // PRESSING IT AGAIN BRINGS IT BACK. A one-way fold is a delete.
+    app.body().fire('click', { target: foldTarget('device') });
+    if (app.body().innerHTML.indexOf('natter-dev-copy') !== -1) {
+      test.check('and pressing the bar again opens it');
+    } else {
+      test.fail('did not reopen');
+    }
+
+    return titleNamesTheRelay();
+  });
+}
+
+// The shell titles a dialog with the app's NAME, which here is the least
+// useful word available: every one of these screens is "Relay Details",
+// and the question is which relay.
+function titleNamesTheRelay() {
+  test.subHeading('The screen says which relay it is about');
+
+  const named = mountApp({
+    relayLabel: 'spirit',
+    rows: [{ url: OWNED, label: 'spirit', owned: true, status: 200,
+      report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
+  });
+
+  return settle().then(function () {
+    if (named.titles.indexOf('Relay Details for spirit') !== -1) {
+      test.check('the title names the relay the list calls it');
+    } else {
+      test.fail('titles: ' + JSON.stringify(named.titles));
+    }
+
+    // NO LABEL, so the url. A title reading "Relay Details for" and then
+    // nothing is worse than a long one.
+    const bare = mountApp({
+      relayLabel: '',
+      rows: [{ url: OWNED, label: '', owned: true, status: 200,
+        report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
+    });
+    return settle().then(function () {
+      if (bare.titles.some(function (t) { return t.indexOf(OWNED) !== -1; })) {
+        test.check('and falls back to the address when the list has no caption for it');
+      } else {
+        test.fail('titles: ' + JSON.stringify(bare.titles));
+      }
+    });
+  });
+}
+
 function theRedIsExplained() {
   test.subHeading('A relay that is not green says why');
 
@@ -754,6 +883,7 @@ ownedMailbox()
   .then(theDevicePanel)
   .then(thePanelAsksOnce)
   .then(openingAnotherMailboxLetsGoOfTheLast)
+  .then(panelsFoldAndAreMarked)
   .then(theRedIsExplained)
   .then(noRemovalSurfaceForNow)
   .then(function () { test.reportSuccessFailureCount(); })

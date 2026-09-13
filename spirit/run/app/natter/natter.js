@@ -212,6 +212,13 @@ function natterRenderList(container, api, relays) {
 // is Natter's file — the dialog's own api.fs is scoped to its folder and
 // cannot write it. So the dialog RETURNS the label and this records it,
 // which is the dialog contract doing exactly what it is for.
+// The caption the list shows for a url, or '' if it has none. A label is
+// display and may be empty; the url is the identity.
+function natterLabelFor(relays, url) {
+  var row = (relays || []).filter(function (r) { return r && r.url === url; })[0];
+  return (row && row.label) || '';
+}
+
 function natterOpenMailbox(api, container, relays, url) {
   // `canRemove` rather than letting the screen work it out: the rule is
   // about the LIST — a node with no mailbox at all can neither claim,
@@ -221,6 +228,10 @@ function natterOpenMailbox(api, container, relays, url) {
   api.callDialog('app/natterDetails', {
     url: url,
     label: natterMyName,
+    // WHAT THIS LIST CALLS IT, for the dialog's own title. The screen is
+    // handed one subject and never reads relays.json — the caption is
+    // the list's to know, the same way canRemove was.
+    relayLabel: natterLabelFor(relays, url),
   }).then(function (result) {
     if (!result) return;
     if (result.minted) natterRememberMinted(api, result.minted);

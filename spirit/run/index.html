@@ -804,6 +804,15 @@
          default ~21px top margin was the space nobody asked for above it
          (Andy). Three callers, one class (§4). */
       .panel-heading { font-size: 16px; margin: 0; }
+      /* A FOLDING TITLE BAR. The mark on the left says open or shut, the
+         icon beside the title says what kind of panel this is — a warning
+         or a thing to do — so a column of folded bars is still readable.
+         Pointer and select:none because it is a control, and a heading
+         that highlights on a double click reads as text. */
+      .panel-heading.nd-fold { cursor: pointer; user-select: none; display: flex; align-items: baseline; gap: 0.35rem; }
+      .panel-heading.nd-fold:hover { text-decoration: underline; }
+      .nd-fold-mark { font-size: 12px; opacity: 0.75; }
+      .nd-panel-body { margin-top: 0.5rem; }
 
       /* What a mint answered. Reading size, because it is read aloud down
          a phone — and it takes the space above it like any block, which

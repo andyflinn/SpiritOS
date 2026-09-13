@@ -40,6 +40,47 @@ var ndBadge = null;     // what that mailbox last said about itself
 var ndLabel = '';       // this node's own name, needed to sign a status ask
 var ndMinted = '';      // a label minted while this screen was open
 var ndChanged = false;  // has anything happened the list must repaint for?
+var ndRelayLabel = '';  // what the LIST calls this relay, for the title
+
+// WHICH PANELS ARE SHUT. Keyed by panel id, and only the SHUT ones are
+// remembered — a panel this screen has never heard of is open, so a new
+// panel arrives open rather than hidden by a default nobody set.
+//
+// It survives open() on purpose. Somebody who folded the diagnostics away
+// on one relay meant "I have read this", not "until I look at the next
+// one", and re-opening every panel on every visit is the behaviour that
+// makes a fold worth nothing.
+var ndShut = Object.create(null);
+
+// A PANEL, WITH A TITLE BAR THAT FOLDS IT.
+//
+//   Andy: "All panels in natterDetails must be foldable, and the
+//   Titlebar should have the current titles, ICON.LINK 'Add one of my own
+//   devices', ICON.WARNING for any of the diagnostics"
+//
+// The heading was a div and the panel was always open, so a screen with a
+// device panel, an invite form and two diagnostics was a page somebody
+// had to scroll past to reach the thing they came for.
+//
+// The mark is part of the title bar rather than decoration: ⚠️ says this
+// one is telling you something is wrong, 🔗 says this one is a thing to
+// do. A reader scanning folded bars can tell those apart without opening
+// either.
+//
+// `id` is what the fold is remembered under, so it must not change with
+// the panel's state — "device" stays "device" whether it is armed,
+// loaded or refused.
+function ndPanel(id, mark, title, inner, extraClass) {
+  var shut = !!ndShut[id];
+  return '<div class="stat-tile wide' + (extraClass ? ' ' + extraClass : '') + '">' +
+    '<div class="panel-heading nd-fold" data-fold="' + ndEscapeHtml(id) + '"' +
+      ' title="' + (shut ? 'Show' : 'Hide') + ' this">' +
+      '<span class="nd-fold-mark">' + (shut ? ndIcon.POINTRIGHT : ndIcon.POINTDOWN) + '</span> ' +
+      (mark ? mark + ' ' : '') + ndEscapeHtml(title) +
+    '</div>' +
+    (shut ? '' : '<div class="nd-panel-body">' + inner + '</div>') +
+    '</div>';
+}
 
 // THE PASSWORD AND THE KEY, and there is nothing else left to hold.
 //
@@ -132,22 +173,22 @@ function ndWhyNotGreen() {
   // 1. Nothing answered. A URL that is wrong and a box that is down look
   //    identical from here, and saying so is more useful than picking.
   if (!ndBadge.status) {
-    return '<div class="panel-heading">This relay did not answer</div>' +
+    return ndPanel('why-red', ndIcon.WARNING, 'This relay did not answer',
       '<div>' + ndEscapeHtml(ndBadge.error || 'no answer') + '</div>' +
       '<div class="muted">Nothing is wrong with your node. A relay that is ' +
         'switched off and an address with a typo in it look the same from here, ' +
         'so this does not guess between them. If the address is right, it will ' +
-        'go green by itself when the relay comes back.</div>';
+        'go green by itself when the relay comes back.</div>');
   }
 
   // 2. It answered, and has no row for you. The only state with an
   //    actual next move, so the next move is the paragraph.
-  return '<div class="panel-heading">This relay answered, and you are not on it</div>' +
+  return ndPanel('why-red', ndIcon.WARNING, 'This relay answered, and you are not on it',
     '<div>It is running and reachable. It simply has no row in your name, ' +
       'so this node cannot send through it or be reached on it.</div>' +
     '<div class="muted">Rows are not self-service: whoever owns this relay ' +
       'mints an invite and gives you the token, and Natter claims a name with ' +
-      'it. Until then the relay is listed here and does nothing for you.</div>';
+      'it. Until then the relay is listed here and does nothing for you.</div>');
 }
 
 // A BUBBLE OF ITS OWN, and it appears whether the relay is green or not.
@@ -165,8 +206,7 @@ function ndWhyNotGreen() {
 // correct terms and neither of them tells somebody what to do next.
 function ndLocalHtml() {
   if (!ndIsLoopback(ndUrl)) return '';
-  return '<div class="stat-tile wide">' +
-    '<div class="panel-heading">Why this relay is not useful</div>' +
+  return ndPanel('local', ndIcon.WARNING, 'Why this relay is not useful',
     '<div>This address points back at the machine you are on. ' +
       'Only programs running on this same computer can reach it — ' +
       'nobody else on the internet can, however well it is working.</div>' +
@@ -177,12 +217,16 @@ function ndLocalHtml() {
       '<br><br>' +
       'It stays in the list and costs you nothing. What it cannot do is be ' +
       'the relay you rely on — for that you want an address other people ' +
-      'can reach, which is what the public one in this list is for.</div>' +
-    '</div>';
+      'can reach, which is what the public one in this list is for.</div>');
 }
 
 function ndReportHtml() {
-  if (!ndBadge) return '<div class="job-log-empty">asking that relay…</div>';
+  // Not a panel: it is a moment, not a thing to fold. Folding it away
+  // would leave a screen that says nothing at all while the answer is on
+  // its way.
+  if (!ndBadge) {
+    return '<div class="stat-tile wide"><div class="job-log-empty">asking that relay…</div></div>';
+  }
 
   // A MEMBER'S VIEW, from the public census rather than the owner-only
   // report. Three facts, not four: Mode and Messages are things the
@@ -191,11 +235,11 @@ function ndReportHtml() {
   // browser across several relays is a per-relay answer.
   if (!ndBadge.owned && ndBadge.claimed) {
     var c = ndBadge.census || {};
-    return spirit.shell.factRow([
+    return ndPanel('relay', ndIcon.INFO, 'What this relay says', spirit.shell.factRow([
       ['Owner', c.owner || '(unknown)'],
       ['Peers', c.peers == null ? '(unknown)' : c.peers],
       ['You', c.myLabel || '(unknown)'],
-    ]);
+    ]));
   }
 
   // NOT GREEN, AND THIS IS WHERE IT GETS EXPLAINED. The row showed a red
@@ -204,12 +248,12 @@ function ndReportHtml() {
   if (!ndBadge.owned) return ndWhyNotGreen();
   var report = ndBadge.report || {};
   var peers = Array.isArray(report.peers) ? report.peers.length : 0;
-  return spirit.shell.factRow([
+  return ndPanel('relay', ndIcon.INFO, 'What this relay says', spirit.shell.factRow([
     ['Owner', report.owner || '(none)'],
     ['Mode', report.mode || '(unknown)'],
     ['Peers', peers],
     ['Messages', report.messages == null ? '(unknown)' : report.messages],
-  ]);
+  ]));
 }
 
 // Minting belongs to the mailbox it mints on, so it lives inside that
@@ -224,12 +268,9 @@ function ndReportHtml() {
 // markup at all to find.
 function ndMintHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
-  return '<div class="stat-tile wide natter-mint">' +
-    // The one block on this screen that DOES need a heading: the strip
-    // above it is a reading of the mailbox the title already named, but
-    // this is a thing to do, and a form with no title is a form you have
-    // to work out. ★ is the same mark the row carries for owning it.
-    '<div class="panel-heading">' + ndIcon.STAR + ' Invite someone to this relay</div>' +
+  // ★ is the same mark the row carries for owning it, and this panel is
+  // genuinely owner-only — see the note on the device panel, which is not.
+  return ndPanel('invite', ndIcon.STAR, 'Invite someone to this relay',
     // DICTIONARY.md, "Label (invite)": the public caption the token
     // unlocks. `saint` is the dictionary's own example, not a person.
     '<div class="start-job-form card">' +
@@ -243,8 +284,7 @@ function ndMintHtml() {
     '</div>' +
     // Under the row: the minted token is read off this screen onto a
     // phone, and it is long. It is an answer, not a control.
-    '<span class="natter-inv-out"></span>' +
-    '</div>';
+    '<span class="natter-inv-out"></span>', 'natter-mint');
 }
 
 function ndDeviceHost() {
@@ -337,14 +377,17 @@ function ndDeviceHtml() {
   if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
   var target = ndDeviceUrl(ndDeviceHost());
   var full = ndEscapeHtml(target);
-  return '<div class="stat-tile wide natter-device">' +
-    // NO STAR, unlike the Invite panel above. ★ means "you own this
-    // relay" everywhere in this app and in Relay Chat's To list — one
-    // mark, one meaning. Invite is genuinely owner-only and keeps it;
-    // since B2 this panel is not, and a peer seeing the owned mark on a
-    // panel that has nothing to do with owning would be the mark starting
-    // to mean two things.
-    '<div class="panel-heading">Add one of my own devices</div>' +
+  // NO STAR, unlike the Invite panel above. ★ means "you own this relay"
+  // everywhere in this app and in Relay Chat's To list — one mark, one
+  // meaning. Invite is genuinely owner-only and keeps it; since B2 this
+  // panel is not, and a peer seeing the owned mark on a panel that has
+  // nothing to do with owning would be the mark starting to mean two
+  // things.
+  //
+  // 🔗 instead, because that is what this panel hands you: a link to open
+  // somewhere else. It says "a thing to do" where ⚠️ says "something is
+  // wrong", which is what lets a reader tell two folded bars apart.
+  return ndPanel('device', ndIcon.LINK, 'Add one of my own devices',
     '<div class="natter-dev-row">' +
       '<button type="button" class="cancel-btn natter-dev-copy">' +
         ndIcon.KEY + ' Copy password</button>' +
@@ -361,8 +404,7 @@ function ndDeviceHtml() {
     '</div>' +
     '<div class="stat-tile nested natter-dev-bubble">' +
       ndDeviceBubbleHtml() +
-    '</div>' +
-    '</div>';
+    '</div>', 'natter-device');
 }
 // "Take this relay off the list" stood here until 2026-09-13.
 //
@@ -383,11 +425,37 @@ function ndDeviceHtml() {
 
 // ---- painting --------------------------------------------------------
 
+// THE TITLE OF THE WHOLE SCREEN.
+//
+//   Andy: "The Title of the entire Dialog should say 'Relay Details for
+//   <relay label>'"
+//
+// The shell titles a dialog with the app's NAME, which here is the least
+// useful word available — every one of these screens is "Relay Details",
+// and the question a person has is which relay. setScreenTitle is the
+// door contactsDetails already uses for exactly this, and it refuses a
+// write from an app that is not on screen, so a badge arriving late
+// cannot retitle whatever somebody went back to.
+//
+// The label rather than the url: the url is on the row and in the device
+// link, and a title bar is one sticky line that a full https address
+// eats. Falls back to the url when the list gave no label, because a
+// title saying "Relay Details for" and then nothing is worse than a long
+// one.
+function ndSetTitle() {
+  if (!ndApi || typeof ndApi.setScreenTitle !== 'function') return;
+  var name = ndRelayLabel || ndUrl || '';
+  ndApi.setScreenTitle(name ? 'Relay Details for ' + name : 'Relay Details');
+}
+
 function ndRender() {
   var body = ndBody();
   if (!body) return;
+  // Every piece brings its own tile now, because every piece is a panel
+  // with a title bar that folds it. Wrapping here as well is what put a
+  // bubble inside a bubble and stopped the headings reading as headings.
   body.innerHTML =
-    '<div class="stat-tile wide">' + ndReportHtml() + '</div>' +
+    ndReportHtml() +
     ndLocalHtml() +
     ndMintHtml() +
     ndDeviceHtml();
@@ -493,6 +561,20 @@ spirit.shell.activateApp({
       var target = event.target;
       if (!target || !target.closest) return;
 
+      // THE FOLD, before anything else. A title bar is a control and the
+      // panels below it contain controls of their own — a click inside an
+      // open panel must not be read as a click on its bar.
+      var bar = target.closest('.nd-fold');
+      if (bar) {
+        var id = bar.getAttribute('data-fold');
+        if (id) {
+          if (ndShut[id]) delete ndShut[id];
+          else ndShut[id] = true;
+          ndRender();
+        }
+        return;
+      }
+
       var mintBtn = target.closest('.natter-inv-go');
       if (mintBtn) { ndMint(mintBtn); return; }
 
@@ -513,6 +595,9 @@ spirit.shell.activateApp({
   open: function (params) {
     ndUrl = (params && params.url) || '';
     ndLabel = (params && params.label) || '';
+    // The list's caption for this relay. It is the list's to know — this
+    // screen is handed one subject and never reads relays.json.
+    ndRelayLabel = (params && params.relayLabel) || '';
     ndBadge = null;
     ndMinted = '';
     ndChanged = false;
@@ -521,6 +606,7 @@ spirit.shell.activateApp({
     // shell can promise open() runs, it cannot know what is stale here.
     ndDevice.loaded = false;
 
+    ndSetTitle();
     ndRender();
     // The password first, then the badge — the panel needs both to paint,
     // and ndLoad is the one that calls ndRender when it lands. No `render`
