@@ -30,14 +30,15 @@ This directory contains the vision, principles, and architecture decisions for *
 - [2026-09-12 — the device, and a node defending itself](cycles/2026-09-12-device-and-node-defence.md)
   — **OPEN.** 16 requirements: 10 done, 2 deferred, 4 still open.
 - [2026-09-12 — app-building removed](cycles/2026-09-12-app-building-removed.md)
-  — **OPEN.** Implements 0008. Five requirements, none built: the two `/api/fs/`
-  doors and their handling code, the absolute refusal that replaces them, three
-  test specimens that must outlive their subjects, and the two apps.
+  — **CLOSED.** Implements 0008. Both `/api/fs/` doors gone, the refusal they
+  were exceptions to now absolute, three test specimens re-pointed before their
+  subjects were deleted.
 - [2026-09-12 — transport, below the node boundary](cycles/2026-09-12-transport-below-the-boundary.md)
-  — **OPEN.** Eight requirements, none built. What "complete compliance" costs:
-  four connections and one deletion. The deletion is easy; the first connection
-  does not exist — the router has no arrival interface, and the shell's packet
-  fan-out is fed by Relay Chat's poll, the app the cycle exists to retire.
+  — **OPEN.** 16 requirements, 13 done. The router had no arrival interface and
+  the shell's packet fan-out was fed by Relay Chat's poll; both are fixed, the
+  console is gone, the relay reports its own condition, and the log is permanent,
+  append-only and readable as a table. Left: the ring itself, an app being able
+  to reply, and the log being able to prove what it claims.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 
@@ -55,6 +56,13 @@ This directory contains the vision, principles, and architecture decisions for *
   with them the two doors through which a browser can write an app's own code.
   Withdraws 0004 entire; 0003's manifest protection becomes structural rather
   than enforced.
+- [0009 — Memory is the training set, and it stays readable](decisions/0009-the-log-is-the-training-set.md)
+  — the node's record of what it experienced is substrate, not diagnostics. Adds
+  no rule: it records why STORAGE-PHILOSOPHY's existing one is worth more than it
+  looked, and corrects a drift toward "files now, a database when reads get slow".
+  Files in the core indefinitely; a database is a plugin; an enterprise fork is
+  where a different answer may live. Also records the gap it exists for — the log
+  holds what crossed the WAN, and experience is larger than that.
 
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route

@@ -693,7 +693,15 @@ labels this node applies to itself and become things it can demonstrate
 independently verified from the log alone, and its negative half: a row
 whose signature does not match the bytes is reported as unverifiable
 rather than quietly trusted.
-**Status:** OPEN — **the database decision is deferred behind this**
+**And it is now the larger claim**, since
+[decision 0009](../decisions/0009-the-log-is-the-training-set.md): if this
+record is what a manifestation of a person is formed from, provenance is
+the whole game. A memory you cannot verify is one you cannot trust to
+have formed you honestly.
+
+**Status:** OPEN — and 0009 settles the database question separately:
+files in the core indefinitely, a plugin behind this api block if anyone
+ever wants one.
 
 ---
 
