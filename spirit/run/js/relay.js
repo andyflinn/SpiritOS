@@ -52,7 +52,7 @@ var RATE_KEY_SWEEP_AT = 1000;
 
 // A RELAY IS NOT A MAILBOX, AND THIS FILE IS THE PROOF.
 //
-// It was called mailbox.json, and what it holds is `peers` — name to
+// It was called mailbox.json once, and what it holds is `peers` — name to
 // public key, when they claimed, and which device keys may speak as
 // them. That is a routing table. The relay had taken the name of a thing
 // it is not.
@@ -69,27 +69,33 @@ function stateFile(rootDir) {
   return path.join(rootDir, 'relay-state', 'routingTable.json');
 }
 
-// WHAT A LIVE RELAY IS ALREADY CALLING IT. spirit-3 has a mailbox.json
-// with everybody's rows in it, and a rename that could not read it would
-// drop the whole roster on the next update — every peer silently off the
-// relay, with nothing on the outside saying so.
+// THE LEGACY READ STOOD HERE, and it is gone.
 //
-// Read once, on the way in. Nothing writes it again: the next persist()
-// lands in routingTable.json, and the old file is left exactly where it
-// is rather than deleted, so a rollback to older code finds the state it
-// expects.
-function legacyStateFile(rootDir) {
-  return path.join(rootDir, 'relay-state', 'mailbox.json');
-}
-
+//   Andy: "mailbox.json MUST go. NOW."
+//
+// When routingTable.json was named, spirit-3 had a live mailbox.json with
+// everybody's rows in it — so this read the old name when the new one was
+// absent, or an update would have dropped the whole roster with nothing
+// on the outside saying so.
+//
+// It was a READ and never a migration: it re-read the old file on every
+// boot, and only the next persist() — a claim, a send, or a removal —
+// wrote the new name. So deleting it was only safe once a live relay had
+// actually written routingTable.json.
+//
+// spirit-3 has. Forced on 2026-09-13 with one self-addressed ring message
+// (77 messages → 78, which is persist() running), and its census read 10
+// rows before and 10 after. Every other relay in existence is a lab box
+// built fresh.
+//
+// The stale file is left on disk rather than deleted by code — removing
+// somebody's data on their box is their call, not a side effect of a
+// boot. It stays unservable, and servableAssets.js still says so: a full
+// roster sitting in relay-state must not become readable just because
+// nothing reads it any more.
 function loadRoutingTable(rootDir) {
   try {
-    var where = stateFile(rootDir);
-    if (!fs.existsSync(where)) {
-      var legacy = legacyStateFile(rootDir);
-      if (fs.existsSync(legacy)) where = legacy;
-    }
-    var raw = fs.readFileSync(where, 'utf8');
+    var raw = fs.readFileSync(stateFile(rootDir), 'utf8');
     var parsed = JSON.parse(raw);
     var peers = Object.create(null);
     if (parsed && parsed.peers && typeof parsed.peers === 'object') {

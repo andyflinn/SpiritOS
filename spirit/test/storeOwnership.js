@@ -48,7 +48,6 @@ const STORES = [
   { file: 'traffic.jsonl', owner: 'trafficLog.js', what: "this node's WAN traffic, permanent, read back as a table" },
   { file: 'traffic.json', owner: 'trafficLog.js', what: 'the whole-file shape it used to have, read once on the way in' },
   { file: 'routingTable.json', owner: 'relay.js', what: 'a relay\'s peer rows' },
-  { file: 'mailbox.json', owner: 'relay.js', what: 'the legacy name for the same' },
   { file: 'invites.json', owner: 'invites.js', what: 'live invite tokens' },
   { file: 'relayKeys.json', owner: 'relayKeys.js', what: 'pinned relay keys' },
   { file: 'who.json', owner: 'whoBook.js', what: 'the address book' },
@@ -61,6 +60,12 @@ const RETIRED = [
   {
     file: 'pendingArrivals.json',
     why: 'the backlog folded into traffic.json — a row that is admitted and not yet takenAt IS the backlog',
+  },
+  {
+    file: 'mailbox.json',
+    why: 'the name routingTable.json replaced. The fallback that read it was a READ and never a migration, ' +
+      'so it could only go once a live relay had written the new name — spirit-3 did on 2026-09-13. ' +
+      'A stale copy may still sit on an old box; nothing reads it, and servableAssets.js still asserts it unservable',
   },
 ];
 

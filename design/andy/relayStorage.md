@@ -22,7 +22,7 @@ Everything lives under `relay-state/`, which is gitignored and unservable
 | **`routingTable.json`** | `{nextId, peers, messages}` | **`peers` is the routing table** — who has a row here, and which key answers to which label. This is what makes a relay able to route at all, and the only thing on this list that is unambiguously its job. `relay.js` |
 | **`invites.json`** | `[{token, label, expiresAt, invitedBy}]` | An unclaimed invite is a **reservation held for somebody who is not here yet**, so it cannot live anywhere else. A claimed one is deleted, not stamped — a waiting room, not a guestbook. `invites.js` |
 | **`pending-owner.json`** | a key allowed to reclaim ownership | Read at claim time and cleared on success. Recovery for a relay whose owner lost their key. `relayAuth.js`, cleared at `relay.js:347` |
-| ~~`mailbox.json`~~ | the old name for `routingTable.json` | **Read-only, migration only.** A live relay predating the rename still has one; it is read when the new name is absent and never written again. `relay.js` |
+
 
 ### What is on this list that should not be
 
@@ -37,6 +37,15 @@ somebody else's behalf*, which is what 0006 forbids.
 - Sentenced (R8). Andy inspected spirit-3's — 77 messages, 15 of them
   telemetry from a console that no longer exists — and said: *"they are
   all noise."* So the deletion needs no migration.
+
+### What a relay no longer reads
+
+**`mailbox.json`** — the name `routingTable.json` replaced. The fallback
+that read it was deleted on 2026-09-13, once spirit-3 had provably written
+the new file (a forced `persist()`; 10 rows before, 10 after). A stale copy
+may still sit in `relay-state/` on an old box: nothing reads it, and
+`servableAssets.js` still asserts it is unservable, because a full roster
+on disk must not become readable just because it became irrelevant.
 
 ### What is NOT on disk, deliberately
 

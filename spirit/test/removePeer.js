@@ -202,17 +202,25 @@ function run() {
     test.fail('removal did not persist: ' + labels(reopened));
   }
 
-  test.subHeading('And it still reads a relay that predates the rename');
+  test.subHeading('And it no longer reads the name it replaced');
 
-  // THE ROSTER IS THE THING AT RISK. mailbox.json became routingTable.json
-  // because a relay is not a mailbox and that file is a routing table —
-  // but spirit-3 has a live mailbox.json with everybody's rows in it, and
-  // a rename that could not read it would drop the whole roster on the
-  // next update. Every peer silently off the relay, and nothing on the
-  // outside saying so.
+  //   Andy: "mailbox.json MUST go. NOW."
   //
-  // Built by hand rather than through world.build: the case IS a home
-  // that only the old code has ever written.
+  // Four checks stood here proving the opposite: that a relay whose only
+  // state was the OLD filename opened with its roster, that the next
+  // write landed in routingTable.json, and that the legacy file was left
+  // untouched so a rollback still worked.
+  //
+  // That fallback was a READ and never a migration — it re-read the old
+  // name on every boot, and only the next persist() wrote the new one. So
+  // it could only be deleted once a live relay had actually written
+  // routingTable.json. spirit-3 has: forced on 2026-09-13 with one
+  // self-addressed ring message (77 → 78, which is persist() running),
+  // census 10 rows before and 10 after.
+  //
+  // What is asserted now is the deletion, because the dangerous direction
+  // is the quiet one: a box with only the old file must open EMPTY rather
+  // than appear to work and lose a roster later.
   const legacyHome = world.tmpHome();
   fs.mkdirSync(path.join(legacyHome, 'relay-state'), { recursive: true });
   const carried = {
@@ -228,41 +236,21 @@ function run() {
     path.join(legacyHome, 'relay-state', 'mailbox.json'),
     JSON.stringify(carried)
   );
-  // The owner record is its own file and always was — allow.json is what
-  // answers "who owns this box", and the rename does not touch it. A
-  // relay with a routing table and no allow list is not a state any real
-  // box has been in.
   auth.writeAllowKeys(legacyHome, [{ name: 'andy', publicKey: L.owner.publicKey }]);
 
-  const migrated = createRelay(legacyHome);
-  if (labels(migrated) === 'andy') {
-    test.check('a relay whose only state is the old filename opens with its roster');
+  const ignored = createRelay(legacyHome);
+  if (labels(ignored) === '') {
+    test.check('a home holding only the old filename opens with no roster at all');
   } else {
-    test.fail('the roster was dropped: ' + labels(migrated));
+    test.fail('the old name was still read: ' + labels(ignored));
   }
 
-  // Read, not adopted silently. The next write goes to the new name.
-  const minted = migrated.mint('andy', 'saint', 7);
-  if (!minted.ok) test.fail('mint on a migrated relay: ' + JSON.stringify(minted));
-
-  const after = migrated.send('andy', 'andy', 'written after the rename',
-    auth.sign(L.owner.privateKey, auth.sendMessage('andy', 'andy', 'written after the rename')));
-  if (!after.ok) test.fail('send on a migrated relay: ' + JSON.stringify(after));
-
-  const newFile = path.join(legacyHome, 'relay-state', 'routingTable.json');
-  if (fs.existsSync(newFile) &&
-      fs.readFileSync(newFile, 'utf8').indexOf('written after the rename') !== -1) {
-    test.check('and the next write lands in routingTable.json');
-  } else {
-    test.fail('nothing was written to the new name');
-  }
-
-  // LEFT WHERE IT IS, not deleted. A rollback to older code then finds
-  // the state it expects, and deleting somebody's only copy of a roster
-  // to tidy up is not a trade worth making.
+  // AND THE FILE IS NOT TOUCHED. Removing somebody's data on their box is
+  // their call, not a side effect of a boot — and a stale roster left on
+  // disk is exactly why servableAssets.js still asserts it unservable.
   const legacyRaw = fs.readFileSync(path.join(legacyHome, 'relay-state', 'mailbox.json'), 'utf8');
   if (legacyRaw === JSON.stringify(carried)) {
-    test.check('while the old file is left untouched, so a rollback still works');
+    test.check('and the file is left exactly where it was, unread and unwritten');
   } else {
     test.fail('the legacy file was written to or removed');
   }
