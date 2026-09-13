@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 15 requirements, 12 done.**
+**Status: OPEN — 16 requirements, 13 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -629,21 +629,71 @@ so its return would fail with a reason rather than pass in silence.
 one module, plus "pendingArrivals.json is gone and stays gone".
 **Status:** DONE
 
-### R15 — `note()` rewrites the whole log on every packet
-**Found by asking whether the store could be swapped.** `trafficLog.note`
-does read-all → push → write-all. That is correct and crash-safe for a
-file, and it is **O(n) per arrival** — and now that undelivered rows never
-age out, `n` has no ceiling. A node nobody opens a page on for a month
-rewrites a growing file on every packet that lands.
+### R15 — the log is permanent, and pays for it with an append
+> the log should be permanent. period.
 
-Not urgent and not a bug: a personal node's traffic is small, and the
-temp-rename is what makes a crash safe. Recorded because it is the
-assumption that decides how long a backlog can sensibly get, and because
-it is the concrete thing a local-disc database would fix. Nobody should
-discover it from a slow node.
+The window is gone, and so is the rule that exempted undelivered mail
+from it: nothing ages out, read or unread, inbound or outbound. It was
+never a privacy measure — it was *"certainly enough to test concepts
+surrounding logfiles"* — and what it did was make this node's record of
+its own traffic the one thing in the system that forgot.
 
-**Verify:** not written.
-**Status:** OPEN
+**Permanence forced the write path.** A 24-hour window and a whole-file
+rewrite could coexist; permanence and a whole-file rewrite cannot — a
+node running a year would rewrite a year of traffic on every packet. So
+`traffic.json` became `traffic.jsonl`, append-only, and a write is O(1).
+
+The failure mode improved rather than merely changing: a torn append
+costs the line being written and nothing behind it. **And the existing
+corrupt-file check caught the bug in the first attempt** — a file that
+does not end in a newline is exactly what a torn write leaves, and
+appending onto it glues the next row to the broken one and loses both.
+`append()` reads the last byte and breaks the line first.
+
+**Verify:** `spirit/test/trafficLog.js` — "a year-old entry is still there
+beside a new one", "reading it leaves the file byte-for-byte as it was",
+"a torn last line is skipped, leaving everything written before it", and
+the migration, "a log written in the old whole-file shape is still read".
+**Status:** DONE
+
+### R16 — the log must be able to PROVE what it claims
+> database decision deferred until proof that the system in itself can verify its promises.
+
+**The condition on the database decision, and the system does not meet it
+yet.**
+
+Every packet arrives signed. `peerPost` verifies the signature, acts on
+it, and **never stores it** — no row in `trafficLog` holds a `sig`. So
+`outcome: 'receipted'` is this node asserting something about itself, and
+an inbound row is a line this node could equally have written for itself.
+
+| the promise | what is stored | provable |
+|---|---|---|
+| *bert sent me this* | peer, hash, payload | **no** |
+| *bert received mine* | `outcome: 'receipted'` | **no** |
+| *bert acted on it* | — | unreachable (R12) |
+
+**This got worse when the relay stopped storing things**, which is worth
+saying plainly: under the ring, the relay was a witness — the message was
+on it and could be pointed at. Decision 0006 removed that on purpose, so
+the node's own log is the only record left, and a record nobody can check
+is a diary rather than evidence.
+
+**What it takes:** keep the signature on the row. An inbound row with
+`from` + `text` + `sig` lets anyone recompute the hash and verify *that
+peer* signed *those bytes*. An outbound settle row with the receipt's
+`sig` over the hash is proof the far end acknowledged. About 88 base64
+characters a row, against payloads already larger than that.
+
+Then the three states of [ROUTER.md §3a](../relay/ROUTER.md) stop being
+labels this node applies to itself and become things it can demonstrate
+— which is what "the system can verify its promises" has to mean.
+
+**Verify:** not written. Wants a check that a stored row can be
+independently verified from the log alone, and its negative half: a row
+whose signature does not match the bytes is reported as unverifiable
+rather than quietly trusted.
+**Status:** OPEN — **the database decision is deferred behind this**
 
 ---
 
