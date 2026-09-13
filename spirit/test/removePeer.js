@@ -246,6 +246,74 @@ function run() {
     test.fail('swept=' + swept + ' left=' + leftRows);
   }
 
+  test.subHeading('The owner asks as a post; the departing peer still has a door');
+
+  //   Andy: "api/hub/remove-peer must be the interface"
+  //
+  // The verb worked, was signed and was thorough, and nothing under run/
+  // could reach it — a person had no way to remove anybody from their own
+  // relay. The interface is /api/hub/remove-peer, and the wire under it
+  // is an ordinary post, so the owner's half needs no signed verb.
+  //
+  // What keeps /api/relay/remove-peer alive is the OTHER signer: a peer
+  // taking themselves off cannot address the relay at all, because it
+  // answers its owner and nobody else. Both halves are checked here, in
+  // one place, because the whole point is that they do the same thing by
+  // different proofs.
+  const P = world.build(SCENARIO);
+  if (!P.ok) { test.fail(P.error); test.reportSuccessFailureCount(); return; }
+  const anna = P.peer('bert');
+  const leaver = P.peer('john');
+  const relayKey = P.box.mailboxPublicKey();
+
+  function asPost(who, bodyObj) {
+    const text = JSON.stringify({ app: 'relay', v: 1, body: bodyObj });
+    return P.box.routePost(who.publicKey, relayKey, text,
+      auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, text)));
+  }
+
+  const heard = [];
+  P.box.streamOpen(P.owner.publicKey,
+    auth.sign(P.owner.privateKey, auth.streamMessage(P.owner.publicKey)), {
+      write: function (chunk) {
+        const ev = /^event: (.+)$/m.exec(String(chunk));
+        const da = /^data: (.+)$/m.exec(String(chunk));
+        if (!ev || ev[1] !== 'reply' || !da) return;
+        try { heard.push(JSON.parse(JSON.parse(da[1]).text)); } catch (e) { /* not it */ }
+      },
+      close: function () {},
+    });
+
+  const posted = asPost(P.owner, { removePeer: { key: anna.publicKey } });
+  const answer = heard[0] && heard[0].body;
+  if (posted.ok && answer && answer.ok && answer.removed &&
+      answer.removed.key === anna.publicKey && labels(P.box).indexOf('bert') === -1) {
+    test.check('the owner removes by posting to the relay — no signed verb in it at all');
+  } else {
+    test.fail('owner post: ' + JSON.stringify(posted) + ' said: ' + JSON.stringify(heard));
+  }
+
+  // AND A PEER CANNOT DO IT THAT WAY, which is why the route survives
+  // rather than being tidied away with the owner's half.
+  const theirs = asPost(leaver, { removePeer: { key: leaver.publicKey } });
+  if (!theirs.ok && theirs.status === 404 && theirs.error === 'no such peer' &&
+      labels(P.box).indexOf('john') !== -1) {
+    test.check('a peer posting the same request gets `no such peer` — the box answers its owner alone');
+  } else {
+    test.fail('peer post: ' + JSON.stringify(theirs) + ' labels: ' + labels(P.box));
+  }
+
+  // SO THE DEPARTING PEER USES THE DOOR, with their own key, exactly as
+  // before. This is the whole reason decision 0010 still lists
+  // remove-peer: half of it cannot be a packet.
+  const walkedOut = P.box.removePeer(leaver.publicKey, leaver.publicKey,
+    removalSig(leaver, leaver.publicKey));
+  if (walkedOut.ok && labels(P.box).indexOf('john') === -1) {
+    test.check('and leaving still works through the public route, signed by the one leaving');
+  } else {
+    test.fail('self-removal: ' + JSON.stringify(walkedOut) + ' labels: ' + labels(P.box));
+  }
+
   test.reportSuccessFailureCount();
 }
 

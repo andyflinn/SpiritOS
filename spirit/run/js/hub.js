@@ -611,20 +611,6 @@ function decorateWithPacket(message) {
 // The STORE stays payload-agnostic: trafficLog never parses anything. The
 // decode happens here, on the way out, which is what keeps that property
 // true while still handing a client a body rather than a string.
-function rowAsMessage(row) {
-  return packet.decorate({
-    id: String((row && row.hash) || ''),
-    hash: String((row && row.hash) || ''),
-    from: String((row && row.peer) || ''),
-    fromKey: String((row && row.peer) || ''),
-    text: typeof (row && row.payload) === 'string' ? row.payload : '',
-    sentAt: String((row && row.at) || ''),
-    relay: String((row && row.relay) || ''),
-    // When a live page was first handed it, or absent while it is still
-    // waiting. A client can tell "new to everyone" from "I missed it".
-    takenAt: (row && row.takenAt) || null,
-  });
-}
 
 // One delivered batch, counted. Packet 7, and the rules are Grok's:
 //
@@ -915,33 +901,27 @@ function createHub(rootDir) {
   // Rows come back in the shape the live push sends, decoded envelope
   // included — one shape to merge rather than two, which is the whole
   // problem a catching-up client has.
-  function handleArrivals(req, res, urlObj, deps) {
-    var log = deps && deps.traffic;
-    if (!log || typeof log.arrivals !== 'function') {
-      fail(res, 503, 'this node keeps no traffic log');
-      return;
-    }
-    var hash = urlObj.searchParams.get('hash') || '';
-    if (hash) {
-      var one = log.byHash(hash);
-      // Admitted inbound only, whatever the caller asked for. An
-      // outbound record is this node's own history and a held packet is
-      // a decision nobody has made yet; neither is an arrival.
-      if (!one || one.dir !== 'in' || !one.admitted) {
-        fail(res, 404, 'no such arrival');
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ rows: [rowAsMessage(one)] }));
-      return;
-    }
-    var rows = log.arrivals({
-      since: urlObj.searchParams.get('since') || '',
-      limit: urlObj.searchParams.get('limit'),
-    });
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ rows: rows.map(rowAsMessage) }));
-  }
+  // handleArrivals STOOD HERE, and GET /api/hub/arrivals with it.
+  //
+  //   Andy: "api/hub/arrivals must be removed"
+  //
+  // It was the catch-up half of "post to a peer, find out what arrived" —
+  // and it had NO CALLER. Not the shell, not an app, nothing but a test
+  // written against it. The reason is that catch-up was already solved,
+  // better, one layer down: createArrivals.subscribe() asks the log for
+  // un-taken rows the moment a page opens, marks them, and pushes them
+  // down the SAME live channel a new packet arrives on. A page that was
+  // closed gets what it missed without asking a second door a different
+  // question.
+  //
+  // So this was a parallel answer to a question that already had a good
+  // one, and the weaker of the two: it needed the client to remember
+  // where it got to, and to have a clock that agreed with the node's.
+  // `since`, the parameter that made it a table rather than a feed, never
+  // had a caller either.
+  //
+  // rowAsMessage went with it. arrivals.js keeps its own asMessage for
+  // the live path, which is the one shape a client ever sees now.
 
   // handleMonitor STOOD HERE, proxying a signed verb to the relay
   // because the browser holds no key.
@@ -1076,94 +1056,145 @@ function createHub(rootDir) {
     });
   }
 
+  // ASKING A RELAY THIS NODE OWNS TO DO SOMETHING, in one place.
+  //
+  // Two doors need the identical five steps — choose the relay, look up
+  // its pinned key, post the packet, unwrap the answer, and tell the two
+  // kinds of failure apart. The last of those is why this is shared
+  // rather than copied: it is the step the first door got wrong, and a
+  // second hand-written copy would have been a second chance to.
+  //
+  // THESE DOORS ARE NOT THE PROTOCOL. Decision 0010 is about ways of
+  // speaking on the WAN; `/api/hub/*` is this node's own front, reachable
+  // only from this machine, and a node may shape it however suits the
+  // browser. What it may not do is invent a word to say over the wire —
+  // and neither of these does. Both send an ordinary post.
+  //
+  // ONE PRECONDITION, honest rather than incidental: the answer arrives
+  // on this node's stream to that relay, so both doors work only on a
+  // relay this node is actually connected to. That is already the
+  // precondition for owning one — presenceNode opens a stream to every
+  // relay this node holds a row on — so what it excludes is a request
+  // made in the seconds before presence has started, which fails as a
+  // timeout saying so rather than as a wrong answer.
+  function askRelay(res, deps, wantedUrl, bodyFor, onOk) {
+    var router = deps && deps.router;
+    var relayKeyFor = deps && deps.relayKey;
+    if (!router || !relayKeyFor) {
+      fail(res, 503, 'this node is not connected to a relay');
+      return undefined;
+    }
+    return withChosenRelay(res, wantedUrl, function (url) {
+      // The url→key pin, not a fresh ask: answerRelay.relayKey is where
+      // trust-on-first-use lives, so a relay swapped underneath this node
+      // refuses here rather than being acted on.
+      return Promise.resolve(relayKeyFor(url)).then(function (key) {
+        if (!key) {
+          fail(res, 502, 'this node does not know that relay by key');
+          return;
+        }
+        var text = JSON.stringify({ app: 'relay', v: 1, body: bodyFor() });
+        return router.post(url, key, text).then(function (answer) {
+          var said = null;
+          try { said = JSON.parse(answer && answer.text); }
+          catch (e) { said = null; }
+          var out = (said && said.body) || null;
+
+          // THE POST FAILED — never got there, or nothing answered.
+          // answer.status is the TRANSPORT's, and it is the right one to
+          // report only here.
+          if (!answer || !answer.ok) {
+            fail(res, (answer && answer.status) || 502,
+              (answer && answer.error) || 'the relay did not answer');
+            return;
+          }
+
+          // THE POST ARRIVED AND THE RELAY SAID NO, which is a different
+          // thing and was reported as the first one for exactly one live
+          // request: a relay running older code answered `unknown
+          // request`, and this node handed the browser HTTP 200 with an
+          // error in the body — because it reached past the relay's
+          // verdict to the transport's 200 behind it.
+          //
+          // A delivered refusal is 502 unless the relay named a status
+          // itself. The transport's number is not in the chain at all.
+          if (!out || !out.ok) {
+            fail(res, (out && out.status) || 502,
+              (out && out.error) || 'the relay refused');
+            return;
+          }
+          onOk(out);
+        });
+      });
+    });
+  }
+
   // MINTING AN INVITE ON A RELAY THIS NODE OWNS.
   //
   // This door is unchanged — the browser still names a url and still gets
   // 201 and the invite back — and everything under it moved. There is no
-  // `/api/relay/invite` any more and no mint signature; this posts to the
-  // relay the way it posts to a person, and the relay answers by hash.
+  // `/api/relay/invite` any more and no mint signature.
   //
-  // THE DOOR IS NOT THE CHEAT, which is worth saying because the line is
-  // easy to draw in the wrong place. Decision 0010 is about ways of
-  // speaking on the WIRE. `/api/hub/invite` is this node's own door,
-  // reachable only from this machine, and a node may shape its own API
-  // however suits the browser. What it may not do is invent a word to say
-  // over the WAN.
-  //
-  // ONE NEW PRECONDITION, and it is honest rather than incidental: the
-  // answer arrives on this node's stream to that relay, so minting works
-  // only on a relay this node is actually connected to. That is already
-  // the precondition for owning one — presenceNode opens a stream to
-  // every relay this node holds a row on — so the case it excludes is a
-  // mint issued in the seconds before presence has started, which fails
-  // as a timeout saying so rather than as a wrong answer.
+  // The spoken token rides inside the packet, which postMessage signs
+  // whole, so it is still part of what was signed: the property A2 built
+  // mintMessage's third field for, now had for free.
   function handleInvite(req, res, readJsonBody, deps) {
-    var router = deps && deps.router;
-    var relayKeyFor = deps && deps.relayKey;
     return readJsonBody(req).then(function (body) {
-      if (!router || !relayKeyFor) {
-        fail(res, 503, 'this node is not connected to a relay');
+      return askRelay(res, deps, body && body.url, function () {
+        return {
+          invite: {
+            label: (body && body.label) || '',
+            days: body && body.days,
+            token: invites.normalizeToken(body && body.token),
+          },
+        };
+      }, function (out) {
+        // 201 and the invite itself, exactly as the relay route answered
+        // before it was deleted: this is what Natter's mint form reads.
+        res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(out.invite));
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
+  // FORGETTING SOMEBODY — THE DOOR THIS VERB NEVER HAD.
+  //
+  //   Andy: "api/hub/remove-peer must be the interface"
+  //
+  // relay.removePeer has worked, been signed and been thorough since it
+  // shipped, and NOTHING under run/ could reach it — no route here, no app
+  // that asked. A person had no way to remove anybody from their own
+  // relay. That is the impurity, and it is not a wrong protocol: it is an
+  // absent one, which is harder to see because nothing about it is wrong
+  // where you can read it.
+  //
+  // BY KEY.
+  //
+  //   Andy: "removePeer MUST be by ID"
+  //
+  // Labels duplicate by design — spirit-3 has two rows called `jazz`
+  // today — so a removal naming one would delete whichever the relay
+  // found first. The browser shows a label and sends the key, which is
+  // how the census hands it over.
+  function handleRemovePeer(req, res, readJsonBody, deps) {
+    return readJsonBody(req).then(function (body) {
+      var key = String((body && body.key) || '').trim();
+      if (!key) {
+        fail(res, 400, 'peer key required');
         return;
       }
-      return withChosenRelay(res, body && body.url, function (url) {
-        // The url→key pin, not a fresh ask: answerRelay.relayKey is where
-        // trust-on-first-use lives, so a relay swapped underneath this
-        // node refuses here rather than being minted onto.
-        return Promise.resolve(relayKeyFor(url)).then(function (key) {
-          if (!key) {
-            fail(res, 502, 'this node does not know that relay by key');
-            return;
-          }
-          // The spoken token rides inside the packet, which postMessage
-          // signs whole — so it is still part of what was signed, the
-          // property A2 built mintMessage's third field for.
-          var text = JSON.stringify({
-            app: 'relay',
-            v: 1,
-            body: {
-              invite: {
-                label: (body && body.label) || '',
-                days: body && body.days,
-                token: invites.normalizeToken(body && body.token),
-              },
-            },
-          });
-          return router.post(url, key, text).then(function (answer) {
-            var said = null;
-            try { said = JSON.parse(answer && answer.text); }
-            catch (e) { said = null; }
-            var out = (said && said.body) || null;
-
-            // THE POST FAILED — never got there, or nothing answered.
-            // answer.status is the TRANSPORT's, and it is the right one
-            // to report only here.
-            if (!answer || !answer.ok) {
-              fail(res, (answer && answer.status) || 502,
-                (answer && answer.error) || 'the relay did not answer');
-              return;
-            }
-
-            // THE POST ARRIVED AND THE RELAY SAID NO, which is a
-            // different thing and was reported as the first one for
-            // exactly one live request: a relay running older code
-            // answered `unknown request`, and this handed the browser
-            // HTTP 200 with an error in the body, because it reached past
-            // the relay's verdict to the transport's 200 behind it.
-            //
-            // A delivered refusal is 502 unless the relay named a status
-            // itself. The transport's number is not in the chain at all.
-            if (!out || !out.ok) {
-              fail(res, (out && out.status) || 502,
-                (out && out.error) || 'the relay did not mint');
-              return;
-            }
-            // 201 and the invite itself, exactly as the relay route
-            // answered before it was deleted: this is what natter's mint
-            // form reads.
-            res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify(out.invite));
-          });
-        });
+      return askRelay(res, deps, body && body.url, function () {
+        return { removePeer: { key: key } };
+      }, function (out) {
+        // What actually happened, whole: who went, how much of their mail
+        // went with them, and how many invites were revoked so the name
+        // is not a lie. An owner removing somebody should see the size of
+        // what they did.
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(out));
       });
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1555,7 +1586,6 @@ function createHub(rootDir) {
     handlePost: handlePost,
     // The other half of the same concept: the live push carries what
     // arrives now, this carries what arrived while nobody was looking.
-    handleArrivals: handleArrivals,
     handleSend: handleSend,
     handleInbox: handleInbox,
     // The same read, with nobody watching. server.js calls it on a timer
@@ -1567,6 +1597,7 @@ function createHub(rootDir) {
     handleContact: handleContact,
     handlePeer: handlePeer,
     handleInvite: handleInvite,
+    handleRemovePeer: handleRemovePeer,
     handleUnknownSenders: handleUnknownSenders,
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,

@@ -113,7 +113,7 @@ Each could be a packet now that a relay is addressable by its owner
 
 | | costs | undone by |
 |---|---|---|
-| `POST /api/relay/remove-peer` · `removePeerMessage` | a second door, and a minute window hand-rolled per verb | **posting only half of it** — see below |
+| `POST /api/relay/remove-peer` · `removePeerMessage` | a second door, and a minute window hand-rolled per verb — **now carrying the self path alone** | nothing, until a relay answers more than its owner |
 | `GET /api/relay/status` · `statusMessage` | a second door; also replayable into other verbs if the message shape ever drifts | **nothing. It is bootstrap** — see below |
 | `POST /api/relay/set-device` · `setDeviceMessage` | a second door | **nothing, as things stand** — see below |
 
@@ -136,11 +136,19 @@ three survivors run into:
   `deviceIdentity` and verifies against whatever row key that finds (B2:
   *"nobody installs a key on a row they cannot sign for"*). A peer cannot
   address the relay, so there is nowhere for that request to go.
-- **`remove-peer` is half an owner verb.** `byOwner` could collapse
-  today. `bySelf` — a peer taking themselves off a relay, signed with
-  their own key — cannot, for the same reason. Collapsing only the owner
-  half would leave the route and the signed format standing anyway and
-  buy nothing.
+- **`remove-peer` is half an owner verb, and that half HAS collapsed.**
+  The owner's way in is a post (`body.removePeer`), reached through
+  `/api/hub/remove-peer` — the node-side interface this verb never had.
+  `bySelf` cannot follow: a peer taking themselves off a relay signs with
+  their own key, and a peer cannot address the relay at all.
+
+  An earlier note here said collapsing only the owner half would "buy
+  nothing" because the route and the format stand either way. **That was
+  wrong, and this corrects it.** It buys two things. The route now carries
+  one caller instead of two, so what it is *for* is legible — an exit, not
+  an administration channel. And the owner's path stopped needing a signed
+  verb, which is the thing that would otherwise have been copied the next
+  time somebody added an owner action.
 - **`status` is bootstrap, and this is the argument the decision asked
   for.** `presenceNode.start` calls `ownerBadge.probe`, which reads
   `GET /api/relay/status`, **to learn which relays to open streams to**.
@@ -176,6 +184,30 @@ through.
   narrowing that was chosen deliberately. Nothing gets built until this
   is decided.
 
+## What a missing door taught this decision
+
+The rule as written catches a protocol **extended** by hand. It said
+nothing about one **absent**, and that turned out to be the more common
+fault in this tree.
+
+`relay.removePeer` had worked, been signed and been thorough since it
+shipped, and **nothing under `run/` could reach it** — no route on the
+node, no app that asked. A person could not remove anybody from their own
+relay. Nothing about that was wrong anywhere a reader could see it: the
+verb was correct, the route was correct, the register listed it honestly.
+The defect was that the two never met.
+
+`GET /api/hub/arrivals` was the same fault inverted — a door with no
+caller, offering a weaker answer to a question `createArrivals.subscribe`
+already answered better. Deleted.
+
+Andy: *"These are the kind of things i wanted to know when asked about
+impurities regarding protocol in the servers."* So the register is not
+the whole inventory. **A verb with no interface and an interface with no
+caller are both impurities**, and neither is visible to
+`protocolSurface.js`, which can only compare two lists of things that
+exist.
+
 ## Closed since this was written
 
 - **`/api/relay/monitor` · `monitorMessage`** — deleted, with
@@ -186,6 +218,11 @@ through.
   because the post already carried one. **The mint-replay hole closed as
   a side effect**, which is what this decision predicted would happen and
   the reason it was worth writing down rather than fixing the hole alone.
+- **`/api/hub/remove-peer`** — the interface `relay.removePeer` never
+  had, and the owner's half of remove-peer collapsed into a post on the
+  way. The public route now carries the departing peer alone.
+- **`GET /api/hub/arrivals`** — deleted with `hub.rowAsMessage`. No
+  caller, and catch-up was already solved on the live channel.
 - **Whether `GET /api/relay/status` is bootstrap** — it is, and the
   argument is in the register above: the stream a posted `status` would
   be answered on is the stream that `status` is what decides to open.

@@ -366,6 +366,12 @@ function hubInvite(hub, body, deps) {
   return res.wait();
 }
 
+function hubRemovePeer(hub, body, deps) {
+  const res = fakeRes();
+  hub.handleRemovePeer({}, res, function () { return Promise.resolve(body); }, deps);
+  return res.wait();
+}
+
 function runHubOnLoopback() {
   test.subHeading('The hub sends the mint to the mailbox that was chosen');
 
@@ -476,6 +482,50 @@ function runHubOnLoopback() {
       test.fail('undelivered: ' + res.status + ' ' + res.text);
     }
 
+    // ── THE DOOR THIS VERB NEVER HAD ────────────────────────────────
+    //
+    //   Andy: "api/hub/remove-peer must be the interface"
+    //
+    // relay.removePeer worked, was signed and was thorough, and NOTHING
+    // under run/ could reach it. A verb with no interface is as much an
+    // impurity as a wrong one, and harder to see: everything about it is
+    // correct where you can read it, and the two halves simply never met.
+    //
+    // Checked here rather than in removePeer.js because what is under
+    // test is the NODE's half — that the door picks the right relay, asks
+    // it as a post, and hands back what happened.
+    return (function () {
+      const box = second.box;
+      const victim = auth.generateIdentity('victim');
+      const minted = box.mint('andy', 'victim', 7);
+      box.claim('victim', auth.sign(victim.privateKey, auth.claimMessage('victim')),
+        victim.publicKey, '10.0.0.9', minted.invite.token);
+
+      const before = box.who().some(function (r) { return r.publicKey === victim.publicKey; });
+      return hubRemovePeer(hub, { url: servers[1].url, key: victim.publicKey }, deps)
+        .then(function (r) {
+          const gone = !box.who().some(function (x) { return x.publicKey === victim.publicKey; });
+          let said = {};
+          try { said = JSON.parse(r.text); } catch (e) { said = {}; }
+          if (before && r.status === 200 && gone && said.removed &&
+              said.removed.key === victim.publicKey) {
+            test.check('POST /api/hub/remove-peer forgets somebody on the mailbox it was aimed at');
+          } else {
+            test.fail('remove: ' + r.status + ' ' + r.text + ' gone=' + gone);
+          }
+          return hubRemovePeer(hub, { url: servers[1].url }, deps);
+        });
+    }()).then(function (r) {
+      // Refused before anything leaves the machine. A removal with no
+      // subject is the node's mistake, and spending a post to be told so
+      // would be the node's too.
+      if (r.status === 400 && /peer key required/.test(r.text)) {
+        test.check('and a removal naming nobody never leaves this node');
+      } else {
+        test.fail('keyless remove: ' + r.status + ' ' + r.text);
+      }
+    }).then(function () {
+
     // And the badge itself, over the same loopback: both mailboxes owned,
     // so Relay Chat shows the panel and the picker.
     const res2 = fakeRes();
@@ -490,6 +540,7 @@ function runHubOnLoopback() {
       test.fail('hub status: ' + res.status + ' ' + res.text);
     }
     servers.forEach(function (s) { s.server.close(); });
+  });
   });
 }
 

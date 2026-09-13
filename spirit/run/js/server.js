@@ -927,11 +927,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // The log as a table — see hub.handleArrivals. GET, because it reads.
-  if (req.method === 'GET' && pathname === '/api/hub/arrivals') {
-    hub.handleArrivals(req, res, url, { traffic: trafficLog });
-    return;
-  }
+  // GET /api/hub/arrivals STOOD HERE, the log as a table. It had no
+  // caller: a page that was closed catches up on the SAME live channel
+  // (createArrivals.subscribe hands it the un-taken backlog before
+  // anything new), so this was a second door asking a weaker version of
+  // an answered question.
 
   if (req.method === 'GET' && pathname === '/api/hub/who') {
     hub.handleWho(req, res);
@@ -1137,12 +1137,20 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // Minting, which goes out as a post now rather than a signed verb —
-    // so it needs the router and the url→key pin, handed in for the same
-    // reason handlePost's are: hub.js must not hold state it cannot see
-    // created.
+    // THE TWO THINGS AN OWNER DOES TO THEIR OWN RELAY, and both go out
+    // as posts rather than signed verbs — so both need the router and the
+    // url→key pin, handed in for the same reason handlePost's are: hub.js
+    // must not hold state it cannot see created.
     if (pathname === '/api/hub/invite') {
       hub.handleInvite(req, res, readJsonBody,
+        { router: peerRouter, relayKey: pinnedRelayKey });
+      return;
+    }
+
+    // Forgetting somebody. relay.removePeer has worked since it shipped
+    // and nothing on this side could reach it — a verb with no interface.
+    if (pathname === '/api/hub/remove-peer') {
+      hub.handleRemovePeer(req, res, readJsonBody,
         { router: peerRouter, relayKey: pinnedRelayKey });
       return;
     }

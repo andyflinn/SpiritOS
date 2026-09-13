@@ -65,7 +65,8 @@ POST /api/relay/post  → relay.routePost
                           ├── postedToSelf?  → relay.answerSelf
                           │                     ├── body.monitor  → start/stop watching
                           │                     ├── body.invite   → relay.mint
-                          │                     └── body.revoke   → invites.revokeInvite
+                          │                     ├── body.revoke   → invites.revokeInvite
+                          │                     └── body.removePeer → relay.forgetPeer
                           └── otherwise      → the peer it names
 ```
 
@@ -94,6 +95,7 @@ POST /api/hub/
   ├── claim                 hub.handleClaim
   ├── peer                  hub.handlePeer              ← whoBook only, never the WAN
   ├── invite                hub.handleInvite            ← posts to the relay
+  ├── remove-peer           hub.handleRemovePeer        ← posts to the relay
   │
   ├── post                  hub.handlePost              ← the router
   ├── send                  hub.handleSend              ← the ring
@@ -103,7 +105,6 @@ POST /api/hub/
   └── rotate-password       hub.handleRotatePassword
 
 GET  /api/hub/
-  ├── arrivals              hub.handleArrivals          ← the log, as a table
   ├── inbox                 hub.handleInbox             ← the ring
   ├── status                hub.handleStatus
   ├── who                   hub.handleWho
@@ -133,8 +134,21 @@ GET  /api/version
 POST /                      "POST accepted"
 ```
 
-Eight `/api/hub/` POST, seven GET. Three `/api/fs/` POST, two GET.
+Nine `/api/hub/` POST, six GET. Three `/api/fs/` POST, two GET.
 Anything else under POST is `405`.
+
+**`GET /api/hub/arrivals` is gone** — the log as a table, with no caller
+anywhere in the tree. Catch-up was already solved one layer down:
+`createArrivals.subscribe` hands a page the un-taken backlog on the same
+live channel a new packet arrives on, so a page that was closed gets what
+it missed without asking a second door a weaker version of the question.
+
+**`POST /api/hub/remove-peer` is new**, and closes the opposite fault:
+`relay.removePeer` had worked since it shipped and nothing under `run/`
+could reach it. A verb with no interface is as much an impurity as an
+interface with no caller, and neither is visible to
+`protocolSurface.js` — it can only compare two lists of things that
+exist.
 
 **Every hub route now names a handler.** `/api/hub/post` was the last one
 written out inside the route table; the rules it enforces — is this node
@@ -202,9 +216,11 @@ label are `whoBook` writes. Taking somebody off a relay is
 `/api/relay/remove-peer`, and **nothing under `run/` calls it** — the
 verb exists, is signed, works, and has no door on the node side.
 
-**Three of the relay's POST routes are named cheats**, which is a claim
+**Two of the relay's POST routes are named cheats, plus the GET
+`status`**, which is a claim
 this page can make because there is a register that says so and a test
-that keeps it honest: `remove-peer`, `set-device`, and the GET `status`.
+that keeps it honest: `remove-peer` — which now carries only the departing peer's own exit,
+the owner's half having become a post — and `set-device`.
 Each is a way of speaking on the wire that the protocol cannot carry as a
 post, and each is listed in decision 0010 with the reason. `invite` and
 `monitor` were on that list until they came off it by being deleted.

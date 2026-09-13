@@ -258,12 +258,12 @@ freePort()
       // network is touched — the ReferenceError was at the CALL, which
       // happens either way.
       ['POST', '/api/hub/invite', { url: 'https://not-on-the-list.example', label: 'x', days: 1 }],
+      ['POST', '/api/hub/remove-peer', { url: 'https://not-on-the-list.example', key: 'NOPE' }],
       ['POST', '/api/hub/post'],
       ['POST', '/api/hub/send'],
       ['POST', '/api/hub/contact'],
       ['POST', '/api/hub/unknown-senders'],
       ['POST', '/api/hub/rotate-password'],
-      ['GET', '/api/hub/arrivals'],
       ['GET', '/api/hub/inbox'],
       ['GET', '/api/hub/status'],
       ['GET', '/api/hub/who'],

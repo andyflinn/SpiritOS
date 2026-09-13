@@ -228,20 +228,28 @@ async function run() {
       test.fail('row: ' + JSON.stringify(row));
     }
 
-    // ── THE LOG, READ BACK AS A TABLE, OVER THE WIRE ──────────────────
+    // ── THE LOG, READ BACK AS A TABLE ─────────────────────────────────
     //
-    // Everything above reads bravo's traffic.json off disk. This asks
-    // bravo the way a client would, and it is the other half of the
-    // contract: one interface to post to a peer, one to find out what
-    // arrived.
-    const table = await hub(portOf(bravo), 'GET', '/api/hub/arrivals');
-    const rows = (table.body && table.body.rows) || [];
-    const mine = rows.filter(function (r) { return r.fromKey === alfaKey; });
+    // This asked bravo over the wire, through GET /api/hub/arrivals. That
+    // door is gone: it had no caller, because catch-up was already solved
+    // one layer down — createArrivals.subscribe hands a page the un-taken
+    // backlog on the SAME live channel a new packet arrives on.
+    //
+    // So the questions move to the module that answers them, which is
+    // where they were always really being asked. What was being tested
+    // was never the route: it was that the log can be read as a table,
+    // that the table means ADMITTED, and that a row is addressable by its
+    // hash. All three still hold and all three still matter.
+    const log = require('../run/js/trafficLog').createTrafficLog({
+      rootDir: homeOf(bravo),
+    });
+    const rows = log.arrivals({});
+    const mine = rows.filter(function (r) { return r.peer === alfaKey; });
 
-    if (table.status === 200 && mine.length === 1) {
-      test.check('bravo answers /api/hub/arrivals with the one line it agreed to hear');
+    if (mine.length === 1) {
+      test.check("bravo's log reads back as a table with the one line it agreed to hear");
     } else {
-      test.fail('arrivals: ' + table.status + ' ' + JSON.stringify(rows));
+      test.fail('arrivals: ' + JSON.stringify(rows));
     }
 
     // THE IGNORED ONE IS NOT IN IT, and that is the check the read
@@ -249,8 +257,8 @@ async function run() {
     // outcome word; only one of them was admitted, and a reader that
     // could not tell them apart would hand an unaccepted stranger's line
     // to an app and walk the front door back.
-    const texts = mine.map(function (r) { return r.packet && r.packet.body; });
-    if (texts.length === 1 && texts[0] === 'hello again') {
+    const texts = mine.map(function (r) { return r.payload; });
+    if (texts.length === 1 && /hello again/.test(String(texts[0]))) {
       test.check('and the post it IGNORED is absent from that table, though both are in its log');
     } else {
       test.fail('table carried: ' + JSON.stringify(texts));
@@ -258,12 +266,11 @@ async function run() {
 
     // ADDRESSABLE BY HASH — the other primary key, and what `re` points
     // at when a packet says which packet it is about.
-    const byHash = await hub(portOf(bravo), 'GET', '/api/hub/arrivals?hash=' + encodeURIComponent(mine[0].hash));
-    const one = (byHash.body && byHash.body.rows) || [];
-    if (byHash.status === 200 && one.length === 1 && one[0].hash === mine[0].hash) {
+    const one = log.byHash(mine[0].hash);
+    if (one && one.hash === mine[0].hash) {
       test.check('and one row comes back by its hash alone');
     } else {
-      test.fail('byHash: ' + byHash.status + ' ' + JSON.stringify(one));
+      test.fail('byHash: ' + JSON.stringify(one));
     }
 
     // ── AND THE PEER'S OWN NUMBERS MOVED (R11) ────────────────────────

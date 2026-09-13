@@ -1035,7 +1035,22 @@ function createRelay(rootDir) {
     }
     return { ok: true, status: 200, devicePublicKey: said.devicePublicKey || '' };
   }
-  function removePeer(byToken, peerKey, sig) {
+  // FORGETTING SOMEBODY — the act, with no opinion about who asked.
+  //
+  // Split out of removePeer so the two ways in can prove themselves
+  // differently and then do the identical thing. The public route still
+  // checks a signature (see removePeer below); a post from the owner was
+  // already proved by the post's own signature before it reached here,
+  // and a second check there would be a second place to decide who the
+  // owner is.
+  //
+  // BY KEY, and only ever by key.
+  //
+  //   Andy: "removePeer MUST be by ID"
+  //
+  // Labels duplicate by design, so a removal naming one would delete
+  // whichever john this box happened to find first.
+  function forgetPeer(peerKey) {
     var key = String(peerKey == null ? '' : peerKey).trim();
     if (!key) return { ok: false, status: 400, error: 'peer key required' };
 
@@ -1044,16 +1059,10 @@ function createRelay(rootDir) {
 
     var owner = auth.ownerName(allow);
     var ownerKey = owner && allow.byName && allow.byName[owner];
-    var asked = deviceIdentity(byToken);
 
-    // Two ways to be allowed, and both prove possession of a HOUSE key.
-    var byOwner = !!ownerKey && auth.removePeerSignatureOk(ownerKey, key, sig);
-    var bySelf = auth.removePeerSignatureOk(target.publicKey, key, sig);
-    if (!byOwner && !bySelf) {
-      return { ok: false, status: 403, error: 'bad remove-peer signature' };
-    }
-
-    // The owner's own row is not removable. It is the only row allow.json
+    // The owner's own row is not removable. NOT an auth check — it is a
+    // safety invariant, which is why it lives with the act rather than
+    // with either gate: no way in may reach past it. It is the only row allow.json
     // holds, ownerName() reads it, and a relay that forgot its owner
     // could never be administered again — first-claim would hand the box
     // to whoever asked next.
@@ -1103,7 +1112,6 @@ function createRelay(rootDir) {
     // it.
     presentNow.broadcast('presence', { key: key, present: false, gone: true });
 
-    void asked;
     return {
       ok: true,
       status: 200,
@@ -1111,6 +1119,40 @@ function createRelay(rootDir) {
       messagesDropped: before - messages.length,
       invitesRevoked: revoked,
     };
+  }
+
+  // THE PUBLIC DOOR, and it exists for ONE of its two callers now.
+  //
+  // The owner's way in is a post (answerSelf, body.removePeer) — reached
+  // through /api/hub/remove-peer, which is the node-side interface this
+  // verb never had. A working, signed, thorough verb that no door on the
+  // node could reach was the impurity: not a wrong protocol, an absent
+  // one.
+  //
+  // What keeps this route alive is the OTHER signer. A peer taking
+  // themselves off a relay signs with their own key, and a peer cannot
+  // address the relay at all — it answers its owner and nobody else. So
+  // the self path has nowhere to go but here, and removePeerMessage stays
+  // with it. Decision 0010 lists what that costs.
+  function removePeer(byToken, peerKey, sig) {
+    var key = String(peerKey == null ? '' : peerKey).trim();
+    if (!key) return { ok: false, status: 400, error: 'peer key required' };
+
+    var target = findByKey(key);
+    if (!target) return { ok: false, status: 404, error: 'no such peer' };
+
+    var owner = auth.ownerName(allow);
+    var ownerKey = owner && allow.byName && allow.byName[owner];
+
+    // Two ways to be allowed, and both prove possession of a HOUSE key.
+    var byOwner = !!ownerKey && auth.removePeerSignatureOk(ownerKey, key, sig);
+    var bySelf = auth.removePeerSignatureOk(target.publicKey, key, sig);
+    if (!byOwner && !bySelf) {
+      return { ok: false, status: 403, error: 'bad remove-peer signature' };
+    }
+
+    void deviceIdentity(byToken);
+    return forgetPeer(key);
   }
 
   // A PEER DROPS A PACKET ON A PEER. Nothing is held open: this returns
@@ -1168,6 +1210,13 @@ function createRelay(rootDir) {
       monitorFilter = monitoring ? readMonitorFilter(body.monitor.filter) : null;
       if (monitoring) statusToOwner();
       out = { ok: true, monitoring: monitoring, filter: monitorFilter };
+    }
+
+    // FORGETTING SOMEBODY, by key. The owner's half of remove-peer, said
+    // as a post — so the node has an interface for it at last, and the
+    // public route is left carrying only the departing peer's own exit.
+    if (body && body.removePeer) {
+      out = forgetPeer(String(body.removePeer.key || ''));
     }
 
     // TAKING ONE BACK, by label — the only handle an unclaimed invite
