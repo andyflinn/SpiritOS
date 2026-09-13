@@ -842,6 +842,12 @@ function createHub(rootDir) {
       var where = presence.relaysNaming(to).filter(function (url) {
         return !wanted || url === wanted;
       });
+
+      // Posting to a relay itself needs nothing special here. Its own
+      // key is in the OWNER's roster and in no peer's (relay.streamRoster),
+      // so presence answers for it exactly as for any peer — which is why
+      // the per-recipient roster was the right place for this and a
+      // lookup table in this function was not.
       if (!where.length) {
         // Truthfully, and at once. Presence is what makes this
         // answerable rather than a guess — and it is why that arc had

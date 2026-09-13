@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 17 requirements, 13 done.**
+**Status: OPEN — 18 requirements, 15 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -775,6 +775,66 @@ nobody can read is no filter, rather than silence".
 work and is not this requirement.
 
 ---
+### R18 — the relay is an addressable peer, for its owner
+> The relay must be an addressable peer for the owner. i guess that's pretty cheap. This entire panel should, of course, go through protocol.
+
+**Decides the item that has sat in "not yet agreed" since this morning**,
+and narrows it in the way that makes it cheap: addressable **for the
+owner**, not for everybody. Every other sender keeps today's answer —
+`404 no such peer` — so nothing leaks and nothing else changes.
+
+**What it costs, measured rather than assumed:**
+
+| | |
+|---|---|
+| `relay.js` | `routePost` resolves its own key when the sender is the owner, handles the packet locally and answers by hash. A special case in the heart of the router — narrow, and worth saying out loud. |
+| `relay.streamRoster` | **per recipient.** The owner's roster carries the relay itself; a peer's does not. `relaysNaming` then answers for it exactly as for any peer. |
+| `hub.handlePost` | **nothing.** |
+| the monitor verb | `/api/relay/monitor` becomes a packet, which is the point |
+
+**What it buys**, beyond the panel going through protocol: four
+hand-rolled signed messages — `monitorMessage`, `mintMessage`,
+`removePeerMessage`, `claimMessage` — exist *because* a relay cannot be
+spoken to as a peer. `postMessage` binds sender, recipient and text and
+registers the hash before anything is sent, so **the mint-replay hole
+closes as a side effect** rather than needing its own fix.
+
+`claim` can never join them: you cannot post to a relay you have no row
+on. It is the bootstrap and stays outside, permanently.
+
+**I had this wrong, and Andy corrected it mid-build.** I measured that
+the node could not address a relay and reached for `relayKeys` inverted
+— a lookup table inside `handlePost`. He pointed out this was already
+settled:
+> We discussed this topic when we discussed how the peer-list can be customized for peers or owners.
+
+He is right, and it is the same rule R11 needs for the device census. The
+roster is already delivered per recipient (`presentNow.send(who_.id,
+'roster', …)`) — it simply did not vary by recipient. Making it vary is
+smaller than the special case, and it means **nothing above presence
+learns that this row is different**. `handlePost` gained nothing.
+
+Still out of `who()`, so the public census is unchanged: **addressable is
+not published.** A relay that listed itself would put its key in every
+peer's roster and every census a stranger can fetch.
+
+**One thing the build found:** the relay could not answer through
+`routeReply` either — that begins with `deviceIdentity`, which resolves
+the owner and peer rows and not the relay's own key, so it would refuse
+itself at its own door. It answers through the same table and the same
+`answer()` check, skipping only the identity lookup, because the identity
+is the process.
+
+**Verify:** `spirit/test/relayMonitor.js` — "the owner can post to the
+relay itself, and gets a hash like any other post", "the reply arrives on
+its stream, same hash, signed by the relay", "the packet did the work —
+monitoring on, filtered, entirely over protocol", "a peer posting to the
+relay gets `no such peer` — the same answer an unknown key gets", "the
+relay is in the OWNER's roster and in no peer's", and "the relay key
+stays out of the census".
+**Status:** DONE
+
+---
 
 ## Not yet agreed
 
@@ -810,7 +870,8 @@ no `seen`, no tick, and no inference.
 
 ## Not yet agreed — a second contract, recorded so it is not lost
 
-**The relay as an addressable post target.** Today `routePost` resolves a
+**~~The relay as an addressable post target.~~ Agreed 2026-09-13 — see
+R18.** Today `routePost` resolves a
 destination through [`deviceIdentity`](../../spirit/run/js/relay.js#L827),
 which knows the owner and peer rows and nothing else; the relay's own
 identity is neither, so posting to it is `404 no such peer`. And
@@ -869,3 +930,25 @@ inventories only obstacles reads as larger than the job.
 
 **Four connections and one deletion. The deletion is easy; the first
 connection does not exist yet.**
+
+---
+
+## Parked, out of scope, recorded so it is not lost
+
+**A relay divides its resources, and the owner's share is capped.**
+
+> If the relay has a mechanism to evenly allot its resources to all peers,
+> the owner's cap should be something like 50% of the entire resources,
+> this for later.
+
+Andy, 2026-09-13, explicitly for later. Recorded because it is a
+*constitutional* claim about what a relay is rather than a feature: a box
+whose owner may take everything is a box its peers are guests in, and one
+that caps its owner at half is one they are members of. That is the
+difference between Peerlink and somebody's server.
+
+Nothing in the tree allots anything today — the rate limits are per-verb
+ceilings (`CLAIM_PER_MIN`, `SEND_PER_MIN`, `DEVICE_PER_MIN`,
+`UNKNOWN_PER_MIN`), not shares of a whole, and there is no notion of a
+total to take a share OF. So this is a design question first and a number
+second.

@@ -1078,9 +1078,106 @@ function createRelay(rootDir) {
   // The relay reads the body but can neither forge nor alter it
   // undetectably: the hash is taken over exactly the bytes that were
   // signed, so a tampered forward cannot match what either end computes.
+  // IS THIS ADDRESSED TO THE RELAY ITSELF, and may this sender do that?
+  //
+  //   Andy: "The relay must be an addressable peer for the owner."
+  //
+  // FOR THE OWNER, and that narrowing is what makes it cheap and safe.
+  // Every other sender keeps the answer they get today — `no such peer`,
+  // the same 404 an unknown key gets — so nothing leaks and no caller
+  // learns that this key means anything here.
+  //
+  // deviceIdentity cannot answer this: it is handed one token and does
+  // not know who is asking. The question is about a PAIR, so it lives
+  // here where both are in hand.
+  function postedToSelf(who, toToken) {
+    var mine = mailboxPublicKey();
+    if (!mine || String(toToken || '') !== mine) return false;
+    var ownerLabel = auth.ownerName(allow);
+    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    return !!ownerKey && who && who.publicKey === ownerKey;
+  }
+
+  // WHAT A RELAY DOES WITH A PACKET ADDRESSED TO IT.
+  //
+  // The reply travels the ordinary way — routeReply, correlated by the
+  // same hash, signed by this relay — so a caller cannot tell the shape
+  // of this exchange from any other. That is the point of making the
+  // relay a peer rather than giving it a second kind of door.
+  //
+  // Everything it can be asked is an owner verb, and the owner's identity
+  // was proved by the post's own signature before this ran. There is no
+  // second gate here and there must not be: two places deciding who the
+  // owner is, is one place to get it wrong.
+  function answerSelf(hash, text) {
+    var asked = null;
+    try { asked = JSON.parse(text); }
+    catch (e) { asked = null; }
+    var body = (asked && asked.body) || null;
+    var out = { ok: false, error: 'unknown request' };
+
+    if (body && body.monitor) {
+      // Already proved: this arrived signed by the owner. setMonitor
+      // wants its own signature because it is also a public route; here
+      // the post IS the proof, so the flag is applied directly.
+      monitoring = !!body.monitor.on;
+      monitorFilter = monitoring ? readMonitorFilter(body.monitor.filter) : null;
+      if (monitoring) statusToOwner();
+      out = { ok: true, monitoring: monitoring, filter: monitorFilter };
+    }
+
+    var mine = auth.loadIdentity(rootDir);
+    if (!mine || !mine.privateKey) return;
+    var reply = JSON.stringify({ app: 'relay', v: 1, body: out });
+
+    // NOT THROUGH routeReply, and the reason is the same asymmetry that
+    // made this requirement necessary in the first place: routeReply
+    // begins with deviceIdentity, which resolves the owner and peer rows
+    // and NOT this relay's own key. Sending its own answer through the
+    // public door would have it refuse itself.
+    //
+    // Everything else is identical to what routeReply does, and
+    // deliberately so — same table, same `answer` check that the replier
+    // is the route's target, same event on the requester's stream. Only
+    // the identity lookup is skipped, because the identity is this
+    // process.
+    var matched = routes.answer(hash, mine.publicKey);
+    if (!matched.ok) return;
+    presentNow.send(matched.requester, 'reply', {
+      hash: hash,
+      from: mine.publicKey,
+      text: reply,
+      sig: auth.sign(mine.privateKey, auth.receiptMessage(hash)),
+    });
+  }
+
   function routePost(fromToken, toToken, text, sig) {
     var who = deviceIdentity(fromToken);
     if (!who) return { ok: false, status: 403, error: 'no such identity' };
+
+    // THE RELAY AS A PEER, for its owner and nobody else. Checked before
+    // deviceIdentity is asked about the target, because the relay's own
+    // key is deliberately not a row and never will be — publishing it as
+    // one would put it in every census.
+    if (postedToSelf(who, toToken)) {
+      var selfSigned = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
+      if (!selfSigned) return { ok: false, status: 403, error: 'bad post signature' };
+      if (typeof text !== 'string' || !text) {
+        return { ok: false, status: 400, error: 'text required' };
+      }
+      if (text.length > MAX_ROUTED_TEXT) {
+        return { ok: false, status: 413, error: 'too big' };
+      }
+      var selfHash = auth.requestHash(selfSigned);
+      // Registered before it is answered, exactly as a peer-to-peer post
+      // is: nothing leaves until the thing that will match its answer
+      // exists.
+      var opened = routes.open(selfHash, who.id, String(toToken), function () { return true; });
+      if (!opened || !opened.ok) return opened;
+      answerSelf(selfHash, text);
+      return withStatus(opened, selfHash);
+    }
+
     var target = deviceIdentity(toToken);
     if (!target) return { ok: false, status: 404, error: 'no such peer' };
 
@@ -1335,16 +1432,41 @@ function createRelay(rootDir) {
     }));
   }
 
-  function streamRoster() {
-    return {
-      members: who().map(function (p) {
-        return {
-          key: p.publicKey || '',
-          label: p.publicLabel || p.name || '',
-          present: presentNow.isPresent(p.publicKey || ''),
-        };
-      }),
-    };
+  // THE ROSTER IS PER RECIPIENT, which is the shape agreed when the
+  // census had to show a device to its owner and to nobody else. This is
+  // the same rule reaching its second user:
+  //
+  //   Andy: "We discussed this topic when we discussed how the peer-list
+  //   can be customized for peers or owners."
+  //
+  // The OWNER's roster carries this relay itself; a peer's does not. That
+  // is how the owner's node learns it can address the box — through the
+  // ordinary presence mechanism, rather than through a special case in
+  // whoever wants to post. `relaysNaming` then answers for the relay's
+  // own key exactly as it does for any peer, and nothing above it needs
+  // to know this row is different.
+  //
+  // Still out of `who()`, so the public census is unchanged: addressable
+  // is not published. A relay that listed itself would put its key in
+  // every peer's roster and in every census any stranger can fetch.
+  function streamRoster(forKey) {
+    var members = who().map(function (p) {
+      return {
+        key: p.publicKey || '',
+        label: p.publicLabel || p.name || '',
+        present: presentNow.isPresent(p.publicKey || ''),
+      };
+    });
+
+    var ownerLabel = auth.ownerName(allow);
+    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    var mine = mailboxPublicKey();
+    if (mine && ownerKey && forKey === ownerKey) {
+      // Always present: a relay answering the question is a relay that is
+      // up, and a stream cannot be open to it otherwise.
+      members.push({ key: mine, label: auth.RESERVED_NAME, present: true });
+    }
+    return { members: members };
   }
 
   // The gate. Order is load-bearing at every step.
@@ -1374,7 +1496,7 @@ function createRelay(rootDir) {
     //    for the newcomer too: it must see itself present in its own
     //    first snapshot rather than learn it from a change it will never
     //    be sent.
-    presentNow.send(who_.id, 'roster', streamRoster());
+    presentNow.send(who_.id, 'roster', streamRoster(who_.id));
     presentNow.broadcast('presence', { key: who_.id, present: true });
 
     // 5. And the owner learns what its box now looks like. Sent after the

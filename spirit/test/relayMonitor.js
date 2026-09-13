@@ -314,4 +314,104 @@ test.subHeading('Filtered at the source');
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
+// ---------------------------------------------------------------------
+test.subHeading('The relay as a peer, for its owner');
+// ---------------------------------------------------------------------
+//
+//   Andy: "The relay must be an addressable peer for the owner… This
+//   entire panel should, of course, go through protocol."
+//
+// R18. The narrowing is what makes it safe: every other sender keeps the
+// answer they get today, so no caller learns this key means anything
+// here.
+
+(function theOwnerCanPostToIt() {
+  const w = world();
+  const relayKey = w.box.mailboxPublicKey();
+  const packet = JSON.stringify({
+    app: 'relay', v: 1, body: { monitor: { on: true, filter: { kinds: ['refused'] } } },
+  });
+
+  const sent = w.box.routePost(w.owner.publicKey, relayKey, packet,
+    auth.sign(w.owner.privateKey, auth.postMessage(w.owner.publicKey, relayKey, packet)));
+
+  if (sent.ok && sent.status === 202 && sent.hash) {
+    test.check('the owner can post to the relay itself, and gets a hash like any other post');
+  } else {
+    test.fail('owner post: ' + JSON.stringify(sent));
+  }
+
+  // THE ANSWER COMES BACK THE ORDINARY WAY. Same table, same hash, signed
+  // by the relay — a caller cannot tell the shape of this exchange from
+  // any other, which is the point of making the relay a peer rather than
+  // giving it a second kind of door.
+  const replies = w.heard.andy.filter(function (m) { return m.event === 'reply'; });
+  if (replies.length === 1 && replies[0].data.hash === sent.hash &&
+      replies[0].data.from === relayKey) {
+    test.check('and the reply arrives on its stream, same hash, signed by the relay');
+  } else {
+    test.fail('reply: ' + JSON.stringify(replies.map(function (m) { return m.data; })));
+  }
+
+  const answered = JSON.parse(replies[0].data.text);
+  if (answered.body && answered.body.monitoring === true &&
+      w.box.monitorFilter() && w.box.monitorFilter().kinds.join() === 'refused') {
+    test.check('the packet did the work — monitoring on, filtered, entirely over protocol');
+  } else {
+    test.fail('answer: ' + replies[0].data.text);
+  }
+
+  fs.rmSync(w.home, { recursive: true, force: true });
+})();
+
+(function andNobodyElseCan() {
+  const w = world();
+  const relayKey = w.box.mailboxPublicKey();
+  const packet = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true } } });
+
+  const theirs = w.box.routePost(w.bella.publicKey, relayKey, packet,
+    auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, relayKey, packet)));
+
+  // THE CHECK THE NARROWING RESTS ON, and it is about the WORDING as much
+  // as the refusal: a peer gets `no such peer`, which is exactly what an
+  // unknown key gets. A distinct error here would tell any peer that this
+  // key means something on this box.
+  if (!theirs.ok && theirs.status === 404 && theirs.error === 'no such peer') {
+    test.check('a peer posting to the relay gets `no such peer` — the same answer an unknown key gets');
+  } else {
+    test.fail('peer post: ' + JSON.stringify(theirs));
+  }
+
+  if (w.box.monitoring() === false) {
+    test.check('and nothing happened: a peer cannot start a monitor by addressing the box');
+  } else {
+    test.fail('a peer turned the monitor on');
+  }
+
+  // AND IT IS IN NO PEER'S ROSTER EITHER. The owner learns the relay's
+  // address through the ordinary presence mechanism — the same
+  // per-recipient rule the device census needed — so a peer must not be
+  // told what the owner was told.
+  const peerRoster = w.heard.bella.filter(function (m) { return m.event === 'roster'; });
+  const ownerRoster = w.heard.andy.filter(function (m) { return m.event === 'roster'; });
+  const inPeers = JSON.stringify(peerRoster).indexOf(relayKey) !== -1;
+  const inOwners = JSON.stringify(ownerRoster).indexOf(relayKey) !== -1;
+  if (inOwners && !inPeers) {
+    test.check("the relay is in the OWNER's roster and in no peer's — a per-recipient census, as agreed");
+  } else {
+    test.fail('owner has it: ' + inOwners + ', peer has it: ' + inPeers);
+  }
+
+  // AND THE KEY IS STILL IN NO CENSUS. Addressable is not published — a
+  // relay that listed itself would put its own key in every peer's roster.
+  const census = JSON.stringify(w.box.who());
+  if (census.indexOf(relayKey) === -1) {
+    test.check('while the relay key stays out of the census — addressable is not published');
+  } else {
+    test.fail('the relay listed itself as a peer');
+  }
+
+  fs.rmSync(w.home, { recursive: true, force: true });
+})();
+
 test.reportSuccessFailureCount();
