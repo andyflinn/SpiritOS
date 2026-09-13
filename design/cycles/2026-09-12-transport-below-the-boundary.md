@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 11 requirements, 9 done.**
+**Status: OPEN — 12 requirements, 9 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -489,7 +489,17 @@ stranger's packet straight to an app and walk the front door back.
 `arrivals` is the only thing that sees both *admitted* and *delivered to
 a page*, so the backlog lives there —
 `relay-state/pendingArrivals.json`, gitignored, unservable, unwritable,
-temp-file-then-rename, bounded by the same 24-hour clock.
+temp-file-then-rename.
+
+**AND NO CLOCK — corrected the same day.** It shipped with a 24-hour
+window copied from `trafficLog`, and Andy caught the analogy: that file
+is a **record** of what crossed the WAN and a record may age out; this is
+**undelivered mail**, and ageing it out is data loss *after* an
+acknowledgement. A receipt true when signed and a lie by morning is the
+false positive [ROUTER.md §4](../relay/ROUTER.md) forbids — and exactly
+the sin 0006 removed from the relay, relocated somewhere harder to
+notice. The bound is the node's own disk, on the node's own machine, in a
+file somebody can look at: the three things the ring was not.
 
 **What it still does not do, said out loud:** the mark is one mark, not
 one per page. The first page to open drains the backlog; a second
@@ -505,8 +515,8 @@ HELD, not dropped", "the first page to open is handed it, after which it
 is forgotten", "a second page opening after it gets nothing — the mark is
 the node's, not the page's", "a page that throws does not count as having
 received it", "a packet held while the node was down is still there when
-it comes back", and the clock, "a day old to the second is still held; a
-second older than that is gone".
+it comes back", and — the reversal — "a packet a YEAR old is still
+waiting: undelivered mail has no clock, whatever the receipt promised".
 **Status:** DONE — R8 no longer blocked on this
 
 ### R8 — the ring is deleted
@@ -548,6 +558,34 @@ kind of thing that disappears between two commits nobody connected.
 check that a packet arriving over the router moves the same numbers a
 line over the ring did.
 **Status:** OPEN — blocks R8
+
+### R12 — an app can reply, and a reply is the only evidence of being read
+> It's only when a reply arrives from the human with a hash of the message he responds to, can the sender be reasonably certain that the package was read… peer to peer consent over the status of a uniquely identifiable package.
+
+**Agreed as a model, and the third state is currently unreachable.**
+[ROUTER.md §3a](../relay/ROUTER.md) now records it: *not delivered* /
+*delivered* / *acted on*, with nothing between the last two, because an
+app being mounted is not a human reading — a `seen` flag would have been
+two green checkmarks, a false positive dressed as precision and signed.
+
+What is missing is the third state's mechanism, and it has the same shape
+as the arrival gap R3 closed:
+
+- [`deliverPackets`](../../spirit/run/js/client/shell.js) **discards the
+  handler's return value**, so an app has no way to say anything back.
+- [`answerRelay.answer`](../../spirit/run/js/answerRelay.js) returns `''`
+  for everything that is not a `device-offer`, so the reply is always the
+  bare receipt.
+
+So the router has carried a reply channel since it landed — `routeReply`,
+correlated by hash, signed by the recipient — and **no app has ever been
+able to use it.**
+
+**Verify:** not written. Wants a packet answered by a real app handler,
+the reply reaching the original sender correlated by the same hash, and
+the negative half: an app that says nothing leaves the bare receipt, with
+no `seen`, no tick, and no inference.
+**Status:** OPEN
 
 ---
 

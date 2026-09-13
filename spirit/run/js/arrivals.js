@@ -64,9 +64,29 @@
 // which is the same failure a poll that read and then crashed always
 // had, and it is the price of not keeping per-browser state.
 //
-// The backlog is bounded by the same 24-hour window as the traffic log,
-// for the same reason: a clock is a promise that can be stated exactly,
-// and a count would be a guess about traffic.
+// ── AND IT HAS NO CLOCK, WHICH IS THE POINT ──────────────────────────
+//
+// It had a 24-hour window for about an hour, copied from trafficLog by
+// analogy. The analogy was wrong, and Andy caught it:
+//
+//   trafficLog is a RECORD of what crossed the WAN, and a record may age
+//   out. This is UNDELIVERED MAIL, and ageing it out is data loss AFTER
+//   an acknowledgement.
+//
+// A backlog that receipts a packet and then quietly deletes it is the
+// exact sin 0006 removed from the relay — words held "for a while,
+// silently, and evicted without telling anybody: neither fast nor true".
+// Relocating that to the owner's own disk does not make it honest, it
+// makes it harder to notice. The receipt would be true when signed and a
+// lie by morning, which is the false positive ROUTER.md §4 says can
+// never happen.
+//
+// So: no window. A receipt means FILED AND KEPT UNTIL SOMETHING TAKES
+// IT. The bound is the node's own disk, on the node's own machine, in a
+// file somebody can look at — which is what the ring was not, on all
+// three counts. 0006 put durability on the recipient's own node; this is
+// that, and an answering machine that erases the tape after a day would
+// not be it.
 
 const fs = require('fs');
 const path = require('path');
@@ -76,27 +96,22 @@ const packet = require('./packet.js');
 // gitignored, it is unservable through every generic file route, and it
 // is where this node keeps things that are its own business. Personal
 // nodes only — a relay never builds a peerRouter and so never notes here.
-const WINDOW_MS = 24 * 60 * 60 * 1000;
-
 function backlogPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'pendingArrivals.json');
 }
 
 // Unreadable or malformed reads as "nothing held" rather than throwing. A
 // backlog that can crash the thing it serves is worse than an empty one.
-function readBacklog(rootDir, nowMs) {
-  var held = [];
+//
+// Nothing is filtered on the way in. Age is not a reason to drop
+// undelivered mail — see the header.
+function readBacklog(rootDir) {
   try {
     var parsed = JSON.parse(fs.readFileSync(backlogPath(rootDir), 'utf8'));
-    held = Array.isArray(parsed && parsed.held) ? parsed.held : [];
+    return Array.isArray(parsed && parsed.held) ? parsed.held : [];
   } catch (e) {
     return [];
   }
-  var floor = nowMs - WINDOW_MS;
-  return held.filter(function (m) {
-    var at = Date.parse(m && m.sentAt);
-    return !(at < floor);
-  });
 }
 
 // TEMP FILE THEN RENAME, the same three lines trafficLog buys it with: a
@@ -116,7 +131,6 @@ function writeBacklog(rootDir, held) {
 function createArrivals(opts) {
   var o = opts || {};
   var rootDir = o.rootDir || null;
-  var clock = typeof o.now === 'function' ? o.now : function () { return Date.now(); };
 
   // An array rather than a map: subscribers are anonymous (one per open
   // browser connection) and there is never a reason to address one.
@@ -125,7 +139,7 @@ function createArrivals(opts) {
   // In memory when there is no rootDir, on disk when there is. Held here
   // as well either way, so a page opening does not read a file to find
   // out there is nothing to read.
-  var held = rootDir ? readBacklog(rootDir, clock()) : [];
+  var held = rootDir ? readBacklog(rootDir) : [];
 
   function persist() {
     if (!rootDir) return;
@@ -197,21 +211,10 @@ function createArrivals(opts) {
     // anything, and treating a broken page as a reader would lose the
     // packet exactly when something is already wrong.
     if (delivered === 0) {
-      held = readBacklogInMemory().concat([message]);
+      held = held.concat([message]);
       persist();
     }
     return delivered;
-  }
-
-  // The window is applied on the way in as well as on the way out, so a
-  // node that ran for a week does not carry a week of backlog waiting for
-  // somebody to open a page.
-  function readBacklogInMemory() {
-    var floor = clock() - WINDOW_MS;
-    return held.filter(function (m) {
-      var at = Date.parse(m && m.sentAt);
-      return !(at < floor);
-    });
   }
 
   // How many packets are waiting for a page to open. For the suite, and
@@ -226,4 +229,4 @@ function createArrivals(opts) {
   return { note: note, subscribe: subscribe, count: count, pending: pending };
 }
 
-module.exports = { createArrivals: createArrivals, WINDOW_MS: WINDOW_MS };
+module.exports = { createArrivals: createArrivals };

@@ -87,6 +87,43 @@ recipient's *node*, and — if an app has something to say — a reply later,
 as its own packet, correlated by the same hash. A receipt is simply the
 degenerate reply a node sends when nobody is home.
 
+### 3a. Three states, and nothing between them (added 2026-09-13)
+
+Written after Andy pushed back on a proposal to carry *"an app was
+listening"* on the receipt. The proposal was wrong and the reason is the
+useful part.
+
+> in popular chat apps (WhatsApp, Telegram etc), when a message shows
+> with two green checkmarks (the user has read your message) is often a
+> false positive. It's only when a reply arrives from the human with a
+> hash of the message he responds to, can the sender be reasonably
+> certain that the package was read. In our system, with precise,
+> hashed, and unique package identities, we should be looking at it this
+> way: **peer to peer consent over the status of a uniquely identifiable
+> package.**
+
+| state | evidence | signed by |
+|---|---|---|
+| **not delivered** | a refusal, or no answer | nobody — the absence *is* the answer |
+| **delivered** | a receipt over the hash | the recipient's **node** |
+| **acted on** | a reply carrying the same hash | the recipient's **app**, on a human's behalf |
+
+**An app being mounted is not a human reading.** A `seen` flag would have
+been two green checkmarks: a new false positive, dressed as precision and
+signed, which is worse than the honest silence it replaced. Nothing
+between *delivered* and *acted on* is knowable, so nothing models it.
+
+The hash is what makes this work here and not there. It is unique, it is
+over the exact bytes, and a reply naming it is signed by the recipient —
+so *acted on* is not a claim the sender infers, it is **consent the
+recipient gives about a specific packet**, and no middle can manufacture
+it.
+
+**Delivered means filed and kept**, with no clock on it. A backlog that
+receipted a packet and then aged it out would make the receipt true when
+signed and a lie by morning — the false positive §4 forbids, and the sin
+0006 removed from the relay.
+
 ## 4. The guarantee, stated so it can be relied on
 
 > **The failure is always a false negative, never a false positive.** You

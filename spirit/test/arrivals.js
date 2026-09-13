@@ -217,31 +217,39 @@ function itemWith(text) {
   fs.rmSync(home, { recursive: true, force: true });
 })();
 
-(function exactlyOneDay() {
+// THE OPPOSITE OF THE CHECK THAT STOOD HERE, and the reversal is the
+// finding.
+//
+// This asserted a 24-hour window: a day old to the second was held, a
+// second older was gone. The window was copied from trafficLog, and the
+// analogy was wrong — that file is a RECORD of what crossed the WAN and
+// a record may age out; this is UNDELIVERED MAIL, and ageing it out is
+// data loss after an acknowledgement.
+//
+//   Andy: "with a 24 hour ring (or however long), we never can guarantee
+//   the recept of the package by the actual human"
+//
+// A receipt that is true when signed and a lie by morning is the false
+// positive ROUTER.md §4 says can never happen — and it is precisely the
+// sin 0006 removed from the relay, relocated somewhere harder to notice.
+(function undeliveredMailHasNoClock() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogage-'));
-  const DAY = arrivalsModule.WINDOW_MS;
-  const T = Date.parse('2026-09-13T12:00:00.000Z');
+  const YEAR = 365 * 24 * 60 * 60 * 1000;
 
-  // Written directly, because the point is the age of what is on disk
-  // rather than the path it took to get there.
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(home, 'relay-state', 'pendingArrivals.json'), JSON.stringify({
     held: [
-      { sentAt: new Date(T - DAY + 1000).toISOString(), text: 'just inside', packet: { app: 'chess', body: {} } },
-      { sentAt: new Date(T - DAY - 1000).toISOString(), text: 'just outside', packet: { app: 'chess', body: {} } },
+      { sentAt: new Date(Date.now() - YEAR).toISOString(), text: 'a year old', packet: { app: 'chess', legacy: false, body: {} } },
+      { sentAt: new Date(Date.now() - 1000).toISOString(), text: 'a second old', packet: { app: 'chess', legacy: false, body: {} } },
     ],
   }));
 
-  const arrivals = arrivalsModule.createArrivals({ rootDir: home, now: function () { return T; } });
+  const arrivals = arrivalsModule.createArrivals({ rootDir: home });
   const got = [];
   arrivals.subscribe(function (m) { got.push(m); });
 
-  // The same clock rule trafficLog keeps, checked against an injected
-  // clock rather than by waiting a day — a retention rule stated in hours
-  // that can only be tested by waiting hours is one that will not be
-  // tested.
-  if (got.length === 1 && got[0].text === 'just inside') {
-    test.check('a day old to the second is still held; a second older than that is gone');
+  if (got.length === 2 && got[0].text === 'a year old') {
+    test.check('a packet a YEAR old is still waiting — undelivered mail has no clock, whatever the receipt promised');
   } else {
     test.fail('kept: ' + JSON.stringify(got.map(function (m) { return m.text; })));
   }
