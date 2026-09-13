@@ -49,16 +49,17 @@ function natterLoadRelays(api) {
 // enforced is worth more than the button, and spirit/test/natterLast.js
 // still proves it. When there is a second satellite the panel comes back
 // and finds its rule already standing.
-function natterCanRemove(count) {
+function natterCanRemove(relays, url) {
   var badge = (typeof window !== 'undefined' && window.spiritOwnerBadge) || null;
-  return !!(badge && badge.canRemoveMailbox(count));
+  return !!(badge && badge.canRemoveMailbox(relays, url));
 }
 
 // Removal decided in one place, so the button and the click agree. A
 // disabled-looking button that still deletes when clicked is the failure
 // this cycle is about.
 function natterRemoveAt(relays, index) {
-  if (!natterCanRemove(relays.length)) return null;
+  var row = relays && relays[index];
+  if (!natterCanRemove(relays, row && row.url)) return null;
   if (!(index >= 0 && index < relays.length)) return null;
   return relays.splice(index, 1)[0];
 }

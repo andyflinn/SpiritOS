@@ -92,28 +92,85 @@ function countRemoveButtons(html) {
 
 test.startTest('Natter — the last public relay does not come off');
 
+// THE TITLE OF THIS SUITE WAS ALREADY RIGHT and the rule underneath it
+// was not. It said "the last PUBLIC relay", and canRemoveMailbox counted
+// rows: `count > 1`.
+//
+//   Andy: "That rule should be: a node keeps at least one working,
+//   public relay"
+//
+// A list of two dead loopback lab relays passed the old rule and leaves a
+// node that cannot claim, send, read, or be reached by anybody. Andy's
+// own node was in that shape — two rows, one of them 127.0.0.1:65425 not
+// running, and sitting FIRST so every /api/hub verb dialled it.
 {
-  if (ownerBadge.canRemoveMailbox(2) === true && ownerBadge.canRemoveMailbox(3) === true) {
-    test.check('two or more mailboxes: a removal is allowed');
+  const LIVE = 'https://spirit.andyflinn.com';
+  const OTHER = 'https://relay.example';
+  const LAB = 'http://127.0.0.1:65425';
+  const LAB2 = 'http://localhost:65426';
+
+  // The case the old rule got wrong, and the reason for the change.
+  if (ownerBadge.canRemoveMailbox([{ url: LAB }, { url: LAB2 }], LAB) === false) {
+    test.check('two lab relays are not two relays — neither comes off, because neither is public');
   } else {
-    test.fail('two/three: ' + ownerBadge.canRemoveMailbox(2) + ' ' + ownerBadge.canRemoveMailbox(3));
+    test.fail('a node was allowed to strip itself down to a loopback fixture');
   }
 
-  if (ownerBadge.canRemoveMailbox(1) === false && ownerBadge.canRemoveMailbox(0) === false) {
-    test.check('one or none: no removal');
+  if (ownerBadge.canRemoveMailbox([{ url: LIVE }, { url: LAB }], LAB) === true) {
+    test.check('and the lab row DOES come off while a public one survives');
   } else {
-    test.fail('one/none: ' + ownerBadge.canRemoveMailbox(1) + ' ' + ownerBadge.canRemoveMailbox(0));
+    test.fail('a lab relay could not be removed beside a public one');
   }
 
-  // The count arrives from a length, but it has arrived from worse before
-  // — this must never be truthy by accident.
-  const junk = [undefined, null, '', 'two', NaN, -1, {}, []].every(function (v) {
+  if (ownerBadge.canRemoveMailbox([{ url: LIVE }, { url: LAB }], LIVE) === false) {
+    test.check('while the public one does not, even with another row left');
+  } else {
+    test.fail('the last public relay came off');
+  }
+
+  // A COUNT COULD NEVER HAVE ANSWERED THIS. Five rows, one of them
+  // public: removing that one is still fatal, and `count > 1` says yes.
+  const five = [{ url: LIVE }, { url: LAB }, { url: LAB2 },
+    { url: 'http://127.0.0.1:1' }, { url: 'http://127.0.0.1:2' }];
+  if (ownerBadge.canRemoveMailbox(five, LIVE) === false) {
+    test.check('one public row among five is still the last one — which no count could tell you');
+  } else {
+    test.fail('a count-shaped answer came back for a list-shaped question');
+  }
+
+  if (ownerBadge.canRemoveMailbox([{ url: LIVE }, { url: OTHER }], LIVE) === true) {
+    test.check('and two public relays are two — either may go');
+  } else {
+    test.fail('two public relays behaved like one');
+  }
+
+  // PUBLIC MEANS REACHABLE BY A PEER, and it is the same rule the wire
+  // enforces (hub.assertRelayUrl): https, or http only to loopback. A
+  // plain-http public host is refused on the wire, so it must not count
+  // here either or the rule would promise something the transport
+  // refuses to deliver.
+  const publicOnes = ['https://spirit.andyflinn.com', 'https://relay.example:8443'];
+  const notPublic = ['http://127.0.0.1:65425', 'http://localhost:1', 'http://[::1]:2',
+    'http://relay.example', 'ftp://relay.example', 'not a url', '', null];
+  if (publicOnes.every(ownerBadge.isPublicRelay) &&
+      notPublic.every(function (u) { return ownerBadge.isPublicRelay(u) === false; })) {
+    test.check('public is https and not loopback — plain http, junk and nothing are none of them');
+  } else {
+    test.fail('public test: ' +
+      JSON.stringify(publicOnes.map(ownerBadge.isPublicRelay)) + ' / ' +
+      JSON.stringify(notPublic.map(ownerBadge.isPublicRelay)));
+  }
+
+  // The rule takes a LIST now. A caller still passing the old count is
+  // asking a question this cannot answer, and no is the safe half of
+  // being wrong.
+  const junk = [undefined, null, '', 'two', NaN, -1, 0, 1, 2, 3, {}].every(function (v) {
     return ownerBadge.canRemoveMailbox(v) === false;
   });
   if (junk) {
-    test.check('a count that is not a number above one is not permission');
+    test.check('and anything that is not a list is refused, counts included');
   } else {
-    test.fail('junk counts were not all refused');
+    test.fail('something that was not a list was treated as permission');
   }
 }
 
@@ -127,8 +184,21 @@ test.subHeading('The browser is given the same rule, not a copy of it');
     test.fail('no browser half: ' + JSON.stringify(Object.keys(win)));
   }
 
-  if (win.spiritOwnerBadge.canRemoveMailbox(1) === false && win.spiritOwnerBadge.canRemoveMailbox(2) === true) {
-    test.check('and it answers exactly as the node side does');
+  // THE SAME LIST, THROUGH BOTH HALVES. One rule published twice, not
+  // two rules that happen to agree — so this asks the browser side the
+  // question the node side was just asked, and compares the answers
+  // rather than restating an expectation.
+  const list = [{ url: 'https://spirit.andyflinn.com' }, { url: 'http://127.0.0.1:65425' }];
+  const cases = [
+    [list, 'http://127.0.0.1:65425'],
+    [list, 'https://spirit.andyflinn.com'],
+    [[{ url: 'http://127.0.0.1:65425' }], 'http://127.0.0.1:65425'],
+  ];
+  const agree = cases.every(function (c) {
+    return win.spiritOwnerBadge.canRemoveMailbox(c[0], c[1]) === ownerBadge.canRemoveMailbox(c[0], c[1]);
+  });
+  if (agree && win.spiritOwnerBadge.canRemoveMailbox(list, 'http://127.0.0.1:65425') === true) {
+    test.check('and it answers exactly as the node side does, on the same lists');
   } else {
     test.fail('browser rule disagrees with the node rule');
   }

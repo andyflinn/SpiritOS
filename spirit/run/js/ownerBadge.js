@@ -28,13 +28,63 @@ function normalizeUrl(u) {
   return String(u == null ? '' : u).trim().replace(/\/+$/, '');
 }
 
-// A personal node with no Natter row has no mailbox at all: Relay Chat
-// cannot claim, cannot send, cannot read an inbox, and the owner badge
-// has nothing to be a badge on. So the last row does not come off. This
-// is the count AFTER which a removal is allowed, not before — one row
-// left is the floor, not the error.
-function canRemoveMailbox(count) {
-  return Number(count) > 1;
+// WHAT A NODE MUST NOT BE LEFT WITHOUT.
+//
+//   Andy: "That rule should be: a node keeps at least one working,
+//   public relay"
+//
+// It used to be `count > 1` — pure arithmetic over rows — and that is
+// satisfied by a list of two dead loopback lab relays, which is a node
+// that cannot claim, cannot send, cannot read, and cannot be reached by
+// anybody. Andy's own node was in exactly that shape: two rows, one of
+// them a lab relay on 127.0.0.1 that was not running, sitting FIRST so
+// every /api/hub verb dialled it.
+//
+// So the floor is not a number of rows. It is one PUBLIC relay.
+//
+// ── PUBLIC, AND WHY "WORKING" IS NOT PART OF THIS ────────────────────
+//
+// Public is a property of the URL and the same one hub.assertRelayUrl
+// already enforces on the wire: https, or http only to loopback. A
+// loopback relay is a lab fixture — no peer on the internet can reach
+// you there, so it is not what keeps a node alive.
+//
+// "Working" is a live fact — a stream held right now — and it does NOT
+// belong in a permission check, for a reason that only shows up in the
+// case that matters: if your one public relay is down, a rule demanding
+// a working one would refuse every removal, including removing the dead
+// lab row that is causing the trouble. It would lock the door of the
+// room it just set on fire.
+//
+// Working belongs in what a screen SHOWS — "your relay is not answering"
+// — which is a different job from deciding whether a list may be edited.
+//
+// `relays` is the list as it stands and `url` the row being considered.
+// The question is about what SURVIVES, which a count can never answer:
+// removing the only public row from a list of five is still fatal.
+function isPublicRelay(url) {
+  var target;
+  try { target = new URL(String(url || '')); }
+  catch (e) { return false; }
+  if (target.protocol !== 'https:' && target.protocol !== 'http:') return false;
+  var host = String(target.hostname || '').toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') return false;
+  // http to a public host is refused on the wire by assertRelayUrl, so a
+  // node cannot rely on one and this must not count it either.
+  return target.protocol === 'https:';
+}
+
+function canRemoveMailbox(relays, url) {
+  // A count, from the version before this one. Answered false rather
+  // than guessed at: a caller that still passes a number is asking a
+  // question this rule no longer knows how to answer, and saying no is
+  // the safe half of being wrong.
+  if (!Array.isArray(relays)) return false;
+  var going = String(url || '');
+  return relays.some(function (row) {
+    var u = String((row && row.url) || row || '');
+    return u !== going && isPublicRelay(u);
+  });
 }
 
 // Natter rows, in file order, deduped by URL. A row with no url is not a
@@ -233,6 +283,7 @@ if (isNode) {
     censusFacts: censusFacts,
     normalizeUrl: normalizeUrl,
     canRemoveMailbox: canRemoveMailbox,
+    isPublicRelay: isPublicRelay,
     loadRelays: loadRelays,
     configuredUrls: configuredUrls,
     statusPath: statusPath,
@@ -245,5 +296,6 @@ if (isNode) {
   window.spiritOwnerBadge = {
     normalizeUrl: normalizeUrl,
     canRemoveMailbox: canRemoveMailbox,
+    isPublicRelay: isPublicRelay,
   };
 }
