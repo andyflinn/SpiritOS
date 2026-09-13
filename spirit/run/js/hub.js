@@ -747,7 +747,13 @@ function createHub(rootDir) {
   // the machine.
   function outgoingText(body) {
     if (body && body.app !== undefined) {
-      return packet.encode(body.app, body.body === undefined ? '' : body.body);
+      // `re` rides through untouched: the node does not know what the
+      // caller is regarding and has no business checking. It is a hash
+      // over bytes somebody else holds, so the only party who can verify
+      // it is the one who holds them.
+      return packet.encode(body.app, body.body === undefined ? '' : body.body, {
+        re: body.re,
+      });
     }
     // Legacy caller: a bare string, wired as it always was.
     return { ok: true, text: String((body && body.text) || '') };

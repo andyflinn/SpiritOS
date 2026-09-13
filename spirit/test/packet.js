@@ -300,4 +300,85 @@ test.subHeading('A weak source is refused, never substituted');
   }
 }
 
+// ---------------------------------------------------------------------
+// Re: — the protocol's "regarding", and what it is NOT.
+// ---------------------------------------------------------------------
+//
+//   Andy: "this has nothing to do with chat. it's a protocol feature,
+//   similar to an email's Re: (regarding) field in meaning but much more
+//   specific."
+//
+// Specific, because it carries a request HASH rather than a subject line
+// or a sender-chosen id: a reference anyone holding the original bytes
+// can recompute and check, instead of one they have to take on trust.
+test.subHeading('Re: a packet regarding another packet');
+
+(function reRidesInTheEnvelope() {
+  const plain = packet.encode('chess', { move: 'e4' }, { id: 'aa' });
+  const regarding = packet.encode('chess', { move: 'e5' }, { id: 'bb', re: 'HASHOFE4' });
+
+  if (regarding.ok && JSON.parse(regarding.text).re === 'HASHOFE4') {
+    test.check('a packet can say which packet it is about, in the envelope');
+  } else {
+    test.fail('encoded: ' + regarding.text);
+  }
+
+  // IN THE ENVELOPE, NOT THE BODY, and that is the decision. A body
+  // convention would be one app's private habit; every app gets this,
+  // and most will ignore it.
+  if (JSON.parse(regarding.text).body.move === 'e5' &&
+      JSON.parse(regarding.text).re === 'HASHOFE4') {
+    test.check('and it sits beside the body rather than inside it — a protocol field, not an app convention');
+  } else {
+    test.fail('shape: ' + regarding.text);
+  }
+
+  // A packet that regards nothing is byte-for-byte what it was before
+  // this field existed. Every peerfile, every relay running older code,
+  // every stored line stays readable.
+  if (plain.text.indexOf('"re"') === -1) {
+    test.check('a packet regarding nothing carries no field at all — older packets are unchanged');
+  } else {
+    test.fail('a plain packet grew a field: ' + plain.text);
+  }
+})();
+
+(function decodeAlwaysAnswers() {
+  const withRe = packet.decode(packet.encode('chess', {}, { re: 'H' }).text);
+  const without = packet.decode(packet.encode('chess', {}).text);
+  const legacy = packet.decode('a plain chat line');
+
+  // '' rather than undefined, so a reader never has to know whether the
+  // field was absent or empty — and a legacy line answers the same way.
+  if (withRe.re === 'H' && without.re === '' && legacy.re === undefined) {
+    test.check("decode answers `re` for an envelope and '' when there is none");
+  } else {
+    test.fail(JSON.stringify({ withRe: withRe.re, without: without.re, legacy: legacy.re }));
+  }
+
+  const decorated = packet.decorate({ text: packet.encode('chess', {}, { re: 'H' }).text });
+  if (decorated.packet.re === 'H') {
+    test.check('and it reaches an app through decorate, like app and body do');
+  } else {
+    test.fail('decorated: ' + JSON.stringify(decorated.packet));
+  }
+})();
+
+(function itIsNotTheRouteKey() {
+  // THE DISTINCTION THAT MATTERS, recorded as a check because conflating
+  // the two would give threading a twenty-second memory.
+  //
+  // The router's pending entry is swept after router.js DEFAULT_TTL_MS —
+  // that is how long a sender stands waiting for a reply. `re` is not
+  // that: it is a new post NAMING an old packet, and it works as long as
+  // somebody kept the packet, not as long as a route is open.
+  const router = require('../run/js/router.js');
+  const ttl = router.createRouter().ttlMs;
+  if (typeof ttl === 'number' && ttl <= 60000) {
+    test.check('the route table forgets in ' + (ttl / 1000) + 's, which is why `re` is a stored hash and not a route key');
+  } else {
+    test.fail('route ttl: ' + ttl);
+  }
+})();
+
 test.reportSuccessFailureCount();

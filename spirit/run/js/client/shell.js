@@ -1289,7 +1289,11 @@
       // `from` is gone with it. The ring signed as a LABEL and needed to
       // be told which one; the router signs as this node's identity and
       // the question does not arise.
-      sendMessagePacket: function (packetApp, toId, body) {
+      // `opts.re` is the request hash of a packet this one is about —
+      // the protocol's Re: field. Optional, opaque here, and passed
+      // straight through: the shell does not know what is being regarded
+      // any more than the node does.
+      sendMessagePacket: function (packetApp, toId, body, opts) {
         return fetch('/api/hub/post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1297,6 +1301,7 @@
             to: toId,
             app: packetApp,
             body: body,
+            re: (opts && opts.re) || '',
           }),
         }).then(function (r) {
           return r.text().then(function (t) { return { status: r.status, text: t }; });

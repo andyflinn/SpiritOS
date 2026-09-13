@@ -119,6 +119,29 @@ so *acted on* is not a claim the sender infers, it is **consent the
 recipient gives about a specific packet**, and no middle can manufacture
 it.
 
+### 3b. Regarding (`re`)
+
+A packet may name another packet it is **about**, by that packet's
+request hash, in the envelope beside `app`/`v`/`id`.
+
+It is an email `Re:` and it is more specific than one, because it carries
+a hash rather than a subject line or a sender-chosen id: **anyone holding
+the original bytes can recompute it and check**. A reference to `id`
+would be merely asserted; this one is verifiable. Both ends already have
+the value without being told — the sender gets it back from its own post,
+the receiver derives it from what arrived.
+
+**It is not the route table's key.** A pending route is swept after 20
+seconds, which is how long a sender stands waiting. `re` is a *new post
+naming an old packet*, and it works for as long as somebody kept the
+packet rather than for as long as a route is open. Conflating the two
+would give threading a twenty-second memory.
+
+**In the envelope, not in a body.** An app's body convention would be one
+app's private habit; this way every app gets it and most will ignore it,
+which is what makes it protocol rather than a feature of whoever thought
+of it first.
+
 **Delivered means filed and kept**, with no clock on it. A backlog that
 receipted a packet and then aged it out would make the receipt true when
 signed and a lie by morning — the false positive §4 forbids, and the sin

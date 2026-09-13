@@ -12,6 +12,11 @@
 //
 //   text = JSON.stringify({ app: "relay-chat", v: 1, id: "…", body: … })
 //
+// …and optionally `re`, the request hash of the packet this one is
+// about: the protocol's "regarding", added 2026-09-13. Omitted entirely
+// when there is nothing to regard, so an ordinary packet is byte-for-byte
+// what it was before the field existed.
+//
 // `app` is the packet name of the app that sent it, not a shell app id
 // and not a path. `body` is whatever that app wants to say: a string for
 // chat, an object for anything with structure. `id` is unique per send —
@@ -116,6 +121,34 @@ function packetEncode(app, body, opts) {
     body: body,
   };
 
+  // REGARDING. The request hash of the packet this one is about — an
+  // email Re:, with proof attached.
+  //
+  //   Andy: "this has nothing to do with chat. it's a protocol feature,
+  //   similar to an email's Re: (regarding) field in meaning but much
+  //   more specific."
+  //
+  // It is a HASH and not the `id` above, and the difference is the whole
+  // value of it: `id` is a number the sender picked, so a reference to it
+  // is merely asserted. The request hash is taken over the exact bytes
+  // that were signed, so anyone holding the original can recompute it and
+  // check. Both ends already have it without being told — the sender gets
+  // it back from its own post, the receiver derives it from what arrived
+  // (ROUTER.md §2: no hash is ever sent).
+  //
+  // NOT the route table's key in any live sense. That entry is swept
+  // after 20 seconds (router.js DEFAULT_TTL_MS), which is the window a
+  // sender stands waiting for a reply. This outlives it by as long as
+  // somebody keeps the packet: "regarding the thing you said on Tuesday"
+  // is a new post that NAMES an old one, not an answer to a request still
+  // in flight. Those are different mechanisms and conflating them would
+  // give threading a twenty-second memory.
+  //
+  // OMITTED WHEN ABSENT, so a packet that regards nothing is byte-for-byte
+  // what it was before this field existed.
+  var re = options.re === undefined || options.re === null ? '' : String(options.re);
+  if (re) envelope.re = re;
+
   var text;
   try {
     text = JSON.stringify(envelope);
@@ -168,6 +201,9 @@ function packetDecode(text) {
     app: parsed.app,
     v: parsed.v,
     id: parsed.id,
+    // '' rather than undefined for a packet that regards nothing, so a
+    // reader never has to know whether the field was absent or empty.
+    re: typeof parsed.re === 'string' ? parsed.re : '',
     body: parsed.body,
   };
 }
@@ -190,6 +226,10 @@ function packetDecorate(message) {
     legacy: !!decoded.legacy,
     app: decoded.app,
     id: decoded.id || null,
+    // What this packet is about, if anything. Every app gets it and most
+    // will ignore it — which is the point of a protocol field rather than
+    // a convention each app invents in its own body.
+    re: decoded.re || '',
     body: decoded.body,
   };
   return out;
