@@ -604,6 +604,28 @@ function decorateWithPacket(message) {
   return packet.decorate(message);
 }
 
+// A LOG ROW, AS A CLIENT SEES A PACKET. The same shape arrivals.js pushes
+// down the live stream, built from the stored row — so a page merging its
+// catch-up with what arrived while it was reading has one shape, not two.
+//
+// The STORE stays payload-agnostic: trafficLog never parses anything. The
+// decode happens here, on the way out, which is what keeps that property
+// true while still handing a client a body rather than a string.
+function rowAsMessage(row) {
+  return packet.decorate({
+    id: String((row && row.hash) || ''),
+    hash: String((row && row.hash) || ''),
+    from: String((row && row.peer) || ''),
+    fromKey: String((row && row.peer) || ''),
+    text: typeof (row && row.payload) === 'string' ? row.payload : '',
+    sentAt: String((row && row.at) || ''),
+    relay: String((row && row.relay) || ''),
+    // When a live page was first handed it, or absent while it is still
+    // waiting. A client can tell "new to everyone" from "I missed it".
+    takenAt: (row && row.takenAt) || null,
+  });
+}
+
 // One delivered batch, counted. Packet 7, and the rules are Grok's:
 //
 //   no fromKey, or our own          skip — not somebody else's traffic
@@ -836,6 +858,55 @@ function createHub(rootDir) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       res.end('Invalid JSON body');
     });
+  }
+
+  // THE LOG, READ AS A TABLE. What arrived, oldest first, from a
+  // position — so a page that was shut can catch up with the same rows a
+  // live page was pushed.
+  //
+  //   Andy: "The node will provide client(s) with an api block that
+  //   treats the log like a database file with the primary keys being
+  //   hash, arrival-date."
+  //
+  // DELIBERATELY CONTAINED. `since` and `limit`, or one row by `hash`,
+  // and nothing else — no filter on `packet.app`, ever:
+  //
+  //   Andy: "only an entity that knows the internal package structure
+  //   (shell) can fan out based on the internal package structure, so the
+  //   read-log-interface the node provides should be fairly contained."
+  //
+  // The node keys on public keys and hashes. Routing by app is the
+  // shell's reading, and doing it here would be this layer reaching up.
+  //
+  // Rows come back in the shape the live push sends, decoded envelope
+  // included — one shape to merge rather than two, which is the whole
+  // problem a catching-up client has.
+  function handleArrivals(req, res, urlObj, deps) {
+    var log = deps && deps.traffic;
+    if (!log || typeof log.arrivals !== 'function') {
+      fail(res, 503, 'this node keeps no traffic log');
+      return;
+    }
+    var hash = urlObj.searchParams.get('hash') || '';
+    if (hash) {
+      var one = log.byHash(hash);
+      // Admitted inbound only, whatever the caller asked for. An
+      // outbound record is this node's own history and a held packet is
+      // a decision nobody has made yet; neither is an arrival.
+      if (!one || one.dir !== 'in' || !one.admitted) {
+        fail(res, 404, 'no such arrival');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ rows: [rowAsMessage(one)] }));
+      return;
+    }
+    var rows = log.arrivals({
+      since: urlObj.searchParams.get('since') || '',
+      limit: urlObj.searchParams.get('limit'),
+    });
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ rows: rows.map(rowAsMessage) }));
   }
 
   function handleSend(req, res, readJsonBody) {
@@ -1374,6 +1445,9 @@ function createHub(rootDir) {
     // listed next to each other on purpose, so the two transports are
     // visible as two transports until one of them goes.
     handlePost: handlePost,
+    // The other half of the same concept: the live push carries what
+    // arrives now, this carries what arrived while nobody was looking.
+    handleArrivals: handleArrivals,
     handleSend: handleSend,
     handleInbox: handleInbox,
     // The same read, with nobody watching. server.js calls it on a timer

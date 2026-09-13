@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 12 requirements, 9 done.**
+**Status: OPEN — 13 requirements, 11 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -554,10 +554,58 @@ Recorded rather than fixed in R5's commit because it is the ring's READ
 half and belongs with R8, and because a silent statistic is exactly the
 kind of thing that disappears between two commits nobody connected.
 
-**Verify:** not written. Wants the router path counting inbound, and a
-check that a packet arriving over the router moves the same numbers a
-line over the ring did.
-**Status:** OPEN — blocks R8
+`peerPost` now calls `peerStats.noteIn` on the arrival path, keyed by the
+**request hash** rather than a relay's message id — the id existed only
+because a non-destructive poll could hand the same line twice, and the
+hash is over the exact bytes rather than a number somebody else assigned.
+
+Per peer, never per app: a count of *"chess packets from bert"* would be
+the node doing the shell's reading.
+
+**Verify:** `spirit/test/liveFrontDoor.js` — "alfa is counted in the
+per-peer numbers bravo keeps — the router moves them now, as the ring
+did", over the wire between real nodes.
+**Status:** DONE
+
+### R13 — the log is readable as a table
+> The node will provide client(s) with an api block that treats the log like a database file with the primary keys being hash, arrival-date.
+
+**And it is the log that already existed.** `trafficLog` has recorded both
+directions since it landed, keyed by exactly that pair. Three things were
+missing, none of them a second store:
+
+**Admission.** `outcome: 'delivered'` meant *arrived and filed*, which is
+equally true of a packet the front door **held** for a human decision —
+both in the file, both with their payload, indistinguishable. Reading the
+log back without that distinction would hand an unaccepted stranger's
+line straight to an app. Rows now carry `admitted`.
+
+**Retention that contradicted itself.** 24 hours is right for a *record*
+and wrong for *undelivered mail*. Resolved per row state rather than per
+file: a row that is admitted and not yet `takenAt` outlives any window;
+everything else ages at the clock. That also folds R10's separate
+`pendingArrivals.json` back into the one log.
+
+**A read surface, and a contained one:**
+> only an entity that knows the internal package structure (shell) can fan out based on the internal package structure, so the read-log-interface the node provides should be fairly contained.
+
+`since` + `limit`, or one row by `hash`. **No filter on `packet.app`,
+ever** — the node keys on public keys and hashes, and routing by app is
+the shell's reading. Rows come back in the same shape the live push
+sends, so a catching-up client merges one shape rather than two. The
+store stays payload-agnostic: the decode happens on the way out.
+
+**Verify:** `spirit/test/trafficLog.js` — "only an ADMITTED inbound row
+is an arrival", "`since` is a position, not a filter", "the surface offers
+no way to ask by app", "two days on the unread packet is still there and
+the read one has aged out"; `spirit/test/liveFrontDoor.js` — "bravo
+answers /api/hub/arrivals with the one line it agreed to hear" and "the
+post it IGNORED is absent from that table, though both are in its log".
+**Status:** DONE
+
+---
+
+## Not yet agreed
 
 ### R12 — an app can reply, and a reply is the only evidence of being read
 > It's only when a reply arrives from the human with a hash of the message he responds to, can the sender be reasonably certain that the package was read… peer to peer consent over the status of a uniquely identifiable package.

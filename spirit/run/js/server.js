@@ -140,6 +140,16 @@ const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.c
 const relayMode = process.argv.slice(2).includes('--relay');
 const HOME_PAGE = relayMode ? 'relay.html' : 'index.html';
 
+// THE LOG, read as a table. One store for both directions, keyed by hash
+// and ordered by arrival — and the thing the arrivals seam hands rows to,
+// so a page that was closed can catch up from the same place a live page
+// is fed from.
+const trafficLog = require('./trafficLog').createTrafficLog({
+  rootDir: spirit.core.node.const.ROOT_DIR,
+  relayMode: relayMode,
+});
+
+
 // A mailbox is a party to conversations — the census reply comes FROM
 // it — and `relay` is the caption it answers to, not an identity. A node
 // that keeps one file per peer cannot file the mailbox anywhere without
@@ -912,6 +922,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // The log as a table — see hub.handleArrivals. GET, because it reads.
+  if (req.method === 'GET' && pathname === '/api/hub/arrivals') {
+    hub.handleArrivals(req, res, url, { traffic: trafficLog });
+    return;
+  }
+
   if (req.method === 'GET' && pathname === '/api/hub/who') {
     hub.handleWho(req, res);
     return;
@@ -1374,10 +1390,11 @@ if (!relayMode) {
     // including what it deliberately does NOT do about a packet that
     // arrives while no browser is open.
     onArrival: arrivals.note,
-    traffic: require('./trafficLog').createTrafficLog({
-      rootDir: ROOT_DIR,
-      relayMode: relayMode,
-    }),
+    traffic: trafficLog,
+    // The peer's own numbers, on the transport that did not move them.
+    // countInbound did it on the `inbox` path and nothing did it here, so
+    // a node fully on the router would have stopped counting silently.
+    stats: require('./peerStats'),
   });
 
   presence = require('./presenceNode').createPresence({

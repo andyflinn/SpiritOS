@@ -228,6 +228,57 @@ async function run() {
       test.fail('row: ' + JSON.stringify(row));
     }
 
+    // ── THE LOG, READ BACK AS A TABLE, OVER THE WIRE ──────────────────
+    //
+    // Everything above reads bravo's traffic.json off disk. This asks
+    // bravo the way a client would, and it is the other half of the
+    // contract: one interface to post to a peer, one to find out what
+    // arrived.
+    const table = await hub(portOf(bravo), 'GET', '/api/hub/arrivals');
+    const rows = (table.body && table.body.rows) || [];
+    const mine = rows.filter(function (r) { return r.fromKey === alfaKey; });
+
+    if (table.status === 200 && mine.length === 1) {
+      test.check('bravo answers /api/hub/arrivals with the one line it agreed to hear');
+    } else {
+      test.fail('arrivals: ' + table.status + ' ' + JSON.stringify(rows));
+    }
+
+    // THE IGNORED ONE IS NOT IN IT, and that is the check the read
+    // surface rests on. Both posts are in bravo's log with the same
+    // outcome word; only one of them was admitted, and a reader that
+    // could not tell them apart would hand an unaccepted stranger's line
+    // to an app and walk the front door back.
+    const texts = mine.map(function (r) { return r.packet && r.packet.body; });
+    if (texts.length === 1 && texts[0] === 'hello again') {
+      test.check('and the post it IGNORED is absent from that table, though both are in its log');
+    } else {
+      test.fail('table carried: ' + JSON.stringify(texts));
+    }
+
+    // ADDRESSABLE BY HASH — the other primary key, and what `re` points
+    // at when a packet says which packet it is about.
+    const byHash = await hub(portOf(bravo), 'GET', '/api/hub/arrivals?hash=' + encodeURIComponent(mine[0].hash));
+    const one = (byHash.body && byHash.body.rows) || [];
+    if (byHash.status === 200 && one.length === 1 && one[0].hash === mine[0].hash) {
+      test.check('and one row comes back by its hash alone');
+    } else {
+      test.fail('byHash: ' + byHash.status + ' ' + JSON.stringify(one));
+    }
+
+    // ── AND THE PEER'S OWN NUMBERS MOVED (R11) ────────────────────────
+    //
+    // countInbound did this on the `inbox` path and nothing did it on the
+    // router, so a node moved across would have stopped counting in
+    // silence — and a frozen figure looks like the truth while a zero
+    // looks like a bug.
+    const stats = require('../run/js/peerStats').readSummary(homeOf(bravo), alfaKey);
+    if (stats && stats.unansweredInbound >= 1) {
+      test.check('and alfa is counted in the per-peer numbers bravo keeps — the router moves them now, as the ring did');
+    } else {
+      test.fail('peerStats: ' + JSON.stringify(stats));
+    }
+
     test.subHeading('A contact is not rationed; a stranger is');
 
     // ALFA IS A CONTACT NOW, so the floor does not apply. Ten posts that

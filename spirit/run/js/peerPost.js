@@ -88,6 +88,10 @@ function createPeerPost(opts) {
   var mailbox = [];
   var nextItem = 1;
   var onArrival = opts.onArrival || null;
+  // Injected rather than required, so a suite can watch it without a
+  // home on disk — and so this file states its dependency instead of
+  // reaching for one.
+  var stats = opts.stats || null;
 
   // WHO THIS NODE WILL HEAR, asked rather than decided here.
   //
@@ -367,6 +371,14 @@ function createPeerPost(opts) {
     // something was ignored is this node's own business to know, and
     // keeping the text of a line the operator asked not to keep would be
     // the log contradicting the setting.
+    // `admitted` is the field that separates "arrived and filed" from
+    // "may be handed to an app". A HELD sender's packet is logged with
+    // its payload and is deliberately not admitted: the person is a row
+    // waiting to be accepted or blocked, and that is a decision a human
+    // makes rather than an app being given the line first and asked
+    // after. Without this the log cannot be read back safely, because
+    // both look identical as `delivered`.
+    var admitted = verdict === 'known' || verdict === 'admit';
     note(verdict === 'drop'
       ? {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
@@ -375,7 +387,29 @@ function createPeerPost(opts) {
       : {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
         hash: hash, outcome: 'delivered', payload: body.text,
+        admitted: admitted,
       });
+
+    // AND THE PEER'S OWN NUMBERS MOVE, on this transport as on the other.
+    //
+    // countInbound did this on the `inbox` path and nothing did it here,
+    // so a node moved onto the router would have stopped counting and
+    // said nothing — the figures Contacts shows would FREEZE rather than
+    // go to zero, and a stale number looks like the truth while a zero
+    // looks like a bug.
+    //
+    // Keyed by the request HASH rather than by a relay's message id. The
+    // id existed because a non-destructive poll could hand the same line
+    // twice; nothing re-delivers here, and the hash is over the exact
+    // bytes rather than being a number somebody else assigned.
+    //
+    // Per peer, never per app: the node keys on public keys, and a count
+    // of "chess packets from bert" would be this file doing the shell's
+    // reading.
+    if (admitted && stats) {
+      try { stats.noteIn(rootDir, body.from, hash); }
+      catch (e) { /* a counter must not break a delivery */ }
+    }
 
     // APPS SEE ADMITTED SENDERS ONLY, and the order is the whole of it.
     // onArrival is app delivery — code running on somebody else's input —

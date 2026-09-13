@@ -70,6 +70,30 @@ const path = require('path');
 // because it is keeping a record.
 const WINDOW_MS = 24 * 60 * 60 * 1000;
 
+// AND ONE KIND OF ROW HAS NO CLOCK AT ALL.
+//
+// The window is right for a RECORD — something this node sent, something
+// it refused, something it ignored. All of those are history, and history
+// may age out.
+//
+// It is wrong for UNDELIVERED MAIL. A packet that was admitted and that
+// no page has yet been handed is not a record of an event, it is the
+// event still waiting to happen. Ageing it out would make the receipt
+// this node already signed true when it was signed and a lie by morning,
+// which is the false positive ROUTER.md §4 forbids — and the exact sin
+// 0006 removed from the relay's ring, relocated somewhere harder to
+// notice.
+//
+//   Andy: "with a 24 hour ring (or however long), we never can guarantee
+//   the recept of the package by the actual human"
+//
+// So retention is decided per ROW STATE rather than per file: a row that
+// is `admitted` and not yet `takenAt` outlives any window. Everything
+// else ages at the clock above.
+function keepsForever(row) {
+  return !!(row && row.admitted && !row.takenAt);
+}
+
 function logPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'traffic.json');
 }
@@ -98,6 +122,9 @@ function withinWindow(entries, nowMs) {
   var floor = nowMs - WINDOW_MS;
   return entries.filter(function (row) {
     if (!row || typeof row.at !== 'string') return false;
+    // Checked BEFORE the clock: undelivered mail is not history and the
+    // window does not apply to it. See keepsForever.
+    if (keepsForever(row)) return true;
     var at = Date.parse(row.at);
     // An unparseable timestamp cannot be shown to be inside the window,
     // so it is not. The window is a promise; an entry that cannot be
@@ -151,6 +178,16 @@ function createTrafficLog(opts) {
       hash: String(entry.hash || ''),
       outcome: String(entry.outcome || ''),
     };
+    // WAS IT HANDED UP, or merely received? `outcome: 'delivered'` has
+    // always meant "arrived and filed", which is true of a packet the
+    // front door HELD for a human decision as well as one it admitted —
+    // both are in this file, both with their payload. A reader could not
+    // tell them apart, and one of them must never reach an app.
+    //
+    // The node never reads `app` and never will (that is the shell's
+    // job); this is about ADMISSION, which is a per-peer decision the
+    // front door already made.
+    if (entry.admitted) row.admitted = true;
     if (entry.status != null) row.status = Number(entry.status) || 0;
     if (entry.ms != null) row.ms = Number(entry.ms) || 0;
 
@@ -179,6 +216,74 @@ function createTrafficLog(opts) {
   // anything — otherwise a node that went quiet would keep yesterday's
   // traffic on disk indefinitely, and "never older than one day" would be
   // true only of nodes that stayed busy.
+  // WHAT A CLIENT HAS NOT SEEN YET, oldest first.
+  //
+  // `since` is an ISO timestamp — a position, not a filter on content.
+  // Deliberately NOT filtered by `packet.app`:
+  //
+  //   Andy: "only an entity that knows the internal package structure
+  //   (shell) can fan out based on the internal package structure, so the
+  //   read-log-interface the node provides should be fairly contained."
+  //
+  // The node keys on public keys and hashes; routing by app is the
+  // shell's reading and filtering here would be this file doing it.
+  //
+  // Admitted inbound only. An outbound record is this node's own history
+  // and not something to hand back as an arrival, and a held or ignored
+  // packet must never reach an app at all.
+  function arrivals(opts) {
+    var o = opts || {};
+    var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
+    var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
+    var rows = withinWindow(readAll(rootDir), clock()).filter(function (row) {
+      if (!row || row.dir !== 'in' || !row.admitted) return false;
+      if (!since) return true;
+      var at = Date.parse(row.at);
+      return at > 0 && at > since;
+    });
+    rows.sort(function (a, b) { return Date.parse(a.at) - Date.parse(b.at); });
+    return rows.slice(0, limit);
+  }
+
+  // The row for one packet, by the hash it is keyed on. What `re` points
+  // at — "regarding that packet" is answerable here without the caller
+  // keeping its own copy.
+  function byHash(hash) {
+    var want = String(hash || '');
+    if (!want) return null;
+    var rows = readAll(rootDir).filter(function (row) {
+      return row && row.hash === want;
+    });
+    return rows.length ? rows[rows.length - 1] : null;
+  }
+
+  // MARKED WHEN A LIVE PAGE WAS ACTUALLY HANDED IT. Andy's rule from this
+  // morning — the node keeps the mark, not the browser — and it is what
+  // lets the row start ageing like any other record. Before this, it is
+  // undelivered mail and has no clock.
+  function taken(hashes) {
+    var want = Object.create(null);
+    (Array.isArray(hashes) ? hashes : [hashes]).forEach(function (h) {
+      if (h) want[String(h)] = true;
+    });
+    if (!Object.keys(want).length) return 0;
+    var at = new Date(clock()).toISOString();
+    var marked = 0;
+    try {
+      var rows = readAll(rootDir);
+      rows.forEach(function (row) {
+        if (!row || row.dir !== 'in' || !row.admitted) return;
+        if (!want[row.hash] || row.takenAt) return;
+        row.takenAt = at;
+        marked += 1;
+      });
+      if (marked) writeAll(rootDir, withinWindow(rows, clock()));
+    } catch (e) {
+      return 0;
+    }
+    return marked;
+  }
+
   function read() {
     var all = readAll(rootDir);
     var kept = withinWindow(all, clock());
@@ -188,11 +293,19 @@ function createTrafficLog(opts) {
     return kept;
   }
 
-  return { note: note, read: read };
+  return {
+    note: note,
+    read: read,
+    // The log, read as a table. Keyed by hash, ordered by arrival.
+    arrivals: arrivals,
+    byHash: byHash,
+    taken: taken,
+  };
 }
 
 module.exports = {
   createTrafficLog: createTrafficLog,
   WINDOW_MS: WINDOW_MS,
+  keepsForever: keepsForever,
   logPath: logPath,
 };
