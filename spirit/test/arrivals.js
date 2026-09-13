@@ -128,23 +128,147 @@ function itemWith(text) {
   }
 })();
 
-(function nobodyHomeIsNotAnError() {
+// REPLACED, NOT DELETED. Until R10 was answered this check read "with no
+// page open the packet is dropped, and says so" — and it recorded a known
+// gap rather than a rule. The gap is closed; the check had to change with
+// it or it would go on passing for the wrong reason, since 0 delivered is
+// still 0 delivered whether the packet was thrown away or kept.
+(function nobodyHomeMeansItWaits() {
   const arrivals = arrivalsModule.createArrivals();
   let threw = false;
   let delivered = -1;
-  try { delivered = arrivals.note(itemWith('hello')); }
+  try { delivered = arrivals.note(itemWith(packet.encode('chess', { move: 'e4' }).text)); }
   catch (e) { threw = true; }
 
-  // Recorded as a check rather than left implicit, because it is the
-  // known gap: with no browser open a packet is DROPPED. The ring it
-  // replaces held 200 messages on the relay, so this is strictly less —
-  // see arrivals.js, and the requirement that the ring must not be
-  // deleted until catch-up is designed.
-  if (!threw && delivered === 0) {
-    test.check('with no page open the packet is dropped, and says so (0 delivered) rather than throwing');
+  if (!threw && delivered === 0 && arrivals.pending() === 1) {
+    test.check('with no page open nothing is delivered — and the packet is HELD, not dropped');
   } else {
-    test.fail('threw=' + threw + ' delivered=' + delivered);
+    test.fail('threw=' + threw + ' delivered=' + delivered + ' pending=' + arrivals.pending());
   }
+
+  // THE HALF THAT MATTERS. Holding it is worthless unless the next page
+  // to open is actually given it.
+  const late = [];
+  arrivals.subscribe(function (m) { late.push(m); });
+  if (late.length === 1 && late[0].packet.app === 'chess' && arrivals.pending() === 0) {
+    test.check('and the first page to open is handed it, after which it is forgotten');
+  } else {
+    test.fail('late=' + JSON.stringify(late.map(function (m) { return m.packet; })) +
+      ' pending=' + arrivals.pending());
+  }
+
+  // ONE MARK, NOT ONE PER PAGE. Andy's choice, and its consequence said
+  // out loud: a second page opening afterwards gets nothing, because the
+  // message already reached the person.
+  const second = [];
+  arrivals.subscribe(function (m) { second.push(m); });
+  if (second.length === 0) {
+    test.check('a second page opening after it gets nothing — the mark is the node\'s, not the page\'s');
+  } else {
+    test.fail('a second page was handed the backlog again: ' + second.length);
+  }
+})();
+
+(function deliveredMeansSomebodyActuallyTookIt() {
+  const arrivals = arrivalsModule.createArrivals();
+  arrivals.subscribe(function () { throw new Error('a page that is broken'); });
+  const delivered = arrivals.note(itemWith(packet.encode('chess', {}).text));
+
+  // A subscriber that threw received nothing, whatever it claims by
+  // existing. Counting a broken page as a reader would lose the packet at
+  // exactly the moment something is already wrong — so it is held, and
+  // the next page that opens properly gets it.
+  if (delivered === 0 && arrivals.pending() === 1) {
+    test.check('a page that throws does not count as having received it, so the packet still waits');
+  } else {
+    test.fail('delivered=' + delivered + ' pending=' + arrivals.pending());
+  }
+})();
+
+(function theBacklogSurvivesARestart() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-'));
+
+  // A laptop closing is the ordinary case, and a backlog that lived only
+  // in memory would lose exactly the packets it exists for.
+  const before = arrivalsModule.createArrivals({ rootDir: home });
+  before.note(itemWith(packet.encode('chess', { move: 'e4' }).text));
+
+  const after = arrivalsModule.createArrivals({ rootDir: home });
+  const got = [];
+  after.subscribe(function (m) { got.push(m); });
+
+  if (got.length === 1 && got[0].packet.app === 'chess') {
+    test.check('a packet held while the node was down is still there when it comes back');
+  } else {
+    test.fail('after restart: ' + JSON.stringify(got.map(function (m) { return m.packet; })));
+  }
+
+  // And it is gone from disk once handed over, rather than replayed for
+  // ever to every page that ever opens.
+  const third = arrivalsModule.createArrivals({ rootDir: home });
+  const again = [];
+  third.subscribe(function (m) { again.push(m); });
+  if (again.length === 0) {
+    test.check('and is not still on disk afterwards, to be replayed for ever');
+  } else {
+    test.fail('replayed again after delivery: ' + again.length);
+  }
+
+  fs.rmSync(home, { recursive: true, force: true });
+})();
+
+(function exactlyOneDay() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogage-'));
+  const DAY = arrivalsModule.WINDOW_MS;
+  const T = Date.parse('2026-09-13T12:00:00.000Z');
+
+  // Written directly, because the point is the age of what is on disk
+  // rather than the path it took to get there.
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'pendingArrivals.json'), JSON.stringify({
+    held: [
+      { sentAt: new Date(T - DAY + 1000).toISOString(), text: 'just inside', packet: { app: 'chess', body: {} } },
+      { sentAt: new Date(T - DAY - 1000).toISOString(), text: 'just outside', packet: { app: 'chess', body: {} } },
+    ],
+  }));
+
+  const arrivals = arrivalsModule.createArrivals({ rootDir: home, now: function () { return T; } });
+  const got = [];
+  arrivals.subscribe(function (m) { got.push(m); });
+
+  // The same clock rule trafficLog keeps, checked against an injected
+  // clock rather than by waiting a day — a retention rule stated in hours
+  // that can only be tested by waiting hours is one that will not be
+  // tested.
+  if (got.length === 1 && got[0].text === 'just inside') {
+    test.check('a day old to the second is still held; a second older than that is gone');
+  } else {
+    test.fail('kept: ' + JSON.stringify(got.map(function (m) { return m.text; })));
+  }
+
+  fs.rmSync(home, { recursive: true, force: true });
+})();
+
+(function abrokenBacklogFileIsNotACrash() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogjunk-'));
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'pendingArrivals.json'), '{ not json at all');
+
+  let threw = false;
+  let got = [];
+  try {
+    const arrivals = arrivalsModule.createArrivals({ rootDir: home });
+    arrivals.subscribe(function (m) { got.push(m); });
+    arrivals.note(itemWith(packet.encode('chess', {}).text));
+  } catch (e) { threw = true; }
+
+  if (!threw && got.length === 1) {
+    test.check('a truncated backlog file reads as nothing held, and the live path keeps working');
+  } else {
+    test.fail('threw=' + threw + ' got=' + got.length);
+  }
+
+  fs.rmSync(home, { recursive: true, force: true });
 })();
 
 (function aLegacyLineIsStillCarried() {

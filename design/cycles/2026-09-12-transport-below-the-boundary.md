@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 10 requirements, 7 done.**
+**Status: OPEN — 10 requirements, 8 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -457,15 +457,40 @@ packet that crossed the WAN for 24 hours, payload included. What is
 missing is delivery: what counts as already-seen, and by whom, when a
 page opens. That is a design question and it has not been asked yet.
 
-Recorded rather than solved on the spot, for the reason the shell gives
-about its own missing hold store: *"inventing one quietly would be
-inventing the part that has to be designed."*
+**Answered by Andy, 2026-09-13: the node keeps ONE mark.** A packet
+counts as seen once it reached at least one live page; everything after
+that is replayed to the next page that opens. No watermark in the
+browser, no new rule for apps.
 
-**Verify:** `spirit/test/arrivals.js` names the gap today — "with no page
-open the packet is dropped, and says so (0 delivered) rather than
-throwing". That check must be **replaced**, not deleted, when this is
-answered.
-**Status:** OPEN — blocks R8
+**And the obvious home for the backlog could not be used.** `trafficLog`
+already keeps every packet for 24 hours, payload included — but it
+records **arrival, not admission**: `peerPost` logs a *held* packet as
+`outcome: delivered` **with its payload** and then deliberately hands it
+to no app, because a stranger waiting to be accepted is a decision a
+human makes. Replaying from the traffic log would hand an unaccepted
+stranger's packet straight to an app and walk the front door back.
+`arrivals` is the only thing that sees both *admitted* and *delivered to
+a page*, so the backlog lives there —
+`relay-state/pendingArrivals.json`, gitignored, unservable, unwritable,
+temp-file-then-rename, bounded by the same 24-hour clock.
+
+**What it still does not do, said out loud:** the mark is one mark, not
+one per page. The first page to open drains the backlog; a second
+opening after it gets nothing. A tab that opens and closes at once
+consumes what it was handed — the same failure a poll that read and then
+crashed always had, and the price of keeping no per-browser state.
+
+**Verify:** `spirit/test/arrivals.js` — the old check named the gap ("the
+packet is dropped, and says so") and was **replaced rather than deleted**,
+because 0 delivered is still 0 delivered whether a packet was thrown away
+or kept. Now: "with no page open nothing is delivered — and the packet is
+HELD, not dropped", "the first page to open is handed it, after which it
+is forgotten", "a second page opening after it gets nothing — the mark is
+the node's, not the page's", "a page that throws does not count as having
+received it", "a packet held while the node was down is still there when
+it comes back", and the clock, "a day old to the second is still held; a
+second older than that is gone".
+**Status:** DONE — R8 no longer blocked on this
 
 ### R8 — the ring is deleted
 > `send` / `inbox` / `status` are retired
@@ -485,7 +510,7 @@ arrives as a header and never on a query string, and the stream reuses
 it. Rename, do not delete.
 
 **Verify:** not written.
-**Status:** OPEN — blocks on R5, R7 and R10
+**Status:** OPEN — blocks on R5
 
 ---
 

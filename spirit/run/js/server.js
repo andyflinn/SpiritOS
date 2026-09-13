@@ -19,7 +19,12 @@ const relay = createRelay.createRelay();
 // opening a page), and the peerRouter built at the foot of this file
 // notes into it (a packet landing off the stream). Neither knows about
 // the other, which is the point of putting a seam between them.
-const arrivals = require('./arrivals').createArrivals();
+const arrivals = require('./arrivals').createArrivals({
+  // A packet that lands while no page is open waits in relay-state/ for
+  // the first one that opens. Personal nodes only: a relay never builds
+  // a peerRouter, so nothing ever notes into this there.
+  rootDir: spirit.core.node.const.ROOT_DIR,
+});
 
 // How often a relay tells its owner how it is doing. Not a poll: the
 // owner already holds a stream, and this only decides how stale the
