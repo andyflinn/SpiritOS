@@ -1,6 +1,6 @@
 # The node API — route hierarchy
 
-**Measured at working tree, 2026-09-13** (after `ac503f9`). Every route both servers dispatch
+**Measured at working tree, 2026-09-13** (after `1502e2a`). Every route both servers dispatch
 and the function it lands in. Illustration only: no argument, no
 proposal, nothing about what should change.
 
@@ -38,8 +38,12 @@ GET  /api/version                                                    ← public
 
 It was seven POST this morning. `invite` and `monitor` became posts;
 `remove-peer` became a post; `set-device` was deleted outright, because a
-relay holds no device key for it to install. Decision 0010's register is
-empty.
+relay holds no device key for it to install. Decision 0010's register of
+named cheats is empty.
+
+Two of the five that remain — `send`, and `inbox` on the GET side — are
+**the ring**, and are sentenced rather than justified. See the contract
+section below for why they are one lump.
 
 **What GET is for on a relay** (granted by Andy, 2026-09-13): static
 files, and the three things that must work before a post is possible —
@@ -143,7 +147,6 @@ POST /api/hub/
   ├── remove-peer           hub.handleRemovePeer        ← posts to the relay
   │
   ├── post                  hub.handlePost              ← the router
-  ├── send                  hub.handleSend              ← the ring
   │
   ├── contact               hub.handleContact
   ├── unknown-senders       hub.handleUnknownSenders
@@ -179,8 +182,9 @@ GET  /api/version           (inline)
 POST /                      "POST accepted"
 ```
 
-Nine `/api/hub/` POST, six GET. Three `/api/fs/` POST, two GET. Anything
-else under POST is `405`; `DELETE` serves one route and nothing else.
+**Eight `/api/hub/` POST, six GET.** Three `/api/fs/` POST, two GET.
+Anything else under POST is `405`; `DELETE` serves one route and nothing
+else.
 
 **Every hub route names a handler.** `/api/hub/post` was the last one
 written out inside the route table; the rules it enforces — is this node
@@ -213,6 +217,13 @@ Three became posts. **`set-device` did not** — it was deleted, along with
 `installEverywhere` and the relay's `deviceByName`. A device is bound to
 its NODE; the relay's copy of the key was read only by `send` and `inbox`,
 by nothing.
+
+**`POST /api/hub/send`** — the node's door onto the ring, and it had no
+caller anywhere. `hubPost.js` had been asserting exactly that: *"nothing
+above the boundary names /api/hub/send."* Relay Chat sends through
+`/api/hub/post`, the router. `hub.handleSend` and `signedSend` went with
+it. What is left of the ring is on the relay, and goes as one lump — see
+the contract section.
 
 **`GET /api/hub/arrivals`** — the log as a table, and it had **no caller
 anywhere in the tree**. Catch-up was already solved one layer down and
@@ -254,8 +265,27 @@ rather than behind a second door the client has to know to knock on.
 `/api/events` carries **both** job events and arriving packets, which is
 why it is named for the node rather than for jobs.
 
-**`/api/hub/send` and `/api/hub/inbox` are the ring**, still wired, and no
-app names `send` any more.
+**`GET /api/hub/inbox` is what is left of the ring on this node**, and it
+is a read: Relay Chat polls it every two seconds for its receive path, and
+Natter uses it once as a cheap *"is this label still mine"* probe. The
+write door is gone.
+
+**The ring never kept the promise it was made for**, which is the argument
+that sentences it rather than the router being nicer:
+
+> Andy: *"the ring was a lie all along. it was unable to promise reliable
+> delivery anyways, because it dropped entries on overflow."*
+
+The cap is **200 global** — one array for every peer on the relay,
+filtered per reader at read time — so a peer sending 200 messages to
+themselves evicts everybody else's undelivered mail, and nothing is told.
+
+What remains goes together, because splitting it leaves a signed format
+guarding an unreachable function: `relay.send`, `POST /api/relay/send`,
+`sendMessage`, `checkSend`, the `messages` array and `inbox`. Note that
+`/api/relay/send` is **not** wire-dead the way the hub door was —
+`labPopulate`, `liveFrontDoor` and five `labMaster` suites use it to make
+ring traffic, and nine suites call `box.send` directly.
 
 ---
 
