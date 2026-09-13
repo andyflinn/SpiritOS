@@ -21,6 +21,8 @@
 // and choosing between them is a routing decision that had no business
 // sitting in a web server's switch statement.
 
+const fs = require('fs');
+const path = require('path');
 const test = require('./testSupport.js');
 const hub = require('../run/js/hub').createHub(process.cwd());
 
@@ -188,6 +190,7 @@ function run() {
                               } else {
                                 test.fail('got ' + bad.status + ' ' + bad.body);
                               }
+                              noAppNamesTheRing();
                               test.reportSuccessFailureCount();
                             });
                         });
@@ -196,6 +199,51 @@ function run() {
             });
         });
     });
+}
+
+// ---------------------------------------------------------------------
+// ONE DOOR, AND THE OTHER ONE HAS NO CALLERS LEFT.
+// ---------------------------------------------------------------------
+//
+// The point of the contract: one way for an app to post to a peer. Every
+// well-behaved app goes through api.sendMessagePacket and names no path
+// at all, so this checks the two that reached for the wire directly —
+// Relay Chat and Natter — plus the shell's own door.
+//
+// Only the WRITE half. /api/hub/inbox is the ring's read half and it is
+// still wired, because retiring it is R8: chat's poll also drives contact
+// acquisition and peerStats, which the router path does not do yet.
+function noAppNamesTheRing() {
+  test.subHeading('No app reaches for the ring to write');
+
+  const RUN = path.join(__dirname, '..', 'run');
+  const looked = [];
+  const named = [];
+
+  function scan(dir, depth) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      if (e.name === 'node_modules') return;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) { if (depth > 0) scan(full, depth - 1); return; }
+      if (!/\.(js|html)$/.test(e.name)) return;
+      const rel = path.relative(RUN, full).split(path.sep).join('/');
+      // hub.js implements it and server.js routes it; both are the
+      // system layer and are R8's business, not an app's.
+      if (rel === 'js/hub.js' || rel === 'js/server.js') return;
+      looked.push(rel);
+      if (fs.readFileSync(full, 'utf8').indexOf('/api/hub/send') !== -1) named.push(rel);
+    });
+  }
+  scan(path.join(RUN, 'app'), 4);
+  scan(path.join(RUN, 'js'), 3);
+
+  if (!named.length && looked.length > 20) {
+    test.check('nothing above the boundary names /api/hub/send — ' + looked.length + ' files scanned');
+  } else if (!looked.length) {
+    test.fail('the scan found no files at all, so it proves nothing');
+  } else {
+    named.forEach(function (f) { test.fail(f + ' still posts to /api/hub/send'); });
+  }
 }
 
 run().catch(function (err) {

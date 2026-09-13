@@ -787,7 +787,25 @@ function createHub(rootDir) {
         return;
       }
       var to = String((body && body.to) || '').trim();
-      var text = typeof (body && body.text) === 'string' ? body.text : '';
+
+      // THE SAME ENVELOPE THE RING ALREADY SPOKE. An app says which app
+      // a message is for and what is in it; wrapping that into
+      // {app, v, body} is the node's job on either transport, and
+      // outgoingText is the one place that decides how — so a packet sent
+      // by the router is byte-identical to one the ring would have sent.
+      //
+      // A bare `text` still works: the router carried raw strings before
+      // apps could reach it, and routerPost.js drives it that way.
+      var wrapped = outgoingText(body);
+      if (!wrapped.ok) {
+        // Refused here rather than at the relay: an oversize packet is
+        // the app's mistake, and spending a post to be told so would be
+        // this node's. The same call handleSend makes, for the same
+        // reason.
+        fail(res, 400, wrapped.error);
+        return;
+      }
+      var text = wrapped.text;
       // Which relay to go through. Normally none of an app's business —
       // a peer reachable two ways is reachable — but a caller may name
       // one, which is how the cost of each path gets measured rather

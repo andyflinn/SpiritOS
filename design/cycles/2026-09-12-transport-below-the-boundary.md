@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 10 requirements, 8 done.**
+**Status: OPEN — 11 requirements, 9 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -278,10 +278,27 @@ refuses with 503. Chat to somebody who is not connected stops working.
 That is the point of the cycle, and it is Andy's call to take it, not
 something to discover.
 
-**Verify:** not written. Wants a check that no app names
-`/api/hub/send` or `/api/hub/inbox`, plus the refusal asserted rather
-than merely tolerated.
-**Status:** OPEN — blocks on R3
+**Scoped to the WRITE half.** `/api/hub/inbox` is still wired, and
+retiring it is R8 — chat's poll also drives contact acquisition and
+`peerStats`, which the router path does not do (see R11).
+
+`handlePost` learned the packet envelope on the way, through the same
+`outgoingText` the ring used — so a packet sent by the router is
+byte-identical to one the ring would have sent, and there is one place
+that decides how an app's `{app, body}` becomes bytes.
+
+Chat's send moved with it, and had to change what it FILES: the ring
+answered 201 with the message the relay had stored, and chat filed the
+relay's copy. Nothing is stored now, so the record is built from what was
+typed — which is the only copy of that line that will ever exist.
+
+**Verify:** `spirit/test/hubPost.js` — "nothing above the boundary names
+`/api/hub/send` — 41 files scanned"; `spirit/test/chatSession.js` — the
+breakage asserted rather than tolerated: "a 503 is shown as a refusal in
+plain words, not as a status code", "nothing was written to the peer file
+— a refused line did not happen", and "what was typed is still in the
+box, to try again or copy out".
+**Status:** DONE
 
 ### R6 — `/api/hub/post` has a handler like every other hub route
 The only `/api/hub/*` route implemented inline in `server.js`
@@ -510,7 +527,27 @@ arrives as a header and never on a query string, and the stream reuses
 it. Rename, do not delete.
 
 **Verify:** not written.
-**Status:** OPEN — blocks on R5
+**Status:** OPEN — blocks on R11
+
+### R11 — what the ring does BESIDES carrying messages must not vanish with it
+**Found by building R5.** The inbox poll is not only a read. Through
+`applyInboxBatch` it also runs `acquireFromInbox` (a stranger becoming a
+contact, under the `acquire` policy), `holdFromInbox`, and
+`countInbound` → `peerStats.noteIn`.
+
+**The router path does none of that.** `peerPost` has no `peerStats`
+reference at all, so a node moved fully onto the router would silently
+stop counting inbound traffic per peer — the numbers Contacts shows would
+freeze rather than go to zero, which is worse.
+
+Recorded rather than fixed in R5's commit because it is the ring's READ
+half and belongs with R8, and because a silent statistic is exactly the
+kind of thing that disappears between two commits nobody connected.
+
+**Verify:** not written. Wants the router path counting inbound, and a
+check that a packet arriving over the router moves the same numbers a
+line over the ring did.
+**Status:** OPEN — blocks R8
 
 ---
 

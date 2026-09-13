@@ -145,11 +145,19 @@ function fakeFetch(log, options) {
     } else if (url.indexOf('/api/hub/claim') === 0) {
       status = options.claimStatus || 201;
       if (options.claimBody) payload = options.claimBody;
-    } else if (url.indexOf('/api/hub/send') === 0) {
-      // What the relay answers a send with: the message it stored, which
-      // is the only copy of an outgoing line that will ever exist.
-      status = options.sendStatus || 201;
-      if (options.sendBody) payload = options.sendBody;
+    } else if (url.indexOf('/api/hub/post') === 0) {
+      // A RECEIPT, not a stored message. The ring answered 201 with what
+      // the relay had kept; the router keeps nothing (0006) and answers
+      // 200 with the hash that correlates the post with its reply — so a
+      // sent line is filed from what was typed, and this fixture no
+      // longer has to invent the relay's copy of it.
+      //
+      // 503 is the interesting one and tests set it deliberately: it is
+      // what a peer who is not connected now gets, where the ring would
+      // have answered 201 and held the line for somebody who may never
+      // come back.
+      status = options.postStatus || 200;
+      payload = options.postBody || { ok: true, status: 200, hash: 'h1', text: '' };
     }
 
     const text = JSON.stringify(payload);
@@ -492,12 +500,12 @@ function threadMarksOwnLines() {
     inboxStatus: 200,
     people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false }],
     // An inbox read only ever returns what was addressed to this node.
-    // The other half of the thread arrives the only way it can: as the
-    // 201 the relay answers a send with.
+    // The other half of the thread is this node's OWN line, and since
+    // 2026-09-13 it is filed from what was typed rather than from what
+    // the relay answered with — the relay keeps no copy to answer with.
     messages: [
       { id: '1', from: 'bert', to: 'andy', fromKey: BERT, toKey: ME, text: 'a word from bert', sentAt: '2026-09-07T10:00:00.000Z' },
     ],
-    sendBody: { id: '2', from: 'andy', to: 'bert', fromKey: ME, toKey: BERT, text: 'and one back', sentAt: '2026-09-07T10:01:00.000Z' },
   });
 
   return settle().then(function () {
@@ -664,12 +672,12 @@ function enterSendsExactlyOnce() {
   return settle().then(function () {
     el(app, 'rc-to-pick').value = 'relay';
     el(app, 'rc-text').value = 'hello mailbox';
-    const before = app.log.filter(function (r) { return r.url === '/api/hub/send'; }).length;
+    const before = app.log.filter(function (r) { return r.url === '/api/hub/post'; }).length;
 
     el(app, 'rc-text').fire('keydown', { key: 'Enter', preventDefault: function () {} });
 
     return settle().then(function () {
-      const sends = app.log.filter(function (r) { return r.url === '/api/hub/send'; }).length - before;
+      const sends = app.log.filter(function (r) { return r.url === '/api/hub/post'; }).length - before;
       if (sends === 1) {
         test.check('one Enter is one send');
       } else {
@@ -680,14 +688,76 @@ function enterSendsExactlyOnce() {
       el(app, 'rc-text').value = 'not yet';
       el(app, 'rc-text').fire('keydown', { key: 'a', preventDefault: function () {} });
       return settle().then(function () {
-        const after = app.log.filter(function (r) { return r.url === '/api/hub/send'; }).length - before;
+        const after = app.log.filter(function (r) { return r.url === '/api/hub/post'; }).length - before;
         if (after === 1) {
           test.check('and an ordinary keystroke sends nothing');
         } else {
           test.fail('sends after a plain keystroke: ' + after);
         }
+        return refusalIsShown();
       });
     });
+  });
+}
+
+// THE BREAKAGE, ASSERTED RATHER THAN TOLERATED.
+//
+// This is what moving chat onto the router actually costs, and it is the
+// point of having done it:
+//
+//   Andy: "I'd rather see apps breaking than apps faking."
+//
+// `send` accepted a line for anybody and answered 201 — the relay held it
+// in a 200-entry ring whether or not the far end existed, was online, or
+// ever looked again. `post` delivers or refuses at once (decision 0006).
+// So writing to somebody who is not connected now fails, and the person
+// has to be TOLD, with their line still in the box.
+//
+// A silent failure here would be worse than the ring ever was: the ring
+// at least kept the words.
+function refusalIsShown() {
+  test.subHeading('A peer who is not there is a refusal, said out loud');
+
+  const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
+  const store = { 'session.json': JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' }) };
+  const app = mountApp(store, {
+    inboxStatus: 200,
+    people: [{ publicKey: BERT, publicLabel: 'bert', caption: 'bert', mine: false }],
+    postStatus: 503,
+    postBody: { error: 'that peer is not reachable right now' },
+  });
+
+  return settle().then(function () {
+    el(app, 'rc-to-pick').value = BERT;
+    el(app, 'rc-text').value = 'are you there';
+    el(app, 'rc-send').fire('click');
+    return settle();
+  }).then(function () {
+    const said = el(app, 'rc-status').textContent || '';
+    if (/not connected right now/.test(said)) {
+      test.check('a 503 is shown as a refusal in plain words, not as a status code');
+    } else {
+      test.fail('status said: ' + JSON.stringify(said));
+    }
+
+    // NOT FILED. A line that was refused did not happen, and a thread
+    // that showed it would be the app lying in the one place a person
+    // looks to find out whether it did.
+    const filed = app.store[chatLog.fileFor(BERT)];
+    if (!filed) {
+      test.check('and nothing was written to the peer file — a refused line did not happen');
+    } else {
+      test.fail('a refused line was filed: ' + filed);
+    }
+
+    // AND THE WORDS ARE STILL THERE. Clearing the box on a refusal would
+    // lose what somebody just typed, which is the one thing the ring was
+    // actually good at.
+    if (el(app, 'rc-text').value === 'are you there') {
+      test.check('and what was typed is still in the box, to try again or copy out');
+    } else {
+      test.fail('the box was cleared on a refusal: ' + JSON.stringify(el(app, 'rc-text').value));
+    }
   });
 }
 
@@ -1713,7 +1783,7 @@ function sendsAndReadsPackets() {
       el(app, 'rc-text').value = 'a new line';
       el(app, 'rc-send').fire('click');
       return settle().then(function () {
-        const send = app.log.filter(function (c) { return c.url.indexOf('/api/hub/send') === 0; }).pop();
+        const send = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; }).pop();
         const body = send && send.body ? JSON.parse(send.body) : null;
         if (body && body.app === 'relay-chat' && body.body === 'a new line' && body.text === undefined) {
           test.check('and a send says app and body, not a wire string');

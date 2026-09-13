@@ -1268,15 +1268,32 @@
 
       // Say something to a peer. `toId` is a public key — labels are for
       // display and a label is not an identity. `body` is a string or
-      // anything JSON can carry. The node wraps it, signs the send and
+      // anything JSON can carry. The node wraps it, signs the post and
       // routes it; the app never names an HTTP path and never sees a
       // signature.
+      //
+      // ON THE ROUTER SINCE 2026-09-13, and this is the line that moved
+      // every well-behaved app at once — which is what the door was for.
+      //
+      // IT ALSO CHANGES WHAT A FAILURE MEANS, and that is deliberate.
+      // `send` accepted anything and answered 201 whether or not the far
+      // end existed, was online, or ever looked: the relay held it in a
+      // 200-entry ring shared by everybody. `post` delivers or refuses,
+      // at once (decision 0006) — so writing to somebody who is not
+      // connected now returns 503 instead of a receipt that meant
+      // nothing. An app that treated 201 as "they got it" was being
+      // lied to; one that shows the 503 is telling the truth.
+      //
+      //   Andy: "I'd rather see apps breaking than apps faking."
+      //
+      // `from` is gone with it. The ring signed as a LABEL and needed to
+      // be told which one; the router signs as this node's identity and
+      // the question does not arise.
       sendMessagePacket: function (packetApp, toId, body) {
-        return fetch('/api/hub/send', {
+        return fetch('/api/hub/post', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            from: readNodeLabel(),
             to: toId,
             app: packetApp,
             body: body,

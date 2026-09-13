@@ -1123,28 +1123,40 @@ spirit.shell.activateApp({
           : 'accept them first, then you can write');
         return;
       }
-      // The envelope is the hub's to build; this says who and what.
-      // The mailbox still stores a string in `text`, still signed the
-      // same way, so nothing on spirit-3 has to move for this.
-      hubPost('/api/hub/send', { from: myName, to: to, app: RC_PACKET_APP, body: text }).then(function (r) {
-        if (r.status === 201) {
-          var msg = null;
-          try { msg = JSON.parse(r.text); } catch (e) { msg = null; }
-          // What the relay stored, not what was typed: the wire may have
-          // resolved a key to a public label on the way through. Filed
-          // under the peer it was addressed to — this is the only copy
-          // of the line that will ever exist, since the mailbox keeps
-          // none for the sender.
-          if (msg) {
-            recordMessages([msg], 'sent');
-            // A word to the relay used to be answered in the same
-            // breath, and filed here like anything else received. The
-            // relay console is gone (2026-09-13) — nothing answers the
-            // reserved name any more, so there is no reply to file.
-            renderThread();
-          }
+      // ON THE ROUTER SINCE 2026-09-13. The envelope is still the hub's
+      // to build; this still says only who and what.
+      //
+      // WHAT CHANGED IS WHAT COMES BACK. `send` answered 201 with the
+      // message the relay had STORED, and this filed that — the relay's
+      // copy was the authoritative one because the relay was holding it.
+      // Nothing is stored now (decision 0006): a post is delivered or
+      // refused, and what comes back is a receipt. So the record filed
+      // here is built from what was typed, which is the only copy of the
+      // line that will ever exist.
+      hubPost('/api/hub/post', { to: to, app: RC_PACKET_APP, body: text }).then(function (r) {
+        if (r.status === 200) {
+          // Keyed by `toKey` for the same reason the received half is
+          // keyed by fromKey: a peer is a key, and two johns are two
+          // threads. `text` is the typed line rather than the envelope —
+          // chatLineFrom reads a bare string as legacy and hands it back
+          // unchanged, which is exactly right for a local record that
+          // never travelled.
+          recordMessages([{
+            to: to,
+            toKey: to,
+            text: text,
+            sentAt: new Date().toISOString(),
+          }], 'sent');
+          renderThread();
           setStatus('');
           document.getElementById('rc-text').value = '';
+        } else if (r.status === 503) {
+          // THE HONEST REFUSAL, and the one thing this migration is for.
+          // The ring would have taken this line, answered 201, and held
+          // it on the relay for a peer who may never come back. Nothing
+          // holds it now, so the line is still in the box and the person
+          // is told why rather than shown a tick that meant nothing.
+          setStatus('not delivered — they are not connected right now');
         } else {
           setStatus(r.status + ' ' + r.text);
         }
