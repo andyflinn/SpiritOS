@@ -24,6 +24,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/packet');
 const arrivalsModule = require('../run/js/arrivals');
+const trafficLog = require('../run/js/trafficLog');
 
 test.startTest('Arrivals — a packet from a peer reaches something');
 
@@ -140,32 +141,24 @@ function itemWith(text) {
   try { delivered = arrivals.note(itemWith(packet.encode('chess', { move: 'e4' }).text)); }
   catch (e) { threw = true; }
 
-  if (!threw && delivered === 0 && arrivals.pending() === 1) {
-    test.check('with no page open nothing is delivered — and the packet is HELD, not dropped');
+  if (!threw && delivered === 0) {
+    test.check('with no page open nothing is delivered, and the seam says so rather than throwing');
   } else {
-    test.fail('threw=' + threw + ' delivered=' + delivered + ' pending=' + arrivals.pending());
+    test.fail('threw=' + threw + ' delivered=' + delivered);
   }
 
   // THE HALF THAT MATTERS. Holding it is worthless unless the next page
   // to open is actually given it.
+  // The holding and the replay are the LOG's job now, and are checked
+  // against a real one below. In memory, with no log, there is nothing to
+  // hold it in — which is the honest behaviour for a seam nobody gave a
+  // store to.
   const late = [];
   arrivals.subscribe(function (m) { late.push(m); });
-  if (late.length === 1 && late[0].packet.app === 'chess' && arrivals.pending() === 0) {
-    test.check('and the first page to open is handed it, after which it is forgotten');
+  if (late.length === 0) {
+    test.check('and with no log behind it there is nothing to replay — this file keeps no store of its own');
   } else {
-    test.fail('late=' + JSON.stringify(late.map(function (m) { return m.packet; })) +
-      ' pending=' + arrivals.pending());
-  }
-
-  // ONE MARK, NOT ONE PER PAGE. Andy's choice, and its consequence said
-  // out loud: a second page opening afterwards gets nothing, because the
-  // message already reached the person.
-  const second = [];
-  arrivals.subscribe(function (m) { second.push(m); });
-  if (second.length === 0) {
-    test.check('a second page opening after it gets nothing — the mark is the node\'s, not the page\'s');
-  } else {
-    test.fail('a second page was handed the backlog again: ' + second.length);
+    test.fail('a storeless seam replayed something: ' + late.length);
   }
 })();
 
@@ -178,22 +171,50 @@ function itemWith(text) {
   // existing. Counting a broken page as a reader would lose the packet at
   // exactly the moment something is already wrong — so it is held, and
   // the next page that opens properly gets it.
-  if (delivered === 0 && arrivals.pending() === 1) {
-    test.check('a page that throws does not count as having received it, so the packet still waits');
+  if (delivered === 0) {
+    test.check('a page that throws does not count as having received it — so nothing is marked taken');
   } else {
-    test.fail('delivered=' + delivered + ' pending=' + arrivals.pending());
+    test.fail('delivered=' + delivered);
   }
 })();
+
+// ONE STORE, AND IT IS THE LOG.
+//
+// These drove a private relay-state/pendingArrivals.json until the fold.
+// Keeping a second copy of "what is still waiting" beside the traffic log
+// was two facts that could drift, and the traffic log could not be used
+// only because it could not be READ back safely — it records arrival, not
+// admission. That was fixed at the source (rows carry `admitted`) rather
+// than worked around here.
+//
+//   Andy: "tests can read what they need to read, production code MUST
+//   read through the API."
+//
+// So this file reaches the log through its api block, and so does
+// everything else in run/.
+function logAt(home) {
+  return trafficLog.createTrafficLog({ rootDir: home, relayMode: false });
+}
+
+// What peerPost writes before it calls onArrival: the row first, the fan
+// out second. Reproduced here so these checks drive the same order.
+function landed(log, hash, text, admitted) {
+  log.note({
+    dir: 'in', kind: 'request', peer: 'PEERKEY', relay: 'https://relay.example',
+    hash: hash, outcome: admitted === false ? 'ignored' : 'delivered',
+    payload: text, admitted: admitted !== false,
+  });
+}
 
 (function theBacklogSurvivesARestart() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-'));
 
   // A laptop closing is the ordinary case, and a backlog that lived only
   // in memory would lose exactly the packets it exists for.
-  const before = arrivalsModule.createArrivals({ rootDir: home });
-  before.note(itemWith(packet.encode('chess', { move: 'e4' }).text));
+  const log = logAt(home);
+  landed(log, 'h1', packet.encode('chess', { move: 'e4' }).text);
 
-  const after = arrivalsModule.createArrivals({ rootDir: home });
+  const after = arrivalsModule.createArrivals({ traffic: logAt(home) });
   const got = [];
   after.subscribe(function (m) { got.push(m); });
 
@@ -203,13 +224,13 @@ function itemWith(text) {
     test.fail('after restart: ' + JSON.stringify(got.map(function (m) { return m.packet; })));
   }
 
-  // And it is gone from disk once handed over, rather than replayed for
-  // ever to every page that ever opens.
-  const third = arrivalsModule.createArrivals({ rootDir: home });
+  // And it is marked, so it is not replayed for ever to every page that
+  // ever opens.
+  const third = arrivalsModule.createArrivals({ traffic: logAt(home) });
   const again = [];
   third.subscribe(function (m) { again.push(m); });
   if (again.length === 0) {
-    test.check('and is not still on disk afterwards, to be replayed for ever');
+    test.check('and is marked taken afterwards, rather than replayed to every page that opens');
   } else {
     test.fail('replayed again after delivery: ' + again.length);
   }
@@ -217,82 +238,80 @@ function itemWith(text) {
   fs.rmSync(home, { recursive: true, force: true });
 })();
 
-// THE OPPOSITE OF THE CHECK THAT STOOD HERE, and the reversal is the
-// finding.
-//
-// This asserted a 24-hour window: a day old to the second was held, a
-// second older was gone. The window was copied from trafficLog, and the
-// analogy was wrong — that file is a RECORD of what crossed the WAN and
-// a record may age out; this is UNDELIVERED MAIL, and ageing it out is
-// data loss after an acknowledgement.
-//
-//   Andy: "with a 24 hour ring (or however long), we never can guarantee
-//   the recept of the package by the actual human"
-//
-// A receipt that is true when signed and a lie by morning is the false
-// positive ROUTER.md §4 says can never happen — and it is precisely the
-// sin 0006 removed from the relay, relocated somewhere harder to notice.
-(function undeliveredMailHasNoClock() {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogage-'));
-  const YEAR = 365 * 24 * 60 * 60 * 1000;
+(function aHeldStrangerIsNotBacklog() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-held-'));
+  const log = logAt(home);
 
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'pendingArrivals.json'), JSON.stringify({
-    held: [
-      { sentAt: new Date(Date.now() - YEAR).toISOString(), text: 'a year old', packet: { app: 'chess', legacy: false, body: {} } },
-      { sentAt: new Date(Date.now() - 1000).toISOString(), text: 'a second old', packet: { app: 'chess', legacy: false, body: {} } },
-    ],
-  }));
+  // THE REASON THE LOG COULD NOT BE USED BEFORE, now checked. A packet
+  // the front door held is in the log with its payload and must never be
+  // replayed to an app — a stranger waiting to be accepted is a decision
+  // a human makes, not a line an app is handed first.
+  landed(log, 'admitted', packet.encode('chess', { move: 'e4' }).text, true);
+  landed(log, 'held', packet.encode('chess', { move: 'e5' }).text, false);
 
-  const arrivals = arrivalsModule.createArrivals({ rootDir: home });
   const got = [];
-  arrivals.subscribe(function (m) { got.push(m); });
+  arrivalsModule.createArrivals({ traffic: logAt(home) })
+    .subscribe(function (m) { got.push(m); });
 
-  if (got.length === 2 && got[0].text === 'a year old') {
-    test.check('a packet a YEAR old is still waiting — undelivered mail has no clock, whatever the receipt promised');
+  if (got.length === 1 && got[0].hash === 'admitted') {
+    test.check('a packet the front door HELD is in the log and is never replayed as backlog');
   } else {
-    test.fail('kept: ' + JSON.stringify(got.map(function (m) { return m.text; })));
+    test.fail('replayed: ' + JSON.stringify(got.map(function (m) { return m.hash; })));
   }
 
   fs.rmSync(home, { recursive: true, force: true });
 })();
 
-(function abrokenBacklogFileIsNotACrash() {
+(function undeliveredMailHasNoClock() {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogage-'));
+  const clock = { value: Date.parse('2026-09-13T12:00:00.000Z') };
+  const log = trafficLog.createTrafficLog({
+    rootDir: home, relayMode: false, now: function () { return clock.value; },
+  });
+
+  landed(log, 'old', packet.encode('chess', { move: 'e4' }).text);
+
+  // A YEAR later. The window is right for a record and wrong for
+  // undelivered mail: ageing it out would make a receipt this node
+  // already signed true when signed and a lie by morning.
+  clock.value += 365 * 24 * 60 * 60 * 1000;
+
+  const got = [];
+  arrivalsModule.createArrivals({
+    traffic: trafficLog.createTrafficLog({
+      rootDir: home, relayMode: false, now: function () { return clock.value; },
+    }),
+  }).subscribe(function (m) { got.push(m); });
+
+  if (got.length === 1 && got[0].hash === 'old') {
+    test.check('a packet a YEAR old is still waiting — undelivered mail has no clock, whatever the receipt promised');
+  } else {
+    test.fail('kept: ' + JSON.stringify(got.map(function (m) { return m.hash; })));
+  }
+
+  fs.rmSync(home, { recursive: true, force: true });
+})();
+
+(function abrokenLogIsNotACrash() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlogjunk-'));
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'pendingArrivals.json'), '{ not json at all');
+  fs.writeFileSync(path.join(home, 'relay-state', 'traffic.json'), '{ not json at all');
 
   let threw = false;
-  let got = [];
+  const got = [];
   try {
-    const arrivals = arrivalsModule.createArrivals({ rootDir: home });
+    const arrivals = arrivalsModule.createArrivals({ traffic: logAt(home) });
     arrivals.subscribe(function (m) { got.push(m); });
     arrivals.note(itemWith(packet.encode('chess', {}).text));
   } catch (e) { threw = true; }
 
   if (!threw && got.length === 1) {
-    test.check('a truncated backlog file reads as nothing held, and the live path keeps working');
+    test.check('a truncated log reads as nothing held, and the live path keeps working');
   } else {
     test.fail('threw=' + threw + ' got=' + got.length);
   }
 
   fs.rmSync(home, { recursive: true, force: true });
-})();
-
-(function aLegacyLineIsStillCarried() {
-  const arrivals = arrivalsModule.createArrivals();
-  const seen = [];
-  arrivals.subscribe(function (m) { seen.push(m); });
-  arrivals.note(itemWith('just a chat line from before packets'));
-
-  // Delivered, marked legacy, and the shell drops it at the fan-out
-  // ("legacy lines belong to whoever polls"). The seam does not get to
-  // decide that — it decodes and hands over, and the reader decides.
-  if (seen.length === 1 && seen[0].packet.legacy === true && seen[0].packet.app === null) {
-    test.check('a line that is not an envelope is carried and marked legacy, not swallowed here');
-  } else {
-    test.fail('legacy line arrived as ' + JSON.stringify(seen[0] && seen[0].packet));
-  }
 })();
 
 // ---------------------------------------------------------------------

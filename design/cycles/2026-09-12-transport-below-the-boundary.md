@@ -1,6 +1,6 @@
 # 2026-09-12 — transport, below the node boundary
 
-**Status: OPEN — 13 requirements, 11 done.**
+**Status: OPEN — 15 requirements, 12 done.**
 
 Opened as a contract under [the method](README.md). Two sittings: the
 first settled scope and cleared two preliminaries (R1, R2); the second
@@ -602,6 +602,48 @@ the read one has aged out"; `spirit/test/liveFrontDoor.js` — "bravo
 answers /api/hub/arrivals with the one line it agreed to hear" and "the
 post it IGNORED is absent from that table, though both are in its log".
 **Status:** DONE
+
+---
+### R14 — one owner per store, and production code goes through it
+> tests can read what they need to read, production code MUST read through the API. I'm sure there's local-disc databases that can boost performance down the road….
+
+The last clause is the requirement. A file is an implementation, not an
+architecture: `traffic.json` should be able to become SQLite without
+anything above it noticing — and that is only true while **exactly one
+module knows the filename.** The moment a second opens it directly, the
+file format *is* the interface and swapping it is a rewrite.
+
+Tests are explicitly exempt. A suite reading a store's file to see what
+really landed is doing its job; that is the difference between checking a
+claim and depending on a shape.
+
+**It was written because it had already been broken.** `arrivals.js` grew
+its own `relay-state/pendingArrivals.json` beside the traffic log — two
+copies of *what is still waiting*, able to drift — and the commit message
+for R13 claimed the fold had happened when it had not. A claim in prose
+is not a check. `arrivals.js` now keeps nothing on disk and reaches the
+log through its api block; the retired filename is asserted gone by name,
+so its return would fail with a reason rather than pass in silence.
+
+**Verify:** `spirit/test/storeOwnership.js` — seven stores, each known to
+one module, plus "pendingArrivals.json is gone and stays gone".
+**Status:** DONE
+
+### R15 — `note()` rewrites the whole log on every packet
+**Found by asking whether the store could be swapped.** `trafficLog.note`
+does read-all → push → write-all. That is correct and crash-safe for a
+file, and it is **O(n) per arrival** — and now that undelivered rows never
+age out, `n` has no ceiling. A node nobody opens a page on for a month
+rewrites a growing file on every packet that lands.
+
+Not urgent and not a bug: a personal node's traffic is small, and the
+temp-rename is what makes a crash safe. Recorded because it is the
+assumption that decides how long a backlog can sensibly get, and because
+it is the concrete thing a local-disc database would fix. Nobody should
+discover it from a slow node.
+
+**Verify:** not written.
+**Status:** OPEN
 
 ---
 

@@ -34,117 +34,67 @@
 // catch-up would have been strictly less than the poll it replaced —
 // the one migration that makes the system worse.
 //
-// ── WHERE THE MARK LIVES, AND WHY NOT IN THE TRAFFIC LOG ─────────────
+// ── WHERE THE BACKLOG LIVES ──────────────────────────────────────────
 //
-// Andy chose: the node keeps one mark. A packet counts as seen once it
-// reached at least one live page; everything after that mark is replayed
-// to the next page that opens. No watermark in the browser, no new rule
-// for apps.
+// In the traffic log, with everything else. This file keeps NOTHING on
+// disk.
 //
-// The obvious home for the backlog was trafficLog — it already keeps
-// every packet that crossed the WAN for 24 hours, payload included. IT
-// CANNOT BE USED, and the reason is worth writing down because it is not
-// visible from that file:
+// It had its own store for a few hours — relay-state/pendingArrivals.json
+// — because the traffic log could not be read back safely: it records
+// ARRIVAL, not ADMISSION, and a packet the front door HELD is in it with
+// its payload, deliberately never handed to an app. Replaying from it
+// would have walked the front door back.
 //
-//   peerPost logs a HELD packet as `outcome: delivered` WITH its payload,
-//   and then deliberately does not hand it to any app — a stranger who is
-//   waiting to be accepted or blocked is a decision a human makes, not a
-//   line an app is given first and asked about after.
+// That is fixed at the source rather than worked around here: rows now
+// carry `admitted`, and `trafficLog.arrivals()` returns only those. So
+// there is one store, keyed by hash and ordered by arrival, holding both
+// what crossed the WAN and what is still waiting to be seen.
 //
-// So the traffic log records arrival, not admission. Replaying from it
-// would hand an unaccepted stranger's packet straight to an app and walk
-// the front door back. This file is the only place that sees both
-// "admitted" and "delivered to a page", so the backlog lives here.
+//   Andy: "The node will provide client(s) with an api block that treats
+//   the log like a database file with the primary keys being hash,
+//   arrival-date."
 //
-// ── WHAT IT STILL DOES NOT DO ────────────────────────────────────────
+// And this file reaches it through that api block and never through the
+// file, which is the rule for everything in run/:
 //
-// The mark is one mark, not one per page. The first page to open drains
-// the backlog; a second page opening after it gets nothing. A tab that
-// opens and closes at once therefore consumes what it was handed —
-// which is the same failure a poll that read and then crashed always
-// had, and it is the price of not keeping per-browser state.
+//   Andy: "tests can read what they need to read, production code MUST
+//   read through the API."
 //
-// ── AND IT HAS NO CLOCK, WHICH IS THE POINT ──────────────────────────
+// ── THE MARK ─────────────────────────────────────────────────────────
 //
-// It had a 24-hour window for about an hour, copied from trafficLog by
-// analogy. The analogy was wrong, and Andy caught it:
+// The node keeps it, not the browser. A row is `takenAt` once a live page
+// has actually been handed it; until then it is undelivered mail and
+// outlives the retention window. The first page to open drains what is
+// waiting; a second opening after it gets nothing, because the message
+// already reached the person.
 //
-//   trafficLog is a RECORD of what crossed the WAN, and a record may age
-//   out. This is UNDELIVERED MAIL, and ageing it out is data loss AFTER
-//   an acknowledgement.
-//
-// A backlog that receipts a packet and then quietly deletes it is the
-// exact sin 0006 removed from the relay — words held "for a while,
-// silently, and evicted without telling anybody: neither fast nor true".
-// Relocating that to the owner's own disk does not make it honest, it
-// makes it harder to notice. The receipt would be true when signed and a
-// lie by morning, which is the false positive ROUTER.md §4 says can
-// never happen.
-//
-// So: no window. A receipt means FILED AND KEPT UNTIL SOMETHING TAKES
-// IT. The bound is the node's own disk, on the node's own machine, in a
-// file somebody can look at — which is what the ring was not, on all
-// three counts. 0006 put durability on the recipient's own node; this is
-// that, and an answering machine that erases the tape after a day would
-// not be it.
+// A tab that opens and closes at once therefore consumes what it was
+// handed — the same failure a poll that read and then crashed always had,
+// and the price of keeping no per-browser state.
 
-const fs = require('fs');
-const path = require('path');
 const packet = require('./packet.js');
 
-// Beside the traffic log, and for the same three reasons: relay-state/ is
-// gitignored, it is unservable through every generic file route, and it
-// is where this node keeps things that are its own business. Personal
-// nodes only — a relay never builds a peerRouter and so never notes here.
-function backlogPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'pendingArrivals.json');
-}
-
-// Unreadable or malformed reads as "nothing held" rather than throwing. A
-// backlog that can crash the thing it serves is worse than an empty one.
-//
-// Nothing is filtered on the way in. Age is not a reason to drop
-// undelivered mail — see the header.
-function readBacklog(rootDir) {
-  try {
-    var parsed = JSON.parse(fs.readFileSync(backlogPath(rootDir), 'utf8'));
-    return Array.isArray(parsed && parsed.held) ? parsed.held : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-// TEMP FILE THEN RENAME, the same three lines trafficLog buys it with: a
-// rename inside one directory is atomic, so a crash leaves either the old
-// backlog or the new one and never half of either.
-function writeBacklog(rootDir, held) {
-  var dir = path.dirname(backlogPath(rootDir));
-  try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* already there */ }
-  var tmp = backlogPath(rootDir) + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify({ held: held }));
-  fs.renameSync(tmp, backlogPath(rootDir));
-}
-
-// opts: { rootDir, now }. Without a rootDir it runs entirely in memory —
-// which is what the seam-level checks want, and what a relay would get if
-// one ever built it.
+// opts: { traffic } — the log, as an api block. Without one this runs
+// entirely in memory and holds nothing back, which is what the
+// seam-level checks want and what a relay would get if one ever built it.
 function createArrivals(opts) {
   var o = opts || {};
-  var rootDir = o.rootDir || null;
+  var traffic = o.traffic || null;
 
   // An array rather than a map: subscribers are anonymous (one per open
   // browser connection) and there is never a reason to address one.
   var subscribers = [];
 
-  // In memory when there is no rootDir, on disk when there is. Held here
-  // as well either way, so a page opening does not read a file to find
-  // out there is nothing to read.
-  var held = rootDir ? readBacklog(rootDir) : [];
-
-  function persist() {
-    if (!rootDir) return;
-    try { writeBacklog(rootDir, held); }
-    catch (e) { /* a backlog that cannot be written must not break delivery */ }
+  // What the log is still holding for a page that has not opened. Asked
+  // for on demand rather than cached: another process could have marked
+  // rows, and a stale copy here would replay what somebody already read.
+  function waiting() {
+    if (!traffic || typeof traffic.arrivals !== 'function') return [];
+    try {
+      return traffic.arrivals({}).filter(function (row) { return !row.takenAt; });
+    } catch (e) {
+      return [];
+    }
   }
 
   // Returns its own unsubscribe, so a caller cannot leak one by holding
@@ -156,16 +106,17 @@ function createArrivals(opts) {
     subscribers.push(fn);
 
     // WHAT THIS PAGE MISSED, before anything new can arrive for it.
-    // Drained on the way out rather than on the way in: a handler that
-    // throws on the backlog must not leave the backlog half-delivered
-    // and half-forgotten, so the whole lot is handed over and then the
-    // mark advances once.
-    if (held.length) {
-      var backlog = held;
-      held = [];
-      persist();
-      backlog.forEach(function (message) {
-        try { fn(message); } catch (e) { /* not ours */ }
+    // Marked FIRST and handed over second: a handler that throws
+    // partway must not leave half the backlog delivered and half of it
+    // still marked as waiting, which would replay those rows to the next
+    // page as if they were new.
+    var backlog = waiting();
+    if (backlog.length) {
+      try {
+        traffic.taken(backlog.map(function (row) { return row.hash; }));
+      } catch (e) { /* the push below still happens */ }
+      backlog.forEach(function (row) {
+        try { fn(asMessage(row)); } catch (e) { /* not ours */ }
       });
     }
 
@@ -206,20 +157,39 @@ function createArrivals(opts) {
       catch (e) { /* not ours */ }
     });
 
-    // NOBODY HOME, SO IT WAITS. Counted as delivered only when a page
-    // actually took it — a subscriber that threw did not receive
-    // anything, and treating a broken page as a reader would lose the
-    // packet exactly when something is already wrong.
-    if (delivered === 0) {
-      held = held.concat([message]);
-      persist();
+    // NOBODY HOME, SO IT WAITS — and nothing is written here to make
+    // that true. peerPost logged the row before calling this, and a row
+    // that is admitted and not yet `takenAt` IS the backlog. One store,
+    // one fact, no second copy to drift.
+    //
+    // Counted as delivered only when a page actually took it: a
+    // subscriber that threw did not receive anything, and treating a
+    // broken page as a reader would lose the packet exactly when
+    // something is already wrong.
+    if (delivered && traffic && typeof traffic.taken === 'function') {
+      try { traffic.taken(message.hash); } catch (e) { /* the push happened */ }
     }
     return delivered;
   }
 
+  // A stored row, in the shape a live push sends. The same conversion
+  // hub.rowAsMessage does for the read route — one shape for a client to
+  // merge, whichever door it came through.
+  function asMessage(row) {
+    return packet.decorate({
+      id: String((row && row.hash) || ''),
+      hash: String((row && row.hash) || ''),
+      from: String((row && row.peer) || ''),
+      fromKey: String((row && row.peer) || ''),
+      text: typeof (row && row.payload) === 'string' ? row.payload : '',
+      sentAt: String((row && row.at) || ''),
+      relay: String((row && row.relay) || ''),
+    });
+  }
+
   // How many packets are waiting for a page to open. For the suite, and
   // for anything that ever wants to say so out loud.
-  function pending() { return held.length; }
+  function pending() { return waiting().length; }
 
   // For the suite and for a future monitor: how many connections are
   // listening. Never a reason to act on it here — a packet is delivered

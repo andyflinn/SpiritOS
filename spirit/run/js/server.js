@@ -14,17 +14,6 @@ const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
 const relay = createRelay.createRelay();
 
-// THE ROUTER'S ARRIVAL SEAM. Declared up here because the two halves sit
-// far apart and both need it: handleSseConnection subscribes (a browser
-// opening a page), and the peerRouter built at the foot of this file
-// notes into it (a packet landing off the stream). Neither knows about
-// the other, which is the point of putting a seam between them.
-const arrivals = require('./arrivals').createArrivals({
-  // A packet that lands while no page is open waits in relay-state/ for
-  // the first one that opens. Personal nodes only: a relay never builds
-  // a peerRouter, so nothing ever notes into this there.
-  rootDir: spirit.core.node.const.ROOT_DIR,
-});
 
 // How often a relay tells its owner how it is doing. Not a poll: the
 // owner already holds a stream, and this only decides how stale the
@@ -147,6 +136,19 @@ const HOME_PAGE = relayMode ? 'relay.html' : 'index.html';
 const trafficLog = require('./trafficLog').createTrafficLog({
   rootDir: spirit.core.node.const.ROOT_DIR,
   relayMode: relayMode,
+});
+
+// THE ROUTER'S ARRIVAL SEAM. Declared up here because the two halves sit
+// far apart and both need it: handleSseConnection subscribes (a browser
+// opening a page), and the peerRouter built at the foot of this file
+// notes into it (a packet landing off the stream). Neither knows about
+// the other, which is the point of putting a seam between them.
+const arrivals = require('./arrivals').createArrivals({
+  // A packet that lands while no page is open waits IN THE LOG — a row
+  // that is admitted and not yet taken. The seam keeps nothing of its
+  // own and reaches the log through its api block, never through the
+  // file: production code reads through the API.
+  traffic: trafficLog,
 });
 
 
