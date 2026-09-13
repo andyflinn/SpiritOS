@@ -357,11 +357,27 @@ test.subHeading('A star means owned, and opens what that mailbox says');
     test.fail('stars: ' + stars + ' in ' + listed);
   }
 
-  // The star says the row can be opened; the row is what opens it, so
-  // the whole width is the target and the star holds no click of its own.
-  if (listed.indexOf('data-row-url="https://other.example"') === -1 &&
-      listed.indexOf('<span class="natter-star">') !== -1) {
-    test.check('the mark is a mark, and only an owned row is openable');
+  // THE STAR AND THE DOOR ARE DIFFERENT THINGS, and this asserted they
+  // were the same one: only an owned row was openable.
+  //
+  //   Andy: "every relay on the natter list must invoke the
+  //   natterDetails dialog, if nothing else, the dialog explains why the
+  //   relay is non-green."
+  //
+  // A red circle with a tooltip and no way in was a dead end on the one
+  // row somebody is actually asking about. The star still means owned,
+  // and only that; the row opens whatever it is.
+  const openable = (listed.match(/data-row-url=/g) || []).length;
+  if (openable === 2 && listed.indexOf('data-row-url="https://other.example"') !== -1) {
+    test.check('every row opens, owned or not — the red ones are the ones needing an explanation');
+  } else {
+    test.fail('openable rows: ' + openable + ' in ' + listed);
+  }
+
+  // And the mark stayed a mark: one star, on the owned row, holding no
+  // click of its own.
+  if (stars === 1 && listed.indexOf('<span class="natter-star">') !== -1) {
+    test.check('while the star still means owned, and only that');
   } else {
     test.fail('row markup: ' + listed);
   }

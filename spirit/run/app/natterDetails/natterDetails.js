@@ -106,6 +106,58 @@ function ndReadDevice() {
 // Four facts, four columns — value at reading size, caption beneath it
 // as fine print. Label-and-value stacked in four rows made a list out of
 // what is really one reading (UI_DESIGN_STYLE.md).
+// A LAB RELAY IS NOT A PUBLIC ONE, and the difference is the same one
+// the wire enforces (hub.assertRelayUrl) and the same one that decides
+// whether a relay may come off the list at all: https, or http only to
+// loopback. No peer on the internet can reach you at 127.0.0.1.
+function ndIsLoopback(url) {
+  var target;
+  try { target = new URL(String(url || '')); }
+  catch (e) { return false; }
+  var host = String(target.hostname || '').toLowerCase();
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]';
+}
+
+// WHY THE CIRCLE IS NOT GREEN, in the three shapes it actually comes in.
+//
+// The glyph answers "usable or not". These are three different
+// afternoons and three different next moves, and until now the only
+// place that distinction existed was a tooltip on a row that could not
+// be opened.
+function ndWhyNotGreen() {
+  var lab = ndIsLoopback(ndUrl);
+
+  // 1. Nothing answered. A URL that is wrong and a box that is down look
+  //    identical from here, and saying so is more useful than picking.
+  if (!ndBadge.status) {
+    return '<div class="stat-tile wide">' +
+      '<div class="panel-heading">This relay did not answer</div>' +
+      '<div>' + ndEscapeHtml(ndBadge.error || 'no answer') + '</div>' +
+      '<div class="muted">Nothing is wrong with your node. A relay that is ' +
+        'switched off and an address with a typo in it look the same from here, ' +
+        'so this does not guess between them. If the address is right, it will ' +
+        'go green by itself when the relay comes back.' +
+        (lab ? ' This one is a loopback address — a lab relay on this machine, ' +
+               'not something a peer could ever reach.' : '') +
+      '</div>' +
+      '</div>';
+  }
+
+  // 2. It answered, and has no row for you. The only state with an
+  //    actual next move, so the next move is the paragraph.
+  return '<div class="stat-tile wide">' +
+    '<div class="panel-heading">This relay answered, and you are not on it</div>' +
+    '<div>It is running and reachable. It simply has no row in your name, ' +
+      'so this node cannot send through it or be reached on it.</div>' +
+    '<div class="muted">Rows are not self-service: whoever owns this relay ' +
+      'mints an invite and gives you the token, and Natter claims a name with ' +
+      'it. Until then the relay is listed here and does nothing for you.' +
+      (lab ? ' This one is a loopback address — a lab relay on this machine, ' +
+             'not something a peer could ever reach.' : '') +
+    '</div>' +
+    '</div>';
+}
+
 function ndReportHtml() {
   if (!ndBadge) return '<div class="job-log-empty">asking that relay…</div>';
 
@@ -123,9 +175,10 @@ function ndReportHtml() {
     ]);
   }
 
-  if (!ndBadge.owned) {
-    return '<div class="job-log-empty">' + ndEscapeHtml(ndBadge.error || 'not owner') + '</div>';
-  }
+  // NOT GREEN, AND THIS IS WHERE IT GETS EXPLAINED. The row showed a red
+  // circle and a tooltip; a tooltip has room for a state and none for a
+  // reason or a way out.
+  if (!ndBadge.owned) return ndWhyNotGreen();
   var report = ndBadge.report || {};
   var peers = Array.isArray(report.peers) ? report.peers.length : 0;
   return spirit.shell.factRow([

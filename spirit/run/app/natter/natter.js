@@ -154,10 +154,21 @@ function natterRenderList(container, api, relays) {
   tbody.innerHTML = relays.map(function (relay) {
     var badge = natterBadgeByUrl[relay.url];
     var owned = !!(badge && badge.owned);
-    // B2: a row this node HAS is openable, whether or not it owns the
-    // mailbox. A peer owns nothing and still has a device slot there, so
-    // gating the row on the star would hide the only control it has.
-    var mine = owned || !!(badge && badge.claimed);
+    // EVERY ROW OPENS, and that is the whole gate now.
+    //
+    //   Andy: "every relay on the natter list must invoke the
+    //   natterDetails dialog, if nothing else, the dialog explains why
+    //   the relay is non-green."
+    //
+    // It was `owned || claimed`, which is the set of rows you can DO
+    // something with — and that is exactly backwards for the rows that
+    // need explaining. A red circle with a tooltip and no way in is a
+    // dead end on the one row somebody is actually asking about.
+    //
+    // The three reds are three different afternoons (see
+    // natterStatusTitle): a relay that is down, one that answered and
+    // has no row for you, and a lab fixture no peer can reach. A glyph
+    // cannot say which; a screen can.
     // ★ MEANS OWNED, AND ONLY THAT — one mark, one meaning, here and in
     // Relay Chat's To list. It has a column of its own now rather than
     // sitting in front of a name: a mark sharing a cell with a label
@@ -172,9 +183,9 @@ function natterRenderList(container, api, relays) {
     // yours, what you call it, and where it is. Only the Remove button
     // left — a destructive control is worth a moment's thought, and it
     // has one on the mailbox's own screen.
-    return '<tr class="job-row' + (mine ? ' natter-openable' : '') + '"' +
-      (mine ? ' data-row-url="' + api.escapeHtml(relay.url) + '"' : '') +
-      (mine ? ' title="Open this relay"' : '') + '>' +
+    return '<tr class="job-row natter-openable"' +
+      ' data-row-url="' + api.escapeHtml(relay.url) + '"' +
+      ' title="Open this relay">' +
       '<td title="' + api.escapeHtml(natterStatusTitle(badge)) + '">' +
         natterStatusMark(badge) + '</td>' +
       '<td>' + star + '</td>' +

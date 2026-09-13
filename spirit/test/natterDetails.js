@@ -566,6 +566,81 @@ function openingAnotherMailboxLetsGoOfTheLast() {
 //   one relay", and spirit/test/natterLast.js still proves it. When there
 //   is a second satellite, the panel is rewritten against a rule that was
 //   never lost.
+// WHY THE CIRCLE IS NOT GREEN, which is now the dialog's job.
+//
+//   Andy: "every relay on the natter list must invoke the natterDetails
+//   dialog, if nothing else, the dialog explains why the relay is
+//   non-green."
+//
+// Every row in the list opens this screen now, including the ones that
+// can do nothing — and those are the rows somebody is actually asking
+// about. A red glyph had a tooltip and no way in; a tooltip has room for
+// a state and none for a reason or a next move.
+//
+// The three reds are three different afternoons, and these are two of
+// them. (The third, "somebody else runs it", is the claimed-not-owned
+// case and already had its own member's view.)
+function theRedIsExplained() {
+  test.subHeading('A relay that is not green says why');
+
+  // 1. NOTHING ANSWERED. A box that is off and an address with a typo in
+  //    it look identical from here, so the screen says that rather than
+  //    picking one.
+  const silent = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', owned: false, status: 0, error: 'connect ECONNREFUSED' }],
+  });
+
+  return settle().then(function () {
+    const html = silent.body().innerHTML;
+    if (/did not answer/i.test(html) && html.indexOf('connect ECONNREFUSED') !== -1) {
+      test.check('a relay that did not answer says so, and carries the reason it was given');
+    } else {
+      test.fail('silent relay: ' + html.slice(0, 400));
+    }
+
+    // AND IT DOES NOT BLAME THE NODE. The first thing somebody thinks
+    // when a screen goes red is that they broke something.
+    if (/Nothing is wrong with your node/i.test(html)) {
+      test.check('and says the node is not the problem, which is the first thing anyone assumes');
+    } else {
+      test.fail('no reassurance: ' + html.slice(0, 400));
+    }
+
+    // 2. IT ANSWERED AND HAS NO ROW FOR YOU. The one red with an actual
+    //    next move, so the next move is the paragraph.
+    const stranger = mountApp({
+      rows: [{ url: OWNED, label: 'spirit', owned: false, claimed: false, status: 403, error: 'not the owner' }],
+    });
+    return settle().then(function () {
+      const said = stranger.body().innerHTML;
+      if (/you are not on it/i.test(said) && /invite/i.test(said)) {
+        test.check('a relay that answered but has no row for you says so, and names the way on');
+      } else {
+        test.fail('stranger relay: ' + said.slice(0, 400));
+      }
+
+      // 3. A LOOPBACK RELAY IS A LAB FIXTURE, and that is worth saying
+      //    on a screen where somebody is wondering why a relay does
+      //    nothing for them. It is also the same line the removal rule
+      //    draws: no peer can reach you at 127.0.0.1.
+      // Opened ON the lab url, or the screen asks about one relay and is
+      // handed the badge of another.
+      const lab = mountApp({
+        url: 'http://127.0.0.1:65425',
+        rows: [{ url: 'http://127.0.0.1:65425', label: 'lab', owned: false, status: 0, error: 'ECONNREFUSED' }],
+      });
+      return settle().then(function () {
+        const labSaid = lab.body().innerHTML;
+        if (/loopback/i.test(labSaid) && /peer could ever reach/i.test(labSaid)) {
+          test.check('and a loopback relay is named as a lab fixture no peer could reach');
+        } else {
+          test.fail('lab relay: ' + labSaid.slice(0, 400));
+        }
+      });
+    });
+  });
+}
+
 function noRemovalSurfaceForNow() {
   test.subHeading('Taking a relay off the list is not offered');
 
@@ -619,6 +694,7 @@ ownedMailbox()
   .then(theDevicePanel)
   .then(thePanelAsksOnce)
   .then(openingAnotherMailboxLetsGoOfTheLast)
+  .then(theRedIsExplained)
   .then(noRemovalSurfaceForNow)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
