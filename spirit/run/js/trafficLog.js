@@ -68,82 +68,144 @@ const path = require('path');
 // than a number of rows. Same idea at a finer grain: that file buckets by
 // day because it is measuring a rate, this one keeps whole packets
 // because it is keeping a record.
-const WINDOW_MS = 24 * 60 * 60 * 1000;
+// PERMANENT.
+//
+//   Andy: "the log should be permanent. period."
+//
+// There was a 24-hour sliding window here, and then a rule that exempted
+// undelivered mail from it. Both are gone: nothing in this file ages out,
+// whether it was read, refused, ignored or sent.
+//
+// The window was never a privacy measure — it was "certainly enough to
+// test concepts surrounding logfiles", from when this was new. What it
+// actually did was make the node's own record of its own traffic the one
+// thing in the system that forgot, in a design whose whole argument is
+// that durability belongs on the recipient's own hardware (0006).
+//
+// TWO THINGS FOLLOW, AND THEY ARE NOT OPTIONAL.
+//
+// 1. THIS FILE GROWS WITHOUT BOUND. That is the decision, not a bug. It
+//    is the owner's own disk, in a file they can look at, holding their
+//    own traffic — which is exactly what the ring on a public relay was
+//    not, on all three counts.
+//
+// 2. IT CANNOT BE REWRITTEN ON EVERY PACKET ANY MORE. It used to be
+//    read-all, push, write-all — correct and crash-safe while a window
+//    bounded it, and impossible once nothing ages: a node running for a
+//    year would rewrite a year of traffic every time a packet landed.
+//    So the store is APPEND-ONLY, one JSON object per line.
+//
+// A write is one line and O(1). A read is O(n) and always was; reads
+// happen when a page opens or asks, writes happen per packet, and that is
+// the right way round. When `n` makes reads hurt, the answer is the one
+// Andy named — a local-disc database behind this same api block — and
+// nothing above this file will notice, because nothing above it knows
+// the filename (spirit/test/storeOwnership.js).
 
-// AND ONE KIND OF ROW HAS NO CLOCK AT ALL.
-//
-// The window is right for a RECORD — something this node sent, something
-// it refused, something it ignored. All of those are history, and history
-// may age out.
-//
-// It is wrong for UNDELIVERED MAIL. A packet that was admitted and that
-// no page has yet been handed is not a record of an event, it is the
-// event still waiting to happen. Ageing it out would make the receipt
-// this node already signed true when it was signed and a lie by morning,
-// which is the false positive ROUTER.md §4 forbids — and the exact sin
-// 0006 removed from the relay's ring, relocated somewhere harder to
-// notice.
-//
-//   Andy: "with a 24 hour ring (or however long), we never can guarantee
-//   the recept of the package by the actual human"
-//
-// So retention is decided per ROW STATE rather than per file: a row that
-// is `admitted` and not yet `takenAt` outlives any window. Everything
-// else ages at the clock above.
-function keepsForever(row) {
-  return !!(row && row.admitted && !row.takenAt);
-}
-
+// One JSON object per line. The extension says so, which matters for a
+// file somebody is meant to be able to open and read.
 function logPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'traffic.json');
+  return path.join(rootDir, 'relay-state', 'traffic.jsonl');
 }
 
-function tempPath(rootDir) {
-  return logPath(rootDir) + '.tmp';
+// WHAT A LIVE NODE ALREADY HAS. The same courtesy routingTable.json paid
+// mailbox.json: read the old shape once on the way in, so a node that has
+// been running does not silently start from nothing. Never written again.
+function legacyPath(rootDir) {
+  return path.join(rootDir, 'relay-state', 'traffic.json');
 }
 
 // Unreadable, missing or malformed all read as no history. A log that can
 // crash the thing it is observing is worse than no log — and this is
 // called on the path a packet takes, so a throw here would break the
 // delivery it was only supposed to witness.
+//
+// A MALFORMED LINE IS SKIPPED, not fatal, and that is the property an
+// append-only file is chosen for: a torn write at the end of the file
+// costs the one row that was being written, never the year behind it.
+// The whole-file rewrite it replaced had the opposite failure — atomic,
+// but all-or-nothing over everything.
 function readAll(rootDir) {
-  var raw;
+  var raw = null;
   try { raw = fs.readFileSync(logPath(rootDir), 'utf8'); }
-  catch (e) { return []; }
-  try {
-    var doc = JSON.parse(raw);
-    return Array.isArray(doc && doc.entries) ? doc.entries : [];
-  } catch (e) {
-    return [];
+  catch (e) { raw = null; }
+
+  if (raw === null) {
+    // The old shape, once. Nothing writes it again.
+    try {
+      var doc = JSON.parse(fs.readFileSync(legacyPath(rootDir), 'utf8'));
+      return Array.isArray(doc && doc.entries) ? doc.entries : [];
+    } catch (e) {
+      return [];
+    }
   }
+
+  var rows = [];
+  raw.split('\n').forEach(function (line) {
+    if (!line) return;
+    try {
+      var row = JSON.parse(line);
+      if (row && typeof row === 'object') rows.push(row);
+    } catch (e) { /* a torn line costs itself and nothing else */ }
+  });
+  return rows;
 }
 
-function withinWindow(entries, nowMs) {
-  var floor = nowMs - WINDOW_MS;
-  return entries.filter(function (row) {
-    if (!row || typeof row.at !== 'string') return false;
-    // Checked BEFORE the clock: undelivered mail is not history and the
-    // window does not apply to it. See keepsForever.
-    if (keepsForever(row)) return true;
-    var at = Date.parse(row.at);
-    // An unparseable timestamp cannot be shown to be inside the window,
-    // so it is not. The window is a promise; an entry that cannot be
-    // aged is exactly the kind of thing that would quietly outlive it.
-    if (!(at > 0)) return false;
-    return at >= floor;
+// The set of hashes a live page has already been handed. Marks are rows
+// too — `mark: 'taken'` — so the file stays append-only and a delivery
+// never rewrites the packet it delivered.
+function takenSet(rows) {
+  var seen = Object.create(null);
+  rows.forEach(function (row) {
+    if (row && row.mark === 'taken' && row.hash) seen[row.hash] = row.at || true;
+  });
+  return seen;
+}
+
+// Traffic rows, with the marks folded in. What every reader below wants.
+function historyOf(rootDir) {
+  var rows = readAll(rootDir);
+  var taken = takenSet(rows);
+  return rows.filter(function (row) { return row && !row.mark; }).map(function (row) {
+    if (!taken[row.hash]) return row;
+    var out = {};
+    Object.keys(row).forEach(function (k) { out[k] = row[k]; });
+    out.takenAt = taken[row.hash];
+    return out;
   });
 }
 
-// TEMP FILE THEN RENAME. A rename within one directory is atomic, so a
-// crash leaves either the whole old history or the whole new one — never
-// a half-written file. This is the one real advantage an append-only log
-// would have had, bought here for three lines.
-function writeAll(rootDir, entries) {
+// ONE LINE, APPENDED. No read, no rewrite, no temp file: the cost of
+// writing a packet down does not grow with how many are already there.
+function append(rootDir, row) {
   var dir = path.dirname(logPath(rootDir));
   try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* already there */ }
-  var tmp = tempPath(rootDir);
-  fs.writeFileSync(tmp, JSON.stringify({ entries: entries }));
-  fs.renameSync(tmp, logPath(rootDir));
+
+  // A NEWLINE FIRST, IF THE FILE DOES NOT ALREADY END IN ONE.
+  //
+  // This is the append-only failure mode, and it is not hypothetical: a
+  // torn write is precisely a file that stops mid-line, and surviving
+  // one is why this store is append-only at all. Appending straight
+  // onto it would glue the next row to the broken one and lose BOTH --
+  // turning a one-row loss into a two-row loss, at the moment something
+  // is already wrong.
+  //
+  // One byte is read to find out. Still O(1), and it buys the property
+  // the whole design rests on: damage stops at the row it happened to.
+  var needsBreak = false;
+  try {
+    var size = fs.statSync(logPath(rootDir)).size;
+    if (size > 0) {
+      var fd = fs.openSync(logPath(rootDir), 'r');
+      try {
+        var tail = Buffer.alloc(1);
+        fs.readSync(fd, tail, 0, 1, size - 1);
+        needsBreak = tail.toString('utf8') !== '\n';
+      } finally { fs.closeSync(fd); }
+    }
+  } catch (e) { /* no file yet, or unreadable: nothing to break away from */ }
+
+  fs.appendFileSync(logPath(rootDir), (needsBreak ? '\n' : '') + JSON.stringify(row) + '\n');
 }
 
 // opts: { rootDir, relayMode, now }
@@ -200,9 +262,7 @@ function createTrafficLog(opts) {
     }
 
     try {
-      var kept = withinWindow(readAll(rootDir), clock());
-      kept.push(row);
-      writeAll(rootDir, kept);
+      append(rootDir, row);
     } catch (e) {
       // Same reason readAll swallows: this is a witness, not a
       // participant. A disk that refuses the log must not refuse the
@@ -235,7 +295,7 @@ function createTrafficLog(opts) {
     var o = opts || {};
     var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
     var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
-    var rows = withinWindow(readAll(rootDir), clock()).filter(function (row) {
+    var rows = historyOf(rootDir).filter(function (row) {
       if (!row || row.dir !== 'in' || !row.admitted) return false;
       if (!since) return true;
       var at = Date.parse(row.at);
@@ -251,7 +311,7 @@ function createTrafficLog(opts) {
   function byHash(hash) {
     var want = String(hash || '');
     if (!want) return null;
-    var rows = readAll(rootDir).filter(function (row) {
+    var rows = historyOf(rootDir).filter(function (row) {
       return row && row.hash === want;
     });
     return rows.length ? rows[rows.length - 1] : null;
@@ -261,6 +321,13 @@ function createTrafficLog(opts) {
   // morning — the node keeps the mark, not the browser — and it is what
   // lets the row start ageing like any other record. Before this, it is
   // undelivered mail and has no clock.
+  // A MARK IS A ROW. Appending `{mark:'taken', hash, at}` rather than
+  // editing the packet's own row is what keeps the file append-only — and
+  // it means a delivery can never corrupt the thing it delivered.
+  //
+  // Marked once. A second page opening does not re-date anything: the
+  // mark means "a live page has had this", not "the last time anybody
+  // looked".
   function taken(hashes) {
     var want = Object.create(null);
     (Array.isArray(hashes) ? hashes : [hashes]).forEach(function (h) {
@@ -271,26 +338,27 @@ function createTrafficLog(opts) {
     var marked = 0;
     try {
       var rows = readAll(rootDir);
+      var already = takenSet(rows);
+      var eligible = Object.create(null);
       rows.forEach(function (row) {
-        if (!row || row.dir !== 'in' || !row.admitted) return;
-        if (!want[row.hash] || row.takenAt) return;
-        row.takenAt = at;
+        if (!row || row.mark || row.dir !== 'in' || !row.admitted) return;
+        if (!want[row.hash] || already[row.hash]) return;
+        eligible[row.hash] = true;
+      });
+      Object.keys(eligible).forEach(function (hash) {
+        append(rootDir, { at: at, mark: 'taken', hash: hash });
         marked += 1;
       });
-      if (marked) writeAll(rootDir, withinWindow(rows, clock()));
     } catch (e) {
       return 0;
     }
     return marked;
   }
 
+  // The whole history, marks folded in. Nothing is pruned on the way out
+  // any more, because nothing is pruned at all.
   function read() {
-    var all = readAll(rootDir);
-    var kept = withinWindow(all, clock());
-    if (kept.length !== all.length) {
-      try { writeAll(rootDir, kept); } catch (e) { /* reading must not fail */ }
-    }
-    return kept;
+    return historyOf(rootDir);
   }
 
   return {
@@ -305,7 +373,6 @@ function createTrafficLog(opts) {
 
 module.exports = {
   createTrafficLog: createTrafficLog,
-  WINDOW_MS: WINDOW_MS,
-  keepsForever: keepsForever,
   logPath: logPath,
+  legacyPath: legacyPath,
 };

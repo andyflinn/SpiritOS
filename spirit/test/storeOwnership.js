@@ -45,7 +45,8 @@ test.startTest('Store ownership — one module per store, and no way round it');
 // module that is allowed to know where it lives. The browser half of an
 // isomorphic module counts as the same owner.
 const STORES = [
-  { file: 'traffic.json', owner: 'trafficLog.js', what: "this node's WAN traffic, read back as a table" },
+  { file: 'traffic.jsonl', owner: 'trafficLog.js', what: "this node's WAN traffic, permanent, read back as a table" },
+  { file: 'traffic.json', owner: 'trafficLog.js', what: 'the whole-file shape it used to have, read once on the way in' },
   { file: 'routingTable.json', owner: 'relay.js', what: 'a relay\'s peer rows' },
   { file: 'mailbox.json', owner: 'relay.js', what: 'the legacy name for the same' },
   { file: 'invites.json', owner: 'invites.js', what: 'live invite tokens' },
@@ -125,7 +126,7 @@ RETIRED.forEach(function (gone) {
 (function itCanActuallyFail() {
   const owner = files.filter(function (f) { return path.basename(f) === 'trafficLog.js'; })[0];
   const code = owner ? codeOf(fs.readFileSync(owner, 'utf8')) : '';
-  if (files.length > 20 && code.indexOf("'traffic.json'") !== -1) {
+  if (files.length > 20 && code.indexOf("'traffic.jsonl'") !== -1) {
     test.check('and it is reading real code — ' + files.length + " files, and trafficLog.js really does name its own store");
   } else {
     test.fail('the scan proves nothing: files=' + files.length + ' ownerFound=' + !!owner);
