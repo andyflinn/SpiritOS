@@ -5,6 +5,12 @@ This directory contains the vision, principles, and architecture decisions for *
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)
 - [Storage Philosophy](storage/STORAGE-PHILOSOPHY.md)
+- [A correspondent that is not a person](principles/A-CORRESPONDENT-NODE.md) —
+  **sketch, nothing built.** A node whose `answer` hook is a model rather than a
+  human, and what falls out: two sovereign logs holding the same packet under the
+  same hash, reconcilable without a shared store. Adds no mechanism — the seam,
+  the credential path and `re` all exist — but it changes why R16 is worth doing,
+  from hygiene to the product. Says plainly that a corpus is not a model.
 
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)
