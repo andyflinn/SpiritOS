@@ -280,4 +280,38 @@ test.subHeading('Filtered at the source');
   fs.rmSync(w2.home, { recursive: true, force: true });
 })();
 
+(function theFilterChangesWhileItRuns() {
+  //   Andy: "as the stream comes in, i want to check/uncheck filters
+  //   while the stream runs"
+  //
+  // No new mechanism: asking again with a different filter replaces it,
+  // and the stream never stops. Checked because it is now a promise the
+  // panel's checkboxes depend on rather than a happy accident of how
+  // setMonitor was written — a later tidy-up that made `start` refuse
+  // while already started would break every checkbox and look like a
+  // panel bug.
+  const w = world();
+
+  startMonitor(w, null);
+  post(w, w.bella, w.owner, 'a');
+  const wide = events(w.heard.andy).length;
+
+  startMonitor(w, { peer: w.carl.publicKey });
+  post(w, w.bella, w.owner, 'b');
+  const narrowed = events(w.heard.andy).length;
+
+  startMonitor(w, null);
+  post(w, w.bella, w.owner, 'c');
+  const widened = events(w.heard.andy).length;
+
+  if (wide === 1 && narrowed === 1 && widened === 2 && w.box.monitoring() === true) {
+    test.check('a filter can be narrowed and widened while the stream runs, without stopping it');
+  } else {
+    test.fail('wide=' + wide + ' narrowed=' + narrowed + ' widened=' + widened +
+      ' monitoring=' + w.box.monitoring());
+  }
+
+  fs.rmSync(w.home, { recursive: true, force: true });
+})();
+
 test.reportSuccessFailureCount();
