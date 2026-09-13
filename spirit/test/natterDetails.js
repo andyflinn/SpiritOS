@@ -186,6 +186,13 @@ function mountApp(opts) {
 
   return {
     doc: doc, log: log, behavior: behavior, answers: answers, titles: titles,
+    // PANELS ARE CLOSED WHEN THE SCREEN ARRIVES, so a check about what a
+    // panel says has to open it first — the same click a person makes.
+    // Not a shortcut into the app's state: this fires the real handler.
+    open: function (id) {
+      doc.getElementById('nd-body').fire('click', { target: foldTarget(id) });
+      return this;
+    },
     body: function () { return doc.getElementById('nd-body'); },
     intervals: function () { return intervalsStarted; },
   };
@@ -212,6 +219,10 @@ function ownedMailbox() {
   });
 
   return settle().then(function () {
+    // ONE AT A TIME, because that is now the rule. Opening `invite`
+    // would shut `relay`, so the facts are read while `relay` is the open
+    // one and the mint is checked further down on its own.
+    app.open('relay');
     const panel = app.body().innerHTML;
 
     // Two blocks, and the facts are one line rather than four rows: the
@@ -224,10 +235,14 @@ function ownedMailbox() {
       test.fail('report layout: ' + panel);
     }
 
-    if (/natter-inv-go/.test(panel)) {
+    // Its own read, after its own open: with one panel open at a time
+    // the facts and the mint can never be on screen together, and
+    // asserting them off one snapshot was the old always-open screen.
+    app.open('invite');
+    if (/natter-inv-go/.test(app.body().innerHTML)) {
       test.check('and an owned mailbox offers the mint');
     } else {
-      test.fail('no mint on an owned mailbox: ' + panel);
+      test.fail('no mint on an owned mailbox: ' + app.body().innerHTML);
     }
 
     // The mint is its own tile, so it carries its own space and a screen
@@ -342,6 +357,7 @@ function someoneElsesMailbox() {
   });
 
   return settle().then(function () {
+    app.open('relay');
     const panel = app.body().innerHTML;
 
     // Not hidden — not built. A mailbox somebody else owns has no mint
@@ -391,6 +407,7 @@ function aStrangersMailbox() {
   });
 
   return settle().then(function () {
+    app.open('relay');
     const panel = app.body().innerHTML;
     // Neither owned nor claimed: this node cannot put a device there and
     // showing the panel would be chrome nobody can act on.
@@ -419,6 +436,7 @@ function theDevicePanel() {
   });
 
   return settle().then(function () {
+    app.open('device');
     const panel = app.body().innerHTML;
 
     // NOTHING TO SWITCH ON. Andy: "no backstop, no 'listening mode' on
@@ -544,8 +562,9 @@ function openingAnotherMailboxLetsGoOfTheLast() {
   });
 
   return settle().then(function () {
+    app.open('invite');
     if (/natter-inv-go/.test(app.body().innerHTML)) {
-      test.check('the owned one opens with its mint');
+      test.check('the owned one offers its mint');
     } else {
       test.fail('no mint on the owned mailbox');
     }
@@ -555,6 +574,7 @@ function openingAnotherMailboxLetsGoOfTheLast() {
     // offer a mint on somebody else's relay.
     app.behavior.open({ url: THEIRS, label: 'andy' });
     return settle().then(function () {
+      app.open('invite');
       if (!/natter-inv-go/.test(app.body().innerHTML)) {
         test.check('and opening a mailbox we do not own takes the mint away again');
       } else {
@@ -607,8 +627,9 @@ function openingAnotherMailboxLetsGoOfTheLast() {
 // of the bar rather than decoration: a reader scanning FOLDED bars can
 // tell a warning from a thing-to-do without opening either.
 function panelsFoldAndAreMarked() {
-  test.subHeading('Every panel folds, and its bar says what it is');
+  test.subHeading('Every panel folds, one at a time, and starts shut');
 
+  const ICON = spirit.core.const.ICON;
   const app = mountApp({
     rows: [{ url: OWNED, label: 'spirit', owned: true, status: 200,
       report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
@@ -616,60 +637,83 @@ function panelsFoldAndAreMarked() {
   });
 
   return settle().then(function () {
-    const html = app.body().innerHTML;
+    const shutAll = app.body().innerHTML;
 
-    // EVERY panel, not most of them. A page where three fold and one does
-    // not is a page with a bug somebody has to find.
-    const bars = (html.match(/class="panel-heading nd-fold"/g) || []).length;
-    const bodies = (html.match(/class="nd-panel-body"/g) || []).length;
-    if (bars >= 3 && bars === bodies) {
-      test.check('every panel has a folding title bar and a body — ' + bars + ' of them');
+    // ARRIVES AS A LIST OF WHAT IS HERE. Bars, no bodies — five lines
+    // each saying what it is and whether it is a warning, and opening one
+    // is choosing.
+    const bars = (shutAll.match(/class="panel-heading nd-fold"/g) || []).length;
+    const bodies = (shutAll.match(/class="nd-panel-body"/g) || []).length;
+    if (bars >= 3 && bodies === 0) {
+      test.check('the screen arrives with every panel shut — ' + bars + ' bars, no bodies');
     } else {
       test.fail('bars ' + bars + ' bodies ' + bodies);
     }
 
-    // THE MARKS. ⚠️ means "something is wrong here", 🔗 means "a thing to
-    // do". One meaning each, which is what makes a folded bar readable.
-    const ICON = spirit.core.const.ICON;
-    const deviceBar = html.slice(html.indexOf('Add one of my own devices') - 200,
-      html.indexOf('Add one of my own devices'));
+    // THE MARKS. One meaning each, which is the whole reason they are on
+    // the bar: a column of SHUT bars is still readable.
+    const deviceBar = shutAll.slice(shutAll.indexOf('Add one of my own devices') - 200,
+      shutAll.indexOf('Add one of my own devices'));
     if (deviceBar.indexOf(ICON.LINK) !== -1) {
       test.check('the device panel wears ' + ICON.LINK + ' — a thing to do, not a warning');
     } else {
       test.fail('device bar: ' + deviceBar.slice(-120));
     }
 
-    // FOLDING IT SHUTS IT. The body goes; the bar stays, or there is
-    // nothing left to press to bring it back.
-    const bar = fakeElement('bar');
-    bar.attrs = { 'data-fold': 'device' };
-    app.body().fire('click', { target: foldTarget('device') });
-    const shut = app.body().innerHTML;
-    if (shut.indexOf('Add one of my own devices') !== -1 &&
-        shut.indexOf('natter-dev-copy') === -1) {
-      test.check('folding a panel hides its body and keeps its bar');
+    app.open('device');
+    const oneOpen = app.body().innerHTML;
+    if ((oneOpen.match(/class="nd-panel-body"/g) || []).length === 1 &&
+        oneOpen.indexOf('natter-dev-copy') !== -1) {
+      test.check('pressing a bar opens that one, and only that one');
     } else {
-      test.fail('after fold: ' + shut.slice(0, 300));
+      test.fail('after opening device: ' +
+        (oneOpen.match(/class="nd-panel-body"/g) || []).length + ' bodies');
     }
 
-    // AND THE MARK FLIPS, so a shut panel does not look like an empty one.
-    const barSlice = shut.slice(shut.indexOf('Add one of my own devices') - 200,
-      shut.indexOf('Add one of my own devices'));
-    if (barSlice.indexOf(ICON.POINTRIGHT) !== -1) {
-      test.check('and its mark points right, so shut does not read as empty');
+    // ONE AT A TIME. Opening another shuts the first — two open bodies
+    // and the bars stop being a list.
+    app.open('invite');
+    const swapped = app.body().innerHTML;
+    if ((swapped.match(/class="nd-panel-body"/g) || []).length === 1 &&
+        swapped.indexOf('natter-inv-go') !== -1 &&
+        swapped.indexOf('natter-dev-copy') === -1) {
+      test.check('and opening another shuts the first — never two at once');
     } else {
-      test.fail('shut bar: ' + barSlice.slice(-120));
+      test.fail('after swapping: ' + swapped.slice(0, 300));
     }
 
-    // PRESSING IT AGAIN BRINGS IT BACK. A one-way fold is a delete.
-    app.body().fire('click', { target: foldTarget('device') });
-    if (app.body().innerHTML.indexOf('natter-dev-copy') !== -1) {
-      test.check('and pressing the bar again opens it');
+    // AND THE OPEN ONE CLOSES. A bar that could only hand over to another
+    // bar would be a screen with no way back to the list.
+    app.open('invite');
+    if ((app.body().innerHTML.match(/class="nd-panel-body"/g) || []).length === 0) {
+      test.check('and pressing the open one shuts it, leaving the list again');
     } else {
-      test.fail('did not reopen');
+      test.fail('the open panel would not close');
     }
 
-    return titleNamesTheRelay();
+    // THE MARK FOLLOWS. A shut panel must not look like an empty one.
+    app.open('device');
+    const marked = app.body().innerHTML;
+    const openBar = marked.slice(marked.indexOf('Add one of my own devices') - 200,
+      marked.indexOf('Add one of my own devices'));
+    if (openBar.indexOf(ICON.POINTDOWN) !== -1) {
+      test.check('an open bar points down and a shut one points right');
+    } else {
+      test.fail('open bar: ' + openBar.slice(-120));
+    }
+
+    // AND THE DEFAULT IS THE DEFAULT. Arriving at a relay with something
+    // already open would be this screen deciding what the question is
+    // before it has been asked.
+    app.behavior.open({ url: OWNED, label: 'andy', relayLabel: 'spirit' });
+    return settle().then(function () {
+      if ((app.body().innerHTML.match(/class="nd-panel-body"/g) || []).length === 0) {
+        test.check('and a fresh visit starts shut again, whatever was open last time');
+      } else {
+        test.fail('a panel survived the next open()');
+      }
+      return titleNamesTheRelay();
+    });
   });
 }
 
@@ -720,6 +764,7 @@ function theRedIsExplained() {
   });
 
   return settle().then(function () {
+    silent.open('why-red');
     const html = silent.body().innerHTML;
     if (/did not answer/i.test(html) && html.indexOf('connect ECONNREFUSED') !== -1) {
       test.check('a relay that did not answer says so, and carries the reason it was given');
@@ -741,6 +786,7 @@ function theRedIsExplained() {
       rows: [{ url: OWNED, label: 'spirit', owned: false, claimed: false, status: 403, error: 'not the owner' }],
     });
     return settle().then(function () {
+      stranger.open('why-red');
       const said = stranger.body().innerHTML;
       if (/you are not on it/i.test(said) && /invite/i.test(said)) {
         test.check('a relay that answered but has no row for you says so, and names the way on');
@@ -776,6 +822,7 @@ function labRelayIsExplained() {
   });
 
   return settle().then(function () {
+    down.open('local');
     const html = down.body().innerHTML;
     if (/Why this relay is not useful/.test(html) && /did not answer/.test(html)) {
       test.check('a local relay that is down gets both bubbles — what happened, and why it would not have mattered');
@@ -791,6 +838,7 @@ function labRelayIsExplained() {
         report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
     });
     return settle().then(function () {
+      up.open('local');
       const green = up.body().innerHTML;
       if (/Why this relay is not useful/.test(green)) {
         test.check('and a lab relay that is UP and owned still says it — green means it replied, not that a peer can reach you');
@@ -842,6 +890,7 @@ function noRemovalSurfaceForNow() {
   });
 
   return settle().then(function () {
+    app.open('relay');
     const panel = app.body().innerHTML;
 
     // EVEN WITH canRemove TRUE. The old screen showed the control when

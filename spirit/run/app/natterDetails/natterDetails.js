@@ -42,15 +42,25 @@ var ndMinted = '';      // a label minted while this screen was open
 var ndChanged = false;  // has anything happened the list must repaint for?
 var ndRelayLabel = '';  // what the LIST calls this relay, for the title
 
-// WHICH PANELS ARE SHUT. Keyed by panel id, and only the SHUT ones are
-// remembered — a panel this screen has never heard of is open, so a new
-// panel arrives open rather than hidden by a default nobody set.
+// WHICH ONE PANEL IS OPEN. '' means none, and none is how the screen
+// arrives.
 //
-// It survives open() on purpose. Somebody who folded the diagnostics away
-// on one relay meant "I have read this", not "until I look at the next
-// one", and re-opening every panel on every visit is the behaviour that
-// makes a fold worth nothing.
-var ndShut = Object.create(null);
+//   Andy: "default state of the folding bubbles = closed, only one bubble
+//   open at the same time."
+//
+// It was the other way round — every panel open, remembering which had
+// been folded away — and that is a page you scroll. Closed by default
+// makes the screen a LIST OF WHAT IS HERE: five bars, each saying what it
+// is and whether it is a warning, and opening one is choosing.
+//
+// One at a time for the same reason. Two open panels and the bars stop
+// being a list; the screen goes back to being scrolled and the choosing
+// stops meaning anything.
+//
+// Reset on open(), because the default is the default: arriving at a
+// relay with a panel already open would be this screen deciding what the
+// question is before it has been asked.
+var ndOpenPanel = '';
 
 // A PANEL, WITH A TITLE BAR THAT FOLDS IT.
 //
@@ -71,7 +81,7 @@ var ndShut = Object.create(null);
 // the panel's state — "device" stays "device" whether it is armed,
 // loaded or refused.
 function ndPanel(id, mark, title, inner, extraClass) {
-  var shut = !!ndShut[id];
+  var shut = ndOpenPanel !== id;
   return '<div class="stat-tile wide' + (extraClass ? ' ' + extraClass : '') + '">' +
     '<div class="panel-heading nd-fold" data-fold="' + ndEscapeHtml(id) + '"' +
       ' title="' + (shut ? 'Show' : 'Hide') + ' this">' +
@@ -568,8 +578,10 @@ spirit.shell.activateApp({
       if (bar) {
         var id = bar.getAttribute('data-fold');
         if (id) {
-          if (ndShut[id]) delete ndShut[id];
-          else ndShut[id] = true;
+          // Pressing the open one shuts it, which leaves none open. A bar
+          // that could only ever hand over to another bar would be a
+          // screen with no way back to the list.
+          ndOpenPanel = (ndOpenPanel === id) ? '' : id;
           ndRender();
         }
         return;
@@ -605,6 +617,7 @@ spirit.shell.activateApp({
     // Arming it for one and then opening another has to disarm — the
     // shell can promise open() runs, it cannot know what is stale here.
     ndDevice.loaded = false;
+    ndOpenPanel = '';
 
     ndSetTitle();
     ndRender();
