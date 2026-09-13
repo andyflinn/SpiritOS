@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const auth = require('./relayAuth');
 const invites = require('./invites');
-// keysForName and the set-device bytes. The device slot's shape is one
-// module's answer whether it is read here or on the personal node
-// (DEVICE-CYCLE1.md).
+// parseKeyRow, and nothing else any more: a relay keeps no device key.
+// The binding between a device and its node belongs to the node — see
+// deviceAuth.js for why, and for the three hazards that deleted.
 const deviceAuth = require('./deviceAuth');
 const presence = require('./presence');
 const routerTable = require('./router');
@@ -445,15 +445,6 @@ function createRelay(rootDir) {
     return { ok: true, status: 201, peer: peer, owner: firstOwner };
   }
 
-  // allow.json is the authority on who the owner is; peer.owner is only
-  // the record written at claim time.
-  function isOwner(party) {
-    var key = party && party.peer && party.peer.publicKey;
-    if (!key) return false;
-    var owner = auth.ownerName(allow);
-    return !!owner && allow.byName[owner] === key;
-  }
-
   // Minting is not checkOwner(): that verifies auth.statusMessage(name),
   // which says nothing about WHICH invite is being made. A signature that
   // could be replayed from a status request into "mint me a token for any
@@ -556,11 +547,8 @@ function createRelay(rootDir) {
       if (!namesSend.ok) return namesSend;
     } else if (allow.mode === 'keys') {
       if (src && src.peer && src.peer.publicKey) {
-        // The peer's own key, OR a device key standing for the same
-        // name. Both, not just the device list: keysForName only ever
-        // answers for the owner (allow.byName holds one row), so
-        // replacing this key with that list would have taken every
-        // ordinary peer's ability to send with it.
+        // The peer's own key. A device key standing for the same name
+        // was accepted here too, until a relay stopped holding one.
         //
         // THE ROW'S OWN KEY, and nothing else. A device's key was
         // accepted here too, on the reasoning that a device is the owner
@@ -787,300 +775,6 @@ function createRelay(rootDir) {
   function deviceIdentityOr(token) {
     return deviceIdentity(token);
   }
-
-  function deviceOffer(token, password, devicePublicKey) {
-    var who = deviceIdentityOr(token);
-    if (!who) {
-      return Promise.resolve({
-        ok: false, status: 403, error: DEVICE_REFUSAL,
-      });
-    }
-
-    // THE FLOOD GATE, and it comes before the post rather than after: the
-    // whole point is that a caller cannot make this relay spend a post on
-    // somebody's node by asking often enough.
-    //
-    // After the identity check, and that order is load-bearing for the
-    // same reason it is at the claim path — a bucket keyed by
-    // caller-chosen input grows when a stranger reaches it, so a stranger
-    // must not reach it.
-    if (!rateOk(deviceHits, who.id, DEVICE_PER_MIN)) {
-      return Promise.resolve({
-        ok: false, status: 429, error: 'too many device attempts',
-      });
-    }
-    // A DEVICE ENROLMENT IS AN ORDINARY POST, and the relay is the one
-    // making it. Everything specific to devices is these few lines;
-    // everything else is `post` below, the same act this relay performs
-    // for any peer.
-    //
-    // NOT AN APP PACKET, and that is a rule rather than a shortcut. The
-    // app envelope lives inside `text` precisely so a relay never learns
-    // it: change the envelope and no relay in the world needs updating.
-    // A relay that could parse one would have made the envelope part of
-    // the relay protocol.
-    //
-    // This is not app-to-app traffic anyway. It is the relay speaking to
-    // a node about the node's own enrolment — protocol, like the answer
-    // `device-pending` has always given — so it gets the relay's own
-    // shape, which the relay is entitled to read because it wrote the
-    // question. Reading the answer to your own question is not learning
-    // somebody else's format.
-    var wrapped = JSON.stringify({
-      relay: 'device-offer',
-      password: password,
-      devicePublicKey: devicePublicKey,
-    });
-
-    // WHOSE ENROLMENT THIS WAS, carried back with the yes.
-    //
-    // The page has to sign as somebody once it is enrolled, and it was
-    // being told the wrong somebody: the answer named
-    // `snapshot().owner` — this RELAY's owner — so every device page on
-    // the box came back "signed in as andy", including bella's. Andy saw
-    // it the first time two enrolments ran back to back.
-    //
-    // True when it was written, and quietly false since B2. The bare
-    // /device page enrolled the owner and nobody else, so the owner's
-    // label was the only answer there was. B2 gave every identity with a
-    // row its own page and its own slot, and this line did not follow.
-    //
-    // It is the label of the identity that was ENROLLED, which is the
-    // one `who` has been holding since the first line of this function.
-    function named(answer) {
-      if (!answer || !answer.ok) return answer;
-      answer.name = who.label;
-      return answer;
-    }
-
-    // DELIVER OR REFUSE, with nothing behind it any more. post() draws
-    // that line for every post this relay makes, and an enrolment is one:
-    // a node holding no stream cannot answer, and saying so at once is
-    // the whole of decision 0006. The poll that used to catch this case
-    // is gone, and with it the only thing on this box that still waited.
-    return post(who.id, wrapped).then(deviceAnswerFrom).then(named);
-  }
-
-  // THE RELAY POSTING AS ITSELF.
-  //
-  // Andy: "the relay already had a spirit style post with reply
-  // implemented, in the relaying... you could have a generic function on
-  // the relay that presents the exact same interface as the personal
-  // node side."
-  //
-  // That is this, and it is deliberately the same shape as
-  // peerPost.post() on a node — sign, hash, register, deliver, wait —
-  // because it is the same act. What the relay does when it proxies
-  // somebody else's post (routePost, below) and what it does when it
-  // makes one of its own differ in exactly two places: who signed it,
-  // and where the answer goes.
-  //
-  // The relay signs with its own key. Not ceremony: for a device
-  // enrolment there IS no end-to-end signature to carry, because the
-  // browser has no identity yet — that being the thing it is enrolling —
-  // so the relay vouching for it is the only attestation there can be.
-  // A hop is not an origin, and TLS can only speak to the hop.
-  function post(toKey, text) {
-    var mine = auth.loadIdentity(rootDir);
-    if (!mine || !mine.privateKey) {
-      return Promise.resolve({ ok: false, status: 503, error: 'this relay has no identity' });
-    }
-    if (typeof text !== 'string' || !text) {
-      return Promise.resolve({ ok: false, status: 400, error: 'text required' });
-    }
-    if (text.length > MAX_ROUTED_TEXT) {
-      return Promise.resolve({ ok: false, status: 413, error: 'too big' });
-    }
-
-    // DELIVER OR REFUSE, AND REFUSE INSTANTLY (0006). The same line
-    // routePost draws, for the same reason, and drawn here rather than
-    // in the caller so that every post this relay makes obeys it.
-    if (!presentNow.isPresent(toKey)) {
-      return Promise.resolve({ ok: false, status: 503, error: 'peer not reachable' });
-    }
-
-    var signed = auth.postMessage(mine.publicKey, toKey, text);
-    var sig = auth.sign(mine.privateKey, signed);
-    var hash = auth.requestHash(signed);
-
-    // REGISTERED BEFORE IT IS SENT, the rule the whole router turns on:
-    // nothing leaves until the thing that will match its answer exists.
-    var waiting = new Promise(function (resolve) {
-      awaitingReply[hash] = {
-        resolve: resolve,
-        timer: setTimeout(function () {
-          if (!awaitingReply[hash]) return;
-          delete awaitingReply[hash];
-          // Named, because cancel() refuses a hash that is not this
-          // requester's — the same rule that stops one node cancelling
-          // another's route.
-          routes.cancel(hash, mine.publicKey);
-          resolve({ ok: false, status: 504, hash: hash, error: 'no answer yet' });
-        }, ROUTE_WAIT_MS),
-      };
-    });
-
-    var opened = routes.open(hash, mine.publicKey, toKey, function () {
-      // NO HASH IS SENT, exactly as in routePost: the target derives it
-      // from the bytes it holds, which is what makes it evidence rather
-      // than an echo.
-      return presentNow.send(toKey, 'request', {
-        from: mine.publicKey,
-        to: toKey,
-        text: text,
-        sig: sig,
-      });
-    });
-    if (!opened.ok) {
-      settleHere(hash, {
-        ok: false, status: opened.status || 503,
-        error: opened.error || 'could not be sent',
-      });
-    }
-
-    return waiting;
-  }
-
-  // Answers this relay is waiting for, by the hash of the request it
-  // made. Not a second router table — the router's own table holds the
-  // route; this holds only what is waiting at the near end of it, which
-  // for a relay is never a socket.
-  var awaitingReply = Object.create(null);
-
-  function settleHere(hash, answer) {
-    var slot = awaitingReply[hash];
-    if (!slot) return false;
-    delete awaitingReply[hash];
-    if (slot.timer) clearTimeout(slot.timer);
-    slot.resolve(answer);
-    return true;
-  }
-
-  // WHAT THE NODE SAID, TURNED BACK INTO WHAT THE BROWSER ASKED.
-  //
-  // The node answers with a packet, because that is what an answer is on
-  // this wire. This is the relay reading a reply to a request it made
-  // itself — which is the one payload it is entitled to open, having
-  // written the question.
-  //
-  // Anything it cannot read is a no. A page that gets `not now` tries
-  // again; a page told yes on the strength of an answer nobody could
-  // parse would be enrolled against a node that never agreed.
-  function deviceAnswerFrom(answer) {
-    if (!answer || !answer.ok) {
-      return { ok: false, status: answer && answer.status, error: DEVICE_REFUSAL };
-    }
-    var said = null;
-    try { said = JSON.parse(answer.text); } catch (e) { said = null; }
-    // THE SHAPE IS PART OF THE CHECK. The bare receipt every node sends
-    // for every request is an empty string, and an empty string must not
-    // read as consent — a browser told yes on the strength of an answer
-    // nobody composed would be enrolled against a node that never
-    // agreed.
-    if (!said || said.relay !== 'device-answer' || said.accepted !== true) {
-      return { ok: false, status: 403, error: DEVICE_REFUSAL };
-    }
-    return { ok: true, status: 200, devicePublicKey: said.devicePublicKey || '' };
-  }
-  // FORGETTING SOMEBODY — the act, with no opinion about who asked.
-  //
-  // Split out of removePeer so the two ways in can prove themselves
-  // differently and then do the identical thing. The public route still
-  // checks a signature (see removePeer below); a post from the owner was
-  // already proved by the post's own signature before it reached here,
-  // and a second check there would be a second place to decide who the
-  // owner is.
-  //
-  // BY KEY, and only ever by key.
-  //
-  //   Andy: "removePeer MUST be by ID"
-  //
-  // Labels duplicate by design, so a removal naming one would delete
-  // whichever john this box happened to find first.
-  function forgetPeer(peerKey) {
-    var key = String(peerKey == null ? '' : peerKey).trim();
-    if (!key) return { ok: false, status: 400, error: 'peer key required' };
-
-    var target = findByKey(key);
-    if (!target) return { ok: false, status: 404, error: 'no such peer' };
-
-    var owner = auth.ownerName(allow);
-    var ownerKey = owner && allow.byName && allow.byName[owner];
-
-    // The owner's own row is not removable. NOT an auth check — it is a
-    // safety invariant, which is why it lives with the act rather than
-    // with either gate: no way in may reach past it. It is the only row allow.json
-    // holds, ownerName() reads it, and a relay that forgot its owner
-    // could never be administered again — first-claim would hand the box
-    // to whoever asked next.
-    if (ownerKey && key === ownerKey) {
-      return { ok: false, status: 403, error: 'the owner cannot be removed' };
-    }
-
-    var label = labelOf(target);
-    delete peers[key];
-    // Some older rows are keyed by name rather than by key.
-    Object.keys(peers).forEach(function (k) {
-      if (peers[k] && peers[k].publicKey === key) delete peers[k];
-    });
-
-    // Their mail goes with them. Leaving it would keep a removed person's
-    // words on a box they have been removed from, addressed to a row that
-    // no longer exists — and "forget" that leaves the letters behind is
-    // not forgetting.
-    var before = messages.length;
-    messages = messages.filter(function (m) {
-      return m.fromKey !== key && m.toKey !== key;
-    });
-    persist();
-
-    // And the invite, or the name is a lie: a live token for that label
-    // walks them straight back in.
-    var revoked = invites.revokeInvite(rootDir, label);
-    invites.sweepExpired(rootDir);
-
-    // If they are holding a stream, it ends now. A removed peer that
-    // keeps receiving the roster is still a member in every way that
-    // matters.
-    if (presentNow.isPresent(key)) {
-      presentNow.disconnect(key, null);
-    }
-
-    // GONE, NOT ABSENT — and the difference is a colour on somebody's
-    // screen. `present: false` is a statement ABOUT A MEMBER: this person
-    // has a row here and is not connected. A removed peer has no row, so
-    // the only true thing left to say is "I no longer know this key" —
-    // and a node that heard `present: false` would keep showing them red,
-    // which claims knowledge the relay no longer has.
-    //
-    // Broadcast unconditionally, not only when they were connected:
-    // somebody removed while away would otherwise stay absent-and-known
-    // in every peer's table for ever, because nothing would ever correct
-    // it.
-    presentNow.broadcast('presence', { key: key, present: false, gone: true });
-
-    return {
-      ok: true,
-      status: 200,
-      removed: { key: key, label: label },
-      messagesDropped: before - messages.length,
-      invitesRevoked: revoked,
-    };
-  }
-
-  // THE PUBLIC DOOR, and it exists for ONE of its two callers now.
-  //
-  // The owner's way in is a post (answerSelf, body.removePeer) — reached
-  // through /api/hub/remove-peer, which is the node-side interface this
-  // verb never had. A working, signed, thorough verb that no door on the
-  // node could reach was the impurity: not a wrong protocol, an absent
-  // one.
-  //
-  // What keeps this route alive is the OTHER signer. A peer taking
-  // themselves off a relay signs with their own key, and a peer cannot
-  // address the relay at all — it answers its owner and nobody else. So
-  // the self path has nowhere to go but here, and removePeerMessage stays
-  // with it. Decision 0010 lists what that costs.
 
   // installDevice() STOOD HERE, and `body.setDevice` with it.
   //
@@ -1551,10 +1245,22 @@ function createRelay(rootDir) {
     var who = deviceIdentity(fromToken);
     if (!who) return { ok: false, status: 403, error: 'no such identity' };
 
-    // THE RELAY AS A PEER, for its owner and nobody else. Checked before
-    // deviceIdentity is asked about the target, because the relay's own
-    // key is deliberately not a row and never will be — publishing it as
-    // one would put it in every census.
+    // AM I THE TARGET? — asked first, and asked alone.
+    //
+    //   Andy: "wouldn't it be the smartest move for the relay to check
+    //   first if it is the target of a request, then depending if the
+    //   requestor is the owner, succeed or fail?"
+    //
+    // That is this line and answerSelf, in that order. It used to be one
+    // question — `postedToSelf(who, toToken)` asked "am I the target AND
+    // is this the owner" in a breath — so a peer was told `no such peer`
+    // as though the relay were not the target at all. Now the two are
+    // separate: here, whether this box is being addressed; there, one
+    // verb at a time, whether this caller may ask for it.
+    //
+    // Checked before deviceIdentity is asked about the target, because
+    // the relay's own key is deliberately not a row and never will be —
+    // publishing it as one would put it in every census.
     if (postedToSelf(toToken)) {
       var selfSigned = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
       if (!selfSigned) return { ok: false, status: 403, error: 'bad post signature' };
