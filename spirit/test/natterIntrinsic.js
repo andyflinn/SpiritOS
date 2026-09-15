@@ -33,8 +33,16 @@ const NATTER_SCRIPT = 'app/natter/natter.js';
 const BOUND = 'andy';
 const NATTER_MANIFEST = 'app/natter/natter.json';
 
+// NEWLINES ARE NORMALISED, and that is not cosmetic. git on this box
+// runs core.autocrlf=true, so a file it checked out arrives with CRLF
+// while a file a tool last wrote arrives with LF — the same blob, two
+// shapes on disk, and which one you get depends on nothing a reader of
+// this suite can see. Two assertions here cut a function body out with
+// `indexOf('\n  }\n')`, and under CRLF that found nothing, sliced four
+// characters, and reported the failure as `func`. The source under test
+// was identical both times.
 function readRun(rel) {
-  return fs.readFileSync(path.join(RUN_DIR, rel), 'utf8');
+  return fs.readFileSync(path.join(RUN_DIR, rel), 'utf8').replace(/\r\n/g, '\n');
 }
 
 function manifest(rel) {
@@ -3364,11 +3372,25 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
   // Counted at the delegation rather than in the markup: the markup can
   // carry a class nothing listens for, but a branch here is a button in
   // the hand.
+  // TWO NOW, AND THE SECOND ONE EARNS IT (2026-09-15).
+  //
+  //   Andy: "rotate password must be a UI element in the device-fold in
+  //   the relay detail"
+  //
+  // The claim above was never "one button" for its own sake — it was that
+  // "Listening off" was CHROME NOBODY COULD ACT ON, a control that did
+  // not do the thing it named. Rotate is the opposite: a verb that has
+  // existed and been reachable since device support landed, with nothing
+  // on any screen to press.
+  //
+  // So the rule this asserts is unchanged in substance — every control in
+  // this panel does something — and the count moves with the honest
+  // arrival of a second one.
   const branches = natter.match(/closest\(\s*['"]\.natter-dev-/g) || [];
-  if (branches.length === 1 && /navigator\.clipboard/.test(natter)) {
-    test.check('one control in the whole panel, and pressing it copies the password');
+  if (branches.length === 2 && /navigator\.clipboard/.test(natter) && /device\.rotate/.test(natter)) {
+    test.check('two controls, and both act: one copies the password, one replaces it');
   } else {
-    test.fail(branches.length + ' device click branches, expected 1');
+    test.fail(branches.length + ' device click branches, expected 2 (copy and rotate)');
   }
 
   // AND IT SAYS WHEN IT FAILED. A copy button that fails quietly sends

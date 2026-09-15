@@ -169,7 +169,10 @@ function mountApp(opts) {
         rows: opts.rows || [],
         relayStatus: opts.relayStatus || {},
       });
-    } else if (url.indexOf('/api/hub/device') === 0) {
+    } else if (url.indexOf('/api/spirit') === 0 && /device.info/.test(String((init && init.body) || ''))) {
+      // device.info under the one door (2026-09-15). Matched on the VERB
+      // rather than the path, because the path is the same for every verb
+      // now — which is the fixture learning what the dispatch learned.
       text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/post') === 0) {
       // What the node answers a post with: peerPost's own settle, whose
@@ -969,7 +972,7 @@ function thePanelAsksOnce() {
   return settle().then(function () {
     return settle().then(function () {
       const asks = app.log.filter(function (c) {
-        return c.url.indexOf('/api/hub/device') === 0;
+        return c.url.indexOf('/api/spirit') === 0 && /device.info/.test(String(c.body || ''));
       });
       if (asks.length === 1) {
         test.check('one ask for the password and the key, and no timer behind it');

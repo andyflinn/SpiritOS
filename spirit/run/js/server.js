@@ -1055,10 +1055,7 @@ const server = http.createServer((req, res) => {
   // like every /api/hub route — the gate is the one at the top of this
   // handler, and it is why the password can be answered in the clear to
   // a page on this machine and nowhere else.
-  if (req.method === 'GET' && pathname === '/api/hub/device') {
-    hub.handleDevice(req, res);
-    return;
-  }
+  // `GET /api/hub/device` is `device.info` under the one door.
 
   // The candidates behind a handle somebody heard out loud. Matches
   // only: the census is filtered on this node and never handed to the
@@ -1245,10 +1242,7 @@ const server = http.createServer((req, res) => {
     // A NEW DOOR PASSWORD. The only answer to a relay that carried one
     // real enrolment and kept the password it was handed — see
     // deviceAuth.rotatePassword. POST only, because it changes a secret.
-    if (pathname === '/api/hub/rotate-password') {
-      hub.handleRotatePassword(req, res, readJsonBody);
-      return;
-    }
+    // `POST /api/hub/rotate-password` is `device.rotate`.
 
     if (pathname === '/api/hub/peer') {
       hub.handlePeer(req, res, readJsonBody);
@@ -1579,7 +1573,8 @@ if (!relayMode) {
   // because a relay does not serve this door.
   loopbackVerbs.claim('net', 'server.js', {
     'net.fetch': handleGenericProxy,
-  });
+    // WIRE: it reaches the internet, so being offline fails it.
+  }, { wire: true });
 
   loopbackVerbs.claim('jobs', 'server.js', {
     'jobs.list': function (rq, rs) {
@@ -1590,7 +1585,8 @@ if (!relayMode) {
     'jobs.update': handleJobUpdate,
     'jobs.cancel': handleCancelJob,
     'jobs.delete': handleDeleteJob,
-  });
+    // LOCAL: a job is this machine's, whether or not anything is reachable.
+  }, { wire: false });
 
   // THE GATE IS NOT IN HERE, and that is the point of this namespace.
   // Every one of these goes through spirit.core.fs, which asks
@@ -1604,7 +1600,31 @@ if (!relayMode) {
     'fs.save': handleFsSave,
     'fs.delete': handleFsDelete,
     'fs.annotate': handleFsAnnotate,
-  });
+    // LOCAL: this node's own disk.
+  }, { wire: false });
+
+  // ── STAGE 4a — device (2026-09-15) ─────────────────────────────────
+  //
+  // LOCAL, and I had this wrong once. I called `device` two-party because
+  // the password exists so a phone can attach — but the second party
+  // never touches THIS call: they hit /api/relay/device on the relay.
+  // The purpose is two-party; the operation reads a file on this box.
+  // The namespace follows the operation, because what a caller needs to
+  // know is whether being offline can fail it.
+  //
+  // `device.rotate` has no caller, and that is NOT the remove-peer gap
+  // wearing another hat:
+  //
+  //   Andy: "rotate-password is standing in line with device support
+  //   with a js-support framework."
+  //
+  // It is waiting for named work, not forgotten by accident. Worth the
+  // distinction — a verb nobody remembered and a verb ahead of its own
+  // UI look identical from a grep, and only one of them is a defect.
+  loopbackVerbs.claim('device', 'hub.js', {
+    'device.info': function (rq, rs) { hub.handleDevice(rq, rs); },
+    'device.rotate': function (rq, rs) { hub.handleRotatePassword(rq, rs, readJsonBody); },
+  }, { wire: false });
 }
 
 server.listen(port, BIND_HOST, () => {

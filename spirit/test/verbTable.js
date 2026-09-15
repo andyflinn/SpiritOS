@@ -32,7 +32,7 @@ test.subHeading('A module answers in its own namespace and nowhere else');
   table.claim('fs', 'fsVerbs', {
     'fs.save': function () {},
     'fs.delete': function () {},
-  });
+  }, { wire: false });
 
   if (table.verbs().join(',') === 'fs.delete,fs.save') {
     test.check('what was claimed is what can be asked');
@@ -59,7 +59,7 @@ test.subHeading('A module answers in its own namespace and nowhere else');
   // `jobs.*` are this machine, `peer.*` reaches the wire — and that is
   // only true if a module cannot answer outside what it claimed.
   const wrong = threw(function () {
-    createVerbTable().claim('fs', 'fsVerbs', { 'peer.post': function () {} });
+    createVerbTable().claim('fs', 'fsVerbs', { 'peer.post': function () {} }, { wire: false });
   });
   if (/answers in its own namespace/.test(wrong)) {
     test.check('claiming fs and offering peer.post is refused, by name');
@@ -77,10 +77,10 @@ test.subHeading('Two modules cannot answer the same thing');
   // last-one-wins: `unknownPolicy` appeared twice in one object literal
   // in hub.js and nothing said a word about it for however long.
   const table = createVerbTable();
-  table.claim('fs', 'fsVerbs', { 'fs.save': function () {} });
+  table.claim('fs', 'fsVerbs', { 'fs.save': function () {} }, { wire: false });
 
   const clash = threw(function () {
-    table.claim('fs', 'somethingElse', { 'fs.save': function () {} });
+    table.claim('fs', 'somethingElse', { 'fs.save': function () {} }, { wire: false });
   });
   if (/already claimed by fsVerbs/.test(clash)) {
     test.check('a second claim on a namespace names who holds it');
@@ -108,8 +108,8 @@ test.subHeading('A malformed claim is refused at boot, not at request time');
   const bad = [
     ['a namespace with a dot', function (t) { t.claim('fs.x', 'm', { 'fs.save': function () {} }); }],
     ['an empty namespace', function (t) { t.claim('', 'm', {}); }],
-    ['a verb with no namespace', function (t) { t.claim('fs', 'm', { save: function () {} }); }],
-    ['a verb that is not a function', function (t) { t.claim('fs', 'm', { 'fs.save': 'nope' }); }],
+    ['a verb with no namespace', function (t) { t.claim('fs', 'm', { save: function () {} }, { wire: false }); }],
+    ['a verb that is not a function', function (t) { t.claim('fs', 'm', { 'fs.save': 'nope' }, { wire: false }); }],
     ['claiming nothing at all', function (t) { t.claim('fs', 'm', null); }],
   ];
 
@@ -125,6 +125,60 @@ test.subHeading('A malformed claim is refused at boot, not at request time');
 }
 
 // ---------------------------------------------------------------------
+test.subHeading('A namespace must say whether being offline can fail it');
+// ---------------------------------------------------------------------
+
+{
+  //   Andy: "wire or not is the most important distingtion, wire requires
+  //   that the local box be online, others who knows."
+  //
+  // It is the client's failure contract, not a maintainer's note — which
+  // is what it was mistaken for once, in the conversation that produced
+  // this. A wire verb can answer "not reachable right now" and yields a
+  // hash; a local one can do neither. A caller handles those differently,
+  // so it must be answerable from the verb alone.
+  const silent = threw(function () {
+    createVerbTable().claim('peer', 'hub.js', { 'peer.post': function () {} });
+  });
+  if (/must say wire/.test(silent)) {
+    test.check('a claim that will not say is refused at boot');
+  } else {
+    test.fail('a claim with no wire flag was allowed: ' + JSON.stringify(silent));
+  }
+
+  // Not truthy-or-falsy: a claim that says `wire: 'yes'` has not answered
+  // the question, it has answered a different one.
+  const fuzzy = threw(function () {
+    createVerbTable().claim('peer', 'hub.js', { 'peer.post': function () {} }, { wire: 'yes' });
+  });
+  if (/must say wire/.test(fuzzy)) {
+    test.check('and so is one that answers with something other than true or false');
+  } else {
+    test.fail('a non-boolean wire flag was allowed');
+  }
+
+  const table = createVerbTable();
+  table.claim('peer', 'hub.js', { 'peer.post': function () {} }, { wire: true });
+  table.claim('contact', 'hub.js', { 'contact.block': function () {} }, { wire: false });
+
+  // THE WHOLE POINT: a client asks the verb, not a document.
+  if (table.needsWire('peer.post') === true && table.needsWire('contact.block') === false) {
+    test.check('and a caller can ask any verb whether it needs the box online');
+  } else {
+    test.fail('needsWire: post=' + table.needsWire('peer.post') +
+      ' block=' + table.needsWire('contact.block'));
+  }
+
+  // Null, not false, for something nobody claimed — "no such verb" and
+  // "a verb that works offline" must not look alike.
+  if (table.needsWire('nope.thing') === null) {
+    test.check('an unclaimed verb answers null rather than pretending to be local');
+  } else {
+    test.fail('unclaimed needsWire: ' + table.needsWire('nope.thing'));
+  }
+}
+
+// ---------------------------------------------------------------------
 test.subHeading('The table can say what this node can do');
 // ---------------------------------------------------------------------
 
@@ -134,8 +188,8 @@ test.subHeading('The table can say what this node can do');
   // that goes stale — which is what design/andy/spiritNodeAPI.md had done
   // by three cycles this week.
   const table = createVerbTable();
-  table.claim('net', 'server.js', { 'net.fetch': function () {} });
-  table.claim('jobs', 'jobVerbs', { 'jobs.create': function () {}, 'jobs.cancel': function () {} });
+  table.claim('net', 'server.js', { 'net.fetch': function () {} }, { wire: true });
+  table.claim('jobs', 'jobVerbs', { 'jobs.create': function () {}, 'jobs.cancel': function () {} }, { wire: false });
 
   const owners = table.namespaces();
   if (owners.length === 2 && owners[0].namespace === 'jobs' && owners[0].by === 'jobVerbs') {

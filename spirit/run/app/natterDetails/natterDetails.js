@@ -194,7 +194,12 @@ function ndLoad() {
 }
 
 function ndReadDevice() {
-  return fetch('/api/hub/device')
+  //  until 2026-09-15. One door, verb in the body.
+  return fetch('/api/spirit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verb: 'device.info' }),
+  })
     .then(function (r) { return r.json(); })
     .then(function (d) {
       ndDevice.password = (d && d.password) || '';
@@ -670,6 +675,25 @@ function ndDeviceHtml() {
         ndEscapeHtml(ndShortUrl(target)) + '</a>' +
       '<span class="natter-dev-out muted"></span>' +
     '</div>' +
+    // ── ROTATE, WHERE THE PASSWORD IS ───────────────────────────────
+    //
+    //   Andy: "rotate password must be a UI element in the device-fold
+    //   in the relay detail"
+    //
+    // The verb has existed and been reachable since device support
+    // landed, with nothing on any screen to press — waiting on named
+    // work rather than forgotten. This is the screen that shows the
+    // password, so it is the screen that replaces it.
+    //
+    // ARMED, like Remove and Revoke: rotating invalidates a word that
+    // may already be half-typed into a phone across the room. Not
+    // destructive of anything permanent — a new one is minted on the
+    // next ask — but it breaks something in flight.
+    '<div class="natter-dev-row">' +
+      '<button type="button" class="cancel-btn natter-dev-rotate">' +
+        ndIcon.WARNING + ' New password</button>' +
+      '<span class="natter-dev-rotate-out muted"></span>' +
+    '</div>' +
     '<div class="stat-tile nested natter-dev-bubble">' +
       ndDeviceBubbleHtml() +
     '</div>', 'natter-device');
@@ -1003,6 +1027,40 @@ function ndMint(button) {
 // The clipboard is the whole transport: the password goes from this
 // screen into a browser's password manager on the other device and syncs
 // from there, which is why 128 characters costs nothing to use.
+// A NEW WORD FOR THE PHONE. `device.rotate` — local, so it cannot fail
+// for being offline, which is why nothing here handles unreachability.
+//
+// Two presses about the same button, the way Revoke and Remove are: the
+// old password stops working the instant this lands, and somebody may be
+// halfway through typing it on another device.
+function ndDeviceRotate(button) {
+  var panel = button.closest('.natter-device');
+  var out = panel.querySelector('.natter-dev-rotate-out');
+
+  if (button.getAttribute('data-armed') !== 'yes') {
+    button.setAttribute('data-armed', 'yes');
+    button.textContent = 'Replace the password?';
+    out.textContent = 'the word now on this screen stops working';
+    return Promise.resolve();
+  }
+
+  button.disabled = true;
+  return ndPost('/api/spirit', { verb: 'device.rotate' }).then(function (r) {
+    button.disabled = false;
+    button.removeAttribute('data-armed');
+    button.textContent = ndIcon.WARNING + ' New password';
+    if (r.status < 200 || r.status >= 300) {
+      out.textContent = 'could not replace it: ' + r.status + ' ' + r.text;
+      return;
+    }
+    // RE-ASKED, not patched from the answer. The screen shows what the
+    // node says, and device.info is what says it — the same rule the
+    // rename panel follows.
+    out.textContent = 'replaced — the new word is above';
+    return ndReadDevice().then(function () { ndRender(); });
+  });
+}
+
 function ndDeviceCopy(button) {
   var out = button.closest('.natter-device').querySelector('.natter-dev-out');
   out.textContent = '';
@@ -1065,6 +1123,9 @@ spirit.shell.activateApp({
 
       var copyBtn = target.closest('.natter-dev-copy');
       if (copyBtn) { ndDeviceCopy(copyBtn); return; }
+
+      var rotateBtn = target.closest('.natter-dev-rotate');
+      if (rotateBtn) { ndDeviceRotate(rotateBtn); return; }
 
     });
 
