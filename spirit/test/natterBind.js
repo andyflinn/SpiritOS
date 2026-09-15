@@ -234,6 +234,17 @@ function unboundIsThePage() {
       test.fail('copy does not point at the list: ' + note);
     }
 
+    // AND IT NAMES THE OTHER ROUTE. The claim form moved to the relay's
+    // own screen, which made this paragraph the only place an unbound
+    // node is told anything — so telling it only about somebody else's
+    // relay left the person who has their own with nothing addressed to
+    // them.
+    if (/relay you already have/i.test(note)) {
+      test.check('and names the other route too — the relay you brought with you');
+    } else {
+      test.fail('copy offers only one way on: ' + note);
+    }
+
     if (el(app, 'natter-bind-row').style.display !== 'none') {
       test.check('and the guidance is on the page while nothing is held');
     } else {
@@ -248,12 +259,25 @@ function unboundIsThePage() {
       test.fail('bind heading: ' + el(app, 'natter-bind-heading').textContent);
     }
 
-    // Adding a relay is not the first thing a new node does — claiming
-    // a seat on one it already lists is.
-    if (el(app, 'natter-add-row').style.display === 'none') {
-      test.check('and adding a relay is not offered before there is a seat');
+    // ── BOTH WAYS ON, NOT ONE ───────────────────────────────────────
+    //
+    // This asserted the opposite until 2026-09-15: adding a relay was
+    // hidden while any relay was listed, on the reasoning that claiming
+    // a seat on the one you already have comes first.
+    //
+    //   Andy: "when somebody else has their own relay, it should land on
+    //   natter, and offer the addition of a new relay or using
+    //   spirit-3."
+    //
+    // relays.json SHIPS with spirit-3 in it, so that condition was true
+    // on every fresh node and the only control that could add your own
+    // relay was hidden behind claiming a seat on somebody else's. An
+    // unbound node has exactly two things it might want to do; the
+    // screen offered one.
+    if (el(app, 'natter-add-row').style.display !== 'none') {
+      test.check('and adding your own relay is offered too, not hidden behind claiming on somebody else’s');
     } else {
-      test.fail('add row shown while unbound with a relay listed');
+      test.fail('add row hidden while unbound — the only way to use your own relay');
     }
 
     // A different problem, and a different sentence: nothing to claim on

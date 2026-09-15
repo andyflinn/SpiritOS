@@ -400,16 +400,30 @@ function natterPaintBind(api, relays) {
   }
   row.style.display = '';
 
-  // Adding a relay is not the first thing a new node does — claiming a
-  // seat on the one it ships with is. So the Add row waits, unless there
-  // is nothing listed: then adding one IS the first thing, and hiding
-  // the only control that could do it would leave a node whose
-  // relays.json is missing with no way forward and no way to say so.
-  if (addRow) addRow.style.display = relays.length ? 'none' : '';
+  // ── THE ADD ROW IS SHOWN, AND IT WAS THE MISSING HALF ──────────────
+  //
+  // This read `relays.length ? 'none' : ''`, on the reasoning that
+  // adding a relay is not the first thing a new node does. Which is true
+  // of somebody being invited onto spirit-3 and false of everybody else:
+  //
+  //   Andy: "when somebody else has their own relay, it should land on
+  //   natter, and offer the addition of a new relay or using spirit-3."
+  //
+  // relays.json ships with spirit-3 in it, so `relays.length` is one on
+  // a fresh node and the ONLY control that could add your own relay was
+  // hidden — behind claiming a seat on somebody else's first. An unbound
+  // node has exactly two things it might want to do and this screen
+  // offered one of them.
+  //
+  // Now it is shown whenever this node holds no seat, which is when both
+  // choices are live. It goes back to hiding the moment a binding
+  // exists, because then the tile has nothing left to say and the list
+  // is an ordinary list again.
+  if (addRow) addRow.style.display = '';
 
-  // IT POINTS AT THE LIST INSTEAD OF ASKING. The claim happens on the
-  // relay's own screen now, so this says which relay to open rather than
-  // taking a name it could not have aimed anywhere in particular.
+  // TWO WAYS ON, NOT ONE INSTRUCTION. The claim happens on the relay's
+  // own screen — which carries the warning and the form — so this names
+  // both routes there and takes no name of its own.
   if (heading) {
     heading.textContent = relays.length
       ? 'This node has no seat on any relay yet'
@@ -420,10 +434,21 @@ function natterPaintBind(api, relays) {
   // this file — nothing from a relay, a peer or a file reaches it — so
   // there is nothing to escape. Anything interpolated later must be.
   note.innerHTML = relays.length
-    ? 'This node needs a seat on a public relay before it can do anything else. ' +
-      'Open a relay in the list below and claim one there — with the token and the name ' +
-      'the owner read out to you, or with no token at all if you own the relay. ' +
-      '<strong>If you have no invite yet, ask countinn@gmail.com, he will give you an invite within 24 hours.</strong>'
+    ? 'This node needs a seat on a public relay before it can do anything else, ' +
+      'and there are two ways to get one.' +
+      '<br><br>' +
+      '<strong>Use a relay you already have.</strong> Add it below, then open its row ' +
+      'and claim the owner name with no token.' +
+      '<br><br>' +
+      '<strong>Or take a seat on somebody else’s.</strong> Open a relay in the list below ' +
+      'and claim there, with the invite name and the token they read out to you. ' +
+      // STILL THE LOUDEST SENTENCE ON THE PAGE. On a fresh node this
+      // paragraph IS the page, and somebody holding no invite has
+      // nothing to do until they get one — so the way to get one stays
+      // bold. It briefly stopped being, while this copy was rewritten
+      // into two routes, and natterBind caught it.
+      '<strong>If you have no invite yet, ask countinn@gmail.com, ' +
+      'he will give you one within 24 hours.</strong>'
     : 'This node has no relay listed yet. Add one above (for example https://spirit.andyflinn.com), then open it and claim a seat.';
 }
 
@@ -802,6 +827,7 @@ spirit.shell.activateApp({
     // One call now. The binding check rides on the probe's own answer —
     // natterCheckBinding is called from inside it, on the rows it already
     // fetched.
+    //
     natterProbe(api, container, relays);
 
     // THE CLAIM HANDLER STOOD HERE and went with the form it drove. It

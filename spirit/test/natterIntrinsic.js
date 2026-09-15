@@ -1110,6 +1110,52 @@ test.subHeading('A dialog is the same window with the colour drained out');
   }
 }
 
+// ---------------------------------------------------------------------
+test.subHeading('Back is drawn when there is somewhere behind you, bound or not');
+// ---------------------------------------------------------------------
+
+{
+  // ── A REAL TRAP, AND IT DID NOT NEED THE AUTO-POP TO EXIST ─────────
+  //
+  // paintTitlebarChrome hid Back and Home on `firstRun()` alone, with
+  // the reasoning that both land on an empty desktop while unbound.
+  // True of Home. Not of Back, and it stopped being true of Back the day
+  // the claim form moved onto app/natterDetails: an unbound node that
+  // opened a relay's row got a dialog pushed on top of Natter and no
+  // control that could leave it.
+  //
+  // So the only way off that screen was to claim — and somebody who
+  // wanted the OTHER thing Natter offers, adding their own relay, was
+  // shut in with no way to say so.
+  //
+  //   Andy: "when somebody else has their own relay, it should land on
+  //   natter, and offer the addition of a new relay or using spirit-3."
+  //
+  // "Nowhere else to be" was always the real rule; firstRun() was
+  // standing in for it while Natter was the only screen an unbound node
+  // could reach.
+  const shellSrc = readRun('js/client/shell.js');
+  const body = shellSrc.slice(shellSrc.indexOf('function paintTitlebarChrome'));
+  const fn = body.slice(0, body.indexOf('\n  }\n') + 5);
+
+  // THE STACK, not the binding, decides Back.
+  if (/navStack\.length > 1/.test(fn)) {
+    test.check('Back asks whether anything is beneath this screen, not whether this node has a name');
+  } else {
+    test.fail('paintTitlebarChrome still decides Back from firstRun() alone: ' + fn);
+  }
+
+  // AND HOME STILL DOES NOT. An unbound node's desktop is deliberately
+  // empty — drawing a button that goes to nothing is the thing this
+  // function exists to avoid, and that half was right.
+  if (/homeBtn[\s\S]{0,60}firstRun\(\)/.test(fn)) {
+    test.check('while Home stays hidden until this node has a name — that desktop is empty on purpose');
+  } else {
+    test.fail('Home no longer follows firstRun(): ' + fn);
+  }
+}
+
+// ---------------------------------------------------------------------
 test.subHeading('A dialog is called, not launched');
 
 {

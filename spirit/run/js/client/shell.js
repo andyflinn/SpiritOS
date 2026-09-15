@@ -144,10 +144,28 @@
   // There is nowhere else to be until this node has a name, so the two
   // buttons are not drawn — the same rule as every other control that
   // could not do anything in the state it is offered in.
+  //
+  // ── UNLESS SOMETHING IS STACKED ON TOP OF NATTER ────────────────────
+  //
+  // An unbound node opens the relay's own screen now (natter pops
+  // app/natterDetails for the relay it would claim on), and that screen
+  // IS somewhere to come back from. With Back hidden, the only way off
+  // it was to claim — so somebody who wanted the other thing Natter
+  // offers, adding a relay, had no route to it and no way to say so.
+  //
+  // "Nowhere else to be" was always the real rule; firstRun() was
+  // standing in for it while the binder was the only screen an unbound
+  // node could reach. It is not any more, so the condition says what it
+  // means: nothing beneath to go back TO.
+  // THE TWO BUTTONS PART COMPANY HERE, because they answer different
+  // questions. Back asks "is there something beneath this one" and while
+  // unbound there now is. Home asks "is the desktop worth going to", and
+  // an unbound node's desktop is deliberately empty — so Home stays
+  // hidden until this node has a name, exactly as before.
   function paintTitlebarChrome() {
-    var nowhereElse = firstRun();
-    if (closeBtn) closeBtn.style.display = nowhereElse ? 'none' : '';
-    if (homeBtn) homeBtn.style.display = nowhereElse ? 'none' : '';
+    var canGoBack = !firstRun() || navStack.length > 1;
+    if (closeBtn) closeBtn.style.display = canGoBack ? '' : 'none';
+    if (homeBtn) homeBtn.style.display = firstRun() ? 'none' : '';
   }
 
   // ---- The window title ----
