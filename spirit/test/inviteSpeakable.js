@@ -154,7 +154,8 @@ test.subHeading('The relay stores the token that was spoken');
     saint.publicKey,
     '10.0.0.7',
     'blue-fish'
-  );
+  ,
+    'saint');
   if (claimed.ok && claimed.status === 201) {
     test.check('the friend claims with the token that was spoken to them');
   } else {
@@ -168,7 +169,8 @@ test.subHeading('The relay stores the token that was spoken');
     again.publicKey,
     '10.0.0.8',
     'blue-fish'
-  );
+  ,
+    'saint');
   if (!reuse.ok && reuse.status === 403) {
     test.check('a spoken token still burns on use, like any other');
   } else {

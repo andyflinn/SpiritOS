@@ -80,7 +80,7 @@ function world() {
   [['bella', bella], ['carl', carl]].forEach(function (pair) {
     const minted = box.mint('andy', pair[0], 7, '');
     box.claim(pair[0], auth.sign(pair[1].privateKey, auth.claimMessage(pair[0])),
-      pair[1].publicKey, null, minted.invite.token);
+      pair[1].publicKey, null, minted.invite.token, pair[0]);
   });
 
   const heard = { andy: [], bella: [] };

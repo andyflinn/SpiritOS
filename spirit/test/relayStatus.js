@@ -163,7 +163,7 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
     return;
   }
   relay.claim('bella', auth.sign(friend.privateKey, auth.claimMessage('bella')),
-    friend.publicKey, null, minted.invite.token);
+    friend.publicKey, null, minted.invite.token, 'bella');
 
   // A SECOND, still-live invite, so the report has something in it that
   // must not leak. bella's was consumed on the line above, which is also

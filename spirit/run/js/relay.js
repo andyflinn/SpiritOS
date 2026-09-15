@@ -363,10 +363,23 @@ function createRelay(rootDir) {
   // So: matched, never stored. `inviteLabel` reaches `redeem` and nothing
   // else; the row below is written with `n`.
   //
-  // FALLS BACK TO `n` when absent, and that is a compatibility shim with
-  // a short life: a caller that has not been updated sends one name and
-  // gets the old behaviour, which is the behaviour it was written for.
-  // It goes when nothing sends a single name any more.
+  // NO FALLBACK. A claim carrying a token must carry the invite label
+  // too; one that sends a single name is refused.
+  //
+  //   Andy: "i dislike a relay supporting stale nodes at this point the
+  //   nodes should break rather than STILL having code on a relay that
+  //   support old crap"
+  //
+  // This DID fall back to `n` for a few hours after R1 landed, on the
+  // reasoning that a node not yet updated should keep working. That is a
+  // relay carrying a node's obsolescence, and the relay is the worst
+  // place to put it: it is the thing every node depends on, so a shim
+  // here is one nobody is ever forced to remove. A node that breaks gets
+  // fixed. A relay that forgives does not.
+  //
+  // And it is the SECOND FACTOR. A second factor that can be silently
+  // defaulted from the first is not a second factor.
+  //
   // `seen` is how the wrapper below learns whether this attempt got past
   // the rate gate, and under what words. Out-parameter rather than a
   // richer return, so every one of the eleven refusals below stays the
@@ -374,11 +387,7 @@ function createRelay(rootDir) {
   function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen) {
     var inviteRow = null;
     var n = normalizeName(name);
-    var onInvite = normalizeName(
-      inviteLabel === undefined || inviteLabel === null || inviteLabel === ''
-        ? name
-        : inviteLabel
-    );
+    var onInvite = normalizeName(inviteLabel);
     seen.label = n;
     seen.invite = onInvite;
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
@@ -467,6 +476,15 @@ function createRelay(rootDir) {
       if (!allowed || allowed !== publicKey) {
         if (!inviteToken) {
           return { ok: false, status: 403, error: 'invite required' };
+        }
+        // THE OTHER HALF OF THE INVITE, and a 400 rather than a 403: this
+        // is a malformed request, not a refused one. A caller that sends
+        // a token and no label is a node that predates R1, and saying so
+        // plainly is the whole point of not falling back — it names what
+        // is wrong instead of quietly enrolling somebody under the
+        // owner's word for them.
+        if (!onInvite) {
+          return { ok: false, status: 400, error: 'invite label required' };
         }
         var keysInvite = redeem(inviteToken, onInvite);
         if (!keysInvite.ok) return keysInvite;

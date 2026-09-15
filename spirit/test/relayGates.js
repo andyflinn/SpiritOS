@@ -139,7 +139,8 @@ test.subHeading('Keys mode: what a signature is actually required for');
     bert.publicKey,
     '10.0.0.2',
     minted && minted.invite && minted.invite.token
-  );
+  ,
+    'bert');
 
   const bertSink = fakeSink();
   openStream(relay, bert, bertSink);
@@ -194,7 +195,8 @@ test.subHeading('Keys mode: what a signature is actually required for');
     john.publicKey,
     '10.0.0.3',
     mintedJohn && mintedJohn.invite && mintedJohn.invite.token
-  );
+  ,
+    'john');
   const absent = relay.routePost(
     andy.publicKey, john.publicKey, TEXT,
     auth.sign(andy.privateKey, auth.postMessage(andy.publicKey, john.publicKey, TEXT))

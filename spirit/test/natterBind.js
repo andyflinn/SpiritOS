@@ -303,6 +303,18 @@ function claimBinds() {
 function tokenGoesWithTheName() {
   test.subHeading('An invited name carries its spoken word');
 
+  // AN INVITE IS TWO WORDS, both read down the same phone call: the
+  // token, and the name the owner wrote on it. Since R1 they are
+  // different fields — the first proves, the second is what the owner
+  // calls you — and since Andy's follow-up the relay does not infer
+  // either from the other:
+  //
+  //   "i dislike a relay supporting stale nodes at this point the nodes
+  //   should break rather than STILL having code on a relay that support
+  //   old crap"
+  //
+  // So a token with no invite label is a half-copied invite, and this
+  // app says so before spending a request on it.
   const app = mountApp({});
 
   return settle().then(function () {
@@ -311,12 +323,31 @@ function tokenGoesWithTheName() {
     el(app, 'natter-claim').fire('click');
 
     return settle().then(function () {
-      const body = JSON.parse(app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; })[0].body);
-      if (body.name === 'bert' && body.invite === 'saint-bernard') {
-        test.check('the token travels with the claim, not instead of it');
+      const halfCopied = app.log.filter(function (c) {
+        return c.url.indexOf('/api/hub/claim') === 0;
+      });
+      if (halfCopied.length === 0 &&
+          /name the owner put on it/.test(el(app, 'natter-bind-status').textContent)) {
+        test.check('a token with no invite label is refused here, before a request is made');
       } else {
-        test.fail('claim body: ' + JSON.stringify(body));
+        test.fail('half-copied invite: ' + halfCopied.length + ' requests, status "' +
+          el(app, 'natter-bind-status').textContent + '"');
       }
+
+      // And with both, the two travel together.
+      el(app, 'natter-invite-label').value = 'bertie';
+      el(app, 'natter-claim').fire('click');
+
+      return settle().then(function () {
+        const sent = app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; });
+        const body = JSON.parse(sent[0].body);
+        if (body.name === 'bert' && body.invite === 'saint-bernard' &&
+            body.inviteLabel === 'bertie') {
+          test.check('and with both, the token and the owner’s word travel with the claim');
+        } else {
+          test.fail('claim body: ' + JSON.stringify(body));
+        }
+      });
     });
   });
 }

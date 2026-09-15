@@ -320,6 +320,29 @@ never reaches the census.
 **The invite keeps its label** — Andy's panel needs it, and it is the word
 the two humans use on the phone. `invites.add` still requires one.
 
+**CORRECTED AGAIN, after it shipped.** This landed with the relay falling
+back to the claimed name when `inviteLabel` was absent, so a node that
+had not been updated kept working. Andy:
+
+> i dislike a relay supporting stale nodes at this point the nodes should
+> break rather than STILL having code on a relay that support old crap
+
+Right, and for a reason beyond taste: **the relay is the worst place to
+put a shim**, because it is the thing every node depends on, so nobody is
+ever forced to remove it. A node that breaks gets fixed; a relay that
+forgives does not. And the label is the SECOND FACTOR — one that can be
+silently defaulted from the first is not a second factor.
+
+So a token with no label is now **400 `invite label required`**, and the
+two travel together the way they do in the world: read off one phone
+call. `signedClaim` sends the label whenever there is a token, even when
+it matches the name. Natter asks for it and refuses to send a half-copied
+invite at all.
+
+Every in-process caller was updated rather than accommodated — including
+`world.build`, which is a caller like any other and the one most worth
+keeping honest.
+
 **Blast radius:** `claim()` takes one more argument and stops writing the
 invite label to the peer row
 ([relay.js:340](../../spirit/run/js/relay.js#L340),
@@ -343,7 +366,10 @@ watched failing against the unchanged `relay.js` first:
 - *"the right invite label admits a claimer under a name of their own"*
 - *"and the phone number on the invite is nowhere in the census"*
 - *"nor in invites.json, which the claim consumed"*
-- *"and a claim that sends one name still works, falling back to it"*
+- *"a token with no invite label is refused — the relay infers nothing"*
+- *"and the same word in both fields is accepted, spelled out"*
+- `spirit/test/natterBind.js` — *"a token with no invite label is refused
+  here, before a request is made"*
 
 The block above it — *"invite does not unlock a different label"* —
 stands unchanged, which is the second factor asserted from the other end.

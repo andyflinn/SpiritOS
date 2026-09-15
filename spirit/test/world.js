@@ -132,12 +132,23 @@ function assemble(s) {
         if (!minted.ok) throw new Error('mint for ' + p.name + ': ' + minted.error);
         token = minted.invite.token;
       }
+      // MINTED UNDER THE LABEL, CLAIMED UNDER THE LABEL — the two are
+      // the same word here because a built world has nobody on a phone
+      // choosing a different one, and a scenario names peers once.
+      //
+      // Both are passed explicitly all the same. The relay stopped
+      // inferring the invite label from the claimed name on 2026-09-15
+      // (R1, then Andy: "i dislike a relay supporting stale nodes"), so
+      // a caller that sends one name is refused — and this builder is a
+      // caller like any other, which is exactly what makes it a useful
+      // one to keep honest.
       const joined = box.claim(
         p.label,
         auth.sign(id.privateKey, auth.claimMessage(p.label)),
         id.publicKey,
         from,
-        token
+        token,
+        token ? p.label : undefined
       );
       if (!joined.ok) throw new Error('join ' + p.name + ': ' + joined.error);
     });

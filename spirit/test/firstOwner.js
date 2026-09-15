@@ -69,7 +69,8 @@ test.startTest('First claim is owner; chat to reserved name relay');
     stranger.publicKey,
     '10.0.0.7',
     groqInvite.ok && groqInvite.invite.token
-  );
+  ,
+    'groq');
   if (bad.ok && bad.status === 201) {
     test.check('second signed key with an invite claims after owner (peer-by-key)');
   } else {

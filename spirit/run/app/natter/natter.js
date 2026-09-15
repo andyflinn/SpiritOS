@@ -498,10 +498,13 @@ spirit.shell.activateApp({
           // above, which meant the owner chose what you were called
           // (R1, design/cycles/2026-09-15-labels-are-not-identities.md).
           //
-          // Left blank when they are the same, which is the ordinary
-          // case: the node omits the field and the relay falls back.
+          // REQUIRED WITH A TOKEN, even when it matches the label above.
+          // The relay refuses a token without it and does not fall back:
+          // a second factor that can be defaulted from the first is not
+          // one. Typed deliberately, which is what reading a word off a
+          // phone call is.
           '<label class="field-label">Name on the invite' +
-            '<input type="text" id="natter-invite-label" placeholder="(only if it differs from your public label)"></label>' +
+            '<input type="text" id="natter-invite-label" placeholder="(the word the owner read out)"></label>' +
           '<button type="button" id="natter-claim">Claim</button>' +
         '</div>' +
         '<div class="job-manifest-note" id="natter-bind-status"></div>' +
@@ -551,11 +554,16 @@ spirit.shell.activateApp({
       var token = document.getElementById('natter-token').value.trim();
       var onInvite = document.getElementById('natter-invite-label').value.trim();
       if (!name) { natterBindStatus('a name is required'); return; }
+      // ASKED FOR HERE rather than discovered as a 400 from the relay.
+      // The two arrive together — a token and a word, down one phone call
+      // — so a token with no word is a half-copied invite, and saying so
+      // before the request saves a round trip nobody learns from.
+      if (token && !onInvite) {
+        natterBindStatus('an invite needs the name the owner put on it, as well as the token');
+        return;
+      }
       var claimBody = { name: name };
       if (token) claimBody.invite = token;
-      // Sent only when it differs. The node drops it again if it matches
-      // `name`, so a person who filled both boxes with the same word
-      // costs nothing and gets the ordinary path.
       if (onInvite) claimBody.inviteLabel = onInvite;
       natterPost('/api/hub/claim', claimBody)
         .then(function (r) {

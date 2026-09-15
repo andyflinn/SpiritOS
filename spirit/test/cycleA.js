@@ -581,7 +581,7 @@ function runHubOnLoopback() {
       const victim = auth.generateIdentity('victim');
       const minted = box.mint('andy', 'victim', 7);
       box.claim('victim', auth.sign(victim.privateKey, auth.claimMessage('victim')),
-        victim.publicKey, '10.0.0.9', minted.invite.token);
+        victim.publicKey, '10.0.0.9', minted.invite.token, 'victim');
 
       const before = box.who().some(function (r) { return r.publicKey === victim.publicKey; });
       return hubRemovePeer(hub, { url: servers[1].url, key: victim.publicKey }, deps)
@@ -658,7 +658,7 @@ function boundNodeSeesItsRow() {
   const minted = lab.box.mint('andy', 'bert', 7);
   const joined = lab.box.claim('bert',
     auth.sign(guest.privateKey, auth.claimMessage('bert')),
-    guest.publicKey, '10.0.0.7', minted.ok && minted.invite.token);
+    guest.publicKey, '10.0.0.7', minted.ok && minted.invite.token, 'bert');
   if (!joined.ok) {
     test.fail('bert could not join: ' + JSON.stringify(joined));
     return Promise.resolve();

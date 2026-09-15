@@ -84,7 +84,8 @@ test.startTest('Invites cycle 1 — consume on claim');
     saint.publicKey,
     '10.0.0.1',
     'tok-saint-1'
-  );
+  ,
+    'eve');
   if (!badLabel.ok) {
     test.check('invite does not unlock a different label');
   } else {
@@ -97,7 +98,8 @@ test.startTest('Invites cycle 1 — consume on claim');
     saint.publicKey,
     '10.0.0.1',
     'tok-saint-1'
-  );
+  ,
+    'saint');
   if (ok.ok && ok.status === 201) {
     test.check('saint with invite and key is accepted');
   } else {
@@ -117,7 +119,8 @@ test.startTest('Invites cycle 1 — consume on claim');
     saint.publicKey,
     '10.0.0.2',
     'tok-saint-1'
-  );
+  ,
+    'saint');
   if (!reuse.ok) {
     test.check('used invite cannot claim again');
   } else {
@@ -198,16 +201,42 @@ test.subHeading('The invite proves; the claimer names themselves');
     test.fail('invite survived with its label: ' + stored);
   }
 
-  // OMITTED MEANS "THE SAME", which is the ordinary case and every
-  // caller that predates this. A second invite, claimed the old way.
+  // NO FALLBACK. A claim carrying a token must carry the invite label
+  // too, even when the two words are the same.
+  //
+  //   Andy: "i dislike a relay supporting stale nodes at this point the
+  //   nodes should break rather than STILL having code on a relay that
+  //   support old crap"
+  //
+  // It DID fall back to the claimed name for a few hours after R1, and
+  // the check here read *"a claim that sends one name still works"*. It
+  // is inverted rather than deleted: the two together are the record of
+  // a decision reversed, which a deletion would hide.
+  //
+  // 400 and not 403, because a half-copied invite is a MALFORMED request
+  // rather than a refused one — and the difference is what a person
+  // reads when it happens to them.
   const carl = auth.generateIdentity('carl');
   box.mint('andy', 'carl', 7, 'cat');
-  const old = box.claim('carl', auth.sign(carl.privateKey, auth.claimMessage('carl')),
+  const halfCopied = box.claim('carl', auth.sign(carl.privateKey, auth.claimMessage('carl')),
     carl.publicKey, '10.0.0.2', 'cat');
-  if (old.ok && old.peer.publicLabel === 'carl') {
-    test.check('and a claim that sends one name still works, falling back to it');
+  if (!halfCopied.ok && halfCopied.status === 400 &&
+      halfCopied.error === 'invite label required') {
+    test.check('a token with no invite label is refused — the relay infers nothing');
   } else {
-    test.fail('single-name claim: ' + JSON.stringify(old));
+    test.fail('half-copied claim: ' + JSON.stringify(halfCopied));
+  }
+
+  // AND THE SAME WORD TWICE IS STILL TWO FIELDS. The ordinary case is
+  // that the owner's word and the claimer's choice agree — it still has
+  // to be said twice, because a second factor that can be defaulted from
+  // the first is not a second factor.
+  const same = box.claim('carl', auth.sign(carl.privateKey, auth.claimMessage('carl')),
+    carl.publicKey, '10.0.0.2', 'cat', 'carl');
+  if (same.ok && same.peer.publicLabel === 'carl') {
+    test.check('and the same word in both fields is accepted, spelled out');
+  } else {
+    test.fail('same-word claim: ' + JSON.stringify(same));
   }
 }
 
@@ -230,7 +259,8 @@ test.subHeading('The invite proves; the claimer names themselves');
     late.publicKey,
     '10.0.0.3',
     'tok-expired'
-  );
+  ,
+    'late');
   if (!r.ok && r.status === 403) {
     test.check('expired invite is refused');
   } else {
@@ -306,7 +336,7 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   const ghost = auth.generateIdentity('ghost');
   const refused = box.claim('ghost',
     auth.sign(ghost.privateKey, auth.claimMessage('ghost')),
-    ghost.publicKey, '10.0.0.1', 'dead-token');
+    ghost.publicKey, '10.0.0.1', 'dead-token', 'ghost');
 
   if (!refused.ok && /expired/.test(String(refused.error || '')) &&
       invites.load(home).length === 0) {
@@ -323,7 +353,7 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   const stranger = auth.generateIdentity('stranger');
   box.claim('stranger',
     auth.sign(stranger.privateKey, auth.claimMessage('stranger')),
-    stranger.publicKey, '10.0.0.2', 'no-such-token');
+    stranger.publicKey, '10.0.0.2', 'no-such-token', 'stranger');
 
   if (invites.load(home).length === 0) {
     test.check('and a claim with a token that was never real sweeps just the same');

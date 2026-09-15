@@ -221,7 +221,8 @@ test.subHeading('Who may mint');
     mallory.publicKey,
     '10.0.0.6',
     mInvite.ok && mInvite.invite.token
-  );
+  ,
+    'mallory');
   if (mClaim.ok) {
     test.check('an invited stranger becomes a peer');
   } else {
@@ -332,7 +333,7 @@ test.subHeading('A mailbox with no owner key cannot mint');
   // meet until keys-mode requires an invite.
   const token = invites.add(home, { label: 'saint', invitedBy: 'andy', days: 7 }).token;
   const saint = auth.generateIdentity('saint');
-  const used = box.claim('saint', auth.sign(saint.privateKey, auth.claimMessage('saint')), saint.publicKey, '10.0.0.9', token);
+  const used = box.claim('saint', auth.sign(saint.privateKey, auth.claimMessage('saint')), saint.publicKey, '10.0.0.9', token, 'saint');
   if (used.ok && used.status === 201) {
     test.check('a hand-written row still gets saint in, as in cycle 1');
   } else {
@@ -390,7 +391,7 @@ function askRevoke(r, who, label) {
   const saint = auth.generateIdentity('saint');
   const walkIn = r.box.claim('saint',
     auth.sign(saint.privateKey, auth.claimMessage('saint')),
-    saint.publicKey, '10.0.0.4', 'blue-fish');
+    saint.publicKey, '10.0.0.4', 'blue-fish', 'saint');
   if (!walkIn.ok && walkIn.status === 403) {
     test.check('and the spoken token no longer opens the door');
   } else {
@@ -419,7 +420,7 @@ function askRevoke(r, who, label) {
   const mallory = auth.generateIdentity('mallory');
   const minted = r.box.mint('andy', 'mallory', 7);
   r.box.claim('mallory', auth.sign(mallory.privateKey, auth.claimMessage('mallory')),
-    mallory.publicKey, '10.0.0.6', minted.invite.token);
+    mallory.publicKey, '10.0.0.6', minted.invite.token, 'mallory');
 
   r.box.mint('andy', 'saint', 7, 'blue-fish');
   const heard = heardBy(r, mallory);

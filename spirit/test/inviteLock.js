@@ -57,7 +57,8 @@ test.startTest('Invites cycle 4 — keys-mode extra claim needs invite');
     johnA.publicKey,
     '10.0.0.4',
     m1.invite.token
-  );
+  ,
+    'john');
   const johnB = auth.generateIdentity('john');
   const b = box.claim(
     'john',
@@ -65,7 +66,8 @@ test.startTest('Invites cycle 4 — keys-mode extra claim needs invite');
     johnB.publicKey,
     '10.0.0.5',
     m2.invite.token
-  );
+  ,
+    'john');
   if (a.ok && b.ok) {
     test.check('two johns redeem two invites');
   } else {

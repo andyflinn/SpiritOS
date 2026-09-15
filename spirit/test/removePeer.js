@@ -198,7 +198,7 @@ function run() {
   // working.
   const backAgain = L.box.claim('bert',
     auth.sign(bert.privateKey, auth.claimMessage('bert')),
-    bert.publicKey, '10.0.0.1', spareToken);
+    bert.publicKey, '10.0.0.1', spareToken, 'bert');
   if (backAgain && backAgain.ok === false) {
     test.check('so the token they still hold no longer lets them back in');
   } else {

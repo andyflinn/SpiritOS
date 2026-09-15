@@ -129,14 +129,16 @@ test.startTest('Identity vs perception (sticks and stones)');
     johnA.publicKey,
     '10.0.0.1',
     inviteFor('john')
-  );
+  ,
+    'john');
   const b = box.claim(
     'john',
     auth.sign(johnB.privateKey, auth.claimMessage('john')),
     johnB.publicKey,
     '10.0.0.2',
     inviteFor('john')
-  );
+  ,
+    'john');
   if (a.ok && b.ok && johnA.publicKey !== johnB.publicKey) {
     test.check('two johns claim the same public label on one mailbox');
   } else {
@@ -158,7 +160,8 @@ test.startTest('Identity vs perception (sticks and stones)');
     johnA.publicKey,
     '10.0.0.3',
     thirdToken
-  );
+  ,
+    'john');
   if (!again.ok && again.status === 409) {
     test.check('same key cannot claim twice, even with a live invite');
   } else {

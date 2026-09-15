@@ -42,7 +42,8 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
     saint.publicKey,
     '10.0.0.2',
     'no-such-token'
-  );
+  ,
+    'saint');
   if (expired && expired.ok === false && /invite/.test(String(expired.error || ''))) {
     test.check('bad token on keys-mode claim is an invite error, not 201');
   } else {
@@ -64,7 +65,8 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
     saint.publicKey,
     '10.0.0.3',
     minted.invite.token
-  );
+  ,
+    'saint');
   if (redeemed.ok && redeemed.status === 201) {
     test.check('keys-mode claim with live invite is 201');
   } else {

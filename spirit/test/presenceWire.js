@@ -58,7 +58,7 @@ function buildRelayHome() {
   const bert = auth.generateIdentity('bert');
   const minted = box.mint('andy', 'bert', 7);
   box.claim('bert', auth.sign(bert.privateKey, auth.claimMessage('bert')),
-    bert.publicKey, '10.0.0.1', minted.invite.token);
+    bert.publicKey, '10.0.0.1', minted.invite.token, 'bert');
 
   // server.js insists on running from a spirit/run, so it gets one of
   // its own with this mailbox in it. A copy rather than the repo tree:

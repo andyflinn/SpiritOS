@@ -41,8 +41,17 @@ function assertRelayUrl(relayUrl) {
 // different thing — that this is the person the owner meant — and it
 // proves it by being held, the way the token is.
 //
-// Omitted when the two are the same, which is the ordinary case and the
-// only one that existed before this: the far end falls back to `name`.
+// SENT WHENEVER THERE IS A TOKEN, even when it matches `name`. It was
+// omitted in that case for a few hours, because the relay fell back —
+// and the relay does not fall back any more:
+//
+//   Andy: "i dislike a relay supporting stale nodes at this point the
+//   nodes should break rather than STILL having code on a relay that
+//   support old crap"
+//
+// So the two travel together or the claim is refused, which is also what
+// they do in the world: the owner reads a token and a word down the same
+// phone call.
 function signedClaim(rootDir, name, invite, inviteLabel) {
   const id = auth.ensureIdentity(rootDir, name);
   const body = {
@@ -52,7 +61,7 @@ function signedClaim(rootDir, name, invite, inviteLabel) {
   };
   if (invite) body.invite = invite;
   const onInvite = String(inviteLabel == null ? '' : inviteLabel).trim();
-  if (onInvite && onInvite !== name) body.inviteLabel = onInvite;
+  if (onInvite) body.inviteLabel = onInvite;
   return body;
 }
 
