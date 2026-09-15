@@ -131,6 +131,52 @@ async function post(url, body) {
   }
 }
 
+// ── ASKING A RELAY FOR SOMETHING, AS A LOOPBACK CLIENT ───────────────
+//
+//   Andy: "The browser itself is not crypte-capable but it's considered
+//   a safe loop-back client, same for processes."
+//
+// This script is a process, which makes it exactly the kind of client
+// the layer is for: no key, no signing, one POST over loopback and the
+// node does the rest. It used to reach /api/hub/invite and
+// /api/hub/remove-peer — two of the four post-path doors that closed on
+// 2026-09-15 — and both of those built one packet body and handed it to
+// router.post, which is what a peerPost IS.
+//
+// ADDRESSED BY KEY, so the relay's own key has to be fetched first. It
+// is public in the census, which is the same place a browser reads it.
+//
+// The answer comes back inside the envelope the relay replied in, and
+// the body is what a caller wants — the same shape api.peerPost hands a
+// page (js/client/shell.js), reached the same way a page reaches it.
+async function relayKeyOf(relayUrl) {
+  try {
+    const res = await fetch(relayUrl + '/api/relay/who');
+    const parsed = await res.json();
+    return (parsed && parsed.relayPublicKey) || '';
+  } catch (e) { return ''; }
+}
+
+async function postToRelay(relayUrl, body) {
+  const key = await relayKeyOf(relayUrl);
+  if (!key) return { ok: false, status: 0, body: { error: 'relay did not say what its key is' } };
+  const sent = await post(WORK_URL + '/api/hub/post', {
+    to: key, app: 'relay', body: body,
+  });
+  let answer = null;
+  try { answer = JSON.parse((sent.body && sent.body.text) || 'null'); }
+  catch (e) { answer = null; }
+  const said = (answer && answer.body) || null;
+  return {
+    // Both halves, for the reason clientLayer.js spells out: the
+    // transport succeeding and the far end agreeing are different facts.
+    ok: !!(sent.ok && said && said.ok !== false),
+    status: sent.status,
+    hash: (sent.body && sent.body.hash) || '',
+    body: said,
+  };
+}
+
 // WHEN did this process start — not "is something answering". Those are
 // different questions and this tool asked the wrong one first: labMaster
 // cannot kill a node it did not spawn, so the OLD process kept answering,
@@ -202,10 +248,7 @@ async function clearLive(me) {
     // STREAM — which the work node is already holding. Signing from here
     // would mean opening a second stream with Andy's key and knocking his
     // running node off the relay.
-    const done = await post(WORK_URL + '/api/hub/remove-peer', {
-      url: LIVE_RELAY,
-      key: row.publicKey,
-    });
+    const done = await postToRelay(LIVE_RELAY, { removePeer: { key: row.publicKey } });
     if (done.ok) removed += 1;
     else console.log('  could not remove ' + label + ': ' + JSON.stringify(done.body));
   }
@@ -437,13 +480,10 @@ async function up(scenarioName) {
     // So this asks the node to mint, which is what Natter's own button
     // does. Andy's rule, and the reason this reads better than the two
     // lines it replaces: production code must go through the API.
-    const minted = await post(WORK_URL + '/api/hub/invite', {
-      name: me.name,
-      label: peer.name,
-      days: 1,
-      url: LIVE_RELAY,
+    const minted = await postToRelay(LIVE_RELAY, {
+      invite: { label: peer.name, days: 1, token: '' },
     });
-    const token = minted.body && minted.body.token;
+    const token = minted.body && minted.body.invite && minted.body.invite.token;
     if (!token) {
       console.log('  ' + peer.name + ' on live: mint refused ' + JSON.stringify(minted.body));
       continue;
@@ -534,10 +574,7 @@ async function up(scenarioName) {
     const peer = world.peer(NAME_PREFIX + step.remove);
     if (!peer) continue;
     const relayUrlFor = step.from === 'live' ? LIVE_RELAY : world.relay().url;
-    const done = await post(WORK_URL + '/api/hub/remove-peer', {
-      url: relayUrlFor,
-      key: peer.id.publicKey,
-    });
+    const done = await postToRelay(relayUrlFor, { removePeer: { key: peer.id.publicKey } });
     if (done.ok) left += 1;
     else console.log('  remove ' + step.remove + ': ' + JSON.stringify(done.body));
   }

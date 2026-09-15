@@ -171,8 +171,6 @@ function mountApp(opts) {
       });
     } else if (url.indexOf('/api/hub/device') === 0) {
       text = JSON.stringify(opts.device || {});
-    } else if (url.indexOf('/api/hub/invite') === 0) {
-      text = JSON.stringify({ token: 'saint-bernard' });
     } else if (url.indexOf('/api/hub/post') === 0) {
       // What the node answers a post with: peerPost's own settle, whose
       // `text` is the packet envelope the far end replied in.
@@ -181,11 +179,6 @@ function mountApp(opts) {
         text: JSON.stringify({ app: 'relay', v: 1, body: opts.relayAnswer || { ok: true, revoked: 1 } }),
         sig: 'SIG', receipt: true,
       });
-    } else if (url.indexOf('/api/hub/revoke') === 0) {
-      // Unminting. `revoked` is a COUNT, not a boolean: one label may
-      // carry several live invites, so revoking by label takes all of
-      // them and the relay reports how many went.
-      text = JSON.stringify(opts.revokeBody || { ok: true, label: 'adam', revoked: 1 });
     } else if (url.indexOf('/api/hub/claim') === 0) {
       // The claim form moved onto this screen on 2026-09-15, because a
       // claim happens ON a relay and the old one on Natter's list could
@@ -193,7 +186,6 @@ function mountApp(opts) {
       text = JSON.stringify(opts.claimBody || { peer: { publicLabel: 'andy' } });
     }
     let status = 200;
-    if (url.indexOf('/api/hub/invite') === 0) status = 201;
     if (url.indexOf('/api/hub/claim') === 0) status = opts.claimStatus || 201;
     return Promise.resolve({
       status: status,
@@ -323,7 +315,7 @@ function ownedMailbox() {
     // owner-only report carried the roster itself — and `messages` is
     // gone, because R8 deleted the ring and a row reading "Messages 0"
     // would suggest the question still applies.
-    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1, key: 'RELAYKEY' } },
   });
 
   return settle().then(function () {
@@ -689,7 +681,13 @@ function mintingNamesThisMailbox() {
     // owner-only report carried the roster itself — and `messages` is
     // gone, because R8 deleted the ring and a row reading "Messages 0"
     // would suggest the question still applies.
-    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1, key: 'RELAYKEY' } },
+    // What relay.mint answers, inside the envelope answerSelf replies in.
+    relayAnswer: {
+      ok: true,
+      status: 201,
+      invite: { token: 'saint-bernard', label: 'saint', expiresAt: '2099-01-01T00:00:00.000Z', invitedBy: 'andy' },
+    },
   });
 
   return settle().then(function () {
@@ -704,12 +702,24 @@ function mintingNamesThisMailbox() {
     });
 
     return settle().then(function () {
-      const mints = app.log.filter(function (c) { return c.url.indexOf('/api/hub/invite') === 0; });
-      const body = mints.length ? JSON.parse(mints[0].body) : null;
-      if (body && body.label === 'saint' && body.days === 7 && body.url === OWNED) {
-        test.check('minting names the mailbox this screen is, never relays.json[0]');
+      // ── A PACKET, NOT A DOOR (2026-09-15) ────────────────────────
+      //
+      // This watched `/api/hub/invite`. That door is gone with the other
+      // three: it built {invite:{…}} and handed it to router.post, which
+      // is what a peerPost IS.
+      //
+      // `url` left the body with it — the post is addressed to the
+      // relay's KEY — and so did `name`, which the relay never read: the
+      // owner's name comes out of allow.json, because the only sender
+      // who reaches that line is the owner.
+      const mints = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; });
+      const sent = mints.length ? JSON.parse(mints[0].body) : null;
+      const body = sent && sent.body && sent.body.invite;
+      if (sent && sent.to === 'RELAYKEY' && sent.app === 'relay' &&
+          body && body.label === 'saint' && body.days === 7) {
+        test.check('minting travels as a packet to the relay this screen is, by key');
       } else {
-        test.fail('mint body: ' + JSON.stringify(body));
+        test.fail('mint body: ' + JSON.stringify(sent));
       }
 
       // Printed, not copied: it is read off this screen onto a phone.
@@ -843,7 +853,7 @@ function theDevicePanel() {
     // owner-only report carried the roster itself — and `messages` is
     // gone, because R8 deleted the ring and a row reading "Messages 0"
     // would suggest the question still applies.
-    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1, key: 'RELAYKEY' } },
     device: { password: 'p'.repeat(128), publicKey: KEY },
   });
 
@@ -952,7 +962,7 @@ function thePanelAsksOnce() {
     // owner-only report carried the roster itself — and `messages` is
     // gone, because R8 deleted the ring and a row reading "Messages 0"
     // would suggest the question still applies.
-    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1, key: 'RELAYKEY' } },
     device: { password: 'p'.repeat(128), publicKey: 'k' },
   });
 

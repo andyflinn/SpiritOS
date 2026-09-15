@@ -442,20 +442,73 @@ function routerTo(boxes, owner) {
   };
 }
 
-function hubInvite(hub, body, deps) {
-  const res = fakeRes();
-  hub.handleInvite({}, res, function () { return Promise.resolve(body); }, deps);
-  return res.wait();
+// Presence, at the seam handlePost uses to pick a road. On a real node
+// this is built from the rosters relays push; here it answers from the
+// boxes themselves, which is the same question asked of a fixture.
+//
+// It is what makes "which relay" a NODE decision rather than a caller's:
+// a post names a KEY, and the node finds the relays that say they carry
+// that key. That is why the relay had to start naming itself in every
+// member's roster (relay.streamRoster).
+function presenceFor(boxes) {
+  return {
+    relaysNaming: function (key) {
+      return Object.keys(boxes).filter(function (url) {
+        return boxes[url].relayPublicKey() === key;
+      });
+    },
+  };
 }
 
-function hubRemovePeer(hub, body, deps) {
+// One peerPost, driven the way the loopback client layer drives it.
+function hubPost(hub, to, body, deps) {
   const res = fakeRes();
-  hub.handleRemovePeer({}, res, function () { return Promise.resolve(body); }, deps);
-  return res.wait();
+  hub.handlePost({}, res, function () {
+    return Promise.resolve({ to: to, app: 'relay', body: body });
+  }, deps);
+  return res.wait().then(function (r) {
+    let settle = {};
+    try { settle = JSON.parse(r.text); } catch (e) { settle = {}; }
+    let answer = null;
+    try { answer = JSON.parse(settle.text || 'null'); } catch (e) { answer = null; }
+    return {
+      status: r.status,
+      text: r.text,
+      hash: settle.hash || '',
+      // What the far end SAID, out of the envelope it said it in.
+      body: (answer && answer.body) || null,
+    };
+  });
 }
 
 function runHubOnLoopback() {
-  test.subHeading('The hub sends the mint to the mailbox that was chosen');
+  test.subHeading('A verb addressed to a relay key lands on that relay');
+
+  // ── THE DOORS ARE GONE, AND SO IS "WHICH URL" ────────────────────
+  //
+  //   Andy: "I am aiming to close all post-path doors on node"
+  //
+  // This section drove hub.handleInvite and hub.handleRemovePeer, and
+  // asserted that each picked the right mailbox out of relays.json by
+  // url. Both functions are deleted: what they did was build one packet
+  // body and hand it to router.post, which is what a peerPost IS.
+  //
+  // TWO OF THE OLD CLAIMS DISSOLVED RATHER THAN MOVED, and that is worth
+  // saying plainly rather than quietly dropping them:
+  //
+  //   "two mailboxes and no choice is refused, not guessed" — there is
+  //     no choice to fail to make. A post names a KEY, and two relays
+  //     owned by one person have two different keys. Ambiguity was a
+  //     property of aiming by url.
+  //
+  //   "a mint aimed off the Natter list never leaves the node" — aiming
+  //     at a key nothing carries is now the same refusal as aiming at a
+  //     peer who is not there: unreachable. Below.
+  //
+  // And one MOVED: "a delivered refusal is not a delivery" is the client
+  // layer's now, because that is where the two failures meet — see
+  // spirit/test/clientLayer.js. It was hub.askRelay's, and askRelay went
+  // with the doors it served.
 
   const owner = auth.generateIdentity('andy');
   const first = ownedBox(owner, 'andy');
@@ -471,145 +524,75 @@ function runHubOnLoopback() {
     const boxes = {};
     boxes[servers[0].url] = first.box;
     boxes[servers[1].url] = second.box;
-    deps = {
-      router: routerTo(boxes, owner),
-      // The url→key pin, which on a real node is answerRelay.relayKey.
-      relayKey: function (url) {
-        return boxes[url] ? boxes[url].relayPublicKey() : '';
-      },
-    };
+    deps = { router: routerTo(boxes, owner), presence: presenceFor(boxes) };
 
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: servers[1].url }, deps);
+    return hubPost(hub, second.box.relayPublicKey(),
+      { invite: { label: 'saint', days: 7, token: '' } }, deps);
   }).then(function (res) {
-    let token = '';
-    try { token = JSON.parse(res.text).token || ''; } catch (e) { token = ''; }
-    if (res.status === 201 && token) {
-      test.check('an invite aimed at the second mailbox is minted');
+    const token = (res.body && res.body.invite && res.body.invite.token) || '';
+    if (res.status === 200 && token) {
+      test.check('an invite posted to the second relay by key is minted');
     } else {
       test.fail('mint on second: ' + res.status + ' ' + res.text);
     }
 
-    // The whole point of the cycle: the token exists on the mailbox that
-    // was named, and does not exist on the one that merely happens to be
+    // THE WHOLE POINT, unchanged in substance: the row exists on the box
+    // that was addressed, and not on the one that merely happens to be
     // first in relays.json.
     const onSecond = invites.load(second.home).some(function (row) { return row.token === token; });
     const onFirst = invites.load(first.home).some(function (row) { return row.token === token; });
     if (token && onSecond && !onFirst) {
-      test.check('the row is on the chosen mailbox and not on relays.json[0]');
+      test.check('and the row is on the relay that was named, not on relays.json[0]');
     } else {
       test.fail('token landed wrong: onFirst=' + onFirst + ' onSecond=' + onSecond);
     }
 
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7 }, deps);
-  }).then(function (res) {
-    if (res.status === 400 && /pick a relay/.test(res.text)) {
-      test.check('two mailboxes and no choice is refused, not guessed');
-    } else {
-      test.fail('unaimed mint: ' + res.status + ' ' + res.text);
-    }
-
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: 'https://evil.example' }, deps);
-  }).then(function (res) {
-    if (res.status === 403) {
-      test.check('a mint aimed off the Natter list never leaves the node');
-    } else {
-      test.fail('foreign mint: ' + res.status + ' ' + res.text);
-    }
-
-    // ── A DELIVERED REFUSAL IS NOT A DELIVERY ───────────────────────
-    //
-    // Found live, on the first real mint through the collapsed path: a
-    // relay running older code answered `unknown request`, and this node
-    // handed the browser HTTP 200 with an error in the body. The post HAD
-    // succeeded — status 200 — and the code reached past the relay's
-    // verdict to the transport's number behind it.
-    //
-    // Two failures that look alike in a promise and are not: nothing
-    // answered, and something answered no. This asks for the second,
-    // which is the one that was wrong.
-    const refusing = {
-      router: {
-        post: function () {
-          return Promise.resolve({
-            ok: true, status: 200,
-            text: JSON.stringify({ app: 'relay', v: 1, body: { ok: false, error: 'unknown request' } }),
-          });
-        },
-      },
-      relayKey: function () { return 'MCowBQYDK2VwAyEAnot-a-real-key='; },
-    };
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: servers[0].url }, refusing);
-  }).then(function (res) {
-    if (res.status === 502 && /unknown request/.test(res.text)) {
-      test.check("a relay that answers 'no' is a 502 carrying its reason — not the post's own 200");
-    } else {
-      test.fail('delivered refusal: ' + res.status + ' ' + res.text);
-    }
-
-    // And the other one still reports the transport's own number, because
-    // there it is the only number there is.
-    const unreachable = {
-      router: {
-        post: function () {
-          return Promise.resolve({ ok: false, status: 503, error: 'that peer is not reachable right now' });
-        },
-      },
-      relayKey: function () { return 'MCowBQYDK2VwAyEAnot-a-real-key='; },
-    };
-    return hubInvite(hub, { name: 'andy', label: 'saint', days: 7, url: servers[0].url }, unreachable);
+    // A KEY NOTHING CARRIES. This replaces both of the old refusals —
+    // the unaimed one and the off-the-list one — because addressing a
+    // key makes them the same question, and it is the ordinary one every
+    // post already asks: is this peer reachable?
+    return hubPost(hub, 'MCowBQYDK2VwAyEAnobody-carries-this-key=',
+      { invite: { label: 'saint', days: 7, token: '' } }, deps);
   }).then(function (res) {
     if (res.status === 503 && /not reachable/.test(res.text)) {
-      test.check('and a post that never arrived keeps the transport\'s status, which is all it has');
+      test.check('a verb aimed at a key no relay carries is unreachable, not guessed at');
     } else {
-      test.fail('undelivered: ' + res.status + ' ' + res.text);
+      test.fail('unaimed: ' + res.status + ' ' + res.text);
     }
 
-    // ── THE DOOR THIS VERB NEVER HAD ────────────────────────────────
+    // ── THE VERB THAT HAD NO DOOR, AND NOW NEEDS NONE ───────────────
     //
     //   Andy: "api/hub/remove-peer must be the interface"
     //
-    // relay.removePeer worked, was signed and was thorough, and NOTHING
-    // under run/ could reach it. A verb with no interface is as much an
-    // impurity as a wrong one, and harder to see: everything about it is
-    // correct where you can read it, and the two halves simply never met.
+    // relay.removePeer worked, was signed and was thorough, and nothing
+    // under run/ could reach it — a verb with no interface, which is as
+    // much an impurity as a wrong one and harder to see.
     //
-    // Checked here rather than in removePeer.js because what is under
-    // test is the NODE's half — that the door picks the right relay, asks
-    // it as a post, and hands back what happened.
-    return (function () {
-      const box = second.box;
-      const victim = auth.generateIdentity('victim');
-      const minted = box.mint('andy', 'victim', 7);
-      box.claim('victim', auth.sign(victim.privateKey, auth.claimMessage('victim')),
-        victim.publicKey, '10.0.0.9', minted.invite.token, 'victim');
+    // It got a door, and the door is now gone too. That is not the gap
+    // reopening: it is the gap becoming impossible. A verb the relay
+    // answers is reachable because the browser can address the relay,
+    // and there is no longer a place for a door to be missing from.
+    const victim = auth.generateIdentity('victim');
+    const minted = second.box.mint('andy', 'victim', 7);
+    second.box.claim('victim', auth.sign(victim.privateKey, auth.claimMessage('victim')),
+      victim.publicKey, '10.0.0.9', minted.invite.token, 'victim');
 
-      const before = box.who().some(function (r) { return r.publicKey === victim.publicKey; });
-      return hubRemovePeer(hub, { url: servers[1].url, key: victim.publicKey }, deps)
-        .then(function (r) {
-          const gone = !box.who().some(function (x) { return x.publicKey === victim.publicKey; });
-          let said = {};
-          try { said = JSON.parse(r.text); } catch (e) { said = {}; }
-          if (before && r.status === 200 && gone && said.removed &&
-              said.removed.key === victim.publicKey) {
-            test.check('POST /api/hub/remove-peer forgets somebody on the mailbox it was aimed at');
-          } else {
-            test.fail('remove: ' + r.status + ' ' + r.text + ' gone=' + gone);
-          }
-          return hubRemovePeer(hub, { url: servers[1].url }, deps);
-        });
-    }()).then(function (r) {
-      // Refused before anything leaves the machine. A removal with no
-      // subject is the node's mistake, and spending a post to be told so
-      // would be the node's too.
-      if (r.status === 400 && /peer key required/.test(r.text)) {
-        test.check('and a removal naming nobody never leaves this node');
-      } else {
-        test.fail('keyless remove: ' + r.status + ' ' + r.text);
-      }
-    }).then(function () {
-
+    const before = second.box.who().some(function (r) { return r.publicKey === victim.publicKey; });
+    return hubPost(hub, second.box.relayPublicKey(),
+      { removePeer: { key: victim.publicKey } }, deps)
+      .then(function (r) {
+        const gone = !second.box.who().some(function (x) { return x.publicKey === victim.publicKey; });
+        const said = r.body || {};
+        if (before && gone && said.removed && said.removed.key === victim.publicKey) {
+          test.check('removing a peer travels as a packet and forgets them on the relay it named');
+        } else {
+          test.fail('remove: ' + r.status + ' ' + r.text + ' gone=' + gone);
+        }
+      });
+  }).then(function () {
     // And the badge itself, over the same loopback: both mailboxes owned,
-    // so Relay Chat shows the panel and the picker.
+    // so Relay Chat shows the panel and the picker. A READ, and reads did
+    // not move — you cannot post to an address you are still asking for.
     const res2 = fakeRes();
     hub.handleStatus({}, res2, new URL('http://127.0.0.1/api/hub/status?name=andy'));
     return res2.wait();
@@ -623,8 +606,9 @@ function runHubOnLoopback() {
     }
     servers.forEach(function (s) { s.server.close(); });
   });
-  });
 }
+
+
 
 // B2, and the half of it that never reached the browser.
 //

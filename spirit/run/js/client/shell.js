@@ -1405,8 +1405,29 @@
           var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
           var decoded = (envelope && text) ? envelope.decode(text) : null;
 
+          // ── A DELIVERED REFUSAL IS NOT A DELIVERY ────────────────
+          //
+          // Found live once already, on the first real mint through the
+          // collapsed path: a relay answered `unknown request`, the POST
+          // had succeeded — status 200, receipt and all — and the node
+          // handed the browser a success with an error inside it. The
+          // code had reached past the far end's verdict to the
+          // transport's number behind it.
+          //
+          // hub.askRelay learned that lesson and then was deleted with
+          // the doors it served, so it moves here, which is where the
+          // same two failures now meet: NOTHING ANSWERED, and SOMETHING
+          // ANSWERED NO. `said.ok` is the transport's; `body.ok` is the
+          // far end's; a caller wants both before it believes anything.
+          //
+          // A body with no `ok` at all is not a refusal — most packets
+          // are not verbs and have no verdict to give.
+          var reached = r.status === 200 && !!(said && said.ok);
+          var answeredYes = !decoded || !decoded.body ||
+            decoded.body.ok === undefined || !!decoded.body.ok;
+
           return {
-            ok: r.status === 200 && !!(said && said.ok),
+            ok: reached && answeredYes,
             status: r.status,
             // Absent rather than invented when the node could not post at
             // all — a caller must be able to tell "no transaction" from

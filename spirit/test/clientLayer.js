@@ -255,6 +255,74 @@ function aFailureInventsNoTransaction() {
 }
 
 // ---------------------------------------------------------------------
+function aDeliveredRefusalIsNotADelivery() {
+  test.subHeading('Something answered NO is not the same as nothing answered');
+
+  // FOUND LIVE ONCE, on the first real mint through the collapsed path:
+  // a relay answered `unknown request`, the POST had succeeded — status
+  // 200, receipt and all — and the node handed the browser a success
+  // with an error inside it. The code reached past the far end's verdict
+  // to the transport's number behind it.
+  //
+  // hub.askRelay learned that and was then deleted along with the doors
+  // it served, so the lesson lives here now. It has to: this is where the
+  // two failures meet.
+  const world = mountShell(function () {
+    return {
+      status: 200,
+      text: JSON.stringify({
+        ok: true, status: 200, hash: 'HASH', from: 'PEERKEY', receipt: true,
+        text: JSON.stringify({ app: 'relay', v: 1, body: { ok: false, error: 'unknown request' } }),
+      }),
+    };
+  });
+  const api = appWithApi(world, 'chess');
+
+  return api.peerPost('relay', 'PEERKEY', { rename: { label: 'x' } }).then(function (r) {
+    if (r.ok === false) {
+      test.check('a post that arrived and was refused reads as a refusal, not a success');
+    } else {
+      test.fail('a delivered refusal read as ok: ' + JSON.stringify(r));
+    }
+
+    // The transport still succeeded, and saying so is what lets a caller
+    // tell this apart from a relay that is down.
+    if (r.status === 200 && r.hash === 'HASH' && r.body && r.body.error === 'unknown request') {
+      test.check('while the transport still reports 200, with the reason it was refused');
+    } else {
+      test.fail('shape: ' + JSON.stringify(r));
+    }
+  });
+}
+
+// ---------------------------------------------------------------------
+function aReplyWithNoVerdictIsNotARefusal() {
+  test.subHeading('A packet with no verdict in it is not a refusal');
+
+  // Most packets are not verbs. A chat line answering a chat line has no
+  // `ok` to give, and reading its absence as failure would make every
+  // ordinary exchange look broken.
+  const world = mountShell(function () {
+    return {
+      status: 200,
+      text: JSON.stringify({
+        ok: true, status: 200, hash: 'HASH', from: 'PEERKEY', receipt: true,
+        text: JSON.stringify({ app: 'chess', v: 1, body: { move: 'e5' } }),
+      }),
+    };
+  });
+  const api = appWithApi(world, 'chess');
+
+  return api.peerPost('chess', 'PEERKEY', { move: 'e4' }).then(function (r) {
+    if (r.ok === true && r.body && r.body.move === 'e5') {
+      test.check('a body carrying no `ok` is delivered, not judged');
+    } else {
+      test.fail('ordinary reply read as a failure: ' + JSON.stringify(r));
+    }
+  });
+}
+
+// ---------------------------------------------------------------------
 function laterNewsFindsWhoAsked() {
   test.subHeading('Later news about an earlier post finds who asked');
 
@@ -327,6 +395,8 @@ function laterNewsFindsWhoAsked() {
 Promise.resolve()
   .then(aPostAnswersInTheShapeTheProtocolHas)
   .then(aFailureInventsNoTransaction)
+  .then(aDeliveredRefusalIsNotADelivery)
+  .then(aReplyWithNoVerdictIsNotARefusal)
   .then(laterNewsFindsWhoAsked)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {

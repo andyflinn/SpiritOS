@@ -43,6 +43,35 @@ var ndIcon = spirit.core.const.ICON;
 // let through to the relay, which decides as it always did. Losing a
 // courtesy is a nuisance; inventing a second opinion about what a label
 // may be would be worse. Same shape as natterCanRemove in Natter.
+// ── HOW THIS SCREEN ADDRESSES THE RELAY IT IS ────────────────────────
+//
+//   Andy: "I'm aiming to close all post-path doors on node"
+//
+// Every verb here is a peerPost now, and a peerPost is addressed to a
+// KEY. `ndUrl` still says which relay this screen is ABOUT; it no longer
+// aims anything.
+//
+// TWO PLACES CARRY IT, and the order matters: `census.relayKey` comes
+// from the public census every probe already fetches, so a plain MEMBER
+// has it — which `report.key` cannot give, because a report is pushed to
+// the owner alone. `rename` is an own-row verb every member holds, so
+// reading the owner's copy first would have worked for exactly one
+// person and looked fine.
+function ndRelayKey() {
+  if (!ndBadge) return '';
+  return (ndBadge.census && ndBadge.census.relayKey)
+    || (ndBadge.report && ndBadge.report.key)
+    || '';
+}
+
+// Said once, because three verbs need to say it. A relay that has not
+// answered a census yet cannot be addressed, and that is a different
+// thing from a relay that refused.
+function ndNoKey(out, cls) {
+  out.className = 'job-manifest-note ' + cls + ' is-error';
+  out.textContent = 'this relay has not said what its key is yet';
+}
+
 function ndLabelProblem(name) {
   var rule = (typeof window !== 'undefined' && window.spiritLabelRule) || null;
   return rule ? rule.problem(name) : '';
@@ -746,21 +775,28 @@ function ndRename(button) {
     return;
   }
 
-  ndPost('/api/hub/rename', { label: wanted, url: ndUrl }).then(function (r) {
-    var said = null;
-    try { said = JSON.parse(r.text); } catch (e) { said = null; }
-    var ok = r.status === 200 && said && said.ok;
+  // AN OWN-ROW VERB, and the reason ndRelayKey reads the census first:
+  // a member renaming itself is sent no report, so the owner's copy of
+  // the key would not be there.
+  var relayKey = ndRelayKey();
+  if (!relayKey) { ndNoKey(out, 'nd-name-out'); return; }
+
+  ndApi.peerPost('relay', relayKey, { rename: { label: wanted } }).then(function (r) {
+    var said = r.body;
+    var ok = r.ok && said && said.ok;
     out.className = 'job-manifest-note nd-name-out ' + (ok ? 'is-token' : 'is-error');
     out.textContent = ok
       ? (said.unchanged ? 'already ' + said.label
         : said.was + '  ->  ' + said.label)
-      : (said && said.error) || (r.status + ' ' + r.text);
+      : (said && said.error) || r.error || ('HTTP ' + r.status);
     if (!ok) return;
     // THE LIST BEHIND THIS SCREEN SHOWS LABELS, so it has to repaint —
     // and the binding Natter keeps is this node's own name, which may be
     // the thing that just moved.
     ndChanged = true;
-    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, renamed: said.label });
+    if (ndApi) {
+      ndApi.setDialogResult({ changed: true, url: ndUrl, renamed: said.label, hash: r.hash });
+    }
     ndLoad();
   });
 }
@@ -916,25 +952,31 @@ function ndMint(button) {
   var days = Number(field('natter-inv-days').value) || 7;
   var spoken = field('natter-inv-token').value.trim();
 
-  ndPost('/api/hub/invite', {
-    name: ndLabel,
-    label: label,
-    days: days,
-    token: spoken,
-    url: ndUrl,
+  var relayKey = ndRelayKey();
+  if (!relayKey) { ndNoKey(out, 'natter-inv-out'); return; }
+
+  // `name: ndLabel` TRAVELLED HERE and never mattered: the relay reads
+  // the owner's name out of allow.json, because the only sender who
+  // reaches that line IS the owner and a name the caller supplied would
+  // be a second opinion about that. The door carried it anyway. `url`
+  // went too — the post is addressed to the relay's key.
+  ndApi.peerPost('relay', relayKey, {
+    invite: { label: label, days: days, token: spoken },
   }).then(function (r) {
-    var token = '';
-    try { token = JSON.parse(r.text).token || ''; } catch (e) { token = ''; }
+    var said = r.body;
+    var token = (said && said.invite && said.invite.token) || '';
     // RETURNED, NOT RECORDED. minted.json is Natter's file — api.fs here
     // is scoped to this app's own folder — and the label is the only
     // part worth carrying back: it is what Natter watches the census for,
     // so the person can be added as a contact the moment they turn up.
     // Never the token. That is the secret, and it does not leave this
     // screen.
-    if (r.status === 201 && token) {
+    if (token) {
       ndMinted = label;
       ndChanged = true;
-      if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, minted: label });
+      if (ndApi) {
+        ndApi.setDialogResult({ changed: true, url: ndUrl, minted: label, hash: r.hash });
+      }
     }
     // Printed, not copied: it is read off this screen onto a phone. What
     // is shown is what the relay stored — the typed token when it took
@@ -943,9 +985,11 @@ function ndMint(button) {
     //
     // The class says which of the two it is, so a refusal does not read
     // as a token somebody might try to speak down a phone.
-    var ok = r.status === 201 && token;
+    var ok = !!token;
     out.className = 'natter-inv-out ' + (ok ? 'is-token' : 'is-error');
-    out.textContent = ok ? token + '  ->  ' + ndUrl : r.status + ' ' + r.text;
+    out.textContent = ok
+      ? token + '  ->  ' + ndUrl
+      : (said && said.error) || r.error || ('HTTP ' + r.status);
   });
 }
 

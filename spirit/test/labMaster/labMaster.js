@@ -517,6 +517,48 @@ function livePost(url, body) {
   });
 }
 
+// ── ASKING A RELAY FOR SOMETHING, AS A LOOPBACK CLIENT ───────────────
+//
+//   Andy: "The browser itself is not crypte-capable but it's considered
+//   a safe loop-back client, same for processes."
+//
+// labMaster is a process, so it is that kind of client: no key, no
+// signing, one POST over loopback and the work node does the rest.
+//
+// It reached /api/hub/invite until 2026-09-15, one of four post-path
+// doors that closed. Each of them built a single packet body and handed
+// it to router.post, which is what a peerPost IS — so the door was a
+// second way of saying what the protocol already said.
+//
+// ADDRESSED BY KEY, which the census publishes to anyone. The answer
+// arrives inside the envelope the relay replied in, and the body is what
+// a caller wants — the same shape api.peerPost hands a page.
+async function postToRelayVia(nodeUrl, relayUrl, body) {
+  let key = '';
+  try {
+    const res = await fetch(relayUrl + '/api/relay/who');
+    const parsed = await res.json();
+    key = (parsed && parsed.relayPublicKey) || '';
+  } catch (e) { key = ''; }
+  if (!key) return { ok: false, status: 0, body: null, text: 'relay did not say what its key is' };
+
+  const sent = await livePost(nodeUrl + '/api/hub/post', {
+    to: key, app: 'relay', body: body,
+  });
+  let answer = null;
+  try { answer = JSON.parse((sent.body && sent.body.text) || 'null'); }
+  catch (e) { answer = null; }
+  const said = (answer && answer.body) || null;
+  return {
+    // Both halves: the transport succeeding and the far end agreeing are
+    // different facts — see spirit/test/clientLayer.js.
+    ok: !!(sent.ok && said && said.ok !== false),
+    status: sent.status,
+    body: said,
+    text: sent.text,
+  };
+}
+
 function napFor(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 // WAIT FOR THE NODE TO ACTUALLY ANSWER, rather than for a number of
@@ -752,17 +794,18 @@ async function buildLiveWorld(body) {
     // So the node mints, which is what Natter's own button does. One less
     // thing this file does by hand, which is the direction the GAPS list
     // has always pointed.
-    const minted = await livePost('http://127.0.0.1:' + WORK_PORT + '/api/hub/invite', {
-      name: me.name,
-      label: peerName,
-      days: 7,
-      token: '',
-      url: LIVE_RELAY,
-    });
-    // The route answers with the invite ITSELF, not {invite:{…}} — the
-    // hub unwraps the relay's answer and passes the inner object straight
-    // through, exactly as the deleted relay route did.
-    const token = minted.body && minted.body.token;
+    const minted = await postToRelayVia(
+      'http://127.0.0.1:' + WORK_PORT, LIVE_RELAY,
+      { invite: { label: peerName, days: 7, token: '' } }
+    );
+    // `{invite:{…}}` NOW, not the invite itself. The door used to unwrap
+    // the relay's answer and pass the inner object through; with the door
+    // gone, what arrives is what the relay actually said.
+    //
+    // `name: me.name` went too, and never mattered: the relay reads the
+    // owner's name out of allow.json, because the only sender who reaches
+    // that line IS the owner.
+    const token = minted.body && minted.body.invite && minted.body.invite.token;
     if (!minted.ok || !token) {
       return { status: 502, error: 'spirit-3 refused the invite: ' + minted.text };
     }

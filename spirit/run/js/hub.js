@@ -1013,253 +1013,31 @@ function createHub(rootDir) {
     });
   }
 
-  // ASKING A RELAY THIS NODE OWNS TO DO SOMETHING, in one place.
-  //
-  // Two doors need the identical five steps — choose the relay, look up
-  // its pinned key, post the packet, unwrap the answer, and tell the two
-  // kinds of failure apart. The last of those is why this is shared
-  // rather than copied: it is the step the first door got wrong, and a
-  // second hand-written copy would have been a second chance to.
-  //
-  // THESE DOORS ARE NOT THE PROTOCOL. Decision 0010 is about ways of
-  // speaking on the WAN; `/api/hub/*` is this node's own front, reachable
-  // only from this machine, and a node may shape it however suits the
-  // browser. What it may not do is invent a word to say over the wire —
-  // and neither of these does. Both send an ordinary post.
-  //
-  // ONE PRECONDITION, honest rather than incidental: the answer arrives
-  // on this node's stream to that relay, so both doors work only on a
-  // relay this node is actually connected to. That is already the
-  // precondition for owning one — presenceNode opens a stream to every
-  // relay this node holds a row on — so what it excludes is a request
-  // made in the seconds before presence has started, which fails as a
-  // timeout saying so rather than as a wrong answer.
-  function askRelay(res, deps, wantedUrl, bodyFor, onOk) {
-    var router = deps && deps.router;
-    var relayKeyFor = deps && deps.relayKey;
-    if (!router || !relayKeyFor) {
-      fail(res, 503, 'this node is not connected to a relay');
-      return undefined;
-    }
-    return withChosenRelay(res, wantedUrl, function (url) {
-      // The url→key pin, not a fresh ask: answerRelay.relayKey is where
-      // trust-on-first-use lives, so a relay swapped underneath this node
-      // refuses here rather than being acted on.
-      return Promise.resolve(relayKeyFor(url)).then(function (key) {
-        if (!key) {
-          fail(res, 502, 'this node does not know that relay by key');
-          return;
-        }
-        var text = JSON.stringify({ app: 'relay', v: 1, body: bodyFor() });
-        return router.post(url, key, text).then(function (answer) {
-          var said = null;
-          try { said = JSON.parse(answer && answer.text); }
-          catch (e) { said = null; }
-          var out = (said && said.body) || null;
 
-          // THE POST FAILED — never got there, or nothing answered.
-          // answer.status is the TRANSPORT's, and it is the right one to
-          // report only here.
-          if (!answer || !answer.ok) {
-            fail(res, (answer && answer.status) || 502,
-              (answer && answer.error) || 'the relay did not answer');
-            return;
-          }
 
-          // THE POST ARRIVED AND THE RELAY SAID NO, which is a different
-          // thing and was reported as the first one for exactly one live
-          // request: a relay running older code answered `unknown
-          // request`, and this node handed the browser HTTP 200 with an
-          // error in the body — because it reached past the relay's
-          // verdict to the transport's 200 behind it.
-          //
-          // A delivered refusal is 502 unless the relay named a status
-          // itself. The transport's number is not in the chain at all.
-          if (!out || !out.ok) {
-            fail(res, (out && out.status) || 502,
-              (out && out.error) || 'the relay refused');
-            return;
-          }
-          // ── THE HASH THE PAGE COULD NOT KNOW ─────────────────────
-          //
-          //   Andy: "the shell posts the unsigned request, so it doesn't
-          //   know the hash yet, the reply from the server must come
-          //   with a hash, generally, so it can reconcile the request in
-          //   the log with the reply from the relay."
-          //
-          // Exactly so, and the node had it all along: peerPost computes
-          // `auth.requestHash(message)` and settles with it, and this
-          // function then handed the handler only the relay's reply body
-          // and dropped it. A browser that pressed Revoke could not name
-          // the transaction it had just caused.
-          //
-          // IT IS A REFERENCE, NOT EVIDENCE, and needs no signature —
-          // Andy, earlier: "the node that POSTS using peerPost can log
-          // the hash without signature, it can trust itself." The page
-          // is on the same machine as the node that computed it. What it
-          // is FOR is quoting: joining what a person did to what the log
-          // says happened.
-          //
-          // AND IT IS THE PAGE'S ONLY THREAD — decision 0011.
-          //
-          //   Andy: "the browser doesn't have the proper crypto to sign
-          //   the request, it only has the means to match up request and
-          //   reply by the hash."
-          //
-          // A browser holds no key and cannot verify a signature, so it
-          // never participates in the protocol this hash belongs to. It
-          // asks this node to act and this node signs. The hash reaches
-          // it twice — here, on the immediate reply, and as `cause` on an
-          // owner event streamed later — and those two are the whole of
-          // what a page has to match an effect to the act that caused it.
-          //
-          // Which is why a page may DISPLAY a hash and QUOTE it, and must
-          // never conclude anything from one.
-          onOk(out, (answer && answer.hash) || '');
-        });
-      });
-    });
-  }
-
-  // MINTING AN INVITE ON A RELAY THIS NODE OWNS.
-  //
-  // This door is unchanged — the browser still names a url and still gets
-  // 201 and the invite back — and everything under it moved. There is no
-  // `/api/relay/invite` any more and no mint signature.
-  //
-  // The spoken token rides inside the packet, which postMessage signs
-  // whole, so it is still part of what was signed: the property A2 built
-  // mintMessage's third field for, now had for free.
-  function handleInvite(req, res, readJsonBody, deps) {
-    return readJsonBody(req).then(function (body) {
-      return askRelay(res, deps, body && body.url, function () {
-        return {
-          invite: {
-            label: (body && body.label) || '',
-            days: body && body.days,
-            token: invites.normalizeToken(body && body.token),
-          },
-        };
-      }, function (out, hash) {
-        // 201 and the invite itself, exactly as the relay route answered
-        // before it was deleted: this is what Natter's mint form reads.
-        // Plus the hash of the post that carried it — see askRelay.
-        res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(Object.assign({}, out.invite, { hash: hash })));
-      });
-    }).catch(function () {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Invalid JSON body');
-    });
-  }
-
-  // handleRevoke STOOD HERE, for exactly one day.
+  // ── EVERY POST-PATH HANDLER STOOD HERE. ALL FOUR ARE GONE. ────────
   //
   //   Andy: "I am aiming to close all post-path doors on node"
   //
-  // It built { revoke: { label } } and handed it to askRelay, which is
-  // what a peerPost is — so the door was a second way of saying a thing
-  // the protocol already said, and the browser now says it directly
-  // through /api/hub/post (app/natterDetails, ndRevoke).
+  // handleInvite, handleRename, handleRemovePeer and handleRevoke. Each
+  // read a JSON body, built one packet body, and handed it to askRelay
+  // -> router.post. That is what a peerPost IS, so each was this node
+  // translating a thing the browser could say for itself.
   //
-  // Worth noticing what that deleted along with the function: the label
-  // check, the url choosing, the response shaping. None of it was
-  // protocol. All of it was this node translating for a browser that
-  // can speak for itself.
-  // FORGETTING SOMEBODY — THE DOOR THIS VERB NEVER HAD.
+  // WHAT WENT WITH THEM is the part worth noticing: label checks, url
+  // choosing, status codes, response shaping. None of it protocol. All
+  // of it opinions that had to be kept consistent with the relay by
+  // hand — and were not always. handleRename spent a day answering 503
+  // to every call because it had been handed the wrong deps, and nothing
+  // could see it, because a door is easy to wire wrongly and a packet is
+  // not.
   //
-  //   Andy: "api/hub/remove-peer must be the interface"
+  // askRelay went with the last of them. It existed to be the shared
+  // half of four near-identical doors; with no doors there is nothing to
+  // share, and `withChosenRelay` keeps its other caller.
   //
-  // relay.removePeer has worked, been signed and been thorough since it
-  // shipped, and NOTHING under run/ could reach it — no route here, no app
-  // that asked. A person had no way to remove anybody from their own
-  // relay. That is the impurity, and it is not a wrong protocol: it is an
-  // absent one, which is harder to see because nothing about it is wrong
-  // where you can read it.
-  //
-  // BY KEY.
-  //
-  //   Andy: "removePeer MUST be by ID"
-  //
-  // Labels duplicate by design — spirit-3 has two rows called `jazz`
-  // today — so a removal naming one would delete whichever the relay
-  // found first. The browser shows a label and sends the key, which is
-  // how the census hands it over.
-  // WHAT THIS NODE IS CALLED ON A RELAY, changed by this node.
-  //
-  //   Andy: "after enrollment the public label of an ID is property of
-  //   the ID... the relay owner will not be allowed to control the
-  //   public label of any keyed peer."
-  //
-  // A post like any other, signed by this node's identity — so there is
-  // no key on the wire and no way to name somebody else's row. The relay
-  // renames whoever signed, and that is the whole of the permission.
-  //
-  // Per relay, because a node on several may be called different things
-  // on each: the label belongs to the key, but which label is a fact
-  // about a membership. `url` says which one.
-  function handleRename(req, res, readJsonBody, deps) {
-    return readJsonBody(req).then(function (body) {
-      var label = String((body && body.label) || '').trim();
-      if (!label) {
-        fail(res, 400, 'label required');
-        return;
-      }
-      return askRelay(res, deps, body && body.url, function () {
-        return { rename: { label: label } };
-      }, function (out, hash) {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(Object.assign({}, out, { hash: hash })));
-      });
-    }).catch(function () {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Invalid JSON body');
-    });
-  }
-
-  function handleRemovePeer(req, res, readJsonBody, deps) {
-    return readJsonBody(req).then(function (body) {
-      var key = String((body && body.key) || '').trim();
-      if (!key) {
-        fail(res, 400, 'peer key required');
-        return;
-      }
-      return askRelay(res, deps, body && body.url, function () {
-        return { removePeer: { key: key } };
-      }, function (out, hash) {
-        // What actually happened, whole: who went, how much of their mail
-        // went with them, and how many invites were revoked so the name
-        // is not a lie. An owner removing somebody should see the size of
-        // what they did — and name the transaction it was.
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(Object.assign({}, out, { hash: hash })));
-      });
-    }).catch(function () {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Invalid JSON body');
-    });
-  }
-
-  // inboxRequest, handleInbox AND sweepInbox STOOD HERE — the node's three
-  // ways of pulling its own mail off a relay: the signed GET itself, the
-  // browser's poll through /api/hub/inbox, and the 60-second sweep that
-  // ran with nobody watching so the counters did not depend on a chat
-  // window being open. All deleted with the ring (R8, 2026-09-15).
-  //
-  // A NODE DOES NOT ASK A RELAY TO HAVE KEPT SOMETHING. That is the whole
-  // of why these go and nothing replaces them: a relay delivers or refuses
-  // and stores nothing on anyone's behalf (decision 0006), so a poll is a
-  // question with no honest answer. What arrives, arrives on the stream
-  // this node already holds — presenceNode keeps it open, peerPost admits
-  // it, arrivals.js pushes it at the page.
-  //
-  // What a page missed while it was SHUT comes off this node's own
-  // traffic log, not off somebody else's box: arrivals.subscribe() asks
-  // for un-taken rows the moment a page opens and pushes them down the
-  // same channel a new packet arrives on. That is strictly better than
-  // the poll was — it needed the client to remember where it got to, and
-  // to have a clock that agreed with the relay's.
-
+  // The browser addresses a relay by KEY through handlePost now. A new
+  // relay verb needs no function here at all.
   // GET /api/hub/who — the mailbox's peers, captioned by this node.
   // Unsigned, like the relay route it forwards: `who` is public on the
   // mailbox (isRelayPublicPath, server.js), and the captions it comes
@@ -1574,11 +1352,9 @@ function createHub(rootDir) {
     handleHandle: handleHandle,
     handleContact: handleContact,
     handlePeer: handlePeer,
-    handleInvite: handleInvite,
-    handleRemovePeer: handleRemovePeer,
-    // What this node is called on a relay — an own-row verb, so the post
-    // names nobody but its signer.
-    handleRename: handleRename,
+    // handleInvite, handleRemovePeer, handleRename and handleRevoke were
+    // exported here. Every one of them is a peerPost the browser makes
+    // for itself now — see the note where they stood.
     handleUnknownSenders: handleUnknownSenders,
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,

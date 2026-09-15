@@ -1083,50 +1083,33 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // THE TWO THINGS AN OWNER DOES TO THEIR OWN RELAY, and both go out
-    // as posts rather than signed verbs — so both need the router and the
-    // url→key pin, handed in for the same reason handlePost's are: hub.js
-    // must not hold state it cannot see created.
-    if (pathname === '/api/hub/invite') {
-      hub.handleInvite(req, res, readJsonBody,
-        { router: peerRouter, relayKey: pinnedRelayKey });
-      return;
-    }
-
-    // Renaming this node's own row on a relay (R4). Same deps as the
-    // door below and for the same reason: both are ordinary posts that
-    // travel on this node's stream, so both need the router and the
-    // url→key pin. Handing `presence` instead — which is what this line
-    // did until 2026-09-15 — is not a wrong answer but a 503 on every
-    // call, because askRelay refuses before it reaches the relay at all.
-    if (pathname === '/api/hub/rename') {
-      hub.handleRename(req, res, readJsonBody,
-        { router: peerRouter, relayKey: pinnedRelayKey });
-      return;
-    }
-
-    // `POST /api/hub/revoke` STOOD HERE and lasted one day.
+    // ── ALL FOUR POST-PATH DOORS STOOD HERE. ALL FOUR ARE GONE. ──────
     //
-    //   Andy: "I'm aiming to close all post-path doors on node"
+    //   Andy: "I am aiming to close all post-path doors on node"
+    //   Andy: "all of natter really can and must go through the shell ->
+    //   clientLayer -> node -> relay"
     //
-    // What it did was build `{revoke:{label}}` and hand it to
-    // router.post, which is what a peerPost IS — so it was a second way
-    // of saying something the protocol already says. The browser now
-    // addresses the relay by key through /api/hub/post like any other
-    // peer (app/natterDetails, ndRevoke).
+    // invite, rename, revoke, remove-peer. Each built one packet body —
+    // { invite: {...} }, { rename: {...} }, { revoke: {...} },
+    // { removePeer: {...} } — and handed it to router.post. That is what
+    // a peerPost IS, so each was a second way of saying a thing the
+    // protocol already said, and each had to be written, wired, given
+    // deps, and remembered.
     //
-    // The first of four to go. When the last one does, /api/hub/post is
-    // the only door on this node that puts anything on the wire, and a
-    // new relay verb needs no change here at all.
-
-    // Forgetting somebody. relay.removePeer has worked since it shipped
-    // and nothing on this side could reach it — a verb with no interface.
-    if (pathname === '/api/hub/remove-peer') {
-      hub.handleRemovePeer(req, res, readJsonBody,
-        { router: peerRouter, relayKey: pinnedRelayKey });
-      return;
-    }
-
+    // The browser addresses the relay by KEY through /api/hub/post now,
+    // like any other peer (app/natterDetails).
+    //
+    // WHAT THIS MAKES TRUE, and it is the point of the whole exercise:
+    // /api/hub/post is the only door on this node that puts anything on
+    // the wire, and A NEW RELAY VERB NEEDS NO CHANGE HERE AT ALL. The
+    // relay grows a verb in answerSelf, the browser names it, and there
+    // is nowhere left for a door to be missing from — which is the gap
+    // remove-peer sat in for months and revoke shipped with this
+    // morning.
+    //
+    // What does NOT move, because 0010 says it cannot: claim, device and
+    // the census reads. You cannot post to a relay you have no row on,
+    // and you cannot post to an address you are still asking for.
     // The router. peerRouter and presence are handed in rather than
     // reached for: they are built at the foot of this file and hub.js
     // must not hold state it cannot see created.

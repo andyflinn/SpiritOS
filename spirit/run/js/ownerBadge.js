@@ -305,7 +305,24 @@ function censusFacts(answer, myKey) {
     if (p.publicKey === myKey) mine = p.publicLabel || '';
   });
 
-  return { owner: owner, peers: list.length, myLabel: mine };
+  // ── THE RELAY'S OWN KEY, WHICH IS HOW A MEMBER ADDRESSES IT ───────
+  //
+  // Already in the census, already fetched, and thrown away until
+  // 2026-09-15 — the same shape `claimedLabel` was in before R8.
+  //
+  // It matters now because the post-path doors are closing: a client
+  // that used to name a URL and let the node pick the key must address
+  // the relay BY key, like any other peer. The owner could read it off
+  // the pushed report (`relayStatus.key`); a plain member is sent no
+  // report at all, and `rename` is an own-row verb every member has.
+  // Without this a member could rename itself only while a door existed
+  // to do it for them.
+  return {
+    owner: owner,
+    peers: list.length,
+    myLabel: mine,
+    relayKey: (parsed && parsed.relayPublicKey) || '',
+  };
 }
 
 // ONE REQUEST PER RELAY, and it is the public census.

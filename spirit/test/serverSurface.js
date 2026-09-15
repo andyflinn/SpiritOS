@@ -324,38 +324,51 @@ freePort()
       // instead. Measured on the broken build: rename 503, remove-peer
       // 403. This asserts they agree, whatever the number turns out to be.
       const SAME = { url: 'https://not-on-the-list.example', label: 'x', key: 'NOPE' };
-      // `/api/hub/revoke` WAS IN THIS LIST and lasted a day. It is not a
-      // door any more — the browser posts `{revoke:{label}}` through
-      // `/api/hub/post` like any other peerPost — and the three below are
-      // going the same way.
+      // ── ONE DOOR PUTS THINGS ON THE WIRE ─────────────────────────────
       //
-      // When the last one does, this check has no subject, and what
-      // should replace it is the invariant it has been standing in for:
-      // NOTHING BUT handlePost MAY CALL router.post. That is a better
-      // guard than four doors agreeing, because it is about the thing
-      // itself rather than about them matching each other.
-      const DOORS = ['/api/hub/rename', '/api/hub/remove-peer', '/api/hub/invite'];
-      return DOORS.reduce(function (chain, path) {
-        return chain.then(function (seen) {
-          return request(port, 'POST', path, SAME).then(function (r) {
-            seen.push({ path: path, status: r.status });
-            return seen;
-          });
-        });
-      }, Promise.resolve([])).then(function (seen) {
-        const statuses = seen.map(function (s) { return s.status; });
-        const agreed = statuses.every(function (s) { return s === statuses[0]; });
-        if (agreed) {
-          test.check('all ' + seen.length + ' askRelay doors refuse an unlisted relay alike ' +
-            '(HTTP ' + statuses[0] + ') — each holds the router and the url->key pin');
-        } else {
-          test.fail('the askRelay doors disagree: ' + JSON.stringify(seen) +
-            '. They share one function, so an unlisted url must be refused in ' +
-            'withChosenRelay before any network — identically. A 503 among them means ' +
-            'that route was handed the wrong deps in server.js and cannot reach a ' +
-            'relay at all.' + lastWords());
-        }
-      }).then(function () {
+      //   Andy: "I am aiming to close all post-path doors on node"
+      //
+      // FOUR DOORS STOOD HERE and this checked that they agreed with each
+      // other, because each built one packet body and handed it to
+      // router.post and any of them could be wired wrongly on its own.
+      // One was: /api/hub/rename spent a day answering 503 to every call
+      // because it had been given the wrong deps, and nothing could see
+      // it — which is what this check was added for.
+      //
+      // All four are gone. What replaces the check is the invariant it
+      // was standing in for, and it is a better one, because it is about
+      // the thing itself rather than about four things matching:
+      //
+      //   NOTHING BUT handlePost MAY CALL router.post.
+      //
+      // Read off hub.js rather than exercised over HTTP, because it is a
+      // claim about the SHAPE of that file: a second caller is a second
+      // way onto the wire, whether or not anybody has wired a route to it
+      // yet. That is the failure mode the doors had — correct in
+      // isolation, and one more place for the next one to be forgotten.
+      let hubSrc = '';
+      try { hubSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8'); }
+      catch (e) { hubSrc = ''; }
+      const callers = [];
+      hubSrc.split('\n').forEach(function (line, i) {
+        if (!/router\.post\(/.test(line)) return;
+        if (/^\s*(\/\/|\*)/.test(line)) return; // a mention in prose is not a call
+        callers.push(i + 1);
+      });
+
+      // handlePost's own call, and no other. The line number is not the
+      // claim — the COUNT is — so a refactor that moves it is fine and a
+      // refactor that adds one is not.
+      if (callers.length === 1) {
+        test.check('exactly one place in hub.js calls router.post — the post door itself');
+      } else {
+        test.fail('router.post is called from ' + callers.length + ' places in hub.js (lines ' +
+          callers.join(', ') + '). Every post-path door was deleted on 2026-09-15 so that ' +
+          '/api/hub/post is the only way onto the wire. A second caller is a second ' +
+          'door, whether or not a route has been wired to it yet.' + lastWords());
+      }
+
+      return Promise.resolve().then(function () {
       return request(port, 'GET', '/api/version').then(function (after) {
         if (after.status === 200) {
           test.check('and the process is still alive after all of them');
