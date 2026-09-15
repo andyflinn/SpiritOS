@@ -230,47 +230,56 @@ async function run() {
     test.fail('node holds: ' + String(deviceDoc().devicePublicKey).slice(-12));
   }
 
-  test.subHeading('One device, every relay that identity is on');
+  test.subHeading('A device opens nothing on a relay, anywhere');
 
-  async function canRead(where) {
+  // THIS SECTION READ THE OTHER WAY ROUND. It was "one device, every
+  // relay that identity is on": the enrolled browser could read its
+  // owner's inbox on the relay that enrolled it AND on one it had never
+  // spoken to, because a device belongs to the identity rather than to a
+  // box. That fanned out through the relay's copy of a device key.
+  //
+  // A relay holds no device key since 2026-09-13 (the binding is the
+  // node's — deviceAuth.js), and R8 deleted the inbox route it read on
+  // 2026-09-15. So the live claim inverts, and what it confirms now is
+  // the negative the in-process suites assert (deviceInbox.js,
+  // deviceEnrol.js): a device key proves nothing to a relay.
+  //
+  // Worth keeping against a REAL box rather than deleting: "the gate is
+  // gone" and "the gate is still there on the deployed code" look
+  // identical from here, and spirit-3 is the only thing that can tell
+  // them apart.
+  async function canOpen(where, id) {
     const r = await get(
-      where + '/api/relay/inbox?name=' + encodeURIComponent(subject.name),
-      { 'X-Spirit-Sig': auth.sign(phone.privateKey, auth.inboxMessage(subject.name)) }
+      where + '/api/relay/stream?key=' + encodeURIComponent(subject.publicKey),
+      { 'X-Spirit-Sig': auth.sign(id.privateKey, auth.streamMessage(subject.publicKey)) }
     );
     return r.status === 200;
   }
 
-  if (await canRead(RELAY)) {
-    test.check('the enrolled browser can read here, where it enrolled');
+  if (!(await canOpen(RELAY, phone))) {
+    test.check('the enrolled browser opens nothing here, where it enrolled');
   } else {
-    test.fail('it cannot read on the relay that enrolled it');
+    test.fail('an enrolled device opened the wire on the relay that enrolled it');
   }
 
-  // THE FAN-OUT. A device belongs to the identity, not to the relay that
-  // happened to enrol it — so it must work on the other one too.
   const elsewhere = RELAY === LAB ? null : LAB;
   if (elsewhere) {
     const reachable = (await get(elsewhere + '/api/relay/who')).status === 200;
     if (!reachable) {
-      test.check('(the other relay is not up, so the fan-out is not checked)');
-    } else if (await canRead(elsewhere)) {
-      test.check('and on ' + elsewhere + ', which it never spoke to');
+      test.check('(the other relay is not up, so the second box is not checked)');
+    } else if (!(await canOpen(elsewhere, phone))) {
+      test.check('and nothing on ' + elsewhere + ' either');
     } else {
-      test.fail('the device did not reach ' + elsewhere);
+      test.fail('the device opened the wire on ' + elsewhere);
     }
   }
 
-  // A KEY THAT ENROLLED NOWHERE READS NOTHING, or the check above passes
-  // by the relay being lax rather than by the device being installed.
-  const nobody = auth.generateIdentity('never-enrolled');
-  const refused = await get(
-    RELAY + '/api/relay/inbox?name=' + encodeURIComponent(subject.name),
-    { 'X-Spirit-Sig': auth.sign(nobody.privateKey, auth.inboxMessage(subject.name)) }
-  );
-  if (refused.status !== 200) {
-    test.check('while a browser that enrolled nowhere is refused (' + refused.status + ')');
+  // AND THE HOUSE KEY STILL DOES, or the checks above pass on a relay
+  // that is simply refusing everybody.
+  if (await canOpen(RELAY, subject)) {
+    test.check('while the identity’s own key still opens it, so this is not a box refusing everyone');
   } else {
-    test.fail('an unenrolled key read the inbox');
+    test.fail('the house key could not open the wire either');
   }
 
   // ── The six node-side fixes, against a real relay ────────────────

@@ -23,10 +23,5 @@
     }
   ],
 
-  "knows": [["bella", "carlos"]],
-
-  "messages": [
-    { "from": "bella", "text": "morning" },
-    { "from": "carlos", "text": "are you about?" }
-  ]
+  "knows": [["bella", "carlos"]]
 }

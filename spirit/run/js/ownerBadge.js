@@ -178,6 +178,38 @@ function claimedFrom(answer, myKey) {
   return list.some(function (p) { return p && p.publicKey === myKey; });
 }
 
+// AND WHICH LABEL THAT ROW WEARS. The census already carries it and it
+// was being thrown away — `claimedFrom` above reads the same list and
+// answers only yes or no.
+//
+// It is here because Natter needs an answer to "is this label still
+// mine?" and used to get one by signing an inbox read: a 403 meant the
+// label had moved. R8 deleted that route on 2026-09-15, and the census
+// answers the question better than the read ever did — it is the same
+// fact, unsigned, off a route that is public by design, with no second
+// request and no endpoint added.
+//
+// BY KEY, ANSWERING A LABEL, which is the only direction that is safe.
+// Two peers may wear one label, so a label does not identify a row; a
+// key does. Asking "what is my row called here" cannot be ambiguous.
+// Asking "who is called andy" can.
+//
+// '' when this key holds no row — which is also what a relay that has
+// forgotten you says, and the two are the same answer to Natter.
+function claimedLabelFrom(answer, myKey) {
+  if (!myKey || !answer) return '';
+  var parsed = null;
+  try { parsed = JSON.parse(answer.text); }
+  catch (e) { return ''; }
+  var list = (parsed && parsed.peers) || [];
+  if (!Array.isArray(list)) return '';
+  var mine = null;
+  list.forEach(function (p) {
+    if (p && p.publicKey === myKey && !mine) mine = p;
+  });
+  return mine ? String(mine.publicLabel || mine.name || '') : '';
+}
+
 // WHAT A MEMBER MAY SAY ABOUT A MAILBOX IT DOES NOT OWN.
 //
 // The census is already fetched to answer claimedFrom above, and was
@@ -226,6 +258,17 @@ function probe(rootDir, name, request, myKey) {
         var badge = readBadge(answer);
         badge.url = relay.url;
         badge.label = relay.label;
+        // WHAT THIS RELAY CALLS THIS NODE, on every row that has one.
+        //
+        // An OWNER's census arrives inside the status report it just
+        // read, so there is nothing more to ask — taking it from `report`
+        // rather than firing a second request is the same rule the
+        // `badge.owned` short-circuit below already follows.
+        if (badge.owned && myKey) {
+          badge.claimedLabel = claimedLabelFrom(
+            { text: JSON.stringify(badge.report || {}) }, myKey
+          );
+        }
         if (badge.owned || !myKey) return badge;
         return Promise.resolve()
           .then(function () { return request(relay.url, 'GET', '/api/relay/who'); })
@@ -234,7 +277,12 @@ function probe(rootDir, name, request, myKey) {
             // Kept only for a row this node is actually on. A mailbox it
             // merely lists tells it nothing, and a panel is not offered
             // for one.
-            if (badge.claimed) badge.census = censusFacts(census, myKey);
+            if (badge.claimed) {
+              badge.census = censusFacts(census, myKey);
+              // The same census, read for one more fact it was already
+              // carrying — see claimedLabelFrom for why Natter needs it.
+              badge.claimedLabel = claimedLabelFrom(census, myKey);
+            }
             return badge;
           })
           .catch(function () { return badge; });
@@ -288,6 +336,9 @@ if (isNode) {
     configuredUrls: configuredUrls,
     statusPath: statusPath,
     readBadge: readBadge,
+    // Exported for the suite that drives it directly. Natter reads the
+    // answer off a `rows` entry, never by calling this.
+    claimedLabelFrom: claimedLabelFrom,
     summarize: summarize,
     probe: probe,
     chooseUrl: chooseUrl,

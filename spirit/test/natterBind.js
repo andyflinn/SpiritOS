@@ -74,10 +74,12 @@ function mountApp(options) {
     } else if (url.indexOf('/api/hub/invite') === 0) {
       status = opts.inviteStatus || 201;
       payload = opts.inviteBody || { token: 'saint-bernard' };
-    } else if (url.indexOf('/api/hub/inbox') === 0) {
-      status = opts.inboxStatus || 200;
-      payload = { messages: [] };
     }
+    // A `/api/hub/inbox` branch stood here, answering whatever
+    // `opts.inboxStatus` said, because Natter checked its binding with a
+    // signed inbox read. R8 deleted that route (2026-09-15) and the check
+    // moved onto the census — see `claimedLabel` on the rows above, and
+    // natterCheckBinding.
     const text = JSON.stringify(payload);
     return Promise.resolve({
       status: status,
@@ -474,26 +476,68 @@ function aMintOverThereIsRememberedHere() {
 }
 
 function staleBindingIsDropped() {
-  test.subHeading('A name the mailbox no longer answers for');
+  test.subHeading('A name the relay no longer calls this node');
 
-  // The stored label is a question; the mailbox answers it. A signed
-  // inbox read is the cheapest form of "is this still me", and the app
-  // that owns the file is the one that asks.
-  const app = mountApp({ label: 'andy', inboxStatus: 403 });
+  // The stored label is a question; the relay answers it. It answered a
+  // signed inbox read with a 403 until R8 deleted that route on
+  // 2026-09-15; it answers the same question in the census now, by
+  // naming the label it holds against this node's key — which says WHICH
+  // way the binding broke instead of only that it did.
+  //
+  // A row that answered (status 200) and calls this node something else
+  // is the sharpest case: somebody is wearing the name.
+  const app = mountApp({
+    label: 'andy',
+    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'someone-else' }],
+  });
   app.store['session.json'] = JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' });
 
   return settle().then(function () {
     return settle().then(function () {
       if (app.store['session.json'] === undefined) {
-        test.check('a 403 drops the binding rather than re-checking it forever');
+        test.check('a label the relay does not hold for us drops the binding');
       } else {
-        test.fail('session survived a 403: ' + app.store['session.json']);
+        test.fail('session survived: ' + app.store['session.json']);
       }
 
-      if (/claim again/.test(el(app, 'natter-bind-status').textContent)) {
+      if (/claim again/i.test(el(app, 'natter-bind-status').textContent)) {
         test.check('and says so, where the claim form is');
       } else {
         test.fail('status: ' + el(app, 'natter-bind-status').textContent);
+      }
+
+      // The distinction the 403 could not draw. Worth naming on screen:
+      // "your name is gone" and "somebody else has your name" are
+      // different problems for the person reading it.
+      if (/someone-else/.test(el(app, 'natter-bind-status').textContent)) {
+        test.check('and names what the relay calls it instead, which a 403 never could');
+      } else {
+        test.fail('status did not say what the relay holds: ' +
+          el(app, 'natter-bind-status').textContent);
+      }
+    });
+  });
+}
+
+// UNREACHABLE IS NOT THE SAME AS NOT OURS. The rule the old version got
+// right, and the one most easily lost in the move: a relay that did not
+// answer carries no label either, and a check that read "no label" as
+// "not mine" would unbind a node every time its relay restarted.
+function anUnreachableRelayKeepsTheBinding() {
+  test.subHeading('A relay that says nothing takes nothing away');
+
+  const app = mountApp({
+    label: 'andy',
+    rows: [{ url: OWNED, label: 'spirit', status: 0, error: 'connect ECONNREFUSED' }],
+  });
+  app.store['session.json'] = JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' });
+
+  return settle().then(function () {
+    return settle().then(function () {
+      if (app.store['session.json'] !== undefined) {
+        test.check('a relay that did not answer leaves the binding alone');
+      } else {
+        test.fail('an unreachable relay unbound the node');
       }
     });
   });
@@ -528,6 +572,7 @@ unboundIsThePage()
   .then(aRowOpensTheMailbox)
   .then(aMintOverThereIsRememberedHere)
   .then(staleBindingIsDropped)
+  .then(anUnreachableRelayKeepsTheBinding)
   .then(chatKeepsNoBinding)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {

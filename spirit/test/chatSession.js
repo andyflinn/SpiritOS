@@ -15,6 +15,24 @@
 // so "claim, reload, still bound" is a test rather than a screenshot.
 // Andy still looks at the shell — this only means he is not the first
 // to find out.
+//
+// ── THIS SUITE IS GREEN OVER A BROKEN APP, ON PURPOSE ────────────────
+//
+// R8 deleted the ring on 2026-09-15, and Relay Chat's RECEIVE path was
+// the ring: `relayChat.js:590` still fetches `/api/hub/inbox`, which no
+// longer exists, and its `api.onPacket` handler is still the empty stub
+// that was registered to claim the name. Chat is retrofitted later —
+// Andy's call, made knowing the app goes dark on receive in the meantime.
+//
+// So the stubs below still answer `/api/hub/inbox`, and that is the only
+// reason this file passes. A stub is not a route: what these checks
+// prove is that the app's own logic does what it says, not that the node
+// still serves it. Do not read a green run here as "chat works".
+//
+// Natter moved instead of breaking — its `/api/hub/inbox` call was never
+// a read, it was a binding probe, and it went to the census (see
+// natterBind.js, and natterCheckBinding in natter.js). Chat's is a real
+// read and has nowhere to go until somebody designs where.
 
 const fs = require('fs');
 const path = require('path');

@@ -32,7 +32,6 @@ const SURFACE = [
   ['GET', '/api/relay/status'],
   ['GET', '/api/relay/stream'],
   ['POST', '/api/relay/claim'],
-  ['POST', '/api/relay/send'],
   ['POST', '/api/relay/device'],
   ['POST', '/api/relay/post'],
   ['POST', '/api/relay/reply'],
@@ -42,13 +41,20 @@ const SURFACE = [
   // and a door that has been removed is the clearest possible signal
   // about which code a box is running.
   //
-  // All four were collapsed into posts on 2026-09-13 (decision 0010),
-  // which is the day the register emptied. A relay still answering any of
-  // them is running code from before that.
+  // The first four were collapsed into posts on 2026-09-13 (decision
+  // 0010), which is the day the register emptied. A relay still answering
+  // any of them is running code from before that.
   ['POST', '/api/relay/invite'],
   ['POST', '/api/relay/monitor'],
   ['POST', '/api/relay/remove-peer'],
   ['POST', '/api/relay/set-device'],
+
+  // And the ring, deleted 2026-09-15 (R8). These two moved from the live
+  // list above to this one on that day, which is the whole value of
+  // keeping both lists in one file: a relay answering either of them is
+  // still storing other people's mail.
+  ['POST', '/api/relay/send'],
+  ['GET', '/api/relay/inbox'],
 ];
 
 function usage() {

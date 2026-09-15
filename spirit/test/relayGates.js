@@ -1,32 +1,46 @@
 'use strict';
 
-// Exercises what the relay's mailbox routes actually gate, as opposed to
-// what server.js's comment claims they gate ("the mailbox routes
-// themselves are gated by the allow list and signature checks in
-// relayAuth.js"):
+// Exercises what the relay's public routes actually gate, as opposed to
+// what a comment claims they gate.
 //
-//   1. claim and send are signature-gated in keys mode;
-//   2. inbox is too — a read is proved against the key the peer claimed
-//      with, so a bare ?name= no longer drains a mailbox;
+//   1. claim is signature-gated in keys mode;
+//   2. so is POST — a packet is proved against the key the peer claimed
+//      with, and refused outright if the target is not there to take it;
 //   3. rate limiting is keyed on the CALLER, not on the name the caller
 //      supplies, so rotating the name does not buy a fresh budget;
-//   4. a relay whose allow.json is missing runs fully open — any name, any
-//      sender, any reader — and says so at startup.
+//   4. a relay whose allow.json is missing runs fully open — any name,
+//      any claimer — and says so at startup.
 //
 // All four were audit findings, fixed in 5c64b17/a1bbac6. 2 and 3 then
-// regressed when peers became key-addressed: inbox lost its gate entirely
-// and the send limit moved back onto `from`. This file is the regression
-// guard for both, so it asserts the fixed behaviour rather than the bug.
+// regressed when peers became key-addressed, and this file is the
+// regression guard, so it asserts the fixed behaviour rather than the bug.
 //
-// Claim takes (name, sig, publicKey, clientKey) since first-claim-is-owner:
-// a keys-mode claim proves possession of the key it presents. Extra signed
-// keys sitting on the mailbox after the owner is set is deliberate — it is
-// how two johns work — and waits on invites, not on this file.
+// ── WHAT R8 CHANGED HERE (2026-09-15) ────────────────────────────────
+//
+// Points 2 and 3 were written against `send` and `inbox`, which are gone
+// with the ring. The QUESTIONS survive the transport and are asked of the
+// router instead:
+//
+//   "an unsigned write is refused"        was send, is now post
+//   "a forged signature is refused"       was send, is now post
+//   "a bare ?name= does not drain a       CANNOT BE ASKED ANY MORE.
+//    mailbox"                             There is no mailbox to drain.
+//                                         The finding it guarded is
+//                                         answered by deletion, which is
+//                                         the strongest form of a fix.
+//   "rotating the sender name does not    was send, is now claim alone —
+//    buy a fresh budget"                  `sendHits` went with `send`,
+//                                         and `claimHits` is the only
+//                                         caller-keyed bucket left.
+//
+// Recorded rather than quietly re-pointed: a regression guard that
+// changes what it guards without saying so is how a closed finding gets
+// re-opened by somebody who trusts the file name.
 //
 // Runs relay.js out of an isolated fake node under the OS temp dir, never
-// the live checkout: createRelay() persists to relay-state/routingTable.json on
-// every send, and loadAllow reads relay-state/allow.json — this test writes
-// both.
+// the live checkout: createRelay() persists to
+// relay-state/routingTable.json on every claim, and loadAllow reads
+// relay-state/allow.json — this test writes both.
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
@@ -36,10 +50,10 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
-const ROTATION_SENDS = 100;
+const ROTATION_CLAIMS = 50;
 const BOOT_TIMEOUT_MS = 10000;
 
-test.startTest('Relay mailbox gates (relay.js / relayAuth.js)');
+test.startTest('Relay route gates (relay.js / relayAuth.js)');
 
 const targets = setupRelayFakes();
 const relayNode = targets.relay;
@@ -54,6 +68,26 @@ function resetState(allowJson) {
   if (allowJson) {
     fs.writeFileSync(path.join(RELAY_STATE, 'allow.json'), JSON.stringify(allowJson), 'utf8');
   }
+}
+
+// A sink that records what the relay wrote at it. Enough to tell "the
+// packet was delivered" from "the relay said yes and dropped it".
+function fakeSink() {
+  const sink = { lines: [] };
+  sink.write = function (chunk) { sink.lines.push(chunk); };
+  sink.close = function () {};
+  sink.sawRequest = function () {
+    return sink.lines.some(function (c) { return /event: request/.test(c); });
+  };
+  return sink;
+}
+
+function openStream(relay, id, sink) {
+  return relay.streamOpen(
+    id.publicKey,
+    auth.sign(id.privateKey, auth.streamMessage(id.publicKey)),
+    sink
+  );
 }
 
 // ---- 1 & 2: signature gating in keys mode ----
@@ -77,7 +111,7 @@ test.subHeading('Keys mode: what a signature is actually required for');
     andy.publicKey
   );
   if (!forged.ok && forged.status === 403) {
-    test.check("claim signed by the wrong key is refused (403)");
+    test.check('claim signed by the wrong key is refused (403)');
   } else {
     test.fail('claim signed by the wrong key returned ' + JSON.stringify(forged));
   }
@@ -93,107 +127,145 @@ test.subHeading('Keys mode: what a signature is actually required for');
     test.fail('claim with a correct signature returned ' + JSON.stringify(signed));
   }
 
-  const unsignedSend = relay.send('andy', 'bert', 'hello', null);
-  if (!unsignedSend.ok && unsignedSend.status === 403) {
-    test.check('send without a signature is refused (403)');
+  // A second row to post AT, so "refused" is never "there was nobody
+  // there anyway". Invited, because keys mode is invite-locked after the
+  // first owner — which is what claiming costs here, and not this file's
+  // subject.
+  const bert = auth.generateIdentity('bert');
+  const minted = relay.mint('andy', 'bert', 7);
+  relay.claim(
+    'bert',
+    auth.sign(bert.privateKey, auth.claimMessage('bert')),
+    bert.publicKey,
+    '10.0.0.2',
+    minted && minted.invite && minted.invite.token
+  );
+
+  const bertSink = fakeSink();
+  openStream(relay, bert, bertSink);
+
+  const TEXT = '{"app":"gate-probe","v":1,"body":"hello"}';
+
+  const unsignedPost = relay.routePost(andy.publicKey, bert.publicKey, TEXT, null);
+  if (!unsignedPost.ok && unsignedPost.status === 403) {
+    test.check('post without a signature is refused (403)');
   } else {
-    test.fail('send without a signature returned ' + JSON.stringify(unsignedSend));
+    test.fail('post without a signature returned ' + JSON.stringify(unsignedPost));
   }
 
-  // Put one real message in andy's mailbox to read back below.
-  relay.send('andy', 'andy', 'a private message', auth.sign(andy.privateKey, auth.sendMessage('andy', 'andy', 'a private message')));
-
-  // The gate that regressed: a bare ?name= used to hand this over.
-  const stolen = relay.inbox('andy');
-  if (!stolen.ok && stolen.status === 403) {
-    test.check("inbox refuses an unsigned read of another peer's mailbox (403)");
-  } else if (stolen.ok) {
-    test.fail('inbox handed over ' + stolen.messages.length + " of andy's message(s) with no signature at all");
+  const forgedPost = relay.routePost(
+    andy.publicKey, bert.publicKey, TEXT,
+    auth.sign(mallory.privateKey, auth.postMessage(andy.publicKey, bert.publicKey, TEXT))
+  );
+  if (!forgedPost.ok && forgedPost.status === 403) {
+    test.check('post signed by the wrong key is refused (403)');
   } else {
-    test.fail('inbox returned ' + JSON.stringify(stolen));
+    test.fail('post signed by the wrong key returned ' + JSON.stringify(forgedPost));
   }
 
-  const forgedRead = relay.inbox('andy', auth.sign(mallory.privateKey, auth.inboxMessage('andy')));
-  if (!forgedRead.ok && forgedRead.status === 403) {
-    test.check('inbox refuses a read signed by the wrong key (403)');
+  // NOTHING LEAKED ON THE WAY TO A REFUSAL. The failure shape this guards
+  // against is a gate that runs after the payload has been handed on.
+  if (!bertSink.sawRequest()) {
+    test.check('and neither refused packet reached the target at all');
   } else {
-    test.fail('inbox with a forged signature returned ' + JSON.stringify(forgedRead));
+    test.fail('a refused packet was delivered anyway');
   }
 
-  // Peers are key-addressed now, so the public key is also a valid token
-  // for the same mailbox. It has to be gated identically, or the gate is
-  // just a speed bump around a second name for the same box.
-  const byKey = relay.inbox(andy.publicKey);
-  if (!byKey.ok && byKey.status === 403) {
-    test.check("inbox refuses an unsigned read addressed by public key (403)");
+  const goodPost = relay.routePost(
+    andy.publicKey, bert.publicKey, TEXT,
+    auth.sign(andy.privateKey, auth.postMessage(andy.publicKey, bert.publicKey, TEXT))
+  );
+  if (goodPost.ok && goodPost.status === 202 && bertSink.sawRequest()) {
+    test.check('andy reaches bert with his own signature, and it arrives');
   } else {
-    test.fail('inbox by public key returned ' + JSON.stringify(byKey));
+    test.fail('signed post returned ' + JSON.stringify(goodPost) +
+      ', delivered=' + bertSink.sawRequest());
   }
 
-  const ownRead = relay.inbox('andy', auth.sign(andy.privateKey, auth.inboxMessage('andy')));
-  if (ownRead.ok && ownRead.messages.length === 1) {
-    test.check('andy reads his own mailbox with his own signature');
+  // THE GATE THE RING COULD NOT HAVE. `send` answered 201 for a peer who
+  // was not there, into a store that dropped it on overflow. A correctly
+  // signed post to somebody holding no stream is refused, at once, with a
+  // reason (decision 0006).
+  const john = auth.generateIdentity('john');
+  const mintedJohn = relay.mint('andy', 'john', 7);
+  relay.claim(
+    'john',
+    auth.sign(john.privateKey, auth.claimMessage('john')),
+    john.publicKey,
+    '10.0.0.3',
+    mintedJohn && mintedJohn.invite && mintedJohn.invite.token
+  );
+  const absent = relay.routePost(
+    andy.publicKey, john.publicKey, TEXT,
+    auth.sign(andy.privateKey, auth.postMessage(andy.publicKey, john.publicKey, TEXT))
+  );
+  if (!absent.ok && absent.status === 503) {
+    test.check('and a signed post to a peer who is not there is refused (503), not stored');
   } else {
-    test.fail('signed read returned ' + JSON.stringify(ownRead));
+    test.fail('post to an absent peer returned ' + JSON.stringify(absent));
   }
 }
 
-// ---- 3: rate limiting is per claimed name ----
-test.subHeading('Rate limiting survives a rotating sender name');
+// ---- 3: rate limiting is per caller, not per claimed name ----
+test.subHeading('Rate limiting survives a rotating claimer name');
 {
-  resetState(null); // open mode — no allow.json, the shipped default
-  const relay = createRelay();
-
-  let accepted = 0;
-  let firstRefusalAt = null;
-  for (let i = 0; i < ROTATION_SENDS; i++) {
-    const result = relay.send('sender' + i, 'victim', 'flood', null);
-    if (result.ok) {
-      accepted++;
-    } else if (firstRefusalAt === null) {
-      firstRefusalAt = i + 1;
-    }
-  }
-
-  // SEND_PER_MIN is 30. A limit that means anything has to bite well
-  // before 100 sends arrive from one place, whatever names they claim.
-  if (firstRefusalAt !== null && firstRefusalAt <= 40) {
-    test.check('a rotating-name flood was refused after ' + firstRefusalAt + ' sends');
-  } else {
-    test.fail('all ' + accepted + ' of ' + ROTATION_SENDS +
-      ' sends were accepted by rotating the name — the 30/min limit never applied');
-  }
-
-  // Same shape for claim. The squatters have to be able to claim for this
-  // to test anything, so they run against a names-mode relay that allows
-  // every one of them — otherwise the first refusal is the cycle-4 invite
-  // lock, not the limit, and this assertion passes for the wrong reason.
-  // (It used to pass for exactly that kind of wrong reason: every claim
-  // was refused for a missing key while the limit itself was broken.)
+  // Fifty identities, every one of them ALLOWED, so the first refusal is
+  // the rate limit and not the invite lock. That distinction is the whole
+  // point: this assertion used to pass for exactly the wrong reason, with
+  // every claim refused for a missing key while the limit itself was
+  // broken.
+  //
+  // It used a names-mode allow.json to arrange that until 2026-09-15.
+  // Keys mode does the same job — a key already in allow.json is not a
+  // NEW key and needs no invite (relay.js, claim) — and does it without
+  // depending on a mode nothing in the tree writes.
   const squatters = [];
-  for (let i = 0; i < 50; i++) squatters.push('squatter' + i);
-  resetState({ names: squatters });
+  for (let i = 0; i < ROTATION_CLAIMS; i++) {
+    squatters.push(auth.generateIdentity('squatter' + i));
+  }
+  resetState({
+    keys: squatters.map(function (s, i) {
+      return { name: 'squatter' + i, publicKey: s.publicKey };
+    }),
+  });
   const claimRelay = createRelay();
 
   let claimsAccepted = 0;
   let claimRefusal = null;
-  for (let i = 0; i < 50; i++) {
-    const squatter = auth.generateIdentity('squatter' + i);
+  for (let i = 0; i < ROTATION_CLAIMS; i++) {
     const r = claimRelay.claim(
       'squatter' + i,
-      auth.sign(squatter.privateKey, auth.claimMessage('squatter' + i)),
-      squatter.publicKey
+      auth.sign(squatters[i].privateKey, auth.claimMessage('squatter' + i)),
+      squatters[i].publicKey,
+      '203.0.113.9'
     );
     if (r.ok) claimsAccepted++;
     else if (claimRefusal === null) claimRefusal = r;
   }
-  if (claimsAccepted >= 50) {
-    test.fail('all 50 name claims succeeded from one caller — a squatter can take the whole namespace');
+  if (claimsAccepted >= ROTATION_CLAIMS) {
+    test.fail('all ' + ROTATION_CLAIMS + ' name claims succeeded from one caller — ' +
+      'a squatter can take the whole namespace');
   } else if (claimRefusal && claimRefusal.status === 429) {
     test.check('a rotating-name claim flood was rate-limited after ' + claimsAccepted + ' claims');
   } else {
     test.fail('claim flood stopped after ' + claimsAccepted +
       ' but not by the rate limit: ' + JSON.stringify(claimRefusal));
+  }
+
+  // AND THE BUCKET IS THE CALLER'S. Same relay, a different clientKey: the
+  // budget it gets is its own, which is what "keyed on the caller" means
+  // and what rotating a NAME must not achieve.
+  const nextFree = 'squatter' + (ROTATION_CLAIMS - 1);
+  const other = claimRelay.claim(
+    nextFree,
+    auth.sign(squatters[ROTATION_CLAIMS - 1].privateKey, auth.claimMessage(nextFree)),
+    squatters[ROTATION_CLAIMS - 1].publicKey,
+    '198.51.100.7'
+  );
+  if (!other || other.status !== 429) {
+    test.check('and a different caller is not spending the flooder budget');
+  } else {
+    test.fail('a fresh caller inherited the refusal: ' + JSON.stringify(other));
   }
 }
 

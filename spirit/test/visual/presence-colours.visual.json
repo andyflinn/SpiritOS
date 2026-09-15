@@ -30,11 +30,6 @@
 
   "knows": [["bella", "carlos"]],
 
-  "messages": [
-    { "from": "bella", "text": "morning" },
-    { "from": "carlos", "text": "are you about?" }
-  ],
-
   "then": [
     {
       "remove": "dina",

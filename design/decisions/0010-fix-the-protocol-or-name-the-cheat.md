@@ -77,9 +77,10 @@ So, stated whole:
 > **GET on a relay is for static files, and for the three things that
 > must work before a post is possible. Everything else must be a post.**
 
-Everything not on that list has to earn its exemption, and two are
-outstanding: `GET /api/relay/inbox`, which dies with the ring (R8), and
-`GET /api/relay/status`, which owes an argument — see the register.
+Everything not on that list has to earn its exemption. Two were
+outstanding when this was written; **one has since gone.** `GET
+/api/relay/inbox` died with the ring on 2026-09-15 (R8), leaving `GET
+/api/relay/status`, which owes an argument — see the register.
 
 ## The narrowing, because a rule that fires on everything is ignored
 
@@ -158,14 +159,18 @@ holds one this list does not.
 | `GET /api/relay/who` | the public census, unsigned, and what a node reads *before* it has anything |
 | `POST /api/relay/device` | posted by a browser that has **no identity yet** — that is the thing it is asking for |
 
-### Dying with the ring (R8)
+### Died with the ring (R8) — **gone from the tree, 2026-09-15**
 
-| | |
-|---|---|
-| `POST /api/relay/send` · `sendMessage` | |
-| `GET /api/relay/inbox` · `inboxMessage` | |
+A table stood here holding `POST /api/relay/send` · `sendMessage` and
+`GET /api/relay/inbox` · `inboxMessage`, under the line *"Not cheats —
+they predate the router and are already sentenced."* The sentence has
+been carried out, so the rows are struck rather than left: this register
+fails in **both** directions, and a door listed here but absent from the
+tree is as red as the reverse.
 
-Not cheats — they predate the router and are already sentenced.
+Named without backticks on purpose, so `protocolSurface.js` reads them as
+history rather than as entries. That distinction is the same one the
+worked example below depends on.
 
 ### Cheats, named
 
@@ -308,16 +313,19 @@ exist.
 
 ## What is left
 
-Two things, and they are the whole of it:
+**One thing.** This section said *"two things"* until 2026-09-15, and the
+second was carried out rather than re-argued.
 
 1. **`GET /api/relay/status`** — the last thing on this wire that neither
    the protocol nor bootstrap has claimed. Moving it is a reordering of
    `presenceNode.start`, not a protocol change.
-2. **`POST /api/relay/send` · `GET /api/relay/inbox`** — the ring, already
-   sentenced (R8). Andy inspected what it was holding on spirit-3 before
+
+2. ~~The ring — `POST /api/relay/send` and `GET /api/relay/inbox`.~~
+   **Done (R8).** Andy inspected what it was holding on spirit-3 before
    deciding: 77 messages, 15 of them telemetry from a console that no
-   longer exists. *"they are all noise."* So the deletion needs no
-   migration.
+   longer exists. *"they are all noise."* So the deletion needed no
+   migration, and there was none: `loadRoutingTable` reads `messages` and
+   drops it. Both signed formats went with the routes.
 
 Everything else on this relay is either the protocol, a granted
 exception, or gone.

@@ -407,46 +407,65 @@ async function run() {
       }
 
       const ownerName = ownerId.name || 'labowner';
-
-      // KEPT: sending as its owner. That is what a device is for.
-      const sent = await relayPost('/api/relay/send', {
-        from: ownerName, to: ownerName, text: 'from the handheld',
-        sig: auth.sign(handheld.privateKey, auth.sendMessage(ownerName, ownerName, 'from the handheld')),
-      });
-      // 201, not 200: a send CREATES a message. Asserted as "not a
-      // refusal" rather than as one number, because what matters here is
-      // that the device was allowed at all.
-      if (sent.status === 201) {
-        test.check('and it still sends as its owner over the real route');
-      } else {
-        test.fail('send: ' + sent.status + ' ' + sent.text.slice(0, 120));
+      // ── WHAT A DEVICE REACHES ON A RELAY: NOTHING ──────────────────
+      //
+      // This block read the other way round until R8 (2026-09-15). Its
+      // first check was "KEPT: sending as its owner — that is what a
+      // device is for", followed by the confinement that bounded it: a
+      // handheld could `send` as its owner, to its own identity, and
+      // nowhere else.
+      //
+      // `send` is gone, and with it the last thing a device could do on
+      // a relay. The confinement is not narrower now, it is total — and
+      // structural rather than written down: `routePost` verifies against
+      // the ROW's key alone, so a device signature does not get confined,
+      // it simply never verifies.
+      //
+      // Kept live rather than left to the in-process suites because "the
+      // gate is gone" and "the gate is still there on the deployed code"
+      // look identical from here.
+      const PROBE = '{"app":"device-probe","v":1,"body":"from the handheld"}';
+      async function postAs(signer, toKey) {
+        return relayPost('/api/relay/post', {
+          from: ownerId.publicKey, to: toKey, text: PROBE,
+          sig: auth.sign(signer.privateKey,
+            auth.postMessage(ownerId.publicKey, toKey, PROBE)),
+        });
       }
 
-      // CONFINED, over the wire: a handheld reaches its own identity and
-      // nothing else. Andy: "if a relay allows device post to target
-      // peers other than its owner's node, it must end in failure
-      // anyway" — the receiving peer cannot tell a device composed it,
-      // so permitting it buys nothing and spends the owner's authority.
-      const someoneElse = await relayPost('/api/relay/send', {
-        from: ownerName, to: 'alfa', text: 'reaching past my owner',
-        sig: auth.sign(handheld.privateKey, auth.sendMessage(ownerName, 'alfa', 'reaching past my owner')),
-      });
-      if (someoneElse.status === 403) {
-        test.check('and cannot reach another peer on the relay at all (403)');
+      const atSelf = await postAs(handheld, ownerId.publicKey);
+      if (atSelf.status === 403) {
+        test.check('a handheld cannot post even as its own identity (403)');
       } else {
-        test.fail('device reached a peer: ' + someoneElse.status + ' ' + someoneElse.text.slice(0, 120));
+        test.fail('device posted as its owner: ' + atSelf.status + ' ' + atSelf.text.slice(0, 120));
       }
 
-      // THE HOUSE KEY STILL CAN, so this is not a check that simply broke
-      // sending to peers.
-      const houseElsewhere = await relayPost('/api/relay/send', {
-        from: ownerName, to: 'alfa', text: 'from the owner',
-        sig: auth.sign(ownerId.privateKey, auth.sendMessage(ownerName, 'alfa', 'from the owner')),
-      });
-      if (houseElsewhere.status === 201) {
-        test.check('while the identity itself still reaches its peers, as it always did');
-      } else {
-        test.fail('the house key was confined too: ' + houseElsewhere.status);
+      // CONFINED, over the wire. Andy: "if a relay allows device post to
+      // target peers other than its owner's node, it must end in failure
+      // anyway" — the receiving peer cannot tell a device composed it, so
+      // permitting it buys nothing and spends the owner's authority.
+      const alfa = W.peer('alfa');
+      const alfaKey = alfa && alfa.id && alfa.id.publicKey;
+      if (alfaKey) {
+        const someoneElse = await postAs(handheld, alfaKey);
+        if (someoneElse.status === 403) {
+          test.check('and cannot reach another peer on the relay at all (403)');
+        } else {
+          test.fail('device reached a peer: ' + someoneElse.status + ' ' +
+            someoneElse.text.slice(0, 120));
+        }
+
+        // THE HOUSE KEY STILL CAN, so this is not a check that simply
+        // broke posting to peers. 202 is the router's accept; a 503 here
+        // means alfa is not holding a stream, which is a different
+        // outcome and not a refusal of the signature.
+        const houseElsewhere = await postAs(ownerId, alfaKey);
+        if (houseElsewhere.status === 202 || houseElsewhere.status === 503) {
+          test.check('while the identity itself is let through (' +
+            houseElsewhere.status + '), so the signature is what was being judged');
+        } else {
+          test.fail('the house key was confined too: ' + houseElsewhere.status);
+        }
       }
 
       // LOST: the owner-only report. The house key still opens it, so
@@ -470,28 +489,25 @@ async function run() {
 
       // LOST WITH THE CONSOLE: its owner words, over the wire.
       //
-      // Two checks stood here — a handheld refused `invites` (the
-      // live token list) and `whoami` telling the house key and the
-      // device apart despite both signing as the same label.
+      // Two checks stood here — a handheld refused `invites` (the live
+      // token list) and `whoami` telling the house key and the device
+      // apart despite both signing as the same label.
       //
-      // The thing they guarded moved rather than vanished. Live
-      // invites now travel in the relay's own status report, which
-      // goes to the owner's sink alone, and a device cannot open a
-      // stream at all — so it is not a recipient of anything, which
-      // beats a console refusing it a word.
+      // The thing they guarded moved rather than vanished. Live invites
+      // travel in the relay's own status report, which goes to the
+      // owner's sink alone, and a device cannot open a stream at all — so
+      // it is not a recipient of anything, which beats a console refusing
+      // it a word.
       //
-      // Over the wire, what is left to prove is the confinement
-      // itself, one clause shorter than it was: the reserved name
-      // was the handheld's last permitted destination besides its own
-      // identity, and it is not a destination any more.
-      const atRelay = await relayPost('/api/relay/send', {
-        from: ownerName, to: 'relay', text: 'whoami',
-        sig: auth.sign(handheld.privateKey, auth.sendMessage(ownerName, 'relay', 'whoami')),
-      });
-      if (atRelay.status !== 200 && atRelay.status !== 201) {
-        test.check('and the handheld cannot reach the reserved name over the wire either — ' + atRelay.status);
+      // The reserved name was the handheld's last permitted destination
+      // besides its own identity. It is not a destination at all now: a
+      // relay is addressed by its KEY, and the post above already showed
+      // the handheld cannot sign one that verifies.
+      const atRelay = await postAs(handheld, relayKey);
+      if (atRelay.status !== 200 && atRelay.status !== 202) {
+        test.check('and the handheld cannot reach the relay itself either — ' + atRelay.status);
       } else {
-        test.fail('a handheld reached the reserved name: ' + JSON.stringify(atRelay));
+        test.fail('a handheld reached the relay: ' + JSON.stringify(atRelay));
       }
     }
 

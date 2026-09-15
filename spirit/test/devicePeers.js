@@ -270,23 +270,32 @@ async function run() {
     // Nothing ever used them. No app, no shell, no device page:
     // device.html's own sendMessage helper had one occurrence in the
     // tree, its own definition. They were the last trace of a design
-    // where the ring was how everything moved.
+    // where the ring was how everything moved, and R8 deleted the ring
+    // itself on 2026-09-15.
     //
     // A device's correspondent is the node that owns it. It speaks to a
     // relay exactly once, to be enrolled, and the relay carries that to
     // the node without learning the answer.
-    const read = D.box.inbox('andy', auth.sign(handheld.privateKey, auth.inboxMessage('andy')));
-    const sent = D.box.send(
-      'andy', 'andy', 'from the handheld',
-      auth.sign(handheld.privateKey, auth.sendMessage('andy', 'andy', 'from the handheld'))
+    //
+    // Asked of POST and STREAM, which are the two things there are to be
+    // refused. `inbox` and `send` were the pair until R8.
+    const OWNER_KEY = D.owner.publicKey;
+    const PROBE = '{"app":"device-probe","v":1,"body":"from the handheld"}';
+    const posted = D.box.routePost(
+      OWNER_KEY, OWNER_KEY, PROBE,
+      auth.sign(handheld.privateKey, auth.postMessage(OWNER_KEY, OWNER_KEY, PROBE))
     );
-    if (read.ok === false && sent.ok === false) {
-      test.check('a device key proves nothing to a relay — not a read, not a send');
+    const opened = D.box.streamOpen(
+      OWNER_KEY, auth.sign(handheld.privateKey, auth.streamMessage(OWNER_KEY)),
+      { write: function () { return true; }, close: function () {} }
+    );
+    if (posted.ok === false && opened.ok === false) {
+      test.check('a device key proves nothing to a relay — not a post, not a stream');
     } else {
-      test.fail('read=' + read.ok + ' send=' + sent.ok);
+      test.fail('post=' + posted.ok + ' stream=' + opened.ok);
     }
 
-    // ── CONFINED: A DEVICE REACHES ITS OWN IDENTITY AND NOTHING ELSE ──
+    // ── CONFINED: A DEVICE REACHES NOTHING, AND THAT IS THE END OF IT ──
     //
     // Andy: "i don't want the relay to allow a device posting to anybody
     // but its owner node, and i know that is cheap. and i know that if a
@@ -297,18 +306,38 @@ async function run() {
     // to tell a DEVICE composed it — it sees the owner's label and a
     // signature it cannot attribute. So allowing it enables no feature;
     // it permits a guaranteed failure carrying the owner's authority.
+    //
+    // THE RULE IS NOW STRUCTURAL RATHER THAN WRITTEN DOWN. `send` had an
+    // explicit clause — "to itself, and nowhere else" — because its keys
+    // branch accepted a device signature and then had to confine what it
+    // had accepted. `routePost` has no such clause and needs none: it
+    // verifies against the ROW's key alone, so a device signature is not
+    // narrowly confined, it simply never verifies. A gate that cannot be
+    // reached is better than a gate that is checked.
     {
       const other = world.build({ title: 'owner and a peer', peers: ['bella'] });
       const oPhone = auth.generateIdentity('o-phone');
       world.ask(other.box, other.owner, { setDevice: { key: oPhone.publicKey } });
-      function sendAs(signer, to, text) {
-        return other.box.send(
-          'andy', to, text,
-          auth.sign(signer.privateKey, auth.sendMessage('andy', to, text))
+      const bella = other.peer('bella');
+
+      // bella holds a stream, so a refusal below is never "there was
+      // nobody there anyway".
+      const bellaSink = { lines: [], write: function (c) { this.lines.push(c); }, close: function () {} };
+      other.box.streamOpen(
+        bella.publicKey,
+        auth.sign(bella.privateKey, auth.streamMessage(bella.publicKey)),
+        bellaSink
+      );
+
+      function postAs(signer, to, text) {
+        const from = other.owner.publicKey;
+        return other.box.routePost(
+          from, to, text,
+          auth.sign(signer.privateKey, auth.postMessage(from, to, text))
         );
       }
 
-      const atPeer = sendAs(oPhone, 'bella', 'hello bella');
+      const atPeer = postAs(oPhone, bella.publicKey, PROBE);
       if (atPeer.ok === false && atPeer.status === 403) {
         test.check('a handheld cannot reach another peer at all — not refused late, refused here');
       } else {
@@ -316,8 +345,8 @@ async function run() {
       }
 
       // AND THE HOUSE KEY STILL CAN, so this is not a check that simply
-      // broke sending to peers.
-      const houseAtPeer = sendAs(other.owner, 'bella', 'hello bella');
+      // broke posting to peers.
+      const houseAtPeer = postAs(other.owner, bella.publicKey, PROBE);
       if (houseAtPeer.ok) {
         test.check('while the identity itself still reaches its peers as before');
       } else {
@@ -332,7 +361,7 @@ async function run() {
       // not reachable by signing as it on a relay. Whatever a device ends
       // up able to do, it will do through its node (DEVICE.md §7), and
       // the relay will carry it the way deviceOffer already does.
-      const atSelf = sendAs(oPhone, 'andy', 'note to self');
+      const atSelf = postAs(oPhone, other.owner.publicKey, PROBE);
       if (atSelf.ok === false) {
         test.check('and not even its own identity — a device key proves nothing to a relay at all');
       } else {
@@ -349,13 +378,13 @@ async function run() {
       // device's correspondent is its NODE and not a relay" — and
       // deleting the console (2026-09-13) settled it early.
       //
-      // So the confinement now reads as it always should have: to
-      // itself, and nowhere else.
-      const atRelay = sendAs(oPhone, 'relay', 'whoami');
+      // Asked of the relay's own KEY now, which is the only way there is
+      // to address a relay since the reserved name stopped resolving.
+      const atRelay = postAs(oPhone, other.box.mailboxPublicKey(), PROBE);
       if (!atRelay.ok) {
-        test.check('and not the relay either — the last exception to its confinement is gone');
+        test.check('and not the relay itself — the last exception to its confinement is gone');
       } else {
-        test.fail('a device still reached the reserved name: ' + JSON.stringify(atRelay));
+        test.fail('a device still reached the relay: ' + JSON.stringify(atRelay));
       }
     }
 

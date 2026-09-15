@@ -84,35 +84,20 @@ test.startTest('First claim is owner; chat to reserved name relay');
   // `relay`, that the census came back on the send response, and that a
   // non-owner got nothing. All three described a feature that is gone.
   //
-  // What replaced them is one check, and it is the one that matters —
-  // a line to `relay` must be REFUSED rather than quietly filed. With
-  // the console removed and no refusal, such a line becomes an ordinary
-  // ring entry addressed to a name no peer holds, with toKey null, that
-  // nobody can ever read back because inbox('relay') is refused for
-  // everyone including the owner. A junk sink that looks like a
-  // delivery is exactly what deleting the console was meant to stop.
-  const sendSig = auth.sign(id.privateKey, auth.sendMessage('andy', 'relay', 'status'));
-  const sent = box.send('andy', 'relay', 'status', sendSig);
-  if (!sent.ok && sent.status === 404) {
-    test.check('a line to the reserved name is refused — nothing answers to it now');
-  } else {
-    test.fail('send to relay: ' + JSON.stringify(sent));
-  }
-
-  // And nothing of it reached the ring. The owner is the one whose
-  // inbox it would land in, so this is where a silent junk entry would
-  // show up.
+  // They were replaced by one check — that a line to `relay` was REFUSED
+  // rather than quietly filed as a ring entry nobody could ever read
+  // back — and R8 has now deleted that too, along with `send` itself.
+  //
+  // NOTHING REPLACES IT, and that is the right outcome rather than a
+  // hole. The refusal existed to stop a junk sink that looked like a
+  // delivery; there is no sink, because there is no store. A post
+  // addressed to the relay's own key is a different thing entirely and
+  // has its own door (answerSelf), asserted in relayMonitor.js and
+  // inviteMint.js.
   const box2 = createRelay(home);
-  const inbox = box2.inbox('andy', auth.sign(id.privateKey, auth.inboxMessage('andy')));
-  const toRelay = (inbox.messages || []).filter(function (m) { return m.to === 'relay' || m.from === 'relay'; });
-  if (inbox.ok && toRelay.length === 0) {
-    test.check('and nothing addressed to it was stored');
-  } else {
-    test.fail('inbox: ' + JSON.stringify(inbox));
-  }
 
-  // The name is still RESERVED, which is a different rule and must
-  // outlive the console: nobody may claim it.
+  // The name is still RESERVED, which is a different rule and outlived
+  // both the console and the ring: nobody may claim it.
   const grab = box2.claim(
     'relay',
     auth.sign(stranger.privateKey, auth.claimMessage('relay')),

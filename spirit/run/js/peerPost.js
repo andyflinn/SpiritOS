@@ -22,6 +22,11 @@
 // is why the hash comes back even on the fast path.
 
 const auth = require('./relayAuth');
+// The address book, for one question only: may this key be COUNTED.
+// Admission is the front door's answer and arrives as `verdict`; whether
+// a sender's numbers move is a fact about the book — see the rules at the
+// stats call below, which came from the ring's countInbound.
+const whoBook = require('./whoBook');
 
 // A UX number, not a protocol constant tuned against another machine's
 // tick. It only decides how long a caller stares at a spinner.
@@ -339,8 +344,17 @@ function createPeerPost(opts) {
       // WITHIN BUDGET, so now the node may write them down. After the
       // floor and never before: an over-budget stranger leaves no trace
       // but a refusal in the log.
+      //
+      // WHICH RELAY IT CAME DOWN goes with it. whoBook's `relays` is
+      // "mailboxes where you have seen this key", which is the only
+      // routing fact this node holds about a stranger — and it was the
+      // ring that recorded it until R8 (hub.acquireFromInbox). This path
+      // already knew the road; it is on the traffic-log row three lines
+      // up. It simply was not passing it on, which nothing caught while
+      // both transports were acquiring in parallel.
       if (remember && verdict !== 'drop') {
-        try { remember(body.from, verdict); } catch (e) { /* the verdict stands */ }
+        try { remember(body.from, verdict, relayUrl); }
+        catch (e) { /* the verdict stands */ }
       }
     }
 
@@ -406,9 +420,49 @@ function createPeerPost(opts) {
     // Per peer, never per app: the node keys on public keys, and a count
     // of "chess packets from bert" would be this file doing the shell's
     // reading.
-    if (admitted && stats) {
-      try { stats.noteIn(rootDir, body.from, hash); }
-      catch (e) { /* a counter must not break a delivery */ }
+    //
+    // ── WHO MAY BE COUNTED, and it is not the same as who is ADMITTED ──
+    //
+    // These are Grok's rules, and they came from the ring's countInbound.
+    // R8 deleted that function on 2026-09-15 and `admitted` alone is the
+    // wrong predicate to inherit, in both directions:
+    //
+    //   A HELD SENDER IS COUNTED, and is not admitted. The hourglass is
+    //   consideration: a line you dropped unread was still a demand on
+    //   your attention, and the count is the only trace `hold` is allowed
+    //   to keep. The body is never written anywhere. Counting is not
+    //   delivering, and `admitted` is about delivering.
+    //
+    //   A BLOCKED KEY IS NOT COUNTED, and can be admitted — a blocked row
+    //   is not in listenSet, so under the `acquire` policy the front door
+    //   says `admit`. Its numbers FREEZE where they stood rather than
+    //   falling, and the sidecar stays, because bytesHeld is still
+    //   telling the truth about disk really in use.
+    //
+    //   A STRANGER WITH NO ROW IS NOT COUNTED. A file for somebody the
+    //   book does not list would be a hidden second book, which is the
+    //   exact thing `silent` is chosen to avoid.
+    //
+    // ASKED OF THE BOOK AND NOT OF THE VERDICT, which is the part that is
+    // easy to get wrong and was got wrong once here already. Gating this
+    // on the verdict looks tidier and is a different rule: a person this
+    // node is HOLDING, on a node set to `silent`, gets verdict `drop` —
+    // the setting is about strangers, and somebody already on the
+    // hourglass is not a stranger. Their numbers must keep moving while a
+    // human decides, or the row a person is looking at in order to decide
+    // says nothing is happening.
+    //
+    // The floor is the one thing that must skip this, and it does so by
+    // returning above: an over-budget stranger leaves no trace but a
+    // refusal in the log.
+    if (stats) {
+      var seen = null;
+      try { seen = whoBook.byPublicKey(rootDir, body.from); }
+      catch (e) { seen = null; }
+      if (seen && !whoBook.isBlocked(seen)) {
+        try { stats.noteIn(rootDir, body.from, hash); }
+        catch (e) { /* a counter must not break a delivery */ }
+      }
     }
 
     // APPS SEE ADMITTED SENDERS ONLY, and the order is the whole of it.

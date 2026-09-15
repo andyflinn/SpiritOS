@@ -298,26 +298,24 @@ function handleMatches(rootDir, peers, handle) {
     });
 }
 
-// Somebody wrote to this node, and the mailbox carried their key. That
-// is how a stranger becomes someone you can answer.
+// acquireFromInbox STOOD HERE — somebody wrote to this node, the relay's
+// copy of the line carried their key, and that is how a stranger became
+// someone you could answer. Deleted with the ring (R8, 2026-09-15).
 //
-// Weak on purpose: anyone the mailbox admits can write, so this proves a
-// key exists and is reachable, not that it belongs to the person you
-// think. It is enough to reply to, and Add-by-handle (cut 2) upgrades
-// the same row rather than making a second one. It never downgrades a
-// row acquired more strongly, and it never files this node's own key.
-function acquireFromInbox(rootDir, messages, relayUrl) {
-  var id = auth.loadIdentity(rootDir);
-  var myKey = (id && id.publicKey) || '';
-  (Array.isArray(messages) ? messages : []).forEach(function (m) {
-    if (!m || !m.fromKey || m.fromKey === myKey) return;
-    whoBook.acquire(rootDir, {
-      publicKey: m.fromKey,
-      publicLabel: m.from || '',
-      relay: relayUrl,
-    }, 'message');
-  });
-}
+// `remember()` below is the same act on the router's path, and it was
+// already there: peerPost calls it with the verdict frontDoor gave, so a
+// stranger who writes is still acquired under `acquire` and still held
+// under `hold`. The rule was always deliberately weak — anyone who can
+// write proves a key exists and is reachable, not that it belongs to the
+// person you think — and that has not changed.
+//
+// ONE DIFFERENCE, NAMED RATHER THAN QUIETLY DROPPED: this captured the
+// sender's `publicLabel` off `m.from`, because the relay stored a line
+// with a label on it. Nothing stores a line any more, so `remember`
+// acquires with an empty label and the census
+// (`/api/hub/who` → whoBook) is what fills the caption in. A contact
+// acquired by being written to is briefly unlabelled where it used to be
+// named on arrival.
 
 // What this node does with mail from somebody it has not added.
 //
@@ -514,19 +512,41 @@ function frontDoor(rootDir, from) {
 // leaves no rows behind.
 //
 // `'message'` is the acquisition route, the same one acquireFromInbox
-// uses for the same event on the old transport: this person wrote. It
+// used for the same event on the old transport: this person wrote. It
 // matters because ACQUIRED_LISTENING contains 'message' and not 'census',
 // so writing is what makes somebody heard next time.
-function remember(rootDir, from, verdict) {
+//
+// `relayUrl` IS WHICH ROAD THEY CAME DOWN, and it is here because R8
+// would otherwise have quietly taken it. whoBook's `relays` means
+// "mailboxes where you have seen this key" — a fact this node holds
+// about how to reach somebody, and the only one it has. acquireFromInbox
+// passed it; peerPost has had it all along (it is already on every
+// traffic-log row) and simply was not handing it over, which nothing
+// noticed while the ring was still acquiring in parallel.
+//
+// Optional, so a caller with no road to name still writes the row rather
+// than refusing to.
+//
+// NOT THE LABEL, and that one really is gone. acquireFromInbox read
+// `publicLabel` off the relay's stored copy of the line; nothing stores a
+// line now, and a post carries keys and no captions. The census fills the
+// caption in afterwards (`/api/hub/who` → whoBook), so a contact acquired
+// by being written to is briefly unlabelled where it used to be named on
+// arrival. That is the cost of the relay not reading the payload, which
+// is the point rather than a regression.
+function remember(rootDir, from, verdict, relayUrl) {
   var key = String(from == null ? '' : from).trim();
   if (!key) return false;
+  var road = String(relayUrl == null ? '' : relayUrl).trim();
+  var row = { publicKey: key, publicLabel: '', relays: [] };
+  if (road) row.relay = road;
   try {
     if (verdict === 'admit') {
-      whoBook.acquire(rootDir, { publicKey: key, publicLabel: '', relays: [] }, 'message');
+      whoBook.acquire(rootDir, row, 'message');
       return true;
     }
     if (verdict === 'hold') {
-      whoBook.hold(rootDir, { publicKey: key, publicLabel: '', relays: [] });
+      whoBook.hold(rootDir, row);
       return true;
     }
   } catch (e) {
@@ -537,152 +557,64 @@ function remember(rootDir, from, verdict) {
   return false;
 }
 
-// Splits an inbox into what this node asked to hear and what it did not.
-function partitionInbox(rootDir, messages) {
-  var allowed = listenSet(rootDir);
-  var known = [];
-  var unknownKeys = Object.create(null);
-  (Array.isArray(messages) ? messages : []).forEach(function (m) {
-    if (!m) return;
-    // The mailbox always gets through. `relay` is a reserved name no
-    // peer can claim, so it cannot be worn by a stranger, and a node
-    // that stopped hearing its own mailbox would have a relay console
-    // that answered into silence. Live mailboxes hold such lines with no
-    // fromKey at all — they predate the mailbox having a key — so the
-    // name is what is checked, not the key.
-    if (m.from === auth.RESERVED_NAME) { known.push(m); return; }
-    // A message with no key cannot be matched against an address book.
-    // In keys mode there is always one; in open or names mode there may
-    // not be, and refusing to show mail because the mailbox is lax would
-    // make a lab node look broken.
-    if (!m.fromKey || allowed[m.fromKey]) known.push(m);
-    else unknownKeys[m.fromKey] = true;
-  });
-  return { known: known, unknown: Object.keys(unknownKeys).length };
-}
-
-// Hold: the sender gets a row and nothing else. Their line is still
-// dropped, nothing is filed under them and no count moves — the row
-// exists so a human can see somebody is waiting and say yes.
-function holdFromInbox(rootDir, messages, relayUrl) {
-  var id = auth.loadIdentity(rootDir);
-  var myKey = (id && id.publicKey) || '';
-  (Array.isArray(messages) ? messages : []).forEach(function (m) {
-    if (!m || !m.fromKey || m.fromKey === myKey) return;
-    var existing = whoBook.byPublicKey(rootDir, m.fromKey);
-    // Never touch somebody already decided about: a blocked row must not
-    // climb back out of the block by writing again.
-    if (existing && whoBook.acquiredVia(existing) !== whoBook.CENSUS) return;
-    whoBook.hold(rootDir, {
-      publicKey: m.fromKey,
-      publicLabel: m.from || '',
-      relay: relayUrl,
-    });
-  });
-}
-
-// Every message comes back with what its text turned out to be. A line
-// written before packets existed decodes as legacy, which is how a live
-// mailbox full of plain strings keeps painting as chat; anything that IS
-// an envelope arrives named, so the reader can tell its own traffic from
-// another app's without parsing anything itself.
+// partitionInbox AND holdFromInbox STOOD HERE — the split between what
+// this node asked to hear and what it did not, and the row a waiting
+// stranger got under `hold`. Deleted with the ring (R8, 2026-09-15).
 //
-// The message is copied rather than edited: `text` stays exactly what the
-// mailbox stored, because that is what was signed.
-// Moved into packet.js on 2026-09-13 and kept here as the name the inbox
-// path and spirit/test/packet.js already call. The router's arrival seam
-// (arrivals.js) needs the identical shape, and two transports each
-// building `message.packet` would be one edit away from handing apps two
-// different shapes depending on which road a line travelled.
+// Both are answered per packet now, before anything is filed, which is
+// the better place for them: frontDoor() above returns known / admit /
+// hold / drop from the sender's KEY, and peerPost acts on that verdict
+// at the moment of arrival rather than sorting a batch afterwards. A
+// held sender still gets a row and nothing else — see `remember`.
+//
+// One rule of partitionInbox's is worth not losing to the deletion:
+// A MESSAGE WITH NO KEY CANNOT BE MATCHED AGAINST AN ADDRESS BOOK. The
+// ring let such lines through, because an open or names relay might
+// carry no key and a lab node that showed nothing would look broken.
+// The router cannot produce one — every post is signed by a key and
+// `from` IS that key — so the case is gone rather than handled.
+
+// Every message comes back with what its text turned out to be: anything
+// that IS an envelope arrives named, so the reader can tell its own
+// traffic from another app's without parsing anything itself, and a bare
+// string decodes as legacy.
+//
+// The message is copied rather than edited: `text` stays exactly the
+// bytes that were signed.
+//
+// Moved into packet.js on 2026-09-13 and kept here as the name
+// spirit/test/packet.js already calls. It had two callers then — the ring
+// and the router — and one place building `message.packet` was what kept
+// an app from seeing two shapes depending on which road a line travelled.
+// The ring is gone (R8) and arrivals.js is the only road left, so this is
+// now a name rather than a junction.
 function decorateWithPacket(message) {
   return packet.decorate(message);
 }
 
-// A LOG ROW, AS A CLIENT SEES A PACKET. The same shape arrivals.js pushes
-// down the live stream, built from the stored row — so a page merging its
-// catch-up with what arrived while it was reading has one shape, not two.
+// countInbound AND applyInboxBatch STOOD HERE — the per-peer counter for
+// a fetched batch, and the one function both the browser's poll and the
+// node's 60-second sweep ran so the two could not drift. Deleted with the
+// ring (R8, 2026-09-15).
 //
-// The STORE stays payload-agnostic: trafficLog never parses anything. The
-// decode happens here, on the way out, which is what keeps that property
-// true while still handing a client a body rather than a string.
-
-// One delivered batch, counted. Packet 7, and the rules are Grok's:
+// R11 is why this is safe to delete rather than move: peerPost already
+// calls peerStats.noteIn on the arrival path, keyed by the REQUEST HASH
+// rather than by a relay's message id. The id existed only because a
+// non-destructive poll could hand the same line twice; the hash is over
+// the exact bytes rather than a number somebody else assigned. Counting
+// was the one thing the ring's read half did that the router did not, and
+// it was fixed before this deletion, not with it.
 //
-//   no fromKey, or our own          skip — not somebody else's traffic
-//   no whoBook row                  skip — a silent stranger gets no row,
-//                                   and a sidecar without a row would be
-//                                   a hidden second book
-//   row.blocked                     skip — refused at the door is
-//                                   refused; the numbers freeze where
-//                                   they are and the sidecar stays,
-//                                   because bytesHeld is still true
+// Grok's three skips survive in peerPost and whoBook, unchanged: our own
+// traffic is not somebody else's, a silent stranger gets no row and so no
+// count, and a blocked row's numbers freeze where they are.
 //
-// Called AFTER policy has run, which is the whole reason it is a separate
-// pass rather than folded into partitionInbox: under `hold` the row for a
-// waiting stranger is created by holdFromInbox in this same batch, and
-// that line is exactly the one worth counting. The hourglass is
-// consideration, and a line you dropped was still a demand on your
-// attention — the count is the only trace hold is allowed to keep. The
-// body is never written anywhere.
-function countInbound(rootDir, messages) {
-  var id = auth.loadIdentity(rootDir);
-  var myKey = (id && id.publicKey) || '';
-  (Array.isArray(messages) ? messages : []).forEach(function (m) {
-    if (!m || !m.fromKey || m.fromKey === myKey) return;
-    var row = whoBook.byPublicKey(rootDir, m.fromKey);
-    if (!row) return;
-    if (whoBook.isBlocked(row)) return;
-    // The id goes with it so a mailbox that does NOT consume on read
-    // cannot count one line twice. peerStats keeps a bounded list of
-    // them — a cap, not a transcript.
-    peerStats.noteIn(rootDir, m.fromKey, m.id);
-  });
-}
-
-// Everything that happens to a fetched inbox batch, in one function,
-// because there are two callers and they must not drift: Relay Chat's
-// poll and the personal node's own 60-second sweep.
-//
-// The sweep exists because counters that only advance while a chat window
-// is open would make Contacts lie every time Andy closes it — and lie in
-// the direction that matters, reading "quiet" for somebody who has been
-// writing all afternoon. What the numbers mean, exactly, is "arrived at
-// this node": the relay stores and this node pulls, so a machine that was
-// off counts when it next pulls, and nothing on spirit-3 counts anything.
-//
-// Returns the response body /api/hub/inbox sends. The sweep throws it
-// away and keeps only the side effects, which is the point.
-function applyInboxBatch(rootDir, messages, relayUrl) {
-  // Off the file, never off the request. A client still sending ?unknown=
-  // is not consulted — see unknownPolicy (packet 5).
-  var policy = unknownPolicy(rootDir);
-
-  // Reading your mail is also how you come to know who wrote it — when
-  // that is what you asked for. Done here rather than in the app either
-  // way: it is a fact about this node's address book, and the browser is
-  // a view of it.
-  if (policy === 'acquire') {
-    acquireFromInbox(rootDir, messages, relayUrl);
-  } else if (policy === 'hold') {
-    holdFromInbox(rootDir, messages, relayUrl);
-  }
-
-  // After policy, so a row created a few lines above is a row this pass
-  // can see. Before the drop, because a held line is dropped and still
-  // counts.
-  countInbound(rootDir, messages);
-
-  // The drop happens here, not in the app. A message the browser never
-  // receives cannot be written to a peerfile, marked on a row or counted
-  // in a title by some later change that forgot about this one.
-  var split = partitionInbox(rootDir, messages);
-  var kept = policy === 'acquire' ? messages : split.known;
-  var body = { messages: kept.map(decorateWithPacket) };
-  // Hold says how many, never who: a name would be the thing the setting
-  // exists to withhold.
-  if (policy === 'hold') body.unknown = split.unknown;
-  return body;
-}
+// WHAT WAS LOST ON PURPOSE: the `hold` count. applyInboxBatch answered
+// `{ unknown: N }` so an app could say "N from people you have not added"
+// without saying who. Nothing asks that question of the router yet. It is
+// not gone from the node — trafficLog keeps held rows, admitted:false —
+// only unexposed, and re-exposing it is a read surface to design rather
+// than a line to restore.
 
 function createHub(rootDir) {
   function fail(res, status, msg) {
@@ -1183,82 +1115,25 @@ function createHub(rootDir) {
     });
   }
 
-  // The request half of an inbox read, extracted so the browser's poll
-  // and the node's own sweep ask the mailbox the same question. The apply
-  // half is applyInboxBatch, above and outside this closure.
-  function inboxRequest(url, name) {
-    // Signed for the same reason claim and send are: in keys mode the
-    // relay proves who is READING a mailbox, not just who is writing to
-    // one. Unsigned when this node has no identity yet, which the relay
-    // still accepts in open and names mode.
-    var id = auth.loadIdentity(rootDir);
-    var query = '?name=' + encodeURIComponent(name);
-    // In a header, never on the URL: the relay refuses a query `sig`
-    // outright, because a signature that has been in a URL is already
-    // in an access log. Signed for this minute — the relay accepts the
-    // one either side of its own clock and nothing further out.
-    var headers = {};
-    if (id && id.privateKey) {
-      headers['X-Spirit-Sig'] = auth.sign(id.privateKey, auth.inboxMessage(name, Date.now()));
-    }
-    return relayRequest(url, 'GET', '/api/relay/inbox' + query, null, headers);
-  }
-
-  function handleInbox(req, res, urlObj) {
-    withRelay(res, function (url) {
-      var name = urlObj.searchParams.get('name') || '';
-      inboxRequest(url, name)
-        .then(function (r) {
-          if (r.status !== 200) {
-            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(r.text);
-            return;
-          }
-          var parsed = null;
-          try { parsed = JSON.parse(r.text); }
-          catch (e) { parsed = null; }
-          if (!parsed || !Array.isArray(parsed.messages)) {
-            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(r.text);
-            return;
-          }
-
-          var body = applyInboxBatch(rootDir, parsed.messages, url);
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify(body));
-        })
-        .catch(function (err) { fail(res, 502, String(err.message || err)); });
-    });
-  }
-
-  // The personal node reading its own mail with nobody watching.
+  // inboxRequest, handleInbox AND sweepInbox STOOD HERE — the node's three
+  // ways of pulling its own mail off a relay: the signed GET itself, the
+  // browser's poll through /api/hub/inbox, and the 60-second sweep that
+  // ran with nobody watching so the counters did not depend on a chat
+  // window being open. All deleted with the ring (R8, 2026-09-15).
   //
-  // Called on a timer by server.js when this is NOT a --relay (packet 7).
-  // No HTTP, no app involved, and it answers to nothing: the caller keeps
-  // the side effects — rows for people who wrote, and the counters — and
-  // throws the body away.
+  // A NODE DOES NOT ASK A RELAY TO HAVE KEPT SOMETHING. That is the whole
+  // of why these go and nothing replaces them: a relay delivers or refuses
+  // and stores nothing on anyone's behalf (decision 0006), so a poll is a
+  // question with no honest answer. What arrives, arrives on the stream
+  // this node already holds — presenceNode keeps it open, peerPost admits
+  // it, arrivals.js pushes it at the page.
   //
-  // Silent by design. A node with no identity has no mailbox to read and
-  // no name to sign with; a node with no relay row has nowhere to ask. In
-  // both cases there is nothing wrong, so there is nothing to say, and a
-  // sweep that logged every minute would bury the console it shares with
-  // the jobs it is meant to make visible.
-  function sweepInbox() {
-    var url = loadRelayUrl(rootDir);
-    if (!url) return Promise.resolve(null);
-    try { assertRelayUrl(url); }
-    catch (e) { return Promise.resolve(null); }
-    var id = auth.loadIdentity(rootDir);
-    if (!id || !id.name) return Promise.resolve(null);
-    return inboxRequest(url, id.name).then(function (r) {
-      if (r.status !== 200) return null;
-      var parsed = null;
-      try { parsed = JSON.parse(r.text); }
-      catch (e) { return null; }
-      if (!parsed || !Array.isArray(parsed.messages)) return null;
-      return applyInboxBatch(rootDir, parsed.messages, url);
-    });
-  }
+  // What a page missed while it was SHUT comes off this node's own
+  // traffic log, not off somebody else's box: arrivals.subscribe() asks
+  // for un-taken rows the moment a page opens and pushes them down the
+  // same channel a new packet arrives on. That is strictly better than
+  // the poll was — it needed the client to remember where it got to, and
+  // to have a clock that agreed with the relay's.
 
   // GET /api/hub/who — the mailbox's peers, captioned by this node.
   // Unsigned, like the relay route it forwards: `who` is public on the
@@ -1561,16 +1436,10 @@ function createHub(rootDir) {
 
   return {
     handleClaim: handleClaim,
-    // The router. handleSend/handleInbox below are the ring it replaces —
-    // listed next to each other on purpose, so the two transports are
-    // visible as two transports until one of them goes.
+    // The transport. handleSend and handleInbox stood beside it while
+    // there were two, listed together so that was visible; R8 deleted the
+    // other one and this is what a node has.
     handlePost: handlePost,
-    // The other half of the same concept: the live push carries what
-    // arrives now, this carries what arrived while nobody was looking.
-    handleInbox: handleInbox,
-    // The same read, with nobody watching. server.js calls it on a timer
-    // in personal mode only — see the comment on sweepInbox.
-    sweepInbox: sweepInbox,
     handleStatus: handleStatus,
     handleWho: handleWho,
     handleHandle: handleHandle,
@@ -1597,14 +1466,12 @@ module.exports = {
   // a second answer to the same question.
   frontDoor: frontDoor,
   remember: remember,
+  // Listed ONCE. It was here twice — same key, same value, one shadowing
+  // the other in the same object literal — which is what an export block
+  // that grew by accretion does. Spotted while deleting the six ring
+  // exports that surrounded it (R8).
   unknownPolicy: unknownPolicy,
-  acquireFromInbox: acquireFromInbox,
   handleMatches: handleMatches,
   keyTail: keyTail,
-  partitionInbox: partitionInbox,
-  holdFromInbox: holdFromInbox,
-  applyInboxBatch: applyInboxBatch,
-  countInbound: countInbound,
-  unknownPolicy: unknownPolicy,
   decorateWithPacket: decorateWithPacket,
 };

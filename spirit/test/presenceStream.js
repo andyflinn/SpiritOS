@@ -173,15 +173,19 @@ function run() {
 
   test.subHeading('The gate');
 
-  // The replay this verb exists to prevent. An inbox signature is one the
-  // owner makes every two seconds and a status one every census.
+  // The replay this verb exists to prevent. It was written against an
+  // INBOX signature — one the owner made every two seconds — and R8
+  // deleted that verb on 2026-09-15. `status` is the replacement and the
+  // better witness: an owner still signs it for every census, so it is
+  // the signature actually lying around in logs today, and what a stream
+  // grants is standing where a status read grants one answer.
   const wrongVerb = L.box.streamOpen(
     bert.publicKey,
-    auth.sign(bert.privateKey, auth.inboxMessage(bert.publicKey)),
+    auth.sign(bert.privateKey, auth.statusMessage(bert.publicKey)),
     fakeSink()
   );
   if (wrongVerb && wrongVerb.ok === false && wrongVerb.status === 403) {
-    test.check('an inbox signature does not open a stream');
+    test.check('a signature for another verb does not open a stream');
   } else {
     test.fail('wrong verb accepted: ' + JSON.stringify(wrongVerb));
   }

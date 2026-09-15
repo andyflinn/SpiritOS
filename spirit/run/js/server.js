@@ -690,7 +690,7 @@ function isRelayPublicPath(method, pathname) {
   // in the path is a LOCATOR — every one is already public at
   // /api/relay/who, and holding one grants nothing.
   if (method === 'GET' && devicePageKey(pathname)) return true;
-  if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/inbox' || pathname === '/api/relay/status')) return true;
+  if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/status')) return true;
   // The presence wire. Public in the same sense the rest is: reachable
   // from the internet, and gated inside relay.streamOpen, which refuses
   // an identity this box does not hold before it allocates anything.
@@ -702,10 +702,11 @@ function isRelayPublicPath(method, pathname) {
   // commit id for code the repository already holds.
   if (method === 'GET' && pathname === '/api/version') return true;
   if (method === 'POST' && pathname === '/api/relay/device') return true;
-  if (method === 'POST' && (pathname === '/api/relay/claim' || pathname === '/api/relay/send')) return true;
-  // The router. Public in the same sense send is: reachable from the
-  // internet, gated inside relay.js by a signature, and refused instantly
-  // if the peer is not there to receive it (decision 0006).
+  if (method === 'POST' && pathname === '/api/relay/claim') return true;
+  // The router, and now the only way onto this box. Public in the sense
+  // the rest is: reachable from the internet, gated inside relay.js by a
+  // signature, and refused instantly if the peer is not there to receive
+  // it (decision 0006).
   if (method === 'POST' && (pathname === '/api/relay/post' || pathname === '/api/relay/reply')) return true;
   return false;
 }
@@ -771,15 +772,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && pathname === '/api/relay/inbox') {
-    handleRelayInbox(req, res, url);
-    return;
-  }
-  
-  if (req.method === 'GET' && pathname === '/api/hub/inbox') {
-    hub.handleInbox(req, res, url);
-    return;
-  }
+  // GET /api/relay/inbox AND GET /api/hub/inbox STOOD HERE — the ring's
+  // read half on the relay and the node's proxy onto it. Both deleted by
+  // R8 on 2026-09-15. A packet arrives on the held stream now
+  // (arrivals.js), and what a page missed while it was shut comes off
+  // this node's own traffic log rather than off somebody else's box.
 
   if (req.method === 'GET' && pathname === '/api/relay/status') {
     handleRelayStatus(req, res, url);
@@ -820,7 +817,7 @@ const server = http.createServer((req, res) => {
   }
 
   if (relayMode && req.method === 'GET' && pathname === '/api/relay/stream') {
-    const from = createRelay.inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
+    const from = createRelay.streamSignatureFrom(url.searchParams.get('sig'), req.headers);
     if (!from.ok) {
       deviceRefusal(res, from.status);
       return;
@@ -946,35 +943,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  
-  function handleRelaySend(req, res) {
-    readJsonBody(req).then(function (body) {
-      const result = relay.send(body && body.from, body && body.to, body && body.text, body && body.sig, clientKeyFor(req));
-      res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-      // A console exchange used to come home in this response, riding on
-      // the message it answered. The console is gone (2026-09-13), so a
-      // send is one message object and nothing else — which is what it
-      // always was for every line that was not a console command.
-      res.end(JSON.stringify(result.ok ? result.message : { error: result.error }));
-    }).catch(function () {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Invalid JSON body');
-    });
-  }
 
-  // The proof of a read arrives in a header and nowhere else — the rule
-  // itself is relay.inboxSignatureFrom, where a test can drive it.
-  function handleRelayInbox(req, res, url) {
-    var from = createRelay.inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
-    if (!from.ok) {
-      res.writeHead(from.status, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: from.error }));
-      return;
-    }
-    var result = relay.inbox(url.searchParams.get('name') || '', from.sig);
-    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(result.ok ? { messages: result.messages } : { error: result.error }));
-  }
+  // handleRelaySend AND handleRelayInbox STOOD HERE, the two routes that
+  // served the ring. Deleted by R8 on 2026-09-15 along with relay.send
+  // and relay.inbox themselves.
+  //
+  // The rule handleRelayInbox enforced is the one thing worth keeping and
+  // it did not belong to the ring: the proof of a GET arrives in a header
+  // and nowhere else, because a signature on a query string is already in
+  // an access log. It now lives on the only signed GET left — see
+  // relay.streamSignatureFrom, and the stream route above that calls it.
 
   function handleRelayWho(res) {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1063,11 +1041,6 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/relay/claim') {
       handleRelayClaim(req, res);
-      return;
-    }
-
-    if (pathname === '/api/relay/send') {
-      handleRelaySend(req, res);
       return;
     }
 
@@ -1166,11 +1139,11 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // POST /api/hub/send STOOD HERE — the node's door onto the ring,
-    // with no caller. hubPost.js asserts nothing names it; see hub.js
-    // for what is left of the ring and why it goes together.
+    // POST /api/hub/send stood here until 2026-09-13 and GET
+    // /api/hub/inbox above until R8. There is nothing left of the ring on
+    // this node: an app posts through /api/hub/post and receives on the
+    // stream.
 
-    
     if (pathname === '/api/fs/delete') {
       handleFsDelete(req, res);
       return;
@@ -1258,32 +1231,23 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
-// The personal node reading its own mail without being asked (packet 7).
+// A SIXTY-SECOND INBOX SWEEP STOOD HERE (packet 7) — the personal node
+// pulling its own mail off a relay without being asked, so that per-peer
+// counters advanced whether or not a chat window was open. Deleted with
+// the ring by R8 on 2026-09-15.
 //
-// Counters that only advanced while Relay Chat was open would make
-// Contacts lie every time Andy closed it, and lie the wrong way: quiet,
-// for somebody who had been writing all afternoon. The sweep calls the
-// SAME apply function the browser's poll uses (hub.applyInboxBatch, via
-// sweepInbox) — two paths into one function, or the counts and the
-// address book drift apart and only one of them is ever looked at.
+// The thing it was protecting is still protected, one layer down and
+// without a timer: peerPost calls peerStats.noteIn on arrival, keyed by
+// the request hash. Counters now move when a packet actually lands
+// rather than when somebody remembers to poll, which is what the sweep
+// was approximating. See R11 in
+// design/cycles/2026-09-12-transport-below-the-boundary.md.
 //
-// A --relay stays quiet. It is a mailbox; it has no book, nobody to
-// count, and nothing to pull from. It also holds other people's keys,
-// which is the reason counting never happens there at all.
-//
-// unref'd: the http server is what keeps this process alive, and a timer
-// that outlived it would hold a node open with nothing listening.
-const INBOX_SWEEP_MS = 60000;
-if (!relayMode) {
-  const sweep = setInterval(() => {
-    // Silent on failure on purpose. The mailbox being unreachable for a
-    // minute is ordinary — a closed laptop lid, a relay restarting — and
-    // a line of console every 60 seconds would bury the job output this
-    // window exists to show.
-    hub.sweepInbox().catch(() => {});
-  }, INBOX_SWEEP_MS);
-  sweep.unref();
+// NOTHING REPLACES IT and nothing should. A node that polls is a node
+// asking a relay to have kept something, and a relay keeps nothing
+// (decision 0006).
 
+if (!relayMode) {
   // The device window, if it was left open. The flag has always survived
   // a restart in relay-state/device.json; until now nothing read it at
   // startup, so every restart shut the door without saying so — and the
@@ -1291,8 +1255,8 @@ if (!relayMode) {
   // (design/relay/DEVICE-PANEL.md section 7). A power cut must not cost a
   // flight home.
   //
-  // Personal mode only, like the sweep above. A --relay has no device of
-  // its own to enrol and must never poll anybody.
+  // Personal mode only. A --relay has no device of its own to enrol and
+  // must never poll anybody.
   // NOTHING TO RESUME. This asked the node to reopen a device window
   // that had been left open across a restart — the window is gone, and
   // an offer now arrives on a stream rather than being waited for.
@@ -1360,8 +1324,8 @@ if (!relayMode) {
     // And what to write down about a stranger who got through the floor.
     // Separate from the judgement on purpose: the verdict is decided
     // before the budget is checked, the row is written after.
-    remember: function (from, verdict) {
-      return require('./hub').remember(ROOT_DIR, from, verdict);
+    remember: function (from, verdict, relayUrl) {
+      return require('./hub').remember(ROOT_DIR, from, verdict, relayUrl);
     },
     // AND WHERE AN ADMITTED PACKET GOES. The hook has existed since the
     // router landed and had no caller but a test, so until 2026-09-13 a
@@ -1413,9 +1377,14 @@ server.listen(port, BIND_HOST, () => {
     // Say which one this is.
     if (require('./relayAuth').loadAllow(ROOT_DIR).mode === 'open') {
       console.warn(
+        // WHAT AN OPEN RELAY ACTUALLY RISKS, which is one thing now and
+        // was three. "send as anyone, and read any mailbox" went with the
+        // ring (R8): there is nothing to read and no way to send. What is
+        // left is the one that matters — the first claim takes the box.
         '    WARNING: no relay-state/allow.json — this relay is OPEN. Anyone who can reach it\n' +
-        '    may claim any name, send as anyone, and read any mailbox. Create relay-state/allow.json\n' +
-        '    (a { "keys": [...] } list) to require signed claims and sends.'
+        '    may take the first claim, and the first claim is the OWNER (decision 0003).\n' +
+        '    Run install-public-relay.js to reserve a name, or create relay-state/allow.json\n' +
+        '    (a { "keys": [...] } list) by hand.'
       );
     }
 

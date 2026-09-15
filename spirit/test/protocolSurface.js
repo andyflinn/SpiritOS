@@ -142,9 +142,15 @@ test.subHeading('The register says what each one IS');
 // ---------------------------------------------------------------------
 
 // The point is not that things are listed. It is that each is listed
-// UNDER something — protocol, bootstrap, dying, or cheat — because "we
+// UNDER something — protocol, bootstrap, died, or cheat — because "we
 // wrote it down" is not a decision and the four words are.
-['## The protocol', '### Bootstrap', '### Dying with the ring', '### Cheats, named']
+//
+// "Dying" became "Died" on 2026-09-15, when R8 carried the sentence out.
+// The section is kept and checked for although its table is now empty:
+// a register that silently loses the category a thing was deleted under
+// cannot tell a later reader that the deletion was decided rather than
+// drifted into. An empty category is a record; a missing one is a gap.
+['## The protocol', '### Bootstrap', '### Died with the ring', '### Cheats, named']
   .forEach(function (heading) {
     if (doc.indexOf(heading) !== -1) {
       test.check('the register keeps its "' + heading.replace(/^#+ /, '') + '" section');

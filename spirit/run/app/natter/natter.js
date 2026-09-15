@@ -252,6 +252,9 @@ function natterOpenMailbox(api, container, relays, url) {
 // Asked again whenever a panel is opened, because a badge is fetched on
 // arrival and a message count from ten minutes ago is worse than one
 // that says it is being fetched.
+// IT ALSO ANSWERS "IS THIS STILL ME", which is why natterVerifyBinding
+// is gone and this takes one more line instead of a second fetch. See
+// natterCheckBinding below.
 function natterProbe(api, container, relays) {
   var label = (typeof api.nodeLabel === 'function' && api.nodeLabel()) || '';
   if (!label) return Promise.resolve(); // no claim, nothing to sign as, no stars
@@ -263,6 +266,7 @@ function natterProbe(api, container, relays) {
         if (row && row.url) natterBadgeByUrl[row.url] = row;
       });
       natterAcquireInvited(rows);
+      natterCheckBinding(api, relays, rows);
       natterRenderList(container, api, relays);
     })
     .catch(function () { /* a mailbox that cannot be reached is not one this node owns */ });
@@ -411,22 +415,59 @@ function natterUnbind(api, relays) {
   natterPaintBind(api, relays);
 }
 
-// The stored label is only a question; the mailbox answers it. A signed
-// inbox read is the cheapest form of "is this still me" — the relay
-// verifies the signature against the peer holding that label, so
-// somebody else's name comes back 403 without this node claiming or
-// writing anything.
-function natterVerifyBinding(api, container, relays) {
-  if (!natterMyName) return Promise.resolve();
+// The stored label is only a question; the relay answers it.
+//
+// IT USED TO BE A SIGNED INBOX READ. `natterVerifyBinding` fetched
+// `/api/hub/inbox?name=<label>` and treated anything but a 200 as "this
+// label is not mine any more" — the relay verified the signature against
+// the peer holding that label, so somebody else's name came back 403.
+// That was never a READ: it was an authorization probe wearing a read's
+// clothes, and R8 deleted the route under it on 2026-09-15.
+//
+// THE CENSUS ANSWERS IT BETTER, and was already on the wire. probe()
+// above fetches a status per relay and, for any row this node holds,
+// `/api/relay/who` alongside it — so the label this relay calls us by is
+// a fact already in hand, thrown away until now (ownerBadge.claimedLabel).
+//
+// Better in three ways, none of them incidental:
+//
+//   NO SECOND REQUEST. One round of fetches answers the badge, the
+//   member panel and this.
+//   NO SIGNATURE. The census is public by design (decision 0010), so
+//   nothing here puts a credential anywhere.
+//   IT SAYS WHAT HAPPENED. A 403 could not tell "somebody else has this
+//   name" from "the relay forgot me" from "I was removed". A label in
+//   hand distinguishes them, and the message below says which.
+//
+// UNREACHABLE IS NOT THE SAME AS NOT OURS, which is the one rule the old
+// version got right and is easy to lose here: a row with no answer
+// carries no `claimedLabel` either, and must not unbind. So this acts on
+// rows that ANSWERED and said we hold no label, and stays silent about
+// the rest.
+function natterCheckBinding(api, relays, rows) {
+  if (!natterMyName) return;
   var label = natterMyName;
-  return fetch('/api/hub/inbox?name=' + encodeURIComponent(label) + '&unknown=silent')
-    .then(function (r) {
-      if (r.status !== 200) {
-        natterUnbind(api, relays);
-        natterBindStatus(label + ' does not belong to this node any more (' + r.status + ') — claim again');
-      }
-    })
-    .catch(function () { /* unreachable is not the same as not ours */ });
+  var answered = (rows || []).filter(function (row) {
+    return row && row.url && !row.error && Number(row.status) > 0;
+  });
+  if (!answered.length) return; // nothing replied; nothing to conclude
+
+  // Any relay that still calls us by this label keeps the binding. A node
+  // may hold rows on several, and being known on one is being bound.
+  var stillOurs = answered.some(function (row) { return row.claimedLabel === label; });
+  if (stillOurs) return;
+
+  // Nobody who answered knows us by it. Two cases worth telling apart,
+  // because one of them is somebody else wearing the name.
+  var wearingSomethingElse = answered.filter(function (row) {
+    return row.claimedLabel && row.claimedLabel !== label;
+  })[0];
+
+  natterUnbind(api, relays);
+  natterBindStatus(wearingSomethingElse
+    ? label + ' is not this node any more — this relay calls it ' +
+      wearingSomethingElse.claimedLabel + '. Claim again.'
+    : label + ' does not belong to this node any more — claim again');
 }
 
 spirit.shell.activateApp({
@@ -489,8 +530,10 @@ spirit.shell.activateApp({
 
     natterPaintBind(api, relays);
     natterRenderList(container, api, relays);
+    // One call now. The binding check rides on the probe's own answer —
+    // natterCheckBinding is called from inside it, on the rows it already
+    // fetched.
     natterProbe(api, container, relays);
-    natterVerifyBinding(api, container, relays);
 
     document.getElementById('natter-claim').addEventListener('click', function () {
       var name = document.getElementById('natter-name').value.trim();

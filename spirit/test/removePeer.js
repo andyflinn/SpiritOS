@@ -149,10 +149,16 @@ function run() {
 
   test.subHeading('What goes with them');
 
-  // Mail first, so there is something to forget.
-  const sent = L.box.send('andy', 'bert', 'are you there',
-    auth.sign(L.owner.privateKey, auth.sendMessage('andy', 'bert', 'are you there')));
-  if (!sent.ok) test.fail('send: ' + JSON.stringify(sent));
+  // MAIL USED TO GO FIRST. A line was sent so there was something to
+  // forget, and `messagesDropped` came back on the removal to prove it
+  // had — the argument being that a forget which leaves the letters
+  // behind is not forgetting.
+  //
+  // R8 answered that argument by deletion (2026-09-15). A relay holds
+  // nothing on anyone's behalf, so removing the row IS removing
+  // everything this box had of them, and there is no count to report.
+  // The check below is what is left, and it is the stronger half: a
+  // removal that does not revoke the invite is a removal in name only.
 
   // A live invite for the same label. Without revoking it, "un-invite"
   // is a lie: they walk straight back in with the token they hold.
@@ -167,10 +173,14 @@ function run() {
     test.fail('remove: ' + JSON.stringify(gone) + ' roster=' + labels(L.box));
   }
 
-  if (gone.messagesDropped >= 1) {
-    test.check('their mail goes with them — ' + gone.messagesDropped + ' dropped');
+  // And the relay is not still reporting a count it cannot have. A
+  // leftover `messagesDropped: 0` would read as "they had no mail" rather
+  // than "there is no mail on this box", which is the inversion this
+  // whole deletion exists to end.
+  if (gone.messagesDropped === undefined) {
+    test.check('and it reports no message count, because a relay holds no messages');
   } else {
-    test.fail('mail left behind: ' + JSON.stringify(gone));
+    test.fail('messagesDropped survived the ring: ' + JSON.stringify(gone));
   }
 
   if (gone.invitesRevoked >= 1) {

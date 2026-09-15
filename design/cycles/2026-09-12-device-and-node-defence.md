@@ -124,8 +124,33 @@ The device's remaining over-reach lives on the old transport, and so does
 chat. Grok's ordering — `consoleExchange` first — applies to the RELAY's
 `/api/relay/send`, not the node's `/api/hub/send`; they are two deletions.
 
-**Verify:** not written. Wants a check that no app names those paths.
-**Status:** OPEN
+**Both deletions happened, in that order.** `consoleExchange` and
+`/api/hub/send` on 2026-09-13; `send` and `inbox` on 2026-09-15 as R8 in
+[the transport cycle](2026-09-12-transport-below-the-boundary.md), which
+is where the costing and the outcome live. The device's over-reach went
+with them and is now structural rather than gated: `routePost` verifies
+against the row's key alone, so a device signature is not confined — it
+never verifies.
+
+**`status` was NOT retired, and this line is corrected rather than
+quietly satisfied.** Decision 0010 is later than this requirement and
+unbundles it: `GET /api/relay/status` *"owes an argument rather than a
+classification"*, and moving it is a reordering of `presenceNode.start`.
+Its own sitting.
+
+**The breakage was taken, not avoided.** Relay Chat's receive path was
+the ring and has not been retrofitted, which is the epigraph above being
+acted on rather than quoted. Natter moved instead: its `/api/hub/inbox`
+call was never a read, it was a binding probe, and the public census
+answers the same question with no signature at all.
+
+**Verify:** `spirit/test/streamSig.js` (the rule that outlived the verb),
+`spirit/test/deviceInbox.js`, `spirit/test/devicePeers.js` and
+`spirit/test/deviceDisplace.js` (a device key proves nothing to a relay —
+asked of `post` and the stream now, since `send` and `inbox` are gone),
+and `spirit/test/natterBind.js` (the probe that moved).
+**Status:** DONE — except `status`, which was never this requirement's to
+take (see above)
 
 ### R15 — the device↔node channel is sealed
 **Status:** DEFERRED: every identity is Ed25519, a signature scheme, so

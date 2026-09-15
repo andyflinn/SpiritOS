@@ -251,6 +251,19 @@ freePort()
     // This asks nothing about what the routes ANSWER. Each refuses for
     // its own good reason here, and a refusal is a pass. The claim is
     // only: it was reached, it answered, and the process is still alive.
+    //
+    // ── THE LIST CANNOT POLICE ITSELF, so it is pruned by hand ────────
+    //
+    // A DELETED route answers 404, which is an answer, so it passes this
+    // check exactly like a live one — the suite is watching for a dead
+    // PROCESS, not a dead route. `POST /api/hub/send` sat here for two
+    // days after it was deleted on 2026-09-13, proving nothing about
+    // nothing, and `GET /api/hub/inbox` would have joined it: both were
+    // taken out on 2026-09-15 when R8 removed the second one.
+    //
+    // Whether a route exists at all is protocolSurface.js's question for
+    // the relay side, and no equivalent register covers /api/hub/*. That
+    // is a real gap and it is named here rather than papered over.
     const HUB_ROUTES = [
       ['POST', '/api/hub/claim'],
       ['POST', '/api/hub/peer'],
@@ -260,11 +273,9 @@ freePort()
       ['POST', '/api/hub/invite', { url: 'https://not-on-the-list.example', label: 'x', days: 1 }],
       ['POST', '/api/hub/remove-peer', { url: 'https://not-on-the-list.example', key: 'NOPE' }],
       ['POST', '/api/hub/post'],
-      ['POST', '/api/hub/send'],
       ['POST', '/api/hub/contact'],
       ['POST', '/api/hub/unknown-senders'],
       ['POST', '/api/hub/rotate-password'],
-      ['GET', '/api/hub/inbox'],
       ['GET', '/api/hub/status'],
       ['GET', '/api/hub/who'],
       ['GET', '/api/hub/handle'],

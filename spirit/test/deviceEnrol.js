@@ -419,17 +419,32 @@ async function oneDeviceEveryRelay() {
   // What survives is the half that was always true, and it is the
   // stronger half: a device key opens nothing on a relay, whether it
   // enrolled there or not.
-  const readFirst = first.inbox('andy', auth.sign(phone.privateKey, auth.inboxMessage('andy')));
-  const readSecond = second.inbox('andy', auth.sign(phone.privateKey, auth.inboxMessage('andy')));
+  //
+  // Asked of the STREAM since R8 deleted `inbox` (2026-09-15). "Opens
+  // nothing" is what was being claimed all along; the wire is now the
+  // only thing there is to open, and it is the sharper test — a stream is
+  // a standing grant where a read was one answer.
+  const ownerKey = owner.publicKey;
+  function opens(box, id) {
+    const r = box.streamOpen(
+      ownerKey,
+      auth.sign(id.privateKey, auth.streamMessage(ownerKey)),
+      { write: function () { return true; }, close: function () {} }
+    );
+    if (r.ok) box.streamClose(ownerKey);
+    return r.ok;
+  }
   const nobody = auth.generateIdentity('uninvited');
-  const noFirst = first.inbox('andy', auth.sign(nobody.privateKey, auth.inboxMessage('andy')));
-  const noSecond = second.inbox('andy', auth.sign(nobody.privateKey, auth.inboxMessage('andy')));
+  const openFirst = opens(first, phone);
+  const openSecond = opens(second, phone);
+  const noFirst = opens(first, nobody);
+  const noSecond = opens(second, nobody);
 
-  if (!readFirst.ok && !readSecond.ok && !noFirst.ok && !noSecond.ok) {
-    test.check('an enrolled device reads neither relay — and neither does a stranger, so the box is not merely lax');
+  if (!openFirst && !openSecond && !noFirst && !noSecond) {
+    test.check('an enrolled device opens neither relay — and neither does a stranger, so the box is not merely lax');
   } else {
-    test.fail('reads: enrolled=' + readFirst.ok + '/' + readSecond.ok +
-      ' stranger=' + noFirst.ok + '/' + noSecond.ok);
+    test.fail('streams: enrolled=' + openFirst + '/' + openSecond +
+      ' stranger=' + noFirst + '/' + noSecond);
   }
 
   // AND THE BINDING IS WHERE IT BELONGS. The thing the spread was trying
@@ -737,16 +752,20 @@ async function run() {
 
   // AND THE NODE HAS THE BINDING FROM THEN ON, which is what "enrolled"
   // means. It used to be checked by having the device read the relay's
-  // inbox — a capability that has been removed, because a device's
-  // correspondent is its node and never a relay.
-  const phoneInbox = box.inbox(
-    'andy', auth.sign(phone.privateKey, auth.inboxMessage('andy'))
+  // inbox — a capability that was removed on 2026-09-13 because a
+  // device's correspondent is its node and never a relay, and whose
+  // route went entirely with the ring (R8). The wire is what is left to
+  // be refused.
+  const phoneStream = box.streamOpen(
+    L.owner.publicKey,
+    auth.sign(phone.privateKey, auth.streamMessage(L.owner.publicKey)),
+    { write: function () { return true; }, close: function () {} }
   );
-  if (deviceAuth.load(home).devicePublicKey === phone.publicKey && !phoneInbox.ok) {
+  if (deviceAuth.load(home).devicePublicKey === phone.publicKey && !phoneStream.ok) {
     test.check('and the node holds the binding from then on — while the relay still knows nothing');
   } else {
     test.fail('binding=' + JSON.stringify(deviceAuth.load(home).devicePublicKey) +
-      ' relayRead=' + phoneInbox.ok);
+      ' relayStream=' + phoneStream.ok);
   }
 
   // A second world, not a second door onto the first. The refusal being

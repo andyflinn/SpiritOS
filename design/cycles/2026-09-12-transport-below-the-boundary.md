@@ -522,6 +522,9 @@ waiting: undelivered mail has no clock, whatever the receipt promised".
 ### R8 — the ring is deleted
 > `send` / `inbox` / `status` are retired
 
+**`status` was not.** R14 bundled the three; decision 0010 is later and
+unbundles it — see the closing note below.
+
 The same requirement as R14 in
 [the device cycle](2026-09-12-device-and-node-defence.md), which is where
 it was first agreed; kept there and costed here.
@@ -536,8 +539,49 @@ the router that already does the job.
 arrives as a header and never on a query string, and the stream reuses
 it. Rename, do not delete.
 
-**Verify:** not written.
-**Status:** OPEN — blocks on R11
+**Done 2026-09-15.** Renamed rather than deleted, as costed:
+`relay.streamSignatureFrom`, now guarding the only signed GET a relay
+has. Everything else in the estimate above went, plus four things the
+estimate did not name — `resolveParty` (its only callers were the two
+deleted functions), `countInbound`, `partitionInbox` and the
+60-second sweep timer in `server.js`.
+
+**Three things were nearly lost with it, and two were caught:**
+
+- **Which relay a stranger arrived on.** `acquireFromInbox` wrote it
+  into whoBook's `relays`; `peerPost` had the same fact on every
+  traffic-log row and was not passing it to `remember`. Fixed, not
+  accepted — `remember(rootDir, from, verdict, relayUrl)`.
+- **A held sender is counted.** *"The hourglass is consideration, and a
+  line you dropped was still a demand on your attention."* The router's
+  `admitted` excludes `hold` by design, so inheriting it as the
+  counting predicate would have made a waiting stranger silently free.
+  Counting asks the BOOK — has a row, not blocked — which is what
+  `countInbound` did and why it was a separate pass.
+- **The sender's label is genuinely gone.** A post carries keys and no
+  captions, because the relay does not read the payload. The census does
+  the naming now, one walk later. Named rather than fixed: it is the
+  cost of the boundary, not a regression.
+
+**Not in scope and still open:** `GET /api/relay/status` — decision
+0010 unbundled it from this after R14 bundled them, and it *"owes an
+argument rather than a classification"*. While there, `ownerBadge`
+still puts its signature on that route's QUERY STRING, and
+`statusMessage` carries no minute — so a line of Caddy's access log is
+a permanent owner-status credential. That is the same hazard
+`streamSig.js` exists to prevent, on the other signed GET. Written down
+in `streamSig.js` beside the exclusion that lets the scan pass.
+
+**Verify:** `spirit/test/streamSig.js` — the whole of `inboxSig.js`,
+retargeted at the stream, plus "the name it had under the ring is not
+still exported"; `spirit/test/chatPeople.js` — acquisition, holding,
+counting and the relay-on-the-row, all driven through
+`peerPost.onRequest` instead of `applyInboxBatch`;
+`spirit/test/relayGates.js` — the gate questions asked of `post`,
+with a note on the one that can no longer be asked at all;
+`spirit/test/protocolSurface.js` — the register agrees with the tree in
+both directions.
+**Status:** DONE
 
 ### R11 — what the ring does BESIDES carrying messages must not vanish with it
 **Found by building R5.** The inbox poll is not only a read. Through

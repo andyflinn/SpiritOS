@@ -111,28 +111,51 @@ test.startTest('Device cycle 5 — replace the slot, and the replacement is conf
   // PROVED BY USE, not by reading a field: neither key opens anything on
   // the relay, and the house key still does — so this is not a check that
   // passes because the box refuses everybody.
-  const phoneRead = box.inbox('andy', auth.sign(phone.privateKey, auth.inboxMessage('andy')));
-  const tabletRead = box.inbox('andy', auth.sign(tablet.privateKey, auth.inboxMessage('andy')));
-  const houseRead = box.inbox('andy', auth.sign(house.privateKey, auth.inboxMessage('andy')));
+  //
+  // Asked of the STREAM since R8 deleted `inbox` (2026-09-15). It is the
+  // sharper question of the two anyway: opening the wire buys a standing
+  // grant, where a read bought one answer.
+  function opens(id) {
+    const r = box.streamOpen(
+      house.publicKey,
+      auth.sign(id.privateKey, auth.streamMessage(house.publicKey)),
+      { write: function () { return true; }, close: function () {} }
+    );
+    if (r.ok) box.streamClose(house.publicKey);
+    return r.ok;
+  }
+  const phoneOpens = opens(phone);
+  const tabletOpens = opens(tablet);
+  const houseOpens = opens(house);
 
-  if (!phoneRead.ok && !tabletRead.ok && houseRead.ok) {
-    test.check('neither the old device nor the new one reads the relay, while the house key still does');
+  if (!phoneOpens && !tabletOpens && houseOpens) {
+    test.check('neither the old device nor the new one opens the relay, while the house key still does');
   } else {
-    test.fail('reads: phone=' + phoneRead.ok + ' tablet=' + tabletRead.ok +
-      ' house=' + houseRead.ok);
+    test.fail('streams: phone=' + phoneOpens + ' tablet=' + tabletOpens +
+      ' house=' + houseOpens);
   }
 
   // AND THE CURRENT DEVICE REACHES NOTHING ON THE WIRE EITHER. The last
   // exception — the reserved name `relay` — went with the console on
   // 2026-09-13, and the identity it belongs to went with the relay's copy
   // of the key. A device's correspondent is the node that owns it.
-  const atRelay = box.send('andy', 'relay', 'help',
-    auth.sign(tablet.privateKey, auth.sendMessage('andy', 'relay', 'help')));
-  const atSelf = box.send('andy', 'andy', 'note to self',
-    auth.sign(tablet.privateKey, auth.sendMessage('andy', 'andy', 'note to self')));
+  //
+  // `send` was the verb here until R8. `post` is the verb now, and the
+  // answer is the same for the same reason: the tablet's signature does
+  // not verify against the row's key, and the row's key is the only one
+  // this box will check.
+  const TEXT = '{"app":"device-probe","v":1,"body":"note to self"}';
+  const atSelf = box.routePost(
+    house.publicKey, house.publicKey, TEXT,
+    auth.sign(tablet.privateKey, auth.postMessage(house.publicKey, house.publicKey, TEXT))
+  );
+  const atRelay = box.routePost(
+    house.publicKey, box.mailboxPublicKey(), TEXT,
+    auth.sign(tablet.privateKey, auth.postMessage(house.publicKey, box.mailboxPublicKey(), TEXT))
+  );
 
   if (!atRelay.ok && !atSelf.ok) {
-    test.check('and the enrolled tablet reaches nothing on the relay — not the reserved name, not its own row');
+    test.check('and the enrolled tablet reaches nothing on the relay — not the relay itself, not its own row');
   } else {
     test.fail('tablet reached: relay=' + atRelay.ok + ' self=' + atSelf.ok);
   }

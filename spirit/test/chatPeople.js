@@ -29,12 +29,71 @@ const auth = require('../run/js/relayAuth');
 const whoBook = require('../run/js/whoBook');
 const peerFile = require('../run/js/peerFile');
 const peerStats = require('../run/js/peerStats');
+// The arrival path itself. The counting sections at the foot of this file
+// drive it directly — it is where the ring's read half went (R8).
+const peerPost = require('../run/js/peerPost');
 const { createRelay } = require('../run/js/relay');
 const world = require('./world');
 const hub = require('../run/js/hub');
-const { createHub, buildPeople, acquireFromInbox, handleMatches, keyTail, partitionInbox, unknownPolicy, holdFromInbox } = require('../run/js/hub');
+const { createHub, buildPeople, handleMatches, keyTail, unknownPolicy, frontDoor, remember } = require('../run/js/hub');
 
 const RELAY_URL = 'https://mailbox.example';
+
+// ── THE RING'S THREE HELPERS, ASKED OF THE ROUTER ────────────────────
+//
+// This suite drove `acquireFromInbox`, `holdFromInbox` and
+// `partitionInbox` — a batch of stored lines, sorted after the fact.
+// R8 deleted all three with the ring on 2026-09-15 and the SUBJECT is
+// untouched: who this node will hear from, and what writing to it earns
+// you. peerPost asks the same questions per packet, at the moment of
+// arrival, through `frontDoor` and `remember`.
+//
+// These helpers are deliberately thin, and `wrote` is a transcription of
+// peerPost's four lines rather than a convenience: ask the front door,
+// then write down whatever it said. Anything cleverer would be a second
+// implementation of the door, and then this suite would be testing
+// itself.
+//
+// TWO THINGS FALL OUT OF THAT, and both used to be special cases:
+//
+//   a note to YOURSELF files nobody. listenSet holds this node's own key,
+//   so the verdict is `known` and `remember` does nothing with it. The
+//   ring needed an explicit `m.fromKey === myKey` skip.
+//
+//   a message CANNOT DEMOTE a stronger row. An existing contact is
+//   `known`, so nothing is written at all — where acquireFromInbox
+//   wrote 'message' every time and leaned on whoBook to refuse the
+//   downgrade. Two guards where one will do, and the one that is left is
+//   the one the real path uses.
+function wrote(home, messages, relayUrl) {
+  (messages || []).forEach(function (m) {
+    if (!m || !m.fromKey) return;
+    const verdict = frontDoor(home, m.fromKey);
+    if (verdict !== 'drop') remember(home, m.fromKey, verdict, relayUrl);
+  });
+}
+
+function heldFrom(home, messages, relayUrl) {
+  (messages || []).forEach(function (m) {
+    if (m && m.fromKey) remember(home, m.fromKey, 'hold', relayUrl);
+  });
+}
+
+// What partitionInbox answered, from the verdict the router actually
+// uses. `known` is what an app would be handed; `unknown` counts the
+// distinct strangers behind it, which is what `hold` reports and never
+// names.
+function partition(home, messages) {
+  const known = [];
+  const strangers = Object.create(null);
+  (messages || []).forEach(function (m) {
+    if (!m) return;
+    if (!m.fromKey) { known.push(m); return; }
+    if (frontDoor(home, m.fromKey) === 'known') known.push(m);
+    else strangers[m.fromKey] = true;
+  });
+  return { known: known, unknown: Object.keys(strangers).length };
+}
 
 function tmpHome(tag) {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-contacts-' + tag + '-'));
@@ -123,7 +182,11 @@ test.subHeading('A message is how a stranger becomes someone you can answer');
   const census = [peer('andy', me.publicKey, true), peer('john', johnA), peer('john', johnB)];
 
   buildPeople(home, census, RELAY_URL); // the census, as any refresh would
-  acquireFromInbox(home, [
+  // The policy is part of the fixture now rather than implied by calling
+  // acquireFromInbox directly: the front door reads it, so a section
+  // about strangers being let in has to be a node that lets them in.
+  setUnknownPolicy(home, 'acquire');
+  wrote(home, [
     line(1, 'john', johnA, me.publicKey, 'hello'),
     line(2, 'john', johnB, me.publicKey, 'also hello'),
   ], RELAY_URL);
@@ -177,7 +240,7 @@ test.subHeading('Ranks never fall');
   const bert = auth.generateIdentity('bert').publicKey;
 
   whoBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'handle');
-  acquireFromInbox(home, [line(3, 'bert', bert, 'KEY-ME', 'hi')], RELAY_URL);
+  wrote(home, [line(3, 'bert', bert, 'KEY-ME', 'hi')], RELAY_URL);
   if (whoBook.acquiredVia(whoBook.byPublicKey(home, bert)) === 'handle') {
     test.check('a message does not demote a key confirmed out of band');
   } else {
@@ -197,7 +260,7 @@ test.subHeading('Ranks never fall');
   // Your own key is never filed by reading your own mail back.
   const me = auth.generateIdentity('andy');
   const own = nodeHome(me, [RELAY_URL]);
-  acquireFromInbox(own, [line(4, 'andy', me.publicKey, me.publicKey, 'note to self')], RELAY_URL);
+  wrote(own, [line(4, 'andy', me.publicKey, me.publicKey, 'note to self')], RELAY_URL);
   if (whoBook.contacts(own).length === 0) {
     test.check('and a note to yourself does not make you your own contact');
   } else {
@@ -270,7 +333,8 @@ test.subHeading('Add by handle: every key behind the word');
   // What this node already thinks of a candidate rides along, so the UI
   // can say "already a contact" instead of offering the same person as
   // though they were new.
-  acquireFromInbox(home, [line(5, 'bert', bert, me.publicKey, 'hi')], RELAY_URL);
+  setUnknownPolicy(home, 'acquire');
+  wrote(home, [line(5, 'bert', bert, me.publicKey, 'hi')], RELAY_URL);
   if (handleMatches(home, census, 'bert')[0].acquiredVia === 'message') {
     test.check('a candidate says how this node already knows them');
   } else {
@@ -306,7 +370,7 @@ test.subHeading('Confirming writes handle, and nothing else changes');
   }
 
   // A message afterwards does not undo the confirmation.
-  acquireFromInbox(home, [line(6, 'john', johnA, 'KEY-ME', 'hello again')], RELAY_URL);
+  wrote(home, [line(6, 'john', johnA, 'KEY-ME', 'hello again')], RELAY_URL);
   if (whoBook.acquiredVia(whoBook.byPublicKey(home, johnA)) === 'handle') {
     test.check('and a later message cannot demote it');
   } else {
@@ -333,10 +397,26 @@ test.subHeading('Confirming writes handle, and nothing else changes');
     test.fail('To after confirm: ' + JSON.stringify(people.map(function (p) { return p.caption; })));
   }
 }
-
 // ---------------------------------------------------------------------
-// The real hub, over loopback: reading mail is how a contact appears.
+// The real hub and a real relay, over loopback: being written to is how
+// a contact appears.
 // ---------------------------------------------------------------------
+//
+// THIS SECTION USED TO POLL. It stood up a stub relay serving
+// `/api/relay/inbox` and `/api/relay/send`, and drove `hub.handleInbox`
+// against it — because "reading your mail is how you come to know who
+// wrote it" was a claim about what happens on a FETCH.
+//
+// R8 deleted the fetch on 2026-09-15. The claim survives it almost
+// unchanged, and reads better for the change: coming to know who wrote
+// to you is a claim about what happens when a PACKET ARRIVES. So the
+// relay here is the real `createRelay` — no route stubs at all — and
+// what crosses between the two nodes is a signed post down a held
+// stream, which is the only thing that crosses now.
+//
+// `/api/relay/who` is still fetched, because the census is still a
+// fetch: it is the one GET that must work before a post is possible
+// (decision 0010).
 
 function relayServer(box) {
   return new Promise(function (resolve) {
@@ -345,35 +425,6 @@ function relayServer(box) {
       if (req.method === 'GET' && url.pathname === '/api/relay/who') {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ peers: box.who(), mailboxPublicKey: box.mailboxPublicKey() }));
-        return;
-      }
-      if (req.method === 'GET' && url.pathname === '/api/relay/inbox') {
-        // Header only, exactly as the real route is: the hub signs for
-        // this minute and puts it in X-Spirit-Sig, and a query `sig` is
-        // refused outright (spirit/test/inboxSig.js). A stub that still
-        // read the query would go on passing while the thing it stands
-        // in for had stopped working.
-        const from = require('../run/js/relay.js').inboxSignatureFrom(url.searchParams.get('sig'), req.headers);
-        if (!from.ok) {
-          res.writeHead(from.status, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ error: from.error }));
-          return;
-        }
-        const r = box.inbox(url.searchParams.get('name') || '', from.sig);
-        res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(r.ok ? { messages: r.messages } : { error: r.error }));
-        return;
-      }
-      if (req.method === 'POST' && url.pathname === '/api/relay/send') {
-        let raw = '';
-        req.on('data', function (c) { raw += c; });
-        req.on('end', function () {
-          let body = {};
-          try { body = JSON.parse(raw); } catch (e) { body = {}; }
-          const r = box.send(body.from, body.to, body.text, body.sig, '127.0.0.1');
-          res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify(r.ok ? r.message : { error: r.error }));
-        });
         return;
       }
       res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -412,26 +463,15 @@ function hubWho(hub) {
   });
 }
 
-// `unknown` is the app's setting travelling with the request. Left out
-// on purpose in one place below, to check what a request that says
-// nothing gets.
-function hubInbox(hub, name, unknown) {
-  const res = fakeRes();
-  const query = '?name=' + encodeURIComponent(name) + (unknown ? '&unknown=' + unknown : '');
-  hub.handleInbox({}, res, new URL('http://127.0.0.1/api/hub/inbox' + query));
-  return res.wait();
-}
-
 function runOverLoopback() {
-  test.subHeading('Through the hub: mail arrives, a contact appears');
+  test.subHeading('Through the node: a packet arrives, a contact appears');
 
   // The whole fixture in one line: a relay with a key of its own, an
   // owner on it, and bert invited and claimed. It was fifteen lines here
   // and fifteen more in five other files, and the mint-then-claim dance
   // is not what this suite is about.
   const L = world.build({ title: 'Andy and bert on one relay', peers: ['bert'] });
-  if (!L.ok) { test.fail(L.error); return; }
-  const relayHome = L.home;
+  if (!L.ok) { test.fail(L.error); return Promise.resolve(); }
   const box = L.box;
   const andy = L.owner;
   const bert = L.peer('bert');
@@ -439,70 +479,93 @@ function runOverLoopback() {
   let server;
   let hub;
   let home;
+  let arrivals;
 
   return relayServer(box).then(function (s) {
     server = s;
     home = nodeHome(andy, [server.url]);
     hub = createHub(home);
-    return hubWho(hub);
-  }).then(function (data) {
-    // Bert is on the mailbox. Andy has never heard from him.
+
+    // Andy's node, wired the way server.js wires it: a front door that
+    // reads this node's policy, and a `remember` that is told which road
+    // a packet came down.
+    arrivals = [];
+    const router = peerPost.createPeerPost({
+      rootDir: home,
+      request: function () { return Promise.resolve({ status: 200, text: '{}' }); },
+      traffic: { note: function () {} },
+      onArrival: function (item) { arrivals.push(item); },
+      admit: function (from) { return frontDoor(home, from); },
+      remember: function (from, verdict, relayUrl) {
+        return remember(home, from, verdict, relayUrl);
+      },
+      stats: peerStats,
+    });
+    return hubWho(hub).then(function (data) { return { data: data, router: router }; });
+  }).then(function (step) {
+    const data = step.data;
+    // Bert is on the relay. Andy has never heard from him.
     if (data.people && data.people.length === 0) {
-      test.check('a mailbox full of peers is an empty To list until somebody writes');
+      test.check('a relay full of peers is an empty To list until somebody writes');
     } else {
       test.fail('who returned: ' + JSON.stringify(data.people));
     }
 
     // Being added is the other half of adding. The tail somebody reads
     // out over the phone has to be readable on their own screen, and it
-    // is their key, not the mailbox's.
+    // is their key, not the relay's.
     if (data.selfPublicKey === andy.publicKey && data.selfTail === andy.publicKey.slice(-6)) {
       test.check('who tells this node the end of its own key');
     } else {
       test.fail('selfTail was ' + JSON.stringify(data.selfTail));
     }
     if (data.selfTail !== data.mailboxPublicKey) {
-      test.check('and that is your key, not the mailbox you are on');
+      test.check('and that is your key, not the relay you are on');
     } else {
-      test.fail('self and mailbox are the same key');
+      test.fail('self and relay are the same key');
     }
 
-    box.send('bert', 'andy', 'first line from bert',
-      auth.sign(bert.privateKey, auth.sendMessage('bert', 'andy', 'first line from bert')), '10.0.0.2');
-    // Said nothing about the policy, so silence: bert is on the mailbox
-    // and has written, and this node has still never added him.
-    return hubInbox(hub, 'andy');
-  }).then(function (res) {
-    if (res.status === 200 && !/first line from bert/.test(res.text)) {
-      test.check('a read that names no policy hears nothing from a stranger');
+    // Bert writes. Said nothing about the policy, so silence: bert is on
+    // the relay and has written, and this node has still never added him.
+    const TEXT = '{"app":"relay-chat","v":1,"body":"first line from bert"}';
+    const packet = {
+      from: bert.publicKey,
+      to: andy.publicKey,
+      text: TEXT,
+      sig: auth.sign(bert.privateKey, auth.postMessage(bert.publicKey, andy.publicKey, TEXT)),
+    };
+    return step.router.onRequest(server.url, packet)
+      .then(function () { return { router: step.router, packet: packet }; });
+  }).then(function (step) {
+    if (arrivals.length === 0) {
+      test.check('a node that names no policy hears nothing from a stranger');
     } else {
-      test.fail('silent read: ' + res.status + ' ' + res.text);
+      test.fail('silent arrival: ' + JSON.stringify(arrivals));
     }
-    return hubWho(hub);
-  }).then(function (data) {
-    if (data.people && data.people.length === 0) {
-      test.check('and the dropped line put nobody in the To list');
+    return hubWho(hub).then(function (data) { return { data: data, step: step }; });
+  }).then(function (both) {
+    if (both.data.people && both.data.people.length === 0) {
+      test.check('and the dropped packet put nobody in the To list');
     } else {
-      test.fail('who after a silent read: ' + JSON.stringify(data.people));
+      test.fail('who after a silent arrival: ' + JSON.stringify(both.data.people));
     }
-    // The same mail, with the node asking to hear it — said in the file
-    // Contacts writes, not on the request. And the request lies: it asks
-    // for silence, which the hub does not consult (packet 5).
+    // The same packet, with the node asking to hear it — said in the file
+    // Contacts writes, which is the only place the door reads (packet 5).
     setUnknownPolicy(home, 'acquire');
-    return hubInbox(hub, 'andy', 'silent');
-  }).then(function (res) {
-    if (res.status === 200 && /first line from bert/.test(res.text)) {
-      test.check('with Acquire in the file the same read comes back with his line');
+    return both.step.router.onRequest(server.url, both.step.packet);
+  }).then(function () {
+    if (arrivals.length === 1 && /first line from bert/.test(arrivals[0].text)) {
+      test.check('with Acquire in the file the same packet is delivered');
     } else {
-      test.fail('inbox: ' + res.status + ' ' + res.text);
+      test.fail('arrivals: ' + JSON.stringify(arrivals));
     }
     return hubWho(hub);
   }).then(function (data) {
     const rows = data.people || [];
     if (rows.length === 1 && rows[0].publicKey === bert.publicKey && rows[0].acquiredVia === 'message') {
-      test.check('and reading it is what put Bert in the To list — the file won, the query lost');
+      test.check('and being written to is what put Bert in the To list');
     } else {
-      test.fail('after inbox: ' + JSON.stringify(rows));
+      test.fail('after arrival: ' + JSON.stringify(rows));
     }
 
     if (!rows.some(function (r) { return r.publicKey === andy.publicKey; })) {
@@ -511,14 +574,36 @@ function runOverLoopback() {
       test.fail('self row appeared');
     }
 
+    // THE CENSUS IS WHAT PUTS A CAPTION ON HIM, and this node had already
+    // walked one (hubWho, above) before bert ever wrote — so the row is
+    // named, and the upgrade to 'message' left that name alone.
+    //
+    // Which is the arrangement R8 leaves behind, stated as a check rather
+    // than discovered later: acquisition carries the KEY and the ROAD,
+    // and the census carries the caption. The ring's acquireFromInbox
+    // read a label off the relay's stored copy of the line, so a first
+    // contact was named by the packet itself. Nothing stores a line now
+    // and a post carries no captions — that is the relay not reading the
+    // payload, which is the point rather than a regression. The unnamed
+    // case is asserted where it can be: countsTheRowItMakes, on a node
+    // that has walked no census.
     const bertRow = whoBook.byPublicKey(home, bert.publicKey);
+    if (bertRow && bertRow.publicLabel === 'bert') {
+      test.check('and the census is what named him — the packet carried no caption');
+    } else {
+      test.fail('label: ' + JSON.stringify(bertRow && bertRow.publicLabel));
+    }
+
     if (bertRow && bertRow.relays.indexOf(server.url) !== -1) {
-      test.check('with the mailbox it was seen on recorded against it');
+      test.check('with the relay it arrived on recorded against it');
     } else {
       test.fail('whoBook row: ' + JSON.stringify(bertRow));
     }
 
     server.server.close();
+  }).catch(function (err) {
+    if (server && server.server) server.server.close();
+    throw err;
   });
 }
 
@@ -546,7 +631,7 @@ function unknownMail() {
     line(3, 'andy', me.publicKey, me.publicKey, 'a note to myself'),
   ];
 
-  const split = partitionInbox(home, inbox);
+  const split = partition(home, inbox);
   const texts = split.known.map(function (m) { return m.text; });
   if (texts.indexOf('from a contact') !== -1 && texts.indexOf('from a stranger') === -1) {
     test.check('a contact is heard and a stranger is not');
@@ -570,7 +655,7 @@ function unknownMail() {
   // not a person — but a node that stopped hearing its own mailbox would
   // have a relay console answering into silence. `relay` is reserved, so
   // no stranger can wear the name.
-  const withRelay = partitionInbox(home, inbox.concat([
+  const withRelay = partition(home, inbox.concat([
     { id: '9', from: 'relay', to: 'andy', fromKey: null, toKey: me.publicKey, text: 'relay status mode=keys' },
   ]));
   if (withRelay.known.some(function (m) { return m.from === 'relay'; }) && withRelay.unknown === 1) {
@@ -579,7 +664,7 @@ function unknownMail() {
     test.fail('relay line: ' + JSON.stringify(withRelay));
   }
 
-  const twice = partitionInbox(home, inbox.concat([line(4, 'carol', stranger.publicKey, me.publicKey, 'again')]));
+  const twice = partition(home, inbox.concat([line(4, 'carol', stranger.publicKey, me.publicKey, 'again')]));
   if (twice.unknown === 1) {
     test.check('and it counts people, not lines');
   } else {
@@ -634,14 +719,15 @@ function unknownMail() {
   }
 
   // Acquire is still available, and still exactly what cut 1 did.
-  acquireFromInbox(home, inbox, RELAY_URL);
+  setUnknownPolicy(home, 'acquire');
+  wrote(home, inbox, RELAY_URL);
   if (whoBook.acquiredVia(whoBook.byPublicKey(home, stranger.publicKey)) === 'message') {
     test.check('choosing Acquire is what lets a stranger in');
   } else {
     test.fail('acquire did not file the stranger');
   }
 
-  if (partitionInbox(home, inbox).unknown === 0) {
+  if (partition(home, inbox).unknown === 0) {
     test.check('and once added, they are somebody this node hears');
   } else {
     test.fail('still unknown after being acquired');
@@ -661,12 +747,12 @@ function heldAndBlocked() {
   const stranger = auth.generateIdentity('carol');
   const inbox = [line(1, 'carol', stranger.publicKey, me.publicKey, 'hello?')];
 
-  holdFromInbox(home, inbox, RELAY_URL);
+  heldFrom(home, inbox, RELAY_URL);
 
   // The row is what Hold buys: somebody to say yes to. The message is
   // still dropped — holding is not hearing.
   const row = whoBook.byPublicKey(home, stranger.publicKey);
-  if (row && whoBook.acquiredVia(row) === 'hold' && partitionInbox(home, inbox).known.length === 0) {
+  if (row && whoBook.acquiredVia(row) === 'hold' && partition(home, inbox).known.length === 0) {
     test.check('a held sender gets a row, and their line still does not arrive');
   } else {
     test.fail('held: ' + JSON.stringify(row));
@@ -686,7 +772,7 @@ function heldAndBlocked() {
   // not climb back out by writing again.
   whoBook.setBlocked(home, stranger.publicKey, true);
   whoBook.acquire(home, { publicKey: stranger.publicKey, publicLabel: 'carol' }, 'handle');
-  holdFromInbox(home, inbox, RELAY_URL);
+  heldFrom(home, inbox, RELAY_URL);
   const afterBlock = whoBook.byPublicKey(home, stranger.publicKey);
   if (whoBook.isBlocked(afterBlock) && whoBook.acquiredVia(afterBlock) === 'handle') {
     test.check('writing again neither unblocks nor demotes anybody');
@@ -697,7 +783,7 @@ function heldAndBlocked() {
   // A blocked contact is out of the listening set and still on screen.
   const blockedPeople = buildPeople(home, [peer('carol', stranger.publicKey)], RELAY_URL);
   const shown = blockedPeople.filter(function (p) { return p.publicKey === stranger.publicKey; })[0];
-  if (partitionInbox(home, inbox).known.length === 0 && shown && shown.held && shown.blocked) {
+  if (partition(home, inbox).known.length === 0 && shown && shown.held && shown.blocked) {
     test.check('a blocked contact is silent, listed, and says which it is');
   } else {
     test.fail('blocked in To: ' + JSON.stringify(shown));
@@ -748,7 +834,7 @@ function heldAndBlocked() {
 
   // Accepting is the way back, and it is one call.
   whoBook.accept(home, stranger.publicKey);
-  if (partitionInbox(home, inbox).known.length === 1) {
+  if (partition(home, inbox).known.length === 1) {
     test.check('and accepting them is what lets the next line through');
   } else {
     test.fail('still silent after accept');
@@ -813,148 +899,267 @@ test.subHeading('What a contact costs in disk is counted, not remembered');
   }
 }
 
+// ── DRIVEN THROUGH THE ROUTER FROM HERE ──────────────────────────────
+//
+// The three sections below asked their questions of `applyInboxBatch`,
+// which R8 deleted with the ring on 2026-09-15. They ask the same
+// questions of `peerPost.onRequest`, which is where packets arrive now —
+// one at a time, off a stream, instead of a batch off a poll.
+//
+// That is a better fixture than the one it replaces. `applyInboxBatch`
+// was a function this suite called; `onRequest` is the function the
+// node actually runs, with its own signature check and its own front
+// door in front of it. What used to be a claim about a helper is now a
+// claim about the path.
+//
+// A node with a router, an address book and a real front door. `stats`
+// is wired because counting is what these sections are about — most
+// suites leave it out.
+function countingNode(me, home) {
+  const arrived = [];
+  const router = peerPost.createPeerPost({
+    rootDir: home,
+    request: function () { return Promise.resolve({ status: 200, text: '{}' }); },
+    traffic: { note: function () {} },
+    onArrival: function (item) { arrived.push(item); },
+    admit: function (from) { return frontDoor(home, from); },
+    remember: function (from, verdict, relayUrl) {
+      return remember(home, from, verdict, relayUrl);
+    },
+    stats: peerStats,
+  });
+  return { router: router, arrived: arrived };
+}
+
+// One packet, signed by its sender and addressed here — the shape that
+// comes off the wire.
+function arriving(sender, toKey, text) {
+  return {
+    from: sender.publicKey,
+    to: toKey,
+    text: text,
+    sig: auth.sign(sender.privateKey, auth.postMessage(sender.publicKey, toKey, text)),
+  };
+}
+
 test.subHeading('Who is counted, and who is not');
 
-{
-  // The eligibility rules are the hub's, not peerStats' (packet 7).
+async function whoIsCounted() {
+  // The eligibility rules are the node's, not peerStats' (packet 7).
   // peerStats knows how to count; whether a key MAY be counted is a
   // question about the address book, and a sidecar with an opinion about
   // blocked or held would be a second book nobody could see.
+  //
+  // They lived in hub.countInbound until R8 and live in peerPost now,
+  // beside the stats call. Moved rather than rewritten — the comment
+  // there carries Grok's three rules verbatim.
   const me = auth.generateIdentity('andy');
   const home = nodeHome(me, [RELAY_URL]);
 
-  const friend = auth.generateIdentity('bert').publicKey;
-  const waiting = auth.generateIdentity('carol').publicKey;
-  const refused = auth.generateIdentity('dave').publicKey;
-  const stranger = auth.generateIdentity('eve').publicKey;
+  const friend = auth.generateIdentity('bert');
+  const waiting = auth.generateIdentity('carol');
+  const refused = auth.generateIdentity('dave');
+  const stranger = auth.generateIdentity('eve');
 
-  whoBook.acquire(home, { publicKey: friend, publicLabel: 'bert' }, 'message');
-  whoBook.hold(home, { publicKey: waiting, publicLabel: 'carol' });
-  whoBook.acquire(home, { publicKey: refused, publicLabel: 'dave' }, 'message');
-  whoBook.setBlocked(home, refused, true);
+  whoBook.acquire(home, { publicKey: friend.publicKey, publicLabel: 'bert' }, 'message');
+  whoBook.hold(home, { publicKey: waiting.publicKey, publicLabel: 'carol' });
+  whoBook.acquire(home, { publicKey: refused.publicKey, publicLabel: 'dave' }, 'message');
+  whoBook.setBlocked(home, refused.publicKey, true);
 
   setUnknownPolicy(home, 'silent');
-  hub.applyInboxBatch(home, [
-    line(1, 'bert', friend, me.publicKey, 'hello'),
-    line(2, 'carol', waiting, me.publicKey, 'let me in'),
-    line(3, 'dave', refused, me.publicKey, 'still here'),
-    line(4, 'eve', stranger, me.publicKey, 'who am i'),
-    // Our own line coming back off the mailbox. Counting it would make
-    // writing to somebody look like them writing to us.
-    line(5, 'andy', me.publicKey, me.publicKey, 'note to self'),
-  ], RELAY_URL);
+  const N = countingNode(me, home);
+  await N.router.onRequest(RELAY_URL, arriving(friend, me.publicKey, 'hello'));
+  await N.router.onRequest(RELAY_URL, arriving(waiting, me.publicKey, 'let me in'));
+  await N.router.onRequest(RELAY_URL, arriving(refused, me.publicKey, 'still here'));
+  await N.router.onRequest(RELAY_URL, arriving(stranger, me.publicKey, 'who am i'));
+  // Our own line coming back. Counting it would make writing to somebody
+  // look like them writing to us.
+  await N.router.onRequest(RELAY_URL, arriving(me, me.publicKey, 'note to self'));
 
   const count = function (key) { return peerStats.readSummary(home, key).unansweredInbound; };
 
-  if (count(friend) === 1) {
+  if (count(friend.publicKey) === 1) {
     test.check('a contact who writes is counted');
   } else {
-    test.fail('friend: ' + count(friend));
+    test.fail('friend: ' + count(friend.publicKey));
   }
 
   // Grok's answer, and the one that is not obvious: the hourglass is
   // consideration, and a line you dropped unread was still a demand on
   // your attention. The count is the only trace hold is allowed to keep
   // — the body is never written anywhere.
-  if (count(waiting) === 1) {
+  //
+  // THIS IS THE RULE R8 CAME CLOSEST TO EATING. `admitted` is the
+  // router's word for "may be handed to an app", and it excludes `hold`
+  // by design; inheriting it as the counting predicate would have made a
+  // waiting stranger silently free. Counting is not delivering.
+  if (count(waiting.publicKey) === 1) {
     test.check('and somebody waiting is counted, because a dropped line was still a demand');
   } else {
-    test.fail('waiting: ' + count(waiting));
+    test.fail('waiting: ' + count(waiting.publicKey));
   }
 
-  if (count(refused) === 0 && count(stranger) === 0 && count(me.publicKey) === 0) {
+  if (count(refused.publicKey) === 0 && count(stranger.publicKey) === 0 &&
+      count(me.publicKey) === 0) {
     test.check('and a blocked key, a silent stranger and our own key are all counted as nothing');
   } else {
-    test.fail('refused ' + count(refused) + ', stranger ' + count(stranger) + ', self ' + count(me.publicKey));
+    test.fail('refused ' + count(refused.publicKey) + ', stranger ' +
+      count(stranger.publicKey) + ', self ' + count(me.publicKey));
   }
 
   // A silent stranger gets no row and no sidecar. A file for somebody
   // the book does not list would be a hidden second book — the exact
   // thing `silent` is chosen to avoid.
-  if (!fs.existsSync(peerStats.statsPath(home, stranger))) {
+  if (!fs.existsSync(peerStats.statsPath(home, stranger.publicKey))) {
     test.check('and no file is written for a stranger the book refused to list');
   } else {
     test.fail('sidecar written for a silent stranger');
   }
 
+  // And nothing of the stranger reached an app either. On the ring this
+  // was a filter over a returned batch; here it is the front door, and
+  // the packet never becomes an arrival at all.
+  if (N.arrived.length === 2) {
+    test.check('while only the contact and this node itself reached an app');
+  } else {
+    test.fail('arrivals: ' + N.arrived.length);
+  }
+
   // Blocked freezes where it stood — it does not fall to zero and the
   // file is not deleted, because bytesHeld is still telling the truth
   // about disk that is really being used.
-  peerStats.noteIn(home, refused, 'earlier');
-  const frozen = count(refused);
-  hub.applyInboxBatch(home, [line(6, 'dave', refused, me.publicKey, 'again')], RELAY_URL);
-  if (count(refused) === frozen && frozen === 1) {
+  //
+  // Asked under `acquire`, which is the setting that makes it a real
+  // question: a blocked row is not in listenSet, so the door says
+  // `admit` and only the book's own answer keeps the number still.
+  peerStats.noteIn(home, refused.publicKey, 'earlier');
+  const frozen = count(refused.publicKey);
+  setUnknownPolicy(home, 'acquire');
+  await N.router.onRequest(RELAY_URL, arriving(refused, me.publicKey, 'again'));
+  if (count(refused.publicKey) === frozen && frozen === 1) {
     test.check('and a blocked key\'s numbers freeze rather than fall, file and all');
   } else {
-    test.fail('frozen at ' + frozen + ', now ' + count(refused));
+    test.fail('frozen at ' + frozen + ', now ' + count(refused.publicKey));
   }
 }
 
-test.subHeading('A row created this batch is a row this batch can count');
+test.subHeading('A row created by this packet is a row this packet can count');
 
-{
-  // Order matters and is easy to get backwards: policy runs first,
-  // because under `hold` the row for a waiting stranger is made by
-  // holdFromInbox in this same call. Count before policy and the very
-  // first line from somebody new is the one that never counts.
+async function countsTheRowItMakes() {
+  // Order matters and is easy to get backwards: the row is written
+  // before the count is taken, because under `hold` the row for a
+  // waiting stranger is made by this very packet. Count first and the
+  // very first line from somebody new is the one that never counts.
   const me = auth.generateIdentity('andy');
   const home = nodeHome(me, [RELAY_URL]);
-  const newcomer = auth.generateIdentity('frank').publicKey;
+  const newcomer = auth.generateIdentity('frank');
 
   setUnknownPolicy(home, 'hold');
-  hub.applyInboxBatch(home, [line(1, 'frank', newcomer, me.publicKey, 'hello?')], RELAY_URL);
+  const N = countingNode(me, home);
+  await N.router.onRequest(RELAY_URL, arriving(newcomer, me.publicKey, 'hello?'));
 
-  const row = whoBook.byPublicKey(home, newcomer);
+  const row = whoBook.byPublicKey(home, newcomer.publicKey);
   if (row && whoBook.acquiredVia(row) === whoBook.HOLD &&
-      peerStats.readSummary(home, newcomer).unansweredInbound === 1) {
-    test.check('under List them, the line that creates the row is the line that counts it');
+      peerStats.readSummary(home, newcomer.publicKey).unansweredInbound === 1) {
+    test.check('under List them, the packet that creates the row is the packet that counts it');
   } else {
     test.fail('row ' + (row && whoBook.acquiredVia(row)) + ', count ' +
-      peerStats.readSummary(home, newcomer).unansweredInbound);
+      peerStats.readSummary(home, newcomer.publicKey).unansweredInbound);
   }
 
-  // And the line itself is still dropped. Counting is not delivering.
-  const body = hub.applyInboxBatch(home, [line(2, 'frank', newcomer, me.publicKey, 'still?')], RELAY_URL);
-  if (body.messages.length === 0 && body.unknown === 1 &&
-      peerStats.readSummary(home, newcomer).unansweredInbound === 2) {
-    test.check('and the line is still dropped — counted is not delivered');
+  // And the packet itself is still not delivered. Counting is not
+  // delivering, and a held sender must reach no app until a human says
+  // so.
+  await N.router.onRequest(RELAY_URL, arriving(newcomer, me.publicKey, 'still?'));
+  if (N.arrived.length === 0 &&
+      peerStats.readSummary(home, newcomer.publicKey).unansweredInbound === 2) {
+    test.check('and it is still held — counted is not delivered');
   } else {
-    test.fail('delivered ' + body.messages.length + ', unknown ' + body.unknown);
+    test.fail('delivered ' + N.arrived.length + ', count ' +
+      peerStats.readSummary(home, newcomer.publicKey).unansweredInbound);
+  }
+
+  // AND WHICH ROAD THEY CAME DOWN IS WRITTEN DOWN. whoBook's `relays` is
+  // "mailboxes where you have seen this key" — the only routing fact
+  // this node holds about a stranger. acquireFromInbox recorded it, and
+  // R8 would have taken it silently: peerPost had the relay url on every
+  // traffic-log row and was not passing it to `remember`. Nothing caught
+  // that while both transports were acquiring in parallel.
+  if (row && (row.relays || []).indexOf(RELAY_URL) !== -1) {
+    test.check('with the relay it arrived on recorded against the row');
+  } else {
+    test.fail('relays: ' + JSON.stringify(row && row.relays));
+  }
+
+  // AND NO CAPTION, which is the other half of the same fact and the one
+  // thing R8 really did cost. acquireFromInbox read `publicLabel` off the
+  // relay's stored copy of the line; a post carries keys and no captions,
+  // because the relay does not read the payload. This node has walked no
+  // census, so there is nothing else to name him with — and that is what
+  // an unnamed row looks like until one is walked.
+  if (row && row.publicLabel === '') {
+    test.check('and no caption — a post carries keys, and the census does the naming');
+  } else {
+    test.fail('label on a node that walked no census: ' + JSON.stringify(row && row.publicLabel));
   }
 }
 
-test.subHeading('The poll and the sweep are one function');
+test.subHeading('There is one arrival path, and it is not a poll');
 
 {
-  // Two callers, one apply path, or the address book and the counters
-  // drift apart and only one of them is ever looked at. The sweep exists
-  // because counters that advanced only while a chat window was open
-  // would make Contacts read "quiet" for somebody who had been writing
-  // all afternoon.
-  // Matched on the CALL, not on the name: `applyInboxBatch(rootDir,` also
-  // matches the function's own definition, which is how this check first
-  // read three call sites where there are two. A grep that finds itself
-  // is the recurring way a source check passes while saying nothing.
+  // TWO CALLERS, ONE APPLY PATH stood here: `handleInbox` and
+  // `sweepInbox` both had to go through `applyInboxBatch`, or the
+  // address book and the counters would drift apart and only one of them
+  // would ever be looked at. The sweep existed because counters that
+  // advanced only while a chat window was open would make Contacts read
+  // "quiet" for somebody who had been writing all afternoon.
+  //
+  // R8 deleted all three. The drift it guarded against cannot happen
+  // now, for a better reason than agreement between two callers: there
+  // is ONE path. A packet arrives on the stream, peerPost admits it,
+  // remembers the sender and counts them, in that order, once.
+  //
+  // So the check inverts. It used to prove two callers shared a
+  // function; it now proves the function they shared is gone and that
+  // nothing has quietly grown a poll to replace it.
   const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8');
-  const applies = (src.match(/applyInboxBatch\(rootDir, parsed\.messages, url\)/g) || []).length;
-  const inHandleInbox = /function handleInbox[\s\S]*?applyInboxBatch\(rootDir, parsed\.messages, url\)/.test(src);
-  const inSweep = /function sweepInbox[\s\S]*?applyInboxBatch\(rootDir, parsed\.messages, url\)/.test(src);
-  if (applies === 2 && inHandleInbox && inSweep) {
-    test.check('handleInbox and sweepInbox both go through applyInboxBatch, and nothing else does');
+  const server = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
+
+  const ringNames = ['applyInboxBatch', 'sweepInbox', 'handleInbox', 'countInbound',
+    'partitionInbox', 'acquireFromInbox', 'holdFromInbox'];
+  // Called, not merely mentioned: every one of these is named in a
+  // tombstone comment explaining what it was, and a scanner that could
+  // not tell a call from an epitaph would make those comments
+  // undeletable.
+  const alive = ringNames.filter(function (name) {
+    return new RegExp('(?:^|[^\\w.])' + name + '\\s*\\(', 'm').test(
+      src.replace(/^\s*\/\/.*$/gm, '')
+    );
+  });
+  if (!alive.length) {
+    test.check('none of the ring\'s seven read-path functions is called anywhere in hub.js');
   } else {
-    test.fail(applies + ' call sites, inbox ' + inHandleInbox + ', sweep ' + inSweep);
+    test.fail('still called: ' + alive.join(', '));
   }
 
-  // And the sweep is personal-node only. A --relay is a mailbox: no
-  // book, nobody to count, and other people's keys on it.
-  const server = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
-  if (/if \(!relayMode\) \{[\s\S]*?hub\.sweepInbox\(\)/.test(server)) {
-    test.check('and the timer that drives it runs on a personal node only, never on a --relay');
+  // And no timer pulls mail. The 60-second sweep was the last one, and a
+  // node that polls is a node asking a relay to have kept something.
+  if (!/setInterval[\s\S]{0,200}?[Ii]nbox/.test(server) && server.indexOf('INBOX_SWEEP_MS') === -1) {
+    test.check('and no timer on the node pulls mail from a relay any more');
   } else {
-    test.fail('sweep is not gated on !relayMode');
+    test.fail('a sweep timer survives in server.js');
+  }
+
+  // The rule that outlived the sweep: a --relay is a mailbox with no
+  // book, nobody to count, and other people's keys on it. Counting has
+  // never happened there and peerPost is where it happens now.
+  const pp = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'peerPost.js'), 'utf8');
+  if (/stats\.noteIn\(rootDir, body\.from, hash\)/.test(pp)) {
+    test.check('counting lives on the arrival path, keyed by the request hash');
+  } else {
+    test.fail('peerPost no longer counts inbound traffic');
   }
 }
-
 test.subHeading('What buildPeople hands the app');
 
 {
@@ -1005,6 +1210,10 @@ test.subHeading('What buildPeople hands the app');
 runOverLoopback()
   .then(unknownMail)
   .then(heldAndBlocked)
+  // Async since R8: the counting sections drive peerPost.onRequest, which
+  // is a promise, where applyInboxBatch was a call and a return.
+  .then(whoIsCounted)
+  .then(countsTheRowItMakes)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contacts threw: ' + ((err && err.stack) || err));

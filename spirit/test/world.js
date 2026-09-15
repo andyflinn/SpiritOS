@@ -143,17 +143,16 @@ function assemble(s) {
     });
   });
 
-  // Mail, so a suite about reading does not have to write its own first.
-  s.messages.forEach(function (m) {
-    const from = cast[m.from];
-    if (!from) return;
-    const toLabel = m.to ? (cast[m.to] ? cast[m.to].label : m.to) : s.owner;
-    if (!toLabel) return;
-    boxes[first].send(
-      from.label, toLabel, m.text,
-      auth.sign(from.id.privateKey, auth.sendMessage(from.label, toLabel, m.text))
-    );
-  });
+  // MAIL WAS SEEDED HERE, so a suite about reading did not have to write
+  // its own first. Deleted with the ring (R8, 2026-09-15), and the field
+  // that fed it is refused by name now — see scenario.js, which carries
+  // the reasoning and what would bring it back.
+  //
+  // The short version: there is nowhere to put it. A relay keeps nothing
+  // on anyone's behalf, so a world cannot be built with mail already
+  // sitting in it. A packet exists because somebody was connected and
+  // somebody posted — which is a thing a SUITE arranges, in the two lines
+  // routerPost.js uses, and not a thing a world can be born holding.
 
   // What happens AFTER. Removing somebody who stays in an address book
   // is the only way the third presence state occurs, and it is the step
@@ -243,10 +242,11 @@ function assemble(s) {
         const who = cast[name] || { id: owner, label: s.owner };
         return auth.sign(who.id.privateKey, auth.claimMessage(who.label));
       },
-      inbox: function (name, token) {
-        const who = cast[name] || { id: owner, label: s.owner };
-        return auth.sign(who.id.privateKey, auth.inboxMessage(token || who.label));
-      },
+      // `inbox` STOOD HERE and went with the verb it signed (R8).
+      // `stream` below is the only signed GET left on a relay, and it
+      // signs a KEY rather than a label — which is the difference that
+      // outlived the ring: labels duplicate by design, so a proof naming
+      // one identifies nobody on a box holding two johns.
       stream: function (name) {
         const who = cast[name] || { id: owner, label: s.owner };
         return auth.sign(who.id.privateKey, auth.streamMessage(who.id.publicKey));

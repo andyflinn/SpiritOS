@@ -76,28 +76,27 @@ test.startTest('A device key proves nothing to a relay');
     test.fail('peers: ' + JSON.stringify(who.peers));
   }
 
-  // ── THE NEGATIVE, three ways ───────────────────────────────────────
+  // ── THE NEGATIVE, two ways ─────────────────────────────────────────
   //
   // Each of these succeeded before 2026-09-13. They are the gates that
   // had no caller, and this is what stops them coming back as a "fix".
+  //
+  // It was THREE ways until R8 (2026-09-15): `send` and `inbox` each had
+  // a device branch, and both are gone with the transport that held them.
+  // What is asked instead is the same question of the transport that is
+  // left — a device key must not POST as its owner — plus the stream
+  // check, which never depended on the ring at all.
 
-  const phoneSend = box.send(
-    'andy', 'andy', 'from the phone',
-    auth.sign(phone.privateKey, auth.sendMessage('andy', 'andy', 'from the phone'))
-  );
-  if (phoneSend && phoneSend.ok === false) {
-    test.check('a device cannot send as its owner');
-  } else {
-    test.fail('device send: ' + JSON.stringify(phoneSend));
-  }
+  const TEXT = '{"app":"device-probe","v":1,"body":"from the phone"}';
 
-  const phoneInbox = box.inbox(
-    'andy', auth.sign(phone.privateKey, auth.inboxMessage('andy'))
+  const phonePost = box.routePost(
+    house.publicKey, house.publicKey, TEXT,
+    auth.sign(phone.privateKey, auth.postMessage(house.publicKey, house.publicKey, TEXT))
   );
-  if (phoneInbox && phoneInbox.ok === false) {
-    test.check('and cannot read its owner\'s mail');
+  if (phonePost && phonePost.ok === false && phonePost.status === 403) {
+    test.check('a device cannot post as its owner');
   } else {
-    test.fail('device inbox: ' + JSON.stringify(phoneInbox));
+    test.fail('device post: ' + JSON.stringify(phonePost));
   }
 
   const phoneStream = box.streamOpen(
@@ -112,35 +111,43 @@ test.startTest('A device key proves nothing to a relay');
 
   // ── AND THE HOUSE KEY IS UNTOUCHED ─────────────────────────────────
   //
-  // Without these three, the checks above would pass on a relay that
-  // simply refused everybody.
+  // Without this, the checks above would pass on a relay that simply
+  // refused everybody.
 
-  const houseSend = box.send(
-    'andy', 'andy', 'from the desk',
-    auth.sign(house.privateKey, auth.sendMessage('andy', 'andy', 'from the desk'))
+  const houseSink = { lines: [], write: function (c) { this.lines.push(c); }, close: function () {} };
+  const houseStream = box.streamOpen(
+    house.publicKey,
+    auth.sign(house.privateKey, auth.streamMessage(house.publicKey)),
+    houseSink
   );
-  const houseInbox = box.inbox(
-    'andy', auth.sign(house.privateKey, auth.inboxMessage('andy'))
+  const housePost = box.routePost(
+    house.publicKey, house.publicKey, TEXT,
+    auth.sign(house.privateKey, auth.postMessage(house.publicKey, house.publicKey, TEXT))
   );
-  if (houseSend.ok && houseInbox.ok) {
-    test.check('while the house key still sends and reads, as it always did');
+  if (houseStream.ok && housePost.ok) {
+    test.check('while the house key still opens the wire and posts, as it always did');
   } else {
-    test.fail('house: send=' + houseSend.ok + ' inbox=' + houseInbox.ok);
+    test.fail('house: stream=' + houseStream.ok + ' post=' + housePost.ok +
+      ' ' + JSON.stringify(housePost));
   }
 
   // A stranger was always refused, and still is. This never depended on
   // device keys either way.
   const stranger = auth.generateIdentity('eve');
-  const eveRead = box.inbox('andy', auth.sign(stranger.privateKey, auth.inboxMessage('andy')));
-  const eveSend = box.send(
-    'andy', 'andy', 'nope',
-    auth.sign(stranger.privateKey, auth.sendMessage('andy', 'andy', 'nope'))
+  const evePost = box.routePost(
+    house.publicKey, house.publicKey, TEXT,
+    auth.sign(stranger.privateKey, auth.postMessage(house.publicKey, house.publicKey, TEXT))
   );
-  if (eveRead.ok === false && eveSend.ok === false) {
+  const eveStream = box.streamOpen(
+    house.publicKey, auth.sign(stranger.privateKey, auth.streamMessage(house.publicKey)),
+    { write: function () { return true; }, close: function () {} }
+  );
+  if (evePost.ok === false && eveStream.ok === false) {
     test.check('and a stranger is refused both, as before');
   } else {
-    test.fail('eve: read=' + eveRead.ok + ' send=' + eveSend.ok);
+    test.fail('eve: post=' + evePost.ok + ' stream=' + eveStream.ok);
   }
+  box.streamClose(house.publicKey);
 
   // AND A DEVICE MUST NOT BECOME A ROW. The one rule from this suite's
   // original subject that still has something to guard: a device that

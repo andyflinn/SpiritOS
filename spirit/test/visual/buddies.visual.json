@@ -14,11 +14,5 @@
     { "name": "dina", "on": ["lab"], "running": true }
   ],
 
-  "knows": [["bella", "carlos"], ["carlos", "dina"]],
-
-  "messages": [
-    { "from": "bella", "text": "morning" },
-    { "from": "carlos", "text": "are you about?" },
-    { "from": "dina", "text": "ping" }
-  ]
+  "knows": [["bella", "carlos"], ["carlos", "dina"]]
 }

@@ -1361,9 +1361,11 @@
 
       onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },
 
-      // Handing the poll's catch to the shell to route. Temporary seam —
-      // see deliverPackets above.
-      deliverPackets: function (messages) { return deliverPackets(messages); },
+      // api.deliverPackets STOOD HERE — an app handing the shell its
+      // poll's catch to fan out. It was marked a temporary seam when it
+      // was written and R8 is what it was waiting for: the ring is gone,
+      // so there is no second source and no app is the shell's supplier.
+      // Arrivals reach onPacket down the node's stream.
 
       // The public label this node claimed, or '' if it has not. The
       // shell reads it for the window title and hands it on rather than
@@ -1708,18 +1710,20 @@
     };
   }
 
-  // Fan-in. Two sources now, and the handlers below cannot tell them
-  // apart — which was the whole promise of this seam:
+  // Fan-out, and ONE SOURCE now: a `packet` event on /api/events, pushed
+  // the instant a peer's post lands (server.js, arrivals.js). No poll, no
+  // app in the middle.
   //
-  //   the ROUTER   — a `packet` event on /api/events, pushed the instant
-  //                  a peer's post lands (server.js, arrivals.js). No
-  //                  poll, no app in the middle.
-  //   the RING     — Relay Chat's inbox loop, still calling
-  //                  api.deliverPackets with whatever it caught.
+  // It was a fan-IN until R8, and the second source was the reason this
+  // seam was worth writing down: Relay Chat's inbox loop called
+  // api.deliverPackets with whatever its poll caught, so every app's
+  // api.onPacket depended on Relay Chat running — including apps with
+  // nothing to do with chat. That went with the ring, as the comment
+  // standing here predicted it would.
   //
-  // The ring's half is what made this fan-out parasitic: every app's
-  // api.onPacket depended on Relay Chat running, including apps that had
-  // nothing to do with chat. It goes when the ring does.
+  // A packet with no `app` is one nobody sent through packet.encode — a
+  // bare string from a peer running old code. It reaches no handler,
+  // because an app that asked for its own name did not ask for that.
   //
   // A packet for an app nobody is listening to is DROPPED — not held,
   // not queued, not announced. There is no hold store yet, and inventing
@@ -1728,7 +1732,7 @@
     var routed = [];
     (Array.isArray(messages) ? messages : []).forEach(function (message) {
       var info = message && message.packet;
-      if (!info || info.legacy || !info.app) return; // legacy lines belong to whoever polls
+      if (!info || !info.app) return; // no envelope: addressed to no app
       var listeners = packetHandlers[info.app] || [];
       if (!listeners.length) return; // nobody home: dropped on purpose
       routed.push(message);
@@ -2330,10 +2334,11 @@
       notifyJobSubscribers(null);
       renderActive();
     },
-    // One packet, pushed the moment it landed. deliverPackets takes a
-    // batch because the ring delivers batches; a router arrival is
-    // always one, and wrapping it here rather than teaching the fan-out
-    // about two shapes keeps the seam where the comment above says it is.
+    // One packet, pushed the moment it landed. deliverPackets still takes
+    // a batch — it did because the ring delivered batches, and it keeps
+    // doing because arrivals.subscribe() hands a page its backlog the
+    // moment it opens. A live arrival is always one, and wrapping it here
+    // is cheaper than teaching the fan-out two shapes.
     //
     // No renderActive(). An arriving packet is not a repaint — the app
     // that wanted it decides what to do, and an app that is not on

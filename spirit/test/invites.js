@@ -14,17 +14,42 @@ function tmpHome() {
 
 test.startTest('Invites cycle 1 — consume on claim');
 
+// ── ON KEYS MODE, SINCE 2026-09-15 ───────────────────────────────────
+//
+// These two blocks were written against a names-mode allow.json —
+// `{ "names": ["andy"] }` — because that is where invites were born: a
+// guest list of bare labels, with a token as the way an owner let
+// somebody in without SSH-editing the file.
+//
+// Names mode is gone. Nothing in the tree ever wrote one, and the two
+// gates that made it mean anything went with the ring in the same
+// sitting. Cycle 4 had already given keys mode its own invite lock, so
+// what these blocks assert — CONSUME ON CLAIM, an invite is a waiting
+// room and not a guestbook — simply moved doors.
+//
+// The fixture is one line longer for it: the owner has to claim first,
+// because keys mode is what a box becomes when somebody does. That is
+// not scaffolding, it is the world these rules live in.
+
 {
   const home = tmpHome();
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(
-    path.join(home, 'relay-state', 'allow.json'),
-    JSON.stringify({ names: ['andy'] })
-  );
-
   const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
   const saint = auth.generateIdentity('saint');
+
+  // First claim is owner (decision 0003), and needs no invite because
+  // there is nobody to invite them yet. This is what turns the box to
+  // keys mode.
+  const owner = box.claim(
+    'andy',
+    auth.sign(andy.privateKey, auth.claimMessage('andy')),
+    andy.publicKey
+  );
+  if (owner.ok && owner.owner) {
+    test.check('first claim is owner, and the box is keys mode from here');
+  } else {
+    test.fail('owner: ' + JSON.stringify(owner));
+  }
 
   const noTok = box.claim(
     'saint',
@@ -33,7 +58,7 @@ test.startTest('Invites cycle 1 — consume on claim');
     '10.0.0.1'
   );
   if (!noTok.ok && noTok.status === 403) {
-    test.check('names-mode saint without invite is refused');
+    test.check('a second key without an invite is refused');
   } else {
     test.fail('no invite: ' + JSON.stringify(noTok));
   }
@@ -74,7 +99,7 @@ test.startTest('Invites cycle 1 — consume on claim');
     'tok-saint-1'
   );
   if (ok.ok && ok.status === 201) {
-    test.check('names-mode saint with invite and key is accepted');
+    test.check('saint with invite and key is accepted');
   } else {
     test.fail('saint invite claim: ' + JSON.stringify(ok));
   }
@@ -102,18 +127,16 @@ test.startTest('Invites cycle 1 — consume on claim');
 
 {
   const home = tmpHome();
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(
-    path.join(home, 'relay-state', 'allow.json'),
-    JSON.stringify({ names: ['andy'] })
-  );
+  const box = createRelay(home);
+  const andy = auth.generateIdentity('andy');
+  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
+
   invites.add(home, {
     label: 'late',
     token: 'tok-expired',
     invitedBy: 'andy',
     expiresAt: '2020-01-01T00:00:00.000Z',
   });
-  const box = createRelay(home);
   const late = auth.generateIdentity('late');
   const r = box.claim(
     'late',
@@ -139,10 +162,15 @@ test.startTest('Invites cycle 1 — consume on claim');
     annie.publicKey
   );
   // This block used to assert the opposite — that cycle 1 left keys-mode
-  // open. Cycle 4 closed it, so what it guards now is that the names-mode
-  // invite path above and the keys-mode lock are two different doors:
-  // names mode still admits an allow-listed name with no token at all,
-  // keys mode does not. inviteLock.js covers the lock itself.
+  // open. Cycle 4 closed it.
+  //
+  // It then guarded that the names-mode invite path and the keys-mode
+  // lock were two different doors, one of which admitted an allow-listed
+  // name with no token at all. Names mode went on 2026-09-15, so there is
+  // ONE door, and what this guards is that it is locked: a second key on
+  // a claimed box is refused by name — `invite required` — rather than by
+  // a signature check that happens to fail. inviteLock.js covers the lock
+  // itself.
   const john = auth.generateIdentity('john');
   const extra = box.claim(
     'john',

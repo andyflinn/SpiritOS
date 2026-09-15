@@ -23,12 +23,28 @@
 // The whole vocabulary. Anything outside it is refused rather than
 // ignored, because a field somebody added in good faith that silently
 // does nothing is worse than an error.
+// `messages` STOOD IN THIS LIST and was removed on 2026-09-15 with the
+// ring (R8). A scenario could declare mail — `{from, to, text}` — and
+// world.build seeded it into the relay's 200-entry store so a suite
+// about READING did not have to write its own first.
+//
+// There is no store. A relay delivers or refuses and keeps nothing
+// (decision 0006), so a world cannot be built with mail already sitting
+// in it: the only way a packet exists is that somebody was connected and
+// somebody posted. Leaving the field in and quietly ignoring it is the
+// one thing this list exists to prevent — "a field somebody added in
+// good faith that silently does nothing is worse than an error" — so it
+// is refused by name now, like any other word the builder cannot honour.
+//
+// WHAT WOULD BRING IT BACK: seeding the receiving NODE's traffic log
+// rather than the relay, which is where a node's own record of what
+// arrived actually lives. That is a real option and not this sitting's;
+// it needs the builder to construct node homes, which it does not.
 const TOP = [
   'title', 'why', 'covers', 'look',   // documentation, for the visual side
-  'relays', 'owner', 'peers', 'knows', 'messages', 'then',
+  'relays', 'owner', 'peers', 'knows', 'then',
 ];
 const PEER = ['name', 'label', 'on', 'running', 'expect'];
-const MESSAGE = ['from', 'to', 'text'];
 const THEN = ['remove', 'from', 'why'];
 
 // `lab` is the relay a world always has. `live` names the real one and
@@ -96,9 +112,6 @@ function normalize(input) {
     owner: doc.owner === null ? null : (doc.owner || 'andy'),
     peers: peers,
     knows: (doc.knows || []).map(function (pair) { return (pair || []).slice(); }),
-    messages: (doc.messages || []).map(function (m) {
-      return { from: m.from, to: m.to || null, text: m.text || '' };
-    }),
     then: (doc.then || []).map(function (step) {
       return { remove: step.remove, from: step.from || 'lab', why: step.why || '' };
     }),
@@ -146,17 +159,10 @@ function problems(input) {
     });
   });
 
-  (doc.messages || []).forEach(function (m) {
-    unknown(m, MESSAGE).forEach(function (k) {
-      found.push('a message has unknown field `' + k + '`');
-    });
-  });
-  s.messages.forEach(function (m) {
-    if (names.indexOf(m.from) === -1) found.push('a message is from a stranger: `' + m.from + '`');
-    if (m.to && names.indexOf(m.to) === -1 && m.to !== s.owner) {
-      found.push('a message is to a stranger: `' + m.to + '`');
-    }
-  });
+  // The `messages` checks stood here — a message from a stranger, a
+  // message to a stranger, an unknown field on one. `messages` is not in
+  // TOP any more, so `unknown()` above refuses the whole field by name
+  // and these three can say nothing a reader needs.
 
   (doc.then || []).forEach(function (step) {
     unknown(step, THEN).forEach(function (k) {

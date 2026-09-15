@@ -65,11 +65,17 @@ function run() {
     hwhat: 1,
     peers: [{ name: 'a', colour: 'red' }, { name: 'a' }, { name: 'b', on: ['nowhere'] }],
     knows: [['a', 'ghost']],
+    // `messages` was one of these complaints — "a message is from a
+    // stranger" — until R8 (2026-09-15). The field itself is refused now,
+    // because a relay keeps nothing and a world cannot be born holding
+    // mail, so it is here as an UNKNOWN FIELD rather than a malformed
+    // one. That is the stronger complaint: the scenario is told the word
+    // means nothing, instead of being told its contents are wrong.
     messages: [{ from: 'nobody', text: 'hi' }],
     then: [{ remove: 'phantom', from: 'lab' }],
   });
   const wanted = ['unknown field `hwhat`', 'unknown field `colour`', 'two peers named `a`',
-    'unknown relay `nowhere`', 'stranger: `ghost`', 'from a stranger: `nobody`',
+    'unknown relay `nowhere`', 'stranger: `ghost`', 'unknown field `messages`',
     'removes a stranger: `phantom`'];
   const missed = wanted.filter(function (w) {
     return !messy.some(function (m) { return m.indexOf(w) !== -1; });
@@ -133,7 +139,6 @@ function run() {
 
   const L = world.build({
     peers: ['bert', { name: 'johnA', label: 'john' }, { name: 'johnB', label: 'john' }],
-    messages: [{ from: 'bert', text: 'morning' }],
   });
   if (!L.ok) { test.fail(L.error); test.reportSuccessFailureCount(); return; }
 
@@ -151,11 +156,18 @@ function run() {
     test.fail('the two johns are not two keys');
   }
 
-  const mail = L.box.inbox('andy', L.sign.inbox('andy'));
-  if (mail.ok && (mail.messages || []).some(function (m) { return m.text === 'morning'; })) {
-    test.check('and the message the scenario declared is in the owner\'s inbox');
+  // "AND THE MESSAGE THE SCENARIO DECLARED IS IN THE OWNER'S INBOX"
+  // stood here. A scenario cannot declare one any more (R8): there is
+  // nowhere on a relay to put it, and the field is refused by name.
+  //
+  // What a built world holds instead is asserted directly — nothing.
+  // Stated rather than assumed, because "no mail" and "a mail store this
+  // suite forgot to look in" read identically from the outside.
+  if (L.box.snapshot().messages === undefined && typeof L.box.inbox !== 'function') {
+    test.check('and the world it builds holds no mail, because a relay has nowhere to keep any');
   } else {
-    test.fail('inbox: ' + JSON.stringify(mail).slice(0, 140));
+    test.fail('a relay still reports a message store: ' +
+      JSON.stringify(L.box.snapshot().messages) + ', inbox=' + typeof L.box.inbox);
   }
 
   test.subHeading('The mailbox has a key of its own');

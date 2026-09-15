@@ -2,8 +2,12 @@
 
 // Shared by relay.js (verify) and hub.js (sign). Node crypto only.
 // Files live on that process's spirit/run home, never in git:
-//   relay-state/allow.json     { "names": [...] }  OR  { "keys": [{ "name", "publicKey", "devicePublicKey"? }] }
+//   relay-state/allow.json     { "keys": [{ "name", "publicKey" }] }, or absent = open
 //   relay-state/identity.json  { "name", "publicKey", "privateKey" }
+//
+// TWO MODES, NOT THREE. `{ "names": [...] }` was a third and went on
+// 2026-09-15 — see loadAllow. `devicePublicKey` was a third field on a
+// key row and went on 2026-09-13 — see writeAllowKeys.
 
 const fs = require('fs');
 const path = require('path');
@@ -20,55 +24,38 @@ function claimMessage(name) {
   return 'claim\n' + name;
 }
 
-function sendMessage(from, to, text) {
-  return 'send\n' + from + '\n' + to + '\n' + text;
-}
-
 function statusMessage(name) {
   return 'status\n' + name;
 }
 
-// Reading a mailbox is as much a capability as writing to one. claim and
-// send were signature-gated from the start while inbox took a bare name
-// and handed over that peer's messages to anyone who asked — so on a relay
-// where every write was cryptographically proven, every read was still
-// anonymous, and any name was enough to drain someone's mail. Peer-by-key
-// re-opened that hole; this is the gate again, and checkInboxKey below is
-// how it is enforced now that a peer carries a key of its own.
+// sendMessage AND inboxMessage STOOD HERE — the ring's two signed
+// formats, deleted with it by R8 on 2026-09-15 and struck from the
+// register in decision 0010.
 //
-// The bytes carry the minute they were made in, because without one the
-// signature is a permanent read token: `inbox\n<label>` never changes, it
-// travelled in the query string, and a query string is written to every
-// access log a request passes through. One line of a proxy log was a
-// standing licence to drain that mailbox, with no way to revoke it short
-// of changing the key.
+//   sendMessage   'send\n<from>\n<to>\n<text>'    signed by LABEL
+//   inboxMessage  'inbox\n<label>\n<unix-minute>' proved a read
 //
-// `unix-minute` is decimal and unpadded. The window below is what makes a
-// captured line die on its own.
-function inboxMessage(name, atMs) {
-  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
-  return 'inbox\n' + name + '\n' + minute;
-}
-
-// Previous, current and next: enough for two clocks a minute apart, and
-// short enough that a captured signature is worthless before anybody has
-// finished reading the log it landed in. Next as well as previous,
-// because the SIGNER may be the one running fast.
-function inboxSignatureOk(publicKey, token, sig, atMs) {
-  if (!publicKey || !sig) return false;
-  var now = atMs == null ? Date.now() : atMs;
-  for (var step = -1; step <= 1; step += 1) {
-    if (verify(publicKey, inboxMessage(token, now + step * 60000), sig)) return true;
-  }
-  return false;
-}
-
+// Worth recording what `inbox` cost to get right, because the lesson
+// outlived the verb and is enforced two functions down. Reading a mailbox
+// is as much a capability as writing to one: claim and send were
+// signature-gated from the start while inbox took a bare name and handed
+// over that peer's messages to anyone who asked. Peer-by-key re-opened
+// the same hole. And the first fix was not enough either — `inbox\n<label>`
+// never changed, it travelled in the query string, and a query string is
+// written to every access log a request passes through, so one line of a
+// proxy log was a standing licence to drain that mailbox with no way to
+// revoke it short of changing the key. The minute in the bytes is what
+// made a captured line die on its own.
+//
+// Both halves of that survive the verb: streamMessage below carries a
+// minute for the same reason, and relay.streamSignatureFrom refuses a
+// signature on the query outright.
+//
 // ITS OWN VERB, and that is the point of it. The owner signs `status` for
-// every census and `inbox` every two seconds, so a captured signature is
-// always available to somebody reading a log — and what this one opens is
-// a STANDING grant rather than a single read, which makes it a far better
-// prize than either. Same reason deviceGate gave `device-take` its own
-// bytes.
+// every census, so a captured signature is always available to somebody
+// reading a log — and what this one opens is a STANDING grant rather than
+// a single read, which makes it a far better prize. Same reason deviceGate
+// gave `device-take` its own bytes.
 //
 // The token is a public KEY, not a label. Labels duplicate by design, so
 // a signature naming one identifies nobody on a relay holding two johns
@@ -78,9 +65,10 @@ function streamMessage(key, atMs) {
   return 'stream\n' + String(key || '') + '\n' + minute;
 }
 
-// Previous, current and next, exactly as inboxSignatureOk: enough for two
-// clocks a minute apart, in both directions, because the SIGNER may be
-// the one running fast.
+// Previous, current and next: enough for two clocks a minute apart, in
+// both directions, because the SIGNER may be the one running fast. The
+// ring's inboxSignatureOk had the same window for the same reason, and
+// this is the only one of the pair left.
 function streamSignatureOk(publicKey, key, sig, atMs) {
   if (!publicKey || !sig) return false;
   var now = atMs == null ? Date.now() : atMs;
@@ -234,9 +222,23 @@ function loadAllow(rootDir) {
       });
       return { mode: 'keys', byName: byName };
     }
-    if (parsed && Array.isArray(parsed.names)) {
-      return { mode: 'names', names: parsed.names };
-    }
+    // NAMES MODE STOOD HERE — `{ "names": [...] }`, a list of labels
+    // allowed to claim with no key behind any of them. Deleted on
+    // 2026-09-15.
+    //
+    // Not because it was unused in principle but because NOTHING IN THE
+    // TREE EVER WROTE ONE. `writeAllowKeys` is the only writer of this
+    // file and it writes `keys`; first-claim-is-owner (decision 0003)
+    // produces a keys-mode box and always did. A names-mode allow.json
+    // could only arrive by hand, and the two gates that made it mean
+    // anything — checkSend and checkInbox — went with the ring in the
+    // same sitting, so what was left was a mode that could claim and do
+    // nothing else.
+    //
+    // A relay upgrading in place that somehow holds one falls through to
+    // `open` below. That is the honest reading rather than a silent
+    // demotion: a list of bare names with no keys IS an open box with a
+    // guest list, and open mode says so out loud at startup.
   } catch (e) { /* missing = open */ }
   return { mode: 'open' };
 }
@@ -304,13 +306,10 @@ function checkClaim(allow, name, sig) {
   if (name === RESERVED_NAME) {
     return { ok: false, status: 400, error: 'name reserved' };
   }
+  // Open is a real state and stays: it is what a relay looks like before
+  // its first claim, which is the moment decision 0003 turns on. A names
+  // branch stood beneath this and went with the mode (2026-09-15).
   if (allow.mode === 'open') return { ok: true };
-  if (allow.mode === 'names') {
-    if (allow.names.indexOf(name) === -1) {
-      return { ok: false, status: 403, error: 'name not allowed' };
-    }
-    return { ok: true };
-  }
   const pub = allow.byName[name];
   if (!pub) return { ok: false, status: 403, error: 'name not allowed' };
   if (!sig || !verify(pub, claimMessage(name), sig)) {
@@ -319,73 +318,24 @@ function checkClaim(allow, name, sig) {
   return { ok: true };
 }
 
-function checkSend(allow, from, sig, to, text) {
-  if (allow.mode === 'open') return { ok: true };
-  if (allow.mode === 'names') {
-    if (allow.names.indexOf(from) === -1) {
-      return { ok: false, status: 403, error: 'from not allowed' };
-    }
-    return { ok: true };
-  }
-  // Either key is this name. A device is Andy on a handheld, not a second
-  // party: it gets no peer row and claims no label, because two rows
-  // wearing one label make resolveParty ambiguous and the owner's own
-  // inbox stops answering (DEVICE-CYCLE1.md, and the walk-through in
-  // design/reviews/2026-09-10-owner-devices.md §4). So the second key
-  // lives on the owner RECORD, and every gate that asked "is this the
-  // owner's signature" now asks it of both strings.
-  //
-  // There is no lesser rung to put a device on. allow.json in keys mode
-  // is the owner record — ownerName() is its first name, and nothing else
-  // is ever written to it — so a device key is a full copy of the owner's
-  // authority on this box. That is the decision, not an oversight.
-  //
-  // THE ROW'S OWN KEY, and nothing else. A device key was accepted here
-  // until 2026-09-13, on the reasoning quoted above — and the relay does
-  // not hold one any more, because the binding belongs to the node. See
-  // deviceAuth.js for the whole of why.
-  const from_ = allow.byName && allow.byName[from];
-  if (!from_) return { ok: false, status: 403, error: 'from not allowed' };
-  if (!sig || !verify(from_, sendMessage(from, to, text), sig)) {
-    return { ok: false, status: 403, error: 'bad send signature' };
-  }
-  return { ok: true };
-}
-
-// The peer resolved from the requested token carries a key of its own, so
-// the proof runs against that key rather than against the allow list.
-// `token` is whatever the caller asked for — a public label or a public
-// key — and has to be the same string the signature was made over.
-function checkInboxKey(publicKey, token, sig, atMs) {
-  if (!publicKey) return { ok: false, status: 403, error: 'name not allowed' };
-  // Missing and wrong are told apart, because they are different
-  // mistakes: one is a caller that has not been updated, the other is a
-  // signature that does not hold. Same status, no new family.
-  if (!sig) return { ok: false, status: 403, error: 'inbox signature required' };
-  if (!inboxSignatureOk(publicKey, token, sig, atMs)) {
-    return { ok: false, status: 403, error: 'bad inbox signature' };
-  }
-  return { ok: true };
-}
-
-// Keyless mailbox: open and names relays have no per-peer key, so this
-// falls back to the allow list exactly as claim and send do there. In keys
-// mode a name with no key behind it is nobody's mailbox to read.
-function checkInbox(allow, name, sig, atMs) {
-  if (!name) return { ok: false, status: 400, error: 'name required' };
-  // An open or names relay has no per-peer key to check against, so it
-  // never asked for a signature and still does not. The window is a
-  // property of the proof, not of the route.
-  if (allow.mode === 'open' || allow.mode === 'names') return { ok: true };
-  // The row's own key, as in checkSend — no device fallback any more.
-  const reader = allow.byName && allow.byName[name];
-  if (!reader) return { ok: false, status: 403, error: 'name not allowed' };
-  if (!sig) return { ok: false, status: 403, error: 'inbox signature required' };
-  if (!inboxSignatureOk(reader, name, sig, atMs)) {
-    return { ok: false, status: 403, error: 'bad inbox signature' };
-  }
-  return { ok: true };
-}
+// checkSend, checkInboxKey AND checkInbox STOOD HERE — 66 lines, the
+// three gates on the ring, deleted with it by R8 on 2026-09-15.
+//
+// The reasoning that produced them did not go with them, and two pieces
+// of it are load-bearing elsewhere:
+//
+//   A DEVICE IS NOT A SECOND PARTY. It gets no peer row and claims no
+//   label, so the second key lived on the owner RECORD and every gate
+//   asking "is this the owner's signature" asked it of both strings.
+//   allow.json in keys mode is the owner record, so a device key there
+//   was a full copy of the owner's authority — the decision, not an
+//   oversight. Reversed on 2026-09-12: checkOwner below takes the HOUSE
+//   KEY ONLY, and a relay holds no device key at all now (deviceAuth.js).
+//
+//   A KEYLESS RELAY HAS NOTHING TO CHECK AGAINST. open and names mode
+//   had no per-peer key, so both gates waved reads through. That is
+//   why checkClaim above still branches on mode and these did not
+//   survive: a read is gone, a claim is not.
 
 function checkOwner(allow, name, sig) {
   if (allow.mode !== 'keys') {
@@ -406,9 +356,11 @@ function checkOwner(allow, name, sig) {
   // from a hotel room"; it is the owner's admin console in somebody
   // else's pocket.
   //
-  // What a device KEEPS is what a device is for: sending and reading its
-  // owner's mail (checkSend, checkInbox). What it LOSES is the power to
-  // administer the box. A device is the owner's window, not the owner's
+  // What a device KEPT was what a device is for: sending and reading its
+  // owner's mail, through checkSend and checkInbox. Both are gone with
+  // the ring, and a device now reaches its node rather than a relay at
+  // all. What it LOSES here is unchanged — the power to administer the
+  // box. A device is the owner's window, not the owner's
   // credentials — design/relay/DEVICE.md, where authority lives on the
   // node and a device only ever asks.
   const ownerPub = allow.byName && allow.byName[name];
@@ -428,10 +380,7 @@ function ownerName(allow) {
 module.exports = {
   RESERVED_NAME,
   claimMessage,
-  sendMessage,
   statusMessage,
-  inboxMessage,
-  inboxSignatureOk,
   streamMessage,
   streamSignatureOk,
   postMessage,
@@ -448,9 +397,6 @@ module.exports = {
   saveIdentity,
   ensureIdentity,
   checkClaim,
-  checkSend,
-  checkInbox,
-  checkInboxKey,
   checkOwner,
   ownerName,
   loadPendingOwner,

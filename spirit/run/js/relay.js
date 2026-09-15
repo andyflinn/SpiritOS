@@ -15,27 +15,26 @@ const relayStatus = require('./relayStatus');
 // describe the code that is running, not the code on disk.
 const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 
-// THE RING NEVER KEPT ITS PROMISE, and this line is why.
+// THE RING IS GONE (R8, 2026-09-15), and this is the whole of what it
+// was: `send()` into a 200-entry `messages` array persisted inside
+// routingTable.json, read back by polling `GET /api/relay/inbox`.
 //
 //   Andy: "the ring was a lie all along. it was unable to promise
 //   reliable delivery anyways, because it dropped entries on overflow."
 //
-// Store-and-forward is only worth the storing if the store holds. This
-// one is 200 entries GLOBAL — one array for every peer on the box,
-// filtered per reader at read time — so it is worse than unreliable:
-//
-//   a peer sending 200 messages TO THEMSELVES silently evicts every
-//   other peer's undelivered mail
-//
-// Not an attack that needs cleverness, and nothing anywhere is told. So
-// the ring offered a guarantee it could not make and could not even
-// notice breaking, which is the strongest argument for R8 — stronger
-// than "the router is better", because it does not depend on the router
-// being better.
+// Store-and-forward is only worth the storing if the store holds. That
+// one was 200 entries GLOBAL — one array for every peer on the box,
+// filtered per reader at read time — so it was worse than unreliable:
+// a peer sending 200 messages TO THEMSELVES silently evicted every other
+// peer's undelivered mail, and nothing anywhere was told. It offered a
+// guarantee it could not make and could not even notice breaking, which
+// is why decision 0006 sentenced it and why the deletion needed no
+// migration (design/andy/relayStorage.md: "they are all noise").
 //
 // The router's answer to the same problem is to make no promise it
-// cannot keep: delivered down a held stream, or refused at once.
-var MAX_MESSAGES = 200;
+// cannot keep: delivered down a held stream, or refused at once. There
+// is now one transport on this box and it is that one.
+//
 // What a routed request may carry. Larger than packet.js's 1024-byte
 // chat envelope because this is meant to feel like an API call, and
 // small enough that the relay's exposure is a number rather than a hope:
@@ -63,10 +62,8 @@ var ROUTE_WAIT_MS = 15000;
 // temporary and a page that knows it is rate-limited waits rather than
 // gives up. Everything else gets `not now`.
 var DEVICE_PER_MIN = 10;
-var MAX_TEXT = 1024;
 var NAME_RE = /^[A-Za-z0-9._-]{1,32}$/;
 var CLAIM_PER_MIN = 10;
-var SEND_PER_MIN = 30;
 var WINDOW_MS = 60 * 1000;
 var RATE_KEY_SWEEP_AT = 1000;
 
@@ -81,10 +78,9 @@ var RATE_KEY_SWEEP_AT = 1000;
 // something it chooses to call one; this layer does not, and the word
 // belongs nowhere near a box whose whole job is to route and forget.
 //
-// The `messages` ring is still in here and is the one thing in this file
-// that is not routing. Decision 0006 deletes it; until it does, a file
-// called routingTable.json that still contains mail leaves the inversion
-// visible, which is the right way for it to be.
+// The name is now true of the contents. The `messages` ring was the one
+// thing in this file that was not routing, and R8 deleted it — so a file
+// called routingTable.json holds a routing table and nothing else.
 function stateFile(rootDir) {
   return path.join(rootDir, 'relay-state', 'routingTable.json');
 }
@@ -99,9 +95,9 @@ function stateFile(rootDir) {
 // on the outside saying so.
 //
 // It was a READ and never a migration: it re-read the old file on every
-// boot, and only the next persist() — a claim, a send, or a removal —
-// wrote the new name. So deleting it was only safe once a live relay had
-// actually written routingTable.json.
+// boot, and only the next persist() — a claim or a removal, and in those
+// days a send — wrote the new name. So deleting it was only safe once a
+// live relay had actually written routingTable.json.
 //
 // spirit-3 has. Forced on 2026-09-13 with one self-addressed ring message
 // (77 messages → 78, which is persist() running), and its census read 10
@@ -123,22 +119,22 @@ function loadRoutingTable(rootDir) {
         peers[k] = parsed.peers[k];
       });
     }
-    return {
-      peers: peers,
-      messages: Array.isArray(parsed.messages) ? parsed.messages : [],
-      nextId: Number(parsed.nextId) > 0 ? Number(parsed.nextId) : 1,
-    };
+    // `messages` and `nextId` are READ AND DROPPED, which is the whole of
+    // the ring's migration. A relay upgrading in place still has both in
+    // its routingTable.json; the first persist() after this writes the
+    // file without them, and the mail goes with it. Nothing is copied
+    // anywhere first — Andy inspected spirit-3's 77 entries before
+    // deciding: "they are all noise" (design/andy/relayStorage.md).
+    return { peers: peers };
   } catch (e) {
-    return { peers: Object.create(null), messages: [], nextId: 1 };
+    return { peers: Object.create(null) };
   }
 }
 
-function saveRoutingTable(rootDir, peers, messages, nextId) {
+function saveRoutingTable(rootDir, peers) {
   fs.mkdirSync(path.dirname(stateFile(rootDir)), { recursive: true });
   fs.writeFileSync(stateFile(rootDir), JSON.stringify({
-    nextId: nextId,
     peers: peers,
-    messages: messages,
   }));
 }
 
@@ -146,11 +142,8 @@ function createRelay(rootDir) {
   rootDir = rootDir || path.join(__dirname, '..');
   var loaded = loadRoutingTable(rootDir);
   var peers = loaded.peers;
-  var messages = loaded.messages;
-  var nextId = loaded.nextId;
   var allow = auth.loadAllow(rootDir);
   var claimHits = Object.create(null);
-  var sendHits = Object.create(null);
   // Enrolment attempts, per identity being enrolled. The limit lived in
   // deviceHandshake.js and came back here when that file went, because
   // the thing it bounds did not go anywhere: /api/relay/device is a
@@ -174,7 +167,7 @@ function createRelay(rootDir) {
   var routes = routerTable.createRouter();
 
   function persist() {
-    saveRoutingTable(rootDir, peers, messages, nextId);
+    saveRoutingTable(rootDir, peers);
   }
 
   function reloadAllow() {
@@ -254,26 +247,15 @@ function createRelay(rootDir) {
     return null;
   }
 
-  function resolveParty(token) {
-    var t = normalizeName(token);
-    if (!t) return null;
-    // `relay` resolved to an addressable party here until 2026-09-13:
-    // it was the console, and the console is gone. The name stays
-    // RESERVED — nobody may claim it and no invite may be labelled
-    // with it — because that is a namespace rule and has nothing to
-    // do with whether there is anything at the other end of it.
-    var byKey = findByKey(t);
-    if (byKey) {
-      return { id: peerId(byKey), label: labelOf(byKey), peer: byKey };
-    }
-    var byLabel = findByLabel(t);
-    if (byLabel) {
-      return { id: peerId(byLabel), label: labelOf(byLabel), peer: byLabel };
-    }
-    var same = listPeers().filter(function (p) { return labelOf(p) === t; });
-    if (same.length > 1) return { ambiguous: true, label: t };
-    return null;
-  }
+  // resolveParty STOOD HERE — token to party, with an `ambiguous` answer
+  // for the two-johns case. Its only callers were `send` and `inbox`, and
+  // it went with them (R8).
+  //
+  // The router never needed it. `deviceIdentity` resolves a row by KEY,
+  // which is what an address is on this wire, so the ambiguity a LABEL
+  // creates cannot arise: two johns are two keys and always were. The
+  // ring is what made labels addressable, and that is the half of the
+  // old transport that is not worth rebuilding.
 
   function who() {
     return listPeers().map(function (p) {
@@ -316,7 +298,11 @@ function createRelay(rootDir) {
       reserved: auth.RESERVED_NAME,
       mailboxPublicKey: mailboxPublicKey(),
       peers: who(),
-      messages: messages.length,
+      // `messages: messages.length` STOOD HERE and went with the ring.
+      // A relay stores nothing on anyone's behalf (0006), so there is no
+      // count to report — the honest number is not zero, it is that the
+      // question no longer applies. relayStatus.js and natterDetails
+      // read the absence rather than a 0.
     };
   }
 
@@ -387,22 +373,16 @@ function createRelay(rootDir) {
       }
       becomeOwner(n, publicKey);
       auth.clearPendingOwner(rootDir);
-    } else if (allow.mode === 'names') {
-      var namesGate = auth.checkClaim(allow, n, sig);
-      if (!namesGate.ok) {
-        // An invite is the names-mode escape hatch: it is how the owner
-        // lets someone in without SSH-editing allow.json. The INVITE's
-        // error comes back, not the allow list's — "expired" and "not on
-        // the list" are different problems and only the first is one the
-        // claimer can do anything about. See INVITE-CYCLE1.md; keys-mode
-        // does not require an invite yet (cycle 4).
-        var invited = redeem(inviteToken, n);
-        if (!invited.ok) return invited;
-        inviteRow = invited.invite;
-      }
-      if (peers[n] || findByLabel(n)) {
-        return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] || findByLabel(n) };
-      }
+    // A NAMES-MODE BRANCH STOOD HERE and went with the mode on
+    // 2026-09-15 (see relayAuth.loadAllow for why the mode went). It was
+    // the invite's original home: a guest list of bare labels, with a
+    // token as the escape hatch so an owner could let somebody in without
+    // SSH-editing allow.json.
+    //
+    // The escape hatch is now the front door. Keys mode has its own
+    // invite lock below — cycle 4 landed, whatever the comment that stood
+    // here said about it not having — so deleting this removes a second
+    // place where a token was consumed, not the feature.
     } else if (allow.mode === 'keys') {
       if (!publicKey || !sig) {
         return { ok: false, status: 400, error: 'claim needs publicKey and sig' };
@@ -477,9 +457,12 @@ function createRelay(rootDir) {
   // label, for any number of days" would not be a mint gate at all. The
   // owner signs the label and the duration, and that is what is verified.
   //
-  // Note the shape this leaves until cycle 4: mint needs an owner key, so
-  // it only works in keys mode, while an invite is only CONSUMED in names
-  // mode. The two halves do not meet yet. See INVITE-CYCLE2.md.
+  // THE TWO HALVES MEET. This note read "the shape this leaves until
+  // cycle 4: mint needs an owner key, so it only works in keys mode,
+  // while an invite is only CONSUMED in names mode. The two halves do
+  // not meet yet." Cycle 4 landed — keys mode has its own invite lock in
+  // claim() above — and names mode was deleted on 2026-09-15, so minting
+  // and consuming now happen in the one mode a live relay has.
   //
   // Cycle A2 adds the spoken token. It is optional and it is SIGNED: an
   // empty field still means "the relay picks the hex", and a signature
@@ -537,210 +520,38 @@ function createRelay(rootDir) {
       },
     };
   }
-  // consoleExchange stood here until 2026-09-13 — 56 lines, reached
-  // THROUGH send(), and not peer transport at all. It is what stood
-  // between the relay and deleting the ring; deleting it is the home
-  // it needed. See relayStatus.js for what replaced what it told an
-  // owner, and decision 0007 for why that is more than the console
-  // ever managed.
 
-  function send(from, to, text, sig, clientKey) {
-    var fTok = normalizeName(from);
-    var tTok = normalizeName(to);
-    if (!fTok || !tTok) return { ok: false, status: 400, error: 'bad name' };
-    if (typeof text !== 'string' || !text.trim()) {
-      return { ok: false, status: 400, error: 'text required' };
-    }
-    if (text.length > MAX_TEXT) {
-      return { ok: false, status: 400, error: 'text too long' };
-    }
-    if (!rateOk(sendHits, clientKey, SEND_PER_MIN)) {
-      return { ok: false, status: 429, error: 'too many sends' };
-    }
-
-    var src = resolveParty(fTok);
-    var dst = resolveParty(tTok);
-    // Whether the SIGNER was the identity's own key rather than a device
-    // standing for it. True by default: names mode and open mode have no
-    // device keys to tell apart, and the owner branch below proves the
-    // house key or nothing.
-    var signedByHouseKey = true;
-    if (src && src.ambiguous) return { ok: false, status: 409, error: 'ambiguous from label' };
-    if (dst && dst.ambiguous) return { ok: false, status: 409, error: 'ambiguous to label' };
-
-    if (allow.mode === 'names') {
-      var namesSend = auth.checkSend(allow, fTok, sig, tTok, text);
-      if (!namesSend.ok) return namesSend;
-    } else if (allow.mode === 'keys') {
-      if (src && src.peer && src.peer.publicKey) {
-        // The peer's own key. A device key standing for the same name
-        // was accepted here too, until a relay stopped holding one.
-        //
-        // THE ROW'S OWN KEY, and nothing else. A device's key was
-        // accepted here too, on the reasoning that a device is the owner
-        // on a handheld — and a relay keeps no device key any more,
-        // because the binding is the node's (see deviceAuth.js).
-        //
-        // Kept as a one-element list because `provedWith` below still
-        // wants to say WHICH key proved it, and the answer being "the
-        // only one there is" is worth reading as such rather than as a
-        // check that was quietly dropped.
-        var sendKeys = [src.peer.publicKey];
-        // WHICH KEY PROVED IT, not merely that one did. The console below
-        // decides owner powers, and it used to decide them from the ROW —
-        // so a device signing as its owner's label got the owner's words,
-        // and nothing in this result could tell the two apart.
-        var provedWith = '';
-        if (sig) {
-          for (var si = 0; si < sendKeys.length; si += 1) {
-            if (auth.verify(sendKeys[si], auth.sendMessage(fTok, tTok, text), sig)) {
-              provedWith = sendKeys[si];
-              break;
-            }
-          }
-        }
-        if (!provedWith) {
-          return { ok: false, status: 403, error: 'bad send signature' };
-        }
-        // The identity's own key is the first entry by construction above,
-        // so this reads as "the signer was the identity itself, not its
-        // handheld".
-        signedByHouseKey = provedWith === src.peer.publicKey;
-
-        // ── A DEVICE REACHES ITS OWN IDENTITY, AND NOTHING ELSE ──────
-        //
-        // Andy: "i don't want the relay to allow a device posting to
-        // anybody but its owner node, and i know that is cheap. and i
-        // know that if a relay allows device post to target peers other
-        // than its owner's node, it must end in failure anyway."
-        //
-        // Both halves are right, and the second is the argument. A peer
-        // receiving this has no way to verify that a DEVICE composed it —
-        // it sees the owner's label and a signature it cannot attribute
-        // (design/relay/DEVICE.md: a device holds no authority toward
-        // anyone, and the node is the only thing that can sign for it).
-        // So allowing it does not enable a feature; it permits a
-        // guaranteed failure with the owner's authority attached.
-        //
-        // Grok's review said not to build this yet. Andy's call, made
-        // knowing that: it is cheap, and the alternative is a live hole.
-        //
-        // NARROWLY: `to` must be the same identity as `from`. A device is
-        // its owner's window, so the only correspondent it has is the
-        // identity it was installed on.
-        //
-        // It had ONE exception until 2026-09-13: the reserved `relay`
-        // name, the console, kept because it was the device page's
-        // only working function. The comment here said what to do
-        // about it — "when the device channel exists it should go,
-        // because a device's correspondent is its NODE and not a
-        // relay" — and deleting the console settles it early. The rule
-        // is now what it always should have read as: to itself, and
-        // nowhere else.
-        if (!signedByHouseKey) {
-          var toSelf = !!(dst && dst.peer && dst.peer.publicKey === src.peer.publicKey);
-          if (!toSelf) {
-            return {
-              ok: false,
-              status: 403,
-              error: 'a device may only reach its own identity',
-            };
-          }
-        }
-      } else {
-        var ownerSend = auth.checkSend(allow, fTok, sig, tTok, text);
-        if (!ownerSend.ok) return ownerSend;
-      }
-    } else {
-      var openSend = auth.checkSend(allow, fTok, sig, tTok, text);
-      if (!openSend.ok) return openSend;
-    }
-
-    var fromWire = (src && src.label) || fTok;
-    var toWire = (dst && dst.label) || tTok;
-
-    // A line addressed to the reserved name was a console command and
-    // was answered here without touching the ring. The console is gone.
-    //
-    // REFUSED, rather than left to fall through. Without this it does
-    // not error — it becomes an ordinary ring entry addressed to a name
-    // no peer holds, with toKey null, which nobody can ever read back
-    // because inbox('relay') is refused for everyone including the
-    // owner. That is a junk sink that looks like a delivery, and the
-    // whole point of removing the console is to stop something looking
-    // like it works.
-    if (tTok === auth.RESERVED_NAME || toWire === auth.RESERVED_NAME) {
-      return { ok: false, status: 404, error: 'nothing answers to that name' };
-    }
-
-    var msg = {
-      id: String(nextId++),
-      from: fromWire,
-      to: toWire,
-      fromKey: (src && src.peer && src.peer.publicKey) || null,
-      toKey: (dst && dst.peer && dst.peer.publicKey) || null,
-      text: text,
-      sentAt: new Date().toISOString()
-    };
-    messages.push(msg);
-    if (messages.length > MAX_MESSAGES) {
-      messages = messages.slice(messages.length - MAX_MESSAGES);
-    }
-    persist();
-    // fromKey is lifted out of the message as well as sitting inside it:
-    // it is the answer to "whose line is this on the wire", and after the
-    // device slot that is a question with a wrong answer available. It is
-    // the HOUSE key whoever signed, because the peer row is what a line
-    // is sent from and a device has no row. So a handheld is invisible to
-    // everyone downstream — which is the point of a device being Andy
-    // rather than a second person.
-    return { ok: true, status: 201, message: msg, fromKey: msg.fromKey };
-  }
-
-  // `atMs` is the clock the signature window is measured against —
-  // injected so a test can stand a minute either side of a signature
-  // without sleeping through it.
-  function inbox(name, sig, atMs) {
-    var n = normalizeName(name);
-    if (!n) return { ok: false, status: 400, error: 'name required' };
-    var party = resolveParty(n);
-    if (party && party.ambiguous) {
-      return { ok: false, status: 409, error: 'ambiguous label' };
-    }
-    var label = (party && party.label) || n;
-    var key = (party && party.peer && party.peer.publicKey) || null;
-    // A peer that claimed with a key proves the read with that key. A
-    // keyless one (open/names relay, or the reserved `relay` token) falls
-    // back to the allow list, which in keys mode is the owner and nobody
-    // else.
-    var gate = key
-      ? auth.checkInboxKey(key, n, sig, atMs)
-      : auth.checkInbox(allow, n, sig, atMs);
-    // Or this owner's device. Tried only after the peer row's own key has
-    // failed, so the ordinary read costs nothing extra and the common
-    // answer is unchanged.
-    //
-    // This is where cycle 1 stopped short: checkInbox learned about the
-    // device slot, but a keys-mode peer always HAS a key, so the branch
-    // that actually runs is checkInboxKey against the house key alone —
-    // and a phone could own the box without reading its mail.
-    //
-    // Nothing about the FILTER moves. The messages handed back are still
-    // the house row's, matched on its label and its key, because a device
-    // has no row and nothing is addressed to it. It is reading Andy's
-    // mail, not its own.
-    // A DEVICE FALLBACK STOOD HERE, and it is gone with the relay's copy
-    // of a device key: the row's own key proves the read, and nothing
-    // else does. See deviceAuth.js.
-    if (!gate.ok) return gate;
-    return {
-      ok: true,
-      status: 200,
-      messages: messages.filter(function (m) {
-        return m.to === n || m.to === label || (key && m.toKey === key);
-      })
-    };
-  }
+  // send() AND inbox() STOOD HERE — 193 lines, and they were the ring.
+  //
+  //   send()   signed by LABEL (auth.sendMessage), pushed into a 200-entry
+  //            global `messages` array, persisted into routingTable.json,
+  //            answered 201 whether or not the far end existed
+  //   inbox()  polled that array back out, filtered per reader, marking
+  //            nothing and deleting nothing
+  //
+  // Deleted by R8 on 2026-09-15. What replaces them is already here and
+  // is 198 lines to their 193: routePost / routeReply below, the router
+  // table in router.js, and the held stream. The difference is not size,
+  // it is that the router DELIVERS OR REFUSES (decision 0006) instead of
+  // promising a store that could not hold.
+  //
+  // Nothing was migrated. Andy inspected what spirit-3's ring was holding
+  // first — 77 entries, 15 of them telemetry from a console that no
+  // longer exists — and ruled: "they are all noise"
+  // (design/andy/relayStorage.md). loadRoutingTable reads `messages` and
+  // drops it, so a relay upgrading in place sheds its mail on the first
+  // persist().
+  //
+  // consoleExchange went before them, on 2026-09-13: 56 lines reached
+  // THROUGH send(), and not peer transport at all. See relayStatus.js for
+  // what replaced what it told an owner, and decision 0007 for why that
+  // is more than the console ever managed.
+  //
+  // THIS IS NOT A GAP TO FILL. An app that wants store-and-forward wants
+  // it on a NODE, which keeps its own traffic log and is entitled to; a
+  // relay that kept one would be holding everybody's messages — the
+  // content, not metadata — which is a far worse thing than the ring,
+  // not a better one (trafficLog.js).
 
   function status(name, sig) {
     var n = normalizeName(name);
@@ -761,8 +572,11 @@ function createRelay(rootDir) {
   // asserted in deviceInbox.js rather than left to reading.
   //
   // No peer row is written and no label is claimed. A second row wearing
-  // `andy` would make resolveParty ambiguous and stop the owner's own
-  // inbox resolving at all (design/reviews/2026-09-10-owner-devices.md).
+  // `andy` made the ring's label resolution ambiguous and stopped the
+  // owner's own inbox resolving at all
+  // (design/reviews/2026-09-10-owner-devices.md). The ring is gone and
+  // this wire addresses keys, so the hazard is historical — the rule it
+  // produced is not, and B2 below is why.
   // B2: any identity installs its OWN device, proved with its OWN row
   // key. The owner still lands in allow.json; a peer lands on its row in
   // the routing table. Two rooms, one rule — nobody installs a key on a row
@@ -1054,14 +868,11 @@ function createRelay(rootDir) {
       if (peers[k] && peers[k].publicKey === key) delete peers[k];
     });
 
-    // Their mail goes with them. Leaving it would keep a removed person's
-    // words on a box they have been removed from, addressed to a row that
-    // no longer exists — and "forget" that leaves the letters behind is
-    // not forgetting.
-    var before = messages.length;
-    messages = messages.filter(function (m) {
-      return m.fromKey !== key && m.toKey !== key;
-    });
+    // A RING PURGE STOOD HERE — "their mail goes with them", because a
+    // forget that leaves the letters behind is not forgetting. The
+    // argument was right and is now answered by there being no letters:
+    // a relay holds nothing on anyone's behalf, so removing the row IS
+    // removing everything this box had of them.
     persist();
 
     // And the invite, or the name is a lie: a live token for that label
@@ -1093,7 +904,10 @@ function createRelay(rootDir) {
       ok: true,
       status: 200,
       removed: { key: key, label: label },
-      messagesDropped: before - messages.length,
+      // `messagesDropped` went with the ring. An owner removing somebody
+      // should still see the size of what they did, and `invitesRevoked`
+      // is now the whole of it — because the row and its live tokens are
+      // the whole of what this box was holding.
       invitesRevoked: revoked,
     };
   }
@@ -1673,8 +1487,6 @@ function createRelay(rootDir) {
     forgetPeer: forgetPeer,
     who: who,
     mailboxPublicKey: mailboxPublicKey,
-    send: send,
-    inbox: inbox,
     status: status,
     mint: mint,
     snapshot: snapshot,
@@ -1719,23 +1531,29 @@ function createRelay(rootDir) {
 // A query string is written to every access log the request passes
 // through — Caddy's on this box, and whatever sits in front of it — so a
 // signature there is a read credential sitting in a log file. The signed
-// bytes carry a minute now (relayAuth.inboxMessage), which makes a
-// captured one expire; this is what stops it being written down at all.
+// bytes carry a minute (relayAuth.streamMessage), which makes a captured
+// one expire; this is what stops it being written down at all.
 //
 // A request that still puts `sig` on the query is refused even when the
 // header is perfectly good. Accepting it "just this once" is how a caller
 // stays unfixed, and a signature that has been in a URL is already in a
-// log whatever happens next. `name` may stay on the query: it is the
-// mailbox being asked for, not the permission to read it.
+// log whatever happens next. `key` may stay on the query: it is the
+// identity being asked for, not the permission to be it.
+//
+// NAMED FOR THE STREAM NOW, and it was `inboxSignatureFrom`. The rule was
+// written for `GET /api/relay/inbox` and outlived it by one commit: R8
+// deleted that route and this is the last GET on the relay that carries a
+// signature at all. Renamed rather than deleted, because the rule never
+// belonged to the ring — it belongs to the shape of a GET.
 //
 // A function rather than four lines in the route, so a test can drive
 // the decision itself instead of reading the source and hoping.
-function inboxSignatureFrom(querySig, headers) {
+function streamSignatureFrom(querySig, headers) {
   if (querySig) {
-    return { ok: false, status: 403, error: 'inbox signature must be a header' };
+    return { ok: false, status: 403, error: 'stream signature must be a header' };
   }
   var h = headers || {};
   return { ok: true, sig: h['x-spirit-sig'] || h['X-Spirit-Sig'] || '' };
 }
 
-module.exports = { createRelay: createRelay, inboxSignatureFrom: inboxSignatureFrom };
+module.exports = { createRelay: createRelay, streamSignatureFrom: streamSignatureFrom };

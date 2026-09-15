@@ -493,22 +493,22 @@ async function up(scenarioName) {
   }
   console.log('friends   : ' + friendships + ' pair(s) know each other');
 
-  // A little mail, so Relay Chat is not an empty screen. Sent by the
-  // peers, to you, signed by them — the ordinary path.
-  let sent = 0;
-  for (const note of (scenario.messages || [])) {
-    const peer = world.peer(NAME_PREFIX + note.from);
-    if (!peer) continue;
-    const text = note.text;
-    const out = await post(relayUrl + '/api/relay/send', {
-      from: peer.name,
-      to: me.name,
-      text: text,
-      sig: auth.sign(peer.id.privateKey, auth.sendMessage(peer.name, me.name, text)),
-    });
-    if (out.ok) sent += 1;
-  }
-  console.log('messages  : ' + sent + ' waiting for you');
+  // A LITTLE MAIL WAS SENT HERE, so Relay Chat was not an empty screen:
+  // each peer posted to you through /api/relay/send, signed by them.
+  //
+  // Both halves of that are gone as of 2026-09-15 (R8). There is no
+  // `send` and no store behind it, so nothing can be waiting when you
+  // arrive — a packet exists only while somebody is connected to receive
+  // it. The `messages` field a scenario used to declare is refused by
+  // name now; see scenario.js for the reasoning and for what would bring
+  // it back (seeding the receiving NODE's traffic log, which is where a
+  // node's own record of what arrived actually lives).
+  //
+  // Relay Chat is an empty screen for a second reason anyway: its receive
+  // path was the ring's, and it has not been retrofitted. That is a known
+  // breakage and Andy's call — "I'd rather see apps breaking than apps
+  // faking."
+  console.log('messages  : none — a relay keeps no mail (R8)');
 
   // ── Nodes the scenario wants DOWN ─────────────────────────────────
   // A peer with a row whose node is not running is the only way red

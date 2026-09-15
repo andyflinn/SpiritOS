@@ -6,7 +6,7 @@ Format: **term** — aliases — meaning.
 
 ## People and machines
 
-**Andy** — AF, the operator, one operator — The human who owns the repo and the public mailbox. Not a Unix user named `spirit`.
+**Andy** — AF, the operator, one operator — The human who owns the repo and the public relay. Not a Unix user named `spirit`.
 
 **Work box** — laptop, Windows box, coordinator machine — Andy’s personal computer. Checkout, browser, Claude’s shell. Not spirit-3.
 
@@ -18,15 +18,17 @@ Format: **term** — aliases — meaning.
 
 **Personal node** — 65432, work node, companion spirit, default server — `node js/server.js` **without** `--relay`. Loopback HTTP only. The browser UI talks to this and only this.
 
-**65432** — work port — Default listen port of a personal node on the same machine as the browser. Not the public mailbox.
+**65432** — work port — Default listen port of a personal node on the same machine as the browser. Not the public relay.
 
-**Public relay** — `--relay`, mailbox, VPS relay — `node js/server.js --relay`. Shared claim/send/inbox store. On spirit-3 it binds **65430** behind Caddy, never as a public 65430.
+**Public relay** — `--relay`, VPS relay — `node js/server.js --relay`. A **router**: it routes packets between personal nodes by public key, delivers or refuses at once, and **stores nothing on anyone's behalf** (decision 0006). On spirit-3 it binds **65430** behind Caddy, never as a public 65430.
+
+> **"mailbox" was a synonym for this until 2026-09-15** and is retired. It described a real thing — a claim/send/inbox store — and R8 deleted that thing. `relay.js` has said *"there are no mailboxes in the system (Andy). An application may have something it chooses to call one; this layer does not"* since before the deletion; the word is dropped here so the two agree. Occurrences survive in comments about history, which is where a retired word belongs.
 
 **65430** — relay port, internal Node port — Where the `--relay` process listens on spirit-3. ufw denies it from the world. Caddy proxies 443 → this.
 
 **Caddy** — TLS front — On spirit-3, public `:443` / `:80` for `spirit.andyflinn.com`. Terminates TLS. Forwards to 127.0.0.1:65430.
 
-**spirit.andyflinn.com** — public URL, mailbox URL — The HTTPS name personal nodes put in `relays.json`.
+**spirit.andyflinn.com** — public URL, relay URL — The HTTPS name personal nodes put in `relays.json`.
 
 **Lab relay** — fake relay, temp relay — A `--relay` on the laptop (often 65410 / 65430 in temp) for tests. Not spirit-3.
 
@@ -38,13 +40,15 @@ Format: **term** — aliases — meaning.
 
 **Spirit group** — the Spirit app, launcher home — The shell's own group screen (Stats, Processes, Jobs, Apps, Groups). Every **intrinsic** app renders here and cannot be moved out — not to None, not to a user group, not back to the desktop. Not a `preferences.groups` entry, so the operator can neither delete nor rename it.
 
-**Relay Chat** — relayChat — The chat app, for any human. Claim / send / inbox against the mailbox in `relays.json`. Not an admin console: owner-only powers appear inside it only when this node’s key happens to own a mailbox.
+**Relay Chat** — relayChat — The chat app, for any human. Not an admin console: owner-only powers appear inside it only when this node’s key happens to own a relay.
 
-**Natter** — relays.json, relay list — The list of public relays this personal node uses (`app/natter/relays.json`). First URL is what hub calls today. A row carries an **owner badge** when this node’s local public key matches the owner on that mailbox. Natter is an **intrinsic shell app**: it lives in the **Spirit group**, has no location control, and the App Builder cannot overwrite its script or manifest — a node with no relay list has no mailbox at all. Keeps its last row (`canRemoveMailbox`).
+> **Its receive path is BROKEN as of 2026-09-15** and is awaiting a retrofit. It polled `/api/hub/inbox`, which R8 deleted, and its `api.onPacket` handler is an empty stub. Andy's call, taken knowingly: *"I'd rather see apps breaking than apps faking."* Sending already moved to `/api/hub/post`.
 
-**Owner badge** — owned row — The Natter mark meaning *this node’s key is `owner` on that mailbox*. Zero, one, or several rows may carry it. It is what unlocks create-invitation in Relay Chat. Decided (Andy): the badge is a **signed status 200** on that Natter URL — no extra endpoint unless one proves necessary.
+**Natter** — relays.json, relay list — The list of public relays this personal node uses (`app/natter/relays.json`). First URL is what hub calls today. A row carries an **owner badge** when this node’s local public key matches the owner on that relay. Natter is an **intrinsic shell app**: it lives in the **Spirit group**, has no location control, and the App Builder cannot overwrite its script or manifest — a node with no relay list can reach nobody at all. Keeps its last row (`canRemoveMailbox`).
 
-**Hub** — hub.js — Personal-node code that signs and forwards claim/send/inbox/invite to the mailbox over HTTPS (or loopback HTTP for a lab relay).
+**Owner badge** — owned row — The Natter mark meaning *this node’s key is `owner` on that relay*. Zero, one, or several rows may carry it. It is what unlocks create-invitation in Relay Chat. Decided (Andy): the badge is a **signed status 200** on that Natter URL — no extra endpoint unless one proves necessary. The same probe answers *"is this label still mine?"* off the public census (`claimedLabel`), which is where Natter's binding check went when R8 deleted the signed inbox read it used.
+
+**Hub** — hub.js — Personal-node code that signs and forwards claim, post and invite to a relay over HTTPS (or loopback HTTP for a lab relay). It forwarded `send` and `inbox` until R8 (2026-09-15).
 
 **whoBook** — private who, perception book — `relay-state/who.json` on a **personal** node. publicKey, publicLabel, myLabel, relays[]. Never uploaded.
 
@@ -58,13 +62,13 @@ Format: **term** — aliases — meaning.
 
 **Identity** — keypair, identity.json — Ed25519 keys on the personal node. Private key never leaves the box.
 
-**Public key** — pubkey — The half that may go to a mailbox on claim.
+**Public key** — pubkey — The half that may go to a relay on claim.
 
-**Public label** — claim name, caption on the wire today — The string peers see on the mailbox (`andy`, `john`). May collide after peer-by-key.
+**Public label** — claim name, caption on the wire today — The string peers see in a relay's census (`andy`, `john`). May collide after peer-by-key.
 
 **My label** — private caption, perception — What *you* call that key in whoBook (`lovelyJohn`). Never on the wire.
 
-**Peer-by-key** — peers keyed by public key — Mailbox identity is the key. Same public label can exist twice (two johns).
+**Peer-by-key** — peers keyed by public key — Identity on a relay is the key. Same public label can exist twice (two johns).
 
 **Owner** — first claim, allow.json keys[0] — The key that first-claimed (or pending-owner redeemed). Mints invites. Reads `/api/relay/status`. Gets the chat-to-relay census.
 
@@ -74,11 +78,11 @@ Format: **term** — aliases — meaning.
 
 ## Allow and invites
 
-**Allow list** — allow.json — Who *may* claim/send. Modes: `open`, `names`, `keys`. Not the same as who has claimed (`mailbox.json`).
+**Allow list** — allow.json — Who *may* claim. **Two modes: `open`** (no file — a relay before its first claim) **and `keys`**. `names` was a third and went on 2026-09-15: nothing in the tree ever wrote one, and the two gates that gave it meaning died with the ring. Not the same as who has claimed, which is `routingTable.json`.
 
 **Names-mode** — names allow list — Only listed strings. Not what live Kamatera runs any more (see Keys-mode).
 
-**Keys-mode** — keys allow list — After first-claim-is-owner. Extra claims need a live **invite** (cycle 4). Owner key may reclaim without invite if mailbox.json was lost. **Live Kamatera runs this since the cutover on 2026-09-07, owner `andy`.**
+**Keys-mode** — keys allow list — After first-claim-is-owner. Extra claims need a live **invite** (cycle 4). Owner key may reclaim without invite if `routingTable.json` was lost. **Live Kamatera runs this since the cutover on 2026-09-07, owner `andy`.**
 
 **Invite** — invite row — `{ token, label, expiresAt, invitedBy, consumedAt }` in `invites.json`.
 
@@ -88,7 +92,7 @@ Format: **term** — aliases — meaning.
 
 **Mint** — POST invite — Owner-signed create of an invite row. Works in keys-mode only.
 
-**Create-invitation** — the invite UI — Where a human mints. Lives in **Relay Chat**, and is shown only if at least one Natter URL carries the owner badge. Several owned rows → the user picks which mailbox to mint on; it is never guessed from “first URL”. Design only — cycle A.
+**Create-invitation** — the invite UI — Where a human mints. Lives in **Relay Chat**, and is shown only if at least one Natter URL carries the owner badge. Several owned rows → the user picks which relay to mint on; it is never guessed from “first URL”. Design only — cycle A.
 
 **Redeem** — consume on claim — Successful claim burns the token before the peer is written.
 
@@ -119,13 +123,14 @@ Format: **term** — aliases — meaning.
 | Do not say | If you mean |
 |---|---|
 | relay | personal node / 65432 |
-| 65432 | public mailbox |
+| 65432 | public relay |
 | 65430 | something the browser should open |
 | harness | `./bash/status` or probe |
-| allow list | mailbox.json peers |
+| allow list | the claimed peers in `routingTable.json` |
 | token | public label |
 | owner | anyone who claimed |
 | Natter | Relay Chat |
-| owner badge | owner (the key on the mailbox) |
+| owner badge | owner (the key on the relay) |
+| mailbox | a relay (the word is retired — see **Public relay**) |
 | VPS | work box |
 | GROQ | GROK.md |
