@@ -216,6 +216,98 @@ function settle() {
 
 test.startTest('Natter — where this node gets its name');
 
+// ── THE ADD BUTTON, WHICH HAD NO HANDLER AT ALL ──────────────────────
+//
+// Andy typed a label and a URL, pressed Add, and nothing happened — not
+// a refusal, nothing. It was wired in this app's first commit and lost
+// in a later refactor, and nobody noticed because the row was hidden
+// whenever any relay was listed. relays.json SHIPS with spirit-3 in it,
+// so the only node that could see the control was one with an empty
+// list.
+//
+// Showing it to every unbound node this afternoon is what finally got it
+// pressed. A control nobody can reach is a control nobody can test, and
+// hiding it is not the same as it working.
+function theAddButtonActuallyAdds() {
+  test.subHeading('Add puts a relay on the list, and says it did');
+
+  const app = mountApp({
+    label: 'andy',
+    relays: [{ label: 'spirit', url: 'https://spirit.example' }],
+    rows: [{ url: 'https://spirit.example', label: 'spirit', status: 200, owned: true }],
+  });
+
+  return settle().then(function () {
+    el(app, 'natter-label').value = 'public Lab Relay';
+    el(app, 'natter-url').value = 'https://lab.andyflinn.com';
+    el(app, 'natter-add').fire('click');
+
+    return settle().then(function () {
+      let saved = [];
+      try { saved = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { saved = []; }
+      const added = saved.filter(function (r) { return r.url === 'https://lab.andyflinn.com'; })[0];
+
+      if (added && added.label === 'public Lab Relay') {
+        test.check('the relay is written to relays.json, under the private label typed');
+      } else {
+        test.fail('relays.json: ' + JSON.stringify(saved));
+      }
+
+      if (/added/.test(el(app, 'natter-status').textContent)) {
+        test.check('and the row says so, rather than looking like nothing happened');
+      } else {
+        test.fail('status said: "' + el(app, 'natter-status').textContent + '"');
+      }
+    });
+  });
+}
+
+// THE SAME RULE THE WIRE ENFORCES, asked before a round trip is spent.
+// hub.assertRelayUrl refuses anything but https, or http to loopback —
+// so a node that saved an http URL to a public host would hold a row it
+// could never use.
+function addRefusesAUrlTheWireWouldRefuse() {
+  test.subHeading('And it refuses a URL the node could never actually use');
+
+  const app = mountApp({
+    label: 'andy',
+    relays: [{ label: 'spirit', url: 'https://spirit.example' }],
+    rows: [{ url: 'https://spirit.example', label: 'spirit', status: 200, owned: true }],
+  });
+
+  return settle().then(function () {
+    el(app, 'natter-label').value = 'insecure';
+    el(app, 'natter-url').value = 'http://someone.example';
+    el(app, 'natter-add').fire('click');
+
+    return settle().then(function () {
+      let saved = [];
+      try { saved = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { saved = []; }
+      if (saved.length === 1 && /https/.test(el(app, 'natter-status').textContent)) {
+        test.check('http to a public host is refused, and the list is unchanged');
+      } else {
+        test.fail('saved ' + saved.length + ', said "' + el(app, 'natter-status').textContent + '"');
+      }
+
+      // BUT LOOPBACK IS FINE, because that is a lab relay and the wire
+      // allows it. Refusing it would make the lab unaddable.
+      el(app, 'natter-label').value = 'lab';
+      el(app, 'natter-url').value = 'http://127.0.0.1:65425';
+      el(app, 'natter-add').fire('click');
+
+      return settle().then(function () {
+        let after = [];
+        try { after = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { after = []; }
+        if (after.some(function (r) { return r.url === 'http://127.0.0.1:65425'; })) {
+          test.check('while http to 127.0.0.1 is allowed — that is what a lab relay is');
+        } else {
+          test.fail('a loopback lab relay was refused: ' + JSON.stringify(after));
+        }
+      });
+    });
+  });
+}
+
 function unboundIsThePage() {
   test.subHeading('A node with no seat is shown one thing to do');
 
@@ -866,7 +958,9 @@ function chatKeepsNoBinding() {
   return Promise.resolve();
 }
 
-unboundIsThePage()
+theAddButtonActuallyAdds()
+  .then(addRefusesAUrlTheWireWouldRefuse)
+  .then(unboundIsThePage)
   .then(aClaimReturnedIsRecordedAgainstItsRelay)
   .then(nothingReportedBindsNothing)
   .then(aRowOpensTheMailbox)

@@ -172,6 +172,15 @@ var NATTER_DEV_FRESH_MS = 5 * 60 * 1000;
 // So white now means exactly one thing: this has not been asked. That is
 // the state of every row for the first moment after a reload, which is
 // the one moment a screenful of red would be a lie.
+// What the Add row says back. Its own line, separate from
+// `natter-bind-status`, which is about this node's SEAT rather than
+// about the list — two questions, two places, so neither can overwrite
+// the other's answer.
+function natterStatus(text) {
+  var el = document.getElementById('natter-status');
+  if (el) el.textContent = text || '';
+}
+
 function natterStatusMark(badge) {
   if (!badge) return natterIcon.WHITE_CIRCLE;
   if (badge.owned || badge.claimed) return natterIcon.GREEN_CIRCLE;
@@ -973,6 +982,79 @@ spirit.shell.activateApp({
     // sat INSIDE the row that opened — so each had to be caught before
     // it triggered the row. All three are on the mailbox's own screen
     // now, and a row has nothing on it to press but itself.
+    // ── THE ADD BUTTON, WHICH HAD NO HANDLER AT ALL ──────────────────
+    //
+    // Found by Andy trying to add lab.andyflinn.com: he typed a label and
+    // a URL, pressed Add, and nothing happened. Not a refusal — nothing.
+    //
+    // It was wired in the app's first commit (4107fe0) and lost in a
+    // later refactor. Nobody noticed for a simple reason: the add row was
+    // hidden whenever any relay was listed, and relays.json SHIPS with
+    // spirit-3 in it — so the only node that could see this control was
+    // one with an empty list, which is a state almost nobody reaches.
+    //
+    // Then this afternoon the row was shown to every unbound node, so
+    // that somebody with their own relay could add it. That made a dead
+    // button visible, which is how it was finally pressed.
+    //
+    // The lesson is the one this session keeps finding: a control nobody
+    // can reach is a control nobody can test, and hiding it is not the
+    // same as it working.
+    document.getElementById('natter-add').addEventListener('click', function () {
+      var labelInput = document.getElementById('natter-label');
+      var urlInput = document.getElementById('natter-url');
+      var label = labelInput.value.trim();
+      var url = urlInput.value.trim().replace(/\/+$/, '');
+
+      if (!label || !url) {
+        natterStatus('both a label and a URL are required');
+        return;
+      }
+
+      // THE SAME RULE THE WIRE ENFORCES, asked here so a typo costs no
+      // round trip. hub.assertRelayUrl refuses anything but https, or
+      // http to loopback for a lab relay — a node that added an http URL
+      // to a public host would have a row it could never use.
+      var ok = false;
+      try {
+        var target = new URL(url);
+        var host = String(target.hostname || '').toLowerCase();
+        var loopback = host === 'localhost' || host === '127.0.0.1' ||
+          host === '::1' || host === '[::1]';
+        ok = target.protocol === 'https:' || (target.protocol === 'http:' && loopback);
+      } catch (e) { ok = false; }
+      if (!ok) {
+        natterStatus('a relay must be https — http is allowed only to 127.0.0.1');
+        return;
+      }
+
+      if (relays.some(function (row) { return row && row.url === url; })) {
+        natterStatus('that relay is already on the list');
+        return;
+      }
+
+      // PUSHED, THEN SAVED, THEN POPPED IF THE SAVE FAILED. The list on
+      // screen and the list on disk must not disagree, and the failure
+      // path is the one that decides that.
+      relays.push({ label: label, url: url });
+      Promise.resolve(api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2) + '\n'))
+        .then(function () {
+          labelInput.value = '';
+          urlInput.value = '';
+          natterStatus('added — probing it now');
+          natterRelaysCache = relays;
+          natterRenderList(container, api, relays);
+          // Ask it straight away. A row that sat white until the next
+          // visit would leave somebody wondering whether Add worked,
+          // which is the question this whole comment is about.
+          natterProbe(api, container, relays);
+        })
+        .catch(function (err) {
+          relays.pop();
+          natterStatus('could not save: ' + ((err && err.message) || 'unknown'));
+        });
+    });
+
     container.querySelector('#natter-tbody').addEventListener('click', function (e) {
       var row = e.target.closest && e.target.closest('[data-row-url]');
       var rowUrl = row && row.getAttribute('data-row-url');
