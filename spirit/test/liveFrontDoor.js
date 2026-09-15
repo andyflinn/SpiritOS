@@ -65,11 +65,30 @@ async function hub(port, method, pathname, body) {
 
 // What a node wrote down about its own WAN traffic. Missing reads as
 // nothing, which is the honest answer for a node that has had none.
+//
+// ── .jsonl, AND READING THE WRONG ONE COST THIS WHOLE FILE ───────────
+//
+// This read `traffic.json` and JSON.parse'd it whole. That file is the
+// READ-ONCE LEGACY SHAPE (trafficLog.legacyPath — "Never written
+// again"); the live log is traffic.jsonl, one object per line.
+//
+// So every read here returned [] — and an empty array is not an error,
+// it is an answer. Seven of this file's checks were asserting things
+// about a log they never saw: what bravo recorded, what it ignored,
+// what it refused, whether rationing held. They failed quietly as "0 of
+// 10 landed" while the posts had in fact all landed, and the checks
+// beside them went on passing, which is what made it look like rot
+// rather than one wrong filename.
+//
+// A malformed line is skipped rather than fatal, the same property
+// trafficLog itself is built on: a torn write at the end of the file
+// costs the row being written, never the history behind it.
 function traffic(home) {
   try {
-    const raw = fs.readFileSync(path.join(home, 'relay-state', 'traffic.json'), 'utf8');
-    const doc = JSON.parse(raw);
-    return Array.isArray(doc) ? doc : (doc.entries || []);
+    const raw = fs.readFileSync(path.join(home, 'relay-state', 'traffic.jsonl'), 'utf8');
+    return raw.split(/\r?\n/).map(function (line) {
+      try { return JSON.parse(line); } catch (e) { return null; }
+    }).filter(Boolean);
   } catch (e) {
     return [];
   }
@@ -374,7 +393,6 @@ async function run() {
       const ownerId = W.owner();
       const relayUrl = 'http://127.0.0.1:65425';
       const handheld = require('../run/js/relayAuth').generateIdentity('handheld');
-      const deviceAuth = require('../run/js/deviceAuth');
       const auth = require('../run/js/relayAuth');
 
       async function relayPost(pathname, body) {
@@ -393,18 +411,37 @@ async function run() {
         }
       }
 
-      // INSTALLED THROUGH THE REAL VERB, which is a post now: there is no
-      // /api/relay/set-device any more, because installing a key on your
-      // own row was never an owner verb and never needed a door only the
-      // owner could knock on (decision 0010).
-      const install = await W.askOn(relayUrl, ownerId, {
-        setDevice: { key: handheld.publicKey },
-      });
-      if (install && install.ok) {
-        test.check("a handheld is installed on the lab relay's own owner record");
-      } else {
-        test.fail('set-device: ' + JSON.stringify(install));
-      }
+      // ── NOTHING IS INSTALLED, BECAUSE NOTHING CAN BE ────────────────
+      //
+      // An install stood here — `askOn(..., { setDevice: { key } })` —
+      // and it had been answering `no such peer` since the verb was
+      // deleted. A RELAY KEEPS NO DEVICE KEY AT ALL now
+      // ([relay.js] "installDevice() STOOD HERE, and body.setDevice with
+      // it"): the binding between a device and its node is the NODE's,
+      // in its own relay-state/device.json, and the copy a relay used to
+      // hold was read in two places that both died with the ring.
+      //
+      // Deleted rather than repaired, because a test whose subject has
+      // been removed by decision is obsolete, not failing — the same
+      // call relayAllowPing got.
+      //
+      // WHAT THAT LEAVES, AND IT IS WORTH BEING EXACT, because the
+      // checks below kept passing while the install above kept failing
+      // and that combination is how a vacuous test hides:
+      //
+      // `handheld` below is a generated key that the relay has never
+      // heard of and now CANNOT be told about. So these are not checks
+      // that a device is confined — there is no such status to hold.
+      // They are the reason confinement no longer needs to be written
+      // down: routePost verifies against the ROW's key alone, so a key
+      // that is not the row's key never verifies, and "device" stopped
+      // being a thing a relay can be persuaded about.
+      //
+      // That claim is CONTROLLED rather than assumed — see the
+      // `houseElsewhere` check below, where the row's own key is let
+      // through on the same call. Without it, every 403 here would also
+      // be explained by "posting is broken", and the section would prove
+      // nothing at all.
 
       const ownerName = ownerId.name || 'labowner';
       // ── WHAT A DEVICE REACHES ON A RELAY: NOTHING ──────────────────
