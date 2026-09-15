@@ -134,4 +134,75 @@ test.subHeading('Every placeholder is one install-units fills in');
   });
 }
 
+// ── TWO RELAYS ON ONE BOX, AND THE TWO WAYS IT USED TO EAT ITSELF ────
+//
+//   Andy: "we'll need to fake multiple public relays without me shelling
+//   out another bunch of bucks per month for that test environment."
+//   Andy: "i could just make a new subdirectory on /root/lab/ and clone
+//   this repo from there, configure it to a separate port, and off we
+//   go... the cheapest in effort."
+//
+// It is the cheapest, and two constants stood in the way. Both failures
+// were SILENT and both took down the live relay rather than the new one,
+// which is why they are asserted rather than remembered.
+test.subHeading('A second clone cannot eat the first');
+{
+  // THE UNIT NAME. `install-units` from a second clone wrote
+  // /etc/systemd/system/spirit-relay.service — the LIVE unit — pointing
+  // it at the lab's directory and port. Nothing failed until the next
+  // restart, and then spirit-3 came back as the lab.
+  if (/UNIT_NAME="\$\{SPIRIT_UNIT_NAME:-/.test(lib)) {
+    test.check('the unit name is an env override, so two clones install two units');
+  } else {
+    test.fail('UNIT_NAME is a constant — a second clone overwrites the live unit');
+  }
+
+  // THE CADDYFILE. `./bash/tls` wrote /etc/caddy/Caddyfile with `>` from
+  // a one-site template, so running it from the lab clone DELETED the
+  // public relay's config. No error; the first sign is a certificate for
+  // the wrong name.
+  const tls = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'tls'), 'utf8');
+
+  // WHAT IT DOES, NOT WHAT IT PRINTS. The script ECHOES the migration
+  // for the operator to type, and that text contains the very
+  // redirection this forbids — so a scan of the whole file failed on its
+  // own instructions. Same rule protocolSurface follows for the
+  // register: a name in a cell is an entry, a name in a paragraph is a
+  // mention.
+  const tlsRuns = tls.split('\n')
+    .filter(function (line) { return !/^\s*(#|echo\b|warn\b|say\b|ok\b|die\b)/.test(line); })
+    .join('\n');
+
+  if (!/>\s*\/etc\/caddy\/Caddyfile/.test(tlsRuns)) {
+    test.check('and tls never writes the main Caddyfile, which is the operator’s');
+  } else {
+    test.fail('tls still overwrites /etc/caddy/Caddyfile — that is the live relay’s config');
+  }
+
+  if (/\/etc\/caddy\/sites/.test(tls) && /import sites\//.test(tls)) {
+    test.check('it writes one file per domain and asks for an import, which is additive');
+  } else {
+    test.fail('tls does not write a per-domain site file');
+  }
+
+  // VALIDATED BEFORE RELOADING. A bad config rejected is a message; a
+  // bad config reloaded is a box off the internet.
+  const reloadAt = tls.indexOf('systemctl reload caddy');
+  const validateAt = tls.indexOf('caddy validate');
+  if (validateAt !== -1 && validateAt < reloadAt) {
+    test.check('and validates before it reloads, so a broken file costs a message');
+  } else {
+    test.fail('tls reloads caddy without validating first');
+  }
+
+  // AND THE POLICY IS UNCHANGED. A second RELAY is a second clone with
+  // its own key; it is not a second Unix user, which is the split
+  // ONE-OPERATOR.md exists to refuse.
+  if (!/useradd|RELAY_USER|User=/.test(lib)) {
+    test.check('while none of it invents a second Unix account — root is still spirit');
+  } else {
+    test.fail('a second user crept into lib.sh');
+  }
+}
+
 test.reportSuccessFailureCount();

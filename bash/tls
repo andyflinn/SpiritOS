@@ -19,9 +19,50 @@ if ! have caddy; then
   fi
 fi
 
-say "write /etc/caddy/Caddyfile for $DOMAIN -> 127.0.0.1:$NODE_PORT"
+# ── ONE FILE PER DOMAIN, AND THIS NEVER OVERWRITES THE MAIN ONE ──────
+#
+# This wrote /etc/caddy/Caddyfile with `>` from a single-site template.
+# Run it from a second clone and it DELETED the live relay's config and
+# replaced it with the lab's — spirit.andyflinn.com goes dark, with no
+# error, until somebody notices the certificate is for another name.
+#
+# So a site block is now its own file under /etc/caddy/sites/, named for
+# the domain, and the main Caddyfile only has to `import` them. Additive
+# by construction: a third relay costs a file and nothing else.
+SITES_DIR=/etc/caddy/sites
+SITE_FILE="$SITES_DIR/$DOMAIN.caddy"
+
+mkdir -p "$SITES_DIR"
+say "write $SITE_FILE for $DOMAIN -> 127.0.0.1:$NODE_PORT"
 sed "s/__DOMAIN__/$DOMAIN/g; s/__PORT__/$NODE_PORT/g" \
-  "$REPO_ROOT/bash/caddy/Caddyfile" > /etc/caddy/Caddyfile
+  "$REPO_ROOT/bash/caddy/Caddyfile" > "$SITE_FILE"
+chmod 644 "$SITE_FILE"
+
+# THE MAIN FILE IS THE OPERATOR'S, and this only ever reads it. Writing
+# it is what caused the fault above, so the worst this can do now is
+# refuse to reload and say what to type.
+if [ ! -f /etc/caddy/Caddyfile ] || ! grep -q 'import sites/' /etc/caddy/Caddyfile; then
+  warn "/etc/caddy/Caddyfile does not import $SITES_DIR — $DOMAIN is written but not served"
+  echo
+  echo "    Make the main file import the per-domain ones. If it currently"
+  echo "    holds a single site block, that block is already saved as"
+  echo "    $SITE_FILE, so this is safe:"
+  echo
+  echo "      cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.before-sites"
+  echo "      printf 'import sites/*.caddy\\n' > /etc/caddy/Caddyfile"
+  echo "      caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile"
+  echo "      systemctl reload caddy"
+  echo
+  echo "    Then rerun ./bash/tls. Nothing was reloaded, so the site that"
+  echo "    is serving now keeps serving."
+  exit 1
+fi
+
+# Checked BEFORE the reload, because a bad file reloaded is a box off
+# the internet and a bad file rejected is a message.
+if have caddy && ! caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+  die "caddy rejects the config after writing $SITE_FILE — not reloading. Run: caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile"
+fi
 
 systemctl enable caddy
 systemctl reload caddy || systemctl restart caddy

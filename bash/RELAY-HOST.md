@@ -182,8 +182,63 @@ Caddy logs are separate: `journalctl -u caddy -n 40 --no-pager`
 ```
 SPIRIT_RELAY_DOMAIN=spirit.andyflinn.com
 SPIRIT_RELAY_PORT=65430
+SPIRIT_UNIT_NAME=spirit-relay
 SPIRIT_CLONE_DIR=/root/SpiritOS
 ```
+
+---
+
+## More than one relay on this box
+
+> Andy: "we'll need to fake multiple public relays without me shelling out
+> another bunch of bucks per month for that test environment."
+
+A second relay is a **second clone**, not a second machine and not a second
+Unix user. What makes it a different relay is its own `relay-state/` and
+therefore its own Ed25519 identity — `bash/ONE-OPERATOR.md` still stands,
+and root is still spirit.
+
+```bash
+mkdir -p /root/lab && cd /root/lab
+git clone https://github.com/andyflinn/SpiritOS.git && cd SpiritOS
+
+cat > .env <<'ENV'
+export SPIRIT_RELAY_DOMAIN=lab.andyflinn.com
+export SPIRIT_RELAY_PORT=65431
+export SPIRIT_UNIT_NAME=spirit-lab
+ENV
+
+source .env
+./bash/install-units && ./bash/start && ./bash/boot-on
+./bash/tls          # writes /etc/caddy/sites/lab.andyflinn.com.caddy
+```
+
+**Source `.env` before every command in that clone.** `./bash/restart` with
+`SPIRIT_UNIT_NAME` unset restarts **spirit-relay** — the live box — from
+inside the lab directory, and says nothing about it. That is the one sharp
+edge here and it is not guarded, because a guard would have to guess which
+clone is which.
+
+`./bash/update` in the lab clone fetches, compares, `reset --hard
+origin/master` and restarts **its own** unit. Per-clone, already.
+
+### Caddy is additive now
+
+`./bash/tls` writes `/etc/caddy/sites/<domain>.caddy` and **never** touches
+`/etc/caddy/Caddyfile`. It used to write the main file with `>` from a
+single-site template — so running it from a second clone deleted the live
+relay's config and replaced it with the lab's, with no error until somebody
+noticed the certificate was for the wrong name.
+
+The main file becomes one line:
+
+```
+import sites/*.caddy
+```
+
+`tls` refuses to reload until it sees that line, and prints the migration.
+It also runs `caddy validate` before reloading: a bad config rejected is a
+message, a bad config reloaded is a box off the internet.
 
 ---
 
