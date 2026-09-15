@@ -1105,13 +1105,19 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // Unminting an invite. Same deps as its neighbours for the same
-    // reason — every askRelay door needs the router and the url->key pin.
-    if (pathname === '/api/hub/revoke') {
-      hub.handleRevoke(req, res, readJsonBody,
-        { router: peerRouter, relayKey: pinnedRelayKey });
-      return;
-    }
+    // `POST /api/hub/revoke` STOOD HERE and lasted one day.
+    //
+    //   Andy: "I'm aiming to close all post-path doors on node"
+    //
+    // What it did was build `{revoke:{label}}` and hand it to
+    // router.post, which is what a peerPost IS — so it was a second way
+    // of saying something the protocol already says. The browser now
+    // addresses the relay by key through /api/hub/post like any other
+    // peer (app/natterDetails, ndRevoke).
+    //
+    // The first of four to go. When the last one does, /api/hub/post is
+    // the only door on this node that puts anything on the wire, and a
+    // new relay verb needs no change here at all.
 
     // Forgetting somebody. relay.removePeer has worked since it shipped
     // and nothing on this side could reach it — a verb with no interface.

@@ -124,7 +124,13 @@ function mountShell(answerFor) {
   };
 
   const src = fs.readFileSync(SHELL, 'utf8');
-  new Function('spirit', 'document', 'fetch', src)(shellSpirit, doc, fakeFetch);
+  // `window` carries the isomorphic rule modules in a real page
+  // (index.html loads them before shell.js). The layer decodes a reply
+  // envelope through spiritPacket, so the fixture supplies the real one
+  // rather than a stand-in — otherwise the decode half is asserted
+  // against a mock of itself.
+  const win = { spiritPacket: packet };
+  new Function('spirit', 'document', 'fetch', 'window', src)(shellSpirit, doc, fakeFetch, win);
 
   const wired = subscribers.filter(function (h) { return typeof h.onPacket === 'function'; })[0];
   return {
@@ -148,12 +154,16 @@ function appWithApi(world, id) {
   return handed;
 }
 
+// What a relay actually sends back: its answer inside a packet
+// envelope, the same shape any peer replies with (relay.answerSelf).
+const REPLY_ENVELOPE = JSON.stringify({ app: 'relay', v: 1, body: { ok: true, revoked: 2 } });
+
 const NODE_ANSWER = {
   status: 200,
   text: JSON.stringify({
     ok: true, status: 200,
     hash: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
-    from: 'PEERKEY', text: 'pong', sig: 'SIG', receipt: true,
+    from: 'PEERKEY', text: REPLY_ENVELOPE, sig: 'SIG', receipt: true,
   }),
 };
 
@@ -187,10 +197,28 @@ function aPostAnswersInTheShapeTheProtocolHas() {
 
     // RULE 3. The reply is in the answer, because /api/hub/post resolves
     // after the round trip settles. No table was consulted to get it.
-    if (r.ok === true && r.reply === 'pong' && r.from === 'PEERKEY') {
+    if (r.ok === true && r.from === 'PEERKEY') {
       test.check('and the reply with it — the round trip needs no correlation table');
     } else {
       test.fail('answer: ' + JSON.stringify(r));
+    }
+
+    // A BODY OUT, A BODY BACK. The caller handed this a body; the relay
+    // answers in the same envelope shape any peer replies with, and the
+    // layer decodes it. Otherwise every app parses the envelope itself
+    // and they drift on what an empty one means.
+    if (r.body && r.body.ok === true && r.body.revoked === 2) {
+      test.check('the answer arrives as a BODY, decoded from the envelope it came in');
+    } else {
+      test.fail('body: ' + JSON.stringify(r.body));
+    }
+
+    // The bytes stay alongside, so a caller wanting them does not have to
+    // re-encode what it was just handed.
+    if (r.reply === REPLY_ENVELOPE) {
+      test.check('with the raw envelope kept beside it');
+    } else {
+      test.fail('reply: ' + JSON.stringify(r.reply));
     }
 
     // Structured, not a string to parse. sendMessagePacket still hands

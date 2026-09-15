@@ -850,14 +850,41 @@ function ndRevoke(button) {
     return;
   }
 
+  // ── THE FIRST VERB THROUGH THE LOOPBACK CLIENT LAYER ───────────────
+  //
+  //   Andy: "all of natter really can and must go through the shell ->
+  //   clientLayer -> node -> relay"
+  //   Andy: "I'm aiming to close all post-path doors on node"
+  //
+  // This said `ndPost('/api/hub/revoke', …)` and that door existed for
+  // one day. What it did was build `{revoke:{label}}` and hand it to
+  // router.post — which is what a peerPost IS, so the door was a second
+  // way of saying a thing the protocol already said.
+  //
+  // ADDRESSED BY KEY, NOT BY URL. `ndUrl` still says which relay this
+  // SCREEN is, but it no longer aims the verb: the post goes to the
+  // relay's own public key and the node picks the road (presence.
+  // relaysNaming). That is why the relay had to start naming itself in
+  // every member's roster — see relay.streamRoster.
+  var relayKey = (ndBadge && ndBadge.report && ndBadge.report.key) || '';
+  if (!relayKey) {
+    out.className = 'job-manifest-note nd-inv-revoke-out is-error';
+    out.textContent = 'this relay has not said what its key is yet';
+    button.removeAttribute('data-armed');
+    button.textContent = 'Revoke';
+    return;
+  }
+
   button.disabled = true;
-  ndPost('/api/hub/revoke', { label: label, url: ndUrl }).then(function (r) {
-    var said = null;
-    try { said = JSON.parse(r.text); } catch (e) { said = null; }
-    var ok = r.status === 200 && said && said.ok;
+  ndApi.peerPost('relay', relayKey, { revoke: { label: label } }).then(function (r) {
+    // THE ANSWER IS A BODY, decoded by the layer from the envelope the
+    // relay replied in. No JSON.parse here, and no second opinion about
+    // what an empty envelope means.
+    var said = r.body;
+    var ok = r.ok && said && said.ok;
     out.className = 'job-manifest-note nd-inv-revoke-out ' + (ok ? 'is-token' : 'is-error');
     if (!ok) {
-      out.textContent = (said && said.error) || (r.status + ' ' + r.text);
+      out.textContent = (said && said.error) || r.error || ('HTTP ' + r.status);
       button.disabled = false;
       button.removeAttribute('data-armed');
       button.textContent = 'Revoke';
@@ -871,7 +898,12 @@ function ndRevoke(button) {
       ? 'revoked ' + n + (n === 1 ? ' invite for ' : ' invites for ') + label
       : 'nothing outstanding for ' + label + ' — it had already lapsed or been claimed';
     ndChanged = true;
-    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, revoked: label });
+    // The hash rides back because this was a post. Returned with the
+    // result so the list — and a log reader one day — can name the
+    // transaction this press was (decision 0011).
+    if (ndApi) {
+      ndApi.setDialogResult({ changed: true, url: ndUrl, revoked: label, hash: r.hash });
+    }
     ndLoad();
   });
 }

@@ -1391,6 +1391,20 @@
         return api.sendMessagePacket(packetApp, toId, body, opts).then(function (r) {
           var said = null;
           try { said = JSON.parse(r.text); } catch (e) { said = null; }
+          var text = (said && typeof said.text === 'string') ? said.text : '';
+
+          // A BODY OUT, A BODY BACK. The caller handed this a body and
+          // the answer arrives in the same envelope shape — the relay
+          // replies with `{app, v, body}` like any peer. Decoding it here
+          // rather than in each caller is the whole reason this layer
+          // exists: otherwise every app parses the envelope itself and
+          // they drift on what an empty one means.
+          //
+          // `reply` stays alongside as the raw text, because a caller
+          // that wants the bytes should not have to re-encode them.
+          var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
+          var decoded = (envelope && text) ? envelope.decode(text) : null;
+
           return {
             ok: r.status === 200 && !!(said && said.ok),
             status: r.status,
@@ -1398,7 +1412,8 @@
             // all — a caller must be able to tell "no transaction" from
             // "a transaction that failed".
             hash: (said && said.hash) || '',
-            reply: (said && typeof said.text === 'string') ? said.text : '',
+            body: decoded ? decoded.body : null,
+            reply: text,
             from: (said && said.from) || '',
             error: (said && said.error) || (r.status === 200 ? '' : r.text),
           };

@@ -23,6 +23,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
+const packet = require('../run/js/packet.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'app', 'natterDetails', 'natterDetails.js');
@@ -172,6 +173,14 @@ function mountApp(opts) {
       text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/invite') === 0) {
       text = JSON.stringify({ token: 'saint-bernard' });
+    } else if (url.indexOf('/api/hub/post') === 0) {
+      // What the node answers a post with: peerPost's own settle, whose
+      // `text` is the packet envelope the far end replied in.
+      text = JSON.stringify({
+        ok: true, status: 200, hash: 'HASH0123456789abcdef', from: 'RELAYKEY',
+        text: JSON.stringify({ app: 'relay', v: 1, body: opts.relayAnswer || { ok: true, revoked: 1 } }),
+        sig: 'SIG', receipt: true,
+      });
     } else if (url.indexOf('/api/hub/revoke') === 0) {
       // Unminting. `revoked` is a COUNT, not a boolean: one label may
       // carry several live invites, so revoking by label takes all of
@@ -233,6 +242,35 @@ function mountApp(opts) {
   const api = {
     escapeHtml: spirit.core.util.escapeHtml,
     isVisible: function () { return true; },
+    // THE LOOPBACK CLIENT LAYER, as the shell hands it to every app.
+    //
+    // Modelled on shell.js's peerPost rather than stubbed to whatever
+    // this screen happens to want: it posts to /api/hub/post, and the
+    // answer arrives as a decoded BODY. spirit/test/clientLayer.js is
+    // what proves the real one behaves this way; this is the shape it
+    // proved, so the two cannot drift silently.
+    peerPost: function (packetApp, toId, body) {
+      return fakeFetch('/api/hub/post', {
+        method: 'POST',
+        body: JSON.stringify({ to: toId, app: packetApp, body: body, re: '' }),
+      }).then(function (r) {
+        return r.text().then(function (t) {
+          let said = null;
+          try { said = JSON.parse(t); } catch (e) { said = null; }
+          const text = (said && typeof said.text === 'string') ? said.text : '';
+          const decoded = text ? packet.decode(text) : null;
+          return {
+            ok: r.status === 200 && !!(said && said.ok),
+            status: r.status,
+            hash: (said && said.hash) || '',
+            body: decoded ? decoded.body : null,
+            reply: text,
+            from: (said && said.from) || '',
+            error: (said && said.error) || '',
+          };
+        });
+      });
+    },
     setDialogResult: function (result) { answers.push(result); },
     // Recorded rather than applied: this harness has no titlebar, and
     // what is being checked is what the screen ASKED for.
@@ -498,6 +536,7 @@ function aHalfCopiedInviteIsRefusedBeforeItTravels() {
 // that revoking aims by label rather than by row.
 const INVITE_REPORT = {
   owner: 'andy', mode: 'keys', peers: 3, present: 1,
+  key: 'RELAYKEY',
   invites: [
     { label: 'adam', expiresAt: '2099-01-01T00:00:00.000Z', invitedBy: 'andy' },
     { label: 'bulb', expiresAt: '2000-01-01T00:00:00.000Z', invitedBy: 'andy' },
@@ -592,14 +631,35 @@ function revokingAimsByLabel() {
 
       app.body().fire('click', { target: button });
       return settle().then(function () {
-        const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/revoke') === 0; });
-        const body = calls.length ? JSON.parse(calls[0].body) : null;
+        // ── THROUGH THE LOOPBACK CLIENT LAYER, NOT A DOOR OF ITS OWN ──
+        //
+        //   Andy: "all of natter really can and must go through the
+        //   shell -> clientLayer -> node -> relay"
+        //
+        // This looked for a call to `/api/hub/revoke`. That door existed
+        // for one day and is gone: what it did was build
+        // `{revoke:{label}}` and hand it to router.post, which is what a
+        // peerPost IS. The browser says it directly now.
+        const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; });
+        const sent = calls.length ? JSON.parse(calls[0].body) : null;
+        const body = sent && sent.body;
+
+        // ADDRESSED BY KEY, NOT BY URL. `ndUrl` still says which relay
+        // this screen is; it no longer aims the verb. The post goes to
+        // the relay's own public key and the node picks the road — which
+        // is why the relay had to start naming itself in every member's
+        // roster.
+        if (sent && sent.to === 'RELAYKEY' && sent.app === 'relay') {
+          test.check('the verb travels as a packet addressed to the relay by key');
+        } else {
+          test.fail('post: ' + JSON.stringify(sent));
+        }
 
         // BY LABEL, NOT BY INDEX. The list repaints from a report that
         // arrives on its own, so an index would aim at whatever had moved
         // into that position.
-        if (body && body.label === 'adam' && body.url === OWNED) {
-          test.check('the second press revokes by label, on the relay this screen is');
+        if (body && body.revoke && body.revoke.label === 'adam') {
+          test.check('and names the invite by label, in the relay’s own vocabulary');
         } else {
           test.fail('revoke body: ' + JSON.stringify(body));
         }

@@ -273,7 +273,6 @@ freePort()
       ['POST', '/api/hub/invite', { url: 'https://not-on-the-list.example', label: 'x', days: 1 }],
       ['POST', '/api/hub/remove-peer', { url: 'https://not-on-the-list.example', key: 'NOPE' }],
       ['POST', '/api/hub/rename', { url: 'https://not-on-the-list.example', label: 'x' }],
-      ['POST', '/api/hub/revoke', { url: 'https://not-on-the-list.example', label: 'x' }],
       ['POST', '/api/hub/post'],
       ['POST', '/api/hub/contact'],
       ['POST', '/api/hub/unknown-senders'],
@@ -325,7 +324,17 @@ freePort()
       // instead. Measured on the broken build: rename 503, remove-peer
       // 403. This asserts they agree, whatever the number turns out to be.
       const SAME = { url: 'https://not-on-the-list.example', label: 'x', key: 'NOPE' };
-      const DOORS = ['/api/hub/rename', '/api/hub/remove-peer', '/api/hub/revoke', '/api/hub/invite'];
+      // `/api/hub/revoke` WAS IN THIS LIST and lasted a day. It is not a
+      // door any more — the browser posts `{revoke:{label}}` through
+      // `/api/hub/post` like any other peerPost — and the three below are
+      // going the same way.
+      //
+      // When the last one does, this check has no subject, and what
+      // should replace it is the invariant it has been standing in for:
+      // NOTHING BUT handlePost MAY CALL router.post. That is a better
+      // guard than four doors agreeing, because it is about the thing
+      // itself rather than about them matching each other.
+      const DOORS = ['/api/hub/rename', '/api/hub/remove-peer', '/api/hub/invite'];
       return DOORS.reduce(function (chain, path) {
         return chain.then(function (seen) {
           return request(port, 'POST', path, SAME).then(function (r) {
