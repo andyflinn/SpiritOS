@@ -205,4 +205,80 @@ test.subHeading('A second clone cannot eat the first');
   }
 }
 
+// ── THE LAB SCRIPTS REFUSE TO TOUCH THE LIVE RELAY ───────────────────
+//
+//   Andy: "my ./batch tools need to give me the option to install/remove
+//   the clone that sits there (/root/lab/)."
+//
+// A command named `lab-remove` that stops `spirit-relay` is the whole
+// hazard here, and it is not hypothetical: every knob it reads has a
+// default, and a default that happens to match the live one turns a
+// tidy-up into an outage. So both scripts compare all four — directory,
+// unit, port, domain — against the live values and refuse rather than
+// guess.
+//
+// Asserted by reading the source, the way the rest of this file does:
+// these scripts need root and a relay host to run, so the harness
+// cannot execute them. What it CAN hold is that the refusals are still
+// written.
+test.subHeading('lab-install and lab-remove cannot be aimed at the live relay');
+{
+  const labInstall = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
+  const labRemove = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-remove'), 'utf8');
+
+  // Four knobs, four ways to be pointed at the wrong thing. `lab-remove`
+  // does not read a port — it never starts anything — so three there.
+  [
+    ['lab-install', labInstall, ['$REPO_ROOT', '$UNIT_NAME', '$NODE_PORT', '$DOMAIN']],
+    ['lab-remove', labRemove, ['$REPO_ROOT', '$UNIT_NAME', '$DOMAIN']],
+  ].forEach(function (row) {
+    const name = row[0];
+    const src = row[1];
+    const missing = row[2].filter(function (live) {
+      // A refusal is a comparison against the live value followed by
+      // `die`. Both halves, because a comparison that only warns is a
+      // pause on the way to the same outage.
+      return src.indexOf(live) === -1;
+    });
+    if (missing.length === 0 && /\|\| die/.test(src)) {
+      test.check(name + ' compares every knob against the live relay and dies rather than guessing');
+    } else {
+      test.fail(name + ' does not guard: ' + (missing.join(', ') || 'no die'));
+    }
+  });
+
+  // THE DEFAULT KEEPS THE DISK. A relay's identity is what its members
+  // PINNED — relayKeys.json refuses a relay answering with a different
+  // key — so deleting relay-state makes the lab a stranger to everybody
+  // that ever spoke to it. That is the damage `recycle` used to do, and
+  // the reason `refresh` exists.
+  if (/--purge/.test(labRemove) && /PURGE=no/.test(labRemove)) {
+    test.check('and removal keeps the clone by default — the key survives unless --purge is asked for');
+  } else {
+    test.fail('lab-remove deletes the clone without being asked');
+  }
+
+  // `rm -rf` ON A VARIABLE is how a script deletes something nobody
+  // asked it to. Two more refusals before it runs.
+  if (/refusing to purge inside/.test(labRemove) && /not a git clone/.test(labRemove)) {
+    test.check('and a purge refuses a path that is not a clone under a lab root');
+  } else {
+    test.fail('lab-remove purges without checking the path it was handed');
+  }
+
+  // NEITHER WRITES THE MAIN CADDYFILE. Same rule as bash/tls, and the
+  // same reason: it once held the live relay's only config.
+  const writesMain = [labInstall, labRemove].filter(function (src) {
+    return src.split('\n').some(function (line) {
+      return !/^\s*(#|echo\b|warn\b|say\b|ok\b|die\b)/.test(line) &&
+        />\s*\/etc\/caddy\/Caddyfile/.test(line);
+    });
+  });
+  if (writesMain.length === 0) {
+    test.check('while neither writes /etc/caddy/Caddyfile — one file per domain, the main one is the operator’s');
+  } else {
+    test.fail('a lab script writes the main Caddyfile');
+  }
+}
+
 test.reportSuccessFailureCount();

@@ -1,0 +1,89 @@
+#!/bin/bash
+# Take the second relay out of service. Run from the MAIN clone.
+#
+#   ./bash/lab-remove            stop it, unenrol it, leave the disk alone
+#   ./bash/lab-remove --purge    and delete the clone, key and all
+#
+# ── WHY THE DEFAULT KEEPS THE DISK ──────────────────────────────────
+#
+# A RELAY'S IDENTITY IS WHAT ITS MEMBERS PINNED. Every node that has
+# spoken to lab.andyflinn.com holds its public key in relayKeys.json and
+# refuses a relay answering with a different one — which is the whole
+# point of pinning. Delete relay-state and the lab comes back as a
+# stranger to everybody, and every one of those nodes has to be told.
+#
+# That is the same damage `recycle` used to do to lab nodes, and the
+# reason `refresh` was written (labMaster.js): "updating a node destroyed
+# its identity, which took it off every relay it was on and left rows
+# behind that nobody held a key for."
+#
+# So the default takes the lab OFF THE AIR and leaves it able to come
+# back as itself. --purge is the deliberate second thought.
+source "$(dirname "$0")/lib.sh"
+need_root
+
+PURGE=no
+[ "${1:-}" = "--purge" ] && PURGE=yes
+
+LAB_DIR="${SPIRIT_LAB_DIR:-/root/lab/SpiritOS}"
+LAB_UNIT="${SPIRIT_LAB_UNIT:-spirit-lab}"
+LAB_DOMAIN="${SPIRIT_LAB_DOMAIN:-lab.andyflinn.com}"
+
+# THE SAME GUARDS AS INSTALL, and they matter more here: every one of
+# these is a way to stop, disable or delete the LIVE relay by running a
+# command named "lab".
+[ "$LAB_DIR" != "$REPO_ROOT" ] || die "lab dir is this clone ($REPO_ROOT) — refusing to remove the live relay"
+[ "$LAB_UNIT" != "$UNIT_NAME" ] || die "lab unit is '$UNIT_NAME', the live unit — refusing"
+[ "$LAB_DOMAIN" != "$DOMAIN" ] || die "lab domain is $DOMAIN, the live domain — refusing"
+
+say "remove lab relay"
+echo "    dir:    $LAB_DIR"
+echo "    unit:   $LAB_UNIT"
+echo "    domain: $LAB_DOMAIN"
+echo "    disk:   $([ "$PURGE" = yes ] && echo 'DELETED (--purge)' || echo 'kept — the key survives')"
+
+if have systemctl && systemctl list-unit-files | grep -q "^${LAB_UNIT}.service"; then
+  say "stop and disable $LAB_UNIT"
+  systemctl stop "$LAB_UNIT" || true
+  systemctl disable "$LAB_UNIT" || true
+  rm -f "/etc/systemd/system/${LAB_UNIT}.service"
+  systemctl daemon-reload
+  ok "unit removed"
+else
+  warn "no unit $LAB_UNIT installed"
+fi
+
+# ONE FILE, NOT THE MAIN Caddyfile. The main file is the operator's and
+# nothing here writes it — the same rule bash/tls follows, and for the
+# same reason: it once held the live relay's only config.
+SITE_FILE="/etc/caddy/sites/$LAB_DOMAIN.caddy"
+if [ -f "$SITE_FILE" ]; then
+  say "remove $SITE_FILE"
+  rm -f "$SITE_FILE"
+  if have caddy && caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+    systemctl reload caddy || warn "caddy did not reload"
+    ok "caddy reloaded without $LAB_DOMAIN"
+  else
+    warn "caddy config does not validate after removing the site — NOT reloading"
+    echo "    the old config is still live. check: caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile"
+  fi
+else
+  warn "no caddy site file for $LAB_DOMAIN"
+fi
+
+if [ "$PURGE" = yes ]; then
+  # LAST GUARD, AND IT IS A PATH ONE. `rm -rf` on a variable is how a
+  # script deletes something nobody asked it to, so this refuses
+  # anything that is not a real clone sitting under the lab root.
+  LAB_ROOT="$(dirname "$LAB_DIR")"
+  case "$LAB_ROOT" in
+    /|/root|/home|/etc|/usr|/var) die "refusing to purge inside $LAB_ROOT" ;;
+  esac
+  [ -d "$LAB_DIR/.git" ] || die "$LAB_DIR is not a git clone — refusing to purge"
+
+  say "delete $LAB_DIR"
+  rm -rf "$LAB_DIR"
+  ok "purged — that relay's key is gone, and members who pinned it must re-accept"
+else
+  ok "stopped. $LAB_DIR is intact — bash/lab-install brings it back as itself"
+fi

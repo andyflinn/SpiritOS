@@ -82,7 +82,8 @@ Caddy  -- HTTP 127.0.0.1:65430 -->  node --relay
 | `update` | 755 | Fetch + hard reset to `origin/master`; restart only if SHA changed |
 | `cron-install` `cron-remove` | 755 | 10-minute update cron |
 | `firewall` | 755 | ufw: 22/80/443 allow, 65430 deny |
-| `tls` | 755 | Install Caddy + write Caddyfile |
+| `tls` | 755 | Install Caddy + write `sites/<domain>.caddy` (never the main file) |
+| `lab-install` `lab-remove` | 755 | The SECOND relay on this box — see above |
 | `http-to-https` | 755 | One-shot cutover (unit + firewall + tls + start) |
 | `logs` | 755 | Last 100 lines of `spirit-relay` |
 | `systemd/spirit-relay.service` | 644 | Unit template |
@@ -154,7 +155,14 @@ If only `firewalld`: allow ssh/http/https.
 ### `./bash/tls`
 
 Installs Caddy (apt + Cloudsmith repo) if missing, writes
-`/etc/caddy/Caddyfile` from the template, enable + reload Caddy.
+`/etc/caddy/sites/<domain>.caddy` from the template, validates, then
+enable + reload Caddy.
+
+It **never writes `/etc/caddy/Caddyfile`** — that file is yours, and one
+line (`import sites/*.caddy`) is all it needs. `tls` refuses to reload
+until it sees that line, and prints the migration instead. It used to
+write the main file with `>`, so running it from a second clone deleted
+the live relay's config and replaced it with the new one's.
 
 DNS A for `$SPIRIT_RELAY_DOMAIN` must already point at this box or
 Let’s Encrypt will fail.
@@ -198,20 +206,42 @@ Unix user. What makes it a different relay is its own `relay-state/` and
 therefore its own Ed25519 identity — `bash/ONE-OPERATOR.md` still stands,
 and root is still spirit.
 
+From the MAIN clone, one command each way:
+
 ```bash
-mkdir -p /root/lab && cd /root/lab
-git clone https://github.com/andyflinn/SpiritOS.git && cd SpiritOS
-
-cat > .env <<'ENV'
-export SPIRIT_RELAY_DOMAIN=lab.andyflinn.com
-export SPIRIT_RELAY_PORT=65431
-export SPIRIT_UNIT_NAME=spirit-lab
-ENV
-
-source .env
-./bash/install-units && ./bash/start && ./bash/boot-on
-./bash/tls          # writes /etc/caddy/sites/lab.andyflinn.com.caddy
+./bash/lab-install          # clone, unit, start, enable, caddy site
+./bash/lab-remove           # stop, disable, drop the unit and the site
+./bash/lab-remove --purge   # and delete the clone, key and all
 ```
+
+`lab-install` is idempotent: run it again after a push and it updates the
+lab clone from origin rather than complaining. It writes the lab clone's
+`.env` for you.
+
+Both **refuse to run** if the lab's directory, unit, port or domain matches
+the live relay's. A command named `lab-remove` that stops `spirit-relay` is
+the hazard here, and every knob has a default that could collide.
+
+Knobs, if the defaults do not suit:
+
+```
+SPIRIT_LAB_DIR=/root/lab/SpiritOS
+SPIRIT_LAB_PORT=65431
+SPIRIT_LAB_UNIT=spirit-lab
+SPIRIT_LAB_DOMAIN=lab.andyflinn.com
+```
+
+### Removing keeps the key, unless you say otherwise
+
+`lab-remove` without `--purge` takes the lab off the air and leaves the
+clone on disk. That is deliberate: **a relay's identity is what its members
+pinned.** Every node that has spoken to `lab.andyflinn.com` holds its public
+key in `relayKeys.json` and refuses a relay answering with a different one.
+Delete `relay-state/` and the lab comes back as a stranger to everybody, and
+each of those nodes has to accept it again.
+
+That is the damage `recycle` used to do to lab nodes, and the reason
+`refresh` was written. `--purge` is the deliberate second thought.
 
 **Source `.env` before every command in that clone.** `./bash/restart` with
 `SPIRIT_UNIT_NAME` unset restarts **spirit-relay** — the live box — from

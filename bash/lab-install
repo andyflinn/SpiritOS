@@ -1,0 +1,87 @@
+#!/bin/bash
+# Put a SECOND relay on this box, at /root/lab/SpiritOS.
+#
+#   Andy: "we'll need to fake multiple public relays without me shelling
+#   out another bunch of bucks per month for that test environment."
+#
+# A second relay is a second CLONE — its own relay-state, its own Ed25519
+# identity, its own port and its own systemd unit. It is not a second
+# machine and not a second Unix user: root is still spirit
+# (bash/ONE-OPERATOR.md), and what makes lab.andyflinn.com a different
+# relay is its key, not its account.
+#
+# Run this from the MAIN clone. It is idempotent — run it again after a
+# push and it updates the lab rather than complaining.
+source "$(dirname "$0")/lib.sh"
+need_root
+
+LAB_DIR="${SPIRIT_LAB_DIR:-/root/lab/SpiritOS}"
+LAB_PORT="${SPIRIT_LAB_PORT:-65431}"
+LAB_UNIT="${SPIRIT_LAB_UNIT:-spirit-lab}"
+LAB_DOMAIN="${SPIRIT_LAB_DOMAIN:-lab.andyflinn.com}"
+ORIGIN="${SPIRIT_LAB_ORIGIN:-https://github.com/andyflinn/SpiritOS.git}"
+
+# ── THE GUARDS, AND EACH IS A WAY THIS COULD EAT THE LIVE RELAY ──────
+#
+# Every one of these has a matching failure that would take down
+# spirit.andyflinn.com rather than the lab, which is the direction these
+# mistakes run in: the new thing is fine and the old thing is gone.
+[ "$LAB_DIR" != "$REPO_ROOT" ] || die "lab dir is this clone ($REPO_ROOT) — that would install the lab over the live relay"
+[ "$LAB_UNIT" != "$UNIT_NAME" ] || die "lab unit is '$UNIT_NAME', the live unit — set SPIRIT_LAB_UNIT"
+[ "$LAB_PORT" != "$NODE_PORT" ] || die "lab port is $NODE_PORT, the live port — set SPIRIT_LAB_PORT"
+[ "$LAB_DOMAIN" != "$DOMAIN" ] || die "lab domain is $DOMAIN, the live domain — set SPIRIT_LAB_DOMAIN"
+
+say "lab relay"
+echo "    dir:    $LAB_DIR"
+echo "    port:   $LAB_PORT"
+echo "    unit:   $LAB_UNIT"
+echo "    domain: $LAB_DOMAIN"
+
+if [ -d "$LAB_DIR/.git" ]; then
+  say "clone exists — updating from origin"
+  cd "$LAB_DIR"
+  git fetch origin
+  git reset --hard origin/master
+  ok "at $(git rev-parse --short HEAD)"
+else
+  say "clone $ORIGIN"
+  mkdir -p "$(dirname "$LAB_DIR")"
+  git clone "$ORIGIN" "$LAB_DIR"
+  cd "$LAB_DIR"
+  ok "cloned at $(git rev-parse --short HEAD)"
+fi
+
+# ── .env, AND IT IS THE ONE SHARP EDGE ON THIS BOX ───────────────────
+#
+# `./bash/restart` inside the lab clone with SPIRIT_UNIT_NAME unset
+# restarts spirit-relay — the LIVE box — and says nothing about it. A
+# guard cannot tell which clone it is in, so the answer is a file you
+# source and a reminder every time this runs.
+say "write $LAB_DIR/.env"
+cat > "$LAB_DIR/.env" <<ENV
+# Source this before EVERY bash/ command in this clone.
+#   source .env && ./bash/restart
+# Without it, ./bash/restart restarts the LIVE relay from in here.
+export SPIRIT_RELAY_DOMAIN=$LAB_DOMAIN
+export SPIRIT_RELAY_PORT=$LAB_PORT
+export SPIRIT_UNIT_NAME=$LAB_UNIT
+ENV
+chmod 600 "$LAB_DIR/.env"
+
+say "install unit $LAB_UNIT"
+( cd "$LAB_DIR" && source .env && ./bash/install-units )
+
+say "start and enable"
+( cd "$LAB_DIR" && source .env && ./bash/start && ./bash/boot-on )
+
+say "caddy site for $LAB_DOMAIN"
+( cd "$LAB_DIR" && source .env && ./bash/tls ) || {
+  warn "tls did not finish — the relay is running on 127.0.0.1:$LAB_PORT but is not public yet"
+  echo "    follow what it printed, then: cd $LAB_DIR && source .env && ./bash/tls"
+  exit 1
+}
+
+ok "lab relay is up"
+echo "    check:  curl -fsS https://$LAB_DOMAIN/api/relay/who"
+echo "    manage: cd $LAB_DIR && source .env && ./bash/status"
+echo "    remove: $REPO_ROOT/bash/lab-remove"
