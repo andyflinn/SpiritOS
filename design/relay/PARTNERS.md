@@ -15,6 +15,46 @@ and inspectability ends.
 > **Andy:** "the partner nodes only reach one level. We're currently not
 > needing 6 degrees of separation."
 
+> **Andy:** "referrals must be verifiable."
+
+That is the generalisation, and it is what makes the reciprocity check the
+load-bearing part rather than a formality. A referral nobody can check is
+a rumour, and a relay that routes on rumour is a relay that can be talked
+into anything. Every link in the chain above is checkable **by the party
+relying on it, against public data, by key** — which is the only kind of
+referral this design accepts.
+
+## And the memory model forbids the second hop anyway
+
+> **Andy:** "the highest memory demand on a relay comes from peerlist ×
+> peerlists… that can only go max one hop."
+
+This is the stronger argument, because it does not depend on anyone
+agreeing about trust. If a relay holds its partners' member lists:
+
+```
+held rows  =  partners × members          (one hop)
+           =  partners² × members         (two hops)
+```
+
+Measured against the live box — spirit-3 answers 9 rows in 1390 bytes, so
+~154 B/row as JSON and call it ~460 B/row held as objects:
+
+| partners | members each | one hop | two hops |
+|---|---|---|---|
+| 10 | 100 | 1 000 rows · 462 KB | 10 000 rows · 5 MB |
+| 50 | 500 | 25 000 rows · 12 MB | 1 250 000 rows · **578 MB** |
+| 100 | 1 000 | 100 000 rows · 46 MB | 10 000 000 rows · **4.6 GB** |
+
+spirit-3 is a **~1 GB VPS**. One hop stays comfortable to a hundred
+partners of a thousand members each. Two hops kills the box somewhere
+around fifty partners — and the growth is quadratic, so it kills it
+suddenly, on somebody else's decision to add a partner.
+
+**That is the rule's real enforcement.** "We do not need six degrees" is a
+preference and could be revisited; `partners² × members` on a 1 GB box is
+arithmetic and cannot.
+
 ---
 
 ## The problem it solves
@@ -67,23 +107,27 @@ This is the real threshold in the proposal — bigger than the flag.
 2. **Reciprocity is the test.** A partner is a non-owner peer here who owns
    a relay elsewhere, and both sides establish that fact through owner
    input. Neither relay takes the other's word for it.
-3. **One level. No transitivity.** B's partners are not A's partners.
+3. **One level. No transitivity.** B's partners are not A's partners — for
+   the trust reason above *and* because `partners² × members` does not fit
+   on the box.
+4. **A referral is only acceptable if it is verifiable** by the party
+   relying on it, against public data, by key.
 
 ## Recommended (Claude), not yet decided
 
-4. **The node fetches; the relay stores the conclusion.** The owner's node
+5. **The node fetches; the relay stores the conclusion.** The owner's node
    already fetches censuses per relay (`ownerBadge.probe`). Let it do the
    reciprocity check and post the result. The relay keeps `partner: true`
    and never learns how to reach out.
-5. **One hop, full stop.** A forwarded post is never forwarded again. With
+6. **One hop, full stop.** A forwarded post is never forwarded again. With
    two relays there is no loop to prevent; the rule has to be written while
    that is still true, and it makes (3) enforceable rather than merely
    intended.
-6. **The partner's member list is a HINT, never an authority.** B checks its
+7. **The partner's member list is a HINT, never an authority.** B checks its
    own ledger when a forward lands, as it does for any post. A stale hint
    then costs a wasted hop and a refusal — never a wrong delivery — which
    removes most of what makes a synced copy frightening.
-7. **Write the 0006 carve-out in the same breath as the flag.** "Nothing is
+8. **Write the 0006 carve-out in the same breath as the flag.** "Nothing is
    stored on a relay on anyone's behalf" is the decision a member-list copy
    presses on. A hint that is never persisted, never served and never
    authoritative is closer to a DNS cache than a store — but that is a
@@ -99,7 +143,8 @@ This is the real threshold in the proposal — bigger than the flag.
   obviously either.
 - **How the hint list is obtained and refreshed.** On demand per question is
   simplest and always correct; a RAM copy with a TTL is the optimisation.
-  At ten peers neither is measurable.
+  At ten peers neither is measurable — and the table above says when it
+  stops being free, which is later than it feels.
 - **What B answers when it refuses a forward.** A's caller learns *what*,
   and A learns something about its hint. Both are log entries nobody has
   specified.
