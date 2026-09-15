@@ -125,6 +125,92 @@ test.startTest('Invites cycle 1 — consume on claim');
   }
 }
 
+// ── R1: THE INVITE NAMES THE PERSON, THE CLAIMER NAMES THEMSELVES ─────
+//
+// design/cycles/2026-09-15-labels-are-not-identities.md
+//
+//   Andy: "after enrollment the public label of an ID is property of the
+//   ID, it must persist on the relay. A contract would say, the relay
+//   owner will not be allowed to control the public label of any keyed
+//   peer."
+//
+// The invite's label used to BE the peer's name — `match` demanded they
+// be equal — so the owner chose what every peer was called, permanently,
+// and `who()` published it unsigned to anyone.
+//
+// The label keeps its OTHER job, and the block above still asserts it:
+// an invite is keyless, the token is the whole credential, and a spoken
+// token is held only to NAME_RE with no entropy floor. The label is the
+// second factor on that path.
+test.subHeading('The invite proves; the claimer names themselves');
+
+{
+  const home = tmpHome();
+  const box = createRelay(home);
+  const andy = auth.generateIdentity('andy');
+  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
+
+  // An owner inviting somebody they know by phone number — Andy's own
+  // example of what an invite label is for: "(phone/email etc)".
+  const PHONE = '07700900123';
+  box.mint('andy', PHONE, 7, 'dog');
+
+  const bella = auth.generateIdentity('bella');
+  const signAs = function (label) {
+    return auth.sign(bella.privateKey, auth.claimMessage(label));
+  };
+
+  // THE SECOND FACTOR STILL REFUSES. Right token, wrong word on the
+  // invite. A spoken token may be one guessable word, so this is the
+  // check that stops a guess being a complete credential.
+  const wrong = box.claim('bel', signAs('bel'), bella.publicKey, '10.0.0.1', 'dog', 'nope');
+  if (!wrong.ok && wrong.status === 403) {
+    test.check('a wrong invite label is refused even with the right token — the second factor holds');
+  } else {
+    test.fail('wrong invite label: ' + JSON.stringify(wrong));
+  }
+
+  // AND THE CLAIMER PICKS THEIR OWN NAME. Same token, right invite
+  // label, a public label of their choosing.
+  const ok = box.claim('bel', signAs('bel'), bella.publicKey, '10.0.0.1', 'dog', PHONE);
+  if (ok.ok && ok.status === 201 && ok.peer.publicLabel === 'bel') {
+    test.check('the right invite label admits a claimer under a name of their own');
+  } else {
+    test.fail('claim: ' + JSON.stringify(ok));
+  }
+
+  // THE FINDING THIS CYCLE OPENED ON. Before R1 the peer row was written
+  // `{name: n, publicLabel: n}` with n forced equal to the invite label,
+  // and /api/relay/who hands publicLabel to anyone unsigned.
+  const census = JSON.stringify(box.who());
+  if (census.indexOf(PHONE) === -1) {
+    test.check('and the phone number on the invite is nowhere in the census');
+  } else {
+    test.fail('the invite label reached the census: ' + census);
+  }
+
+  // Nor anywhere else on the box that a peer can reach. The invite row
+  // itself is gone — consumed — and the owner's report is owner-only.
+  const stored = JSON.stringify(invites.load(home));
+  if (stored.indexOf(PHONE) === -1) {
+    test.check('nor in invites.json, which the claim consumed');
+  } else {
+    test.fail('invite survived with its label: ' + stored);
+  }
+
+  // OMITTED MEANS "THE SAME", which is the ordinary case and every
+  // caller that predates this. A second invite, claimed the old way.
+  const carl = auth.generateIdentity('carl');
+  box.mint('andy', 'carl', 7, 'cat');
+  const old = box.claim('carl', auth.sign(carl.privateKey, auth.claimMessage('carl')),
+    carl.publicKey, '10.0.0.2', 'cat');
+  if (old.ok && old.peer.publicLabel === 'carl') {
+    test.check('and a claim that sends one name still works, falling back to it');
+  } else {
+    test.fail('single-name claim: ' + JSON.stringify(old));
+  }
+}
+
 {
   const home = tmpHome();
   const box = createRelay(home);

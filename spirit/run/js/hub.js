@@ -31,7 +31,19 @@ function assertRelayUrl(relayUrl) {
 
 // The invite is forwarded, never minted here — a token this node made up
 // would not be in the relay's invites.json. Minting is cycle 2.
-function signedClaim(rootDir, name, invite) {
+// `name` is what this node wants to be CALLED. `inviteLabel` is the word
+// the relay owner wrote on the invite — spoken down a phone, matched at
+// the far end, and never stored (R1,
+// design/cycles/2026-09-15-labels-are-not-identities.md).
+//
+// The signature covers `name` and only `name`, because a signature here
+// binds this KEY to that public label. The invite label proves a
+// different thing — that this is the person the owner meant — and it
+// proves it by being held, the way the token is.
+//
+// Omitted when the two are the same, which is the ordinary case and the
+// only one that existed before this: the far end falls back to `name`.
+function signedClaim(rootDir, name, invite, inviteLabel) {
   const id = auth.ensureIdentity(rootDir, name);
   const body = {
     name: name,
@@ -39,6 +51,8 @@ function signedClaim(rootDir, name, invite) {
     sig: auth.sign(id.privateKey, auth.claimMessage(name)),
   };
   if (invite) body.invite = invite;
+  const onInvite = String(inviteLabel == null ? '' : inviteLabel).trim();
+  if (onInvite && onInvite !== name) body.inviteLabel = onInvite;
   return body;
 }
 
@@ -686,7 +700,8 @@ function createHub(rootDir) {
         relayRequest(url, 'POST', '/api/relay/claim', signedClaim(
           rootDir,
           body && body.name,
-          body && body.invite
+          body && body.invite,
+          body && body.inviteLabel
         ))
           .then(function (r) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1388,21 +1403,27 @@ function createHub(rootDir) {
 
   function handleStatus(req, res, urlObj, deps) {
     var name = urlObj.searchParams.get('name') || '';
-    // THE KEY, or every row comes back saying nothing about whether this
-    // node is ON that relay.
+    // THE KEY, and since R3 it is the only thing probe asks with.
     //
-    // probe() computes `claimed` only when it is given a key to look for
-    // in the census — `if (badge.owned || !myKey) return badge` — so
-    // three arguments meant `claimed` was never set on any row, and
-    // Natter's `owned || claimed` quietly collapsed to `owned`. Every
-    // mailbox this node is merely BOUND to drew no panel at all.
+    // It was once possible to call this WITHOUT a key and still get
+    // `owned`, because owning was decided by a signed status 200 and only
+    // `claimed` needed a census match. That asymmetry cost a real bug —
+    // three arguments here meant `claimed` was never set on any row, and
+    // Natter's `owned || claimed` quietly collapsed to `owned`, so every
+    // relay this node was merely BOUND to drew no panel at all. The same
+    // omission the device timer above carries a comment about: "the whole
+    // feature stopped at the owner for want of one word."
     //
-    // This is the same omission the device timer above already carries a
-    // comment about: "the whole feature stopped at the owner for want of
-    // one word." It was fixed there and missed here, which is what a
-    // default parameter that means "answer less" will do.
+    // The asymmetry is gone rather than fixed twice. Both answers come
+    // from the census, by key, so a caller without a key gets nothing —
+    // which is the truth, and is now unmistakable.
+    //
+    // `name` no longer travels at all: it was there to sign a LABEL to
+    // prove a KEY owned a box (ownerBadge, statusPath). It is still read
+    // off the query above, because it is echoed back to the browser as
+    // `name` below and Natter uses it as the label to display.
     var me = auth.loadIdentity(rootDir);
-    ownerBadge.probe(rootDir, name, function (url, method, pathname) {
+    ownerBadge.probe(rootDir, function (url, method, pathname) {
       return relayRequest(url, method, pathname, null);
     }, me && me.publicKey)
       .then(function (summary) {

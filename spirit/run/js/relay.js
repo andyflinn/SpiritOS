@@ -337,9 +337,50 @@ function createRelay(rootDir) {
     return found;
   }
 
-  function claim(name, sig, publicKey, clientKey, inviteToken) {
+  // `name` IS WHAT THE CLAIMER WILL BE CALLED. `inviteLabel` is the word
+  // the owner wrote on the invite, and they are two different things —
+  // which is the whole of R1 (design/cycles/2026-09-15-labels-are-not-
+  // identities.md).
+  //
+  //   Andy: "after enrollment the public label of an ID is property of
+  //   the ID... the relay owner will not be allowed to control the public
+  //   label of any keyed peer."
+  //
+  // They were ONE argument until 2026-09-15, because `match` demanded the
+  // claim's name equal the invite's label. That made the owner's word the
+  // peer's permanent name — and since `who()` publishes it unsigned, it
+  // published whatever the owner used to identify the invitee. An invite
+  // labelled with a phone number put that number in a public census.
+  //
+  // THE LABEL STILL PROVES. It is not merely a caption: an invite is
+  // KEYLESS, so the token is the entire credential, and a SPOKEN token is
+  // held only to NAME_RE — no length floor, no entropy floor. `dog` is a
+  // legal token. On that path the invite label is the second factor, and
+  // an earlier draft of this change that dropped it was wrong for exactly
+  // that reason (Andy: "invites are keyless, i don't understand how we
+  // can drop the label out of the match() call?").
+  //
+  // So: matched, never stored. `inviteLabel` reaches `redeem` and nothing
+  // else; the row below is written with `n`.
+  //
+  // FALLS BACK TO `n` when absent, and that is a compatibility shim with
+  // a short life: a caller that has not been updated sends one name and
+  // gets the old behaviour, which is the behaviour it was written for.
+  // It goes when nothing sends a single name any more.
+  // `seen` is how the wrapper below learns whether this attempt got past
+  // the rate gate, and under what words. Out-parameter rather than a
+  // richer return, so every one of the eleven refusals below stays the
+  // single line it is.
+  function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen) {
     var inviteRow = null;
     var n = normalizeName(name);
+    var onInvite = normalizeName(
+      inviteLabel === undefined || inviteLabel === null || inviteLabel === ''
+        ? name
+        : inviteLabel
+    );
+    seen.label = n;
+    seen.invite = onInvite;
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
     if (n === auth.RESERVED_NAME) {
       return { ok: false, status: 400, error: 'name reserved' };
@@ -347,6 +388,17 @@ function createRelay(rootDir) {
     if (!rateOk(claimHits, clientKey, CLAIM_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many claims' };
     }
+    // PAST THE GATE, and this line is what bounds the owner's stream.
+    // Everything above is reachable by anyone on the internet without
+    // limit — /api/relay/claim is a public POST — so an event fired
+    // before here would let a stranger drive the owner's notifications
+    // as fast as they can send. That is the B1 hazard in a new dress: a
+    // thing keyed by caller-chosen input grows when a stranger reaches
+    // it, so a stranger must not reach it.
+    //
+    // After here, an attempt has already spent one of ten a minute, so
+    // the existing limit caps the notices too. No second mechanism.
+    seen.gate = true;
 
     // pending-owner only means anything while the mailbox is empty: it
     // names who may take the FIRST claim. If peers are already on the box
@@ -399,6 +451,12 @@ function createRelay(rootDir) {
       // Two johns is still two keys; it is now also two invites. The
       // label is not what is scarce, the token is.
       //
+      // REDEEMED ON `onInvite`, WRITTEN AS `n`. The invite's label is
+      // proof — the second factor on a token that may be a spoken word —
+      // and the claimer's own `n` is what the row and the census get.
+      // They were the same string until 2026-09-15; see the note on this
+      // function for why that published the owner's word for somebody.
+      //
       // A key already in allow.json is not a NEW key — it is the owner,
       // and the owner is never someone the box has to be invited into.
       // Without this, a relay whose allow.json outlived its routing table
@@ -410,7 +468,7 @@ function createRelay(rootDir) {
         if (!inviteToken) {
           return { ok: false, status: 403, error: 'invite required' };
         }
-        var keysInvite = redeem(inviteToken, n);
+        var keysInvite = redeem(inviteToken, onInvite);
         if (!keysInvite.ok) return keysInvite;
         inviteRow = keysInvite.invite;
       }
@@ -449,6 +507,48 @@ function createRelay(rootDir) {
     peers[publicKey || n] = peer;
     persist();
     return { ok: true, status: 201, peer: peer, owner: firstOwner };
+  }
+
+  // A SLOT WAS TAKEN, OR SOMEBODY TRIED. The owner hears about both.
+  //
+  //   Andy: "failed AND successful attempts should send a notification
+  //   down the owners SSE stream... the notice must mention the label,
+  //   both in failed and in succesful claims."
+  //
+  // BOTH LABELS RIDE, because they answer different questions and R1 has
+  // just made them two words rather than one:
+  //
+  //   invite  — WHO this was for, in the owner's own terms. The word the
+  //             two of them used on the phone; possibly a phone number.
+  //             This is what makes a notice readable.
+  //   label   — WHAT THEY WILL BE CALLED, which the claimer chose and the
+  //             owner has never seen before this moment.
+  //
+  // An owner who minted `bella` and sees `bel` appear should not read
+  // that as a bug, which is a line for the panel's copy — but they can
+  // only NOT read it as a bug if the notice carries both.
+  //
+  // `key` is the claimer's, because a purge is by key and always was
+  // (Andy: "removePeer MUST be by ID"). A notice that named only labels
+  // would be a notice you cannot act on.
+  //
+  // WHY A WRAPPER. The refusals inside are eleven early returns, and
+  // threading a notification through each one is eleven chances to miss
+  // the twelfth somebody adds later. One place, one rule: if the attempt
+  // got past the rate gate, the owner hears how it ended.
+  function claim(name, sig, publicKey, clientKey, inviteToken, inviteLabel) {
+    var seen = { gate: false, label: '', invite: '' };
+    var out = claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen);
+    if (seen.gate) {
+      ownerEvent(out && out.ok ? 'claim' : 'claim-refused', {
+        label: seen.label,
+        invite: seen.invite,
+        key: (out && out.ok && out.peer && out.peer.publicKey) || publicKey || '',
+        owner: !!(out && out.ok && out.owner),
+        why: (out && out.ok) ? '' : String((out && out.error) || ''),
+      });
+    }
+    return out;
   }
 
   // Minting is not checkOwner(): that verifies auth.statusMessage(name),
@@ -509,6 +609,14 @@ function createRelay(rootDir) {
       token: tok,
       invitedBy: owner,
     });
+    // A SEAT WAS RESERVED (R2). The first half of the pair a claim notice
+    // completes: an owner reading their log should see a reservation made
+    // and later spent, and by whom.
+    //
+    // NEVER THE TOKEN. It is the credential, and the one thing on that row
+    // the owner already holds by having just made it. A log carrying live
+    // tokens would be a log worth stealing.
+    ownerEvent('invite-minted', { invite: row.label, expiresAt: row.expiresAt });
     return {
       ok: true,
       status: 201,
@@ -553,12 +661,25 @@ function createRelay(rootDir) {
   // content, not metadata — which is a far worse thing than the ring,
   // not a better one (trafficLog.js).
 
-  function status(name, sig) {
-    var n = normalizeName(name);
-    var gate = auth.checkOwner(allow, n, sig);
-    if (!gate.ok) return gate;
-    return { ok: true, status: 200, report: snapshot() };
-  }
+  // status() STOOD HERE — the owner-only report, pulled with a signature
+  // over a NAME. Deleted 2026-09-15 (R3).
+  //
+  // It existed for one caller, the owner badge, and the badge is gone:
+  // `owner: true|false` is on every census row already, so a node asks by
+  // KEY and signs nothing (ownerBadge.ownedFrom).
+  //
+  // THE REPORT DID NOT GO ANYWHERE. statusToOwner pushes it down the
+  // owner's own stream on every open and every presence change, to one
+  // key and no other, carrying MORE than this returned — live invite
+  // labels among it. A pull was always the weaker of the two: it needed a
+  // credential, and that credential was `status\n<name>` with no minute
+  // in it, travelling on a query string. The only signature on this wire
+  // that could not expire.
+  //
+  // AND IT ANSWERS DECISION 0010'S LAST QUESTION. `GET /api/relay/status`
+  // was the one route neither the protocol nor bootstrap had claimed —
+  // "it owes an argument rather than a classification". It owes nothing
+  // now; it is not there.
 
   // Install (or replace) this owner's device key on the owner record.
   //
@@ -900,6 +1021,20 @@ function createRelay(rootDir) {
     // it.
     presentNow.broadcast('presence', { key: key, present: false, gone: true });
 
+    // AND THE OWNER'S LOG GETS IT (R2). Somebody leaving the box is the
+    // same category as somebody joining it, and an owner reviewing how
+    // their relay came to hold who it holds needs both halves or the
+    // record reads as a list of arrivals.
+    //
+    // Fired for a self-removal too. The owner is not the actor there, but
+    // it is still their box and still their membership changing — and a
+    // peer that leaves and is never noticed is how a roster drifts.
+    ownerEvent('peer-removed', {
+      label: label,
+      key: key,
+      invitesRevoked: revoked,
+    });
+
     return {
       ok: true,
       status: 200,
@@ -1036,8 +1171,14 @@ function createRelay(rootDir) {
     // owner verb about the owner's own box, which is why it could be born
     // as a packet and never needs a door of its own (decision 0010).
     if (body && body.revoke && owner) {
-      var gone = invites.revokeInvite(rootDir, String(body.revoke.label || ''));
+      var revokedLabel = String(body.revoke.label || '');
+      var gone = invites.revokeInvite(rootDir, revokedLabel);
       invites.sweepExpired(rootDir);
+      // The owner's own act, logged on the owner's own box (R2). Taking a
+      // reservation back is a membership decision as much as granting one
+      // — and it is the one most worth a record, because it is what an
+      // owner does when something has gone wrong.
+      ownerEvent('invite-revoked', { invite: revokedLabel, revoked: gone });
       out = { ok: true, revoked: gone };
     }
 
@@ -1319,6 +1460,67 @@ function createRelay(rootDir) {
   // own signature, which proved the owner before answerSelf ever ran. A
   // second check here would be a second place to decide who the owner is.
 
+  // ── WHAT THE BOX DID ABOUT WHO BELONGS ON IT ─────────────────────────
+  //
+  //   Andy: "There is a category of events on the relay that the owner
+  //   should have a log of."
+  //
+  // R2, design/cycles/2026-09-15-labels-are-not-identities.md. This is
+  // that category, and it is NOT the monitor below.
+  //
+  // THE TWO ARE OPPOSITES, and until 2026-09-15 only one of them existed.
+  // Every `relay-event` this file could send was TRAFFIC — post, reply,
+  // two refusals — which is the one thing decision 0006 says a relay must
+  // not keep. Nothing at all fired for membership, which is the thing an
+  // owner is entitled to keep. Inverted, exactly.
+  //
+  //   monitorEvent   traffic       opt-in (`monitoring`), live, forgotten
+  //   ownerEvent     membership    always on, and the owner's node LOGS it
+  //
+  // Always on is the point. The monitor is a screen you open; this is a
+  // record you keep, and the owner is usually not watching when somebody
+  // claims a slot. A category that only fired while a tab was open would
+  // be the same nothing it replaces.
+  //
+  // ── THE RELAY STILL KEEPS NOTHING ────────────────────────────────────
+  //
+  // It EMITS; the owner's node keeps (trafficLog). No event file here, no
+  // ring, no history — 0006 is untouched, and the durability sits on the
+  // owner's own hardware, which is that decision's whole argument.
+  //
+  // So it is SILENT WHEN THE OWNER IS AWAY. A relay does not queue and
+  // does not retry. Nothing is lost that matters: the roster, the invite
+  // list and `claimedAt` carry the fact, and the next `statusToOwner` on
+  // stream-open hands them over.
+  //
+  // ── TO ONE SINK, AND THIS IS THE HAZARD ──────────────────────────────
+  //
+  //   Andy: "They should go to the log... of the owner only."
+  //
+  // `presentNow.send(ownerKey, …)` addresses ONE sink. `broadcast()`
+  // walks every sink and cannot express a recipient at all — and it is
+  // how every other event on this wire travels, so reaching for the
+  // familiar one is the mistake available here.
+  //
+  // Worse here than for the status report that warning was first written
+  // about, because a claim notice carries TWO things no other peer may
+  // see: a third party's key, and the owner's out-of-band handle for them
+  // — which may be a phone number (R1). Broadcasting it would publish
+  // that to everybody holding a stream.
+  //
+  // FACTS, NEVER PAYLOADS. Same rule as the monitor and for the same
+  // reason: a relay that put anybody's words on the owner's screen would
+  // be the ring in a new file.
+  function ownerEvent(kind, extra) {
+    var ownerLabel = auth.ownerName(allow);
+    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    if (!ownerKey) return false;
+    if (!presentNow.isPresent(ownerKey)) return false;
+    var row = { at: new Date().toISOString(), kind: String(kind || '') };
+    if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
+    return !!presentNow.send(ownerKey, 'owner-event', row);
+  }
+
   // ONE ROUTED THING HAPPENED. Sent only while somebody is watching, only
   // to the owner's sink, and never stored.
   //
@@ -1487,7 +1689,9 @@ function createRelay(rootDir) {
     forgetPeer: forgetPeer,
     who: who,
     mailboxPublicKey: mailboxPublicKey,
-    status: status,
+    // `status` STOOD HERE and went with its route (R3). What an owner
+    // learns about its relay arrives on the owner's stream —
+    // statusToOwner, below — and is not something anybody asks for.
     mint: mint,
     snapshot: snapshot,
     // Pushed on every presence change from inside this file; server.js

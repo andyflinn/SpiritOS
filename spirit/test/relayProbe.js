@@ -29,7 +29,6 @@ const LATENCY_SAMPLES = 7;
 const SURFACE = [
   ['GET', '/api/version'],
   ['GET', '/api/relay/who'],
-  ['GET', '/api/relay/status'],
   ['GET', '/api/relay/stream'],
   ['POST', '/api/relay/claim'],
   ['POST', '/api/relay/device'],
@@ -55,6 +54,12 @@ const SURFACE = [
   // still storing other people's mail.
   ['POST', '/api/relay/send'],
   ['GET', '/api/relay/inbox'],
+
+  // And the owner badge's route, deleted the same day (R3). It moved
+  // from the live list too. A relay still answering it is running code
+  // from before the badge was deleted — and is still accepting, on a
+  // query string, the one signature on this wire that could not expire.
+  ['GET', '/api/relay/status'],
 ];
 
 function usage() {

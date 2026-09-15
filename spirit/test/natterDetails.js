@@ -117,7 +117,18 @@ function mountApp(opts) {
     log.push({ url: url, body: init && init.body });
     let text = '{}';
     if (url.indexOf('/api/hub/status') === 0) {
-      text = JSON.stringify({ rows: opts.rows || [] });
+      // `relayStatus` is a SECOND FIELD on this response, keyed by relay
+      // url, and since R3 it is where the owner-only report lives.
+      //
+      // It used to ride on the badge row, because the badge WAS a signed
+      // `GET /api/relay/status` and the report was that request's body.
+      // The request is gone; the relay pushes the same report down the
+      // stream unprompted, and `/api/hub/status` has been forwarding it
+      // under this name all along.
+      text = JSON.stringify({
+        rows: opts.rows || [],
+        relayStatus: opts.relayStatus || {},
+      });
     } else if (url.indexOf('/api/hub/device') === 0) {
       text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/invite') === 0) {
@@ -212,10 +223,17 @@ function ownedMailbox() {
   test.subHeading('A mailbox this node owns');
 
   const app = mountApp({
-    rows: [{
-      url: OWNED, label: 'spirit', owned: true,
-      report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 },
-    }],
+    rows: [{ url: OWNED, label: 'spirit', owned: true }],
+    // THE REPORT ARRIVES SEPARATELY NOW (R3). It sat on the row while
+    // the badge was a signed status GET and the report was that
+    // request's body. The relay pushes it down the stream instead, and
+    // it reaches the browser under `relayStatus`, keyed by url.
+    //
+    // The SHAPE moved with it: `peers` is a count here, where the
+    // owner-only report carried the roster itself — and `messages` is
+    // gone, because R8 deleted the ring and a row reading "Messages 0"
+    // would suggest the question still applies.
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
   });
 
   return settle().then(function () {
@@ -281,10 +299,17 @@ function mintingNamesThisMailbox() {
   test.subHeading('Minting happens on the mailbox it was opened from');
 
   const app = mountApp({
-    rows: [{
-      url: OWNED, label: 'spirit', owned: true,
-      report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 },
-    }],
+    rows: [{ url: OWNED, label: 'spirit', owned: true }],
+    // THE REPORT ARRIVES SEPARATELY NOW (R3). It sat on the row while
+    // the badge was a signed status GET and the report was that
+    // request's body. The relay pushes it down the stream instead, and
+    // it reaches the browser under `relayStatus`, keyed by url.
+    //
+    // The SHAPE moved with it: `peers` is a count here, where the
+    // owner-only report carried the roster itself — and `messages` is
+    // gone, because R8 deleted the ring and a row reading "Messages 0"
+    // would suggest the question still applies.
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
   });
 
   return settle().then(function () {
@@ -428,10 +453,17 @@ function theDevicePanel() {
   const KEY = 'MCowBQYDK2VwAyEAbella+key/with+slashes+and+padding+to+be+long=';
 
   const app = mountApp({
-    rows: [{
-      url: OWNED, label: 'spirit', owned: true,
-      report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 },
-    }],
+    rows: [{ url: OWNED, label: 'spirit', owned: true }],
+    // THE REPORT ARRIVES SEPARATELY NOW (R3). It sat on the row while
+    // the badge was a signed status GET and the report was that
+    // request's body. The relay pushes it down the stream instead, and
+    // it reaches the browser under `relayStatus`, keyed by url.
+    //
+    // The SHAPE moved with it: `peers` is a count here, where the
+    // owner-only report carried the roster itself — and `messages` is
+    // gone, because R8 deleted the ring and a row reading "Messages 0"
+    // would suggest the question still applies.
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
     device: { password: 'p'.repeat(128), publicKey: KEY },
   });
 
@@ -530,10 +562,17 @@ function thePanelAsksOnce() {
   test.subHeading('And asks once, because nothing it shows can change');
 
   const app = mountApp({
-    rows: [{
-      url: OWNED, label: 'spirit', owned: true,
-      report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 },
-    }],
+    rows: [{ url: OWNED, label: 'spirit', owned: true }],
+    // THE REPORT ARRIVES SEPARATELY NOW (R3). It sat on the row while
+    // the badge was a signed status GET and the report was that
+    // request's body. The relay pushes it down the stream instead, and
+    // it reaches the browser under `relayStatus`, keyed by url.
+    //
+    // The SHAPE moved with it: `peers` is a count here, where the
+    // owner-only report carried the roster itself — and `messages` is
+    // gone, because R8 deleted the ring and a row reading "Messages 0"
+    // would suggest the question still applies.
+    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1 } },
     device: { password: 'p'.repeat(128), publicKey: 'k' },
   });
 

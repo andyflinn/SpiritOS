@@ -491,6 +491,17 @@ spirit.shell.activateApp({
         '<div class="start-job-form" id="natter-bind-fields">' +
           '<label class="field-label">Public label<input type="text" id="natter-name" placeholder="the name peers see"></label>' +
           '<label class="field-label">Invite token<input type="text" id="natter-token" placeholder="(only if you were invited)"></label>' +
+          // THE WORD THE OWNER READ OUT, which is not the name you pick.
+          // Two things travel down the phone call — the token and the
+          // word the owner wrote on the invite — and only the first of
+          // them used to have a box. The second was the Public label
+          // above, which meant the owner chose what you were called
+          // (R1, design/cycles/2026-09-15-labels-are-not-identities.md).
+          //
+          // Left blank when they are the same, which is the ordinary
+          // case: the node omits the field and the relay falls back.
+          '<label class="field-label">Name on the invite' +
+            '<input type="text" id="natter-invite-label" placeholder="(only if it differs from your public label)"></label>' +
           '<button type="button" id="natter-claim">Claim</button>' +
         '</div>' +
         '<div class="job-manifest-note" id="natter-bind-status"></div>' +
@@ -538,8 +549,15 @@ spirit.shell.activateApp({
     document.getElementById('natter-claim').addEventListener('click', function () {
       var name = document.getElementById('natter-name').value.trim();
       var token = document.getElementById('natter-token').value.trim();
+      var onInvite = document.getElementById('natter-invite-label').value.trim();
       if (!name) { natterBindStatus('a name is required'); return; }
-      natterPost('/api/hub/claim', token ? { name: name, invite: token } : { name: name })
+      var claimBody = { name: name };
+      if (token) claimBody.invite = token;
+      // Sent only when it differs. The node drops it again if it matches
+      // `name`, so a person who filled both boxes with the same word
+      // costs nothing and gets the ordinary path.
+      if (onInvite) claimBody.inviteLabel = onInvite;
+      natterPost('/api/hub/claim', claimBody)
         .then(function (r) {
           natterBindStatus(r.status + ' ' + r.text);
           // 201 is a new claim. 409 is only us when the peer already on

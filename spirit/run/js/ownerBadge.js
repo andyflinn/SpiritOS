@@ -113,32 +113,69 @@ function configuredUrls(rootDir) {
   return loadRelays(rootDir).map(function (r) { return r.url; });
 }
 
-function statusPath(rootDir, name) {
-  var q = '/api/relay/status?name=' + encodeURIComponent(name || '');
-  var id = auth.loadIdentity(rootDir);
-  if (id && id.privateKey) {
-    q += '&sig=' + encodeURIComponent(auth.sign(id.privateKey, auth.statusMessage(name || '')));
-  }
-  return q;
-}
+// statusPath STOOD HERE, and it was the badge:
+//
+//   '/api/relay/status?name=' + name + '&sig=' +
+//     sign(privateKey, statusMessage(name))
+//
+// Deleted 2026-09-15 (R3,
+// design/cycles/2026-09-15-labels-are-not-identities.md).
+//
+//   Andy: "i don't understand the ownerbadge concept at all: the relay
+//   knows its owner by key, and already filters requests by that, because
+//   the owner gets a wider peer-post-api than non-owning peers."
+//
+// He was right, and it was redundant three ways over. The census below
+// already says `owner: true|false` on every row, unsigned, to anyone —
+// and `claimedFrom` was already fetching and parsing that exact list to
+// answer a different question, with the flag open in a variable and
+// unread. `statusToOwner` reaches only the owner's key, so receiving one
+// IS the badge. And `answerSelf` decides `isOwner` from the post's own
+// signature, per verb, so there was never state to pre-fetch.
+//
+// IT WAS ALSO THE WORST SIGNATURE ON THIS WIRE. `statusMessage` is
+// `status\n<name>` with no minute in it — the only credential in the
+// system that could not expire — and it travelled on a QUERY STRING,
+// where `relay.streamSignatureFrom` refuses its sibling outright. It was
+// fired at every relay in relays.json, including boxes this node holds
+// no row on.
+//
+// Deleting it fixes that by removing it rather than by patching it, and
+// costs one fewer request per relay: the census answers `owned` and
+// `claimed` together.
 
-// 200 alone is not the badge. A mailbox that answered 200 with an error
-// body, or with something that is not a census, has not told us this key
-// owns it — so the report is what is checked, not the number.
-function readBadge(answer) {
-  if (!answer) return { owned: false, status: 0, error: 'no answer' };
-  var status = Number(answer.status) || 0;
+// readBadge STOOD HERE — *"200 alone is not the badge"* — parsing the
+// owner-only report to decide whether this key owned the box. It went
+// with the route it read (R3).
+//
+// IS MY KEY THE ONE MARKED OWNER? Asked of the public census, which
+// publishes `owner: true|false` on every row
+// ([relay.js] `who()`), so this costs no signature, adds no endpoint, and
+// tells the relay nothing it did not publish.
+//
+// BY KEY, which is the whole point of the change. The route this
+// replaces asked by NAME and proved it with a signature over that name —
+// a label standing in for an identity, on a box where identity is a key
+// and labels duplicate by design.
+//
+// THE ONE THING THIS IS WEAKER AT, stated rather than discovered: the
+// census flag is written at claim time (`owner: firstOwner`) while
+// `allow.json` is the live authority `checkOwner` reads. They are
+// written together and can only diverge if somebody hand-edits
+// allow.json on the box — the documented break-glass path — so the flag
+// can go STALE, never false. A relay pushing `relay-status` reads
+// allow.json every time and has no such gap, which is why that is the
+// authoritative refresh and this is the opening answer.
+function ownedFrom(answer, myKey) {
+  if (!myKey || !answer) return false;
   var parsed = null;
   try { parsed = JSON.parse(answer.text); }
-  catch (e) { parsed = null; }
-  if (status === 200 && parsed && !parsed.error && typeof parsed.mode === 'string') {
-    return { owned: true, status: status, report: parsed };
-  }
-  return {
-    owned: false,
-    status: status,
-    error: (parsed && parsed.error) || 'not owner',
-  };
+  catch (e) { return false; }
+  var list = (parsed && parsed.peers) || [];
+  if (!Array.isArray(list)) return false;
+  return list.some(function (p) {
+    return p && p.publicKey === myKey && !!p.owner;
+  });
 }
 
 function summarize(rows) {
@@ -248,44 +285,55 @@ function censusFacts(answer, myKey) {
   return { owner: owner, peers: list.length, myLabel: mine };
 }
 
-function probe(rootDir, name, request, myKey) {
+// ONE REQUEST PER RELAY, and it is the public census.
+//
+// It was two: a signed `GET /api/relay/status` to decide `owned`, and
+// then `GET /api/relay/who` for `claimed` on every relay the first one
+// said no to. R3 deleted the first, because the second was already
+// carrying the answer — `claimedFrom` parsed the very list that has
+// `owner` on every row and did not look at it.
+//
+// So this now signs NOTHING. A node asking which relays it is on, and
+// which of those it owns, makes no credential of any kind and reveals
+// nothing it did not already publish. That is the right shape for a
+// question asked on a timer against every URL in relays.json, including
+// boxes this node has no relationship with.
+// `name` WAS THE SECOND ARGUMENT and is gone (R3). It existed to build
+// `statusPath(rootDir, name)` — a signature over a LABEL, to prove a KEY
+// owned a box. Nothing here asks by name any more, and a parameter kept
+// for a call that no longer happens is the residue this whole cycle is
+// about.
+//
+// `myKey` is REQUIRED now rather than optional. It used to refine the
+// answer — `owned` came from the signed report, `claimed` needed a key —
+// and both come from the census by key, so a caller without one gets
+// nothing and should.
+function probe(rootDir, request, myKey) {
   var relays = loadRelays(rootDir);
-  var query = statusPath(rootDir, name);
   return Promise.all(relays.map(function (relay) {
     return Promise.resolve()
-      .then(function () { return request(relay.url, 'GET', query); })
-      .then(function (answer) {
-        var badge = readBadge(answer);
-        badge.url = relay.url;
-        badge.label = relay.label;
-        // WHAT THIS RELAY CALLS THIS NODE, on every row that has one.
-        //
-        // An OWNER's census arrives inside the status report it just
-        // read, so there is nothing more to ask — taking it from `report`
-        // rather than firing a second request is the same rule the
-        // `badge.owned` short-circuit below already follows.
-        if (badge.owned && myKey) {
-          badge.claimedLabel = claimedLabelFrom(
-            { text: JSON.stringify(badge.report || {}) }, myKey
-          );
+      .then(function () { return request(relay.url, 'GET', '/api/relay/who'); })
+      .then(function (census) {
+        var badge = {
+          url: relay.url,
+          label: relay.label,
+          status: Number(census && census.status) || 0,
+          owned: ownedFrom(census, myKey),
+        };
+        // OWNING IMPLIES CLAIMING — the owner holds a peer row from first
+        // claim — so this is true of an owner too, and `summarize` no
+        // longer has to say `owned || claimed`.
+        badge.claimed = claimedFrom(census, myKey);
+        // Kept only for a row this node is actually on. A relay it merely
+        // lists tells it nothing, and a panel is not offered for one.
+        if (badge.claimed) {
+          badge.census = censusFacts(census, myKey);
+          // What this relay calls this node — see claimedLabelFrom for
+          // why Natter needs it and what it replaced.
+          badge.claimedLabel = claimedLabelFrom(census, myKey);
         }
-        if (badge.owned || !myKey) return badge;
-        return Promise.resolve()
-          .then(function () { return request(relay.url, 'GET', '/api/relay/who'); })
-          .then(function (census) {
-            badge.claimed = claimedFrom(census, myKey);
-            // Kept only for a row this node is actually on. A mailbox it
-            // merely lists tells it nothing, and a panel is not offered
-            // for one.
-            if (badge.claimed) {
-              badge.census = censusFacts(census, myKey);
-              // The same census, read for one more fact it was already
-              // carrying — see claimedLabelFrom for why Natter needs it.
-              badge.claimedLabel = claimedLabelFrom(census, myKey);
-            }
-            return badge;
-          })
-          .catch(function () { return badge; });
+        if (!badge.owned && !badge.claimed) badge.error = 'no row here';
+        return badge;
       })
       .catch(function (err) {
         // A mailbox that is down is not a mailbox we own. It says so on
@@ -334,8 +382,10 @@ if (isNode) {
     isPublicRelay: isPublicRelay,
     loadRelays: loadRelays,
     configuredUrls: configuredUrls,
-    statusPath: statusPath,
-    readBadge: readBadge,
+    // `statusPath` and `readBadge` STOOD HERE and went with the signed
+    // status GET (R3). `ownedFrom` is what answers the same question now,
+    // off the public census and by key.
+    ownedFrom: ownedFrom,
     // Exported for the suite that drives it directly. Natter reads the
     // answer off a `rows` entry, never by calling this.
     claimedLabelFrom: claimedLabelFrom,

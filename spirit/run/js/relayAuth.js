@@ -24,9 +24,16 @@ function claimMessage(name) {
   return 'claim\n' + name;
 }
 
-function statusMessage(name) {
-  return 'status\n' + name;
-}
+// statusMessage STOOD HERE — `'status\n' + name` — and it was the last
+// signed format on this wire that named a LABEL rather than a key, and
+// the only one carrying no clock. Deleted with `checkOwner` and
+// `GET /api/relay/status` on 2026-09-15 (R3).
+//
+// Every format left here carries a minute: streamMessage, postMessage
+// and receiptMessage all take `atMs` and are checked ±1. claimMessage
+// does not, and is the exception that proves the rule — a claim is
+// answered once, at a box you have no row on, and a registered hash is
+// what stops a post being replayed rather than a clock.
 
 // sendMessage AND inboxMessage STOOD HERE — the ring's two signed
 // formats, deleted with it by R8 on 2026-09-15 and struck from the
@@ -51,11 +58,16 @@ function statusMessage(name) {
 // minute for the same reason, and relay.streamSignatureFrom refuses a
 // signature on the query outright.
 //
-// ITS OWN VERB, and that is the point of it. The owner signs `status` for
-// every census, so a captured signature is always available to somebody
-// reading a log — and what this one opens is a STANDING grant rather than
-// a single read, which makes it a far better prize. Same reason deviceGate
-// gave `device-take` its own bytes.
+// ITS OWN VERB, and that was the point of it. The argument was that the
+// owner signed `status` constantly, for every census, so a captured
+// signature was always lying around — and what a STREAM opens is a
+// standing grant rather than a single read, which makes it the better
+// prize. Same reason deviceGate gave `device-take` its own bytes.
+//
+// `status` is gone (R3, 2026-09-15) and the rule outlived it, which is
+// the ordinary way of these: one verb, one format, no signature that
+// works in two places. There is nothing left on this wire whose bytes
+// could be replayed into a stream open.
 //
 // The token is a public KEY, not a label. Labels duplicate by design, so
 // a signature naming one identifies nobody on a relay holding two johns
@@ -337,39 +349,39 @@ function checkClaim(allow, name, sig) {
 //   why checkClaim above still branches on mode and these did not
 //   survive: a read is gone, a claim is not.
 
-function checkOwner(allow, name, sig) {
-  if (allow.mode !== 'keys') {
-    return { ok: false, status: 403, error: 'no owner key on this relay' };
-  }
-  // THE HOUSE KEY ONLY, and this REVERSES a decision. It used to accept
-  // either key, on the reasoning that "being the owner from a hotel room
-  // is the whole point of the device slot" — and that sentence was true
-  // of a design in which a device had nowhere else to go.
-  //
-  // Andy, 2026-09-12, shown what a device key actually reaches: "needs
-  // fixing."
-  //
-  // What it reached was ADMIN. This gate is the owner-only report, and
-  // through the console's isOwner it was also `status peers search
-  // invites key version` — and `invites` lists LIVE TOKENS. A seized
-  // phone could hand out access to the relay. That is not "the owner
-  // from a hotel room"; it is the owner's admin console in somebody
-  // else's pocket.
-  //
-  // What a device KEPT was what a device is for: sending and reading its
-  // owner's mail, through checkSend and checkInbox. Both are gone with
-  // the ring, and a device now reaches its node rather than a relay at
-  // all. What it LOSES here is unchanged — the power to administer the
-  // box. A device is the owner's window, not the owner's
-  // credentials — design/relay/DEVICE.md, where authority lives on the
-  // node and a device only ever asks.
-  const ownerPub = allow.byName && allow.byName[name];
-  if (!ownerPub) return { ok: false, status: 403, error: 'not the owner' };
-  if (!sig || !verify(ownerPub, statusMessage(name), sig)) {
-    return { ok: false, status: 403, error: 'bad status signature' };
-  }
-  return { ok: true };
-}
+// checkOwner STOOD HERE, and `statusMessage` above it. Both went with
+// `GET /api/relay/status` on 2026-09-15 (R3,
+// design/cycles/2026-09-15-labels-are-not-identities.md), which was the
+// only thing either had ever gated.
+//
+// WHAT THE OWNER CHECK IS NOW, and it is not a replacement — it is where
+// the question was already being answered better. `relay.isOwner(who)`
+// compares the POST's proven sender against the key in allow.json, per
+// verb, inside answerSelf. The post's own signature did the proving
+// before that line ran, so there is no second place to decide who the
+// owner is.
+//
+// WHAT WENT WITH IT, worth keeping because the reasoning outlived the
+// function:
+//
+//   THE HOUSE KEY ONLY, and it REVERSED a decision. checkOwner used to
+//   accept either key, on the reasoning that "being the owner from a
+//   hotel room is the whole point of the device slot" — true of a design
+//   in which a device had nowhere else to go.
+//
+//   Andy, 2026-09-12, shown what a device key actually reaches: "needs
+//   fixing."
+//
+//   What it reached was ADMIN — through the console's isOwner, `status
+//   peers search invites key version`, and `invites` lists LIVE TOKENS.
+//   A seized phone could hand out access to the relay. Not "the owner
+//   from a hotel room"; the owner's admin console in somebody else's
+//   pocket.
+//
+// That rule is unchanged and now structural: a device signature does not
+// verify against a row's key at all, so it is not narrowly refused — it
+// never matches. A device is the owner's window, not the owner's
+// credentials (design/relay/DEVICE.md).
 
 function ownerName(allow) {
   if (allow.mode !== 'keys') return null;
@@ -380,7 +392,6 @@ function ownerName(allow) {
 module.exports = {
   RESERVED_NAME,
   claimMessage,
-  statusMessage,
   streamMessage,
   streamSignatureOk,
   postMessage,
@@ -397,7 +408,6 @@ module.exports = {
   saveIdentity,
   ensureIdentity,
   checkClaim,
-  checkOwner,
   ownerName,
   loadPendingOwner,
   writePendingOwner,

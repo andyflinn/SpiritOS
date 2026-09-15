@@ -43,8 +43,21 @@ This directory contains the vision, principles, and architecture decisions for *
   — **OPEN.** 16 requirements, 13 done. The router had no arrival interface and
   the shell's packet fan-out was fed by Relay Chat's poll; both are fixed, the
   console is gone, the relay reports its own condition, and the log is permanent,
-  append-only and readable as a table. Left: the ring itself, an app being able
-  to reply, and the log being able to prove what it claims.
+  append-only and readable as a table. The ring itself went on 2026-09-15 (R8).
+  Left: an app being able to reply, and the log being able to prove what it
+  claims.
+- [2026-09-15 — labels are not identities](cycles/2026-09-15-labels-are-not-identities.md)
+  — **CLOSED.** 3 requirements, all done. Peer-by-key settled that identity is a
+  key and stopped halfway. The relay owner chose every peer's public name,
+  permanently, and the census published it — so an invite labelled with a phone
+  number published that number; now the invite label proves and the claimer
+  names themselves. Claims, mints, revokes and removals reach the owner's log,
+  to the owner's sink alone and bounded by the rate gate — the relay's only
+  event channel used to carry traffic, which 0006 forbids it to keep, and
+  nothing about membership, which the owner is entitled to. And the owner badge
+  is gone: it signed a *name* to prove a *key*, so `/api/relay/status`,
+  `statusMessage` and `checkOwner` went with it — which answers decision 0010's
+  last open question by removal.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 

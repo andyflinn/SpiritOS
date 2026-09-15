@@ -331,7 +331,14 @@ function handleRelayClaim(req, res) {
       body && body.sig,
       body && body.publicKey,
       clientKeyFor(req),
-      body && body.invite
+      body && body.invite,
+      // THE WORD ON THE INVITE, which is not the name being claimed.
+      // `name` is what this key wants to be called; `inviteLabel` is what
+      // the owner wrote down to identify the person they were inviting,
+      // and it is matched and then forgotten (R1, 2026-09-15). A caller
+      // that sends only `name` gets the old behaviour, where the two were
+      // one string.
+      body && body.inviteLabel
     );
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     // A 409 carries the peer that is already there so the caller can tell
@@ -690,7 +697,10 @@ function isRelayPublicPath(method, pathname) {
   // in the path is a LOCATOR — every one is already public at
   // /api/relay/who, and holding one grants nothing.
   if (method === 'GET' && devicePageKey(pathname)) return true;
-  if (method === 'GET' && (pathname === '/api/relay/who' || pathname === '/api/relay/status')) return true;
+  // `who` alone. `/api/relay/status` was beside it until R3 deleted the
+  // badge that called it — and with it the last signed GET on this box
+  // apart from the stream.
+  if (method === 'GET' && pathname === '/api/relay/who') return true;
   // The presence wire. Public in the same sense the rest is: reachable
   // from the internet, and gated inside relay.streamOpen, which refuses
   // an identity this box does not hold before it allocates anything.
@@ -778,10 +788,11 @@ const server = http.createServer((req, res) => {
   // (arrivals.js), and what a page missed while it was shut comes off
   // this node's own traffic log rather than off somebody else's box.
 
-  if (req.method === 'GET' && pathname === '/api/relay/status') {
-    handleRelayStatus(req, res, url);
-    return;
-  }
+  // GET /api/relay/status STOOD HERE and went with the owner badge that
+  // was its only caller (R3, 2026-09-15). The owner's report is pushed
+  // down the owner's own stream instead — relay.statusToOwner — and
+  // "am I the owner here?" is answered off the public census, by key,
+  // with no credential at all.
 
   // One held connection per identity, carrying who is reachable. The
   // signature is a HEADER for the same reason device-pending's is: a
@@ -966,14 +977,9 @@ const server = http.createServer((req, res) => {
     }));
   }
 
-  function handleRelayStatus(req, res, url) {
-    var result = relay.status(
-      url.searchParams.get('name') || '',
-      url.searchParams.get('sig') || ''
-    );
-    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(result.ok ? result.report : { error: result.error }));
-  }
+  // handleRelayStatus STOOD HERE. It read `name` and `sig` off the query
+  // string — the last route on this box that did — and handed back the
+  // owner's report. Deleted with the verb (R3).
 
   if (req.method === 'GET' && pathname === '/api/events') {
     handleSseConnection(req, res);
@@ -1348,6 +1354,39 @@ if (!relayMode) {
     // Straight onto the page's stream. presenceNode receives it, this
     // hands it to whoever has a panel open.
     onRelayEvent: relayEvents.note,
+    // AND THE MEMBERSHIP HALF, WHICH IS KEPT (R2).
+    //
+    //   Andy: "There is a category of events on the relay that the owner
+    //   should have a log of... They should go to the log."
+    //
+    // Two things happen and the order is the point: it is WRITTEN first
+    // and shown second. `relayEvents.note` above only fans out to open
+    // tabs, which is right for traffic and wrong for this — an owner is
+    // usually not watching when somebody claims a slot, and a record
+    // that depended on a tab being open would be the same nothing this
+    // replaces.
+    //
+    // `dir: 'in'` because it crossed the WAN inward, on the stream this
+    // node holds to a relay it owns.
+    onOwnerEvent: function (ev) {
+      try {
+        trafficLog.note({
+          dir: 'in',
+          kind: 'owner',
+          event: ev && ev.kind,
+          peer: (ev && ev.key) || '',
+          relay: (ev && ev.relay) || '',
+          label: ev && ev.label,
+          invite: ev && ev.invite,
+          why: ev && ev.why,
+          owner: ev && ev.owner,
+          revoked: ev && ev.revoked,
+          invitesRevoked: ev && ev.invitesRevoked,
+          expiresAt: ev && ev.expiresAt,
+        });
+      } catch (e) { /* a witness must not break the stream it watches */ }
+      return relayEvents.note(ev);
+    },
     // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the
     // census, accepts a key never seen before, and refuses one that
     // changed — so by the time any enrolment can be posted down that

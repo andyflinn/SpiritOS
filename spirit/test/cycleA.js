@@ -63,15 +63,31 @@ function nodeHome(id, urls) {
 
 // Answers a status request out of a relay object in this process. Same
 // shape as the wire: the report itself on 200, { error } otherwise.
-function statusAnswerer(boxes) {
+// THE PUBLIC CENSUS, which is the only thing probe() asks for now.
+//
+// It answered a SIGNED `GET /api/relay/status` until 2026-09-15 and
+// handed back the owner-only report, because that was how the badge was
+// decided. R3 deleted that route's only caller: `owner: true|false` is
+// on every census row already, unsigned, and `probe` reads it by key.
+//
+// A stub that still served the old route would keep passing while the
+// thing it stands in for had stopped being asked — which is the failure
+// mode every stub in this tree is written against.
+function censusAnswerer(boxes) {
   return function (url, method, pathname) {
     var box = boxes[url];
     if (!box) return Promise.reject(new Error('connection refused'));
-    var q = new URL('http://x' + pathname);
-    var r = box.status(q.searchParams.get('name') || '', q.searchParams.get('sig') || '');
+    if (pathname.indexOf('/api/relay/who') !== 0) {
+      // Nothing else should be asked. Saying so loudly beats a 404 that
+      // reads as "that relay is not ours".
+      return Promise.reject(new Error('probe asked for ' + pathname));
+    }
     return Promise.resolve({
-      status: r.status,
-      text: JSON.stringify(r.ok ? r.report : { error: r.error }),
+      status: 200,
+      text: JSON.stringify({
+        peers: box.who(),
+        mailboxPublicKey: box.mailboxPublicKey(),
+      }),
     });
   };
 }
@@ -112,35 +128,92 @@ test.startTest('Cycle A — owner badge, mailbox picker, mint goes where it was 
 
 test.subHeading('What counts as a badge');
 
+// THE BADGE IS A CENSUS READ NOW, not a signed 200 (R3, 2026-09-15,
+// design/cycles/2026-09-15-labels-are-not-identities.md).
+//
+//   Andy: "i don't understand the ownerbadge concept at all: the relay
+//   knows its owner by key, and already filters requests by that."
+//
+// These four checks used to drive `readBadge`, which parsed the body of
+// a signed `GET /api/relay/status` and decided whether it was a real
+// report or a 200 from something that answers 200 to everything. That
+// route had no caller but this badge, and its signature was the only one
+// on this wire that could not expire.
+//
+// The question survives the mechanism: IS MY KEY THE ONE MARKED OWNER?
+// `ownedFrom` answers it off the public census, by key. So the impostor
+// cases change shape — there is no status code to lie with any more, and
+// what an impostor would have to forge is a peer row carrying somebody
+// else's key.
 {
-  const good = ownerBadge.readBadge({ status: 200, text: JSON.stringify({ mode: 'keys', owner: 'andy', peers: [] }) });
-  if (good.owned && good.report && good.report.owner === 'andy') {
-    test.check('signed 200 with a report is the badge, and the report comes back with it');
+  const me = auth.generateIdentity('me');
+  const other = auth.generateIdentity('other');
+  const census = function (peers) {
+    return { status: 200, text: JSON.stringify({ peers: peers }) };
+  };
+  const row = function (key, owner) {
+    return { name: 'x', publicLabel: 'x', publicKey: key, owner: !!owner };
+  };
+
+  const good = ownerBadge.ownedFrom(
+    census([row(other.publicKey, false), row(me.publicKey, true)]), me.publicKey);
+  if (good) {
+    test.check('my key carrying owner:true in the census is the badge');
   } else {
-    test.fail('good: ' + JSON.stringify(good));
+    test.fail('an owned row did not read as owned');
   }
 
-  // 200 is not the badge. A mailbox behind something that answers 200 to
-  // everything must not hand this node an Invite button.
-  const emptyBody = ownerBadge.readBadge({ status: 200, text: 'OK' });
-  const errorBody = ownerBadge.readBadge({ status: 200, text: JSON.stringify({ error: 'not the owner' }) });
-  if (!emptyBody.owned && !errorBody.owned) {
-    test.check('200 without a census report is not a badge');
+  // ON THE ROW, NOT ON THE BOX. Somebody else owning it is the ordinary
+  // case for a member, and it must not read as ours.
+  if (!ownerBadge.ownedFrom(
+    census([row(other.publicKey, true), row(me.publicKey, false)]), me.publicKey)) {
+    test.check('and another key owning it is not a badge, however green the box');
   } else {
-    test.fail('200 impostors: ' + JSON.stringify([emptyBody, errorBody]));
+    test.fail('somebody else\u2019s ownership read as ours');
   }
 
-  const refused = ownerBadge.readBadge({ status: 403, text: JSON.stringify({ error: 'not the owner' }) });
-  if (!refused.owned && refused.status === 403 && refused.error === 'not the owner') {
-    test.check("403 keeps the relay's own reason on the row");
+  // A row of ours with no owner flag is a MEMBER — claimed, not owned.
+  // This is the distinction that decides whether an Invite button is
+  // drawn, so it is the one worth being exact about.
+  if (!ownerBadge.ownedFrom(census([row(me.publicKey, false)]), me.publicKey)) {
+    test.check('holding a row is not owning one');
   } else {
-    test.fail('refused: ' + JSON.stringify(refused));
+    test.fail('a plain member row read as owned');
   }
 
-  if (!ownerBadge.readBadge(null).owned) {
-    test.check('no answer at all is not a badge');
+  // NO KEY, NO ANSWER. A node that has not made an identity cannot own
+  // anything, and must not be told it does by a census full of rows.
+  if (!ownerBadge.ownedFrom(census([row(me.publicKey, true)]), '')) {
+    test.check('and a node with no key of its own owns nothing');
   } else {
-    test.fail('null answer read as owned');
+    test.fail('a keyless node read as owned');
+  }
+
+  // Unreachable, unparseable, or not a census at all. Each used to be a
+  // status code; now they are all the same nothing.
+  const junk = [null, { status: 200, text: 'OK' },
+    { status: 200, text: JSON.stringify({ error: 'no' }) },
+    { status: 0, text: '' }];
+  if (junk.every(function (a) { return !ownerBadge.ownedFrom(a, me.publicKey); })) {
+    test.check('and nothing that is not a census is a badge \u2014 ' + junk.length + ' ways');
+  } else {
+    test.fail('junk read as a badge');
+  }
+
+  // AND IT IS UNSIGNED. The point of R3: this question now costs no
+  // credential at all, so a node may ask it of every relay in its list
+  // including ones it has no relationship with.
+  const src = fs.readFileSync(
+    path.join(__dirname, '..', 'run', 'js', 'ownerBadge.js'), 'utf8');
+  // Called, not merely named. The tombstone explaining what statusPath
+  // was has to stay readable, so a scanner that cannot tell a call from
+  // an epitaph would make the history undeletable.
+  const live = src.replace(/^\s*\/\/.*$/gm, '');
+  const signs = live.indexOf('statusPath(') !== -1 || live.indexOf('auth.sign(') !== -1;
+  if (!signs) {
+    test.check('and ownerBadge signs nothing at all to ask it');
+  } else {
+    test.fail('ownerBadge still signs something');
   }
 }
 
@@ -159,7 +232,7 @@ function runBadgeProbe() {
   boxes[urlMine] = mine.box;
   boxes[urlTheirs] = theirs.box;
 
-  return ownerBadge.probe(home, 'andy', statusAnswerer(boxes)).then(function (summary) {
+  return ownerBadge.probe(home, censusAnswerer(boxes), andy.publicKey).then(function (summary) {
     if (summary.ownedUrls.length === 1 && summary.ownedUrls[0] === urlMine) {
       test.check('the badge lands only on the mailbox this key owns');
     } else {
@@ -172,9 +245,17 @@ function runBadgeProbe() {
       test.fail('mustPick with one owned row');
     }
 
+    // SOMEBODY ELSE'S RELAY ANSWERS PERFECTLY WELL. It used to come back
+    // 403 — the owner-only route refusing us — and the row was unbadged
+    // because the request failed. Since R3 the request is the public
+    // census, which answers 200 to anyone, so the row is unbadged
+    // because OUR KEY IS NOT THE ONE MARKED OWNER.
+    //
+    // The better assertion, and the one that survives the relay being
+    // reachable: not owned, not claimed, and the census read fine.
     const foreign = summary.rows.filter(function (r) { return r.url === urlTheirs; })[0];
-    if (foreign && !foreign.owned && foreign.status === 403) {
-      test.check("someone else's mailbox is on the list, unbadged");
+    if (foreign && !foreign.owned && !foreign.claimed && foreign.status === 200) {
+      test.check("someone else's relay answers us, and is still unbadged");
     } else {
       test.fail('foreign row: ' + JSON.stringify(foreign));
     }
@@ -185,7 +266,7 @@ function runBadgeProbe() {
     const twoBoxes = {};
     twoBoxes[urlMine] = mine.box;
     twoBoxes[urlSecond] = second.box;
-    return ownerBadge.probe(nodeHome(andy, [urlMine, urlSecond]), 'andy', statusAnswerer(twoBoxes));
+    return ownerBadge.probe(nodeHome(andy, [urlMine, urlSecond]), censusAnswerer(twoBoxes), andy.publicKey);
   }).then(function (summary) {
     if (summary.ownedUrls.length === 2 && summary.mustPick) {
       test.check('two owned mailboxes must be picked between, never defaulted');
@@ -198,7 +279,7 @@ function runBadgeProbe() {
     const urlDown = 'https://down.example';
     const upBoxes = {};
     upBoxes[urlUp] = mine.box;
-    return ownerBadge.probe(nodeHome(andy, [urlDown, urlUp]), 'andy', statusAnswerer(upBoxes));
+    return ownerBadge.probe(nodeHome(andy, [urlDown, urlUp]), censusAnswerer(upBoxes), andy.publicKey);
   }).then(function (summary) {
     const down = summary.rows[0];
     if (summary.ownedUrls.length === 1 && down && !down.owned && down.status === 0) {
@@ -272,15 +353,16 @@ function relayServer(box) {
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(result.ok ? payload : { error: result.error }));
       }
-      if (req.method === 'GET' && url.pathname === '/api/relay/status') {
-        const r = box.status(url.searchParams.get('name') || '', url.searchParams.get('sig') || '');
-        reply(r, r.report);
-        return;
-      }
-      // THE PUBLIC CENSUS, which probe() reads to answer "do I have a
-      // row here". The fake did not serve it, so claimedFrom() saw a 404
-      // in every test and answered false — and a suite cannot notice a
-      // flag that is false because the question was never asked.
+      // A `/api/relay/status` branch stood here, serving the owner-only
+      // report to a signed GET. R3 deleted that route on 2026-09-15 along
+      // with the badge that was its only caller, so a fake still offering
+      // it would be a fake more capable than the thing it stands in for.
+      //
+      // THE PUBLIC CENSUS, which probe() reads to answer BOTH "do I own
+      // this" and "do I have a row here". The fake did not serve it at
+      // first, so claimedFrom() saw a 404 in every test and answered
+      // false — and a suite cannot notice a flag that is false because
+      // the question was never asked.
       //
       // Same shape as the wire (server.js, handleRelayWho): peers, and
       // the mailbox's own key beside them.

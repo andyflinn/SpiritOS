@@ -173,15 +173,17 @@ function run() {
 
   test.subHeading('The gate');
 
-  // The replay this verb exists to prevent. It was written against an
-  // INBOX signature — one the owner made every two seconds — and R8
-  // deleted that verb on 2026-09-15. `status` is the replacement and the
-  // better witness: an owner still signs it for every census, so it is
-  // the signature actually lying around in logs today, and what a stream
-  // grants is standing where a status read grants one answer.
+  // The replay this verb exists to prevent, asked with whatever other
+  // signed format the tree still has.
+  //
+  // It has outlived two of them now. Written against an INBOX signature —
+  // one the owner made every two seconds — which R8 deleted; moved to
+  // `status`, which an owner signed for every census, which R3 deleted a
+  // few hours later. `claim` is what is left, and the claim is unchanged:
+  // bytes signed for one verb must not open another.
   const wrongVerb = L.box.streamOpen(
     bert.publicKey,
-    auth.sign(bert.privateKey, auth.statusMessage(bert.publicKey)),
+    auth.sign(bert.privateKey, auth.claimMessage(bert.publicKey)),
     fakeSink()
   );
   if (wrongVerb && wrongVerb.ok === false && wrongVerb.status === 403) {

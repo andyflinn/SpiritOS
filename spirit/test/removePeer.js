@@ -67,11 +67,16 @@ function run() {
     app: 'relay', v: 1, body: { removePeer: { key: bert.publicKey } },
   });
 
-  // A census signature is the owner's most abundant credential. It must
-  // not be spendable as "delete this person" — and now it cannot even be
-  // presented as one, because it is not a post signature at all.
+  // A signature made for another verb must not be spendable as "delete
+  // this person" — and cannot even be presented as one, because it is not
+  // a post signature at all.
+  //
+  // This named the CENSUS signature, on the argument that it was the
+  // owner's most abundant credential. R3 deleted that verb on 2026-09-15
+  // along with the owner badge that spent it, so the check uses `claim`.
+  // The claim is unchanged: bytes are good for one verb.
   const asStatus = L.box.routePost(L.owner.publicKey, boxKey, wanted,
-    auth.sign(L.owner.privateKey, auth.statusMessage('andy')));
+    auth.sign(L.owner.privateKey, auth.claimMessage('andy')));
   if (asStatus && asStatus.ok === false && asStatus.status === 403) {
     test.check('a signature made for another verb does not remove anyone');
   } else {

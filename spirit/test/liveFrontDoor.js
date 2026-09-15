@@ -468,23 +468,45 @@ async function run() {
         }
       }
 
-      // LOST: the owner-only report. The house key still opens it, so
-      // this is not a check that simply broke `status`.
-      async function statusAs(signer) {
-        const q = '?name=' + encodeURIComponent(ownerName) +
-          '&sig=' + encodeURIComponent(auth.sign(signer.privateKey, auth.statusMessage(ownerName)));
+      // LOST: the owner-only report — and the route it was pulled from.
+      //
+      // This asked `GET /api/relay/status` twice, once signed by each
+      // key, and checked that only the house key got a 200. R3 deleted
+      // that route on 2026-09-15 with the owner badge that called it, so
+      // what is asserted over the wire now is that **the door is gone
+      // for everybody** — which a live box is the only thing that can
+      // confirm, since a deployed relay still answering it would be
+      // running older code and still taking a signature on a query
+      // string.
+      async function statusRoute() {
         try {
-          const res = await fetch(relayUrl + '/api/relay/status' + q);
+          const res = await fetch(relayUrl + '/api/relay/status?name=' +
+            encodeURIComponent(ownerName));
           return res.status;
         } catch (e) { return 0; }
       }
-      const houseStatus = await statusAs(ownerId);
-      const deviceStatus = await statusAs(handheld);
-      if (houseStatus === 200 && deviceStatus !== 200) {
-        test.check('while the owner-only report takes the house key alone — ' +
-          houseStatus + ' for the owner, ' + deviceStatus + ' for the handheld');
+      const gone = await statusRoute();
+      if (gone === 404) {
+        test.check('the owner-only status route is gone from the wire — 404 for anyone');
       } else {
-        test.fail('status: house=' + houseStatus + ' device=' + deviceStatus);
+        test.fail('/api/relay/status answered ' + gone + ', so this box predates R3');
+      }
+
+      // AND OWNER POWER STILL TAKES THE HOUSE KEY ALONE, which is the
+      // claim the two status calls were really making. Asked of an owner
+      // verb, which is where that power lives.
+      const WATCH = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true } } });
+      const asDevice = await relayPost('/api/relay/post', {
+        from: ownerId.publicKey, to: relayKey, text: WATCH,
+        sig: auth.sign(handheld.privateKey,
+          auth.postMessage(ownerId.publicKey, relayKey, WATCH)),
+      });
+      const asHouse = await W.askOn(relayUrl, ownerId, { monitor: { on: true } });
+      if (asHouse && asHouse.ok && asDevice.status === 403) {
+        test.check('while an owner verb takes the house key alone — 403 for the handheld');
+      } else {
+        test.fail('monitor: house=' + JSON.stringify(asHouse && asHouse.answer) +
+          ' device=' + asDevice.status);
       }
 
       // LOST WITH THE CONSOLE: its owner words, over the wire.

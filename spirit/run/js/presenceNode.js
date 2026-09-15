@@ -92,6 +92,9 @@ function createPresence(opts) {
   // history of a box that is supposed to keep nothing.
   const statusByRelay = Object.create(null);
   const onRelayEvent = opts.onRelayEvent || null;
+  // The membership half — see the `owner-event` branch below for why it
+  // is a separate hook and not a kind on the one above.
+  const onOwnerEvent = opts.onOwnerEvent || null;
 
   function onRoster(url, body) {
     const set = Object.create(null);
@@ -217,6 +220,32 @@ function createPresence(opts) {
           row.relay = url;
           try { onRelayEvent(row); } catch (e) { /* a witness, never a participant */ }
         }
+        // WHAT A RELAY THIS NODE OWNS DID ABOUT ITS MEMBERSHIP (R2).
+        //
+        //   Andy: "There is a category of events on the relay that the
+        //   owner should have a log of."
+        //
+        // A SECOND EVENT NAME, not a kind on the first, and that is the
+        // point rather than tidiness. `relay-event` is the monitor:
+        // traffic, opt-in, live, and deliberately forgotten. This is
+        // membership: always sent, and KEPT. One name for two retention
+        // rules would mean the thing that decides whether somebody's
+        // words are written to disk is a string comparison inside a
+        // switch, which is exactly the kind of place the ring hid.
+        //
+        // Only a relay this node OWNS sends one — enforced at the far end
+        // where the owner's key is, the same way `relay-status` is. This
+        // side does not second-guess it.
+        //
+        // `relay` is stamped here because a node on several relays cannot
+        // otherwise tell which box a claim happened on, and that is
+        // routing information only this side holds.
+        else if (msg.event === 'owner-event' && onOwnerEvent) {
+          var ev = {};
+          Object.keys(msg.data || {}).forEach(function (k) { ev[k] = msg.data[k]; });
+          ev.relay = url;
+          try { onOwnerEvent(ev); } catch (e) { /* a witness, never a participant */ }
+        }
       },
       onOpen: function () { publish('connected to ' + url); },
       onClose: function (reason) { forget(url); publish('lost ' + url + ': ' + reason); },
@@ -238,7 +267,7 @@ function createPresence(opts) {
     if (!ask) return Promise.resolve([]);
     return Promise.resolve()
       .then(function () {
-        return ownerBadge.probe(rootDir, identity.name, ask, identity.publicKey);
+        return ownerBadge.probe(rootDir, ask, identity.publicKey);
       })
       .then(function (summary) {
         const urls = (summary && summary.claimedUrls) || [];

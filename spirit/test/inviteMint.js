@@ -156,15 +156,21 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
     test.fail('wrong days: ' + JSON.stringify(wrongDays));
   }
 
-  // A STATUS SIGNATURE IS THE REPLAY THIS GATE EXISTS TO REFUSE, and it
-  // is now refused a layer earlier and for a broader reason: it is not a
-  // post signature at all, so it never reaches anything that mints.
-  const statusSig = auth.sign(r.owner.privateKey, auth.statusMessage('andy'));
-  const replay = r.box.routePost(r.owner.publicKey, relayKey, forSaint, statusSig);
+  // A SIGNATURE FOR ANOTHER VERB IS THE REPLAY THIS GATE EXISTS TO
+  // REFUSE, and it is refused a layer earlier and for a broader reason
+  // than it used to be: it is not a post signature at all, so it never
+  // reaches anything that mints.
+  //
+  // The verb named here was `status`, because an owner signed one for
+  // every census and it was therefore the most abundant credential to
+  // steal. R3 deleted that verb on 2026-09-15 along with the badge that
+  // spent it; `claim` is what is left to try.
+  const otherVerb = auth.sign(r.owner.privateKey, auth.claimMessage('andy'));
+  const replay = r.box.routePost(r.owner.publicKey, relayKey, forSaint, otherVerb);
   if (!replay.ok && replay.status === 403) {
-    test.check('a status signature cannot be replayed into a mint');
+    test.check('a signature for another verb cannot be replayed into a mint');
   } else {
-    test.fail('status replay: ' + JSON.stringify(replay));
+    test.fail('replay: ' + JSON.stringify(replay));
   }
 
   // AND NEITHER CAN A MINT BE REPLAYED INTO ITSELF, which is the hole the

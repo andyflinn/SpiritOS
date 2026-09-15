@@ -388,14 +388,33 @@ async function run() {
       }
     }
 
-    // LOST: the owner-only report. The house key still opens it, so this
-    // is not a check that simply broke `status`.
-    const houseReport = D.box.status('andy', auth.sign(D.owner.privateKey, auth.statusMessage('andy')));
-    const deviceReport = D.box.status('andy', auth.sign(handheld.privateKey, auth.statusMessage('andy')));
-    if (houseReport.ok && deviceReport.ok === false) {
-      test.check('but the owner-only report takes the house key alone');
+    // LOST: the owner's powers. The house key still has them, so this is
+    // not a check that simply broke everything.
+    //
+    // It used to ask this of `status` — the owner-only report, pulled
+    // with a signature over a name. R3 deleted that verb on 2026-09-15,
+    // and the report is pushed to the owner's sink now rather than
+    // fetched. So the question moves to an OWNER VERB, which is where
+    // owner power actually lives: answerSelf, reached by a post.
+    //
+    // The device fails one step earlier than it used to, and for a
+    // better reason. It is not refused BY the owner check — it never
+    // reaches one, because a handheld's signature does not verify against
+    // the row's key at all. Confinement that is structural rather than
+    // gated.
+    const WATCH = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true } } });
+    const boxKey = D.box.mailboxPublicKey();
+    const asDevice = D.box.routePost(
+      D.owner.publicKey, boxKey, WATCH,
+      auth.sign(handheld.privateKey,
+        auth.postMessage(D.owner.publicKey, boxKey, WATCH))
+    );
+    const asHouse = world.ask(D.box, D.owner, { monitor: { on: true } });
+    if (asHouse.ok && asDevice.ok === false && asDevice.status === 403) {
+      test.check('but an owner verb takes the house key alone — the handheld never reaches the gate');
     } else {
-      test.fail('status: house=' + houseReport.ok + ' device=' + deviceReport.ok);
+      test.fail('monitor: house=' + JSON.stringify(asHouse.answer) +
+        ' device=' + JSON.stringify(asDevice));
     }
 
     // LOST WITH THE CONSOLE: its owner words. Two checks stood here —
@@ -593,7 +612,7 @@ async function run() {
     return Promise.resolve({ status: 404, text: '{}' });
   }
 
-  const mine = await ownerBadge.probe(nodeHome, 'john', labRequest, johnA.publicKey);
+  const mine = await ownerBadge.probe(nodeHome, labRequest, johnA.publicKey);
   if (mine && mine.ownedUrls.length === 0 && mine.claimedUrls.length === 1) {
     test.check('a peer owns nothing and still holds a row — 0 owned, 1 claimed');
   } else {
@@ -602,7 +621,7 @@ async function run() {
   }
 
   const stranger = auth.generateIdentity('nobody');
-  const none = await ownerBadge.probe(nodeHome, 'nobody', labRequest, stranger.publicKey);
+  const none = await ownerBadge.probe(nodeHome, labRequest, stranger.publicKey);
   if (none && none.claimedUrls.length === 0) {
     test.check('and a key with no row anywhere claims nothing');
   } else {

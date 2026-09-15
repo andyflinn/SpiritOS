@@ -131,6 +131,20 @@ function ndLoad() {
     .then(function (data) {
       var rows = (data && data.rows) || [];
       ndBadge = rows.filter(function (row) { return row && row.url === ndUrl; })[0] || null;
+      // WHAT THE RELAY LAST SAID ABOUT ITSELF, pushed rather than asked
+      // for (R3). The owner-only report used to ride on the badge row,
+      // because the badge WAS a signed status GET and the report was its
+      // body. That request is gone; the same report arrives unprompted on
+      // the stream this node already holds, and `/api/hub/status` has
+      // been handing it over under `relayStatus` all along.
+      //
+      // Absent rather than empty for a relay that has not spoken, which
+      // is the distinction the panel below needs: "said nothing yet" is
+      // not "said zero".
+      if (ndBadge) {
+        var said = (data && data.relayStatus) || {};
+        ndBadge.report = said[ndUrl] || null;
+      }
       ndRender();
     })
     .catch(function () { ndRender(); });
@@ -256,13 +270,35 @@ function ndReportHtml() {
   // circle and a tooltip; a tooltip has room for a state and none for a
   // reason or a way out.
   if (!ndBadge.owned) return ndWhyNotGreen();
-  var report = ndBadge.report || {};
-  var peers = Array.isArray(report.peers) ? report.peers.length : 0;
+
+  // THE OWNER'S VIEW, off the report the relay PUSHED (R3). It used to
+  // be the body of a signed status GET this screen made; that request is
+  // gone, and the same report now arrives unprompted on the stream the
+  // node already holds.
+  //
+  // A relay that has not spoken yet says so, rather than drawing zeros.
+  // "Said nothing" and "said zero" are different facts, and a panel that
+  // rendered them alike would be the careless half of the distinction
+  // hub.js already takes care to preserve.
+  if (!ndBadge.report) {
+    return ndPanel('relay', ndIcon.INFO, 'What this relay says',
+      '<div class="job-log-empty">this relay has not reported yet</div>');
+  }
+  var report = ndBadge.report;
+  // `peers` is a COUNT here, where the old owner-only report carried the
+  // roster itself. The pushed report counts on the relay — see
+  // relayStatus.report — because a monitor wants a number and a roster is
+  // already public at /api/relay/who.
+  //
+  // MESSAGES IS GONE, and not merely missing: R8 deleted the ring, so
+  // there is no count to show. A relay stores nothing on anyone's behalf,
+  // and a row reading "Messages 0" would suggest the question still
+  // applies.
   return ndPanel('relay', ndIcon.INFO, 'What this relay says', spirit.shell.factRow([
     ['Owner', report.owner || '(none)'],
     ['Mode', report.mode || '(unknown)'],
-    ['Peers', peers],
-    ['Messages', report.messages == null ? '(unknown)' : report.messages],
+    ['Peers', report.peers == null ? '(unknown)' : report.peers],
+    ['Connected', report.present == null ? '(unknown)' : report.present],
   ]));
 }
 

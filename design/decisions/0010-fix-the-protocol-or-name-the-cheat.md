@@ -78,9 +78,13 @@ So, stated whole:
 > must work before a post is possible. Everything else must be a post.**
 
 Everything not on that list has to earn its exemption. Two were
-outstanding when this was written; **one has since gone.** `GET
-/api/relay/inbox` died with the ring on 2026-09-15 (R8), leaving `GET
-/api/relay/status`, which owes an argument — see the register.
+outstanding when this was written; **both have since gone.** `GET
+/api/relay/inbox` died with the ring (R8) and `GET /api/relay/status`
+with the owner badge (R3), both on 2026-09-15.
+
+So the rule holds with **no outstanding exemptions.** Every GET a relay
+answers is a static file, the public census, the stream, or
+`/api/version`. Everything else is a post.
 
 ## The narrowing, because a rule that fires on everything is ignored
 
@@ -231,28 +235,49 @@ verb asked by a peer and a verb nobody has heard of are indistinguishable,
 so the set of things this box will do for somebody else cannot be
 enumerated by asking.
 
-### `GET /api/relay/status` — not a cheat, and not yet bootstrap either
+### `GET /api/relay/status` — **gone from the tree, 2026-09-15**
 
-| | |
-|---|---|
-| `GET /api/relay/status` · `statusMessage` | the owner badge, and the only thing still on this wire that neither the protocol nor bootstrap has claimed |
+A table stood here holding `GET /api/relay/status` · `statusMessage`,
+under the line *"the owner badge, and the only thing still on this wire
+that neither the protocol nor bootstrap has claimed."* Struck, because
+this register fails in **both** directions and a door listed but absent
+is as red as the reverse.
 
-It stays on the wire, and it is off the cheat list because "cheat" was
-the wrong word for it. A cheat is a verb invented because the protocol
-could not carry it. `status` is a **read taken before this node has
-anything to post with**, which is a different thing.
+**It was not reclassified. It was deleted**, and by the question this
+section kept asking answering itself.
 
-`presenceNode.start` calls `ownerBadge.probe`, which reads it to learn
-which relays to open streams to; a relay answers a post on the asker's
-stream, so a posted `status` would need a stream that does not exist yet.
+The argument here ran: `presenceNode.start` calls `ownerBadge.probe`,
+which reads status to learn which relays to open streams to — and a relay
+answers a post on the asker's stream, so a posted `status` would need a
+stream that does not exist yet. The note beneath already conceded the
+circle was *"circular as ORDERED, not by nature"*.
 
-**That is circular as ORDERED, not by nature** — an earlier draft here
-said otherwise and was corrected. `streamOpen` refuses a token with no
-row, and that refusal already answers "do I have a row here", so the order
-could be: read `who` for the key, try a stream to each configured relay,
-then post. What that costs is a connection attempt per row at boot and
-disturbing an ordering with a deadlock scar on it.
+Andy went past the ordering to the thing it was serving:
 
+> i don't understand the ownerbadge concept at all: the relay knows its
+> owner by key, and already filters requests by that, because the owner
+> gets a wider peer-post-api than non-owning peers.
+
+The badge was `status`'s only caller, and it was redundant three ways
+over: `owner: true|false` is on every census row already, unsigned;
+`statusToOwner` reaches only the owner's key, so receiving one IS the
+badge; and `answerSelf` decides `isOwner` from the post's own signature,
+per verb. `ownerBadge.claimedFrom` was already parsing the very list that
+carries the flag and not reading it.
+
+So there is no reordering, no posted `status`, and no read. The last
+thing on this wire that neither the protocol nor bootstrap had claimed is
+not classified — it is not there. See
+[R3](../cycles/2026-09-15-labels-are-not-identities.md).
+
+**What it took with it.** `statusMessage` was the last signed format
+naming a LABEL rather than a key, and the only one carrying no minute —
+so it could not expire, and it travelled on a query string, where
+`relay.streamSignatureFrom` refuses its sibling outright. `checkOwner`
+went too; it had no other caller.
+
+Named without backticks above, so `protocolSurface.js` reads this as
+history rather than as an entry.
 **Open, and owed an argument.** Under the standing rule above, the
 arrangement is what has to be defended — not the read.
 
@@ -306,26 +331,32 @@ exist.
 - **Whether a relay should be addressable by more than its owner** — YES,
   and it was one question of Andy's that settled it. See "Cheats, named"
   above; the answer emptied that list.
-- **Whether `GET /api/relay/status` is bootstrap** — **not settled.** An
-  earlier entry here said it was, on the strength of a claim this
-  decision itself later corrected. It has its own section above now,
-  and it owes an argument rather than a classification.
+- **Whether `GET /api/relay/status` is bootstrap** — **never settled, and
+  no longer a question.** An earlier entry said it was; this decision
+  corrected that and left it owing an argument. It was deleted instead
+  (R3, 2026-09-15). A classification nobody has to make is the cheapest
+  answer available, and it came from asking what the route was FOR rather
+  than what it was.
 
 ## What is left
 
-**One thing.** This section said *"two things"* until 2026-09-15, and the
-second was carried out rather than re-argued.
+**Nothing.** This section said *"two things"*, then *"one thing"*, and
+both were carried out rather than re-argued — on the same day, by the
+same cycle's neighbour.
 
-1. **`GET /api/relay/status`** — the last thing on this wire that neither
-   the protocol nor bootstrap has claimed. Moving it is a reordering of
-   `presenceNode.start`, not a protocol change.
+1. ~~`GET /api/relay/status`~~ — **Done (R3).** Deleted rather than
+   classified, along with the owner badge that was its only caller,
+   `statusMessage` and `checkOwner`. See the section above.
 
 2. ~~The ring — `POST /api/relay/send` and `GET /api/relay/inbox`.~~
    **Done (R8).** Andy inspected what it was holding on spirit-3 before
    deciding: 77 messages, 15 of them telemetry from a console that no
    longer exists. *"they are all noise."* So the deletion needed no
-   migration, and there was none: `loadRoutingTable` reads `messages` and
-   drops it. Both signed formats went with the routes.
+   migration, and there was none: `loadRoutingTable` reads `messages`
+   and drops it. Both signed formats went with the routes.
+
+The register is now the protocol, three granted exceptions, and
+history. There is no third category with anything in it.
 
 Everything else on this relay is either the protocol, a granted
 exception, or gone.

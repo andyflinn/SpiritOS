@@ -83,14 +83,18 @@ test.subHeading('The bytes say when');
     test.fail('minute boundary: ' + [early, late, next].join(' | '));
   }
 
-  // ITS OWN VERB, and that is what stops a captured `status` signature —
-  // which an owner makes for every census — being replayed into a
-  // standing grant on the wire.
-  if (auth.streamMessage('KEY', at).indexOf('status') === -1 &&
-      auth.statusMessage('KEY') !== auth.streamMessage('KEY', at)) {
+  // ITS OWN VERB, so no signature made anywhere else can be replayed
+  // into a standing grant on the wire.
+  //
+  // This was written against `status`, the signature an owner made for
+  // every census — the one most likely to be lying around. R3 deleted
+  // that verb on 2026-09-15, so the check moved to `claim`, which is now
+  // the only other format naming something a caller supplies.
+  if (auth.streamMessage('KEY', at) !== auth.claimMessage('KEY') &&
+      auth.streamMessage('KEY', at).indexOf('claim') === -1) {
     test.check('and it is not the bytes any other verb signs');
   } else {
-    test.fail('stream and status share bytes');
+    test.fail('stream and claim share bytes');
   }
 }
 
@@ -267,42 +271,44 @@ test.subHeading('Nothing puts it back on the URL');
   // hub did it once, and the fix was a header; this is what stops the
   // next caller repeating it.
   //
-  // ── ONE KNOWN EXCEPTION, AND IT IS NOT THIS SITTING'S ────────────────
+  // ── THE ONE EXCEPTION IS GONE, AND SO IS THE EXCLUSION ───────────────
   //
-  // `ownerBadge.statusPath` puts a signature on the query of
-  // `GET /api/relay/status`:
+  // This scan carried a carve-out for `ownerBadge.statusPath`, which put
+  // a signature on the query of `GET /api/relay/status`:
   //
   //     q += '&sig=' + encodeURIComponent(
   //            auth.sign(id.privateKey, auth.statusMessage(name)));
   //
-  // That is the same hazard this suite was written about, on the other
-  // signed GET — and WORSE than the one it replaced, because
-  // `statusMessage` is `status\n<name>` with no minute in it. A captured
-  // line of Caddy's access log is a PERMANENT owner-status credential,
-  // with no expiry and no revocation short of changing the key. The
-  // inbox proof had exactly this shape before it was fixed twice.
+  // The same hazard this suite is about, on the other signed GET, and
+  // WORSE than the one it replaced: `statusMessage` is `status\n<name>`
+  // with no minute in it, so unlike every other signature on this wire it
+  // could not expire. Revocation meant changing the key.
   //
-  // Deliberately NOT fixed here. `GET /api/relay/status` is the one thing
-  // decision 0010 leaves open — *"it owes an argument rather than a
-  // classification"* — and moving it is a reordering of
-  // `presenceNode.start`, which is its own sitting. Found while deleting
-  // the ring (R8) and written down rather than folded in, so it is a
-  // decision and not a discovery twice.
+  // It was found while deleting the ring (R8) and left alone, because
+  // `/api/relay/status` was decision 0010's last open question. R3 closed
+  // that question by deleting the badge that was its only caller
+  // (2026-09-15), so the carve-out went with it.
   //
-  // The scan below therefore excludes the status path by name. When
-  // status moves, delete the exclusion rather than the check.
-  const KNOWN = [/&sig='\s*\+\s*encodeURIComponent\(\s*auth\.sign\([^)]*statusMessage/];
+  // THE RULE IS NOW ABSOLUTE: nothing under run/js builds a query
+  // signature, for any route, with no name excused. If this ever needs an
+  // exception again, that is the argument to have — not the line to add.
   const offenders = [];
   const scanned = fs.readdirSync(RUN).filter(function (f) { return /\.js$/.test(f); });
   scanned.forEach(function (name) {
     var src = fs.readFileSync(path.join(RUN, name), 'utf8')
-      .replace(/searchParams\.get\('sig'\)/g, '');
-    KNOWN.forEach(function (re) { src = src.replace(re, ''); });
+      // What the ROUTE does with a query sig is refuse it — reading the
+      // parameter in order to say no is the rule working, not breaking.
+      .replace(/searchParams\.get\('sig'\)/g, '')
+      // Comments, including the tombstones that quote what was deleted.
+      // A scanner that cannot tell a line of code from an epitaph makes
+      // those comments undeletable, which is how history gets erased to
+      // keep a test quiet.
+      .replace(/^\s*\/\/.*$/gm, '');
     if (/[?&]sig=/.test(src)) offenders.push(name);
   });
   if (!offenders.length) {
-    test.check('and no file under run/js builds one for the stream — ' +
-      scanned.length + ' scanned, status excluded by name');
+    test.check('and no file under run/js builds one at all — ' +
+      scanned.length + ' scanned, nothing excused');
   } else {
     test.fail('these build a query signature: ' + offenders.join(', '));
   }

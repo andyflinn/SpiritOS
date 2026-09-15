@@ -109,19 +109,31 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('the reserved name was claimed: ' + JSON.stringify(grab));
   }
 
-  const stSig = auth.sign(id.privateKey, auth.statusMessage('andy'));
-  const st = box2.status('andy', stSig);
-  if (st.ok && st.report && st.report.owner === 'andy' && st.report.mode === 'keys') {
-    test.check('owner-only status report');
+  // AN OWNER-ONLY STATUS REPORT STOOD HERE, pulled with a signature over
+  // a name, and beside it a check that an unsigned pull was refused. R3
+  // deleted the verb and its route on 2026-09-15.
+  //
+  // WHAT THE TWO CHECKS WERE REALLY ABOUT survives, and this file is
+  // where it belongs: after a first claim, the box knows who its owner
+  // is. Asserted off `snapshot()` directly — which is what the report was
+  // reading anyway — with no signature, because no question is being
+  // asked across a wire.
+  const snap = box2.snapshot();
+  if (snap.owner === 'andy' && snap.mode === 'keys') {
+    test.check('after the first claim the box knows its owner, and is in keys mode');
   } else {
-    test.fail('status: ' + JSON.stringify(st));
+    test.fail('snapshot: ' + JSON.stringify(snap));
   }
 
-  const nosig = box2.status('andy', '');
-  if (!nosig.ok && nosig.status === 403) {
-    test.check('status without sig is refused');
+  // AND THE PUBLIC CENSUS SAYS SO TOO, which is what the owner badge
+  // reads since R3. The flag on the row and the name in allow.json are
+  // written by the same claim and must agree — a badge read off a census
+  // that disagreed with `ownerName` would be a second authority.
+  const ownerRow = box2.who().filter(function (p) { return p.owner; });
+  if (ownerRow.length === 1 && ownerRow[0].publicKey === id.publicKey) {
+    test.check('and the census marks that key as owner, with no credential asked');
   } else {
-    test.fail('status nosig: ' + JSON.stringify(nosig));
+    test.fail('census owner rows: ' + JSON.stringify(ownerRow));
   }
 }
 
