@@ -847,15 +847,18 @@
       .nd-fold-mark { font-size: 12px; opacity: 0.75; }
       .nd-panel-body { margin-top: 0.5rem; }
 
-      /* The line between "what I am on this relay" and "what I run".
-         A HEADING AND NOT A FOLD: ndOpenPanel holds one id, so a group
-         that folded would need a two-level model, and that decision is
-         deliberately parked (Andy: "decide later how to organize the
-         interface"). It marks the owner's half and nothing more. */
-      .nd-group-heading {
-        margin: 1.25rem 0 0.25rem; font-size: 13px; text-transform: uppercase;
-        letter-spacing: 0.08em; opacity: 0.7;
-      }
+      /* The line between "what I am on this relay" and "what I run",
+         and it FOLDS (Andy: "Managing my relay should be a folded
+         container"). It shipped as a plain heading for about an hour,
+         which grouped the owner bubbles visually and still left five
+         bars on the screen — folding them leaves one. */
+      .nd-group-fold { cursor: pointer; -webkit-user-select: none; user-select: none; display: flex; align-items: baseline; gap: 0.35rem; }
+      .nd-group-fold:hover { text-decoration: underline; }
+      /* Inset, so a panel inside the group reads as inside it. The tiles
+         bring their own borders; this is the only thing that says which
+         level you are looking at. */
+      .nd-group-body { margin-top: 0.5rem; padding-left: 0.75rem; border-left: 2px solid rgba(128,128,128,0.25); }
+      .nd-group-body .stat-tile { margin-bottom: 0.5rem; }
       /* The last eight characters of a key, for telling two peers with
          one label apart — spirit-3 carries two `jazz` and two `rock`
          right now. Tabular so the columns line up and the eye can

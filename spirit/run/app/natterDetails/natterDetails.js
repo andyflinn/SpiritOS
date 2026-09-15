@@ -105,6 +105,26 @@ var ndRelayLabel = '';  // what the LIST calls this relay, for the title
 // question is before it has been asked.
 var ndOpenPanel = '';
 
+// ── AND WHETHER THE OWNER GROUP IS OPEN ─────────────────────────────
+//
+//   Andy: "Managing my relay should be a folded container."
+//
+// A SECOND VARIABLE, NOT A SECOND ENTRY IN THE FIRST. `ndOpenPanel`
+// means "which of the sibling panels is open", and the group is not one
+// of its siblings — it CONTAINS some of them. Folding the group away
+// must not decide which panel is open inside it, and opening a panel
+// inside must not close the group.
+//
+// That is the whole of the two-level model, and it is two variables
+// rather than a tree because there are exactly two levels. A third would
+// be the moment to build something general; two is not.
+//
+// SHUT ON ARRIVAL, like every panel. An owner opening a relay is usually
+// looking at what it says, not administering it — and a group that
+// arrived open would put five bars back on the screen, which is the
+// thing it exists to stop.
+var ndOwnerGroupOpen = false;
+
 // A PANEL, WITH A TITLE BAR THAT FOLDS IT.
 //
 //   Andy: "All panels in natterDetails must be foldable, and the
@@ -617,18 +637,32 @@ function ndInviteWhen(row) {
 // the ones that kept arriving were all owner-only. This is the line
 // between "what I am on this relay" and "what I run".
 //
-// A HEADING, NOT A FOLD, and that is deliberate for now. `ndOpenPanel`
-// holds ONE id — one panel open at a time, flat — so a group that folded
-// would need a two-level model, and Andy parked that question:
+// A FOLDED CONTAINER, which it was not for about an hour. It shipped as
+// a plain heading with the owner bubbles loose beneath it, on the
+// argument that folding needed a two-level model and that decision was
+// parked. Andy unparked it the moment he saw it:
 //
-//   Andy: "for now, we just add bubbles to the owner group in
-//   natterDetails and decide later how to organize the interface."
+//   Andy: "Managing my relay should be a folded container."
 //
-// So the grouping is visual, the fold model is untouched, and new owner
-// bubbles go under this line without deciding anything.
-function ndOwnerHeadingHtml() {
+// Which is right, and the heading version was solving the wrong half:
+// grouping them visually still leaves five bars on the screen. Folding
+// them leaves one.
+//
+// The contents are passed in rather than called here, so this function
+// decides only how a group LOOKS and the render order stays in one
+// place — the same reason ndPanel takes `inner`.
+function ndOwnerGroupHtml(inner) {
   if (!ndBadge || !ndBadge.owned) return '';
-  return '<div class="nd-group-heading">' + ndIcon.STAR + ' Managing my relay</div>';
+  var shut = !ndOwnerGroupOpen;
+  return '<div class="stat-tile wide nd-group">' +
+    '<div class="panel-heading nd-group-fold"' +
+      ' title="' + (shut ? 'Show' : 'Hide') + ' what you can do as owner">' +
+      '<span class="nd-fold-mark">' +
+        (shut ? ndIcon.POINTRIGHT : ndIcon.POINTDOWN) + '</span> ' +
+      ndIcon.STAR + ' Managing my relay' +
+    '</div>' +
+    (shut ? '' : '<div class="nd-group-body">' + inner + '</div>') +
+    '</div>';
 }
 
 // ── WHAT HAPPENS WHEN SOMEBODY NEW TAKES A SEAT ─────────────────────
@@ -661,7 +695,7 @@ function ndAutoAddHtml() {
       '<input type="radio" name="nd-autoadd" value="no"' + (on ? '' : ' checked') + '>' +
       '<span class="rc-choice-title">Leave them alone</span>' +
       '<span class="rc-choice-note">They take a seat and nothing else happens. ' +
-        'You can add them from the list below whenever you like.</span>' +
+        'You can add them from the list above whenever you like.</span>' +
     '</label>' +
     '</div>' +
     '<div class="job-manifest-note">This is about this relay only. What this node does ' +
@@ -693,6 +727,21 @@ function ndAutoAddHtml() {
 // YOUR node rather than the relay — the asymmetry that makes an undo
 // tedious. The policy above is how you say "all of them", in advance and
 // one at a time as they arrive.
+// A DATE, NOT A DURATION. The invite panel next door says "in 6 days"
+// because an expiry is a countdown and what you want is how long you
+// have. An enrolment is a fact in the past and what you want is WHEN —
+// "3 days ago" and "2 months ago" both sort two rows correctly and
+// neither tells you which jazz you were talking to in March.
+//
+// Local date, no clock: the relay writes ISO in UTC, and an hour of
+// timezone slip on a row that is months old is noise.
+function ndWhen(iso) {
+  if (!iso) return '';
+  var at = new Date(iso);
+  if (isNaN(at.getTime())) return '';
+  return at.toLocaleDateString();
+}
+
 function ndPeersHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   // THE CENSUS, NOT THE REPORT. I reached for `report.peers` first and
@@ -707,7 +756,7 @@ function ndPeersHtml() {
     body = '<div class="job-log-empty">nobody is enrolled here yet</div>';
   } else {
     body = '<table class="job-table"><thead><tr>' +
-      '<th>Label</th><th>Key</th><th></th>' +
+      '<th>Label</th><th>Key</th><th>Enrolled</th><th></th>' +
       '</tr></thead><tbody>' +
       rows.map(function (peer) {
         var key = String((peer && peer.publicKey) || '');
@@ -716,6 +765,7 @@ function ndPeersHtml() {
         return '<tr>' +
           '<td>' + (isOwner ? ndIcon.STAR + ' ' : '') + ndEscapeHtml(label || '(no label)') + '</td>' +
           '<td class="nd-peer-tail">…' + ndEscapeHtml(key.slice(-8)) + '</td>' +
+          '<td>' + ndEscapeHtml(ndWhen(peer && peer.claimedAt)) + '</td>' +
           '<td>' +
             // THE OWNER'S OWN ROW TAKES NEITHER BUTTON. Adding yourself
             // is refused by the node anyway, and removing yourself is
@@ -1047,13 +1097,24 @@ function ndRender() {
     // of them ever renders — see ndClaimHtml.
     ndClaimHtml() +
     ndRenameHtml() +
-    ndOwnerHeadingHtml() +
-    ndMintHtml() +
-    // Minting and what has been minted, adjacent on purpose: the answer
-    // to "did that work" is the row that appears in the panel below.
-    ndInvitesHtml() +
-    ndPeersHtml() +
-    ndAutoAddHtml() +
+    // ── THE OWNER'S HALF, INSIDE ONE FOLD ────────────────────────────
+    //
+    // Minting and what has been minted stay adjacent: the answer to "did
+    // that work" is the row that appears in the panel below it.
+    //
+    // The device panel is NOT in here, and that is the line the group
+    // draws. It is about attaching a device to THIS NODE — a member with
+    // no relay of their own has one too — so it stays outside, among the
+    // things you ARE rather than the things you RUN.
+    ndOwnerGroupHtml(
+      // A "Change what this relay is called" panel belongs here and is
+      // not built: a relay publishes no label of its own yet, so there
+      // is nothing for it to change. See the note in relay.snapshot.
+      ndMintHtml() +
+      ndInvitesHtml() +
+      ndPeersHtml() +
+      ndAutoAddHtml()
+    ) +
     ndDeviceHtml();
 }
 
@@ -1479,6 +1540,17 @@ spirit.shell.activateApp({
       // THE FOLD, before anything else. A title bar is a control and the
       // panels below it contain controls of their own — a click inside an
       // open panel must not be read as a click on its bar.
+      // THE GROUP BAR FIRST, and it must be tested before `.nd-fold`
+      // below — the panels inside it carry that class, and a click on
+      // one of them is a click inside the group, not on it. Its own bar
+      // deliberately does NOT carry `.nd-fold`, so the two cannot be
+      // confused by a selector.
+      if (target.closest('.nd-group-fold')) {
+        ndOwnerGroupOpen = !ndOwnerGroupOpen;
+        ndRender();
+        return;
+      }
+
       var bar = target.closest('.nd-fold');
       if (bar) {
         var id = bar.getAttribute('data-fold');

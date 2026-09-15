@@ -339,6 +339,18 @@ function censusFacts(answer, myKey) {
       return {
         publicKey: (p && p.publicKey) || '',
         publicLabel: (p && p.publicLabel) || '',
+        // WHEN THIS KEY ENROLLED, and it is how a human tells two rows
+        // wearing one label apart.
+        //
+        //   Andy: "enrollment date is a good indicator of which jazz is
+        //   current... I know for a fact that the current jazz is
+        //   Jazzmin Thut because that labeling feature is really new."
+        //
+        // Already on every census row (relay.who) and never sent on.
+        // `last seen` would be the better indicator and is deliberately
+        // not asked for: it would make a relay write on every arrival,
+        // which is a cost on the relay for a convenience on one screen.
+        claimedAt: (p && p.claimedAt) || '',
         owner: !!(p && p.owner),
       };
     }),

@@ -133,6 +133,22 @@ function copyTarget(out) {
 // opts: { rows, device, label, canRemove }
 // A click lands on the bar, and the app reads data-fold off it via
 // closest(). The fake element answers both.
+// Which bars are inside "Managing my relay". Named rather than inferred,
+// because the group's membership is a decision — the device panel is
+// deliberately NOT in it, being about this node rather than this relay —
+// and a list that guessed would stop noticing when that line moves.
+const OWNER_PANELS = ['invite', 'invites', 'peers', 'policy'];
+
+// The group's own bar. It carries `.nd-group-fold` and deliberately NOT
+// `.nd-fold`, so the handler can tell a click on the group from a click
+// on a panel inside it.
+function groupFoldTarget() {
+  const el = fakeElement('div');
+  el.className = 'panel-heading nd-group-fold';
+  el.closest = function (sel) { return sel === '.nd-group-fold' ? el : null; };
+  return el;
+}
+
 function foldTarget(id) {
   const el = fakeElement('div');
   el.className = 'panel-heading nd-fold';
@@ -321,8 +337,28 @@ function mountApp(opts) {
     // PANELS ARE CLOSED WHEN THE SCREEN ARRIVES, so a check about what a
     // panel says has to open it first — the same click a person makes.
     // Not a shortcut into the app's state: this fires the real handler.
+    // ── THE OWNER PANELS LIVE INSIDE A FOLD NOW ──────────────────────
+    //
+    // "Managing my relay" became a folded container on 2026-09-15, and
+    // it arrives SHUT — so a bar inside it is not rendered until the
+    // group is opened, and a click on one is a click on nothing.
+    //
+    // This opens the group first when the target is one of its members,
+    // which is what a person does: press the group, then press the
+    // panel. Nine checks went red for the want of that first press, and
+    // every one of them was right to — the panel really was unreachable
+    // in one click.
     open: function (id) {
+      if (OWNER_PANELS.indexOf(id) !== -1) {
+        doc.getElementById('nd-body').fire('click', { target: groupFoldTarget() });
+      }
       doc.getElementById('nd-body').fire('click', { target: foldTarget(id) });
+      return this;
+    },
+    // For a test that wants to assert the group's own state rather than
+    // reach through it.
+    openGroup: function () {
+      doc.getElementById('nd-body').fire('click', { target: groupFoldTarget() });
       return this;
     },
     body: function () { return doc.getElementById('nd-body'); },
@@ -378,7 +414,13 @@ function ownedMailbox() {
     // the facts and the mint can never be on screen together, and
     // asserting them off one snapshot was the old always-open screen.
     app.open('invite');
-    if (/natter-inv-go/.test(app.body().innerHTML)) {
+    // RE-READ, because `panel` above is a snapshot from when the facts
+    // were open. That was harmless while a folded panel still rendered
+    // its own tile and heading — the mint was in the markup either way.
+    // It is not any more: the owner panels live inside "Managing my
+    // relay", and a shut group renders none of them at all.
+    const withMint = app.body().innerHTML;
+    if (/natter-inv-go/.test(withMint)) {
       test.check('and an owned mailbox offers the mint');
     } else {
       test.fail('no mint on an owned mailbox: ' + app.body().innerHTML);
@@ -386,20 +428,20 @@ function ownedMailbox() {
 
     // The mint is its own tile, so it carries its own space and a screen
     // without one leaves no gap behind.
-    if (/stat-tile wide natter-mint/.test(panel)) {
+    if (/stat-tile wide natter-mint/.test(withMint)) {
       test.check('with the mint as a second block, spaced by itself');
     } else {
-      test.fail('mint is not its own block: ' + panel);
+      test.fail('mint is not its own block: ' + withMint);
     }
 
     // And it is the one block here that gets a heading: the facts above
     // are a reading of the mailbox the title already named, but this is
     // a thing to do. The mark is the shell's own ★ — the same one the
     // row carries for owning the mailbox.
-    if (panel.indexOf(spirit.core.const.ICON.STAR + ' Invite someone to this relay') !== -1) {
+    if (withMint.indexOf(spirit.core.const.ICON.STAR + ' Invite someone to this relay') !== -1) {
       test.check('and says what it is, with the mark that means owned');
     } else {
-      test.fail('mint heading: ' + panel);
+      test.fail('mint heading: ' + withMint);
     }
 
     // No picker, ever again: the screen is which mailbox. A question
@@ -751,6 +793,127 @@ function anOwnerEventRefreshesTheScreen() {
         }
       });
     });
+  });
+}
+
+// ── THE OWNER'S HALF IS ONE BAR UNTIL YOU OPEN IT ────────────────────
+//
+//   Andy: "Managing my relay should be a folded container."
+//
+// It shipped as a plain heading with the owner bubbles loose beneath —
+// which grouped them visually and still left five bars on the screen.
+// Folding leaves one, which is the whole point of the group.
+function theOwnerGroupFolds() {
+  test.subHeading('An owner’s screen is one bar for what they run, until asked');
+
+  const owner = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true }],
+    relayStatus: { [OWNED]: { key: 'RELAYKEY', invites: [] } },
+  });
+
+  return settle().then(function () {
+    const shut = owner.body().innerHTML;
+
+    if (/Managing my relay/.test(shut)) {
+      test.check('the group names itself even while shut');
+    } else {
+      test.fail('no group bar: ' + shut.slice(0, 200));
+    }
+
+    // NONE OF ITS MEMBERS, and that is the difference from the heading
+    // it replaced: a folded panel still draws its own tile, so grouping
+    // them under a label hid nothing at all.
+    if (!/natter-mint/.test(shut) && !/natter-peers/.test(shut) && !/natter-policy/.test(shut)) {
+      test.check('and hides every owner panel inside it, rather than merely labelling them');
+    } else {
+      test.fail('owner panels drawn while the group is shut');
+    }
+
+    // THE DEVICE PANEL IS NOT A MEMBER. It is about attaching a device
+    // to THIS NODE — a member with no relay of their own has one — so it
+    // stays outside, among the things you are rather than the things you
+    // run.
+    if (/natter-device/.test(shut)) {
+      test.check('while the device panel stays outside — that is this node, not this relay');
+    } else {
+      test.fail('the device panel went into the owner group');
+    }
+
+    owner.openGroup();
+    const open = owner.body().innerHTML;
+    if (/natter-mint/.test(open) && /natter-peers/.test(open) && /natter-policy/.test(open)) {
+      test.check('and opening it brings all of them at once');
+    } else {
+      test.fail('group opened and did not draw its members');
+    }
+
+    // A MEMBER SEES NO GROUP AT ALL. It is not an empty bar for somebody
+    // who runs nothing — the screen simply has one fewer thing on it.
+    const member = mountApp({
+      rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'andy' }],
+    });
+    return settle().then(function () {
+      if (!/Managing my relay/.test(member.body().innerHTML)) {
+        test.check('and somebody who merely holds a row is not shown the bar at all');
+      } else {
+        test.fail('a member was offered the owner group');
+      }
+    });
+  });
+}
+
+// THE ENROLMENT DATE, which is how a human tells two rows with one label
+// apart.
+//
+//   Andy: "enrollment date is a good indicator of which jazz is
+//   current... I know for a fact that the current jazz is Jazzmin Thut
+//   because that labeling feature is really new."
+//
+// `last seen` would be the better indicator and is deliberately not
+// asked for: it would make a relay write on every arrival, which is a
+// cost on the relay for a convenience on one screen.
+function theEnrolmentListDatesEachRow() {
+  test.subHeading('Two peers wearing one label are told apart by when they enrolled');
+
+  const owner = mountApp({
+    rows: [{
+      url: OWNED, label: 'spirit', status: 200, owned: true,
+      census: {
+        relayKey: 'RELAYKEY',
+        roster: [
+          { publicKey: 'KEY-OLD-JAZZ', publicLabel: 'jazz', claimedAt: '2026-03-02T00:00:00.000Z' },
+          { publicKey: 'KEY-NEW-JAZZ', publicLabel: 'jazz', claimedAt: '2026-09-14T00:00:00.000Z' },
+        ],
+      },
+    }],
+    relayStatus: { [OWNED]: { key: 'RELAYKEY' } },
+  });
+
+  return settle().then(function () {
+    const body = owner.open('peers').body().innerHTML;
+
+    if (/2026/.test(body)) {
+      test.check('every row says when that key enrolled');
+    } else {
+      test.fail('no enrolment date in the list: ' + body.slice(0, 300));
+    }
+
+    // BY KEY, WHICH IS THE WHOLE POINT. Two rows, one label, and every
+    // button carries the key — so pressing Remove on the stale jazz
+    // cannot take the live one.
+    if (/data-peer-key="KEY-OLD-JAZZ"/.test(body) && /data-peer-key="KEY-NEW-JAZZ"/.test(body)) {
+      test.check('and each carries its own key, so one jazz can be removed without the other');
+    } else {
+      test.fail('rows are not keyed: ' + body.slice(0, 300));
+    }
+
+    // The tail is shown for the same reason, because two dates can match
+    // and two keys cannot.
+    if (/…OLD-JAZZ/.test(body) || /…LD-JAZZ/.test(body)) {
+      test.check('with the key tail beside it, which no two rows can share');
+    } else {
+      test.fail('no key tail on the rows');
+    }
   });
 }
 
@@ -1313,7 +1476,13 @@ function openingAnotherMailboxLetsGoOfTheLast() {
 
   return settle().then(function () {
     app.open('invite');
-    if (/natter-inv-go/.test(app.body().innerHTML)) {
+    // RE-READ, because `panel` above is a snapshot from when the facts
+    // were open. That was harmless while a folded panel still rendered
+    // its own tile and heading — the mint was in the markup either way.
+    // It is not any more: the owner panels live inside "Managing my
+    // relay", and a shut group renders none of them at all.
+    const withMint = app.body().innerHTML;
+    if (/natter-inv-go/.test(withMint)) {
       test.check('the owned one offers its mint');
     } else {
       test.fail('no mint on the owned mailbox');
@@ -1682,6 +1851,8 @@ ownedMailbox()
   .then(claimAndRenameAreExclusive)
   .then(anUnboundNodeCanStillClaim)
   .then(aRelayThatIsDownOffersNoClaim)
+  .then(theOwnerGroupFolds)
+  .then(theEnrolmentListDatesEachRow)
   .then(anOwnerEventRefreshesTheScreen)
   .then(theClaimFormReadsInTheOrderYouAreTold)
   .then(thePublicLabelIsOptional)
