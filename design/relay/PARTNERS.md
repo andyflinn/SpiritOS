@@ -109,13 +109,13 @@ otherwise have got wrong with a TTL.
 Reciprocity means the partner's owner **is a peer on this relay**. So
 `presentNow.isPresent(theirOwnerKey)` — which the relay already answers,
 and already uses to decide whether it can deliver at all — is exactly the
-liveness signal the list's lifetime should follow:
+liveness signal the route table's lifetime should follow:
 
-| moment | what happens to the list |
+| moment | what happens |
 |---|---|
-| their owner's stream opens | acquire it |
-| while present | hold it, route from it |
-| their stream closes | drop it |
+| their owner's stream opens | add their routes to the table |
+| while present | route from it |
+| their stream closes | remove their routes; evict any peer left with none |
 | ever | never write it down |
 
 No TTL, no invalidation, no staleness policy, no reconciliation. The list
@@ -158,6 +158,65 @@ Consequences worth naming, because they run against the instinct:
 This is the opposite shape from a mail server, and deliberately: a mailbox
 accumulates and a relay does not. It is what "a relay relays" costs, and
 what it buys.
+
+### It is one route table, not a list per partner
+
+> **Andy:** "when a partner's ledger is cached in RAM, it can already
+> filter out peers it can reach already, let's say over 2 routes or
+> whatever is configured — that flattens the exponentiality of RAM usage."
+
+This changes the **data structure**, not just its size, and the earlier
+framing in this document ("hold the partner's member list") was the wrong
+shape. What a relay holds is:
+
+```
+key → { row, routes: [partner indices], capped at N }
+```
+
+One entry per **distinct peer**, carrying up to N ways to reach them. Not
+one list per partner with the same popular peer copied into every one.
+
+**Two different wins, and the second is the one that matters.**
+
+Deduplication pays off with overlap, and overlap is the realistic case —
+relays that partner with each other serve communities that intersect. At
+`ref = 8 B` (a route is an index into a ≤255-entry partner array, not a
+copy of anything):
+
+| partners | members | overlap | list per partner | one capped table | |
+|---|---|---|---|---|---|
+| 10 | 100 | 30% | 460 KB | 333 KB | 1.4× |
+| 50 | 500 | 60% | 12 MB | 5 MB | 2.4× |
+| 100 | 1000 | 80% | 46 MB | 10 MB | 4.8× |
+| 100 | 1000 | 95% | 46 MB | 2 MB | 19× |
+| 100 | 1000 | **0%** | 46 MB | 48 MB | 1.0× |
+
+That last row is honest: with no overlap at all, dedup buys nothing and
+the refs cost a little. It is not the case to design for, but it is the
+case that says *the cap is doing the real work, not the dedup*.
+
+**Because the cap is what bounds the pathological peer.** Somebody present
+on all hundred partners:
+
+```
+uncapped   100 rows   46 KB     for one peer
+cap of 2     1 row    ~0.5 KB   97x
+```
+
+Without a cap, the cost of a *popular* peer grows with your partner count,
+and popularity is exactly what a network produces. With one, it does not
+grow at all.
+
+**So the memory stops depending on the number of partnerships** and starts
+depending on the number of distinct people reachable — which is a property
+of the network rather than of the owner's enthusiasm. That is the
+flattening, and it is worth more than any of the shedding policy above:
+shedding reacts to pressure, this removes the source of it.
+
+**Two routes, not one**, because one is a single point of failure: the day
+that partner's stream closes, every peer reachable only through it becomes
+unreachable, and you have paid for a route table that evaporates. Two is
+redundancy; fifty is hoarding. Configurable, defaulting low.
 
 ### A partnership is not a contract
 
@@ -352,23 +411,26 @@ This is the real threshold in the proposal — bigger than the flag.
 6. **A relay NEVER persists a partner's ledger.** Hard rule. It is useless
    for an offline partner and askable for a live one, so it has no case.
    `partner` on a peer row persists; the *list* has nowhere on disk to be.
+7. **What is held is ONE route table keyed by peer, with routes capped**
+   (two by default). Not a list per partner. The cap is what stops a
+   popular peer costing one row per partnership.
 
 ## Recommended (Claude), not yet decided
 
-7. **The node fetches; the relay stores the conclusion.** The owner's node
+8. **The node fetches; the relay stores the conclusion.** The owner's node
    already fetches censuses per relay (`ownerBadge.probe`). Let it do the
    reciprocity check and post the result. The relay keeps `partner: true`
    and never learns how to reach out.
-8. **One hop, full stop.** A forwarded post is never forwarded again. With
+9. **One hop, full stop.** A forwarded post is never forwarded again. With
    two relays there is no loop to prevent; the rule has to be written while
    that is still true, and it makes (3) enforceable rather than merely
    intended.
-9. **The partner's member list is a HINT, never an authority.** B checks its
+10. **The route table is a HINT, never an authority.** B checks its
    own ledger when a forward lands, as it does for any post. A stale hint
    then costs a wasted hop and a refusal — never a wrong delivery.
-10. **Bind the list's lifetime to presence, not a TTL.** Acquire when the
-   partner's owner opens a stream here, drop when it closes. Follows from
-   decision (6) rather than being a policy of its own.
+11. **Bind lifetime to presence, not a TTL.** Add a partner's routes when
+   their owner opens a stream here; remove them when it closes, and evict
+   any peer left with no route. Follows from decision (6).
 
 ### Withdrawn
 
