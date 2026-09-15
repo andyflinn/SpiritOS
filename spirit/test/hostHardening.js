@@ -285,6 +285,86 @@ test.subHeading('The unit template is one file, however many relays use it');
 //   installed from the lab clone would pull the LAB's code and restart
 //   spirit-relay: the live box, bounced every ten minutes on behalf of a
 //   directory it knows nothing about.
+// ── NO PIPELINE DECIDES ANYTHING, UNDER pipefail ─────────────────────
+//
+// `set -euo pipefail` is on for every script in bash/, and it turns a
+// SUCCESSFUL match into a failed test:
+//
+//   grep -q exits the instant it matches
+//   the producer keeps writing into a closed pipe and takes SIGPIPE (141)
+//   pipefail promotes that to the PIPELINE's status
+//   the `if` sees 141 and takes the else branch
+//
+// Proved on spirit-3 on 2026-09-16:
+//
+//   systemctl list-unit-files | grep -q "^spirit-relay.service"  -> MATCHED
+//   ( set -o pipefail; same )                                    -> exit=141
+//
+// WHAT IT COST: bash/update has NEVER restarted a relay. It printed
+// "unit spirit-relay not installed" on a box where the unit was
+// installed, enabled AND active — so the code updated and the process
+// went on running the old copy. Silent for as long as pipefail has been
+// in lib.sh, on every box, including the cron that runs every ten
+// minutes.
+//
+// bash/lab-remove had the same line, where it would have skipped the
+// stop and disable and left a relay running after being told to remove
+// it. bash/status had it on the labMaster warning, which therefore never
+// warned.
+test.subHeading('No pipeline decides anything — pipefail turns a match into 141');
+{
+  const SCRIPTS = ['update', 'lab-remove', 'lab-install', 'status', 'tls', 'cron-install', 'cron-remove'];
+  const guilty = [];
+
+  SCRIPTS.forEach(function (name) {
+    const src = fs.readFileSync(path.join(REPO_ROOT, 'bash', name), 'utf8');
+    // Plain string work, no regexes: this check is about backslashes in
+    // shell, and writing it with escaped patterns is how it would come
+    // to disagree with itself.
+    src.split(String.fromCharCode(10)).forEach(function (raw, i) {
+      const line = raw.replace(String.fromCharCode(13), '').trim();
+      if (!line || line.charAt(0) === '#' || line.indexOf('echo ') === 0) return;
+      // A pipeline whose exit code is READ: it decides an if, or is
+      // chained with && / ||. A pipeline whose OUTPUT is used is fine:
+      // x=$(a | grep b) reads stdout and never consults the status.
+      const decides = line.indexOf('if ') === 0 || line.indexOf('elif ') === 0 ||
+        line.indexOf('&&') !== -1 || line.indexOf('||') !== -1;
+      if (!decides) return;
+      // ONLY `grep -q`. That is the whole hazard: -q exits on the first
+      // match, so the producer is still writing when the pipe closes.
+      // Plain grep and grep -v read to EOF, the producer finishes
+      // normally, and the pipeline's status is grep's own — those are
+      // safe and six of them were flagged by a first cut of this scan.
+      const quiet = line.indexOf('grep -q') !== -1;
+      if (quiet && (line.indexOf('| grep') !== -1 || line.indexOf('|grep') !== -1)) {
+        guilty.push(name + ':' + (i + 1));
+      }
+    });
+  });
+
+  if (guilty.length === 0) {
+    test.check('no script decides a branch on `| grep -q` — ' + SCRIPTS.length + ' scanned');
+  } else {
+    test.fail(guilty.join(', ') + ' — under pipefail, grep -q matching KILLS the producer ' +
+      'with SIGPIPE and the pipeline reports 141. A successful match reads as a failed test. ' +
+      'Use contains() or unit_known() from lib.sh.');
+  }
+
+  // AND THE TWO HELPERS EXIST, because the rule is only enforceable if
+  // there is somewhere to go instead.
+  if (/^contains()/m.test(lib) && /<<</.test(lib)) {
+    test.check('and lib.sh offers contains(), which feeds grep a here-string rather than a pipe');
+  } else {
+    test.fail('lib.sh has no contains() helper');
+  }
+
+  if (/^unit_known()/m.test(lib) && /systemctl cat/.test(lib)) {
+    test.check('and unit_known(), which asks systemd directly instead of filtering its list');
+  } else {
+    test.fail('lib.sh has no unit_known() helper');
+  }
+}
+
 test.subHeading('Two clones can each keep their own update cron');
 {
   const cronIn = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'cron-install'), 'utf8');

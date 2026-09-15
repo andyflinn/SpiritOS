@@ -20,7 +20,10 @@ say "reset --hard origin/master"
 echo "    $(git rev-parse --short HEAD) -> $(git rev-parse --short origin/master)"
 git reset --hard origin/master
 
-if have systemctl && systemctl list-unit-files | grep -q "^${UNIT_NAME}.service"; then
+# No pipe: see `unit_known` in lib.sh. This line reported "not
+# installed" on a box where the unit was installed, enabled and active,
+# so an update never restarted anything.
+if unit_known "$UNIT_NAME"; then
   say "restart $UNIT_NAME"
   systemctl restart "$UNIT_NAME"
   ok "restarted"

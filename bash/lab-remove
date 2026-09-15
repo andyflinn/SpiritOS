@@ -42,7 +42,10 @@ echo "    unit:   $LAB_UNIT"
 echo "    domain: $LAB_DOMAIN"
 echo "    disk:   $([ "$PURGE" = yes ] && echo 'DELETED (--purge)' || echo 'kept — the key survives')"
 
-if have systemctl && systemctl list-unit-files | grep -q "^${LAB_UNIT}.service"; then
+# Same SIGPIPE trap as bash/update had: this would have reported "no
+# unit installed" and skipped the stop and disable, leaving the lab
+# relay running after being told to remove it.
+if unit_known "$LAB_UNIT"; then
   say "stop and disable $LAB_UNIT"
   systemctl stop "$LAB_UNIT" || true
   systemctl disable "$LAB_UNIT" || true

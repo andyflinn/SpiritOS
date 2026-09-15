@@ -60,6 +60,43 @@ on_relay_host() {
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# ── NEVER `cmd | grep -q` IN A CONDITION, UNDER pipefail ─────────────
+#
+# `set -euo pipefail` is on for every script here, and it turns a
+# SUCCESSFUL match into a failed test:
+#
+#   grep -q exits the instant it matches
+#   the producer keeps writing into a closed pipe and takes SIGPIPE (141)
+#   pipefail promotes that to the PIPELINE's status
+#   the `if` sees 141 and goes to the else branch
+#
+# Proved on spirit-3, 2026-09-16:
+#
+#   systemctl list-unit-files | grep -q "^spirit-relay.service"  -> MATCHED
+#   ( set -o pipefail; same )                                    -> exit=141
+#
+# What it cost: `bash/update` has NEVER restarted the relay. It reported
+# "unit spirit-relay not installed" on a box where the unit is installed,
+# enabled and active — so the code updated and the process kept running
+# the old copy until somebody restarted it by hand. Silent for as long as
+# pipefail has been in this file, on every box.
+#
+# `contains` does the same job with no pipe: the producer finishes into a
+# variable, and grep reads a here-string. Nothing can be signalled.
+#
+#   contains "$(ss -tln)" ':65420 '   instead of  ss -tln | grep -q ...
+#
+# And where the question is "does systemd know this unit", ask systemd
+# rather than filtering its list — `unit_known` below.
+contains() {
+  grep -q -- "$2" <<< "$1"
+}
+
+unit_known() {
+  have systemctl || return 1
+  systemctl cat "$1.service" >/dev/null 2>&1
+}
+
 say() { echo "==> $*"; }
 
 ok() { echo "    ok  $*"; }

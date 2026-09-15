@@ -52,7 +52,7 @@ fi
 
 echo
 say "labMaster must NOT be here (port 65420)"
-if have ss && ss -tln | grep -q ':65420 '; then
+if have ss && contains "$(ss -tln)" ':65420 '; then
   warn "PORT 65420 IS LISTENING — that is labMaster. Stop it. This box is a mailbox."
 else
   ok "65420 is quiet"
