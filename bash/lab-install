@@ -81,6 +81,44 @@ say "caddy site for $LAB_DOMAIN"
   exit 1
 }
 
+# ── AN UNCLAIMED PUBLIC RELAY IS FIRST-CLAIM-IS-OWNER ────────────────
+#
+# This script used to stop at "it is serving" and that was a hole, found
+# by Andy asking the obvious question: did anybody claim it?
+#
+# A relay with no owner is in `open` mode, and decision 0003 says the
+# first claim wins. So a box that is up, public and unclaimed belongs to
+# whoever POSTs /api/relay/claim first — and the hostname is not secret:
+# Caddy's certificate publishes it to Certificate Transparency logs the
+# moment it is issued, which is a routine thing to scan.
+#
+# There is no transfer verb. An owner seat taken by the wrong key is
+# undone only by wiping relay-state, which destroys the relay's own key
+# and every pin any node has made against it.
+#
+# So this checks, and says so loudly. It does not claim FOR you: which
+# identity should own a relay is a decision (it must not be the owner of
+# the relay you intend to partner it with — setPartner refuses its own
+# owner's row), and a script guessing that is how the wrong key ends up
+# in allow.json permanently.
+say "check the owner seat"
+CENSUS=$(curl -fsS --max-time 10 "https://$LAB_DOMAIN/api/relay/who" 2>/dev/null || true)
+if [ -z "$CENSUS" ]; then
+  warn "could not read https://$LAB_DOMAIN/api/relay/who — cannot tell whether it is claimed"
+  echo "    if the certificate is still being issued this is normal; check again in a minute."
+elif echo "$CENSUS" | grep -q '"owner":true'; then
+  ok "claimed — it has an owner"
+else
+  warn "THIS RELAY HAS NO OWNER. It is open, public, and the first claim wins it."
+  echo
+  echo "    Claim it now, from the node that should own it:"
+  echo "      POST https://$LAB_DOMAIN/api/relay/claim"
+  echo "      { name, publicKey, sig: sign(claimMessage(name)) }"
+  echo
+  echo "    NOT the owner of the relay you mean to partner it with — a relay"
+  echo "    cannot partner its own owner's row."
+fi
+
 ok "lab relay is up"
 echo "    check:  curl -fsS https://$LAB_DOMAIN/api/relay/who"
 echo "    manage: cd $LAB_DIR && source .env && ./bash/status"
