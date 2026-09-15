@@ -360,6 +360,60 @@ function createRelay(rootDir) {
     return (id && id.publicKey) || null;
   }
 
+  // ── AND WHAT THIS RELAY CALLS ITSELF ────────────────────────────────
+  //
+  //   Andy: "the owner should be able to change the public label of his
+  //   relay... it lives in the json file on the relay that holds the
+  //   relay's key: key and label are a pair, in keyed mode."
+  //
+  // WHICH IS WHY IT IS HERE AND NOT IN routingTable.json. That file is
+  // `peers` and nothing else — decision 0006, a relay stores nothing on
+  // anyone's BEHALF, and spirit/test/labPersistence.js now asserts the
+  // shape. A relay's own name is not held on anyone's behalf; it is the
+  // other half of its own identity, and identity.json has carried a
+  // `name` field since the day keys existed. It was simply never
+  // published.
+  //
+  // So this adds no file and no persist shape. It publishes a pair that
+  // was already written down.
+  //
+  // EMPTY IS A REAL ANSWER and reads as "this relay has not been named".
+  // A box that ships without one must not invent a caption for itself —
+  // the list is the reader's to name until the owner says otherwise,
+  // which is what natterDetails' own relayLabel has always done locally.
+  function relayLabel() {
+    var id = auth.loadIdentity(rootDir);
+    var name = String((id && id.name) || '').trim();
+    // The relay's identity is minted with the name `relay` (labWorld,
+    // install). That is a type, not a caption, and publishing it would
+    // put the word on every unnamed box as though somebody chose it.
+    return name === 'relay' ? '' : name;
+  }
+
+  // Owner-only, and enforced by the caller: this is reached from
+  // answerSelf's `owner` branch, which has already verified the post
+  // against the row marked owner in allow.json.
+  //
+  // THE SAME RULE AS ANY OTHER PUBLIC LABEL (js/labelRule.js). A relay's
+  // caption goes in the same lists, next to the same peers, and an
+  // invisible character is the same impersonation here as anywhere.
+  function setRelayLabel(next, hash) {
+    var id = auth.loadIdentity(rootDir);
+    if (!id) return { ok: false, status: 409, error: 'this relay has no key yet' };
+
+    var wanted = normalizeName(next);
+    var bad = labelProblem(wanted);
+    if (bad) return { ok: false, status: 400, error: bad };
+
+    var was = relayLabel();
+    id.name = wanted;
+    try { auth.saveIdentity(rootDir, id); }
+    catch (e) { return { ok: false, status: 500, error: 'could not write identity.json' }; }
+
+    ownerEvent('relay-renamed', { was: was, label: wanted, cause: hash });
+    return { ok: true, status: 200, label: wanted };
+  }
+
   function snapshot() {
     return {
       owner: auth.ownerName(allow),
@@ -369,6 +423,9 @@ function createRelay(rootDir) {
       // hub forwarded it to the page as `reservedName` and nothing on the
       // other side looked. Gone with the reservation itself.
       relayPublicKey: relayPublicKey(),
+      // The other half of the pair (Andy: "key and label are a pair, in
+      // keyed mode").
+      relayLabel: relayLabel(),
       peers: who(),
       // `messages: messages.length` STOOD HERE and went with the ring.
       // A relay stores nothing on anyone's behalf (0006), so there is no
@@ -1430,6 +1487,23 @@ function createRelay(rootDir) {
     // identity on this relay and can sign nothing. So this is purely an
     // owner verb about the owner's own box, which is why it could be born
     // as a packet and never needs a door of its own (decision 0010).
+    // ── WHAT THIS BOX CALLS ITSELF ──────────────────────────────────
+    //
+    //   Andy: "the owner should be able to change the public label of
+    //   his relay."
+    //
+    // OWNER ONLY, and it is the one verb here whose subject is the relay
+    // rather than a row on it. `rename` above moves a PEER's own row and
+    // every member holds it; this moves the box's own caption and only
+    // the key in allow.json may.
+    //
+    // A packet, like everything else, and it needs no door for the
+    // reason 0010 gives: the relay is a peer with a key, so the browser
+    // addresses it the way it addresses anybody.
+    if (body && body.relayLabel && owner) {
+      out = setRelayLabel(String(body.relayLabel.label || ''), hash);
+    }
+
     if (body && body.revoke && owner) {
       var revokedLabel = String(body.revoke.label || '');
       var gone = invites.revokeInvite(rootDir, revokedLabel);
@@ -2051,6 +2125,12 @@ function createRelay(rootDir) {
     forgetPeer: forgetPeer,
     who: who,
     relayPublicKey: relayPublicKey,
+    // The other half of the pair. Read by server.js for the public
+    // census; set through the `relayLabel` verb in answerSelf.
+    relayLabel: relayLabel,
+    // Exported for the suite that drives it directly (ownerLog). The
+    // browser reaches it through the `relayLabel` verb, like any peer.
+    setRelayLabel: setRelayLabel,
     // `status` STOOD HERE and went with its route (R3). What an owner
     // learns about its relay arrives on the owner's stream —
     // statusToOwner, below — and is not something anybody asks for.

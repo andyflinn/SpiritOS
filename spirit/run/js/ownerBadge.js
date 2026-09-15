@@ -356,6 +356,11 @@ function censusFacts(answer, myKey) {
     }),
     myLabel: mine,
     relayKey: (parsed && parsed.relayPublicKey) || '',
+    // WHAT THE BOX CALLS ITSELF, as opposed to what this node's own
+    // relays.json calls it. Empty means nobody has named it — a relay
+    // must not invent a caption for itself, so the reader's own label
+    // stands until the owner says otherwise.
+    relayLabel: (parsed && parsed.relayLabel) || '',
   };
 }
 

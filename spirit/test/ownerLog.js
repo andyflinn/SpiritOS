@@ -119,6 +119,54 @@ const PHONE = '07700900123';
     test.fail('the token rode along: ' + JSON.stringify(minted));
   }
 
+  // ── AND WHAT THE BOX CALLS ITSELF ─────────────────────────────────
+  //
+  //   Andy: "the owner should be able to change the public label of his
+  //   relay... it lives in the json file on the relay that holds the
+  //   relay's key: key and label are a pair, in keyed mode."
+  //
+  // A MEMBERSHIP FACT, so it is an owner-event and it is kept. The box
+  // being renamed is not a row moving — `peer-renamed` is that — and the
+  // two are separate kinds for the same reason `relay-event` and
+  // `owner-event` are separate names: one string comparison must not
+  // decide what a thing IS.
+  const beforeName = ownerSink.owned().length;
+  const named = box.setRelayLabel('Andy’s box', 'HASH-CAUSE');
+  const renames = ownerSink.owned().slice(beforeName);
+
+  if (named && named.ok && box.relayLabel() === 'Andy’s box') {
+    test.check('the owner can name the box, and it answers with the name it took');
+  } else {
+    test.fail('setRelayLabel: ' + JSON.stringify(named) + ' / ' + box.relayLabel());
+  }
+
+  if (renames.length === 1 && renames[0].kind === 'relay-renamed' &&
+      renames[0].label === 'Andy’s box' && renames[0].cause === 'HASH-CAUSE') {
+    test.check('and it is reported as its own kind, carrying which post caused it');
+  } else {
+    test.fail('relay-renamed: ' + JSON.stringify(renames));
+  }
+
+  // THE SAME RULE AS ANY PUBLIC LABEL. A relay's caption sits in the
+  // same lists beside the same peers, so an invisible character is the
+  // same impersonation here as anywhere (js/labelRule.js).
+  const sneaky = box.setRelayLabel('and​y', 'H2');
+  if (!sneaky.ok && sneaky.status === 400 && box.relayLabel() === 'Andy’s box') {
+    test.check('while a label with an invisible character is refused, and changes nothing');
+  } else {
+    test.fail('invisible label accepted: ' + JSON.stringify(sneaky));
+  }
+
+  // UNNAMED IS A REAL STATE, and `relay` is a TYPE rather than a
+  // caption — publishing it would put that word on every box that has
+  // never been named, as though somebody chose it.
+  const fresh = world.build({ title: 'a box nobody named', peers: [] });
+  if (fresh.box.relayLabel() === '') {
+    test.check('and a box nobody has named publishes no caption, rather than calling itself "relay"');
+  } else {
+    test.fail('an unnamed box called itself: ' + JSON.stringify(fresh.box.relayLabel()));
+  }
+
   const bella = auth.generateIdentity('bella');
   const at = ownerSink.owned().length;
   const took = box.claim(

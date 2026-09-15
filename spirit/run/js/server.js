@@ -1073,6 +1073,11 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({
       peers: relay.who(),
       relayPublicKey: relay.relayPublicKey(),
+      // KEY AND LABEL ARE A PAIR (Andy), so the public census carries
+      // both. A member reads this to see what the box calls itself
+      // rather than only what their own relays.json calls it — the same
+      // distinction `publicLabel` draws for a peer.
+      relayLabel: relay.relayLabel(),
     }));
   }
 

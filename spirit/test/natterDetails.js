@@ -137,7 +137,7 @@ function copyTarget(out) {
 // because the group's membership is a decision — the device panel is
 // deliberately NOT in it, being about this node rather than this relay —
 // and a list that guessed would stop noticing when that line moves.
-const OWNER_PANELS = ['invite', 'invites', 'peers', 'policy'];
+const OWNER_PANELS = ['relaylabel', 'invite', 'invites', 'peers', 'policy'];
 
 // The group's own bar. It carries `.nd-group-fold` and deliberately NOT
 // `.nd-fold`, so the handler can tell a click on the group from a click

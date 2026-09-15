@@ -727,6 +727,68 @@ function ndAutoAddHtml() {
 // YOUR node rather than the relay — the asymmetry that makes an undo
 // tedious. The policy above is how you say "all of them", in advance and
 // one at a time as they arrive.
+// ── WHAT THIS BOX CALLS ITSELF ──────────────────────────────────────
+//
+//   Andy: "the owner should be able to change the public label of his
+//   relay... it lives in the json file on the relay that holds the
+//   relay's key: key and label are a pair, in keyed mode."
+//
+// NOT THE SAME AS THE ROW ABOVE IT. "Change what this relay calls me"
+// moves this node's own row and every member has it. This moves the
+// BOX's caption, and only the owner may.
+//
+// Nor is it the caption in your relays.json — that one is yours, local,
+// and nobody else ever sees it. This is what the relay publishes about
+// itself, so every member's screen can show it.
+function ndRelayLabelHtml() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  var census = ndBadge.census || {};
+  var now = census.relayLabel || '';
+  return ndPanel('relaylabel', ndIcon.INFO, 'Change what this relay is called',
+    '<div class="start-job-form card">' +
+    '<label class="field-label grow">Public label of this relay' +
+      '<input type="text" class="nd-relay-label"' +
+      ' value="' + ndEscapeHtml(now) + '"' +
+      ' placeholder="' + (now ? '' : 'this relay has not been named') + '"></label>' +
+    '<button type="button" class="cancel-btn nd-relay-label-go">Change</button>' +
+    '</div>' +
+    '<div class="job-manifest-note">Everybody on this relay sees this. The name in ' +
+      'your own list is yours alone and nobody else ever sees it.</div>' +
+    '<div class="job-manifest-note nd-relay-label-out"></div>',
+    'natter-relaylabel');
+}
+
+function ndSetRelayLabel(button) {
+  var panel = button.closest('.natter-relaylabel');
+  var out = panel.querySelector('.nd-relay-label-out');
+  var wanted = panel.querySelector('.nd-relay-label').value.trim();
+
+  function say(text, bad) {
+    out.className = 'job-manifest-note nd-relay-label-out ' + (bad ? 'is-error' : 'is-token');
+    out.textContent = text;
+  }
+
+  // Asked here first, so a space costs no round trip. Same rule object
+  // both sides (js/labelRule.js), so the two cannot disagree.
+  var badName = ndLabelProblem(wanted);
+  if (badName) { say(badName, true); return; }
+
+  var relayKey = ndRelayKey();
+  if (!relayKey) { ndNoKey(out, 'nd-relay-label-out'); return; }
+
+  say('asking…');
+  ndApi.peerPost('relay', relayKey, { relayLabel: { label: wanted } }).then(function (r) {
+    var said = r && r.reply;
+    if (r && r.ok && said && said.ok !== false) {
+      say('this relay is called ' + (said.label || wanted) + ' now');
+      ndChanged = true;
+      ndLoad();
+      return;
+    }
+    say((said && said.error) || (r && r.error) || 'refused', true);
+  });
+}
+
 // A DATE, NOT A DURATION. The invite panel next door says "in 6 days"
 // because an expiry is a countdown and what you want is how long you
 // have. An enrolment is a fact in the past and what you want is WHEN —
@@ -1107,9 +1169,7 @@ function ndRender() {
     // no relay of their own has one too — so it stays outside, among the
     // things you ARE rather than the things you RUN.
     ndOwnerGroupHtml(
-      // A "Change what this relay is called" panel belongs here and is
-      // not built: a relay publishes no label of its own yet, so there
-      // is nothing for it to change. See the note in relay.snapshot.
+      ndRelayLabelHtml() +
       ndMintHtml() +
       ndInvitesHtml() +
       ndPeersHtml() +
@@ -1569,6 +1629,9 @@ spirit.shell.activateApp({
 
       var revokeBtn = target.closest('.nd-inv-revoke');
       if (revokeBtn) { ndRevoke(revokeBtn); return; }
+
+      var relayLabelBtn = target.closest('.nd-relay-label-go');
+      if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }
 
       var addBtn = target.closest('.nd-peer-add');
       if (addBtn) { ndPeerAdd(addBtn); return; }

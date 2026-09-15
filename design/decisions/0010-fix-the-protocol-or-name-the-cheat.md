@@ -206,6 +206,7 @@ eighth stream event was.
 | `invite-revoked` | an invite was withdrawn, with how many rows it took | `invite`, `revoked`, `cause` |
 | `peer-renamed` | somebody changed what this relay calls them | `key`, `was`, `label`, `cause` |
 | `peer-removed` | a row is gone, and what went with it | `key`, `label`, `invitesRevoked` |
+| `relay-renamed` | the owner changed what the BOX calls itself — not a row on it | `was`, `label`, `cause` |
 
 **`invite` is a LABEL, never a token.** The word the owner wrote on the
 invite, normalised — `seen.invite = normalizeName(inviteLabel)`. A token
@@ -451,9 +452,17 @@ So *What travels on the stream* is now a section above, and
 again:**
 
 1. **The fields on a published response.** `/api/relay/who` answers
-   `publicLabel`, `publicKey`, `claimedAt`, `owner` and `relayPublicKey`,
-   and the register knows none of them. A rename there breaks every node
-   and this document would not notice.
+   `publicLabel`, `publicKey`, `claimedAt`, `owner`, `relayPublicKey` and
+   `relayLabel`, and the register knows none of them. A rename there
+   breaks every node and this document would not notice.
+
+   *2026-09-15: `relayLabel` was added to that list while this paragraph
+   stood here saying it would go unnoticed, and it did.* The owner-event
+   that accompanies it (`relay-renamed`) was caught immediately, by the
+   scan added the same morning — so the two halves of one change met two
+   different fates, which is the clearest argument this document has for
+   closing the remaining gap. **The cost of registering a response shape
+   is now known to be lower than the cost of the next rename.**
 2. **The packet envelope.** `{app, v, id, body, re}` — now load-bearing
    for the client layer (`spirit/test/clientLayer.js`), and in no
    register at all.
