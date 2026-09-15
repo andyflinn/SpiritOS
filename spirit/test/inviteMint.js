@@ -45,7 +45,7 @@ const { createRelay } = require('../run/js/relay');
 // A relay with an owner on it and nobody else, built from the scenario
 // every suite shares. It was four lines written out here, and the same
 // four written out in five other files — where two of them saved the
-// mailbox a key of its own and three forgot, so `mailboxPublicKey` was
+// mailbox a key of its own and three forgot, so `relayPublicKey` was
 // null in some suites and not others for no reason anybody had chosen.
 function ownedRelay() {
   const made = world.build(scenario.OWNER_ONLY);
@@ -61,7 +61,7 @@ function daysBetween(iso) {
 // there is no mint signature any more, and that is the point of the
 // helper being this short.
 function askMint(r, who, label, days, token) {
-  const relayKey = r.box.mailboxPublicKey();
+  const relayKey = r.box.relayPublicKey();
   const text = JSON.stringify({
     app: 'relay',
     v: 1,
@@ -134,7 +134,7 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   const forEve = JSON.stringify({
     app: 'relay', v: 1, body: { invite: { label: 'eve', days: 7, token: '' } },
   });
-  const relayKey = r.box.mailboxPublicKey();
+  const relayKey = r.box.relayPublicKey();
   const saintSig = auth.sign(r.owner.privateKey,
     auth.postMessage(r.owner.publicKey, relayKey, forSaint));
 
@@ -256,11 +256,19 @@ test.subHeading('Who may mint');
   // signature before it knows what the packet contains, which is where
   // that check now lives (routerPost.js).
 
-  const reserved = r.box.mint('andy', 'relay', 7);
-  if (!reserved.ok && reserved.status === 400) {
-    test.check('the reserved name cannot be invited');
+  // `the reserved name cannot be invited` STOOD HERE, asserting a 400 on
+  // `mint('andy', 'relay', 7)`. The reservation went on 2026-09-15 —
+  // a relay is addressed by key, so a caption never protected anything
+  // a packet could reach (relayAuth.js).
+  //
+  // Inverted rather than deleted, because the claim worth keeping is the
+  // new one: `relay` is a label like any other, and an owner may write
+  // it on an invite the same way they may write `saint`.
+  const ordinary = r.box.mint('andy', 'relay', 7);
+  if (ordinary.ok && ordinary.status === 201 && ordinary.invite.label === 'relay') {
+    test.check('"relay" is an ordinary label an owner may invite');
   } else {
-    test.fail('reserved: ' + JSON.stringify(reserved));
+    test.fail('mint of "relay": ' + JSON.stringify(ordinary));
   }
 }
 
@@ -359,7 +367,7 @@ test.subHeading('Taking an invitation back');
 // — so a label is the only handle the owner is given, too.
 
 function askRevoke(r, who, label) {
-  const relayKey = r.box.mailboxPublicKey();
+  const relayKey = r.box.relayPublicKey();
   const text = JSON.stringify({
     app: 'relay', v: 1, body: { revoke: { label: label } },
   });

@@ -39,7 +39,7 @@ const T0 = Date.parse('2026-09-13T12:00:00.000Z');
   const r = relayStatus.report({
     now: T0,
     snapshot: {
-      owner: 'andy', mode: 'keys', mailboxPublicKey: 'MBOXKEY',
+      owner: 'andy', mode: 'keys', relayPublicKey: 'MBOXKEY',
       peers: [{ publicKey: 'a' }, { publicKey: 'b' }, { publicKey: 'c' }],
       messages: 7,
     },

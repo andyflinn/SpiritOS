@@ -150,7 +150,7 @@ function createAnswerer(opts) {
         // The census is public and already carries it — no new endpoint,
         // and nothing here the relay did not already publish to anyone
         // who asked.
-        var key = answer && answer.mailboxPublicKey;
+        var key = answer && answer.relayPublicKey;
         if (typeof key !== 'string' || !key) return '';
 
         var verdict = relayKeys.check(rootDir, url, key);

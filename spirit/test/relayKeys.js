@@ -4,7 +4,7 @@
 // Trust-on-first-use for a relay's identity, made durable.
 //
 // The gap this closes, found while answering Grok's review of DEVICE.md:
-// `answerRelay.js` pinned a relay's `mailboxPublicKey` in RAM for the
+// `answerRelay.js` pinned a relay's `relayPublicKey` in RAM for the
 // life of one process, and `relays.json` recorded no key at all. So a
 // relay swapped underneath a node between restarts was accepted in
 // silence.

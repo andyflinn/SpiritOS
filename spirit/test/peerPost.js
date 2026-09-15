@@ -331,7 +331,7 @@ async function run() {
 
   test.subHeading('What the far side did with it');
 
-  const landed = john.P.inbox();
+  const landed = john.P.arrived();
   if (landed.length === 1 && landed[0].from === bert.id.publicKey) {
     test.check('the target filed it, from a key rather than a label');
   } else {

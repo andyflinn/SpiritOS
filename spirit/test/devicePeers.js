@@ -380,7 +380,7 @@ async function run() {
       //
       // Asked of the relay's own KEY now, which is the only way there is
       // to address a relay since the reserved name stopped resolving.
-      const atRelay = postAs(oPhone, other.box.mailboxPublicKey(), PROBE);
+      const atRelay = postAs(oPhone, other.box.relayPublicKey(), PROBE);
       if (!atRelay.ok) {
         test.check('and not the relay itself — the last exception to its confinement is gone');
       } else {
@@ -403,7 +403,7 @@ async function run() {
     // the row's key at all. Confinement that is structural rather than
     // gated.
     const WATCH = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true } } });
-    const boxKey = D.box.mailboxPublicKey();
+    const boxKey = D.box.relayPublicKey();
     const asDevice = D.box.routePost(
       D.owner.publicKey, boxKey, WATCH,
       auth.sign(handheld.privateKey,
@@ -457,7 +457,7 @@ async function run() {
     // against the ROW key alone and never consults keysForName, so a
     // handheld signing as `andy` cannot make the bytes. The router path
     // never admitted a device key in the first place.
-    const relayKey = D.box.mailboxPublicKey();
+    const relayKey = D.box.relayPublicKey();
     const wanted = JSON.stringify({
       app: 'relay', v: 1, body: { invite: { label: 'stranger', days: 7, token: '' } },
     });

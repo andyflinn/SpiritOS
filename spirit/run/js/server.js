@@ -26,7 +26,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
     '  --port <number>   Listen on this port instead of the default (' + spirit.core.node.const.DEFAULT_SPIRIT_PORT + ').\n' +
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
     '  --relay           Run as a public relay: serve relay.html at / and /index.html, answer\n' +
-    '                    only the mailbox routes (/api/relay/*) and 404 everything else —\n' +
+    '                    only the relay routes (/api/relay/*) and 404 everything else —\n' +
     '                    Jobs, /api/fs/*, /api/proxy, /api/hub/* and the desktop shell.\n' +
     '                    Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is\n' +
     '                    meant to be reached from the internet. Do NOT pass this to a personal\n' +
@@ -973,7 +973,7 @@ const server = http.createServer((req, res) => {
     // Null on a mailbox that has not been restarted since it grew one.
     res.end(JSON.stringify({
       peers: relay.who(),
-      mailboxPublicKey: relay.mailboxPublicKey(),
+      relayPublicKey: relay.relayPublicKey(),
     }));
   }
 

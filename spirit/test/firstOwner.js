@@ -37,11 +37,26 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('allow after first claim: ' + JSON.stringify(allow));
   }
 
-  const reserved = box.claim('relay', sig, id.publicKey);
-  if (!reserved.ok && reserved.status === 400) {
-    test.check('name "relay" is reserved');
+  // ── `relay` IS AN ORDINARY LABEL NOW (2026-09-15) ────────────────
+  //
+  //   Andy: "relay is just a public-key-type. node is another one, none
+  //   other exist yet, but will."
+  //
+  // This asserted `status === 400, name reserved`. The reservation is
+  // gone: it never guarded routing — postedToSelf compares against the
+  // relay's own KEY — so it only guarded what a list could display, and
+  // it could not even do that, since the match was exact and `Relay`
+  // was always claimable.
+  //
+  // What is asserted instead is the point of the removal: the label is
+  // refused for an ORDINARY reason. `sig` here signs `claim\nandy`, so
+  // a claim for a different label fails the signature check like any
+  // other mismatch would. Nothing about the word `relay` is special.
+  const notSpecial = box.claim('relay', sig, id.publicKey);
+  if (!notSpecial.ok && notSpecial.error !== 'name reserved') {
+    test.check('"relay" is refused as an ordinary label, not as a reserved word');
   } else {
-    test.fail('reserved claim: ' + JSON.stringify(reserved));
+    test.fail('claim of "relay": ' + JSON.stringify(notSpecial));
   }
 
   // A second signed key is still how peer-by-key works, but since cycle 4

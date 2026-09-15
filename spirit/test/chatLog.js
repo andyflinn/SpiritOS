@@ -40,7 +40,7 @@ function record(store, messages, dir, mailboxKey) {
   const fsApi = fakeScopedFs(store);
   const byPeer = {};
   messages.forEach(function (m) {
-    const peerKey = chatLog.peerKeyFor(m, dir, mailboxKey);
+    const peerKey = chatLog.peerKeyFor(m, dir);
     if (!peerKey) return;
     (byPeer[peerKey] = byPeer[peerKey] || []).push(chatLog.entryFor(m, dir));
   });
@@ -108,11 +108,22 @@ test.subHeading('The mailbox is a peer, and it is not the owner');
     test.fail('mailbox and owner share a key or a file');
   }
 
-  // The whole exchange with the mailbox: asked, and answered. Both ends
-  // file under the MAILBOX's key, whichever direction the line went.
+  // The whole exchange with the relay: asked, and answered. Both ends
+  // file under the RELAY's key, whichever direction the line went.
+  //
+  // THE KEY IS ON THE LINE NOW, on the relay's end of each. It used to
+  // be absent, and peerKeyFor filled it in by matching the caption
+  // `relay` — a type test written as a string match, which worked only
+  // while that word was reserved. The reservation went on 2026-09-15
+  // (relayAuth.js) and the fallback went with it: a line with no key on
+  // the relevant end is a line this log cannot file, and inventing one
+  // from a caption is how it came to file them wrongly.
+  //
+  // Nothing is lost, because nothing was ever really missing — the relay
+  // signs what it sends, so its key is on the line.
   const store = {};
-  record(store, [msg(1, 'andy', 'relay', 'status?', { fromKey: ME })], 'sent', MAILBOX);
-  record(store, [msg(2, 'relay', 'andy', 'relay status mode=keys owner=andy', { toKey: ME })], 'received', MAILBOX);
+  record(store, [msg(1, 'andy', 'relay', 'status?', { fromKey: ME, toKey: MAILBOX })], 'sent', MAILBOX);
+  record(store, [msg(2, 'relay', 'andy', 'relay status mode=keys owner=andy', { toKey: ME, fromKey: MAILBOX })], 'received', MAILBOX);
 
   const files = Object.keys(store);
   if (files.length === 1 && files[0] === chatLog.fileFor(MAILBOX)) {

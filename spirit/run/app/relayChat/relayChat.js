@@ -448,7 +448,7 @@ spirit.shell.activateApp({
       (messages || []).forEach(function (raw) {
         var m = asChatMessage(raw);
         if (!m) return; // another app's packet is not a line in this thread
-        var peerKey = chatLog.peerKeyFor(m, dir, mailboxKey);
+        var peerKey = chatLog.peerKeyFor(m, dir);
         if (!peerKey) return;
         (byPeer[peerKey] = byPeer[peerKey] || []).push(chatLog.entryFor(m, dir));
       });
@@ -631,7 +631,7 @@ spirit.shell.activateApp({
         .then(function (r) { return r.json(); })
         .then(function (data) {
           people = (data && data.people) || [];
-          mailboxKey = (data && data.mailboxPublicKey) || '';
+          mailboxKey = (data && data.relayPublicKey) || '';
           paintMyTail(data && data.selfTail);
 
           captions = {};

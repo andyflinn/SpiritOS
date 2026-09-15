@@ -286,7 +286,7 @@ function createWorld(opts) {
     let relayKey = '';
     try {
       const census = await (await fetch(relayUrl + '/api/relay/who')).json();
-      relayKey = (census && census.mailboxPublicKey) || '';
+      relayKey = (census && census.relayPublicKey) || '';
     } catch (e) { relayKey = ''; }
     if (!relayKey) return { ok: false, error: 'the lab relay published no key' };
 

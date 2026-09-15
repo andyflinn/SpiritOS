@@ -172,11 +172,11 @@ function run() {
 
   test.subHeading('The mailbox has a key of its own');
 
-  // relay.js, mailboxPublicKey(): "the owner is a peer who claimed, the
+  // relay.js, relayPublicKey(): "the owner is a peer who claimed, the
   // mailbox is the box." The builder used to save the OWNER's identity
   // into the relay's home, so the two were the same key and any check
   // that told them apart passed without telling anything apart.
-  const mine = L.box.snapshot().mailboxPublicKey;
+  const mine = L.box.snapshot().relayPublicKey;
   if (mine && mine !== L.owner.publicKey && mine === L.relayKey().publicKey) {
     test.check('the relay\'s own key is not its owner\'s — the two are different parties');
   } else {

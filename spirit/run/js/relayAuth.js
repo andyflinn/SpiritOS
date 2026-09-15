@@ -18,7 +18,32 @@ const crypto = require('crypto');
 // in a mailbox's allow list, and there is one answer to that question.
 const deviceAuth = require('./deviceAuth');
 
-const RESERVED_NAME = 'relay';
+// ── RESERVED_NAME = 'relay' STOOD HERE ───────────────────────────────
+//
+//   Andy: "relay is just a public-key-type. node is another one, none
+//   other exist yet, but will."
+//
+// It was a TYPE wearing a caption's clothes, and it said so itself. The
+// note above `relayPublicKey` justified it with "a node that keeps one
+// file per peer cannot file the relay anywhere without one
+// (CYCLE-CHAT-5.1)" — true when it was written, and obsolete since
+// relayKeys.js, which files a relay by key and pins it across restarts.
+//
+// It never guarded routing. `postedToSelf` compares against the relay's
+// own key and always has, so reserving a word protected nothing a packet
+// could reach — only what a list could DISPLAY. And it could not do even
+// that: the comparison is exact, so `Relay` was always claimable, and
+// Unicode labels make `relaу` with a Cyrillic у free. A display name
+// cannot be defended by blacklisting one string.
+//
+// What replaces it is what the node already had: two books, both keyed.
+// relayKeys.js holds the relays, whoBook.js holds the peers, and which
+// book a key is in IS its type. Nothing needs to travel, because the
+// node is the one who needs to know and it wrote it down itself.
+//
+// Deleted 2026-09-15 with `who().reserved`, the three refusals in claim,
+// invite and renameSelf, and hub's `reservedName` — which was forwarded
+// to the browser and read by nothing.
 
 function claimMessage(name) {
   return 'claim\n' + name;
@@ -315,9 +340,6 @@ function ensureIdentity(rootDir, name) {
 
 function checkClaim(allow, name, sig) {
   if (!name) return { ok: false, status: 400, error: 'name required' };
-  if (name === RESERVED_NAME) {
-    return { ok: false, status: 400, error: 'name reserved' };
-  }
   // Open is a real state and stays: it is what a relay looks like before
   // its first claim, which is the moment decision 0003 turns on. A names
   // branch stood beneath this and went with the mode (2026-09-15).
@@ -390,7 +412,6 @@ function ownerName(allow) {
 }
 
 module.exports = {
-  RESERVED_NAME,
   claimMessage,
   streamMessage,
   streamSignatureOk,

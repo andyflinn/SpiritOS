@@ -75,7 +75,7 @@ function report(opts) {
     at: new Date(nowMs).toISOString(),
     owner: snap.owner || '',
     mode: snap.mode || '',
-    key: snap.mailboxPublicKey || '',
+    key: snap.relayPublicKey || '',
     version: o.version || '',
 
     peers: peers.length,

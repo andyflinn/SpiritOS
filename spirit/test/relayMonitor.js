@@ -112,7 +112,7 @@ function askMonitor(w, who, on, filter) {
   const packet = JSON.stringify({
     app: 'relay', v: 1, body: { monitor: { on: !!on, filter: filter || null } },
   });
-  const relayKey = w.box.mailboxPublicKey();
+  const relayKey = w.box.relayPublicKey();
   return w.box.routePost((who || w.owner).publicKey, relayKey, packet,
     auth.sign((who || w.owner).privateKey,
       auth.postMessage((who || w.owner).publicKey, relayKey, packet)));
@@ -235,7 +235,7 @@ test.subHeading('Stopping, both ways');
   // buying a property the transport already had.
   const onText = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true, filter: null } } });
   const offText = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: false, filter: null } } });
-  const relayKey = w.box.mailboxPublicKey();
+  const relayKey = w.box.relayPublicKey();
   const capturedOff = auth.sign(w.owner.privateKey,
     auth.postMessage(w.owner.publicKey, relayKey, offText));
 
@@ -382,7 +382,7 @@ test.subHeading('The relay as a peer, for its owner');
 
 (function theOwnerCanPostToIt() {
   const w = world();
-  const relayKey = w.box.mailboxPublicKey();
+  const relayKey = w.box.relayPublicKey();
   const packet = JSON.stringify({
     app: 'relay', v: 1, body: { monitor: { on: true, filter: { kinds: ['refused'] } } },
   });
@@ -421,7 +421,7 @@ test.subHeading('The relay as a peer, for its owner');
 
 (function andNobodyElseCan() {
   const w = world();
-  const relayKey = w.box.mailboxPublicKey();
+  const relayKey = w.box.relayPublicKey();
   const packet = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true } } });
 
   const theirs = w.box.routePost(w.bella.publicKey, relayKey, packet,

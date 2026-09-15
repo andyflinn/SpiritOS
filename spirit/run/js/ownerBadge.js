@@ -390,7 +390,7 @@ function chooseUrl(urls, wanted) {
   if (urls.length === 0) {
     return { ok: false, status: 503, error: 'no relay url in app/natter/relays.json' };
   }
-  return { ok: false, status: 400, error: 'pick a mailbox url' };
+  return { ok: false, status: 400, error: 'pick a relay url' };
 }
 
 // The node side gets everything. The browser gets the rules it has to

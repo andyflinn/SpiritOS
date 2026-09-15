@@ -90,7 +90,9 @@ function createPeerPost(opts) {
   // hash -> { resolve, timer, relayUrl, at }
   var waiting = Object.create(null);
   // What arrived for us, in order, with an id an app can ask for again.
-  var mailbox = [];
+  // Called "mailbox" until 2026-09-15, after the ring R8 deleted. Andy:
+  // "what is mailbox doing in this?!?"
+  var arrived = [];
   var nextItem = 1;
   var onArrival = opts.onArrival || null;
   // Injected rather than required, so a suite can watch it without a
@@ -374,7 +376,7 @@ function createPeerPost(opts) {
     // handed. The receipt still goes out, below — the bytes did arrive,
     // and a sender who is being ignored is not owed the distinction
     // between "ignored" and "unreachable".
-    if (verdict !== 'drop') mailbox.push(item);
+    if (verdict !== 'drop') arrived.push(item);
 
     // SOMEBODY ELSE'S PACKET, ARRIVING. Logged after it is filed and
     // before the receipt goes out, for the same reason the receipt waits:
@@ -548,7 +550,7 @@ function createPeerPost(opts) {
     onRequest: onRequest,
     onReply: onReply,
     // What arrived while nobody was home, and what is still outstanding.
-    inbox: function () { return mailbox.slice(); },
+    arrived: function () { return arrived.slice(); },
     outstanding: function () { return Object.keys(waiting); },
   };
 }

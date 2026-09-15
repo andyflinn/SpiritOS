@@ -38,7 +38,7 @@ const scenario = require('./scenario');
 // A relay with an owner on it and nobody else, built from the scenario
 // every suite shares. It was four lines written out here, and the same
 // four written out in five other files — where two of them saved the
-// mailbox a key of its own and three forgot, so `mailboxPublicKey` was
+// mailbox a key of its own and three forgot, so `relayPublicKey` was
 // null in some suites and not others for no reason anybody had chosen.
 function ownedRelay() {
   const made = world.build(scenario.OWNER_ONLY);
@@ -67,7 +67,7 @@ test.subHeading('The token is part of the request');
 
 {
   const r = ownedRelay();
-  const relayKey = r.box.mailboxPublicKey();
+  const relayKey = r.box.relayPublicKey();
 
   // THE REPLAY THIS CYCLE EXISTS TO REFUSE, and the only check left that
   // is about signing: an owner-signed mint for "saint, 7 days, relay
@@ -213,7 +213,7 @@ test.subHeading('What a token may be');
   // AND A BAD TOKEN IS REFUSED THROUGH THE PACKET TOO, which is the path
   // a person's typing actually takes. The rule lives in mint(); this says
   // nothing on the way in quietly widens it.
-  const relayKey = r.box.mailboxPublicKey();
+  const relayKey = r.box.relayPublicKey();
   const nasty = invitePacket('saint', 7, '../etc/passwd');
   r.box.routePost(r.owner.publicKey, relayKey, nasty,
     auth.sign(r.owner.privateKey, auth.postMessage(r.owner.publicKey, relayKey, nasty)));

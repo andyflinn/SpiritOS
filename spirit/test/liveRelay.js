@@ -124,10 +124,10 @@ async function run() {
 
   // THE RELAY'S OWN KEY, which is not its owner's. Everything below
   // needs it, and a node needs it to tell this relay apart from a peer.
-  if (census.mailboxPublicKey && census.mailboxPublicKey !== (owner && owner.publicKey)) {
+  if (census.relayPublicKey && census.relayPublicKey !== (owner && owner.publicKey)) {
     test.check("and publishes a key of its own, which is not its owner's");
   } else {
-    test.fail('mailboxPublicKey: ' + String(census.mailboxPublicKey).slice(-12));
+    test.fail('relayPublicKey: ' + String(census.relayPublicKey).slice(-12));
   }
 
   test.subHeading('A held stream, through whatever is in front of it');
@@ -304,8 +304,8 @@ async function run() {
     auth.saveIdentity(meeting, auth.generateIdentity('pin-probe'));
 
     const census = parsed(await get(RELAY + '/api/relay/who'));
-    const realKey = census && census.mailboxPublicKey;
-    if (!realKey) { test.fail('no mailboxPublicKey from the census'); return; }
+    const realKey = census && census.relayPublicKey;
+    if (!realKey) { test.fail('no relayPublicKey from the census'); return; }
 
     // First contact: nothing on record, so it is accepted and written down.
     if (relayKeys.check(meeting, RELAY, realKey) === 'new') {

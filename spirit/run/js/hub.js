@@ -1236,13 +1236,12 @@ function createHub(rootDir) {
           // Null from a mailbox that has not been restarted since it grew
           // a key of its own. The app treats that as "no log for this
           // row" rather than inventing a name for it.
-          var mailboxKey = (parsed && parsed.mailboxPublicKey) || null;
+          var relayKey = (parsed && parsed.relayPublicKey) || null;
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          // The reserved name travels with the people, because it is a
-          // destination the app must offer and never a peer it could
-          // discover: `relay` cannot be claimed, so it is in no `who`.
-          // Naming it here keeps the constant on the node beside the
-          // relay that honours it (relayAuth.RESERVED_NAME).
+          // `reservedName: auth.RESERVED_NAME` TRAVELLED HERE, described
+          // as "a destination the app must offer". Nothing on the page
+          // ever read it, and the reservation itself is gone (2026-09-15,
+          // relayAuth.js): the relay is addressed by key and always was.
           // This node's own key travels with the list, because being
           // added is the other half of adding: the person confirming a
           // tail has to hear it from somebody, and until now the only
@@ -1250,8 +1249,7 @@ function createHub(rootDir) {
           var self = auth.loadIdentity(rootDir);
           res.end(JSON.stringify({
             relay: url,
-            reservedName: auth.RESERVED_NAME,
-            mailboxPublicKey: mailboxKey,
+            relayPublicKey: relayKey,
             selfPublicKey: (self && self.publicKey) || null,
             selfTail: self && self.publicKey ? keyTail(self.publicKey) : null,
             people: buildPeople(rootDir, peers, url),

@@ -314,19 +314,32 @@ function createRelay(rootDir) {
     });
   }
 
-  // The mailbox's OWN key, not the owner's. `relay` is a caption — a
-  // reserved word nobody may claim — and a caption is not an identity: a
-  // node that keeps one file per peer cannot file the relay anywhere
-  // without one (CYCLE-CHAT-5.1). Until 2026-09-13 a line could be
-  // ADDRESSED to that caption, because the console was at the other end;
-  // it no longer can, and the key is what the relay signs with. The
-  // keypair is made
-  // once, on the first --relay boot (server.js), and lives in this
-  // process's own relay-state like any other identity.
+  // THIS RELAY'S OWN KEY, not the owner's. The keypair is made once, on
+  // the first --relay boot (server.js), and lives in this process's own
+  // relay-state like any other identity.
   //
-  // Public, deliberately: it names the mailbox the way a peer's key
-  // names a peer, and it is the half that may be handed out.
-  function mailboxPublicKey() {
+  // Public, deliberately: it names the relay the way a peer's key names
+  // a peer, and it is the half that may be handed out.
+  //
+  // ── IT WAS CALLED mailboxPublicKey UNTIL 2026-09-15 ────────────────
+  //
+  //   Andy: "what is mailbox doing in this?!?"
+  //
+  // Fair. The ring went in R8 and the word was retired in DICTIONARY.md,
+  // but it survived here — in a field name, on the wire, read by
+  // answerRelay to pin a relay's identity on first use.
+  //
+  // The old note here justified RESERVED_NAME: "a node that keeps one
+  // file per peer cannot file the relay anywhere without one". That was
+  // true when it was written and stopped being true when relayKeys.js
+  // arrived to file relays by key. Both are gone now; see relayAuth.js.
+  //
+  // A STALE NODE BREAKS ON THIS, and aimed: it pins `undefined`,
+  // answerRelay refuses the relay, and that node's calls fail while
+  // everything not keyed on this field keeps working. Note that
+  // protocolSurface.js CANNOT see this change — the register counts
+  // doors, not the shape of what comes back through them.
+  function relayPublicKey() {
     var id = auth.loadIdentity(rootDir);
     return (id && id.publicKey) || null;
   }
@@ -335,11 +348,11 @@ function createRelay(rootDir) {
     return {
       owner: auth.ownerName(allow),
       mode: allow.mode,
-      // The name nobody may claim. Still reported, because a browser
-      // building a claim form needs to know which name will be refused —
-      // it is a namespace fact and was never about the console.
-      reserved: auth.RESERVED_NAME,
-      mailboxPublicKey: mailboxPublicKey(),
+      // `reserved: auth.RESERVED_NAME` STOOD HERE, justified as a fact a
+      // browser building a claim form needed. No browser ever read it —
+      // hub forwarded it to the page as `reservedName` and nothing on the
+      // other side looked. Gone with the reservation itself.
+      relayPublicKey: relayPublicKey(),
       peers: who(),
       // `messages: messages.length` STOOD HERE and went with the ring.
       // A relay stores nothing on anyone's behalf (0006), so there is no
@@ -434,9 +447,9 @@ function createRelay(rootDir) {
     seen.label = n;
     seen.invite = onInvite;
     if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
-    if (n === auth.RESERVED_NAME) {
-      return { ok: false, status: 400, error: 'name reserved' };
-    }
+    // A `name reserved` refusal stood here, for the caption `relay`. It
+    // went with RESERVED_NAME — see relayAuth.js. A label is a caption,
+    // the relay is a key, and nothing a claimer can type reaches it.
     if (!rateOk(claimHits, clientKey, CLAIM_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many claims' };
     }
@@ -679,9 +692,6 @@ function createRelay(rootDir) {
       return { ok: false, status: 403, error: 'no owner key on this relay' };
     }
     if (!nameOk(lbl)) return { ok: false, status: 400, error: 'bad label' };
-    if (lbl === auth.RESERVED_NAME) {
-      return { ok: false, status: 400, error: 'name reserved' };
-    }
     if (tok && !nameOk(tok)) return { ok: false, status: 400, error: 'bad token' };
     // NOT A GATE — the caller's identity was settled before this ran.
     // This asks whether the name is on this relay at all, because it is
@@ -1078,9 +1088,6 @@ function createRelay(rootDir) {
     }
     var next = normalizeName(wanted);
     if (!nameOk(next)) return { ok: false, status: 400, error: 'bad name' };
-    if (next === auth.RESERVED_NAME) {
-      return { ok: false, status: 400, error: 'name reserved' };
-    }
 
     var row = findByKey(who.publicKey);
     if (!row) return { ok: false, status: 404, error: 'no such peer' };
@@ -1264,7 +1271,7 @@ function createRelay(rootDir) {
   // opening it is what let set-device and self-removal stop being cheats.
   // See decision 0010.
   function postedToSelf(toToken) {
-    var mine = mailboxPublicKey();
+    var mine = relayPublicKey();
     return !!mine && String(toToken || '') === mine;
   }
 
@@ -1822,11 +1829,19 @@ function createRelay(rootDir) {
 
     var ownerLabel = auth.ownerName(allow);
     var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
-    var mine = mailboxPublicKey();
+    var mine = relayPublicKey();
     if (mine && ownerKey && forKey === ownerKey) {
       // Always present: a relay answering the question is a relay that is
       // up, and a stream cannot be open to it otherwise.
-      members.push({ key: mine, label: auth.RESERVED_NAME, present: true });
+      //
+      // MARKED BY KEY, NOT NAMED. This carried `label: 'relay'` — the
+      // reserved caption — which meant a list told a relay from a peer by
+      // reading a string any peer could have worn. `relay: true` is a
+      // flag on the row beside its key, the same shape as `owner` on a
+      // census row, and the caption is left empty because a relay does
+      // not have one. presenceNode reads `key` and `present` and has
+      // never looked at the label.
+      members.push({ key: mine, label: '', relay: true, present: true });
     }
     return { members: members };
   }
@@ -1899,7 +1914,7 @@ function createRelay(rootDir) {
     claim: claim,
     forgetPeer: forgetPeer,
     who: who,
-    mailboxPublicKey: mailboxPublicKey,
+    relayPublicKey: relayPublicKey,
     // `status` STOOD HERE and went with its route (R3). What an owner
     // learns about its relay arrives on the owner's stream —
     // statusToOwner, below — and is not something anybody asks for.

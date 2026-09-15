@@ -424,7 +424,7 @@ function relayServer(box) {
       const url = new URL(req.url, 'http://127.0.0.1');
       if (req.method === 'GET' && url.pathname === '/api/relay/who') {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ peers: box.who(), mailboxPublicKey: box.mailboxPublicKey() }));
+        res.end(JSON.stringify({ peers: box.who(), relayPublicKey: box.relayPublicKey() }));
         return;
       }
       res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -519,7 +519,7 @@ function runOverLoopback() {
     } else {
       test.fail('selfTail was ' + JSON.stringify(data.selfTail));
     }
-    if (data.selfTail !== data.mailboxPublicKey) {
+    if (data.selfTail !== data.relayPublicKey) {
       test.check('and that is your key, not the relay you are on');
     } else {
       test.fail('self and relay are the same key');

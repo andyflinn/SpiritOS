@@ -59,7 +59,7 @@ function assemble(s) {
     homes[name] = home;
     // THE MAILBOX'S OWN KEY, which is not the owner's. server.js makes it
     // with ensureIdentity(ROOT_DIR, 'relay') on the first --relay boot,
-    // and relay.js says so at mailboxPublicKey(): "the owner is a peer
+    // and relay.js says so at relayPublicKey(): "the owner is a peer
     // who claimed, the mailbox is the box."
     //
     // This file used to save the OWNER there instead, so every world it
@@ -292,7 +292,7 @@ function ask(box, id, body) {
       close: function () {},
     });
 
-  const to = box.mailboxPublicKey();
+  const to = box.relayPublicKey();
   const text = JSON.stringify({ app: 'relay', v: 1, body: body });
   const sent = box.routePost(id.publicKey, to, text,
     auth.sign(id.privateKey, auth.postMessage(id.publicKey, to, text)));

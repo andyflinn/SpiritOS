@@ -343,7 +343,7 @@ async function run() {
     // the code the door would have blocked.
     const relayPort = 65425;
     const census = await hub(relayPort, 'GET', '/api/relay/who');
-    const relayKey = census.body && census.body.mailboxPublicKey;
+    const relayKey = census.body && census.body.relayPublicKey;
     let pins = {};
     try {
       pins = JSON.parse(fs.readFileSync(

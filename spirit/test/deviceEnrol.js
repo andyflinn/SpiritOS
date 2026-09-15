@@ -156,7 +156,7 @@ async function theRelayPostsAsItself() {
   // identity yet — that is what it is enrolling — so there is no
   // end-to-end signature to carry, and the relay vouching for it is the
   // only attestation there can be.
-  const mailboxKey = box.snapshot().mailboxPublicKey;
+  const mailboxKey = box.snapshot().relayPublicKey;
   const verified = auth.postSignatureFor(req.from, req.from, req.to, req.text, req.sig);
   if (req.from === mailboxKey && verified) {
     test.check('signed by the relay itself, and it verifies against the relay key');
@@ -725,7 +725,7 @@ async function run() {
 
   // THE OWNER'S NODE, which is not the relay's directory.
   // relay-state/identity.json inside a RELAY home is the relay's own key,
-  // never the owner's (relay.js, mailboxPublicKey). It is two machines in
+  // never the owner's (relay.js, relayPublicKey). It is two machines in
   // production and it is two homes here.
   const home = L.ownerHome();
   test.check('house owns the lab relay');

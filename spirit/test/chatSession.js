@@ -150,7 +150,7 @@ function fakeFetch(log, options) {
       mustPick: !!options.mustPick,
       people: options.people || [],
       reservedName: 'relay',
-      mailboxPublicKey: options.mailboxPublicKey || null,
+      relayPublicKey: options.relayPublicKey || null,
       selfTail: options.selfTail || null,
       matches: options.matches || [],
       unknown: options.unknown || 0,
@@ -278,7 +278,7 @@ function nobodyToWriteTo() {
     inboxStatus: 200,
     people: [],
     selfTail: 'Zv0gX0=',
-    mailboxPublicKey: MAILBOX_KEY,
+    relayPublicKey: MAILBOX_KEY,
     rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: false }],
   });
 
@@ -307,7 +307,7 @@ function nobodyToWriteTo() {
     // contacts has nothing to say to anyone — which is the honest
     // reading of no contacts, and the panel below is the way forward.
     //
-    // Asserted against a fixture that DOES supply mailboxPublicKey and a
+    // Asserted against a fixture that DOES supply relayPublicKey and a
     // Natter row, so this cannot pass merely because nothing was there.
     if (el(app, 'rc-to-pick').innerHTML.indexOf(MAILBOX_KEY) === -1) {
       test.check('and the mailbox is not the way out of it, though its key was supplied');
@@ -599,7 +599,7 @@ function composerOffersTheMailbox() {
   const app = mountApp(store, {
     inboxStatus: 200,
     people: [{ publicKey: 'KEY-BERT', publicLabel: 'bert', caption: 'bert', mine: false }],
-    mailboxPublicKey: MAILBOX_KEY,
+    relayPublicKey: MAILBOX_KEY,
     ownedUrls: ['https://spirit.example'],
     rows: [
       { url: 'https://spirit.example', label: 'spirit.example', owned: true },
@@ -625,7 +625,7 @@ function composerOffersTheMailbox() {
       test.fail('the literal relay is still an option value');
     }
 
-    // The mailbox is fed to the app the whole time — mailboxPublicKey is
+    // The mailbox is fed to the app the whole time — relayPublicKey is
     // in the fixture, and two Natter rows with it. None of it reaches
     // the list. Checked against a key the app definitely knows, so this
     // cannot pass merely because nothing was supplied.
@@ -820,7 +820,7 @@ function viewIsRemembered() {
     const onRelay = mountApp(relayStore, {
       inboxStatus: 200,
       people: two,
-      mailboxPublicKey: MAILBOX,
+      relayPublicKey: MAILBOX,
       rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
       ownedUrls: ['https://spirit.example'],
     });
@@ -943,7 +943,7 @@ function mailArrivesOnTheRow() {
   };
   const app = mountApp(store, {
     inboxStatus: 200,
-    mailboxPublicKey: MAILBOX,
+    relayPublicKey: MAILBOX,
     rows: [{ url: 'https://spirit.example', label: 'spirit.example', owned: true }],
     ownedUrls: ['https://spirit.example'],
     people: [

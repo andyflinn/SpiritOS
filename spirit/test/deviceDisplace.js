@@ -150,8 +150,8 @@ test.startTest('Device cycle 5 — replace the slot, and the replacement is conf
     auth.sign(tablet.privateKey, auth.postMessage(house.publicKey, house.publicKey, TEXT))
   );
   const atRelay = box.routePost(
-    house.publicKey, box.mailboxPublicKey(), TEXT,
-    auth.sign(tablet.privateKey, auth.postMessage(house.publicKey, box.mailboxPublicKey(), TEXT))
+    house.publicKey, box.relayPublicKey(), TEXT,
+    auth.sign(tablet.privateKey, auth.postMessage(house.publicKey, box.relayPublicKey(), TEXT))
   );
 
   if (!atRelay.ok && !atSelf.ok) {

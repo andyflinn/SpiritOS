@@ -67,7 +67,7 @@ function fakeRelay(opts) {
         if (opts.censusFails) return Promise.reject(new Error('down'));
         return said({
           peers: [],
-          mailboxPublicKey: url === OTHER_URL ? opts.otherKey : opts.mailboxKey,
+          relayPublicKey: url === OTHER_URL ? opts.otherKey : opts.mailboxKey,
         });
       }
 

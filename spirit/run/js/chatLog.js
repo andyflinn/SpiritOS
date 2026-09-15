@@ -80,16 +80,23 @@ function chatLogFileFor(publicKey) {
 // copies look sent, and the received half vanishes, though it is a real
 // event: the mailbox delivered it.
 //
-// `mailboxKey` is how the mailbox itself gets filed. `relay` is the
-// caption it answers to; the key beside it in `who` is the identity, and
-// it is the MAILBOX's key, never the owner's — the owner is a peer who
-// claimed, the mailbox is the box. Without one there is no file: no
-// relay.json, no tail, nothing invented.
-function chatLogPeerKeyFor(message, dir, mailboxKey) {
+// ── FILED BY KEY, NEVER BY CAPTION (2026-09-15) ──────────────────────
+//
+// This read `if (!key && reservedEnd === 'relay') key = mailboxKey;` —
+// a TYPE test written as a string match, in a data path, deciding which
+// key a record is filed under. It worked only because `relay` was a
+// reserved caption nobody could claim; the reservation is gone
+// (relayAuth.js), so a peer labelled `relay` would have had its rows
+// filed against the relay's key.
+//
+// The fallback is dropped rather than rewritten. A message with no key
+// on the relevant end is a message this log cannot file, and inventing
+// one from a caption is how it came to be filing them wrongly. The
+// relay's key arrives on every line that is actually from the relay,
+// because the relay signs what it sends.
+function chatLogPeerKeyFor(message, dir) {
   if (!message) return '';
-  var reservedEnd = dir === 'sent' ? message.to : message.from;
   var key = dir === 'sent' ? message.toKey : message.fromKey;
-  if (!key && reservedEnd === 'relay') key = mailboxKey;
   return chatLogIsLoggable(key) ? String(key) : '';
 }
 

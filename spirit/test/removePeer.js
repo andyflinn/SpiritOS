@@ -62,7 +62,7 @@ function run() {
   // recipient and the exact text, carries a minute, and the removal names
   // a key because the packet field says `key`. What is asked here now is
   // that they still hold on the new path.
-  const boxKey = L.box.mailboxPublicKey();
+  const boxKey = L.box.relayPublicKey();
   const wanted = JSON.stringify({
     app: 'relay', v: 1, body: { removePeer: { key: bert.publicKey } },
   });

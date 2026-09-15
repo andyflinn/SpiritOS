@@ -86,7 +86,7 @@ function censusAnswerer(boxes) {
       status: 200,
       text: JSON.stringify({
         peers: box.who(),
-        mailboxPublicKey: box.mailboxPublicKey(),
+        relayPublicKey: box.relayPublicKey(),
       }),
     });
   };
@@ -370,7 +370,7 @@ function relayServer(box) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           peers: box.who(),
-          mailboxPublicKey: box.mailboxPublicKey(),
+          relayPublicKey: box.relayPublicKey(),
         }));
         return;
       }
@@ -475,7 +475,7 @@ function runHubOnLoopback() {
       router: routerTo(boxes, owner),
       // The url→key pin, which on a real node is answerRelay.relayKey.
       relayKey: function (url) {
-        return boxes[url] ? boxes[url].mailboxPublicKey() : '';
+        return boxes[url] ? boxes[url].relayPublicKey() : '';
       },
     };
 
@@ -502,7 +502,7 @@ function runHubOnLoopback() {
 
     return hubInvite(hub, { name: 'andy', label: 'saint', days: 7 }, deps);
   }).then(function (res) {
-    if (res.status === 400 && /pick a mailbox/.test(res.text)) {
+    if (res.status === 400 && /pick a relay/.test(res.text)) {
       test.check('two mailboxes and no choice is refused, not guessed');
     } else {
       test.fail('unaimed mint: ' + res.status + ' ' + res.text);
