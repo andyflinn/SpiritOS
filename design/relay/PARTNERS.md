@@ -76,6 +76,89 @@ Read this section as *the shape the optimisation will take when it is
 wanted*, not as work queued behind the flag. The build order at the foot of
 this document is the real sequence.
 
+### A relay NEVER persists a partner's ledger
+
+> **Andy:** "the relay must NEVER persist a partner's ledger. that's a
+> hard rule. It is of no use anyway if the partner is not online and
+> alive."
+
+**Hard rule, and the reasoning removes a whole section of this document.**
+A cached list for an unreachable partner buys nothing: you cannot forward
+there anyway. And if the partner *is* reachable, you can ask. So
+persistence has no case to make — the list is worth exactly as much as the
+partner's liveness, and no longer.
+
+What follows from it:
+
+- **0006 needs no carve-out.** Nothing is stored on anyone's behalf,
+  because nothing is stored. The recommendation to write one is withdrawn:
+  it was solving a problem this rule deletes.
+- **Restart is empty and that is correct**, not a gap to warm. `routes`
+  already behaves this way; a relay that came back knowing things it had
+  not been told since boot would be the strange one.
+- **`routingTable.json` keeps its shape** — `peers` and nothing else, which
+  `labPersistence` asserts and which is the whole of 0006 on disk. The
+  `partner` flag lives on a peer row, so it persists; the *list* has
+  nowhere on disk to be.
+
+### And the lifetime is already measured — it is presence
+
+The rule hands over the cache policy for free, which is the part I would
+otherwise have got wrong with a TTL.
+
+Reciprocity means the partner's owner **is a peer on this relay**. So
+`presentNow.isPresent(theirOwnerKey)` — which the relay already answers,
+and already uses to decide whether it can deliver at all — is exactly the
+liveness signal the list's lifetime should follow:
+
+| moment | what happens to the list |
+|---|---|
+| their owner's stream opens | acquire it |
+| while present | hold it, route from it |
+| their stream closes | drop it |
+| ever | never write it down |
+
+No TTL, no invalidation, no staleness policy, no reconciliation. The list
+exists precisely while it could be used and not one second longer, and the
+mechanism that decides is one a relay already runs for every peer.
+
+That also means the **memory ceiling is bounded by who is online**, not by
+how many partnerships an owner has accumulated — which is a far better
+bound than the row budget I proposed, and makes that budget a backstop
+rather than the policy.
+
+### Which makes this a network that needs more RAM than disk
+
+> **Andy:** "we're designing a network that requires more RAM than
+> discspace."
+
+It is already true and this makes it truer. **spirit-3's entire persistent
+state is about 2.3 KB** — `routingTable.json` at ~1400 B for nine peers,
+`allow.json` ~200 B, `identity.json` ~350 B, a few hundred for invites.
+That is the whole of what survives a reboot.
+
+Everything a relay is actually *doing* lives in RAM and dies with the
+process: held streams, the presence registry, routes in flight, rate
+counters, and now partner lists. None of it is written, none of it is
+recovered, and that is the design rather than a shortcut — 0006 is the
+disk half of the same sentence.
+
+Consequences worth naming, because they run against the instinct:
+
+- **Size a relay by RAM, never by disk.** "It is filling up" is not a
+  failure mode this system has; "it is holding too much at once" is the
+  only one.
+- **Backup is a copy of a few kilobytes**, and losing the disk loses the
+  identity and the roster — everything that makes it *this* relay — while
+  losing the RAM loses only what it was mid-way through.
+- **Adding disk is never the answer to anything.** If a relay is in
+  trouble, the answer is fewer things held, which is what the shedding
+  policy above is for.
+
+This is the opposite shape from a mail server, and deliberately: a mailbox
+accumulates and a relay does not. It is what "a relay relays" costs, and
+what it buys.
+
 ### A partnership is not a contract
 
 It is **two unilateral decisions that happen to agree.** Reciprocity is a
@@ -266,26 +349,33 @@ This is the real threshold in the proposal — bigger than the flag.
    relying on it, against public data, by key.
 5. **A relay may decline or cancel a partnership to survive**, and choose
    its partners by an algorithm that is smart rather than complicated.
+6. **A relay NEVER persists a partner's ledger.** Hard rule. It is useless
+   for an offline partner and askable for a live one, so it has no case.
+   `partner` on a peer row persists; the *list* has nowhere on disk to be.
 
 ## Recommended (Claude), not yet decided
 
-6. **The node fetches; the relay stores the conclusion.** The owner's node
+7. **The node fetches; the relay stores the conclusion.** The owner's node
    already fetches censuses per relay (`ownerBadge.probe`). Let it do the
    reciprocity check and post the result. The relay keeps `partner: true`
    and never learns how to reach out.
-7. **One hop, full stop.** A forwarded post is never forwarded again. With
+8. **One hop, full stop.** A forwarded post is never forwarded again. With
    two relays there is no loop to prevent; the rule has to be written while
    that is still true, and it makes (3) enforceable rather than merely
    intended.
-8. **The partner's member list is a HINT, never an authority.** B checks its
+9. **The partner's member list is a HINT, never an authority.** B checks its
    own ledger when a forward lands, as it does for any post. A stale hint
-   then costs a wasted hop and a refusal — never a wrong delivery — which
-   removes most of what makes a synced copy frightening.
-9. **Write the 0006 carve-out in the same breath as the flag.** "Nothing is
-   stored on a relay on anyone's behalf" is the decision a member-list copy
-   presses on. A hint that is never persisted, never served and never
-   authoritative is closer to a DNS cache than a store — but that is a
-   distinction to *decide*, in the decision, rather than assert in a commit.
+   then costs a wasted hop and a refusal — never a wrong delivery.
+10. **Bind the list's lifetime to presence, not a TTL.** Acquire when the
+   partner's owner opens a stream here, drop when it closes. Follows from
+   decision (6) rather than being a policy of its own.
+
+### Withdrawn
+
+- ~~Write the 0006 carve-out in the same breath as the flag.~~ It was
+  solving a problem decision (6) deletes: nothing is stored on anyone's
+  behalf because nothing is stored. **0006 stands untouched**, which is a
+  better outcome than an exception to it.
 
 ## Open
 
