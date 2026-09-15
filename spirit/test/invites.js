@@ -390,6 +390,90 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   }
 }
 
+test.subHeading('A claim that is refused after the invite check does not spend it');
+
+// ── THE ORDER IS A GATE, AND NOTHING ASSERTED IT ─────────────────────
+//
+// claimAttempt reads the invite (`redeem`, which only MATCHES) well
+// before `findByKey(publicKey)` returns 409, and `consume` — the
+// delete — comes after both. relay.js says so in a comment: "Everything
+// that can refuse this claim has already run, so a burn here is not
+// spent on a claim that then 409s."
+//
+// That comment was the whole of the protection. Move `consume` above the
+// 409 and every one of these burns the token and writes no row, which
+// leaves somebody holding a dead invite and no seat and no way to tell
+// which:
+//
+//   a browser double-submit, or an impatient second click
+//   a retry after a timeout where the first request actually landed
+//   anyone whose key is already on the box typing a token by mistake
+//
+// FOUND FROM THE OTHER SIDE, which is why it is worth pinning. Andy:
+// "i no longer have my slot on public lab". His invite turned out to be
+// intact — a claim signed with a key already on that relay bounced at
+// the 409 and left the row untouched, which is how the invite could be
+// checked at all without spending it. That diagnostic is only possible
+// while this order holds, and the failure it rules out is the one he
+// thought had happened.
+{
+  const home = tmpHome();
+  const box = createRelay(home);
+  const andy = auth.generateIdentity('andy');
+  const bella = auth.generateIdentity('bella');
+
+  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
+
+  // bella gets on the box legitimately, with her own invite.
+  invites.add(home, { label: 'bella', invitedBy: 'andy', days: 7, token: 'tok-bella' });
+  const first = box.claim(
+    'bella', auth.sign(bella.privateKey, auth.claimMessage('bella')),
+    bella.publicKey, '10.0.0.2', 'tok-bella', 'bella'
+  );
+  if (first.ok) test.check('bella claims her seat with her invite');
+  else test.fail('bella: ' + JSON.stringify(first));
+
+  // A SECOND, STILL-LIVE INVITE — somebody else's, or a spare. bella's
+  // key is now on the box, so this claim can only ever 409.
+  invites.add(home, { label: 'carol', invitedBy: 'andy', days: 7, token: 'tok-carol' });
+
+  const again = box.claim(
+    'carol', auth.sign(bella.privateKey, auth.claimMessage('carol')),
+    bella.publicKey, '10.0.0.2', 'tok-carol', 'carol'
+  );
+  if (!again.ok && again.status === 409) {
+    test.check('a key already on the box is refused 409, invite or no invite');
+  } else {
+    test.fail('second claim: ' + JSON.stringify(again));
+  }
+
+  // THE POINT. carol's token must still be on disk and still redeemable
+  // by whoever it was actually for.
+  const left = invites.load(home);
+  const carol = left.filter(function (r) { return r.token === 'tok-carol'; })[0];
+  if (carol) {
+    test.check('and carol’s invite is still on the box — the 409 spent nothing');
+  } else {
+    test.fail('carol’s invite was consumed by a claim that was refused: ' + JSON.stringify(left));
+  }
+
+  const stillGood = invites.match(home, 'tok-carol', 'carol');
+  if (stillGood.ok) {
+    test.check('and it still redeems, so carol can take the seat she was given');
+  } else {
+    test.fail('carol match after a stranger’s 409: ' + JSON.stringify(stillGood));
+  }
+
+  // AND bella's OWN invite is gone, because hers was actually claimed.
+  // Without this the test would pass on a relay that consumed nothing at
+  // all, which is the other way to get these two lines wrong.
+  if (!invites.load(home).some(function (r) { return r.token === 'tok-bella'; })) {
+    test.check('while the invite that did admit somebody is spent and gone');
+  } else {
+    test.fail('tok-bella survived a successful claim');
+  }
+}
+
 test.subHeading('A box upgrading in place does not resurrect spent tokens');
 
 // THE ONE DAY THIS MATTERS is the day a running relay takes the code that
