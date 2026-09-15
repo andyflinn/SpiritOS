@@ -442,6 +442,22 @@ test.subHeading('The clone decides what it is — not whatever the shell was car
     test.fail('lib.sh reads .env after deriving UNIT_NAME — the file has no effect');
   }
 
+  // AND `update` RE-READS IT AFTER THE RESET, because the reset can
+  // replace lib.sh — so without this, a change to how a clone resolves
+  // its unit takes effect one cycle late, and the run that installs it
+  // still behaves the old way. That is not theoretical: the run that
+  // shipped this very fix updated /root/SpiritOS and restarted
+  // spirit-lab, leaving the live relay on the old process.
+  const updateSrc = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'update'), 'utf8');
+  const resetAt = updateSrc.indexOf('git reset --hard origin/master');
+  const rereadAt = updateSrc.indexOf('source "$REPO_ROOT/bash/lib.sh"');
+  const restartAt = updateSrc.indexOf('systemctl restart');
+  if (resetAt !== -1 && rereadAt > resetAt && restartAt > rereadAt) {
+    test.check('and update re-reads it after the reset, before deciding what to restart');
+  } else {
+    test.fail('update decides which unit to restart from the lib.sh it replaced a moment ago');
+  }
+
   // NOBODY SOURCES IT BY HAND ANY MORE. lab-install used to, in four
   // places, and those four lines are the instruction that caused this.
   const labInstallSrc = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');

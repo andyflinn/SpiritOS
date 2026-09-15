@@ -20,6 +20,32 @@ say "reset --hard origin/master"
 echo "    $(git rev-parse --short HEAD) -> $(git rev-parse --short origin/master)"
 git reset --hard origin/master
 
+# ── THE CONFIG WE LOADED IS NOW OLD CODE ─────────────────────────────
+#
+# lib.sh was sourced at line 3, and line 21 just replaced it. Everything
+# below decides things — WHICH UNIT TO RESTART, above all — and until
+# this re-read it decided them from the copy that was on disk before the
+# update. A change to how a clone works therefore took effect one cycle
+# LATE: the run that installed it still behaved the old way.
+#
+# Seen on spirit-3, 2026-09-16, the run that shipped the fix for exactly
+# this class of thing:
+#
+#   cd /root/SpiritOS && ./bash/update
+#   ==> reset --hard origin/master
+#       af596bf -> c8b7293          <- new lib.sh, which ignores the shell
+#   ==> restart spirit-lab          <- old lib.sh, which did not
+#
+# The live relay took the new code and never restarted; the LAB's service
+# got bounced by the main clone instead. Re-reading costs nothing and the
+# file is idempotent — no readonly, no side effects, just assignments.
+#
+# This does NOT re-exec. A second run would fetch, find HEAD already at
+# origin/master, and exit "no restart" — the restart would be lost
+# entirely. The configuration is what has to be current here.
+# shellcheck source=lib.sh
+source "$REPO_ROOT/bash/lib.sh"
+
 # No pipe: see `unit_known` in lib.sh. This line reported "not
 # installed" on a box where the unit was installed, enabled and active,
 # so an update never restarted anything.
