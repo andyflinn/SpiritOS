@@ -458,8 +458,8 @@ function listsTheBook() {
     // In its own cell now, not glued to the front of a name: the mark
     // column has no heading and every handle starts at the same x
     // whether or not the row beside it is marked (Andy).
-    if (rows.indexOf('<td>' + ICONS.NO + '</td><td>dave</td>') !== -1 &&
-        rows.indexOf('<td>' + ICONS.WAITING + '</td><td>carol</td>') !== -1 &&
+    if (rows.indexOf('<td>' + ICONS.NO + '</td><td class="label-cell">dave</td>') !== -1 &&
+        rows.indexOf('<td>' + ICONS.WAITING + '</td><td class="label-cell">carol</td>') !== -1 &&
         rows.indexOf(ICONS.ROLODEX) === -1) {
       test.check('and refused wears the plain no here, where the rolodex would point at itself');
     } else {
@@ -506,8 +506,8 @@ function listsTheBook() {
     // that order — theirs is what you were told, yours is what you
     // decided afterwards. Bert has been renamed, so the two words differ
     // and a row that printed one twice would fail here.
-    if (rows.indexOf('<td>bert</td><td>Bertie</td>') !== -1 &&
-        rows.indexOf('<td>carol</td><td></td>') !== -1) {
+    if (rows.indexOf('<td class="label-cell">bert</td><td class="label-cell">Bertie</td>') !== -1 &&
+        rows.indexOf('<td class="label-cell">carol</td><td class="label-cell"></td>') !== -1) {
       test.check('Handle carries theirs and Label carries yours, empty when you have not chosen one');
     } else {
       test.fail('handle/label columns: ' + rows);
@@ -798,14 +798,14 @@ function theHandleColumnStillIdentifies() {
 
   return settle().then(function () {
     const rows = el(app, 'contacts-tbody').innerHTML;
-    if (rows.indexOf('<td>john …aaajoh=</td>') !== -1 &&
-        rows.indexOf('<td>john …bbbjoh=</td>') !== -1) {
+    if (rows.indexOf('<td class="label-cell">john …aaajoh=</td>') !== -1 &&
+        rows.indexOf('<td class="label-cell">john …bbbjoh=</td>') !== -1) {
       test.check('two people behind one word are told apart by the end of the key');
     } else {
       test.fail('ambiguous rows: ' + rows);
     }
 
-    if (rows.indexOf('<td>…lcaro=</td>') !== -1) {
+    if (rows.indexOf('<td class="label-cell">…lcaro=</td>') !== -1) {
       test.check('and a contact who never claimed a handle is their key ending, not a blank');
     } else {
       test.fail('nameless row: ' + rows);

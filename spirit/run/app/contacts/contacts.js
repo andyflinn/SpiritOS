@@ -194,8 +194,18 @@ function contactsRowHtml(person) {
     '<td title="' + contactsEscapeHtml(contactsPresenceTitle(person.publicKey)) + '">' +
       contactsPresenceMark(person.publicKey) + '</td>' +
     '<td>' + mark + '</td>' +
-    '<td>' + contactsHandleCell(person) + '</td>' +
-    '<td>' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
+    // THE COLUMN FITS THE LABEL, THE RELAY DOES NOT (2026-09-15).
+    //
+    // Labels are Unicode and permissive now — a real name, with spaces
+    // and punctuation, up to 48 graphemes. The relay BOUNDS one so a
+    // peer cannot write ten kilobytes into somebody else's ledger, and
+    // has no opinion beyond that: how wide a table is belongs to the
+    // table. See .label-cell in index.html, and UI_DESIGN_STYLE.md.
+    //
+    // Both cells, because `myLabel` is the private caption and a person
+    // may write anything they like in their own address book.
+    '<td class="label-cell">' + contactsHandleCell(person) + '</td>' +
+    '<td class="label-cell">' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
     '<td>' + contactsEscapeHtml(person.acquiredVia || '') + '</td>' +
     '</tr>';
 }

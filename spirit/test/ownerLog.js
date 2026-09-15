@@ -265,11 +265,25 @@ test.subHeading('A stranger cannot drive the owner’s stream');
     test.fail('a flood cost ' + cost + ' notices — the gate is not bounding this');
   }
 
-  // Before the gate: a malformed name and the reserved name. Neither is
-  // an attempt on a slot, and neither is rate-limited.
+  // Before the gate: names the rule refuses outright. Neither is an
+  // attempt on a slot, and neither is rate-limited.
+  //
+  // THESE FIXTURES HAD TO CHANGE TWICE ON 2026-09-15, and both times
+  // because the thing they relied on stopped being refused:
+  //
+  //   `!!!not a name` was malformed under NAME_RE. Labels are Unicode
+  //     and permissive now — punctuation and spaces are the point — so
+  //     it is a perfectly good caption and gets as far as the signature.
+  //   `auth.RESERVED_NAME` was the reserved word, and there is no longer
+  //     a reserved word: a relay is addressed by key.
+  //
+  // What is still refused before the gate is what the rule actually
+  // guards: the invisible, and the absurdly long. A zero-width space is
+  // a character no reader can see, and 300 bytes is past the ledger
+  // bound — neither can reach the rate limiter.
   const at = ownerSink.owned().length;
-  box.claim('!!!not a name', 'sig', 'key', '203.0.113.5');
-  box.claim(auth.RESERVED_NAME, 'sig', 'key', '203.0.113.5');
+  box.claim('and​y', 'sig', 'key', '203.0.113.5');
+  box.claim('x'.repeat(300), 'sig', 'key', '203.0.113.5');
   if (ownerSink.owned().length === at) {
     test.check('and a refusal before the gate sends nothing at all');
   } else {

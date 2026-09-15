@@ -665,6 +665,29 @@
         font-family: ui-monospace, Consolas, monospace;
         white-space: nowrap;
       }
+      /* A CELL THAT HOLDS A LABEL.
+
+         Labels became Unicode and permissive on 2026-09-15 — a real
+         name, with spaces and punctuation. The relay BOUNDS one (256
+         bytes, 48 graphemes) so nobody can write ten kilobytes into
+         somebody else's enrolment ledger, and it stops there: how wide a
+         table is belongs to the table, not to a router.
+
+            Andy: "the max length ... also for limiting the width of
+            columns in list displays since that is a primary use for
+            labels."
+
+         Done in CSS rather than by truncating the string, because the
+         width that matters is the RENDERED one. 40 CJK characters is 40
+         graphemes and 80 columns; an ellipsis counted in JavaScript
+         would cut the two cases differently and cut emoji in half. The
+         browser already measures this correctly. */
+      .label-cell {
+        max-width: 22ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
       .rc-msg .rc-who { opacity: 0.85; font-weight: 600; white-space: nowrap; }
       .rc-msg .rc-text { flex: 1; }
       .rc-msg.me { background: rgba(255, 255, 255, 0.06); }

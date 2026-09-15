@@ -288,6 +288,12 @@ A number that changes on its own does not belong in text somebody reads to find 
 
 The same reason keeps the key ending out of the title and in the footer: somebody is reading it aloud down a phone.
 
+**A label is as wide as the column, and the column is the app's business.** Since 2026-09-15 a public label is Unicode and permissive — a real name, with spaces and punctuation. The relay *bounds* one (256 bytes, 48 graphemes) so nobody can write ten kilobytes into somebody else's enrolment ledger, and it has no opinion past that: shortening a person's name to fit a table would be a router deciding how a box looks on a shelf.
+
+So the fitting happens here, as `.label-cell` — `max-width` plus `text-overflow: ellipsis` — and **never by cutting the string in JavaScript**. The width that matters is the rendered one: 40 CJK characters is 40 graphemes and 80 columns, and a count done in code would cut the two cases differently and cut an emoji in half. The browser measures this correctly already.
+
+The spoken half is the exception and keeps the old tight rule: an invite's label and its token are read down a phone call and retyped by a stranger, where "was that a hyphen or a dash, one space or two" is a real cost. Those stay `[A-Za-z0-9._-]`, 1–32.
+
 ## 6. Human-facing machine values
 
 A key is 48 characters and all Ed25519 keys share the prefix `MCowBQYDK2VwAyEA` — so a fragment shown to a person is taken from the **end**, six characters, and the same six in the same words on both screens ("ends …mjowM=" beside "key ends mjowM="). Never show a prefix, never abbreviate in the middle.

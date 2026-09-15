@@ -62,7 +62,87 @@ var ROUTE_WAIT_MS = 15000;
 // temporary and a page that knows it is rate-limited waits rather than
 // gives up. Everything else gets `not now`.
 var DEVICE_PER_MIN = 10;
-var NAME_RE = /^[A-Za-z0-9._-]{1,32}$/;
+// ── WHAT A LABEL MAY BE, AND WHAT A SPOKEN WORD MAY BE ───────────────
+//
+//   Andy: "I'm thinking of a printable string with spaces, number upper
+//   and lower case letters, even punctuation.... unicode."
+//
+// ONE RULE SPLIT INTO TWO, because the tree has two different fields
+// wearing the same regex. R1 separated them and this finishes the job:
+//
+//   PUBLIC LABEL — owned by the key, displayed, never spoken. It is a
+//     caption on a row and it should be able to hold a person's actual
+//     name. Permissive.
+//   SPOKEN WORD — an invite's label and its token, read down a phone
+//     call and retyped by a stranger, compared exactly. Spaces and
+//     punctuation are genuinely bad here: "was that a hyphen or a dash,
+//     one space or two?" Tight, and unchanged.
+//
+// WHY PERMISSIVE IS SAFE HERE and would not be elsewhere: a label is not
+// an identity. R4 made the key the identity and duplicate labels legal
+// by design — spirit-3 carries two `jazz` and two `rock` — so confusable
+// captions are an existing condition, not a new attack. Nothing routes
+// on a label, nothing is filed under one, and the only signed format
+// that carries one puts it LAST (relayAuth.claimMessage), where no
+// delimiter inside it can forge a different message.
+//
+// ── THE BLACKLIST IS OF THE INVISIBLE, NOT OF PUNCTUATION ────────────
+//
+// Every visible character is allowed. What is refused is what cannot be
+// seen and therefore cannot be judged: C0/C1 controls, the soft hyphen,
+// zero-width space/joiner/non-joiner and the marks, line and paragraph
+// separators, the bidi overrides and isolates, and the byte-order mark.
+// Those break a table row, reverse what a reader sees, or make two
+// different labels pixel-identical. Ordinary whitespace is not refused —
+// normalizeName collapses it — because a tab pasted out of a document is
+// a formatting accident and not an attack.
+var LABEL_INVISIBLE_RE = new RegExp(
+  '[\\u0000-\\u001F\\u007F-\\u009F\\u00AD\\u200B-\\u200F' +
+  '\\u2028\\u2029\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u206F\\uFEFF]');
+
+// ── TWO LENGTHS, BECAUSE UNICODE MAKES THEM DIFFERENT NUMBERS ────────
+//
+//   Andy: "the max length both for storage space on the relays enrolment
+//   ledger, and also for limiting the width of columns in list displays
+//   since that is a primary use for labels."
+//
+// Both reasons are real and they do not measure the same thing. 40 CJK
+// characters is 40 graphemes, 120 bytes and 80 display columns; 40 emoji
+// is 40 graphemes, 160 bytes and a `.length` of 80. `.length` is the
+// obvious thing to reach for and is wrong for every non-ASCII case.
+//
+// STORAGE, measured rather than assumed: a ledger row pretty-printed is
+// 171 bytes, of which a 9-character label is 9. The key and the
+// timestamp dominate. A thousand peers at 256 bytes of label is 250 KiB,
+// which is nothing on this box — so the byte cap is a BOUND, not thrift.
+// It exists so a peer cannot write ten kilobytes into somebody else's
+// ledger.
+//
+// WIDTH is the cap that is actually felt, and the apps truncate for
+// their own columns (a relay has no opinion about a table). This one
+// keeps a label from being absurd anywhere.
+var LABEL_MAX_BYTES = 256;
+var LABEL_MAX_GRAPHEMES = 48;
+
+// The spoken pair, unchanged: 1-32 of the characters that survive being
+// read aloud. Also still the token rule — see the note at claimAttempt
+// about there being no entropy floor, which is why the invite LABEL is
+// the second factor.
+var SPOKEN_RE = /^[A-Za-z0-9._-]{1,32}$/;
+
+// Graphemes, not codepoints: an emoji with a skin-tone modifier is one
+// thing a reader sees and two codepoints. Intl.Segmenter is in every
+// current browser and Node 18+; the fallback counts codepoints, which is
+// wrong only in the direction of being more permissive.
+var LABEL_SEGMENTER = null;
+try { LABEL_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' }); }
+catch (e) { LABEL_SEGMENTER = null; }
+
+function graphemeCount(s) {
+  if (LABEL_SEGMENTER) return Array.from(LABEL_SEGMENTER.segment(s)).length;
+  return Array.from(s).length;
+}
+
 var CLAIM_PER_MIN = 10;
 var WINDOW_MS = 60 * 1000;
 var RATE_KEY_SWEEP_AT = 1000;
@@ -227,13 +307,41 @@ function createRelay(rootDir) {
     return true;
   }
 
+  // NFC FIRST, because Unicode lets the same name be two byte strings:
+  // `é` as one codepoint, or `e` followed by a combining accent. Without
+  // this the stored form depends on which keyboard typed it, the byte
+  // cap measures something unstable, and two identical-looking labels
+  // are unequal for no reason a person could see.
+  //
+  // THEN WHITESPACE COLLAPSES rather than being refused. `andy  flinn`
+  // and `andy flinn` must not be two rows that look the same in a list
+  // where duplicates are legal and the eye is the only thing telling
+  // them apart. This also swallows a tab or a newline pasted out of a
+  // document, turning a formatting accident into a space instead of a
+  // refusal — the invisible characters that ARE refused are the ones
+  // whitespace collapsing cannot help with.
   function normalizeName(name) {
     if (typeof name !== 'string') return '';
-    return name.trim();
+    var s = name.normalize ? name.normalize('NFC') : name;
+    return s.replace(/\s+/g, ' ').trim();
   }
 
-  function nameOk(n) {
-    return !!n && NAME_RE.test(n);
+  // Returns WHY, not just whether — a label refused for being 300 bytes
+  // long and one refused for carrying a bidi override are different
+  // problems for the person reading the message, and 'bad name' told
+  // them neither.
+  function labelProblem(n) {
+    if (!n) return 'name required';
+    if (LABEL_INVISIBLE_RE.test(n)) return 'name has invisible or control characters';
+    if (Buffer.byteLength(n, 'utf8') > LABEL_MAX_BYTES) return 'name too long';
+    if (graphemeCount(n) > LABEL_MAX_GRAPHEMES) return 'name too long';
+    return '';
+  }
+
+  // The tight half: an invite's label and its token. Read aloud, retyped
+  // by a stranger, compared exactly.
+  function spokenOk(n) {
+    return !!n && SPOKEN_RE.test(n);
   }
 
   // A PEER IS ITS KEY. A `|| peer.name` fallback stood here for rows
@@ -410,7 +518,7 @@ function createRelay(rootDir) {
   //
   // THE LABEL STILL PROVES. It is not merely a caption: an invite is
   // KEYLESS, so the token is the entire credential, and a SPOKEN token is
-  // held only to NAME_RE — no length floor, no entropy floor. `dog` is a
+  // held only to SPOKEN_RE — no length floor, no entropy floor. `dog` is a
   // legal token. On that path the invite label is the second factor, and
   // an earlier draft of this change that dropped it was wrong for exactly
   // that reason (Andy: "invites are keyless, i don't understand how we
@@ -442,11 +550,30 @@ function createRelay(rootDir) {
   // single line it is.
   function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen) {
     var inviteRow = null;
+    // ── SIGNED AS SENT, STORED AS NORMALISED ─────────────────────────
+    //
+    // `n` is the canonical form and it is what the ledger keeps. The
+    // SIGNATURE is checked against `asSent` — the bytes that actually
+    // arrived — because that is what the claimer signed: hub.signedClaim
+    // signs `claimMessage(name)` with the same `name` it puts in the
+    // body, so the wire value is the only string both ends can agree on.
+    //
+    // Verifying the normalised form instead would break every claim that
+    // normalisation touches: type two spaces, the node signs two, the
+    // relay collapses to one and rejects the signature it just changed.
+    // That reads as `bad claim signature` and would be maddening.
+    //
+    // The signature still proves the key asked for this claim.
+    // Normalising afterwards canonicalises WHAT it asked for; it does not
+    // let anybody claim anything they did not sign for.
+    var asSent = typeof name === 'string' ? name : '';
     var n = normalizeName(name);
     var onInvite = normalizeName(inviteLabel);
     seen.label = n;
     seen.invite = onInvite;
-    if (!nameOk(n)) return { ok: false, status: 400, error: 'bad name' };
+    // The PUBLIC label the claimer picks for itself — permissive.
+    var badLabel = labelProblem(n);
+    if (badLabel) return { ok: false, status: 400, error: badLabel };
     // A `name reserved` refusal stood here, for the caption `relay`. It
     // went with RESERVED_NAME — see relayAuth.js. A label is a caption,
     // the relay is a key, and nothing a claimer can type reaches it.
@@ -485,7 +612,7 @@ function createRelay(rootDir) {
       if (!publicKey || !sig) {
         return { ok: false, status: 400, error: 'first claim needs publicKey and sig' };
       }
-      if (!auth.verify(publicKey, auth.claimMessage(n), sig)) {
+      if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
         return { ok: false, status: 403, error: 'bad claim signature' };
       }
       becomeOwner(n, publicKey);
@@ -504,7 +631,7 @@ function createRelay(rootDir) {
       if (!publicKey || !sig) {
         return { ok: false, status: 400, error: 'claim needs publicKey and sig' };
       }
-      if (!auth.verify(publicKey, auth.claimMessage(n), sig)) {
+      if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
         return { ok: false, status: 403, error: 'bad claim signature' };
       }
       // This is the lock 0003 promised: after first-claim-is-owner, a new
@@ -691,8 +818,12 @@ function createRelay(rootDir) {
     if (allow.mode !== 'keys') {
       return { ok: false, status: 403, error: 'no owner key on this relay' };
     }
-    if (!nameOk(lbl)) return { ok: false, status: 400, error: 'bad label' };
-    if (tok && !nameOk(tok)) return { ok: false, status: 400, error: 'bad token' };
+    // BOTH HALVES OF AN INVITE ARE SPOKEN, so both keep the tight rule.
+    // The label here is not the peer's public caption — it is the word
+    // the owner reads down the phone and the claimer types back, and it
+    // is the second factor a token with no entropy floor depends on.
+    if (!spokenOk(lbl)) return { ok: false, status: 400, error: 'bad label' };
+    if (tok && !spokenOk(tok)) return { ok: false, status: 400, error: 'bad token' };
     // NOT A GATE — the caller's identity was settled before this ran.
     // This asks whether the name is on this relay at all, because it is
     // written into the row as `invitedBy` and a row cannot truthfully
@@ -1087,7 +1218,10 @@ function createRelay(rootDir) {
       return { ok: false, status: 403, error: 'no such peer' };
     }
     var next = normalizeName(wanted);
-    if (!nameOk(next)) return { ok: false, status: 400, error: 'bad name' };
+    // The key renaming its own caption — the same permissive rule a
+    // claim uses, because it is the same field.
+    var badNext = labelProblem(next);
+    if (badNext) return { ok: false, status: 400, error: badNext };
 
     var row = findByKey(who.publicKey);
     if (!row) return { ok: false, status: 404, error: 'no such peer' };
