@@ -1041,13 +1041,36 @@ spirit.shell.activateApp({
         .then(function () {
           labelInput.value = '';
           urlInput.value = '';
-          natterStatus('added — probing it now');
+          natterStatus('added — asking it now…');
           natterRelaysCache = relays;
           natterRenderList(container, api, relays);
           // Ask it straight away. A row that sat white until the next
           // visit would leave somebody wondering whether Add worked,
           // which is the question this whole comment is about.
-          natterProbe(api, container, relays);
+          //
+          // AND SAY WHAT CAME BACK. "asking it now…" with no end is the
+          // same fault natterDetails had this morning — a progress line
+          // that cannot finish looks identical to a hang, and the person
+          // reading it has no way to tell which they are looking at.
+          //
+          // The three outcomes are the three the dot draws, said in
+          // words, because a fresh row is exactly the moment somebody
+          // does not yet know what the colours mean.
+          return natterProbe(api, container, relays).then(function () {
+            var badge = natterBadgeByUrl[url];
+            if (!badge || !Number(badge.status)) {
+              natterStatus('added, but it did not answer — check the address');
+              return;
+            }
+            if (badge.owned || badge.claimed) {
+              natterStatus('added, and you have a seat there');
+              return;
+            }
+            // ANSWERED, AND YOU ARE NOT ON IT. The useful half: it is
+            // reachable, so the next step is a claim rather than a
+            // correction.
+            natterStatus('added — it answered, and you have no seat yet. Open it to claim one.');
+          });
         })
         .catch(function (err) {
           relays.pop();

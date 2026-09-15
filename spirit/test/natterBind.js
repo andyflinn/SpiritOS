@@ -234,7 +234,13 @@ function theAddButtonActuallyAdds() {
   const app = mountApp({
     label: 'andy',
     relays: [{ label: 'spirit', url: 'https://spirit.example' }],
-    rows: [{ url: 'https://spirit.example', label: 'spirit', status: 200, owned: true }],
+    // The relay being added ANSWERS, and holds no row for this key —
+    // which is the case a person is actually in the moment after they
+    // add somewhere they have been invited but not yet claimed.
+    rows: [
+      { url: 'https://spirit.example', label: 'spirit', status: 200, owned: true },
+      { url: 'https://lab.andyflinn.com', label: 'lab', status: 200, owned: false, claimed: false },
+    ],
   });
 
   return settle().then(function () {
@@ -253,10 +259,25 @@ function theAddButtonActuallyAdds() {
         test.fail('relays.json: ' + JSON.stringify(saved));
       }
 
-      if (/added/.test(el(app, 'natter-status').textContent)) {
-        test.check('and the row says so, rather than looking like nothing happened');
+      // AND THE LINE FINISHES. "asking it now…" with no ending is the
+      // same fault natterDetails had this morning: a progress message
+      // that cannot complete is indistinguishable from a hang. This
+      // fixture answers the probe with a row this node holds no seat on,
+      // so the settled text must say THAT rather than still be asking.
+      const said = el(app, 'natter-status').textContent;
+      if (/added/.test(said) && !/asking it now/.test(said)) {
+        test.check('and the row says so, and the line finishes rather than saying "asking" for ever');
       } else {
-        test.fail('status said: "' + el(app, 'natter-status').textContent + '"');
+        test.fail('status said: "' + said + '"');
+      }
+
+      // THE THREE OUTCOMES ARE THE THREE THE DOT DRAWS, said in words,
+      // because a fresh row is exactly the moment somebody does not yet
+      // know what the colours mean. This one answered and holds no seat.
+      if (/no seat/.test(said)) {
+        test.check('and names which of the three it is — reachable, but no seat yet');
+      } else {
+        test.fail('the outcome was not named: "' + said + '"');
       }
     });
   });
