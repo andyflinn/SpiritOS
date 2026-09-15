@@ -1778,7 +1778,43 @@ function createRelay(rootDir) {
     if (!presentNow.isPresent(ownerKey)) return false;
     var row = { at: new Date().toISOString(), kind: String(kind || '') };
     if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
-    return !!presentNow.send(ownerKey, 'owner-event', row);
+    var sent = !!presentNow.send(ownerKey, 'owner-event', row);
+
+    // ── AND THE REPORT THAT FOLLOWS FROM IT ──────────────────────────
+    //
+    //   Andy: "while trying to revoke all adam invites one by one, but
+    //   the panel kept showing all, not behaving in an understandable
+    //   way?"
+    //
+    // It was understandable and it was this. `statusToOwner` fired on
+    // three occasions — a stream opening, a stream closing, and monitor
+    // being switched on — and on no MEMBERSHIP CHANGE at all. So an
+    // owner who minted, revoked, renamed or removed somebody kept the
+    // report from whenever a socket last moved, and the invite panel
+    // redrew four invites that had been gone for three minutes.
+    //
+    // The node's own log said so plainly and the screen did not:
+    //
+    //   06:59:52  invite-revoked  adam  revoked=4
+    //   06:59:55  invite-revoked  adam  revoked=0
+    //   07:02:39  invite-revoked  adam  revoked=0
+    //
+    // The first press took all four — revoking by label takes every
+    // invite under it — and the next two found nothing, exactly as they
+    // should have. Only the picture was wrong.
+    //
+    // SO THE TWO TRAVEL TOGETHER. Every caller of this function is a
+    // moment the relay's membership changed, which is the same set of
+    // moments the report goes stale. Putting the push here rather than
+    // at the five call sites means the next verb to arrive cannot forget
+    // it, which is how this one came to be missing.
+    //
+    // A refused claim re-sends an unchanged report. That is bounded — the
+    // claim event only fires past the rate gate (see `seen.gate`) — and
+    // cheap, and the alternative is a flag threaded through five call
+    // sites to save a message nobody would notice.
+    statusToOwner();
+    return sent;
   }
 
   // ONE ROUTED THING HAPPENED. Sent only while somebody is watching, only

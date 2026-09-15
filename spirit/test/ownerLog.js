@@ -66,6 +66,13 @@ function fakeSink() {
     return sink.events().filter(function (e) { return e.event === 'owner-event'; })
       .map(function (e) { return e.data; });
   };
+  // The OTHER thing the owner's stream carries: what the box looks like
+  // now. A membership event says what happened; this says what it left
+  // behind, and the panel reads only the second one.
+  sink.reports = function () {
+    return sink.events().filter(function (e) { return e.event === 'relay-status'; })
+      .map(function (e) { return e.data; });
+  };
   return sink;
 }
 
@@ -433,6 +440,85 @@ test.subHeading('And the relay still keeps nothing');
     test.check('and routingTable.json still holds peers and nothing else');
   } else {
     test.fail('routingTable.json: ' + Object.keys(JSON.parse(table)).join(','));
+  }
+}
+
+// ---------------------------------------------------------------------
+test.subHeading('A membership change pushes the report it invalidated');
+// ---------------------------------------------------------------------
+
+//   Andy: "while trying to revoke all adam invites one by one, but the
+//   panel kept showing all, not behaving in an understandable way?"
+//
+// It was behaving correctly and reporting nothing. `statusToOwner` fired
+// on a stream opening, a stream closing, and monitor being switched on —
+// and on no membership change at all. So the invite panel, whose only
+// source is the pushed report, redrew four invites that had been revoked
+// three minutes earlier. The node's own log said so and the screen did
+// not:
+//
+//   06:59:52  invite-revoked  adam  revoked=4
+//   06:59:55  invite-revoked  adam  revoked=0
+//
+// The event and the report now travel together, out of ownerEvent, so a
+// verb added later cannot forget the second half.
+{
+  const L = world.build({ title: 'an owner alone', peers: [] });
+  const box = L.box;
+  const ownerSink = fakeSink();
+  openStream(box, L.owner, ownerSink);
+
+  function invitesInLastReport() {
+    const reports = ownerSink.reports();
+    const last = reports[reports.length - 1];
+    return ((last && last.invites) || []).map(function (i) { return i.label; });
+  }
+
+  // Opening the stream pushes one, which has always been true. What is
+  // under test is every push after that.
+  const atOpen = ownerSink.reports().length;
+
+  box.mint('andy', 'adam', 7, '');
+  if (ownerSink.reports().length > atOpen) {
+    test.check('a membership change pushes a report of its own');
+  } else {
+    test.fail('minting pushed no report — the panel would still show the old list');
+  }
+
+  // THE CONTENT, not just the count. A report that arrives without the
+  // change in it is the same bug wearing a timestamp.
+  if (invitesInLastReport().indexOf('adam') !== -1) {
+    test.check('and the report it pushes already contains what just happened');
+  } else {
+    test.fail('report after minting: ' + JSON.stringify(invitesInLastReport()));
+  }
+
+  // ONE LABEL, EVERY INVITE UNDER IT — the half that made the screen
+  // confusing. Two live invites for `adam`, and one revoke takes both.
+  box.mint('andy', 'adam', 7, '');
+  const twoAdams = invitesInLastReport().filter(function (l) { return l === 'adam'; }).length;
+  if (twoAdams === 2) {
+    test.check('one label may carry several invites, and the report shows each');
+  } else {
+    test.fail('adams in report: ' + twoAdams);
+  }
+
+  // A DIFFERENT VERB, so this is a property of the mechanism rather than
+  // of one call site. A real peer, because forgetting the OWNER takes the
+  // owner out of allow.json and there is then nobody to push to — which
+  // is correct, and would make this assert the wrong thing.
+  box.mint('andy', 'bel', 7, 'dog');
+  const bella = auth.generateIdentity('bella');
+  box.claim('bel', auth.sign(bella.privateKey, auth.claimMessage('bel')),
+    bella.publicKey, '10.0.0.7', 'dog', 'bel');
+
+  const atRemove = ownerSink.reports().length;
+  box.forgetPeer(bella.publicKey);
+
+  if (ownerSink.reports().length > atRemove) {
+    test.check('and removing a peer pushes one too — it is not per-verb plumbing');
+  } else {
+    test.fail('forgetPeer pushed no report');
   }
 }
 
