@@ -270,6 +270,59 @@ test.subHeading('The unit template is one file, however many relays use it');
   }
 }
 
+// ── THE UPDATE CRON IS PER CLONE, AND BOTH HALVES WERE BROKEN ────────
+//
+// Found before it ran, while answering "can the agent test remote
+// update and restart on the relay it owns".
+//
+//   THE MARKER WAS SHARED. cron-install removed every line carrying
+//   `# spirit-host-update` before adding its own, so installing from the
+//   lab clone DELETED spirit-3's line. Not an update cron — a game of
+//   swapping.
+//
+//   AND CRON HAS NO ENVIRONMENT, which is worse. bash/update restarts
+//   "$UNIT_NAME", and cron sources no .env and no profile — so a line
+//   installed from the lab clone would pull the LAB's code and restart
+//   spirit-relay: the live box, bounced every ten minutes on behalf of a
+//   directory it knows nothing about.
+test.subHeading('Two clones can each keep their own update cron');
+{
+  const cronIn = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'cron-install'), 'utf8');
+  const cronOut = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'cron-remove'), 'utf8');
+
+  if (cronIn.indexOf('spirit-host-update:$UNIT_NAME') !== -1) {
+    test.check('the cron marker names the unit, so two clones are two lines');
+  } else {
+    test.fail('cron-install still uses a marker both clones share');
+  }
+
+  // THE ENV TRAVELS ON THE LINE. Longer to read and impossible to
+  // forget, which is the trade this two-clone arrangement keeps asking
+  // for.
+  if (cronIn.indexOf('SPIRIT_UNIT_NAME=$UNIT_NAME') !== -1) {
+    test.check('and the line carries its own environment, because cron has none');
+  } else {
+    test.fail('the cron line relies on an environment cron does not provide');
+  }
+
+  // REMOVAL TAKES ONLY ITS OWN. A cron-remove that swept both would be
+  // the same fault wearing the other face.
+  if (cronOut.indexOf('spirit-host-update:$UNIT_NAME') !== -1) {
+    test.check('while removing one leaves the other clone’s alone');
+  } else {
+    test.fail('cron-remove sweeps every clone');
+  }
+
+  // AND THE LEGACY LINE IS ONLY THE DEFAULT UNIT'S TO CLEAR. spirit-3
+  // already has a line with the old bare marker; clearing it from the
+  // lab clone would delete the live box's cron.
+  if (cronIn.indexOf('UNIT_NAME" = "spirit-relay"') !== -1) {
+    test.check('and the pre-existing bare marker is claimed by the default unit only');
+  } else {
+    test.fail('any clone may clear the legacy cron line');
+  }
+}
+
 test.subHeading('lab-install and lab-remove cannot be aimed at the live relay');
 {
   const labInstall = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');

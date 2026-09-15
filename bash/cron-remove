@@ -1,9 +1,12 @@
 #!/bin/bash
+# Take THIS clone's update cron out. Leaves any other clone's alone.
 source "$(dirname "$0")/lib.sh"
 need_root
 have crontab || die "crontab not installed"
 
-say "remove update cron"
+say "remove update cron for $UNIT_NAME"
 existing=$(crontab -l 2>/dev/null || true)
-printf '%s\n' "$existing" | grep -v "spirit-host-update" | crontab -
+filtered=$(printf '%s\n' "$existing" | grep -v "spirit-host-update:$UNIT_NAME" || true)
+printf '%s\n' "$filtered" | crontab -
 ok "removed"
+crontab -l 2>/dev/null | grep "spirit-host-update" || echo "    no update cron left for any clone"

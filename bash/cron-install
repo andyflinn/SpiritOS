@@ -1,15 +1,52 @@
 #!/bin/bash
+# Keep THIS clone up to date from origin, every 10 minutes.
 source "$(dirname "$0")/lib.sh"
 need_root
 have crontab || die "crontab not installed"
 
-MARKER="# spirit-host-update"
-LINE="*/10 * * * * $REPO_ROOT/bash/update >> /var/log/spirit-host-update.log 2>&1 $MARKER"
+# ── ONE LINE PER CLONE, AND BOTH HALVES OF THAT WERE BROKEN ──────────
+#
+# This script installed a line marked `# spirit-host-update` and removed
+# every line carrying that marker first. With two clones on one box that
+# is not an update cron, it is a game of swapping: installing from the
+# lab clone DELETED spirit-3's line and replaced it with the lab's.
+#
+# So the marker carries the unit name. Two clones, two lines, and
+# `cron-remove` takes only its own.
+MARKER="# spirit-host-update:$UNIT_NAME"
 
-say "install update cron (every 10 min)"
+# ── AND CRON HAS NO ENVIRONMENT ──────────────────────────────────────
+#
+# The worse half. `bash/update` restarts "$UNIT_NAME", which comes from
+# SPIRIT_UNIT_NAME — and cron does not source .env, or a profile, or
+# anything. So a line installed from the lab clone would have pulled the
+# LAB's code and restarted spirit-relay: the live box, bounced every ten
+# minutes on behalf of a directory it knows nothing about.
+#
+# The env travels ON the line. It is longer to read and it cannot be
+# forgotten, which is the trade this whole two-clone arrangement keeps
+# asking for.
+ENVPART="SPIRIT_UNIT_NAME=$UNIT_NAME SPIRIT_RELAY_PORT=$NODE_PORT SPIRIT_RELAY_DOMAIN=$DOMAIN"
+LOG="/var/log/spirit-host-update-$UNIT_NAME.log"
+LINE="*/10 * * * * $ENVPART $REPO_ROOT/bash/update >> $LOG 2>&1 $MARKER"
+
+say "install update cron for $UNIT_NAME (every 10 min)"
+echo "    clone: $REPO_ROOT"
+echo "    unit:  $UNIT_NAME"
 existing=$(crontab -l 2>/dev/null || true)
-filtered=$(printf '%s\n' "$existing" | grep -v "spirit-host-update" || true)
+# Only this clone's line. Another clone's marker is a different string
+# and survives untouched — which is the whole point of the change.
+filtered=$(printf '%s\n' "$existing" | grep -v "spirit-host-update:$UNIT_NAME" || true)
+
+# THE LINE THAT IS ALREADY ON spirit-3 carries the OLD bare marker, from
+# before there were two clones. It belongs to the default unit — nothing
+# else existed when it was written — so only the default unit may clear
+# it. Doing this from the lab clone would delete the live box's cron,
+# which is the exact fault this rewrite is fixing.
+if [ "$UNIT_NAME" = "spirit-relay" ]; then
+  filtered=$(printf '%s\n' "$filtered" | grep -v "spirit-host-update$" || true)
+fi
 printf '%s\n%s\n' "$filtered" "$LINE" | crontab -
 ok "crontab now contains:"
-crontab -l | grep spirit-host-update
-echo "    log: /var/log/spirit-host-update.log"
+crontab -l | grep "spirit-host-update" || true
+echo "    log: $LOG"
