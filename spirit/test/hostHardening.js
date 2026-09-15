@@ -496,6 +496,52 @@ test.subHeading('The clone decides what it is — not whatever the shell was car
 // reaches the lab and refuses everything else, twice over — the clone
 // has no .env (which is what MAKES it the main clone), or it resolves to
 // the live unit or domain.
+// ── A SCRIPT ADDED FROM WINDOWS IS NOT EXECUTABLE ────────────────────
+//
+// The work machine is Windows, git cannot read an exec bit there, and so
+// EVERY script added to bash/ from here lands in the index as 100644.
+// Nothing complains. It is discovered on the relay, by the thing that
+// needed to run it failing — and for a script invoked by sshd as a
+// forced command, "failing" means the door does not open.
+//
+// That is exactly how keeper-ssh shipped: `chmod +x` locally (which git
+// on Windows ignores), then `git update-index --chmod=+x` BEFORE the
+// file was staged, with its error swallowed by 2>/dev/null. Two mistakes
+// that cancel into silence. The file arrived on spirit-3 as -rw-r--r--.
+//
+// `chmod +x` on the box does not fix it either: the mode lives in the
+// index, so the next `git reset --hard` in bash/update puts it back.
+//
+// So assert it here, where it costs nothing: anything in bash/ with a
+// shebang is something meant to be RUN, and must be 100755. lib.sh is
+// sourced rather than run and has no shebang line of its own to claim
+// otherwise — it is 100644 correctly, and this rule leaves it alone.
+test.subHeading('Every script in bash/ is committed executable');
+{
+  const ls = require('child_process')
+    .execSync('git ls-files -s bash/', { cwd: REPO_ROOT, encoding: 'utf8' });
+  const wrong = [];
+  ls.split('\n').forEach(function (row) {
+    if (!row.trim()) return;
+    const mode = row.slice(0, 6);
+    const file = row.split('\t')[1];
+    if (!file) return;
+    const full = path.join(REPO_ROOT, file);
+    if (!fs.existsSync(full) || fs.statSync(full).isDirectory()) return;
+    const first = fs.readFileSync(full, 'utf8').slice(0, 2);
+    // A shebang is the file saying it is meant to be executed. lib.sh
+    // opens with one too — `#!/bin/bash` — but is only ever sourced, so
+    // it is named rather than sniffed.
+    if (first !== '#!' || file === 'bash/lib.sh') return;
+    if (mode !== '100755') wrong.push(file + ' is ' + mode);
+  });
+  if (wrong.length === 0) {
+    test.check('nothing in bash/ has a shebang and a non-executable mode');
+  } else {
+    test.fail('added from Windows without --chmod=+x: ' + wrong.join(', '));
+  }
+}
+
 test.subHeading('The keeper’s SSH key runs one script and cannot reach the live relay');
 {
   const keeper = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'keeper-ssh'), 'utf8');
