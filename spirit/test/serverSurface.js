@@ -272,6 +272,7 @@ freePort()
       // happens either way.
       ['POST', '/api/hub/invite', { url: 'https://not-on-the-list.example', label: 'x', days: 1 }],
       ['POST', '/api/hub/remove-peer', { url: 'https://not-on-the-list.example', key: 'NOPE' }],
+      ['POST', '/api/hub/rename', { url: 'https://not-on-the-list.example', label: 'x' }],
       ['POST', '/api/hub/post'],
       ['POST', '/api/hub/contact'],
       ['POST', '/api/hub/unknown-senders'],
@@ -301,6 +302,41 @@ freePort()
           'name not in scope at request time is invisible until the request is made.' +
           lastWords());
       }
+      // ── THE DOORS THAT SHARE askRelay MUST BE HANDED THE SAME DEPS ──
+      //
+      // The block above deliberately asks nothing about what a route
+      // ANSWERS, and that is why it could not see this one. `rename` and
+      // `remove-peer` are the same door twice: both build an ordinary
+      // post and hand it to `hub.askRelay`, which needs `{ router,
+      // relayKey }`. `rename` was wired with `{ presence }` instead, so
+      // askRelay refused at its first line — 503, "this node is not
+      // connected to a relay" — on every call, for every input, on a node
+      // that was connected. The verb shipped and had never once worked.
+      //
+      // Nothing caught it: unit tests call the handler with deps of their
+      // own, `node --check` sees a valid object literal, and a 503 is an
+      // answer, so the survivability check above passed it.
+      //
+      // WHAT MAKES IT VISIBLE is that both doors, given a url on no
+      // Natter list, must refuse for the SAME reason — withChosenRelay,
+      // before any network — and therefore with the same status. A door
+      // handed the wrong deps never reaches that point and says 503
+      // instead. Measured on the broken build: rename 503, remove-peer
+      // 403. This asserts they agree, whatever the number turns out to be.
+      const SAME = { url: 'https://not-on-the-list.example', label: 'x', key: 'NOPE' };
+      return request(port, 'POST', '/api/hub/rename', SAME).then(function (ren) {
+        return request(port, 'POST', '/api/hub/remove-peer', SAME).then(function (rem) {
+          if (ren.status === rem.status) {
+            test.check('rename and remove-peer refuse an unlisted relay alike (HTTP ' +
+              ren.status + ') — both hold the router and the url->key pin');
+          } else {
+            test.fail('rename answered ' + ren.status + ' where remove-peer answered ' +
+              rem.status + '. They share askRelay, so they must refuse an unlisted url ' +
+              'identically. A 503 here means the route was handed the wrong deps in ' +
+              'server.js and cannot reach a relay at all.' + lastWords());
+          }
+        });
+      }).then(function () {
       return request(port, 'GET', '/api/version').then(function (after) {
         if (after.status === 200) {
           test.check('and the process is still alive after all of them');
@@ -309,6 +345,7 @@ freePort()
             (after.error || 'HTTP ' + after.status) + ')' + lastWords());
         }
         return port;
+      });
       });
     });
   })

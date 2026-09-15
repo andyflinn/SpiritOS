@@ -1093,13 +1093,20 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // Forgetting somebody. relay.removePeer has worked since it shipped
-    // and nothing on this side could reach it — a verb with no interface.
+    // Renaming this node's own row on a relay (R4). Same deps as the
+    // door below and for the same reason: both are ordinary posts that
+    // travel on this node's stream, so both need the router and the
+    // url→key pin. Handing `presence` instead — which is what this line
+    // did until 2026-09-15 — is not a wrong answer but a 503 on every
+    // call, because askRelay refuses before it reaches the relay at all.
     if (pathname === '/api/hub/rename') {
-      hub.handleRename(req, res, readJsonBody, { presence: presence });
+      hub.handleRename(req, res, readJsonBody,
+        { router: peerRouter, relayKey: pinnedRelayKey });
       return;
     }
 
+    // Forgetting somebody. relay.removePeer has worked since it shipped
+    // and nothing on this side could reach it — a verb with no interface.
     if (pathname === '/api/hub/remove-peer') {
       hub.handleRemovePeer(req, res, readJsonBody,
         { router: peerRouter, relayKey: pinnedRelayKey });
