@@ -148,8 +148,8 @@ async function run() {
     //
     // A fresh node has no preferences.json, so unknownPolicy answers
     // `silent`: the tightest setting, and the default for the same reason.
-    const first = await hub(portOf(alfa), 'POST', '/api/hub/post', {
-      to: bravoKey, text: 'unsolicited hello',
+    const first = await hub(portOf(alfa), 'POST', '/api/spirit', {
+      verb: 'peer.post', to: bravoKey, text: 'unsolicited hello',
     });
 
     // THE SENDER IS NOT TOLD. It got a receipt, because the bytes did
@@ -199,8 +199,8 @@ async function run() {
       test.fail('unknown-senders: ' + set.status + ' ' + JSON.stringify(set.body));
     }
 
-    const second = await hub(portOf(alfa), 'POST', '/api/hub/post', {
-      to: bravoKey, text: 'hello again',
+    const second = await hub(portOf(alfa), 'POST', '/api/spirit', {
+      verb: 'peer.post', to: bravoKey, text: 'hello again',
     });
     await sleep(600);
 
@@ -293,7 +293,7 @@ async function run() {
     const before = inbound(homeOf(bravo), alfaKey).length;
     for (let n = 0; n < 10; n += 1) {
       /* eslint-disable no-await-in-loop */
-      await hub(portOf(alfa), 'POST', '/api/hub/post', { to: bravoKey, text: 'x'.repeat(4000) });
+      await hub(portOf(alfa), 'POST', '/api/spirit', { verb: 'peer.post', to: bravoKey, text: 'x'.repeat(4000) });
     }
     await sleep(1200);
     const after = inbound(homeOf(bravo), alfaKey);
@@ -311,7 +311,7 @@ async function run() {
     await hub(portOf(bravo), 'POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' });
     for (let n = 0; n < 9; n += 1) {
       /* eslint-disable no-await-in-loop */
-      await hub(portOf(charlie), 'POST', '/api/hub/post', { to: bravoKey, text: 'knock ' + n });
+      await hub(portOf(charlie), 'POST', '/api/spirit', { verb: 'peer.post', to: bravoKey, text: 'knock ' + n });
     }
     await sleep(1200);
 

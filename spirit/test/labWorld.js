@@ -215,11 +215,25 @@ function createWorld(opts) {
       const minted = await askOn(relay.url, owner, { invite: { label: name, days: 1, token: '' } });
       if (!minted.ok) return { ok: false, error: 'mint ' + name + ': ' + minted.error };
       const token = minted.invite.token;
+      // THE TOKEN AND THE WORD TRAVEL TOGETHER since R1. `inviteLabel`
+      // is what the owner wrote on the invite — spoken down a phone,
+      // matched at the far end, never stored — and the relay refuses a
+      // token that arrives without one rather than falling back:
+      //
+      //   Andy: "i dislike a relay supporting stale nodes at this point
+      //   the nodes should break rather than STILL having code on a
+      //   relay that support old crap"
+      //
+      // This lab minted with `label: name` above, so the word IS the
+      // name here. Sent explicitly all the same: they are two different
+      // things that happen to match in a lab, and writing `name` twice
+      // is what says so.
       const joined = await post(relay.url + '/api/relay/claim', {
         name: name,
         publicKey: id.publicKey,
         sig: auth.sign(id.privateKey, auth.claimMessage(name)),
         invite: token,
+        inviteLabel: name,
       });
       if (!joined.ok) {
         return { ok: false, error: 'join ' + name + ': ' + JSON.stringify(joined.body) };
@@ -290,12 +304,25 @@ function createWorld(opts) {
     } catch (e) { relayKey = ''; }
     if (!relayKey) return { ok: false, error: 'the lab relay published no key' };
 
+    // THE SIGNATURE IS A HEADER AND NEVER A QUERY STRING. This sent it
+    // as `&sig=` and had been getting a flat 403 for it — a relay
+    // REFUSES a query-string signature rather than ignoring it
+    // (relay.streamSignatureFrom), because a URL ends up in logs,
+    // referrers and history and a signature must not.
+    //
+    // So every process-spawning test in this tree failed at "build the
+    // lab" and had done since the stream grew that rule. Nothing in the
+    // harness runs them, so nothing said so; STATE.md in labMaster/ is
+    // where that was written down, and this is the fix it was waiting
+    // for.
     const streamSig = auth.sign(ownerId.privateKey, auth.streamMessage(ownerId.publicKey));
-    const wire = relayUrl + '/api/relay/stream?key=' + encodeURIComponent(ownerId.publicKey) +
-      '&sig=' + encodeURIComponent(streamSig);
+    const wire = relayUrl + '/api/relay/stream?key=' + encodeURIComponent(ownerId.publicKey);
 
     const stop = new AbortController();
-    const opened = await fetch(wire, { signal: stop.signal });
+    const opened = await fetch(wire, {
+      signal: stop.signal,
+      headers: { 'X-Spirit-Sig': streamSig },
+    });
     if (!opened.ok) {
       return { ok: false, error: 'lab owner could not open a stream: ' + opened.status };
     }

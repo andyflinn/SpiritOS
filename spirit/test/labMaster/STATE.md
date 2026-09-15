@@ -11,17 +11,51 @@ a red one, and the numbers below are the trap, written down.
 
 **`spirit/test/liveFrontDoor.js` is in the same condition**, and it is
 not in this directory — it sits with the suites and is excluded from the
-harness by name, because it spawns a relay and three nodes. It fails
-before it starts, identically before and after R8:
+harness by name, because it spawns a relay and three nodes.
+
+### It builds again — 2026-09-15, after the loopback fold
+
+It used to fail before it started:
 
 ```
 could not build the lab: mint alfa: lab owner could not open a stream: 403
 ```
 
-That is `labWorld.build` and not this cycle's work. It is named here
-because it is the same class of thing and the same page should carry it:
-**everything in this tree that spawns real processes is currently red,
-and none of it was red in a way anybody would notice.**
+*This corrects the note that stood here.* That was not "`labWorld.build`
+rot in general" — it was two specific things, both found and fixed:
+
+1. **The stream signature travelled on the query string.** `labWorld.askOn`
+   sent `&sig=`, and a relay REFUSES that rather than ignoring it
+   (`relay.streamSignatureFrom`): a URL ends up in logs, referrers and
+   history, and a signature must not. Now an `X-Spirit-Sig` header.
+2. **The claim carried a token and no word.** Since R1 the two travel
+   together or the claim is refused — `{"error":"invite label required"}`
+   — because the relay stopped falling back for stale nodes.
+
+With those two, the lab builds, and the file went from **3 ✅ / 9 ❌**
+(nothing but "could not build") to **16 ✅ / 8 ❌**. What now passes is
+the thing it exists to prove: a packet crosses between real processes,
+is admitted, acquired by `message`, logged, counted in peerStats, and
+found again by its hash alone. The verb fold is proven live too —
+`contact.setSenders` and `peer.post` both answer real nodes.
+
+### The eight that are left
+
+Not investigated, and not this sitting's work. They are the ordinary rot
+this page is about, now visible for the first time in months because the
+file gets far enough to run:
+
+- the inbound-log reads (`bravo logged: []`, `after acquire: []`) — the
+  helper reads a file directly and may be reading the wrong one or too
+  early;
+- the rationing section (`contact posts: 0 of 10 landed`) — every post in
+  it is 4000 bytes, which is under `MAX_ROUTED_TEXT` but worth checking
+  against the packet caps;
+- `set-device` answers `no such peer`.
+
+**Everything in this tree that spawns real processes is still partly red,
+and none of it was red in a way anybody would notice.** That has not
+changed. What changed is that one of them now reaches its subject.
 
 ## The state, before and after
 
@@ -75,13 +109,23 @@ is deleted:
 | `relayPing` | labMaster's own lifecycle — create, start, delete, leave `work` alone | the ping. Claim needs a key and a signature; the send/inbox pair becomes a post down a held stream |
 | `relayAbuse` | name charset, and a cap on what one request may carry | `MAX_TEXT` → `MAX_ROUTED_TEXT`; the send rate limit is gone with `sendHits`, and the claim limit is the one left |
 | `relayPersist` | `routingTable.json` survives stop + start | it proved persistence with MAIL. The file holds `peers` and nothing else now, which is a better subject than the one it had |
-| `relayHubPing` | a node reaching a relay through its own `/api/hub/*` | `/api/hub/send` and `/api/hub/inbox` → `/api/hub/post` |
+| `relayHubPing` | a node reaching a relay through its own loopback API | `/api/hub/send` and `/api/hub/inbox` → `peer.post` and the stream |
 | `relaySignedPing` | Ed25519 claim | the send half |
 
 The common cost is that **a post needs somebody holding a stream**. These
 casts do not open one, so every rewrite here is "spawn the target, open
 its wire, then post" rather than a one-line swap. That is the sitting
 this page is asking for, and it is not the one that wrote this page.
+
+**Two of the five now have a worked example.** `labWorld.askOn` speaks the
+whole thing by hand — census for the relay key, a stream held with the
+signature in a header, a post, and a read of the stream until the reply
+to THAT hash arrives. Whoever takes this sitting should start by reading
+it rather than inventing the shape again.
+
+Their claims were also retargeted at `relay.claim` on 2026-09-15 when
+`/api/hub/claim` folded, so the claim half of `relayHubPing` and
+`relaySignedPing` is current even though the send half is not.
 
 ## Until then
 
