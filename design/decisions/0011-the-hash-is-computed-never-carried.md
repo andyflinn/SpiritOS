@@ -55,9 +55,41 @@ the conversation that produced this file, and the correction is the reason the
 file exists. Nothing is being kept out. An unmatched hash is not
 dangerous-and-handled; it is **unproducible** without the request.
 
-## The browser is outside the cryptography, and this is its only thread
+## The loopback client layer
 
-**The browser has no key and cannot sign.** It never participates in the
+> The browser itself is not crypto-capable but it's considered a safe loopback
+> client, same for processes. That's really what the client layer is: loopback
+> client layer. (Andy)
+
+**The line is not browser-versus-process. It is loopback client versus peer.**
+
+A **peer** holds a key, signs, and is addressable. A **loopback client** holds
+no key, cannot sign, cannot verify, and reaches the node only from this machine.
+It asks the node to act, and the node signs. Browsers are loopback clients.
+Spawned processes are loopback clients. Nothing about the layer is about a
+browser, which is why it is one POST and one JSON answer over loopback and not a
+JavaScript API.
+
+**Why a process does not simply get its own key.** It could — nothing in the
+protocol forbids it. What argues against it is **transience**. A peer is
+something another peer can address later and reconcile with; identity here is
+worth having precisely because it persists, accumulates a row on a relay, and
+holds a log somebody can join on a hash. A key that comes and goes with a job is
+an identity nobody can write to, and a history nobody can close. So a process is
+nearer a browser than a peer, and borrows the node's identity like one.
+
+**The trust boundary is the loopback interface itself, not the client.** Any
+local client can ask this node to post as it — that is the contract rather than
+a hole in it, and it is the same arrangement every operating system makes: what
+you run on your machine acts as you. Anything wanting a narrower boundary than
+"this machine" needs a key of its own, which is to say it needs to stop being a
+loopback client and become a peer.
+
+*(An earlier note in this conversation flagged "any process can post as this
+node" as a boundary to be decided. Under this model it is not a defect; it is
+the definition. Recorded because the concern will be raised again otherwise.)*
+
+**So a loopback client has no key and cannot sign.** It never participates in the
 protocol above — it asks the node on its own machine to act, and the node signs.
 
 So for a page, the hash is **not proof of anything**. It cannot check a

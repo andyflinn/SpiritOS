@@ -32,10 +32,19 @@
 //      travelled end to end since the router landed and nothing read it
 //      until this layer.
 //
-//   5. THIS IS NOT A BROWSER API. It is one POST and one JSON answer over
-//      loopback, plus one SSE stream. A spawned process implements the
-//      same contract in any language and gets the same hash for the same
-//      reason. The shell is one client of it, not its owner.
+//   5. THIS IS THE LOOPBACK CLIENT LAYER, not a browser API.
+//
+//        Andy: "The browser itself is not crypte-capable but it is
+//        considered a safe loop-back client, same for processes."
+//
+//      The line is loopback client versus PEER, not browser versus
+//      process. A peer holds a key, signs, and is addressable. A
+//      loopback client holds none of that and asks the node to act.
+//      A process could take a key and become a peer; transience argues
+//      against it, because an identity nobody can address later is not
+//      worth having. So it is one POST and one JSON answer over
+//      loopback, plus one stream — implementable in any language, and
+//      the shell is one client of it rather than its owner.
 //
 // What is NOT here, deliberately: catching up on what arrived while
 // nobody was listening. A table dies with the page or the process that
