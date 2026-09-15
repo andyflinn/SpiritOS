@@ -62,86 +62,24 @@ var ROUTE_WAIT_MS = 15000;
 // temporary and a page that knows it is rate-limited waits rather than
 // gives up. Everything else gets `not now`.
 var DEVICE_PER_MIN = 10;
-// ── WHAT A LABEL MAY BE, AND WHAT A SPOKEN WORD MAY BE ───────────────
+// ── WHAT A LABEL MAY BE ──────────────────────────────────────────────
 //
-//   Andy: "I'm thinking of a printable string with spaces, number upper
-//   and lower case letters, even punctuation.... unicode."
+// The rule moved to js/labelRule.js on 2026-09-15 and this requires it.
 //
-// ONE RULE SPLIT INTO TWO, because the tree has two different fields
-// wearing the same regex. R1 separated them and this finishes the job:
+//   Andy: "an input field should validate before taxing the wire. the
+//   reason to have it there is to make it uniformely avalable to all
+//   components. hops on wire can be saved etc..."
 //
-//   PUBLIC LABEL — owned by the key, displayed, never spoken. It is a
-//     caption on a row and it should be able to hold a person's actual
-//     name. Permissive.
-//   SPOKEN WORD — an invite's label and its token, read down a phone
-//     call and retyped by a stranger, compared exactly. Spaces and
-//     punctuation are genuinely bad here: "was that a hyphen or a dash,
-//     one space or two?" Tight, and unchanged.
+// It lived here, which was right while the relay was the only caller.
+// An input field that checks before spending a round trip is a second
+// caller, and a rule with two callers written in one of them is a rule
+// that will be changed in one of them (ownerBadge.js says the same
+// about its own).
 //
-// WHY PERMISSIVE IS SAFE HERE and would not be elsewhere: a label is not
-// an identity. R4 made the key the identity and duplicate labels legal
-// by design — spirit-3 carries two `jazz` and two `rock` — so confusable
-// captions are an existing condition, not a new attack. Nothing routes
-// on a label, nothing is filed under one, and the only signed format
-// that carries one puts it LAST (relayAuth.claimMessage), where no
-// delimiter inside it can forge a different message.
-//
-// ── THE BLACKLIST IS OF THE INVISIBLE, NOT OF PUNCTUATION ────────────
-//
-// Every visible character is allowed. What is refused is what cannot be
-// seen and therefore cannot be judged: C0/C1 controls, the soft hyphen,
-// zero-width space/joiner/non-joiner and the marks, line and paragraph
-// separators, the bidi overrides and isolates, and the byte-order mark.
-// Those break a table row, reverse what a reader sees, or make two
-// different labels pixel-identical. Ordinary whitespace is not refused —
-// normalizeName collapses it — because a tab pasted out of a document is
-// a formatting accident and not an attack.
-var LABEL_INVISIBLE_RE = new RegExp(
-  '[\\u0000-\\u001F\\u007F-\\u009F\\u00AD\\u200B-\\u200F' +
-  '\\u2028\\u2029\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u206F\\uFEFF]');
-
-// ── TWO LENGTHS, BECAUSE UNICODE MAKES THEM DIFFERENT NUMBERS ────────
-//
-//   Andy: "the max length both for storage space on the relays enrolment
-//   ledger, and also for limiting the width of columns in list displays
-//   since that is a primary use for labels."
-//
-// Both reasons are real and they do not measure the same thing. 40 CJK
-// characters is 40 graphemes, 120 bytes and 80 display columns; 40 emoji
-// is 40 graphemes, 160 bytes and a `.length` of 80. `.length` is the
-// obvious thing to reach for and is wrong for every non-ASCII case.
-//
-// STORAGE, measured rather than assumed: a ledger row pretty-printed is
-// 171 bytes, of which a 9-character label is 9. The key and the
-// timestamp dominate. A thousand peers at 256 bytes of label is 250 KiB,
-// which is nothing on this box — so the byte cap is a BOUND, not thrift.
-// It exists so a peer cannot write ten kilobytes into somebody else's
-// ledger.
-//
-// WIDTH is the cap that is actually felt, and the apps truncate for
-// their own columns (a relay has no opinion about a table). This one
-// keeps a label from being absurd anywhere.
-var LABEL_MAX_BYTES = 256;
-var LABEL_MAX_GRAPHEMES = 48;
-
-// The spoken pair, unchanged: 1-32 of the characters that survive being
-// read aloud. Also still the token rule — see the note at claimAttempt
-// about there being no entropy floor, which is why the invite LABEL is
-// the second factor.
-var SPOKEN_RE = /^[A-Za-z0-9._-]{1,32}$/;
-
-// Graphemes, not codepoints: an emoji with a skin-tone modifier is one
-// thing a reader sees and two codepoints. Intl.Segmenter is in every
-// current browser and Node 18+; the fallback counts codepoints, which is
-// wrong only in the direction of being more permissive.
-var LABEL_SEGMENTER = null;
-try { LABEL_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' }); }
-catch (e) { LABEL_SEGMENTER = null; }
-
-function graphemeCount(s) {
-  if (LABEL_SEGMENTER) return Array.from(LABEL_SEGMENTER.segment(s)).length;
-  return Array.from(s).length;
-}
+// THIS FILE IS STILL THE ENFORCER. The browser half is a courtesy that
+// saves a hop; the ledger is written here, and every claim and rename
+// is checked here whatever any page believed.
+var labelRule = require('./labelRule');
 
 var CLAIM_PER_MIN = 10;
 var WINDOW_MS = 60 * 1000;
@@ -307,42 +245,12 @@ function createRelay(rootDir) {
     return true;
   }
 
-  // NFC FIRST, because Unicode lets the same name be two byte strings:
-  // `é` as one codepoint, or `e` followed by a combining accent. Without
-  // this the stored form depends on which keyboard typed it, the byte
-  // cap measures something unstable, and two identical-looking labels
-  // are unequal for no reason a person could see.
-  //
-  // THEN WHITESPACE COLLAPSES rather than being refused. `andy  flinn`
-  // and `andy flinn` must not be two rows that look the same in a list
-  // where duplicates are legal and the eye is the only thing telling
-  // them apart. This also swallows a tab or a newline pasted out of a
-  // document, turning a formatting accident into a space instead of a
-  // refusal — the invisible characters that ARE refused are the ones
-  // whitespace collapsing cannot help with.
-  function normalizeName(name) {
-    if (typeof name !== 'string') return '';
-    var s = name.normalize ? name.normalize('NFC') : name;
-    return s.replace(/\s+/g, ' ').trim();
-  }
-
-  // Returns WHY, not just whether — a label refused for being 300 bytes
-  // long and one refused for carrying a bidi override are different
-  // problems for the person reading the message, and 'bad name' told
-  // them neither.
-  function labelProblem(n) {
-    if (!n) return 'name required';
-    if (LABEL_INVISIBLE_RE.test(n)) return 'name has invisible or control characters';
-    if (Buffer.byteLength(n, 'utf8') > LABEL_MAX_BYTES) return 'name too long';
-    if (graphemeCount(n) > LABEL_MAX_GRAPHEMES) return 'name too long';
-    return '';
-  }
-
-  // The tight half: an invite's label and its token. Read aloud, retyped
-  // by a stranger, compared exactly.
-  function spokenOk(n) {
-    return !!n && SPOKEN_RE.test(n);
-  }
+  // Thin wrappers, so the twelve call sites below read as they always
+  // have. The rule itself is labelRule.js — see the note at the head of
+  // this file about why it left.
+  function normalizeName(name) { return labelRule.normalize(name); }
+  function labelProblem(n) { return labelRule.problem(n); }
+  function spokenOk(n) { return labelRule.spokenOk(n); }
 
   // A PEER IS ITS KEY. A `|| peer.name` fallback stood here for rows
   // filed under a label, and went with them — every row has a key now,

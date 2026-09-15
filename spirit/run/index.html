@@ -11,6 +11,16 @@
          node may be left with fewer relays). Node-only code inside it
          never runs here. -->
     <script src="/js/ownerBadge.js"></script>
+    <!-- The isomorphic half of js/labelRule.js: what a label may be.
+
+         Andy: "an input field should validate before taxing the wire."
+
+         The relay is still the enforcer — it writes the ledger and checks
+         every claim and rename regardless. This is so a form can say what
+         is wrong while the cursor is still in the box, instead of paying
+         a round trip to another continent to be told about a space. One
+         file so the two cannot drift. -->
+    <script src="/js/labelRule.js"></script>
     <!-- One peer, one file, named by the peer's whole public key.
          js/chatLog.js reads this at load, so it comes first. -->
     <script src="/js/peerFile.js"></script>

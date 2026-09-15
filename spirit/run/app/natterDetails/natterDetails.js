@@ -33,6 +33,20 @@
 
 var ndEscapeHtml = spirit.core.util.escapeHtml;
 var ndIcon = spirit.core.const.ICON;
+
+// WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
+// rule is js/labelRule.js, loaded by index.html, and the relay enforces
+// the same one — this only saves the hop and says what is wrong while
+// the cursor is still in the box.
+//
+// If that script did not load there is no rule here and every label is
+// let through to the relay, which decides as it always did. Losing a
+// courtesy is a nuisance; inventing a second opinion about what a label
+// may be would be worse. Same shape as natterCanRemove in Natter.
+function ndLabelProblem(name) {
+  var rule = (typeof window !== 'undefined' && window.spiritLabelRule) || null;
+  return rule ? rule.problem(name) : '';
+}
 var ndApi = null;
 
 var ndUrl = '';         // which mailbox this screen is
@@ -626,9 +640,11 @@ function ndRename(button) {
   var panel = button.closest('.natter-rename');
   var out = panel.querySelector('.nd-name-out');
   var wanted = panel.querySelector('.nd-name-new').value.trim();
-  if (!wanted) {
+  // The same courtesy the claim panel does, and the same rule object.
+  var badWanted = ndLabelProblem(wanted);
+  if (badWanted) {
     out.className = 'job-manifest-note nd-name-out is-error';
-    out.textContent = 'a new label is required';
+    out.textContent = badWanted;
     return;
   }
 
@@ -671,7 +687,16 @@ function ndClaim(button) {
     out.textContent = text;
   }
 
-  if (!name) { say('a public label is required', true); return; }
+  // ASKED HERE FIRST, so a space costs nothing.
+  //
+  //   Andy: "an input field should validate before taxing the wire...
+  //   hops on wire can be saved etc..."
+  //
+  // The relay still decides — it writes the ledger — but there is no
+  // reason to cross an ocean to be told about a character. Same rule
+  // object both sides (js/labelRule.js), so the two cannot disagree.
+  var badName = ndLabelProblem(name);
+  if (badName) { say(badName, true); return; }
   // ASKED FOR HERE rather than discovered as a 400 from the relay. The
   // two arrive together — a token and a word, down one phone call — so a
   // token with no word is a half-copied invite, and saying so before the
