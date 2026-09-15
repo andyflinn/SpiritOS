@@ -92,6 +92,14 @@ This directory contains the vision, principles, and architecture decisions for *
   `spirit/test/protocolSurface.js` goes red if the tree holds a door the register
   does not, or the register names one the tree has lost.
 
+- [0011 — The hash is computed, never carried](decisions/0011-the-hash-is-computed-never-carried.md)
+  — a post carries no hash and no correlation id. Every party derives it from the
+  signed bytes it holds, and it crosses the wire once: inside the responder's
+  signature on the reply. Correlation and proof are the same number, which is why
+  a forwarder cannot fake either. Also the browser's position — it has no key,
+  cannot verify, and the hash is the one thread it has back to what it caused:
+  on the immediate reply, and as `cause` on a streamed owner event.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.

@@ -199,6 +199,16 @@ function createPeerPost(opts) {
     });
   }
 
+  // A MATCH, NOT A DEFENCE — decision 0011.
+  //
+  // This reads like a guard against a forged hash and is not. The hash on
+  // an arriving reply cannot be produced without reconstructing the signed
+  // request, so an unmatched one is not dangerous-and-handled, it is
+  // UNPRODUCIBLE. Nothing is being kept out; this is the lookup that turns
+  // a reply into an answer to a specific post.
+  //
+  // `waiting` is keyed by a hash this node computed and never sent, which
+  // is what makes correlation and proof the same number.
   function settle(hash, answer) {
     var slot = waiting[hash];
     if (!slot) return false;

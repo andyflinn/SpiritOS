@@ -1099,6 +1099,22 @@ function createHub(rootDir) {
           // is on the same machine as the node that computed it. What it
           // is FOR is quoting: joining what a person did to what the log
           // says happened.
+          //
+          // AND IT IS THE PAGE'S ONLY THREAD — decision 0011.
+          //
+          //   Andy: "the browser doesn't have the proper crypto to sign
+          //   the request, it only has the means to match up request and
+          //   reply by the hash."
+          //
+          // A browser holds no key and cannot verify a signature, so it
+          // never participates in the protocol this hash belongs to. It
+          // asks this node to act and this node signs. The hash reaches
+          // it twice — here, on the immediate reply, and as `cause` on an
+          // owner event streamed later — and those two are the whole of
+          // what a page has to match an effect to the act that caused it.
+          //
+          // Which is why a page may DISPLAY a hash and QUOTE it, and must
+          // never conclude anything from one.
           onOk(out, (answer && answer.hash) || '');
         });
       });
