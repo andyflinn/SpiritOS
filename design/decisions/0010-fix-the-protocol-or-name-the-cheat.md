@@ -155,6 +155,33 @@ holds one this list does not.
 | `POST /api/relay/reply` · `receiptMessage` | the answer, by hash |
 | `GET /api/relay/stream` · `streamMessage` | the wire itself |
 
+### What travels on the stream
+
+**The register counted doors, not packets, and that was a hole it fell
+through twice.** `GET /api/relay/stream` is one row above, and seven
+different things go down it. On 2026-09-15 an eighth was added —
+`owner-event`, for the membership log — and nothing went red, because the
+door had not changed. The same blindness let `mailboxPublicKey` be renamed
+to `relayPublicKey` on a published response with no register entry
+disturbed.
+
+A door is a way of speaking. So is a word said through it.
+
+| event | what it is |
+|---|---|
+| `roster` | who this relay holds, sent to one identity as its stream opens |
+| `presence` | one member arrived or left — broadcast, and the only broadcast here |
+| `request` | a packet being delivered to the peer it is addressed to |
+| `reply` | the answer to one, carried back on the asker's own stream |
+| `relay-status` | what this box looks like, to the owner only, on membership change and on a stream opening or closing — never on a timer (0006) |
+| `relay-event` | one routed thing happened. Opt-in (`monitor`), owner only, live only, never stored |
+| `owner-event` | what this relay did about who belongs on it. Always on, owner only, and **kept** — see 0009 and the R2 note |
+
+Two of these are deliberately not one. `relay-event` is traffic and is
+forgotten; `owner-event` is membership and is written down. One event name
+for two retention rules would put the decision about whether somebody's
+words reach disk inside a string comparison.
+
 ### Bootstrap — cannot be a packet, by nature
 
 | | |
@@ -360,3 +387,36 @@ history. There is no third category with anything in it.
 
 Everything else on this relay is either the protocol, a granted
 exception, or gone.
+
+## What the register could not see, until 2026-09-15
+
+**It counted doors and not packets.** Every entry above is a route or a
+signed format, and for months that was taken to be the whole surface. It
+is not: `GET /api/relay/stream` is one row, and **seven different things
+go down it**.
+
+The hole was found by falling through it twice in one day. An eighth
+event — `owner-event`, carrying the membership log — was added and
+nothing went red, because no door had changed. Then `mailboxPublicKey`
+was renamed to `relayPublicKey` on a published response, which is a
+change every node in the world must follow, and the register was equally
+silent.
+
+So *What travels on the stream* is now a section above, and
+`protocolSurface.js` compares it against `presentNow.send` and
+`presentNow.broadcast` in both directions like everything else.
+
+**What is still unregistered, named rather than left to be discovered
+again:**
+
+1. **The fields on a published response.** `/api/relay/who` answers
+   `publicLabel`, `publicKey`, `claimedAt`, `owner` and `relayPublicKey`,
+   and the register knows none of them. A rename there breaks every node
+   and this document would not notice.
+2. **The packet envelope.** `{app, v, id, body, re}` — now load-bearing
+   for the client layer (`spirit/test/clientLayer.js`), and in no
+   register at all.
+
+Both are the same kind of thing as the stream events were: a way of
+speaking that is not a door. Neither is urgent; both are cheaper to
+register before something moves than after.

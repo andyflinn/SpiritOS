@@ -67,8 +67,30 @@ const server = readOr(path.join(RUN, 'server.js'), '');
   if (inTree.routes.indexOf(r) === -1) inTree.routes.push(r);
 });
 
+// ── AND WHAT TRAVELS ON THE ONE THAT IS A WIRE ───────────────────────
+//
+// THE REGISTER COUNTED DOORS, NOT PACKETS, and fell through that hole
+// twice. `GET /api/relay/stream` is one row, and seven different things
+// go down it — so an eighth (`owner-event`, 2026-09-15) was added and
+// nothing went red, because the door had not changed.
+//
+// A door is a way of speaking. So is a word said through it.
+//
+// Read off the two calls that put something on a stream: `presentNow.send`
+// names one identity, `presentNow.broadcast` names everybody. Anything
+// that reaches a sink goes through one of them, so this is the same kind
+// of scan as the route one above — the tree's own answer, not a list
+// somebody keeps beside it.
+const relaySrc = readOr(path.join(RUN, 'relay.js'), '');
+inTree.events = [];
+(relaySrc.match(/presentNow\.(?:send|broadcast)\([^;]*?'([a-z-]+)'/g) || []).forEach(function (call) {
+  const m = /'([a-z-]+)'\s*$/.exec(call);
+  if (m && inTree.events.indexOf(m[1]) === -1) inTree.events.push(m[1]);
+});
+
 inTree.messages.sort();
 inTree.routes.sort();
+inTree.events.sort();
 
 // ---------------------------------------------------------------------
 // What the register says.
@@ -101,8 +123,31 @@ rows.forEach(function (line) {
   });
 });
 
+// THE EVENT TABLE IS READ BY SECTION, not by scanning every row, because
+// a lowercase backticked word is common everywhere else in this document
+// — `monitor`, `keys`, `open` — and a scanner that took them all would
+// register half the vocabulary of the prose. The heading is the boundary,
+// and if somebody renames the heading this goes red for a missing
+// section, which is the right failure.
+const EVENT_HEADING = '### What travels on the stream';
+registered.events = [];
+(function () {
+  const start = doc.indexOf(EVENT_HEADING);
+  if (start === -1) return; // no section: every event reads as unregistered
+  const after = doc.indexOf('\n### ', start + EVENT_HEADING.length);
+  const section = doc.slice(start, after === -1 ? doc.length : after);
+  section.split('\n').forEach(function (line) {
+    if (!/^\s*\|/.test(line) || /^\s*\|[\s|:-]*$/.test(line)) return;
+    // First cell only. The second is prose and may name anything.
+    const first = line.split('|')[1] || '';
+    const m = /`([a-z-]+)`/.exec(first);
+    if (m && registered.events.indexOf(m[1]) === -1) registered.events.push(m[1]);
+  });
+})();
+
 registered.messages.sort();
 registered.routes.sort();
+registered.events.sort();
 
 test.subHeading(inTree.messages.length + ' signed format(s), ' +
   inTree.routes.length + ' public relay route(s)');
@@ -136,6 +181,7 @@ function compare(what, tree, listed) {
 
 compare('signed format', inTree.messages, registered.messages);
 compare('relay route', inTree.routes, registered.routes);
+compare('stream event', inTree.events, registered.events);
 
 // ---------------------------------------------------------------------
 test.subHeading('The register says what each one IS');
