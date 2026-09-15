@@ -301,9 +301,20 @@ function createTrafficLog(opts) {
     // `invite` is the owner's own word for the person — possibly a phone
     // number (R1) — which is exactly why it is owner-only and never
     // leaves this machine.
+    // `cause` IS NOT `hash`, AND THE COLUMN NAMES THE DIFFERENCE.
+    //
+    // A request row and its reply row ARE the transaction hash H. An
+    // owner row is a CONSEQUENCE of H — the relay telling this node what
+    // that post did to its membership. Putting it in `hash` would make
+    // three rows claim to be the same transaction; a column of its own
+    // lets a reader join `hash` to `cause` and keeps the relation legible.
+    //
+    // Empty on anything the relay merely witnessed — a stranger's claim
+    // arrives on an HTTP route and no post exists to name. See
+    // relay.ownerEvent.
     if (row.kind === 'owner') {
       ['event', 'label', 'invite', 'key', 'why', 'owner', 'revoked',
-        'invitesRevoked', 'expiresAt'].forEach(function (k) {
+        'invitesRevoked', 'expiresAt', 'cause'].forEach(function (k) {
         if (entry[k] !== undefined && entry[k] !== '') row[k] = entry[k];
       });
     }

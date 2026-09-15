@@ -1080,7 +1080,26 @@ function createHub(rootDir) {
               (out && out.error) || 'the relay refused');
             return;
           }
-          onOk(out);
+          // ── THE HASH THE PAGE COULD NOT KNOW ─────────────────────
+          //
+          //   Andy: "the shell posts the unsigned request, so it doesn't
+          //   know the hash yet, the reply from the server must come
+          //   with a hash, generally, so it can reconcile the request in
+          //   the log with the reply from the relay."
+          //
+          // Exactly so, and the node had it all along: peerPost computes
+          // `auth.requestHash(message)` and settles with it, and this
+          // function then handed the handler only the relay's reply body
+          // and dropped it. A browser that pressed Revoke could not name
+          // the transaction it had just caused.
+          //
+          // IT IS A REFERENCE, NOT EVIDENCE, and needs no signature —
+          // Andy, earlier: "the node that POSTS using peerPost can log
+          // the hash without signature, it can trust itself." The page
+          // is on the same machine as the node that computed it. What it
+          // is FOR is quoting: joining what a person did to what the log
+          // says happened.
+          onOk(out, (answer && answer.hash) || '');
         });
       });
     });
@@ -1105,11 +1124,12 @@ function createHub(rootDir) {
             token: invites.normalizeToken(body && body.token),
           },
         };
-      }, function (out) {
+      }, function (out, hash) {
         // 201 and the invite itself, exactly as the relay route answered
         // before it was deleted: this is what Natter's mint form reads.
+        // Plus the hash of the post that carried it — see askRelay.
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(out.invite));
+        res.end(JSON.stringify(Object.assign({}, out.invite, { hash: hash })));
       });
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1144,9 +1164,11 @@ function createHub(rootDir) {
       }
       return askRelay(res, deps, body && body.url, function () {
         return { revoke: { label: label } };
-      }, function (out) {
+      }, function (out, hash) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ ok: true, label: label, revoked: out.revoked || 0 }));
+        res.end(JSON.stringify({
+          ok: true, label: label, revoked: out.revoked || 0, hash: hash,
+        }));
       });
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1195,9 +1217,9 @@ function createHub(rootDir) {
       }
       return askRelay(res, deps, body && body.url, function () {
         return { rename: { label: label } };
-      }, function (out) {
+      }, function (out, hash) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(out));
+        res.end(JSON.stringify(Object.assign({}, out, { hash: hash })));
       });
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1214,13 +1236,13 @@ function createHub(rootDir) {
       }
       return askRelay(res, deps, body && body.url, function () {
         return { removePeer: { key: key } };
-      }, function (out) {
+      }, function (out, hash) {
         // What actually happened, whole: who went, how much of their mail
         // went with them, and how many invites were revoked so the name
         // is not a lie. An owner removing somebody should see the size of
-        // what they did.
+        // what they did — and name the transaction it was.
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(out));
+        res.end(JSON.stringify(Object.assign({}, out, { hash: hash })));
       });
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });

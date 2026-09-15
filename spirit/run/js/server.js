@@ -1394,6 +1394,10 @@ if (!relayMode) {
           dir: 'in',
           kind: 'owner',
           event: ev && ev.kind,
+          // WHICH POST CAUSED IT, where one did. This is what joins the
+          // request and reply rows this node already wrote to the event
+          // the relay pushed back about them — see relay.ownerEvent.
+          cause: ev && ev.cause,
           peer: (ev && ev.key) || '',
           relay: (ev && ev.relay) || '',
           label: ev && ev.label,

@@ -719,7 +719,7 @@ function createRelay(rootDir) {
   // minted a fresh token. A post cannot be replayed at all — the hash is
   // registered before anything is sent, and a second arrival of the same
   // bytes is `already in flight` and then nothing.
-  function mint(ownerName, label, days, token) {
+  function mint(ownerName, label, days, token, cause) {
     var owner = normalizeName(ownerName);
     var lbl = normalizeName(label);
     var tok = invites.normalizeToken(token);
@@ -752,7 +752,7 @@ function createRelay(rootDir) {
     // NEVER THE TOKEN. It is the credential, and the one thing on that row
     // the owner already holds by having just made it. A log carrying live
     // tokens would be a log worth stealing.
-    ownerEvent('invite-minted', { invite: row.label, expiresAt: row.expiresAt });
+    ownerEvent('invite-minted', { invite: row.label, expiresAt: row.expiresAt, cause: cause });
     return {
       ok: true,
       status: 201,
@@ -1121,7 +1121,7 @@ function createRelay(rootDir) {
   //
   // Swept first, so an EXPIRED reservation does not block a living
   // person: the same "any attempt tidies up" rule redeem follows.
-  function renameSelf(who, wanted) {
+  function renameSelf(who, wanted, cause) {
     if (!who || !who.publicKey) {
       return { ok: false, status: 403, error: 'no such peer' };
     }
@@ -1176,7 +1176,7 @@ function createRelay(rootDir) {
     // called is a membership fact, and an owner watching a name appear
     // in the census with no record of how it got there is exactly the
     // gap that category exists to close.
-    ownerEvent('peer-renamed', { key: who.publicKey, was: was, label: next });
+    ownerEvent('peer-renamed', { key: who.publicKey, was: was, label: next, cause: cause });
 
     return { ok: true, status: 200, label: next, was: was };
   }
@@ -1196,7 +1196,7 @@ function createRelay(rootDir) {
   //
   // Labels duplicate by design, so a removal naming one would delete
   // whichever john this box happened to find first.
-  function forgetPeer(peerKey) {
+  function forgetPeer(peerKey, cause) {
     var key = String(peerKey == null ? '' : peerKey).trim();
     if (!key) return { ok: false, status: 400, error: 'peer key required' };
 
@@ -1393,7 +1393,7 @@ function createRelay(rootDir) {
     if (body && body.removePeer) {
       var target = String(body.removePeer.key || '');
       if (owner || (who && target === who.publicKey)) {
-        out = forgetPeer(target);
+        out = forgetPeer(target, hash);
       }
     }
 
@@ -1420,7 +1420,7 @@ function createRelay(rootDir) {
     // be able to say out loud — and until now it was chosen by whoever
     // minted their invite, permanently.
     if (body && body.rename) {
-      out = renameSelf(who, String(body.rename.label || ''));
+      out = renameSelf(who, String(body.rename.label || ''), hash);
     }
 
     // TAKING ONE BACK, by label — the only handle an unclaimed invite
@@ -1438,7 +1438,7 @@ function createRelay(rootDir) {
       // reservation back is a membership decision as much as granting one
       // — and it is the one most worth a record, because it is what an
       // owner does when something has gone wrong.
-      ownerEvent('invite-revoked', { invite: revokedLabel, revoked: gone });
+      ownerEvent('invite-revoked', { invite: revokedLabel, revoked: gone, cause: hash });
       out = { ok: true, revoked: gone };
     }
 
@@ -1448,7 +1448,7 @@ function createRelay(rootDir) {
     // caller supplied would be a second opinion about that.
     if (body && body.invite && owner) {
       var ask = body.invite;
-      out = mint(auth.ownerName(allow), ask.label, ask.days, ask.token);
+      out = mint(auth.ownerName(allow), ask.label, ask.days, ask.token, hash);
     }
 
     // `body.setDevice` STOOD HERE. It was the verb that proved a relay
@@ -1778,6 +1778,31 @@ function createRelay(rootDir) {
     if (!presentNow.isPresent(ownerKey)) return false;
     var row = { at: new Date().toISOString(), kind: String(kind || '') };
     if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
+
+    // ── `cause`: WHICH POST CAUSED THIS ──────────────────────────────
+    //
+    //   Andy: "the reply from the server must come with a hash,
+    //   generally, so it can reconcile the request in the log with the
+    //   reply from the relay."
+    //
+    // One press of Revoke writes three rows on the owner's node: the
+    // request it posted, the reply that came back — joined by a hash —
+    // and the owner-event the relay pushed, which shared no key with
+    // either. The same act, in three rows, two of which were a story and
+    // one of which was an orphan.
+    //
+    // The relay knew all along: `answerSelf(hash, text, who)` receives
+    // the hash of the post it is answering, and every post-driven verb
+    // fires from inside it. So the hash is threaded through mint,
+    // renameSelf and forgetPeer and arrives here as `cause`.
+    //
+    // ABSENT ON A CLAIM, and that is honest rather than a hole: a claim
+    // arrives on an HTTP route, not as a post, so there is no hash in
+    // existence to name. Which gives the rule this file should be read
+    // by — THE HASH IS THE JOIN KEY FOR ACTS SOMEBODY POSTED, not a key
+    // for the log as a whole. An event this relay merely witnessed has
+    // no hash and never will; its handle is the peer key and the time.
+    if (!row.cause) delete row.cause;
     var sent = !!presentNow.send(ownerKey, 'owner-event', row);
 
     // ── AND THE REPORT THAT FOLLOWS FROM IT ──────────────────────────

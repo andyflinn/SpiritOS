@@ -522,4 +522,86 @@ test.subHeading('A membership change pushes the report it invalidated');
   }
 }
 
+// ---------------------------------------------------------------------
+test.subHeading('An owner event names the post that caused it');
+// ---------------------------------------------------------------------
+
+//   Andy: "the shell posts the unsigned request, so it doesn't know the
+//   hash yet, the reply from the server must come with a hash,
+//   generally, so it can reconcile the request in the log with the reply
+//   from the relay."
+//
+// One press writes three rows on the owner's node: the request it
+// posted, the reply that came back — joined by a hash — and the
+// owner-event the relay pushed, which shared no key with either. Same
+// act, three rows, one of them an orphan.
+//
+// The relay knew all along: answerSelf receives the hash of the post it
+// is answering, and every post-driven verb fires from inside it.
+{
+  const L = world.build({ title: 'an owner alone', peers: [] });
+  const box = L.box;
+  const ownerSink = fakeSink();
+  openStream(box, L.owner, ownerSink);
+
+  // Driven as a POST, because that is the only path a hash exists on —
+  // mint() called directly has no transaction to name.
+  //
+  // Posted by hand rather than through world.ask: ask opens a stream of
+  // its own for the same identity, which REPLACES the sink above, and
+  // the owner-event would land in ask's sink instead of this one. Same
+  // bytes it sends, minus the stream it takes over.
+  const at = ownerSink.owned().length;
+  const to = box.relayPublicKey();
+  const text = JSON.stringify({
+    app: 'relay', v: 1, body: { invite: { label: 'carl', days: 7, token: '' } },
+  });
+  box.routePost(L.owner.publicKey, to, text,
+    auth.sign(L.owner.privateKey, auth.postMessage(L.owner.publicKey, to, text)));
+
+  const minted = ownerSink.owned().slice(at).filter(function (e) {
+    return e.kind === 'invite-minted';
+  })[0];
+
+  if (minted && minted.cause) {
+    test.check('a minted invite names the post that caused it');
+  } else {
+    test.fail('invite-minted carried no cause: ' + JSON.stringify(minted));
+  }
+
+  // IT IS THE POST'S OWN HASH, not a new number. That is what makes it a
+  // join key rather than a second identifier for the same thing.
+  if (minted && /^[0-9a-f]{16,}$/.test(String(minted.cause))) {
+    test.check('and it is a request hash, which is what the request row is keyed by');
+  } else {
+    test.fail('cause is not a hash: ' + JSON.stringify(minted && minted.cause));
+  }
+}
+
+// THE OTHER HALF OF THE RULE, and the reason it is written down: a claim
+// arrives on an HTTP route, not as a post, so no hash exists to name. An
+// absent `cause` is honest; inventing one would make the log claim a
+// transaction that never happened.
+{
+  const L = world.build({ title: 'an owner alone', peers: [] });
+  const box = L.box;
+  const ownerSink = fakeSink();
+  openStream(box, L.owner, ownerSink);
+  box.mint('andy', 'dora', 7, 'cat');
+
+  const dora = auth.generateIdentity('dora');
+  const at = ownerSink.owned().length;
+  box.claim('dora', auth.sign(dora.privateKey, auth.claimMessage('dora')),
+    dora.publicKey, '10.0.0.9', 'cat', 'dora');
+  const claimed = ownerSink.owned().slice(at).filter(function (e) {
+    return e.kind === 'claim';
+  })[0];
+
+  if (claimed && claimed.cause === undefined) {
+    test.check('a claim carries no cause, because no post exists to name');
+  } else {
+    test.fail('claim invented a cause: ' + JSON.stringify(claimed));
+  }
+}
+
 test.reportSuccessFailureCount();
