@@ -157,24 +157,54 @@ async function relayKeyOf(relayUrl) {
   } catch (e) { return ''; }
 }
 
-async function postToRelay(relayUrl, body) {
+// ── A POST IS ANSWERED ON A STREAM, SO THE STREAM HAS TO BE OPEN ─────
+//
+// This is retried, and the reason is a real race rather than caution.
+// restartWork() above proves the node came back by watching startedAt
+// move — but answering HTTP and holding a stream to a relay on another
+// continent are seconds apart, and a relay replies to a post on the
+// ASKER'S stream. Fire in that window and the mint comes back refused
+// with nothing useful in it.
+//
+// It showed as `mint refused null` for the first live peer and worked
+// for the second, in the same run, which is the shape of a race and not
+// of a broken verb: the same mint posted by hand a moment later returned
+// a token.
+//
+// Bounded, and it does not retry a REFUSAL — only the empty answer that
+// means nobody was listening yet. A relay saying no is an answer and
+// gets reported.
+async function postToRelay(relayUrl, body, tries) {
   const key = await relayKeyOf(relayUrl);
   if (!key) return { ok: false, status: 0, body: { error: 'relay did not say what its key is' } };
-  const sent = await post(WORK_URL + '/api/hub/post', {
-    to: key, app: 'relay', body: body,
-  });
-  let answer = null;
-  try { answer = JSON.parse((sent.body && sent.body.text) || 'null'); }
-  catch (e) { answer = null; }
-  const said = (answer && answer.body) || null;
-  return {
-    // Both halves, for the reason clientLayer.js spells out: the
-    // transport succeeding and the far end agreeing are different facts.
-    ok: !!(sent.ok && said && said.ok !== false),
-    status: sent.status,
-    hash: (sent.body && sent.body.hash) || '',
-    body: said,
-  };
+
+  const attempts = tries == null ? 4 : tries;
+  let last = null;
+
+  for (let n = 0; n < attempts; n += 1) {
+    /* eslint-disable no-await-in-loop */
+    const sent = await post(WORK_URL + '/api/spirit', {
+      verb: 'peer.post', to: key, app: 'relay', body: body,
+    });
+    let answer = null;
+    try { answer = JSON.parse((sent.body && sent.body.text) || 'null'); }
+    catch (e) { answer = null; }
+    const said = (answer && answer.body) || null;
+
+    last = {
+      // Both halves, for the reason clientLayer.js spells out: the
+      // transport succeeding and the far end agreeing are different facts.
+      ok: !!(sent.ok && said && said.ok !== false),
+      status: sent.status,
+      hash: (sent.body && sent.body.hash) || '',
+      body: said,
+    };
+
+    // Answered at all — yes or no — so stop. Only silence is retried.
+    if (said) return last;
+    if (n < attempts - 1) await sleep(1500);
+  }
+  return last;
 }
 
 // WHEN did this process start — not "is something answering". Those are
@@ -456,7 +486,7 @@ async function up(scenarioName) {
   // rather than writing whoBook by hand.
   let added = 0;
   for (const peer of world.peers()) {
-    const done = await post(WORK_URL + '/api/hub/contact', { publicKey: peer.id.publicKey });
+    const done = await post(WORK_URL + '/api/spirit', { verb: 'peer.acquire', publicKey: peer.id.publicKey });
     if (done.ok) added += 1;
     else console.log('  contact ' + peer.name + ': ' + JSON.stringify(done.body));
   }
@@ -488,11 +518,24 @@ async function up(scenarioName) {
       console.log('  ' + peer.name + ' on live: mint refused ' + JSON.stringify(minted.body));
       continue;
     }
+    // THE TOKEN AND THE WORD TRAVEL TOGETHER since R1, or the claim is
+    // refused — "invite label required". The relay stopped falling back
+    // for stale nodes on purpose:
+    //
+    //   Andy: "i dislike a relay supporting stale nodes at this point
+    //   the nodes should break rather than STILL having code on a relay
+    //   that support old crap"
+    //
+    // The mint above wrote `label: peer.name`, so the word IS the name
+    // here. Sent explicitly all the same: they are two different things
+    // that happen to coincide in a lab, and writing the name twice is
+    // what says so.
     const joined = await post(LIVE_RELAY + '/api/relay/claim', {
       name: peer.name,
       publicKey: peer.id.publicKey,
       sig: auth.sign(peer.id.privateKey, auth.claimMessage(peer.name)),
       invite: token,
+      inviteLabel: peer.name,
     });
     if (!joined.ok && !(joined.body && joined.body.error === 'name taken')) {
       console.log('  ' + peer.name + ' on live: claim refused ' + JSON.stringify(joined.body));
@@ -525,8 +568,8 @@ async function up(scenarioName) {
     const one = world.peer(NAME_PREFIX + pair[0]);
     const two = world.peer(NAME_PREFIX + pair[1]);
     if (!one || !two) continue;
-    const there = await post(one.url + '/api/hub/contact', { publicKey: two.id.publicKey });
-    const back = await post(two.url + '/api/hub/contact', { publicKey: one.id.publicKey });
+    const there = await post(one.url + '/api/spirit', { verb: 'peer.acquire', publicKey: two.id.publicKey });
+    const back = await post(two.url + '/api/spirit', { verb: 'peer.acquire', publicKey: one.id.publicKey });
     if (there.ok && back.ok) friendships += 1;
     else console.log('  ' + one.name + ' <-> ' + two.name + ': ' +
       JSON.stringify((there.ok ? back : there).body));

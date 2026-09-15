@@ -542,8 +542,8 @@ async function postToRelayVia(nodeUrl, relayUrl, body) {
   } catch (e) { key = ''; }
   if (!key) return { ok: false, status: 0, body: null, text: 'relay did not say what its key is' };
 
-  const sent = await livePost(nodeUrl + '/api/hub/post', {
-    to: key, app: 'relay', body: body,
+  const sent = await livePost(nodeUrl + '/api/spirit', {
+    verb: 'peer.post', to: key, app: 'relay', body: body,
   });
   let answer = null;
   try { answer = JSON.parse((sent.body && sent.body.text) || 'null'); }
@@ -894,11 +894,11 @@ async function buildLiveWorld(body) {
   //    streams are open, and a contact written while presence is still
   //    settling is correct but looks wrong in the panel a second later.
   await napFor(2000);
-  const there = await livePost('http://127.0.0.1:' + peer.port + '/api/hub/contact', {
-    publicKey: me.publicKey,
+  const there = await livePost('http://127.0.0.1:' + peer.port + '/api/spirit', {
+    verb: 'peer.acquire', publicKey: me.publicKey,
   });
-  const back = await livePost('http://127.0.0.1:' + WORK_PORT + '/api/hub/contact', {
-    publicKey: peerId.publicKey,
+  const back = await livePost('http://127.0.0.1:' + WORK_PORT + '/api/spirit', {
+    verb: 'peer.acquire', publicKey: peerId.publicKey,
   });
   steps.push(there.ok && back.ok
     ? 'the two nodes have each other in their address books'

@@ -156,16 +156,23 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 404) test.check('GET /api/fs/stat 404');
     else test.fail('fs/stat → ' + r.status + ' ' + r.text);
-    // A LIVE HUB ROUTE, deliberately. This asked for /api/hub/claim until
-    // 2026-09-15, and that route no longer exists on a NODE either — so
-    // the 404 it was getting had stopped saying anything about relays.
-    // The claim being made is "a relay serves none of the node's hub
-    // surface", and only a route that a node really answers can make it.
-    return request(ORIGIN + '/api/hub/who', 'GET', null);
+    // THE NODE'S OWN STREAM, which is the one piece of loopback surface
+    // that is NOT a verb and so is not covered by the /api/spirit check
+    // above.
+    //
+    // This slot asked for /api/hub/claim, then /api/hub/who, and both of
+    // those have since been deleted from the NODE as well — so each 404
+    // had quietly stopped saying anything about relays. A check whose
+    // subject no longer exists anywhere passes for free.
+    //
+    // /api/events is a relay's blind spot worth being exact about: it
+    // serves /api/relay/stream, a held connection with a signature, and
+    // must not also serve the node's unsigned local one.
+    return request(ORIGIN + '/api/events', 'GET', null);
   })
   .then(function (r) {
-    if (r.status === 404) test.check('GET /api/hub/who 404 on relay');
-    else test.fail('hub who on relay → ' + r.status + ' ' + r.text);
+    if (r.status === 404) test.check("GET /api/events 404 on relay — the node's own stream is not served here");
+    else test.fail('node stream on relay → ' + r.status + ' ' + r.text);
     return request(ORIGIN + '/js/server.js', 'GET', null);
   })
   .then(function (r) {

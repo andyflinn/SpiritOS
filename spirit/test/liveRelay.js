@@ -171,7 +171,8 @@ async function run() {
   // being the relay.
   const me = auth.loadIdentity(RUN);
   if (me && me.privateKey) {
-    const tried = parsed(await post('http://127.0.0.1:65432/api/hub/post', {
+    const tried = parsed(await post('http://127.0.0.1:65432/api/spirit', {
+      verb: 'peer.post',
       to: subject.publicKey,
       via: RELAY,
       text: JSON.stringify({

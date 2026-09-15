@@ -113,6 +113,17 @@ async function rosterOf(url) {
   } catch (e) { return []; }
 }
 
+// A RELAY IS A PEER, AND A PEER IS A KEY. Read off the public census,
+// the same place a real node reads it — no second endpoint, and no need
+// for this script to be told it out of band.
+async function relayKeyOf(url) {
+  try {
+    const res = await fetch(url + '/api/relay/who');
+    const body = await res.json();
+    return (body && body.relayPublicKey) || '';
+  } catch (e) { return ''; }
+}
+
 // THE STEP THAT MAKES WHITE HAPPEN WHILE SOMEBODY IS WATCHING.
 //
 // labPopulate performs the scenario's `then` removals when it builds the
@@ -137,9 +148,20 @@ async function removeFromLab(label) {
 
   // Through this node's own door: the relay route is gone (decision
   // 0010), and the post's answer comes back on the stream the node holds.
-  const done = await post(WORK_URL + '/api/hub/remove-peer', {
-    url: url,
-    key: row.publicKey,
+  //
+  // AND THE NODE'S DOOR IS A VERB NOW. `POST /api/hub/remove-peer` was
+  // itself deleted when the post-path doors closed — it built one packet
+  // body and handed it to router.post, which is what a peerPost IS. So
+  // this addresses the RELAY BY KEY, like any other peer, and says
+  // `removePeer` in the body. A relay grows a verb and nothing here
+  // needs a door wired for it.
+  const relayKey = await relayKeyOf(url);
+  if (!relayKey) return 'the lab relay has not said what its key is';
+  const done = await post(WORK_URL + '/api/spirit', {
+    verb: 'peer.post',
+    to: relayKey,
+    app: 'relay',
+    body: { removePeer: { key: row.publicKey } },
   });
   return done.ok
     ? 'removed ' + label + " from the lab relay — they stay in your contacts"
