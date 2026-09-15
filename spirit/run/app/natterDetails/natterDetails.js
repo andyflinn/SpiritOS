@@ -410,6 +410,101 @@ function ndClaimHtml() {
     'natter-claim');
 }
 
+// ── WHAT IS OUTSTANDING, AND TAKING ONE BACK ─────────────────────────
+//
+//   Andy: "The relay owner maintains invites through a panel in
+//   natterDetail (not implemented yet, and a pre-enrolment label is of
+//   great value for that."
+//
+// THE DATA WAS ALREADY ON THIS SCREEN. Every report the relay pushes
+// carries `invites` — label, expiry and who minted it — and nothing has
+// ever drawn them. Six were outstanding on spirit-3 while this was being
+// written, one of them already expired.
+//
+// OWNER ONLY, because invites are. A member sees no report at all
+// (relayStatus reaches the owner's stream), so this renders off
+// `ndBadge.report` and needs no second gate — but `owned` is asserted
+// anyway, because a panel that depends on data being absent is a panel
+// that appears the day the data arrives for another reason.
+//
+// WHY THE LABEL IS WORTH SHOWING, which is the whole reason the field
+// survived R1: it is what the owner wrote on the invite to remember WHO
+// they meant — a phone number, a first name — and it is the only handle
+// on a keyless reservation. The token is not here and never will be:
+// that is the spoken secret, it left on a phone call, and the relay does
+// not report it either.
+function ndInvitesHtml() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  var report = ndBadge.report;
+  if (!report) return '';
+  var rows = (report.invites || []).slice();
+
+  var body;
+  if (!rows.length) {
+    body = '<div class="job-log-empty">nothing outstanding — every invite ' +
+      'has been claimed, revoked or expired</div>';
+  } else {
+    // Soonest to expire first: the one about to lapse is the one an owner
+    // is deciding about, and an already-lapsed row sorts to the top where
+    // it can be cleared.
+    rows.sort(function (a, b) {
+      return String((a && a.expiresAt) || '').localeCompare(String((b && b.expiresAt) || ''));
+    });
+    body = '<table class="jobs-table"><thead><tr>' +
+      '<th>Name on the invite</th><th>Expires</th><th>Invited by</th><th></th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (row) {
+        var label = String((row && row.label) || '');
+        var lapsed = ndInviteLapsed(row);
+        return '<tr class="job-row">' +
+          '<td class="label-cell">' + ndEscapeHtml(label) + '</td>' +
+          '<td' + (lapsed ? ' title="this one has lapsed and no longer opens anything"' : '') + '>' +
+            ndEscapeHtml(ndInviteWhen(row)) + '</td>' +
+          '<td class="label-cell">' + ndEscapeHtml(String((row && row.invitedBy) || '')) + '</td>' +
+          // Revoke carries the LABEL, not a row index: the list repaints
+          // from a report that arrives on its own, so an index would be
+          // aimed at whatever had moved into that position.
+          '<td><button type="button" class="cancel-btn nd-inv-revoke"' +
+            ' data-invite-label="' + ndEscapeHtml(label) + '">Revoke</button></td>' +
+          '</tr>';
+      }).join('') +
+      '</tbody></table>';
+  }
+
+  return ndPanel('invites', ndIcon.STAR, 'Invites outstanding on this relay',
+    body +
+    // Said once, here, rather than implied by a count that does not add
+    // up: one label may carry several live invites, so revoking takes
+    // every invite under that name.
+    '<div class="job-manifest-note">Revoking a name takes back every ' +
+    'outstanding invite under it. An invite that has already been claimed ' +
+    'is not here — the seat is on the peer list now.</div>' +
+    '<div class="job-manifest-note nd-inv-revoke-out"></div>',
+    'natter-invites');
+}
+
+// EXPIRY IN WORDS, because an ISO timestamp is not a thing anybody reads
+// to decide whether to make a phone call. Rounded down deliberately: "in
+// 2 days" for anything past two days is the truth an owner acts on, and
+// a countdown to the minute would be a number that goes stale on a
+// screen that only repaints when something is pressed.
+function ndInviteLapsed(row) {
+  var at = Date.parse(String((row && row.expiresAt) || ''));
+  return !isNaN(at) && at <= Date.now();
+}
+
+function ndInviteWhen(row) {
+  var at = Date.parse(String((row && row.expiresAt) || ''));
+  if (isNaN(at)) return 'unknown';
+  var ms = at - Date.now();
+  if (ms <= 0) return 'expired';
+  var mins = Math.floor(ms / 60000);
+  if (mins < 60) return 'in ' + mins + (mins === 1 ? ' minute' : ' minutes');
+  var hours = Math.floor(mins / 60);
+  if (hours < 48) return 'in ' + hours + (hours === 1 ? ' hour' : ' hours');
+  return 'in ' + Math.floor(hours / 24) + ' days';
+}
+
 function ndMintHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   // ★ is the same mark the row carries for owning it, and this panel is
@@ -606,6 +701,9 @@ function ndRender() {
     ndClaimHtml() +
     ndRenameHtml() +
     ndMintHtml() +
+    // Minting and what has been minted, adjacent on purpose: the answer
+    // to "did that work" is the row that appears in the panel below.
+    ndInvitesHtml() +
     ndDeviceHtml();
 }
 
@@ -730,6 +828,54 @@ function ndClaim(button) {
   });
 }
 
+// TAKING ONE BACK. The label travels, never an index — see the button.
+//
+// RE-ASKED AFTERWARDS rather than patched locally, for the same reason
+// rename is: the relay decides how many rows went, and a panel that had
+// already removed the row would be showing a guess. ndLoad re-reads the
+// report, and the row leaves because the relay says it has.
+function ndRevoke(button) {
+  var panel = button.closest('.natter-invites');
+  var out = panel.querySelector('.nd-inv-revoke-out');
+  var label = button.getAttribute('data-invite-label') || '';
+  if (!label) return;
+
+  // Two presses about the SAME name, the way Remove was armed before it.
+  // Revoking is not destructive of anything a person cannot redo — the
+  // owner can mint again — but it breaks a phone call that has already
+  // happened, so it is worth a second of thought.
+  if (button.getAttribute('data-armed') !== label) {
+    button.setAttribute('data-armed', label);
+    button.textContent = 'Revoke ' + label + '?';
+    return;
+  }
+
+  button.disabled = true;
+  ndPost('/api/hub/revoke', { label: label, url: ndUrl }).then(function (r) {
+    var said = null;
+    try { said = JSON.parse(r.text); } catch (e) { said = null; }
+    var ok = r.status === 200 && said && said.ok;
+    out.className = 'job-manifest-note nd-inv-revoke-out ' + (ok ? 'is-token' : 'is-error');
+    if (!ok) {
+      out.textContent = (said && said.error) || (r.status + ' ' + r.text);
+      button.disabled = false;
+      button.removeAttribute('data-armed');
+      button.textContent = 'Revoke';
+      return;
+    }
+    // ZERO IS NOT A FAILURE. It means the expiry swept them first, which
+    // is the ordinary way an invite ends — and saying "revoked 0" plainly
+    // beats a success message that implies something was taken back.
+    var n = Number(said.revoked) || 0;
+    out.textContent = n
+      ? 'revoked ' + n + (n === 1 ? ' invite for ' : ' invites for ') + label
+      : 'nothing outstanding for ' + label + ' — it had already lapsed or been claimed';
+    ndChanged = true;
+    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, revoked: label });
+    ndLoad();
+  });
+}
+
 function ndMint(button) {
   var panel = button.closest('.natter-mint');
   function field(cls) { return panel.querySelector('.' + cls); }
@@ -831,6 +977,9 @@ spirit.shell.activateApp({
 
       var mintBtn = target.closest('.natter-inv-go');
       if (mintBtn) { ndMint(mintBtn); return; }
+
+      var revokeBtn = target.closest('.nd-inv-revoke');
+      if (revokeBtn) { ndRevoke(revokeBtn); return; }
 
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }

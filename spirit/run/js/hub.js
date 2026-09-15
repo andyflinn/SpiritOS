@@ -1117,6 +1117,43 @@ function createHub(rootDir) {
     });
   }
 
+  // TAKING A RESERVATION BACK, and the door it never had.
+  //
+  //   Andy: "The relay owner maintains invites through a panel in
+  //   natterDetail (not implemented yet, and a pre-enrolment label is of
+  //   great value for that."
+  //
+  // The relay has answered `{ revoke: { label } }` since invites landed,
+  // and nothing on this side could reach it — the same shape of gap
+  // remove-peer had below, and rename had until this morning. Minting had
+  // a door and unminting did not, which made the panel that maintains
+  // invites impossible to write: it could create them and never undo one.
+  //
+  // WHAT IT ANSWERS is how many rows went, not whether one did. A label
+  // may carry several live invites — the owner can mint `adam` three
+  // times, and spirit-3 currently holds exactly that — so revoking by
+  // label takes all of them, and a count is the honest report. Zero is
+  // not an error: it means the expiry swept them first, which is the
+  // ordinary way an invite ends.
+  function handleRevoke(req, res, readJsonBody, deps) {
+    return readJsonBody(req).then(function (body) {
+      var label = String((body && body.label) || '').trim();
+      if (!label) {
+        fail(res, 400, 'label required');
+        return;
+      }
+      return askRelay(res, deps, body && body.url, function () {
+        return { revoke: { label: label } };
+      }, function (out) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ ok: true, label: label, revoked: out.revoked || 0 }));
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
   // FORGETTING SOMEBODY — THE DOOR THIS VERB NEVER HAD.
   //
   //   Andy: "api/hub/remove-peer must be the interface"
@@ -1530,6 +1567,10 @@ function createHub(rootDir) {
     // What this node is called on a relay — an own-row verb, so the post
     // names nobody but its signer.
     handleRename: handleRename,
+    // Unminting. Its sibling handleInvite has had a door since invites
+    // landed; this one is new (2026-09-15), because a panel that
+    // maintains invites has to be able to undo one.
+    handleRevoke: handleRevoke,
     handleUnknownSenders: handleUnknownSenders,
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,

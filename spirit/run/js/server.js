@@ -1105,6 +1105,14 @@ const server = http.createServer((req, res) => {
       return;
     }
 
+    // Unminting an invite. Same deps as its neighbours for the same
+    // reason — every askRelay door needs the router and the url->key pin.
+    if (pathname === '/api/hub/revoke') {
+      hub.handleRevoke(req, res, readJsonBody,
+        { router: peerRouter, relayKey: pinnedRelayKey });
+      return;
+    }
+
     // Forgetting somebody. relay.removePeer has worked since it shipped
     // and nothing on this side could reach it — a verb with no interface.
     if (pathname === '/api/hub/remove-peer') {

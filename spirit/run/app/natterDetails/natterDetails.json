@@ -1,6 +1,6 @@
 {
-  "name": "Mailbox",
-  "description": "One relay from the Natter list: what it says about itself, who may be invited to it, and attaching one of your own devices.",
+  "name": "Relay",
+  "description": "One relay from the Natter list: what it says about itself, taking or renaming a seat on it, who may be invited, and attaching one of your own devices.",
   "icon": "BUG",
   "hidden": true,
   "type": "dialog",

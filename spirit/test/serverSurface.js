@@ -273,6 +273,7 @@ freePort()
       ['POST', '/api/hub/invite', { url: 'https://not-on-the-list.example', label: 'x', days: 1 }],
       ['POST', '/api/hub/remove-peer', { url: 'https://not-on-the-list.example', key: 'NOPE' }],
       ['POST', '/api/hub/rename', { url: 'https://not-on-the-list.example', label: 'x' }],
+      ['POST', '/api/hub/revoke', { url: 'https://not-on-the-list.example', label: 'x' }],
       ['POST', '/api/hub/post'],
       ['POST', '/api/hub/contact'],
       ['POST', '/api/hub/unknown-senders'],
@@ -324,18 +325,27 @@ freePort()
       // instead. Measured on the broken build: rename 503, remove-peer
       // 403. This asserts they agree, whatever the number turns out to be.
       const SAME = { url: 'https://not-on-the-list.example', label: 'x', key: 'NOPE' };
-      return request(port, 'POST', '/api/hub/rename', SAME).then(function (ren) {
-        return request(port, 'POST', '/api/hub/remove-peer', SAME).then(function (rem) {
-          if (ren.status === rem.status) {
-            test.check('rename and remove-peer refuse an unlisted relay alike (HTTP ' +
-              ren.status + ') — both hold the router and the url->key pin');
-          } else {
-            test.fail('rename answered ' + ren.status + ' where remove-peer answered ' +
-              rem.status + '. They share askRelay, so they must refuse an unlisted url ' +
-              'identically. A 503 here means the route was handed the wrong deps in ' +
-              'server.js and cannot reach a relay at all.' + lastWords());
-          }
+      const DOORS = ['/api/hub/rename', '/api/hub/remove-peer', '/api/hub/revoke', '/api/hub/invite'];
+      return DOORS.reduce(function (chain, path) {
+        return chain.then(function (seen) {
+          return request(port, 'POST', path, SAME).then(function (r) {
+            seen.push({ path: path, status: r.status });
+            return seen;
+          });
         });
+      }, Promise.resolve([])).then(function (seen) {
+        const statuses = seen.map(function (s) { return s.status; });
+        const agreed = statuses.every(function (s) { return s === statuses[0]; });
+        if (agreed) {
+          test.check('all ' + seen.length + ' askRelay doors refuse an unlisted relay alike ' +
+            '(HTTP ' + statuses[0] + ') — each holds the router and the url->key pin');
+        } else {
+          test.fail('the askRelay doors disagree: ' + JSON.stringify(seen) +
+            '. They share one function, so an unlisted url must be refused in ' +
+            'withChosenRelay before any network — identically. A 503 among them means ' +
+            'that route was handed the wrong deps in server.js and cannot reach a ' +
+            'relay at all.' + lastWords());
+        }
       }).then(function () {
       return request(port, 'GET', '/api/version').then(function (after) {
         if (after.status === 200) {

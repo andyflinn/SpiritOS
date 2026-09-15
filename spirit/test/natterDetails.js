@@ -89,6 +89,31 @@ function claimTarget(fields) {
   return node;
 }
 
+// The revoke button on one invite row. It carries the label in an
+// attribute rather than the panel carrying an index, so the target has to
+// answer getAttribute as the real one does.
+function revokeTarget(label, out) {
+  const panel = {
+    querySelector: function (selector) {
+      return selector === '.nd-inv-revoke-out' ? out : null;
+    },
+  };
+  const attrs = { 'data-invite-label': label };
+  const node = {
+    textContent: 'Revoke',
+    disabled: false,
+    getAttribute: function (name) { return attrs[name] === undefined ? null : attrs[name]; },
+    setAttribute: function (name, value) { attrs[name] = value; },
+    removeAttribute: function (name) { delete attrs[name]; },
+  };
+  node.closest = function (selector) {
+    if (selector === '.nd-inv-revoke') return node;
+    if (selector === '.natter-invites') return panel;
+    return null;
+  };
+  return node;
+}
+
 function copyTarget(out) {
   const panel = {
     querySelector: function (selector) {
@@ -147,6 +172,11 @@ function mountApp(opts) {
       text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/invite') === 0) {
       text = JSON.stringify({ token: 'saint-bernard' });
+    } else if (url.indexOf('/api/hub/revoke') === 0) {
+      // Unminting. `revoked` is a COUNT, not a boolean: one label may
+      // carry several live invites, so revoking by label takes all of
+      // them and the relay reports how many went.
+      text = JSON.stringify(opts.revokeBody || { ok: true, label: 'adam', revoked: 1 });
     } else if (url.indexOf('/api/hub/claim') === 0) {
       // The claim form moved onto this screen on 2026-09-15, because a
       // claim happens ON a relay and the old one on Natter's list could
@@ -453,6 +483,134 @@ function aHalfCopiedInviteIsRefusedBeforeItTravels() {
       } else {
         test.fail(calls.length + ' requests, status "' + out.textContent + '"');
       }
+    });
+  });
+}
+
+// ── THE PANEL THAT MAINTAINS INVITES ─────────────────────────────────
+//
+//   Andy: "The relay owner maintains invites through a panel in
+//   natterDetail (not implemented yet, and a pre-enrolment label is of
+//   great value for that."
+//
+// The data has been arriving in every pushed report since R3 and nothing
+// drew it. These assert that it is drawn, that the token never is, and
+// that revoking aims by label rather than by row.
+const INVITE_REPORT = {
+  owner: 'andy', mode: 'keys', peers: 3, present: 1,
+  invites: [
+    { label: 'adam', expiresAt: '2099-01-01T00:00:00.000Z', invitedBy: 'andy' },
+    { label: 'bulb', expiresAt: '2000-01-01T00:00:00.000Z', invitedBy: 'andy' },
+  ],
+};
+
+function invitesOutstandingAreShown() {
+  test.subHeading('What is outstanding on this relay, and who it was for');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true }],
+    relayStatus: { [OWNED]: INVITE_REPORT },
+  });
+
+  return settle().then(function () {
+    const html = app.open('invites').body().innerHTML;
+
+    if (/adam/.test(html) && /bulb/.test(html)) {
+      test.check('every outstanding invite is listed by the name on it');
+    } else {
+      test.fail('invites panel: ' + html.slice(0, 400));
+    }
+
+    // WHY THE LABEL SURVIVED R1. It is what the owner wrote down to
+    // remember who they meant, and the only handle on a keyless
+    // reservation.
+    if (/Name on the invite/.test(html) && /Invited by/.test(html)) {
+      test.check('with who minted it, which is what makes the row actionable');
+    } else {
+      test.fail('columns: ' + html.slice(0, 400));
+    }
+
+    // Expiry in words, and a lapsed one says so rather than showing a
+    // date a person has to subtract from today.
+    if (/expired/.test(html)) {
+      test.check('and a lapsed invite says "expired" rather than printing a timestamp');
+    } else {
+      test.fail('no expiry wording: ' + html.slice(0, 400));
+    }
+
+    // NEVER THE TOKEN. It is the spoken secret; it left on a phone call
+    // and the relay does not report it either.
+    if (html.indexOf('token') === -1 && html.indexOf('saint-bernard') === -1) {
+      test.check('and no token appears, because that is not the relay’s to repeat');
+    } else {
+      test.fail('a token reached the panel: ' + html.slice(0, 400));
+    }
+  });
+}
+
+function invitesAreOwnerOnly() {
+  test.subHeading('A relay somebody else owns shows no invite panel');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'andy' }],
+    relayStatus: { [OWNED]: INVITE_REPORT },
+  });
+
+  return settle().then(function () {
+    if (!/nd-inv-revoke/.test(app.open('invites').body().innerHTML)) {
+      test.check('a member sees no invite list, because invites are the owner’s business');
+    } else {
+      test.fail('a non-owner was shown the invite panel');
+    }
+  });
+}
+
+function revokingAimsByLabel() {
+  test.subHeading('Revoking names the invite, and takes two presses');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true }],
+    relayStatus: { [OWNED]: INVITE_REPORT },
+  });
+
+  return settle().then(function () {
+    app.open('invites');
+    const out = { textContent: '', className: '' };
+    const button = revokeTarget('adam', out);
+
+    // ARMED FIRST. Revoking is not destructive of anything that cannot be
+    // redone, but it breaks a phone call that has already happened.
+    app.body().fire('click', { target: button });
+    return settle().then(function () {
+      const early = app.log.filter(function (c) { return c.url.indexOf('/api/hub/revoke') === 0; });
+      if (!early.length && /adam/.test(button.textContent)) {
+        test.check('the first press arms and names what it is about to take back');
+      } else {
+        test.fail('first press sent ' + early.length + ' requests, button says "' +
+          button.textContent + '"');
+      }
+
+      app.body().fire('click', { target: button });
+      return settle().then(function () {
+        const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/revoke') === 0; });
+        const body = calls.length ? JSON.parse(calls[0].body) : null;
+
+        // BY LABEL, NOT BY INDEX. The list repaints from a report that
+        // arrives on its own, so an index would aim at whatever had moved
+        // into that position.
+        if (body && body.label === 'adam' && body.url === OWNED) {
+          test.check('the second press revokes by label, on the relay this screen is');
+        } else {
+          test.fail('revoke body: ' + JSON.stringify(body));
+        }
+
+        const said = app.answers[app.answers.length - 1] || {};
+        if (said.revoked === 'adam' && said.changed === true) {
+          test.check('and the list behind this screen is told to repaint');
+        } else {
+          test.fail('answer: ' + JSON.stringify(said));
+        }
+      });
     });
   });
 }
@@ -1127,6 +1285,9 @@ function noRemovalSurfaceForNow() {
 
 
 ownedMailbox()
+  .then(invitesOutstandingAreShown)
+  .then(invitesAreOwnerOnly)
+  .then(revokingAimsByLabel)
   .then(claimAndRenameAreExclusive)
   .then(aRelayThatIsDownOffersNoClaim)
   .then(claimingNamesThisMailbox)
