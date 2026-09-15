@@ -5,6 +5,33 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_DIR="$REPO_ROOT/spirit/run"
+
+# ── THE CLONE DECIDES, NOT THE SHELL ────────────────────────────────
+#
+# `source .env` exports SPIRIT_UNIT_NAME and friends, and an export
+# outlives the `cd`. So this happened, first try, on spirit-3:
+#
+#   cd /root/lab/SpiritOS && source .env     # exports spirit-lab
+#   cd /root/SpiritOS     && ./bash/update   # says "unit spirit-lab"
+#   cd /root/SpiritOS     && ./bash/cron-install
+#       -> clone: /root/SpiritOS   unit: spirit-lab
+#
+# A cron line that pulls one clone's code and restarts another clone's
+# service, installed by a command that looked right. Then the lab's own
+# install replaced it — same marker — and the live relay was left with
+# no update cron at all.
+#
+# Documenting it ("source .env before every command") was not a guard, it
+# was a hope. So: a clone carrying a .env is described by THAT file, and
+# a clone without one uses the defaults — and in both cases whatever is
+# lying around in the shell is discarded. The variables exist to
+# configure a clone, and which clone is decided by where this file lives.
+if [ -f "$REPO_ROOT/.env" ]; then
+  # shellcheck disable=SC1091
+  . "$REPO_ROOT/.env"
+else
+  unset SPIRIT_UNIT_NAME SPIRIT_RELAY_PORT SPIRIT_RELAY_DOMAIN SPIRIT_UNIT_TEMPLATE
+fi
 # ── ONE BOX, MORE THAN ONE RELAY ────────────────────────────────────
 #
 #   Andy: "we'll need to fake multiple public relays without me shelling

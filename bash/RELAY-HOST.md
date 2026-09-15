@@ -243,14 +243,37 @@ each of those nodes has to accept it again.
 That is the damage `recycle` used to do to lab nodes, and the reason
 `refresh` was written. `--purge` is the deliberate second thought.
 
-**Source `.env` before every command in that clone.** `./bash/restart` with
-`SPIRIT_UNIT_NAME` unset restarts **spirit-relay** — the live box — from
-inside the lab directory, and says nothing about it. That is the one sharp
-edge here and it is not guarded, because a guard would have to guess which
-clone is which.
+### The clone decides, not the shell
 
-`./bash/update` in the lab clone fetches, compares, `reset --hard
-origin/master` and restarts **its own** unit. Per-clone, already.
+**Do not source `.env`.** `bash/lib.sh` reads it, from whichever clone the
+script you ran lives in, and a clone without one falls back to the defaults
+with `SPIRIT_UNIT_NAME`, `SPIRIT_RELAY_PORT`, `SPIRIT_RELAY_DOMAIN` and
+`SPIRIT_UNIT_TEMPLATE` **cleared**. So `cd <clone> && ./bash/<anything>` is
+always about that clone, and nothing you did earlier in the shell changes it.
+
+This replaces an earlier instruction here to source `.env` before every
+command in the lab clone. That instruction was not merely forgettable — it
+was wrong. `source` *exports*, and an export outlives the `cd` that follows
+it, so it made the hazard travel the other way:
+
+```
+cd /root/lab/SpiritOS && source .env     # exports SPIRIT_UNIT_NAME=spirit-lab
+cd /root/SpiritOS     && ./bash/update   # "unit spirit-lab" — wrong clone
+cd /root/SpiritOS     && ./bash/cron-install
+    clone: /root/SpiritOS    unit: spirit-lab
+```
+
+That last line is a cron entry that pulls the **live** clone's code and
+restarts the **lab's** service every ten minutes, and it installed without
+an error. It happened on spirit-3 on 2026-09-16.
+
+The cost of the fix is that a one-off `SPIRIT_RELAY_PORT=9999 ./bash/serve`
+no longer works — to change what a clone is, edit that clone's `.env`. The
+variables configure a clone, and which clone is not a question the shell
+gets a vote on.
+
+`./bash/update` fetches, compares, `reset --hard origin/master` and restarts
+**its own** unit. Per-clone, already, and now per-clone without help.
 
 ### Caddy is additive now
 

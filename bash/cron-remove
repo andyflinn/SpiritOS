@@ -6,7 +6,12 @@ have crontab || die "crontab not installed"
 
 say "remove update cron for $UNIT_NAME"
 existing=$(crontab -l 2>/dev/null || true)
-filtered=$(printf '%s\n' "$existing" | grep -v "spirit-host-update:$UNIT_NAME" || true)
+# By marker AND by path: a line that runs THIS clone's update script is
+# this clone's cron even if a leaked environment got it marked with the
+# other clone's unit name. See the note in cron-install.
+filtered=$(printf '%s\n' "$existing" \
+  | grep -v "spirit-host-update:$UNIT_NAME" \
+  | grep -v -F "$REPO_ROOT/bash/update" || true)
 printf '%s\n' "$filtered" | crontab -
 ok "removed"
 crontab -l 2>/dev/null | grep "spirit-host-update" || echo "    no update cron left for any clone"

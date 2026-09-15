@@ -15,28 +15,39 @@ have crontab || die "crontab not installed"
 # `cron-remove` takes only its own.
 MARKER="# spirit-host-update:$UNIT_NAME"
 
-# ── AND CRON HAS NO ENVIRONMENT ──────────────────────────────────────
+# ── AND CRON HAS NO ENVIRONMENT — WHICH IS NOW THE RIGHT ANSWER ──────
 #
-# The worse half. `bash/update` restarts "$UNIT_NAME", which comes from
-# SPIRIT_UNIT_NAME — and cron does not source .env, or a profile, or
-# anything. So a line installed from the lab clone would have pulled the
-# LAB's code and restarted spirit-relay: the live box, bounced every ten
-# minutes on behalf of a directory it knows nothing about.
+# The first fix put the env ON the line: `SPIRIT_UNIT_NAME=spirit-lab
+# /root/lab/SpiritOS/bash/update`. It worked, and it was solving the
+# problem at the wrong end — a line that carried its own idea of which
+# unit to restart could be written with the WRONG one, and was:
 #
-# The env travels ON the line. It is longer to read and it cannot be
-# forgotten, which is the trade this whole two-clone arrangement keeps
-# asking for.
-ENVPART="SPIRIT_UNIT_NAME=$UNIT_NAME SPIRIT_RELAY_PORT=$NODE_PORT SPIRIT_RELAY_DOMAIN=$DOMAIN"
+#   */10 * * * * SPIRIT_UNIT_NAME=spirit-lab /root/SpiritOS/bash/update
+#
+# installed by `cd /root/SpiritOS && ./bash/cron-install` in a shell that
+# had sourced the lab's .env an hour earlier. Pull the live clone, bounce
+# the lab's service, every ten minutes.
+#
+# lib.sh now derives all of it from the clone the script lives in and
+# discards the inherited environment, so cron's empty environment stops
+# being a hazard and becomes the guarantee: there is nothing to carry.
+# The path in the line is the whole of the configuration.
 LOG="/var/log/spirit-host-update-$UNIT_NAME.log"
-LINE="*/10 * * * * $ENVPART $REPO_ROOT/bash/update >> $LOG 2>&1 $MARKER"
+LINE="*/10 * * * * $REPO_ROOT/bash/update >> $LOG 2>&1 $MARKER"
 
 say "install update cron for $UNIT_NAME (every 10 min)"
 echo "    clone: $REPO_ROOT"
 echo "    unit:  $UNIT_NAME"
 existing=$(crontab -l 2>/dev/null || true)
-# Only this clone's line. Another clone's marker is a different string
-# and survives untouched — which is the whole point of the change.
-filtered=$(printf '%s\n' "$existing" | grep -v "spirit-host-update:$UNIT_NAME" || true)
+# Only this clone's line — another clone's marker is a different string
+# and survives untouched, which is the whole point of the change.
+#
+# ALSO by path, because the crontab on spirit-3 already holds a line that
+# names this clone's update script under the OTHER clone's marker. It is
+# this clone's cron whatever it claims to be, and it is going.
+filtered=$(printf '%s\n' "$existing" \
+  | grep -v "spirit-host-update:$UNIT_NAME" \
+  | grep -v -F "$REPO_ROOT/bash/update" || true)
 
 # THE LINE THAT IS ALREADY ON spirit-3 carries the OLD bare marker, from
 # before there were two clones. It belongs to the default unit — nothing

@@ -285,6 +285,13 @@ test.subHeading('The unit template is one file, however many relays use it');
 //   installed from the lab clone would pull the LAB's code and restart
 //   spirit-relay: the live box, bounced every ten minutes on behalf of a
 //   directory it knows nothing about.
+//
+// THIS CORRECTS THE FIX, NOT THE DIAGNOSIS. The first answer was to put
+// the environment on the cron line. It shipped, and then the real fault
+// showed itself one level up — see "The clone decides, not the shell"
+// below. Cron's empty environment was never the hazard; an environment
+// that could be WRONG was, and a line carrying its own copy of it is a
+// line that can carry the wrong one. It did.
 // ── NO PIPELINE DECIDES ANYTHING, UNDER pipefail ─────────────────────
 //
 // `set -euo pipefail` is on for every script in bash/, and it turns a
@@ -365,6 +372,89 @@ test.subHeading('No pipeline decides anything — pipefail turns a match into 14
   }
 }
 
+// ── THE CLONE DECIDES, NOT THE SHELL ─────────────────────────────────
+//
+// The fifth instance of one bug class, all of them found within two days
+// of a second relay existing on this box: FINE WITH ONE CLONE, SILENTLY
+// WRONG WITH TWO, and every one of them failing TOWARD the live relay.
+//
+//   install-units read bash/systemd/${UNIT_NAME}.service   (template)
+//   tls wrote /etc/caddy/Caddyfile with >                  (site config)
+//   cron-install swept every line carrying its marker      (the cron)
+//   update's `| grep -q` never matched under pipefail      (the restart)
+//   and this one: an exported SPIRIT_UNIT_NAME
+//
+// `source .env` was the documented way to work in the lab clone. It is
+// also an EXPORT, and an export outlives the `cd` that follows it, so
+// the documentation was handing the shell a lie to carry:
+//
+//   cd /root/lab/SpiritOS && source .env
+//   cd /root/SpiritOS     && ./bash/update        -> "unit spirit-lab"
+//   cd /root/SpiritOS     && ./bash/cron-install  -> clone: /root/SpiritOS
+//                                                    unit:  spirit-lab
+//
+// The guard written for lab-install compares the lab's knobs against the
+// live ones, which catches a mis-AIMED command. It cannot catch this,
+// because by the time it runs, "the live ones" have already been read
+// out of the poisoned environment: both sides of the comparison are
+// wrong together and it agrees with itself.
+//
+// So the environment stops being an input. A clone with a .env is
+// described by that file; a clone without one takes the defaults; and in
+// both cases what the shell was carrying is discarded. The variables
+// exist to configure a clone, and which clone is not a question the
+// shell gets a vote on.
+//
+// THE PRICE, stated because it is real: a one-off
+// `SPIRIT_RELAY_PORT=9999 ./bash/serve` no longer works. To change what a
+// clone is, edit that clone's .env. Cheap, next to a public relay
+// restarting on behalf of a directory it has never heard of.
+test.subHeading('The clone decides what it is — not whatever the shell was carrying');
+{
+  // READ, NOT UNSET, when the file is there. A clone with a .env is
+  // described by it; the file is the clone's own word about itself.
+  if (/if \[ -f "\$REPO_ROOT\/\.env" \]/.test(lib) && /\.\s+"\$REPO_ROOT\/\.env"/.test(lib)) {
+    test.check('lib.sh reads this clone’s .env itself — nobody sources anything');
+  } else {
+    test.fail('lib.sh does not read $REPO_ROOT/.env — the lab clone depends on a human remembering');
+  }
+
+  // AND CLEARED WHEN IT IS NOT. This is the half that saves the live
+  // relay: /root/SpiritOS has no .env, so an inherited SPIRIT_UNIT_NAME
+  // would otherwise still win there.
+  const unsetLine = (lib.match(/^\s*unset .*$/m) || [''])[0];
+  const missing = ['SPIRIT_UNIT_NAME', 'SPIRIT_RELAY_PORT', 'SPIRIT_RELAY_DOMAIN', 'SPIRIT_UNIT_TEMPLATE']
+    .filter(function (v) { return unsetLine.indexOf(v) === -1; });
+  if (missing.length === 0) {
+    test.check('and clears all four when there is none, so an export cannot follow you between clones');
+  } else {
+    test.fail('a clone with no .env still inherits: ' + missing.join(', '));
+  }
+
+  // THE ORDER IS THE WHOLE THING. UNIT_NAME and friends must be assigned
+  // AFTER the .env block, or the block resolves nothing and the defaults
+  // have already been fixed from the environment.
+  const envAt = lib.indexOf('$REPO_ROOT/.env');
+  const unitAt = lib.indexOf('UNIT_NAME="${SPIRIT_UNIT_NAME:-');
+  if (envAt !== -1 && unitAt !== -1 && envAt < unitAt) {
+    test.check('and it resolves before UNIT_NAME is read, or the defaults would already be set');
+  } else {
+    test.fail('lib.sh reads .env after deriving UNIT_NAME — the file has no effect');
+  }
+
+  // NOBODY SOURCES IT BY HAND ANY MORE. lab-install used to, in four
+  // places, and those four lines are the instruction that caused this.
+  const labInstallSrc = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
+  const sourced = labInstallSrc.split('\n').filter(function (line) {
+    return /^\s*[^#]*\bsource \.env\b/.test(line);
+  });
+  if (sourced.length === 0) {
+    test.check('and lab-install no longer tells anyone to source it');
+  } else {
+    test.fail(sourced.length + ' line(s) in lab-install still `source .env` — that is the export that travels');
+  }
+}
+
 test.subHeading('Two clones can each keep their own update cron');
 {
   const cronIn = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'cron-install'), 'utf8');
@@ -376,13 +466,36 @@ test.subHeading('Two clones can each keep their own update cron');
     test.fail('cron-install still uses a marker both clones share');
   }
 
-  // THE ENV TRAVELS ON THE LINE. Longer to read and impossible to
-  // forget, which is the trade this two-clone arrangement keeps asking
-  // for.
-  if (cronIn.indexOf('SPIRIT_UNIT_NAME=$UNIT_NAME') !== -1) {
-    test.check('and the line carries its own environment, because cron has none');
+  // THE LINE CARRIES NO ENVIRONMENT — REVERSED FROM WHAT THIS ASSERTED
+  // A DAY AGO, and the reversal is the point. It used to require
+  // `SPIRIT_UNIT_NAME=$UNIT_NAME` on the line "because cron has none".
+  // Then this got installed, from a shell that had sourced the lab's
+  // .env and walked back to the live clone:
+  //
+  //   */10 * * * * SPIRIT_UNIT_NAME=spirit-lab /root/SpiritOS/bash/update
+  //
+  // Live clone's code, lab's service, every ten minutes, no error. A
+  // line that states its own unit is a line that can state the wrong
+  // one. lib.sh now derives it from the clone the script lives in, so
+  // the path IS the configuration and there is nothing to get wrong.
+  // Comments stripped: the block above QUOTES the bad line on purpose,
+  // and a scan that cannot tell code from the history of the code is a
+  // scan that punishes writing the history down.
+  const cronCode = cronIn.split('\n').filter(function (line) {
+    return !/^\s*#/.test(line);
+  }).join('\n');
+  if (cronCode.indexOf('SPIRIT_UNIT_NAME=') === -1) {
+    test.check('the line carries no environment — the clone it points at decides');
   } else {
-    test.fail('the cron line relies on an environment cron does not provide');
+    test.fail('the cron line states a unit name, which is a unit name it can state wrongly');
+  }
+
+  // AND IT IS CLAIMED BY PATH AS WELL AS BY MARKER, so the bad line
+  // above is swept by the clone it actually runs, whatever it is marked.
+  if (cronIn.indexOf('-F "$REPO_ROOT/bash/update"') !== -1) {
+    test.check('and a line running this clone’s update is this clone’s, however it is marked');
+  } else {
+    test.fail('cron-install trusts the marker alone — a mismarked line survives forever');
   }
 
   // REMOVAL TAKES ONLY ITS OWN. A cron-remove that swept both would be

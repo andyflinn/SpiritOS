@@ -51,17 +51,24 @@ else
   ok "cloned at $(git rev-parse --short HEAD)"
 fi
 
-# ── .env, AND IT IS THE ONE SHARP EDGE ON THIS BOX ───────────────────
+# ── .env IS WHAT THIS CLONE IS, NOT A THING YOU REMEMBER TO SOURCE ───
 #
-# `./bash/restart` inside the lab clone with SPIRIT_UNIT_NAME unset
-# restarts spirit-relay — the LIVE box — and says nothing about it. A
-# guard cannot tell which clone it is in, so the answer is a file you
-# source and a reminder every time this runs.
+# It used to say "source this before EVERY bash/ command" — and that
+# instruction was not just easy to forget, it was ACTIVELY WRONG, because
+# an export outlives the `cd` that follows it. Sourcing it once and then
+# walking back to the main clone made every script there speak for the
+# lab: `./bash/update` in /root/SpiritOS reported `unit spirit-lab`, and
+# `./bash/cron-install` there installed a line pulling the live clone and
+# restarting the lab's service.
+#
+# So lib.sh reads this file itself, from wherever it lives, and a clone
+# without one gets the defaults with the environment cleared. Nobody
+# sources anything and the shell cannot lie about which relay it is in.
 say "write $LAB_DIR/.env"
 cat > "$LAB_DIR/.env" <<ENV
-# Source this before EVERY bash/ command in this clone.
-#   source .env && ./bash/restart
-# Without it, ./bash/restart restarts the LIVE relay from in here.
+# Read automatically by bash/lib.sh — do NOT source this by hand.
+# It says what THIS clone is. Sourcing it exports into your shell, and
+# the exports follow you into the other clone.
 export SPIRIT_RELAY_DOMAIN=$LAB_DOMAIN
 export SPIRIT_RELAY_PORT=$LAB_PORT
 export SPIRIT_UNIT_NAME=$LAB_UNIT
@@ -69,15 +76,15 @@ ENV
 chmod 600 "$LAB_DIR/.env"
 
 say "install unit $LAB_UNIT"
-( cd "$LAB_DIR" && source .env && ./bash/install-units )
+( cd "$LAB_DIR" && ./bash/install-units )
 
 say "start and enable"
-( cd "$LAB_DIR" && source .env && ./bash/start && ./bash/boot-on )
+( cd "$LAB_DIR" && ./bash/start && ./bash/boot-on )
 
 say "caddy site for $LAB_DOMAIN"
-( cd "$LAB_DIR" && source .env && ./bash/tls ) || {
+( cd "$LAB_DIR" && ./bash/tls ) || {
   warn "tls did not finish — the relay is running on 127.0.0.1:$LAB_PORT but is not public yet"
-  echo "    follow what it printed, then: cd $LAB_DIR && source .env && ./bash/tls"
+  echo "    follow what it printed, then: cd $LAB_DIR && ./bash/tls"
   exit 1
 }
 
@@ -121,5 +128,5 @@ fi
 
 ok "lab relay is up"
 echo "    check:  curl -fsS https://$LAB_DOMAIN/api/relay/who"
-echo "    manage: cd $LAB_DIR && source .env && ./bash/status"
+echo "    manage: cd $LAB_DIR && ./bash/status"
 echo "    remove: $REPO_ROOT/bash/lab-remove"
