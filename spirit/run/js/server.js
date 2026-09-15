@@ -27,7 +27,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
     '  --relay           Run as a public relay: serve relay.html at / and /index.html, answer\n' +
     '                    only the relay routes (/api/relay/*) and 404 everything else —\n' +
-    '                    Jobs, /api/fs/*, /api/spirit, /api/hub/* and the desktop shell.\n' +
+    '                    /api/spirit, /api/hub/*, /api/events and the desktop shell.\n' +
     '                    Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is\n' +
     '                    meant to be reached from the internet. Do NOT pass this to a personal\n' +
     '                    node; those stay loopback-only.\n' +
@@ -558,6 +558,42 @@ function deleteJobById(res, id) {
   res.end();
 }
 
+// ── THE TWO READS, NOW VERBS ─────────────────────────────────────────
+//
+// Both took their path off a query string and answered GET. Under the
+// one door they read it from the body like everything else.
+//
+// THE GATE IS UNTOUCHED, which is what stage 3 exists to show. Both still
+// go through spirit.core.fs, which still asks fileServable — the fold
+// moved where the path comes FROM and changed nothing about what may be
+// reached with it. serverSurface's encoded-traversal checks are the proof
+// and they are not edited.
+function handleFsStat(req, res) {
+  return readJsonBody(req).then((body) => {
+    const stats = spirit.core.fs.statFile(String((body && body.path) || ''));
+    if (!stats) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Not found');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(stats));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+function handleFsAnnotations(req, res) {
+  return readJsonBody(req).then((body) => {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(spirit.core.fs.getAnnotations(String((body && body.path) || ''))));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
 function writeFsResult(res, result) {
   if (result.ok) {
     res.writeHead(204);
@@ -1077,23 +1113,12 @@ const server = http.createServer((req, res) => {
   // the thing the whole fold is for: one place that knows what this node
   // can be asked.
 
-  if (req.method === 'GET' && pathname === '/api/fs/stat') {
-    const stats = spirit.core.fs.statFile(url.searchParams.get('path') || '');
-    if (!stats) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(stats));
-    return;
-  }
-
-  if (req.method === 'GET' && pathname === '/api/fs/annotations') {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(spirit.core.fs.getAnnotations(url.searchParams.get('path') || '')));
-    return;
-  }
+  // `GET /api/fs/stat` and `GET /api/fs/annotations` STOOD HERE, each
+  // taking its path from a QUERY STRING. They are `fs.stat` and
+  // `fs.annotations` under the one door, and the path is a field — which
+  // is the last of the three ways this node used to carry a parameter
+  // (path segment, query string, body) collapsing into the one that a
+  // type system can see.
 
   if (req.method === 'GET') {
     const isHomeRequest = pathname === '/' || pathname === '/index.html';
@@ -1125,10 +1150,6 @@ const server = http.createServer((req, res) => {
 
   if (req.method === 'POST') {
     
-    if (pathname === '/api/fs/save') {
-      handleFsSave(req, res);
-      return;
-    }
 
     if (pathname === '/api/relay/claim') {
       handleRelayClaim(req, res);
@@ -1243,16 +1264,6 @@ const server = http.createServer((req, res) => {
     // /api/hub/inbox above until R8. There is nothing left of the ring on
     // this node: an app posts through /api/hub/post and receives on the
     // stream.
-
-    if (pathname === '/api/fs/delete') {
-      handleFsDelete(req, res);
-      return;
-    }
-
-    if (pathname === '/api/fs/annotate') {
-      handleFsAnnotate(req, res);
-      return;
-    }
 
     // ── THE LOOPBACK CLIENT API — ONE DOOR, VERBS IN THE BODY ────────
     //
@@ -1579,6 +1590,20 @@ if (!relayMode) {
     'jobs.update': handleJobUpdate,
     'jobs.cancel': handleCancelJob,
     'jobs.delete': handleDeleteJob,
+  });
+
+  // THE GATE IS NOT IN HERE, and that is the point of this namespace.
+  // Every one of these goes through spirit.core.fs, which asks
+  // fileWritable or fileServable about the path — so folding the route
+  // moved where a path COMES FROM and changed nothing about what may be
+  // reached with it. serverSurface's traversal checks are untouched and
+  // still red-green the same way.
+  loopbackVerbs.claim('fs', 'server.js', {
+    'fs.stat': handleFsStat,
+    'fs.annotations': handleFsAnnotations,
+    'fs.save': handleFsSave,
+    'fs.delete': handleFsDelete,
+    'fs.annotate': handleFsAnnotate,
   });
 }
 

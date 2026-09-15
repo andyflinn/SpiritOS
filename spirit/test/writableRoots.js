@@ -111,7 +111,7 @@ expectWritable('a non-entry-script file in a new app folder', 'app/__writableRoo
 // image of the refusals above: exactly what saveFile refuses, those two
 // existed to allow, for one caller (App Builder). Decision 0008 deleted
 // app-building from this repo on 2026-09-13, and both doors went with
-// it -- kernel side, browser side, and the two /api/fs/ routes.
+// it -- kernel side, browser side, and the fs.* verbs.
 //
 // About 40 checks disappeared with them. That must not be read as a
 // smaller world: what those checks proved was that the exception was

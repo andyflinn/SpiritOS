@@ -628,13 +628,14 @@ if (isNode()) {
   };
 
   // Sync, same as loadFile — file metadata (size/mtime/birthtime) for
-  // display purposes, via the new /api/fs/stat proxy (the browser has no
+  // display purposes, via the fs.stat verb (the browser has no
   // direct filesystem access, unlike the Node side's fs.statSync).
   spirit.core.fs.statFile = function(filePath) {
     let result = null;
     let xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", "/api/fs/stat?path=" + encodeURIComponent(filePath), false);
-    xmlhttp.send();
+    xmlhttp.open("POST", "/api/spirit", false);
+    xmlhttp.setRequestHeader("Content-Type", "application/json");
+    xmlhttp.send(JSON.stringify({ verb: "fs.stat", path: filePath }));
     if (xmlhttp.status == 200) {
       try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = null; }
     }
@@ -643,15 +644,16 @@ if (isNode()) {
 
   // Sync, same as loadFile/statFile — "More Information" data any tool has
   // recorded about this file via annotateFile (kernel.js's Node side), via
-  // the /api/fs/annotations proxy (no direct filesystem access from the
+  // the fs.annotations verb (no direct filesystem access from the
   // browser). Always resolves to an object — {} both when nothing's been
   // recorded and when the request itself fails — so callers never need a
   // null-check before reading .client.
   spirit.core.fs.getAnnotations = function(filePath) {
     let result = {};
     let xmlhttp = new XMLHttpRequest();
-    xmlhttp.open("GET", "/api/fs/annotations?path=" + encodeURIComponent(filePath), false);
-    xmlhttp.send();
+    xmlhttp.open("POST", "/api/spirit", false);
+    xmlhttp.setRequestHeader("Content-Type", "application/json");
+    xmlhttp.send(JSON.stringify({ verb: "fs.annotations", path: filePath }));
     if (xmlhttp.status == 200) {
       try { result = JSON.parse(xmlhttp.responseText); } catch (e) { result = {}; }
     }
@@ -661,14 +663,14 @@ if (isNode()) {
   spirit.core.fs.saveFile = function(filePath, content) {
     return new Promise(function (resolve, reject) {
       let xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/fs/save', true);
+      xhr.open('POST', '/api/spirit', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) return;
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else reject(new Error('failed to save file: ' + xhr.status));
       };
-      xhr.send(JSON.stringify({ path: filePath, content: content }));
+      xhr.send(JSON.stringify({ verb: 'fs.save', path: filePath, content: content }));
     });
   };
 
@@ -680,14 +682,14 @@ if (isNode()) {
   spirit.core.fs.deleteFile = function(filePath) {
     return new Promise(function (resolve, reject) {
       let xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/fs/delete', true);
+      xhr.open('POST', '/api/spirit', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.onreadystatechange = function() {
         if (xhr.readyState !== 4) return;
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else reject(new Error('failed to delete file: ' + xhr.status));
       };
-      xhr.send(JSON.stringify({ path: filePath }));
+      xhr.send(JSON.stringify({ verb: 'fs.delete', path: filePath }));
     });
   };
 

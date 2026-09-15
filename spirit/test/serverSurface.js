@@ -11,7 +11,7 @@
 //   2. the static route's read gate is spelled in %2f, which the WHATWG URL
 //      parser leaves alone (it collapses a literal '../' but not an encoded
 //      one) so the raw traversal reaches fileServable intact;
-//   3. /api/fs/save's write gate, same non-canonical spelling as
+//   3. fs.save's write gate, same non-canonical spelling as
 //      pathCanonicalization.js but through the real route, proving the
 //      bypass actually reaches disk rather than only the predicate;
 //   4. net.fetch substitutes ${ENV:ANTHROPIC_API_KEY} into headers for
@@ -183,16 +183,46 @@ freePort()
 
   // ---- 3. the write gate, through the real route, to real disk ----
   .then(function (port) {
-    test.subHeading('POST /api/fs/save cannot overwrite an app entry script');
+    test.subHeading('fs.save cannot overwrite an app entry script');
     const before = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
-    return request(port, 'POST', '/api/fs/save', {
-      path: 'app/./natter/natter.js',
-      content: '// serverSurface.js probe — must never reach disk',
+
+    // ── THE SAME VACUITY THIS FILE ALREADY FELL INTO ONCE ───────────
+    //
+    // Case 4 kept passing when its route vanished, because "nothing
+    // happened" took the "the key was withheld" branch. THIS check has
+    // the identical shape: a dead route answers 405, the write never
+    // happens, the file is unchanged, and both assertions go green while
+    // proving nothing at all.
+    //
+    // So it proves the verb is REACHABLE first, with a write that is
+    // supposed to succeed, and only then asks whether the gate refuses
+    // the one that must not. A test about a gate has to know the door
+    // opens.
+    return request(port, 'POST', '/api/spirit', {
+      verb: 'fs.save',
+      path: 'app/natter/serverSurface-probe.json',
+      content: '{"written":"by serverSurface, and deleted again below"}',
+    }).then(function (ok) {
+      if (ok.status >= 200 && ok.status < 300) {
+        test.check('fs.save is reachable and writes where it is allowed to');
+      } else {
+        test.fail('fs.save could not write an ALLOWED path (HTTP ' + ok.status + '), so the ' +
+          'refusal below proves nothing — the verb is not wired.' + lastWords());
+      }
+      return request(port, 'POST', '/api/spirit', {
+        verb: 'fs.delete', path: 'app/natter/serverSurface-probe.json',
+      });
+    }).then(function () {
+      return request(port, 'POST', '/api/spirit', {
+        verb: 'fs.save',
+        path: 'app/./natter/natter.js',
+        content: '// serverSurface.js probe — must never reach disk',
+      });
     }).then(function (r) {
       if (r.status >= 200 && r.status < 300) {
-        test.fail('/api/fs/save ACCEPTED a non-canonical entry-script path (HTTP ' + r.status + ')');
+        test.fail('fs.save ACCEPTED a non-canonical entry-script path (HTTP ' + r.status + ')');
       } else {
-        test.check('/api/fs/save refused a non-canonical entry-script path (HTTP ' + r.status + ')');
+        test.check('fs.save refused a non-canonical entry-script path (HTTP ' + r.status + ')');
       }
       const after = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
       if (after === before) {
