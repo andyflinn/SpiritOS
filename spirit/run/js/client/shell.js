@@ -1361,6 +1361,60 @@
 
       onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },
 
+      // ── THE CLIENT HALF OF A peerPost (decision 0011) ────────────────
+      //
+      //   Andy: "it should be a generic client layer, the point will come
+      //   where processes want to ask peer nodes for answers."
+      //
+      // sendMessagePacket above hands back { status, text } — the raw HTTP
+      // answer, with the hash buried in a string every caller would have
+      // to parse for itself. This is the same post, answered in the shape
+      // the protocol actually has:
+      //
+      //   { ok, status, hash, reply, from, error }
+      //
+      // `hash` is the one the NODE computed and never sent to the peer
+      // (0011). A page holds no key, cannot verify a signature, and must
+      // never be built as though it could — so the hash is not proof
+      // here, it is the thread: the name of the thing this client caused.
+      //
+      // `reply` is the answer that came back, because /api/hub/post
+      // resolves only after router.post settles. The immediate round trip
+      // needs no table at all — which is why there isn't one.
+      //
+      // NOT A BROWSER API, and that is the point of the shape. Everything
+      // here is one POST and one JSON answer over loopback: a spawned
+      // process, in any language, implements the same contract with an
+      // HTTP client and gets the same hash for the same reason. The shell
+      // is one client of this, not its owner.
+      peerPost: function (packetApp, toId, body, opts) {
+        return api.sendMessagePacket(packetApp, toId, body, opts).then(function (r) {
+          var said = null;
+          try { said = JSON.parse(r.text); } catch (e) { said = null; }
+          return {
+            ok: r.status === 200 && !!(said && said.ok),
+            status: r.status,
+            // Absent rather than invented when the node could not post at
+            // all — a caller must be able to tell "no transaction" from
+            // "a transaction that failed".
+            hash: (said && said.hash) || '',
+            reply: (said && typeof said.text === 'string') ? said.text : '',
+            from: (said && said.from) || '',
+            error: (said && said.error) || (r.status === 200 ? '' : r.text),
+          };
+        });
+      },
+
+      // LATER NEWS ABOUT SOMETHING THIS CLIENT ASKED FOR. Hand it a hash
+      // from peerPost and it calls back when a packet arrives carrying
+      // that hash in `re`. Returns off().
+      //
+      // Separate from peerPost on purpose: the immediate reply is already
+      // in the promise above, so a table would be dead weight for every
+      // ordinary exchange. This exists for the case the promise cannot
+      // cover — a peer that answers again, later, about the same thing.
+      onRegarding: function (hash, handler) { return onRegardingFor(hash, handler); },
+
       // api.deliverPackets STOOD HERE — an app handing the shell its
       // poll's catch to fan out. It was marked a temporary seam when it
       // was written and R8 is what it was waiting for: the ring is gone,
@@ -1728,11 +1782,57 @@
   // A packet for an app nobody is listening to is DROPPED — not held,
   // not queued, not announced. There is no hold store yet, and inventing
   // one quietly would be inventing the part that has to be designed.
+  // ── REGARDING: LATER PACKETS ABOUT AN EARLIER ONE ────────────────────
+  //
+  //   Andy: "There is a common lowest shell layer that must match request
+  //   and replies by hash, if it is a peerPost()"
+  //
+  // hash -> [handler]. The shell's half of the correlation decision 0011
+  // describes: a client cannot sign and cannot verify, so a hash is the
+  // ONLY thread it has from something it caused back to news about it.
+  //
+  // WHY THIS IS NOT peerPost's `waiting` TABLE. That one settles the
+  // immediate reply and is gone; this one outlives the round trip, for a
+  // packet a peer sends LATER that carries `re` — the protocol's Re:
+  // field, which has travelled end to end since the router landed and
+  // which nothing has ever read.
+  //
+  // KEPT DELIBERATELY SMALL: no timeout, no store, no retry. A handler
+  // lives until its app drops it, and a page that closes takes its table
+  // with it — which is honest, because catching up on what arrived while
+  // nobody was watching is the LOG's job and not a table's (0011, and
+  // Andy's note in hub.js about a reader keyed by hash and arrival-date).
+  var regardingHandlers = Object.create(null);
+
+  function onRegardingFor(hash, handler) {
+    var key = String(hash || '');
+    if (!key || typeof handler !== 'function') return function () {};
+    (regardingHandlers[key] = regardingHandlers[key] || []).push(handler);
+    return function off() {
+      var left = (regardingHandlers[key] || []).filter(function (fn) { return fn !== handler; });
+      if (left.length) regardingHandlers[key] = left;
+      else delete regardingHandlers[key];
+    };
+  }
+
   function deliverPackets(messages) {
     var routed = [];
     (Array.isArray(messages) ? messages : []).forEach(function (message) {
       var info = message && message.packet;
       if (!info || !info.app) return; // no envelope: addressed to no app
+
+      // MINE BEFORE THE APP'S. A packet regarding something this page
+      // asked for belongs to whoever asked, and an app watching its own
+      // name would otherwise have to filter every arrival for a hash it
+      // is holding — which is the table nobody should have to write
+      // twice.
+      var waiting = info.re ? (regardingHandlers[info.re] || []) : [];
+      if (waiting.length) {
+        routed.push(message);
+        waiting.slice().forEach(function (fn) { fn(info.body, message); });
+        return;
+      }
+
       var listeners = packetHandlers[info.app] || [];
       if (!listeners.length) return; // nobody home: dropped on purpose
       routed.push(message);
