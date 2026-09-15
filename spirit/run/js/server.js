@@ -27,7 +27,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
     '  --relay           Run as a public relay: serve relay.html at / and /index.html, answer\n' +
     '                    only the relay routes (/api/relay/*) and 404 everything else —\n' +
-    '                    Jobs, /api/fs/*, /api/proxy, /api/hub/* and the desktop shell.\n' +
+    '                    Jobs, /api/fs/*, /api/spirit, /api/hub/* and the desktop shell.\n' +
     '                    Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is\n' +
     '                    meant to be reached from the internet. Do NOT pass this to a personal\n' +
     '                    node; those stay loopback-only.\n' +
@@ -214,8 +214,25 @@ function sendFile(res, filePath) {
 
 const fsPath = spirit.core.node.util.fsPath;
 
+// ── READ ONCE, ANSWERABLE TWICE ──────────────────────────────────────
+//
+// A request body is a stream and a stream is consumed. That was fine
+// while a path chose the handler, because exactly one thing ever read
+// it.
+//
+// /api/spirit has to look at the body to know WHICH handler — the verb
+// is in there — and the handler it picks then reads the same body for
+// itself. So the promise is memoised on the request: the first caller
+// drains the stream, every later caller gets the same answer, and a
+// handler moving under the single door needs no change of its own.
+//
+// Memoised on `req` rather than in a table, because the lifetime is
+// exactly the request's and nothing has to remember to clean up.
+const BODY_PROMISE = Symbol('spiritJsonBody');
+
 function readJsonBody(req) {
-  return new Promise((resolve, reject) => {
+  if (req[BODY_PROMISE]) return req[BODY_PROMISE];
+  const reading = new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
@@ -231,6 +248,18 @@ function readJsonBody(req) {
     });
     req.on('error', reject);
   });
+  req[BODY_PROMISE] = reading;
+  return reading;
+}
+
+// Which verb this is, for the one door that has to know before it can
+// choose. A body that will not parse is not a verb — the handler that
+// would have been chosen is the one that reports that, so this answers
+// empty and lets the dispatch below say "no such verb".
+function peekVerb(req) {
+  return readJsonBody(req)
+    .then(function (body) { return String((body && body.verb) || ''); })
+    .catch(function () { return ''; });
 }
 
 // The connection's own address, used only as a rate-limiting bucket key —
@@ -540,7 +569,7 @@ function handleFsAnnotate(req, res) {
   });
 }
 
-// Small, explicit allowlist of env var NAMES that /api/proxy is willing to
+// Small, explicit allowlist of env var NAMES that net.fetch is willing to
 // substitute into an outgoing header value, via a ${ENV:NAME} placeholder
 // (see substituteEnvPlaceholders, below) — e.g. a caller can send
 // {"headers": {"x-api-key": "${ENV:ANTHROPIC_API_KEY}"}} and the real
@@ -1169,11 +1198,66 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/proxy') {
-      handleGenericProxy(req, res);
+    // ── THE LOOPBACK CLIENT API — ONE DOOR, VERBS IN THE BODY ────────
+    //
+    //   Andy: "Do we maximally fold as much as possible into one single
+    //   interface (route)?" — agreed, 2026-09-15.
+    //
+    // The same collapse the relay's post-path doors just had, one layer
+    // up and for the same reason: every route below this line reads a
+    // JSON body and dispatches on nothing but its own path. A path IS a
+    // verb, spelled in a place a type system cannot see.
+    //
+    // WHAT FOLDS: everything request/response. WHAT DOES NOT, and both
+    // are technical rather than taste —
+    //
+    //   GET /api/events   a long-lived server-push connection. A
+    //                     different transport shape, not a different
+    //                     verb, and no body can express it.
+    //   GET /api/version  must answer a client that knows nothing,
+    //                     including one running older code, which is the
+    //                     case it exists for.
+    //
+    // NAMESPACE.VERB, so which side of this node a verb lives on is
+    // readable in the verb itself: `fs.*` and `jobs.*` are this machine,
+    // `peer.*` reaches the wire. The plumbing behind the door is NOT
+    // folded — a local call must never acquire a wire, and a post must
+    // never be answered locally (Andy: "folding of the plumbing behind
+    // the API is for future consideration").
+    //
+    // STAGED, smallest first, and no verb is ever reachable two ways: a
+    // namespace moves with its callers and its old route is deleted in
+    // the same breath. A transition where both work would be a fallback
+    // wearing a schedule.
+    //
+    //   1. net.fetch   (was /api/proxy)   ← this stage
+    //   2. jobs.*      (was /api/jobs)
+    //   3. fs.*        (was /api/fs/*)
+    //   4. peer.*, and the rest of /api/hub/*
+    const LOOPBACK_VERBS = {
+      'net.fetch': function (rq, rs) { handleGenericProxy(rq, rs); },
+    };
+
+    if (pathname === '/api/spirit') {
+      // The verb is read off the body without consuming it: each handler
+      // still reads the body it was written to read, so a handler moving
+      // under this door needs no change of its own.
+      peekVerb(req).then(function (verb) {
+        const run = Object.prototype.hasOwnProperty.call(LOOPBACK_VERBS, verb)
+          ? LOOPBACK_VERBS[verb] : null;
+        if (!run) {
+          res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ error: 'no such verb: ' + verb }));
+          return;
+        }
+        run(req, res);
+      });
       return;
     }
 
+    // `POST /api/proxy` STOOD HERE. It is `net.fetch` under the single
+    // door above — the first of four namespaces to fold, and the one
+    // chosen to go first because it is the whole pattern in miniature.
     if (pathname === '/api/jobs') {
       handleCreateJob(req, res);
       return;

@@ -14,7 +14,7 @@
 //   3. /api/fs/save's write gate, same non-canonical spelling as
 //      pathCanonicalization.js but through the real route, proving the
 //      bypass actually reaches disk rather than only the predicate;
-//   4. /api/proxy substitutes ${ENV:ANTHROPIC_API_KEY} into headers for
+//   4. net.fetch substitutes ${ENV:ANTHROPIC_API_KEY} into headers for
 //      ANY destination the caller names — the allow-list gates which env
 //      var, never which host receives it.
 //
@@ -207,22 +207,45 @@ freePort()
 
   // ---- 4. the proxy's env substitution is not scoped to a destination ----
   .then(function (port) {
-    test.subHeading('POST /api/proxy does not hand the API key to any host named');
+    test.subHeading('net.fetch does not hand the API key to any host named');
     return startSink().then(function (s) {
       sink = s;
-      return request(port, 'POST', '/api/proxy', {
+      // ── THE VERB, NOT THE ROUTE (2026-09-15) ────────────────────────
+      //
+      // This posted to /api/proxy. That route folded into the single
+      // loopback door as `net.fetch`, and pointing this at the new one is
+      // the mechanical half of the change.
+      //
+      // The half that matters: IT PASSED ANYWAY when the route vanished.
+      // A 405 means the proxy never ran, the sink saw nothing, `received`
+      // was '' — and '' took the "withheld the key" branch. The check
+      // read "nothing happened" as "the key was withheld", which is the
+      // most comfortable way for a security test to be wrong.
+      //
+      // So the first thing asserted now is that the sink was REACHED.
+      // Without it this can only fail by leaking; with it, it also fails
+      // by not happening.
+      return request(port, 'POST', '/api/spirit', {
+        verb: 'net.fetch',
         url: 'http://127.0.0.1:' + s.port + '/v1/messages',
         method: 'POST',
         headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}' },
         body: { hello: 'world' },
       }).then(function () {
+        if (s.seen.headers) {
+          test.check('net.fetch reached the host it was given — so what follows is about the key');
+        } else {
+          test.fail('net.fetch never reached the sink, so the key check below proves nothing. ' +
+            'The verb is not wired, or the door refused it.' + lastWords());
+        }
+
         const received = (s.seen.headers && s.seen.headers['x-api-key']) || '';
         if (received === ENV_KEY_SENTINEL) {
-          test.fail('the proxy sent the real ANTHROPIC_API_KEY to an unrelated host');
+          test.fail('net.fetch sent the real ANTHROPIC_API_KEY to an unrelated host');
         } else if (received.indexOf('${ENV:') === 0 || received === '') {
-          test.check('the proxy withheld the key from an unrelated host (sent ' + JSON.stringify(received) + ')');
+          test.check('and withheld the key from an unrelated host (sent ' + JSON.stringify(received) + ')');
         } else {
-          test.check('the proxy did not send the real key (sent ' + JSON.stringify(received) + ')');
+          test.check('and did not send the real key (sent ' + JSON.stringify(received) + ')');
         }
         return port;
       });

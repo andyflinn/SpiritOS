@@ -1225,7 +1225,7 @@
             var controller = new AbortController();
             var timeoutId = setTimeout(function () { controller.abort(); }, 2000);
 
-            // Goes through our own server's generic /api/proxy route, not
+            // Goes through our own server's net.fetch verb, not
             // LM Studio directly — LM Studio sends no Access-Control-Allow-
             // Origin header, so a cross-origin browser fetch to it would be
             // silently blocked by CORS even when it's perfectly reachable.
@@ -1236,11 +1236,11 @@
             // for the vision-probe case doesn't report `state` at all).
             var targetUrl = filter === 'vision' ? 'http://localhost:1234/v1/models' : 'http://localhost:1234/api/v0/models';
 
-            fetch('/api/proxy', {
+            fetch('/api/spirit', {
               method: 'POST',
               signal: controller.signal,
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: targetUrl, timeoutMs: 2000 }),
+              body: JSON.stringify({ verb: 'net.fetch', url: targetUrl, timeoutMs: 2000 }),
             })
               .then(function (res) {
                 clearTimeout(timeoutId);

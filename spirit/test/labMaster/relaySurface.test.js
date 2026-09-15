@@ -139,11 +139,14 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 404) test.check('GET /api/jobs 404');
     else test.fail('jobs → ' + r.status + ' ' + r.text);
-    return request(ORIGIN + '/api/proxy', 'POST', { url: 'http://example.com' });
+    // The loopback client door, which a relay must not answer at all.
+    // It was /api/proxy until 2026-09-15; the verb folded, the claim did
+    // not — a relay serves only isRelayPublicPath, and this is not on it.
+    return request(ORIGIN + '/api/spirit', 'POST', { verb: 'net.fetch', url: 'http://example.com' });
   })
   .then(function (r) {
-    if (r.status === 404) test.check('POST /api/proxy 404');
-    else test.fail('proxy → ' + r.status + ' ' + r.text);
+    if (r.status === 404) test.check('POST /api/spirit 404 — the client door is not on a relay');
+    else test.fail('spirit door → ' + r.status + ' ' + r.text);
     return request(ORIGIN + '/api/fs/stat?path=index.html', 'GET', null);
   })
   .then(function (r) {

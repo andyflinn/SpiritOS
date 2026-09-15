@@ -1051,7 +1051,7 @@
   // member of api, full stop": a contract with documented carve-outs
   // invites exactly the "maybe there are other undocumented ones too"
   // guessing this design exists to avoid. fetchExternal also hides the
-  // /api/proxy wire envelope entirely (method/headers/body/timeoutMs
+  // net.fetch wire envelope entirely (method/headers/body/timeoutMs
   // nested just so) behind a plain (url, options) call, the same way
   // fs.loadFile already hides the jailed path resolver behind a bare
   // filename — one less way to get a shape subtly wrong. Every app gets
@@ -1079,12 +1079,18 @@
   function buildApiFor(app) {
     var api = {
       escapeHtml: escapeHtml,
+      // ONE DOOR, AND THE VERB IS IN THE BODY (2026-09-15). This posted
+      // to /api/proxy; that route is gone, and the shape it hid is
+      // unchanged — an app still says (url, options) and never learns
+      // the envelope. Which is the point of the folding being invisible
+      // here: a verb moving under the single door is not an app's news.
       fetchExternal: function (url, options) {
         options = options || {};
-        return fetch('/api/proxy', {
+        return fetch('/api/spirit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            verb: 'net.fetch',
             url: url,
             method: options.method || 'GET',
             headers: options.headers || {},
