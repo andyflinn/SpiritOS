@@ -242,6 +242,8 @@ function mountApp(opts) {
 
   const container = fakeElement('container');
   const answers = [];
+  const closed = [];
+  let relayEventHandlers = [];
   const api = {
     escapeHtml: spirit.core.util.escapeHtml,
     isVisible: function () { return true; },
@@ -275,6 +277,22 @@ function mountApp(opts) {
       });
     },
     setDialogResult: function (result) { answers.push(result); },
+    // THE OTHER WAY A DIALOG ANSWERS, and the difference is WHEN.
+    // setDialogResult parks a result that callDialog delivers on exit;
+    // closeDialog leaves now and delivers it. Recorded separately
+    // because "said what it decided" and "handed it over" are different
+    // facts, and a claim that only did the first left Natter waiting
+    // behind a Back press nobody had a reason to make.
+    closeDialog: function (result) { closed.push(result); answers.push(result); },
+    // The shell's fan-out of what a relay this node OWNS just reported.
+    // Captured so a test can push one and watch the screen react, which
+    // is the only way to assert "it does not have to be asked".
+    onRelayEvent: function (handler) {
+      relayEventHandlers.push(handler);
+      return function off() {
+        relayEventHandlers = relayEventHandlers.filter(function (fn) { return fn !== handler; });
+      };
+    },
     // Recorded rather than applied: this harness has no titlebar, and
     // what is being checked is what the screen ASKED for.
     setScreenTitle: function (text) { titles.push(String(text)); },
@@ -295,7 +313,11 @@ function mountApp(opts) {
   });
 
   return {
-    doc: doc, log: log, behavior: behavior, answers: answers, titles: titles,
+    doc: doc, log: log, behavior: behavior, answers: answers, closed: closed, titles: titles,
+    // Push an owner-event at the screen, the way the shell would.
+    relayEvent: function (ev) {
+      relayEventHandlers.slice().forEach(function (fn) { fn(ev); });
+    },
     // PANELS ARE CLOSED WHEN THE SCREEN ARRIVES, so a check about what a
     // panel says has to open it first — the same click a person makes.
     // Not a shortcut into the app's state: this fires the real handler.
@@ -500,6 +522,235 @@ function aRelayThatIsDownOffersNoClaim() {
     } else {
       test.fail('a down relay offered a claim form');
     }
+  });
+}
+
+// ── THE FORM READS IN THE ORDER OF THE PHONE CALL ────────────────────
+//
+//   Andy: "the redeem token should start with the same fields labeled
+//   invite name and invite token and the last (optional) my public
+//   label."
+//
+// The order was Public label, Invite token, Name on the invite — so the
+// two things somebody was READ OUT sat first and third, with a decision
+// they had to make on their own wedged between them.
+//
+// AND THE WORDS COLLIDED, which is the half that actually misled. The
+// MINT screen captioned its first box "Public label" too, for the word
+// the owner writes on the invite. One phone call, two screens, and the
+// same two words meaning two different things at each end of it — the
+// exact confusion R1 existed to remove, reintroduced in the copy.
+function theClaimFormReadsInTheOrderYouAreTold() {
+  test.subHeading('The redeem form asks for what you were told, in that order');
+
+  const app = mountApp({
+    label: '',
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+
+  return settle().then(function () {
+    const body = app.open('claim').body().innerHTML;
+    const at = function (needle) { return body.indexOf(needle); };
+
+    if (at('nd-claim-invite') < at('nd-claim-token') &&
+        at('nd-claim-token') < at('nd-claim-name')) {
+      test.check('invite name, then invite token, then the optional public label');
+    } else {
+      test.fail('field order: invite=' + at('nd-claim-invite') +
+        ' token=' + at('nd-claim-token') + ' name=' + at('nd-claim-name'));
+    }
+
+    // ONE WORD, ONE MEANING, ON BOTH SCREENS. The thing that travels
+    // down the phone is "Invite name" wherever it appears; "Public
+    // label" is only ever what YOU choose to be called.
+    const owner = mountApp({
+      rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true }],
+      relayStatus: { [OWNED]: { key: 'RELAYKEY', invites: [] } },
+    });
+    return settle().then(function () {
+      const mint = owner.open('invite').body().innerHTML;
+      if (/Invite name/.test(mint) && !/Public label/.test(mint)) {
+        test.check('and the mint screen calls that same word "Invite name", not "Public label"');
+      } else {
+        test.fail('the mint form still captions the invite word as a public label');
+      }
+    });
+  });
+}
+
+// OPTIONAL, AND IT FALLS BACK TO THE INVITE NAME. Being called what the
+// person who invited you called you is the obvious default — and it is
+// what the old single-box form imposed on everybody without saying so.
+function thePublicLabelIsOptional() {
+  test.subHeading('Leaving the public label empty means "call me what you called me"');
+
+  const app = mountApp({
+    label: '',
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+
+  return settle().then(function () {
+    const out = { textContent: '', className: '' };
+    app.body().fire('click', {
+      target: claimTarget({
+        'nd-claim-name': { value: '' },
+        'nd-claim-token': { value: 'saint-bernard' },
+        'nd-claim-invite': { value: 'saint' },
+        'nd-claim-out': out,
+      }),
+    });
+
+    return settle().then(function () {
+      const calls = app.log.filter(function (c) { return c.verb === 'relay.claim'; });
+      const body = calls.length ? JSON.parse(calls[0].body) : null;
+
+      if (body && body.name === 'saint' && body.inviteLabel === 'saint') {
+        test.check('an empty public label claims the invite name, rather than refusing');
+      } else {
+        test.fail('claim body: ' + JSON.stringify(body));
+      }
+
+      // THE FALLBACK IS HERE AND NOT ON THE RELAY, deliberately: a relay
+      // that filled in the blanks would be signing a claim over bytes
+      // the claimant never chose.
+      if (body && body.name) {
+        test.check('and the name still travels, so the relay is never asked to invent one');
+      } else {
+        test.fail('an empty name reached the wire');
+      }
+    });
+  });
+}
+
+// ── A CLAIM CLOSES THE SCREEN, AND THAT IS WHY IT WORKS AT ALL ───────
+//
+//   Andy: "when jazz (successfully btw) redeemed her invite, the UI
+//   didn't pop to full featured mode."
+//
+// Not a claiming bug — a dialog-contract one. What this screen decides
+// it RETURNS, and a returned result is delivered when the dialog EXITS,
+// because that is when callDialog's promise resolves. So a claim that
+// only called setDialogResult left Natter waiting behind a Back press
+// nobody had a reason to make: no binding recorded, no session.json, no
+// nodeLabelChanged, and a shell still painted for a node with no name.
+function aClaimHandsItselfBack() {
+  test.subHeading('Claiming leaves the screen, because the result is no use parked here');
+
+  const app = mountApp({
+    label: '',
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+
+  return settle().then(function () {
+    const out = { textContent: '', className: '' };
+    app.body().fire('click', {
+      target: claimTarget({
+        'nd-claim-name': { value: 'jazz' },
+        'nd-claim-token': { value: 'saint-bernard' },
+        'nd-claim-invite': { value: 'saint' },
+        'nd-claim-out': out,
+      }),
+    });
+
+    return settle().then(function () {
+      if (app.closed.length === 1 && app.closed[0].claimed === 'jazz') {
+        test.check('a successful claim closes the dialog and hands the name over');
+      } else {
+        test.fail('closed with: ' + JSON.stringify(app.closed));
+      }
+
+      if (app.closed[0] && app.closed[0].url === OWNED) {
+        test.check('and says which relay it took a seat on, so Natter records it against that one');
+      } else {
+        test.fail('no url on the result: ' + JSON.stringify(app.closed[0]));
+      }
+    });
+  });
+}
+
+// A REFUSED CLAIM STAYS PUT. Closing on a failure would take the reason
+// off the screen with it and drop somebody back on a list that looks
+// exactly as it did before they tried.
+function aRefusedClaimStaysOnTheScreen() {
+  test.subHeading('A refused claim keeps the screen, and the reason');
+
+  const app = mountApp({
+    label: '',
+    claimStatus: 409,
+    claimBody: { error: 'name taken', mine: false },
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+
+  return settle().then(function () {
+    const out = { textContent: '', className: '' };
+    app.body().fire('click', {
+      target: claimTarget({
+        'nd-claim-name': { value: 'jazz' },
+        'nd-claim-token': { value: 'saint-bernard' },
+        'nd-claim-invite': { value: 'saint' },
+        'nd-claim-out': out,
+      }),
+    });
+
+    return settle().then(function () {
+      if (app.closed.length === 0 && /taken/.test(out.textContent)) {
+        test.check('the dialog stays open and says why, rather than vanishing on a refusal');
+      } else {
+        test.fail('closed=' + app.closed.length + ' said "' + out.textContent + '"');
+      }
+    });
+  });
+}
+
+// ── THE RELAY SAYS WHEN, RATHER THAN THIS SCREEN ASKING AGAIN ────────
+//
+//   Andy: "during any of those transactions, there is no live update.
+//   once the invite is successfully issued, that invite should be
+//   immediately visible in outstanding invites, ie, the relay should
+//   have triggered an owner-event, that ultimately causes the ui to know
+//   a new invite needs displaying."
+//
+// The relay HAD. relay.ownerEvent has fired invite-minted, claim,
+// peer-renamed, peer-removed and invite-revoked all along; presenceNode
+// took them, server.js logged them and wrote them to the page's stream
+// as `relay-event`. Nothing in the browser listened — the pipe was built
+// end to end and the last three feet were missing.
+function anOwnerEventRefreshesTheScreen() {
+  test.subHeading('A relay that reports something does not have to be asked again');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true }],
+    relayStatus: { [OWNED]: { key: 'RELAYKEY', invites: [] } },
+  });
+
+  return settle().then(function () {
+    const before = app.log.filter(function (c) { return c.verb === 'relay.status'; }).length;
+
+    app.relayEvent({ kind: 'invite-minted', relay: OWNED, invite: 'saint' });
+
+    return settle().then(function () {
+      const after = app.log.filter(function (c) { return c.verb === 'relay.status'; }).length;
+      if (after > before) {
+        test.check('an owner-event about this relay makes the screen re-ask, unprompted');
+      } else {
+        test.fail('nothing was re-asked: ' + before + ' -> ' + after);
+      }
+
+      // NOT EVERY RELAY. Andy may own more than one, and a mint on the
+      // other one must not repaint this screen with rows that are not
+      // its own.
+      const mid = app.log.filter(function (c) { return c.verb === 'relay.status'; }).length;
+      app.relayEvent({ kind: 'invite-minted', relay: THEIRS, invite: 'elsewhere' });
+
+      return settle().then(function () {
+        const end = app.log.filter(function (c) { return c.verb === 'relay.status'; }).length;
+        if (end === mid) {
+          test.check('and an event about a DIFFERENT relay is ignored, not repainted over this one');
+        } else {
+          test.fail('another relay’s event refreshed this screen: ' + mid + ' -> ' + end);
+        }
+      });
+    });
   });
 }
 
@@ -1431,6 +1682,11 @@ ownedMailbox()
   .then(claimAndRenameAreExclusive)
   .then(anUnboundNodeCanStillClaim)
   .then(aRelayThatIsDownOffersNoClaim)
+  .then(anOwnerEventRefreshesTheScreen)
+  .then(theClaimFormReadsInTheOrderYouAreTold)
+  .then(thePublicLabelIsOptional)
+  .then(aClaimHandsItselfBack)
+  .then(aRefusedClaimStaysOnTheScreen)
   .then(claimingNamesThisMailbox)
   .then(aHalfCopiedInviteIsRefusedBeforeItTravels)
   .then(mintingNamesThisMailbox)

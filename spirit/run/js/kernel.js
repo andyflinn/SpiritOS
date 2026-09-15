@@ -778,6 +778,23 @@ if (isNode()) {
       source.addEventListener('packet', function(e) {
         if (handlers.onPacket) handlers.onPacket(JSON.parse(e.data));
       });
+
+      // WHAT A RELAY THIS NODE OWNS JUST DID. invite-minted, claim,
+      // peer-renamed, peer-removed, invite-revoked — pushed the moment
+      // it happens, to the owner alone (relay.ownerEvent).
+      //
+      // The relay has fired these all along and server.js has written
+      // them to this stream all along; nothing in the browser listened,
+      // so a screen showing outstanding invites could only learn about a
+      // new one by being asked again. Andy noticed from the other side:
+      // "once the invite is successfully issued, that invite should be
+      // immediately visible in outstanding invites."
+      //
+      // A wire, not a reader — same as `packet` above. What the event
+      // MEANS is the subscribing app's business.
+      source.addEventListener('relay-event', function(e) {
+        if (handlers.onRelayEvent) handlers.onRelayEvent(JSON.parse(e.data));
+      });
       return function unsubscribe() { source.close(); };
     },
     start: function(options) {

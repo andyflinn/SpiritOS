@@ -470,23 +470,35 @@ function ndClaimHtml() {
   if (!ndBadge || ndBadge.owned || ndBadge.claimed) return '';
   if (!Number(ndBadge.status)) return '';
   return ndPanel('claim', ndIcon.POINTRIGHT, 'Claim a seat on this relay',
-    '<div class="start-job-form card">' +
-    '<label class="field-label grow">Public label' +
-      '<input type="text" class="nd-claim-name" placeholder="the name peers see"></label>' +
-    '<label class="field-label">Invite token' +
-      '<input type="text" class="nd-claim-token" placeholder="(only if you were invited)"></label>' +
-    // THE WORD THE OWNER READ OUT, which is not the name you pick. Two
-    // things travel down one phone call — the token and the word the
-    // owner wrote on the invite — and only the first of them used to
-    // have a box. The second was the Public label above, which meant the
-    // owner chose what you were called (R1,
-    // design/cycles/2026-09-15-labels-are-not-identities.md).
+    // ── THE ORDER IS THE ORDER OF THE PHONE CALL ────────────────────
     //
-    // REQUIRED WITH A TOKEN, even when it matches the label above. The
-    // relay refuses a token without it and does not fall back: a second
-    // factor that can be defaulted from the first is not one.
-    '<label class="field-label">Name on the invite' +
+    //   Andy: "the redeem token should start with the same fields
+    //   labeled invite name and invite token and the last (optional) my
+    //   public label."
+    //
+    // It was Public label, Invite token, Name on the invite — so the two
+    // things somebody was READ OUT sat first and third with an unrelated
+    // decision between them, and the box you fill in first was the one
+    // nobody told you.
+    //
+    // WORSE, AND THE REAL FAULT: "Public label" was the caption on the
+    // MINT screen too, for the word the owner writes on the invite. The
+    // same two words meant two different things at the two ends of one
+    // phone call, which is precisely the confusion R1 existed to remove
+    // (design/cycles/2026-09-15-labels-are-not-identities.md). The word
+    // that travels is "Invite name" on both screens now.
+    '<div class="start-job-form card">' +
+    '<label class="field-label grow">Invite name' +
       '<input type="text" class="nd-claim-invite" placeholder="(the word the owner read out)"></label>' +
+    '<label class="field-label">Invite token' +
+      '<input type="text" class="nd-claim-token" placeholder="(the token they sent you)"></label>' +
+    // OPTIONAL, AND LAST, because it is the only thing on this form you
+    // get to decide. Left empty it becomes the invite name — being
+    // called what the person who invited you called you is a sane
+    // default, and it is what the old form forced on everybody by having
+    // no second box at all.
+    '<label class="field-label grow">My public label' +
+      '<input type="text" class="nd-claim-name" placeholder="(optional — the name peers see)"></label>' +
     '<button type="button" class="nd-claim-go">Claim</button>' +
     '</div>' +
     // Every character written in this file; nothing from a relay reaches
@@ -599,7 +611,14 @@ function ndMintHtml() {
     // DICTIONARY.md, "Label (invite)": the public caption the token
     // unlocks. `saint` is the dictionary's own example, not a person.
     '<div class="start-job-form card">' +
-    '<label class="field-label grow">Public label<input type="text" class="natter-inv-label" placeholder="e.g. saint"></label>' +
+    // "Invite name", NOT "Public label", and the rename is the point.
+    // This box was captioned Public label while the REDEEM screen used
+    // those same two words for a different thing — the name the invitee
+    // picks for themselves. One phone call, two screens, and the same
+    // two words meaning two different things at each end of it.
+    //
+    // It is the word you read out. It is called that here and there.
+    '<label class="field-label grow">Invite name<input type="text" class="natter-inv-label" placeholder="e.g. saint"></label>' +
     '<label class="field-label">Days<input type="number" class="natter-inv-days" min="1" max="15" value="7"></label>' +
     // The token spoken on the phone. Empty means the relay picks hex;
     // typed, it is signed with the label and the days (cycle A2), so it
@@ -905,7 +924,22 @@ function ndClaim(button) {
   // The relay still decides — it writes the ledger — but there is no
   // reason to cross an ocean to be told about a character. Same rule
   // object both sides (js/labelRule.js), so the two cannot disagree.
-  var badName = ndLabelProblem(name);
+  // THE PUBLIC LABEL IS OPTIONAL AND FALLS BACK TO THE INVITE NAME.
+  // Being called what the person who invited you called you is the
+  // obvious default, and it is what the form imposed on everybody back
+  // when it had one box doing both jobs.
+  //
+  // The fallback is HERE and not on the relay deliberately: the relay
+  // has no business inventing a label for somebody, and a claim it
+  // filled in the blanks of would be a claim signed over bytes the
+  // claimant never chose.
+  var wanted = name || onInvite;
+  if (!wanted) {
+    say('type the invite name you were given, or a public label of your own', true);
+    return;
+  }
+
+  var badName = ndLabelProblem(wanted);
   if (badName) { say(badName, true); return; }
   // ASKED FOR HERE rather than discovered as a 400 from the relay. The
   // two arrive together — a token and a word, down one phone call — so a
@@ -916,7 +950,7 @@ function ndClaim(button) {
     return;
   }
 
-  var body = { name: name, url: ndUrl };
+  var body = { name: wanted, url: ndUrl };
   if (token) body.invite = token;
   if (onInvite) body.inviteLabel = onInvite;
 
@@ -933,9 +967,35 @@ function ndClaim(button) {
       say((said && said.error) || (r.status + ' ' + r.text), true);
       return;
     }
-    say(mine ? 'already yours here, as ' + name : 'claimed — this relay calls you ' + name);
+    say(mine ? 'already yours here, as ' + wanted : 'claimed — this relay calls you ' + wanted);
     ndChanged = true;
-    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, claimed: name });
+
+    // ── A CLAIM CLOSES THIS SCREEN, AND THAT IS NOT A FLOURISH ───────
+    //
+    //   Andy: "when jazz (successfully btw) redeemed her invite, the UI
+    //   didn't pop to full featured mode."
+    //
+    // It could not, and the reason is the dialog contract rather than
+    // anything to do with claiming. What this screen decides it RETURNS
+    // — session.json is Natter's file and api.fs here is scoped to this
+    // app's folder — and a returned result is delivered WHEN THE DIALOG
+    // EXITS, because that is when callDialog's promise resolves.
+    //
+    // So jazz claimed, stayed on this screen to read the confirmation,
+    // and Natter never heard. No binding recorded, no session.json, no
+    // nodeLabelChanged, and a shell still painted for a node with no
+    // name — all of it waiting behind a Back press nobody had a reason
+    // to make.
+    //
+    // Claiming is also the one verb here that finishes the screen. Every
+    // other one — rename, invite, revoke, rotate — leaves you with more
+    // to do on this relay. Taking a seat is the end of the errand, and
+    // the thing that comes next is the shell you could not use yet.
+    if (ndApi && ndApi.closeDialog) {
+      ndApi.closeDialog({ changed: true, url: ndUrl, claimed: wanted });
+      return;
+    }
+    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, claimed: wanted });
     ndLoad();
   });
 }
@@ -1138,6 +1198,51 @@ spirit.shell.activateApp({
   mount: function (container, api) {
     ndApi = api;
     container.innerHTML = '<div id="nd-body" class="stack"></div>';
+
+    // ── THE RELAY SAYS WHEN, RATHER THAN THIS SCREEN ASKING AGAIN ────
+    //
+    //   Andy: "during any of those transactions, there is no live
+    //   update. once the invite is successfully issued, that invite
+    //   should be immediately visible in outstanding invites."
+    //
+    // Once per pane, in mount rather than open, because the subscription
+    // outlives any one relay being looked at and there is nothing to
+    // tear down when the screen is left — a dialog is hidden, never
+    // destroyed, and subscribing in open() would stack a listener per
+    // visit.
+    //
+    // FILTERED TO THIS RELAY, by the key it publishes. Andy may own more
+    // than one, and a mint on the other one must not repaint this
+    // screen's list with rows that are not its own. An event with no
+    // relay named is taken — older relays did not say, and a missed
+    // repaint is worse than a redundant one.
+    //
+    // ndLoad(), not a local patch of the list: the event says something
+    // changed, and the screen already knows how to ask what is true. A
+    // handler that spliced the new invite in by hand would be a second
+    // opinion about the relay's ledger, which is the relay's to hold.
+    //
+    // WHICH MAKES THE ORDER WORTH KNOWING. The invites are not in this
+    // event — they ride a SECOND message, `relay-status`, which
+    // relay.ownerEvent sends immediately after this one (statusToOwner,
+    // at the foot of it) and which stops at the node in
+    // presenceNode.statusByRelay. ndLoad reads it back through
+    // relay.status.
+    //
+    // So the two are ordered frames on one already-open socket, and this
+    // screen's reaction to the first has to cross an SSE delivery, an
+    // HTTP request, and a census fetch before it reads the second. The
+    // status has effectively always landed by then. It is not a formal
+    // guarantee, and it is the thing to suspect if an invite ever shows
+    // up exactly one beat late.
+    if (api.onRelayEvent) {
+      api.onRelayEvent(function (event) {
+        var about = (event && event.relay) || '';
+        if (about && ndUrl && about !== ndUrl) return;
+        if (!ndUrl) return;
+        ndLoad();
+      });
+    }
 
     // Delegated, because the panels are repainted and a handler bound to
     // a button would go with them.

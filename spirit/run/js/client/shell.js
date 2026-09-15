@@ -1368,6 +1368,12 @@
 
       onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },
 
+      // Everything a relay this node OWNS reports about itself, pushed.
+      // Takes no app name because an owner-event is not addressed to one
+      // — see deliverRelayEvent. Returns its own unsubscribe, like
+      // onPacket and onRegarding.
+      onRelayEvent: function (handler) { return onRelayEventFor(handler); },
+
       // ── THE CLIENT HALF OF A peerPost (decision 0011) ────────────────
       //
       //   Andy: "it should be a generic client layer, the point will come
@@ -1486,6 +1492,11 @@
         paintWindowTitle(activeAppId && apps[activeAppId] ? apps[activeAppId].name : '');
         renderDesktop();
         paintTitlebarChrome();
+        // THE SCREEN SOMEBODY IS ACTUALLY LOOKING AT, which this did not
+        // repaint. The desktop behind it did, and the chrome did, so a
+        // node that had just taken a name showed the change everywhere
+        // except where the eyes were.
+        renderActive();
         // Symmetrical with boot: a node that has just lost its name has
         // one thing to do again, and the desktop behind it is empty.
         openBinderIfUnbound();
@@ -1805,6 +1816,50 @@
     return function off() {
       packetHandlers[name] = (packetHandlers[name] || []).filter(function (fn) { return fn !== handler; });
     };
+  }
+
+  // ── WHAT A RELAY THIS NODE OWNS JUST DID ────────────────────────────
+  //
+  //   Andy: "the relay should have triggered an owner-event, that
+  //   ultimately causes the ui to know a new invite needs displaying."
+  //
+  // It did, and it always had. relay.ownerEvent fires invite-minted,
+  // claim, peer-renamed, peer-removed and invite-revoked; presenceNode
+  // receives them; server.js logs them and writes them to this page's
+  // stream as `relay-event`. Nothing in the browser was listening, so
+  // the pipe was built end to end and the last three feet were missing.
+  //
+  // NOT ADDRESSED TO AN APP, which is why this is a flat list rather
+  // than a per-app table like packetHandlers. A packet names the app it
+  // is for; an owner-event is a fact about a relay, and which screens
+  // care is the screens' business. Every subscriber sees every event and
+  // filters for itself.
+  //
+  // OWNER-ONLY BY CONSTRUCTION, not by a check here: the relay sends
+  // these to the owner's key alone (ownerEvent returns false when the
+  // owner is not the one present), so a node that is merely a member
+  // never receives one and has nothing to filter.
+  var relayEventHandlers = [];
+
+  function onRelayEventFor(handler) {
+    if (typeof handler !== 'function') return function () {};
+    relayEventHandlers.push(handler);
+    return function off() {
+      relayEventHandlers = relayEventHandlers.filter(function (fn) { return fn !== handler; });
+    };
+  }
+
+  function deliverRelayEvent(event) {
+    if (!event) return;
+    // A COPY OF THE LIST, because a handler that unsubscribes itself on
+    // the event it is handling would otherwise shorten the array being
+    // walked and skip whoever came after it.
+    relayEventHandlers.slice().forEach(function (fn) {
+      // One handler throwing must not cost the others the event. The
+      // same rule the node applies to its own witnesses: a listener is
+      // never a participant.
+      try { fn(event); } catch (e) { /* a subscriber is not a gate */ }
+    });
   }
 
   // Fan-out, and ONE SOURCE now: a `packet` event on /api/events, pushed
@@ -2487,5 +2542,11 @@
     // that wanted it decides what to do, and an app that is not on
     // screen must not drag the screen to it.
     onPacket: function (message) { deliverPackets([message]); },
+
+    // WHAT A RELAY WE OWN JUST DID. No renderActive(), for the same
+    // reason a packet does not repaint: the app that asked for these
+    // decides what to do with one, and an app that is not on screen must
+    // not drag the screen to it.
+    onRelayEvent: function (event) { deliverRelayEvent(event); },
   });
 })();
