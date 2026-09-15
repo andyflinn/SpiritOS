@@ -72,6 +72,11 @@ cat > "$LAB_DIR/.env" <<ENV
 export SPIRIT_RELAY_DOMAIN=$LAB_DOMAIN
 export SPIRIT_RELAY_PORT=$LAB_PORT
 export SPIRIT_UNIT_NAME=$LAB_UNIT
+# THE LAB FOLLOWS master, AND SAYS SO IN WRITING. The default is \`tag\`
+# (lib.sh), because the clone with no .env is the live relay and the safe
+# setting must be the one you get by doing nothing. This is the opt-in:
+# the lab is where code is supposed to arrive the moment it is pushed.
+export SPIRIT_TRACK=master
 ENV
 chmod 600 "$LAB_DIR/.env"
 

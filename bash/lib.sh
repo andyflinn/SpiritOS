@@ -68,6 +68,32 @@ UNIT_NAME="${SPIRIT_UNIT_NAME:-spirit-relay}"
 UNIT_TEMPLATE="${SPIRIT_UNIT_TEMPLATE:-spirit-relay}"
 NODE_PORT="${SPIRIT_RELAY_PORT:-65430}"
 DOMAIN="${SPIRIT_RELAY_DOMAIN:-spirit.andyflinn.com}"
+
+# ── WHAT THIS CLONE FOLLOWS: A TAG, OR master ────────────────────────
+#
+#   Andy: "let's make sure that my relay only restarts on my tags, and
+#   your relay is controlled by you."
+#
+# THE DEFAULT IS `tag`, AND THE DEFAULT IS THE POINT. A clone with no
+# .env is the live relay — that is exactly what lib.sh's fallback means
+# — so the safe setting has to be the one you get by doing nothing. The
+# lab opts INTO master, in writing, in its own .env.
+#
+# WHY THIS IS NEEDED NOW AND WAS NOT BEFORE. bash/update never restarted
+# anything until 2026-09-16: `| grep -q` under pipefail turned every
+# match into 141, so the code updated and the process kept running the
+# old copy until somebody restarted it by hand. That bug was doing the
+# job of a release gate. Fixing it meant every push to master reached
+# spirit.andyflinn.com unattended within ten minutes — a capability
+# nobody asked for, created by repairing something else.
+#
+# `tag` means the most recent tag REACHABLE FROM origin/master
+# (git describe --abbrev=0), which is Andy's own rule — "we only TAG
+# origin/master" — read back out of the repository rather than restated.
+# A clone that tracks tags and finds none does NOT fall back to master:
+# it stays where it is and says so. Falling back would give away the
+# whole gate at exactly the moment it first matters.
+TRACK="${SPIRIT_TRACK:-tag}"
 # Live clone on spirit-3 is /root/SpiritOS. That is the one-operator model:
 # root is spirit. Do not invent a second Unix user for the same entity.
 CLONE_DIR="${SPIRIT_CLONE_DIR:-/root/SpiritOS}"

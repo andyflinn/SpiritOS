@@ -12,16 +12,34 @@ echo "policy:  one operator — root is spirit"
 echo
 
 if [ -d "$REPO_ROOT/.git" ]; then
-  say "git"
+  say "git (tracks: $TRACK)"
   echo "    HEAD   $(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || echo '?')"
   echo "    branch $(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo '?')"
-  git -C "$REPO_ROOT" fetch origin --quiet 2>/dev/null || warn "git fetch failed (offline?)"
+  git -C "$REPO_ROOT" fetch --tags origin --quiet 2>/dev/null || warn "git fetch failed (offline?)"
   LOCAL=$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo none)
-  REMOTE=$(git -C "$REPO_ROOT" rev-parse origin/master 2>/dev/null || echo none)
-  if [ "$LOCAL" = "$REMOTE" ]; then
-    ok "matches origin/master"
+  # ASK THE SAME QUESTION bash/update ASKS. This compared against
+  # origin/master whatever the clone followed, so the moment the live
+  # relay started tracking tags it would have reported "HEAD !=
+  # origin/master (run ./bash/update)" for ever — telling the operator
+  # to fix a relay that is correctly sitting on its release.
+  if [ "$TRACK" = "master" ]; then
+    WANT=$(git -C "$REPO_ROOT" rev-parse origin/master 2>/dev/null || echo none)
+    WHAT="origin/master"
   else
-    warn "HEAD != origin/master  (run ./bash/update)"
+    TAG=$(git -C "$REPO_ROOT" describe --tags --abbrev=0 origin/master 2>/dev/null || true)
+    if [ -z "$TAG" ]; then
+      WANT="$LOCAL"
+      WHAT="no tag yet — pinned here until one is cut"
+    else
+      WANT=$(git -C "$REPO_ROOT" rev-parse "$TAG^{commit}" 2>/dev/null || echo none)
+      WHAT="tag $TAG"
+    fi
+  fi
+  echo "    wants  $WHAT"
+  if [ "$LOCAL" = "$WANT" ]; then
+    ok "matches $WHAT"
+  else
+    warn "HEAD != $WHAT  (run ./bash/update)"
   fi
 else
   warn "not a git clone"
@@ -53,13 +71,13 @@ fi
 echo
 say "labMaster must NOT be here (port 65420)"
 if have ss && contains "$(ss -tln)" ':65420 '; then
-  warn "PORT 65420 IS LISTENING — that is labMaster. Stop it. This box is a mailbox."
+  warn "PORT 65420 IS LISTENING — that is labMaster. Stop it. This box is a relay."
 else
   ok "65420 is quiet"
 fi
 
 echo
-say "mailbox who (https://$DOMAIN)"
+say "relay who (https://$DOMAIN)"
 if have curl; then
   if curl -fsS --max-time 8 "https://$DOMAIN/api/relay/who" ; then
     echo

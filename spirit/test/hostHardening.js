@@ -449,7 +449,9 @@ test.subHeading('The clone decides what it is — not whatever the shell was car
   // shipped this very fix updated /root/SpiritOS and restarted
   // spirit-lab, leaving the live relay on the old process.
   const updateSrc = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'update'), 'utf8');
-  const resetAt = updateSrc.indexOf('git reset --hard origin/master');
+  // `git reset --hard "$REMOTE"` — it named origin/master literally
+  // until the clone learned to follow a tag instead.
+  const resetAt = updateSrc.indexOf('git reset --hard "$REMOTE"');
   const rereadAt = updateSrc.indexOf('source "$REPO_ROOT/bash/lib.sh"');
   const restartAt = updateSrc.indexOf('systemctl restart');
   if (resetAt !== -1 && rereadAt > resetAt && restartAt > rereadAt) {
@@ -496,6 +498,64 @@ test.subHeading('The clone decides what it is — not whatever the shell was car
 // reaches the lab and refuses everything else, twice over — the clone
 // has no .env (which is what MAKES it the main clone), or it resolves to
 // the live unit or domain.
+// ── ANDY'S RELAY MOVES ON ANDY'S TAGS ────────────────────────────────
+//
+//   Andy: "let's make sure that my relay only restarts on my tags, and
+//   your relay is controlled by you."
+//
+// This exists because fixing a bug created a capability nobody asked
+// for. bash/update never restarted anything until 2026-09-16 — `grep -q`
+// under pipefail turned every match into 141 — so a push to master
+// reached the live relay's DISK and never its process. That accident was
+// doing the work of a release gate. Repairing it meant every push
+// restarted spirit.andyflinn.com, unattended, within ten minutes.
+//
+// THE DEFAULT IS THE WHOLE DESIGN. A clone with no .env is the live
+// relay — that is what lib.sh's fallback means — so `tag` has to be what
+// you get by doing nothing, and the lab opts into `master` in writing.
+// Get that backwards and the safe case is the one requiring a step
+// somebody has to remember, which is how the last five of these went.
+test.subHeading('A clone follows tags unless it says otherwise in writing');
+{
+  const upd = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'update'), 'utf8');
+  const updCode = upd.split('\n').filter(function (l) { return !/^\s*#/.test(l); }).join('\n');
+  const labInstall = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
+
+  if (/TRACK="\$\{SPIRIT_TRACK:-tag\}"/.test(lib)) {
+    test.check('the default is `tag`, so the clone with no .env is the guarded one');
+  } else {
+    test.fail('SPIRIT_TRACK does not default to `tag` — the live relay follows master again');
+  }
+
+  if (/export SPIRIT_TRACK=master/.test(labInstall)) {
+    test.check('and lab-install writes `master` into the lab’s own .env, opting in');
+  } else {
+    test.fail('lab-install does not set SPIRIT_TRACK — a fresh lab would freeze on tags');
+  }
+
+  // NO FALLBACK. A tag-tracking clone that finds no tag must STAY PUT.
+  // Falling back to origin/master would hand the whole gate back at the
+  // one moment it first means anything: before the first tag exists.
+  const tagBranch = updCode.slice(updCode.indexOf('  tag)'), updCode.indexOf('  *)'));
+  const fallsBack = /TARGET="origin\/master"/.test(tagBranch);
+  if (!fallsBack && /git describe --tags --abbrev=0 origin\/master/.test(tagBranch)) {
+    test.check('and a clone tracking tags with none to find stays where it is');
+  } else {
+    test.fail('the tag branch falls back to origin/master — that is no gate at all');
+  }
+
+  // AND status ASKS THE SAME QUESTION. It compared HEAD to origin/master
+  // unconditionally, so the day the live relay started tracking tags it
+  // would have said "HEAD != origin/master (run ./bash/update)" for ever
+  // — telling the operator to fix a relay correctly sitting on release.
+  const st = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'status'), 'utf8');
+  if (/\$TRACK" = "master"/.test(st) && /describe --tags --abbrev=0/.test(st)) {
+    test.check('and ./bash/status judges the clone by what it actually follows');
+  } else {
+    test.fail('status still measures every clone against origin/master');
+  }
+}
+
 // ── A SCRIPT ADDED FROM WINDOWS IS NOT EXECUTABLE ────────────────────
 //
 // The work machine is Windows, git cannot read an exec bit there, and so

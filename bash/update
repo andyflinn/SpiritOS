@@ -21,14 +21,48 @@ FORCE=no
 [ "${1:-}" = "--force" ] && FORCE=yes
 
 cd "$REPO_ROOT"
-say "fetch origin"
-git fetch origin
+say "fetch origin ($TRACK)"
+# --tags, because the tag-tracking clone cannot see a release it has not
+# fetched, and a plain fetch does not reliably bring tags on every git.
+git fetch --tags origin
+
+# ── WHERE THIS CLONE IS ALLOWED TO GO ────────────────────────────────
+#
+# See TRACK in lib.sh. The live relay follows tags because it is the
+# clone with no .env; the lab says `master` in its own.
+case "$TRACK" in
+  master)
+    TARGET="origin/master"
+    WHAT="origin/master"
+    ;;
+  tag)
+    # The most recent tag REACHABLE FROM origin/master — Andy's rule
+    # ("we only TAG origin/master") asked of the repository rather than
+    # restated here. A tag on a side branch is not a release.
+    TAG=$(git describe --tags --abbrev=0 origin/master 2>/dev/null || true)
+    if [ -z "$TAG" ]; then
+      # NOT A FALLBACK TO master. A clone that tracks tags and finds
+      # none stays exactly where it is: falling back would hand back the
+      # whole gate at the first moment it means anything, which is
+      # before the first tag exists.
+      warn "no tag on origin/master — staying at $(git rev-parse --short HEAD)"
+      echo "    this clone tracks tags (SPIRIT_TRACK=$TRACK). Cut one to release:"
+      echo "      git tag -a v0.1.0 -m 'first release' && git push origin v0.1.0"
+      exit 0
+    fi
+    TARGET="$TAG"
+    WHAT="tag $TAG"
+    ;;
+  *)
+    die "SPIRIT_TRACK is '$TRACK' — want 'tag' or 'master'"
+    ;;
+esac
 
 LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/master)
+REMOTE=$(git rev-parse "$TARGET^{commit}")
 
 if [ "$LOCAL" = "$REMOTE" ] && [ "$FORCE" = no ]; then
-  ok "already at $(git rev-parse --short HEAD) — no restart"
+  ok "already at $(git rev-parse --short HEAD) ($WHAT) — no restart"
   exit 0
 fi
 
@@ -36,9 +70,9 @@ if [ "$LOCAL" = "$REMOTE" ]; then
   say "already at $(git rev-parse --short HEAD) — restarting anyway (--force)"
 fi
 
-say "reset --hard origin/master"
-echo "    $(git rev-parse --short HEAD) -> $(git rev-parse --short origin/master)"
-git reset --hard origin/master
+say "reset --hard $WHAT"
+echo "    $(git rev-parse --short HEAD) -> $(git rev-parse --short "$REMOTE")"
+git reset --hard "$REMOTE"
 
 # ── THE CONFIG WE LOADED IS NOW OLD CODE ─────────────────────────────
 #

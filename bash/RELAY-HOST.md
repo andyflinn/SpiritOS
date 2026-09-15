@@ -272,8 +272,46 @@ no longer works — to change what a clone is, edit that clone's `.env`. The
 variables configure a clone, and which clone is not a question the shell
 gets a vote on.
 
-`./bash/update` fetches, compares, `reset --hard origin/master` and restarts
-**its own** unit. Per-clone, already, and now per-clone without help.
+`./bash/update` fetches, compares, `reset --hard`s and restarts **its own**
+unit. Per-clone, already, and now per-clone without help.
+
+### What a clone follows: a tag, or master
+
+> Andy: "let's make sure that my relay only restarts on my tags, and your
+> relay is controlled by you."
+
+`SPIRIT_TRACK` is `tag` by default and the default is the design. A clone
+with no `.env` **is** the live relay, so the guarded setting has to be the
+one you get by doing nothing; the lab opts into `master` in writing, in its
+own `.env`, and `lab-install` puts it there.
+
+| clone | `.env` | follows |
+|---|---|---|
+| `/root/SpiritOS` | none | the newest tag reachable from `origin/master` |
+| `/root/lab/SpiritOS` | `SPIRIT_TRACK=master` | `origin/master`, the moment it is pushed |
+
+**A clone tracking tags that finds none stays exactly where it is.** It does
+not fall back to master — that would hand back the whole gate at the one
+moment it first means anything, which is before the first tag exists. It
+says so and exits:
+
+```
+==> fetch origin (tag)
+    !!  no tag on origin/master — staying at 1f34571
+    this clone tracks tags (SPIRIT_TRACK=tag). Cut one to release:
+      git tag -a v0.1.0 -m 'first release' && git push origin v0.1.0
+```
+
+To release: `git tag -a v0.2.0 -m '…' && git push origin v0.2.0`. The live
+relay takes it at the next ten-minute tick.
+
+**Why this was needed the day it was written.** `bash/update` never restarted
+anything until 2026-09-16 — `grep -q` under `pipefail` turned every match
+into 141 — so a push to master reached the live relay's *disk* and never its
+process, and somebody restarted by hand when they meant to. That accident was
+doing the work of a release gate. Repairing it meant every push restarted
+`spirit.andyflinn.com` unattended within ten minutes: a capability nobody
+asked for, created by fixing something else.
 
 ### Caddy is additive now
 
