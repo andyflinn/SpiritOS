@@ -167,7 +167,7 @@ Promise.resolve()
     }, 10000, 'avatar up');
   })
   .then(function () {
-    return json(ANDY_ORIGIN + '/api/hub/claim', 'POST', { name: 'andy' });
+    return json(ANDY_ORIGIN + '/api/spirit', 'POST', { verb: 'relay.claim', name: 'andy' });
   })
   .then(function (r) {
     if (r.status === 201 || r.status === 409) test.check('hub signed claim');

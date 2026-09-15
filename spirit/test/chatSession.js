@@ -458,7 +458,13 @@ function reloadRestores() {
 
     // It reads mail and claims nothing — claiming is not this app's to do.
     const asked = app.log.filter(function (r) { return r.url.indexOf('/api/hub/inbox') === 0; });
-    const claimed = app.log.filter(function (r) { return r.url.indexOf('/api/hub/claim') === 0; });
+    // BY VERB SINCE THE FOLD. Claiming was `POST /api/hub/claim` until
+    // 2026-09-15 and is `relay.claim` at the one door now, so a filter on
+    // the old path would find nothing in a window that claimed on every
+    // keystroke.
+    const claimed = app.log.filter(function (r) {
+      return /relay\.claim/.test(String(r.body || ''));
+    });
     if (asked.length >= 1 && claimed.length === 0) {
       test.check('it reads the inbox and claims nothing');
     } else {

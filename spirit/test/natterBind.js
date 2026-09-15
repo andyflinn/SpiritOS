@@ -84,15 +84,26 @@ function mountApp(options) {
   let told = 0;
 
   const fakeFetch = function (url, init) {
-    log.push({ url: url, method: (init && init.method) || 'GET', body: init && init.body });
+    let verb = '';
+    try { verb = JSON.parse(String((init && init.body) || '{}')).verb || ''; } catch (e) { verb = ''; }
+    log.push({ url: url, method: (init && init.method) || 'GET', body: init && init.body, verb: verb });
     let status = 200;
-    let payload = { rows: opts.rows || [], ownedUrls: opts.ownedUrls || [], mustPick: !!opts.mustPick };
-    if (url.indexOf('/api/hub/claim') === 0) {
-      status = opts.claimStatus || 201;
-      payload = opts.claimBody || { peer: { name: 'andy' } };
-    } else if (url.indexOf('/api/hub/invite') === 0) {
-      status = opts.inviteStatus || 201;
-      payload = opts.inviteBody || { token: 'saint-bernard' };
+    let payload = {};
+    // THE ROWS ANSWER ONE VERB, not every request. This fixture used to
+    // hand the relay list to anything that asked, which meant a probe
+    // that named the WRONG verb — or stopped naming one at all when
+    // `relay.status` folded onto /api/spirit — would have been answered
+    // anyway and the suite would have stayed green while Natter drew an
+    // empty screen. The real door refuses an unclaimed verb; so does
+    // this one.
+    if (verb === 'relay.status') {
+      payload = { rows: opts.rows || [], ownedUrls: opts.ownedUrls || [], mustPick: !!opts.mustPick };
+    } else if (url.indexOf('/api/hub/') === 0) {
+      // Still a path, still the wire: contact and post have not folded.
+      payload = {};
+    } else {
+      status = 400;
+      payload = { error: 'no such verb: ' + verb };
     }
     // A `/api/hub/inbox` branch stood here, answering whatever
     // `opts.inboxStatus` said, because Natter checked its binding with a
@@ -633,7 +644,16 @@ function chatKeepsNoBinding() {
   test.subHeading('And the chat window is out of it');
 
   const chat = fs.readFileSync(path.join(RUN_DIR, 'app', 'relayChat', 'relayChat.js'), 'utf8');
-  const gone = ['rc-claim', 'rc-name', 'rc-invite', 'session.json', '/api/hub/claim', '/api/hub/invite']
+  // Named as VERBS since the fold, because the paths they used to be no
+  // longer exist anywhere — and a needle that cannot be found in any
+  // file is a check that cannot fail.
+  //
+  // MINTING has no needle of its own any more: it stopped being a door
+  // and became an ordinary peerPost, so what this window must not do is
+  // post at all. `rc-invite` still covers the control, and the prose in
+  // relayChat.js explains where minting went — which is why a bare
+  // "invite" cannot be the test.
+  const gone = ['rc-claim', 'rc-name', 'rc-invite', 'session.json', 'relay.claim', 'peerPost']
     .filter(function (needle) { return chat.indexOf(needle) !== -1; });
   if (gone.length === 0) {
     test.check('relayChat.js neither claims, mints, nor keeps a binding');

@@ -1,11 +1,26 @@
 'use strict';
 
 // Same cast as relayPing.test.js, but claim/send go through the avatar's
-// /api/hub/* (Node → relay). Browser is not involved.
+// loopback API (Node → relay). Browser is not involved.
 // Relays.json in the TEMP avatar is rewritten to this cast's relay port
 // (tracked default still says :65430).
 //
 //   node spirit/test/labMaster/relayHubPing.test.js
+//
+// ── BROKEN, AND NOT BY THE CHANGE THAT TOUCHED IT LAST ───────────────
+//
+// The claim below was retargeted at `relay.claim` on 2026-09-15 when the
+// relay namespace folded onto /api/spirit. The SEND below it has been
+// dead since R8 deleted `POST /api/hub/send` — that door is gone and the
+// ring with it, so this file cannot pass as written whatever the claim
+// says.
+//
+// Left failing rather than half-repaired. What it was FOR — a node
+// putting a message on a relay and another node getting it — is a real
+// claim worth keeping, and it now has to be made through `/api/hub/post`
+// and the stream, which is a rewrite rather than a substitution. The
+// harness never runs this directory (runAll.js reads only spirit/test/),
+// so the trap is silent and this comment is what makes it not.
 
 const fs = require('fs');
 const http = require('http');
@@ -171,7 +186,7 @@ Promise.resolve()
   })
   .then(function () {
     test.check('both nodes listening');
-    return json(ANDY_ORIGIN + '/api/hub/claim', 'POST', { name: FROM });
+    return json(ANDY_ORIGIN + '/api/spirit', 'POST', { verb: 'relay.claim', name: FROM });
   })
   .then(function (r) {
     if (r.status === 201 || r.status === 409) test.check('hub claim via :' + ANDY_PORT);

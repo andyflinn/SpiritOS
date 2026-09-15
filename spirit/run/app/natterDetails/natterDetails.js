@@ -147,13 +147,33 @@ function ndPanel(id, mark, title, inner, extraClass) {
 // claimed anywhere has no key yet.
 var ndDevice = { password: '', publicKey: '', loaded: false };
 
-function ndPost(path, body) {
-  return fetch(path, {
+// ONE DOOR, AND THE VERB IS THE ARGUMENT. This took a path until
+// 2026-09-15, which was a fair shape while there were five of them and
+// is a misleading one now that there is exactly one: a path that is
+// always the same string is not information, it is a constant every
+// caller had to keep saying correctly.
+//
+// So the caller names WHAT IT WANTS and nothing about where that lives.
+// A verb that moves from hub.js to somewhere else changes nothing here,
+// and there is no longer a way to get the address right and the request
+// wrong.
+function ndPost(verb, body) {
+  var payload = { verb: verb };
+  if (body) Object.keys(body).forEach(function (k) { payload[k] = body[k]; });
+  return fetch('/api/spirit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   }).then(function (r) {
     return r.text().then(function (t) { return { status: r.status, text: t }; });
+  });
+}
+
+// The same call when the answer is JSON and a failure is simply "the
+// panel could not ask" — which is most of the reads on this screen.
+function ndAsk(verb, body) {
+  return ndPost(verb, body).then(function (r) {
+    try { return JSON.parse(r.text); } catch (e) { return null; }
   });
 }
 
@@ -169,8 +189,7 @@ function ndBody() { return document.getElementById('nd-body'); }
 // part of a row that cannot change.
 function ndLoad() {
   if (!ndLabel) { ndRender(); return Promise.resolve(); }
-  return fetch('/api/hub/status?name=' + encodeURIComponent(ndLabel))
-    .then(function (r) { return r.json(); })
+  return ndAsk('relay.status', { name: ndLabel })
     .then(function (data) {
       var rows = (data && data.rows) || [];
       ndBadge = rows.filter(function (row) { return row && row.url === ndUrl; })[0] || null;
@@ -178,7 +197,7 @@ function ndLoad() {
       // for (R3). The owner-only report used to ride on the badge row,
       // because the badge WAS a signed status GET and the report was its
       // body. That request is gone; the same report arrives unprompted on
-      // the stream this node already holds, and `/api/hub/status` has
+      // the stream this node already holds, and `relay.status` has
       // been handing it over under `relayStatus` all along.
       //
       // Absent rather than empty for a relay that has not spoken, which
@@ -195,12 +214,7 @@ function ndLoad() {
 
 function ndReadDevice() {
   //  until 2026-09-15. One door, verb in the body.
-  return fetch('/api/spirit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ verb: 'device.info' }),
-  })
-    .then(function (r) { return r.json(); })
+  return ndAsk('device.info')
     .then(function (d) {
       ndDevice.password = (d && d.password) || '';
       ndDevice.publicKey = (d && d.publicKey) || '';
@@ -868,7 +882,7 @@ function ndClaim(button) {
   if (token) body.invite = token;
   if (onInvite) body.inviteLabel = onInvite;
 
-  ndPost('/api/hub/claim', body).then(function (r) {
+  ndPost('relay.claim', body).then(function (r) {
     // 201 is a new seat. 409 is only us when the peer already on the
     // relay carries OUR key — the node sets `mine` for exactly that. Any
     // other 409 is somebody else's label, and claiming it would fail the
@@ -1045,7 +1059,7 @@ function ndDeviceRotate(button) {
   }
 
   button.disabled = true;
-  return ndPost('/api/spirit', { verb: 'device.rotate' }).then(function (r) {
+  return ndPost('device.rotate').then(function (r) {
     button.disabled = false;
     button.removeAttribute('data-armed');
     button.textContent = ndIcon.WARNING + ' New password';

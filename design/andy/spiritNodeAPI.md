@@ -1,8 +1,11 @@
 # The node API — route hierarchy
 
-**Measured at working tree, 2026-09-15** (after `25489ab`). Every route both
+**Measured at working tree, 2026-09-15** (after `4bf13c5`). Every route both
 servers dispatch and the function it lands in. Illustration only: no argument,
 no proposal, nothing about what should change.
+
+Remeasured after stages 1–4b of the loopback fold. The relay section below is
+unchanged from `25489ab`; the node section is not, and says where it stands.
 
 One file, [`spirit/run/js/server.js`](../../spirit/run/js/server.js),
 serves both. Which server you get is `--relay` on the command line.
@@ -86,40 +89,66 @@ Binds loopback only, with a Host check. Everything below is reachable from this
 machine and nowhere else.
 
 ```
+POST /api/spirit              ← ONE DOOR. The verb is in the body.
+
+  net.fetch                   handleGenericProxy          wire
+  relay.claim                 hub.handleClaim             wire
+  relay.status                hub.handleStatus            wire   ← the badge, by key
+  jobs.list   .create         (inline) / handleCreateJob  local
+  jobs.update .cancel .delete handleJobUpdate / …         local
+  fs.stat     .annotations    handleFsStat / …            local
+  fs.save     .delete .annotate  handleFsSave / …         local
+  device.info .rotate         hub.handleDevice / …        local
+
 POST /api/hub/
   ├── post                  hub.handlePost      ← THE ONLY DOOR ONTO THE WIRE
-  │
-  ├── claim                 hub.handleClaim     ← bootstrap
   ├── contact               hub.handleContact
   ├── peer                  hub.handlePeer
-  ├── unknown-senders       hub.handleUnknownSenders
-  └── rotate-password       hub.handleRotatePassword
-
-GET  /api/hub/
-  ├── status                hub.handleStatus    ← the badge, by key
-  ├── who                   hub.handleWho
-  ├── handle                hub.handleHandle
-  ├── device                hub.handleDevice
   └── unknown-senders       hub.handleUnknownSenders
 
-POST /api/fs/
-  ├── save                  handleFsSave
-  ├── delete                handleFsDelete
-  └── annotate              handleFsAnnotate
+GET  /api/hub/
+  ├── who                   hub.handleWho
+  ├── handle                hub.handleHandle
+  └── unknown-senders       hub.handleUnknownSenders
 
-GET  /api/fs/
-  ├── stat                  (inline)
-  └── annotations           (inline)
-
-POST /api/jobs                handleCreateJob
-POST /api/jobs/<id>           handleJobUpdate
-POST /api/jobs/<id>/cancel    handleCancelJob
-GET  /api/jobs                (inline)
-
-POST /api/proxy               handleGenericProxy
 GET  /api/events              handleSseConnection   ← the node's own stream
 GET  /api/version
 ```
+
+### The verb is the address
+
+Measured at `4bf13c5`. Twelve routes became one door and seventeen verbs across
+four stages on 2026-09-15 — `net`, `jobs`, `fs`, `device`, `relay` — and the
+`/api/hub/*` rows above are what has not folded yet: `peer.*` and `contact.*`,
+which are stage 4c and 4d.
+
+Two things stay routes for reasons that are not taste. `GET /api/events` is a
+long-lived server-push connection, a different transport shape rather than a
+different verb, and no body can express it. `GET /api/version` has to answer a
+client that knows nothing — including one running older code, which is the case
+it exists for.
+
+**A module CLAIMS a namespace** ([verbTable.js](../../spirit/run/js/verbTable.js)),
+at the foot of server.js where its dependencies exist, so the dispatch knows how
+to find an answer and nothing about what the answers are. Two modules claiming
+the same namespace, or one answering outside its own, is a crash at boot rather
+than a surprise months later.
+
+**Every namespace declares `wire: true|false`.**
+
+> Andy: "wire or not is the most important distingtion, wire requires that the
+> local box be online, others who knows."
+
+That is the client's failure contract rather than a maintainer's note: a wire
+verb can answer "not reachable right now" and yields a hash, a local one can do
+neither, and a caller handles those differently. `table.needsWire(verb)` answers
+it — `null` for an unclaimed verb, because "no such verb" and "works offline"
+must not look alike.
+
+`relay.status` is the one worth knowing about: it reads like local
+configuration and is not. `ownerBadge.probe` fetches `/api/relay/who` from every
+configured relay, so an offline box answers 502, and a caller who assumed
+otherwise would draw an empty relay list and call it the truth.
 
 ### One door puts things on the wire
 
@@ -132,12 +161,15 @@ yet.
 and `remove-peer` — each building one packet body and handing it to
 `router.post`. `askRelay` was their shared half and went with them.
 
-What remains on `/api/hub/` is what is NOT a post:
+What remains on `/api/hub/` is what is NOT a post, and it is now two groups
+rather than four — the other two folded onto `/api/spirit` the same day:
 
-- **bootstrap** — `claim`, and `device` on the GET side
-- **reads** — `status`, `who`, `handle`, which fetch the public census
-- **local** — `contact`, `peer`, `unknown-senders`, `rotate-password`, which are
-  whoBook and password work on this machine and never touch a relay
+- **reads** — `who`, `handle`, which are this node's own whoBook
+- **local** — `contact`, `peer`, `unknown-senders`, whoBook work on this machine
+  that never touches a relay
+
+`claim` is `relay.claim`, `status` is `relay.status`, `device` and
+`rotate-password` are `device.info` and `device.rotate`.
 
 ### What a client is
 

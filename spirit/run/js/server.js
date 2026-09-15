@@ -1035,10 +1035,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && pathname === '/api/hub/status') {
-    hub.handleStatus(req, res, url, { presence: presence });
-    return;
-  }
+  // `GET /api/hub/status` is `relay.status` under the one door.
 
   // GET /api/hub/arrivals STOOD HERE, the log as a table. It had no
   // caller: a page that was closed catches up on the SAME live channel
@@ -1249,10 +1246,7 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/hub/claim') {
-      hub.handleClaim(req, res, readJsonBody);
-      return;
-    }
+    // `POST /api/hub/claim` is `relay.claim` under the one door.
 
     // POST /api/hub/send stood here until 2026-09-13 and GET
     // /api/hub/inbox above until R8. There is nothing left of the ring on
@@ -1625,6 +1619,33 @@ if (!relayMode) {
     'device.info': function (rq, rs) { hub.handleDevice(rq, rs); },
     'device.rotate': function (rq, rs) { hub.handleRotatePassword(rq, rs, readJsonBody); },
   }, { wire: false });
+
+  // ── STAGE 4b — relay (2026-09-15) ──────────────────────────────────
+  //
+  // THE NODE'S RELATIONSHIP WITH A RELAY, which is a different subject
+  // from what it says to a peer THROUGH one. `relay.claim` asks a relay
+  // for a row; `relay.status` asks every configured relay what it thinks
+  // of this node's key. Neither is addressed to a person, which is what
+  // keeps them out of `peer.*` and `contact.*`.
+  //
+  // WIRE, both of them, and uniformly — which is not an accident of who
+  // happened to land in the same group. `relay.claim` obviously reaches
+  // out. `relay.status` is less obvious and matters more: it LOOKS like
+  // a read of local configuration, and it is not. ownerBadge.probe
+  // fetches /api/relay/who from every configured relay, so an offline
+  // box answers 502 and a caller that assumed otherwise draws an empty
+  // relay list and calls it the truth. That is exactly the confusion the
+  // wire flag exists to make impossible to arrive at by accident.
+  //
+  // What a relay verb is NOT: a way to talk to the relay's owner. That
+  // goes through peer.post like anybody else's — the relay names itself
+  // on its own roster precisely so it has an ordinary address.
+  loopbackVerbs.claim('relay', 'hub.js', {
+    'relay.claim': function (rq, rs) { hub.handleClaim(rq, rs, readJsonBody); },
+    'relay.status': function (rq, rs) {
+      hub.handleStatus(rq, rs, readJsonBody, { presence: presence });
+    },
+  }, { wire: true });
 }
 
 server.listen(port, BIND_HOST, () => {

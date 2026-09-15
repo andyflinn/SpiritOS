@@ -153,26 +153,34 @@ function mountApp(opts) {
 
   const log = [];
   const titles = [];
+  // THE FIXTURE ANSWERS A VERB, NOT A PATH, and it had to learn that the
+  // same day the dispatch did: every loopback call this screen makes now
+  // goes to `/api/spirit`, so matching on the URL would match all of
+  // them. The one exception below is `/api/hub/post`, which is the wire
+  // and has not folded yet.
+  const verbOf = function (init) {
+    try { return JSON.parse(String((init && init.body) || '{}')).verb || ''; }
+    catch (e) { return ''; }
+  };
+
   const fakeFetch = function (url, init) {
-    log.push({ url: url, body: init && init.body });
+    const verb = verbOf(init);
+    log.push({ url: url, body: init && init.body, verb: verb });
     let text = '{}';
-    if (url.indexOf('/api/hub/status') === 0) {
+    if (verb === 'relay.status') {
       // `relayStatus` is a SECOND FIELD on this response, keyed by relay
       // url, and since R3 it is where the owner-only report lives.
       //
       // It used to ride on the badge row, because the badge WAS a signed
       // `GET /api/relay/status` and the report was that request's body.
       // The request is gone; the relay pushes the same report down the
-      // stream unprompted, and `/api/hub/status` has been forwarding it
+      // stream unprompted, and `relay.status` has been forwarding it
       // under this name all along.
       text = JSON.stringify({
         rows: opts.rows || [],
         relayStatus: opts.relayStatus || {},
       });
-    } else if (url.indexOf('/api/spirit') === 0 && /device.info/.test(String((init && init.body) || ''))) {
-      // device.info under the one door (2026-09-15). Matched on the VERB
-      // rather than the path, because the path is the same for every verb
-      // now — which is the fixture learning what the dispatch learned.
+    } else if (verb === 'device.info') {
       text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/post') === 0) {
       // What the node answers a post with: peerPost's own settle, whose
@@ -182,14 +190,14 @@ function mountApp(opts) {
         text: JSON.stringify({ app: 'relay', v: 1, body: opts.relayAnswer || { ok: true, revoked: 1 } }),
         sig: 'SIG', receipt: true,
       });
-    } else if (url.indexOf('/api/hub/claim') === 0) {
+    } else if (verb === 'relay.claim') {
       // The claim form moved onto this screen on 2026-09-15, because a
       // claim happens ON a relay and the old one on Natter's list could
       // not say which. See ndClaimHtml.
       text = JSON.stringify(opts.claimBody || { peer: { publicLabel: 'andy' } });
     }
     let status = 200;
-    if (url.indexOf('/api/hub/claim') === 0) status = opts.claimStatus || 201;
+    if (verb === 'relay.claim') status = opts.claimStatus || 201;
     return Promise.resolve({
       status: status,
       text: function () { return Promise.resolve(text); },
@@ -455,7 +463,7 @@ function claimingNamesThisMailbox() {
     });
 
     return settle().then(function () {
-      const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; });
+      const calls = app.log.filter(function (c) { return c.verb === 'relay.claim'; });
       const body = calls.length ? JSON.parse(calls[0].body) : null;
 
       // THE WHOLE REASON THE FORM COULD MOVE HERE. hub.handleClaim used
@@ -510,7 +518,7 @@ function aHalfCopiedInviteIsRefusedBeforeItTravels() {
     });
 
     return settle().then(function () {
-      const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; });
+      const calls = app.log.filter(function (c) { return c.verb === 'relay.claim'; });
       if (!calls.length && /invite/.test(out.textContent) && /is-error/.test(out.className)) {
         test.check('no request made, and the screen says which half is missing');
       } else {

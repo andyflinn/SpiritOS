@@ -52,6 +52,13 @@ function ownedBox(id, name) {
   return { home: home, box: box };
 }
 
+// WHAT server.js HANDS A LOOPBACK VERB: a readJsonBody, memoised on the
+// request, answering a promise. Handlers take this rather than a parsed
+// object so that one place decides what a malformed body is.
+function askedWith(body) {
+  return function () { return Promise.resolve(body); };
+}
+
 function nodeHome(id, urls) {
   var home = tmpHome('node');
   auth.saveIdentity(home, id);
@@ -593,16 +600,30 @@ function runHubOnLoopback() {
     // And the badge itself, over the same loopback: both mailboxes owned,
     // so Relay Chat shows the panel and the picker. A READ, and reads did
     // not move — you cannot post to an address you are still asking for.
+    // THE THIRD ARGUMENT IS readJsonBody, not a URL. It was a URL until
+    // `relay.status` folded onto /api/spirit on 2026-09-15, and the name
+    // now arrives in the body like every other loopback verb's argument.
+    // Handed the same shape server.js hands it, so a change to how the
+    // body is read fails here rather than being swallowed.
     const res2 = fakeRes();
-    hub.handleStatus({}, res2, new URL('http://127.0.0.1/api/hub/status?name=andy'));
+    hub.handleStatus({}, res2, askedWith({ name: 'andy' }));
     return res2.wait();
   }).then(function (res) {
     let data = {};
     try { data = JSON.parse(res.text); } catch (e) { data = {}; }
     if (res.status === 200 && data.ownedUrls && data.ownedUrls.length === 2 && data.mustPick) {
-      test.check('GET /api/hub/status badges both mailboxes and asks for a pick');
+      test.check('relay.status badges both mailboxes and asks for a pick');
     } else {
       test.fail('hub status: ' + res.status + ' ' + res.text);
+    }
+    // And the label came back off the BODY. It is echoed rather than
+    // used, which is exactly why it would go unnoticed if the read
+    // broke — the rows would still be right and Natter would draw a
+    // blank title.
+    if (data.name === 'andy') {
+      test.check('and it echoes the label it was asked with, read out of the body');
+    } else {
+      test.fail('echoed name: ' + JSON.stringify(data.name));
     }
     servers.forEach(function (s) { s.server.close(); });
   });
@@ -653,7 +674,7 @@ function boundNodeSeesItsRow() {
     server = s;
     const hub = createHub(nodeHome(guest, [server.url]));
     const res = fakeRes();
-    hub.handleStatus({}, res, new URL('http://x/api/hub/status?name=bert'));
+    hub.handleStatus({}, res, askedWith({ name: 'bert' }));
     return res.wait();
   }).then(function (res) {
     let body = null;
@@ -729,7 +750,7 @@ function aStrangerIsOnNothing() {
     server = s;
     const hub = createHub(nodeHome(nobody, [server.url]));
     const res = fakeRes();
-    hub.handleStatus({}, res, new URL('http://x/api/hub/status?name=mallory'));
+    hub.handleStatus({}, res, askedWith({ name: 'mallory' }));
     return res.wait();
   }).then(function (res) {
     let body = null;

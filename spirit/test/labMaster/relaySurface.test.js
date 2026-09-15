@@ -156,11 +156,16 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 404) test.check('GET /api/fs/stat 404');
     else test.fail('fs/stat → ' + r.status + ' ' + r.text);
-    return request(ORIGIN + '/api/hub/claim', 'POST', { name: 'andy' });
+    // A LIVE HUB ROUTE, deliberately. This asked for /api/hub/claim until
+    // 2026-09-15, and that route no longer exists on a NODE either — so
+    // the 404 it was getting had stopped saying anything about relays.
+    // The claim being made is "a relay serves none of the node's hub
+    // surface", and only a route that a node really answers can make it.
+    return request(ORIGIN + '/api/hub/who', 'GET', null);
   })
   .then(function (r) {
-    if (r.status === 404) test.check('POST /api/hub/claim 404 on relay');
-    else test.fail('hub claim on relay → ' + r.status + ' ' + r.text);
+    if (r.status === 404) test.check('GET /api/hub/who 404 on relay');
+    else test.fail('hub who on relay → ' + r.status + ' ' + r.text);
     return request(ORIGIN + '/js/server.js', 'GET', null);
   })
   .then(function (r) {

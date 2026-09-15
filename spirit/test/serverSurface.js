@@ -317,27 +317,61 @@ freePort()
     // Whether a route exists at all is protocolSurface.js's question for
     // the relay side, and no equivalent register covers /api/hub/*. That
     // is a real gap and it is named here rather than papered over.
+    // PRUNED 2026-09-15, and seven of the fourteen entries were dead —
+    // claim, invite, remove-peer, rename, rotate-password, status and
+    // device. Four went when the post path collapsed onto peerPost, three
+    // more when their namespaces folded onto /api/spirit, and every one
+    // of them kept answering 404 and kept passing. The warning above was
+    // already written; this is it coming true at scale.
+    //
+    // THE VERBS ARE HERE FOR THE SAME REASON THE ROUTES ARE. The crash
+    // this guards against is a handler reaching at request time for a
+    // name that is not in scope, and the claim block at the foot of
+    // server.js sits INSIDE the boot block and closes over `presence`,
+    // `peerRouter` and `readJsonBody` — which is precisely the shape of
+    // the 2026-09-13 death. A verb nobody has posted to since it was
+    // claimed is exactly as unproven as a route nobody has called.
     const HUB_ROUTES = [
-      ['POST', '/api/hub/claim'],
       ['POST', '/api/hub/peer'],
-      // A url that is on no Natter list, so this is refused before any
-      // network is touched — the ReferenceError was at the CALL, which
-      // happens either way.
-      ['POST', '/api/hub/invite', { url: 'https://not-on-the-list.example', label: 'x', days: 1 }],
-      ['POST', '/api/hub/remove-peer', { url: 'https://not-on-the-list.example', key: 'NOPE' }],
-      ['POST', '/api/hub/rename', { url: 'https://not-on-the-list.example', label: 'x' }],
       ['POST', '/api/hub/post'],
       ['POST', '/api/hub/contact'],
       ['POST', '/api/hub/unknown-senders'],
-      ['POST', '/api/hub/rotate-password'],
-      ['GET', '/api/hub/status'],
       ['GET', '/api/hub/who'],
       ['GET', '/api/hub/handle'],
-      ['GET', '/api/hub/device'],
       ['GET', '/api/hub/unknown-senders'],
+      // Every loopback verb, at the one door. `net.fetch` is left out on
+      // purpose: it is the only one that would reach the internet from a
+      // test, and it is covered where its refusals are.
+      ['POST', '/api/spirit', { verb: 'jobs.list' }],
+      ['POST', '/api/spirit', { verb: 'jobs.create' }],
+      ['POST', '/api/spirit', { verb: 'jobs.update' }],
+      ['POST', '/api/spirit', { verb: 'jobs.cancel' }],
+      ['POST', '/api/spirit', { verb: 'jobs.delete' }],
+      ['POST', '/api/spirit', { verb: 'fs.stat' }],
+      ['POST', '/api/spirit', { verb: 'fs.annotations' }],
+      ['POST', '/api/spirit', { verb: 'fs.save' }],
+      ['POST', '/api/spirit', { verb: 'fs.delete' }],
+      ['POST', '/api/spirit', { verb: 'fs.annotate' }],
+      ['POST', '/api/spirit', { verb: 'device.info' }],
+      ['POST', '/api/spirit', { verb: 'device.rotate' }],
+      // A url on no Natter list, so this is refused before any network is
+      // touched — the ReferenceError was at the CALL, which happens
+      // either way.
+      ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
+      ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
+      // And the door's own refusal, which must be an answer rather than a
+      // throw: a verb nobody claimed.
+      ['POST', '/api/spirit', { verb: 'nope.thing' }],
     ];
 
     const dead = [];
+    // UNREACHED, WHICH IS THE VACUITY THE LIST ABOVE COULD NOT SEE. A
+    // verb the table does not hold is answered by the door itself — 400,
+    // "no such verb" — and that is an answer, so it would sail through
+    // the survivability check exactly as a deleted route did. So a verb
+    // this suite names must be one somebody claimed, and the one entry
+    // that is deliberately unclaimed is asserted to say so.
+    const unreached = [];
     return HUB_ROUTES.reduce(function (chain, row) {
       return chain.then(function () {
         return request(port, row[0], row[1], row[2] || (row[0] === 'POST' ? {} : null))
@@ -345,6 +379,14 @@ freePort()
             // Status 0 is no answer at all: the handler threw and took the
             // connection — or the process — with it.
             if (r.status === 0) dead.push(row[0] + ' ' + row[1] + ' (' + r.error + ')');
+            const verb = (row[2] && row[2].verb) || '';
+            if (!verb) return;
+            const missing = r.status === 400 && /no such verb/.test(String(r.text || ''));
+            if (verb === 'nope.thing') {
+              if (!missing) unreached.push('nope.thing was ANSWERED by somebody: ' + r.status);
+            } else if (missing) {
+              unreached.push(verb + ' is claimed by nobody');
+            }
           });
       });
     }, Promise.resolve()).then(function () {
@@ -354,6 +396,13 @@ freePort()
         test.fail(dead.join(', ') + ' — answered nothing. A handler that reaches for a ' +
           'name not in scope at request time is invisible until the request is made.' +
           lastWords());
+      }
+
+      if (!unreached.length) {
+        test.check('and every verb named here reached a handler, while an unclaimed one did not');
+      } else {
+        test.fail(unreached.join('; ') + ' — a verb nobody claimed is refused BY THE DOOR, ' +
+          'which is an answer. Without this, deleting a claim leaves the check above green.');
       }
       // ── THE DOORS THAT SHARE askRelay MUST BE HANDED THE SAME DEPS ──
       //

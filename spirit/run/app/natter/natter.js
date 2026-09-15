@@ -343,7 +343,11 @@ function natterOpenMailbox(api, container, relays, url) {
 // by itself.
 function natterProbe(api, container, relays) {
   var label = natterMyName || '';
-  return fetch('/api/hub/status?name=' + encodeURIComponent(label))
+  return fetch('/api/spirit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verb: 'relay.status', name: label }),
+  })
     .then(function (r) { return r.json(); })
     .then(function (data) {
       var rows = (data && data.rows) || [];

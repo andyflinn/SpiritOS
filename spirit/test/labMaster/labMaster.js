@@ -764,7 +764,8 @@ async function buildLiveWorld(body) {
   let peerId = readJson(peerIdFile, null);
   if (!peerId || !peerId.publicKey) {
     // The node makes its own on first claim; poke it so it exists.
-    await livePost('http://127.0.0.1:' + peer.port + '/api/hub/claim', { name: peerName });
+    await livePost('http://127.0.0.1:' + peer.port + '/api/spirit',
+      { verb: 'relay.claim', name: peerName });
     await napFor(800);
     peerId = readJson(peerIdFile, null);
   }

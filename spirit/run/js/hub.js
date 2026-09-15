@@ -1287,8 +1287,28 @@ function createHub(rootDir) {
     }));
   }
 
-  function handleStatus(req, res, urlObj, deps) {
-    var name = urlObj.searchParams.get('name') || '';
+  // THE NAME ARRIVES IN THE BODY, not on a query string, since the relay
+  // namespace folded onto /api/spirit. What this buys is that every
+  // loopback verb is now the same shape — a POST with a JSON body — so
+  // there is nothing left for a caller to remember about this one in
+  // particular. `readJsonBody` is memoised on the request, so reading it
+  // here costs nothing even though the door has already peeked at it for
+  // the verb.
+  //
+  // A BODY THAT WILL NOT PARSE IS NOT A REFUSAL HERE, and that is
+  // deliberate. `name` is echoed back, never used to decide anything
+  // (see below), so a missing one degrades to the empty string exactly
+  // as a missing query parameter did. Failing the whole probe over a
+  // caption would take Natter's relay list down for a reason that has
+  // nothing to do with the relays.
+  function handleStatus(req, res, readJsonBody, deps) {
+    Promise.resolve()
+      .then(function () { return readJsonBody(req); })
+      .catch(function () { return {}; })
+      .then(function (body) { statusFor(res, (body && body.name) || '', deps); });
+  }
+
+  function statusFor(res, name, deps) {
     // THE KEY, and since R3 it is the only thing probe asks with.
     //
     // It was once possible to call this WITHOUT a key and still get
@@ -1306,7 +1326,7 @@ function createHub(rootDir) {
     //
     // `name` no longer travels at all: it was there to sign a LABEL to
     // prove a KEY owned a box (ownerBadge, statusPath). It is still read
-    // off the query above, because it is echoed back to the browser as
+    // off the body above, because it is echoed back to the browser as
     // `name` below and Natter uses it as the label to display.
     var me = auth.loadIdentity(rootDir);
     ownerBadge.probe(rootDir, function (url, method, pathname) {
