@@ -13,17 +13,55 @@ var RELAYS_FILENAME = 'relays.json';
 // owns it" on the row above and in Relay Chat's To list.
 var natterIcon = spirit.core.const.ICON;
 
-// The binding this node has, if it has one: { label, boundAt }. It lives
-// here now (packet 3) because claiming is what this app does — the chat
-// window used to hold both the claim form and the file, and neither was
-// chat's business. The shell reads this same path for the window title
-// and for the first-run gate (readNodeLabel in js/client/shell.js), so
-// there is one file and one answer to "is this node bound".
+// ── THE BINDINGS THIS NODE HOLDS, ONE PER RELAY ──────────────────────
+//
+//   Andy: "We must persist our bound-status for every listed relay and
+//   give that persisted status a high degree of trust."
+//
+// The file was { label, boundAt } — ONE answer for a node that may hold
+// a row on several relays. A rename is per-relay (relay.renameSelf moves
+// one row), an unbind is per-relay (an owner purges one seat), and one
+// slot for all of it meant the node re-derived its whole standing on
+// every probe from whatever happened to be reachable. That is how a
+// successful rename read as theft and deleted the session.
+//
+// The shape now, and it is ADDITIVE so nothing has to migrate:
+//
+//   {
+//     "label": "andyflinn",          <- the primary, unchanged in meaning
+//     "boundAt": "...",
+//     "relays": {
+//       "https://spirit.andyflinn.com": {
+//         "label": "andyflinn",
+//         "boundAt": "...",
+//         "confirmedAt": "..."       <- when a relay last positively said yes
+//       }
+//     }
+//   }
+//
+// `label` and `boundAt` stay exactly where they were, so js/client/shell.js
+// (readNodeLabel, the window title, the first-run gate) and every harness
+// that reads `held.label` keep working untouched. A file written by older
+// code simply has no `relays` and grows one on the first probe.
+//
+// HIGH TRUST MEANS: an entry is believed until THAT relay answers and
+// says it holds no row for this key. Silence never erodes it — see
+// natterCheckBinding. `confirmedAt` is what makes the trust auditable
+// rather than a feeling: it says when the relay last agreed.
 var NATTER_SESSION_FILE = 'session.json';
+
+// The primary caption — what this node calls itself, and what the shell
+// puts in the window title. Derived, never stored independently: it is
+// the first relay in relays.json order that we hold a binding for. Front
+// of the list is already this tree's notion of primary (hub.loadRelayUrl,
+// and labMaster deliberately moves spirit-3 to the front for it).
+var natterMyName = '';
+
+// url -> { label, boundAt, confirmedAt }. Null until the file is read.
+var natterBindings = Object.create(null);
 
 // What this app is called on the wire when it mints. Nothing to do with
 // packets — mint and claim are hub routes, not messages.
-var natterMyName = '';
 var natterMintedLabels = [];
 
 function natterLoadRelays(api) {
@@ -239,6 +277,37 @@ function natterOpenMailbox(api, container, relays, url) {
     // the screen's own api.fs is scoped to its folder — so the screen
     // says what it decided and this performs it, under the same guard
     // that has always stood here.
+    // A RENAME OF OUR OWN ROW IS RETURNED, NOT DONE — same rule as
+    // removal above, and for the same reason: session.json is this app's
+    // file and the dialog's api.fs is scoped to its own folder.
+    //
+    // ONLY ON CONFIRMATION, which is the whole point. ndRename posts and
+    // waits, and hands `renamed` back only for an answer the relay said
+    // ok to. A name the relay refuses — illegal characters, a reserved
+    // word, a live invite already holding it — never arrives here, so
+    // nothing local moves and the screen keeps saying what is true.
+    //
+    // natterBind then does all three things at once: writes the file,
+    // TELLS the shell (window titles across every app repaint, and the
+    // desktop with them), and re-probes so the list and the stars follow
+    // the relay rather than the typing that asked.
+    //
+    // AIMED AT THE RELAY IT HAPPENED ON. The note that stood here said
+    // this was "whichever was renamed last" on a node with two relays,
+    // because session.json had room for one answer. It has room for one
+    // answer PER RELAY now, so the url the dialog was opened for is the
+    // url the binding is written under.
+    if (result.renamed) {
+      natterBind(api, container, relays, url, result.renamed);
+      return;
+    }
+    // A CLAIM IS THE SAME SHAPE, and it is why the form could move here
+    // at all: the screen knows which relay it is, so the seat it took is
+    // recorded against that relay and nothing else.
+    if (result.claimed) {
+      natterBind(api, container, relays, url, result.claimed);
+      return;
+    }
     if (result.changed) natterProbe(api, container, relays);
   });
 }
@@ -255,9 +324,25 @@ function natterOpenMailbox(api, container, relays, url) {
 // IT ALSO ANSWERS "IS THIS STILL ME", which is why natterVerifyBinding
 // is gone and this takes one more line instead of a second fetch. See
 // natterCheckBinding below.
+// ── IT IS ASKED EVEN WITH NO LABEL, AND THAT IS THE RECOVERY ─────────
+//
+// This used to return here when the node had no local label: "no claim,
+// nothing to sign as, no stars". That was true when the probe SIGNED a
+// status request as a label. R3 ended it — hub.handleStatus reads `name`
+// only to echo it back for display, and ownerBadge.probe asks the public
+// census by KEY (handleStatus: "both answers come from the census, by
+// key, so a caller without a key gets nothing").
+//
+// Leaving the guard in place meant a node that lost session.json could
+// never find out it was still enrolled: no label, so no probe; no probe,
+// so no label. It was one unsigned public GET away from the answer the
+// whole time, and it stranded this node twice on 2026-09-15.
+//
+// So: always ask. natterCheckBinding writes back whatever relays report
+// for this key, which is how a node with no file recovers its bindings
+// by itself.
 function natterProbe(api, container, relays) {
-  var label = (typeof api.nodeLabel === 'function' && api.nodeLabel()) || '';
-  if (!label) return Promise.resolve(); // no claim, nothing to sign as, no stars
+  var label = natterMyName || '';
   return fetch('/api/hub/status?name=' + encodeURIComponent(label))
     .then(function (r) { return r.json(); })
     .then(function (data) {
@@ -297,59 +382,45 @@ function natterBindStatus(text) {
 function natterPaintBind(api, relays) {
   var row = document.getElementById('natter-bind-row');
   var note = document.getElementById('natter-bind-note');
-  var fields = document.getElementById('natter-bind-fields');
   var heading = document.getElementById('natter-bind-heading');
-  if (!row || !note || !fields) return;
+  if (!row || !note) return;
 
-  var addRowBound = document.getElementById('natter-add-row');
-  if (natterMyName) {
-    // Bound: the claim form is not hidden, it has nothing left to ask —
-    // and adding a mailbox becomes available, which is what this app is
-    // for once a node has a name.
+  var addRow = document.getElementById('natter-add-row');
+  // BOUND ANYWHERE IS BOUND. The tile is guidance for a node that holds
+  // no seat at all; one seat on one relay and it has nothing left to say.
+  if (Object.keys(natterBindings).length) {
     row.style.display = 'none';
     note.innerHTML = '';
-    if (addRowBound) addRowBound.style.display = '';
+    if (addRow) addRow.style.display = '';
     return;
   }
   row.style.display = '';
-  fields.style.display = relays.length ? '' : 'none';
 
-  // Adding a mailbox is not the first thing a new node does — claiming a
-  // name on the one it ships with is. So the Add row waits until this
-  // node is bound.
-  //
-  // Unless there is nothing listed: then adding one IS the first thing,
-  // and hiding the only control that could do it would leave a node
-  // whose relays.json is missing with no way forward and no way to say
-  // so. Same shape as the escape hatch the shell used to need, now that
-  // this app is the one an unbound node is shown.
-  var addRow = document.getElementById('natter-add-row');
-  if (addRow) addRow.style.display = (natterMyName || !relays.length) ? '' : 'none';
+  // Adding a relay is not the first thing a new node does — claiming a
+  // seat on the one it ships with is. So the Add row waits, unless there
+  // is nothing listed: then adding one IS the first thing, and hiding
+  // the only control that could do it would leave a node whose
+  // relays.json is missing with no way forward and no way to say so.
+  if (addRow) addRow.style.display = relays.length ? 'none' : '';
 
-  // The heading names the mailbox, because a claim happens ON one and
-  // this form never said which. There is no field for it and there
-  // should not be: the hub claims, sends and reads on the FIRST Natter
-  // row only (loadRelayUrl, hub.js), so a URL box would be a control
-  // whose every other value is silently ignored. When the hub learns to
-  // speak to a chosen mailbox, this line is where the choice goes.
-  //
-  // "a name", not "an invite": the owner of a mailbox claims with no
-  // token at all, and the token field already says it is optional.
+  // IT POINTS AT THE LIST INSTEAD OF ASKING. The claim happens on the
+  // relay's own screen now, so this says which relay to open rather than
+  // taking a name it could not have aimed anywhere in particular.
   if (heading) {
     heading.textContent = relays.length
-      ? 'Claim a name on ' + ((relays[0] && (relays[0].label || relays[0].url)) || 'this relay')
-      : 'Add a relay below, then claim a name on it';
+      ? 'This node has no seat on any relay yet'
+      : 'Add a relay below, then claim a seat on it';
   }
 
   // innerHTML for the one bold sentence. Every character is written in
-  // this file — nothing from a mailbox, a peer or a file reaches it — so
+  // this file — nothing from a relay, a peer or a file reaches it — so
   // there is nothing to escape. Anything interpolated later must be.
   note.innerHTML = relays.length
-    ? 'This node needs a name on a public relay before it can do anything else. ' +
-      'If you were invited, enter that name and the spoken word, then Claim. If you own the relay, ' +
-      'Claim the owner name with no token. ' +
+    ? 'This node needs a seat on a public relay before it can do anything else. ' +
+      'Open a relay in the list below and claim one there — with the token and the name ' +
+      'the owner read out to you, or with no token at all if you own the relay. ' +
       '<strong>If you have no invite yet, ask countinn@gmail.com, he will give you an invite within 24 hours.</strong>'
-    : 'This node has no relay listed yet. Add one above (for example https://spirit.andyflinn.com), then claim a name on it.';
+    : 'This node has no relay listed yet. Add one above (for example https://spirit.andyflinn.com), then open it and claim a seat.';
 }
 
 
@@ -387,32 +458,123 @@ function natterAcquireInvited(rows) {
   });
 }
 
-// Claiming is what turns a first-run node into an ordinary one, so the
-// file is written here and the shell is TOLD rather than left to notice:
-// writing session.json does move the fs-watcher's list, and the snapshot
-// would repaint — but only because the file is new, and only while that
-// watcher is alive.
-function natterBind(api, container, relays, label) {
-  natterMyName = label;
-  api.fs.saveFile(NATTER_SESSION_FILE, JSON.stringify({
-    label: label,
-    boundAt: new Date().toISOString(),
-  }, null, 2)).then(function () {
-    if (typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
+// Read once, on mount. A file from before 2026-09-15 has a label and no
+// map: that label is a real binding and must not be thrown away, so it is
+// carried into the map under the first listed relay — the only relay the
+// hub could claim on when that file was written (loadRelayUrl), which
+// makes it the one it was about.
+function natterLoadSession(api, relays) {
+  natterBindings = Object.create(null);
+  var held = null;
+  try { held = JSON.parse(api.fs.loadFile(NATTER_SESSION_FILE) || 'null'); }
+  catch (e) { held = null; }
+  if (!held) { natterMyName = ''; return; }
+
+  var map = held.relays;
+  if (map && typeof map === 'object') {
+    Object.keys(map).forEach(function (url) {
+      var row = map[url];
+      if (row && row.label) natterBindings[url] = row;
+    });
+  } else if (held.label && relays.length) {
+    natterBindings[relays[0].url] = {
+      label: held.label,
+      boundAt: held.boundAt || new Date().toISOString(),
+      confirmedAt: '',
+    };
+  }
+  natterMyName = natterPrimaryLabel(relays);
+}
+
+// THE PRIMARY IS DERIVED, NOT DECIDED. First relay in list order that we
+// hold a binding for. So renaming yourself on a relay that is not the
+// first does not move your window title, which would be a strange thing
+// for a caption on somebody else's relay to do.
+function natterPrimaryLabel(relays) {
+  for (var i = 0; i < relays.length; i += 1) {
+    var held = natterBindings[relays[i].url];
+    if (held && held.label) return held.label;
+  }
+  // A binding on a relay no longer listed still names this node — losing
+  // a row from relays.json is not losing the seat it pointed at.
+  var any = Object.keys(natterBindings)[0];
+  return (any && natterBindings[any].label) || '';
+}
+
+function natterBindingFor(url) {
+  return natterBindings[url] || null;
+}
+
+// One write, and the shell is TOLD rather than left to notice: writing
+// session.json does move the fs-watcher's list and the snapshot would
+// repaint — but only because the file is NEW, and only while that watcher
+// is alive. A claim is not the place to depend on either.
+//
+// The file goes away entirely only when the last binding does. That is
+// the one destructive act in here, and it now happens once, at the end,
+// instead of on every partial disagreement.
+function natterSaveSession(api, relays) {
+  var urls = Object.keys(natterBindings);
+  // TOLD ONLY WHEN IT CHANGED. This now runs on every probe, because
+  // `confirmedAt` moves whenever a relay agrees — and nodeLabelChanged
+  // repaints the window title, the desktop and the titlebar chrome. That
+  // is the right thing to do when a node is renamed and pure churn when
+  // it has simply been confirmed as what it already was.
+  var wasPrimary = natterMyName;
+  natterMyName = natterPrimaryLabel(relays);
+  var titleMoved = natterMyName !== wasPrimary;
+
+  var done;
+  if (!urls.length) {
+    done = Promise.resolve(api.fs.deleteFile(NATTER_SESSION_FILE));
+  } else {
+    var primaryAt = '';
+    for (var i = 0; i < relays.length && !primaryAt; i += 1) {
+      var held = natterBindings[relays[i].url];
+      if (held && held.label === natterMyName) primaryAt = held.boundAt || '';
+    }
+    done = api.fs.saveFile(NATTER_SESSION_FILE, JSON.stringify({
+      label: natterMyName,
+      boundAt: primaryAt || new Date().toISOString(),
+      relays: natterBindings,
+    }, null, 2));
+  }
+
+  return Promise.resolve(done).then(function () {
+    if (titleMoved && typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
     natterPaintBind(api, relays);
-    natterProbe(api, container, relays);
   }).catch(function (e) {
-    natterBindStatus('could not remember this name: ' + e.message);
+    natterBindStatus('could not remember this binding: ' + (e && e.message));
   });
 }
 
-// Symmetrical, and abrupt on purpose: a node the mailbox no longer
-// recognises goes back to first run.
-function natterUnbind(api, relays) {
-  natterMyName = '';
-  api.fs.deleteFile(NATTER_SESSION_FILE);
-  if (typeof api.nodeLabelChanged === 'function') api.nodeLabelChanged();
-  natterPaintBind(api, relays);
+// A relay said yes — a claim went through, a rename was confirmed, or a
+// probe found our row. `boundAt` survives a re-confirmation: it says when
+// this node first took a seat here, and nothing later should overwrite
+// that, the same way the relay never rewrites `claimedAt`.
+function natterNoteBinding(api, relays, url, label) {
+  var had = natterBindings[url];
+  natterBindings[url] = {
+    label: label,
+    boundAt: (had && had.boundAt) || new Date().toISOString(),
+    confirmedAt: new Date().toISOString(),
+  };
+  return natterSaveSession(api, relays);
+}
+
+// One seat gone, not the node. This is an owner purging a row, and it is
+// only ever reached on COMPLETE evidence — see natterCheckBinding.
+function natterDropBinding(api, relays, url) {
+  if (!natterBindings[url]) return Promise.resolve();
+  delete natterBindings[url];
+  return natterSaveSession(api, relays);
+}
+
+// Claiming is what turns a first-run node into an ordinary one.
+function natterBind(api, container, relays, url, label) {
+  return natterNoteBinding(api, relays, url, label).then(function () {
+    natterProbe(api, container, relays);
+  });
 }
 
 // The stored label is only a question; the relay answers it.
@@ -444,30 +606,116 @@ function natterUnbind(api, relays) {
 // carries no `claimedLabel` either, and must not unbind. So this acts on
 // rows that ANSWERED and said we hold no label, and stays silent about
 // the rest.
+// ── THE BINDING IS A KEY, NOT A NAME (Andy, 2026-09-15) ──────────────
+//
+//   Andy: "checkbinding must be key-based... if i have a key"
+//
+// THIS CORRECTS THE VERSION ABOVE IT, which asked "does any relay still
+// call me by my stored label?" and unbound when none did. That question
+// was coherent while a label was how a peer was found. R4 ended it: the
+// key is the identity, the label is a caption the key owns, and a peer
+// may change its own caption whenever it likes.
+//
+// So the old reading had a branch for "somebody else is wearing the
+// name" — and that branch cannot happen. `claimedLabel` is read off THIS
+// NODE'S OWN ROW, matched by `p.publicKey === myKey` (ownerBadge.js,
+// claimedLabelFrom). A label that differs from the cache is never a
+// stranger; it is our own row wearing a caption the cache has not caught
+// up with.
+//
+// IT COST A LIVE SESSION. A rename to `andyflinn` succeeded on spirit-3,
+// the cache still said `andy`, and this concluded the name had been
+// stolen — unbound the node, deleted session.json, and sent a shell that
+// was correctly enrolled back to first run. The node's own successful
+// rename looked exactly like theft.
+//
+// WHAT IS ASKED NOW: does a relay that answered hold a row for this key?
+// That is `claimed` (or `owned`, which implies it). If yes, we are bound
+// and the relay's caption is adopted. Only if every relay that answered
+// holds no row for this key is the binding gone — which is what an owner
+// purging a seat actually looks like.
+//
+// UNREACHABLE IS STILL NOT THE SAME AS NOT OURS, which the old version
+// got right and is easy to lose: a relay that did not answer says
+// nothing and must not unbind. `status > 0` is the test — NOT `!error`,
+// because probe sets `error: 'no row here'` on a relay that answered
+// perfectly well and simply has no row for us. That row is evidence, and
+// filtering it out was throwing away the only thing that can prove an
+// unbind.
 function natterCheckBinding(api, relays, rows) {
-  if (!natterMyName) return;
-  var label = natterMyName;
-  var answered = (rows || []).filter(function (row) {
-    return row && row.url && !row.error && Number(row.status) > 0;
-  });
+  var asked = (rows || []).filter(function (row) { return row && row.url; });
+  var answered = asked.filter(function (row) { return Number(row.status) > 0; });
   if (!answered.length) return; // nothing replied; nothing to conclude
 
-  // Any relay that still calls us by this label keeps the binding. A node
-  // may hold rows on several, and being known on one is being bound.
-  var stillOurs = answered.some(function (row) { return row.claimedLabel === label; });
-  if (stillOurs) return;
+  // DECIDED ON A COPY, COMMITTED ONCE. Mutating as we go and then
+  // declining to save would leave the map and the file disagreeing,
+  // which is the disease this whole change is treating.
+  var next = Object.create(null);
+  Object.keys(natterBindings).forEach(function (u) { next[u] = natterBindings[u]; });
 
-  // Nobody who answered knows us by it. Two cases worth telling apart,
-  // because one of them is somebody else wearing the name.
-  var wearingSomethingElse = answered.filter(function (row) {
-    return row.claimedLabel && row.claimedLabel !== label;
-  })[0];
+  var now = new Date().toISOString();
+  var moved = false;
+  var adopted = '';
 
-  natterUnbind(api, relays);
-  natterBindStatus(wearingSomethingElse
-    ? label + ' is not this node any more — this relay calls it ' +
-      wearingSomethingElse.claimedLabel + '. Claim again.'
-    : label + ' does not belong to this node any more — claim again');
+  answered.forEach(function (row) {
+    var held = natterBindings[row.url];
+
+    // ── A ROW FOR THIS KEY IS THE BINDING ────────────────────────────
+    if (row.claimed || row.owned) {
+      var label = row.claimedLabel || (held && held.label) || '';
+      if (!label) return; // enrolled, but nothing said what we are called
+      if (!held || held.label !== label) {
+        if (held) adopted = label;
+        moved = true;
+      }
+      // `confirmedAt` moves on every agreement, not only on a change:
+      // "this relay said yes 4 seconds ago" and "said yes in September"
+      // are different degrees of the same trust, and a field that only
+      // updated when something moved could not tell them apart.
+      next[row.url] = {
+        label: label,
+        boundAt: (held && held.boundAt) || now,
+        confirmedAt: now,
+      };
+      return;
+    }
+
+    // ── THIS RELAY ANSWERED AND HOLDS NOTHING FOR THIS KEY ───────────
+    //
+    // Per-relay now, which is what makes it safe to act on: losing a
+    // seat on one relay is not losing the node. The old rule deleted
+    // session.json — every binding — on the word of whichever relays
+    // happened to be reachable.
+    if (held) {
+      delete next[row.url];
+      moved = true;
+    }
+  });
+
+  // ── SILENCE IS NOT EVIDENCE, AND OFFLINE IS MOSTLY SILENCE ─────────
+  //
+  // A relay that did not answer keeps its entry untouched above, which
+  // is the whole point of persisting them: the half-offline node no
+  // longer has to be special-cased, because an unreachable relay simply
+  // is not in `answered` and nothing is concluded about it.
+  //
+  // What remains is the FILE, which goes when the last entry does. That
+  // is destructive and currently unrecoverable by hand, so it happens
+  // only when every relay we were asked about answered. A node that is
+  // entirely offline concluded nothing above and must not lose its file
+  // for it.
+  var left = Object.keys(next).length;
+  if (!left && answered.length < asked.length) return;
+
+  natterBindings = next;
+  var was = natterMyName;
+  natterSaveSession(api, relays);
+
+  if (!left) {
+    if (moved) natterBindStatus('no relay holds a row for this key — claim again');
+  } else if (adopted && adopted !== was) {
+    natterBindStatus('this relay now calls this node ' + adopted);
+  }
 }
 
 spirit.shell.activateApp({
@@ -485,28 +733,29 @@ spirit.shell.activateApp({
     container.innerHTML =
       // First, because on a fresh node this is the whole page: a name on
       // a public mailbox is what everything else waits for.
+      // ── THE CLAIM FORM LEFT THIS FILE (2026-09-15) ─────────────────
+      //
+      //   Andy: "the never-bound-to-any-relay form that shows up if I'm
+      //   truly not bound yet, it shows up in natter, instead of
+      //   natterDetails for spirit.andyflinn.com"
+      //
+      // A claim happens ON a relay, and this form never said which. It
+      // could not: hub.handleClaim used relays.json[0] whatever the
+      // caller meant, and the comment that used to stand here admitted
+      // as much — "a URL box would be a control whose every other value
+      // is silently ignored". So the heading named row zero and hoped.
+      //
+      // Both halves are fixed together. handleClaim takes a url through
+      // ownerBadge.chooseUrl like invite, rename and remove-peer already
+      // did, and the form moved to the screen that IS one relay, where
+      // it is the mirror of rename: every relay screen offers either
+      // "you are X here" or "claim a seat here", and never both.
+      //
+      // What is left here is the sentence an unbound node needs, which
+      // is not a form — it is a direction to the list below.
       '<div class="stat-tile wide" id="natter-bind-row">' +
         '<div class="panel-heading" id="natter-bind-heading"></div>' +
         '<div id="natter-bind-note"></div>' +
-        '<div class="start-job-form" id="natter-bind-fields">' +
-          '<label class="field-label">Public label<input type="text" id="natter-name" placeholder="the name peers see"></label>' +
-          '<label class="field-label">Invite token<input type="text" id="natter-token" placeholder="(only if you were invited)"></label>' +
-          // THE WORD THE OWNER READ OUT, which is not the name you pick.
-          // Two things travel down the phone call — the token and the
-          // word the owner wrote on the invite — and only the first of
-          // them used to have a box. The second was the Public label
-          // above, which meant the owner chose what you were called
-          // (R1, design/cycles/2026-09-15-labels-are-not-identities.md).
-          //
-          // REQUIRED WITH A TOKEN, even when it matches the label above.
-          // The relay refuses a token without it and does not fall back:
-          // a second factor that can be defaulted from the first is not
-          // one. Typed deliberately, which is what reading a word off a
-          // phone call is.
-          '<label class="field-label">Name on the invite' +
-            '<input type="text" id="natter-invite-label" placeholder="(the word the owner read out)"></label>' +
-          '<button type="button" id="natter-claim">Claim</button>' +
-        '</div>' +
         '<div class="job-manifest-note" id="natter-bind-status"></div>' +
       '</div>' +
       '<div class="stat-tile wide" id="natter-add-row">' +
@@ -533,14 +782,16 @@ spirit.shell.activateApp({
 
     statusEl = document.getElementById('natter-status');
 
-    // What this node is called, as the shell reads it — one accessor,
-    // one answer, and the same one the window title uses.
-    natterMyName = (typeof api.nodeLabel === 'function' && api.nodeLabel()) || '';
+    // The bindings, one per relay, and the primary caption derived from
+    // them. Read from this app's own file rather than through
+    // api.nodeLabel: the shell's accessor answers "what is this node
+    // called", which is one of the things in here, and this app is the
+    // one that owns the file.
+    natterLoadSession(api, relays);
     try {
       var mintedRaw = api.fs.loadFile('minted.json');
       natterMintedLabels = mintedRaw ? (JSON.parse(mintedRaw) || []) : [];
     } catch (e) { natterMintedLabels = []; }
-    if (natterMyName) document.getElementById('natter-name').value = natterMyName;
 
     natterPaintBind(api, relays);
     natterRenderList(container, api, relays);
@@ -549,36 +800,9 @@ spirit.shell.activateApp({
     // fetched.
     natterProbe(api, container, relays);
 
-    document.getElementById('natter-claim').addEventListener('click', function () {
-      var name = document.getElementById('natter-name').value.trim();
-      var token = document.getElementById('natter-token').value.trim();
-      var onInvite = document.getElementById('natter-invite-label').value.trim();
-      if (!name) { natterBindStatus('a name is required'); return; }
-      // ASKED FOR HERE rather than discovered as a 400 from the relay.
-      // The two arrive together — a token and a word, down one phone call
-      // — so a token with no word is a half-copied invite, and saying so
-      // before the request saves a round trip nobody learns from.
-      if (token && !onInvite) {
-        natterBindStatus('an invite needs the name the owner put on it, as well as the token');
-        return;
-      }
-      var claimBody = { name: name };
-      if (token) claimBody.invite = token;
-      if (onInvite) claimBody.inviteLabel = onInvite;
-      natterPost('/api/hub/claim', claimBody)
-        .then(function (r) {
-          natterBindStatus(r.status + ' ' + r.text);
-          // 201 is a new claim. 409 is only us when the peer already on
-          // the mailbox carries OUR key — the node sets `mine` for that.
-          // Any other 409 is somebody else's name, and claiming it would
-          // fail the signature check on the relay anyway.
-          var mine = false;
-          try { mine = !!JSON.parse(r.text).mine; } catch (e) { mine = false; }
-          if (r.status === 201 || (r.status === 409 && mine)) {
-            natterBind(api, container, relays, name);
-          }
-        });
-    });
+    // THE CLAIM HANDLER STOOD HERE and went with the form it drove. It
+    // is app/natterDetails/ndClaim now, where it can name the relay it
+    // is aimed at — see the comment on the tile above.
 
     // ONE THING A ROW DOES. There were three branches here, answered in
     // a careful order because Invite, the device toggle and Remove all

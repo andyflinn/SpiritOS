@@ -703,9 +703,29 @@ function createHub(rootDir) {
     return guarded(res, chosen.url, fn);
   }
 
+  // CLAIMING HAPPENS ON ONE RELAY, AND NOW IT SAYS WHICH.
+  //
+  // This used `withRelay` — relays.json[0], whatever the caller meant —
+  // while invite, rename and remove-peer had all moved to
+  // `withChosenRelay`. Claim was the last route that could not be aimed,
+  // and Natter's claim form carried a comment admitting it: the heading
+  // named relays[0] because "a URL box would be a control whose every
+  // other value is silently ignored."
+  //
+  // That is why the claim form could not live on a relay's own screen. A
+  // Claim button on spirit-3's panel that quietly claimed on the lab row
+  // is worse than no button. With the form moving to natterDetails
+  // (2026-09-15) the aim has to be real.
+  //
+  // Not a new switch — the switch is `ownerBadge.chooseUrl`, which has
+  // decided this for three other doors since invites landed. A url that
+  // is on no Natter list is refused there, so a stale tab cannot aim a
+  // signed claim at a relay this node does not list. With nothing wanted
+  // it still falls back to the only row when there is only one, which is
+  // exactly what every existing caller relied on.
   function handleClaim(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
-      withRelay(res, function (url) {
+      withChosenRelay(res, body && body.url, function (url) {
         relayRequest(url, 'POST', '/api/relay/claim', signedClaim(
           rootDir,
           body && body.name,

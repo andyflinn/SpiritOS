@@ -61,6 +61,25 @@ function mountApp(options) {
   const doc = fakeDocument();
   const log = [];
   const store = { 'relays.json': JSON.stringify(opts.relays === undefined ? SEEDED : opts.relays) };
+
+  // A BOUND FIXTURE NOW HAS THE FILE, because the file is the answer.
+  //
+  // `opts.label` used to reach the app only through api.nodeLabel(), so
+  // a fixture could be "bound" with no session.json at all. The app
+  // reads its own file now (natterLoadSession) — bindings are per-relay
+  // and the shell's one-label accessor cannot carry them — so a fixture
+  // that means bound has to say so where the app looks.
+  //
+  // Written in the OLD shape on purpose: { label, boundAt } and no
+  // `relays` map. That is what every node on disk has today, so every
+  // test using opts.label also exercises the migration that carries a
+  // legacy label onto the first listed relay.
+  if (opts.label) {
+    store['session.json'] = JSON.stringify({
+      label: opts.label,
+      boundAt: '2026-09-07T00:00:00.000Z',
+    });
+  }
   let label = opts.label || '';
   let told = 0;
 
@@ -172,7 +191,7 @@ function settle() {
 test.startTest('Natter — where this node gets its name');
 
 function unboundIsThePage() {
-  test.subHeading('A node with no name is shown one thing to do');
+  test.subHeading('A node with no seat is shown one thing to do');
 
   const app = mountApp({});
 
@@ -181,42 +200,49 @@ function unboundIsThePage() {
     // On a fresh node this paragraph IS the page — Natter is the only
     // app the shell shows until a claim succeeds — so the way in for
     // somebody holding no invite is in it, and loudly.
-    if (/<strong>[^<]*countinn@gmail\.com[^<]*<\/strong>/.test(note) && /If you were invited/.test(note)) {
-      test.check('it says how to claim, and who to ask for an invite');
+    if (/<strong>[^<]*countinn@gmail\.com[^<]*<\/strong>/.test(note)) {
+      test.check('it says who to ask for an invite, loudly');
     } else {
       test.fail('unbound copy: ' + note);
     }
 
-    if (el(app, 'natter-bind-row').style.display !== 'none') {
-      test.check('and the claim form is on the page');
+    // ── IT POINTS AT THE LIST, IT DOES NOT ASK ──────────────────────
+    //
+    //   Andy: "the never-bound-to-any-relay form that shows up if I'm
+    //   truly not bound yet, it shows up in natter, instead of
+    //   natterDetails for spirit.andyflinn.com"
+    //
+    // The form asked for a label and a token and could not say which
+    // relay either was for — hub.handleClaim took relays.json[0]
+    // whatever the caller meant. Both halves moved on 2026-09-15: the
+    // claim takes a url, and the form lives on the relay's own screen.
+    // What is left here is a direction to the list.
+    if (/Open a relay in the list below/.test(note)) {
+      test.check('and sends you to the relay you mean to join');
     } else {
-      test.fail('claim row hidden while unbound');
+      test.fail('copy does not point at the list: ' + note);
     }
 
-    // A claim happens ON a mailbox, and the form never said which. The
-    // heading does — there is no URL field and there should not be: the
-    // hub claims on the first Natter row only, so a box offering any
-    // other would be ignored.
-    if (el(app, 'natter-bind-heading').textContent === 'Claim a name on spirit') {
-      test.check('the heading names the mailbox the claim will happen on');
+    if (el(app, 'natter-bind-row').style.display !== 'none') {
+      test.check('and the guidance is on the page while nothing is held');
+    } else {
+      test.fail('guidance hidden while unbound');
+    }
+
+    // It states the condition rather than naming a relay it could not
+    // have aimed at.
+    if (el(app, 'natter-bind-heading').textContent === 'This node has no seat on any relay yet') {
+      test.check('the heading says what is missing, not where to put it');
     } else {
       test.fail('bind heading: ' + el(app, 'natter-bind-heading').textContent);
     }
 
-    // And a name, not an invite: the owner of a mailbox claims with no
-    // token at all.
-    if (el(app, 'natter-bind-heading').textContent.indexOf('invite') === -1) {
-      test.check('and calls it a name, because an owner needs no invite');
-    } else {
-      test.fail('heading promises an invite: ' + el(app, 'natter-bind-heading').textContent);
-    }
-
-    // Adding a mailbox is not the first thing a new node does — claiming
-    // a name on the one it ships with is.
+    // Adding a relay is not the first thing a new node does — claiming
+    // a seat on one it already lists is.
     if (el(app, 'natter-add-row').style.display === 'none') {
-      test.check('and adding a relay is not offered before there is a name');
+      test.check('and adding a relay is not offered before there is a seat');
     } else {
-      test.fail('add row shown while unbound with a mailbox listed');
+      test.fail('add row shown while unbound with a relay listed');
     }
 
     // A different problem, and a different sentence: nothing to claim on
@@ -224,10 +250,10 @@ function unboundIsThePage() {
     const empty = mountApp({ relays: [] });
     return settle().then(function () {
       const copy = el(empty, 'natter-bind-note').innerHTML;
-      if (/no relay listed yet/.test(copy) && el(empty, 'natter-bind-fields').style.display === 'none') {
-        test.check('with no relay listed it says so, and offers no name to claim');
+      if (/no relay listed yet/.test(copy)) {
+        test.check('with no relay listed it says so');
       } else {
-        test.fail('empty-list copy: ' + copy + ' / fields ' + el(empty, 'natter-bind-fields').style.display);
+        test.fail('empty-list copy: ' + copy);
       }
 
       // ...and with nothing listed, adding one IS the first thing, so it
@@ -239,8 +265,7 @@ function unboundIsThePage() {
         test.fail('add row hidden with an empty list');
       }
 
-      // The heading degrades to the step that comes first, rather than
-      // naming a relay that is not there.
+      // The heading degrades to the step that comes first.
       if (/Add a relay below/.test(el(empty, 'natter-bind-heading').textContent)) {
         test.check('and the heading asks for one instead of naming none');
       } else {
@@ -250,136 +275,90 @@ function unboundIsThePage() {
   });
 }
 
-function claimBinds() {
-  test.subHeading('Claim is what binds the node');
+// ── THE CLAIM FORM LEFT THIS APP, THE BINDING DID NOT ────────────────
+//
+// `claimBinds`, `tokenGoesWithTheName` and `refusalDoesNotBind` stood
+// here and drove the form directly. The form is app/natterDetails now
+// (spirit/test/natterDetails.js: claimingNamesThisMailbox,
+// aHalfCopiedInviteIsRefusedBeforeItTravels), because a claim happens ON
+// a relay and this app's form could not say which.
+//
+// What stayed is what Natter still owns: session.json, and writing a
+// seat down against the relay it was taken on. The dialog reports;
+// this app records. Same contract as a mint and a rename.
+function aClaimReturnedIsRecordedAgainstItsRelay() {
+  test.subHeading('A seat taken on a relay is written down under that relay');
 
-  const app = mountApp({});
+  const app = mountApp({ dialogResult: { changed: true, url: OWNED, claimed: 'andy' } });
 
   return settle().then(function () {
-    el(app, 'natter-name').value = 'andy';
-    el(app, 'natter-claim').fire('click');
+    el(app, 'natter-tbody').fire('click', { target: rowTarget(OWNED) });
 
     return settle().then(function () {
-      const claims = app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; });
-      if (claims.length === 1 && JSON.parse(claims[0].body).name === 'andy' &&
-          JSON.parse(claims[0].body).invite === undefined) {
-        test.check('a name with no token claims without one');
-      } else {
-        test.fail('claim calls: ' + JSON.stringify(claims));
-      }
-
-      // The binding is this app's file now, and the shell is TOLD rather
-      // than left to notice: claiming is what ends first run, and that
-      // must not wait on an fs-watcher.
       let saved = null;
       try { saved = JSON.parse(app.store['session.json']); } catch (e) { saved = null; }
-      if (saved && saved.label === 'andy' && saved.boundAt) {
-        test.check('and the binding is written here, with when it happened');
+
+      if (saved && saved.relays && saved.relays[OWNED] &&
+          saved.relays[OWNED].label === 'andy' && saved.relays[OWNED].boundAt) {
+        test.check('the seat is recorded under the relay it was taken on');
       } else {
         test.fail('session.json: ' + app.store['session.json']);
       }
 
-      if (app.told() === 1) {
+      // THE PRIMARY IS DERIVED. `label` at the top is what the shell
+      // reads for the window title (readNodeLabel), and it stays where
+      // it was so nothing outside this app has to learn a new shape.
+      if (saved && saved.label === 'andy') {
+        test.check('and the primary caption is still where the shell reads it');
+      } else {
+        test.fail('top-level label: ' + (saved && saved.label));
+      }
+
+      // Claiming is what ends first run, and that must not wait on an
+      // fs-watcher.
+      if (app.told() >= 1) {
         test.check('and the shell is told, so the rest of the apps appear');
       } else {
         test.fail('nodeLabelChanged called ' + app.told() + ' times');
       }
 
       if (el(app, 'natter-add-row').style.display !== 'none') {
-        test.check('and adding a mailbox becomes available once there is a name');
+        test.check('and adding a relay becomes available once a seat is held');
       } else {
         test.fail('add row still hidden after binding');
       }
 
       if (el(app, 'natter-bind-row').style.display === 'none') {
-        test.check('and the claim form goes, because claiming is what you do once');
+        test.check('and the guidance goes, because it has nothing left to say');
       } else {
-        test.fail('claim row still shown after binding');
+        test.fail('guidance still shown after binding');
       }
     });
   });
 }
 
-function tokenGoesWithTheName() {
-  test.subHeading('An invited name carries its spoken word');
+// The mirror: a dialog that reports no seat writes none. ndClaim returns
+// `claimed` only for an answer the relay agreed to — a 409 for somebody
+// else's label never reaches here — so this asserts the recording half
+// keeps its side of that bargain.
+function nothingReportedBindsNothing() {
+  test.subHeading('A dialog that took no seat leaves the file alone');
 
-  // AN INVITE IS TWO WORDS, both read down the same phone call: the
-  // token, and the name the owner wrote on it. Since R1 they are
-  // different fields — the first proves, the second is what the owner
-  // calls you — and since Andy's follow-up the relay does not infer
-  // either from the other:
-  //
-  //   "i dislike a relay supporting stale nodes at this point the nodes
-  //   should break rather than STILL having code on a relay that support
-  //   old crap"
-  //
-  // So a token with no invite label is a half-copied invite, and this
-  // app says so before spending a request on it.
-  const app = mountApp({});
+  const app = mountApp({ dialogResult: { changed: true, url: OWNED } });
 
   return settle().then(function () {
-    el(app, 'natter-name').value = 'bert';
-    el(app, 'natter-token').value = 'saint-bernard';
-    el(app, 'natter-claim').fire('click');
+    el(app, 'natter-tbody').fire('click', { target: rowTarget(OWNED) });
 
     return settle().then(function () {
-      const halfCopied = app.log.filter(function (c) {
-        return c.url.indexOf('/api/hub/claim') === 0;
-      });
-      if (halfCopied.length === 0 &&
-          /name the owner put on it/.test(el(app, 'natter-bind-status').textContent)) {
-        test.check('a token with no invite label is refused here, before a request is made');
+      if (app.store['session.json'] === undefined && app.told() === 0) {
+        test.check('no seat reported, no binding written, and the shell is not disturbed');
       } else {
-        test.fail('half-copied invite: ' + halfCopied.length + ' requests, status "' +
-          el(app, 'natter-bind-status').textContent + '"');
+        test.fail('bound on a dialog that claimed nothing: ' + app.store['session.json']);
       }
-
-      // And with both, the two travel together.
-      el(app, 'natter-invite-label').value = 'bertie';
-      el(app, 'natter-claim').fire('click');
-
-      return settle().then(function () {
-        const sent = app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; });
-        const body = JSON.parse(sent[0].body);
-        if (body.name === 'bert' && body.invite === 'saint-bernard' &&
-            body.inviteLabel === 'bertie') {
-          test.check('and with both, the token and the owner’s word travel with the claim');
-        } else {
-          test.fail('claim body: ' + JSON.stringify(body));
-        }
-      });
     });
   });
 }
 
-function refusalDoesNotBind() {
-  test.subHeading('A refused claim binds nothing');
-
-  // 409 is only this node when the peer already there carries OUR key —
-  // the hub marks that `mine`. Any other 409 is somebody else's name.
-  const taken = mountApp({ claimStatus: 409, claimBody: { peer: { name: 'andy' }, mine: false } });
-
-  return settle().then(function () {
-    if (taken.store['session.json'] === undefined && taken.told() === 0) {
-      test.check("somebody else's name is not a binding");
-    } else {
-      test.fail('bound on a foreign 409');
-    }
-
-    const ours = mountApp({ claimStatus: 409, claimBody: { peer: { name: 'andy' }, mine: true } });
-    return settle().then(function () {
-      el(ours, 'natter-name').value = 'andy';
-      el(ours, 'natter-claim').fire('click');
-      return settle().then(function () {
-        if (ours.store['session.json'] !== undefined) {
-          test.check('but a 409 carrying our own key is a bind, not an error');
-        } else {
-          test.fail('a 409 with mine:true did not bind');
-        }
-      });
-    });
-  });
-}
 
 // A click on a row, and a click on the Invite inside it. Both are
 // delegated on the table, so the test hands the handler what the browser
@@ -506,27 +485,113 @@ function aMintOverThereIsRememberedHere() {
   });
 }
 
-function staleBindingIsDropped() {
-  test.subHeading('A name the relay no longer calls this node');
+// THIS TEST USED TO ASSERT THE OPPOSITE, and it was wrong from the day
+// R4 landed. It mounted a row with `claimed: true, claimedLabel:
+// 'someone-else'` and called that "the sharpest case: somebody is wearing
+// the name" — then required the binding to be dropped.
+//
+// `claimed` and `claimedLabel` are both read off the row whose
+// `publicKey` IS this node's (ownerBadge.js). A row that answers `claimed
+// true` is OUR row. Its caption cannot belong to a stranger, so the
+// fixture described a state that cannot occur, and the rule it defended
+// unbound a node for renaming itself.
+//
+//   Andy: "checkbinding must be key-based... if i have a key"
+//
+// It cost a live session on 2026-09-15: a rename to `andyflinn` was
+// accepted by spirit-3, the local cache still said `andy`, and this rule
+// deleted session.json and sent a correctly enrolled shell back to first
+// run.
+function aRenamedRowKeepsTheBinding() {
+  test.subHeading('A row this key holds, wearing a caption the cache has not caught up with');
 
-  // The stored label is a question; the relay answers it. It answered a
-  // signed inbox read with a 403 until R8 deleted that route on
-  // 2026-09-15; it answers the same question in the census now, by
-  // naming the label it holds against this node's key — which says WHICH
-  // way the binding broke instead of only that it did.
-  //
-  // A row that answered (status 200) and calls this node something else
-  // is the sharpest case: somebody is wearing the name.
   const app = mountApp({
     label: 'andy',
-    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'someone-else' }],
+    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'andyflinn' }],
+  });
+  app.store['session.json'] = JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' });
+
+  return settle().then(function () {
+    return settle().then(function () {
+      if (app.store['session.json'] !== undefined) {
+        test.check('the binding survives — the key still holds a row here');
+      } else {
+        test.fail('session was deleted for a row this key owns');
+      }
+
+      let stored = null;
+      try { stored = JSON.parse(app.store['session.json'] || 'null'); }
+      catch (e) { stored = null; }
+      if (stored && stored.label === 'andyflinn') {
+        test.check('and the relay\'s caption is adopted, not argued with');
+      } else {
+        test.fail('session label is ' + (stored && stored.label) + ', not andyflinn');
+      }
+
+      if (/andyflinn/.test(el(app, 'natter-bind-status').textContent)) {
+        test.check('and the screen says what it is called here now');
+      } else {
+        test.fail('status: ' + el(app, 'natter-bind-status').textContent);
+      }
+    });
+  });
+}
+
+// OFFLINE IS MOSTLY SILENCE, AND SILENCE IS NOT EVIDENCE.
+//
+// The fully offline node is covered below by
+// anUnreachableRelayKeepsTheBinding — nothing answers, nothing is
+// concluded. This is the half-offline node, which is the dangerous one
+// because it LOOKS like evidence: one relay answers honestly that it
+// holds no row for this key, while the relay that does hold the row
+// could not be reached at all.
+//
+// Being enrolled on one relay is being bound, so a relay we could not
+// ask can still be the reason we are bound. Unbinding deletes
+// session.json and cannot currently be walked back, so it may only
+// happen when EVERY relay answered.
+function halfOfflineDoesNotUnbind() {
+  test.subHeading('One relay answers empty while another cannot be reached');
+
+  const app = mountApp({
+    label: 'andy',
+    rows: [
+      { url: OWNED, label: 'spirit', status: 200, claimed: false, error: 'no row here' },
+      { url: 'https://lab.example', label: 'lab', status: 0, error: 'connect ECONNREFUSED' },
+    ],
+  });
+  app.store['session.json'] = JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' });
+
+  return settle().then(function () {
+    return settle().then(function () {
+      if (app.store['session.json'] !== undefined) {
+        test.check('the binding survives — the silent relay was never asked');
+      } else {
+        test.fail('session was deleted on the word of a relay that is not the only one');
+      }
+    });
+  });
+}
+
+// The unbind that IS real, and the only one: every relay answered, and
+// none holds a row for this key. That is an owner purging a seat.
+function noRowForThisKeyDropsTheBinding() {
+  test.subHeading('A relay that answers and holds nothing for this key');
+
+  // `error: 'no row here'` is what ownerBadge.probe writes on exactly
+  // this row — it answered fine, it simply has no seat for us. An
+  // earlier version of the check filtered rows on `!error` and so threw
+  // away the only evidence that can prove an unbind.
+  const app = mountApp({
+    label: 'andy',
+    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: false, error: 'no row here' }],
   });
   app.store['session.json'] = JSON.stringify({ label: 'andy', boundAt: '2026-09-07T00:00:00.000Z' });
 
   return settle().then(function () {
     return settle().then(function () {
       if (app.store['session.json'] === undefined) {
-        test.check('a label the relay does not hold for us drops the binding');
+        test.check('no row for this key drops the binding');
       } else {
         test.fail('session survived: ' + app.store['session.json']);
       }
@@ -535,16 +600,6 @@ function staleBindingIsDropped() {
         test.check('and says so, where the claim form is');
       } else {
         test.fail('status: ' + el(app, 'natter-bind-status').textContent);
-      }
-
-      // The distinction the 403 could not draw. Worth naming on screen:
-      // "your name is gone" and "somebody else has your name" are
-      // different problems for the person reading it.
-      if (/someone-else/.test(el(app, 'natter-bind-status').textContent)) {
-        test.check('and names what the relay calls it instead, which a 403 never could');
-      } else {
-        test.fail('status did not say what the relay holds: ' +
-          el(app, 'natter-bind-status').textContent);
       }
     });
   });
@@ -597,12 +652,13 @@ function chatKeepsNoBinding() {
 }
 
 unboundIsThePage()
-  .then(claimBinds)
-  .then(tokenGoesWithTheName)
-  .then(refusalDoesNotBind)
+  .then(aClaimReturnedIsRecordedAgainstItsRelay)
+  .then(nothingReportedBindsNothing)
   .then(aRowOpensTheMailbox)
   .then(aMintOverThereIsRememberedHere)
-  .then(staleBindingIsDropped)
+  .then(aRenamedRowKeepsTheBinding)
+  .then(halfOfflineDoesNotUnbind)
+  .then(noRowForThisKeyDropsTheBinding)
   .then(anUnreachableRelayKeepsTheBinding)
   .then(chatKeepsNoBinding)
   .then(function () { test.reportSuccessFailureCount(); })

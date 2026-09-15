@@ -74,6 +74,29 @@ function isPublicRelay(url) {
   return target.protocol === 'https:';
 }
 
+// ── WHY THIS STABILISES THE SYSTEM, FOR NOW (Andy, 2026-09-15) ───────
+//
+//   Andy: "for now spirit.andyflinn.com should be un-deletable, with a
+//   comment why that stabilizes our system, for now."
+//
+// It already is, and no hostname is written down to make it so. There is
+// exactly one public relay in the world this node can reach; the lab row
+// is loopback http, which `isPublicRelay` refuses on both counts. So the
+// rule below — a row may go only if another PUBLIC row survives — makes
+// spirit-3 un-deletable as a consequence of what it is rather than of
+// what it is called.
+//
+// WHAT IT IS PROTECTING, today: that relay carries the owner identity
+// this node signs as, it is where every enrolment lives, the harness
+// points at it, and `on-spirit-3.visual.json` builds against it. A node
+// that dropped it from its list would keep its key and its seat and lose
+// every way of reaching either — recoverable only by retyping a URL from
+// memory. One click, and no way back through the screen that did it.
+//
+// AND WHEN IT LAPSES, which is the half a pin by name could not express:
+// add a second public relay and this rule lets spirit-3 go, because by
+// then a public path genuinely survives without it. That is the right
+// moment for the protection to end, and it ends by itself.
 function canRemoveMailbox(relays, url) {
   // A count, from the version before this one. Answered false rather
   // than guessed at: a caller that still passes a number is asking a

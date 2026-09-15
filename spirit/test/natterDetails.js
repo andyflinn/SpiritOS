@@ -75,6 +75,20 @@ function mintTarget(fields) {
   return node;
 }
 
+// The claim panel's button, the same shape as mintTarget above.
+function claimTarget(fields) {
+  const panel = {
+    querySelector: function (selector) { return fields[selector.replace('.', '')] || null; },
+  };
+  const node = { getAttribute: function () { return null; } };
+  node.closest = function (selector) {
+    if (selector === '.nd-claim-go') return node;
+    if (selector === '.natter-claim') return panel;
+    return null;
+  };
+  return node;
+}
+
 function copyTarget(out) {
   const panel = {
     querySelector: function (selector) {
@@ -133,9 +147,17 @@ function mountApp(opts) {
       text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/invite') === 0) {
       text = JSON.stringify({ token: 'saint-bernard' });
+    } else if (url.indexOf('/api/hub/claim') === 0) {
+      // The claim form moved onto this screen on 2026-09-15, because a
+      // claim happens ON a relay and the old one on Natter's list could
+      // not say which. See ndClaimHtml.
+      text = JSON.stringify(opts.claimBody || { peer: { publicLabel: 'andy' } });
     }
+    let status = 200;
+    if (url.indexOf('/api/hub/invite') === 0) status = 201;
+    if (url.indexOf('/api/hub/claim') === 0) status = opts.claimStatus || 201;
     return Promise.resolve({
-      status: url.indexOf('/api/hub/invite') === 0 ? 201 : 200,
+      status: status,
       text: function () { return Promise.resolve(text); },
       json: function () { return Promise.resolve(JSON.parse(text)); },
     });
@@ -292,6 +314,146 @@ function ownedMailbox() {
     } else {
       test.fail('a picker or a row attribute survived: ' + panel);
     }
+  });
+}
+
+// ── CLAIM AND RENAME ARE THE TWO HALVES OF ONE QUESTION ──────────────
+//
+//   Andy: "the never-bound-to-any-relay form that shows up if I'm truly
+//   not bound yet, it shows up in natter, instead of natterDetails for
+//   spirit.andyflinn.com"
+//
+// The invariant worth holding: a relay's screen offers "you are X here"
+// or "claim a seat here", and never both and never neither.
+function claimAndRenameAreExclusive() {
+  test.subHeading('A relay screen offers one of claim and rename, never both');
+
+  const stranger = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+  const mine = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'andy' }],
+  });
+
+  return settle().then(function () {
+    const onStranger = stranger.open('claim').body().innerHTML;
+    const onMine = mine.open('rename').body().innerHTML;
+
+    if (/nd-claim-go/.test(onStranger) && !/nd-name-go/.test(onStranger)) {
+      test.check('a relay holding no row for this key offers Claim and not Rename');
+    } else {
+      test.fail('unclaimed screen offered the wrong panels');
+    }
+
+    if (/nd-name-go/.test(onMine) && !/nd-claim-go/.test(onMine)) {
+      test.check('a relay that holds our row offers Rename and not Claim');
+    } else {
+      test.fail('claimed screen offered the wrong panels');
+    }
+  });
+}
+
+// A claim posted at a relay that did not answer fails at the router with
+// nothing learned. Offering the form is offering to waste somebody's
+// time, and `status` is the same "did it answer" test the binding check
+// uses.
+function aRelayThatIsDownOffersNoClaim() {
+  test.subHeading('A relay that did not answer is not offered a claim form');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 0, error: 'connect ECONNREFUSED' }],
+  });
+
+  return settle().then(function () {
+    if (!/nd-claim-go/.test(app.open('claim').body().innerHTML)) {
+      test.check('no Claim button on a relay that could not be reached');
+    } else {
+      test.fail('a down relay offered a claim form');
+    }
+  });
+}
+
+function claimingNamesThisMailbox() {
+  test.subHeading('Claiming happens on the mailbox it was opened from');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+
+  return settle().then(function () {
+    const out = { textContent: '', className: '' };
+    app.body().fire('click', {
+      target: claimTarget({
+        'nd-claim-name': { value: 'andy' },
+        'nd-claim-token': { value: 'saint-bernard' },
+        'nd-claim-invite': { value: 'saint' },
+        'nd-claim-out': out,
+      }),
+    });
+
+    return settle().then(function () {
+      const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; });
+      const body = calls.length ? JSON.parse(calls[0].body) : null;
+
+      // THE WHOLE REASON THE FORM COULD MOVE HERE. hub.handleClaim used
+      // relays.json[0] whatever the caller meant, until it took a url
+      // through ownerBadge.chooseUrl like invite and rename already did.
+      if (body && body.url === OWNED) {
+        test.check('the claim names the mailbox this screen is, never relays.json[0]');
+      } else {
+        test.fail('claim body: ' + JSON.stringify(body));
+      }
+
+      // Both halves of the invite travel, and the second is required —
+      // the relay refuses a token without it and does not fall back (R1).
+      if (body && body.name === 'andy' && body.invite === 'saint-bernard' &&
+          body.inviteLabel === 'saint') {
+        test.check('and carries the label, the token and the word on the invite');
+      } else {
+        test.fail('claim body: ' + JSON.stringify(body));
+      }
+
+      // RETURNED, NOT RECORDED. session.json is Natter's file and api.fs
+      // here is scoped to this app's own folder.
+      const said = app.answers[app.answers.length - 1] || {};
+      if (said.claimed === 'andy' && said.changed === true && said.url === OWNED) {
+        test.check('and the seat is RETURNED, for Natter to write down against this url');
+      } else {
+        test.fail('answer: ' + JSON.stringify(said));
+      }
+    });
+  });
+}
+
+// Asked for here rather than discovered as a 400 from the relay: a token
+// with no word is a half-copied invite, and the two arrive together down
+// one phone call.
+function aHalfCopiedInviteIsRefusedBeforeItTravels() {
+  test.subHeading('A token with no name on the invite never leaves the screen');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+
+  return settle().then(function () {
+    const out = { textContent: '', className: '' };
+    app.body().fire('click', {
+      target: claimTarget({
+        'nd-claim-name': { value: 'andy' },
+        'nd-claim-token': { value: 'saint-bernard' },
+        'nd-claim-invite': { value: '' },
+        'nd-claim-out': out,
+      }),
+    });
+
+    return settle().then(function () {
+      const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/claim') === 0; });
+      if (!calls.length && /invite/.test(out.textContent) && /is-error/.test(out.className)) {
+        test.check('no request made, and the screen says which half is missing');
+      } else {
+        test.fail(calls.length + ' requests, status "' + out.textContent + '"');
+      }
+    });
   });
 }
 
@@ -965,6 +1127,10 @@ function noRemovalSurfaceForNow() {
 
 
 ownedMailbox()
+  .then(claimAndRenameAreExclusive)
+  .then(aRelayThatIsDownOffersNoClaim)
+  .then(claimingNamesThisMailbox)
+  .then(aHalfCopiedInviteIsRefusedBeforeItTravels)
   .then(mintingNamesThisMailbox)
   .then(someoneElsesMailbox)
   .then(aStrangersMailbox)

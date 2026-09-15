@@ -346,6 +346,56 @@ function ndRenameHtml() {
     'natter-rename');
 }
 
+// ── THE MIRROR OF RENAME ─────────────────────────────────────────────
+//
+//   Andy: "the never-bound-to-any-relay form that shows up if I'm truly
+//   not bound yet, it shows up in natter, instead of natterDetails for
+//   spirit.andyflinn.com"
+//
+// Rename shows when this key holds a row here; this shows when it does
+// not. One of the two is always on a relay's screen and never both, so
+// the screen answers "what is my standing here, and what can I do about
+// it" without the list having to know.
+//
+// It could not live here until hub.handleClaim learned to take a url
+// (ownerBadge.chooseUrl, the same switch invite and rename use). A Claim
+// button on spirit-3's panel that quietly claimed on the lab row would
+// have been worse than no button at all.
+//
+// NOT OFFERED TO A RELAY THAT DID NOT ANSWER. A claim posted at a relay
+// that is down fails at the router with nothing learned, and a form that
+// invites that is a form that wastes a person's time. `status` is the
+// same "did it answer" test natterCheckBinding uses.
+function ndClaimHtml() {
+  if (!ndBadge || ndBadge.owned || ndBadge.claimed) return '';
+  if (!Number(ndBadge.status)) return '';
+  return ndPanel('claim', ndIcon.POINTRIGHT, 'Claim a seat on this relay',
+    '<div class="start-job-form card">' +
+    '<label class="field-label grow">Public label' +
+      '<input type="text" class="nd-claim-name" placeholder="the name peers see"></label>' +
+    '<label class="field-label">Invite token' +
+      '<input type="text" class="nd-claim-token" placeholder="(only if you were invited)"></label>' +
+    // THE WORD THE OWNER READ OUT, which is not the name you pick. Two
+    // things travel down one phone call — the token and the word the
+    // owner wrote on the invite — and only the first of them used to
+    // have a box. The second was the Public label above, which meant the
+    // owner chose what you were called (R1,
+    // design/cycles/2026-09-15-labels-are-not-identities.md).
+    //
+    // REQUIRED WITH A TOKEN, even when it matches the label above. The
+    // relay refuses a token without it and does not fall back: a second
+    // factor that can be defaulted from the first is not one.
+    '<label class="field-label">Name on the invite' +
+      '<input type="text" class="nd-claim-invite" placeholder="(the word the owner read out)"></label>' +
+    '<button type="button" class="nd-claim-go">Claim</button>' +
+    '</div>' +
+    // Every character written in this file; nothing from a relay reaches
+    // it, so there is nothing to escape here.
+    '<div class="job-manifest-note">If you own this relay, claim the owner name with no token.</div>' +
+    '<div class="job-manifest-note nd-claim-out"></div>',
+    'natter-claim');
+}
+
 function ndMintHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   // ★ is the same mark the row carries for owning it, and this panel is
@@ -537,6 +587,9 @@ function ndRender() {
   body.innerHTML =
     ndReportHtml() +
     ndLocalHtml() +
+    // Claim and rename are the two halves of one question and only one
+    // of them ever renders — see ndClaimHtml.
+    ndClaimHtml() +
     ndRenameHtml() +
     ndMintHtml() +
     ndDeviceHtml();
@@ -594,6 +647,60 @@ function ndRename(button) {
     // the thing that just moved.
     ndChanged = true;
     if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, renamed: said.label });
+    ndLoad();
+  });
+}
+
+// TAKING A SEAT ON THIS RELAY, and `url: ndUrl` is the whole reason this
+// can be here — the screen is which relay, so the claim is aimed rather
+// than landing on relays.json[0].
+//
+// RETURNED, NOT RECORDED, like the rename above and the mint below:
+// session.json is Natter's file and api.fs here is scoped to this app's
+// own folder. The screen says what the relay agreed to; Natter writes it
+// down against this url.
+function ndClaim(button) {
+  var panel = button.closest('.natter-claim');
+  var out = panel.querySelector('.nd-claim-out');
+  var name = panel.querySelector('.nd-claim-name').value.trim();
+  var token = panel.querySelector('.nd-claim-token').value.trim();
+  var onInvite = panel.querySelector('.nd-claim-invite').value.trim();
+
+  function say(text, bad) {
+    out.className = 'job-manifest-note nd-claim-out ' + (bad ? 'is-error' : 'is-token');
+    out.textContent = text;
+  }
+
+  if (!name) { say('a public label is required', true); return; }
+  // ASKED FOR HERE rather than discovered as a 400 from the relay. The
+  // two arrive together — a token and a word, down one phone call — so a
+  // token with no word is a half-copied invite, and saying so before the
+  // request saves a round trip nobody learns from.
+  if (token && !onInvite) {
+    say('an invite needs the name the owner put on it, as well as the token', true);
+    return;
+  }
+
+  var body = { name: name, url: ndUrl };
+  if (token) body.invite = token;
+  if (onInvite) body.inviteLabel = onInvite;
+
+  ndPost('/api/hub/claim', body).then(function (r) {
+    // 201 is a new seat. 409 is only us when the peer already on the
+    // relay carries OUR key — the node sets `mine` for exactly that. Any
+    // other 409 is somebody else's label, and claiming it would fail the
+    // signature check on the relay anyway.
+    var said = null;
+    try { said = JSON.parse(r.text); } catch (e) { said = null; }
+    var mine = !!(said && said.mine);
+    var ok = r.status === 201 || (r.status === 409 && mine);
+    if (!ok) {
+      say((said && said.error) || (r.status + ' ' + r.text), true);
+      return;
+    }
+    say(mine ? 'already yours here, as ' + name : 'claimed — this relay calls you ' + name);
+    ndChanged = true;
+    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, claimed: name });
     ndLoad();
   });
 }
@@ -700,12 +807,49 @@ spirit.shell.activateApp({
       var mintBtn = target.closest('.natter-inv-go');
       if (mintBtn) { ndMint(mintBtn); return; }
 
+      var claimBtn = target.closest('.nd-claim-go');
+      if (claimBtn) { ndClaim(claimBtn); return; }
+
       var nameBtn = target.closest('.nd-name-go');
       if (nameBtn) { ndRename(nameBtn); return; }
 
       var copyBtn = target.closest('.natter-dev-copy');
       if (copyBtn) { ndDeviceCopy(copyBtn); return; }
 
+    });
+
+    // ENTER IS THE BUTTON. One text field with one button beside it is a
+    // form, and a form submits on Return. This one did not, so the most
+    // obvious gesture on the screen did nothing at all (Andy, 2026-09-15).
+    //
+    // Delegated for the same reason the clicks above are: the panels are
+    // repainted, and a handler bound to an input would go with it.
+    //
+    // Rename and claim, not invite. Those two are a form with one thing
+    // to say, and Return says it. The invite panel has a number field and
+    // a token that may be generated for you — guessing what Return means
+    // there would be a worse answer than the button it already has.
+    ndBody().addEventListener('keydown', function (event) {
+      if (event.key !== 'Enter') return;
+      var target = event.target;
+      if (!target || !target.closest || !target.classList) return;
+
+      if (target.classList.contains('nd-name-new')) {
+        var renamePanel = target.closest('.natter-rename');
+        var renameGo = renamePanel && renamePanel.querySelector('.nd-name-go');
+        if (renameGo) { event.preventDefault(); ndRename(renameGo); }
+        return;
+      }
+
+      // Any of the three claim fields: this is the first-run gesture on a
+      // fresh node, and it should not require finding the button.
+      if (target.classList.contains('nd-claim-name') ||
+          target.classList.contains('nd-claim-token') ||
+          target.classList.contains('nd-claim-invite')) {
+        var claimPanel = target.closest('.natter-claim');
+        var claimGo = claimPanel && claimPanel.querySelector('.nd-claim-go');
+        if (claimGo) { event.preventDefault(); ndClaim(claimGo); }
+      }
     });
   },
 
