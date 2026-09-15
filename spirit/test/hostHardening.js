@@ -538,10 +538,46 @@ test.subHeading('A clone follows tags unless it says otherwise in writing');
   // one moment it first means anything: before the first tag exists.
   const tagBranch = updCode.slice(updCode.indexOf('  tag)'), updCode.indexOf('  *)'));
   const fallsBack = /TARGET="origin\/master"/.test(tagBranch);
-  if (!fallsBack && /git describe --tags --abbrev=0 origin\/master/.test(tagBranch)) {
+  // `origin/master` specifically — a tag on a side branch is not a
+  // release, which is Andy's "we only TAG origin/master" as a mechanism.
+  // The flags between `describe` and the ref are checked separately
+  // below; this one is about which history is asked.
+  if (!fallsBack && /git describe --tags [^\n]*origin\/master/.test(tagBranch)) {
     test.check('and a clone tracking tags with none to find stays where it is');
   } else {
     test.fail('the tag branch falls back to origin/master — that is no gate at all');
+  }
+
+  // ── A MARKER IS NOT A RELEASE ──────────────────────────────────────
+  //
+  // This matched ANY tag for about an hour and it very nearly rolled the
+  // live relay back eight days. The repository already carried four
+  // tags, none of them releases — APP_SPECIFIC_RELAY_PROTOCOL,
+  // mailbox-keys-2026-09-07, END_OF_SKELLETON_PHASE,
+  // archive/zs4-2016-2026 — and `git describe --abbrev=0` picked the
+  // newest, 194 commits behind master. spirit.andyflinn.com would have
+  // reset --hard onto it at a ten-minute tick, unattended, and served
+  // eight-day-old code with a plausible commit id and dirty:false.
+  //
+  // Caught by reading the tag list before the second tick. Nothing in
+  // the design would have caught it, which is the point of this check.
+  if (/--match 'v\*'/.test(updCode)) {
+    test.check('and only a `v*` tag is a release — a phase marker is not deployable');
+  } else {
+    test.fail('update deploys ANY tag, including archive and milestone markers');
+  }
+
+  // ── AND AN UPDATE NEVER GOES BACKWARDS ─────────────────────────────
+  //
+  // Belt to that brace. Any way of choosing a target can choose an older
+  // one — a tag moved, a tag deleted, a branch rewound — and whatever
+  // the cause, "update" cannot mean "go back". A rollback is a
+  // deliberate act with somebody watching, not something cron does
+  // at :20.
+  if (/merge-base --is-ancestor "\$REMOTE" "\$LOCAL"/.test(updCode)) {
+    test.check('and it refuses a target that is an ancestor of where it already is');
+  } else {
+    test.fail('update will silently roll a relay backwards');
   }
 
   // AND status ASKS THE SAME QUESTION. It compared HEAD to origin/master

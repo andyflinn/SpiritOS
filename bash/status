@@ -26,7 +26,7 @@ if [ -d "$REPO_ROOT/.git" ]; then
     WANT=$(git -C "$REPO_ROOT" rev-parse origin/master 2>/dev/null || echo none)
     WHAT="origin/master"
   else
-    TAG=$(git -C "$REPO_ROOT" describe --tags --abbrev=0 origin/master 2>/dev/null || true)
+    TAG=$(git -C "$REPO_ROOT" describe --tags --abbrev=0 --match 'v*' origin/master 2>/dev/null || true)
     if [ -z "$TAG" ]; then
       WANT="$LOCAL"
       WHAT="no tag yet — pinned here until one is cut"

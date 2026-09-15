@@ -36,10 +36,26 @@ case "$TRACK" in
     WHAT="origin/master"
     ;;
   tag)
-    # The most recent tag REACHABLE FROM origin/master — Andy's rule
-    # ("we only TAG origin/master") asked of the repository rather than
-    # restated here. A tag on a side branch is not a release.
-    TAG=$(git describe --tags --abbrev=0 origin/master 2>/dev/null || true)
+    # ── ONLY `v*` COUNTS AS A RELEASE ────────────────────────────────
+    #
+    # This matched ANY tag for about an hour, and that was very nearly a
+    # disaster. The repository already carried four tags, and none of
+    # them is a release — they are milestone and archive markers:
+    #
+    #   APP_SPECIFIC_RELAY_PROTOCOL  2026-09-08   <- newest
+    #   mailbox-keys-2026-09-07
+    #   END_OF_SKELLETON_PHASE
+    #   archive/zs4-2016-2026
+    #
+    # `git describe --abbrev=0 origin/master` picked the first of those:
+    # commit 2bf5d6c, 194 commits and eight days behind master. The live
+    # public relay would have reset --hard BACKWARDS onto it and
+    # restarted, unattended, at a ten-minute tick. Caught by looking at
+    # the tag list before the second tick, not by any check here.
+    #
+    # So a release tag is `v*` and nothing else. A marker someone dropped
+    # to remember a phase by is not a thing to deploy.
+    TAG=$(git describe --tags --abbrev=0 --match 'v*' origin/master 2>/dev/null || true)
     if [ -z "$TAG" ]; then
       # NOT A FALLBACK TO master. A clone that tracks tags and finds
       # none stays exactly where it is: falling back would hand back the
@@ -60,6 +76,28 @@ esac
 
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse "$TARGET^{commit}")
+
+# ── AN UPDATE NEVER GOES BACKWARDS ───────────────────────────────────
+#
+# Belt to the `v*` brace above, because the failure it guards is the
+# worst one available here: a relay silently serving eight-day-old code
+# after a routine tick, with `dirty:false` and a plausible commit id, so
+# nothing downstream looks wrong.
+#
+# Any way of choosing a target can choose an older one — a tag moved, a
+# tag deleted, a release branch rewound, or simply a marker that sorts
+# newest. Whatever the cause, "update" cannot mean "go back": a rollback
+# is a deliberate act with somebody watching, not something a cron does
+# at :20. So if the target is an ancestor of where we already are, stay
+# put and say so loudly.
+if [ "$LOCAL" != "$REMOTE" ] && git merge-base --is-ancestor "$REMOTE" "$LOCAL"; then
+  warn "REFUSING TO GO BACKWARDS — $WHAT is behind this clone"
+  echo "    here:   $(git rev-parse --short "$LOCAL")  $(git log -1 --format=%cI "$LOCAL")"
+  echo "    target: $(git rev-parse --short "$REMOTE")  $(git log -1 --format=%cI "$REMOTE")"
+  echo "    $(git rev-list --count "$REMOTE..$LOCAL") commit(s) would be undone. Nothing changed."
+  echo "    To roll back on purpose, do it by hand with somebody watching."
+  exit 0
+fi
 
 if [ "$LOCAL" = "$REMOTE" ] && [ "$FORCE" = no ]; then
   ok "already at $(git rev-parse --short HEAD) ($WHAT) — no restart"
