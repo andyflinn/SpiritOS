@@ -233,7 +233,7 @@ function natterRenderList(container, api, relays) {
       '<td title="' + api.escapeHtml(natterStatusTitle(badge)) + '">' +
         natterStatusMark(badge) + '</td>' +
       '<td>' + star + '</td>' +
-      '<td>' + api.escapeHtml(relay.label) + '</td>' +
+      '<td>' + api.escapeHtml(natterRelayName(relays, relay.url)) + '</td>' +
       '<td>' + api.escapeHtml(relay.url) + '</td>' +
       '</tr>';
   }).join('');
@@ -263,6 +263,32 @@ function natterLabelFor(relays, url) {
   return (row && row.label) || '';
 }
 
+// ── WHAT A RELAY IS CALLED, NOW THAT IT CAN SAY ─────────────────────
+//
+//   Andy: "the Label change doesn't propagate on my UI"
+//   Andy: "The relay list displays it"
+//
+// It did not propagate, and nothing was broken: the census carried the
+// new name to the browser and NOTHING DREW IT. Every caption came from
+// relays.json — the reader's private shorthand — so a relay could
+// publish a name and no screen would ever show it.
+//
+// PUBLISHED FIRST, LOCAL SECOND, and that order is the opposite of a
+// contact's on purpose. whoBook prefers MY label for a person: I chose
+// it to tell two people apart, and a peer must not be able to rename
+// themselves on my screen. A relay is not somebody I am distinguishing
+// — it is a service with a name, and my list word was only ever
+// standing in until it had one.
+//
+// The local label is not lost and not overridden anywhere it was typed:
+// it is still what relays.json holds, still what the Add row wrote, and
+// still what shows for a relay that has never been named.
+function natterRelayName(relays, url) {
+  var badge = natterBadgeByUrl[url];
+  var published = (badge && badge.census && badge.census.relayLabel) || '';
+  return published || natterLabelFor(relays, url) || url || '';
+}
+
 function natterOpenMailbox(api, container, relays, url) {
   // `canRemove` rather than letting the screen work it out: the rule is
   // about the LIST — a node with no mailbox at all can neither claim,
@@ -275,7 +301,7 @@ function natterOpenMailbox(api, container, relays, url) {
     // WHAT THIS LIST CALLS IT, for the dialog's own title. The screen is
     // handed one subject and never reads relays.json — the caption is
     // the list's to know, the same way canRemove was.
-    relayLabel: natterLabelFor(relays, url),
+    relayLabel: natterRelayName(relays, url),
     // This relay's answer to "add newcomers to my contacts". Handed in
     // because relays.json is THIS app's file — the screen decides, and
     // hands the decision back below.

@@ -570,6 +570,79 @@ function anInviteRedeemedAddsThemHere() {
   });
 }
 
+// ── WHAT THE BOX CALLS ITSELF BEATS WHAT MY LIST CALLS IT ────────────
+//
+//   Andy: "the Label change doesn't propagate on my UI"
+//   Andy: "The relay list displays it"
+//
+// A relay could publish a name and no screen would show it: every
+// caption came from relays.json, the reader's private shorthand. The
+// census carried the new name to the browser correctly and nothing drew
+// it — which is a whole feature reaching the last inch and stopping.
+//
+// THE ORDER IS THE OPPOSITE OF A CONTACT'S, deliberately. whoBook
+// prefers MY label for a person, because I chose it to tell two people
+// apart and a peer must not rename themselves on my screen. A relay is
+// not somebody I am distinguishing — it is a service with a name, and
+// the word in my list was standing in until it had one.
+function aRelayNameBeatsTheListsOwnWord() {
+  test.subHeading('A relay that has named itself is called that, not my shorthand for it');
+
+  const app = mountApp({
+    label: 'andy',
+    relays: [{ label: 'spirit', url: OWNED }],
+    rows: [{
+      url: OWNED, label: 'spirit', status: 200, owned: true,
+      census: { relayKey: 'RELAYKEY', relayLabel: 'Andy Flinn home relay', roster: [] },
+    }],
+  });
+
+  return settle().then(function () {
+    const listed = app.doc.getElementById('natter-tbody').innerHTML;
+    if (/Andy Flinn home relay/.test(listed)) {
+      test.check('the list shows the name the relay publishes');
+    } else {
+      test.fail('list row: ' + listed.slice(0, 300));
+    }
+
+    // AND THE SCREEN IT OPENS IS TOLD THE SAME THING, so the row and its
+    // title cannot disagree about what you just pressed.
+    app.doc.getElementById('natter-tbody').fire('click', { target: rowTarget(OWNED) });
+    return settle().then(function () {
+      const call = app.called.filter(function (c) { return c.id === 'app/natterDetails'; })[0];
+      if (call && call.params && call.params.relayLabel === 'Andy Flinn home relay') {
+        test.check('and hands that same name to the relay’s own screen');
+      } else {
+        test.fail('opened with: ' + JSON.stringify(call && call.params));
+      }
+    });
+  });
+}
+
+// AND THE LOCAL WORD IS NOT LOST — it stands for a relay that has never
+// been named, which is every relay until an owner says otherwise.
+function anUnnamedRelayKeepsMyWordForIt() {
+  test.subHeading('A relay that has not named itself keeps the word I gave it');
+
+  const app = mountApp({
+    label: 'andy',
+    relays: [{ label: 'spirit', url: OWNED }],
+    rows: [{
+      url: OWNED, label: 'spirit', status: 200, owned: true,
+      census: { relayKey: 'RELAYKEY', relayLabel: '', roster: [] },
+    }],
+  });
+
+  return settle().then(function () {
+    const listed = app.doc.getElementById('natter-tbody').innerHTML;
+    if (/spirit/.test(listed)) {
+      test.check('an unnamed relay is still called what I called it');
+    } else {
+      test.fail('list row: ' + listed.slice(0, 300));
+    }
+  });
+}
+
 // PER RELAY, WHICH WAS ANDY'S CORRECTION. I proposed node-wide, beside
 // the unknown-senders policy; he pointed out they answer different
 // questions — that one is about strangers and belongs to the node, this
@@ -798,6 +871,8 @@ unboundIsThePage()
   .then(nothingReportedBindsNothing)
   .then(aRowOpensTheMailbox)
   .then(anInviteRedeemedAddsThemHere)
+  .then(aRelayNameBeatsTheListsOwnWord)
+  .then(anUnnamedRelayKeepsMyWordForIt)
   .then(theAutoAddPolicyIsPerRelay)
   .then(aRenamedRowKeepsTheBinding)
   .then(halfOfflineDoesNotUnbind)

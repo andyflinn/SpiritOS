@@ -1140,9 +1140,32 @@ function ndDeviceHtml() {
 // eats. Falls back to the url when the list gave no label, because a
 // title saying "Relay Details for" and then nothing is worse than a long
 // one.
+// ── WHAT THE BOX CALLS ITSELF WINS, ON THE BOX'S OWN SCREEN ─────────
+//
+//   Andy: "the Label change doesn't propagate on my UI"
+//
+// It did not, and nothing was broken: the census carried the new name to
+// the browser correctly and NOTHING DREW IT. Every caption on this
+// screen came from the caller's relays.json — the reader's private
+// shorthand — so publishing a name changed a field nobody displayed.
+//
+// THE ORDER IS THE OPPOSITE OF A CONTACT'S, and the difference is real.
+// whoBook prefers MY label for a person: I chose it to tell two people
+// apart, and a peer must not be able to rename themselves on my screen.
+// A relay is not a peer I am distinguishing — it is a service, and this
+// is ITS screen. What it calls itself is the fact; my list shorthand is
+// a convenience that stands in until there is one.
+//
+// So: published first, local second, url last. Somebody who prefers
+// their own word still has it in the list, which is where they wrote it.
+function ndRelayName() {
+  var census = (ndBadge && ndBadge.census) || {};
+  return census.relayLabel || ndRelayLabel || ndUrl || '';
+}
+
 function ndSetTitle() {
   if (!ndApi || typeof ndApi.setScreenTitle !== 'function') return;
-  var name = ndRelayLabel || ndUrl || '';
+  var name = ndRelayName();
   ndApi.setScreenTitle(name ? 'Relay Details for ' + name : 'Relay Details');
 }
 
