@@ -181,6 +181,17 @@ jobs.startFsWatcherJob(ROOT_DIR);
 // has something to close. Null on a relay, which holds no streams.
 let presence = null;
 let peerRouter = null;
+
+// ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
+//
+// Declared here, filled at the foot of this file. Modules claim their
+// own namespace where their dependencies exist — see js/verbTable.js for
+// why claiming beats a table, and why it happens after boot rather than
+// on require.
+//
+// Empty on a relay, and that is correct rather than incidental: a relay
+// answers only isRelayPublicPath, and /api/spirit is not on it.
+const loopbackVerbs = require('./verbTable').createVerbTable();
 // AND THE URL→KEY PIN, out here for a different reason: a REQUEST needs
 // it. The answerer itself is built inside the boot block and was only
 // ever read from inside it, so `const answerer` was enough — until
@@ -1230,21 +1241,26 @@ const server = http.createServer((req, res) => {
     // the same breath. A transition where both work would be a fallback
     // wearing a schedule.
     //
-    //   1. net.fetch   (was /api/proxy)   ← this stage
+    //   1. net.fetch   (was /api/proxy)
     //   2. jobs.*      (was /api/jobs)
     //   3. fs.*        (was /api/fs/*)
     //   4. peer.*, and the rest of /api/hub/*
-    const LOOPBACK_VERBS = {
-      'net.fetch': function (rq, rs) { handleGenericProxy(rq, rs); },
-    };
-
+    //
+    // WHO ANSWERS WHAT IS NOT DECIDED HERE. A table of verb-to-function
+    // stood on this spot for an hour and would have grown to nineteen
+    // lines whose only content is a fact the answering module already
+    // knows — the same thing said twice, kept in step by remembering,
+    // which is what the four post-path doors were.
+    //
+    // Modules CLAIM a namespace instead (js/verbTable.js), at the foot of
+    // this file where their dependencies exist. So this dispatch knows
+    // how to find an answer and nothing about what the answers are.
     if (pathname === '/api/spirit') {
       // The verb is read off the body without consuming it: each handler
       // still reads the body it was written to read, so a handler moving
       // under this door needs no change of its own.
       peekVerb(req).then(function (verb) {
-        const run = Object.prototype.hasOwnProperty.call(LOOPBACK_VERBS, verb)
-          ? LOOPBACK_VERBS[verb] : null;
+        const run = loopbackVerbs.handlerFor(verb);
         if (!run) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ error: 'no such verb: ' + verb }));
@@ -1499,6 +1515,26 @@ if (!relayMode) {
   // why a const inside this block was not enough.
   pinnedRelayKey = answerer.relayKey;
   presence.start(require('./hub').relayRequest).catch(() => {});
+
+  // ── THE CLAIMS, WHERE THE DEPENDENCIES ARE ─────────────────────────
+  //
+  //   Andy: "registration after boot. it avoids dependency messes."
+  //
+  // Everything a verb needs is built above this line — peerRouter,
+  // presence, the pinned relay key — so a module can close over what it
+  // uses instead of being handed deps at every call, and nothing has to
+  // be declared before the thing it depends on exists. That is the
+  // failure this file already carries a comment about: a const inside
+  // this block, read from a request handler that runs long afterwards.
+  //
+  // ONE LINE PER MODULE, not one per verb. A verb added later touches
+  // the file that answers it and nothing here.
+  //
+  // Inside the personal-node branch on purpose: a relay claims nothing,
+  // because a relay does not serve this door.
+  loopbackVerbs.claim('net', 'server.js', {
+    'net.fetch': handleGenericProxy,
+  });
 }
 
 server.listen(port, BIND_HOST, () => {
