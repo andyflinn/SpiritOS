@@ -279,7 +279,7 @@ function contactsFindByHandle() {
     .then(function (data) {
       var matches = (data && data.matches) || [];
       if (!matches.length) {
-        out.innerHTML = '<div class="job-log-empty">Nobody on this mailbox is called ' +
+        out.innerHTML = '<div class="job-log-empty">Nobody on this relay is called ' +
           contactsEscapeHtml(handle) + '.</div>';
         return;
       }

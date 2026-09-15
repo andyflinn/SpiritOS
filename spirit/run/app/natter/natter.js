@@ -95,7 +95,7 @@ function natterLoadRelays(api) {
 // and finds its rule already standing.
 function natterCanRemove(relays, url) {
   var badge = (typeof window !== 'undefined' && window.spiritOwnerBadge) || null;
-  return !!(badge && badge.canRemoveMailbox(relays, url));
+  return !!(badge && badge.canRemoveRelay(relays, url));
 }
 
 // Removal decided in one place, so the button and the click agree. A
@@ -289,7 +289,7 @@ function natterRelayName(relays, url) {
   return published || natterLabelFor(relays, url) || url || '';
 }
 
-function natterOpenMailbox(api, container, relays, url) {
+function natterOpenRelay(api, container, relays, url) {
   // `canRemove` rather than letting the screen work it out: the rule is
   // about the LIST — a node with no mailbox at all can neither claim,
   // send, nor read — and the list is the only thing that knows how long
@@ -977,7 +977,7 @@ spirit.shell.activateApp({
       var row = e.target.closest && e.target.closest('[data-row-url]');
       var rowUrl = row && row.getAttribute('data-row-url');
       if (!rowUrl) return;
-      natterOpenMailbox(api, container, relays, rowUrl);
+      natterOpenRelay(api, container, relays, rowUrl);
     });
   },
   // Nothing to do on the way back in. This used to restart the device

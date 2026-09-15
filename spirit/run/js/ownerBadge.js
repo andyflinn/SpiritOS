@@ -97,7 +97,7 @@ function isPublicRelay(url) {
 // add a second public relay and this rule lets spirit-3 go, because by
 // then a public path genuinely survives without it. That is the right
 // moment for the protection to end, and it ends by itself.
-function canRemoveMailbox(relays, url) {
+function canRemoveRelay(relays, url) {
   // A count, from the version before this one. Answered false rather
   // than guessed at: a caller that still passes a number is asking a
   // question this rule no longer knows how to answer, and saying no is
@@ -457,7 +457,7 @@ if (isNode) {
   module.exports = {
     censusFacts: censusFacts,
     normalizeUrl: normalizeUrl,
-    canRemoveMailbox: canRemoveMailbox,
+    canRemoveRelay: canRemoveRelay,
     isPublicRelay: isPublicRelay,
     loadRelays: loadRelays,
     configuredUrls: configuredUrls,
@@ -475,7 +475,7 @@ if (isNode) {
 } else if (typeof window !== 'undefined') {
   window.spiritOwnerBadge = {
     normalizeUrl: normalizeUrl,
-    canRemoveMailbox: canRemoveMailbox,
+    canRemoveRelay: canRemoveRelay,
     isPublicRelay: isPublicRelay,
   };
 }

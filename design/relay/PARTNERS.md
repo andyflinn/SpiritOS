@@ -55,6 +55,158 @@ suddenly, on somebody else's decision to add a partner.
 preference and could be revisited; `partners² × members` on a 1 GB box is
 arithmetic and cannot.
 
+## Declining and cancelling — survival is part of the design
+
+> **Andy:** "relays will have to decline or cancel partnerships for
+> survival. and pick its optimal partners based on a very smart algorithm
+> (not necessarily very complicated)."
+
+> **Andy:** "and somehow measure route-usage in memory to real-time
+> optimize… all this later, of course, first the principal mechanisms need
+> to go green."
+
+**Everything in this section is LATER, and that is a decision rather than a
+caveat.** It is written down now because the sequencing question — *do I
+need the ranking before the flag?* — has an answer, and the answer is no.
+A relay with partners and no policy is a relay that accepts everything
+until an owner says otherwise, which is exactly how it behaves today about
+everything else.
+
+Read this section as *the shape the optimisation will take when it is
+wanted*, not as work queued behind the flag. The build order at the foot of
+this document is the real sequence.
+
+### A partnership is not a contract
+
+It is **two unilateral decisions that happen to agree.** Reciprocity is a
+precondition for the thing being *useful*, not a promise either side made.
+So there is no cancellation protocol to design, no negotiation and no
+teardown handshake: A stops holding B's list and stops forwarding, and B
+finds out the next time a forward is refused.
+
+That is worth stating because the alternative — a contract — would need an
+agreement to end it, and a relay under memory pressure cannot wait for the
+other side to answer.
+
+### Dropping the list is not ending the partnership
+
+The cheapest useful insight here. The **flag** costs one boolean on a row
+the relay already keeps. The **hint list** costs `members × ~460 B`. Those
+are five orders of magnitude apart and should be shed separately:
+
+| state | holds | routes to that partner |
+|---|---|---|
+| healthy | flag + hint list | immediately, from memory |
+| under pressure | **flag only** | on demand — ask the partner's public census when a packet actually needs it |
+| cancelled | nothing | refuses, as before the partnership |
+
+So **memory pressure degrades performance, not connectivity.** A relay that
+sheds every hint list it holds still routes everywhere it did; it is just
+slower and chattier while it does. Nothing anybody depends on breaks, which
+is the property that makes automatic shedding safe enough to do without
+asking the owner.
+
+### The budget is in rows, not partners
+
+Three partners of ten thousand members cost more than fifty of ten. The
+table above is exactly why: what a relay must cap is the number of **rows
+held**, and partner count is not a proxy for it.
+
+### The algorithm, and it is a division
+
+One counter per partner — **forwards carried since boot**, an integer in
+RAM, reset on restart. Counting its own work is not storing on anyone's
+behalf, so 0006 is untouched.
+
+```
+value  =  forwards carried for this partner
+cost   =  rows held for this partner
+rank   =  value / cost
+```
+
+- **Over budget:** shed the hint list of the lowest rank. Keep the flag.
+- **Admitting a new partner:** it has no history, so give it the list on
+  trust while there is room; when there is not, compare its *cost* against
+  the worst incumbent's rank and decline if it cannot be afforded.
+- **Cancel** only on owner input, or on a partner that has been rank-zero
+  and listless for long enough that the flag is a fiction.
+
+Rank-zero-and-shed is the honest steady state for a partner nobody talks
+to: it costs one boolean, and the day somebody does talk to them it works,
+slowly, and starts earning a list back.
+
+**Why not something cleverer:** every richer signal — latency, uptime,
+reciprocal traffic, refusal rates — needs history a relay does not keep and
+0006 discourages it from keeping. One counter and one division use only
+what the relay can see about its own work, which is the same constraint
+that produced every other good decision in this tree.
+
+**Route usage is the generalisation of that counter**, and the thing to
+reach for if one division proves too blunt:
+
+> **Andy:** "somehow measure route-usage in memory to real-time optimize."
+
+`routes` — posts registered and not yet answered — is already reported by
+`relayStatus`, and it is already the one figure that says whether a relay is
+*busy* rather than merely *populated*. A per-partner version of it is the
+same idea at the granularity the policy needs, and **in memory** is the
+whole point: it resets on restart, it is never served, and it describes the
+relay's own work rather than anybody's traffic. A counter that survived a
+reboot would be a record of who talks to whom, which is precisely what this
+system does not keep.
+
+### The node has the same problem upside down
+
+> **Andy:** "one concept for optimization is: culling too many redundant
+> relays for one peer id. the node wants the highest number of peers
+> accessible."
+
+A relay culls **partners** to protect memory it spends on other people. A
+node culls **relays** to stop paying for reach it already has. Same shape,
+opposite direction, and the node's objective is the one that matters to a
+person: *how many peers can I reach*, not *how many relays am I on*.
+
+Once partners exist, a relay's reach is bigger than its roster:
+
+```
+reachable(R)  =  members(R)  ∪  members of R's partners
+```
+
+So a second relay is only worth holding if it reaches somebody the first
+cannot:
+
+```
+unique(R)  =  reachable(R)  minus  reachable(everything else I hold)
+cull R     when  unique(R) is empty
+```
+
+**A relay with no unique reach costs a claim, a binding, a pinned key and a
+held stream, and buys nothing.** That is the redundancy worth culling —
+not "too many relays" by count, which would be the wrong measure for the
+same reason partner-count was.
+
+**It needs no new wire either.** `ownerBadge.probe` already fetches every
+configured relay's census on every probe; the unions and the subtraction
+are arithmetic on data already in hand.
+
+**And the rule already exists in embryo.** `canRemoveRelay` refuses to
+leave a node with no *public* relay — a floor. This is the same family with
+a ceiling: keep every relay that reaches somebody new, drop the ones that
+do not, and never drop the last one that can carry anything.
+
+The two policies are worth stating together because they pull opposite
+ways and that is healthy: a relay wants **fewer, better** partners; a node
+wants **enough, distinct** relays. Neither is authoritative over the other,
+and a node that finds itself culled from a relay simply discovers it the
+next time it probes.
+
+### What a relay must not do
+
+**Shed on somebody else's schedule.** Eviction is the relay's own decision
+about its own memory. A partner cannot cause it, and a packet must never be
+able to — otherwise "make A drop B" is one flood away, and the survival
+mechanism becomes the attack.
+
 ---
 
 ## The problem it solves
@@ -112,22 +264,24 @@ This is the real threshold in the proposal — bigger than the flag.
    on the box.
 4. **A referral is only acceptable if it is verifiable** by the party
    relying on it, against public data, by key.
+5. **A relay may decline or cancel a partnership to survive**, and choose
+   its partners by an algorithm that is smart rather than complicated.
 
 ## Recommended (Claude), not yet decided
 
-5. **The node fetches; the relay stores the conclusion.** The owner's node
+6. **The node fetches; the relay stores the conclusion.** The owner's node
    already fetches censuses per relay (`ownerBadge.probe`). Let it do the
    reciprocity check and post the result. The relay keeps `partner: true`
    and never learns how to reach out.
-6. **One hop, full stop.** A forwarded post is never forwarded again. With
+7. **One hop, full stop.** A forwarded post is never forwarded again. With
    two relays there is no loop to prevent; the rule has to be written while
    that is still true, and it makes (3) enforceable rather than merely
    intended.
-7. **The partner's member list is a HINT, never an authority.** B checks its
+8. **The partner's member list is a HINT, never an authority.** B checks its
    own ledger when a forward lands, as it does for any post. A stale hint
    then costs a wasted hop and a refusal — never a wrong delivery — which
    removes most of what makes a synced copy frightening.
-8. **Write the 0006 carve-out in the same breath as the flag.** "Nothing is
+9. **Write the 0006 carve-out in the same breath as the flag.** "Nothing is
    stored on a relay on anyone's behalf" is the decision a member-list copy
    presses on. A hint that is never persisted, never served and never
    authoritative is closer to a DNS cache than a store — but that is a

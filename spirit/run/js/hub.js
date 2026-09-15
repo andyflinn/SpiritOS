@@ -236,10 +236,10 @@ function buildPeople(rootDir, peers, relayUrl) {
         // at the list they are the same fact.
         held: !whoBook.listens(row),
         blocked: whoBook.isBlocked(row),
-        // Whether this contact is on the mailbox this node is pointed at
+        // Whether this contact has a row on the relay this node is pointed at
         // right now. A contact you acquired elsewhere is still a contact;
         // it just has nowhere to be written to from here.
-        onMailbox: !!seen,
+        onRelay: !!seen,
         owner: !!(seen && seen.owner),
         // Bytes this node is carrying for them, across every app that
         // keeps a file per peer. Always a number, 0 for somebody who has

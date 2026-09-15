@@ -152,7 +152,7 @@ function mountApp(options) {
   const fakeSetInterval = function () { intervalsStarted += 1; return intervalsStarted; };
   const fakeClearInterval = function () {};
   new Function('spirit', 'document', 'window', 'fetch', 'setInterval', 'clearInterval', src)(
-    shellSpirit, doc, { spiritOwnerBadge: { canRemoveMailbox: function (n) { return n > 1; } } },
+    shellSpirit, doc, { spiritOwnerBadge: { canRemoveRelay: function (n) { return n > 1; } } },
     fakeFetch, fakeSetInterval, fakeClearInterval
   );
 

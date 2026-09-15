@@ -55,7 +55,7 @@ spirit.shell.activateApp({
     // list is people, full stop — but still what an old console exchange
     // on disk is filed under, so chatLog keeps being handed it rather
     // than filing yesterday's lines under nothing.
-    var mailboxKey = '';
+    var relayKey = '';
     var people = [];     // the mailbox's peers, captioned by this node
     var search = '';     // a gesture, never remembered
 
@@ -467,7 +467,7 @@ spirit.shell.activateApp({
       });
     }
 
-    // A To value is a key — a peer's, or the mailbox's own. Nothing else
+    // A To value is a key — a peer's, or the relay's own. Nothing else
     // is ever in that control, so this is the whole of "who am I looking
     // at".
     function pickedPeerKey() {
@@ -552,11 +552,11 @@ spirit.shell.activateApp({
       var empty;
       if (missingTo) {
         empty = '<div class="job-log-empty">' + api.escapeHtml(missingTo) +
-          ' is gone — not on this mailbox any more</div>';
+          ' is gone — not on this relay any more</div>';
       } else if (!picked) {
         empty = '<div class="job-log-empty">Pick someone to see that conversation.</div>';
       } else if (!chatLog.isLoggable(picked)) {
-        empty = '<div class="job-log-empty">(nothing is kept for this row — this mailbox has no key of its own yet)</div>';
+        empty = '<div class="job-log-empty">(nothing is kept for this row — this relay has no key of its own yet)</div>';
       } else {
         empty = '<div class="job-log-empty">(nothing here yet)</div>';
       }
@@ -631,7 +631,7 @@ spirit.shell.activateApp({
         .then(function (r) { return JSON.parse(r.text); })
         .then(function (data) {
           people = (data && data.people) || [];
-          mailboxKey = (data && data.relayPublicKey) || '';
+          relayKey = (data && data.relayPublicKey) || '';
           paintMyTail(data && data.selfTail);
 
           captions = {};

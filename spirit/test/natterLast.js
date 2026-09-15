@@ -93,7 +93,7 @@ function countRemoveButtons(html) {
 test.startTest('Natter — the last public relay does not come off');
 
 // THE TITLE OF THIS SUITE WAS ALREADY RIGHT and the rule underneath it
-// was not. It said "the last PUBLIC relay", and canRemoveMailbox counted
+// was not. It said "the last PUBLIC relay", and canRemoveRelay counted
 // rows: `count > 1`.
 //
 //   Andy: "That rule should be: a node keeps at least one working,
@@ -110,19 +110,19 @@ test.startTest('Natter — the last public relay does not come off');
   const LAB2 = 'http://localhost:65426';
 
   // The case the old rule got wrong, and the reason for the change.
-  if (ownerBadge.canRemoveMailbox([{ url: LAB }, { url: LAB2 }], LAB) === false) {
+  if (ownerBadge.canRemoveRelay([{ url: LAB }, { url: LAB2 }], LAB) === false) {
     test.check('two lab relays are not two relays — neither comes off, because neither is public');
   } else {
     test.fail('a node was allowed to strip itself down to a loopback fixture');
   }
 
-  if (ownerBadge.canRemoveMailbox([{ url: LIVE }, { url: LAB }], LAB) === true) {
+  if (ownerBadge.canRemoveRelay([{ url: LIVE }, { url: LAB }], LAB) === true) {
     test.check('and the lab row DOES come off while a public one survives');
   } else {
     test.fail('a lab relay could not be removed beside a public one');
   }
 
-  if (ownerBadge.canRemoveMailbox([{ url: LIVE }, { url: LAB }], LIVE) === false) {
+  if (ownerBadge.canRemoveRelay([{ url: LIVE }, { url: LAB }], LIVE) === false) {
     test.check('while the public one does not, even with another row left');
   } else {
     test.fail('the last public relay came off');
@@ -132,13 +132,13 @@ test.startTest('Natter — the last public relay does not come off');
   // public: removing that one is still fatal, and `count > 1` says yes.
   const five = [{ url: LIVE }, { url: LAB }, { url: LAB2 },
     { url: 'http://127.0.0.1:1' }, { url: 'http://127.0.0.1:2' }];
-  if (ownerBadge.canRemoveMailbox(five, LIVE) === false) {
+  if (ownerBadge.canRemoveRelay(five, LIVE) === false) {
     test.check('one public row among five is still the last one — which no count could tell you');
   } else {
     test.fail('a count-shaped answer came back for a list-shaped question');
   }
 
-  if (ownerBadge.canRemoveMailbox([{ url: LIVE }, { url: OTHER }], LIVE) === true) {
+  if (ownerBadge.canRemoveRelay([{ url: LIVE }, { url: OTHER }], LIVE) === true) {
     test.check('and two public relays are two — either may go');
   } else {
     test.fail('two public relays behaved like one');
@@ -165,7 +165,7 @@ test.startTest('Natter — the last public relay does not come off');
   // asking a question this cannot answer, and no is the safe half of
   // being wrong.
   const junk = [undefined, null, '', 'two', NaN, -1, 0, 1, 2, 3, {}].every(function (v) {
-    return ownerBadge.canRemoveMailbox(v) === false;
+    return ownerBadge.canRemoveRelay(v) === false;
   });
   if (junk) {
     test.check('and anything that is not a list is refused, counts included');
@@ -178,7 +178,7 @@ test.subHeading('The browser is given the same rule, not a copy of it');
 
 {
   const win = browserBadge();
-  if (win.spiritOwnerBadge && typeof win.spiritOwnerBadge.canRemoveMailbox === 'function') {
+  if (win.spiritOwnerBadge && typeof win.spiritOwnerBadge.canRemoveRelay === 'function') {
     test.check('the isomorphic half publishes window.spiritOwnerBadge');
   } else {
     test.fail('no browser half: ' + JSON.stringify(Object.keys(win)));
@@ -195,9 +195,9 @@ test.subHeading('The browser is given the same rule, not a copy of it');
     [[{ url: 'http://127.0.0.1:65425' }], 'http://127.0.0.1:65425'],
   ];
   const agree = cases.every(function (c) {
-    return win.spiritOwnerBadge.canRemoveMailbox(c[0], c[1]) === ownerBadge.canRemoveMailbox(c[0], c[1]);
+    return win.spiritOwnerBadge.canRemoveRelay(c[0], c[1]) === ownerBadge.canRemoveRelay(c[0], c[1]);
   });
-  if (agree && win.spiritOwnerBadge.canRemoveMailbox(list, 'http://127.0.0.1:65425') === true) {
+  if (agree && win.spiritOwnerBadge.canRemoveRelay(list, 'http://127.0.0.1:65425') === true) {
     test.check('and it answers exactly as the node side does, on the same lists');
   } else {
     test.fail('browser rule disagrees with the node rule');
