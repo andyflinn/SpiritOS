@@ -1921,7 +1921,12 @@ function createRelay(rootDir) {
   // Still out of `who()`, so the public census is unchanged: addressable
   // is not published. A relay that listed itself would put its key in
   // every peer's roster and in every census any stranger can fetch.
-  function streamRoster(forKey) {
+  // NO LONGER PER-RECIPIENT, and the parameter went with the rule. It
+  // took `forKey` so it could decide whether to include the relay row,
+  // and every member gets that row now — so the roster this relay sends
+  // is the same roster for everybody, and a parameter implying otherwise
+  // would be the kind of lie a later reader builds on.
+  function streamRoster() {
     var members = who().map(function (p) {
       return {
         key: p.publicKey || '',
@@ -1930,20 +1935,48 @@ function createRelay(rootDir) {
       };
     });
 
-    var ownerLabel = auth.ownerName(allow);
-    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
+    // ── A RELAY IS A PEER TO EVERY MEMBER, NOT ONLY TO ITS OWNER ─────
+    //
+    // This row went to the owner alone, and that was true enough while
+    // everything answerSelf could be asked was an owner verb. It is not
+    // true any more: `rename` is an own-row verb — a peer renaming
+    // ITSELF — and so is removing your own seat. Both are things a member
+    // must be able to ask the relay directly.
+    //
+    // They work today only because hub.askRelay names a URL and posts to
+    // it, going around presence entirely. The moment the post-path doors
+    // close and a member addresses the relay by KEY like any other peer,
+    // `presence.relaysNaming(relayKey)` is what answers — and it answers
+    // from this roster. Owner-only here would have meant a member could
+    // not rename itself, which is a gate nobody decided.
+    //
+    // Nothing is given away by widening it: the key is already public at
+    // /api/relay/who to anybody who asks. What the roster adds is that a
+    // member holding a stream can now SEE the relay on the other end of
+    // it, which was always the case and was simply unsaid.
+    //
+    // Always present: a relay answering the question is a relay that is
+    // up, and a stream cannot be open to it otherwise.
+    //
+    // MARKED BY KEY, NOT NAMED. This carried `label: 'relay'` — the
+    // reserved caption — which meant a list told a relay from a peer by
+    // reading a string any peer could have worn. `relay: true` is a flag
+    // on the row beside its key, the same shape as `owner` on a census
+    // row, and the caption is left empty because a relay does not have
+    // one. presenceNode reads `key` and `present` and has never looked at
+    // the label.
+    // ONE ROW PER KEY. A roster is read into a map keyed by `key`
+    // (presenceNode.onRoster), so a second row for the same key does not
+    // appear twice — it OVERWRITES, silently, and the last one wins.
+    //
+    // That is not hypothetical: a relay whose identity.json holds the same
+    // keypair its owner claimed with is one key wearing two hats, and this
+    // row would have replaced that member's real presence with `true`.
+    // Nothing in the protocol forbids the arrangement, so this does not
+    // either — it just refuses to say the same key twice.
     var mine = relayPublicKey();
-    if (mine && ownerKey && forKey === ownerKey) {
-      // Always present: a relay answering the question is a relay that is
-      // up, and a stream cannot be open to it otherwise.
-      //
-      // MARKED BY KEY, NOT NAMED. This carried `label: 'relay'` — the
-      // reserved caption — which meant a list told a relay from a peer by
-      // reading a string any peer could have worn. `relay: true` is a
-      // flag on the row beside its key, the same shape as `owner` on a
-      // census row, and the caption is left empty because a relay does
-      // not have one. presenceNode reads `key` and `present` and has
-      // never looked at the label.
+    var already = mine && members.some(function (m) { return m.key === mine; });
+    if (mine && !already) {
       members.push({ key: mine, label: '', relay: true, present: true });
     }
     return { members: members };
@@ -1976,7 +2009,7 @@ function createRelay(rootDir) {
     //    for the newcomer too: it must see itself present in its own
     //    first snapshot rather than learn it from a change it will never
     //    be sent.
-    presentNow.send(who_.id, 'roster', streamRoster(who_.id));
+    presentNow.send(who_.id, 'roster', streamRoster());
     presentNow.broadcast('presence', { key: who_.id, present: true });
 
     // 5. And the owner learns what its box now looks like. Sent after the

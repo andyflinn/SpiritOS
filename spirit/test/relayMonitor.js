@@ -451,16 +451,30 @@ test.subHeading('The relay as a peer, for its owner');
     test.fail('a peer turned the monitor on');
   }
 
-  // AND IT IS IN NO PEER'S ROSTER EITHER. The owner learns the relay's
-  // address through the ordinary presence mechanism — the same
-  // per-recipient rule the device census needed — so a peer must not be
-  // told what the owner was told.
+  // ── AND IT IS IN EVERY MEMBER'S ROSTER (2026-09-15) ────────────────
+  //
+  // THIS ASSERTED THE OPPOSITE — "in the OWNER's roster and in no
+  // peer's, a per-recipient census, as agreed" — and the agreement was
+  // sound when everything answerSelf could be asked was an owner verb.
+  //
+  // It stopped being sound when `rename` arrived: a peer renaming ITSELF
+  // is an own-row verb, and so is giving up its own seat. Both are asked
+  // of the relay directly. They worked anyway only because hub.askRelay
+  // named a URL and posted to it, going around presence — and the moment
+  // the post-path doors close and a member addresses the relay by KEY,
+  // `presence.relaysNaming` answers from this roster. Owner-only would
+  // have meant a member cannot rename itself: a gate nobody decided,
+  // arrived at by omission.
+  //
+  // Nothing is given away by widening it. The key is already public at
+  // /api/relay/who to anyone who asks — see the census check below, which
+  // is a DIFFERENT claim and still stands.
   const peerRoster = w.heard.bella.filter(function (m) { return m.event === 'roster'; });
   const ownerRoster = w.heard.andy.filter(function (m) { return m.event === 'roster'; });
   const inPeers = JSON.stringify(peerRoster).indexOf(relayKey) !== -1;
   const inOwners = JSON.stringify(ownerRoster).indexOf(relayKey) !== -1;
-  if (inOwners && !inPeers) {
-    test.check("the relay is in the OWNER's roster and in no peer's — a per-recipient census, as agreed");
+  if (inOwners && inPeers) {
+    test.check('the relay is in every member’s roster — it is a peer to each of them, not only to its owner');
   } else {
     test.fail('owner has it: ' + inOwners + ', peer has it: ' + inPeers);
   }
