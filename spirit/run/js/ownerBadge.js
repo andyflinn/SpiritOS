@@ -244,7 +244,7 @@ function claimedLabelFrom(answer, myKey) {
   list.forEach(function (p) {
     if (p && p.publicKey === myKey && !mine) mine = p;
   });
-  return mine ? String(mine.publicLabel || mine.name || '') : '';
+  return mine ? String(mine.publicLabel || '') : '';
 }
 
 // WHAT A MEMBER MAY SAY ABOUT A MAILBOX IT DOES NOT OWN.
@@ -273,13 +273,13 @@ function censusFacts(answer, myKey) {
   var mine = '';
   list.forEach(function (p) {
     if (!p) return;
-    if (p.owner) owner = p.publicLabel || p.name || '';
+    if (p.owner) owner = p.publicLabel || '';
     // YOUR OWN LABEL ON THIS BOX, which is the fact that only exists
     // once a node is on more than one. Nothing says two mailboxes gave
     // you the same name, and with one browser now serving every relay
     // this node holds, "who am I here" is a question with a per-relay
     // answer.
-    if (p.publicKey === myKey) mine = p.publicLabel || p.name || '';
+    if (p.publicKey === myKey) mine = p.publicLabel || '';
   });
 
   return { owner: owner, peers: list.length, myLabel: mine };

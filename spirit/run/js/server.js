@@ -1095,6 +1095,11 @@ const server = http.createServer((req, res) => {
 
     // Forgetting somebody. relay.removePeer has worked since it shipped
     // and nothing on this side could reach it — a verb with no interface.
+    if (pathname === '/api/hub/rename') {
+      hub.handleRename(req, res, readJsonBody, { presence: presence });
+      return;
+    }
+
     if (pathname === '/api/hub/remove-peer') {
       hub.handleRemovePeer(req, res, readJsonBody,
         { router: peerRouter, relayKey: pinnedRelayKey });

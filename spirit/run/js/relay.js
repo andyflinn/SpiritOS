@@ -116,7 +116,26 @@ function loadRoutingTable(rootDir) {
     var peers = Object.create(null);
     if (parsed && parsed.peers && typeof parsed.peers === 'object') {
       Object.keys(parsed.peers).forEach(function (k) {
-        peers[k] = parsed.peers[k];
+        var row = parsed.peers[k];
+        if (!row || typeof row !== 'object') return;
+        // ONE LABEL, NORMALISED ON THE WAY IN.
+        //
+        // A row carried `name` AND `publicLabel`, both set to the same
+        // string at claim, and `labelOf()` existed only to reconcile
+        // them. Residue from before peer-by-key: a label was an address
+        // once, and then it stopped being one and nothing collapsed the
+        // pair.
+        //
+        // `publicLabel` wins because it is the one that says what it is.
+        // A row written by older code has the same value in both, so
+        // this is a rename and not a choice — and `name` is dropped so
+        // the next persist() writes one field.
+        var one = {};
+        Object.keys(row).forEach(function (f) {
+          if (f !== 'name') one[f] = row[f];
+        });
+        one.publicLabel = String(row.publicLabel || row.name || '');
+        peers[k] = one;
       });
     }
     // `messages` and `nextId` are READ AND DROPPED, which is the whole of
@@ -217,12 +236,20 @@ function createRelay(rootDir) {
     return !!n && NAME_RE.test(n);
   }
 
+  // A PEER IS ITS KEY. A `|| peer.name` fallback stood here for rows
+  // filed under a label, and went with them — every row has a key now,
+  // so an id that was ever a name could only belong to a row predating
+  // the rule, which cannot be addressed anyway.
   function peerId(peer) {
-    return (peer && peer.publicKey) || (peer && peer.name) || '';
+    return (peer && peer.publicKey) || '';
   }
 
+  // ONE FIELD. It read `publicLabel || name` while a row carried both,
+  // which is what this function existed for. loadRoutingTable collapses
+  // the pair on the way in, so there is nothing left to reconcile and
+  // this is only a guard against a missing row.
   function labelOf(peer) {
-    return (peer && (peer.publicLabel || peer.name)) || '';
+    return (peer && peer.publicLabel) || '';
   }
 
   function listPeers() {
@@ -239,12 +266,20 @@ function createRelay(rootDir) {
     return null;
   }
 
+  // ONE HIT OR NOBODY. Two peers may wear one label by design, so a
+  // label that two rows answer to identifies neither — and this returns
+  // null rather than picking, which is the rule that stops "whichever
+  // john this box found first" being an answer anywhere.
+  //
+  // A KEYLESS FALLBACK STOOD HERE — `peers[n] && !peers[n].publicKey` —
+  // for rows keyed by name rather than by key. Gone with the pair: every
+  // claim needs a key now, so every row has one and the map is keyed by
+  // it. A row from older code that has no key is not addressable on this
+  // wire by any means, so finding it by label bought nothing.
   function findByLabel(label) {
     var n = normalizeName(label);
     var hits = listPeers().filter(function (p) { return labelOf(p) === n; });
-    if (hits.length === 1) return hits[0];
-    if (peers[n] && !peers[n].publicKey) return peers[n];
-    return null;
+    return hits.length === 1 ? hits[0] : null;
   }
 
   // resolveParty STOOD HERE — token to party, with an `ambiguous` answer
@@ -260,9 +295,17 @@ function createRelay(rootDir) {
   function who() {
     return listPeers().map(function (p) {
       return {
-        name: labelOf(p),
+        // `name` STOOD BESIDE THIS, carrying the identical value. Two
+        // spellings of one fact on a public route, so every reader had
+        // to know which to trust and none could be told apart. Gone
+        // 2026-09-15 — a census row says a peer's label once.
         publicLabel: labelOf(p),
         publicKey: p.publicKey || null,
+        // WHEN THIS KEY ENROLLED, published here all along with nothing
+        // reading it. It is the human-usable way to tell two johns
+        // apart — "the john who joined in March" rather than six
+        // characters of key — and it must never be rewritten, or the
+        // ledger stops being one.
         claimedAt: p.claimedAt,
         owner: !!p.owner,
       };
@@ -495,11 +538,29 @@ function createRelay(rootDir) {
       if (!gate.ok) return gate;
     }
 
-    if (publicKey && findByKey(publicKey)) {
-      return { ok: false, status: 409, error: 'key already claimed', peer: findByKey(publicKey) };
+    // EVERY ROW HAS A KEY, and this is where that becomes true rather
+    // than merely usual.
+    //
+    // `open` mode could admit a claim with no key at all — the only path
+    // that ever could — and the row was then filed under its NAME. That
+    // is what made `peers` a map of two kinds of thing, what
+    // `findByLabel` needed a keyless branch for, and what kept `name`
+    // alive beside `publicLabel`.
+    //
+    // It was unreachable in practice anyway: the first claim on an open
+    // box takes the owner path, which demands a key and writes
+    // allow.json — so `open` with peers already on it requires somebody
+    // to have deleted allow.json by hand. A recovery state, not a way in.
+    //
+    // Refused rather than migrated. A keyless row cannot open a stream,
+    // cannot post, cannot be posted to, and cannot be told apart from
+    // another wearing the same label. A row that exists and can do
+    // nothing is worse than no row.
+    if (!publicKey) {
+      return { ok: false, status: 400, error: 'claim needs publicKey' };
     }
-    if (!publicKey && (peers[n] || findByLabel(n))) {
-      return { ok: false, status: 409, error: 'name already claimed', peer: peers[n] || findByLabel(n) };
+    if (findByKey(publicKey)) {
+      return { ok: false, status: 409, error: 'key already claimed', peer: findByKey(publicKey) };
     }
 
     // Consume BEFORE the write, and only write if the row actually
@@ -516,13 +577,21 @@ function createRelay(rootDir) {
     }
 
     var peer = {
-      name: n,
+      // ONE LABEL. `name` stood here carrying the same string, and went
+      // on 2026-09-15 — see loadRoutingTable for the migration and
+      // `who()` for what a census row says now.
       publicLabel: n,
-      publicKey: publicKey || null,
+      publicKey: publicKey,
+      // THE ENROLMENT LEDGER'S ONE DATE. Written once, never rewritten:
+      // it says when this KEY joined, which stays true whatever the
+      // label does later.
       claimedAt: new Date().toISOString(),
       owner: firstOwner,
     };
-    peers[publicKey || n] = peer;
+    // KEYED BY KEY, always, because a claim without one is refused
+    // above. The map used to be `publicKey || n`, which is how a row
+    // could be filed under a label.
+    peers[publicKey] = peer;
     persist();
     return { ok: true, status: 201, peer: peer, owner: firstOwner };
   }
@@ -965,6 +1034,104 @@ function createRelay(rootDir) {
     }
     return { ok: true, status: 200, devicePublicKey: said.devicePublicKey || '' };
   }
+  // A PEER RENAMES ITSELF, and nobody else can do it for them.
+  //
+  //   Andy: "after enrollment the public label of an ID is property of
+  //   the ID, it must persist on the relay."
+  //
+  // `who` is the row the post proved, so there is no key argument and no
+  // way to name somebody else's. That is the same shape self-removal
+  // has, and for the same reason — it is not a lesser permission, it is
+  // a different one.
+  //
+  // ── WHAT IT DOES NOT TOUCH ───────────────────────────────────────────
+  //
+  // `claimedAt` is NOT rewritten. It says when this KEY enrolled, and
+  // that stays true whatever the label does — it is the enrolment
+  // ledger's one date, and the human-usable way to tell two johns apart.
+  // A rename that moved it would turn an old member into a new one on
+  // every screen that reads it.
+  //
+  // `publicKey` is not touched either, obviously, and `owner` is not:
+  // renaming is not a way to become or stop being the owner.
+  //
+  // ── THE TWO COLLISIONS, AND THEY ARE REAL ────────────────────────────
+  //
+  // DUPLICATE LABELS ARE ALLOWED, so renaming INTO one is allowed too.
+  // Two johns are two keys and always were, `findByLabel` answers null
+  // rather than picking, and every census row carries `claimedAt` and a
+  // key. Refusing a duplicate here would invent a scarcity the rest of
+  // the box does not have.
+  //
+  // A LIVE INVITE FOR THAT LABEL IS THE ONE REFUSAL. An unclaimed invite
+  // is a reservation held for somebody who is not here yet; renaming
+  // into it would leave a token that can never be redeemed, because the
+  // claim it unlocks would collide with the row that just took the name.
+  // That is a silent breakage for a third party who is not in this
+  // conversation — the invitee — so it is refused rather than allowed.
+  //
+  // Swept first, so an EXPIRED reservation does not block a living
+  // person: the same "any attempt tidies up" rule redeem follows.
+  function renameSelf(who, wanted) {
+    if (!who || !who.publicKey) {
+      return { ok: false, status: 403, error: 'no such peer' };
+    }
+    var next = normalizeName(wanted);
+    if (!nameOk(next)) return { ok: false, status: 400, error: 'bad name' };
+    if (next === auth.RESERVED_NAME) {
+      return { ok: false, status: 400, error: 'name reserved' };
+    }
+
+    var row = findByKey(who.publicKey);
+    if (!row) return { ok: false, status: 404, error: 'no such peer' };
+    if (labelOf(row) === next) {
+      // Nothing to do, and said so rather than persisting a no-op.
+      return { ok: true, status: 200, label: next, unchanged: true };
+    }
+
+    invites.sweepExpired(rootDir);
+    var reserved = invites.load(rootDir).some(function (r) {
+      return r && normalizeName(r.label) === next;
+    });
+    if (reserved) {
+      return { ok: false, status: 409, error: 'name reserved by a live invite' };
+    }
+
+    // THE OWNER'S LABEL LIVES IN TWO PLACES, and this is the whole of
+    // why that matters.
+    //
+    // `allow.json` identifies the owner by NAME — `ownerName()` is its
+    // first key, and every owner check on this box resolves through it.
+    // An owner whose peer row said `bob` while allow.json still said
+    // `andy` would be locked out of its own relay: not refused, simply
+    // not recognised.
+    //
+    // So the two move together or neither does. Written FIRST, because a
+    // failed write to allow.json must not leave a renamed row behind —
+    // the other order strands the owner, and this order costs at worst a
+    // rename that did not happen.
+    if (isOwner(who)) {
+      try {
+        auth.writeAllowKeys(rootDir, [{ name: next, publicKey: who.publicKey }]);
+        reloadAllow();
+      } catch (e) {
+        return { ok: false, status: 500, error: 'could not move the owner record' };
+      }
+    }
+
+    var was = labelOf(row);
+    row.publicLabel = next;
+    persist();
+
+    // THE OWNER HEARS ABOUT IT (R2). A member changing what they are
+    // called is a membership fact, and an owner watching a name appear
+    // in the census with no record of how it got there is exactly the
+    // gap that category exists to close.
+    ownerEvent('peer-renamed', { key: who.publicKey, was: was, label: next });
+
+    return { ok: true, status: 200, label: next, was: was };
+  }
+
   // FORGETTING SOMEBODY — the act, with no opinion about who asked.
   //
   // Split out of removePeer so the two ways in can prove themselves
@@ -1179,6 +1346,32 @@ function createRelay(rootDir) {
       if (owner || (who && target === who.publicKey)) {
         out = forgetPeer(target);
       }
+    }
+
+    // CHANGING YOUR OWN PUBLIC LABEL. An OWN-ROW verb, and the strictest
+    // one: there is no owner path at all.
+    //
+    //   Andy: "after enrollment the public label of an ID is property of
+    //   the ID, it must persist on the relay. A contract would say, the
+    //   relay owner will not be allowed to control the public label of
+    //   any keyed peer."
+    //
+    // So `owner ||` is deliberately absent, where removePeer has it. The
+    // owner may evict somebody — that is their box — but may not rename
+    // them, because the label belongs to the key. Those are different
+    // powers and this is the line between them.
+    //
+    // NO NEW ROUTE AND NO NEW SIGNED FORMAT. It rides the post that is
+    // already here, proved by the signature that already ran, which is
+    // decision 0010's collapse paying off: a capability without a
+    // protocol surface. The register does not move for this.
+    //
+    // WHY A PERSON WANTS IT (Andy): add-by-handle matches on an exact,
+    // case-folded `publicLabel`, so the label is a word somebody has to
+    // be able to say out loud — and until now it was chosen by whoever
+    // minted their invite, permanently.
+    if (body && body.rename) {
+      out = renameSelf(who, String(body.rename.label || ''));
     }
 
     // TAKING ONE BACK, by label — the only handle an unclaimed invite
@@ -1622,7 +1815,7 @@ function createRelay(rootDir) {
     var members = who().map(function (p) {
       return {
         key: p.publicKey || '',
-        label: p.publicLabel || p.name || '',
+        label: p.publicLabel || '',
         present: presentNow.isPresent(p.publicKey || ''),
       };
     });

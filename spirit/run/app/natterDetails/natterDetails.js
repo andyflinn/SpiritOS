@@ -312,6 +312,40 @@ function ndReportHtml() {
 //
 // Only for a mailbox this node owns: one somebody else owns has no mint
 // markup at all to find.
+// WHAT THIS RELAY CALLS THIS NODE, changed by this node.
+//
+//   Andy: "after enrollment the public label of an ID is property of the
+//   ID... the relay owner will not be allowed to control the public
+//   label of any keyed peer."
+//
+// SHOWN ON A ROW THIS NODE HOLDS, owned or not, which is the whole
+// condition — the label belongs to the key, and owning the box is beside
+// the point. A relay this node merely LISTS gets no panel, because there
+// is no row to rename.
+//
+// PER RELAY, and that is why it lives on this screen rather than in
+// Natter's bind row. A node on several relays may be called different
+// things on each: the label belongs to the key, but WHICH label is a
+// fact about one membership, and this screen is one membership.
+//
+// The field starts empty rather than pre-filled with the current label.
+// Pre-filling would make the current name look like a thing being edited
+// and a stray keystroke into a rename — and the name it would show is
+// already on the row above, under "You".
+function ndRenameHtml() {
+  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
+  var now = ndBadge.claimedLabel || '';
+  return ndPanel('rename', ndIcon.INFO, 'Change what this relay calls me',
+    '<div class="start-job-form card">' +
+    '<label class="field-label grow">New public label' +
+      '<input type="text" class="nd-name-new" placeholder="' +
+      (now ? 'currently ' + ndEscapeHtml(now) : 'the name peers see') + '"></label>' +
+    '<button type="button" class="nd-name-go">Change</button>' +
+    '</div>' +
+    '<div class="job-manifest-note nd-name-out"></div>',
+    'natter-rename');
+}
+
 function ndMintHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   // ★ is the same mark the row carries for owning it, and this panel is
@@ -503,6 +537,7 @@ function ndRender() {
   body.innerHTML =
     ndReportHtml() +
     ndLocalHtml() +
+    ndRenameHtml() +
     ndMintHtml() +
     ndDeviceHtml();
 }
@@ -524,6 +559,45 @@ function ndRender() {
 // One mint, on the mailbox this screen is. `ndUrl` rather than a picker
 // or relays.json[0]: the screen is which mailbox, and the hub still
 // checks that URL is one this node lists.
+// CHANGING WHAT THIS RELAY CALLS THIS NODE.
+//
+// A post like any other, and the node signs it — so the relay renames
+// whoever signed and there is no key on the wire to name anybody else.
+//
+// RE-ASKED AFTERWARDS rather than patched locally. The screen shows what
+// the relay says, and a rename is exactly the moment where believing our
+// own optimistic copy would be wrong: the relay can refuse it — a live
+// invite holds that name — and a panel that had already written the new
+// label would be showing a name nobody answers to.
+function ndRename(button) {
+  var panel = button.closest('.natter-rename');
+  var out = panel.querySelector('.nd-name-out');
+  var wanted = panel.querySelector('.nd-name-new').value.trim();
+  if (!wanted) {
+    out.className = 'job-manifest-note nd-name-out is-error';
+    out.textContent = 'a new label is required';
+    return;
+  }
+
+  ndPost('/api/hub/rename', { label: wanted, url: ndUrl }).then(function (r) {
+    var said = null;
+    try { said = JSON.parse(r.text); } catch (e) { said = null; }
+    var ok = r.status === 200 && said && said.ok;
+    out.className = 'job-manifest-note nd-name-out ' + (ok ? 'is-token' : 'is-error');
+    out.textContent = ok
+      ? (said.unchanged ? 'already ' + said.label
+        : said.was + '  ->  ' + said.label)
+      : (said && said.error) || (r.status + ' ' + r.text);
+    if (!ok) return;
+    // THE LIST BEHIND THIS SCREEN SHOWS LABELS, so it has to repaint —
+    // and the binding Natter keeps is this node's own name, which may be
+    // the thing that just moved.
+    ndChanged = true;
+    if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, renamed: said.label });
+    ndLoad();
+  });
+}
+
 function ndMint(button) {
   var panel = button.closest('.natter-mint');
   function field(cls) { return panel.querySelector('.' + cls); }
@@ -625,6 +699,9 @@ spirit.shell.activateApp({
 
       var mintBtn = target.closest('.natter-inv-go');
       if (mintBtn) { ndMint(mintBtn); return; }
+
+      var nameBtn = target.closest('.nd-name-go');
+      if (nameBtn) { ndRename(nameBtn); return; }
 
       var copyBtn = target.closest('.natter-dev-copy');
       if (copyBtn) { ndDeviceCopy(copyBtn); return; }

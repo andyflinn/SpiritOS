@@ -193,7 +193,7 @@ function buildPeople(rootDir, peers, relayUrl) {
     .forEach(function (p) {
       whoBook.handshake(rootDir, {
         publicKey: p.publicKey,
-        publicLabel: p.publicLabel || p.name || '',
+        publicLabel: p.publicLabel || '',
         relay: relayUrl,
       });
       census[p.publicKey] = p;
@@ -223,7 +223,7 @@ function buildPeople(rootDir, peers, relayUrl) {
         // must not carve its own out of the key: a fourth copy of "six
         // from the end" is a fourth thing to get wrong.
         tail: keyTail(row.publicKey),
-        publicLabel: (seen && (seen.publicLabel || seen.name)) || row.publicLabel || '',
+        publicLabel: (seen && seen.publicLabel) || row.publicLabel || '',
         caption: whoBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
         // The raw one, beside the resolved caption: an editor has to
         // show what is stored, not what is shown, or clearing the field
@@ -305,13 +305,13 @@ function handleMatches(rootDir, peers, handle) {
   return (Array.isArray(peers) ? peers : [])
     .filter(function (p) { return p && p.publicKey && p.publicKey !== myKey; })
     .filter(function (p) {
-      return String(p.publicLabel || p.name || '').trim().toLowerCase() === want;
+      return String(p.publicLabel || '').trim().toLowerCase() === want;
     })
     .map(function (p) {
       var row = whoBook.byPublicKey(rootDir, p.publicKey);
       return {
         publicKey: p.publicKey,
-        publicLabel: p.publicLabel || p.name || '',
+        publicLabel: p.publicLabel || '',
         tail: keyTail(p.publicKey),
         // What this node already thinks of them, so the UI can say
         // "already a contact" instead of offering the same person twice.
@@ -1116,6 +1116,38 @@ function createHub(rootDir) {
   // today — so a removal naming one would delete whichever the relay
   // found first. The browser shows a label and sends the key, which is
   // how the census hands it over.
+  // WHAT THIS NODE IS CALLED ON A RELAY, changed by this node.
+  //
+  //   Andy: "after enrollment the public label of an ID is property of
+  //   the ID... the relay owner will not be allowed to control the
+  //   public label of any keyed peer."
+  //
+  // A post like any other, signed by this node's identity — so there is
+  // no key on the wire and no way to name somebody else's row. The relay
+  // renames whoever signed, and that is the whole of the permission.
+  //
+  // Per relay, because a node on several may be called different things
+  // on each: the label belongs to the key, but which label is a fact
+  // about a membership. `url` says which one.
+  function handleRename(req, res, readJsonBody, deps) {
+    return readJsonBody(req).then(function (body) {
+      var label = String((body && body.label) || '').trim();
+      if (!label) {
+        fail(res, 400, 'label required');
+        return;
+      }
+      return askRelay(res, deps, body && body.url, function () {
+        return { rename: { label: label } };
+      }, function (out) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(out));
+      });
+    }).catch(function () {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Invalid JSON body');
+    });
+  }
+
   function handleRemovePeer(req, res, readJsonBody, deps) {
     return readJsonBody(req).then(function (body) {
       var key = String((body && body.key) || '').trim();
@@ -1350,7 +1382,7 @@ function createHub(rootDir) {
             var via = (wanted === 'invite') ? 'invite' : 'handle';
             var row = whoBook.acquire(rootDir, {
               publicKey: publicKey,
-              publicLabel: found.publicLabel || found.name || '',
+              publicLabel: found.publicLabel || '',
               relay: url,
             }, via);
             res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1477,6 +1509,9 @@ function createHub(rootDir) {
     handlePeer: handlePeer,
     handleInvite: handleInvite,
     handleRemovePeer: handleRemovePeer,
+    // What this node is called on a relay — an own-row verb, so the post
+    // names nobody but its signer.
+    handleRename: handleRename,
     handleUnknownSenders: handleUnknownSenders,
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,

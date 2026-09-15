@@ -1,6 +1,6 @@
 # 2026-09-15 — labels are not identities
 
-**Status: CLOSED. Three requirements, all done, 2026-09-15.**
+**Status: CLOSED. Four requirements, all done, 2026-09-15.**
 
 Opened by Andy, reading the R8 commit. The thread ran from a loose end I
 left in that sitting — a signature on a query string — and ended
@@ -25,8 +25,8 @@ relay still has places where a LABEL stands in for an identity:
 - a peer row carries `name` *and* `publicLabel`, and `who()` publishes the
   same value under both keys
 
-The first two are this cycle. The last two are named at the foot as
-deferred, with the reason.
+All four are this cycle. The last two were deferred when it opened and
+promoted the same day — see R4.
 
 ---
 
@@ -150,146 +150,7 @@ He is right, and the reason is the speakable path. A DEFAULT token is
 `crypto.randomBytes(16)` — 128 bits, unguessable
 ([invites.js:62-64](../../spirit/run/js/invites.js#L62-L64)) — and
 against that the label adds nothing. A SPOKEN token is only held to
-`NAME_RE`, `^[A-Za-z0-9._-]{1,32}# 2026-09-15 — labels are not identities
-
-**Status: OPEN. Three requirements, none started. No code written.**
-
-Opened by Andy, reading the R8 commit. The thread ran from a loose end I
-left in that sitting — a signature on a query string — and ended
-somewhere else entirely, because the loose end turned out to be one face
-of something larger.
-
-> **Andy:** i don't understand the ownerbadge concept at all: the relay
-> knows its owner by key, and already filters requests by that, because
-> the owner gets a wider peer-post-api than non-owning peers.
-
-He was right, and the same question applied further down. What this cycle
-fixes is one thing wearing three faces:
-
-**Peer-by-key settled that identity is a key, and stopped halfway.** The
-relay still has places where a LABEL stands in for an identity:
-
-- the owner badge signs a *name* (`status\n<name>`) to prove a *key* owns
-  the box
-- an invite's label is forced onto the claimer, becoming their public name
-- `allow.json` identifies the owner by name; eleven call sites resolve
-  through it
-- a peer row carries `name` *and* `publicLabel`, and `who()` publishes the
-  same value under both keys
-
-The first two are this cycle. The last two are named at the foot as
-deferred, with the reason.
-
----
-
-## What Andy decided, in his words
-
-> after enrollment the public label of an ID is property of the ID, it
-> must persist on the relay. A contract would say, the relay owner will
-> not be allowed to control the public label of any keyed peer.
-
-> when any peer renames its own/owned public label, it is for example to
-> make peer search easier in the "add peer by handle" user interface
-
-> The invite must name/label the peer (phone/email etc) a stolen label
-> aquiring a seat can be purged from the relays peer-list
-
-> We are not responsible for the security of the out-of-band channel....
-> and we need a way to reasonable enable enrollment without opening a can
-> of worms. counter measures for theft: expiry period of invites and
-> after-the fact purging of a stolen slot.
-
-> the pre existing label is for out-of-channel (over the phone)
-> communication between relay owner and perspective peer.
-
-> failed AND successful attempts should send a notification down the
-> owners SSE stream.
-
-> Yes the notice must mention the label, both in failed and in succesful
-> claims. This then enters the owners log (it should) and it can be
-> reviewed.
-
-> They should go to the log.
-
----
-
-## The finding that forced it
-
-Verified at `3b1c468`.
-
-**The relay owner chooses every peer's public name, permanently, and the
-relay publishes it to the world.**
-
-The chain is forced, with no step optional:
-
-1. `mint` writes the owner's label onto the invite row —
-   [relay.js:1048-1050](../../spirit/run/js/relay.js#L1048-L1050), where
-   `ask.label` comes straight from the owner's post body.
-2. `match` refuses any claim whose name is not that exact label —
-   [invites.js:138](../../spirit/run/js/invites.js#L138).
-3. So the peer row is written `{name: n, publicLabel: n}` with `n`
-   **necessarily** the invite's label —
-   [relay.js:442-447](../../spirit/run/js/relay.js#L442-L447).
-4. `/api/relay/who` publishes `publicLabel` to anyone, unsigned, no
-   credential — `isRelayPublicPath`, [server.js:693](../../spirit/run/js/server.js#L693).
-5. Nothing can change it afterwards. There is no rename verb; `publicLabel`
-   is written once at claim and never again.
-
-Andy's parenthetical — *phone/email* — is what makes this sharp rather
-than merely untidy. Run against `NAME_RE`
-([relay.js:65](../../spirit/run/js/relay.js#L65)):
-
-```
-refused   email        bella@example.com
-refused   phone intl   +447700900123
-ACCEPTED  phone local  07700900123
-ACCEPTED  name         bella.smith
-```
-
-**The one contact identifier the field accepts is the one that would be
-most damaging to publish.** An owner doing exactly what Andy describes
-would be putting an invitee's phone number into a public census, and
-nothing in the system would say a word.
-
-**Three labels, and the tree has words for two**
-
-| | whose | seen by | lives |
-|---|---|---|---|
-| **`publicLabel`** | the ID's | anyone, unsigned | as long as the peer |
-| **`myLabel`** (whoBook) | mine, never uploaded | me | as long as I keep it |
-| **the invite's label** | the relay owner's | the owner only | while the reservation stands |
-
-The third has no name in the tree, which is why it was mislabelled as the
-first. It is spoken down a phone, like its sibling the token already is —
-*"typed by one human and read aloud to another"*
-([inviteSpeakable.js:25](../../spirit/test/inviteSpeakable.js#L25)).
-
-**Why the binding was never a defence**
-
-Andy's countermeasures are expiry and purge, and both are already built:
-`normalizeDays` caps at **15 days**
-([invites.js:71-77](../../spirit/run/js/invites.js#L71-L77)), a claimed
-invite is deleted rather than stamped, expired rows are swept at four
-touches, and `forgetPeer` is reachable as a signed post. Only the purge
-UI is missing.
-
-Against that, the label binding does nothing. A thief holding the token
-gets one seat either way; today they get it *under the name of the person
-they are impersonating*, which is worse, not better. Detection is
-unchanged — the invite vanishes from the panel and the invitee says it
-was not them — and the purge is by key regardless, per Andy's own rule
-that *"removePeer MUST be by ID"*.
-
----
-
-## Requirements
-
-### R1 — the invite label stops binding
-
-> **Andy:** the relay owner will not be allowed to control the public
-> label of any keyed peer.
-
-, with **no minimum length and no
+`NAME_RE`, `^[A-Za-z0-9._-]{1,32}$`, with **no minimum length and no
 entropy floor** ([relay.js:498](../../spirit/run/js/relay.js#L498)). An
 owner may mint `saint-bernard`, or `dog`, or `a`.
 
@@ -633,28 +494,101 @@ code.
 
 ---
 
+### R4 — one label, owned by the key that wears it
+
+> **Andy:** there should be only publicLabel, owned by the key… also
+> because of duplicate labels, can the enrolment date for keys be part of
+> the enrolment ledger?
+
+D1, D2 and D3 promoted out of the deferred list and done together, on
+2026-09-15. They were listed apart and are one thing: a label that the
+relay owner chose, that nobody could change, published twice.
+
+**ONE FIELD.** A peer row carried `name` AND `publicLabel`, set to the
+same string at claim, and `who()` published both — two spellings of one
+fact on a public route, so every reader had to know which to trust and
+none could be told apart. `labelOf()` existed solely to reconcile them.
+
+Collapsed on the way in (`loadRoutingTable`), so a relay upgrading in
+place reads an older row and the next `persist()` writes one field. The
+same shape of migration the ring got.
+
+**AND EVERY ROW IS KEYED BY ITS KEY.** The map was `publicKey || n`, so a
+keyless claim filed a row under a LABEL — which is what `findByLabel`
+needed a keyless branch for and what kept `name` alive. A claim now
+requires a key. That path was unreachable anyway: the first claim on an
+open box takes the owner path, which demands one; `open` with peers
+already on it needs somebody to have deleted `allow.json` by hand.
+Refused rather than migrated, because a row that cannot open a stream,
+post, be posted to, or be told apart from another wearing the same label
+is worse than no row.
+
+**AND THE KEY MAY MOVE IT.** `body.rename` in `answerSelf`, an OWN-ROW
+verb with no owner path at all — where `removePeer` deliberately has
+one. Evicting somebody is the owner's business; renaming them is not.
+There is no key field on the verb, so it is not refused, it is
+unexpressible.
+
+**NO NEW ROUTE AND NO NEW SIGNED FORMAT.** It rides the post that already
+exists, proved by the signature that already ran — decision 0010's
+collapse paying off. `protocolSurface.js` did not move, and a check says
+so rather than leaving it to be noticed.
+
+**THE LEDGER'S ONE DATE.** `claimedAt` has been on every row and in every
+census since it was written, and nothing read it. It says when the KEY
+enrolled — which stays true whatever the label does — and it is the
+human-usable way to tell two johns apart, where the alternative is six
+characters of key and *"machine detail wearing a person's clothes"*. A
+rename does not touch it, and a check says so.
+
+**THE THREE COLLISIONS, decided rather than discovered:**
+
+- **A duplicate label is allowed**, so renaming into one is allowed.
+  Two johns are two keys and always were; refusing would invent a
+  scarcity the rest of the box does not have.
+- **A live invite for that label refuses it.** An unclaimed invite is a
+  reservation held for somebody who is not here yet, and renaming into it
+  would leave a token nobody can ever redeem. The party that would be
+  hurt is not in the conversation. Expired ones are swept first, so a
+  dead reservation does not block a living person.
+- **The owner's label lives in two places**, and they move together.
+  `allow.json` identifies the owner by NAME, and eleven call sites
+  resolve through it — an owner whose row said `chief` while the file
+  said `andy` would be locked out of its own box, not refused but simply
+  unrecognised. Written FIRST, so a failed write costs a rename that did
+  not happen rather than an orphaned relay.
+
+**Verify:** `spirit/test/labelIsOwned.js` — 22 checks, watched failing
+(13 red) against the unchanged `relay.js` first. The ones carrying the
+requirement:
+
+- *"a census row says a peer's label once, under publicLabel"*, and
+  *"every row is filed under its key, never its label"*
+- *"a row carrying only `name` comes back with its label intact"* — the
+  in-place migration
+- *"the verb takes no key — the owner cannot rename a peer, it is not
+  expressible"*
+- *"claimedAt does not move — the ledger records the key, not the name"*
+- *"renaming into a label somebody else wears is allowed"*, and *"not
+  onto a label a live invite is holding"*
+- *"the owner still mints, monitors and removes under its new name"* —
+  proved by use, because being locked out would look like a quiet relay
+- *"no route was added for it"* and *"no signed format"*
+
+**Live:** a census row over the wire is now four fields —
+`publicLabel`, `publicKey`, `claimedAt`, `owner` — each saying one thing
+once.
+
+**Status:** DONE
+
+---
+
 ## Deferred, with reasons
 
-**D1 — `name`/`publicLabel` collapse to one field.** A peer row carries
-both, set to the same string; `labelOf()` exists only to reconcile them;
-`who()` publishes the same value under both keys. Residue from before
-peer-by-key. **Deferred:** it changes the wire, which is a different risk
-class from R1–R3, and nothing today is broken by it.
+**D1, D2 and D3 are DONE** — promoted into R4 above on the day they were
+deferred. Kept named here rather than deleted, because a deferral that
+vanishes is indistinguishable from one nobody got to.
 
-**D2 — rename as an own-row verb.** `answerSelf` beside `removePeer`,
-which is already the precedent — *leaving is not a favour you have to ask
-for*. Andy's reason for wanting it is real: `handleMatches` matches on
-**exact, case-folded `publicLabel`** ([hub.js:276-286](../../spirit/run/js/hub.js#L276-L286)),
-so add-by-handle is "say your word out loud and I type it exactly", and
-the word is currently chosen by somebody else. **Deferred:** blocked on
-D1, and on D3.
-
-**D3 — the owner's label in `allow.json`.** `ownerName(allow)` is
-`Object.keys(byName)[0]`, and eleven call sites resolve the owner through
-it. An owner renaming its peer row without rewriting `allow.json` in the
-same act locks itself out of its own box. Either the rename rewrites it,
-or `allow.json` moves to key-first with the name as caption.
-**Deferred:** only bites once D2 exists.
 
 **D4 — the purge UI, and the invite panel.** Both app work; the backend
 for purge exists end to end (`POST /api/hub/remove-peer` → signed post →

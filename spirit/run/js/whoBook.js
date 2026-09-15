@@ -170,7 +170,7 @@ function byPublicKey(rootDir, publicKey) {
 // address book, and it never touches how an existing row was acquired.
 function handshake(rootDir, peer) {
   if (!peer || !peer.publicKey) throw new Error('handshake needs publicKey');
-  const publicLabel = peer.publicLabel || peer.name || '';
+  const publicLabel = peer.publicLabel || '';
   const existing = byPublicKey(rootDir, peer.publicKey);
   if (existing) {
     existing.publicLabel = publicLabel || existing.publicLabel;
@@ -201,7 +201,7 @@ function acquire(rootDir, peer, via) {
   const existing = byPublicKey(rootDir, peer.publicKey);
   return upsert(rootDir, {
     publicKey: peer.publicKey,
-    publicLabel: peer.publicLabel || peer.name || (existing && existing.publicLabel) || '',
+    publicLabel: peer.publicLabel || (existing && existing.publicLabel) || '',
     acquiredVia: via,
     relays: peer.relay
       ? normalizeRelays(((existing && existing.relays) || []).concat([peer.relay]))

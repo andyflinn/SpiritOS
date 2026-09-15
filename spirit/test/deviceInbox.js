@@ -68,7 +68,9 @@ test.startTest('A device key proves nothing to a relay');
 
   // AND THE RELAY LEARNED NOTHING. Not a row, not a slot, not a key.
   const who = box.snapshot();
-  const andys = (who.peers || []).filter(function (p) { return p.name === 'andy'; });
+  // `p.name` until 2026-09-15, when a census row stopped saying a peer's
+  // label twice. One field, and it is the one that says what it is.
+  const andys = (who.peers || []).filter(function (p) { return p.publicLabel === 'andy'; });
   const anyDeviceKey = (who.peers || []).some(function (p) { return p.devicePublicKey; });
   if (andys.length === 1 && !anyDeviceKey) {
     test.check('still one andy row, and no device key anywhere on the relay');
