@@ -138,3 +138,4 @@ spirit/run/app/natter/relays.json.before-lab
 # above — missingFromCopy uses --exclude-standard, so an untracked backup
 # refuses every lab build until it is deleted.
 spirit/run/app/natter/session.json.before-lab
+NEXT_PROMPT.md

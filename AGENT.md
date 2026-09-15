@@ -6,10 +6,10 @@ Public face: [andyflinn.com](https://andyflinn.com). Andy Flinn is the one opera
 
 ## What this system is
 
-- A **personal node** is loopback HTTP on `:65432`. The browser never talks to the public net.
-- A **public relay** (`--relay`) is a mailbox. On spirit-3 that is Caddy `:443` → Node `:65430`. The name is `https://spirit.andyflinn.com`.
+- A **personal node**, or just **node**, is loopback HTTP on `:65432`. It is identified by a public key, and typically cannot be reached from public IP addresses or via DNS.
+- A **public relay**, or just **relay**, (`--relay`) is a router. it routes packets between personal nodes, identified by public keys. On spirit-3 that is Caddy `:443` → Node `:65430`. The name is `https://spirit.andyflinn.com`.
 - Personal → public is **HTTPS**, except loopback HTTP for lab relays. Public Node is never advertised on 65430.
-- labMaster belongs on a **laptop**. Never on the 1 GB public box.
+- labMaster and lab relays belongs on a **personal development workstation**. Never on the 1 GB public box.
 
 ## Host
 
