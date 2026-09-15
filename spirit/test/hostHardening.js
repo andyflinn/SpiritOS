@@ -471,6 +471,86 @@ test.subHeading('The clone decides what it is — not whatever the shell was car
   }
 }
 
+// ── THE KEEPER'S SSH DOOR IS ONE SCRIPT, NOT A SHELL ─────────────────
+//
+//   Andy: "you may set yourself up to remotely update and restart, i'll
+//   help you with my ssh until you can do it from here."
+//
+// The lazy way to grant that is a key in authorized_keys and a promise
+// about what will be typed with it. That is a root shell with a manner,
+// and the promise is the only thing between it and the box. SSH's own
+// `command=` is the real mechanism: sshd runs the named script and the
+// client's request survives only as $SSH_ORIGINAL_COMMAND — a string to
+// MATCH, never to execute.
+//
+// Two properties, and both are the kind that get loosened by someone
+// being helpful:
+//
+//   the request is matched against a list, never evaluated
+//   the door is the LAB's, never the live relay's
+//
+// The second is a policy choice worth stating: the same cron that makes
+// remote update useful also restarts spirit.andyflinn.com unattended on
+// every push, which became true only when bash/update was fixed. The
+// live relay should move when Andy cuts a tag. So the keeper's key
+// reaches the lab and refuses everything else, twice over — the clone
+// has no .env (which is what MAKES it the main clone), or it resolves to
+// the live unit or domain.
+test.subHeading('The keeper’s SSH key runs one script and cannot reach the live relay');
+{
+  const keeper = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'keeper-ssh'), 'utf8');
+  const code = keeper.split('\n').filter(function (l) { return !/^\s*#/.test(l); }).join('\n');
+
+  // NEVER EVALUATED. eval, $REQ as a bare command, or feeding it to sh
+  // would each turn a forced command back into a shell.
+  const evaluated = /\beval\b/.test(code) ||
+    /^\s*\$\{?REQ/m.test(code) ||
+    /^\s*\$\{?SSH_ORIGINAL_COMMAND/m.test(code) ||
+    /(sh|bash)\s+-c\s+"?\$\{?(REQ|SSH_ORIGINAL_COMMAND)/.test(code);
+  if (!evaluated) {
+    test.check('the client’s request is matched, never executed');
+  } else {
+    test.fail('keeper-ssh evaluates $SSH_ORIGINAL_COMMAND — that is a shell, not a forced command');
+  }
+
+  // A CLOSED LIST. `case` with an explicit default that exits non-zero;
+  // a default that fell through to anything would be the same hole.
+  if (/case "\$REQ" in/.test(code) && /\*\)/.test(code) && /exit 2/.test(code)) {
+    test.check('and only a named verb reaches anything — the default refuses');
+  } else {
+    test.fail('keeper-ssh has no closed whitelist with a refusing default');
+  }
+
+  // THE LIVE RELAY IS NOT REACHABLE THROUGH IT, both ways round.
+  const guardsEnv = /! -f "\$REPO_ROOT\/\.env"/.test(code);
+  const guardsLive = /"\$UNIT_NAME" = "spirit-relay"/.test(code) &&
+    /"\$DOMAIN" = "spirit\.andyflinn\.com"/.test(code);
+  if (guardsEnv && guardsLive) {
+    test.check('and it refuses the main clone and anything resolving to the live relay');
+  } else {
+    test.fail('keeper-ssh can be pointed at spirit-3: env guard ' + guardsEnv + ', live guard ' + guardsLive);
+  }
+
+  // THE PRIVATE KEY IS NOT IN THE REPOSITORY, which is OneDrive-synced
+  // on the work machine — a key committed here would be a key uploaded.
+  const strayKeys = [];
+  ['bash', 'relayLab', '.'].forEach(function (dir) {
+    const full = path.join(REPO_ROOT, dir);
+    if (!fs.existsSync(full)) return;
+    fs.readdirSync(full).forEach(function (f) {
+      const p = path.join(full, f);
+      if (!fs.statSync(p).isFile()) return;
+      const head = fs.readFileSync(p, 'utf8').slice(0, 80);
+      if (head.indexOf('PRIVATE KEY-----') !== -1) strayKeys.push(path.join(dir, f));
+    });
+  });
+  if (strayKeys.length === 0) {
+    test.check('and no private key is committed beside it');
+  } else {
+    test.fail('private key material in the repo: ' + strayKeys.join(', '));
+  }
+}
+
 test.subHeading('Two clones can each keep their own update cron');
 {
   const cronIn = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'cron-install'), 'utf8');

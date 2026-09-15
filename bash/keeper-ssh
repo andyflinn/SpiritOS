@@ -1,0 +1,98 @@
+#!/bin/bash
+# The keeper's SSH door. NOT for humans — this is the forced command on a
+# restricted key, and it is the whole of what that key can do.
+#
+#   Andy: "you may set yourself up to remotely update and restart, i'll
+#   help you with my ssh until you can do it from here."
+#
+# ── A KEY THAT CAN RUN ONE SCRIPT, NOT A SHELL ───────────────────────
+#
+# The obvious way to give an agent remote update is a key in
+# authorized_keys and a promise about what it will type. That is a root
+# shell with a manner, and the promise is the only thing between it and
+# the rest of the box. SSH has the real mechanism, so use it:
+#
+#   command="/root/lab/SpiritOS/bash/keeper-ssh",restrict ssh-ed25519 AAAA... keeper
+#
+# With `command=`, sshd runs THIS and ignores whatever the client asked
+# for; the request survives only as $SSH_ORIGINAL_COMMAND, which is a
+# string to be matched against a list, never executed. `restrict` turns
+# off pty, agent, port and X11 forwarding in one word.
+#
+# So the blast radius is this file, and this file refuses anything that
+# is not one of four words.
+#
+# ── AND IT IS THE LAB'S DOOR, NOT THE BOX'S ──────────────────────────
+#
+# Scoped deliberately, and scoped to the SMALLER thing on purpose. The
+# same cron that makes remote update useful also restarts
+# spirit.andyflinn.com unattended on every push — which only became true
+# the day bash/update was fixed, because until then it silently restarted
+# nothing. The live relay should move when Andy cuts a tag, not when an
+# agent pushes to master.
+#
+# The `command=` path decides which clone this is, and lib.sh reads that
+# clone's .env. The guard below is defence in depth: if the line in
+# authorized_keys is ever copied to point at the main clone, this refuses
+# rather than handing out the live relay.
+source "$(dirname "$0")/lib.sh"
+
+# ── THIS MUST NOT BE THE LIVE RELAY ──────────────────────────────────
+#
+# Two independent ways of saying "not spirit-3", because one of them
+# being edited by hand is exactly the scenario this guards. A clone with
+# no .env IS the main clone — that is what lib.sh's fallback means.
+if [ ! -f "$REPO_ROOT/.env" ]; then
+  echo "refused: $REPO_ROOT has no .env, so it is the main clone" >&2
+  echo "         this key manages the lab and nothing else" >&2
+  exit 3
+fi
+if [ "$UNIT_NAME" = "spirit-relay" ] || [ "$DOMAIN" = "spirit.andyflinn.com" ]; then
+  echo "refused: this resolves to the live relay ($UNIT_NAME / $DOMAIN)" >&2
+  exit 3
+fi
+
+# NEVER EXECUTED, ONLY MATCHED. sshd hands the client's request here as a
+# string; running it is the entire vulnerability this design exists to
+# avoid. An empty request (a bare `ssh host`) is the common case and
+# means "update".
+REQ="${SSH_ORIGINAL_COMMAND:-update}"
+
+echo "keeper-ssh  $UNIT_NAME  $REPO_ROOT"
+
+case "$REQ" in
+  update)
+    # The scheduled poll's behaviour: restart only if the commit moved.
+    exec "$REPO_ROOT/bash/update"
+    ;;
+  force)
+    # What "remotely force update and restart" asks for: bring the clone
+    # to origin/master and restart the unit whether or not the commit
+    # moved. A wedged process is not a repository question.
+    exec "$REPO_ROOT/bash/update" --force
+    ;;
+  restart)
+    # No fetch at all. For "it is running the right code and has stopped
+    # answering", which is a different fault and deserves a different
+    # verb — an update that silently also restarts hides which one it was.
+    exec "$REPO_ROOT/bash/restart"
+    ;;
+  status)
+    exec "$REPO_ROOT/bash/status"
+    ;;
+  check)
+    # Read-only, and the one that needs no root. hostCheck is where the
+    # two-clone invariants live; running it ON the box is the only way to
+    # see the unit, cron and caddy halves.
+    exec node "$REPO_ROOT/relayLab/hostCheck.js"
+    ;;
+  *)
+    # SAY WHAT IS ALLOWED AND NOTHING ABOUT THE BOX. The refusal is the
+    # security boundary doing its job, so it should be legible — but a
+    # refusal that echoed the request back would put an attacker's string
+    # in root's log for somebody else to read.
+    echo "refused: not a keeper verb" >&2
+    echo "allowed: update | force | restart | status | check" >&2
+    exit 2
+    ;;
+esac
