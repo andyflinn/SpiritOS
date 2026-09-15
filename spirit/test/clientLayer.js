@@ -23,7 +23,7 @@
 //      hold. It crosses the wire once, on the reply, inside a signature.
 //      A client learns it from its OWN node, never from a peer.
 //
-//   3. THE IMMEDIATE REPLY NEEDS NO TABLE. /api/hub/post resolves only
+//   3. THE IMMEDIATE REPLY NEEDS NO TABLE. `peer.post` resolves only
 //      after the round trip settles, so the answer IS the HTTP response.
 //      A pending table for that would be dead weight on every exchange.
 //
@@ -179,7 +179,7 @@ function aPostAnswersInTheShapeTheProtocolHas() {
   return api.peerPost('chess', 'PEERKEY', { move: 'e4' }).then(function (r) {
     // The envelope is the node's job; this only checks the client asked
     // for the right thing: which app, which peer, what body.
-    const sent = world.posts.filter(function (p) { return p.url === '/api/hub/post'; })[0];
+    const sent = world.posts.filter(function (p) { return p.body.verb === 'peer.post'; })[0];
     if (sent && sent.body.to === 'PEERKEY' && sent.body.app === 'chess') {
       test.check('the post names the peer and the app, and nothing else is invented');
     } else {
@@ -195,7 +195,7 @@ function aPostAnswersInTheShapeTheProtocolHas() {
       test.fail('hash: ' + JSON.stringify(r.hash));
     }
 
-    // RULE 3. The reply is in the answer, because /api/hub/post resolves
+    // RULE 3. The reply is in the answer, because `peer.post` resolves
     // after the round trip settles. No table was consulted to get it.
     if (r.ok === true && r.from === 'PEERKEY') {
       test.check('and the reply with it — the round trip needs no correlation table');

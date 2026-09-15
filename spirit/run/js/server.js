@@ -27,7 +27,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
     '  --relay           Run as a public relay: serve relay.html at / and /index.html, answer\n' +
     '                    only the relay routes (/api/relay/*) and 404 everything else —\n' +
-    '                    /api/spirit, /api/hub/*, /api/events and the desktop shell.\n' +
+    '                    /api/spirit, /api/events and the desktop shell.\n' +
     '                    Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is\n' +
     '                    meant to be reached from the internet. Do NOT pass this to a personal\n' +
     '                    node; those stay loopback-only.\n' +
@@ -1035,37 +1035,23 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // `GET /api/hub/status` is `relay.status` under the one door.
-
-  // GET /api/hub/arrivals STOOD HERE, the log as a table. It had no
-  // caller: a page that was closed catches up on the SAME live channel
+  // SIX GET ROUTES STOOD HERE — status, who, device, handle,
+  // unknown-senders, and arrivals. Five are verbs at the one door now
+  // (the map is beside the POST block below); arrivals is the one that
+  // was deleted rather than moved.
+  //
+  // GET /api/hub/arrivals was the log as a table, and it had no caller:
+  // a page that was closed catches up on the SAME live channel
   // (createArrivals.subscribe hands it the un-taken backlog before
-  // anything new), so this was a second door asking a weaker version of
-  // an answered question.
-
-  if (req.method === 'GET' && pathname === '/api/hub/who') {
-    hub.handleWho(req, res);
-    return;
-  }
-
-  // The door password, and whether the window is open. Loopback only,
-  // like every /api/hub route — the gate is the one at the top of this
-  // handler, and it is why the password can be answered in the clear to
-  // a page on this machine and nowhere else.
-  // `GET /api/hub/device` is `device.info` under the one door.
-
-  // The candidates behind a handle somebody heard out loud. Matches
-  // only: the census is filtered on this node and never handed to the
-  // page (CYCLE-CONTACTS-2).
-  // `GET /api/hub/unknown-senders` is `contact.senders` under the one
-  // door, and the POST below it is `contact.setSenders`. They were one
-  // handler branching on req.method until the door made every call a
-  // POST — see hub.handleSendersRead.
-
-  if (req.method === 'GET' && pathname === '/api/hub/handle') {
-    hub.handleHandle(req, res, url);
-    return;
-  }
+  // anything new), so it was a second door asking a weaker version of an
+  // answered question.
+  //
+  // ONE THING THE ROUTES CARRIED THAT THE VERBS MUST KEEP: the loopback
+  // gate at the top of this handler is what let `device.info` answer a
+  // door password in the clear. It is not per-route and never was, so
+  // the fold did not move it — but a verb is easier to add than a route
+  // was, and a verb that answers a secret is still answering it to
+  // whatever can reach this port.
 
 
   // handleRelaySend AND handleRelayInbox STOOD HERE, the two routes that
@@ -1194,58 +1180,48 @@ const server = http.createServer((req, res) => {
     // protocol already said, and each had to be written, wired, given
     // deps, and remembered.
     //
-    // The browser addresses the relay by KEY through /api/hub/post now,
+    // The browser addresses the relay by KEY through `peer.post` now,
     // like any other peer (app/natterDetails).
     //
     // WHAT THIS MAKES TRUE, and it is the point of the whole exercise:
-    // /api/hub/post is the only door on this node that puts anything on
+    // `peer.post` is the only verb on this node that puts anything on
     // the wire, and A NEW RELAY VERB NEEDS NO CHANGE HERE AT ALL. The
     // relay grows a verb in answerSelf, the browser names it, and there
     // is nowhere left for a door to be missing from — which is the gap
     // remove-peer sat in for months and revoke shipped with this
     // morning.
     //
-    // What does NOT move, because 0010 says it cannot: claim, device and
-    // the census reads. You cannot post to a relay you have no row on,
-    // and you cannot post to an address you are still asking for.
-    // The router. peerRouter and presence are handed in rather than
-    // reached for: they are built at the foot of this file and hub.js
-    // must not hold state it cannot see created.
-    if (pathname === '/api/hub/post') {
-      hub.handlePost(req, res, readJsonBody, { router: peerRouter, presence: presence });
-      return;
-    }
+    // What does NOT fold into a post, because 0010 says it cannot:
+    // claim, device and the census reads. You cannot post to a relay you
+    // have no row on, and you cannot post to an address you are still
+    // asking for. They are verbs at the same door now, which is a
+    // different thing — the door is one, the plumbing behind it is not.
 
-    if (pathname === '/api/hub/contact') {
-      hub.handleContact(req, res, readJsonBody);
-      return;
-    }
-
-    // Yes or no about somebody already in the book: accept the person
-    // who was being held, or block a contact. Nothing leaves this node —
-    // whether it listens is not the mailbox's business.
-    // The node's front door, set by the person whose node it is. Contacts
-    // draws the control and posts here rather than writing a file: the
-    // setting is node-global, and api.fs is scoped to app/<name>/, so an
-    // app writing it would put a node-wide answer inside one of the apps
-    // that reads it.
-    // `POST /api/hub/unknown-senders` is `contact.setSenders`.
-
-    // A NEW DOOR PASSWORD. The only answer to a relay that carried one
-    // real enrolment and kept the password it was handed — see
-    // deviceAuth.rotatePassword. POST only, because it changes a secret.
-    // `POST /api/hub/rotate-password` is `device.rotate`.
-
-    // `POST /api/hub/peer` with an `action` field is four verbs now:
-    // `contact.block`, `contact.unblock`, `contact.accept`,
-    // `contact.label`.
-
-    // `POST /api/hub/claim` is `relay.claim` under the one door.
-
-    // POST /api/hub/send stood here until 2026-09-13 and GET
-    // /api/hub/inbox above until R8. There is nothing left of the ring on
-    // this node: an app posts through /api/hub/post and receives on the
-    // stream.
+    // ── THERE IS NO /api/hub/* ANY MORE ──────────────────────────────
+    //
+    // Every one of them is a verb at the door below, and this is the one
+    // place that says where each went, so the next reader of an old app
+    // or an old comment can find it:
+    //
+    //   claim              relay.claim
+    //   status             relay.status
+    //   who                peer.list
+    //   handle             peer.find
+    //   contact            peer.acquire
+    //   post               peer.post
+    //   peer  {action}     contact.block / .unblock / .accept / .label
+    //   unknown-senders    contact.senders (GET) / contact.setSenders
+    //   device             device.info
+    //   rotate-password    device.rotate
+    //
+    // Two are not on that list because they were deleted rather than
+    // moved. `POST /api/hub/send` went on 2026-09-13 and `GET
+    // /api/hub/inbox` on 2026-09-15, both with the ring: there is nothing
+    // left of it on this node, and an app posts through `peer.post` and
+    // receives on the stream.
+    //
+    // And four were never routes to begin with by the time they mattered
+    // — invite, rename, revoke, remove-peer, above.
 
     // ── THE LOOPBACK CLIENT API — ONE DOOR, VERBS IN THE BODY ────────
     //
@@ -1282,7 +1258,11 @@ const server = http.createServer((req, res) => {
     //   1. net.fetch   (was /api/proxy)
     //   2. jobs.*      (was /api/jobs)
     //   3. fs.*        (was /api/fs/*)
-    //   4. peer.*, and the rest of /api/hub/*
+    //   4. device, relay, contact, peer — all of /api/hub/*
+    //
+    // DONE, 2026-09-15. Twelve routes, seventeen verbs, six namespaces,
+    // and nothing on this node answers a path any more except the stream
+    // and the version.
     //
     // WHO ANSWERS WHAT IS NOT DECIDED HERE. A table of verb-to-function
     // stood on this spot for an hour and would have grown to nineteen
@@ -1668,6 +1648,42 @@ if (!relayMode) {
     'contact.senders': function (rq, rs) { hub.handleSendersRead(rq, rs); },
     'contact.setSenders': function (rq, rs) { hub.handleUnknownSenders(rq, rs, readJsonBody); },
   }, { wire: false });
+
+  // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────
+  //
+  // ANYBODY WHO IS NOT THIS NODE. Uniformly wire, and every one of these
+  // fails the same way when the box is offline — which is the whole
+  // reason the flag is on the namespace.
+  //
+  //   peer.post     the only thing on this node that reaches router.post
+  //   peer.list     the relay's census, captioned by this node's book
+  //   peer.find     the keys behind one spoken handle
+  //   peer.acquire  a human confirmed one of those keys
+  //
+  // WHY THESE ARE NOT `contact.*` even though a person doing them is
+  // doing contact work: `contact.*` edits the book on this disk and
+  // cannot be unreachable. These three ask a RELAY. Grouping by what the
+  // user calls it would have put a 502 and a file write in one namespace
+  // and made the wire flag a lie for half of it.
+  //
+  // `peer.acquire` is the seam between the two: it asks the relay whether
+  // that key is really there, and only then writes a row. It is wire
+  // because the asking can fail, and the write never happens when it
+  // does.
+  //
+  // peerRouter and presence are handed in rather than reached for: they
+  // are built at the foot of this file and hub.js must not hold state it
+  // cannot see created. That is not pedantry — /api/hub/invite was given
+  // a name out of scope on 2026-09-13 and the first real mint killed the
+  // node with every suite green.
+  loopbackVerbs.claim('peer', 'hub.js', {
+    'peer.post': function (rq, rs) {
+      hub.handlePost(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
+    },
+    'peer.list': function (rq, rs) { hub.handleWho(rq, rs); },
+    'peer.find': function (rq, rs) { hub.handleHandle(rq, rs, readJsonBody); },
+    'peer.acquire': function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); },
+  }, { wire: true });
 }
 
 server.listen(port, BIND_HOST, () => {

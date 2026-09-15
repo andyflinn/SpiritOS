@@ -91,25 +91,23 @@ machine and nowhere else.
 ```
 POST /api/spirit              ← ONE DOOR. The verb is in the body.
 
-  net.fetch                   handleGenericProxy          wire
-  relay.claim                 hub.handleClaim             wire
-  relay.status                hub.handleStatus            wire   ← the badge, by key
-  jobs.list   .create         (inline) / handleCreateJob  local
-  jobs.update .cancel .delete handleJobUpdate / …         local
-  fs.stat     .annotations    handleFsStat / …            local
-  fs.save     .delete .annotate  handleFsSave / …         local
-  device.info .rotate         hub.handleDevice / …        local
+  WIRE — these reach a relay, and being offline fails them
 
-POST /api/hub/
-  ├── post                  hub.handlePost      ← THE ONLY DOOR ONTO THE WIRE
-  ├── contact               hub.handleContact
-  ├── peer                  hub.handlePeer
-  └── unknown-senders       hub.handleUnknownSenders
+    net.fetch                   handleGenericProxy
+    relay.claim                 hub.handleClaim
+    relay.status                hub.handleStatus      ← the badge, by key
+    peer.post                   hub.handlePost        ← THE ONLY WAY ONTO THE WIRE
+    peer.list                   hub.handleWho
+    peer.find                   hub.handleHandle
+    peer.acquire                hub.handleContact
 
-GET  /api/hub/
-  ├── who                   hub.handleWho
-  ├── handle                hub.handleHandle
-  └── unknown-senders       hub.handleUnknownSenders
+  LOCAL — these are this machine, and cannot be unreachable
+
+    jobs.list   .create .update .cancel .delete
+    fs.stat     .annotations .save .delete .annotate
+    device.info .rotate         hub.handleDevice / handleRotatePassword
+    contact.block .unblock .accept .label      hub.handlePeer
+    contact.senders .setSenders hub.handleSendersRead / handleUnknownSenders
 
 GET  /api/events              handleSseConnection   ← the node's own stream
 GET  /api/version
@@ -117,10 +115,28 @@ GET  /api/version
 
 ### The verb is the address
 
-Measured at `4bf13c5`. Twelve routes became one door and seventeen verbs across
-four stages on 2026-09-15 — `net`, `jobs`, `fs`, `device`, `relay` — and the
-`/api/hub/*` rows above are what has not folded yet: `peer.*` and `contact.*`,
-which are stage 4c and 4d.
+Measured at `c214dd4` plus the working tree. Twelve routes became one door and
+twenty-two verbs across four stages on 2026-09-15 — `net`, `jobs`, `fs`,
+`device`, `relay`, `contact`, `peer`. **There is no `/api/hub/*` any more**;
+server.js carries the map from each old path to its verb, in one place, beside
+the dispatch.
+
+Two verbs are worth knowing were once one thing:
+
+- **`contact.*` was `POST /api/hub/peer` with `{ action }`** — a verb inside a
+  body, under a route that was also a verb, dispatched by hand in hub.js beside
+  a dispatch the door already does.
+- **`contact.senders` / `contact.setSenders` was one handler branching on
+  `req.method`** — which under one door is `POST` for both, so the branch had
+  become a coin-toss where a forgotten method reads instead of writes.
+
+### Why `peer.list` is not `contact.list`
+
+A person doing either is doing contact work, and grouping by that would have put
+a 502 and a file write in one namespace. `peer.*` asks a RELAY who is out there;
+`contact.*` edits the book on this disk. `peer.acquire` is the seam: it asks the
+relay whether the key is really there, and only then writes a row — wire,
+because the asking can fail, and the write never happens when it does.
 
 Two things stay routes for reasons that are not taste. `GET /api/events` is a
 long-lived server-push connection, a different transport shape rather than a
@@ -152,24 +168,19 @@ otherwise would draw an empty relay list and call it the truth.
 
 ### One door puts things on the wire
 
-`/api/hub/post` is the only route on this node that reaches `router.post`, and
+`peer.post` is the only verb on this node that reaches `router.post`, and
 `spirit/test/serverSurface.js` asserts it by reading `hub.js`: a second caller
-would be a second way onto the wire, whether or not a route had been wired to it
-yet.
+would be a second way onto the wire, whether or not a verb had been claimed for
+it yet.
 
 **Four doors stood beside it until 2026-09-15** — `invite`, `rename`, `revoke`
 and `remove-peer` — each building one packet body and handing it to
 `router.post`. `askRelay` was their shared half and went with them.
 
-What remains on `/api/hub/` is what is NOT a post, and it is now two groups
-rather than four — the other two folded onto `/api/spirit` the same day:
-
-- **reads** — `who`, `handle`, which are this node's own whoBook
-- **local** — `contact`, `peer`, `unknown-senders`, whoBook work on this machine
-  that never touches a relay
-
-`claim` is `relay.claim`, `status` is `relay.status`, `device` and
-`rotate-password` are `device.info` and `device.rotate`.
+Nothing remains on `/api/hub/`. What was not a post folded onto `/api/spirit`
+the same day — the table at the top of this section is the whole node API, and
+server.js carries the old-path-to-verb map beside the dispatch for anyone
+reading an older app.
 
 ### What a client is
 

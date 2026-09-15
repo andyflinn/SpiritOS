@@ -1103,8 +1103,20 @@ function createHub(rootDir) {
   // has to fetch the census to answer at all, but the browser holding a
   // copy of it is how `To` gets refilled from `who` by accident six
   // weeks from now. Downloading is not acquiring.
-  function handleHandle(req, res, urlObj) {
-    var handle = urlObj.searchParams.get('handle') || '';
+  // THE HANDLE ARRIVES IN THE BODY since `peer.find` folded onto
+  // /api/spirit. Same shape and same reasoning as handleStatus: a body
+  // that will not parse degrades to the empty string rather than
+  // refusing, because an empty handle is already a meaningful question
+  // here — it matches nobody, which is what `handleMatches` answers for
+  // it and what the old missing query parameter did.
+  function handleHandle(req, res, readJsonBody) {
+    Promise.resolve()
+      .then(function () { return readJsonBody(req); })
+      .catch(function () { return {}; })
+      .then(function (body) { findHandle(res, String((body && body.handle) || '')); });
+  }
+
+  function findHandle(res, handle) {
     withRelay(res, function (url) {
       relayRequest(url, 'GET', '/api/relay/who', null)
         .then(function (r) {

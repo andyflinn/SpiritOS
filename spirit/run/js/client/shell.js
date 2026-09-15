@@ -1351,10 +1351,11 @@
       // straight through: the shell does not know what is being regarded
       // any more than the node does.
       sendMessagePacket: function (packetApp, toId, body, opts) {
-        return fetch('/api/hub/post', {
+        return fetch('/api/spirit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            verb: 'peer.post',
             to: toId,
             app: packetApp,
             body: body,
@@ -1384,7 +1385,7 @@
       // never be built as though it could — so the hash is not proof
       // here, it is the thread: the name of the thing this client caused.
       //
-      // `reply` is the answer that came back, because /api/hub/post
+      // `reply` is the answer that came back, because `peer.post`
       // resolves only after router.post settles. The immediate round trip
       // needs no table at all — which is why there isn't one.
       //

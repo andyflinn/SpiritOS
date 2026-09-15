@@ -315,7 +315,8 @@ freePort()
     // taken out on 2026-09-15 when R8 removed the second one.
     //
     // Whether a route exists at all is protocolSurface.js's question for
-    // the relay side, and no equivalent register covers /api/hub/*. That
+    // the relay side, and no equivalent register covers the loopback
+    // door. That
     // is a real gap and it is named here rather than papered over.
     // PRUNED 2026-09-15, and seven of the fourteen entries were dead —
     // claim, invite, remove-peer, rename, rotate-password, status and
@@ -331,11 +332,16 @@ freePort()
     // `peerRouter` and `readJsonBody` — which is precisely the shape of
     // the 2026-09-13 death. A verb nobody has posted to since it was
     // claimed is exactly as unproven as a route nobody has called.
-    const HUB_ROUTES = [
-      ['POST', '/api/hub/post'],
-      ['POST', '/api/hub/contact'],
-      ['GET', '/api/hub/who'],
-      ['GET', '/api/hub/handle'],
+    const LOOPBACK_CALLS = [
+      // THE LIST IS ALL VERBS NOW. Not one /api/hub/* route is left on
+      // this node — the fold finished on 2026-09-15 — so the pruning
+      // this block's header warns about has nothing more to prune, and
+      // the reachability check below is the whole of what keeps it
+      // honest.
+      ['POST', '/api/spirit', { verb: 'peer.post' }],
+      ['POST', '/api/spirit', { verb: 'peer.list' }],
+      ['POST', '/api/spirit', { verb: 'peer.find', handle: 'x' }],
+      ['POST', '/api/spirit', { verb: 'peer.acquire', publicKey: 'NOPE' }],
       // Every loopback verb, at the one door. `net.fetch` is left out on
       // purpose: it is the only one that would reach the internet from a
       // test, and it is covered where its refusals are.
@@ -375,7 +381,7 @@ freePort()
     // this suite names must be one somebody claimed, and the one entry
     // that is deliberately unclaimed is asserted to say so.
     const unreached = [];
-    return HUB_ROUTES.reduce(function (chain, row) {
+    return LOOPBACK_CALLS.reduce(function (chain, row) {
       return chain.then(function () {
         return request(port, row[0], row[1], row[2] || (row[0] === 'POST' ? {} : null))
           .then(function (r) {
@@ -394,7 +400,7 @@ freePort()
       });
     }, Promise.resolve()).then(function () {
       if (!dead.length) {
-        test.check('all ' + HUB_ROUTES.length + ' hub routes answered rather than throwing');
+        test.check('all ' + LOOPBACK_CALLS.length + ' loopback verbs answered rather than throwing');
       } else {
         test.fail(dead.join(', ') + ' — answered nothing. A handler that reaches for a ' +
           'name not in scope at request time is invisible until the request is made.' +
@@ -469,7 +475,7 @@ freePort()
       } else {
         test.fail('router.post is called from ' + callers.length + ' places in hub.js (lines ' +
           callers.join(', ') + '). Every post-path door was deleted on 2026-09-15 so that ' +
-          '/api/hub/post is the only way onto the wire. A second caller is a second ' +
+          'peer.post is the only way onto the wire. A second caller is a second ' +
           'door, whether or not a route has been wired to it yet.' + lastWords());
       }
 

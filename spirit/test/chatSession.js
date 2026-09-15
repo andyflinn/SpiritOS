@@ -142,7 +142,17 @@ function fakeApi(store, project) {
 // more" — the only two answers the reload path cares about.
 function fakeFetch(log, options) {
   return function (url, init) {
-    log.push({ url: url, method: (init && init.method) || 'GET', body: init && init.body });
+    // THE VERB IS WHAT TELLS THESE APART NOW. Every loopback call goes to
+    // /api/spirit since the fold finished on 2026-09-15, so the URL is
+    // the same string for all of them and matching on it matches
+    // everything. Logged beside the url so assertions can filter on it.
+    let verb = '';
+    try { verb = JSON.parse(String((init && init.body) || '{}')).verb || ''; }
+    catch (e) { verb = ''; }
+    log.push({
+      url: url, method: (init && init.method) || 'GET',
+      body: init && init.body, verb: verb,
+    });
     const body = {
       messages: options.messages || [],
       ownedUrls: options.ownedUrls || [],
@@ -163,7 +173,7 @@ function fakeFetch(log, options) {
     } else if (url.indexOf('/api/hub/claim') === 0) {
       status = options.claimStatus || 201;
       if (options.claimBody) payload = options.claimBody;
-    } else if (url.indexOf('/api/hub/post') === 0) {
+    } else if (verb === 'peer.post') {
       // A RECEIPT, not a stored message. The ring answered 201 with what
       // the relay had kept; the router keeps nothing (0006) and answers
       // 200 with the hash that correlates the post with its reply — so a
@@ -397,22 +407,28 @@ function noAddressBookInChat() {
     // asks the shell for nothing and the hub for nothing: a mere app must
     // not be able to reach a node-global switch, and the way to be sure
     // of that is that no such reach exists in the source. Matched on the
-    // quoted path, because the file names /api/hub/peer in a comment
+    // quoted verb, because the file names contact.* in a comment
     // explaining why it does not call it — a check that greps the whole
     // source for a bare path is one a comment can fail, or pass, for no
     // reason anybody meant.
-    if (src.indexOf("'/api/hub/peer'") === -1 && src.indexOf('blockId') === -1 &&
+    if (src.indexOf("'contact.block'") === -1 && src.indexOf('blockId') === -1 &&
         src.indexOf('blockedHere') !== -1) {
       test.check('and its refusal is its own file, not a call on the node');
     } else {
-      test.fail('how chat blocks: quoted path ' + (src.indexOf("'/api/hub/peer'") !== -1) +
+      test.fail('how chat blocks: quoted verb ' + (src.indexOf("'contact.block'") !== -1) +
         ', blockId ' + (src.indexOf('blockId') !== -1) +
         ', blockedHere ' + (src.indexOf('blockedHere') !== -1));
     }
 
     // And now not even that one: minting moved to Natter with the rest
     // of binding (packet 3), so the invite's own acquire went with it.
-    if (src.indexOf('/api/hub/contact') === -1 && src.indexOf('/api/hub/invite') === -1) {
+    // MINTING HAS NO NEEDLE OF ITS OWN any more: it stopped being a door
+    // and became an ordinary peerPost, so a grep for "invite" hits the
+    // prose in this file that explains where minting went — which is the
+    // trap the check above already carries a paragraph about. What is
+    // still greppable, and is the sharper half, is acquiring: that IS a
+    // verb, and this window must not name it.
+    if (src.indexOf('peer.acquire') === -1) {
       test.check('and it neither mints an invite nor writes a contact at all');
     } else {
       test.fail('relayChat.js still writes contacts or mints');
@@ -696,12 +712,12 @@ function enterSendsExactlyOnce() {
   return settle().then(function () {
     el(app, 'rc-to-pick').value = 'relay';
     el(app, 'rc-text').value = 'hello mailbox';
-    const before = app.log.filter(function (r) { return r.url === '/api/hub/post'; }).length;
+    const before = app.log.filter(function (r) { return r.verb === 'peer.post'; }).length;
 
     el(app, 'rc-text').fire('keydown', { key: 'Enter', preventDefault: function () {} });
 
     return settle().then(function () {
-      const sends = app.log.filter(function (r) { return r.url === '/api/hub/post'; }).length - before;
+      const sends = app.log.filter(function (r) { return r.verb === 'peer.post'; }).length - before;
       if (sends === 1) {
         test.check('one Enter is one send');
       } else {
@@ -712,7 +728,7 @@ function enterSendsExactlyOnce() {
       el(app, 'rc-text').value = 'not yet';
       el(app, 'rc-text').fire('keydown', { key: 'a', preventDefault: function () {} });
       return settle().then(function () {
-        const after = app.log.filter(function (r) { return r.url === '/api/hub/post'; }).length - before;
+        const after = app.log.filter(function (r) { return r.verb === 'peer.post'; }).length - before;
         if (after === 1) {
           test.check('and an ordinary keystroke sends nothing');
         } else {
@@ -1332,7 +1348,7 @@ function heldRowsPointAtContacts() {
         // like every other row.
         let called = null;
         let launched = '';
-        const whoBefore = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+        const whoBefore = app.log.filter(function (c) { return c.verb === 'peer.list'; }).length;
         app.api.launchApp = function (id) { launched = id; };
         app.api.callDialog = function (id, params) {
           called = { id: id, params: params };
@@ -1358,7 +1374,7 @@ function heldRowsPointAtContacts() {
         }
 
         return settle().then(function () {
-          const whoAfter = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+          const whoAfter = app.log.filter(function (c) { return c.verb === 'peer.list'; }).length;
           if (whoAfter === whoBefore) {
             test.check('and a card that decided nothing costs the list nothing');
           } else {
@@ -1376,7 +1392,7 @@ function heldRowsPointAtContacts() {
             target: closestStub('rc-open-contacts', { 'data-rc-card': HELD }),
           });
           return settle().then(function () {
-            const whoFinally = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+            const whoFinally = app.log.filter(function (c) { return c.verb === 'peer.list'; }).length;
             if (whoFinally === whoAfter + 1) {
               test.check('while an answer saying something changed re-reads the book behind the To control');
             } else {
@@ -1807,7 +1823,7 @@ function sendsAndReadsPackets() {
       el(app, 'rc-text').value = 'a new line';
       el(app, 'rc-send').fire('click');
       return settle().then(function () {
-        const send = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; }).pop();
+        const send = app.log.filter(function (c) { return c.verb === 'peer.post'; }).pop();
         const body = send && send.body ? JSON.parse(send.body) : null;
         if (body && body.app === 'relay-chat' && body.body === 'a new line' && body.text === undefined) {
           test.check('and a send says app and body, not a wire string');

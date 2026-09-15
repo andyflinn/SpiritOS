@@ -10,11 +10,15 @@
 // Everything here goes through the hub's own routes, the same ones the
 // chat window called:
 //
-//   GET  /api/hub/who       the address book, captioned by this node
-//   GET  /api/hub/handle    every key the mailbox carries under a word
-//   POST /api/hub/contact   confirm one of those keys (acquiredVia handle)
+//   peer.list       the address book, captioned by this node
+//   peer.find       every key the mailbox carries under a word
+//   peer.acquire    confirm one of those keys (acquiredVia handle)
 //   contact.accept .block .unblock .label     what this node keeps
 //   contact.senders .setSenders               and who it listens to
+//
+// All six at one door, /api/spirit, with the verb in the body. `peer.*`
+// asks the relay and can fail because this box is offline; `contact.*`
+// is this disk and cannot.
 //
 // No packets. Sharing a contact is a later sitting and a bigger
 // question: a card that arrives from somebody else is their six
@@ -250,8 +254,7 @@ function contactsPaintSelf() {
 }
 
 function contactsRefresh() {
-  return fetch('/api/hub/who')
-    .then(function (r) { return r.json(); })
+  return contactsAsk('peer.list')
     .then(function (data) {
       contactsPeople = (data && data.people) || [];
       contactsSelfTail = (data && data.selfTail) || '';
@@ -272,8 +275,7 @@ function contactsFindByHandle() {
     return;
   }
   out.innerHTML = '<div class="job-log-empty">looking…</div>';
-  fetch('/api/hub/handle?handle=' + encodeURIComponent(handle))
-    .then(function (r) { return r.json(); })
+  contactsAsk('peer.find', { handle: handle })
     .then(function (data) {
       var matches = (data && data.matches) || [];
       if (!matches.length) {
@@ -518,7 +520,9 @@ spirit.shell.activateApp({
       var button = event.target && event.target.closest && event.target.closest('[data-add-key]');
       if (!button) return;
       var out = document.getElementById('contacts-add-out');
-      contactsPost('/api/hub/contact', { publicKey: button.dataset.addKey }).then(function (r) {
+      contactsPost('/api/spirit', {
+        verb: 'peer.acquire', publicKey: button.dataset.addKey,
+      }).then(function (r) {
         if (r.status !== 201) {
           out.innerHTML = '<div class="job-log-empty">' + contactsEscapeHtml(r.status + ' ' + r.text) + '</div>';
           return;

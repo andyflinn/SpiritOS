@@ -124,7 +124,7 @@ function mountApp(options) {
         json: function () { return Promise.resolve(JSON.parse(body)); },
       });
     }
-    if (url.indexOf('/api/hub/contact') === 0) status = opts.contactStatus || 201;
+    if (verb === 'peer.acquire') status = opts.contactStatus || 201;
     if (verb.indexOf('contact.') === 0) {
       status = opts.peerStatus || 200;
       // The node keeps what it is told and the next read hands it back —
@@ -267,8 +267,13 @@ function settle() {
     .then(function () { return new Promise(function (r) { setImmediate(r); }); });
 }
 
-function posted(app, path) {
-  return app.log.filter(function (c) { return c.url === path; }).map(function (c) { return JSON.parse(c.body); });
+// WHAT WAS SENT, BY VERB. This took a path until the fold finished on
+// 2026-09-15: every loopback call goes to one URL now, so a filter on
+// the URL matches everything this app ever did.
+function posted(app, prefix) {
+  return app.log
+    .map(function (c) { try { return JSON.parse(c.body); } catch (e) { return null; } })
+    .filter(function (b) { return b && String(b.verb || '').indexOf(prefix) === 0; });
 }
 
 test.startTest('Contacts — the address book, in its own window');
@@ -645,10 +650,10 @@ function saysNothingWhenNothingHappened() {
     dialogResult: null,
   });
   return settle().then(function () {
-    const reads = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+    const reads = app.log.filter(function (c) { return /peer.list/.test(String(c.body || '')); }).length;
     el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', CAROL) });
     return settle().then(function () {
-      const after = app.log.filter(function (c) { return c.url === '/api/hub/who'; }).length;
+      const after = app.log.filter(function (c) { return /peer.list/.test(String(c.body || '')); }).length;
       if (after === reads) {
         test.check('and a dialog answering null costs the table nothing');
       } else {
@@ -688,7 +693,7 @@ function addsByHandle() {
 
       el(app, 'contacts-add-out').fire('click', { target: target('data-add-key', 'KEY-BERT-ONE') });
       return settle().then(function () {
-        const calls = posted(app, '/api/hub/contact');
+        const calls = posted(app, 'peer.acquire');
         if (calls.length === 1 && calls[0].publicKey === 'KEY-BERT-ONE') {
           test.check('and confirming one writes that key and no other');
         } else {

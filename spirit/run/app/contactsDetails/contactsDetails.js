@@ -57,8 +57,8 @@ function cdStatus(text) {
 // is open changes unanswered inbound. The key is the only part of a row
 // that cannot change.
 function cdLoad() {
-  return fetch('/api/hub/who')
-    .then(function (r) { return r.json(); })
+  return cdPost('/api/spirit', { verb: 'peer.list' })
+    .then(function (r) { return JSON.parse(r.text); })
     .then(function (data) {
       var people = (data && data.people) || [];
       cdPerson = people.filter(function (p) { return p.publicKey === cdKey; })[0] || null;

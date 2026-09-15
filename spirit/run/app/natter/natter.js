@@ -458,7 +458,7 @@ function natterAcquireInvited(rows) {
     var key = claimed[label];
     if (!key) return;
     natterMintedLabels = natterMintedLabels.filter(function (l) { return l !== label; });
-    natterPost('/api/hub/contact', { publicKey: key, via: 'invite' }).catch(function () {});
+    natterPost('/api/spirit', { verb: 'peer.acquire', publicKey: key, via: 'invite' }).catch(function () {});
   });
 }
 

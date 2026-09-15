@@ -627,8 +627,8 @@ spirit.shell.activateApp({
       // to write to, so a people list would be a question with no use
       // for its answer.
       if (!myName) return Promise.resolve();
-      return fetch('/api/hub/who')
-        .then(function (r) { return r.json(); })
+      return hubPost('/api/spirit', { verb: 'peer.list' })
+        .then(function (r) { return JSON.parse(r.text); })
         .then(function (data) {
           people = (data && data.people) || [];
           mailboxKey = (data && data.relayPublicKey) || '';
@@ -1133,7 +1133,7 @@ spirit.shell.activateApp({
       // refused, and what comes back is a receipt. So the record filed
       // here is built from what was typed, which is the only copy of the
       // line that will ever exist.
-      hubPost('/api/hub/post', { to: to, app: RC_PACKET_APP, body: text }).then(function (r) {
+      hubPost('/api/spirit', { verb: 'peer.post', to: to, app: RC_PACKET_APP, body: text }).then(function (r) {
         if (r.status === 200) {
           // Keyed by `toKey` for the same reason the received half is
           // keyed by fromKey: a peer is a key, and two johns are two
