@@ -1332,6 +1332,89 @@ function createHub(rootDir) {
   // as a missing query parameter did. Failing the whole probe over a
   // caption would take Natter's relay list down for a reason that has
   // nothing to do with the relays.
+  // ── IS THIS PEER ELIGIBLE TO BE A PARTNER? ──────────────────────────
+  //
+  //   Andy: "can peers get the public key of a relay's owner from the
+  //   relay, if they are on its ledger? this would make handshake on
+  //   partnership a breeze, because partnership eligibility would be
+  //   easier to determine."
+  //
+  // They can, and better than asked: not just peers on the ledger —
+  // ANYONE. `/api/relay/who` is public and unsigned (0010 calls it "what
+  // a node reads before it has anything") and every row carries
+  // `publicKey` and `owner`. So eligibility is a fetch and a comparison,
+  // with no new wire, no signature and no membership.
+  //
+  // READ-ONLY, AND THAT IS THE DESIGN. This answers a question; it does
+  // not promote anybody. The promotion is an owner verb posted to the
+  // relay like every other one, so there is exactly one path that writes
+  // a peer row and this is not it.
+  //
+  // WHY THE NODE DOES THE FETCHING: a relay makes no outbound request of
+  // any kind and this does not change that. Nothing is being laundered —
+  // the census is public, so a node reporting it hands over nothing the
+  // relay could not have read itself.
+  //
+  // TWO KEYS, TWO JOBS, and conflating them is the likeliest bug in this
+  // design: you verify OWNERSHIP against the row marked owner, and you
+  // capture the RELAY's own key to pin for a later forward hop. On
+  // spirit-3 those are …fXD+0c= and …bCAsCR4=.
+  function handlePartnerCheck(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var peerKey = String((body && body.publicKey) || '').trim();
+      var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
+      if (!peerKey || !url) { fail(res, 400, 'publicKey and url required'); return; }
+
+      var answer = function (obj) {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(obj));
+      };
+
+      relayRequest(url, 'GET', '/api/relay/who', null)
+        .then(function (r) {
+          var parsed = null;
+          try { parsed = JSON.parse(r.text); }
+          catch (e) { parsed = null; }
+          if (r.status !== 200 || !parsed) {
+            answer({ ok: false, error: 'that relay did not answer a census (' + r.status + ')' });
+            return;
+          }
+          var rows = Array.isArray(parsed) ? parsed : (parsed.peers || []);
+          var theirOwner = rows.filter(function (p) { return p && p.owner; })[0];
+          if (!theirOwner) {
+            answer({ ok: false, error: 'that relay has no owner yet — nobody has claimed it' });
+            return;
+          }
+          // THE WHOLE CHECK. Not "somebody told me", not "the label
+          // matches" — the key marked owner over there is the key of the
+          // peer here. A referral has to be verifiable (Andy) and this is
+          // what verifiable looks like.
+          if (theirOwner.publicKey !== peerKey) {
+            answer({
+              ok: false,
+              error: 'that relay is owned by somebody else (' +
+                (theirOwner.publicLabel || 'unlabelled') + ')',
+            });
+            return;
+          }
+          answer({
+            ok: true,
+            url: url,
+            // Pinned at promotion, used at the hop.
+            relayKey: parsed.relayPublicKey || '',
+            relayLabel: parsed.relayLabel || '',
+            ownerLabel: theirOwner.publicLabel || '',
+            peers: rows.length,
+          });
+        })
+        .catch(function (err) {
+          answer({ ok: false, error: String((err && err.message) || err) });
+        });
+    }).catch(function () {
+      fail(res, 400, 'bad body');
+    });
+  }
+
   function handleStatus(req, res, readJsonBody, deps) {
     Promise.resolve()
       .then(function () { return readJsonBody(req); })
@@ -1399,6 +1482,7 @@ function createHub(rootDir) {
     // other one and this is what a node has.
     handlePost: handlePost,
     handleStatus: handleStatus,
+    handlePartnerCheck: handlePartnerCheck,
     handleWho: handleWho,
     handleHandle: handleHandle,
     handleContact: handleContact,

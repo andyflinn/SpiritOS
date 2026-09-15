@@ -137,7 +137,7 @@ function copyTarget(out) {
 // because the group's membership is a decision — the device panel is
 // deliberately NOT in it, being about this node rather than this relay —
 // and a list that guessed would stop noticing when that line moves.
-const OWNER_PANELS = ['relaylabel', 'invite', 'invites', 'peers', 'policy'];
+const OWNER_PANELS = ['relaylabel', 'invite', 'invites', 'peers', 'partners', 'policy'];
 
 // The group's own bar. It carries `.nd-group-fold` and deliberately NOT
 // `.nd-fold`, so the handler can tell a click on the group from a click
@@ -196,6 +196,11 @@ function mountApp(opts) {
         rows: opts.rows || [],
         relayStatus: opts.relayStatus || {},
       });
+    } else if (verb === 'relay.partnerCheck') {
+      // Read-only eligibility. The fixture answers what a public census
+      // would have proved, so a test can drive both outcomes without a
+      // second relay.
+      text = JSON.stringify(opts.partnerCheck || { ok: false, error: 'no fixture' });
     } else if (verb === 'device.info') {
       text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/post') === 0) {
@@ -914,6 +919,117 @@ function theEnrolmentListDatesEachRow() {
     } else {
       test.fail('no key tail on the rows');
     }
+  });
+}
+
+// ── THE PARTNER PANEL, AND THE TWO STEPS THAT ARE NOT ONE ────────────
+//
+//   Andy: "via owner input, both can establish that fact."
+//
+// The owner types WHERE, because a key is not an address and nothing on
+// this wire maps one to the other. The census supplies the proof.
+//
+// TWO STEPS, AND THE FIRST GRANTS NOTHING. `relay.partnerCheck` is
+// read-only — it fetches a public census and compares a key. Only a yes
+// leads to the owner verb, so there is exactly one path that writes a
+// peer row and the check is not on it.
+function thePartnerPanelChecksBeforeItAdds() {
+  test.subHeading('A partnership is checked against a public census before it is made');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, census: { relayKey: 'RELAYKEY' } }],
+    relayStatus: { [OWNED]: { key: 'RELAYKEY', partners: [] } },
+    partnerCheck: {
+      ok: true, url: 'https://lab.example',
+      relayKey: 'THEIR-RELAY-KEY', relayLabel: 'the lab', ownerLabel: 'bella',
+    },
+  });
+
+  return settle().then(function () {
+    const panel = {
+      querySelector: function (sel) {
+        if (sel === '.nd-partner-url') return { value: 'https://lab.example' };
+        if (sel === '.nd-partner-key') return { value: 'HER-KEY' };
+        if (sel === '.nd-partner-out') return out;
+        return null;
+      },
+    };
+    const out = { textContent: '', className: '' };
+    const go = { getAttribute: function () { return null; } };
+    go.closest = function (sel) {
+      if (sel === '.nd-partner-go') return go;
+      if (sel === '.natter-partners') return panel;
+      return null;
+    };
+
+    app.open('partners').body().fire('click', { target: go });
+
+    return settle().then(function () {
+      const checked = app.log.filter(function (c) { return c.verb === 'relay.partnerCheck'; });
+      const asked = checked.length ? JSON.parse(checked[0].body) : null;
+      if (asked && asked.publicKey === 'HER-KEY' && asked.url === 'https://lab.example') {
+        test.check('it asks whether that key owns that relay, before promoting anybody');
+      } else {
+        test.fail('checked with: ' + JSON.stringify(asked));
+      }
+
+      // AND THEN THE OWNER VERB, carrying THEIR relay's key — pinned from
+      // the same census that proved the ownership, so a later forward hop
+      // can verify them signing as themselves.
+      const posts = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; });
+      const sent = posts.length ? JSON.parse(posts[posts.length - 1].body) : null;
+      const body = sent && sent.body;
+      if (body && body.partner && body.partner.relayKey === 'THEIR-RELAY-KEY' &&
+          body.partner.key === 'HER-KEY') {
+        test.check('and then posts the partnership, pinning THEIR relay key rather than their own');
+      } else {
+        test.fail('posted: ' + JSON.stringify(body));
+      }
+    });
+  });
+}
+
+// A REFUSAL STOPS AT THE CHECK. Nothing is posted, nothing is promoted,
+// and the reason is the one the census gave — "that relay is owned by
+// somebody else" is a different problem from "that relay is down", and
+// the screen must not flatten them.
+function aRefusedCheckPromotesNobody() {
+  test.subHeading('And a relay somebody else owns is refused before anything is posted');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, census: { relayKey: 'RELAYKEY' } }],
+    relayStatus: { [OWNED]: { key: 'RELAYKEY', partners: [] } },
+    partnerCheck: { ok: false, error: 'that relay is owned by somebody else (carol)' },
+  });
+
+  return settle().then(function () {
+    const out = { textContent: '', className: '' };
+    const panel = {
+      querySelector: function (sel) {
+        if (sel === '.nd-partner-url') return { value: 'https://carols.example' };
+        if (sel === '.nd-partner-key') return { value: 'HER-KEY' };
+        if (sel === '.nd-partner-out') return out;
+        return null;
+      },
+    };
+    const go = { getAttribute: function () { return null; } };
+    go.closest = function (sel) {
+      if (sel === '.nd-partner-go') return go;
+      if (sel === '.natter-partners') return panel;
+      return null;
+    };
+
+    const before = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; }).length;
+    app.open('partners').body().fire('click', { target: go });
+
+    return settle().then(function () {
+      const after = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; }).length;
+      if (after === before && /somebody else/.test(out.textContent)) {
+        test.check('nothing is posted, and the screen says whose relay it actually is');
+      } else {
+        test.fail('posts ' + before + '->' + after + ', said "' + out.textContent + '"');
+      }
+    });
   });
 }
 
@@ -1851,6 +1967,8 @@ ownedMailbox()
   .then(claimAndRenameAreExclusive)
   .then(anUnboundNodeCanStillClaim)
   .then(aRelayThatIsDownOffersNoClaim)
+  .then(thePartnerPanelChecksBeforeItAdds)
+  .then(aRefusedCheckPromotesNobody)
   .then(theOwnerGroupFolds)
   .then(theEnrolmentListDatesEachRow)
   .then(anOwnerEventRefreshesTheScreen)

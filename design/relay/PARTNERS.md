@@ -451,6 +451,18 @@ This is the real threshold in the proposal — bigger than the flag.
   simplest and always correct; a RAM copy with a TTL is the optimisation.
   At ten peers neither is measurable — and the table above says when it
   stops being free, which is later than it feels.
+- **A stale flag is nobody's emergency.** Nothing re-checks that a peer
+  still owns the relay it was partnered for. Left open deliberately:
+
+  > **Andy:** "I'm not too concerned about the flags, later on the relay
+  > can report to its owner things like partner x unavailable for n
+  > hours/days etc."
+
+  Which is the right shape — an owner-event about a partnership that has
+  gone quiet, not a re-verification loop. A relay already knows when a
+  partner's owner was last present, and that is the number worth
+  reporting. Tier two has to handle a refused forward regardless, so a
+  stale flag costs a wasted hop and a line in the log.
 - **What B answers when it refuses a forward.** A's caller learns *what*,
   and A learns something about its hint. Both are log entries nobody has
   specified.

@@ -390,6 +390,121 @@ function createRelay(rootDir) {
     return name === 'relay' ? '' : name;
   }
 
+  // ── PARTNERSHIP, TIER ONE: THE FLAG AND NOTHING ELSE ────────────────
+  //
+  //   Andy: "every relay can promote a peer to 'partner' status in the
+  //   peer-ledger… a non-owner peer possesses his own relay somewhere."
+  //
+  // After this, a relay KNOWS who its partners are and nothing routes
+  // differently. That is the whole of the tier, and it is useful alone:
+  // the flag is what everything after it depends on, and until the route
+  // table exists a relay simply refuses a stranger exactly as before.
+  //
+  // WHAT IS STORED IS THIS RELAY'S OWN RELATIONSHIP, never their members
+  // (design/relay/PARTNERS.md):
+  //
+  //   partner: { url, relayKey, since }
+  //
+  // Three facts about a peer's row here. `url` because A KEY IS NOT AN
+  // ADDRESS — nothing on this wire maps one to the other, which is why
+  // the owner supplies it. `relayKey` because the forward hop in a later
+  // tier must verify the partner signing as itself, and the moment to
+  // capture that is while somebody is looking at the census that proves
+  // the partnership.
+  //
+  // 0006 IS UNTOUCHED. Their ledger is not here and never will be — the
+  // hard rule is that a relay never persists one — so routingTable.json
+  // keeps its shape, `peers` and nothing else, which labPersistence
+  // asserts.
+  //
+  // THE RECIPROCITY CHECK IS NOT HERE, and that is deliberate. The proof
+  // is a public census: anybody may read `/api/relay/who` and see which
+  // key is marked owner (0010 — it is the bootstrap). So the owner's NODE
+  // fetches it and this stores the conclusion, and a relay still never
+  // makes an outbound request. A node reporting a public page is not
+  // laundering privilege; it saw nothing this box could not have seen.
+  function setPartner(who, key, url, relayKey, hash) {
+    var peerKey = String(key == null ? '' : key).trim();
+    if (!peerKey) return { ok: false, status: 400, error: 'peer key required' };
+
+    var row = findByKey(peerKey);
+    if (!row) return { ok: false, status: 404, error: 'no such peer' };
+
+    // A RELAY IS NOT ITS OWN PARTNER. The whole point is a peer who owns
+    // a DIFFERENT relay; the owner's own row is this box, and partnering
+    // with yourself would be a route to where you already are.
+    if (row.owner) return { ok: false, status: 400, error: 'that is this relay’s owner' };
+
+    var at = String(url == null ? '' : url).trim().replace(/\/+$/, '');
+    if (!at) return { ok: false, status: 400, error: 'partner relay url required' };
+    var theirKey = String(relayKey == null ? '' : relayKey).trim();
+    if (!theirKey) return { ok: false, status: 400, error: 'partner relay key required' };
+    // Their relay's key, not their own. Two keys, two jobs — you verify
+    // ownership against the OWNER row and you pin the RELAY key for the
+    // hop, and conflating them is the likeliest bug in this design.
+    if (theirKey === peerKey) {
+      return { ok: false, status: 400, error: 'that is the peer’s own key, not their relay’s' };
+    }
+
+    if (row.partner && row.partner.url === at && row.partner.relayKey === theirKey) {
+      return { ok: true, status: 200, unchanged: true, partner: row.partner };
+    }
+
+    row.partner = {
+      url: at,
+      relayKey: theirKey,
+      // Written once, like claimedAt: it says when this partnership
+      // began, and a re-promotion to the same relay does not reach here.
+      since: (row.partner && row.partner.since) || new Date().toISOString(),
+    };
+    persist();
+
+    ownerEvent('partner-added', {
+      key: peerKey, label: row.publicLabel || '', relayAt: at, cause: hash,
+    });
+    return { ok: true, status: 200, partner: row.partner };
+  }
+
+  // BREAKING IS ONE SIDE'S DECISION, and needs no protocol. A partnership
+  // is two unilateral choices that happen to agree (PARTNERS.md) — so
+  // this clears the flag here and the other relay finds out, if it ever
+  // matters, by being refused.
+  function clearPartner(who, key, hash) {
+    var peerKey = String(key == null ? '' : key).trim();
+    if (!peerKey) return { ok: false, status: 400, error: 'peer key required' };
+
+    var row = findByKey(peerKey);
+    if (!row) return { ok: false, status: 404, error: 'no such peer' };
+    if (!row.partner) return { ok: true, status: 200, unchanged: true };
+
+    var was = row.partner;
+    delete row.partner;
+    persist();
+
+    ownerEvent('partner-removed', {
+      key: peerKey, label: row.publicLabel || '', relayAt: was.url, cause: hash,
+    });
+    return { ok: true, status: 200, removed: was };
+  }
+
+  // Everything this relay partners with, for the owner's own report. Not
+  // in `who()`: a partnership is a public statement of association
+  // between two relays, and there is no reason yet for a stranger to read
+  // one. Owner-only until somebody needs otherwise.
+  function partners() {
+    return listPeers()
+      .filter(function (p) { return p && p.partner; })
+      .map(function (p) {
+        return {
+          key: p.publicKey,
+          label: p.publicLabel || '',
+          url: p.partner.url,
+          relayKey: p.partner.relayKey,
+          since: p.partner.since,
+        };
+      });
+  }
+
   // Owner-only, and enforced by the caller: this is reached from
   // answerSelf's `owner` branch, which has already verified the post
   // against the row marked owner in allow.json.
@@ -1504,6 +1619,32 @@ function createRelay(rootDir) {
       out = setRelayLabel(String(body.relayLabel.label || ''), hash);
     }
 
+    // ── PARTNERSHIP, AND THE PROOF WAS READ BEFORE IT GOT HERE ──────
+    //
+    // Owner-only: who this relay partners with is the owner's decision
+    // about their own box, the same class as naming it.
+    //
+    // The reciprocity — that this peer really owns the relay at that url
+    // — was checked against a PUBLIC census by the owner's node before
+    // this post was signed. It is not re-checked here because a relay
+    // makes no outbound request, and because nothing about the check
+    // needs privilege: `/api/relay/who` is readable by anyone, which is
+    // what makes the node's report trustworthy rather than merely
+    // trusted.
+    if (body && body.partner && owner) {
+      out = setPartner(
+        who,
+        String(body.partner.key || ''),
+        String(body.partner.url || ''),
+        String(body.partner.relayKey || ''),
+        hash
+      );
+    }
+
+    if (body && body.unpartner && owner) {
+      out = clearPartner(who, String(body.unpartner.key || ''), hash);
+    }
+
     if (body && body.revoke && owner) {
       var revokedLabel = String(body.revoke.label || '');
       var gone = invites.revokeInvite(rootDir, revokedLabel);
@@ -1951,6 +2092,7 @@ function createRelay(rootDir) {
     try { mem = process.memoryUsage(); } catch (e) { mem = {}; }
 
     return !!presentNow.send(ownerKey, 'relay-status', relayStatus.report({
+      partners: partners(),
       snapshot: snapshot(),
       present: presentNow.present(),
       routes: routes.size(),
@@ -2131,6 +2273,11 @@ function createRelay(rootDir) {
     // Exported for the suite that drives it directly (ownerLog). The
     // browser reaches it through the `relayLabel` verb, like any peer.
     setRelayLabel: setRelayLabel,
+    // Who this relay partners with. Owner-only by where it is used —
+    // relayStatus puts it in the report, which reaches the owner alone.
+    partners: partners,
+    setPartner: setPartner,
+    clearPartner: clearPartner,
     // `status` STOOD HERE and went with its route (R3). What an owner
     // learns about its relay arrives on the owner's stream —
     // statusToOwner, below — and is not something anybody asks for.

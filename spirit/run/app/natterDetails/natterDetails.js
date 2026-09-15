@@ -938,6 +938,141 @@ function ndPeerDrop(button) {
   });
 }
 
+// ── PARTNER RELAYS ──────────────────────────────────────────────────
+//
+//   Andy: "every relay can promote a peer to 'partner' status in the
+//   peer-ledger… a non-owner peer possesses his own relay somewhere. and
+//   via owner input, both can establish that fact."
+//
+// TIER ONE, so this changes nothing about routing. What it does is make
+// the relationship a fact in the ledger — see design/relay/PARTNERS.md.
+//
+// THE OWNER TYPES THE URL, and that is load-bearing rather than lazy: a
+// KEY IS NOT AN ADDRESS. Nothing on this wire maps one to the other, and
+// nothing should — that is the DNS-shaped question this system has
+// avoided. So a human supplies where, and the census supplies the proof.
+function ndPartnersHtml() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  var report = ndBadge.report;
+  var rows = (report && report.partners) || [];
+
+  var body;
+  if (!rows.length) {
+    body = '<div class="job-log-empty">no partners — this relay reaches only its own members</div>';
+  } else {
+    body = '<table class="job-table"><thead><tr>' +
+      '<th>Partner</th><th>Their relay</th><th>Since</th><th></th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (p) {
+        var key = String(p.key || '');
+        return '<tr>' +
+          '<td>' + ndEscapeHtml(p.label || '(no label)') +
+            ' <span class="nd-peer-tail">…' + ndEscapeHtml(key.slice(-8)) + '</span></td>' +
+          '<td>' + ndEscapeHtml(p.url || '') + '</td>' +
+          '<td>' + ndEscapeHtml(ndWhen(p.since)) + '</td>' +
+          '<td><button type="button" class="cancel-btn nd-partner-drop"' +
+            ' data-partner-key="' + ndEscapeHtml(key) + '">Break</button></td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table>';
+  }
+
+  return ndPanel('partners', ndIcon.LINK, 'Partner relays (' + rows.length + ')',
+    body +
+    '<div class="start-job-form card">' +
+    '<label class="field-label grow">Their relay' +
+      '<input type="text" class="nd-partner-url" placeholder="https://their-relay.example"></label>' +
+    '<label class="field-label grow">Who owns it' +
+      '<input type="text" class="nd-partner-key" placeholder="paste their key, or use the list above"></label>' +
+    '<button type="button" class="cancel-btn nd-partner-go">Check and add</button>' +
+    '</div>' +
+    '<div class="job-manifest-note">A partner is somebody enrolled here who owns a relay ' +
+      'of their own. This checks that before adding them — their relay says publicly who ' +
+      'owns it, and the key has to be theirs.</div>' +
+    '<div class="job-manifest-note nd-partner-out"></div>',
+    'natter-partners');
+}
+
+// TWO STEPS, AND THE FIRST ONE GRANTS NOTHING. `relay.partnerCheck` is
+// read-only: it fetches a PUBLIC census and compares a key. Only if that
+// says yes does the second step post an owner verb — so there is exactly
+// one path that writes a peer row, and the check is not on it.
+function ndPartnerAdd(button) {
+  var panel = button.closest('.natter-partners');
+  var out = panel.querySelector('.nd-partner-out');
+  var url = panel.querySelector('.nd-partner-url').value.trim();
+  var key = panel.querySelector('.nd-partner-key').value.trim();
+
+  function say(text, bad) {
+    out.className = 'job-manifest-note nd-partner-out ' + (bad ? 'is-error' : 'is-token');
+    out.textContent = text;
+  }
+
+  if (!url || !key) { say('a partner needs their relay and the key that owns it', true); return; }
+
+  var relayKey = ndRelayKey();
+  if (!relayKey) { ndNoKey(out, 'nd-partner-out'); return; }
+
+  say('asking that relay who owns it…');
+  ndAsk('relay.partnerCheck', { publicKey: key, url: url }).then(function (said) {
+    if (!said || !said.ok) {
+      say((said && said.error) || 'could not check that relay', true);
+      return;
+    }
+    // THE PROOF CAME BACK, so now the owner verb. `relayKey` here is
+    // THEIR relay's own key, captured from the same census that proved
+    // the ownership — pinned now so a later forward hop can verify them
+    // signing as themselves.
+    say('they own it — adding…');
+    ndApi.peerPost('relay', relayKey, {
+      partner: { key: key, url: said.url, relayKey: said.relayKey },
+    }).then(function (r) {
+      var answer = r && r.reply;
+      if (r && r.ok && answer && answer.ok !== false) {
+        say('partnered with ' + (said.relayLabel || said.url));
+        ndChanged = true;
+        ndLoad();
+        return;
+      }
+      say((answer && answer.error) || (r && r.error) || 'refused', true);
+    });
+  });
+}
+
+// Two presses, like every other destructive control on this screen.
+function ndPartnerDrop(button) {
+  var panel = button.closest('.natter-partners');
+  var out = panel.querySelector('.nd-partner-out');
+  var key = button.getAttribute('data-partner-key') || '';
+  if (!key || !out) return;
+
+  if (button.getAttribute('data-armed') !== 'yes') {
+    button.setAttribute('data-armed', 'yes');
+    button.textContent = 'Really break?';
+    out.className = 'job-manifest-note nd-partner-out';
+    out.textContent = 'they keep their seat here; only the partnership ends. Press again.';
+    return;
+  }
+  button.removeAttribute('data-armed');
+  button.textContent = 'Break';
+
+  var relayKey = ndRelayKey();
+  if (!relayKey) { ndNoKey(out, 'nd-partner-out'); return; }
+
+  ndApi.peerPost('relay', relayKey, { unpartner: { key: key } }).then(function (r) {
+    var answer = r && r.reply;
+    if (r && r.ok && answer && answer.ok !== false) {
+      out.className = 'job-manifest-note nd-partner-out is-token';
+      out.textContent = 'partnership ended';
+      ndChanged = true;
+      ndLoad();
+      return;
+    }
+    out.className = 'job-manifest-note nd-partner-out is-error';
+    out.textContent = (answer && answer.error) || (r && r.error) || 'refused';
+  });
+}
+
 function ndMintHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   // ★ is the same mark the row carries for owning it, and this panel is
@@ -1196,6 +1331,7 @@ function ndRender() {
       ndMintHtml() +
       ndInvitesHtml() +
       ndPeersHtml() +
+      ndPartnersHtml() +
       ndAutoAddHtml()
     ) +
     ndDeviceHtml();
@@ -1652,6 +1788,12 @@ spirit.shell.activateApp({
 
       var revokeBtn = target.closest('.nd-inv-revoke');
       if (revokeBtn) { ndRevoke(revokeBtn); return; }
+
+      var partnerGo = target.closest('.nd-partner-go');
+      if (partnerGo) { ndPartnerAdd(partnerGo); return; }
+
+      var partnerDrop = target.closest('.nd-partner-drop');
+      if (partnerDrop) { ndPartnerDrop(partnerDrop); return; }
 
       var relayLabelBtn = target.closest('.nd-relay-label-go');
       if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }

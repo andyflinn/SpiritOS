@@ -101,6 +101,16 @@ function report(opts) {
     // Labels and expiry, never the token itself. A token is a credential
     // — it is what somebody claims a row with — and a monitor is a view,
     // not a place to keep secrets where a screenshot can find them.
+    // WHO THIS RELAY PARTNERS WITH, and it is here rather than in the
+    // census on purpose: a partnership is a public statement of
+    // association between two relays, and nothing needs a stranger to
+    // read one yet. The report reaches the owner alone.
+    //
+    // Their members are NOT here and never will be — a relay never
+    // persists a partner's ledger (PARTNERS.md, Andy's hard rule), so
+    // there is nothing to report but the partnership itself.
+    partners: Array.isArray(o.partners) ? o.partners : [],
+
     invites: liveInvites(o.invites, nowMs).map(function (row) {
       return {
         label: String(row.label),

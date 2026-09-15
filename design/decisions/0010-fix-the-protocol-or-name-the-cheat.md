@@ -207,6 +207,8 @@ eighth stream event was.
 | `peer-renamed` | somebody changed what this relay calls them | `key`, `was`, `label`, `cause` |
 | `peer-removed` | a row is gone, and what went with it | `key`, `label`, `invitesRevoked` |
 | `relay-renamed` | the owner changed what the BOX calls itself — not a row on it | `was`, `label`, `cause` |
+| `partner-added` | a peer here was promoted to partner — they own the relay at `relayAt` | `key`, `label`, `relayAt`, `cause` |
+| `partner-removed` | that partnership was broken from this side | `key`, `label`, `relayAt`, `cause` |
 
 **`invite` is a LABEL, never a token.** The word the owner wrote on the
 invite, normalised — `seen.invite = normalizeName(inviteLabel)`. A token

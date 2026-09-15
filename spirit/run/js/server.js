@@ -1621,6 +1621,10 @@ if (!relayMode) {
   // on its own roster precisely so it has an ordinary address.
   loopbackVerbs.claim('relay', 'hub.js', {
     'relay.claim': function (rq, rs) { hub.handleClaim(rq, rs, readJsonBody); },
+    // Eligibility, read-only: does this peer own the relay at that url?
+    // Answered off a PUBLIC census, so it grants nothing — the promotion
+    // itself is an owner verb posted to the relay like any other.
+    'relay.partnerCheck': function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody); },
     'relay.status': function (rq, rs) {
       hub.handleStatus(rq, rs, readJsonBody, { presence: presence });
     },

@@ -652,4 +652,139 @@ test.subHeading('An owner event names the post that caused it');
   }
 }
 
+// ---------------------------------------------------------------------
+test.subHeading('Partnership — the flag, and nothing routes differently yet');
+// ---------------------------------------------------------------------
+
+// ── TIER ONE, AND THAT IS THE WHOLE OF IT ────────────────────────────
+//
+//   Andy: "every relay can promote a peer to 'partner' status in the
+//   peer-ledger… a non-owner peer possesses his own relay somewhere."
+//
+// After this a relay KNOWS who its partners are and nothing routes
+// differently. Useful alone: the flag is what every later tier depends
+// on, and until a route table exists a relay refuses a stranger exactly
+// as it did before.
+//
+// THE RECIPROCITY CHECK IS NOT ASSERTED HERE, because it is not the
+// relay's. The proof is a PUBLIC census read by the owner's node before
+// the post was signed (hub.handlePartnerCheck) — this box stores a
+// conclusion it could have reached itself, which is what makes the
+// node's report trustworthy rather than merely trusted.
+{
+  const L = world.build({ title: 'a relay with a partner', peers: ['bella'] });
+  const box = L.box;
+  const owner = L.owner;
+  const her = L.peer('bella');
+  const sink = fakeSink();
+  openStream(box, owner, sink);
+
+  const THEIR_URL = 'https://lab.example';
+  const THEIR_RELAY_KEY = 'MCowBQYDK2VwAyEAtheirRELAYkeyNOTtheirOWNkeyAAAAAAAAA=';
+
+  const before = sink.owned().length;
+  const made = box.setPartner(owner, her.publicKey, THEIR_URL, THEIR_RELAY_KEY, 'HASH-P');
+  const said = sink.owned().slice(before);
+
+  if (made.ok && made.partner && made.partner.url === THEIR_URL) {
+    test.check('a peer is promoted to partner, and the relay says which relay they own');
+  } else {
+    test.fail('setPartner: ' + JSON.stringify(made));
+  }
+
+  if (said.length === 1 && said[0].kind === 'partner-added' &&
+      said[0].key === her.publicKey && said[0].relayAt === THEIR_URL) {
+    test.check('and it is reported by KEY, naming the relay it is a partnership with');
+  } else {
+    test.fail('partner-added: ' + JSON.stringify(said));
+  }
+
+  const listed = box.partners();
+  if (listed.length === 1 && listed[0].key === her.publicKey &&
+      listed[0].relayKey === THEIR_RELAY_KEY) {
+    test.check('and the relay lists who it partners with, carrying the key it pinned');
+  } else {
+    test.fail('partners(): ' + JSON.stringify(listed));
+  }
+
+  // NOT IN THE PUBLIC CENSUS. A partnership is a public statement of
+  // association between two relays, and nothing needs a stranger to read
+  // one yet — it travels in the owner's report instead.
+  const row = box.who().filter(function (p) { return p.publicKey === her.publicKey; })[0];
+  if (row && !row.partner) {
+    test.check('while the public census says nothing about it — that is the owner’s business');
+  } else {
+    test.fail('the census exposed a partnership: ' + JSON.stringify(row));
+  }
+
+  test.subHeading('And the four things a partnership cannot be');
+
+  const stranger = box.setPartner(
+    owner, 'MCowBQYDK2VwAyEAnobodyNOBODYnobodyNOBODYnobodyNOB=',
+    THEIR_URL, THEIR_RELAY_KEY, 'H');
+  if (!stranger.ok && stranger.status === 404) {
+    test.check('somebody with no row here cannot be one — a partner is a peer first');
+  } else {
+    test.fail('a stranger was partnered: ' + JSON.stringify(stranger));
+  }
+
+  // A RELAY IS NOT ITS OWN PARTNER. The point is a peer who owns a
+  // DIFFERENT relay; partnering with yourself is a route to where you
+  // already are.
+  const itself = box.setPartner(owner, owner.publicKey, THEIR_URL, THEIR_RELAY_KEY, 'H');
+  if (!itself.ok && /owner/.test(itself.error)) {
+    test.check('and the owner’s own row cannot — a relay is not its own partner');
+  } else {
+    test.fail('a relay partnered itself: ' + JSON.stringify(itself));
+  }
+
+  // TWO KEYS, TWO JOBS: ownership is verified against the OWNER row, the
+  // RELAY key is pinned for a later hop. Handing the peer's own key as
+  // the relay key is the likeliest mistake in this design, so it is
+  // refused by name rather than pinned wrongly and found out later.
+  const confused = box.setPartner(owner, her.publicKey, THEIR_URL, her.publicKey, 'H');
+  if (!confused.ok && /own key/.test(confused.error)) {
+    test.check('and a peer’s own key is not their relay’s — refused, not pinned');
+  } else {
+    test.fail('the two keys were conflated: ' + JSON.stringify(confused));
+  }
+
+  const noUrl = box.setPartner(owner, her.publicKey, '', THEIR_RELAY_KEY, 'H');
+  if (!noUrl.ok && /url/.test(noUrl.error)) {
+    test.check('and a key is not an address — it needs the url a human typed');
+  } else {
+    test.fail('partnered with no url: ' + JSON.stringify(noUrl));
+  }
+
+  test.subHeading('Breaking it is one side’s decision and needs no protocol');
+
+  const beforeBreak = sink.owned().length;
+  const broken = box.clearPartner(owner, her.publicKey, 'HASH-U');
+  const saidBreak = sink.owned().slice(beforeBreak);
+
+  if (broken.ok && box.partners().length === 0) {
+    test.check('a partnership is broken here, and the list is empty again');
+  } else {
+    test.fail('clearPartner: ' + JSON.stringify(broken));
+  }
+
+  if (saidBreak.length === 1 && saidBreak[0].kind === 'partner-removed' &&
+      saidBreak[0].relayAt === THEIR_URL) {
+    test.check('and it is reported, naming what the partnership was with');
+  } else {
+    test.fail('partner-removed: ' + JSON.stringify(saidBreak));
+  }
+
+  // IDEMPOTENT, because a partnership is two unilateral decisions that
+  // happen to agree: breaking one already broken is not an error, it is
+  // the state somebody asked for.
+  const again = box.clearPartner(owner, her.publicKey, 'H');
+  if (again.ok && again.unchanged) {
+    test.check('and breaking it twice is not an error — it is the state that was asked for');
+  } else {
+    test.fail('second break: ' + JSON.stringify(again));
+  }
+}
+
+
 test.reportSuccessFailureCount();

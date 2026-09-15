@@ -362,6 +362,7 @@ freePort()
       // either way.
       ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
       ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
+      ['POST', '/api/spirit', { verb: 'relay.partnerCheck', publicKey: 'NOPE', url: 'https://not-a-relay.example' }],
       ['POST', '/api/spirit', { verb: 'contact.block', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.unblock', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.accept', publicKey: 'NOPE' }],
