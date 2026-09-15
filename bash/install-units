@@ -29,7 +29,7 @@ install -m 644 "$tmp" "/etc/systemd/system/${UNIT_NAME}.service"
 rm -f "$tmp"
 systemctl daemon-reload
 ok "installed /etc/systemd/system/${UNIT_NAME}.service"
-echo "    runs as root (one-operator mailbox)"
+echo "    runs as root (one-operator host — see bash/ONE-OPERATOR.md)"
 echo "    clone: $REPO_ROOT"
 echo "    state: $STATE_DIR"
 echo "    next: ./bash/start    then ./bash/boot-on"

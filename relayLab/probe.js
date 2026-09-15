@@ -93,6 +93,9 @@ function summarizeWho(result) {
   else line('bad % path', bad.status === 400, 'HTTP ' + bad.status + ' (want 400 once URIError is caught)');
 
   console.log();
-  if (pub.ok) line('mailbox reachable over TLS', true, PUBLIC);
-  else line('mailbox reachable over TLS', false, 'fix DNS/Caddy/unit before anything else');
+  // "mailbox" — it said that until 2026-09-16. There are no mailboxes in
+  // this system (relay.js:80). A relay routes and refuses; it holds
+  // nothing on anyone's behalf, which is decision 0006.
+  if (pub.ok) line('relay reachable over TLS', true, PUBLIC);
+  else line('relay reachable over TLS', false, 'fix DNS/Caddy/unit before anything else');
 })();

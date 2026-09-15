@@ -1066,10 +1066,10 @@ const server = http.createServer((req, res) => {
 
   function handleRelayWho(res) {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    // The mailbox names itself here as well as listing its peers: it is
-    // a party to conversations (the census reply comes from it), and a
+    // The relay names itself here as well as listing its peers: it is a
+    // party to conversations (the census reply comes from it), and a
     // party with no key is a party nothing can file (CYCLE-CHAT-5.1).
-    // Null on a mailbox that has not been restarted since it grew one.
+    // Null on a relay that has not been restarted since it grew one.
     res.end(JSON.stringify({
       peers: relay.who(),
       relayPublicKey: relay.relayPublicKey(),
