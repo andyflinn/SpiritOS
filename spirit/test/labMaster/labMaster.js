@@ -960,7 +960,11 @@ const server = http.createServer(function (req, res) {
     const child = children[n.id];
     const alive = !!(child && child.exitCode == null) || portHasListener(n.port);
     if (!alive) return Promise.resolve([n.id, null]);
-      return fetch('http://127.0.0.1:' + n.port + '/api/jobs')
+      return fetch('http://127.0.0.1:' + n.port + '/api/spirit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verb: 'jobs.list' }),
+      })
         .then(function (res) { return res.json(); })
         .then(function (jobs) {
           const job = (jobs || []).filter(function (j) { return j.type === 'relay-presence'; })[0];

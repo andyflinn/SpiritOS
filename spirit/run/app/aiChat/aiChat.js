@@ -99,7 +99,12 @@ spirit.shell.activateApp({
     var IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
     function loadMediaImages() {
-      return fetch('/api/jobs')
+      // `GET /api/jobs` until 2026-09-15. One door, verb in the body.
+      return fetch('/api/spirit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verb: 'jobs.list' }),
+      })
         .then(function (res) { return res.json(); })
         .then(function (jobs) {
           var fsWatcher = jobs.filter(function (j) { return j.type === 'fs-watcher'; })[0];

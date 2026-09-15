@@ -204,7 +204,10 @@ module.exports = function installJobs(spirit, port) {
     const child = child_process.spawn(command, args || [], {
       env: Object.assign({}, process.env, {
         SPIRIT_JOB_ID: job.id,
-        SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/jobs/' + job.id,
+        // THE ONE DOOR, and the id travels beside the verb rather than
+        // baked into the path — see spirit.core.jobs.report in kernel.js,
+        // which is the only thing that reads this.
+        SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit',
       }),
     });
 

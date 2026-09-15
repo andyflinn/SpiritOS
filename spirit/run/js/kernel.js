@@ -542,6 +542,22 @@ if (isNode()) {
   // talk back to the server that spawned it, using the SPIRIT_JOB_ID /
   // SPIRIT_CALLBACK_URL env vars the server provides.
   spirit.core.jobs = {
+    // ── A SPAWNED PROCESS IS A LOOPBACK CLIENT ──────────────────────
+    //
+    // It holds no key and cannot sign; it asks the node that spawned it
+    // to act. The same position a browser is in (decision 0011), which
+    // is why it speaks through the same door.
+    //
+    // SPIRIT_CALLBACK_URL used to carry the job id in its path —
+    // `/api/jobs/<id>` — so the id was baked into a URL and matched by a
+    // regexp at the other end. It names the one door now, and the id
+    // travels as a field beside the verb. SPIRIT_JOB_ID already existed
+    // and was already set; it simply had nothing to do until now.
+    //
+    // THIS IS THE ONLY PLACE A PROCESS TOUCHES THE CONTRACT. No script
+    // under process/ reads either variable — they all call report(),
+    // log(), complete() or fail() — so folding the route changed one
+    // function rather than every job ever written.
     report(patch) {
       const jobId = process.env.SPIRIT_JOB_ID;
       const url = process.env.SPIRIT_CALLBACK_URL;
@@ -549,7 +565,9 @@ if (isNode()) {
         return Promise.reject(new Error('spirit.core.jobs.report() called outside a spawned job context (SPIRIT_JOB_ID/SPIRIT_CALLBACK_URL unset)'));
       }
       return new Promise((resolve, reject) => {
-        const body = JSON.stringify(patch);
+        const body = JSON.stringify(
+          Object.assign({ verb: 'jobs.update', id: jobId }, patch)
+        );
         const req = http.request(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
@@ -706,7 +724,11 @@ if (isNode()) {
       // since it goes over the same /api/jobs fetch every other scan of
       // this data already uses.
       scanDirectory: function() {
-        return fetch('/api/jobs')
+        return fetch('/api/spirit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ verb: 'jobs.list' }),
+        })
           .then(function (res) { return res.json(); })
           .then(function (jobs) {
             var fsWatcher = jobs.filter(function (j) { return j.type === 'fs-watcher'; })[0];
@@ -759,7 +781,7 @@ if (isNode()) {
     start: function(options) {
       return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/jobs', true);
+        xhr.open('POST', '/api/spirit', true);
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
           if (xhr.readyState !== 4) return;
@@ -769,13 +791,14 @@ if (isNode()) {
             reject(new Error('failed to start job: ' + xhr.status));
           }
         };
-        xhr.send(JSON.stringify(options || {}));
+        xhr.send(JSON.stringify(Object.assign({ verb: 'jobs.create' }, options || {})));
       });
     },
     list: function() {
       return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest();
-        xhr.open('GET', '/api/jobs', true);
+        xhr.open('POST', '/api/spirit', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
           if (xhr.readyState !== 4) return;
           if (xhr.status === 200) {
@@ -784,13 +807,14 @@ if (isNode()) {
             reject(new Error('failed to list jobs: ' + xhr.status));
           }
         };
-        xhr.send();
+        xhr.send(JSON.stringify({ verb: 'jobs.list' }));
       });
     },
     cancel: function(id) {
       return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/jobs/' + encodeURIComponent(id) + '/cancel', true);
+        xhr.open('POST', '/api/spirit', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
           if (xhr.readyState !== 4) return;
           if (xhr.status >= 200 && xhr.status < 300) {
@@ -799,13 +823,14 @@ if (isNode()) {
             reject(new Error('failed to cancel job: ' + xhr.status));
           }
         };
-        xhr.send();
+        xhr.send(JSON.stringify({ verb: 'jobs.cancel', id: id }));
       });
     },
     delete: function(id) {
       return new Promise(function(resolve, reject) {
         let xhr = new XMLHttpRequest();
-        xhr.open('DELETE', '/api/jobs/' + encodeURIComponent(id), true);
+        xhr.open('POST', '/api/spirit', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.onreadystatechange = function() {
           if (xhr.readyState !== 4) return;
           if (xhr.status >= 200 && xhr.status < 300) {
@@ -814,7 +839,7 @@ if (isNode()) {
             reject(new Error('failed to delete job: ' + xhr.status));
           }
         };
-        xhr.send();
+        xhr.send(JSON.stringify({ verb: 'jobs.delete', id: id }));
       });
     },
   };

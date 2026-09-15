@@ -134,6 +134,10 @@ Promise.resolve()
   .then(function (r) {
     if (r.status === 200) test.check('GET /api/relay/who');
     else test.fail('who → ' + r.status);
+    // Jobs folded into the one door on 2026-09-15; what a relay must
+    // refuse is the door, and the check above already makes that claim.
+    // This one keeps asking about the old path because a relay must 404
+    // an unknown path too — and that is a different claim worth keeping.
     return request(ORIGIN + '/api/jobs', 'GET', null);
   })
   .then(function (r) {

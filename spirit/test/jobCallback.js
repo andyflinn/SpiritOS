@@ -36,14 +36,36 @@ function waitForTerminal(jobs, jobId) {
 
 function withJobsServer(fn) {
   return new Promise(function (resolve, reject) {
+    // ── THE DOOR THIS STANDS IN FOR (2026-09-15) ────────────────────
+    //
+    // This matched `/api/jobs/<id>` and read the id out of the path,
+    // because that is what SPIRIT_CALLBACK_URL carried. It carries
+    // `/api/spirit` now and the id travels as a field beside the verb —
+    // see spirit.core.jobs.report in kernel.js.
+    //
+    // WHY A STUB AT ALL, restated because it is the reason this had to
+    // change by hand: the suite deliberately does not boot server.js
+    // (see the header), so this is a hand-written copy of what that
+    // route does. A copy is a thing that can fall out of step, and this
+    // one just did — which is the cost of the isolation, paid honestly
+    // rather than hidden.
     const callbackServer = http.createServer(function (req, res) {
-      const match = req.url.match(/^\/api\/jobs\/(.+)$/);
+      const onDoor = req.url === '/api/spirit';
       let body = '';
       req.on('data', function (chunk) { body += chunk; });
       req.on('end', function () {
-        let patch = {};
-        try { patch = body ? JSON.parse(body) : {}; } catch (e) { /* malformed — treat as empty patch */ }
-        const job = match ? jobs.updateJob(match[1], patch) : null;
+        let sent = {};
+        try { sent = body ? JSON.parse(body) : {}; } catch (e) { /* malformed — treat as empty */ }
+
+        // The verb and the id are the envelope; everything else is the
+        // patch, exactly as server.js's handleJobUpdate splits it.
+        const patch = Object.assign({}, sent);
+        const id = String(patch.id || '');
+        delete patch.id;
+        delete patch.verb;
+
+        const job = (onDoor && sent.verb === 'jobs.update' && id)
+          ? jobs.updateJob(id, patch) : null;
         res.writeHead(job ? 200 : 404, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(job));
       });

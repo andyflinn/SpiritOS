@@ -475,8 +475,26 @@ function handleCreateJob(req, res) {
   });
 }
 
-function handleJobUpdate(req, res, id) {
-  readJsonBody(req).then((body) => {
+// ── THE ID CAME OUT OF THE PATH ──────────────────────────────────────
+//
+// `POST /api/jobs/<id>` carried it as a path segment, matched by a
+// regexp. Under one door it is a field: `{verb:'jobs.update', id, ...}`.
+//
+// This is the case stage 2 exists to prove, because fs and hub both have
+// parameters too — and a parameter in a path is a parameter a type
+// system cannot see, matched by a regexp that has to agree with a route
+// by hand.
+//
+// `id` is read from the body and the REST of the body is still the
+// patch, which is why it is deleted from the copy rather than passed
+// alongside: jobs.updateJob takes a patch, and a patch carrying the id
+// of the thing it patches would be a field that means nothing to it.
+function handleJobUpdate(req, res) {
+  readJsonBody(req).then((whole) => {
+    const id = String((whole && whole.id) || '');
+    const body = Object.assign({}, whole);
+    delete body.id;
+    delete body.verb;
     const job = jobs.updateJob(id, body);
     if (!job) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -491,7 +509,19 @@ function handleJobUpdate(req, res, id) {
   });
 }
 
-function handleCancelJob(res, id) {
+// Same move as handleJobUpdate: the id is a field now. This one took no
+// body at all before, so it gains a read it did not have — and readJsonBody
+// is memoised on the request, so the door's own peek already paid for it.
+function handleCancelJob(req, res) {
+  return readJsonBody(req).then((body) => {
+    cancelJobById(res, String((body && body.id) || ''));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+function cancelJobById(res, id) {
   const job = jobs.cancelJob(id);
   if (!job) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -502,7 +532,22 @@ function handleCancelJob(res, id) {
   res.end(JSON.stringify(job));
 }
 
-function handleDeleteJob(res, id) {
+// The fifth jobs verb, and the one my own route scan missed: it was
+// `DELETE /api/jobs/<id>`, matched by a regexp INSIDE a method guard, so
+// a scan looking for `pathname === '/api/...'` never saw it. Found by
+// grepping the callers instead of the routes — which is the better
+// direction, because a route with no caller is dead and a caller with no
+// route is broken.
+function handleDeleteJob(req, res) {
+  return readJsonBody(req).then((body) => {
+    deleteJobById(res, String((body && body.id) || ''));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
+function deleteJobById(res, id) {
   const deleted = jobs.deleteJob(id);
   if (!deleted) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1026,11 +1071,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && pathname === '/api/jobs') {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify(jobs.listJobs()));
-    return;
-  }
+  // `GET /api/jobs` STOOD HERE and is `jobs.list` under the one door.
+  // A read folding into a POST costs nothing on loopback — there is no
+  // cache to honour and no intermediary to be polite to — and it buys
+  // the thing the whole fold is for: one place that knows what this node
+  // can be asked.
 
   if (req.method === 'GET' && pathname === '/api/fs/stat') {
     const stats = spirit.core.fs.statFile(url.searchParams.get('path') || '');
@@ -1271,25 +1316,18 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // `POST /api/proxy` STOOD HERE. It is `net.fetch` under the single
-    // door above — the first of four namespaces to fold, and the one
-    // chosen to go first because it is the whole pattern in miniature.
-    if (pathname === '/api/jobs') {
-      handleCreateJob(req, res);
-      return;
-    }
-
-    const cancelMatch = pathname.match(/^\/api\/jobs\/([^/]+)\/cancel$/);
-    if (cancelMatch) {
-      handleCancelJob(res, cancelMatch[1]);
-      return;
-    }
-
-    const jobIdMatch = pathname.match(/^\/api\/jobs\/([^/]+)$/);
-    if (jobIdMatch) {
-      handleJobUpdate(req, res, jobIdMatch[1]);
-      return;
-    }
+    // ── STAGES 1 AND 2 STOOD HERE ───────────────────────────────────
+    //
+    // `POST /api/proxy` is `net.fetch`. `POST /api/jobs`,
+    // `POST /api/jobs/<id>` and `POST /api/jobs/<id>/cancel` are
+    // `jobs.create`, `jobs.update` and `jobs.cancel`, claimed by the
+    // jobs module at the foot of this file.
+    //
+    // The last two were matched by REGEXPS that had to agree with two
+    // routes by hand, and their id was a path segment — which is a
+    // parameter a type system cannot see. It is a field now, and that is
+    // the half of this stage worth proving before fs and hub, because
+    // both of those have parameters too.
 
     if (pathname === '/') {
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1302,15 +1340,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'DELETE') {
-    const jobIdMatch = pathname.match(/^\/api\/jobs\/([^/]+)$/);
-    if (jobIdMatch) {
-      handleDeleteJob(res, jobIdMatch[1]);
-      return;
-    }
-  }
+  // `DELETE /api/jobs/<id>` STOOD HERE and is `jobs.delete` under the one
+  // door. It was the last method this server answered besides GET and
+  // POST, so DELETE goes out of the Allow header with it.
 
-  res.writeHead(405, { 'Allow': 'GET, POST, DELETE' });
+  res.writeHead(405, { 'Allow': 'GET, POST' });
   res.end('Method not allowed');
 });
 
@@ -1534,6 +1568,17 @@ if (!relayMode) {
   // because a relay does not serve this door.
   loopbackVerbs.claim('net', 'server.js', {
     'net.fetch': handleGenericProxy,
+  });
+
+  loopbackVerbs.claim('jobs', 'server.js', {
+    'jobs.list': function (rq, rs) {
+      rs.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      rs.end(JSON.stringify(jobs.listJobs()));
+    },
+    'jobs.create': handleCreateJob,
+    'jobs.update': handleJobUpdate,
+    'jobs.cancel': handleCancelJob,
+    'jobs.delete': handleDeleteJob,
   });
 }
 

@@ -293,7 +293,11 @@ async function preflight(s) {
   // column will be white for everybody and the demonstration would be a
   // twenty-minute way to discover the node is running old code.
   try {
-    const res = await fetch(WORK_URL + '/api/jobs');
+    const res = await fetch(WORK_URL + '/api/spirit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verb: 'jobs.list' }),
+    });
     const jobs = await res.json();
     const job = (jobs || []).filter(function (j) { return j.type === 'relay-presence'; })[0];
     if (!job) {
