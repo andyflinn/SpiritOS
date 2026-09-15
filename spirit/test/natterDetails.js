@@ -283,7 +283,13 @@ function mountApp(opts) {
   behavior.mount(container, api);
   behavior.open({
     url: opts.url || OWNED,
-    label: opts.label || 'andy',
+    // `|| 'andy'` HERE MADE AN UNBOUND NODE UNTESTABLE. An empty label
+    // is the whole state of a node that has never claimed anywhere, and
+    // a default that swallows it means the one case this screen exists
+    // for could not be set up — which is how the live bug of
+    // 2026-09-15 got past a green suite, and how the test written FOR
+    // that bug passed against the broken code on its first run.
+    label: opts.label === undefined ? 'andy' : opts.label,
     relayLabel: opts.relayLabel,
     canRemove: opts.canRemove !== false,
   });
@@ -420,6 +426,59 @@ function claimAndRenameAreExclusive() {
       test.check('a relay that holds our row offers Rename and not Claim');
     } else {
       test.fail('claimed screen offered the wrong panels');
+    }
+  });
+}
+
+// ── THE NODE WITH NO NAME AT ALL, WHICH IS THE ONE THAT MUST CLAIM ───
+//
+// A LIVE BUG, 2026-09-15, and it shipped because this suite passed
+// without ever mounting an unbound node. `ndLoad` opened with
+//
+//   if (!ndLabel) { ndRender(); return Promise.resolve(); }
+//
+// so a node that had never claimed anywhere never asked, never got a
+// badge, and drew "asking that relay…" for ever — with the claim panel,
+// the one thing it needed, behind the badge it would never have.
+//
+// The guard was a leftover: the badge USED to be a signed status call
+// and a signature needs a label. Since R3 the probe goes by KEY, and a
+// node with no label still has a key.
+//
+// The same shape as natterProbe's early return, which stranded a node
+// twice on the same day. Andy: "it was one unsigned public GET away from
+// the answer the whole time."
+function anUnboundNodeCanStillClaim() {
+  test.subHeading('A node with no name anywhere is the one that most needs this screen');
+
+  const app = mountApp({
+    label: '',
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
+  });
+
+  return settle().then(function () {
+    const asked = app.log.filter(function (c) { return c.verb === 'relay.status'; });
+    if (asked.length >= 1) {
+      test.check('it asks, though it has no label to ask with — the probe goes by key');
+    } else {
+      test.fail('an unbound node made no request at all: ' +
+        JSON.stringify(app.log.map(function (c) { return c.verb; })));
+    }
+
+    const body = app.open('claim').body().innerHTML;
+    if (/nd-claim-go/.test(body)) {
+      test.check('and it is offered the claim form, rather than a spinner it can never leave');
+    } else {
+      test.fail('an unbound node was shown: ' + body.slice(0, 200));
+    }
+
+    // AND THE FORM IT GETS HAS THE SECOND BOX. The whole point of R1:
+    // the token and the word the owner read out are two things, and the
+    // public label is neither of them.
+    if (/nd-claim-invite/.test(body) && /nd-claim-token/.test(body)) {
+      test.check('with the invite word in a box of its own, not doubling as the public label');
+    } else {
+      test.fail('the claim form is missing a field');
     }
   });
 }
@@ -1370,6 +1429,7 @@ ownedMailbox()
   .then(invitesAreOwnerOnly)
   .then(revokingAimsByLabel)
   .then(claimAndRenameAreExclusive)
+  .then(anUnboundNodeCanStillClaim)
   .then(aRelayThatIsDownOffersNoClaim)
   .then(claimingNamesThisMailbox)
   .then(aHalfCopiedInviteIsRefusedBeforeItTravels)

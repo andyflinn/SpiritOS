@@ -147,6 +147,12 @@ function ndPanel(id, mark, title, inner, extraClass) {
 // claimed anywhere has no key yet.
 var ndDevice = { password: '', publicKey: '', loaded: false };
 
+// HAS THE QUESTION COME BACK? Not "was the answer good" — just whether
+// this screen is still waiting. It is the difference between a spinner
+// and a result, and without it every failure on this screen wore the
+// spinner's face. See ndReportHtml.
+var ndAsked = false;
+
 // ONE DOOR, AND THE VERB IS THE ARGUMENT. This took a path until
 // 2026-09-15, which was a fair shape while there were five of them and
 // is a misleading one now that there is exactly one: a path that is
@@ -187,10 +193,27 @@ function ndBody() { return document.getElementById('nd-body'); }
 // at launch would sit here going stale while you read it, and the
 // message count is the half most likely to move. The URL is the only
 // part of a row that cannot change.
+// ── AN UNBOUND NODE ASKS TOO, AND IT IS THE ONE THAT MUST ────────────
+//
+// This began `if (!ndLabel) { ndRender(); return; }` and that guard made
+// the claim panel unreachable by the only node that needs it: no label,
+// so no ask; no ask, so no badge; no badge, so ndClaimHtml returns ''
+// and the screen says "asking that relay…" for ever. jazz sat on that
+// for an afternoon.
+//
+// It is the same shape as the bug natterProbe had — Andy: "it was one
+// unsigned public GET away from the answer the whole time" — and it has
+// the same cause. The badge USED to be a signed status call, so a label
+// was needed to sign it. Since R3 the probe is key-based: `name` is
+// echoed back and decides nothing (hub.handleStatus says so out loud),
+// and a node with no label still has a key.
+//
+// So: always ask.
 function ndLoad() {
-  if (!ndLabel) { ndRender(); return Promise.resolve(); }
-  return ndAsk('relay.status', { name: ndLabel })
+  ndAsked = false;
+  return ndAsk('relay.status', { name: ndLabel || '' })
     .then(function (data) {
+      ndAsked = true;
       var rows = (data && data.rows) || [];
       ndBadge = rows.filter(function (row) { return row && row.url === ndUrl; })[0] || null;
       // WHAT THE RELAY LAST SAID ABOUT ITSELF, pushed rather than asked
@@ -209,7 +232,7 @@ function ndLoad() {
       }
       ndRender();
     })
-    .catch(function () { ndRender(); });
+    .catch(function () { ndAsked = true; ndRender(); });
 }
 
 function ndReadDevice() {
@@ -310,8 +333,23 @@ function ndReportHtml() {
   // Not a panel: it is a moment, not a thing to fold. Folding it away
   // would leave a screen that says nothing at all while the answer is on
   // its way.
+  // ── "ASKING" AND "ASKED, AND GOT NOTHING" ARE DIFFERENT ────────────
+  //
+  // This said "asking that relay…" for both, with no timeout and no
+  // error path — every failure looked like a slow network, for ever. It
+  // cost two diagnoses in one day: a node running yesterday's code, and
+  // an unbound node that never asked at all. Neither was slow.
+  //
+  // `ndAsked` is the whole fix: a question that has come back and
+  // brought no row for this relay is an ANSWER, and says so.
   if (!ndBadge) {
-    return '<div class="stat-tile wide"><div class="job-log-empty">asking that relay…</div></div>';
+    if (!ndAsked) {
+      return '<div class="stat-tile wide"><div class="job-log-empty">asking that relay…</div></div>';
+    }
+    return '<div class="stat-tile wide"><div class="job-log-empty">' +
+      'This node could not get an answer about ' + ndEscapeHtml(ndUrl) + '. ' +
+      'It is either unreachable from here, or this node is running older code than it is.' +
+      '</div></div>';
   }
 
   // A MEMBER'S VIEW, from the public census rather than the owner-only
@@ -1193,6 +1231,9 @@ spirit.shell.activateApp({
     // screen is handed one subject and never reads relays.json.
     ndRelayLabel = (params && params.relayLabel) || '';
     ndBadge = null;
+    // Opening a second relay must show "asking" again, not the previous
+    // relay's answer wearing this one's name.
+    ndAsked = false;
     ndMinted = '';
     ndChanged = false;
     // A half-armed Remove must mean two presses about the SAME mailbox.
