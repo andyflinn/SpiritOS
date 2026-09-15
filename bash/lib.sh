@@ -26,6 +26,19 @@ RUN_DIR="$REPO_ROOT/spirit/run"
 # needs a second account, and inventing one to run a test fixture would
 # be the split that document exists to refuse.
 UNIT_NAME="${SPIRIT_UNIT_NAME:-spirit-relay}"
+
+# ── THE TEMPLATE IS NOT THE UNIT NAME ────────────────────────────────
+#
+# One file in this repo describes how to run a relay, and it is the same
+# file whichever relay you are installing — it is all placeholders. What
+# VARIES is what systemd calls the installed copy.
+#
+# Conflating the two is what broke the first real lab-install:
+# install-units read `bash/systemd/${UNIT_NAME}.service`, so setting
+# SPIRIT_UNIT_NAME=spirit-lab sent it looking for a template nobody
+# wrote. The error was honest — "missing .../spirit-lab.service" — and
+# the fix is that the template has a name of its own.
+UNIT_TEMPLATE="${SPIRIT_UNIT_TEMPLATE:-spirit-relay}"
 NODE_PORT="${SPIRIT_RELAY_PORT:-65430}"
 DOMAIN="${SPIRIT_RELAY_DOMAIN:-spirit.andyflinn.com}"
 # Live clone on spirit-3 is /root/SpiritOS. That is the one-operator model:

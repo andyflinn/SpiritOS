@@ -221,6 +221,55 @@ test.subHeading('A second clone cannot eat the first');
 // these scripts need root and a relay host to run, so the harness
 // cannot execute them. What it CAN hold is that the refusals are still
 // written.
+// ── THE TEMPLATE IS NOT THE UNIT NAME ────────────────────────────────
+//
+// FOUND BY RUNNING IT, which is the part worth recording. `lab-install`
+// cloned, wrote .env, and died on:
+//
+//   ERROR: missing /root/lab/SpiritOS/bash/systemd/spirit-lab.service
+//
+// install-units read `bash/systemd/${UNIT_NAME}.service`, so the moment
+// UNIT_NAME became an override it started looking for a template nobody
+// wrote. One file in this repo describes how to run a relay and it is
+// the same file for every relay — it is all placeholders. What varies
+// is the name systemd knows the installed copy by.
+//
+// The check above ("every placeholder is one install-units fills in")
+// could not see this: it reads the template and the installer, and both
+// were fine. What was wrong was which FILE the installer opened.
+test.subHeading('The unit template is one file, however many relays use it');
+{
+  if (/UNIT_TEMPLATE="\$\{SPIRIT_UNIT_TEMPLATE:-/.test(lib)) {
+    test.check('the template name is its own variable, not the unit name');
+  } else {
+    test.fail('UNIT_TEMPLATE is missing — install-units derives the template from UNIT_NAME again');
+  }
+
+  if (/systemd\/\$\{UNIT_TEMPLATE\}\.service/.test(installer)) {
+    test.check('and install-units reads the template by that name');
+  } else {
+    test.fail('install-units still opens bash/systemd/${UNIT_NAME}.service');
+  }
+
+  // AND INSTALLS UNDER THE OTHER ONE. Both halves, because reading the
+  // right file and writing the wrong name is the same bug reversed —
+  // two clones would install one unit again.
+  if (/etc\/systemd\/system\/\$\{UNIT_NAME\}\.service/.test(installer)) {
+    test.check('while the installed unit takes the name this clone runs under');
+  } else {
+    test.fail('install-units does not install as ${UNIT_NAME}');
+  }
+
+  // THE TEMPLATE IT NAMES MUST EXIST. The failure Andy hit was a missing
+  // file, and a default that points at nothing is the same outage.
+  const templatePath = path.join(REPO_ROOT, 'bash', 'systemd', 'spirit-relay.service');
+  if (fs.existsSync(templatePath)) {
+    test.check('and the default template is a file that is actually here');
+  } else {
+    test.fail('bash/systemd/spirit-relay.service is missing');
+  }
+}
+
 test.subHeading('lab-install and lab-remove cannot be aimed at the live relay');
 {
   const labInstall = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
