@@ -3,12 +3,12 @@
 // Phase B: a --relay process 404s Jobs/fs/proxy/desktop APIs.
 // Brochure GET / is static (no who-list script).
 //
-//   node spirit/test/labMaster/relaySurface.test.js
+//   node spirit/test/labRelaySurface.js
 
 const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
-const test = require('../testSupport.js');
+const test = require('./testSupport.js');
 
 const MASTER = 'http://127.0.0.1:65420';
 const RELAY_PORT = 65418;
@@ -77,8 +77,8 @@ function masterUp() {
 function spawnMaster() {
   return spawn(
     process.execPath,
-    [path.join(__dirname, 'labMaster.js')],
-    { cwd: path.join(__dirname, '..', '..', '..'), stdio: 'inherit' }
+    [path.join(__dirname, 'labMaster', 'labMaster.js')],
+    { cwd: path.join(__dirname, '..', '..'), stdio: 'ignore' }
   );
 }
 

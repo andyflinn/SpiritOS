@@ -112,7 +112,7 @@ const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.c
 // This started as nothing but a routing switch for GET / — everything else
 // stayed reachable. It isn't that any more. Phase B narrowed a --relay
 // process to the mailbox routes plus the brochure (isRelayPublicPath,
-// below; relaySurface.test.js proves Jobs/fs/proxy/hub/the desktop all
+// below; labRelaySurface.js proves Jobs/fs/proxy/hub/the desktop all
 // 404), and Phase F takes the last step: a --relay process binds 0.0.0.0
 // and drops the loopback + Host gate, because it is meant to be reached
 // from the internet.

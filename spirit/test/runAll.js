@@ -45,14 +45,35 @@ const NOT_A_SUITE = [
   // to a live relay and changes state on a box other people use. Run by
   // hand: `node spirit/test/liveRelay.js`.
   'liveRelay.js',
-  // SPAWNS A RELAY AND THREE NODES through labMaster and waits for
-  // streams to settle — seconds, not milliseconds, and real processes on
-  // real ports. It proves the front door is WIRED, which the in-process
-  // suites cannot: frontDoor.js drives the module, this one posts from
-  // one node to another and reads what the receiving node wrote down.
-  // Run by hand: `node spirit/test/liveFrontDoor.js`.
-  'liveFrontDoor.js',
 ];
+
+// ── THE LAB SUITES ARE IN THE HARNESS NOW (2026-09-15) ───────────────
+//
+// `liveFrontDoor.js` was excluded here, and five more sat in
+// spirit/test/labMaster/ which this file does not read at all. Between
+// them they went months without going red anywhere while six of the
+// seven rotted — the accounting is in labMaster/STATE.md.
+//
+// What it cost to find out: liveFrontDoor was reading a log file the
+// product had stopped writing, so seven of its checks were asserting
+// things about an empty array, and `relayAbuse` was defending a label
+// rule that had been deliberately removed. Neither is the kind of thing
+// a person notices by reading. Both are the kind a harness notices in
+// one run.
+//
+// THE PRICE, AND IT IS PAID ON PURPOSE. These spawn real relays and real
+// nodes on real ports: seconds each, against milliseconds for everything
+// else, and the harness goes from about 25s to about a minute and a
+// half. That is the trade Andy took — "more pain now, cleaner
+// environment later" — on the argument that an opt-in tier is the same
+// silent trap wearing a flag.
+//
+// They are written to coexist: distinct relay/node ports per file
+// (65410-65419 and 65425-65428) and distinct labMaster row names, so
+// they run in the ordinary lanes rather than needing a lane of their
+// own. labMaster itself is started by whichever of them gets there
+// first (labMaster/ensureMaster.js) and left running if it was already
+// up, because somebody may be using theirs.
 
 // Last, always. It reads the other suites off disk to check that every
 // visual scenario still points at one that exists, so it should be

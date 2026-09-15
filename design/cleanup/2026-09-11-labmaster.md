@@ -221,6 +221,14 @@ clear of the rows already in your table.
 lab relay rather than in process. They are not part of `npm test`, which
 discovers suites in `spirit/test/` only. Left where they are.
 
+> **Superseded 2026-09-15.** "Left where they are" turned out to cost six of
+> the eight: nothing ran them, so nothing said they had rotted, and when they
+> were finally read one had been defending a rule that was deliberately removed
+> and another was reading a log file the product had stopped writing. Three were
+> repaired and moved, two moved unchanged, three deleted as superseded or
+> obsolete — and they are all in `npm test` now, which costs it about 35
+> seconds. `spirit/test/labMaster/STATE.md` has the accounting.
+
 `BONES.md` in the same directory is a recipe from 2026-09-06 and is **stale** —
 it names ports 65410–65414, an `install-public-relay.js` step, and a "until
 peers are keyed by public key" caveat that has since landed. This document

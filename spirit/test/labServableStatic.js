@@ -15,12 +15,12 @@
 // make each row pass for a reason that has nothing to do with
 // fileServable (relaySurface.test.js is where that allowlist is tested).
 //
-//   node spirit/test/labMaster/servableStatic.test.js
+//   node spirit/test/labServableStatic.js
 
 const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
-const test = require('../testSupport.js');
+const test = require('./testSupport.js');
 
 const MASTER = 'http://127.0.0.1:65420';
 const ANDY_PORT = 65421;
@@ -110,8 +110,8 @@ function masterUp() {
 function spawnMaster() {
   return spawn(
     process.execPath,
-    [path.join(__dirname, 'labMaster.js')],
-    { cwd: path.join(__dirname, '..', '..', '..'), stdio: 'inherit' }
+    [path.join(__dirname, 'labMaster', 'labMaster.js')],
+    { cwd: path.join(__dirname, '..', '..'), stdio: 'ignore' }
   );
 }
 
