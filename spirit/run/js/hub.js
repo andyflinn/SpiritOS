@@ -984,12 +984,23 @@ function createHub(rootDir) {
     });
   }
 
+  // ── READ AND WRITE ARE TWO FUNCTIONS NOW ────────────────────────────
+  //
+  // This was one handler that branched on `req.method`, because one path
+  // served GET and POST. Under the one loopback door every call is a
+  // POST, so the method carries nothing and that branch had become a
+  // silent coin-toss: a caller that forgot to say POST would have READ
+  // the policy and been answered 200 with the old value, which looks
+  // exactly like a write that did nothing.
+  //
+  // Two verbs, two functions. `contact.senders` asks, `contact.setSenders`
+  // decides, and neither can be mistaken for the other.
+  function handleSendersRead(req, res) {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ ok: true, policy: unknownPolicy(rootDir) }));
+  }
+
   function handleUnknownSenders(req, res, readJsonBody) {
-    if (req.method === 'GET') {
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ ok: true, policy: unknownPolicy(rootDir) }));
-      return;
-    }
     readJsonBody(req).then(function (body) {
       var wanted = body && body.policy;
       if (UNKNOWN_POLICIES.indexOf(wanted) === -1) {
@@ -1134,19 +1145,27 @@ function createHub(rootDir) {
   // Block is deliberately not a delete. The row stays, marked, because a
   // list you can be removed from silently is a list nobody can undo a
   // mistake in.
-  function handlePeer(req, res, readJsonBody) {
+  // ── THE ACTION FIELD IS THE VERB, AND NOW IT IS SPELLED THAT WAY ────
+  //
+  // `{ action: 'block' | 'unblock' | 'accept' | 'label' }` was a verb
+  // inside a body, under a route that was also a verb — a dispatch this
+  // file did by hand, one `indexOf` and one if-chain, beside a dispatch
+  // the door already does for everything else.
+  //
+  // So `contact.block`, `contact.unblock`, `contact.accept` and
+  // `contact.label` are four claims on the table, and the check that
+  // `action` is one of four is gone: an unknown verb is refused at the
+  // door by a table that knows every verb this node answers, rather than
+  // by a string list here that only knows these.
+  //
+  // WHAT DOES NOT CHANGE, and is the reason these are four and not two:
+  // `accept` says listen to this person, `unblock` only takes the block
+  // off. Somebody blocked while still waiting goes back to waiting, not
+  // into the address book — undoing a no is not the same as saying yes.
+  function handlePeer(req, res, readJsonBody, action) {
     readJsonBody(req).then(function (body) {
       var publicKey = String((body && body.publicKey) || '').trim();
-      var action = String((body && body.action) || '');
       if (!publicKey) { fail(res, 400, 'publicKey required'); return; }
-      // Three, and they are not two: `accept` says listen to this person
-      // and `unblock` only takes the block off. Somebody who was blocked
-      // while still waiting goes back to waiting, not into the address
-      // book — undoing a no is not the same as saying yes.
-      if (['block', 'unblock', 'accept', 'label'].indexOf(action) === -1) {
-        fail(res, 400, 'action must be block, unblock, accept or label');
-        return;
-      }
       var id = auth.loadIdentity(rootDir);
       if (id && id.publicKey === publicKey) {
         fail(res, 400, 'that key is this node');
@@ -1376,6 +1395,7 @@ function createHub(rootDir) {
     // exported here. Every one of them is a peerPost the browser makes
     // for itself now — see the note where they stood.
     handleUnknownSenders: handleUnknownSenders,
+    handleSendersRead: handleSendersRead,
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,
   };

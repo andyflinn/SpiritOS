@@ -192,7 +192,7 @@ async function run() {
     // THROUGH THE REAL VERB, not by writing a file. This is the route
     // built the same day: the node holds the setting, validates it, and
     // answers with what it will actually do.
-    const set = await hub(portOf(bravo), 'POST', '/api/hub/unknown-senders', { policy: 'acquire' });
+    const set = await hub(portOf(bravo), 'POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'acquire' });
     if (set.status === 200 && set.body && set.body.policy === 'acquire') {
       test.check('bravo sets its own policy to acquire, and the node confirms what it will do');
     } else {
@@ -308,7 +308,7 @@ async function run() {
     // AND THE STRANGER. Back to silent, so charlie stays one — under
     // acquire a stranger becomes a contact on their first message and has
     // exactly one rationed request in them.
-    await hub(portOf(bravo), 'POST', '/api/hub/unknown-senders', { policy: 'silent' });
+    await hub(portOf(bravo), 'POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' });
     for (let n = 0; n < 9; n += 1) {
       /* eslint-disable no-await-in-loop */
       await hub(portOf(charlie), 'POST', '/api/hub/post', { to: bravoKey, text: 'knock ' + n });

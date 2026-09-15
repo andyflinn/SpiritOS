@@ -79,16 +79,23 @@ function mountDialog(options) {
   const fakeFetch = function (url, init) {
     log.push({ url: url, method: (init && init.method) || 'GET', body: init && init.body });
     let status = 200;
-    if (url.indexOf('/api/hub/peer') === 0) {
+    // BY VERB. `{ action: 'block' }` under `/api/hub/peer` became
+    // `contact.block` at the one door on 2026-09-15, so a fixture that
+    // still read `sent.action` would find undefined on every call and
+    // change nothing — while the POST itself still looked right.
+    var sentVerb = '';
+    try { sentVerb = JSON.parse(String((init && init.body) || '{}')).verb || ''; }
+    catch (e) { sentVerb = ''; }
+    if (sentVerb.indexOf('contact.') === 0) {
       status = opts.peerStatus || 200;
       const sent = JSON.parse((init && init.body) || '{}');
       if (status === 200) {
         people.forEach(function (p) {
           if (p.publicKey !== sent.publicKey) return;
-          if (sent.action === 'label') p.myLabel = sent.myLabel;
-          if (sent.action === 'block') p.blocked = true;
-          if (sent.action === 'unblock') p.blocked = false;
-          if (sent.action === 'accept') { p.held = false; p.acquiredVia = 'message'; }
+          if (sentVerb === 'contact.label') p.myLabel = sent.myLabel;
+          if (sentVerb === 'contact.block') p.blocked = true;
+          if (sentVerb === 'contact.unblock') p.blocked = false;
+          if (sentVerb === 'contact.accept') { p.held = false; p.acquiredVia = 'message'; }
         });
       }
     }
@@ -154,8 +161,13 @@ function settle() {
   return new Promise(function (r) { setImmediate(r); })
     .then(function () { return new Promise(function (r2) { setImmediate(r2); }); });
 }
-function posted(app, path) {
-  return app.log.filter(function (c) { return c.url === path; }).map(function (c) { return JSON.parse(c.body); });
+// WHAT WAS SENT, BY VERB. This took a path until the contact
+// namespace folded onto /api/spirit: every call goes to one URL now, so
+// a filter on the URL matches everything this screen ever did.
+function posted(app, prefix) {
+  return app.log
+    .map(function (c) { try { return JSON.parse(c.body); } catch (e) { return null; } })
+    .filter(function (b) { return b && String(b.verb || '').indexOf(prefix) === 0; });
 }
 
 function bert(extra) {
@@ -309,8 +321,8 @@ function decides() {
   return settle().then(function () {
     el(app, 'cd-body').fire('click', { target: button('cd-accept') });
     return settle().then(function () {
-      const calls = posted(app, '/api/hub/peer');
-      if (calls.length === 1 && calls[0].action === 'accept' && calls[0].publicKey === CAROL) {
+      const calls = posted(app, 'contact.');
+      if (calls.length === 1 && calls[0].verb === 'contact.accept' && calls[0].publicKey === CAROL) {
         test.check('Accept posts accept for the key this screen was opened on');
       } else {
         test.fail('peer calls: ' + JSON.stringify(calls));
@@ -345,7 +357,7 @@ function blockingTakesTwoPresses() {
   return settle().then(function () {
     el(app, 'cd-body').fire('click', { target: button('cd-block') });
     return settle().then(function () {
-      if (posted(app, '/api/hub/peer').length === 0 &&
+      if (posted(app, 'contact.').length === 0 &&
           el(app, 'cd-body').innerHTML.indexOf('press again') !== -1) {
         test.check('the first press arms and says so, and posts nothing');
       } else {
@@ -354,8 +366,8 @@ function blockingTakesTwoPresses() {
 
       el(app, 'cd-body').fire('click', { target: button('cd-block') });
       return settle().then(function () {
-        const calls = posted(app, '/api/hub/peer');
-        if (calls.length === 1 && calls[0].action === 'block') {
+        const calls = posted(app, 'contact.');
+        if (calls.length === 1 && calls[0].verb === 'contact.block') {
           test.check('and the second one does it — the only decision here that stops mail arriving');
         } else {
           test.fail('after second press: ' + JSON.stringify(calls));
@@ -383,8 +395,8 @@ function renamesLocally() {
     input.value = ' lovelyBert ';
     el(app, 'cd-body').fire('change', { target: input });
     return settle().then(function () {
-      const calls = posted(app, '/api/hub/peer');
-      if (calls.length === 1 && calls[0].action === 'label' && calls[0].myLabel === 'lovelyBert') {
+      const calls = posted(app, 'contact.');
+      if (calls.length === 1 && calls[0].verb === 'contact.label' && calls[0].myLabel === 'lovelyBert') {
         test.check('and renaming posts the label, trimmed, for this node only');
       } else {
         test.fail('label calls: ' + JSON.stringify(calls));

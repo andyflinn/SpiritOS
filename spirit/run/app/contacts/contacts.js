@@ -10,10 +10,11 @@
 // Everything here goes through the hub's own routes, the same ones the
 // chat window called:
 //
-//   GET  /api/hub/who      the address book, captioned by this node
-//   GET  /api/hub/handle   every key the mailbox carries under a word
-//   POST /api/hub/contact  confirm one of those keys (acquiredVia handle)
-//   POST /api/hub/peer     accept / block / unblock / label
+//   GET  /api/hub/who       the address book, captioned by this node
+//   GET  /api/hub/handle    every key the mailbox carries under a word
+//   POST /api/hub/contact   confirm one of those keys (acquiredVia handle)
+//   contact.accept .block .unblock .label     what this node keeps
+//   contact.senders .setSenders               and who it listens to
 //
 // No packets. Sharing a contact is a later sitting and a bigger
 // question: a card that arrives from somebody else is their six
@@ -40,8 +41,8 @@ var contactsApi = null;
 // NO FILE HERE ANY MORE. It was app/contacts/prefs.json, and before that
 // app/relayChat/prefs.json — it has now moved twice between apps, which
 // was the tell that it belonged to neither. It is preferences.json on the
-// node, reached through /api/hub/unknown-senders, and this app no longer
-// stores it at all.
+// node, reached through `contact.senders`, and this app no longer stores
+// it at all.
 //
 // The old files are not read here either: hub.js honours
 // app/contacts/prefs.json when preferences.json says nothing, so the
@@ -88,6 +89,21 @@ function contactsPost(path, body) {
   }).then(function (r) {
     return r.text().then(function (t) { return { status: r.status, text: t }; });
   });
+}
+
+// ONE DOOR, AND THE VERB IS THE ARGUMENT. Same shape as ndPost in
+// natterDetails: the path is the same string for every loopback verb
+// now, so a caller that had to repeat it was repeating a constant.
+// Answers the parsed body, because a refusal from these verbs is a
+// `{ ok: false }` rather than a status the caller reads.
+function contactsAsk(verb, body) {
+  var payload = { verb: verb };
+  if (body) Object.keys(body).forEach(function (k) { payload[k] = body[k]; });
+  return fetch('/api/spirit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(function (r) { return r.json(); });
 }
 
 function contactsStatus(text) {
@@ -307,8 +323,7 @@ function contactsFindByHandle() {
 // radios show is always what the node last said, never what this app
 // believes it asked for.
 function contactsLoadPrefs() {
-  return fetch('/api/hub/unknown-senders')
-    .then(function (r) { return r.json(); })
+  return contactsAsk('contact.senders')
     .then(function (d) {
       var wanted = d && d.policy;
       contactsPrefs = {
@@ -329,12 +344,7 @@ function contactsLoadPrefs() {
 // unwritable setting shows as unchanged instead of showing a radio that
 // lies.
 function contactsSavePrefs() {
-  return fetch('/api/hub/unknown-senders', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ policy: contactsPrefs.unknown }),
-  })
-    .then(function (r) { return r.json(); })
+  return contactsAsk('contact.setSenders', { policy: contactsPrefs.unknown })
     .then(function (d) {
       if (!d || d.ok !== true) throw new Error((d && d.error) || 'refused');
       contactsPrefs.unknown = d.policy;

@@ -332,13 +332,10 @@ freePort()
     // the 2026-09-13 death. A verb nobody has posted to since it was
     // claimed is exactly as unproven as a route nobody has called.
     const HUB_ROUTES = [
-      ['POST', '/api/hub/peer'],
       ['POST', '/api/hub/post'],
       ['POST', '/api/hub/contact'],
-      ['POST', '/api/hub/unknown-senders'],
       ['GET', '/api/hub/who'],
       ['GET', '/api/hub/handle'],
-      ['GET', '/api/hub/unknown-senders'],
       // Every loopback verb, at the one door. `net.fetch` is left out on
       // purpose: it is the only one that would reach the internet from a
       // test, and it is covered where its refusals are.
@@ -359,6 +356,12 @@ freePort()
       // either way.
       ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
       ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
+      ['POST', '/api/spirit', { verb: 'contact.block', publicKey: 'NOPE' }],
+      ['POST', '/api/spirit', { verb: 'contact.unblock', publicKey: 'NOPE' }],
+      ['POST', '/api/spirit', { verb: 'contact.accept', publicKey: 'NOPE' }],
+      ['POST', '/api/spirit', { verb: 'contact.label', publicKey: 'NOPE', myLabel: 'x' }],
+      ['POST', '/api/spirit', { verb: 'contact.senders' }],
+      ['POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' }],
       // And the door's own refusal, which must be an answer rather than a
       // throw: a verb nobody claimed.
       ['POST', '/api/spirit', { verb: 'nope.thing' }],

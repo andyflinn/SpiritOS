@@ -86,12 +86,25 @@ function mountApp(options) {
       matches: opts.matches || [],
     };
     let status = 200;
-    // THE NODE HOLDS THE STRANGER POLICY, so the fake holds it too: a GET
-    // answers what is set and a POST changes it. A stub that answered a
-    // fixture forever would let a panel that never repaints pass, which
-    // is the trap this harness already learned once on /api/hub/peer.
-    if (url.indexOf('/api/hub/unknown-senders') === 0) {
-      if ((init && init.method) === 'POST') {
+    // THE VERB, since the contact namespace folded onto /api/spirit on
+    // 2026-09-15. Matching on the URL stopped telling these apart: every
+    // loopback call this app makes goes to the same path now.
+    let verb = '';
+    try { verb = JSON.parse(String((init && init.body) || '{}')).verb || ''; }
+    catch (e) { verb = ''; }
+
+    // THE NODE HOLDS THE STRANGER POLICY, so the fake holds it too:
+    // `contact.senders` answers what is set and `contact.setSenders`
+    // changes it. A stub that answered a fixture forever would let a
+    // panel that never repaints pass, which is the trap this harness
+    // already learned once on /api/hub/peer.
+    //
+    // READ AND WRITE ARE TWO VERBS rather than two methods on one path,
+    // and the fixture is better for it: it used to read `init.method`,
+    // which under one door is 'POST' for both and would have made every
+    // write look like a read.
+    if (verb === 'contact.senders' || verb === 'contact.setSenders') {
+      if (verb === 'contact.setSenders') {
         const sent = JSON.parse((init && init.body) || '{}');
         if (opts.policyRefuses) {
           const bad = JSON.stringify({ ok: false, error: 'refused' });
@@ -112,7 +125,7 @@ function mountApp(options) {
       });
     }
     if (url.indexOf('/api/hub/contact') === 0) status = opts.contactStatus || 201;
-    if (url.indexOf('/api/hub/peer') === 0) {
+    if (verb.indexOf('contact.') === 0) {
       status = opts.peerStatus || 200;
       // The node keeps what it is told and the next read hands it back —
       // whoBook.label, then buildPeople. A stub that answered the same
@@ -120,7 +133,7 @@ function mountApp(options) {
       // suite: the POST was asserted, and nothing ever asked what the
       // screen said afterwards.
       const sent = JSON.parse((init && init.body) || '{}');
-      if (status === 200 && sent.action === 'label') {
+      if (status === 200 && verb === 'contact.label') {
         (opts.people || []).forEach(function (p) {
           if (p.publicKey !== sent.publicKey) return;
           p.myLabel = sent.myLabel;
@@ -323,7 +336,7 @@ function strangerPolicy() {
     el(app, 'contacts-unknown-choices').fire('change', { target: { value: 'acquire' } });
     return settle().then(function () {
       const posts = app.log.filter(function (c) {
-        return c.url.indexOf('/api/hub/unknown-senders') === 0 && c.method === 'POST';
+        return /contact.setSenders/.test(String(c.body || ''));
       });
       const sent = posts.length ? JSON.parse(posts[0].body) : null;
       if (posts.length === 1 && sent && sent.policy === 'acquire') {
@@ -756,7 +769,7 @@ function sendsNothing() {
   // policy, which had already moved here from relayChat's folder. Moving
   // twice between apps was the tell that it belonged to neither: it is
   // what the NODE does about a stranger, so it lives in preferences.json
-  // and is reached through /api/hub/unknown-senders.
+  // and is reached through `contact.senders`.
   //
   // What that leaves is an app that draws and asks, and stores nothing at
   // all. whoBook is still the book; now nothing here is.

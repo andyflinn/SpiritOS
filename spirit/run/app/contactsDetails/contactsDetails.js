@@ -166,10 +166,15 @@ function cdRender() {
 
 // Everything this screen decides is a hub verb. Nothing is written to
 // disk here, and nothing about the person is kept: whoBook is the book.
+// THE ACTION IS THE VERB, and since 2026-09-15 it is spelled as one.
+// This built `{ action: 'block' }` and posted it to a route that was
+// itself a verb, so hub.js had to dispatch the field by hand. Now the
+// door does it, `cdPeerAction('block')` names `contact.block`, and the
+// only thing that changed on this screen is which string it says.
 function cdPeerAction(action, extra) {
-  var body = { publicKey: cdKey, action: action };
+  var body = { verb: 'contact.' + action, publicKey: cdKey };
   Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
-  return cdPost('/api/hub/peer', body).then(function (r) {
+  return cdPost('/api/spirit', body).then(function (r) {
     if (r.status !== 200) {
       cdStatus(action + ' failed: ' + r.status + ' ' + r.text);
       return false;

@@ -1057,12 +1057,10 @@ const server = http.createServer((req, res) => {
   // The candidates behind a handle somebody heard out loud. Matches
   // only: the census is filtered on this node and never handed to the
   // page (CYCLE-CONTACTS-2).
-  // What this node does about a sender it has never heard of. The GET is
-  // here beside the other hub reads; the POST is below with the writes.
-  if (req.method === 'GET' && pathname === '/api/hub/unknown-senders') {
-    hub.handleUnknownSenders(req, res, readJsonBody);
-    return;
-  }
+  // `GET /api/hub/unknown-senders` is `contact.senders` under the one
+  // door, and the POST below it is `contact.setSenders`. They were one
+  // handler branching on req.method until the door made every call a
+  // POST — see hub.handleSendersRead.
 
   if (req.method === 'GET' && pathname === '/api/hub/handle') {
     hub.handleHandle(req, res, url);
@@ -1231,20 +1229,16 @@ const server = http.createServer((req, res) => {
     // setting is node-global, and api.fs is scoped to app/<name>/, so an
     // app writing it would put a node-wide answer inside one of the apps
     // that reads it.
-    if (pathname === '/api/hub/unknown-senders') {
-      hub.handleUnknownSenders(req, res, readJsonBody);
-      return;
-    }
+    // `POST /api/hub/unknown-senders` is `contact.setSenders`.
 
     // A NEW DOOR PASSWORD. The only answer to a relay that carried one
     // real enrolment and kept the password it was handed — see
     // deviceAuth.rotatePassword. POST only, because it changes a secret.
     // `POST /api/hub/rotate-password` is `device.rotate`.
 
-    if (pathname === '/api/hub/peer') {
-      hub.handlePeer(req, res, readJsonBody);
-      return;
-    }
+    // `POST /api/hub/peer` with an `action` field is four verbs now:
+    // `contact.block`, `contact.unblock`, `contact.accept`,
+    // `contact.label`.
 
     // `POST /api/hub/claim` is `relay.claim` under the one door.
 
@@ -1646,6 +1640,34 @@ if (!relayMode) {
       hub.handleStatus(rq, rs, readJsonBody, { presence: presence });
     },
   }, { wire: true });
+
+  // ── STAGE 4c — contact (2026-09-15) ────────────────────────────────
+  //
+  //   Andy: "The user sees it as contact: which is kind of what i
+  //   prefer."
+  //
+  // THIS NODE'S OWN ADDRESS BOOK, and nothing else. Every verb here is
+  // a whoBook write or a preferences read on this machine, so the group
+  // is uniformly local — which is what lets the census reads live
+  // somewhere else even though a person would call them contact work
+  // too. `peer.list` and `peer.find` ask a RELAY who is out there;
+  // `contact.*` is what this node has decided to keep.
+  //
+  // FOUR VERBS WHERE THERE WAS ONE ROUTE AND AN `action` FIELD. That
+  // field was a verb inside a body, under a route that was also a verb,
+  // and hub.js dispatched it by hand beside a dispatch the door already
+  // does. The if-chain is gone: an unknown verb is now refused by a
+  // table that knows every verb this node answers.
+  loopbackVerbs.claim('contact', 'hub.js', {
+    'contact.block': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); },
+    'contact.unblock': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); },
+    'contact.accept': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); },
+    'contact.label': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); },
+    // Read and write, told apart by name rather than by an HTTP method
+    // that no longer varies. See handleSendersRead.
+    'contact.senders': function (rq, rs) { hub.handleSendersRead(rq, rs); },
+    'contact.setSenders': function (rq, rs) { hub.handleUnknownSenders(rq, rs, readJsonBody); },
+  }, { wire: false });
 }
 
 server.listen(port, BIND_HOST, () => {

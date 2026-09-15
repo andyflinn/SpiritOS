@@ -19,7 +19,7 @@
 // what polls — which meant a node-level policy travelling through an app
 // with no say in it, and a second poller or a stale tab would have been a
 // second answer. The hub holds it itself now — preferences.json, set
-// through /api/hub/unknown-senders, and no app's file at all.
+// through `contact.senders`, and no app's file at all.
 //
 // So: Contacts writes it, the hub reads it, this app polls and says
 // nothing about it.
@@ -877,7 +877,7 @@ spirit.shell.activateApp({
     // caller that has no table of its own.
     //
     // This gives chat no authority it did not have. The dialog does its
-    // own write, to /api/hub/peer, exactly as it does when Contacts opens
+    // own write, a contact.* verb, exactly as it does when Contacts opens
     // it; chat points at the decision and does not make it. The rule
     // above still holds — a mere app must not reach a node-global switch
     // (Andy) — and chat still cannot: it holds nothing but its own log.
