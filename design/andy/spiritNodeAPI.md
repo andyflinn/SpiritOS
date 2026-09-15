@@ -1,8 +1,8 @@
 # The node API — route hierarchy
 
-**Measured at working tree, 2026-09-13** (after `1502e2a`). Every route both servers dispatch
-and the function it lands in. Illustration only: no argument, no
-proposal, nothing about what should change.
+**Measured at working tree, 2026-09-15** (after `25489ab`). Every route both
+servers dispatch and the function it lands in. Illustration only: no argument,
+no proposal, nothing about what should change.
 
 One file, [`spirit/run/js/server.js`](../../spirit/run/js/server.js),
 serves both. Which server you get is `--relay` on the command line.
@@ -12,149 +12,91 @@ serves both. Which server you get is `--relay` on the command line.
 ## The relay — `node js/server.js --relay`
 
 Binds `0.0.0.0`. Every path not on the allowlist
-(`isRelayPublicPath`, [server.js:673](../../spirit/run/js/server.js#L673))
+(`isRelayPublicPath`, [server.js:680](../../spirit/run/js/server.js#L680))
 is 404 before dispatch, so this is the whole surface.
 
 ```
 POST /api/relay/
-  ├── claim                 handleRelayClaim   → relay.claim
-  │
+  ├── claim                 handleRelayClaim   → relay.claim         ← bootstrap
   ├── post                  (inline)           → relay.routePost
   ├── reply                 (inline)           → relay.routeReply
-  ├── send                  handleRelaySend    → relay.send          ← the ring
-  │
-  └── device                handleDeviceOffer  → relay.deviceOffer
+  └── device                handleDeviceOffer  → relay.deviceOffer   ← bootstrap
 
 GET  /api/relay/
   ├── who                   handleRelayWho     → relay.who           ← public census
-  ├── status                handleRelayStatus  → relay.status        ← owner-signed
-  ├── inbox                 handleRelayInbox   → relay.inbox         ← the ring
   └── stream                (inline)           → relay.streamOpen    ← the held wire
 
 GET  /api/version                                                    ← public
+GET  /, /index.html, /relay.html, /favicon.svg                       ← the brochure
+GET  /<key>/device                                                   ← the enrol page
 ```
 
-**Five POST, four GET**, plus `/api/version`. All of `relay.js`.
+**Four POST, two GET**, plus `/api/version` and static files. All of `relay.js`.
 
-It was seven POST this morning. `invite` and `monitor` became posts;
-`remove-peer` became a post; `set-device` was deleted outright, because a
-relay holds no device key for it to install. Decision 0010's register of
-named cheats is empty.
+It was five POST and four GET on 2026-09-13. `send` and `inbox` went with the
+ring (R8); `status` went with the owner badge that was its only caller (R3).
+Nothing was added.
 
-Two of the five that remain — `send`, and `inbox` on the GET side — are
-**the ring**, and are sentenced rather than justified. See the contract
-section below for why they are one lump.
+**What GET is for on a relay**: static files, and the two things that must work
+before a post is possible — `who`, because it is where a node learns the relay's
+key, and `stream`, because a post is answered on the connection it opens. You
+cannot post to an address you are still asking for, and you cannot post to open
+the channel that carries the answer.
 
-**What GET is for on a relay** (granted by Andy, 2026-09-13): static
-files, and the three things that must work before a post is possible —
-`who`, because it is where a node learns the relay's key; `stream`,
-because it is the wire a post's answer comes back on; and `version`,
-because a deploy check must not need a private key. Each sits *before or
-beneath* the protocol, and a protocol cannot express its own
-preconditions.
+**What POST is for**: two halves of the router, and two bootstraps. `claim` is
+permanently outside the protocol — you cannot post to a relay you have no row
+on. `device` is posted by a browser with no identity yet, which is the thing it
+is asking for.
 
-Everything else must be a post, and as of 2026-09-13 everything else is
-one. Two GETs are outstanding: `inbox` dies with the ring, and `status`
-owes an argument — it is un-postable because of the ORDER this node does
-its work in, not because of anything about the relay.
+### Everything else a relay can be asked is a packet
+
+`post` carries them. A relay answers a packet addressed to its own key in
+`relay.answerSelf` ([relay.js:1358](../../spirit/run/js/relay.js#L1358)), and
+the verbs are:
+
+```
+{ monitor:    { on, filter } }   owner        traffic events, live, never stored
+{ invite:     { label, days, token } }        owner
+{ revoke:     { label } }        owner
+{ removePeer: { key } }          owner, or anybody about themselves
+{ rename:     { label } }        own row      a peer renaming itself
+```
+
+Five, and `monitor` is the watching one — there is no separate `watch` verb,
+though the comments around `statusToOwner` talk about watching.
+
+**None of these has a route, and none needs one.** That is the whole of what
+2026-09-15 changed on the node side: a verb the relay answers is reachable
+because the browser can address the relay, so there is nowhere left for a door
+to be missing from. `removePeer` sat in that gap for months and `revoke` shipped
+with it the same morning.
 
 ### The relay's own key is a destination
 
-**`relay` is no longer an addressable destination BY NAME.** It is still a
-reserved name nobody may claim and no invite may be labelled with — a
-namespace rule that outlived the console it used to serve.
-
-**Its KEY is addressable, by its owner and by nobody else.** A post to the
-relay's own public key is answered by `relay.answerSelf`, and that is
-where four owner verbs live — two that used to have doors of their own,
-and two that never had a door at all:
-
-```
-POST /api/relay/post  → relay.routePost
-                          ├── postedToSelf?  → relay.answerSelf
-                          │                     │
-                          │                     │  OWNER VERBS — the house key
-                          │                     ├── body.monitor    → start/stop watching
-                          │                     ├── body.invite     → relay.mint
-                          │                     ├── body.revoke     → invites.revokeInvite
-                          │                     ├── body.removePeer → relay.forgetPeer   (anybody)
-                          │                     │
-                          │                     │  OWN-ROW VERBS — any identity with a row
-                          │                     └── body.removePeer → relay.forgetPeer   (yourself)
-                          └── otherwise      → the peer it names
-```
-
-**Any peer on the relay may address it.** That opened on 2026-09-13, and
-it is what let `set-device` and self-removal stop being cheats. It also
-corrects this page: an earlier version said a peer got `no such peer` and
-learned nothing, on the grounds that the key was hidden. It is not — the
-relay publishes it unsigned in `/api/relay/who`, because a node needs it
-to pin the box and to post THROUGH it.
-
-What refuses a peer now is **the verb, not the door**. `answerSelf` gates
-one verb at a time, and an owner verb asked by a peer answers `no such
-peer` — exactly what a verb nobody has heard of gets, so the set of things
-this box will do for somebody else cannot be enumerated by asking it.
-
-The proof for both kinds is the same signature: the post's, checked once
-in `routePost`. Only *which row it has to be* differs.
-
-Two are worth naming for what they show about the rule:
-
-**`body.revoke` is the first verb designed after 0010** rather than
-collapsed into it. It takes an invitation back by label and has no self
-path — an unclaimed invitee has no identity here and can sign nothing —
-so it was born as a packet and never needed a door. Before it, an
-unclaimed invite could not be revoked at all: `revokeLabel` existed, only
-`removePeer` called it, and `removePeer` needs a row.
-
-**`body.removePeer` is one verb of both kinds**, which is why it reads
-twice in the tree above. The owner may name anybody; anybody else may name
-only themselves. That was `byOwner || bySelf` on a public route, and it is
-the same rule decided by who signed rather than by a second signature.
-
-**`body.setDevice` was here for a few hours, and is gone.** It was the
-verb that proved a relay should answer more than its owner — installing a
-key on your own row was never an owner verb. Then the same reasoning went
-one step further:
-
-> Andy: *"the device key is used to mirror/fake the protocol for the one
-> leg of the route where it's not actually compliant... and to safely tie
-> a device to its node."*
-
-**Both jobs are the node's, so a relay now keeps no device key at all.**
-It was read in exactly two places — inside `send` and inside `inbox` — and
-nothing in the tree ever exercised either; `device.html`'s own
-`sendMessage` helper had one occurrence, its own definition.
-
-The door it opened stays open: removing yourself is still an own-row verb,
-and that is what keeps the per-verb gate honest rather than decorative.
+A relay is a peer to every member. Its key is published in the census, it
+appears in every member's roster (`relay.streamRoster`), and posts addressed to
+it are answered like any other. That is what makes the verbs above reachable
+without routes.
 
 ---
 
 ## The personal server — `node js/server.js`
 
-Binds `127.0.0.1`, and refuses anything that is not loopback with a valid
-`Host` before dispatch ([server.js:727](../../spirit/run/js/server.js#L727)).
-So this whole surface is reachable from the browser on this machine and
-from nowhere else.
+Binds loopback only, with a Host check. Everything below is reachable from this
+machine and nowhere else.
 
 ```
 POST /api/hub/
-  ├── claim                 hub.handleClaim
-  ├── peer                  hub.handlePeer              ← whoBook only, never the WAN
-  ├── invite                hub.handleInvite            ← posts to the relay
-  ├── remove-peer           hub.handleRemovePeer        ← posts to the relay
+  ├── post                  hub.handlePost      ← THE ONLY DOOR ONTO THE WIRE
   │
-  ├── post                  hub.handlePost              ← the router
-  │
+  ├── claim                 hub.handleClaim     ← bootstrap
   ├── contact               hub.handleContact
+  ├── peer                  hub.handlePeer
   ├── unknown-senders       hub.handleUnknownSenders
   └── rotate-password       hub.handleRotatePassword
 
 GET  /api/hub/
-  ├── inbox                 hub.handleInbox             ← the ring
-  ├── status                hub.handleStatus
+  ├── status                hub.handleStatus    ← the badge, by key
   ├── who                   hub.handleWho
   ├── handle                hub.handleHandle
   ├── device                hub.handleDevice
@@ -166,159 +108,90 @@ POST /api/fs/
   └── annotate              handleFsAnnotate
 
 GET  /api/fs/
-  ├── stat                  (inline)           → spirit.core.fs.statFile
-  └── annotations           (inline)           → spirit.core.fs.getAnnotations
+  ├── stat                  (inline)
+  └── annotations           (inline)
 
-POST   /api/jobs                       handleCreateJob
-POST   /api/jobs/<id>                  handleJobUpdate
-POST   /api/jobs/<id>/cancel           handleCancelJob
-DELETE /api/jobs/<id>                  handleDeleteJob
-GET    /api/jobs                       (inline)  → jobs.listJobs
+POST /api/jobs                handleCreateJob
+POST /api/jobs/<id>           handleJobUpdate
+POST /api/jobs/<id>/cancel    handleCancelJob
+GET  /api/jobs                (inline)
 
-GET  /api/events            handleSseConnection         ← jobs AND arriving packets
-POST /api/proxy             handleGenericProxy
-GET  /api/version           (inline)
-
-POST /                      "POST accepted"
+POST /api/proxy               handleGenericProxy
+GET  /api/events              handleSseConnection   ← the node's own stream
+GET  /api/version
 ```
 
-**Eight `/api/hub/` POST, six GET.** Three `/api/fs/` POST, two GET.
-Anything else under POST is `405`; `DELETE` serves one route and nothing
-else.
+### One door puts things on the wire
 
-**Every hub route names a handler.** `/api/hub/post` was the last one
-written out inside the route table; the rules it enforces — is this node
-attached to a relay, which relay to send through, what `via` overrides —
-could only be exercised by making an HTTP request until it moved.
+`/api/hub/post` is the only route on this node that reaches `router.post`, and
+`spirit/test/serverSurface.js` asserts it by reading `hub.js`: a second caller
+would be a second way onto the wire, whether or not a route had been wired to it
+yet.
 
-**`/api/hub/invite` and `/api/hub/remove-peer` are doors, not protocol.**
-Both take a url, both post to that relay rather than calling a route on
-it, and both need `router` and `relayKey` handed in the way
-`/api/hub/post` needs `router` and `presence`. They share `hub.askRelay`,
-which is the one place that tells a post that never arrived apart from one
-that arrived and was refused.
+**Four doors stood beside it until 2026-09-15** — `invite`, `rename`, `revoke`
+and `remove-peer` — each building one packet body and handing it to
+`router.post`. `askRelay` was their shared half and went with them.
 
-This is the line decision 0010 draws: **a node may shape its own door
-however suits the browser; what it may not do is invent a word to say over
-the WAN.** Neither of these does — both send an ordinary post.
+What remains on `/api/hub/` is what is NOT a post:
+
+- **bootstrap** — `claim`, and `device` on the GET side
+- **reads** — `status`, `who`, `handle`, which fetch the public census
+- **local** — `contact`, `peer`, `unknown-senders`, `rotate-password`, which are
+  whoBook and password work on this machine and never touch a relay
+
+### What a client is
+
+A browser holds no key and cannot sign. Neither does a spawned process. Both are
+**loopback clients**: they ask this node to act, and this node signs. The shell
+hands apps `api.peerPost(app, toKey, body)` and `api.onRegarding(hash, fn)`
+([shell.js](../../spirit/run/js/client/shell.js)); a process does the same thing
+with an HTTP client and gets the same answer for the same reason. Neither is a
+peer, because a peer holds a key. See decision 0011.
 
 ---
 
 ## What is gone, and why it is worth saying
 
-**Four relay routes** — `invite`, `monitor`, `remove-peer` and
-`set-device`. With them went `mintMessage`, `monitorMessage`,
-`removePeerMessage`, `setDeviceMessage`, `relay.setMonitor`,
-`handleSetDevice`, `hub.handleMonitor` and `POST /api/hub/monitor`.
-**Nothing replaced any of it**, and the register of named cheats is empty.
+| gone | when | why |
+|---|---|---|
+| `POST /api/relay/send` · `GET /api/relay/inbox` | R8, 2026-09-13 | the ring. A relay stores nothing on anyone's behalf (0006) |
+| `GET /api/relay/status` | R3, 2026-09-15 | the owner badge was its only caller, and the census already answered it |
+| `POST /api/relay/set-device` | 2026-09-13 | a relay holds no device key for it to install |
+| `POST /api/hub/send` · `GET /api/hub/inbox` | R8 | the node's half of the ring |
+| `GET /api/hub/arrivals` | — | no caller: a closed page catches up on the live channel |
+| `POST /api/hub/invite` · `rename` · `revoke` · `remove-peer` | 2026-09-15 | each built one packet body. That is a peerPost |
 
-Three became posts. **`set-device` did not** — it was deleted, along with
-`relay.installDevice`, `deviceAuth.keysForName`, `deviceTick`'s
-`installEverywhere` and the relay's `deviceByName`. A device is bound to
-its NODE; the relay's copy of the key was read only by `send` and `inbox`,
-by nothing.
-
-**`POST /api/hub/send`** — the node's door onto the ring, and it had no
-caller anywhere. `hubPost.js` had been asserting exactly that: *"nothing
-above the boundary names /api/hub/send."* Relay Chat sends through
-`/api/hub/post`, the router. `hub.handleSend` and `signedSend` went with
-it. What is left of the ring is on the relay, and goes as one lump — see
-the contract section.
-
-**`GET /api/hub/arrivals`** — the log as a table, and it had **no caller
-anywhere in the tree**. Catch-up was already solved one layer down and
-better: `createArrivals.subscribe` hands a page the un-taken backlog on
-the same live channel a new packet arrives on, so a page that was closed
-gets what it missed without asking a second door a weaker version of the
-question. `hub.rowAsMessage` went with it.
-
-**`/api/fs/save-app-script` and `/api/fs/save-app-manifest`** — decision
-0008. `saveFile` refuses an app's own entry script and manifest, and there
-are no exceptions left to that refusal.
-
-**Two faults, opposite shapes, and neither visible to
-`spirit/test/protocolSurface.js`** — it can only compare two lists of
-things that exist. `relay.removePeer` was a verb nothing could reach;
-`/api/hub/arrivals` was a door nothing called. Both are impurities; only
-the first looked like a missing feature.
+Six routes and four doors, and none of them was replaced by anything. Each was
+either a second way of saying something the protocol already said, or a thing
+the protocol had decided not to do.
 
 ---
 
 ## The two interfaces the contract was about
 
-Read across the method boundary rather than down one column:
+**The relay's, which is the protocol.** Four POST, two GET, and a register that
+now covers what travels on the stream as well as which doors exist
+(decision 0010). `protocolSurface.js` fails in both directions: a door or an
+event in the tree and not in the register, or the reverse.
 
-| | post to a peer, with reply | find out what arrived |
-|---|---|---|
-| **an app** | `api.sendMessagePacket` — names no path | `api.onPacket` — names no path |
-| **node** | `POST /api/hub/post` | `GET /api/events` |
-| **relay** | `POST /api/relay/post` + `/reply` | `GET /api/relay/stream` |
-
-**There is one door on the right-hand column now, and that is the point.**
-It used to be two — live on `/api/events`, catch-up on
-`/api/hub/arrivals` — split on the reasoning that a held connection and a
-question about the past are different things. They are, but the split was
-in the wrong place: the node already knows which rows a page has been
-handed (`taken`), so the backlog belongs at the front of the live stream
-rather than behind a second door the client has to know to knock on.
-
-`/api/events` carries **both** job events and arriving packets, which is
-why it is named for the node rather than for jobs.
-
-**`GET /api/hub/inbox` is what is left of the ring on this node**, and it
-is a read: Relay Chat polls it every two seconds for its receive path, and
-Natter uses it once as a cheap *"is this label still mine"* probe. The
-write door is gone.
-
-**The ring never kept the promise it was made for**, which is the argument
-that sentences it rather than the router being nicer:
-
-> Andy: *"the ring was a lie all along. it was unable to promise reliable
-> delivery anyways, because it dropped entries on overflow."*
-
-The cap is **200 global** — one array for every peer on the relay,
-filtered per reader at read time — so a peer sending 200 messages to
-themselves evicts everybody else's undelivered mail, and nothing is told.
-
-What remains goes together, because splitting it leaves a signed format
-guarding an unreachable function: `relay.send`, `POST /api/relay/send`,
-`sendMessage`, `checkSend`, the `messages` array and `inbox`. Note that
-`/api/relay/send` is **not** wire-dead the way the hub door was —
-`labPopulate`, `liveFrontDoor` and five `labMaster` suites use it to make
-ring traffic, and nine suites call `box.send` directly.
+**The node's, which is not.** `/api/hub/*` is this node's own front, reachable
+only from this machine, and a node may shape it however suits its clients. What
+it may not do is invent a word to say over the wire — and after 2026-09-15 it
+cannot, because only one of its doors speaks.
 
 ---
 
 ## Structural notes
 
-**`/api/relay/*` is not relay-only in code.** The relay object is built
-unconditionally at [server.js:15](../../spirit/run/js/server.js#L15), and
-the relay routes are dispatched in the same blocks as the hub routes. On a
-personal node they are live — behind the loopback gate, like everything
-else it serves. What separates the two servers is not which handlers
-exist; it is which ones the door lets a request reach.
+**`/api/events` is the node's stream, not Jobs'.** Named for what it is: jobs
+were its first customer, and it now carries `job-updated`, `job-deleted`,
+`relay-event` and `packet`.
 
-**Eight routes are still written out inline.** On the relay: `post`,
-`reply`, `remove-peer` and `stream`. On the node: `fs/stat`,
-`fs/annotations`, `GET /api/jobs` and `GET /api/version`.
+**A relay writes no traffic log.** `trafficLog.note` returns null in relay mode
+([trafficLog.js:226](../../spirit/run/js/trafficLog.js#L226)). The owner's log
+of membership events lives on the owner's own node, fed down the stream — so a
+relay keeps no record of who talked to whom.
 
-All eight are pass-through — read the input, call one function, write the
-result — with no decisions in them, which is what makes them different
-from `/api/hub/post` before it moved. **Every route that decides something
-names a handler.**
-
-**`/api/hub/peer` never leaves the machine.** Block, unblock, accept and
-label are `whoBook` writes. Taking somebody off a relay is
-`/api/hub/remove-peer`, which posts — and which did not exist until
-2026-09-13, so until then the verb worked and no door on this side could
-reach it.
-
-**No route on this relay is a named cheat any more**, which is a claim
-this page can make because there is a register that says so and a test
-that keeps it honest (`spirit/test/protocolSurface.js`).
-
-One thing is still owed an argument: `GET /api/relay/status`.
-`presenceNode.start` reads it to learn which relays to open streams to, so
-a posted `status` would need a stream its own answer is what decides to
-open. That is circular **as ordered, not by nature** — and under the
-standing rule, the ordering is what has to be defended.
+**The hash is computed at every hop and carried on none.** A post is
+`{from, to, text, sig}` with no hash and no correlation id. It crosses the wire
+once, on the reply, inside the responder's signature. See decision 0011.
