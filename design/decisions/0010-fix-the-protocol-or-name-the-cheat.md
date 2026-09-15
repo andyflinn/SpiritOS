@@ -182,6 +182,47 @@ forgotten; `owner-event` is membership and is written down. One event name
 for two retention rules would put the decision about whether somebody's
 words reach disk inside a string comparison.
 
+### What the owner is told
+
+**The register learned to count events instead of only doors, and still
+counted `owner-event` as one row.** Six different things go down it. That
+is the hole above, recursing: a door is a way of speaking, a word said
+through it is another, and so is what the word says.
+
+> Andy: "there are events that the owner node should be notified of, no
+> matter if natter is probing, we simply have not identified them
+> formally."
+
+It matters more here than one level up. These are the only things a relay
+ever says to its owner unprompted; they are the ones 0009 says are
+**kept**; and until 2026-09-15 nothing in a browser received any of them,
+so a seventh could have been added and read by nobody — exactly as an
+eighth stream event was.
+
+| kind | what it says | carries |
+|---|---|---|
+| `claim` · `claim-refused` | somebody tried to take a seat, and how it ended. One call site, two outcomes, so one row | `label`, `invite`, `key`, `owner`, `why` |
+| `invite-minted` | the owner wrote an invite | `invite`, `expiresAt`, `cause` |
+| `invite-revoked` | an invite was withdrawn, with how many rows it took | `invite`, `revoked`, `cause` |
+| `peer-renamed` | somebody changed what this relay calls them | `key`, `was`, `label`, `cause` |
+| `peer-removed` | a row is gone, and what went with it | `key`, `label`, `invitesRevoked` |
+
+**`invite` is a LABEL, never a token.** The word the owner wrote on the
+invite, normalised — `seen.invite = normalizeName(inviteLabel)`. A token
+is a secret and does not travel on an event that is written to disk.
+
+**`key` is what a consumer acts on, and `label` is only for display.** A
+label is a caption: two peers may wear one, and the same peer may change
+theirs. Anything that decides something — acquiring a contact, removing a
+row — reads `key`. The one place in the tree that resolved a label back
+to a key in order to act (`natterAcquireInvited`, matching a minted label
+against the census) is deleted by this decision's own logic: `claim`
+already carries the key.
+
+**`cause` is which post caused it**, absent on `claim` because a claim
+arrives on a route rather than as a post — see the `cause` note in
+`relay.ownerEvent`.
+
 ### Bootstrap — cannot be a packet, by nature
 
 | | |

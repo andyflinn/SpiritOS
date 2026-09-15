@@ -160,6 +160,7 @@ function mountApp(options) {
   container.byId = function () { return doc.getElementById('natter-tbody'); };
 
   const called = [];
+  let relayEventHandlers = [];
   const api = {
     escapeHtml: spirit.core.util.escapeHtml,
     // Opening a mailbox IS a call now: the panel that used to unfold
@@ -171,6 +172,16 @@ function mountApp(options) {
       // What the screen decided. A dialog that decided nothing answers
       // null, and costs this list nothing.
       return Promise.resolve(opts.dialogResult || null);
+    },
+    // The shell's fan-out of what a relay this node OWNS reported.
+    // Captured so a test can push a claim at the app and watch what it
+    // does, which is the only way to assert "no matter if natter is
+    // probing".
+    onRelayEvent: function (handler) {
+      relayEventHandlers.push(handler);
+      return function off() {
+        relayEventHandlers = relayEventHandlers.filter(function (fn) { return fn !== handler; });
+      };
     },
     // The shell's own accessor, which reads the file this app writes.
     nodeLabel: function () { return label; },
@@ -189,6 +200,10 @@ function mountApp(options) {
     doc: doc, log: log, store: store, container: container,
     told: function () { return told; },
     called: called,
+    // Push an owner-event at the app, the way the shell would.
+    relayEvent: function (ev) {
+      relayEventHandlers.slice().forEach(function (fn) { fn(ev); });
+    },
   };
 }
 
@@ -488,34 +503,117 @@ function aRowOpensTheMailbox() {
   });
 }
 
-// minted.json is the LIST's file, and the screen cannot write it: a
-// dialog's api.fs is scoped to its own folder. So the label comes back as
-// the dialog's answer and this app records it — which is the whole reason
-// a dialog returns anything.
-function aMintOverThereIsRememberedHere() {
+// ── THE RELAY NAMES THE KEY, SO NOTHING HAS TO REMEMBER A LABEL ──────
+//
+// THIS TEST DROVE minted.json, and its subject is deleted. Natter kept a
+// list of invite labels this browser had issued, watched the owner
+// census for a peer whose PUBLIC label matched one, and acquired them.
+//
+// It was wrong three ways, and only the first was ever written down:
+// a claimant picks their public label freely since R1, so the label they
+// wear is not the label on the invite; it only ran while Natter was open
+// because it rode on the probe; and it only knew what THIS browser had
+// minted.
+//
+//   Andy: "there are events that the owner node should be notified of,
+//   no matter if natter is probing."
+//   Andy: "any search for enrollment row or peers or anything is really
+//   search-key-by-public-label"
+//
+// The relay has always told its owner, live, by KEY — `claim` carries
+// `key` and `invite` (decision 0010, "What the owner is told"). So the
+// guessing is gone and what is asserted here is the thing that replaced
+// it. Rewritten rather than deleted: the SUBJECT survives — an owner who
+// invited somebody ends up connected to them — only the mechanism moved.
+function anInviteRedeemedAddsThemHere() {
   const app = mountApp({
     label: 'andy',
-    rows: [{ url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
-    dialogResult: { changed: true, url: OWNED, minted: 'saint' },
+    rows: [{ url: OWNED, label: 'spirit', owned: true }],
   });
 
   return settle().then(function () {
-    app.doc.getElementById('natter-tbody').fire('click', { target: rowTarget(OWNED) });
+    // No probe, no dialog, nothing on screen: the point is that none of
+    // that is required any more.
+    app.relayEvent({
+      kind: 'claim', relay: OWNED, key: 'KEY-SAINT', invite: 'saint',
+      label: 'whatever-they-called-themselves', owner: false,
+    });
+
     return settle().then(function () {
-      const minted = app.store['minted.json'] || '';
-      if (/saint/.test(minted)) {
-        test.check('a label minted on that screen is remembered by this one');
+      const added = app.log.filter(function (c) { return c.verb === 'peer.acquire'; });
+      const body = added.length ? JSON.parse(added[0].body) : null;
+
+      // BY KEY. The label they wear is deliberately nothing like the
+      // invite here — that mismatch is exactly what the old label match
+      // could not survive.
+      if (body && body.publicKey === 'KEY-SAINT' && body.via === 'invite') {
+        test.check('a redeemed invite adds them by KEY, whatever label they chose for themselves');
       } else {
-        test.fail('minted.json: ' + minted);
+        test.fail('acquire body: ' + JSON.stringify(body));
       }
 
-      // Never the token. It is the spoken secret and it does not leave
-      // the screen it was read off.
-      if (minted.indexOf('saint-bernard') === -1) {
-        test.check('and the token is not, because that is the spoken secret');
+      // A CLAIM WITH NO INVITE IS NOT SOMEBODY YOU ASKED FOR. The owner
+      // taking their own first seat, or an open box before it had an
+      // owner — neither is consent to put anyone in your address book.
+      const before = app.log.filter(function (c) { return c.verb === 'peer.acquire'; }).length;
+      app.relayEvent({ kind: 'claim', relay: OWNED, key: 'KEY-STRANGER', invite: '', owner: false });
+
+      return settle().then(function () {
+        const after = app.log.filter(function (c) { return c.verb === 'peer.acquire'; }).length;
+        if (after === before) {
+          test.check('and a claim that consumed no invite adds nobody');
+        } else {
+          test.fail('a claim with no invite was acquired anyway');
+        }
+      });
+    });
+  });
+}
+
+// PER RELAY, WHICH WAS ANDY'S CORRECTION. I proposed node-wide, beside
+// the unknown-senders policy; he pointed out they answer different
+// questions — that one is about strangers and belongs to the node, this
+// one is about people YOU let onto THIS relay, and you can own two
+// relays for two purposes.
+function theAutoAddPolicyIsPerRelay() {
+  const app = mountApp({
+    label: 'andy',
+    relays: [{ label: 'spirit', url: OWNED, autoAdd: false }],
+    rows: [{ url: OWNED, label: 'spirit', owned: true }],
+  });
+
+  return settle().then(function () {
+    app.relayEvent({
+      kind: 'claim', relay: OWNED, key: 'KEY-SAINT', invite: 'saint', owner: false,
+    });
+
+    return settle().then(function () {
+      const added = app.log.filter(function (c) { return c.verb === 'peer.acquire'; });
+      if (added.length === 0) {
+        test.check('a relay whose policy says no adds nobody, however the invite went');
       } else {
-        test.fail('a token reached minted.json: ' + minted);
+        test.fail('acquired despite autoAdd:false — ' + added[0].body);
       }
+
+      // ABSENT MEANS ON, so every relay enrolled before this setting
+      // existed behaves the way the person who wrote the invite expected.
+      const other = mountApp({
+        label: 'andy',
+        relays: [{ label: 'spirit', url: OWNED }],
+        rows: [{ url: OWNED, label: 'spirit', owned: true }],
+      });
+      return settle().then(function () {
+        other.relayEvent({
+          kind: 'claim', relay: OWNED, key: 'KEY-SAINT', invite: 'saint', owner: false,
+        });
+        return settle().then(function () {
+          if (other.log.filter(function (c) { return c.verb === 'peer.acquire'; }).length === 1) {
+            test.check('and a relay that has never been asked defaults to yes — the invite is the consent');
+          } else {
+            test.fail('a relay with no policy set did not add');
+          }
+        });
+      });
     });
   });
 }
@@ -699,7 +797,8 @@ unboundIsThePage()
   .then(aClaimReturnedIsRecordedAgainstItsRelay)
   .then(nothingReportedBindsNothing)
   .then(aRowOpensTheMailbox)
-  .then(aMintOverThereIsRememberedHere)
+  .then(anInviteRedeemedAddsThemHere)
+  .then(theAutoAddPolicyIsPerRelay)
   .then(aRenamedRowKeepsTheBinding)
   .then(halfOfflineDoesNotUnbind)
   .then(noRowForThisKeyDropsTheBinding)

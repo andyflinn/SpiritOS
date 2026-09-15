@@ -88,9 +88,39 @@ inTree.events = [];
   if (m && inTree.events.indexOf(m[1]) === -1) inTree.events.push(m[1]);
 });
 
+// ── AND WHAT THE OWNER IS TOLD, WHICH IS THE SAME HOLE AGAIN ─────────
+//
+//   Andy: "there are events that the owner node should be notified of,
+//   no matter if natter is probing, we simply have not identified them
+//   formally."
+//
+// The register learned to count events instead of only doors. It still
+// counted `owner-event` as ONE row — and six different things go down
+// it. That is the blindness above, recursing: a door is a way of
+// speaking, a word said through it is another, and so is what the word
+// says.
+//
+// It matters more here than it looks. These are the only things a relay
+// ever tells its owner unprompted, they are the ones decision 0009 says
+// are KEPT, and until 2026-09-15 nothing in a browser received any of
+// them — so a seventh could be added and read by nobody, exactly as an
+// eighth stream event was.
+//
+// Scanned off `ownerEvent(` the same way: the tree's own answer. The
+// ternary at the claim wrapper means one call site can name two kinds,
+// so both halves are taken.
+inTree.ownerKinds = [];
+(relaySrc.match(/ownerEvent\(\s*[^;]*?\)/g) || []).forEach(function (call) {
+  (call.match(/'([a-z-]+)'/g) || []).forEach(function (q) {
+    const kind = q.replace(/'/g, '');
+    if (inTree.ownerKinds.indexOf(kind) === -1) inTree.ownerKinds.push(kind);
+  });
+});
+
 inTree.messages.sort();
 inTree.routes.sort();
 inTree.events.sort();
+inTree.ownerKinds.sort();
 
 // ---------------------------------------------------------------------
 // What the register says.
@@ -145,9 +175,34 @@ registered.events = [];
   });
 })();
 
+// THE SAME TRICK ONE LEVEL DOWN. Its own heading, its own section, and
+// first-cell-only for the same reason: `claim` and `owner` are words the
+// prose of this document uses constantly, and a scanner that took every
+// backticked lowercase word out of every row would register the
+// vocabulary instead of the protocol.
+const OWNER_HEADING = '### What the owner is told';
+registered.ownerKinds = [];
+(function () {
+  const start = doc.indexOf(OWNER_HEADING);
+  if (start === -1) return; // no section: every kind reads as unregistered
+  const after = doc.indexOf('\n### ', start + OWNER_HEADING.length);
+  const section = doc.slice(start, after === -1 ? doc.length : after);
+  section.split('\n').forEach(function (line) {
+    if (!/^\s*\|/.test(line) || /^\s*\|[\s|:-]*$/.test(line)) return;
+    const first = line.split('|')[1] || '';
+    // Two per cell, because `claim` and `claim-refused` are one call
+    // site and belong on one row.
+    (first.match(/`([a-z-]+)`/g) || []).forEach(function (q) {
+      const kind = q.replace(/`/g, '');
+      if (registered.ownerKinds.indexOf(kind) === -1) registered.ownerKinds.push(kind);
+    });
+  });
+})();
+
 registered.messages.sort();
 registered.routes.sort();
 registered.events.sort();
+registered.ownerKinds.sort();
 
 test.subHeading(inTree.messages.length + ' signed format(s), ' +
   inTree.routes.length + ' public relay route(s)');
@@ -182,6 +237,7 @@ function compare(what, tree, listed) {
 compare('signed format', inTree.messages, registered.messages);
 compare('relay route', inTree.routes, registered.routes);
 compare('stream event', inTree.events, registered.events);
+compare('owner-event kind', inTree.ownerKinds, registered.ownerKinds);
 
 // ---------------------------------------------------------------------
 test.subHeading('The register says what each one IS');

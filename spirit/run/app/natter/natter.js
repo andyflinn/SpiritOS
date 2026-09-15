@@ -60,9 +60,15 @@ var natterMyName = '';
 // url -> { label, boundAt, confirmedAt }. Null until the file is read.
 var natterBindings = Object.create(null);
 
-// What this app is called on the wire when it mints. Nothing to do with
-// packets — mint and claim are hub routes, not messages.
-var natterMintedLabels = [];
+// minted.json AND natterMintedLabels STOOD HERE. They existed to
+// recognise an invitee by the LABEL on their invite, which stopped being
+// possible when a claimant gained the right to pick their own public
+// label (R1) and stopped being necessary when the browser started
+// receiving owner-events. The relay names the key. See natterOnClaim.
+//
+// The file itself is left on disk rather than deleted: it is one small
+// array of labels, nothing reads it, and a node that downgrades should
+// find it where it left it.
 
 function natterLoadRelays(api) {
   var raw = api.fs.loadFile(RELAYS_FILENAME);
@@ -270,9 +276,15 @@ function natterOpenMailbox(api, container, relays, url) {
     // handed one subject and never reads relays.json — the caption is
     // the list's to know, the same way canRemove was.
     relayLabel: natterLabelFor(relays, url),
+    // This relay's answer to "add newcomers to my contacts". Handed in
+    // because relays.json is THIS app's file — the screen decides, and
+    // hands the decision back below.
+    autoAdd: natterAutoAddFor(url),
   }).then(function (result) {
     if (!result) return;
-    if (result.minted) natterRememberMinted(api, result.minted);
+    if (typeof result.autoAdd === 'boolean') {
+      natterSetAutoAdd(api, relays, url, result.autoAdd);
+    }
     // REMOVAL IS RETURNED, NOT DONE. relays.json is this app's file —
     // the screen's own api.fs is scoped to its folder — so the screen
     // says what it decided and this performs it, under the same guard
@@ -354,7 +366,6 @@ function natterProbe(api, container, relays) {
       rows.forEach(function (row) {
         if (row && row.url) natterBadgeByUrl[row.url] = row;
       });
-      natterAcquireInvited(rows);
       natterCheckBinding(api, relays, rows);
       natterRenderList(container, api, relays);
     })
@@ -453,38 +464,121 @@ function natterPaintBind(api, relays) {
 }
 
 
-// A label this node minted an invite for. Not the token — that is the
-// secret — just enough to recognise the person when they turn up claimed
-// on this owner's own census.
-function natterRememberMinted(api, label) {
-  var wanted = String(label || '').trim();
-  if (!wanted || natterMintedLabels.indexOf(wanted) !== -1) return;
-  natterMintedLabels.push(wanted);
-  if (natterMintedLabels.length > 50) natterMintedLabels = natterMintedLabels.slice(-50);
-  api.fs.saveFile('minted.json', JSON.stringify(natterMintedLabels, null, 2)).catch(function () {});
+// ── WHO JUST JOINED, FROM THE RELAY ITSELF ──────────────────────────
+//
+//   Andy: "when someone binds to the relay the owner may want to
+//   auto-add the new ID to his contacts. he issued an invite, so he must
+//   want to be connected with the new addition."
+//
+// THIS USED TO GUESS, and the guess was made of labels. Natter kept
+// minted.json — the invite labels this browser had issued — and watched
+// the owner census for a peer whose PUBLIC LABEL matched one of them.
+// Three ways that was wrong, and only the first was ever written down:
+//
+//   IT MATCHED THE WRONG THING. A claimant picks their public label
+//   freely (R1), so the label they wear is not the label on the invite.
+//   Anybody who chose their own name was never recognised.
+//   IT ONLY RAN WHILE NATTER WAS OPEN, because it rode on the probe.
+//   IT ONLY KNEW WHAT THIS BROWSER MINTED. An invite issued from another
+//   device was invisible here.
+//
+// None of that guessing is necessary. The relay has always told its
+// owner, live, exactly who redeemed which invite, BY KEY:
+//
+//   ownerEvent('claim', { label, invite, key, owner, why })
+//
+// So this reads `key` and acts on it, which is the rule for every
+// consumer of an owner-event (decision 0010, "What the owner is told"):
+// key is what you act on, label is only for display.
+//
+//   Andy: "any search for enrollment row or peers or anything is really
+//   search-key-by-public-label"
+//
+// It was the last place in the running tree that resolved a label back
+// to a key in order to DO something. There is now none.
+//
+// ONLY WHEN AN INVITE WAS CONSUMED. A claim with no `invite` is the
+// owner taking their own first seat, or an open box before it had an
+// owner — neither is somebody you invited, and neither is consent to put
+// them in your address book.
+// ── THE POLICY IS PER RELAY, AND THAT WAS ANDY'S CORRECTION ──────────
+//
+// I proposed node-wide, beside the unknown-senders policy, on the
+// grounds that "what I do about people" should be answered once.
+//
+//   Andy: "maybe a policy for owned relays in natter detail, where the
+//   owner can select policy for newly bound peers."
+//
+// He is right and the distinction is real. unknown-senders answers "what
+// do I do about STRANGERS", which is a property of this node. This
+// answers "what do I do about people I let onto THIS relay" — and you
+// can own two relays for two purposes. A lab box you are testing on and
+// spirit-3 should not share an answer, and node-wide would have made
+// them.
+//
+// Kept in relays.json, on the relay's own row, because that file is
+// already the list of relays this node has an opinion about and this is
+// one more opinion about one of them.
+//
+// DEFAULT ON, and it is the invite that says so: an owner who wrote
+// somebody an invite has already decided they want to be connected.
+// Absent reads as on, so every relay enrolled before this existed
+// behaves the way the person who invited them expected.
+// THE FIRST THING THAT WRITES relays.json SINCE THE ADD ROW. Nothing
+// else in this file persists the list — the remove panel that did went
+// on 2026-09-13 — so this is written out here rather than folded into a
+// saver that does not exist.
+//
+// The row is edited in place and the whole array rewritten, because the
+// file IS the array. `autoAdd` is stored only when it is false: absent
+// means on, so a relay nobody has chosen for stays one byte lighter and
+// an older file needs no migration.
+function natterSetAutoAdd(api, relays, url, on) {
+  var changed = false;
+  (relays || []).forEach(function (row) {
+    if (!row || row.url !== url) return;
+    if (on) {
+      if (row.autoAdd === false) { delete row.autoAdd; changed = true; }
+    } else if (row.autoAdd !== false) {
+      row.autoAdd = false;
+      changed = true;
+    }
+  });
+  if (!changed) return Promise.resolve();
+  natterRelaysCache = relays;
+  // TRAILING NEWLINE KEPT: relays.json is a TRACKED file, and a write
+  // that dropped it would show as a diff on every lab run.
+  return Promise.resolve(
+    api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2) + '\n')
+  ).catch(function () { /* the screen already said what it chose */ });
 }
 
-// The smallest owner-side invite acquire that needs no new field on the
-// mailbox: the wire still does not say which key consumed a token, but
-// the owner census names every peer and its key, and in keys mode only
-// the key that redeemed the token can hold that label. Owner-only,
-// because a census is — which is exactly the case that needed it.
-function natterAcquireInvited(rows) {
-  if (!natterMintedLabels.length) return;
-  var claimed = {};
-  (rows || []).forEach(function (row) {
-    var peers = (row && row.report && row.report.peers) || [];
-    peers.forEach(function (peer) {
-      var label = (peer && (peer.publicLabel || peer.name)) || '';
-      if (label && peer.publicKey) claimed[label] = peer.publicKey;
-    });
-  });
-  natterMintedLabels.slice().forEach(function (label) {
-    var key = claimed[label];
-    if (!key) return;
-    natterMintedLabels = natterMintedLabels.filter(function (l) { return l !== label; });
-    natterPost('/api/spirit', { verb: 'peer.acquire', publicKey: key, via: 'invite' }).catch(function () {});
-  });
+function natterAutoAddFor(url) {
+  var rows = natterRelaysCache || [];
+  for (var i = 0; i < rows.length; i += 1) {
+    if (rows[i] && rows[i].url === url) return rows[i].autoAdd !== false;
+  }
+  return true;
+}
+
+// The list as this app last read it, so an event arriving while nothing
+// is being painted can still be answered. natterOnClaim is called from a
+// subscription, not from a render.
+var natterRelaysCache = null;
+
+function natterOnClaim(api, event) {
+  if (!event || event.kind !== 'claim') return;
+  var key = String(event.key || '');
+  var onInvite = String(event.invite || '');
+  if (!key || !onInvite) return;
+  // Never yourself. The owner's own claim carries the owner's own key,
+  // and hub.handleContact refuses it anyway — this saves the round trip
+  // and the confusing refusal in the log.
+  if (event.owner) return;
+  if (!natterAutoAddFor(event.relay)) return;
+  natterPost('/api/spirit', {
+    verb: 'peer.acquire', publicKey: key, via: 'invite',
+  }).catch(function () {});
 }
 
 // Read once, on mount. A file from before 2026-09-15 has a label and no
@@ -750,6 +844,25 @@ function natterCheckBinding(api, relays, rows) {
 spirit.shell.activateApp({
   mount: function (container, api) {
     var relays = natterLoadRelays(api);
+    natterRelaysCache = relays;
+
+    // ── WHAT THE RELAY SAYS, WITHOUT BEING ASKED ────────────────────
+    //
+    //   Andy: "there are events that the owner node should be notified
+    //   of, no matter if natter is probing."
+    //
+    // Subscribed in mount, once per pane, so it keeps working while
+    // somebody is in Chat or Files. The old acquire rode on natterProbe
+    // and therefore only ran while this screen was open, which is the
+    // half of "no matter if natter is probing" that was actually broken.
+    //
+    // The six kinds are registered in decision 0010 ("What the owner is
+    // told"); this answers one of them and ignores the rest rather than
+    // switching on all six, because the others change nothing this app
+    // holds.
+    if (api.onRelayEvent) {
+      api.onRelayEvent(function (event) { natterOnClaim(api, event); });
+    }
     var statusEl;
 
     // The shared row (.start-job-form): fields with a button on the end,
@@ -817,11 +930,6 @@ spirit.shell.activateApp({
     // called", which is one of the things in here, and this app is the
     // one that owns the file.
     natterLoadSession(api, relays);
-    try {
-      var mintedRaw = api.fs.loadFile('minted.json');
-      natterMintedLabels = mintedRaw ? (JSON.parse(mintedRaw) || []) : [];
-    } catch (e) { natterMintedLabels = []; }
-
     natterPaintBind(api, relays);
     natterRenderList(container, api, relays);
     // One call now. The binding check rides on the probe's own answer —

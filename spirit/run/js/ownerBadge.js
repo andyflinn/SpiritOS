@@ -320,6 +320,28 @@ function censusFacts(answer, myKey) {
   return {
     owner: owner,
     peers: list.length,
+    // ── AND THE ROWS THEMSELVES, WHICH WERE PARSED AND DROPPED ───────
+    //
+    // `peers` is a COUNT and was the only thing kept of a list this
+    // function had already read. The third time that pattern has cost
+    // something here: `claimedLabel` and `relayKey` were both in hand
+    // and thrown away before somebody needed them.
+    //
+    // The enrolment list an owner manages is this. It costs no request —
+    // the census is fetched once per relay to decide the badge — and no
+    // secret, because /api/relay/who is public by design (0010): anybody
+    // may read it, which is what makes it the bootstrap.
+    //
+    // NOT FILTERED TO OWNERS HERE. This module answers what the census
+    // said; who is allowed to act on it is the screen's question, and
+    // ndPeersHtml draws nothing unless the badge says owned.
+    roster: list.map(function (p) {
+      return {
+        publicKey: (p && p.publicKey) || '',
+        publicLabel: (p && p.publicLabel) || '',
+        owner: !!(p && p.owner),
+      };
+    }),
     myLabel: mine,
     relayKey: (parsed && parsed.relayPublicKey) || '',
   };

@@ -153,6 +153,11 @@ var ndDevice = { password: '', publicKey: '', loaded: false };
 // spinner's face. See ndReportHtml.
 var ndAsked = false;
 
+// This relay's answer to "add newcomers to my contacts". Handed in by
+// Natter, which owns relays.json; absent reads as ON, because an owner
+// who wrote an invite already decided they want to reach that person.
+var ndAutoAdd = true;
+
 // ONE DOOR, AND THE VERB IS THE ARGUMENT. This took a path until
 // 2026-09-15, which was a fair shape while there were five of them and
 // is a misleading one now that there is exactly one: a path that is
@@ -603,6 +608,224 @@ function ndInviteWhen(row) {
   return 'in ' + Math.floor(hours / 24) + ' days';
 }
 
+// ── THE OWNER'S HALF OF THIS SCREEN, UNDER ONE HEADING ──────────────
+//
+//   Andy: "maybe there should be an owner group-bubble labeled Managing
+//   my relay."
+//
+// A member sees three bars here; an owner sees five and counting, and
+// the ones that kept arriving were all owner-only. This is the line
+// between "what I am on this relay" and "what I run".
+//
+// A HEADING, NOT A FOLD, and that is deliberate for now. `ndOpenPanel`
+// holds ONE id — one panel open at a time, flat — so a group that folded
+// would need a two-level model, and Andy parked that question:
+//
+//   Andy: "for now, we just add bubbles to the owner group in
+//   natterDetails and decide later how to organize the interface."
+//
+// So the grouping is visual, the fold model is untouched, and new owner
+// bubbles go under this line without deciding anything.
+function ndOwnerHeadingHtml() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  return '<div class="nd-group-heading">' + ndIcon.STAR + ' Managing my relay</div>';
+}
+
+// ── WHAT HAPPENS WHEN SOMEBODY NEW TAKES A SEAT ─────────────────────
+//
+//   Andy: "when someone binds to the relay the owner may want to
+//   auto-add the new ID to his contacts. he issued an invite, so he must
+//   want to be connected with the new addition."
+//
+// PER RELAY, which corrects my own proposal — I argued for node-wide,
+// beside the unknown-senders policy, and Andy was right that they answer
+// different questions. unknown-senders is about STRANGERS and is a
+// property of this node. This is about people YOU let onto THIS relay,
+// and you can own two relays for two purposes.
+//
+// RETURNED, NOT WRITTEN, like every other decision on this screen:
+// relays.json is Natter's file and api.fs here is scoped to this app's
+// folder. The screen says what was chosen; Natter records it.
+function ndAutoAddHtml() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  var on = ndAutoAdd !== false;
+  return ndPanel('policy', ndIcon.INFO, 'When somebody new joins',
+    '<div class="start-job-form card">' +
+    '<label class="rc-choice">' +
+      '<input type="radio" name="nd-autoadd" value="add"' + (on ? ' checked' : '') + '>' +
+      '<span class="rc-choice-title">Add them to my contacts</span>' +
+      '<span class="rc-choice-note">You wrote the invite, so you already decided you ' +
+        'want to reach them. They get a row the moment they claim it.</span>' +
+    '</label>' +
+    '<label class="rc-choice">' +
+      '<input type="radio" name="nd-autoadd" value="no"' + (on ? '' : ' checked') + '>' +
+      '<span class="rc-choice-title">Leave them alone</span>' +
+      '<span class="rc-choice-note">They take a seat and nothing else happens. ' +
+        'You can add them from the list below whenever you like.</span>' +
+    '</label>' +
+    '</div>' +
+    '<div class="job-manifest-note">This is about this relay only. What this node does ' +
+      'about a stranger who simply writes to it is a different question, and Contacts ' +
+      'answers it.</div>',
+    'natter-policy');
+}
+
+// ── WHO IS ENROLLED HERE ────────────────────────────────────────────
+//
+//   Andy: "Details must have a list bubble that allows the owner to
+//   remove enrollments, add one or all to contacts."
+//
+// The enrolment register, which costs no wire: `report.peers` is already
+// in hand from the relay-status the relay pushes its owner.
+//
+// BY KEY, ROW BY ROW. spirit-3 currently lists two peers called `jazz`
+// and two called `rock` — orphans from lab nodes whose identities were
+// wiped — and that is the case that proves the point:
+//
+//   Andy: "any search for enrollment row or peers or anything is really
+//   search-key-by-public-label"
+//
+// A label is a caption two people can wear. Every button below carries
+// the KEY, and the tail is shown precisely so a human can tell two rows
+// with one name apart.
+//
+// NO "ADD ALL". It is one press, ten consequences, and all of them on
+// YOUR node rather than the relay — the asymmetry that makes an undo
+// tedious. The policy above is how you say "all of them", in advance and
+// one at a time as they arrive.
+function ndPeersHtml() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  // THE CENSUS, NOT THE REPORT. I reached for `report.peers` first and
+  // it is a COUNT — the owner-only report says how many, the public
+  // census says who. ownerBadge.censusFacts keeps the rows it was
+  // already parsing now; see `roster` there.
+  var census = ndBadge.census || {};
+  var rows = (census.roster || []).slice();
+
+  var body;
+  if (!rows.length) {
+    body = '<div class="job-log-empty">nobody is enrolled here yet</div>';
+  } else {
+    body = '<table class="job-table"><thead><tr>' +
+      '<th>Label</th><th>Key</th><th></th>' +
+      '</tr></thead><tbody>' +
+      rows.map(function (peer) {
+        var key = String((peer && peer.publicKey) || '');
+        var label = String((peer && (peer.publicLabel || peer.name)) || '');
+        var isOwner = !!(peer && peer.owner);
+        return '<tr>' +
+          '<td>' + (isOwner ? ndIcon.STAR + ' ' : '') + ndEscapeHtml(label || '(no label)') + '</td>' +
+          '<td class="nd-peer-tail">…' + ndEscapeHtml(key.slice(-8)) + '</td>' +
+          '<td>' +
+            // THE OWNER'S OWN ROW TAKES NEITHER BUTTON. Adding yourself
+            // is refused by the node anyway, and removing yourself is
+            // how a relay loses the only key that can administer it.
+            (isOwner ? '<span class="muted">that is you</span>' :
+              '<button type="button" class="cancel-btn nd-peer-add" data-peer-key="' +
+                ndEscapeHtml(key) + '">Add to contacts</button> ' +
+              '<button type="button" class="cancel-btn nd-peer-drop" data-peer-key="' +
+                ndEscapeHtml(key) + '">Remove</button>') +
+          '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table>';
+  }
+
+  return ndPanel('peers', ndIcon.INFO, 'Who is enrolled here (' + rows.length + ')',
+    body + '<div class="job-manifest-note nd-peer-out"></div>', 'natter-peers');
+}
+
+// RETURNED, NOT WRITTEN. relays.json is Natter's file and this app's
+// api.fs is scoped to its own folder, so the screen says what was chosen
+// and Natter records it against the relay this screen is.
+//
+// Repainted from the local value rather than from an answer, which is
+// the opposite of how the stranger policy works in Contacts — and the
+// difference is real: that one is applied by the NODE and read back from
+// it, this one is a line in a file Natter owns and will write.
+function ndSetAutoAdd(on) {
+  ndAutoAdd = !!on;
+  ndChanged = true;
+  if (ndApi) ndApi.setDialogResult({ changed: true, url: ndUrl, autoAdd: ndAutoAdd });
+  ndRender();
+}
+
+// ── ADDING ONE PERSON, BY KEY ───────────────────────────────────────
+//
+// `peer.acquire` is the same verb Contacts uses to confirm somebody
+// found by handle, and it verifies against the relay's census before it
+// writes a row — so this cannot add a key the relay does not actually
+// carry, however stale this screen's copy of the list is.
+function ndPeerAdd(button) {
+  var key = button.getAttribute('data-peer-key') || '';
+  var panel = button.closest('.natter-peers');
+  var out = panel && panel.querySelector('.nd-peer-out');
+  if (!key || !out) return;
+
+  out.className = 'job-manifest-note nd-peer-out';
+  out.textContent = 'adding…';
+  ndPost('peer.acquire', { publicKey: key, via: 'invite' }).then(function (r) {
+    var said = null;
+    try { said = JSON.parse(r.text); } catch (e) { said = null; }
+    if (r.status === 201) {
+      out.className = 'job-manifest-note nd-peer-out is-token';
+      out.textContent = 'added — ' + ((said && said.publicLabel) || 'they') + ' is in your contacts';
+      ndChanged = true;
+      return;
+    }
+    out.className = 'job-manifest-note nd-peer-out is-error';
+    out.textContent = (said && said.error) || (r.status + ' ' + r.text);
+  });
+}
+
+// ── REMOVING AN ENROLMENT, WHICH IS A POST LIKE EVERYTHING ELSE ─────
+//
+// `removePeer` addressed to the relay's own key. Two presses, because
+// this is the one control on this screen that destroys something
+// somebody else is relying on — the same arming the device rotate uses.
+//
+// IT TAKES THEIR INVITES WITH IT (relay.forgetPeer), which the answer
+// says out loud: un-inviting somebody while leaving their token working
+// would be a lie.
+function ndPeerDrop(button) {
+  var key = button.getAttribute('data-peer-key') || '';
+  var panel = button.closest('.natter-peers');
+  var out = panel && panel.querySelector('.nd-peer-out');
+  if (!key || !out) return;
+
+  if (button.getAttribute('data-armed') !== 'yes') {
+    button.setAttribute('data-armed', 'yes');
+    button.textContent = 'Really remove?';
+    out.className = 'job-manifest-note nd-peer-out';
+    out.textContent = 'this takes their seat and any invite they hold. Press again.';
+    return;
+  }
+  button.removeAttribute('data-armed');
+  button.textContent = 'Remove';
+
+  var relayKey = ndRelayKey();
+  if (!relayKey) { ndNoKey(out, 'nd-peer-out'); return; }
+
+  out.className = 'job-manifest-note nd-peer-out';
+  out.textContent = 'removing…';
+  ndApi.peerPost('relay', relayKey, { removePeer: { key: key } }).then(function (r) {
+    var said = r && r.reply;
+    if (r && r.ok && said && said.ok !== false) {
+      out.className = 'job-manifest-note nd-peer-out is-token';
+      out.textContent = 'removed' + (said.invitesRevoked
+        ? ' — and ' + said.invitesRevoked + ' invite(s) with them' : '');
+      ndChanged = true;
+      // The relay pushes an owner-event for this, which re-asks anyway.
+      // Asked here too, because the press and the repaint should not
+      // look like two separate things to the person who made them.
+      ndLoad();
+      return;
+    }
+    out.className = 'job-manifest-note nd-peer-out is-error';
+    out.textContent = (said && said.error) || (r && r.error) || 'refused';
+  });
+}
+
 function ndMintHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   // ★ is the same mark the row carries for owning it, and this panel is
@@ -824,10 +1047,13 @@ function ndRender() {
     // of them ever renders — see ndClaimHtml.
     ndClaimHtml() +
     ndRenameHtml() +
+    ndOwnerHeadingHtml() +
     ndMintHtml() +
     // Minting and what has been minted, adjacent on purpose: the answer
     // to "did that work" is the row that appears in the panel below.
     ndInvitesHtml() +
+    ndPeersHtml() +
+    ndAutoAddHtml() +
     ndDeviceHtml();
 }
 
@@ -1272,6 +1498,19 @@ spirit.shell.activateApp({
       var revokeBtn = target.closest('.nd-inv-revoke');
       if (revokeBtn) { ndRevoke(revokeBtn); return; }
 
+      var addBtn = target.closest('.nd-peer-add');
+      if (addBtn) { ndPeerAdd(addBtn); return; }
+
+      var dropBtn = target.closest('.nd-peer-drop');
+      if (dropBtn) { ndPeerDrop(dropBtn); return; }
+
+      // A RADIO IS A CLICK HERE, not a change event. The panels are
+      // repainted wholesale, so a change listener bound to an input goes
+      // with the next repaint — the same reason every control on this
+      // screen is delegated.
+      var policy = target.closest('input[name="nd-autoadd"]');
+      if (policy) { ndSetAutoAdd(policy.value === 'add'); return; }
+
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }
 
@@ -1335,6 +1574,7 @@ spirit.shell.activateApp({
     // The list's caption for this relay. It is the list's to know — this
     // screen is handed one subject and never reads relays.json.
     ndRelayLabel = (params && params.relayLabel) || '';
+    ndAutoAdd = !(params && params.autoAdd === false);
     ndBadge = null;
     // Opening a second relay must show "asking" again, not the previous
     // relay's answer wearing this one's name.

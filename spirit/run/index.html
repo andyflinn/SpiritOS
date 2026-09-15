@@ -847,6 +847,21 @@
       .nd-fold-mark { font-size: 12px; opacity: 0.75; }
       .nd-panel-body { margin-top: 0.5rem; }
 
+      /* The line between "what I am on this relay" and "what I run".
+         A HEADING AND NOT A FOLD: ndOpenPanel holds one id, so a group
+         that folded would need a two-level model, and that decision is
+         deliberately parked (Andy: "decide later how to organize the
+         interface"). It marks the owner's half and nothing more. */
+      .nd-group-heading {
+        margin: 1.25rem 0 0.25rem; font-size: 13px; text-transform: uppercase;
+        letter-spacing: 0.08em; opacity: 0.7;
+      }
+      /* The last eight characters of a key, for telling two peers with
+         one label apart — spirit-3 carries two `jazz` and two `rock`
+         right now. Tabular so the columns line up and the eye can
+         compare them without counting. */
+      .nd-peer-tail { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.7; }
+
       /* What a mint answered. Reading size, because it is read aloud down
          a phone — and it takes the space above it like any block, which
          nothing inside a panel does for it. Collapsed until there is an
