@@ -1553,13 +1553,70 @@ function createHub(rootDir) {
               publicKey: p.publicKey,
               publicLabel: p.publicLabel || '',
               tail: keyTail(p.publicKey),
+              // WHICH RELAY THIS ROW CAN BE ACQUIRED FROM, which is not
+              // always the one that answered. A row carrying `via` came
+              // from a PARTNER of this relay, and confirming a key means
+              // finding it on a census — so the URL has to be the
+              // partner's or the confirm is looked up in the wrong book
+              // and answers "no peer at ... with that key".
+              //
+              // `via` is a relay KEY, because that is what a relay pins
+              // and the only thing it can name a partner by without
+              // trusting a URL somebody sent it. Resolved to a URL below,
+              // by asking the relay that answered who it partners with.
               relay: url,
               relayLabel: labels[url] || '',
+              via: p.via || null,
+              viaPartner: !!p.via,
               acquiredVia: row ? whoBook.acquiredVia(row) : null,
             };
           });
         }).catch(function () { silent.push(url); });
       })).then(function () {
+        // -- A PARTNER'S KEY BECOMES A PARTNER'S URL ------------------
+        //
+        //   Andy: "it must accompany the found records with the partner ID
+        //   supplying that result record ... so the node can associate the
+        //   peer with an initial route."
+        //
+        // Asked ONLY when something actually came from a partner: an
+        // ordinary search of this node's own relays costs no extra round
+        // trip. `{partners:true}` is a verb any member may ask, and
+        // handleCandidates has been asking it since tier one — so this
+        // adds no door, only a second reader.
+        var needsRoute = Object.keys(found).some(function (k) { return found[k].via; });
+        if (!needsRoute) return null;
+
+        return Promise.all(urls.map(function (url) {
+          var relayKey = relayKeys.pinned(rootDir, url);
+          if (!relayKey) return Promise.resolve(null);
+          return sendPacket(router, url, relayKey, systemPayload({ partners: true }))
+            .then(function (answer) {
+              var said = null;
+              try { said = JSON.parse((answer && answer.text) || ''); }
+              catch (e) { said = null; }
+              return ((said && said.body && said.body.partners) || []);
+            })
+            .catch(function () { return []; });
+        })).then(function (lists) {
+          var byKey = Object.create(null);
+          lists.forEach(function (list) {
+            (list || []).forEach(function (p) {
+              if (p && p.relayKey && p.url) byKey[p.relayKey] = p.url;
+            });
+          });
+          Object.keys(found).forEach(function (k) {
+            var row = found[k];
+            if (!row.via) return;
+            var at = byKey[row.via];
+            // A partner this node cannot name is a row it cannot confirm.
+            // Left with the answering relay's URL rather than a guess: the
+            // confirm then fails honestly, naming a relay, instead of
+            // succeeding against the wrong census.
+            if (at) { row.relay = at; row.relayLabel = labels[at] || ''; }
+          });
+        });
+      }).then(function () {
         var list = Object.keys(found).map(function (k) { return found[k]; });
         list.sort(function (a, b) {
           return String(a.publicLabel).localeCompare(String(b.publicLabel));

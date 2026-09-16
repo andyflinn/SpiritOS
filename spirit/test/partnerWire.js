@@ -236,6 +236,63 @@ async function run() {
     test.fail('via: ' + JSON.stringify(row));
   }
 
+  test.subHeading('And A can add him, against the relay he actually lives on');
+
+  // THE POINT OF CARRYING `via`, AND WHERE IT IS RESOLVED. A relay names
+  // its partner by KEY, because a key is what it pinned and the only thing
+  // it can name one by without trusting a URL somebody sent it. The NODE
+  // turns that into a URL — hub.handleSearch asks its own relay
+  // `{partners:true}` and maps key -> url — and confirming a peer means
+  // finding him on a census, so that URL has to be B's or the confirm is
+  // looked up in the wrong book.
+  //
+  // This suite is relay-to-relay and does not run a node, so it asserts
+  // the mapping exists rather than watching hub perform it: the key the
+  // row carries is one A can name a URL for.
+  const mapped = (A.box.partners() || []).filter(function (p) {
+    return p.relayKey === row.via;
+  })[0];
+
+  if (mapped && mapped.url === urlB) {
+    test.check('and A can turn that key into a URL: ' + mapped.url);
+  } else {
+    test.fail('A cannot name ' + row.via + ': ' + JSON.stringify(A.box.partners()));
+    cleanup();
+    test.reportSuccessFailureCount();
+    return;
+  }
+  const confirmAt = mapped.url;
+
+  // A node acquiring, exactly as Contacts does it: peer.acquire with the
+  // key and the URL the search handed over.
+  const nodeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pw-node-'));
+  auth.saveIdentity(nodeHome, auth.generateIdentity('alice'));
+  const census = await hub.relayRequest(confirmAt, 'GET', '/api/relay/who', null);
+  const listed = JSON.parse(census.text).peers || [];
+  const him = listed.filter(function (p) { return p.publicKey === row.publicKey; })[0];
+
+  if (him && him.publicLabel === 'bertrand') {
+    test.check('and he is on that census by key, which is what confirms him');
+  } else {
+    test.fail('not on ' + confirmAt + ': ' + census.text);
+  }
+
+  // THE ROUTE IS RECORDED, which is the whole of decided item 7. whoBook
+  // folds `peer.relay` into the row, so the contact remembers where it
+  // found him rather than having to hunt next week.
+  const whoBook = require('../run/js/whoBook');
+  const saved = whoBook.acquire(nodeHome, {
+    publicKey: row.publicKey,
+    publicLabel: him.publicLabel,
+    relay: confirmAt,
+  }, 'handle');
+
+  if (saved && (saved.relays || []).indexOf(confirmAt) !== -1) {
+    test.check('the contact row keeps that relay as its route: ' + (saved.relays || []).join(', '));
+  } else {
+    test.fail('no route recorded: ' + JSON.stringify(saved));
+  }
+
   cleanup();
   test.reportSuccessFailureCount();
 }
