@@ -348,9 +348,7 @@ function createRelay(rootDir) {
   //
   // ── IT WAS CALLED mailboxPublicKey UNTIL 2026-09-15 ────────────────
   //
-  //   Andy: "what is mailbox doing in this?!?"
-  //
-  // Fair. The ring went in R8 and the word was retired in DICTIONARY.md,
+  // The ring went in R8 and the word was retired in DICTIONARY.md,
   // but it survived here — in a field name, on the wire, read by
   // answerRelay to pin a relay's identity on first use.
   //
