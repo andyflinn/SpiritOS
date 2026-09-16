@@ -135,7 +135,7 @@ expectLoads('app/natter/relays.json (app data)', 'app/natter/relays.json');
 expectWritable('app/natter/relays.json (app data)', 'app/natter/relays.json');
 
 // ---- process scripts: readable, never writable ----
-// Processes/Jobs list them, the Code Viewer shows them; writes are already
+// Job Selector/Job Monitor list them, the Code Viewer shows them; writes are already
 // impossible since process/ isn't a writable root.
 // The specimen was relayLabPing until 2026-09-13, when that script was
 // deleted from run/ for pointing at a lab. The RULE is about process/ as

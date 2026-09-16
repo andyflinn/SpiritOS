@@ -1,6 +1,6 @@
 {
-  "name": "Processes",
-  "description": "Every script under process/ that this node can run, searchable — open one to read it and start it as a job.",
+  "name": "Job Selector",
+  "description": "Pick a program to run: every script under process/ that this node can run, searchable — open one to read it and start it. Its running instances show up next door in Job Monitor.",
   "icon": "ROCKET",
   "hidden": false,
   "intrinsic": true,

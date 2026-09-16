@@ -899,7 +899,7 @@ test.subHeading('Jobs has moved out of index.html');
   if (html.indexOf("id: 'jobs'") === -1 && html.indexOf('function renderJobRow') === -1) {
     test.check('and index.html no longer registers it, table and all');
   } else {
-    test.fail('index.html still carries the Jobs app');
+    test.fail('index.html still carries the Job Monitor app');
   }
 
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
@@ -917,7 +917,10 @@ test.subHeading('Jobs has moved out of index.html');
 
   const jobs = appById(booted, 'app/jobs');
   const grid = spiritGroupLabels(booted);
-  if (jobs && jobs.intrinsic === true && grid.indexOf('Jobs') !== -1 && grid.split('Jobs').length === 2) {
+  // "Job Monitor", not "Jobs" — it is half of a pair with Job Selector, and
+  // the names say which half (Andy: "they are totally a couple"). The split
+  // still asserts ONE tile: "Job Selector" contains "Job" but not this.
+  if (jobs && jobs.intrinsic === true && grid.indexOf('Job Monitor') !== -1 && grid.split('Job Monitor').length === 2) {
     test.check('it is declared before any snapshot and draws one Spirit tile');
   } else {
     test.fail('jobs app: ' + JSON.stringify(jobs) + ' grid: ' + grid);
@@ -1457,7 +1460,7 @@ test.subHeading('Apps has moved out of index.html');
   }
 }
 
-test.subHeading('Processes has moved out of index.html');
+test.subHeading('Job Selector has moved out of index.html');
 
 {
   const PROCESS_SCRIPT = 'app/process-browser/process-browser.js';
@@ -1474,7 +1477,7 @@ test.subHeading('Processes has moved out of index.html');
   if (html.indexOf("id: 'process-browser'") === -1 && html.indexOf('function renderProcessList') === -1) {
     test.check('and index.html no longer registers it, list and all');
   } else {
-    test.fail('index.html still carries the Processes app');
+    test.fail('index.html still carries the Job Selector app');
   }
 
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} }, MOVED_SCRIPTS, true);
@@ -1491,7 +1494,7 @@ test.subHeading('Processes has moved out of index.html');
 
   const processes = appById(booted, 'app/process-browser');
   const grid = spiritGroupLabels(booted);
-  if (processes && processes.intrinsic === true && grid.indexOf('Processes') !== -1) {
+  if (processes && processes.intrinsic === true && grid.indexOf('Job Selector') !== -1) {
     test.check('it is declared before any snapshot and sits in the Spirit grid');
   } else {
     test.fail('processes app: ' + JSON.stringify(processes) + ' grid: ' + grid);
@@ -1499,7 +1502,7 @@ test.subHeading('Processes has moved out of index.html');
 
   // It opens a script through the viewer, and the viewer is what offers
   // "start as a job" and jumps to Jobs. Both of those launches stay on
-  // spirit.shell until step 6 — what matters here is that the Jobs id
+  // spirit.shell until step 6 — what matters here is that the Job Monitor id
   // they name is the moved one.
   if (html.indexOf("launchApp('app/jobs'") !== -1) {
     test.check("the viewer's start-and-watch launch still names app/jobs");
@@ -1592,7 +1595,7 @@ test.subHeading('The system-app api surface');
     test.fail('registry methods disagree with the shell');
   }
 
-  // And launchApp actually navigates: opening Processes through the api
+  // And launchApp actually navigates: opening Job Selector through the api
   // fetches its entry script, exactly as a desktop tile would.
   const before = booted.scripts.length;
   handed.launchApp('app/process-browser');
@@ -1941,7 +1944,7 @@ test.subHeading('An app can subscribe, instead of being broadcast at');
     test.fail('visibility: notes ' + lastNotes.visible + ', ledger ' + lastLedger.visible);
   }
 
-  // The proof app. Processes kept `lastProcessBrowserJob` to tell its own
+  // The proof app. Job Selector kept `lastProcessBrowserJob` to tell its own
   // job moving from a stats tick; that cache is what onFiles replaces.
   // Named by what the code does, not by a word that also appears in the
   // comment explaining why it used to: processFindJob existed only to
@@ -1951,9 +1954,9 @@ test.subHeading('An app can subscribe, instead of being broadcast at');
   if (proc.indexOf('api.onFiles(') !== -1 &&
       proc.indexOf('function processFindJob') === -1 &&
       /render: function \(\)/.test(proc)) {
-    test.check('and Processes asks instead of caching a job reference');
+    test.check('and Job Selector asks instead of caching a job reference');
   } else {
-    test.fail('Processes still reads the job map');
+    test.fail('Job Selector still reads the job map');
   }
 }
 
@@ -2310,7 +2313,7 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
 
   // An error line that reserves a row for a message that is not there is
   // §1 broken in CSS, and it was the bottom half of 48px of nothing under
-  // the Jobs form. Collapsed when empty, like #rc-peer-strip.
+  // the Job Monitor form. Collapsed when empty, like #rc-peer-strip.
   const errorRule = /\.job-start-error\s*\{([^}]*)\}/.exec(css);
   if (errorRule && !/min-height/.test(errorRule[1]) && !/margin/.test(errorRule[1]) &&
       /\.job-start-error:empty\s*\{[^}]*display:\s*none/.test(css)) {
@@ -2783,7 +2786,7 @@ test.subHeading('A group screen is a place you can go back to');
   //   Open <app>      the app whose source you were reading
   //   Start Job       the job the form on that script just started
   //
-  // — so Back returns to whatever opened the launcher (Processes, Files)
+  // — so Back returns to whatever opened the launcher (Job Selector, Files)
   // rather than to a file you are done with. Everything else pushes, and
   // a group screen pushing is what makes Back into it mean going back to
   // where you were.
@@ -3167,14 +3170,14 @@ test.subHeading('Open with is a form like the others');
   }
 }
 
-test.subHeading('The Processes screen offers one control and one list');
+test.subHeading('The Job Selector screen offers one control and one list');
 
 {
   const src = readRun('app/process-browser/process-browser.js');
   const css = readRun('index.html');
 
   // The search box is the one control this screen offers, so it sits in a
-  // panel — the shape the Jobs and Groups forms have. Read as an
+  // panel — the shape the Job Monitor and Groups forms have. Read as an
   // ordering, because the markup is built by concatenation and a regex
   // across it would be asserting the source's formatting.
   const panelAt = src.indexOf('<div class="stat-tile wide">');

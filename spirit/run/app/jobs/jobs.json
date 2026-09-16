@@ -1,6 +1,6 @@
 {
-  "name": "Jobs",
-  "description": "Every job this personal node is running or has run: start a process, watch its log live, cancel or delete it.",
+  "name": "Job Monitor",
+  "description": "Every job this personal node is running or has run: watch its log live, cancel or delete it. Pick what to run next door in Job Selector.",
   "icon": "LIST",
   "hidden": false,
   "intrinsic": true,
