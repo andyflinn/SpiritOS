@@ -219,13 +219,70 @@ function createTrafficLog(opts) {
   var relayMode = !!opts.relayMode;
   var clock = typeof opts.now === 'function' ? opts.now : function () { return Date.now(); };
 
+  // ── `at` IS A POSITION, SO IT HAS TO BE UNIQUE AND INCREASING ──────
+  //
+  // Both readers below say it: "`since` is a POSITION, not a filter on
+  // content" (R13). They implement it as `at > since` against a
+  // millisecond timestamp — and `Date.now()` repeats. Two rows in one
+  // millisecond, and a reader who asks for everything after the first
+  // never sees the second:
+  //
+  //   claim@00.000Z  claim-refused@00.000Z  partner-added@00.005Z
+  //   ownerEvents({ since: '…00.000Z' }) -> [partner-added]
+  //   claim-refused is gone, silently
+  //
+  // WHAT THAT COSTS is owner notices, and the losses concentrate exactly
+  // where they hurt: claims arrive in bursts, and `claim-refused` is the
+  // one you wanted to see. Nothing reports a gap, because a position
+  // cursor cannot tell "nothing happened" from "it was skipped".
+  //
+  // FOUND AS A FLAKY TEST. ownerLog.js failed roughly one run in five
+  // with `since: 1 of 3` and passed on every re-run — writes here are a
+  // synchronous append, ~3ms apart on an idle box, so ties only happen
+  // under the parallel harness. It was dismissed twice as noise before
+  // the output was kept.
+  //
+  // So the clock stays injectable and the STAMP is monotonic: never the
+  // same millisecond twice, never backwards. That is a promise about the
+  // field the readers already rely on, not a new field — the persist
+  // shape is untouched, and a row written before this still parses.
+  //
+  // The cost, stated: under a burst, `at` can run up to a millisecond or
+  // two ahead of the wall clock, and if the system clock jumps backwards
+  // it advances one millisecond per row until real time catches up. A
+  // log whose order is trustworthy is worth more than one whose
+  // millisecond is, and 0009 keeps this file for ever either way.
+  var lastMs = null;
+
+  function highestWritten() {
+    var high = 0;
+    try {
+      readAll(rootDir).forEach(function (row) {
+        var t = row && row.at ? Date.parse(row.at) : 0;
+        if (t > high) high = t;
+      });
+    } catch (e) { /* unreadable: the clock is as good a start as any */ }
+    return high;
+  }
+
+  function stamp() {
+    // Seeded from disk on first write, ONCE — a restart must not reuse a
+    // position the previous process already handed out, which is the
+    // same fault across a process boundary.
+    if (lastMs === null) lastMs = highestWritten();
+    var ms = clock();
+    if (!(ms > lastMs)) ms = lastMs + 1;
+    lastMs = ms;
+    return new Date(ms).toISOString();
+  }
+
   // THE GATE. Read the comment at the top of this file before removing
   // it: this module is correct on a personal node and is the worst thing
   // in the system on a relay.
   function note(entry) {
     if (relayMode || !rootDir || !entry) return null;
 
-    var at = new Date(clock()).toISOString();
+    var at = stamp();
     var row = {
       at: at,
       dir: entry.dir === 'in' ? 'in' : 'out',
@@ -423,7 +480,11 @@ function createTrafficLog(opts) {
       if (h) want[String(h)] = true;
     });
     if (!Object.keys(want).length) return 0;
-    var at = new Date(clock()).toISOString();
+    // ONE stamp for the whole batch, deliberately — "Marked once", per
+    // the note above. Monotonic against everything already written, but
+    // the marks of a single delivery still share a position, because
+    // that is what makes them one delivery.
+    var at = stamp();
     var marked = 0;
     try {
       var rows = readAll(rootDir);

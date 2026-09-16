@@ -452,6 +452,84 @@ test.subHeading('And it goes to the log');
   }
 }
 
+// ── AND A POSITION IS NEVER HANDED OUT TWICE ─────────────────────────
+//
+// The check above failed about one run in five with `since: 1 of 3` and
+// passed on every re-run, so it was dismissed as harness noise twice
+// before anybody kept the output. It was not noise.
+//
+// `at` came from Date.now(), which repeats, and `since` is `at > since`.
+// Two rows in one millisecond and a reader who asks for everything after
+// the first never sees the second — silently, because a position cursor
+// cannot tell "nothing happened" from "it was skipped". Writes here are
+// a synchronous append, ~3ms apart on an idle box, which is why only the
+// parallel harness ever produced the tie.
+//
+// What it cost in practice is owner notices, and they cluster where they
+// matter: claims arrive in bursts and `claim-refused` is the one you
+// wanted. Fixed by making the stamp monotonic rather than by adding a
+// sequence field — the readers' stated rule was already "position", and
+// the persist shape is untouched.
+//
+// FROZEN CLOCK, because the real one hides this. `now` was already
+// injectable for the retention rules.
+test.subHeading('A position is never handed out twice, whatever the clock says');
+{
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerlog-'));
+  const FROZEN = Date.parse('2026-09-16T00:00:00.000Z');
+  let log = trafficLog.createTrafficLog({ rootDir: home, now: function () { return FROZEN; } });
+
+  for (let i = 0; i < 8; i++) {
+    log.note({ dir: 'in', kind: 'owner', event: 'claim', peer: 'K' + i, relay: 'r', label: 'x' });
+  }
+
+  // ACROSS A RESTART TOO. A new process must not reuse a position the
+  // last one already handed out — the same fault over a process
+  // boundary, and the reason the stamp seeds itself from the file.
+  log = trafficLog.createTrafficLog({ rootDir: home, now: function () { return FROZEN; } });
+  for (let i = 8; i < 12; i++) {
+    log.note({ dir: 'in', kind: 'owner', event: 'claim', peer: 'K' + i, relay: 'r', label: 'x' });
+  }
+
+  const all = log.ownerEvents();
+  const distinct = new Set(all.map(function (r) { return r.at; })).size;
+  if (all.length === 12 && distinct === 12) {
+    test.check('twelve rows on a clock that never moves get twelve distinct positions');
+  } else {
+    test.fail('rows ' + all.length + ', distinct ' + distinct);
+  }
+
+  // THE READER'S WALK, which is the thing that was actually broken.
+  let cursor = null;
+  const seen = [];
+  for (let guard = 0; guard < 100; guard++) {
+    const batch = cursor ? log.ownerEvents({ since: cursor }) : log.ownerEvents();
+    if (!batch.length) break;
+    batch.forEach(function (r) { seen.push(r); });
+    cursor = batch[batch.length - 1].at;
+  }
+  const missed = all.filter(function (r) {
+    return !seen.some(function (s) { return s.peer === r.peer; });
+  });
+  if (missed.length === 0 && seen.length === all.length) {
+    test.check('and a since-cursor walks every one of them, losing nothing');
+  } else {
+    test.fail('walk saw ' + seen.length + '/' + all.length +
+      (missed.length ? ', lost ' + missed.map(function (r) { return r.peer; }).join(',') : ''));
+  }
+
+  // AND IT NEVER GOES BACKWARDS, which is the other half of "position".
+  let ordered = true;
+  for (let i = 1; i < all.length; i++) {
+    if (!(Date.parse(all[i].at) > Date.parse(all[i - 1].at))) ordered = false;
+  }
+  if (ordered) {
+    test.check('and every position is strictly later than the one before it');
+  } else {
+    test.fail('positions are not strictly increasing: ' + all.map(function (r) { return r.at; }).join(' '));
+  }
+}
+
 // ---------------------------------------------------------------------
 test.subHeading('And the relay still keeps nothing');
 // ---------------------------------------------------------------------
