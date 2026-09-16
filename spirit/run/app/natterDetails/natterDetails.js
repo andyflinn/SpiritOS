@@ -448,39 +448,33 @@ function ndReportHtml() {
 //
 // Only for a mailbox this node owns: one somebody else owns has no mint
 // markup at all to find.
-// WHAT THIS RELAY CALLS THIS NODE, changed by this node.
+// ── THE RENAME PANEL STOOD HERE, AND IT IS IN INFO NOW ──────────────
 //
-//   Andy: "after enrollment the public label of an ID is property of the
-//   ID... the relay owner will not be allowed to control the public
-//   label of any keyed peer."
+//   Andy: "when I'm on the phone with a friend to connect, i have no idea
+//   which 'relay' contains which 'label' of mine. i want this app to
+//   distribute my label to ALL relays I'm a member of. Then we remove the
+//   Label-change interface from natter detail."
 //
-// SHOWN ON A ROW THIS NODE HOLDS, owned or not, which is the whole
-// condition — the label belongs to the key, and owning the box is beside
-// the point. A relay this node merely LISTS gets no panel, because there
-// is no row to rename.
+// This panel was right about the MECHANISM and wrong about the question.
+// A label is stored per membership, so a screen that is one membership is
+// where a rename can be aimed — which is what the comment here argued,
+// and it still holds. What it missed is that nobody wants to be called
+// different things: one label per relay is a consequence of how the
+// ledger works, not something a person set out to arrange.
 //
-// PER RELAY, and that is why it lives on this screen rather than in
-// Natter's bind row. A node on several relays may be called different
-// things on each: the label belongs to the key, but WHICH label is a
-// fact about one membership, and this screen is one membership.
+// So the gesture moved up a level. Info holds one name and posts it to
+// every relay this key holds a row on, and shows what each one calls you
+// — which is the question that was unanswerable from here, because this
+// screen can only ever see one mailbox.
 //
-// The field starts empty rather than pre-filled with the current label.
-// Pre-filling would make the current name look like a thing being edited
-// and a stray keystroke into a rename — and the name it would show is
-// already on the row above, under "You".
-function ndRenameHtml() {
-  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
-  var now = ndBadge.claimedLabel || '';
-  return ndPanel('rename', ndIcon.INFO, 'Change what this relay calls me',
-    '<div class="start-job-form card">' +
-    '<label class="field-label grow">New public label' +
-      '<input type="text" class="nd-name-new" placeholder="' +
-      (now ? 'currently ' + ndEscapeHtml(now) : 'the name peers see') + '"></label>' +
-    '<button type="button" class="nd-name-go">Change</button>' +
-    '</div>' +
-    '<div class="job-manifest-note nd-name-out"></div>',
-    'natter-rename');
-}
+// WHAT STAYS HERE is the READING: what this relay calls this node is
+// shown on the row above, under "You". That is a fact about this
+// membership and belongs on this membership's screen. It is the control
+// that left, not the fact.
+//
+// The relay's own verb is untouched (relay.renameSelf) and so is the
+// packet: `{ rename: { label } }` addressed to the relay's key, sent by
+// Info now instead of from here.
 
 // ── THE MIRROR OF RENAME ─────────────────────────────────────────────
 //
@@ -1708,10 +1702,11 @@ function ndRender() {
   body.innerHTML =
     ndReportHtml() +
     ndLocalHtml() +
-    // Claim and rename are the two halves of one question and only one
-    // of them ever renders — see ndClaimHtml.
+    // Claim renders only where this node holds no row. Its other half —
+    // the rename panel for a row it does hold — moved to Info, so this is
+    // now a panel that is either there or absent rather than one of a
+    // pair. See ndClaimHtml.
     ndClaimHtml() +
-    ndRenameHtml() +
     // ── THE OWNER'S HALF, INSIDE ONE FOLD ────────────────────────────
     //
     // Minting and what has been minted stay adjacent: the answer to "did
@@ -1764,59 +1759,11 @@ function ndRender() {
 // One mint, on the mailbox this screen is. `ndUrl` rather than a picker
 // or relays.json[0]: the screen is which mailbox, and the hub still
 // checks that URL is one this node lists.
-// CHANGING WHAT THIS RELAY CALLS THIS NODE.
-//
-// A post like any other, and the node signs it — so the relay renames
-// whoever signed and there is no key on the wire to name anybody else.
-//
-// RE-ASKED AFTERWARDS rather than patched locally. The screen shows what
-// the relay says, and a rename is exactly the moment where believing our
-// own optimistic copy would be wrong: the relay can refuse it — a live
-// invite holds that name — and a panel that had already written the new
-// label would be showing a name nobody answers to.
-function ndRename(button) {
-  var panel = button.closest('.natter-rename');
-  var out = panel.querySelector('.nd-name-out');
-  var wanted = panel.querySelector('.nd-name-new').value.trim();
-  // The same courtesy the claim panel does, and the same rule object.
-  var badWanted = ndLabelProblem(wanted);
-  if (badWanted) {
-    out.className = 'job-manifest-note nd-name-out is-error';
-    out.textContent = badWanted;
-    return;
-  }
-
-  // AN OWN-ROW VERB, and the reason ndRelayKey reads the census first:
-  // a member renaming itself is sent no report, so the owner's copy of
-  // the key would not be there.
-  var relayKey = ndRelayKey();
-  if (!relayKey) { ndNoKey(out, 'nd-name-out'); return; }
-
-  ndApi.peerPost('relay', relayKey, { rename: { label: wanted } }).then(function (r) {
-    var said = r.body;
-    var ok = r.ok && said && said.ok;
-    out.className = 'job-manifest-note nd-name-out ' + (ok ? 'is-token' : 'is-error');
-    out.textContent = ok
-      ? (said.unchanged ? 'already ' + said.label
-        : said.was + '  ->  ' + said.label)
-      : (said && said.error) || r.error || ('HTTP ' + r.status);
-    if (!ok) return;
-    // THE LIST BEHIND THIS SCREEN SHOWS LABELS, so it has to repaint —
-    // and the binding Natter keeps is this node's own name, which may be
-    // the thing that just moved.
-    ndChanged = true;
-    if (ndApi) {
-      ndApi.setDialogResult({ changed: true, url: ndUrl, renamed: said.label, hash: r.hash });
-    }
-    ndLoad();
-  });
-}
-
 // TAKING A SEAT ON THIS RELAY, and `url: ndUrl` is the whole reason this
 // can be here — the screen is which relay, so the claim is aimed rather
 // than landing on relays.json[0].
 //
-// RETURNED, NOT RECORDED, like the rename above and the mint below:
+// RETURNED, NOT RECORDED, like the mint below:
 // session.json is Natter's file and api.fs here is scoped to this app's
 // own folder. The screen says what the relay agreed to; Natter writes it
 // down against this url.
@@ -2230,9 +2177,6 @@ spirit.shell.activateApp({
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }
 
-      var nameBtn = target.closest('.nd-name-go');
-      if (nameBtn) { ndRename(nameBtn); return; }
-
       var copyBtn = target.closest('.natter-dev-copy');
       if (copyBtn) { ndDeviceCopy(copyBtn); return; }
 
@@ -2248,10 +2192,12 @@ spirit.shell.activateApp({
     // Delegated for the same reason the clicks above are: the panels are
     // repainted, and a handler bound to an input would go with it.
     //
-    // Rename and claim, not invite. Those two are a form with one thing
-    // to say, and Return says it. The invite panel has a number field and
-    // a token that may be generated for you — guessing what Return means
-    // there would be a worse answer than the button it already has.
+    // Claim, not invite. Claim is a form with one thing to say and Return
+    // says it. The invite panel has a number field and a token that may
+    // be generated for you — guessing what Return means there would be a
+    // worse answer than the button it already has.
+    //
+    // Rename was the other one, and went to Info with its panel.
     // ── A SELECT NEEDS `change`, NOT `click` ───────────────────────────
     //
     // Every other control on this screen is delegated on click, because
@@ -2273,13 +2219,6 @@ spirit.shell.activateApp({
       if (event.key !== 'Enter') return;
       var target = event.target;
       if (!target || !target.closest || !target.classList) return;
-
-      if (target.classList.contains('nd-name-new')) {
-        var renamePanel = target.closest('.natter-rename');
-        var renameGo = renamePanel && renamePanel.querySelector('.nd-name-go');
-        if (renameGo) { event.preventDefault(); ndRename(renameGo); }
-        return;
-      }
 
       // Any of the three claim fields: this is the first-run gesture on a
       // fresh node, and it should not require finding the button.

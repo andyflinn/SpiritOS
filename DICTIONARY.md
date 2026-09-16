@@ -64,7 +64,7 @@ Format: **term** — aliases — meaning.
 
 **Public key** — pubkey — The half that may go to a relay on claim.
 
-**Public label** — claim name, caption on the wire today — The string peers see in a relay's census (`andy`, `john`). May collide after peer-by-key.
+**Public label** — claim name, caption on the wire today — The string peers see in a relay's census (`andy`, `john`). May collide after peer-by-key. **Stored once per membership, set once for all of them:** the ledger holds one label per key per relay and two relays may legally disagree, but a person has one name, so **Info** keeps it and posts it to every relay this key holds a seat on. A relay that was down or that refuses (a live invite holding the name) stays out of step, and Info's table is where that shows. *Natter Details used to set it one relay at a time; that panel is gone — Andy: "i have no idea which 'relay' contains which 'label' of mine."*
 
 **My label** — private caption, perception — What *you* call that key in whoBook (`lovelyJohn`). Never on the wire.
 

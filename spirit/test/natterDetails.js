@@ -491,32 +491,67 @@ function ownedMailbox() {
 //   not bound yet, it shows up in natter, instead of natterDetails for
 //   spirit.andyflinn.com"
 //
-// The invariant worth holding: a relay's screen offers "you are X here"
-// or "claim a seat here", and never both and never neither.
-function claimAndRenameAreExclusive() {
-  test.subHeading('A relay screen offers one of claim and rename, never both');
+// The invariant worth holding: a relay's screen offers "claim a seat
+// here" exactly where there is no seat, and never where there is.
+//
+// ── THE OTHER HALF OF THIS CHECK IS GONE, AND SO IS ITS PANEL ────────
+//
+//   Andy: "i want this app to distribute my label to ALL relays I'm a
+//   member of. Then we remove the Label-change interface from natter
+//   detail."
+//
+// Claim and Rename used to be a pair — one or the other, never both.
+// Renaming moved to Info, which posts one label to every relay at once,
+// so what is left here is a panel that is present or absent rather than
+// one of two.
+//
+// WHAT THIS STILL ASSERTS is the half that was always the point: a
+// screen for a relay this node is already on must not offer to claim a
+// seat it holds. And it now asserts the deletion too — no rename control
+// anywhere on a screen for a relay this node IS on, which is the exact
+// place the old one appeared.
+function claimIsOfferedOnlyWhereThereIsNoSeat() {
+  test.subHeading('A relay screen offers Claim where there is no seat, and nothing to rename');
 
   const stranger = mountApp({
     rows: [{ url: OWNED, label: 'spirit', status: 200, owned: false, claimed: false }],
   });
   const mine = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'andy' }],
+    rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'andy',
+      census: { owner: 'zoe', peers: 3, myLabel: 'andy', relayKey: 'RELAYKEY' } }],
   });
 
   return settle().then(function () {
     const onStranger = stranger.open('claim').body().innerHTML;
-    const onMine = mine.open('rename').body().innerHTML;
+    const onMine = mine.body().innerHTML;
 
     if (/nd-claim-go/.test(onStranger) && !/nd-name-go/.test(onStranger)) {
-      test.check('a relay holding no row for this key offers Claim and not Rename');
+      test.check('a relay holding no row for this key offers Claim');
     } else {
       test.fail('unclaimed screen offered the wrong panels');
     }
 
-    if (/nd-name-go/.test(onMine) && !/nd-claim-go/.test(onMine)) {
-      test.check('a relay that holds our row offers Rename and not Claim');
+    if (!/nd-claim-go/.test(onMine)) {
+      test.check('and a relay that holds our row does not offer it again');
     } else {
-      test.fail('claimed screen offered the wrong panels');
+      test.fail('claimed screen offered Claim: ' + onMine.slice(0, 200));
+    }
+
+    // THE CONTROL LEFT, THE FACT STAYED. What this relay calls this node
+    // is still on the screen — under "You", in the member reading — and
+    // that is a fact about this membership rather than an interface.
+    // Only the box for changing it went to Info.
+    const reading = mine.open('relay').body().innerHTML;
+    if (!/nd-name-go/.test(reading) && !/nd-name-new/.test(reading)) {
+      test.check('with no rename control anywhere on it');
+    } else {
+      test.fail('the rename panel is still here: ' + reading.slice(0, 200));
+    }
+
+    if (/>You</.test(reading) && /andy/.test(reading)) {
+      test.check('but it still SAYS what this relay calls you, which was never the control');
+    } else {
+      test.fail('the reading went with the panel: ' + reading.slice(0, 300));
     }
   });
 }
@@ -1759,7 +1794,11 @@ function panelsFoldAndAreMarked() {
     // is choosing.
     const bars = (shutAll.match(/class="panel-heading nd-fold"/g) || []).length;
     const bodies = (shutAll.match(/class="nd-panel-body"/g) || []).length;
-    if (bars >= 3 && bodies === 0) {
+    // `bars >= 3` STOOD HERE and became `>= 2` when the rename panel
+    // moved to Info — this fixture drew one fewer. The number was never
+    // the assertion: `bodies === 0` is, and the bar count is only there
+    // so "every panel is shut" cannot pass on a screen with no panels.
+    if (bars >= 2 && bodies === 0) {
       test.check('the screen arrives with every panel shut — ' + bars + ' bars, no bodies');
     } else {
       test.fail('bars ' + bars + ' bodies ' + bodies);
@@ -2044,7 +2083,7 @@ ownedMailbox()
   .then(invitesOutstandingAreShown)
   .then(invitesAreOwnerOnly)
   .then(revokingAimsByLabel)
-  .then(claimAndRenameAreExclusive)
+  .then(claimIsOfferedOnlyWhereThereIsNoSeat)
   .then(anUnboundNodeCanStillClaim)
   .then(aRelayThatIsDownOffersNoClaim)
   .then(thePartnerPanelChecksBeforeItAdds)

@@ -806,6 +806,15 @@
       #rc-to-row #rc-to-pick { flex: 1; width: auto; margin-bottom: 0; }
       #rc-peer-strip:empty { display: none; }
 
+      /* Info's relay table, which is a panel that may have nothing to
+         say: a node on no relay has nothing to distribute a label to, and
+         a bordered empty box with 12px of padding is a thing to read and
+         dismiss (§1). It also sits empty for the moment between the
+         screen opening and relay.status answering, so this is what stops
+         the page jumping when the probe lands rather than only what
+         handles the never-enrolled case. */
+      #info-relays:empty { display: none; }
+
       /* The choices are a block, and a block carries the gap above itself
          (§3). On top of the space a summary keeps from its body, because
          a list of radios reads as part of the title otherwise.

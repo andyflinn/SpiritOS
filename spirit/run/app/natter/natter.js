@@ -324,33 +324,22 @@ function natterOpenRelay(api, container, relays, url) {
     // the screen's own api.fs is scoped to its folder — so the screen
     // says what it decided and this performs it, under the same guard
     // that has always stood here.
-    // A RENAME OF OUR OWN ROW IS RETURNED, NOT DONE — same rule as
-    // removal above, and for the same reason: session.json is this app's
-    // file and the dialog's api.fs is scoped to its own folder.
+    // `result.renamed` WAS HANDLED HERE and is gone with the panel that
+    // produced it: renaming moved to Info, which posts one label to every
+    // relay at once (Andy: "i have no idea which 'relay' contains which
+    // 'label' of mine").
     //
-    // ONLY ON CONFIRMATION, which is the whole point. ndRename posts and
-    // waits, and hands `renamed` back only for an answer the relay said
-    // ok to. A name the relay refuses — illegal characters, a reserved
-    // word, a live invite already holding it — never arrives here, so
-    // nothing local moves and the screen keeps saying what is true.
+    // Nothing had to replace it, and that is worth saying because it
+    // looks like a gap. natterCheckBinding already ADOPTS each relay's
+    // caption off the census on every probe — see the long note on it
+    // below, written after a rename that succeeded was mistaken for
+    // theft. A label changed anywhere is picked up here by the ordinary
+    // probe, with nobody telling this app anything.
     //
-    // natterBind then does all three things at once: writes the file,
-    // TELLS the shell (window titles across every app repaint, and the
-    // desktop with them), and re-probes so the list and the stars follow
-    // the relay rather than the typing that asked.
-    //
-    // AIMED AT THE RELAY IT HAPPENED ON. The note that stood here said
-    // this was "whichever was renamed last" on a node with two relays,
-    // because session.json had room for one answer. It has room for one
-    // answer PER RELAY now, so the url the dialog was opened for is the
-    // url the binding is written under.
-    if (result.renamed) {
-      natterBind(api, container, relays, url, result.renamed);
-      return;
-    }
-    // A CLAIM IS THE SAME SHAPE, and it is why the form could move here
-    // at all: the screen knows which relay it is, so the seat it took is
-    // recorded against that relay and nothing else.
+    // A CLAIM IS NOT THE SAME, which is why the branch below stays: a
+    // seat taken on a relay this node had no row on is not a caption
+    // moving, it is a membership appearing, and the file has to say so
+    // before the next probe has anything to adopt.
     if (result.claimed) {
       natterBind(api, container, relays, url, result.claimed);
       return;

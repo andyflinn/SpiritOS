@@ -67,12 +67,43 @@ function fakeDocument() {
   };
 }
 
-// The app, wired to a real identity on disk.
-function mountApp(home) {
+// ── A RELAY, AS FAR AS THIS SCREEN IS CONCERNED ──────────────────────
+//
+//   { url, label, relayKey, calls, claimed, refuses }
+//
+// `calls` is what that relay currently calls this node, and a successful
+// rename MOVES IT — so the next `relay.status` answers the new label and
+// the test can tell "the table repainted from the relays" from "the table
+// repainted from what was typed". A fixture that did not move would make
+// those two indistinguishable, which is the one thing worth proving here.
+//
+// `refuses` is a string: what that relay says instead of yes. The real
+// ones say "name reserved by a live invite"; a node with no stream to a
+// relay never gets that far and hears "that peer is not reachable right
+// now" from its own hub. Both arrive here as the same shape.
+function relayFixture(over) {
+  return Object.assign({
+    url: 'https://a.example',
+    label: 'a',
+    relayKey: 'RELAYKEY-A',
+    calls: 'andy',
+    claimed: true,
+    refuses: '',
+  }, over || {});
+}
+
+// The app, wired to a real identity on disk and a set of fake relays.
+function mountApp(home, relays) {
   const doc = fakeDocument();
   const asked = [];
+  const posted = [];
+  const boxes = relays || [];
 
   const api = {
+    escapeHtml: function (t) {
+      return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    },
+
     verb: function (name, args) {
       asked.push(name);
       const body = args || {};
@@ -84,10 +115,51 @@ function mountApp(home) {
         said = nodeCard.setName(home, body.name);
       } else if (name === 'node.setDescription') {
         said = nodeCard.setDescription(home, body.description);
+      } else if (name === 'relay.status') {
+        // The shape ownerBadge.probe answers with: one row per configured
+        // relay, `claimed` where this key holds a seat, `claimedLabel`
+        // read off the public census by key, and the relay's own key on
+        // `census` — which is the address a rename is posted to.
+        said = {
+          ok: true,
+          rows: boxes.map(function (b) {
+            const row = { url: b.url, label: b.label, status: 200, owned: false, claimed: b.claimed };
+            if (b.claimed) {
+              row.claimedLabel = b.calls;
+              // A relay that answered but said nothing about its key gets
+              // no census — the real `censusFacts` returns null when the
+              // census cannot be read, and this screen must cope.
+              if (b.relayKey) row.census = { relayKey: b.relayKey, myLabel: b.calls };
+            } else {
+              row.error = 'no row here';
+            }
+            return row;
+          }),
+        };
       } else {
         said = { ok: false, error: 'no such verb: ' + name };
       }
       return Promise.resolve({ status: said.ok ? 200 : (said.status || 400), body: said });
+    },
+
+    // THE ONE CALL THAT PUTS ANYTHING ON THE WIRE. Addressed by KEY, like
+    // any other peer — a relay is a peer to its members (relay.streamRoster)
+    // — and answered by relay.renameSelf on the far side.
+    peerPost: function (packetApp, toKey, body) {
+      posted.push({ app: packetApp, to: toKey, body: body });
+      const box = boxes.filter(function (b) { return b.relayKey === toKey; })[0];
+      if (!box) {
+        return Promise.resolve({ ok: false, status: 503, body: null,
+          error: 'that peer is not reachable right now' });
+      }
+      if (box.refuses) {
+        return Promise.resolve({ ok: false, status: 200,
+          body: { ok: false, error: box.refuses } });
+      }
+      const was = box.calls;
+      box.calls = body.rename.label;
+      return Promise.resolve({ ok: true, status: 200,
+        body: { ok: true, was: was, label: box.calls } });
     },
   };
 
@@ -101,7 +173,7 @@ function mountApp(home) {
 
   const container = fakeElement('container');
   behavior.mount(container, api);
-  return { doc: doc, asked: asked, api: api, container: container };
+  return { doc: doc, asked: asked, posted: posted, relays: boxes, api: api, container: container };
 }
 
 function el(app, id) { return app.doc.getElementById(id); }
@@ -342,7 +414,219 @@ function theScreen() {
   });
 }
 
-// ── 3. NO TICK ───────────────────────────────────────────────────────
+// ── 3. ONE NAME, SENT EVERYWHERE ─────────────────────────────────────
+//
+//   Andy: "when I'm on the phone with a friend to connect, i have no idea
+//   which 'relay' contains which 'label' of mine. i want this app to
+//   distribute my label to ALL relays I'm a member of."
+//
+// The screen could pass every check above while doing nothing at all on
+// the wire, because the local write was the whole of it. This is the half
+// that makes it a distribution.
+
+function theFanOut() {
+  test.subHeading('One name, sent to every relay this node has a seat on');
+
+  const home = tmpHome('andy');
+  const app = mountApp(home, [
+    relayFixture({ url: 'https://a.example', label: 'lab', relayKey: 'KEY-A', calls: 'andy' }),
+    relayFixture({ url: 'https://b.example', label: 'spirit', relayKey: 'KEY-B', calls: 'andy-old' }),
+    // A relay this node merely LISTS. There is no row here to rename, and
+    // posting to it would be asking a stranger's mailbox to change a name
+    // it does not hold.
+    relayFixture({ url: 'https://c.example', label: 'elsewhere', claimed: false }),
+  ]);
+
+  return settle().then(function () {
+    // THE DRIFT IS ON THE SCREEN BEFORE ANYTHING IS PRESSED. That is the
+    // complaint answered: the two relays disagree, and you can see which.
+    const table = el(app, 'info-relays').innerHTML;
+    if (/lab/.test(table) && /spirit/.test(table) && /andy-old/.test(table)) {
+      test.check('it opens showing what each relay calls you');
+    } else {
+      test.fail('table: ' + table);
+    }
+
+    if (/out of step/.test(table)) {
+      test.check('and marks the one that disagrees with the name above');
+    } else {
+      test.fail('drift not marked: ' + table);
+    }
+
+    if (/no seat here/.test(table)) {
+      test.check('and says so for a relay this node merely lists');
+    } else {
+      test.fail('the seatless relay is unexplained: ' + table);
+    }
+
+    // ── ONE SAVE ─────────────────────────────────────────────────────
+    el(app, 'info-name').value = 'andyflinn';
+    el(app, 'info-name-save').fire('click');
+
+    return settle().then(settle).then(settle).then(function () {
+      if (nodeCard.read(home).name === 'andyflinn') {
+        test.check('pressing Save writes the name here');
+      } else {
+        test.fail('local: ' + JSON.stringify(nodeCard.read(home)));
+      }
+
+      const sent = app.posted.filter(function (p) { return p.body && p.body.rename; });
+      const to = sent.map(function (p) { return p.to; }).sort();
+      if (to.length === 2 && to[0] === 'KEY-A' && to[1] === 'KEY-B') {
+        test.check('and posts it to every relay it holds a seat on');
+      } else {
+        test.fail('posted to: ' + JSON.stringify(to));
+      }
+
+      if (sent.every(function (p) { return p.body.rename.label === 'andyflinn'; })) {
+        test.check('as an ordinary rename packet, addressed to the relay by key');
+      } else {
+        test.fail('bodies: ' + JSON.stringify(sent.map(function (p) { return p.body; })));
+      }
+
+      // THE ONE IT MUST NOT ASK. A relay this key holds no row on has
+      // nothing to rename.
+      if (!app.posted.some(function (p) { return p.to === 'RELAYKEY-A'; })) {
+        test.check('and asks nothing of a relay it has no seat on');
+      } else {
+        test.fail('posted to a relay with no seat: ' + JSON.stringify(app.posted));
+      }
+
+      const after = el(app, 'info-relays').innerHTML;
+      if (!/andy-old/.test(after) && !/out of step/.test(after)) {
+        test.check('the table repaints, and the relay that was out of step is not any more');
+      } else {
+        test.fail('after: ' + after);
+      }
+
+      if (/agree/.test(el(app, 'info-name-error').textContent)) {
+        test.check('and the screen says how many relays took it');
+      } else {
+        test.fail('said: ' + el(app, 'info-name-error').textContent);
+      }
+    });
+  });
+}
+
+// ── 4. AND A RELAY THAT SAYS NO ──────────────────────────────────────
+//
+// Partial failure is the NORMAL case here, not an error state: a relay can
+// be down for days, and a live invite can hold the name you want. What
+// this asserts is the rule that makes the feature usable at all — local is
+// the intent, the relays catch up, and one refusal costs the others
+// nothing.
+function aRelayThatSaysNo() {
+  test.subHeading('And a relay that refuses costs the others nothing');
+
+  const home = tmpHome('andy');
+  const app = mountApp(home, [
+    relayFixture({ url: 'https://a.example', label: 'lab', relayKey: 'KEY-A', calls: 'andy' }),
+    relayFixture({ url: 'https://b.example', label: 'spirit', relayKey: 'KEY-B', calls: 'andy',
+      refuses: 'name reserved by a live invite' }),
+  ]);
+
+  return settle().then(function () {
+    el(app, 'info-name').value = 'andyflinn';
+    el(app, 'info-name-save').fire('click');
+
+    return settle().then(settle).then(settle).then(function () {
+      if (app.relays[0].calls === 'andyflinn') {
+        test.check('the relay that accepted is renamed');
+      } else {
+        test.fail('relay A: ' + app.relays[0].calls);
+      }
+
+      if (app.relays[1].calls === 'andy') {
+        test.check('and the one that refused is not');
+      } else {
+        test.fail('relay B: ' + app.relays[1].calls);
+      }
+
+      // LOCAL STANDS. Otherwise a node with one unreachable relay could
+      // never record what it wants to be called — and the name here is the
+      // INTENT, which is exactly what the relays have yet to catch up with.
+      if (nodeCard.read(home).name === 'andyflinn') {
+        test.check('the local name stands, because it is the intent and not a mirror');
+      } else {
+        test.fail('local was rolled back: ' + JSON.stringify(nodeCard.read(home)));
+      }
+
+      const table = el(app, 'info-relays').innerHTML;
+      if (/reserved by a live invite/.test(table)) {
+        test.check('and the row says WHY, not merely that it failed');
+      } else {
+        test.fail('table: ' + table);
+      }
+
+      const said = el(app, 'info-name-error').textContent;
+      if (/1 of 2/.test(said) && el(app, 'info-name-error').className === 'job-start-error') {
+        test.check('with the count in red, because this is not finished');
+      } else {
+        test.fail('said: ' + said + ' [' + el(app, 'info-name-error').className + ']');
+      }
+
+      // AND PRESSING SAVE AGAIN TRIES AGAIN. There is no background job
+      // reconciling this: the row that disagrees is the prompt, and the
+      // gesture that fixes it is the one already on the screen.
+      app.relays[1].refuses = '';
+      const before = app.posted.length;
+      el(app, 'info-name-save').fire('click');
+
+      return settle().then(settle).then(settle).then(function () {
+        if (app.posted.length > before && app.relays[1].calls === 'andyflinn') {
+          test.check('and pressing Save again asks the relay that refused, once more');
+        } else {
+          test.fail('retry: ' + app.posted.length + ' posts, B calls ' + app.relays[1].calls);
+        }
+      });
+    });
+  });
+}
+
+// ── 5. A NODE ON NO RELAY ────────────────────────────────────────────
+
+function aNodeOnNoRelay() {
+  test.subHeading('A node on no relay still has a name');
+
+  const home = tmpHome('alone');
+  const app = mountApp(home, []);
+
+  return settle().then(function () {
+    el(app, 'info-name').value = 'solo';
+    el(app, 'info-name-save').fire('click');
+
+    return settle().then(settle).then(settle).then(function () {
+      if (nodeCard.read(home).name === 'solo') {
+        test.check('it saves');
+      } else {
+        test.fail('local: ' + JSON.stringify(nodeCard.read(home)));
+      }
+
+      if (app.posted.length === 0) {
+        test.check('and posts to nobody, because there is nobody to tell');
+      } else {
+        test.fail('posted anyway: ' + JSON.stringify(app.posted));
+      }
+
+      // NOTHING IS DRAWN. A heading over an empty table is a thing to read
+      // and dismiss (UI_DESIGN_STYLE §1), and `#info-relays:empty`
+      // collapses the panel so it takes no space either.
+      if (el(app, 'info-relays').innerHTML === '') {
+        test.check('and draws no relay table at all rather than an empty one');
+      } else {
+        test.fail('drew: ' + el(app, 'info-relays').innerHTML);
+      }
+
+      if (el(app, 'info-name-error').textContent === 'saved') {
+        test.check('and says only that it saved, with no count of nobody');
+      } else {
+        test.fail('said: ' + el(app, 'info-name-error').textContent);
+      }
+    });
+  });
+}
+
+// ── 6. NO TICK ───────────────────────────────────────────────────────
 
 function noTick() {
   test.subHeading('And it is not driven by the job tick');
@@ -380,6 +664,9 @@ test.startTest('Info — what this node says about itself');
 
 theRules();
 theScreen()
+  .then(theFanOut)
+  .then(aRelayThatSaysNo)
+  .then(aNodeOnNoRelay)
   .then(function () { noTick(); })
   .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
   .then(function () { test.reportSuccessFailureCount(); });
