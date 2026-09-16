@@ -20,6 +20,45 @@
 
 var DEFAULT_PER_MIN = 6;
 
+// ── TELLING WHOEVER IS LISTENING THAT THIS PROCESS IS GOING ───────────
+//
+//   Andy: "node and relay must have these safeguards, from the same
+//   code?"
+//
+// Yes, and this is that code — outside `createRegistry` on purpose. A
+// RELAY's listeners are members, held in a registry keyed by identity. A
+// NODE's listener is its own browser on /api/events, which is a plain
+// response in a Set and has no identity, no rate limit and no presence.
+// Two very different books, one thing to say when the lights go out, so
+// the saying is a function over sinks and not a method on either book.
+//
+// `retry:` is SSE's own field for when to reconnect. The browser's
+// EventSource honours it with no code of ours at all, and sseClient
+// honours it for a node or a partner relay — so one write serves every
+// listener this system has.
+//
+// Bounded the same way the parser bounds what it will accept, because the
+// two numbers have to agree about what is sayable.
+function sayGoingAway(sinkList, backInMs) {
+  var ms = Math.max(0, Math.min(3600000, Math.round(backInMs || 0)));
+  var told = 0;
+  (sinkList || []).forEach(function (sink) {
+    if (!sink || typeof sink.write !== 'function') return;
+    try {
+      sink.write('retry: ' + ms + '\n\n');
+      told += 1;
+    } catch (e) { /* already gone, and nothing to do about it */ }
+  });
+  // CLOSED HERE rather than left to the process exiting, so the FIN is
+  // this process's decision and arrives BEHIND the hint. A socket the
+  // kernel reaps on exit would race the write.
+  (sinkList || []).forEach(function (sink) {
+    if (!sink || typeof sink.close !== 'function') return;
+    try { sink.close(); } catch (e) { /* already gone */ }
+  });
+  return told;
+}
+
 function createRegistry(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
@@ -143,20 +182,7 @@ function createRegistry(opts) {
   // That case is the idle watchdog's, and the two are complements: this
   // makes a restart invisible, the watchdog makes a disappearance finite.
   function goingAway(backInMs) {
-    var ms = Math.max(0, Math.min(3600000, Math.round(backInMs || 0)));
-    var told = 0;
-    Object.keys(sinks).forEach(function (id) {
-      var sink = sinks[id];
-      if (!sink || typeof sink.write !== 'function') return;
-      try {
-        sink.write('retry: ' + ms + '\n\n');
-        told += 1;
-      } catch (e) { /* already gone, and nothing to do about it */ }
-    });
-    // Closed here rather than left to the process exiting, so the FIN is
-    // this relay's decision and arrives BEHIND the hint. A socket the
-    // kernel reaps on exit would race it.
-    Object.keys(sinks).forEach(function (id) { close(sinks[id]); });
+    var told = sayGoingAway(Object.keys(sinks).map(function (id) { return sinks[id]; }), backInMs);
     sinks = Object.create(null);
     return told;
   }
@@ -182,5 +208,6 @@ function createRegistry(opts) {
 
 module.exports = {
   createRegistry: createRegistry,
+  sayGoingAway: sayGoingAway,
   DEFAULT_PER_MIN: DEFAULT_PER_MIN,
 };

@@ -448,6 +448,19 @@ function handleRelayClaim(req, res) {
   });
 }
 
+// EVERY PAGE STREAM THIS PROCESS IS SERVING.
+//
+//   Andy: "node and relay must have these safeguards, from the same code?"
+//
+// A relay's listeners live in a presence registry, keyed by identity and
+// rate limited. A node's listener is its own browser, which has no identity
+// and needs none — so it is a plain Set, and the only thing the two books
+// share is what gets SAID to them on the way out (presence.sayGoingAway).
+//
+// Existing only so the shutdown handler has somebody to tell. Nothing else
+// reads it, and a stream removes itself in teardown below.
+const pageStreams = new Set();
+
 function handleSseConnection(req, res) {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -492,6 +505,8 @@ function handleSseConnection(req, res) {
     res.write('event: packet\ndata: ' + JSON.stringify(message) + '\n\n');
   });
 
+  pageStreams.add(res);
+
   const heartbeat = setInterval(() => {
     res.write(':\n\n');
   }, 20000);
@@ -504,6 +519,7 @@ function handleSseConnection(req, res) {
   function teardown() {
     if (torndown) return;
     torndown = true;
+    pageStreams.delete(res);
     clearInterval(heartbeat);
     jobs.events.off('job-updated', onJobUpdated);
     jobs.events.off('job-deleted', onJobDeleted);
@@ -1805,21 +1821,37 @@ if (!relayMode) {
 // about: too low and a member is refused once and retries on its own
 // backoff, which is where it would have been anyway.
 //
-// NOT REGISTERED IN PERSONAL MODE. A node has no members to tell, and a
-// handler that exists only to do nothing is a handler somebody later
-// mistakes for a working one.
-if (relayMode) {
+// BOTH MODES, FROM THE SAME CODE.
+//
+//   Andy: "node and relay must have these safeguards, from the same code?"
+//
+// A first draft registered this for a relay only, on the reasoning that a
+// node has no members to tell. Wrong twice over: a node serves
+// /api/events to its own browser and can pace THAT reconnect the same way,
+// and once a relay holds outbound streams to partners it is a listener as
+// well as a speaker.
+//
+// The two books differ — a registry keyed by identity, a Set of page
+// responses — and what gets said to them does not, which is why
+// sayGoingAway takes sinks rather than being a method on either.
+{
   let leaving = false;
   const goodbye = function (signal) {
     if (leaving) return;
     leaving = true;
     let told = 0;
-    try { told = relay.presence.goingAway(3000); }
-    catch (e) { /* nothing to tell, or already gone */ }
+    // The browser's EventSource honours `retry:` natively, so telling the
+    // page costs no client code at all.
+    try { told += require('./presence').sayGoingAway(Array.from(pageStreams), 3000); }
+    catch (e) { /* no page open */ }
+    if (relayMode) {
+      try { told += relay.presence.goingAway(3000); }
+      catch (e) { /* nothing to tell, or already gone */ }
+    }
     console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
-    // The sockets are closed by goingAway, so what is left is this
+    // The sockets are closed by sayGoingAway, so what is left is this
     // process. Exit rather than waiting for the default handler, which
-    // would race the writes we just made.
+    // would race the writes just made.
     try { server.close(); } catch (e) { /* not listening */ }
     process.exit(0);
   };
