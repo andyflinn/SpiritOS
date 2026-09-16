@@ -53,8 +53,10 @@ var CHAT_LOG_DIR = 'logs/';
 // the newest.
 var CHAT_LOG_CAP = 500;
 
+// peerFile.js stays up in js/ — hub.js and peerStats.js name files with it,
+// so it is genuinely dual-target where this file is not.
 var chatLogPeerFile = (typeof require === 'function' && typeof module !== 'undefined')
-  ? require('./peerFile')
+  ? require('../peerFile')
   : (typeof window !== 'undefined' ? window.spiritPeerFile : null);
 
 // Only a key names a file. Everything else — the reserved mailbox row, a

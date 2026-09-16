@@ -20,7 +20,7 @@
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const peerFile = require('../run/js/peerFile.js');
-const chatLog = require('../run/js/chatLog.js');
+const chatLog = require('../run/js/client/chatLog.js');
 
 // The scoped api.fs Relay Chat is handed, backed by an object, so a
 // "reload" is reading the same store with a fresh cache.

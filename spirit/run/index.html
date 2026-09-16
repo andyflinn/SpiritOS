@@ -21,13 +21,19 @@
          a round trip to another continent to be told about a space. One
          file so the two cannot drift. -->
     <script src="/js/labelRule.js"></script>
-    <!-- One peer, one file, named by the peer's whole public key.
-         js/chatLog.js reads this at load, so it comes first. -->
+    <!-- One peer, one file, named by the peer's whole public key. Stays up
+         in js/ because hub.js and peerStats.js name files with it too.
+         js/client/chatLog.js reads it at load, so it comes first. -->
     <script src="/js/peerFile.js"></script>
-    <!-- The isomorphic half of js/chatLog.js: how a conversation is
-         filed on this node. Relay Chat holds the files through its own
-         scoped api.fs; this only decides names, shapes and merging. -->
-    <script src="/js/chatLog.js"></script>
+    <!-- How a conversation is filed on this node. Relay Chat holds the
+         files through its own scoped api.fs; this only decides names,
+         shapes and merging.
+
+         Browser-only, so js/client/. It exports to node as well, but no
+         node module requires it — that half is there so the merging can be
+         asserted in a test instead of only looked at, which is not the
+         same thing as being isomorphic. -->
+    <script src="/js/client/chatLog.js"></script>
     <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spiritLimits,
          so the size a page refuses is the size the relay refuses. -->
     <script src="/js/limits.js"></script>
@@ -49,9 +55,10 @@
     <script src="/js/client/packet.js"></script>
     <!-- The ICON table read the other way round — one line per glyph,
          carrying every name it is keyed under. What the icon selector
-         chooses from, and isomorphic so the grouping and the filtering
-         can be asserted in node rather than only looked at. -->
-    <script src="/js/iconIndex.js"></script>
+         chooses from. Browser-only like chatLog.js above: the node export
+         is so the grouping and the filtering can be asserted rather than
+         only looked at, not because anything in the node reads it. -->
+    <script src="/js/client/iconIndex.js"></script>
     <style>
       * { box-sizing: border-box; }
 

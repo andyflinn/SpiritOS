@@ -41,7 +41,7 @@ const spirit = require('../run/js/kernel.js');
 // The app reads its logging rules off the same global the shell hands
 // it in the browser (index.html loads js/chatLog.js as a script), so the
 // stub supplies the real module rather than a lookalike.
-const chatLog = require('../run/js/chatLog.js');
+const chatLog = require('../run/js/client/chatLog.js');
 const peerFile = require('../run/js/peerFile.js');
 // index.html loads this by script tag beside the other two; the app
 // reads envelopes with it, so the stub hands over the real module rather

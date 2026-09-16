@@ -110,7 +110,10 @@ expectLoads('js/client/browser.js', 'js/client/browser.js');
 // send or read an envelope, and the shell can only say so in the console —
 // so the serving is asserted rather than discovered.
 expectLoads('js/client/packet.js (the app envelope)', 'js/client/packet.js');
+expectLoads('js/client/chatLog.js', 'js/client/chatLog.js');
+expectLoads('js/client/iconIndex.js', 'js/client/iconIndex.js');
 expectLoads('js/limits.js (the size both ends refuse at)', 'js/limits.js');
+expectLoads('js/peerFile.js', 'js/peerFile.js');
 
 // ---- app code and app data stay open ----
 // An app's entry script and manifest are readable (the shell fetches the

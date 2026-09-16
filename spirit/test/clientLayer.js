@@ -401,7 +401,87 @@ function laterNewsFindsWhoAsked() {
   return Promise.resolve();
 }
 
+// ---------------------------------------------------------------------------
+// WHERE A BROWSER-ONLY FILE LIVES, so it stops being asked one file at a
+// time. Andy, of iconIndex.js the day after packet.js moved: "is the same?
+// should also go into client/?"
+//
+// The rule underneath both answers: a file in js/ is one a RELAY may end up
+// loading. So if index.html loads it with a <script> tag and no node module
+// requires it, it is the shell's and belongs in js/client/.
+//
+// Note what the rule does NOT say. A node `module.exports` is not evidence
+// of a node consumer — chatLog.js and iconIndex.js both export so a test can
+// drive them, which is the export earning its keep, not the file being
+// isomorphic. Only a `require` from node code counts, and that is what is
+// measured here.
+//
+// The genuinely dual files stay up in js/ and this proves it of them:
+// limits.js (relay.js, server.js), peerFile.js (hub.js, peerStats.js),
+// labelRule.js (relay.js), ownerBadge.js (hub.js, presenceNode.js).
+function aBrowserOnlyFileLivesWithTheShell() {
+  test.subHeading('A file js/ keeps is a file the node reads');
+
+  const jsDir = path.join(__dirname, '..', 'run', 'js');
+  const indexHtml = fs.readFileSync(
+    path.join(__dirname, '..', 'run', 'index.html'), 'utf8');
+
+  // Every .js directly in js/ — client/ is the answer, not the question.
+  const inJs = fs.readdirSync(jsDir).filter(function (f) {
+    return f.endsWith('.js') && fs.statSync(path.join(jsDir, f)).isFile();
+  });
+
+  // Comments stripped: a file that explains why it no longer requires
+  // something must not read as requiring it.
+  function nodeRequirersOf(base) {
+    const name = base.replace(/\.js$/, '');
+    const hunting = new RegExp('require\\([\'"]\\.{1,2}/(?:client/)?' + name + '(?:\\.js)?[\'"]');
+    const found = [];
+    [jsDir, path.join(jsDir, 'client')].forEach(function (dir) {
+      fs.readdirSync(dir).forEach(function (f) {
+        if (!f.endsWith('.js') || f === base) return;
+        const p = path.join(dir, f);
+        if (!fs.statSync(p).isFile()) return;
+        const src = fs.readFileSync(p, 'utf8')
+          .split('\n')
+          .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })
+          .join('\n');
+        if (hunting.test(src)) found.push(f);
+      });
+    });
+    return found;
+  }
+
+  const stranded = inJs.filter(function (f) {
+    if (indexHtml.indexOf('/js/' + f + '"') === -1) return false;  // not page-loaded
+    return nodeRequirersOf(f).length === 0;                        // and nobody reads it
+  });
+
+  if (stranded.length === 0) {
+    test.check('no page script sits in js/ with no node module reading it');
+  } else {
+    test.fail('browser-only, but still in js/ where a relay could load it: '
+      + stranded.join(', ') + ' — these belong in js/client/');
+  }
+
+  // And the other direction, so the rule cannot be satisfied by emptying
+  // js/ of everything. These four are page-loaded AND node-required, which
+  // is the case client/ would be wrong for.
+  const dual = ['limits.js', 'peerFile.js', 'labelRule.js', 'ownerBadge.js'];
+  const misplaced = dual.filter(function (f) {
+    return inJs.indexOf(f) === -1 || nodeRequirersOf(f).length === 0;
+  });
+  if (misplaced.length === 0) {
+    test.check('and the dual-target four stay in js/, where both halves reach them');
+  } else {
+    test.fail('expected in js/ with a node requirer: ' + misplaced.join(', '));
+  }
+
+  return Promise.resolve();
+}
+
 Promise.resolve()
+  .then(aBrowserOnlyFileLivesWithTheShell)
   .then(aPostAnswersInTheShapeTheProtocolHas)
   .then(aFailureInventsNoTransaction)
   .then(aDeliveredRefusalIsNotADelivery)
