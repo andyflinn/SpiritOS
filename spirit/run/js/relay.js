@@ -437,11 +437,6 @@ function createRelay(rootDir) {
     var row = findByKey(peerKey);
     if (!row) return { ok: false, status: 404, error: 'no such peer' };
 
-    // A RELAY IS NOT ITS OWN PARTNER. The whole point is a peer who owns
-    // a DIFFERENT relay; the owner's own row is this box, and partnering
-    // with yourself would be a route to where you already are.
-    if (row.owner) return { ok: false, status: 400, error: 'that is this relay’s owner' };
-
     var at = String(url == null ? '' : url).trim().replace(/\/+$/, '');
     if (!at) return { ok: false, status: 400, error: 'partner relay url required' };
     var theirKey = String(relayKey == null ? '' : relayKey).trim();
@@ -451,6 +446,39 @@ function createRelay(rootDir) {
     // hop, and conflating them is the likeliest bug in this design.
     if (theirKey === peerKey) {
       return { ok: false, status: 400, error: 'that is the peer’s own key, not their relay’s' };
+    }
+
+    // ── A RELAY IS NOT ITS OWN PARTNER ─────────────────────────────────
+    //
+    //   Andy: "the relays need to be different, the owners? why?"
+    //
+    // This read `if (row.owner)` and refused, with the reason "the
+    // owner's own row is this box, and partnering with yourself would be
+    // a route to where you already are". That is the same sentence as
+    // "not this box" only while ONE KEY OWNS ONE RELAY. Own twenty and
+    // your key is `owner: true` on all twenty, while A and B are
+    // genuinely different machines — so the check refused the thing it
+    // was never about.
+    //
+    // "Not the owner" was shorthand. Only "not this box" was ever the
+    // invariant, and the vocabulary to say it exactly was already here:
+    // the line above insists the RELAY key differs from the PEER key —
+    // two keys, two jobs — and then the old gate conflated them anyway,
+    // one line later, by testing whose key sits in allow.json.
+    //
+    // It is also STRICTER than what it replaced. The old check would
+    // happily partner this box with itself through any non-owner peer
+    // who named this relay's own url; this one cannot, because the
+    // identity compared is the box's.
+    //
+    // Nothing else weakens. The reciprocity proof (decided 2 and 4) is
+    // the far census showing that key marked owner — with one owner it
+    // proves "one key owns both", which is true, public, and checkable
+    // by key. No third party's consent is bypassed: partnering only
+    // creates routes between the two relays' own members, and the other
+    // relay's owner must promote this one in turn.
+    if (theirKey === relayPublicKey()) {
+      return { ok: false, status: 400, error: 'that is this relay' };
     }
 
     if (row.partner && row.partner.url === at && row.partner.relayKey === theirKey) {

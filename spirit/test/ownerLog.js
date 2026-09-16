@@ -806,15 +806,40 @@ test.subHeading('Partnership — the flag, and nothing routes differently yet');
     test.fail('a stranger was partnered: ' + JSON.stringify(stranger));
   }
 
-  // A RELAY IS NOT ITS OWN PARTNER. The point is a peer who owns a
-  // DIFFERENT relay; partnering with yourself is a route to where you
-  // already are.
-  const itself = box.setPartner(owner, owner.publicKey, THEIR_URL, THEIR_RELAY_KEY, 'H');
-  if (!itself.ok && /owner/.test(itself.error)) {
-    test.check('and the owner’s own row cannot — a relay is not its own partner');
+  // ── A RELAY IS NOT ITS OWN PARTNER, AND THAT IS ABOUT THE BOX ──────
+  //
+  //   Andy: "the relays need to be different, the owners? why?"
+  //
+  // This asserted that the OWNER's row could not be promoted, because
+  // "partnering with yourself is a route to where you already are". True
+  // while one key owns one relay, and false the moment somebody owns two:
+  // their key is `owner: true` on both, and the two are different
+  // machines. "Not the owner" was shorthand for "not this box" and only
+  // the second was ever the rule.
+  //
+  // So the owner's row IS promotable now — that is a fleet, twenty
+  // relays one person operates and meshes — and what is refused is the
+  // box itself, by its own relay key.
+  const fleet = box.setPartner(owner, owner.publicKey, THEIR_URL, THEIR_RELAY_KEY, 'H');
+  if (fleet.ok && fleet.partner && fleet.partner.relayKey === THEIR_RELAY_KEY) {
+    test.check('the owner’s own row CAN be a partner — one person may own both relays');
+  } else {
+    test.fail('an owner could not partner their own second relay: ' + JSON.stringify(fleet));
+  }
+
+  // AND THE REAL INVARIANT, tested exactly rather than by proxy: the
+  // partner's relay key is this relay's own. Stricter than the old
+  // check, which would have let any NON-owner peer partner this box with
+  // itself by naming its own url.
+  const itself = box.setPartner(owner, her.publicKey, THEIR_URL, box.relayPublicKey(), 'H');
+  if (!itself.ok && /this relay/.test(itself.error)) {
+    test.check('while this box may not partner itself, whoever proposes it');
   } else {
     test.fail('a relay partnered itself: ' + JSON.stringify(itself));
   }
+
+  // Put her back the way the rest of the block expects.
+  box.clearPartner(owner, owner.publicKey, 'H');
 
   // TWO KEYS, TWO JOBS: ownership is verified against the OWNER row, the
   // RELAY key is pinned for a later hop. Handing the peer's own key as

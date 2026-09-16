@@ -398,9 +398,29 @@ This is the real threshold in the proposal — bigger than the flag.
 
 1. **A relay may promote a peer to `partner` in its own peer ledger.** Not
    a new store: a flag on the row, beside `owner`.
-2. **Reciprocity is the test.** A partner is a non-owner peer here who owns
-   a relay elsewhere, and both sides establish that fact through owner
-   input. Neither relay takes the other's word for it.
+2. **Reciprocity is the test.** A partner is a peer here who owns a relay
+   elsewhere, and both sides establish that fact through owner input.
+   Neither relay takes the other's word for it.
+
+   **This said "a NON-OWNER peer here", and that was corrected on
+   2026-09-16.** Andy: *"the relays need to be different, the owners?
+   why?"* — and there was no answer. "Not the owner" was shorthand for
+   "not this box", written while one key owned one relay, where the two
+   sentences are the same. Own twenty and your key is `owner: true` on
+   all twenty while the machines are genuinely different, so the rule
+   refused the thing it was never about.
+
+   The invariant is **a relay is not its own partner**, and it is now
+   tested as such: the partner's relay key against this relay's own
+   (`relay.js`, `setPartner`). That is *stricter* — the old check would
+   have let any non-owner peer partner this box with itself by naming its
+   own url.
+
+   Nothing in (4) weakens. With one owner the census proves *"one key
+   owns both"*, which is true, public and checkable by key; and no third
+   party's consent is bypassed, because partnering only creates routes
+   between the two relays' own members and the other relay's owner must
+   promote this one in turn.
 3. **One level. No transitivity.** B's partners are not A's partners — for
    the trust reason above *and* because `partners² × members` does not fit
    on the box.
