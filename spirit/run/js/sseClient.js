@@ -293,14 +293,33 @@ function connect(opts) {
       if (controller) { try { controller.abort(); } catch (e) { /* gone */ } }
     },
     // For tests and for the Jobs row: how far the backoff has walked.
-    retryMs: function () { return retryMs; },
+    // retryMs() STOOD HERE — a getter on the handle with no caller in
+    // run/ or test/. A surface member nobody reads is a promise made to
+    // nobody, and it is still a promise: the next person to touch the
+    // backoff has to wonder who is watching it.
   };
 }
 
+// -- ONE EXPORT, BECAUSE ONE IS WHAT ANYBODY CALLS ---------------------
+//
+//   Andy: "that should be made true for the sseClient and peerPost
+//   interfaces."
+//
+// This exported five things. `connect` had one caller in run/; the other
+// four — parseChunk, FIRST_RETRY_MS, MAX_RETRY_MS, IDLE_MS — had ZERO, and
+// existed because presenceNode.js's suite read them. That is peerSearch's
+// `internal` bag in different clothes: a module widening its surface for a
+// test's convenience, and every widening is a promise to some future caller
+// that the thing will keep working the way it does now.
+//
+// FIRST_RETRY_MS had no reader at all, in run/ or test/. A dead export is
+// the same promise made to nobody.
+//
+// parseChunk is reached the only way it is ever reached in production:
+// bytes arrive, connect() parses them, onEvent is called. The constants are
+// observed as behaviour — the delay a backoff actually waits, the window a
+// watchdog is actually armed with — which is what the numbers were for and
+// is what would have to keep being true if they changed.
 module.exports = {
   connect: connect,
-  parseChunk: parseChunk,
-  FIRST_RETRY_MS: FIRST_RETRY_MS,
-  MAX_RETRY_MS: MAX_RETRY_MS,
-  IDLE_MS: IDLE_MS,
 };

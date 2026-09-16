@@ -52,33 +52,122 @@ function fakeJobs() {
   return j;
 }
 
+// -- FEEDING BYTES, WHICH IS THE ONLY WAY THE PARSER IS REACHED --------
+//
+//   Andy: "that should be made true for the sseClient and peerPost
+//   interfaces."
+//
+// sseClient exported `parseChunk`, `MAX_RETRY_MS`, `IDLE_MS` and
+// `FIRST_RETRY_MS`. Four exports, ZERO callers in run/ — every one existed
+// because this suite read it. That is the same escape hatch as peerSearch's
+// `internal` bag wearing different clothes: a module widening its surface
+// for a test's convenience.
+//
+// `connect` is the whole interface now. Bytes go in through a fake fetch,
+// events come out through onEvent, and the parser is exercised by the only
+// path that ever calls it.
+//
+// The constants went the same way and the assertions are better for it: a
+// number read out of a module proves the number, while a delay observed
+// through setTimeoutImpl proves the behaviour the number was for.
+function feeds(chunks, opts) {
+  opts = opts || {};
+  const got = [];
+  let n = 0;
+  const handle = sseClient.connect({
+    url: 'http://relay/api/relay/stream',
+    retryMs: opts.retryMs || 10,
+    randomImpl: function () { return 1; },
+    idleTimeoutImpl: opts.idleTimeoutImpl || function () { return 0; },
+    idleClearTimeoutImpl: function () {},
+    setTimeoutImpl: opts.setTimeoutImpl || function (fn) { return setTimeout(fn, 0); },
+    clearTimeoutImpl: clearTimeout,
+    onEvent: function (msg) { got.push(msg); },
+    fetchImpl: function () {
+      // PAST THE SCRIPT, THE STREAM ENDS THE WAY IT ENDED. A first draft
+      // re-served the last chunk on every reconnect, so events piled up
+      // across retries and a count of two became eight — a relay does not
+      // repeat itself because a socket came back. A second draft went
+      // QUIET instead, which broke the opposite case: a script of one
+      // refusal is a relay that is DOWN, and it must keep being down or
+      // the backoff has nothing to climb.
+      //
+      // So: content runs out into silence, a refusal runs out into more
+      // refusal.
+      if (n >= chunks.length && chunks[chunks.length - 1] === null) {
+        n += 1;
+        return Promise.reject(new Error('down'));
+      }
+      if (n >= chunks.length) {
+        n += 1;
+        return Promise.resolve({
+          ok: true,
+          body: { getReader: function () {
+            return { read: function () { return new Promise(function () {}); } };
+          } },
+        });
+      }
+      const chunk = chunks[n];
+      n += 1;
+      if (chunk === null) return Promise.reject(new Error('down'));
+      return Promise.resolve({
+        ok: true,
+        body: { getReader: function () {
+          let served = false;
+          return { read: function () {
+            if (served) return Promise.resolve({ done: true });
+            served = true;
+            return Promise.resolve({ done: false, value: new TextEncoder().encode(chunk) });
+          } };
+        } },
+      });
+    },
+  });
+  return { events: got, close: function () { handle.close(); } };
+}
+
 test.startTest('Presence 2 — the node holds the sockets');
 
 async function run() {
   test.subHeading('Reading the protocol, including the parts that look like nothing');
 
-  const heartbeat = sseClient.parseChunk(':');
-  if (heartbeat === null) {
-    test.check('a lone colon is a heartbeat and not an event');
-  } else {
-    test.fail('heartbeat parsed as: ' + JSON.stringify(heartbeat));
-  }
+  {
+    // Three frames down one stream: a heartbeat, a roster, and an event
+    // whose value must survive the space after the colon.
+    const fed = feeds([
+      ':\n\n' +
+      'event: roster\ndata: {"members":[]}\n\n' +
+      'event: presence\ndata: {"key":"abc"}\n\n',
+    ]);
+    await new Promise(function (r) { setTimeout(r, 30); });
+    fed.close();
 
-  const msg = sseClient.parseChunk('event: roster\ndata: {"members":[]}');
-  if (msg && msg.event === 'roster' && msg.data && Array.isArray(msg.data.members)) {
-    test.check('an event carries its name and its parsed data');
-  } else {
-    test.fail('parse: ' + JSON.stringify(msg));
-  }
+    // THE HEARTBEAT IS NOT AN EVENT. Two frames reached onEvent, not three
+    // — which is the observable form of "parseChunk answers null for a
+    // lone colon", and the form that matters: a heartbeat reaching an app
+    // as an event with an empty name is the bug.
+    if (fed.events.length === 2) {
+      test.check('a lone colon is a heartbeat and never reaches a listener');
+    } else {
+      test.fail('events: ' + JSON.stringify(fed.events));
+    }
 
-  // The spec allows a space after the colon and most servers write one.
-  // A parser that keeps it turns every key into a key with a space in
-  // front, which compares unequal to itself everywhere else.
-  const spaced = sseClient.parseChunk('event: presence\ndata: {"key":"abc"}');
-  if (spaced && spaced.data && spaced.data.key === 'abc') {
-    test.check('and the space after the colon is not part of the value');
-  } else {
-    test.fail('spacing: ' + JSON.stringify(spaced));
+    const roster = fed.events[0];
+    if (roster && roster.event === 'roster' && roster.data && Array.isArray(roster.data.members)) {
+      test.check('an event carries its name and its parsed data');
+    } else {
+      test.fail('roster: ' + JSON.stringify(roster));
+    }
+
+    // The spec allows a space after the colon and most servers write one.
+    // A parser that keeps it turns every key into a key with a space in
+    // front, which compares unequal to itself everywhere else.
+    const presence = fed.events[1];
+    if (presence && presence.data && presence.data.key === 'abc') {
+      test.check('and the space after the colon is not part of the value');
+    } else {
+      test.fail('spacing: ' + JSON.stringify(presence));
+    }
   }
 
   test.subHeading('A stream that is cut comes back, and does not hammer');
@@ -287,11 +376,22 @@ async function run() {
   }
 
   // Three missed heartbeats, not one: a relay under load may be late.
-  if (sseClient.IDLE_MS > 60000 && sseClient.IDLE_MS < 120000) {
-    test.check('silence is allowed to last ' + (sseClient.IDLE_MS / 1000) +
-      's — three missed 20s heartbeats, so lateness is not death');
-  } else {
-    test.fail('idle window is ' + sseClient.IDLE_MS + 'ms against a 20s heartbeat');
+  // Observed rather than read — the window is whatever the watchdog was
+  // armed with, which is the thing that decides when a socket is abandoned.
+  {
+    let armedFor = 0;
+    const fed = feeds(['event: x\ndata: 1\n\n'], {
+      idleTimeoutImpl: function (fn, ms) { armedFor = ms; return 1; },
+    });
+    await new Promise(function (r) { setTimeout(r, 20); });
+    fed.close();
+
+    if (armedFor > 60000 && armedFor < 120000) {
+      test.check('silence is allowed to last ' + (armedFor / 1000) +
+        's — three missed 20s heartbeats, so lateness is not death');
+    } else {
+      test.fail('watchdog armed for ' + armedFor + 'ms against a 20s heartbeat');
+    }
   }
 
   // ── AND IT TAKES THE SERVER'S WORD FOR WHEN TO COME BACK ────────────
@@ -351,12 +451,26 @@ async function run() {
     }
   }
 
-  // And the ceiling is short enough to catch a restart rather than a death.
-  if (sseClient.MAX_RETRY_MS <= 10000) {
-    test.check('the longest a node waits to find a relay that came back is ' +
-      (sseClient.MAX_RETRY_MS / 1000) + 's');
-  } else {
-    test.fail('cap is ' + sseClient.MAX_RETRY_MS + 'ms — a restart takes 2-5 seconds');
+  // And the ceiling is short enough to catch a restart rather than a death
+  // — observed by letting the backoff run to its limit rather than by
+  // reading the constant it stops at.
+  {
+    const waits = [];
+    const fed = feeds([null], {
+      retryMs: 1000,
+      setTimeoutImpl: function (fn, ms) { waits.push(ms); return setTimeout(fn, 0); },
+    });
+    await new Promise(function (r) { setTimeout(r, 80); });
+    fed.close();
+
+    const ceiling = Math.max.apply(null, waits);
+    if (waits.length > 3 && ceiling <= 10000) {
+      test.check('the longest a node waits to find a relay that came back is ' +
+        (ceiling / 1000) + 's, after ' + waits.length + ' tries');
+    } else {
+      test.fail('backoff reached ' + ceiling + 'ms in ' + waits.length +
+        ' tries — a restart takes 2-5 seconds');
+    }
   }
 
   test.subHeading('Who the relay is, pinned as the stream opens');

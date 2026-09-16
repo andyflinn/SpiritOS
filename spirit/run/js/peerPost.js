@@ -566,6 +566,7 @@ function createPeerPost(opts) {
 }
 
 module.exports = {
+  // DEFAULT_WAIT_MS went with it, for the same reason: exported, and
+  // read by nothing in run/ or test/.
   createPeerPost: createPeerPost,
-  DEFAULT_WAIT_MS: DEFAULT_WAIT_MS,
 };
