@@ -1097,6 +1097,18 @@ const server = http.createServer((req, res) => {
 
     const opened = relay.streamOpen(token, from.sig, sink);
     if (!opened || !opened.ok) {
+      // SAY HOW LONG, because this box is the only one that knows. A 429
+      // here is the connect allowance — six a minute, one per ten seconds
+      // — and a client left to guess will guess with a constant that has
+      // no idea what this relay allows.
+      //
+      // RFC 9110 Retry-After, in seconds. sseClient honours it over its
+      // own backoff, so the number that governs the retry is the number
+      // that governs the refusal.
+      if (opened && opened.status === 429) {
+        try { res.setHeader('Retry-After', String(Math.ceil(60 / relay.presence.perMin) + 5)); }
+        catch (e) { /* headers already sent */ }
+      }
       deviceRefusal(res, opened && opened.status);
       return;
     }

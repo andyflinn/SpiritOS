@@ -451,6 +451,69 @@ async function run() {
     }
   }
 
+  // ── A 429 IS NOT A FAILURE, IT IS AN INSTRUCTION ────────────────────
+  //
+  // THE BUG THIS EXISTS FOR, found in the wild the same evening the
+  // clinginess shipped. A relay allows six connects a minute per identity,
+  // and presence.js says exactly what goes wrong: "an exponential backoff
+  // is meant to prevent a connect storm and is also what produces one when
+  // it is wrong."
+  //
+  // An 8s cap with jitter is seven to fifteen reconnects a minute. The
+  // allowance is spent, every attempt after it is refused 429, and a
+  // refusal carries no bytes so the backoff never resets. A node in that
+  // state can NEVER get back in — and the symptom is not "cannot connect",
+  // it is a SEARCH THAT FINDS NOBODY, because the post goes out and the
+  // reply comes back on a stream that was never allowed to open.
+  {
+    async function refuses(status, header) {
+      const waits = [];
+      const h = sseClient.connect({
+        url: 'http://relay/api/relay/stream',
+        retryMs: 1000,
+        randomImpl: function () { return 1; },
+        idleTimeoutImpl: function () { return 0; },
+        idleClearTimeoutImpl: function () {},
+        setTimeoutImpl: function (fn, ms) { waits.push(ms); return setTimeout(fn, 0); },
+        clearTimeoutImpl: clearTimeout,
+        fetchImpl: function () {
+          return Promise.resolve({
+            ok: false, status: status,
+            headers: { get: function (n) { return n === 'retry-after' ? header : null; } },
+          });
+        },
+      });
+      await new Promise(function (r) { setTimeout(r, 50); });
+      h.close();
+      return waits;
+    }
+
+    const ordinary = await refuses(503, null);
+    if (ordinary[0] === 1000 && ordinary[1] === 2000) {
+      test.check('an ordinary refusal still backs off clingily: ' + ordinary.slice(0, 3).join(', ') + 'ms');
+    } else {
+      test.fail('503: ' + ordinary.slice(0, 3).join(', '));
+    }
+
+    // WELL CLEAR OF THE WINDOW, so the next try is inside the allowance
+    // rather than racing it.
+    const limited = await refuses(429, null);
+    if (limited[0] >= 15000) {
+      test.check('but a 429 waits ' + (limited[0] / 1000) + 's, which the 8s cap must not shorten');
+    } else {
+      test.fail('429 retried after ' + limited[0] + 'ms — straight back into the limit');
+    }
+
+    // AND THE SERVER'S OWN NUMBER WINS, because the box that refused is
+    // the only one that knows its allowance.
+    const told = await refuses(429, '15');
+    if (told[0] === 15000) {
+      test.check('and Retry-After is obeyed over any constant here: ' + told[0] + 'ms');
+    } else {
+      test.fail('ignored Retry-After: ' + told[0]);
+    }
+  }
+
   // And the ceiling is short enough to catch a restart rather than a death
   // — observed by letting the backoff run to its limit rather than by
   // reading the constant it stops at.

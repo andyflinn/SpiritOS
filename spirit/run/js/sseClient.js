@@ -63,6 +63,32 @@ var MAX_RETRY_MS = 8000;
 // a connection to nobody.
 var IDLE_MS = 65000;
 
+// -- WHEN THE SERVER SAYS SLOW DOWN, THAT IS NOT A FAILURE ------------
+//
+// A relay allows six connects a minute per identity — one per ten seconds
+// — and presence.js says exactly why, and exactly what goes wrong:
+//
+//   "a backoff bug spends all six in a second - which is the case this
+//    exists for. An exponential backoff is meant to prevent a connect
+//    storm and is also what produces one when it is wrong."
+//
+// It was right, and the wrong backoff was mine, hours old. Capping at 8s
+// with jitter means seven to fifteen reconnects a minute: the allowance is
+// spent, every attempt after it is refused 429, and because a refusal
+// carries no bytes the backoff never resets. A node in that state can
+// NEVER get back in. Andy's went there and stayed, and the symptom was a
+// search that found nobody — the post goes out, the reply comes back on a
+// stream that was never allowed to open.
+//
+// So a 429 is handled as what it is: the server declining the RATE, not
+// the request. It is the one refusal that must not be retried clingily,
+// and the cap above deliberately does not apply to it.
+//
+// Twenty seconds against a ten-second window, so a node that has just been
+// refused is comfortably inside the allowance on its next try rather than
+// racing it.
+var RATE_LIMITED_MS = 20000;
+
 function parseChunk(text) {
   // One SSE message: any number of field lines, terminated by a blank
   // line. A line starting with `:` is a comment — the heartbeat — and
@@ -208,7 +234,21 @@ function connect(opts) {
     }
 
     if (!res || !res.ok || !res.body) {
-      scheduleRetry('refused: ' + ((res && res.status) || 0));
+      // Retry-After first, because a server that names a number knows
+      // better than a constant here does. Seconds, per RFC 9110, and
+      // bounded like every other number this file accepts from the wire.
+      var status = (res && res.status) || 0;
+      var after = 0;
+      try {
+        if (res && res.headers && typeof res.headers.get === 'function') {
+          after = parseInt(res.headers.get('retry-after'), 10) * 1000;
+        }
+      } catch (e) { after = 0; }
+
+      if (after > 0 && after < 3600000) retryMs = after;
+      else if (status === 429) retryMs = Math.max(retryMs, RATE_LIMITED_MS);
+
+      scheduleRetry('refused: ' + status);
       return;
     }
 
