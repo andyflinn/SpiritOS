@@ -184,6 +184,52 @@ async function run() {
       test.fail('descriptions: ' + JSON.stringify(described));
     }
 
+    // ── AND A SEARCH SAYS WHO IS HOME ───────────────────────────────
+    //
+    //   Andy: "the search might need a filter argument (onlineOnly =
+    //   true)… discuss?"
+    //
+    // The discussion found the field already existed and was being thrown
+    // away: the relay computes presence per row and the ranker weighs it
+    // at a quarter of an exact match, while hub.handleSearch dropped it
+    // before the browser saw it.
+    //
+    // ASKED OF A REAL NODE AGAINST A REAL RELAY, because that is the only
+    // place the SHAPING can be caught. The relay's own reply is asserted
+    // in partnerWire; the app's use of the field in contacts.js. Neither
+    // sees this node's hand between them — a fixture answers the shape it
+    // was given, so a suite driving the app can be green about a field
+    // the node never sends.
+    const searched = await hub(portOf(alfa), 'POST', '/api/spirit',
+      { verb: 'peer.search', q: '*' });
+    const seenRows = (searched.body && searched.body.matches) || [];
+
+    if (seenRows.length) {
+      test.check('a member searching its own relay gets seenRows back');
+    } else {
+      test.fail('search: ' + JSON.stringify(searched.body));
+    }
+
+    // A BOOLEAN ON EVERY ROW. Not truthy, not absent: a bseenRowser that
+    // cannot tell "absent" from "nobody said" draws the wrong dot, and
+    // those are the two states the mark exists to keep apart.
+    if (seenRows.length && seenRows.every(function (r) { return typeof r.present === 'boolean'; })) {
+      test.check('and every row says whether the relay sees that peer connected');
+    } else {
+      test.fail('presence missing from a row: ' + JSON.stringify(seenRows.slice(0, 2)));
+    }
+
+    // AND IT IS THE TRUTH, not a constant. These three nodes are up and
+    // streaming, so the relay must say so about at least one of them —
+    // `present: false` everywhere would satisfy the check above while
+    // meaning the field was never wired to anything.
+    if (seenRows.some(function (r) { return r.present === true; })) {
+      test.check('and says TRUE of somebody, which a hardcoded false would not');
+    } else {
+      test.fail('nobody present among ' + seenRows.length + ' seenRows: ' +
+        JSON.stringify(seenRows.map(function (r) { return [r.publicLabel, r.present]; })));
+    }
+
 
     test.subHeading('A stranger with a perfect signature, and a node that has not heard of them');
 

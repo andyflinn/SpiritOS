@@ -236,6 +236,24 @@ async function run() {
     test.fail('via: ' + JSON.stringify(row));
   }
 
+  // ── AND WHETHER B SEES HIM CONNECTED ────────────────────────────────
+  //
+  // The field A could never answer for itself. `bertrand` is a member of
+  // B, and A holds no stream to him — so A's own presence table has no
+  // opinion and never will. B's does, and this is B's answer surviving
+  // the partner hop and the merge (peerSearch.rowsFrom copies the whole
+  // item, which is why nothing had to be taught to carry it).
+  //
+  // A BOOLEAN, not a truthy value, and not absent: `hub.handleSearch`
+  // hands it to the browser as `!!p.present`, and a browser that cannot
+  // tell "absent" from "nobody said" would draw the wrong dot for the one
+  // case this exists to cover.
+  if (row && typeof row.present === 'boolean') {
+    test.check('and whether B sees him connected, which A has no way to know itself');
+  } else {
+    test.fail('no presence on a partner row: ' + JSON.stringify(row));
+  }
+
   test.subHeading('And A can add him, against the relay he actually lives on');
 
   // THE POINT OF CARRYING `via`, AND WHERE IT IS RESOLVED. A relay names

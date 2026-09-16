@@ -258,6 +258,45 @@ function contactsPresenceTitle(publicKey) {
   return 'not known — no relay you are connected to mentions this key';
 }
 
+// ── THE SAME DOT, FOR SOMEBODY YOU HAVE NOT ADDED ────────────────────
+//
+// A search result is not in the book, so it is not in this node's
+// presence table either — that table is fed by the relay-presence job,
+// which reports the rosters of relays this node HOLDS A STREAM TO.
+//
+// TWO ANSWERS, AND THE NEARER ONE WINS. If this node's own table has an
+// opinion, it is the one to show: it is the same fact `peer.post` uses to
+// decide whether a packet can go, so it is what predicts whether the
+// bubble below will say anything. If it has none — which is exactly what
+// a PARTNER's member looks like, somebody on a relay this node does not
+// stream to — the answering relay's word is all there is, and it is
+// better than white.
+//
+// So a green dot beside a name this node cannot reach is not a
+// contradiction: it means "the relay that found them says they are
+// connected, and I have no way to speak to them myself". That pairing is
+// the thing a person needs to see, and it was unreadable while the field
+// was being dropped.
+function contactsSeenMark(c) {
+  var known = contactsPresence[c.publicKey];
+  if (contactsPresenceSeen && known === true) return contactsIcon.GREEN_CIRCLE;
+  if (contactsPresenceSeen && known === false) return contactsIcon.RED_CIRCLE;
+  return c.present ? contactsIcon.GREEN_CIRCLE : contactsIcon.WHITE_CIRCLE;
+}
+
+function contactsSeenMarkTitle(c) {
+  var known = contactsPresence[c.publicKey];
+  if (contactsPresenceSeen && known === true) {
+    return 'present — a relay you share is holding their connection';
+  }
+  if (contactsPresenceSeen && known === false) {
+    return 'absent — a relay you share says they are not connected';
+  }
+  return c.present
+    ? 'the relay that found them says they are connected, but you share no relay with them'
+    : 'no relay you are connected to mentions this key';
+}
+
 function contactsRowHtml(person) {
   var mark = '';
   if (person.blocked) mark = contactsIcon.NO;
@@ -432,8 +471,13 @@ function contactsPaintSeen() {
     // enrolment list on the Natter screen (ndTellApart) and the same one
     // the book above already follows (contactsHandleCell) — say it where
     // there is a decision to make, and nowhere else.
+    // The dot gets a column of its own and that column has no heading —
+    // the same treatment it gets in the book above, and for the same
+    // reason: there is no word for it, and a mark sharing a cell with a
+    // name pushes every name a glyph to the right or not, depending on
+    // the row.
     '<table class="job-table"><thead><tr>' +
-      '<th>Name</th><th></th>' +
+      '<th></th><th>Name</th><th></th>' +
     '</tr></thead><tbody>' +
     // Counted over the whole answer, not over the two rows either side:
     // a list is scanned, and a name is ambiguous if anything else in it
@@ -457,6 +501,8 @@ function contactsPaintSeen() {
       // nothing to press and no chevron promising there is.
       const alike = (contactsSeenCollide[String(c.publicLabel || '')] || 0) > 1;
       return '<tr>' +
+        '<td title="' + contactsEscapeHtml(contactsSeenMarkTitle(c)) + '">' +
+          contactsSeenMark(c) + '</td>' +
         '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') +
           (alike
             ? ' <span class="muted" title="more than one answer wears this name">\u2026' +
@@ -468,7 +514,7 @@ function contactsPaintSeen() {
             ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
             ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button>') + '</td>' +
       '</tr>' +
-      contactsCardBubble(c, 2);
+      contactsCardBubble(c, 3);
     }).join('') +
     '</tbody></table>' +
     (contactsSeenSilent.length

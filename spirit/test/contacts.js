@@ -839,6 +839,104 @@ function distinctNamesCarryNoKey() {
   });
 }
 
+// ── AND WHETHER ANYBODY IS HOME ──────────────────────────────────────
+//
+//   Andy: "the search might need a filter argument (onlineOnly = true)…
+//   discuss?" — and the discussion found the field already existed and
+//   was being thrown away: the relay computes presence per row and the
+//   ranker weighs it at a quarter of an exact match, while
+//   hub.handleSearch dropped it before the browser saw it.
+//
+// No filter was built on it. Hiding absent people would answer "nobody
+// found" for somebody whose laptop is shut, and acquiring a key has never
+// required the person to be awake. What it buys instead is a dot — the
+// same one the book above has always had.
+function foundPeopleShowWhetherTheyAreHome() {
+  test.subHeading('A found person carries whether anybody is home');
+
+  const app = mountApp({
+    matches: [
+      // On a relay this node shares: its own presence table will answer.
+      { publicKey: 'KEY-HERE', publicLabel: 'here', tail: 'aaa=', relay: 'https://a.example', acquiredVia: 'census', present: true },
+      { publicKey: 'KEY-AWAY', publicLabel: 'away', tail: 'bbb=', relay: 'https://a.example', acquiredVia: 'census', present: false },
+      // A PARTNER'S MEMBER. This node holds no stream to them, so its own
+      // table never mentions the key — the answering relay's word is the
+      // only answer there is.
+      { publicKey: 'KEY-PARTNER', publicLabel: 'faraway', tail: 'ccc=', relay: 'https://b.example', acquiredVia: 'census', present: true, viaPartner: true },
+    ],
+  });
+
+  return settle().then(function () {
+    el(app, 'contacts-seen-q').value = 'a';
+    el(app, 'contacts-seen-go').fire('click');
+
+    return settle().then(settle).then(function () {
+      const ICON = spirit.core.const.ICON;
+      const before = el(app, 'contacts-seen-list').innerHTML;
+
+      // NOTHING KNOWN YET, so the node's own table is silent and the
+      // relay's word is what shows. White for the one it called absent —
+      // never red, because this node has not checked and a red dot it
+      // cannot stand behind is the lie that looks like information.
+      if (before.indexOf(ICON.GREEN_CIRCLE) !== -1 && before.indexOf(ICON.RED_CIRCLE) === -1) {
+        test.check('before any presence payload, the answering relay\’s word is what shows');
+      } else {
+        test.fail('marks: ' + before);
+      }
+
+      // ── AND THEN THIS NODE'S OWN TABLE ARRIVES ──────────────────────
+      //
+      // It wins wherever it has an opinion, because it is the same fact
+      // `peer.post` uses to decide whether a packet can go — so it is
+      // what predicts whether the bubble below will say anything.
+      app.presence({ 'KEY-HERE': true, 'KEY-AWAY': false }, 'snapshot');
+
+      return settle().then(function () {
+        el(app, 'contacts-seen-go').fire('click');
+        return settle().then(settle).then(function () {
+          const out = el(app, 'contacts-seen-list').innerHTML;
+          const rows = out.split('<tr>');
+
+          const rowFor = function (name) {
+            return rows.filter(function (r) { return r.indexOf('>' + name) !== -1; })[0] || '';
+          };
+
+          if (rowFor('here').indexOf(ICON.GREEN_CIRCLE) !== -1) {
+            test.check('somebody this node can see is green');
+          } else {
+            test.fail('here: ' + rowFor('here'));
+          }
+
+          if (rowFor('away').indexOf(ICON.RED_CIRCLE) !== -1) {
+            test.check('and somebody it can see is absent goes red, which only its own table may say');
+          } else {
+            test.fail('away: ' + rowFor('away'));
+          }
+
+          // THE CASE THE PASSTHROUGH EXISTS FOR. This node's table will
+          // never mention a partner's member, so without the relay's word
+          // this row could only ever be white — and white next to "could
+          // not reach them" says nothing at all about whether the person
+          // is there.
+          if (rowFor('faraway').indexOf(ICON.GREEN_CIRCLE) !== -1) {
+            test.check('and a partner\’s member is green on the answering relay\’s word, which this node could never supply');
+          } else {
+            test.fail('faraway: ' + rowFor('faraway'));
+          }
+
+          // NO FILTER. Every row is still listed — the dot is a fact on
+          // the row, not a reason to drop it.
+          if (/here/.test(out) && /away/.test(out) && /faraway/.test(out)) {
+            test.check('and nobody is hidden for being absent, because adding somebody never needed them awake');
+          } else {
+            test.fail('a row went missing: ' + out);
+          }
+        });
+      });
+    });
+  });
+}
+
 // ── EVERY PERSON FOUND IS ASKED WHO THEY ARE ─────────────────────────
 //
 //   Andy: "when a contact is found, there should be a bubble below with a
@@ -1370,7 +1468,7 @@ listsTheBook()
   .then(aRowOpensThePerson)
   .then(refreshesWhenTheDialogChangedSomething)
   .then(saysNothingWhenNothingHappened)
-  .then(forgetsWithoutUnblocking).then(addsByHandle).then(distinctNamesCarryNoKey).then(aFoundPersonCanBeAsked)
+  .then(forgetsWithoutUnblocking).then(addsByHandle).then(distinctNamesCarryNoKey).then(aFoundPersonCanBeAsked).then(foundPeopleShowWhetherTheyAreHome)
   .then(strangerPolicy)
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)

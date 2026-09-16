@@ -1648,6 +1648,30 @@ function createHub(rootDir) {
               // by asking the relay that answered who it partners with.
               relay: url,
               relayLabel: labels[url] || '',
+              // ── WHETHER THE RELAY THAT ANSWERED SEES THEM CONNECTED ──
+              //
+              //   Andy: "hmm the search might need a filter argument
+              //   (onlineOnly = true)... discuss?"
+              //
+              // The discussion found the field already existed and was
+              // being thrown away here. The relay computes it per row
+              // (relay.js, `present: presentNow.isPresent(...)`) and the
+              // ranker weighs it at a quarter of an exact match — so
+              // presence has been deciding which rows reach the browser
+              // all along, while the browser was told nothing about it.
+              //
+              // NOT THE SAME FACT AS THIS NODE'S OWN PRESENCE TABLE, and
+              // that is why it is worth carrying rather than looked up.
+              // This node knows who is present on the relays IT holds
+              // streams to; a row that came from a PARTNER is somebody it
+              // has no stream to and can never answer for. The relay that
+              // answered can, and this is it saying so.
+              //
+              // A FILTER IS NOT BUILT ON IT YET, deliberately: hiding
+              // absent people would mean a search for somebody whose
+              // laptop is shut answers "nobody found", and acquiring a
+              // key has never required the person to be awake.
+              present: !!p.present,
               via: p.via || null,
               viaPartner: !!p.via,
               acquiredVia: row ? whoBook.acquiredVia(row) : null,
