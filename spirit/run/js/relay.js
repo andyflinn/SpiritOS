@@ -549,6 +549,49 @@ function createRelay(rootDir) {
   // in `who()`: a partnership is a public statement of association
   // between two relays, and there is no reason yet for a stranger to read
   // one. Owner-only until somebody needs otherwise.
+  // ── A PARTNER RELAY, RECOGNISED BY THE KEY IT SIGNS WITH ───────────
+  //
+  // A partner is NOT a member and must never become one. Its relay key is
+  // not a row in `peers`, is not in the census, and cannot claim a label —
+  // so `deviceIdentity` answers null for it, which is correct and is why
+  // this exists separately rather than as a branch inside that.
+  //
+  // THE PINNED KEY IS THE WHOLE PROOF. It was written down at promotion,
+  // by the owner, against a relay they had verified (PARTNERS.md item 2).
+  // Nothing here trusts a URL, a label, or anything the caller says about
+  // itself: the signature verifies against the pinned key or the caller is
+  // a stranger.
+  function partnerByRelayKey(key) {
+    var k = String(key == null ? '' : key).trim();
+    if (!k) return null;
+    var rows = listPeers();
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      if (row && row.partner && row.partner.relayKey === k) return row;
+    }
+    return null;
+  }
+
+  // The identity a partner gets. Deliberately NOT shaped like a member's:
+  // no `peer`, no label, and `partner: true` so every gate downstream has
+  // to have thought about it rather than inheriting a member's standing by
+  // having the same fields.
+  function partnerIdentity(token) {
+    var row = partnerByRelayKey(token);
+    if (!row) return null;
+    return {
+      id: String(token).trim(),
+      publicKey: String(token).trim(),
+      owner: false,
+      partner: true,
+      // Whose relay it is — recorded for the log, never for a decision.
+      // Andy: "i might ban a peer, but still want his relays to help
+      // mine." Partnership is between relays; the owner's row is evidence
+      // of how it was made, not a standing condition.
+      ownerKey: row.publicKey,
+    };
+  }
+
   function partners() {
     return listPeers()
       .filter(function (p) { return p && p.partner; })
@@ -1592,6 +1635,20 @@ function createRelay(rootDir) {
     var body = (asked && asked.body) || null;
     var out = { ok: false, status: 404, error: 'no such peer' };
     var owner = isOwner(who);
+    var fromPartner = !!(who && who.partner);
+
+    // ── WHAT A PARTNER MAY ASK, WHICH IS ONE THING ────────────────────
+    //
+    // Only `search`, and the answer is this relay's own members. Every
+    // other verb falls through to the same `no such peer` a stranger
+    // gets, so the set of things this box will do for a partner is not
+    // enumerable by asking — the same rule that already governs an
+    // ordinary member asking an owner verb.
+    // Dropping `body` rather than returning early, so the refusal leaves
+    // by the same door every other answer does — one send, at the foot of
+    // this function, with `out` still the default `no such peer`. An early
+    // return here would be a second exit that silently answered nothing.
+    if (fromPartner && !(body && body.search)) body = null;
 
     // ── WHO THIS RELAY PARTNERS WITH — ANY MEMBER MAY ASK ──────────────
     //
@@ -1642,6 +1699,20 @@ function createRelay(rootDir) {
     // the shape of this answer does not change when it does.
     if (body && body.search) {
       var q = String((body.search.q) || '').trim().toLowerCase();
+
+      // ── ONE HOP, FULL STOP — ENFORCED, NOT DOCUMENTED ───────────────
+      //
+      // A member asking is answered from this relay's members AND from
+      // its partners. A PARTNER asking is answered from this relay's
+      // members alone, and never asks anyone else.
+      //
+      // That is the whole of no-transitivity, and it is enforceable here
+      // precisely because the two askers are distinguishable: without the
+      // partner gate above, a forwarded search would be indistinguishable
+      // from a member's and would fan out again, which is
+      // `partners x partners x members` and the arithmetic that kills a
+      // 1 GB box (PARTNERS.md).
+      var propagate = !fromPartner;
 
       // ── NO FLOOR. "a" IS A QUESTION AND IT HAS AN ANSWER ───────────
       //
@@ -1899,8 +1970,26 @@ function createRelay(rootDir) {
   }
 
   function routePost(fromToken, toToken, text, sig) {
-    var who = deviceIdentity(fromToken);
+    // A MEMBER, OR A PARTNER RELAY. In that order, because a member is the
+    // ordinary case and a partner key can never also be a member row.
+    //
+    //   Andy: "search must be member gated. on propagated search is
+    //   partner gated."
+    //
+    // Two gates, two authorities. Everything below still verifies the
+    // signature against whichever key was resolved, so admitting a partner
+    // here widens WHO may speak and nothing about what they may say —
+    // answerSelf decides that, per verb.
+    var who = deviceIdentity(fromToken) || partnerIdentity(fromToken);
     if (!who) return { ok: false, status: 403, error: 'no such identity' };
+
+    // A PARTNER MAY ONLY ADDRESS THIS BOX. It is not a member, so it has
+    // no business routing to this relay's members: that would be the
+    // second hop PARTNERS.md forbids, arriving by the side door. One hop
+    // means a partner talks to the RELAY and the relay talks to its own.
+    if (who.partner && !postedToSelf(toToken)) {
+      return { ok: false, status: 403, error: 'no such peer' };
+    }
 
     // AM I THE TARGET? — asked first, and asked alone.
     //
@@ -2404,7 +2493,14 @@ function createRelay(rootDir) {
     // 1. Unknown identity first, before any bucket and before any crypto.
     //    B1's rule: a registry keyed by caller-chosen input grows when a
     //    stranger reaches it, so a stranger must not reach it.
-    var who_ = deviceIdentity(token);
+    //    A PARTNER RELAY MAY HOLD ONE TOO, and must: a reply leaves this
+    //    box through `presentNow.send`, so a partner with no stream can be
+    //    asked a question it is unable to answer into. That is tier two's
+    //    "request by post, reply by stream, in both directions" — the
+    //    partner is structurally in the position of a node here, and every
+    //    line below treats it as one because it resolves to an identity
+    //    with a key and a signature like any other.
+    var who_ = deviceIdentity(token) || partnerIdentity(token);
     if (!who_) return { ok: false, status: 403, error: 'no such identity' };
 
     // 2. The signature, against THAT identity's own row key. Never the
