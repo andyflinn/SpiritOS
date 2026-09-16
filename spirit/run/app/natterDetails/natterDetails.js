@@ -1198,7 +1198,7 @@ function ndReachHtml(partners) {
   });
 
   if (waiting && !gained.length) {
-    return ndPanel('reach', ndIcon.LINK, 'Reachable through partners',
+    return ndPanel('reach', ndIcon.LINK, 'On partner relays',
       '<div class="job-log-empty">asking ' + waiting + ' partner…</div>', 'natter-reach');
   }
 
@@ -1219,14 +1219,28 @@ function ndReachHtml(partners) {
       '</tbody></table>';
   }
 
-  // SEEING, AND SAYING SO. Nothing here can be messaged yet — forwarding
-  // is a later tier — and a list that looked like contacts would promise
-  // delivery this relay cannot perform.
+  // ── SAY WHAT IS TRUE, AND THE HEADING IS PART OF IT ────────────────
+  //
+  // This was headed "Reachable through partners", with a note underneath
+  // retracting it. Andy: "how does my node know that sonny is reachable
+  // through partner?" — it does not, and nothing here could have told it.
+  //
+  // What actually happened: the partnership supplied lab's ADDRESS, and
+  // this node then fetched lab's public census over HTTPS by itself. The
+  // relay vouched for nobody and relayed nothing. These identities are
+  // enrolled somewhere else and cannot be posted to at all until
+  // forwarding exists.
+  //
+  // A heading that claims reachability is a promise the system cannot
+  // keep, and the note below it was already admitting so — which is a
+  // panel arguing with itself.
   return ndPanel('reach', ndIcon.LINK,
-    'Reachable through partners (' + gained.length + ')',
+    'On partner relays (' + gained.length + ')',
     body +
-    '<div class="job-manifest-note">Identities on a partner relay that are not enrolled here. ' +
-      'Visible only — posting to them needs forwarding, which is not built.</div>',
+    '<div class="job-manifest-note">Enrolled on a partner relay, not here. ' +
+      'Your node read that relay&rsquo;s public census itself — the partnership ' +
+      'supplied the address and nothing else. <strong>Not reachable</strong>: ' +
+      'posting needs forwarding, which is not built.</div>',
     'natter-reach');
 }
 
