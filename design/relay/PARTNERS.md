@@ -1063,6 +1063,32 @@ as authority.
    any relay known to reach them will do, which is why one is a floor
    rather than the answer.
 
+   **And it is below the shell.**
+
+   > **Andy:** *"The shell doesn't necessarily have to know about this, but
+   > a contact acquired through partners needs at least one known route
+   > persisted with the peer/contact row."*
+
+   Which settles the layering before anyone writes it. The shell names a
+   **key**; the node reads the row, finds the route and attaches it. So:
+
+   - `api.peerPost(app, toId, body, opts)` does **not** change. No app and
+     no picker ever handles a relay URL, exactly as no app handles a
+     signature. A route is transport, and transport is the node's.
+   - The write happens at **acquisition**, in `peer.acquire`, because that
+     is the only moment the answer is in hand — the partner search reply
+     knew where the peer was and the row is being created anyway. Recover
+     it later and you are hunting for what you were told and discarded.
+   - A contact acquired on **this node's own relay** needs nothing stored:
+     the route is the relay it was seen on, and the node holds that
+     already. The requirement is specifically for partner-acquired rows,
+     which is where the knowledge is both essential and perishable.
+
+   That boundary is the same one drawn 2026-09-16 for app envelopes — the
+   shell composes what it means, the node carries and addresses it, and
+   neither reaches into the other's half. A route in the shell's hands
+   would be the mirror of an app name in the node's.
+
 ### Recommended (Claude), not yet decided
 
 8. Public-by-contract as a **declared category**, so the record can grow
