@@ -844,6 +844,7 @@ function theOwnerGroupFolds() {
       test.fail('the device panel went into the owner group');
     }
 
+
     owner.openGroup();
     const open = owner.body().innerHTML;
     if (/natter-mint/.test(open) && /natter-peers/.test(open) && /natter-policy/.test(open)) {
@@ -864,6 +865,49 @@ function theOwnerGroupFolds() {
         test.fail('a member was offered the owner group');
       }
     });
+  });
+}
+
+// ── REACH IS NOT ADMINISTRATION, SO IT IS NOT IN THE FOLD ────────────
+//
+// "On partner relays" shipped INSIDE "Managing my relay", which made the
+// whole of that step invisible to exactly the people it was built for:
+//
+//   Andy: "'On Partner relays' is inside the 'Managing my Relay' block so
+//   non-owning members don't see it because of that."
+//
+// The relay answers `{partners:true}` to any member and the panel renders
+// for anyone bound here — and then the fold hid the result from everybody
+// except the one person who already had it in `relayStatus`.
+//
+// Asserted with the group SHUT, because that is the state the mistake
+// lives in: opened, it looked fine.
+function reachIsNotInTheOwnerFold() {
+  test.subHeading('Reach is drawn outside the owner fold');
+
+  const app = mountApp({
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, claimed: true }],
+    relayStatus: {
+      [OWNED]: {
+        key: 'RELAYKEY',
+        partners: [{ url: 'https://other.example', relayKey: 'THEIRKEY', since: '2026-09-16' }],
+      },
+    },
+  });
+
+  return settle().then(function () {
+    const shut = app.body().innerHTML;
+    if (/Managing my relay/.test(shut) && !/natter-peers/.test(shut)) {
+      test.check('the owner fold is shut, so its own panels are not drawn');
+    } else {
+      test.fail('fixture is not in the state this checks — group open, or no group');
+    }
+
+    if (/natter-reach/.test(shut)) {
+      test.check('and reach is drawn anyway — what you can see is not what you run');
+    } else {
+      test.fail('the reach panel is only drawn when the owner group is open');
+    }
   });
 }
 
@@ -1984,6 +2028,7 @@ ownedMailbox()
   .then(thePartnerPanelChecksBeforeItAdds)
   .then(aRefusedCheckPromotesNobody)
   .then(theOwnerGroupFolds)
+  .then(reachIsNotInTheOwnerFold)
   .then(theEnrolmentListDatesEachRow)
   .then(anOwnerEventRefreshesTheScreen)
   .then(theClaimFormReadsInTheOrderYouAreTold)

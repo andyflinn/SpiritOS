@@ -1676,13 +1676,27 @@ function ndRender() {
     // draws. It is about attaching a device to THIS NODE — a member with
     // no relay of their own has one too — so it stays outside, among the
     // things you ARE rather than the things you RUN.
+    // ── REACH IS NOT ADMINISTRATION ──────────────────────────────────
+    //
+    //   Andy: "'On Partner relays' is inside the 'Managing my Relay'
+    //   block so non-owning members don't see it because of that."
+    //
+    // It was, and that made the whole point of the step invisible to the
+    // people it was for. The relay answers `{partners:true}` to any
+    // member now, and the panel renders for anyone bound here — and then
+    // the fold above it hid the result from everybody but the owner.
+    //
+    // The same line the device panel draws, two comments up: this is
+    // about who you can SEE from here, not about running the box. A
+    // member with no relay of their own has reach; they have nothing to
+    // manage.
+    ndReachPanel() +
     ndOwnerGroupHtml(
       ndRelayLabelHtml() +
       ndMintHtml() +
       ndInvitesHtml() +
       ndPeersHtml() +
       ndPartnersHtml() +
-      ndReachPanel() +
       ndAutoAddHtml()
     ) +
     ndDeviceHtml();
