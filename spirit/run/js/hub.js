@@ -1359,6 +1359,51 @@ function createHub(rootDir) {
   // design: you verify OWNERSHIP against the row marked owner, and you
   // capture the RELAY's own key to pin for a later forward hop. On
   // spirit-3 those are …fXD+0c= and …bCAsCR4=.
+  // ── WHO IS OVER THERE ────────────────────────────────────────────────
+  //
+  //   Andy: "we want to prove that with a partnership more peer id's can
+  //   be visible for every node bound to either partner."
+  //
+  // The census of a relay this node is NOT on. Public, unauthenticated,
+  // the same page `handlePartnerCheck` above already reads — this just
+  // hands back the roster instead of a verdict about one key.
+  //
+  // WHY THE NODE AND NOT THE RELAY. Item 8: the node fetches, the relay
+  // stores the conclusion. A relay caching its partners' members and
+  // answering searches is tier three and needs a cache, a lifetime and a
+  // budget. Reading a public page needs none of those, and it is enough
+  // to SEE — which is the whole of what this step claims.
+  //
+  // NOT A PROXY. It fetches one fixed path, returns only what a census
+  // carries, and `assertRelayUrl` applies as everywhere else. A caller
+  // that wants an arbitrary url has `net.fetch` and its own refusals.
+  function handleRoster(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
+      if (!url) { fail(res, 400, 'url required'); return; }
+
+      relayRequest(url, 'GET', '/api/relay/who', null)
+        .then(function (r) {
+          var parsed = null;
+          try { parsed = JSON.parse(r.text); }
+          catch (e) { parsed = null; }
+          if (r.status !== 200 || !parsed) {
+            fail(res, 502, 'that relay did not answer a census (' + r.status + ')');
+            return;
+          }
+          var rows = Array.isArray(parsed) ? parsed : (parsed.peers || []);
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            url: url,
+            relayLabel: parsed.relayLabel || '',
+            relayPublicKey: parsed.relayPublicKey || '',
+            peers: rows,
+          }));
+        })
+        .catch(function (err) { fail(res, 502, String(err.message || err)); });
+    }).catch(function () { fail(res, 400, 'bad body'); });
+  }
+
   function handlePartnerCheck(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       var peerKey = String((body && body.publicKey) || '').trim();
@@ -1483,6 +1528,7 @@ function createHub(rootDir) {
     handlePost: handlePost,
     handleStatus: handleStatus,
     handlePartnerCheck: handlePartnerCheck,
+    handleRoster: handleRoster,
     handleWho: handleWho,
     handleHandle: handleHandle,
     handleContact: handleContact,

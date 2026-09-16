@@ -406,6 +406,10 @@ freePort()
       // either way.
       ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
       ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
+      // Reads a census from a url this node is not on. 127.0.0.1:1 for the
+      // reason partnerCheck below uses it: refused by the kernel, no DNS,
+      // and the handler must ANSWER rather than throw.
+      ['POST', '/api/spirit', { verb: 'relay.roster', url: 'https://127.0.0.1:1' }],
       // ── THIS ONE REACHES THE NETWORK, AND SAID IT DID NOT ───────────
       //
       // The note above says net.fetch "is the only one that would reach
@@ -489,6 +493,43 @@ freePort()
       } else {
         test.fail(unreached.join('; ') + ' — a verb nobody claimed is refused BY THE DOOR, ' +
           'which is an answer. Without this, deleting a claim leaves the check above green.');
+      }
+
+      // ── AND THE LIST COVERS EVERY VERB, WHICH IS THE OTHER DIRECTION ──
+      //
+      // The check above reads "every verb NAMED HERE reached a handler".
+      // One direction. A verb that is claimed and never named is invisible
+      // to this suite — it can throw on first contact for as long as
+      // nobody posts to it, which is exactly the 2026-09-13 death this
+      // block exists to prevent, wearing the one disguise the block did
+      // not check for.
+      //
+      // Found by adding `relay.roster` and watching a full green run.
+      //
+      // Parsed from the claim blocks rather than asked of a running
+      // server, because there is no verb that lists verbs — and inventing
+      // one to satisfy a test would put a door in the register to check
+      // the register.
+      const serverSrc = fs.readFileSync(path.join(nodeRoot, 'js', 'server.js'), 'utf8');
+      const claimed = [];
+      const claimRe = /^\s*'([a-z]+\.[a-zA-Z]+)':\s*function/gm;
+      let m;
+      while ((m = claimRe.exec(serverSrc)) !== null) claimed.push(m[1]);
+
+      const named = LOOPBACK_CALLS
+        .map(function (row) { return (row[2] && row[2].verb) || ''; })
+        .filter(Boolean);
+      const unnamed = claimed.filter(function (v) {
+        return named.indexOf(v) === -1 && v !== 'net.fetch';
+      });
+
+      if (claimed.length < 10) {
+        test.fail('only ' + claimed.length + ' verbs parsed out of server.js — the claim shape moved');
+      } else if (unnamed.length === 0) {
+        test.check('and the sweep names every verb the table claims (' + claimed.length + ', net.fetch aside)');
+      } else {
+        test.fail('claimed but never posted to: ' + unnamed.join(', ') +
+          ' — add them above, or this suite is green about code it never ran');
       }
       // ── THE DOORS THAT SHARE askRelay MUST BE HANDED THE SAME DEPS ──
       //

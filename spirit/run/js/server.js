@@ -1698,6 +1698,9 @@ if (!relayMode) {
     // Answered off a PUBLIC census, so it grants nothing — the promotion
     // itself is an owner verb posted to the relay like any other.
     'relay.partnerCheck': function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody); },
+    // The public census of a relay this node is not on — what a
+    // partnership makes visible. Reads one fixed path; see hub.handleRoster.
+    'relay.roster': function (rq, rs) { hub.handleRoster(rq, rs, readJsonBody); },
     'relay.status': function (rq, rs) {
       hub.handleStatus(rq, rs, readJsonBody, { presence: presence });
     },

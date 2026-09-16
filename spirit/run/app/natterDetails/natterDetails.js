@@ -1135,6 +1135,108 @@ function ndPartnerPickerHtml(existing) {
     '</div>';
 }
 
+// ── WHAT THE PARTNERSHIP ACTUALLY ADDS ───────────────────────────────
+//
+//   Andy: "we want to prove that with a partnership more peer id's can be
+//   visible for every node bound to either partner." / "seeing only is
+//   the goal."
+//
+// Filled asynchronously — one `relay.roster` per partner, each a public
+// census read — and kept keyed by partner url so a repaint does not
+// refetch. Empty until the first answer lands, which is why the panel
+// says nothing rather than "none" before then: "no answer yet" and "none"
+// are different facts and only one of them is worth reporting.
+var ndReach = Object.create(null);   // partner url -> { peers, relayLabel }
+
+function ndLoadReach(partners) {
+  partners.forEach(function (p) {
+    if (!p || !p.url || ndReach[p.url]) return;
+    ndReach[p.url] = { peers: [], relayLabel: '', pending: true };
+    ndAsk('relay.roster', { url: p.url }).then(function (data) {
+      ndReach[p.url] = {
+        peers: (data && data.peers) || [],
+        relayLabel: (data && data.relayLabel) || '',
+        pending: false,
+        failed: !data,
+      };
+      ndRender();
+    });
+  });
+}
+
+function ndReachHtml(partners) {
+  if (!partners.length) return '';
+
+  // WHO THIS RELAY ALREADY HOLDS. The point of the panel is what is
+  // GAINED, so anybody already enrolled here is not news — and with two
+  // relays sharing an owner, most of the far roster is exactly that.
+  var here = Object.create(null);
+  ((((ndBadge || {}).census) || {}).roster || []).forEach(function (p) {
+    if (p && p.publicKey) here[p.publicKey] = true;
+  });
+
+  var gained = [];
+  var waiting = 0;
+  partners.forEach(function (p) {
+    var got = ndReach[p.url];
+    if (!got || got.pending) { waiting += 1; return; }
+    got.peers.forEach(function (row) {
+      if (!row || !row.publicKey || here[row.publicKey]) return;
+      // Same key on two partners is one identity, not two.
+      if (gained.some(function (g) { return g.publicKey === row.publicKey; })) return;
+      gained.push({
+        publicKey: row.publicKey,
+        publicLabel: row.publicLabel || '(no label)',
+        via: got.relayLabel || p.url,
+      });
+    });
+  });
+
+  if (waiting && !gained.length) {
+    return ndPanel('reach', ndIcon.LINK, 'Reachable through partners',
+      '<div class="job-log-empty">asking ' + waiting + ' partner…</div>', 'natter-reach');
+  }
+
+  var body;
+  if (!gained.length) {
+    body = '<div class="job-log-empty">partners hold nobody this relay does not already have</div>';
+  } else {
+    body = '<table class="job-table"><thead><tr>' +
+      '<th>Label</th><th>Key</th><th>On</th>' +
+      '</tr></thead><tbody>' +
+      gained.map(function (g) {
+        return '<tr>' +
+          '<td>' + ndEscapeHtml(g.publicLabel) + '</td>' +
+          '<td class="nd-peer-tail">…' + ndEscapeHtml(g.publicKey.slice(-8)) + '</td>' +
+          '<td>' + ndEscapeHtml(g.via) + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table>';
+  }
+
+  // SEEING, AND SAYING SO. Nothing here can be messaged yet — forwarding
+  // is a later tier — and a list that looked like contacts would promise
+  // delivery this relay cannot perform.
+  return ndPanel('reach', ndIcon.LINK,
+    'Reachable through partners (' + gained.length + ')',
+    body +
+    '<div class="job-manifest-note">Identities on a partner relay that are not enrolled here. ' +
+      'Visible only — posting to them needs forwarding, which is not built.</div>',
+    'natter-reach');
+}
+
+// Reads the same partner list the table above renders, kicks off the
+// census fetches, and draws what came back. Split from ndReachHtml so the
+// fetching happens once per render pass rather than inside a function that
+// also builds markup.
+function ndReachPanel() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  var partners = (((ndBadge.report) || {}).partners) || [];
+  if (!partners.length) return '';
+  ndLoadReach(partners);
+  return ndReachHtml(partners);
+}
+
 function ndPartnersHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   var report = ndBadge.report;
@@ -1521,6 +1623,7 @@ function ndRender() {
       ndInvitesHtml() +
       ndPeersHtml() +
       ndPartnersHtml() +
+      ndReachPanel() +
       ndAutoAddHtml()
     ) +
     ndDeviceHtml();
