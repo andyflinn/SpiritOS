@@ -70,6 +70,7 @@ function parseChunk(text) {
   // event with an empty name.
   var event = 'message';
   var data = [];
+  var retry = null;
   text.split('\n').forEach(function (line) {
     if (!line || line.charAt(0) === ':') return;
     var colon = line.indexOf(':');
@@ -77,12 +78,34 @@ function parseChunk(text) {
     var value = colon === -1 ? '' : line.slice(colon + 1).replace(/^ /, '');
     if (field === 'event') event = value;
     else if (field === 'data') data.push(value);
+    // `retry:` IS IN THE SPEC and was being dropped on the floor. It is
+    // the server saying when to come back, in milliseconds.
+    //
+    //   Andy: "can a relay that knows it's shutting down send a message
+    //   down the SSE connections to prepare its counterparts to
+    //   re-connect?"
+    //
+    // It can, and it needs no message of its own — this is the field for
+    // exactly that, which is why honouring it adds no relay concept to a
+    // file that must not have one.
+    //
+    // Bounded at an hour: the value arrives from whatever is on the other
+    // end of the socket, and a client that accepted `retry: 999999999`
+    // would have been told to go away for eleven days by anything that
+    // could get a frame in front of it.
+    else if (field === 'retry') {
+      var ms = parseInt(value, 10);
+      if (ms >= 0 && ms < 3600000) retry = ms;
+    }
   });
-  if (!data.length) return null;
+  // A frame carrying ONLY `retry:` is valid and carries no event. It must
+  // not answer null — that means "nothing here" and the caller drops it —
+  // and it must not reach onEvent, because there is no event.
+  if (!data.length) return retry === null ? null : { retry: retry };
   var parsed = null;
   try { parsed = JSON.parse(data.join('\n')); }
   catch (e) { parsed = data.join('\n'); }
-  return { event: event, data: parsed };
+  return { event: event, data: parsed, retry: retry };
 }
 
 // opts:
@@ -241,6 +264,17 @@ function connect(opts) {
         parts.forEach(function (raw) {
           var msg = parseChunk(raw);
           if (!msg) return;
+
+          // THE SERVER'S OWN ANSWER WINS, and it is set AFTER the
+          // byte-reset above, deliberately: bytes just put the backoff
+          // back to its floor, and a box that said "three seconds"
+          // because it is about to restart knows better than the floor
+          // does. It holds until the next byte resets it — which is the
+          // next thing that arrives if the box came back.
+          if (typeof msg.retry === 'number') retryMs = msg.retry;
+
+          // A frame that carried only `retry:` is not an event.
+          if (msg.data === undefined) return;
           say(opts.onEvent, msg);
         });
       }

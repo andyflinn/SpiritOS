@@ -316,6 +316,57 @@ function run() {
     test.fail('the wire carried more than presence');
   }
 
+  test.subHeading('A relay that knows it is going says when to come back');
+
+  {
+    //   Andy: "can a relay that knows its shutting down (lab.andyflinn.com
+    //   reboot by your request) send a message down the SSE connections to
+    //   prepare its counterparts to re-connect?"
+    //
+    // It can, and it needs no message of its own: `retry:` is SSE's own
+    // field for when to reconnect, so nothing new crosses the wire and no
+    // client has to be taught a word. sseClient honours it, asserted in
+    // presenceNode.js.
+    //
+    // A FRESH REGISTRY, deliberately: the purity check above asserts this
+    // suite put nothing but presence on the wire, and a hint written into
+    // those same sinks would be arguing with it.
+    const bye = presence.createRegistry();
+    const one = fakeSink();
+    const two = fakeSink();
+    bye.connect('one', one);
+    bye.connect('two', two);
+
+    const told = bye.goingAway(3000);
+    if (told === 2) {
+      test.check('every held stream is told, and the count says how many heard it');
+    } else {
+      test.fail('told ' + told + ' of 2');
+    }
+
+    const hint = one.lines.join('');
+    if (/retry: 3000/.test(hint) && hint.indexOf('event:') === -1) {
+      test.check('as a bare `retry:` frame — no event, so nothing has to understand it');
+    } else {
+      test.fail('wrote: ' + JSON.stringify(hint));
+    }
+
+    // CLOSED HERE, so the FIN is the relay's decision and lands BEHIND the
+    // hint. Left to the process exiting, the kernel would reap the socket
+    // and could race the write.
+    if (one.closed && two.closed) {
+      test.check('and the sockets close deliberately, after the hint rather than with it');
+    } else {
+      test.fail('sinks left open: ' + one.closed + ', ' + two.closed);
+    }
+
+    if (bye.present().length === 0) {
+      test.check('and it believes nobody is there afterwards');
+    } else {
+      test.fail('still present: ' + bye.present().join(', '));
+    }
+  }
+
   test.reportSuccessFailureCount();
 }
 

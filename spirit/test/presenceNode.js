@@ -294,6 +294,63 @@ async function run() {
     test.fail('idle window is ' + sseClient.IDLE_MS + 'ms against a 20s heartbeat');
   }
 
+  // ── AND IT TAKES THE SERVER'S WORD FOR WHEN TO COME BACK ────────────
+  //
+  //   Andy: "can a relay that knows its shutting down send a message down
+  //   the SSE connections to prepare its counterparts to re-connect?"
+  //
+  // `retry:` is SSE's own field for it and was being dropped on the floor
+  // by the parser. Honouring it is what turns a planned restart from a
+  // hundred nodes reconnecting into a booting box, being refused, and
+  // backing off further — into a hundred nodes arriving once, late enough
+  // to be answered.
+  {
+    const waited = [];
+    let round = 0;
+    const told = sseClient.connect({
+      url: 'http://relay/api/relay/stream',
+      retryMs: 100,
+      randomImpl: function () { return 1; },
+      idleTimeoutImpl: function () { return 0; },
+      idleClearTimeoutImpl: function () {},
+      setTimeoutImpl: function (fn, ms) { waited.push(ms); return setTimeout(fn, 0); },
+      clearTimeoutImpl: clearTimeout,
+      fetchImpl: function () {
+        round += 1;
+        const frame = round === 1 ? 'retry: 3000\n\n' : ':\n\n';
+        return Promise.resolve({
+          ok: true,
+          body: { getReader: function () {
+            let served = false;
+            return { read: function () {
+              if (served) return Promise.resolve({ done: true });
+              served = true;
+              return Promise.resolve({ done: false, value: new TextEncoder().encode(frame) });
+            } };
+          } },
+        });
+      },
+    });
+    await new Promise(function (r) { setTimeout(r, 40); });
+    told.close();
+
+    // The bytes reset the backoff to its 100ms floor; the `retry:` is read
+    // after that and overrides it. A later connection carrying only a
+    // heartbeat goes back to the floor, because the hint was about one
+    // restart and not a new policy.
+    if (waited[0] === 3000) {
+      test.check('a relay saying "back in 3s" is believed over the floor: ' + waited[0] + 'ms');
+    } else {
+      test.fail('ignored the hint: ' + waited.slice(0, 3).join(', '));
+    }
+
+    if (waited[1] === 100) {
+      test.check('and the next stream, which said nothing, returns to the floor');
+    } else {
+      test.fail('the hint outlived the restart: ' + waited.slice(0, 3).join(', '));
+    }
+  }
+
   // And the ceiling is short enough to catch a restart rather than a death.
   if (sseClient.MAX_RETRY_MS <= 10000) {
     test.check('the longest a node waits to find a relay that came back is ' +

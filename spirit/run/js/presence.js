@@ -122,6 +122,45 @@ function createRegistry(opts) {
     return sent;
   }
 
+  // ── GOING AWAY, ON PURPOSE ─────────────────────────────────────────
+  //
+  //   Andy: "can a relay that knows it's shutting down send a message down
+  //   the SSE connections to prepare its counterparts to re-connect?"
+  //
+  // It can, and `retry:` is the field for it — part of SSE, so nothing new
+  // crosses the wire and no client needs to be taught a word.
+  //
+  // WHAT IT BUYS, since a clean exit already closes the sockets and the
+  // clients already come back. Pacing. A relay with a hundred members that
+  // simply dies gets a hundred reconnects about a second later, jittered
+  // across half a second — all of them landing while the box is still
+  // BOOTING, all refused, all backing off further. `bash/update` restarts
+  // a relay every time it takes a tag, so this is a routine Tuesday.
+  // Telling them to come back in three seconds means the first attempt
+  // arrives when there is something to attach to.
+  //
+  // IT CANNOT HELP AN UNPLANNED DEATH — a box that is killed says nothing.
+  // That case is the idle watchdog's, and the two are complements: this
+  // makes a restart invisible, the watchdog makes a disappearance finite.
+  function goingAway(backInMs) {
+    var ms = Math.max(0, Math.min(3600000, Math.round(backInMs || 0)));
+    var told = 0;
+    Object.keys(sinks).forEach(function (id) {
+      var sink = sinks[id];
+      if (!sink || typeof sink.write !== 'function') return;
+      try {
+        sink.write('retry: ' + ms + '\n\n');
+        told += 1;
+      } catch (e) { /* already gone, and nothing to do about it */ }
+    });
+    // Closed here rather than left to the process exiting, so the FIN is
+    // this relay's decision and arrives BEHIND the hint. A socket the
+    // kernel reaps on exit would race it.
+    Object.keys(sinks).forEach(function (id) { close(sinks[id]); });
+    sinks = Object.create(null);
+    return told;
+  }
+
   function reset() {
     Object.keys(sinks).forEach(function (id) { close(sinks[id]); });
     sinks = Object.create(null);
@@ -135,6 +174,7 @@ function createRegistry(opts) {
     present: present,
     send: send,
     broadcast: broadcast,
+    goingAway: goingAway,
     reset: reset,
     perMin: perMin,
   };

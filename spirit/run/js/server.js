@@ -1783,6 +1783,50 @@ if (!relayMode) {
   }, { wire: true });
 }
 
+// ── A RELAY THAT KNOWS IT IS GOING SAYS SO ───────────────────────────
+//
+//   Andy: "can a relay that knows its shutting down (lab.andyflinn.com
+//   reboot by your request) send a message down the SSE connections to
+//   prepare its counterparts to re-connect?"
+//
+// THERE WAS NO SHUTDOWN HANDLER AT ALL. systemd sends SIGTERM, node's
+// default terminates the process, and the *kernel* closes the sockets. It
+// works — clients see the stream end and come back — but nothing about it
+// was this relay's decision, and it had no moment in which to say
+// anything.
+//
+// It has one now, and spends it on `retry:`, which is SSE's own field for
+// when to come back. So a hundred members do not all reconnect one second
+// later into a box that is still booting, get refused, and back off
+// further than they needed to. `bash/update` restarts a relay every time
+// it takes a tag: this is a routine Tuesday, not an outage.
+//
+// THREE SECONDS is a guess at a node boot, and a cheap one to be wrong
+// about: too low and a member is refused once and retries on its own
+// backoff, which is where it would have been anyway.
+//
+// NOT REGISTERED IN PERSONAL MODE. A node has no members to tell, and a
+// handler that exists only to do nothing is a handler somebody later
+// mistakes for a working one.
+if (relayMode) {
+  let leaving = false;
+  const goodbye = function (signal) {
+    if (leaving) return;
+    leaving = true;
+    let told = 0;
+    try { told = relay.presence.goingAway(3000); }
+    catch (e) { /* nothing to tell, or already gone */ }
+    console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
+    // The sockets are closed by goingAway, so what is left is this
+    // process. Exit rather than waiting for the default handler, which
+    // would race the writes we just made.
+    try { server.close(); } catch (e) { /* not listening */ }
+    process.exit(0);
+  };
+  process.on('SIGTERM', function () { goodbye('SIGTERM'); });
+  process.on('SIGINT', function () { goodbye('SIGINT'); });
+}
+
 server.listen(port, BIND_HOST, () => {
   if (relayMode) {
     console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
