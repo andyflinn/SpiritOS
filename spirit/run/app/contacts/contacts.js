@@ -296,7 +296,7 @@ function contactsRefresh() {
 function contactsSearchSeen() {
   const input = document.getElementById('contacts-seen-q');
   const q = ((input && input.value) || '').trim();
-  if (q.length < 2) { contactsSeenNote('type at least two characters'); return; }
+  if (!q) { contactsSeenNote('type part of a name, or * for anyone'); return; }
   contactsSeenNote('searching...');
   return contactsAsk('peer.search', { q: q })
     .then(function (data) {

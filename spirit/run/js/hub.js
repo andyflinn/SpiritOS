@@ -1503,7 +1503,9 @@ function createHub(rootDir) {
     var router = deps && deps.router;
     readJsonBody(req).then(function (body) {
       var q = String((body && body.q) || '').trim();
-      if (q.length < 2) { fail(res, 400, 'search needs at least two characters'); return; }
+      // No floor: see relay.js. A short query is a real question with a
+      // ranked, capped answer, and refusing it here would put the crutch
+      // back one layer out.
       if (!router) { fail(res, 503, 'this node is not connected to a relay'); return; }
 
       var urls = ownerBadge.configuredUrls(rootDir);
@@ -1523,40 +1525,55 @@ function createHub(rootDir) {
       // returned nothing for a name that is plainly on it.
       var silent = [];
 
+      // ── THE NODE ALREADY KNOWS THE KEY ─────────────────────────────
+      //
+      //   Andy: "sticking to protocol and its interface calls will save
+      //   us in the long run... the protocol has cut down response time
+      //   for device-login from 30 seconds to a fraction of a second."
+      //
+      // This fetched the WHOLE census over plain HTTPS to read one field
+      // off it — relayPublicKey — so that it could then send the search
+      // as a proper packet. A 150 KB download on the path whose entire
+      // purpose is to stop downloading censuses.
+      //
+      // relayKeys.js has held that key since first contact; pinning it is
+      // what makes a relay identifiable at all. And the LABEL comes off
+      // relays.json, which is what this person called it rather than what
+      // the box calls itself — better for a result row either way.
+      var labels = Object.create(null);
+      ownerBadge.loadRelays(rootDir).forEach(function (r) {
+        if (r && r.url) labels[r.url] = r.label || '';
+      });
+
       return Promise.all(urls.map(function (url) {
-        return relayRequest(url, 'GET', '/api/relay/who', null)
-          .then(function (r) {
-            var parsed = null;
-            try { parsed = JSON.parse(r.text); } catch (e) { parsed = null; }
-            var relayKey = (parsed && parsed.relayPublicKey) || '';
-            if (!relayKey) return null;
-            var wrapped = outgoingText({ app: 'relay', body: { search: { q: q, limit: 25 } } });
-            if (!wrapped.ok) return null;
-            return sendPacket(router, url, relayKey, wrapped.text).then(function (answer) {
-              var said = null;
-              try { said = JSON.parse((answer && answer.text) || ''); }
-              catch (e) { said = null; }
-              var out = (said && said.body) || {};
-              if (!out || out.ok !== true) { silent.push(url); return; }
-              if (out.more) truncated = true;
-              (out.matches || []).forEach(function (p) {
-                if (!p || !p.publicKey || p.publicKey === myKey) return;
-                if (found[p.publicKey]) return;
-                var row = whoBook.byPublicKey(rootDir, p.publicKey);
-                found[p.publicKey] = {
-                  publicKey: p.publicKey,
-                  publicLabel: p.publicLabel || '',
-                  tail: keyTail(p.publicKey),
-                  relay: url,
-                  relayLabel: (parsed && parsed.relayLabel) || '',
-                  // So the app can say "already a contact" rather than
-                  // offering the same person a second time.
-                  acquiredVia: row ? whoBook.acquiredVia(row) : null,
-                };
-              });
-            });
-          })
-          .catch(function () { return null; });
+        var relayKey = relayKeys.pinned(rootDir, url);
+        // No pin means this node has never spoken to it. Nothing to do
+        // but say so — fetching a key from the box you are asking about
+        // is how you get answered by whoever is standing there.
+        if (!relayKey) { silent.push(url); return Promise.resolve(null); }
+        var wrapped = outgoingText({ app: 'relay', body: { search: { q: q } } });
+        if (!wrapped.ok) { silent.push(url); return Promise.resolve(null); }
+        return sendPacket(router, url, relayKey, wrapped.text).then(function (answer) {
+          var said = null;
+          try { said = JSON.parse((answer && answer.text) || ''); }
+          catch (e) { said = null; }
+          var out = (said && said.body) || {};
+          if (!out || out.ok !== true) { silent.push(url); return; }
+          if (out.more) truncated = true;
+          (out.matches || []).forEach(function (p) {
+            if (!p || !p.publicKey || p.publicKey === myKey) return;
+            if (found[p.publicKey]) return;
+            var row = whoBook.byPublicKey(rootDir, p.publicKey);
+            found[p.publicKey] = {
+              publicKey: p.publicKey,
+              publicLabel: p.publicLabel || '',
+              tail: keyTail(p.publicKey),
+              relay: url,
+              relayLabel: labels[url] || '',
+              acquiredVia: row ? whoBook.acquiredVia(row) : null,
+            };
+          });
+        }).catch(function () { silent.push(url); });
       })).then(function () {
         var list = Object.keys(found).map(function (k) { return found[k]; });
         list.sort(function (a, b) {

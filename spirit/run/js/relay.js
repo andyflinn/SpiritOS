@@ -388,6 +388,58 @@ function createRelay(rootDir) {
   // A box that ships without one must not invent a caption for itself —
   // the list is the reader's to name until the owner says otherwise,
   // which is what natterDetails' own relayLabel has always done locally.
+// ── WILDCARDS, WITHOUT HANDING A STRANGER A REGEX ────────────────────
+//
+//   Andy: "the search must be supporting wildcards etc."
+//
+// `*` any run, `?` one character. NOT compiled to a RegExp: a pattern a
+// stranger supplies, turned into a regex, is catastrophic backtracking
+// waiting to be typed — `*a*a*a*a*b` against a long label is the classic,
+// and it would be a public relay burning CPU on request.
+//
+// So the matcher is the two-pointer one, which backtracks only to the
+// last `*` and is O(label × pattern) with no pathological case. Labels
+// cap at 256 bytes (labelRule), so the worst case is small and knowable
+// rather than merely unlikely.
+function globMatches(text, pattern) {
+  var t = 0;
+  var p = 0;
+  var star = -1;
+  var mark = 0;
+  while (t < text.length) {
+    if (p < pattern.length && (pattern[p] === '?' || pattern[p] === text[t])) {
+      t += 1; p += 1;
+    } else if (p < pattern.length && pattern[p] === '*') {
+      star = p; mark = t; p += 1;
+    } else if (star !== -1) {
+      p = star + 1; mark += 1; t = mark;
+    } else {
+      return false;
+    }
+  }
+  while (p < pattern.length && pattern[p] === '*') p += 1;
+  return p === pattern.length;
+}
+
+// How good a match is, lowest is best. A plain query still means
+// "anywhere", which is what somebody typing three letters expects — the
+// wildcards are for when they want to say something more precise.
+//
+//   0  exact
+//   1  starts with
+//   2  found somewhere
+//  -1  no
+function matchRank(label, query) {
+  if (query.indexOf('*') !== -1 || query.indexOf('?') !== -1) {
+    if (!globMatches(label, query)) return -1;
+    // An anchored pattern is a stronger statement than a floating one.
+    return query[0] === '*' ? 2 : 1;
+  }
+  if (label === query) return 0;
+  if (label.indexOf(query) === 0) return 1;
+  return label.indexOf(query) !== -1 ? 2 : -1;
+}
+
   function relayLabel() {
     var id = auth.loadIdentity(rootDir);
     var name = String((id && id.name) || '').trim();
@@ -1619,32 +1671,100 @@ function createRelay(rootDir) {
     // the shape of this answer does not change when it does.
     if (body && body.search) {
       var q = String((body.search.q) || '').trim().toLowerCase();
-      var cap = Math.min(Math.max(Number(body.search.limit) || 25, 1), 100);
-      if (q.length < 2) {
-        out = { ok: false, status: 400, error: 'search needs at least two characters' };
-      } else {
-        var hits = listPeers().filter(function (p) {
-          return p && p.publicKey &&
-            String(labelOf(p) || '').toLowerCase().indexOf(q) !== -1;
+
+      // ── NO FLOOR. "a" IS A QUESTION AND IT HAS AN ANSWER ───────────
+      //
+      //   Andy: "Searches for 'a' must be successful, even if there’s a
+      //   million potential peers..."
+      //
+      // There was a two-character floor here and it was a crutch for not
+      // having ranking. Refusing a short query refuses a legitimate
+      // question — and with matches ordered by quality and capped by
+      // what a packet holds, "a" answers perfectly well: the exact `a`
+      // first if somebody claimed it, then everyone starting with it,
+      // present before absent, as many as fit, and `more`.
+      //
+      // An EMPTY query is not an error either. It matches everyone, so
+      // ordering puts the present first and the cap takes the top of
+      // that — which is "who is around", answered by the same verb
+      // rather than by a second one.
+      {
+        var scored = [];
+        listPeers().forEach(function (p) {
+          if (!p || !p.publicKey) return;
+          var label = String(labelOf(p) || '').toLowerCase();
+          var rank = matchRank(label, q);
+          if (rank < 0) return;
+          scored.push({ peer: p, label: label, rank: rank });
         });
+
+        // ── HIGHER QUALITY FIRST ───────────────────────────────────
+        //
+        //   Andy: "when the results are assembled the higher quality
+        //   matches must get priority."
+        //
+        // Exact beats prefix beats anywhere, which is what a person
+        // means by a better match. Then PRESENT beats absent — and that
+        // is not a nicety: a relay stores nothing, so an absent peer
+        // cannot be posted to at all. Liveness is not a hint about who
+        // is likelier to reply, it is the difference between a row you
+        // can act on and a row you can only file.
+        //
+        // Presence is included in the answer too. It stays off the
+        // public census — but a search reaches this line only from a
+        // member, over a signed post, which is the authenticated
+        // channel that was always allowed to carry it.
+        scored.sort(function (a, b) {
+          if (a.rank !== b.rank) return a.rank - b.rank;
+          var ap = presentNow.isPresent(a.peer.publicKey) ? 0 : 1;
+          var bp = presentNow.isPresent(b.peer.publicKey) ? 0 : 1;
+          if (ap !== bp) return ap - bp;
+          return a.label.localeCompare(b.label);
+        });
+
+        // ── CAPPED BY WHAT A PACKET HOLDS, NOT BY A ROW COUNT ──────
+        //
+        //   Andy: "the results must be capped by MAX_PACKET_SIZE."
+        //
+        // A count is a guess about row size: twenty-five long labels
+        // overflow where a hundred short ones would not. The reply is a
+        // packet, so the honest cap is the packet — js/limits.js, the
+        // same number the sender pre-checks and this relay enforces.
+        //
+        // Headroom for the envelope and the fields around `matches`,
+        // measured the same way the wire overhead was: reserve rather
+        // than hope.
+        var budget = limits.PAYLOAD_MAX - limits.WIRE_HEADROOM;
+        var matches = [];
+        var used = 0;
+        var more = false;
+        scored.forEach(function (hit) {
+          if (more) return;
+          var row = {
+            publicKey: hit.peer.publicKey,
+            publicLabel: labelOf(hit.peer),
+            claimedAt: hit.peer.claimedAt,
+            owner: !!hit.peer.owner,
+            present: presentNow.isPresent(hit.peer.publicKey),
+          };
+          var cost = JSON.stringify(row).length + 1;
+          if (used + cost > budget) { more = true; return; }
+          used += cost;
+          matches.push(row);
+        });
+
         out = {
           ok: true,
           status: 200,
-          // `more` rather than a page: a caller who sees it types another
-          // letter, which is cheaper for everybody than a cursor.
-          more: hits.length > cap,
-          matches: hits.slice(0, cap).map(function (p) {
-            return {
-              publicKey: p.publicKey,
-              publicLabel: labelOf(p),
-              claimedAt: p.claimedAt,
-              owner: !!p.owner,
-            };
-          }),
+          // `more` rather than a page: a caller who sees it types
+          // another letter, which is cheaper for everybody than a
+          // cursor — and with results ordered by quality, the ones that
+          // did not fit are the ones they wanted least.
+          more: more,
+          matches: matches,
         };
       }
     }
-
     if (body && body.partners) {
       out = {
         ok: true,
