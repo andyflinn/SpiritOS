@@ -72,7 +72,6 @@
 // handed — the same failure a poll that read and then crashed always had,
 // and the price of keeping no per-browser state.
 
-const packet = require('./packet.js');
 
 // opts: { traffic } — the log, as an api block. Without one this runs
 // entirely in memory and holds nothing back, which is what the
@@ -171,7 +170,19 @@ function createArrivals(opts) {
   function note(item) {
     if (!item || typeof item.text !== 'string') return 0;
 
-    var message = packet.decorate({
+    // ── NOT DECORATED ─────────────────────────────────────────────
+    //
+    //   Andy: "nothing in node and relay should know about apps."
+    //
+    // This called packet.decorate, which parses the envelope and hangs
+    // `message.packet` on the row so a reader could tell whose traffic
+    // it is without parsing. That reader is the SHELL, and the shell
+    // already loads packet.js — so the node was decoding an app
+    // envelope on behalf of a layer that can do it itself.
+    //
+    // `text` travels exactly as signed, which was always true; what
+    // stops now is the node having an opinion about what is in it.
+    var message = ({
       id: item.item,
       hash: item.hash,
       from: item.from,
@@ -210,7 +221,8 @@ function createArrivals(opts) {
   // hub.rowAsMessage does for the read route — one shape for a client to
   // merge, whichever door it came through.
   function asMessage(row) {
-    return packet.decorate({
+    // Plain, for the reason above: the node does not read the payload.
+    return ({
       id: String((row && row.hash) || ''),
       hash: String((row && row.hash) || ''),
       from: String((row && row.peer) || ''),

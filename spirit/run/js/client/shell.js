@@ -1960,8 +1960,26 @@
 
   function deliverPackets(messages) {
     var routed = [];
+    var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
     (Array.isArray(messages) ? messages : []).forEach(function (message) {
-      var info = message && message.packet;
+      // ── THE SHELL DECODES, BECAUSE THE SHELL IS WHAT ROUTES ──────────
+      //
+      //   Andy: "nothing in node and relay should know about apps."
+      //
+      // `message.packet` was hung on the row by the node, which meant the
+      // node parsed an app envelope to label traffic for a layer that
+      // loads packet.js itself. That was the last thing keeping packet.js
+      // in the node, and it is gone.
+      //
+      // Read off `text` here, where `app` means something: this function
+      // is the only thing in the system that routes on it.
+      //
+      // `message.packet` is still accepted when present, because a caller
+      // may hand one in — but nothing on the wire supplies it now.
+      var info = (message && message.packet) ||
+        (envelope && message && typeof message.text === 'string'
+          ? envelope.decode(message.text)
+          : null);
       if (!info || !info.app) return; // no envelope: addressed to no app
 
       // MINE BEFORE THE APP'S. A packet regarding something this page

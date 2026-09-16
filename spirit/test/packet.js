@@ -269,27 +269,59 @@ test.subHeading('A packet addressed to the box names no app');
   }
 }
 
-test.subHeading('The hub wraps on the way out and names on the way in');
+// ── THE NODE NAMES NOTHING ───────────────────────────────────────────
+//
+//   Andy: "nothing in node and relay should know about apps."
+//
+// This drove `hub.decorateWithPacket`, which parsed an arriving payload
+// and hung `message.packet` on the row so a reader could tell whose
+// traffic it was. That reader is the SHELL, which loads this file
+// itself — so the node was decoding an app envelope for a layer above
+// it, and that was the only reason hub.js required packet.js.
+//
+// Gone. What is asserted now is the absence: the node exposes nothing
+// that reads an envelope, and decoding still works where it belongs.
+test.subHeading('The node exposes nothing that reads an envelope');
 
 {
-  // What the inbox route now hands the browser: the message exactly as
-  // the relay stored it, plus what its text turned out to be.
-  const legacy = hub.decorateWithPacket({ id: '1', from: 'bert', text: 'hello from before' });
-  if (legacy.packet.legacy && legacy.packet.body === 'hello from before' && legacy.text === 'hello from before') {
-    test.check('a stored plain line arrives named legacy, text untouched');
+  if (typeof hub.decorateWithPacket !== 'function') {
+    test.check('hub no longer decorates — an app envelope is not the node’s to read');
   } else {
-    test.fail('legacy decoration: ' + JSON.stringify(legacy));
+    test.fail('hub.decorateWithPacket is back');
   }
 
-  const chess = packet.encode('chess', { move: 'e4' }, { id: 'x1' });
-  const decorated = hub.decorateWithPacket({ id: '2', from: 'bert', text: chess.text });
-  if (decorated.packet.app === 'chess' && decorated.packet.body.move === 'e4' && decorated.text === chess.text) {
-    test.check('and another app’s packet arrives named, with its text left as signed');
+  // AND NOTHING IN THE NODE REQUIRES packet.js. The rule is about the
+  // dependency, not just the one function: a module about apps has no
+  // business in a node, and through server.js it reached a relay.
+  const nodeDir = path.join(__dirname, '..', 'run', 'js');
+  const offenders = fs.readdirSync(nodeDir)
+    .filter(function (f) { return f.endsWith('.js') && f !== 'packet.js'; })
+    .filter(function (f) {
+      // Comments stripped: this file's own history mentions packet.js all
+      // over, and a scan that cannot tell code from the record of the code
+      // punishes writing the record down.
+      const src = fs.readFileSync(path.join(nodeDir, f), 'utf8')
+        .split('\n')
+        .filter(function (l) { return !/^\s*(\/\/|\*)/.test(l); })
+        .join('\n');
+      return /require\(['"]\.\/packet/.test(src);
+    });
+  if (offenders.length === 0) {
+    test.check('and no module in js/ requires packet.js — the envelope is the shell’s');
   } else {
-    test.fail('packet decoration: ' + JSON.stringify(decorated));
+    test.fail('node code requiring packet.js: ' + offenders.join(', '));
+  }
+
+  // DECODING STILL WORKS, where it belongs. Same function, called by
+  // whoever actually routes on the answer.
+  const chess = packet.encode('chess', { move: 'e4' }, { id: 'x1' });
+  const read = packet.decode(chess.text);
+  if (read.app === 'chess' && read.body.move === 'e4') {
+    test.check('while packet.decode reads it for the layer that routes on it');
+  } else {
+    test.fail('decode: ' + JSON.stringify(read));
   }
 }
-
 test.subHeading('Relay Chat keeps another app’s traffic out of its archive');
 
 {

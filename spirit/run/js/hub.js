@@ -10,7 +10,6 @@ const invites = require('./invites');
 const ownerBadge = require('./ownerBadge');
 const whoBook = require('./whoBook');
 const relayKeys = require('./relayKeys');
-const packet = require('./packet');
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
 const deviceAuth = require('./deviceAuth');
@@ -597,24 +596,18 @@ function remember(rootDir, from, verdict, relayUrl) {
 // The router cannot produce one — every post is signed by a key and
 // `from` IS that key — so the case is gone rather than handled.
 
-// Every message comes back with what its text turned out to be: anything
-// that IS an envelope arrives named, so the reader can tell its own
-// traffic from another app's without parsing anything itself, and a bare
-// string decodes as legacy.
+// decorateWithPacket STOOD HERE, and it was the last thing in the node
+// that read an app envelope.
 //
-// The message is copied rather than edited: `text` stays exactly the
-// bytes that were signed.
+//   Andy: "nothing in node and relay should know about apps."
 //
-// Moved into packet.js on 2026-09-13 and kept here as the name
-// spirit/test/packet.js already calls. It had two callers then — the ring
-// and the router — and one place building `message.packet` was what kept
-// an app from seeing two shapes depending on which road a line travelled.
-// The ring is gone (R8) and arrivals.js is the only road left, so this is
-// now a name rather than a junction.
-function decorateWithPacket(message) {
-  return packet.decorate(message);
-}
-
+// It parsed an arriving payload and hung `message.packet` on the row so
+// a reader could tell its own traffic from another app’s. That reader
+// is the shell, which loads packet.js itself — so this was the node
+// decoding on behalf of a layer above it, and the only reason hub.js
+// required packet.js at all.
+//
+// The payload travels as signed and is read where it is understood.
 // countInbound AND applyInboxBatch STOOD HERE — the per-peer counter for
 // a fetched batch, and the one function both the browser's poll and the
 // node's 60-second sweep ran so the two could not drift. Deleted with the
@@ -1867,5 +1860,4 @@ module.exports = {
   unknownPolicy: unknownPolicy,
   handleMatches: handleMatches,
   keyTail: keyTail,
-  decorateWithPacket: decorateWithPacket,
 };

@@ -51,20 +51,29 @@ function itemWith(text) {
   const encoded = packet.encode('chess', { move: 'e4' });
   arrivals.note(itemWith(encoded.text));
 
-  if (seen.length === 1 && seen[0].packet && seen[0].packet.app === 'chess') {
-    test.check('a packet noted on the seam reaches a subscriber, envelope already decoded');
+  // ── AS SIGNED, NOT AS READ ─────────────────────────────────────────
+  //
+  //   Andy: "nothing in node and relay should know about apps."
+  //
+  // This asserted `seen[0].packet.app` — the node having decoded the
+  // envelope before handing the row on. It carries the payload verbatim
+  // now and the shell decodes it, because the shell is the only thing
+  // that routes on `app`.
+  if (seen.length === 1 && seen[0].packet === undefined && seen[0].text === encoded.text) {
+    test.check('a packet noted on the seam reaches a subscriber, payload exactly as signed');
   } else {
     test.fail('subscriber got ' + JSON.stringify(seen));
   }
 
-  // The body, not the envelope. An app asked for `{move:'e4'}` and that
-  // is what deliverPackets hands its handler — if this arrived as a JSON
-  // string every app would have to parse it and they would each do it
-  // slightly differently.
-  if (seen[0] && seen[0].packet && seen[0].packet.body && seen[0].packet.body.move === 'e4') {
-    test.check('and the body arrives as the object the sender encoded, not as text');
+  // The body is still an object where it is READ. An app asked for
+  // `{move:'e4'}` and that is what deliverPackets hands its handler —
+  // decoded by the shell rather than by the node, which changes who does
+  // it and not what an app receives.
+  const read = packet.decode(seen[0].text);
+  if (read.app === 'chess' && read.body && read.body.move === 'e4') {
+    test.check('and decoding it where it is routed gives the object the sender encoded');
   } else {
-    test.fail('body was ' + JSON.stringify(seen[0] && seen[0].packet));
+    test.fail('decoded as ' + JSON.stringify(read));
   }
 
   // THE FIELD THE TWO TRANSPORTS MUST AGREE ON. The ring's messages
@@ -218,10 +227,13 @@ function landed(log, hash, text, admitted) {
   const got = [];
   after.subscribe(function (m) { got.push(m); });
 
-  if (got.length === 1 && got[0].packet.app === 'chess') {
+  // THE BYTES THAT WERE SIGNED, which is the stronger claim than the
+  // node's reading of them — see the note on the first subscriber above.
+  if (got.length === 1 && got[0].packet === undefined &&
+      packet.decode(got[0].text).app === 'chess') {
     test.check('a packet held while the node was down is still there when it comes back');
   } else {
-    test.fail('after restart: ' + JSON.stringify(got.map(function (m) { return m.packet; })));
+    test.fail('after restart: ' + JSON.stringify(got));
   }
 
   // And it is marked, so it is not replayed for ever to every page that
@@ -318,23 +330,19 @@ function landed(log, hash, text, admitted) {
 test.subHeading('One shape, both transports');
 // ---------------------------------------------------------------------
 
-(function bothRoadsDecorateTheSame() {
-  const hub = require('../run/js/hub');
-  const encoded = packet.encode('chess', { move: 'e4' });
+// bothRoadsDecorateTheSame STOOD HERE. It compared hub.decorateWithPacket
+// against the arrivals path to prove one shape whichever road a line
+// travelled — the ring and the router.
+//
+// Three things ended it. The ring went with R8, so there is one road.
+// The node stopped decoding altogether, so there is nothing to compare.
+// And hub.decorateWithPacket does not exist: an app envelope is not the
+// node’s to read (Andy: "nothing in node and relay should know about
+// apps").
+//
+// What replaces it is the absence, asserted in spirit/test/packet.js —
+// no module under run/js requires packet.js at all.
 
-  // The inbox path's decoration, and the router's, on the same text.
-  const viaRing = hub.decorateWithPacket({ id: 'm1', from: 'bert', text: encoded.text });
-  const arrivals = arrivalsModule.createArrivals();
-  let viaRouter = null;
-  arrivals.subscribe(function (m) { viaRouter = m; });
-  arrivals.note(itemWith(encoded.text));
-
-  if (JSON.stringify(viaRing.packet) === JSON.stringify(viaRouter.packet)) {
-    test.check('the ring and the router build an identical `packet` — one function, not two');
-  } else {
-    test.fail('ring ' + JSON.stringify(viaRing.packet) + ' vs router ' + JSON.stringify(viaRouter.packet));
-  }
-})();
 
 // ---------------------------------------------------------------------
 test.subHeading('Connected: peerPost actually notes into it');
@@ -380,7 +388,9 @@ test.subHeading('Connected: peerPost actually notes into it');
   return router.onRequest('https://relay.example', {
     from: them.publicKey, to: me.publicKey, text: text, sig: sig,
   }).then(function () {
-    if (seen.length === 1 && seen[0].packet.app === 'chess') {
+    // Decoded here, not by the node — see the first subscriber above.
+    if (seen.length === 1 && seen[0].packet === undefined &&
+        packet.decode(seen[0].text).app === 'chess') {
       test.check('a real post from a known peer comes out of the seam as a chess packet');
     } else {
       test.fail('peerPost delivered ' + JSON.stringify(seen));
