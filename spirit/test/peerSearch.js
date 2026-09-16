@@ -49,28 +49,68 @@ test.startTest('Graded search — isolated, and driven with nothing running');
 test.subHeading('It stands alone');
 
 {
-  // THE ISOLATION IS THE FEATURE, so it is asserted rather than assumed.
-  // A require() that pulls in relay.js, fs or a socket would make every
-  // quality question below cost a lab run to answer.
-  const src = require('fs').readFileSync(
-    require('path').join(__dirname, '..', 'run', 'js', 'peerSearch.js'), 'utf8')
-    .split('\n')
-    .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })
-    .join('\n');
+  // THE ISOLATION IS THE FEATURE, so it is asserted rather than assumed,
+  // and it is now a STACK of three rather than one file:
+  //
+  //   bucket.js        limited spots, weakest evicted. Knows nothing.
+  //   gradedSearch.js  what makes one STRING a better answer. Knows
+  //                    strings, not objects.
+  //   peerSearch.js    the extractor and the two signals that read a peer.
+  //
+  //   Andy: "the interface only needs to supply a means of extracting the
+  //   relevant comparison string from the object, so the bucket doesn't
+  //   have to know the shape of the object."
+  //
+  // Each may depend on the one below it and on nothing else. A require of
+  // relay.js, fs or a socket anywhere in here would make every quality
+  // question cost a lab run to answer.
+  const codeOf = function (name) {
+    return require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'run', 'js', name), 'utf8')
+      .split('\n')
+      .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })
+      .join('\n');
+  };
+  const requiresOf = function (name) {
+    return (codeOf(name).match(/require\(['"][^'"]+['"]\)/g) || [])
+      .map(function (r) { return r.replace(/require\(['"]\.\/|['"]\)/g, ''); });
+  };
 
-  const requires = (src.match(/require\([^)]*\)/g) || []);
-  if (requires.length === 1 && /bucket/.test(requires[0])) {
-    test.check('peerSearch requires only js/bucket.js — no relay, no fs, no clock, no socket');
+  const stack = [
+    ['bucket.js', []],
+    ['gradedSearch.js', ['bucket']],
+    ['peerSearch.js', ['gradedSearch']],
+  ];
+  const wrong = stack.filter(function (layer) {
+    return requiresOf(layer[0]).join(',') !== layer[1].join(',');
+  });
+
+  if (wrong.length === 0) {
+    test.check('three layers, each depending only on the one below: ' +
+      stack.map(function (l) { return l[0].replace('.js', ''); }).join(' -> '));
   } else {
-    test.fail('dependencies: ' + (requires.join(', ') || 'none') +
-      ' — the opinion may depend on the mechanism and nothing else');
+    test.fail('dependencies wrong: ' + wrong.map(function (l) {
+      return l[0] + ' requires ' + (requiresOf(l[0]).join(', ') || 'nothing');
+    }).join('; '));
+  }
+
+  // THE MIDDLE LAYER MUST NOT KNOW WHAT A PEER IS. The moment it reads
+  // publicLabel, publicKey or present, the generalisation has gone and the
+  // next thing worth searching has to fork it.
+  const graded = codeOf('gradedSearch.js');
+  const leaked = ['publicLabel', 'publicKey', 'present', 'via', 'relay', 'peer']
+    .filter(function (w) { return new RegExp('\b' + w + '\b').test(graded); });
+  if (leaked.length === 0) {
+    test.check('and the string layer names nothing about peers — it could rank filenames');
+  } else {
+    test.fail('gradedSearch knows about: ' + leaked.join(', '));
   }
 
   // Presence as a FIELD, not a function. Taking `isPresent` would drag the
-  // relay's live socket state in through the back door and make every test
+  // relay live socket state in through the back door and make every test
   // here stand up a registry to answer it.
-  if (!/isPresent/.test(src)) {
-    test.check('and reads presence off the row rather than asking anybody');
+  if (!/isPresent/.test(codeOf('peerSearch.js'))) {
+    test.check('and presence is read off the row rather than asked of anybody');
   } else {
     test.fail('peerSearch calls isPresent — presence must arrive as a field');
   }
@@ -351,11 +391,13 @@ test.subHeading('Quality is a probability, and the signals are weighted');
 
   // EVERY SIGNAL STAYS ON THE SCALE. A probability that is not one is the
   // failure mode weighting has and precedence did not.
-  // The shape  builds per row: the query arrives pre-tokenised on the
-  // scored object, so a signal never splits a string of its own.
+  // The shape `open` builds per candidate. `item` is the caller's object,
+  // untouched — a peer signal reads that and nothing else. `text` is what
+  // the extractor pulled out of it, and the query arrives pre-tokenised,
+  // so no signal ever splits a string of its own.
   const probe = {
-    row: { present: true, via: null, publicKey: 'K' },
-    label: 'x', labelTokens: ['x'], rank: 0,
+    item: { present: true, via: null, publicKey: 'K' },
+    text: 'x', textTokens: ['x'], rank: 0,
     queryTokens: ['x'], literal: 1, typed: 1,
   };
   const offScale = peerSearch.SIGNALS.filter(function (sig) {
