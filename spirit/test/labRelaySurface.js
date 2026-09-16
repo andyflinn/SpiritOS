@@ -104,6 +104,9 @@ Promise.resolve()
   .then(function () {
     return json(MASTER + '/api/nodes', 'POST', {
       name: RELAY_NAME, type: 'relay', port: RELAY_PORT,
+      // A working-tree copy under %TEMP%, never a clone of
+      // origin/master: a suite tests the code being written (labWorld.js).
+      kind: 'fixture',
     });
   })
   .then(function (r) {

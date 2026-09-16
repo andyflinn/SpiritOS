@@ -26,6 +26,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const labelRule = require('../run/js/labelRule');
 const nodeCard = require('../run/js/nodeCard');
+const ownerBadge = require('../run/js/ownerBadge');
 
 const APP_SCRIPT = path.join(__dirname, '..', 'run', 'app', 'info', 'info.js');
 
@@ -742,7 +743,80 @@ function theFirstDescription() {
   fs.rmSync(empty, { recursive: true, force: true });
 }
 
-// ── 7. NO TICK ───────────────────────────────────────────────────────
+// ── 7. A NODE WITH NO RELAY LIST AT ALL ──────────────────────────────
+//
+//   Andy: "for node boot. if relays.json doesn't exist, initialize with
+//   spirit.andyflinn.com only (where we auto-initialize description as
+//   well)."
+//
+// The second half of untracking relays.json. It used to ship in git, so
+// every `git reset --hard` reverted a node's own list — the complaint the
+// lab change came from — and untracking it left a fresh clone with no
+// relays at all.
+//
+// The two are not the same thing and the distinction is the whole point:
+// a list carried by git is code and comes back on every update; a list
+// written by the node is the node's own state, written once into a gap
+// and never touched again.
+function theFirstRelay() {
+  test.subHeading('A node with no relay list writes itself one, once');
+
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-relays-'));
+
+  if (ownerBadge.loadRelays(home).length === 0) {
+    test.check('a fresh home lists no relays at all, because nothing ships one any more');
+  } else {
+    test.fail('found relays in a fresh home: ' + JSON.stringify(ownerBadge.loadRelays(home)));
+  }
+
+  const first = ownerBadge.ensureRelays(home);
+  if (first.length === 1 && first[0].url === ownerBadge.FIRST_RELAY.url) {
+    test.check('and boot gives it one — a single public relay, not a pair');
+  } else {
+    test.fail('first: ' + JSON.stringify(first));
+  }
+
+  // A PUBLIC ONE, which is the floor this whole file is about: a node
+  // must not be left without a relay peers on the internet can reach.
+  if (ownerBadge.isPublicRelay(first[0].url)) {
+    test.check('and it is a public relay, which is the floor a node may not fall below');
+  } else {
+    test.fail('not public: ' + first[0].url);
+  }
+
+  // ── AND NEVER AGAIN ─────────────────────────────────────────────────
+  //
+  // This runs on EVERY boot. A list somebody edited must survive a
+  // restart, or it would be a git-carried file wearing different clothes
+  // — which is the exact thing it was written to stop being.
+  const mine = [{ label: 'mine', url: 'https://elsewhere.example' }];
+  fs.writeFileSync(
+    path.join(home, 'app', 'natter', 'relays.json'),
+    JSON.stringify(mine, null, 2)
+  );
+  const again = ownerBadge.ensureRelays(home);
+  if (again.length === 1 && again[0].url === 'https://elsewhere.example') {
+    test.check('a list somebody edited survives every later boot');
+  } else {
+    test.fail('overwritten: ' + JSON.stringify(again));
+  }
+
+  // AN EMPTY LIST IS A STATE, NOT A GAP — and this is where it differs
+  // from the description, which IS refilled when cleared. Natter refuses
+  // to remove the last public relay (canRemoveRelay), so a node with an
+  // empty list got there some other way, and boot quietly deciding for it
+  // would be this file overruling something it cannot see the reason for.
+  fs.writeFileSync(path.join(home, 'app', 'natter', 'relays.json'), '[]');
+  if (ownerBadge.ensureRelays(home).length === 0) {
+    test.check('but an emptied list is left empty, because empty is an answer and absent is not');
+  } else {
+    test.fail('refilled an emptied list: ' + JSON.stringify(ownerBadge.ensureRelays(home)));
+  }
+
+  fs.rmSync(home, { recursive: true, force: true });
+}
+
+// ── 8. NO TICK ───────────────────────────────────────────────────────
 
 function noTick() {
   test.subHeading('And it is not driven by the job tick');
@@ -784,6 +858,7 @@ theScreen()
   .then(aRelayThatSaysNo)
   .then(aNodeOnNoRelay)
   .then(function () { theFirstDescription(); })
+  .then(function () { theFirstRelay(); })
   .then(function () { noTick(); })
   .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
   .then(function () { test.reportSuccessFailureCount(); });

@@ -89,7 +89,7 @@ async function run() {
   try { await lab.api('POST', '/api/nodes/' + RELAY_NAME + '/delete', {}); } catch (e) { /* fine */ }
 
   const made = await lab.api('POST', '/api/nodes',
-    { name: RELAY_NAME, type: 'relay', port: RELAY_PORT });
+    { name: RELAY_NAME, type: 'relay', port: RELAY_PORT , kind: 'fixture' });
   if (made.status !== 201) { test.fail('create: ' + made.status + ' ' + made.text); return; }
 
   const started = await lab.api('POST', '/api/nodes/' + RELAY_NAME + '/start', {});

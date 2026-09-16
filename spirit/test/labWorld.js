@@ -88,7 +88,20 @@ function homeOf(id) {
 // that had just asked for it.
 async function ensureNode(name, type, port) {
   const id = PREFIX + name;
-  const made = await master('POST', '/api/nodes', { name: id, type: type, port: port });
+  // `kind: 'fixture'` — a copy of the WORKING TREE under %TEMP%, not a
+  // clone of origin/master under repo/lab.
+  //
+  // Both halves matter. A suite must test the code being written, so it
+  // cannot run what is published; and `homeOf` below computes the home
+  // from FIXTURE_ROOT for itself, so a node built anywhere else would
+  // have its identity written into a directory nobody is running.
+  //
+  // That is not hypothetical — it is what happened the day lab homes
+  // moved to repo/lab, and it stayed invisible through a full green run
+  // because labMaster is long-running and the suites were still talking
+  // to the process started before the change.
+  const made = await master('POST', '/api/nodes',
+    { name: id, type: type, port: port, kind: 'fixture' });
 
   if (made.status === 409) {
     // Already in the table from an interrupted run. Recycle is the verb

@@ -136,6 +136,53 @@ function configuredUrls(rootDir) {
   return loadRelays(rootDir).map(function (r) { return r.url; });
 }
 
+// ── A NODE WITH NO LIST AT ALL GETS ONE, ONCE, AT BOOT ───────────────
+//
+//   Andy: "for node boot. if relays.json doesn't exist, initialize with
+//   spirit.andyflinn.com only (where we auto-initialize description as
+//   well)."
+//
+// THIS IS THE OTHER HALF OF UNTRACKING IT. relays.json used to ship in
+// git with two relays in it, and that is why `git reset --hard` reverted
+// a node's own list on every update — the complaint this all came from.
+// Untracking it fixed that and left a new hole: a fresh clone had no
+// relays at all and opened to an empty Natter.
+//
+// The difference between the two, and it is the whole argument: a list
+// SHIPPED IN GIT is code, so it comes back on every update and cannot be
+// edited away. A list WRITTEN BY THE NODE is the node's own state — it
+// is created once, into a gap, and from then on it belongs to whoever
+// runs the box. Nothing ever overwrites it again.
+//
+// ONE RELAY, NOT TWO. A node must not be left without a working public
+// relay (canRemoveRelay above), and one is what that rule asks for. The
+// second row was a second thing to explain on a screen somebody is
+// seeing for the first time.
+//
+// ABSENCE ONLY. An EMPTY list is not a gap — it is a state, and one the
+// UI already refuses to create, since Natter will not let the last
+// public relay be removed. A node whose list is empty got there some
+// other way and should not have this quietly decide for it.
+//
+// Said plainly because it is a real choice and not a detail: this points
+// a brand-new node at ANDY'S relay. It was already true when the file
+// was tracked, and with one row rather than two it is less true than it
+// was — but anybody forking this tree should change this line, and
+// nothing else, to point their nodes somewhere of their own.
+var FIRST_RELAY = { label: 'spirit', url: 'https://spirit.andyflinn.com' };
+
+function ensureRelays(rootDir) {
+  var file = path.join(rootDir, 'app', 'natter', 'relays.json');
+  if (fs.existsSync(file)) return loadRelays(rootDir);
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify([FIRST_RELAY], null, 2) + '\n');
+  } catch (e) {
+    return [];
+  }
+  return loadRelays(rootDir);
+}
+
 // statusPath STOOD HERE, and it was the badge:
 //
 //   '/api/relay/status?name=' + name + '&sig=' +
@@ -460,7 +507,11 @@ if (isNode) {
     canRemoveRelay: canRemoveRelay,
     isPublicRelay: isPublicRelay,
     loadRelays: loadRelays,
+    ensureRelays: ensureRelays,
     configuredUrls: configuredUrls,
+    // The one row a node writes itself, exported so a test can assert the
+    // default without repeating the string it is checking for.
+    FIRST_RELAY: FIRST_RELAY,
     // `statusPath` and `readBadge` STOOD HERE and went with the signed
     // status GET (R3). `ownedFrom` is what answers the same question now,
     // off the public census and by key.

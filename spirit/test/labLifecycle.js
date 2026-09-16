@@ -91,7 +91,7 @@ async function run() {
   test.subHeading('A row is made, and it is a copy of the tree under test');
 
   const madeRelay = await lab.api('POST', '/api/nodes',
-    { name: RELAY_NAME, type: 'relay', port: RELAY_PORT });
+    { name: RELAY_NAME, type: 'relay', port: RELAY_PORT , kind: 'fixture' });
   if (madeRelay.status === 201 && madeRelay.json && madeRelay.json.node) {
     test.check('labMaster creates a relay row');
   } else {
@@ -99,7 +99,7 @@ async function run() {
   }
 
   const madeAvatar = await lab.api('POST', '/api/nodes',
-    { name: AVATAR_NAME, type: 'avatar', port: AVATAR_PORT });
+    { name: AVATAR_NAME, type: 'avatar', port: AVATAR_PORT , kind: 'fixture' });
   if (madeAvatar.status === 201) {
     test.check('and an avatar row beside it');
   } else {

@@ -44,6 +44,45 @@ const WORK_HOME = path.join(REPO_ROOT, 'spirit', 'run');
 // published. These two roots answer different questions and sharing one
 // was what made a hand-kept node as disposable as a fixture.
 const LAB_ROOT = path.join(REPO_ROOT, '..', 'lab');
+
+// ── AND THE FIXTURE ROOT, WHICH DID NOT MOVE ─────────────────────────
+//
+// THE HARNESS CREATES ITS NODES THROUGH THIS SERVER. labWorld,
+// labPersistence, labLifecycle and friends all POST /api/nodes and then
+// read the home for themselves — labWorld computes it from this very
+// path (labWorld.js, homeOf). So "lab nodes moved to repo/lab" could not
+// mean every node: it would have put every test fixture in repo/lab too,
+// cloned from GitHub, which is slow and tests the wrong code.
+//
+// Found the hard way, and worth recording because the failure was
+// invisible: a full green run came back AFTER this root moved, because
+// labMaster is a long-running server and the suites were still talking
+// to the copy started before the change. The harness only broke when the
+// server was restarted.
+//
+// So a node declares which it is:
+//
+//   kind 'lab'      repo/lab/<name>   a git clone, updated from GitHub,
+//                                     kept forever, holds a real key
+//   kind 'fixture'  %TEMP%/…/<id>     a copy of the WORKING TREE, wiped
+//                                     between runs, disposable
+//
+// They answer different questions. A suite must test the code being
+// written and wants a tree it can throw away; a node somebody keeps
+// should run what is published and never be thrown away at all. Sharing
+// one root is what made the second as disposable as the first.
+const FIXTURE_ROOT = path.join(os.tmpdir(), 'spiritos-relay-fakes');
+
+const LAB_KIND = 'lab';
+const FIXTURE_KIND = 'fixture';
+
+function kindOf(node) {
+  return (node && node.kind) === FIXTURE_KIND ? FIXTURE_KIND : LAB_KIND;
+}
+
+function rootFor(kind) {
+  return kind === FIXTURE_KIND ? FIXTURE_ROOT : LAB_ROOT;
+}
 const STATE_DIR = path.join(os.tmpdir(), 'spiritos-lab-master');
 const STATE_FILE = path.join(STATE_DIR, 'nodes.json');
 const PANEL_FILE = path.join(__dirname, 'labMastPanel.html');
@@ -85,8 +124,12 @@ function loadDesired() {
 
 // Noted on the row and persisted, so a restart of labMaster does not
 // forget what each node is running.
+// Only a clone can answer this. A fixture is a copy of the working tree
+// and is not a repository — asking it would print an error and a blank,
+// and blank is already what it means.
 function noteCommit(node) {
-  const root = homeRootFor(node.id);
+  if (kindOf(node) !== LAB_KIND) { node.commit = ''; return ''; }
+  const root = homeRootFor(node.id, LAB_KIND);
   node.commit = root ? commitOf(root) : '';
   return node.commit;
 }
@@ -101,6 +144,7 @@ function saveDesired(nodes) {
       port: n.port,
       permanent: !!n.permanent,
       home: n.home,
+      kind: kindOf(n),
       // Kept across a restart of labMaster: which commit a node was last
       // put on is a fact about the node, and re-deriving it would mean
       // shelling out to git for every row at boot.
@@ -123,7 +167,10 @@ let nodes = loadDesired().map(function (n) {
     type: n.type === 'relay' ? 'relay' : 'avatar',
     port: n.port,
     permanent: false,
-    home: n.home || path.join(LAB_ROOT, n.id, 'spirit', 'run').replace(/\\/g, '/'),
+    kind: kindOf(n),
+    home: n.home ||
+      path.join(rootFor(kindOf(n)), n.id, 'spirit', 'run').replace(/\\/g, '/'),
+    commit: n.commit || '',
     pid: null,
     running: false,
     lastError: '',
@@ -187,6 +234,7 @@ function publicNode(n) {
     type: n.type,
     port: n.port,
     permanent: !!n.permanent,
+    kind: kindOf(n),
     home: n.home,
     pid: mine ? child.pid : (pidsOnPort(n.port)[0] || null),
     running: mine || portHasListener(n.port),
@@ -217,11 +265,12 @@ function publicNode(n) {
 // LAB_ROOT is `repo/lab`, a folder beside somebody's actual checkout and
 // inside their synced drive. The guards did not change because they were
 // already written for the worse case.
-function homeRootFor(id) {
+function homeRootFor(id, kind) {
   const slug = slugName(id);
   if (!slug) return null;
-  const target = path.resolve(LAB_ROOT, slug);
-  const inside = path.resolve(LAB_ROOT) + path.sep;
+  const root = rootFor(kind || LAB_KIND);
+  const target = path.resolve(root, slug);
+  const inside = path.resolve(root) + path.sep;
   if (!target.startsWith(inside)) return null;
   if (target === path.resolve(WORK_HOME)) return null;
   return target;
@@ -237,8 +286,8 @@ function homeRootFor(id) {
 // it should not have, and it is why Recycle wipes. It is also why Recycle
 // is not the bulk button: the same thoroughness that makes a new node
 // clean is what took Andy's bindings away.
-function wipeHome(id) {
-  const target = homeRootFor(id);
+function wipeHome(id, kind) {
+  const target = homeRootFor(id, kind);
   if (!target) return false;
   try { fs.rmSync(target, { recursive: true, force: true }); }
   catch (err) { return false; }
@@ -308,6 +357,47 @@ function isClone(targetRoot) {
   return fs.existsSync(path.join(targetRoot, '.git'));
 }
 
+// ── A FIXTURE IS A COPY OF THE WORKING TREE ──────────────────────────
+//
+// What every lab node used to be, kept for the nodes that should be it:
+// the suites. `git ls-files` names the tracked tree and each path is
+// copied, so a fixture runs the code being written rather than the code
+// that has been published — which is the only thing a test may run.
+//
+// `keepState` copies over the top; without it the home is wiped first,
+// which is what makes a recycled fixture genuinely new. A suite that asks
+// for a fresh relay must not get one owned by the previous run's key.
+function copyTrackedSpirit(id, keepState) {
+  const targetRoot = homeRootFor(id, FIXTURE_KIND);
+  if (!targetRoot) throw new Error('refusing to build outside the fixture root: ' + id);
+
+  const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  }).split('\n').filter(Boolean);
+
+  if (!keepState) wipeHome(id, FIXTURE_KIND);
+
+  // A TRACKED FILE THAT IS NOT ON DISK IS SKIPPED, not fatal. `git
+  // ls-files` reads the INDEX, which happily lists a file that has since
+  // been deleted from the working tree — a `git rm` not yet committed, or
+  // something staged by reflex. One of those made every node creation
+  // fail with an ENOENT about a path nobody recognised.
+  const absent = [];
+  relativePaths.forEach(function (relPath) {
+    const source = path.join(REPO_ROOT, relPath);
+    if (!fs.existsSync(source)) { absent.push(relPath); return; }
+    const dest = path.join(targetRoot, relPath);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(source, dest);
+  });
+  if (absent.length) {
+    console.warn('labMaster: ' + absent.length + ' file(s) are in the index but not on disk, ' +
+      'so ' + id + ' was built without them:\n  ' + absent.join('\n  '));
+  }
+  return path.join(targetRoot, 'spirit', 'run');
+}
+
 // A HOME THAT IS ALREADY A CLONE IS ADOPTED, NOT DESTROYED.
 //
 // Create and Start both reach for a home, and neither of them means
@@ -318,8 +408,12 @@ function isClone(targetRoot) {
 //
 // Recycle is the one caller that means exactly that, and it says so by
 // calling cloneNode directly.
-function ensureClone(id) {
-  const targetRoot = homeRootFor(id);
+function ensureClone(id, kind) {
+  // A FIXTURE IS NEVER CLONED. It is a copy of the working tree, and
+  // copying over the top is what "make sure this home exists and is
+  // current" means for one.
+  if (kind === FIXTURE_KIND) return copyTrackedSpirit(id, true);
+  const targetRoot = homeRootFor(id, LAB_KIND);
   if (!targetRoot) throw new Error('refusing to build outside the lab root: ' + id);
   if (isClone(targetRoot)) return updateNode(id);
   return cloneNode(id);
@@ -333,9 +427,9 @@ function ensureClone(id) {
 // Andy's checkout cannot break a lab node. `origin` still points at
 // GitHub, which is what every later update reads.
 function cloneNode(id) {
-  const targetRoot = homeRootFor(id);
+  const targetRoot = homeRootFor(id, LAB_KIND);
   if (!targetRoot) throw new Error('refusing to build outside the lab root: ' + id);
-  wipeHome(id);
+  wipeHome(id, LAB_KIND);
   fs.mkdirSync(LAB_ROOT, { recursive: true });
   git('clone --reference "' + REPO_ROOT + '" --dissociate "' + originUrl() +
     '" "' + targetRoot + '"', LAB_ROOT);
@@ -350,7 +444,7 @@ function cloneNode(id) {
 // the alternative is telling somebody their node cannot be updated and
 // leaving them to move a directory by hand.
 function updateNode(id) {
-  const targetRoot = homeRootFor(id);
+  const targetRoot = homeRootFor(id, LAB_KIND);
   if (!targetRoot) throw new Error('refusing to update outside the lab root: ' + id);
   if (!isClone(targetRoot)) return adoptIntoClone(id);
   git('fetch origin', targetRoot);
@@ -391,7 +485,7 @@ function carryState(fromRoot, toRoot) {
 // every existing lab node goes through once, and it is why the first
 // update after this change takes a moment longer than the rest.
 function adoptIntoClone(id) {
-  const targetRoot = homeRootFor(id);
+  const targetRoot = homeRootFor(id, LAB_KIND);
   if (!targetRoot) throw new Error('refusing to adopt outside the lab root: ' + id);
   const keep = targetRoot + '.state';
   try { fs.rmSync(keep, { recursive: true, force: true }); } catch (err) { /* nothing there */ }
@@ -500,6 +594,10 @@ function readJsonBody(req) {
 function handleCreate(body) {
   const name = String(body && body.name || '').trim();
   const type = body && body.type === 'relay' ? 'relay' : 'avatar';
+  // 'lab' unless a caller asks otherwise, so a node made from the panel is
+  // one somebody keeps. The harness asks for 'fixture' explicitly
+  // (labWorld.js), which is the only place that should.
+  const kind = kindOf(body);
   const port = Number(body && body.port);
   const id = slugName(name);
   if (!id) return { status: 400, error: 'name required' };
@@ -512,7 +610,7 @@ function handleCreate(body) {
   if (portTaken(port)) return { status: 409, error: 'port in use in table' };
 
   let home;
-  try { home = ensureClone(id); }
+  try { home = ensureClone(id, kind); }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
 
 
@@ -522,6 +620,7 @@ function handleCreate(body) {
     type: type,
     port: port,
     permanent: false,
+    kind: kind,
     home: home.replace(/\\/g, '/'),
     pid: null,
     running: false,
@@ -548,7 +647,7 @@ function handleStart(node) {
   // never been an update and must not become one: pressing it on a node
   // bound to a relay should start that node, not fetch anything.
   if (!node.permanent && !fs.existsSync(path.join(node.home, 'js', 'server.js'))) {
-    try { node.home = ensureClone(node.id).replace(/\\/g, '/'); }
+    try { node.home = ensureClone(node.id, kindOf(node)).replace(/\\/g, '/'); }
     catch (err) { return { status: 500, error: String(err.message || err) }; }
     noteCommit(node);
     saveDesired(nodes);
@@ -571,8 +670,11 @@ function handleStop(node) {
 function handleRecycle(node) {
   if (node.permanent) return { status: 403, error: 'cannot recycle work node' };
   stopNode(node);
-  try { node.home = cloneNode(node.id).replace(/\\/g, '/'); }
-  catch (err) { return { status: 500, error: String(err.message || err) }; }
+  try {
+    node.home = (kindOf(node) === FIXTURE_KIND
+      ? copyTrackedSpirit(node.id)
+      : cloneNode(node.id)).replace(/\\/g, '/');
+  } catch (err) { return { status: 500, error: String(err.message || err) }; }
   noteCommit(node);
   saveDesired(nodes);
   const started = startNode(node);
@@ -594,7 +696,14 @@ function handleRecycle(node) {
 function handleRefresh(node) {
   if (node.permanent) return { status: 403, error: 'the work node is your checkout' };
   stopNode(node);
-  try { node.home = updateNode(node.id).replace(/\\/g, '/'); }
+  try {
+    // A fixture is refreshed the way it always was — the working tree,
+    // copied over the top, state left where it is. Only a lab node goes
+    // to GitHub.
+    node.home = (kindOf(node) === FIXTURE_KIND
+      ? copyTrackedSpirit(node.id, true)
+      : updateNode(node.id)).replace(/\\/g, '/');
+  }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
   noteCommit(node);
   saveDesired(nodes);
@@ -610,7 +719,7 @@ function handleDelete(node) {
   // so a node created again under the same name inherited the identity,
   // the mailbox and the device slot of the one that was deleted — which
   // is the opposite of what "delete" says.
-  const wiped = wipeHome(node.id);
+  const wiped = wipeHome(node.id, kindOf(node));
   nodes = nodes.filter(function (n) { return n.id !== node.id; });
   saveDesired(nodes);
   return { status: 200, ok: true, id: node.id, wiped: wiped };

@@ -9,6 +9,9 @@ const deviceAuth = require('./deviceAuth');
 // What this node answers about itself, and the one thing it writes there
 // unasked — see the boot call in the personal-node block.
 const nodeCard = require('./nodeCard');
+// Where this node keeps its mail. Required here for one call at boot:
+// a node with no relays.json is given one.
+const ownerBadge = require('./ownerBadge');
 // Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
 // again later would report whatever is on disk now, which is the lie
 // this is meant to catch.
@@ -1523,6 +1526,27 @@ if (!relayMode) {
   // has no card and must not grow one by accident.
   try { nodeCard.ensureDescription(ROOT_DIR); }
   catch (e) { /* a caption must never be the reason a node will not boot */ }
+
+  // ── AND A NODE WITH NO RELAY LIST GETS ONE ─────────────────────────
+  //
+  //   Andy: "for node boot. if relays.json doesn't exist, initialize with
+  //   spirit.andyflinn.com only (where we auto-initialize description as
+  //   well)."
+  //
+  // Beside the description, and for the same reason: both are things a
+  // fresh node needs before anybody looks at it, and neither is something
+  // a person should have to supply before the box is useful. Both write
+  // into a GAP and never over an answer.
+  //
+  // This one replaces a list that used to ship in git — see
+  // ownerBadge.ensureRelays for why a file the node writes and a file git
+  // carries are different things, and why untracking it is what made this
+  // necessary.
+  //
+  // BEFORE PRESENCE, which is the reason it is here and not later: the
+  // relay list is what presenceNode dials, a few lines below.
+  try { ownerBadge.ensureRelays(ROOT_DIR); }
+  catch (e) { /* nor a relay list */ }
 
   // The device window, if it was left open. The flag has always survived
   // a restart in relay-state/device.json; until now nothing read it at
