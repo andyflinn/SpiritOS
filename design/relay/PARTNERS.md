@@ -795,3 +795,179 @@ nothing is broken — it is just not routing yet.
 
 Each step is useful alone, and the first three change nothing about what a
 relay stores.
+
+---
+
+## Tier three — the public record (designed 2026-09-16, nothing built)
+
+Verified against `967d294`. This section is design only: no code in the
+tree does any of it yet, and the two gaps named below are named as gaps.
+
+Tier one made a foreign peer **visible**. Tier two gave partners a stream.
+Tier three asks what a peer row is allowed to *say*, and the answer turned
+out to settle a UI question Andy has had open far longer than partnering:
+
+> **Andy:** *"my biggest regret: the self-description of a personal node.
+> if a peer-dropdown selector was to successfully display/or even tooltip
+> the selected peer, then the ugly key-ends-with display could be
+> dropped."*
+
+### Public by contract is not stored on anyone's behalf
+
+0006 says *"nothing is stored on a relay on anyone's behalf."* A relay has
+nonetheless always stored `publicLabel` for every enrolled peer and
+published it through `who()` ([relay.js:288](../../spirit/run/js/relay.js#L288)).
+That was never a violation, and the distinction Andy's phrase names is why:
+
+| | held so it can be handed | audience | relay is |
+|---|---|---|---|
+| **on your behalf** | back *to you*, later | you | a custodian |
+| **public by contract** | to *anyone*, now | the world | a register |
+
+The mailbox failed that test. The public label passes it. **A public
+description passes it identically**, and 0006 needs no amendment — it
+simply never had to distinguish the two, because the label was the only
+published field when it was written.
+
+*This corrects a claim made earlier in the same sitting*, that a
+relay-held description would breach 0006. It applied a custodian's test to
+a register's field.
+
+### It belongs on the relay because a relay is up
+
+The obvious home for a self-description is the node — it is the peer's own
+word about itself. That is the wrong home, for one reason: **a node is
+frequently asleep and a relay is not.** A description fetched from the node
+is unavailable in exactly the case you most wanted it, and forces the
+picker to render from cache or render blank.
+
+So the peer declares it at claim/rename time, the home relay holds it by
+contract beside the label, and it answers for an offline peer.
+
+The consequence worth liking: **a stranger never interrogates your node.**
+They read the register. See *"the gap that stays shut"* below.
+
+### The row is closed
+
+A search slot carries what you **scan** by, and nothing else. Everything
+else is fetched by id.
+
+> **Andy:** *"The slot doesn't have to carry the description in
+> peer-search, the ID allows it to be retrieved after the fact."*
+
+The budget is already written into the code — 32 slots, *"13376 worst case,
+with 2890 spare"* ([relay.js:1752](../../spirit/run/js/relay.js#L1752)) —
+and the requirement it exists to serve is Andy's *"searches for 'a' must be
+successful, even if there's a million potential peers."* Put prose in the
+row and 32 results become roughly 13.
+
+The membership test this gives is sharper than "is it useful":
+
+> **What survives being multiplied by 32?**
+
+`present` is a boolean, so it earns its seat and already has one
+([relay.js:1764](../../spirit/run/js/relay.js#L1764)); ranking sorts
+present-first at [1731](../../spirit/run/js/relay.js#L1731). A description
+is prose, so it does not. The rule is what keeps the slot budget from being
+eroded one well-meaning field at a time.
+
+**Make it a category, not a field.** "Public by contract" as a *declared
+set* means a peer can add to its public record later with no protocol
+change, and partners keep propagating it **by reference** — the id — rather
+than by value. That is the closed-row rule one level up, and it is what
+holds the 32 slots permanently rather than until the next good idea.
+
+### Fetching it proves the route, because it is the same route
+
+> **Andy:** *"when a peer is selected in the shell, a description can then
+> be procured via the relay-partner POST chain, this would incidentally
+> also validate true reachability."*
+
+Not incidentally — rigorously, and for a reason worth stating. A
+reachability probe that travels a *different* path than the real send is
+the classic lie: ping is green, the service is down. This probe traverses
+the hops a `peer.post` will.
+
+| hop | how it is known |
+|---|---|
+| shell to node | local |
+| node to my relay | **traversed** — the POST left |
+| my relay to their relay | **traversed** — the answer came back over the partner link |
+| their relay to their node | **reported**, by the only party that can know: the relay holding their stream |
+
+Three hops proved by traversal, the fourth by the authority on it. The
+fourth is already wired — `presentNow.isPresent()` — so one reply carries
+the description *and* the home relay's own view of liveness.
+
+It also costs nothing: the fetch was happening anyway, on selection, at the
+moment the user is about to write to somebody.
+
+**The boundary:** hop four is a snapshot, and the user then spends thirty
+seconds typing. That is not a flaw to engineer around. It is why `peer.post`
+delivers or refuses at once under 0006.
+
+> **The probe is for choosing. The post is for knowing.**
+
+A picker showing a green dot over a send that then fails silently would be
+the mailbox's lie in a smaller package.
+
+### The gap that stays shut
+
+A relay answers questions addressed to itself — `answerSelf`
+([relay.js:1629](../../spirit/run/js/relay.js#L1629)) handles
+`{partners:true}` and `{search:{q}}`. **A node answers nothing.** An
+app-less arrival is dropped at
+[shell.js:2003](../../spirit/run/js/client/shell.js#L2003):
+
+    if (!info || !info.app) return; // no envelope: addressed to no app
+
+The transport for a node-side responder already exists — the app-less
+system packet, `{v:1, body:{...}}`, built when the envelope left the node
+(`84ef6c6`). Only the responder is missing.
+
+**Tier three does not need it, and should not open it.** Crossing that
+threshold changes what a node *is*: today it receives messages, afterwards
+it answers questions, and "what are you running" is the same shape as
+"describe yourself". `unknownPolicy` and `frontDoor` in `hub.js` are where
+that policy would live. Recorded here so the next session knows the door
+was found, considered and left closed on purpose.
+
+---
+
+### Decided (Andy)
+
+1. **A peer's public record is public by contract** — held by the home
+   relay, published to anyone, distinct in kind from anything stored on a
+   peer's behalf. 0006 unamended.
+2. **The search row stays closed**: key, label, present. Everything else is
+   retrieved by id.
+3. **Description is procured on selection**, through the relay-partner POST
+   chain, and that fetch validates reachability.
+4. **Label is what it calls itself; description is what you say about it.**
+   Two fields, two authors — the R1 split generalised past labels.
+5. **The key ending retreats** to the two screens §6 actually argues for:
+   your own footer, and first contact where it is read down a phone.
+
+### Recommended (Claude), not yet decided
+
+6. Public-by-contract as a **declared category**, so the record can grow
+   without a protocol change and partners propagate it by reference.
+7. **Bound the description at the relay** the way the label is bounded
+   (256 bytes / 48 graphemes). A register that publishes an unbounded
+   string is a register somebody writes ten kilobytes into.
+8. **Say the reach in the words the user types it into.** Public by
+   contract means public to the whole mesh — every partner of every
+   partner, for as long as the enrolment lives. A name does not feel like
+   disclosure; a description is where somebody writes something they
+   regret. Cheapest to get right before the first description exists.
+
+### Open
+
+- **Who authors the description for a peer with no node of their own?**
+  Devices share an identity; nothing says which device's word wins.
+- **Revocation.** A label can be renamed. Nothing says what happens to a
+  published description when a peer leaves a relay, or whether partners
+  holding it by reference ever learn.
+- **The offline remainder.** If the home relay is unreachable, the fallback
+  chain is: local note, then cached description, then key ending. Only the
+  last exists today.
