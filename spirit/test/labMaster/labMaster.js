@@ -308,6 +308,23 @@ function isClone(targetRoot) {
   return fs.existsSync(path.join(targetRoot, '.git'));
 }
 
+// A HOME THAT IS ALREADY A CLONE IS ADOPTED, NOT DESTROYED.
+//
+// Create and Start both reach for a home, and neither of them means
+// "throw away what is there". A node migrated by hand — or a row created
+// again after labMaster's state file was lost — already has a clone on
+// disk with a key in it, and cloning fresh over the top would take that
+// key off every relay it holds a seat on.
+//
+// Recycle is the one caller that means exactly that, and it says so by
+// calling cloneNode directly.
+function ensureClone(id) {
+  const targetRoot = homeRootFor(id);
+  if (!targetRoot) throw new Error('refusing to build outside the lab root: ' + id);
+  if (isClone(targetRoot)) return updateNode(id);
+  return cloneNode(id);
+}
+
 // NEW NODE, NEW CLONE.
 //
 // `--reference` takes the objects off the checkout already on this disk,
@@ -495,7 +512,7 @@ function handleCreate(body) {
   if (portTaken(port)) return { status: 409, error: 'port in use in table' };
 
   let home;
-  try { home = cloneNode(id); }
+  try { home = ensureClone(id); }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
 
 
@@ -531,7 +548,7 @@ function handleStart(node) {
   // never been an update and must not become one: pressing it on a node
   // bound to a relay should start that node, not fetch anything.
   if (!node.permanent && !fs.existsSync(path.join(node.home, 'js', 'server.js'))) {
-    try { node.home = cloneNode(node.id).replace(/\\/g, '/'); }
+    try { node.home = ensureClone(node.id).replace(/\\/g, '/'); }
     catch (err) { return { status: 500, error: String(err.message || err) }; }
     noteCommit(node);
     saveDesired(nodes);
