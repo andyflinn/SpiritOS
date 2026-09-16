@@ -103,6 +103,11 @@ This directory contains the vision, principles, and architecture decisions for *
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.
+- [What each server would depend on, separated](andy/NODE_AND_RELAY_DEPENDENCIES.md)
+  — a relay loads 22 modules and uses 11; 4,257 lines of node code sit on the
+  public box unreached, `trafficLog.js` among them, held off by one boolean.
+  Three modules are the entire shared surface. Measured at `e647e60`, with the
+  method to re-derive it.
 
 ## Relay
 - [Peer Devices](relay/PEER-DEVICES.md) — every identity attaching its own
