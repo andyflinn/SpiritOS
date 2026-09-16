@@ -42,6 +42,27 @@ var FIRST_RETRY_MS = 1000;
 // and the jitter below is what stops those requests arriving together.
 var MAX_RETRY_MS = 8000;
 
+// ── HOW LONG SILENCE IS ALLOWED TO LAST ──────────────────────────────
+//
+//   Andy: "when a partner receives a connect request from a partner, does
+//   it verify the health of its own connect/sseReader?"
+//
+// It could not. `await reader.read()` blocks until bytes arrive or the
+// socket errors, and a HALF-OPEN connection does neither: the peer is
+// gone — a killed VM, a dropped NAT mapping, a firewall reaping an idle
+// flow — but no FIN ever arrived, so the read never returns and never
+// throws. Nothing fails, so the retry loop never fires, and the client
+// believes it is attached FOREVER.
+//
+// That is the worst shape a failure can take here and it is the one the
+// backoff work above cannot help with: being clingy about reconnecting is
+// no use to a client that does not know it has been disconnected.
+//
+// The relay writes `:` every twenty seconds for exactly this purpose, and
+// until now the only thing listening was a proxy. Three missed in a row is
+// a connection to nobody.
+var IDLE_MS = 65000;
+
 function parseChunk(text) {
   // One SSE message: any number of field lines, terminated by a blank
   // line. A line starting with `:` is a comment — the heartbeat — and
@@ -89,6 +110,31 @@ function connect(opts) {
   var retryMs = firstRetry;
   var timer = null;
   var controller = null;
+  var idleTimer = null;
+  var idleMs = opts.idleMs || IDLE_MS;
+  // ITS OWN TIMER SEAM, so a test measuring the backoff curve does not
+  // have to sieve the watchdog out of the same list of delays by
+  // recognising its number. Two clocks, two questions.
+  var idleSetT = opts.idleTimeoutImpl || setT;
+  var idleClearT = opts.idleClearTimeoutImpl || clearT;
+
+  // Restarted on every byte. When it fires, the connection is abandoned
+  // rather than waited on: abort() makes the pending read throw, which
+  // lands in the same catch a real network error would, so there is one
+  // recovery path and not two.
+  function touch() {
+    if (idleTimer) idleClearT(idleTimer);
+    if (stopped) return;
+    idleTimer = idleSetT(function () {
+      idleTimer = null;
+      untouch();
+      if (controller) { try { controller.abort(); } catch (e) { /* gone */ } }
+    }, idleMs);
+  }
+
+  function untouch() {
+    if (idleTimer) { idleClearT(idleTimer); idleTimer = null; }
+  }
 
   function say(fn, arg) {
     if (typeof fn !== 'function') return;
@@ -99,6 +145,7 @@ function connect(opts) {
   }
 
   function scheduleRetry(reason) {
+    untouch();
     say(opts.onClose, reason);
     if (stopped) return;
     // JITTERED, and that is what makes a short cap safe rather than
@@ -123,6 +170,9 @@ function connect(opts) {
     if (!doFetch) { scheduleRetry('no fetch'); return; }
 
     controller = typeof AbortController === 'function' ? new AbortController() : null;
+    // Armed before the fetch, so a request that hangs before any response
+    // is abandoned on the same clock as one that goes quiet afterwards.
+    touch();
     var res;
     try {
       res = await doFetch(opts.url, {
@@ -146,22 +196,25 @@ function connect(opts) {
     // a stale credential into a one-per-second hammer that then spent the
     // relay's rate limit, which guaranteed the refusals continued.
     //
-    // ── THE BACKOFF RESETS ON A CONNECTION, not only on a message ──────
+    // AND IT IS NOT RESET HERE, still. A draft of the clingy change did
+    // exactly what the paragraph above forbids, and this comment is what
+    // caught it — the incident it describes is not visible from anywhere
+    // else in the tree.
     //
-    // This said "the backoff resets when something ARRIVES... nothing
-    // weaker is worth believing", and reset it only where an EVENT was
-    // parsed. Which meant a heartbeat did not count — `parseChunk(':')`
-    // answers null and returns before the reset — so a stream that was
-    // connected, healthy and merely QUIET kept whatever backoff it had.
+    // THE RESET MOVED TO BYTES, which distinguishes the two cases cleanly
+    // where neither "on connect" nor "on an event" could:
     //
-    // A node on a relay nobody is talking through would climb to the cap
-    // across a few restarts and stay there, and every later restart cost
-    // the full wait. The symptom is a node that takes longer to re-attach
-    // the longer it has been well behaved.
+    //   stale credential   200, body closes, ZERO bytes -> no reset, the
+    //                      backoff keeps climbing, the hammer never starts
+    //   healthy but quiet  heartbeats arrive every 20s -> reset, so a node
+    //                      on a relay nobody talks through does not climb
+    //                      to the cap and stay there
     //
-    // An accepted connection is the relay saying it is there. That is
-    // enough, and the event reset below stays as the stronger signal.
-    retryMs = firstRetry;
+    // The old rule reset only where an EVENT was parsed, and
+    // `parseChunk(':')` answers null for a heartbeat and returns first —
+    // so a stream that was connected, healthy and merely QUIET kept
+    // whatever backoff it had. The symptom was a node that re-attached
+    // more slowly the longer it had behaved.
     say(opts.onOpen);
 
     var reader = res.body.getReader();
@@ -171,6 +224,14 @@ function connect(opts) {
       for (;;) {
         var step = await reader.read();
         if (step.done) { scheduleRetry('ended'); return; }
+
+        // BYTES. Not a parsed event, not an accepted socket — bytes this
+        // relay chose to send down this stream. A heartbeat is the relay
+        // saying it is there, which is the whole reason it sends one, and
+        // until now the only thing listening for it was a proxy.
+        retryMs = firstRetry;
+        touch();
+
         buffer += decoder.decode(step.value, { stream: true });
         // \r\n\r\n as well as \n\n: the spec allows either, and a proxy
         // that rewrites line endings would otherwise make every message
@@ -180,11 +241,11 @@ function connect(opts) {
         parts.forEach(function (raw) {
           var msg = parseChunk(raw);
           if (!msg) return;
-          retryMs = firstRetry;
           say(opts.onEvent, msg);
         });
       }
     } catch (e) {
+      untouch();
       scheduleRetry('read failed: ' + (e && e.message ? e.message : e));
     }
   }
@@ -207,4 +268,5 @@ module.exports = {
   parseChunk: parseChunk,
   FIRST_RETRY_MS: FIRST_RETRY_MS,
   MAX_RETRY_MS: MAX_RETRY_MS,
+  IDLE_MS: IDLE_MS,
 };

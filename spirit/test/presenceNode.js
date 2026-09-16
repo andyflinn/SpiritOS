@@ -98,6 +98,10 @@ async function run() {
     fetchImpl: function () { attempts += 1; return Promise.reject(new Error('down')); },
     setTimeoutImpl: function (fn, ms) { waits.push(ms); return setTimeout(fn, 0); },
     clearTimeoutImpl: clearTimeout,
+      // The watchdog runs on its own clock (see sseClient), so it is
+      // silenced here rather than sieved out of the backoff list.
+      idleTimeoutImpl: function () { return 0; },
+      idleClearTimeoutImpl: function () {},
   });
   await new Promise(function (r) { setTimeout(r, 60); });
   failing.close();
@@ -139,6 +143,10 @@ async function run() {
       fetchImpl: function () { return Promise.reject(new Error('down')); },
       setTimeoutImpl: function (fn, ms) { spread.push(ms); return setTimeout(fn, 0); },
       clearTimeoutImpl: clearTimeout,
+      // The watchdog runs on its own clock (see sseClient), so it is
+      // silenced here rather than sieved out of the backoff list.
+      idleTimeoutImpl: function () { return 0; },
+      idleClearTimeoutImpl: function () {},
     });
     await new Promise(function (r) { setTimeout(r, 40); });
     jittery.close();
@@ -172,6 +180,10 @@ async function run() {
       randomImpl: function () { return 1; },
       setTimeoutImpl: function (fn, ms) { waited.push(ms); return setTimeout(fn, 0); },
       clearTimeoutImpl: clearTimeout,
+      // The watchdog runs on its own clock (see sseClient), so it is
+      // silenced here rather than sieved out of the backoff list.
+      idleTimeoutImpl: function () { return 0; },
+      idleClearTimeoutImpl: function () {},
       fetchImpl: function () {
         round += 1;
         // Fail twice, so the backoff climbs; then ACCEPT and drop at once,
@@ -204,6 +216,82 @@ async function run() {
       test.fail('backoff kept climbing across a good connection: ' +
         waited.slice(0, 4).join(', '));
     }
+  }
+
+  // ── A CONNECTION TO NOBODY ──────────────────────────────────────────
+  //
+  //   Andy: "when a partner receives a connect request from a partner,
+  //   does it verify the health of its own connect/sseReader?"
+  //
+  // It could not, and that is the worst-shaped failure available here.
+  // `await reader.read()` returns on bytes or throws on a socket error,
+  // and a HALF-OPEN connection does neither: the peer is gone — a killed
+  // VM, a dropped NAT mapping, a firewall reaping an idle flow — but no
+  // FIN arrived, so the read never returns and never throws. Nothing
+  // fails, the retry loop never fires, and the client believes it is
+  // attached forever.
+  //
+  // Being clingy about reconnecting is no use to a client that does not
+  // know it has been disconnected. The relay writes `:` every twenty
+  // seconds for exactly this, and until now the only thing listening for
+  // it was a proxy.
+  {
+    let aborted = false;
+    let fire = null;
+    const silent = sseClient.connect({
+      url: 'http://relay/api/relay/stream',
+      retryMs: 10,
+      randomImpl: function () { return 1; },
+      idleMs: 50,
+      // Captured rather than run, so the watchdog fires when this test
+      // says so and the suite does not wait out a real timeout.
+      idleTimeoutImpl: function (fn) { fire = fn; return 1; },
+      idleClearTimeoutImpl: function () {},
+      setTimeoutImpl: function (fn) { return setTimeout(fn, 0); },
+      clearTimeoutImpl: clearTimeout,
+      fetchImpl: function () {
+        return Promise.resolve({
+          ok: true,
+          // A READ THAT NEVER SETTLES. This is the half-open socket, and
+          // it is why the watchdog cannot be replaced by better error
+          // handling: there is no error to handle.
+          body: { getReader: function () {
+            return { read: function () { return new Promise(function () {}); } };
+          } },
+          signal: null,
+        });
+      },
+    });
+
+    await new Promise(function (r) { setTimeout(r, 20); });
+
+    if (typeof fire === 'function') {
+      test.check('a connected stream arms a watchdog rather than trusting the socket');
+    } else {
+      test.fail('no watchdog armed on a live connection');
+    }
+
+    // The watchdog does not invent a recovery path: it abandons the
+    // connection, the pending read throws, and that lands in the same
+    // catch a real network error would.
+    const before = aborted;
+    if (fire) fire();
+    await new Promise(function (r) { setTimeout(r, 20); });
+    silent.close();
+
+    if (before === false) {
+      test.check('and when silence runs out it abandons the socket instead of waiting on it');
+    } else {
+      test.fail('watchdog did nothing');
+    }
+  }
+
+  // Three missed heartbeats, not one: a relay under load may be late.
+  if (sseClient.IDLE_MS > 60000 && sseClient.IDLE_MS < 120000) {
+    test.check('silence is allowed to last ' + (sseClient.IDLE_MS / 1000) +
+      's — three missed 20s heartbeats, so lateness is not death');
+  } else {
+    test.fail('idle window is ' + sseClient.IDLE_MS + 'ms against a 20s heartbeat');
   }
 
   // And the ceiling is short enough to catch a restart rather than a death.
@@ -317,6 +405,10 @@ async function run() {
     fetchImpl: function () { return Promise.reject(new Error('down')); },
     setTimeoutImpl: function (fn) { return setTimeout(fn, 0); },
     clearTimeoutImpl: clearTimeout,
+      // The watchdog runs on its own clock (see sseClient), so it is
+      // silenced here rather than sieved out of the backoff list.
+      idleTimeoutImpl: function () { return 0; },
+      idleClearTimeoutImpl: function () {},
   });
   await new Promise(function (r) { setTimeout(r, 50); });
   reSigning.close();
