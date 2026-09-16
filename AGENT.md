@@ -11,6 +11,28 @@ Public face: [andyflinn.com](https://andyflinn.com). Andy Flinn is the one opera
 - Personal → public is **HTTPS**, except loopback HTTP for lab relays. Public Node is never advertised on 65430.
 - labMaster and lab relays belongs on a **personal development workstation**. Never on the 1 GB public box.
 
+## Comms — one interface, no exceptions
+
+**All comms go through `peerPost`.** It is the one component that provides signed requests over public HTTP, and it owns the mechanics — not just the socket:
+
+- **Signing**, from the node's own key.
+- **The hash, computed and never sent** (decision 0011). Each party derives it from bytes it holds: `waiting[hash]` on the asking side (`peerPost.js`, `auth.requestHash`), and derived again *from the bytes that actually arrived* on the answering side. A responder that can produce the hash **read the request** — that is the proof, and it is why the hash never travels except inside a signature.
+- **Dispatch by hash.** `settle(hash, answer)` returns a reply to the requester that asked, and to no one else. Late news finds who asked by the same key.
+- **The transport, injected** — `opts.request` is `hub.relayRequest`. `peerPost` never reaches for a socket and neither does anything else.
+
+The interface has **two halves**, because a personal node has no public address:
+
+| direction | mechanism |
+|---|---|
+| out | `relayRequest` — `POST /api/relay/post`, `POST /api/relay/reply` |
+| in | the held stream — the relay pushes `request` and `reply` to a node it cannot call |
+
+That is *request by post, reply by stream*. The stream is the **inbound half of the interface**, never a way around it.
+
+**No component reaches for `http`, `https`, `fetch`, `XMLHttpRequest` or `EventSource`.** Not to get something done quickly, not because the interface is awkward here. If the interface is insufficient for the task, **decide**: modify the interface, or grant an explicit, recorded exception. Never work around it. This rule has been re-derived and back-slid more than once — `fetch` is a global in both runtimes, so nothing stops it but this line and `spirit/test/oneDoor.js`.
+
+A relay is a client of the same interface. `createPeerPost` already takes `traffic` injected so a relay can omit it, and touches `whoBook` only on the inbound unknown-sender path — it was built to be constructed on a relay.
+
 ## Host
 
 - One operator. **root is spirit.** Clone stays `/root/SpiritOS`.
@@ -37,7 +59,7 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 - Target: every **app** will live at `app/<appName>/<appName>.js` plus sibling manifest. Today nine ids still live in `index.html` (stats, files, text-file-launcher, media-launcher, process-browser, jobs, app-manager, group-manager, spirit). They move only per `CLEANUP-PLAN.md`. Intrinsic still does not earn a seat in `index.html`.
 - Not apps (do not tidy into `app/`): `js/kernel.js`, `js/client/shell.js`, `index.html`, `js/ownerBadge.js` (script-tag helper). `js/client/browser.js` is unused by `index.html` / `relay.html` / `server.js` — do not assume it is loaded; do not delete it until Andy opens that sitting.
 - `mount(container, api, params)` — third argument is real; viewers use it.
-- Target: apps do not name HTTP paths. Methods live on `api`. **Today Relay Chat still `fetch`es `/api/hub/*`; do not lint-fail that file until Andy opens the `api.hub` sitting.**
+- **Apps do not name HTTP paths and do not call `fetch`.** Methods live on `api`; the shell reaches the node, the node reaches the wire — see **Comms** above. This was written as a *target* with a standing pass for Relay Chat, and that is precisely how twelve direct `fetch`es accumulated across six apps: one file had a named exemption, so the next file took one too. The twelve are now a frozen, dated list in `spirit/test/oneDoor.js` — the count goes down or the harness goes red. **Nothing is added to it without Andy granting the exception explicitly.**
 - `api.hub.status` means the **badge summary** (`rows`, `ownedUrls`, `mustPick`), not the relay census (`/api/relay/status`).
 - `api.fs` is scoped to `app/<name>/` **by convention**. The jail is server-side `fileWritable`. Shared reads via `spirit.core.fs` are not a security regression.
 - Kernel rules may be `js/*.js` modules on `api` or a documented script-tag global (`spiritOwnerBadge`). Do not delete `js/ownerBadge.js` as a stray.
