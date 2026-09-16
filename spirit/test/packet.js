@@ -18,7 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const packet = require('../run/js/packet.js');
+const packet = require('../run/js/client/packet.js');
 const limits = require('../run/js/limits.js');
 const hub = require('../run/js/hub.js');
 
@@ -133,17 +133,23 @@ test.subHeading('One number, in one place');
   // AND NOBODY ELSE DECLARES ONE. A literal here is how the gap comes
   // back: the next module needing a size writes its own, agrees with
   // itself, and disagrees with the wire.
+  // js/ AND js/client/: packet.js moved down there, and shell.js — which
+  // refuses an oversized send before it posts — is exactly the file that
+  // would grow a second number if this scan could not see it.
   const jsDir = path.join(__dirname, '..', 'run', 'js');
   const offenders = [];
-  fs.readdirSync(jsDir).forEach(function (f) {
-    if (!f.endsWith('.js') || f === 'limits.js') return;
-    const src = fs.readFileSync(path.join(jsDir, f), 'utf8');
-    src.split('\n').forEach(function (line, i) {
-      if (/^\s*(\/\/|\*)/.test(line)) return;
-      // A declaration that assigns a bare number to a size-shaped name.
-      if (/\b(MAX_TEXT|MAX_ROUTED_TEXT|PAYLOAD_MAX|BODY_MAX|MAX_BODY)\b\s*=\s*\d+/.test(line)) {
-        offenders.push(f + ':' + (i + 1) + '  ' + line.trim());
-      }
+  [jsDir, path.join(jsDir, 'client')].forEach(function (dir) {
+    const where = dir === jsDir ? '' : 'client/';
+    fs.readdirSync(dir).forEach(function (f) {
+      if (!f.endsWith('.js') || f === 'limits.js') return;
+      const src = fs.readFileSync(path.join(dir, f), 'utf8');
+      src.split('\n').forEach(function (line, i) {
+        if (/^\s*(\/\/|\*)/.test(line)) return;
+        // A declaration that assigns a bare number to a size-shaped name.
+        if (/\b(MAX_TEXT|MAX_ROUTED_TEXT|PAYLOAD_MAX|BODY_MAX|MAX_BODY)\b\s*=\s*\d+/.test(line)) {
+          offenders.push(where + f + ':' + (i + 1) + '  ' + line.trim());
+        }
+      });
     });
   });
   if (offenders.length === 0) {
@@ -293,9 +299,12 @@ test.subHeading('The node exposes nothing that reads an envelope');
   // AND NOTHING IN THE NODE REQUIRES packet.js. The rule is about the
   // dependency, not just the one function: a module about apps has no
   // business in a node, and through server.js it reached a relay.
+  // No exclusion needed: packet.js is not in this directory any more. It
+  // sits in js/client/ with the shell, which is the same rule written as
+  // a path rather than as a test.
   const nodeDir = path.join(__dirname, '..', 'run', 'js');
   const offenders = fs.readdirSync(nodeDir)
-    .filter(function (f) { return f.endsWith('.js') && f !== 'packet.js'; })
+    .filter(function (f) { return f.endsWith('.js'); })
     .filter(function (f) {
       // Comments stripped: this file's own history mentions packet.js all
       // over, and a scan that cannot tell code from the record of the code

@@ -106,6 +106,11 @@ expectLoads('relay.html (--relay homepage)', 'relay.html');
 expectLoads('favicon.svg', 'favicon.svg');
 expectLoads('js/client/shell.js (browser boot)', 'js/client/shell.js');
 expectLoads('js/client/browser.js', 'js/client/browser.js');
+// packet.js moved down here out of js/. If it ever stops serving, no app can
+// send or read an envelope, and the shell can only say so in the console —
+// so the serving is asserted rather than discovered.
+expectLoads('js/client/packet.js (the app envelope)', 'js/client/packet.js');
+expectLoads('js/limits.js (the size both ends refuse at)', 'js/limits.js');
 
 // ---- app code and app data stay open ----
 // An app's entry script and manifest are readable (the shell fetches the

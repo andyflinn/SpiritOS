@@ -1389,7 +1389,7 @@
       sendMessagePacket: function (packetApp, toId, body, opts) {
         var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
         if (!envelope) {
-          return Promise.resolve({ status: 0, text: '{"error":"js/packet.js is not loaded"}' });
+          return Promise.resolve({ status: 0, text: '{"error":"js/client/packet.js is not loaded"}' });
         }
         var made = envelope.encode(packetApp, body, { re: (opts && opts.re) || '' });
         if (!made.ok) {
@@ -1975,7 +1975,7 @@
     if (!envelope && !deliverPackets.warned) {
       deliverPackets.warned = true;
       console.error(
-        'js/packet.js is not loaded — no packet can be routed to any app. ' +
+        'js/client/packet.js is not loaded — no packet can be routed to any app. ' +
         'index.html must load it before js/client/shell.js. A hard reload ' +
         'usually fixes it: the page is running a cached index.html.'
       );

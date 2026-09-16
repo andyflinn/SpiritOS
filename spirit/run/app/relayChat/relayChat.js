@@ -1140,7 +1140,7 @@ spirit.shell.activateApp({
       var rcMade = (window.spiritPacket || null) &&
         window.spiritPacket.encode(RC_PACKET_APP, text);
       if (!rcMade || !rcMade.ok) {
-        rcSay((rcMade && rcMade.error) || 'js/packet.js is not loaded');
+        rcSay((rcMade && rcMade.error) || 'js/client/packet.js is not loaded');
         return;
       }
       hubPost('/api/spirit', { verb: 'peer.post', to: to, text: rcMade.text }).then(function (r) {

@@ -1930,7 +1930,8 @@ function matchRank(label, query) {
     // naming an app, in bytes the box never reads. Andy: "nothing in node
     // and relay should know about apps." A packet addressed to a relay
     // has no app on any node to be for, and the absence is now what marks
-    // it as a system packet (js/packet.js).
+    // it as a system packet to whoever decodes one. Which is not this
+    // file, and not any file next to it — the decoder lives in js/client/.
     var reply = JSON.stringify({ v: 1, body: out });
 
     // NOT THROUGH routeReply, and the reason is the same asymmetry that

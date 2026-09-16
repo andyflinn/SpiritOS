@@ -55,7 +55,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const kernel = require('../run/js/kernel');
-const packet = require('../run/js/packet');
+const packet = require('../run/js/client/packet');
 
 const SHELL = path.join(__dirname, '..', 'run', 'js', 'client', 'shell.js');
 

@@ -29,11 +29,12 @@
 // only clock two peers share), and any label (labels are display; a peer
 // is a key).
 
-// Dual target, like this file: required on the node and the relay, and
-// read off `window.spiritLimits` in the page. index.html loads limits.js
-// before packet.js for exactly this reason.
+// limits.js IS dual target — the relay and server.js read it too, which is
+// why it stays up in js/ while this file does not. Required from one
+// directory up on the node, read off `window.spiritLimits` in the page.
+// index.html loads limits.js before packet.js for exactly that reason.
 var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
-  ? require('./limits.js')
+  ? require('../limits.js')
   : (typeof window !== 'undefined' ? window.spiritLimits : null);
 
 // SAY WHICH SCRIPT IS MISSING, rather than dying on `undefined.PAYLOAD_MAX`.

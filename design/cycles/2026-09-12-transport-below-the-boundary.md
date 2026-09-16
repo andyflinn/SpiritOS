@@ -233,7 +233,7 @@ subscribes from `handleSseConnection` (a `packet` event on the
 `createPeerPost`.
 
 `decorateWithPacket` moved from `hub.js` into
-[`packet.decorate`](../../spirit/run/js/packet.js) on the way, so the
+[`packet.decorate`](../../spirit/run/js/client/packet.js) on the way, so the
 ring and the router build `message.packet` with one function rather than
 two that can drift.
 

@@ -46,7 +46,7 @@ const peerFile = require('../run/js/peerFile.js');
 // index.html loads this by script tag beside the other two; the app
 // reads envelopes with it, so the stub hands over the real module rather
 // than a lookalike.
-const packet = require('../run/js/packet.js');
+const packet = require('../run/js/client/packet.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'app', 'relayChat', 'relayChat.js');

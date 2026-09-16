@@ -41,10 +41,12 @@
          run/js requires this file now, and the packet suite fails if one
          does again.
 
-         So it lives here, in the only layer that routes on `app`: the
-         shell composes an envelope on the way out and reads one on the
-         way in, and the node carries an opaque payload between them. -->
-    <script src="/js/packet.js"></script>
+         So it lives in js/client/ now, with the only layer that routes on
+         `app`: the shell composes an envelope on the way out and reads one
+         on the way in, and the node carries an opaque payload between
+         them. The directory is the statement — a file in js/ is one a
+         relay may end up loading. -->
+    <script src="/js/client/packet.js"></script>
     <!-- The ICON table read the other way round — one line per glyph,
          carrying every name it is keyed under. What the icon selector
          chooses from, and isomorphic so the grouping and the filtering

@@ -22,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const packet = require('../run/js/packet');
+const packet = require('../run/js/client/packet');
 const arrivalsModule = require('../run/js/arrivals');
 const trafficLog = require('../run/js/trafficLog');
 
