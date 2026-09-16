@@ -1961,6 +1961,26 @@
   function deliverPackets(messages) {
     var routed = [];
     var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
+
+    // ── LOUD, BECAUSE THIS FAILS QUIETLY ─────────────────────────────
+    //
+    // The node used to decode and hand over `message.packet`, so a page
+    // without packet.js still received traffic. It does not any more: if
+    // this script did not load, every arriving packet routes to nobody
+    // and nothing says why — a chat that receives nothing, an app that
+    // never hears back, and no error anywhere.
+    //
+    // Once, not per message: a stuck page would otherwise fill a console
+    // with the same line at the rate its peers are talking.
+    if (!envelope && !deliverPackets.warned) {
+      deliverPackets.warned = true;
+      console.error(
+        'js/packet.js is not loaded — no packet can be routed to any app. ' +
+        'index.html must load it before js/client/shell.js. A hard reload ' +
+        'usually fixes it: the page is running a cached index.html.'
+      );
+    }
+
     (Array.isArray(messages) ? messages : []).forEach(function (message) {
       // ── THE SHELL DECODES, BECAUSE THE SHELL IS WHAT ROUTES ──────────
       //

@@ -6,7 +6,7 @@
     <title>SpiritOS</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <script src="/js/kernel.js"></script>
-    <!-- The isomorphic half of js/ownerBadge.js: the mailbox rules the
+    <!-- The isomorphic half of js/ownerBadge.js: the relay rules the
          browser has to obey too (Natter's Remove asks it whether this
          node may be left with fewer relays). Node-only code inside it
          never runs here. -->
@@ -28,12 +28,22 @@
          filed on this node. Relay Chat holds the files through its own
          scoped api.fs; this only decides names, shapes and merging. -->
     <script src="/js/chatLog.js"></script>
-    <!-- The envelope every app's traffic travels in, inside the relay's
-         own `text` field. Isomorphic: the hub wraps with it in node, the
-         apps read it here. -->
-    <!-- Before packet.js: packet.js reads PAYLOAD_MAX off window.spiritLimits,
-         so that the size a page refuses is the size the relay refuses. -->
+    <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spiritLimits,
+         so the size a page refuses is the size the relay refuses. -->
     <script src="/js/limits.js"></script>
+    <!-- The envelope every app's traffic travels in, inside the relay's
+         own `text` field.
+
+         NOT isomorphic any more, and that is the point. This said "the hub
+         wraps with it in node, the apps read it here" — and the hub doing
+         the wrapping was the node knowing what an app is (Andy: "nothing
+         in node and relay should know about apps"). No module under
+         run/js requires this file now, and the packet suite fails if one
+         does again.
+
+         So it lives here, in the only layer that routes on `app`: the
+         shell composes an envelope on the way out and reads one on the
+         way in, and the node carries an opaque payload between them. -->
     <script src="/js/packet.js"></script>
     <!-- The ICON table read the other way round — one line per glyph,
          carrying every name it is keyed under. What the icon selector
@@ -312,7 +322,7 @@
          (§3), and it is a block in the pane's own stack. */
       #process-search { width: 100%; }
 
-      /* The ownership mark: ★ means this node owns that mailbox, the
+      /* The ownership mark: ★ means this node owns that relay, the
          same as in Relay Chat's To list. It is a mark and not a control
          — what opens the row is the row (.natter-openable) — so it takes
          no hit area of its own and the whole width is the target. */
@@ -778,7 +788,7 @@
       /* A handful of short facts read as ONE line, not as a list. Used
          where a row has already supplied the heading, so the facts under
          it are a single reading rather than four label-over-value rows
-         stacked into a table: what a mailbox reports in Natter, and who a
+         stacked into a table: what a relay reports in Natter, and who a
          contact is in the row that opened.
 
          Was .natter-facts, named for the one app that had it. One row
@@ -831,7 +841,7 @@
          .jobs-table stays 13px for Jobs, which is a log. */
       .natter-table th, .natter-table td { font-size: 16px; }
 
-      /* Names the mailbox a claim will happen on, which the form itself
+      /* Names the relay a claim will happen on, which the form itself
          cannot ask about — see natterPaintBind. Same weight as the mint
          heading: both are the title of a thing to do. */
       /* A heading inside a panel: reading size, and no browser margin of
@@ -883,7 +893,7 @@
 
       /* The one heading in that panel: the facts above are a reading of
          the row that opened them, but this is a thing to do. Reading
-         size, and the same ★ the row carries for owning the mailbox. */
+         size, and the same ★ the row carries for owning the relay. */
 
 
       /* All the labels in this panel read at the same size — the form's
@@ -898,7 +908,7 @@
          left hanging where it used to be, and no :empty rule to cancel
          one — the two hacks this replaces (#open-with:empty, and the
          12px that had to sit on the panel ABOVE the invite slot because
-         the slot is empty for a node that owns no mailbox).
+         the slot is empty for a node that owns no relay).
          The first block in a stack has nothing above it to be separated
          from, so it takes the space back. */
       /* §3, said once instead of once per pair.
@@ -960,7 +970,7 @@
       /* The folded panels at the foot of Relay Chat are separate offers,
          not one block: the same 12px that separates blocks everywhere
          else (§3). On each panel rather than the slot below them,
-         because the invite slot is empty for a node that owns no mailbox
+         because the invite slot is empty for a node that owns no relay
          and an empty div would still hold its margin. */
       /* Both are .stat-tile details, so the rule above already spaces
          them from whatever precedes them. Nothing to carry downward. */
