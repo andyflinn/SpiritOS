@@ -50,6 +50,11 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 // than a hope — neither is meaningful alone, and raising one without the
 // other moves the worst case linearly.
 var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
+
+// How many rows a search answers with. Fixed, not measured — see the
+// note at the cap itself. 32 x 418 worst-case bytes = 13376, inside the
+// 15872 a packet leaves after envelope headroom.
+var SEARCH_SLOTS = 32;
 // WHAT THE ONE REFUSAL IS CALLED, and how long this relay will hold a
 // browser's POST while the node answers.
 //
@@ -1722,37 +1727,34 @@ function matchRank(label, query) {
           return a.label.localeCompare(b.label);
         });
 
-        // ── CAPPED BY WHAT A PACKET HOLDS, NOT BY A ROW COUNT ──────
+        // ── A FIXED NUMBER OF SLOTS ────────────────────────────────
         //
-        //   Andy: "the results must be capped by MAX_PACKET_SIZE."
+        //   Andy: "there’s just a fixed number of slots."
         //
-        // A count is a guess about row size: twenty-five long labels
-        // overflow where a hundred short ones would not. The reply is a
-        // packet, so the honest cap is the packet — js/limits.js, the
-        // same number the sender pre-checks and this relay enforces.
+        // This measured each row and filled the packet to the byte,
+        // which got 91 rows of ordinary labels into the same space that
+        // guarantees 37. Not worth the machinery: a caller wants to know
+        // what a page IS, and "somewhere between 37 and 96 depending on
+        // how long everyone’s name is" is not an answer anybody can
+        // write code against.
         //
-        // Headroom for the envelope and the fields around `matches`,
-        // measured the same way the wire overhead was: reserve rather
-        // than hope.
-        var budget = limits.PAYLOAD_MAX - limits.WIRE_HEADROOM;
-        var matches = [];
-        var used = 0;
-        var more = false;
-        scored.forEach(function (hit) {
-          if (more) return;
-          var row = {
+        // The number is checkable rather than chosen. A row is at most
+        // a 60-char key, a 256-byte label (labelRule), an ISO date and
+        // two booleans, with field names — 418 bytes measured. The
+        // budget is PAYLOAD_MAX less the envelope headroom, 15872. So
+        // 32 slots is 13376 worst case, and the slack is there so that
+        // adding a field to a row later is a decision rather than an
+        // incident.
+        var matches = scored.slice(0, SEARCH_SLOTS).map(function (hit) {
+          return {
             publicKey: hit.peer.publicKey,
             publicLabel: labelOf(hit.peer),
             claimedAt: hit.peer.claimedAt,
             owner: !!hit.peer.owner,
             present: presentNow.isPresent(hit.peer.publicKey),
           };
-          var cost = JSON.stringify(row).length + 1;
-          if (used + cost > budget) { more = true; return; }
-          used += cost;
-          matches.push(row);
         });
-
+        var more = scored.length > SEARCH_SLOTS;
         out = {
           ok: true,
           status: 200,
