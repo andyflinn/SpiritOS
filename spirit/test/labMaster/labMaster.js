@@ -15,7 +15,6 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { spawn, execSync } = require('child_process');
-const buildStamp = require('../../run/js/buildStamp');
 
 const MASTER_PORT = 65420;
 const WORK_PORT = 65432;
@@ -25,7 +24,26 @@ const LAB_PORT_MAX = 65429;
 
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const WORK_HOME = path.join(REPO_ROOT, 'spirit', 'run');
-const FAKES_ROOT = path.join(os.tmpdir(), 'spiritos-relay-fakes');
+
+// ── WHERE A LAB NODE LIVES, AND WHY IT IS NOT %TEMP% ─────────────────
+//
+//   Andy: "in fact i want new ones all in repo/lab" — "repo/lab/name".
+//
+// Beside the checkout rather than inside it: `repo/SpiritOS` is the work
+// node, `repo/lab/<name>` is everybody else. A lab node is a person's
+// node that happens to run on this machine — it holds a key, a seat on a
+// public relay and a conversation — and %TEMP% is where a machine puts
+// things it is willing to lose.
+//
+// ── THE TEST HARNESS DID NOT COME WITH IT ────────────────────────────
+//
+// setupRelayFakes.js, labWorld.js, labPersistence.js and liveRelay.js all
+// still build under `os.tmpdir()/spiritos-relay-fakes`, and that is the
+// right place for them: a suite wants a throwaway tree it can wipe
+// between runs, and it must test the WORKING TREE rather than what is
+// published. These two roots answer different questions and sharing one
+// was what made a hand-kept node as disposable as a fixture.
+const LAB_ROOT = path.join(REPO_ROOT, '..', 'lab');
 const STATE_DIR = path.join(os.tmpdir(), 'spiritos-lab-master');
 const STATE_FILE = path.join(STATE_DIR, 'nodes.json');
 const PANEL_FILE = path.join(__dirname, 'labMastPanel.html');
@@ -65,6 +83,14 @@ function loadDesired() {
   return [workRow()];
 }
 
+// Noted on the row and persisted, so a restart of labMaster does not
+// forget what each node is running.
+function noteCommit(node) {
+  const root = homeRootFor(node.id);
+  node.commit = root ? commitOf(root) : '';
+  return node.commit;
+}
+
 function saveDesired(nodes) {
   fs.mkdirSync(STATE_DIR, { recursive: true });
   const desired = nodes.map(function (n) {
@@ -75,6 +101,10 @@ function saveDesired(nodes) {
       port: n.port,
       permanent: !!n.permanent,
       home: n.home,
+      // Kept across a restart of labMaster: which commit a node was last
+      // put on is a fact about the node, and re-deriving it would mean
+      // shelling out to git for every row at boot.
+      commit: n.commit || '',
     };
   });
   if (!desired.some(function (n) { return n.id === WORK_ID; })) {
@@ -93,7 +123,7 @@ let nodes = loadDesired().map(function (n) {
     type: n.type === 'relay' ? 'relay' : 'avatar',
     port: n.port,
     permanent: false,
-    home: n.home || path.join(FAKES_ROOT, n.id, 'spirit', 'run').replace(/\\/g, '/'),
+    home: n.home || path.join(LAB_ROOT, n.id, 'spirit', 'run').replace(/\\/g, '/'),
     pid: null,
     running: false,
     lastError: '',
@@ -162,6 +192,15 @@ function publicNode(n) {
     running: mine || portHasListener(n.port),
     lastError: n.lastError || '',
     startedAt: n.startedAt,
+    // WHICH COMMIT THIS NODE IS ON, recorded when it was last cloned or
+    // updated rather than asked here. The panel polls every three
+    // seconds; a `git rev-parse` per node per poll is a subprocess
+    // storm for a string that only changes when a button is pressed.
+    //
+    // It is the answer to the question this whole change created: a lab
+    // node runs published code now, so "is it behind?" is a real
+    // question and used not to be.
+    commit: n.commit || '',
   };
 }
 
@@ -170,28 +209,34 @@ function publicNode(n) {
 //
 // Three guards, none of them theatre: the id must be a slug (so it can
 // carry no separators and no ..), the resolved path must sit strictly
-// INSIDE the fakes root, and it must not be the work home. A tool that
+// INSIDE the lab root, and it must not be the work home. A tool that
 // deletes directories on a developer's machine earns all three — and the
 // work node is a real checkout, not a copy.
+//
+// THEY MATTER MORE THAN THEY DID. This used to delete inside %TEMP%;
+// LAB_ROOT is `repo/lab`, a folder beside somebody's actual checkout and
+// inside their synced drive. The guards did not change because they were
+// already written for the worse case.
 function homeRootFor(id) {
   const slug = slugName(id);
   if (!slug) return null;
-  const target = path.resolve(FAKES_ROOT, slug);
-  const inside = path.resolve(FAKES_ROOT) + path.sep;
+  const target = path.resolve(LAB_ROOT, slug);
+  const inside = path.resolve(LAB_ROOT) + path.sep;
   if (!target.startsWith(inside)) return null;
   if (target === path.resolve(WORK_HOME)) return null;
   return target;
 }
 
-// A NODE THAT IS RECREATED OR RECYCLED MUST BE CLEAN. It was not:
-// copyTrackedSpirit writes the git-tracked files over whatever is
-// already there, and relay-state, device.json, session.json and
-// minted.json are none of them tracked — so they survived. A "new" lab
-// relay could boot owned by a previous run's key, and be unclaimable by
-// the suite that had just asked for it.
+// A NODE THAT IS RECREATED MUST BE CLEAN, and nothing else may call
+// this. The old copy path wrote tracked files over whatever was already
+// there, and relay-state, device.json, session.json and minted.json are
+// none of them tracked — so a "new" lab relay could boot owned by a
+// previous run's key and be unclaimable by the suite that asked for it.
 //
 // That cost an afternoon of debugging a relay that remembered something
-// it should not have.
+// it should not have, and it is why Recycle wipes. It is also why Recycle
+// is not the bulk button: the same thoroughness that makes a new node
+// clean is what took Andy's bindings away.
 function wipeHome(id) {
   const target = homeRootFor(id);
   if (!target) return false;
@@ -200,80 +245,159 @@ function wipeHome(id) {
   return true;
 }
 
-// copyTrackedSpirit(id)          wipe, then copy — a genuinely new node
-// copyTrackedSpirit(id, true)    copy over the top — new code, same node
+// ── A LAB NODE IS A CLONE, NOT A COPY ────────────────────────────────
 //
-// THE SECOND ONE EXISTS BECAUSE THERE WAS NO WAY TO DO IT.
+//   Andy: "i want all my nodes on labMaster page to only be updated via
+//   github, jazz's binding to spirit-3 keeps getting trashed."
 //
-// Recycle was the only way to get new code into a lab node, and recycle
-// wipes — so updating a node destroyed its identity, which took it off
-// every relay it was on and left rows behind that nobody held a key for.
-// Start does not refresh: it rebuilds only when js/server.js is missing,
-// so stopping and starting ran the old code.
+// copyTrackedSpirit STOOD HERE. It ran `git ls-files` in the checkout and
+// copied each path into the node's home — and, unless asked to keep
+// state, `wipeHome` first. That is the whole of the complaint:
 //
-// Between "destroy it" and "leave it alone" there was nothing, and the
-// thing actually wanted most of the time — new code, same node, still a
-// member — was the one thing that could not be asked for.
+//   relay-state/ and session.json are GITIGNORED, so they were never in
+//   the copy and never came back. Recycle destroyed a node's key and its
+//   binding, and `Recycle all` was the only bulk button on the panel. A
+//   node bound to spirit-3 came back a stranger to itself.
 //
-// Copying over the top is safe for the same reason setupRelayFakes says
-// it is: only tracked paths are written, and a node's own state
-// (relay-state, session.json, device.json, minted.json) is none of them.
-function copyTrackedSpirit(id, keepState) {
-  const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', {
-    cwd: REPO_ROOT,
-    encoding: 'utf8',
-  }).split('\n').filter(Boolean);
+// Both halves are answered by the same change, and it is a change to
+// something SIMPLER rather than something cleverer: a lab node is a git
+// clone, and it is updated the way the public relay updates itself
+// (install/kamerata/update.sh, running on a real box today):
+//
+//   git fetch origin
+//   git reset --hard origin/master
+//
+// `reset --hard` reverts tracked files and LEAVES UNTRACKED AND IGNORED
+// FILES ALONE. Every piece of a node's own state — relay-state/,
+// session.json, view.json, prefs.json, minted.json, the peerfiles — is
+// ignored, so an update cannot reach any of it. The binding problem stops
+// being a thing that is fixed and becomes a thing that cannot happen.
+//
+// relays.json was the one exception and is no longer tracked either; see
+// .gitignore, which says why at length.
+//
+// ── AND IT IS GITHUB, NOT THIS WORKING TREE ──────────────────────────
+//
+// Which is the other half of what was asked, and it is a real change in
+// what the lab TESTS. A copy of `git ls-files` carried Andy's uncommitted
+// edits into every node; a clone carries what is on origin/master. So a
+// lab node now runs published code, and code that only exists in the
+// checkout reaches the work node and nowhere else.
+//
+// That is the point — but it has a consequence worth saying out loud
+// rather than discovering: **an unpushed commit does not reach the lab.**
+// `git log origin/master..HEAD` is the list of things the lab cannot see.
+const ORIGIN_FALLBACK = 'https://github.com/andyflinn/SpiritOS';
 
-  // Cleared first, so what lands is exactly the tracked tree and nothing
-  // a previous life left behind — unless the caller is refreshing, in
-  // which case what a previous life left behind IS the point.
-  if (!keepState) wipeHome(id);
-  const targetRoot = path.join(FAKES_ROOT, id);
-  // A copy is a tree, not a repository, so it cannot answer "which
-  // commit am I" by itself. Stamped here, with the commit it was taken
-  // from — otherwise every fake node reports `unknown` and a suite
-  // cannot tell a node running the code under test from one running
-  // whatever was there last week.
-  const stamp = buildStamp.fromGit(REPO_ROOT);
-
-  // Said out loud, because the alternative is a fake node that runs
-  // without a module you just wrote and fails somewhere unrelated. The
-  // count rides along in the stamp too, so the node itself can admit it
-  // may be incomplete (GET /api/version).
-  const missing = buildStamp.missingFromCopy(REPO_ROOT);
-  if (missing.length) {
-    console.warn('labMaster: ' + missing.length + ' untracked file(s) under spirit/ will NOT ' +
-      'reach ' + id + ' — `git add` them first:\n  ' + missing.join('\n  '));
+function originUrl() {
+  try {
+    const url = execSync('git config --get remote.origin.url', {
+      cwd: REPO_ROOT, encoding: 'utf8',
+    }).trim();
+    return url || ORIGIN_FALLBACK;
+  } catch (err) {
+    return ORIGIN_FALLBACK;
   }
-  // A TRACKED FILE THAT IS NOT ON DISK IS SKIPPED, not fatal.
-  //
-  // `git ls-files` reads the INDEX, and the index happily lists a file
-  // that has since been deleted from the working tree — a `git rm` not
-  // yet committed, a transient file somebody staged by reflex with
-  // `git add -A`. One of those made every node creation fail with an
-  // ENOENT about a path nobody recognised, which is a long way from
-  // "a file in the index is missing".
-  //
-  // Counted and reported rather than silently ignored: a fake node built
-  // without something it needs is the bug missingFromCopy already exists
-  // to prevent from the other direction.
-  const absent = [];
-  relativePaths.forEach(function (relPath) {
-    const source = path.join(REPO_ROOT, relPath);
-    if (!fs.existsSync(source)) { absent.push(relPath); return; }
-    const dest = path.join(targetRoot, relPath);
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(source, dest);
+}
+
+function git(args, cwd) {
+  return execSync('git ' + args, { cwd: cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+function isClone(targetRoot) {
+  return fs.existsSync(path.join(targetRoot, '.git'));
+}
+
+// NEW NODE, NEW CLONE.
+//
+// `--reference` takes the objects off the checkout already on this disk,
+// so this is a local copy rather than a download; `--dissociate` then
+// copies what it borrowed and drops the link, so a later `git gc` in
+// Andy's checkout cannot break a lab node. `origin` still points at
+// GitHub, which is what every later update reads.
+function cloneNode(id) {
+  const targetRoot = homeRootFor(id);
+  if (!targetRoot) throw new Error('refusing to build outside the lab root: ' + id);
+  wipeHome(id);
+  fs.mkdirSync(LAB_ROOT, { recursive: true });
+  git('clone --reference "' + REPO_ROOT + '" --dissociate "' + originUrl() +
+    '" "' + targetRoot + '"', LAB_ROOT);
+  return path.join(targetRoot, 'spirit', 'run');
+}
+
+// NEW CODE, SAME NODE — and now that is all it can be.
+//
+// A home that is not a clone is one built by the old copy path. It is
+// adopted rather than refused: clone beside it, move its state across,
+// and it becomes an ordinary lab node. Doing that silently is right —
+// the alternative is telling somebody their node cannot be updated and
+// leaving them to move a directory by hand.
+function updateNode(id) {
+  const targetRoot = homeRootFor(id);
+  if (!targetRoot) throw new Error('refusing to update outside the lab root: ' + id);
+  if (!isClone(targetRoot)) return adoptIntoClone(id);
+  git('fetch origin', targetRoot);
+  git('reset --hard origin/master', targetRoot);
+  return path.join(targetRoot, 'spirit', 'run');
+}
+
+// WHAT A NODE OWNS, and the list is the one .gitignore already keeps —
+// stated as paths because this has to MOVE them rather than merely not
+// overwrite them. Everything else in a home is code and comes from git.
+const NODE_STATE = [
+  path.join('spirit', 'run', 'relay-state'),
+  path.join('spirit', 'run', 'app', 'natter', 'session.json'),
+  path.join('spirit', 'run', 'app', 'natter', 'relays.json'),
+  path.join('spirit', 'run', 'app', 'natter', 'minted.json'),
+  path.join('spirit', 'run', 'app', 'relayChat'),
+  path.join('spirit', 'run', 'app', 'contacts'),
+  path.join('spirit', 'run', 'app', 'shared'),
+];
+
+function carryState(fromRoot, toRoot) {
+  const carried = [];
+  NODE_STATE.forEach(function (rel) {
+    const from = path.join(fromRoot, rel);
+    if (!fs.existsSync(from)) return;
+    const to = path.join(toRoot, rel);
+    fs.mkdirSync(path.dirname(to), { recursive: true });
+    // Over the top: a clone brings the app FOLDERS (manifests, scripts),
+    // so relayChat/ and contacts/ already exist and only the files a node
+    // wrote into them are being added.
+    fs.cpSync(from, to, { recursive: true, force: true });
+    carried.push(rel);
   });
-  if (absent.length) {
-    console.warn('labMaster: ' + absent.length + ' file(s) are in the index but not on disk, ' +
-      'so ' + id + ' was built without them:\n  ' + absent.join('\n  '));
-  }
-  const runDir = path.join(targetRoot, 'spirit', 'run');
-  if (stamp) {
-    buildStamp.write(runDir, Object.assign({}, stamp, { untracked: missing.length }));
-  }
+  return carried;
+}
+
+// An old copy-built home becomes a clone, keeping its key. This is what
+// every existing lab node goes through once, and it is why the first
+// update after this change takes a moment longer than the rest.
+function adoptIntoClone(id) {
+  const targetRoot = homeRootFor(id);
+  if (!targetRoot) throw new Error('refusing to adopt outside the lab root: ' + id);
+  const keep = targetRoot + '.state';
+  try { fs.rmSync(keep, { recursive: true, force: true }); } catch (err) { /* nothing there */ }
+
+  // The state is moved ASIDE first and the clone is taken second, so a
+  // clone that fails leaves the state on disk under a name somebody can
+  // find. Wiping first and cloning second would lose a key to a network
+  // error.
+  fs.mkdirSync(keep, { recursive: true });
+  carryState(targetRoot, keep);
+
+  const runDir = cloneNode(id);
+  carryState(keep, targetRoot);
+  try { fs.rmSync(keep, { recursive: true, force: true }); } catch (err) { /* left for a human */ }
   return runDir;
+}
+
+// WHICH COMMIT IS THIS NODE ON. A clone can answer for itself, so nothing
+// is stamped into it any more — build.json was only ever there because a
+// copied tree is not a repository and could not be asked.
+function commitOf(targetRoot) {
+  try { return git('rev-parse --short HEAD', targetRoot).trim(); }
+  catch (err) { return ''; }
 }
 
 function portAllowedForLab(port) {
@@ -371,8 +495,9 @@ function handleCreate(body) {
   if (portTaken(port)) return { status: 409, error: 'port in use in table' };
 
   let home;
-  try { home = copyTrackedSpirit(id); }
+  try { home = cloneNode(id); }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
+
 
   const row = {
     id: id,
@@ -385,7 +510,9 @@ function handleCreate(body) {
     running: false,
     lastError: '',
     startedAt: null,
+    commit: '',
   };
+  noteCommit(row);
   nodes.push(row);
   saveDesired(nodes);
   return { status: 201, node: publicNode(row) };
@@ -400,9 +527,13 @@ function handleRename(node, body) {
 }
 
 function handleStart(node) {
+  // A HOME THAT IS NOT THERE IS REBUILT, and nothing else is. Start has
+  // never been an update and must not become one: pressing it on a node
+  // bound to a relay should start that node, not fetch anything.
   if (!node.permanent && !fs.existsSync(path.join(node.home, 'js', 'server.js'))) {
-    try { node.home = copyTrackedSpirit(node.id).replace(/\\/g, '/'); }
+    try { node.home = cloneNode(node.id).replace(/\\/g, '/'); }
     catch (err) { return { status: 500, error: String(err.message || err) }; }
+    noteCommit(node);
     saveDesired(nodes);
   }
   const result = startNode(node);
@@ -415,30 +546,40 @@ function handleStop(node) {
   return { status: 200, node: publicNode(node) };
 }
 
+// START AGAIN AS A STRANGER. The home goes and a fresh clone takes its
+// place — new key, off every relay it was on, no conversation. It is the
+// rare thing to want and it stays per-row, behind its warning: the BULK
+// button is Update now, because a bulk gesture that destroys every
+// identity in the lab is how this whole sitting started.
 function handleRecycle(node) {
   if (node.permanent) return { status: 403, error: 'cannot recycle work node' };
   stopNode(node);
-  try { node.home = copyTrackedSpirit(node.id).replace(/\\/g, '/'); }
+  try { node.home = cloneNode(node.id).replace(/\\/g, '/'); }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
+  noteCommit(node);
   saveDesired(nodes);
   const started = startNode(node);
   if (!started.ok) return { status: started.status || 500, error: started.error };
   return { status: 200, node: publicNode(node) };
 }
 
-// NEW CODE, SAME NODE. Stop, copy the tracked tree over the top, start.
-// Its key, its relay rows, its device slot and its session all survive,
-// so a world built by labPopulate is still a world afterwards.
+// UPDATE FROM GITHUB. Stop, fetch, reset to origin/master, start.
 //
-// This is what somebody means nine times out of ten when they reach for
-// Recycle, and until it existed they got a wiped node instead — which
-// looks like nothing at all until the next thing that needed the world
-// quietly has no world.
+// Its key, its relay rows, its device slot, its session and its
+// conversations all survive — not because this is careful with them, but
+// because git has never had them. That is the difference between the old
+// refresh and this one: the old one was a copy that happened to miss the
+// state, and one wrong flag away from not missing it.
+//
+// The work node is refused because it is Andy's checkout: a tool that
+// fetched and hard-reset somebody's working tree would throw away the
+// thing they are in the middle of writing.
 function handleRefresh(node) {
   if (node.permanent) return { status: 403, error: 'the work node is your checkout' };
   stopNode(node);
-  try { node.home = copyTrackedSpirit(node.id, true).replace(/\\/g, '/'); }
+  try { node.home = updateNode(node.id).replace(/\\/g, '/'); }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
+  noteCommit(node);
   saveDesired(nodes);
   const started = startNode(node);
   if (!started.ok) return { status: started.status || 500, error: started.error };
@@ -874,7 +1015,7 @@ async function buildLiveWorld(body) {
   }
 
   // 4c. The same for the peer, which has NEVER had one: session.json is
-  //     gitignored, so copyTrackedSpirit cannot bring it, and a fresh lab
+  //     gitignored, so a clone cannot bring it, and a fresh lab
   //     node therefore always opens to Natter alone until somebody claims
   //     through the UI by hand.
   const peerBound = writeSession(peer.home, peerName, steps, peerName);

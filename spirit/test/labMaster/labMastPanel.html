@@ -12,7 +12,7 @@
     .bulk.live small { display: block; margin-top: 0.35rem; }
     .live-out { margin-top: 0.5rem; font-family: monospace; white-space: pre-wrap; font-size: 0.85rem; }
     .live-out .bad { color: #a32; }
-    /* Below the table, and able to hold several lines: recycle-all
+    /* Below the table, and able to hold several lines: update-all
        answers once per node and a one-line box would show only the last. */
     #status { margin: 1rem 0 0; min-height: 1.2em; white-space: pre-wrap; font-family: monospace; }
     label { margin-right: 0.75rem; }
@@ -34,8 +34,22 @@
     <button type="button" id="create">Create</button>
   </div>
   <div class="bulk">
-    <button type="button" id="recycle-all">Recycle all</button>
-    <small>every node but the work node, one at a time</small>
+    <!-- RECYCLE ALL STOOD HERE, and it is the reason this sitting
+         happened: a bulk button that WIPED every node in the lab, next to
+         nothing that merely updated them.
+
+           Andy: "i want all my nodes on labMaster page to only be updated
+           via github, jazz's binding to spirit-3 keeps getting trashed."
+
+         The bulk gesture is now the safe one. Recycle is still there, per
+         row, behind its warning — destroying one node is a thing somebody
+         means; destroying all of them is a thing that happens to them. -->
+    <button type="button" id="update-all">Update all from GitHub</button>
+    <small>
+      every node but the work node, one at a time:
+      <code>git fetch &amp;&amp; git reset --hard origin/master</code>.
+      Keys, relay rows and conversations are untouched — git never had them.
+    </small>
   </div>
 
   <!-- THE ONE CONTROL THAT REACHES A REAL BOX, and it says so. Everything
@@ -55,7 +69,7 @@
   <table>
     <thead>
       <tr>
-        <th>Name</th><th>Type</th><th>Port</th><th>Running</th><th>Connected to</th><th>Home</th><th></th>
+        <th>Name</th><th>Type</th><th>Port</th><th>Running</th><th>Connected to</th><th>Commit</th><th>Home</th><th></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -80,16 +94,16 @@
     function render(nodes) {
       var tbody = document.getElementById('tbody');
       tbody.innerHTML = nodes.map(function (n) {
-        // REFRESH BEFORE RECYCLE, and titled, because the two read as
-        // synonyms and are not: Refresh keeps the node's key and its
-        // relay rows, Recycle destroys them. Somebody reaching for new
-        // code wants the first one nearly every time, and reaching for
-        // the second took their whole lab world away without saying so.
+        // UPDATE BEFORE RECYCLE, and titled, because the two read as
+        // synonyms and are not: Update fetches GitHub and leaves the
+        // node's key, relay rows and conversations alone — git never had
+        // them — while Recycle throws the home away and clones a fresh
+        // one. Somebody reaching for new code wants the first every time.
         var del = n.permanent
           ? ''
           : '<button data-act="refresh" data-id="' + n.id + '" ' +
-              'title="New code, same node: keeps its key, its relay rows and its device slot">' +
-              'Refresh</button>' +
+              'title="git fetch + reset --hard origin/master. Same node, same key, same relay rows.">' +
+              'Update</button>' +
             '<button data-act="recycle" data-id="' + n.id + '" ' +
               'title="WIPES this node — new key, off every relay it was on. Rebuild the world after.">' +
               'Recycle</button>' +
@@ -99,7 +113,7 @@
             var nameCell = n.running
             ? '<a href="http://localhost:' + n.port + '" target="_blank" rel="noopener">' + label + '</a>'
             : label;
-        // Seven cells for seven headings. Count them against the <th>
+        // Eight cells for eight headings. Count them against the <th>
         // row above before adding one: an earlier version drew `label`
         // twice and every column after it sat under the wrong heading.
         var link = links[n.id];
@@ -117,6 +131,11 @@
           '<td>' + n.port + '</td>' +
           '<td>' + (n.running ? 'yes' : 'no') + (n.lastError ? ' ' + n.lastError : '') + '</td>' +
           '<td>' + linkCell + '</td>' +
+          // WHICH COMMIT IT IS ON, which only became a real question when
+          // lab nodes started running published code rather than a copy
+          // of the checkout. '—' for the work node, which is the checkout
+          // and answers for itself in the terminal.
+          '<td><small>' + (n.commit || '\u2014') + '</small></td>' +
           '<td><small>' + n.home + '</small></td>' +
           '<td class="row-actions">' +
             '<button data-act="start" data-id="' + n.id + '">Start</button>' +
@@ -186,23 +205,26 @@
 
     // One at a time, on purpose: a recycle stops a process, recopies the
     // tree and starts it again, and firing a dozen at once would have them
-    // competing over the same fakes root. Sequential is also what makes the
-    // answers readable — one line per node, in the order it was done.
-    document.getElementById('recycle-all').addEventListener('click', function () {
+    // competing over the same lab root — and, now, over the same git
+    // object store. Sequential is also what makes the answers readable —
+    // one line per node, in the order it was done.
+    document.getElementById('update-all').addEventListener('click', function () {
       var button = this;
       button.disabled = true;
-      setStatus('recycling…');
+      setStatus('updating from GitHub…');
       api('GET', '/api/nodes').then(function (r) {
         var all = (r.body && r.body.nodes) || [];
-        // The work node refuses recycle server-side (403, "cannot recycle
-        // work node"). Skipping it here means the log reports what was
-        // done rather than one guaranteed failure every time.
+        // The work node refuses server-side (403, "the work node is your
+        // checkout") — fetching and hard-resetting somebody's working
+        // tree would throw away what they are writing. Skipped here so
+        // the log reports what was done rather than one guaranteed
+        // failure every time.
         var targets = all.filter(function (n) { return !n.permanent; });
-        if (!targets.length) return ['nothing to recycle'];
+        if (!targets.length) return ['nothing to update'];
         var lines = [];
         return targets.reduce(function (chain, n) {
           return chain.then(function () {
-            return api('POST', '/api/nodes/' + n.id + '/recycle', {}).then(function (res) {
+            return api('POST', '/api/nodes/' + n.id + '/refresh', {}).then(function (res) {
               lines.push(n.name + ' (' + n.port + ') → ' + res.status + ' ' +
                 (res.body && res.body.error ? res.body.error : 'ok'));
               setStatus(lines.join('\n'));

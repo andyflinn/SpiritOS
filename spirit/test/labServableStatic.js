@@ -45,7 +45,16 @@ const STATIC_ROUTES = [
   { path: '/relay.html', expect: 200, why: 'reachable by its own path in either mode' },
   { path: '/favicon.svg', expect: 200, why: 'static asset' },
   { path: '/app/natter/natter.js', expect: 200, why: 'the shell fetches app entry scripts' },
-  { path: '/app/natter/relays.json', expect: 200, why: 'ordinary scoped app data' },
+  // relays.json STOOD HERE and is gone from a fake node's home: it stopped
+  // being tracked, because a node's own relay list is its own state and a
+  // tracked one is reverted by every `git reset --hard origin/master`
+  // (.gitignore says the whole of why). It joins media/ and relay-state/
+  // in the note above — absent from a git-built home, so a 404 on it would
+  // prove nothing about the route.
+  //
+  // The manifest is the better example anyway: it is app data the SHELL
+  // actually fetches, on every boot, for every app.
+  { path: '/app/natter/natter.json', expect: 200, why: 'ordinary scoped app data' },
 ];
 
 function request(urlString, method, bodyObj) {

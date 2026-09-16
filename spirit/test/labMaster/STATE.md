@@ -78,3 +78,35 @@ already up, and leaves it alone if it is, because you may be using
 yours.
 
 See [design/cleanup/2026-09-11-labmaster.md](../../../design/cleanup/2026-09-11-labmaster.md).
+
+---
+
+## Where a lab node lives, and where a fixture does
+
+*Added 2026-09-17, because the two were one place and that is what made a
+node somebody keeps as disposable as a fixture.*
+
+| | root | built from | wiped between runs |
+|---|---|---|---|
+| **a lab node** (this panel) | `repo/lab/<name>` | a **git clone**, updated `git fetch && git reset --hard origin/master` | never |
+| **a test fixture** (`labWorld`, `setupRelayFakes`, `labPersistence`, `liveRelay`) | `%TEMP%/spiritos-relay-fakes/<id>` | a copy of the **working tree** (`git ls-files`) | deliberately |
+
+> **Andy:** *"i want all my nodes on labMaster page to only be updated via
+> github, jazz's binding to spirit-3 keeps getting trashed."*
+
+**Why they must not share a root.** A fixture wants a throwaway tree and
+must test the code being written; a lab node holds a key, a seat on a
+public relay and a conversation, and should run what is *published*. They
+answer different questions. While both were copies under `%TEMP%`, the
+only way to get new code into a lab node was `Recycle` — which wipes —
+so updating a node destroyed it.
+
+**Nothing restores a node's state, because nothing takes it.**
+`relay-state/`, `session.json`, `relays.json`, `view.json`, `prefs.json`,
+`minted.json` and the peerfiles are all gitignored, so `reset --hard`
+cannot reach them. That is the whole fix, and it is a fix by subtraction.
+
+**An unpushed commit does not reach the lab.** That is the point of
+updating from GitHub and the one thing that surprises: `git log
+origin/master..HEAD` is the list of what the lab cannot see. The `Commit`
+column on the panel is there to make it visible.

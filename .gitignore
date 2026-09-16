@@ -122,6 +122,30 @@ minted.json
 # file about a peer.
 **/peerfile-*.json
 
+# THIS NODE'S OWN RELAY LIST. Same class as session.json above and
+# ignored for the same reason: it is what one box has decided about where
+# it keeps its mail, and it is meaningless in another clone.
+#
+#   Andy: "i want all my nodes on labMaster page to only be updated via
+#   github, jazz's binding to spirit-3 keeps getting trashed."
+#
+# It was TRACKED, and that is the file that fights a `git pull`. A lab
+# node bound to spirit-3 has a relays.json of its own; `git reset --hard
+# origin/master` — which is how the public relay updates itself
+# (install/kamerata/update.sh) — reverts it, and the node comes back
+# pointing somewhere else. Every other piece of a node's state survives
+# an update because git never had it. This one did not, alone.
+#
+# It had already cost once from the other direction: labPopulate rewrites
+# it during a lab run, so a reflexive `git add -A` ships a loopback relay
+# as everybody's default.
+#
+# WHAT A FRESH CLONE LOSES is a list of relays it has never spoken to.
+# That is not a loss: an unbound node showing Natter's add-a-relay row is
+# what an unbound node is, and a list shipped in git was the box
+# pretending to know somewhere it had never been.
+spirit/run/app/natter/relays.json
+
 # Written by labMaster (and any future packaging step) so a copied tree
 # can say which commit it came from. Never a checkout, so never tracked.
 spirit/run/build.json
