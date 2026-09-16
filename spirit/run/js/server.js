@@ -14,7 +14,23 @@ const buildStamp = require('./buildStamp');
 const limits = require('./limits.js');
 const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
-const relay = createRelay.createRelay();
+// HOW THIS RELAY ASKS A PARTNER, injected rather than reached for.
+//
+// LATE-BOUND on purpose: createRelay runs at module load and partnerRouter
+// is built after the server is listening, so this closes over the variable
+// rather than the value. A relay with no partnerRouter — a personal node,
+// or a relay still booting — answers from its own members and propagates
+// nothing, which is what it did yesterday.
+//
+// `post` is peerPost's, so the hash, the proof the partner read it, and
+// the dispatch of the answer back to this exact question are all the
+// interface's and none of relay.js's (AGENT.md, Comms).
+const relay = createRelay.createRelay(undefined, {
+  askPartner: function (url, relayKey, text) {
+    if (!partnerRouter) return Promise.resolve(null);
+    return partnerRouter.post(url, relayKey, text);
+  },
+});
 
 
 //console.log(JSON.stringify(spirit,null,2));
@@ -183,6 +199,10 @@ jobs.startFsWatcherJob(ROOT_DIR);
 // has something to close. Null on a relay, which holds no streams.
 let presence = null;
 let peerRouter = null;
+// A relay's half: the peerPost it posts to partners from, and the streams
+// it holds to them. Null on a personal node, which has neither.
+let partnerRouter = null;
+let partnerLinks = null;
 
 // ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
 //
@@ -1847,6 +1867,12 @@ if (!relayMode) {
     if (relayMode) {
       try { told += relay.presence.goingAway(3000); }
       catch (e) { /* nothing to tell, or already gone */ }
+      // The streams this relay HOLDS, as opposed to the ones it serves.
+      // Closed rather than left to the process exiting, so a partner sees
+      // a clean end and reconnects on its own clock instead of waiting out
+      // the idle watchdog.
+      try { if (partnerLinks) partnerLinks.stop(); }
+      catch (e) { /* already gone */ }
     }
     console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
     // The sockets are closed by sayGoingAway, so what is left is this
@@ -1896,6 +1922,39 @@ server.listen(port, BIND_HOST, () => {
     // when it closes, and the whole thing dies on its own if that stream
     // drops. A relay nobody is watching now does exactly nothing about
     // being watched, and there is no verb here for it to do it with.
+
+    // -- AND IT DIALS ITS PARTNERS ------------------------------------
+    //
+    //   Andy: "Both partners must have the mutual sseClients alive in
+    //   this pass."
+    //
+    // Until now a relay's boot was ONE LINE — ensureIdentity — and it
+    // opened no outbound connection to anyone. Every partner gate built
+    // this afternoon was a door nobody would ever knock on.
+    //
+    // ONE STREAM EACH WAY, because the stream is the INBOUND half of the
+    // interface: B's answers to A land on the stream A holds, so if only
+    // one end dialled, the other could ask nothing. Both ends run this,
+    // so both ends can ask.
+    //
+    // Its own peerPost, signing as this relay's identity, with
+    // relayRequest injected — the same interface a node uses, which is why
+    // this needed no new transport and inherits the backoff, jitter, idle
+    // watchdog and `retry:` handling without a line of its own.
+    partnerRouter = require('./peerPost').createPeerPost({
+      rootDir: ROOT_DIR,
+      request: require('./relayRequest').relayRequest,
+      // NO TRAFFIC LOG. peerPost takes it injected precisely so a relay
+      // can omit it: that file is correct on a personal node and is "the
+      // worst thing in the system on a relay" (peerPost.js).
+    });
+    partnerLinks = require('./partnerLink').createPartnerLinks({
+      rootDir: ROOT_DIR,
+      relay: relay,
+      router: partnerRouter,
+    });
+    const dialled = partnerLinks.start();
+    if (dialled) console.log(`    holding ${dialled} partner stream(s)`);
   } else {
     console.log(`Server listening on http://localhost:${port}`);
   }

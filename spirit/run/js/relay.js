@@ -199,7 +199,15 @@ function saveRoutingTable(rootDir, peers) {
   }));
 }
 
-function createRelay(rootDir) {
+// `deps.askPartner(url, relayKey, text)` answers a promise of the partner's
+// reply text, or null. INJECTED, never reached for: it is this relay's own
+// peerPost over relayRequest, wired in server.js, which is the one
+// interface everything speaks through (AGENT.md, Comms). A relay built
+// without it simply does not propagate — which is every existing test, and
+// is why they did not have to change.
+function createRelay(rootDir, deps) {
+  deps = deps || {};
+  var askPartner = typeof deps.askPartner === 'function' ? deps.askPartner : null;
   rootDir = rootDir || path.join(__dirname, '..');
   var loaded = loadRoutingTable(rootDir);
   var peers = loaded.peers;
@@ -1636,6 +1644,10 @@ function createRelay(rootDir) {
     var out = { ok: false, status: 404, error: 'no such peer' };
     var owner = isOwner(who);
     var fromPartner = !!(who && who.partner);
+    // Set by the search branch when this relay must also ask its partners.
+    // Null for every other verb and for a partner-asked search, which is
+    // how the one-hop rule is carried from the gate to the send.
+    var pendingSearch = null;
 
     // ── WHAT A PARTNER MAY ASK, WHICH IS ONE THING ────────────────────
     //
@@ -1779,6 +1791,16 @@ function createRelay(rootDir) {
           };
         });
         var more = found.more;
+
+        // A MEMBER'S SEARCH IS NOT FINISHED YET. `propagate` is false for
+        // a partner asking, so their answer leaves immediately below and
+        // goes no further — one hop. For a member, this hands the send the
+        // rows this relay found and the query they were found with, and
+        // the answer waits for the partners.
+        if (propagate) {
+          pendingSearch = { q: q, mine: found.matches, more: more };
+        }
+
         out = {
           ok: true,
           status: 200,
@@ -1938,15 +1960,24 @@ function createRelay(rootDir) {
     // key at all. The door it opened stays open: removing yourself is
     // still an own-row verb, and that is what keeps the gate honest.
 
-    var mine = auth.loadIdentity(rootDir);
-    if (!mine || !mine.privateKey) return;
+    // ── SENDING IS A FUNCTION NOW, because an answer can arrive late ──
+    //
+    // Everything answerSelf does is immediate except one thing: a search
+    // asked BY A MEMBER is also asked of this relay's partners, and their
+    // replies come back on held streams whenever they come back. So the
+    // reply is sent by calling this rather than by falling off the end.
+    //
+    // Every other verb calls it at once and behaves exactly as before.
+    function sendAnswer(answer) {
+      var mine = auth.loadIdentity(rootDir);
+      if (!mine || !mine.privateKey) return;
     // NO APP. This wrote an app name into every answer — the box
     // naming an app, in bytes the box never reads. Andy: "nothing in node
     // and relay should know about apps." A packet addressed to a relay
     // has no app on any node to be for, and the absence is now what marks
     // it as a system packet to whoever decodes one. Which is not this
     // file, and not any file next to it — the decoder lives in js/client/.
-    var reply = JSON.stringify({ v: 1, body: out });
+      var reply = JSON.stringify({ v: 1, body: answer });
 
     // NOT THROUGH routeReply, and the reason is the same asymmetry that
     // made this requirement necessary in the first place: routeReply
@@ -1959,14 +1990,87 @@ function createRelay(rootDir) {
     // is the route's target, same event on the requester's stream. Only
     // the identity lookup is skipped, because the identity is this
     // process.
-    var matched = routes.answer(hash, mine.publicKey);
-    if (!matched.ok) return;
-    presentNow.send(matched.requester, 'reply', {
-      hash: hash,
-      from: mine.publicKey,
-      text: reply,
-      sig: auth.sign(mine.privateKey, auth.receiptMessage(hash)),
-    });
+      var matched = routes.answer(hash, mine.publicKey);
+      if (!matched.ok) return;
+      presentNow.send(matched.requester, 'reply', {
+        hash: hash,
+        from: mine.publicKey,
+        text: reply,
+        sig: auth.sign(mine.privateKey, auth.receiptMessage(hash)),
+      });
+    }
+
+    // ── ASK THE PARTNERS, AND MERGE WHAT COMES BACK ──────────────────
+    //
+    //   Andy: "search must be member gated. on propagated search is
+    //   partner gated."
+    //
+    // A MEMBER asking is answered from this relay AND its partners. A
+    // PARTNER asking is answered from this relay alone and asks nobody —
+    // `propagate` is false for them, which is the one-hop rule enforced
+    // rather than documented.
+    //
+    // THE MERGER DOES NOT TRUST ORDER. Each partner ranked its own reply
+    // with its own copy of peerSearch, at whatever version it is running,
+    // and concatenating sorted lists gives a list sorted by nothing. Every
+    // row is graded again here, which is also the only way a cap across
+    // the merged set means anything.
+    //
+    // A partner that is slow, down, or refuses contributes nothing and is
+    // not an error. The member gets this relay's own answer either way,
+    // which is what it would have got yesterday.
+    if (pendingSearch) {
+      var partnerList = askPartner ? (partners() || []) : [];
+      if (!partnerList.length) {
+        sendAnswer(out);
+        return;
+      }
+
+      var asked = partnerList.map(function (p) {
+        var text = JSON.stringify({ v: 1, body: { search: { q: pendingSearch.q } } });
+        return askPartner(p.url, p.relayKey, text)
+          .then(function (answer) {
+            var said = null;
+            try { said = JSON.parse((answer && answer.text) || ''); }
+            catch (e) { said = null; }
+            var body = (said && said.body) || {};
+            if (!body || body.ok !== true) return null;
+            return { via: p.relayKey, rows: body.matches || [] };
+          })
+          .catch(function () { return null; });
+      });
+
+      Promise.all(asked).then(function (answers) {
+        var sources = [{ via: null, rows: pendingSearch.mine }];
+        var more = pendingSearch.more;
+        answers.forEach(function (a) {
+          if (!a) return;
+          sources.push(a);
+        });
+        var merged = peerSearch.merge(sources, pendingSearch.q, peerSearch.SLOTS);
+        sendAnswer({
+          ok: true,
+          status: 200,
+          more: more || merged.more,
+          matches: merged.matches.map(function (row) {
+            return {
+              publicKey: row.publicKey,
+              publicLabel: row.publicLabel,
+              claimedAt: row.claimedAt,
+              owner: row.owner,
+              present: row.present,
+              // WHICH PARTNER SUPPLIED IT. Andy: "it must accompany the
+              // found records with the partner ID supplying that result
+              // record" — the thread a node follows to record a route.
+              via: row.via || undefined,
+            };
+          }),
+        });
+      });
+      return;
+    }
+
+    sendAnswer(out);
   }
 
   function routePost(fromToken, toToken, text, sig) {

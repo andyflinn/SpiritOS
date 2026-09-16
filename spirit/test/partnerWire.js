@@ -1,0 +1,247 @@
+'use strict';
+
+// spirit/test/partnerWire.js
+// TWO RELAY PROCESSES, TWO SOCKETS, AND A SEARCH THAT CROSSES BETWEEN THEM.
+//
+//   Andy: "Both partners must have the mutual sseClients alive in this
+//   pass."
+//   Andy: "no escaping from the rules for prototyping."
+//
+// ── WHY THIS FILE EXISTS AND partnerGate.js IS NOT ENOUGH ────────────
+//
+// partnerGate.js proves B's gates by calling `B.box.routePost(...)` — in
+// process, on B's own object, through a door no partner will ever use. It
+// proves the gates and nothing about a partnership, and it was shipped as
+// verification, which was the fault Andy named. This file is what that
+// should have been.
+//
+// A FIRST DRAFT OF THIS FILE CONCEDED that two relays could not have
+// separate state, because server.js pins its root to its own location —
+// and then asserted the weak things it could. That was the same
+// compromise wearing a different hat. presenceWire had already solved it:
+// COPY spirit/run per relay, so each process is a whole tree with its own
+// relay-state, and two relays are two boxes in every sense that matters.
+//
+// ── WHAT A GREEN RUN HERE PROVES ────────────────────────────────────
+//
+//   1. A dialled B and B dialled A — both sseClients alive, one each way.
+//   2. B admitted a signer that is not a member, on a PINNED key.
+//   3. A member of A asked for a peer that exists only on B.
+//   4. A asked B through peerPost over relayRequest: signed, hashed, and
+//      dispatched back to that exact question.
+//   5. The answer arrived on the stream A holds — the only place it could
+//      have arrived, and so proof the stream is live.
+//   6. A merged it and told its member which partner supplied the row.
+//
+// No stub can fake it, because there is none: every byte crosses a
+// loopback socket between two operating-system processes.
+
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
+const test = require('./testSupport.js');
+const auth = require('../run/js/relayAuth');
+const hub = require('../run/js/hub');
+const buildStamp = require('../run/js/buildStamp');
+const sseClient = require('../run/js/sseClient');
+const { createRelay } = require('../run/js/relay');
+
+const REPO_RUN = path.join(__dirname, '..', 'run');
+const PORTS = [65461, 65462];
+
+let kids = [];
+function cleanup() {
+  kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
+  kids = [];
+}
+process.on('exit', cleanup);
+
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+// One relay's world: its own copy of spirit/run, its own identity, owner
+// and members. Built with the same createRelay the process will use, so
+// what is on disk is state a relay wrote rather than a fixture's idea of
+// it.
+function buildRelay(tag, memberNames) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pw-' + tag + '-'));
+  const box = createRelay(home);
+
+  auth.saveIdentity(home, auth.generateIdentity('relay'));
+  const owner = auth.generateIdentity('owner' + tag);
+  auth.writeAllowKeys(home, [{ name: 'owner' + tag, publicKey: owner.publicKey }]);
+  box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)),
+    owner.publicKey);
+
+  const members = {};
+  (memberNames || []).forEach(function (name) {
+    const id = auth.generateIdentity(name);
+    const minted = box.mint('owner' + tag, name, 7, '');
+    box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
+      id.publicKey, null, minted.invite.token, name);
+    members[name] = id;
+  });
+
+  return { tag: tag, home: home, box: box, owner: owner, members: members };
+}
+
+// Copies the tree and moves the relay's state into it. Done AFTER the
+// partnership is written, so the process starts already partnered — which
+// is the case that matters: a relay must dial on boot, not be poked into
+// it.
+function plant(w) {
+  const runDir = path.join(w.home, 'spirit', 'run');
+  fs.cpSync(REPO_RUN, runDir, { recursive: true });
+  fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
+  fs.cpSync(path.join(w.home, 'relay-state'), path.join(runDir, 'relay-state'),
+    { recursive: true });
+  const mine = buildStamp.fromGit(path.join(__dirname, '..', '..'));
+  if (mine) buildStamp.write(runDir, mine);
+  w.runDir = runDir;
+  return w;
+}
+
+async function startRelay(w, port) {
+  const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
+    { cwd: w.runDir, stdio: 'ignore' });
+  kids.push(kid);
+  const base = 'http://127.0.0.1:' + port;
+  for (let n = 0; n < 30; n += 1) {
+    await sleep(200);
+    try {
+      const r = await hub.relayRequest(base, 'GET', '/api/relay/who', null);
+      if (r.status === 200) { w.base = base; w.kid = kid; return base; }
+    } catch (e) { /* not up yet */ }
+  }
+  return null;
+}
+
+// A member of `w` asking its own relay something, the way a node does:
+// a signed post addressed to the relay's own key, answered on the stream
+// the member holds. The stream is held here with a plain fetch of the SSE
+// route, which is what a node's sseClient does with more ceremony.
+function askAsMember(w, member, bodyObj) {
+  const relayKey = w.box.relayPublicKey();
+  const text = JSON.stringify({ v: 1, body: bodyObj });
+  const sig = auth.sign(member.privateKey,
+    auth.postMessage(member.publicKey, relayKey, text));
+  return hub.relayRequest(w.base, 'POST', '/api/relay/post',
+    { from: member.publicKey, to: relayKey, text: text, sig: sig });
+}
+
+test.startTest('Partner wire — two relays, two sockets, one search');
+
+async function run() {
+  test.subHeading('Two relays that have pinned each other');
+
+  const A = buildRelay('a', ['alice']);
+  const B = buildRelay('b', ['bella', 'bertrand']);
+
+  // RECIPROCITY IS A MEMBERSHIP: a partnership rides the row of the relay
+  // owner who is a peer HERE, so each owner joins the other relay before
+  // either can promote. PARTNERS.md's middle clause, made of an enrolment
+  // rather than an assertion.
+  [[B, 'b', A.owner, 'ownera'], [A, 'a', B.owner, 'ownerb']].forEach(function (p) {
+    const minted = p[0].box.mint('owner' + p[1], p[3], 7, '');
+    p[0].box.claim(p[3], auth.sign(p[2].privateKey, auth.claimMessage(p[3])),
+      p[2].publicKey, null, minted.invite.token, p[3]);
+  });
+
+  const urlA = 'http://127.0.0.1:' + PORTS[0];
+  const urlB = 'http://127.0.0.1:' + PORTS[1];
+  const okA = A.box.setPartner(A.owner, B.owner.publicKey, urlB, B.box.relayPublicKey(), 'h1');
+  const okB = B.box.setPartner(B.owner, A.owner.publicKey, urlA, A.box.relayPublicKey(), 'h2');
+
+  if (okA.ok && okB.ok) {
+    test.check('each owner promoted the other relay, pinning its key');
+  } else {
+    test.fail('promotion: ' + JSON.stringify(okA) + ' / ' + JSON.stringify(okB));
+    test.reportSuccessFailureCount();
+    return;
+  }
+
+  plant(A);
+  plant(B);
+
+  if (!(await startRelay(A, PORTS[0])) || !(await startRelay(B, PORTS[1]))) {
+    test.fail('a relay did not come up on ' + PORTS.join(' / '));
+    test.reportSuccessFailureCount();
+    return;
+  }
+  test.check('both are answering, already partnered from the state on disk');
+
+  // Time for each to dial the other. Nobody tells them to: a relay opens
+  // its partner streams at boot, which is the thing under test.
+  await sleep(1500);
+
+  test.subHeading('A member of A finds somebody who only exists on B');
+
+  // THE STREAM IS HELD FIRST, and that order is not incidental. A reply
+  // leaves through presentNow.send, down a stream the asker already holds
+  // — so a member who posts and THEN connects has already missed it. A
+  // first run of this suite did exactly that and saw null: the relay
+  // answered correctly into a socket nobody was on yet.
+  //
+  // HELD WITH sseClient, not with a raw fetch. A first draft read the
+  // stream by hand — reader loop, decoder, frame splitting — and oneDoor
+  // refused it, correctly: a member holding a stream is the exact thing
+  // sseClient exists for, and a test that hand-rolls it is testing a
+  // transport the product does not use. The guard caught it the same hour
+  // it was written, which is the only reason this paragraph is short.
+  let saw = null;
+  const listening = sseClient.connect({
+    url: A.base + '/api/relay/stream?key=' +
+      encodeURIComponent(A.members.alice.publicKey),
+    headers: function () {
+      return {
+        'X-Spirit-Sig': auth.sign(A.members.alice.privateKey,
+          auth.streamMessage(A.members.alice.publicKey)),
+      };
+    },
+    onEvent: function (msg) {
+      if (msg.event !== 'reply' || !msg.data) return;
+      try { saw = JSON.parse(msg.data.text).body; }
+      catch (e) { /* not an envelope this test understands */ }
+    },
+  });
+  await sleep(400);
+
+  // `bertrand` is a member of B and has never been heard of by A. If A can
+  // answer with him, every link in the chain worked.
+  const asked = await askAsMember(A, A.members.alice, { search: { q: 'bert' } });
+
+  if (asked.status >= 200 && asked.status < 300) {
+    test.check('A accepted its member\u2019s search over a real socket');
+  } else {
+    test.fail('A refused the search: ' + asked.status + ' ' + asked.text);
+  }
+
+  const until = Date.now() + 6000;
+  while (Date.now() < until && !saw) await sleep(100);
+  listening.close();
+
+  const labels = ((saw && saw.matches) || []).map(function (m) { return m.publicLabel; });
+  if (labels.indexOf('bertrand') !== -1) {
+    test.check('and bertrand came back — he is a member of B and A had never heard of him');
+  } else {
+    test.fail('A answered: ' + JSON.stringify(saw));
+  }
+
+  const row = ((saw && saw.matches) || []).filter(function (m) {
+    return m.publicLabel === 'bertrand';
+  })[0];
+  if (row && row.via === B.box.relayPublicKey()) {
+    test.check('carrying the partner that supplied him, which is the route a node records');
+  } else {
+    test.fail('via: ' + JSON.stringify(row));
+  }
+
+  cleanup();
+  test.reportSuccessFailureCount();
+}
+
+run().catch(function (e) {
+  cleanup();
+  test.fail('partnerWire threw: ' + ((e && e.stack) || e));
+  test.reportSuccessFailureCount();
+});
