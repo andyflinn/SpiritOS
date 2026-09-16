@@ -154,5 +154,4 @@ module.exports = {
   SIGNALS: gradedSearch.TEXT_SIGNALS.concat(PEER_SIGNALS),
   PEER_SIGNALS: PEER_SIGNALS,
   SLOTS: gradedSearch.SLOTS,
-  internal: gradedSearch.internal,
 };

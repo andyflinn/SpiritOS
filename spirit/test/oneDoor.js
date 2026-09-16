@@ -263,4 +263,70 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
   }
 }
 
+// ── 4. AN INTERFACE IS OPAQUE, OR IT IS NOT AN INTERFACE ───────────────
+//
+//   Andy: "this whole enforcement rule must include calling inside-the
+//   interface helpers. that is the whole point of interfaces. they must be
+//   opaque. their internal mechanics shouldn't even be reachable."
+//
+// The reach that a `fetch` census cannot see. I gave peerSearch and
+// gradedSearch an `internal: {...}` bag holding eleven helpers, labelled
+// "for the suite alone" — an escape hatch with a note on it. Reachable is
+// reachable: a caller will eventually reach for the same reason a test
+// did, and a mechanic with a caller is a mechanic that cannot change,
+// which was the whole reason that module was separated out.
+//
+// WHAT IT COST TO CLOSE IT, which is the argument for closing it: two of
+// the thirteen assertions that went through the bag turned out to be
+// testing branches NO CALLER CAN REACH. `globMatches('abcd','abc')` is
+// false and irrelevant — a query with no wildcard never consults the
+// matcher. `tokenScore('two','twelve')` is 0.667 and unreachable — a
+// one-word query that is not a substring is not a result at all. An escape
+// hatch does not only permit bad calls; it hides which calls are possible.
+test.subHeading('No module offers a way past its own front door');
+
+{
+  const HATCHES = [/\binternal\s*:/, /\b_[a-z]\w*\s*:\s*function/];
+  const offenders = [];
+  files.forEach(function (f) {
+    if (f.rel.indexOf('js/') !== 0) return;
+    const src = fs.readFileSync(f.full, 'utf8')
+      .split('\n')
+      .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })
+      .join('\n');
+    // THE WHOLE FILE, not just module.exports. A first draft looked only
+    // at the export block and missed four underscore hooks on the object
+    // presenceNode's FACTORY returns — which is a public surface too, and
+    // is where a hook is likeliest to be added because it feels private.
+    HATCHES.forEach(function (re) {
+      if (re.test(src)) offenders.push(f.rel + ' (' + re.source + ')');
+    });
+  });
+
+  if (offenders.length === 0) {
+    test.check('no module exports an `internal` bag or an underscore hook');
+  } else {
+    test.fail('escape hatches: ' + offenders.join(', ') +
+      ' — if the mechanics are reachable they are not encapsulated');
+  }
+}
+
+{
+  // And nothing reaches through one, wherever it came from.
+  const reaching = [];
+  files.forEach(function (f) {
+    const src = fs.readFileSync(f.full, 'utf8')
+      .split('\n')
+      .filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); })
+      .join('\n');
+    if (/\.internal\./.test(src)) reaching.push(f.rel);
+  });
+
+  if (reaching.length === 0) {
+    test.check('and nothing reaches through one — tests included, first of all');
+  } else {
+    test.fail('reaching into internals: ' + reaching.join(', '));
+  }
+}
+
 test.reportSuccessFailureCount();

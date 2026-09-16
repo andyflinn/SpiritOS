@@ -514,14 +514,69 @@ async function run() {
 
   test.subHeading('Merging what several relays say');
 
+  // -- DRIVEN THROUGH THE STREAM, NOT THROUGH A BACK DOOR --------------
+  //
+  //   Andy: "their internal mechanics shouldn't even be reachable."
+  //
+  // presenceNode used to expose _roster, _status, _change and _forget,
+  // captioned "fed by tests standing in for a relay" — and this suite was
+  // the only caller of all four. A hook that exists for one test is a hole
+  // in a module's front door that a caller will eventually use, and it
+  // hides whether the REAL path works: everything below asserted the
+  // merging while never once exercising the lines that route a stream
+  // event into it.
+  //
+  // What replaces them is what a relay actually does. `connectImpl` is a
+  // published option, so the suite captures the callbacks presenceNode
+  // registers and calls them — which is exactly what sseClient does with
+  // bytes off a socket. `onClose` is how a relay stops asserting, so even
+  // _forget had a real path sitting next to it.
   const home = tmpHome();
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
   const jobs = fakeJobs();
-  const P = presenceNode.createPresence({ rootDir: home, jobs: jobs, router: fakeRouter() });
-  await P.start(function () {
-    return Promise.resolve({ status: 403, text: '{}' });
+
+  // Two relays this node holds a row on, so start() opens a stream to each.
+  fs.mkdirSync(path.join(home, 'app', 'natter'), { recursive: true });
+  fs.writeFileSync(
+    path.join(home, 'app', 'natter', 'relays.json'),
+    JSON.stringify([{ label: 'a', url: 'http://a' }, { label: 'b', url: 'http://b' }])
+  );
+
+  const opened = {};
+  const P = presenceNode.createPresence({
+    rootDir: home,
+    jobs: jobs,
+    router: fakeRouter(),
+    connectImpl: function (o) {
+      // The stream URL carries the key; index by the relay it belongs to.
+      opened[o.url.split('/api/')[0]] = o;
+      return { close: function () {} };
+    },
   });
+
+  // A census naming this node, so openTo accepts each relay and the
+  // streams are opened the way they are in production.
+  await P.start(function () {
+    return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
+      { name: 'me', publicLabel: 'me', publicKey: me.publicKey },
+    ] }) });
+  });
+
+  // A relay speaking down the stream it holds for this node.
+  function relaySays(relayUrl, event, data) {
+    const o = opened[relayUrl];
+    if (!o) { test.fail('no stream was opened to ' + relayUrl); return; }
+    o.onEvent({ event: event, data: data });
+  }
+
+  // And a relay this node can no longer reach: the stream closes, which is
+  // the only way production ever stops believing one.
+  function relayLost(relayUrl) {
+    const o = opened[relayUrl];
+    if (!o) { test.fail('no stream to lose at ' + relayUrl); return; }
+    o.onClose('gone');
+  }
 
   if (jobs.job && jobs.job.type === 'relay-presence' && jobs.job.kind === 'permanent') {
     test.check('a permanent job carries it, beside fs-watcher and server-stats');
@@ -529,11 +584,11 @@ async function run() {
     test.fail('job: ' + JSON.stringify(jobs.job));
   }
 
-  P._roster('http://a', { members: [
+  relaySays('http://a', 'roster', { members: [
     { key: 'bert', present: false },
     { key: 'john', present: true },
   ] });
-  P._roster('http://b', { members: [
+  relaySays('http://b', 'roster', { members: [
     { key: 'bert', present: true },
     { key: 'zoe', present: false },
   ] });
@@ -566,7 +621,7 @@ async function run() {
   test.subHeading('The shell hears about changes, and only changes');
 
   const before = jobs.updates.length;
-  P._roster('http://a', { members: [
+  relaySays('http://a', 'roster', { members: [
     { key: 'bert', present: false },
     { key: 'john', present: true },
   ] });
@@ -576,7 +631,7 @@ async function run() {
     test.fail('republished on an identical roster');
   }
 
-  P._change('http://a', { key: 'john', present: false });
+  relaySays('http://a', 'presence', { key: 'john', present: false });
   if (jobs.updates.length === before + 1 && P.table().john === false) {
     test.check('and a real change publishes exactly once');
   } else {
@@ -588,11 +643,11 @@ async function run() {
   // The failure that would make the NODE the liar rather than the relay:
   // keeping a dead relay's last roster would hold peers green minutes
   // after the connection died.
-  P._change('http://b', { key: 'zoe', present: true });
+  relaySays('http://b', 'presence', { key: 'zoe', present: true });
   if (P.table().zoe === true) test.check('zoe is reachable while b is connected');
   else test.fail('setup: ' + JSON.stringify(P.table()));
 
-  P._forget('http://b');
+  relayLost('http://b');
   const after = P.table();
   if (!('zoe' in after)) {
     test.check('and when b is lost, zoe goes back to not-known rather than staying green');
@@ -619,11 +674,11 @@ async function run() {
   // the only true thing left is to stop answering for that key at all.
   // Keys of their own, so removing one here cannot quietly change what a
   // later check in this file is asserting about bert or zoe.
-  P._change('http://a', { key: 'gonzo', present: false });
+  relaySays('http://a', 'presence', { key: 'gonzo', present: false });
   if (P.table().gonzo === false) test.check('a member who is away is absent — red');
   else test.fail('setup: ' + JSON.stringify(P.table()));
 
-  P._change('http://a', { key: 'gonzo', present: false, gone: true });
+  relaySays('http://a', 'presence', { key: 'gonzo', present: false, gone: true });
   if (!('gonzo' in P.table())) {
     test.check('and a member who is REMOVED leaves the table entirely — white, not red');
   } else {
@@ -632,9 +687,9 @@ async function run() {
 
   // And only for the relay that said so. Somebody removed from one relay
   // is still whatever another relay says they are.
-  P._change('http://a', { key: 'hattie', present: true });
-  P._change('http://b', { key: 'hattie', present: false });
-  P._change('http://a', { key: 'hattie', present: false, gone: true });
+  relaySays('http://a', 'presence', { key: 'hattie', present: true });
+  relaySays('http://b', 'presence', { key: 'hattie', present: false });
+  relaySays('http://a', 'presence', { key: 'hattie', present: false, gone: true });
   if (P.table().hattie === false) {
     test.check('while another relay that still holds them keeps answering');
   } else {

@@ -329,11 +329,17 @@ function createPresence(opts) {
     // here and mean very different things.
     relayStatus: function () { return statusByRelay; },
     jobId: function () { return job && job.id; },
-    // Fed by tests standing in for a relay.
-    _roster: onRoster,
-    _status: function (url, data) { statusByRelay[url] = data; },
-    _change: onChange,
-    _forget: forget,
+    // FOUR UNDERSCORE HOOKS STOOD HERE — _roster, _status, _change and
+    // _forget — captioned "fed by tests standing in for a relay". Nothing
+    // called any of them.
+    //
+    //   Andy: "their internal mechanics shouldn't even be reachable."
+    //
+    // A door opened for a caller that never arrived is worse than one in
+    // use: it looks sanctioned, so the next person needing a shortcut takes
+    // it instead of asking why the real path is hard. The suites that would
+    // have used these drive the stream instead, which is what a relay
+    // actually does to this module.
   };
 }
 

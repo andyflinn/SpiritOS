@@ -43,6 +43,39 @@ function labelsOf(result) {
   return result.matches.map(function (m) { return m.publicLabel; });
 }
 
+// ── EVERYTHING BELOW GOES THROUGH THE PUBLIC SURFACE ─────────────────
+//
+//   Andy: "this whole enforcement rule must include calling inside-the
+//   interface helpers. that is the whole point of interfaces. they must be
+//   opaque. their internal mechanics shouldn't even be reachable."
+//
+// This suite used to reach through a `peerSearch.internal` bag — thirteen
+// calls into globMatches, rank, tokens, tokenScore and overlapChars. The
+// bag was mine and it was labelled "for the suite alone", which is an
+// escape hatch with a note on it: if the mechanics are reachable they are
+// not encapsulated, and a caller will eventually reach the same way for
+// the same reason a test did.
+//
+// The rewrite is not a cost. Every one of those assertions was about a
+// helper's return value; each is now about what the search DOES, which is
+// the thing that must not change. rank's integers can be renumbered
+// tomorrow and nothing below notices.
+
+// Does this query find this label, and how good does the search think it
+// is? `explain` is public because a weight has to be arguable with
+// numbers.
+function found(label, query, extra) {
+  const r = { publicKey: 'K-' + label, publicLabel: label, present: false, via: null };
+  Object.keys(extra || {}).forEach(function (k) { r[k] = extra[k]; });
+  return peerSearch.explain(r, query);
+}
+
+function signal(label, query, name, extra) {
+  const e = found(label, query, extra);
+  if (!e.matched) return null;
+  return e.signals.filter(function (x) { return x.name === name; })[0].quality;
+}
+
 test.startTest('Graded search — isolated, and driven with nothing running');
 
 // ---------------------------------------------------------------------
@@ -216,14 +249,22 @@ test.subHeading("A search for 'a' is a real question");
 test.subHeading('Wildcards, without handing a stranger a regex');
 
 {
+  // WILDCARD PATTERNS ONLY, and finding that out was the first thing the
+  // public surface said. The table used to carry ['abc','abcd',false] —
+  // true of the matcher, and unreachable through a search: a query with no
+  // wildcard never consults it, it goes to the prefix rule and `abcd`
+  // matches `abc`. An assertion about a branch no caller can take is an
+  // assertion about the implementation, which is the thing being given up.
   const cases = [
     ['a*c', 'abc', true], ['a*c', 'ac', true], ['a*c', 'abd', false],
     ['a?c', 'abc', true], ['a?c', 'ac', false],
     ['*', 'anything', true], ['**', 'anything', true],
-    ['abc', 'abc', true], ['abc', 'abcd', false],
+    ['a*z', 'abc', false],
   ];
+  // Through the search rather than the matcher: a pattern either finds a
+  // label or it does not, and that is the only thing a caller can observe.
   const wrong = cases.filter(function (c) {
-    return peerSearch.internal.globMatches(c[1], c[0]) !== c[2];
+    return found(c[1], c[0]).matched !== c[2];
   });
   if (wrong.length === 0) {
     test.check('* and ? mean what they should, ' + cases.length + ' cases');
@@ -238,7 +279,7 @@ test.subHeading('Wildcards, without handing a stranger a regex');
   const evil = '*a*a*a*a*a*a*a*a*a*a*a*b';
   const long = new Array(200).join('a');
   const began = Date.now();
-  peerSearch.internal.globMatches(long, evil);
+  found(long, evil);
   const took = Date.now() - began;
   if (took < 100) {
     test.check('and the classic catastrophic pattern returns in ' + took + 'ms');
@@ -545,44 +586,61 @@ test.subHeading('How many of the words landed');
   // IT ONLY MATCHES AT ALL BECAUSE rank GREW A TIER. That query is not a
   // substring of that label; before tier 3 the row was simply absent, and
   // the signal could never have fired.
-  if (peerSearch.internal.rank('six twelve four one', 'one two three four') === 3) {
-    test.check('and the row is in the results at all only via the token tier');
+  // THE OBSERVABLE CLAIM, which is stronger than "rank === 3": the row is
+  // in the results at all, and it would not be without the token tier
+  // because the query is a substring of nothing.
+  const someWords = found('six twelve four one', 'one two three four');
+  const noWords = found('nine ten eleven', 'one two three four');
+  if (someWords.matched && !noWords.matched) {
+    test.check('some of the words is a result; none of them is not');
   } else {
-    test.fail('rank: ' + peerSearch.internal.rank('six twelve four one', 'one two three four'));
+    test.fail('scattered=' + someWords.matched + ' noWords=' + noWords.matched);
   }
 
   // A MULTISET, not a set. "john john" needs two johns to score twice.
-  const one = peerSearch.internal.overlapChars(['john', 'john'], ['john', 'smith']);
-  const two = peerSearch.internal.overlapChars(['john', 'john'], ['john', 'john']);
-  // The second `john` gets no WHOLE-word credit against `smith` — only the
-  // scraps partial matching allows (a shared `h`, 1 x 1/5). Full credit
-  // needs a second real john.
-  if (one < 5 && two === 8) {
+  // Through the `tokens` signal: "john john" against one john scores a
+  // fraction, against two johns it is whole. The second john gets no
+  // WHOLE-word credit from `smith` — only the scraps partial matching
+  // allows — so full credit needs a second real john.
+  const once = signal('john smith', 'john john', 'tokens');
+  const twice = signal('john john', 'john john', 'tokens');
+  if (once < 1 && twice === 1) {
     test.check('a repeated word needs a repeat for full credit — ' +
-      one.toFixed(1) + ' then ' + two + ' chars');
+      once.toFixed(2) + ' then ' + twice.toFixed(2));
   } else {
-    test.fail('multiset: ' + one + ', ' + two);
+    test.fail('multiset: ' + once + ', ' + twice);
   }
 
   // SEPARATORS ARE PUNCTUATION. Somebody writing anna-marie and somebody
   // writing anna marie mean the same two words.
-  const hyphen = peerSearch.internal.tokens('anna-marie.van_der beek');
-  if (hyphen.join(',') === 'anna,marie,van,der,beek') {
-    test.check('and -, ., _ and space all separate words: ' + hyphen.join(' | '));
+  // Through behaviour: a name written with any of them is the same name.
+  // Asserting the splitter's array would be asserting the splitter.
+  const written = ['anna-marie', 'anna.marie', 'anna_marie', 'anna marie'];
+  const scores = written.map(function (w) { return signal(w, 'marie anna', 'tokens'); });
+  const allWhole = scores.every(function (q) { return q === 1; });
+  if (allWhole) {
+    test.check('-, ., _ and space all separate words: every spelling scores 1.00');
   } else {
-    test.fail('tokens: ' + hyphen.join(','));
+    test.fail('spellings differ: ' + written.map(function (w, i) {
+      return w + '=' + scores[i];
+    }).join(', '));
   }
 
   // THE TIER IS ONLY TRIED FOR A MULTI-TOKEN QUERY, because a single-token
   // one that matches a whole token is always already a substring match —
   // so the check could only cost a split per row and never change an
   // answer. This is the assertion that keeps a million rows cheap.
-  if (peerSearch.internal.rank('annabel smith', 'ann') === 1 &&
-      peerSearch.internal.rank('smith annabel', 'ann') === 2) {
-    test.check('a one-word query never reaches the token path — it is already a substring');
+  // A one-word query is already a substring wherever it would be a whole
+  // token, so the token path can add nothing. Observable as: the name that
+  // STARTS with it beats the one that merely contains it, which is the
+  // prefix rule and not the token rule.
+  const starts = found('annabel smith', 'ann').quality;
+  const inside = found('smith annabel', 'ann').quality;
+  if (starts > inside) {
+    test.check('a one-word query is decided by the prefix rule, not the token path: ' +
+      starts.toFixed(3) + ' vs ' + inside.toFixed(3));
   } else {
-    test.fail('single-token ranks: ' + peerSearch.internal.rank('annabel smith', 'ann') +
-      ', ' + peerSearch.internal.rank('smith annabel', 'ann'));
+    test.fail('single-token: ' + starts + ' vs ' + inside);
   }
 
   // AND IT IS THE WEAKEST TIER. Some of the words in any order is worse
@@ -608,19 +666,40 @@ test.subHeading('Partial words score, and the exact ones are taken first');
   //   is longer, then the length of the longest matching substring
   //   compared to the length of the result-token determines its weight,
   //   and the matched length is added... at a reduced number."
+  // Through the `tokens` signal, one query word against one result word,
+  // so the fraction is the whole score. Same numbers, observed rather than
+  // extracted.
+  // PAIRED WITH A WORD THAT ANCHORS THE MATCH, and that too came from the
+  // public surface. `two` alone against `twelve` is NOT A RESULT — a
+  // one-word query that is not a substring never reaches the token path at
+  // all, so scoring it in isolation was scoring something no search can
+  // produce. With a second word the row is admitted and the partial credit
+  // becomes observable, which is the only state it exists in.
+  //
+  // `x` matches whole in each, so what varies is the first word's share.
   const cases = [
-    ['ann', 'ann', 3, 'the word itself is worth its length'],
-    ['ann', 'annabel', 3 * (3 / 7), 'inside a longer word, reduced by how much of it it covers'],
-    ['annabel', 'ann', 0, 'a shorter result word is not a partial match, it is a different word'],
-    ['two', 'twelve', 2 * (2 / 6), 'two shared characters of six'],
+    ['ann x', 'ann x', 1, 'the word itself is worth its length'],
+    ['ann x', 'annabel x', (3 * (3 / 7) + 1) / 4, 'inside a longer word, reduced by its share of it'],
+    ['two x', 'twelve x', (2 * (2 / 6) + 1) / 4, 'two shared characters of six'],
   ];
   const wrong = cases.filter(function (c) {
-    return Math.abs(peerSearch.internal.tokenScore(c[0], c[1]) - c[2]) > 1e-9;
+    const q = signal(c[1], c[0], 'tokens');
+    return q === null || Math.abs(q - c[2]) > 1e-9;
   });
   if (wrong.length === 0) {
     test.check('one word against one word, graded — ' + cases.length + ' cases');
   } else {
-    test.fail('wrong: ' + wrong.map(function (c) { return c[0] + '/' + c[1]; }).join(', '));
+    test.fail('wrong: ' + wrong.map(function (c) {
+      return c[0] + '/' + c[1] + ' = ' + signal(c[1], c[0], 'tokens');
+    }).join(', '));
+  }
+
+  // A SHORTER RESULT WORD IS NOT A PARTIAL MATCH, it is a different word.
+  // `annabel` typed against the name `ann` finds nothing at all.
+  if (!found('ann', 'annabel').matched) {
+    test.check('and a name shorter than the word typed is not a match');
+  } else {
+    test.fail('ann matched the query annabel');
   }
 
   // THE BUG TWO PASSES EXIST FOR, and it is worth a check of its own
@@ -630,12 +709,15 @@ test.subHeading('Partial words score, and the exact ones are taken first');
   // scores 0.25 against `four` on a shared "o", CONSUMES it, and the exact
   // `four` that follows finds an empty pool. Two of four words right
   // scored as one and a bit.
-  const both = peerSearch.internal.overlapChars(
-    ['one', 'two', 'three', 'four'], ['four', 'one']);
-  if (Math.abs(both - 7) < 1e-9) {
-    test.check('a partial match cannot steal a word an exact match needs — 7 chars, not 3.25');
+  // 7 of 15 typed characters land as whole words. In a single pass `two`
+  // scored 0.25 against `four` on a shared "o", consumed it, and the exact
+  // `four` that followed found an empty pool — 3.25 of 15.
+  const q = signal('four one', 'one two three four', 'tokens');
+  if (Math.abs(q - 7 / 15) < 1e-9) {
+    test.check('a partial match cannot steal a word an exact match needs — ' +
+      q.toFixed(3) + ', not ' + (3.25 / 15).toFixed(3));
   } else {
-    test.fail('overlap: ' + both + ' — pass order is wrong');
+    test.fail('tokens scored ' + q + ' — pass order is wrong');
   }
 }
 

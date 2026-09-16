@@ -686,15 +686,4 @@ module.exports = {
   TEXT_SIGNALS: TEXT_SIGNALS,
   SLOTS: SLOTS,
 
-  internal: {
-    globMatches: globMatches,
-    tokens: tokens,
-    tokenScore: tokenScore,
-    longestRun: longestRun,
-    matchTokens: matchTokens,
-    overlapChars: overlapChars,
-    sequenceRun: sequenceRun,
-    anyTokenFound: anyTokenFound,
-    rank: rank,
-  },
 };
