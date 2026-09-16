@@ -137,7 +137,10 @@ function copyTarget(out) {
 // because the group's membership is a decision — the device panel is
 // deliberately NOT in it, being about this node rather than this relay —
 // and a list that guessed would stop noticing when that line moves.
-const OWNER_PANELS = ['relaylabel', 'invite', 'invites', 'peers', 'partners', 'policy'];
+// `'invites'` STOOD BESIDE `'invite'` and is gone with the panel: minting
+// and what has been minted are one bar now (Andy: "the two invite blocks
+// should be one single invite block").
+const OWNER_PANELS = ['relaylabel', 'invite', 'peers', 'partners', 'policy'];
 
 // The group's own bar. It carries `.nd-group-fold` and deliberately NOT
 // `.nd-fold`, so the handler can tell a click on the group from a click
@@ -465,10 +468,24 @@ function ownedMailbox() {
     // are a reading of the mailbox the title already named, but this is
     // a thing to do. The mark is the shell's own ★ — the same one the
     // row carries for owning the mailbox.
-    if (withMint.indexOf(spirit.core.const.ICON.STAR + ' Invite someone to this relay') !== -1) {
+    // "Invite someone to this relay" STOOD HERE, and the bar is called
+    // "Invites" now because it is no longer only the form: the list of
+    // what is outstanding is in the same fold, so the heading names the
+    // subject rather than one of the two things you do with it.
+    if (withMint.indexOf(spirit.core.const.ICON.STAR + ' Invites') !== -1) {
       test.check('and says what it is, with the mark that means owned');
     } else {
       test.fail('mint heading: ' + withMint);
+    }
+
+    // ONE FOLD, BOTH HALVES. This is the point of the merge and the thing
+    // that two adjacent panels could not promise: a token you have just
+    // read onto a phone and the reservation it made are on screen at the
+    // same time, because only one panel is ever open at a time.
+    if (/natter-inv-go/.test(withMint) && /nd-inv-revoke-out/.test(withMint)) {
+      test.check('and the form and what is outstanding are in the SAME fold');
+    } else {
+      test.fail('the two halves are not together: ' + withMint);
     }
 
     // No picker, ever again: the screen is which mailbox. A question
@@ -1015,10 +1032,104 @@ function theEnrolmentListDatesEachRow() {
 
     // The tail is shown for the same reason, because two dates can match
     // and two keys cannot.
+    //
+    // AND ONLY HERE. The Key column is gone (Andy: "get rid of the keys
+    // column, that stuff has to go everywhere") — what is left is an
+    // ending on the label of a row that would otherwise be unreadable,
+    // which is the rule Contacts already landed on: say it where there is
+    // a decision to make, and nowhere else.
     if (/…OLD-JAZZ/.test(body) || /…LD-JAZZ/.test(body)) {
       test.check('with the key tail beside it, which no two rows can share');
     } else {
       test.fail('no key tail on the rows');
+    }
+
+    if (body.indexOf('<th>Key</th>') === -1) {
+      test.check('and no Key column, even on the table that needs an ending');
+    } else {
+      test.fail('the Key column is still here: ' + body.slice(0, 300));
+    }
+  });
+}
+
+// ── AND A LIST OF DISTINCT NAMES CARRIES NO KEY AT ALL ───────────────
+//
+//   Andy: "get rid of the keys column (that stuff has to go everywhere)."
+//
+// The check above proves the ending survives where it is load-bearing.
+// This one proves it is not everywhere else — which is the actual
+// request, and the half a test written around the ambiguous case would
+// never have noticed.
+function theEnrolmentListShowsNoKeys() {
+  test.subHeading('And an unambiguous list shows no key at all');
+
+  const owner = mountApp({
+    rows: [{
+      url: OWNED, label: 'spirit', status: 200, owned: true,
+      census: {
+        relayKey: 'RELAYKEY',
+        roster: [
+          { publicKey: 'KEY-BERT-XYZ', publicLabel: 'bert', claimedAt: '2026-03-02T00:00:00.000Z' },
+          { publicKey: 'KEY-CAROL-AB', publicLabel: 'carol', claimedAt: '2026-09-14T00:00:00.000Z' },
+        ],
+      },
+    }],
+    relayStatus: { [OWNED]: { key: 'RELAYKEY' } },
+  });
+
+  return settle().then(function () {
+    const body = owner.open('peers').body().innerHTML;
+
+    if (/bert/.test(body) && /carol/.test(body)) {
+      test.check('both rows are listed by name');
+    } else {
+      test.fail('rows: ' + body.slice(0, 300));
+    }
+
+    if (body.indexOf('nd-peer-tail') === -1) {
+      test.check('and neither carries a key ending, because neither needs one');
+    } else {
+      test.fail('a tail appeared on an unambiguous row: ' + body.slice(0, 400));
+    }
+
+    // THE BUTTONS STILL CARRY IT, which is what makes the column
+    // deletable rather than a loss: the key is what a press acts on, and
+    // it never had to be read off the screen to get there.
+    if (/data-peer-key="KEY-BERT-XYZ"/.test(body)) {
+      test.check('while every button still carries the whole key it acts on');
+    } else {
+      test.fail('rows are not keyed: ' + body.slice(0, 300));
+    }
+
+    // ── AND NO TABLE ON THIS SCREEN HAS ONE ─────────────────────────
+    //
+    //   Andy: "that stuff has to go everywhere."
+    //
+    // Three tables carried a Key column — the enrolment list, the people
+    // visible on partner relays, and the partner list itself. A check
+    // that renders one of them proves one of them; this is the whole
+    // screen at once, and it covers a table added next year that nobody
+    // thought to test.
+    //
+    // ASKED OF THE SOURCE, deliberately. Rendering every panel needs a
+    // fixture for every panel, which is a fixture to keep in step — and
+    // the thing being asserted is about the markup this file is willing
+    // to write, which the file itself answers.
+    const src = fs.readFileSync(APP_SCRIPT, 'utf8');
+    if (src.indexOf('<th>Key</th>') === -1) {
+      test.check('and no table anywhere on this screen has a Key column');
+    } else {
+      test.fail('a Key column is still written somewhere in natterDetails.js');
+    }
+
+    // THE RULE LIVES IN ONE PLACE, which is what stops the next table
+    // from inventing a fourth answer. `nd-peer-tail` is written by
+    // ndTellApart and by nothing else.
+    const tails = src.split('class="nd-peer-tail"').length - 1;
+    if (tails === 1) {
+      test.check('and the ending is drawn by one function, not once per table');
+    } else {
+      test.fail(tails + ' places write a key tail — the rule has been copied');
     }
   });
 }
@@ -1245,7 +1356,7 @@ function invitesOutstandingAreShown() {
   });
 
   return settle().then(function () {
-    const html = app.open('invites').body().innerHTML;
+    const html = app.open('invite').body().innerHTML;
 
     if (/adam/.test(html) && /bulb/.test(html)) {
       test.check('every outstanding invite is listed by the name on it');
@@ -1272,10 +1383,17 @@ function invitesOutstandingAreShown() {
 
     // NEVER THE TOKEN. It is the spoken secret; it left on a phone call
     // and the relay does not report it either.
-    if (html.indexOf('token') === -1 && html.indexOf('saint-bernard') === -1) {
-      test.check('and no token appears, because that is not the relay’s to repeat');
+    //
+    // ASKED OF THE ROWS, NOT OF THE PANEL, since the merge. The mint form
+    // shares this fold now and has a field called Token — so a search of
+    // the whole panel for that word finds the CONTROL and reads it as a
+    // leak. What is being asserted is about the relay's report, so the
+    // table is what gets searched.
+    const rows = html.slice(html.indexOf('<table'), html.indexOf('</table>'));
+    if (rows.indexOf('token') === -1 && rows.indexOf('saint-bernard') === -1) {
+      test.check('and no token appears on a row, because that is not the relay’s to repeat');
     } else {
-      test.fail('a token reached the panel: ' + html.slice(0, 400));
+      test.fail('a token reached the rows: ' + rows.slice(0, 400));
     }
   });
 }
@@ -1289,7 +1407,7 @@ function invitesAreOwnerOnly() {
   });
 
   return settle().then(function () {
-    if (!/nd-inv-revoke/.test(app.open('invites').body().innerHTML)) {
+    if (!/nd-inv-revoke/.test(app.open('invite').body().innerHTML)) {
       test.check('a member sees no invite list, because invites are the owner’s business');
     } else {
       test.fail('a non-owner was shown the invite panel');
@@ -1306,7 +1424,7 @@ function revokingAimsByLabel() {
   });
 
   return settle().then(function () {
-    app.open('invites');
+    app.open('invite');
     const out = { textContent: '', className: '' };
     const button = revokeTarget('adam', out);
 
@@ -2091,6 +2209,7 @@ ownedMailbox()
   .then(theOwnerGroupFolds)
   .then(reachIsNotInTheOwnerFold)
   .then(theEnrolmentListDatesEachRow)
+  .then(theEnrolmentListShowsNoKeys)
   .then(anOwnerEventRefreshesTheScreen)
   .then(theClaimFormReadsInTheOrderYouAreTold)
   .then(thePublicLabelIsOptional)

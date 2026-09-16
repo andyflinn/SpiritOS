@@ -144,6 +144,47 @@ var ndOwnerGroupOpen = false;
 // `id` is what the fold is remembered under, so it must not change with
 // the panel's state — "device" stays "device" whether it is armed,
 // loaded or refused.
+// ── A KEY ENDING IS SHOWN WHERE IT DECIDES SOMETHING, AND NOWHERE ELSE ──
+//
+//   Andy: "get rid of the keys column (that stuff has to go everywhere)."
+//
+// Three tables on this screen carried eight characters of somebody's key
+// in a column of its own, on every row, forever. That is machine detail
+// wearing a person's clothes (UI_DESIGN_STYLE §6) — and it was there for
+// a reason that expired: the row's buttons could not reach the whole key,
+// so a person had to read it off the screen. Every button carries the
+// full key now, in `data-*`, and a press acts on that.
+//
+// WHAT IS NOT DELETED is the case the ending exists for. A label is not
+// an identity (R1) and duplicates are legal by design, so two rows can
+// read exactly alike while Remove and Break are irreversible. There the
+// ending is not decoration, it is the whole of how you tell which.
+//
+// So: count the captions, and show an ending on the rows that collide.
+// A table of distinct names carries none at all. This is the rule
+// Contacts already landed on (contactsHandleCell, `person.ambiguous`) —
+// said here in one function rather than a third and fourth time, because
+// a rule written once per table is a rule that will be changed in one of
+// them.
+//
+// EIGHT CHARACTERS, unchanged. What moved is WHERE this appears, not how
+// much of a key it is: a shorter one would be a second change hiding
+// inside a deletion.
+function ndCountLabels(rows, labelOf) {
+  var seen = Object.create(null);
+  (rows || []).forEach(function (row) {
+    var l = String(labelOf(row) || '');
+    seen[l] = (seen[l] || 0) + 1;
+  });
+  return seen;
+}
+
+function ndTellApart(counts, label, key) {
+  if ((counts[String(label || '')] || 0) < 2) return '';
+  return ' <span class="nd-peer-tail" title="more than one row here wears this name">…' +
+    ndEscapeHtml(String(key || '').slice(-8)) + '</span>';
+}
+
 function ndPanel(id, mark, title, inner, extraClass) {
   var shut = ndOpenPanel !== id;
   return '<div class="stat-tile wide' + (extraClass ? ' ' + extraClass : '') + '">' +
@@ -561,10 +602,31 @@ function ndClaimHtml() {
 // on a keyless reservation. The token is not here and never will be:
 // that is the spoken secret, it left on a phone call, and the relay does
 // not report it either.
-function ndInvitesHtml() {
-  if (!ndBadge || !ndBadge.owned) return '';
-  var report = ndBadge.report;
-  if (!report) return '';
+//
+// ── AND IT IS HALF A PANEL NOW, NOT A PANEL ──────────────────────────
+//
+//   Andy: "the two invite blocks should be one single invite block."
+//
+// They were two folds and one subject. Minting and what has been minted
+// answer each other — the row that appears below the form IS the answer
+// to "did that work" — and a person who has just read a token onto a
+// phone has to open a second bar to see the reservation they made. The
+// note in ndRender already said they belonged adjacent; adjacent was
+// never enough, because either could be the one that is shut.
+//
+// So this returns a FRAGMENT and ndInvitePanel puts it under the form.
+// It keeps its own function because it is a different thing to build: the
+// form is markup, this is a list off the relay's report.
+function ndInviteRowsHtml() {
+  var report = ndBadge && ndBadge.report;
+  // NO REPORT IS NOT NO INVITES. A screen that has not heard back yet
+  // must not answer "nothing outstanding" — that is a claim about the
+  // relay made on the strength of not having asked it.
+  if (!report) {
+    return '<div class="job-log-empty">' +
+      (ndAsked ? 'this relay has not said what is outstanding' : 'asking that relay\u2026') +
+      '</div>';
+  }
   var rows = (report.invites || []).slice();
 
   var body;
@@ -599,16 +661,24 @@ function ndInvitesHtml() {
       '</tbody></table>';
   }
 
-  return ndPanel('invites', ndIcon.STAR, 'Invites outstanding on this relay',
-    body +
+  return body +
     // Said once, here, rather than implied by a count that does not add
     // up: one label may carry several live invites, so revoking takes
     // every invite under that name.
     '<div class="job-manifest-note">Revoking a name takes back every ' +
     'outstanding invite under it. An invite that has already been claimed ' +
     'is not here — the seat is on the peer list now.</div>' +
-    '<div class="job-manifest-note nd-inv-revoke-out"></div>',
-    'natter-invites');
+    '<div class="job-manifest-note nd-inv-revoke-out"></div>';
+}
+
+// How many are outstanding, for the bar. '' rather than '(0)' when the
+// relay has not reported: a number on a folded bar is read as a fact, and
+// "none" is not something this screen knows yet.
+function ndInviteCount() {
+  var report = ndBadge && ndBadge.report;
+  if (!report) return '';
+  var n = (report.invites || []).length;
+  return n ? ' (' + n + ')' : '';
 }
 
 // EXPIRY IN WORDS, because an ISO timestamp is not a thing anybody reads
@@ -822,16 +892,25 @@ function ndPeersHtml() {
   if (!rows.length) {
     body = '<div class="job-log-empty">nobody is enrolled here yet</div>';
   } else {
+    // No Key column: the key is what the BUTTONS act on and they carry
+    // it. An ending appears beside a label only where two rows read alike
+    // — see ndTellApart for the whole of the rule.
+    var counts = ndCountLabels(rows, function (peer) {
+      return (peer && (peer.publicLabel || peer.name)) || '';
+    });
+
     body = '<table class="job-table"><thead><tr>' +
-      '<th>Label</th><th>Key</th><th>Enrolled</th><th></th>' +
+      '<th>Label</th><th>Enrolled</th><th></th>' +
       '</tr></thead><tbody>' +
       rows.map(function (peer) {
         var key = String((peer && peer.publicKey) || '');
         var label = String((peer && (peer.publicLabel || peer.name)) || '');
         var isOwner = !!(peer && peer.owner);
         return '<tr>' +
-          '<td>' + (isOwner ? ndIcon.STAR + ' ' : '') + ndEscapeHtml(label || '(no label)') + '</td>' +
-          '<td class="nd-peer-tail">…' + ndEscapeHtml(key.slice(-8)) + '</td>' +
+          '<td>' + (isOwner ? ndIcon.STAR + ' ' : '') +
+            ndEscapeHtml(label || '(no label)') +
+            ndTellApart(counts, label, key) +
+            '</td>' +
           '<td>' + ndEscapeHtml(ndWhen(peer && peer.claimedAt)) + '</td>' +
           '<td>' +
             // ── "OR USE THE LIST ABOVE" WAS NOT TRUE ─────────────────
@@ -1236,13 +1315,18 @@ function ndReachHtml(partners) {
   if (!gained.length) {
     body = '<div class="job-log-empty">partners hold nobody this relay does not already have</div>';
   } else {
+    // SAME RULE AS THE ENROLMENT LIST, and this table wants it most: Add
+    // writes a row into this node's own book, and two strangers on two
+    // different partners can easily wear one name. See ndTellApart.
+    var counts = ndCountLabels(gained, function (g) { return g && g.publicLabel; });
+
     body = '<table class="job-table"><thead><tr>' +
-      '<th>Label</th><th>Key</th><th>On</th><th></th>' +
+      '<th>Label</th><th>On</th><th></th>' +
       '</tr></thead><tbody>' +
       gained.map(function (g) {
         return '<tr>' +
-          '<td>' + ndEscapeHtml(g.publicLabel) + '</td>' +
-          '<td class="nd-peer-tail">…' + ndEscapeHtml(g.publicKey.slice(-8)) + '</td>' +
+          '<td>' + ndEscapeHtml(g.publicLabel) +
+            ndTellApart(counts, g.publicLabel, g.publicKey) + '</td>' +
           '<td>' + ndEscapeHtml(g.via) + '</td>' +
           // THE URL TRAVELS WITH THE BUTTON. `peer.acquire` proves a key
           // against a census, and for one of these that census is the
@@ -1344,6 +1428,13 @@ function ndPartnersHtml() {
   if (!rows.length) {
     body = '<div class="job-log-empty">no partners — this relay reaches only its own members</div>';
   } else {
+    // AND HERE TOO, though a partner already has the one caption no other
+    // row can wear — its URL, in the next column. The ending stays for
+    // the case that column cannot cover: one person meshing several of
+    // their own relays, all called the same thing, where Break is
+    // irreversible and the urls are the only things that differ.
+    var counts = ndCountLabels(rows, function (p) { return p && p.label; });
+
     body = '<table class="job-table"><thead><tr>' +
       '<th>Partner</th><th>Their relay</th><th>Since</th><th></th>' +
       '</tr></thead><tbody>' +
@@ -1351,7 +1442,7 @@ function ndPartnersHtml() {
         var key = String(p.key || '');
         return '<tr>' +
           '<td>' + ndEscapeHtml(p.label || '(no label)') +
-            ' <span class="nd-peer-tail">…' + ndEscapeHtml(key.slice(-8)) + '</span></td>' +
+            ndTellApart(counts, p.label, key) + '</td>' +
           '<td>' + ndEscapeHtml(p.url || '') + '</td>' +
           '<td>' + ndEscapeHtml(ndWhen(p.since)) + '</td>' +
           '<td><button type="button" class="cancel-btn nd-partner-drop"' +
@@ -1462,11 +1553,25 @@ function ndPartnerDrop(button) {
   });
 }
 
-function ndMintHtml() {
+// ── ONE INVITE BLOCK ─────────────────────────────────────────────────
+//
+//   Andy: "the two invite blocks should be one single invite block."
+//
+// The form, then what it has produced. One fold, one subject, and the
+// answer to a mint lands in the same open panel that asked for it.
+//
+// TWO CLASSES ON ONE TILE, and that is not laziness: `natter-mint` and
+// `natter-invites` are what the mint and revoke handlers reach for with
+// `closest()`. Keeping both means neither handler learns that its panel
+// moved — and a delegated handler that silently finds nothing is the
+// failure mode this screen is most prone to, since every control here is
+// bound to the body and not to the button.
+//
+// ★ is the same mark the row carries for owning it, and this panel is
+// genuinely owner-only — see the note on the device panel, which is not.
+function ndInvitePanel() {
   if (!ndBadge || !ndBadge.owned) return '';
-  // ★ is the same mark the row carries for owning it, and this panel is
-  // genuinely owner-only — see the note on the device panel, which is not.
-  return ndPanel('invite', ndIcon.STAR, 'Invite someone to this relay',
+  return ndPanel('invite', ndIcon.STAR, 'Invites' + ndInviteCount(),
     // DICTIONARY.md, "Label (invite)": the public caption the token
     // unlocks. `saint` is the dictionary's own example, not a person.
     '<div class="start-job-form card">' +
@@ -1487,7 +1592,12 @@ function ndMintHtml() {
     '</div>' +
     // Under the row: the minted token is read off this screen onto a
     // phone, and it is long. It is an answer, not a control.
-    '<span class="natter-inv-out"></span>', 'natter-mint');
+    '<span class="natter-inv-out"></span>' +
+    // AND WHAT IS OUTSTANDING, in the same fold. A minted token appears
+    // above this and its reservation appears in it, which is the pairing
+    // two panels could never guarantee.
+    ndInviteRowsHtml(),
+    'natter-mint natter-invites');
 }
 
 function ndDeviceHost() {
@@ -1709,8 +1819,11 @@ function ndRender() {
     ndClaimHtml() +
     // ── THE OWNER'S HALF, INSIDE ONE FOLD ────────────────────────────
     //
-    // Minting and what has been minted stay adjacent: the answer to "did
-    // that work" is the row that appears in the panel below it.
+    // Minting and what has been minted are ONE panel now (ndInvitePanel).
+    // They were two, sitting adjacent for exactly this reason — the answer
+    // to "did that work" is the row that appears under the form — and
+    // adjacency could not deliver it, because either of the two could be
+    // the one that is shut.
     //
     // The device panel is NOT in here, and that is the line the group
     // draws. It is about attaching a device to THIS NODE — a member with
@@ -1733,8 +1846,7 @@ function ndRender() {
     ndReachPanel() +
     ndOwnerGroupHtml(
       ndRelayLabelHtml() +
-      ndMintHtml() +
-      ndInvitesHtml() +
+      ndInvitePanel() +
       ndPeersHtml() +
       ndPartnersHtml() +
       ndAutoAddHtml()
