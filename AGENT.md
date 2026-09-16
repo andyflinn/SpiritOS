@@ -73,7 +73,11 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 
 - Kamatera cutover
 - Moving Stats/Processes/Jobs/Apps/Groups
-- Refactoring Relay Chat onto `api.hub`
+- **Relay Chat, at all.** Not a retrofit, not its receive path, not its tests. It is a **carcass kept as reference** for a chat app to be built later over node and shell infrastructure that does not exist yet — a global inbox and outbox, which is a shell mechanism for every app and not a chat feature. Receive is dark and that is the settled state, not a bug report.
+
+  > **Andy:** *"i will burn less tokens leaving chat and rebuilding, adapting later. so many cycles burn tokens dealing with chat, when the basic browser side's fundamentals and intrinsic apps have such a long way to go."*
+
+  This line replaces *"Refactoring Relay Chat onto `api.hub`"*, which was narrower and kept being read as permission for everything adjacent to it. Touch `relayChat.js` only when a tree-wide rule forces it (it moved to `api.verb` with the other five apps on 2026-09-16), and then only that.
 - Name/icon lock (until that sitting)
 - App Builder work (subject to scrap; do not design cleanup around it)
 - Treating `preferences.json` / `media/` in this clone as irreplaceable personal data
