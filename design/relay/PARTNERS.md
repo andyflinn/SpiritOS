@@ -448,11 +448,24 @@ This is the real threshold in the proposal — bigger than the flag.
 
 ## Decided (Andy)
 
-1. **A relay may promote a peer to `partner` in its own peer ledger.** Not
-   a new store: a flag on the row, beside `owner`.
-2. **Reciprocity is the test.** A partner is a peer here who owns a relay
-   elsewhere, and both sides establish that fact through owner input.
-   Neither relay takes the other's word for it.
+1. **A relay may promote another RELAY to `partner` in its own PARTNER
+   ledger. A NEW store** — `relay-state/partners.json`, keyed by the
+   partner's relay key.
+
+   **This said "promote a peer … in its own peer ledger. Not a new store:
+   a flag on the row" — corrected 2026-09-16.** A flag on a peer row holds
+   one partnership per owner, and an owner may run twenty relays; and
+   *"i might ban a peer, but still want his relays to help mine"* means a
+   partnership has to outlive a membership it was never made of. The thing
+   being promoted is a **relay**, identified by its relay key. See
+   §"A relay NEVER persists a partner's ledger" for the shape and for what
+   the new store costs.
+
+2. **Reciprocity is the test, and it is tested once.** At promotion, the
+   far relay's public census must show that key marked owner — both sides
+   establish it through owner input, and neither takes the other's word.
+   Afterwards the partnership stands on the **pinned relay key**, which is
+   what the forward path has always authenticated against.
 
    **This said "a NON-OWNER peer here", and that was corrected on
    2026-09-16.** Andy: *"the relays need to be different, the owners?
