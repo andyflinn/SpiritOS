@@ -60,13 +60,17 @@ const REACHES = [
 // of — a node has no public address, so it has an outbound half and an
 // inbound half, and the inbound half is not a way around the outbound one.
 const INTERFACE = {
-  'js/hub.js':
-    'relayRequest — THE outbound transport. http/https live here and ' +
-    'nowhere else in node code; every caller is handed it, injected.',
+  'js/relayRequest.js':
+    'THE outbound transport. http/https live here and nowhere else in ' +
+    'node code; every caller is handed it, injected. It sat inside ' +
+    'hub.js until 2026-09-16, which put the one interface everything ' +
+    'must use inside the NODE’s hub — so a relay could not reach it ' +
+    'without the node’s machinery, and the only ways out of that were ' +
+    'to reach for http directly or to go without.',
   'js/sseClient.js':
     'the INBOUND half. A relay cannot call a node that has no public ' +
-    'address, so it pushes down a held stream. Parser and reconnect ' +
-    'only; it holds no relay concepts and takes fetchImpl for tests.',
+    'address, so it pushes down a held stream. Parser, reconnect, idle ' +
+    'watchdog; it holds no relay concepts and takes fetchImpl for tests.',
 };
 
 // ── STRUCTURE, NOT COMMS ────────────────────────────────────────────────

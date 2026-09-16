@@ -2,8 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const http = require('http');
-const https = require('https');
 const { URL } = require('url');
 const auth = require('./relayAuth');
 const invites = require('./invites');
@@ -14,19 +12,17 @@ const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
 const deviceAuth = require('./deviceAuth');
 
-function isLoopbackHost(hostname) {
-  var h = String(hostname || '').toLowerCase();
-  return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-}
-
-function assertRelayUrl(relayUrl) {
-  var target;
-  try { target = new URL(relayUrl); }
-  catch (e) { throw new Error('bad relay url'); }
-  if (target.protocol === 'https:') return target;
-  if (target.protocol === 'http:' && isLoopbackHost(target.hostname)) return target;
-  throw new Error('relay url must be https (loopback http is allowed for lab relays)');
-}
+// isLoopbackHost, assertRelayUrl and relayRequest MOVED to
+// js/relayRequest.js on 2026-09-16. They were the node's outbound socket
+// living inside the node's hub, which meant a relay could not reach the
+// one interface AGENT.md says everything must use without requiring the
+// node's machinery — and the only ways out of that are to reach for `http`
+// directly or to go without. Both are the rule being broken.
+//
+// Re-exported below, unchanged, so every existing caller is untouched.
+const wire = require('./relayRequest');
+const assertRelayUrl = wire.assertRelayUrl;
+const relayRequest = wire.relayRequest;
 
 // The invite is forwarded, never minted here — a token this node made up
 // would not be in the relay's invites.json. Minting is cycle 2.
@@ -89,35 +85,6 @@ function loadRelayUrl(rootDir) {
   return urls.length ? urls[0] : null;
 }
 
-function relayRequest(relayUrl, method, pathname, bodyObj, extraHeaders) {
-  return new Promise(function (resolve, reject) {
-    var target;
-    try { target = assertRelayUrl(relayUrl + pathname); }
-    catch (e) { reject(e); return; }
-    var payload = bodyObj == null ? '' : JSON.stringify(bodyObj);
-    var lib = target.protocol === 'https:' ? https : http;
-    var req = lib.request({
-      protocol: target.protocol,
-      hostname: target.hostname,
-      port: target.port,
-      path: target.pathname + target.search,
-      method: method,
-      headers: Object.assign({
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload),
-        'Host': target.host
-      }, extraHeaders || {})
-    }, function (res) {
-      var chunks = '';
-      res.on('data', function (c) { chunks += c; });
-      res.on('end', function () {
-        resolve({ status: res.statusCode, text: chunks });
-      });
-    });
-    req.on('error', reject);
-    req.end(payload);
-  });
-}
 
 // How much disk this node is carrying on one peer's behalf.
 //
