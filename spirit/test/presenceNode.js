@@ -89,6 +89,12 @@ async function run() {
   const failing = sseClient.connect({
     url: 'http://relay/api/relay/stream',
     retryMs: 10,
+    // RANDOM PINNED, because the delays are jittered now. Without this the
+    // assertion below ("each wait is longer than the last") passes on most
+    // rolls and fails on some — 10 at full spread then 20 at half spread
+    // are the same number. A test that is usually right is a test nobody
+    // believes on the morning it goes red.
+    randomImpl: function () { return 1; },
     fetchImpl: function () { attempts += 1; return Promise.reject(new Error('down')); },
     setTimeoutImpl: function (fn, ms) { waits.push(ms); return setTimeout(fn, 0); },
     clearTimeoutImpl: clearTimeout,
@@ -112,6 +118,101 @@ async function run() {
   await new Promise(function (r) { setTimeout(r, 40); });
   if (attempts === settled) test.check('and close() ends it rather than the current attempt');
   else test.fail('kept retrying after close: ' + settled + ' -> ' + attempts);
+
+  test.subHeading('Clingy: it spreads the herd, and forgets its patience');
+
+  // ── JITTER ──────────────────────────────────────────────────────────
+  //
+  // Without it every member of a relay backs off on the same curve from
+  // the same instant: the box dies, a hundred nodes count to one together,
+  // and it is hit by a hundred simultaneous reconnects exactly as it tries
+  // to come up. The nominal curve still doubles; what varies is where in
+  // the back half of each interval a given node lands.
+  {
+    const spread = [];
+    const rolls = [0, 0.5, 1, 0.25];
+    let n = 0;
+    const jittery = sseClient.connect({
+      url: 'http://relay/api/relay/stream',
+      retryMs: 1000,
+      randomImpl: function () { return rolls[n++ % rolls.length]; },
+      fetchImpl: function () { return Promise.reject(new Error('down')); },
+      setTimeoutImpl: function (fn, ms) { spread.push(ms); return setTimeout(fn, 0); },
+      clearTimeoutImpl: clearTimeout,
+    });
+    await new Promise(function (r) { setTimeout(r, 40); });
+    jittery.close();
+
+    // 1000 at rolls 0 and 1 is 500 and 1000 — half the interval apart, on
+    // the same nominal step.
+    if (spread.length >= 2 && spread[0] === 500 && spread[1] === 1500) {
+      test.check('the same step lands anywhere in its back half: ' +
+        spread.slice(0, 3).join(', ') + 'ms');
+    } else {
+      test.fail('no jitter: ' + spread.slice(0, 4).join(', '));
+    }
+  }
+
+  // ── AND THE PATIENCE RESETS ON A CONNECTION ─────────────────────────
+  //
+  //   Andy: "the sseClient needs to be clingy."
+  //
+  // THE BUG THIS EXISTS FOR. The reset used to sit where an EVENT was
+  // parsed, so a heartbeat did not count — parseChunk(':') answers null
+  // and returns first. A node on a quiet relay climbed to the cap across a
+  // few restarts and stayed there, and every later restart then cost the
+  // full wait. The symptom is a node that re-attaches more slowly the
+  // longer it has behaved.
+  {
+    const waited = [];
+    let round = 0;
+    const flapping = sseClient.connect({
+      url: 'http://relay/api/relay/stream',
+      retryMs: 100,
+      randomImpl: function () { return 1; },
+      setTimeoutImpl: function (fn, ms) { waited.push(ms); return setTimeout(fn, 0); },
+      clearTimeoutImpl: clearTimeout,
+      fetchImpl: function () {
+        round += 1;
+        // Fail twice, so the backoff climbs; then ACCEPT and drop at once,
+        // carrying nothing but a heartbeat. A stream that opened is a
+        // relay that is there.
+        if (round <= 2) return Promise.reject(new Error('down'));
+        return Promise.resolve({
+          ok: true,
+          body: { getReader: function () {
+            let served = false;
+            return { read: function () {
+              if (served) return Promise.resolve({ done: true });
+              served = true;
+              return Promise.resolve({ done: false, value: new TextEncoder().encode(':\n\n') });
+            } };
+          } },
+        });
+      },
+    });
+    await new Promise(function (r) { setTimeout(r, 60); });
+    flapping.close();
+
+    // 100, 200 while failing; then the connection lands and the next wait
+    // is 100 again rather than 400.
+    const afterConnect = waited[2];
+    if (waited[0] === 100 && waited[1] === 200 && afterConnect === 100) {
+      test.check('a connection that opened resets the patience: ' +
+        waited.slice(0, 3).join(', ') + 'ms — not 400');
+    } else {
+      test.fail('backoff kept climbing across a good connection: ' +
+        waited.slice(0, 4).join(', '));
+    }
+  }
+
+  // And the ceiling is short enough to catch a restart rather than a death.
+  if (sseClient.MAX_RETRY_MS <= 10000) {
+    test.check('the longest a node waits to find a relay that came back is ' +
+      (sseClient.MAX_RETRY_MS / 1000) + 's');
+  } else {
+    test.fail('cap is ' + sseClient.MAX_RETRY_MS + 'ms — a restart takes 2-5 seconds');
+  }
 
   test.subHeading('Who the relay is, pinned as the stream opens');
 

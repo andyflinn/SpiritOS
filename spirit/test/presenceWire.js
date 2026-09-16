@@ -259,6 +259,70 @@ async function run() {
   } else {
     test.fail('stale presence outlived the relay: ' + JSON.stringify(seen));
   }
+
+  // ── AND IT COMES BACK BY ITSELF ─────────────────────────────────────
+  //
+  //   Andy: "have we built and verified that relays can restart and
+  //   re-establish connections? does this run properly through
+  //   sseClient?" ... "the relay re-attachment is vital."
+  //
+  // It was not. Three things were separately true and the gap between
+  // them was invisible: sseClient's retry loop is asserted against a fake
+  // fetch (presenceNode.js), a relay keeping its state across a restart is
+  // asserted with real processes (labPersistence.js), and the suite you
+  // are reading proved a relay DYING without a node dying with it — then
+  // stopped. Nothing had ever watched a node re-attach to a relay that
+  // came back.
+  //
+  // WHY IT IS VITAL RATHER THAN TIDY. `bash/update` restarts a relay every
+  // time it takes a tag, so this is a routine Tuesday and not an outage.
+  // And since the partner gate landed, a PARTNERSHIP is two long-lived
+  // streams between two machines that both get updated — so a reconnect
+  // that silently did not happen would leave a partnership that looks
+  // established and carries nothing.
+  //
+  // NOBODY ASKS IT TO. The node is not told the relay is back and has no
+  // poll: sseClient's own backoff wakes up, the GET succeeds, and presence
+  // arrives. That is the whole assertion.
+  test.subHeading('And the node re-attaches to a relay that came back');
+
+  const again = await awaitRelay(lab.runDir, PORT);
+  if (!again) {
+    test.fail('the relay did not come back on ' + PORT + ' — the port may still be held');
+    return;
+  }
+  child = again.kid;
+
+  // Long enough for the backoff to have tried: 1s, then 2s, then 4s.
+  // Polled rather than slept flat, so a fast reconnect does not pay for
+  // the slow case.
+  let refilled = {};
+  for (let n = 0; n < 20; n += 1) {
+    await sleep(500);
+    refilled = A.P.table();
+    if (Object.keys(refilled).length) break;
+  }
+
+  if (Object.keys(refilled).length) {
+    test.check('the stream re-opened on its own and presence came back: ' +
+      Object.keys(refilled).length + ' known');
+  } else {
+    test.fail('the node never re-attached — sseClient gave up, or presence did not resume');
+  }
+
+  // RE-ATTACHED IS NOT THE SAME AS USABLE. A stream that reconnects but
+  // whose node never re-enrols is a socket with nothing behind it, which
+  // reads as healthy from every angle except asking it something.
+  const post = await hub.relayRequest(BASE, 'GET', '/api/relay/who', null);
+  let census = null;
+  try { census = JSON.parse(post.text); } catch (e) { census = null; }
+  const rows = (census && census.peers) || [];
+  if (rows.length) {
+    test.check('and the relay that came back still knows who its members are: ' +
+      rows.length + ' rows');
+  } else {
+    test.fail('census empty after restart: ' + post.text);
+  }
 }
 
 // ── THE DEVICE PAGE IS SERVED, not merely allowed ────────────────────

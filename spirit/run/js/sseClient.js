@@ -26,7 +26,21 @@
 // than the curve: a relay that is down must not be hammered, and a node
 // that has been asleep must not take ten minutes to notice it is back.
 var FIRST_RETRY_MS = 1000;
-var MAX_RETRY_MS = 30000;
+
+// CLINGY. Andy: "the sseClient needs to be clingy."
+//
+// This was 30 seconds, on the reasoning that a relay which is down must
+// not be hammered. True, and it answered the wrong question: the case that
+// actually happens is not a relay that is DOWN, it is a relay that is
+// RESTARTING — `bash/update` restarts one every time it takes a tag, and
+// that gap is two to five seconds. Waiting thirty is a node asleep through
+// four of them.
+//
+// Eight seconds is the worst a node waits to find a relay that came back.
+// A relay that is genuinely gone costs one request per node per eight
+// seconds, which is a rounding error next to a member's ordinary traffic —
+// and the jitter below is what stops those requests arriving together.
+var MAX_RETRY_MS = 8000;
 
 function parseChunk(text) {
   // One SSE message: any number of field lines, terminated by a blank
@@ -67,6 +81,7 @@ function connect(opts) {
   opts = opts || {};
   var doFetch = opts.fetchImpl || (typeof fetch === 'function' ? fetch : null);
   var setT = opts.setTimeoutImpl || setTimeout;
+  var rand = opts.randomImpl || Math.random;
   var clearT = opts.clearTimeoutImpl || clearTimeout;
   var firstRetry = opts.retryMs || FIRST_RETRY_MS;
 
@@ -86,10 +101,20 @@ function connect(opts) {
   function scheduleRetry(reason) {
     say(opts.onClose, reason);
     if (stopped) return;
+    // JITTERED, and that is what makes a short cap safe rather than
+    // reckless. Without it every member of a relay backs off on the same
+    // curve from the same instant — the box dies, a hundred nodes count to
+    // one together, and it is hit by a hundred simultaneous reconnects
+    // exactly as it tries to come up. Spreading them over the back half of
+    // each interval costs nothing and turns a wave into a trickle.
+    //
+    // The NOMINAL curve still doubles, which is what a test can assert;
+    // `randomImpl` pinned to 1 gives the undisturbed sequence.
+    var spread = 0.5 + (0.5 * rand());
     timer = setT(function () {
       timer = null;
       run();
-    }, retryMs);
+    }, Math.round(retryMs * spread));
     retryMs = Math.min(retryMs * 2, MAX_RETRY_MS);
   }
 
@@ -121,8 +146,22 @@ function connect(opts) {
     // a stale credential into a one-per-second hammer that then spent the
     // relay's rate limit, which guaranteed the refusals continued.
     //
-    // The backoff resets when something ARRIVES. A stream that delivers is
-    // a stream that works, and nothing weaker is worth believing.
+    // ── THE BACKOFF RESETS ON A CONNECTION, not only on a message ──────
+    //
+    // This said "the backoff resets when something ARRIVES... nothing
+    // weaker is worth believing", and reset it only where an EVENT was
+    // parsed. Which meant a heartbeat did not count — `parseChunk(':')`
+    // answers null and returns before the reset — so a stream that was
+    // connected, healthy and merely QUIET kept whatever backoff it had.
+    //
+    // A node on a relay nobody is talking through would climb to the cap
+    // across a few restarts and stay there, and every later restart cost
+    // the full wait. The symptom is a node that takes longer to re-attach
+    // the longer it has been well behaved.
+    //
+    // An accepted connection is the relay saying it is there. That is
+    // enough, and the event reset below stays as the stronger signal.
+    retryMs = firstRetry;
     say(opts.onOpen);
 
     var reader = res.body.getReader();
