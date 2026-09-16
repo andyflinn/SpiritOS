@@ -311,7 +311,7 @@ function contactsPaintSeen() {
   if (!box) return;
 
   if (!contactsSeen.length) {
-    box.innerHTML = '<div class="job-log-empty">nobody on your relays matches that</div>' +
+    box.innerHTML = '<div class="job-log-empty">nobody found</div>' +
       (contactsSeenSilent.length
         ? '<div class="job-manifest-note">' + contactsSeenSilent.length +
           ' relay(s) could not search: ' + contactsEscapeHtml(contactsSeenSilent.join(', ')) + '</div>'
@@ -319,12 +319,27 @@ function contactsPaintSeen() {
     return;
   }
 
+  // THE ONE THING WORTH SAYING BEFORE A LIST OF NAMES. Carried over from
+  // Add-by-handle, which was the only place it appeared and is the reason
+  // that panel was worth merging rather than deleting: a label is not an
+  // identity (R1), so the ending is how you know WHICH john.
+  //
+  // Shown only when there is a decision to make.
+  const ambiguous = contactsSeen.length > 1;
+
   box.innerHTML =
+    (ambiguous
+      ? '<div class="job-manifest-note">More than one answer. Ask them what their key ' +
+        'ends with — they can see it in fine print at the foot of their own screen.</div>'
+      : '') +
+    // NO "WHERE" COLUMN. Andy: "The user shouldn't worry about relays."
+    // The relay is still on the row, as `data-url`, because the confirm is
+    // checked against that census and the contact keeps it as a route —
+    // but it is the node's business and not a column somebody reads.
     '<table class="job-table"><thead><tr>' +
-      '<th>Label</th><th>Key</th><th>Where</th><th></th>' +
+      '<th>Name</th><th>Key ends</th><th></th>' +
     '</tr></thead><tbody>' +
     contactsSeen.map(function (c) {
-      const where = c.relayLabel || c.relay;
       // ALREADY KNOWN IS SAID, NOT HIDDEN. A search is a question about
       // who is out there, and dropping the people you have would make
       // the answer depend on your book — which is how somebody ends up
@@ -332,8 +347,7 @@ function contactsPaintSeen() {
       const known = c.acquiredVia && c.acquiredVia !== 'census';
       return '<tr>' +
         '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') + '</td>' +
-        '<td>' + contactsEscapeHtml(String(c.tail || '')) + '</td>' +
-        '<td>' + contactsEscapeHtml(where) + '</td>' +
+        '<td>\u2026' + contactsEscapeHtml(String(c.tail || '')) + '</td>' +
         '<td>' + (known
           ? '<span class="muted">already a contact</span>'
           : '<button type="button" class="cancel-btn contacts-seen-add"' +
@@ -369,41 +383,16 @@ function contactsSeenAdd(button) {
 // Every key the mailbox has under that handle. Never one: a handle is a
 // caption, and two johns are two keys — the whole reason this asks
 // rather than picks.
-function contactsFindByHandle() {
-  var handle = document.getElementById('contacts-add-handle').value.trim();
-  var out = document.getElementById('contacts-add-out');
-  if (!handle) {
-    out.innerHTML = '<div class="job-log-empty">Type the name you were told.</div>';
-    return;
-  }
-  out.innerHTML = '<div class="job-log-empty">looking…</div>';
-  contactsAsk('peer.find', { handle: handle })
-    .then(function (data) {
-      var matches = (data && data.matches) || [];
-      if (!matches.length) {
-        out.innerHTML = '<div class="job-log-empty">Nobody on this relay is called ' +
-          contactsEscapeHtml(handle) + '.</div>';
-        return;
-      }
-      // One match is still a question. A lone john today is not a lone
-      // john next month, and the confirm is the habit that protects the
-      // person, not the count.
-      out.innerHTML =
-        '<div class="job-log-empty">Ask them what their key ends with. They can see it in fine print ' +
-        'at the bottom of their chat app, then confirm the one that matches.</div>' +
-        matches.map(function (row) {
-          var known = row.acquiredVia === 'handle'
-            ? ' — already confirmed'
-            : (row.acquiredVia && row.acquiredVia !== 'census' ? ' — already a contact' : '');
-          return '<div class="rc-msg them">' +
-            '<span class="rc-who">' + contactsEscapeHtml(row.publicLabel) + '</span>' +
-            '<span class="rc-text">ends …' + contactsEscapeHtml(row.tail) + contactsEscapeHtml(known) + '</span>' +
-            '<button type="button" class="cancel-btn" data-add-key="' + contactsEscapeHtml(row.publicKey) + '">Confirm</button>' +
-            '</div>';
-        }).join('');
-    })
-    .catch(function (e) { out.innerHTML = '<div class="job-log-empty">could not ask: ' + contactsEscapeHtml(e.message) + '</div>'; });
-}
+// contactsFindByHandle STOOD HERE and asked `peer.find`. Its one good
+// sentence — ask them what their key ends with — moved into the search
+// results above, which is the only place it was ever needed: where more
+// than one answer carries the same name.
+//
+// The verb survives it. `peer.find` is still served by the node
+// (server.js) and now has no caller in the tree, which is a thing to
+// decide rather than a thing to leave: it asks `urls[0]`, so it cannot
+// see a second relay or a partner's members, and anything that wanted it
+// should want peer.search instead.
 
 // Factory is the tightest setting that still lets two people who added
 // each other talk. A file that is missing, empty or nonsense therefore
@@ -571,14 +560,26 @@ spirit.shell.activateApp({
       // app ids are folder-derived and have moved before — a group named
       // from one would silently regroup on the next move. See
       // UI_DESIGN_STYLE.md §3.
-      '<details class="stat-tile wide" name="contacts-panels" id="contacts-add-panel">' +
-        '<summary>Add someone by handle</summary>' +
-        '<div class="start-job-form">' +
-          '<input type="text" id="contacts-add-handle" placeholder="the name you were told">' +
-          '<button type="button" id="contacts-add-find">Find</button>' +
-        '</div>' +
-        '<div id="contacts-add-out"></div>' +
-      '</details>' +
+      // ADD-SOMEONE-BY-HANDLE STOOD HERE, and it asked `peer.find`.
+      //
+      //   Andy: "this new item should be integrated in: Find someone by
+      //   handle. The user shouldn't worry about relays, they just want to
+      //   find somebody."
+      //
+      // Two panels answered what turned out to be one question, and the
+      // reason for keeping them apart stopped being true. The old comment
+      // said they were different — "is the john I was told about here"
+      // versus "who is here" — and that was fair while a search could not
+      // rank: a partial query drowned an exact one.
+      //
+      // It ranks now. An exact handle scores 1.0 and comes first out of a
+      // million, so typing the name you were told IS the handle lookup,
+      // and typing part of it is the other question. One box answers both.
+      //
+      // AND peer.find WAS THE WEAKER HALF besides: it asked `urls[0]` —
+      // the first row of relays.json, whatever the question — so it could
+      // not see a second relay, let alone a partner's members, and the
+      // Confirm it offered carried no route for the acquire to use.
       // Under Add-someone, because adding is what you come here to do and
       // this is the standing answer for people you have not. No count of
       // who is waiting: under Hold the hub writes them into the book, so
@@ -600,9 +601,14 @@ spirit.shell.activateApp({
       // answer different questions: one is "is the john I was told about
       // here", this is "who is here".
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-seen-section">' +
-        '<summary id="contacts-seen-summary">Find someone on your relays</summary>' +
+        // NOT "on your relays". Andy: "The user shouldn't worry about
+        // relays, they just want to find somebody." Which relay somebody
+        // is on is the node's problem — it is how the search is answered
+        // and where the confirm is checked, and neither is a question a
+        // person came here with.
+        '<summary id="contacts-seen-summary">Find someone</summary>' +
         '<div class="start-job-form">' +
-          '<input type="text" id="contacts-seen-q" placeholder="part of their name">' +
+          '<input type="text" id="contacts-seen-q" placeholder="their name, or part of it">' +
           '<button type="button" id="contacts-seen-go">Search</button>' +
         '</div>' +
         '<div id="contacts-seen-list"></div>' +
@@ -631,7 +637,6 @@ spirit.shell.activateApp({
       contactsSavePrefs();
     });
 
-    document.getElementById('contacts-add-find').addEventListener('click', contactsFindByHandle);
     // Delegated: the list repaints whole, so a listener bound to a row
     // would go with the next paint.
     document.getElementById('contacts-seen-go').addEventListener('click', contactsSearchSeen);
@@ -642,31 +647,18 @@ spirit.shell.activateApp({
       const btn = event.target && event.target.closest && event.target.closest('.contacts-seen-add');
       if (btn) contactsSeenAdd(btn);
     });
-    document.getElementById('contacts-add-handle').addEventListener('keydown', function (event) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        contactsFindByHandle();
-      }
-    });
 
     // Confirming is what writes the contact. Delegated, because the rows
     // are painted and repainted.
-    document.getElementById('contacts-add-out').addEventListener('click', function (event) {
-      var button = event.target && event.target.closest && event.target.closest('[data-add-key]');
-      if (!button) return;
-      var out = document.getElementById('contacts-add-out');
-      contactsPost('peer.acquire', {
-        publicKey: button.dataset.addKey,
-      }).then(function (r) {
-        if (r.status !== 201) {
-          out.innerHTML = '<div class="job-log-empty">' + contactsEscapeHtml(r.status + ' ' + r.text) + '</div>';
-          return;
-        }
-        out.innerHTML = '<div class="job-log-empty">added — they are in your list now</div>';
-        document.getElementById('contacts-add-handle').value = '';
-        contactsRefresh();
-      });
-    });
+    // THE ADD-BY-HANDLE CONFIRM STOOD HERE, and it acquired with a key
+    // and NO URL — so peer.acquire fell back to `urls[0]` and could only
+    // ever confirm somebody on the first relay in the file. A peer found
+    // on a second relay, or on a partner's, was unconfirmable by the very
+    // panel built for confirming.
+    //
+    // The seen-list Add above carries the relay the row came from, which
+    // is why merging the two panels fixed a bug rather than only removing
+    // a box.
 
     // A row opens the person, and that is all a row does now.
     //

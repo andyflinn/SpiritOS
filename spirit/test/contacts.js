@@ -63,12 +63,28 @@ function fakeDocument() {
 
 // What a click hands a delegated listener: the element it landed on,
 // answering closest() for the attribute it carries.
-function target(attr, value) {
+function target(attr, value, opts) {
   const node = { dataset: {} };
   const camel = attr.replace(/-([a-z])/g, function (m, c) { return c.toUpperCase(); });
   node.dataset[camel.replace(/^data/, '').replace(/^./, function (c) { return c.toLowerCase(); })] = value;
+  // ANSWERS A CLASS SELECTOR TOO. This only ever matched '[data-attr]',
+  // which was enough while every clickable row was found by attribute.
+  // The seen list finds its Add by CLASS, so a stub that could not answer
+  // one silently produced "nothing was clicked" — which reads exactly like
+  // a broken handler.
+  node.className = (opts && opts.className) || '';
   node.closest = function (selector) {
-    return selector === '[' + attr + ']' ? node : null;
+    if (selector === '[' + attr + ']') return node;
+    if (selector.charAt(0) === '.' && node.className.split(/\s+/).indexOf(selector.slice(1)) !== -1) return node;
+    return null;
+  };
+  // The handler reads data-url off the button as well as data-key.
+  Object.keys((opts && opts.dataset) || {}).forEach(function (k) {
+    node.dataset[k] = opts.dataset[k];
+  });
+  node.getAttribute = function (name) {
+    const c = name.replace(/^data-/, '').replace(/-([a-z])/g, function (m, ch) { return ch.toUpperCase(); });
+    return node.dataset[c] === undefined ? '' : node.dataset[c];
   };
   return node;
 }
@@ -699,38 +715,80 @@ function saysNothingWhenNothingHappened() {
 function addsByHandle() {
   test.subHeading('Adding somebody is still a phone call');
 
+  // THE PANEL MOVED, THE RULE DID NOT. This drove "Add someone by handle",
+  // which asked `peer.find` and is gone —
+  //
+  //   Andy: "this new item should be integrated in: Find someone by
+  //   handle. The user shouldn't worry about relays, they just want to
+  //   find somebody."
+  //
+  // What it asserted is a product rule and not a panel: a label is not an
+  // identity (R1), so two people can carry one name, and the ENDING is how
+  // a person tells them apart. That has to keep holding wherever adding
+  // happens, so the test follows it rather than going with the box.
   const app = mountApp({
     matches: [
-      { publicKey: 'KEY-BERT-ONE', publicLabel: 'bert', tail: 'mjowM=', acquiredVia: 'census', owner: false },
-      { publicKey: 'KEY-BERT-TWO', publicLabel: 'bert', tail: 'Zv0gX0=', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-BERT-ONE', publicLabel: 'bert', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-BERT-TWO', publicLabel: 'bert', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'census', owner: false },
     ],
   });
 
   return settle().then(function () {
-    el(app, 'contacts-add-handle').value = 'bert';
-    el(app, 'contacts-add-find').fire('click');
+    el(app, 'contacts-seen-q').value = 'bert';
+    el(app, 'contacts-seen-go').fire('click');
     return settle().then(function () {
-      const out = el(app, 'contacts-add-out').innerHTML;
-      const confirms = out.split('data-add-key=').length - 1;
-      if (confirms === 2 && /mjowM=/.test(out) && /Zv0gX0=/.test(out)) {
+      const out = el(app, 'contacts-seen-list').innerHTML;
+      const adds = out.split('data-key=').length - 1;
+      if (adds === 2 && /mjowM=/.test(out) && /Zv0gX0=/.test(out)) {
         test.check('every key behind the word is listed, by its ending');
       } else {
         test.fail('matches: ' + out);
       }
 
-      if (/fine print at the bottom of their chat app/.test(out)) {
+      if (/ends with/.test(out) && /fine print/.test(out)) {
         test.check('and it still says where the other person reads their own');
       } else {
         test.fail('instruction: ' + out);
       }
 
-      el(app, 'contacts-add-out').fire('click', { target: target('data-add-key', 'KEY-BERT-ONE') });
+      // AND THE RELAY IS NOT A COLUMN. Andy: "The user shouldn't worry
+      // about relays." It rides on the row as data-url, because the
+      // confirm is checked against that census and the contact keeps it as
+      // a route — but nobody reads it.
+      // NOT IN A CELL, but present as an attribute. A first draft asked
+      // for the URL to be absent AND present, which no render can satisfy:
+      // what "shown to nobody" means is that it is not TEXT, not that the
+      // bytes are missing.
+      const cells = (out.match(/<td>([^<]*)<\/td>/g) || []).join(' ');
+      if (cells.indexOf('a.example') === -1 && /data-url="https:\/\/a\.example"/.test(out)) {
+        test.check('the relay is carried for the node and shown in no cell');
+      } else {
+        test.fail('relay leaked into a cell, or the route was dropped: ' + cells);
+      }
+
+      el(app, 'contacts-seen-list').fire('click', {
+        target: target('data-key', 'KEY-BERT-ONE', {
+          className: 'cancel-btn contacts-seen-add',
+          dataset: { key: 'KEY-BERT-ONE', url: 'https://a.example' },
+        }),
+      });
       return settle().then(function () {
         const calls = posted(app, 'peer.acquire');
         if (calls.length === 1 && calls[0].publicKey === 'KEY-BERT-ONE') {
           test.check('and confirming one writes that key and no other');
         } else {
           test.fail('contact calls: ' + JSON.stringify(calls));
+        }
+
+        // THE BUG THE MERGE FIXED. The old Confirm sent a key and no url,
+        // so peer.acquire fell back to `urls[0]` — the first relay in the
+        // file, whatever the question — and somebody found on a second
+        // relay, or on a partner's, could not be confirmed by the panel
+        // built for confirming.
+        if (calls[0] && calls[0].url === 'https://a.example') {
+          test.check('against the relay the row came from, not whichever is first in the file');
+        } else {
+          test.fail('no route on the acquire: ' + JSON.stringify(calls[0]));
         }
       });
     });
