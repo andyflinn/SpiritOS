@@ -1551,7 +1551,7 @@ function createHub(rootDir) {
         // but say so — fetching a key from the box you are asking about
         // is how you get answered by whoever is standing there.
         if (!relayKey) { silent.push(url); return Promise.resolve(null); }
-        var wrapped = outgoingText({ app: 'relay', body: { search: { q: q } } });
+        var wrapped = outgoingText({ app: null, body: { search: { q: q } } });
         if (!wrapped.ok) { silent.push(url); return Promise.resolve(null); }
         return sendPacket(router, url, relayKey, wrapped.text).then(function (answer) {
           var said = null;
@@ -1644,7 +1644,7 @@ function createHub(rootDir) {
     // not say who it partners with simply contributes its own census.
     function partnersOf(url, relayKey) {
       if (!router || !relayKey) return Promise.resolve([]);
-      var wrapped = outgoingText({ app: 'relay', body: { partners: true } });
+      var wrapped = outgoingText({ app: null, body: { partners: true } });
       if (!wrapped.ok) return Promise.resolve([]);
       // Through sendPacket, not past it — see the note above it.
       return sendPacket(router, url, relayKey, wrapped.text)

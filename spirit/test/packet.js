@@ -190,8 +190,10 @@ test.subHeading('Yesterday’s mail is still mail');
   const notPackets = [
     '{"app":"relay-chat"}',                       // no version, no body
     '{"app":"relay-chat","v":2,"id":"x","body":1}', // a version we do not know
-    '{"v":1,"id":"x","body":"hi"}',                // no app
-    '{"app":"","v":1,"id":"x","body":"hi"}',       // empty app
+    // `{"v":1,"id":"x","body":"hi"}` STOOD HERE — "no app" — and it is a
+    // packet now, asserted below. See the block after this one.
+    '{"app":"","v":1,"id":"x","body":"hi"}',       // empty app: a claim to be
+                                                  // an app, made badly
     '[1,2,3]',
     '{ not json at all',
     '',
@@ -209,6 +211,61 @@ test.subHeading('Yesterday’s mail is still mail');
     test.check('including JSON a person typed by hand');
   } else {
     test.fail('typed JSON: ' + JSON.stringify(typed));
+  }
+}
+
+// ── A PACKET FOR THE BOX HAS NO APP ──────────────────────────────────
+//
+//   Andy: "nothing in node and relay should know about apps."
+//
+// `app` says which app ON THE RECIPIENT NODE a packet is for, and the
+// shell is the only reader of it — deliverPackets opens "no envelope:
+// addressed to no app". A packet addressed to a RELAY has no such app,
+// and requiring one made the node and the box each invent the string
+// `relay` and write it into bytes neither of them ever parses.
+//
+// `{"v":1,"id":"x","body":"hi"}` was in the legacy list above until
+// 2026-09-16, on the rule that "anything short of a whole envelope reads
+// as legacy". The rule stands; what changed is what a whole envelope IS.
+// A version we know and a body still separate a packet from a chat line —
+// a plain string is not JSON at all, and hand-typed JSON has neither.
+//
+// It also closes a hole rather than opening one. While every packet had
+// to name an app, an app could name itself `relay` and be
+// indistinguishable from a system call. A system packet is the one with
+// NO app, and nothing claiming to be an app can forge that.
+test.subHeading('A packet addressed to the box names no app');
+
+{
+  const sys = packet.encode(null, { search: { q: 'a' } }, { id: 'sys1' });
+  if (sys.ok && sys.text === '{"v":1,"id":"sys1","body":{"search":{"q":"a"}}}') {
+    test.check('encoding without an app omits the field rather than emptying it');
+  } else {
+    test.fail('system encode: ' + JSON.stringify(sys));
+  }
+
+  const back = packet.decode(sys.text);
+  if (!back.legacy && back.app === null && back.body.search.q === 'a') {
+    test.check('and it decodes as a packet with no app, not as legacy');
+  } else {
+    test.fail('system decode: ' + JSON.stringify(back));
+  }
+
+  // THE HOLE THIS CLOSES. An app may not sit where a system packet sits.
+  const impostor = packet.decode('{"app":"relay","v":1,"id":"x","body":{}}');
+  if (!impostor.legacy && impostor.app === 'relay') {
+    test.check('while an app calling itself “relay” is still just an app with that name');
+  } else {
+    test.fail('impostor: ' + JSON.stringify(impostor));
+  }
+
+  // AND AN APP PACKET IS UNCHANGED, byte for byte. This is the half that
+  // must not move: every live peerfile is full of them.
+  const app = packet.encode('relay-chat', 'are you there', { id: 'abc123' });
+  if (app.ok && app.text === '{"app":"relay-chat","v":1,"id":"abc123","body":"are you there"}') {
+    test.check('and an app’s own packet is byte-for-byte what it always was');
+  } else {
+    test.fail('app encode moved: ' + JSON.stringify(app));
   }
 }
 

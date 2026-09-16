@@ -134,8 +134,20 @@ function packetRandomId(random) {
 // so a test can assert an exact string instead of a shape.
 function packetEncode(app, body, opts) {
   var options = opts || {};
+  // ── AN APP IS OPTIONAL, BECAUSE NOT EVERY PACKET IS FOR ONE ─────────
+  //
+  //   Andy: "nothing in node and relay should know about apps."
+  //
+  // `app` says which app ON THE RECIPIENT NODE a packet is for, and the
+  // shell is the only thing that reads it — `deliverPackets` begins "no
+  // envelope: addressed to no app". A packet addressed to a RELAY has no
+  // such app, and requiring one made the node and the box each invent the
+  // string `relay` and write it into bytes neither of them ever parses.
+  //
+  // It also left `relay` impersonatable: while every packet had to name
+  // an app, an app could name itself that. A system packet is now the one
+  // with NO app, which nothing claiming to be an app can forge.
   var appId = String(app || '').trim();
-  if (!appId) return { ok: false, error: 'app required' };
   if (body === undefined) return { ok: false, error: 'body required' };
 
   var newId = options.id || packetRandomId(options.random);
@@ -146,12 +158,14 @@ function packetEncode(app, body, opts) {
     return { ok: false, error: 'no secure randomness available for a packet id' };
   }
 
-  var envelope = {
-    app: appId,
-    v: PACKET_VERSION,
-    id: newId,
-    body: body,
-  };
+  // OMITTED, NOT EMPTIED. A packet with no app is one addressed to a box
+  // rather than to somebody behind it; writing `app: ""` would be the
+  // node inventing a value for a question that does not apply to it.
+  var envelope = {};
+  if (appId) envelope.app = appId;
+  envelope.v = PACKET_VERSION;
+  envelope.id = newId;
+  envelope.body = body;
 
   // REGARDING. The request hash of the packet this one is about — an
   // email Re:, with proof attached.
@@ -214,7 +228,12 @@ function packetIsEnvelope(text) {
   catch (e) { return false; }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
   if (parsed.v !== PACKET_VERSION) return false;
-  if (typeof parsed.app !== 'string' || !parsed.app) return false;
+  // AN APP IS OPTIONAL. It says which app on the recipient NODE a packet
+  // is for; a packet addressed to a relay has none, and demanding one
+  // made the box write a name it never reads. What still makes this an
+  // envelope rather than a chat line is the SHAPE: a version we know and
+  // a body. A plain string is not JSON, and hand-typed JSON has neither.
+  if (parsed.app !== undefined && (typeof parsed.app !== 'string' || !parsed.app)) return false;
   if (!Object.prototype.hasOwnProperty.call(parsed, 'body')) return false;
   return true;
 }
@@ -230,7 +249,7 @@ function packetDecode(text) {
   var parsed = JSON.parse(String(text).trim());
   return {
     legacy: false,
-    app: parsed.app,
+    app: typeof parsed.app === 'string' && parsed.app ? parsed.app : null,
     v: parsed.v,
     id: parsed.id,
     // '' rather than undefined for a packet that regards nothing, so a

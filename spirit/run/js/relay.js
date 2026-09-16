@@ -1926,7 +1926,12 @@ function matchRank(label, query) {
 
     var mine = auth.loadIdentity(rootDir);
     if (!mine || !mine.privateKey) return;
-    var reply = JSON.stringify({ app: 'relay', v: 1, body: out });
+    // NO APP. This wrote an app name into every answer — the box
+    // naming an app, in bytes the box never reads. Andy: "nothing in node
+    // and relay should know about apps." A packet addressed to a relay
+    // has no app on any node to be for, and the absence is now what marks
+    // it as a system packet (js/packet.js).
+    var reply = JSON.stringify({ v: 1, body: out });
 
     // NOT THROUGH routeReply, and the reason is the same asymmetry that
     // made this requirement necessary in the first place: routeReply
