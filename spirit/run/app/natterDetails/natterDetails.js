@@ -79,7 +79,8 @@ function ndLabelProblem(name) {
 var ndApi = null;
 
 var ndUrl = '';         // which mailbox this screen is
-var ndBadge = null;     // what that mailbox last said about itself
+var ndBadge = null;     // what that relay last said about itself
+var ndRows = [];        // every configured relay's row — see ndLoad
 var ndLabel = '';       // this node's own name, needed to sign a status ask
 var ndMinted = '';      // a label minted while this screen was open
 var ndChanged = false;  // has anything happened the list must repaint for?
@@ -241,6 +242,21 @@ function ndLoad() {
       ndAsked = true;
       var rows = (data && data.rows) || [];
       ndBadge = rows.filter(function (row) { return row && row.url === ndUrl; })[0] || null;
+      // ── AND THE OTHER RELAYS, WHICH WERE FETCHED AND THROWN AWAY ────
+      //
+      //   Andy: "i can fetch the census of all relays I'm connected to,
+      //   and find potential partners that are not partners yet."
+      //
+      // `relay.status` answers for EVERY configured relay, roster and
+      // all — ownerBadge.probe walks the list — and this kept one row and
+      // dropped the rest. Which is why finding a partner meant opening
+      // who.json: the page already held the answer and discarded it one
+      // line after receiving it.
+      //
+      // The same shape as censusFacts keeping `roster` instead of
+      // summarising it away. Costs nothing: no request, no wire, no
+      // store — a reference to data already in hand.
+      ndRows = rows;
       // WHAT THE RELAY LAST SAID ABOUT ITSELF, pushed rather than asked
       // for (R3). The owner-only report used to ride on the badge row,
       // because the badge WAS a signed status GET and the report was its
@@ -920,6 +936,34 @@ function ndPeerPartner(button) {
   }
 }
 
+// Picking a candidate fills BOTH fields, because unlike the Partner
+// button on a peer row this one knows the address as well — it came from
+// the relay whose census named that key as owner.
+function ndPartnerPicked(select) {
+  var key = select.value || '';
+  var body = ndBody();
+  if (!body) return;
+
+  var option = select.options[select.selectedIndex];
+  var url = (option && option.getAttribute('data-url')) || '';
+
+  var keyField = body.querySelector('.nd-partner-key');
+  var urlField = body.querySelector('.nd-partner-url');
+  var out = body.querySelector('.nd-partner-out');
+
+  if (keyField) keyField.value = key;
+  if (urlField) urlField.value = url;
+
+  if (out) {
+    out.className = 'job-manifest-note nd-partner-out';
+    // The empty option is a real choice — it clears rather than doing
+    // nothing, so a mis-click is undoable without a reload.
+    out.textContent = key
+      ? 'filled in — “Check and add” will verify it against their census'
+      : '';
+  }
+}
+
 function ndPeerAdd(button) {
   var key = button.getAttribute('data-peer-key') || '';
   var panel = button.closest('.natter-peers');
@@ -1003,6 +1047,94 @@ function ndPeerDrop(button) {
 // KEY IS NOT AN ADDRESS. Nothing on this wire maps one to the other, and
 // nothing should — that is the DNS-shaped question this system has
 // avoided. So a human supplies where, and the census supplies the proof.
+// ── WHO HERE IS ALREADY ELIGIBLE, COMPUTED FROM WHAT IS IN HAND ──────
+//
+//   Andy: "the drop box in this one should just show peers that are
+//   eligible for partnership, if possible."
+//
+// Possible for a real subset, and the subset is the one that matters.
+// Eligibility is "owns a relay elsewhere", which in general is only
+// provable by reading THEIR relay's census — and its address is the thing
+// being asked for, so it cannot be known in advance.
+//
+// But for every relay this node is on, `relay.status` already returned
+// the roster, and a roster names its `owner: true` row BY KEY. So the
+// question "which peers enrolled here are the owner of another relay I
+// know about" is answerable with no request at all — and for those, the
+// URL is known too, so selecting one fills both fields and the check that
+// follows is certain to pass, because it re-reads the census this answer
+// came from.
+//
+// WHAT IT CANNOT SEE, stated in the panel rather than hidden: somebody
+// who owns a relay this node has never heard of. A key is not an address
+// (PARTNERS.md), which is why the owner supplies it — so the free-text
+// fields remain the real path and this is only a shortcut. Silence from
+// the picker is "none that I know of", never "nobody is eligible".
+function ndPartnerCandidates() {
+  if (!ndBadge || !ndBadge.owned) return [];
+
+  var here = ((ndBadge.census || {}).roster) || [];
+  var hereKeys = Object.create(null);
+  here.forEach(function (p) { if (p && p.publicKey) hereKeys[p.publicKey] = p; });
+
+  var already = Object.create(null);
+  (((ndBadge.report || {}).partners) || []).forEach(function (p) {
+    if (p && p.key) already[p.key] = true;
+  });
+
+  var out = [];
+  ndRows.forEach(function (row) {
+    // Not this relay: a relay is not its own partner, and that is a
+    // question about the BOX (relay.js, setPartner).
+    if (!row || row.url === ndUrl) return;
+    var roster = ((row.census || {}).roster) || [];
+    var theirOwner = roster.filter(function (p) { return p && p.owner; })[0];
+    if (!theirOwner || !theirOwner.publicKey) return;
+
+    // Enrolled HERE is the other half of reciprocity — a partner is a
+    // peer on this relay who owns one elsewhere.
+    var rowHere = hereKeys[theirOwner.publicKey];
+    if (!rowHere) return;
+    if (already[theirOwner.publicKey]) return;
+
+    out.push({
+      key: theirOwner.publicKey,
+      url: row.url,
+      // Two labels, and they are allowed to differ — R1. What they are
+      // called HERE is what the owner will recognise in their own list;
+      // what the far relay calls itself is how they will recognise the
+      // address.
+      hereLabel: rowHere.publicLabel || '(no label)',
+      relayLabel: (row.census && row.census.relayLabel) || row.label || row.url,
+    });
+  });
+  return out;
+}
+
+function ndPartnerPickerHtml(existing) {
+  if (!ndBadge || !ndBadge.owned) return '';
+  var candidates = ndPartnerCandidates();
+  if (!candidates.length) {
+    // Said plainly, and only once there is something to compare against —
+    // on a node with one relay this is the normal state and not a fault.
+    return ndRows.length > 1
+      ? '<div class="job-manifest-note">Nobody enrolled here owns another relay on your list' +
+        (existing && existing.length ? ' that is not already a partner' : '') + '.</div>'
+      : '';
+  }
+  return '<div class="start-job-form card">' +
+    '<label class="field-label grow">Someone you already know' +
+    '<select class="nd-partner-pick">' +
+      '<option value="">choose a peer who owns a relay you use…</option>' +
+      candidates.map(function (c) {
+        return '<option value="' + ndEscapeHtml(c.key) + '" data-url="' + ndEscapeHtml(c.url) + '">' +
+          ndEscapeHtml(c.hereLabel) + ' — owns ' + ndEscapeHtml(c.relayLabel) +
+          '</option>';
+      }).join('') +
+    '</select></label>' +
+    '</div>';
+}
+
 function ndPartnersHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   var report = ndBadge.report;
@@ -1031,6 +1163,7 @@ function ndPartnersHtml() {
 
   return ndPanel('partners', ndIcon.LINK, 'Partner relays (' + rows.length + ')',
     body +
+    ndPartnerPickerHtml(rows) +
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Their relay' +
       '<input type="text" class="nd-partner-url" placeholder="https://their-relay.example"></label>' +
@@ -1895,6 +2028,23 @@ spirit.shell.activateApp({
     // to say, and Return says it. The invite panel has a number field and
     // a token that may be generated for you — guessing what Return means
     // there would be a worse answer than the button it already has.
+    // ── A SELECT NEEDS `change`, NOT `click` ───────────────────────────
+    //
+    // Every other control on this screen is delegated on click, because
+    // the panels repaint wholesale and a listener bound to an element
+    // goes with the next repaint. A <select> is the one that cannot join
+    // them: click fires when the list OPENS, so the handler would read
+    // the value the user is about to replace.
+    //
+    // `change` bubbles, so it delegates the same way and survives the
+    // same repaints.
+    ndBody().addEventListener('change', function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+      var pick = target.closest('.nd-partner-pick');
+      if (pick) { ndPartnerPicked(pick); }
+    });
+
     ndBody().addEventListener('keydown', function (event) {
       if (event.key !== 'Enter') return;
       var target = event.target;
