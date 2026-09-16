@@ -113,10 +113,34 @@ var contactsSelfTail = '';
 // a person and the list is about a question.
 var contactsCards = Object.create(null);
 
-// Which row is open. One at a time — the same rule the fold panels
-// follow (UI_DESIGN_STYLE §3): two open bubbles and a list of names stops
-// being a list you scan.
-var contactsCardOpen = '';
+// ── ASKED FOR EVERY ANSWER, NOT ON A CLICK ───────────────────────────
+//
+//   Andy: "when a contact is found, there should be a bubble below with
+//   a description obtained via a peerPost to the ID of the found peer."
+//
+// THIS CORRECTS THE FIRST VERSION, which opened one bubble at a time when
+// a row was pressed, and it was wrong for the reason the whole arc
+// exists: the description is what REPLACED the key ending, and a key
+// ending was readable without doing anything to it. A fact you have to go
+// hunting for row by row does not replace one that was simply on the
+// page.
+//
+// WHAT IT COSTS, and it is the thing that argued for the click:
+//
+//   A SEARCH NOW SPEAKS TO PEOPLE. It used to be a question asked of
+//   relays; every row is now a packet to somebody's node, so the people
+//   in your answer learn that somebody looked. Bounded by the search's
+//   own cap — peerSearch.SLOTS, 32 — and sent in parallel, so the wall
+//   clock is one round trip rather than thirty-two.
+//
+//   AN UNREACHABLE PEER COSTS NOTHING. The node refuses a post to a key
+//   presence does not name, at once and with no wait, so the common case
+//   — somebody on a relay this node holds no stream to — answers
+//   immediately rather than sitting on peerPost's 8s.
+//
+// ONE BUBBLE PER ROW, all open. `contactsCardOpen` STOOD HERE and kept
+// the single open row; there is nothing left to choose between when every
+// row answers for itself.
 
 // Which names in the current answer are worn by more than one row. Built
 // in contactsPaintSeen, read one line later — a variable rather than a
@@ -326,13 +350,16 @@ function contactsSearchSeen() {
   // opens instantly on somebody whose node went down between searches,
   // which is precisely the fact this is here to report.
   contactsCards = Object.create(null);
-  contactsCardOpen = '';
   return contactsAsk('peer.search', { q: q })
     .then(function (data) {
       contactsSeen = (data && data.matches) || [];
       contactsSeenMore = !!(data && data.more);
       contactsSeenSilent = (data && data.silent) || [];
       contactsPaintSeen();
+      // THE LIST FIRST, THE PEOPLE SECOND. Painted before anybody is
+      // asked, so the names are on screen while the packets are still
+      // out — and each bubble fills itself in as its answer lands.
+      contactsAskEveryone();
     })
     .catch(function () {
       contactsSeen = [];
@@ -377,9 +404,10 @@ function contactsPaintSeen() {
 
   box.innerHTML =
     (ambiguous
-      ? '<div class="job-manifest-note">More than one answer. Open a row and that ' +
-        'node will say who it is — or ask them what their key ends with, which they ' +
-        'can read in fine print at the foot of their own screen.</div>'
+      ? '<div class="job-manifest-note">More than one answer. Each node has been ' +
+        'asked who it is and says so below its name — or ask them what their key ' +
+        'ends with, which they can read in fine print at the foot of their own ' +
+        'screen.</div>'
       : '') +
     // NO "WHERE" COLUMN. Andy: "The user shouldn't worry about relays."
     // The relay is still on the row, as `data-url`, because the confirm is
@@ -424,16 +452,12 @@ function contactsPaintSeen() {
       // the answer depend on your book — which is how somebody ends up
       // typing a name, seeing nothing, and concluding they are gone.
       const known = c.acquiredVia && c.acquiredVia !== 'census';
-      const open = contactsCardOpen === c.publicKey;
-      // THE ROW IS THE CONTROL, and Add is a button on it. Clicking the
-      // name asks that person who they are; clicking Add writes the row.
-      // Two gestures, and the one that costs nothing is the bigger target.
+      // THE ROW IS NOT A CONTROL ANY MORE. It was, while the bubble had
+      // to be opened; every row answers for itself now, so there is
+      // nothing to press and no chevron promising there is.
       const alike = (contactsSeenCollide[String(c.publicLabel || '')] || 0) > 1;
-      return '<tr class="job-row" data-seen-row="' +
-          contactsEscapeHtml(c.publicKey) + '"' +
-          ' title="' + (open ? 'hide' : 'ask them who they are') + '">' +
-        '<td>' + (open ? contactsIcon.POINTDOWN : contactsIcon.POINTRIGHT) + ' ' +
-          contactsEscapeHtml(c.publicLabel || '(no label)') +
+      return '<tr>' +
+        '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') +
           (alike
             ? ' <span class="muted" title="more than one answer wears this name">\u2026' +
               contactsEscapeHtml(String(c.tail || '')) + '</span>'
@@ -465,6 +489,12 @@ function contactsPaintSeen() {
 // ANSWERED IN FRONT OF THEIR FRONT DOOR. The far node replies whether or
 // not it has ever heard of us, which is the whole reason this is worth
 // asking before adding somebody (js/nodeCard.js).
+// Everybody in the current answer, in parallel. Asked once each — a key
+// already in `contactsCards` is one this search has already spoken to.
+function contactsAskEveryone() {
+  contactsSeen.forEach(function (c) { contactsAskCard(c.publicKey); });
+}
+
 function contactsAskCard(key) {
   if (!key || contactsCards[key]) return;
   contactsCards[key] = 'asking';
@@ -502,7 +532,6 @@ function contactsAskCard(key) {
 // one sentence, no controls, one at a time. The rule's reason does not
 // reach it, and Andy asked for it here by name.
 function contactsCardBubble(c, columns) {
-  if (contactsCardOpen !== c.publicKey) return '';
   var card = contactsCards[c.publicKey];
   var inner;
 
@@ -817,19 +846,9 @@ spirit.shell.activateApp({
       // ADD FIRST. It sits inside the row, so a row handler that ran
       // first would open a bubble every time somebody pressed Add — and
       // the press that writes a contact must not also do something else.
+      // Add is the only thing on a result row that does anything now.
       const btn = target.closest('.contacts-seen-add');
       if (btn) { contactsSeenAdd(btn); return; }
-
-      const row = target.closest('[data-seen-row]');
-      if (!row) return;
-      const key = row.getAttribute('data-seen-row') || '';
-      if (!key) return;
-      // ONE OPEN AT A TIME, and pressing the open one shuts it.
-      contactsCardOpen = contactsCardOpen === key ? '' : key;
-      // Asked once. The answer is kept for as long as this list of
-      // answers is, so shutting and reopening a row costs no packet.
-      if (contactsCardOpen) contactsAskCard(key);
-      contactsPaintSeen();
     });
 
     // Confirming is what writes the contact. Delegated, because the rows
