@@ -34,14 +34,26 @@
          asserted in a test instead of only looked at, which is not the
          same thing as being isomorphic.
 
-         AND IT IS NOT THE SHELL'S. Relay Chat is its only reader; the shell
-         never touches it. Andy: "chatLog.js actually belongs in
-         run/app/relayChat/" — correct, and there is nowhere to put it: an
-         app is exactly one script, app/<folder>/<folder>.js. Rehousing it
-         means either inlining it (losing the test on merge) or teaching the
-         loader about a second file, for an app that is to be killed. So it
-         sits here on loan, and goes when Relay Chat goes. Do not read this
-         tag as core infrastructure, and do not add a second app to it. -->
+         Relay Chat is its only reader today, and Andy: "chatLog.js actually
+         belongs in run/app/relayChat/".
+
+         THIS CORRECTS THE NOTE THAT STOOD HERE, which said it sits on loan
+         and goes when Relay Chat goes. Relay Chat is not going — it is
+         parked because it grows into a conversational surface over shell
+         functions ("/contact gets a dropdown showing contact labels", same
+         for invites and files). Andy: "the modularization of chat might be
+         via elements it borrows from shell or generic, client packets."
+
+         Under that, this file is not homeless and not on loan. It is a
+         DECIDING module with no painting — names, shapes, merging, driven
+         from node by a test — which is the same shape as iconIndex.js and
+         exactly what api.ui.elements' rule asks for (see shell.js, above
+         createIconSelector). An app borrowing the shell's controls is the
+         direction of travel, so a deciding module sitting beside the shell
+         is the pattern rather than the exception.
+
+         What is still true: no app owns a second file, because an app is
+         one script. That is not what would need building. -->
     <script src="/js/client/chatLog.js"></script>
     <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spiritLimits,
          so the size a page refuses is the size the relay refuses. -->
