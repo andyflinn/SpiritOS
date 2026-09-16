@@ -932,6 +932,94 @@ it answers questions, and "what are you running" is the same shape as
 that policy would live. Recorded here so the next session knows the door
 was found, considered and left closed on purpose.
 
+### Presence is volatile. Binding is not. (the gap, found 2026-09-16)
+
+> **Andy:** *"because the relay's caching of a peer ID being highly
+> volatile by design: the manifested/selected peer now has a problem:
+> reconstructing the post path, when the relay may no longer hold the
+> peer... somewhere a peer row has, at least conceptually, a manifest of
+> node-bindings."*
+
+Everything above assumed selection and posting happen in the same breath.
+They do not. A peer selected today is posted to next week, and by then the
+volatility this design is *right* to have has erased the route.
+
+Three concepts are currently collapsed into two fields:
+
+| | answers | lifetime | whose fact |
+|---|---|---|---|
+| **presence** | connected right now? | volatile — correctly so | the relay holding their stream |
+| **binding** | which relays is this identity enrolled on? | **durable — missing entirely** | theirs, published |
+| **perception** | where did *I* see them? | decays | mine (`whoBook.relays`) |
+
+**The wire never carried it.** A `peer.search` hit is
+`{publicKey, publicLabel, claimedAt, owner, present}`
+([relay.js:1758](../../spirit/run/js/relay.js#L1758)) — no relay in it. So
+a node cannot record a binding even in principle.
+
+**And the store's field means something else.** `whoBook.relays` is
+documented as *"mailboxes where you have seen this key"* — perception. For
+a peer acquired through a partner search the honest value is *my own*
+relay's URL, which is the wrong address the moment it matters.
+
+**What is already safe.** Relay-side this is handled: a relay that sheds a
+hint list asks the partner's census on demand, so *"memory pressure
+degrades performance, not connectivity"*, and item 10 makes every hint
+non-authoritative. Nothing above changes.
+
+**What is not.** The node offers its relay nothing. On a cold post it says
+only *"deliver to key K"*, and the relay must hunt every partner census —
+bounded, but a hunt — and fails outright if that partnership has since
+ended or the peer moved. The node holds the one thing that would have
+helped and never wrote it down.
+
+#### It is the same decision as the deferred hub-URL switch
+
+`post(relayUrl, toKey, text)` ([peerPost.js:227](../../spirit/run/js/peerPost.js#L227)):
+**the node chooses which of its own relays to post through**, and that
+choice decides whether the peer is reachable at all — a target whose home
+relay partners with relay 2 is unreachable through relay 1. Today the
+choice is `urls[0]`, arbitrary, and has been deferred to Andy as a separate
+question.
+
+It is not separate. With a binding the node picks the relay that *is*, or
+partners with, the target's home. Without one there is nothing to pick on.
+**The hub-URL switch has been waiting on this data, not on a decision.**
+
+#### Shape — no new concept, one more category member
+
+*The node-side half of this is now decided; see items 6 and 7. What remains
+proposed is how the binding reaches the node in the first place.*
+
+- **`binding` joins the public-by-contract category.** The peer's own
+  published list of relays it is enrolled on; the home relay is the
+  authority for its own entry. This is the argument for tier three's
+  recommendation 6 — a category, not a field — arriving one message later.
+- **The reply carries it by reference.** Not a URL per row: a small index
+  per row into a relay table sent once per reply. There are ~19 partners,
+  not 32 rows, so it is ~32 ints plus a short table against 2890 bytes
+  spare. The row stays closed; this is tier three's by-reference rule
+  applied *inside* a single reply.
+- **The node stores it as a hint**, under item 10 unchanged. Stale costs a
+  wasted hop and a refusal, never a wrong delivery. **A new field, not
+  `whoBook.relays`** — that one is documented as *"mailboxes where you have
+  seen this key"* and is read as perception across the tree. Redefining a
+  field in use is how two meanings end up sharing one name.
+- **The same data is used twice.** Attached to a post it offers the
+  destination; read before a post it decides *which of this node's own
+  relays to send through* — a peer whose relay partners with relay 2 is
+  unreachable through relay 1. That is the `urls[0]` question, answered.
+- **Plural is the point.** A peer bound to several relays gives the node a
+  *fallback chain*, which is what makes a path reconstructable when one
+  relay is down or a partnership has ended. That is resilience, not a
+  lookup optimisation.
+
+**Honest limit:** relay A can assert only *"P is enrolled here."* The rest
+of P's list is P's claim, relayed by A, and each entry is independently
+checkable by asking that relay. So it is hints all the way down — which
+item 10 already licenses, and which is why none of it may ever be treated
+as authority.
+
 ---
 
 ### Decided (Andy)
@@ -947,15 +1035,44 @@ was found, considered and left closed on purpose.
    Two fields, two authors — the R1 split generalised past labels.
 5. **The key ending retreats** to the two screens §6 actually argues for:
    your own footer, and first contact where it is read down a phone.
+6. **Binding is a third concept**, distinct from presence and from
+   perception, and durable where presence is deliberately not. A peer row
+   carries a manifest of node-bindings, or the post path cannot be
+   reconstructed after selection.
+7. **A floor, and a hint on the wire.**
+
+   > **Andy:** *"The node must store at least one known relay partner in
+   > its list of peers, so it can attach a known route to request for that
+   > peer."*
+
+   Two requirements, and they are separable:
+
+   - **At least one.** A peer row with no relay on it is a contact that
+     cannot be written to — the same shape as `canRemoveRelay` refusing to
+     leave a node with no public relay, and enforceable the same way: a
+     floor, checked when a row is written, not a cleanup pass.
+   - **Attached to the request.** `peer.post` carries the route hint, so
+     the destination relay is *offered* rather than hunted for.
+
+   It stays a **hint** under item 10 — the receiving relay checks its own
+   ledger first and a stale one costs a wasted hop, never a wrong delivery.
+   A relay that trusted an attached route would be routing on the sender's
+   word, which is the property this whole document exists to avoid.
+
+   Note it is **a known relay partner**, not necessarily the peer's home:
+   any relay known to reach them will do, which is why one is a floor
+   rather than the answer.
 
 ### Recommended (Claude), not yet decided
 
-6. Public-by-contract as a **declared category**, so the record can grow
+8. Public-by-contract as a **declared category**, so the record can grow
    without a protocol change and partners propagate it by reference.
-7. **Bound the description at the relay** the way the label is bounded
+   `binding` is the second member and arrived one message after the
+   recommendation, which is the argument for it made by events.
+9. **Bound the description at the relay** the way the label is bounded
    (256 bytes / 48 graphemes). A register that publishes an unbounded
    string is a register somebody writes ten kilobytes into.
-8. **Say the reach in the words the user types it into.** Public by
+10. **Say the reach in the words the user types it into.** Public by
    contract means public to the whole mesh — every partner of every
    partner, for as long as the enrolment lives. A name does not feel like
    disclosure; a description is where somebody writes something they
@@ -963,6 +1080,14 @@ was found, considered and left closed on purpose.
 
 ### Open
 
+- **Who refreshes a binding, and how does a node learn one has changed?**
+  A peer that leaves a relay leaves every node holding the stale hint to
+  discover it by a wasted hop. Acceptable under item 10, but nothing says
+  whether the discovery is ever written back.
+- **Does a binding belong in the search row after all?** The by-reference
+  index is cheap enough that the answer may be yes, which would make the
+  closed-row rule read `key, label, present, relay-index`. Worth deciding
+  deliberately rather than by whoever implements first.
 - **Who authors the description for a peer with no node of their own?**
   Devices share an identity; nothing says which device's word wins.
 - **Revocation.** A label can be renamed. Nothing says what happens to a
