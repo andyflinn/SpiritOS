@@ -468,6 +468,79 @@ test.subHeading('How much of the name the query accounts for');
 }
 
 // ---------------------------------------------------------------------
+test.subHeading('How many of the words landed');
+
+{
+  //   Andy: "search string: 'one two three four' result string: 'six
+  //   twelve four one' — we compute the combined length of full token
+  //   matches against the length of the search string."
+  //
+  // one(3) + four(4) = 7 matched, against one+two+three+four = 15 typed.
+  const e = peerSearch.explain(
+    { publicKey: 'K', publicLabel: 'six twelve four one', present: false, via: null },
+    'one two three four');
+  const tok = e.signals.filter(function (x) { return x.name === 'tokens'; })[0];
+
+  if (Math.abs(tok.quality - 7 / 15) < 1e-9) {
+    test.check('two of four words match: ' + tok.quality.toFixed(3) + ' = 7 chars of 15 typed');
+  } else {
+    test.fail('tokens scored ' + tok.quality);
+  }
+
+  // IT ONLY MATCHES AT ALL BECAUSE rank GREW A TIER. That query is not a
+  // substring of that label; before tier 3 the row was simply absent, and
+  // the signal could never have fired.
+  if (peerSearch.rank('six twelve four one', 'one two three four') === 3) {
+    test.check('and the row is in the results at all only via the token tier');
+  } else {
+    test.fail('rank: ' + peerSearch.rank('six twelve four one', 'one two three four'));
+  }
+
+  // A MULTISET, not a set. "john john" needs two johns to score twice.
+  const one = peerSearch.overlapChars(['john', 'john'], ['john', 'smith']);
+  const two = peerSearch.overlapChars(['john', 'john'], ['john', 'john']);
+  if (one === 4 && two === 8) {
+    test.check('a repeated word needs a repeat to match — ' + one + ' then ' + two + ' chars');
+  } else {
+    test.fail('multiset: ' + one + ', ' + two);
+  }
+
+  // SEPARATORS ARE PUNCTUATION. Somebody writing anna-marie and somebody
+  // writing anna marie mean the same two words.
+  const hyphen = peerSearch.tokens('anna-marie.van_der beek');
+  if (hyphen.join(',') === 'anna,marie,van,der,beek') {
+    test.check('and -, ., _ and space all separate words: ' + hyphen.join(' | '));
+  } else {
+    test.fail('tokens: ' + hyphen.join(','));
+  }
+
+  // THE TIER IS ONLY TRIED FOR A MULTI-TOKEN QUERY, because a single-token
+  // one that matches a whole token is always already a substring match —
+  // so the check could only cost a split per row and never change an
+  // answer. This is the assertion that keeps a million rows cheap.
+  if (peerSearch.rank('annabel smith', 'ann') === 1 &&
+      peerSearch.rank('smith annabel', 'ann') === 2) {
+    test.check('a one-word query never reaches the token path — it is already a substring');
+  } else {
+    test.fail('single-token ranks: ' + peerSearch.rank('annabel smith', 'ann') +
+      ', ' + peerSearch.rank('smith annabel', 'ann'));
+  }
+
+  // AND IT IS THE WEAKEST TIER. Some of the words in any order is worse
+  // than the whole query found somewhere.
+  const scattered = peerSearch.explain(
+    { publicKey: 'K', publicLabel: 'four one', present: false, via: null }, 'one two three four');
+  const whole = peerSearch.explain(
+    { publicKey: 'K', publicLabel: 'x one two three four x', present: false, via: null }, 'one two three four');
+  if (whole.quality > scattered.quality) {
+    test.check('the whole query found in order beats the same words scattered, ' +
+      whole.quality.toFixed(3) + ' vs ' + scattered.quality.toFixed(3));
+  } else {
+    test.fail('scattered beat whole: ' + scattered.quality + ' vs ' + whole.quality);
+  }
+}
+
+// ---------------------------------------------------------------------
 test.subHeading('A weight can be argued about with numbers');
 
 {

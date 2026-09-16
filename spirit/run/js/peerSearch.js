@@ -84,6 +84,42 @@ function globMatches(text, pattern) {
   return p === pattern.length;
 }
 
+// ── TOKENS ───────────────────────────────────────────────────────────
+//
+// Split on whitespace and the separators a name actually uses. A person
+// writing "anna-marie" and a person writing "anna marie" mean the same
+// two words, and a matcher that disagrees is describing punctuation.
+//
+// Lowercased by the callers before they get here, so this does not
+// lowercase again — the query is normalised once per search, not once per
+// row of a million.
+function tokens(text) {
+  return String(text || '').split(/[\s\-_.,/]+/).filter(function (t) { return t.length > 0; });
+}
+
+// HOW MANY CHARACTERS MATCHED, TOKEN FOR TOKEN, whole tokens only.
+//
+//   Andy: "break down both strings into tokens, and measure how many
+//   characters are matched in case insensitive token to token comparison.
+//   search string: 'one two three four' result string: 'six twelve four
+//   one' — we compute the combined length of full token matches against
+//   the length of the search string."
+//
+// A MULTISET, not a set: two tokens the same in the query need two in the
+// label to both count, or "john john" would score double against one
+// "john". Each label token is consumed once.
+function overlapChars(queryTokens, labelTokens) {
+  var pool = labelTokens.slice();
+  var chars = 0;
+  for (var i = 0; i < queryTokens.length; i++) {
+    var at = pool.indexOf(queryTokens[i]);
+    if (at === -1) continue;
+    pool.splice(at, 1);
+    chars += queryTokens[i].length;
+  }
+  return chars;
+}
+
 // How good a match is, lowest is best. A plain query still means
 // "anywhere", which is what somebody typing three letters expects — the
 // wildcards are for when they want to say something more precise.
@@ -104,7 +140,23 @@ function rank(label, query) {
   }
   if (label === query) return 0;
   if (label.indexOf(query) === 0) return 1;
-  return label.indexOf(query) !== -1 ? 2 : -1;
+  if (label.indexOf(query) !== -1) return 2;
+
+  // ── TIER 3: SOME OF THE WORDS, IN ANY ORDER ────────────────────────
+  //
+  // "one two three four" against "six twelve four one" is not a substring
+  // of anything and used to be NO MATCH — which is why the token signal
+  // below needed this before it could ever fire. Two of four words are
+  // right; that is worse than finding the whole query somewhere, and much
+  // better than nothing.
+  //
+  // ONLY FOR A MULTI-TOKEN QUERY, and that is not an optimisation for its
+  // own sake: a single-token query that matches a whole token is ALWAYS
+  // already a substring match, so the check could only ever cost a split
+  // per row and never change an answer. A million rows is the size this
+  // was built for.
+  if (!/[\s\-_.,/]/.test(query)) return -1;
+  return overlapChars(tokens(query), tokens(label)) > 0 ? 3 : -1;
 }
 
 // ── THE SLOTS ────────────────────────────────────────────────────────
@@ -165,7 +217,8 @@ var SIGNALS = [
     quality: function (s) {
       if (s.rank === 0) return 1.0;    // exact
       if (s.rank === 1) return 0.7;    // starts with, or an anchored pattern
-      return 0.35;                     // found somewhere
+      if (s.rank === 2) return 0.35;   // found somewhere
+      return 0.15;                     // only some of the words, in any order
     },
   },
 
@@ -220,6 +273,40 @@ var SIGNALS = [
       var l = s.label.length;
       if (!q || !l) return 0;
       return q < l ? q / l : l / q;
+    },
+  },
+
+  // HOW MANY OF THE WORDS LANDED.
+  //
+  //   Andy: "we compute the combined length of full token matches against
+  //   the length of the search string... this gives us a measurement of
+  //   how many characters are matched in separate tokens as percentage,
+  //   expressable in a value from 0 to 1."
+  //
+  // WHY IT IS NOT REDUNDANT WITH `coverage`, which is the obvious
+  // objection. Coverage compares STRING LENGTHS and is blind to order and
+  // to words: "one two three four" against "six twelve four one" is 18
+  // characters against 19, so coverage calls it 0.95 — nearly perfect —
+  // while only half the words are actually right. This reads the words.
+  //
+  // THE DENOMINATOR IS THE QUERY. Andy offered either; they are the two
+  // halves of the same pair and they answer different questions —
+  //
+  //   over the query   how much of what I TYPED was found   (recall)
+  //   over the label   how much of the NAME I accounted for (precision)
+  //
+  // and `coverage` already approximates the second. So this takes the
+  // first, and the two signals together carry both sides with separate
+  // weights, which is the whole reason the model is weighted.
+  {
+    name: 'tokens',
+    weight: 0.3,
+    quality: function (s) {
+      var q = tokens(s.query.replace(/[*?]/g, ' '));
+      if (!q.length) return 0;
+      var typed = q.reduce(function (n, t) { return n + t.length; }, 0);
+      if (!typed) return 0;
+      return overlapChars(q, tokens(s.label)) / typed;
     },
   },
 
@@ -391,6 +478,8 @@ function merge(sources, query, slots) {
 
 module.exports = {
   globMatches: globMatches,
+  tokens: tokens,
+  overlapChars: overlapChars,
   rank: rank,
   quality: quality,
   compare: compare,
