@@ -37,7 +37,27 @@ function createPresence(opts) {
   // Given rather than made here, because a node has ONE of these and the
   // hub needs the same instance to post from — an outbound request and
   // the answer that matches it must meet in the same table.
-  const router = opts.router || null;
+  //
+  // REQUIRED, and loudly. This read `opts.router || null`, and both event
+  // lines below were guarded `&& router` — so a stream built without the
+  // post half accepted every `request` and `reply` and dropped them on the
+  // floor. That is the exact failure router.js's own header names as the
+  // worst available: answerable but undeliverable, nobody erroring,
+  // nothing logged, and the only symptom is silence for the length of
+  // somebody's patience.
+  //
+  // The invariant was stated here in a comment and enforced nowhere, which
+  // held while server.js was the only caller. A relay is about to be the
+  // second one (AGENT.md, Comms) and must not be able to construct half an
+  // interface. Andy: "the post mechanism has to be tied to a reply-by-
+  // stream... it obviously must provide the matching post mechanism."
+  const router = opts.router;
+  if (!router || typeof router.onReply !== 'function' || typeof router.onRequest !== 'function') {
+    throw new Error(
+      'createPresence needs `router`: the stream is the INBOUND HALF of one ' +
+      'interface and a reply arriving here has to settle in the same table ' +
+      'the post opened. Pass the peerPost instance you post from.');
+  }
 
   // relay url -> { key -> bool }. THE PER-RELAY DETAIL LIVES HERE AND
   // NOWHERE ELSE. Andy's ruling: the shell gets one merged set and apps
@@ -197,8 +217,10 @@ function createPresence(opts) {
         // one to peerPost and forms no opinion, which is why the fence
         // in PRESENCE.md §6 could be opened without this module growing
         // a second subject.
-        else if (msg.event === 'request' && router) router.onRequest(url, msg.data);
-        else if (msg.event === 'reply' && router) router.onReply(msg.data);
+        // No `&& router` any more — it is required at construction, so a
+        // guard here could only ever have hidden the absence.
+        else if (msg.event === 'request') router.onRequest(url, msg.data);
+        else if (msg.event === 'reply') router.onReply(msg.data);
         // A RELAY TELLING ITS OWNER HOW IT IS DOING. Only a relay this
         // node OWNS ever sends one — the rule is enforced at the far end,
         // where the owner's key is, and this side does not second-guess

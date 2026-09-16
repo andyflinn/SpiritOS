@@ -24,6 +24,7 @@ const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const hub = require('../run/js/hub');
 const presenceNode = require('../run/js/presenceNode');
+const { createPeerPost } = require('../run/js/peerPost');
 const buildStamp = require('../run/js/buildStamp');
 const { createRelay } = require('../run/js/relay');
 
@@ -102,7 +103,16 @@ function nodeFor(id) {
     createJob: function (k, t, d) { jobs.job = { id: 'j', kind: k, type: t, data: d }; return jobs.job; },
     updateJob: function (i, p) { if (p.data) Object.assign(jobs.job.data, p.data); return jobs.job; },
   };
-  const P = presenceNode.createPresence({ rootDir: home, jobs: jobs });
+  // THE REAL POST HALF, not a stub. This suite already probes with
+  // hub.relayRequest rather than a stand-in, and the pairing is the same
+  // kind of claim: a reply arriving on the stream has to settle in the
+  // table the post opened, so the two halves are wired here exactly as
+  // server.js wires them.
+  const P = presenceNode.createPresence({
+    rootDir: home,
+    jobs: jobs,
+    router: createPeerPost({ rootDir: home, request: hub.relayRequest }),
+  });
   opened.push({ close: function () { P.stop(); } });
   // hub.relayRequest is the node's own outbound helper, so the probe is
   // the one production uses rather than a stand-in for it.

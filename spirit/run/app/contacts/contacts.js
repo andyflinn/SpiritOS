@@ -91,14 +91,11 @@ var contactsSeenMore = false;
 var contactsSeenSilent = [];
 var contactsSelfTail = '';
 
-function contactsPost(path, body) {
-  return fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }).then(function (r) {
-    return r.text().then(function (t) { return { status: r.status, text: t }; });
-  });
+// Both of these are `contactsApi.verb` now (AGENT.md, Comms) — the shell
+// is the only thing an app speaks to. They stay as two names because they
+// answer two shapes and their callers read different halves.
+function contactsPost(verb, body) {
+  return contactsApi.verb(verb, body);
 }
 
 // ONE DOOR, AND THE VERB IS THE ARGUMENT. Same shape as ndPost in
@@ -107,13 +104,7 @@ function contactsPost(path, body) {
 // Answers the parsed body, because a refusal from these verbs is a
 // `{ ok: false }` rather than a status the caller reads.
 function contactsAsk(verb, body) {
-  var payload = { verb: verb };
-  if (body) Object.keys(body).forEach(function (k) { payload[k] = body[k]; });
-  return fetch('/api/spirit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).then(function (r) { return r.json(); });
+  return contactsApi.verb(verb, body).then(function (r) { return r.body; });
 }
 
 function contactsStatus(text) {
@@ -664,8 +655,8 @@ spirit.shell.activateApp({
       var button = event.target && event.target.closest && event.target.closest('[data-add-key]');
       if (!button) return;
       var out = document.getElementById('contacts-add-out');
-      contactsPost('/api/spirit', {
-        verb: 'peer.acquire', publicKey: button.dataset.addKey,
+      contactsPost('peer.acquire', {
+        publicKey: button.dataset.addKey,
       }).then(function (r) {
         if (r.status !== 201) {
           out.innerHTML = '<div class="job-log-empty">' + contactsEscapeHtml(r.status + ' ' + r.text) + '</div>';

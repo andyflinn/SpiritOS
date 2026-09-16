@@ -190,15 +190,7 @@ var ndAutoAdd = true;
 // and there is no longer a way to get the address right and the request
 // wrong.
 function ndPost(verb, body) {
-  var payload = { verb: verb };
-  if (body) Object.keys(body).forEach(function (k) { payload[k] = body[k]; });
-  return fetch('/api/spirit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  }).then(function (r) {
-    return r.text().then(function (t) { return { status: r.status, text: t }; });
-  });
+  return ndApi.verb(verb, body);
 }
 
 // The same call when the answer is JSON and a failure is simply "the

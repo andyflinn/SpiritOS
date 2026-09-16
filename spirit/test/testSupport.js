@@ -96,9 +96,37 @@ const test = {
         this.comment('"' + str + '"');
         this.lineFeed();
     },
-    
-    
-    
+
+    // THE BROWSER'S ONE MOUTH, for a fixture that stands the shell up
+    // without a page. `spirit.core.ask` is defined in kernel.js's BROWSER
+    // half, which a test requiring kernel.js from node never gets — so
+    // every shell fixture has to supply it, and this is the one copy of it.
+    //
+    // Over the fixture's own `fetch`, deliberately: these suites intercept
+    // there to answer as a node would, and a shim that bypassed that would
+    // assert against a different door than the one shell.js goes through.
+    // AGENT.md, Comms.
+    // A FACTORY, taking the fixture's own fetch. Not the global: these
+    // suites hand shell.js a fake `fetch` as a Function() argument and
+    // intercept there, so an `ask` closing over the real global would ask
+    // the network and assert against a door nobody uses.
+    browserAsk: function (fetchImpl) {
+        return function (verb, args) {
+            const payload = { verb: String(verb) };
+            if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+            return fetchImpl('/api/spirit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            }).then(function (r) {
+                return r.text().then(function (t) {
+                    let body = null;
+                    try { body = JSON.parse(t); } catch (e) { body = null; }
+                    return { status: r.status, text: t, body: body };
+                });
+            });
+        };
+    },
 
 };
 

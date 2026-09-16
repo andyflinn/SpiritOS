@@ -1,11 +1,11 @@
 {
   "title": "A little buddy network",
   "why": "Somebody to talk to. The everyday world for looking at chat, contacts and Natter after a sandbox wipe, without rebuilding it through the shell by hand.",
-  "covers": ["chatSession.js", "contacts.js", "natterIntrinsic.js"],
+  "covers": ["contacts.js", "natterIntrinsic.js"],
   "look": [
     "Natter — two rows, both yours",
     "Contacts — three people, two of them acquired by handle",
-    "Chat — mail waiting, from more than one person"
+    "Chat — a carcass kept for reference: it sends, and receives nothing"
   ],
 
   "peers": [

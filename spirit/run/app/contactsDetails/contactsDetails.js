@@ -34,14 +34,10 @@ var cdPerson = null;   // the row itself, as buildPeople hands it over
 var cdChanged = false; // has anything happened that the table must repaint for?
 var cdBlockArmed = false;
 
-function cdPost(path, body) {
-  return fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }).then(function (r) {
-    return r.text().then(function (t) { return { status: r.status, text: t }; });
-  });
+// Through the shell (AGENT.md, Comms). The verb is the argument; this app
+// no longer knows an address.
+function cdPost(verb, body) {
+  return cdApi.verb(verb, body);
 }
 
 function cdStatus(text) {
@@ -57,7 +53,7 @@ function cdStatus(text) {
 // is open changes unanswered inbound. The key is the only part of a row
 // that cannot change.
 function cdLoad() {
-  return cdPost('/api/spirit', { verb: 'peer.list' })
+  return cdPost('peer.list', null)
     .then(function (r) { return JSON.parse(r.text); })
     .then(function (data) {
       var people = (data && data.people) || [];
@@ -172,9 +168,9 @@ function cdRender() {
 // door does it, `cdPeerAction('block')` names `contact.block`, and the
 // only thing that changed on this screen is which string it says.
 function cdPeerAction(action, extra) {
-  var body = { verb: 'contact.' + action, publicKey: cdKey };
+  var body = { publicKey: cdKey };
   Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
-  return cdPost('/api/spirit', body).then(function (r) {
+  return cdPost('contact.' + action, body).then(function (r) {
     if (r.status !== 200) {
       cdStatus(action + ' failed: ' + r.status + ' ' + r.text);
       return false;

@@ -461,6 +461,10 @@ function theLastHop() {
   var subscribers = [];
   var shellSpirit = {
     core: {
+      // This fixture drives no verb, so the mouth is present and
+      // loud: a suite that starts posting should say so, not quietly
+      // reach a global.
+      ask: function () { throw new Error('this fixture hands shell.js no fetch'); },
       const: { ICON: require('../run/js/kernel').core.const.ICON, MIME: {} },
       util: { escapeHtml: function (s) { return String(s); }, formatBytes: function () { return ''; } },
       fs: {

@@ -170,6 +170,9 @@ function mountApp(options) {
 
     },
     core: {
+      // The browser's one mouth onto the node (AGENT.md, Comms).
+      // shell.js asks here; kernel.js supplies it in a real page.
+      ask: test.browserAsk(fakeFetch),
       util: {
         escapeHtml: spirit.core.util.escapeHtml,
         // The real one. A stub that rounded differently would let the
@@ -206,6 +209,25 @@ function mountApp(options) {
   // screen leaves the stack; here the test says what it decided.
   let answer = opts.dialogResult === undefined ? null : opts.dialogResult;
   const api = {
+    // WHAT THE SHELL HANDS AN APP for talking to the node (AGENT.md,
+    // Comms). Until 2026-09-16 this app kept a private `fetch` wrapper and
+    // this fixture never had to supply anything — which meant the fixture
+    // could not see, or assert, which verbs the app actually asks for.
+    verb: function (name, args) {
+      const payload = { verb: String(name) };
+      if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+      return fakeFetch('/api/spirit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).then(function (r) {
+        return r.text().then(function (t) {
+          let body = null;
+          try { body = JSON.parse(t); } catch (e) { body = null; }
+          return { status: r.status, text: t, body: body };
+        });
+      });
+    },
     escapeHtml: spirit.core.util.escapeHtml,
     launchApp: function (id, params, options) {
       launched.push({ id: id, params: params, options: options });

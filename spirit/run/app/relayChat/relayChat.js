@@ -348,22 +348,18 @@ spirit.shell.activateApp({
         setStatus('claim a name in Natter first');
         return;
       }
-      refreshInbox();
       // The people list is what the remembered To is looked up in, so
       // the selection is restored once it has arrived.
       refreshPeople().then(selectRestoredTo);
     }
 
-    function hubPost(path, obj) {
-      return fetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(obj)
-      }).then(function (r) {
-        return r.text().then(function (t) {
-          return { status: r.status, text: t };
-        });
-      });
+    // Through the shell (AGENT.md, Comms). AGENT.md used to carry a
+    // standing pass for this file — "do not lint-fail that file until Andy
+    // opens the api.hub sitting" — and that pass is what the other five
+    // apps copied. `api.verb` exists now, so the exemption has nothing
+    // left to excuse.
+    function hubPost(verb, obj) {
+      return api.verb(verb, obj);
     }
 
     // Reading and writing one peer's file. Loads are cached for the
@@ -578,36 +574,18 @@ spirit.shell.activateApp({
       markSeen(picked);
     }
 
-    // The inbox is still where anything said TO this node arrives. Every
-    // line is filed before it is drawn, so the thread is a view of the
-    // files rather than of the last response.
-    function refreshInbox() {
-      if (!myName) return;
-      // No policy on the request. The hub reads preferences.json
-      // itself (packet 5, hub.js unknownPolicy) and ignores a ?unknown=
-      // if an older client still sends one — so this app cannot get the
-      // node's answer about strangers wrong, or stale, by polling.
-      fetch('/api/hub/inbox?name=' + encodeURIComponent(myName))
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          // Fan-in: the shell routes anything addressed to another app,
-          // and drops what nobody is listening for. This app's own
-          // packets and the legacy plain lines are recorded below, the
-          // way they always were.
-          if (typeof api.deliverPackets === 'function') api.deliverPackets(data && data.messages);
-          // Everything an inbox read returns was RECEIVED by this node:
-          // that is what the route is. Direction is never guessed from
-          // the sender's name — a note to yourself is sent and received,
-          // and both halves happened.
-          recordMessages(data.messages || [], 'received');
-          // A line from someone you are not looking at goes to their
-          // row, never into the open thread.
-          renderThread();
-          paintToList();
-          paintTitle();
-        })
-        .catch(function (e) { setStatus('inbox failed: ' + e.message); });
-    }
+    // refreshInbox STOOD HERE, and had been dead since 2026-09-15.
+    //
+    // It polled `GET /api/hub/inbox` every two seconds. That route went
+    // with the ring (server.js: "GET /api/relay/inbox AND GET
+    // /api/hub/inbox STOOD HERE"), and the `api.deliverPackets` it handed
+    // the catch to went with it. So this ran four hundred times an hour,
+    // 404ed, and painted "inbox failed" — receive in this app has been
+    // dark for a day and this was the noise, not the function.
+    //
+    // NOT REPAIRED HERE. Andy: "I'd rather see apps breaking than apps
+    // faking." Relay Chat receives through api.onPacket or it does not
+    // receive; a poll against a deleted door is the faking.
 
     // Every peer this node knows of, read off disk once a visit, so the
     // combined view after a reload is the whole record and not merely
@@ -627,7 +605,7 @@ spirit.shell.activateApp({
       // to write to, so a people list would be a question with no use
       // for its answer.
       if (!myName) return Promise.resolve();
-      return hubPost('/api/spirit', { verb: 'peer.list' })
+      return hubPost('peer.list', null)
         .then(function (r) { return JSON.parse(r.text); })
         .then(function (data) {
           people = (data && data.people) || [];
@@ -1143,7 +1121,7 @@ spirit.shell.activateApp({
         rcSay((rcMade && rcMade.error) || 'js/client/packet.js is not loaded');
         return;
       }
-      hubPost('/api/spirit', { verb: 'peer.post', to: to, text: rcMade.text }).then(function (r) {
+      hubPost('peer.post', { to: to, text: rcMade.text }).then(function (r) {
         if (r.status === 200) {
           // Keyed by `toKey` for the same reason the received half is
           // keyed by fromKey: a peer is a key, and two johns are two
@@ -1170,22 +1148,16 @@ spirit.shell.activateApp({
         } else {
           setStatus(r.status + ' ' + r.text);
         }
-        refreshInbox();
       });
     });
 
-    // The door, from the receiving side. Nothing routes through it yet
-    // that this app would not have seen anyway — RC still owns the poll,
-    // and hands its catch to the shell to fan out (api.deliverPackets) —
-    // but the handler is where a second client's traffic would go, and
-    // registering it now is what makes the routing real rather than a
-    // shape to be filled in later.
+    // The door, from the receiving side — and since the poll above it was
+    // deleted, the ONLY one. Registering it claims the name so a second
+    // app cannot quietly take it; making it paint is the retrofit Andy has
+    // parked, not an oversight.
     if (typeof api.onPacket === 'function') {
       api.onPacket(RC_PACKET_APP, function () {
-        // Chat lines are recorded by refreshInbox, which sees every
-        // message including the legacy ones this handler never gets.
-        // Nothing to do here yet; the subscription is what claims the
-        // name, and a second app cannot quietly take it.
+        // Nothing painted yet. See above: parked, deliberately.
       });
     }
 
@@ -1207,7 +1179,6 @@ spirit.shell.activateApp({
     paintFilterButtons();
     renderThread();
     restoreSession();
-    setInterval(refreshInbox, 2000);
   },
   render: function () {}
 });

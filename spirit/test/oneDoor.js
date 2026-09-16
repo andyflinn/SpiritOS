@@ -25,9 +25,16 @@
 // six apps grew in behind that pass, because an exemption nobody has to
 // argue for is an exemption everybody takes.
 //
-// So the exceptions below are FROZEN and DATED. The count goes down or
-// this suite goes red. Adding a line is Andy granting an exception, out
-// loud, and not a commit that happens to pass.
+// THERE IS NO EXCEPTION LIST. This shipped with twelve grandfathered
+// reaches frozen at a count that could only fall; Andy: "ok, lets fully
+// enforce this, and then fix where this rule has been neglected." All
+// twelve are gone — six apps onto `api.verb`, one binary read into
+// kernel.js where the browser's transport lives, one dead poll against a
+// route deleted with the ring — so the list has nothing left to hold and
+// keeping an empty one would only be an invitation.
+//
+// Adding a name below is Andy granting an exception, out loud, and never
+// a commit that happens to pass.
 
 const fs = require('fs');
 const path = require('path');
@@ -74,24 +81,22 @@ const STRUCTURAL = {
     'caller. Not an exception to the rule — the other side of it.',
 };
 
-// ── GRANTED EXCEPTIONS — FROZEN 2026-09-16 AT db3438e ───────────────────
+// ── GRANTED EXCEPTIONS — EMPTY, AND THAT IS THE POINT ───────────────────
 //
-// Twelve reaches that predate the rule being written down. Each needs
-// `api.verb()` on the shell surface before it can go, which is its own
-// sitting. Frozen so the number can only fall.
+// Cleared 2026-09-16, the same day it was written. What was in it:
 //
-// `js/client/browser.js` is not here: AGENT.md says it is unused and to
-// leave it, so it is excluded from the scan entirely rather than granted
-// a pass it would then appear to have earned.
-const GRANTED = {
-  'app/aiChat/aiChat.js': 2,
-  'app/contacts/contacts.js': 2,
-  'app/contactsDetails/contactsDetails.js': 1,
-  'app/natter/natter.js': 2,
-  'app/natterDetails/natterDetails.js': 1,
-  'app/relayChat/relayChat.js': 2,
-  'js/client/shell.js': 2,
-};
+//   app/aiChat            2   -> api.verb + spirit.core.fs.loadDataUrl
+//   app/contacts          2   -> api.verb
+//   app/contactsDetails   1   -> api.verb
+//   app/natter            2   -> api.verb
+//   app/natterDetails     1   -> api.verb
+//   app/relayChat         2   -> api.verb, and one dead poll deleted
+//   js/client/shell.js    2   -> one postToNode, which api.verb is over
+//
+// `js/client/browser.js` was never here: AGENT.md says it is unused and to
+// leave it, so it is skipped entirely rather than granted a pass it would
+// then appear to have earned.
+const GRANTED = {};
 
 const SKIP_ENTIRELY = [
   // Spawned scripts talking to LM Studio and WordPress. They are outside

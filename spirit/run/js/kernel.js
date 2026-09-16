@@ -627,6 +627,59 @@ if (isNode()) {
     return result;
   };
 
+  // ── THE BROWSER'S ONE MOUTH ONTO THE NODE ──────────────────────────────
+  //
+  // AGENT.md, Comms: all comms go through one interface, and in the page
+  // that interface is this file. The shell asks here, apps ask the shell
+  // (api.verb), and nothing else opens a socket.
+  //
+  // Answers `{ status, text, body }` — `body` parsed when it was JSON and
+  // null when it was not, because the six private wrappers this replaces
+  // disagreed about which they wanted and a caller picking a helper by
+  // return shape picks wrong eventually.
+  spirit.core.ask = function (verb, args) {
+    const payload = { verb: String(verb) };
+    if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+    return fetch('/api/spirit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        let body = null;
+        try { body = JSON.parse(t); } catch (e) { body = null; }
+        return { status: r.status, text: t, body: body };
+      });
+    });
+  };
+
+  // THE SAME READ, FOR BYTES. loadFile is sync XHR returning responseText,
+  // which mangles anything that is not text — so an app wanting an image's
+  // bytes had nothing to call and AI Chat reached for `fetch` directly
+  // (AGENT.md, Comms: nothing but kernel.js may, in the browser).
+  //
+  // Async, unlike its siblings here, and deliberately: the sync reads above
+  // are small text and JSON, and blocking the page on a megabyte of JPEG is
+  // the one case where the comment above them stops being true.
+  //
+  // Same boundary as loadFile — whatever the static route will serve, which
+  // fileServable already decides on the node. A refusal answers null rather
+  // than throwing, because every caller here is decorating a screen.
+  spirit.core.fs.loadDataUrl = function(filePath){
+    return fetch(filePath)
+      .then(function (r) { return r.status === 200 ? r.blob() : null; })
+      .then(function (blob) {
+        if (!blob) return null;
+        return new Promise(function (resolve) {
+          const reader = new FileReader();
+          reader.onloadend = function () { resolve(reader.result); };
+          reader.onerror = function () { resolve(null); };
+          reader.readAsDataURL(blob);
+        });
+      })
+      .catch(function () { return null; });
+  };
+
   // Sync, same as loadFile — file metadata (size/mtime/birthtime) for
   // display purposes, via the fs.stat verb (the browser has no
   // direct filesystem access, unlike the Node side's fs.statSync).
@@ -726,12 +779,8 @@ if (isNode()) {
       // since it goes over the same /api/jobs fetch every other scan of
       // this data already uses.
       scanDirectory: function() {
-        return fetch('/api/spirit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ verb: 'jobs.list' }),
-        })
-          .then(function (res) { return res.json(); })
+        return spirit.core.ask('jobs.list', null)
+          .then(function (res) { return res.body || []; })
           .then(function (jobs) {
             var fsWatcher = jobs.filter(function (j) { return j.type === 'fs-watcher'; })[0];
             var all = (fsWatcher && fsWatcher.data && fsWatcher.data.files) || [];

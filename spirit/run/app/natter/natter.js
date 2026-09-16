@@ -390,12 +390,8 @@ function natterOpenRelay(api, container, relays, url) {
 // by itself.
 function natterProbe(api, container, relays) {
   var label = natterMyName || '';
-  return fetch('/api/spirit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ verb: 'relay.status', name: label }),
-  })
-    .then(function (r) { return r.json(); })
+  return api.verb('relay.status', { name: label })
+    .then(function (r) { return r.body; })
     .then(function (data) {
       var rows = (data && data.rows) || [];
       rows.forEach(function (row) {
@@ -414,14 +410,12 @@ function natterProbe(api, container, relays) {
 
 
 
-function natterPost(path, body) {
-  return fetch(path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }).then(function (r) {
-    return r.text().then(function (t) { return { status: r.status, text: t }; });
-  });
+// Through the shell, which is the only thing that speaks to the node
+// (AGENT.md, Comms). This was a private `fetch` wrapper, one of six
+// identical copies across the apps, each written because `api` had no verb
+// call on it. It does now.
+function natterPost(api, verb, body) {
+  return api.verb(verb, body);
 }
 
 function natterBindStatus(text) {
@@ -611,9 +605,8 @@ function natterOnClaim(api, event) {
   // and the confusing refusal in the log.
   if (event.owner) return;
   if (!natterAutoAddFor(event.relay)) return;
-  natterPost('/api/spirit', {
-    verb: 'peer.acquire', publicKey: key, via: 'invite',
-  }).catch(function () {});
+  natterPost(api, 'peer.acquire', { publicKey: key, via: 'invite' })
+    .catch(function () {});
 }
 
 // Read once, on mount. A file from before 2026-09-15 has a label and no

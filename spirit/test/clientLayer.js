@@ -104,6 +104,9 @@ function mountShell(answerFor) {
   const subscribers = [];
   const shellSpirit = {
     core: {
+      // The browser's one mouth onto the node (AGENT.md, Comms).
+      // shell.js asks here; kernel.js supplies it in a real page.
+      ask: test.browserAsk(fakeFetch),
       const: { ICON: kernel.core.const.ICON, MIME: {} },
       util: { escapeHtml: function (s) { return String(s); }, formatBytes: function () { return ''; } },
       fs: {

@@ -121,6 +121,9 @@ function mountDialog(options) {
       },
     },
     core: {
+      // The browser's one mouth onto the node (AGENT.md, Comms).
+      // shell.js asks here; kernel.js supplies it in a real page.
+      ask: test.browserAsk(fakeFetch),
       util: {
         escapeHtml: spirit.core.util.escapeHtml,
         formatBytes: spirit.core.util.formatBytes,
@@ -135,6 +138,25 @@ function mountDialog(options) {
   const titles = [];
   let dialogResult;
   const api = {
+    // WHAT THE SHELL HANDS AN APP for talking to the node (AGENT.md,
+    // Comms). Until 2026-09-16 this app kept a private `fetch` wrapper and
+    // this fixture never had to supply anything — which meant the fixture
+    // could not see, or assert, which verbs the app actually asks for.
+    verb: function (name, args) {
+      const payload = { verb: String(name) };
+      if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+      return fakeFetch('/api/spirit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).then(function (r) {
+        return r.text().then(function (t) {
+          let body = null;
+          try { body = JSON.parse(t); } catch (e) { body = null; }
+          return { status: r.status, text: t, body: body };
+        });
+      });
+    },
     setScreenTitle: function (t) { titles.push(t); },
     setDialogResult: function (r) { dialogResult = r; },
     // The shell throws for a dialog; the stub does the same, so a

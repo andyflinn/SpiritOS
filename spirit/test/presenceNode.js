@@ -20,6 +20,22 @@ function tmpHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presence-node-'));
 }
 
+// THE POST HALF, RECORDING. `createPresence` requires one, and until
+// 2026-09-16 it did not: `opts.router || null` plus `&& router` on the two
+// event lines meant a stream with no post half swallowed every request and
+// reply in silence. Not one of the five createPresence calls in this tree's
+// tests passed a router, so the seam that carries every answer home was
+// asserted nowhere below liveFrontDoor.
+//
+// Recording rather than empty, so the tests can say what ARRIVED rather
+// than only that construction succeeded.
+function fakeRouter() {
+  const r = { requests: [], replies: [] };
+  r.onRequest = function (url, data) { r.requests.push({ url: url, data: data }); };
+  r.onReply = function (data) { r.replies.push(data); };
+  return r;
+}
+
 // Enough of jobs.js to be published into, and it records every update so
 // the dedupe can be asserted by COUNT rather than by reading the source.
 function fakeJobs() {
@@ -138,6 +154,7 @@ async function run() {
     const P = presenceNode.createPresence({
       rootDir: pinHome,
       jobs: fakeJobs(),
+      router: fakeRouter(),
       connectImpl: function (o) { opened.push(o.url); return { close: function () {} }; },
       pinRelay: function (url) { pinned.push(url); return Promise.resolve('k'); },
     });
@@ -167,6 +184,7 @@ async function run() {
     const D = presenceNode.createPresence({
       rootDir: deafHome,
       jobs: fakeJobs(),
+      router: fakeRouter(),
       connectImpl: function (o) { deafOpened.push(o.url); return { close: function () {} }; },
       pinRelay: function () { return Promise.reject(new Error('census down')); },
     });
@@ -223,6 +241,7 @@ async function run() {
   const spy = presenceNode.createPresence({
     rootDir: spyHome,
     jobs: fakeJobs(),
+    router: fakeRouter(),
     connectImpl: function (o) { sawHeaders = o.headers; return { close: function () {} }; },
   });
   await spy.start(function () {
@@ -249,7 +268,7 @@ async function run() {
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
   const jobs = fakeJobs();
-  const P = presenceNode.createPresence({ rootDir: home, jobs: jobs });
+  const P = presenceNode.createPresence({ rootDir: home, jobs: jobs, router: fakeRouter() });
   await P.start(function () {
     return Promise.resolve({ status: 403, text: '{}' });
   });

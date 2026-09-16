@@ -99,13 +99,11 @@ spirit.shell.activateApp({
     var IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
     function loadMediaImages() {
-      // `GET /api/jobs` until 2026-09-15. One door, verb in the body.
-      return fetch('/api/spirit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verb: 'jobs.list' }),
-      })
-        .then(function (res) { return res.json(); })
+      // `GET /api/jobs` until 2026-09-15, then a private fetch wrapper
+      // until 2026-09-16. The shell is the only thing this app speaks to
+      // now (AGENT.md, Comms).
+      return api.verb('jobs.list', null)
+        .then(function (res) { return res.body || []; })
         .then(function (jobs) {
           var fsWatcher = jobs.filter(function (j) { return j.type === 'fs-watcher'; })[0];
           var files = (fsWatcher && fsWatcher.data && fsWatcher.data.files) || [];
@@ -147,14 +145,10 @@ spirit.shell.activateApp({
       if (!visionCapable) clearAttachment();
     }
 
-    function blobToDataUrl(blob) {
-      return new Promise(function (resolve, reject) {
-        var reader = new FileReader();
-        reader.onload = function () { resolve(reader.result); };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    }
+    // blobToDataUrl STOOD HERE. It was half of this app's private file
+    // reader, and the half that survived moved into kernel.js as
+    // spirit.core.fs.loadDataUrl — one copy, where the browser's transport
+    // already lives, for the next app that needs bytes.
 
     container.innerHTML =
       '<div id="ai-chat-target-row" class="stat-tile wide">' +
@@ -291,8 +285,13 @@ spirit.shell.activateApp({
       // outgoing send — never persisted. Fetches the already-servable
       // static file (the same route Media Launcher already relies on) as a
       // blob and reads it as a data URL.
+      // WAS A BARE fetch + blob + FileReader here, which is the one case
+      // in this sweep that had nowhere to go: loadFile is sync XHR and
+      // returns responseText, which mangles a JPEG. So the capability went
+      // into kernel.js, where the browser's transport belongs, rather than
+      // this app keeping the only copy of it (AGENT.md, Comms).
       var imageDataUrlPromise = exchange.image
-        ? fetch('/' + exchange.image).then(function (r) { return r.blob(); }).then(blobToDataUrl)
+        ? spirit.core.fs.loadDataUrl('/' + exchange.image)
         : Promise.resolve(null);
 
       imageDataUrlPromise.then(function (imageDataUrl) {

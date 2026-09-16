@@ -1094,9 +1094,50 @@
     });
   }
 
+  // ── THE SHELL'S ONE MOUTH ONTO THE NODE ────────────────────────────────
+  //
+  //   Andy: "we have one component that provides signed requests over http
+  //   in public. all other components must use that interface. no
+  //   exception... we are done, reaching for require('http') when something
+  //   needs doing."
+  //
+  // AGENT.md, Comms. The shell is the layer an app asks, and until
+  // 2026-09-16 it was not: six apps each kept a private three-line `fetch`
+  // wrapper — contactsAsk, cdPost, ndPost, hubPost — because there was
+  // nothing on `api` to call, and the shell itself opened this door twice.
+  //
+  // One function now, and `api.verb` below is its only public form. A verb
+  // that moves inside the node changes nothing in any app, and no app can
+  // get the address right and the request wrong, because no app says the
+  // address.
+  // THROUGH KERNEL, not around it. The shell is a layer, not the bottom:
+  // in the page the transport lives in kernel.js and nowhere else, so this
+  // holds the shell's *policy* (which verbs an app may name, what an app
+  // gets back) and none of the plumbing.
+  function postToNode(payload) {
+    var verb = payload.verb;
+    var args = {};
+    Object.keys(payload).forEach(function (k) { if (k !== 'verb') args[k] = payload[k]; });
+    return spirit.core.ask(verb, args);
+  }
+
   function buildApiFor(app) {
     var api = {
       escapeHtml: escapeHtml,
+      // ASK THE NODE FOR SOMETHING, BY NAME. `args` are folded into the
+      // envelope beside the verb, so a caller says WHAT IT WANTS and
+      // nothing about where that lives.
+      //
+      // Answers `{ status, text, body }` — all three, because the wrappers
+      // this replaces disagreed about which they wanted: ndPost and cdPost
+      // read `status`, contactsAsk read the parsed body, and a caller that
+      // has to pick a helper by return shape picks wrong eventually.
+      // `body` is null when the answer was not JSON.
+      verb: function (name, args) {
+        var payload = { verb: String(name) };
+        if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+        return postToNode(payload);
+      },
       // ONE DOOR, AND THE VERB IS IN THE BODY (2026-09-15). This posted
       // to /api/proxy; that route is gone, and the shape it hid is
       // unchanged — an app still says (url, options) and never learns
@@ -1104,18 +1145,14 @@
       // here: a verb moving under the single door is not an app's news.
       fetchExternal: function (url, options) {
         options = options || {};
-        return fetch('/api/spirit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            verb: 'net.fetch',
-            url: url,
-            method: options.method || 'GET',
-            headers: options.headers || {},
-            body: options.body,
-            timeoutMs: options.timeoutMs || 10000,
-          }),
-        }).then(function (res) { return res.json(); });
+        return postToNode({
+          verb: 'net.fetch',
+          url: url,
+          method: options.method || 'GET',
+          headers: options.headers || {},
+          body: options.body,
+          timeoutMs: options.timeoutMs || 10000,
+        }).then(function (res) { return res.body; });
       },
       // The smallest possible app launcher — one small icon appended to
       // this app's own titlebar (never replacing it; titleEl already has
@@ -1398,17 +1435,7 @@
           // spending a post to be told.
           return Promise.resolve({ status: 400, text: JSON.stringify({ error: made.error }) });
         }
-        return fetch('/api/spirit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            verb: 'peer.post',
-            to: toId,
-            text: made.text,
-          }),
-        }).then(function (r) {
-          return r.text().then(function (t) { return { status: r.status, text: t }; });
-        });
+        return postToNode({ verb: 'peer.post', to: toId, text: made.text });
       },
 
       onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },
