@@ -1764,6 +1764,7 @@ if (!relayMode) {
     'contact.unblock': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); },
     'contact.accept': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); },
     'contact.label': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); },
+    'contact.forget': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); },
     // Read and write, told apart by name rather than by an HTTP method
     // that no longer varies. See handleSendersRead.
     'contact.senders': function (rq, rs) { hub.handleSendersRead(rq, rs); },

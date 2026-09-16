@@ -1192,6 +1192,25 @@ function createHub(rootDir) {
         return;
       }
 
+      // FORGETTING IS NOT BLOCKING, and answers a different shape: there
+      // may be no row left to describe. whoBook keeps a blocked row and
+      // only downgrades it — deleting one would readmit the person the
+      // moment they wrote, because the row IS the refusal.
+      if (action === 'forget') {
+        var gone = whoBook.forget(rootDir, publicKey);
+        if (!gone) { fail(res, 404, 'no row for that key'); return; }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          publicKey: publicKey,
+          forgotten: !!gone.forgotten,
+          // Said plainly rather than implied: a blocked person is still
+          // blocked, and a person on a relay you are on will be findable
+          // again, because a census is not yours to edit.
+          stillBlocked: !gone.forgotten,
+        }));
+        return;
+      }
+
       var row;
       if (action === 'block') row = whoBook.setBlocked(rootDir, publicKey, true);
       else if (action === 'unblock') row = whoBook.setBlocked(rootDir, publicKey, false);

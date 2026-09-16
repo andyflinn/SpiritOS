@@ -437,6 +437,10 @@ freePort()
       ['POST', '/api/spirit', { verb: 'contact.unblock', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.accept', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.label', publicKey: 'NOPE', myLabel: 'x' }],
+      // Forgetting a key this node has no row for is a 404, which is the
+      // honest answer and the one this surface check wants: the verb
+      // exists, it is reachable, and it refuses what it should.
+      ['POST', '/api/spirit', { verb: 'contact.forget', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.senders' }],
       ['POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' }],
       // And the door's own refusal, which must be an answer rather than a

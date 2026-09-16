@@ -33,6 +33,7 @@ var cdKey = '';        // whose row this screen is
 var cdPerson = null;   // the row itself, as buildPeople hands it over
 var cdChanged = false; // has anything happened that the table must repaint for?
 var cdBlockArmed = false;
+var cdForgetArmed = false;
 
 // Through the shell (AGENT.md, Comms). The verb is the argument; this app
 // no longer knows an address.
@@ -139,6 +140,27 @@ function cdRender() {
       (cdBlockArmed ? 'Block — press again' : 'Block') + '</button>';
   }
 
+  // ── AND FORGETTING, WHICH IS OFFERED TO EVERYBODY ─────────────────
+  //
+  //   Andy: "i also have no method of removing sonny from my contacts so
+  //   i could re-test easily."
+  //
+  // There was none. Block silences a row and KEEPS it, which is right for
+  // "not from this person" and has never been an answer to "I added the
+  // wrong one".
+  //
+  // OFFERED IN BOTH STATES, unlike Accept and Unblock, because it is not
+  // about the relationship: it is about this node's own book. A blocked
+  // person can be forgotten without being unblocked — whoBook downgrades
+  // that row rather than deleting it, or the block would evaporate and
+  // they would be readmitted the moment they wrote.
+  //
+  // Two presses, for the same reason Block has two: it is at the end of a
+  // row somebody may have been tabbing along, and it throws away what they
+  // wrote — myLabel is theirs and is not on any relay to be recovered from.
+  buttons += '<button type="button" class="cancel-btn" id="cd-forget">' +
+    (cdForgetArmed ? 'Forget — press again' : 'Forget') + '</button>';
+
   var handle = cdPerson.publicLabel || '';
   var caption = handle ? 'Change My Label for ' + cdEscapeHtml(handle) : 'Change My Label';
 
@@ -196,9 +218,22 @@ spirit.shell.activateApp({
     // a handler bound to a button would go with it.
     document.getElementById('cd-body').addEventListener('click', function (event) {
       var id = event.target && event.target.id;
-      if (id === 'cd-accept') { cdBlockArmed = false; cdPeerAction('accept'); return; }
-      if (id === 'cd-unblock') { cdBlockArmed = false; cdPeerAction('unblock'); return; }
+      if (id === 'cd-accept') { cdBlockArmed = cdForgetArmed = false; cdPeerAction('accept'); return; }
+      if (id === 'cd-unblock') { cdBlockArmed = cdForgetArmed = false; cdPeerAction('unblock'); return; }
+      if (id === 'cd-forget') {
+        if (!cdForgetArmed) { cdForgetArmed = true; cdRender(); return; }
+        cdForgetArmed = false;
+        // THE SCREEN GOES WITH THE ROW. Every other action here repaints
+        // the person; this one removed them, so there is nobody left to
+        // paint and staying would be a screen about a contact that is not
+        // one. Back to the book, which is where the change is visible.
+        cdPeerAction('forget').then(function (ok) {
+          if (ok) { cdChanged = true; cdApi.closeDialog({ changed: true }); }
+        });
+        return;
+      }
       if (id === 'cd-block') {
+        cdForgetArmed = false;
         // Two presses. Blocking is the one decision here that stops mail
         // arriving, and the button sits at the end of a row you may have
         // been tabbing along.

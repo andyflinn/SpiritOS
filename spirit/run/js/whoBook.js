@@ -255,6 +255,47 @@ function labelForKey(rootDir, publicKey, fallbackPublicLabel) {
   return String(publicKey || '');
 }
 
+// ── FORGETTING SOMEBODY, WHICH IS NOT BLOCKING THEM ──────────────────
+//
+//   Andy: "i also have no method of removing sonny from my contacts so i
+//   could re-test easily."
+//
+// There was none. Block silences a row and KEEPS it — deliberately, so
+// unblocking is the same call with the other value — and that is the right
+// shape for "not from this person". It is the wrong shape for "I added the
+// wrong one", which until now had no answer at all.
+//
+// WHAT IT DOES NOT DO is make them unfindable. If they are on a relay this
+// node is on, they are in its census, and the next search will show them
+// again as somebody you could add. That is correct and worth saying: this
+// forgets YOUR side of a relationship, and a relay's census is not yours
+// to edit.
+//
+// WHAT IT ALSO DOES NOT DO is unblock them. A blocked row that is simply
+// deleted comes back the moment they write, admitted, because the thing
+// that refused them was the row. So a blocked row is kept and only
+// DOWNGRADED — the block survives, the acquaintance does not.
+function forget(rootDir, publicKey) {
+  const rows = load(rootDir);
+  const at = rows.findIndex(function (r) { return r.publicKey === publicKey; });
+  if (at === -1) return null;
+
+  if (isBlocked(rows[at])) {
+    rows[at] = {
+      publicKey: rows[at].publicKey,
+      publicLabel: rows[at].publicLabel || '',
+      acquiredVia: ACQUIRED_CENSUS,
+      blocked: true,
+    };
+    save(rootDir, rows);
+    return rows[at];
+  }
+
+  rows.splice(at, 1);
+  save(rootDir, rows);
+  return { publicKey: publicKey, forgotten: true };
+}
+
 function addRoute(rootDir, publicKey, relayUrl) {
   const url = String(relayUrl || '').replace(/\/+$/, '');
   if (!url) return null;
@@ -267,6 +308,7 @@ function addRoute(rootDir, publicKey, relayUrl) {
 }
 
 module.exports = {
+  forget: forget,
   CENSUS: ACQUIRED_CENSUS,
   HOLD: ACQUIRED_HOLD,
   load: load,

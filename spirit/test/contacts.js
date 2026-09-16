@@ -712,6 +712,65 @@ function saysNothingWhenNothingHappened() {
   });
 }
 
+// FORGETTING SOMEBODY, WHICH IS NOT BLOCKING THEM.
+//
+//   Andy: "i also have no method of removing sonny from my contacts so i
+//   could re-test easily."
+//
+// Driven against whoBook directly because that is where the rule lives and
+// there is no relay in it: this is one node's own book.
+function forgetsWithoutUnblocking() {
+  test.subHeading('Forgetting somebody is not unblocking them');
+
+  const os = require('os');
+  const fs = require('fs');
+  const path = require('path');
+  const whoBook = require('../run/js/whoBook');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-forget-'));
+
+  whoBook.acquire(home, { publicKey: 'K1', publicLabel: 'sonny', relay: 'https://lab.example' }, 'handle');
+  whoBook.setMyLabel(home, 'K1', 'my sonny');
+  const gone = whoBook.forget(home, 'K1');
+
+  if (gone && gone.forgotten && whoBook.byPublicKey(home, 'K1') === null) {
+    test.check('an ordinary contact leaves the book entirely, myLabel and route with them');
+  } else {
+    test.fail('after forget: ' + JSON.stringify(whoBook.byPublicKey(home, 'K1')));
+  }
+
+  // THE CASE A PLAIN DELETE GETS WRONG, and the reason forget is not one
+  // line. A blocked row IS the refusal — delete it and the next thing they
+  // write is admitted by a node that has forgotten why it said no.
+  whoBook.acquire(home, { publicKey: 'K2', publicLabel: 'nuisance' }, 'handle');
+  whoBook.setBlocked(home, 'K2', true);
+  whoBook.forget(home, 'K2');
+  const after = whoBook.byPublicKey(home, 'K2');
+
+  if (after && whoBook.isBlocked(after)) {
+    test.check('a blocked person is downgraded, not deleted — the refusal survives');
+  } else {
+    test.fail('block evaporated: ' + JSON.stringify(after));
+  }
+
+  const stillListed = whoBook.contacts(home).some(function (r) { return r.publicKey === 'K2'; });
+  if (!stillListed) {
+    test.check('and they are no longer a contact, which is what was asked for');
+  } else {
+    test.fail('still in the book as a contact');
+  }
+
+  // FORGETTING SOMEBODY THIS NODE NEVER KNEW is not an error to swallow
+  // quietly — the verb answers 404 so a caller can tell "gone" from
+  // "never there".
+  if (whoBook.forget(home, 'NEVER-HEARD-OF') === null) {
+    test.check('and forgetting a stranger says so rather than pretending');
+  } else {
+    test.fail('forgot somebody who was not there');
+  }
+
+  return Promise.resolve();
+}
+
 function addsByHandle() {
   test.subHeading('Adding somebody is still a phone call');
 
@@ -1087,7 +1146,7 @@ listsTheBook()
   .then(aRowOpensThePerson)
   .then(refreshesWhenTheDialogChangedSomething)
   .then(saysNothingWhenNothingHappened)
-  .then(addsByHandle)
+  .then(forgetsWithoutUnblocking).then(addsByHandle)
   .then(strangerPolicy)
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)
