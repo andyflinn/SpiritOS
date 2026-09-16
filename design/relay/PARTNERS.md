@@ -683,6 +683,55 @@ authorization**: same route shape, same `streamSignatureOk`, one more
 identity source. Breaking the partnership closes the stream, because the
 key that authorized it is no longer pinned.
 
+### Relay-to-relay is an authenticated exchange, and needs no new handshake
+
+> **Andy:** "a good enough handshake and proof information can be
+> exchanged, the relays use a protocol-post to get info?"
+
+**The handshake already happened.** Promotion verified reciprocity against
+the far public census and pinned that relay's key. The pin *is* the proof;
+there is nothing further to exchange before two relays can talk.
+
+So a relay asking a partner anything is a **post signed with its own relay
+key, verified against the pinned partner record** — the same admission
+path the forward needs. One mechanism, two kinds of request:
+
+```
+A ─POST (signed as A) → B    "forward this"       the delivery leg
+A ─POST (signed as A) → B    "who is present?"    the same door
+```
+
+**Which is why presence stays OFF the public census.** Partners get it
+because they are authenticated; a stranger reading `/api/relay/who` still
+gets enrolment and nothing else. That also puts the filter where it can
+work: B is answering a known party, so B can decide what to send —
+present-only, capped, priced per partner. A public GET cannot, because it
+does not know who is asking.
+
+> **Withdrawn with it:** adding `present:` to census rows. It was the
+> cheap way to let a partner filter, and it published per-person
+> attendance to the whole internet to solve a problem between two
+> authenticated boxes. The census stays enrolment, and stays stable.
+
+### Replies are matched. Events are not.
+
+> **Andy:** "same as a node talking to a relay."
+
+A reply carries a hash and finds A's pending entry. An event answers
+nothing and matches nothing — it is addressed to the stream, exactly like
+`presence` on a member's. That is what turns one answer into a
+subscription: the POST asks *and* says what to keep sending.
+
+| | matched by | |
+|---|---|---|
+| `reply` | hash, against the requester's pending entry | answers a POST |
+| `presence`, `roster` | nothing | the far side volunteering a change |
+
+So the whole of it is: **request by POST, reply by stream, events by
+stream, admitted by the pin.** A partner is a node-shaped party that is
+let in by a key instead of a row — which is why none of this needed a
+protocol of its own.
+
 ### POST is the control channel
 
 > **Andy:** "post only are there to start the stream, or filter it at the
