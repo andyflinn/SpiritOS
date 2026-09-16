@@ -183,6 +183,46 @@ var SIGNALS = [
     quality: function (s) { return s.row.present ? 1.0 : 0.0; },
   },
 
+  // HOW MUCH OF THE LABEL THE QUERY ACCOUNTS FOR — the cheap one.
+  //
+  //   Andy: "the [search] string length versus the result-string-length is
+  //   a cheap quality tester. if the search string length exceeds the
+  //   result string length, the probability that the match is valuable
+  //   might be extremely low."
+  //
+  // Three letters found in a four-letter name is most of that name. The
+  // same three in a thirty-letter name is a fragment, and the person who
+  // typed them probably did not mean it. Nothing else in this list can
+  // tell those apart: both are prefix matches, identical on every other
+  // signal, and before this they fell through to ALPHABETICAL ORDER —
+  // which is not a quality judgement, it is the absence of one.
+  //
+  // WILDCARDS ARE STRIPPED FIRST. `*` and `?` add length without adding
+  // evidence — `*a*` is three characters matching one — so measuring them
+  // would penalise a precise wildcard for its own punctuation.
+  //
+  // WHICH MAKES ANDY'S CASE UNREACHABLE, and that is worth writing down
+  // rather than discovering twice. He asked for the query-longer-than-the
+  // -label case to score very low; once the punctuation is gone it cannot
+  // happen, because a glob match maps every literal character in the
+  // pattern to a distinct character of the label IN ORDER — so a row that
+  // matched at all has a label at least as long as the literal query.
+  //
+  // The ratio is still written smaller-over-larger rather than q/l. Not
+  // defensive habit: `rank` is expected to change, and a future one that
+  // admits a fuzzy or transposed match would make the branch live. Written
+  // as a ratio it keeps meaning the same thing on that day.
+  {
+    name: 'coverage',
+    weight: 0.2,
+    quality: function (s) {
+      var q = s.query.replace(/[*?]/g, '').length;
+      var l = s.label.length;
+      if (!q || !l) return 0;
+      return q < l ? q / l : l / q;
+    },
+  },
+
   // HOW NEAR. `via` null means the caller's own members; anything else came
   // from a partner. Acquiring needs a census this node can reach, and the
   // nearer one is reachable without a partnership — the rule `harvest`
@@ -245,7 +285,7 @@ function compare(a, b) {
 function explain(row, query) {
   var q = String(query == null ? '' : query).toLowerCase();
   var label = String((row && row.publicLabel) || '').toLowerCase();
-  var s = { row: row || {}, label: label, rank: rank(label, q) };
+  var s = { row: row || {}, label: label, rank: rank(label, q), query: q };
   if (s.rank < 0) return { matched: false, quality: 0, signals: [] };
   return {
     matched: true,
@@ -280,7 +320,7 @@ function offer(bucketIn, row, query, via) {
   Object.keys(row).forEach(function (k) { copy[k] = row[k]; });
   if (via !== undefined) copy.via = via;
 
-  return bucketIn.offer({ row: copy, label: label, rank: r });
+  return bucketIn.offer({ row: copy, label: label, rank: r, query: q });
 }
 
 // A bucket ready to be offered rows, with this module's opinion in it.

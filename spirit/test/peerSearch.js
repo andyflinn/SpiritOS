@@ -98,10 +98,16 @@ test.subHeading('A better match comes first');
     test.fail('order: ' + got.join(', '));
   }
 
-  if (got.indexOf('anderson') < got.indexOf('andrew')) {
-    test.check('and two prefixes fall back to the label, so the order is stable');
+  // THIS ASSERTION USED TO BE THE OPPOSITE, and it was pinning the
+  // ALPHABETICAL fallback: `anderson` before `andrew` because `a` sorts
+  // before `r`, which is not a quality judgement but the absence of one.
+  // The coverage signal gave the tie a meaning — `and` is half of
+  // `andrew` and three eighths of `anderson` — so the shorter name, which
+  // the query accounts for more of, now wins on merit.
+  if (got.indexOf('andrew') < got.indexOf('anderson')) {
+    test.check('and between two prefixes the query covers more of, the closer name wins');
   } else {
-    test.fail('tie not broken by label: ' + got.join(', '));
+    test.fail('coverage did not break the tie: ' + got.join(', '));
   }
 }
 
@@ -345,7 +351,7 @@ test.subHeading('Quality is a probability, and the signals are weighted');
 
   // EVERY SIGNAL STAYS ON THE SCALE. A probability that is not one is the
   // failure mode weighting has and precedence did not.
-  const probe = { row: { present: true, via: null, publicKey: 'K' }, label: 'x', rank: 0 };
+  const probe = { row: { present: true, via: null, publicKey: 'K' }, label: 'x', rank: 0, query: 'x' };
   const offScale = peerSearch.SIGNALS.filter(function (sig) {
     const q = sig.quality(probe);
     return typeof q !== 'number' || q < 0 || q > 1;
@@ -377,6 +383,87 @@ test.subHeading('Quality is a probability, and the signals are weighted');
     test.check('and the total is the weighted mean of the parts, not their sum');
   } else {
     test.fail(contributions + '/' + weights + ' != ' + best.quality);
+  }
+}
+
+// ---------------------------------------------------------------------
+test.subHeading('How much of the name the query accounts for');
+
+{
+  //   Andy: "the search string length versus the result-string-length is a
+  //   cheap quality tester. if the search string length exceeds the result
+  //   string length, the probability that the match is valuable might be
+  //   extremely low."
+  const rows = [
+    row('ann'),                                  // 'ann' is all of it
+    row('annabel'),
+    row('annabella-cunningham-forsyth'),
+  ];
+  const got = labelsOf(peerSearch.search(rows, 'ann'));
+
+  if (got.join(',') === 'ann,annabel,annabella-cunningham-forsyth') {
+    test.check('three prefix matches order by how much of the name was typed');
+  } else {
+    test.fail('order: ' + got.join(', '));
+  }
+
+  // THE CASE ANDY NAMED IS UNREACHABLE, and the test says so rather than
+  // pretending to cover it. He asked for query-longer-than-label to score
+  // very low; once wildcard punctuation is stripped it cannot occur,
+  // because a glob match maps every literal character of the pattern to a
+  // distinct character of the label in order. A row that matched has a
+  // label at least as long as the literal query — so the over-length
+  // branch is dead code kept against a future fuzzier `rank`.
+  const cov = function (label, query) {
+    const e = peerSearch.explain({ publicKey: 'K', publicLabel: label }, query);
+    if (!e.matched) return null;
+    return e.signals.filter(function (x) { return x.name === 'coverage'; })[0].quality;
+  };
+
+  const overlong = [
+    ['ab', 'a*b*c*d*e*f'],       // needs c..f, which `ab` has not
+    ['a', 'ab*'],                // needs b
+    ['abc', 'a?b?c?d'],          // needs seven positions
+  ].filter(function (c) { return cov(c[0], c[1]) !== null; });
+
+  if (overlong.length === 0) {
+    test.check('a query with more literal characters than the label never matches at all');
+  } else {
+    test.fail('matched despite being longer: ' + JSON.stringify(overlong));
+  }
+
+  // So what the signal actually separates is BROAD from PRECISE, which is
+  // the same intuition arriving from the reachable side.
+  const broad = cov('abcdef', 'a*');
+  const precise = cov('abcdef', 'a*b*c*d*e*f');
+  if (broad < precise && precise === 1) {
+    test.check('`a*` over a six-letter name scores ' + broad.toFixed(2) +
+      ', a pattern naming every letter scores ' + precise.toFixed(2));
+  } else {
+    test.fail('broad=' + broad + ' precise=' + precise);
+  }
+
+  // WILDCARDS ARE PUNCTUATION, NOT EVIDENCE. `*a*` matches one character
+  // and should be measured as one, or a precise wildcard is penalised for
+  // its own syntax.
+  const starred = peerSearch.explain({ publicKey: 'K', publicLabel: 'a' }, '*a*');
+  const plain = peerSearch.explain({ publicKey: 'K', publicLabel: 'a' }, 'a');
+  const sc = starred.signals.filter(function (x) { return x.name === 'coverage'; })[0];
+  const pc = plain.signals.filter(function (x) { return x.name === 'coverage'; })[0];
+  if (sc.quality === pc.quality && pc.quality === 1) {
+    test.check('and `*a*` is measured as the one letter it matches, not three');
+  } else {
+    test.fail('starred=' + sc.quality + ' plain=' + pc.quality);
+  }
+
+  // It must not outrank the match itself: a full-coverage middle match is
+  // still a worse answer than a partial prefix.
+  const weak = peerSearch.explain({ publicKey: 'K', publicLabel: 'xax', present: false, via: null }, 'a');
+  const strong = peerSearch.explain({ publicKey: 'K', publicLabel: 'annabel', present: false, via: null }, 'a');
+  if (strong.quality > weak.quality) {
+    test.check('but coverage never overtakes the match — a prefix still beats a middle');
+  } else {
+    test.fail('coverage outranked the match: ' + strong.quality + ' vs ' + weak.quality);
   }
 }
 
