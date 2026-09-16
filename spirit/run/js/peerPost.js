@@ -27,6 +27,7 @@ const auth = require('./relayAuth');
 // a sender's numbers move is a fact about the book — see the rules at the
 // stats call below, which came from the ring's countInbound.
 const whoBook = require('./whoBook');
+const nodeCard = require('./nodeCard');
 
 // A UX number, not a protocol constant tuned against another machine's
 // tick. It only decides how long a caller stares at a spinner.
@@ -302,6 +303,41 @@ function createPeerPost(opts) {
   // supplied it and this echoed it back, the echo would say nothing. A
   // hash computed from bytes we hold, matching the one the sender
   // computed, IS the evidence that nothing was changed in between.
+  // THE CARD, ANSWERED AND FORGOTTEN. Not on the returned object and not
+  // reachable from outside this factory: it is one branch of onRequest and
+  // nobody else's to call. (AGENT.md, Comms — an interface is opaque.)
+  //
+  // The reply goes out the same door every other reply does — the held
+  // stream, addressed by hash — so a card is not a second protocol. It is
+  // the ordinary reply, composed by the node itself rather than by an app.
+  //
+  // LOGGED BOTH WAYS, for the reason the main path logs before it answers:
+  // the record of what arrived must not depend on whether the answer got
+  // out. The inbound row carries NO payload — the question is a fixed
+  // shape and keeping a stranger's bytes is what the floor above exists to
+  // prevent — and is not `admitted`, because nothing was handed to an app.
+  function answerCard(relayUrl, id, body, hash) {
+    note({
+      dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+      hash: hash, outcome: 'answered',
+    });
+
+    var text = nodeCard.describe(rootDir);
+    var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash));
+    return request(relayUrl, 'POST', '/api/relay/reply', {
+      from: id.publicKey, hash: hash, text: text, sig: receipt,
+    }).then(function () {
+      note({
+        dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
+        hash: hash, outcome: 'answered', payload: text,
+      });
+      // NOTHING COMES BACK. onRequest's value is the filed item, and this
+      // filed none — saying otherwise would hand a caller a row that is in
+      // no list.
+      return null;
+    }).catch(function () { return null; });
+  }
+
   function onRequest(relayUrl, body) {
     var id = me();
     if (!id || !id.privateKey || !body || !body.from || !body.sig) return null;
@@ -314,6 +350,38 @@ function createPeerPost(opts) {
     if (body.to !== id.publicKey) return null;
 
     var hash = auth.requestHash(verified);
+
+    // ── THE CARD IS ANSWERED HERE, AND TRAVELS NO FURTHER ────────────
+    //
+    //   Andy: "this should be answered by the node straight away, before
+    //   optionally streaming the packet to shell."
+    //
+    // Everything below this line is the machinery of DELIVERY: a verdict,
+    // a filed item, a count against a peer, and a hand-off to whatever
+    // app is listening. A question about this node is not addressed to
+    // any of that — it is addressed to the node — so it is answered and
+    // dropped, and none of that machinery runs.
+    //
+    // Which is not only tidiness. Each of those steps would be wrong here:
+    //
+    //   NOT FILED. `arrived` is what was waiting while nobody was home.
+    //   A card that was answered is not waiting for anybody.
+    //   NOT ACQUIRED. `remember` writes a stranger into the book under
+    //   the `acquire` policy. Asking somebody's name is not a greeting,
+    //   and a node whose book fills up with everyone who ever looked at
+    //   it has a worse book.
+    //   NOT COUNTED. The hourglass in Contacts is consideration — lines a
+    //   person had to weigh. This one cost them nothing.
+    //   NOT STREAMED. No app is handed it, which is the ask.
+    //
+    // AND THE FLOOR IS SKIPPED, which is worth saying out loud because it
+    // is the one guard this jumps. The floor counts a stranger's BYTES,
+    // because the thing it was built to stop is somebody making this node
+    // write their words to its own disk. This path writes none of them —
+    // the log row below carries no payload, and the reply is bounded by
+    // the description cap. What bounds the rate is the relay, which limits
+    // posts before they ever arrive here.
+    if (nodeCard.asks(body.text)) return answerCard(relayUrl, id, body, hash);
 
     // ── THE FRONT DOOR ───────────────────────────────────────────────
     //

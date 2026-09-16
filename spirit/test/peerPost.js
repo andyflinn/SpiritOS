@@ -75,7 +75,11 @@ function fakeRelay() {
   return R;
 }
 
-function nodeFor(name, relay, answer) {
+// `more` carries the seams a particular test needs — a front door
+// (`admit`), an app to deliver to (`onArrival`). Left off, a node admits
+// everybody and hands packets to nobody, which is what every test here
+// wanted before the card arrived.
+function nodeFor(name, relay, answer, more) {
   const home = tmpHome(name);
   const id = auth.loadIdentity(home);
   // A REAL traffic log, not a stub. The module has its own suite; what
@@ -86,6 +90,9 @@ function nodeFor(name, relay, answer) {
   const P = peerPost.createPeerPost({
     rootDir: home, request: relay.request, waitMs: 800, traffic: traffic,
     answer: answer || null,
+    admit: (more && more.admit) || null,
+    onArrival: (more && more.onArrival) || null,
+    remember: (more && more.remember) || null,
   });
   relay.listen(id.publicKey, function (event, body) {
     if (event === 'request') P.onRequest('http://relay', body);
@@ -284,6 +291,166 @@ async function aNodeCanAnswer() {
 
 test.startTest('Peer post — a node asks a node');
 
+// ── THE CARD ────────────────────────────────────────────────────────
+//
+//   Andy: "the node should have a verb that is always answered like name
+//   or description, that'll be the first two relay peerPost to test, the
+//   description is what I want to replace the ugly end-of-key stuff with
+//   in the UI."
+//   Andy: "this should be answered by the node straight away, before
+//   optionally streaming the packet to shell."
+//
+// Two things are being proven and they pull in opposite directions, which
+// is why they are one test: the card is answered to somebody this node
+// would not hear a word from, AND that same packet reaches no app. A
+// version that got the first right and the second wrong would be a hole:
+// a stranger the front door dropped, delivered to an app anyway.
+async function aCardIsAnsweredToAnybody() {
+  test.subHeading('A node answers for itself, to anybody, and tells no app');
+
+  const relay = fakeRelay();
+  const stranger = nodeFor('stranger-card', relay);
+
+  const delivered = [];
+  const answered = [];
+  const remembered = [];
+  const sonny = nodeFor('sonny-card', relay, function (item) {
+    answered.push(item);
+    return JSON.stringify({ ok: true, from: 'the app' });
+  }, {
+    // THE WELCOMING DOOR, and that is the point of choosing it. Under
+    // `admit` a stranger's packet is filed, counted, remembered and handed
+    // to the app — every one of the things a card must not do. A node set
+    // to `drop` would do none of them anyway, so testing there would prove
+    // the setting rather than the change.
+    admit: function () { return 'admit'; },
+    onArrival: function (item) { delivered.push(item); },
+    remember: function (from) { remembered.push(from); },
+  });
+
+  const SAID = 'jazz, a synth in the corner, and no small talk';
+  auth.setDescription(sonny.home, SAID);
+
+  const card = await stranger.P.post('http://relay', sonny.id.publicKey,
+    JSON.stringify({ v: 1, body: { describe: true } }));
+
+  let said = null;
+  try { said = JSON.parse(card.text).body; } catch (e) { said = null; }
+
+  if (card.ok && said && said.description === SAID) {
+    test.check('a stranger asks what this node is, and is told');
+  } else {
+    test.fail('card: ' + JSON.stringify(card));
+  }
+
+  if (said && said.name === 'sonny-card') {
+    test.check('and gets the name with it, which is often all a fresh node has');
+  } else {
+    test.fail('name: ' + JSON.stringify(said));
+  }
+
+  // STILL A RECEIPT, signed over the hash by the node that answered. The
+  // card rides the ordinary reply and is not a second protocol, so the
+  // thing that makes any answer trustworthy has to be on this one too.
+  if (card.receipt === true && card.from === sonny.id.publicKey) {
+    test.check('signed by the node it describes, over the hash it was asked on');
+  } else {
+    test.fail('receipt shape: ' + JSON.stringify(card));
+  }
+
+  // ── AND IT WENT NO FURTHER ─────────────────────────────────────────
+  if (delivered.length === 0) {
+    test.check('and no app was handed the packet');
+  } else {
+    test.fail('streamed to the shell anyway: ' + JSON.stringify(delivered));
+  }
+
+  if (answered.length === 0) {
+    test.check('nor did the node\'s own answerer ever see it');
+  } else {
+    test.fail('the answer hook ran: ' + JSON.stringify(answered));
+  }
+
+  if (remembered.length === 0) {
+    test.check('and asking somebody\'s name did not write the asker into the book');
+  } else {
+    test.fail('remembered a stranger who only asked: ' + JSON.stringify(remembered));
+  }
+
+  if (sonny.P.arrived().length === 0) {
+    test.check('and nothing is left waiting, because nothing is waiting for an answer it got');
+  } else {
+    test.fail('filed: ' + JSON.stringify(sonny.P.arrived()));
+  }
+
+  // ── BUT IT IS WRITTEN DOWN ─────────────────────────────────────────
+  //
+  // Answered is not invisible. Somebody looking at this node's traffic
+  // must be able to see that a stranger asked and what went back — and
+  // the inbound row must carry no payload, because the floor that stops a
+  // stranger writing bytes to this disk is the one guard this path jumps.
+  const rows = sonny.traffic.read();
+  const inbound = rows.filter(function (r) { return r.dir === 'in'; });
+  const reply = rows.filter(function (r) { return r.dir === 'out' && r.kind === 'reply'; })[0];
+
+  if (inbound.length === 1 && inbound[0].outcome === 'answered' && !inbound[0].payload) {
+    test.check('the log says a stranger asked, and keeps none of their bytes');
+  } else {
+    test.fail('inbound rows: ' + JSON.stringify(inbound));
+  }
+
+  if (inbound.length === 1 && !inbound[0].admitted) {
+    test.check('and does not call it admitted, because no app was admitted to it');
+  } else {
+    test.fail('admitted: ' + JSON.stringify(inbound));
+  }
+
+  if (reply && reply.payload && reply.payload.indexOf(SAID) !== -1) {
+    test.check('and keeps what this node said about itself, which is its own to keep');
+  } else {
+    test.fail('reply row: ' + JSON.stringify(reply));
+  }
+
+  // ── AND EVERY OTHER PACKET STILL MEETS THE DOOR ────────────────────
+  //
+  // The one risk in answering in front of the gate is answering too much.
+  // An ordinary packet to the same dropping node gets the plain receipt
+  // and nothing else, exactly as before.
+  // A packet that is not a card goes the long way, through the same
+  // welcoming door — so the checks above are about the CARD and not about
+  // a node that stopped delivering.
+  const ordinary = await stranger.P.post('http://relay', sonny.id.publicKey,
+    JSON.stringify({ app: 'relay-chat', v: 1, body: 'hello?' }));
+  if (ordinary.ok && delivered.length === 1 && answered.length === 1) {
+    test.check('while an ordinary packet from the same stranger IS filed and handed up');
+  } else {
+    test.fail('ordinary: ' + JSON.stringify(ordinary) +
+      ' delivered ' + delivered.length + ' answered ' + answered.length);
+  }
+
+  // ── AND THROUGH THE TIGHTEST DOOR THERE IS ─────────────────────────
+  //
+  // "Always answered" has to mean a node that hears nobody. `drop` keeps
+  // no row, tells no app and never even remembers the sender — and the
+  // card still goes back, because whoever is asking is usually a stranger
+  // deciding whether to add you, and that is the whole reason for it.
+  const shut = nodeFor('shut-card', relay, null, {
+    admit: function () { return 'drop'; },
+  });
+  auth.setDescription(shut.home, 'not hearing from anybody, thanks');
+
+  const throughShut = await stranger.P.post('http://relay', shut.id.publicKey,
+    JSON.stringify({ v: 1, body: { describe: true } }));
+  let shutSaid = null;
+  try { shutSaid = JSON.parse(throughShut.text).body; } catch (e) { shutSaid = null; }
+
+  if (throughShut.ok && shutSaid && shutSaid.description === 'not hearing from anybody, thanks') {
+    test.check('a node that hears nobody still says what it is');
+  } else {
+    test.fail('through a shut door: ' + JSON.stringify(throughShut));
+  }
+}
+
 async function run() {
   const relay = fakeRelay();
   const bert = nodeFor('bert', relay);
@@ -420,6 +587,7 @@ async function run() {
   }
 
   await aNodeCanAnswer();
+  await aCardIsAnsweredToAnybody();
   await whatCrossedIsWrittenDown();
 
   test.reportSuccessFailureCount();

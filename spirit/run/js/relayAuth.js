@@ -324,6 +324,37 @@ function loadIdentity(rootDir) {
   return null;
 }
 
+// ── WHAT THIS NODE SAYS ABOUT ITSELF ─────────────────────────────────
+//
+//   Andy: "spirit/run/relay-state/identity.json store a 'description'
+//   let's say max 128 characters ... the description is what I want to
+//   replace the ugly end-of-key stuff with in the UI."
+//
+// 128 BYTES, not characters, and measured the way the wire measures it.
+// A cap counted in characters is a cap somebody can walk through with
+// emoji, and the thing being protected is a packet budget.
+//
+// It lives beside the key rather than in a preference file because it is
+// answered to strangers: a node hands it over on request, so it belongs
+// with the identity it describes and not with the things this machine
+// keeps to itself.
+var DESCRIPTION_MAX = 128;
+
+function setDescription(rootDir, text) {
+  const id = loadIdentity(rootDir);
+  if (!id) return null;
+  let next = String(text == null ? '' : text).trim();
+  // Trimmed to fit rather than refused. A description is prose somebody
+  // typed, and the honest failure for prose that is slightly too long is
+  // a shorter description, not a rejected form.
+  while (Buffer.byteLength(next, 'utf8') > DESCRIPTION_MAX) {
+    next = next.slice(0, -1);
+  }
+  id.description = next;
+  saveIdentity(rootDir, id);
+  return id;
+}
+
 function saveIdentity(rootDir, id) {
   const dir = path.join(rootDir, 'relay-state');
   fs.mkdirSync(dir, { recursive: true });
@@ -412,6 +443,8 @@ function ownerName(allow) {
 }
 
 module.exports = {
+  setDescription: setDescription,
+  DESCRIPTION_MAX: DESCRIPTION_MAX,
   claimMessage,
   streamMessage,
   streamSignatureOk,
