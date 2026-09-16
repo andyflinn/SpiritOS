@@ -2,7 +2,7 @@
 
 // One door for every app (ARCHITECTURAL-CONCERNS.md, packet 1).
 //
-// The mailbox carries `{ from, to, text }` and signs
+// The relay carries `{ from, to, text }` and signs
 // `send\n<from>\n<to>\n<text>`. None of that changes here, and that is
 // the whole point of this file: the envelope lives INSIDE `text`, so a
 // relay running today's code stores and returns it without knowing what
@@ -20,22 +20,34 @@
 // `app` is the packet name of the app that sent it, not a shell app id
 // and not a path. `body` is whatever that app wants to say: a string for
 // chat, an object for anything with structure. `id` is unique per send —
-// the mailbox assigns its own message id, but that one belongs to the
-// mailbox, and an app that wants to recognise its own traffic across a
+// the relay assigns its own message id, but that one belongs to the
+// relay, and an app that wants to recognise its own traffic across a
 // re-read needs one it minted itself.
 //
 // What is deliberately NOT in here: a second signature (the send is
-// already signed end to end), a timestamp (the mailbox's `sentAt` is the
+// already signed end to end), a timestamp (the relay's `sentAt` is the
 // only clock two peers share), and any label (labels are display; a peer
 // is a key).
+
+// Dual target, like this file: required on the node and the relay, and
+// read off `window.spiritLimits` in the page. index.html loads limits.js
+// before packet.js for exactly this reason.
+var limits = (typeof process !== 'undefined' && process.versions && process.versions.node)
+  ? require('./limits.js')
+  : (typeof window !== 'undefined' ? window.spiritLimits : null);
 
 var PACKET_VERSION = 1;
 
 // The relay's own limit, checked there against the encoded string. An
 // envelope that would be refused is refused here instead, so an app
 // learns its packet is too big without a round trip and without the
-// mailbox counting it against a rate limit.
-var PACKET_MAX_TEXT = 1024;
+// relay counting it against a rate limit.
+//
+// IT SAID 1024 AND THE RELAY SAID 16384 — the same measurement of the
+// same string, disagreeing by 16×, with this comment claiming to mirror
+// a number it undercut. Every app was capped at a sixteenth of what the
+// relay would take. One rule, one place: js/limits.js.
+var PACKET_MAX_TEXT = limits.PAYLOAD_MAX;
 
 // 128 bits. It was 64, from Math.random, and both halves were wrong for
 // what this field is about to become (design/relay/ROUTER.md §6).
@@ -54,7 +66,10 @@ var PACKET_MAX_TEXT = 1024;
 // contributed fewer than its 32 bits.)
 //
 // 128 bits rather than 64 because it is the same line of code and the
-// envelope caps at 1024 bytes, so sixteen more characters cost nothing.
+// envelope has a cap far larger than this (js/limits.js), so sixteen more
+// characters cost nothing. That cap was 1024 when this was written and is
+// 16384 now; the sentence was true of the number rather than of the
+// reason, which is why it is stated as the reason here.
 // The collision odds were never the argument — unpredictability was.
 var PACKET_ID_BYTES = 16;
 
@@ -187,7 +202,7 @@ function packetIsEnvelope(text) {
   return true;
 }
 
-// Every mailbox in existence already holds plain strings, and so does
+// Every relay in existence already holds plain strings, and so does
 // every peerfile. So decode never fails: a string that is not an
 // envelope comes back as legacy, which is what "this is a chat line
 // somebody sent before packets existed" means. The reader decides.

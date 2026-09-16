@@ -10,6 +10,8 @@ const deviceAuth = require('./deviceAuth');
 // again later would report whatever is on disk now, which is the lie
 // this is meant to catch.
 const buildStamp = require('./buildStamp');
+// How big a thing may be — one file, shared with the relay and the page.
+const limits = require('./limits.js');
 const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
 const relay = createRelay.createRelay();
@@ -111,7 +113,7 @@ const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.c
 //
 // This started as nothing but a routing switch for GET / — everything else
 // stayed reachable. It isn't that any more. Phase B narrowed a --relay
-// process to the mailbox routes plus the brochure (isRelayPublicPath,
+// process to the relay routes plus the brochure (isRelayPublicPath,
 // below; labRelaySurface.js proves Jobs/fs/proxy/hub/the desktop all
 // 404), and Phase F takes the last step: a --relay process binds 0.0.0.0
 // and drops the loopback + Host gate, because it is meant to be reached
@@ -151,13 +153,13 @@ const arrivals = require('./arrivals').createArrivals({
 });
 
 
-// A mailbox is a party to conversations — the census reply comes FROM
+// A relay is a party to conversations — the census reply comes FROM
 // it — and `relay` is the caption it answers to, not an identity. A node
-// that keeps one file per peer cannot file the mailbox anywhere without
-// a key, so the mailbox gets one: made once, on the first --relay boot,
+// that keeps one file per peer cannot file the relay anywhere without
+// a key, so the relay gets one: made once, on the first --relay boot,
 // into this process's own relay-state beside allow.json. It is handed
 // out through who and status (relay.mailboxPublicKey), and it is NOT the
-// owner's key — the owner is a peer who claimed, the mailbox is the box.
+// owner's key — the owner is a peer who claimed, the relay is the box.
 // A personal node never reaches this line; its identity is made on its
 // first claim (hub.js).
 if (relayMode) {
@@ -241,11 +243,63 @@ const fsPath = spirit.core.node.util.fsPath;
 // exactly the request's and nothing has to remember to clean up.
 const BODY_PROMISE = Symbol('spiritJsonBody');
 
+// ── THE CAP THAT WAS MISSING, AND IT IS THE ONE THAT MATTERS ─────────
+//
+// This read `body += chunk` with no limit of any kind. The payload caps
+// in relay.js are checked AFTER the body is whole and parsed, so they
+// bounded what got ROUTED and never what got ACCEPTED — on a public box,
+// on every POST, /claim and /device included.
+//
+// So the memory arithmetic everybody reasoned from was an intention:
+//
+//   router: 256 concurrent, 16 per requester, no bodies held
+//   256 × 16 KB ≈ 4 MB in flight, ~12 MB peak through parse
+//
+// True of routed requests. Meanwhile real exposure was concurrent
+// sockets × whatever they cared to send, with `body += chunk` holding the
+// old string and the new one, and JSON.parse making a third copy.
+//
+// TWO CHECKS, BECAUSE Content-Length IS A CLAIM.
+//
+//   1. the header, when there is one — refuse before reading a byte
+//   2. the running total, always — because `Transfer-Encoding: chunked`
+//      carries no Content-Length at all, and a client that sends one can
+//      send more than it promised
+//
+// (1) alone is bypassed by omitting the header. (2) alone works and
+// wastes a cap's worth of reading on every abuser. Neither is redundant.
+//
+// The socket is DESTROYED rather than left to finish: a request refused
+// for size must not go on arriving, or the refusal costs what it was
+// refusing.
 function readJsonBody(req) {
   if (req[BODY_PROMISE]) return req[BODY_PROMISE];
   const reading = new Promise((resolve, reject) => {
+    const tooBig = () => {
+      const err = new Error('body too large');
+      err.statusCode = 413;
+      req.destroy();
+      reject(err);
+    };
+
+    const declared = Number(req.headers['content-length']);
+    if (Number.isFinite(declared) && declared > limits.BODY_MAX) {
+      tooBig();
+      return;
+    }
+
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    let seen = 0;
+    req.on('data', chunk => {
+      // Bytes, not characters — Content-Length is bytes, and a multi-byte
+      // body would otherwise be measured smaller than it arrives.
+      seen += Buffer.byteLength(chunk);
+      if (seen > limits.BODY_MAX) {
+        tooBig();
+        return;
+      }
+      body += chunk;
+    });
     req.on('end', () => {
       if (!body) {
         resolve({});
@@ -332,7 +386,7 @@ function handleDeviceOffer(req, res) {
     // `send\n<from>\nrelay\n<text>`, and `from` is whoever this device
     // now belongs to.
     //
-    // It said the mailbox's OWNER until 2026-09-12, and that was true
+    // It said the relay's OWNER until 2026-09-12, and that was true
     // when it was written — the bare /device page enrolled the owner and
     // nobody else, so there was only one answer it could be. B2 gave
     // every identity with a row its own /<key>/device page and its own
@@ -852,13 +906,32 @@ const server = http.createServer((req, res) => {
   // foo.herokuapp.com, and the platform assigns the internal port anyway.
   //
   // What stands in for this on a relay is not "nothing": isRelayPublicPath
-  // (below) reduces the answerable surface to the mailbox routes and the
-  // brochure, and the mailbox routes themselves are gated by the allow
+  // (below) reduces the answerable surface to the relay routes and the
+  // brochure, and the relay routes themselves are gated by the allow
   // list and signature checks in relayAuth.js. The brochure does not hide
   // those routes from curl and was never meant to — H/I/E are the gates.
   if (!relayMode && (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host))) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden: this server only accepts connections from localhost');
+    return;
+  }
+
+  // ── TOO BIG IS ANSWERED ONCE, HERE, BEFORE ANY ROUTE ─────────────────
+  //
+  // One place for every POST, because /claim and /device were as
+  // unbounded as /post and none of them should each carry their own
+  // opinion about it. Declared size only — the running total is enforced
+  // in readJsonBody, which is what catches a chunked body or a client
+  // that sends more than it said.
+  //
+  // It answers before dispatch so the refusal is a clean 413 rather than
+  // the `400 Invalid JSON body` every route's catch would otherwise
+  // report — which would name the wrong fault, and the wrong fault is
+  // what somebody debugs at three in the morning.
+  const declaredLength = Number(req.headers['content-length']);
+  if (Number.isFinite(declaredLength) && declaredLength > limits.BODY_MAX) {
+    res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Body too large: ' + declaredLength + ' of ' + limits.BODY_MAX);
     return;
   }
 
@@ -878,7 +951,7 @@ const server = http.createServer((req, res) => {
   //
   // That mattered most on a --relay, where this runs BEFORE
   // isRelayPublicPath narrows anything: a single unauthenticated
-  // `GET /%zz` from the internet took the public mailbox down, and
+  // `GET /%zz` from the internet took the public relay down, and
   // systemd's Restart=on-failure just made it a three-second outage per
   // request rather than a permanent one. Answer 400 and stay up.
   let url;
@@ -1390,7 +1463,7 @@ if (!relayMode) {
 
   // Presence: one held connection to every relay this node holds a ROW
   // on — not only the ones it owns, since B2 gave every identity its own
-  // standing on a mailbox. The connection's existence IS the presence,
+  // standing on a relay. The connection's existence IS the presence,
   // so there is nothing to announce and nothing to expire.
   //
   // Published as a permanent job, beside fs-watcher and server-stats, so
@@ -1708,7 +1781,7 @@ server.listen(port, BIND_HOST, () => {
     if (require('./relayAuth').loadAllow(ROOT_DIR).mode === 'open') {
       console.warn(
         // WHAT AN OPEN RELAY ACTUALLY RISKS, which is one thing now and
-        // was three. "send as anyone, and read any mailbox" went with the
+        // was three. "send as anyone, and read any relay" went with the
         // ring (R8): there is nothing to read and no way to send. What is
         // left is the one that matters — the first claim takes the box.
         '    WARNING: no relay-state/allow.json — this relay is OPEN. Anyone who can reach it\n' +

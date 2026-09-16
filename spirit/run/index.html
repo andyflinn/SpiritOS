@@ -31,6 +31,9 @@
     <!-- The envelope every app's traffic travels in, inside the relay's
          own `text` field. Isomorphic: the hub wraps with it in node, the
          apps read it here. -->
+    <!-- Before packet.js: packet.js reads PAYLOAD_MAX off window.spiritLimits,
+         so that the size a page refuses is the size the relay refuses. -->
+    <script src="/js/limits.js"></script>
     <script src="/js/packet.js"></script>
     <!-- The ICON table read the other way round — one line per glyph,
          carrying every name it is keyed under. What the icon selector

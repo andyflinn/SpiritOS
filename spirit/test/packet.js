@@ -1,6 +1,6 @@
 'use strict';
 
-// The envelope every app's traffic travels in — inside the mailbox's own
+// The envelope every app's traffic travels in — inside the relay's own
 // `text` field, so no relay has to learn anything (packet 1,
 // ARCHITECTURAL-CONCERNS.md).
 //
@@ -11,7 +11,7 @@
 //      string, signed `send\n<from>\n<to>\n<text>`, exactly as before —
 //      so there is no spirit-3 cutover and no version skew. The
 //      inbox-signature cycle is what that costs when it is unavoidable.
-//   2. Every live mailbox and every peerfile is already full of plain
+//   2. Every live relay and every peerfile is already full of plain
 //      strings. They are chat, they stay chat, and nothing about packets
 //      may make yesterday's mail unreadable.
 
@@ -19,9 +19,10 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const packet = require('../run/js/packet.js');
+const limits = require('../run/js/limits.js');
 const hub = require('../run/js/hub.js');
 
-test.startTest('Packets — an envelope the mailbox never has to understand');
+test.startTest('Packets — an envelope the relay never has to understand');
 
 test.subHeading('A body goes in, a string comes out');
 
@@ -34,7 +35,7 @@ test.subHeading('A body goes in, a string comes out');
   }
 
   // An object body is the whole point of the door: chess moves, contact
-  // cards, a bridge bid. JSON carries it; the mailbox still sees a
+  // cards, a bridge bid. JSON carries it; the relay still sees a
   // string.
   const move = packet.encode('chess', { game: 'g1', move: 'e4' }, { id: 'def456' });
   if (move.ok && typeof move.text === 'string' && JSON.parse(move.text).body.move === 'e4') {
@@ -50,8 +51,8 @@ test.subHeading('A body goes in, a string comes out');
     test.fail('round trip: ' + JSON.stringify(back));
   }
 
-  // An id per send, unasked. The mailbox assigns one too, but that one
-  // is the mailbox's — an app that wants to know its own traffic across
+  // An id per send, unasked. The relay assigns one too, but that one
+  // is the relay's — an app that wants to know its own traffic across
   // a re-read needs one it minted.
   const first = packet.encode('relay-chat', 'hi');
   const second = packet.encode('relay-chat', 'hi');
@@ -68,15 +69,20 @@ test.subHeading('Too big is refused here, not there');
   // MAX_TEXT is the relay's limit, checked there against the encoded
   // string — so an oversize packet would cost a signed round trip and a
   // rate-limit slot to be told what this node already knows.
+  // THE LIMIT IS ASKED FOR, NOT RESTATED. This asserted `=== 1024`, which
+  // was the number packet.js held while the relay held 16384 about the
+  // identical string — so the test agreed with the wrong half of a
+  // disagreement and made the gap look intentional. One source now
+  // (js/limits.js), and this checks the rule rather than the value.
   const huge = packet.encode('relay-chat', 'x'.repeat(packet.MAX_TEXT));
-  if (!huge.ok && /too long/.test(huge.error) && huge.limit === 1024) {
+  if (!huge.ok && /too long/.test(huge.error) && huge.limit === limits.PAYLOAD_MAX) {
     test.check('an envelope over the limit is refused before the wire');
   } else {
     test.fail('oversize: ' + JSON.stringify(huge).slice(0, 120));
   }
 
   // The envelope counts. A body that only just fits alone does not fit
-  // once wrapped, and finding that out at the mailbox would be finding
+  // once wrapped, and finding that out at the relay would be finding
   // it out too late.
   const framing = packet.encode('relay-chat', 'x'.repeat(packet.MAX_TEXT - 40), { id: 'abc123' });
   if (!framing.ok) {
@@ -104,10 +110,71 @@ test.subHeading('Too big is refused here, not there');
   }
 }
 
+test.subHeading('One number, in one place');
+
+// ── HOW THE 16× GAP HAPPENED ─────────────────────────────────────────
+//
+// Two modules held a limit on the same bytes. packet.js said 1024 and
+// relay.js said 16384, both measuring `JSON.stringify(envelope).length`,
+// and packet.js's comment claimed to be pre-refusing what the relay would
+// refuse. It was refusing sixteen times more.
+//
+// Nothing caught it because nothing compared them — each was internally
+// consistent and each had a test that restated its own number back to it.
+// So this checks the property that was missing: that there is only one
+// number, and that everything defers to it rather than copying it.
+{
+  if (packet.MAX_TEXT === limits.PAYLOAD_MAX) {
+    test.check('packet.js takes its limit from js/limits.js rather than holding one');
+  } else {
+    test.fail('packet ' + packet.MAX_TEXT + ' vs limits ' + limits.PAYLOAD_MAX);
+  }
+
+  // AND NOBODY ELSE DECLARES ONE. A literal here is how the gap comes
+  // back: the next module needing a size writes its own, agrees with
+  // itself, and disagrees with the wire.
+  const jsDir = path.join(__dirname, '..', 'run', 'js');
+  const offenders = [];
+  fs.readdirSync(jsDir).forEach(function (f) {
+    if (!f.endsWith('.js') || f === 'limits.js') return;
+    const src = fs.readFileSync(path.join(jsDir, f), 'utf8');
+    src.split('\n').forEach(function (line, i) {
+      if (/^\s*(\/\/|\*)/.test(line)) return;
+      // A declaration that assigns a bare number to a size-shaped name.
+      if (/\b(MAX_TEXT|MAX_ROUTED_TEXT|PAYLOAD_MAX|BODY_MAX|MAX_BODY)\b\s*=\s*\d+/.test(line)) {
+        offenders.push(f + ':' + (i + 1) + '  ' + line.trim());
+      }
+    });
+  });
+  if (offenders.length === 0) {
+    test.check('and no other module declares a payload size of its own');
+  } else {
+    test.fail('a second number is back: ' + offenders.join(' | '));
+  }
+
+  // THE CAP ON THE SOCKET IS DERIVED, not a third literal — it has to
+  // move when the payload cap moves, or it is either strangling
+  // legitimate traffic or leaving the hole it was written to close.
+  if (limits.BODY_MAX === limits.PAYLOAD_MAX + limits.WIRE_HEADROOM) {
+    test.check('and the socket cap is the payload cap plus headroom, derived');
+  } else {
+    test.fail('BODY_MAX ' + limits.BODY_MAX + ' is not PAYLOAD_MAX + WIRE_HEADROOM');
+  }
+
+  // Headroom over the MEASURED overhead, not under it. 246 was exact at
+  // the time of writing; the slack is what stops a longer key format or
+  // one more wire field turning legal traffic into 413s.
+  if (limits.WIRE_HEADROOM > limits.WIRE_OVERHEAD) {
+    test.check('with headroom above the measured 246-byte wire overhead');
+  } else {
+    test.fail('headroom ' + limits.WIRE_HEADROOM + ' <= measured ' + limits.WIRE_OVERHEAD);
+  }
+}
+
 test.subHeading('Yesterday’s mail is still mail');
 
 {
-  // Every live mailbox holds these. They decode as legacy, which is what
+  // Every live relay holds these. They decode as legacy, which is what
   // "somebody sent this before packets existed" means, and the reader
   // decides — for Relay Chat, legacy IS a chat line.
   const plain = packet.decode('just a line');
@@ -149,7 +216,7 @@ test.subHeading('The hub wraps on the way out and names on the way in');
 
 {
   // What the inbox route now hands the browser: the message exactly as
-  // the mailbox stored it, plus what its text turned out to be.
+  // the relay stored it, plus what its text turned out to be.
   const legacy = hub.decorateWithPacket({ id: '1', from: 'bert', text: 'hello from before' });
   if (legacy.packet.legacy && legacy.packet.body === 'hello from before' && legacy.text === 'hello from before') {
     test.check('a stored plain line arrives named legacy, text untouched');
@@ -190,7 +257,7 @@ test.subHeading('Relay Chat keeps another app’s traffic out of its archive');
 test.subHeading('relay.js did not have to change');
 
 {
-  // The whole reason the envelope lives inside `text`. If the mailbox
+  // The whole reason the envelope lives inside `text`. If the relay
   // starts PARSING packets it has learned something it does not need to
   // know, and every relay in the world needs updating.
   //
@@ -208,7 +275,7 @@ test.subHeading('relay.js did not have to change');
     /packetDecode|packetEncode|packetIsEnvelope|spiritPacket/.test(relayCode) ||
     /\.envelope/.test(relayCode);
   if (!parses) {
-    test.check('the mailbox still knows nothing about envelopes');
+    test.check('the relay still knows nothing about envelopes');
   } else {
     test.fail('relay.js has learned to parse packets');
   }

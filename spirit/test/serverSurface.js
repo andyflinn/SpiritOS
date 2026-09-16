@@ -29,6 +29,7 @@
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
+const limits = require('../run/js/limits.js');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
@@ -567,6 +568,77 @@ freePort()
       });
       });
     });
+  })
+
+  // ── A BODY BIGGER THAN THE CAP IS REFUSED AT THE DOOR ──────────────
+  //
+  //   Andy: "the redundant package-size limits must be collapsed to one
+  //   PAYLOAD_MAX, and the max post and reply sizes must be PAYLOAD_MAX +
+  //   OVERHEAD (with headroom)."
+  //
+  // `readJsonBody` did `body += chunk` with NO limit. The payload caps in
+  // relay.js are checked after the body is whole and parsed, so they
+  // bounded what got ROUTED and never what got ACCEPTED — on a public
+  // box, on every POST, /claim and /device included.
+  //
+  // Which made the memory arithmetic an intention rather than a bound:
+  // "256 concurrent × 16 KB ≈ 4 MB" describes routed requests, while real
+  // exposure was concurrent sockets × whatever they chose to send, at
+  // roughly 3× through `+=` and JSON.parse.
+  .then(function (port) {
+    test.subHeading('A body over the cap is refused before it is read');
+
+    const over = 'x'.repeat(limits.BODY_MAX + 1024);
+
+    return request(port, 'POST', '/api/spirit', { verb: 'peer.list', pad: over })
+      .then(function (r) {
+        if (r.status === 413) {
+          test.check('an oversized POST is answered 413, not parsed');
+        } else {
+          test.fail('oversized POST returned ' + r.status + ' — expected 413');
+        }
+
+        // NOT `400 Invalid JSON body`, which is what every route's own
+        // catch would have said. A refusal that names the wrong fault is
+        // the one somebody debugs at three in the morning.
+        if (r.status === 413 && /too large/i.test(r.text)) {
+          test.check('and it says the body was too large rather than malformed');
+        } else if (r.status === 413) {
+          test.fail('413 but the text does not say why: ' + r.text.slice(0, 60));
+        }
+
+        // ── AND WITHOUT A Content-Length TO BELIEVE ──────────────────
+        //
+        // The header is a CLAIM. `Transfer-Encoding: chunked` carries
+        // none at all, so a pre-check alone is bypassed by omitting it —
+        // which is why the running total is enforced while reading and
+        // the socket destroyed. Either a 413 or a dead socket is a pass
+        // here; what must not happen is the whole body being accepted.
+        return new Promise(function (resolve) {
+          const req = http.request({
+            hostname: '127.0.0.1', port: port, path: '/api/spirit', method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Transfer-Encoding': 'chunked' },
+          }, function (res) {
+            let t = '';
+            res.on('data', function (c) { t += c; });
+            res.on('end', function () { resolve({ status: res.statusCode, text: t }); });
+          });
+          req.on('error', function (e) { resolve({ status: 0, error: e.code || String(e) }); });
+          req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
+          req.write('{"verb":"peer.list","pad":"');
+          req.write(over);
+          req.write('"}');
+          req.end();
+        }).then(function (chunked) {
+          if (chunked.status === 413 || chunked.status === 0) {
+            test.check('and a chunked body with no Content-Length is stopped too (' +
+              (chunked.status === 0 ? chunked.error : '413') + ')');
+          } else {
+            test.fail('chunked oversize was accepted: HTTP ' + chunked.status);
+          }
+          return port;
+        });
+      });
   })
 
   // ---- 1. survivability. Runs LAST: it currently kills the process ----

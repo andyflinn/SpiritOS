@@ -4,6 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const auth = require('./relayAuth');
 const invites = require('./invites');
+// One place decides how big a thing may be, and the browser reads the
+// same file (js/limits.js). A cap the client pre-checks must be the cap
+// the relay enforces, or the pre-check is a lie.
+const limits = require('./limits.js');
 // parseKeyRow, and nothing else any more: a relay keeps no device key.
 // The binding between a device and its node belongs to the node — see
 // deviceAuth.js for why, and for the three hazards that deleted.
@@ -35,12 +39,17 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 // cannot keep: delivered down a held stream, or refused at once. There
 // is now one transport on this box and it is that one.
 //
-// What a routed request may carry. Larger than packet.js's 1024-byte
-// chat envelope because this is meant to feel like an API call, and
-// small enough that the relay's exposure is a number rather than a hope:
-// the table caps concurrent requests, and this caps what each one can
-// push through a socket.
-var MAX_ROUTED_TEXT = 16384;
+// What a routed request may carry — ONE number, shared with the browser
+// that pre-checks it (js/limits.js). It used to say 16384 here while
+// packet.js said 1024 about the identical string, so an app was refused
+// at a sixteenth of what this would have taken.
+//
+// Still true, and still the reason a limit exists at all: the table caps
+// concurrent requests and this caps what each one can push through a
+// socket. The pair is what makes the relay's exposure a number rather
+// than a hope — neither is meaningful alone, and raising one without the
+// other moves the worst case linearly.
+var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
 // WHAT THE ONE REFUSAL IS CALLED, and how long this relay will hold a
 // browser's POST while the node answers.
 //
@@ -92,7 +101,7 @@ var RATE_KEY_SWEEP_AT = 1000;
 // them. That is a routing table. The relay had taken the name of a thing
 // it is not.
 //
-// There are no mailboxes in the system (Andy). An application may have
+// There are no relays in the system (Andy). An application may have
 // something it chooses to call one; this layer does not, and the word
 // belongs nowhere near a box whose whole job is to route and forget.
 //
@@ -339,7 +348,7 @@ function createRelay(rootDir) {
   //
   // ── IT WAS CALLED mailboxPublicKey UNTIL 2026-09-15 ────────────────
   //
-  //   Andy: "what is mailbox doing in this?!?"
+  //   Andy: "what is relay doing in this?!?"
   //
   // Fair. The ring went in R8 and the word was retired in DICTIONARY.md,
   // but it survived here — in a field name, on the wire, read by
@@ -672,10 +681,10 @@ function createRelay(rootDir) {
     // the existing limit caps the notices too. No second mechanism.
     seen.gate = true;
 
-    // pending-owner only means anything while the mailbox is empty: it
+    // pending-owner only means anything while the relay is empty: it
     // names who may take the FIRST claim. If peers are already on the box
     // there is no first claim left to reserve, so the file is stale — drop
-    // it rather than leaving a mailbox where no name but the pending one
+    // it rather than leaving a relay where no name but the pending one
     // can ever be claimed again.
     var pending = auth.loadPendingOwner(rootDir);
     var empty = listPeers().length === 0;
