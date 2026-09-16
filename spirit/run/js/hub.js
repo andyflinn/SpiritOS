@@ -1230,7 +1230,37 @@ function createHub(rootDir) {
         fail(res, 400, 'publicKey required');
         return;
       }
-      withRelay(res, function (url) {
+      // ── WHICH CENSUS PROVES IT ───────────────────────────────────────
+      //
+      //   Andy: "now we need to be able to add foreign peers to contacts,
+      //   peer post to foreign peers require that."
+      //
+      // This asked `withRelay`, which is `urls[0]` — the first row in
+      // relays.json, whatever the question was. So a key that is real and
+      // enrolled on a PARTNER could never be confirmed: it is not on this
+      // relay's census, and 404 was the honest answer to the wrong
+      // question.
+      //
+      // The caller names the relay now. What is checked is exactly what
+      // was checked before — the key must be listed on that census, so a
+      // stale page or a mistyped paste still cannot write a row for
+      // somebody who is not there. Only the source moves, from "the first
+      // relay in the file" to "the one the caller was looking at".
+      //
+      // NOT A WIDENING, and this is why it needs no gate: a person could
+      // already add any relay to relays.json and acquire from it. All
+      // this removes is the requirement to JOIN a relay in order to
+      // confirm a key that is on it.
+      //
+      // `relay: url` is written on the row below, so where a contact was
+      // found is recorded rather than inferred later.
+      var wantedUrl = String((body && body.url) || '').trim().replace(/\/+$/, '');
+      var target = wantedUrl || loadRelayUrl(rootDir);
+      if (!target) { fail(res, 503, 'no relay url in app/natter/relays.json'); return; }
+      try { assertRelayUrl(target); }
+      catch (e) { fail(res, 503, String(e.message || e)); return; }
+
+      guarded(res, target, function (url) {
         relayRequest(url, 'GET', '/api/relay/who', null)
           .then(function (r) {
             var parsed = null;
@@ -1239,7 +1269,11 @@ function createHub(rootDir) {
             var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
             var found = peers.filter(function (p) { return p && p.publicKey === publicKey; })[0];
             if (!found) {
-              fail(res, 404, 'no peer on this mailbox with that key');
+              // NAME THE RELAY. With one census this said "this mailbox"
+              // and there was only one it could mean; with partners there
+              // are several, and "not found" is useless without saying
+              // where it was looked for.
+              fail(res, 404, 'no peer at ' + url + ' with that key');
               return;
             }
             var id = auth.loadIdentity(rootDir);

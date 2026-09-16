@@ -967,6 +967,48 @@ function ndPartnerPicked(select) {
   }
 }
 
+// ── ADDING SOMEBODY WHO IS NOT ON THIS RELAY ─────────────────────────
+//
+// Same verb as the enrolment list's button, one field more: the census
+// that proves the key is the PARTNER's, because that is the only one the
+// key is on.
+//
+// `via: 'handle'` and not something new. The ranks in whoBook say how you
+// came to KNOW someone — census 0, message 2, invite 3, handle 4 — and
+// none of them is about which relay they sit on. A person pressing this
+// has looked at the row and decided; that is the same act as confirming a
+// local one, and inventing a weaker rank for "foreign" would be recording
+// the address as if it were the evidence.
+function ndReachAdd(button) {
+  var key = button.getAttribute('data-peer-key') || '';
+  var url = button.getAttribute('data-peer-url') || '';
+  var panel = button.closest('.natter-reach');
+  var out = panel && panel.querySelector('.nd-reach-out');
+  if (!key || !url) return;
+
+  if (out) {
+    out.className = 'job-manifest-note nd-reach-out';
+    out.textContent = 'adding…';
+  }
+  ndPost('peer.acquire', { publicKey: key, url: url, via: 'handle' }).then(function (r) {
+    var said = null;
+    try { said = JSON.parse(r.text); } catch (e) { said = null; }
+    if (!out) return;
+    if (r.status === 201 && said) {
+      out.className = 'job-manifest-note nd-reach-out is-token';
+      // SAYS WHAT IT DID AND WHAT IT DID NOT. A contact you cannot post
+      // to is a new thing on this screen, and a bare "added" would let
+      // somebody discover the rest by trying.
+      out.textContent = 'added ' + (said.publicLabel || 'them') +
+        ' — you cannot post to them yet: that needs forwarding.';
+    } else {
+      out.className = 'job-manifest-note nd-reach-out is-error';
+      out.textContent = (said && said.error) || ('could not add (' + r.status + ')');
+    }
+    ndLoad();
+  });
+}
+
 function ndPeerAdd(button) {
   var key = button.getAttribute('data-peer-key') || '';
   var panel = button.closest('.natter-peers');
@@ -1193,6 +1235,8 @@ function ndReachHtml(partners) {
         publicKey: row.publicKey,
         publicLabel: row.publicLabel || '(no label)',
         via: got.relayLabel || p.url,
+        // The address the key was proved against — peer.acquire needs it.
+        url: p.url,
       });
     });
   });
@@ -1207,13 +1251,21 @@ function ndReachHtml(partners) {
     body = '<div class="job-log-empty">partners hold nobody this relay does not already have</div>';
   } else {
     body = '<table class="job-table"><thead><tr>' +
-      '<th>Label</th><th>Key</th><th>On</th>' +
+      '<th>Label</th><th>Key</th><th>On</th><th></th>' +
       '</tr></thead><tbody>' +
       gained.map(function (g) {
         return '<tr>' +
           '<td>' + ndEscapeHtml(g.publicLabel) + '</td>' +
           '<td class="nd-peer-tail">…' + ndEscapeHtml(g.publicKey.slice(-8)) + '</td>' +
           '<td>' + ndEscapeHtml(g.via) + '</td>' +
+          // THE URL TRAVELS WITH THE BUTTON. `peer.acquire` proves a key
+          // against a census, and for one of these that census is the
+          // partner's — not this relay's, where the key is not and never
+          // was. Carried here rather than looked up later because this
+          // row is the only place that knows which partner it came from.
+          '<td><button type="button" class="cancel-btn nd-reach-add"' +
+            ' data-peer-key="' + ndEscapeHtml(g.publicKey) + '"' +
+            ' data-peer-url="' + ndEscapeHtml(g.url) + '">Add to contacts</button></td>' +
         '</tr>';
       }).join('') +
       '</tbody></table>';
@@ -1240,7 +1292,8 @@ function ndReachHtml(partners) {
     '<div class="job-manifest-note">Enrolled on a partner relay, not here. ' +
       'Your node read that relay&rsquo;s public census itself — the partnership ' +
       'supplied the address and nothing else. <strong>Not reachable</strong>: ' +
-      'posting needs forwarding, which is not built.</div>',
+      'posting needs forwarding, which is not built.</div>' +
+    '<div class="job-manifest-note nd-reach-out"></div>',
     'natter-reach');
 }
 
@@ -2162,6 +2215,9 @@ spirit.shell.activateApp({
 
       var relayLabelBtn = target.closest('.nd-relay-label-go');
       if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }
+
+      var reachAdd = target.closest('.nd-reach-add');
+      if (reachAdd) { ndReachAdd(reachAdd); return; }
 
       var partnerPick = target.closest('.nd-peer-partner');
       if (partnerPick) { ndPeerPartner(partnerPick); return; }
