@@ -1,0 +1,8 @@
+{
+  "name": "Info",
+  "description": "What this node says about itself: the name it was minted with and the sentence it answers to anybody who asks.",
+  "icon": "INFO",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}

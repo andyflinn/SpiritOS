@@ -49,6 +49,7 @@
 // node is, and deserves the argument this one got.
 
 const auth = require('./relayAuth');
+const labelRule = require('./labelRule');
 
 // Recognises the ask. An app-less system packet — the shape a relay's
 // `answerSelf` already takes, so a node and a relay are asked the same way
@@ -70,19 +71,81 @@ function asks(text) {
 // enrolments (R1). It is here because it is often the only word a fresh
 // node has, and an empty card is worse than a weak one.
 function describe(rootDir) {
-  const id = auth.loadIdentity(rootDir);
-  if (!id) return '';
+  const card = read(rootDir);
+  if (!card) return '';
   return JSON.stringify({
     v: 1,
-    body: {
-      ok: true,
-      name: String(id.name || ''),
-      description: String(id.description || ''),
-    },
+    body: { ok: true, name: card.name, description: card.description },
   });
+}
+
+// ── THE SAME CARD, READ AT HOME ──────────────────────────────────────
+//
+//   Andy: "i want an intrinsic app info, in which, for now the user can
+//   maintain both fields in this file, more to come."
+//
+// The owner's own view of what strangers are told. It is deliberately the
+// SAME function the wire answer is built from — an editor that reads the
+// fields through a second path is an editor that can show you something
+// other than what is being sent, and this is a file whose whole purpose
+// is that somebody can see what their node says about them.
+//
+// `publicKey` rides along because it is the one field here nobody may
+// edit, and a screen about your identity that cannot show it is coy about
+// the only part that IS the identity.
+function read(rootDir) {
+  const id = auth.loadIdentity(rootDir);
+  if (!id) return null;
+  return {
+    name: String(id.name || ''),
+    description: String(id.description || ''),
+    publicKey: String(id.publicKey || ''),
+    descriptionMax: labelRule.DESCRIPTION_MAX_BYTES,
+  };
+}
+
+// ── AND WRITTEN ──────────────────────────────────────────────────────
+//
+// Both fields go through labelRule, which is the rule the RELAY enforces
+// on a rename (relay.setRelayLabel) — so a node names itself under the
+// same law a mailbox does, rather than under whatever this file felt like.
+//
+// A NAME IS REQUIRED, and the refusal is not cosmetic: deviceTick declines
+// enrolment outright when `id.name` is empty, so a node that let somebody
+// clear this field would break phone attachment from a text box that said
+// nothing about phones.
+function setName(rootDir, text) {
+  const id = auth.loadIdentity(rootDir);
+  if (!id) return { ok: false, status: 409, error: 'this node has no key yet' };
+
+  const bad = labelRule.problem(text);
+  if (bad) return { ok: false, status: 400, error: bad };
+
+  id.name = labelRule.normalize(text);
+  try { auth.saveIdentity(rootDir, id); }
+  catch (e) { return { ok: false, status: 500, error: 'could not write identity.json' }; }
+  return { ok: true, status: 200, name: id.name };
+}
+
+// THE LENGTH IS NOT REFUSED HERE EITHER. relayAuth trims to fit and says
+// why; this checks what is left — the invisible, which is the same
+// impersonation in a description as in a name, and in the same row.
+function setDescription(rootDir, text) {
+  const bad = labelRule.describeProblem(text);
+  if (bad) return { ok: false, status: 400, error: bad };
+
+  const saved = auth.setDescription(rootDir, labelRule.normalize(text));
+  if (!saved) return { ok: false, status: 409, error: 'this node has no key yet' };
+  // WHAT WAS ACTUALLY STORED goes back, not what was sent. A caller that
+  // echoes its own input is a caller that will draw 140 characters into a
+  // field holding 128.
+  return { ok: true, status: 200, description: String(saved.description || '') };
 }
 
 module.exports = {
   asks: asks,
   describe: describe,
+  read: read,
+  setName: setName,
+  setDescription: setDescription,
 };

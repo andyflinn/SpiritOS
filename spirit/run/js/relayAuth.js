@@ -17,6 +17,10 @@ const crypto = require('crypto');
 // owns the personal node's password also owns how a device key is spelled
 // in a mailbox's allow list, and there is one answer to that question.
 const deviceAuth = require('./deviceAuth');
+// What a label and a description may be, said once for both sides of the
+// wire. It requires nothing at all — that is what lets the browser have
+// the same copy — so this is another one-way edge.
+const labelRule = require('./labelRule');
 
 // ── RESERVED_NAME = 'relay' STOOD HERE ───────────────────────────────
 //
@@ -338,7 +342,12 @@ function loadIdentity(rootDir) {
 // answered to strangers: a node hands it over on request, so it belongs
 // with the identity it describes and not with the things this machine
 // keeps to itself.
-var DESCRIPTION_MAX = 128;
+//
+// THE NUMBER IS labelRule's, and is read from there rather than repeated.
+// A form that counts down to 128 while the file trims at 140 is the exact
+// drift that file was written to stop, and it is the browser half that
+// cannot require this module.
+var DESCRIPTION_MAX = labelRule.DESCRIPTION_MAX_BYTES;
 
 function setDescription(rootDir, text) {
   const id = loadIdentity(rootDir);

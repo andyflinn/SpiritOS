@@ -1720,6 +1720,32 @@ if (!relayMode) {
     'device.rotate': function (rq, rs) { hub.handleRotatePassword(rq, rs, readJsonBody); },
   }, { wire: false });
 
+  // ── node (2026-09-16) ──────────────────────────────────────────────
+  //
+  //   Andy: "i want an intrinsic app info, in which, for now the user can
+  //   maintain both fields in this file, more to come."
+  //
+  // THIS BOX ITSELF. Not what it says to a relay (`relay.*`), not what it
+  // says to a person (`peer.*`), not the book it keeps about others
+  // (`contact.*`) — the two fields it answers about ITSELF, which is a
+  // subject none of those namespaces was about.
+  //
+  // LOCAL, all three: identity.json on this disk. The description travels
+  // to strangers, but only ever as the ANSWER to a question somebody else
+  // asked (nodeCard.js), and never because it was edited here. So the box
+  // being offline cannot fail any of these, which is what `wire: false`
+  // promises a caller.
+  //
+  // "More to come" is Andy's, and is why this is a namespace rather than
+  // two verbs bolted onto `device`.
+  loopbackVerbs.claim('node', 'hub.js', {
+    'node.card': function (rq, rs) { hub.handleNodeCard(rq, rs); },
+    'node.setName': function (rq, rs) { hub.handleNodeName(rq, rs, readJsonBody); },
+    'node.setDescription': function (rq, rs) {
+      hub.handleNodeDescription(rq, rs, readJsonBody);
+    },
+  }, { wire: false });
+
   // ── STAGE 4b — relay (2026-09-15) ──────────────────────────────────
   //
   // THE NODE'S RELATIONSHIP WITH A RELAY, which is a different subject

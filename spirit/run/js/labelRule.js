@@ -33,6 +33,10 @@
 //     call and retyped by a stranger, compared exactly. Tight, because
 //     "was that a hyphen or a dash, one space or two" is a real cost
 //     there and none at all on a caption.
+//   DESCRIPTION — a sentence a node says about itself to anybody who
+//     asks (nodeCard.js). Prose, so it is the most permissive of the
+//     three and the only one that may be EMPTY: a node that has not
+//     written one yet is an ordinary state, not a broken form.
 //
 // Why permissive is safe for the first and would not be in most systems:
 // a label is not an identity. The key is (R4), duplicate labels are legal
@@ -138,13 +142,51 @@ function spokenOk(word) {
   return !!word && SPOKEN_RE.test(word);
 }
 
+// ── THE THIRD RULE: A SENTENCE ABOUT YOURSELF ────────────────────────
+//
+// 128 bytes, which is the cap relayAuth stores to and is repeated here
+// for the reason this whole file exists: a rule in two files is a rule
+// that will be changed in one of them. It is small on purpose — this
+// travels as an answer to anybody who asks, and a node that can be made
+// to emit a paragraph is a better amplifier than one that emits a line.
+var DESCRIPTION_MAX_BYTES = 128;
+
+// EMPTY IS FINE, and that is the one place this differs from `problem`.
+// A name is required — a node with none cannot be enrolled to — and a
+// description is something you may simply not have written. Clearing it
+// is a legitimate edit, not a form to refuse.
+//
+// LENGTH IS NOT REFUSED EITHER. relayAuth trims prose to fit rather than
+// rejecting it, and the two must agree or an app reports an error for
+// something the node would have quietly accepted. So the only thing
+// refused here is the invisible: a bidi override in a description sits
+// in the same row as somebody's name, and reverses it just as well from
+// either field.
+function describeProblem(text) {
+  var n = normalize(text);
+  if (!n) return '';
+  if (INVISIBLE_RE.test(n)) return 'description has invisible or control characters';
+  return '';
+}
+
+// What is LEFT, for a field that counts down while somebody types. Bytes
+// rather than characters because bytes are what the cap is in — an emoji
+// costs four and a letter costs one, and a counter that says otherwise
+// truncates somebody mid-word with no warning.
+function describeRemaining(text) {
+  return DESCRIPTION_MAX_BYTES - byteLength(normalize(text));
+}
+
 // Node gets everything; the browser gets the rules and nothing that would
 // need a filesystem. Same split, and the same reason, as ownerBadge.js.
 var RULE = {
   MAX_BYTES: LABEL_MAX_BYTES,
   MAX_GRAPHEMES: LABEL_MAX_GRAPHEMES,
+  DESCRIPTION_MAX_BYTES: DESCRIPTION_MAX_BYTES,
   normalize: normalize,
   problem: problem,
+  describeProblem: describeProblem,
+  describeRemaining: describeRemaining,
   spokenOk: spokenOk,
   graphemeCount: graphemeCount,
   byteLength: byteLength,

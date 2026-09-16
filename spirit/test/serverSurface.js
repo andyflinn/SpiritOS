@@ -403,6 +403,20 @@ freePort()
       ['POST', '/api/spirit', { verb: 'fs.annotate' }],
       ['POST', '/api/spirit', { verb: 'device.info' }],
       ['POST', '/api/spirit', { verb: 'device.rotate' }],
+      // This node's own two fields. `setName` is posted with no name,
+      // which its own rule refuses — a refusal proves the handler was
+      // REACHABLE just as well as a success does, and this sweep asks
+      // nothing else. It is left refused deliberately: the fixture's name
+      // is what several checks below read.
+      //
+      // `setDescription` is posted with one, because an empty description
+      // is LEGAL (a node that has not written one is an ordinary state),
+      // so there is no refusal available to hide behind and the honest
+      // thing is to exercise the write. It touches a field nothing else
+      // in this suite reads.
+      ['POST', '/api/spirit', { verb: 'node.card' }],
+      ['POST', '/api/spirit', { verb: 'node.setName' }],
+      ['POST', '/api/spirit', { verb: 'node.setDescription', description: 'a node in a test' }],
       // A url on no Natter list, so this is refused before any network is
       // touched — the ReferenceError was at the CALL, which happens
       // either way.

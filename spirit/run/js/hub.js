@@ -11,6 +11,10 @@ const relayKeys = require('./relayKeys');
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
 const deviceAuth = require('./deviceAuth');
+// What this node says about itself — the same two fields a stranger is
+// answered with, so the screen that edits them and the wire that sends
+// them cannot drift.
+const nodeCard = require('./nodeCard');
 
 // isLoopbackHost, assertRelayUrl and relayRequest MOVED to
 // js/relayRequest.js on 2026-09-16. They were the node's outbound socket
@@ -1358,6 +1362,51 @@ function createHub(rootDir) {
     }));
   }
 
+  // ── WHAT THIS NODE SAYS ABOUT ITSELF, AT HOME ────────────────────────
+  //
+  //   Andy: "i want an intrinsic app info, in which, for now the user can
+  //   maintain both fields in this file, more to come."
+  //
+  // Read and write of the two fields nodeCard answers to strangers. The
+  // logic is all in nodeCard — these three exist because a loopback verb
+  // needs a req/res pair and that module must not learn what one is: it is
+  // required by peerPost, which is the wire path, and a file that answers
+  // both sides of a question should not also be holding an HTTP response.
+  //
+  // WHY NOT device.info, which already hands back this node's public key:
+  // that verb is about the PASSWORD — what a phone needs to attach. These
+  // are about what a stranger is told. Sharing a verb would mean a screen
+  // for editing your description had a password in its response body.
+  function handleNodeCard(req, res) {
+    var card = nodeCard.read(rootDir);
+    if (!card) { fail(res, 409, 'this node has no key yet'); return; }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify(Object.assign({ ok: true }, card)));
+  }
+
+  // A REFUSAL IS A BODY, NOT A STATUS, for both of these. The app draws
+  // `error` under the field that caused it, which is where somebody is
+  // looking — and labelRule already told it the same thing before the
+  // request left, so arriving here means the browser was out of date or
+  // was not the one asking.
+  function handleNodeName(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var said = nodeCard.setName(rootDir, body && body.name);
+      res.writeHead(said.ok ? 200 : said.status,
+        { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(said));
+    }).catch(function () { fail(res, 400, 'Invalid JSON body'); });
+  }
+
+  function handleNodeDescription(req, res, readJsonBody) {
+    readJsonBody(req).then(function (body) {
+      var said = nodeCard.setDescription(rootDir, body && body.description);
+      res.writeHead(said.ok ? 200 : said.status,
+        { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(said));
+    }).catch(function () { fail(res, 400, 'Invalid JSON body'); });
+  }
+
   // THE NAME ARRIVES IN THE BODY, not on a query string, since the relay
   // namespace folded onto /api/spirit. What this buys is that every
   // loopback verb is now the same shape — a POST with a JSON body — so
@@ -1880,6 +1929,9 @@ function createHub(rootDir) {
     handleSendersRead: handleSendersRead,
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,
+    handleNodeCard: handleNodeCard,
+    handleNodeName: handleNodeName,
+    handleNodeDescription: handleNodeDescription,
   };
 }
 
