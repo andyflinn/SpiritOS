@@ -98,8 +98,51 @@ What follows from it:
   not been told since boot would be the strange one.
 - **`routingTable.json` keeps its shape** — `peers` and nothing else, which
   `labPersistence` asserts and which is the whole of 0006 on disk. The
-  `partner` flag lives on a peer row, so it persists; the *list* has
-  nowhere on disk to be.
+  *list* has nowhere on disk to be.
+
+**Where the partnership itself lives — corrected 2026-09-16.** This said
+the `partner` flag rides a peer row. Two things broke that, both from
+Andy:
+
+*"our relay-owning peers may also own multiple relays, so in our
+partner-records partner-relay-IDs must be unique, and the owner of those
+relays must not be unique."* — a field on a peer row holds one
+partnership, and one owner may have twenty relays.
+
+*"i might ban a peer, but still want his relays to help mine."* — decisive,
+and it ends the case for nesting. Banning is about **membership**;
+partnership is between **relays**. Cutting one must not cut the other, or
+banning one person disconnects everyone their relay serves.
+
+So reciprocity is a check at **promotion time**, not a standing condition —
+which the code already assumed: the forward path authenticates against the
+**pinned relay key**, never against a peer row. The owner's row was the
+evidence, never the substance.
+
+```
+relay-state/partners.json
+  "<relayKey>": { url, ownerKey, since,
+                  carried, refused, lastUsed,
+                  peersSeen, peersPrev, peersSeenAt }
+```
+
+Keyed by relay key — unique, O(1) for the forward path's one hot
+question (*is this signer a partner?*), many per owner for free.
+`ownerKey` is recorded for re-verification and display, not as the key.
+
+**The stats are running values, never history.** Nine fields, fixed,
+updated in place; nothing per peer, nothing appended. That reverses the
+RAM-only counter below, and for a reason that section missed: a counter
+reset on restart means a relay that reboots nightly can never learn
+anything about a partner — every morning every partner is rank-zero and
+indistinguishable, so the algorithm meant to shed the worst has nothing to
+shed by. Coarseness is the protection, not volatility: counts and a day,
+never an event log, never a peer.
+
+**Nothing cleans it up automatically any more.** That was nesting's one
+real advantage — `delete peers[key]` took the partnership with it — and it
+is traded deliberately. `forgetPeer` must therefore *say* that a banned
+peer's relay is still partnered, or banning looks complete and is not.
 
 ### And the lifetime is already measured — it is presence
 
@@ -283,6 +326,15 @@ reciprocal traffic, refusal rates — needs history a relay does not keep and
 what the relay can see about its own work, which is the same constraint
 that produced every other good decision in this tree.
 
+> **Superseded 2026-09-16.** The counter is persistent now, in
+> `partners.json` above — not history, a running value updated in place.
+> The flaw this paragraph missed is that *reset on restart* means nothing
+> is ever learned: a relay that reboots nightly wakes with every partner
+> rank-zero and no way to tell a dead one from a new one. The rule that
+> replaces "don't keep it" is **count the relationship, never the
+> members** — and a lifetime total needs `lastUsed` beside it, or a
+> partner that was busy last year outranks one doing work today.
+
 **Route usage is the generalisation of that counter**, and the thing to
 reach for if one division proves too blunt:
 
@@ -448,9 +500,14 @@ This is the real threshold in the proposal — bigger than the flag.
 10. **The route table is a HINT, never an authority.** B checks its
    own ledger when a forward lands, as it does for any post. A stale hint
    then costs a wasted hop and a refusal — never a wrong delivery.
-11. **Bind lifetime to presence, not a TTL.** Add a partner's routes when
-   their owner opens a stream here; remove them when it closes, and evict
-   any peer left with no route. Follows from decision (6).
+11. ~~**Bind lifetime to presence, not a TTL.** Add a partner's routes when
+   their owner opens a stream here; remove them when it closes.~~
+   **Withdrawn 2026-09-16.** It used the *owner's* presence as a proxy for
+   whether their relay was worth routing to — fine for a stranger, and
+   inverted for a fleet, where the relays run permanently and the owner's
+   laptop does not. Tier two replaces it: B filters to present peers at
+   the source, so the bound arrives by filtering rather than by a lifetime
+   rule, and nothing depends on a person being awake.
 
 ### Withdrawn
 
@@ -502,6 +559,122 @@ N1 ──post──▶ A ──forward (signed as A) ──▶ B ──deliver�
   which is what keeps 0006 intact on the delivery half.
 - All four parties compute the same hash over the same bytes, and none of
   them carries it.
+
+---
+
+## Tier two — the partner stream (decided 2026-09-16)
+
+**Partners hold streams to each other.** One each way.
+
+The case against was that a stream is a session, and this design has no
+inter-relay sessions. Andy ended it:
+
+> *"partners are the most permanent presences in practice: they are
+> designed to run indefinitely, browsers are not… the streams will never
+> be held, they only get presence and fan it immediately, no storage no
+> logs, nothing."*
+
+Backwards, in other words: a relay is the *stablest* party in the system,
+and the box already supervises a flapping stream per member on sleeping
+laptops. Nineteen streams to machines that never sleep is the easy case.
+
+### Same protocol, and the direction is not the node's
+
+> **Andy:** "request by post, reply by stream. in both directions."
+
+```
+A ─POST /api/relay/post  (forward, co-signed by A)──▶ B
+A ◀─ reply, down the stream A holds with B ────────── B
+```
+
+A node receives `request` down its stream **only because a browser cannot
+be POSTed to**. Two relays are both publicly reachable, so the request leg
+is a POST both ways and the stream is purely the return path. Same
+`request`/`reply` vocabulary, same hash matched independently at each hop,
+same receipt signature.
+
+### Two registries, not one stream with a flag
+
+`presence.js` is already `createRegistry(opts)` with its own `sinks` per
+instance, so this is two instances and no new code:
+
+```js
+var presentNow  = presence.createRegistry({…});   // members
+var partnersNow = presence.createRegistry({…});   // partner relays
+```
+
+A partner must never enter `presentNow`: opening a member stream runs
+`broadcast('presence', {key, present:true})` and `send(id,'roster',…)`, so
+a relay arriving there would be announced to every member as a present
+peer, rostered, counted, and addressable as a post target — a box in the
+attendance list as a person.
+
+Separate maps make that structural rather than remembered. At B, a
+forwarded request's `requester` is **A**, so `routeReply` finds A's sink in
+`partnersNow` — a lookup across two maps, not a flag on a record.
+
+| | member's stream | partner's stream |
+|---|---|---|
+| `request` | yes — no other way to reach a node | no — it arrives as a POST |
+| `reply` | yes | yes |
+| `presence`, `roster` | yes | yes |
+| `owner-event`, `relay-status` | owner only | never |
+
+### Opening one
+
+`streamOpen` today needs a peer row. A partner has none and must not be
+given one — that would mean invites minted for boxes and relays in the
+census pretending to be people. **The pinned partner key is the
+authorization**: same route shape, same `streamSignatureOk`, one more
+identity source. Breaking the partnership closes the stream, because the
+key that authorized it is no longer pinned.
+
+### POST is the control channel
+
+> **Andy:** "post only are there to start the stream, or filter it at the
+> source, like dont gimme offline peers, they don't help me."
+
+**Online only, filtered at B.** B sends A only peers who are present, and
+`present:false` when one leaves. A never holds a row it could not use, and
+a partner with 10,000 enrolled and 200 online costs 200 rows. That is the
+`peerlists × peerlists` exponent flattened by filtering rather than by a
+lifetime rule — and it delivers the bound §"the lifetime is already
+measured" wanted, without the presence-of-owner proxy that turned out to be
+wrong.
+
+**The recipient de-dupes.** The route cap stays local to A:
+
+> **Andy:** "yes. the recipient de-dupes."
+
+A is the only party that knows how many routes it already holds for a key.
+Asking B to exclude them would hand B a map of who A reaches through other
+partners — the same reason a search hit must not say *via whom*. A drops
+the surplus on arrival; B never learns why.
+
+| decided by | | why |
+|---|---|---|
+| **B** (source) | online only | only B knows, and it saves the bytes |
+| **A** (local) | route cap, de-dup | only A knows, and it is A's topology |
+
+### Presence, and why it gates nothing
+
+> **Andy:** "don't gate on presence, absolutely. but a best effort in
+> displaying presence indicator in real time is sexy and useful."
+
+Every dot is a false positive sometimes — a peer can drop the instant
+after the broadcast — so presence is a **hint**, exactly as the route table
+is. The far end is authoritative: it delivers or refuses instantly (0006).
+
+Which means nothing waits on a dot. Refusing a chat input because a mark is
+red lets a stale mark silently remove a working feature, and the stale mark
+is guaranteed. Post, and let the refusal be the answer.
+
+`contacts.js` already models it correctly and stricter than proposed here —
+green / red / **white**, where white is *unseen* rather than dim red, and
+*"anything unknown, stale or unreachable reads as white — the mark that
+promises nothing."* A partner-peer with nothing known is white, which is
+honest. Traffic is the cheapest refresh there is: a successful post proves
+presence at that instant, a refusal proves absence, and both are free.
 
 ---
 
