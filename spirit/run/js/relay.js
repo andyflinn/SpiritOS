@@ -8,6 +8,7 @@ const invites = require('./invites');
 // same file (js/limits.js). A cap the client pre-checks must be the cap
 // the relay enforces, or the pre-check is a lie.
 const limits = require('./limits.js');
+const peerSearch = require('./peerSearch');
 // parseKeyRow, and nothing else any more: a relay keeps no device key.
 // The binding between a device and its node belongs to the node — see
 // deviceAuth.js for why, and for the three hazards that deleted.
@@ -61,7 +62,9 @@ var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
 // WIRE_HEADROOM in BODY_MAX, so they must not be subtracted here.
 // Doing so once reserved room inside the packet for things that are
 // not in it.
-var SEARCH_SLOTS = 32;
+// SEARCH_SLOTS MOVED to peerSearch.SLOTS — the cap is part of the
+// ranking question, not the relay's, and a second copy here is how
+// the two would disagree about what a page is.
 // WHAT THE ONE REFUSAL IS CALLED, and how long this relay will hold a
 // browser's POST while the node answers.
 //
@@ -400,57 +403,13 @@ function createRelay(rootDir) {
   // A box that ships without one must not invent a caption for itself —
   // the list is the reader's to name until the owner says otherwise,
   // which is what natterDetails' own relayLabel has always done locally.
-// ── WILDCARDS, WITHOUT HANDING A STRANGER A REGEX ────────────────────
+// globMatches AND matchRank MOVED to js/peerSearch.js, 2026-09-16.
 //
-//   Andy: "the search must be supporting wildcards etc."
-//
-// `*` any run, `?` one character. NOT compiled to a RegExp: a pattern a
-// stranger supplies, turned into a regex, is catastrophic backtracking
-// waiting to be typed — `*a*a*a*a*b` against a long label is the classic,
-// and it would be a public relay burning CPU on request.
-//
-// So the matcher is the two-pointer one, which backtracks only to the
-// last `*` and is O(label × pattern) with no pathological case. Labels
-// cap at 256 bytes (labelRule), so the worst case is small and knowable
-// rather than merely unlikely.
-function globMatches(text, pattern) {
-  var t = 0;
-  var p = 0;
-  var star = -1;
-  var mark = 0;
-  while (t < text.length) {
-    if (p < pattern.length && (pattern[p] === '?' || pattern[p] === text[t])) {
-      t += 1; p += 1;
-    } else if (p < pattern.length && pattern[p] === '*') {
-      star = p; mark = t; p += 1;
-    } else if (star !== -1) {
-      p = star + 1; mark += 1; t = mark;
-    } else {
-      return false;
-    }
-  }
-  while (p < pattern.length && pattern[p] === '*') p += 1;
-  return p === pattern.length;
-}
-
-// How good a match is, lowest is best. A plain query still means
-// "anywhere", which is what somebody typing three letters expects — the
-// wildcards are for when they want to say something more precise.
-//
-//   0  exact
-//   1  starts with
-//   2  found somewhere
-//  -1  no
-function matchRank(label, query) {
-  if (query.indexOf('*') !== -1 || query.indexOf('?') !== -1) {
-    if (!globMatches(label, query)) return -1;
-    // An anchored pattern is a stronger statement than a floating one.
-    return query[0] === '*' ? 2 : 1;
-  }
-  if (label === query) return 0;
-  if (label.indexOf(query) === 0) return 1;
-  return label.indexOf(query) !== -1 ? 2 : -1;
-}
+// They were the only judgement in this file about what a person meant by
+// a search, which is a question with no settled answer — Andy: "quality-
+// of-result measurements etc. are up in the air." A relay is the wrong
+// place for anything that is going to keep changing: it is the part of
+// the system that must be dull.
 
   function relayLabel() {
     var id = auth.loadIdentity(rootDir);
@@ -1701,70 +1660,54 @@ function matchRank(label, query) {
       // that — which is "who is around", answered by the same verb
       // rather than by a second one.
       {
-        var scored = [];
-        listPeers().forEach(function (p) {
-          if (!p || !p.publicKey) return;
-          var label = String(labelOf(p) || '').toLowerCase();
-          var rank = matchRank(label, q);
-          if (rank < 0) return;
-          scored.push({ peer: p, label: label, rank: rank });
-        });
+        // ── THE RANKING IS NOT THIS FILE'S ───────────────────────────
+        //
+        //   Andy: "i want the graded search logic and that stuff isolated
+        //   from relay or other core components, since quality-of-result
+        //   measurements etc. are up in the air and we need to have this
+        //   block separately tested and verified, and give it an
+        //   independent evolution path."
+        //
+        // So this maps `peers` into the plain rows peerSearch takes and
+        // does nothing else. Presence is resolved HERE, into a field,
+        // because `presentNow` is a relay concept with a live socket
+        // behind it and peerSearch must stay drivable from a test with
+        // nothing running.
+        //
+        // What this file is no longer entitled to an opinion about: what
+        // a good match is, what beats what, and how many fit.
+        var rows = listPeers()
+          .filter(function (p) { return p && p.publicKey; })
+          .map(function (p) {
+            return {
+              publicKey: p.publicKey,
+              publicLabel: labelOf(p),
+              claimedAt: p.claimedAt,
+              owner: !!p.owner,
+              // Off the public census, but a search reaches this line only
+              // from a member over a signed post — the authenticated
+              // channel that was always allowed to carry it.
+              present: presentNow.isPresent(p.publicKey),
+              via: null,
+            };
+          });
 
-        // ── HIGHER QUALITY FIRST ───────────────────────────────────
-        //
-        //   Andy: "when the results are assembled the higher quality
-        //   matches must get priority."
-        //
-        // Exact beats prefix beats anywhere, which is what a person
-        // means by a better match. Then PRESENT beats absent — and that
-        // is not a nicety: a relay stores nothing, so an absent peer
-        // cannot be posted to at all. Liveness is not a hint about who
-        // is likelier to reply, it is the difference between a row you
-        // can act on and a row you can only file.
-        //
-        // Presence is included in the answer too. It stays off the
-        // public census — but a search reaches this line only from a
-        // member, over a signed post, which is the authenticated
-        // channel that was always allowed to carry it.
-        scored.sort(function (a, b) {
-          if (a.rank !== b.rank) return a.rank - b.rank;
-          var ap = presentNow.isPresent(a.peer.publicKey) ? 0 : 1;
-          var bp = presentNow.isPresent(b.peer.publicKey) ? 0 : 1;
-          if (ap !== bp) return ap - bp;
-          return a.label.localeCompare(b.label);
-        });
-
-        // ── A FIXED NUMBER OF SLOTS ────────────────────────────────
-        //
-        //   Andy: "there’s just a fixed number of slots."
-        //
-        // This measured each row and filled the packet to the byte,
-        // which got 91 rows of ordinary labels into the same space that
-        // guarantees 37. Not worth the machinery: a caller wants to know
-        // what a page IS, and "somewhere between 37 and 96 depending on
-        // how long everyone’s name is" is not an answer anybody can
-        // write code against.
-        //
-        // The number is checkable rather than chosen. A row is at most
-        // a 60-char key, a 256-byte label (labelRule), an ISO date and
-        // two booleans, with field names — 418 bytes measured. The
-        // budget is PAYLOAD_MAX less this reply’s own envelope, 16266.
-        // So 32 slots is 13376 worst case, with 2890 spare — and that
-        // slack is there so adding a field to a row later is a decision
-        // rather than an incident.
-        //
-        // Not PAYLOAD_MAX less WIRE_HEADROOM, which is what this said
-        // first. The keys around a packet are not IN the packet.
-        var matches = scored.slice(0, SEARCH_SLOTS).map(function (hit) {
+        // ONE BUCKET, offered every row. Never a list of everyone — this
+        // relay may hold a million members and `q` may be one letter.
+        var found = peerSearch.search(rows, q, peerSearch.SLOTS);
+        var matches = found.matches.map(function (row) {
+          // `via` is the merger's field and means nothing in a reply that
+          // had one source. It goes back on at the point a reply carries
+          // several (tier three), not here.
           return {
-            publicKey: hit.peer.publicKey,
-            publicLabel: labelOf(hit.peer),
-            claimedAt: hit.peer.claimedAt,
-            owner: !!hit.peer.owner,
-            present: presentNow.isPresent(hit.peer.publicKey),
+            publicKey: row.publicKey,
+            publicLabel: row.publicLabel,
+            claimedAt: row.claimedAt,
+            owner: row.owner,
+            present: row.present,
           };
         });
-        var more = scored.length > SEARCH_SLOTS;
+        var more = found.more;
         out = {
           ok: true,
           status: 200,
