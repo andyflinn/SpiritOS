@@ -125,48 +125,140 @@ function rank(label, query) {
 // is not an answer anybody can write code against.
 var SLOTS = 32;
 
-// ── WHAT ORDER COMPARES, IN ORDER ────────────────────────────────────
+// ── QUALITY IS A PROBABILITY, AND THE SIGNALS ARE WEIGHTED ───────────
 //
-// Named rather than inlined so the sequence is a thing a test can read
-// and a later signal is an entry here rather than a line buried in a
-// comparator. Each takes a scored row and answers a number, lowest first.
+//   Andy: "lets define quality like probability a number from 0.0 to 1.0.
+//   then different approaches to quality could be weighted to come up with
+//   an overall quality measurement."
+//
+// Every signal answers the SAME question — *how likely is this the row
+// that was wanted* — on the same scale, 0.0 to 1.0, one being certain. It
+// knows nothing about the others and nothing about how much it counts.
+//
+// WHY THIS REPLACED A PRECEDENCE LIST. The first version compared signals
+// in a fixed order: rank, then presence, then nearness, each an absolute
+// veto over everything below it. That is not tunable — it can only be
+// REORDERED, and reordering is a cliff. Under weights, saying "presence
+// matters more" is a number moving, and the effect is proportional.
+//
+// It also changes what a tie is. Lexicographic order almost never ties, so
+// the weakest signal silently decided a great many rows. Weighted, rows
+// genuinely close in quality fall through to the label — which is the
+// honest answer when nothing measured tells them apart.
+//
+// ── THE WEIGHTS ARE THE TUNING SURFACE, AND THEY ARE GUESSES ─────────
+//
+// Nothing here is measured yet. Andy: "quality-of-result measurements etc.
+// are up in the air." These are a starting point chosen to preserve the
+// behaviour the old precedence list had, so the change of model is not
+// also a change of results — and every one of them is expected to move.
+//
+// A signal is added as an entry, not as a line in a comparator: a name, a
+// weight, and a function that reads the row and answers 0..1.
 var SIGNALS = [
-  // Exact beats prefix beats anywhere, which is what a person means by a
-  // better match.
-  { name: 'rank', of: function (s) { return s.rank; } },
+  // HOW WELL THE LABEL ANSWERS THE QUERY. Exact is certainty; a prefix is
+  // most of the way there; found-in-the-middle is a maybe. Dominant on
+  // purpose — being reachable does not make somebody the person asked for.
+  {
+    name: 'match',
+    weight: 1.0,
+    quality: function (s) {
+      if (s.rank === 0) return 1.0;    // exact
+      if (s.rank === 1) return 0.7;    // starts with, or an anchored pattern
+      return 0.35;                     // found somewhere
+    },
+  },
 
-  // PRESENT BEATS ABSENT, and it is not a nicety: a relay stores nothing,
-  // so an absent peer cannot be posted to at all. Liveness is the
-  // difference between a row you can act on and a row you can only file —
-  // not a hint about who is likelier to reply.
-  { name: 'present', of: function (s) { return s.row.present ? 0 : 1; } },
+  // IS THERE ANYBODY THERE. A relay stores nothing (0006), so an absent
+  // peer cannot be posted to at all — this is the difference between a row
+  // you can act on and a row you can only file, which is why it is worth a
+  // quarter of the match and not a tenth.
+  //
+  // Binary today. It is the obvious place for the first real measurement:
+  // a live PERCENTAGE over a window is the same number with more truth in
+  // it, and needs no change here beyond returning it.
+  {
+    name: 'present',
+    weight: 0.25,
+    quality: function (s) { return s.row.present ? 1.0 : 0.0; },
+  },
 
-  // NEARER SOURCE WINS. `via` null means the caller's own members; a
-  // number is an index into whatever table the caller keeps. Acquiring
-  // needs a census that lists the key, and the nearer one is reachable
-  // without a partnership — the rule `harvest` already follows in hub.js.
-  { name: 'near', of: function (s) { return s.row.via == null ? 0 : 1; } },
+  // HOW NEAR. `via` null means the caller's own members; anything else came
+  // from a partner. Acquiring needs a census this node can reach, and the
+  // nearer one is reachable without a partnership — the rule `harvest`
+  // already follows in hub.js. Lightest of the three: it is about cost,
+  // not about whether the row is the right one.
+  {
+    name: 'near',
+    weight: 0.15,
+    quality: function (s) { return s.row.via == null ? 1.0 : 0.0; },
+  },
 ];
 
-// ── THE COMPARE FUNCTION, WHICH IS THE WHOLE OPINION ─────────────────
+// The weighted mean — 0.0 to 1.0, so the total reads on the same scale as
+// the parts and a caller can show it to a person without explaining it.
+//
+// Normalised by the weights actually present, so adding a signal does not
+// silently rescale every score that came before it.
+function quality(s) {
+  var sum = 0;
+  var total = 0;
+  for (var i = 0; i < SIGNALS.length; i++) {
+    var w = SIGNALS[i].weight;
+    if (!(w > 0)) continue;
+    var q = SIGNALS[i].quality(s);
+    // A signal that answers nonsense is clamped rather than allowed to
+    // dominate: 0..1 is the contract, and a bug in one signal must not be
+    // able to reorder everything.
+    if (!(q >= 0)) q = 0;
+    if (q > 1) q = 1;
+    sum += w * q;
+    total += w;
+  }
+  return total > 0 ? sum / total : 0;
+}
+
+// ── THE COMPARE FUNCTION ─────────────────────────────────────────────
 //
 // Same convention as `Array.prototype.sort`: negative when `a` comes
-// first. SIGNALS in sequence, then the label, then the key.
+// first. Higher quality first, so the subtraction is the other way round.
 //
 // TOTAL, and that is not a nicety. A comparator answering 0 for two
 // different rows leaves them to insertion order — and a search whose
 // second page depends on which partner replied first is not a search
-// anybody can page through. The key is the last resort because it is
-// unique by definition.
+// anybody can page through. Under weights this matters MORE than it did
+// under a precedence list, because equal scores are now common: two rows
+// can differ in their signals and still add up the same.
 function compare(a, b) {
-  for (var i = 0; i < SIGNALS.length; i++) {
-    var av = SIGNALS[i].of(a);
-    var bv = SIGNALS[i].of(b);
-    if (av !== bv) return av - bv;
-  }
+  var qa = quality(a);
+  var qb = quality(b);
+  if (qa !== qb) return qb - qa;
   var byLabel = a.label.localeCompare(b.label);
   if (byLabel !== 0) return byLabel;
   return String(a.row.publicKey).localeCompare(String(b.row.publicKey));
+}
+
+// WHY A ROW SCORED WHAT IT SCORED. Not used by the search — it exists so a
+// weight can be argued about with numbers instead of impressions, and so
+// the day somebody asks "why is that one third" there is an answer that
+// does not require reading this file.
+function explain(row, query) {
+  var q = String(query == null ? '' : query).toLowerCase();
+  var label = String((row && row.publicLabel) || '').toLowerCase();
+  var s = { row: row || {}, label: label, rank: rank(label, q) };
+  if (s.rank < 0) return { matched: false, quality: 0, signals: [] };
+  return {
+    matched: true,
+    quality: quality(s),
+    signals: SIGNALS.map(function (sig) {
+      return {
+        name: sig.name,
+        weight: sig.weight,
+        quality: sig.quality(s),
+        contribution: sig.weight * sig.quality(s),
+      };
+    }),
+  };
 }
 
 // ── ONE ROW, GRADED AND OFFERED ──────────────────────────────────────
@@ -260,7 +352,9 @@ function merge(sources, query, slots) {
 module.exports = {
   globMatches: globMatches,
   rank: rank,
+  quality: quality,
   compare: compare,
+  explain: explain,
   // The streaming face: open a bucket, offer rows one at a time, harvest.
   open: open,
   offer: offer,

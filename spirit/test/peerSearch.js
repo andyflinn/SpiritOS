@@ -324,28 +324,102 @@ test.subHeading('The cap holds across the merged set');
 }
 
 // ---------------------------------------------------------------------
-test.subHeading('The signals are named, so the next one is an entry');
+test.subHeading('Quality is a probability, and the signals are weighted');
 
 {
-  // Quality-of-result is up in the air (Andy), so what `order` compares
-  // and in what sequence is data rather than a comparator to be read.
-  // A new signal — activity, live percentage, how often somebody actually
-  // answered — is a row in SIGNALS with its own check here, and nothing
-  // above or below it moves.
-  const names = peerSearch.SIGNALS.map(function (s) { return s.name; });
-  if (names[0] === 'rank') {
-    test.check('rank is asked first: ' + names.join(' > '));
+  //   Andy: "lets define quality like probability a number from 0.0 to
+  //   1.0. then different approaches to quality could be weighted to come
+  //   up with an overall quality measurement."
+  //
+  // THE CONTRACT, asserted rather than assumed, because every signal Andy
+  // adds has to satisfy it and a signal answering 7 would quietly reorder
+  // everything.
+  const bad = peerSearch.SIGNALS.filter(function (sig) {
+    return !sig.name || typeof sig.quality !== 'function' || !(sig.weight > 0);
+  });
+  if (bad.length === 0) {
+    test.check(peerSearch.SIGNALS.length + ' signals, each named, weighted and answering a function');
   } else {
-    test.fail('signals: ' + names.join(', '));
+    test.fail('malformed: ' + bad.map(function (b) { return b.name || '(unnamed)'; }).join(', '));
   }
 
-  const allNamed = peerSearch.SIGNALS.every(function (s) {
-    return s.name && typeof s.of === 'function';
+  // EVERY SIGNAL STAYS ON THE SCALE. A probability that is not one is the
+  // failure mode weighting has and precedence did not.
+  const probe = { row: { present: true, via: null, publicKey: 'K' }, label: 'x', rank: 0 };
+  const offScale = peerSearch.SIGNALS.filter(function (sig) {
+    const q = sig.quality(probe);
+    return typeof q !== 'number' || q < 0 || q > 1;
   });
-  if (allNamed) {
-    test.check('and every signal is named and answers a number');
+  if (offScale.length === 0) {
+    test.check('and every one answers between 0.0 and 1.0');
   } else {
-    test.fail('an unnamed signal is in the list');
+    test.fail('off scale: ' + offScale.map(function (b) { return b.name; }).join(', '));
+  }
+
+  // THE TOTAL IS ON THE SAME SCALE AS THE PARTS, so a caller can show it
+  // to a person without explaining it.
+  const best = peerSearch.explain(
+    { publicKey: 'K', publicLabel: 'exact', present: true, via: null }, 'exact');
+  const worst = peerSearch.explain(
+    { publicKey: 'K', publicLabel: 'unrelated-exact-ish', present: false, via: 3 }, 'exact');
+
+  if (best.quality === 1 && worst.quality > 0 && worst.quality < 1) {
+    test.check('a perfect row scores exactly 1.0; a poor one scores ' + worst.quality.toFixed(3));
+  } else {
+    test.fail('best=' + best.quality + ' worst=' + worst.quality);
+  }
+
+  // NORMALISED BY THE WEIGHTS PRESENT, so adding a signal does not
+  // silently rescale every score that came before it.
+  const weights = peerSearch.SIGNALS.reduce(function (n, sig) { return n + sig.weight; }, 0);
+  const contributions = best.signals.reduce(function (n, sig) { return n + sig.contribution; }, 0);
+  if (Math.abs(contributions / weights - best.quality) < 1e-9) {
+    test.check('and the total is the weighted mean of the parts, not their sum');
+  } else {
+    test.fail(contributions + '/' + weights + ' != ' + best.quality);
+  }
+}
+
+// ---------------------------------------------------------------------
+test.subHeading('A weight can be argued about with numbers');
+
+{
+  // WHY explain() EXISTS. Quality-of-result is up in the air, so the
+  // question "should presence count for more" has to be answerable by
+  // looking at what a row actually scored rather than by reading the file.
+  const near = peerSearch.explain(
+    { publicKey: 'K1', publicLabel: 'zebra', present: false, via: null }, 'z');
+  const live = peerSearch.explain(
+    { publicKey: 'K2', publicLabel: 'buzz', present: true, via: null }, 'z');
+
+  const byName = {};
+  near.signals.forEach(function (sig) { byName[sig.name] = sig; });
+
+  if (byName.match && byName.match.contribution > byName.present.weight) {
+    test.check('the match outweighs presence entirely today — ' +
+      'a prefix contributes ' + byName.match.contribution.toFixed(2) +
+      ' against presence worth at most ' + byName.present.weight);
+  } else {
+    test.fail('match no longer dominates: ' + JSON.stringify(byName.match));
+  }
+
+  // Which is what keeps the old precedence behaviour: a present weaker
+  // match does not overtake an absent stronger one. THE MOMENT A WEIGHT
+  // MOVES this check is the one that will say so, which is the point.
+  if (near.quality > live.quality) {
+    test.check('so an absent prefix still beats a present middle-match, ' +
+      near.quality.toFixed(3) + ' vs ' + live.quality.toFixed(3));
+  } else {
+    test.fail('weights now let presence overtake the match: ' +
+      near.quality + ' vs ' + live.quality);
+  }
+
+  // A row that does not match at all is not scored low, it is absent.
+  const no = peerSearch.explain({ publicKey: 'K', publicLabel: 'nothing' }, 'zzz');
+  if (no.matched === false && no.quality === 0) {
+    test.check('and a row that does not match is not a bad match, it is no match');
+  } else {
+    test.fail('unmatched scored ' + no.quality);
   }
 }
 
