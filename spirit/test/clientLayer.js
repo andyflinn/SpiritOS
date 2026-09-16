@@ -179,9 +179,18 @@ function aPostAnswersInTheShapeTheProtocolHas() {
   return api.peerPost('chess', 'PEERKEY', { move: 'e4' }).then(function (r) {
     // The envelope is the node's job; this only checks the client asked
     // for the right thing: which app, which peer, what body.
+    // THE ENVELOPE IS THE CLIENT'S JOB. The comment above said it was the
+    // node's, and that was the layering fault: the node composed an app
+    // envelope, so it had to know what an app was, and `hub.js` needed
+    // `packet.js`. Andy: "nothing in node and relay should know about
+    // apps." The client names the peer and hands over ONE payload; the app
+    // lives inside it, where only the shell reads it.
     const sent = world.posts.filter(function (p) { return p.body.verb === 'peer.post'; })[0];
-    if (sent && sent.body.to === 'PEERKEY' && sent.body.app === 'chess') {
-      test.check('the post names the peer and the app, and nothing else is invented');
+    let env = null;
+    try { env = JSON.parse((sent && sent.body && sent.body.text) || 'null'); } catch (e) { env = null; }
+    if (sent && sent.body.to === 'PEERKEY' && sent.body.app === undefined &&
+        env && env.app === 'chess' && env.body.move === 'e4') {
+      test.check('the post names the peer and hands over one payload, app inside');
     } else {
       test.fail('post body: ' + JSON.stringify(sent && sent.body));
     }

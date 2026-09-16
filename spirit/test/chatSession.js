@@ -1817,16 +1817,23 @@ function sendsAndReadsPackets() {
         test.fail('peerfile: ' + filed);
       }
 
-      // Outbound: the app says who and what, the node wraps it. The
-      // mailbox still receives a string in `text`, which is why nothing
-      // on spirit-3 has to move.
+      // Outbound: THE APP WRAPS IT, and the node is handed one string.
+      // This asserted the opposite — "a send says app and body, not a
+      // wire string" — because the node used to compose the envelope.
+      // Andy: "nothing in node and relay should know about apps." The
+      // relay still receives a string in `text`, which is why nothing
+      // on spirit-3 has to move either way.
       el(app, 'rc-text').value = 'a new line';
       el(app, 'rc-send').fire('click');
       return settle().then(function () {
         const send = app.log.filter(function (c) { return c.verb === 'peer.post'; }).pop();
         const body = send && send.body ? JSON.parse(send.body) : null;
-        if (body && body.app === 'relay-chat' && body.body === 'a new line' && body.text === undefined) {
-          test.check('and a send says app and body, not a wire string');
+        // The payload is opaque to the node, so the app is INSIDE it.
+        let envelope = null;
+        try { envelope = JSON.parse((body && body.text) || 'null'); } catch (e) { envelope = null; }
+        if (body && body.app === undefined && envelope &&
+            envelope.app === 'relay-chat' && envelope.body === 'a new line') {
+          test.check('and a send hands the node one payload, with the app inside it');
         } else {
           test.fail('send body: ' + (send && send.body));
         }

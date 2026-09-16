@@ -1368,16 +1368,43 @@
       // the protocol's Re: field. Optional, opaque here, and passed
       // straight through: the shell does not know what is being regarded
       // any more than the node does.
+      // ── THE SHELL BUILDS THE ENVELOPE, THE NODE CARRIES IT ───────────
+      //
+      //   Andy: "that's the shell's point of view, and it has to hand an
+      //   app-containing package to the node as one single payload" /
+      //   "nothing in node and relay should know about apps."
+      //
+      // This sent `{to, app, body}` and let the node call packet.encode —
+      // so the NODE assembled the app envelope, which meant the node knew
+      // what an app was, and `hub.js` needed `packet.js` to serve a layer
+      // above it.
+      //
+      // The envelope is the shell's: it is the shell that routes an
+      // arriving packet by `app`, and the shell that knows which app is
+      // speaking. The node is handed one opaque string and posts it.
+      //
+      // `re` rides inside the envelope where it always belonged — it is a
+      // hash over bytes the sender holds, and the node has no business
+      // reading it either.
       sendMessagePacket: function (packetApp, toId, body, opts) {
+        var envelope = (typeof window !== 'undefined' && window.spiritPacket) || null;
+        if (!envelope) {
+          return Promise.resolve({ status: 0, text: '{"error":"js/packet.js is not loaded"}' });
+        }
+        var made = envelope.encode(packetApp, body, { re: (opts && opts.re) || '' });
+        if (!made.ok) {
+          // Refused here, before a round trip — the same reason packet.js
+          // pre-checks the size: an app learns its own mistake without
+          // spending a post to be told.
+          return Promise.resolve({ status: 400, text: JSON.stringify({ error: made.error }) });
+        }
         return fetch('/api/spirit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             verb: 'peer.post',
             to: toId,
-            app: packetApp,
-            body: body,
-            re: (opts && opts.re) || '',
+            text: made.text,
           }),
         }).then(function (r) {
           return r.text().then(function (t) { return { status: r.status, text: t }; });

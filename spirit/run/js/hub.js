@@ -751,18 +751,40 @@ function createHub(rootDir) {
   // rather than in the browser so that one place decides what a packet
   // looks like, and so the size limit is enforced before anything leaves
   // the machine.
-  function outgoingText(body) {
-    if (body && body.app !== undefined) {
-      // `re` rides through untouched: the node does not know what the
-      // caller is regarding and has no business checking. It is a hash
-      // over bytes somebody else holds, so the only party who can verify
-      // it is the one who holds them.
-      return packet.encode(body.app, body.body === undefined ? '' : body.body, {
-        re: body.re,
-      });
-    }
-    // Legacy caller: a bare string, wired as it always was.
+  // ── THE NODE CARRIES A PAYLOAD, IT DOES NOT COMPOSE ONE ──────────────
+  //
+  //   Andy: "that's the shell's point of view, and it has to hand an
+  //   app-containing package to the node as one single payload."
+  //
+  // This had two branches: one that called `packet.encode(body.app, …)`
+  // and one described as the "legacy caller: a bare string". They were
+  // the wrong way round. The bare string is the CORRECT layering — the
+  // shell composes the envelope, because the shell is what routes an
+  // arriving packet by `app` and what knows which app is speaking — and
+  // the branch calling packet.encode was the node reaching a layer up.
+  //
+  // What it cost, beyond tidiness: `hub.js` needed `packet.js`, so a
+  // module about apps sat in the node's dependency set and, through
+  // server.js, on a relay.
+  //
+  // One branch now. `text` arrives whole and leaves whole, and the only
+  // thing the node asks of it is how long it is.
+  function outgoingPayload(body) {
     return { ok: true, text: String((body && body.text) || '') };
+  }
+
+  // ── AND WHAT THE NODE SENDS ON ITS OWN BEHALF ───────────────────────
+  //
+  // A system call to a relay — `search`, `partners` — originates HERE,
+  // so there is no shell above it to compose anything. It is not an app
+  // packet and must not look like one: no `app`, and no `id`, because a
+  // reply is matched by hash and an id would be a field nobody reads.
+  //
+  // Built directly rather than through packet.js, which is the point: the
+  // node does not use an app-envelope builder for something that is not
+  // an app packet.
+  function systemPayload(body) {
+    return JSON.stringify({ v: 1, body: body });
   }
 
   // POST TO A PEER, AND WAIT FOR THE ANSWER. The router's half of the
@@ -800,15 +822,20 @@ function createHub(rootDir) {
       }
       var to = String((body && body.to) || '').trim();
 
-      // THE SAME ENVELOPE THE RING ALREADY SPOKE. An app says which app
-      // a message is for and what is in it; wrapping that into
-      // {app, v, body} is the node's job on either transport, and
-      // outgoingText is the one place that decides how — so a packet sent
-      // by the router is byte-identical to one the ring would have sent.
+      // ── OPAQUE, AND THAT INCLUDES ITS SHAPE ──────────────────────────
       //
-      // A bare `text` still works: the router carried raw strings before
-      // apps could reach it, and routerPost.js drives it that way.
-      var wrapped = outgoingText(body);
+      //   Andy: "it might be a hex encoded favicon.ico"
+      //
+      // This said wrapping a body into `{app, v, body}` was "the node's
+      // job". It never was — the shell composes the envelope and hands
+      // this one string (see outgoingPayload). And the payload is not
+      // text in any sense the node may rely on: it is whatever the sender
+      // put there, which may be an envelope, a chat line, or a picture in
+      // hex. The wire field is called `text` for historical reasons and
+      // the name promises nothing.
+      //
+      // The only question asked of it below is how long it is.
+      var wrapped = outgoingPayload(body);
       if (!wrapped.ok) {
         // Refused here rather than at the relay: an oversize packet is
         // the app's mistake, and spending a post to be told so would be
@@ -1551,9 +1578,7 @@ function createHub(rootDir) {
         // but say so — fetching a key from the box you are asking about
         // is how you get answered by whoever is standing there.
         if (!relayKey) { silent.push(url); return Promise.resolve(null); }
-        var wrapped = outgoingText({ app: null, body: { search: { q: q } } });
-        if (!wrapped.ok) { silent.push(url); return Promise.resolve(null); }
-        return sendPacket(router, url, relayKey, wrapped.text).then(function (answer) {
+        return sendPacket(router, url, relayKey, systemPayload({ search: { q: q } })).then(function (answer) {
           var said = null;
           try { said = JSON.parse((answer && answer.text) || ''); }
           catch (e) { said = null; }
@@ -1644,10 +1669,8 @@ function createHub(rootDir) {
     // not say who it partners with simply contributes its own census.
     function partnersOf(url, relayKey) {
       if (!router || !relayKey) return Promise.resolve([]);
-      var wrapped = outgoingText({ app: null, body: { partners: true } });
-      if (!wrapped.ok) return Promise.resolve([]);
       // Through sendPacket, not past it — see the note above it.
-      return sendPacket(router, url, relayKey, wrapped.text)
+      return sendPacket(router, url, relayKey, systemPayload({ partners: true }))
         .then(function (answer) {
           var said = null;
           try { said = JSON.parse((answer && answer.text) || ''); }

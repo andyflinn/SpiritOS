@@ -471,7 +471,9 @@ function presenceFor(boxes) {
 function hubPost(hub, to, body, deps) {
   const res = fakeRes();
   hub.handlePost({}, res, function () {
-    return Promise.resolve({ to: to, app: 'relay', body: body });
+    // THE CALLER COMPOSES THE PAYLOAD, as the client layer now does:
+    // a relay-directed call is a system payload with no app in it.
+    return Promise.resolve({ to: to, text: JSON.stringify({ v: 1, body: body }) });
   }, deps);
   return res.wait().then(function (r) {
     let settle = {};

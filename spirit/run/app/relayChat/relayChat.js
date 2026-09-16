@@ -1133,7 +1133,17 @@ spirit.shell.activateApp({
       // refused, and what comes back is a receipt. So the record filed
       // here is built from what was typed, which is the only copy of the
       // line that will ever exist.
-      hubPost('/api/spirit', { verb: 'peer.post', to: to, app: RC_PACKET_APP, body: text }).then(function (r) {
+      // THE ENVELOPE IS BUILT HERE, not by the node. Chat is an app and
+      // knows it; the node is handed one opaque string (js/hub.js,
+      // outgoingText). See the note there — the node composing an app
+      // envelope was the node knowing what an app is.
+      var rcMade = (window.spiritPacket || null) &&
+        window.spiritPacket.encode(RC_PACKET_APP, text);
+      if (!rcMade || !rcMade.ok) {
+        rcSay((rcMade && rcMade.error) || 'js/packet.js is not loaded');
+        return;
+      }
+      hubPost('/api/spirit', { verb: 'peer.post', to: to, text: rcMade.text }).then(function (r) {
         if (r.status === 200) {
           // Keyed by `toKey` for the same reason the received half is
           // keyed by fromKey: a peer is a key, and two johns are two
