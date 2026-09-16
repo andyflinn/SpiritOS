@@ -32,7 +32,16 @@
          Browser-only, so js/client/. It exports to node as well, but no
          node module requires it — that half is there so the merging can be
          asserted in a test instead of only looked at, which is not the
-         same thing as being isomorphic. -->
+         same thing as being isomorphic.
+
+         AND IT IS NOT THE SHELL'S. Relay Chat is its only reader; the shell
+         never touches it. Andy: "chatLog.js actually belongs in
+         run/app/relayChat/" — correct, and there is nowhere to put it: an
+         app is exactly one script, app/<folder>/<folder>.js. Rehousing it
+         means either inlining it (losing the test on merge) or teaching the
+         loader about a second file, for an app that is to be killed. So it
+         sits here on loan, and goes when Relay Chat goes. Do not read this
+         tag as core infrastructure, and do not add a second app to it. -->
     <script src="/js/client/chatLog.js"></script>
     <!-- limits.js first: packet.js reads PAYLOAD_MAX off window.spiritLimits,
          so the size a page refuses is the size the relay refuses. -->
