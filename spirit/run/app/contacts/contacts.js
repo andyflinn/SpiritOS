@@ -83,8 +83,12 @@ var CONTACTS_UNKNOWN_LABELS = {
 };
 
 var contactsPeople = [];
-// Visible from here and not yet in the book — see contactsLoadSeen.
+// Search results — see contactsSearchSeen. Not a standing list: a
+// thousand-member relay makes that unreadable and expensive both.
 var contactsSeen = [];
+var contactsSeenMore = false;
+// Relays that could not answer the search — older code, or down.
+var contactsSeenSilent = [];
 var contactsSelfTail = '';
 
 function contactsPost(path, body) {
@@ -262,7 +266,6 @@ function contactsRefresh() {
       contactsSelfTail = (data && data.selfTail) || '';
       contactsRender();
       contactsPaintSelf();
-      contactsLoadSeen();
     })
     .catch(function (e) { contactsStatus('could not read the book: ' + e.message); });
 }
@@ -277,31 +280,51 @@ function contactsRefresh() {
 //
 // Reloaded after the book is read rather than beside it, because what
 // counts as a candidate depends on who is already a contact.
-function contactsLoadSeen() {
-  return contactsAsk('peer.candidates')
+// ── ASK, DO NOT DOWNLOAD ─────────────────────────────────────────────
+//
+//   Andy: "This approach will not be sustainable if there’s even just a
+//   thousand people in this list... We want the partner-space
+//   searchable."
+//
+// This fetched every census whole and rendered whoever was left after
+// subtracting the book. Fine at ten members; at a thousand it is 150 KB
+// a relay to draw a list nobody can read to the end of.
+//
+// The relay matches over rows it already holds and answers with a capped
+// list. When a relay holds its partners’ members too (tier two) the same
+// request covers partner space and nothing here changes.
+function contactsSearchSeen() {
+  const input = document.getElementById('contacts-seen-q');
+  const q = ((input && input.value) || '').trim();
+  if (q.length < 2) { contactsSeenNote('type at least two characters'); return; }
+  contactsSeenNote('searching...');
+  return contactsAsk('peer.search', { q: q })
     .then(function (data) {
-      contactsSeen = (data && data.candidates) || [];
+      contactsSeen = (data && data.matches) || [];
+      contactsSeenMore = !!(data && data.more);
+      contactsSeenSilent = (data && data.silent) || [];
       contactsPaintSeen();
     })
     .catch(function () {
       contactsSeen = [];
-      contactsPaintSeen();
+      contactsSeenNote('could not search');
     });
 }
 
+function contactsSeenNote(text) {
+  const box = document.getElementById('contacts-seen-list');
+  if (box) box.innerHTML = '<div class="job-log-empty">' + contactsEscapeHtml(text) + '</div>';
+}
 function contactsPaintSeen() {
   const box = document.getElementById('contacts-seen-list');
-  const summary = document.getElementById('contacts-seen-summary');
   if (!box) return;
 
-  if (summary) {
-    summary.textContent = contactsSeen.length
-      ? 'People you have not added yet (' + contactsSeen.length + ')'
-      : 'People you have not added yet';
-  }
-
   if (!contactsSeen.length) {
-    box.innerHTML = '<div class="job-log-empty">nobody visible from here that you do not already have</div>';
+    box.innerHTML = '<div class="job-log-empty">nobody on your relays matches that</div>' +
+      (contactsSeenSilent.length
+        ? '<div class="job-manifest-note">' + contactsSeenSilent.length +
+          ' relay(s) could not search: ' + contactsEscapeHtml(contactsSeenSilent.join(', ')) + '</div>'
+        : '');
     return;
   }
 
@@ -311,28 +334,32 @@ function contactsPaintSeen() {
     '</tr></thead><tbody>' +
     contactsSeen.map(function (c) {
       const where = c.relayLabel || c.relay;
+      // ALREADY KNOWN IS SAID, NOT HIDDEN. A search is a question about
+      // who is out there, and dropping the people you have would make
+      // the answer depend on your book — which is how somebody ends up
+      // typing a name, seeing nothing, and concluding they are gone.
+      const known = c.acquiredVia && c.acquiredVia !== 'census';
       return '<tr>' +
         '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') + '</td>' +
-        '<td>…' + contactsEscapeHtml(String(c.publicKey).slice(-8)) + '</td>' +
-        // VIA A PARTNER IS SAID, because it changes what adding them
-        // gets you: a contact you cannot post to until forwarding
-        // exists. Silence there would be the page implying otherwise.
-        '<td>' + contactsEscapeHtml(where) +
-          (c.viaPartner ? ' <span class="muted">(partner)</span>' : '') + '</td>' +
-        '<td><button type="button" class="cancel-btn contacts-seen-add"' +
-          ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
-          ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button></td>' +
+        '<td>' + contactsEscapeHtml(String(c.tail || '')) + '</td>' +
+        '<td>' + contactsEscapeHtml(where) + '</td>' +
+        '<td>' + (known
+          ? '<span class="muted">already a contact</span>'
+          : '<button type="button" class="cancel-btn contacts-seen-add"' +
+            ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
+            ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button>') + '</td>' +
       '</tr>';
     }).join('') +
     '</tbody></table>' +
-    '<div class="job-manifest-note">Seen on a relay you use, or on one of its partners. ' +
-      'Adding somebody on a partner relay records them; posting to them needs ' +
-      'forwarding, which is not built.</div>';
+    (contactsSeenSilent.length
+      ? '<div class="job-manifest-note">' + contactsSeenSilent.length +
+        ' relay(s) could not search — they may be running older code: ' +
+        contactsEscapeHtml(contactsSeenSilent.join(', ')) + '</div>'
+      : '') +
+    (contactsSeenMore
+      ? '<div class="job-manifest-note">More matched than are shown — type more of the name.</div>'
+      : '');
 }
-
-// Same confirmation as anywhere else: the node checks the key against the
-// census of the relay named here before it writes a row, so a stale page
-// cannot add somebody who is not there.
 function contactsSeenAdd(button) {
   const key = button.getAttribute('data-key') || '';
   const url = button.getAttribute('data-url') || '';
@@ -582,7 +609,11 @@ spirit.shell.activateApp({
       // answer different questions: one is "is the john I was told about
       // here", this is "who is here".
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-seen-section">' +
-        '<summary id="contacts-seen-summary">People you have not added yet</summary>' +
+        '<summary id="contacts-seen-summary">Find someone on your relays</summary>' +
+        '<div class="start-job-form">' +
+          '<input type="text" id="contacts-seen-q" placeholder="part of their name">' +
+          '<button type="button" id="contacts-seen-go">Search</button>' +
+        '</div>' +
         '<div id="contacts-seen-list"></div>' +
       '</details>' +
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-unknown-section">' +
@@ -612,6 +643,10 @@ spirit.shell.activateApp({
     document.getElementById('contacts-add-find').addEventListener('click', contactsFindByHandle);
     // Delegated: the list repaints whole, so a listener bound to a row
     // would go with the next paint.
+    document.getElementById('contacts-seen-go').addEventListener('click', contactsSearchSeen);
+    document.getElementById('contacts-seen-q').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') contactsSearchSeen();
+    });
     document.getElementById('contacts-seen-list').addEventListener('click', function (event) {
       const btn = event.target && event.target.closest && event.target.closest('.contacts-seen-add');
       if (btn) contactsSeenAdd(btn);

@@ -378,6 +378,7 @@ freePort()
       ['POST', '/api/spirit', { verb: 'peer.find', handle: 'x' }],
       ['POST', '/api/spirit', { verb: 'peer.acquire', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'peer.candidates' }],
+      ['POST', '/api/spirit', { verb: 'peer.search', q: 'zz' }],
       // Every loopback verb, at the one door. `net.fetch` is left out on
       // purpose — it would reach the internet from a test, and it is
       // covered where its refusals are.

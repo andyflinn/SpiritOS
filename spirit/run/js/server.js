@@ -1772,6 +1772,11 @@ if (!relayMode) {
     // their partners, minus everybody it already knows. See
     // hub.handleCandidates — the fan-out is here so the app does not
     // have to know how many places it took.
+    // Ask every relay who matches, rather than downloading every
+    // census to find out. See hub.handleSearch.
+    'peer.search': function (rq, rs) {
+      hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
+    },
     'peer.candidates': function (rq, rs) {
       hub.handleCandidates(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
     },

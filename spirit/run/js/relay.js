@@ -1591,6 +1591,60 @@ function createRelay(rootDir) {
     // they were given by joining; a stranger reading /api/relay/who
     // learns nothing about who this box talks to. Publishing the mesh is
     // a different decision and nobody has taken it.
+    // ── SEARCH, BECAUSE A LIST DOES NOT SCALE ──────────────────────────
+    //
+    //   Andy: "This approach will not be sustainable if there's even just
+    //   a thousand people in this list… We want the partner-space
+    //   searchable."
+    //
+    // The node used to fetch every census WHOLE and subtract what it
+    // knew. At ten members that is a list; at a thousand it is 150 KB per
+    // relay to render something nobody can read. So the relay answers the
+    // question instead of shipping the material to answer it with.
+    //
+    // ANY MEMBER MAY ASK, like `partners` above. The census is already
+    // public in full, so a search over it gives away nothing new — what it
+    // saves is the transfer, and that saving is the entire point.
+    //
+    // A FLOOR ON THE QUERY, because substring matching with no floor is
+    // the census again with extra steps: `a` would return everybody.
+    //
+    // CANDIDATES, NEVER AN ANSWER (R1). Three johns come back as three
+    // rows and the caller confirms by key, exactly as contacts does for a
+    // local handle. A search that implied "this is the john you meant"
+    // would be the thing R1 exists to prevent.
+    //
+    // Own members only, for now. Partner space becomes searchable when
+    // this relay holds its partners' members — tier two, the stream — and
+    // the shape of this answer does not change when it does.
+    if (body && body.search) {
+      var q = String((body.search.q) || '').trim().toLowerCase();
+      var cap = Math.min(Math.max(Number(body.search.limit) || 25, 1), 100);
+      if (q.length < 2) {
+        out = { ok: false, status: 400, error: 'search needs at least two characters' };
+      } else {
+        var hits = listPeers().filter(function (p) {
+          return p && p.publicKey &&
+            String(labelOf(p) || '').toLowerCase().indexOf(q) !== -1;
+        });
+        out = {
+          ok: true,
+          status: 200,
+          // `more` rather than a page: a caller who sees it types another
+          // letter, which is cheaper for everybody than a cursor.
+          more: hits.length > cap,
+          matches: hits.slice(0, cap).map(function (p) {
+            return {
+              publicKey: p.publicKey,
+              publicLabel: labelOf(p),
+              claimedAt: p.claimedAt,
+              owner: !!p.owner,
+            };
+          }),
+        };
+      }
+    }
+
     if (body && body.partners) {
       out = {
         ok: true,

@@ -1483,6 +1483,98 @@ function createHub(rootDir) {
     return router.post(relayUrl, toKey, text);
   }
 
+  // ── ASK EACH RELAY, DO NOT DOWNLOAD EACH RELAY ───────────────────────
+  //
+  //   Andy: "This approach will not be sustainable if there's even just a
+  //   thousand people in this list… We want the partner-space
+  //   searchable."
+  //
+  // handleCandidates below fetches every census whole and subtracts what
+  // this node knows. That is fine at ten members and absurd at a thousand:
+  // 150 KB per relay, per refresh, to build a list nobody can read. It
+  // stays for the small case and for the "who is here" question, and this
+  // is what the app should use once a relay is real.
+  //
+  // One signed post per relay, capped answers, and the relay does the
+  // matching over rows it already holds in RAM. When a relay holds its
+  // partners' members (tier two) the same request covers partner space and
+  // nothing here changes.
+  function handleSearch(req, res, readJsonBody, deps) {
+    var router = deps && deps.router;
+    readJsonBody(req).then(function (body) {
+      var q = String((body && body.q) || '').trim();
+      if (q.length < 2) { fail(res, 400, 'search needs at least two characters'); return; }
+      if (!router) { fail(res, 503, 'this node is not connected to a relay'); return; }
+
+      var urls = ownerBadge.configuredUrls(rootDir);
+      var me = auth.loadIdentity(rootDir);
+      var myKey = (me && me.publicKey) || '';
+      var found = Object.create(null);
+      var truncated = false;
+      // ── A RELAY THAT CANNOT SEARCH IS NOT A RELAY WITH NOBODY ON IT ──
+      //
+      // A box running code older than this verb answers `no such peer`
+      // and contributes nothing. Counting that as "no matches" would make
+      // an empty result mean two different things — nobody is called
+      // that, or nobody could look — and on a network where relays update
+      // on their owners' schedules the second is normal, not exceptional.
+      //
+      // Seen immediately: spirit.andyflinn.com is pinned to a tag and
+      // returned nothing for a name that is plainly on it.
+      var silent = [];
+
+      return Promise.all(urls.map(function (url) {
+        return relayRequest(url, 'GET', '/api/relay/who', null)
+          .then(function (r) {
+            var parsed = null;
+            try { parsed = JSON.parse(r.text); } catch (e) { parsed = null; }
+            var relayKey = (parsed && parsed.relayPublicKey) || '';
+            if (!relayKey) return null;
+            var wrapped = outgoingText({ app: 'relay', body: { search: { q: q, limit: 25 } } });
+            if (!wrapped.ok) return null;
+            return sendPacket(router, url, relayKey, wrapped.text).then(function (answer) {
+              var said = null;
+              try { said = JSON.parse((answer && answer.text) || ''); }
+              catch (e) { said = null; }
+              var out = (said && said.body) || {};
+              if (!out || out.ok !== true) { silent.push(url); return; }
+              if (out.more) truncated = true;
+              (out.matches || []).forEach(function (p) {
+                if (!p || !p.publicKey || p.publicKey === myKey) return;
+                if (found[p.publicKey]) return;
+                var row = whoBook.byPublicKey(rootDir, p.publicKey);
+                found[p.publicKey] = {
+                  publicKey: p.publicKey,
+                  publicLabel: p.publicLabel || '',
+                  tail: keyTail(p.publicKey),
+                  relay: url,
+                  relayLabel: (parsed && parsed.relayLabel) || '',
+                  // So the app can say "already a contact" rather than
+                  // offering the same person a second time.
+                  acquiredVia: row ? whoBook.acquiredVia(row) : null,
+                };
+              });
+            });
+          })
+          .catch(function () { return null; });
+      })).then(function () {
+        var list = Object.keys(found).map(function (k) { return found[k]; });
+        list.sort(function (a, b) {
+          return String(a.publicLabel).localeCompare(String(b.publicLabel));
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          q: q, matches: list, more: truncated,
+          asked: urls.length,
+          // Named, not counted: 'one relay could not answer' is useless
+          // without saying which, and the owner of that relay is often
+          // the person reading this.
+          silent: silent,
+        }));
+      });
+    }).catch(function () { fail(res, 400, 'bad body'); });
+  }
+
   function handleCandidates(req, res, readJsonBody, deps) {
     var router = deps && deps.router;
     var urls = ownerBadge.configuredUrls(rootDir);
@@ -1700,6 +1792,7 @@ function createHub(rootDir) {
     handlePartnerCheck: handlePartnerCheck,
     handleRoster: handleRoster,
     handleCandidates: handleCandidates,
+    handleSearch: handleSearch,
     handleWho: handleWho,
     handleHandle: handleHandle,
     handleContact: handleContact,
