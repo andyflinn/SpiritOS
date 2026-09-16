@@ -104,6 +104,54 @@ function read(rootDir) {
   };
 }
 
+// ── A NODE THAT HAS NEVER BEEN DESCRIBED DESCRIBES ITSELF ────────────
+//
+//   Andy: "lots of empty node-descriptions right now. the node assigns
+//   the first name when redeeming an invite. but on boot: the node should
+//   fill the description 'this node described for the first time [date /
+//   time string].' this gives likely different strings by default."
+//
+// THE PROBLEM IS SAMENESS, NOT EMPTINESS. An empty description is honest
+// — nobody has written one — but a list of strangers all saying nothing
+// is a list you cannot read, which is the job key endings were doing and
+// the job this was built to take over. A timestamp is not a description
+// of anything; what it IS is different from the next node's, which is the
+// entire property being asked for.
+//
+// ONCE, AND ONLY INTO A GAP. It runs on every boot and writes on the
+// first: after that the field is non-empty and this does nothing, so a
+// description somebody typed is never overwritten by a restart, and one
+// they deliberately CLEARED is filled again on the next boot — which is
+// the right way round. Blank is the state this exists to end.
+//
+// TO THE SECOND. Not milliseconds: this is read by a person, off a screen
+// where it stands in for somebody's name, and two nodes minted in the
+// same second is a collision worth having over a string with a decimal
+// point in it. UTC and spelled out, because the reader may be anywhere.
+//
+// A RELAY DOES NOT GET ONE. Its identity.json holds its public label
+// (relay.setRelayLabel) and it answers `answerSelf`, not a card — see the
+// caller in server.js, which is inside the personal-node branch.
+function firstDescription(now) {
+  const at = (now instanceof Date ? now : new Date()).toISOString();
+  // 2026-09-17T14:23:07.123Z -> 2026-09-17 14:23:07 UTC
+  return 'this node described for the first time ' +
+    at.slice(0, 10) + ' ' + at.slice(11, 19) + ' UTC';
+}
+
+function ensureDescription(rootDir, now) {
+  const id = auth.loadIdentity(rootDir);
+  if (!id) return '';
+  if (String(id.description || '').trim()) return String(id.description);
+
+  const said = firstDescription(now);
+  // Through the ordinary setter, so the one thing written without a human
+  // present obeys every rule a human's would — the cap, the normalising,
+  // and whatever is added to them later.
+  const saved = auth.setDescription(rootDir, said);
+  return saved ? String(saved.description || '') : '';
+}
+
 // ── AND WRITTEN ──────────────────────────────────────────────────────
 //
 // Both fields go through labelRule, which is the rule the RELAY enforces
@@ -146,6 +194,8 @@ module.exports = {
   asks: asks,
   describe: describe,
   read: read,
+  ensureDescription: ensureDescription,
+  firstDescription: firstDescription,
   setName: setName,
   setDescription: setDescription,
 };

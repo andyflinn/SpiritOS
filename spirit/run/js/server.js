@@ -6,6 +6,9 @@ const createRelay = require('./relay');
 // For keyFromUrl only — translating a URL segment back to the stored key
 // form. No secret reaches this side of the wire.
 const deviceAuth = require('./deviceAuth');
+// What this node answers about itself, and the one thing it writes there
+// unasked — see the boot call in the personal-node block.
+const nodeCard = require('./nodeCard');
 // Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
 // again later would report whatever is on disk now, which is the lie
 // this is meant to catch.
@@ -1496,6 +1499,31 @@ server.on('error', (err) => {
 // (decision 0006).
 
 if (!relayMode) {
+  // ── A NODE THAT HAS NEVER BEEN DESCRIBED DESCRIBES ITSELF ──────────
+  //
+  //   Andy: "lots of empty node-descriptions right now ... on boot: the
+  //   node should fill the description 'this node described for the first
+  //   time [date / time string].' this gives likely different strings by
+  //   default."
+  //
+  // WHAT IS BEING FIXED IS SAMENESS. A card that says nothing is honest
+  // and useless: a list of strangers reading the same blank is the list
+  // key endings existed to make readable, and this field was built to
+  // take that job over. A timestamp describes nothing — it is simply
+  // DIFFERENT from the next node's, which is the whole property asked
+  // for, and it is something a person will then want to replace.
+  //
+  // FIRST THING, before any relay is dialled: the first thing that can
+  // ask for this card is a peer on the far end of a stream opened a few
+  // lines below, and a node that answered blank once has already made the
+  // impression this exists to prevent.
+  //
+  // Personal mode only, which is what this block is. A relay's
+  // identity.json holds its public label and it answers `answerSelf`; it
+  // has no card and must not grow one by accident.
+  try { nodeCard.ensureDescription(ROOT_DIR); }
+  catch (e) { /* a caption must never be the reason a node will not boot */ }
+
   // The device window, if it was left open. The flag has always survived
   // a restart in relay-state/device.json; until now nothing read it at
   // startup, so every restart shut the door without saying so — and the

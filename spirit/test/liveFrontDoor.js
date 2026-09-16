@@ -154,9 +154,36 @@ async function run() {
       return;
     }
 
+
     // Streams take a moment to settle, and a post to a peer the relay
     // does not yet see present is refused for the wrong reason.
     await sleep(2500);
+
+    // ── AND EACH DESCRIBED ITSELF ON THE WAY UP ──────────────────────
+    //
+    //   Andy: "on boot: the node should fill the description 'this node
+    //   described for the first time [date / time string]'."
+    //
+    // nodeCard's own suite proves the function; this proves the WIRING —
+    // that server.js actually calls it, in the personal-node branch,
+    // against the right directory, on a process that really booted. A
+    // boot hook nobody calls and a boot hook that works look identical
+    // from a unit test.
+    const described = [alfa, bravo, charlie].map(function (peer) {
+      let id = null;
+      try {
+        id = JSON.parse(fs.readFileSync(
+          path.join(homeOf(peer), 'relay-state', 'identity.json'), 'utf8'));
+      } catch (e) { id = null; }
+      return String((id && id.description) || '');
+    });
+
+    if (described.every(function (d) { return /^this node described for the first time /.test(d); })) {
+      test.check('and each wrote itself a description on the way up, rather than booting blank');
+    } else {
+      test.fail('descriptions: ' + JSON.stringify(described));
+    }
+
 
     test.subHeading('A stranger with a perfect signature, and a node that has not heard of them');
 

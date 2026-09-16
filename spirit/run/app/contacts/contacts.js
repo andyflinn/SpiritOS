@@ -91,6 +91,33 @@ var contactsSeenMore = false;
 var contactsSeenSilent = [];
 var contactsSelfTail = '';
 
+// ── WHO IS THAT, ASKED OF THEM ───────────────────────────────────────
+//
+//   Andy: "when a contact is actually found, a bubble should open below
+//   with the description: obtained via peerPost() to the perspective
+//   peer."
+//   Andy, earlier: "when a peer is selected in the shell, a description
+//   can then be procured via the relay-partner POST chain, this would
+//   incidentally also validate true 'reachability'."
+//
+// A search answers off a relay's CENSUS — a label and a key, which is
+// what the relay was told and has no opinion about. This asks the person
+// themselves, and it is a different kind of fact: they composed it, they
+// are awake to say it, and the packet came back. That last part is why
+// "could not reach them" is an answer here and not a failure — it is the
+// one thing a census can never tell you.
+//
+// Keyed by public key: `'asking' | { name, description } | { why }`.
+// Kept across repaints of the list so pressing a row twice does not
+// re-ask, and thrown away with each new search, because a card is about
+// a person and the list is about a question.
+var contactsCards = Object.create(null);
+
+// Which row is open. One at a time — the same rule the fold panels
+// follow (UI_DESIGN_STYLE §3): two open bubbles and a list of names stops
+// being a list you scan.
+var contactsCardOpen = '';
+
 // Both of these are `contactsApi.verb` now (AGENT.md, Comms) — the shell
 // is the only thing an app speaks to. They stay as two names because they
 // answer two shapes and their callers read different halves.
@@ -289,6 +316,12 @@ function contactsSearchSeen() {
   const q = ((input && input.value) || '').trim();
   if (!q) { contactsSeenNote('type part of a name, or * for anyone'); return; }
   contactsSeenNote('searching...');
+  // A NEW QUESTION, SO NO OLD ANSWERS. The cards are about people and the
+  // list is about a question; carrying them over would mean a bubble that
+  // opens instantly on somebody whose node went down between searches,
+  // which is precisely the fact this is here to report.
+  contactsCards = Object.create(null);
+  contactsCardOpen = '';
   return contactsAsk('peer.search', { q: q })
     .then(function (data) {
       contactsSeen = (data && data.matches) || [];
@@ -345,15 +378,23 @@ function contactsPaintSeen() {
       // the answer depend on your book — which is how somebody ends up
       // typing a name, seeing nothing, and concluding they are gone.
       const known = c.acquiredVia && c.acquiredVia !== 'census';
-      return '<tr>' +
-        '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') + '</td>' +
+      const open = contactsCardOpen === c.publicKey;
+      // THE ROW IS THE CONTROL, and Add is a button on it. Clicking the
+      // name asks that person who they are; clicking Add writes the row.
+      // Two gestures, and the one that costs nothing is the bigger target.
+      return '<tr class="job-row" data-seen-row="' +
+          contactsEscapeHtml(c.publicKey) + '"' +
+          ' title="' + (open ? 'hide' : 'ask them who they are') + '">' +
+        '<td>' + (open ? contactsIcon.POINTDOWN : contactsIcon.POINTRIGHT) + ' ' +
+          contactsEscapeHtml(c.publicLabel || '(no label)') + '</td>' +
         '<td>\u2026' + contactsEscapeHtml(String(c.tail || '')) + '</td>' +
         '<td>' + (known
           ? '<span class="muted">already a contact</span>'
           : '<button type="button" class="cancel-btn contacts-seen-add"' +
             ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
             ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button>') + '</td>' +
-      '</tr>';
+      '</tr>' +
+      contactsCardBubble(c, 3);
     }).join('') +
     '</tbody></table>' +
     (contactsSeenSilent.length
@@ -365,6 +406,82 @@ function contactsPaintSeen() {
       ? '<div class="job-manifest-note">More matched than are shown — type more of the name.</div>'
       : '');
 }
+// THE PACKET IS ADDRESSED TO THE BOX, NOT TO AN APP, and the empty app
+// id is how that is said: packet.js omits the field rather than writing
+// `app: ""`, and js/nodeCard.js answers only a packet that carries none.
+// A card is a question about the node itself — the same shape a relay is
+// asked `answerSelf` — so it belongs to no app on either end.
+//
+// ANSWERED IN FRONT OF THEIR FRONT DOOR. The far node replies whether or
+// not it has ever heard of us, which is the whole reason this is worth
+// asking before adding somebody (js/nodeCard.js).
+function contactsAskCard(key) {
+  if (!key || contactsCards[key]) return;
+  contactsCards[key] = 'asking';
+
+  contactsApi.peerPost('', key, { describe: true }).then(function (r) {
+    var said = (r && r.body) || null;
+    if (r && r.ok && said && said.ok) {
+      contactsCards[key] = {
+        name: String(said.name || ''),
+        description: String(said.description || ''),
+      };
+    } else {
+      // WHY, and it is usually one of two things: their node is not
+      // reachable from here — which for somebody found on a PARTNER'S
+      // relay is the ordinary case today, since this node holds no stream
+      // to a relay it is not a member of — or they answered something
+      // else. Both are worth reading before adding a row.
+      contactsCards[key] = {
+        why: (said && said.error) || (r && r.error) || 'no answer',
+      };
+    }
+    contactsPaintSeen();
+  }).catch(function (e) {
+    contactsCards[key] = { why: String((e && e.message) || e) };
+    contactsPaintSeen();
+  });
+}
+
+// The bubble itself: one reading, under the row it is about.
+//
+// A ROW EXPANSION, WHICH THE STYLE GUIDE RETIRED — and the reason it did
+// is worth checking against rather than ignoring. What was retired was a
+// six-fact bubble AND A FORM inside a colspan: the widest thing on the
+// page in the narrowest box, reflowing the list on every open. This is
+// one sentence, no controls, one at a time. The rule's reason does not
+// reach it, and Andy asked for it here by name.
+function contactsCardBubble(c, columns) {
+  if (contactsCardOpen !== c.publicKey) return '';
+  var card = contactsCards[c.publicKey];
+  var inner;
+
+  if (card === 'asking') {
+    inner = '<span class="muted">asking them…</span>';
+  } else if (card && card.why) {
+    // NOT AN ERROR IN RED. Being unreachable is a fact about somebody,
+    // not a mistake anybody made, and it is one of the things you came
+    // here to learn.
+    inner = '<span class="muted">could not reach them — ' +
+      contactsEscapeHtml(card.why) + '</span>';
+  } else if (card) {
+    inner = (card.description
+      ? contactsEscapeHtml(card.description)
+      : '<span class="muted">they have not said anything about themselves</span>') +
+      // The name they were minted with, under it, and only when it adds
+      // something the row above does not already say.
+      (card.name && card.name !== c.publicLabel
+        ? '<div class="job-manifest-note">their node calls itself ' +
+          contactsEscapeHtml(card.name) + '</div>'
+        : '');
+  } else {
+    return '';
+  }
+
+  return '<tr class="job-log-row"><td colspan="' + columns + '">' +
+    '<div class="job-log-panel">' + inner + '</div></td></tr>';
+}
+
 function contactsSeenAdd(button) {
   const key = button.getAttribute('data-key') || '';
   const url = button.getAttribute('data-url') || '';
@@ -644,8 +761,25 @@ spirit.shell.activateApp({
       if (event.key === 'Enter') contactsSearchSeen();
     });
     document.getElementById('contacts-seen-list').addEventListener('click', function (event) {
-      const btn = event.target && event.target.closest && event.target.closest('.contacts-seen-add');
-      if (btn) contactsSeenAdd(btn);
+      const target = event.target;
+      if (!target || !target.closest) return;
+
+      // ADD FIRST. It sits inside the row, so a row handler that ran
+      // first would open a bubble every time somebody pressed Add — and
+      // the press that writes a contact must not also do something else.
+      const btn = target.closest('.contacts-seen-add');
+      if (btn) { contactsSeenAdd(btn); return; }
+
+      const row = target.closest('[data-seen-row]');
+      if (!row) return;
+      const key = row.getAttribute('data-seen-row') || '';
+      if (!key) return;
+      // ONE OPEN AT A TIME, and pressing the open one shuts it.
+      contactsCardOpen = contactsCardOpen === key ? '' : key;
+      // Asked once. The answer is kept for as long as this list of
+      // answers is, so shutting and reopening a row costs no packet.
+      if (contactsCardOpen) contactsAskCard(key);
+      contactsPaintSeen();
     });
 
     // Confirming is what writes the contact. Delegated, because the rows

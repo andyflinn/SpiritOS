@@ -53,6 +53,20 @@ const relayRequest = wire.relayRequest;
 // phone call.
 function signedClaim(rootDir, name, invite, inviteLabel) {
   const id = auth.ensureIdentity(rootDir, name);
+  // AND THE OTHER HALF OF THE CARD, at the one moment a node can have
+  // been booted without a key to describe.
+  //
+  //   Andy: "the node assigns the first name when redeeming an invite.
+  //   but on boot: the node should fill the description."
+  //
+  // Both are true and neither alone is enough. server.js fills the gap on
+  // every boot, but `ensureIdentity` above is where a fresh node's key
+  // comes into existence — after that boot ran — so a node minted by its
+  // first claim would answer a blank card until somebody restarted it.
+  // That is exactly the window this whole thing exists to close, and it
+  // is the window every NEW node passes through.
+  try { nodeCard.ensureDescription(rootDir); }
+  catch (e) { /* a caption must never be the reason a claim fails */ }
   const body = {
     name: name,
     publicKey: id.publicKey,

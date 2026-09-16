@@ -166,6 +166,7 @@ function mountApp(options) {
   };
 
   let behavior = null;
+  const posts = [];
   const jobFeed = [];
   const shellSpirit = {
     shell: {
@@ -257,6 +258,27 @@ function mountApp(options) {
       called.push({ id: id, params: params });
       return Promise.resolve(answer);
     },
+    // ── ASKING A PERSON WHO THEY ARE ─────────────────────────────────
+    //
+    // Recorded whole, because what is being asserted about it is its
+    // SHAPE: an empty app id, so packet.js omits the field and
+    // js/nodeCard.js will answer it (a packet carrying an app is an
+    // app's, and falls through to the front door instead).
+    //
+    // `opts.cards` maps a key to what that node says back, or to a
+    // refusal — there is no third state worth faking, because the one
+    // thing this bubble reports that a census cannot is whether anybody
+    // was home.
+    peerPost: function (packetApp, toKey, body) {
+      posts.push({ app: packetApp, to: toKey, body: body });
+      const card = (opts.cards || {})[toKey];
+      if (!card) {
+        return Promise.resolve({ ok: false, status: 503, body: null,
+          error: 'that peer is not reachable right now' });
+      }
+      return Promise.resolve({ ok: true, status: 200,
+        body: { ok: true, name: card.name || '', description: card.description || '' } });
+    },
     readProject: function (path) {
       return Object.prototype.hasOwnProperty.call(project, path) ? project[path] : null;
     },
@@ -270,7 +292,7 @@ function mountApp(options) {
   behavior.mount(container, api, null);
   return {
     doc: doc, log: log, container: container, behavior: behavior, store: store,
-    launched: launched, called: called,
+    launched: launched, called: called, posts: posts,
     answers: function (result) { answer = result; },
     // A SECOND MOUNT OF THE SAME LOADED SCRIPT, which is what walking
     // into an app twice actually is. mountApp() re-evaluates the source,
@@ -771,6 +793,158 @@ function forgetsWithoutUnblocking() {
   return Promise.resolve();
 }
 
+// ── ASKING SOMEBODY WHO THEY ARE, BEFORE ADDING THEM ─────────────────
+//
+//   Andy: "when a contact is actually found, a bubble should open below
+//   with the description: obtained via peerPost() to the perspective
+//   peer."
+//
+// A search answers off a relay's census: a label and a key, which the
+// relay was told and has no opinion about. This asks the person, and the
+// answer is a different kind of fact — they wrote it, they are awake, and
+// the packet came back.
+function aFoundPersonCanBeAsked() {
+  test.subHeading('A found person can be asked who they are');
+
+  const app = mountApp({
+    matches: [
+      { publicKey: 'KEY-SONNY', publicLabel: 'sonny', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-GHOST', publicLabel: 'ghost', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'census', owner: false },
+    ],
+    cards: {
+      'KEY-SONNY': { name: 'sonny', description: 'jazz, and a synth in the corner' },
+      // KEY-GHOST answers nothing — their node is not reachable from here.
+    },
+  });
+
+  return settle().then(function () {
+    el(app, 'contacts-seen-q').value = 'o';
+    el(app, 'contacts-seen-go').fire('click');
+
+    return settle().then(function () {
+      const listed = el(app, 'contacts-seen-list').innerHTML;
+
+      // NOTHING IS ASKED UNTIL SOMEBODY ASKS. A search of thirty-two
+      // people must not post thirty-two packets on the strength of being
+      // looked at.
+      if (app.posts.length === 0) {
+        test.check('a search asks nobody anything — a list of names is not thirty-two packets');
+      } else {
+        test.fail('posted on search: ' + JSON.stringify(app.posts));
+      }
+
+      if (/data-seen-row="KEY-SONNY"/.test(listed)) {
+        test.check('and every row offers to ask');
+      } else {
+        test.fail('rows are not openable: ' + listed);
+      }
+
+      // ── OPEN ONE ──────────────────────────────────────────────────
+      el(app, 'contacts-seen-list').fire('click', {
+        target: target('data-seen-row', 'KEY-SONNY'),
+      });
+
+      return settle().then(function () {
+        const one = app.posts[0] || {};
+        if (app.posts.length === 1 && one.to === 'KEY-SONNY') {
+          test.check('opening a row asks that person, and only that person');
+        } else {
+          test.fail('posts: ' + JSON.stringify(app.posts));
+        }
+
+        // THE SHAPE IS THE ASSERTION. packet.js omits an empty app id,
+        // and js/nodeCard.js answers only a packet that carries none — a
+        // card is a question about the node itself and belongs to no app
+        // on either end. An app name here would be answered by the front
+        // door instead, which is a stranger's silence.
+        if (one.app === '' && one.body && one.body.describe === true) {
+          test.check('with an app-less packet, which is the one a node answers about itself');
+        } else {
+          test.fail('wrong packet: ' + JSON.stringify(one));
+        }
+
+        const open = el(app, 'contacts-seen-list').innerHTML;
+        if (/jazz, and a synth in the corner/.test(open)) {
+          test.check('and what they said appears in a bubble under their row');
+        } else {
+          test.fail('no bubble: ' + open);
+        }
+
+        // ── THE ONE A CENSUS COULD NEVER ANSWER ───────────────────────
+        //
+        //   Andy, earlier: "this would incidentally also validate true
+        //   'reachability'."
+        el(app, 'contacts-seen-list').fire('click', {
+          target: target('data-seen-row', 'KEY-GHOST'),
+        });
+
+        return settle().then(function () {
+          const ghost = el(app, 'contacts-seen-list').innerHTML;
+          if (/could not reach them/.test(ghost)) {
+            test.check('somebody who does not answer is reported as unreachable, which a census cannot tell you');
+          } else {
+            test.fail('ghost: ' + ghost);
+          }
+
+          // ONE AT A TIME. Two open bubbles and a list of names stops
+          // being a list you scan (UI_DESIGN_STYLE §3).
+          if (!/jazz, and a synth/.test(ghost)) {
+            test.check('and opening one shuts the other');
+          } else {
+            test.fail('two bubbles open at once: ' + ghost);
+          }
+
+          // ASKED ONCE. The answer is kept while this list of answers is,
+          // so shutting and reopening costs no packet.
+          const before = app.posts.length;
+          el(app, 'contacts-seen-list').fire('click', {
+            target: target('data-seen-row', 'KEY-GHOST'),
+          });
+          el(app, 'contacts-seen-list').fire('click', {
+            target: target('data-seen-row', 'KEY-GHOST'),
+          });
+
+          return settle().then(function () {
+            if (app.posts.length === before) {
+              test.check('and re-opening a row asks nothing again');
+            } else {
+              test.fail('asked again: ' + JSON.stringify(app.posts.slice(before)));
+            }
+
+            // ── ADD IS STILL ADD ────────────────────────────────────
+            //
+            // The button sits inside the row, so a row handler that ran
+            // first would open a bubble on every press of Add. The press
+            // that writes a contact must do that and nothing else.
+            const postsBefore = app.posts.length;
+            el(app, 'contacts-seen-list').fire('click', {
+              target: target('data-key', 'KEY-SONNY', {
+                className: 'cancel-btn contacts-seen-add',
+                dataset: { key: 'KEY-SONNY', url: 'https://a.example' },
+              }),
+            });
+
+            return settle().then(function () {
+              const calls = posted(app, 'peer.acquire');
+              if (calls.length === 1 && calls[0].publicKey === 'KEY-SONNY') {
+                test.check('pressing Add still adds');
+              } else {
+                test.fail('acquire: ' + JSON.stringify(calls));
+              }
+
+              if (app.posts.length === postsBefore) {
+                test.check('and does not also ask them who they are');
+              } else {
+                test.fail('Add opened a bubble too: ' + JSON.stringify(app.posts.slice(postsBefore)));
+              }
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
 function addsByHandle() {
   test.subHeading('Adding somebody is still a phone call');
 
@@ -1146,7 +1320,7 @@ listsTheBook()
   .then(aRowOpensThePerson)
   .then(refreshesWhenTheDialogChangedSomething)
   .then(saysNothingWhenNothingHappened)
-  .then(forgetsWithoutUnblocking).then(addsByHandle)
+  .then(forgetsWithoutUnblocking).then(addsByHandle).then(aFoundPersonCanBeAsked)
   .then(strangerPolicy)
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)

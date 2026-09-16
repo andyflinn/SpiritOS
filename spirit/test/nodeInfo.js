@@ -626,7 +626,123 @@ function aNodeOnNoRelay() {
   });
 }
 
-// ── 6. NO TICK ───────────────────────────────────────────────────────
+// ── 6. A NODE THAT HAS NEVER BEEN DESCRIBED ──────────────────────────
+//
+//   Andy: "lots of empty node-descriptions right now ... on boot: the
+//   node should fill the description 'this node described for the first
+//   time [date / time string].' this gives likely different strings by
+//   default."
+//
+// The property is SAMENESS, not emptiness — so the check that matters is
+// that two nodes do not get one string.
+
+function theFirstDescription() {
+  test.subHeading('A node with nothing to say says when it first had nothing to say');
+
+  const home = tmpHome('fresh');
+  if (nodeCard.read(home).description === '') {
+    test.check('a minted identity has no description at all');
+  } else {
+    test.fail('minted with: ' + JSON.stringify(nodeCard.read(home)));
+  }
+
+  const first = nodeCard.ensureDescription(home, new Date('2026-09-17T14:23:07.891Z'));
+  if (/^this node described for the first time /.test(first)) {
+    test.check('and boot fills one rather than leaving the gap');
+  } else {
+    test.fail('first: ' + JSON.stringify(first));
+  }
+
+  // TO THE SECOND, AND SPELLED OUT. It is read by a person off a screen
+  // where it stands in for somebody's name, so it is not an ISO stamp
+  // with a T and a Z in it — and not milliseconds either, which would buy
+  // uniqueness nobody needs at the cost of a string with a decimal point.
+  if (first.indexOf('2026-09-17 14:23:07 UTC') !== -1 && first.indexOf('891') === -1) {
+    test.check('as a date and a time to the second, in UTC, with no machine punctuation');
+  } else {
+    test.fail('shape: ' + first);
+  }
+
+  if (nodeCard.read(home).description === first) {
+    test.check('and it is on disk, not merely returned');
+  } else {
+    test.fail('not stored: ' + JSON.stringify(nodeCard.read(home)));
+  }
+
+  // ── THE POINT: TWO NODES, TWO STRINGS ───────────────────────────────
+  const other = tmpHome('fresh');
+  const second = nodeCard.ensureDescription(other, new Date('2026-09-17T14:23:09.000Z'));
+  if (second !== first) {
+    test.check('two nodes booting seconds apart do not read the same, which is the whole point');
+  } else {
+    test.fail('both said: ' + first);
+  }
+
+  // ── AND IT NEVER OVERWRITES ─────────────────────────────────────────
+  //
+  // It runs on EVERY boot. A description somebody typed must survive a
+  // restart, or this would be a feature that eats the thing it exists to
+  // encourage.
+  nodeCard.setDescription(home, 'jazz, and a synth in the corner');
+  nodeCard.ensureDescription(home, new Date('2027-01-01T00:00:00.000Z'));
+  if (nodeCard.read(home).description === 'jazz, and a synth in the corner') {
+    test.check('a description somebody wrote survives every later boot');
+  } else {
+    test.fail('overwritten: ' + JSON.stringify(nodeCard.read(home)));
+  }
+
+  // CLEARED IS EMPTY, AND EMPTY GETS FILLED AGAIN. That is the right way
+  // round: blank is the state this exists to end, and somebody who wants
+  // to say nothing has said nothing either way.
+  nodeCard.setDescription(home, '');
+  const again = nodeCard.ensureDescription(home, new Date('2027-01-01T00:00:00.000Z'));
+  if (/2027-01-01 00:00:00 UTC/.test(again)) {
+    test.check('and a cleared one is filled again, because blank is what this ends');
+  } else {
+    test.fail('after clearing: ' + JSON.stringify(again));
+  }
+
+  // IT GOES THROUGH THE ORDINARY SETTER, so the one thing written with
+  // nobody present obeys every rule a person's would.
+  if (Buffer.byteLength(again, 'utf8') <= labelRule.DESCRIPTION_MAX_BYTES) {
+    test.check('and it fits the cap, like anything else that reaches this field');
+  } else {
+    test.fail('too long: ' + again.length);
+  }
+
+  // ── A NODE MINTED AFTER ITS OWN BOOT ────────────────────────────────
+  //
+  // The boot hook runs before a fresh node has a key: `ensureIdentity` is
+  // called by the first CLAIM. So hub.signedClaim ensures too, or every
+  // new node answers a blank card until somebody restarts it — which is
+  // the window every new node passes through, and the one this feature is
+  // for. Proven here as the sequence it actually is.
+  const late = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-late-'));
+  if (nodeCard.ensureDescription(late) === '') {
+    test.check('a node booting before it has a key writes nothing, because there is nothing to describe');
+  } else {
+    test.fail('described a node with no identity');
+  }
+  auth.saveIdentity(late, auth.generateIdentity('newcomer'));
+  if (/^this node described for the first time /.test(nodeCard.ensureDescription(late))) {
+    test.check('and gets one the moment its key exists, which is when it is claimed');
+  } else {
+    test.fail('still blank after minting: ' + JSON.stringify(nodeCard.read(late)));
+  }
+  fs.rmSync(late, { recursive: true, force: true });
+
+  // A NODE WITH NO KEY HAS NOTHING TO DESCRIBE, and must not be a crash
+  // on the first line of boot.
+  const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-nokey-'));
+  if (nodeCard.ensureDescription(empty) === '') {
+    test.check('and a directory with no identity in it is left alone rather than thrown at');
+  } else {
+    test.fail('wrote into a keyless directory');
+  }
+  fs.rmSync(empty, { recursive: true, force: true });
+}
+
+// ── 7. NO TICK ───────────────────────────────────────────────────────
 
 function noTick() {
   test.subHeading('And it is not driven by the job tick');
@@ -667,6 +783,7 @@ theScreen()
   .then(theFanOut)
   .then(aRelayThatSaysNo)
   .then(aNodeOnNoRelay)
+  .then(function () { theFirstDescription(); })
   .then(function () { noTick(); })
   .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
   .then(function () { test.reportSuccessFailureCount(); });
