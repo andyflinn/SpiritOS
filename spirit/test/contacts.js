@@ -803,6 +803,52 @@ function forgetsWithoutUnblocking() {
 // relay was told and has no opinion about. This asks the person, and the
 // answer is a different kind of fact — they wrote it, they are awake, and
 // the packet came back.
+// The other half of the deletion, and the half a test written around two
+// berts would never see: a list of distinct names carries no key at all.
+function distinctNamesCarryNoKey() {
+  test.subHeading('And a list of distinct names shows no key at all');
+
+  const app = mountApp({
+    matches: [
+      { publicKey: 'KEY-BERT', publicLabel: 'bert', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-CAROL', publicLabel: 'carol', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'census', owner: false },
+    ],
+  });
+
+  return settle().then(function () {
+    el(app, 'contacts-seen-q').value = 'r';
+    el(app, 'contacts-seen-go').fire('click');
+    return settle().then(function () {
+      const out = el(app, 'contacts-seen-list').innerHTML;
+
+      if (/bert/.test(out) && /carol/.test(out)) {
+        test.check('both are listed by name');
+      } else {
+        test.fail('rows: ' + out);
+      }
+
+      if (out.indexOf('mjowM=') === -1 && out.indexOf('Zv0gX0=') === -1) {
+        test.check('and neither carries an ending, because neither needs one');
+      } else {
+        test.fail('an ending appeared on an unambiguous row: ' + out);
+      }
+
+      // NOR THE SENTENCE ABOUT TELLING THEM APART. There is nothing to
+      // tell apart, and a standing instruction for a problem you do not
+      // have is a thing to read and dismiss (UI_DESIGN_STYLE §1).
+      //
+      // Two answers is still "more than one", so this fixture deliberately
+      // keeps two rows: what is being asserted is that the ENDING goes and
+      // the sentence stays, not that the sentence tracks the count.
+      if (/data-key=/.test(out)) {
+        test.check('and Add still carries the whole key it writes');
+      } else {
+        test.fail('rows are not keyed: ' + out);
+      }
+    });
+  });
+}
+
 function aFoundPersonCanBeAsked() {
   test.subHeading('A found person can be asked who they are');
 
@@ -978,8 +1024,35 @@ function addsByHandle() {
         test.fail('matches: ' + out);
       }
 
-      if (/ends with/.test(out) && /fine print/.test(out)) {
-        test.check('and it still says where the other person reads their own');
+      // ── IN NO COLUMN, THOUGH ─────────────────────────────────────
+      //
+      //   Andy: "get rid of the keys column (that stuff has to go
+      //   everywhere)" — and, asked about this last one: "word."
+      //
+      // This was the final place in the shell with a key ending in a
+      // column of its own, and the one that had an argument for keeping
+      // it: picking the right key IS the decision here. What answers that
+      // now is opening the row — the node says who it is in its own
+      // words, which is the thing an ending was ever standing in for.
+      if (out.indexOf('<th>Key ends</th>') === -1) {
+        test.check('and no Key ends column — the last one in the shell is gone');
+      } else {
+        test.fail('the column is still here: ' + out);
+      }
+
+      // THE ENDING RIDES THE NAME, on the rows that collide, because a
+      // node that will not answer leaves two identical rows and Add
+      // writes one of them.
+      if (/bert <span class="muted"[^>]*>…mjowM=<\/span>/.test(out)) {
+        test.check('it rides beside the name instead, on the rows that need it');
+      } else {
+        test.fail('ending is not on the label: ' + out);
+      }
+
+      // AND THE SENTENCE POINTS AT THE NEW ANSWER FIRST, keeping the old
+      // one as the fallback it now is.
+      if (/Open a row/.test(out) && /ends with/.test(out) && /fine print/.test(out)) {
+        test.check('and the instruction offers opening a row first, and the ending as the fallback');
       } else {
         test.fail('instruction: ' + out);
       }
@@ -1320,7 +1393,7 @@ listsTheBook()
   .then(aRowOpensThePerson)
   .then(refreshesWhenTheDialogChangedSomething)
   .then(saysNothingWhenNothingHappened)
-  .then(forgetsWithoutUnblocking).then(addsByHandle).then(aFoundPersonCanBeAsked)
+  .then(forgetsWithoutUnblocking).then(addsByHandle).then(distinctNamesCarryNoKey).then(aFoundPersonCanBeAsked)
   .then(strangerPolicy)
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)

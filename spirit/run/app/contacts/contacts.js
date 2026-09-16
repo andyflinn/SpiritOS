@@ -118,6 +118,11 @@ var contactsCards = Object.create(null);
 // being a list you scan.
 var contactsCardOpen = '';
 
+// Which names in the current answer are worn by more than one row. Built
+// in contactsPaintSeen, read one line later — a variable rather than a
+// local only because the rows are mapped in an expression.
+var contactsSeenCollide = Object.create(null);
+
 // Both of these are `contactsApi.verb` now (AGENT.md, Comms) — the shell
 // is the only thing an app speaks to. They stay as two names because they
 // answer two shapes and their callers read different halves.
@@ -352,26 +357,67 @@ function contactsPaintSeen() {
     return;
   }
 
-  // THE ONE THING WORTH SAYING BEFORE A LIST OF NAMES. Carried over from
-  // Add-by-handle, which was the only place it appeared and is the reason
-  // that panel was worth merging rather than deleting: a label is not an
-  // identity (R1), so the ending is how you know WHICH john.
+  // THE ONE THING WORTH SAYING BEFORE A LIST OF NAMES. A label is not an
+  // identity (R1), so two answers can wear one name and something has to
+  // tell them apart.
+  //
+  // WHAT THAT SOMETHING IS HAS CHANGED. It used to be six characters of a
+  // key read down a telephone, and this sentence used to ask for them.
+  // Now a row can be OPENED and that node says who it is in its own words
+  // — which is the thing key endings were standing in for, and the reason
+  // UI_DESIGN_STYLE §6 only ever defended them as the answer when there
+  // was nothing better.
+  //
+  // THE ENDING IS STILL THE FALLBACK, and the sentence keeps it, because
+  // a node that does not answer has no words to offer and two rows are
+  // then still two rows.
   //
   // Shown only when there is a decision to make.
   const ambiguous = contactsSeen.length > 1;
 
   box.innerHTML =
     (ambiguous
-      ? '<div class="job-manifest-note">More than one answer. Ask them what their key ' +
-        'ends with — they can see it in fine print at the foot of their own screen.</div>'
+      ? '<div class="job-manifest-note">More than one answer. Open a row and that ' +
+        'node will say who it is — or ask them what their key ends with, which they ' +
+        'can read in fine print at the foot of their own screen.</div>'
       : '') +
     // NO "WHERE" COLUMN. Andy: "The user shouldn't worry about relays."
     // The relay is still on the row, as `data-url`, because the confirm is
     // checked against that census and the contact keeps it as a route —
     // but it is the node's business and not a column somebody reads.
+    //
+    // AND NO "KEY ENDS" COLUMN EITHER, now that a row can be opened.
+    //
+    //   Andy: "get rid of the keys column (that stuff has to go
+    //   everywhere)" — and, on this one: "word."
+    //
+    // This was the last place in the shell showing a key ending in a
+    // column of its own, and it was the one with an argument: picking the
+    // right key IS the decision here, so something had to distinguish two
+    // rows called john. Something does now, and it is better than six
+    // characters — the node's own sentence about itself, which is what
+    // this whole arc was for.
+    //
+    // WHAT SURVIVES is the ending on a row that COLLIDES, beside the name
+    // rather than in a column: a node that will not answer leaves two
+    // identical rows, and Add writes one of them. Same rule as the
+    // enrolment list on the Natter screen (ndTellApart) and the same one
+    // the book above already follows (contactsHandleCell) — say it where
+    // there is a decision to make, and nowhere else.
     '<table class="job-table"><thead><tr>' +
-      '<th>Name</th><th>Key ends</th><th></th>' +
+      '<th>Name</th><th></th>' +
     '</tr></thead><tbody>' +
+    // Counted over the whole answer, not over the two rows either side:
+    // a list is scanned, and a name is ambiguous if anything else in it
+    // reads the same wherever that row happens to sort.
+    (function () {
+      contactsSeenCollide = Object.create(null);
+      contactsSeen.forEach(function (c) {
+        const l = String(c.publicLabel || '');
+        contactsSeenCollide[l] = (contactsSeenCollide[l] || 0) + 1;
+      });
+      return '';
+    })() +
     contactsSeen.map(function (c) {
       // ALREADY KNOWN IS SAID, NOT HIDDEN. A search is a question about
       // who is out there, and dropping the people you have would make
@@ -382,19 +428,23 @@ function contactsPaintSeen() {
       // THE ROW IS THE CONTROL, and Add is a button on it. Clicking the
       // name asks that person who they are; clicking Add writes the row.
       // Two gestures, and the one that costs nothing is the bigger target.
+      const alike = (contactsSeenCollide[String(c.publicLabel || '')] || 0) > 1;
       return '<tr class="job-row" data-seen-row="' +
           contactsEscapeHtml(c.publicKey) + '"' +
           ' title="' + (open ? 'hide' : 'ask them who they are') + '">' +
         '<td>' + (open ? contactsIcon.POINTDOWN : contactsIcon.POINTRIGHT) + ' ' +
-          contactsEscapeHtml(c.publicLabel || '(no label)') + '</td>' +
-        '<td>\u2026' + contactsEscapeHtml(String(c.tail || '')) + '</td>' +
+          contactsEscapeHtml(c.publicLabel || '(no label)') +
+          (alike
+            ? ' <span class="muted" title="more than one answer wears this name">\u2026' +
+              contactsEscapeHtml(String(c.tail || '')) + '</span>'
+            : '') + '</td>' +
         '<td>' + (known
           ? '<span class="muted">already a contact</span>'
           : '<button type="button" class="cancel-btn contacts-seen-add"' +
             ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
             ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button>') + '</td>' +
       '</tr>' +
-      contactsCardBubble(c, 3);
+      contactsCardBubble(c, 2);
     }).join('') +
     '</tbody></table>' +
     (contactsSeenSilent.length
