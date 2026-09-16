@@ -52,8 +52,15 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
 
 // How many rows a search answers with. Fixed, not measured — see the
-// note at the cap itself. 32 x 418 worst-case bytes = 13376, inside the
-// 15872 a packet leaves after envelope headroom.
+// note at the cap itself.
+//
+// 32 x 418 worst-case bytes = 13376, inside the 16266 a packet leaves
+// after its own envelope. PAYLOAD_MAX is the PACKET — the encoded
+// envelope, which is what packet.js and MAX_ROUTED_TEXT both measure.
+// `from`, `to` and `sig` sit OUTSIDE it and are covered by
+// WIRE_HEADROOM in BODY_MAX, so they must not be subtracted here.
+// Doing so once reserved room inside the packet for things that are
+// not in it.
 var SEARCH_SLOTS = 32;
 // WHAT THE ONE REFUSAL IS CALLED, and how long this relay will hold a
 // browser's POST while the node answers.
@@ -1741,10 +1748,13 @@ function matchRank(label, query) {
         // The number is checkable rather than chosen. A row is at most
         // a 60-char key, a 256-byte label (labelRule), an ISO date and
         // two booleans, with field names — 418 bytes measured. The
-        // budget is PAYLOAD_MAX less the envelope headroom, 15872. So
-        // 32 slots is 13376 worst case, and the slack is there so that
-        // adding a field to a row later is a decision rather than an
-        // incident.
+        // budget is PAYLOAD_MAX less this reply’s own envelope, 16266.
+        // So 32 slots is 13376 worst case, with 2890 spare — and that
+        // slack is there so adding a field to a row later is a decision
+        // rather than an incident.
+        //
+        // Not PAYLOAD_MAX less WIRE_HEADROOM, which is what this said
+        // first. The keys around a packet are not IN the packet.
         var matches = scored.slice(0, SEARCH_SLOTS).map(function (hit) {
           return {
             publicKey: hit.peer.publicKey,
