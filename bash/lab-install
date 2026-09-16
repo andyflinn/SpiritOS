@@ -110,8 +110,28 @@ chmod 600 "$LAB_DIR/.env"
 say "install unit $LAB_UNIT"
 ( cd "$LAB_DIR" && ./bash/install-units )
 
-say "start and enable"
-( cd "$LAB_DIR" && ./bash/start && ./bash/boot-on )
+# ── restart, NOT start — THIS SCRIPT IS DOCUMENTED IDEMPOTENT ────────
+#
+# "run it again after a push and it updates the lab rather than
+# complaining" — and it did update the clone, and then called
+# `systemctl start` on a unit that was already active, which is a no-op.
+# Seen on spirit-3, 2026-09-16:
+#
+#   ok  at ea91a60                     <- disk
+#   ok  started spirit-lab
+#   Active: active (running) since ... 51min ago    <- the OLD process
+#   /api/version -> 04e5acb                         <- the old code
+#
+# Disk updated, process not, and a line saying "started" about something
+# that did not start. The same shape as the pipefail bug in bash/update,
+# which cost weeks of a relay never restarting — and it hid here behind
+# an `ok`.
+#
+# `systemctl restart` starts a stopped unit and restarts a running one,
+# so it is right on the first install AND on every re-run. There was
+# never a case where `start` was the better call.
+say "restart and enable"
+( cd "$LAB_DIR" && ./bash/restart && ./bash/boot-on )
 
 say "caddy site for $LAB_DOMAIN"
 ( cd "$LAB_DIR" && ./bash/tls ) || {

@@ -117,6 +117,40 @@ fs.writeFileSync(
   'utf8'
 );
 
+// ── THIS NODE MUST NOT KNOW ABOUT THE REAL RELAYS ────────────────────
+//
+// setupRelayFakes copies every TRACKED spirit/ file, and
+// app/natter/relays.json is tracked — so every fake node booted with the
+// production list in it:
+//
+//   [{ "label": "spirit", "url": "https://spirit.andyflinn.com" }, …]
+//
+// `relay.status` is ownerBadge.probe, which fetches /api/relay/who from
+// EVERY row. So the verb sweep below made a real HTTPS request to the
+// live public relay on every run of this suite — DNS, TLS, round trip —
+// and then failed with `relay.status (Error: timeout, 8013ms)` whenever
+// the parallel harness made that exceed the 8s budget. One run in five,
+// looking like flakiness.
+//
+// Two things wrong with that, and the slow one is the lesser. A unit
+// suite must not depend on a machine in a data centre being up, and it
+// must not send traffic to it — spirit.andyflinn.com was being probed by
+// every full harness run on this laptop.
+//
+// setupRelayFakes' own header says local state "(relays.json,
+// preferences.json, ...) is never touched", which was true when
+// relays.json was untracked. It is tracked now, so that sentence is
+// wrong and this is the consequence landing somewhere else.
+//
+// 127.0.0.1:1 is refused by the kernel with no name lookup. The list is
+// non-empty on purpose: relay.claim below is asserted to refuse a url
+// that is NOT on it, which needs a list to not be on.
+fs.writeFileSync(
+  path.join(nodeRoot, 'app', 'natter', 'relays.json'),
+  JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]),
+  'utf8'
+);
+
 let child = null;
 let sink = null;
 
@@ -343,8 +377,17 @@ freePort()
       ['POST', '/api/spirit', { verb: 'peer.find', handle: 'x' }],
       ['POST', '/api/spirit', { verb: 'peer.acquire', publicKey: 'NOPE' }],
       // Every loopback verb, at the one door. `net.fetch` is left out on
-      // purpose: it is the only one that would reach the internet from a
-      // test, and it is covered where its refusals are.
+      // purpose — it would reach the internet from a test, and it is
+      // covered where its refusals are.
+      //
+      // IT IS NOT THE ONLY ONE, which this said until 2026-09-16.
+      // relay.partnerCheck reaches the network too, and unlike
+      // relay.claim nothing gates it first: handleClaim goes through
+      // withChosenRelay, so a url on no Natter list is refused before a
+      // socket is opened, while partnerCheck fetches whatever it is
+      // handed — necessarily, since a partner's relay is somewhere this
+      // node has never been. See the note on it below for what believing
+      // this sentence cost.
       ['POST', '/api/spirit', { verb: 'jobs.list' }],
       ['POST', '/api/spirit', { verb: 'jobs.create' }],
       ['POST', '/api/spirit', { verb: 'jobs.update' }],
@@ -362,7 +405,27 @@ freePort()
       // either way.
       ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
       ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
-      ['POST', '/api/spirit', { verb: 'relay.partnerCheck', publicKey: 'NOPE', url: 'https://not-a-relay.example' }],
+      // ── THIS ONE REACHES THE NETWORK, AND SAID IT DID NOT ───────────
+      //
+      // The note above says net.fetch "is the only one that would reach
+      // the internet from a test". That was wrong: handlePartnerCheck
+      // calls relayRequest(url, 'GET', '/api/relay/who') on whatever url
+      // it is handed, with no list check first — that is the whole point
+      // of the verb, since a partner's relay is by definition somewhere
+      // this node has never been.
+      //
+      // So `https://not-a-relay.example` made a real DNS lookup on every
+      // run, and how long that takes is the resolver's business. Inside
+      // the parallel harness it went past the 8s per-request budget and
+      // this suite failed with `POST /api/spirit (Error: timeout)` —
+      // twice in a row, while passing 3/3 when run alone. It reads as
+      // flakiness and is a test doing I/O it disclaimed.
+      //
+      // 127.0.0.1:1 is refused instantly by the kernel: no DNS, no
+      // waiting, and the same thing proved — handlePartnerCheck catches
+      // the failure and ANSWERS rather than throwing, which is exactly
+      // what this sweep exists to check.
+      ['POST', '/api/spirit', { verb: 'relay.partnerCheck', publicKey: 'NOPE', url: 'https://127.0.0.1:1' }],
       ['POST', '/api/spirit', { verb: 'contact.block', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.unblock', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'contact.accept', publicKey: 'NOPE' }],
@@ -384,11 +447,23 @@ freePort()
     const unreached = [];
     return LOOPBACK_CALLS.reduce(function (chain, row) {
       return chain.then(function () {
+        const startedAt = Date.now();
         return request(port, row[0], row[1], row[2] || (row[0] === 'POST' ? {} : null))
           .then(function (r) {
             // Status 0 is no answer at all: the handler threw and took the
             // connection — or the process — with it.
-            if (r.status === 0) dead.push(row[0] + ' ' + row[1] + ' (' + r.error + ')');
+            // NAME THE VERB. Every entry in this list is the same method
+            // and the same path, so "POST /api/spirit (Error: timeout)"
+            // identified nothing — a timeout here was reported twice as
+            // an anonymous failure, and both times the next step was
+            // guessing which of twenty-six calls it was. The verb is the
+            // only part that differs, so it is the only part worth
+            // printing. Milliseconds too, because the failure this
+            // catches is usually slowness rather than death.
+            if (r.status === 0) {
+              dead.push(((row[2] && row[2].verb) || row[0] + ' ' + row[1]) +
+                ' (' + r.error + ', ' + (Date.now() - startedAt) + 'ms)');
+            }
             const verb = (row[2] && row[2].verb) || '';
             if (!verb) return;
             const missing = r.status === 400 && /no such verb/.test(String(r.text || ''));

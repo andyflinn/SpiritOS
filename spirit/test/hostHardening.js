@@ -673,6 +673,34 @@ test.subHeading('The keeper’s SSH key runs one script and cannot reach the liv
     test.fail('keeper-ssh can be pointed at spirit-3: env guard ' + guardsEnv + ', live guard ' + guardsLive);
   }
 
+  // ── AN IDEMPOTENT INSTALLER MUST RESTART, NOT START ────────────────
+  //
+  // lab-install is documented "run it again after a push and it updates
+  // the lab" — and it called `systemctl start`, which does nothing to a
+  // unit that is already active. On spirit-3, 2026-09-16:
+  //
+  //   ok  at ea91a60                                 <- clone updated
+  //   ok  started spirit-lab
+  //   Active: active (running) since ... 51min ago   <- old process
+  //   /api/version -> 04e5acb                        <- old code
+  //
+  // Disk updated, process not, and an `ok` line claiming it started
+  // something that did not start. Exactly the shape of the pipefail bug
+  // in bash/update, which meant no relay was ever restarted by an
+  // update — found the same week, in the neighbouring script.
+  //
+  // `restart` is right on a first install too, so there is no case this
+  // trades away.
+  const labInstallSrc2 = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
+  const startsOnly = /\.\/bash\/start\b/.test(
+    labInstallSrc2.split('\n').filter(function (l) { return !/^\s*#/.test(l); }).join('\n')
+  );
+  if (!startsOnly) {
+    test.check('and lab-install restarts rather than starts, so a re-run reaches the process');
+  } else {
+    test.fail('lab-install calls ./bash/start — a re-run updates the disk and leaves the old process');
+  }
+
   // THE PRIVATE KEY IS NOT IN THE REPOSITORY, which is OneDrive-synced
   // on the work machine — a key committed here would be a key uploaded.
   const strayKeys = [];
