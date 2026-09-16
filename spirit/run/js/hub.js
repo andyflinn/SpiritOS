@@ -839,7 +839,7 @@ function createHub(rootDir) {
         fail(res, 503, 'that peer is not reachable right now');
         return;
       }
-      return router.post(where[0], to, text).then(function (answer) {
+      return sendPacket(router, where[0], to, text).then(function (answer) {
         res.writeHead(answer.ok ? 200 : (answer.status || 502),
           { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(answer));
@@ -1438,6 +1438,142 @@ function createHub(rootDir) {
     }).catch(function () { fail(res, 400, 'bad body'); });
   }
 
+  // ── EVERYBODY THIS NODE CAN SEE AND DOES NOT YET KNOW ────────────────
+  //
+  //   Andy: "Natter, of course, will not be the place to add contacts,
+  //   this must fit seamlessly into contacts itself, and the list there
+  //   must present peers that are not yet in the contacts list from our
+  //   bound relay or other relays."
+  //
+  // Contacts sees ONE relay today: `peer.list` is `withRelay`, which is
+  // `urls[0]`. So "people you could add" meant "people on the first row of
+  // relays.json", and everybody on the second relay — let alone on a
+  // partner — was invisible in the place a person actually goes looking.
+  //
+  // THE FAN-OUT BELONGS HERE, not in the app. The browser would need one
+  // request per relay plus one per partner, and natterDetails would grow a
+  // second copy of the same arithmetic. Later this becomes one `search` to
+  // each relay (PARTNERS.md, tier three) and the app does not change: it
+  // asks this verb either way.
+  //
+  // Three hops, and only the middle one needs a signature:
+  //
+  //   1. each configured relay's census      public GET
+  //   2. ask it who it partners with         signed post, any member may
+  //   3. each partner's census               public GET
+  //
+  // WHAT IS SUBTRACTED is anybody already known — `whoBook.contacts()` is
+  // every row that arrived by more than a census sighting. A candidate is
+  // precisely somebody visible and not yet known, which is the list the
+  // question asks for and nothing more.
+  // ── THE ONE DOOR ONTO THE WIRE ───────────────────────────────────────
+  //
+  // `router.post` is called here and nowhere else in this file, and
+  // serverSurface asserts it by counting:
+  //
+  //   "Every post-path door was deleted on 2026-09-15 so that peer.post is
+  //   the only way onto the wire. A second caller is a second door,
+  //   whether or not a route has been wired to it yet."
+  //
+  // Which it caught immediately when handleCandidates grew its own call.
+  // The rule is about paths, not about verbs — so a second CALLER shares
+  // this function rather than reaching past it, and everything that
+  // decides how a packet is shaped stays in one place.
+  function sendPacket(router, relayUrl, toKey, text) {
+    return router.post(relayUrl, toKey, text);
+  }
+
+  function handleCandidates(req, res, readJsonBody, deps) {
+    var router = deps && deps.router;
+    var urls = ownerBadge.configuredUrls(rootDir);
+    var me = auth.loadIdentity(rootDir);
+    var myKey = (me && me.publicKey) || '';
+
+    // Already known, by key. `contacts()` drops census-only rows, which is
+    // exactly right: seen-in-a-census is what these candidates ARE.
+    var known = Object.create(null);
+    whoBook.contacts(rootDir).forEach(function (row) {
+      if (row && row.publicKey) known[row.publicKey] = true;
+    });
+
+    var found = Object.create(null);   // key -> row
+    var seenUrl = Object.create(null);
+
+    function censusOf(url) {
+      if (seenUrl[url]) return Promise.resolve(null);
+      seenUrl[url] = true;
+      return relayRequest(url, 'GET', '/api/relay/who', null)
+        .then(function (r) {
+          if (r.status !== 200) return null;
+          try { return JSON.parse(r.text); } catch (e) { return null; }
+        })
+        .catch(function () { return null; });
+    }
+
+    function harvest(parsed, url, viaPartner) {
+      var rows = (parsed && parsed.peers) || [];
+      rows.forEach(function (p) {
+        if (!p || !p.publicKey) return;
+        if (p.publicKey === myKey || known[p.publicKey]) return;
+        // FIRST SIGHTING WINS, and a relay this node is ON beats a
+        // partner: acquiring needs a census that lists the key, and the
+        // nearer one is the one it can reach without a partnership.
+        if (found[p.publicKey] && !found[p.publicKey].viaPartner) return;
+        found[p.publicKey] = {
+          publicKey: p.publicKey,
+          publicLabel: p.publicLabel || '',
+          claimedAt: p.claimedAt || '',
+          relay: url,
+          relayLabel: (parsed && parsed.relayLabel) || '',
+          viaPartner: !!viaPartner,
+        };
+      });
+    }
+
+    // A signed ask, on the road the node already uses for every other
+    // relay verb. Failure is not fatal anywhere here: a relay that will
+    // not say who it partners with simply contributes its own census.
+    function partnersOf(url, relayKey) {
+      if (!router || !relayKey) return Promise.resolve([]);
+      var wrapped = outgoingText({ app: 'relay', body: { partners: true } });
+      if (!wrapped.ok) return Promise.resolve([]);
+      // Through sendPacket, not past it — see the note above it.
+      return sendPacket(router, url, relayKey, wrapped.text)
+        .then(function (answer) {
+          var said = null;
+          try { said = JSON.parse((answer && answer.text) || ''); }
+          catch (e) { said = null; }
+          var body = (said && said.body) || {};
+          return (body.partners) || [];
+        })
+        .catch(function () { return []; });
+    }
+
+    Promise.all(urls.map(function (url) {
+      return censusOf(url).then(function (parsed) {
+        if (!parsed) return null;
+        harvest(parsed, url, false);
+        return partnersOf(url, parsed.relayPublicKey || '');
+      }).then(function (partners) {
+        return Promise.all((partners || []).map(function (p) {
+          if (!p || !p.url) return null;
+          return censusOf(p.url).then(function (far) {
+            if (far) harvest(far, p.url, true);
+          });
+        }));
+      });
+    })).then(function () {
+      var list = Object.keys(found).map(function (k) { return found[k]; });
+      list.sort(function (a, b) {
+        return String(a.publicLabel).localeCompare(String(b.publicLabel));
+      });
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ candidates: list, relays: urls.length }));
+    }).catch(function (err) {
+      fail(res, 502, String((err && err.message) || err));
+    });
+  }
+
   function handlePartnerCheck(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
       var peerKey = String((body && body.publicKey) || '').trim();
@@ -1563,6 +1699,7 @@ function createHub(rootDir) {
     handleStatus: handleStatus,
     handlePartnerCheck: handlePartnerCheck,
     handleRoster: handleRoster,
+    handleCandidates: handleCandidates,
     handleWho: handleWho,
     handleHandle: handleHandle,
     handleContact: handleContact,

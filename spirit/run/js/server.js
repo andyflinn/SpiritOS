@@ -1768,6 +1768,13 @@ if (!relayMode) {
     'peer.list': function (rq, rs) { hub.handleWho(rq, rs); },
     'peer.find': function (rq, rs) { hub.handleHandle(rq, rs, readJsonBody); },
     'peer.acquire': function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); },
+    // Everybody this node can see across every relay it is on and
+    // their partners, minus everybody it already knows. See
+    // hub.handleCandidates — the fan-out is here so the app does not
+    // have to know how many places it took.
+    'peer.candidates': function (rq, rs) {
+      hub.handleCandidates(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
+    },
   }, { wire: true });
 }
 

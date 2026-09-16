@@ -83,6 +83,8 @@ var CONTACTS_UNKNOWN_LABELS = {
 };
 
 var contactsPeople = [];
+// Visible from here and not yet in the book — see contactsLoadSeen.
+var contactsSeen = [];
 var contactsSelfTail = '';
 
 function contactsPost(path, body) {
@@ -260,8 +262,90 @@ function contactsRefresh() {
       contactsSelfTail = (data && data.selfTail) || '';
       contactsRender();
       contactsPaintSelf();
+      contactsLoadSeen();
     })
     .catch(function (e) { contactsStatus('could not read the book: ' + e.message); });
+}
+
+// ── EVERYBODY VISIBLE AND NOT YET KNOWN ──────────────────────────────
+//
+// One ask. The node walks every relay this node is on, asks each which
+// relays it partners with, reads those censuses too, and subtracts
+// everybody already in the book — so this page does not have to know how
+// many places the answer came from, and will not have to change when the
+// relay starts answering a search instead (PARTNERS.md, tier three).
+//
+// Reloaded after the book is read rather than beside it, because what
+// counts as a candidate depends on who is already a contact.
+function contactsLoadSeen() {
+  return contactsAsk('peer.candidates')
+    .then(function (data) {
+      contactsSeen = (data && data.candidates) || [];
+      contactsPaintSeen();
+    })
+    .catch(function () {
+      contactsSeen = [];
+      contactsPaintSeen();
+    });
+}
+
+function contactsPaintSeen() {
+  const box = document.getElementById('contacts-seen-list');
+  const summary = document.getElementById('contacts-seen-summary');
+  if (!box) return;
+
+  if (summary) {
+    summary.textContent = contactsSeen.length
+      ? 'People you have not added yet (' + contactsSeen.length + ')'
+      : 'People you have not added yet';
+  }
+
+  if (!contactsSeen.length) {
+    box.innerHTML = '<div class="job-log-empty">nobody visible from here that you do not already have</div>';
+    return;
+  }
+
+  box.innerHTML =
+    '<table class="job-table"><thead><tr>' +
+      '<th>Label</th><th>Key</th><th>Where</th><th></th>' +
+    '</tr></thead><tbody>' +
+    contactsSeen.map(function (c) {
+      const where = c.relayLabel || c.relay;
+      return '<tr>' +
+        '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') + '</td>' +
+        '<td>…' + contactsEscapeHtml(String(c.publicKey).slice(-8)) + '</td>' +
+        // VIA A PARTNER IS SAID, because it changes what adding them
+        // gets you: a contact you cannot post to until forwarding
+        // exists. Silence there would be the page implying otherwise.
+        '<td>' + contactsEscapeHtml(where) +
+          (c.viaPartner ? ' <span class="muted">(partner)</span>' : '') + '</td>' +
+        '<td><button type="button" class="cancel-btn contacts-seen-add"' +
+          ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
+          ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button></td>' +
+      '</tr>';
+    }).join('') +
+    '</tbody></table>' +
+    '<div class="job-manifest-note">Seen on a relay you use, or on one of its partners. ' +
+      'Adding somebody on a partner relay records them; posting to them needs ' +
+      'forwarding, which is not built.</div>';
+}
+
+// Same confirmation as anywhere else: the node checks the key against the
+// census of the relay named here before it writes a row, so a stale page
+// cannot add somebody who is not there.
+function contactsSeenAdd(button) {
+  const key = button.getAttribute('data-key') || '';
+  const url = button.getAttribute('data-url') || '';
+  if (!key) return;
+  contactsStatus('adding…');
+  contactsAsk('peer.acquire', { publicKey: key, url: url, via: 'handle' })
+    .then(function (row) {
+      contactsStatus(row && row.publicLabel
+        ? 'added ' + row.publicLabel
+        : 'added');
+      contactsRefresh();
+    })
+    .catch(function (e) { contactsStatus('could not add: ' + e.message); });
 }
 
 // Every key the mailbox has under that handle. Never one: a handle is a
@@ -482,6 +566,25 @@ spirit.shell.activateApp({
       // who is waiting: under Hold the hub writes them into the book, so
       // they are rows in the table above — which is more than a number,
       // and something you can act on.
+      // ── PEOPLE YOU COULD ADD, WHICH IS WHY YOU CAME ─────────────────
+      //
+      //   Andy: "this must fit seamlessly into contacts itself, and the
+      //   list there must present peers that are not yet in the contacts
+      //   list from our bound relay or other relays."
+      //
+      // Add-by-handle asks you to already know the name. This is the
+      // other half: everybody visible from here and not yet known —
+      // across every relay this node is on AND their partners, which the
+      // node gathers so the page does not have to know how many places it
+      // took (peer.candidates).
+      //
+      // Beside Add-by-handle rather than replacing it, because they
+      // answer different questions: one is "is the john I was told about
+      // here", this is "who is here".
+      '<details class="stat-tile wide" name="contacts-panels" id="contacts-seen-section">' +
+        '<summary id="contacts-seen-summary">People you have not added yet</summary>' +
+        '<div id="contacts-seen-list"></div>' +
+      '</details>' +
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-unknown-section">' +
         '<summary id="contacts-unknown-summary">People who write and are not in this book</summary>' +
         '<div id="contacts-unknown-choices"></div>' +
@@ -507,6 +610,12 @@ spirit.shell.activateApp({
     });
 
     document.getElementById('contacts-add-find').addEventListener('click', contactsFindByHandle);
+    // Delegated: the list repaints whole, so a listener bound to a row
+    // would go with the next paint.
+    document.getElementById('contacts-seen-list').addEventListener('click', function (event) {
+      const btn = event.target && event.target.closest && event.target.closest('.contacts-seen-add');
+      if (btn) contactsSeenAdd(btn);
+    });
     document.getElementById('contacts-add-handle').addEventListener('keydown', function (event) {
       if (event.key === 'Enter') {
         event.preventDefault();

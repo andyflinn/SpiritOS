@@ -510,14 +510,25 @@ function listsTheBook() {
     // `<th` and not `<th>`: a heading that carries an attribute is still
     // a heading, and counting only the bare ones would undercount the
     // moment anybody adds one.
-    const headers = (src.match(/<th[\s>]/g) || []).length;
-    const spans = (src.match(/colspan="(\d+)"/g) || []).map(function (m) {
-      return Number(/\d+/.exec(m)[0]);
+    // PER TABLE, because this file has more than one now. It counted
+    // every `<th` in the source and demanded exactly five — true while
+    // there was a single table, and it went red the moment "People you
+    // have not added yet" arrived with four headings of its own. The
+    // count was never the rule; the rule is that a colspan matches the
+    // table it is in, and that generalises where a total does not.
+    const tables = src.split('<table').slice(1);
+    const wrong = [];
+    tables.forEach(function (chunk, i) {
+      const cols = (chunk.match(/<th[\s>]/g) || []).length;
+      (chunk.match(/colspan="(\d+)"/g) || []).forEach(function (m) {
+        const n = Number(/\d+/.exec(m)[0]);
+        if (n !== cols) wrong.push('table ' + (i + 1) + ': colspan ' + n + ' of ' + cols);
+      });
     });
-    if (headers === 5 && spans.length && spans.every(function (n) { return n === headers; })) {
-      test.check('and every colspan under it spans all ' + headers);
+    if (tables.length && !wrong.length) {
+      test.check('and every colspan spans all of its own table’s columns (' + tables.length + ' tables)');
     } else {
-      test.fail(headers + ' headers vs colspans ' + JSON.stringify(spans));
+      test.fail(wrong.length ? wrong.join('; ') : 'no table found in the source');
     }
 
     // Their name and yours are two answers and the table shows both, in
@@ -720,8 +731,15 @@ function foldsObeyTheSpacingRules() {
     .map(function (tag) { return /name="([^"]+)"/.exec(tag)[1]; });
   const folds = (src.match(/<details/g) || []).length;
 
-  if (folds === 2 && named.length === 2 && named[0] === named[1]) {
-    test.check('both folds are in one exclusive group, so opening one closes the other');
+  // THE PROPERTY, NOT THE COUNT. This demanded exactly two folds, which
+  // was the number there happened to be — and a third ("People you have
+  // not added yet") is not a violation of anything, it is another fold in
+  // the same group. What must hold is that EVERY fold is named and named
+  // the same, because that is what makes the browser close the others.
+  const oneGroup = folds >= 2 && named.length === folds &&
+    named.every(function (n) { return n === named[0]; });
+  if (oneGroup) {
+    test.check('all ' + folds + ' folds are in one exclusive group, so opening one closes the rest');
   } else {
     test.fail(folds + ' folds, names: ' + JSON.stringify(named));
   }
