@@ -973,6 +973,74 @@ bounded, but a hunt — and fails outright if that partnership has since
 ended or the peer moved. The node holds the one thing that would have
 helped and never wrote it down.
 
+#### One route is the floor. The list is the point.
+
+> **Andy:** *"once the first route is persisted, it would be advisable for
+> the node to query the new contact/peer for alternate relays it knows and
+> persist them as well in the peer/contact record... when an app wants to
+> post to the peer, the node reads the peer's relay list at request time,
+> drops all but the known partners, and then the request envelope can
+> contain multiple routing options for partners. But this also gives the
+> node data for partner acquisitions in its owned relays."*
+
+Three uses of one list, and the third is not a routing feature at all.
+
+**Query the register, not the peer.** "Query the contact for alternate
+relays" has two readings, and only one is free. Asking the peer's *node*
+needs the responder this document deliberately left shut, and fails
+whenever they are asleep — which is most of the time. Reading their
+**published binding** from the home relay is the same answer from a party
+that is always up, and it is already the category tier three proposes. So
+the alternate relays arrive the same way the first one did.
+
+**The filter needs no new wire.** `hub.js:1666` already asks a relay for
+its partners — `sendPacket(…, systemPayload({ partners: true }))` — so
+"drop all but the known partners" is an intersection over data the node can
+obtain today:
+
+```
+usable(P)  =  binding(P)  ∩  ( myRelay ∪ partners(myRelay) )
+```
+
+Which is the same arithmetic as `reachable(R)` earlier in this document,
+evaluated for one peer instead of a whole roster.
+
+**Multiple options, with a cap.** Carrying several candidates makes the
+path survive a relay being down or a partnership having ended since
+acquisition — the resilience the plural was for. It needs a bound, and the
+reason is not size:
+
+> A post carrying N routes lets one signed request make a relay attempt N
+> outbound forwards.
+
+That is an amplification vector, and the cap is the whole defence. Two or
+three is resilience; twenty is a favour to somebody else. The cap belongs
+at the relay, which must never attempt more than it, regardless of what
+arrived — a sender-chosen N is not a limit.
+
+**And the third use is the valuable one.** A node that knows where its
+contacts are bound knows something no relay can compute: *which
+partnerships would actually carry traffic.* Partner selection today would
+be guesswork; this makes it demand-driven — partner with the relays your
+people are already on, ranked by how many of them are there.
+
+That is a good enough reason to persist the list even for peers you can
+already reach, which the routing use alone would not justify.
+
+**The rule it must not break.** whoBook never uploads, and this is derived
+from whoBook. The aggregate is computed **on the node**, surfaced to the
+owner as a suggestion, and never shipped — even to a relay the owner owns,
+and even as counts. "Relay X holds 14 of my contacts" is a fact about the
+contact graph however it is rounded. An owner acting on the suggestion
+promotes a partner by hand, which is item 1's flow unchanged.
+
+**Freshness.** Alternates are *more* perishable than the first route, not
+less: they were never verified by use. So the list is re-read from the
+register when the register is being asked anyway (on selection, per tier
+three) and otherwise trusted as a hint under item 10 — a stale alternate
+costs a wasted attempt inside a capped set, which is the cost the cap
+already bounds.
+
 #### It is the same decision as the deferred hub-URL switch
 
 `post(relayUrl, toKey, text)` ([peerPost.js:227](../../spirit/run/js/peerPost.js#L227)):
@@ -1089,16 +1157,24 @@ as authority.
    neither reaches into the other's half. A route in the shell's hands
    would be the mirror of an app name in the node's.
 
+8. **The list, not just the floor.** Once a route is persisted the node
+   reads the peer's published binding and keeps the alternates too. At
+   request time it intersects them with its own relay's partners and may
+   offer several — capped at the relay, which never attempts more than the
+   cap however many arrive. The list is also what makes partner selection
+   demand-driven rather than guesswork, and that use is computed on the
+   node and never uploaded.
+
 ### Recommended (Claude), not yet decided
 
-8. Public-by-contract as a **declared category**, so the record can grow
+9. Public-by-contract as a **declared category**, so the record can grow
    without a protocol change and partners propagate it by reference.
    `binding` is the second member and arrived one message after the
    recommendation, which is the argument for it made by events.
-9. **Bound the description at the relay** the way the label is bounded
+10. **Bound the description at the relay** the way the label is bounded
    (256 bytes / 48 graphemes). A register that publishes an unbounded
    string is a register somebody writes ten kilobytes into.
-10. **Say the reach in the words the user types it into.** Public by
+11. **Say the reach in the words the user types it into.** Public by
    contract means public to the whole mesh — every partner of every
    partner, for as long as the enrolment lives. A name does not feel like
    disclosure; a description is where somebody writes something they
@@ -1106,6 +1182,8 @@ as authority.
 
 ### Open
 
+- **What is the route cap?** Two or three is the guess; nothing measures
+  it. It is a relay-side constant and belongs beside `SEARCH_SLOTS`.
 - **Who refreshes a binding, and how does a node learn one has changed?**
   A peer that leaves a relay leaves every node holding the stale hint to
   discover it by a wasted hop. Acceptable under item 10, but nothing says
