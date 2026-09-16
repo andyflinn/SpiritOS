@@ -70,6 +70,12 @@ Format: **term** — aliases — meaning.
 
 **Peer-by-key** — peers keyed by public key — Identity on a relay is the key. Same public label can exist twice (two johns).
 
+**Peer** — the other end, for a node — *Nodes have peers.* Another identity a node corresponds with, named by key. A peer is a person's box.
+
+**Partner** — the other end, for a relay — *Relays have partners.* Another **relay**, promoted by an owner and pinned by its relay key (`partners.json`). Never a person: a relay's counterpart is a box like itself, which is why partnership survives banning the human who owns it.
+
+**Member** — an enrolled row — Who claimed a name on a relay. A relay *has* members; it does not have peers. Note `routingTable.json` still calls this map `peers`, and the public census still answers `{ "peers": [...] }` — naming them from the node's vantage rather than the relay's, and the one place the tree contradicts the line above.
+
 **Owner** — first claim, allow.json keys[0] — The key that first-claimed (or pending-owner redeemed). Mints invites. Reads `/api/relay/status`. Gets the chat-to-relay census.
 
 **Pending owner** — pending-owner.json — Installer-set name that must win first claim. Cleared after that claim.
