@@ -101,7 +101,7 @@ var RATE_KEY_SWEEP_AT = 1000;
 // them. That is a routing table. The relay had taken the name of a thing
 // it is not.
 //
-// There are no relays in the system (Andy). An application may have
+// There are no mailboxes in the system (Andy). An application may have
 // something it chooses to call one; this layer does not, and the word
 // belongs nowhere near a box whose whole job is to route and forget.
 //
@@ -348,7 +348,7 @@ function createRelay(rootDir) {
   //
   // ── IT WAS CALLED mailboxPublicKey UNTIL 2026-09-15 ────────────────
   //
-  //   Andy: "what is relay doing in this?!?"
+  //   Andy: "what is mailbox doing in this?!?"
   //
   // Fair. The ring went in R8 and the word was retired in DICTIONARY.md,
   // but it survived here — in a field name, on the wire, read by
