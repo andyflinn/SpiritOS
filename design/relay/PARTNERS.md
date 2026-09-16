@@ -76,11 +76,15 @@ Read this section as *the shape the optimisation will take when it is
 wanted*, not as work queued behind the flag. The build order at the foot of
 this document is the real sequence.
 
-### A relay NEVER persists a partner's ledger
+### A relay NEVER persists a partner's members
 
 > **Andy:** "the relay must NEVER persist a partner's ledger. that's a
 > hard rule. It is of no use anyway if the partner is not online and
 > alive."
+
+*Heading corrected 2026-09-16: "ledger" was ambiguous once a partnership
+became a stored thing in its own right. What may never be written down is
+a partner's **members**. The partnership itself persists — that is item 1.*
 
 **Hard rule, and the reasoning removes a whole section of this document.**
 A cached list for an unreachable partner buys nothing: you cannot forward
@@ -145,6 +149,14 @@ is traded deliberately. `forgetPeer` must therefore *say* that a banned
 peer's relay is still partnered, or banning looks complete and is not.
 
 ### And the lifetime is already measured — it is presence
+
+> **Superseded 2026-09-16 by tier two.** The mechanism below binds the
+> route table to the **owner's** presence, as a proxy for whether their
+> relay is worth routing to. That inverts for a fleet — the relays run
+> permanently, the owner's laptop does not — and it was never needed:
+> B filters to present members at the source, so the bound below arrives
+> by filtering instead. Kept because the *bound* it identifies is right
+> and is the one tier two delivers.
 
 The rule hands over the cache policy for free, which is the part I would
 otherwise have got wrong with a TTL.
@@ -448,6 +460,26 @@ This is the real threshold in the proposal — bigger than the flag.
 
 ## Decided (Andy)
 
+> **Terminology, and this list has to hold it exactly** — in code as well
+> as here (`DICTIONARY.md`).
+>
+> **Nodes have peers. Relays have partners.**
+>
+> | word | belongs to | is |
+> |---|---|---|
+> | **peer** | a node | another person's box |
+> | **partner** | a relay | another **relay**, pinned by relay key |
+> | **member** | a relay | an enrolled row — who claimed a name here |
+>
+> A relay has no peers. Saying "peer" inside a relay structure is how
+> *"promote a peer to partner"* survived in item 1 for a week, and how the
+> route table below nearly shipped keyed by the wrong noun.
+>
+> The one place the tree still disagrees: `routingTable.json` names its
+> enrolment map `peers`, and the public census answers `{"peers": [...]}`.
+> Those are **members**. Recorded rather than renamed — it is on the wire
+> and in a persisted shape — but nothing *new* may take the word.
+
 1. **A relay may promote another RELAY to `partner` in its own PARTNER
    ledger. A NEW store** — `relay-state/partners.json`, keyed by the
    partner's relay key.
@@ -493,12 +525,21 @@ This is the real threshold in the proposal — bigger than the flag.
    relying on it, against public data, by key.
 5. **A relay may decline or cancel a partnership to survive**, and choose
    its partners by an algorithm that is smart rather than complicated.
-6. **A relay NEVER persists a partner's ledger.** Hard rule. It is useless
-   for an offline partner and askable for a live one, so it has no case.
-   `partner` on a peer row persists; the *list* has nowhere on disk to be.
-7. **What is held is ONE route table keyed by peer, with routes capped**
-   (two by default). Not a list per partner. The cap is what stops a
-   popular peer costing one row per partnership.
+6. **A relay NEVER persists a partner's members.** Hard rule. That list is
+   useless for an offline partner and askable for a live one, so it has no
+   case. The **partnership** persists — `partners.json`, item 1 — and what
+   has nowhere on disk to be is who that partner carries.
+7. **What is held is ONE route table keyed by identity, whose routes are
+   PARTNERS, capped** (two by default). Not a list per partner. The cap is
+   what stops one popular identity costing a row per partnership.
+
+   ```
+   route table (RAM)    <identity key>  ->  [ partnerRelayKey, partnerRelayKey ]
+   ```
+
+   The key is an identity — a box somewhere that this relay does not hold
+   a row for. The **value is a partner**, which is the only kind of
+   counterpart a relay has.
 
 ## Recommended (Claude), not yet decided
 
@@ -635,7 +676,7 @@ forwarded request's `requester` is **A**, so `routeReply` finds A's sink in
 
 ### Opening one
 
-`streamOpen` today needs a peer row. A partner has none and must not be
+`streamOpen` today needs a **member** row. A partner has none and must not be
 given one — that would mean invites minted for boxes and relays in the
 census pretending to be people. **The pinned partner key is the
 authorization**: same route shape, same `streamSignatureOk`, one more
@@ -647,10 +688,10 @@ key that authorized it is no longer pinned.
 > **Andy:** "post only are there to start the stream, or filter it at the
 > source, like dont gimme offline peers, they don't help me."
 
-**Online only, filtered at B.** B sends A only peers who are present, and
+**Online only, filtered at B.** B sends A only **members** who are present, and
 `present:false` when one leaves. A never holds a row it could not use, and
 a partner with 10,000 enrolled and 200 online costs 200 rows. That is the
-`peerlists × peerlists` exponent flattened by filtering rather than by a
+member-lists × member-lists exponent flattened by filtering rather than by a
 lifetime rule — and it delivers the bound §"the lifetime is already
 measured" wanted, without the presence-of-owner proxy that turned out to be
 wrong.
@@ -685,7 +726,8 @@ is guaranteed. Post, and let the refusal be the answer.
 `contacts.js` already models it correctly and stricter than proposed here —
 green / red / **white**, where white is *unseen* rather than dim red, and
 *"anything unknown, stale or unreachable reads as white — the mark that
-promises nothing."* A partner-peer with nothing known is white, which is
+promises nothing."* An identity reachable only through a partner, with
+nothing known about it, is white — which is
 honest. Traffic is the cheapest refresh there is: a successful post proves
 presence at that instant, a refusal proves absence, and both are free.
 
