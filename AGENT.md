@@ -29,7 +29,13 @@ The interface has **two halves**, because a personal node has no public address:
 
 That is *request by post, reply by stream*. The stream is the **inbound half of the interface**, never a way around it.
 
-**No component reaches for `http`, `https`, `fetch`, `XMLHttpRequest` or `EventSource`.** Not to get something done quickly, not because the interface is awkward here. If the interface is insufficient for the task, **decide**: modify the interface, or grant an explicit, recorded exception. Never work around it. This rule has been re-derived and back-slid more than once — `fetch` is a global in both runtimes, so nothing stops it but this line and `spirit/test/oneDoor.js`.
+**No component reaches for `http`, `https`, `fetch`, `XMLHttpRequest` or `EventSource`. EVERY FILE. ALWAYS — run code and TESTS alike.** Not to get something done quickly, not because the interface is awkward here. If the interface is insufficient for the task, **decide**: modify the interface, or grant an explicit, recorded exception. Never work around it. This rule has been re-derived and back-slid more than once — `fetch` is a global in both runtimes, so nothing stops it but this line and `spirit/test/oneDoor.js`.
+
+**A TEST IS WHERE IT GETS ESCAPED FIRST**, because bypassing the interface is always the quickest way to make something go green. `oneDoor.js` holds a CENSUS of every reach in every file under `run/js`, `run/app` and `test` — 76 across 26 files, counted recursively. A number may fall freely and may never rise; a file not in the census must have zero. **There is no category meaning "unlimited"**, because the first version had one (`server.js` and `kernel.js`, "structural") and that is precisely what got used.
+
+> **Andy:** *"it's not only new files. it's all files! Always! we need to enforce this stronger."*
+
+Raising a number, or adding a line to the census, is Andy granting an exception out loud. It is never a commit that happens to pass.
 
 A relay is a client of the same interface. `createPeerPost` already takes `traffic` injected so a relay can omit it, and touches `whoBook` only on the inbound unknown-sender path — it was built to be constructed on a relay.
 
