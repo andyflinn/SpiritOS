@@ -271,6 +271,9 @@ function ndLoad() {
         var said = (data && data.relayStatus) || {};
         ndBadge.report = said[ndUrl] || null;
       }
+      // Anything this screen needs to ASK for is asked here, once per
+      // load — never from a panel builder. See ndEnsureReach.
+      ndEnsureReach();
       ndRender();
     })
     .catch(function () { ndAsked = true; ndRender(); });
@@ -1148,6 +1151,8 @@ function ndPartnerPickerHtml(existing) {
 // are different facts and only one of them is worth reporting.
 var ndReach = Object.create(null);   // partner url -> { peers, relayLabel }
 
+// Called from ndEnsureReach only — see the note there about renders that
+// send things.
 function ndLoadReach(partners) {
   partners.forEach(function (p) {
     if (!p || !p.url || ndReach[p.url]) return;
@@ -1229,11 +1234,51 @@ function ndReachHtml(partners) {
 // census fetches, and draws what came back. Split from ndReachHtml so the
 // fetching happens once per render pass rather than inside a function that
 // also builds markup.
+// ── FOR EVERY NODE BOUND HERE, NOT ONLY THE OWNER ────────────────────
+//
+// An owner has the partner list already: it rides `relayStatus`, pushed
+// down their stream. A member has to ask — `{ partners: true }` to the
+// relay's own key — and gets the addresses without the owner's reading of
+// them (no stats, no ownerKey; see relay.js answerSelf).
+//
+// Asked once per relay and cached, because this panel repaints on every
+// render and the answer changes about as often as a partnership does.
+var ndPartnerList = Object.create(null);   // relay url -> [ {url, relayKey} ]
+
+// ── ASKING HAPPENS IN ndLoad, NEVER IN A RENDER ──────────────────────
+//
+// The first cut fired `peerPost({partners:true})` from inside the panel
+// builder, and natterDetails.js went red at once: the suite reads the LAST
+// post this screen made, and a render-time request had overwritten the
+// mint it was inspecting. The test was right about something larger than
+// itself — a repaint must not send anything, or what the node did depends
+// on how many times the screen was drawn.
+function ndEnsureReach() {
+  if (!ndBadge || (!ndBadge.owned && !ndBadge.claimed)) return;
+
+  // An owner already holds the list — it rides relayStatus.
+  var fromReport = (((ndBadge.report) || {}).partners) || [];
+  if (fromReport.length) { ndLoadReach(fromReport); return; }
+
+  var known = ndPartnerList[ndUrl];
+  if (known) { if (known.length) ndLoadReach(known); return; }
+
+  var key = ndRelayKey();
+  if (!key) return;
+  ndPartnerList[ndUrl] = [];              // asked once per relay
+  ndApi.peerPost('relay', key, { partners: true }).then(function (r) {
+    var said = (r && r.body) || {};
+    ndPartnerList[ndUrl] = said.partners || [];
+    if (ndPartnerList[ndUrl].length) ndLoadReach(ndPartnerList[ndUrl]);
+    ndRender();
+  });
+}
+
+// Pure: draws what ndEnsureReach has gathered, and sends nothing.
 function ndReachPanel() {
-  if (!ndBadge || !ndBadge.owned) return '';
-  var partners = (((ndBadge.report) || {}).partners) || [];
+  if (!ndBadge || (!ndBadge.owned && !ndBadge.claimed)) return '';
+  var partners = (((ndBadge.report) || {}).partners) || ndPartnerList[ndUrl] || [];
   if (!partners.length) return '';
-  ndLoadReach(partners);
   return ndReachHtml(partners);
 }
 

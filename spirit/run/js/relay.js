@@ -1570,6 +1570,37 @@ function createRelay(rootDir) {
     var out = { ok: false, status: 404, error: 'no such peer' };
     var owner = isOwner(who);
 
+    // ── WHO THIS RELAY PARTNERS WITH — ANY MEMBER MAY ASK ──────────────
+    //
+    //   Andy: "we want to prove that with a partnership more peer id's
+    //   can be visible for every node bound to either partner."
+    //
+    // EVERY node bound here, which is why this is not owner-gated. The
+    // partner list already reaches the owner inside `relayStatus`; an
+    // ordinary member could see nothing, so "more identities visible"
+    // was true for exactly one person per relay.
+    //
+    // WHAT A MEMBER GETS, and it is less than the owner's view: where the
+    // partner is and which key it signs with. Not `ownerKey`, not the
+    // label this relay's owner filed it under, and none of the running
+    // stats — those are the owner's reading of a relationship they
+    // entered. A member needs the address to go and look, and the key to
+    // know what it is looking at.
+    //
+    // NOT ON THE PUBLIC CENSUS, deliberately. A member learns the reach
+    // they were given by joining; a stranger reading /api/relay/who
+    // learns nothing about who this box talks to. Publishing the mesh is
+    // a different decision and nobody has taken it.
+    if (body && body.partners) {
+      out = {
+        ok: true,
+        status: 200,
+        partners: partners().map(function (p) {
+          return { url: p.url, relayKey: p.relayKey, since: p.since };
+        }),
+      };
+    }
+
     if (body && body.monitor && owner) {
       // Already proved: this arrived signed by the owner, over bytes that
       // bind sender, recipient and this exact text. So a captured `on`

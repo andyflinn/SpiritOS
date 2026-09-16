@@ -1232,8 +1232,14 @@ function revokingAimsByLabel() {
         // for one day and is gone: what it did was build
         // `{revoke:{label}}` and hand it to router.post, which is what a
         // peerPost IS. The browser says it directly now.
-        const calls = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; });
-        const sent = calls.length ? JSON.parse(calls[0].body) : null;
+        // BY WHAT IT IS — see the note on the mint below. This screen now
+        // asks the relay for its partner list on load, so `calls[0]` is
+        // no longer the verb under test.
+        const calls = app.log
+          .filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; })
+          .map(function (c) { return JSON.parse(c.body); })
+          .filter(function (p) { return p && p.body && p.body.revoke; });
+        const sent = calls.length ? calls[0] : null;
         const body = sent && sent.body;
 
         // ADDRESSED BY KEY, NOT BY URL. `ndUrl` still says which relay
@@ -1312,8 +1318,16 @@ function mintingNamesThisMailbox() {
       // relay's KEY — and so did `name`, which the relay never read: the
       // owner's name comes out of allow.json, because the only sender
       // who reaches that line is the owner.
-      const mints = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; });
-      const sent = mints.length ? JSON.parse(mints[0].body) : null;
+      // BY WHAT IT IS, NOT BY BEING FIRST. This took `mints[0]`, which was
+      // only ever the mint because this screen made exactly one post. It
+      // now asks the relay for its partner list on load, so the mint is no
+      // longer the first thing sent — and "the first post is the one I
+      // triggered" is an assumption about how much else the screen does.
+      const mints = app.log
+        .filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; })
+        .map(function (c) { return JSON.parse(c.body); })
+        .filter(function (p) { return p && p.body && p.body.invite; });
+      const sent = mints.length ? mints[0] : null;
       const body = sent && sent.body && sent.body.invite;
       if (sent && sent.to === 'RELAYKEY' && sent.app === 'relay' &&
           body && body.label === 'saint' && body.days === 7) {
