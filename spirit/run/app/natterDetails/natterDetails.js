@@ -829,9 +829,28 @@ function ndPeersHtml() {
           '<td class="nd-peer-tail">…' + ndEscapeHtml(key.slice(-8)) + '</td>' +
           '<td>' + ndEscapeHtml(ndWhen(peer && peer.claimedAt)) + '</td>' +
           '<td>' +
-            // THE OWNER'S OWN ROW TAKES NEITHER BUTTON. Adding yourself
-            // is refused by the node anyway, and removing yourself is
-            // how a relay loses the only key that can administer it.
+            // ── "OR USE THE LIST ABOVE" WAS NOT TRUE ─────────────────
+            //
+            // The partner form says "paste their key, or use the list
+            // above", and the list showed `…` plus the last eight
+            // characters and offered no way to get the whole thing into
+            // the field. Andy: "that was extremely tedious, i stole your
+            // personal public key from the who.json on my node."
+            //
+            // The full key is already on this row — every button here
+            // carries it in data-peer-key. It only had to be reachable.
+            //
+            // ON EVERY ROW, INCLUDING THE OWNER'S. A relay may now
+            // partner a peer who owns it, because the invariant is "not
+            // this box" and not "not the owner" (relay.js, setPartner) —
+            // so one person meshing their own relays needs this button
+            // exactly where the old rule said it could never apply.
+            '<button type="button" class="cancel-btn nd-peer-partner" data-peer-key="' +
+              ndEscapeHtml(key) + '">Partner</button> ' +
+            // THE OWNER'S OWN ROW TAKES NEITHER OF THE OTHER TWO. Adding
+            // yourself is refused by the node anyway, and removing
+            // yourself is how a relay loses the only key that can
+            // administer it.
             (isOwner ? '<span class="muted">that is you</span>' :
               '<button type="button" class="cancel-btn nd-peer-add" data-peer-key="' +
                 ndEscapeHtml(key) + '">Add to contacts</button> ' +
@@ -868,6 +887,39 @@ function ndSetAutoAdd(on) {
 // found by handle, and it verifies against the relay's census before it
 // writes a row — so this cannot add a key the relay does not actually
 // carry, however stale this screen's copy of the list is.
+// ── THE KEY FROM THE ROW INTO THE PARTNER FORM ───────────────────────
+//
+// Nothing on the wire: the key is already in this page, on the button
+// that was clicked. The form's placeholder promised "or use the list
+// above" and the list was showing eight characters of it, so the only
+// way to obey the instruction was to go and read who.json.
+//
+// Leaves the URL alone. The key identifies who owns the far relay; the
+// address is the thing a person actually has to know and type, and
+// guessing it from a label would be inventing a fact (PARTNERS.md: "a
+// key is not an address").
+function ndPeerPartner(button) {
+  var key = button.getAttribute('data-peer-key') || '';
+  var body = ndBody();
+  var field = body && body.querySelector('.nd-partner-key');
+  if (!key || !field) return;
+
+  field.value = key;
+
+  // Put the cursor where the remaining work is. The url is the one field
+  // this cannot fill, so it is the one to land in.
+  var url = body.querySelector('.nd-partner-url');
+  if (url && typeof url.focus === 'function') { url.focus(); }
+
+  // Say what was taken, because the field shows a long key that looks
+  // like every other long key on this screen.
+  var out = body.querySelector('.nd-partner-out');
+  if (out) {
+    out.className = 'job-manifest-note nd-partner-out';
+    out.textContent = 'key taken from the list — now give their relay’s address';
+  }
+}
+
 function ndPeerAdd(button) {
   var key = button.getAttribute('data-peer-key') || '';
   var panel = button.closest('.natter-peers');
@@ -983,7 +1035,11 @@ function ndPartnersHtml() {
     '<label class="field-label grow">Their relay' +
       '<input type="text" class="nd-partner-url" placeholder="https://their-relay.example"></label>' +
     '<label class="field-label grow">Who owns it' +
-      '<input type="text" class="nd-partner-key" placeholder="paste their key, or use the list above"></label>' +
+      // It said "or use the list above" while the list offered no way to
+      // do that. The Partner button on each enrolled row fills this now,
+      // so the sentence is true — say which button rather than gesturing
+      // upward.
+      '<input type="text" class="nd-partner-key" placeholder="paste their key, or hit Partner on a row above"></label>' +
     '<button type="button" class="cancel-btn nd-partner-go">Check and add</button>' +
     '</div>' +
     '<div class="job-manifest-note">A partner is somebody enrolled here who owns a relay ' +
@@ -1797,6 +1853,9 @@ spirit.shell.activateApp({
 
       var relayLabelBtn = target.closest('.nd-relay-label-go');
       if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }
+
+      var partnerPick = target.closest('.nd-peer-partner');
+      if (partnerPick) { ndPeerPartner(partnerPick); return; }
 
       var addBtn = target.closest('.nd-peer-add');
       if (addBtn) { ndPeerAdd(addBtn); return; }
