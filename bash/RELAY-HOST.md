@@ -206,13 +206,23 @@ Unix user. What makes it a different relay is its own `relay-state/` and
 therefore its own Ed25519 identity — `bash/ONE-OPERATOR.md` still stands,
 and root is still spirit.
 
-From the MAIN clone, one command each way:
+These belong to the MAIN clone, so **call them by absolute path** — it works
+from any directory, including from inside the lab:
 
 ```bash
-./bash/lab-install          # clone, unit, start, enable, caddy site
-./bash/lab-remove           # stop, disable, drop the unit and the site
-./bash/lab-remove --purge   # and delete the clone, key and all
+/root/SpiritOS/bash/lab-install          # clone, unit, start, enable, caddy site
+/root/SpiritOS/bash/lab-remove           # stop, disable, drop the unit and the site
+/root/SpiritOS/bash/lab-remove --purge   # and delete the clone, key and all
 ```
+
+This said "from the MAIN clone, `./bash/lab-install`", and that instruction
+failed twice in a row in practice: the `cd` is a separate step, and it is not
+the part that looks like the command, so it gets lost to a paste or to a
+prompt already sitting somewhere else. Both times the guard caught it — but a
+guard firing on the expected way of running something is a design telling you
+which way that should be. `REPO_ROOT` comes from `$BASH_SOURCE`, so the path
+form settles which clone the script belongs to and there is nothing left to
+remember.
 
 `lab-install` is idempotent: run it again after a push and it updates the
 lab clone from origin rather than complaining. It writes the lab clone's

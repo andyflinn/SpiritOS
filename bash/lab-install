@@ -43,7 +43,14 @@ ORIGIN="${SPIRIT_LAB_ORIGIN:-https://github.com/andyflinn/SpiritOS.git}"
 # to being overridden, so say which of the two this is.
 if [ "$LAB_DIR" = "$REPO_ROOT" ]; then
   if [ -f "$REPO_ROOT/.env" ]; then
-    die "this IS the lab clone — run lab-install from the main clone (${CLONE_DIR})"
+    # BY ABSOLUTE PATH, not "cd there first". Told to `cd /root/SpiritOS
+    # && ./bash/lab-install`, Andy hit this twice from inside the lab —
+    # the cd is a separate step that can be lost to a paste, a prompt
+    # already sitting somewhere else, or simply not being the part that
+    # looks like the command. The path form cannot be got wrong, because
+    # REPO_ROOT comes from $BASH_SOURCE: the script decides which clone
+    # it belongs to, the same way lib.sh decides which relay it is.
+    die "this IS the lab clone — run ${CLONE_DIR}/bash/lab-install instead (works from any directory)"
   fi
   die "lab dir is this clone ($REPO_ROOT) — that would install the lab over the live relay"
 fi

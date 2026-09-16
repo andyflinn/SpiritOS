@@ -38,7 +38,9 @@ LAB_DOMAIN="${SPIRIT_LAB_DOMAIN:-lab.andyflinn.com}"
 # otherwise is one somebody talks themselves past.
 if [ "$LAB_DIR" = "$REPO_ROOT" ]; then
   if [ -f "$REPO_ROOT/.env" ]; then
-    die "this IS the lab clone — run lab-remove from the main clone (${CLONE_DIR})"
+    # By absolute path — see the note in lab-install. A `cd` is a step
+    # that gets lost; a path is the command.
+    die "this IS the lab clone — run ${CLONE_DIR}/bash/lab-remove instead (works from any directory)"
   fi
   die "lab dir is this clone ($REPO_ROOT) — refusing to remove the live relay"
 fi
