@@ -32,7 +32,16 @@ LAB_DOMAIN="${SPIRIT_LAB_DOMAIN:-lab.andyflinn.com}"
 # THE SAME GUARDS AS INSTALL, and they matter more here: every one of
 # these is a way to stop, disable or delete the LIVE relay by running a
 # command named "lab".
-[ "$LAB_DIR" != "$REPO_ROOT" ] || die "lab dir is this clone ($REPO_ROOT) — refusing to remove the live relay"
+# Same two cases as lab-install's, and the same reason for telling them
+# apart: run from inside the lab you are not about to delete the live
+# relay, you are just in the wrong directory, and a refusal that says
+# otherwise is one somebody talks themselves past.
+if [ "$LAB_DIR" = "$REPO_ROOT" ]; then
+  if [ -f "$REPO_ROOT/.env" ]; then
+    die "this IS the lab clone — run lab-remove from the main clone (${CLONE_DIR})"
+  fi
+  die "lab dir is this clone ($REPO_ROOT) — refusing to remove the live relay"
+fi
 [ "$LAB_UNIT" != "$UNIT_NAME" ] || die "lab unit is '$UNIT_NAME', the live unit — refusing"
 [ "$LAB_DOMAIN" != "$DOMAIN" ] || die "lab domain is $DOMAIN, the live domain — refusing"
 

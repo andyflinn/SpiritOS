@@ -26,7 +26,27 @@ ORIGIN="${SPIRIT_LAB_ORIGIN:-https://github.com/andyflinn/SpiritOS.git}"
 # Every one of these has a matching failure that would take down
 # spirit.andyflinn.com rather than the lab, which is the direction these
 # mistakes run in: the new thing is fine and the old thing is gone.
-[ "$LAB_DIR" != "$REPO_ROOT" ] || die "lab dir is this clone ($REPO_ROOT) — that would install the lab over the live relay"
+# ── THE COMMONEST WAY TO HIT THIS IS NOT THE DANGEROUS ONE ──────────
+#
+# This said "that would install the lab over the live relay", which is
+# true when you are standing in the MAIN clone with SPIRIT_LAB_DIR
+# pointing at it — the hazard the guard was written for. It is nonsense
+# in the case that actually happens:
+#
+#   root@spirit-3:~/lab/SpiritOS# ./bash/lab-install
+#   ERROR: lab dir is this clone — that would install the lab over the
+#          live relay
+#
+# You are IN the lab. Nothing about the live relay is involved, and being
+# told it is invites the reader to decide the guard is confused and go
+# around it. A refusal that misdescribes itself is a refusal on its way
+# to being overridden, so say which of the two this is.
+if [ "$LAB_DIR" = "$REPO_ROOT" ]; then
+  if [ -f "$REPO_ROOT/.env" ]; then
+    die "this IS the lab clone — run lab-install from the main clone (${CLONE_DIR})"
+  fi
+  die "lab dir is this clone ($REPO_ROOT) — that would install the lab over the live relay"
+fi
 [ "$LAB_UNIT" != "$UNIT_NAME" ] || die "lab unit is '$UNIT_NAME', the live unit — set SPIRIT_LAB_UNIT"
 [ "$LAB_PORT" != "$NODE_PORT" ] || die "lab port is $NODE_PORT, the live port — set SPIRIT_LAB_PORT"
 [ "$LAB_DOMAIN" != "$DOMAIN" ] || die "lab domain is $DOMAIN, the live domain — set SPIRIT_LAB_DOMAIN"
