@@ -183,7 +183,7 @@ test.subHeading('Wildcards, without handing a stranger a regex');
     ['abc', 'abc', true], ['abc', 'abcd', false],
   ];
   const wrong = cases.filter(function (c) {
-    return peerSearch.globMatches(c[1], c[0]) !== c[2];
+    return peerSearch.internal.globMatches(c[1], c[0]) !== c[2];
   });
   if (wrong.length === 0) {
     test.check('* and ? mean what they should, ' + cases.length + ' cases');
@@ -198,7 +198,7 @@ test.subHeading('Wildcards, without handing a stranger a regex');
   const evil = '*a*a*a*a*a*a*a*a*a*a*a*b';
   const long = new Array(200).join('a');
   const began = Date.now();
-  peerSearch.globMatches(long, evil);
+  peerSearch.internal.globMatches(long, evil);
   const took = Date.now() - began;
   if (took < 100) {
     test.check('and the classic catastrophic pattern returns in ' + took + 'ms');
@@ -351,7 +351,13 @@ test.subHeading('Quality is a probability, and the signals are weighted');
 
   // EVERY SIGNAL STAYS ON THE SCALE. A probability that is not one is the
   // failure mode weighting has and precedence did not.
-  const probe = { row: { present: true, via: null, publicKey: 'K' }, label: 'x', rank: 0, query: 'x' };
+  // The shape  builds per row: the query arrives pre-tokenised on the
+  // scored object, so a signal never splits a string of its own.
+  const probe = {
+    row: { present: true, via: null, publicKey: 'K' },
+    label: 'x', labelTokens: ['x'], rank: 0,
+    queryTokens: ['x'], literal: 1, typed: 1,
+  };
   const offScale = peerSearch.SIGNALS.filter(function (sig) {
     const q = sig.quality(probe);
     return typeof q !== 'number' || q < 0 || q > 1;
@@ -481,33 +487,44 @@ test.subHeading('How many of the words landed');
     'one two three four');
   const tok = e.signals.filter(function (x) { return x.name === 'tokens'; })[0];
 
-  if (Math.abs(tok.quality - 7 / 15) < 1e-9) {
-    test.check('two of four words match: ' + tok.quality.toFixed(3) + ' = 7 chars of 15 typed');
+  // 7 from whole words, plus PARTIAL credit for `two` inside `twelve`:
+  // two characters shared, over a six-character result word, so
+  // 2 x 2/6 = 0.667. Andy's layering — a query word is worth its length
+  // when it IS the result word, and a fraction of that when it is merely
+  // inside a longer one.
+  const expected = (7 + 2 * (2 / 6)) / 15;
+  if (Math.abs(tok.quality - expected) < 1e-9) {
+    test.check('two whole words plus a partial: ' + tok.quality.toFixed(3) +
+      ' = (3 + 4 + 0.67) of 15 typed');
   } else {
-    test.fail('tokens scored ' + tok.quality);
+    test.fail('tokens scored ' + tok.quality + ', expected ' + expected);
   }
 
   // IT ONLY MATCHES AT ALL BECAUSE rank GREW A TIER. That query is not a
   // substring of that label; before tier 3 the row was simply absent, and
   // the signal could never have fired.
-  if (peerSearch.rank('six twelve four one', 'one two three four') === 3) {
+  if (peerSearch.internal.rank('six twelve four one', 'one two three four') === 3) {
     test.check('and the row is in the results at all only via the token tier');
   } else {
-    test.fail('rank: ' + peerSearch.rank('six twelve four one', 'one two three four'));
+    test.fail('rank: ' + peerSearch.internal.rank('six twelve four one', 'one two three four'));
   }
 
   // A MULTISET, not a set. "john john" needs two johns to score twice.
-  const one = peerSearch.overlapChars(['john', 'john'], ['john', 'smith']);
-  const two = peerSearch.overlapChars(['john', 'john'], ['john', 'john']);
-  if (one === 4 && two === 8) {
-    test.check('a repeated word needs a repeat to match — ' + one + ' then ' + two + ' chars');
+  const one = peerSearch.internal.overlapChars(['john', 'john'], ['john', 'smith']);
+  const two = peerSearch.internal.overlapChars(['john', 'john'], ['john', 'john']);
+  // The second `john` gets no WHOLE-word credit against `smith` — only the
+  // scraps partial matching allows (a shared `h`, 1 x 1/5). Full credit
+  // needs a second real john.
+  if (one < 5 && two === 8) {
+    test.check('a repeated word needs a repeat for full credit — ' +
+      one.toFixed(1) + ' then ' + two + ' chars');
   } else {
     test.fail('multiset: ' + one + ', ' + two);
   }
 
   // SEPARATORS ARE PUNCTUATION. Somebody writing anna-marie and somebody
   // writing anna marie mean the same two words.
-  const hyphen = peerSearch.tokens('anna-marie.van_der beek');
+  const hyphen = peerSearch.internal.tokens('anna-marie.van_der beek');
   if (hyphen.join(',') === 'anna,marie,van,der,beek') {
     test.check('and -, ., _ and space all separate words: ' + hyphen.join(' | '));
   } else {
@@ -518,12 +535,12 @@ test.subHeading('How many of the words landed');
   // one that matches a whole token is always already a substring match —
   // so the check could only cost a split per row and never change an
   // answer. This is the assertion that keeps a million rows cheap.
-  if (peerSearch.rank('annabel smith', 'ann') === 1 &&
-      peerSearch.rank('smith annabel', 'ann') === 2) {
+  if (peerSearch.internal.rank('annabel smith', 'ann') === 1 &&
+      peerSearch.internal.rank('smith annabel', 'ann') === 2) {
     test.check('a one-word query never reaches the token path — it is already a substring');
   } else {
-    test.fail('single-token ranks: ' + peerSearch.rank('annabel smith', 'ann') +
-      ', ' + peerSearch.rank('smith annabel', 'ann'));
+    test.fail('single-token ranks: ' + peerSearch.internal.rank('annabel smith', 'ann') +
+      ', ' + peerSearch.internal.rank('smith annabel', 'ann'));
   }
 
   // AND IT IS THE WEAKEST TIER. Some of the words in any order is worse
@@ -537,6 +554,97 @@ test.subHeading('How many of the words landed');
       whole.quality.toFixed(3) + ' vs ' + scattered.quality.toFixed(3));
   } else {
     test.fail('scattered beat whole: ' + scattered.quality + ' vs ' + whole.quality);
+  }
+}
+
+// ---------------------------------------------------------------------
+test.subHeading('Partial words score, and the exact ones are taken first');
+
+{
+  //   Andy: "if the result token is shorter, its obviously no match; if
+  //   the tokens are same that token's weight is 1.0; if the result token
+  //   is longer, then the length of the longest matching substring
+  //   compared to the length of the result-token determines its weight,
+  //   and the matched length is added... at a reduced number."
+  const cases = [
+    ['ann', 'ann', 3, 'the word itself is worth its length'],
+    ['ann', 'annabel', 3 * (3 / 7), 'inside a longer word, reduced by how much of it it covers'],
+    ['annabel', 'ann', 0, 'a shorter result word is not a partial match, it is a different word'],
+    ['two', 'twelve', 2 * (2 / 6), 'two shared characters of six'],
+  ];
+  const wrong = cases.filter(function (c) {
+    return Math.abs(peerSearch.internal.tokenScore(c[0], c[1]) - c[2]) > 1e-9;
+  });
+  if (wrong.length === 0) {
+    test.check('one word against one word, graded — ' + cases.length + ' cases');
+  } else {
+    test.fail('wrong: ' + wrong.map(function (c) { return c[0] + '/' + c[1]; }).join(', '));
+  }
+
+  // THE BUG TWO PASSES EXIST FOR, and it is worth a check of its own
+  // because one pass in query order looks perfectly reasonable.
+  //
+  // Query "one two three four" against "four one": in a single pass `two`
+  // scores 0.25 against `four` on a shared "o", CONSUMES it, and the exact
+  // `four` that follows finds an empty pool. Two of four words right
+  // scored as one and a bit.
+  const both = peerSearch.internal.overlapChars(
+    ['one', 'two', 'three', 'four'], ['four', 'one']);
+  if (Math.abs(both - 7) < 1e-9) {
+    test.check('a partial match cannot steal a word an exact match needs — 7 chars, not 3.25');
+  } else {
+    test.fail('overlap: ' + both + ' — pass order is wrong');
+  }
+}
+
+// ---------------------------------------------------------------------
+test.subHeading('Admission is about cost; the bucket is about quality');
+
+{
+  //   Andy: "there is no reason to not-admit, while the bucket isn't
+  //   overflowing."
+  //
+  // So the gate stopped being whole-tokens-only. `annabel` for the query
+  // `ann smith` is plainly worth seeing and was being refused outright.
+  const annabel = peerSearch.explain(
+    { publicKey: 'K', publicLabel: 'annabel', present: false, via: null }, 'ann smith');
+  if (annabel.matched) {
+    test.check('a word found inside a longer one is admitted, scoring ' +
+      annabel.quality.toFixed(3));
+  } else {
+    test.fail('annabel refused for `ann smith`');
+  }
+
+  // What is still refused is "these two strings share a letter", which is
+  // nearly everything — and every admitted row pays for a longest-run
+  // search per token pair.
+  const unrelated = peerSearch.explain(
+    { publicKey: 'K', publicLabel: 'zebra', present: false, via: null }, 'ann smith');
+  if (!unrelated.matched) {
+    test.check('but a shared letter is not a result — the gate is what keeps a million rows cheap');
+  } else {
+    test.fail('zebra admitted for `ann smith`');
+  }
+
+  // AND QUALITY IS MEASURED ONCE PER ROW. A bucket compares a row O(log k)
+  // times on its way to a seat; with a longest-run search inside the token
+  // signal, recomputing per comparison is that many DP passes for one row.
+  let calls = 0;
+  const saved = peerSearch.SIGNALS[0];
+  const realQuality = saved.quality;   // captured BEFORE the swap, or the spy calls itself
+  peerSearch.SIGNALS[0] = Object.assign({}, saved, {
+    quality: function (s) { calls++; return realQuality(s); },
+  });
+  const rows = [];
+  for (let i = 0; i < 40; i++) rows.push(row('peer' + i));
+  peerSearch.search(rows, 'peer');
+  peerSearch.SIGNALS[0] = saved;
+
+  if (calls <= rows.length) {
+    test.check('quality is asked once per row, not once per comparison — ' +
+      calls + ' for ' + rows.length + ' rows');
+  } else {
+    test.fail(calls + ' quality calls for ' + rows.length + ' rows');
   }
 }
 

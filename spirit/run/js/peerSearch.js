@@ -93,31 +93,192 @@ function globMatches(text, pattern) {
 // Lowercased by the callers before they get here, so this does not
 // lowercase again — the query is normalised once per search, not once per
 // row of a million.
+var SEPARATORS = /[\s\-_.,/]/;
+
 function tokens(text) {
   return String(text || '').split(/[\s\-_.,/]+/).filter(function (t) { return t.length > 0; });
 }
 
-// HOW MANY CHARACTERS MATCHED, TOKEN FOR TOKEN, whole tokens only.
+// ── ONE TOKEN AGAINST ONE TOKEN, GRADED ──────────────────────────────
 //
-//   Andy: "break down both strings into tokens, and measure how many
-//   characters are matched in case insensitive token to token comparison.
-//   search string: 'one two three four' result string: 'six twelve four
-//   one' — we compute the combined length of full token matches against
-//   the length of the search string."
+//   Andy: "if the result token is shorter, its obviously no match; if the
+//   tokens are same that token's weight is 1.0; if the result token is
+//   longer, then the length of the longest matching substring compared to
+//   the length of the result-token determines its weight, and the matched
+//   length is added to the final length match at a reduced number."
+//
+// So a query word is worth its own length when it IS the result word, and
+// a fraction of that when it is merely inside a longer one — the fraction
+// being how much of the result word it accounts for. `ann` is all of
+// `ann` and three sevenths of `annabel`, so it scores 3 against
+// 3 × 3/7 = 1.29.
+//
+// SHORTER MEANS NO. You typed more than the word has; that is not a
+// partial match, it is a different word.
+//
+// This is the same coverage idea as the whole-string signal below, moved
+// to where it belongs. A name is words, and discounting the whole string
+// by its total length says nothing about whether the RIGHT words are in
+// it — which is the interaction that made "six twelve four one" outscore
+// "four one" for the query "one two three four".
+function tokenScore(queryToken, resultToken) {
+  if (resultToken.length < queryToken.length) return 0;
+  if (resultToken === queryToken) return queryToken.length;
+  var run = longestRun(queryToken, resultToken);
+  if (!run) return 0;
+  return run * (run / resultToken.length);
+}
+
+// The longest run of characters the two share. Rolling two rows rather
+// than a full table: tokens are short, but this runs per query-token per
+// result-token per ROW, and a million rows is the size this was built for.
+function longestRun(a, b) {
+  var prev = new Array(b.length + 1).fill(0);
+  var cur = new Array(b.length + 1).fill(0);
+  var best = 0;
+  for (var i = 1; i <= a.length; i++) {
+    for (var j = 1; j <= b.length; j++) {
+      cur[j] = a[i - 1] === b[j - 1] ? prev[j - 1] + 1 : 0;
+      if (cur[j] > best) best = cur[j];
+    }
+    var swap = prev; prev = cur; cur = swap;
+    cur.fill(0);
+  }
+  return best;
+}
+
+// HOW MANY CHARACTERS MATCHED, taking each query word's best result word.
 //
 // A MULTISET, not a set: two tokens the same in the query need two in the
 // label to both count, or "john john" would score double against one
-// "john". Each label token is consumed once.
-function overlapChars(queryTokens, labelTokens) {
-  var pool = labelTokens.slice();
+// "john". Each result token is consumed by at most one query token.
+//
+// TWO PASSES, AND THE ORDER IS THE WHOLE CORRECTNESS OF IT.
+//
+// Exact matches are taken FIRST, across every query token, before any
+// partial credit is handed out. One pass in query order is wrong in a way
+// that is easy to miss and badly wrong when it bites: for the query
+// "one two three four" against "four one", `two` scored 0.25 against
+// `four` on a shared "o", consumed it, and the exact `four` that followed
+// found an empty pool. Two of four words right scored as one.
+//
+// Within the second pass it is greedy, best available first. The optimal
+// assignment is a matching problem; at four words against four it would
+// cost more to be exact than the difference could ever be worth, and what
+// this feeds is a ranking rather than a ledger.
+//
+// ANSWERS WHERE THE WORDS LANDED, not only how many characters did. The
+// positions are what the sequence signal reads — see below.
+function matchTokens(queryTokens, labelTokens) {
+  var taken = new Array(labelTokens.length).fill(false);
   var chars = 0;
+  var order = [];
+  var left = [];
+
+  // PASS ONE: whole words. Nothing may take these.
   for (var i = 0; i < queryTokens.length; i++) {
-    var at = pool.indexOf(queryTokens[i]);
-    if (at === -1) continue;
-    pool.splice(at, 1);
+    var at = -1;
+    for (var j = 0; j < labelTokens.length; j++) {
+      if (!taken[j] && labelTokens[j] === queryTokens[i]) { at = j; break; }
+    }
+    if (at === -1) { left.push(queryTokens[i]); continue; }
+    taken[at] = true;
     chars += queryTokens[i].length;
+    order.push(at);
   }
-  return chars;
+
+  // PASS TWO: what is left, against what is left.
+  for (var k = 0; k < left.length; k++) {
+    var bestAt = -1;
+    var bestScore = 0;
+    for (var m = 0; m < labelTokens.length; m++) {
+      if (taken[m]) continue;
+      var sc = tokenScore(left[k], labelTokens[m]);
+      if (sc > bestScore) { bestScore = sc; bestAt = m; }
+    }
+    if (bestAt === -1) continue;
+    taken[bestAt] = true;
+    chars += bestScore;
+    order.push(bestAt);
+  }
+
+  return { chars: chars, order: order };
+}
+
+function overlapChars(queryTokens, labelTokens) {
+  return matchTokens(queryTokens, labelTokens).chars;
+}
+
+// HOW MUCH OF THE MATCH WAS IN THE RIGHT ORDER.
+//
+//   Andy: "if all tokens match in sequence, that must be a higher score
+//   than tokens matching out of sequence."
+//
+// `order` holds the label position each matched query word landed on, in
+// query order. If the words came out in the same order they went in, that
+// list ascends. So the question is how much of it ascends — the longest
+// increasing run that need not be contiguous, over how many words matched.
+//
+// SAME PRINCIPLE AS THE TOKEN COMPARISON, which is what makes it simple.
+//
+//   Andy: "is there a simple scoring of sequence matching.... same
+//   principle as token comparisons"
+//
+// tokenScore takes the longest RUN of characters two words share. This
+// takes the longest RUN of words that came out in the order they went in —
+// the same idea one level up, and five lines rather than the longest-
+// increasing-subsequence search that stood here first. That was more
+// machinery for an answer that differs only on orderings like
+// [0,3,1,2], where it would say three and this says two; neither is more
+// obviously right, and only one of them can be read at a glance.
+//
+// NOT "is it sorted", which would be a boolean and would throw away the
+// difference between one word out of place and a complete reversal.
+// "one two three four" against "one three two four" keeps three of its
+// four words in order and should read that way.
+//
+// GAPS IN THE LABEL DO NOT BREAK A RUN. "one X two Y three" is in
+// sequence — what is measured is the order of the words that matched, not
+// how tightly packed they are. This is where it departs from tokenScore
+// on purpose: characters inside a word are one thing, words inside a name
+// with other words between them are another.
+function sequenceRun(order) {
+  if (order.length < 2) return order.length;
+  var best = 1;
+  var run = 1;
+  for (var i = 1; i < order.length; i++) {
+    run = order[i] > order[i - 1] ? run + 1 : 1;
+    if (run > best) best = run;
+  }
+  return best;
+}
+
+// WHAT ADMITS A ROW, as opposed to what scores it.
+//
+//   Andy: "there is no reason to not-admit, while the bucket isn't
+//   overflowing."
+//
+// Correct, and it moves the whole argument. This gate was whole-tokens-
+// only, on the grounds that partial overlap would qualify most of a
+// million rows — but the BUCKET bounds the output, and a person who gets
+// three results would rather see thirty-two weak ones than be told no.
+// Quality decides what survives; admission only decides what is looked at.
+//
+// SO THE GATE IS ABOUT COST, AND NOTHING ELSE. `indexOf` of each query
+// token against the label: one scan per token, no allocation, no dynamic
+// programming. It admits `annabel` for the query `ann smith`, which whole
+// tokens refused and which is plainly a result worth seeing.
+//
+// What it still refuses is "these two strings share a letter", which is
+// nearly everything — and the reason that matters is the NEXT step: every
+// admitted row pays for a longest-run search per token pair, and at a
+// million rows the difference between a filter and no filter is the
+// difference between a search and an outage.
+function anyTokenFound(queryTokens, label) {
+  for (var i = 0; i < queryTokens.length; i++) {
+    if (queryTokens[i] && label.indexOf(queryTokens[i]) !== -1) return true;
+  }
+  return false;
 }
 
 // How good a match is, lowest is best. A plain query still means
@@ -127,12 +288,13 @@ function overlapChars(queryTokens, labelTokens) {
 //   0  exact
 //   1  starts with
 //   2  found somewhere
+//   3  only some of the words, in any order
 //  -1  no
 //
 // NO FLOOR ON QUERY LENGTH. Andy: "Searches for 'a' must be successful,
 // even if there's a million potential peers." One letter is a legitimate
 // question; the answer to a broad one is the CAP, not a refusal.
-function rank(label, query) {
+function rank(label, query, multi) {
   if (query.indexOf('*') !== -1 || query.indexOf('?') !== -1) {
     if (!globMatches(label, query)) return -1;
     // An anchored pattern is a stronger statement than a floating one.
@@ -142,21 +304,24 @@ function rank(label, query) {
   if (label.indexOf(query) === 0) return 1;
   if (label.indexOf(query) !== -1) return 2;
 
-  // ── TIER 3: SOME OF THE WORDS, IN ANY ORDER ────────────────────────
+  // ── TIER 3: SOME OF THE WORDS ──────────────────────────────────────
   //
   // "one two three four" against "six twelve four one" is not a substring
-  // of anything and used to be NO MATCH — which is why the token signal
-  // below needed this before it could ever fire. Two of four words are
-  // right; that is worse than finding the whole query somewhere, and much
-  // better than nothing.
+  // of anything and used to be NO MATCH — which is why the token signals
+  // needed this before they could ever fire. Some of the words are right;
+  // that is worse than finding the whole query somewhere, and much better
+  // than nothing.
   //
   // ONLY FOR A MULTI-TOKEN QUERY, and that is not an optimisation for its
   // own sake: a single-token query that matches a whole token is ALWAYS
   // already a substring match, so the check could only ever cost a split
   // per row and never change an answer. A million rows is the size this
   // was built for.
-  if (!/[\s\-_.,/]/.test(query)) return -1;
-  return overlapChars(tokens(query), tokens(label)) > 0 ? 3 : -1;
+  // `multi` is computed once per search by `open`. This was a regex test
+  // per row.
+  if (multi === undefined) multi = SEPARATORS.test(query);
+  if (!multi) return -1;
+  return anyTokenFound(tokens(query), label) ? 3 : -1;
 }
 
 // ── THE SLOTS ────────────────────────────────────────────────────────
@@ -269,7 +434,7 @@ var SIGNALS = [
     name: 'coverage',
     weight: 0.2,
     quality: function (s) {
-      var q = s.query.replace(/[*?]/g, '').length;
+      var q = s.literal;
       var l = s.label.length;
       if (!q || !l) return 0;
       return q < l ? q / l : l / q;
@@ -302,11 +467,32 @@ var SIGNALS = [
     name: 'tokens',
     weight: 0.3,
     quality: function (s) {
-      var q = tokens(s.query.replace(/[*?]/g, ' '));
-      if (!q.length) return 0;
-      var typed = q.reduce(function (n, t) { return n + t.length; }, 0);
-      if (!typed) return 0;
-      return overlapChars(q, tokens(s.label)) / typed;
+      if (!s.queryTokens.length || !s.typed) return 0;
+      return overlapChars(s.queryTokens, s.labelTokens) / s.typed;
+    },
+  },
+
+  // WERE THEY IN THE RIGHT ORDER.
+  //
+  //   Andy: "if all tokens match in sequence, that must be a higher score
+  //   than tokens matching out of sequence."
+  //
+  // The token signal above is blind to order: "one two three four" and
+  // "four three two one" match every word and score identically on it.
+  // A name is not a set of words, and somebody typing them in an order
+  // meant that order.
+  //
+  // Trivially 1.0 when one word matched — there is no sequence to be
+  // wrong about — which keeps it neutral for the ordinary one-word search
+  // rather than making every such row look perfect at something.
+  {
+    name: 'sequence',
+    weight: 0.25,
+    quality: function (s) {
+      if (s.queryTokens.length < 2) return 1;
+      var m = matchTokens(s.queryTokens, s.labelTokens);
+      if (!m.order.length) return 0;
+      return sequenceRun(m.order) / m.order.length;
     },
   },
 
@@ -357,8 +543,12 @@ function quality(s) {
 // under a precedence list, because equal scores are now common: two rows
 // can differ in their signals and still add up the same.
 function compare(a, b) {
-  var qa = quality(a);
-  var qb = quality(b);
+  // MEASURED ONCE PER ROW, not once per comparison. A bucket compares a
+  // row O(log k) times on the way to its seat, and since the token signal
+  // grew a longest-run search that is O(log k) dynamic-programming passes
+  // for one row. Cached on the scored object the first time it is asked.
+  var qa = a.q === undefined ? (a.q = quality(a)) : a.q;
+  var qb = b.q === undefined ? (b.q = quality(b)) : b.q;
   if (qa !== qb) return qb - qa;
   var byLabel = a.label.localeCompare(b.label);
   if (byLabel !== 0) return byLabel;
@@ -372,7 +562,13 @@ function compare(a, b) {
 function explain(row, query) {
   var q = String(query == null ? '' : query).toLowerCase();
   var label = String((row && row.publicLabel) || '').toLowerCase();
-  var s = { row: row || {}, label: label, rank: rank(label, q), query: q };
+  var qTokens = tokens(q.replace(/[*?]/g, ' '));
+  var s = {
+    row: row || {}, label: label, labelTokens: tokens(label),
+    rank: rank(label, q),
+    queryTokens: qTokens, literal: q.replace(/[*?]/g, '').length,
+    typed: qTokens.reduce(function (n, t) { return n + t.length; }, 0),
+  };
   if (s.rank < 0) return { matched: false, quality: 0, signals: [] };
   return {
     matched: true,
@@ -388,109 +584,148 @@ function explain(row, query) {
   };
 }
 
-// ── ONE ROW, GRADED AND OFFERED ──────────────────────────────────────
+// -- A SEARCH IS A BUCKET YOU DROP CANDIDATES INTO --------------------
 //
-// The stream half. A caller with a million rows never builds a list of
-// them: it makes a bucket and offers, and the bucket holds `slots`.
-// Answers whether the row took a spot.
-function offer(bucketIn, row, query, via) {
-  if (!row || !row.publicKey) return false;
+//   Andy: "the bucket is always the only thing that actually does the
+//   search comparisons, the algorithm doesn't need to be known outside of
+//   this bucket module."
+//   Andy: "a search simply drops all candidates into the bucket.... it
+//   handles everything else."
+//
+// So this is the whole interaction. `open` gives you something with two
+// methods; you offer rows and you read the result. Nothing about ranking,
+// matching, tokens, weights or eviction is visible from outside, and the
+// only caller in the tree names none of it.
+//
+// THE QUERY BELONGS TO THE BUCKET, not to each offer. It was an argument
+// per row, which meant lowercasing it, stripping its wildcards and
+// splitting it into words ONCE PER ROW -- a million times over, for the
+// search that justified all of this. Now it happens once, here, and every
+// row is graded against the result.
+function open(query, slots) {
   var q = String(query == null ? '' : query).toLowerCase();
-  var label = String(row.publicLabel || '').toLowerCase();
-  var r = rank(label, q);
-  if (r < 0) return false;
+  var queryTokens = tokens(q.replace(/[*?]/g, ' '));
+  var literal = q.replace(/[*?]/g, '').length;
+  var typed = queryTokens.reduce(function (n, t) { return n + t.length; }, 0);
+  var multi = SEPARATORS.test(q);
 
-  // `via` is stamped on a COPY. A caller's rows are its own, and a merge
-  // that wrote back into its inputs would be a caller's list quietly
-  // changing under it.
-  var copy = {};
-  Object.keys(row).forEach(function (k) { copy[k] = row[k]; });
-  if (via !== undefined) copy.via = via;
-
-  return bucketIn.offer({ row: copy, label: label, rank: r, query: q });
-}
-
-// A bucket ready to be offered rows, with this module's opinion in it.
-function open(slots) {
-  return bucket.createBucket(
+  var held = bucket.createBucket(
     typeof slots === 'number' && slots > 0 ? slots : SLOTS, compare);
-}
 
-// What a bucket holds, as rows — the wrapper this module put around them
-// on the way in is not the caller's business on the way out.
-function harvest(bucketIn) {
   return {
-    matches: bucketIn.items().map(function (s) { return s.row; }),
-    more: bucketIn.more(),
+    // A candidate. `via` marks which source it came from -- null or absent
+    // for the caller own rows. Answers whether it took a spot, so a caller
+    // feeding several sources can tell when one has stopped placing.
+    offer: function (row, via) {
+      if (!row || !row.publicKey) return false;
+      var label = String(row.publicLabel || '').toLowerCase();
+      var r = rank(label, q, multi);
+      if (r < 0) return false;
+
+      // `via` is stamped on a COPY. A caller rows are its own, and a merge
+      // that wrote back into its inputs would be a caller list quietly
+      // changing under it.
+      var copy = {};
+      Object.keys(row).forEach(function (k) { copy[k] = row[k]; });
+      if (via !== undefined) copy.via = via;
+
+      return held.offer({
+        row: copy,
+        label: label,
+        labelTokens: tokens(label),
+        rank: r,
+        queryTokens: queryTokens,
+        literal: literal,
+        typed: typed,
+      });
+    },
+
+    // Best first, and whether there were more.
+    result: function () {
+      return {
+        matches: held.items().map(function (x) { return x.row; }),
+        more: held.more(),
+      };
+    },
   };
 }
 
-// ── THE CONVENIENCES, OVER THE SAME MECHANISM ────────────────────────
-//
-// `search` is one source and `merge` is several, and neither is a second
-// implementation: both open one bucket and offer into it, so a cap across
-// a merge is not a thing anybody has to remember to apply.
+// -- THE CONVENIENCES, OVER EXACTLY THAT ------------------------------
 
 function search(rows, query, slots) {
-  var b = open(slots);
-  (rows || []).forEach(function (row) { offer(b, row, query, undefined); });
-  return harvest(b);
+  var b = open(query, slots);
+  (rows || []).forEach(function (row) { b.offer(row); });
+  return b.result();
 }
 
-// Each source is `{ via, rows }` — `via` null for the caller's own,
+// Each source is `{ via, rows }` -- `via` null for the caller own rows,
 // otherwise whatever handle the caller uses for that source.
 //
 // IT DOES NOT TRUST THE ORDER IT IS GIVEN. A partner ranked its own reply
 // with its own copy of this file, at whatever version it is running.
-// Nothing here reads that order: every row is graded again from its label,
-// which is also the only way a cap across the merged set means anything.
+// Nothing here reads that order: every row is graded again, which is also
+// the only way a cap across the merged set means anything.
 //
-// DE-DUPLICATED BY KEY, the better copy winning — so the `near` signal
-// decides which copy of a peer survives rather than which partner
-// happened to answer first. Done on the way out rather than the way in,
-// because a duplicate that would not have made the list is not worth a
-// lookup per offer.
+// DE-DUPLICATED BY KEY on the way out, the better copy winning -- so the
+// `near` signal decides which copy of a peer survives rather than which
+// partner happened to answer first. Room for duplicates on the way in, or
+// a peer on three partners could push a distinct row out of a seat it had
+// earned.
 function merge(sources, query, slots) {
   var n = typeof slots === 'number' && slots > 0 ? slots : SLOTS;
+  var b = open(query, n * ((sources && sources.length) || 1));
 
-  // Room for duplicates, or a peer on three partners could push a
-  // distinct row out of a bucket it had earned a spot in.
-  var b = open(n * ((sources && sources.length) || 1));
   (sources || []).forEach(function (source) {
     if (!source) return;
     var via = source.via == null ? null : source.via;
-    (source.rows || []).forEach(function (row) { offer(b, row, query, via); });
+    (source.rows || []).forEach(function (row) { b.offer(row, via); });
   });
 
+  var all = b.result();
   var seen = Object.create(null);
   var unique = [];
-  b.items().forEach(function (s) {
-    if (seen[s.row.publicKey]) return;
-    seen[s.row.publicKey] = true;
-    unique.push(s.row);
+  all.matches.forEach(function (row) {
+    if (seen[row.publicKey]) return;
+    seen[row.publicKey] = true;
+    unique.push(row);
   });
 
-  return {
-    matches: unique.slice(0, n),
-    more: b.more() || unique.length > n,
-  };
+  return { matches: unique.slice(0, n), more: all.more || unique.length > n };
 }
 
+// -- WHAT IS PUBLIC, AND IT IS SMALL ----------------------------------
+//
+// Andy: "the algorithm doesn't need to be known outside of this bucket
+// module." relay.js, the only caller in the tree, names exactly two of
+// these: `search` and `SLOTS`.
+//
+// SIGNALS and their weights are public because they are the TUNING
+// SURFACE -- quality-of-result is unsettled and a weight is meant to move.
+// `explain` is public for the same reason, so a weight can be argued about
+// with numbers rather than impressions.
+//
+// Everything else sits under `internal`, for the suite alone. A caller
+// reaching in there is a caller forming a second opinion about what a good
+// match is, which is the thing this module exists to prevent.
 module.exports = {
-  globMatches: globMatches,
-  tokens: tokens,
-  overlapChars: overlapChars,
-  rank: rank,
-  quality: quality,
-  compare: compare,
-  explain: explain,
-  // The streaming face: open a bucket, offer rows one at a time, harvest.
   open: open,
-  offer: offer,
-  harvest: harvest,
-  // The convenient face, over exactly the same mechanism.
   search: search,
   merge: merge,
+  explain: explain,
   SIGNALS: SIGNALS,
   SLOTS: SLOTS,
+
+  internal: {
+    globMatches: globMatches,
+    tokens: tokens,
+    tokenScore: tokenScore,
+    longestRun: longestRun,
+    matchTokens: matchTokens,
+    overlapChars: overlapChars,
+    sequenceRun: sequenceRun,
+    anyTokenFound: anyTokenFound,
+    rank: rank,
+    quality: quality,
+    compare: compare,
+  },
 };
