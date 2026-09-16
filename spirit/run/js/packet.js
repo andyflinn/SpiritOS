@@ -36,6 +36,23 @@ var limits = (typeof process !== 'undefined' && process.versions && process.vers
   ? require('./limits.js')
   : (typeof window !== 'undefined' ? window.spiritLimits : null);
 
+// SAY WHICH SCRIPT IS MISSING, rather than dying on `undefined.PAYLOAD_MAX`.
+//
+// A page holding a cached index.html from before limits.js existed loads
+// this file with no global to read, and the bare property access throws a
+// TypeError at parse-adjacent time — which kills packet.js, and with it
+// every app that sends anything, with a message naming neither file.
+//
+// The page is then simply broken in a way that looks like the node
+// forgetting things rather than like a script failing to load.
+if (!limits || typeof limits.PAYLOAD_MAX !== 'number') {
+  throw new Error(
+    'packet.js needs js/limits.js loaded first — ' +
+    'index.html must have <script src="/js/limits.js"> before this file. ' +
+    'A hard reload usually fixes it: the page is running a cached index.html.'
+  );
+}
+
 var PACKET_VERSION = 1;
 
 // The relay's own limit, checked there against the encoded string. An
