@@ -1420,6 +1420,43 @@ the one thing a partner is permitted to ask.
 > logic. Knowing it arrived *via* a partner is for the UI, not for
 > authorization.
 >
+> ### One protocol, and A↔B is another instance of it
+>
+> > **Andy:** *"The A↔B protocol is an exact duplicate of the N1→A protocol,
+> > but in both directions. AND the A↔B protocol simply tunnels the N1→A and
+> > the N2→B protocol to the other partner."*
+>
+> This is the statement the rest of the section is a consequence of, and
+> "nested in itself" undersold it in an earlier draft — that describes one
+> direction and reads as an analogy. It is neither.
+>
+> **Exact duplicate, and checkable:** `routePost(from, to, text, sig)` over
+> `postMessage(from, to, text)`. The only difference between N1→A and A→B
+> is which keys occupy `from` and `to`. Same function, same signed bytes,
+> the same hash derived from them and never sent.
+>
+> **In both directions:** tier two above already says *"request by post,
+> reply by stream, in both directions"*, and `partnerLink` opens one stream
+> each way, so either partner initiates and either replies. Node↔relay has
+> the same shape — the node posts, the relay pushes requests down the held
+> stream.
+>
+> **And it tunnels BOTH node-side exchanges**, not only the outbound one:
+> N1's packet travels out inside A→B, and N2's reply comes back inside
+> B→A. The partner link carries both halves of two node-relay
+> conversations.
+>
+> So there is **one protocol, spoken between any two identities that have
+> pinned each other's keys.** Node↔relay is one instance; relay↔relay is
+> another, whose payload is instances of the first.
+>
+> **That is why no partner branch exists anywhere in the implementation.**
+> `deviceIdentity(fromToken) || partnerIdentity(fromToken)` resolves to *an
+> identity*, and every line below treats it the same. The absence of a
+> special case is not tidiness — it is the protocol having one shape, and
+> it is why *"everybody rations POSTs"* (CAPACITY.md, 0b) needs no separate
+> partner rule. One protocol, one set of rules, one implementation.
+>
 > ### One bus, and everything rides it
 >
 > > **Andy:** *"and all comms between partners ride the same bus."*

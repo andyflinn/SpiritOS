@@ -49,22 +49,47 @@ all of it becomes zero.** The `partners × members` term does not appear
 anywhere, at any hop count. Boot is `O(own members)` always, and a relay's
 memory stops being a function of decisions other people make.
 
-### 2. The forward is the protocol nested in itself
+### 2. There is ONE protocol, and A↔B is another instance of it
 
-Andy's framing, and it is better than "a forward verb with a cert attached":
+Andy's framing, and this is the headline rather than a detail — an earlier
+draft of this note said *"nested in itself"*, which describes one direction and
+reads as an analogy. It is neither:
 
-> *"In the exact same way that the node wraps the untouched request from its
-> client, and the receiving node unwraps and replies to it — that's the exact
-> same way A wraps the whole kaboodle posted by the requesting node, with its
-> own sig, and posts that to B, who unwraps the outer wrapper and forwards it to
-> N2. A tunnels N1's request to B through an outer layer of the protocol."*
+> *"The A↔B protocol is an exact duplicate of the N1→A protocol, but in both
+> directions. AND the A↔B protocol simply tunnels the N1→A and the N2→B
+> protocol to the other partner."*
 
-`peerPost.post(relayUrl, toKey, text)` already does exactly this one level down:
-`text` is the app's packet untouched, the node signs `(from, to, text)`, and the
-hash is derived from the bytes and never sent. A's forward is that function with
-`text` = N1's whole signed post. **No new signature format, no new event, no new
-route** — and decision 0011 pays off as PARTNERS.md predicted: each layer derives
-its own hash independently and the layers correlate with nobody coordinating.
+**Exact duplicate, checkable:** `routePost(from, to, text, sig)` over
+`postMessage(from, to, text)`. The only difference between N1→A and A→B is
+which keys occupy `from` and `to`. Same function, same signed bytes, same hash
+derived from them and never sent.
+
+**In both directions:** tier two of PARTNERS.md already says *"request by post,
+reply by stream, in both directions"*, and `partnerLink` opens one stream each
+way — so either partner initiates and either replies. Node↔relay is the same
+shape: the node posts, the relay pushes requests down the held stream.
+
+**And it tunnels BOTH node-side exchanges, not just the outbound one.** N1's
+packet travels out inside A→B; N2's reply comes back inside B→A. The partner
+link carries both halves of two node-relay conversations.
+
+So: **one protocol, spoken between any two identities that have pinned each
+other's keys.** Node↔relay is one instance; relay↔relay is another, whose
+payload is instances of the first.
+
+That is why there is no partner branch anywhere in the implementation —
+`deviceIdentity(fromToken) || partnerIdentity(fromToken)` resolves to *an
+identity*, and everything downstream treats it the same. The absence of a
+special case is not tidiness; it is the protocol having one shape. It is also
+why *"everybody rations POSTs"* needs no separate partner rule: one protocol,
+one set of rules, one implementation.
+
+`peerPost.post(relayUrl, toKey, text)` already does this one level down: `text`
+is the app's packet untouched, the node signs `(from, to, text)`, and the hash
+is derived from the bytes. A's forward is that same function with `text` = N1's
+whole signed post. **No new signature format, no new event, no new route** —
+and decision 0011 pays off as PARTNERS.md predicted: each layer derives its own
+hash independently, and the layers correlate with nobody coordinating.
 
 ### 3. The cheap cert has no job left
 
