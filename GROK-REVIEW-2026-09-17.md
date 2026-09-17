@@ -1,5 +1,10 @@
 # Review request: partner reach, and a relay that governs itself
 
+**This file is the whole brief.** Andy sent you nothing but the link to it,
+so read this first, then fetch the two documents under review below — they
+are the subject, and this is only the covering note telling you what to look
+at and where we are least sure.
+
 **Repo:** `github.com/andyflinn/SpiritOS`, branch `master`.
 Everything below is pushed — read it there rather than from this file.
 
