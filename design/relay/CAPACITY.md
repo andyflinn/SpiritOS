@@ -214,7 +214,59 @@ start.
    > a relay. Different processes on different machines — one cannot reach
    > the other, and there was never a conflict to guard against.
 
-9. **Rate management bootstraps on delivery that already exists.**
+9. **What survives a restart is the LEVERS, not the statistics.**
+
+   > **Andy:** *"which general stats about the extended population (# of
+   > nodes in visible mesh) should be kept to facilitate smarter
+   > re-starts?"*
+   >
+   > **Andy, answering it better:** *"if I was the Governor I would want to
+   > save the state of the tuning levers, as learned."*
+
+   The second sentence retires most of the first, and this author's answer
+   to it — a bundle of peaks, cardinalities and `watchedSince` — was
+   over-built.
+
+   **Persist the governor's output, not its input.** The levers are a
+   handful of numbers: `perRequester`, the byte cap, ring size, sample
+   interval, announce interval. They are **decisions, not observations**,
+   which is what makes them both sufficient and clean:
+
+   - **Sufficient** — a restart resumes at the tuned position instead of
+     re-deriving it. `bash/update` restarts on every tag, so without this a
+     relay re-learns its own link from zero repeatedly and stays
+     conservative for ever.
+   - **Clean** — `perRequester = 24` says nothing about who talked to whom.
+     A stored peak is a record of activity; a stored lever is a record of a
+     choice. The least revealing thing to keep is also the most useful one,
+     which is usually the sign it is right.
+   - **Self-describing** — whatever meters exist now or later, the levers
+     are the interface. A new meter does not add a new thing to persist.
+
+   **It also dissolves a question rather than answering it.** Whether
+   keeping a partner's member *count* is about the relationship or about
+   their business never has to be settled: with levers saved, nothing needs
+   the count, because the lever already encodes the sizing it would have
+   driven. This extends *"count the relationship, never the members"* — to
+   **count neither; keep what you decided.**
+
+   Two guards, and they are the same shape as the rule for declared RAM:
+
+   - **An opening bid, not an entitlement.** Andy: *"uplink capacity varies
+     with node-locations and conditions."* A relay that moved to a worse
+     link, or now shares its VPS, must not resume yesterday's aggressive
+     setting. Levers load, and the ring either re-confirms them or the
+     governor lowers them on the first evidence.
+   - **Loaded levers may only narrow**, clamped against the boot-time
+     knowables — declared budget, member count — so a file edited to say
+     "allow ten times more" is ignored. **Persisted state and operator
+     config may both only ever narrow.**
+
+   *Still worth keeping separately:* `watchedSince`, but for dud detection
+   rather than for capacity — a different feature with its own reasons
+   (PARTNERS.md).
+
+10. **Rate management bootstraps on delivery that already exists.**
 
    > **Andy:** *"we already have packet delivery, that should be the
    > bootstrap for rate-management, there we get first measurements."*

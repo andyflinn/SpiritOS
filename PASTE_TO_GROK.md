@@ -237,6 +237,42 @@ declared budgets reaching production config — the node floor is in
 does a stock cap want a floor and a ceiling more than it wants a ratio? A
 relay with three members would hand each of them a third of the box.
 
+### And what survives a restart: the levers, not the statistics
+
+Andy asked which population stats a relay should keep for smarter restarts,
+then answered it better himself:
+
+> *"If I was the Governor I would want to save the state of the tuning
+> levers, as learned."*
+
+**Persist the governor's output, not its input.** A handful of numbers —
+`perRequester`, the byte cap, ring size, sample interval, announce interval
+— which are **decisions, not observations**. `perRequester = 24` says
+nothing about who talked to whom, where a stored peak is a record of
+activity. Sufficient (a restart resumes tuned rather than re-deriving, and
+`bash/update` restarts on every tag), clean, and self-describing: a new
+meter adds nothing new to persist.
+
+It extends the rule already in PARTNERS.md — *"count the relationship,
+never the members"* — to **count neither; keep what you decided.** It also
+dissolves a question we were about to ask you: whether keeping a partner's
+member *count* is about the relationship or about their business. With
+levers saved, nothing needs the count.
+
+Two guards, the same shape as the declared-RAM rule. Andy: *"uplink
+capacity varies with node-locations and conditions"* — so loaded levers are
+an **opening bid, not an entitlement**: the ring re-confirms them or the
+governor lowers them on first evidence. And **loaded levers may only
+narrow**, clamped against the boot-time knowables, so a file edited to say
+"allow ten times more" is ignored. **Persisted state and operator config may
+both only ever narrow.**
+
+**For you:** anything in that set that should NOT survive a restart, or
+anything missing from it? Our instinct is that the announce interval is the
+doubtful one — it lengthens under load, so resuming a long one after a
+reboot means a fresh member waits for its first cap announcement at exactly
+the moment the box is least busy.
+
 ---
 
 ## What we want from you
