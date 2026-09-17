@@ -112,6 +112,21 @@ This directory contains the vision, principles, and architecture decisions for *
   other people make. Cost is latency on a cold post, in the fallback mode the
   shedding policy already called safe.
 
+- [0013 — A relay is fixed-cost per time-unit](decisions/0013-a-relay-is-fixed-cost-per-time-unit.md)
+  — the invariant that turns out to be the reason for most of the others: a box
+  costs the same per month whether the mesh holds ten peers or ten million, so
+  the test for any proposal is *does this make a relay's cost a function of
+  anything other than time?* Growth lands on **nodes**, where each person pays
+  for their own — **the network's durable memory lives in nodes; relays are
+  fast, ephemeral, and re-primed by the nodes they serve.** The owner's
+  incentive to externalize cost points the same way, bounded by *externalize
+  memory, never service — to the demanding node, never to a peer relay.*
+  Exposes a live defect: `streamRoster` ships the full member list to every
+  member on every connect, 19 KB past `PAYLOAD_MAX` at 190 members, and the
+  presence broadcast is `members × changes`. Carries the `about:[keys]`
+  mechanism that answers routing and presence in one call, and the precise
+  amendment 0012 needs.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.

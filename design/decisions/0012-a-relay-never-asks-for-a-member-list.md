@@ -114,6 +114,23 @@ so the hunt happens for a peer nobody has posted to before.
   which is what makes two relays on one VPS reasonable
   (`CAPACITY.md`, decided item 8).
 
+## Amended by 0013 — "does not appear anywhere" is too strong
+
+This decision says the `partners × members` term **does not appear anywhere, at
+any hop count**. [0013](0013-a-relay-is-fixed-cost-per-time-unit.md) permits a
+relay to hold a **working set** of routes in RAM — keys its own members asked
+about — which is a bounded form of that term. The sentence should read: **no
+stored term, and no verb that fetches one.**
+
+The distinction is what both decisions rest on:
+
+- **never persisted** — a relay that reboots is re-primed by its members' next
+  requests, so boot stays `O(own members)`;
+- **never fetched as a roster** — there is still no verb that delivers a
+  partner's members, which is this decision's structural guarantee intact;
+- **bounded by member demand**, not by partner membership — so it is a function
+  of this relay's own members, which is what 0013's invariant permits.
+
 ## Related
 
 - **0006** — nothing is stored on a relay on anyone's behalf. This removes the

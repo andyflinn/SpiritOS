@@ -138,10 +138,20 @@ function relayWith(tag, memberNames) {
   return { home, box, owner, people, inboxes, key: box.relayPublicKey() };
 }
 
-function post(box, from, toKey, bodyObj) {
+// `atRelayKey` is the fifth argument, and naming it here is the point:
+// **nothing on the wire supplies it.** The public route calls routePost
+// with four, so forwarding cannot be triggered by anybody until it is
+// decided how a node tells its relay where a peer lives — 0012 says the
+// node has the answer, and a post has no field to carry it.
+//
+// The first version needed no such argument because it BROADCAST to every
+// partner, which disclosed a member's packet to relays that had no
+// business seeing it and burned a pool unit at each of them. Passing the
+// target explicitly is what makes that impossible rather than discouraged.
+function post(box, from, toKey, bodyObj, atRelayKey) {
   const text = JSON.stringify({ v: 1, body: bodyObj });
   return box.routePost(from.publicKey, toKey, text,
-    auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text)));
+    auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text)), atRelayKey);
 }
 
 test.startTest('A packet crosses a partnership, and the far node answers it');
@@ -163,6 +173,10 @@ function enrol(relay, tag, identity, name) {
 enrol(B, 'b', A.owner, 'ownera');
 enrol(A, 'a', B.owner, 'ownerb');
 
+// A fourth box, partnered with A, so "unnamed goes nowhere" is tested
+// against a partner that COULD have been guessed at rather than against
+// an empty list.
+const D = relayWith('d', ['dave']);
 const okA = A.box.setPartner(A.owner, B.owner.publicKey, 'http://b.example', B.key, 'h1');
 const okB = B.box.setPartner(B.owner, A.owner.publicKey, 'http://a.example', A.key, 'h2');
 if (!okA.ok || !okB.ok) {
@@ -187,6 +201,12 @@ function dial(host, guestHome, what) {
   if (!opened || !opened.ok) test.fail(what + ' could not hold a stream: ' + JSON.stringify(opened));
   return opened;
 }
+enrol(D, 'd', A.owner, 'ownera');
+enrol(A, 'a', D.owner, 'ownerd');
+A.box.setPartner(A.owner, D.owner.publicKey, 'http://d.example', D.key, 'h5');
+D.box.setPartner(D.owner, A.owner.publicKey, 'http://a.example', A.key, 'h6');
+dial(D, A.home, 'A on D');
+dial(A, D.home, 'D on A');
 dial(B, A.home, 'A on B');
 dial(A, B.home, 'B on A');
 
@@ -194,7 +214,7 @@ dial(A, B.home, 'B on A');
 
 test.subHeading('jazz posts to sonny, who is on nobody jazz has ever heard of');
 
-const sent = post(A.box, A.people.jazz, B.people.sonny.publicKey, { describe: true });
+const sent = post(A.box, A.people.jazz, B.people.sonny.publicKey, { describe: true }, B.key);
 
 if (sent && sent.ok) {
   test.check('A took it rather than answering "no such peer" — 202 with a hash');
@@ -314,7 +334,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   B.box.setPartner(B.owner, C.owner.publicKey, 'http://c.example', C.key, 'h3');
   C.box.setPartner(C.owner, B.owner.publicKey, 'http://b.example', B.key, 'h4');
 
-  post(A.box, A.people.jazz, C.people.carol.publicKey, { describe: true });
+  post(A.box, A.people.jazz, C.people.carol.publicKey, { describe: true }, B.key);
   await Promise.resolve();
   await Promise.resolve();
   const reachedCarol = C.inboxes.carol.filter(function (m) { return m.event === 'request'; });
@@ -352,6 +372,55 @@ test.subHeading('And sonny’s answer reaches jazz');
     test.check('no certificate primitive exists — the two signatures already carried it');
   } else {
     test.fail('a certificate was built after all');
+  }
+
+  // ── 5. ONE PARTNER, AND NEVER A BROADCAST ──────────────────────────
+  //
+  // The first version of `carryToPartner` posted the wrapper to every
+  // partner in parallel and let the wrong ones refuse it. Andy killed it
+  // on three counts, and the third is the one that makes it fail rather
+  // than merely offend:
+  //
+  //   — every uninvolved partner receives a full copy of a packet
+  //     addressed to somebody else's member;
+  //   — N posts for one delivery;
+  //   — *"and you burn your quota on all partners in parallel"* — each
+  //     post spends a unit of this relay's standing in a DIFFERENT
+  //     relay's partner pool, so nineteen partners cost nineteen units
+  //     per forward. That is `partners × members` coming back as traffic
+  //     after 0012 deleted it as memory.
+  //
+  // So it goes to one named partner or nowhere. Asserted twice: that the
+  // code holds no loop over partners, and that a forward with no named
+  // target is refused rather than guessed at.
+
+  test.subHeading('A forward goes to one named partner, or nowhere');
+
+  const carry = src.slice(src.indexOf('function carryToPartner'));
+  const body = carry.slice(0, carry.indexOf('\n  }'));
+
+  if (!/forEach|\.map\(/.test(body)) {
+    test.check('carryToPartner holds no loop over partners — a broadcast cannot be written here by accident');
+  } else {
+    test.fail('something iterates the partner list: ' + body.slice(0, 200));
+  }
+
+  // AND UNNAMED MEANS UNSENT. This is the state the public route is in:
+  // it calls routePost with four arguments, so a forward is unreachable
+  // from the wire until it is decided how a node names the target's relay.
+  D.inboxes.dave.length = 0;
+  const unnamed = post(A.box, A.people.jazz, D.people.dave.publicKey, { describe: true });
+
+  if (unnamed && !unnamed.ok && unnamed.status === 404) {
+    test.check('and a post with no named partner is "no such peer", not a guess');
+  } else {
+    test.fail('an unnamed forward went somewhere: ' + JSON.stringify(unnamed));
+  }
+
+  if (!D.inboxes.dave.filter(function (m) { return m.event === 'request'; }).length) {
+    test.check('and dave heard nothing — nothing was tried on his relay');
+  } else {
+    test.fail('an unnamed forward reached a partner anyway');
   }
 
   test.reportSuccessFailureCount();

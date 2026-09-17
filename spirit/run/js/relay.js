@@ -1904,17 +1904,48 @@ function createRelay(rootDir, deps) {
   // is a client of the protocol here exactly as a node is, through the
   // peerPost it already uses to ask partners to search.
   //
-  // A HUNT, NOT A LOOKUP. This box holds no list of anybody else's
-  // members (0012), so it asks each partner in turn and the first that
-  // takes it wins. That is the cost 0012 accepted: latency on a cold
-  // post, never memory.
+  // ── AND IT NEEDS TO BE TOLD WHERE TO SEND IT ─────────────────────────
+  //
+  // THE FIRST VERSION BROADCAST, AND WAS WRONG THREE TIMES OVER. It posted
+  // the wrapper to every partner in parallel and let the ones that do not
+  // hold the key refuse it. Andy, on each count:
+  //
+  //   — **Disclosure.** Every uninvolved partner receives a full copy of
+  //     a packet addressed to somebody else's member: from, to, text and
+  //     signature. A relay carries rather than reads, and that handed
+  //     N−1 relays something none of them had any business seeing.
+  //   — **Waste.** N posts for one delivery.
+  //   — *"and you burn your quota on all partners in parallel"* — and
+  //     this is the one that makes it FAIL rather than merely offend.
+  //     Each post lands in a different relay's PARTNER POOL, so nineteen
+  //     partners means nineteen pool units per forward, eighteen of them
+  //     spent on relays that can only answer `no such peer`. That is
+  //     `partners × members` returning as traffic after 0012 deleted it
+  //     as memory — and it is self-defeating, because a busy relay would
+  //     have its forwards throttled by partners it had been filling with
+  //     packets they could not use.
+  //
+  // SO THIS FAILS CLOSED. A forward goes to ONE named partner or nowhere,
+  // and nothing on the wire can name one yet: a post carries `from`, `to`,
+  // `text` and `sig`, and has no field for where the target lives.
+  //
+  // 0012 already said where the answer comes from — *"which partner comes
+  // from the node, which already has it: a search row carries the
+  // partner's URL"* — and that hint has nowhere to ride. Carrying it is a
+  // change to what a post is, which is a team-review line, so the door is
+  // left shut rather than propped open with a broadcast.
   //
   // Returns an answer to give the member now, or null when there is
   // nothing to try — in which case the caller falls through to its own
   // `no such peer`.
-  function carryToPartner(who, toToken, text, sig) {
-    var list = askPartner ? (partners() || []) : [];
-    if (!list.length) return null;
+  function carryToPartner(who, toToken, text, sig, atRelayKey) {
+    if (!askPartner || !atRelayKey) return null;
+    var list = (partners() || []).filter(function (p) {
+      return p.relayKey === atRelayKey;
+    });
+    // ONE, OR NONE. A named partner this box has actually promoted, or
+    // the caller falls through to `no such peer` as it always did.
+    if (list.length !== 1) return null;
 
     var signed = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
     if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
@@ -1930,22 +1961,20 @@ function createRelay(rootDir, deps) {
         v: 1,
         body: { forward: { from: who.id, to: String(toToken), text: text, sig: sig } },
       });
-      list.forEach(function (p) {
-        askPartner(p.url, p.relayKey, wrapper)
-          .then(function (answer) {
-            var said = null;
-            try { said = JSON.parse((answer && answer.text) || ''); }
-            catch (e) { said = null; }
-            var out = (said && said.body) || null;
-            if (!out || out.ok !== true || !out.forwarded) return;
-            deliverForwardedReply(innerHash, out.forwarded);
-          })
-          .catch(function () { /* a partner that cannot help is not an error */ });
-      });
-      // The hunt has started. Whether anybody holds this key is not
-      // knowable yet, and saying `false` here would cancel the route that
+      var p = list[0];
+      askPartner(p.url, p.relayKey, wrapper)
+        .then(function (answer) {
+          var said = null;
+          try { said = JSON.parse((answer && answer.text) || ''); }
+          catch (e) { said = null; }
+          var out = (said && said.body) || null;
+          if (!out || out.ok !== true || !out.forwarded) return;
+          deliverForwardedReply(innerHash, out.forwarded);
+        })
+        .catch(function () { /* a partner that cannot help is not an error */ });
+      // It is on its way. Whether that partner holds the key is its
+      // answer to give, and saying `false` here would cancel the route
       // the answer needs.
-      return true;
     });
     if (!opened || !opened.ok) return opened;
 
@@ -2457,7 +2486,17 @@ function createRelay(rootDir, deps) {
     sendAnswer(out);
   }
 
-  function routePost(fromToken, toToken, text, sig) {
+  // `atRelayKey` is the one thing this function takes that NOTHING ON THE
+  // WIRE SUPPLIES. It names which partner holds the target, and it exists
+  // as a parameter so the forwarding path is drivable and provable while
+  // the question of how a node tells a relay that stays open (0012 says
+  // the node has the answer; a post has no field for it).
+  //
+  // So: the public route calls this with four arguments, `atRelayKey` is
+  // undefined, and `carryToPartner` returns null. **Forwarding is inert
+  // from the wire and cannot be triggered by anybody**, which is the
+  // correct state for a path whose target selection is undecided.
+  function routePost(fromToken, toToken, text, sig, atRelayKey) {
     // A MEMBER, OR A PARTNER RELAY. In that order, because a member is the
     // ordinary case and a partner key can never also be a member row.
     //
@@ -2574,7 +2613,7 @@ function createRelay(rootDir, deps) {
     // that is the second hop, and the check is `!fromPartner` rather than
     // a counter, so there is no arithmetic anybody can get wrong.
     if (!target && !who.partner) {
-      var carried = carryToPartner(who, toToken, text, sig);
+      var carried = carryToPartner(who, toToken, text, sig, atRelayKey);
       if (carried) return carried;
     }
 
