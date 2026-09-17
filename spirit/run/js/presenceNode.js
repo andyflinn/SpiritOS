@@ -115,6 +115,11 @@ function createPresence(opts) {
   // The membership half — see the `owner-event` branch below for why it
   // is a separate hook and not a kind on the one above.
   const onOwnerEvent = opts.onOwnerEvent || null;
+  // A route a relay proved and announced. A third hook rather than a kind
+  // on either of the others, for the same reason they are two: this one
+  // is about a PEER and not about a relay, nobody addressed it to this
+  // node, and it must never reach the traffic log.
+  const onRoute = opts.onRoute || null;
 
   function onRoster(url, body) {
     const set = Object.create(null);
@@ -212,6 +217,18 @@ function createPresence(opts) {
       onEvent: function (msg) {
         if (msg.event === 'roster') onRoster(url, msg.data);
         else if (msg.event === 'presence') onChange(url, msg.data);
+        // -- A ROUTE THIS RELAY PROVED, FOR SOMEBODY WE MAY KNOW --------
+        //
+        // Not correspondence, so it never reaches the traffic log: that
+        // file is what this node sent and what it received, and nobody
+        // addressed this to us. Presence has always been handled the same
+        // way, one line above.
+        //
+        // The relay says `{ key, at }` -- a peer, and the partner it was
+        // reached through. `onRoute` matches an EXISTING contact row and
+        // writes the route on it; a key nobody here knows is dropped
+        // where it lands.
+        else if (msg.event === 'route' && onRoute) onRoute(url, msg.data);
         // The same socket carries the router now (ROUTER.md). This file
         // owns the connection and nothing else about them: it hands each
         // one to peerPost and forms no opinion, which is why the fence

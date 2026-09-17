@@ -170,12 +170,20 @@ A door is a way of speaking. So is a word said through it.
 | event | what it is |
 |---|---|
 | `roster` | who this relay holds, sent to one identity as its stream opens |
-| `presence` | one member arrived or left — broadcast, and the only broadcast here |
+| `presence` | one member arrived or left — broadcast |
+| `route` | a route this relay **proved** — it carried a packet to that key through that partner and a reply came back signed by it. Broadcast, and forgotten here: the members that care write it down (0013) |
 | `request` | a packet being delivered to the peer it is addressed to |
 | `reply` | the answer to one, carried back on the asker's own stream |
 | `relay-status` | what this box looks like, to the owner only, on membership change and on a stream opening or closing — never on a timer (0006) |
 | `relay-event` | one routed thing happened. Opt-in (`monitor`), owner only, live only, never stored |
 | `owner-event` | what this relay did about who belongs on it. Always on, owner only, and **kept** — see 0009 and the R2 note |
+
+`presence` and `route` are the two broadcasts, and both say something
+about a **peer** rather than about this relay — which is why neither is
+correspondence and neither reaches a node's traffic log. A route is only
+announced once it has been **proven**, because a false route cannot be
+proven: verification is what lets a member's claimed route be shared
+without trusting the member who claimed it.
 
 Two of these are deliberately not one. `relay-event` is traffic and is
 forgotten; `owner-event` is membership and is written down. One event name

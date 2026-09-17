@@ -9,6 +9,11 @@ const deviceAuth = require('./deviceAuth');
 // What this node answers about itself, and the one thing it writes there
 // unasked — see the boot call in the personal-node block.
 const nodeCard = require('./nodeCard');
+// The address book, for one narrow purpose here: stashing a route a relay
+// has PROVEN onto a contact row that already exists. Everything else that
+// touches the book goes through hub; this does not, because it is a
+// stream event with no request behind it and no response to build.
+const whoBook = require('./whoBook');
 // Where this node keeps its mail. Required here for one call at boot:
 // a node with no relays.json is given one.
 const ownerBadge = require('./ownerBadge');
@@ -1701,6 +1706,27 @@ if (!relayMode) {
     //
     // `dir: 'in'` because it crossed the WAN inward, on the stream this
     // node holds to a relay it owns.
+    // -- A PROVEN ROUTE, STASHED AND NOT LOGGED ----------------------
+    //
+    //   Andy: "streamed routes should be exempt from the log, they just
+    //   miraculously get stashed on the correct contact-row."
+    //
+    // NOT CORRESPONDENCE. trafficLog is what this node sent and what it
+    // received; nobody addressed this to us. Presence is handled the same
+    // way and writes nothing either. And the log is permanent, so route
+    // chatter would grow a file that never shrinks with infrastructure
+    // nobody will read — and would leave, on every member's disk, a lasting
+    // record of what a relay's members have been looking up.
+    //
+    // `learnRoute` matches an EXISTING row and never creates one: a relay
+    // may improve what this node knows about its own contacts and may
+    // never add to them.
+    onRoute: function (url, body) {
+      if (!body || !body.key || !body.at) return;
+      try { whoBook.learnRoute(ROOT_DIR, body.key, body.at); }
+      catch (e) { /* a book that cannot be written is not a reason to stop listening */ }
+    },
+
     onOwnerEvent: function (ev) {
       try {
         trafficLog.note({

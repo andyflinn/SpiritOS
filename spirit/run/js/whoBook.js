@@ -326,6 +326,40 @@ function acquire(rootDir, peer, via) {
   });
 }
 
+// -- A ROUTE LEARNED FROM A RELAY, STASHED ON A ROW THAT ALREADY EXISTS -
+//
+//   Andy: "they just miraculously get stashed on the correct contact-row."
+//
+// A relay announces a route it has PROVEN -- it carried a packet to that
+// key through that partner and a reply came back signed by it -- and any
+// member holding a row for that key writes it down.
+//
+// IT NEVER CREATES A ROW, and that boundary is the whole of the safety
+// here. A relay may improve what this node knows about its own contacts;
+// it may never add to them, or "my book is mine" stops being true and a
+// relay can put people in it. A route for somebody not in the book is
+// dropped, which is also what makes an announcement cheap to receive:
+// most of them are about people you do not know, and cost one lookup.
+//
+// Returns the row it updated, or null when there was nothing to update --
+// so a caller can tell "stashed" from "ignored" without asking twice.
+function learnRoute(rootDir, publicKey, relayUrl) {
+  var key = String(publicKey == null ? '' : publicKey).trim();
+  var url = String(relayUrl == null ? '' : relayUrl).trim();
+  if (!key || !url) return null;
+
+  var rows = load(rootDir);
+  var row = rows.find(function (r) { return r.publicKey === key; });
+  if (!row) return null;          // not a contact: not this node's business
+
+  var have = normalizeRelays(row.relays || []);
+  if (have.indexOf(url) !== -1) return row;   // already known, nothing to write
+
+  row.relays = normalizeRelays(have.concat([url]));
+  save(rootDir, rows);
+  return row;
+}
+
 // Somebody wrote and this node is holding them: a row so a human can
 // see there is somebody there, and nothing more. Never a downgrade — a
 // contact who writes again is still a contact.
@@ -449,6 +483,7 @@ module.exports = {
   byMyLabel: byMyLabel,
   byPublicKey: byPublicKey,
   handshake: handshake,
+  learnRoute: learnRoute,
   labelForKey: labelForKey,
   addRoute: addRoute,
 };

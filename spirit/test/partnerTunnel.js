@@ -549,5 +549,86 @@ test.subHeading('And sonny’s answer reaches jazz');
     test.fail('the pair is wrong: ' + JSON.stringify(andyRow && andyRow.vias));
   }
 
+  // -- 8. A ROUTE THAT CARRIED A PACKET IS ANNOUNCED TO EVERYBODY -------
+  //
+  //   Andy: "what happens if the node, during a peer post, supplies
+  //   routes, the relay verifies the first one and it is valid: broadcast
+  //   then?"
+  //
+  // Yes, and it dissolves the boundary it looked like it was bending. The
+  // earlier rule was about PROVENANCE -- a member's claim is a hint, a
+  // relay's finding is a fact. Verification makes provenance irrelevant:
+  // **a false route cannot be verified**, so the only thing anybody can
+  // get announced is a route that works.
+  //
+  // THE BAR IS THE SIGNED REPLY. A partner merely ACCEPTING a forward
+  // proves only that it said it holds the key, which a partner harvesting
+  // packets would also say. A reply signed by the target cannot be made by
+  // anyone who does not hold that key, so this threshold trusts nobody --
+  // not even the partner that carried it.
+
+  test.subHeading('A proven route is announced, and only a proven one');
+
+  const heard = [];
+  const listener = auth.generateIdentity('listener');
+  const mintL = A.box.mint('ownera', 'listener', 7, '');
+  A.box.claim('listener', auth.sign(listener.privateKey, auth.claimMessage('listener')),
+    listener.publicKey, 'client-listener', mintL.invite.token, 'listener');
+  A.box.streamOpen(listener.publicKey,
+    auth.sign(listener.privateKey, auth.streamMessage(listener.publicKey)), sinkFor(heard));
+
+  // jazz posts to sonny through the partnership, naming B -- a claim.
+  const claimed = post(A.box, A.people.jazz, B.people.sonny.publicKey,
+    { describe: true }, B.key);
+
+  const beforeReply = heard.filter(function (m) { return m.event === 'route'; }).length;
+
+  if (claimed && claimed.ok && beforeReply === 0) {
+    test.check('the packet went, and nothing was announced yet -- a claim is not a fact');
+  } else {
+    test.fail('announced before it was proven: ' + beforeReply + ' route events');
+  }
+
+  // sonny answers, signing over the hash he derived himself.
+  const card2 = JSON.stringify({ v: 1, body: { ok: true, name: 'sonny' } });
+  B.box.routeReply(B.people.sonny.publicKey, claimed.hash, card2,
+    auth.sign(B.people.sonny.privateKey, auth.receiptMessage(claimed.hash)));
+  await new Promise(function (r) { setTimeout(r, 0); });
+  await new Promise(function (r) { setTimeout(r, 0); });
+
+  const routes = heard.filter(function (m) { return m.event === 'route'; });
+
+  if (routes.length === 1) {
+    test.check('and once the signed reply came back, the route was announced');
+  } else {
+    test.fail(routes.length + ' route events after the reply');
+  }
+
+  // IT NAMES THE PEER AND THE PARTNER, and nothing about who asked. A
+  // listener learns "sonny is reachable through B", never "jazz wanted
+  // him" -- the route is the fact; who wanted it is not anybody's
+  // business.
+  const ann = routes.length ? routes[0].data : null;
+
+  if (ann && ann.key === B.people.sonny.publicKey && ann.at === B.key) {
+    test.check('naming the peer and the partner it was reached through');
+  } else {
+    test.fail('announcement is wrong: ' + JSON.stringify(ann));
+  }
+
+  if (ann && JSON.stringify(ann).indexOf(A.people.jazz.publicKey) === -1) {
+    test.check('and saying nothing about who asked for it');
+  } else {
+    test.fail('the announcement names the requester');
+  }
+
+  // AND IT WENT TO A MEMBER WHO HAD NOTHING TO DO WITH IT. That is the
+  // whole point: one member paid for the discovery and everybody gets it.
+  if (routes.length && heard !== A.inboxes.jazz) {
+    test.check('heard by a member who was not party to the exchange');
+  } else {
+    test.fail('the announcement did not reach an uninvolved member');
+  }
+
   test.reportSuccessFailureCount();
 }());

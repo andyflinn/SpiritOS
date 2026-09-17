@@ -1847,6 +1847,11 @@ function createRelay(rootDir, deps) {
   // route by the router's own ttl.
   var forwarding = Object.create(null);
 
+  // inner hash -> { to, at } for a forward this relay sent to a partner.
+  // Only so that a signed reply can name the route it proved. In RAM,
+  // keyed by a hash derived from bytes, emptied on reply.
+  var carrying = Object.create(null);
+
   // WHAT A PARTNER'S FORWARD ACTUALLY DOES HERE.
   //
   // Returns an answer object to send back at once, or `null` when the
@@ -1982,6 +1987,11 @@ function createRelay(rootDir, deps) {
       bytes: text.length, hash: innerHash, via: 'partner',
     });
     meterNote(text.length, false);
+    // Which partner this went to, so that a reply -- if one comes -- can
+    // say WHICH route was proven. Dropped as soon as it is used or the
+    // route expires; it is a fact about a request in flight, like the
+    // route table itself.
+    carrying[innerHash] = { to: String(toToken), at: list[0].relayKey };
     return withStatus(opened, innerHash);
   }
 
@@ -1991,12 +2001,45 @@ function createRelay(rootDir, deps) {
   // member here. Everything else is identical — same table, same check
   // that the replier is the route's target, same event on the requester's
   // stream.
+  // -- A ROUTE THAT CARRIED A PACKET AND CAME BACK IS A FACT ----------
+  //
+  //   Andy: "what happens if the node, during a peer post, supplies
+  //   routes, the relay verifies the first one and it is valid: broadcast
+  //   then?"
+  //
+  // Yes -- and it dissolves the rule it looked like it was bending. The
+  // earlier boundary was about PROVENANCE: a route a member supplied was a
+  // hint, a route this relay found was a fact, and the first must never
+  // become the second. Verification makes provenance irrelevant, because
+  // **a false route cannot be verified.** The only thing anybody can get
+  // broadcast is a route that works, which is harmless by construction.
+  //
+  // THE BAR IS THE SIGNED REPLY, not the partner's acceptance. Acceptance
+  // proves only that a partner SAID it holds the key, which a partner that
+  // wanted to harvest packets would also say. A reply signed by the target
+  // key cannot be produced by anyone who does not hold that key -- so this
+  // threshold trusts nobody, including the partner that carried it.
+  //
+  // AND IT IS BROADCAST, NOT KEPT. This relay does not hold a route table
+  // (0012, 0013): it says what it learned and forgets, and the members
+  // that care write it down. A relay that rebooted is re-primed by them.
+  function announceRoute(innerHash, from) {
+    var carried = carrying[innerHash];
+    delete carrying[innerHash];
+    if (!carried || carried.to !== from) return;
+    presentNow.broadcast('route', { key: from, at: carried.at });
+  }
+
   function deliverForwardedReply(innerHash, reply) {
     var matched = routes.answer(innerHash, reply.from);
     if (!matched.ok) return false;
     monitorEvent('reply', reply.from, matched.requester || '', {
       bytes: (reply.text || '').length, hash: innerHash, via: 'partner',
     });
+    // PROVEN, so everybody gets it. `routes.answer` has already checked
+    // that the replier is the key the route was opened for, which is what
+    // makes this a fact rather than a claim.
+    announceRoute(innerHash, reply.from);
     return !!presentNow.send(matched.requester, 'reply', {
       hash: innerHash,
       from: reply.from,
