@@ -212,6 +212,17 @@ start.
 
 > **Grok:** *"one governor, two meters."*
 >
+> **Andy, deciding:** *"i agree with grok: one governor, multiple meters."*
+>
+> **Multiple, not two** — and that is a generalisation rather than a
+> rewording. RAM and bandwidth are the two that are *primary*; nothing says
+> they are the only things a relay can observe about itself. Routes in
+> flight, open sockets, write latency and CPU are all meters, and some of
+> them are already reported. So **the governor takes an open bag of
+> readings, never a fixed pair** — see recommendation 10, whose signature
+> is written that way for exactly this reason: a new meter should be a new
+> key, not a new argument and not a second governor.
+>
 > **Andy:** *"if bandwidth gets critical before RAM, the relay can increase
 > the number of duplicate routes allowed, later shedding, more precise
 > measurement rings. With low RAM, high bandwidth: reduce the number of
@@ -363,9 +374,11 @@ a socket itself. It is handed what it is allowed to know:
 
 ```
 govern({
-  budget:   { rssMax, bytesPerMinMax },   // what this relay believes it has
-  observed: { rss, routes, ring },        // the ring of {bytes, elapsed, latency}
-  now,                                    // injected clock
+  budget:   { ... },      // what this relay believes it has, per meter
+  observed: { ... },      // AN OPEN BAG OF METERS — rss, routes, ring,
+                          // latency, sockets — never a fixed pair. Andy:
+                          // "one governor, multiple meters."
+  now,                    // injected clock
 })  ->  { perMemberBytes, perMemberRoutes, floorHeld, why }
 ```
 
