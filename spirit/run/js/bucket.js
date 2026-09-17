@@ -54,6 +54,29 @@
 // free where a heap needs a final sort, and — the reason that actually
 // decides it — an array is readable in a debugger by somebody asking why
 // a row did not make the list.
+// ── SPOTS BOUND ROWS. BYTES ARE BOUNDED AT SERIALISATION ───────────
+//
+//   Andy: "bucket.js should be configurable by max_byte_length."
+//   Andy: "bucket.serialize should take a byte maximum."
+//
+// SPOTS COUNT THE WRONG THING WHEN ITEMS VARY IN SIZE. A fixed number of
+// spots was the whole limit while every item was about the same size --
+// thirty-two peer rows of a few short fields always fitted on the wire.
+// The moment a row could carry a list (every relay a peer was found on)
+// the same thirty-two spots became anywhere from 4 KB to 26 KB, and the
+// second does not fit. Spots cannot express that, because they count rows.
+//
+// AND THE CUT BELONGS AT SERIALISATION, NOT AT `offer`. An earlier version
+// of this evicted by size on arrival, which is wrong for a reason worth
+// keeping: a caller may add to an item AFTER it is seated -- `merge` does
+// exactly that, recording every source that offered a duplicate -- so an
+// item measured on arrival is measured wrong. Only the serialised form
+// knows what anything actually costs.
+//
+// So `serialize(map, maxBytes)` is where the ceiling applies: map each
+// held item to what will really be sent, accumulate, and stop when the
+// next one would not fit. The order is the compare function's and is not
+// re-opened; the ceiling only decides how far down that order to read.
 function createBucket(capacity, compare) {
   var cap = typeof capacity === 'number' && capacity > 0 ? Math.floor(capacity) : 0;
   if (typeof compare !== 'function') {
@@ -95,7 +118,7 @@ function createBucket(capacity, compare) {
       }
 
       // FULL. The only question left is whether this beats the weakest
-      // spot — one compare, and for most of a million items the answer is
+      // spot -- one compare, and for most of a million items the answer is
       // no and nothing moves.
       var weakest = held[held.length - 1];
       if (compare(item, weakest) >= 0) { turnedAway += 1; return false; }
@@ -104,6 +127,46 @@ function createBucket(capacity, compare) {
       turnedAway += 1;          // the evicted one did not make it either
       held.splice(seatFor(item), 0, item);
       return true;
+    },
+
+    // -- WHAT WILL ACTUALLY BE SENT, CUT TO WHAT WILL ACTUALLY FIT ------
+    //
+    // `map(item)` turns a held item into the thing that goes on the wire --
+    // the bucket still knows nothing about what an item is -- and
+    // `maxBytes` is measured against the SERIALISED result, because that
+    // is the only number that is true.
+    //
+    // Best first, stopping at the first row that will not fit. NOT
+    // skipping it to try a smaller one further down: the order is the
+    // compare function's, and choosing a lesser row because it fits would
+    // be this file forming an opinion about quality, which is the one
+    // thing it must never do.
+    //
+    // `more` is told the truth, so a caller knows to ask a narrower
+    // question rather than believing it has seen everything.
+    serialize: function (map, maxBytes) {
+      var toWire = typeof map === 'function' ? map : function (x) { return x; };
+      var ceiling = typeof maxBytes === 'number' && maxBytes > 0 ? maxBytes : 0;
+      var out = [];
+      var cut = false;
+      for (var i = 0; i < held.length; i += 1) {
+        var row = toWire(held[i]);
+        if (ceiling) {
+          var next = out.concat([row]);
+          if (JSON.stringify(next).length > ceiling) { cut = true; break; }
+          out = next;
+        } else {
+          out.push(row);
+        }
+      }
+      return {
+        items: out,
+        bytes: JSON.stringify(out).length,
+        // Either kind of overflow: more offered than there were spots, or
+        // more spots filled than the wire holds.
+        more: turnedAway > 0 || cut,
+        truncated: cut,
+      };
     },
 
     // Best first. A copy, so a caller cannot sort the result again and

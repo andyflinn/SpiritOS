@@ -2010,37 +2010,24 @@ function createRelay(rootDir, deps) {
     return (mine && mine.publicKey) || '';
   }
 
-  // ── SLOTS BOUND ROWS. BYTES ARE BOUNDED HERE ─────────────────────────
+  // -- THE WIRE'S CEILING, WHICH IS THIS FILE'S ONLY OPINION ABOUT SIZE -
   //
   //   Andy: "the relay-side search function should still collect the same
   //   amount of slots, but measure and truncate before returning results."
+  //   Andy: "bucket.serialize should take a byte maximum."
   //
-  // `peerSearch.SLOTS` is a RANKING device — how many candidates are worth
-  // offering — and it was also, by accident, the size limit: a row was a
-  // fixed handful of short fields, so 32 of them always fitted.
+  // `peerSearch.SLOTS` is a RANKING device -- how many candidates are worth
+  // offering -- and it was also, by accident, the size limit: a row was a
+  // fixed handful of short fields, so 32 of them always fitted. `vias`
+  // ended that, and 32 slots is now anywhere from ~4 KB to ~26 KB.
   //
-  // `vias` ended that. A peer bound to nineteen partners carries nineteen
-  // relay keys, so 32 slots is now anywhere from ~4 KB to ~26 KB and the
-  // second one does not fit on the wire. The slot count cannot express
-  // that, because it counts the wrong thing.
-  //
-  // So the rank still decides WHICH rows, and this decides HOW MANY
-  // survive: serialise, and drop from the bottom until it fits. The ones
-  // that go are the lowest-ranked, which is the same rule the cap has
-  // always followed — "with results ordered by quality, the ones that did
-  // not fit are the ones they wanted least" — and `more` is told the
-  // truth so a caller knows to type more of the name.
+  // THE CUT ITSELF IS NOT HERE. It belongs with the ordering, because
+  // deciding how far down a ranked list to read is a question about the
+  // ranking -- and because an item's size is only known after `merge` has
+  // finished adding sources to it. So this file supplies the one number it
+  // actually knows (what fits in the envelope it is about to send) and the
+  // ranker does the rest. Same rule as "the ranking is not this file's".
   var MATCH_BUDGET = limits.PAYLOAD_MAX - 512;
-
-  function fitMatches(rows, more) {
-    var kept = rows.slice();
-    var truncated = false;
-    while (kept.length && JSON.stringify(kept).length > MATCH_BUDGET) {
-      kept.pop();
-      truncated = true;
-    }
-    return { matches: kept, more: !!more || truncated };
-  }
 
   function answerSelf(hash, text, who) {
     var asked = null;
@@ -2251,12 +2238,22 @@ function createRelay(rootDir, deps) {
         // results ordered by quality, the ones that did not fit are the
         // ones they wanted least. That now covers two kinds of "did not
         // fit": too many for the slots, and too many for the wire.
-        var fitted = fitMatches(matches, more);
+        // The local answer has no `vias` -- nothing merged, so no row
+        // grew -- and its size is the ordinary one that always fitted.
+        // Checked anyway, because "it has always fitted" is what was true
+        // of the merged answer too.
+        var localFit = [];
+        var localCut = false;
+        for (var mi = 0; mi < matches.length; mi += 1) {
+          var tryRow = localFit.concat([matches[mi]]);
+          if (JSON.stringify(tryRow).length > MATCH_BUDGET) { localCut = true; break; }
+          localFit = tryRow;
+        }
         out = {
           ok: true,
           status: 200,
-          more: fitted.more,
-          matches: fitted.matches,
+          more: more || localCut,
+          matches: localFit,
         };
       }
     }
@@ -2494,11 +2491,17 @@ function createRelay(rootDir, deps) {
           if (!a) return;
           sources.push(a);
         });
-        var merged = peerSearch.merge(sources, pendingSearch.q, peerSearch.SLOTS);
-        // THE MERGED ANSWER IS THE ONE THAT OVERFLOWS. Every partner
-        // contributed rows and a peer held by several of them now carries
-        // several relay keys, so this is where 32 slots can become 26 KB.
-        var merfit = fitMatches(merged.matches.map(function (row) {
+        // THE BUDGET GOES IN, AND WHAT COMES BACK FITS. peerSearch knows
+        // what a row is on the wire -- it is the module that puts `via`
+        // and `vias` on one -- so it is the module that can measure one.
+        var merged = peerSearch.merge(
+          sources, pendingSearch.q, peerSearch.SLOTS, MATCH_BUDGET);
+
+        sendAnswer({
+          ok: true,
+          status: 200,
+          more: more || merged.more,
+          matches: merged.matches.map(function (row) {
             return {
               publicKey: row.publicKey,
               publicLabel: row.publicLabel,
@@ -2507,32 +2510,21 @@ function createRelay(rootDir, deps) {
               present: row.present,
               // WHICH PARTNER SUPPLIED IT. Andy: "it must accompany the
               // found records with the partner ID supplying that result
-              // record" — the thread a node follows to record a route.
+              // record" -- the thread a node follows to record a route.
               via: row.via || undefined,
-              // AND EVERY OTHER RELAY IT WAS FOUND ON.
-              //
-              //   Andy: "if you pay the price for search, may as well get
-              //   valuable, cachable routing info with it."
-              //
-              // The fan-out already asked every partner and every answer
-              // already arrived; the merger used to keep the best row and
-              // discard the knowledge that three other relays hold the
-              // same peer. That is a routing table thrown away at the last
-              // step, having been paid for in full.
+              // AND EVERY OTHER RELAY IT WAS FOUND ON. Andy: "if you pay
+              // the price for search, may as well get valuable, cachable
+              // routing info with it." The fan-out already asked every
+              // partner and every answer already arrived; the merger used
+              // to keep the best row and discard the knowledge that three
+              // other relays hold the same peer.
               //
               // Absent when there is only one, so an ordinary answer is
               // the same bytes it always was. `null` inside it means THIS
-              // relay — the one being asked — which a node already knows
-              // the identity of.
+              // relay, which a node already knows the identity of.
               vias: (row.vias && row.vias.length > 1) ? row.vias : undefined,
             };
-          }), more || merged.more);
-
-        sendAnswer({
-          ok: true,
-          status: 200,
-          more: merfit.more,
-          matches: merfit.matches,
+          }),
         });
       });
       return;
@@ -3299,7 +3291,7 @@ function createRelay(rootDir, deps) {
     // The byte budget a search answer is cut to. Exposed so a suite can
     // drive the cut rather than recompute it — the number and the rule
     // have to be the same ones the wire gets.
-    fitMatches: fitMatches,
+    matchBudget: function () { return MATCH_BUDGET; },
     // Does anybody here hold this key or label? Answers a LABEL, never a
     // key and never a device key — the routing layer needs to know an
     // identity exists and what to call it, and nothing more. Everything

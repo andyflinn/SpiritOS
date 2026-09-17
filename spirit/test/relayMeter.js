@@ -442,83 +442,103 @@ if (floor && floor.slots * floor.sampleS >= 120) {
   test.fail('span floor not enforced: ' + JSON.stringify(floor));
 }
 
-// ── 8. SLOTS BOUND ROWS; BYTES ARE BOUNDED SEPARATELY ─────────────
+// -- 8. SLOTS BOUND ROWS; BYTES ARE BOUNDED AT SERIALISATION ----------
 //
 //   Andy: "the relay-side search function should still collect the same
 //   amount of slots, but measure and truncate before returning results."
+//   Andy: "bucket.serialize should take a byte maximum."
 //
 // SLOTS COUNT THE WRONG THING, and used to get away with it: a search row
 // was a fixed handful of short fields, so 32 of them always fitted on the
-// wire. `vias` ended that — a peer bound to nineteen partners carries
-// nineteen relay keys, and 32 such rows is ~26 KB against a PAYLOAD_MAX of
-// 16384.
+// wire. `vias` ended that -- a peer bound to nineteen partners carries
+// nineteen relay keys, and 32 such rows is ~26 KB against a PAYLOAD_MAX
+// of 16384.
 //
-// So the rank still decides WHICH rows and the budget decides how many
-// survive. Driven through the real door rather than by calling the helper:
-// a member asks, and what comes back has to fit.
+// AND THE CUT IS NOT THE RELAY'S. It lives with the ordering, because
+// deciding how far down a ranked list to read is a question about the
+// ranking -- and because a row's size is only known after `merge` has
+// finished adding sources to it. The relay supplies the one number it
+// knows: what fits in the envelope it is about to send.
 
 test.subHeading('A search answer is cut to what the wire holds');
 
-const wide = (function () {
-  // Forty peers whose labels all match, each carrying a long `vias` list
-  // — the shape a busy mesh produces and the one that overflows.
+const peerSearch = require('../run/js/peerSearch.js');
+
+// Twenty peers on each of two partners, all matching, each therefore
+// carrying a long `vias` list -- the shape a busy mesh produces and the
+// one that overflows.
+const wideSources = [0, 1].map(function (src) {
   const rows = [];
-  for (let i = 0; i < 40; i += 1) {
+  for (let i = 0; i < 20; i += 1) {
     rows.push({
       publicKey: 'MCowBQYDK2VwAyEA' + String(i).padStart(4, '0') + 'x'.repeat(28) + '=',
-      publicLabel: 'wide' + i,
+      publicLabel: 'wide' + String(i).padStart(2, '0'),
       claimedAt: '2026-09-17T08:08:18.051Z',
       owner: false,
       present: true,
-      vias: Array.from({ length: 19 }, function (_, j) {
-        return 'MCowBQYDK2VwAyEA' + String(j).padStart(4, '0') + 'y'.repeat(28) + '=';
-      }),
     });
   }
-  return rows;
-}());
+  return { via: 'MCowBQYDK2VwAyEA' + String(src).padStart(4, '0') + 'y'.repeat(28) + '=', rows: rows };
+});
 
-const wholeSize = JSON.stringify(wide).length;
+const budget = R.box.matchBudget();
 
-if (wholeSize > 16384) {
-  test.check('the shape really does overflow: ' + Math.round(wholeSize / 1024) +
-    ' KB for 40 rows of 19 routes');
+if (typeof budget === 'number' && budget > 0 && budget < 16384) {
+  test.check('the relay publishes the envelope it can fill: ' + budget + ' bytes');
 } else {
-  test.fail('the fixture does not overflow, so it proves nothing: ' + wholeSize);
+  test.fail('no match budget: ' + JSON.stringify(budget));
 }
 
-// The relay's own budget, applied through the code under test rather than
-// recomputed here.
-const fitted = R.box.fitMatches ? R.box.fitMatches(wide, false) : null;
+// UNCAPPED FIRST, to prove the shape really does overflow. A fixture that
+// fits proves nothing about a cut.
+const loose = peerSearch.merge(wideSources, 'wide', 40);
+const looseBytes = JSON.stringify(loose.matches).length;
 
-if (fitted) {
-  test.check('the relay exposes the budget it applies, so it can be checked');
+const capped = peerSearch.merge(wideSources, 'wide', 40, 900);
+const cappedBytes = JSON.stringify(capped.matches).length;
+
+if (looseBytes > 900) {
+  test.check('the shape overflows a small ceiling: ' + looseBytes + ' bytes for ' +
+    loose.matches.length + ' rows');
 } else {
-  test.fail('fitMatches is not reachable — the cut cannot be verified');
+  test.fail('the fixture does not overflow, so it proves nothing: ' + looseBytes);
 }
 
-if (fitted && JSON.stringify(fitted.matches).length <= 16384) {
-  test.check('and what survives fits the wire: ' + fitted.matches.length +
-    ' of 40 rows, ' + Math.round(JSON.stringify(fitted.matches).length / 1024) + ' KB');
+if (cappedBytes <= 900 && capped.matches.length < loose.matches.length) {
+  test.check('and the ceiling cuts it: ' + capped.matches.length + ' rows, ' +
+    cappedBytes + ' bytes');
 } else {
-  test.fail('the answer still overflows');
+  test.fail('the ceiling did not bind: ' + cappedBytes + ' bytes, ' +
+    capped.matches.length + ' rows');
 }
 
 // TRUNCATION IS SAID OUT LOUD. A caller that does not know it was cut
-// believes it has seen everything, which is the failure this whole field
-// exists to prevent.
-if (fitted && fitted.more === true) {
-  test.check('and `more` says so, so a caller types another letter');
+// believes it has seen everything, which is the failure `more` exists to
+// prevent.
+if (capped.more === true) {
+  test.check('and `more` says so, so a caller asks a narrower question');
 } else {
   test.fail('the answer was cut silently');
 }
 
 // AND THE ONES THAT GO ARE THE ONES RANKED LOWEST. The rank decided the
-// order; the budget only decides where to stop reading it.
-if (fitted && fitted.matches[0] && fitted.matches[0].publicLabel === 'wide0') {
-  test.check('and the best-ranked row is still first — the cut takes from the bottom');
+// order; the ceiling only decides where to stop reading it.
+if (capped.matches[0] && loose.matches[0] &&
+    capped.matches[0].publicKey === loose.matches[0].publicKey) {
+  test.check('and the best-ranked row is still first -- the cut takes from the bottom');
 } else {
   test.fail('truncation disturbed the order');
+}
+
+// THE ROUTES SURVIVE THE CUT. Every one of these peers was offered by both
+// sources, so each surviving row must still name both -- the ceiling
+// removes rows, never the routing information on the rows it keeps.
+const both = capped.matches.filter(function (r) { return r.vias && r.vias.length === 2; });
+
+if (both.length === capped.matches.length) {
+  test.check('and every surviving row still names both relays that hold it');
+} else {
+  test.fail(both.length + ' of ' + capped.matches.length + ' kept their routes');
 }
 
 test.reportSuccessFailureCount();

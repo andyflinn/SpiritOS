@@ -135,8 +135,24 @@ function search(rows, query, slots) {
 }
 
 // Each source is `{ via, rows }` — `via` null for this node's own members.
-function merge(sources, query, slots) {
+// `maxBytes` is the wire's ceiling, and the caller supplies it because the
+// caller is the one that knows what envelope this answer goes into. The
+// ranking decides WHICH rows; the ceiling decides how many of them fit,
+// and neither question is answered in relay.js any more.
+function merge(sources, query, slots, maxBytes) {
   var opts = optionsFor(slots);
+  if (typeof maxBytes === 'number' && maxBytes > 0) {
+    opts.maxBytes = maxBytes;
+    // What a row costs is what a row IS on the wire, which is this
+    // module's business rather than the bucket's.
+    opts.wire = function (m) {
+      var row = {};
+      Object.keys(m.item).forEach(function (k) { row[k] = m.item[k]; });
+      if (m.tag !== undefined) row.via = m.tag;
+      if (m.tags && m.tags.length > 1) row.vias = m.tags.slice();
+      return row;
+    };
+  }
   return rowsFrom(gradedSearch.merge(
     (sources || []).map(function (source) {
       return { tag: source && source.via == null ? null : source.via, items: (source && source.rows) || [] };

@@ -689,7 +689,36 @@ function merge(sources, query, opts) {
     unique.push(m);
   });
 
-  return { matches: unique.slice(0, n), more: all.more || unique.length > n };
+  // -- THE BYTE CEILING IS APPLIED HERE, AND ONLY HERE ----------------
+  //
+  //   Andy: "bucket.serialize should take a byte maximum."
+  //
+  // After the tags have accumulated, because that is the point at which an
+  // item's real size is known: a duplicate arriving late adds a source to
+  // a row already seated, so anything measured earlier is measured wrong.
+  //
+  // `opts.maxBytes` with `opts.wire(item)` -- the caller says what a row
+  // will look like on the wire and how much room there is, and this reads
+  // the ranked order until the next row will not fit. Nothing here forms
+  // an opinion about which rows are worth keeping; it only decides how far
+  // down somebody else's order to read.
+  var kept = unique.slice(0, n);
+  var overflowed = false;
+  if (typeof opts.maxBytes === 'number' && opts.maxBytes > 0) {
+    var wire = typeof opts.wire === 'function' ? opts.wire : function (m) { return m.item; };
+    var out = [];
+    for (var i = 0; i < kept.length; i += 1) {
+      var next = out.concat([wire(kept[i])]);
+      if (JSON.stringify(next).length > opts.maxBytes) { overflowed = true; break; }
+      out = next;
+    }
+    kept = kept.slice(0, out.length);
+  }
+
+  return {
+    matches: kept,
+    more: all.more || unique.length > n || overflowed,
+  };
 }
 
 // -- WHAT IS PUBLIC, AND IT IS SMALL ----------------------------------

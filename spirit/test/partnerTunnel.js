@@ -498,5 +498,56 @@ test.subHeading('And sonny’s answer reaches jazz');
     test.fail('vias present for a single route: ' + JSON.stringify(sonnyRow));
   }
 
+  // -- 7. A PEER ON THE RELAY YOU ASKED *AND* ON A PARTNER --------------
+  //
+  //   Andy: "searching for andy on either lab or spirit should return two
+  //   attached relays."
+  //
+  // The case that matters most in practice, because it is the shape a
+  // relay OWNER has: andy is a member of spirit and of lab, so a search
+  // from either one finds him twice -- once locally, once through the
+  // partnership -- and must come back naming both.
+  //
+  // `null` is one of the two, and means THE RELAY BEING ASKED. A node
+  // already knows which relay it addressed, so naming it again would be
+  // 44 characters to say something the reader could not have got wrong.
+
+  test.subHeading('A peer on the asked relay and on a partner names both');
+
+  const andy = auth.generateIdentity('andy');
+  ['a', 'b'].forEach(function (tag) {
+    const relay = tag === 'a' ? A : B;
+    const minted = relay.box.mint('owner' + tag, 'andy', 7, '');
+    relay.box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')),
+      andy.publicKey, 'client-andy-' + tag, minted.invite.token, 'andy');
+  });
+
+  post(A.box, A.people.jazz, A.key, { search: { q: 'andy' } });
+  await new Promise(function (r) { setTimeout(r, 0); });
+  await new Promise(function (r) { setTimeout(r, 0); });
+
+  const andyReply = A.inboxes.jazz.filter(function (m) { return m.event === 'reply'; }).pop();
+  const andyRow = andyReply && JSON.parse(andyReply.data.text).body.matches
+    .filter(function (r) { return r.publicKey === andy.publicKey; })[0];
+
+  if (andyRow) {
+    test.check('the search found andy, who is on both');
+  } else {
+    test.fail('andy was not found: ' + JSON.stringify(andyReply && andyReply.data && andyReply.data.text).slice(0, 200));
+  }
+
+  if (andyRow && Array.isArray(andyRow.vias) && andyRow.vias.length === 2) {
+    test.check('and named two attached relays, exactly as asked');
+  } else {
+    test.fail('routes for andy: ' + JSON.stringify(andyRow && andyRow.vias));
+  }
+
+  if (andyRow && andyRow.vias && andyRow.vias.indexOf(null) !== -1 &&
+      andyRow.vias.indexOf(B.key) !== -1) {
+    test.check('one of them null -- the relay asked -- and the other the partner');
+  } else {
+    test.fail('the pair is wrong: ' + JSON.stringify(andyRow && andyRow.vias));
+  }
+
   test.reportSuccessFailureCount();
 }());
