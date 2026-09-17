@@ -3456,17 +3456,59 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
     test.fail('ndDeviceCopy reports nothing: ' + copyBody.slice(0, 200));
   }
 
-  // THE ADDRESS IS HIDDEN, AND BY A NUMBER SOMEBODY CAN TURN. Andy asked
-  // for exactly that — the URL hidden, its length on the display
-  // controllable — so the check is that the shortening is governed by a
-  // named constant rather than by a literal buried in a slice.
-  const shortAt = natter.indexOf('function ndShortUrl(');
-  const shortBody = shortAt === -1 ? '' : natter.slice(shortAt, natter.indexOf('\n}', shortAt));
-  if (/var ND_LINK_CHARS = \d+;/.test(natter) && /ND_LINK_CHARS/.test(shortBody) &&
-      !/\bslice\(0,\s*\d/.test(shortBody)) {
-    test.check('the displayed length is one named constant, not a number inside the cut');
+  // THE ADDRESS IS NOT ON THE PAGE AT ALL NOW, which supersedes the
+  // check that stood here — that the elision was governed by a named
+  // constant rather than a literal buried in a slice.
+  //
+  //   Andy: "since the link to the device URL is already shortened in the
+  //   link, may as well put a button in its place [open your device in
+  //   your browser] or sumfin."
+  //
+  // A middle-elided URL was a shorter thing that still looked like an
+  // address and could be read as neither. So the assertion is now the
+  // stronger one: the visible caption is a sentence, and the shortener is
+  // gone rather than left sitting unused where it reads as a decision.
+  const code0 = natter.replace(/(^|[^:])\/\/.*$/gm, '$1');
+  if (!/ndShortUrl|ND_LINK_CHARS/.test(code0)) {
+    test.check('the address is off the page entirely, and its shortener went with it');
   } else {
-    test.fail('ndShortUrl: ' + shortBody.slice(0, 200));
+    test.fail('ndShortUrl / ND_LINK_CHARS survive with nothing rendering them');
+  }
+
+  if (/natter-dev-link[^]{0,400}?Open the device page/.test(natter)) {
+    test.check('and the link says what pressing it does instead of naming where it goes');
+  } else {
+    test.fail('the device link has no plain caption');
+  }
+
+  // STILL AN ANCHOR, not a button that calls window.open. A popup blocker
+  // can eat window.open; it cannot eat a click on a link — and the
+  // right-click menu is how the address reaches a phone that is not
+  // signed into this browser.
+  if (/<a class="cancel-btn natter-dev-link"/.test(natter) && !/window\.open/.test(code0)) {
+    test.check('and it is still a link, so Copy link address still reaches the phone');
+  } else {
+    test.fail('the device link became a scripted open');
+  }
+
+  // ── AND THE RED ONE IS LAST ON THAT LINE ───────────────────────────
+  //
+  //   Andy: "it be even better if the New password button was at the end
+  //   of the URL line."
+  //
+  // It was on a line of its own below, where the eye had already stopped.
+  // Order is the assertion because order is the request: copy, open,
+  // replace — left to right in the order somebody does them, with the
+  // destructive one at the end rather than first under a thumb.
+  const row = natter.slice(natter.indexOf('natter-dev-row'));
+  const copyAtRow = row.indexOf('natter-dev-copy');
+  const linkAtRow = row.indexOf('natter-dev-link');
+  const rotateAtRow = row.indexOf('natter-dev-rotate"');
+  if (copyAtRow !== -1 && linkAtRow > copyAtRow && rotateAtRow > linkAtRow) {
+    test.check('copy, open, then replace — the destructive one at the end of the line');
+  } else {
+    test.fail('device controls are out of order: ' +
+      [copyAtRow, linkAtRow, rotateAtRow].join(', '));
   }
 
   // And what is hidden is only the DISPLAY. The href carries the whole
@@ -3531,13 +3573,16 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
     test.fail('the device panel still animates something');
   }
 
-  // The address is held to one line by the stylesheet as well as by the
-  // markup. ndShortUrl already elides it; this stops a long one from
-  // pushing the row apart on a narrow screen if the constant is raised.
-  if (/\.natter-dev-link\s*\{[^}]*text-overflow:\s*ellipsis/.test(css)) {
-    test.check('and the address is held to one line however long the constant is set');
+  // THE LINK HAS TO LOOK LIKE THE BUTTONS IT SITS BETWEEN, and it cannot
+  // inherit that: `#app-content button` does not reach an <a>, so the
+  // shape is repeated for it deliberately. Without this the row is two
+  // buttons with a bare blue underline between them — which is the state
+  // the caption change would otherwise have left behind.
+  if (/#app-content a\.natter-dev-link\s*\{[^}]*min-height:\s*44px/.test(css) &&
+      /#app-content a\.natter-dev-link\s*\{[^}]*background:/.test(css)) {
+    test.check('and the link carries the button shape, since an <a> inherits none of it');
   } else {
-    test.fail('.natter-dev-link can grow the row');
+    test.fail('.natter-dev-link is not shaped like the buttons beside it');
   }
 }
 

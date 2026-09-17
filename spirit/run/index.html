@@ -1265,18 +1265,51 @@
         align-items: center;
       }
 
-      /* The address, shortened in the markup and never allowed to grow
-         back. The ellipsis is put there by ndShortUrl so that copying the
-         link text is impossible by accident — the href is the whole
-         address and the title shows it, but what is on the page is a
-         label rather than something to read off. */
-      .natter-dev-link {
+      /* THE ADDRESS IS NOT ON THE PAGE ANY MORE, and this is what took
+         its place.
+
+           Andy: "since the link to the device URL is already shortened in
+           the link, may as well put a button in its place [open your
+           device in your browser] or sumfin."
+
+         It was a host, 58 characters of base64url and `/device`, elided
+         in the middle because none of the middle was readable — a label
+         pretending to be information, taking the width of a control. The
+         href is still the whole address and the title still shows it, so
+         right-click → Copy link address is untouched; only the caption
+         changed, from an address nobody could read to a sentence saying
+         what pressing it does.
+
+         STILL AN ANCHOR. #app-content button does not reach an <a>, so
+         the button shape is repeated here rather than inherited — the
+         alternative was a <button> calling window.open, which a popup
+         blocker may eat and which loses the right-click menu that is how
+         the address gets to a phone. */
+      #app-content a.natter-dev-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 16px;
+        min-height: 44px;
+        border-radius: 10px;
+        background: #0f3460;
+        color: inherit;
+        text-decoration: none;
         font-size: 16px;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
         max-width: 100%;
       }
+
+      #app-content a.natter-dev-link:hover { background: #16487a; }
+
+      /* What the panel just said, on its own line under the controls.
+         Two of the three answer back, and a message that appears between
+         two buttons pushes the third one sideways as you use it.
+
+         The spans are always in the markup and usually hold nothing, so
+         the row collapses to no height on its own — it is not hidden
+         while empty, it simply has nothing in it to be tall. The margin
+         is what keeps the sentence off the buttons when there is one. */
+      .natter-dev-note { margin-top: 8px; }
 
       /* The bubble: prose about what to do next, not form chrome. It is a
          .stat-tile.nested for its weight — the shell's word for a card

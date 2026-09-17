@@ -1485,28 +1485,24 @@ function ndDeviceUrl(host) {
   return host + '/' + seg + '/device';
 }
 
-// HOW MUCH OF THE ADDRESS TO SHOW, and it is the one number this panel
-// has. Andy asked for the URL to be hidden and its length on the display
-// to be controllable, so this is that control: the full address is what
-// the link GOES to and what hovering it reveals, and this is only how
-// much of it takes up room on the page.
+// ND_LINK_CHARS and ndShortUrl stood here until 2026-09-17. THIS CORRECTS
+// AN EARLIER NOTE: they existed because Andy asked for the URL to be
+// hidden and the displayed length to be a number somebody could turn, and
+// a middle-elided address was the answer to that as stated.
 //
-// It is long because it carries a key: a host, then 58 characters of
-// base64url nobody reads and nobody could check by eye, then `/device`.
-// Printing the whole thing made the panel look like an error message.
-var ND_LINK_CHARS = 52;
-
-// Middle-elided rather than cut short, because the two ends are the parts
-// that mean anything — which relay it is at the front, and `/device` at
-// the back. What goes is the key in the middle, which is the part that
-// was never readable.
-function ndShortUrl(url) {
-  var s = String(url || '');
-  if (s.length <= ND_LINK_CHARS) return s;
-  var keep = ND_LINK_CHARS - 1;
-  var head = Math.ceil(keep * 0.7);
-  return s.slice(0, head) + '…' + s.slice(s.length - (keep - head));
-}
+// It was the wrong answer to the question underneath it. The address is a
+// host, 58 characters of base64url and `/device` — elide the middle and
+// what is left is not a shorter address, it is a label that looks like an
+// address and can be read for neither. A control saying what pressing it
+// does is smaller than any elision and answers the actual question.
+//
+//   Andy: "since the link to the device URL is already shortened in the
+//   link, may as well put a button in its place."
+//
+// NOTHING WAS LOST WITH IT. The href and the title still carry the
+// address whole, so hovering still reveals it and right-click still
+// copies it — which is how it reaches a phone that cannot be handed a
+// clipboard. See ndDeviceHtml.
 
 // WHAT TO DO WITH IT, in the order it is done, and it does not change.
 //
@@ -1565,6 +1561,24 @@ function ndDeviceHtml() {
   // 🔗 instead, because that is what this panel hands you: a link to open
   // somewhere else. It says "a thing to do" where ⚠️ says "something is
   // wrong", which is what lets a reader tell two folded bars apart.
+  // ── THREE CONTROLS, ONE LINE, IN THE ORDER YOU USE THEM ───────────
+  //
+  //   Andy: "it be even better if the New password button was at the end
+  //   of the URL line.... and since the link to the device URL is already
+  //   shortened in the link, may as well put a button in its place [open
+  //   your device in your browser] or sumfin."
+  //
+  // The address was never readable. It is a host, 58 characters of
+  // base64url and `/device`, elided in the middle on purpose — so what
+  // sat on this line was a label pretending to be information, and the
+  // one destructive control on the panel sat on a second line below it
+  // where the eye had already stopped.
+  //
+  // Copy, open, replace: left to right in the order somebody does them,
+  // with the red one last. STILL AN ANCHOR, not a button that calls
+  // window.open — right-click still offers Copy link address, which is
+  // how the address gets to a phone that is not signed into anything, and
+  // a popup blocker cannot eat a click on a link.
   return ndPanel('device', ndIcon.LINK, 'Add one of my own devices',
     '<div class="natter-dev-row">' +
       '<button type="button" class="cancel-btn natter-dev-copy">' +
@@ -1575,28 +1589,32 @@ function ndDeviceHtml() {
       // not a credential (deviceAuth.js), public at /api/relay/who
       // already, so hiding it is about the page not being readable rather
       // than about the address being secret.
-      '<a class="natter-dev-link" href="' + full + '" target="_blank"' +
+      '<a class="cancel-btn natter-dev-link" href="' + full + '" target="_blank"' +
         ' rel="noopener" title="' + full + '">' +
-        ndEscapeHtml(ndShortUrl(target)) + '</a>' +
-      '<span class="natter-dev-out muted"></span>' +
-    '</div>' +
-    // ── ROTATE, WHERE THE PASSWORD IS ───────────────────────────────
-    //
-    //   Andy: "rotate password must be a UI element in the device-fold
-    //   in the relay detail"
-    //
-    // The verb has existed and been reachable since device support
-    // landed, with nothing on any screen to press — waiting on named
-    // work rather than forgotten. This is the screen that shows the
-    // password, so it is the screen that replaces it.
-    //
-    // ARMED, like Remove and Revoke: rotating invalidates a word that
-    // may already be half-typed into a phone across the room. Not
-    // destructive of anything permanent — a new one is minted on the
-    // next ask — but it breaks something in flight.
-    '<div class="natter-dev-row">' +
+        ndIcon.LINK + ' Open the device page</a>' +
+      // ── ROTATE, WHERE THE PASSWORD IS ─────────────────────────────
+      //
+      //   Andy: "rotate password must be a UI element in the device-fold
+      //   in the relay detail"
+      //
+      // The verb has existed and been reachable since device support
+      // landed, with nothing on any screen to press — waiting on named
+      // work rather than forgotten. This is the screen that shows the
+      // password, so it is the screen that replaces it.
+      //
+      // ARMED, like Remove and Revoke: rotating invalidates a word that
+      // may already be half-typed into a phone across the room. Not
+      // destructive of anything permanent — a new one is minted on the
+      // next ask — but it breaks something in flight. Andy: "the red
+      // frame helps me to notice."
       '<button type="button" class="cancel-btn natter-dev-rotate">' +
         ndIcon.WARNING + ' New password</button>' +
+    '</div>' +
+    // WHAT JUST HAPPENED, under the controls rather than between them.
+    // Two of the three say something back, and a message sitting between
+    // two buttons pushes the third one sideways as you use the panel.
+    '<div class="natter-dev-row natter-dev-note">' +
+      '<span class="natter-dev-out muted"></span>' +
       '<span class="natter-dev-rotate-out muted"></span>' +
     '</div>' +
     '<div class="stat-tile nested natter-dev-bubble">' +
@@ -2031,20 +2049,37 @@ function ndDeviceRotate(button) {
 }
 
 function ndDeviceCopy(button) {
-  var out = button.closest('.natter-device').querySelector('.natter-dev-out');
-  out.textContent = '';
+  // FOUND AGAIN AFTER THE CLIPBOARD ANSWERS, never held across it.
+  //
+  // Copying is the click that disarms New password, and disarming
+  // repaints the whole screen — so a span captured before the await is a
+  // detached node by the time there is anything to write in it, and the
+  // message goes into a DOM nobody is looking at. Silent, and only in the
+  // one case where somebody armed the red button and then reached for the
+  // password instead: the exact shape of bug that cost three tries at
+  // removing a seat.
+  // Through ndBody, the one handle on this screen that survives a
+  // repaint — the panel and every button in it are replaced, and the
+  // container is not.
+  function says(text) {
+    var body = ndBody();
+    var out = body && body.querySelector('.natter-dev-out');
+    if (out) out.textContent = text;
+  }
+
+  says('');
   var copy = ndDevice.password && navigator.clipboard && navigator.clipboard.writeText
     ? navigator.clipboard.writeText(ndDevice.password)
     : Promise.reject(new Error('no clipboard'));
   return copy.then(function () {
-    out.textContent = 'password copied';
+    says('password copied');
   }, function () {
     // Said out loud rather than silently doing nothing. A copy button
     // that fails quietly sends somebody to the other device to paste
     // whatever was on the clipboard before.
-    out.textContent = ndDevice.password
+    says(ndDevice.password
       ? 'could not copy — this browser refused the clipboard'
-      : 'no password on this node yet';
+      : 'no password on this node yet');
   });
 }
 

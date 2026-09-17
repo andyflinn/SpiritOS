@@ -50,7 +50,13 @@ function fakeElement(id) {
     },
     getAttribute: function () { return null; },
     setAttribute: function () {},
-    querySelector: function () { return null; },
+    // WHAT THIS CONTAINER HOLDS, for the code that looks things up from
+    // the container rather than from the button it was handed. A handler
+    // that has to survive a repaint cannot hold the element it writes to
+    // — the repaint replaces it — so it re-finds it from nd-body, and the
+    // fake has to be able to answer that. Empty unless a test fills it.
+    parts: {},
+    querySelector: function (selector) { return el.parts[selector] || null; },
   };
   Object.defineProperty(el, 'innerHTML', {
     get: function () { return html; },
@@ -1616,23 +1622,33 @@ function theDevicePanel() {
       test.fail('device link target: ' + (/href="https:\/\/spirit[^"]*/.exec(panel) || [''])[0]);
     }
 
-    // AND DOES NOT SHOW IT. Andy asked for the URL hidden and its length
-    // on the display controllable. The href and the title carry it whole
-    // — it is a locator, not a credential — and the text is a label.
-    const shown = />([^<]*…[^<]*)<\/a>/.exec(panel);
-    if (shown && shown[1].length < target.length && shown[1].indexOf(KEY.slice(20, 40)) === -1) {
-      test.check('and shows it shortened — ' + shown[1].length + ' characters, not ' +
-        target.length + ', with the key elided');
+    // AND DOES NOT SHOW IT AT ALL. This supersedes the check that stood
+    // here — that the text was a middle-elided version of the address,
+    // shorter than the whole and with the key taken out of the middle.
+    //
+    //   Andy: "since the link to the device URL is already shortened in
+    //   the link, may as well put a button in its place [open your device
+    //   in your browser] or sumfin."
+    //
+    // A shortened address is still an address on the page, and one that
+    // can be read for neither what it is nor where it goes. What the link
+    // says now is what pressing it does. NO PART OF THE ADDRESS is in the
+    // caption — asserted against the key rather than against a length,
+    // because a caption that happened to contain it would be the failure.
+    const shown = /<a class="cancel-btn natter-dev-link"[^>]*>([^<]*)<\/a>/.exec(panel);
+    if (shown && shown[1].indexOf('http') === -1 &&
+        shown[1].indexOf(KEY.slice(20, 40)) === -1 && /\w/.test(shown[1])) {
+      test.check('and says what pressing it does instead: "' + shown[1].trim() + '"');
     } else {
       test.fail('displayed link text: ' + JSON.stringify(shown && shown[1]));
     }
 
-    // The whole address is still ONE hover away, and the check is that
-    // the two differ: a title equal to the text would mean nothing was
-    // hidden, and a missing title would mean it could not be recovered.
+    // The whole address is still ONE hover away, and still one right-click
+    // from the clipboard — which is the part that matters, since the phone
+    // it is for cannot be handed this browser's clipboard.
     const title = /title="(https:\/\/[^"]*)"/.exec(panel);
-    if (title && title[1] === target && shown && title[1] !== shown[1]) {
-      test.check('and the full address is on the title, so nothing is lost by hiding it');
+    if (title && title[1] === target) {
+      test.check('and the full address is on the title, so nothing is lost by dropping it');
     } else {
       test.fail('title: ' + JSON.stringify(title && title[1]));
     }
@@ -1650,6 +1666,12 @@ function theDevicePanel() {
     // there were once two buttons and the copy was the one that opened it
     // — which nobody could guess.
     const out = { textContent: '' };
+    // FOUND FROM THE CONTAINER, not from the button. Copying is the click
+    // that disarms New password, and disarming repaints the panel — so a
+    // span captured before the clipboard answers is detached by the time
+    // there is anything to write in it, and the message lands in a DOM
+    // nobody is looking at.
+    app.body().parts['.natter-dev-out'] = out;
     app.body().fire('click', { target: copyTarget(out) });
 
     return settle().then(function () {
@@ -1667,6 +1689,31 @@ function theDevicePanel() {
       } else {
         test.fail('the password was printed on the page');
       }
+
+      // ── AND IT STILL SAYS SO AFTER A REPAINT ──────────────────────
+      //
+      // The case: New password is armed, and the next press is Copy. That
+      // click disarms, disarming repaints the whole screen, and the span
+      // the message was going to lands in the bin — so the copy happens
+      // and the panel says nothing, which is indistinguishable from a
+      // copy that failed.
+      //
+      // The repaint is MODELLED here rather than assumed: the container's
+      // `.natter-dev-out` becomes a different object mid-flight, exactly
+      // as innerHTML replaces the element. A handler that captured the
+      // old one writes to the old one and this fails.
+      const fresh = { textContent: '' };
+      app.body().parts['.natter-dev-out'] = fresh;
+      app.body().fire('click', { target: copyTarget({ textContent: '' }) });
+
+      return settle().then(function () {
+        if (/copied/.test(fresh.textContent)) {
+          test.check('and says so into the panel that is on the screen now, not the one it was handed');
+        } else {
+          test.fail('the message went to the replaced span: ' +
+            JSON.stringify(fresh.textContent));
+        }
+      });
     });
   });
 }
