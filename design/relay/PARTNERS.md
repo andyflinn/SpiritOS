@@ -1263,7 +1263,32 @@ that signature, which had never been said outright:
   blast radius stays where it was put — one hop, bounded by the receiving
   node's own decision to acquire — and that was accepted as sufficient.
 
-  > **Its job has since been eliminated — 2026-09-17, later the same day.**
+  > **THE TUNNEL IS THE CHEAP IMPLEMENTATION OF IT** — Andy, 2026-09-17,
+  > and this is the accurate way to record what happened. Grok's
+  > *requirement* stands; what is superseded is only the mechanism.
+  >
+  > > **Andy:** *"the tunnel is the cheap implementation of the cheap cert
+  > > Grok mentioned."*
+  >
+  > What he asked for: **B can tell that a trusted partner is vouching for
+  > a key it has never seen, without holding A's roster.** The tunnel
+  > delivers precisely that, out of two signatures already on the wire:
+  >
+  > | | carries | proves |
+  > |---|---|---|
+  > | **inner** | N1's signature over `(N1, N2, text)` | N1 authored this, and A cannot forge it |
+  > | **outer** | A's signature over `(A, B, wrapper)` | a partner B pinned vouches by carrying it |
+  >
+  > No roster, no new message format, no new signer, no new verifier, no
+  > new suite — and it proves **more** than the cert would, because a
+  > self-signed membership claim asserts nothing without A's agreement, and
+  > A's agreement *is* the outer signature.
+  >
+  > So "cheap" is literal: the cert's cost was a new primitive; the
+  > tunnel's cost is zero. **The requirement was met by building the thing
+  > it was a workaround for.**
+
+  > **Its mechanism is therefore superseded — 2026-09-17, later the same day.**
   > Two of Andy's rulings removed it between them, and this is recorded
   > rather than deleted because Grok proposed it in good faith against the
   > picture we had given him.
