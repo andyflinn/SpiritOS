@@ -40,6 +40,53 @@ inert. This document is what names it.
 
 ---
 
+## Most routes are already free, and already taken
+
+Found while writing this, and it narrows what the mechanism is actually for.
+
+> **Andy:** *"there are a few relay interfaces that give routes for free."*
+
+| interface | the route it gives | harvested today? |
+|---|---|---|
+| **the census** — `/api/relay/who`, read on every probe | every member of every relay this node is bound to | **yes.** `hub.buildPeople` → `whoBook.handshake({… relay: relayUrl })` |
+| **an arriving message** | the sender is bound to the relay it came through | **yes.** `hub.remember(…, relayUrl)` → `acquire` with `relay` |
+| **search** | which partners hold them — `via`, and now `vias` for all of them | **yes** |
+| **the roster and the presence stream** | every member of a relay this node holds a stream to | **in RAM only** — `presenceNode.byRelay[url][key]`, never written to the book |
+
+So a node already learns, free and continuously, the route of **everyone on
+every relay it is bound to**. That was never the gap.
+
+**The gap is partner routes**, and `search` already fills it for anyone found by
+searching. Which changes what this document's mechanism is for: **not initial
+discovery, but refresh** — a route that went stale — **and presence at scale**,
+which is the roster's replacement. A smaller job with a different justification,
+and worth knowing before anybody builds the big version of it.
+
+### A finding: binding and presence are conflated at the lookup
+
+```js
+relaysNaming: function (key) {
+  return Object.keys(byRelay).filter(function (url) {
+    return byRelay[url][key] === true;     // present, not merely bound
+  });
+}
+```
+
+`byRelay` holds **binding** — the roster lists every member, present or absent,
+which is the whole reason the roster carries states (*"if this sent only who is
+here, a key a node did not hear about would be ambiguous"*). `relaysNaming`
+then returns only the entries whose value is `true`, i.e. **present**.
+
+That is right for *"can I deliver right now"* and wrong for *"where is this peer
+bound"*, and the node has no other way to ask the second question. **A contact
+who is merely asleep is indistinguishable from one with no known route.**
+
+It is the same shape as the bug in the merger: information gathered, held, and
+discarded at the last step by a filter that answers a narrower question than the
+caller asked. It is also why jazz's failure read *"that peer is not reachable
+right now"* for a case that is really *"not bound here at all"* — one of those is
+worth waiting out and the other never will be.
+
 ## The shape
 
 ```
@@ -212,7 +259,9 @@ architecture with nothing left over.
 > just miraculously get stashed on the correct contact-row."*
 
 **Not logged, and there is already precedent: presence writes nothing to the
-traffic log either.** A route arrives the way a presence change arrives — a
+traffic log either.** Andy, confirming what the log is: *"the log is mainly for
+request/reply."* Correspondence — what this node asked and what it answered.
+Routing metadata is not that. A route arrives the way a presence change arrives — a
 stream event, handled beside `onRoster` and `onChange`, never through
 `peerPost`'s `note()`.
 
