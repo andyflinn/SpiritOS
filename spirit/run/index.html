@@ -697,6 +697,29 @@
 
       .jobs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 
+      /* A COLUMN THAT HOLDS A GLYPH IS FIXED, AND SQUARE-ISH.
+
+           Andy: "when leftmost columns display icons the column width
+           should be fixed to twice the column height."
+
+         Taken literally: the width is twice the line height of a row, so
+         the cell is a fixed box rather than one sized by whatever emoji
+         happens to be in it. That matters because the mark column is
+         EMPTY on most rows — a content-sized column would be a few pixels
+         wide until somebody is held or blocked, and then every name in
+         the table would shift right.
+
+         Centred, and with the side padding taken off: the padding is
+         there to keep text off a neighbour, and a glyph in a fixed box
+         has its own room. */
+      .jobs-table th.icon-cell, .jobs-table td.icon-cell {
+        width: 2.6em;          /* 2 x the 1.3 line height below */
+        line-height: 1.3;
+        padding-left: 0;
+        padding-right: 0;
+        text-align: center;
+      }
+
       .jobs-table th, .jobs-table td {
         text-align: left;
         padding: 6px 8px;

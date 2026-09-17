@@ -179,12 +179,47 @@ function contactsStatus(text) {
 // and the To list can never disagree about which rows read alike. The
 // tail comes down with the row for the same reason: six from the end is
 // one rule and it lives in hub.js.
-function contactsHandleCell(person) {
-  var handle = contactsEscapeHtml(person.publicLabel || '');
+// WHAT TO CALL THIS KEY, in one cell.
+//
+//   Andy: "what is the 'Handle' column for? it has to go."
+//
+// contactsHandleCell STOOD HERE and drew their relay caption; the column
+// beside it drew mine. Two columns for one question, and each of them
+// blank half the time.
+//
+// `caption` is the node's answer (whoBook.labelForKey): my label for them
+// if I set one, theirs otherwise — so this is never empty for a row that
+// has a name anywhere.
+//
+// AND THE ENDING WHERE TWO ROWS READ ALIKE, which is the only part of the
+// old pair worth keeping. `ambiguous` is the node's own verdict
+// (buildPeople), not a second opinion formed here, so the table and the To
+// list can never disagree about which rows need it.
+function contactsNameCell(person) {
+  // NOT `caption`, which is the node's resolved answer and falls back to
+  // the WHOLE KEY for somebody who claimed no handle (whoBook.labelForKey).
+  // Forty-four characters in a name column is exactly what the old
+  // two-column version was careful to avoid, and it would have walked
+  // straight back in.
+  var name = contactsEscapeHtml(
+    String(person.myLabel || '').trim() || String(person.publicLabel || '').trim()
+  );
   var tail = contactsEscapeHtml(person.tail || '');
-  if (handle && !person.ambiguous) return handle;
-  if (!tail) return handle;
-  return (handle ? handle + ' ' : '') + '…' + tail;
+
+  // NOBODY EVER CLAIMED A WORD. The ending is all there is, and it names
+  // them better than a blank does.
+  if (!name) {
+    return tail
+      ? '<span class="muted">\u2026' + tail + '</span>'
+      : '<span class="muted">(no name)</span>';
+  }
+
+  if (!person.ambiguous || !tail) return name;
+
+  // TWO ROWS READ ALIKE. Muted, because the ending is the disambiguator
+  // rather than part of what they are called \u2014 and in one column, with no
+  // second name beside it, the eye needs the two told apart.
+  return name + ' <span class="muted">\u2026' + tail + '</span>';
 }
 
 // One row per key.
@@ -327,7 +362,8 @@ function contactsRowHtml(person) {
   else if (person.held) mark = contactsIcon.WAITING;
 
   return '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
-    '<td title="' + contactsEscapeHtml(contactsPresenceTitle(person.publicKey)) + '">' +
+    '<td class="icon-cell" title="' +
+      contactsEscapeHtml(contactsPresenceTitle(person.publicKey)) + '">' +
       contactsPresenceMark(person.publicKey) + '</td>' +
     // ── LOCKED: THEY HOLD A SEAT ON A RELAY I OWN ────────────────────
     //
@@ -349,10 +385,10 @@ function contactsRowHtml(person) {
     //
     // WHICH relays, on the title, because one person may sit on several
     // of mine and that is exactly what Forget has to name.
-    '<td' + (contactsIsMember(person)
+    '<td class="icon-cell"' + (contactsIsMember(person)
       ? ' title="' + contactsEscapeHtml(contactsSeatTitle(person)) + '">' + contactsIcon.LOCKED
       : '>') + '</td>' +
-    '<td>' + mark + '</td>' +
+    '<td class="icon-cell">' + mark + '</td>' +
     // THE COLUMN FITS THE LABEL, THE RELAY DOES NOT (2026-09-15).
     //
     // Labels are Unicode and permissive now — a real name, with spaces
@@ -363,18 +399,11 @@ function contactsRowHtml(person) {
     //
     // Both cells, because `myLabel` is the private caption and a person
     // may write anything they like in their own address book.
-    '<td class="label-cell">' + contactsHandleCell(person) + '</td>' +
-    '<td class="label-cell">' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
-    // HOW THEY GOT HERE, and nothing else. A member reads `member`,
-    // which is the truthful answer to this column's question — they got
-    // here by taking a seat.
-    //
-    // "⭐ on your relay" STOOD HERE for one commit and has moved to a
-    // column of its own (Andy). It was the right fact in the wrong
-    // place: how a row arrived is history, and holding a seat is a
-    // standing fact about what can be done to the row — which belongs
-    // beside the presence dot, not in the column of provenance.
-    '<td>' + contactsEscapeHtml(person.acquiredVia || '') + '</td>' +
+    // ONE NAME, and it is the node's own answer to what to call this key
+    // — mine for them if I set one, theirs otherwise (whoBook.labelForKey).
+    // The ending still rides on it where two rows read alike, which is
+    // the only thing that made two columns worth having.
+    '<td class="label-cell">' + contactsNameCell(person) + '</td>' +
     '</tr>';
 }
 
@@ -525,7 +554,7 @@ function contactsPaintSeen() {
     // rather than in a column: a node that will not answer leaves two
     // identical rows, and Add writes one of them. Same rule as the
     // enrolment list on the Natter screen (ndTellApart) and the same one
-    // the book above already follows (contactsHandleCell) — say it where
+    // the book above already follows (contactsNameCell) — say it where
     // there is a decision to make, and nowhere else.
     // The dot gets a column of its own and that column has no heading —
     // the same treatment it gets in the book above, and for the same
@@ -896,13 +925,33 @@ spirit.shell.activateApp({
       // is what somebody told you on the phone, and Label is what you
       // decided afterwards. The bubble under an open row reads the same
       // way for the same reason.
-      // SIX CELLS, AND THREE OF THEM HAVE NO HEADING: the presence dot,
-      // the lock, and the mark. There is no word for any of them, and a
-      // one-word heading over a glyph column is a word that has to be
-      // read on every pass to learn nothing. What each means rides on the
-      // cell's own title, where the question is actually asked.
+      // FOUR CELLS: three marks and a name.
+      //
+      //   Andy: "what is the 'Handle' column for? it has to go." — "the
+      //   how column can go, too."
+      //
+      // HANDLE AND LABEL WERE ONE QUESTION. Handle was their caption on a
+      // relay, Label was mine for them, and every row showed both — so a
+      // person with no private caption had a name in one column and a
+      // blank in the next, and a person with one had their name twice.
+      // `caption` is the node's own answer (whoBook.labelForKey): what to
+      // call this key, mine if I set one and theirs otherwise. One column,
+      // never blank.
+      //
+      // HOW went because it is provenance, and provenance is a fact about
+      // the past that never changes and is read once, if ever. It is on
+      // the contact's own screen, where somebody asking "how did this row
+      // get here" is already standing.
+      //
+      // The three marks keep no heading: there is no word for a presence
+      // dot, a lock or a hold, and a one-word heading over a glyph is a
+      // word read on every pass to learn nothing. What each means rides on
+      // its own cell's title, where the question is actually asked.
       '<table class="jobs-table"><thead><tr>' +
-        '<th></th><th></th><th></th><th>Handle</th><th>Label</th><th>How</th>' +
+        '<th class="icon-cell"></th>' +
+        '<th class="icon-cell"></th>' +
+        '<th class="icon-cell"></th>' +
+        '<th>Label</th>' +
       '</tr></thead>' +
         '<tbody id="contacts-tbody"></tbody></table>' +
       // name= makes the two folds one exclusive group: opening either

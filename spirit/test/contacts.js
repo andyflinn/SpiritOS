@@ -536,8 +536,13 @@ function listsTheBook() {
     // In its own cell now, not glued to the front of a name: the mark
     // column has no heading and every handle starts at the same x
     // whether or not the row beside it is marked (Andy).
-    if (rows.indexOf('<td>' + ICONS.NO + '</td><td class="label-cell">dave</td>') !== -1 &&
-        rows.indexOf('<td>' + ICONS.WAITING + '</td><td class="label-cell">carol</td>') !== -1 &&
+    // `icon-cell` since the glyph columns were given a fixed width
+    // (Andy: "the column width should be fixed to twice the column
+    // height") — the mark column is empty on most rows, and a
+    // content-sized one would be a few pixels wide until somebody is
+    // held, then shift every name in the table sideways.
+    if (rows.indexOf('<td class="icon-cell">' + ICONS.NO + '</td><td class="label-cell">dave</td>') !== -1 &&
+        rows.indexOf('<td class="icon-cell">' + ICONS.WAITING + '</td><td class="label-cell">carol</td>') !== -1 &&
         rows.indexOf(ICONS.ROLODEX) === -1) {
       test.check('and refused wears the plain no here, where the rolodex would point at itself');
     } else {
@@ -571,8 +576,8 @@ function listsTheBook() {
     // So: drop whitespace and the string joins, then look for the run of
     // cells. What survives is the markup as the browser receives it.
     const flat = src.replace(/\s+/g, '').replace(/'\+'/g, '');
-    if (flat.indexOf('<th></th><th></th><th></th><th>Handle</th><th>Label</th><th>How</th>') !== -1) {
-      test.check('the header is a dot column, a lock column, a mark column, then Handle, Label and How');
+    if (flat.indexOf('<thclass="icon-cell"></th><thclass="icon-cell"></th><thclass="icon-cell"></th><th>Label</th>') !== -1) {
+      test.check('the header is three fixed glyph columns and one name');
     } else {
       test.fail('header: ' + (/<tr>(<th[^>]*>[^<]*<\/th>)+<\/tr>/.exec(flat) || [''])[0]);
     }
@@ -606,15 +611,23 @@ function listsTheBook() {
       test.fail(wrong.length ? wrong.join('; ') : 'no table found in the source');
     }
 
-    // Their name and yours are two answers and the table shows both, in
-    // that order — theirs is what you were told, yours is what you
-    // decided afterwards. Bert has been renamed, so the two words differ
-    // and a row that printed one twice would fail here.
-    if (rows.indexOf('<td class="label-cell">bert</td><td class="label-cell">Bertie</td>') !== -1 &&
-        rows.indexOf('<td class="label-cell">carol</td><td class="label-cell"></td>') !== -1) {
-      test.check('Handle carries theirs and Label carries yours, empty when you have not chosen one');
+    // ── ONE NAME, NOT TWO ────────────────────────────────────────────
+    //
+    //   Andy: "what is the 'Handle' column for? it has to go."
+    //
+    // Handle was their caption on a relay and Label was mine for them, and
+    // every row showed both — so somebody with no private caption had a
+    // name and then a blank, and somebody with one had their name twice.
+    //
+    // `caption` is the node's own answer (whoBook.labelForKey): mine if I
+    // set one, theirs otherwise. Bert has been renamed, so his cell shows
+    // MINE; carol has not, so hers shows HERS — one column, neither blank.
+    if (rows.indexOf('<td class="label-cell">Bertie</td>') !== -1 &&
+        rows.indexOf('<td class="label-cell">carol</td>') !== -1 &&
+        rows.indexOf('<td class="label-cell">bert</td>') === -1) {
+      test.check('one name column: mine for them where I chose one, theirs where I did not');
     } else {
-      test.fail('handle/label columns: ' + rows);
+      test.fail('name column: ' + rows);
     }
 
     // And no key endings on ordinary rows: you compared those down a
@@ -626,13 +639,18 @@ function listsTheBook() {
       test.fail('endings in rows: ' + rows);
     }
 
-    // How each key got here is the whole point of the book: `handle` is
-    // a phone call, `message` is somebody who wrote, `hold` is nobody
-    // yet.
-    if (/handle/.test(rows) && /message/.test(rows)) {
-      test.check('and each row says how that key got here');
+    // ── AND HOW THEY GOT HERE IS NOT IN THE TABLE ────────────────────
+    //
+    //   Andy: "the how column can go, too."
+    //
+    // Provenance is a fact about the past that never changes and is read
+    // once, if ever. It is on the contact's own screen, where somebody
+    // asking "how did this row get here" is already standing — and a
+    // column of it on every row is a column nobody reads twice.
+    if (!/>handle</.test(rows) && !/>message</.test(rows)) {
+      test.check('and no column of provenance \u2014 that lives on the contact\u2019s own screen');
     } else {
-      test.fail('acquiredVia missing: ' + rows);
+      test.fail('How survived: ' + rows);
     }
 
     // Being added is the other half of adding.
@@ -1210,22 +1228,22 @@ function aMemberSaysSoOnTheRow() {
       test.fail('the lock is not the second cell: ' + rowFor('Cruella'));
     }
 
-    // AND `How` STILL SAYS HOW. For a member that reads `member`, which
-    // is the truthful answer to that column's question — they got here by
-    // taking a seat.
-    if (/>member</.test(rowFor('Cruella'))) {
-      test.check('while How goes on answering how, which for a member is member');
+    // AND NOTHING ELSE. The How column went (Andy: "the how column can go,
+    // too"), so the lock is the whole of what the table says about the
+    // relationship — the rest is on the contact's own screen.
+    if (rowFor('Cruella').indexOf('>member<') === -1) {
+      test.check('and the table says nothing more about it — the screen does');
     } else {
-      test.fail('How: ' + rowFor('Cruella'));
+      test.fail('provenance survived in the table: ' + rowFor('Cruella'));
     }
 
     // ── AND EVERYBODY ELSE IS UNTOUCHED ────────────────────────────
     //
     //   Andy: "a peer who connects with me through a partner node
     //   behaves independently as contact."
-    if (/handle/.test(rowFor('sonny')) &&
-        rowFor('sonny').indexOf(spirit.core.const.ICON.LOCKED) === -1) {
-      test.check('while an ordinary contact carries no lock and says how it arrived');
+    if (rowFor('sonny').indexOf(spirit.core.const.ICON.LOCKED) === -1 &&
+        /sonny/.test(rowFor('sonny'))) {
+      test.check('while an ordinary contact is a name and no lock');
     } else {
       test.fail('sonny: ' + rowFor('sonny'));
     }
@@ -1454,8 +1472,8 @@ function theHandleColumnStillIdentifies() {
     people: [
       // Two people who claimed the same word and neither renamed. The
       // node saw the collision and said so.
-      { publicKey: JOHN_A, publicLabel: 'john', caption: 'john (aaajoh=)', myLabel: '', tail: 'aaajoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
-      { publicKey: JOHN_B, publicLabel: 'john', caption: 'john (bbbjoh=)', myLabel: '', tail: 'bbbjoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
+      { publicKey: JOHN_A, publicLabel: 'john', caption: 'john', myLabel: '', tail: 'aaajoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
+      { publicKey: JOHN_B, publicLabel: 'john', caption: 'john', myLabel: '', tail: 'bbbjoh=', ambiguous: true, acquiredVia: 'message', held: false, blocked: false },
       // And somebody who never claimed a handle at all: the cell would
       // otherwise be empty, which names nobody rather than everybody.
       { publicKey: CAROL, publicLabel: '', caption: CAROL, myLabel: '', tail: 'lcaro=', acquiredVia: 'message', held: false, blocked: false },
@@ -1464,15 +1482,22 @@ function theHandleColumnStillIdentifies() {
 
   return settle().then(function () {
     const rows = el(app, 'contacts-tbody').innerHTML;
-    if (rows.indexOf('<td class="label-cell">john …aaajoh=</td>') !== -1 &&
-        rows.indexOf('<td class="label-cell">john …bbbjoh=</td>') !== -1) {
+    // The ending is muted now: it is the disambiguator, not part of the
+    // name, and in one column with no Handle beside it the eye needs the
+    // two told apart.
+    if (/john <span class="muted">…aaajoh=<\/span>/.test(rows) &&
+        /john <span class="muted">…bbbjoh=<\/span>/.test(rows)) {
       test.check('two people behind one word are told apart by the end of the key');
     } else {
       test.fail('ambiguous rows: ' + rows);
     }
 
-    if (rows.indexOf('<td class="label-cell">…lcaro=</td>') !== -1) {
-      test.check('and a contact who never claimed a handle is their key ending, not a blank');
+    // `caption` falls back to the whole key for somebody who claimed no
+    // handle, so the cell shows the ENDING rather than 44 characters —
+    // and it is muted, like every other ending.
+    if (/<td class="label-cell">[^<]*<span class="muted">…lcaro=<\/span><\/td>/.test(rows) ||
+        /<td class="label-cell"><span class="muted">\(no name\)<\/span><\/td>/.test(rows)) {
+      test.check('and a contact who never claimed a handle is not a blank cell');
     } else {
       test.fail('nameless row: ' + rows);
     }
@@ -1578,7 +1603,9 @@ function theDotColumn() {
     }
 
     // Words as well as colour, on the cell rather than a heading.
-    const titled = /<td title="([^"]*)">/.exec(rows());
+    // `icon-cell` since the glyph columns were given a fixed width, so
+    // the attribute is no longer the first thing on the cell.
+    const titled = /<td class="icon-cell" title="([^"]*)">/.exec(rows());
     if (titled && /present|absent|not known/.test(titled[1])) {
       test.check('and every dot carries the words too, so colour is never the only carrier');
     } else {
