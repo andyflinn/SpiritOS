@@ -472,6 +472,67 @@ start.
     with measurements from a box under pressure rather than in advance —
     which is what the ring in item 11 exists to provide.
 
+0g. **A small, live-trained model as the Governor — explored.**
+
+    > **Andy:** *"think of a small live-trained AI model being governor…"*
+
+    This is the honest endpoint of *measure, don't declare*, and it closes
+    the question item 0f leaves open: *"what the weights are, decided from
+    a box under pressure rather than in advance"* **is** a training problem
+    stated without the word.
+
+    **It is not a different mechanism. The model IS the weight vector** —
+    weighted signals with learned weights instead of typed ones. That is
+    what keeps it admissible: 0f argued `explain()` is not optional, and a
+    linear model stays printable. Anything deeper and *"why did my cache
+    empty"* becomes unanswerable, which is how a cache becomes folklore.
+
+    [0009](../decisions/0009-the-log-is-the-training-set.md) has the
+    parallel already — *"memory is the training set, and it stays
+    readable."* A node's log is what a manifestation of a person is formed
+    from; a relay's meter is what its Governor is formed from. Same
+    constraint: **inspectable substrate**.
+
+    ### Three guards, and the third belongs first
+
+    **1. The objective must include work DONE, not only resources spared.**
+
+    Every meter on the box is perfectly satisfied by a relay that does
+    nothing: RAM flat, latency flat, bandwidth unspent, no routes in
+    flight. **An idle relay scores perfectly.** A Governor rewarded on
+    resource metrics alone has an optimum of refusing everything, and would
+    reach it gradually, each step locally sensible and none of them wrong
+    on its own terms.
+
+    So delivery is the reward and resources are the constraints, never the
+    other way round. That is Andy's prime objective — *"get the job done"* —
+    as a loss function, and this design is unusually exposed to getting it
+    backwards because idleness looks like health on every instrument it has.
+
+    **2. It tunes the burst, never the floor.** The guarantee (item 5) and
+    the reach line (item 7) sit outside its reach. The model proposes; the
+    invariants dispose. Same rule as a declaration only ever narrowing
+    (item 8), and for the same reason: those are the numbers somebody can
+    be starved by.
+
+    **3. Local, per box, nothing shared.** Each relay learns its own link
+    and its own members' rhythm. No central model, no telemetry leaving,
+    and the learned weights are **levers** — so item 9 already says what
+    happens to them: persisted, clamped, and re-earned rather than trusted
+    after a restart.
+
+    ### Open
+
+    - **The reward's exact shape.** "Delivered, subject to constraints" is
+      the direction; nothing decides the trade between a refused post and a
+      slow one.
+    - **How small.** It runs on the box it is protecting, so its own
+      footprint is part of what it governs — a few dozen weights, not a
+      network.
+    - **Determinism.** Two relays in identical conditions behaving
+      differently is harder to support than a formula. Worth knowing before
+      it is chosen, not after.
+
 1. **A rate limit is not a constant.**
 
    > *"fixing a limit as a constant seems… not very modern."*
