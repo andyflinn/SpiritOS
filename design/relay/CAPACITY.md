@@ -420,6 +420,58 @@ start.
     Everything above it costs speed; below it costs reach. Nothing may
     reorder that — item 7, and Andy's ruling that overturned Grok's ladder.
 
+0f. **Weight-balanced shedding — the ladder says what, not how much.**
+
+    > **Andy:** *"shedding could also happen weight balanced…"*
+
+    ### The flaw this exposes in a strict ladder
+
+    The ladder says *cheapest to lose, first*. It quietly assumes the
+    cheap-to-lose things are also **big enough to matter**, and those are
+    independent properties.
+
+    **If the label cache is 2% of what a relay holds, shedding all of it is
+    theatre.** The pressure is unrelieved, and the box has spent its
+    cheapest win for nothing — then goes on to the next rung anyway, having
+    made itself slower first.
+
+    So: **the ladder orders what a relay is willing to lose; weighting
+    decides how much of each it actually takes.** Shed mostly from the top,
+    shed enough to help, and never cross the line in item 7 however much
+    relief is wanted.
+
+    ### And the rank can be weighted signals rather than one ratio
+
+    `recent uses / bytes held` is a single ratio standing in for several
+    judgements. The tree already has the richer shape, in the module that
+    was isolated for exactly this reason:
+
+    > `gradedSearch.TEXT_SIGNALS` — *"the TUNING SURFACE… so a weight can
+    > be argued about with numbers rather than impressions"*, with
+    > `explain()` beside it *"so a weight can be argued about with
+    > numbers"*.
+
+    Reusing it would mean:
+
+    - **one mechanism** for search ranking and for shedding, rather than
+      two rankers drifting apart;
+    - a new consideration becomes **a signal with a weight** — which is
+      what item 0e asks for, arriving as a term rather than a rung;
+    - **`explain()` answers "why was this shed"** with numbers, which a
+      bare ratio cannot.
+
+    *The cost, stated:* weights are harder to get right than a ratio, and a
+    weighted score can evict something surprising. That is precisely why
+    `explain` is not optional here — an eviction nobody can account for is
+    how a cache becomes folklore.
+
+    ### Open
+
+    **What the weights are**, and whether shedding uses the same signal
+    list as search or its own. Nothing decides it, and it should be decided
+    with measurements from a box under pressure rather than in advance —
+    which is what the ring in item 11 exists to provide.
+
 1. **A rate limit is not a constant.**
 
    > *"fixing a limit as a constant seems… not very modern."*
