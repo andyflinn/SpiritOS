@@ -100,6 +100,18 @@ This directory contains the vision, principles, and architecture decisions for *
   cannot verify, and the hash is the one thread it has back to what it caused:
   on the immediate reply, and as `cause` on a streamed owner event.
 
+- [0012 — A relay never asks for a member list](decisions/0012-a-relay-never-asks-for-a-member-list.md)
+  — not refused, **absent**: there is no verb by which one relay can ask another
+  for its members, so the partner vocabulary is two words, `search` and
+  `forward`. Nobody needs it once A says *"forward this to your member K"*
+  rather than routing to K, and once the node supplies the route. It deletes the
+  `partners × members` term outright — 46 MB at a hundred partners of a
+  thousand, on a 1 GB box, becomes **zero** — and makes *"a relay never persists
+  a partner's members"* structural instead of a policy somebody has to remember.
+  The line that matters: a relay's memory stops being a function of decisions
+  other people make. Cost is latency on a cold post, in the fallback mode the
+  shedding policy already called safe.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.
