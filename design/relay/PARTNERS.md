@@ -1477,8 +1477,9 @@ the one thing a partner is permitted to ask.
 >    later optimisation. The cost is a cold post with no route becoming a
 >    hunt — *"do you hold K?"*, N small questions on the same bus — rather
 >    than a local lookup, which is the flag-only state this file already
->    calls safe. Full reasoning in
->    [CAPACITY.md](CAPACITY.md), decided item 10.
+>    calls safe. **Recorded as
+>    [0012 — A relay never asks for a member list](../decisions/0012-a-relay-never-asks-for-a-member-list.md)**,
+>    with the load figures; working in [CAPACITY.md](CAPACITY.md) item 10.
 > 2. **B originates a request to its own member**, which `routePost`
 >    already does via `presentNow.send(target.id, 'request', …)`.
 > 3. **The inner packet travels intact** — N1's original text and signature
