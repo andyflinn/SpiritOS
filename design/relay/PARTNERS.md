@@ -1331,6 +1331,86 @@ the one thing a partner is permitted to ask.
 
 ## The four gates that are not
 
+> ## WRONG — retracted 2026-09-17. Read this before the table below.
+>
+> The four gates enumerated here were an artefact of **this author's
+> misreading**, and Grok reviewed them on that basis. They describe an
+> arrangement nobody proposed: *A routing a packet directly to a member of
+> B*. What this file's own delivery diagram has said since 2026-09-15 is
+> the opposite — `N1 → A → forward, signed as A → B → B delivers → N2`.
+> **A forwards to B. B delivers to its own member.**
+>
+> > **Andy:** *"partner-to-partner posts all follow exactly the same
+> > pattern. A gimme-all-members may be a simple string, a
+> > search-your-members also has a string, a forward-post request is just
+> > another standard partner-to-partner request, where the partner needs an
+> > exchange with a specific member before it can reply. They are ALL the
+> > same."*
+>
+> Under that framing none of the four applies:
+>
+> | gate | why it does not apply |
+> |---|---|
+> | 1 — recipient lookup → `404` | A addresses **B's relay key**, so `postedToSelf` is true and the line is never reached |
+> | 2 — *"a partner may only address this box"* | the forward **is** addressed to the box. Not a blocker — the rule this design obeys |
+> | 3 — `routeReply` members-only | B's member replies to **B**, its own member, so `deviceIdentity` resolves |
+> | 4 — `routes.answer` target mismatch | B opens its own internal route to its own member; A↔B is matched by B's own key, as `sendAnswer` already does |
+>
+> **And the machinery exists.** `answerSelf` already defers a reply across a
+> round trip, for exactly this reason:
+>
+> > *"SENDING IS A FUNCTION NOW, because an answer can arrive late.
+> > Everything answerSelf does is immediate except one thing: a search asked
+> > by a member is also asked of this relay's partners, and their replies
+> > come back on held streams whenever they come back."*
+>
+> A forward is that pattern with a different inner exchange — B talks to
+> its own member instead of to its partners.
+>
+> ### The trust chain, and why it needs nothing new
+>
+> > **Andy:** *"and N2 can trust B that a trusted partner has relayed the
+> > post."*
+>
+> ```
+> N1 trusts A  — its own relay
+> A  trusts B  — the partner key it pinned at promotion
+> B  trusts A  — the same, mutually
+> N2 trusts B  — its own relay
+> ```
+>
+> Every link is checked by the party relying on it, against something it
+> already holds — which is this file's opening maxim, finally closed.
+> **N2 never has to know A exists:** it does not verify A's key, hold a
+> partner list, or learn the mesh. It receives a request from its own relay.
+>
+> **So the cheap cert's audience is B, not N2.** B is the party deciding
+> whether to accept a forward from A on behalf of a key it has never seen.
+> N2's decision is unchanged from today — verify N1's signature over the
+> inner packet, apply the front door — and it needs no new verification
+> logic. Knowing it arrived *via* a partner is for the UI, not for
+> authorization.
+>
+> ### What is actually left to build
+>
+> 1. **The partner allowance becomes a list.** `body.search` is currently
+>    both the permission and the entire vocabulary; `forward` joins it,
+>    gated per verb as `answerSelf` already does for members. The three asks
+>    differ in cost and authority — a member roll should be refused
+>    outright (the roster rule), a search is bounded at 32 slots, a forward
+>    asserts a third party.
+> 2. **B originates a request to its own member**, which `routePost`
+>    already does via `presentNow.send(target.id, 'request', …)`.
+> 3. **The inner packet travels intact** — N1's original text and signature
+>    nested inside A's forward, so N2 verifies `postSignatureFor(N1, N1, N2,
+>    …)` itself and A is a carrier rather than a re-signer.
+> 4. **The cheap cert**, for B.
+>
+> No gate moves. No persist shape changes. The table below is kept so the
+> misreading stays visible rather than tidied away.
+
+
+
 A packet from a member of A to a member of B is refused in four places.
 Verified by reading, and the first two by measurement.
 
