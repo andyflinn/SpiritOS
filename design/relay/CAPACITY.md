@@ -154,13 +154,78 @@ start.
       members'.
     - **The cheap cert loses its last job.** Its remaining purpose was
       per-member accountability at B; with B metering A as a sender, there
-      is nothing left for it to enable. See the note in PARTNERS.md.
+      is nothing left for it to enable. See the note in PARTNERS.md — and
+      item 0c, where Grok's one attempt to give it a job back is answered
+      by two budgets rather than by a signature.
 
     *Already true in the branch:* `who` is `deviceIdentity(fromToken) ||
     partnerIdentity(fromToken)` and the gate keys on `who.id`, so a
     partner's posts land in the same bucket by the same rule with no
     branch — which is decided item 0c (one bus) enforced rather than
     documented.
+
+0c. **Two budgets: members, and partners — and the members fund both.**
+
+    > **Andy:** *"I decide that everybody rations POSTs — that's also a
+    > clear autonomy boundary for partners. I, the Governor, anticipate
+    > that the budget for posts from partners must be a different POST
+    > budget from members. Why? Because even incoming posts from partners
+    > satisfy a need from my members. In fact, I need to tax the members to
+    > keep my partners operational."*
+
+    **A forward arriving from A is not foreign demand.** It is one of B's
+    own members' demand seen from the other side: N2 is being reached
+    because N2 wants to be reachable. So B serving A *is* B serving its
+    member, and the partner budget is **infrastructure for member reach**
+    rather than a grudging allowance to a stranger. Hence the tax —
+    members fund the partnerships that give them reach.
+
+    ### It resolves the one conflict with Grok's review
+
+    > **Grok:** *"Meter forwards per originating member key. Do not name
+    > the asking member on search."*
+
+    He wanted precision: if A fails to ration, throttling A wholesale makes
+    A's well-behaved members pay. The only way he could get it was a rate
+    bucket per originating member — a `partners × active members` term in
+    RAM keyed by other people's identities, which is the shape
+    [0012](../decisions/0012-a-relay-never-asks-for-a-member-list.md) had
+    just deleted and which the meter is kept aggregate to avoid.
+
+    **Two budgets give the isolation without the identification:**
+
+    | | one shared budget | two budgets |
+    |---|---|---|
+    | A floods B | member traffic starves | **only partner-sourced traffic degrades** |
+    | must B know who at A sent it? | yes, to be precise | **no** — the pool is the isolation |
+    | state B holds about A's members | a bucket each | **none** |
+
+    A misbehaving partner can exhaust the pool that exists to serve reach
+    and cannot touch the pool that serves members directly. **So B never
+    reasons about A's members at all** — not for rationing, not for
+    metering, not for anything. The autonomy boundary is complete: no relay
+    depends on another's good behaviour for its own survival.
+
+    **A note on the parenthetical:** Grok wrote *"already on the cert"*. It
+    is not — it is already on the **inner packet**, which carries
+    `from = N1` by construction under tunnelling. So per-member metering
+    was available with or without the cert, and this removes the last
+    reason to build one.
+
+    ### And it bounds the spam case
+
+    A forward for an **unacquired** sender spends B's partner budget on
+    something N2's front door will hold — junk, taxed to the members.
+    Capped separately, junk can exhaust that pool and nothing else.
+
+    ### Open: how the partner budget is derived
+
+    It cannot be a constant (item 1), and by item 0 it must follow demand —
+    so presumably something like **observed reach-need**: how much of this
+    relay's own members' traffic actually crosses a partnership, which the
+    same meter can see. An idle membership would then fund almost nothing,
+    and a membership that lives on partner reach would fund a lot. Nothing
+    decides the shape of that function yet.
 
 1. **A rate limit is not a constant.**
 
