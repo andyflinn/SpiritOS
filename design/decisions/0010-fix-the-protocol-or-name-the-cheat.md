@@ -231,8 +231,44 @@ arrives on a route rather than as a post — see the `cause` note in
 | | |
 |---|---|
 | `POST /api/relay/claim` · `claimMessage` | **you cannot post to a relay you have no row on.** Permanently outside. |
-| `GET /api/relay/who` | the public census, unsigned, and what a node reads *before* it has anything |
+| `GET /api/relay/who` | the public census, unsigned, and what a node reads *before* it has anything — **but see the correction below** |
 | `POST /api/relay/device` | posted by a browser that has **no identity yet** — that is the thing it is asking for |
+
+> ### The census exemption is too broad — corrected 2026-09-17
+>
+> > **Andy:** *"the census being public and unsigned is kind of a no-no as
+> > well."* — *"violation!!"*
+>
+> The row above is **right for the first read and wrong for every read after
+> it.** On first contact a node has no pin, cannot verify anything, and needs
+> the key in order to pin it. Genuinely outside the protocol, and this decision
+> was correct to say so.
+>
+> **The exemption was then inherited by every later use of the same route.** A
+> node that already holds `relayKeys.pinned(url)` is not bootstrapping — it is
+> querying a box it has already identified, and accepting an unsigned answer for
+> no reason. Nine callers read this route; only the first read of a new relay is
+> bootstrap.
+>
+> **And one of the later readers decides identity.** `peer.acquire` confirms
+> *"key K really is on relay R"* by reading this document. Anyone who can
+> interpose — a hostile proxy, a bad CA, an operator editing a file — can bind a
+> **wrong key to a right label**, and acquire will confirm it. So identity
+> acquisition currently rests on **CA trust rather than on keys**, which is the
+> opposite of what 0001 means by *proven*.
+>
+> **The fix is cheap and does not touch bootstrap.** The relay signs the census
+> with its relay key; a node verifies against the pin it already holds. First
+> contact ignores the signature because it has nothing to check it against —
+> exactly as today — and every read after the pin stops trusting the transport.
+>
+> **Separately, and much larger: `public` is a premise with dependents.** Four
+> arguments elsewhere stand on *"the census is public in full"* — that a search
+> over it gives away nothing new (`relay.js`), that a key in a device URL is a
+> locator rather than a credential, that broadcasting routes discloses nothing,
+> and that naming keys in a routing question is free. None is wrong today. All
+> four become unsupported at once if that premise moves, and each would then need
+> its own argument.
 
 ### Died with the ring (R8) — **gone from the tree, 2026-09-15**
 
