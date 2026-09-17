@@ -33,7 +33,12 @@ const SAMPLE = {
   FOLDER: '📁',
 };
 
-
+// NAMED, WHICH IS ALSO HOW IT GETS RUN. runAll discovers a suite by
+// finding `startTest(` in the file — so without this line the file is
+// invisible to the harness and its 31 checks only ever ran if somebody
+// typed its name. Found alongside deviceAuth.js, which had the same gap
+// and had been asserting a deleted API for four days because of it.
+test.startTest('The ICON table, read the other way round');
 
 test.subHeading('One line per glyph, carrying every name it answers to');
 

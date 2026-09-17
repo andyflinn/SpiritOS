@@ -45,6 +45,13 @@ const NOT_A_SUITE = [
   // to a live relay and changes state on a box other people use. Run by
   // hand: `node spirit/test/liveRelay.js`.
   'liveRelay.js',
+  // ASSERTED BY A PERSON LOOKING AT A SCREEN. It moves the world one step
+  // at a time, slowly enough to be followed, and asks Andy what he sees —
+  // so a harness that ran it would sit at a prompt for ever. Listed here
+  // rather than left out by accident: it does not call startTest, and the
+  // discovery rule below would skip it silently, which is precisely how
+  // deviceAuth.js and iconIndex.js went unrun.
+  'presenceShow.js',
 ];
 
 // ── THE LAB SUITES ARE IN THE HARNESS NOW (2026-09-15) ───────────────
@@ -85,6 +92,25 @@ const serial = args.indexOf('--serial') !== -1;
 const filter = args.filter(function (a) { return a.charAt(0) !== '-'; })[0] || '';
 const LANES = serial ? 1 : 6;
 
+// ── WHAT THE DISCOVERY RULE SKIPPED, SAID OUT LOUD ───────────────────
+//
+// The rule below is right — a suite is a file that reports — but it
+// FAILED SILENTLY, and that is a different thing from being wrong. A file
+// missing `startTest(` was skipped with no line of output, so it looked
+// exactly like a file that had passed.
+//
+// What that cost, found on 2026-09-17: `deviceAuth.js` reported through a
+// hand-rolled `ok()` and had never once been discovered. It spent four
+// days asserting `deviceByName`, `keysForName` and `checkOwner` — all
+// three deliberately deleted — and threw on the first of them, so seven
+// further checks had not run either. `iconIndex.js`, 31 green, was in the
+// same position for want of one line.
+//
+// So anything skipped is NAMED. A file that genuinely is not a suite goes
+// in NOT_A_SUITE, where it is a decision somebody wrote down; anything
+// else shows up here until somebody deals with it.
+const skipped = [];
+
 function discover() {
   const found = fs.readdirSync(DIR).filter(function (f) {
     if (!/\.js$/.test(f)) return false;
@@ -93,7 +119,9 @@ function discover() {
     if (filter && f.toLowerCase().indexOf(filter.toLowerCase()) === -1) return false;
     // A suite is a file that reports. Anything else in here is a module
     // somebody put beside them, and running it proves nothing.
-    return /startTest\s*\(/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
+    if (/startTest\s*\(/.test(fs.readFileSync(path.join(DIR, f), 'utf8'))) return true;
+    skipped.push(f);
+    return false;
   }).sort();
 
   if (!filter || LAST.toLowerCase().indexOf(filter.toLowerCase()) !== -1) found.push(LAST);
@@ -209,8 +237,18 @@ async function main() {
       .forEach(function (l) { console.log('    ' + l.replace(/\s+$/, '')); });
   });
 
+  // NOT RUN, AND NOT SILENT. See the note on `skipped`: a file that looks
+  // like a suite and is never discovered is indistinguishable from one
+  // that passes, and that is how two of them rotted.
+  if (skipped.length) {
+    console.log('\n--- not run: no startTest(), so the runner cannot see them');
+    skipped.forEach(function (f) { console.log('    ' + f); });
+    console.log('    (add test.startTest(...), or list it in NOT_A_SUITE with a reason)');
+  }
+
   console.log('\n' + files.length + ' suites, ' + green + ' green, ' + red + ' red, ' +
-    unhappy.length + ' unhappy\n');
+    unhappy.length + ' unhappy' +
+    (skipped.length ? ', ' + skipped.length + ' not run' : '') + '\n');
   process.exit(unhappy.length ? 1 : 0);
 }
 
