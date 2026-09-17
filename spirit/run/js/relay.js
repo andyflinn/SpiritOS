@@ -2476,6 +2476,22 @@ function createRelay(rootDir, deps) {
               // found records with the partner ID supplying that result
               // record" — the thread a node follows to record a route.
               via: row.via || undefined,
+              // AND EVERY OTHER RELAY IT WAS FOUND ON.
+              //
+              //   Andy: "if you pay the price for search, may as well get
+              //   valuable, cachable routing info with it."
+              //
+              // The fan-out already asked every partner and every answer
+              // already arrived; the merger used to keep the best row and
+              // discard the knowledge that three other relays hold the
+              // same peer. That is a routing table thrown away at the last
+              // step, having been paid for in full.
+              //
+              // Absent when there is only one, so an ordinary answer is
+              // the same bytes it always was. `null` inside it means THIS
+              // relay — the one being asked — which a node already knows
+              // the identity of.
+              vias: (row.vias && row.vias.length > 1) ? row.vias : undefined,
             };
           }),
         });

@@ -206,6 +206,51 @@ simplifies: the relay resolves, announces, and forgets. The tuples a node sends
 with its request are then the *only* memory in the system, which is 0013's
 architecture with nothing left over.
 
+## A streamed route is not correspondence
+
+> **Andy:** *"I think that streamed routes should be exempt from the log — they
+> just miraculously get stashed on the correct contact-row."*
+
+**Not logged, and there is already precedent: presence writes nothing to the
+traffic log either.** A route arrives the way a presence change arrives — a
+stream event, handled beside `onRoster` and `onChange`, never through
+`peerPost`'s `note()`.
+
+Three reasons, and the third is the one worth not missing:
+
+1. **It is not correspondence.** `trafficLog.js` is *"what this node sent and
+   what it received"*. A route announcement is neither; nobody addressed it to
+   you.
+2. **Volume would accumulate for ever.** Andy: *"the log is forever."* There
+   was a 24-hour window and it is gone — `trafficLog.js`: *"nothing is pruned on
+   the way out any more, because nothing is pruned at all"*, because *"the log
+   should be permanent. period."* So route noise would not evict real traffic;
+   it would **grow the owner's disk without bound, permanently**, with
+   infrastructure chatter nobody will ever read.
+3. **It would distribute the one thing broadcasting leaks, for ever.**
+   Announcing routes leaks timing: *"a route for sonny appeared just now"* says
+   somebody here went looking. Logging it turns a transient leak into a
+   **permanent record, on every member's node, of everything a relay's members
+   have ever looked up** — worse than the relay holding it, because the relay
+   forgets on reboot and a permanent log does not.
+
+### Stashed, with one boundary
+
+**Match an existing contact row and update `whoBook.relays`. Never create a
+row.**
+
+A route announcement must be able to improve a contact you already have, and
+must **not** be able to put a person into your book — otherwise a relay can
+inject contacts, and *"my book is mine"* stops being true. A route for a key
+with no row is dropped, which is also the filter that makes broadcasting cheap
+for the recipient: most announcements are about people you do not know, and
+those cost one comparison and nothing else.
+
+Together with the sidecar boundary above, the rule is symmetrical:
+
+> **A relay may improve what a node knows about its own contacts. It may never
+> add to them, and a node may never make a claim that a relay repeats.**
+
 ## What it retires
 
 - **`streamRoster`'s full member list.** Its only job is the three-state dot:

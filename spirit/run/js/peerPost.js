@@ -59,9 +59,24 @@ var DEFAULT_WAIT_MS = 8000;
 var UNKNOWN_PER_MIN = 6;
 // A stranger's whole budget of payload for a minute, across every
 // stranger. Sized as "enough for a first hello, nothing like enough to
-// fill a disk": the traffic log keeps 24 hours, so this is what an
-// unknown sender may add to it, and 64KB a minute is under 100MB a day
-// in the pathological case of somebody spending all of it forever.
+// fill a disk".
+//
+// THE ARITHMETIC UNDER IT WAS STALE (corrected 2026-09-17). It read "the
+// traffic log keeps 24 hours, so this is what an unknown sender may add
+// to it" — and the window is gone. Andy: "the log should be permanent.
+// period." trafficLog.js: "nothing is pruned on the way out any more,
+// because nothing is pruned at all."
+//
+// So the bound is NOT "100 MB a day, recycled". It is **100 MB a day,
+// kept**, which is the number this constant actually governs: at 64 KB a
+// minute an adversary spending every byte for a year adds ~34 GB to the
+// owner's disk, for ever.
+//
+// That does not make the number wrong — it makes it load-bearing in a
+// different way. The floor is no longer a cap on how much of a rolling
+// window a stranger may occupy; it is a cap on **how fast a stranger can
+// grow a file that never shrinks**. Anybody retuning it should be pricing
+// permanent bytes, not transient ones.
 var UNKNOWN_BYTES_PER_MIN = 65536;
 var UNKNOWN_WINDOW_MS = 60000;
 

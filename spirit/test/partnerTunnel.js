@@ -67,6 +67,20 @@ function sinkFor(bag) {
 
 const boxes = {};          // relay public key -> the relay object
 const waiting = {};        // outer hash -> resolve, for a partner's answer
+const early = {};          // replies that arrived before anybody waited
+
+// ── AN ANSWER CAN ARRIVE BEFORE THE QUESTION RETURNS ─────────────────
+//
+// Only in one process, and only because of it. A partner answering a
+// SEARCH does so inside `routePost` — it has nothing to wait for — so the
+// reply lands on the stream before `askPartner` has been handed a hash to
+// register a waiter against. A FORWARD does not do this: B parks it until
+// its own member speaks, so the reply is always later.
+//
+// Over a socket every reply is later, so this buffer models nothing real.
+// It exists so the fixture does not lose a reply that beat its own
+// bookkeeping, which is a property of the test harness and not of the
+// protocol.
 
 // ── THE WIRE BETWEEN TWO RELAYS, AND THE WAITING IS THE POINT ─────────
 //
@@ -85,6 +99,11 @@ function askPartner(fromHome) {
     const sig = auth.sign(me.privateKey, auth.postMessage(me.publicKey, relayKey, text));
     const posted = target.routePost(me.publicKey, relayKey, text, sig);
     if (!posted || !posted.ok) return Promise.resolve(null);
+    if (early[posted.hash] !== undefined) {
+      const had = early[posted.hash];
+      delete early[posted.hash];
+      return Promise.resolve({ text: had });
+    }
     return new Promise(function (resolve) { waiting[posted.hash] = resolve; });
   };
 }
@@ -103,6 +122,8 @@ function partnerSink() {
         const resolve = waiting[parsed.hash];
         delete waiting[parsed.hash];
         resolve({ text: parsed.text });
+      } else if (parsed && parsed.hash) {
+        early[parsed.hash] = parsed.text;
       }
       return true;
     },
@@ -421,6 +442,60 @@ test.subHeading('And sonny’s answer reaches jazz');
     test.check('and dave heard nothing — nothing was tried on his relay');
   } else {
     test.fail('an unnamed forward reached a partner anyway');
+  }
+
+  // ── 6. A SEARCH PAYS FOR EVERY ROUTE, SO IT RETURNS EVERY ROUTE ────
+  //
+  //   Andy: "if you pay the price for search, may as well get valuable,
+  //   cachable routing info with it."
+  //
+  // The fan-out asks every partner and every answer arrives. The merger
+  // used to keep the best row and drop the knowledge that other relays
+  // hold the same peer — a routing table discarded at the last step, after
+  // being paid for in full.
+  //
+  // Here dave is a member of BOTH D and B, so a search from jazz on A
+  // reaches him twice and must come back naming both.
+
+  test.subHeading('A peer found on two partners comes back with both routes');
+
+  const daveKey = D.people.dave.publicKey;
+  const mintB = B.box.mint('ownerb', 'dave', 7, '');
+  B.box.claim('dave', auth.sign(D.people.dave.privateKey, auth.claimMessage('dave')),
+    daveKey, null, mintB.invite.token, 'dave');
+
+  post(A.box, A.people.jazz, A.key, { search: { q: 'dave' } });
+  // A real turn of the loop, not a microtask: the fan-out is a Promise.all
+  // over answers that each arrive through their own chain.
+  await new Promise(function (r) { setTimeout(r, 0); });
+  await new Promise(function (r) { setTimeout(r, 0); });
+
+  const answer = A.inboxes.jazz.filter(function (m) { return m.event === 'reply'; }).pop();
+  const found = answer && JSON.parse(answer.data.text).body.matches
+    .filter(function (r) { return r.publicKey === daveKey; })[0];
+
+  if (found) {
+    test.check('the search found dave across the partnerships');
+  } else {
+    test.fail('dave was not found: ' + JSON.stringify(answer && answer.data && answer.data.text));
+  }
+
+  if (found && Array.isArray(found.vias) && found.vias.length === 2 &&
+      found.vias.indexOf(B.key) !== -1 && found.vias.indexOf(D.key) !== -1) {
+    test.check('and named BOTH relays holding him — the second route is not discarded');
+  } else {
+    test.fail('only one route came back: ' + JSON.stringify(found && { via: found.via, vias: found.vias }));
+  }
+
+  // AND AN ORDINARY ANSWER IS UNCHANGED. `vias` is absent when there is
+  // one route, so a peer found in one place costs exactly the bytes it
+  // always did.
+  const sonnyRow = answer && JSON.parse(answer.data.text).body.matches
+    .filter(function (r) { return r.publicLabel === 'sonny'; })[0];
+  if (!sonnyRow || sonnyRow.vias === undefined) {
+    test.check('and a peer found in one place carries no extra field');
+  } else {
+    test.fail('vias present for a single route: ' + JSON.stringify(sonnyRow));
   }
 
   test.reportSuccessFailureCount();

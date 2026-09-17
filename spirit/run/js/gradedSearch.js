@@ -641,6 +641,22 @@ function search(items, query, opts) {
 // DE-DUPLICATED on the way out by whatever `opts.id` says identity is, the
 // better copy winning. Room for duplicates on the way in, or one item held
 // by three sources could push a distinct one out of a seat it had earned.
+//
+// ── BUT THE LOSERS' TAGS ARE KEPT ────────────────────────────────────
+//
+//   Andy: "if you pay the price for search, may as well get valuable,
+//   cachable routing info with it."
+//
+// The duplicate ROWS are dropped and the sources that offered them are
+// not. A caller that fanned a question out has already paid for every
+// answer; throwing away "and these other sources hold it too" discards
+// information that cost exactly as much as the information kept.
+//
+// `tags` is therefore every source that offered the winning item, in the
+// order they ranked, with the winner's own tag first. For the peer search
+// that is every relay a peer was found on rather than only the best one —
+// which is a routing table arriving free with a question somebody asked
+// for another reason.
 function merge(sources, query, opts) {
   opts = opts || {};
   var n = typeof opts.slots === 'number' && opts.slots > 0 ? opts.slots : SLOTS;
@@ -660,8 +676,16 @@ function merge(sources, query, opts) {
   var idOf = opts.id || function (item) { return String(item); };
   all.matches.forEach(function (m) {
     var id = idOf(m.item);
-    if (seen[id]) return;
-    seen[id] = true;
+    if (seen[id]) {
+      // Not a discard: the row loses, its SOURCE is recorded on the
+      // winner. Guarded against repeats so a source offering the same
+      // item twice is named once.
+      var kept = seen[id];
+      if (kept.tags.indexOf(m.tag) === -1) kept.tags.push(m.tag);
+      return;
+    }
+    m.tags = [m.tag];
+    seen[id] = m;
     unique.push(m);
   });
 

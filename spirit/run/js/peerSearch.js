@@ -106,6 +106,12 @@ function rowsFrom(result) {
       var copy = {};
       Object.keys(m.item).forEach(function (k) { copy[k] = m.item[k]; });
       copy.via = m.tag;
+      // EVERY RELAY THIS PEER WAS FOUND ON, not only the best-ranked one.
+      // The fan-out paid for all of them; `via` keeps its old meaning
+      // (the source of the row that won) and `vias` carries the rest, so
+      // a reader that wants one route is unchanged and a reader that
+      // wants a routing table has one.
+      if (m.tags && m.tags.length > 1) copy.vias = m.tags.slice();
       return copy;
     }),
     more: result.more,
