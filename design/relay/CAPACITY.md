@@ -176,7 +176,45 @@ start.
    reach, and one that quietly narrows the world is failing at the only
    thing its members would notice.
 
-8. **Rate management bootstraps on delivery that already exists.**
+8. **The RAM budget is DECLARED, not measured — and a declaration may
+   only narrow.**
+
+   > **Andy:** *"artificial bounding of available RAM: cheap-skate
+   > hackists like me may want to run two relays on a VPS, so available
+   > RAM can be capped is a smart design decision. (helps with testing as
+   > well)"*
+
+   **Reading `os.totalmem()` is wrong on any shared host**, which is most
+   hosts. Two relays on one VPS each conclude they own the machine, each
+   size themselves for all of it, and then fight. Nothing in the numbers
+   tells either one that the other exists. So the operator's intent is the
+   only correct source, and a declared budget is the **normal path** rather
+   than a testing affordance — measurement is what fills in when nothing
+   was declared.
+
+   This is also what makes the governor's shape in recommendation 10 right
+   for production and not only for a suite: `budget` is handed in,
+   `observed` is read. Same seam, both uses.
+
+   **A declaration may only narrow.** Clamp it to what the box can actually
+   see — `min(declared, visible)` — so an operator who writes 8 GB on a
+   512 MB box gets 512 MB rather than an OOM. A budget that can only be
+   more conservative than reality is one nobody can hurt themselves with,
+   and it costs one line.
+
+   *Open:* where the declaration lives. `--port` and `--relay` are CLI
+   flags, which is the precedent; a file would be the other option and
+   carries the *"a floor in a file is a floor somebody can lower"* smell,
+   though a budget is legitimately operator policy in a way a jail is not.
+
+   > **Corrects a trap this author wrote in recommendation 10:** *"a
+   > declared budget must never be readable as a real one, or the node
+   > floor becomes lowerable by a setting."* That was confused. The floor
+   > lives in `peerPost.js`, **on a node**; a relay's declared budget is on
+   > a relay. Different processes on different machines — one cannot reach
+   > the other, and there was never a conflict to guard against.
+
+9. **Rate management bootstraps on delivery that already exists.**
 
    > **Andy:** *"we already have packet delivery, that should be the
    > bootstrap for rate-management, there we get first measurements."*
@@ -428,10 +466,12 @@ Two traps worth naming before anybody builds it:
   tested in its comfortable region only.** That is the failure this
   recommendation exists to prevent: adaptive systems are easy to demonstrate
   working and hard to demonstrate failing safely.
-- **A declared budget must never be readable as a real one.** If a lab
-  relay's fake 32 MB can reach production configuration, the floor becomes
-  lowerable by a setting — which is exactly what the carve-out below
-  forbids.
+- ~~**A declared budget must never be readable as a real one.**~~
+  **Withdrawn — see decided item 8.** A declared budget IS the production
+  path, because measuring total RAM is wrong on a shared host. And the
+  conflict this feared does not exist: the floor lives in `peerPost.js` on
+  a **node**, and a relay's budget is on a **relay**. What replaces it is
+  a smaller rule: a declaration may only ever narrow, never widen.
 
 ---
 

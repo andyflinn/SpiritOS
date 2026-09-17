@@ -201,6 +201,42 @@ the starting limit belong in the protocol** — announced like any other cap,
 so a fresh member is never guessing — or is it purely a relay-local
 backstop that only ever surfaces in a refusal?
 
+### And what can honestly be computed at boot (new, decided since)
+
+Andy: *"the starting limit must be computed from initially known things:
+available RAM… the number of members, so we already know memory/members
+ratio. Anything else?"*
+
+Working the list through splits it in a way that matters. A relay knows at
+boot: RAM, member count, partner count, CPU count, `PAYLOAD_MAX` (16 KB, so
+any post-rate **is** a byte-rate), the route TTL, and its own stock caps.
+**Every one of those is a stock except the payload conversion** — so a flow
+limit cannot be derived from them. The missing quantity is the uplink, and
+it is the one thing genuinely unknowable at boot. That is why the ring
+exists, and why a computed starting *rate* would be a guess wearing
+arithmetic.
+
+But the ratio has a better job than the rate: **memory ÷ members should size
+`perRequester`, which is a flat 16 today** whatever the box and whatever the
+membership. A stock limit from stock knowledge, no measurement needed — and
+`createRouter(opts)` already takes `max`, `maxPerRequester` and `ttlMs`
+while `relay.js` calls it with none.
+
+**And the RAM figure is DECLARED, not measured.** Andy: *"cheap-skate
+hackists like me may want to run two relays on a VPS, so available RAM can
+be capped is a smart design decision."* Stronger than convenience — reading
+`os.totalmem()` is **wrong on any shared host**: two relays on one box each
+conclude they own it, size for all of it, and fight. The operator's intent
+is the only correct source, so a declared budget is the normal path and
+measurement is the fallback. It clamps to what is visible, so a declaration
+can only ever narrow. (This also retires a trap we had written about
+declared budgets reaching production config — the node floor is in
+`peerPost.js` on a node, and a relay's budget is on a relay.)
+
+**For you:** is `memory ÷ members → perRequester` the right derivation, or
+does a stock cap want a floor and a ceiling more than it wants a ratio? A
+relay with three members would hand each of them a third of the box.
+
 ---
 
 ## What we want from you
