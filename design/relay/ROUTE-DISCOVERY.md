@@ -62,6 +62,51 @@ discovery, but refresh** — a route that went stale — **and presence at scale
 which is the roster's replacement. A smaller job with a different justification,
 and worth knowing before anybody builds the big version of it.
 
+### And the census is bootstrap scaffolding that became load-bearing
+
+> **Andy:** *"the most fetched because it bootstrapped concepts quickly, but is
+> not scalable."*
+
+`GET /api/relay/who` is the most-fetched interface in the system — **nine call
+sites** — and it is the largest ship-the-material payload in it:
+
+```
+census row  151 bytes  →  1 000 members = 147 KB per fetch
+roster row  101 bytes  →  1 000 members =  99 KB per connect
+```
+
+It is not on a timer, which is what has kept it survivable: probes fire on user
+actions, at presence start, at acquire, at handle-candidates. Human-paced, and
+fetched **whole**, **repeatedly**, **per relay**.
+
+**It is not a design. It is the thing that was easiest to reach for while the
+concepts were being proven**, and the call sites accreted around it. So the
+useful question is not *"how do we shrink the census"* but **what is each caller
+actually asking**, because most of them want something far narrower:
+
+| caller | the question it is really asking | cheaper form |
+|---|---|---|
+| `ownerBadge.probe` | *am I on this relay, and how is it?* | own row + status |
+| `buildPeople` | *labels and routes for people I know* | `about([my keys])` |
+| `peer.acquire` verification | *is key K on relay R?* | a per-key membership test |
+| `handleHandle` / candidates | *who claims the handle "john"?* | `search` — which already exists |
+| `device.html` | *what label belongs to key K?* | a per-key label lookup |
+| `handleRoster` | *who is on this relay?* | the only one that genuinely wants a list |
+
+**`peer.acquire` is the sharpest waste:** it pulls up to 147 KB to answer yes or
+no about **one key**.
+
+**One constraint stops it disappearing.** The census is *public and unsigned* —
+decision 0010 calls it *"what a node reads before it has anything"*. `device.html`
+resolves a label with no identity at all, and acquire verifies keys on relays the
+node is **not a member of**. An authenticated per-key question cannot serve a
+party that has no relationship yet.
+
+So the shape of its retirement is probably **members ask questions; strangers
+still get a census** — and the open question becomes whether the public census
+can be bounded (paged, capped, or answered by prefix) without breaking the
+bootstrap it exists for.
+
 ### A finding: binding and presence are conflated at the lookup
 
 ```js
