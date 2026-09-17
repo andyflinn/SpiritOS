@@ -57,6 +57,26 @@ Measured by reading, at `97e973e`.
 
 ### The finding: there is no rate limit on posting
 
+> **Refined 2026-09-17 by building it.** "No limit" was too strong, and the
+> distinction turns out to be this document's own: **a stock limit existed
+> and a flow limit did not.**
+>
+> `routes.open` already caps a requester's **outstanding** posts — `too
+> many in flight`, 429, `DEFAULT_PER_REQUESTER = 16` — and the table caps
+> the box at `DEFAULT_MAX = 256`. That is the RAM half of recommendation 1,
+> **built, and already fair per requester.**
+>
+> What was missing is the flow half. A post that completes promptly costs
+> nothing against a stock limit, so a polite, fast, endless conversation
+> was bounded by nothing at all. Found by writing `relayMeter.js`: a naive
+> flood loop was stopped at sixteen by the in-flight cap, which has nothing
+> to do with rate.
+>
+> **Now built:** `ROUTE_PER_MIN` on `routePost`, keyed on the resolved
+> sender, naming its number in the 429; and the meter beside it — a fixed
+> ring of bytes, posts and peak routes per second, aggregate, carried to
+> the owner in `relayStatus`.
+
 `rateOk` has exactly **two** call sites — claim and device enrolment.
 `routePost` has none. A member may post as fast as they can open sockets,
 and the only thing bounding it is the destination node's floor, which

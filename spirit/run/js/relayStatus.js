@@ -87,6 +87,34 @@ function report(opts) {
     // the census.
     routes: typeof o.routes === 'number' ? o.routes : 0,
 
+    // ── WHAT IT MOVED, NOT ONLY WHAT IT HOLDS ────────────────────────
+    //
+    //   Andy: "a relay's capacity is primarily governed by its own RAM
+    //   and by its network bandwidth."
+    //
+    // `routes` and `memory` are both STOCKS — what is outstanding right
+    // now. Neither says anything about throughput, so neither could tell
+    // an owner whether the box is near its link. This is the flow beside
+    // them, read off relay.js's ring: bytes and posts over the window,
+    // and the highest number of routes seen open in any second of it.
+    //
+    // AGGREGATE, and that is load-bearing rather than a simplification.
+    // The same figures per member would be a record of who talks how much
+    // and when, arriving as a performance feature in a report nobody
+    // thinks of as a ledger.
+    //
+    // Absent rather than zeroed when the relay did not send one, for the
+    // same reason `relayStatus` is absent for a relay that has not
+    // reported: "not told yet" and "nothing to tell" are different things
+    // and must not be drawn the same.
+    meter: o.meter || undefined,
+
+    // WHAT IT IS ALLOWING RIGHT NOW, beside what it moved. Two pools, so
+    // an owner watching a busy box can see which one is the constraint —
+    // a partner pool at its floor while member traffic is nowhere near
+    // its cap is a different problem from both being spent.
+    caps: o.caps || undefined,
+
     // THE RING, and it is here so that its disappearance is visible.
     // When R8 deletes send/inbox this number goes to zero and then the
     // field goes, and an owner watching a monitor sees the change rather

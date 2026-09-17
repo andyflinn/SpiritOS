@@ -106,6 +106,77 @@ var DEVICE_PER_MIN = 10;
 var labelRule = require('./labelRule');
 
 var CLAIM_PER_MIN = 10;
+
+// ── POSTING HAD NO LIMIT AT ALL, AND THAT WAS NOT A DECISION ─────────
+//
+// Measured 2026-09-17: `rateOk` had exactly two call sites, `claim` and
+// device enrolment. `routePost` — the thing that actually moves bytes —
+// had none, so nothing counted posts per minute and a member could post
+// as fast as they could open sockets. The "30 sends per minute per key" a
+// few lines below reads like a live rule and is a comment about `send`,
+// the ring route R8 deleted.
+//
+// HALF OF IT WAS ALREADY THERE, which is worth stating so this is not
+// mistaken for a box with no defences: `routes.open` caps a requester's
+// OUTSTANDING posts (`too many in flight`, DEFAULT_PER_REQUESTER) and the
+// table caps the box (DEFAULT_MAX). That is the stock — what is held —
+// and it is fair per requester already. What was missing is the FLOW:
+// posts that complete promptly cost nothing against a stock limit, so a
+// polite, fast, endless conversation was bounded by nothing at all.
+//
+// The far end was not covering for it either: the node's floor bounds
+// only senders it has NEVER HEARD OF (peerPost.js), so between two
+// acquainted peers there was no limit anywhere in the system.
+//
+//   Grok: "put a dumb rateOk on routePost before partner delivery."
+//   Andy: "we already have packet delivery, that should be the bootstrap
+//   for rate-management, there we get first measurements."
+//
+// DUMB ON PURPOSE, and temporary. CAPACITY.md's governor divides measured
+// headroom and publishes the result; this is the backstop that holds the
+// door until there is something in the ring to divide. A number chosen
+// to bound a runaway and to be invisible to a person: ten a second is far
+// past human, and far below what a loop can do.
+//
+// NAMED IN THE REFUSAL, like DEVICE_PER_MIN above — a page that knows it
+// is rate-limited waits, where `not now` makes it guess.
+// ── TWO BUDGETS, BECAUSE A PARTNER'S POST IS A MEMBER'S DEMAND ───────
+//
+//   Andy: "the budget for posts from partners must be a different POST
+//   budget from members. Why? Because even incoming posts from partners
+//   satisfy a need from my members. In fact, I need to tax the members to
+//   keep my partners operational."
+//
+// A forward arriving from a partner is not foreign traffic: somebody's
+// member is being reached because they want to be reachable. So the
+// partner pool is infrastructure for member reach, funded out of the same
+// total — and kept SEPARATE so that a partner having a bad day degrades
+// reach without starving the members who paid for it.
+//
+// That separation is also what lets this box stay incurious about who at
+// the far end sent anything. The pool IS the isolation, so there is no
+// bucket per foreign member and nothing here learns who talks how much
+// (CAPACITY.md, decided 0c).
+var MEMBER_PER_MIN = 600;
+
+// THE PARTNER POOL'S FLOOR, and the floor is all there is for now.
+//
+//   Grok: "floor in work, then observedPartnerFraction x total, taxed
+//   from the member pool. Idle -> floor, not zero."
+//
+// IDLE MEANS FLOOR, NEVER ZERO, and that is the half worth not getting
+// wrong: a pool of zero is a bootstrap deadlock. An unused partnership
+// could never carry the first packet that would make it used, so the
+// fraction could never rise, so the pool would stay zero for ever.
+//
+// The fraction is MEASURED here (meterRead().partnerFraction) and not yet
+// ACTED ON: computing the pool from it is the governor's job, and the
+// governor divides observed headroom that does not exist until the ring
+// has run on a real box. So this is the starting declaration, in force
+// until there is something to divide — not a constant anybody chose as
+// correct.
+var PARTNER_FLOOR_PER_MIN = 60;
+
 var WINDOW_MS = 60 * 1000;
 var RATE_KEY_SWEEP_AT = 1000;
 
@@ -221,6 +292,133 @@ function createRelay(rootDir, deps) {
   // caller — the caller is whoever the internet sent, and what needs a
   // ceiling is how often one person's node can be made to answer.
   var deviceHits = Object.create(null);
+  // Posts routed, per sender key. The sender is the identity that was
+  // RESOLVED, never a name they chose — the reasoning is in the note on
+  // `rateOk` below, and it is why the old per-name limit was worthless.
+  // TWO POOLS, TWO BUCKETS. Keyed on the resolved sender either way — a
+  // member key, a device key, or a partner's relay key — never on
+  // anything the sender chose.
+  var memberHits = Object.create(null);
+  var partnerHits = Object.create(null);
+
+  // What a partner may spend right now. A function rather than a constant
+  // because the governor will compute it; today it answers the floor, and
+  // the call site should not have to change when that stops being true.
+  function partnerPerMin() {
+    return PARTNER_FLOOR_PER_MIN;
+  }
+
+  // ── THE METER, WHICH MATTERS MORE THAN THE GATE ──────────────────────
+  //
+  //   Andy: "a relay's capacity is primarily governed by its own RAM and
+  //   by its network bandwidth" — and "there we get first measurements".
+  //
+  // A fixed ring of what this box actually moved. It exists so the
+  // governor in CAPACITY.md can be built against observation instead of
+  // against a guess, and it starts filling from ordinary member-to-member
+  // traffic today, long before any partner delivery exists.
+  //
+  // AGGREGATE ONLY, NEVER PER-PEER. The same ring kept per member would be
+  // a record of who talks how much and when — what this system refuses to
+  // hold — arriving by the side door as a performance feature, in a file
+  // nobody thinks of as a ledger. The precedent is the route-usage note in
+  // PARTNERS.md: "in memory is the whole point: it resets on restart, it
+  // is never served, and it describes the relay's own work rather than
+  // anybody's traffic."
+  //
+  // FIXED SIZE, because the resource it reports on is the one it spends.
+  // A ring that grew under load would be the instrument consuming what it
+  // was built to measure.
+  //
+  // ── AND IT HAS A FLOOR, IN BOTH DIRECTIONS ─────────────────────────
+  //
+  //   Grok: "measurement ring has a floor in slots and in time span;
+  //   never slower than 5s samples."
+  //
+  // The governor shrinks its own instrumentation under memory pressure —
+  // which degrades measurement quality at exactly the moment the
+  // decisions are hardest. Both bounds are needed and neither implies the
+  // other: ten slots of sixty seconds is ten minutes of mush, ten slots
+  // of one second is ten seconds of detail, and neither is usable. So the
+  // ring keeps a minimum number of slots AND a minimum span, and a sample
+  // may never be coarser than five seconds — past that a burst is
+  // invisible, which is the one thing it is watching for.
+  var METER_SLOTS = 120;
+  var METER_SLOTS_MIN = 20;
+  var METER_SPAN_MIN_S = 120;
+  var METER_SAMPLE_MAX_S = 5;
+  var meter = { at: 0, slots: [], sampleS: 1 };
+
+  // What the ring may be shrunk to, and the answer is never "as small as
+  // you like". Exported as a function so the governor has one place to
+  // ask rather than three constants to respect.
+  function meterFloor(wantSlots, wantSampleS) {
+    var sampleS = Math.min(Math.max(1, wantSampleS || 1), METER_SAMPLE_MAX_S);
+    var slots = Math.max(METER_SLOTS_MIN, wantSlots || METER_SLOTS);
+    // The span floor can force more slots back than the slot floor did:
+    // a coarse sample with few slots still has to cover the minimum
+    // window, which is what stops "smaller and slower" becoming "blind".
+    var neededForSpan = Math.ceil(METER_SPAN_MIN_S / sampleS);
+    return { slots: Math.max(slots, neededForSpan), sampleS: sampleS };
+  }
+
+  // One slot per second of wall clock, overwriting the oldest. `bytes` is
+  // what crossed in that second; `posts` is how many; `peak` is the most
+  // outstanding routes seen — the RAM meter beside the bandwidth one,
+  // since CAPACITY.md's governor reads several and not a fixed pair.
+  //
+  // `fromPartner` is counted as a COUNT, not as an identity: two integers
+  // per slot, so the relay can say what share of its work crossed a
+  // partnership without holding anything about who did it. That share is
+  // the input Grok's formula wants — "observedPartnerFraction x total" —
+  // and measuring it is this file's job where dividing by it is the
+  // governor's.
+  function meterNote(bytes, fromPartner) {
+    var second = Math.floor(Date.now() / 1000);
+    var head = meter.slots[meter.slots.length - 1];
+    if (!head || head.second !== second) {
+      head = { second: second, bytes: 0, posts: 0, peak: 0, partnerPosts: 0 };
+      meter.slots.push(head);
+      if (meter.slots.length > METER_SLOTS) meter.slots.shift();
+    }
+    head.bytes += bytes;
+    head.posts += 1;
+    if (fromPartner) head.partnerPosts += 1;
+    // `size()` rather than a counter of our own, and it sweeps expired
+    // entries on the way past — so the peak is live routes, never a
+    // backlog of ones that timed out.
+    var open = routes.size();
+    if (open > head.peak) head.peak = open;
+  }
+
+  // What the ring says, for the owner's report and for the governor when
+  // it exists. Derived on the way out rather than kept: a running total
+  // would be a second thing to get wrong.
+  function meterRead() {
+    var cut = Math.floor(Date.now() / 1000) - METER_SLOTS;
+    var live = meter.slots.filter(function (s) { return s.second > cut; });
+    var bytes = 0, posts = 0, peak = 0, partnerPosts = 0;
+    live.forEach(function (s) {
+      bytes += s.bytes; posts += s.posts;
+      partnerPosts += (s.partnerPosts || 0);
+      if (s.peak > peak) peak = s.peak;
+    });
+    return {
+      seconds: live.length,
+      bytes: bytes,
+      posts: posts,
+      peakRoutes: peak,
+      // THE INPUT THE PARTNER POOL IS WAITING FOR. Measured now, acted on
+      // by the governor later — today the pool answers its floor. Zero
+      // when nothing has crossed a partnership, which is the common case
+      // on a relay with no partners and is why the floor exists.
+      partnerPosts: partnerPosts,
+      partnerFraction: posts ? (partnerPosts / posts) : 0,
+      // The one figure a governor would divide. Honest about the window
+      // rather than extrapolated from a short one.
+      bytesPerSec: live.length ? Math.round(bytes / live.length) : 0,
+    };
+  }
 
   // THE RAM SLOT IS GONE, and so is the poll that read it. An offer is
   // no longer parked for a node to come and find: it is posted to the
@@ -2095,6 +2293,49 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 403, error: 'no such peer' };
     }
 
+    // ── ONE LIMIT, FOR EVERY POST THIS BOX CARRIES ───────────────────
+    //
+    //   Andy: "the relay-to-relay hop is just normal protocol-compliant
+    //   traffic, like all other traffic... measurable, throttleable."
+    //
+    // ABOVE THE postedToSelf BRANCH ON PURPOSE. It sat below it for an
+    // hour and that was a special case arriving by accident: a partner's
+    // search and a member's verb both address the BOX, take the early
+    // return, and were neither counted nor capped. A relay that meters
+    // packets to its members and not packets to itself is measuring the
+    // half of its work that is easiest to measure.
+    //
+    // So this is the first thing after the sender is known, which is also
+    // the cheap-to-expensive order the rest of this function keeps: a
+    // flood must not be able to make this box verify signatures.
+    //
+    // KEYED ON THE RESOLVED SENDER — a member key, a device key or a
+    // partner's relay key — never on anything the sender chose. The note
+    // on the old send limit is the reason, and is worth not relearning:
+    // "30 sends per minute per name, with the name chosen by the sender,
+    // is 30 per minute per made-up string — rotate it and the budget
+    // resets, which is exactly what an abuser does and never what a real
+    // client does."
+    //
+    // 429, and it NAMES THE NUMBER. Everything else this route says is
+    // deliberately incurious; this is the exception, for the same reason
+    // DEVICE_PER_MIN is — it is temporary, and a client that knows the cap
+    // waits instead of guessing.
+    var fromPartner = !!who.partner;
+    var pool = fromPartner ? partnerHits : memberHits;
+    var perMin = fromPartner ? partnerPerMin() : MEMBER_PER_MIN;
+    if (!rateOk(pool, who.id, perMin)) {
+      monitorEvent('refused', who.id, String(toToken), {
+        why: 'rate', pool: fromPartner ? 'partner' : 'member',
+      });
+      return {
+        ok: false, status: 429,
+        error: 'too many posts — limit is ' + perMin + ' a minute',
+        perMin: perMin,
+        pool: fromPartner ? 'partner' : 'member',
+      };
+    }
+
     // AM I THE TARGET? — asked first, and asked alone.
     //
     //   Andy: "wouldn't it be the smartest move for the relay to check
@@ -2126,6 +2367,10 @@ function createRelay(rootDir, deps) {
       // exists.
       var opened = routes.open(selfHash, who.id, String(toToken), function () { return true; });
       if (!opened || !opened.ok) return opened;
+      // METERED LIKE ANY OTHER POST. A search a partner asks costs this
+      // box real work and real bytes; leaving it out of the ring would
+      // make the governor blind to exactly the traffic partnering adds.
+      meterNote(text.length, fromPartner);
       answerSelf(selfHash, text, who);
       return withStatus(opened, selfHash);
     }
@@ -2164,6 +2409,11 @@ function createRelay(rootDir, deps) {
     // the owner's screen a place everybody else's words pass through,
     // which is what 0006 just emptied off this box.
     monitorEvent('post', who.id, target.id, { bytes: text.length, hash: hash });
+    // AND THE METER, counted where the bytes are known and the decision to
+    // carry them has been made. Aggregate: `who` is not passed, and there
+    // is nowhere in `meterNote` to put it if it were — only whether it
+    // crossed a partnership, which is a count and not an identity.
+    meterNote(text.length, fromPartner);
     return withStatus(routes.open(hash, who.id, target.id, function () {
       return presentNow.send(target.id, 'request', {
         from: who.id,
@@ -2490,6 +2740,17 @@ function createRelay(rootDir, deps) {
       snapshot: snapshot(),
       present: presentNow.present(),
       routes: routes.size(),
+      // WHAT THIS BOX ACTUALLY MOVED, so the governor in CAPACITY.md can
+      // be built against observation. Aggregate and derived on the way
+      // out; the ring itself never leaves this process.
+      meter: meterRead(),
+      // AND WHAT IT IS CURRENTLY ALLOWING. Grok: "starting cap is
+      // published, not a silent backstop." Published to the owner here,
+      // which is the party that has a channel for it today; publishing to
+      // members is the governor's announcement, capped at two minutes and
+      // not built. Partners are told on the reply, per the one-bus rule,
+      // and so need no announcement at all.
+      caps: { memberPerMin: MEMBER_PER_MIN, partnerPerMin: partnerPerMin() },
       // SWEPT BEFORE IT IS READ.
       //
       //   Andy: "anytime the UI askes for a list of pending invites, the
@@ -2709,6 +2970,10 @@ function createRelay(rootDir, deps) {
     streamClose: streamClose,
     streamRoster: streamRoster,
     presence: presentNow,
+    // WHAT THE RING MAY BE SHRUNK TO. Exposed so the governor has one
+    // place to ask rather than three constants to respect, and so a suite
+    // can check the floor without driving a box out of memory.
+    meterFloor: meterFloor,
     // Does anybody here hold this key or label? Answers a LABEL, never a
     // key and never a device key — the routing layer needs to know an
     // identity exists and what to call it, and nothing more. Everything
