@@ -225,6 +225,79 @@ the client's pre-check breaks (*"a cap the client pre-checks must be the
 cap"*). It is grouped with rate limits because it lives in the same
 sentence, which is a naming accident rather than a decision.
 
+### 10. It is `peerSearch` again: a module, with its observations injected
+
+> **Andy:** *"for testing purposes, we can reduce the ram-size and fake
+> other constraints on local test relays to test the adaptable rate and
+> limit management."*
+
+That requirement decides the shape, and it should be taken further than it
+sounds: **fake the observation, not the resource.**
+
+Really constraining a box tests V8's OOM behaviour. Injecting *"rss is at
+90% of your budget"* tests the governor. Only the second belongs in a suite
+— so the governor must never call `process.memoryUsage()`, `Date.now()` or
+a socket itself. It is handed what it is allowed to know:
+
+```
+govern({
+  budget:   { rssMax, bytesPerMinMax },   // what this relay believes it has
+  observed: { rss, routes, ring },        // the ring of {bytes, elapsed, latency}
+  now,                                    // injected clock
+})  ->  { perMemberBytes, perMemberRoutes, floorHeld, why }
+```
+
+The precedent is exact, and it is Andy's:
+
+> *"i want the graded search logic and that stuff isolated from relay or
+> other core components, since quality-of-result measurements etc. are up
+> in the air and we need to have this block separately tested and verified,
+> and give it an independent evolution path."*
+
+Every word of that is true of a rate governor, and for the same reason: what
+a good limit is will be wrong on the first try, and `relay.js` should hold
+no opinion about it. `relayStatus.report` already takes `proc` and `now` as
+options rather than reading them, so the pattern is in the neighbourhood
+already.
+
+**Why this matters more here than it did for search.** An adaptive limit has
+*history* — a ring, a decaying peak, a value committed until the next
+announcement. Against a live box those are untestable in practice: you
+cannot make a relay run out of RAM on demand, you cannot hold a link at 80%
+for ninety seconds, and every run differs. Against an injected clock and a
+handed-in ring they are ordinary assertions, and the edges become reachable:
+
+| assertion | what it catches |
+|---|---|
+| the floor holds as capacity → 0 | the starvation failure mode, including the packet that would report it |
+| plateau + rising latency lowers the published number | the ceiling is *discovered*, not merely tracked |
+| a quiet hour does not raise the ceiling | throughput mistaken for capacity |
+| the peak decays out of the window | yesterday's 03:00 figure applied at 21:00 |
+| a fresh relay starts conservative | no configuration, safe by default |
+| the value does **not** move between announcements | committed-until-superseded, which is the whole anti-flap property |
+| the refusal names the number | a page that waits instead of giving up |
+
+Every one of those is a pure function of injected inputs. None needs a
+socket, and none is flaky.
+
+**And the lab still has a job.** The in-process suite proves the policy; a
+lab relay handed a small *declared* budget proves the wiring — that the
+number reaches a member's stream and a partner's, that a client pre-checks
+against it, that a refusal carries it. `labMaster` already builds relays
+with their own homes, so "start this one believing it has 32 MB" is a field
+in the node record rather than a new mechanism.
+
+Two traps worth naming before anybody builds it:
+
+- **A governor that reads the world cannot be tested, and will therefore be
+  tested in its comfortable region only.** That is the failure this
+  recommendation exists to prevent: adaptive systems are easy to demonstrate
+  working and hard to demonstrate failing safely.
+- **A declared budget must never be readable as a real one.** If a lab
+  relay's fake 32 MB can reach production configuration, the floor becomes
+  lowerable by a setting — which is exactly what the carve-out below
+  forbids.
+
 ---
 
 ## The carve-out: the node's floor stays a constant
