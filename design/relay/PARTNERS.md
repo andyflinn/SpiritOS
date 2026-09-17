@@ -1358,6 +1358,50 @@ Granting reporting without routing is coherent. The reverse is not.
 
 ## Describe must reach as far as search (decided 2026-09-17)
 
+> ## Superseded the same day — read this first
+>
+> Two rulings landed after this section was written, and together they
+> withdraw its conclusion.
+>
+> **1. The peer must not cache its description on its relay.**
+>
+> > **Andy:** *"the peer must NOT cache its description on its bound relay.
+> > The peerPost()-based obtaining of the description is the realest proof
+> > of reachability."*
+>
+> That catches a contradiction inside tier three, which wanted the
+> description to be available **while the peer is asleep** *and* wanted
+> *"procuring a description on selection proves the route a post will
+> take."* One fetch cannot do both. A cached description answers for a peer
+> who is dead, which is worse than no answer: it is a false one.
+>
+> **So the register is withdrawn.** `describe` stays a `peerPost` to the
+> peer's own node, it may fail, and the failure is information — it is the
+> only liveness test taken on the route a message would actually use.
+>
+> **2. And nothing depends on it.**
+>
+> > **Andy:** *"acquisition doesn't require descriptions. Descriptions only
+> > give better information prior to the acquisition-decision."*
+>
+> This is what makes the first ruling cheap rather than a sacrifice.
+> Acquisition reads the **public census** of the relay named on the row —
+> proven live, both directions, 2026-09-17 — and never asks the peer
+> anything. So a description that is sometimes unavailable blocks nothing.
+> It is advice before a decision, not a precondition of it.
+>
+> **What that leaves:** `describe` does not reach as far as search, and
+> will not until forwarding exists. That is now an accepted gap rather than
+> a problem to solve, because the thing it was wanted for — telling three
+> `john`s apart before adding one — degrades to the key ending, which
+> `contactsNameCell` already shows.
+>
+> **What the UI must therefore not do** is imply the add will fail. A card
+> that could not be fetched is *"they did not answer just now"*, beside a
+> row that is perfectly addable.
+
+
+
 > **Andy:** *"get description must have the same reach as search."*
 >
 > **Andy:** *"that way two separated peers can put each other into

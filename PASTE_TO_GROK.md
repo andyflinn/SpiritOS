@@ -42,8 +42,10 @@ Grok's verdict on this round has landed and Andy has ruled on it. Recorded in
 |---|---|
 | the vouching hole | trust A, one hop, the receiving node's acquire is the backstop. Optional cheap cert: the **member** signs `(memberKey, relayKey, minute)` on the forward — not a roster |
 | gate 3 (`routeReply`) | not a bug. Partner replies are stream-only; do not add `partnerIdentity` silently |
-| `describe` | **the register**, on the home row. Not the forward |
-| CAPACITY shape | **one governor, two meters**. Shed forwards → partnerships → claims. Inject observations |
+| `describe` | ~~the register~~ — **overruled by Andy.** No relay cache: a `peerPost` is the only real proof of reachability, and a cached description answers for a peer who is dead. Nothing depends on it — acquisition reads the public census and never asks the peer |
+| CAPACITY shape | **one governor, two meters** — agreed, and Andy's RAM↔bandwidth trade is the argument for it. Inject observations |
+| shedding order | ~~forwards → partnerships → claims~~ — **overruled by Andy.** Performance before reach: shed lists, routes, rings and intervals first; then refuse NEW claims; **never** cancel a partnership automatically. Contradicted the already-decided *"memory pressure degrades performance, not connectivity"* |
+| gate 3 | agreed, **and the reason is stronger than "unless"**: *"request by post, reply by stream, in both directions"* is the protocol, so stream-only is adherence rather than an omission |
 | the interval | 30s, **lengthening under load**. Open: its maximum |
 | build order | **`routePost` first** — it is both the first gate and the first meter, on traffic that already exists |
 | the stranger floor | stays global; acquired peers are not on it; do not forward `describe` onto it |

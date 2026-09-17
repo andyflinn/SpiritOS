@@ -136,7 +136,47 @@ start.
    announcement it saved. *Open:* the maximum interval, and whether growth
    is tied to the same meters as the cap.
 
-7. **Rate management bootstraps on delivery that already exists.**
+7. **Shedding degrades performance, never reach. Andy overrules Grok.**
+
+   > **Grok:** *"shed forwards → partnerships → claims."*
+   >
+   > **Andy:** *"my relay's members are going to be most unhappy if their
+   > reach disappears (the relay's function fails). Reduction in
+   > performance before reduction in reach, so dropping partners early (or
+   > at all)—"*
+   >
+   > **Andy, ruling:** *"on shedding: i win. grok loses. that's my
+   > decision."*
+
+   Partnerships are **reach**, and a ladder that sheds them second trades
+   the thing members would notice for the thing they would not. It also
+   contradicts a line already decided in PARTNERS.md:
+
+   > *"So **memory pressure degrades performance, not connectivity.** A
+   > relay that sheds every hint list it holds still routes everywhere it
+   > did; it is just slower and chattier while it does."*
+
+   That file already separates **dropping the hint list** (performance,
+   automatic, safe) from **cancelling the partnership** (reach, owner
+   input only) — three states: healthy, under pressure, cancelled. Grok's
+   ladder collapsed the two.
+
+   **The order, decided:**
+
+   1. every performance degradation first — hint lists shed, outstanding
+      routes per connection reduced toward the floor of 1, rings shrunk,
+      sample intervals lengthened, announcement interval lengthened;
+   2. then refuse **new** claims, which costs reach to people who do not
+      have it yet rather than to members who do;
+   3. **never** cancel a partnership automatically. Owner input only, or a
+      partner long rank-zero and listless enough that the flag is a
+      fiction — which is the existing rule and stays.
+
+   This is decision 0007 read plainly: a relay earns its keep by keeping
+   reach, and one that quietly narrows the world is failing at the only
+   thing its members would notice.
+
+8. **Rate management bootstraps on delivery that already exists.**
 
    > **Andy:** *"we already have packet delivery, that should be the
    > bootstrap for rate-management, there we get first measurements."*
