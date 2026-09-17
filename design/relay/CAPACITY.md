@@ -108,6 +108,60 @@ start.
 
    **It also deletes a verb.** See decided item 10.
 
+0b. **Every box rations every post it is asked to carry — partners
+    included — and rationing lives where the members are.**
+
+    > **Andy:** *"A doesn't need a per-member budget to talk to B. The
+    > Governor governs that part to satisfy the prime objective: get the
+    > job done. The rationing on the N1 and N2 side happens so that
+    > A ↔ B can function as reliably as possible for the things demanded
+    > by N1 and N2."*
+    >
+    > **Andy:** *"For A and B the rationing must happen for POSTs, even
+    > posts from partners — that's throttling demand from any side to
+    > accomplish the prime objective. The other partner will do the
+    > same."*
+
+    ```
+    N1 ──post──▶ A        A rations N1, every member, and every partner
+    A  ──post──▶ B        B rations A — same bucket, same rule, no branch
+    B  ──post──▶ N2       N2's front door decides
+    ```
+
+    **A rations A's members; B rations B's members; A↔B is a link the
+    Governor keeps healthy**, not a place where per-member fairness is
+    adjudicated. Symmetric, and there is exactly one rule to get wrong.
+
+    **THE PRIME OBJECTIVE INVERTS THE USUAL READING OF A RATE LIMIT.** The
+    Governor exists to get the job done; rationing serves reliability
+    rather than being a goal of its own. A limit that made the link less
+    able to carry what N1 and N2 actually want would be failing at the
+    thing it is for.
+
+    ### What this retires
+
+    - **Per-member metering across a partnership — dropped.** B never needs
+      to know which member of A originated a packet, because A limited them
+      before forwarding. The disclosure this would have cost (*"member M of
+      A wants to know about sonny"* rather than *"A does"*) is not paid,
+      and the question does not need asking.
+    - **And an objection this author raised is withdrawn.** It said B being
+      able to throttle only A *wholesale* was collective punishment — one
+      bad member of A degrading everyone at A, a reach reduction by the
+      back door. That assumed A was not rationing. With rationing at both
+      ends, a flood arriving at B means **A failed to ration**, so
+      throttling A is correct rather than blunt: the fault is A's, not A's
+      members'.
+    - **The cheap cert loses its last job.** Its remaining purpose was
+      per-member accountability at B; with B metering A as a sender, there
+      is nothing left for it to enable. See the note in PARTNERS.md.
+
+    *Already true in the branch:* `who` is `deviceIdentity(fromToken) ||
+    partnerIdentity(fromToken)` and the gate keys on `who.id`, so a
+    partner's posts land in the same bucket by the same rule with no
+    branch — which is decided item 0c (one bus) enforced rather than
+    documented.
+
 1. **A rate limit is not a constant.**
 
    > *"fixing a limit as a constant seems… not very modern."*

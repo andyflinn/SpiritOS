@@ -1263,6 +1263,35 @@ that signature, which had never been said outright:
   blast radius stays where it was put — one hop, bounded by the receiving
   node's own decision to acquire — and that was accepted as sufficient.
 
+  > **Its job has since been eliminated — 2026-09-17, later the same day.**
+  > Two of Andy's rulings removed it between them, and this is recorded
+  > rather than deleted because Grok proposed it in good faith against the
+  > picture we had given him.
+  >
+  > **First, tunnelling.** Andy: *"in the exact same way that the node
+  > wraps the untouched request from its client… that's the exact same way
+  > A wraps the whole kaboodle posted by the requesting node, with its own
+  > sig, and posts that to B, who unwraps the outer wrapper and forwards it
+  > to N2. A tunnels N1's request to B through an outer layer of the
+  > protocol."* If the inner packet travels intact, **the inner signature
+  > already proves N1 authored it** and **A's outer signature already
+  > proves a trusted partner relayed it**. The cert was left proving only
+  > "N1 is A's member" — which, being self-signed, it cannot do: a
+  > non-member can assert the same thing, and only A's agreement makes it
+  > true. A asserted that by forwarding.
+  >
+  > **Second, where rationing lives.** Andy: *"for A and B the rationing
+  > must happen for POSTs, even posts from partners… the other partner
+  > will do the same."* The cert's last remaining use was per-member
+  > accountability at B. With **B metering A as a sender**, B never needs
+  > to know which member of A originated a packet — A limited them before
+  > forwarding — so there is nothing left for the cert to enable.
+  >
+  > What survives is one small efficiency: B could refuse a forward early
+  > rather than spending N2's attention on something its front door will
+  > hold. That is not what the cert was proposed for, and is not worth a
+  > new signature format on its own.
+
   **Not implemented, and easy to think it is.** Checked 2026-09-17. The
   relay-to-relay hop today carries `askPartner(url, relayKey, text)` →
   peerPost's post, signed by **the relay as itself** over (A, B, text)
