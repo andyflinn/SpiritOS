@@ -638,37 +638,42 @@ function aRowOpensTheMailbox() {
   });
 }
 
-// ── THE RELAY NAMES THE KEY, SO NOTHING HAS TO REMEMBER A LABEL ──────
+// ── ADDING THE PERSON MOVED TO THE NODE, AND SO DID THIS TEST ────────
 //
-// THIS TEST DROVE minted.json, and its subject is deleted. Natter kept a
-// list of invite labels this browser had issued, watched the owner
-// census for a peer whose PUBLIC label matched one, and acquired them.
+// The subject survives twice over now: an owner who invited somebody ends
+// up connected to them. This app used to do it — watch the owner's claim
+// events, post `peer.acquire` by key — and that was itself a rewrite of
+// an older version that matched invite LABELS against the census.
 //
-// It was wrong three ways, and only the first was ever written down:
-// a claimant picks their public label freely since R1, so the label they
-// wear is not the label on the invite; it only ran while Natter was open
-// because it rode on the probe; and it only knew what THIS browser had
-// minted.
+// It has moved again, to hub.syncMembers, and the new home fixes the one
+// thing neither browser version could: **it does not need a browser**.
+// The acquire here only ran while somebody had Natter open, so an owner
+// who was not looking missed the contact entirely.
 //
-//   Andy: "there are events that the owner node should be notified of,
-//   no matter if natter is probing."
-//   Andy: "any search for enrollment row or peers or anything is really
-//   search-key-by-public-label"
+// ── AND THE RULE CHANGED WITH THE HOME, DELIBERATELY ─────────────────
 //
-// The relay has always told its owner, live, by KEY — `claim` carries
-// `key` and `invite` (decision 0010, "What the owner is told"). So the
-// guessing is gone and what is asserted here is the thing that replaced
-// it. Rewritten rather than deleted: the SUBJECT survives — an owner who
-// invited somebody ends up connected to them — only the mechanism moved.
+// This app acquired only where an INVITE was consumed, and asserted the
+// negative: "a claim that consumed no invite adds nobody". That is no
+// longer true and is not meant to be —
+//
+//   Andy: "when someone binds to a peer i own, it's because i want them
+//   in my network, so i want a contact auto-generated."
+//
+// Binding is binding. The node adopts every member of a relay this node
+// owns, invite or not, and relayOwnerContacts.js is where that is
+// asserted now.
+//
+// What is left here is the half that belongs to THIS app: it must no
+// longer acquire, or the same row would be written twice at two ranks.
 function anInviteRedeemedAddsThemHere() {
+  test.subHeading('Natter no longer adds the person — the node does');
+
   const app = mountApp({
     label: 'andy',
     rows: [{ url: OWNED, label: 'spirit', owned: true }],
   });
 
   return settle().then(function () {
-    // No probe, no dialog, nothing on screen: the point is that none of
-    // that is required any more.
     app.relayEvent({
       kind: 'claim', relay: OWNED, key: 'KEY-SAINT', invite: 'saint',
       label: 'whatever-they-called-themselves', owner: false,
@@ -676,31 +681,21 @@ function anInviteRedeemedAddsThemHere() {
 
     return settle().then(function () {
       const added = app.log.filter(function (c) { return c.verb === 'peer.acquire'; });
-      const body = added.length ? JSON.parse(added[0].body) : null;
-
-      // BY KEY. The label they wear is deliberately nothing like the
-      // invite here — that mismatch is exactly what the old label match
-      // could not survive.
-      if (body && body.publicKey === 'KEY-SAINT' && body.via === 'invite') {
-        test.check('a redeemed invite adds them by KEY, whatever label they chose for themselves');
+      if (added.length === 0) {
+        test.check('a claim event no longer makes this app write a contact');
       } else {
-        test.fail('acquire body: ' + JSON.stringify(body));
+        test.fail('natter acquired anyway: ' + added[0].body);
       }
 
-      // A CLAIM WITH NO INVITE IS NOT SOMEBODY YOU ASKED FOR. The owner
-      // taking their own first seat, or an open box before it had an
-      // owner — neither is consent to put anyone in your address book.
-      const before = app.log.filter(function (c) { return c.verb === 'peer.acquire'; }).length;
-      app.relayEvent({ kind: 'claim', relay: OWNED, key: 'KEY-STRANGER', invite: '', owner: false });
-
-      return settle().then(function () {
-        const after = app.log.filter(function (c) { return c.verb === 'peer.acquire'; }).length;
-        if (after === before) {
-          test.check('and a claim that consumed no invite adds nobody');
-        } else {
-          test.fail('a claim with no invite was acquired anyway');
-        }
-      });
+      // A SECOND WRITER AT A LOWER RANK IS THE THING TO AVOID. The node
+      // files a member at rank `member`; this posted at rank `invite`,
+      // and ranks never fall — so the call could not have an effect and
+      // would only ever be a second thing to keep in step.
+      if (added.length === 0) {
+        test.check('so there is one writer of that row, at one rank');
+      } else {
+        test.fail('two writers: ' + JSON.stringify(added));
+      }
     });
   });
 }
@@ -778,53 +773,25 @@ function anUnnamedRelayKeepsMyWordForIt() {
   });
 }
 
-// PER RELAY, WHICH WAS ANDY'S CORRECTION. I proposed node-wide, beside
-// the unknown-senders policy; he pointed out they answer different
-// questions — that one is about strangers and belongs to the node, this
-// one is about people YOU let onto THIS relay, and you can own two
-// relays for two purposes.
-function theAutoAddPolicyIsPerRelay() {
-  const app = mountApp({
-    label: 'andy',
-    relays: [{ label: 'spirit', url: OWNED, autoAdd: false }],
-    rows: [{ url: OWNED, label: 'spirit', owned: true }],
-  });
-
-  return settle().then(function () {
-    app.relayEvent({
-      kind: 'claim', relay: OWNED, key: 'KEY-SAINT', invite: 'saint', owner: false,
-    });
-
-    return settle().then(function () {
-      const added = app.log.filter(function (c) { return c.verb === 'peer.acquire'; });
-      if (added.length === 0) {
-        test.check('a relay whose policy says no adds nobody, however the invite went');
-      } else {
-        test.fail('acquired despite autoAdd:false — ' + added[0].body);
-      }
-
-      // ABSENT MEANS ON, so every relay enrolled before this setting
-      // existed behaves the way the person who wrote the invite expected.
-      const other = mountApp({
-        label: 'andy',
-        relays: [{ label: 'spirit', url: OWNED }],
-        rows: [{ url: OWNED, label: 'spirit', owned: true }],
-      });
-      return settle().then(function () {
-        other.relayEvent({
-          kind: 'claim', relay: OWNED, key: 'KEY-SAINT', invite: 'saint', owner: false,
-        });
-        return settle().then(function () {
-          if (other.log.filter(function (c) { return c.verb === 'peer.acquire'; }).length === 1) {
-            test.check('and a relay that has never been asked defaults to yes — the invite is the consent');
-          } else {
-            test.fail('a relay with no policy set did not add');
-          }
-        });
-      });
-    });
-  });
-}
+// ── THE AUTO-ADD POLICY WAS TESTED HERE, AND IT IS GONE ──────────────
+//
+//   Andy: "another panel, 'When somebody new joins' makes no sense
+//   anymore either. gotta go, too."
+//
+// It was per-relay, which was Andy's own correction at the time: that
+// setting answered "what do I do about people I let onto THIS relay",
+// and you can own two relays for two purposes.
+//
+// SUPERSEDED, not merely deleted. Everybody with a seat on a relay this
+// node OWNS is now a contact — from the node, on every probe and on every
+// claim (hub.reconcileMembers, hub.syncMembers, asserted in
+// relayOwnerContacts.js). These events only ever reach the owner of the
+// relay they happened on, so the set the policy gated is exactly the set
+// the node now adopts unconditionally.
+//
+// AND THE NEW PLACE IS BETTER for the reason this app could never fix:
+// the acquire here only ran while a browser was open on Natter, so an
+// owner who was not looking missed the contact entirely.
 
 // THIS TEST USED TO ASSERT THE OPPOSITE, and it was wrong from the day
 // R4 landed. It mounted a row with `claimed: true, claimedLabel:
@@ -1010,7 +977,7 @@ theAddButtonActuallyAdds()
   .then(anInviteRedeemedAddsThemHere)
   .then(aRelayNameBeatsTheListsOwnWord)
   .then(anUnnamedRelayKeepsMyWordForIt)
-  .then(theAutoAddPolicyIsPerRelay)
+  
   .then(aRenamedRowKeepsTheBinding)
   .then(halfOfflineDoesNotUnbind)
   .then(noRowForThisKeyDropsTheBinding)

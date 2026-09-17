@@ -140,7 +140,9 @@ function copyTarget(out) {
 // `'invites'` STOOD BESIDE `'invite'` and is gone with the panel: minting
 // and what has been minted are one bar now (Andy: "the two invite blocks
 // should be one single invite block").
-const OWNER_PANELS = ['relaylabel', 'invite', 'peers', 'partners', 'policy'];
+// `peers` and `policy` went with their panels (Andy: "i want that panel
+// gone"; "makes no sense anymore either. gotta go, too").
+const OWNER_PANELS = ['relaylabel', 'invite', 'partners'];
 
 // The group's own bar. It carries `.nd-group-fold` and deliberately NOT
 // `.nd-fold`, so the handler can tell a click on the group from a click
@@ -921,7 +923,10 @@ function theOwnerGroupFolds() {
 
     owner.openGroup();
     const open = owner.body().innerHTML;
-    if (/natter-mint/.test(open) && /natter-peers/.test(open) && /natter-policy/.test(open)) {
+    // `natter-peers` and `natter-policy` went with their panels. What is
+    // left in the group is what the group was always for: the things you
+    // do to the BOX — its name, its invites, its partners.
+    if (/natter-mint/.test(open) && /natter-relaylabel/.test(open) && /natter-partners/.test(open)) {
       test.check('and opening it brings all of them at once');
     } else {
       test.fail('group opened and did not draw its members');
@@ -994,145 +999,33 @@ function reachIsNotInTheOwnerFold() {
 //
 // `last seen` would be the better indicator and is deliberately not
 // asked for: it would make a relay write on every arrival, which is a
-// cost on the relay for a convenience on one screen.
-function theEnrolmentListDatesEachRow() {
-  test.subHeading('Two peers wearing one label are told apart by when they enrolled');
-
-  const owner = mountApp({
-    rows: [{
-      url: OWNED, label: 'spirit', status: 200, owned: true,
-      census: {
-        relayKey: 'RELAYKEY',
-        roster: [
-          { publicKey: 'KEY-OLD-JAZZ', publicLabel: 'jazz', claimedAt: '2026-03-02T00:00:00.000Z' },
-          { publicKey: 'KEY-NEW-JAZZ', publicLabel: 'jazz', claimedAt: '2026-09-14T00:00:00.000Z' },
-        ],
-      },
-    }],
-    relayStatus: { [OWNED]: { key: 'RELAYKEY' } },
-  });
-
-  return settle().then(function () {
-    const body = owner.open('peers').body().innerHTML;
-
-    if (/2026/.test(body)) {
-      test.check('every row says when that key enrolled');
-    } else {
-      test.fail('no enrolment date in the list: ' + body.slice(0, 300));
-    }
-
-    // BY KEY, WHICH IS THE WHOLE POINT. Two rows, one label, and every
-    // button carries the key — so pressing Remove on the stale jazz
-    // cannot take the live one.
-    if (/data-peer-key="KEY-OLD-JAZZ"/.test(body) && /data-peer-key="KEY-NEW-JAZZ"/.test(body)) {
-      test.check('and each carries its own key, so one jazz can be removed without the other');
-    } else {
-      test.fail('rows are not keyed: ' + body.slice(0, 300));
-    }
-
-    // The tail is shown for the same reason, because two dates can match
-    // and two keys cannot.
-    //
-    // AND ONLY HERE. The Key column is gone (Andy: "get rid of the keys
-    // column, that stuff has to go everywhere") — what is left is an
-    // ending on the label of a row that would otherwise be unreadable,
-    // which is the rule Contacts already landed on: say it where there is
-    // a decision to make, and nowhere else.
-    if (/…OLD-JAZZ/.test(body) || /…LD-JAZZ/.test(body)) {
-      test.check('with the key tail beside it, which no two rows can share');
-    } else {
-      test.fail('no key tail on the rows');
-    }
-
-    if (body.indexOf('<th>Key</th>') === -1) {
-      test.check('and no Key column, even on the table that needs an ending');
-    } else {
-      test.fail('the Key column is still here: ' + body.slice(0, 300));
-    }
-  });
-}
-
-// ── AND A LIST OF DISTINCT NAMES CARRIES NO KEY AT ALL ───────────────
+// ── THE ENROLMENT LIST WAS TESTED HERE, AND THE PANEL IS GONE ────────
 //
-//   Andy: "get rid of the keys column (that stuff has to go everywhere)."
+//   Andy: "i, as a user: want to deal in natter with relays, not people
+//   or nodes. that panel 'enrollment list', i would never use: when i
+//   deal with people i go to contacts. and contactsDetails will offer me
+//   all functionality i need that are related to a single contact."
 //
-// The check above proves the ending survives where it is load-bearing.
-// This one proves it is not everywhere else — which is the actual
-// request, and the half a test written around the ambiguous case would
-// never have noticed.
-function theEnrolmentListShowsNoKeys() {
-  test.subHeading('And an unambiguous list shows no key at all');
-
-  const owner = mountApp({
-    rows: [{
-      url: OWNED, label: 'spirit', status: 200, owned: true,
-      census: {
-        relayKey: 'RELAYKEY',
-        roster: [
-          { publicKey: 'KEY-BERT-XYZ', publicLabel: 'bert', claimedAt: '2026-03-02T00:00:00.000Z' },
-          { publicKey: 'KEY-CAROL-AB', publicLabel: 'carol', claimedAt: '2026-09-14T00:00:00.000Z' },
-        ],
-      },
-    }],
-    relayStatus: { [OWNED]: { key: 'RELAYKEY' } },
-  });
-
-  return settle().then(function () {
-    const body = owner.open('peers').body().innerHTML;
-
-    if (/bert/.test(body) && /carol/.test(body)) {
-      test.check('both rows are listed by name');
-    } else {
-      test.fail('rows: ' + body.slice(0, 300));
-    }
-
-    if (body.indexOf('nd-peer-tail') === -1) {
-      test.check('and neither carries a key ending, because neither needs one');
-    } else {
-      test.fail('a tail appeared on an unambiguous row: ' + body.slice(0, 400));
-    }
-
-    // THE BUTTONS STILL CARRY IT, which is what makes the column
-    // deletable rather than a loss: the key is what a press acts on, and
-    // it never had to be read off the screen to get there.
-    if (/data-peer-key="KEY-BERT-XYZ"/.test(body)) {
-      test.check('while every button still carries the whole key it acts on');
-    } else {
-      test.fail('rows are not keyed: ' + body.slice(0, 300));
-    }
-
-    // ── AND NO TABLE ON THIS SCREEN HAS ONE ─────────────────────────
-    //
-    //   Andy: "that stuff has to go everywhere."
-    //
-    // Three tables carried a Key column — the enrolment list, the people
-    // visible on partner relays, and the partner list itself. A check
-    // that renders one of them proves one of them; this is the whole
-    // screen at once, and it covers a table added next year that nobody
-    // thought to test.
-    //
-    // ASKED OF THE SOURCE, deliberately. Rendering every panel needs a
-    // fixture for every panel, which is a fixture to keep in step — and
-    // the thing being asserted is about the markup this file is willing
-    // to write, which the file itself answers.
-    const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-    if (src.indexOf('<th>Key</th>') === -1) {
-      test.check('and no table anywhere on this screen has a Key column');
-    } else {
-      test.fail('a Key column is still written somewhere in natterDetails.js');
-    }
-
-    // THE RULE LIVES IN ONE PLACE, which is what stops the next table
-    // from inventing a fourth answer. `nd-peer-tail` is written by
-    // ndTellApart and by nothing else.
-    const tails = src.split('class="nd-peer-tail"').length - 1;
-    if (tails === 1) {
-      test.check('and the ending is drawn by one function, not once per table');
-    } else {
-      test.fail(tails + ' places write a key tail — the rule has been copied');
-    }
-  });
-}
+// Two suites lived here and both were about telling PEOPLE apart — that
+// two rows wearing one label are dated differently, and that a list of
+// distinct names carries no key at all. Both are still true and both are
+// asserted where people are now looked at: spirit/test/contacts.js.
+//
+// The panel's own three buttons did not all survive the move:
+//
+//   ADD TO CONTACTS had become a falsehood. Every member of a relay this
+//     node owns is a contact already (hub.reconcileMembers), so it posted
+//     an acquire at rank `invite` for somebody filed at `member`, changed
+//     nothing, and reported "added".
+//   PARTNER filled the key field below it. That field still takes a
+//     pasted key; its placeholder no longer promises a row above.
+//   REMOVE evicted somebody. Contacts Details evicts as the first half of
+//     Forget (cdReleaseSeats, asserted in contactsDetails.js).
+//
+// WHAT IS GENUINELY GONE is evicting while KEEPING the contact — "off my
+// relay, still my friend". It has no control anywhere now. Written down
+// rather than discovered: if it is wanted, it is a button beside Forget
+// in contactsDetails, not a panel here.
 
 // ── THE PARTNER PANEL, AND THE TWO STEPS THAT ARE NOT ONE ────────────
 //
@@ -2208,8 +2101,6 @@ ownedMailbox()
   .then(aRefusedCheckPromotesNobody)
   .then(theOwnerGroupFolds)
   .then(reachIsNotInTheOwnerFold)
-  .then(theEnrolmentListDatesEachRow)
-  .then(theEnrolmentListShowsNoKeys)
   .then(anOwnerEventRefreshesTheScreen)
   .then(theClaimFormReadsInTheOrderYouAreTold)
   .then(thePublicLabelIsOptional)

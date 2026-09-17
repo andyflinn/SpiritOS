@@ -311,15 +311,18 @@ function natterOpenRelay(api, container, relays, url) {
     // handed one subject and never reads relays.json — the caption is
     // the list's to know, the same way canRemove was.
     relayLabel: natterRelayName(relays, url),
-    // This relay's answer to "add newcomers to my contacts". Handed in
-    // because relays.json is THIS app's file — the screen decides, and
-    // hands the decision back below.
-    autoAdd: natterAutoAddFor(url),
+    // `autoAdd` WAS HANDED IN HERE and is gone with the panel that read
+    // it (Andy: "another panel, 'When somebody new joins' makes no sense
+    // anymore either. gotta go, too").
+    //
+    // It was superseded — every member of a relay this node owns becomes
+    // a contact on its own now (hub.reconcileMembers) — but it is worth
+    // recording that it had never done anything either: this app wrote
+    // the field and this app read it back, and no module in the node
+    // ever looked at it. No newcomer was ever added or not added because
+    // of that radio.
   }).then(function (result) {
     if (!result) return;
-    if (typeof result.autoAdd === 'boolean') {
-      natterSetAutoAdd(api, relays, url, result.autoAdd);
-    }
     // REMOVAL IS RETURNED, NOT DONE. relays.json is this app's file —
     // the screen's own api.fs is scoped to its folder — so the screen
     // says what it decided and this performs it, under the same guard
@@ -524,61 +527,26 @@ function natterPaintBind(api, relays) {
 // I proposed node-wide, beside the unknown-senders policy, on the
 // grounds that "what I do about people" should be answered once.
 //
-//   Andy: "maybe a policy for owned relays in natter detail, where the
-//   owner can select policy for newly bound peers."
+// ── THE POLICY THAT GATED THIS IS GONE, AND SO IS THE NEED FOR IT ────
 //
-// He is right and the distinction is real. unknown-senders answers "what
-// do I do about STRANGERS", which is a property of this node. This
-// answers "what do I do about people I let onto THIS relay" — and you
-// can own two relays for two purposes. A lab box you are testing on and
-// spirit-3 should not share an answer, and node-wide would have made
-// them.
+//   Andy: "another panel, 'When somebody new joins' makes no sense
+//   anymore either. gotta go, too."
 //
-// Kept in relays.json, on the relay's own row, because that file is
-// already the list of relays this node has an opinion about and this is
-// one more opinion about one of them.
+// `autoAdd` stood here — a per-relay switch for "add newcomers to my
+// contacts", argued for because a lab box and spirit-3 should not share
+// an answer. It gated the acquire below.
 //
-// DEFAULT ON, and it is the invite that says so: an owner who wrote
-// somebody an invite has already decided they want to be connected.
-// Absent reads as on, so every relay enrolled before this existed
-// behaves the way the person who invited them expected.
-// THE FIRST THING THAT WRITES relays.json SINCE THE ADD ROW. Nothing
-// else in this file persists the list — the remove panel that did went
-// on 2026-09-13 — so this is written out here rather than folded into a
-// saver that does not exist.
+// It is superseded rather than merely deleted: everybody with a seat on
+// a relay this node OWNS is now a contact, from the node, on every probe
+// and on every claim (hub.reconcileMembers, hub.syncMembers). And these
+// events only ever reach the owner of the relay they happened on — so
+// the set this gated is exactly the set the node now adopts
+// unconditionally.
 //
-// The row is edited in place and the whole array rewritten, because the
-// file IS the array. `autoAdd` is stored only when it is false: absent
-// means on, so a relay nobody has chosen for stays one byte lighter and
-// an older file needs no migration.
-function natterSetAutoAdd(api, relays, url, on) {
-  var changed = false;
-  (relays || []).forEach(function (row) {
-    if (!row || row.url !== url) return;
-    if (on) {
-      if (row.autoAdd === false) { delete row.autoAdd; changed = true; }
-    } else if (row.autoAdd !== false) {
-      row.autoAdd = false;
-      changed = true;
-    }
-  });
-  if (!changed) return Promise.resolve();
-  natterRelaysCache = relays;
-  // TRAILING NEWLINE KEPT: relays.json is a TRACKED file, and a write
-  // that dropped it would show as a diff on every lab run.
-  return Promise.resolve(
-    api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2) + '\n')
-  ).catch(function () { /* the screen already said what it chose */ });
-}
-
-function natterAutoAddFor(url) {
-  var rows = natterRelaysCache || [];
-  for (var i = 0; i < rows.length; i += 1) {
-    if (rows[i] && rows[i].url === url) return rows[i].autoAdd !== false;
-  }
-  return true;
-}
-
+// I TOLD ANDY THIS FIELD WAS DEAD BEFORE CHECKING ITS CALLERS, and it
+// was not: this function read it. The grep found the definition and not
+// the use, and the suite caught it. Recorded because the wrong half of
+// "it does nothing" is the half that deletes something that does.
 // The list as this app last read it, so an event arriving while nothing
 // is being painted can still be answered. natterOnClaim is called from a
 // subscription, not from a render.
@@ -593,9 +561,21 @@ function natterOnClaim(api, event) {
   // and hub.handleContact refuses it anyway — this saves the round trip
   // and the confusing refusal in the log.
   if (event.owner) return;
-  if (!natterAutoAddFor(event.relay)) return;
-  natterPost(api, 'peer.acquire', { publicKey: key, via: 'invite' })
-    .catch(function () {});
+
+  // ACQUIRING MOVED TO THE NODE. This posted `peer.acquire` for the
+  // newcomer, and it could only work while a browser was open on this
+  // app — an owner who was not looking missed the contact entirely.
+  //
+  // hub.syncMembers does it now: on the claim event as it arrives at the
+  // node, and again on every probe for anybody the first pass missed.
+  // Leaving this in would be a second writer of the same row at a lower
+  // rank (`invite` under `member`), which changes nothing because ranks
+  // never fall — a call that cannot have an effect.
+  //
+  // The function stays because the guards above are still worth having
+  // for whatever a claim event is used for next, and because an empty
+  // subscription is a thing somebody deletes without noticing the
+  // subscription went with it.
 }
 
 // Read once, on mount. A file from before 2026-09-15 has a label and no
