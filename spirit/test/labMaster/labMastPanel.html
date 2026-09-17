@@ -121,7 +121,11 @@
       if (!armedDelete || armedEvent === ev) return;
       armedDelete = '';
       armedEvent = null;
-      refresh();
+      // REPAINTED HERE AND NOW, from what is already on screen. Calling
+      // refresh() alone would leave the button hot until a fetch came
+      // back — and not at all if the network were down, which is exactly
+      // when somebody is clicking around wondering what is wrong.
+      render(lastRows);
     }, false);
 
     var statusEl = document.getElementById('status');
@@ -140,6 +144,14 @@
     }
 
     function render(nodes) {
+      // WHAT IS ON SCREEN, remembered by the thing that put it there.
+      //
+      // `lastRows` was set by refresh() alone, and arming Delete
+      // repaints from it — so a press before the first poll answered, or
+      // after one failed, would have redrawn the table from an empty
+      // list and blanked it. Recording here means a repaint can always
+      // draw what is already there, whatever the network is doing.
+      if (nodes) lastRows = nodes;
       var tbody = document.getElementById('tbody');
       tbody.innerHTML = nodes.map(function (n) {
         // ── THREE BUTTONS, AND NO MORE ───────────────────────────────
@@ -161,7 +173,7 @@
         // START OR STOP, never both. A stopped node has one useful thing
         // to do to it and a running node has another; offering both makes
         // half the buttons on this screen no-ops at any moment.
-        var del = n.permanent
+        var actions = n.permanent
           ? ''
           : (n.running
             ? '<button data-act="stop" data-id="' + n.id + '" ' +
@@ -213,11 +225,14 @@
           // and answers for itself in the terminal.
           '<td><small>' + (n.commit || '\u2014') + '</small></td>' +
           '<td><small>' + n.home + '</small></td>' +
-          '<td class="row-actions">' +
-            '<button data-act="start" data-id="' + n.id + '">Start</button>' +
-            '<button data-act="stop" data-id="' + n.id + '">Stop</button>' +
-            del +
-          '</td></tr>';
+          // A HARDCODED Start AND Stop STOOD HERE, beside the pair that
+          // `actions` builds — so a row drew five buttons: Start, Stop,
+          // and then the toggle, Update and Delete (Andy: "whoops! my
+          // avatars have 5 buttons now").
+          //
+          // Everything a row offers is built in one place now, which is
+          // what makes "three buttons" a thing that can be counted.
+          '<td class="row-actions">' + actions + '</td></tr>';
       }).join('');
     }
 
@@ -226,15 +241,14 @@
     // delays one cell instead of the whole table.
     var links = {};
 
-    // The last answer, so arming Delete can repaint the table without a
-    // round trip — and so the three-second poll and a button press draw
-    // from the same thing.
+    // The last thing drawn, so arming Delete can repaint without a round
+    // trip — and so the three-second poll and a button press draw from
+    // the same thing. Written by render(), not by the fetch: see there.
     var lastRows = [];
 
     function refresh() {
       return api('GET', '/api/nodes').then(function (r) {
         var rows = (r.body && r.body.nodes) || [];
-        lastRows = rows;
         render(rows);
         return api('GET', '/api/links').then(function (l) {
           links = (l.body && l.body.links) || {};
