@@ -1079,6 +1079,61 @@
   // still shows up immediately during that first mount, same as before)
   // and by switchTo on every later visit, since titleEl itself gets
   // wiped and reset to plain text on every navigation.
+  // ── AN ARMED BUTTON DISARMS THE MOMENT YOU LOOK AWAY ─────────────────
+  //
+  //   Andy: "on all are-you-sure type buttons, whenever i click anywhere
+  //   else on the screen (de-activate the button) the button must reset,
+  //   back to its original state, and the whole are-you-sure procedure
+  //   must be done from scratch. This is to prevent a user from seeing
+  //   the are-you-sure and then doing something else then accidentally
+  //   confirming that they are sure. this must be a hard rule for the
+  //   UI."
+  //
+  // The danger is specific and it is not the second press: it is the
+  // press AFTER the second press. A person arms Delete, gets distracted,
+  // does three other things, comes back, and the button under their
+  // finger is still the loaded one — so the confirmation they give is to
+  // a question they have forgotten being asked.
+  //
+  // IN THE SHELL BECAUSE IT IS A RULE, NOT A FEATURE. Eight controls
+  // across three apps had two-press confirms and each disarmed on its own
+  // terms, or did not; a rule implemented once per app is a rule that is
+  // true of the apps somebody remembered. New ones get this by asking for
+  // it in one line, and a suite checks that they do.
+  //
+  // ── WHY TWO LISTENERS ────────────────────────────────────────────────
+  //
+  // The obvious version disarms on any click and breaks immediately: the
+  // click that ARMS the button is itself a click, so the button would
+  // disarm in the same gesture that armed it.
+  //
+  // So the capture listener stamps which event is being processed, and
+  // the bubble listener — which runs after the app's own delegated
+  // handlers, because those are bound inside the container — disarms only
+  // if the armed state was not created during THIS event.
+  //
+  // The confirming press is safe for the same reason it is correct: the
+  // app's handler runs first and acts, and the disarm that follows is
+  // against a state the app has already cleared. Every disarm hook here
+  // is therefore required to be harmless when called twice.
+  var armedDisarm = null;
+  var armedEvent = null;
+  var currentClick = null;
+
+  function disarmElsewhere(ev) {
+    if (!armedDisarm) return;
+    if (armedEvent === ev) return;   // the click that armed it
+    var fn = armedDisarm;
+    armedDisarm = null;
+    armedEvent = null;
+    try { fn(); } catch (e) { /* a disarm must never break a click */ }
+  }
+
+  if (containerEl && containerEl.addEventListener) {
+    containerEl.addEventListener('click', function (ev) { currentClick = ev; }, true);
+    containerEl.addEventListener('click', function (ev) { disarmElsewhere(ev); }, false);
+  }
+
   // ── A MARK ON THE TITLE, WHICH IS NOT A LINK ─────────────────────────
   //
   //   Andy: "contact details, titlebar: if contact has slot on any of my
@@ -1365,6 +1420,31 @@
       // Called with no glyph to take it off — which a screen showing one
       // row must do when it opens on the next row, or the mark outlives
       // the thing it was about.
+      // WHAT A TWO-PRESS BUTTON OWES THE PERSON PRESSING IT.
+      //
+      //   Andy: "the whole are-you-sure procedure must be done from
+      //   scratch... this must be a hard rule for the UI."
+      //
+      // Called at the moment of arming, with whatever puts this screen
+      // back the way it was. The shell calls it on the next click
+      // anywhere in the window that is not the one now being handled —
+      // so a person who arms something and then does anything else finds
+      // the button cold when they come back.
+      //
+      // MUST BE HARMLESS TWICE. The confirming press runs the app's own
+      // handler first, which acts and clears its own flag; the disarm
+      // that follows is against a state that is already gone. Every
+      // caller here is a repaint from state, which is idempotent by
+      // construction.
+      //
+      // Arming a second control replaces the first, which is right: two
+      // loaded buttons on one screen is the same trap twice.
+      armUntilElsewhere: function (disarm) {
+        if (typeof disarm !== 'function') return;
+        armedDisarm = disarm;
+        armedEvent = currentClick;
+      },
+
       setScreenMark: function (glyph, hoverTitle) {
         app._titlebarMark = glyph ? { glyph: glyph, title: hoverTitle || '' } : null;
         if (activeAppId === app.id) renderTitlebarMark(app);

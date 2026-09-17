@@ -133,6 +133,7 @@ function mountDialog(options) {
   const closed = [];
   const marks = [];
   const order = [];
+  const disarms = [];
   const shellSpirit = {
     shell: {
       activateApp: function (b) { behavior = b; },
@@ -208,6 +209,17 @@ function mountDialog(options) {
     // setScreenTitle writes textContent and so wipes every child of the
     // bar, which means a mark set before it is gone by the time anybody
     // sees it. That is invisible in a stub unless the order is kept.
+    // ── WHAT THE SHELL DOES ON THE NEXT CLICK ELSEWHERE ─────────────
+    //
+    //   Andy: "whenever i click anywhere else on the screen the button
+    //   must reset... the whole are-you-sure procedure must be done from
+    //   scratch."
+    //
+    // Held rather than dropped, so a test can BE the click elsewhere —
+    // the shell's own half (which event, which phase) is asserted in
+    // armedButtons.js; this is the half that proves the screen actually
+    // goes back.
+    armUntilElsewhere: function (fn) { disarms.push(fn); },
     setScreenMark: function (glyph, markTitle) {
       marks.push({ glyph: glyph || '', title: markTitle || '' });
       order.push('mark');
@@ -232,6 +244,12 @@ function mountDialog(options) {
     closed: closed,
     marks: marks,
     order: order,
+    // Somebody clicking anything else in the window.
+    clickElsewhere: function () {
+      const fn = disarms[disarms.length - 1];
+      if (fn) fn();
+    },
+    armedHooks: function () { return disarms.length; },
     result: function () { return dialogResult; },
   };
 }
@@ -643,6 +661,120 @@ function writesNothingDown() {
   } else {
     test.fail('this dialog sends');
   }
+}
+
+// ── AND AN ARMED BUTTON GOES COLD IF YOU LOOK AWAY ───────────────────
+//
+//   Andy: "on all are-you-sure type buttons, whenever i click anywhere
+//   else on the screen the button must reset, back to its original state,
+//   and the whole are-you-sure procedure must be done from scratch. This
+//   is to prevent a user from seeing the are-you-sure and then doing
+//   something else then accidentally confirming that they are sure."
+//
+// armedButtons.js asserts the shell's half — which event, which phase,
+// and that every app asks for it. This is the half that proves the SCREEN
+// goes back, and that the next press starts the question again rather
+// than answering it.
+function anArmedButtonResetsWhenAttentionMoves() {
+  test.subHeading('An armed button goes cold when you click anything else');
+
+  const app = mountDialog({
+    key: 'KEY-SONNY',
+    people: [{
+      publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
+      caption: 'sonny', myLabel: '', acquiredVia: 'handle',
+      memberOf: [], missingSince: '',
+      held: false, blocked: false, onRelay: true, bytesHeld: 0,
+    }],
+  });
+
+  return settle().then(function () {
+    el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+
+    return settle().then(function () {
+      if (/Forget — press again/.test(el(app, 'cd-body').innerHTML)) {
+        test.check('the first press arms it');
+      } else {
+        test.fail('not armed: ' + el(app, 'cd-body').innerHTML.slice(0, 200));
+      }
+
+      if (app.armedHooks() === 1) {
+        test.check('and the shell is told to reset it on the next click elsewhere');
+      } else {
+        test.fail('no disarm registered');
+      }
+
+      // ── SOMEBODY CLICKS SOMETHING ELSE ────────────────────────────
+      app.clickElsewhere();
+
+      return settle().then(function () {
+        const cold = el(app, 'cd-body').innerHTML;
+        if (/>Forget</.test(cold) && !/press again/.test(cold)) {
+          test.check('and it is back to plain Forget, with nothing said');
+        } else {
+          test.fail('still armed: ' + cold.slice(0, 200));
+        }
+
+        // ── THE WHOLE PROCEDURE FROM SCRATCH, which is the point ─────
+        //
+        // The danger was never the second press: it is the press AFTER
+        // it. Somebody arms Forget, is interrupted, comes back and
+        // presses — and if that press confirmed, they would have
+        // answered a question they had forgotten being asked.
+        el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+
+        return settle().then(settle).then(function () {
+          if (posted(app, 'contact.forget').length === 0) {
+            test.check('and the next press asks again rather than confirming');
+          } else {
+            test.fail('a press after disarming forgot somebody');
+          }
+
+          if (/press again/.test(el(app, 'cd-body').innerHTML)) {
+            test.check('it arms from scratch, exactly as the first time');
+          } else {
+            test.fail('did not re-arm: ' + el(app, 'cd-body').innerHTML.slice(0, 200));
+          }
+        });
+      });
+    });
+  });
+}
+
+// ── AND ARMING ONE DISARMS THE OTHER ─────────────────────────────────
+//
+// Two loaded buttons on one screen is the same trap twice, and this
+// screen has both Block and Forget. The shell keeps one armed control at
+// a time; the app clears both flags on either disarm, so the rule holds
+// whichever way round they are pressed.
+function armingOneDisarmsTheOther() {
+  test.subHeading('And two loaded buttons are never on screen at once');
+
+  const app = mountDialog({
+    key: 'KEY-SONNY',
+    people: [{
+      publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
+      caption: 'sonny', myLabel: '', acquiredVia: 'handle',
+      memberOf: [], missingSince: '',
+      held: false, blocked: false, onRelay: true, bytesHeld: 0,
+    }],
+  });
+
+  return settle().then(function () {
+    el(app, 'cd-body').fire('click', { target: button('cd-block') });
+    return settle().then(function () {
+      el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+      return settle().then(function () {
+        const out = el(app, 'cd-body').innerHTML;
+        const armedCount = (out.match(/press again/g) || []).length;
+        if (armedCount === 1 && /Forget — press again/.test(out)) {
+          test.check('arming Forget takes Block back to plain Block');
+        } else {
+          test.fail(armedCount + ' armed buttons: ' + out.slice(0, 300));
+        }
+      });
+    });
+  });
 }
 
 // ── THE PADLOCK, AND WHAT IT STANDS FOR ──────────────────────────────
@@ -1095,6 +1227,8 @@ readsTheRow()
   .then(aLockedContactIsMarkedAndExplained)
   .then(theMarkIsClearedForSomebodyElse)
   .then(function () { theMarkIsChromeSized(); })
+  .then(anArmedButtonResetsWhenAttentionMoves)
+  .then(armingOneDisarmsTheOther)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contactsDetails threw: ' + ((err && err.stack) || err));

@@ -209,6 +209,25 @@ So **a focus guard in a dialog is now a smell**: it is dead code, and worse, it 
 
 What the shell still cannot do for you: **`open()` must let go of the last subject's state.** It can promise the call; it cannot know what is stale inside. The example is a half-armed two-press Block — two presses have to mean two presses about the *same* person.
 
+### An armed button disarms the moment attention moves
+
+**A hard rule, and the shell enforces it** (Andy, 2026-09-17):
+
+> *"On all are-you-sure type buttons, whenever i click anywhere else on the screen (de-activate the button) the button must reset, back to its original state, and the whole are-you-sure procedure must be done from scratch. This is to prevent a user from seeing the are-you-sure and then doing something else then accidentally confirming that they are sure."*
+
+**The danger is not the second press — it is the press after it.** Somebody arms Delete, is interrupted, does three other things, comes back, and the button under their finger is still loaded. The confirmation they give is to a question they have forgotten being asked, and nothing on screen looks wrong at any point.
+
+`api.armUntilElsewhere(disarm)`, called at the moment of arming, with whatever puts the screen back. The shell calls it on the next click anywhere in the window that is not the one being handled.
+
+**Two things it asks of the caller:**
+
+- **The disarm must be harmless twice.** The confirming press runs the app's own handler first, which acts and clears its own flag; the disarm that follows is against a state that is already gone. A repaint from state is idempotent by construction and is what every caller uses.
+- **One loaded button at a time is the app's own job.** The shell cannot do this half: the click that arms the second button is precisely the click it is told to ignore, so the first button's disarm never fires. A screen with two confirms clears the other flag when it arms one.
+
+**Why it is in the shell and not in each app.** Eight controls across three apps had two-press confirms and each disarmed on its own terms or not at all. A rule implemented once per app is a rule that is true of the apps somebody remembered — and the failure is invisible, because an armed button that should have reset looks exactly like one that was just armed. `spirit/test/armedButtons.js` finds every app that arms anything and fails if it does not ask.
+
+That suite also checks the **handle** each app guards on actually exists. A silent `if (someApi && someApi.armUntilElsewhere)` on a name the file never had passes a naive grep and does nothing at run time — which happened while this was being written.
+
 ### Opening one fold closes its siblings
 
 **One panel open at a time.** This is already the house rule for every row expander — Apps, Groups, Jobs, Natter's relay rows and Contacts' own rows all say *"opening one closes any other"* — and folds now say it too. It is the same argument as the spacing above: a portrait screen has one screenful, and a fold left open behind you is chrome you are not using (§1).

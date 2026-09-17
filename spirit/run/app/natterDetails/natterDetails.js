@@ -1113,6 +1113,7 @@ function ndPeerDrop(button) {
 
   if (button.getAttribute('data-armed') !== 'yes') {
     button.setAttribute('data-armed', 'yes');
+    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
     button.textContent = 'Really remove?';
     out.className = 'job-manifest-note nd-peer-out';
     out.textContent = 'this takes their seat and any invite they hold. Press again.';
@@ -1528,6 +1529,7 @@ function ndPartnerDrop(button) {
 
   if (button.getAttribute('data-armed') !== 'yes') {
     button.setAttribute('data-armed', 'yes');
+    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
     button.textContent = 'Really break?';
     out.className = 'job-manifest-note nd-partner-out';
     out.textContent = 'they keep their seat here; only the partnership ends. Press again.';
@@ -1803,6 +1805,22 @@ function ndSetTitle() {
   ndApi.setScreenTitle(name ? 'Relay Details for ' + name : 'Relay Details');
 }
 
+// ── PUTTING EVERY ARMED BUTTON BACK ──────────────────────────────────
+//
+//   Andy: "whenever i click anywhere else on the screen the button must
+//   reset, back to its original state, and the whole are-you-sure
+//   procedure must be done from scratch."
+//
+// This screen arms in the DOM — `data-armed` plus a changed label — so
+// the disarm is simply a repaint: ndRender rebuilds every panel from
+// state, and `data-armed` is not state. Four buttons, one answer.
+//
+// HARMLESS TWICE, which the shell requires of a disarm hook: a repaint of
+// a screen that is already right paints the same thing.
+function ndDisarm() {
+  ndRender();
+}
+
 function ndRender() {
   var body = ndBody();
   if (!body) return;
@@ -1993,6 +2011,7 @@ function ndRevoke(button) {
   // happened, so it is worth a second of thought.
   if (button.getAttribute('data-armed') !== label) {
     button.setAttribute('data-armed', label);
+    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
     button.textContent = 'Revoke ' + label + '?';
     return;
   }
@@ -2126,6 +2145,7 @@ function ndDeviceRotate(button) {
 
   if (button.getAttribute('data-armed') !== 'yes') {
     button.setAttribute('data-armed', 'yes');
+    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
     button.textContent = 'Replace the password?';
     out.textContent = 'the word now on this screen stops working';
     return Promise.resolve();

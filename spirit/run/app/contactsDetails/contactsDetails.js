@@ -180,6 +180,26 @@ function cdLockedFold() {
     '</details>';
 }
 
+// ── PUTTING THE SCREEN BACK ──────────────────────────────────────────
+//
+//   Andy: "whenever i click anywhere else on the screen the button must
+//   reset, back to its original state, and the whole are-you-sure
+//   procedure must be done from scratch."
+//
+// Handed to the shell at the moment either button arms. It calls this on
+// the next click anywhere that is not the one being handled — so an armed
+// Block or Forget cannot survive a person's attention moving.
+//
+// HARMLESS TWICE, which the shell requires: the confirming press runs the
+// handler first, which clears the flag itself, and this then repaints a
+// screen that is already right.
+function cdDisarm() {
+  if (!cdBlockArmed && !cdForgetArmed) return;
+  cdBlockArmed = false;
+  cdForgetArmed = false;
+  cdRender();
+}
+
 function cdRender() {
   var body = document.getElementById('cd-body');
   if (!body) return;
@@ -431,7 +451,18 @@ spirit.shell.activateApp({
       if (id === 'cd-accept') { cdBlockArmed = cdForgetArmed = false; cdPeerAction('accept'); return; }
       if (id === 'cd-unblock') { cdBlockArmed = cdForgetArmed = false; cdPeerAction('unblock'); return; }
       if (id === 'cd-forget') {
-        if (!cdForgetArmed) { cdForgetArmed = true; cdRender(); return; }
+        if (!cdForgetArmed) {
+          // ONE LOADED BUTTON AT A TIME. Two on a screen is the same
+          // trap twice, and the shell cannot do this part: the click
+          // that arms this one is the click it is told to ignore, so
+          // the other button's disarm never fires. The pairing is this
+          // screen's own knowledge.
+          cdBlockArmed = false;
+          cdForgetArmed = true;
+          if (cdApi.armUntilElsewhere) cdApi.armUntilElsewhere(cdDisarm);
+          cdRender();
+          return;
+        }
         cdForgetArmed = false;
         // THE SCREEN GOES WITH THE ROW. Every other action here repaints
         // the person; this one removed them, so there is nobody left to
@@ -454,7 +485,13 @@ spirit.shell.activateApp({
         // Two presses. Blocking is the one decision here that stops mail
         // arriving, and the button sits at the end of a row you may have
         // been tabbing along.
-        if (!cdBlockArmed) { cdBlockArmed = true; cdRender(); return; }
+        if (!cdBlockArmed) {
+          cdForgetArmed = false;   // see the note on Forget, above
+          cdBlockArmed = true;
+          if (cdApi.armUntilElsewhere) cdApi.armUntilElsewhere(cdDisarm);
+          cdRender();
+          return;
+        }
         cdBlockArmed = false;
         cdPeerAction('block');
       }

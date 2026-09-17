@@ -1029,6 +1029,23 @@ spirit.shell.activateApp({
         // First press arms and says so; second press is the refusal.
         if (blockArmed !== blockKey) {
           blockArmed = blockKey;
+          // ── AND IT DISARMS THE MOMENT ATTENTION MOVES ─────────────
+          //
+          //   Andy: "whenever i click anywhere else on the screen the
+          //   button must reset... the whole are-you-sure procedure must
+          //   be done from scratch."
+          //
+          // Repainting the strip is the whole of it: `blockArmed` is the
+          // only state that makes a button say "press again", so
+          // clearing it and repainting puts the screen back. Harmless
+          // twice, which the shell requires.
+          if (api.armUntilElsewhere) {
+            api.armUntilElsewhere(function () {
+              if (!blockArmed) return;
+              blockArmed = '';
+              paintPeerStrip();
+            });
+          }
           paintPeerStrip();
           return;
         }
