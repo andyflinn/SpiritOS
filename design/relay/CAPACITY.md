@@ -247,6 +247,80 @@ start.
     and a membership that lives on partner reach would fund a lot. Nothing
     decides the shape of that function yet.
 
+0d. **The label cache is a lever, not a policy — and it is the first thing shed.**
+
+    > **Andy:** *"if the relay caches label with public keys, it can also
+    > reduce search cost… and labels are less space than keys… (that's
+    > available shedding)."*
+    >
+    > **Andy:** *"the label allows to save expensive fan-outs in search.
+    > Governor is given a choice."*
+
+    A relay may hold `label → key` for peers its members have actually
+    searched for, and answer a later search from it instead of fanning out.
+    **Whether to do so is not a rule. It is a choice the Governor makes
+    against conditions it already measures.**
+
+    ### What the choice is between
+
+    | | costs | buys |
+    |---|---|---|
+    | **fan out** | bandwidth, **one unit in each partner's pool**, latency | completeness |
+    | **serve from cache** | RAM, and an answer that may miss somebody new | speed, and partner budget kept |
+
+    **The second column is the part that is easy to miss.** A fan-out
+    spends this relay's standing in every partner's pool (item 0b), so the
+    cache is not only a speed optimisation — **it is how a relay stops
+    spending its partners' patience.** Under partner-pool pressure the
+    Governor should lean on it harder; on a quiet box with responsive
+    partners it should fan out and stay fresh.
+
+    ### Why it is affordable
+
+    An entry is a label and a key — ~54 bytes against the ~460 of the hint
+    row that [0012](../decisions/0012-a-relay-never-asks-for-a-member-list.md)
+    deleted — so it buys roughly eight times the coverage per byte, and
+    covers only peers somebody actually looked for.
+
+    And the saving is larger than "one search" suggests: typing a name is
+    `j` → `jo` → `joh` → `john`, **four queries for one human act**, each
+    of which fans out today. Serving refinements from cache collapses that
+    to one.
+
+    ### The boundary it must stay behind
+
+    0012's amendment already drew it: **no stored term, and no verb that
+    fetches one.** So this cache is legitimate only while it is
+
+    - **populated from answers that arrived for a real query** — never
+      fetched in bulk, which is the thing 0012 deleted;
+    - **RAM only, never persisted** — a relay that reboots has forgotten
+      it, and is re-primed by use rather than by a disk (0013);
+    - **sheddable, with nothing depending on it** — which is what makes it
+      safe rather than merely small.
+
+    ### And it goes at the top of the shedding ladder
+
+    Ahead of everything in item 7, because losing it costs **only speed**:
+    a relay with no cache fans out, exactly as it does today. So the order
+    reads: **this cache first**, then hint lists and the other performance
+    degradations, then refuse new claims, and never a partnership.
+
+    ### Open
+
+    **Staleness has no signal.** A cached `label → key` cannot know about
+    somebody who joined a partner yesterday. Search is explicitly
+    *candidates, never an answer* (R1) and already says `more`, so a
+    partial result is within contract — but *"I searched and they were not
+    there"* is how a person concludes somebody is unreachable, and a silent
+    cache makes that conclusion wrong in a way they cannot see. Candidates:
+    fan out on the **first** query of a session and serve refinements from
+    cache, expire entries, or mark cached rows as such. Nothing decides it.
+
+    **And until the Governor exists, the choice is a constant** — the same
+    starting-declaration pattern as the rate limit in item 1, and it should
+    be written as one rather than arrived at.
+
 1. **A rate limit is not a constant.**
 
    > *"fixing a limit as a constant seems… not very modern."*
