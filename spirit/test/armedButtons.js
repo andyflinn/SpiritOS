@@ -154,4 +154,44 @@ if (ghosts.length === 0) {
   test.fail('dead disarm: ' + ghosts.join(', '));
 }
 
+// ── 4. AND AN ARMED BUTTON LOOKS ARMED ───────────────────────────────
+//
+//   Andy: "New password... should be protected by your are-you-sure
+//   mechanism. Thats the RED button!"
+//
+// It already was protected. What it did not do was look any different
+// from the button beside it, and the wording alone is the wrong channel
+// for this particular danger: the press that hurts is the one given
+// WITHOUT reading, by somebody who has come back to a screen and does not
+// remember arming anything. A colour is seen without being read.
+//
+// One rule in the shell, keyed on `data-armed` rather than on any button
+// in particular — so a control turns red by arming, and a control that
+// does not turn red is one that did not arm.
+test.subHeading('And an armed button is red without being read');
+
+const shellCss = fs.readFileSync(path.join(RUN_DIR, '..', 'run', 'index.html'), 'utf8');
+
+if (/button\[data-armed\][^{]*\{[^}]*background/.test(shellCss)) {
+  test.check('the shell paints any armed button, rather than each app painting its own');
+} else {
+  test.fail('nothing in index.html styles [data-armed] — the red is per-app or absent');
+}
+
+// THE ATTRIBUTE IS THE HOOK, so an app that keeps its arming in a
+// variable has to write it back out on the repaint or the rule above
+// never reaches it. That is exactly the gap this section was written
+// for: contactsDetails and relayChat armed correctly and silently.
+const unpainted = [];
+arming.forEach(function (name) {
+  const code = codeOf(path.join(APP_DIR, name, name + '.js'));
+  if (!/data-armed/.test(code)) unpainted.push(name);
+});
+
+if (unpainted.length === 0) {
+  test.check('and every app that arms marks it, so the rule reaches all of them');
+} else {
+  test.fail(unpainted.join(', ') + ' arm without data-armed — they arm invisibly');
+}
+
 test.reportSuccessFailureCount();

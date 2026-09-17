@@ -278,7 +278,12 @@ function cdRender() {
     if (cdPerson.held) {
       buttons += '<button type="button" class="cancel-btn" id="cd-accept">Accept</button>';
     }
-    buttons += '<button type="button" class="cancel-btn" id="cd-block">' +
+    // `data-armed` is what the shell's red is keyed on. This screen keeps
+    // the arming in a variable rather than on the element — it repaints
+    // after every decision, so an attribute set on a button would go with
+    // it — and the attribute is written back out on the way through.
+    buttons += '<button type="button" class="cancel-btn" id="cd-block"' +
+      (cdBlockArmed ? ' data-armed="yes"' : '') + '>' +
       (cdBlockArmed ? 'Block — press again' : 'Block') + '</button>';
   }
 
@@ -312,7 +317,8 @@ function cdRender() {
   // The relays are named. "Remove their seat" is not answerable without
   // knowing from where, and one person may be seated on several of mine.
   var seats = cdSeats();
-  buttons += '<button type="button" class="cancel-btn" id="cd-forget">' +
+  buttons += '<button type="button" class="cancel-btn" id="cd-forget"' +
+    (cdForgetArmed ? ' data-armed="yes"' : '') + '>' +
     (cdForgetArmed
       ? (seats.length
         ? 'Remove their seat on ' + cdEscapeHtml(cdSeatNames()) + ' and forget — press again'

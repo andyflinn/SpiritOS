@@ -535,6 +535,41 @@
 
       #app-content button:hover { background: #16487a; }
 
+      /* ── AN ARMED BUTTON IS RED ───────────────────────────────────
+           Andy: "New password... should be protected by your
+           are-you-sure mechanism. Thats the RED button!"
+
+         It already was protected — every are-you-sure button on every
+         screen arms, changes its wording and goes cold when attention
+         moves (UI_DESIGN_STYLE.md). What it did not do was LOOK
+         different, and a button that only says "press again" asks to be
+         read at the exact moment somebody is not reading: the danger is
+         never the second press, it is the press after it landing on a
+         control that is still loaded.
+
+         So the colour is the second channel. The same red as the dud
+         bubble in Contacts Details and a failed card in Find someone —
+         one red in this app, meaning "this is the thing that bites".
+
+         KEYED ON THE ARMING ITSELF, not on which button it is. Every
+         screen here already marks an armed control with data-armed
+         (labMaster, which is not a shell app, uses .armed) so there is
+         nothing to remember per button: arm it and it turns red, and a
+         control that skips the red is one that skipped the arming.
+
+         Inset box-shadow rather than a border, because #app-content
+         button sets border:none and a border here would change the
+         button's size the moment it armed — a control that grows under
+         a finger already on its way down. */
+      #app-content button[data-armed],
+      #app-content button.armed {
+        background: #7a2222;
+        box-shadow: inset 0 0 0 1px #ff8080;
+      }
+
+      #app-content button[data-armed]:hover,
+      #app-content button.armed:hover { background: #932a2a; }
+
       /* A native dropdown paints its popup with the control's OWN
          colours. A translucent background (rgba over a dark page) lands
          as near-white behind near-white text once the OS draws the list

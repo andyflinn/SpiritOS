@@ -837,8 +837,12 @@ spirit.shell.activateApp({
       // somebody else disarms rather than following the selection —
       // "press again" has to mean the person it was pressed about.
       var armed = blockArmed === key;
+      // `data-armed` is what the shell paints red. The strip is repainted
+      // on every decision, so the attribute is written out from the
+      // variable rather than set on a button that is about to be replaced.
       strip.innerHTML = '<button type="button" class="cancel-btn" data-rc-block="' +
-        api.escapeHtml(key) + '">' + (armed ? 'Press again to block' : 'Block here') + '</button>';
+        api.escapeHtml(key) + '"' + (armed ? ' data-armed="yes"' : '') + '>' +
+        (armed ? 'Press again to block' : 'Block here') + '</button>';
     }
 
     // The decision is over there — and this carries the subject with it.
