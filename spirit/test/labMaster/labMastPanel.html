@@ -188,11 +188,27 @@
         // NOTHING STOPS A NODE WITHOUT DELETING IT any more. That is the
         // cost of three buttons and it was asked for; the verb is still on
         // the server for labWorld, which stops nodes between suites.
+        //
+        // THE WORK NODE GETS THIS ONE AND ONLY THIS ONE. It is Andy's own
+        // checkout, so Update would fetch and hard-reset the tree he is
+        // writing in and Delete would take it off the disk — both refused
+        // on the server, and neither drawn here. But restarting it is the
+        // commonest thing he does to it, and every node-side fix needs a
+        // node restart to be true, so it had no business being a trip to
+        // the terminal.
+        //
+        // stopNode kills whatever holds the port, not just a child it
+        // spawned, so this works on a work node started from a terminal.
+        // After that its process belongs to labMaster — and labMaster's
+        // exit handler skips permanent nodes on purpose, so quitting the
+        // panel does not take the checkout down with it.
+        var restart = '<button data-act="restart" data-id="' + n.id + '" ' +
+          'title="Stop it if it is up, then start it on its port. ' +
+          'No fetch \\u2014 same code it is running now.">(Re)start</button>';
+
         var actions = n.permanent
-          ? ''
-          : '<button data-act="restart" data-id="' + n.id + '" ' +
-              'title="Stop it if it is up, then start it on its port. ' +
-              'No fetch — same code it is running now.">(Re)start</button>' +
+          ? restart
+          : restart +
             '<button data-act="refresh" data-id="' + n.id + '" ' +
               'title="git fetch + reset --hard origin/master, then start it. ' +
               'Same node, same key, same relay rows \u2014 git never had them.">' +

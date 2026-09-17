@@ -164,12 +164,21 @@ if (drawn.indexOf('data-act="recycle"') === -1) {
 
 // ── AND THE WORK NODE IS NOT A LAB NODE ──────────────────────────────
 //
-// It is Andy's checkout. Stopping it is one thing; updating or deleting
-// it would fetch and hard-reset the tree he is working in.
-if (buttonsIn(rowFor(drawn, 'work')).length === 0) {
-  test.check('the work node offers none of them — it is the checkout');
+//   Andy: "id like a (Re)start button for my work node as well."
+//
+// It is his checkout, so it gets the one button that cannot hurt it and
+// neither of the two that can: Update fetches and hard-resets the tree he
+// is writing in, Delete takes it off the disk. Both are refused on the
+// server as well — the panel not drawing them is the courtesy, not the
+// guard.
+//
+// Restarting it, though, is the commonest thing he does to it: every
+// node-side fix needs a node restart before it is true.
+const work = buttonsIn(rowFor(drawn, 'work'));
+if (work.length === 1 && work[0] === 'restart') {
+  test.check('the work node gets (Re)start and nothing else — it is the checkout');
 } else {
-  test.fail('work row: ' + buttonsIn(rowFor(drawn, 'work')).join(', '));
+  test.fail('work row: ' + work.join(', '));
 }
 
 // ── 2. THE COLUMN THAT WENT ──────────────────────────────────────────
