@@ -607,13 +607,32 @@ function contactsAskCard(key) {
 function contactsSaidCell(c) {
   var card = contactsCards[c.publicKey];
 
+  // STILL A BUBBLE, and the cell is only the box it sits in.
+  //
+  //   Andy: "hmmm the description text should still be in a bubble."
+  //
+  // What went was the row EXPANSION, not the bubble — those were one
+  // thing and never had to be. A sentence somebody wrote about themselves
+  // is a reading, and the shell has one ground for a reading inside
+  // something else (.stat-tile.nested, .fact-row): a lighter card on the
+  // card, rounded the same 10px. Bare text in a table cell reads as a
+  // fourth column of data, which is what this stopped being the moment it
+  // became a person's own words.
+  //
+  // EVERY STATE GETS ONE, waiting included. A bubble that appeared only
+  // when the answer landed would make every row jump a few hundred
+  // milliseconds after a search — which is exactly when somebody is
+  // reading them.
+
   if (card === 'asking') {
-    return '<td class="seen-said"><span class="muted">asking them\u2026</span></td>';
+    return '<td class="seen-said"><span class="said-bubble muted">asking them\u2026</span></td>';
   }
 
   if (card && card.why) {
-    return '<td class="seen-said is-error">' + contactsIcon.WARNING + ' ' +
-      contactsEscapeHtml('could not reach them \u2014 ' + card.why) + '</td>';
+    return '<td class="seen-said"><span class="said-bubble is-error">' +
+      contactsIcon.WARNING + ' ' +
+      contactsEscapeHtml('could not reach them \u2014 ' + card.why) +
+      '</span></td>';
   }
 
   if (card) {
@@ -621,10 +640,12 @@ function contactsSaidCell(c) {
     // line in the bubble. One line means one thing to read, and the
     // description is the thing — a node name that differs from the label
     // is a curiosity, not a reason to make every row two rows.
-    return '<td class="seen-said">' + (card.description
-      ? contactsEscapeHtml(card.description)
-      : '<span class="muted">they have not said anything about themselves</span>') +
-      '</td>';
+    return '<td class="seen-said"><span class="said-bubble' +
+      (card.description ? '' : ' muted') + '">' +
+      (card.description
+        ? contactsEscapeHtml(card.description)
+        : 'they have not said anything about themselves') +
+      '</span></td>';
   }
 
   // Nobody has been asked — which happens for a row painted before the

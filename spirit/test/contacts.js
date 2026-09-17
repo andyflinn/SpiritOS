@@ -1039,7 +1039,7 @@ function aFoundPersonCanBeAsked() {
       }
 
       if (out.indexOf('colspan') === -1) {
-        test.check('and no row spans the table, which is what a bubble had to do');
+        test.check('and no row spans the table, which is what the expansion had to do');
       } else {
         test.fail('a spanning row survived: ' + out);
       }
@@ -1061,6 +1061,21 @@ function aFoundPersonCanBeAsked() {
         test.check('one cell each, and exactly one of them marked as a failure');
       } else {
         test.fail(said.length + ' said cells, ' + failed.length + ' failures: ' + out);
+      }
+
+      // AND EACH IS A BUBBLE, not bare text in a cell.
+      //
+      //   Andy: "hmmm the description text should still be in a bubble."
+      //
+      // The row expansion went and the bubble came with it, which was one
+      // change too many — they were never the same thing. Asserted by
+      // name so the next tidy-up cannot quietly take it again: a sentence
+      // somebody wrote about themselves is a reading, and bare text in a
+      // table cell reads as a fourth column of data.
+      if (said.every(function (c) { return c.indexOf('said-bubble') !== -1; })) {
+        test.check('and each sits in a bubble rather than bare in the cell');
+      } else {
+        test.fail('a said cell has no bubble: ' + said.join(' | '));
       }
 
       if (failed[0] && failed[0].indexOf(spirit.core.const.ICON.WARNING) !== -1) {

@@ -836,13 +836,36 @@
          The cell is allowed to be the widest thing in the row — it is the
          only one holding a sentence — and wraps rather than pushing the
          table sideways. */
-      .seen-said { font-size: 13px; opacity: 0.85; }
+      /* THE CELL IS ONLY THE BOX; the bubble is the span inside it.
 
-      .seen-said.is-error {
+           Andy: "hmmm the description text should still be in a bubble."
+
+         What went was the row expansion — the colspan under each result —
+         not the bubble. Those were one thing and never had to be: a
+         sentence somebody wrote about themselves is a READING, and bare
+         text in a table cell reads as a fourth column of data.
+
+         Same card-inside-a-card ground .stat-tile.nested and .fact-row
+         use, and the same 10px roundness as the panel it all sits in. */
+      .seen-said { font-size: 13px; }
+
+      .seen-said .said-bubble {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.04);
+        padding: 4px 10px;
+        border-radius: 10px;
+      }
+
+      /* THE GROUND, NOT ONLY THE COLOUR. Everywhere else a refusal is red
+         TEXT (.job-start-error) and that works because it is the only
+         thing in its block. Here it is one bubble of prose among nine
+         other bubbles of prose, where colour alone reads as emphasis
+         rather than as a category — and somebody scanning ten rows is
+         asking which they can act on at all, which has to be answerable
+         without reading any of them. */
+      .seen-said .said-bubble.is-error {
         background: rgba(255, 128, 128, 0.14);
         color: #ff8080;
-        opacity: 1;
-        border-radius: 4px;
       }
 
       /* The choices are a block, and a block carries the gap above itself
