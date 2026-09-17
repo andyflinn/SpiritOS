@@ -932,6 +932,21 @@ it answers questions, and "what are you running" is the same shape as
 that policy would live. Recorded here so the next session knows the door
 was found, considered and left closed on purpose.
 
+> **The door was opened on 2026-09-17, and this corrects the paragraph
+> above.** `peerPost` now answers a card itself
+> ([peerPost.js:384](../../spirit/run/js/peerPost.js#L384)) — Andy:
+> *"this should be answered by the node straight away, before optionally
+> streaming the packet to shell."* It is answered ABOVE the front door:
+> signature and addressee are checked, `unknownPolicy` is not consulted,
+> and the packet is then dropped rather than filed, acquired, counted or
+> streamed.
+>
+> That is less of a reversal than it reads. The paragraph's fear was a
+> node that *answers questions* to strangers; admission is still the
+> relay's, so the set who can ask is unchanged — members of a relay
+> this node is on. What it does mean is that the tree now has a node-side
+> description path and no register, which is the reach problem below.
+
 ### Presence is volatile. Binding is not. (the gap, found 2026-09-16)
 
 > **Andy:** *"because the relay's caching of a peer ID being highly
@@ -1338,3 +1353,84 @@ Granting reporting without routing is coherent. The reverse is not.
 - **What the UI calls a peer it can find but not reach.** Green means
   "the relay that found them says they are connected", not "you can speak
   to them". Today one dot carries both readings.
+
+---
+
+## Describe must reach as far as search (decided 2026-09-17)
+
+> **Andy:** *"get description must have the same reach as search."*
+>
+> **Andy:** *"that way two separated peers can put each other into
+> contacts."*
+
+The second sentence is the requirement and the first is the mechanism.
+**Acquisition is the feature** — two people on different relays that
+partner can each end up with a usable contact row for the other — and a
+key with a label is not a usable row. What makes a row confirmable is the
+peer's own word about themselves.
+
+### The two reaches do not match, and cannot be made to by forwarding
+
+| | reach today |
+|---|---|
+| `search` | this relay's members **∪** every partner's members, awake or asleep |
+| `describe` | we share a relay **and** they are awake |
+
+`describe` is answered by the NODE (`peerPost.js:384`), so it inherits the
+routing gates *and* the peer's sleep schedule. Closing that difference by
+forwarding the packet would need all four gates above **and** the peer
+online — and the case it is wanted in most is precisely a peer who is not.
+
+### So it is tier three, not the forward
+
+The register answers it with no new gate:
+
+- the peer declares its description to its **home relay** at claim/rename,
+  the way it already declares a label;
+- the relay holds it **by contract** and publishes it — a register, not a
+  custodian, so 0006 is untouched (see *"public by contract"* above);
+- a node fetches it **by id** from whichever relay answered the search —
+  the same party, so the reach is identical by construction rather than by
+  a second mechanism kept in step;
+- and it answers **while the peer is asleep**, which is the whole reason
+  the description does not live on the node.
+
+The row stays closed: `{publicKey, publicLabel, claimedAt, owner,
+present}`, fetched-by-id afterwards, per the 32-slot budget.
+
+### What that gives, and what it does not
+
+**Gives:** jazz finds sonny through the partnership, reads his description
+from lab, confirms he is the sonny she means, and adds him. No shared
+relay, no gate change, nothing awake but the relay.
+
+**Does not give:** she still cannot POST to him. Acquisition and delivery
+are different surfaces, and only the first one lands here — so a contact
+acquired this way must be honest about it rather than showing a message
+box that will answer *"could not reach them"*. See the four gates above
+for what delivery needs.
+
+### The node-side path is not replaced
+
+Both exist, and they answer different askers:
+
+| asker | answered by | why |
+|---|---|---|
+| a peer who shares a relay with you | **your node** (`peerPost.js:384`) | live, authoritative, already built |
+| anyone else the register reaches | **the home relay** | always up; no stranger interrogates your node |
+
+The node path is also how the description is *declared* — `nodeCard` is
+where the text lives and where `ensureDescription` writes the first one.
+What tier three adds is publication, not authorship.
+
+### Open
+
+- **When does the relay learn it?** Claim and rename are the obvious
+  moments. Nothing yet says what happens when a node edits its description
+  and is on four relays — Info's *"one name, sent everywhere"*
+  (`app/info/info.js`) is the pattern that already exists for the label,
+  and a description should almost certainly ride the same gesture.
+- **Which relay's copy wins** when two disagree. The home relay is the
+  peer's own register; a partner's copy is hearsay held for a search. The
+  by-reference rule says fetch from the home relay and do not cache the
+  prose, which answers it — but it has never been written as a rule.
