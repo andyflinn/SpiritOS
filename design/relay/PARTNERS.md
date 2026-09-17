@@ -1262,6 +1262,40 @@ that signature, which had never been said outright:
   verification of it. A relay that forges a member can forge this too. The
   blast radius stays where it was put — one hop, bounded by the receiving
   node's own decision to acquire — and that was accepted as sufficient.
+
+  **Not implemented, and easy to think it is.** Checked 2026-09-17. The
+  relay-to-relay hop today carries `askPartner(url, relayKey, text)` →
+  peerPost's post, signed by **the relay as itself** over (A, B, text)
+  ([server.js:35](../../spirit/run/js/server.js#L35)). The member's identity
+  does not travel at all — correctly, because search is a question about
+  A's members in aggregate rather than a packet from one of them.
+
+  The **construction** does exist, one field short:
+
+  ```js
+  function streamMessage(key, atMs) {
+    var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+    return 'stream
+' + String(key || '') + '
+' + minute;
+  }
+  ```
+
+  Self-signed by the member, minute-scoped, with `streamSignatureOk`
+  already carrying the ±1 minute window and its reasoning. **The cert is
+  this plus the relay key** — and that field is load-bearing rather than
+  decorative:
+
+  `streamMessage` binds `(memberKey, minute)` and nothing else, so a
+  signature made for A is replayable at B as a claim of membership. Today
+  that is harmless, because it is presented **to** the relay that verifies
+  it against its own row — a replay proves only what that relay already
+  knew. **In a forward it inverts:** B verifies a signature made for A, and
+  with no relay key in the bytes one signature would assert membership of
+  every relay in the mesh.
+
+  So: one known-good primitive, one field short, and the missing field is
+  exactly the one the new use requires. Do not reuse `streamMessage` as-is.
 - **It is intrinsic, not an extra grant.** Vouching is what a partnership
   *consists of* while it holds — there is no second switch to throw at
   promotion time.
