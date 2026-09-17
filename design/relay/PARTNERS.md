@@ -1200,3 +1200,141 @@ as authority.
 - **The offline remainder.** If the home relay is unreachable, the fallback
   chain is: local note, then cached description, then key ending. Only the
   last exists today.
+
+---
+
+# Status at `9110393` — what is built, and the four gates that are not
+
+**This supersedes the header of this file** (*"Shape agreed 2026-09-15.
+Nothing here is built. Every claim checked at `02f4bd1`"*). Tier two is
+partly built. Every claim below was checked at `9110393` on 2026-09-17,
+and the live half was measured on Andy's own boxes rather than reasoned
+about.
+
+## The decision that governs all of it
+
+> **Andy, 2026-09-17:** *"it vouches for the fact that they are verified by
+> a trusted partner."*
+>
+> **Andy, 2026-09-17:** *"the partnership contract includes mutual
+> vouchery."*
+
+This is not a new rule. It is the file's own opening maxim — *"if you can
+verify a peer, and we can verify each other, then I can verify your
+peer"* — and the delivery path already written above: **A signs the
+forward with its own relay key; B verifies against the partner key it
+pinned at promotion.** What the two sentences settle is the *character* of
+that signature, which had never been said outright:
+
+- **The vouch is second-hand, and says so.** A relay does not assert
+  "this is my member". It asserts "this key was verified by a partner I
+  trust". A receiving node can tell the two apart instead of seeing an
+  unexplained valid signature from a stranger.
+- **It is intrinsic, not an extra grant.** Vouching is what a partnership
+  *consists of* while it holds — there is no second switch to throw at
+  promotion time.
+- **No rosters are copied.** The partner asserts per packet, so
+  [`partnerLink.js`](../../spirit/run/js/partnerLink.js) — *"a partner's
+  roster is not this relay's to hold, even in RAM, even briefly"* — stands
+  unchanged. The decision dissolves that conflict rather than overriding
+  it.
+- **A vouch cannot be re-vouched.** A relay vouches only for keys it
+  verified itself, so a vouch cannot survive a second hop. One hop stops
+  being a rule that must be policed and becomes one that cannot be broken.
+
+**"Mutual" is a steady state, not a promise.** It does not reopen *"a
+partnership is not a contract"* above: the two decisions remain unilateral
+and either side may drop the other without ceremony. What is mutual is
+that while the partnership holds, neither side vouches one-way.
+
+## What is built
+
+| built | where |
+|---|---|
+| partner promotion, with the reciprocity check | `relay.setPartner` |
+| partner **streams**, one each way, opened at boot and on promotion | `partnerLink.js` |
+| a partner resolving to an identity that may post and hold a stream | `relay.js` `partnerIdentity`, `streamOpen` |
+| **fanned search** — a member's query answered from this relay *and* its partners, merged and re-ranked here | `relay.js` ~2020, `peerSearch.merge` |
+| the one-hop stop, enforced rather than documented — `propagate = !fromPartner` | `relay.js` ~1727 |
+| `via` on a search row, so a node learns which partner supplied it | `hub.js` `buildPeople` |
+| `relay.js` still makes **no outbound request** — `askPartner` is injected by the node | `relay.js` `deps.askPartner` |
+
+**Search is the only thing that crosses a partnership today**, and that is
+exactly because a search is a question addressed *to the relay*, which is
+the one thing a partner is permitted to ask.
+
+## The four gates that are not
+
+A packet from a member of A to a member of B is refused in four places.
+Verified by reading, and the first two by measurement.
+
+| # | gate | file | what it does today |
+|---|---|---|---|
+| 1 | recipient lookup | `relay.js:2133` | `deviceIdentity(toToken)` — **own members only**; partners are never consulted → `404 no such peer` |
+| 2 | a partner may address only the box | `relay.js:2094` | `who.partner && !postedToSelf(toToken)` → `403`. Forwarding a member's packet to B's member is precisely what this forbids |
+| 3 | reply admission | `relay.js:2186` | `deviceIdentity(fromToken)` with **no `partnerIdentity` fallback** — an explicit asymmetry with `routePost:2087`, which has one |
+| 4 | route matching | `relay.js:2199` | `routes.answer(hash, who.id)` checks *the replier is the target*. The origin relay opened the route with a target it cannot resolve |
+
+Gates 1 and 2 are decided and documented. **Gate 3 reads accidental** —
+nothing says why the reply leg is narrower than the post leg. Gate 4 is
+the one the vouching decision actually answers: the origin relay matches
+against **the partner it pinned**, not against a member key it has no way
+to verify.
+
+Gate 3 may turn out not to matter: if a forward rides the partner
+*streams*, the reply comes back as a stream event
+(`partnerLink.onEvent → router.onReply`) and never touches `routeReply` —
+which is how a partner's search answer returns today.
+
+## Measured, not inferred (2026-09-17)
+
+Three live nodes. `jazz` is on `spirit` only; `sonny` is on `lab` only;
+`andy` is on both.
+
+```
+jazz  → sonny  peer.post describe:  HTTP 503  "that peer is not reachable right now"
+andy  → sonny  peer.post describe:  reached the relay
+```
+
+- **The refusal is a routing answer, not an admission one.** Jazz's
+  request dies inside *her own node* — `presence.relaysNaming(sonny)` is
+  empty, `hub.js:889` — and never reaches a wire. Gate 1 is waiting behind
+  it either way.
+- **Nobody rejects jazz.** `peerPost` answers `describe` above the front
+  door (`peerPost.js:384`, Andy: *"answered by the node straight away"*),
+  so sonny would have replied. He was never asked.
+- **The UI shows both truths one screen apart**, and they look like a
+  contradiction: sonny is **green in search** (the answering partner's
+  word, carried on the row) and **white in the contact list** (this node's
+  own table, which has no opinion) — beside *"could not reach them"*.
+  Both are honest; nothing says they are answers to different questions.
+
+## Two surfaces, and they can be granted separately
+
+Worth keeping apart when this is implemented, because they fail
+differently:
+
+- **Reporting** — letting a partner's member *ask* this relay things
+  (`search`, `partners`, a card). Small blast radius; the census is
+  already public. Today the classes are: **owner** (the full pushed report
+  — version, invites, connected count), **member** (`search`, `partners`,
+  the latter narrowed to url + relay key), **partner** (`search` only),
+  **stranger** (`/api/relay/who`, no presence).
+- **Routing** — letting them *post through* it. That is the four gates,
+  and it is what makes jazz able to reach sonny.
+
+Granting reporting without routing is coherent. The reverse is not.
+
+## Open, and unchanged by this
+
+- **How a vouch travels on the wire.** The delivery path says A co-signs
+  the forward. Nothing yet says what the receiving *node* sees, or whether
+  it is told "vouched by lab" at all — and the whole value of the
+  second-hand character is lost if the node cannot read it.
+- **Whether widening the member lever publishes the mesh.** `partners`
+  becomes reachable by a partner's member. `relay.js:1682` flags that as
+  its own decision: *"Publishing the mesh is a different decision and
+  nobody has taken it."*
+- **What the UI calls a peer it can find but not reach.** Green means
+  "the relay that found them says they are connected", not "you can speak
+  to them". Today one dot carries both readings.

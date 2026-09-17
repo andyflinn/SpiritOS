@@ -137,6 +137,12 @@ This directory contains the vision, principles, and architecture decisions for *
   a register rather than a custodian and so does not touch 0006, why the
   search row stays closed at key/label/present, and why procuring a
   description on selection proves the route a post will take.
+  **Status at 9110393 (2026-09-17)** supersedes the "nothing is built"
+  header: partner streams and fanned search are built, and the four gates
+  that still refuse a packet across a partnership are named with their
+  lines — plus Andy's ruling that a relay vouches only for *"the fact
+  that they are verified by a trusted partner"*, and that vouching is what
+  a partnership consists of rather than an extra grant.
 - [One object, three densities](shell/OBJECT-PRESENTATION.md) — the UI half of
   the same sitting. Dropdown, selector surface and tooltip as three densities
   of one object; label is what it calls itself, description is what you say
