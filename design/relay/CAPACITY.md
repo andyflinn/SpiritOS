@@ -299,6 +299,34 @@ start.
     - **sheddable, with nothing depending on it** — which is what makes it
       safe rather than merely small.
 
+    ### Shedding it is ranked, not wholesale
+
+    > **Andy:** *"another shedding factor: connected members and their
+    > frequently used routes. A prioritising point."*
+
+    **The ranking is free, and the record it looks like it needs is not
+    required.** Attributing routes to members — *"these are jazz's"* —
+    would be a per-member map of who wants to reach whom, which is the one
+    thing the meter is kept aggregate to avoid.
+
+    **Frequency already encodes it.** A disconnected member generates no
+    use, so a route's recent-use count *is* a measure of how much
+    currently-connected members want it. Nothing has to be named for the
+    ranking to work.
+
+    It is also the division this file's neighbour already uses for
+    partners, one level down:
+
+    ```
+    partner:  rank = forwards carried / rows held      (PARTNERS.md)
+    route:    rank = recent uses      / bytes held
+    ```
+
+    So the cache sheds **worst-rank-first** rather than all at once, and
+    *"the routes connected members use survive"* falls out rather than
+    being arranged. Two counters per entry — uses and when it was last
+    used — and neither says who.
+
     ### And it goes at the top of the shedding ladder
 
     Ahead of everything in item 7, because losing it costs **only speed**:
