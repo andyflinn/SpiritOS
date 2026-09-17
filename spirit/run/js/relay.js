@@ -1834,6 +1834,153 @@ function createRelay(rootDir, deps) {
   // asked by a peer and a verb nobody has heard of get the same answer,
   // so the set of things this box will do for somebody else is not
   // enumerable by asking.
+  // ── THE FORWARD'S HALF-FINISHED BUSINESS ─────────────────────────────
+  //
+  // inner hash -> the function that answers the PARTNER who asked. A
+  // forward cannot be answered when it arrives: this relay has to ask one
+  // of its members and wait. So the partner's answer is parked here and
+  // fired by `routeReply` when the member speaks.
+  //
+  // In RAM and keyed by a hash nobody chose — it is derived from the
+  // bytes — so it is not a record of anything. It empties as replies
+  // arrive, and a request whose member never answers is swept with its
+  // route by the router's own ttl.
+  var forwarding = Object.create(null);
+
+  // WHAT A PARTNER'S FORWARD ACTUALLY DOES HERE.
+  //
+  // Returns an answer object to send back at once, or `null` when the
+  // packet is on its way to a member and the partner must wait.
+  function forwardToMine(packet, answerPartner) {
+    var from = packet && packet.from;
+    var to = packet && packet.to;
+    var body = packet && packet.text;
+    var sig = packet && packet.sig;
+    if (!from || !to || typeof body !== 'string' || !body || !sig) {
+      return { ok: false, status: 400, error: 'forward needs from, to, text and sig' };
+    }
+    if (body.length > MAX_ROUTED_TEXT) {
+      return { ok: false, status: 413, error: 'too big' };
+    }
+
+    // THE INNER SIGNATURE, VERIFIED HERE AND NOT TAKEN ON TRUST. The
+    // partner vouches by carrying it; this proves the sender it names
+    // actually signed these bytes, so a partner cannot put words in a
+    // real peer's mouth even if it wanted to.
+    var signed = auth.postSignatureFor(from, from, to, body, sig);
+    if (!signed) return { ok: false, status: 403, error: 'bad inner signature' };
+
+    // MY MEMBER, OR NOBODY. A forward is never re-forwarded: if this key
+    // is not on this box, the hunt ends here rather than going another
+    // hop. That is the one-hop rule as an absence of code.
+    var target = deviceIdentity(to);
+    if (!target) return { ok: false, status: 404, error: 'no such peer' };
+    if (!presentNow.isPresent(target.id)) {
+      return { ok: false, status: 503, error: 'peer not reachable' };
+    }
+
+    // THE HASH IS THE INNER ONE, derived from the bytes exactly as N1 and
+    // N2 each derive it (0011). Nobody sent it, and this relay arrives at
+    // the same number by holding the same packet — which is what lets the
+    // member's reply match a request it was never told the name of.
+    var innerHash = auth.requestHash(signed);
+    var opened = routes.open(innerHash, mineKey(), target.id, function () {
+      return presentNow.send(target.id, 'request', {
+        from: from, to: to, text: body, sig: sig,
+      });
+    });
+    if (!opened || !opened.ok) return opened;
+
+    monitorEvent('post', from, target.id, { bytes: body.length, hash: innerHash, via: 'partner' });
+    forwarding[innerHash] = answerPartner;
+    return null;
+  }
+
+  // ── WRAPPING A MEMBER'S PACKET FOR A PARTNER ─────────────────────────
+  //
+  // The member's post is enclosed WHOLE — its own from, to, text and
+  // signature — as the text of an ordinary post from this relay to the
+  // partner. Same function, same signed shape, one level up: this relay
+  // is a client of the protocol here exactly as a node is, through the
+  // peerPost it already uses to ask partners to search.
+  //
+  // A HUNT, NOT A LOOKUP. This box holds no list of anybody else's
+  // members (0012), so it asks each partner in turn and the first that
+  // takes it wins. That is the cost 0012 accepted: latency on a cold
+  // post, never memory.
+  //
+  // Returns an answer to give the member now, or null when there is
+  // nothing to try — in which case the caller falls through to its own
+  // `no such peer`.
+  function carryToPartner(who, toToken, text, sig) {
+    var list = askPartner ? (partners() || []) : [];
+    if (!list.length) return null;
+
+    var signed = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
+    if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
+    var innerHash = auth.requestHash(signed);
+
+    // REGISTERED BEFORE IT LEAVES, exactly as a local post is: nothing
+    // goes out until the thing that will match its answer exists. The
+    // route's target is the far member, so when the reply comes back up
+    // the tunnel `routes.answer` checks it against the key the member
+    // actually replied with.
+    var opened = routes.open(innerHash, who.id, String(toToken), function () {
+      var wrapper = JSON.stringify({
+        v: 1,
+        body: { forward: { from: who.id, to: String(toToken), text: text, sig: sig } },
+      });
+      list.forEach(function (p) {
+        askPartner(p.url, p.relayKey, wrapper)
+          .then(function (answer) {
+            var said = null;
+            try { said = JSON.parse((answer && answer.text) || ''); }
+            catch (e) { said = null; }
+            var out = (said && said.body) || null;
+            if (!out || out.ok !== true || !out.forwarded) return;
+            deliverForwardedReply(innerHash, out.forwarded);
+          })
+          .catch(function () { /* a partner that cannot help is not an error */ });
+      });
+      // The hunt has started. Whether anybody holds this key is not
+      // knowable yet, and saying `false` here would cancel the route that
+      // the answer needs.
+      return true;
+    });
+    if (!opened || !opened.ok) return opened;
+
+    monitorEvent('post', who.id, String(toToken), {
+      bytes: text.length, hash: innerHash, via: 'partner',
+    });
+    meterNote(text.length, false);
+    return withStatus(opened, innerHash);
+  }
+
+  // The far member's reply, arriving as the answer to this relay's own
+  // post to a partner. NOT through routeReply, for the reason sendAnswer
+  // gives: that door begins with deviceIdentity, and the replier is not a
+  // member here. Everything else is identical — same table, same check
+  // that the replier is the route's target, same event on the requester's
+  // stream.
+  function deliverForwardedReply(innerHash, reply) {
+    var matched = routes.answer(innerHash, reply.from);
+    if (!matched.ok) return false;
+    monitorEvent('reply', reply.from, matched.requester || '', {
+      bytes: (reply.text || '').length, hash: innerHash, via: 'partner',
+    });
+    return !!presentNow.send(matched.requester, 'reply', {
+      hash: innerHash,
+      from: reply.from,
+      text: reply.text || '',
+      sig: reply.sig,
+    });
+  }
+
+  function mineKey() {
+    var mine = auth.loadIdentity(rootDir);
+    return (mine && mine.publicKey) || '';
+  }
+
   function answerSelf(hash, text, who) {
     var asked = null;
     try { asked = JSON.parse(text); }
@@ -1858,7 +2005,17 @@ function createRelay(rootDir, deps) {
     // by the same door every other answer does — one send, at the foot of
     // this function, with `out` still the default `no such peer`. An early
     // return here would be a second exit that silently answered nothing.
-    if (fromPartner && !(body && body.search)) body = null;
+    // ── WHAT A PARTNER MAY ASK, AND IT IS A LIST OF TWO ──────────────
+    //
+    // `search` — a question about this relay's own members, answered by
+    // this relay. `forward` — carry an enclosed packet to one of this
+    // relay's members and bring back what they say.
+    //
+    // THERE IS NO THIRD, AND NO "GIVE ME YOUR MEMBERS"
+    // (decisions/0012). Everything else falls through to the same
+    // `no such peer` a stranger gets, so the set of things this box will
+    // do for a partner is not enumerable by asking.
+    if (fromPartner && !(body && (body.search || body.forward))) body = null;
 
     // ── WHO THIS RELAY PARTNERS WITH — ANY MEMBER MAY ASK ──────────────
     //
@@ -1907,7 +2064,36 @@ function createRelay(rootDir, deps) {
     // Own members only, for now. Partner space becomes searchable when
     // this relay holds its partners' members — tier two, the stream — and
     // the shape of this answer does not change when it does.
-    if (body && body.search) {
+    // ── CARRYING A PACKET TO ONE OF MY OWN MEMBERS ───────────────────
+    //
+    //   Andy: "the A↔B protocol is an exact duplicate of the N1→A
+    //   protocol, but in both directions. AND the A↔B protocol simply
+    //   tunnels the N1→A and the N2→B protocol to the other partner."
+    //
+    // The enclosed packet is N1's, untouched: its own `from`, `to`, text
+    // and signature, exactly as N1 signed them. This relay verifies that
+    // signature and then behaves as though N1 had posted here directly —
+    // because, in every way that matters to the member receiving it, N1
+    // did.
+    //
+    // WHY THERE IS NO CERT (Andy: "the tunnel is the cheap implementation
+    // of the cheap cert"). Two signatures are already on the wire and
+    // between them they carry what a membership certificate was proposed
+    // to carry: the INNER proves N1 authored this and that the partner
+    // cannot have forged it, and the OUTER — checked before this function
+    // was reached, against the key pinned at promotion — proves a partner
+    // this box chose is vouching by carrying it. A self-signed claim of
+    // membership would add nothing, because only the partner's agreement
+    // makes such a claim true and the outer signature IS that agreement.
+    //
+    // ONE HOP, STRUCTURALLY. A forward is only accepted FROM a partner,
+    // and a forward is only ever delivered to one of this relay's OWN
+    // members — it is never re-forwarded. There is no second hop to
+    // refuse because there is no code that could take one.
+    if (body && body.forward && fromPartner) {
+      out = forwardToMine(body.forward, sendAnswer);
+      if (out === null) return;   // delivered; the answer comes when N2 replies
+    } else if (body && body.search) {
       var q = String((body.search.q) || '').trim().toLowerCase();
 
       // ── ONE HOP, FULL STOP — ENFORCED, NOT DOCUMENTED ───────────────
@@ -2376,6 +2562,22 @@ function createRelay(rootDir, deps) {
     }
 
     var target = deviceIdentity(toToken);
+
+    // ── NOT MINE: ASK THE PARTNERS TO CARRY IT ───────────────────────
+    //
+    // `no such peer` was the whole answer until now, and it was the right
+    // answer while this box was the only one that could deliver. With
+    // partners it is premature: the key may be a member of somebody this
+    // relay has verified and been verified by.
+    //
+    // ONLY FOR A MEMBER'S POST. A partner's post is never re-forwarded —
+    // that is the second hop, and the check is `!fromPartner` rather than
+    // a counter, so there is no arithmetic anybody can get wrong.
+    if (!target && !who.partner) {
+      var carried = carryToPartner(who, toToken, text, sig);
+      if (carried) return carried;
+    }
+
     if (!target) return { ok: false, status: 404, error: 'no such peer' };
 
     if (typeof text !== 'string' || !text) {
@@ -2467,6 +2669,32 @@ function createRelay(rootDir, deps) {
     // `answer()` check that the replier is the target; only the last
     // hop differs, and it differs because the thing waiting is a
     // connection rather than a socket.
+    // ── A REPLY TO SOMETHING A PARTNER ASKED FOR ─────────────────────
+    //
+    // The member answered a packet that arrived through a partner, so the
+    // reply does not go down a stream — it goes back up the tunnel, as
+    // the answer to the partner's own post. Same asymmetry as the device
+    // case below, and for the same reason: the requester here is this
+    // relay, which holds no stream to itself.
+    //
+    // THE MEMBER'S REPLY TRAVELS WHOLE. Its text and its signature over
+    // the inner hash are passed through untouched, so N1 verifies N2's
+    // receipt itself and neither relay can alter what was said without
+    // breaking it.
+    if (forwarding[hash]) {
+      var answerPartner = forwarding[hash];
+      delete forwarding[hash];
+      answerPartner({
+        ok: true, status: 200,
+        forwarded: {
+          from: who.id,
+          text: typeof text === 'string' ? text : '',
+          sig: sig,
+        },
+      });
+      return { ok: true, status: 200, delivered: true };
+    }
+
     if (awaitingReply[hash]) {
       settleHere(hash, {
         ok: true, status: 200, hash: hash,
