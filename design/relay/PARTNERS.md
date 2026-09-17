@@ -1451,12 +1451,34 @@ the one thing a partner is permitted to ask.
 >
 > ### What is actually left to build
 >
-> 1. **The partner allowance becomes a list.** `body.search` is currently
->    both the permission and the entire vocabulary; `forward` joins it,
->    gated per verb as `answerSelf` already does for members. The three asks
->    differ in cost and authority — a member roll should be refused
->    outright (the roster rule), a search is bounded at 32 slots, a forward
->    asserts a third party.
+> 1. **The partner allowance becomes a list — of TWO.** `body.search` is
+>    currently both the permission and the entire vocabulary; `forward`
+>    joins it, gated per verb as `answerSelf` already does for members.
+>    `search` stays bounded at 32 slots; `forward` carries an intact inner
+>    packet.
+>
+>    **THERE IS NO "GIVE ME YOUR MEMBER LIST", AND THERE NEVER WAS A
+>    CALLER.** Grok said *refuse* it; Andy went further — *"the
+>    get-complete-member-list could be dropped altogether, that's the
+>    slimmest initial load guaranteed at startup, with no instant explosive
+>    growth."* Deleting beats refusing because a refused verb is one
+>    somebody writes a bounded version of in six months.
+>
+>    Nobody needs it once A only ever says *"B, forward this to your member
+>    K"*: **A never has to know B has K**, B does. And *which* partner comes
+>    from the node, which already has it — the search row carries the
+>    partner's URL, and *"one route is the floor, the list is the point"*
+>    above has the node persisting routing options. The job moved off the
+>    relay and the hint list did not notice.
+>
+>    So *"a relay never persists a partner's members"* becomes **structural
+>    rather than enforced**: no verb could deliver them, and no
+>    `partners × members` term exists anywhere to be reintroduced by a
+>    later optimisation. The cost is a cold post with no route becoming a
+>    hunt — *"do you hold K?"*, N small questions on the same bus — rather
+>    than a local lookup, which is the flag-only state this file already
+>    calls safe. Full reasoning in
+>    [CAPACITY.md](CAPACITY.md), decided item 10.
 > 2. **B originates a request to its own member**, which `routePost`
 >    already does via `presentNow.send(target.id, 'request', …)`.
 > 3. **The inner packet travels intact** — N1's original text and signature
