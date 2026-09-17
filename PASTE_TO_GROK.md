@@ -7,334 +7,157 @@ holds the latest call and nothing else. Git history holds the previous ones.
 Read at:
 <https://github.com/andyflinn/SpiritOS/blob/master/PASTE_TO_GROK.md>
 
-**This round (2026-09-17, second call): a correction to the one you just
-answered.** The previous call is in git at
-[`fec66ec`](https://github.com/andyflinn/SpiritOS/commit/fec66ec).
+**This round (2026-09-17, third call): what your review decided, and three open
+issues that are not blocking.** The previous call is in git at
+[`f902d8f`](https://github.com/andyflinn/SpiritOS/commit/f902d8f).
+
+**Short round.** Most of your reply landed as-is. This says what changed after
+it, what it changed *in* it, and what is still open. A verdict per item is
+enough — nothing here needs a long answer.
 
 ---
 
-## We got the central thing wrong, and you reviewed it
+## Taken as decided, from you, unchanged
 
-**The "four gates" were an artefact of a misreading.** They described *A routing
-a packet directly to a member of B*. Nobody proposed that, and PARTNERS.md's own
-delivery diagram — written 2026-09-15, before either of us looked at this — says
-the opposite:
+- `perRequester` from declared RAM ÷ members, **clamped floor 2–4, ceiling 16**.
+  Worth noting the ceiling only narrows: today's flat 16 becomes the maximum.
+- **The starting cap is published and named on the 429**, not a silent backstop.
+- **Persist levers, not stats** — and not the announce or sample intervals.
+- **Flow meter on all `routePost` including `postedToSelf`; no partner special
+  case.** Already true on the branch.
+- Gate 3 stands; the four gates stay retracted; both earlier overrules accepted.
 
-```
-N1 ──post──▶ A ──forward, signed as A──▶ B ──deliver──▶ N2
-```
+---
 
-**A forwards to B. B delivers to its own member.** Andy, putting it as the
-generalisation we had both missed:
+## What changed after your reply
 
-> *"Partner-to-partner posts all follow exactly the same pattern. A
-> gimme-all-members may be a simple string, a search-your-members also has a
-> string, a forward-post request is just another standard partner-to-partner
-> request, where the partner needs an exchange with a specific member before it
-> can reply. They are ALL the same."*
+### 1. The member roll is deleted, not refused — [decision 0012](https://github.com/andyflinn/SpiritOS/blob/master/design/decisions/0012-a-relay-never-asks-for-a-member-list.md)
+
+You ruled *"refuse member roll"*. Andy went further, and it is now a numbered
+decision carrying the load figures: **there is no verb, and there will not be
+one.**
+
+Reason to prefer deleting: **a refused verb is one somebody writes a bounded
+version of in six months**, with a good reason and a small limit, and then the
+limit is raised once. And nobody needs it — once A says *"forward this to your
+member K"* rather than routing to K, **A never has to know B has K**, and
+*which* partner comes from the node, which already has it.
+
+Impact, from PARTNERS.md's measured figures (~460 B/row held, ~1 GB VPS):
+462 KB at 10 partners × 100 members, 12 MB at 50 × 500, **46 MB at 100 × 1000 —
+all of it becomes zero.** The `partners × members` term does not appear
+anywhere, at any hop count. Boot is `O(own members)` always, and a relay's
+memory stops being a function of decisions other people make.
+
+### 2. The forward is the protocol nested in itself
+
+Andy's framing, and it is better than "a forward verb with a cert attached":
+
+> *"In the exact same way that the node wraps the untouched request from its
+> client, and the receiving node unwraps and replies to it — that's the exact
+> same way A wraps the whole kaboodle posted by the requesting node, with its
+> own sig, and posts that to B, who unwraps the outer wrapper and forwards it to
+> N2. A tunnels N1's request to B through an outer layer of the protocol."*
+
+`peerPost.post(relayUrl, toKey, text)` already does exactly this one level down:
+`text` is the app's packet untouched, the node signs `(from, to, text)`, and the
+hash is derived from the bytes and never sent. A's forward is that function with
+`text` = N1's whole signed post. **No new signature format, no new event, no new
+route** — and decision 0011 pays off as PARTNERS.md predicted: each layer derives
+its own hash independently and the layers correlate with nobody coordinating.
+
+### 3. The cheap cert has no job left
+
+Two of Andy's rulings removed it between them. Recorded under your proposal
+rather than deleted, since you offered it against the picture we had given you.
+
+**Tunnelling takes the authenticity job:** the inner signature already proves N1
+authored it, and A's outer signature already proves a trusted partner relayed
+it. That leaves the cert proving only *"N1 is A's member"* — which, self-signed,
+it cannot do: a non-member asserts the same thing, and only A's agreement makes
+it true. A asserted that by forwarding.
+
+**Two budgets take the accountability job** — see below.
+
+**And a correction to your parenthetical, which is the load-bearing part:** you
+wrote *"meter forwards per originating member key (already on the cert)"*. It is
+not on the cert — it is **already on the inner packet**, which carries
+`from = N1` by construction under tunnelling. So per-member metering was
+available with or without a cert.
+
+### 4. Two budgets — which answers your one unresolved ask
+
+> **You:** *"Meter forwards per originating member key. Do not name the asking
+> member on search."*
 >
-> *"And all comms between partners ride the same bus."*
+> **Andy:** *"I decide that everybody rations POSTs — that's also a clear
+> autonomy boundary for partners. I anticipate that the budget for posts from
+> partners must be a different POST budget from members. Why? Because even
+> incoming posts from partners satisfy a need from my members. In fact, I need
+> to tax the members to keep my partners operational."*
 
-Under that framing **none of the four gates applies**:
+You wanted precision: if A fails to ration, throttling A wholesale makes A's
+well-behaved members pay. The only way to get it your way is **a rate bucket per
+originating member** — a `partners × active members` term in RAM keyed by other
+people's identities, which is the shape 0012 had just deleted and which the meter
+is kept aggregate to avoid.
 
-| gate | why it does not apply |
-|---|---|
-| 1 — recipient lookup → `404` | A addresses **B's relay key**, so `postedToSelf` is true and the line is never reached |
-| 2 — *"a partner may only address this box"* | the forward **is** addressed to the box. The rule being obeyed, not a blocker |
-| 3 — `routeReply` members-only | B's member replies to **B**, its own member, so `deviceIdentity` resolves |
-| 4 — `routes.answer` target mismatch | B opens its own internal route to its own member; A↔B is matched by B's own key, as `sendAnswer` already does |
+**Two budgets give the isolation without the identification:**
 
-And the machinery is already there. `answerSelf` defers a reply across a round
-trip today, for exactly this reason: *"SENDING IS A FUNCTION NOW, because an
-answer can arrive late… a search asked by a member is also asked of this relay's
-partners, and their replies come back on held streams whenever they come back."*
-A forward is that pattern with B talking to its own member instead of its
-partners.
+| | one shared budget | two budgets |
+|---|---|---|
+| A floods B | member traffic starves | **only partner-sourced traffic degrades** |
+| must B know who at A sent it? | yes, to be precise | **no** — the pool is the isolation |
+| state B holds about A's members | a bucket each | **none** |
 
-The wrong table is kept in the file under a retraction rather than deleted, so
-the misreading stays visible.
+The reasoning under it is the part worth your eye: **a forward arriving from A
+is not foreign demand.** It is one of B's own members' demand seen from the
+other side — N2 is being reached because N2 wants to be reachable — so the
+partner budget is *infrastructure for member reach*, funded by the members,
+rather than an allowance to a stranger.
 
----
+It bounds spam too: a forward for an **unacquired** sender spends the partner
+budget on something N2's front door will hold. Capped separately, junk exhausts
+that pool and nothing else.
 
-## What that does to your verdicts
-
-| your ruling | now |
-|---|---|
-| **gate 3: stream-only, don't add `partnerIdentity`** | **stands, and the reason is stronger than "unless"** — *"request by post, reply by stream, in both directions"* is the protocol, stated in tier two of the same file. `routeReply` is a POST endpoint, so a partner not being admitted there is adherence, not an omission |
-| **cheap cert** | **accepted**, with two corrections below |
-| **describe = register on the home row** | **overruled by Andy** — see below |
-| **one governor, two meters** | **agreed**, and generalised: *"one governor, multiple meters"* — an open bag of readings, never a fixed pair, so a new meter is a new key rather than a new argument |
-| **shed forwards → partnerships → claims** | **overruled by Andy** — see below |
-| **30s stream interval** | decided, *lengthening under load* — but may retire for the partner side entirely; see "one bus" below |
-| **dumb `rateOk` on `routePost` first** | **agreed and sharpened.** Andy: *"we already have packet delivery, that should be the bootstrap for rate-management, there we get first measurements."* The meter matters more than the gate: a governor tuned against hypothetical partner traffic is tuned against a guess |
-| **stranger floor stays global** | agreed, unchanged |
-
-### Two corrections to the cheap cert
-
-**It is not already built, and the primitive must not be reused as-is.** The
-relay-to-relay hop today carries `askPartner` → peerPost's post, signed by **the
-relay as itself** over `(A, B, text)`. No member identity travels — correctly,
-since search is a question about A's members in aggregate.
-
-`relayAuth.streamMessage` is the same construction **one field short**:
-
-```js
-'stream\n' + key + '\n' + minute        // binds (memberKey, minute) only
-```
-
-Today its replay-safety comes entirely from *who verifies it* — the relay
-checking against its own row, where a replay proves only what that relay already
-knew. **In a forward that inverts:** B verifies a signature made for A, and with
-no relay key in the bytes one signature would assert membership of every relay
-in the mesh. Your `(memberKey, relayKey, minute)` is exactly the fix; the point
-is that `streamMessage` cannot be borrowed unchanged.
-
-**Its audience is B, not N2.** Andy: *"N2 can trust B that a trusted partner has
-relayed the post."* The chain closes locally at every link — N1 trusts A, A and
-B trust each other by pinned key, N2 trusts B — so **N2 never has to know A
-exists**. It does not verify A's key, hold a partner list, or learn the mesh.
-The cert is what lets **B** decide whether to accept a forward on behalf of a key
-it has never seen. N2's decision is unchanged: verify the inner signature, apply
-the front door.
-
-### The two overrules, with Andy's reasons
-
-**Shedding — *"on shedding: i win. grok loses. that's my decision."*** The ladder
-puts partnerships second, and partnerships are **reach**. It also contradicts a
-line already decided in that file: *"memory pressure degrades performance, not
-connectivity. A relay that sheds every hint list it holds still routes everywhere
-it did; it is just slower and chattier while it does."* The file already
-separates dropping the hint list (performance, automatic) from cancelling the
-partnership (reach, owner input only). Decided order: every performance
-degradation first — lists, routes toward a floor of 1, rings, sample intervals,
-announcement interval — then refuse **new** claims, and **never** cancel a
-partnership automatically.
-
-**Describe — no relay cache.** Andy: *"the peer must NOT cache its description on
-its bound relay. The peerPost()-based obtaining of the description is the realest
-proof of reachability."* This catches a contradiction inside tier three, which
-wanted the description available while the peer is **asleep** *and* wanted
-*"procuring a description on selection proves the route a post will take."* One
-fetch cannot do both, and a cached one answers for a peer who is dead — worse
-than no answer, because it is a false one.
-
-It costs nothing, which is the second half: *"acquisition doesn't require
-descriptions. Descriptions only give better information prior to the
-acquisition-decision."* Acquisition reads the **public census** of the relay named
-on the row — proven live, both directions — and never asks the peer anything.
-
-### One bus, and an open question it may retire
-
-> **Andy:** *"all comms between partners ride the same bus."*
-
-One channel — a post out, the reply on the held stream — and everything uses it.
-`partnerLink.onEvent` already enforces half of it (*"REQUEST AND REPLY, AND
-NOTHING ELSE"*). So a new partner capability is **a new key in a body**, never a
-new event, route or channel. A proposal needing one of those is wrong.
-
-**Our recommendation, undecided:** let every reply carry the current cap. Then
-there is no announcement mechanism at all — no new event, no push, no interval —
-and the number arrives with the traffic it governs. That would retire *"30s,
-lengthening under load, and what is the maximum"* for the **partner** side,
-leaving it only for members, who may hold a stream for hours without posting.
+**So the per-verb list is two entries:** `search` (bounded, unchanged) and
+`forward` (intact inner packet; no cert).
 
 ---
 
-## What is left to build
+## Open, and none of it blocking
 
-No gate moves. No persist shape changes.
-
-1. **The partner allowance becomes a per-verb list — with TWO entries, not
-   three.** `if (fromPartner && !(body && body.search)) body = null;` is
-   currently both the permission and the entire vocabulary. It becomes
-   `search` (bounded at 32 slots, as today) and `forward` (cert attached,
-   inner packet intact).
-
-   **You said "refuse member roll". Andy went further: delete it.** *"The
-   get-complete-member-list could be dropped altogether — that's the slimmest
-   initial load guaranteed at startup, with no instant explosive growth."*
-
-   Deleting beats refusing because **nobody needs it under the corrected
-   frame.** The roll existed so A could resolve a key to a partner — the hint
-   list, `members × ~460 B` per partner. Once A only ever says *"B, forward
-   this to your member K"*, **A never has to know B has K**; B knows. And
-   *which* partner comes from the node, which already has it: the search row
-   carries the partner's URL, and PARTNERS.md's *"one route is the floor, the
-   list is the point"* has the node persisting routing options. That job moved
-   off the relay and the hint list did not notice.
-
-   So *"a relay never persists a partner's members"* becomes **structural
-   rather than enforced** — no verb could deliver them — and no
-   `partners × members` term exists anywhere to be reintroduced later. The
-   cost is a cold post with no route becoming a hunt (*"do you hold K?"*, N
-   small questions on the same bus) instead of a local lookup, which is the
-   flag-only state PARTNERS.md already calls safe.
-
-   **And the principle underneath it, which Andy stated last and which the
-   rest follows from:** *"relay's resource usage driven by member demand."* A
-   relay spends **nothing in anticipation** — a route exists while a post is
-   in flight, a presence entry while a socket is open, and when nobody is
-   asking it holds its own ledger and nothing else. The test for any future
-   proposal: *does this consume memory before anybody asked for anything?*
-   The member roll fails it, which is a better reason to drop it than size.
-   It also explains, in one rule, three things argued separately: no partner
-   rosters, no hint lists, no cached descriptions.
-2. **B originates a request to its own member** — `routePost` already does this
-   via `presentNow.send(target.id, 'request', …)`.
-3. **The inner packet travels intact** — N1's original text and signature nested
-   inside A's forward, so N2 verifies `postSignatureFor(N1, N1, N2, …)` itself
-   and A is a carrier rather than a re-signer.
-4. **The cheap cert**, for B.
-
-Plus, independently and first: a starting rate limit on `routePost` and the
-measurement ring, on traffic that already exists.
-
-### We attempted that last one, and it corrected two things we told you
-
-It is on branch **`rate-meter`**, green (`relayMeter.js`, 9 checks; harness
-84 suites, 2167), **not merged** — parked because bouncing the corrected
-framing off you comes first. Two findings from the attempt:
-
-**1. "routePost has no rate limit" was too strong**, and the distinction is
-your own shape. `routes.open` already caps a requester's **outstanding**
-posts — `too many in flight`, 429, `DEFAULT_PER_REQUESTER = 16` — and the
-table caps the box at `DEFAULT_MAX = 256`. **That is the RAM half, built and
-already fair per requester.** A naive flood loop is stopped at sixteen by it,
-which is how we found out. What was genuinely missing is the **flow** half:
-a post that completes promptly costs nothing against a stock limit, so a
-polite, fast, endless conversation was bounded by nothing at all.
-
-**2. The first attempt special-cased the thing Andy had just generalised.**
-The gate went inside the member-delivery path, below the `postedToSelf`
-branch — so a partner's search and a member's verb both took the early
-return and were **neither counted nor capped**. A relay metering packets to
-its members but not packets to itself. Andy's sentence is what exposed it:
-
-> *"The relay-to-relay hop is just normal protocol-compliant traffic, like
-> all other traffic… measurable, throttleable."*
-
-Worth stating as a rule for the review: **if partner traffic needs its own
-branch anywhere, the design is wrong.** One bus, one limit, one meter.
-
-**And a third number we had been conflating.** Three things, and the code
-comment had two of them as one:
-
-| number | what it is |
-|---|---|
-| **starting limit** | what is in force before anything has been measured. Static, unmeasured, chosen only to stop a runaway while staying invisible to a person |
-| **the floor** | the guarantee nobody can be pushed below, in units of work — *"one greeting and a handful of replies"*. Far smaller |
-| **the published cap** | what the governor computes from the ring and streams, moving between the two |
-
-Andy: *"is it a default initial rate-limit declaration — right now this is
-the starting limit, adjustment to arrive later?"* Yes, exactly that. **Does
-the starting limit belong in the protocol** — announced like any other cap,
-so a fresh member is never guessing — or is it purely a relay-local
-backstop that only ever surfaces in a refusal?
-
-### And what can honestly be computed at boot (new, decided since)
-
-Andy: *"the starting limit must be computed from initially known things:
-available RAM… the number of members, so we already know memory/members
-ratio. Anything else?"*
-
-Working the list through splits it in a way that matters. A relay knows at
-boot: RAM, member count, partner count, CPU count, `PAYLOAD_MAX` (16 KB, so
-any post-rate **is** a byte-rate), the route TTL, and its own stock caps.
-**Every one of those is a stock except the payload conversion** — so a flow
-limit cannot be derived from them. The missing quantity is the uplink, and
-it is the one thing genuinely unknowable at boot. That is why the ring
-exists, and why a computed starting *rate* would be a guess wearing
-arithmetic.
-
-But the ratio has a better job than the rate: **memory ÷ members should size
-`perRequester`, which is a flat 16 today** whatever the box and whatever the
-membership. A stock limit from stock knowledge, no measurement needed — and
-`createRouter(opts)` already takes `max`, `maxPerRequester` and `ttlMs`
-while `relay.js` calls it with none.
-
-**And the RAM figure is DECLARED, not measured.** Andy: *"cheap-skate
-hackists like me may want to run two relays on a VPS, so available RAM can
-be capped is a smart design decision."* Stronger than convenience — reading
-`os.totalmem()` is **wrong on any shared host**: two relays on one box each
-conclude they own it, size for all of it, and fight. The operator's intent
-is the only correct source, so a declared budget is the normal path and
-measurement is the fallback. It clamps to what is visible, so a declaration
-can only ever narrow. (This also retires a trap we had written about
-declared budgets reaching production config — the node floor is in
-`peerPost.js` on a node, and a relay's budget is on a relay.)
-
-**For you:** is `memory ÷ members → perRequester` the right derivation, or
-does a stock cap want a floor and a ceiling more than it wants a ratio? A
-relay with three members would hand each of them a third of the box.
-
-### And what survives a restart: the levers, not the statistics
-
-Andy asked which population stats a relay should keep for smarter restarts,
-then answered it better himself:
-
-> *"If I was the Governor I would want to save the state of the tuning
-> levers, as learned."*
-
-**Persist the governor's output, not its input.** A handful of numbers —
-`perRequester`, the byte cap, ring size, sample interval, announce interval
-— which are **decisions, not observations**. `perRequester = 24` says
-nothing about who talked to whom, where a stored peak is a record of
-activity. Sufficient (a restart resumes tuned rather than re-deriving, and
-`bash/update` restarts on every tag), clean, and self-describing: a new
-meter adds nothing new to persist.
-
-It extends the rule already in PARTNERS.md — *"count the relationship,
-never the members"* — to **count neither; keep what you decided.** It also
-dissolves a question we were about to ask you: whether keeping a partner's
-member *count* is about the relationship or about their business. With
-levers saved, nothing needs the count.
-
-Two guards, the same shape as the declared-RAM rule. Andy: *"uplink
-capacity varies with node-locations and conditions"* — so loaded levers are
-an **opening bid, not an entitlement**: the ring re-confirms them or the
-governor lowers them on first evidence. And **loaded levers may only
-narrow**, clamped against the boot-time knowables, so a file edited to say
-"allow ten times more" is ignored. **Persisted state and operator config may
-both only ever narrow.**
-
-**For you:** anything in that set that should NOT survive a restart, or
-anything missing from it? Our instinct is that the announce interval is the
-doubtful one — it lengthens under load, so resuming a long one after a
-reboot means a fresh member waits for its first cap announcement at exactly
-the moment the box is least busy.
+1. **How is the partner budget derived?** It cannot be a constant, and by
+   *"nothing in anticipation"* it must follow demand — presumably **observed
+   reach-need**: how much of this relay's own members' traffic actually crosses
+   a partnership, which the same meter can see. An idle membership would fund
+   almost nothing. Nothing decides the shape of that function.
+2. **What is the maximum announce interval?** It lengthens under load, which is
+   safe because the 429 carries the number — but unbounded growth turns every
+   send into refuse-then-retry, which costs more than the announcement it saved.
+3. **Does the measurement ring need a floor?** Under RAM pressure the governor
+   shrinks its own instrumentation — smaller rings, longer sample intervals —
+   which degrades measurement quality exactly when the decisions are hardest.
 
 ---
 
-## What we want from you
+## State
 
-1. **Does anything break under the corrected frame?** You ruled on a picture we
-   drew wrong. Gate 3 survives it; we believe the rest does too, but that is the
-   thing to check.
-2. **Is the per-verb list the right shape**, and should *give me your member
-   roll* be refused outright rather than bounded?
-3. **Per-member metering across a partnership.** B can currently only throttle A
-   wholesale, so one abusive member of A degrades everyone at A — collective
-   punishment, and a reach reduction by the back door, which is what the shedding
-   ruling exists to prevent. Naming the originating member on the **search** hop
-   would fix it, but that is the cert's mechanism borrowed for a different job,
-   and it discloses who is asking (*"member M of A wants to know about sonny"*
-   rather than *"A does"*). Worth the disclosure, with a use-don't-keep rule like
-   the measurement ring? Or is wholesale throttling of a partner acceptable?
+**`rate-meter` branch, green, not merged.** `ROUTE_PER_MIN` on `routePost` above
+the `postedToSelf` branch, keyed on the resolved sender (member, device or
+partner alike); a fixed aggregate ring of `{bytes, posts, peak routes}` per
+second, carried to the owner in `relayStatus`. Suite `relayMeter.js`, 9 checks.
 
----
+Your *"re-aim at the one bus before merge"* is done. **Two budgets is not** — the
+gate still uses a single bucket, so the split lands before merge.
 
-## Read
+**Harness:** 84 suites, 2167 green, 0 red. Master carries no relay change.
 
-- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/design/relay/PARTNERS.md
-  — the retraction and everything after it are at the end of the file
-- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/design/relay/CAPACITY.md
-- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/spirit/run/js/relay.js
-- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/spirit/run/js/relayAuth.js
-- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/spirit/run/js/partnerLink.js
-- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/spirit/run/js/peerPost.js
+**Read:**
 
-**Harness:** `83 suites, 2158 green, 0 red`. No relay code has changed — the last
-commit to `spirit/run/js/relay.js` is `f5fcb16`, which predates all of this.
+- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/design/decisions/0012-a-relay-never-asks-for-a-member-list.md
+- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/design/relay/CAPACITY.md — decided items 0, 0b, 0c are the spine
+- https://raw.githubusercontent.com/andyflinn/SpiritOS/master/design/relay/PARTNERS.md — the retraction and everything after it
 
-**How to answer:** findings first, and keep *regressions of closed gates* apart
-from *design not implemented yet*. A short pasted verdict is enough.
+**How to answer:** a verdict per item. Findings first, and keep *regressions of
+closed gates* apart from *design not implemented yet*.
