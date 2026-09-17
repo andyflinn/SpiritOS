@@ -202,6 +202,12 @@ function upsert(rootDir, row) {
     // rank above it CAN fall, and must: evicting somebody empties it, and
     // that is what turns them back into an ordinary deletable contact.
     memberOf: normalizeRelays(row.memberOf != null ? row.memberOf : prev.memberOf),
+    // Carried like the rest, and cleared by the sweep the moment the key
+    // turns up on a census again — a row that came back must not keep
+    // wearing a warning.
+    missingSince: String(
+      row.missingSince != null ? row.missingSince : (prev.missingSince || '')
+    ),
   };
   if (i === -1) rows.push(next);
   else rows[i] = next;
@@ -226,6 +232,36 @@ function setMemberOf(rootDir, publicKey, urls) {
   row.memberOf = normalizeRelays(urls);
   save(rootDir, rows);
   return row;
+}
+
+// ── WHEN THIS NODE FIRST FOUND THE KEY ON NO CENSUS ──────────────────
+//
+//   Andy: "show a warning bubble at the top of contact details if the
+//   contact is an obvious dud... the bubble will show the reason."
+//
+// An ISO stamp, or '' for a key that is on a census somewhere. It is the
+// date this node first CONCLUDED it was missing, not the date it went —
+// the difference matters and the wording that reads it has to say so,
+// because nothing here watched before the conclusion was possible.
+//
+// WHY A DATE AND NOT A FLAG. "Not on any census" is worth acting on in
+// proportion to how long it has been true: a key that vanished an hour
+// ago may be an owner mid-edit, and one that has been gone since March is
+// a lab node somebody wiped. A boolean cannot tell those apart, and the
+// person deciding whether to delete a row needs to.
+function setMissing(rootDir, publicKey, whenIso) {
+  const rows = load(rootDir);
+  const row = rows.find(function (r) { return r.publicKey === publicKey; });
+  if (!row) return null;
+  const next = String(whenIso || '');
+  if (String(row.missingSince || '') === next) return row;
+  row.missingSince = next;
+  save(rootDir, rows);
+  return row;
+}
+
+function missingSince(row) {
+  return String((row && row.missingSince) || '');
 }
 
 function setMyLabel(rootDir, publicKey, myLabel) {
@@ -396,6 +432,8 @@ module.exports = {
   memberOf: memberOf,
   isMember: isMember,
   setMemberOf: setMemberOf,
+  missingSince: missingSince,
+  setMissing: setMissing,
   load: load,
   contacts: contacts,
   addressBook: addressBook,

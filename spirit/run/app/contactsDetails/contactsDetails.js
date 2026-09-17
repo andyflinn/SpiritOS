@@ -94,6 +94,53 @@ function cdTitle() {
 // decision. There is no two-second repaint left to destroy the field
 // somebody is typing in — which is exactly what it used to do, and what
 // every table in the shell still needs a guard against.
+// ── AN OBVIOUS DUD, AND WHY ──────────────────────────────────────────
+//
+//   Andy: "show a warning bubble at the top of contact details if the
+//   contact is an obvious dud... the bubble will show the reason."
+//
+// The node decides it, on a sweep that already probes every relay this
+// node is on (hub.reconcileOrphans): a key that EVERY relay ANSWERED
+// about and none of them listed. A relay that did not answer says
+// nothing about anybody, which is why a rebooting box does not paint a
+// book full of warnings.
+//
+// AT THE TOP, before the facts, because it changes what the facts mean.
+// "Unanswered inbound: 0" reads as a quiet contact until you know there
+// is nobody on the other end of it.
+//
+// THE REASON, NOT THE VERDICT. "This contact is dead" is a claim this
+// screen cannot support; what it can support is the observation the
+// verdict was made from, and a person who knows their own network reads
+// far more out of it than a label would give them.
+//
+// "FIRST NOTICED", NEVER "WENT". Nothing watched before there was a
+// field to watch with, so the date is when this node first CONCLUDED the
+// key was missing — which for every row in an existing book is the day
+// this shipped. Saying "gone since" would be inventing a history.
+function cdDudBubble() {
+  var since = (cdPerson && cdPerson.missingSince) || '';
+  if (!since) return '';
+
+  var when = '';
+  try {
+    var d = new Date(since);
+    if (!isNaN(d.getTime())) when = d.toISOString().slice(0, 10);
+  } catch (e) { when = ''; }
+
+  return '<div class="stat-tile wide cd-dud">' +
+    '<div>' + cdIcon.WARNING + ' <strong>No relay you are on lists this key.</strong></div>' +
+    '<div class="job-manifest-note">' +
+      'Every relay you are on answered, and none of them has a row for this ' +
+      'contact — so this is not a connection problem. Either they left, or ' +
+      'the relay you met them on is gone.' +
+      (when ? ' First noticed ' + cdEscapeHtml(when) + '.' : '') +
+      ' Nothing has been deleted: the name you gave them is yours and is on ' +
+      'no relay to be recovered from, so Forget stays a decision you make.' +
+    '</div>' +
+    '</div>';
+}
+
 function cdRender() {
   var body = document.getElementById('cd-body');
   if (!body) return;
@@ -181,6 +228,9 @@ function cdRender() {
   var caption = handle ? 'Change My Label for ' + cdEscapeHtml(handle) : 'Change My Label';
 
   body.innerHTML =
+    // BEFORE THE PANEL, not inside it: the warning is about whether this
+    // screen is worth reading, so it is not one of the things on it.
+    cdDudBubble() +
     '<div class="stat-tile wide">' +
       facts +
       // The caption and its input take the width and the buttons fill the

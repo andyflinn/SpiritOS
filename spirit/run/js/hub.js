@@ -228,6 +228,10 @@ function buildPeople(rootDir, peers, relayUrl) {
         // relays, and empty for everybody else — which is every row on a
         // node that owns nothing.
         memberOf: whoBook.memberOf(row),
+        // WHEN THIS NODE FIRST FOUND THE KEY ON NO CENSUS, or ''. The
+        // warning a screen draws from it must say "first noticed", not
+        // "went": nothing watched before the conclusion was possible.
+        missingSince: whoBook.missingSince(row),
         // One question the app asks about every row: may this be written
         // to? Held and blocked both answer no, and they are drawn the
         // same way — a × and no composer — because to the person looking
@@ -1506,6 +1510,95 @@ function createHub(rootDir) {
     return { adopted: adopted, pruned: pruned };
   }
 
+
+  // ── AND WHO IS ON NO CENSUS AT ALL ───────────────────────────────────
+  //
+  //   Andy: "show a warning bubble at the top of contact details if the
+  //   contact is an obvious dud... the bubble will show the reason."
+  //
+  // An obvious dud is a key that EVERY relay this node is on answered
+  // about, and none of them listed. Andy's book has three today: bella
+  // and carlos, whose only relay was a loopback lab box that no longer
+  // exists, and rock, whose seat he removed by hand.
+  //
+  // ── THE RULE IS natterCheckBinding'S, AND IT HAS TO BE ───────────────
+  //
+  //   "UNREACHABLE IS STILL NOT THE SAME AS NOT OURS ... `status > 0` is
+  //    the test — NOT `!error`, because probe sets `error: 'no row here'`
+  //    on a relay that answered perfectly well."
+  //
+  // A relay that did not answer says NOTHING about anybody. Without that
+  // distinction a node whose relay was rebooting would mark its whole
+  // address book as dead — and this writes a warning onto a screen, so
+  // being wrong is loud.
+  //
+  // NEVER ACTS, ONLY MARKS. Nothing is deleted here and nothing will be:
+  // absence is not death, a node can be off for a month, and a row
+  // carries `myLabel` — a name its owner typed, which is on no relay to
+  // be recovered from. The mark is what lets a person decide; the
+  // deciding stays theirs.
+  //
+  // A DATE, NOT A FLAG, and the wording that reads it must be careful:
+  // this is when this node first CONCLUDED the key was missing, not when
+  // it went. Nothing watched before the conclusion was possible.
+  function reconcileOrphans(summary, now) {
+    var me = auth.loadIdentity(rootDir);
+    var myKey = (me && me.publicKey) || '';
+    var rows = (summary && summary.rows) || [];
+
+    // ANSWERED, not merely configured. `status > 0` is a reply of some
+    // kind; `error: 'no row here'` is a relay answering perfectly well
+    // that this node holds no seat, which is still an answer about
+    // everybody else on it.
+    var answered = rows.filter(function (row) { return row && Number(row.status) > 0; });
+    if (!answered.length) return { marked: 0, cleared: 0, asked: 0 };
+
+    var listed = Object.create(null);
+    answered.forEach(function (row) {
+      ((row.census && row.census.roster) || []).forEach(function (p) {
+        if (p && p.publicKey) listed[p.publicKey] = true;
+      });
+    });
+
+    // A ROSTER IS ONLY AS GOOD AS ITS RELAY. An older relay answers the
+    // census without a roster, and reading that as "lists nobody" would
+    // mark every contact on it. If not one answering relay produced a
+    // roster, this knows nothing and says so by doing nothing.
+    var anyRoster = answered.some(function (row) {
+      return ((row.census && row.census.roster) || []).length > 0;
+    });
+    if (!anyRoster) return { marked: 0, cleared: 0, asked: answered.length };
+
+    var stamp = (now instanceof Date ? now : new Date()).toISOString();
+    var marked = 0;
+    var cleared = 0;
+    var book = [];
+    try { book = whoBook.addressBook(rootDir); } catch (e) { book = []; }
+
+    book.forEach(function (row) {
+      if (!row || !row.publicKey || row.publicKey === myKey) return;
+
+      if (listed[row.publicKey]) {
+        // Back on a census, so the warning goes. A row that returned must
+        // not keep wearing one.
+        if (whoBook.missingSince(row)) {
+          try { whoBook.setMissing(rootDir, row.publicKey, ''); cleared += 1; }
+          catch (e) { /* one row must not stop the sweep */ }
+        }
+        return;
+      }
+
+      // ALREADY MARKED KEEPS ITS ORIGINAL DATE. The useful number is how
+      // long this has been true, and rewriting the stamp on every probe
+      // would make every dud look like it appeared minutes ago.
+      if (whoBook.missingSince(row)) return;
+      try { whoBook.setMissing(rootDir, row.publicKey, stamp); marked += 1; }
+      catch (e) { /* likewise */ }
+    });
+
+    return { marked: marked, cleared: cleared, asked: answered.length };
+  }
+
   // The probe this node already makes, with the reconcile hung off it.
   // Separate from statusFor so boot can run it without a browser asking,
   // and so a suite can drive it directly.
@@ -1515,8 +1608,19 @@ function createHub(rootDir) {
     return ownerBadge.probe(rootDir, function (url, method, pathname) {
       return relayRequest(url, method, pathname, null);
     }, me.publicKey)
-      .then(reconcileMembers)
-      .catch(function () { return { adopted: 0, pruned: 0 }; });
+      .then(function (summary) {
+        var seats = reconcileMembers(summary);
+        // THE SAME PROBE ANSWERS BOTH QUESTIONS. Who holds a seat on a
+        // relay I own, and who is on no census at all, are read from one
+        // set of censuses — a second sweep would be a second round of
+        // requests to say something about the same rows.
+        var orphans = reconcileOrphans(summary);
+        return {
+          adopted: seats.adopted, pruned: seats.pruned,
+          marked: orphans.marked, cleared: orphans.cleared,
+        };
+      })
+      .catch(function () { return { adopted: 0, pruned: 0, marked: 0, cleared: 0 }; });
   }
 
   function handleDevice(req, res) {
@@ -2126,6 +2230,7 @@ function createHub(rootDir) {
     handleNodeCard: handleNodeCard,
     syncMembers: syncMembers,
     reconcileMembers: reconcileMembers,
+    reconcileOrphans: reconcileOrphans,
     handleNodeName: handleNodeName,
     handleNodeDescription: handleNodeDescription,
   };

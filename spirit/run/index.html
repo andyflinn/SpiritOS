@@ -868,6 +868,28 @@
         color: #ff8080;
       }
 
+      /* Contacts Details, at the top: no relay this node is on lists this
+         key.
+
+           Andy: "show a warning bubble at the top of contact details if
+           the contact is an obvious dud... the bubble will show the
+           reason."
+
+         The same red ground as a failed card in Find someone, on a full
+         panel rather than a cell — the two say related things and a
+         reader should not have to learn two colours for them.
+
+         A LEFT EDGE RATHER THAN A BORDER. It sits above an ordinary
+         panel, and a full outline would read as a second kind of tile;
+         a bar on the leading edge marks it without giving it a shape of
+         its own. The heading keeps the normal text colour so the sentence
+         stays readable — the mark and the ground carry the warning, and
+         red prose at reading length is harder to read, not more urgent. */
+      .cd-dud {
+        background: rgba(255, 128, 128, 0.12);
+        border-left: 3px solid #ff8080;
+      }
+
       /* The choices are a block, and a block carries the gap above itself
          (§3). On top of the space a summary keeps from its body, because
          a list of radios reads as part of the title otherwise.

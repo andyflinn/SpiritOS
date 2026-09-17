@@ -329,9 +329,105 @@ function ownersOnly() {
   fs.rmSync(home, { recursive: true, force: true });
 }
 
+// ── 5. AND WHO IS ON NO CENSUS AT ALL ────────────────────────────────
+//
+//   Andy: "show a warning bubble at the top of contact details if the
+//   contact is an obvious dud... the bubble will show the reason."
+//
+// The same probe answers both questions, so this rides the same sweep.
+// Andy's book has three today: bella and carlos, whose only relay was a
+// loopback lab box that no longer exists, and rock, whose seat he removed
+// by hand.
+function theSweepMarksOrphans() {
+  test.subHeading('A key on no census is marked, and the mark keeps its date');
+
+  const home = tmpHome();
+  const hub = hubFor(home);
+
+  whoBook.acquire(home, { publicKey: 'K-LIVE', publicLabel: 'jim', relay: THEIRS }, 'handle');
+  whoBook.acquire(home, { publicKey: 'K-DUD', publicLabel: 'bella', relay: 'http://127.0.0.1:65425' }, 'handle');
+
+  // A relay this node is on but does NOT own — orphan-hunting is about
+  // every relay you are bound to, not only the ones you keep.
+  const up = { rows: [{ url: THEIRS, owned: false, claimed: true, status: 200,
+    census: { roster: roster(['K-LIVE']) } }] };
+
+  const first = hub.reconcileOrphans(up, new Date('2026-09-17T01:00:00.000Z'));
+  if (first.marked === 1 && whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD'))) {
+    test.check('somebody no relay lists is marked');
+  } else {
+    test.fail('mark: ' + JSON.stringify(first));
+  }
+
+  if (!whoBook.missingSince(whoBook.byPublicKey(home, 'K-LIVE'))) {
+    test.check('and somebody a relay does list is not');
+  } else {
+    test.fail('marked a live contact');
+  }
+
+  // THE DATE IS THE USEFUL PART, so it must not move. A stamp rewritten
+  // on every probe would make a contact missing since March look like it
+  // vanished a minute ago — which is the one thing the date is for.
+  hub.reconcileOrphans(up, new Date('2026-09-30T01:00:00.000Z'));
+  if (whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD')).indexOf('2026-09-17') === 0) {
+    test.check('and a second sweep leaves the original date alone');
+  } else {
+    test.fail('the date moved: ' + whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD')));
+  }
+
+  // ── A RELAY THAT DID NOT ANSWER SAYS NOTHING ABOUT ANYBODY ─────────
+  //
+  // natterCheckBinding's rule, and the reason this is safe to run on
+  // every probe: without it a node whose relay was rebooting would paint
+  // a warning onto every row in its book.
+  const home2 = tmpHome();
+  const hub2 = hubFor(home2);
+  whoBook.acquire(home2, { publicKey: 'K-X', publicLabel: 'x', relay: THEIRS }, 'handle');
+  const silent = hub2.reconcileOrphans({ rows: [{ url: THEIRS, claimed: true, status: 0 }] });
+  if (silent.marked === 0 && !whoBook.missingSince(whoBook.byPublicKey(home2, 'K-X'))) {
+    test.check('a relay that did not answer marks nobody');
+  } else {
+    test.fail('an unreachable relay condemned the book: ' + JSON.stringify(silent));
+  }
+
+  // AND NEITHER DOES ONE THAT ANSWERED WITHOUT A ROSTER. An older relay
+  // replies to the census without one, and reading that as "lists
+  // nobody" would mark every contact on it.
+  const old = hub2.reconcileOrphans({
+    rows: [{ url: THEIRS, claimed: true, status: 200, census: { peers: 3 } }],
+  });
+  if (old.marked === 0 && !whoBook.missingSince(whoBook.byPublicKey(home2, 'K-X'))) {
+    test.check('nor one running older code that answered without a roster');
+  } else {
+    test.fail('a rosterless answer condemned the book: ' + JSON.stringify(old));
+  }
+
+  // ── AND A KEY THAT COMES BACK LOSES THE MARK ──────────────────────
+  const back = { rows: [{ url: THEIRS, owned: false, claimed: true, status: 200,
+    census: { roster: roster(['K-LIVE', 'K-DUD']) } }] };
+  const cleared = hub.reconcileOrphans(back);
+  if (cleared.cleared === 1 && !whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD'))) {
+    test.check('and somebody who turns up again stops being warned about');
+  } else {
+    test.fail('the mark stuck: ' + JSON.stringify(cleared));
+  }
+
+  // NOTHING WAS DELETED, at any point. Absence is not death, and the row
+  // holds a name its owner typed which is on no relay to be recovered
+  // from — so the sweep marks and the human decides.
+  if (whoBook.byPublicKey(home, 'K-DUD')) {
+    test.check('and nothing was ever deleted — the sweep marks, a person decides');
+  } else {
+    test.fail('the sweep deleted a row');
+  }
+
+  fs.rmSync(home, { recursive: true, force: true });
+  fs.rmSync(home2, { recursive: true, force: true });
+}
+
 theSweepAdopts();
 theSweepPrunes();
 forgetRefusesAMember()
-  .then(function () { ownersOnly(); })
+  .then(function () { ownersOnly(); theSweepMarksOrphans(); })
   .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
   .then(function () { test.reportSuccessFailureCount(); });

@@ -631,6 +631,104 @@ function writesNothingDown() {
   }
 }
 
+// ── A CONTACT NOBODY HAS A ROW FOR ───────────────────────────────────
+//
+//   Andy: "show a warning bubble at the top of contact details if the
+//   contact is an obvious dud... the bubble will show the reason."
+//
+// The node decides it on the sweep that already probes every relay
+// (hub.reconcileOrphans, asserted in relayOwnerContacts.js): a key every
+// relay ANSWERED about and none of them listed. This screen only reads
+// the answer — which is what keeps the warning off a book whose relay
+// was merely rebooting.
+function aDudSaysWhyAtTheTop() {
+  test.subHeading('A contact on no census is warned about, with the reason');
+
+  const app = mountDialog({
+    key: 'KEY-BELLA',
+    people: [{
+      publicKey: 'KEY-BELLA', tail: 'qgFs=', publicLabel: 'bella',
+      caption: 'bella', myLabel: 'bella from the lab', acquiredVia: 'handle',
+      memberOf: [], missingSince: '2026-09-17T01:00:00.000Z',
+      held: false, blocked: false, onRelay: false, bytesHeld: 0,
+    }],
+  });
+
+  return settle().then(function () {
+    const out = el(app, 'cd-body').innerHTML;
+
+    if (/cd-dud/.test(out)) {
+      test.check('the screen carries a warning');
+    } else {
+      test.fail('no bubble: ' + out.slice(0, 300));
+    }
+
+    // AT THE TOP, before the facts, because it changes what they mean:
+    // "Unanswered inbound: 0" reads as a quiet contact until you know
+    // there is nobody on the other end of it.
+    if (out.indexOf('cd-dud') < out.indexOf('fact-row')) {
+      test.check('above the facts, because it changes what they mean');
+    } else {
+      test.fail('the warning is below the reading it qualifies');
+    }
+
+    // THE REASON, NOT THE VERDICT. "This contact is dead" is a claim this
+    // screen cannot support; the observation it was made from is one a
+    // person who knows their own network reads far more out of.
+    if (/No relay you are on lists this key/.test(out) &&
+        /not a connection problem/.test(out)) {
+      test.check('and says what was observed, not a verdict it cannot support');
+    } else {
+      test.fail('reason: ' + out.slice(0, 400));
+    }
+
+    // "FIRST NOTICED", NEVER "GONE SINCE". Nothing watched before there
+    // was a field to watch with, so claiming a date of death would be
+    // inventing a history.
+    if (/First noticed 2026-09-17/.test(out) && !/gone since/i.test(out)) {
+      test.check('dated as when this node first noticed, which is all it can know');
+    } else {
+      test.fail('date: ' + out.slice(0, 400));
+    }
+
+    // AND IT SAYS NOTHING WAS DELETED, because the row holds a name its
+    // owner typed which is on no relay to be recovered from.
+    if (/Nothing has been deleted/.test(out)) {
+      test.check('and that nothing was acted on — the deciding stays theirs');
+    } else {
+      test.fail('no reassurance: ' + out.slice(0, 400));
+    }
+  });
+}
+
+// ── AND EVERYBODY ELSE IS UNMARKED ───────────────────────────────────
+//
+// The half that matters most, because a warning on every screen is a
+// warning on none — and because the sweep deliberately marks nothing when
+// a relay did not answer, a contact with no mark is the ordinary case.
+function anOrdinaryContactIsNotWarnedAbout() {
+  test.subHeading('While a contact somebody still lists is left alone');
+
+  const app = mountDialog({
+    key: 'KEY-SONNY',
+    people: [{
+      publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
+      caption: 'sonny', myLabel: '', acquiredVia: 'handle',
+      memberOf: [], missingSince: '',
+      held: false, blocked: false, onRelay: true, bytesHeld: 0,
+    }],
+  });
+
+  return settle().then(function () {
+    const out = el(app, 'cd-body').innerHTML;
+    if (!/cd-dud/.test(out) && !/No relay you are on/.test(out)) {
+      test.check('no warning, and no space held open for one');
+    } else {
+      test.fail('warned about a live contact: ' + out.slice(0, 300));
+    }
+  });
+}
+
 // ── FORGETTING SOMEBODY WHO SITS ON A RELAY I OWN ────────────────────
 //
 //   Andy: "when someone binds to a peer i own... i want a contact
@@ -812,6 +910,8 @@ readsTheRow()
   .then(forgettingAMemberTakesTheSeatFirst)
   .then(aRefusedEvictionKeepsTheRow)
   .then(anOrdinaryContactIsForgottenAsEver)
+  .then(aDudSaysWhyAtTheTop)
+  .then(anOrdinaryContactIsNotWarnedAbout)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contactsDetails threw: ' + ((err && err.stack) || err));
