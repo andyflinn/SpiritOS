@@ -222,6 +222,66 @@ architecture with nothing left over.
 
 ---
 
+## Route sidecars — explored, not decided
+
+> **Andy:** *"worth exploring? route-sidecars to requests, bundled by the
+> node… this would help the as-needed concept."*
+
+**The shape:** a node attaches to posts it is already sending a small sidecar of
+*"keys I still lack routes for"* and *"tuples I already hold"*. The relay
+answers on the reply that was coming back anyway. Discovery stops being a call
+and becomes metadata on traffic that already flows.
+
+### Why it matters more than the bytes it saves
+
+**"As needed" is only sustainable if needing is cheap.** Without a sidecar,
+on-demand means: want to post → find no route → spend a post asking → wait →
+post. Two round trips and two budget units before every first contact, every
+time. That pressure is exactly what pushes a designer toward pre-fetching at
+connect — the anticipatory bulk load this document rejects — because the demand
+path hurts.
+
+With a sidecar, unrouted keys ride on traffic that was happening anyway, so **by
+the time a route is wanted it is usually already held**, and nobody is tempted
+to fetch in advance.
+
+So a sidecar is not an optimisation of the as-needed model. **It is what stops
+the as-needed model eroding into a cache.** `CAPACITY.md`'s decided item 0 — *a
+relay spends nothing in anticipation* — survives only while the demand path is
+cheap enough that nobody needs to route around it.
+
+| | covers |
+|---|---|
+| **sidecar** | an active node — routing needs met as a side effect of talking |
+| **`about`** | cold start, long absence, or a burst of new contacts while idle |
+
+Recency ordering then puts the keys that matter most on the cheap channel, and
+leaves the expensive one for the rare case.
+
+### The rule that must not be got wrong
+
+> **A member-supplied tuple is a hint for that member's own request. A
+> relay-discovered tuple is a fact worth sharing. Never let the first become the
+> second.**
+
+The sidecar rides **outside the signed text** — it has to, because the text is
+the member's packet and must travel intact for the tunnel. So it is unsigned
+claim data from an authenticated member. That is fine for routing *their*
+request: a bad hint misroutes their own packet, fails, and is dropped.
+
+But if a relay broadcast member-supplied tuples, **any member could poison every
+other member's routing with one sidecar** — *"sonny is at evil-relay"* — and the
+relay would be the amplifier. Broadcast-and-forget is safe **only** for routes a
+relay learned from partners it pinned itself.
+
+### Smaller, if it is pursued
+
+- **A cap of its own.** The sidecar competes with the payload it rides on: a few
+  hundred bytes, a handful of keys, refused by number like everything else.
+- **Outbound only.** A reply carrying route news is redundant with
+  broadcast-and-forget — the stream already delivers that. The useful direction
+  is node → relay.
+
 ## Open, and some of it is load-bearing
 
 **A partner that claims keys it does not hold can harvest forwards.** If B
