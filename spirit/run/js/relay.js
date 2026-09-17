@@ -2010,6 +2010,38 @@ function createRelay(rootDir, deps) {
     return (mine && mine.publicKey) || '';
   }
 
+  // ── SLOTS BOUND ROWS. BYTES ARE BOUNDED HERE ─────────────────────────
+  //
+  //   Andy: "the relay-side search function should still collect the same
+  //   amount of slots, but measure and truncate before returning results."
+  //
+  // `peerSearch.SLOTS` is a RANKING device — how many candidates are worth
+  // offering — and it was also, by accident, the size limit: a row was a
+  // fixed handful of short fields, so 32 of them always fitted.
+  //
+  // `vias` ended that. A peer bound to nineteen partners carries nineteen
+  // relay keys, so 32 slots is now anywhere from ~4 KB to ~26 KB and the
+  // second one does not fit on the wire. The slot count cannot express
+  // that, because it counts the wrong thing.
+  //
+  // So the rank still decides WHICH rows, and this decides HOW MANY
+  // survive: serialise, and drop from the bottom until it fits. The ones
+  // that go are the lowest-ranked, which is the same rule the cap has
+  // always followed — "with results ordered by quality, the ones that did
+  // not fit are the ones they wanted least" — and `more` is told the
+  // truth so a caller knows to type more of the name.
+  var MATCH_BUDGET = limits.PAYLOAD_MAX - 512;
+
+  function fitMatches(rows, more) {
+    var kept = rows.slice();
+    var truncated = false;
+    while (kept.length && JSON.stringify(kept).length > MATCH_BUDGET) {
+      kept.pop();
+      truncated = true;
+    }
+    return { matches: kept, more: !!more || truncated };
+  }
+
   function answerSelf(hash, text, who) {
     var asked = null;
     try { asked = JSON.parse(text); }
@@ -2214,15 +2246,17 @@ function createRelay(rootDir, deps) {
           pendingSearch = { q: q, mine: found.matches, more: more };
         }
 
+        // `more` rather than a page: a caller who sees it types another
+        // letter, which is cheaper for everybody than a cursor — and with
+        // results ordered by quality, the ones that did not fit are the
+        // ones they wanted least. That now covers two kinds of "did not
+        // fit": too many for the slots, and too many for the wire.
+        var fitted = fitMatches(matches, more);
         out = {
           ok: true,
           status: 200,
-          // `more` rather than a page: a caller who sees it types
-          // another letter, which is cheaper for everybody than a
-          // cursor — and with results ordered by quality, the ones that
-          // did not fit are the ones they wanted least.
-          more: more,
-          matches: matches,
+          more: fitted.more,
+          matches: fitted.matches,
         };
       }
     }
@@ -2461,11 +2495,10 @@ function createRelay(rootDir, deps) {
           sources.push(a);
         });
         var merged = peerSearch.merge(sources, pendingSearch.q, peerSearch.SLOTS);
-        sendAnswer({
-          ok: true,
-          status: 200,
-          more: more || merged.more,
-          matches: merged.matches.map(function (row) {
+        // THE MERGED ANSWER IS THE ONE THAT OVERFLOWS. Every partner
+        // contributed rows and a peer held by several of them now carries
+        // several relay keys, so this is where 32 slots can become 26 KB.
+        var merfit = fitMatches(merged.matches.map(function (row) {
             return {
               publicKey: row.publicKey,
               publicLabel: row.publicLabel,
@@ -2493,7 +2526,13 @@ function createRelay(rootDir, deps) {
               // the identity of.
               vias: (row.vias && row.vias.length > 1) ? row.vias : undefined,
             };
-          }),
+          }), more || merged.more);
+
+        sendAnswer({
+          ok: true,
+          status: 200,
+          more: merfit.more,
+          matches: merfit.matches,
         });
       });
       return;
@@ -3257,6 +3296,10 @@ function createRelay(rootDir, deps) {
     // place to ask rather than three constants to respect, and so a suite
     // can check the floor without driving a box out of memory.
     meterFloor: meterFloor,
+    // The byte budget a search answer is cut to. Exposed so a suite can
+    // drive the cut rather than recompute it — the number and the rule
+    // have to be the same ones the wire gets.
+    fitMatches: fitMatches,
     // Does anybody here hold this key or label? Answers a LABEL, never a
     // key and never a device key — the routing layer needs to know an
     // identity exists and what to call it, and nothing more. Everything

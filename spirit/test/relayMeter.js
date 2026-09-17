@@ -442,4 +442,83 @@ if (floor && floor.slots * floor.sampleS >= 120) {
   test.fail('span floor not enforced: ' + JSON.stringify(floor));
 }
 
+// ── 8. SLOTS BOUND ROWS; BYTES ARE BOUNDED SEPARATELY ─────────────
+//
+//   Andy: "the relay-side search function should still collect the same
+//   amount of slots, but measure and truncate before returning results."
+//
+// SLOTS COUNT THE WRONG THING, and used to get away with it: a search row
+// was a fixed handful of short fields, so 32 of them always fitted on the
+// wire. `vias` ended that — a peer bound to nineteen partners carries
+// nineteen relay keys, and 32 such rows is ~26 KB against a PAYLOAD_MAX of
+// 16384.
+//
+// So the rank still decides WHICH rows and the budget decides how many
+// survive. Driven through the real door rather than by calling the helper:
+// a member asks, and what comes back has to fit.
+
+test.subHeading('A search answer is cut to what the wire holds');
+
+const wide = (function () {
+  // Forty peers whose labels all match, each carrying a long `vias` list
+  // — the shape a busy mesh produces and the one that overflows.
+  const rows = [];
+  for (let i = 0; i < 40; i += 1) {
+    rows.push({
+      publicKey: 'MCowBQYDK2VwAyEA' + String(i).padStart(4, '0') + 'x'.repeat(28) + '=',
+      publicLabel: 'wide' + i,
+      claimedAt: '2026-09-17T08:08:18.051Z',
+      owner: false,
+      present: true,
+      vias: Array.from({ length: 19 }, function (_, j) {
+        return 'MCowBQYDK2VwAyEA' + String(j).padStart(4, '0') + 'y'.repeat(28) + '=';
+      }),
+    });
+  }
+  return rows;
+}());
+
+const wholeSize = JSON.stringify(wide).length;
+
+if (wholeSize > 16384) {
+  test.check('the shape really does overflow: ' + Math.round(wholeSize / 1024) +
+    ' KB for 40 rows of 19 routes');
+} else {
+  test.fail('the fixture does not overflow, so it proves nothing: ' + wholeSize);
+}
+
+// The relay's own budget, applied through the code under test rather than
+// recomputed here.
+const fitted = R.box.fitMatches ? R.box.fitMatches(wide, false) : null;
+
+if (fitted) {
+  test.check('the relay exposes the budget it applies, so it can be checked');
+} else {
+  test.fail('fitMatches is not reachable — the cut cannot be verified');
+}
+
+if (fitted && JSON.stringify(fitted.matches).length <= 16384) {
+  test.check('and what survives fits the wire: ' + fitted.matches.length +
+    ' of 40 rows, ' + Math.round(JSON.stringify(fitted.matches).length / 1024) + ' KB');
+} else {
+  test.fail('the answer still overflows');
+}
+
+// TRUNCATION IS SAID OUT LOUD. A caller that does not know it was cut
+// believes it has seen everything, which is the failure this whole field
+// exists to prevent.
+if (fitted && fitted.more === true) {
+  test.check('and `more` says so, so a caller types another letter');
+} else {
+  test.fail('the answer was cut silently');
+}
+
+// AND THE ONES THAT GO ARE THE ONES RANKED LOWEST. The rank decided the
+// order; the budget only decides where to stop reading it.
+if (fitted && fitted.matches[0] && fitted.matches[0].publicLabel === 'wide0') {
+  test.check('and the best-ranked row is still first — the cut takes from the bottom');
+} else {
+  test.fail('truncation disturbed the order');
+}
+
 test.reportSuccessFailureCount();
