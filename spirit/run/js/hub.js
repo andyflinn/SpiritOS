@@ -1360,7 +1360,20 @@ function createHub(rootDir) {
       catch (e) { fail(res, 503, String(e.message || e)); return; }
 
       guarded(res, target, function (url) {
-        relayRequest(url, 'GET', '/api/relay/who', null)
+        // -- ASKING ABOUT ONE KEY, NOT READING THE WHOLE LEDGER ---------
+        //
+        // This fetched the entire census to answer yes or no about a
+        // single key: 151 bytes a member, so ~147 KB at a thousand, for a
+        // question whose answer is one row. The sharpest waste of the nine
+        // callers that read this route (relay/ROUTE-DISCOVERY.md).
+        //
+        // `?key=` narrows it at the same door, so nothing is added to
+        // 0010's register and a relay that has not been updated simply
+        // ignores the parameter and answers as it always did -- which the
+        // filter below still handles correctly, because it was already
+        // looking for one row in a list.
+        relayRequest(url, 'GET',
+          '/api/relay/who?key=' + encodeURIComponent(publicKey), null)
           .then(function (r) {
             var parsed = null;
             try { parsed = JSON.parse(r.text); }

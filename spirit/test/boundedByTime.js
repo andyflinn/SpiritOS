@@ -122,6 +122,18 @@ function measure(n) {
     relayLabel: R.box.relayLabel(),
   }).length;
 
+  // THE ALTERNATIVE, MEASURED BESIDE IT. Same door, `?key=` supplied: the
+  // answer is the row asked for and nothing else, so it must not grow at
+  // all. This is the number that has to stay flat as callers migrate off
+  // the whole-census form.
+  const one = R.people.length
+    ? JSON.stringify({
+      peers: R.box.who([R.people[0].publicKey]),
+      relayPublicKey: R.box.relayPublicKey(),
+      relayLabel: R.box.relayLabel(),
+    }).length
+    : 0;
+
   const roster = JSON.stringify(R.box.streamRoster()).length;
 
   // Everybody holds a stream, then one more arrives: how many writes does
@@ -141,7 +153,7 @@ function measure(n) {
     auth.sign(extra.privateKey, auth.streamMessage(extra.publicKey)), sink([]));
   const after = bags.reduce(function (t, b) { return t + b.length; }, 0);
 
-  return { census: census, roster: roster, presence: after - before };
+  return { census: census, narrowed: one, roster: roster, presence: after - before };
 }
 
 test.startTest('A relay is fixed-cost per time-unit (0013), measured');
@@ -173,11 +185,37 @@ test.check('so at 1000 members: census ' + Math.round(slope.census * 1000 / 1024
   ' KB per connect, presence ' + Math.round(slope.presence * 1000) +
   ' events per change');
 
-// ── 2. THE RATCHET ───────────────────────────────────────────────────
+// ── THE ALTERNATIVE, AND WHY THE RATCHET CAN EVER MOVE ────────────
 //
-// A number may fall, never rise. Falling is the whole point: every caller
-// that migrates to a per-key question takes bytes off one of these lines,
-// and the allowance follows it down.
+// A number in the allowance can only fall if there is something for a
+// caller to move TO. `?key=` is that something: the same door, answering
+// about the keys somebody named.
+//
+// It must be FLAT — not smaller, flat. A narrowed answer that still grew
+// with membership would be the same defect wearing a parameter.
+
+test.subHeading('And the narrowed form does not grow at all');
+
+const narrowSlope = Math.round((((large.narrowed - small.narrowed) / span)) * 100) / 100;
+
+if (narrowSlope === 0) {
+  test.check('`?key=` answers ' + small.narrowed + ' bytes at ' + SMALL +
+    ' members and ' + large.narrowed + ' at ' + LARGE + ' — 0 per member');
+} else {
+  test.fail('the narrowed census grows too: ' + narrowSlope + ' bytes per member');
+}
+
+// WHAT ONE CALLER SAVED BY MOVING. peer.acquire asked the whole census to
+// answer yes or no about one key; it asks about the key now.
+test.check('so peer.acquire went from ' + Math.round(slope.census * 1000 / 1024) +
+  ' KB to ' + large.narrowed + ' bytes at 1000 members');
+
+// ── 2. THE RATCHET ──────────────────────────────────────────
+//
+// A number may fall, never rise. The census line stays at 150 until the
+// LAST caller stops asking for the whole thing — one migration does not
+// move it, which is honest: the interface still has the per-member term,
+// and what changed is who pays it.
 
 test.subHeading('And a number may fall, never rise');
 

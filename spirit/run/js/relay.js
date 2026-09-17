@@ -538,8 +538,36 @@ function createRelay(rootDir, deps) {
   // ring is what made labels addressable, and that is the half of the
   // old transport that is not worth rebuilding.
 
-  function who() {
-    return listPeers().map(function (p) {
+  // -- THE CENSUS, OPTIONALLY NARROWED TO KEYS SOMEBODY NAMED ---------
+  //
+  //   Andy: "the most fetched because it bootstrapped concepts quickly,
+  //   but is not scalable."
+  //
+  // Nine callers read this and six of them want one row. `peer.acquire` is
+  // the sharpest: it pulls the whole census -- 151 bytes a member, so
+  // ~147 KB at a thousand -- to answer yes or no about ONE key.
+  //
+  // SAME DOOR, NARROWER ANSWER. Not a new route, so nothing is added to
+  // 0010's register: a parameter that filters an existing response is not
+  // a new way of speaking. And `key` on a query is explicitly allowed
+  // there -- "it is the identity being asked for, not the permission to be
+  // it" -- which is the distinction that keeps signatures off query
+  // strings while letting this through.
+  //
+  // Absent `keys`, this answers exactly what it always did, so every
+  // caller that has not migrated is untouched.
+  function who(keys) {
+    var wanted = null;
+    if (Array.isArray(keys) && keys.length) {
+      wanted = Object.create(null);
+      keys.forEach(function (k) {
+        var key = String(k == null ? '' : k).trim();
+        if (key) wanted[key] = true;
+      });
+    }
+    return listPeers().filter(function (p) {
+      return !wanted || (p && p.publicKey && wanted[p.publicKey]);
+    }).map(function (p) {
       return {
         // `name` STOOD BESIDE THIS, carrying the identical value. Two
         // spellings of one fact on a public route, so every reader had

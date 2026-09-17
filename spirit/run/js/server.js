@@ -1019,7 +1019,11 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'GET' && pathname === '/api/relay/who') {
-    handleRelayWho(res);
+    // `?key=` once or many times, or one comma-separated list: a caller
+    // asking about somebody specific gets a census of exactly them. The
+    // whole thing is still what an unparameterised read returns, because
+    // bootstrap has no key to ask about yet (0010).
+    handleRelayWho(res, url.searchParams.getAll('key'));
     return;
   }
 
@@ -1196,14 +1200,27 @@ const server = http.createServer((req, res) => {
   // an access log. It now lives on the only signed GET left — see
   // relay.streamSignatureFrom, and the stream route above that calls it.
 
-  function handleRelayWho(res) {
+  // One `?key=a&key=b`, or one `?key=a,b` -- both spellings arrive, and a
+  // caller should not have to know which this box prefers.
+  function expandKeys(keys) {
+    var out = [];
+    (keys || []).forEach(function (raw) {
+      String(raw).split(',').forEach(function (k) {
+        var key = k.trim();
+        if (key) out.push(key);
+      });
+    });
+    return out;
+  }
+
+  function handleRelayWho(res, keys) {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     // The relay names itself here as well as listing its peers: it is a
     // party to conversations (the census reply comes from it), and a
     // party with no key is a party nothing can file (CYCLE-CHAT-5.1).
     // Null on a relay that has not been restarted since it grew one.
     res.end(JSON.stringify({
-      peers: relay.who(),
+      peers: relay.who(expandKeys(keys)),
       relayPublicKey: relay.relayPublicKey(),
       // KEY AND LABEL ARE A PAIR (Andy), so the public census carries
       // both. A member reads this to see what the box calls itself

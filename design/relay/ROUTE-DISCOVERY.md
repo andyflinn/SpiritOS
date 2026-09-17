@@ -88,7 +88,7 @@ actually asking**, because most of them want something far narrower:
 |---|---|---|
 | `ownerBadge.probe` | *am I on this relay, and how is it?* | own row + status |
 | `buildPeople` | *labels and routes for people I know* | `about([my keys])` |
-| `peer.acquire` verification | *is key K on relay R?* | a per-key membership test |
+| `peer.acquire` verification | *is key K on relay R?* | **migrated 2026-09-17** — `?key=` at the same door: 146 KB → 256 bytes at a thousand members |
 | `handleHandle` / candidates | *who claims the handle "john"?* | `search` — which already exists |
 | `device.html` | *what label belongs to key K?* | a per-key label lookup |
 | `handleRoster` | *who is on this relay?* | the only one that genuinely wants a list |
