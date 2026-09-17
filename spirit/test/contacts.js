@@ -1017,9 +1017,65 @@ function aFoundPersonCanBeAsked() {
       // BOTH AT ONCE. There is nothing to choose between when every row
       // answers for itself, so the single-open rule went with the click.
       if (/jazz, and a synth/.test(out) && /could not reach them/.test(out)) {
-        test.check('both bubbles at once — there is no row to open any more');
+        test.check('both answers at once — there is no row to open any more');
       } else {
         test.fail('only one answered: ' + out);
+      }
+
+      // ── ONE LINE EACH ───────────────────────────────────────────────
+      //
+      //   Andy: "i'd like the search results ... to be each only occupying
+      //   one line. 1) colored status circle 2) label 3) Add Button, if
+      //   applicable 4) description or error message."
+      //
+      // Two people, two rows. A row expansion stood here and made it four,
+      // which put the widest thing on the page inside the narrowest box
+      // and changed the page height under whoever was reading it.
+      const bodyRows = (out.split('<tbody>')[1] || '').split('<tr>').length - 1;
+      if (bodyRows === 2) {
+        test.check('two people, two rows — what they said shares the line with their name');
+      } else {
+        test.fail(bodyRows + ' rows for two people: ' + out);
+      }
+
+      if (out.indexOf('colspan') === -1) {
+        test.check('and no row spans the table, which is what a bubble had to do');
+      } else {
+        test.fail('a spanning row survived: ' + out);
+      }
+
+      // ── AND A FAILURE DOES NOT READ AS A DESCRIPTION ────────────────
+      //
+      //   Andy: "error message must be visually different (preceded by
+      //   ICON.WARNING and maybe a dark-red background)."
+      //
+      // Both are prose in the same cell, so the difference cannot be the
+      // words: somebody scanning ten rows is looking for which ones they
+      // can act on, and that has to be answerable without reading any of
+      // them.
+      const cells = out.split('<td');
+      const said = cells.filter(function (c) { return c.indexOf('seen-said') !== -1; });
+      const failed = said.filter(function (c) { return c.indexOf('is-error') !== -1; });
+
+      if (said.length === 2 && failed.length === 1) {
+        test.check('one cell each, and exactly one of them marked as a failure');
+      } else {
+        test.fail(said.length + ' said cells, ' + failed.length + ' failures: ' + out);
+      }
+
+      if (failed[0] && failed[0].indexOf(spirit.core.const.ICON.WARNING) !== -1) {
+        test.check('the failure carries the warning mark');
+      } else {
+        test.fail('no mark on the failure: ' + (failed[0] || ''));
+      }
+
+      // AND THE ORDINARY CASE EARNS NO DECORATION. A mark on every row is
+      // a mark on no row.
+      const plain = said.filter(function (c) { return c.indexOf('is-error') === -1; })[0] || '';
+      if (plain.indexOf(spirit.core.const.ICON.WARNING) === -1 && /jazz, and a synth/.test(plain)) {
+        test.check('and a description carries none, so the mark still means something');
+      } else {
+        test.fail('the description is decorated too: ' + plain);
       }
 
       // AND NOTHING TO PRESS. A chevron promising an action that no longer

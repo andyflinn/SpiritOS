@@ -815,6 +815,36 @@
          handles the never-enrolled case. */
       #info-relays:empty { display: none; }
 
+      /* Contacts, Find someone: what the person on that row said about
+         themselves, or why nothing came back.
+
+           Andy: "4) description or error message, where error message
+           must be visually different (preceded by ICON.WARNING and maybe
+           a dark-red background)."
+
+         THE GROUND, NOT ONLY THE COLOUR. Everywhere else in the shell a
+         refusal is red TEXT (.job-start-error), and that works because it
+         is the only thing in its block. Here it is one cell of prose in a
+         row of four, beside nine other rows of prose — colour alone reads
+         as emphasis rather than as a category, and the eye is scanning
+         for which rows can be acted on at all.
+
+         Dark enough to sit under 13px text without fighting it: the same
+         red as the text elsewhere, at low alpha over the dark ground, so
+         the cell reads as a band rather than a highlight.
+
+         The cell is allowed to be the widest thing in the row — it is the
+         only one holding a sentence — and wraps rather than pushing the
+         table sideways. */
+      .seen-said { font-size: 13px; opacity: 0.85; }
+
+      .seen-said.is-error {
+        background: rgba(255, 128, 128, 0.14);
+        color: #ff8080;
+        opacity: 1;
+        border-radius: 4px;
+      }
+
       /* The choices are a block, and a block carries the gap above itself
          (§3). On top of the space a summary keeps from its body, because
          a list of radios reads as part of the title otherwise.

@@ -476,8 +476,11 @@ function contactsPaintSeen() {
     // reason: there is no word for it, and a mark sharing a cell with a
     // name pushes every name a glyph to the right or not, depending on
     // the row.
+    // FOUR CELLS: the dot, the name, Add, and what they said. Neither the
+    // dot nor Add gets a heading — there is no word for either, and the
+    // last one needs none because the cell under it is a whole sentence.
     '<table class="job-table"><thead><tr>' +
-      '<th></th><th>Name</th><th></th>' +
+      '<th></th><th>Name</th><th></th><th></th>' +
     '</tr></thead><tbody>' +
     // Counted over the whole answer, not over the two rows either side:
     // a list is scanned, and a name is ambiguous if anything else in it
@@ -513,8 +516,8 @@ function contactsPaintSeen() {
           : '<button type="button" class="cancel-btn contacts-seen-add"' +
             ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
             ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button>') + '</td>' +
-      '</tr>' +
-      contactsCardBubble(c, 3);
+        contactsSaidCell(c) +
+      '</tr>';
     }).join('') +
     '</tbody></table>' +
     (contactsSeenSilent.length
@@ -569,42 +572,64 @@ function contactsAskCard(key) {
   });
 }
 
-// The bubble itself: one reading, under the row it is about.
+// ── WHAT THEY SAID, IN THE SAME LINE AS THEIR NAME ───────────────────
 //
-// A ROW EXPANSION, WHICH THE STYLE GUIDE RETIRED — and the reason it did
-// is worth checking against rather than ignoring. What was retired was a
-// six-fact bubble AND A FORM inside a colspan: the widest thing on the
-// page in the narrowest box, reflowing the list on every open. This is
-// one sentence, no controls, one at a time. The rule's reason does not
-// reach it, and Andy asked for it here by name.
-function contactsCardBubble(c, columns) {
+//   Andy: "i'd like the search results in contacts -> Find someone to be
+//   each only occupying one line. 1) colored status circle 2) label
+//   3) Add Button, if applicable 4) description or error message, where
+//   error message must be visually different (preceded by ICON.WARNING
+//   and maybe a dark-red background)."
+//
+// A ROW EXPANSION STOOD HERE and is gone, which puts this back on the
+// right side of UI_DESIGN_STYLE's rule about them: a bubble in a
+// `colspan` put the widest thing on the page in the narrowest box and
+// changed the page height under whoever was reading it. One line per
+// person means a list of ten is ten lines, scannable down the left edge,
+// with the answer read across.
+//
+// THREE STATES, AND ONLY ONE OF THEM IS A FAILURE:
+//
+//   waiting    the packet is out and nothing is back. Muted, no mark —
+//              a warning triangle for "not yet" would cry wolf on every
+//              search, and it arrives a few hundred milliseconds later.
+//   said       their own sentence, at reading size, no mark. The
+//              ordinary case earns no decoration.
+//   could not  ⚠ and a dark red ground. This is the one that has to be
+//              distinguishable at a glance from a description, because
+//              both are prose in the same cell and a person scanning ten
+//              rows is looking for which ones they can actually act on.
+//
+// NOT RED TEXT ALONE. `.job-start-error` is the shell's red, and it is
+// what a message UNDER a form uses — there it is the only thing in its
+// block. Here it would be one cell of prose among nine others and the
+// colour alone reads as emphasis rather than as a category, which is why
+// Andy asked for the ground and the mark together.
+function contactsSaidCell(c) {
   var card = contactsCards[c.publicKey];
-  var inner;
 
   if (card === 'asking') {
-    inner = '<span class="muted">asking them…</span>';
-  } else if (card && card.why) {
-    // NOT AN ERROR IN RED. Being unreachable is a fact about somebody,
-    // not a mistake anybody made, and it is one of the things you came
-    // here to learn.
-    inner = '<span class="muted">could not reach them — ' +
-      contactsEscapeHtml(card.why) + '</span>';
-  } else if (card) {
-    inner = (card.description
-      ? contactsEscapeHtml(card.description)
-      : '<span class="muted">they have not said anything about themselves</span>') +
-      // The name they were minted with, under it, and only when it adds
-      // something the row above does not already say.
-      (card.name && card.name !== c.publicLabel
-        ? '<div class="job-manifest-note">their node calls itself ' +
-          contactsEscapeHtml(card.name) + '</div>'
-        : '');
-  } else {
-    return '';
+    return '<td class="seen-said"><span class="muted">asking them\u2026</span></td>';
   }
 
-  return '<tr class="job-log-row"><td colspan="' + columns + '">' +
-    '<div class="job-log-panel">' + inner + '</div></td></tr>';
+  if (card && card.why) {
+    return '<td class="seen-said is-error">' + contactsIcon.WARNING + ' ' +
+      contactsEscapeHtml('could not reach them \u2014 ' + card.why) + '</td>';
+  }
+
+  if (card) {
+    // THE NAME THEIR NODE CALLS ITSELF is dropped here and was a second
+    // line in the bubble. One line means one thing to read, and the
+    // description is the thing — a node name that differs from the label
+    // is a curiosity, not a reason to make every row two rows.
+    return '<td class="seen-said">' + (card.description
+      ? contactsEscapeHtml(card.description)
+      : '<span class="muted">they have not said anything about themselves</span>') +
+      '</td>';
+  }
+
+  // Nobody has been asked — which happens for a row painted before the
+  // packets go out, and for the moment between the two.
+  return '<td class="seen-said"></td>';
 }
 
 function contactsSeenAdd(button) {
