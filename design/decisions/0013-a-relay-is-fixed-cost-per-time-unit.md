@@ -36,6 +36,36 @@ opposite shape from a mail server, and deliberately: a mailbox accumulates and a
 relay does not."* **A mailbox is cost-per-byte-per-month. A relay is
 cost-per-month.**
 
+## Which resource the fixed cost is actually made of
+
+> **Andy:** *"processor speed and bandwidth are cheap with VPS."*
+
+The invariant says cost does not grow. This says **which resource to protect
+when a design must spend one to save another**, and it is what makes the
+invariant actionable rather than merely true.
+
+```
+RAM        expensive — it is what the VPS tier is priced by
+CPU        cheap — mostly idle; an Ed25519 verify is tens of microseconds
+bandwidth  cheap — allowances are in terabytes
+```
+
+> **Spend CPU and bandwidth freely to protect RAM.**
+
+`PARTNERS.md` already carried half of this — *"size a relay by RAM, never by
+disk; 'it is filling up' is not a failure mode this system has, 'it is holding
+too much at once' is the only one"* — and this is the other half.
+
+It also explains a run of decisions that each looked like its own idea:
+
+| decision | spends | saves |
+|---|---|---|
+| search fans out rather than shipping censuses | bandwidth, CPU | RAM at both ends |
+| the hash is computed at every party, never carried (0011) | CPU | state |
+| no persisted hint lists (0012) | a hunt | RAM |
+| levers persisted, statistics not | recomputation | RAM |
+| routes broadcast rather than cached (below) | bandwidth | RAM |
+
 ## Where the growth goes, and why that is sustainable
 
 Growth is real; it has to land somewhere. It lands on **nodes**.

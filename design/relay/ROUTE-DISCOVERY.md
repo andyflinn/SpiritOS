@@ -145,6 +145,67 @@ you sent 500"*.
 
 ---
 
+## What the relay does with a route it just discovered
+
+> **Andy:** *"crazy question: what would happen if the relay, upon discovering
+> routes, streams every found route to all its members, and members can filter
+> out the useful ones?"*
+>
+> *"What is the cost to the member — a little bandwidth, already paid for?
+> Compare that to four family members watching different YouTube streams."*
+>
+> *"And processor speed and bandwidth are cheap with VPS."*
+
+**Broadcast and forget, not hold and answer.** The instinct behind the question
+is the one the design was missing: a discovery is expensive and should be paid
+for **once for the whole relay**, not once per member who wants the same peer.
+
+The author first argued against it on `M × discoveries` grounds. That was scale
+theatre, and the numbers say so:
+
+```
+one route event ≈ 90 bytes
+a member receives   1 000 discoveries/day  →   90 KB/day
+                   10 000 discoveries/day  →  900 KB/day
+a relay sends      1 000 members × 1 000   →   90 MB/day egress
+```
+
+90 KB a day is four seconds of one video stream. And `M` cannot run away,
+because RAM bounds it long before bandwidth does — `PARTNERS.md`'s own table puts
+a 1 GB box in the low thousands of members.
+
+**The decisive argument is not the traffic, it is what the relay stops holding.**
+
+| | the relay holds | traffic |
+|---|---|---|
+| hold and answer | a working set of foreign keys, needing a size cap, an expiry rule, and an amendment to 0012 | `O(1)` |
+| **broadcast and forget** | **nothing** | `M` per discovery |
+
+Broadcasting is **cheaper in the expensive resource**. It needs no working set,
+no lifetime policy, no re-priming after a reboot — every member already has what
+it learned — and it is the purest reading of *"externalize as much cost as
+possible"*: the owner externalizes the **memory entirely** and keeps only the
+wire. Under 0013's ranking (*spend CPU and bandwidth freely to protect RAM*)
+that is not a close call.
+
+It also compares well with the defect already in the tree: the roster costs
+`M × connects`, and laptops flap, while this costs `M × discoveries`, and
+discoveries are rare. **The expensive one is the thing already running.**
+
+**What broadcasting costs, recorded rather than waved away:**
+
+- **Timing leaks interest.** The route itself is public — the named relay's
+  census says so to anyone — but *"a route for sonny appeared just now"* tells
+  everyone on the relay that somebody here went looking. The cache does not leak
+  this. It is the one real advantage the rejected option had.
+- **Members receive routes they will never use.** True, and at 90 KB/day it does
+  not matter.
+
+**Which makes the relay stateless about routes**, and the mechanism above
+simplifies: the relay resolves, announces, and forgets. The tuples a node sends
+with its request are then the *only* memory in the system, which is 0013's
+architecture with nothing left over.
+
 ## What it retires
 
 - **`streamRoster`'s full member list.** Its only job is the three-state dot:
