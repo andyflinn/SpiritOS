@@ -180,6 +180,20 @@ This directory contains the vision, principles, and architecture decisions for *
   streamed and in force until superseded. Records the measurement that
   prompted it: **`routePost` has no rate limit at all** — `rateOk` has two
   call sites, and neither is posting.
+- [Collaborative route discovery, on demand](relay/ROUTE-DISCOVERY.md) —
+  **designed, nothing built.** Andy: *"as fundamental as proper tunnelling, with
+  a higher cost impact"* — the tunnel decides whether a packet crosses; this
+  decides what every discovery costs for as long as the network runs. A node
+  asks only relays it is bound to, sending the keys it lacks routes for **and
+  the tuples it already holds**, so the relay answers its own members locally,
+  culls tuples for relays it does not partner with, and fans out only the
+  remainder. Collaborative because neither end has the answer and both keep it —
+  and because a rebooted relay is re-primed by its members rather than by a
+  disk. Carries the arithmetic that forces a by-reference reply (nine keys per
+  call by value, ~330 by reference), and names the load-bearing open ones: a
+  partner that lies about holding a key can harvest one packet per lie, and
+  negative results need a lifetime or every post to an unroutable contact is a
+  fan-out for ever.
 - [One object, three densities](shell/OBJECT-PRESENTATION.md) — the UI half of
   the same sitting. Dropdown, selector surface and tooltip as three densities
   of one object; label is what it calls itself, description is what you say
