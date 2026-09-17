@@ -82,11 +82,23 @@
       them — the picker problem Andy had, "difficult to select from 13
       usernames".
 
-      What it missed is that a label is not stable. Renaming yourself
-      does not rename a saved credential; it mints a NEW one, so the
-      picker fills up with the history of what you have called yourself
-      and the passwords behind them are all the same password. The fix
-      for a crowded picker was making the picker crowd faster.
+      THE GROUND MOVED; THE REASONING DID NOT FAIL. Andy:
+
+        "when we last changed the logic, it was the relay's 'handle' for
+        our ID, which stayed constant at the time, that's why it worked.
+        but now, since we change our node's public label on the relay,
+        that no longer was true."
+
+      A relay handle that never changed was a perfectly good key for a
+      saved credential. Then Info grew "one name, sent everywhere" —
+      relay.renameSelf to every relay you hold a seat on, infoPush in
+      app/info/info.js — and the field this page had chosen for being
+      stable became the field the product exists to let you change.
+
+      A renamed label does not rename a saved credential; it mints a NEW
+      one. So the picker fills with the history of what you have called
+      yourself, every entry holding the same password. The fix for a
+      crowded picker had become the thing that crowds it.
 
         Andy: "make the Account Field a constant, something explanatory
         like 'MyDeviceAccountPassword'... so that 1) we generate only

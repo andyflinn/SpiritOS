@@ -116,11 +116,22 @@ with it. That field is not decoration: it is how a password manager holding
 several accounts on one domain shows **which** password to pick.
 
 > **Superseded 2026-09-17 — the username field is a constant again.** The
-> paragraph above is kept because its reasoning is still sound as far as it
-> goes; what it missed is that **a label is not stable**. Renaming yourself does
-> not rename a saved credential, it mints another one — so the fix for a crowded
-> picker ("difficult to select from 13 usernames") was making the picker crowd
-> faster, one entry per name you have ever worn, all holding the same password.
+> paragraph above is kept because **it was right when it was written**, and it is
+> worth being precise about why it stopped being right.
+>
+> > **Andy:** *"when we last changed the logic, it was the relay's 'handle' for
+> > our ID, which stayed constant at the time, that's why it worked. but now,
+> > since we change our node's public label on the relay, that no longer was
+> > true."*
+>
+> A relay handle that never changed was a sound key for a saved credential. Then
+> Info grew **one name, sent everywhere** — `relay.renameSelf` to every relay
+> holding a seat, `infoPush` in `app/info/info.js` — and the field this page had
+> picked *for being stable* became the field the product exists to let you
+> change. A renamed label does not rename a saved credential, it mints another
+> one: the picker fills with the history of what you have called yourself, every
+> entry holding the same password. The fix for a crowded picker had become the
+> thing crowding it.
 >
 > The field now carries the fixed string `MyDeviceAccountPassword` on every
 > device page, asserted exactly by `spirit/test/deviceAccount.js` because it is
