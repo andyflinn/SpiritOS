@@ -327,6 +327,40 @@ start.
     being arranged. Two counters per entry — uses and when it was last
     used — and neither says who.
 
+    ### The same rank, one grain up
+
+    > **Andy:** *"and if shedding partners, the ones not referenced by a
+    > connected member are to go earlier than the ones referenced by
+    > connected members."*
+
+    Right, and already decided one level up — PARTNERS.md's supersession
+    note says *"count the relationship, never the members — and a lifetime
+    total needs `lastUsed` beside it, or a partner that was busy last year
+    outranks one doing work today."*
+
+    *"Referenced by a connected member"* cannot be known directly: a relay
+    does not know any member's contacts, and learning them is the map this
+    document keeps refusing. **Recent use encodes it exactly** — a
+    disconnected member generates none, so a partner still carrying traffic
+    is by definition one somebody present depends on.
+
+    So it is one rank at two grains:
+
+    ```
+    route entry:  rank = recent uses            / bytes held
+    partner:      rank = recent forwards carried / bytes held for it
+    ```
+
+    Shed worst-first at the entry level and the partner grain follows: a
+    partner nobody present is using has no entries earning their keep, so
+    its material falls away without being singled out. No grouping logic,
+    no attribution.
+
+    **And none of this ever sheds the partnership itself** (item 7). What is
+    ranked here is cached material *about* a partner. A partner whose cache
+    is entirely shed still routes everywhere it did — slower and chattier,
+    which is the state this design already calls safe.
+
     ### And it goes at the top of the shedding ladder
 
     Ahead of everything in item 7, because losing it costs **only speed**:
