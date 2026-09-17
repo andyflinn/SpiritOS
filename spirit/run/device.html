@@ -18,6 +18,32 @@
     /* Stated, not asked: it reads as the fact it is rather than a field
        somebody is meant to fill in. */
     input[readonly] { background: #f2f2f2; color: #555; border-style: dotted; }
+
+    /* ── THE ACCOUNT NAME IS A HEADING, NOT A FIELD ──────────────────
+         Andy: "styled more like a heading".
+
+       It is one fixed word that is the same on every device page there
+       will ever be, and nothing here can change it. Left looking like an
+       input it invites a try — a dotted grey box still reads as
+       something that might accept typing, and somebody who types into it
+       and fails has learned nothing about why.
+
+       IT REMAINS AN <input>, because the browser's password manager only
+       sees a username in a real field: this is the one element on the
+       page whose purpose is served by something other than a reader. So
+       the field is kept and its chrome is taken away. */
+    .account input[readonly] {
+      background: none;
+      border: none;
+      padding: 0;
+      color: #111;
+      font-size: 1.15rem;
+      font-weight: 600;
+      /* Not for reading so much as for recognising: it is quoted
+         verbatim in the instructions, so it should look the same here as
+         it does there. */
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
   </style>
 </head>
 <body>
@@ -47,23 +73,44 @@
       less reliably still — and remembering it IS how the password gets
       to the other device, copied once and synced, never typed.
 
-      Was a constant, and is now THE PUBLIC LABEL of whoever this page is
-      for — filled in below from /api/relay/who once the key in the
-      address resolves. The constant was right while the page named
-      nobody: the host adds nothing a saved entry does not already know,
-      because browsers key by origin. But a relay carries many
-      identities on ONE origin, so the origin cannot separate them and
-      the username is the only field that can. That is the picker
-      problem Andy actually had — "difficult to select from 13
-      usernames" — and it is the reason PEER-DEVICES.md section 5 asks
-      for the label here.
+      ── A CONSTANT AGAIN, AND DELIBERATELY ─────────────────────────
+      THIS SUPERSEDES the note that stood here and PEER-DEVICES.md
+      section 5, both of which called for the PUBLIC LABEL in this
+      field. The reasoning there still holds as far as it goes: browsers
+      key saved credentials by origin, one relay carries many identities
+      on one origin, so the username is the only field that can separate
+      them — the picker problem Andy had, "difficult to select from 13
+      usernames".
 
-      Hidden in the accessibility sense, not display:none — the field is
-      present and readable, stated rather than asked.
+      What it missed is that a label is not stable. Renaming yourself
+      does not rename a saved credential; it mints a NEW one, so the
+      picker fills up with the history of what you have called yourself
+      and the passwords behind them are all the same password. The fix
+      for a crowded picker was making the picker crowd faster.
+
+        Andy: "make the Account Field a constant, something explanatory
+        like 'MyDeviceAccountPassword'... so that 1) we generate only
+        one account/password entry for the browser password manager, and
+        2) our documentation of this process is always correct when we
+        say 'MyDeviceAccountPassword'."
+
+      DECIDED BY ANDY, with the cost stated first: several nodes of your
+      own enrolled against ONE relay now share this name, and the picker
+      cannot tell them apart. What tells them apart is the sentence
+      above, which still names the identity — you read who this page is
+      for on the page, not in the password manager.
+
+      THE STRING IS PART OF THE DOCUMENTATION. Changing it silently
+      breaks every instruction that quotes it and mints everyone a
+      second entry, which is why deviceAccount.js asserts it exactly.
+
+      Stated rather than asked: readonly and out of the tab order, and
+      styled as a heading rather than a field, because there is nothing
+      here to fill in.
     -->
-    <label>Account
+    <label class="account">Account
       <input id="user" type="text" name="username" autocomplete="username"
-             value="spirit-device" readonly tabindex="-1">
+             value="MyDeviceAccountPassword" readonly tabindex="-1">
     </label>
     <label>Password
       <input id="pw" type="password" name="password" autocomplete="current-password" required>
@@ -110,10 +157,11 @@
       // whole census to anyone, so this costs no signature and reveals
       // nothing that was not already public.
       //
-      // It lands in two places: the sentence at the top, so you can see
-      // whose enrolment this is before typing a password into it, and
-      // the username field, so the browser's password manager can tell
-      // this account from the others on the same origin.
+      // ONE PLACE NOW, not two: the sentence at the top, so you can see
+      // whose enrolment this is before typing a password into it. It no
+      // longer touches the username field — see the note on that field.
+      // A label that reaches a password manager is a label whose every
+      // past value is kept there.
       function segOf(key) {
         return String(key == null ? '' : key)
           .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -132,7 +180,6 @@
             var label = row.publicLabel || row.name || '';
             if (!label) return;
             document.getElementById('who-for').textContent = label;
-            document.getElementById('user').value = label;
           })
           .catch(function () { /* the sentence stays generic */ });
       }

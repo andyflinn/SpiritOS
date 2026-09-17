@@ -115,6 +115,27 @@ public `/api/relay/who` and pre-fills a hidden `autocomplete="username"` field
 with it. That field is not decoration: it is how a password manager holding
 several accounts on one domain shows **which** password to pick.
 
+> **Superseded 2026-09-17 — the username field is a constant again.** The
+> paragraph above is kept because its reasoning is still sound as far as it
+> goes; what it missed is that **a label is not stable**. Renaming yourself does
+> not rename a saved credential, it mints another one — so the fix for a crowded
+> picker ("difficult to select from 13 usernames") was making the picker crowd
+> faster, one entry per name you have ever worn, all holding the same password.
+>
+> The field now carries the fixed string `MyDeviceAccountPassword` on every
+> device page, asserted exactly by `spirit/test/deviceAccount.js` because it is
+> **quoted in the instructions** and drifting it would make documentation wrong
+> without making anything fail.
+>
+> **Decided by Andy, with the cost stated first:** several nodes of your own
+> enrolled against one relay now share this account name, and the password
+> manager cannot tell them apart. What tells them apart is the sentence at the
+> top of the page, which still names the identity — you read who the page is for
+> **on the page**, not in the picker.
+>
+> The label still reaches `#who-for`. It no longer reaches anything that
+> remembers.
+
 **The shell hands over a link.** A per-key URL is not typeable, and it does not
 need to be. Submitting it once on the desktop is what registers the password
 with the browser's password manager for that exact origin — after which sync
