@@ -383,6 +383,43 @@ start.
     starting-declaration pattern as the rate limit in item 1, and it should
     be written as one rather than arrived at.
 
+0e. **How to add a shedding consideration — because there will be more.**
+
+    > **Andy:** *"there'll be more shedding considerations."*
+
+    There will, and the danger is that each arrives as a **new rung**. A
+    ladder with twenty rungs is not ordered; it is a list of special cases
+    with an order somebody has to remember.
+
+    None of the first four needed one. Each changed what counts as
+    **value** or what counts as **cost** in the same rank:
+
+    | consideration | where it landed |
+    |---|---|
+    | frequently used routes | value = recent uses |
+    | connected members' routes | recency — the disconnected generate none |
+    | partners nobody present uses | the same rank, one grain up |
+    | labels are cheaper than rows | cost — ~54 B, so it ranks well and sheds first |
+
+    **So the test for a new one is:**
+
+    1. **Does it change value, or cost?** Then it is a term in
+       `recent value / bytes held`, and the ladder does not grow.
+    2. **Does it need a new rung?** Then it is claiming an ordering the
+       rank cannot express — which has to be argued, not assumed, because
+       every rung is a rule somebody must remember in the right order.
+    3. **Does it need to know WHO?** Then look again. Four times in one
+       sitting a property did the work an identity looked necessary for —
+       the pool is the isolation, verification dissolves provenance,
+       frequency encodes connectedness, and two signatures replaced a
+       certificate. The cheaper answer has been the one holding less about
+       people every time, which is not a coincidence: a relay that knows
+       less also stores less, and storage is the expensive resource (0013).
+
+    **And one line is not negotiable wherever a consideration lands.**
+    Everything above it costs speed; below it costs reach. Nothing may
+    reorder that — item 7, and Andy's ruling that overturned Grok's ladder.
+
 1. **A rate limit is not a constant.**
 
    > *"fixing a limit as a constant seems… not very modern."*
