@@ -329,6 +329,29 @@ function contactsRowHtml(person) {
   return '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
     '<td title="' + contactsEscapeHtml(contactsPresenceTitle(person.publicKey)) + '">' +
       contactsPresenceMark(person.publicKey) + '</td>' +
+    // ── LOCKED: THEY HOLD A SEAT ON A RELAY I OWN ────────────────────
+    //
+    //   Andy: "a column right after the status column, it contains an
+    //   ICON.LOCKED, if the contact has a slot on one or more of my
+    //   relays. the locked icon indicates that the ContactsDetails dialog
+    //   may look a bit different from other contact details."
+    //
+    // WHAT THE LOCK IS FOR, and it is not decoration: this row cannot be
+    // deleted the way the others can. Forget on it means removing their
+    // seat as well, and the dialog says so on its own button — so the
+    // mark is a promise that the screen behind it differs, made before
+    // anybody opens it and is surprised.
+    //
+    // Right after the status dot, where the eye already goes for the
+    // two things about a row that are true right now rather than
+    // historical: whether they are here, and whether they are mine to
+    // remove.
+    //
+    // WHICH relays, on the title, because one person may sit on several
+    // of mine and that is exactly what Forget has to name.
+    '<td' + (contactsIsMember(person)
+      ? ' title="' + contactsEscapeHtml(contactsSeatTitle(person)) + '">' + contactsIcon.LOCKED
+      : '>') + '</td>' +
     '<td>' + mark + '</td>' +
     // THE COLUMN FITS THE LABEL, THE RELAY DOES NOT (2026-09-15).
     //
@@ -342,23 +365,16 @@ function contactsRowHtml(person) {
     // may write anything they like in their own address book.
     '<td class="label-cell">' + contactsHandleCell(person) + '</td>' +
     '<td class="label-cell">' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
-    // ── HOW THEY GOT HERE, AND WHAT THEY ARE NOW ────────────────────
+    // HOW THEY GOT HERE, and nothing else. A member reads `member`,
+    // which is the truthful answer to this column's question — they got
+    // here by taking a seat.
     //
-    //   Andy: "as user it becomes very confusing to understand my
-    //   relationship with this peer (ID)."
-    //
-    // `acquiredVia` is history. A seat on a relay I own is a STANDING
-    // fact, and the one that explains why Forget will refuse — so it is
-    // said on the row rather than discovered at the moment somebody is
-    // stopped from doing something.
-    //
-    // It replaces the How rather than sitting beside it: for a member,
-    // "member" IS how they got here, and a second column that repeated
-    // it would be a column of "member / member / message".
-    '<td>' + (contactsIsMember(person)
-      ? '<span title="' + contactsEscapeHtml(contactsSeatTitle(person)) + '">' +
-        contactsIcon.STAR + ' on your relay</span>'
-      : contactsEscapeHtml(person.acquiredVia || '')) + '</td>' +
+    // "⭐ on your relay" STOOD HERE for one commit and has moved to a
+    // column of its own (Andy). It was the right fact in the wrong
+    // place: how a row arrived is history, and holding a seat is a
+    // standing fact about what can be done to the row — which belongs
+    // beside the presence dot, not in the column of provenance.
+    '<td>' + contactsEscapeHtml(person.acquiredVia || '') + '</td>' +
     '</tr>';
 }
 
@@ -880,7 +896,14 @@ spirit.shell.activateApp({
       // is what somebody told you on the phone, and Label is what you
       // decided afterwards. The bubble under an open row reads the same
       // way for the same reason.
-      '<table class="jobs-table"><thead><tr><th></th><th></th><th>Handle</th><th>Label</th><th>How</th></tr></thead>' +
+      // SIX CELLS, AND THREE OF THEM HAVE NO HEADING: the presence dot,
+      // the lock, and the mark. There is no word for any of them, and a
+      // one-word heading over a glyph column is a word that has to be
+      // read on every pass to learn nothing. What each means rides on the
+      // cell's own title, where the question is actually asked.
+      '<table class="jobs-table"><thead><tr>' +
+        '<th></th><th></th><th></th><th>Handle</th><th>Label</th><th>How</th>' +
+      '</tr></thead>' +
         '<tbody id="contacts-tbody"></tbody></table>' +
       // name= makes the two folds one exclusive group: opening either
       // closes the other, done by the browser with no JS and no state.

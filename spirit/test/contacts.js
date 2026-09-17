@@ -556,10 +556,25 @@ function listsTheBook() {
     // That has been the cause three times in this repo now.
     const src = rawSrc.replace(/^\s*\/\/.*$/gm, '');
 
-    if (src.indexOf('<tr><th></th><th></th><th>Handle</th><th>Label</th><th>How</th></tr>') !== -1) {
-      test.check('the header is a dot column, a mark column, then Handle, Label and How');
+    // THREE UNHEADED COLUMNS NOW, not two: the presence dot, the LOCK
+    // (Andy: "a column right after the status column, it contains an
+    // ICON.LOCKED"), and the mark. None of them has a word, and a
+    // one-word heading over a glyph is a word read on every pass to
+    // learn nothing.
+    //
+    // MATCHED ACROSS THE CONCATENATION, and against the whole file
+    // rather than the first <thead> in it. Both bit: the header is built
+    // from several string literals joined with `+` now, and a regex for
+    // the first <thead> finds the SEARCH table's — which has different
+    // columns and would have made this assert the wrong table quietly.
+    //
+    // So: drop whitespace and the string joins, then look for the run of
+    // cells. What survives is the markup as the browser receives it.
+    const flat = src.replace(/\s+/g, '').replace(/'\+'/g, '');
+    if (flat.indexOf('<th></th><th></th><th></th><th>Handle</th><th>Label</th><th>How</th>') !== -1) {
+      test.check('the header is a dot column, a lock column, a mark column, then Handle, Label and How');
     } else {
-      test.fail('header: ' + (/<thead>[\s\S]*?<\/thead>/.exec(src) || [''])[0]);
+      test.fail('header: ' + (/<tr>(<th[^>]*>[^<]*<\/th>)+<\/tr>/.exec(flat) || [''])[0]);
     }
 
     // A column added is two numbers to keep in step: the header and every
@@ -1164,8 +1179,14 @@ function aMemberSaysSoOnTheRow() {
       return out.split('<tr').filter(function (r) { return r.indexOf(name) !== -1; })[0] || '';
     };
 
-    if (/on your relay/.test(rowFor('Cruella'))) {
-      test.check('a member is marked as one');
+    //   Andy: "the locked icon indicates that the ContactsDetails dialog
+    //   may look a bit different from other contact details."
+    //
+    // The lock is a promise about the screen behind the row: Forget there
+    // means removing their seat as well. Made before somebody opens it
+    // and is surprised, which is the whole job of a mark on a row.
+    if (rowFor('Cruella').indexOf(spirit.core.const.ICON.LOCKED) !== -1) {
+      test.check('a member carries the lock');
     } else {
       test.fail('cruella: ' + rowFor('Cruella'));
     }
@@ -1178,21 +1199,33 @@ function aMemberSaysSoOnTheRow() {
       test.fail('no seat named: ' + rowFor('Cruella'));
     }
 
-    // AND IT REPLACES THE HOW rather than sitting beside it. For a
-    // member, "member" IS how they got here — a second column repeating
-    // it would read "member / member / message".
-    if (rowFor('Cruella').indexOf('>member<') === -1) {
-      test.check('and does not also print the raw rank beside it');
+    // AND IT SITS RIGHT AFTER THE STATUS DOT, which is where Andy put
+    // it and where the eye already goes for the two facts about a row
+    // that are true NOW rather than historical: whether they are here,
+    // and whether they are mine to remove.
+    const cells = rowFor('Cruella').split('<td');
+    if (cells.length > 2 && cells[2].indexOf(spirit.core.const.ICON.LOCKED) !== -1) {
+      test.check('in the column immediately after the status dot');
     } else {
-      test.fail('the rank is printed twice: ' + rowFor('Cruella'));
+      test.fail('the lock is not the second cell: ' + rowFor('Cruella'));
+    }
+
+    // AND `How` STILL SAYS HOW. For a member that reads `member`, which
+    // is the truthful answer to that column's question — they got here by
+    // taking a seat.
+    if (/>member</.test(rowFor('Cruella'))) {
+      test.check('while How goes on answering how, which for a member is member');
+    } else {
+      test.fail('How: ' + rowFor('Cruella'));
     }
 
     // ── AND EVERYBODY ELSE IS UNTOUCHED ────────────────────────────
     //
     //   Andy: "a peer who connects with me through a partner node
     //   behaves independently as contact."
-    if (/handle/.test(rowFor('sonny')) && !/on your relay/.test(rowFor('sonny'))) {
-      test.check('while an ordinary contact still shows how it got here');
+    if (/handle/.test(rowFor('sonny')) &&
+        rowFor('sonny').indexOf(spirit.core.const.ICON.LOCKED) === -1) {
+      test.check('while an ordinary contact carries no lock and says how it arrived');
     } else {
       test.fail('sonny: ' + rowFor('sonny'));
     }
