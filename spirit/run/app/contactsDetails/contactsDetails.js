@@ -141,11 +141,70 @@ function cdDudBubble() {
     '</div>';
 }
 
+// ── WHAT THE LOCK IS, SPELLED OUT ────────────────────────────────────
+//
+//   Andy: "for those locked contacts display a foldable bubble containing
+//   a list of the relays that cause the locked status.... Title: Locked
+//   to relays I own." — and, on the mark for it: "ICON.INFO".
+//
+// INFO AND NOT A WARNING, which is the difference between this and the
+// bubble above it. A dud is something wrong; this is a fact about a box
+// you keep, and one you arranged on purpose. The two must not wear the
+// same face or the warning stops meaning anything.
+//
+// FOLDED SHUT, so it costs a line. The mark in the titlebar is the
+// question — "why does this screen have a padlock on it" — and this is
+// the answer, available without being in the way. Somebody who already
+// knows never opens it.
+//
+// THE RELAYS ARE THE CONTENT, because they are what Forget will have to
+// remove, one by one, and a person deciding whether to press it needs to
+// see how many that is.
+function cdLockedFold() {
+  var seats = cdSeats();
+  if (!seats.length) return '';
+
+  return '<details class="stat-tile wide cd-locked">' +
+    '<summary>' + cdIcon.INFO + ' Locked to relays I own</summary>' +
+    '<div class="job-manifest-note">' +
+      'They hold a seat on ' + (seats.length === 1 ? 'this relay' : 'these relays') +
+      ', so this contact was created for you and cannot simply be ' +
+      'forgotten. Forget removes the ' +
+      (seats.length === 1 ? 'seat' : 'seats') + ' as well, and says so before it does.' +
+    '</div>' +
+    '<ul class="cd-seat-list">' +
+      seats.map(function (url) {
+        return '<li>' + cdEscapeHtml(String(url).replace(/^https?:\/\//, '')) + '</li>';
+      }).join('') +
+    '</ul>' +
+    '</details>';
+}
+
 function cdRender() {
   var body = document.getElementById('cd-body');
   if (!body) return;
 
   if (cdApi) cdApi.setScreenTitle(cdTitle());
+
+  // ── AND A PADLOCK ON THE BAR ────────────────────────────────────────
+  //
+  //   Andy: "if contact has slot on any of my relays: after the label of
+  //   the contact in the title bar display a ICON.LOCKED in the same size
+  //   as the back and home icons."
+  //
+  // AFTER setScreenTitle, always: that call writes textContent, which
+  // wipes every child of the bar — so a mark set before it would be gone
+  // by the time anybody saw it.
+  //
+  // CLEARED WHEN THERE IS NO SEAT, and that is not tidiness: this screen
+  // is reused for every contact, so a mark left on would tell the truth
+  // about the last person and a lie about this one.
+  if (cdApi && cdApi.setScreenMark) {
+    cdApi.setScreenMark(
+      cdSeats().length ? cdIcon.LOCKED : '',
+      cdSeats().length ? cdSeatTitle() : ''
+    );
+  }
 
   if (!cdPerson) {
     // The row went away while this screen was open — blocked from
@@ -231,6 +290,10 @@ function cdRender() {
     // BEFORE THE PANEL, not inside it: the warning is about whether this
     // screen is worth reading, so it is not one of the things on it.
     cdDudBubble() +
+    // Then the lock, which is the same kind of statement — about the
+    // screen rather than on it — and is why the titlebar has a padlock.
+    // Under the warning, because a warning outranks an explanation.
+    cdLockedFold() +
     '<div class="stat-tile wide">' +
       facts +
       // The caption and its input take the width and the buttons fill the
@@ -263,6 +326,15 @@ function cdRender() {
 function cdSeats() {
   var list = cdPerson && cdPerson.memberOf;
   return Array.isArray(list) ? list : [];
+}
+
+// What the padlock says when you hover it. The relays, because that is
+// what Forget will have to name.
+function cdSeatTitle() {
+  var on = cdSeatNames();
+  return cdSeats().length === 1
+    ? 'They hold a seat on ' + on + ', so Forget removes it too'
+    : 'They hold seats on ' + on + ', so Forget removes them too';
 }
 
 function cdSeatNames() {

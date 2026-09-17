@@ -131,6 +131,8 @@ function mountDialog(options) {
   let behavior = null;
   const posts = [];
   const closed = [];
+  const marks = [];
+  const order = [];
   const shellSpirit = {
     shell: {
       activateApp: function (b) { behavior = b; },
@@ -199,7 +201,17 @@ function mountDialog(options) {
     // the dialog open on a contact that no longer exists is the failure
     // this branch exists to avoid.
     closeDialog: function (r) { closed.push(r || null); dialogResult = r; },
-    setScreenTitle: function (t) { titles.push(t); },
+    setScreenTitle: function (t) { titles.push(t); order.push('title'); },
+    // ── A MARK ON THE BAR, WHICH IS NOT A LINK ──────────────────────
+    //
+    // Recorded rather than stubbed away, and the ORDER with it: the real
+    // setScreenTitle writes textContent and so wipes every child of the
+    // bar, which means a mark set before it is gone by the time anybody
+    // sees it. That is invisible in a stub unless the order is kept.
+    setScreenMark: function (glyph, markTitle) {
+      marks.push({ glyph: glyph || '', title: markTitle || '' });
+      order.push('mark');
+    },
     setDialogResult: function (r) { dialogResult = r; },
     // The shell throws for a dialog; the stub does the same, so a
     // launch added here fails the suite instead of being recorded.
@@ -218,6 +230,8 @@ function mountDialog(options) {
     doc: doc, log: log, people: people, behavior: behavior, titles: titles,
     posts: posts,
     closed: closed,
+    marks: marks,
+    order: order,
     result: function () { return dialogResult; },
   };
 }
@@ -631,6 +645,172 @@ function writesNothingDown() {
   }
 }
 
+// ── THE PADLOCK, AND WHAT IT STANDS FOR ──────────────────────────────
+//
+//   Andy: "contact details, titlebar: if contact has slot on any of my
+//   relays: after the label of the contact in the title bar display a
+//   ICON.LOCKED in the same size as the back and home icons.... for those
+//   locked contacts display a foldable bubble containing a list of the
+//   relays that cause the locked status.... Title: Locked to relays I
+//   own." — and, for its mark: "ICON.INFO".
+function aLockedContactIsMarkedAndExplained() {
+  test.subHeading('A contact seated on my relay is marked, and can say why');
+
+  const app = mountDialog({
+    key: 'KEY-CRUELLA',
+    people: [{
+      publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
+      caption: 'Cruella', myLabel: '', acquiredVia: 'member',
+      memberOf: ['https://mine.example', 'https://also-mine.example'],
+      missingSince: '',
+      held: false, blocked: false, onRelay: true, bytesHeld: 0,
+    }],
+  });
+
+  return settle().then(function () {
+    const ICON = spirit.core.const.ICON;
+
+    // ── THE BAR ──────────────────────────────────────────────────────
+    const mark = app.marks[app.marks.length - 1] || {};
+    if (mark.glyph === ICON.LOCKED) {
+      test.check('the titlebar carries the padlock');
+    } else {
+      test.fail('marks: ' + JSON.stringify(app.marks));
+    }
+
+    // AFTER THE TITLE, ALWAYS. setScreenTitle writes textContent and so
+    // wipes every child of the bar — a mark set before it would be gone
+    // by the time anybody saw it.
+    const titleAt = app.log.indexOf('title');
+    if (app.order.indexOf('title') !== -1 &&
+        app.order.indexOf('mark') > app.order.indexOf('title')) {
+      test.check('set after the title, which wipes the bar');
+    } else {
+      test.fail('order: ' + JSON.stringify(app.order));
+    }
+
+    // AND IT NAMES THE RELAYS, because that is what Forget will have to.
+    if (/mine\.example/.test(mark.title || '') && /Forget/.test(mark.title || '')) {
+      test.check('and says on hover which relays, and what Forget will do');
+    } else {
+      test.fail('mark title: ' + JSON.stringify(mark));
+    }
+
+    // ── THE FOLD ─────────────────────────────────────────────────────
+    const out = el(app, 'cd-body').innerHTML;
+
+    if (/Locked to relays I own/.test(out)) {
+      test.check('and a fold answers the question the padlock raises');
+    } else {
+      test.fail('no fold: ' + out.slice(0, 300));
+    }
+
+    // INFO, NOT A WARNING. A dud is something wrong; this is a fact about
+    // a box you keep and arranged on purpose. Sharing the warning's face
+    // would spend it on a state that is working correctly.
+    const fold = (/<details[^>]*cd-locked[\s\S]*?<\/details>/.exec(out) || [''])[0];
+    if (fold.indexOf(ICON.INFO) !== -1 && fold.indexOf(ICON.WARNING) === -1) {
+      test.check('marked info rather than warning, because nothing is wrong');
+    } else {
+      test.fail('fold mark: ' + fold.slice(0, 200));
+    }
+
+    // SHUT, so the whole thing costs one line until somebody asks.
+    if (fold.indexOf('<details') === 0 && !/<details[^>]*\sopen/.test(fold)) {
+      test.check('and starts folded, so it costs a line');
+    } else {
+      test.fail('the fold is open: ' + fold.slice(0, 120));
+    }
+
+    // BOTH RELAYS, because Forget will have to remove each one and the
+    // person deciding needs to see how many that is.
+    if (/mine\.example/.test(fold) && /also-mine\.example/.test(fold)) {
+      test.check('listing every relay that causes it');
+    } else {
+      test.fail('seats: ' + fold.slice(0, 300));
+    }
+  });
+}
+
+// ── AND THE MARK DOES NOT OUTLIVE THE ROW IT WAS ABOUT ───────────────
+//
+// This screen is reused for every contact. A padlock left on would tell
+// the truth about the last person and a lie about this one — which is
+// the failure mode a titlebar mark has and a panel does not, because the
+// panel is rebuilt and the bar is not.
+function theMarkIsClearedForSomebodyElse() {
+  test.subHeading('And the padlock does not follow you to the next contact');
+
+  const app = mountDialog({
+    key: 'KEY-CRUELLA',
+    people: [
+      { publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
+        caption: 'Cruella', myLabel: '', acquiredVia: 'member',
+        memberOf: ['https://mine.example'], missingSince: '',
+        held: false, blocked: false, onRelay: true, bytesHeld: 0 },
+      { publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
+        caption: 'sonny', myLabel: '', acquiredVia: 'handle',
+        memberOf: [], missingSince: '',
+        held: false, blocked: false, onRelay: true, bytesHeld: 0 },
+    ],
+  });
+
+  return settle().then(function () {
+    app.behavior.open({ key: 'KEY-SONNY' });
+    return settle().then(function () {
+      const mark = app.marks[app.marks.length - 1] || {};
+      if (!mark.glyph) {
+        test.check('opening an ordinary contact takes the padlock off');
+      } else {
+        test.fail('the mark survived: ' + JSON.stringify(app.marks));
+      }
+
+      if (!/Locked to relays I own/.test(el(app, 'cd-body').innerHTML)) {
+        test.check('and there is no fold to explain a lock that is not there');
+      } else {
+        test.fail('the fold survived');
+      }
+    });
+  });
+}
+
+// ── THE SIZE IS THE CHROME'S, WHICH IS WHAT WAS ASKED FOR ────────────
+//
+//   Andy: "in the same size as the back and home icons."
+//
+// A number repeated in two rules is a number that will be changed in one
+// of them, and this one is invisible when it drifts: the mark simply
+// looks slightly wrong beside Home and nobody can say why. Read off the
+// stylesheet so the two cannot part company silently.
+function theMarkIsChromeSized() {
+  test.subHeading('And it is the size of Back and Home, as asked');
+
+  const css = fs.readFileSync(
+    path.join(RUN_DIR, 'index.html'), 'utf8'
+  ).replace(/\s+/g, ' ');
+
+  const chrome = /#app-close, #app-home, \.titlebar-link \{[^}]*?font-size: (\d+)px/.exec(css);
+  const mark = /\.titlebar-mark \{[^}]*?font-size: (\d+)px/.exec(css);
+
+  if (chrome && mark && chrome[1] === mark[1]) {
+    test.check('the padlock is ' + mark[1] + 'px, the same as Back and Home');
+  } else {
+    test.fail('chrome ' + (chrome && chrome[1]) + ' vs mark ' + (mark && mark[1]));
+  }
+
+  // AND IT IS NOT A BUTTON. The shell's only other titlebar occupant is
+  // a launcher, and a dialog may not launch — so this had to be a
+  // different kind of thing, not a link with its click removed. A pointer
+  // cursor over something unclickable is a promise.
+  const shell = fs.readFileSync(path.join(RUN_DIR, 'js', 'client', 'shell.js'), 'utf8');
+  if (/createElement\('span'\)[\s\S]{0,200}titlebar-mark/.test(shell) ||
+      /titlebar-mark[\s\S]{0,200}createElement\('span'\)/.test(shell)) {
+    test.check('and a span rather than a button — it answers no click');
+  } else {
+    test.fail('the mark is not a span');
+  }
+}
+
 // ── A CONTACT NOBODY HAS A ROW FOR ───────────────────────────────────
 //
 //   Andy: "show a warning bubble at the top of contact details if the
@@ -912,6 +1092,9 @@ readsTheRow()
   .then(anOrdinaryContactIsForgottenAsEver)
   .then(aDudSaysWhyAtTheTop)
   .then(anOrdinaryContactIsNotWarnedAbout)
+  .then(aLockedContactIsMarkedAndExplained)
+  .then(theMarkIsClearedForSomebodyElse)
+  .then(function () { theMarkIsChromeSized(); })
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contactsDetails threw: ' + ((err && err.stack) || err));

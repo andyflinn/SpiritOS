@@ -1079,6 +1079,40 @@
   // still shows up immediately during that first mount, same as before)
   // and by switchTo on every later visit, since titleEl itself gets
   // wiped and reset to plain text on every navigation.
+  // ── A MARK ON THE TITLE, WHICH IS NOT A LINK ─────────────────────────
+  //
+  //   Andy: "contact details, titlebar: if contact has slot on any of my
+  //   relays: after the label of the contact in the title bar display a
+  //   ICON.LOCKED in the same size as the back and home icons."
+  //
+  // A titlebar LINK is a button that launches another app, and a dialog
+  // cannot launch (launchApp throws for one) — so the only thing on this
+  // bar an app could add was the one thing a dialog may not use.
+  //
+  // This is the other kind: a glyph that says something about the screen
+  // you are on. Not a button, so it takes no focus and answers no click;
+  // the title attribute carries what it means, at the place the question
+  // gets asked.
+  //
+  // CHROME SIZE, 22px, which is Back and Home — that is what Andy asked
+  // for and it is right: a mark at the title's own 16px reads as part of
+  // the name, and this is a statement about the name rather than more of
+  // it.
+  //
+  // Repainted like the links are, and for the same reason: setScreenTitle
+  // writes textContent, which wipes every child, so anything living on
+  // this bar has to be put back after every title change.
+  function renderTitlebarMark(app) {
+    Array.prototype.slice.call(titleEl.querySelectorAll('.titlebar-mark')).forEach(function (el) { el.remove(); });
+    var mark = app._titlebarMark;
+    if (!mark || !mark.glyph) return;
+    var markEl = document.createElement('span');
+    markEl.className = 'titlebar-mark';
+    markEl.title = String(mark.title || '');
+    markEl.textContent = String(mark.glyph);
+    titleEl.appendChild(markEl);
+  }
+
   function renderTitlebarLinks(app) {
     Array.prototype.slice.call(titleEl.querySelectorAll('.titlebar-link')).forEach(function (el) { el.remove(); });
     (app._titlebarLinks || []).forEach(function (targetAppId) {
@@ -1320,7 +1354,20 @@
       setScreenTitle: function (text) {
         if (activeAppId !== app.id) return;
         titleEl.textContent = String(text == null ? '' : text);
+        renderTitlebarMark(app);
         renderTitlebarLinks(app);
+      },
+
+      // ONE MARK, REPLACED RATHER THAN ADDED TO. A screen says one thing
+      // about itself at a time; a bar that accumulated glyphs across
+      // repaints would grow every time a dialog was reopened.
+      //
+      // Called with no glyph to take it off — which a screen showing one
+      // row must do when it opens on the next row, or the mark outlives
+      // the thing it was about.
+      setScreenMark: function (glyph, hoverTitle) {
+        app._titlebarMark = glyph ? { glyph: glyph, title: hoverTitle || '' } : null;
+        if (activeAppId === app.id) renderTitlebarMark(app);
       },
       listApps: listApps,
       listGroups: listGroups,
@@ -1628,6 +1675,11 @@
     // path as given, not the basename — two dog.png in two folders are
     // two tabs.
     paintWindowTitle((params && params.path) || app.name);
+    // The mark goes back on with the links: the line above wiped the bar
+    // to plain text, and a screen navigated away from and back to must
+    // look the same as it did. An app that has nothing to mark has
+    // nothing recorded and this draws nothing.
+    renderTitlebarMark(app);
     renderTitlebarLinks(app);
     desktopEl.hidden = true;
     containerEl.hidden = false;

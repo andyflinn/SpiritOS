@@ -204,6 +204,24 @@
       #app-title { font-size: 16px; font-weight: 600; }
       #app-content { padding: 16px; }
 
+      /* A MARK, NOT A LINK. Same size as Back and Home — 22px, inherited
+         from the rule above — because a mark at the title's own 16px
+         reads as part of the name, and this is a statement ABOUT the
+         name rather than more of it (Andy).
+
+         Not a button: it answers no click and takes no focus. What it
+         means rides on its title attribute, at the place the question
+         gets asked. `default` cursor because the rule above sets
+         `pointer` for the controls it shares a selector with, and a
+         pointer over something unclickable is a promise. */
+      .titlebar-mark {
+        font-size: 22px;
+        opacity: 0.75;
+        margin-left: 8px;
+        vertical-align: middle;
+        cursor: default;
+      }
+
       .titlebar-link {
         opacity: 0.75;
         margin-left: 8px;
@@ -888,6 +906,28 @@
       .cd-dud {
         background: rgba(255, 128, 128, 0.12);
         border-left: 3px solid #ff8080;
+      }
+
+      /* And the lock's own fold: the same left-edge shape as the warning
+         above it, in the accent rather than the red.
+
+           Andy: "for those locked contacts display a foldable bubble
+           containing a list of the relays that cause the locked status."
+
+         INFO AND NOT A WARNING (Andy: "ICON.INFO"). A dud is something
+         wrong; this is a fact about a box you keep and arranged on
+         purpose. Sharing the red would spend the warning colour on a
+         state that is working correctly, and the warning is only worth
+         anything while it is rare.
+
+         The list is inside a fold that starts shut, so the whole thing
+         costs one line until somebody asks. */
+      .cd-locked { border-left: 3px solid #8ec9ff; }
+
+      .cd-seat-list {
+        margin: 8px 0 0;
+        padding-left: 20px;
+        font-size: 13px;
       }
 
       /* The choices are a block, and a block carries the gap above itself
