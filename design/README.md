@@ -143,6 +143,16 @@ This directory contains the vision, principles, and architecture decisions for *
   lines — plus Andy's ruling that a relay vouches only for *"the fact
   that they are verified by a trusted partner"*, and that vouching is what
   a partnership consists of rather than an extra grant.
+- [A relay governs itself by what it can observe](relay/CAPACITY.md) —
+  **first cut, nothing built.** Andy: *"a relay's capacity is primarily
+  governed by its own RAM and by its network bandwidth."* If that is true a
+  relay can *measure* its capacity, and a measured limit beats a typed one.
+  Two units are two limits (RAM is a stock, bandwidth a flow); the ceiling is
+  discovered from throughput-against-latency rather than declared; the floor
+  is a requirement in units of work rather than a number; the value is
+  streamed and in force until superseded. Records the measurement that
+  prompted it: **`routePost` has no rate limit at all** — `rateOk` has two
+  call sites, and neither is posting.
 - [One object, three densities](shell/OBJECT-PRESENTATION.md) — the UI half of
   the same sitting. Dropdown, selector surface and tooltip as three densities
   of one object; label is what it calls itself, description is what you say

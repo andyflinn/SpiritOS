@@ -1586,6 +1586,18 @@ the question askable.
   forwards anything needs a rate story, and `partners × members` is the
   arithmetic it has to survive. That work does not go away; it changes
   department.
+
+  > **Overstated — corrected 2026-09-17.** Andy: *"spam and abuse can also
+  > happen between two peers on the same relay-ledger."* Right, and it makes
+  > the point sharper. The node-side floor is **global, not per-sender**:
+  > `unknownBytes` is one array summed across everybody
+  > ([peerPost.js:143](../../spirit/run/js/peerPost.js#L143)), so the
+  > ceiling on what strangers can make a node write **does not move when the
+  > stranger population grows**. Ten thousand partner-members share the same
+  > 64 KB/min that two do. Widening reach cannot touch that number, so this
+  > decision owes no rate story — it only made an existing gap worth
+  > looking at. What that gap actually is, measured: **`routePost` has no
+  > rate limit at all**. See [CAPACITY.md](CAPACITY.md).
 - **A held greeting is a row somebody did not ask for.** The local front
   door already accepts this trade for relay-mates; this widens who can
   cause one to the partner mesh.
