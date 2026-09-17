@@ -156,8 +156,50 @@ No gate moves. No persist shape changes.
    and A is a carrier rather than a re-signer.
 4. **The cheap cert**, for B.
 
-Plus, independently and first: a static `rateOk` on `routePost` and the
+Plus, independently and first: a starting rate limit on `routePost` and the
 measurement ring, on traffic that already exists.
+
+### We attempted that last one, and it corrected two things we told you
+
+It is on branch **`rate-meter`**, green (`relayMeter.js`, 9 checks; harness
+84 suites, 2167), **not merged** — parked because bouncing the corrected
+framing off you comes first. Two findings from the attempt:
+
+**1. "routePost has no rate limit" was too strong**, and the distinction is
+your own shape. `routes.open` already caps a requester's **outstanding**
+posts — `too many in flight`, 429, `DEFAULT_PER_REQUESTER = 16` — and the
+table caps the box at `DEFAULT_MAX = 256`. **That is the RAM half, built and
+already fair per requester.** A naive flood loop is stopped at sixteen by it,
+which is how we found out. What was genuinely missing is the **flow** half:
+a post that completes promptly costs nothing against a stock limit, so a
+polite, fast, endless conversation was bounded by nothing at all.
+
+**2. The first attempt special-cased the thing Andy had just generalised.**
+The gate went inside the member-delivery path, below the `postedToSelf`
+branch — so a partner's search and a member's verb both took the early
+return and were **neither counted nor capped**. A relay metering packets to
+its members but not packets to itself. Andy's sentence is what exposed it:
+
+> *"The relay-to-relay hop is just normal protocol-compliant traffic, like
+> all other traffic… measurable, throttleable."*
+
+Worth stating as a rule for the review: **if partner traffic needs its own
+branch anywhere, the design is wrong.** One bus, one limit, one meter.
+
+**And a third number we had been conflating.** Three things, and the code
+comment had two of them as one:
+
+| number | what it is |
+|---|---|
+| **starting limit** | what is in force before anything has been measured. Static, unmeasured, chosen only to stop a runaway while staying invisible to a person |
+| **the floor** | the guarantee nobody can be pushed below, in units of work — *"one greeting and a handful of replies"*. Far smaller |
+| **the published cap** | what the governor computes from the ring and streams, moving between the two |
+
+Andy: *"is it a default initial rate-limit declaration — right now this is
+the starting limit, adjustment to arrive later?"* Yes, exactly that. **Does
+the starting limit belong in the protocol** — announced like any other cap,
+so a fresh member is never guessing — or is it purely a relay-local
+backstop that only ever surfaces in a refusal?
 
 ---
 
