@@ -1245,6 +1245,23 @@ that signature, which had never been said outright:
   "this is my member". It asserts "this key was verified by a partner I
   trust". A receiving node can tell the two apart instead of seeing an
   unexplained valid signature from a stranger.
+- **And the member may make its own claim checkable** — Grok's
+  contribution, 2026-09-17, accepted as optional rather than required:
+
+  > *"Optional cheap cert: member signs (memberKey, relayKey, minute) on the
+  > forward — not a roster."*
+
+  The **peer** signs a scrap asserting its own membership of A, and it
+  travels with the forward. B can then check that the sender genuinely
+  claims to belong to A **without holding A's roster**, which is the
+  constraint that defeated every other construction tried here.
+  Minute-scoped, the same shape `relayAuth.streamMessage` and
+  `inboxMessage` already use, so nothing new goes on the wire conceptually.
+
+  **What it does not fix:** it proves the member's claim, never A's
+  verification of it. A relay that forges a member can forge this too. The
+  blast radius stays where it was put — one hop, bounded by the receiving
+  node's own decision to acquire — and that was accepted as sufficient.
 - **It is intrinsic, not an extra grant.** Vouching is what a partnership
   *consists of* while it holds — there is no second switch to throw at
   promotion time.
@@ -1290,7 +1307,26 @@ Verified by reading, and the first two by measurement.
 | 3 | reply admission | `relay.js:2186` | `deviceIdentity(fromToken)` with **no `partnerIdentity` fallback** — an explicit asymmetry with `routePost:2087`, which has one |
 | 4 | route matching | `relay.js:2199` | `routes.answer(hash, who.id)` checks *the replier is the target*. The origin relay opened the route with a target it cannot resolve |
 
-Gates 1 and 2 are decided and documented. **Gate 3 reads accidental** —
+> **Gate 3 is NOT accidental — corrected 2026-09-17, and this author was
+> wrong.** It is protocol adherence, and the protocol is stated in tier two
+> of this same file:
+>
+> > **Andy:** *"request by post, reply by stream. in both directions."*
+>
+> `routeReply` is a POST endpoint. A partner not being admitted there is the
+> rule being kept, not a line somebody forgot. Grok, independently: *"treat
+> as stream-only partner replies unless a path without a stream exists. Do
+> not silently add `partnerIdentity` to `routeReply`."*
+>
+> A partner's reply returns over the stream it already holds
+> (`partnerLink.onEvent → router.onReply`), which is how a partner's
+> **search** answer comes back today. Revisit only if a case appears where a
+> reply must arrive with no stream available — and then it is a protocol
+> question, not a patch.
+
+Gates 1 and 2 are decided and documented. ~~**Gate 3 reads accidental**~~ —
+the sentence below stood before the correction above, kept so the mistake is
+visible rather than tidied away —
 nothing says why the reply leg is narrower than the post leg. Gate 4 is
 the one the vouching decision actually answers: the origin relay matches
 against **the partner it pinned**, not against a member key it has no way

@@ -208,7 +208,33 @@ start.
 
 ## Recommended (Claude), not decided
 
-### 1. Two units are two limits, not one number
+### 1. ~~Two units are two limits, not one number~~ — OVERRULED
+
+> **Grok:** *"one governor, two meters."*
+>
+> **Andy:** *"if bandwidth gets critical before RAM, the relay can increase
+> the number of duplicate routes allowed, later shedding, more precise
+> measurement rings. With low RAM, high bandwidth: reduce the number of
+> allowed routes for a connection all the way down to 1 (floor), reduce
+> measurement rings to a smaller size with larger sample intervals."*
+
+**The two resources trade against each other, and that is what settles it.**
+Spare RAM *buys* bandwidth — more outstanding routes per connection means
+fewer retries means fewer bytes. Scarce RAM *spends* bandwidth instead —
+one route per connection, serialised, retried. Two independent limiters
+cannot make that trade; each can only defend its own resource while the
+other sits idle. **One governor reading two meters can**, which is Grok's
+shape — and Andy's sentence is the argument for it rather than a
+refinement of the recommendation it replaces.
+
+The self-referential part is worth keeping: **the ring is itself RAM**, so
+under memory pressure the governor shrinks its own instrumentation —
+smaller rings, longer sample intervals. *Open, and a real tension:* that
+degrades measurement quality exactly when the decisions are hardest, so the
+ring needs a floor for the same reason sends do.
+
+What stood before the overrule is kept below, so the reasoning that lost is
+still legible:
 
 RAM and bandwidth bound different things and cannot be collapsed:
 
