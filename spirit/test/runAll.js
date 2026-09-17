@@ -52,6 +52,11 @@ const NOT_A_SUITE = [
   // discovery rule below would skip it silently, which is precisely how
   // deviceAuth.js and iconIndex.js went unrun.
   'presenceShow.js',
+  // A FIXTURE, NOT A SUITE. It enrols a relay full of people named after
+  // consecutive lines of a play, so a ranker is asked the kind of question
+  // somebody will actually ask it. Required by suites; reports nothing of
+  // its own.
+  'playPopulate.js',
 ];
 
 // ── THE LAB SUITES ARE IN THE HARNESS NOW (2026-09-15) ───────────────
