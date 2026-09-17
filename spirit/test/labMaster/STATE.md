@@ -110,3 +110,57 @@ cannot reach them. That is the whole fix, and it is a fix by subtraction.
 updating from GitHub and the one thing that surprises: `git log
 origin/master..HEAD` is the list of what the lab cannot see. The `Commit`
 column on the panel is there to make it visible.
+
+---
+
+## The lab's ports are reserved from Windows, and have to be
+
+*Added 2026-09-17, after chasing it as a code bug for half an hour.*
+
+`labLifecycle` failed three runs out of three — *"the relay never answered
+/api/relay/who on 65410"* — while a fixture relay on 65411 worked
+perfectly. The cause was not in this repo:
+
+```
+TCP  192.168.1.193:65410 -> 172.217.119.4:443  ESTABLISHED  GoogleDriveFS
+```
+
+**Windows hands out 49152-65535 as dynamic source ports for outbound
+connections, and the lab lives at 65400-65432 — entirely inside that
+range.** Any program on the machine can be handed a lab port at any
+moment, and the node that wants it then cannot bind. It looks exactly
+like a broken suite and is not one.
+
+The fix is one line, in an **elevated** shell, and it persists across
+reboots:
+
+```powershell
+netsh int ipv4 add excludedportrange protocol=tcp startport=65400 numberofports=33
+```
+
+33 ports: 65400-65432, which is the lab's range plus labMaster (65420)
+and the work node (65432). It removes 0.20% of the ephemeral pool, and an
+**explicit** bind to a port in the range still succeeds — which is why
+the nodes keep working and nothing else notices.
+
+Two things that cost time and are worth knowing:
+
+- **netsh refuses while any port in the range is in use.** Stop the lab
+  first. It does not say which port is the problem, so check before
+  running it.
+- **Stop nodes by LISTENING PORT, not by matching the command line.**
+  labMaster is launched with a relative path (`spirit/test/labMaster/…`),
+  so a filter on `SpiritOS` matches every node but that one — which is
+  the one holding 65420.
+
+```powershell
+Get-NetTCPConnection | Where-Object {
+  $_.LocalPort -ge 65400 -and $_.LocalPort -le 65432 -and $_.State -eq 'Listen'
+} | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+Undo: the same command with `delete` in place of `add`.
+
+**A fresh machine needs this before the lab suites can be trusted.** Until
+it is done, any lab suite can go red for a reason that has nothing to do
+with the code, and the failure is indistinguishable from a real one.
