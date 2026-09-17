@@ -109,6 +109,12 @@ function report(opts) {
     // and must not be drawn the same.
     meter: o.meter || undefined,
 
+    // WHAT IT IS ALLOWING RIGHT NOW, beside what it moved. Two pools, so
+    // an owner watching a busy box can see which one is the constraint —
+    // a partner pool at its floor while member traffic is nowhere near
+    // its cap is a different problem from both being spent.
+    caps: o.caps || undefined,
+
     // THE RING, and it is here so that its disappearance is visible.
     // When R8 deletes send/inbox this number goes to zero and then the
     // field goes, and an owner watching a monitor sees the change rather
