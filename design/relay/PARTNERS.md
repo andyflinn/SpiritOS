@@ -1364,10 +1364,20 @@ Granting reporting without routing is coherent. The reverse is not.
 > contacts."*
 
 The second sentence is the requirement and the first is the mechanism.
-**Acquisition is the feature** — two people on different relays that
-partner can each end up with a usable contact row for the other — and a
-key with a label is not a usable row. What makes a row confirmable is the
-peer's own word about themselves.
+**Acquisition is the feature.** Two people on different relays that
+partner each end up with a contact row for the other.
+
+**And the description is a small part of it.** Andy, correcting an earlier
+draft of this section that billed it as the point:
+
+> *"the description is only help for duplicate labels."*
+
+That is its job and the whole of its job: three `john`s come back from a
+search and something has to tell them apart. `contactsNameCell` already
+falls back to the key ending for exactly this, and a sentence the peer
+wrote is a better disambiguator than eight base64 characters. It is not
+what makes the acquisition worth having — see *"acquisition is the
+gate"* below, which is.
 
 ### The two reaches do not match, and cannot be made to by forwarding
 
@@ -1434,3 +1444,151 @@ What tier three adds is publication, not authorship.
   peer's own register; a partner's copy is hearsay held for a search. The
   by-reference rule says fetch from the home relay and do not cache the
   prose, which answers it — but it has never been written as a rule.
+
+---
+
+## Acquisition is the gate (decided 2026-09-17)
+
+> **Andy:** *"once both peers added each other, then more gates become
+> open-able."*
+
+This is the governing idea of the whole partner-reach question, and it
+arrived last because everything above was looking at the wrong subject.
+
+**The gates do not need widening. They need a different subject.** Every
+shape considered until now asked *"may a partner's members post through
+this relay?"* — a question about a **population**, which is why the
+arithmetic kept coming out as `partners × members` and why the answers
+kept needing a vouch broad enough to be uncomfortable. The right question
+is *"have these two agreed?"* — about a **pair**.
+
+### Mutual acquisition is consent, and consent is the authority
+
+The node already works this way and has since 2026-09-12. `whoBook` ranks
+an acquisition — `census 0 < hold 1 < message 2 < invite 3 < handle 4 <
+member 5` — and `ACQUIRED_LISTENING` (`['message','invite','handle',
+'member']`) is what decides **whether this node accepts somebody's mail at
+all**. A key you have not acquired is not heard from.
+
+So the front door already encodes exactly the fact that would open the
+routing gates. What is missing is not a policy. It is that **the fact
+lives only in the two nodes** and nothing carries it to the relays that
+would act on it.
+
+### Why this is better than a broader vouch
+
+| | widen for all partner-members | open per acquired pair |
+|---|---|---|
+| fan-out | `partners × members` | the pairs that actually agreed |
+| consent | implied by the partnership | explicit, by both parties |
+| revocation | drop the partnership, affects everyone | Forget, affects one pair |
+| blast radius of a bad partner | their whole membership | only who your people agreed to |
+
+It also keeps the vouch honest at its narrowest: a relay still only
+asserts *"this key was verified by a partner I trust"*, and that assertion
+now has to carry **one pair**, not a population.
+
+### The staging falls out
+
+1. **Find** — `search`, built, already crosses a partnership.
+2. **Confirm** — the register's description, so three `john`s are
+   distinguishable. Decided above; still tier three, still not built.
+3. **Acquire** — each node writes its own row. Needs nothing new: this is
+   `whoBook.upsert` at rank `handle`, which is what adding from a search
+   result already does.
+4. **Unlock** — once **both** have done step 3, the four gates may open
+   for that pair.
+
+Steps 1–3 are acquisition and land without touching a gate. Step 4 is
+delivery, and it is the only part that changes `relay.js`.
+
+### Open — and it is the one question left
+
+**Who observes the mutuality?** Each node knows only its own half: jazz
+knows she added sonny; only sonny's node knows whether he added her.
+Candidates, none decided:
+
+- **Each node tells its home relay** what it has acquired, and the two
+  relays compare notes over the partner stream they already hold. Costs a
+  per-pair row on the relay, which is the thing `0006` and the memory
+  model are most careful about — and a list of who you have added is far
+  more revealing than a census.
+- **One greeting is allowed**, rate-limited, and acceptance creates the
+  pair. This is how the local front door already behaves: an unacquired
+  sender's message is **held** (`hold`, rank 1) for a human to accept. It
+  needs no new store on the relay, and it makes step 4 bootstrap from step
+  3 rather than requiring a separate exchange.
+- **The relay does not decide at all** — it routes across a vouched
+  partnership, and acceptance stays the recipient node's front door, where
+  it already lives. Simplest, and it moves the question from authority to
+  abuse-resistance: the relay's concern becomes rate and memory rather
+  than consent.
+
+The third is the smallest change and the most consistent with where the
+decision already lives. It is also the one that most needs a rate story
+before anybody builds it.
+
+### Decided: partners forward, the peer gates — except for the card
+
+> **Andy:** *"the partners forward all requests but the peer can gate by
+> identity."*
+>
+> **Andy:** *"...except for 'description'."*
+
+The third candidate above, and the exception is not a detail — it is what
+stops the design deadlocking.
+
+**The relay stops being an authority and becomes a conduit.** It forwards
+across a vouched partnership and asks no question about whether these two
+have agreed. The recipient **node** decides, at the front door it already
+has: `whoBook` ranks the sender, `ACQUIRED_LISTENING` decides whether the
+packet is heard, and an unacquired sender is **held** rather than refused —
+`hold`, rank 1, waiting for a human. Nothing new is invented, and the
+authority stays in the one place that was ever entitled to it.
+
+That also answers *"who observes the mutuality"*: **nobody at the relay,
+and nobody needs to.** Mutual acquisition is not a precondition a relay
+checks — it is what *happens*. Jazz's greeting is forwarded, sonny's node
+holds it, sonny accepts, and the pair now exists because both books say
+so. Step 4 bootstraps out of step 3 instead of needing a separate
+exchange, and no relay ever holds a list of who added whom.
+
+**And the card is not gated, because it cannot be.** `describe` is
+answered above the front door already
+([peerPost.js:384](../../spirit/run/js/peerPost.js#L384)). That was built
+for a different reason and turns out to be load-bearing here: you need the
+description **in order to decide whether to acquire**, so gating it on
+acquisition would be a lock whose key is inside it. Three `john`s stay
+three `john`s for ever.
+
+So the exception is structural rather than a relaxation: the one request
+that must cross before any relationship exists is the one that asks *"who
+are you?"*, and it is the one request that discloses nothing the census
+does not already publish.
+
+#### This refines the section above, it does not cancel it
+
+*"So it is tier three, not the forward"* was written before this decision
+and had the mechanisms the wrong way round. With forwarding, **reach is
+solved by the forward**: the card is answered by the node, to anybody the
+partnership carries, so `describe` and `search` reach equally by
+construction.
+
+What the register still buys is **availability, not reach** — a node that
+is asleep answers nothing, and that is most of the time. So tier three
+remains worth building and its billing changes: it is the offline answer
+for a question the forward can already ask, not the mechanism that makes
+the question askable.
+
+#### What this costs, stated plainly
+
+- **The relay's concern moves from consent to abuse.** A conduit that
+  forwards anything needs a rate story, and `partners × members` is the
+  arithmetic it has to survive. That work does not go away; it changes
+  department.
+- **A held greeting is a row somebody did not ask for.** The local front
+  door already accepts this trade for relay-mates; this widens who can
+  cause one to the partner mesh.
+- **Your description is readable by the whole mesh.** Which *"public by
+  contract"* above already accepts — but it is now true one hop further
+  out than when that was written.
