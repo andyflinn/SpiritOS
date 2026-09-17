@@ -1858,7 +1858,15 @@ if (!relayMode) {
   // goes through peer.post like anybody else's — the relay names itself
   // on its own roster precisely so it has an ordinary address.
   loopbackVerbs.claim('relay', 'hub.js', {
-    'relay.claim': function (rq, rs) { hub.handleClaim(rq, rs, readJsonBody); },
+    // PRESENCE IS HANDED IN so a claim can connect the node it just
+    // enrolled. A brand-new node has no key at boot, so presence bailed
+    // and never tried again — see handleClaim.
+    'relay.claim': function (rq, rs) {
+      hub.handleClaim(rq, rs, readJsonBody, {
+        presence: presence,
+        probe: require('./hub').relayRequest,
+      });
+    },
     // Eligibility, read-only: does this peer own the relay at that url?
     // Answered off a PUBLIC census, so it grants nothing — the promotion
     // itself is an owner verb posted to the relay like any other.

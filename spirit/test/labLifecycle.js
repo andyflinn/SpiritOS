@@ -30,6 +30,9 @@
 // this suite and its two siblings went months without going red anywhere
 // precisely because nothing ran them.
 
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const test = require('./testSupport.js');
 const lab = require('./labMaster/ensureMaster.js');
 
@@ -58,12 +61,28 @@ async function waitUntil(fn, timeoutMs, label) {
   }
 }
 
+// A RELAY IS SERVING when its public census answers. Expressed through
+// the one door below rather than opening a second: oneDoor.js counts
+// every reach for the wire in every file, tests included, and a number
+// that may only fall is the whole mechanism (AGENT.md, Comms).
 async function serving(port) {
+  const res = await hub(port, 'GET', '/api/relay/who', null);
+  return res.status === 200;
+}
+
+// One loopback verb at one door, the way every caller asks now.
+async function hub(port, method, pathname, body) {
   try {
-    const res = await fetch('http://127.0.0.1:' + port + '/api/relay/who');
-    return res.status === 200;
+    const res = await fetch('http://127.0.0.1:' + port + pathname, {
+      method: method,
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    let parsed = null;
+    try { parsed = await res.json(); } catch (e) { parsed = null; }
+    return { status: res.status, body: parsed };
   } catch (e) {
-    return false;
+    return { status: 0, body: null };
   }
 }
 
@@ -134,6 +153,104 @@ async function run() {
     test.check('and the relay is really listening — a started row is not a serving process');
   } else {
     test.fail('the relay never answered /api/relay/who on ' + RELAY_PORT);
+  }
+
+  // ── A NODE THAT CLAIMS AFTER BOOT MUST CONNECT ─────────────────────
+  //
+  //   Andy: "now i have a new 'Jazzy Alexandra' and she's bound to
+  //   spirit-3 but she cannot find anybody in contacts" — "her relay
+  //   shows green."
+  //
+  // She had no `relay-presence` job at all. presenceNode.start returns at
+  // its first line when the node has no identity, and a brand-new node
+  // has none: it boots empty and the key is minted by the first CLAIM.
+  // Nothing started presence again, so the node sat enrolled and
+  // unconnected until somebody restarted it.
+  //
+  // EVERY NEW NODE GOES THROUGH EXACTLY THAT SEQUENCE, which is why this
+  // is asserted here rather than left to the live suites: labWorld writes
+  // an identity into a home and RESTARTS the node, so it has never once
+  // walked the path a person walks.
+  //
+  // The green badge was not lying either, which is what made it hard to
+  // see: it is read off the public census, and `claimed` means "you have
+  // a row here" — a different question from "you are connected".
+  test.subHeading('A node that claims after boot connects without a restart');
+
+  // `serving` asks /api/relay/who, which only a RELAY answers. A personal
+  // node is alive when its own door answers a verb — the same door every
+  // caller uses.
+  const relayUp = await serving(RELAY_PORT);
+
+  // WAITED FOR, not assumed. The suite above waits for the relay to
+  // listen and never waited for the avatar — a started row is not a
+  // serving process, which is a sentence this file already carries about
+  // the other one.
+  let avatarUp = false;
+  try {
+    await waitUntil(async function () {
+      const probe = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.list' });
+      return probe.status === 200;
+    }, 10000, 'avatar on ' + AVATAR_PORT);
+    avatarUp = true;
+  } catch (e) { avatarUp = false; }
+  if (!relayUp || !avatarUp) {
+    test.fail('need both fixtures up: relay=' + relayUp + ' avatar=' + avatarUp);
+  } else {
+    // The avatar booted with no identity — a fresh clone of the tree, the
+    // way a new node arrives. Before claiming it should have no presence
+    // job, because there is nobody to be present AS.
+    const before = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.list' });
+    const beforeKinds = ((before.body || []).map(function (j) { return j.type; }));
+
+    if (beforeKinds.indexOf('relay-presence') === -1) {
+      test.check('a node with no key holds no presence — there is nobody to be present as');
+    } else {
+      test.fail('presence before a key: ' + beforeKinds.join(', '));
+    }
+
+    // POINT IT AT THE FIXTURE RELAY FIRST. `withChosenRelay` refuses a
+    // url the node does not list — deliberately, so a stale tab cannot
+    // aim an owner-signed claim at a box the person never added — and
+    // nothing exposes "configure this node's relays" from outside it, so
+    // the file is written the way labWorld writes one.
+    //
+    // No restart needed: ownerBadge.loadRelays reads the file per call.
+    const avatarHome = path.join(
+      os.tmpdir(), 'spiritos-relay-fakes', AVATAR_NAME, 'spirit', 'run'
+    );
+    fs.mkdirSync(path.join(avatarHome, 'app', 'natter'), { recursive: true });
+    fs.writeFileSync(
+      path.join(avatarHome, 'app', 'natter', 'relays.json'),
+      JSON.stringify([{ label: 'ping', url: 'http://127.0.0.1:' + RELAY_PORT }], null, 2)
+    );
+
+    // And claim, exactly as Natter does.
+    const claimed = await hub(AVATAR_PORT, 'POST', '/api/spirit', {
+      verb: 'relay.claim', url: 'http://127.0.0.1:' + RELAY_PORT, name: 'ping-andy',
+    });
+    if (claimed.status >= 200 && claimed.status < 300) {
+      test.check('it can take a seat on the fixture relay');
+    } else {
+      test.fail('claim: ' + claimed.status + ' ' + JSON.stringify(claimed.body));
+    }
+
+    // NO RESTART between the claim and the question. That is the whole
+    // assertion: the node that was just enrolled has to connect itself.
+    let connected = false;
+    try {
+      await waitUntil(async function () {
+        const after = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.list' });
+        return ((after.body || []).some(function (j) { return j.type === 'relay-presence'; }));
+      }, 8000, 'presence after claim');
+      connected = true;
+    } catch (e) { connected = false; }
+
+    if (connected) {
+      test.check('and one that claims starts one, without being restarted');
+    } else {
+      test.fail('no relay-presence job after claiming — the node is enrolled and deaf');
+    }
   }
 
   test.subHeading('It can take them away again, and knows what is not its own');

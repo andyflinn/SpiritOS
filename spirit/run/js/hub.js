@@ -719,7 +719,30 @@ function createHub(rootDir) {
   // signed claim at a relay this node does not list. With nothing wanted
   // it still falls back to the only row when there is only one, which is
   // exactly what every existing caller relied on.
-  function handleClaim(req, res, readJsonBody) {
+  // ── AND A NODE THAT JUST CLAIMED MUST CONNECT ────────────────────────
+  //
+  //   Andy: "now i have a new 'Jazzy Alexandra' and she's bound to
+  //   spirit-3 but she cannot find anybody in contacts" — "her relay
+  //   shows green."
+  //
+  // She had no `relay-presence` job at all. presenceNode.start returns at
+  // its first line when the node has no identity, and a brand-new node
+  // has none: it boots empty, and the key is minted by THIS function, at
+  // the first claim. Nothing ever started presence again, so the node sat
+  // there enrolled and unconnected until somebody restarted it.
+  //
+  // EVERY NEW NODE GOES THROUGH EXACTLY THAT SEQUENCE. Boot, claim,
+  // nothing. It could not search, could not be posted to, and could not
+  // receive — while looking bound, because the badge is read off the
+  // public census and `claimed` means "you have a row here", not "you are
+  // connected". Green was telling the truth about a different question.
+  //
+  // `presence.start` is safe to call again: it creates its job only if it
+  // has none and openTo returns early for a url it already holds. So this
+  // is "make sure", not "restart".
+  function handleClaim(req, res, readJsonBody, deps) {
+    var presence = deps && deps.presence;
+    var probe = deps && deps.probe;
     readJsonBody(req).then(function (body) {
       withChosenRelay(res, body && body.url, function (url) {
         relayRequest(url, 'POST', '/api/relay/claim', signedClaim(
@@ -729,8 +752,16 @@ function createHub(rootDir) {
           body && body.inviteLabel
         ))
           .then(function (r) {
+            // AFTER THE ANSWER IS WRITTEN, never before: a claim that
+            // worked must be reported even if opening a stream does not,
+            // and connecting is not what the caller asked about.
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(markMine(rootDir, r.text));
+
+            if (r.status >= 200 && r.status < 300 && presence && probe) {
+              try { presence.start(probe); }
+              catch (e) { /* the claim stands; the next boot connects */ }
+            }
           })
           .catch(function (err) { fail(res, 502, String(err.message || err)); });
       });
