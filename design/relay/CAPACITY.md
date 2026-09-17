@@ -108,6 +108,62 @@ start.
    > *"bandwidth upstream and downstream could be measured and observed in
    > a ring-bucket of current measurements."*
 
+6. **The interval is 30 seconds, and it LENGTHENS under load.**
+
+   > **Grok:** *"30s stream interval."*
+   >
+   > **Andy:** *"interval may increase with increasing load."*
+
+   The second half inverts the obvious instinct, and is right for a reason
+   worth writing down: announcing costs bandwidth multiplied by members, and
+   under load that is precisely what cannot be spared. A busy relay
+   spending more of itself to say it is busy is self-defeating.
+
+   **It is safe only because the refusal carries the number.** The two
+   mechanisms have opposite load profiles, which is why they pair:
+
+   | | cheap when | reaches you |
+   |---|---|---|
+   | the stream | idle — and nobody is urgent when idle | before you need it |
+   | the 429 | busy — it happens only on a real refusal | exactly when you need it |
+
+   So a lengthening interval does not delay the truth; it delays a courtesy
+   that matters least at the moment it is withheld.
+
+   **The risk, and it needs a ceiling.** If the interval grows without
+   bound, a member's cached value becomes arbitrarily stale and every send
+   turns into refuse-then-retry — which costs the relay more than the
+   announcement it saved. *Open:* the maximum interval, and whether growth
+   is tied to the same meters as the cap.
+
+7. **Rate management bootstraps on delivery that already exists.**
+
+   > **Andy:** *"we already have packet delivery, that should be the
+   > bootstrap for rate-management, there we get first measurements."*
+
+   This is a sequencing decision and it changes the build order. Partner
+   forwarding is not a prerequisite: **`routePost` between two members of
+   one relay is live traffic on two real boxes today**, and it is both the
+   place the first gate goes and the place the first measurements come
+   from.
+
+   Grok, independently: *"put a dumb rateOk on routePost before partner
+   delivery."* Andy's version is the same instruction with the reason
+   attached — the meter matters more than the gate, because a governor
+   built against hypothetical partner traffic would be tuned against a
+   guess.
+
+   What follows:
+
+   - the ring is fed by **real traffic on spirit and lab**, now, before any
+     forwarding exists;
+   - *"a fresh relay starts conservative and earns its ceiling"* stops
+     being a claim and becomes something observable on a box in use;
+   - by the time forwarding lands, the ceiling has been **discovered**
+     rather than guessed, which is the whole argument of recommendation 2;
+   - and the first gate is a plain static limit, not the governor. The
+     governor replaces it once the ring has something in it.
+
 ---
 
 ## Recommended (Claude), not decided
@@ -323,9 +379,10 @@ true.
 
 ## Open
 
-- **What is the interval?** "Reasonable" is doing work in the decided list.
-  Too short and the stream is chatter; too long and the committed value is
-  stale during exactly the burst it exists to govern.
+- ~~**What is the interval?**~~ **Answered:** 30 seconds, lengthening under
+  load — decided item 6. What remains open is its **maximum**: an interval
+  that grows without bound turns every send into refuse-then-retry, which
+  costs more than the announcement it saved.
 - **Partner streams carry "request and reply, and nothing else"**
   ([partnerLink.js:106](../../spirit/run/js/partnerLink.js#L106)),
   deliberately. A limits event widens that. Defensible — it is the relay's
