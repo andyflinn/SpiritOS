@@ -41,9 +41,25 @@ function cdPost(verb, body) {
   return cdApi.verb(verb, body);
 }
 
+// ── A MESSAGE THAT SURVIVES THE REPAINT ──────────────────────────────
+//
+// `#cd-status` is written by cdRender as part of body.innerHTML, always
+// empty — so every message this wrote was destroyed by the next repaint,
+// and the failure path repaints. Andy: "i tried 3 times now to remove her
+// seat, and failed WITHOUT ERROR MESSAGE."
+//
+// The relay had answered `no such peer` every time. The screen said
+// nothing because the screen had already thrown the sentence away.
+//
+// Kept in a variable and drawn from it, like every other thing on this
+// screen: a repaint redraws state, and a message is state until somebody
+// has read it.
+var cdMessage = '';
+
 function cdStatus(text) {
+  cdMessage = String(text || '');
   var el = document.getElementById('cd-status');
-  if (el) el.textContent = text || '';
+  if (el) el.textContent = cdMessage;
 }
 
 // Re-fetched by key, never handed over in params.
@@ -328,7 +344,8 @@ function cdRender() {
         buttons +
       '</div>' +
     '</div>' +
-    '<div class="job-manifest-note" id="cd-status"></div>';
+    '<div class="job-manifest-note" id="cd-status">' +
+      cdEscapeHtml(cdMessage) + '</div>';
 }
 
 // Everything this screen decides is a hub verb. Nothing is written to
@@ -407,8 +424,24 @@ function cdReleaseSeats() {
           .then(function (out) {
             var said = out && out.body;
             if (out && out.ok && (!said || said.ok !== false)) return true;
+
+            // ── ALREADY GONE IS NOT A FAILURE ────────────────────────
+            //
+            // `no such peer` means the relay holds no row for this key —
+            // which is the state this was trying to reach. Treating it as
+            // a refusal left the contact permanently unforgettable
+            // whenever the seat had been removed some other way, and the
+            // node's own `memberOf` had not caught up.
+            //
+            // The catching-up is fixed too (hub.statusFor reconciles on
+            // every probe now), but this has to be right on its own: the
+            // two screens race, and the one holding the button should not
+            // depend on winning.
+            var why = String((said && said.error) || (out && out.error) || '');
+            if (/no such peer/i.test(why) || (said && said.status === 404)) return true;
+
             cdStatus('could not remove their seat on ' + url + ': ' +
-              ((said && said.error) || (out && out.error) || 'no answer'));
+              (why || 'no answer'));
             return false;
           });
       });

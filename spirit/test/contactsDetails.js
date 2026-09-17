@@ -238,10 +238,12 @@ function mountDialog(options) {
   // which is what makes a second open impossible to get wrong.
   behavior.mount(container, api);
   behavior.open({ key: opts.key });
+  const openedWith = opts.key;
   return {
     doc: doc, log: log, people: people, behavior: behavior, titles: titles,
     posts: posts,
     closed: closed,
+    openedWith: openedWith,
     marks: marks,
     order: order,
     // Somebody clicking anything else in the window.
@@ -255,6 +257,13 @@ function mountDialog(options) {
 }
 
 function el(app, id) { return app.doc.getElementById(id); }
+
+// Anything that changes state on this screen repaints it. The armed
+// buttons do, the disarm does, and every decision does — so a message
+// that cannot survive one is a message nobody reads.
+function cdRenderAgain(app) {
+  app.behavior.open({ key: app.openedWith });
+}
 function settle() {
   return new Promise(function (r) { setImmediate(r); })
     .then(function () { return new Promise(function (r2) { setImmediate(r2); }); });
@@ -1143,7 +1152,10 @@ function aRefusedEvictionKeepsTheRow() {
       held: false, blocked: false, onRelay: true, bytesHeld: 0,
     }],
     relays: [{ url: 'https://mine.example', relayKey: 'RELAYKEY-MINE' }],
-    evictionRefuses: { 'RELAYKEY-MINE': 'no such peer' },
+    // A REAL REFUSAL, not "no such peer" — that phrase now means the seat
+    // is already gone, which is success. This fixture used it by accident
+    // and the change caught the test rather than the other way round.
+    evictionRefuses: { 'RELAYKEY-MINE': 'not the owner here' },
   });
 
   return settle().then(function () {
@@ -1159,11 +1171,79 @@ function aRefusedEvictionKeepsTheRow() {
 
         // AND IT SAYS WHY, naming the relay that refused. "It did not
         // work" is not actionable when a person may be seated on several.
-        const said = el(app, 'cd-body').innerHTML + ' ' + (el(app, 'cd-status').textContent || '');
-        if (/no such peer/.test(said) && /mine\.example/.test(said)) {
+  const said = el(app, 'cd-body').innerHTML + ' ' + (el(app, 'cd-status').textContent || '');
+        if (/not the owner here/.test(said) && /mine\.example/.test(said)) {
           test.check('and the screen says which relay refused, and what it said');
         } else {
           test.fail('status: ' + said.slice(0, 300));
+        }
+
+        // ── AND THE MESSAGE SURVIVES THE REPAINT ─────────────────────
+        //
+        //   Andy: "i tried 3 times now to remove her seat, and failed
+        //   WITHOUT ERROR MESSAGE."
+        //
+        // `#cd-status` is written by cdRender as part of body.innerHTML,
+        // always empty — so every message written into it was destroyed
+        // by the next repaint, and the failure path repaints. The relay
+        // had answered every time; the screen had thrown the sentence
+        // away before anybody could read it.
+        // ASKED OF THE MARKUP, not of the stub element. The fake document
+        // does not model innerHTML destroying its children, so
+        // `#cd-status`'s textContent survives a repaint here whatever the
+        // app does — and a check on it passes against the bug as happily
+        // as against the fix. What the browser would show is what the
+        // repaint WROTE, so that is what this reads.
+        cdRenderAgain(app);
+        if (/not the owner here/.test(el(app, 'cd-body').innerHTML)) {
+          test.check('and is still there after the screen redraws itself');
+        } else {
+          test.fail('the message was wiped by a repaint');
+        }
+      });
+    });
+  });
+}
+
+// ── A SEAT THAT IS ALREADY GONE IS NOT A FAILURE ─────────────────────
+//
+//   Andy: "i tried 3 times now to remove her seat, and failed without
+//   error message."
+//
+// The relay had answered `no such peer` every time: the seat was already
+// gone — removed by one of the earlier attempts — and this node's
+// `memberOf` had not caught up, so the row stayed locked and Forget kept
+// trying to evict nothing.
+//
+// Two things were wrong and this is the second: `no such peer` IS the
+// state the eviction was trying to reach. The first — a `memberOf` that
+// only pruned at boot — is fixed in the node (hub.statusFor), but this
+// has to be right on its own: the two race, and the screen holding the
+// button should not depend on winning.
+function aSeatAlreadyGoneStillForgets() {
+  test.subHeading('A seat the relay no longer has is one less thing to remove');
+
+  const app = mountDialog({
+    key: 'KEY-JAZZ',
+    people: [{
+      publicKey: 'KEY-JAZZ', tail: 'QBWg=', publicLabel: 'Jazzmin Thut',
+      caption: 'Jazzmin Thut', myLabel: '', acquiredVia: 'member',
+      memberOf: ['https://mine.example'], missingSince: '',
+      held: false, blocked: false, onRelay: true, bytesHeld: 0,
+    }],
+    relays: [{ url: 'https://mine.example', relayKey: 'RELAYKEY-MINE' }],
+    evictionRefuses: { 'RELAYKEY-MINE': 'no such peer' },
+  });
+
+  return settle().then(function () {
+    el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+    return settle().then(function () {
+      el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+      return settle().then(settle).then(settle).then(function () {
+        if (posted(app, 'contact.forget').length === 1) {
+          test.check('the forget goes through — there is no seat left to take');
+        } else {
+          test.fail('refused to forget a seat that does not exist');
         }
       });
     });
@@ -1221,6 +1301,7 @@ readsTheRow()
   .then(writesNothingDown)
   .then(forgettingAMemberTakesTheSeatFirst)
   .then(aRefusedEvictionKeepsTheRow)
+  .then(aSeatAlreadyGoneStillForgets)
   .then(anOrdinaryContactIsForgottenAsEver)
   .then(aDudSaysWhyAtTheTop)
   .then(anOrdinaryContactIsNotWarnedAbout)

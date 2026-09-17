@@ -2177,6 +2177,22 @@ function createHub(rootDir) {
       return relayRequest(url, method, pathname, null);
     }, me && me.publicKey)
       .then(function (summary) {
+        // ── THE SWEEP RIDES THIS PROBE ───────────────────────────────
+        //
+        // It was wired at boot and on a claim event, and the comment on
+        // reconcileMembers said "on every probe" — which it was not. The
+        // cost of that was exact and Andy hit it: he removed somebody's
+        // seat, `memberOf` still named the relay, so the row stayed
+        // locked and Forget went on trying to evict a seat that was
+        // already gone. Until a restart.
+        //
+        // THIS probe is the one the browser triggers, and it has already
+        // fetched every census — so reconciling here is free, and it
+        // happens at exactly the moment a screen is about to draw
+        // something from the answer.
+        try { reconcileMembers(summary); reconcileOrphans(summary); }
+        catch (e) { /* a status must answer even if the book will not */ }
+
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           name: name,
