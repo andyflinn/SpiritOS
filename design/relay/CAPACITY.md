@@ -87,6 +87,27 @@ start.
 
 ## Decided (Andy)
 
+0. **A relay's resource usage is driven by member demand.**
+
+   > **Andy:** *"relay's resource usage driven by member demand."*
+
+   Numbered zero because the rest follows from it. **A relay spends nothing
+   in anticipation.** Everything it holds is the trace of something a
+   member actually asked for — a route exists while a post is in flight, a
+   presence entry while a socket is open — and when nobody is asking, it
+   holds its own ledger and nothing else.
+
+   **The test this gives every future proposal:** *does this consume
+   memory before anybody asked for anything?* If yes, it is wrong.
+
+   It explains, in one rule, decisions that were each argued separately:
+   no partner rosters, no hint lists, no cached descriptions. And it is why
+   two relays on one VPS is reasonable rather than a hack — a relay whose
+   members are idle costs almost nothing, so the second one is not
+   competing for anything until somebody uses it.
+
+   **It also deletes a verb.** See decided item 10.
+
 1. **A rate limit is not a constant.**
 
    > *"fixing a limit as a constant seems… not very modern."*
@@ -266,7 +287,49 @@ start.
    rather than for capacity — a different feature with its own reasons
    (PARTNERS.md).
 
-10. **Rate management bootstraps on delivery that already exists.**
+10. **There is no "give me your member list", and there never was a caller.**
+
+    > **Andy:** *"the get-complete-member-list could be dropped
+    > altogether — that's the slimmest initial load guaranteed at startup,
+    > with no instant explosive growth."*
+    >
+    > **Grok had said:** *"refuse member roll."* Deleting is better than
+    > refusing: a refused verb is one somebody writes a bounded version of
+    > in six months.
+
+    **Under the corrected frame nobody needs it.** The roll existed to let
+    A resolve a key to a partner — the hint list, `members × ~460 B` per
+    partner. But once A only ever says *"B, forward this to your member
+    K"*, **A never has to know B has K.** B knows. And *which* partner
+    comes from the node, which already has it: a search row carries the
+    partner's URL, and PARTNERS.md's *"one route is the floor, the list is
+    the point"* has the node persisting and supplying routing options. That
+    job moved off the relay and the hint list did not notice.
+
+    What it buys:
+
+    - **The roster rule becomes structural rather than enforced.** *"A
+      relay never persists a partner's members"* stops being a policy
+      somebody could soften and becomes a fact: no verb could deliver
+      them. The same shift the cert makes for one-hop.
+    - **No `partners × members` term exists anywhere**, so it cannot be
+      reintroduced by a later optimisation.
+    - Startup memory is bounded by a relay's own members, permanently —
+      which is decided item 0 applied to boot.
+
+    What it costs, and it is real but small: a **cold post with no route**
+    becomes a hunt — asking each partner *"do you hold K?"* — rather than
+    a local lookup. N small questions on the same bus, not a bulk
+    transfer. PARTNERS.md already accepts that state: *"memory pressure
+    degrades performance, not connectivity"* describes a relay running
+    permanently in flag-only mode. Dropping the roll means **always**
+    operating in the state the design already calls safe.
+
+    **So the per-verb list is two entries, not three:** `search`, bounded
+    as it is today; and `forward`, admitted only with the cert attached and
+    the inner packet intact.
+
+11. **Rate management bootstraps on delivery that already exists.**
 
    > **Andy:** *"we already have packet delivery, that should be the
    > bootstrap for rate-management, there we get first measurements."*

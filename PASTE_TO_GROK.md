@@ -144,11 +144,41 @@ leaving it only for members, who may hold a stream for hours without posting.
 
 No gate moves. No persist shape changes.
 
-1. **The partner allowance becomes a per-verb list.** `if (fromPartner && !(body
-   && body.search)) body = null;` is currently both the permission and the entire
-   vocabulary. The three asks differ in cost and authority: a member roll should
-   be refused outright (the roster rule), a search is bounded at 32 slots, a
-   forward asserts a third party.
+1. **The partner allowance becomes a per-verb list — with TWO entries, not
+   three.** `if (fromPartner && !(body && body.search)) body = null;` is
+   currently both the permission and the entire vocabulary. It becomes
+   `search` (bounded at 32 slots, as today) and `forward` (cert attached,
+   inner packet intact).
+
+   **You said "refuse member roll". Andy went further: delete it.** *"The
+   get-complete-member-list could be dropped altogether — that's the slimmest
+   initial load guaranteed at startup, with no instant explosive growth."*
+
+   Deleting beats refusing because **nobody needs it under the corrected
+   frame.** The roll existed so A could resolve a key to a partner — the hint
+   list, `members × ~460 B` per partner. Once A only ever says *"B, forward
+   this to your member K"*, **A never has to know B has K**; B knows. And
+   *which* partner comes from the node, which already has it: the search row
+   carries the partner's URL, and PARTNERS.md's *"one route is the floor, the
+   list is the point"* has the node persisting routing options. That job moved
+   off the relay and the hint list did not notice.
+
+   So *"a relay never persists a partner's members"* becomes **structural
+   rather than enforced** — no verb could deliver them — and no
+   `partners × members` term exists anywhere to be reintroduced later. The
+   cost is a cold post with no route becoming a hunt (*"do you hold K?"*, N
+   small questions on the same bus) instead of a local lookup, which is the
+   flag-only state PARTNERS.md already calls safe.
+
+   **And the principle underneath it, which Andy stated last and which the
+   rest follows from:** *"relay's resource usage driven by member demand."* A
+   relay spends **nothing in anticipation** — a route exists while a post is
+   in flight, a presence entry while a socket is open, and when nobody is
+   asking it holds its own ledger and nothing else. The test for any future
+   proposal: *does this consume memory before anybody asked for anything?*
+   The member roll fails it, which is a better reason to drop it than size.
+   It also explains, in one rule, three things argued separately: no partner
+   rosters, no hint lists, no cached descriptions.
 2. **B originates a request to its own member** — `routePost` already does this
    via `presentNow.send(target.id, 'request', …)`.
 3. **The inner packet travels intact** — N1's original text and signature nested
