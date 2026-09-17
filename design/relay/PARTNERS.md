@@ -1391,6 +1391,35 @@ the one thing a partner is permitted to ask.
 > logic. Knowing it arrived *via* a partner is for the UI, not for
 > authorization.
 >
+> ### One bus, and everything rides it
+>
+> > **Andy:** *"and all comms between partners ride the same bus."*
+>
+> There is one partner-to-partner channel — **a post out, the reply on the
+> held stream** — and every exchange uses it. Search, forward, and whatever
+> is added next are bodies on the same wire, not mechanisms beside it. Half
+> enforced already: `partnerLink.onEvent` handles *"REQUEST AND REPLY, AND
+> NOTHING ELSE."*
+>
+> This is what makes the per-verb list in item 1 below the whole of the
+> design rather than the first of several. A new thing partners can do is a
+> new **key in a body**; it is never a new event, a new route, or a second
+> channel. If a proposal needs one of those, the proposal is wrong.
+>
+> **Recommendation (Claude), not decided — it retires an open question.**
+> This author flagged earlier that a streamed rate-limit announcement
+> *"widens what a partner stream carries"* and needed its own decision.
+> Under one bus it need not widen anything: **let every reply carry the
+> current cap.** Then there is no announcement mechanism at all — no new
+> event, no push, no interval to tune — and the number arrives with the
+> traffic it governs. A quiet partnership needs none, because it is
+> spending nothing.
+>
+> That would retire *"30s, lengthening under load, and what is the
+> maximum"* (CAPACITY.md, decided 6) **for the partner side**, leaving it
+> only for members — who may hold a stream for hours without posting, and
+> so cannot learn a cap from a reply they never ask for.
+>
 > ### What is actually left to build
 >
 > 1. **The partner allowance becomes a list.** `body.search` is currently
