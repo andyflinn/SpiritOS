@@ -170,16 +170,29 @@
         // finds a row already in the table, which is how a suite asks for
         // a node it can trust to be new.
         //
-        // START OR STOP, never both. A stopped node has one useful thing
-        // to do to it and a running node has another; offering both makes
-        // half the buttons on this screen no-ops at any moment.
+        // ONE BUTTON, NOT A TOGGLE.
+        //
+        //   Andy: "labMaster no longer offers me start or stop, one
+        //   (re)start button would do."
+        //
+        // A toggle shows you one half of itself, so with every node up
+        // every row said Stop and the column read as though it had lost a
+        // control. And the thing wanted most often — put this node back on
+        // its feet — took two presses with a wait in between.
+        //
+        // (Re)start stops it if it is up and starts it either way, so the
+        // button means the same thing on every row whatever the row is
+        // doing. WHETHER A NODE IS UP is still on the screen: a running
+        // node's name is a link to it, a stopped one's is plain text.
+        //
+        // NOTHING STOPS A NODE WITHOUT DELETING IT any more. That is the
+        // cost of three buttons and it was asked for; the verb is still on
+        // the server for labWorld, which stops nodes between suites.
         var actions = n.permanent
           ? ''
-          : (n.running
-            ? '<button data-act="stop" data-id="' + n.id + '" ' +
-                'title="Leave the process stopped. The home and its key stay.">Stop</button>'
-            : '<button data-act="start" data-id="' + n.id + '" ' +
-                'title="Start it on its port.">Start</button>') +
+          : '<button data-act="restart" data-id="' + n.id + '" ' +
+              'title="Stop it if it is up, then start it on its port. ' +
+              'No fetch — same code it is running now.">(Re)start</button>' +
             '<button data-act="refresh" data-id="' + n.id + '" ' +
               'title="git fetch + reset --hard origin/master, then start it. ' +
               'Same node, same key, same relay rows \u2014 git never had them.">' +

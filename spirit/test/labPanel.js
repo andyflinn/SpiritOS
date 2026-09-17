@@ -113,22 +113,38 @@ if (jazz.length === 3) {
   test.fail(jazz.length + ' buttons: ' + jazz.join(', '));
 }
 
-// ── START OR STOP, NEVER BOTH ────────────────────────────────────────
+// ── ONE BUTTON, NOT A TOGGLE ─────────────────────────────────────────
 //
-// A stopped node has one useful thing to do to it and a running node has
-// another. Offering both makes half the buttons on the screen no-ops at
-// any moment — and it is how five happened.
-if (jazz.indexOf('stop') !== -1 && jazz.indexOf('start') === -1) {
-  test.check('a running node offers Stop and not Start');
+//   Andy: "labMaster no longer offers me start or stop, one (re)start
+//   button would do."
+//
+// Start and Stop were the same button wearing two faces, and a toggle
+// shows you one of them: with every node up, every row said Stop and the
+// panel read as though the control had gone. (Re)start means the same
+// thing on every row whatever the row is doing, which is the point —
+// so it must be there on a stopped row too, not only a running one.
+if (jazz.indexOf('restart') !== -1 && jazz.indexOf('stop') === -1 && jazz.indexOf('start') === -1) {
+  test.check('a running node offers one (Re)start, not a Stop that hides Start');
 } else {
   test.fail('running row: ' + jazz.join(', '));
 }
 
 const rock = buttonsIn(rowFor(drawn, 'rock'));
-if (rock.indexOf('start') !== -1 && rock.indexOf('stop') === -1) {
-  test.check('and a stopped one offers Start and not Stop');
+if (rock.indexOf('restart') !== -1 && rock.length === 3) {
+  test.check('and a stopped one offers the same three buttons');
 } else {
   test.fail('stopped row: ' + rock.join(', '));
+}
+
+// WHETHER IT IS UP STILL HAS TO BE ON THE SCREEN, and with both the
+// Running column and the toggle gone, the name carries it: a running node
+// links to itself, a stopped one is plain text. Lose that and the table
+// says nothing about which nodes are alive.
+if (/<a href="http:\/\/localhost:65400"[^>]*>jazz/.test(drawn) &&
+    !/<a href="http:\/\/localhost:65405"/.test(drawn)) {
+  test.check('and a running node is a link to itself, which is how you can tell');
+} else {
+  test.fail('running is no longer visible on the row');
 }
 
 if (jazz.indexOf('refresh') !== -1 && jazz.indexOf('delete') !== -1) {
@@ -161,7 +177,7 @@ if (buttonsIn(rowFor(drawn, 'work')).length === 0) {
 test.subHeading('And the Running column is the button');
 
 if (drawn.indexOf('<th>Running</th>') === -1 && panel.browser.elements.tbody.innerHTML.indexOf('>yes<') === -1) {
-  test.check('no Running column, because a button that says Stop is one');
+  test.check('no Running column — the name being a link says it');
 } else {
   test.fail('Running survived');
 }

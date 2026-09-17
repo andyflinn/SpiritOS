@@ -662,6 +662,30 @@ function handleStop(node) {
   return { status: 200, node: publicNode(node) };
 }
 
+// ── ONE BUTTON THAT ALWAYS MEANS SOMETHING ───────────────────────────
+//
+//   Andy: "labMaster no longer offers me start or stop, one (re)start
+//   button would do."
+//
+// Start and Stop were a toggle, and a toggle shows you one half: with
+// every node running, every row said Stop and the table looked as though
+// it had lost a control. Worse, the thing wanted most often — put this
+// node back on its feet — took two presses and a wait in between.
+//
+// So: stop if it is up, then start. A node that was down is simply
+// started, which is why the label has the parenthesis in it.
+//
+// NOT AN UPDATE. Update fetches GitHub first and is the other button;
+// this one is for a node running the code you want that has got itself
+// wedged.
+function handleRestart(node) {
+  stopNode(node);
+  // Through handleStart, not startNode, so a node whose home has been
+  // deleted under it is rebuilt exactly as Start rebuilds it. Restart
+  // must not be a second, subtly different Start.
+  return handleStart(node);
+}
+
 // START AGAIN AS A STRANGER. The home goes and a fresh clone takes its
 // place — new key, off every relay it was on, no conversation. It is the
 // rare thing to want and it stays per-row, behind its warning: the BULK
@@ -1285,7 +1309,7 @@ const server = http.createServer(function (req, res) {
     return;
   }
 
-  const action = pathname.match(/^\/api\/nodes\/([^/]+)(?:\/(start|stop|recycle|refresh|delete))?$/);
+  const action = pathname.match(/^\/api\/nodes\/([^/]+)(?:\/(start|stop|restart|recycle|refresh|delete))?$/);
   if (req.method === 'POST' && action) {
     const id = action[1];
     const verb = action[2] || 'rename';
@@ -1299,6 +1323,7 @@ const server = http.createServer(function (req, res) {
       if (verb === 'rename') result = handleRename(node, body);
       else if (verb === 'start') result = handleStart(node);
       else if (verb === 'stop') result = handleStop(node);
+      else if (verb === 'restart') result = handleRestart(node);
       else if (verb === 'recycle') result = handleRecycle(node);
       else if (verb === 'refresh') result = handleRefresh(node);
       else if (verb === 'delete') result = handleDelete(node);
