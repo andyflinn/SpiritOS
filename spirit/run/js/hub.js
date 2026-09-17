@@ -214,6 +214,20 @@ function buildPeople(rootDir, peers, relayUrl) {
         // would look like clearing the name.
         myLabel: row.myLabel || '',
         acquiredVia: whoBook.acquiredVia(row),
+        // ── SEATS ON RELAYS THIS NODE OWNS ─────────────────────────────
+        //
+        //   Andy: "as user it becomes very confusing to understand my
+        //   relationship with this peer (ID)."
+        //
+        // `acquiredVia` is HISTORY — how this row got here. This is a
+        // STANDING fact: they hold a seat on a box I keep, right now. The
+        // two are different questions and a screen that showed only the
+        // first could not explain why Forget refuses.
+        //
+        // A list, because one person may be seated on several of my
+        // relays, and empty for everybody else — which is every row on a
+        // node that owns nothing.
+        memberOf: whoBook.memberOf(row),
         // One question the app asks about every row: may this be written
         // to? Held and blocked both answer no, and they are drawn the
         // same way — a × and no composer — because to the person looking
@@ -1215,6 +1229,32 @@ function createHub(rootDir) {
       // only downgrades it — deleting one would readmit the person the
       // moment they wrote, because the row IS the refusal.
       if (action === 'forget') {
+        // ── A SEAT ON MY OWN RELAY OUTRANKS A FORGET ──────────────────
+        //
+        //   Andy: "undeletable until i agree to also remove their relay
+        //   slots."
+        //
+        // Refused, and the refusal NAMES THE RELAYS — the caller cannot
+        // offer "remove their seat as well" without knowing which seats.
+        //
+        // ASKED OF A LOCAL FIELD, never of the network. A permission that
+        // probes is a permission that fails when the box is down, and
+        // ownerBadge.canRemoveRelay already argues at length why a live
+        // fact has no business in one: it would lock the door of the room
+        // it just set on fire. `memberOf` is written by the reconcile and
+        // read here, so this answers the same whether anything is
+        // reachable or not.
+        var held = whoBook.byPublicKey(rootDir, publicKey);
+        if (held && whoBook.isMember(held)) {
+          res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({
+            ok: false,
+            error: 'they hold a seat on a relay you own',
+            memberOf: whoBook.memberOf(held),
+          }));
+          return;
+        }
+
         var gone = whoBook.forget(rootDir, publicKey);
         if (!gone) { fail(res, 404, 'no row for that key'); return; }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1363,6 +1403,122 @@ function createHub(rootDir) {
   // pass. A node with a password can be enrolled to, always, and there is
   // nothing about that state worth reporting because there is no other
   // state.
+
+  // ── EVERYBODY WITH A SEAT ON A RELAY I OWN IS A CONTACT ──────────────
+  //
+  //   Andy: "when someone binds to a peer i own, it's because i want them
+  //   in my network, so i want a contact auto-generated, and undeletable
+  //   until i agree to also remove their relay slots."
+  //   "then i have to rummage two different peer lists for everything i
+  //   want to do... and simply because as user it becomes very confusing
+  //   to understand my relationship with this peer (ID)."
+  //
+  // Two lists were one subject. A relay owner's census and their address
+  // book overlap completely at the owner's end and were kept apart
+  // anyway, so Cruella and Jazzmin Thut held seats on Andy's relay and
+  // were not people he could write to without going to a second screen.
+  //
+  // ── IN THE NODE, NOT THE BROWSER ─────────────────────────────────────
+  //
+  // A contact that only exists while Contacts is open is not a contact.
+  // The owner EVENT (relay.js, ownerEvent('claim')) is the fast path and
+  // is not enough on its own: it reaches an open browser and nothing
+  // persists it, and every member who enrolled before this existed would
+  // never be seen at all.
+  //
+  // ── WHOLE-LIST, SO IT PRUNES ─────────────────────────────────────────
+  //
+  // `memberOf` is rewritten from what the census just said rather than
+  // added to. A key that left a relay must lose that url — an add-only
+  // field would keep somebody undeletable for ever on the strength of a
+  // seat they no longer hold, which is the same class of bug as a cache
+  // that only grows.
+  //
+  // ONLY RELAYS THIS NODE OWNS. A member of somebody else's relay, or a
+  // peer seen across a partnership, is not this node's to adopt — Andy:
+  // "a peer who connects with me through a partner node behaves
+  // independently as contact, same as non-relay-owners experience all
+  // their contacts." A node that owns nothing does nothing here.
+  //
+  // NEVER THE OWNER'S OWN KEY. A node is on its own census and must not
+  // become its own contact.
+  function reconcileMembers(summary) {
+    var me = auth.loadIdentity(rootDir);
+    var myKey = (me && me.publicKey) || '';
+    var rows = (summary && summary.rows) || [];
+
+    // key -> [urls of my relays it holds a seat on]
+    var seats = Object.create(null);
+    var owned = 0;
+
+    rows.forEach(function (row) {
+      if (!row || !row.owned) return;
+      owned += 1;
+      var roster = (row.census && row.census.roster) || [];
+      roster.forEach(function (p) {
+        var key = (p && p.publicKey) || '';
+        if (!key || key === myKey) return;
+        (seats[key] = seats[key] || []).push(row.url);
+      });
+    });
+
+    // NOTHING ANSWERED, NOTHING CONCLUDED. An owned relay that did not
+    // reply carries no roster, and treating that as "nobody is enrolled"
+    // would empty every memberOf on this node and make a whole address
+    // book deletable because a box was rebooting. The same rule
+    // natterCheckBinding follows for bindings, for the same reason.
+    if (!owned) return { adopted: 0, pruned: 0 };
+
+    var adopted = 0;
+    Object.keys(seats).forEach(function (key) {
+      var existing = null;
+      try { existing = whoBook.byPublicKey(rootDir, key); }
+      catch (e) { existing = null; }
+      var label = '';
+      rows.forEach(function (row) {
+        if (!row || !row.owned) return;
+        ((row.census && row.census.roster) || []).forEach(function (p) {
+          if (p && p.publicKey === key && p.publicLabel) label = p.publicLabel;
+        });
+      });
+      try {
+        whoBook.acquire(rootDir, {
+          publicKey: key, publicLabel: label, relay: seats[key][0],
+        }, whoBook.MEMBER);
+        whoBook.setMemberOf(rootDir, key, seats[key]);
+        if (!existing || !whoBook.isMember(existing)) adopted += 1;
+      } catch (e) { /* one bad row must not stop the sweep */ }
+    });
+
+    // AND THE ONES WHO LEFT. Anybody this node still believes holds a
+    // seat, who was not on any roster just read, loses it — which is what
+    // makes them an ordinary deletable contact again.
+    var pruned = 0;
+    var book = [];
+    try { book = whoBook.load(rootDir); } catch (e) { book = []; }
+    book.forEach(function (row) {
+      if (!row || !whoBook.isMember(row)) return;
+      if (seats[row.publicKey]) return;
+      try { whoBook.setMemberOf(rootDir, row.publicKey, []); pruned += 1; }
+      catch (e) { /* likewise */ }
+    });
+
+    return { adopted: adopted, pruned: pruned };
+  }
+
+  // The probe this node already makes, with the reconcile hung off it.
+  // Separate from statusFor so boot can run it without a browser asking,
+  // and so a suite can drive it directly.
+  function syncMembers() {
+    var me = auth.loadIdentity(rootDir);
+    if (!me || !me.publicKey) return Promise.resolve({ adopted: 0, pruned: 0 });
+    return ownerBadge.probe(rootDir, function (url, method, pathname) {
+      return relayRequest(url, method, pathname, null);
+    }, me.publicKey)
+      .then(reconcileMembers)
+      .catch(function () { return { adopted: 0, pruned: 0 }; });
+  }
+
   function handleDevice(req, res) {
     var doc = deviceAuth.ensurePassword(rootDir);
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1968,6 +2124,8 @@ function createHub(rootDir) {
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,
     handleNodeCard: handleNodeCard,
+    syncMembers: syncMembers,
+    reconcileMembers: reconcileMembers,
     handleNodeName: handleNodeName,
     handleNodeDescription: handleNodeDescription,
   };

@@ -1548,6 +1548,21 @@ if (!relayMode) {
   try { ownerBadge.ensureRelays(ROOT_DIR); }
   catch (e) { /* nor a relay list */ }
 
+  // ── AND EVERYBODY WITH A SEAT ON A RELAY THIS NODE OWNS ────────────
+  //
+  //   Andy: "i have to rummage two different peer lists for everything i
+  //   want to do."
+  //
+  // The catch-up half. The owner event above is the fast path and cannot
+  // stand alone: it reaches an open browser, nothing persists it, and
+  // every member who enrolled before this existed would never be seen.
+  //
+  // Not awaited — it probes every relay, and a node must not wait on
+  // another continent to finish booting. A node that owns no relay does
+  // nothing at all here.
+  try { hub.syncMembers(); }
+  catch (e) { /* a contact list is not a reason to fail a boot */ }
+
   // The device window, if it was left open. The flag has always survived
   // a restart in relay-state/device.json; until now nothing read it at
   // startup, so every restart shut the door without saying so — and the
@@ -1647,7 +1662,31 @@ if (!relayMode) {
     router: peerRouter,
     // Straight onto the page's stream. presenceNode receives it, this
     // hands it to whoever has a panel open.
-    onRelayEvent: relayEvents.note,
+    //
+    // ── AND A CLAIM ON MY OWN RELAY MAKES A CONTACT ─────────────────
+    //
+    //   Andy: "when someone binds to a peer i own, it's because i want
+    //   them in my network, so i want a contact auto-generated."
+    //
+    // The fast path. Somebody claiming a seat is news the relay already
+    // pushes to its owner (relay.js, ownerEvent('claim')) and nothing
+    // was done with it but draw a line on a panel.
+    //
+    // A FULL RECONCILE RATHER THAN AN ACQUIRE OF THAT ONE KEY, and the
+    // extra probe is worth it: the event says a key claimed, it does not
+    // say on which of this node's relays, and a reconcile answers that
+    // from the census — the same authority that runs at boot. One
+    // mechanism, exercised twice, rather than two that can disagree.
+    //
+    // Nothing waits on it and a failure is silent: this is a convenience
+    // on top of the sweep, never the only way a member is noticed.
+    onRelayEvent: function (ev) {
+      relayEvents.note(ev);
+      if (ev && ev.kind === 'claim') {
+        try { require('./hub').createHub(ROOT_DIR).syncMembers(); }
+        catch (e) { /* the sweep at boot and on every probe still runs */ }
+      }
+    },
     // AND THE MEMBERSHIP HALF, WHICH IS KEPT (R2).
     //
     //   Andy: "There is a category of events on the relay that the owner

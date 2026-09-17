@@ -297,6 +297,30 @@ function contactsSeenMarkTitle(c) {
     : 'no relay you are connected to mentions this key';
 }
 
+// A seat on a relay this node owns — the standing fact, sent by the node
+// on every row (hub.buildPeople). Empty for everybody else, and for every
+// row on a node that owns no relay.
+function contactsMemberOf(person) {
+  var list = person && person.memberOf;
+  return Array.isArray(list) ? list : [];
+}
+
+function contactsIsMember(person) {
+  return contactsMemberOf(person).length > 0;
+}
+
+// WHICH relays, on the hover, because one person may be seated on several
+// of mine and "on your relay" does not say which — and that is exactly
+// what Forget has to name when it refuses.
+function contactsSeatTitle(person) {
+  var on = contactsMemberOf(person).map(function (u) {
+    return String(u).replace(/^https?:\/\//, '');
+  });
+  return on.length === 1
+    ? 'they hold a seat on ' + on[0]
+    : 'they hold seats on ' + on.join(', ');
+}
+
 function contactsRowHtml(person) {
   var mark = '';
   if (person.blocked) mark = contactsIcon.NO;
@@ -318,7 +342,23 @@ function contactsRowHtml(person) {
     // may write anything they like in their own address book.
     '<td class="label-cell">' + contactsHandleCell(person) + '</td>' +
     '<td class="label-cell">' + contactsEscapeHtml(person.myLabel || '') + '</td>' +
-    '<td>' + contactsEscapeHtml(person.acquiredVia || '') + '</td>' +
+    // ── HOW THEY GOT HERE, AND WHAT THEY ARE NOW ────────────────────
+    //
+    //   Andy: "as user it becomes very confusing to understand my
+    //   relationship with this peer (ID)."
+    //
+    // `acquiredVia` is history. A seat on a relay I own is a STANDING
+    // fact, and the one that explains why Forget will refuse — so it is
+    // said on the row rather than discovered at the moment somebody is
+    // stopped from doing something.
+    //
+    // It replaces the How rather than sitting beside it: for a member,
+    // "member" IS how they got here, and a second column that repeated
+    // it would be a column of "member / member / message".
+    '<td>' + (contactsIsMember(person)
+      ? '<span title="' + contactsEscapeHtml(contactsSeatTitle(person)) + '">' +
+        contactsIcon.STAR + ' on your relay</span>'
+      : contactsEscapeHtml(person.acquiredVia || '')) + '</td>' +
     '</tr>';
 }
 

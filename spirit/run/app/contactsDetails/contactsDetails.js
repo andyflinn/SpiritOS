@@ -158,8 +158,24 @@ function cdRender() {
   // Two presses, for the same reason Block has two: it is at the end of a
   // row somebody may have been tabbing along, and it throws away what they
   // wrote — myLabel is theirs and is not on any relay to be recovered from.
+  // ── AND WHAT IT COSTS, WHEN THEY SIT ON A RELAY OF MINE ──────────
+  //
+  //   Andy: "undeletable until i agree to also remove their relay slots."
+  //
+  // Not a refusal with no way forward: the second press is the agreement.
+  // A member cannot be forgotten while they hold the seat, so Forget here
+  // means BOTH — evict, then forget — and the button has to say so before
+  // it is pressed rather than after.
+  //
+  // The relays are named. "Remove their seat" is not answerable without
+  // knowing from where, and one person may be seated on several of mine.
+  var seats = cdSeats();
   buttons += '<button type="button" class="cancel-btn" id="cd-forget">' +
-    (cdForgetArmed ? 'Forget — press again' : 'Forget') + '</button>';
+    (cdForgetArmed
+      ? (seats.length
+        ? 'Remove their seat on ' + cdEscapeHtml(cdSeatNames()) + ' and forget — press again'
+        : 'Forget — press again')
+      : 'Forget') + '</button>';
 
   var handle = cdPerson.publicLabel || '';
   var caption = handle ? 'Change My Label for ' + cdEscapeHtml(handle) : 'Change My Label';
@@ -189,6 +205,78 @@ function cdRender() {
 // itself a verb, so hub.js had to dispatch the field by hand. Now the
 // door does it, `cdPeerAction('block')` names `contact.block`, and the
 // only thing that changed on this screen is which string it says.
+// ── THE SEATS THIS PERSON HOLDS ON RELAYS I OWN ──────────────────────
+//
+// Sent on the row by the node (hub.buildPeople, `memberOf`) — a standing
+// fact rather than a lookup, so this screen never has to ask whether the
+// person can be forgotten. The node refuses that on the same field.
+function cdSeats() {
+  var list = cdPerson && cdPerson.memberOf;
+  return Array.isArray(list) ? list : [];
+}
+
+function cdSeatNames() {
+  return cdSeats().map(function (u) {
+    return String(u).replace(/^https?:\/\//, '');
+  }).join(', ');
+}
+
+// ── GIVING UP THE SEATS, WHICH MUST HAPPEN FIRST ─────────────────────
+//
+// Evict, then forget. The other order strands a row: a forget that
+// succeeded followed by an eviction that failed would leave somebody
+// seated on the relay with no record of them here, and the next sweep
+// would put the contact straight back — so the screen would have appeared
+// to do something it had not.
+//
+// ONE AT A TIME rather than in parallel, because a failure has to stop
+// the rest: if the second relay refuses, the first eviction has already
+// happened and is true, but nothing is forgotten and the person can see
+// exactly where it got to.
+//
+// THE RELAY'S KEY COMES FROM relay.status, asked once and only here. A
+// relay is addressed by key like any other peer (removePeer rides the
+// ordinary post, natterDetails does the same), and the census carries the
+// key — so no new verb, and no cost at all for anybody who never presses
+// this.
+function cdReleaseSeats() {
+  var seats = cdSeats();
+  if (!seats.length) return Promise.resolve(true);
+
+  cdStatus('removing their seat\u2026');
+  return cdPost('relay.status', {}).then(function (r) {
+    var rows = (r.body && r.body.rows) || [];
+    var keyFor = Object.create(null);
+    rows.forEach(function (row) {
+      if (row && row.url && row.census && row.census.relayKey) {
+        keyFor[row.url] = row.census.relayKey;
+      }
+    });
+
+    return seats.reduce(function (chain, url) {
+      return chain.then(function (carryOn) {
+        if (!carryOn) return false;
+        var relayKey = keyFor[url];
+        if (!relayKey) {
+          cdStatus(url + ' has not said what its key is, so the seat cannot be removed');
+          return false;
+        }
+        return cdApi.peerPost('relay', relayKey, { removePeer: { key: cdKey } })
+          .then(function (out) {
+            var said = out && out.body;
+            if (out && out.ok && (!said || said.ok !== false)) return true;
+            cdStatus('could not remove their seat on ' + url + ': ' +
+              ((said && said.error) || (out && out.error) || 'no answer'));
+            return false;
+          });
+      });
+    }, Promise.resolve(true));
+  }).catch(function (e) {
+    cdStatus('could not reach your relays: ' + String((e && e.message) || e));
+    return false;
+  });
+}
+
 function cdPeerAction(action, extra) {
   var body = { publicKey: cdKey };
   Object.keys(extra || {}).forEach(function (k) { body[k] = extra[k]; });
@@ -227,8 +315,15 @@ spirit.shell.activateApp({
         // the person; this one removed them, so there is nobody left to
         // paint and staying would be a screen about a contact that is not
         // one. Back to the book, which is where the change is visible.
-        cdPeerAction('forget').then(function (ok) {
-          if (ok) { cdChanged = true; cdApi.closeDialog({ changed: true }); }
+        // Seats first, and the forget only if every one of them went.
+        // A member the node still believes is seated is refused by the
+        // node anyway (hub, contact.forget) — this is the agreement that
+        // makes the refusal answerable, not a way around it.
+        cdReleaseSeats().then(function (released) {
+          if (!released) { cdRender(); return; }
+          return cdPeerAction('forget').then(function (ok) {
+            if (ok) { cdChanged = true; cdApi.closeDialog({ changed: true }); }
+          });
         });
         return;
       }

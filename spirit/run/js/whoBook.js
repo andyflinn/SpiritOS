@@ -34,20 +34,40 @@
 //             anyone the mailbox admits can write. Enough to reply to.
 //   invite  — a token this node minted was consumed by that key.
 //   handle  — a human confirmed the key out of band (cut 2).
+//   member  — they hold a seat on a relay THIS NODE OWNS.
 //
 // Ranks never fall. A census sync may correct a publicLabel on a row you
 // already know, and can never demote it back to a stranger.
+//
+// ── WHY `member` IS A RANK AND NOT A FLAG ────────────────────────────
+//
+//   Andy: "when someone binds to a peer i own, it's because i want them
+//   in my network, so i want a contact auto-generated."
+//
+// It has to be a rank because ACQUIRED_LISTENING is what decides whether
+// this node accepts somebody's mail at all. A member auto-added as
+// `census` would be a contact this node refuses to hear from, which is
+// the opposite of the point — the owner let them onto the box.
+//
+// TOP OF THE LADDER, above `handle`: a human confirming a key out of band
+// is somebody's word about who they are; a seat on your own relay is your
+// own act, recorded on a ledger you keep. And because ranks never fall,
+// evicting somebody later leaves them an ordinary contact this node still
+// listens to — which is right. You did let them in once.
 
 const fs = require('fs');
 const path = require('path');
 
 const ACQUIRED_CENSUS = 'census';
 const ACQUIRED_HOLD = 'hold';
-const ACQUIRED_RANK = { census: 0, hold: 1, message: 2, invite: 3, handle: 4 };
+const ACQUIRED_MEMBER = 'member';
+const ACQUIRED_RANK = {
+  census: 0, hold: 1, message: 2, invite: 3, handle: 4, member: 5,
+};
 // The ways of arriving that mean this node will listen. `hold` is not one
 // of them: a held row exists so a human can see who is waiting and say
 // yes, and until they do it is a name, not a correspondent.
-const ACQUIRED_LISTENING = ['message', 'invite', 'handle'];
+const ACQUIRED_LISTENING = ['message', 'invite', 'handle', 'member'];
 
 // A row with no field predates the field, and what it was is a census
 // row: it was written by handshake from `who`.
@@ -66,6 +86,44 @@ function acquiredRank(via) {
 // confirmed by phone. So it sits beside the rank rather than in it.
 function isBlocked(row) {
   return !!(row && row.blocked);
+}
+
+// ── WHICH RELAYS OF MINE THIS KEY HOLDS A SEAT ON ────────────────────
+//
+//   Andy: "i may acquire the same contact through multiple relays i own.
+//   the contact record must hold a LIST of relays i own and the contact
+//   has a slot on them. the whoBook should have to reflect that."
+//
+// A LIST, for the reason he gives, and it is the whole boundary of this
+// feature in one field:
+//
+//   non-empty  auto-created, and Forget must evict the seats first
+//   empty      an ordinary contact, exactly as today
+//
+// So a peer reached through a PARTNER relay needs no special case: it is
+// not a member of anything this node owns, so the list is empty and it
+// behaves like every other contact —
+//
+//   Andy: "a peer who connects with me through a partner node behaves
+//   independently as contact, same as non-relay-owners experience all
+//   their contacts."
+//
+// And a node that owns no relay never has a non-empty one, so nothing in
+// this feature is reachable for anybody who is not a relay owner.
+//
+// NOT THE SAME FIELD AS `relays`, which is "mailboxes where this key has
+// been SEEN" and includes relays somebody else owns. This is a statement
+// about seats on boxes that are mine, and only the reconcile writes it.
+function memberOf(row) {
+  var list = row && row.memberOf;
+  return Array.isArray(list) ? list.slice() : [];
+}
+
+// Is this row here because of a seat I granted? The one question Forget
+// asks, and it asks it of a LOCAL field — no network inside a permission
+// check, which is the trap ownerBadge.canRemoveRelay documents at length.
+function isMember(row) {
+  return memberOf(row).length > 0;
 }
 
 // Whether this node listens to that row: acquired one of the ways that
@@ -140,11 +198,34 @@ function upsert(rootDir, row) {
     // would do it if this were dropped on every upsert.
     blocked: row.blocked === undefined ? isBlocked(prev) : !!row.blocked,
     relays: normalizeRelays(row.relays != null ? row.relays : prev.relays),
+    // Carried like `blocked`, and set by the reconcile alone. Unlike the
+    // rank above it CAN fall, and must: evicting somebody empties it, and
+    // that is what turns them back into an ordinary deletable contact.
+    memberOf: normalizeRelays(row.memberOf != null ? row.memberOf : prev.memberOf),
   };
   if (i === -1) rows.push(next);
   else rows[i] = next;
   save(rootDir, rows);
   return next;
+}
+
+// ── WHAT THE RECONCILE WRITES ────────────────────────────────────────
+//
+// The seats this key holds on relays I own, as the census last answered.
+// Whole-list, never additive: a key that left a relay must lose that url,
+// and an add-only field would keep somebody undeletable for ever on the
+// strength of a seat they no longer have.
+//
+// Returns the row, or null for a key not in the book — the caller
+// acquires first and sets this second, so a missing row is a bug rather
+// than a state to paper over.
+function setMemberOf(rootDir, publicKey, urls) {
+  const rows = load(rootDir);
+  const row = rows.find(function (r) { return r.publicKey === publicKey; });
+  if (!row) return null;
+  row.memberOf = normalizeRelays(urls);
+  save(rootDir, rows);
+  return row;
 }
 
 function setMyLabel(rootDir, publicKey, myLabel) {
@@ -311,6 +392,10 @@ module.exports = {
   forget: forget,
   CENSUS: ACQUIRED_CENSUS,
   HOLD: ACQUIRED_HOLD,
+  MEMBER: ACQUIRED_MEMBER,
+  memberOf: memberOf,
+  isMember: isMember,
+  setMemberOf: setMemberOf,
   load: load,
   contacts: contacts,
   addressBook: addressBook,

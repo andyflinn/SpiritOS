@@ -1134,6 +1134,71 @@ function aFoundPersonCanBeAsked() {
 }
 
 
+// ── A SEAT ON MY OWN RELAY IS A STANDING FACT ────────────────────────
+//
+//   Andy: "as user it becomes very confusing to understand my
+//   relationship with this peer (ID)."
+//
+// `acquiredVia` is HISTORY — how the row got here. A seat on a relay I
+// own is what they ARE, now, and the reason Forget will refuse. A screen
+// that showed only the first could not explain the second.
+function aMemberSaysSoOnTheRow() {
+  test.subHeading('Somebody seated on a relay I own says so on their row');
+
+  const app = mountApp({
+    people: [
+      { publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
+        caption: 'Cruella', myLabel: '', acquiredVia: 'member',
+        memberOf: ['https://mine.example'],
+        held: false, blocked: false, onRelay: true, bytesHeld: 0 },
+      { publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
+        caption: 'sonny', myLabel: '', acquiredVia: 'handle',
+        memberOf: [],
+        held: false, blocked: false, onRelay: false, bytesHeld: 0 },
+    ],
+  });
+
+  return settle().then(function () {
+    const out = el(app, 'contacts-tbody').innerHTML;
+    const rowFor = function (name) {
+      return out.split('<tr').filter(function (r) { return r.indexOf(name) !== -1; })[0] || '';
+    };
+
+    if (/on your relay/.test(rowFor('Cruella'))) {
+      test.check('a member is marked as one');
+    } else {
+      test.fail('cruella: ' + rowFor('Cruella'));
+    }
+
+    // WHICH relay, on the hover: one person may be seated on several of
+    // mine, and that is exactly what Forget has to name when it refuses.
+    if (/they hold a seat on mine\.example/.test(rowFor('Cruella'))) {
+      test.check('and the row names which relay, because Forget will have to');
+    } else {
+      test.fail('no seat named: ' + rowFor('Cruella'));
+    }
+
+    // AND IT REPLACES THE HOW rather than sitting beside it. For a
+    // member, "member" IS how they got here — a second column repeating
+    // it would read "member / member / message".
+    if (rowFor('Cruella').indexOf('>member<') === -1) {
+      test.check('and does not also print the raw rank beside it');
+    } else {
+      test.fail('the rank is printed twice: ' + rowFor('Cruella'));
+    }
+
+    // ── AND EVERYBODY ELSE IS UNTOUCHED ────────────────────────────
+    //
+    //   Andy: "a peer who connects with me through a partner node
+    //   behaves independently as contact."
+    if (/handle/.test(rowFor('sonny')) && !/on your relay/.test(rowFor('sonny'))) {
+      test.check('while an ordinary contact still shows how it got here');
+    } else {
+      test.fail('sonny: ' + rowFor('sonny'));
+    }
+  });
+}
+
 function addsByHandle() {
   test.subHeading('Adding somebody is still a phone call');
 
@@ -1539,7 +1604,7 @@ listsTheBook()
   .then(aRowOpensThePerson)
   .then(refreshesWhenTheDialogChangedSomething)
   .then(saysNothingWhenNothingHappened)
-  .then(forgetsWithoutUnblocking).then(addsByHandle).then(distinctNamesCarryNoKey).then(aFoundPersonCanBeAsked).then(foundPeopleShowWhetherTheyAreHome)
+  .then(forgetsWithoutUnblocking).then(aMemberSaysSoOnTheRow).then(addsByHandle).then(distinctNamesCarryNoKey).then(aFoundPersonCanBeAsked).then(foundPeopleShowWhetherTheyAreHome)
   .then(strangerPolicy)
   .then(foldsObeyTheSpacingRules)
   .then(sendsNothing)

@@ -99,6 +99,27 @@ function mountDialog(options) {
         });
       }
     }
+    // ── WHICH RELAYS THIS NODE OWNS, AND THEIR KEYS ─────────────────
+    //
+    // Asked once, by Forget, only when the person holds a seat: the
+    // screen turns each url in `memberOf` into the relay's KEY, because a
+    // relay is addressed like any other peer.
+    if (sentVerb === 'relay.status') {
+      const statusText = JSON.stringify({
+        rows: (opts.relays || []).map(function (r) {
+          return {
+            url: r.url, owned: true, claimed: true, status: 200,
+            census: r.relayKey ? { relayKey: r.relayKey } : null,
+          };
+        }),
+      });
+      return Promise.resolve({
+        status: 200,
+        text: function () { return Promise.resolve(statusText); },
+        json: function () { return Promise.resolve(JSON.parse(statusText)); },
+      });
+    }
+
     const text = JSON.stringify({ people: people, selfTail: null, matches: [] });
     return Promise.resolve({
       status: status,
@@ -108,6 +129,8 @@ function mountDialog(options) {
   };
 
   let behavior = null;
+  const posts = [];
+  const closed = [];
   const shellSpirit = {
     shell: {
       activateApp: function (b) { behavior = b; },
@@ -157,6 +180,25 @@ function mountDialog(options) {
         });
       });
     },
+    // ── THE ONE CALL THAT REACHES A RELAY ───────────────────────────
+    //
+    // `removePeer` addressed to the relay's own key, which is what an
+    // owner evicting somebody is — the same post natterDetails' Remove
+    // makes. Recorded whole, because the ORDER is what is being asserted:
+    // the seat goes before the row.
+    peerPost: function (packetApp, toKey, body) {
+      posts.push({ app: packetApp, to: toKey, body: body });
+      const refuse = (opts.evictionRefuses || {})[toKey];
+      if (refuse) {
+        return Promise.resolve({ ok: false, status: 200, body: { ok: false, error: refuse } });
+      }
+      return Promise.resolve({ ok: true, status: 200, body: { ok: true, removed: { key: toKey } } });
+    },
+    // THE SCREEN GOES WITH THE ROW when a forget succeeds — there is
+    // nobody left to paint. Recorded rather than stubbed away: leaving
+    // the dialog open on a contact that no longer exists is the failure
+    // this branch exists to avoid.
+    closeDialog: function (r) { closed.push(r || null); dialogResult = r; },
     setScreenTitle: function (t) { titles.push(t); },
     setDialogResult: function (r) { dialogResult = r; },
     // The shell throws for a dialog; the stub does the same, so a
@@ -174,6 +216,8 @@ function mountDialog(options) {
   behavior.open({ key: opts.key });
   return {
     doc: doc, log: log, people: people, behavior: behavior, titles: titles,
+    posts: posts,
+    closed: closed,
     result: function () { return dialogResult; },
   };
 }
@@ -587,6 +631,175 @@ function writesNothingDown() {
   }
 }
 
+// ── FORGETTING SOMEBODY WHO SITS ON A RELAY I OWN ────────────────────
+//
+//   Andy: "when someone binds to a peer i own... i want a contact
+//   auto-generated, and undeletable until i agree to also remove their
+//   relay slots."
+//
+// The node refuses the forget outright while `memberOf` is non-empty
+// (hub, contact.forget — asserted in relayOwnerContacts.js). This is the
+// other half: the agreement that makes the refusal answerable, rather
+// than a screen that can only say no.
+function forgettingAMemberTakesTheSeatFirst() {
+  test.subHeading('Forgetting a member removes their seat first, and says so');
+
+  const app = mountDialog({
+    key: 'KEY-CRUELLA',
+    people: [{
+      publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
+      caption: 'Cruella', myLabel: '', acquiredVia: 'member',
+      memberOf: ['https://mine.example'],
+      held: false, blocked: false, onRelay: true, bytesHeld: 0,
+    }],
+    relays: [{ url: 'https://mine.example', relayKey: 'RELAYKEY-MINE' }],
+  });
+
+  return settle().then(function () {
+    // ── THE BUTTON SAYS WHAT IT WILL DO, BEFORE IT IS PRESSED ────────
+    //
+    // A second press that quietly evicts somebody from a relay would be
+    // the screen doing more than it offered. The relay is NAMED, because
+    // "remove their seat" is not answerable without knowing from where.
+    el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+
+    return settle().then(function () {
+      const armed = el(app, 'cd-body').innerHTML;
+      if (/Remove their seat on mine\.example and forget/.test(armed)) {
+        test.check('the armed button names the relay and both acts');
+      } else {
+        test.fail('armed: ' + armed.slice(0, 400));
+      }
+
+      if (app.posts.length === 0 && posted(app, 'contact.forget').length === 0) {
+        test.check('and the first press does nothing but arm');
+      } else {
+        test.fail('the first press acted: ' + JSON.stringify(app.posts));
+      }
+
+      // ── AND THE SECOND PRESS DOES BOTH, IN ORDER ─────────────────
+      el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+
+      return settle().then(settle).then(settle).then(function () {
+        const evictions = app.posts.filter(function (p) { return p.body && p.body.removePeer; });
+        if (evictions.length === 1 && evictions[0].to === 'RELAYKEY-MINE' &&
+            evictions[0].body.removePeer.key === 'KEY-CRUELLA') {
+          test.check('the seat is given up, addressed to the relay by key');
+        } else {
+          test.fail('evictions: ' + JSON.stringify(app.posts));
+        }
+
+        if (posted(app, 'contact.forget').length === 1) {
+          test.check('and the row is forgotten after it');
+        } else {
+          test.fail('forget: ' + JSON.stringify(posted(app, 'contact.forget')));
+        }
+
+        // THE ORDER IS THE ASSERTION. A forget that succeeded followed by
+        // an eviction that failed would leave somebody seated with no
+        // record of them here — and the next sweep would put the contact
+        // straight back, so the screen would have appeared to do
+        // something it had not.
+        const evictAt = app.log.findIndex(function (r) {
+          return String(r.body || '').indexOf('relay.status') !== -1;
+        });
+        const forgetAt = app.log.findIndex(function (r) {
+          return String(r.body || '').indexOf('contact.forget') !== -1;
+        });
+        if (evictAt !== -1 && forgetAt !== -1 && evictAt < forgetAt) {
+          test.check('and the relay was asked before the book was changed');
+        } else {
+          test.fail('order: relay at ' + evictAt + ', forget at ' + forgetAt);
+        }
+      });
+    });
+  });
+}
+
+// ── AND A SEAT THAT WILL NOT GO TAKES THE FORGET WITH IT ─────────────
+//
+// The half that makes the order worth having. If the relay refuses, the
+// row stays — and it is still TRUE: they do hold a seat, and the node
+// would refuse the forget anyway.
+function aRefusedEvictionKeepsTheRow() {
+  test.subHeading('And a seat that cannot be given up keeps the contact');
+
+  const app = mountDialog({
+    key: 'KEY-CRUELLA',
+    people: [{
+      publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
+      caption: 'Cruella', myLabel: '', acquiredVia: 'member',
+      memberOf: ['https://mine.example'],
+      held: false, blocked: false, onRelay: true, bytesHeld: 0,
+    }],
+    relays: [{ url: 'https://mine.example', relayKey: 'RELAYKEY-MINE' }],
+    evictionRefuses: { 'RELAYKEY-MINE': 'no such peer' },
+  });
+
+  return settle().then(function () {
+    el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+    return settle().then(function () {
+      el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+      return settle().then(settle).then(settle).then(function () {
+        if (posted(app, 'contact.forget').length === 0) {
+          test.check('nothing is forgotten when the seat could not be removed');
+        } else {
+          test.fail('forgot anyway: ' + JSON.stringify(posted(app, 'contact.forget')));
+        }
+
+        // AND IT SAYS WHY, naming the relay that refused. "It did not
+        // work" is not actionable when a person may be seated on several.
+        const said = el(app, 'cd-body').innerHTML + ' ' + (el(app, 'cd-status').textContent || '');
+        if (/no such peer/.test(said) && /mine\.example/.test(said)) {
+          test.check('and the screen says which relay refused, and what it said');
+        } else {
+          test.fail('status: ' + said.slice(0, 300));
+        }
+      });
+    });
+  });
+}
+
+// ── SOMEBODY WHO HOLDS NO SEAT OF MINE IS UNCHANGED ──────────────────
+//
+//   Andy: "a peer who connects with me through a partner node behaves
+//   independently as contact, same as non-relay-owners experience all
+//   their contacts."
+function anOrdinaryContactIsForgottenAsEver() {
+  test.subHeading('While an ordinary contact is forgotten as ever');
+
+  const app = mountDialog({
+    key: 'KEY-SONNY',
+    people: [{
+      publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
+      caption: 'sonny', myLabel: '', acquiredVia: 'handle',
+      memberOf: [],
+      held: false, blocked: false, onRelay: false, bytesHeld: 0,
+    }],
+  });
+
+  return settle().then(function () {
+    el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+    return settle().then(function () {
+      const armed = el(app, 'cd-body').innerHTML;
+      if (/Forget — press again/.test(armed) && !/Remove their seat/.test(armed)) {
+        test.check('the button offers only to forget, with no seat to mention');
+      } else {
+        test.fail('armed: ' + armed.slice(0, 300));
+      }
+
+      el(app, 'cd-body').fire('click', { target: button('cd-forget') });
+      return settle().then(settle).then(function () {
+        if (posted(app, 'contact.forget').length === 1 && app.posts.length === 0) {
+          test.check('and it forgets without asking any relay anything');
+        } else {
+          test.fail('posts: ' + JSON.stringify(app.posts));
+        }
+      });
+    });
+  });
+}
+
 readsTheRow()
   .then(marksWhoIsRefusedOrWaiting)
   .then(decides)
@@ -596,6 +809,9 @@ readsTheRow()
   .then(opensForSomebodyElse)
   .then(survivesARowThatWentAway)
   .then(writesNothingDown)
+  .then(forgettingAMemberTakesTheSeatFirst)
+  .then(aRefusedEvictionKeepsTheRow)
+  .then(anOrdinaryContactIsForgottenAsEver)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('contactsDetails threw: ' + ((err && err.stack) || err));
