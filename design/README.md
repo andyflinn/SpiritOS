@@ -4,6 +4,15 @@ This directory contains the vision, principles, and architecture decisions for *
 
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)
+- [A node and a relay are two different things](principles/NODE-AND-RELAY.md)
+  — **co-design, nothing built.** The node is a person, readable and
+  inspectable; the relay is infrastructure that owes its owner *an account
+  of itself*, not a readable disk. Most of the split is already decided and
+  correctly scoped — STORAGE-PHILOSOPHY never mentioned a relay. The owner
+  governs partnerships by an allow-list of URLs and the relay chooses within
+  it, which also deletes the requirement that a partner's owner be a member.
+  The monitor's data is already on the wire and undrawn. Open: version
+  tolerance, which is what splitting the evolution actually costs.
 - [The requester is responsible for the question](principles/THE-REQUESTER-IS-RESPONSIBLE.md)
   — *"the more specific my question, the more precise the answer."* A vague
   question earns a bounded answer or none, never everything. The reason
