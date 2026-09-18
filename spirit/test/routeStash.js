@@ -25,7 +25,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const whoBook = require('../run/js/whoBook');
+const contactBook = require('../run/js/contacts');
 
 function freshRoot() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-routestash-'));
@@ -42,10 +42,10 @@ test.startTest('A proven route lands on a row that already exists');
 test.subHeading('A route for a contact is written on their row');
 
 const root = freshRoot();
-whoBook.acquire(root, { publicKey: KNOWN, publicLabel: 'known' }, 'handle');
-const before = whoBook.load(root).length;
+contactBook.acquire(root, { publicKey: KNOWN, publicLabel: 'known' }, 'handle');
+const before = contactBook.load(root).length;
 
-const updated = whoBook.learnRoute(root, KNOWN, AT);
+const updated = contactBook.learnRoute(root, KNOWN, AT);
 
 if (updated && (updated.relays || []).indexOf(AT) !== -1) {
   test.check('the route lands on the row, beside any already there');
@@ -56,7 +56,7 @@ if (updated && (updated.relays || []).indexOf(AT) !== -1) {
 // IT SURVIVES A RELOAD, because the point of learning a route is not
 // having to learn it again — and because a relay that reboots is
 // re-primed by its members, which only works if the members kept it.
-const reloaded = whoBook.byPublicKey(root, KNOWN);
+const reloaded = contactBook.byPublicKey(root, KNOWN);
 if (reloaded && (reloaded.relays || []).indexOf(AT) !== -1) {
   test.check('and it is on disk, which is what re-primes a relay that restarted');
 } else {
@@ -67,7 +67,7 @@ if (reloaded && (reloaded.relays || []).indexOf(AT) !== -1) {
 
 test.subHeading('And a route for a stranger is dropped, never added');
 
-const ignored = whoBook.learnRoute(root, STRANGER, AT);
+const ignored = contactBook.learnRoute(root, STRANGER, AT);
 
 if (ignored === null) {
   test.check('an announcement about somebody unknown changes nothing');
@@ -75,17 +75,17 @@ if (ignored === null) {
   test.fail('a stranger was written into the book: ' + JSON.stringify(ignored));
 }
 
-if (whoBook.load(root).length === before) {
+if (contactBook.load(root).length === before) {
   test.check('and the book is exactly as long as it was — a relay cannot fill it');
 } else {
-  test.fail('the book grew from ' + before + ' to ' + whoBook.load(root).length);
+  test.fail('the book grew from ' + before + ' to ' + contactBook.load(root).length);
 }
 
 // AND NOT AS A CENSUS ROW EITHER. `handshake` exists to write a bare row
 // from a census this node read for itself; an announcement must not take
 // that path, because reading a census is this node's own act and hearing
 // an announcement is somebody else's.
-if (!whoBook.byPublicKey(root, STRANGER)) {
+if (!contactBook.byPublicKey(root, STRANGER)) {
   test.check('not even as a bare row — hearing about somebody is not meeting them');
 } else {
   test.fail('the stranger got a row by the side door');
@@ -100,10 +100,10 @@ if (!whoBook.byPublicKey(root, STRANGER)) {
 
 test.subHeading('And hearing the same route again costs nothing');
 
-whoBook.learnRoute(root, KNOWN, AT);
-whoBook.learnRoute(root, KNOWN, AT);
+contactBook.learnRoute(root, KNOWN, AT);
+contactBook.learnRoute(root, KNOWN, AT);
 
-const row = whoBook.byPublicKey(root, KNOWN);
+const row = contactBook.byPublicKey(root, KNOWN);
 const times = (row.relays || []).filter(function (u) { return u === AT; }).length;
 
 if (times === 1) {
@@ -115,8 +115,8 @@ if (times === 1) {
 // A SECOND, DIFFERENT ROUTE IS KEPT, because a peer on two relays is the
 // ordinary case for anybody who owns one — and the second route is the
 // one that works when the first is down.
-whoBook.learnRoute(root, KNOWN, 'https://spirit.example');
-const both = whoBook.byPublicKey(root, KNOWN).relays || [];
+contactBook.learnRoute(root, KNOWN, 'https://spirit.example');
+const both = contactBook.byPublicKey(root, KNOWN).relays || [];
 
 if (both.length === 2 && both.indexOf('https://spirit.example') !== -1) {
   test.check('and a different one is added beside it: ' + both.length + ' routes held');
@@ -134,7 +134,7 @@ if (both.length === 2 && both.indexOf('https://spirit.example') !== -1) {
 // record of what a relay's members have been looking up.
 //
 // Asserted on the wiring rather than by driving a stream: the handler in
-// server.js must reach whoBook and must not reach trafficLog.
+// server.js must reach contactBook and must not reach trafficLog.
 
 test.subHeading('And an announcement never reaches the traffic log');
 
@@ -142,7 +142,7 @@ const wiring = fs.readFileSync(
   path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
 const hook = wiring.slice(wiring.indexOf('onRoute: function'), wiring.indexOf('onOwnerEvent: function'));
 
-if (hook && /whoBook\.learnRoute/.test(hook)) {
+if (hook && /contactBook\.learnRoute/.test(hook)) {
   test.check('the handler stashes it');
 } else {
   test.fail('the route handler does not reach the book');

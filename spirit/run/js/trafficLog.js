@@ -48,7 +48,7 @@
 // in and out, across every app that uses the router.
 //
 // That is the point rather than a side effect. It is also why the rules
-// it shares with whoBook and the peerfiles are absolute: local, never
+// it shares with contactBook and the peerfiles are absolute: local, never
 // uploaded, and NEVER ON A RELAY. A node keeping its own traffic is a
 // machine keeping its own record. A relay keeping this same file would be
 // holding everybody's messages — not metadata, the content — which is a

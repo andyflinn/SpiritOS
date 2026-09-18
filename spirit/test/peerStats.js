@@ -2,7 +2,7 @@
 
 // What a contact costs, counted (CYCLE-PACKET-7.md).
 //
-// A whoBook row is what a human decided about a key. These numbers are
+// A contactBook row is what a human decided about a key. These numbers are
 // not a decision, so they do not live on the row: they are a sidecar per
 // peer, under app/contacts/, named by peerFile so that bytesHeld already
 // counts them as part of what that contact costs.
@@ -18,7 +18,7 @@
 //     as zero, so a total cannot grow forever and a quiet week shows.
 //
 // Whether a key is ELIGIBLE to be counted is the hub's question, not
-// this module's: blocked, held and stranger all live in whoBook, and a
+// this module's: blocked, held and stranger all live in contactBook, and a
 // file that had an opinion about them would be a second address book.
 // See countInbound in hub.js, and chatPeople.js for those tests.
 

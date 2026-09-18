@@ -1,5 +1,5 @@
 // The address book, which used to be three panels inside Relay Chat
-// (packet 2, ARCHITECTURAL-CONCERNS.md). whoBook is still the store and
+// (packet 2, ARCHITECTURAL-CONCERNS.md). contactBook is still the store and
 // the hub still owns every verb; what moved is the view.
 //
 // Chat is one app that reads this list. Chess will be another, and a
@@ -187,7 +187,7 @@ function contactsStatus(text) {
 // beside it drew mine. Two columns for one question, and each of them
 // blank half the time.
 //
-// `caption` is the node's answer (whoBook.labelForKey): my label for them
+// `caption` is the node's answer (contactBook.labelForKey): my label for them
 // if I set one, theirs otherwise — so this is never empty for a row that
 // has a name anywhere.
 //
@@ -197,7 +197,7 @@ function contactsStatus(text) {
 // list can never disagree about which rows need it.
 function contactsNameCell(person) {
   // NOT `caption`, which is the node's resolved answer and falls back to
-  // the WHOLE KEY for somebody who claimed no handle (whoBook.labelForKey).
+  // the WHOLE KEY for somebody who claimed no handle (contactBook.labelForKey).
   // Forty-four characters in a name column is exactly what the old
   // two-column version was careful to avoid, and it would have walked
   // straight back in.
@@ -254,7 +254,7 @@ function contactsNameCell(person) {
 //     below them while you read their numbers.
 // PRESENCE, AND THE JOIN HAPPENS HERE AND ONLY HERE (PRESENCE.md, Stage
 // 4). Presence arrives keyed by public key because a key is the only
-// thing a relay and this node agree about; whoBook says who that is.
+// thing a relay and this node agree about; contactBook says who that is.
 //
 // Three marks, and the third is the point of the other two:
 //
@@ -400,7 +400,7 @@ function contactsRowHtml(person) {
     // Both cells, because `myLabel` is the private caption and a person
     // may write anything they like in their own address book.
     // ONE NAME, and it is the node's own answer to what to call this key
-    // — mine for them if I set one, theirs otherwise (whoBook.labelForKey).
+    // — mine for them if I set one, theirs otherwise (contactBook.labelForKey).
     // The ending still rides on it where two rows read alike, which is
     // the only thing that made two columns worth having.
     '<td class="label-cell">' + contactsNameCell(person) + '</td>' +
@@ -940,7 +940,7 @@ spirit.shell.activateApp({
       // relay, Label was mine for them, and every row showed both — so a
       // person with no private caption had a name in one column and a
       // blank in the next, and a person with one had their name twice.
-      // `caption` is the node's own answer (whoBook.labelForKey): what to
+      // `caption` is the node's own answer (contactBook.labelForKey): what to
       // call this key, mine if I set one and theirs otherwise. One column,
       // never blank.
       //

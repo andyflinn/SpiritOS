@@ -3,7 +3,7 @@
 // spirit/run/js/peerStats.js
 // Personal node only. Per-peer packet counters. Never uploaded. Never on the relay.
 //
-// A whoBook row is a human decision. These numbers are not.
+// A contactBook row is a human decision. These numbers are not.
 // They live in app/contacts/peerfile-<key>.json via peerFile.js so
 // bytesHeld already includes them.
 //

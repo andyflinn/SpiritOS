@@ -355,7 +355,7 @@ test.subHeading('Connected: peerPost actually notes into it');
 (function peerPostFeedsTheSeam() {
   const peerPost = require('../run/js/peerPost');
   const trafficLog = require('../run/js/trafficLog');
-  const whoBook = require('../run/js/whoBook');
+  const contactBook = require('../run/js/contacts');
 
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-arrivals-'));
   const me = auth.generateIdentity('me');
@@ -365,8 +365,8 @@ test.subHeading('Connected: peerPost actually notes into it');
   // Known, or the front door refuses before the seam is ever reached —
   // which is correct and is exactly why this has to be set up rather
   // than assumed. See frontDoor.js.
-  whoBook.hold(home, { publicKey: them.publicKey, publicLabel: 'them' });
-  whoBook.accept(home, them.publicKey);
+  contactBook.hold(home, { publicKey: them.publicKey, publicLabel: 'them' });
+  contactBook.accept(home, them.publicKey);
 
   const arrivals = arrivalsModule.createArrivals();
   const seen = [];

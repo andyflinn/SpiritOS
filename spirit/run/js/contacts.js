@@ -1,5 +1,28 @@
 'use strict';
 
+// spirit/run/js/contacts.js — the contact storage.
+//
+// ── IT WAS whoBook.js UNTIL 2026-09-18 ──────────────────────────────
+//
+//   Andy: "i want to erase the whole whoBook nonsense — it's like: what
+//   the hell is that. It's the contacts.json, the contact storage."
+//
+// `who` was the CENSUS's word: GET /api/relay/who, everyone who ever
+// claimed on a relay. This file's first paragraph below is an argument
+// that it is NOT that — "a mailbox census is not an address book" — and
+// it was named after the thing it exists to keep out.
+//
+// That is not a cosmetic complaint. `peer.list` spent as long as the two
+// wore one name pouring the census into this file on every Contacts
+// refresh, as census-rank rows, for people the node would then refuse to
+// hear from. A name that argues with its own purpose is how that goes
+// unnoticed.
+//
+// The store it writes was renamed the same day (who.json -> contacts.json,
+// see bookPath); callers bind it as `contactBook`, because the module
+// exports `contacts()` — who this node listens to — and a binding of the
+// same name would shadow it.
+//
 // Perception only. Lives on a personal node, never on a --relay.
 // File: <rootDir>/relay-state/contacts.json (was who.json until
 //       2026-09-18 — see bookPath)
@@ -93,7 +116,7 @@ function isBlocked(row) {
 //
 //   Andy: "i may acquire the same contact through multiple relays i own.
 //   the contact record must hold a LIST of relays i own and the contact
-//   has a slot on them. the whoBook should have to reflect that."
+//   has a slot on them. the contactBook should have to reflect that."
 //
 // A LIST, for the reason he gives, and it is the whole boundary of this
 // feature in one field:

@@ -50,12 +50,12 @@ const STORES = [
   { file: 'routingTable.json', owner: 'relay.js', what: 'a relay\'s peer rows' },
   { file: 'invites.json', owner: 'invites.js', what: 'live invite tokens' },
   { file: 'relayKeys.json', owner: 'relayKeys.js', what: 'pinned relay keys' },
-  { file: 'contacts.json', owner: 'whoBook.js', what: 'the address book' },
+  { file: 'contacts.json', owner: 'contacts.js', what: 'the address book' },
   // The name it wore until 2026-09-18, renamed on first load. Listed so a
   // node upgrading in place is a case somebody decided rather than a file
   // that quietly stops being read — `who` was the census's word, and this
   // book exists precisely to not be the census.
-  { file: 'who.json', owner: 'whoBook.js', what: 'the address book, under its old name' },
+  { file: 'who.json', owner: 'contacts.js', what: 'the address book, under its old name' },
   { file: 'device.json', owner: 'deviceAuth.js', what: 'the door password and device slot' },
 ];
 

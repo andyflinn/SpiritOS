@@ -283,7 +283,7 @@ function natterLabelFor(relays, url) {
 // publish a name and no screen would ever show it.
 //
 // PUBLISHED FIRST, LOCAL SECOND, and that order is the opposite of a
-// contact's on purpose. whoBook prefers MY label for a person: I chose
+// contact's on purpose. contactBook prefers MY label for a person: I chose
 // it to tell two people apart, and a peer must not be able to rename
 // themselves on my screen. A relay is not somebody I am distinguishing
 // — it is a service with a name, and my list word was only ever

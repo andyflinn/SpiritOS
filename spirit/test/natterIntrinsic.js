@@ -2642,7 +2642,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
 
 test.subHeading('Contacts is its own app');
 
-// Packet 2: whoBook stayed the store, the view left Relay Chat. Chat is
+// Packet 2: contactBook stayed the store, the view left Relay Chat. Chat is
 // one reader of that book; Chess will be another, and neither is a
 // reason to open a chat window to add somebody.
 {

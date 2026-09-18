@@ -32,7 +32,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const peerPost = require('../run/js/peerPost');
 const relayKeys = require('../run/js/relayKeys');
-const whoBook = require('../run/js/whoBook');
+const contactBook = require('../run/js/contacts');
 const hub = require('../run/js/hub');
 const world = require('./world');
 
@@ -103,12 +103,12 @@ async function knownAndStranger() {
   const stranger = auth.generateIdentity('nobody');
 
   const N = nodeWith({});
-  // 'message' rather than a bare acquire: whoBook's ACQUIRED_LISTENING is
+  // 'message' rather than a bare acquire: contactBook's ACQUIRED_LISTENING is
   // ['message', 'invite', 'handle'], so a census row is somebody merely
   // SEEN and is deliberately not somebody this node hears. Having noticed
   // a stranger exists is not an introduction, and a first draft of this
   // suite failed for exactly that reason.
-  whoBook.acquire(N.home, {
+  contactBook.acquire(N.home, {
     publicKey: friend.publicKey, publicLabel: 'bella', relays: [RELAY],
   }, 'message');
 
@@ -191,7 +191,7 @@ async function thePreference() {
   fs.writeFileSync(path.join(A.home, 'preferences.json'),
     JSON.stringify({ unknownSenders: 'acquire' }));
   await A.router.onRequest(RELAY, arriving(stranger, A.me.publicKey, 'hello'));
-  const row = whoBook.byPublicKey(A.home, stranger.publicKey);
+  const row = contactBook.byPublicKey(A.home, stranger.publicKey);
   if (A.arrived.length === 1 && row) {
     test.check('under `acquire` a stranger gets a row and is delivered');
   } else {
@@ -204,7 +204,7 @@ async function thePreference() {
   fs.writeFileSync(path.join(H.home, 'preferences.json'),
     JSON.stringify({ unknownSenders: 'hold' }));
   await H.router.onRequest(RELAY, arriving(stranger, H.me.publicKey, 'hello'));
-  const held = whoBook.byPublicKey(H.home, stranger.publicKey);
+  const held = contactBook.byPublicKey(H.home, stranger.publicKey);
   if (held && H.arrived.length === 0) {
     test.check('under `hold` they get a waiting row and reach no app');
   } else {
@@ -309,7 +309,7 @@ async function theFloor() {
     /* eslint-disable no-await-in-loop */
     await K.router.onRequest(RELAY, arriving(newcomer, K.me.publicKey, 'hello'));
   }
-  if (K.arrived.length === 10 && whoBook.listens(whoBook.byPublicKey(K.home, newcomer.publicKey))) {
+  if (K.arrived.length === 10 && contactBook.listens(contactBook.byPublicKey(K.home, newcomer.publicKey))) {
     test.check('while under `acquire` one message makes them a contact, and a contact is not rationed');
   } else {
     test.fail('acquire newcomer: arrived=' + K.arrived.length);
@@ -319,7 +319,7 @@ async function theFloor() {
   // contact who talks a lot is not a stranger.
   const F = nodeWith({});
   const friend = auth.generateIdentity('bella');
-  whoBook.acquire(F.home, { publicKey: friend.publicKey, publicLabel: 'bella', relays: [] }, 'message');
+  contactBook.acquire(F.home, { publicKey: friend.publicKey, publicLabel: 'bella', relays: [] }, 'message');
   for (let n = 0; n < 20; n += 1) {
     /* eslint-disable no-await-in-loop */
     await F.router.onRequest(RELAY, arriving(friend, F.me.publicKey, 'x'.repeat(9000)));
@@ -349,7 +349,7 @@ async function theAnswerIsGatedToo() {
   }
 
   const friend = auth.generateIdentity('bella');
-  whoBook.acquire(N.home, { publicKey: friend.publicKey, publicLabel: 'bella', relays: [] }, 'message');
+  contactBook.acquire(N.home, { publicKey: friend.publicKey, publicLabel: 'bella', relays: [] }, 'message');
   await N.router.onRequest(RELAY, arriving(friend, N.me.publicKey, 'hi'));
   if (asked.length === 1 && asked[0] === friend.publicKey) {
     test.check('and somebody admitted does');

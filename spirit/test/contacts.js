@@ -2,7 +2,7 @@
 
 // The address book, now that it has its own window (packet 2).
 //
-// whoBook is still the store and the hub still owns every verb — what
+// contactBook is still the store and the hub still owns every verb — what
 // moved out of Relay Chat is the view, and with it the four decisions a
 // person can make about a key: add it by handle, accept somebody
 // waiting, block or unblock, and say what YOU call them.
@@ -144,7 +144,7 @@ function mountApp(options) {
     if (verb.indexOf('contact.') === 0) {
       status = opts.peerStatus || 200;
       // The node keeps what it is told and the next read hands it back —
-      // whoBook.label, then buildPeople. A stub that answered the same
+      // contactBook.label, then buildPeople. A stub that answered the same
       // fixture forever is how a panel that never repaints passed this
       // suite: the POST was asserted, and nothing ever asked what the
       // screen said afterwards.
@@ -619,7 +619,7 @@ function listsTheBook() {
     // every row showed both — so somebody with no private caption had a
     // name and then a blank, and somebody with one had their name twice.
     //
-    // `caption` is the node's own answer (whoBook.labelForKey): mine if I
+    // `caption` is the node's own answer (contactBook.labelForKey): mine if I
     // set one, theirs otherwise. Bert has been renamed, so his cell shows
     // MINE; carol has not, so hers shows HERS — one column, neither blank.
     if (rows.indexOf('<td class="label-cell">Bertie</td>') !== -1 &&
@@ -772,7 +772,7 @@ function saysNothingWhenNothingHappened() {
 //   Andy: "i also have no method of removing sonny from my contacts so i
 //   could re-test easily."
 //
-// Driven against whoBook directly because that is where the rule lives and
+// Driven against contactBook directly because that is where the rule lives and
 // there is no relay in it: this is one node's own book.
 function forgetsWithoutUnblocking() {
   test.subHeading('Forgetting somebody is not unblocking them');
@@ -780,34 +780,34 @@ function forgetsWithoutUnblocking() {
   const os = require('os');
   const fs = require('fs');
   const path = require('path');
-  const whoBook = require('../run/js/whoBook');
+  const contactBook = require('../run/js/contacts');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-forget-'));
 
-  whoBook.acquire(home, { publicKey: 'K1', publicLabel: 'sonny', relay: 'https://lab.example' }, 'handle');
-  whoBook.setMyLabel(home, 'K1', 'my sonny');
-  const gone = whoBook.forget(home, 'K1');
+  contactBook.acquire(home, { publicKey: 'K1', publicLabel: 'sonny', relay: 'https://lab.example' }, 'handle');
+  contactBook.setMyLabel(home, 'K1', 'my sonny');
+  const gone = contactBook.forget(home, 'K1');
 
-  if (gone && gone.forgotten && whoBook.byPublicKey(home, 'K1') === null) {
+  if (gone && gone.forgotten && contactBook.byPublicKey(home, 'K1') === null) {
     test.check('an ordinary contact leaves the book entirely, myLabel and route with them');
   } else {
-    test.fail('after forget: ' + JSON.stringify(whoBook.byPublicKey(home, 'K1')));
+    test.fail('after forget: ' + JSON.stringify(contactBook.byPublicKey(home, 'K1')));
   }
 
   // THE CASE A PLAIN DELETE GETS WRONG, and the reason forget is not one
   // line. A blocked row IS the refusal — delete it and the next thing they
   // write is admitted by a node that has forgotten why it said no.
-  whoBook.acquire(home, { publicKey: 'K2', publicLabel: 'nuisance' }, 'handle');
-  whoBook.setBlocked(home, 'K2', true);
-  whoBook.forget(home, 'K2');
-  const after = whoBook.byPublicKey(home, 'K2');
+  contactBook.acquire(home, { publicKey: 'K2', publicLabel: 'nuisance' }, 'handle');
+  contactBook.setBlocked(home, 'K2', true);
+  contactBook.forget(home, 'K2');
+  const after = contactBook.byPublicKey(home, 'K2');
 
-  if (after && whoBook.isBlocked(after)) {
+  if (after && contactBook.isBlocked(after)) {
     test.check('a blocked person is downgraded, not deleted — the refusal survives');
   } else {
     test.fail('block evaporated: ' + JSON.stringify(after));
   }
 
-  const stillListed = whoBook.contacts(home).some(function (r) { return r.publicKey === 'K2'; });
+  const stillListed = contactBook.contacts(home).some(function (r) { return r.publicKey === 'K2'; });
   if (!stillListed) {
     test.check('and they are no longer a contact, which is what was asked for');
   } else {
@@ -817,7 +817,7 @@ function forgetsWithoutUnblocking() {
   // FORGETTING SOMEBODY THIS NODE NEVER KNEW is not an error to swallow
   // quietly — the verb answers 404 so a caller can tell "gone" from
   // "never there".
-  if (whoBook.forget(home, 'NEVER-HEARD-OF') === null) {
+  if (contactBook.forget(home, 'NEVER-HEARD-OF') === null) {
     test.check('and forgetting a stranger says so rather than pretending');
   } else {
     test.fail('forgot somebody who was not there');
@@ -1443,7 +1443,7 @@ function sendsNothing() {
   // and is reached through `contact.senders`.
   //
   // What that leaves is an app that draws and asks, and stores nothing at
-  // all. whoBook is still the book; now nothing here is.
+  // all. contactBook is still the book; now nothing here is.
   const writes = src.match(/saveFile\(/g) || [];
   if (writes.length === 0) {
     test.check('and it keeps nothing on disk — it draws the control, the node holds the value');
@@ -1515,7 +1515,7 @@ function theHandleColumnStillIdentifies() {
 
 // PRESENCE.md Stage 4 — the dot, and that is the boundary.
 //
-// The column is the one place presence and whoBook meet: presence
+// The column is the one place presence and contactBook meet: presence
 // arrives keyed by public key because a key is all a relay and this node
 // agree about, and the book says who that is. Everything below is that
 // join and the three marks it produces.

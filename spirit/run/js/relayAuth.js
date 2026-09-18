@@ -41,7 +41,7 @@ const labelRule = require('./labelRule');
 // cannot be defended by blacklisting one string.
 //
 // What replaces it is what the node already had: two books, both keyed.
-// relayKeys.js holds the relays, whoBook.js holds the peers, and which
+// relayKeys.js holds the relays, contacts.js holds the peers, and which
 // book a key is in IS its type. Nothing needs to travel, because the
 // node is the one who needs to know and it wrote it down itself.
 //

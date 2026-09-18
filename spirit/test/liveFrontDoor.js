@@ -314,7 +314,7 @@ async function run() {
     }
 
     // THE ROW, and the route it was acquired BY. 'message' is in
-    // whoBook's ACQUIRED_LISTENING and 'census' is not — so writing is
+    // contactBook's ACQUIRED_LISTENING and 'census' is not — so writing is
     // what makes somebody heard next time, and being merely seen in a
     // census would not have.
     const row = rowFor(homeOf(bravo), alfaKey);

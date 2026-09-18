@@ -244,19 +244,19 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
   // THE PROPERTY THAT MAKES RELAY-TO-RELAY NEED NO NEW PROTOCOL. If this
   // breaks, partner work silently grows a second transport.
   const trafficInjected = /opts\.traffic/.test(peerPost);
-  const whoBookUses = (peerPost.match(/whoBook\./g) || []).length;
-  if (trafficInjected && whoBookUses <= 2) {
-    test.check('traffic is injected and whoBook is inbound-only, so a relay may construct one');
+  const contactBookUses = (peerPost.match(/contactBook\./g) || []).length;
+  if (trafficInjected && contactBookUses <= 2) {
+    test.check('traffic is injected and contactBook is inbound-only, so a relay may construct one');
   } else {
     test.fail('peerPost grew node-only coupling: traffic injected=' +
-      trafficInjected + ', whoBook uses=' + whoBookUses);
+      trafficInjected + ', contactBook uses=' + contactBookUses);
   }
 
   // AND THE TRANSPORT IS REACHABLE BY BOTH. It sat inside hub.js until
   // 2026-09-16, which is why a relay had no way to obey the rule and the
   // shortcut was available to take.
   const wire = code('js/relayRequest.js');
-  if (/function relayRequest/.test(wire) && !/whoBook|ownerBadge|peerStats/.test(wire)) {
+  if (/function relayRequest/.test(wire) && !/contactBook|ownerBadge|peerStats/.test(wire)) {
     test.check('and relayRequest is its own module, with none of the node on it');
   } else {
     test.fail('the transport is back inside something');

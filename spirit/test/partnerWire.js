@@ -309,11 +309,11 @@ async function run() {
     test.fail('search row: ' + JSON.stringify(row));
   }
 
-  // THE ROUTE IS RECORDED, which is the whole of decided item 7. whoBook
+  // THE ROUTE IS RECORDED, which is the whole of decided item 7. contactBook
   // folds `peer.relay` into the row, so the contact remembers where it
   // found him rather than having to hunt next week.
-  const whoBook = require('../run/js/whoBook');
-  const saved = whoBook.acquire(nodeHome, {
+  const contactBook = require('../run/js/contacts');
+  const saved = contactBook.acquire(nodeHome, {
     publicKey: row.publicKey,
     publicLabel: row.publicLabel,
     relay: confirmAt,

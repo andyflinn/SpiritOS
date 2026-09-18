@@ -26,7 +26,7 @@ const auth = require('./relayAuth');
 // Admission is the front door's answer and arrives as `verdict`; whether
 // a sender's numbers move is a fact about the book — see the rules at the
 // stats call below, which came from the ring's countInbound.
-const whoBook = require('./whoBook');
+const contactBook = require('./contacts');
 const nodeCard = require('./nodeCard');
 
 // A UX number, not a protocol constant tuned against another machine's
@@ -440,7 +440,7 @@ function createPeerPost(opts) {
       // floor and never before: an over-budget stranger leaves no trace
       // but a refusal in the log.
       //
-      // WHICH RELAY IT CAME DOWN goes with it. whoBook's `relays` is
+      // WHICH RELAY IT CAME DOWN goes with it. contactBook's `relays` is
       // "mailboxes where you have seen this key", which is the only
       // routing fact this node holds about a stranger — and it was the
       // ring that recorded it until R8 (hub.acquireFromInbox). This path
@@ -552,9 +552,9 @@ function createPeerPost(opts) {
     // refusal in the log.
     if (stats) {
       var seen = null;
-      try { seen = whoBook.byPublicKey(rootDir, body.from); }
+      try { seen = contactBook.byPublicKey(rootDir, body.from); }
       catch (e) { seen = null; }
-      if (seen && !whoBook.isBlocked(seen)) {
+      if (seen && !contactBook.isBlocked(seen)) {
         try { stats.noteIn(rootDir, body.from, hash); }
         catch (e) { /* a counter must not break a delivery */ }
       }

@@ -1477,7 +1477,7 @@ function ndDeviceHtml() {
 // shorthand — so publishing a name changed a field nobody displayed.
 //
 // THE ORDER IS THE OPPOSITE OF A CONTACT'S, and the difference is real.
-// whoBook prefers MY label for a person: I chose it to tell two people
+// contactBook prefers MY label for a person: I chose it to tell two people
 // apart, and a peer must not be able to rename themselves on my screen.
 // A relay is not a peer I am distinguishing — it is a service, and this
 // is ITS screen. What it calls itself is the fact; my list shorthand is

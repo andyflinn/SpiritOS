@@ -448,7 +448,7 @@ if (isNode()) {
                   // A directory is asked the same question a file is.
                   // fileServable already refuses `relay-state` and
                   // everything under it, but only files were ever asked —
-                  // so the identity key, the whoBook, the allow list and
+                  // so the identity key, the contactBook, the allow list and
                   // the mailbox were all correctly hidden while the empty
                   // folder holding them stayed in every listing. A row
                   // that can never be opened is a tease, and one verdict

@@ -39,7 +39,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const whoBook = require('../run/js/whoBook');
+const contactBook = require('../run/js/contacts');
 
 const MINE = 'https://mine.example';
 const ALSO_MINE = 'https://also-mine.example';
@@ -120,8 +120,8 @@ function theSweepAdopts() {
     test.fail('adopted: ' + JSON.stringify(first));
   }
 
-  const cruella = whoBook.byPublicKey(home, 'K-CRUELLA');
-  if (whoBook.isMember(cruella) && whoBook.memberOf(cruella)[0] === MINE) {
+  const cruella = contactBook.byPublicKey(home, 'K-CRUELLA');
+  if (contactBook.isMember(cruella) && contactBook.memberOf(cruella)[0] === MINE) {
     test.check('and each row names the relay of mine the seat is on');
   } else {
     test.fail('cruella: ' + JSON.stringify(cruella));
@@ -131,20 +131,20 @@ function theSweepAdopts() {
   // node accepts somebody's mail at all, and a member added as `census`
   // would be a contact it refuses to hear from — the opposite of the
   // point, since the owner let them onto the box.
-  if (whoBook.acquiredVia(cruella) === whoBook.MEMBER && whoBook.listens(cruella)) {
+  if (contactBook.acquiredVia(cruella) === contactBook.MEMBER && contactBook.listens(cruella)) {
     test.check('and this node will hear from them, which is what the rank is for');
   } else {
-    test.fail('rank: ' + whoBook.acquiredVia(cruella) + ' listens: ' + whoBook.listens(cruella));
+    test.fail('rank: ' + contactBook.acquiredVia(cruella) + ' listens: ' + contactBook.listens(cruella));
   }
 
   // ── AND NOBODY ELSE ────────────────────────────────────────────────
-  if (!whoBook.byPublicKey(home, 'K-STRANGER')) {
+  if (!contactBook.byPublicKey(home, 'K-STRANGER')) {
     test.check('a member of somebody else’s relay is not adopted');
   } else {
     test.fail('adopted a stranger from a relay this node does not own');
   }
 
-  if (!whoBook.byPublicKey(home, me)) {
+  if (!contactBook.byPublicKey(home, me)) {
     test.check('and this node does not become its own contact');
   } else {
     test.fail('the owner is in its own book');
@@ -159,7 +159,7 @@ function theSweepAdopts() {
     census: { roster: roster([me, 'K-CRUELLA']) },
   });
   hub.reconcileMembers(summary);
-  const both = whoBook.memberOf(whoBook.byPublicKey(home, 'K-CRUELLA'));
+  const both = contactBook.memberOf(contactBook.byPublicKey(home, 'K-CRUELLA'));
   if (both.length === 2 && both.indexOf(MINE) !== -1 && both.indexOf(ALSO_MINE) !== -1) {
     test.check('somebody seated on two of my relays lists both');
   } else {
@@ -190,8 +190,8 @@ function theSweepPrunes() {
   };
   const pruned = hub.reconcileMembers(withoutJazz);
 
-  const jazz = whoBook.byPublicKey(home, 'K-JAZZ');
-  if (pruned.pruned === 1 && jazz && !whoBook.isMember(jazz)) {
+  const jazz = contactBook.byPublicKey(home, 'K-JAZZ');
+  if (pruned.pruned === 1 && jazz && !contactBook.isMember(jazz)) {
     test.check('somebody evicted is no longer a member');
   } else {
     test.fail('after prune: ' + JSON.stringify(pruned) + ' ' + JSON.stringify(jazz));
@@ -201,7 +201,7 @@ function theSweepPrunes() {
   // the right answer: you did let them onto your relay once, so their
   // mail is still welcome. What changed is that the row is now yours to
   // delete.
-  if (jazz && whoBook.listens(jazz)) {
+  if (jazz && contactBook.listens(jazz)) {
     test.check('but they are still somebody this node hears — ranks never fall');
   } else {
     test.fail('the rank fell: ' + JSON.stringify(jazz));
@@ -215,7 +215,7 @@ function theSweepPrunes() {
   // empty every memberOf on this node and make a whole address book
   // deletable because a box was rebooting.
   hub.reconcileMembers({ rows: [{ url: MINE, owned: false, status: 0 }] });
-  if (whoBook.isMember(whoBook.byPublicKey(home, 'K-CRUELLA'))) {
+  if (contactBook.isMember(contactBook.byPublicKey(home, 'K-CRUELLA'))) {
     test.check('and a relay that did not answer takes nobody’s seat away');
   } else {
     test.fail('an unreachable relay emptied the book');
@@ -238,7 +238,7 @@ async function forgetRefusesAMember() {
       census: { roster: roster([me, 'K-CRUELLA']) } }],
   });
   // An ordinary contact beside them, acquired the way anybody is.
-  whoBook.acquire(home, { publicKey: 'K-SONNY', publicLabel: 'sonny', relay: THEIRS }, 'handle');
+  contactBook.acquire(home, { publicKey: 'K-SONNY', publicLabel: 'sonny', relay: THEIRS }, 'handle');
 
   const refused = fakeRes();
   hub.handlePeer({}, refused, readBody({ publicKey: 'K-CRUELLA' }), 'forget');
@@ -260,7 +260,7 @@ async function forgetRefusesAMember() {
     test.fail('refusal: ' + refused.text);
   }
 
-  if (whoBook.byPublicKey(home, 'K-CRUELLA')) {
+  if (contactBook.byPublicKey(home, 'K-CRUELLA')) {
     test.check('and nothing was deleted');
   } else {
     test.fail('the row went anyway');
@@ -275,7 +275,7 @@ async function forgetRefusesAMember() {
   hub.handlePeer({}, ok, readBody({ publicKey: 'K-SONNY' }), 'forget');
   await ok.wait();
 
-  if (ok.status === 200 && !whoBook.byPublicKey(home, 'K-SONNY')) {
+  if (ok.status === 200 && !contactBook.byPublicKey(home, 'K-SONNY')) {
     test.check('while somebody who holds no seat of mine is forgotten as ever');
   } else {
     test.fail('ordinary forget: ' + ok.status + ' ' + ok.text);
@@ -293,7 +293,7 @@ async function forgetRefusesAMember() {
   hub.handlePeer({}, after, readBody({ publicKey: 'K-CRUELLA' }), 'forget');
   await after.wait();
 
-  if (after.status === 200 && !whoBook.byPublicKey(home, 'K-CRUELLA')) {
+  if (after.status === 200 && !contactBook.byPublicKey(home, 'K-CRUELLA')) {
     test.check('and once the seat is gone, so is the refusal');
   } else {
     test.fail('after eviction: ' + after.status + ' ' + after.text);
@@ -320,7 +320,7 @@ function ownersOnly() {
     ],
   });
 
-  if (said.adopted === 0 && whoBook.load(home).length === 0) {
+  if (said.adopted === 0 && contactBook.load(home).length === 0) {
     test.check('nobody is adopted, and the book is untouched');
   } else {
     test.fail('a non-owner adopted somebody: ' + JSON.stringify(said));
@@ -344,8 +344,8 @@ function theSweepMarksOrphans() {
   const home = tmpHome();
   const hub = hubFor(home);
 
-  whoBook.acquire(home, { publicKey: 'K-LIVE', publicLabel: 'jim', relay: THEIRS }, 'handle');
-  whoBook.acquire(home, { publicKey: 'K-DUD', publicLabel: 'bella', relay: 'http://127.0.0.1:65425' }, 'handle');
+  contactBook.acquire(home, { publicKey: 'K-LIVE', publicLabel: 'jim', relay: THEIRS }, 'handle');
+  contactBook.acquire(home, { publicKey: 'K-DUD', publicLabel: 'bella', relay: 'http://127.0.0.1:65425' }, 'handle');
 
   // A relay this node is on but does NOT own — orphan-hunting is about
   // every relay you are bound to, not only the ones you keep.
@@ -353,13 +353,13 @@ function theSweepMarksOrphans() {
     census: { roster: roster(['K-LIVE']) } }] };
 
   const first = hub.reconcileOrphans(up, new Date('2026-09-17T01:00:00.000Z'));
-  if (first.marked === 1 && whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD'))) {
+  if (first.marked === 1 && contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD'))) {
     test.check('somebody no relay lists is marked');
   } else {
     test.fail('mark: ' + JSON.stringify(first));
   }
 
-  if (!whoBook.missingSince(whoBook.byPublicKey(home, 'K-LIVE'))) {
+  if (!contactBook.missingSince(contactBook.byPublicKey(home, 'K-LIVE'))) {
     test.check('and somebody a relay does list is not');
   } else {
     test.fail('marked a live contact');
@@ -369,10 +369,10 @@ function theSweepMarksOrphans() {
   // on every probe would make a contact missing since March look like it
   // vanished a minute ago — which is the one thing the date is for.
   hub.reconcileOrphans(up, new Date('2026-09-30T01:00:00.000Z'));
-  if (whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD')).indexOf('2026-09-17') === 0) {
+  if (contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD')).indexOf('2026-09-17') === 0) {
     test.check('and a second sweep leaves the original date alone');
   } else {
-    test.fail('the date moved: ' + whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD')));
+    test.fail('the date moved: ' + contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD')));
   }
 
   // ── A RELAY THAT DID NOT ANSWER SAYS NOTHING ABOUT ANYBODY ─────────
@@ -382,9 +382,9 @@ function theSweepMarksOrphans() {
   // a warning onto every row in its book.
   const home2 = tmpHome();
   const hub2 = hubFor(home2);
-  whoBook.acquire(home2, { publicKey: 'K-X', publicLabel: 'x', relay: THEIRS }, 'handle');
+  contactBook.acquire(home2, { publicKey: 'K-X', publicLabel: 'x', relay: THEIRS }, 'handle');
   const silent = hub2.reconcileOrphans({ rows: [{ url: THEIRS, claimed: true, status: 0 }] });
-  if (silent.marked === 0 && !whoBook.missingSince(whoBook.byPublicKey(home2, 'K-X'))) {
+  if (silent.marked === 0 && !contactBook.missingSince(contactBook.byPublicKey(home2, 'K-X'))) {
     test.check('a relay that did not answer marks nobody');
   } else {
     test.fail('an unreachable relay condemned the book: ' + JSON.stringify(silent));
@@ -396,7 +396,7 @@ function theSweepMarksOrphans() {
   const old = hub2.reconcileOrphans({
     rows: [{ url: THEIRS, claimed: true, status: 200, census: { peers: 3 } }],
   });
-  if (old.marked === 0 && !whoBook.missingSince(whoBook.byPublicKey(home2, 'K-X'))) {
+  if (old.marked === 0 && !contactBook.missingSince(contactBook.byPublicKey(home2, 'K-X'))) {
     test.check('nor one running older code that answered without a roster');
   } else {
     test.fail('a rosterless answer condemned the book: ' + JSON.stringify(old));
@@ -406,7 +406,7 @@ function theSweepMarksOrphans() {
   const back = { rows: [{ url: THEIRS, owned: false, claimed: true, status: 200,
     census: { roster: roster(['K-LIVE', 'K-DUD']) } }] };
   const cleared = hub.reconcileOrphans(back);
-  if (cleared.cleared === 1 && !whoBook.missingSince(whoBook.byPublicKey(home, 'K-DUD'))) {
+  if (cleared.cleared === 1 && !contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD'))) {
     test.check('and somebody who turns up again stops being warned about');
   } else {
     test.fail('the mark stuck: ' + JSON.stringify(cleared));
@@ -415,7 +415,7 @@ function theSweepMarksOrphans() {
   // NOTHING WAS DELETED, at any point. Absence is not death, and the row
   // holds a name its owner typed which is on no relay to be recovered
   // from — so the sweep marks and the human decides.
-  if (whoBook.byPublicKey(home, 'K-DUD')) {
+  if (contactBook.byPublicKey(home, 'K-DUD')) {
     test.check('and nothing was ever deleted — the sweep marks, a person decides');
   } else {
     test.fail('the sweep deleted a row');

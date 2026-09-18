@@ -5,7 +5,7 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const whoBook = require('../run/js/whoBook');
+const contactBook = require('../run/js/contacts');
 const invites = require('../run/js/invites');
 const world = require('./world');
 const scenario = require('./scenario');
@@ -29,15 +29,15 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('key collision on two generateIdentity(john)');
   }
 
-  whoBook.handshake(annie, { publicKey: johnA.publicKey, publicLabel: 'john' });
-  whoBook.handshake(annie, { publicKey: johnB.publicKey, publicLabel: 'john' });
-  whoBook.handshake(annie, { publicKey: jim.publicKey, publicLabel: 'jim' });
+  contactBook.handshake(annie, { publicKey: johnA.publicKey, publicLabel: 'john' });
+  contactBook.handshake(annie, { publicKey: johnB.publicKey, publicLabel: 'john' });
+  contactBook.handshake(annie, { publicKey: jim.publicKey, publicLabel: 'jim' });
 
-  whoBook.setMyLabel(annie, johnA.publicKey, 'lovelyJohn');
-  whoBook.setMyLabel(annie, johnB.publicKey, 'john-work');
+  contactBook.setMyLabel(annie, johnA.publicKey, 'lovelyJohn');
+  contactBook.setMyLabel(annie, johnB.publicKey, 'john-work');
 
-  const lovely = whoBook.byMyLabel(annie, 'lovelyJohn');
-  const work = whoBook.byMyLabel(annie, 'john-work');
+  const lovely = contactBook.byMyLabel(annie, 'lovelyJohn');
+  const work = contactBook.byMyLabel(annie, 'john-work');
   if (lovely.length === 1 && lovely[0].publicKey === johnA.publicKey) {
     test.check('lovelyJohn is only john A');
   } else {
@@ -49,7 +49,7 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('john-work: ' + JSON.stringify(work));
   }
 
-  const publicJohns = whoBook.load(annie).filter(function (r) {
+  const publicJohns = contactBook.load(annie).filter(function (r) {
     return r.publicLabel === 'john';
   });
   if (publicJohns.length === 2) {
@@ -58,37 +58,37 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('public johns: ' + publicJohns.length);
   }
 
-  whoBook.handshake(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan' });
-  const afterRename = whoBook.byPublicKey(annie, johnA.publicKey);
+  contactBook.handshake(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan' });
+  const afterRename = contactBook.byPublicKey(annie, johnA.publicKey);
   if (afterRename.publicLabel === 'jonathan' && afterRename.myLabel === 'lovelyJohn') {
     test.check('their public rename does not smash my caption');
   } else {
     test.fail('after rename: ' + JSON.stringify(afterRename));
   }
 
-  whoBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
-  whoBook.addRoute(annie, johnA.publicKey, 'https://spirit.andyflinn.com');
-  whoBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
-  const routed = whoBook.byPublicKey(annie, johnA.publicKey);
+  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
+  contactBook.addRoute(annie, johnA.publicKey, 'https://spirit.andyflinn.com');
+  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
+  const routed = contactBook.byPublicKey(annie, johnA.publicKey);
   if (routed.relays && routed.relays.length === 2) {
     test.check('routes append per key and do not duplicate');
   } else {
     test.fail('routes: ' + JSON.stringify(routed));
   }
 
-  const bRoutes = whoBook.byPublicKey(annie, johnB.publicKey).relays || [];
+  const bRoutes = contactBook.byPublicKey(annie, johnB.publicKey).relays || [];
   if (bRoutes.length === 0) {
     test.check('john-work has no routes until seen elsewhere');
   } else {
     test.fail('john B should start with no routes');
   }
 
-  whoBook.handshake(annie, {
+  contactBook.handshake(annie, {
     publicKey: johnA.publicKey,
     publicLabel: 'jonathan',
     relay: 'http://127.0.0.1:65411',
   });
-  const afterSeen = whoBook.byPublicKey(annie, johnA.publicKey);
+  const afterSeen = contactBook.byPublicKey(annie, johnA.publicKey);
   if (afterSeen.relays.length === 3 && afterSeen.myLabel === 'lovelyJohn') {
     test.check('handshake appends a new route and keeps my caption');
   } else {
@@ -182,10 +182,10 @@ test.subHeading('Knowing somebody, and merely seeing them');
   const seen = auth.generateIdentity('stranger').publicKey;
   const wrote = auth.generateIdentity('bert').publicKey;
 
-  whoBook.handshake(annie2, { publicKey: seen, publicLabel: 'stranger' });
-  whoBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bert' }, 'message');
+  contactBook.handshake(annie2, { publicKey: seen, publicLabel: 'stranger' });
+  contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bert' }, 'message');
 
-  const known = whoBook.contacts(annie2).map(function (r) { return r.publicKey; });
+  const known = contactBook.contacts(annie2).map(function (r) { return r.publicKey; });
   if (known.length === 1 && known[0] === wrote) {
     test.check('a census row is not a contact; a message is');
   } else {
@@ -194,7 +194,7 @@ test.subHeading('Knowing somebody, and merely seeing them');
 
   // Every row written before the field is exactly what a census row is,
   // so it reads as one without anything being migrated.
-  if (whoBook.acquiredVia({ publicKey: 'x', publicLabel: 'old' }) === 'census') {
+  if (contactBook.acquiredVia({ publicKey: 'x', publicLabel: 'old' }) === 'census') {
     test.check('a row with no acquiredVia reads as census');
   } else {
     test.fail('a fieldless row was treated as acquired');
@@ -203,10 +203,10 @@ test.subHeading('Knowing somebody, and merely seeing them');
   // Perception is still the caption and never the identity: renaming a
   // contact does not change what the mailbox calls them, and seeing them
   // again in a census does not unknow them.
-  whoBook.setMyLabel(annie2, wrote, 'bertie');
-  whoBook.handshake(annie2, { publicKey: wrote, publicLabel: 'bertram' });
-  const row = whoBook.byPublicKey(annie2, wrote);
-  if (row.myLabel === 'bertie' && row.publicLabel === 'bertram' && whoBook.acquiredVia(row) === 'message') {
+  contactBook.setMyLabel(annie2, wrote, 'bertie');
+  contactBook.handshake(annie2, { publicKey: wrote, publicLabel: 'bertram' });
+  const row = contactBook.byPublicKey(annie2, wrote);
+  if (row.myLabel === 'bertie' && row.publicLabel === 'bertram' && contactBook.acquiredVia(row) === 'message') {
     test.check('a census sync corrects the public label and leaves the rest alone');
   } else {
     test.fail('after sync: ' + JSON.stringify(row));
@@ -221,27 +221,27 @@ test.subHeading('Waiting to be let in, and shut out again');
 
   // Held: a row exists so somebody can be seen waiting, and that is all
   // it is. Not somebody this node listens to.
-  whoBook.hold(home, { publicKey: 'KEY-CAROL', publicLabel: 'carol', relay: 'https://spirit.example' });
-  const carol = whoBook.byPublicKey(home, 'KEY-CAROL');
-  if (whoBook.acquiredVia(carol) === 'hold' && whoBook.listens(carol) === false) {
+  contactBook.hold(home, { publicKey: 'KEY-CAROL', publicLabel: 'carol', relay: 'https://spirit.example' });
+  const carol = contactBook.byPublicKey(home, 'KEY-CAROL');
+  if (contactBook.acquiredVia(carol) === 'hold' && contactBook.listens(carol) === false) {
     test.check('a held row is a name, not a correspondent');
   } else {
     test.fail('held row: ' + JSON.stringify(carol));
   }
 
   // Visible in the address book, absent from the people this node hears.
-  if (whoBook.addressBook(home).length === 1 && whoBook.contacts(home).length === 0) {
+  if (contactBook.addressBook(home).length === 1 && contactBook.contacts(home).length === 0) {
     test.check('and it is in the list you can see, not the list you can write to');
   } else {
-    test.fail('book ' + whoBook.addressBook(home).length + ', contacts ' + whoBook.contacts(home).length);
+    test.fail('book ' + contactBook.addressBook(home).length + ', contacts ' + contactBook.contacts(home).length);
   }
 
   // Accepting is saying yes to somebody who wrote: that is what
   // `message` means. It does not inflate into `handle`, which is a key
   // confirmed out of band and nothing else.
-  whoBook.accept(home, 'KEY-CAROL');
-  const accepted = whoBook.byPublicKey(home, 'KEY-CAROL');
-  if (whoBook.acquiredVia(accepted) === 'message' && whoBook.listens(accepted)) {
+  contactBook.accept(home, 'KEY-CAROL');
+  const accepted = contactBook.byPublicKey(home, 'KEY-CAROL');
+  if (contactBook.acquiredVia(accepted) === 'message' && contactBook.listens(accepted)) {
     test.check('accepting makes them somebody you hear, at the rank that is true');
   } else {
     test.fail('after accept: ' + JSON.stringify(accepted));
@@ -249,33 +249,33 @@ test.subHeading('Waiting to be let in, and shut out again');
 
   // Blocking a contact keeps how they were acquired. Unblocking has to
   // put something back, and inventing it later would be a guess.
-  whoBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'handle');
-  whoBook.setBlocked(home, 'KEY-BERT', true);
-  const blocked = whoBook.byPublicKey(home, 'KEY-BERT');
-  if (whoBook.acquiredVia(blocked) === 'handle' && whoBook.listens(blocked) === false) {
+  contactBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'handle');
+  contactBook.setBlocked(home, 'KEY-BERT', true);
+  const blocked = contactBook.byPublicKey(home, 'KEY-BERT');
+  if (contactBook.acquiredVia(blocked) === 'handle' && contactBook.listens(blocked) === false) {
     test.check('blocking silences a contact without forgetting how they got in');
   } else {
     test.fail('blocked row: ' + JSON.stringify(blocked));
   }
 
   // The path that would quietly undo it: they write again.
-  whoBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'message');
-  if (whoBook.isBlocked(whoBook.byPublicKey(home, 'KEY-BERT'))) {
+  contactBook.acquire(home, { publicKey: 'KEY-BERT', publicLabel: 'bert' }, 'message');
+  if (contactBook.isBlocked(contactBook.byPublicKey(home, 'KEY-BERT'))) {
     test.check('and writing again does not unblock anybody');
   } else {
     test.fail('a message cleared the block');
   }
 
   // Still listed, or there would be no way back.
-  if (whoBook.addressBook(home).some(function (r) { return r.publicKey === 'KEY-BERT'; })) {
+  if (contactBook.addressBook(home).some(function (r) { return r.publicKey === 'KEY-BERT'; })) {
     test.check('a blocked row stays visible, because a block must be undoable');
   } else {
     test.fail('blocked row vanished from the address book');
   }
 
-  whoBook.accept(home, 'KEY-BERT');
-  const unblocked = whoBook.byPublicKey(home, 'KEY-BERT');
-  if (!whoBook.isBlocked(unblocked) && whoBook.acquiredVia(unblocked) === 'handle') {
+  contactBook.accept(home, 'KEY-BERT');
+  const unblocked = contactBook.byPublicKey(home, 'KEY-BERT');
+  if (!contactBook.isBlocked(unblocked) && contactBook.acquiredVia(unblocked) === 'handle') {
     test.check('and unblocking gives back exactly what was there before');
   } else {
     test.fail('after unblock: ' + JSON.stringify(unblocked));

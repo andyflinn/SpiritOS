@@ -16,7 +16,7 @@
 //     "entries": [ { "dir": "sent"|"received", "at": "...", "text": "..." } ] }
 //
 // `blocked` is CHAT's refusal of that peer, and it lives here because
-// this is chat's own file. It is not the node's block: whoBook's
+// this is chat's own file. It is not the node's block: contactBook's
 // `blocked` makes listens() false and the inbox stops accepting them at
 // all, and that switch belongs to Contacts. This one only decides what
 // this app shows — their lines keep arriving on every inbox read and

@@ -13,7 +13,7 @@ const nodeCard = require('./nodeCard');
 // has PROVEN onto a contact row that already exists. Everything else that
 // touches the book goes through hub; this does not, because it is a
 // stream event with no request behind it and no response to build.
-const whoBook = require('./whoBook');
+const contactBook = require('./contacts');
 // Where this node keeps its mail. Required here for one call at boot:
 // a node with no relays.json is given one.
 const ownerBadge = require('./ownerBadge');
@@ -1781,7 +1781,7 @@ if (!relayMode) {
     // never add to them.
     onRoute: function (url, body) {
       if (!body || !body.key || !body.at) return;
-      try { whoBook.learnRoute(ROOT_DIR, body.key, body.at); }
+      try { contactBook.learnRoute(ROOT_DIR, body.key, body.at); }
       catch (e) { /* a book that cannot be written is not a reason to stop listening */ }
     },
 
@@ -1966,7 +1966,7 @@ if (!relayMode) {
   //   prefer."
   //
   // THIS NODE'S OWN ADDRESS BOOK, and nothing else. Every verb here is
-  // a whoBook write or a preferences read on this machine, so the group
+  // a contactBook write or a preferences read on this machine, so the group
   // is uniformly local — which is what lets the census reads live
   // somewhere else even though a person would call them contact work
   // too. `peer.list` and `peer.find` ask a RELAY who is out there;

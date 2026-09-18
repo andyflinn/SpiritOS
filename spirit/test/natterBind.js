@@ -710,7 +710,7 @@ function anInviteRedeemedAddsThemHere() {
 // census carried the new name to the browser correctly and nothing drew
 // it — which is a whole feature reaching the last inch and stopping.
 //
-// THE ORDER IS THE OPPOSITE OF A CONTACT'S, deliberately. whoBook
+// THE ORDER IS THE OPPOSITE OF A CONTACT'S, deliberately. contactBook
 // prefers MY label for a person, because I chose it to tell two people
 // apart and a peer must not rename themselves on my screen. A relay is
 // not somebody I am distinguishing — it is a service with a name, and

@@ -306,7 +306,7 @@ async function clearLive(me, known) {
 
 // GAP — NOTHING MAKES A NODE FORGET A PERSON.
 //
-// whoBook offers block, unblock, accept and label. None of them removes a
+// contactBook offers block, unblock, accept and label. None of them removes a
 // row, and there is no route that does — so a contact, once acquired, is
 // in your address book for good.
 //
@@ -502,7 +502,7 @@ async function up(scenarioName) {
   console.log('work node : restarted (verified by startedAt, not by a ping)');
 
   // Through the real route a person uses, so this exercises the same path
-  // rather than writing whoBook by hand.
+  // rather than writing contactBook by hand.
   let added = 0;
   for (const peer of world.peers()) {
     const done = await post(WORK_URL + '/api/spirit', { verb: 'peer.acquire', publicKey: peer.id.publicKey });
@@ -580,7 +580,7 @@ async function up(scenarioName) {
   // ── They know each other ──────────────────────────────────────────
   // Added through each peer's OWN node, on the loopback port labMaster
   // gave it — the same route a person uses, so this exercises the real
-  // path rather than writing whoBook by hand.
+  // path rather than writing contactBook by hand.
   await sleep(2500);
   let friendships = 0;
   for (const pair of (scenario.knows || [])) {

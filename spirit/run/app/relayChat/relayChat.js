@@ -55,7 +55,7 @@ spirit.shell.activateApp({
     // peer public key -> chat's own refusal of them, off the same file's
     // header. Read for free: logFor already parses the whole file for
     // every peer that is read back, and used to keep only the entries.
-    // This is NOT the node's block — that is whoBook's, it lives in
+    // This is NOT the node's block — that is contactBook's, it lives in
     // Contacts, and nothing here may lift it.
     var blockedHere = {};
     var captions = {};   // peer public key -> what this node calls them
@@ -531,7 +531,7 @@ spirit.shell.activateApp({
     }
 
     // A file knows a key; a human reads a caption. captions comes from
-    // the people list, so a peer this node has renamed in whoBook reads
+    // the people list, so a peer this node has renamed in contactBook reads
     // as that name here too.
     function captionFor(peerKey) {
       return captions[peerKey] || peerKey;

@@ -299,7 +299,7 @@ test.subHeading('Two peers, two files — and a reload finds them');
 test.subHeading('The header carries chat\'s own refusal, and only chat\'s');
 
 {
-  // Two blocks exist and they are not the same switch. whoBook's makes
+  // Two blocks exist and they are not the same switch. contactBook's makes
   // listens() false and the node stops accepting that peer at all; this
   // one lives in chat's own file and only decides what chat shows. It
   // rides in the header because that is the app's own store — a mere app

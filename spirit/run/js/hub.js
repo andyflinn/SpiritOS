@@ -6,7 +6,7 @@ const { URL } = require('url');
 const auth = require('./relayAuth');
 const invites = require('./invites');
 const ownerBadge = require('./ownerBadge');
-const whoBook = require('./whoBook');
+const contactBook = require('./contacts');
 const relayKeys = require('./relayKeys');
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
@@ -158,7 +158,7 @@ function bytesHeldByPeer(rootDir) {
 // CONTACTS, not the census. Everyone who ever claimed on a public
 // mailbox is in `who`; that is a fact about the mailbox, not an address
 // book, and a To list built from it means "everyone who exists" — which
-// is how a friend picks a stranger's john. So the list is whoBook rows
+// is how a friend picks a stranger's john. So the list is contactBook rows
 // this node actually acquired: somebody wrote to it, or consumed an
 // invite it minted, or a human confirmed the key out of band.
 //
@@ -175,7 +175,7 @@ function buildPeople(rootDir, peers, relayUrl) {
   (Array.isArray(peers) ? peers : [])
     .filter(function (p) { return p && p.publicKey; })
     .forEach(function (p) {
-      whoBook.handshake(rootDir, {
+      contactBook.handshake(rootDir, {
         publicKey: p.publicKey,
         publicLabel: p.publicLabel || '',
         relay: relayUrl,
@@ -192,7 +192,7 @@ function buildPeople(rootDir, peers, relayUrl) {
   // cannot reverse.
   var bytesHeld = bytesHeldByPeer(rootDir);
 
-  var rows = whoBook.addressBook(rootDir)
+  var rows = contactBook.addressBook(rootDir)
     // No self row. Claiming a name is not meeting somebody, and a list
     // of people to write to that opens with yourself reads as a mistake.
     .filter(function (row) { return row.publicKey !== myKey; })
@@ -208,12 +208,12 @@ function buildPeople(rootDir, peers, relayUrl) {
         // from the end" is a fourth thing to get wrong.
         tail: keyTail(row.publicKey),
         publicLabel: (seen && seen.publicLabel) || row.publicLabel || '',
-        caption: whoBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
+        caption: contactBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
         // The raw one, beside the resolved caption: an editor has to
         // show what is stored, not what is shown, or clearing the field
         // would look like clearing the name.
         myLabel: row.myLabel || '',
-        acquiredVia: whoBook.acquiredVia(row),
+        acquiredVia: contactBook.acquiredVia(row),
         // ── SEATS ON RELAYS THIS NODE OWNS ─────────────────────────────
         //
         //   Andy: "as user it becomes very confusing to understand my
@@ -227,17 +227,17 @@ function buildPeople(rootDir, peers, relayUrl) {
         // A list, because one person may be seated on several of my
         // relays, and empty for everybody else — which is every row on a
         // node that owns nothing.
-        memberOf: whoBook.memberOf(row),
+        memberOf: contactBook.memberOf(row),
         // WHEN THIS NODE FIRST FOUND THE KEY ON NO CENSUS, or ''. The
         // warning a screen draws from it must say "first noticed", not
         // "went": nothing watched before the conclusion was possible.
-        missingSince: whoBook.missingSince(row),
+        missingSince: contactBook.missingSince(row),
         // One question the app asks about every row: may this be written
         // to? Held and blocked both answer no, and they are drawn the
         // same way — a × and no composer — because to the person looking
         // at the list they are the same fact.
-        held: !whoBook.listens(row),
-        blocked: whoBook.isBlocked(row),
+        held: !contactBook.listens(row),
+        blocked: contactBook.isBlocked(row),
         // Whether this contact has a row on the relay this node is pointed at
         // right now. A contact you acquired elsewhere is still a contact;
         // it just has nowhere to be written to from here.
@@ -249,7 +249,7 @@ function buildPeople(rootDir, peers, relayUrl) {
         // between "none" and "not asked", which are not the same answer.
         bytesHeld: bytesHeld[row.publicKey] || 0,
         // What they cost in attention. Computed from the sidecar
-        // (peerStats), never from a field on the row: a whoBook row is
+        // (peerStats), never from a field on the row: a contactBook row is
         // what a human decided, and a packet counter is not a decision.
         //
         // A missing sidecar summarises as zeros, and zeros are the true
@@ -332,7 +332,7 @@ function keyTail(publicKey) {
 // Left standing on purpose, not by omission: it is the only place the
 // two-johns rule is written down as code, and whether ranked search has
 // genuinely absorbed that — exact-label matching, key tails, and the
-// whoBook cross-reference that says "already a contact" — is a question
+// contactBook cross-reference that says "already a contact" — is a question
 // for whoever moves the last census reader, not something to settle by
 // deleting the tested version first.
 function handleMatches(rootDir, peers, handle) {
@@ -347,14 +347,14 @@ function handleMatches(rootDir, peers, handle) {
       return String(p.publicLabel || '').trim().toLowerCase() === want;
     })
     .map(function (p) {
-      var row = whoBook.byPublicKey(rootDir, p.publicKey);
+      var row = contactBook.byPublicKey(rootDir, p.publicKey);
       return {
         publicKey: p.publicKey,
         publicLabel: p.publicLabel || '',
         tail: keyTail(p.publicKey),
         // What this node already thinks of them, so the UI can say
         // "already a contact" instead of offering the same person twice.
-        acquiredVia: row ? whoBook.acquiredVia(row) : null,
+        acquiredVia: row ? contactBook.acquiredVia(row) : null,
         owner: !!p.owner,
       };
     });
@@ -375,7 +375,7 @@ function handleMatches(rootDir, peers, handle) {
 // sender's `publicLabel` off `m.from`, because the relay stored a line
 // with a label on it. Nothing stores a line any more, so `remember`
 // acquires with an empty label and the census
-// (`/api/hub/who` → whoBook) is what fills the caption in. A contact
+// (`/api/hub/who` → contactBook) is what fills the caption in. A contact
 // acquired by being written to is briefly unlabelled where it used to be
 // named on arrival.
 
@@ -387,7 +387,7 @@ function handleMatches(rootDir, peers, handle) {
 //   hold    — the same, except the count comes back, so the app can say
 //             "N from people you have not added" without saying who.
 //   acquire — the old behaviour: writing to this node makes you someone
-//             it can answer (whoBook 'message').
+//             it can answer (contactBook 'message').
 //
 // This node's policy about its own book, so the hub reads it here rather
 // than taking it from whoever asked (packet 5).
@@ -497,7 +497,7 @@ function unknownPolicy(rootDir) {
 // dropped by one.
 function listenSet(rootDir) {
   var allowed = Object.create(null);
-  whoBook.contacts(rootDir).forEach(function (row) { allowed[row.publicKey] = true; });
+  contactBook.contacts(rootDir).forEach(function (row) { allowed[row.publicKey] = true; });
   var id = auth.loadIdentity(rootDir);
   if (id && id.publicKey) allowed[id.publicKey] = true;
   return allowed;
@@ -518,7 +518,7 @@ function listenSet(rootDir) {
 // mailbox needs no exception here", which was true of a path relay
 // traffic never travelled. This is not that path: a relay posts here in
 // its own name to carry a device enrolment, and a relay is not a contact
-// — its key is in no whoBook. relayKeys.js is what makes that answerable
+// — its key is in no contactBook. relayKeys.js is what makes that answerable
 // without trusting whatever claims to be a relay, because it holds the
 // keys this node has actually accepted.
 //
@@ -552,7 +552,7 @@ function frontDoor(rootDir, from) {
   // Itself and everyone it has acquired — the same set the inbox uses,
   // asked here for the first time.
   //
-  // "Acquired" is narrower than "on record", deliberately: whoBook's
+  // "Acquired" is narrower than "on record", deliberately: contactBook's
   // ACQUIRED_LISTENING is ['message', 'invite', 'handle'], so somebody
   // merely SEEN in a relay's census is not somebody this node agreed to
   // hear. Having noticed a stranger exists is not an introduction.
@@ -579,7 +579,7 @@ function frontDoor(rootDir, from) {
 // so writing is what makes somebody heard next time.
 //
 // `relayUrl` IS WHICH ROAD THEY CAME DOWN, and it is here because R8
-// would otherwise have quietly taken it. whoBook's `relays` means
+// would otherwise have quietly taken it. contactBook's `relays` means
 // "mailboxes where you have seen this key" — a fact this node holds
 // about how to reach somebody, and the only one it has. acquireFromInbox
 // passed it; peerPost has had it all along (it is already on every
@@ -592,7 +592,7 @@ function frontDoor(rootDir, from) {
 // NOT THE LABEL, and that one really is gone. acquireFromInbox read
 // `publicLabel` off the relay's stored copy of the line; nothing stores a
 // line now, and a post carries keys and no captions. The census fills the
-// caption in afterwards (`/api/hub/who` → whoBook), so a contact acquired
+// caption in afterwards (`/api/hub/who` → contactBook), so a contact acquired
 // by being written to is briefly unlabelled where it used to be named on
 // arrival. That is the cost of the relay not reading the payload, which
 // is the point rather than a regression.
@@ -604,11 +604,11 @@ function remember(rootDir, from, verdict, relayUrl) {
   if (road) row.relay = road;
   try {
     if (verdict === 'admit') {
-      whoBook.acquire(rootDir, row, 'message');
+      contactBook.acquire(rootDir, row, 'message');
       return true;
     }
     if (verdict === 'hold') {
-      whoBook.hold(rootDir, row);
+      contactBook.hold(rootDir, row);
       return true;
     }
   } catch (e) {
@@ -661,7 +661,7 @@ function remember(rootDir, from, verdict, relayUrl) {
 // was the one thing the ring's read half did that the router did not, and
 // it was fixed before this deletion, not with it.
 //
-// Grok's three skips survive in peerPost and whoBook, unchanged: our own
+// Grok's three skips survive in peerPost and contactBook, unchanged: our own
 // traffic is not somebody else's, a silent stranger gets no row and so no
 // count, and a blocked row's numbers freeze where they are.
 //
@@ -1180,18 +1180,18 @@ function createHub(rootDir) {
       //   relay             relays.json
       //   relayPublicKey    the pin (relayKeys), written at stream open
       //   selfPublicKey     this node's identity
-      //   people            whoBook.addressBook — buildPeople reads it
+      //   people            contactBook.addressBook — buildPeople reads it
       //
       // WHAT THE CENSUS WAS DOING HERE, and neither is worth a request:
       //
       //   1. A fresher `publicLabel` fallback. The caption a person
-      //      actually sees comes from whoBook.labelForKey, locally, and
+      //      actually sees comes from contactBook.labelForKey, locally, and
       //      prefers the name they typed. A relay's idea of somebody's
       //      label reaches this node through peer.acquire, search results
       //      and arriving packets — all of which carry it for the one
       //      person concerned.
       //
-      //   2. `whoBook.handshake` on EVERY member of the relay, which
+      //   2. `contactBook.handshake` on EVERY member of the relay, which
       //      recorded each of them here as a `census`-rank row. That is
       //      not a side effect worth keeping: it is this node building a
       //      copy of the membership, on every refresh of its own contact
@@ -1295,26 +1295,26 @@ function createHub(rootDir) {
       // are in the census, they have been picked in the list, and they
       // have never been acquired. A row is made so the block has
       // somewhere to live and somewhere to be undone from.
-      if (action === 'block' && !whoBook.byPublicKey(rootDir, publicKey)) {
-        whoBook.hold(rootDir, { publicKey: publicKey, publicLabel: String((body && body.publicLabel) || '') });
+      if (action === 'block' && !contactBook.byPublicKey(rootDir, publicKey)) {
+        contactBook.hold(rootDir, { publicKey: publicKey, publicLabel: String((body && body.publicLabel) || '') });
       }
       // What YOU call that key. Never uploaded, never seen by the peer,
-      // and the reason whoBook keeps publicLabel separate: the mailbox's
+      // and the reason contactBook keeps publicLabel separate: the mailbox's
       // caption is theirs and can change under you, this one is yours.
       if (action === 'label') {
-        var row = whoBook.setMyLabel(rootDir, publicKey, String((body && body.myLabel) || ''));
+        var row = contactBook.setMyLabel(rootDir, publicKey, String((body && body.myLabel) || ''));
         if (!row) { fail(res, 404, 'no row for that key'); return; }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           publicKey: row.publicKey,
           myLabel: row.myLabel || '',
-          caption: whoBook.labelForKey(rootDir, publicKey, row.publicLabel || ''),
+          caption: contactBook.labelForKey(rootDir, publicKey, row.publicLabel || ''),
         }));
         return;
       }
 
       // FORGETTING IS NOT BLOCKING, and answers a different shape: there
-      // may be no row left to describe. whoBook keeps a blocked row and
+      // may be no row left to describe. contactBook keeps a blocked row and
       // only downgrades it — deleting one would readmit the person the
       // moment they wrote, because the row IS the refusal.
       if (action === 'forget') {
@@ -1333,18 +1333,18 @@ function createHub(rootDir) {
         // it just set on fire. `memberOf` is written by the reconcile and
         // read here, so this answers the same whether anything is
         // reachable or not.
-        var held = whoBook.byPublicKey(rootDir, publicKey);
-        if (held && whoBook.isMember(held)) {
+        var held = contactBook.byPublicKey(rootDir, publicKey);
+        if (held && contactBook.isMember(held)) {
           res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({
             ok: false,
             error: 'they hold a seat on a relay you own',
-            memberOf: whoBook.memberOf(held),
+            memberOf: contactBook.memberOf(held),
           }));
           return;
         }
 
-        var gone = whoBook.forget(rootDir, publicKey);
+        var gone = contactBook.forget(rootDir, publicKey);
         if (!gone) { fail(res, 404, 'no row for that key'); return; }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
@@ -1359,16 +1359,16 @@ function createHub(rootDir) {
       }
 
       var row;
-      if (action === 'block') row = whoBook.setBlocked(rootDir, publicKey, true);
-      else if (action === 'unblock') row = whoBook.setBlocked(rootDir, publicKey, false);
-      else row = whoBook.accept(rootDir, publicKey);
+      if (action === 'block') row = contactBook.setBlocked(rootDir, publicKey, true);
+      else if (action === 'unblock') row = contactBook.setBlocked(rootDir, publicKey, false);
+      else row = contactBook.accept(rootDir, publicKey);
       if (!row) { fail(res, 404, 'no row for that key'); return; }
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
         publicKey: row.publicKey,
-        acquiredVia: whoBook.acquiredVia(row),
-        blocked: whoBook.isBlocked(row),
-        held: !whoBook.listens(row),
+        acquiredVia: contactBook.acquiredVia(row),
+        blocked: contactBook.isBlocked(row),
+        held: !contactBook.listens(row),
       }));
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -1465,7 +1465,7 @@ function createHub(rootDir) {
         // asking nicely.
         var wanted = String((body && body.via) || 'handle');
         var via = (wanted === 'invite') ? 'invite' : 'handle';
-        var row = whoBook.acquire(rootDir, {
+        var row = contactBook.acquire(rootDir, {
           publicKey: publicKey,
           // Empty is a real answer: a pasted key has no label until its
           // holder writes to you or you type one yourself. Inventing one
@@ -1477,7 +1477,7 @@ function createHub(rootDir) {
         res.end(JSON.stringify({
           publicKey: row.publicKey,
           publicLabel: row.publicLabel,
-          acquiredVia: whoBook.acquiredVia(row),
+          acquiredVia: contactBook.acquiredVia(row),
         }));
       });
     }).catch(function () {
@@ -1584,7 +1584,7 @@ function createHub(rootDir) {
     var adopted = 0;
     Object.keys(seats).forEach(function (key) {
       var existing = null;
-      try { existing = whoBook.byPublicKey(rootDir, key); }
+      try { existing = contactBook.byPublicKey(rootDir, key); }
       catch (e) { existing = null; }
       var label = '';
       rows.forEach(function (row) {
@@ -1594,11 +1594,11 @@ function createHub(rootDir) {
         });
       });
       try {
-        whoBook.acquire(rootDir, {
+        contactBook.acquire(rootDir, {
           publicKey: key, publicLabel: label, relay: seats[key][0],
-        }, whoBook.MEMBER);
-        whoBook.setMemberOf(rootDir, key, seats[key]);
-        if (!existing || !whoBook.isMember(existing)) adopted += 1;
+        }, contactBook.MEMBER);
+        contactBook.setMemberOf(rootDir, key, seats[key]);
+        if (!existing || !contactBook.isMember(existing)) adopted += 1;
       } catch (e) { /* one bad row must not stop the sweep */ }
     });
 
@@ -1607,11 +1607,11 @@ function createHub(rootDir) {
     // makes them an ordinary deletable contact again.
     var pruned = 0;
     var book = [];
-    try { book = whoBook.load(rootDir); } catch (e) { book = []; }
+    try { book = contactBook.load(rootDir); } catch (e) { book = []; }
     book.forEach(function (row) {
-      if (!row || !whoBook.isMember(row)) return;
+      if (!row || !contactBook.isMember(row)) return;
       if (seats[row.publicKey]) return;
-      try { whoBook.setMemberOf(rootDir, row.publicKey, []); pruned += 1; }
+      try { contactBook.setMemberOf(rootDir, row.publicKey, []); pruned += 1; }
       catch (e) { /* likewise */ }
     });
 
@@ -1681,7 +1681,7 @@ function createHub(rootDir) {
     var marked = 0;
     var cleared = 0;
     var book = [];
-    try { book = whoBook.addressBook(rootDir); } catch (e) { book = []; }
+    try { book = contactBook.addressBook(rootDir); } catch (e) { book = []; }
 
     book.forEach(function (row) {
       if (!row || !row.publicKey || row.publicKey === myKey) return;
@@ -1689,8 +1689,8 @@ function createHub(rootDir) {
       if (listed[row.publicKey]) {
         // Back on a census, so the warning goes. A row that returned must
         // not keep wearing one.
-        if (whoBook.missingSince(row)) {
-          try { whoBook.setMissing(rootDir, row.publicKey, ''); cleared += 1; }
+        if (contactBook.missingSince(row)) {
+          try { contactBook.setMissing(rootDir, row.publicKey, ''); cleared += 1; }
           catch (e) { /* one row must not stop the sweep */ }
         }
         return;
@@ -1699,8 +1699,8 @@ function createHub(rootDir) {
       // ALREADY MARKED KEEPS ITS ORIGINAL DATE. The useful number is how
       // long this has been true, and rewriting the stamp on every probe
       // would make every dud look like it appeared minutes ago.
-      if (whoBook.missingSince(row)) return;
-      try { whoBook.setMissing(rootDir, row.publicKey, stamp); marked += 1; }
+      if (contactBook.missingSince(row)) return;
+      try { contactBook.setMissing(rootDir, row.publicKey, stamp); marked += 1; }
       catch (e) { /* likewise */ }
     });
 
@@ -1883,7 +1883,7 @@ function createHub(rootDir) {
   //   2. ask it who it partners with         signed post, any member may
   //   3. each partner's census               public GET
   //
-  // WHAT IS SUBTRACTED is anybody already known — `whoBook.contacts()` is
+  // WHAT IS SUBTRACTED is anybody already known — `contactBook.contacts()` is
   // every row that arrived by more than a census sighting. A candidate is
   // precisely somebody visible and not yet known, which is the list the
   // question asks for and nothing more.
@@ -1983,7 +1983,7 @@ function createHub(rootDir) {
           (out.matches || []).forEach(function (p) {
             if (!p || !p.publicKey || p.publicKey === myKey) return;
             if (found[p.publicKey]) return;
-            var row = whoBook.byPublicKey(rootDir, p.publicKey);
+            var row = contactBook.byPublicKey(rootDir, p.publicKey);
             found[p.publicKey] = {
               publicKey: p.publicKey,
               publicLabel: p.publicLabel || '',
@@ -2027,7 +2027,7 @@ function createHub(rootDir) {
               present: !!p.present,
               via: p.via || null,
               viaPartner: !!p.via,
-              acquiredVia: row ? whoBook.acquiredVia(row) : null,
+              acquiredVia: row ? contactBook.acquiredVia(row) : null,
             };
           });
         }).catch(function () { silent.push(url); });
@@ -2103,7 +2103,7 @@ function createHub(rootDir) {
   //
   // `peer.candidates` answered "everybody visible from here and not yet
   // known" by fetching EVERY census whole — this node's relays and each
-  // of their partners — and subtracting what the whoBook already had.
+  // of their partners — and subtracting what the contactBook already had.
   // It was the worst census reader in the tree and the only one with no
   // narrow form, because not knowing the keys was the entire point of
   // it: at a thousand members across five partners, six times 147 KB in

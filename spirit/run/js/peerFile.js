@@ -3,7 +3,7 @@
 // One peer, one file, named by the peer's WHOLE public key.
 //
 // Anything that keeps a file per peer goes through here — chat logs
-// today, whoBook sidecars later — so that "which file is this peer's" has
+// today, contactBook sidecars later — so that "which file is this peer's" has
 // exactly one answer in the tree.
 //
 // The rules this has to satisfy, in the order they bite:

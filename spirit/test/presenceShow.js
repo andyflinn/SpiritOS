@@ -11,7 +11,7 @@
 // fast suites prove the node's presence table is right, and presenceWire
 // proves the socket is real, and NEITHER of them can tell you the dot is
 // on the screen. Everything between the job payload and the pixel — the
-// join to whoBook, the repaint, the colour actually chosen — has no
+// join to contactBook, the repaint, the colour actually chosen — has no
 // automated witness and would not until somebody wrote a browser driver.
 //
 // So the witness is Andy. The script moves the world one step at a time,

@@ -6,7 +6,7 @@
 // A mailbox census is not an address book. Everyone who ever claimed on
 // a public relay is in `who`, and a To list built from it means
 // "everyone who exists" — which is how a friend picks a stranger's john.
-// So a whoBook row carries how it arrived, and only some ways count:
+// So a contactBook row carries how it arrived, and only some ways count:
 //
 //   census  — seen in `who`. Not a contact. Also what a row with no
 //             field at all is, since that is exactly what those were.
@@ -26,7 +26,7 @@ const path = require('path');
 const { URL } = require('url');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const whoBook = require('../run/js/whoBook');
+const contactBook = require('../run/js/contacts');
 const peerFile = require('../run/js/peerFile');
 const peerStats = require('../run/js/peerStats');
 // The arrival path itself. The counting sections at the foot of this file
@@ -62,7 +62,7 @@ const RELAY_URL = 'https://mailbox.example';
 //
 //   a message CANNOT DEMOTE a stronger row. An existing contact is
 //   `known`, so nothing is written at all — where acquireFromInbox
-//   wrote 'message' every time and leaned on whoBook to refuse the
+//   wrote 'message' every time and leaned on contactBook to refuse the
 //   downgrade. Two guards where one will do, and the one that is left is
 //   the one the real path uses.
 function wrote(home, messages, relayUrl) {
@@ -151,11 +151,11 @@ test.subHeading('A census is not an address book');
 
   // Walked, though: the census is what keeps a caption and its routes
   // current. It is written down as census, which is the whole difference.
-  const book = whoBook.load(home);
-  if (book.length === 3 && book.every(function (row) { return whoBook.acquiredVia(row) === 'census'; })) {
-    test.check('but they are in whoBook, marked census');
+  const book = contactBook.load(home);
+  if (book.length === 3 && book.every(function (row) { return contactBook.acquiredVia(row) === 'census'; })) {
+    test.check('but they are in contactBook, marked census');
   } else {
-    test.fail('whoBook: ' + JSON.stringify(book.map(function (r) { return r.acquiredVia; })));
+    test.fail('contactBook: ' + JSON.stringify(book.map(function (r) { return r.acquiredVia; })));
   }
 
   // A row written before the field existed is exactly what a census row
@@ -165,7 +165,7 @@ test.subHeading('A census is not an address book');
   fs.writeFileSync(path.join(legacy, 'relay-state', 'who.json'), JSON.stringify([
     { publicKey: johnA, publicLabel: 'john', myLabel: 'john', relays: [] },
   ]));
-  if (whoBook.contacts(legacy).length === 0 && buildPeople(legacy, [], RELAY_URL).length === 0) {
+  if (contactBook.contacts(legacy).length === 0 && buildPeople(legacy, [], RELAY_URL).length === 0) {
     test.check('a row from before the field is a census row, and stays out of To');
   } else {
     test.fail('a legacy row was treated as a contact');
@@ -223,7 +223,7 @@ test.subHeading('A message is how a stranger becomes someone you can answer');
   }
 
   // A private caption wins, and never leaves this node.
-  whoBook.setMyLabel(home, johnA, 'lovelyJohn');
+  contactBook.setMyLabel(home, johnA, 'lovelyJohn');
   const renamed = buildPeople(home, census, RELAY_URL);
   const lovely = renamed.filter(function (p) { return p.caption === 'lovelyJohn'; })[0];
   if (lovely && lovely.publicKey === johnA && lovely.publicLabel === 'john') {
@@ -239,19 +239,19 @@ test.subHeading('Ranks never fall');
   const home = nodeHome(auth.generateIdentity('andy'), [RELAY_URL]);
   const bert = auth.generateIdentity('bert').publicKey;
 
-  whoBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'handle');
+  contactBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'handle');
   wrote(home, [line(3, 'bert', bert, 'KEY-ME', 'hi')], RELAY_URL);
-  if (whoBook.acquiredVia(whoBook.byPublicKey(home, bert)) === 'handle') {
+  if (contactBook.acquiredVia(contactBook.byPublicKey(home, bert)) === 'handle') {
     test.check('a message does not demote a key confirmed out of band');
   } else {
-    test.fail('downgraded to: ' + whoBook.acquiredVia(whoBook.byPublicKey(home, bert)));
+    test.fail('downgraded to: ' + contactBook.acquiredVia(contactBook.byPublicKey(home, bert)));
   }
 
   // A census sync corrects the public caption of somebody you know, and
   // does not turn them back into a stranger.
   buildPeople(home, [peer('bertram', bert)], RELAY_URL);
-  const row = whoBook.byPublicKey(home, bert);
-  if (whoBook.acquiredVia(row) === 'handle' && row.publicLabel === 'bertram') {
+  const row = contactBook.byPublicKey(home, bert);
+  if (contactBook.acquiredVia(row) === 'handle' && row.publicLabel === 'bertram') {
     test.check('and a census sync updates the label without demoting the row');
   } else {
     test.fail('after census: ' + JSON.stringify(row));
@@ -261,10 +261,10 @@ test.subHeading('Ranks never fall');
   const me = auth.generateIdentity('andy');
   const own = nodeHome(me, [RELAY_URL]);
   wrote(own, [line(4, 'andy', me.publicKey, me.publicKey, 'note to self')], RELAY_URL);
-  if (whoBook.contacts(own).length === 0) {
+  if (contactBook.contacts(own).length === 0) {
     test.check('and a note to yourself does not make you your own contact');
   } else {
-    test.fail('self acquired: ' + JSON.stringify(whoBook.contacts(own)));
+    test.fail('self acquired: ' + JSON.stringify(contactBook.contacts(own)));
   }
 }
 
@@ -349,21 +349,21 @@ test.subHeading('Confirming writes handle, and nothing else changes');
   const johnA = auth.generateIdentity('john').publicKey;
   const johnB = auth.generateIdentity('john').publicKey;
 
-  whoBook.handshake(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL });
-  whoBook.handshake(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL });
+  contactBook.handshake(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL });
+  contactBook.handshake(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL });
 
   // The upgrade a confirm performs: census to handle, in place, on one
   // key. Identity is the key, so the other john is untouched.
-  whoBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'handle');
+  contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'handle');
 
-  const contacts = whoBook.contacts(home);
-  if (contacts.length === 1 && contacts[0].publicKey === johnA && whoBook.acquiredVia(contacts[0]) === 'handle') {
+  const contacts = contactBook.contacts(home);
+  if (contacts.length === 1 && contacts[0].publicKey === johnA && contactBook.acquiredVia(contacts[0]) === 'handle') {
     test.check('confirming one john makes one contact, marked handle');
   } else {
     test.fail('contacts: ' + JSON.stringify(contacts));
   }
 
-  if (whoBook.acquiredVia(whoBook.byPublicKey(home, johnB)) === 'census') {
+  if (contactBook.acquiredVia(contactBook.byPublicKey(home, johnB)) === 'census') {
     test.check('and the other john is still a stranger');
   } else {
     test.fail('the wrong john was promoted');
@@ -371,7 +371,7 @@ test.subHeading('Confirming writes handle, and nothing else changes');
 
   // A message afterwards does not undo the confirmation.
   wrote(home, [line(6, 'john', johnA, 'KEY-ME', 'hello again')], RELAY_URL);
-  if (whoBook.acquiredVia(whoBook.byPublicKey(home, johnA)) === 'handle') {
+  if (contactBook.acquiredVia(contactBook.byPublicKey(home, johnA)) === 'handle') {
     test.check('and a later message cannot demote it');
   } else {
     test.fail('handle was downgraded by a message');
@@ -606,7 +606,7 @@ function runOverLoopback() {
     // act on them. `peer.acquire` names them, and it asks about ONE key
     // when it does. The name arrives when somebody decides it should,
     // rather than as a side effect of opening Contacts.
-    const bertRow = whoBook.byPublicKey(home, bert.publicKey);
+    const bertRow = contactBook.byPublicKey(home, bert.publicKey);
     if (bertRow && !bertRow.publicLabel) {
       test.check('and he arrives UNNAMED — no survey ran, and the packet carried no caption');
     } else {
@@ -616,7 +616,7 @@ function runOverLoopback() {
     if (bertRow && bertRow.relays.indexOf(server.url) !== -1) {
       test.check('with the relay it arrived on recorded against it');
     } else {
-      test.fail('whoBook row: ' + JSON.stringify(bertRow));
+      test.fail('contactBook row: ' + JSON.stringify(bertRow));
     }
 
     server.server.close();
@@ -642,7 +642,7 @@ function unknownMail() {
 
   // Bert is a contact; carol is a name on the same mailbox and nothing
   // more. Exactly the case cut 1 was about, now with a policy over it.
-  whoBook.acquire(home, { publicKey: bert.publicKey, publicLabel: 'bert', relay: RELAY_URL }, 'handle');
+  contactBook.acquire(home, { publicKey: bert.publicKey, publicLabel: 'bert', relay: RELAY_URL }, 'handle');
 
   const inbox = [
     line(1, 'bert', bert.publicKey, me.publicKey, 'from a contact'),
@@ -731,7 +731,7 @@ function unknownMail() {
     test.fail('a wire value still steered the policy');
   }
 
-  if (whoBook.byPublicKey(home, stranger.publicKey) === null) {
+  if (contactBook.byPublicKey(home, stranger.publicKey) === null) {
     test.check('a dropped line leaves nothing behind on disk');
   } else {
     test.fail('the stranger was filed anyway');
@@ -740,7 +740,7 @@ function unknownMail() {
   // Acquire is still available, and still exactly what cut 1 did.
   setUnknownPolicy(home, 'acquire');
   wrote(home, inbox, RELAY_URL);
-  if (whoBook.acquiredVia(whoBook.byPublicKey(home, stranger.publicKey)) === 'message') {
+  if (contactBook.acquiredVia(contactBook.byPublicKey(home, stranger.publicKey)) === 'message') {
     test.check('choosing Acquire is what lets a stranger in');
   } else {
     test.fail('acquire did not file the stranger');
@@ -770,8 +770,8 @@ function heldAndBlocked() {
 
   // The row is what Hold buys: somebody to say yes to. The message is
   // still dropped — holding is not hearing.
-  const row = whoBook.byPublicKey(home, stranger.publicKey);
-  if (row && whoBook.acquiredVia(row) === 'hold' && partition(home, inbox).known.length === 0) {
+  const row = contactBook.byPublicKey(home, stranger.publicKey);
+  if (row && contactBook.acquiredVia(row) === 'hold' && partition(home, inbox).known.length === 0) {
     test.check('a held sender gets a row, and their line still does not arrive');
   } else {
     test.fail('held: ' + JSON.stringify(row));
@@ -789,11 +789,11 @@ function heldAndBlocked() {
 
   // Somebody already decided about is not re-held: a blocked row must
   // not climb back out by writing again.
-  whoBook.setBlocked(home, stranger.publicKey, true);
-  whoBook.acquire(home, { publicKey: stranger.publicKey, publicLabel: 'carol' }, 'handle');
+  contactBook.setBlocked(home, stranger.publicKey, true);
+  contactBook.acquire(home, { publicKey: stranger.publicKey, publicLabel: 'carol' }, 'handle');
   heldFrom(home, inbox, RELAY_URL);
-  const afterBlock = whoBook.byPublicKey(home, stranger.publicKey);
-  if (whoBook.isBlocked(afterBlock) && whoBook.acquiredVia(afterBlock) === 'handle') {
+  const afterBlock = contactBook.byPublicKey(home, stranger.publicKey);
+  if (contactBook.isBlocked(afterBlock) && contactBook.acquiredVia(afterBlock) === 'handle') {
     test.check('writing again neither unblocks nor demotes anybody');
   } else {
     test.fail('after writing while blocked: ' + JSON.stringify(afterBlock));
@@ -812,11 +812,11 @@ function heldAndBlocked() {
   // goes back to waiting: undoing a no is not saying yes.
   const waiting = tmpHome('waiting');
   auth.saveIdentity(waiting, me);
-  whoBook.hold(waiting, { publicKey: stranger.publicKey, publicLabel: 'carol' });
-  whoBook.setBlocked(waiting, stranger.publicKey, true);
-  whoBook.setBlocked(waiting, stranger.publicKey, false);
-  const backToWaiting = whoBook.byPublicKey(waiting, stranger.publicKey);
-  if (whoBook.acquiredVia(backToWaiting) === 'hold' && !whoBook.listens(backToWaiting)) {
+  contactBook.hold(waiting, { publicKey: stranger.publicKey, publicLabel: 'carol' });
+  contactBook.setBlocked(waiting, stranger.publicKey, true);
+  contactBook.setBlocked(waiting, stranger.publicKey, false);
+  const backToWaiting = contactBook.byPublicKey(waiting, stranger.publicKey);
+  if (contactBook.acquiredVia(backToWaiting) === 'hold' && !contactBook.listens(backToWaiting)) {
     test.check('unblocking somebody who was never accepted leaves them waiting');
   } else {
     test.fail('after unblock: ' + JSON.stringify(backToWaiting));
@@ -827,11 +827,11 @@ function heldAndBlocked() {
   const fresh = tmpHome('nuisance');
   auth.saveIdentity(fresh, me);
   const nuisance = auth.generateIdentity('dave');
-  whoBook.hold(fresh, { publicKey: nuisance.publicKey, publicLabel: 'dave' });
-  whoBook.setBlocked(fresh, nuisance.publicKey, true);
-  const shut = whoBook.byPublicKey(fresh, nuisance.publicKey);
-  if (whoBook.isBlocked(shut) && !whoBook.listens(shut) &&
-      whoBook.addressBook(fresh).length === 1) {
+  contactBook.hold(fresh, { publicKey: nuisance.publicKey, publicLabel: 'dave' });
+  contactBook.setBlocked(fresh, nuisance.publicKey, true);
+  const shut = contactBook.byPublicKey(fresh, nuisance.publicKey);
+  if (contactBook.isBlocked(shut) && !contactBook.listens(shut) &&
+      contactBook.addressBook(fresh).length === 1) {
     test.check('somebody never added can be blocked, and stays visible to undo');
   } else {
     test.fail('blocked stranger: ' + JSON.stringify(shut));
@@ -840,8 +840,8 @@ function heldAndBlocked() {
   // What YOU call that key, which the address book edits and the wire
   // never sees. The caption follows it; publicLabel does not move.
   const named = auth.generateIdentity('bert');
-  whoBook.acquire(home, { publicKey: named.publicKey, publicLabel: 'bert' }, 'handle');
-  whoBook.setMyLabel(home, named.publicKey, 'lovelyBert');
+  contactBook.acquire(home, { publicKey: named.publicKey, publicLabel: 'bert' }, 'handle');
+  contactBook.setMyLabel(home, named.publicKey, 'lovelyBert');
   const relabelled = buildPeople(home, [peer('bert', named.publicKey)], RELAY_URL)
     .filter(function (p) { return p.publicKey === named.publicKey; })[0];
   if (relabelled && relabelled.caption === 'lovelyBert' && relabelled.myLabel === 'lovelyBert' &&
@@ -852,7 +852,7 @@ function heldAndBlocked() {
   }
 
   // Accepting is the way back, and it is one call.
-  whoBook.accept(home, stranger.publicKey);
+  contactBook.accept(home, stranger.publicKey);
   if (partition(home, inbox).known.length === 1) {
     test.check('and accepting them is what lets the next line through');
   } else {
@@ -866,10 +866,10 @@ test.subHeading('What a contact costs in disk is counted, not remembered');
   const home = nodeHome(null, [RELAY_URL]);
   const bert = auth.generateIdentity('bert').publicKey;
   const carol = auth.generateIdentity('carol').publicKey;
-  whoBook.handshake(home, { publicKey: bert, publicLabel: 'bert', relay: RELAY_URL });
-  whoBook.handshake(home, { publicKey: carol, publicLabel: 'carol', relay: RELAY_URL });
-  whoBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
-  whoBook.acquire(home, { publicKey: carol, publicLabel: 'carol' }, 'message');
+  contactBook.handshake(home, { publicKey: bert, publicLabel: 'bert', relay: RELAY_URL });
+  contactBook.handshake(home, { publicKey: carol, publicLabel: 'carol', relay: RELAY_URL });
+  contactBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
+  contactBook.acquire(home, { publicKey: carol, publicLabel: 'carol' }, 'message');
 
   const byKey = {};
   buildPeople(home, [], RELAY_URL).forEach(function (p) { byKey[p.publicKey] = p; });
@@ -980,10 +980,10 @@ async function whoIsCounted() {
   const refused = auth.generateIdentity('dave');
   const stranger = auth.generateIdentity('eve');
 
-  whoBook.acquire(home, { publicKey: friend.publicKey, publicLabel: 'bert' }, 'message');
-  whoBook.hold(home, { publicKey: waiting.publicKey, publicLabel: 'carol' });
-  whoBook.acquire(home, { publicKey: refused.publicKey, publicLabel: 'dave' }, 'message');
-  whoBook.setBlocked(home, refused.publicKey, true);
+  contactBook.acquire(home, { publicKey: friend.publicKey, publicLabel: 'bert' }, 'message');
+  contactBook.hold(home, { publicKey: waiting.publicKey, publicLabel: 'carol' });
+  contactBook.acquire(home, { publicKey: refused.publicKey, publicLabel: 'dave' }, 'message');
+  contactBook.setBlocked(home, refused.publicKey, true);
 
   setUnknownPolicy(home, 'silent');
   const N = countingNode(me, home);
@@ -1077,12 +1077,12 @@ async function countsTheRowItMakes() {
   const N = countingNode(me, home);
   await N.router.onRequest(RELAY_URL, arriving(newcomer, me.publicKey, 'hello?'));
 
-  const row = whoBook.byPublicKey(home, newcomer.publicKey);
-  if (row && whoBook.acquiredVia(row) === whoBook.HOLD &&
+  const row = contactBook.byPublicKey(home, newcomer.publicKey);
+  if (row && contactBook.acquiredVia(row) === contactBook.HOLD &&
       peerStats.readSummary(home, newcomer.publicKey).unansweredInbound === 1) {
     test.check('under List them, the packet that creates the row is the packet that counts it');
   } else {
-    test.fail('row ' + (row && whoBook.acquiredVia(row)) + ', count ' +
+    test.fail('row ' + (row && contactBook.acquiredVia(row)) + ', count ' +
       peerStats.readSummary(home, newcomer.publicKey).unansweredInbound);
   }
 
@@ -1098,7 +1098,7 @@ async function countsTheRowItMakes() {
       peerStats.readSummary(home, newcomer.publicKey).unansweredInbound);
   }
 
-  // AND WHICH ROAD THEY CAME DOWN IS WRITTEN DOWN. whoBook's `relays` is
+  // AND WHICH ROAD THEY CAME DOWN IS WRITTEN DOWN. contactBook's `relays` is
   // "mailboxes where you have seen this key" — the only routing fact
   // this node holds about a stranger. acquireFromInbox recorded it, and
   // R8 would have taken it silently: peerPost had the relay url on every
@@ -1184,7 +1184,7 @@ test.subHeading('What buildPeople hands the app');
 {
   const home = nodeHome(null, [RELAY_URL]);
   const bert = auth.generateIdentity('bert').publicKey;
-  whoBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
+  contactBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
 
   const fresh = buildPeople(home, [], RELAY_URL)[0];
   if (fresh.unansweredInbound === 0 && fresh.inboundPerDay === 0 && fresh.outboundPerDay === 0) {
@@ -1209,7 +1209,7 @@ test.subHeading('What buildPeople hands the app');
   // The counters are in the sidecar and NOT on the row. who.json is what
   // a human decided; a packet counter is not a decision, and a book that
   // changed without one would be the wrong kind of record.
-  const book = JSON.stringify(whoBook.load(home));
+  const book = JSON.stringify(contactBook.load(home));
   if (book.indexOf('unansweredInbound') === -1 && book.indexOf('inboundPerDay') === -1 &&
       book.indexOf('days') === -1) {
     test.check('and who.json grew no counter fields — the book is still only decisions');

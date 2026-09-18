@@ -210,7 +210,7 @@ function accept(rootDir, url, publicKey, atMs) {
 
 // Every relay this node has accepted, as a key set. This is what the
 // front door needs: a relay posts to a node in its own name for a device
-// enrolment, and that key is in no whoBook — a relay is not a contact.
+// enrolment, and that key is in no contactBook — a relay is not a contact.
 function acceptedKeys(rootDir) {
   var book = load(rootDir);
   var out = Object.create(null);

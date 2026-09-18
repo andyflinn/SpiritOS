@@ -149,7 +149,7 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
   const keys = relayKeys.acceptedKeys(home);
 
   // WHY THIS EXISTS: a relay posts to a node in its own name for a device
-  // enrolment, and a relay is not a contact — its key is in no whoBook.
+  // enrolment, and a relay is not a contact — its key is in no contactBook.
   // Without this set, applying listenSet to the router path would refuse
   // the enrolment it is supposed to carry.
   if (keys[KEY_2] === URL_A && keys[KEY_1] === URL_B) {
