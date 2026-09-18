@@ -761,11 +761,10 @@ function contactsSeenAdd(button) {
 // results above, which is the only place it was ever needed: where more
 // than one answer carries the same name.
 //
-// The verb survives it. `peer.find` is still served by the node
-// (server.js) and now has no caller in the tree, which is a thing to
-// decide rather than a thing to leave: it asks `urls[0]`, so it cannot
-// see a second relay or a partner's members, and anything that wanted it
-// should want peer.search instead.
+// The verb outlived it by two days and was deleted on 2026-09-17 — it
+// asked `urls[0]`, so it could not see a second relay or a partner's
+// members, and anything that wanted it wanted peer.search. Andy:
+// "handles are not used in keyed mode by definition."
 
 // Factory is the tightest setting that still lets two people who added
 // each other talk. A file that is missing, empty or nonsense therefore
@@ -995,7 +994,10 @@ spirit.shell.activateApp({
       // other half: everybody visible from here and not yet known —
       // across every relay this node is on AND their partners, which the
       // node gathers so the page does not have to know how many places it
-      // took (peer.candidates).
+      // took. `peer.search` — it ASKS each relay who matches rather than
+      // downloading each census, which is the same question with a bound
+      // on the answer. (It said `peer.candidates` until 2026-09-17; that
+      // verb had already stopped being called and is now deleted.)
       //
       // Beside Add-by-handle rather than replacing it, because they
       // answer different questions: one is "is the john I was told about

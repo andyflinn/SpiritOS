@@ -142,15 +142,70 @@ function createAnswerer(opts) {
   // The re-check happens once per process rather than per request, which
   // is exactly where the old gap was: a restart is when a substitution
   // used to become invisible, and a restart is now when it is caught.
+  // ── THE KEY ITSELF, FROM THE ONE THING THAT ANSWERS IT ─────────────
+  //
+  // `GET /api/relay/key` answers `{ relayPublicKey, relayLabel }` and
+  // nothing else.
+  //
+  // THERE IS NO FALLBACK TO THE CENSUS, and that is the decision rather
+  // than an omission.
+  //
+  //   Andy: "why not: the suite asserts the order — small door first, or
+  //   else fail."
+  //
+  // One was written, on the usual discipline that a relay which has not
+  // been updated should keep working while one side migrates. It was cut
+  // within the hour for two reasons, and the second is the one that
+  // settles it:
+  //
+  //   1. A fallback is a path nobody exercises. Four things were deleted
+  //      on 2026-09-17 for exactly that — peer.candidates, peer.find,
+  //      relay.roster, pinnedRelayKey — each kept for a caller that never
+  //      came, each rotting in place while looking alive.
+  //
+  //   2. **A fallback is a reader.** While this reaches for `who`, `who`
+  //      has a caller that is not a list, and the census cannot be
+  //      demoted to a signed post. The fallback would have preserved the
+  //      exact thing the door was built to remove.
+  //
+  // WHAT IT COSTS, said out loud: deploys are now relay-before-node. A
+  // node updated first cannot pin that relay, so the relay drops out of
+  // search (listed `silent`), out of partner discovery, and off the front
+  // door's "this sender is a relay" list. That is visible rather than
+  // quiet, which is the right shape for a version skew. `liveRelay.js`
+  // will say so first, being the one suite that talks to a real box.
+  function fetchKey(url) {
+    return Promise.resolve()
+      .then(function () { return request(url, 'GET', '/api/relay/key'); })
+      .then(function (answer) {
+        var key = answer && answer.relayPublicKey;
+        return (typeof key === 'string' && key) ? key : '';
+      });
+  }
+
   function relayKey(url) {
     if (keyOf[url]) return Promise.resolve(keyOf[url]);
-    return Promise.resolve()
-      .then(function () { return request(url, 'GET', '/api/relay/who'); })
-      .then(function (answer) {
-        // The census is public and already carries it — no new endpoint,
-        // and nothing here the relay did not already publish to anyone
-        // who asked.
-        var key = answer && answer.relayPublicKey;
+
+    // A PIN-FIRST SHORT-CIRCUIT STOOD HERE FOR ABOUT TEN MINUTES on
+    // 2026-09-18 and was backed out. It returned `relayKeys.pinned()`
+    // without asking, making steady state zero requests, on the argument
+    // that the re-check compares against an UNSIGNED answer and so
+    // catches nothing an attacker could not forge.
+    //
+    // True of an attacker, who can echo the pinned key back and be
+    // believed. NOT true of the case that actually happens: a relay
+    // REBUILT with a new key answers honestly, and the check below is
+    // what notices. Skipping it made a rebuilt relay simply go quiet —
+    // every signed exchange failing, with nobody able to say why.
+    //
+    // `answerRelay.js`'s own suite caught it, which is the check earning
+    // its place: "onKeyChanged: []".
+    //
+    // The saving that mattered was the DOOR, not the skip: 97 bytes
+    // against 30 KB at 201 members, and the re-check kept intact.
+
+    return fetchKey(url)
+      .then(function (key) {
         if (typeof key !== 'string' || !key) return '';
 
         var verdict = relayKeys.check(rootDir, url, key);

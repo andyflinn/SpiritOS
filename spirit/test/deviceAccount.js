@@ -86,14 +86,42 @@ if (!/getElementById\(['"]user['"]\)\s*\.value\s*=/.test(code) &&
   test.fail('something writes to the account field at run time');
 }
 
-// THE LABEL IS STILL ON THE PAGE, and that is the point rather than an
-// oversight: you still have to be able to see whose enrolment this is
-// before typing a password into it. What changed is that it no longer
-// reaches the password manager, where every past value would be kept.
-if (/getElementById\(['"]who-for['"]\)\s*\.textContent\s*=/.test(code)) {
-  test.check('and the identity is still named in the sentence, where it costs nothing to change');
+// ── AND THE LABEL IS GONE FROM THE SENTENCE TOO (2026-09-17) ─────────
+//
+// THIS REVERSES THE CHECK THAT STOOD HERE, which asserted the opposite:
+// "you still have to be able to see whose enrolment this is before
+// typing a password into it."
+//
+//   Andy: "the page fulfills its function without being cute and showing
+//   a label that the user already knows. Unnecessary for functionality.
+//   Kill it." — "the page posts a constant username and a pasted secret.
+//   That's all."
+//
+// The old check was the stated mitigation for the constant account name:
+// several of your own nodes on one relay share one password-manager
+// entry, and the sentence was what told them apart. That mitigation is
+// withdrawn deliberately — the page is not where you work out which
+// identity you meant, the link you followed is.
+//
+// It also could not do the job it appeared to: a label printed by the
+// page comes from whoever served the page.
+if (!/who-for/.test(code)) {
+  test.check('no identity label on the page — a constant username and a pasted secret, and that is all');
 } else {
-  test.fail('the page no longer says whose enrolment it is');
+  test.fail('the page is still naming the identity');
+}
+
+// AND IT ASKS THE RELAY NOTHING. The label was the only reason this page
+// made a request before the person typed anything.
+// Comments stripped first: this file keeps a tombstone that NAMES the
+// route it no longer calls, and a check that cannot tell prose from code
+// would read that as a relapse.
+const deviceCode = code.replace(/\/\/.*/g, '');
+
+if (!/\/api\/relay\/who/.test(deviceCode)) {
+  test.check('and it fetches nothing before the enrolment post — no census read from a browser');
+} else {
+  test.fail('the device page still reads the census');
 }
 
 // ── 3. STATED, NOT ASKED ─────────────────────────────────────────────

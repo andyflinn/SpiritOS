@@ -285,7 +285,31 @@ function buildPeople(rootDir, peers, relayUrl) {
 // on purpose: every Ed25519 SPKI key opens with the same ASN.1 header,
 // so a fragment from the front names every peer on every mailbox
 // equally. Six characters is what buildPeople already uses to tell two
-// johns apart, and relayConsole uses the same rule from its own copy.
+// johns apart. It said "and relayConsole uses the same rule from its own
+// copy" until 2026-09-17; that app is gone and so is the copy, so this
+// is the only definition of the rule now.
+//
+// ── IT IS NOT SPOKEN-SAFE, AND IT IS MEANT TO BE SPOKEN ──────────────
+//
+//   Andy, reading Contacts' own footer: "Being added yourself? Your key
+//   ends …XD+0c= — that is what to tell them."
+//
+// Six characters of SPKI base64, and the last is ALWAYS `=`: 44 bytes
+// does not divide by three, so every Ed25519 key in existence ends in
+// padding. Five characters of information wearing six. The rest carries
+// `+` and `/` at random, is case-sensitive, and keeps 0/O and 1/l/I as
+// distinct symbols — over a telephone, which is the stated use.
+//
+// This repo already has the bar it misses: `spokenOk`, the invite-label
+// rule, is exactly "a string a person will say out loud".
+//
+// The fix is to take the last 30 bits of the KEY'S BYTES (not of its
+// base64, which makes the tail a property of the encoding) and render
+// them in Crockford base32 — same collision resistance, no `+` or `/`,
+// no case, and I/L/O/U excluded so nothing is mistakable. Not done here:
+// it changes every tail anybody has already written down, which is a
+// one-time cost worth taking deliberately rather than inside a commit
+// about something else.
 function keyTail(publicKey) {
   return String(publicKey || '').slice(-6);
 }
@@ -298,6 +322,19 @@ function keyTail(publicKey) {
 // Two johns are two candidates, and stay two. Nothing here picks one:
 // picking is the human's job, done against a key tail on a phone call,
 // which is what makes this an acquisition rather than a guess.
+// ── NO CALLER IN run/ SINCE peer.find WENT (2026-09-17) ──────────────
+//
+// `findHandle` was its only one. chatPeople.js still asserts it in six
+// places, which is the shape sseClient.js warns about — "a module
+// widening its surface for a test's convenience", and "a dead export is
+// the same promise made to nobody."
+//
+// Left standing on purpose, not by omission: it is the only place the
+// two-johns rule is written down as code, and whether ranked search has
+// genuinely absorbed that — exact-label matching, key tails, and the
+// whoBook cross-reference that says "already a contact" — is a question
+// for whoever moves the last census reader, not something to settle by
+// deleting the tested version first.
 function handleMatches(rootDir, peers, handle) {
   var want = String(handle || '').trim().toLowerCase();
   if (!want) return [];
@@ -1109,89 +1146,85 @@ function createHub(rootDir) {
   // back with never leave this machine.
   function handleWho(req, res) {
     withRelay(res, function (url) {
-      relayRequest(url, 'GET', '/api/relay/who', null)
-        .then(function (r) {
-          if (r.status !== 200) {
-            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(r.text);
-            return;
-          }
-          // The relay route answers { peers: [...] } (server.js
-          // handleRelayWho), not a bare array. Both shapes are accepted
-          // because a stub that guessed wrong is exactly how this got
-          // shipped once already: the harness passed against a fake that
-          // returned the array, and the live mailbox returned an object.
-          var parsed = null;
-          try { parsed = JSON.parse(r.text); }
-          catch (e) { parsed = null; }
-          var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
-          // Null from a mailbox that has not been restarted since it grew
-          // a key of its own. The app treats that as "no log for this
-          // row" rather than inventing a name for it.
-          var relayKey = (parsed && parsed.relayPublicKey) || null;
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          // `reservedName: auth.RESERVED_NAME` TRAVELLED HERE, described
-          // as "a destination the app must offer". Nothing on the page
-          // ever read it, and the reservation itself is gone (2026-09-15,
-          // relayAuth.js): the relay is addressed by key and always was.
-          // This node's own key travels with the list, because being
-          // added is the other half of adding: the person confirming a
-          // tail has to hear it from somebody, and until now the only
-          // way to read your own was to type `whoami` at the mailbox.
-          var self = auth.loadIdentity(rootDir);
-          res.end(JSON.stringify({
-            relay: url,
-            relayPublicKey: relayKey,
-            selfPublicKey: (self && self.publicKey) || null,
-            selfTail: self && self.publicKey ? keyTail(self.publicKey) : null,
-            people: buildPeople(rootDir, peers, url),
-          }));
-        })
-        .catch(function (err) { fail(res, 502, String(err.message || err)); });
+      // ── THE ADDRESS BOOK IS LOCAL, AND ALWAYS WAS (2026-09-18) ──────
+      //
+      //   Andy: "there is absolutely no reason for unbound entities to
+      //   conduct surveys of our network." — and on the packet ceiling
+      //   blocking the census's demotion: "that's the point, so bound
+      //   entities now MUST use alternate interfaces: easy!"
+      //
+      // This fetched the whole census of the relay to answer a question
+      // about THIS NODE'S OWN BOOK. Every field below is on disk:
+      //
+      //   relay             relays.json
+      //   relayPublicKey    the pin (relayKeys), written at stream open
+      //   selfPublicKey     this node's identity
+      //   people            whoBook.addressBook — buildPeople reads it
+      //
+      // WHAT THE CENSUS WAS DOING HERE, and neither is worth a request:
+      //
+      //   1. A fresher `publicLabel` fallback. The caption a person
+      //      actually sees comes from whoBook.labelForKey, locally, and
+      //      prefers the name they typed. A relay's idea of somebody's
+      //      label reaches this node through peer.acquire, search results
+      //      and arriving packets — all of which carry it for the one
+      //      person concerned.
+      //
+      //   2. `whoBook.handshake` on EVERY member of the relay, which
+      //      recorded each of them here as a `census`-rank row. That is
+      //      not a side effect worth keeping: it is this node building a
+      //      copy of the membership, on every refresh of its own contact
+      //      list, for people it has never spoken to. The rank was
+      //      already outside ACQUIRED_LISTENING — "having noticed a
+      //      stranger exists is not an introduction" — so nothing was
+      //      gained by the rows except bytes.
+      //
+      // A survey by a bound entity is still a survey.
+      var self = auth.loadIdentity(rootDir);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        relay: url,
+        // Null before this node has ever opened a stream to that relay.
+        // The app already treats null as "no log for this row" rather
+        // than inventing a name for it, which is the same handling it
+        // needed when a relay had not yet grown a key of its own.
+        relayPublicKey: relayKeys.pinned(rootDir, url) || null,
+        selfPublicKey: (self && self.publicKey) || null,
+        selfTail: self && self.publicKey ? keyTail(self.publicKey) : null,
+        // No census rows. `buildPeople` already took an empty list as a
+        // legitimate argument — chatPeople.js drives it that way
+        // throughout — because the book was never built out of the wire.
+        people: buildPeople(rootDir, [], url),
+      }));
     });
   }
 
-  // GET /api/hub/handle?handle=bert — the candidates behind a handle.
+  // ── peer.find STOOD HERE (handleHandle / findHandle), DELETED ──────
+  //     2026-09-17
   //
-  // The filtering happens HERE, and only the matches go back. The node
-  // has to fetch the census to answer at all, but the browser holding a
-  // copy of it is how `To` gets refilled from `who` by accident six
-  // weeks from now. Downloading is not acquiring.
-  // THE HANDLE ARRIVES IN THE BODY since `peer.find` folded onto
-  // /api/spirit. Same shape and same reasoning as handleStatus: a body
-  // that will not parse degrades to the empty string rather than
-  // refusing, because an empty handle is already a meaningful question
-  // here — it matches nobody, which is what `handleMatches` answers for
-  // it and what the old missing query parameter did.
-  function handleHandle(req, res, readJsonBody) {
-    Promise.resolve()
-      .then(function () { return readJsonBody(req); })
-      .catch(function () { return {}; })
-      .then(function (body) { findHandle(res, String((body && body.handle) || '')); });
-  }
-
-  function findHandle(res, handle) {
-    withRelay(res, function (url) {
-      relayRequest(url, 'GET', '/api/relay/who', null)
-        .then(function (r) {
-          if (r.status !== 200) {
-            res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(r.text);
-            return;
-          }
-          var parsed = null;
-          try { parsed = JSON.parse(r.text); }
-          catch (e) { parsed = null; }
-          var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({
-            handle: handle,
-            matches: handleMatches(rootDir, peers, handle),
-          }));
-        })
-        .catch(function (err) { fail(res, 502, String(err.message || err)); });
-    });
-  }
+  //   Andy: "handles are not used in keyed mode by definition."
+  //
+  // It fetched the whole census from `urls[0]` and filtered it down to
+  // rows whose label matched a word exactly — the "is the john I was
+  // told about here" question.
+  //
+  // THE TREE ASKED FOR THIS DECISION and had been waiting on it.
+  // contacts.js, where the caller used to be: "The verb survives it.
+  // `peer.find` is still served by the node and now has no caller in the
+  // tree, which is a thing to decide rather than a thing to leave: it
+  // asks `urls[0]`, so it cannot see a second relay or a partner's
+  // members, and anything that wanted it should want peer.search
+  // instead."
+  //
+  // Superseded rather than merely unused, which is why this is a
+  // deletion and not a retrofit: ranked search answers the same question
+  // strictly better. "An exact handle scores 1.0 and comes first out of
+  // a million, so typing the name you were told IS the handle lookup,
+  // and typing part of it is the other question. One box answers both."
+  // It also crossed relays and partnerships, which this never could.
+  //
+  // `handleMatches` above is what this called and is NOT deleted with
+  // it — see the note there.
 
   // POST /api/hub/contact — a human confirmed one of those candidates.
   //
@@ -1784,32 +1817,16 @@ function createHub(rootDir) {
   // NOT A PROXY. It fetches one fixed path, returns only what a census
   // carries, and `assertRelayUrl` applies as everywhere else. A caller
   // that wants an arbitrary url has `net.fetch` and its own refusals.
-  function handleRoster(req, res, readJsonBody) {
-    readJsonBody(req).then(function (body) {
-      var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
-      if (!url) { fail(res, 400, 'url required'); return; }
-
-      relayRequest(url, 'GET', '/api/relay/who', null)
-        .then(function (r) {
-          var parsed = null;
-          try { parsed = JSON.parse(r.text); }
-          catch (e) { parsed = null; }
-          if (r.status !== 200 || !parsed) {
-            fail(res, 502, 'that relay did not answer a census (' + r.status + ')');
-            return;
-          }
-          var rows = Array.isArray(parsed) ? parsed : (parsed.peers || []);
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({
-            url: url,
-            relayLabel: parsed.relayLabel || '',
-            relayPublicKey: parsed.relayPublicKey || '',
-            peers: rows,
-          }));
-        })
-        .catch(function (err) { fail(res, 502, String(err.message || err)); });
-    }).catch(function () { fail(res, 400, 'bad body'); });
-  }
+  // ── handleRoster STOOD HERE (`relay.roster`), DELETED 2026-09-17 ───
+  //
+  // It fetched a named relay's whole public census so natterDetails could
+  // tabulate who a partner holds. That panel is gone (see the tombstone
+  // in natterDetails.js) and this had no other caller.
+  //
+  // It was the one census reader that genuinely wanted a LIST, and so the
+  // one that would have needed paging designed for it. It turned out to
+  // want a list for a screen nobody needed — which is worth remembering
+  // the next time a caller looks like it needs a bigger answer.
 
   // ── EVERYBODY THIS NODE CAN SEE AND DOES NOT YET KNOW ────────────────
   //
@@ -1848,7 +1865,8 @@ function createHub(rootDir) {
   //   the only way onto the wire. A second caller is a second door,
   //   whether or not a route has been wired to it yet."
   //
-  // Which it caught immediately when handleCandidates grew its own call.
+  // Which it caught immediately when handleCandidates grew its own call
+  // (that verb is gone, but the rule it proved is not).
   // The rule is about paths, not about verbs — so a second CALLER shares
   // this function rather than reaching past it, and everything that
   // decides how a packet is shaped stays in one place.
@@ -1862,11 +1880,11 @@ function createHub(rootDir) {
   //   thousand people in this list… We want the partner-space
   //   searchable."
   //
-  // handleCandidates below fetches every census whole and subtracts what
-  // this node knows. That is fine at ten members and absurd at a thousand:
-  // 150 KB per relay, per refresh, to build a list nobody can read. It
-  // stays for the small case and for the "who is here" question, and this
-  // is what the app should use once a relay is real.
+  // handleCandidates fetched every census whole and subtracted what this
+  // node knows — fine at ten members and absurd at a thousand: 150 KB per
+  // relay, per refresh, to build a list nobody can read. It was kept "for
+  // the small case" and deleted on 2026-09-17 once the app had moved off
+  // it entirely; see the tombstone below. This is what asks instead.
   //
   // One signed post per relay, capped answers, and the relay does the
   // matching over rows it already holds in RAM. When a relay holds its
@@ -1991,9 +2009,10 @@ function createHub(rootDir) {
         //
         // Asked ONLY when something actually came from a partner: an
         // ordinary search of this node's own relays costs no extra round
-        // trip. `{partners:true}` is a verb any member may ask, and
-        // handleCandidates has been asking it since tier one — so this
-        // adds no door, only a second reader.
+        // trip. `{partners:true}` is a verb any member may ask —
+        // handleCandidates asked it from tier one until that verb was
+        // deleted (2026-09-17), so this adds no door and is now its only
+        // reader.
         var needsRoute = Object.keys(found).some(function (k) { return found[k].via; });
         if (!needsRoute) return null;
 
@@ -2044,94 +2063,34 @@ function createHub(rootDir) {
     }).catch(function () { fail(res, 400, 'bad body'); });
   }
 
-  function handleCandidates(req, res, readJsonBody, deps) {
-    var router = deps && deps.router;
-    var urls = ownerBadge.configuredUrls(rootDir);
-    var me = auth.loadIdentity(rootDir);
-    var myKey = (me && me.publicKey) || '';
-
-    // Already known, by key. `contacts()` drops census-only rows, which is
-    // exactly right: seen-in-a-census is what these candidates ARE.
-    var known = Object.create(null);
-    whoBook.contacts(rootDir).forEach(function (row) {
-      if (row && row.publicKey) known[row.publicKey] = true;
-    });
-
-    var found = Object.create(null);   // key -> row
-    var seenUrl = Object.create(null);
-
-    function censusOf(url) {
-      if (seenUrl[url]) return Promise.resolve(null);
-      seenUrl[url] = true;
-      return relayRequest(url, 'GET', '/api/relay/who', null)
-        .then(function (r) {
-          if (r.status !== 200) return null;
-          try { return JSON.parse(r.text); } catch (e) { return null; }
-        })
-        .catch(function () { return null; });
-    }
-
-    function harvest(parsed, url, viaPartner) {
-      var rows = (parsed && parsed.peers) || [];
-      rows.forEach(function (p) {
-        if (!p || !p.publicKey) return;
-        if (p.publicKey === myKey || known[p.publicKey]) return;
-        // FIRST SIGHTING WINS, and a relay this node is ON beats a
-        // partner: acquiring needs a census that lists the key, and the
-        // nearer one is the one it can reach without a partnership.
-        if (found[p.publicKey] && !found[p.publicKey].viaPartner) return;
-        found[p.publicKey] = {
-          publicKey: p.publicKey,
-          publicLabel: p.publicLabel || '',
-          claimedAt: p.claimedAt || '',
-          relay: url,
-          relayLabel: (parsed && parsed.relayLabel) || '',
-          viaPartner: !!viaPartner,
-        };
-      });
-    }
-
-    // A signed ask, on the road the node already uses for every other
-    // relay verb. Failure is not fatal anywhere here: a relay that will
-    // not say who it partners with simply contributes its own census.
-    function partnersOf(url, relayKey) {
-      if (!router || !relayKey) return Promise.resolve([]);
-      // Through sendPacket, not past it — see the note above it.
-      return sendPacket(router, url, relayKey, systemPayload({ partners: true }))
-        .then(function (answer) {
-          var said = null;
-          try { said = JSON.parse((answer && answer.text) || ''); }
-          catch (e) { said = null; }
-          var body = (said && said.body) || {};
-          return (body.partners) || [];
-        })
-        .catch(function () { return []; });
-    }
-
-    Promise.all(urls.map(function (url) {
-      return censusOf(url).then(function (parsed) {
-        if (!parsed) return null;
-        harvest(parsed, url, false);
-        return partnersOf(url, parsed.relayPublicKey || '');
-      }).then(function (partners) {
-        return Promise.all((partners || []).map(function (p) {
-          if (!p || !p.url) return null;
-          return censusOf(p.url).then(function (far) {
-            if (far) harvest(far, p.url, true);
-          });
-        }));
-      });
-    })).then(function () {
-      var list = Object.keys(found).map(function (k) { return found[k]; });
-      list.sort(function (a, b) {
-        return String(a.publicLabel).localeCompare(String(b.publicLabel));
-      });
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ candidates: list, relays: urls.length }));
-    }).catch(function (err) {
-      fail(res, 502, String((err && err.message) || err));
-    });
-  }
+  // ── handleCandidates STOOD HERE, AND TOOK THE LAST WHOLE-CENSUS ────
+  //     FAN-OUT WITH IT (2026-09-17)
+  //
+  //   Andy: "we can kill the census getting in the partner
+  //   communications. we already are working with search concepts only
+  //   there... nothing should break, contacts also uses search now."
+  //
+  // `peer.candidates` answered "everybody visible from here and not yet
+  // known" by fetching EVERY census whole — this node's relays and each
+  // of their partners — and subtracting what the whoBook already had.
+  // It was the worst census reader in the tree and the only one with no
+  // narrow form, because not knowing the keys was the entire point of
+  // it: at a thousand members across five partners, six times 147 KB in
+  // one call.
+  //
+  // IT HAD NO CALLER. The note that used to stand above it said it
+  // "stays for the small case and for the 'who is here' question, and
+  // [peer.search] is what the app should use once a relay is real" — and
+  // the app moved. Contacts paints that panel from `peer.search`
+  // (contacts.js, contactsAsk('peer.search')), and says so itself
+  // twenty lines earlier: "anything that wanted it should want
+  // peer.search instead." What remained was a route, an export, a
+  // surface assertion and one stale comment, which between them made a
+  // dead verb look alive.
+  //
+  // Nothing replaces it. `peer.search` asks each relay who matches
+  // rather than downloading each relay, which is the same question with
+  // a bound on the answer.
 
   function handlePartnerCheck(req, res, readJsonBody) {
     readJsonBody(req).then(function (body) {
@@ -2144,41 +2103,62 @@ function createHub(rootDir) {
         res.end(JSON.stringify(obj));
       };
 
-      relayRequest(url, 'GET', '/api/relay/who', null)
+      // ── IT ASKS WHO RUNS THE BOX, AND NOTHING ELSE (2026-09-18) ────
+      //
+      //   Andy: "when a cheat is identified, it must be eradicated."
+      //
+      // This read the whole census of a relay this node has never been on
+      // — every member, every label, every join date — to answer one
+      // question about ONE key. It narrowed to `?key=` for a day, keeping
+      // a whole-census read on the refusal path so it could still name
+      // the other owner.
+      //
+      // BOTH OF THOSE WERE THE CENSUS. `GET /api/relay/key` carries
+      // `ownerKey` and `ownerLabel` now — two fields that were already
+      // public on the row marked `owner`, asked for without asking for
+      // the membership they were buried in. One request, fixed cost, and
+      // this verb no longer touches the census on any path.
+      //
+      // Narrowing would have been the wrong move and is worth saying so:
+      // a `?owner=1` parameter answers the same question by making the
+      // cheat smaller, and a smaller cheat is a defended one.
+      //
+      // THE CHECK IS UNCHANGED. "The key marked owner over there is the
+      // key of the peer here" — a referral has to be verifiable (Andy),
+      // and it still is, off a public page the relay serves about itself.
+      relayRequest(url, 'GET', '/api/relay/key', null)
         .then(function (r) {
-          var parsed = null;
-          try { parsed = JSON.parse(r.text); }
-          catch (e) { parsed = null; }
-          if (r.status !== 200 || !parsed) {
-            answer({ ok: false, error: 'that relay did not answer a census (' + r.status + ')' });
+          var said = null;
+          try { said = JSON.parse(r.text); }
+          catch (e) { said = null; }
+          if (r.status !== 200 || !said) {
+            // A relay too old to have the door, or one that is down. Both
+            // are "this cannot be checked", and neither is a promotion.
+            answer({ ok: false, error: 'that relay did not say who runs it (' + r.status + ')' });
             return;
           }
-          var rows = Array.isArray(parsed) ? parsed : (parsed.peers || []);
-          var theirOwner = rows.filter(function (p) { return p && p.owner; })[0];
-          if (!theirOwner) {
+
+          var ownerKey = String(said.ownerKey || '');
+          if (!ownerKey) {
             answer({ ok: false, error: 'that relay has no owner yet — nobody has claimed it' });
             return;
           }
-          // THE WHOLE CHECK. Not "somebody told me", not "the label
-          // matches" — the key marked owner over there is the key of the
-          // peer here. A referral has to be verifiable (Andy) and this is
-          // what verifiable looks like.
-          if (theirOwner.publicKey !== peerKey) {
+          if (ownerKey !== peerKey) {
             answer({
               ok: false,
               error: 'that relay is owned by somebody else (' +
-                (theirOwner.publicLabel || 'unlabelled') + ')',
+                (said.ownerLabel || 'unlabelled') + ')',
             });
             return;
           }
+
           answer({
             ok: true,
             url: url,
             // Pinned at promotion, used at the hop.
-            relayKey: parsed.relayPublicKey || '',
-            relayLabel: parsed.relayLabel || '',
-            ownerLabel: theirOwner.publicLabel || '',
-            peers: rows.length,
+            relayKey: said.relayPublicKey || '',
+            relayLabel: said.relayLabel || '',
+            ownerLabel: said.ownerLabel || '',
           });
         })
         .catch(function (err) {
@@ -2273,11 +2253,8 @@ function createHub(rootDir) {
     handlePost: handlePost,
     handleStatus: handleStatus,
     handlePartnerCheck: handlePartnerCheck,
-    handleRoster: handleRoster,
-    handleCandidates: handleCandidates,
     handleSearch: handleSearch,
     handleWho: handleWho,
-    handleHandle: handleHandle,
     handleContact: handleContact,
     handlePeer: handlePeer,
     // handleInvite, handleRemovePeer, handleRename and handleRevoke were

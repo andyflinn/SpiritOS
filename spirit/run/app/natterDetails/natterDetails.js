@@ -304,8 +304,6 @@ function ndLoad() {
         ndBadge.report = said[ndUrl] || null;
       }
       // Anything this screen needs to ASK for is asked here, once per
-      // load — never from a panel builder. See ndEnsureReach.
-      ndEnsureReach();
       ndRender();
     })
     .catch(function () { ndAsked = true; ndRender(); });
@@ -955,49 +953,6 @@ function ndPartnerPicked(select) {
   }
 }
 
-// ── ADDING SOMEBODY WHO IS NOT ON THIS RELAY ─────────────────────────
-//
-// Same verb as the enrolment list's button, one field more: the census
-// that proves the key is the PARTNER's, because that is the only one the
-// key is on.
-//
-// `via: 'handle'` and not something new. The ranks in whoBook say how you
-// came to KNOW someone — census 0, message 2, invite 3, handle 4 — and
-// none of them is about which relay they sit on. A person pressing this
-// has looked at the row and decided; that is the same act as confirming a
-// local one, and inventing a weaker rank for "foreign" would be recording
-// the address as if it were the evidence.
-function ndReachAdd(button) {
-  var key = button.getAttribute('data-peer-key') || '';
-  var url = button.getAttribute('data-peer-url') || '';
-  var panel = button.closest('.natter-reach');
-  var out = panel && panel.querySelector('.nd-reach-out');
-  if (!key || !url) return;
-
-  if (out) {
-    out.className = 'job-manifest-note nd-reach-out';
-    out.textContent = 'adding…';
-  }
-  ndPost('peer.acquire', { publicKey: key, url: url, via: 'handle' }).then(function (r) {
-    var said = null;
-    try { said = JSON.parse(r.text); } catch (e) { said = null; }
-    if (!out) return;
-    if (r.status === 201 && said) {
-      out.className = 'job-manifest-note nd-reach-out is-token';
-      // SAYS WHAT IT DID AND WHAT IT DID NOT. A contact you cannot post
-      // to is a new thing on this screen, and a bare "added" would let
-      // somebody discover the rest by trying.
-      out.textContent = 'added ' + (said.publicLabel || 'them') +
-        ' — you cannot post to them yet: that needs forwarding.';
-    } else {
-      out.className = 'job-manifest-note nd-reach-out is-error';
-      out.textContent = (said && said.error) || ('could not add (' + r.status + ')');
-    }
-    ndLoad();
-  });
-}
-
-
 // ── REMOVING AN ENROLMENT, WHICH IS A POST LIKE EVERYTHING ELSE ─────
 //
 // `removePeer` addressed to the relay's own key. Two presses, because
@@ -1109,179 +1064,34 @@ function ndPartnerPickerHtml(existing) {
     '</div>';
 }
 
-// ── WHAT THE PARTNERSHIP ACTUALLY ADDS ───────────────────────────────
+// ── "ON PARTNER RELAYS" STOOD HERE, AND IS GONE (2026-09-17) ─────────
 //
-//   Andy: "we want to prove that with a partnership more peer id's can be
-//   visible for every node bound to either partner." / "seeing only is
-//   the goal."
+//   Andy: "relay details for non-owned relays: section 'On partner
+//   relays' needs to go." — then, of the owner's copy: "kill it there,
+//   too."
 //
-// Filled asynchronously — one `relay.roster` per partner, each a public
-// census read — and kept keyed by partner url so a repaint does not
-// refetch. Empty until the first answer lands, which is why the panel
-// says nothing rather than "none" before then: "no answer yet" and "none"
-// are different facts and only one of them is worth reporting.
-var ndReach = Object.create(null);   // partner url -> { peers, relayLabel }
-
-// Called from ndEnsureReach only — see the note there about renders that
-// send things.
-function ndLoadReach(partners) {
-  partners.forEach(function (p) {
-    if (!p || !p.url || ndReach[p.url]) return;
-    ndReach[p.url] = { peers: [], relayLabel: '', pending: true };
-    ndAsk('relay.roster', { url: p.url }).then(function (data) {
-      ndReach[p.url] = {
-        peers: (data && data.peers) || [],
-        relayLabel: (data && data.relayLabel) || '',
-        pending: false,
-        failed: !data,
-      };
-      ndRender();
-    });
-  });
-}
-
-function ndReachHtml(partners) {
-  if (!partners.length) return '';
-
-  // WHO THIS RELAY ALREADY HOLDS. The point of the panel is what is
-  // GAINED, so anybody already enrolled here is not news — and with two
-  // relays sharing an owner, most of the far roster is exactly that.
-  var here = Object.create(null);
-  ((((ndBadge || {}).census) || {}).roster || []).forEach(function (p) {
-    if (p && p.publicKey) here[p.publicKey] = true;
-  });
-
-  var gained = [];
-  var waiting = 0;
-  partners.forEach(function (p) {
-    var got = ndReach[p.url];
-    if (!got || got.pending) { waiting += 1; return; }
-    got.peers.forEach(function (row) {
-      if (!row || !row.publicKey || here[row.publicKey]) return;
-      // Same key on two partners is one identity, not two.
-      if (gained.some(function (g) { return g.publicKey === row.publicKey; })) return;
-      gained.push({
-        publicKey: row.publicKey,
-        publicLabel: row.publicLabel || '(no label)',
-        via: got.relayLabel || p.url,
-        // The address the key was proved against — peer.acquire needs it.
-        url: p.url,
-      });
-    });
-  });
-
-  if (waiting && !gained.length) {
-    return ndPanel('reach', ndIcon.LINK, 'On partner relays',
-      '<div class="job-log-empty">asking ' + waiting + ' partner…</div>', 'natter-reach');
-  }
-
-  var body;
-  if (!gained.length) {
-    body = '<div class="job-log-empty">partners hold nobody this relay does not already have</div>';
-  } else {
-    // SAME RULE AS THE ENROLMENT LIST, and this table wants it most: Add
-    // writes a row into this node's own book, and two strangers on two
-    // different partners can easily wear one name. See ndTellApart.
-    var counts = ndCountLabels(gained, function (g) { return g && g.publicLabel; });
-
-    body = '<table class="job-table"><thead><tr>' +
-      '<th>Label</th><th>On</th><th></th>' +
-      '</tr></thead><tbody>' +
-      gained.map(function (g) {
-        return '<tr>' +
-          '<td>' + ndEscapeHtml(g.publicLabel) +
-            ndTellApart(counts, g.publicLabel, g.publicKey) + '</td>' +
-          '<td>' + ndEscapeHtml(g.via) + '</td>' +
-          // THE URL TRAVELS WITH THE BUTTON. `peer.acquire` proves a key
-          // against a census, and for one of these that census is the
-          // partner's — not this relay's, where the key is not and never
-          // was. Carried here rather than looked up later because this
-          // row is the only place that knows which partner it came from.
-          '<td><button type="button" class="cancel-btn nd-reach-add"' +
-            ' data-peer-key="' + ndEscapeHtml(g.publicKey) + '"' +
-            ' data-peer-url="' + ndEscapeHtml(g.url) + '">Add to contacts</button></td>' +
-        '</tr>';
-      }).join('') +
-      '</tbody></table>';
-  }
-
-  // ── SAY WHAT IS TRUE, AND THE HEADING IS PART OF IT ────────────────
-  //
-  // This was headed "Reachable through partners", with a note underneath
-  // retracting it. Andy: "how does my node know that sonny is reachable
-  // through partner?" — it does not, and nothing here could have told it.
-  //
-  // What actually happened: the partnership supplied lab's ADDRESS, and
-  // this node then fetched lab's public census over HTTPS by itself. The
-  // relay vouched for nobody and relayed nothing. These identities are
-  // enrolled somewhere else and cannot be posted to at all until
-  // forwarding exists.
-  //
-  // A heading that claims reachability is a promise the system cannot
-  // keep, and the note below it was already admitting so — which is a
-  // panel arguing with itself.
-  return ndPanel('reach', ndIcon.LINK,
-    'On partner relays (' + gained.length + ')',
-    body +
-    '<div class="job-manifest-note">Enrolled on a partner relay, not here. ' +
-      'Your node read that relay&rsquo;s public census itself — the partnership ' +
-      'supplied the address and nothing else. <strong>Not reachable</strong>: ' +
-      'posting needs forwarding, which is not built.</div>' +
-    '<div class="job-manifest-note nd-reach-out"></div>',
-    'natter-reach');
-}
-
-// Reads the same partner list the table above renders, kicks off the
-// census fetches, and draws what came back. Split from ndReachHtml so the
-// fetching happens once per render pass rather than inside a function that
-// also builds markup.
-// ── FOR EVERY NODE BOUND HERE, NOT ONLY THE OWNER ────────────────────
+// It listed people enrolled on the PARTNERS of this relay, so a
+// partnership could be seen to add something:
 //
-// An owner has the partner list already: it rides `relayStatus`, pushed
-// down their stream. A member has to ask — `{ partners: true }` to the
-// relay's own key — and gets the addresses without the owner's reading of
-// them (no stats, no ownerKey; see relay.js answerSelf).
+//   Andy, when it was built: "we want to prove that with a partnership
+//   more peer id's can be visible for every node bound to either
+//   partner." / "seeing only is the goal."
 //
-// Asked once per relay and cached, because this panel repaints on every
-// render and the answer changes about as often as a partnership does.
-var ndPartnerList = Object.create(null);   // relay url -> [ {url, relayKey} ]
-
-// ── ASKING HAPPENS IN ndLoad, NEVER IN A RENDER ──────────────────────
+// It proved that, and then the proof stopped being worth its price. The
+// panel's own note was the argument against it — "Not reachable: posting
+// needs forwarding, which is not built" — so what it offered was a list
+// of people you cannot write to, and it cost a `relay.roster` per
+// partner to draw: a whole public census of somebody else's box, fanned
+// out across every partnership, on every visit to this screen.
 //
-// The first cut fired `peerPost({partners:true})` from inside the panel
-// builder, and natterDetails.js went red at once: the suite reads the LAST
-// post this screen made, and a render-time request had overwritten the
-// mint it was inspecting. The test was right about something larger than
-// itself — a repaint must not send anything, or what the node did depends
-// on how many times the screen was drawn.
-function ndEnsureReach() {
-  if (!ndBadge || (!ndBadge.owned && !ndBadge.claimed)) return;
-
-  // An owner already holds the list — it rides relayStatus.
-  var fromReport = (((ndBadge.report) || {}).partners) || [];
-  if (fromReport.length) { ndLoadReach(fromReport); return; }
-
-  var known = ndPartnerList[ndUrl];
-  if (known) { if (known.length) ndLoadReach(known); return; }
-
-  var key = ndRelayKey();
-  if (!key) return;
-  ndPartnerList[ndUrl] = [];              // asked once per relay
-  ndApi.peerPost('relay', key, { partners: true }).then(function (r) {
-    var said = (r && r.body) || {};
-    ndPartnerList[ndUrl] = said.partners || [];
-    if (ndPartnerList[ndUrl].length) ndLoadReach(ndPartnerList[ndUrl]);
-    ndRender();
-  });
-}
-
-// Pure: draws what ndEnsureReach has gathered, and sends nothing.
-function ndReachPanel() {
-  if (!ndBadge || (!ndBadge.owned && !ndBadge.claimed)) return '';
-  var partners = (((ndBadge.report) || {}).partners) || ndPartnerList[ndUrl] || [];
-  if (!partners.length) return '';
-  return ndReachHtml(partners);
-}
+// WHAT WENT WITH IT: ndReachAdd and its click handler, the ndReach
+// cache, ndLoadReach, ndReachHtml, ndPartnerList, ndEnsureReach and
+// ndReachPanel — and `relay.roster` itself, whose only caller this was.
+//
+// The question it answered is search's now. `peer.search` crosses
+// partnerships, ranks, bounds its answer, and marks each row with the
+// partner it came through (`vias`) — which is the same fact this
+// tabulated, asked for rather than downloaded.
 
 function ndPartnersHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
@@ -1742,7 +1552,6 @@ function ndRender() {
     // about who you can SEE from here, not about running the box. A
     // member with no relay of their own has reach; they have nothing to
     // manage.
-    ndReachPanel() +
     ndOwnerGroupHtml(
       ndRelayLabelHtml() +
       ndInvitePanel() +
@@ -2184,8 +1993,6 @@ spirit.shell.activateApp({
       var relayLabelBtn = target.closest('.nd-relay-label-go');
       if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }
 
-      var reachAdd = target.closest('.nd-reach-add');
-      if (reachAdd) { ndReachAdd(reachAdd); return; }
 
 
 

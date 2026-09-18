@@ -375,9 +375,7 @@ freePort()
       // honest.
       ['POST', '/api/spirit', { verb: 'peer.post' }],
       ['POST', '/api/spirit', { verb: 'peer.list' }],
-      ['POST', '/api/spirit', { verb: 'peer.find', handle: 'x' }],
       ['POST', '/api/spirit', { verb: 'peer.acquire', publicKey: 'NOPE' }],
-      ['POST', '/api/spirit', { verb: 'peer.candidates' }],
       ['POST', '/api/spirit', { verb: 'peer.search', q: 'zz' }],
       // Every loopback verb, at the one door. `net.fetch` is left out on
       // purpose — it would reach the internet from a test, and it is
@@ -425,7 +423,6 @@ freePort()
       // Reads a census from a url this node is not on. 127.0.0.1:1 for the
       // reason partnerCheck below uses it: refused by the kernel, no DNS,
       // and the handler must ANSWER rather than throw.
-      ['POST', '/api/spirit', { verb: 'relay.roster', url: 'https://127.0.0.1:1' }],
       // ── THIS ONE REACHES THE NETWORK, AND SAID IT DID NOT ───────────
       //
       // The note above says net.fetch "is the only one that would reach

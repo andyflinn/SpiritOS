@@ -63,12 +63,30 @@ function fakeRelay(opts) {
     },
     request: function (url, method, pathname, body) {
       calls.push({ url: url, method: method, pathname: pathname, body: body });
-      if (method === 'GET' && /\/api\/relay\/who$/.test(pathname)) {
+      // ── THE KEY COMES FROM ITS OWN DOOR NOW (2026-09-18) ─────────
+      //
+      // This fake served `/api/relay/who` because that is where
+      // answerRelay read `relayPublicKey` — the whole census, fetched to
+      // take one field off the envelope. `GET /api/relay/key` answers
+      // that field and nothing else, and there is no fallback: a relay
+      // without the door yields no key at all (see the note on fetchKey).
+      //
+      // `opts.censusFails` keeps its name and its meaning — "the box will
+      // not say who it is" — because every check that used it is about
+      // what the node does when it cannot pin, not about which path it
+      // asked down.
+      if (method === 'GET' && /\/api\/relay\/key$/.test(pathname)) {
         if (opts.censusFails) return Promise.reject(new Error('down'));
         return said({
-          peers: [],
           relayPublicKey: url === OTHER_URL ? opts.otherKey : opts.mailboxKey,
         });
+      }
+
+      // AND THE CENSUS IS NOT SERVED HERE AT ALL. If answerRelay ever
+      // reaches for it again, it gets `{ok:false}` and no key — which
+      // fails these checks loudly rather than working at 300x the price.
+      if (method === 'GET' && /\/api\/relay\/who$/.test(pathname)) {
+        test.fail('answerRelay read the census: ' + pathname);
       }
 
       return said({ ok: false });
@@ -352,11 +370,11 @@ async function run() {
     });
     await A.answer(arriving(relayId.publicKey, offer('wrong', phone.publicKey)));
     await A.answer(arriving(relayId.publicKey, offer('wrong', phone.publicKey)));
-    const censuses = relay.calls.filter(function (c) { return /who$/.test(c.pathname); });
+    const censuses = relay.calls.filter(function (c) { return /key$/.test(c.pathname); });
     if (censuses.length === 1) {
       test.check('and the relay\'s key is asked for once, not once per enrolment');
     } else {
-      test.fail(censuses.length + ' census calls for two offers');
+      test.fail(censuses.length + ' key lookups for two offers');
     }
   }
 

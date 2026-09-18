@@ -155,4 +155,68 @@ if (/\/api\/relay\/who\?key=/.test(body)) {
   test.fail('peer.acquire still reads the whole ledger');
 }
 
+// ── THE CALLERS THAT FOLLOWED IT (2026-09-17) ────────────────────────
+//
+// Asserted on the source, like the one above, because what matters is
+// that the expensive form is no longer reached from there. A migrated
+// caller that quietly reverts looks exactly like one that never moved.
+
+test.subHeading('And the callers that followed peer.acquire');
+
+// ── AND relay.partnerCheck LEFT ENTIRELY (2026-09-18) ────────────────
+//
+// It narrowed to `?key=` on 2026-09-17, keeping ONE whole-census read on
+// the refusal path so it could still say "that relay is owned by somebody
+// else (Jazzmin Thut)". Two assertions stood here for that arrangement.
+//
+//   Andy: "when a cheat is identified, it must be eradicated."
+//
+// A `?owner=1` parameter would have answered the refusal too — and would
+// have been the wrong move, because it answers by making the cheat
+// smaller, and a smaller cheat is a defended one. `GET /api/relay/key`
+// carries `ownerKey` and `ownerLabel` instead: two fields already public
+// on the row marked `owner`, asked for without asking for the membership
+// they were buried in.
+//
+// So the assertion is the strong one now.
+const check = hub.slice(hub.indexOf('function handlePartnerCheck'));
+const checkBody = check.slice(0, check.indexOf('\n  function '));
+
+if (!/api\/relay\/who/.test(checkBody.replace(/\/\/.*/g, ''))) {
+  test.check('relay.partnerCheck reads no census on any path — it asks who runs the box');
+} else {
+  test.fail('handlePartnerCheck still reads the census');
+}
+
+// AND IT STILL NAMES THE OTHER OWNER. That sentence is the only thing a
+// person reads when they get a promotion wrong, and it was the reason the
+// refusal path kept a census read at all. Losing it while removing the
+// census would have been a silent downgrade dressed as a cleanup.
+if (/owned by somebody else/.test(checkBody) && /ownerLabel/.test(checkBody)) {
+  test.check('and still names who does own it, from the same fixed-cost answer');
+} else {
+  test.fail('the refusal no longer names the other owner');
+}
+
+// It narrowed to `?key=` for a few hours on 2026-09-17 and then stopped
+// asking at all — the only thing it wanted was a label in a sentence,
+// and Andy cut the sentence: "the page posts a constant username and a
+// pasted secret. That's all."
+//
+// So the assertion is the stronger one: NO browser reads this route.
+// That matters beyond the bytes. The census must answer a party with no
+// identity because this page had none — and now nothing does, which
+// removes one of the reasons the door has to stay open to anybody.
+const devicePage = fs.readFileSync(path.join(__dirname, '..', 'run', 'device.html'), 'utf8');
+// Comments stripped: the page keeps a tombstone naming the route it no
+// longer calls, and a check that cannot tell prose from code would read
+// that as a relapse.
+const deviceCode = devicePage.replace(/\/\/.*/g, '');
+
+if (!/\/api\/relay\/who/.test(deviceCode)) {
+  test.check('the device page reads no census at all — no browser does');
+} else {
+  test.fail('device.html still fetches the census');
+}
+
 test.reportSuccessFailureCount();

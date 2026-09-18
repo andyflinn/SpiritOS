@@ -22,6 +22,9 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
+// The device page's URL spelling, from the module that defines it rather
+// than from a copy in this file — see theDevicePageIsServed.
+const deviceAuth = require('../run/js/deviceAuth');
 const hub = require('../run/js/hub');
 const presenceNode = require('../run/js/presenceNode');
 const { createPeerPost } = require('../run/js/peerPost');
@@ -350,11 +353,11 @@ async function run() {
 async function theDevicePageIsServed(up, ownerKey) {
   test.subHeading('The device page is served, not merely permitted');
 
-  function segOf(key) {
-    return String(key).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-
-  const mine = await fetch(up.base + '/' + segOf(ownerKey) + '/device');
+  // `segOf` STOOD HERE — a fourth hand-rolled copy of the same three
+  // replacements. A suite that spells the rule itself cannot catch the
+  // rule changing, which is the one thing it is here to do: this asserts
+  // the URL the product builds, so it has to be built the product's way.
+  const mine = await fetch(up.base + '/' + deviceAuth.keyToUrl(ownerKey) + '/device');
   const body = mine.ok ? await mine.text() : '';
   if (mine.status === 200 && /<html/i.test(body)) {
     test.check('an identity this relay holds is handed the page, over a real socket');

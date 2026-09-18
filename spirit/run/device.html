@@ -63,8 +63,7 @@
       showing NOW. A browser offers the saved one, and a rotated password
       makes the saved one wrong while looking exactly as right.
     -->
-    <p>Adding a device for <strong id="who-for">this identity</strong> on
-       <strong id="host">this relay</strong>.
+    <p>Adding a device on <strong id="host">this relay</strong>.
        Use the password that node is showing now — if it was changed, the
        one your browser saved is out of date.</p>
     <!--
@@ -108,9 +107,21 @@
 
       DECIDED BY ANDY, with the cost stated first: several nodes of your
       own enrolled against ONE relay now share this name, and the picker
-      cannot tell them apart. What tells them apart is the sentence
-      above, which still names the identity — you read who this page is
-      for on the page, not in the password manager.
+      cannot tell them apart.
+
+      THE MITIGATION WAS WITHDRAWN ON 2026-09-17. This said "what tells
+      them apart is the sentence above, which still names the identity",
+      and that sentence is gone:
+
+        Andy: "the page fulfills its function without being cute and
+        showing a label that the user already knows. Unnecessary for
+        functionality. Kill it." — "the page posts a constant username
+        and a pasted secret. That's all."
+
+      So nothing on the page distinguishes one of your nodes from
+      another; the LINK you followed does, and that is where the choice
+      was made. The label never did the job it appeared to anyway — a
+      name printed by the page comes from whoever served the page.
 
       THE STRING IS PART OF THE DOCUMENTATION. Changing it silently
       breaks every instruction that quotes it and mints everyone a
@@ -164,37 +175,35 @@
         return m ? m[1] : '';
       })();
 
-      // The key in the address is not something a person can read. The
-      // LABEL is, and the relay publishes it — /api/relay/who hands the
-      // whole census to anyone, so this costs no signature and reveals
-      // nothing that was not already public.
+      // ── THE PAGE ASKS THE RELAY NOTHING (2026-09-17) ──────────────
       //
-      // ONE PLACE NOW, not two: the sentence at the top, so you can see
-      // whose enrolment this is before typing a password into it. It no
-      // longer touches the username field — see the note on that field.
-      // A label that reaches a password manager is a label whose every
-      // past value is kept there.
-      function segOf(key) {
-        return String(key == null ? '' : key)
-          .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      }
-
-      if (enrollFor) {
-        fetch('/api/relay/who')
-          .then(function (r) { return r.json(); })
-          .then(function (body) {
-            var list = (body && body.peers) || [];
-            var row = null;
-            for (var i = 0; i < list.length; i++) {
-              if (list[i] && segOf(list[i].publicKey) === enrollFor) { row = list[i]; break; }
-            }
-            if (!row) return;
-            var label = row.publicLabel || row.name || '';
-            if (!label) return;
-            document.getElementById('who-for').textContent = label;
-          })
-          .catch(function () { /* the sentence stays generic */ });
-      }
+      //   Andy: "the important part of the chrome on that page is the
+      //   constant, the name that identifies the label for their password
+      //   manager. The page fulfills its function without being cute and
+      //   showing a label that the user already knows. Unnecessary for
+      //   functionality. Kill it."
+      //
+      // A fetch stood here to put this node's public label into the first
+      // sentence — "Adding a device for Jazzmin Thut on …". It read the
+      // relay's whole census to find one row, then (briefly, the same
+      // day) one row by key. Both were a request for chrome.
+      //
+      // It could not do the job it looked like it was doing, either. A
+      // label printed by the page comes from the same party serving the
+      // page, so it reassures only where the relay is already trusted —
+      // which is exactly where nobody needed reassuring.
+      //
+      // WHAT THE PAGE DOES NEED is below and it is a constant:
+      // MyDeviceAccountPassword, the same for every user on every relay,
+      // so a password manager keeps ONE entry instead of a new one per
+      // label change. That is the chrome that carries weight here.
+      //
+      // `enrollFor` stays — the enrolment POST is addressed with it. It
+      // is a locator and not a credential, and it is sent back untouched
+      // because the relay is the one place that translates the url-safe
+      // spelling.
+      //
+      // With this gone, no browser reads the census at all.
 
       function sayEnroll(t) { enrollOut.textContent = t; }
       function sayLog(t) {

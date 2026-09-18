@@ -24,6 +24,8 @@ const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 const packet = require('../run/js/client/packet.js');
+// The device page's URL spelling — see the device-link check below.
+const deviceAuth = require('../run/js/deviceAuth');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'app', 'natterDetails', 'natterDetails.js');
@@ -953,50 +955,28 @@ function theOwnerGroupFolds() {
   });
 }
 
-// ── REACH IS NOT ADMINISTRATION, SO IT IS NOT IN THE FOLD ────────────
+// ── THE REACH SUITE WENT WITH ITS PANEL (2026-09-17) ─────────────────
 //
-// "On partner relays" shipped INSIDE "Managing my relay", which made the
-// whole of that step invisible to exactly the people it was built for:
+// "On partner relays" is deleted — see the tombstone in
+// natterDetails.js. Two decisions were asserted here and both are worth
+// keeping in writing, because each was made on a complaint from Andy and
+// the second reverses the first:
 //
-//   Andy: "'On Partner relays' is inside the 'Managing my Relay' block so
-//   non-owning members don't see it because of that."
+//   1. It was drawn OUTSIDE the owner fold. "'On Partner relays' is
+//      inside the 'Managing my Relay' block so non-owning members don't
+//      see it because of that." Reach is not administration.
 //
-// The relay answers `{partners:true}` to any member and the panel renders
-// for anyone bound here — and then the fold hid the result from everybody
-// except the one person who already had it in `relayStatus`.
+//   2. Then members stopped being shown it at all — "relay details for
+//      non-owned relays: section 'On partner relays' needs to go" — and
+//      then so did the owner: "kill it there, too."
 //
-// Asserted with the group SHUT, because that is the state the mistake
-// lives in: opened, it looked fine.
-function reachIsNotInTheOwnerFold() {
-  test.subHeading('Reach is drawn outside the owner fold');
+// So the panel travelled from owner-only, to everyone, to owner-only, to
+// gone. The thing that settled it was not who should see it but what it
+// cost against what it offered: a `relay.roster` per partner, for rows
+// carrying a note saying they were not reachable.
+//
+// The question is search's now, and `peer.search`'s own suites assert it.
 
-  const app = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, claimed: true }],
-    relayStatus: {
-      [OWNED]: {
-        key: 'RELAYKEY',
-        partners: [{ url: 'https://other.example', relayKey: 'THEIRKEY', since: '2026-09-16' }],
-      },
-    },
-  });
-
-  return settle().then(function () {
-    const shut = app.body().innerHTML;
-    if (/Managing my relay/.test(shut) && !/natter-peers/.test(shut)) {
-      test.check('the owner fold is shut, so its own panels are not drawn');
-    } else {
-      test.fail('fixture is not in the state this checks — group open, or no group');
-    }
-
-    if (/natter-reach/.test(shut)) {
-      test.check('and reach is drawn anyway — what you can see is not what you run');
-    } else {
-      test.fail('the reach panel is only drawn when the owner group is open');
-    }
-  });
-}
-
-// THE ENROLMENT DATE, which is how a human tells two rows with one label
 // apart.
 //
 //   Andy: "enrollment date is a good indicator of which jazz is
@@ -1614,8 +1594,11 @@ function theDevicePanel() {
     // which is what lets a relay answer per identity rather than one for
     // the box. Base64url — the same bytes, `-` and `_` for `+` and `/` —
     // because a `/` in a path segment is not in the segment.
-    const target = 'https://spirit.example/' +
-      KEY.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') + '/device';
+    // Built with deviceAuth.keyToUrl, not with a copy of it. A suite
+    // that respells the rule cannot notice the rule changing, and this
+    // check exists precisely to hold the app and the relay to one
+    // spelling of the same URL.
+    const target = 'https://spirit.example/' + deviceAuth.keyToUrl(KEY) + '/device';
     if (panel.indexOf('href="' + target + '"') !== -1) {
       test.check('the link GOES to this identity in base64url, not to the bare /device');
     } else {
@@ -2147,7 +2130,6 @@ ownedMailbox()
   .then(thePartnerPanelChecksBeforeItAdds)
   .then(aRefusedCheckPromotesNobody)
   .then(theOwnerGroupFolds)
-  .then(reachIsNotInTheOwnerFold)
   .then(anOwnerEventRefreshesTheScreen)
   .then(theClaimFormReadsInTheOrderYouAreTold)
   .then(thePublicLabelIsOptional)

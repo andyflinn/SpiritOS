@@ -654,6 +654,28 @@ function createRelay(rootDir, deps) {
     return name === 'relay' ? '' : name;
   }
 
+  // ── WHO RUNS THIS BOX ────────────────────────────────────────────
+  //
+  // Two fields, both already public: the owner's key and label are on
+  // every census row that carries `owner: true`. What changes is that
+  // they can now be ASKED FOR without asking for the membership they
+  // were buried in.
+  //
+  // This is the last thing `handlePartnerCheck` needed the census for.
+  // A partner promotion has to be verifiable — "the key marked owner over
+  // there is the key of the peer here" — and setPartner's own note leans
+  // on that proof being a PUBLIC page: "a node reporting a public page is
+  // not laundering privilege; it saw nothing this box could not have
+  // seen." Still true, and now it is one page rather than a ledger.
+  //
+  // Empty on a relay nobody has claimed, which is a real answer: that box
+  // has no owner yet, and partner promotion refuses it for that reason.
+  function ownerPublic() {
+    var label = auth.ownerName(allow);
+    var key = label && allow.byName && allow.byName[label];
+    return { ownerKey: key || '', ownerLabel: label || '' };
+  }
+
   // ── PARTNERSHIP, TIER ONE: THE FLAG AND NOTHING ELSE ────────────────
   //
   //   Andy: "every relay can promote a peer to 'partner' status in the
@@ -3317,6 +3339,10 @@ function createRelay(rootDir, deps) {
     // The other half of the pair. Read by server.js for the public
     // census; set through the `relayLabel` verb in answerSelf.
     relayLabel: relayLabel,
+    // Who runs this box — key and label, both already public on the
+    // census row marked `owner`. Served at GET /api/relay/key so a
+    // partner promotion can be verified without reading a membership.
+    ownerPublic: ownerPublic,
     // Exported for the suite that drives it directly (ownerLog). The
     // browser reaches it through the `relayLabel` verb, like any peer.
     setRelayLabel: setRelayLabel,

@@ -574,24 +574,33 @@ function runOverLoopback() {
       test.fail('self row appeared');
     }
 
-    // THE CENSUS IS WHAT PUTS A CAPTION ON HIM, and this node had already
-    // walked one (hubWho, above) before bert ever wrote — so the row is
-    // named, and the upgrade to 'message' left that name alone.
+    // ── HE ARRIVES UNNAMED, AND THAT IS THE DESIGN NOW (2026-09-18) ──
     //
-    // Which is the arrangement R8 leaves behind, stated as a check rather
-    // than discovered later: acquisition carries the KEY and the ROAD,
-    // and the census carries the caption. The ring's acquireFromInbox
-    // read a label off the relay's stored copy of the line, so a first
-    // contact was named by the packet itself. Nothing stores a line now
-    // and a post carries no captions — that is the relay not reading the
-    // payload, which is the point rather than a regression. The unnamed
-    // case is asserted where it can be: countsTheRowItMakes, on a node
-    // that has walked no census.
+    // THIS REVERSES THE CHECK THAT STOOD HERE. It asserted "the census is
+    // what named him", because `peer.list` used to walk the whole census
+    // and handshake every member into this book — so anybody who later
+    // wrote to you was already captioned by a survey you had run before
+    // they spoke.
+    //
+    //   Andy: "there is absolutely no reason for unbound entities to
+    //   conduct surveys of our network." — "we're killing the census. we
+    //   will break what needs breaking."
+    //
+    // A survey by a BOUND entity is still a survey, and a name taken from
+    // one is a name nobody gave you. So the arrangement is now:
+    // acquisition carries the KEY and the ROAD, and **nothing carries the
+    // caption** — a post carries none, because the relay does not read
+    // the payload, which is the point rather than a regression.
+    //
+    // WHAT A PERSON SEES: a stranger who writes to you is a key until you
+    // act on them. `peer.acquire` names them, and it asks about ONE key
+    // when it does. The name arrives when somebody decides it should,
+    // rather than as a side effect of opening Contacts.
     const bertRow = whoBook.byPublicKey(home, bert.publicKey);
-    if (bertRow && bertRow.publicLabel === 'bert') {
-      test.check('and the census is what named him — the packet carried no caption');
+    if (bertRow && !bertRow.publicLabel) {
+      test.check('and he arrives UNNAMED — no survey ran, and the packet carried no caption');
     } else {
-      test.fail('label: ' + JSON.stringify(bertRow && bertRow.publicLabel));
+      test.fail('something captioned him: ' + JSON.stringify(bertRow && bertRow.publicLabel));
     }
 
     if (bertRow && bertRow.relays.indexOf(server.url) !== -1) {

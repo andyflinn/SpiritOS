@@ -225,17 +225,18 @@ let partnerLinks = null;
 // Empty on a relay, and that is correct rather than incidental: a relay
 // answers only isRelayPublicPath, and /api/spirit is not on it.
 const loopbackVerbs = require('./verbTable').createVerbTable();
-// AND THE URL→KEY PIN, out here for a different reason: a REQUEST needs
-// it. The answerer itself is built inside the boot block and was only
-// ever read from inside it, so `const answerer` was enough — until
-// /api/hub/invite started posting to the relay instead of calling a route
-// on it, and needed to know which key that url is.
+// `pinnedRelayKey` STOOD HERE, DELETED 2026-09-17 — assigned at boot and
+// read by nothing.
 //
-// The failure was a ReferenceError that killed the process on the first
-// mint, because a route handler runs long after the block that declares
-// a const inside it has finished. `peerRouter` is up here for exactly
-// this reason and has been since the router landed.
-let pinnedRelayKey = null;
+// It was hoisted out of the boot block because a REQUEST needed it:
+// /api/hub/invite had started posting to the relay instead of calling a
+// route on it, and a route handler runs long after the block declaring a
+// const inside it has finished. The failure was a ReferenceError that
+// killed the process on the first mint.
+//
+// That route is gone (there is no /api/hub/* any more — see the verb
+// table below), and the fix outlived the caller. The lesson did not:
+// `peerRouter` is still hoisted for exactly this reason.
 
 const requestCounters = { total: 0, byMethod: {}, byStatusClass: {} };
 jobs.startStatsJob({ requestCounters: requestCounters });
@@ -922,6 +923,20 @@ function isRelayPublicPath(method, pathname) {
   // `who` alone. `/api/relay/status` was beside it until R3 deleted the
   // badge that called it — and with it the last signed GET on this box
   // apart from the stream.
+  // ── WHO THIS RELAY IS, AND NOTHING ELSE (2026-09-18) ───────────────
+  //
+  //   Andy: "the first two are easily replaced with GET /api/relay/key
+  //   or whatever."
+  //
+  // The two being the front door's "is this sender a relay?" and search's
+  // "which key do I address this box as" — both of which need a PIN, and
+  // the pin was being derived from the whole census, once per relay per
+  // boot. ~147 KB at a thousand members to learn 44 bytes.
+  //
+  // Fixed cost per request, with no membership term in it, which is what
+  // earns it the exemption the census is losing (0013, and 0010's
+  // granted-GET table).
+  if (method === 'GET' && pathname === '/api/relay/key') return true;
   if (method === 'GET' && pathname === '/api/relay/who') return true;
   // The presence wire. Public in the same sense the rest is: reachable
   // from the internet, and gated inside relay.streamOpen, which refuses
@@ -1015,6 +1030,27 @@ const server = http.createServer((req, res) => {
   if (relayMode && !isRelayPublicPath(req.method, pathname)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Not found');
+    return;
+  }
+
+  if (relayMode && req.method === 'GET' && pathname === '/api/relay/key') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    // KEY AND LABEL ARE A PAIR (Andy), the same pair the census envelope
+    // carries — so a caller that reads one reads both, and nothing has to
+    // learn a second shape. Null on a relay that has not been restarted
+    // since it grew a key of its own.
+    // AND WHO RUNS IT. Both fields are already public on the census row
+    // marked `owner` — what changes is that a caller can ask for them
+    // without asking for the membership they were buried in. It is what
+    // `relay.partnerCheck` needed the census for, and the last thing it
+    // needed it for.
+    var own = relay.ownerPublic();
+    res.end(JSON.stringify({
+      relayPublicKey: relay.relayPublicKey(),
+      relayLabel: relay.relayLabel(),
+      ownerKey: own.ownerKey,
+      ownerLabel: own.ownerLabel,
+    }));
     return;
   }
 
@@ -1207,7 +1243,19 @@ const server = http.createServer((req, res) => {
     (keys || []).forEach(function (raw) {
       String(raw).split(',').forEach(function (k) {
         var key = k.trim();
-        if (key) out.push(key);
+        if (!key) return;
+        // A KEY MAY ARRIVE IN THE DEVICE PAGE'S SPELLING. Those URLs
+        // carry the full key url-escaped — `-` for `+`, `_` for `/`, no
+        // padding — because that is how the relay ties a login post to a
+        // peer, and a page holding one should not have to convert it
+        // back to ask about itself. It used to: device.html carried its
+        // own copy of the encoding in both directions.
+        //
+        // keyFromUrl owns that rule and refuses anything containing
+        // `+`, `/` or `=`, so a stored-form key returns '' and falls
+        // through unchanged. One conversion, in the one module that
+        // already defines it.
+        out.push(deviceAuth.keyFromUrl(key) || key);
       });
     });
     return out;
@@ -1778,9 +1826,6 @@ if (!relayMode) {
     // nothing was pinned, so the pinner never ran.
     pinRelay: answerer.relayKey,
   });
-  // The same function, reachable from a request. See the declaration for
-  // why a const inside this block was not enough.
-  pinnedRelayKey = answerer.relayKey;
   presence.start(require('./hub').relayRequest).catch(() => {});
 
   // ── THE CLAIMS, WHERE THE DEPENDENCIES ARE ─────────────────────────
@@ -1914,9 +1959,9 @@ if (!relayMode) {
     // Answered off a PUBLIC census, so it grants nothing — the promotion
     // itself is an owner verb posted to the relay like any other.
     'relay.partnerCheck': function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody); },
-    // The public census of a relay this node is not on — what a
-    // partnership makes visible. Reads one fixed path; see hub.handleRoster.
-    'relay.roster': function (rq, rs) { hub.handleRoster(rq, rs, readJsonBody); },
+    // `relay.roster` STOOD HERE — the public census of a relay this node
+    // is not on, "what a partnership makes visible". Deleted 2026-09-17
+    // with the only screen that drew it; see the tombstone in hub.js.
     'relay.status': function (rq, rs) {
       hub.handleStatus(rq, rs, readJsonBody, { presence: presence });
     },
@@ -1983,19 +2028,15 @@ if (!relayMode) {
       hub.handlePost(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
     },
     'peer.list': function (rq, rs) { hub.handleWho(rq, rs); },
-    'peer.find': function (rq, rs) { hub.handleHandle(rq, rs, readJsonBody); },
     'peer.acquire': function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); },
-    // Everybody this node can see across every relay it is on and
-    // their partners, minus everybody it already knows. See
-    // hub.handleCandidates — the fan-out is here so the app does not
-    // have to know how many places it took.
     // Ask every relay who matches, rather than downloading every
     // census to find out. See hub.handleSearch.
+    //
+    // `peer.candidates` STOOD BESIDE THIS and answered the same question
+    // by downloading every census on every relay and partner. Deleted
+    // 2026-09-17 with no caller — see the tombstone in hub.js.
     'peer.search': function (rq, rs) {
       hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
-    },
-    'peer.candidates': function (rq, rs) {
-      hub.handleCandidates(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
     },
   }, { wire: true });
 }

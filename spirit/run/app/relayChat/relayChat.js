@@ -33,7 +33,15 @@ var RC_PACKET_APP = 'relay-chat';
 spirit.shell.activateApp({
   mount: function (container, api) {
     var myName = '';
-    var myTail = ''; // the end of this node's own key, for the footer
+    // The end of this node's OWN key, for the footer. Empty since the To
+    // control became a slot, and that is a finding rather than a
+    // casualty: it arrived as `selfTail` on `peer.list`'s answer
+    // (hub.js, handleWho), where the node computes it from its own
+    // identity on disk — a purely LOCAL fact that was paying a whole
+    // census fetch to be told. It wants its own home, not a bigger
+    // question. Contacts reads it the same way and will hit the same
+    // wall when it moves.
+    var myTail = '';
     var statusEl;
     var titleEl;
     // Chat 5: the conversation lives on this node, one file per peer,
@@ -46,16 +54,17 @@ spirit.shell.activateApp({
     var logs = {};       // peer public key -> entries read off disk this visit
     // peer public key -> chat's own refusal of them, off the same file's
     // header. Read for free: logFor already parses the whole file for
-    // every peer on mount (loadKnownLogs) and used to keep only the
-    // entries. This is NOT the node's block — that is whoBook's, it lives
-    // in Contacts, and nothing here may lift it.
+    // every peer that is read back, and used to keep only the entries.
+    // This is NOT the node's block — that is whoBook's, it lives in
+    // Contacts, and nothing here may lift it.
     var blockedHere = {};
     var captions = {};   // peer public key -> what this node calls them
-    // The mailbox's own key. Not somebody to write to any more — the To
-    // list is people, full stop — but still what an old console exchange
-    // on disk is filed under, so chatLog keeps being handed it rather
-    // than filing yesterday's lines under nothing.
-    var relayKey = '';
+    // `relayKey` STOOD HERE — the mailbox's own key, filed against old
+    // console exchanges on disk. `peer.list` was the only thing that
+    // ever set it, so it went empty the moment the To control became a
+    // slot (refreshPeople). Restore it from the selector's answer if
+    // yesterday's lines turn out to need it; do not restore it by
+    // reading the census.
     var people = [];     // the mailbox's peers, captioned by this node
     var search = '';     // a gesture, never remembered
 
@@ -123,7 +132,11 @@ spirit.shell.activateApp({
       // nobody-selected — there is nothing to accept or refuse about a
       // relay.
       '<div class="start-job-form" id="rc-to-row">' +
-        '<select id="rc-to-pick" class="rc-wide"><option value="">(pick a person)</option></select>' +
+        // THE SELECTOR'S SLOT. paintToList repaints this; until there is
+        // an api.contactSelector it repaints it empty, so the first
+        // painted state and the static one have to agree or the control
+        // flickers a promise it cannot keep.
+        '<select id="rc-to-pick" class="rc-wide"><option value="">(waiting on the contact selector)</option></select>' +
         '<span id="rc-peer-strip"></span>' +
       '</div>' +
       '<div class="job-log-panel" id="rc-thread"></div>' +
@@ -587,38 +600,45 @@ spirit.shell.activateApp({
     // faking." Relay Chat receives through api.onPacket or it does not
     // receive; a poll against a deleted door is the faking.
 
-    // Every peer this node knows of, read off disk once a visit, so the
-    // combined view after a reload is the whole record and not merely
-    // whatever the mailbox still holds for us.
-    function loadKnownLogs(people) {
-      (people || []).forEach(function (person) { logFor(person.publicKey); });
-      renderThread();
-    }
+    // loadKnownLogs STOOD HERE. It read every known peer's log off disk
+    // once a visit, so a reload showed the whole record rather than
+    // whatever the mailbox still held — and it needed a LIST of peers to
+    // do it, which is exactly what this app no longer has. It belongs
+    // with the selector: what a person picked is what is worth reading
+    // back.
 
-    // The people list, captioned by this node: myLabel where whoBook has
-    // one, otherwise the label the mailbox shows. The value of each row
-    // is the peer's public KEY — that is what send() resolves against,
-    // so picking a row cannot land on the other john.
+    // ── THE TO CONTROL IS AN EMPTY SLOT NOW (2026-09-17) ─────────────
+    //
+    //   Andy: "that To control would be replaced by the
+    //   select-contact-dropdown, an api.tool for apps to quickly
+    //   implement a contactSelector."
+    //   Andy: "just put an empty dropdown in that place of relayChat, so
+    //   the skeleton still can move a bit."
+    //
+    // This asked `peer.list` and kept the answer: `people`, plus a
+    // `captions` map keyed by public key — the address book, copied into
+    // an app. Which is the thing the node has always said not to do,
+    // in the handler that used to serve the same question: "the browser
+    // holding a copy of it is how `To` gets refilled from `who` by
+    // accident six weeks from now. Downloading is not acquiring."
+    //
+    // A shared selector fixes that structurally rather than by warning:
+    // the app is handed A CHOSEN KEY and never a roster, so there is no
+    // copy to leak, no captions to go stale, and paging belongs to the
+    // selector instead of to each of the three apps that built this
+    // widget separately (contacts, contactsDetails, here).
+    //
+    // EMPTY RATHER THAN REMOVED, and empty rather than faked. The
+    // filter, the marks and the unread counts all still run against the
+    // list — they simply run against nothing — so the shape stays
+    // exercised while the selector does not exist. Same call as the
+    // receive path: "I'd rather see apps breaking than apps faking."
     function refreshPeople() {
-      // Like the inbox and the badges: nothing is asked of the mailbox
-      // until this node is bound to a name. An unbound node has nobody
-      // to write to, so a people list would be a question with no use
-      // for its answer.
       if (!myName) return Promise.resolve();
-      return hubPost('peer.list', null)
-        .then(function (r) { return JSON.parse(r.text); })
-        .then(function (data) {
-          people = (data && data.people) || [];
-          relayKey = (data && data.relayPublicKey) || '';
-          paintMyTail(data && data.selfTail);
-
-          captions = {};
-          people.forEach(function (person) { captions[person.publicKey] = person.caption; });
-
-          loadKnownLogs(people);
-          paintToList();
-        })
-        .catch(function (e) { setStatus('people failed: ' + e.message); });
+      // No fetch. `people` and `captions` stay empty until there is an
+      // api.contactSelector to fill them, and paintToList says so.
+      paintToList();
+      return Promise.resolve();
     }
 
     // Whether a key is anybody this node can address right now. Asked
@@ -633,9 +653,10 @@ spirit.shell.activateApp({
 
     // The To list: people, and a key for a value.
     //
-    // Relays used to be in here too. Chatting to a mailbox reaches the
-    // console (relayConsole.js), and for a mailbox you do not own the
-    // whole of what it will answer is `help` and `whoami` — one
+    // Relays used to be in here too. Chatting to a mailbox reached a
+    // console app (gone since; this named relayConsole.js until
+    // 2026-09-17), and for a mailbox you do not own the whole of what it
+    // would answer was `help` and `whoami` — one
     // diagnostic word, for a row offered to everybody whether they own
     // the thing or not. What it cost to carry was three filter buttons,
     // a rule that flipped the filter when the KIND of your selection
@@ -661,8 +682,13 @@ spirit.shell.activateApp({
       // list until somebody writes to this node or it redeems an invite.
       // Said plainly, or an empty control reads as a broken one and the
       // first fix anyone reaches for is to refill it from `who`.
+      //
+      // AND IT IS EMPTY ON PURPOSE UNTIL THE SELECTOR EXISTS — see
+      // refreshPeople. The copy says which of the two it is, because
+      // "nobody yet" would be a lie about a list that is not being
+      // asked for, and a lie is what sends the next reader to `who`.
       var html = '<option value="">' +
-        (people.length ? '(pick a person)' : '(nobody yet — a contact appears when someone writes to you)') +
+        (people.length ? '(pick a person)' : '(waiting on the contact selector)') +
         '</option>';
 
       // The filter decides what is in the list. It used to be overridden
