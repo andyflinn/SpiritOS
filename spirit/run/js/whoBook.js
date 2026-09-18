@@ -1,7 +1,8 @@
 'use strict';
 
 // Perception only. Lives on a personal node, never on a --relay.
-// File: <rootDir>/relay-state/who.json
+// File: <rootDir>/relay-state/contacts.json (was who.json until
+//       2026-09-18 — see bookPath)
 //
 // [
 //   {
@@ -146,21 +147,62 @@ function addressBook(rootDir) {
   return load(rootDir).filter(function (row) { return acquiredVia(row) !== ACQUIRED_CENSUS; });
 }
 
+// ── IT WAS who.json UNTIL 2026-09-18 ────────────────────────────────
+//
+//   Andy: "who.json should be contacts.json."
+//
+// `who` is the CENSUS'S word — `GET /api/relay/who`, everyone who ever
+// claimed on that box. This file's first paragraph is an argument that it
+// is not that, and it was named after the thing it exists to keep out.
+// That is how the confusion got in: `peer.list` spent two years pouring
+// the census into the address book because the two wore one name.
 function bookPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'who.json');
+  return path.join(rootDir, 'relay-state', 'contacts.json');
+}
+
+// ── AND A NODE THAT ALREADY HAS ONE KEEPS ITS CONTACTS ───────────────
+//
+// A ONE-TIME MOVE, not a fallback. Nothing reads `who.json` after this:
+// it is renamed on the first load that finds it and is never consulted
+// again, so there is no second path to rot and no second place a contact
+// can live. The distinction matters — a permanent fallback is what was
+// deleted from answerRelay this same week, for being a reader that keeps
+// the old thing alive.
+//
+// It renames rather than copies, deliberately. Two files holding contacts
+// is the failure worth avoiding; losing somebody's book is the other, and
+// a rename risks neither.
+function migrateOldName(rootDir) {
+  const now = bookPath(rootDir);
+  if (fs.existsSync(now)) return;
+  const was = path.join(rootDir, 'relay-state', 'who.json');
+  if (!fs.existsSync(was)) return;
+  try { fs.renameSync(was, now); }
+  catch (e) { /* a book that cannot be moved is read where it is, below */ }
 }
 
 function load(rootDir) {
+  migrateOldName(rootDir);
   try {
     const parsed = JSON.parse(fs.readFileSync(bookPath(rootDir), 'utf8'));
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    return [];
+    // THE OLD NAME, ONCE, only if the rename above could not run — a
+    // read-only mount, a permission, a file held open. Not a fallback
+    // anybody relies on: it exists so a migration that fails is still not
+    // a node that has forgotten its contacts.
+    try {
+      const old = JSON.parse(fs.readFileSync(
+        path.join(rootDir, 'relay-state', 'who.json'), 'utf8'));
+      return Array.isArray(old) ? old : [];
+    } catch (e2) { return []; }
   }
 }
 
 function save(rootDir, rows) {
   fs.mkdirSync(path.join(rootDir, 'relay-state'), { recursive: true });
+  // So a save that lands before any read still leaves one file, not two.
+  migrateOldName(rootDir);
   fs.writeFileSync(bookPath(rootDir), JSON.stringify(rows, null, 2));
 }
 

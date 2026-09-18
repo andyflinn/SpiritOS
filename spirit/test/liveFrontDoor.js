@@ -100,16 +100,20 @@ function inbound(home, fromKey) {
   });
 }
 
-function whoBookOf(home) {
+// `contacts.json` since 2026-09-18 — it was `who.json`, which was the
+// census's word for a file that exists precisely to not be the census.
+// Read off disk rather than through the module because what this suite
+// checks is that a REAL node wrote a row, not that a function returns one.
+function contactsOf(home) {
   try {
-    return JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'who.json'), 'utf8'));
+    return JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'contacts.json'), 'utf8'));
   } catch (e) {
     return [];
   }
 }
 
 function rowFor(home, key) {
-  return whoBookOf(home).filter(function (r) { return r.publicKey === key; })[0] || null;
+  return contactsOf(home).filter(function (r) { return r.publicKey === key; })[0] || null;
 }
 
 // A labWorld peer is { name, id, node, url } -- the home and the port
