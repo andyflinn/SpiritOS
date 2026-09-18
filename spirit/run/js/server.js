@@ -937,7 +937,6 @@ function isRelayPublicPath(method, pathname) {
   // earns it the exemption the census is losing (0013, and 0010's
   // granted-GET table).
   if (method === 'GET' && pathname === '/api/relay/key') return true;
-  if (method === 'GET' && pathname === '/api/relay/who') return true;
   // The presence wire. Public in the same sense the rest is: reachable
   // from the internet, and gated inside relay.streamOpen, which refuses
   // an identity this box does not hold before it allocates anything.
@@ -1054,14 +1053,40 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && pathname === '/api/relay/who') {
-    // `?key=` once or many times, or one comma-separated list: a caller
-    // asking about somebody specific gets a census of exactly them. The
-    // whole thing is still what an unparameterised read returns, because
-    // bootstrap has no key to ask about yet (0010).
-    handleRelayWho(res, url.searchParams.getAll('key'));
-    return;
-  }
+  // ── GET /api/relay/who STOOD HERE — THE CENSUS, DELETED 2026-09-18 ──
+  //
+  //   Andy: "the census mechanism is a cheat." — "when a cheat is
+  //   identified, it must be eradicated." — "the eradication must be done
+  //   to eliminate temptation."
+  //
+  // A public, unsigned, unbounded read of every member of this relay: 151
+  // bytes a row, ~147 KB at a thousand, answerable by anyone as often as
+  // they liked. Named a cheat in 0010 on 2026-09-17 and gone the next day.
+  //
+  // EIGHT READERS, AND NOT ONE NEEDED A REPLACEMENT. peer.candidates,
+  // peer.find and relay.roster had no caller at all. The device page
+  // wanted a label for one sentence. peer.list was refreshing a fallback
+  // label — and handshaking every member of the relay into that node's own
+  // book while it was there. relay.partnerCheck wanted to know who runs a
+  // box. peer.acquire wanted a label the relay had already said in a
+  // search reply. ownerBadge.probe was asking each relay to remember what
+  // the node itself had done.
+  //
+  // WHAT REPLACED IT:
+  //
+  //   GET /api/relay/key    who this box is and who runs it — 97 bytes,
+  //                         flat, no membership term (0013)
+  //   relayKeys.seat        the node's own record of where it holds a
+  //                         seat, written when the claim is granted
+  //   peer.search           ask who matches; ranked, slot-bounded, and
+  //                         honest about what it dropped
+  //   the stream            presence and routes, pushed as they happen
+  //
+  // The rule that settles the general case is 0012, widened the same week:
+  // no party may ASK for an entire enrolment list — not a stranger, not a
+  // member, not the owner — and no bounded, paginated or owner-only
+  // version of one. A broadcast is not a list: what is refused is an
+  // unbounded PULL, not disclosure to members.
 
   // GET /api/relay/inbox AND GET /api/hub/inbox STOOD HERE — the ring's
   // read half on the relay and the node's proxy onto it. Both deleted by
@@ -1236,47 +1261,15 @@ const server = http.createServer((req, res) => {
   // an access log. It now lives on the only signed GET left — see
   // relay.streamSignatureFrom, and the stream route above that calls it.
 
-  // One `?key=a&key=b`, or one `?key=a,b` -- both spellings arrive, and a
-  // caller should not have to know which this box prefers.
-  function expandKeys(keys) {
-    var out = [];
-    (keys || []).forEach(function (raw) {
-      String(raw).split(',').forEach(function (k) {
-        var key = k.trim();
-        if (!key) return;
-        // A KEY MAY ARRIVE IN THE DEVICE PAGE'S SPELLING. Those URLs
-        // carry the full key url-escaped — `-` for `+`, `_` for `/`, no
-        // padding — because that is how the relay ties a login post to a
-        // peer, and a page holding one should not have to convert it
-        // back to ask about itself. It used to: device.html carried its
-        // own copy of the encoding in both directions.
-        //
-        // keyFromUrl owns that rule and refuses anything containing
-        // `+`, `/` or `=`, so a stored-form key returns '' and falls
-        // through unchanged. One conversion, in the one module that
-        // already defines it.
-        out.push(deviceAuth.keyFromUrl(key) || key);
-      });
-    });
-    return out;
-  }
-
-  function handleRelayWho(res, keys) {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    // The relay names itself here as well as listing its peers: it is a
-    // party to conversations (the census reply comes from it), and a
-    // party with no key is a party nothing can file (CYCLE-CHAT-5.1).
-    // Null on a relay that has not been restarted since it grew one.
-    res.end(JSON.stringify({
-      peers: relay.who(expandKeys(keys)),
-      relayPublicKey: relay.relayPublicKey(),
-      // KEY AND LABEL ARE A PAIR (Andy), so the public census carries
-      // both. A member reads this to see what the box calls itself
-      // rather than only what their own relays.json calls it — the same
-      // distinction `publicLabel` draws for a peer.
-      relayLabel: relay.relayLabel(),
-    }));
-  }
+  // expandKeys STOOD HERE. It turned `?key=a&key=b` or `?key=a,b` into a
+  // list for the census's narrow form, and normalised the device page's
+  // url-safe spelling through deviceAuth.keyFromUrl so a page holding one
+  // could ask about itself without converting it back.
+  //
+  // Both callers are gone: the device page asks the relay nothing, and the
+  // census route it served was deleted the same day. Narrowing was the
+  // intermediate strategy and it is not the one that finished the job —
+  // "a narrower cheat is a defended one" (0012).
 
   // handleRelayStatus STOOD HERE. It read `name` and `sig` off the query
   // string — the last route on this box that did — and handed back the

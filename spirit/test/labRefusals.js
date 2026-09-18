@@ -72,7 +72,7 @@ async function waitServing(timeoutMs) {
   for (;;) {
     /* eslint-disable no-await-in-loop */
     try {
-      const res = await fetch(ORIGIN + '/api/relay/who');
+      const res = await fetch(ORIGIN + '/api/relay/key');
       if (res.status === 200) return true;
     } catch (e) { /* not yet */ }
     if (Date.now() - startedAt > timeoutMs) return false;
@@ -162,7 +162,7 @@ async function run() {
   // that key in its own census, and posts addressed to it are answered
   // like anybody's. It is the one address guaranteed to exist on a box
   // this suite has not spent an invite on.
-  const relayKey = (await (await fetch(ORIGIN + '/api/relay/who')).json()).relayPublicKey;
+  const relayKey = (await (await fetch(ORIGIN + '/api/relay/key')).json()).relayPublicKey;
   if (!relayKey) { test.fail('the relay published no key of its own'); return; }
   const target = { publicKey: relayKey };
   const huge = 'x'.repeat(16385);

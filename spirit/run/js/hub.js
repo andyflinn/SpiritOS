@@ -795,9 +795,30 @@ function createHub(rootDir) {
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(markMine(rootDir, r.text));
 
-            if (r.status >= 200 && r.status < 300 && presence && probe) {
-              try { presence.start(probe); }
-              catch (e) { /* the claim stands; the next boot connects */ }
+            if (r.status >= 200 && r.status < 300) {
+              // ── WRITE THE SEAT DOWN, HERE, WHERE IT IS KNOWN ────────
+              //
+              // Everything needed is in hand at this instant: the url, the
+              // label asked for, and a 2xx saying it was granted. Until
+              // 2026-09-18 none of it was recorded, so every subsequent
+              // boot re-derived it by fetching the relay's ENTIRE
+              // membership and looking for itself (ownerBadge.probe) — the
+              // last census read in the tree, and the only one that was
+              // not a question about other people.
+              //
+              //   Andy: "persist necessary information at claim time,
+              //   re-use that information on boot."
+              //
+              // Before the stream, not after: a claim that worked is a
+              // seat held whether or not connecting succeeds, and the next
+              // boot must know that without asking.
+              try { relayKeys.seat(rootDir, url, (body && body.name) || ''); }
+              catch (e) { /* the claim stands; a boot can still backfill */ }
+
+              if (presence && probe) {
+                try { presence.start(probe); }
+                catch (e) { /* the claim stands; the next boot connects */ }
+              }
             }
           })
           .catch(function (err) { fail(res, 502, String(err.message || err)); });
@@ -1395,59 +1416,69 @@ function createHub(rootDir) {
       guarded(res, target, function (url) {
         // -- ASKING ABOUT ONE KEY, NOT READING THE WHOLE LEDGER ---------
         //
-        // This fetched the entire census to answer yes or no about a
-        // single key: 151 bytes a member, so ~147 KB at a thousand, for a
-        // question whose answer is one row. The sharpest waste of the nine
-        // callers that read this route (relay/ROUTE-DISCOVERY.md).
+        // ── IT ASKS THE RELAY NOTHING (2026-09-18) ──────────────────
         //
-        // `?key=` narrows it at the same door, so nothing is added to
-        // 0010's register and a relay that has not been updated simply
-        // ignores the parameter and answers as it always did -- which the
-        // filter below still handles correctly, because it was already
-        // looking for one row in a list.
-        relayRequest(url, 'GET',
-          '/api/relay/who?key=' + encodeURIComponent(publicKey), null)
-          .then(function (r) {
-            var parsed = null;
-            try { parsed = JSON.parse(r.text); }
-            catch (e) { parsed = null; }
-            var peers = Array.isArray(parsed) ? parsed : ((parsed && parsed.peers) || []);
-            var found = peers.filter(function (p) { return p && p.publicKey === publicKey; })[0];
-            if (!found) {
-              // NAME THE RELAY. With one census this said "this mailbox"
-              // and there was only one it could mean; with partners there
-              // are several, and "not found" is useless without saying
-              // where it was looked for.
-              fail(res, 404, 'no peer at ' + url + ' with that key');
-              return;
-            }
-            var id = auth.loadIdentity(rootDir);
-            if (id && id.publicKey === publicKey) {
-              fail(res, 400, 'that key is this node');
-              return;
-            }
-            // How the key was confirmed. `handle` is a human comparing
-            // key endings out loud (cut 2). `invite` is the owner
-            // recognising a label they minted, now claimed on their own
-            // mailbox — the census is what proves the two are the same
-            // key, and only the owner can read one. Nothing else is
-            // accepted here: a page cannot promote a stranger by asking
-            // nicely.
-            var wanted = String((body && body.via) || 'handle');
-            var via = (wanted === 'invite') ? 'invite' : 'handle';
-            var row = whoBook.acquire(rootDir, {
-              publicKey: publicKey,
-              publicLabel: found.publicLabel || '',
-              relay: url,
-            }, via);
-            res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({
-              publicKey: row.publicKey,
-              publicLabel: row.publicLabel,
-              acquiredVia: whoBook.acquiredVia(row),
-            }));
-          })
-          .catch(function (err) { fail(res, 502, String(err.message || err)); });
+        //   Andy: "callers of the census have two choices: use other
+        //   interfaces or die."
+        //
+        // It fetched the entire census to answer yes or no about a single
+        // key, then narrowed to `?key=` for a day. Both were the census,
+        // and this was the last caller holding the route open.
+        //
+        // The read did two jobs: it CONFIRMED the key was on that relay,
+        // and it lifted `publicLabel` off the row.
+        //
+        // The label travels with the row now. A key reaches this verb
+        // because somebody clicked a thing the relay had already
+        // described — a search result carries `publicLabel`, and Contacts
+        // puts it on the button. Asking the relay to repeat what it just
+        // said is a node spending its own request budget on nothing
+        // (design/principles/THE-REQUESTER-IS-RESPONSIBLE.md).
+        //
+        // THE CONFIRMATION IS GONE, deliberately, and it bought less than
+        // it looked:
+        //
+        // - It never checked the thing that matters. `via: 'handle'` means
+        //   a human compared key endings out loud; the census only said
+        //   "that key is enrolled here", which a typo landing on a real
+        //   key passes just as well.
+        // - A contacts row is this node's OWN PERCEPTION, in a local file.
+        //   A wrong one is a contact that never answers — honest, visible
+        //   and deletable — which is a small thing against keeping a cheat
+        //   alive to prevent it.
+        // - And posting is the real test: 0006 has the relay deliver or
+        //   refuse instantly, so writing to somebody proves reachability,
+        //   which is more than enrolment ever proved.
+        //
+        // What it still refuses is acquiring THIS NODE, a local check that
+        // needs nobody.
+        var id = auth.loadIdentity(rootDir);
+        if (id && id.publicKey === publicKey) {
+          fail(res, 400, 'that key is this node');
+          return;
+        }
+
+        // How the key was confirmed. `handle` is a human comparing key
+        // endings out loud (cut 2). `invite` is the owner recognising a
+        // label they minted, now claimed on their own mailbox. Nothing
+        // else is accepted here: a page cannot promote a stranger by
+        // asking nicely.
+        var wanted = String((body && body.via) || 'handle');
+        var via = (wanted === 'invite') ? 'invite' : 'handle';
+        var row = whoBook.acquire(rootDir, {
+          publicKey: publicKey,
+          // Empty is a real answer: a pasted key has no label until its
+          // holder writes to you or you type one yourself. Inventing one
+          // would be worse than an unnamed row.
+          publicLabel: String((body && body.publicLabel) || ''),
+          relay: url,
+        }, via);
+        res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+          publicKey: row.publicKey,
+          publicLabel: row.publicLabel,
+          acquiredVia: whoBook.acquiredVia(row),
+        }));
       });
     }).catch(function () {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });

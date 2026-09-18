@@ -23,6 +23,8 @@ const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const auth = require('../run/js/relayAuth');
+// GAP 1 again: the node's own record of where it holds a seat.
+const relayKeys = require('../run/js/relayKeys');
 const buildStamp = require('../run/js/buildStamp');
 
 const MASTER = 'http://127.0.0.1:65420';
@@ -200,7 +202,7 @@ function createWorld(opts) {
     relay = await ensureNode('relay', 'relay', RELAY_PORT);
     if (!relay.ok) return relay;
     relay.url = 'http://127.0.0.1:' + RELAY_PORT;
-    if (!await answering(relay.url + '/api/relay/who')) {
+    if (!await answering(relay.url + '/api/relay/key')) {
       return { ok: false, error: 'lab relay did not answer on ' + relay.url };
     }
 
@@ -261,6 +263,17 @@ function createWorld(opts) {
         path.join(node.home, 'app', 'natter', 'relays.json'),
         JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
       );
+      // AND THE SEAT (2026-09-18). This lab claims by posting STRAIGHT AT
+      // the relay above, which is the relay's half of a bind and not the
+      // node's: the box gets a row and the node is never told.
+      //
+      // That was invisible while a node re-derived its memberships from
+      // each relay's census on every boot. It records them itself now —
+      // Andy: "persist necessary information at claim time, re-use that
+      // information on boot" — so a claim made AROUND a node leaves it
+      // correctly not knowing, and a world-builder has to write the
+      // node's half as it writes every other file here (GAP 1).
+      relayKeys.seat(node.home, relay.url, name);
       // AND session.json, or the shell believes this node has no name.
       // firstRun() is decided by exactly one thing — a label in this file
       // — and an unbound node shows Natter alone and nothing else. So a
@@ -312,8 +325,8 @@ function createWorld(opts) {
     // same reason answerRelay.relayKey reads it there on a real node.
     let relayKey = '';
     try {
-      const census = await (await fetch(relayUrl + '/api/relay/who')).json();
-      relayKey = (census && census.relayPublicKey) || '';
+      const said = await (await fetch(relayUrl + '/api/relay/key')).json();
+      relayKey = (said && said.relayPublicKey) || '';
     } catch (e) { relayKey = ''; }
     if (!relayKey) return { ok: false, error: 'the lab relay published no key' };
 

@@ -1,222 +1,162 @@
 'use strict';
 
 // spirit/test/censusNarrow.js
-// THE CENSUS ANSWERS ABOUT KEYS SOMEBODY NAMED.
+// THE CENSUS IS GONE, AND NOTHING REACHES FOR IT.
 //
-//   Andy: "the most fetched because it bootstrapped concepts quickly, but
-//   is not scalable."
-//   Andy: "so... are we ready to replace fetchCensus at at least one spot?"
+//   Andy: "the census mechanism is a cheat." — "when a cheat is
+//   identified, it must be eradicated." — "the eradication must be done to
+//   eliminate temptation."
 //
-// `GET /api/relay/who` is read by nine callers and six of them want one
-// row. `peer.acquire` was the sharpest: it pulled the whole census —
-// 151 bytes a member, ~147 KB at a thousand — to answer yes or no about
-// ONE key.
+// `GET /api/relay/who` was a public, unsigned, unbounded read of every
+// member of a relay: 151 bytes a row, ~147 KB at a thousand, answerable by
+// anyone as often as they liked. Named a cheat in decision 0010 on
+// 2026-09-17 and deleted on 2026-09-18.
 //
-// ── SAME DOOR, NARROWER ANSWER ───────────────────────────────────────
+// ── WHY THIS FILE STILL HAS THIS NAME ────────────────────────────────
 //
-// Not a new route, so nothing is added to 0010's register: a parameter
-// that filters an existing response is not a new way of speaking. And
-// `key` on a query is explicitly allowed there — "it is the identity
-// being asked for, not the permission to be it" — which is the
-// distinction that keeps signatures off query strings and lets this
-// through.
+// It was written for the INTERMEDIATE strategy — narrowing the census with
+// `?key=` so callers could ask about somebody specific. That worked, moved
+// five callers, and was not what finished the job:
 //
-// THE OLD FORM IS UNTOUCHED, and has to be: the census is what a node
-// reads *before it has anything* (0010), so bootstrap has no key to ask
-// about yet. A relay that has not been updated ignores the parameter and
-// answers as it always did, and the caller still works — which is the
-// only reason one caller can migrate at a time.
+//   Andy: "callers of the census have two choices: use other interfaces
+//   or die."
+//
+// Narrowing is how a cheat survives. 0012 says it plainly — *a narrower
+// cheat is a defended one* — so the parameter went with the route, and
+// this suite became the guard instead of the demonstration. The name is
+// kept so the history is findable; what it checks is the opposite of what
+// it checked.
+//
+// ── WHAT IT GUARDS ───────────────────────────────────────────────────
+//
+// Source-level, and deliberately: a relapse looks exactly like a caller
+// that never moved, and the harness has caught every one of them this way.
+// Eight readers went between 2026-09-17 and 2026-09-18 and NOT ONE needed
+// a replacement — the thing to defend is that nobody quietly adds a ninth.
 
-const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const auth = require('../run/js/relayAuth');
-const { createRelay } = require('../run/js/relay');
 
-function relayOf(names) {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-narrow-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  auth.saveIdentity(home, auth.generateIdentity('relay'));
+const RUN = path.join(__dirname, '..', 'run');
 
-  const owner = auth.generateIdentity('owner');
-  auth.writeAllowKeys(home, [{ name: 'owner', publicKey: owner.publicKey }]);
+// Comments are stripped before matching. Several files carry a tombstone
+// NAMING the route they no longer call — that is the record working, and a
+// check that cannot tell prose from code would read it as a relapse.
+function codeOf(file) {
+  return fs.readFileSync(path.join(RUN, file), 'utf8').replace(/\/\/.*/g, '');
+}
 
-  const box = createRelay(home);
-  box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
-
-  const people = {};
-  names.forEach(function (name, i) {
-    const id = auth.generateIdentity(name);
-    const minted = box.mint('owner', name, 7, '');
-    box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
-      id.publicKey, 'client-' + i, minted.invite.token, name);
-    people[name] = id;
+function walk(dir, out) {
+  fs.readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      // node_modules is nobody's code here, and process/ holds spawned
+      // scripts that never speak to a relay.
+      if (entry.name === 'node_modules' || entry.name === 'process') return;
+      walk(full, out);
+      return;
+    }
+    if (/\.(js|html)$/.test(entry.name)) out.push(path.relative(RUN, full));
   });
-  return { box: box, owner: owner, people: people };
+  return out;
 }
 
-test.startTest('The census answers about keys somebody named');
+test.startTest('The census is gone, and nothing reaches for it');
 
-const R = relayOf(['ann', 'bob', 'cat']);
+// ── 1. NO CALLER, ANYWHERE UNDER run/ ────────────────────────────────
 
-// ── 1. NAMED, AND ONLY THEM ──────────────────────────────────────────
+test.subHeading('No file under run/ asks for it');
 
-test.subHeading('One key in, one row out');
+const offenders = walk(RUN, []).filter(function (rel) {
+  return /api\/relay\/who/.test(codeOf(rel));
+});
 
-const one = R.box.who([R.people.bob.publicKey]);
-
-if (one.length === 1 && one[0].publicKey === R.people.bob.publicKey) {
-  test.check('asking about bob answers bob, and nobody else');
+if (offenders.length === 0) {
+  test.check('no code under run/ names /api/relay/who — ' +
+    walk(RUN, []).length + ' files checked');
 } else {
-  test.fail('got ' + one.length + ' rows: ' + JSON.stringify(one.map(function (p) { return p.publicLabel; })));
+  test.fail('still reaching for the census: ' + offenders.join(', '));
 }
 
-// THE ROW IS THE SAME ROW. Narrowing changes which rows come back and
-// nothing about what a row says, so a caller that already knew how to
-// read one does not have to learn anything.
-const whole = R.box.who();
-const bobWhole = whole.filter(function (p) { return p.publicKey === R.people.bob.publicKey; })[0];
-
-if (JSON.stringify(one[0]) === JSON.stringify(bobWhole)) {
-  test.check('and it is byte-identical to the row in the whole census');
-} else {
-  test.fail('the narrowed row differs: ' + JSON.stringify(one[0]));
-}
-
-// ── SEVERAL, BECAUSE ONE CALLER WILL WANT SEVERAL ────────────────────
+// ── 2. AND THE DOOR ITSELF IS SHUT ───────────────────────────────────
 //
-// `about([keys])` in ROUTE-DISCOVERY.md is the same question in bulk, and
-// it should not need a second parameter shape when it arrives.
-const two = R.box.who([R.people.ann.publicKey, R.people.cat.publicKey]);
+// A caller can be removed and the route left standing, which is the exact
+// shape 0010 calls temptation: "a door that answers is an invitation."
 
-if (two.length === 2) {
-  test.check('two keys in, two rows out — the bulk form needs no new spelling');
+test.subHeading('And the relay does not serve it');
+
+const server = codeOf(path.join('js', 'server.js'));
+
+if (!/['"]\/api\/relay\/who['"]/.test(server)) {
+  test.check('server.js has no route for it, and no entry in the public-path list');
 } else {
-  test.fail('got ' + two.length + ' rows for two keys');
+  test.fail('the route is still served');
 }
 
-// ── A KEY NOBODY HOLDS ───────────────────────────────────────────────
+// THE HANDLER AND ITS HELPER WENT TOO. A dead function is the next
+// person's starting point.
+if (!/handleRelayWho|expandKeys/.test(server)) {
+  test.check('handleRelayWho and expandKeys are gone with it');
+} else {
+  test.fail('the handler or its key-expander is still there');
+}
+
+// ── 3. WHAT ANSWERS INSTEAD ──────────────────────────────────────────
 //
-// Which is the answer `peer.acquire` exists to get: "no, that key is not
-// here". An empty list, not an error — the relay answered perfectly well.
-const none = R.box.who(['MCowBQYDK2VwAyEA' + 'z'.repeat(27) + '=']);
+// Named here so a reader of this file learns where the questions went,
+// rather than only that they stopped being asked.
 
-if (Array.isArray(none) && none.length === 0) {
-  test.check('and a key nobody holds is an empty answer, not a refusal');
+test.subHeading('And the questions it used to answer have homes');
+
+if (/['"]\/api\/relay\/key['"]/.test(server)) {
+  test.check('who a box is and who runs it — GET /api/relay/key, fixed cost');
 } else {
-  test.fail('a stranger key returned: ' + JSON.stringify(none));
+  test.fail('the key door is missing');
 }
 
-// ── 2. THE OLD FORM IS UNTOUCHED ─────────────────────────────────────
+const badge = codeOf(path.join('js', 'ownerBadge.js'));
 
-test.subHeading('And asking for everything still answers everything');
-
-if (whole.length === 4) {
-  test.check('no parameter, whole census — owner and three members');
+if (/relayKeys\.seatedUrls/.test(badge)) {
+  test.check('where this node holds a seat — its own record, written at claim');
 } else {
-  test.fail('the unparameterised census changed: ' + whole.length + ' rows');
+  test.fail('ownerBadge no longer reads the seat record');
 }
 
-// AN EMPTY LIST IS NOT A FILTER. `?key=` with nothing after it, or a
-// caller passing an empty array, must not mean "answer nothing" — it
-// means the caller named nobody, which is the bootstrap case.
-const empty = R.box.who([]);
+const hub = codeOf(path.join('js', 'hub.js'));
 
-if (empty.length === whole.length) {
-  test.check('and naming nobody is the whole census, not an empty one');
+if (/relayKeys\.seat\(/.test(hub)) {
+  test.check('and the claim writes that record, which is what made the rest possible');
 } else {
-  test.fail('an empty key list filtered everything out');
+  test.fail('nothing records a seat when a claim succeeds');
 }
 
-// ── 3. WHY THIS MATTERS, IN BYTES ────────────────────────────────────
-
-test.subHeading('Which is the difference between a question and a ledger');
-
-const wholeBytes = JSON.stringify(whole).length;
-const oneBytes = JSON.stringify(one).length;
-
-if (oneBytes < wholeBytes) {
-  test.check('one row is ' + oneBytes + ' bytes against ' + wholeBytes +
-    ' for four members — and the gap is the membership, so it grows');
-} else {
-  test.fail('narrowing saved nothing: ' + oneBytes + ' vs ' + wholeBytes);
-}
-
-// AND THE CALLER THAT MOVED. Asserted on the source, because what matters
-// is that the expensive form is no longer reached from there.
-const hub = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8');
-const acquire = hub.slice(hub.indexOf('function handleContact'));
-const body = acquire.slice(0, acquire.indexOf('\n  function '));
-
-if (/\/api\/relay\/who\?key=/.test(body)) {
-  test.check('and peer.acquire asks about the key it is confirming');
-} else {
-  test.fail('peer.acquire still reads the whole ledger');
-}
-
-// ── THE CALLERS THAT FOLLOWED IT (2026-09-17) ────────────────────────
+// ── 4. THE RULE, NOT JUST THIS ROUTE ─────────────────────────────────
 //
-// Asserted on the source, like the one above, because what matters is
-// that the expensive form is no longer reached from there. A migrated
-// caller that quietly reverts looks exactly like one that never moved.
+// 0012, widened 2026-09-18: no party may ASK for an entire enrolment list
+// — not a stranger, not a member, not the owner — and no bounded,
+// paginated or owner-only version of one. A broadcast is a different
+// thing: what is refused is an unbounded PULL, not disclosure to members.
+//
+// Asserted on the decision rather than on code, because the next census
+// will not be called `who`.
 
-test.subHeading('And the callers that followed peer.acquire');
+test.subHeading('And the rule that keeps a second one from appearing');
 
-// ── AND relay.partnerCheck LEFT ENTIRELY (2026-09-18) ────────────────
-//
-// It narrowed to `?key=` on 2026-09-17, keeping ONE whole-census read on
-// the refusal path so it could still say "that relay is owned by somebody
-// else (Jazzmin Thut)". Two assertions stood here for that arrangement.
-//
-//   Andy: "when a cheat is identified, it must be eradicated."
-//
-// A `?owner=1` parameter would have answered the refusal too — and would
-// have been the wrong move, because it answers by making the cheat
-// smaller, and a smaller cheat is a defended one. `GET /api/relay/key`
-// carries `ownerKey` and `ownerLabel` instead: two fields already public
-// on the row marked `owner`, asked for without asking for the membership
-// they were buried in.
-//
-// So the assertion is the strong one now.
-const check = hub.slice(hub.indexOf('function handlePartnerCheck'));
-const checkBody = check.slice(0, check.indexOf('\n  function '));
+const twelve = fs.readFileSync(
+  path.join(__dirname, '..', '..', 'design', 'decisions',
+    '0012-a-relay-never-asks-for-a-member-list.md'), 'utf8');
 
-if (!/api\/relay\/who/.test(checkBody.replace(/\/\/.*/g, ''))) {
-  test.check('relay.partnerCheck reads no census on any path — it asks who runs the box');
+if (/No party may ASK for an entire enrolment list/.test(twelve)) {
+  test.check('0012 covers every direction, not only relay-to-relay');
 } else {
-  test.fail('handlePartnerCheck still reads the census');
+  test.fail('0012 no longer states the widened rule');
 }
 
-// AND IT STILL NAMES THE OTHER OWNER. That sentence is the only thing a
-// person reads when they get a promotion wrong, and it was the reason the
-// refusal path kept a census read at all. Losing it while removing the
-// census would have been a silent downgrade dressed as a cleanup.
-if (/owned by somebody else/.test(checkBody) && /ownerLabel/.test(checkBody)) {
-  test.check('and still names who does own it, from the same fixed-cost answer');
+if (/a broadcast is not a list/i.test(twelve)) {
+  test.check('and says why a broadcast is not one — cost shape, not disclosure');
 } else {
-  test.fail('the refusal no longer names the other owner');
-}
-
-// It narrowed to `?key=` for a few hours on 2026-09-17 and then stopped
-// asking at all — the only thing it wanted was a label in a sentence,
-// and Andy cut the sentence: "the page posts a constant username and a
-// pasted secret. That's all."
-//
-// So the assertion is the stronger one: NO browser reads this route.
-// That matters beyond the bytes. The census must answer a party with no
-// identity because this page had none — and now nothing does, which
-// removes one of the reasons the door has to stay open to anybody.
-const devicePage = fs.readFileSync(path.join(__dirname, '..', 'run', 'device.html'), 'utf8');
-// Comments stripped: the page keeps a tombstone naming the route it no
-// longer calls, and a check that cannot tell prose from code would read
-// that as a relapse.
-const deviceCode = devicePage.replace(/\/\/.*/g, '');
-
-if (!/\/api\/relay\/who/.test(deviceCode)) {
-  test.check('the device page reads no census at all — no browser does');
-} else {
-  test.fail('device.html still fetches the census');
+  test.fail('0012 lost the broadcast correction');
 }
 
 test.reportSuccessFailureCount();

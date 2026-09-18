@@ -98,7 +98,7 @@ const CENSUS = {
   'test/jobCallback.js': 1,
   'test/labLifecycle.js': 1,
   'test/labPersistence.js': 2,
-  'test/labPopulate.js': 4,
+  'test/labPopulate.js': 3,
   'test/labRefusals.js': 3,
   'test/labRelaySurface.js': 2,
   'test/labServableStatic.js': 2,
@@ -106,7 +106,7 @@ const CENSUS = {
   'test/liveFrontDoor.js': 3,
   'test/liveRelay.js': 2,
   'test/oneDoor.js': 3,        // this file: the patterns it searches for
-  'test/presenceShow.js': 5,
+  'test/presenceShow.js': 4,
   'test/presenceWire.js': 6,
   'test/relayGates.js': 2,
   'test/relayProbe.js': 1,

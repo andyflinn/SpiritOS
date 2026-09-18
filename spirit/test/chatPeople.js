@@ -422,9 +422,19 @@ function relayServer(box) {
   return new Promise(function (resolve) {
     const server = http.createServer(function (req, res) {
       const url = new URL(req.url, 'http://127.0.0.1');
-      if (req.method === 'GET' && url.pathname === '/api/relay/who') {
+      // A `/api/relay/who` branch STOOD HERE serving box.who(). The
+      // census was deleted on 2026-09-18 (decision 0010, 0012), and a
+      // fake more capable than the thing it stands in for is how two
+      // mocks come to agree about a protocol neither implements.
+      if (req.method === 'GET' && url.pathname === '/api/relay/key') {
+        const own = box.ownerPublic();
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ peers: box.who(), relayPublicKey: box.relayPublicKey() }));
+        res.end(JSON.stringify({
+          relayPublicKey: box.relayPublicKey(),
+          relayLabel: box.relayLabel(),
+          ownerKey: own.ownerKey,
+          ownerLabel: own.ownerLabel,
+        }));
         return;
       }
       res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });

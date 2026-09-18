@@ -58,7 +58,7 @@ async function post(url, body) {
 
 async function census() {
   try {
-    const res = await fetch(ORIGIN + '/api/relay/who');
+    const res = await fetch(ORIGIN + '/api/relay/key');
     if (res.status !== 200) return null;
     return await res.json();
   } catch (e) {
@@ -171,12 +171,25 @@ async function run() {
     test.fail('restart: ' + again.status + ' ' + again.text);
   }
 
-  const after = await census();
-  const keys = ((after && after.peers) || []).map(function (p) { return p.publicKey; });
-  if (keys.indexOf(andy.publicKey) !== -1) {
+  // ── READ THE FILE, NOT A ROUTE (2026-09-18) ──────────────────────
+  //
+  // This asked `GET /api/relay/who` and looked for andy's key in the
+  // list. That route is gone — a public, unsigned read of every member
+  // was named a cheat in 0010 and eradicated the next day — and the
+  // question it was standing in for is one this suite can ask directly.
+  //
+  // Better evidence besides: a PERSISTENCE suite should read what
+  // persisted. `routingTable()` above already does, and a row that is on
+  // disk after a restart is the claim being made, where a row that is
+  // served by a route is that plus a route.
+  const reread = routingTable();
+  const survived = reread && reread.peers && reread.peers[andy.publicKey];
+  if (survived && survived.owner === true) {
     test.check('andy still holds his row — by KEY, which is what a row is');
   } else {
-    test.fail('census after restart: ' + JSON.stringify(keys.map(function (k) { return String(k).slice(-8); })));
+    test.fail('routingTable.json after restart: ' +
+      JSON.stringify(Object.keys((reread && reread.peers) || {})
+        .map(function (k) { return String(k).slice(-8); })));
   }
 
   // AND THE BOX IS STILL SHUT. A census that lists somebody proves the

@@ -438,8 +438,8 @@ async function run() {
     // key must already be pinned — pinned at stream-open, not lazily by
     // the code the door would have blocked.
     const relayPort = 65425;
-    const census = await hub(relayPort, 'GET', '/api/relay/who');
-    const relayKey = census.body && census.body.relayPublicKey;
+    const said = await hub(relayPort, 'GET', '/api/relay/key');
+    const relayKey = said.body && said.body.relayPublicKey;
     let pins = {};
     try {
       pins = JSON.parse(fs.readFileSync(

@@ -83,6 +83,87 @@ function pinned(rootDir, url) {
   return (row && typeof row.publicKey === 'string' && row.publicKey) || '';
 }
 
+// ── AND THE SEAT, WHICH IS THIS NODE'S OWN HISTORY ──────────────────
+//
+//   Andy: "doesn't the node persist the necessary connection information
+//   when the bind occurs? A slot is claimed on the relay — at that point
+//   the node must know relay ID, url, etc. Why would it not have its
+//   memberships registered in a way that allows rapid re-connect? Like
+//   the relay, the node must record the enrolment details."
+//
+// It did not, and the cost was the last census read in the tree.
+//
+// A node knew everything at claim time — the url, the relay's key, the
+// label it asked for, and a 201 saying it worked — and wrote none of it
+// down. So on every boot it re-derived its own history by fetching each
+// relay's ENTIRE MEMBERSHIP and looking for itself in the list
+// (ownerBadge.probe). Asking somebody else to remember what you did.
+//
+// This file is already "what this node knows about a relay it deals
+// with", so the seat goes on the same row as the pin rather than into a
+// second store: one url, one record, one owner.
+function seat(rootDir, url, label, atMs) {
+  var u = normalizeUrl(url);
+  if (!u) return false;
+  var book = load(rootDir);
+  var at = new Date(atMs == null ? Date.now() : atMs).toISOString();
+  var row = book[u] || {};
+  row.seat = {
+    // What this node asked to be called here. A relay may normalise it,
+    // and the node may rename later through the `rename` verb — this is
+    // the record of the claim, not a live mirror of the label.
+    label: String(label == null ? '' : label),
+    // FIRST claim kept across a re-claim, like firstSeen above: the
+    // useful fact is how long this seat has been held.
+    claimedAt: (row.seat && row.seat.claimedAt) || at,
+  };
+  book[u] = row;
+  return save(rootDir, book);
+}
+
+// Where this node holds a seat — the question `probe` used to answer by
+// reading a census.
+//
+// ── A PIN COUNTS AS A SEAT, FOR NODES THAT PREDATE THIS ──────────────
+//
+// A pin is only ever written from answerRelay.relayKey, which is reached
+// from presenceNode.openTo, which is called on relays the node was told
+// it holds a row on. So on any node that has booted and connected, the
+// pinned set IS the membership set — written at the wrong moment, for a
+// different reason, but sound.
+//
+// That is the migration: an existing node needs no census read to learn
+// what it already has on disk, and a node claiming from here on records
+// the seat properly at the moment it is granted.
+function seatedUrls(rootDir) {
+  var book = load(rootDir);
+  return Object.keys(book).filter(function (u) {
+    var row = book[u];
+    if (!row) return false;
+    if (row.seat) return true;
+    return typeof row.publicKey === 'string' && !!row.publicKey;
+  });
+}
+
+// What this relay calls this node, as recorded at claim. Empty for a
+// backfilled row, which has a pin and no seat — the label was never
+// written down, and inventing one would be worse than saying nothing.
+function seatLabel(rootDir, url) {
+  var row = load(rootDir)[normalizeUrl(url)];
+  return (row && row.seat && String(row.seat.label || '')) || '';
+}
+
+// Evicted, or a seat given up. Leaves the PIN alone: who that relay is
+// does not change because this node is no longer on it, and forgetting
+// the key would silently re-enable trust-on-first-use next time.
+function unseat(rootDir, url) {
+  var u = normalizeUrl(url);
+  var book = load(rootDir);
+  if (!book[u] || !book[u].seat) return false;
+  delete book[u].seat;
+  return save(rootDir, book);
+}
+
 // THE WHOLE QUESTION, in one word.
 //
 //   'new'      nothing on record — first contact, the caller may accept
@@ -158,4 +239,8 @@ module.exports = {
   accept: accept,
   acceptedKeys: acceptedKeys,
   forget: forget,
+  seat: seat,
+  seatedUrls: seatedUrls,
+  seatLabel: seatLabel,
+  unseat: unseat,
 };

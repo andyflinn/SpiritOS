@@ -4,14 +4,13 @@
 
 | | |
 |---|---|
-| **built** | `GET /api/relay/key` (§8) — the census is out of key-learning |
-| **built** | three census readers deleted outright: `peer.candidates`, `peer.find`, `relay.roster` |
-| **built** | `handlePartnerCheck` narrowed to `?key=`; `device.html` asks the relay nothing |
-| **design** | 2a, 2b, 2c, 2d — and 2a is now optional, superseded for its own caller by the key door |
+| **done** | **the census is eradicated.** `GET /api/relay/who` is deleted, with `handleRelayWho` and `expandKeys`. Nothing in the tree reads it |
+| **done** | `GET /api/relay/key` — who a box is and who runs it, 97 bytes, flat |
+| **done** | `relayKeys.seat` — a node records its own enrolment at claim and reads it at boot |
+| **design** | 2b, 2c, 2d. 2a is superseded: `claim` need not carry the key, because the key door serves every moment rather than only the claim |
 
-Three census readers remain: `peer.list`, `ownerBadge.probe`, and
-`handlePartnerCheck`'s refusal path. All three want lists, so they are the
-selector-and-paging job, not a parameter.
+`censusNarrow.js` is the guard: it goes red if any file under `run/` names
+the route, if the route returns, or if 0012 loses its widened rule.
 
 This note is about the *shape* of a relay's interface, not what travels on
 it. The mechanism is [TRANSPORT.md](TRANSPORT.md); the byte-level packet is
@@ -386,15 +385,33 @@ everything lives.
   ([ownerBadge.js:428-431](../../spirit/run/js/ownerBadge.js#L428-L431)). A
   signed post needs a row, so that case has no post form.
 
-  **Recommended: it rides the streams instead, and stops being a poll.** The
-  node already holds a stream to every relay it has a row on —
-  `urls.forEach(openTo)` ([presenceNode.js:313](../../spirit/run/js/presenceNode.js#L313)).
+  **Recommended: it rides the streams instead, and stops being a poll** —
+  and this recommendation is WRONG, corrected 2026-09-18 without being
+  rebuilt, because the way it was wrong is worth keeping.
 
-  | | how the badge learns it |
-  |---|---|
-  | on it | the stream — row, ownership and roster arrive on connect |
-  | evicted | `streamOpen` refuses `no such identity` (403), immediately rather than within 30s |
-  | never joined | a local fact; no request at all |
+  It read: *"the node already holds a stream to every relay it has a row on
+  — `urls.forEach(openTo)`
+  ([presenceNode.js:313](../../spirit/run/js/presenceNode.js#L313))"*, and
+  concluded the stream could therefore report which relays have a row.
+
+  That sentence is true and the conclusion inverts it. **Four lines above
+  313** is `ownerBadge.probe(...)` producing `summary.claimedUrls` — the
+  list `openTo` is called on. The streams exist for relays with rows
+  *because probe already said so*. Reading the consequence and not the
+  cause.
+
+  The third row of the table it carried was the same error stated harder:
+  *"never joined — a local fact; no request at all."* There is no such
+  local fact. `relays.json` rows are `{label, url}`, and nothing records a
+  claim.
+
+  See §10 for what actually has to happen.
+
+  | | what was claimed | |
+  |---|---|---|
+  | on it | the stream reports it | **circular** |
+  | evicted | `streamOpen` refuses `no such identity` | true, but only once you are dialling |
+  | never joined | a local fact | **there is no such fact** |
 
   Strictly better than the poll, and it *deletes* a per-relay request rather
   than converting one — a 0013 win in passing. What it changes is what Natter
@@ -826,10 +843,43 @@ scans the whole list for six facts, and five are already available:
 |---|---|
 | `owned` | `/api/relay/key` → `ownerKey === myKey`. A comparison, not a search |
 | `owner`, `relayKey`, `relayLabel` | `/api/relay/key` — **already built** |
-| `claimed` | the stream opens, or refuses `no such identity` |
+| `claimed` | **not settled — see below.** This row said "the stream opens, or refuses `no such identity`", inherited from §8 without re-deriving it |
 | `claimedLabel` | `streamOpen` returns `label` ([relay.js:3306](../../spirit/run/js/relay.js#L3306)) and it is discarded today |
 | `peers` (a count) | **delete** — no consumer in `run/` |
 | `roster` | gone with the fetch; the member reconcile listens instead |
+
+### `claimed` is the one that is not solved
+
+**The census is the only thing that tells a node it holds a row anywhere.**
+`presenceNode.start` calls `probe` to decide which relays to dial
+([presenceNode.js:309-313](../../spirit/run/js/presenceNode.js#L309-L313)),
+so the stream cannot answer it — the stream depends on the answer. And
+nothing is written down locally: `relays.json` rows are `{label, url}`, and
+a successful claim records nothing.
+
+Which is the defect underneath the defect: **the node asks somebody else to
+remember what it did.**
+
+Two ways out, neither yet chosen:
+
+**Dial everything.** `presenceNode` opens a stream to every *configured*
+relay rather than only claimed ones, and the stream becomes the test: it
+opens, or the relay refuses `no such identity`. No circularity, no new
+store, cheaper than a census per relay, and it takes `probe` out of presence
+startup altogether.
+
+The catch is real: `sseClient` treats any non-OK as retry-with-backoff
+([sseClient.js:236](../../spirit/run/js/sseClient.js#L236)), so dialling an
+unjoined relay becomes a permanent retry loop. It has to tell *"you are not
+a member"* from *"the box is down"* — worth having regardless, since a
+clingy client should not cling to a door telling it to go away.
+
+**Or record the claim.** The node writes down that it claimed, in
+`relay-state/`. Its own fact, smaller blast radius — but a new store, and it
+helps only nodes that claim after it ships. Existing seats have no record.
+
+The first is better on every count except that it restructures presence
+startup, which is nearer infrastructure than the rest of this plan.
 
 And one thing to build rather than move: `presenceNode.onRoster` already
 receives labels and throws them away
@@ -853,16 +903,42 @@ improvement comes after. **Exactly two readers hold it open**, and nothing
 else in this plan is a precondition:
 
 ```
-1  probe off censusFacts        owned/owner/relayKey/relayLabel → /api/relay/key
-                                claimed/claimedLabel → what the node already knows
-                                peers deleted
-2  peer.acquire stops asking    nothing new is built — see below
-3  DELETE GET /api/relay/who    the temptation is gone at this point
+1  probe off censusFacts        DONE — owned from /api/relay/key, claimed from
+                                the node's own seat record, peers deleted
+2  peer.acquire stops asking    DONE — the label travels with the search row
+3  DELETE GET /api/relay/who    DONE 2026-09-18
 —————————————————————————————— everything below is improvement, not eradication
 4  snapshot() stops building a list it does not use
 5  streamRoster narrows to the relay's own row
 6  member-added broadcast, and the reconcile listens for it
 ```
+
+### What it cost, measured after the fact
+
+**Nothing was built to replace it.** Eight readers, no substitute for any of
+them — the pattern the plan predicted and the strongest argument for
+collapsing rather than narrowing.
+
+What *did* need writing was one thing nobody had noticed was missing: a node
+did not record its own enrolments. It claimed, got a 201, wrote none of it
+down, and re-derived its memberships every boot by downloading each relay's
+membership and looking for itself. `relayKeys.seat` is that record, and it
+is nine lines.
+
+**Three capabilities went with the route**, all of them lists, all recorded
+where they were lost rather than quietly dropped:
+
+| | where |
+|---|---|
+| the member count on the badge | no reader in `run/` — deleted |
+| `labPopulate.clearLive`'s pattern sweep | says so, and names the owner report as what restores it |
+| `presenceShow`'s remove-by-label | asks for a key now; a label was never the right handle |
+
+**And one thing got better rather than merely cheaper.** A stranger who
+writes to you arrives unnamed. The census sweep used to caption them — a
+name taken from a survey nobody gave you — and `peer.list` was handshaking
+every member of the relay into that node's own book on every Contacts
+refresh.
 
 **An earlier draft had the deletion at step 6**, behind the `streamRoster`
 narrowing, on the reasoning that removing the route while the stream still

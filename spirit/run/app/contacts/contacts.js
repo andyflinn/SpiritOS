@@ -600,6 +600,12 @@ function contactsPaintSeen() {
           ? '<span class="muted">already a contact</span>'
           : '<button type="button" class="cancel-btn contacts-seen-add"' +
             ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
+            // THE LABEL TRAVELS WITH THE ROW (2026-09-18). peer.acquire
+            // used to fetch it from the relay's census by key; the relay
+            // already said it, right here, when it answered the search.
+            // Asking again is the node spending its own request budget on
+            // something it was told.
+            ' data-label="' + contactsEscapeHtml(c.publicLabel || '') + '"' +
             ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button>') + '</td>' +
         contactsSaidCell(c) +
       '</tr>';
@@ -741,9 +747,10 @@ function contactsSaidCell(c) {
 function contactsSeenAdd(button) {
   const key = button.getAttribute('data-key') || '';
   const url = button.getAttribute('data-url') || '';
+  const label = button.getAttribute('data-label') || '';
   if (!key) return;
   contactsStatus('adding…');
-  contactsAsk('peer.acquire', { publicKey: key, url: url, via: 'handle' })
+  contactsAsk('peer.acquire', { publicKey: key, url: url, via: 'handle', publicLabel: label })
     .then(function (row) {
       contactsStatus(row && row.publicLabel
         ? 'added ' + row.publicLabel

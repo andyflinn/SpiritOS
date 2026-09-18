@@ -15,6 +15,39 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const sseClient = require('../run/js/sseClient');
 const presenceNode = require('../run/js/presenceNode');
+const relayKeys = require('../run/js/relayKeys');
+
+// ── A NODE KNOWS ITS OWN SEATS NOW (2026-09-18) ─────────────────────
+//
+// These fixtures used to say "I hold a row here" by having the fake
+// request return a CENSUS with this node's key in it — which is how
+// ownerBadge.probe used to find out, by reading every member of every
+// relay and looking for itself.
+//
+// A node records its seats at claim time and reads them off disk now
+// (relayKeys.seat, hub.handleClaim). So a fixture says the same thing by
+// writing the seat, and the fake answers the key door instead — which is
+// all probe asks for: who the box is, and who runs it.
+function seatEveryRelay(home, label) {
+  let list = [];
+  try {
+    list = JSON.parse(fs.readFileSync(
+      path.join(home, 'app', 'natter', 'relays.json'), 'utf8'));
+  } catch (e) { list = []; }
+  list.forEach(function (row) {
+    if (row && row.url) relayKeys.seat(home, row.url, label || 'me');
+  });
+}
+
+// What GET /api/relay/key answers. `ownerKey` is left out on purpose:
+// these checks are about pinning and streams, and none of them is about
+// owning the box.
+function keyDoor() {
+  return Promise.resolve({
+    status: 200,
+    text: JSON.stringify({ relayPublicKey: 'RELAYKEY', relayLabel: 'lab' }),
+  });
+}
 
 function tmpHome() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presence-node-'));
@@ -581,11 +614,8 @@ async function run() {
       connectImpl: function (o) { opened.push(o.url); return { close: function () {} }; },
       pinRelay: function (url) { pinned.push(url); return Promise.resolve('k'); },
     });
-    await P.start(function () {
-      return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
-        { name: 'pinner', publicLabel: 'pinner', publicKey: auth.loadIdentity(pinHome).publicKey },
-      ] }) });
-    });
+    seatEveryRelay(pinHome, 'pinner');
+    await P.start(keyDoor);
 
     if (pinned.length && opened.length && pinned.length === opened.length) {
       test.check('every relay it opens a stream to is pinned as well — ' + pinned.length + ' of ' + opened.length);
@@ -611,11 +641,8 @@ async function run() {
       connectImpl: function (o) { deafOpened.push(o.url); return { close: function () {} }; },
       pinRelay: function () { return Promise.reject(new Error('census down')); },
     });
-    await D.start(function () {
-      return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
-        { name: 'pinner2', publicLabel: 'pinner2', publicKey: auth.loadIdentity(deafHome).publicKey },
-      ] }) });
-    });
+    seatEveryRelay(deafHome, 'pinner2');
+    await D.start(keyDoor);
     if (deafOpened.length) {
       test.check('and a relay whose census will not answer still gets its stream opened');
     } else {
@@ -671,11 +698,8 @@ async function run() {
     router: fakeRouter(),
     connectImpl: function (o) { sawHeaders = o.headers; return { close: function () {} }; },
   });
-  await spy.start(function () {
-    return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
-      { name: 'spy', publicLabel: 'spy', publicKey: auth.loadIdentity(spyHome).publicKey },
-    ] }) });
-  });
+  seatEveryRelay(spyHome, 'spy');
+  await spy.start(keyDoor);
   if (typeof sawHeaders === 'function') {
     const one = sawHeaders();
     const two = sawHeaders();
@@ -732,13 +756,11 @@ async function run() {
     },
   });
 
-  // A census naming this node, so openTo accepts each relay and the
-  // streams are opened the way they are in production.
-  await P.start(function () {
-    return Promise.resolve({ status: 200, text: JSON.stringify({ peers: [
-      { name: 'me', publicLabel: 'me', publicKey: me.publicKey },
-    ] }) });
-  });
+  // Seats on both relays, so openTo accepts each and the streams are
+  // opened the way they are in production. This said "a census naming
+  // this node" until 2026-09-18 — the node reads its own record now.
+  seatEveryRelay(home, 'me');
+  await P.start(keyDoor);
 
   // A relay speaking down the stream it holds for this node.
   function relaySays(relayUrl, event, data) {

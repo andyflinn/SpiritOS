@@ -28,7 +28,7 @@ const LATENCY_SAMPLES = 7;
 // credentials to make.
 const SURFACE = [
   ['GET', '/api/version'],
-  ['GET', '/api/relay/who'],
+  ['GET', '/api/relay/key'],
   ['GET', '/api/relay/stream'],
   ['POST', '/api/relay/claim'],
   ['POST', '/api/relay/device'],
@@ -127,13 +127,31 @@ async function main() {
     reading.commit = version.status === 404 ? 'pre-version' : 'unreachable';
   }
 
-  const who = await ask(url, 'GET', '/api/relay/who');
-  reading.members = [];
-  if (who.status === 200) {
+  // ── `members` STOOD HERE, AND IS NOT A THING TO REPORT ───────────
+  //
+  // It read `GET /api/relay/who` and listed every member's label. That
+  // route was a public, unsigned, unbounded read of the membership —
+  // named a cheat in decision 0010 on 2026-09-17, deleted the next day —
+  // and 0012 says plainly that no party may ask for an enrolment list,
+  // including a probe belonging to the owner.
+  //
+  // What a deploy check actually needs is below: which doors answer, and
+  // how fast. Neither needs to know who is on the box.
+  //
+  // If a relay's operator wants its roster, that is the relay reporting
+  // to its owner over the owner's own stream (relay.statusToOwner) — a
+  // box telling the person who runs it, unasked, rather than a door
+  // anybody can knock on.
+  const said = await ask(url, 'GET', '/api/relay/key');
+  reading.relay = {};
+  if (said.status === 200) {
     try {
-      reading.members = (JSON.parse(who.text).peers || []).map(function (p) {
-        return p.publicLabel || p.name || '?';
-      }).sort();
+      const body = JSON.parse(said.text);
+      reading.relay = {
+        label: body.relayLabel || '',
+        owner: body.ownerLabel || '',
+        key: (body.relayPublicKey || '').slice(-8),
+      };
     } catch (e) { /* leave empty */ }
   }
 
@@ -145,7 +163,7 @@ async function main() {
 
   const samples = [];
   for (let n = 0; n < LATENCY_SAMPLES; n += 1) {
-    const one = await ask(url, 'GET', '/api/relay/who');
+    const one = await ask(url, 'GET', '/api/relay/key');
     if (one.status) samples.push(one.ms);
   }
   reading.latency = samples.length
@@ -162,8 +180,12 @@ async function main() {
     (reading.dirty ? '  DIRTY — running code that is in no commit' : '') +
     (reading.untracked ? '  (' + reading.untracked + ' file(s) missing from its copy)' : ''));
   console.log('uptime     : ' + (reading.uptimeSec == null ? '?' : reading.uptimeSec + 's'));
-  console.log('members    : ' + reading.members.length +
-    (reading.members.length ? '  (' + reading.members.join(', ') + ')' : ''));
+  // `members` STOOD HERE and named everybody on the box. See the note
+  // where it was read: a probe does not get an enrolment list, and the
+  // owner's roster is the relay's report to its owner, not a route.
+  console.log('relay      : ' + ((reading.relay && reading.relay.label) || '(unlabelled)') +
+    '  key …' + ((reading.relay && reading.relay.key) || '?') +
+    '  owner ' + ((reading.relay && reading.relay.owner) || '(none)'));
   if (reading.latency) {
     console.log('latency    : ' + reading.latency.min + '/' + reading.latency.median +
       '/' + reading.latency.max + ' ms  (min/median/max of ' + LATENCY_SAMPLES + ')');

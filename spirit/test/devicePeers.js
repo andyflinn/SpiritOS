@@ -585,7 +585,8 @@ async function run() {
   // The badge answers "do I OWN this" with a signed status. A peer owns
   // nothing, so before B2 its device timer got an empty list and never
   // polled — the feature stopped at the owner for want of one word.
-  // `claimed` is the other question, asked of the PUBLIC census.
+  // `claimed` is the other question, and it is asked of THIS NODE'S OWN
+  // RECORD now, not of a census (2026-09-18).
   const ownerBadge = require('../run/js/ownerBadge');
   const nodeHome = world.tmpHome();
   fs.mkdirSync(path.join(nodeHome, 'app', 'natter'), { recursive: true });
@@ -594,19 +595,32 @@ async function run() {
     JSON.stringify([{ label: 'lab', url: 'http://relay' }])
   );
   auth.saveIdentity(nodeHome, johnA);
+  // johnA joined by claiming on `L.box` directly — the relay's half. The
+  // node's half is its own seat record, which hub.handleClaim writes on a
+  // real claim and a fixture writes by hand.
+  require('../run/js/relayKeys').seat(nodeHome, 'http://relay', 'johnA');
 
   function labRequest(url, method, pathname) {
     if (/\/api\/relay\/status/.test(pathname)) {
       return Promise.resolve({ status: 403, text: JSON.stringify({ error: 'not owner' }) });
     }
-    if (/\/api\/relay\/who/.test(pathname)) {
-      // The WIRE shape, which wraps the list — relay.who() is an array
-      // in process and `{ peers: [...] }` over HTTP (server.js). A fake
-      // that answers the in-process shape tests nothing the node will
-      // ever receive.
+    if (/\/api\/relay\/key/.test(pathname)) {
+      // WHO THE BOX IS, which is all probe asks a relay for since
+      // 2026-09-18. It asked `/api/relay/who` here and read the whole
+      // membership to find out whether this node was on it; the node
+      // keeps that record itself now (relayKeys.seat, below).
+      //
+      // The WIRE shape, as server.js serves it — a fake that answers the
+      // in-process shape tests nothing the node will ever receive.
+      var own = L.box.ownerPublic();
       return Promise.resolve({
         status: 200,
-        text: JSON.stringify({ peers: L.box.who() }),
+        text: JSON.stringify({
+          relayPublicKey: L.box.relayPublicKey(),
+          relayLabel: L.box.relayLabel(),
+          ownerKey: own.ownerKey,
+          ownerLabel: own.ownerLabel,
+        }),
       });
     }
     return Promise.resolve({ status: 404, text: '{}' });
@@ -620,10 +634,30 @@ async function run() {
       ' claimed=' + JSON.stringify(mine && mine.claimedUrls));
   }
 
+  // ── A NODE WITH NO SEAT CLAIMS NOTHING ──────────────────────────
+  //
+  // This probed `nodeHome` with a STRANGER'S key and expected nothing
+  // claimed. That stopped meaning anything on 2026-09-18: `claimed` is a
+  // fact about the HOME — its own record of where it holds a seat — and
+  // only `owned` depends on the key. Asking one home's badge "what would
+  // this look like if I were somebody else" has no answer, and no caller:
+  // probe is always handed the identity of the home it is reading
+  // (presenceNode.start).
+  //
+  // So the check keeps its meaning by giving the stranger a home of its
+  // own: same relay listed, no seat written, nothing claimed.
   const stranger = auth.generateIdentity('nobody');
-  const none = await ownerBadge.probe(nodeHome, labRequest, stranger.publicKey);
+  const strangerHome = world.tmpHome();
+  fs.mkdirSync(path.join(strangerHome, 'app', 'natter'), { recursive: true });
+  fs.writeFileSync(
+    path.join(strangerHome, 'app', 'natter', 'relays.json'),
+    JSON.stringify([{ label: 'lab', url: 'http://relay' }])
+  );
+  auth.saveIdentity(strangerHome, stranger);
+
+  const none = await ownerBadge.probe(strangerHome, labRequest, stranger.publicKey);
   if (none && none.claimedUrls.length === 0) {
-    test.check('and a key with no row anywhere claims nothing');
+    test.check('and a node that holds no seat claims nothing, though it lists the relay');
   } else {
     test.fail('stranger claimed: ' + JSON.stringify(none && none.claimedUrls));
   }

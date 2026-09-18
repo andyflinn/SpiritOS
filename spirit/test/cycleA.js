@@ -24,6 +24,8 @@ const { URL } = require('url');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
+// Where this node holds a seat — its own record, written at claim.
+const relayKeys = require('../run/js/relayKeys');
 const ownerBadge = require('../run/js/ownerBadge');
 const { createRelay } = require('../run/js/relay');
 const { createHub } = require('../run/js/hub');
@@ -59,12 +61,21 @@ function askedWith(body) {
   return function () { return Promise.resolve(body); };
 }
 
-function nodeHome(id, urls) {
+// `seats` names the urls this node has a row on. It used to be implied —
+// the census listed the key, so probe found it — and a node keeps that
+// record itself now, so a fixture has to write it (relayKeys.seat, which
+// hub.handleClaim calls when a claim is granted).
+//
+// Left OUT for a relay this node merely lists: that is the case
+// `owned:false, claimed:false` exists to describe, and it has to be
+// constructible.
+function nodeHome(id, urls, seats) {
   var home = tmpHome('node');
   auth.saveIdentity(home, id);
   writeRelays(home, urls.map(function (u, i) {
     return { label: 'mailbox' + (i + 1), url: u };
   }));
+  (seats || []).forEach(function (u) { relayKeys.seat(home, u, id.name || 'me'); });
   return home;
 }
 
@@ -80,20 +91,34 @@ function nodeHome(id, urls) {
 // A stub that still served the old route would keep passing while the
 // thing it stands in for had stopped being asked — which is the failure
 // mode every stub in this tree is written against.
+// ── IT SERVES THE KEY DOOR NOW, NOT THE CENSUS (2026-09-18) ─────────
+//
+// This answered `/api/relay/who` with `box.who()` — the whole membership —
+// because that is how probe used to learn both who runs a box and whether
+// this node was on it.
+//
+// It learns the first from `GET /api/relay/key` (97 fixed bytes, no
+// membership term) and the second from its OWN RECORD of where it holds a
+// seat (relayKeys, written at claim). So this serves the key door, and
+// keeps rejecting everything else — the loud-stub rule below is what made
+// this change announce itself instead of passing quietly.
 function censusAnswerer(boxes) {
   return function (url, method, pathname) {
     var box = boxes[url];
     if (!box) return Promise.reject(new Error('connection refused'));
-    if (pathname.indexOf('/api/relay/who') !== 0) {
+    if (pathname.indexOf('/api/relay/key') !== 0) {
       // Nothing else should be asked. Saying so loudly beats a 404 that
       // reads as "that relay is not ours".
       return Promise.reject(new Error('probe asked for ' + pathname));
     }
+    var own = box.ownerPublic();
     return Promise.resolve({
       status: 200,
       text: JSON.stringify({
-        peers: box.who(),
         relayPublicKey: box.relayPublicKey(),
+        relayLabel: box.relayLabel(),
+        ownerKey: own.ownerKey,
+        ownerLabel: own.ownerLabel,
       }),
     });
   };
@@ -365,19 +390,29 @@ function relayServer(box) {
       // with the badge that was its only caller, so a fake still offering
       // it would be a fake more capable than the thing it stands in for.
       //
-      // THE PUBLIC CENSUS, which probe() reads to answer BOTH "do I own
-      // this" and "do I have a row here". The fake did not serve it at
-      // first, so claimedFrom() saw a 404 in every test and answered
-      // false — and a suite cannot notice a flag that is false because
-      // the question was never asked.
+      // WHO THIS BOX IS, which probe() reads to answer "do I own this".
+      // "Do I have a row here" is no longer asked of the relay at all —
+      // the node keeps its own record of where it holds a seat
+      // (relayKeys, written at claim), so a fixture says so by writing
+      // the seat rather than by being listed in an answer.
       //
-      // Same shape as the wire (server.js, handleRelayWho): peers, and
-      // the mailbox's own key beside them.
-      if (req.method === 'GET' && url.pathname === '/api/relay/who') {
+      // THE CENSUS BRANCH STOOD HERE and served `box.who()`. It was added
+      // because the fake did not serve it at first, so claimedFrom() saw
+      // a 404 in every test and answered false — a suite cannot notice a
+      // flag that is false because the question was never asked. The same
+      // hazard now lives at the seat: a fixture that forgets to write one
+      // gets `claimed: false` for a reason that has nothing to do with
+      // what it is testing.
+      //
+      // Same shape as the wire (server.js): the key door, four fields.
+      if (req.method === 'GET' && url.pathname === '/api/relay/key') {
+        var own = box.ownerPublic();
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
-          peers: box.who(),
           relayPublicKey: box.relayPublicKey(),
+          relayLabel: box.relayLabel(),
+          ownerKey: own.ownerKey,
+          ownerLabel: own.ownerLabel,
         }));
         return;
       }
@@ -674,7 +709,11 @@ function boundNodeSeesItsRow() {
   let server;
   return relayServer(lab.box).then(function (s) {
     server = s;
-    const hub = createHub(nodeHome(guest, [server.url]));
+    // Bert joined by `lab.box.claim(...)` above — the RELAY's half of a
+    // bind. The node's half is its own record of the seat, which a real
+    // claim writes through hub.handleClaim and this fixture writes by
+    // hand for the same reason labWorld does (2026-09-18).
+    const hub = createHub(nodeHome(guest, [server.url], [server.url]));
     const res = fakeRes();
     hub.handleStatus({}, res, askedWith({ name: 'bert' }));
     return res.wait();
@@ -704,11 +743,20 @@ function boundNodeSeesItsRow() {
     // "not the owner" — which is the app telling somebody off for the
     // ordinary case of being a member.
     //
-    // All three come from the PUBLIC census, which was already fetched
-    // to decide `claimed` and was being thrown away.
+    // ── "AND HOW MANY ARE ON IT" IS GONE (2026-09-18) ──────────────
+    //
+    // This asserted `facts.peers === 2` as well. The count came from the
+    // census, and a count of the membership is a membership fact: the
+    // relay does not serve one, to anybody, and no screen in run/ ever
+    // read it. It was in the badge because censusFacts had the list in
+    // hand and reducing it was free.
+    //
+    // What the panel can still say is who runs the box and what it calls
+    // YOU — both off GET /api/relay/key and this node's own seat record,
+    // neither with a membership term in it.
     const facts = row.census || {};
-    if (facts.owner === 'andy' && facts.peers === 2) {
-      test.check('and the panel can say who runs it and how many are on it');
+    if (facts.owner === 'andy' && facts.myLabel === 'bert') {
+      test.check('and the panel can say who runs it and what it calls you');
     } else {
       test.fail('census: ' + JSON.stringify(facts));
     }

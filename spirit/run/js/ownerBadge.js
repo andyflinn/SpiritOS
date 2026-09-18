@@ -23,6 +23,9 @@ const isNode = typeof process !== 'undefined' && !!process.versions && !!process
 const fs = isNode ? require('fs') : null;
 const path = isNode ? require('path') : null;
 const auth = isNode ? require('./relayAuth') : null;
+// Where this node holds a seat, and who each relay is. Both are records
+// this node keeps about itself — see probe.
+const relayKeys = isNode ? require('./relayKeys') : null;
 
 function normalizeUrl(u) {
   return String(u == null ? '' : u).trim().replace(/\/+$/, '');
@@ -434,29 +437,83 @@ function censusFacts(answer, myKey) {
 // answer — `owned` came from the signed report, `claimed` needed a key —
 // and both come from the census by key, so a caller without one gets
 // nothing and should.
+// ── IT ASKS WHO THE RELAY IS, AND READS ITS OWN SEAT ────────────────
+//
+//   Andy: "doesn't the node persist the necessary connection information
+//   when the bind occurs? … Like the relay, the node must record the
+//   enrolment details. Simple, no?"
+//
+// It fetched the WHOLE CENSUS of every configured relay, on a timer, and
+// looked for its own key in the list — the last census read in the tree,
+// and the only one that was not a question about other people. It was
+// asking each relay to remember what this node did.
+//
+// Now: `GET /api/relay/key` says who the box is and who runs it, at 97
+// fixed bytes; `relayKeys` says where this node holds a seat, off disk.
+// Neither answer has a membership term in it.
+//
+// `owned` is now a COMPARISON rather than a search — is the key this box
+// names as its owner my key — which is the same fact the census row
+// marked `owner` carried, arrived at without reading anybody else's row.
 function probe(rootDir, request, myKey) {
   var relays = loadRelays(rootDir);
+
+  // One read for the whole pass. See relayKeys.seatedUrls for why a pinned
+  // relay with no recorded seat counts as one: on a node that predates the
+  // seat record, the pinned set IS the membership set.
+  var seated = Object.create(null);
+  if (relayKeys) {
+    relayKeys.seatedUrls(rootDir).forEach(function (u) { seated[u] = true; });
+  }
+  function hasSeat(url) {
+    return !!(relayKeys && seated[relayKeys.normalizeUrl(url)]);
+  }
+
   return Promise.all(relays.map(function (relay) {
     return Promise.resolve()
-      .then(function () { return request(relay.url, 'GET', '/api/relay/who'); })
-      .then(function (census) {
+      .then(function () { return request(relay.url, 'GET', '/api/relay/key'); })
+      .then(function (answer) {
+        var said = null;
+        try { said = JSON.parse(answer && answer.text); }
+        catch (e) { said = null; }
+
         var badge = {
           url: relay.url,
           label: relay.label,
-          status: Number(census && census.status) || 0,
-          owned: ownedFrom(census, myKey),
+          // `status > 0` is what tells "answered" from "unreachable"
+          // downstream (natter.natterCheckBinding), and it still does.
+          status: Number(answer && answer.status) || 0,
+          owned: !!(said && said.ownerKey && myKey && said.ownerKey === myKey),
         };
+
         // OWNING IMPLIES CLAIMING — the owner holds a peer row from first
         // claim — so this is true of an owner too, and `summarize` no
-        // longer has to say `owned || claimed`.
-        badge.claimed = claimedFrom(census, myKey);
+        // longer has to say `owned || claimed`. It also covers an owner
+        // whose seat predates the record and was never pinned.
+        badge.claimed = badge.owned || hasSeat(relay.url);
+
         // Kept only for a row this node is actually on. A relay it merely
         // lists tells it nothing, and a panel is not offered for one.
+        //
+        // STILL CALLED `census` AND IT IS NO LONGER ONE. The name is the
+        // apps' and changing it is their commit, not this one
+        // (SURFACE.md §10, step 2). What it carries is what the key door
+        // answers; `roster`, `peers` and `myLabel` are gone, and every
+        // reader of those already guards with `|| []`.
         if (badge.claimed) {
-          badge.census = censusFacts(census, myKey);
-          // What this relay calls this node — see claimedLabelFrom for
-          // why Natter needs it and what it replaced.
-          badge.claimedLabel = claimedLabelFrom(census, myKey);
+          badge.census = {
+            owner: (said && said.ownerLabel) || '',
+            relayKey: (said && said.relayPublicKey) || '',
+            relayLabel: (said && said.relayLabel) || '',
+            // What this box calls this node. natterDetails draws it as
+            // the "You" row, and it is the same fact as `claimedLabel`
+            // below — two names for one thing, which step 2 collapses.
+            myLabel: relayKeys ? relayKeys.seatLabel(rootDir, relay.url) : '',
+          };
+          // What this relay calls this node, as recorded when the claim
+          // was granted. Empty on a backfilled seat — the label was never
+          // written down, and inventing one would be worse than silence.
+          badge.claimedLabel = relayKeys ? relayKeys.seatLabel(rootDir, relay.url) : '';
         }
         if (!badge.owned && !badge.claimed) badge.error = 'no row here';
         return badge;

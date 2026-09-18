@@ -25,6 +25,8 @@ const invites = require('../run/js/invites');
 // The device page's URL spelling, from the module that defines it rather
 // than from a copy in this file — see theDevicePageIsServed.
 const deviceAuth = require('../run/js/deviceAuth');
+// The node's own record of where it holds a seat — see nodeFor.
+const relayKeys = require('../run/js/relayKeys');
 const hub = require('../run/js/hub');
 const presenceNode = require('../run/js/presenceNode');
 const { createPeerPost } = require('../run/js/peerPost');
@@ -101,6 +103,13 @@ function nodeFor(id) {
     path.join(home, 'app', 'natter', 'relays.json'),
     JSON.stringify([{ label: 'wire', url: BASE }])
   );
+  // AND THE SEAT. The claims above are made straight on the relay object
+  // (`box.claim(...)`), which is the RELAY's half of a bind. A node keeps
+  // its own record of where it holds one and reads that at boot
+  // (relayKeys.seat, written by hub.handleClaim on a real claim), so a
+  // fixture that claims around the node has to write the node's half —
+  // otherwise `claimedUrls` is empty and nothing dials anything.
+  relayKeys.seat(home, BASE, id.name || 'wire');
   const jobs = {
     job: null,
     createJob: function (k, t, d) { jobs.job = { id: 'j', kind: k, type: t, data: d }; return jobs.job; },
@@ -140,7 +149,7 @@ async function awaitRelay(runDir, port) {
   for (let n = 0; n < 25; n += 1) {
     await sleep(200);
     try {
-      const res = await fetch(base + '/api/relay/who');
+      const res = await fetch(base + '/api/relay/key');
       if (res.ok) return { kid: kid, base: base, port: port };
     } catch (e) { /* not up yet, or this port was taken */ }
   }
@@ -316,15 +325,29 @@ async function run() {
   // RE-ATTACHED IS NOT THE SAME AS USABLE. A stream that reconnects but
   // whose node never re-enrols is a socket with nothing behind it, which
   // reads as healthy from every angle except asking it something.
-  const post = await hub.relayRequest(BASE, 'GET', '/api/relay/who', null);
-  let census = null;
-  try { census = JSON.parse(post.text); } catch (e) { census = null; }
-  const rows = (census && census.peers) || [];
-  if (rows.length) {
+  // ── ASKED OF THE FILE, NOT A ROUTE (2026-09-18) ──────────────────
+  //
+  // This read `GET /api/relay/who` and counted the rows. That route was a
+  // public, unsigned read of every member — named a cheat in 0010 and
+  // deleted the next day — and the claim being made here is about the
+  // relay's MEMORY, which is on disk.
+  //
+  // It has to answer as well, or a file on disk proves nothing about a
+  // process: the key door is what says the box came back up.
+  const said = await hub.relayRequest(BASE, 'GET', '/api/relay/key', null);
+  let table = null;
+  try {
+    table = JSON.parse(fs.readFileSync(
+      path.join(lab.runDir, 'relay-state', 'routingTable.json'), 'utf8'));
+  } catch (e) { table = null; }
+  const rows = Object.keys((table && table.peers) || {});
+
+  if (said.status === 200 && rows.length) {
     test.check('and the relay that came back still knows who its members are: ' +
       rows.length + ' rows');
   } else {
-    test.fail('census empty after restart: ' + post.text);
+    test.fail('after restart — key door ' + said.status +
+      ', routingTable rows ' + rows.length);
   }
 }
 

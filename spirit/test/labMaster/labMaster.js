@@ -784,6 +784,8 @@ function liveWorldPaths() {
     identity: path.join(run, 'relay-state', 'identity.json'),
     relays: path.join(run, 'app', 'natter', 'relays.json'),
     session: path.join(run, 'app', 'natter', 'session.json'),
+    // The home itself, for the seat record — see liveWorldReport.
+    home: run,
   };
 }
 
@@ -827,7 +829,7 @@ function livePost(url, body) {
 async function postToRelayVia(nodeUrl, relayUrl, body) {
   let key = '';
   try {
-    const res = await fetch(relayUrl + '/api/relay/who');
+    const res = await fetch(relayUrl + '/api/relay/key');
     const parsed = await res.json();
     key = (parsed && parsed.relayPublicKey) || '';
   } catch (e) { key = ''; }
@@ -941,16 +943,40 @@ function workIdentity() {
 async function liveWorldReport(peerNode, peerName) {
   const me = workIdentity();
   const relays = readJson(liveWorldPaths().relays, []);
-  const census = await fetch(LIVE_RELAY + '/api/relay/who')
-    .then(function (r) { return r.json(); })
-    .catch(function () { return null; });
-  const rows = (census && census.peers) || [];
+  // ── ASK EACH NODE, NOT THE RELAY (2026-09-18) ────────────────────
+  //
+  // This read `GET /api/relay/who` and looked for each key in the list.
+  // That route was a public, unsigned read of the whole membership —
+  // named a cheat in decision 0010 and deleted the next day — and 0012
+  // rules out any door that answers "who is on this box".
+  //
+  // The question was never really about the relay. "Does this node hold a
+  // row" is something the NODE knows: it records the seat when its claim
+  // is granted (relayKeys.seat, hub.handleClaim) and reads it at boot.
+  // Andy: "persist necessary information at claim time, re-use that
+  // information on boot."
+  //
+  // So this reads each node's own record, which is also more honest about
+  // what it is reporting — the lab shows what each node believes, and a
+  // node that believes wrongly is exactly the thing worth seeing.
+  const up = await fetch(LIVE_RELAY + '/api/relay/key')
+    .then(function (r) { return r.ok; })
+    .catch(function () { return false; });
+
+  function seatedAt(home, url) {
+    const book = readJson(path.join(home, 'relay-state', 'relayKeys.json'), {});
+    const row = book && book[String(url).replace(/\/+$/, '')];
+    // A pin with no seat counts, for a node claimed before the record
+    // existed — same backfill relayKeys.seatedUrls uses.
+    return !!(row && (row.seat || row.publicKey));
+  }
+
   return {
     relay: LIVE_RELAY,
-    reachable: !!census,
+    reachable: up,
     work: {
       name: me ? me.name : '',
-      onRelay: !!(me && rows.some(function (r) { return r.publicKey === me.publicKey; })),
+      onRelay: seatedAt(liveWorldPaths().home || WORK_RUN, LIVE_RELAY),
       inRelaysJson: relays.some(function (r) { return r && r.url === LIVE_RELAY; }),
       // Whether the SHELL thinks this node is bound, which is a different
       // question from whether the relay does — and the one a person sees.
@@ -959,7 +985,7 @@ async function liveWorldReport(peerNode, peerName) {
     peer: {
       name: peerName,
       running: !!peerNode,
-      onRelay: rows.some(function (r) { return r.name === peerName; }),
+      onRelay: !!(peerNode && seatedAt(peerNode.home, LIVE_RELAY)),
       boundInShell: !!(peerNode && (readJson(
         path.join(peerNode.home, 'app', 'natter', 'session.json'), {}) || {}).label),
     },
@@ -1064,12 +1090,19 @@ async function buildLiveWorld(body) {
     return { status: 502, error: peerName + ' has no identity yet — is it running?' };
   }
 
-  const census = await fetch(LIVE_RELAY + '/api/relay/who')
-    .then(function (r) { return r.json(); })
-    .catch(function () { return null; });
-  if (!census) return { status: 502, error: 'spirit-3 did not answer /api/relay/who' };
+  // WHETHER IT IS ALREADY ON, asked of the node rather than the relay —
+  // see liveWorldReport above for why the census is gone. If the node is
+  // wrong, the claim below answers `409 key already claimed` and says so,
+  // which is the relay's own answer rather than a list to search.
+  const reachable = await fetch(LIVE_RELAY + '/api/relay/key')
+    .then(function (r) { return r.ok; })
+    .catch(function () { return false; });
+  if (!reachable) return { status: 502, error: 'spirit-3 did not answer /api/relay/key' };
 
-  const already = (census.peers || []).some(function (r) { return r.publicKey === peerId.publicKey; });
+  const peerBook = readJson(
+    path.join(peerNode.home, 'relay-state', 'relayKeys.json'), {});
+  const peerRow = peerBook && peerBook[String(LIVE_RELAY).replace(/\/+$/, '')];
+  const already = !!(peerRow && (peerRow.seat || peerRow.publicKey));
   if (already) {
     steps.push(peerName + ' already has a row on spirit-3');
   } else {

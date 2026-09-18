@@ -300,7 +300,7 @@ function get(port, rawPath) {
 function waitForBoot(port) {
   const startedAt = Date.now();
   return (function poll() {
-    return get(port, '/api/relay/who').then(function (r) {
+    return get(port, '/api/relay/key').then(function (r) {
       if (r.status === 200) return true;
       if (Date.now() - startedAt > BOOT_TIMEOUT_MS) throw new Error('relay did not boot on ' + port);
       return new Promise(function (r2) { setTimeout(r2, 150); }).then(poll);
@@ -325,7 +325,7 @@ freePort()
     return waitForBoot(port).then(function () {
       // Prove it really is open before asking whether it admitted as much,
       // so this can never pass by testing a relay that wasn't open at all.
-      return get(port, '/api/relay/who').then(function () {
+      return get(port, '/api/relay/key').then(function () {
         if (/open|unrestricted|no allow|anyone/i.test(output)) {
           test.check('the relay announced open mode at startup');
         } else {

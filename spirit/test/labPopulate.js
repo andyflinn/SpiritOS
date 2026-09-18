@@ -151,7 +151,7 @@ async function post(url, body) {
 // page (js/client/shell.js), reached the same way a page reaches it.
 async function relayKeyOf(relayUrl) {
   try {
-    const res = await fetch(relayUrl + '/api/relay/who');
+    const res = await fetch(relayUrl + '/api/relay/key');
     const parsed = await res.json();
     return (parsed && parsed.relayPublicKey) || '';
   } catch (e) { return ''; }
@@ -257,19 +257,38 @@ function writeRelays(rows) {
   fs.writeFileSync(RELAYS, JSON.stringify(rows, null, 2) + '\n');
 }
 
-// Remove anything named `lab-*` from the live relay. By PATTERN and not
-// from a list, so this still works after a sandbox wipe has taken every
-// local trace of what was created — the one case where being unable to
-// clean up would leave fixtures on a box that cannot be edited from here.
-async function clearLive(me) {
+// Remove anything named `lab-*` from the live relay.
+//
+// ── IT SWEPT BY PATTERN, AND CANNOT ANY MORE (2026-09-18) ───────────
+//
+// This read `GET /api/relay/who` and matched every row whose label began
+// `lab-`. The justification was real and is worth keeping: "by PATTERN
+// and not from a list, so this still works after a sandbox wipe has taken
+// every local trace of what was created — the one case where being unable
+// to clean up would leave fixtures on a box that cannot be edited from
+// here."
+//
+// The route is gone. A public, unsigned read of every member was named a
+// cheat in decision 0010 and eradicated the next day, and 0012 leaves no
+// bounded or owner-only version of it. So the recovery path goes with it:
+// an owner's view of its own roster is the relay REPORTING to its owner
+// on the owner's own stream (relay.statusToOwner), which does not carry
+// one yet — design/relay/SURFACE.md §10, the improvement tier.
+//
+// What still works is removing from a list this process holds. What does
+// not is recovering after that list is lost, and this says so rather than
+// reporting a clean sweep of a relay it could not read.
+async function clearLive(me, known) {
   let removed = 0;
-  let census = null;
-  try {
-    const res = await fetch(LIVE_RELAY + '/api/relay/who');
-    census = await res.json();
-  } catch (e) { return { removed: 0, error: String(e.message || e) }; }
-
-  const rows = (census && census.peers) || [];
+  const rows = Array.isArray(known) ? known : [];
+  if (!rows.length) {
+    return {
+      removed: 0,
+      error: 'no local list of what was created, and a relay no longer publishes ' +
+        'its roster to sweep by pattern (decision 0012). Remove them from Natter, ' +
+        'or wait for the owner report to carry a roster (SURFACE.md §10).',
+    };
+  }
   for (const row of rows) {
     const label = row.publicLabel || row.name || '';
     if (label.indexOf('lab-') !== 0 || !row.publicKey) continue;

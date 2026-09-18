@@ -66,7 +66,7 @@ async function waitUntil(fn, timeoutMs, label) {
 // every reach for the wire in every file, tests included, and a number
 // that may only fall is the whole mechanism (AGENT.md, Comms).
 async function serving(port) {
-  const res = await hub(port, 'GET', '/api/relay/who', null);
+  const res = await hub(port, 'GET', '/api/relay/key', null);
   return res.status === 200;
 }
 
@@ -152,7 +152,7 @@ async function run() {
   if (up) {
     test.check('and the relay is really listening — a started row is not a serving process');
   } else {
-    test.fail('the relay never answered /api/relay/who on ' + RELAY_PORT);
+    test.fail('the relay never answered /api/relay/key on ' + RELAY_PORT);
   }
 
   // ── A NODE THAT CLAIMS AFTER BOOT MUST CONNECT ─────────────────────

@@ -55,7 +55,7 @@ const ALLOWANCE = {
 // What each entry is for, printed beside the number so a reader does not
 // have to go and find out what they are looking at.
 const WHAT = {
-  census: 'GET /api/relay/who — nine callers, six of which want a narrower question',
+  census: 'the census — eight callers, all gone. GET /api/relay/who deleted 2026-09-18',
   roster: 'the stream roster — one job, the three-state dot',
   presence: 'events per presence change — one per member, per change',
 };

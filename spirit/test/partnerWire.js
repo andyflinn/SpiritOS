@@ -109,7 +109,7 @@ async function startRelay(w, port) {
   for (let n = 0; n < 30; n += 1) {
     await sleep(200);
     try {
-      const r = await hub.relayRequest(base, 'GET', '/api/relay/who', null);
+      const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
       if (r.status === 200) { w.base = base; w.kid = kid; return base; }
     } catch (e) { /* not up yet */ }
   }
@@ -285,14 +285,28 @@ async function run() {
   // key and the URL the search handed over.
   const nodeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pw-node-'));
   auth.saveIdentity(nodeHome, auth.generateIdentity('alice'));
-  const census = await hub.relayRequest(confirmAt, 'GET', '/api/relay/who', null);
-  const listed = JSON.parse(census.text).peers || [];
-  const him = listed.filter(function (p) { return p.publicKey === row.publicKey; })[0];
-
-  if (him && him.publicLabel === 'bertrand') {
-    test.check('and he is on that census by key, which is what confirms him');
+  // ── THE SEARCH REPLY IS THE CONFIRMATION (2026-09-18) ────────────
+  //
+  // This fetched the far relay's census and looked for the key: "he is on
+  // that census, which is what confirms him". Both halves are gone.
+  //
+  // The route was a public, unsigned read of every member — a cheat in
+  // 0010, deleted the next day. And `peer.acquire` no longer confirms
+  // anything against a relay: the key and the label both arrive in the
+  // SEARCH REPLY the person clicked, so asking the relay to repeat what
+  // it just said is a node spending its own request budget on nothing
+  // (design/principles/THE-REQUESTER-IS-RESPONSIBLE.md).
+  //
+  // What the census check never did, and this makes plain: it proved
+  // enrolment, not that the key belonged to the person you meant. That is
+  // what `via: 'handle'` means — a human compared key endings out loud.
+  //
+  // So the claim here is the one that survived: the search answer carried
+  // the label, by key, across a partnership.
+  if (row.publicLabel === 'bertrand') {
+    test.check('the search reply named him, by key — which is what acquire now records');
   } else {
-    test.fail('not on ' + confirmAt + ': ' + census.text);
+    test.fail('search row: ' + JSON.stringify(row));
   }
 
   // THE ROUTE IS RECORDED, which is the whole of decided item 7. whoBook
@@ -301,7 +315,7 @@ async function run() {
   const whoBook = require('../run/js/whoBook');
   const saved = whoBook.acquire(nodeHome, {
     publicKey: row.publicKey,
-    publicLabel: him.publicLabel,
+    publicLabel: row.publicLabel,
     relay: confirmAt,
   }, 'handle');
 

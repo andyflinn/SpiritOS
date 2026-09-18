@@ -103,13 +103,23 @@ async function run() {
 
   test.subHeading('The roster survived the rename');
 
-  const census = parsed(await get(RELAY + '/api/relay/who'));
-  const peers = (census && census.peers) || [];
-  if (peers.length) {
-    test.check(peers.length + ' peer(s) still listed: ' +
-      peers.map(function (p) { return p.publicLabel || p.name; }).sort().join(', '));
+  // ── THE ROSTER IS NOT SOMETHING TO ASK FOR (2026-09-18) ──────────
+  //
+  // This listed every peer off `GET /api/relay/who` to show the routing
+  // table had survived a rename. The route is gone — a cheat named in
+  // 0010 and eradicated — and 0012 rules out any door that answers "who
+  // is on this box", to anyone, owner included.
+  //
+  // What survives is the weaker but askable claim: the box is up and is
+  // still the same box, which is what a rename must not change. Whether
+  // the table survived is visible to its OWNER, on the owner's own
+  // stream, and not over a route.
+  const itself = parsed(await get(RELAY + '/api/relay/key'));
+  if (itself && itself.relayPublicKey) {
+    test.check('the relay answers as itself after the rename: ' +
+      (itself.relayLabel || '(unlabelled)') + ', owner ' + (itself.ownerLabel || '(none)'));
   } else {
-    test.fail('empty roster — the routing table did not survive');
+    test.fail('no answer from the key door — the relay did not come back'); 
   }
 
   // mailbox.json became routingTable.json. A relay that could not read
@@ -265,7 +275,7 @@ async function run() {
 
   const elsewhere = RELAY === LAB ? null : LAB;
   if (elsewhere) {
-    const reachable = (await get(elsewhere + '/api/relay/who')).status === 200;
+    const reachable = (await get(elsewhere + '/api/relay/key')).status === 200;
     if (!reachable) {
       test.check('(the other relay is not up, so the second box is not checked)');
     } else if (!(await canOpen(elsewhere, phone))) {
@@ -304,9 +314,9 @@ async function run() {
     fs.mkdirSync(path.join(meeting, 'relay-state'), { recursive: true });
     auth.saveIdentity(meeting, auth.generateIdentity('pin-probe'));
 
-    const census = parsed(await get(RELAY + '/api/relay/who'));
-    const realKey = census && census.relayPublicKey;
-    if (!realKey) { test.fail('no relayPublicKey from the census'); return; }
+    const door = parsed(await get(RELAY + '/api/relay/key'));
+    const realKey = door && door.relayPublicKey;
+    if (!realKey) { test.fail('no relayPublicKey from the key door'); return; }
 
     // First contact: nothing on record, so it is accepted and written down.
     if (relayKeys.check(meeting, RELAY, realKey) === 'new') {

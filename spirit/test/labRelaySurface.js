@@ -118,25 +118,35 @@ Promise.resolve()
     if (r.status === 200) test.check('start relay');
     else test.fail('start → ' + r.status + ' ' + r.text);
     return waitUntil(function () {
-      return request(ORIGIN + '/api/relay/who', 'GET', null)
+      return request(ORIGIN + '/api/relay/key', 'GET', null)
         .then(function (x) { return x.status === 200; })
         .catch(function () { return false; });
-    }, 10000, 'who');
+    }, 10000, 'key');
   })
   .then(function () {
     return request(ORIGIN + '/', 'GET', null);
   })
   .then(function (r) {
     if (r.status === 200 && r.text.indexOf('mailbox') !== -1 && r.text.indexOf('/api/relay/who') === -1) {
-      test.check('GET / is brochure, no who script');
+      test.check('GET / is brochure, no census script');
     } else {
       test.fail('GET / → ' + r.status + ' ' + r.text.slice(0, 160));
     }
     return request(ORIGIN + '/api/relay/who', 'GET', null);
   })
   .then(function (r) {
-    if (r.status === 200) test.check('GET /api/relay/who');
-    else test.fail('who → ' + r.status);
+    // ── IT MUST 404 NOW (2026-09-18) ──────────────────────────────
+    //
+    // This asserted `GET /api/relay/who` answers 200. The census was a
+    // public, unsigned, unbounded read of every member — named a cheat in
+    // 0010 and deleted the next day — so the surface a relay presents is
+    // exactly the claim being inverted here.
+    //
+    // Asserted rather than dropped, because "the caller is gone" and "the
+    // door is shut" are different facts, and 0010's temptation argument
+    // is about the second: a door that answers is an invitation.
+    if (r.status === 404) test.check('GET /api/relay/who is 404 — the census is gone');
+    else test.fail('the census still answers: ' + r.status);
     // Jobs folded into the one door on 2026-09-15; what a relay must
     // refuse is the door, and the check above already makes that claim.
     // This one keeps asking about the old path because a relay must 404

@@ -105,20 +105,22 @@ async function labRelayUrl() {
   return row ? 'http://127.0.0.1:' + row.port : null;
 }
 
-async function rosterOf(url) {
-  try {
-    const res = await fetch(url + '/api/relay/who');
-    const body = await res.json();
-    return Array.isArray(body) ? body : ((body && body.peers) || []);
-  } catch (e) { return []; }
-}
+// rosterOf STOOD HERE. It read `GET /api/relay/who` and handed back every
+// member, so this script could turn a LABEL into a key. The route is gone
+// — a public, unsigned read of the whole membership, named a cheat in
+// decision 0010 and eradicated the next day — and 0012 rules out any door
+// that answers "who is on this box", owner included.
+//
+// A LABEL WAS NEVER THE RIGHT HANDLE ANYWAY. A peer is a key; a label is
+// a caption, and two peers may wear one. Resolving one to the other by
+// downloading everybody is the pattern being removed, not an incidental
+// user of it.
 
-// A RELAY IS A PEER, AND A PEER IS A KEY. Read off the public census,
-// the same place a real node reads it — no second endpoint, and no need
-// for this script to be told it out of band.
+// A RELAY IS A PEER, AND A PEER IS A KEY. Off the key door, which answers
+// who a box is at fixed cost and tells nobody who is on it.
 async function relayKeyOf(url) {
   try {
-    const res = await fetch(url + '/api/relay/who');
+    const res = await fetch(url + '/api/relay/key');
     const body = await res.json();
     return (body && body.relayPublicKey) || '';
   } catch (e) { return ''; }
@@ -141,10 +143,18 @@ async function removeFromLab(label) {
   const me = auth.loadIdentity(WORK_RUN);
   if (!me || !me.privateKey) return 'your node has no identity, so nothing can be signed';
 
-  const row = (await rosterOf(url)).filter(function (p) {
-    return (p.publicLabel || p.name) === label;
-  })[0];
-  if (!row) return label + ' has no row on the lab relay already — nothing to remove';
+  // NAMED BY KEY, not by label. This looked the label up in the relay's
+  // census; there is no such door, and the owner's view of its own roster
+  // is the relay's report to its owner (relay.statusToOwner), which does
+  // not carry one yet — design/relay/SURFACE.md §10, the improvement tier.
+  //
+  // Until it does, this scenario wants the key: paste the one Contacts or
+  // a search result shows, which is where a key comes from anyway.
+  const row = /^[A-Za-z0-9+/=]{40,}$/.test(label) ? { publicKey: label } : null;
+  if (!row) {
+    return 'name them by KEY — the relay no longer publishes a roster to look a ' +
+      'label up in (decision 0012). Copy the key from Contacts or a search result.';
+  }
 
   // Through this node's own door: the relay route is gone (decision
   // 0010), and the post's answer comes back on the stream the node holds.

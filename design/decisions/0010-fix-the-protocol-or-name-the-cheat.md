@@ -335,7 +335,6 @@ arrives on a route rather than as a post — see the `cause` note in
 | | |
 |---|---|
 | `POST /api/relay/claim` · `claimMessage` | **you cannot post to a relay you have no row on.** Permanently outside. |
-| `GET /api/relay/who` | the public census, unsigned, and what a node reads *before* it has anything — **but see the correction below** |
 | `POST /api/relay/device` | posted by a browser that has **no identity yet** — that is the thing it is asking for |
 
 > ### The census exemption is too broad — corrected 2026-09-17
@@ -391,9 +390,14 @@ worked example below depends on.
 
 **One, named 2026-09-18.**
 
-| cheat | what it is |
-|---|---|
-| the census — `GET /api/relay/who` | a public, unsigned, unbounded read of every member of a relay |
+**There are none left again — the census was eradicated on 2026-09-18**,
+the day after it was named. What follows is the account of it, in prose
+rather than in a table row, because the register reads rows as things that
+exist (see the note on `registered` in protocolSurface.js) and this one does
+not any more.
+
+It was `GET /api/relay/who`: a public, unsigned, unbounded read of every
+member of a relay.
 
 > **Andy:** *"the census mechanism is a cheat."*
 > *"There is absolutely no reason for unbound entities to conduct surveys
@@ -418,17 +422,29 @@ Three things make it a cheat rather than a feature:
   already says a relay never asks for a member list. The same holds on the
   other side.
 
-**Two dependents remain, and they are the work rather than the reason:**
+**Eight readers, and not one needed a replacement.** That is the fact worth
+carrying forward, because at the time each looked like a dependency:
 
-| dependent | wants | eradication |
-|---|---|---|
-| `handlePartnerCheck`'s refusal path | who *does* own that box, to name them in the refusal | one row — `?owner=1`. It already asks by key on the happy path |
-| `ownerBadge.probe` → the owner's roster | who holds a seat on a relay I run | the relay **tells its owner**, down the stream it already pushes `statusToOwner` on. Not a node fetching a list: a box reporting to the person who runs it, unasked |
+| reader | what it actually wanted |
+|---|---|
+| `peer.candidates`, `peer.find`, `relay.roster` | nothing — no caller at all |
+| the device page | a label for one sentence, on a page that has authenticated nobody |
+| `peer.list` | to refresh a fallback label, and it handshook every member of the relay into that node's own book while it was there |
+| `relay.partnerCheck` | who runs a box |
+| `peer.acquire` | a label the relay had already said, in the search reply the person clicked |
+| `ownerBadge.probe` | **what this node itself had done** — it asked each relay to remember its own claims |
 
-The second is not a narrowing of the cheat and must not become one. A
-fetchable roster behind a signature would be the same survey wearing a
-credential; a report the relay volunteers to its own operator is a
-different thing, and it grows no door anyone can knock on.
+What replaced it: `GET /api/relay/key` for who a box is and who runs it, 97
+bytes and flat; `relayKeys.seat` for the node's own record of where it holds
+a seat, written when the claim is granted; `peer.search` for *"who
+matches"*, ranked and slot-bounded; and the stream for presence and routes,
+pushed as they happen.
+
+**The last one is the lesson.** `ownerBadge.probe` was the only reader that
+was not a question about other people — the node was asking somebody else to
+remember what it did, every boot, by downloading a membership. Andy:
+*"persist necessary information at claim time, re-use that information on
+boot."*
 
 `ndPartnerCandidates` reads the roster too and is not a dependent: its own
 comment says the picker may be empty and *"the fields remain the real
