@@ -1,6 +1,6 @@
 # 0012 — A relay never asks for a member list
 
-**Decided 2026-09-17. Against `86b6fe2`. Not implemented — nothing to implement.**
+**Decided 2026-09-17. Against `86b6fe2`. Widened 2026-09-18 — see below.**
 
 > The get-complete-member-list could be dropped altogether. That's the slimmest
 > initial load guaranteed at startup, with no instant explosive growth. (Andy)
@@ -15,6 +15,93 @@ This supersedes Grok's ruling of the same day, *"refuse member roll"*. Refusing
 leaves the verb in the vocabulary, and **a refused verb is one somebody writes a
 bounded version of in six months**, with a good reason and a small limit, and
 then the limit is raised once.
+
+## Widened, 2026-09-18: nobody is served one either
+
+> **Andy:** *"there is absolutely no reason for unbound entities to conduct
+> surveys of our network."* — *"no node is entitled to a full member list from
+> a relay."* — *"because the decision is: **entire enrolment lists are NOT
+> necessary**."*
+
+The rule above is about one relay asking another. The same rule holds in every
+direction, and this is now the decision rather than an implication of it:
+
+> **No party may ASK for an entire enrolment list — not a stranger, not a
+> member, not the owner.** There is no door at which "tell me everything"
+> is a question, and no bounded, paginated or owner-only version of one.
+
+Three things follow, and they were each a live feature when this was written:
+
+- **`GET /api/relay/who`'s whole-census form** — public, unsigned, unbounded.
+  Named a cheat in [0010](0010-fix-the-protocol-or-name-the-cheat.md) the
+  same day, and being eradicated per
+  [SURFACE.md](../relay/SURFACE.md) §10.
+- **`streamRoster`'s member list**, which sends every member's key and label
+  to every member on connect. Under the correction below this is **not**
+  condemned as a broadcast — but it is the one place a whole list still
+  crosses in a single message, and its stated justification (*"the key is
+  already public at /api/relay/who"*) goes with the census. Best read as the
+  deltas a joining node missed; **open**, and named in
+  [SURFACE.md](../relay/SURFACE.md) §10.
+- **The owner's roster.** The auto-contacts feature — *"when someone binds
+  to a peer i own, it's because i want them in my network, so i want a
+  contact auto-generated"* — wanted the membership of a relay its operator
+  runs, **by fetching it**. Owning the box does not make a bulk question
+  necessary. But it does not need one: a **member-added broadcast** gives the
+  owner's node exactly this, as it happens, and gives it to every member's
+  node too — *"can add the new member, put it in a queue for acquisition, or
+  disregard it."* The feature keeps its purpose and loses its fetch.
+
+**Not "bounded", not "paginated", not "owner-only".** Each is the refusal
+this decision already rejected wearing a different sleeve, and a narrower
+cheat is a defended one.
+
+### But a broadcast is not a list — corrected 2026-09-18, same day
+
+An earlier draft of this section read *"not by request and not by
+broadcast"*, on the reasoning that a list arriving unasked is the same
+disclosure as one arriving on request. **That is wrong, and it collapsed the
+thing this decision is actually about.**
+
+> **Andy:** *"the working relay will broadcast useful information to its
+> membership. Members can filter/use that, because bandwidth is generally
+> cheap. A route is established and verified — that's a broadcast. A member
+> is added — broadcast it. The member node that is actively listening can
+> add the new member, put it in a queue for acquisition, or disregard it.
+> Less work for the relay, more up-to-date information for the node."*
+
+What this decision rejects is a **cost shape**, not a disclosure:
+
+| | cost | driven by |
+|---|---|---|
+| a list on demand | O(members) × per request × per requester | whoever asks, as often as they like |
+| a delta broadcast | O(1) per event, one write per listener | **the relay's own business happening** |
+
+A pull is unbounded by anything the relay controls. A push is bounded by the
+event rate, which is real activity. So broadcast **satisfies**
+[0013](0013-a-relay-is-fixed-cost-per-time-unit.md) rather than evading it,
+and the relay is doing less work, not more.
+
+**Membership is not secret from members.** It never was — a member can see
+who arrives, and should. What is refused is the bulk question, at any door,
+by anyone.
+
+And the incentive runs both ways, which is what makes this hold without
+policing:
+
+> **Andy:** *"a node, also looking out for itself, is well advised to listen
+> and not waste their request budget (variable) on requests."*
+
+A node's request allowance is scarce and governed
+([CAPACITY.md](../relay/CAPACITY.md)). Listening costs it nothing. A node
+that fetches a census spends its own budget on information the stream was
+handing it free — and under shedding, the one that hammers is dropped before
+the one that listens.
+
+What replaces the question in each case is `search` — ask who matches, get
+a bounded answer — or nothing, because the caller turned out not to need it.
+Five callers were removed between 2026-09-17 and 2026-09-18 and **none
+needed a replacement**.
 
 ## Why it can go: nobody needs it
 

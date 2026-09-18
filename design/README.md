@@ -4,6 +4,11 @@ This directory contains the vision, principles, and architecture decisions for *
 
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)
+- [The requester is responsible for the question](principles/THE-REQUESTER-IS-RESPONSIBLE.md)
+  — *"the more specific my question, the more precise the answer."* A vague
+  question earns a bounded answer or none, never everything. The reason
+  behind 0012 and the census eradication, and what decides presence
+  scoping.
 - [Storage Philosophy](storage/STORAGE-PHILOSOPHY.md)
 - [A correspondent that is not a person](principles/A-CORRESPONDENT-NODE.md) —
   **sketch, nothing built.** A node whose `answer` hook is a model rather than a
@@ -88,7 +93,9 @@ This directory contains the vision, principles, and architecture decisions for *
   the thing. Narrowed to the two shapes a new way of speaking has in this tree —
   a new `<verb>Message()` and a new `/api/relay/*` route — so most work is
   untouched. Carries the register of all 24, sorted into protocol, bootstrap,
-  dying, and **five named cheats**, one of them a day old.
+  dying and cheats. **Amended 2026-09-18**: naming a cheat is not a resting
+  state — identify, **plan**, eradicate, and the plan is written before any of
+  it is built. One cheat stands named: the census.
   `spirit/test/protocolSurface.js` goes red if the tree holds a door the register
   does not, or the register names one the tree has lost.
 
@@ -108,6 +115,10 @@ This directory contains the vision, principles, and architecture decisions for *
   `partners × members` term outright — 46 MB at a hundred partners of a
   thousand, on a 1 GB box, becomes **zero** — and makes *"a relay never persists
   a partner's members"* structural instead of a policy somebody has to remember.
+  **Widened 2026-09-18**: nobody is *served* one either — not a stranger, not a
+  member, not the owner, not by request and not by broadcast. Which names the
+  census a cheat, condemns `streamRoster`'s member list with it, and settles
+  that owning the box does not make an enrolment list necessary.
   The line that matters: a relay's memory stops being a function of decisions
   other people make. Cost is latency on a cold post, in the fallback mode the
   shedding policy already called safe.
@@ -154,6 +165,11 @@ This directory contains the vision, principles, and architecture decisions for *
 - [The transport, and what it has been shown to do](relay/TRANSPORT.md) — one
   mechanism now carrying peer-to-peer, relay-to-node and browser-to-node alike:
   the measurements, and an explicit list of what has *not* been proven.
+- [Everything is a post](relay/SURFACE.md) — the case that 0010's three granted
+  GET exceptions can all go: the key arrives with the row, `version` is a file,
+  and the stream becomes `stream.initialize()` / `stream.close()` — an ordinary
+  peerPost whose reply is the channel it created. Leaves the protocol statable
+  without naming a transport, which is the point. Design, nothing built.
 - [The relay as a router](relay/ROUTER.md) — a peer drops a packet on a peer
   and gets a signed receipt. Decision 0006 implemented, plus the receipt.
 - [Partner relays](relay/PARTNERS.md) — *"if you can verify a peer, and we can

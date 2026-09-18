@@ -20,6 +20,69 @@ What is not allowed is the fourth outcome, which is what happens by
 default: a new signed message format and a new route appear, the feature
 works, and nobody ever calls it a decision.
 
+### Naming is not a resting state — 2026-09-18
+
+> **Andy:** *"there are cheats left and we know it. we will stop defending
+> cheats."* — *"when a cheat is identified, it must be eradicated."*
+
+Outcome 2 above reads as a place a thing may stay, and it is not one. A
+name buys the time to do the work and nothing else: **identified means
+scheduled.**
+
+> **Andy:** *"and eradication of a cheat requires a plan. always."*
+
+So it is three steps, not two, and the middle one is not optional:
+
+| | |
+|---|---|
+| **identify** | say what it is and why it is a cheat |
+| **plan** | write down what replaces each thing that depends on it, in what order, and what breaks — **before any of it is built** |
+| **eradicate** | do that |
+
+The plan is not ceremony and it is not the same as the naming. A cheat's
+dependents each want something, and the plan is where it is established —
+in writing, where somebody else can disagree — that the replacement
+actually answers what they wanted. Skip it and the work proceeds by
+whatever the person doing it happened to notice, which is how a feature
+gets quietly dropped under cover of a cleanup.
+
+**This rule was written because it was broken.** `relay.partnerCheck` was
+moved off the census on 2026-09-18 within minutes of the census being
+named, with no plan written first. It came out well and that is not the
+point: it kept the refusal sentence only because somebody remembered it
+was there, and the check for it was added after the fact rather than
+demanded by a plan.
+
+**And the reason it cannot wait is temptation, not tidiness.**
+
+> **Andy:** *"the eradication must be done to eliminate temptation."*
+
+A door that answers is an invitation. While the cheap wrong path exists it
+is the one that gets taken — by the next session, by a person in a hurry,
+with a perfectly good reason each time.
+[0012](0012-a-relay-never-asks-for-a-member-list.md) already knew this in
+another form: *"a refused verb is one somebody writes a bounded version of
+in six months, with a good reason and a small limit, and then the limit is
+raised once."*
+
+So a scheduled eradication is not a completed one, and the schedule should
+be short. **The code goes; the plan is how, not whether.**
+
+The failure this closes is not a cheat going unnamed — this decision fixed
+that — it is a cheat being *defended*. The shape it takes is always the
+same, and it has taken it several times in this file's own history:
+somebody asks what depends on the cheat, the dependents are listed, and the
+list becomes the reason to keep it. It is not. **The dependents are the
+work.**
+
+And they are usually asking the wrong question. Everything removed from the
+census between 2026-09-17 and 2026-09-18 — `peer.candidates`, `peer.find`,
+`relay.roster`, the device page's label, `peer.list`'s whole-census sweep —
+turned out not to need a member list at all. Five dependents, five wrong
+questions, nothing built to replace them. That is the usual result of
+collapsing rather than narrowing, which is why narrowing a cheat is a way
+of defending it.
+
 ## And the standing half, which this decision was missing
 
 Everything above is REACTIVE — it fires when something new is being
@@ -61,9 +124,42 @@ that must work before a post is possible.**
 | granted | why it can never be a post |
 |---|---|
 | the brochure — `/`, `/index.html`, `/relay.html`, `/favicon.svg`, and the key-addressed enrolment page | files |
-| `GET /api/relay/who` | it is where a node learns the relay's KEY. You cannot post to an address you are still asking for |
+| `GET /api/relay/key` | it is where a node learns the relay's KEY. You cannot post to an address you are still asking for |
 | `GET /api/relay/stream` | it is the wire itself. Posts are answered on this connection, so you cannot post to open the channel that carries the answer |
 | `GET /api/version` | deliberately credential-free: *"the question a deploy check asks must not need a private key, or the check cannot run from anywhere but the owner's own machine."* A post needs a row; needing nothing is the point |
+
+> ### The census hands its warrant to a smaller door — 2026-09-18
+>
+> > **Andy:** *"the first two are easily replaced with `GET /api/relay/key`
+> > or whatever."*
+>
+> The row above was true of **key-learning**, never of the census. The census
+> merely happened to be where the key was kept, and it inherited a bootstrap
+> exemption that then covered every other caller — which is the correction
+> already recorded further down this file, on Andy's *"violation!!"*, and
+> which until now had no fix.
+>
+> `GET /api/relay/key` answers `{ relayPublicKey, relayLabel }` and nothing
+> else: **fixed cost per request, with no membership term**, which is what
+> earns an exemption under
+> [0013](0013-a-relay-is-fixed-cost-per-time-unit.md). The census answered
+> the same question at 151 bytes a member — ~147 KB at a thousand — once per
+> relay per node boot.
+>
+> **Two, not three.** This is a swap: `who` keeps its row only until its
+> remaining readers move, and it is listed above as holding a warrant it has
+> already handed over. What it cannot do any more is claim that a signature
+> is impossible on it, because the thing that was impossible now lives
+> elsewhere.
+>
+> **And the caller asks nobody in steady state.** `answerRelay.relayKey`
+> reads `relayKeys.pinned()` first and only opens this door when there is no
+> pin. What that gives up is the per-boot substitution re-check — worth less
+> than it looked, since it compared a pin against an **unsigned** answer from
+> the box being checked. Substitution is caught where it actually shows:
+> every signed exchange fails against a changed key. Evidence, not a poll.
+>
+> See [SURFACE.md](../relay/SURFACE.md) for the rest of the sequence.
 
 They share a shape, and it is worth naming because it is what makes them
 principled rather than convenient: **each one sits before or beneath the
@@ -293,12 +389,67 @@ worked example below depends on.
 
 ### Cheats, named
 
-**There are none left.**
+**One, named 2026-09-18.**
+
+| cheat | what it is |
+|---|---|
+| the census — `GET /api/relay/who` | a public, unsigned, unbounded read of every member of a relay |
+
+> **Andy:** *"the census mechanism is a cheat."*
+> *"There is absolutely no reason for unbound entities to conduct surveys
+> of our network."* — *"no node is entitled to a full member list from a
+> relay."*
+
+**It was filed above as a granted exception and that was wrong.** The
+warrant it held — *"it is where a node learns the relay's KEY"* — was true
+of key-learning and never of the census; the census merely happened to be
+where the key was kept. `GET /api/relay/key` holds that warrant now, so the
+row is gone from the granted table and the census stands here instead.
+
+Three things make it a cheat rather than a feature:
+
+- **It is a survey.** Unsigned and public, so bound and unbound cannot be
+  told apart, and anyone who can reach the box gets every member's label,
+  key and join date.
+- **It could never have been protocol.** Its answer does not fit in a
+  packet — 151 bytes a row against `PAYLOAD_MAX` 16384, so ~147 KB at a
+  thousand members. A verb whose reply is undeliverable was never a verb.
+- **Nobody is entitled to it.** [0012](0012-a-relay-never-asks-for-a-member-list.md)
+  already says a relay never asks for a member list. The same holds on the
+  other side.
+
+**Two dependents remain, and they are the work rather than the reason:**
+
+| dependent | wants | eradication |
+|---|---|---|
+| `handlePartnerCheck`'s refusal path | who *does* own that box, to name them in the refusal | one row — `?owner=1`. It already asks by key on the happy path |
+| `ownerBadge.probe` → the owner's roster | who holds a seat on a relay I run | the relay **tells its owner**, down the stream it already pushes `statusToOwner` on. Not a node fetching a list: a box reporting to the person who runs it, unasked |
+
+The second is not a narrowing of the cheat and must not become one. A
+fetchable roster behind a signature would be the same survey wearing a
+credential; a report the relay volunteers to its own operator is a
+different thing, and it grows no door anyone can knock on.
+
+`ndPartnerCandidates` reads the roster too and is not a dependent: its own
+comment says the picker may be empty and *"the fields remain the real
+path."*
+
+The collapse plan is [SURFACE.md](../relay/SURFACE.md). It is worth noting
+what has already gone rather than been migrated — `peer.candidates`,
+`peer.find`, `relay.roster`, the device page's label, and `peer.list`'s
+whole-census sweep — because in every case the caller turned out not to
+need a list at all. **A cheat's dependents are usually asking the wrong
+question**, which is the argument for collapsing rather than narrowing.
+
+---
+
+Five were named when this was written, and the account of them stands,
+because it is what the word "cheat" means here.
 
 That line is the whole point of this decision, so it is worth saying what
 it cost to get to and what it does not mean.
 
-Five were named when this was written. `monitor` and `invite` collapsed
+`monitor` and `invite` collapsed
 the same day, because the relay had just become addressable by its owner.
 The other three were parked behind one sentence — *a relay is addressable
 by its owner and by nobody else* — and that sentence turned out to be the

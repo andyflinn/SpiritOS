@@ -1075,3 +1075,104 @@ true.
 **This is `relay.js` gate and persist-shape work, which CLAUDE.md names as
 a stop-and-call-a-team-review line.** Nothing here should be built from this
 document alone.
+
+---
+
+## RAM scales with activity, not with history — 2026-09-18
+
+> **Andy:** *"the relay should only keep active members in memory. Its
+> member roll is for verification and additions — why stand at attention
+> for members who are not online?"*
+
+**Today the whole roll is resident.** `loadRoutingTable` runs once at boot
+and `var peers = loaded.peers`
+([relay.js:283-284](../../spirit/run/js/relay.js#L283-L284)) holds every
+member object for the life of the process — a thousand members is a thousand
+objects, whether anyone is connected or not. RAM is a function of
+**enrolment**, which only ever grows.
+
+> **Andy:** *"a relay only serves active members. It's kind of
+> self-evident."*
+
+And it is — which means this needs less argument than it first looks. It is
+**not a trade** of RAM for disk, because the resident rows are not buying
+anything: [0006](../decisions/0006-fast-and-true-not-guaranteed.md) has a
+relay deliver or refuse *instantly*, so an absent member cannot receive a
+post, cannot hold a stream and cannot search. **Every unit of work a relay
+does is on behalf of somebody present.**
+
+To the relay, an absent member and a non-member differ in exactly two
+situations, and both are triggered by somebody who *is* present:
+
+| | triggered by |
+|---|---|
+| **verification** — is this sender a member | a post or a stream-open arriving |
+| **addition** — a claim | somebody joining |
+
+Both are point lookups at a transition. Neither is a reason to stand at
+attention between them.
+
+So the cheap-for-expensive ranking (*RAM expensive, CPU and bandwidth cheap*)
+is how it is **implemented** — a lookup against disk, with the page cache
+making it cheaper still — rather than why it is right.
+
+### The census is why the roll is resident
+
+This is the connection worth seeing, because it makes the two jobs one:
+**"list everyone" cannot be answered from a lazy store.** Any door that
+returns the membership forces the membership into memory. Remove the scans
+and the roll can go cold.
+
+Six scans exist today ([relay.js](../../spirit/run/js/relay.js), `listPeers()`),
+and after [SURFACE.md](SURFACE.md) §10 the shape is:
+
+| scan | what it wants | after |
+|---|---|---|
+| `who()` | the census | **gone** |
+| `findByLabel` | label → peer, for claims | a point lookup wanting an index |
+| `partnerByRelayKey`, `partners()` | the partner subset | **resident** — few, and routing state |
+| the empty check | *is this relay unclaimed* | one bit |
+| **search** | rank everybody | the interesting one, below |
+
+### Search is already the right shape
+
+Search is the only remaining reader that genuinely wants the whole
+membership, and it is **already bounded**: a term comes back ranked, cut to
+slots and to a byte budget, with the answer saying how much was dropped
+(`bucket.js`, `gradedSearch.js`).
+
+So it does not need the roll resident — it needs to *stream* over it,
+ranking as it goes and holding only the slots. RAM cost becomes the slot
+count rather than the membership, which is the external-sort shape and the
+cheap-for-expensive trade stated plainly. `bucket.js` already ranks into
+bounded slots; what changes is where the rows come from.
+
+### What stays in memory
+
+| | bounded by |
+|---|---|
+| connected members | the connection cap (`DEFAULT_MAX = 256`), not enrolment |
+| partners | how many partnerships the owner made. Routing state, and small |
+| a search in flight | its slots |
+
+Everything else is a point lookup against disk. The roll keeps its two real
+jobs — **verification** (is this key a member) and **additions** (claim) —
+and both are lookups, not scans.
+
+**Which makes the relay's memory a function of what is happening rather than
+of what has ever happened** — the same thing
+[0013](../decisions/0013-a-relay-is-fixed-cost-per-time-unit.md) says about
+time, said about memory. A box with a million members and two hundred
+connections holds two hundred rows.
+
+It also takes most of the pressure off the shedding ladder in this document:
+a great deal of what shedding exists to rank is simply not held.
+
+### Not decided
+
+The mechanism is not designed here and should not be built from this
+section. `routingTable.json` is a single JSON file read whole; a lazy roll
+wants either an index or a different store, and **CLAUDE.md names relay
+persist-shape work as a stop-and-call-a-team-review line.** What is recorded
+is the *shape* — activity, not history — and the fact that the census
+eradication is its precondition rather than a separate piece of work.
