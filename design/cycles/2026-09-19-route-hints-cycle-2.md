@@ -1,6 +1,6 @@
 # 2026-09-19 — route hints end to end
 
-**Status: OPEN.** First scaffolding cycle of the build sequence
+**Status: CLOSED, 2026-09-19. Seven requirements, all done.** First scaffolding cycle of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
 locked in by Andy:
 
@@ -136,11 +136,12 @@ reply as a relayed failure.
 
 **Status:** DONE
 
-## Open
+## Carried out of this cycle
+
 - **`MATCH_BUDGET = PAYLOAD_MAX - 512`** left as it was: nothing measured in
   this cycle is evidence to move it (SURFACE.md §8 asks that it change only
   with evidence).
-- **The route broadcast still goes to every member** — `members × changes`
-  (0013). Scoping it to members who hold the key as a contact is the open
-  item recorded in NODE-AND-RELAY.
+- **The route broadcast goes to every connected member — decided as
+  specified** (Andy): the relay broadcasts, the node filters by its own
+  contacts. NODE-AND-RELAY, *Build sequence*.
 - **"Minting incomplete" starts nothing yet.** The minting cycle is cycle 5.

@@ -2291,11 +2291,23 @@ The optimization rows stay unordered until the scaffolding is done.
 the lever's floor and share (§10) → carry its position and last move in the
 report → the monitor draws it. Nothing else to build per lever.
 
-**Open:** "the relay broadcast streaming new connections" — route
-announcements (cost follows traffic; `contacts.learnRoute` already stashes
-them on existing rows) are clearly cycle 2. Presence broadcast to every
-member is `members × changes` (0013) and should be scoped to members who hold
-the connecting key as a contact before it is grown.
+**Decided (Andy, 2026-09-19): the relay broadcasts, the node filters.**
+
+> **Andy:** *"So relay should broadcast as specified. Isn't it the node who
+> has to know if it holds a contact with that ID?"*
+
+*This settles the open item that stood here.* A proven route is broadcast to
+every connected member, as built; each node keeps it only if it already
+holds that key as a contact (`contacts.learnRoute`, which never creates a
+row) and drops it otherwise. Scoping at the relay was never possible — it
+would need the relay to know members' contacts, which never leave the node —
+and it is not the relay's question: *whose contact is whose* belongs to the
+node, like stranger handling (§2). The cost is connected members × proven
+forwards; if it ever binds, deduplicating per route over a window is an
+optimization, not a scaffolding change.
+
+Presence broadcast (`present` true/false to every member) is the same shape
+and the same answer.
 
 ## Recommended, not decided
 

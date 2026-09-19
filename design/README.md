@@ -94,7 +94,7 @@ This directory contains the vision, principles, and architecture decisions for *
   panel Andy looks at (to cycle 4, the visual monitor) and the live run (to
   optimization).
 - [2026-09-19 — route hints end to end](cycles/2026-09-19-route-hints-cycle-2.md)
-  — **OPEN.** 7 requirements, 7 done. The first scaffolding cycle: signed
+  — **CLOSED.** 7 requirements, all done. The first scaffolding cycle: signed
   route hints beside the packet, the relay choosing one partner (live, then
   minted, else "minting incomplete"), contacts keeping relay keys in
   `routes`, proven routes announced as keys, and nothing tunnelled that
