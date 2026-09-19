@@ -203,6 +203,54 @@ when it came off the census on 2026-09-18, so the member-facing panel has
 rendered `Peers (unknown)` on both live relays since 05:30. Nothing has been
 said about it.
 
+### The Relay Monitor (cycle 4 planning, 2026-09-19)
+
+**Decided (Andy):**
+- **Home: an intrinsic app, the Relay Monitor**, not natterDetails (the
+  provisional home). Why a separate app: natterDetails' monitor rows can fall
+  into deprecation (D9), and a dedicated app has room for dialogs.
+- **A dropdown: `All` (default), then each owned relay.** `All` is
+  **triage** — it helps the owner pick which relay to examine: a list, most
+  in need first, each row with its reason, each opening its relay.
+- **The order is learned, so it is not in the screen**: a replaceable
+  ranking module on the node (like gradedSearch beside relay.js) returns
+  `{relay, score 0..1, reason}`; cycle 4 ships the simplest rule (lowest
+  lever headroom, heap % of limit); tune-develop cycles replace the module.
+  *Future:* the dropdown ordered the same way, red in the font fading with
+  the score.
+- **The relay reports; it never selects.** It sends *all its status* every
+  tick — every fact about the box, in a fixed shape (each lever, heap,
+  activity, routes in flight, counts by state) — and has no authority to
+  decide on the owner's behalf. *(Supersedes two notes of the same
+  conversation that had the relay ranking, then picking "its worst few".)*
+- **The relay's decision-making is exactly its Governor's scope** — its own
+  resources, inside its programming and the configuration; every such
+  decision is itself status, with its reason. Everything else is the
+  node's: grading, ranking across relays, what is critical.
+- **The relay is a sensor, the node the recorder.** Gauges (a lever's value,
+  connections, routes, heap: the reading is the amplitude) and counters
+  (moves, closes, refusals — only up since start: the node's rate is the
+  difference of two samples). The relay keeps no window; every report
+  carries its capture time; a counter that falls means a restart; gaps stay
+  gaps. *(Illustrations, not commitments: a crude audio analyser on the
+  node; time-compressed replays. Open option: a gauge's peak since the last
+  report.)*
+- **Cadence, provisionally:** while the monitor is open, the relays it shows
+  push their report every Governor tick; closing it stops them. The node
+  counts open views (desk and phone) and switches off at the last.
+- **Observe traffic live: a dialog** with a relay selector mirroring the
+  app's (including `All`, merged by time), the existing `monitor` filters
+  applied at the relay — one member's traffic across every owned relay is
+  the same `peer` filter sent to each. Live and forgotten: memory only.
+- **Devices:** a phone watches what its node can watch; levers move through
+  the node. *Vision:* the owner's phone streaming status straight from the
+  relay under a node-signed, watch-only grant for the phone's session,
+  revoked by a password rotation through a signed **epoch** the relay keeps
+  as one number — still no device key on the relay (2026-09-13 stands). A
+  protocol decision (0010) when it comes.
+- *Vision:* a per-lever dialog — one lever across all owned relays, against
+  its effects; needs trends kept on the node.
+
 ---
 
 ## 5. Owner sets, relay decides
@@ -566,6 +614,27 @@ owner verb (`setPartner`, `partner` on `answerSelf`), with its membership
 requirement. It stays in the tree only until this design is proven, and
 then it goes. Do not extend it, build on it, or fix it forward in the
 meantime.
+
+### The vouch: the new model's bootstrap (cycle 5's first piece)
+
+**Decided (Andy, 2026-09-19):** where the old promotion form sits
+(natterDetails → Managing my relay → Partner relays), the owner vouches:
+*"I vouch for the relay at https://lab.andyflinn.com"* — §5's injection.
+- The owner's node resolves the URL to its relay key; the signed owner verb
+  carries both (`{ vouch: { url, relayKey } }`); the relay records an
+  `injected` row and fetches nothing (`relay.js` makes no outbound request).
+- **No seats**: lab and spirit partner without either owner holding a seat
+  on the other's relay. Each relay's own row is its half; traffic flows
+  when both owners have vouched.
+- **The dial is the confirmation**: A dials B with its relay key; B accepts
+  only if B vouched for A. Accepted = mutual; refused = "waiting for them".
+  No new verb. Confirmed by a spawned two-relay suite.
+- **An unanswered vouch lives until disc needs the space**: waiting rows
+  share the partner roll's allotment and the longest-waiting is shed first,
+  silently — "we should do coffee sometime… but we never do".
+- **When:** cycle 5's first piece, straight after cycle 4; **before alpha**
+  at the latest, because the old form's deprecation (D10) is eliminated only
+  once the vouch exists.
 
 ---
 
@@ -2159,6 +2228,45 @@ to merged answer. It keeps the most recent value and the maximum, with *n*
 and how many partners answered. It rides the owner report that already
 exists, so nothing new goes on the wire, and cycle 4's monitor draws it.
 
+### The lever object, its label, and its contract (cycle 4 planning, 2026-09-19)
+
+**Decided (Andy):**
+- **No lever is known in advance** — "today's set of levers is what we
+  thought yesterday; tomorrow will bring…". Each lever declares itself in
+  the report; the monitor, the ranking and the dialog never name one; a
+  lever from a newer relay is still drawn, ranked and, if live, movable.
+- **A shared lever module** (isomorphic, like `labelRule.js`) produces a
+  **labelled object with a variable value**: the label fixed, bounds and
+  `live` declared once, the value the one thing that varies, `set(v, why)`
+  the only mutator (checks `canSet`, records the move). The Governor and the
+  owner both go through `set`. The report is the object read out; the node
+  rebuilds it with the same factory. On the wire: **one owner verb**,
+  `{ lever: { name, set } }`, answered in `answerSelf`.
+- **Levers have no ID, only labels**, restricted like an invite's label:
+  **`^[A-Za-z]+[1-9][0-9]*$`** — the meaning in letters, then its
+  iteration as the shortest form of a positive integer (`connections1`),
+  within 32 characters; `labelRule.leverOk` layers it on `spokenOk`. A
+  change of meaning takes a new iteration; a retired label is never reused.
+- **Setting vs constant.** A *setting* is a live, temporary value — an
+  experiment during a learning cycle, kept in `levers.json`, clamped to the
+  bounds on load. A *constant* is what learning concluded, a final value in
+  the Governor's program. **Programming controls and constrains the
+  Governor, and tests assert it does not step outside.**
+- **A setting below the present count is just a changed value**: the
+  program reacts to the value, whoever set it (close the idlest, sparing the
+  owner and posts in flight); the dialog only predicts that reaction.
+- **Postulate, for now:** the sum of all levers does not threaten
+  `PAYLOAD_MAX` per relay — held with a tripwire test (the report under a
+  quarter of it), which catches growth in the shapes it builds.
+- **The lever contract**, layered: a **generic base, lever-agnostic and
+  generated** (random labels, bounds, values, signals and version skew),
+  and **lever-specific tests on top**. The base is found by working the
+  first real levers, not designed up front; it stabilises and sharpens over
+  learn-reprogram-test rounds, and lever-specific tests retire with useless
+  levers.
+- **A lever's lifecycle:** declared → learned (settings) → a constant, or
+  retired through the deprecation register (0014).
+
 ---
 
 ## Approach: cheap measurements first, then learn
@@ -2334,6 +2442,41 @@ extended, and it still goes once §5 is proven.
 utmost care** (Andy, 2026-09-19). Nothing is resident that current activity
 does not need.
 
+**Completeness is a trap** (Andy, 2026-09-19): *"The concept of 'complete'
+datasets like the census is a trap. Life will always require decisions made
+from incomplete information … with member and partner rolls expiring and
+shed, nothing is 100% true."* And its capstone: *"A windowed roll will only
+ever be searched — 'what can I recall that's useful' — and we offer the user
+those choices. Period. No planning for 'knowing it all'."*
+- **Every lookup is a search** — members, partners, invites, the owner's own
+  roll, the node's contacts, routes. None is complete truth.
+- **Every answer is best effort** — capped, dated, saying what it could not
+  cover; `more` means "ask more specifically", never "next page".
+- **Rolls are never enumerated**, not even in pages (the whole roll in
+  slices is the census by another route — 0012 by symmetry, for partners and
+  invites too). The report carries counts; rolls answer bounded questions.
+- **Discovery searches live participants only** — "active participants are
+  the most precious". Member search walks the cache of connected members'
+  rows, never the disc.
+- **We design how we act, not how we would know**: every action works on a
+  partial answer, and plans carry no guarantees — **every cycle document
+  states its anticipated failures**, and what the user sees when each one
+  happens.
+
+**"Our willingness to throw out stale data is what keeps us alive"** (Andy,
+2026-09-19). Forgetting is a feature to build and test: shedding is asserted
+as correct behaviour, and a proposal to keep data "for later", or to grow a
+dataset without a disc bound, argues against this and usually loses.
+
+**spirit-3 is kept alive through every future cycle** (Andy, 2026-09-19:
+*"practice our care for our relays … latest by beta I want to start
+maintaining my spirit dataset on my work node, supported by my relay"*).
+spirit-3 is production now, the work node by beta. Placed, not yet built:
+every update keeps a way back (`bash/update` copies `relay.db`,
+`allow.json`, `identity.json` aside first); every release is rehearsed on a
+lab relay at the previous tag before it is tagged — which lowers the risk
+and cannot remove it; lever experiments happen on a lab relay first.
+
 **RAM conservation takes priority: caching goes to the route users** (Andy,
 2026-09-19, ruled). Where a relay could hold something to help a member,
 such as a route, the member's node holds it instead (§9b).
@@ -2472,8 +2615,8 @@ shape.
 | done | 1 | configuration, connection allowance, one-lever Governor, monitor rows | checkpoint, `c67ab1e`; live run moved to optimization |
 | scaffolding | 2 | **route hints end to end** — the relay accepts the hint, the node sends it, contacts store relay IDs; route announcements fill contacts | **locked in — next** (Andy) |
 | scaffolding | 3 | **SQLite** for the member roll, invites and **partner roll** (its own table in the §5 shape, today's partnerships imported as `partnered`; identity, allow, config stay files) — **and RAM becomes a client of disc** (amended, Andy): disc is the only copy; RAM holds only what current activity needs — connected members, rows a packet or query just touched, the monitoring reservation. The seven whole-roll reads in `relay.js` become queries, search the largest. Verified by a 10,000-member roll running at about the heap of a 10-member one. **The owner's first-claim token** and the installer | agreed (Andy) |
-| scaffolding | 4 | **the owner's visual monitor**, generic over levers — any lever in the report is drawn with position, floor, share and last move, so a new lever needs no UI work — **and the lever configuration API** beside it (§5): the monitor shows a lever, the API moves one that declares itself live | agreed (Andy) |
-| scaffolding | 5 | **partner acquisition**, the §5 model, **with the partner-to-partner API** (describe, propose/consent, terms); partner roll born in SQLite | agreed (Andy) |
+| scaffolding | 4 | **the owner's visual monitor**, generic over levers — any lever in the report is drawn with position, floor, share and last move, so a new lever needs no UI work — **and the lever configuration API** beside it (§5): the monitor shows a lever, the API moves one that declares itself live. **Planned 2026-09-19** as the Relay Monitor app (§4) and the lever object (§10), in pieces 4.1–4.6 | agreed (Andy); 4.1 next |
+| scaffolding | 5 | **partner acquisition**, the §5 model, **with the partner-to-partner API** (describe, propose/consent, terms); partner roll born in SQLite. **Its first piece, 5.1, is the vouch** (§6), before alpha | agreed (Andy) |
 | optimization | 6 | **dynamic shares** — fixed owner reservation, shares recomputed on connect/disconnect, fixed caps converted (§10) | |
 | optimization | 7 | DISC allotments; cycle 1's live run; Governor learning | |
 | optimization | — | **a search index**, a learning cycle after the scaffolding exists (Andy, 2026-09-19). Today search walks the roll a page at a time, which does not block but grows with the roll. Options: FTS5 trigram (keeps matches inside a word, 3+ characters, more disc); a `member_tokens(token, publicKey)` table or FTS5 words (starts-with per word, one seek per word, any word count); five indexed token columns (the same, but five seeks per word and words after the fifth unsearchable unless labels are capped at five words). In every option gradedSearch still ranks what the index returns, and 1–2 letter queries keep the walk. **Open, and it decides the option:** must matching inside a word (`ann` in `hannah`) stay? `node:sqlite` has FTS5 and trigram (SQLite 3.53.4, Node 24; spirit-3's Node 25 not checked) | |
@@ -2510,7 +2653,47 @@ The optimization rows stay unordered until the scaffolding is done.
 
 **The lever-integration routine** that the monitor makes possible: declare
 the lever's floor and share (§10) → carry its position and last move in the
-report → the monitor draws it. Nothing else to build per lever.
+report → the monitor draws it. Nothing else to build per lever. *(Extended
+by cycle 4's planning: declare it, report it, draw it, **prove it** — the
+lever contract, §10.)*
+
+**Cycle 4 in pieces** (Andy, 2026-09-19: "break the cycle into more
+manageable pieces"), each its own commit:
+- **4.1 hello world** — the owner moves one lever (`connections1`) from a
+  bare Relay Monitor and watches the relay take it, live.
+- **4.2 the contract, found by working the levers** — the generic test
+  layer emerges from `connections1` and a second real lever,
+  `requestTimeout1` (its bounds discussed at the start of 4.2); `levers.json`
+  and clamping.
+- **4.3 no roll travels whole** — counts in the report; rolls answer bounded
+  questions; discovery searches live participants only.
+- **4.4 triage** — the cadence switch, `All`, the ranking module.
+- **4.5 dialogs** — `consequence`; the traffic dialog.
+- **4.6 deprecation** — D9 (natterDetails' monitor rows), D10 (the old
+  partner form), and deleting the dead partner picker (it read the census).
+- **Then cycle 5.1, the vouch** (§6), before alpha.
+
+### Anticipated, and where it sits
+
+Every problem this planning anticipated, placed against the sequence —
+where, not how. The goal it points at: **the most robust, self-reliant relay
+network we can implement.**
+
+| stage | anticipated problem |
+|---|---|
+| cycle 4 | rolls passing the payload (answered: counts, bounded questions); network-wide triage without the relay selecting; hub.js still reading `census.roster` (traced before 4.1) |
+| cycle 5 | partners chosen by relays inside the owner's admitted set; the minting cycle; the partner-to-partner API; the old promotion model and the dead picker going |
+| Governor / tuning | the timeout floor measured; waits nesting; a deadline travelling with the request; the fan-out's own budget tier; the ranking learned; refusal paths seen live (exit 78, `check_started`) |
+| learning cycles | a search index (mostly dissolved by searching live participants); last-active per member; the flush of longest-inactive; trends kept on the node |
+| protocol, unplaced | peerPut (a receipt that answers at once, the answer as its own post); broadcasting the route back to other members; the phone's direct grant |
+| before separate shipping | version tolerance (§7) — already arriving through levers |
+| harness hygiene | suites leaving temporary folders; lab clones on old code |
+| decided, small, unplaced | `seen` on routes, hints ordered by it |
+
+Robustness keeps returning to one pattern: bound it, measure it, then let
+the Governor act inside the bound. Scaffolding (cycles 4–5) is where the
+network becomes observable and self-managing; everything after it is the
+network learning to use that.
 
 **Decided (Andy, 2026-09-19): the relay broadcasts, the node filters.**
 

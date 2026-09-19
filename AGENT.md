@@ -43,6 +43,7 @@ A relay is a client of the same interface. `createPeerPost` already takes `traff
 
 - One operator. **root is spirit.** Clone stays `/root/SpiritOS`.
 - No `User=spirit`, no `/opt`. See `bash/ONE-OPERATOR.md`.
+- **spirit-3 is production and is kept alive through every cycle** (Andy, 2026-09-19); the work node becomes production by beta. So: an update keeps a way back (relay data copied aside first — not built yet); a release is rehearsed on a lab relay at the previous tag before it is tagged; lever settings are tried on a lab relay before spirit-3. A rehearsal lowers the risk, it does not remove it. See NODE-AND-RELAY.md, standing rules.
 
 ## Git
 
@@ -51,7 +52,7 @@ A relay is a client of the same interface. `createPeerPost` already takes `traff
 ## Identity, invites, gates
 
 - Identity = keypair on the personal node. Perception = whoBook, never uploaded.
-- Live Kamatera is **keys-mode**, owner `andy`, cut over 2026-09-07 (`CUTOVER.md`). The harness cannot see the VPS, so this line is the only record.
+- Live Kamatera (spirit-3) is **keys-mode**, owner **`Andy Flinn`** in `allow.json` (read on the box 2026-09-19; this line said `andy`), cut over 2026-09-07 (`CUTOVER.md`), on `relay.db` since release `v-2026-09-19-17-00`. The harness cannot see the VPS, so this line is the only record.
 - Extra keys-mode claims need a live invite. **The first claim needs one too** (cycle 3, 0003 amended): an unclaimed relay takes only the owner invite `node install.js` mints over SSH. The owner key in `allow.json` may reclaim its own row if the roll lost it. **If `allow.json` is lost while `relay.db` holds members, the relay refuses to start (exit 78); recovery is SSH, restoring `allow.json` by hand — never the wire** (Andy). (This line said "Owner key may reclaim if `routingTable.json` is gone"; that file became `relay.db` in cycle 3, and a recovery rule naming a file that no longer exists is followed literally at the worst moment.)
 - Reserved name `relay` cannot be claimed. Chat-to-relay census is owner-only (asserted in `firstOwner.js`, not `relayGates.js`).
 - Inbox signed. Send rate-limit on `clientKey`. No `X-Forwarded-For` unless asked.

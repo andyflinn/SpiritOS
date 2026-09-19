@@ -86,3 +86,34 @@ failure this exists for.
 
 `Verify:` names a file that must exist. `DEFERRED:` must carry a reason on
 the same line. Anything else is red.
+
+A cycle file also carries an **"Anticipated failures"** section: what we
+expect can go wrong, and what the user sees when it does. Plans carry no
+guarantees (Andy, 2026-09-19).
+
+## How a cycle is shaped — the pattern cycle
+
+**DRAFT for Andy to correct** (agreed 2026-09-19: "at the end of this
+planning session, we codify a pattern cycle we both find effective"). Named
+by Andy while planning cycle 4:
+
+1. **Dream the shape** of the next cycle — the whole of what it could be.
+2. **Pare it down** to the most minimal first step that is achievable.
+3. **Clamp its scope** to that minimum, listing what is left out on purpose.
+4. **Amend planning errors and reconcile** with the larger vision and the
+   existing rules — every correction marked in place, never silently
+   edited. *Step 4 is the one that gets skipped, and without it a minimal
+   step drifts from the dream it came from.*
+
+The two halves of it:
+
+| Andy | Claude |
+|---|---|
+| dreams the shape, holds the vision | pares and clamps; proposes the smallest achievable step |
+| triggers step 4 when a proposal drifts from the vision | runs step 4 **before presenting anything**: does it break a decided rule; who holds authority; does it supersede something, and is that marked; does it promise what it cannot guarantee |
+| decides; may cancel a feature once its cost is visible | checks every premise against the tree, with a file and a line |
+| | asks in plain text, never in a prompt; never asks for approval while an issue that changes what gets built is open |
+
+Andy should only need to trigger step 4 for what only he can see — the
+vision. *(End of the draft: Claude's first wording of this section, not yet
+corrected by Andy.)*
