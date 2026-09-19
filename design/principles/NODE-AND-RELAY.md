@@ -1730,11 +1730,20 @@ hints.
   `partnerFromHints` already takes hints in their given order within each
   tier ([relay.js:2685](../../spirit/run/js/relay.js#L2685)).
 
-**Evidence, stated.** A's broadcast rests on a reply signed by the target,
-which nobody else could make. B's route rests on N1's signature, which B
-verifies, on a packet partner A carried. That shows A reaches N1, but no
-signature from N1 proves it is there. Accepted as enough for a hint, which the
-relay checks against its partner roll anyway.
+**Evidence: the forward is the proof.** N1's post signature covers the minute
+([relayAuth.js:135](../../spirit/run/js/relayAuth.js#L135)) and is accepted
+within ±1 minute ([relayAuth.js:147](../../spirit/run/js/relayAuth.js#L147)).
+A partner forwards only a post from its own member, enclosed whole. So a
+fresh packet from N1 that A carried shows that N1 is A's member and posted
+there just now. The only way round it is for A to replay a packet it got
+elsewhere within that window. That is a partner breaking the partnership, and
+B's trust in A already rests on both owners having minted it.
+
+*Andy: "Isn't the proof that N1 is there implicit in the fact that A forwarded
+N1's request to B?" Yes. This corrects an earlier note, the same day, which
+called B's evidence weaker than A's because no signature from N1 proved N1 was
+there. Both bars prove presence: at A a signature from the target, at B a
+fresh signature from the originator, carried by a minted partner.*
 
 **For Grok's review:** `seen` changes the contacts schema, from
 `routes: ['key', …]` to `routes: [{ at, seen }, …]`. The rule in CLAUDE.md
