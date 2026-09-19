@@ -1,6 +1,6 @@
 # 2026-09-19 — the relay's data on disc, and the owner's token
 
-**Status: OPEN. Part A (disc) done, eight requirements. Part B (the owner's
+**Status: OPEN. Part A (disc) done, nine requirements. Part B (the owner's
 first-claim token) not started; its requirements are written here when it
 is built, in its own commit.** Scaffolding cycle 3 of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
@@ -131,6 +131,32 @@ once.
 
 **Verify:** `spirit/test/storeImport.js` — the open refuses. The process
 exit itself has no spawned test; it is three lines around that call.
+
+**Status:** DONE
+
+### R9 — the member who answers learns the route back
+
+> **Andy (2026-09-19):** *"Now, because it should've been in the Part A
+> cycle."*
+
+Added after Part A's first commit. When B carries a post from N1 in through
+partner A, it keeps N1 and A's relay key in memory while the request is in
+flight (`forwarding`). When N2's signed reply is taken and B answers it with
+a 200, B sends **N2 alone** `('route', { key: N1, at: A })`. It is the same
+event cycle 2 broadcasts from A. The node already applies it through
+`onRoute` → `learnRoute`, which keeps it only for a contact. There is no
+route cache, nothing reaches disc, and B never reads the reply. An oversized
+reply, refused with 413, sends no route. Before this, B knew A's key at the
+moment it carried the post and dropped it
+([NODE-AND-RELAY §9b](../principles/NODE-AND-RELAY.md), "The member who
+answers learns the route back").
+
+Not in this requirement: `seen` and ordering hints by it. They change the
+contacts schema and wait for Grok's review.
+
+**Verify:** `spirit/test/hintWire.js` — over real sockets, bertrand on B
+hears `{ key: alice, at: A's relay key }` after answering, and bella on B
+hears nothing.
 
 **Status:** DONE
 

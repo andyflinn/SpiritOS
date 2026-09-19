@@ -166,7 +166,9 @@ async function run() {
 
   // bertrand answers whatever reaches him, signed over the hash he derives
   // from the bytes that arrived (0011).
+  const bertrandRoutes = [];
   hold(B, bertrand, function (msg) {
+    if (msg.event === 'route') { bertrandRoutes.push(msg.data); return; }
     if (msg.event !== 'request' || !msg.data) return;
     const d = msg.data;
     const verified = auth.postSignatureFor(d.from, d.from, d.to, d.text, d.sig);
@@ -190,6 +192,12 @@ async function run() {
   });
   let amyRoute = null;
   hold(A, amy, function (msg) { if (msg.event === 'route') amyRoute = msg.data; });
+  // Another member of B, who must hear nothing of it: the route back goes
+  // to the member who answered, not to B's roll (NODE-AND-RELAY §9b).
+  const bellaRoutes = [];
+  const bellaStream = hold(B, B.members.bella, function (msg) {
+    if (msg.event === 'route') bellaRoutes.push(msg.data);
+  });
   await sleep(600);
 
   test.subHeading('alice posts to bertrand, hinting B');
@@ -215,6 +223,26 @@ async function run() {
   } else {
     test.fail('route announcement at amy: ' + JSON.stringify(amyRoute));
   }
+
+  // THE ROUTE BACK (cycle 3, NODE-AND-RELAY §9b). B carried alice's post in
+  // from A; when bertrand's reply is taken, B tells him where alice is, so
+  // his next request to her can carry the hint. Before this, B knew A's key
+  // at the moment it carried the post and dropped it.
+  await until(function () { return bertrandRoutes.length > 0; }, 3000);
+  const back = bertrandRoutes[0];
+  if (back && back.key === alice.publicKey && back.at === A.box.relayPublicKey()) {
+    test.check('B told bertrand the route back: { key: alice, at: A’s relay key }');
+  } else {
+    test.fail('route back at bertrand: ' + JSON.stringify(bertrandRoutes));
+  }
+  if (bellaRoutes.length === 0) {
+    test.check('and told nobody else on B — the member who answered, only');
+  } else {
+    test.fail('the route back was broadcast: bella heard ' + JSON.stringify(bellaRoutes));
+  }
+  // bella goes offline again: the absent-target check below needs her gone.
+  bellaStream.close();
+  await sleep(600);
 
   test.subHeading('An error on the far side travels down the chain to alice');
 

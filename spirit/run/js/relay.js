@@ -1883,6 +1883,12 @@ function createRelay(rootDir, deps) {
   // bytes — so it is not a record of anything. It empties as replies
   // arrive, and a request whose member never answers is swept with its
   // route by the router's own ttl.
+  //
+  // inner hash -> { answer, from, at }: the partner's answer, and the
+  // originator and the partner that carried it — so the member who answers
+  // can be told the route back (cycle 3, NODE-AND-RELAY §9b, "The member
+  // who answers learns the route back"). Held only while the request is in
+  // flight; this is not a route cache, and nothing of it reaches disc.
   var forwarding = Object.create(null);
 
   // inner hash -> { to, at } for a forward this relay sent to a partner.
@@ -1894,7 +1900,7 @@ function createRelay(rootDir, deps) {
   //
   // Returns an answer object to send back at once, or `null` when the
   // packet is on its way to a member and the partner must wait.
-  function forwardToMine(packet, answerPartner) {
+  function forwardToMine(packet, answerPartner, viaKey) {
     var from = packet && packet.from;
     var to = packet && packet.to;
     var body = packet && packet.text;
@@ -1935,7 +1941,7 @@ function createRelay(rootDir, deps) {
     if (!opened || !opened.ok) return opened;
 
     monitorEvent('post', from, target.id, { bytes: body.length, hash: innerHash, via: 'partner' });
-    forwarding[innerHash] = answerPartner;
+    forwarding[innerHash] = { answer: answerPartner, from: from, at: String(viaKey || '') };
     return null;
   }
 
@@ -2269,7 +2275,7 @@ function createRelay(rootDir, deps) {
     // members — it is never re-forwarded. There is no second hop to
     // refuse because there is no code that could take one.
     if (body && body.forward && fromPartner) {
-      out = forwardToMine(body.forward, sendAnswer);
+      out = forwardToMine(body.forward, sendAnswer, who.id);
       if (out === null) return;   // delivered; the answer comes when N2 replies
     } else if (body && body.search) {
       var q = String((body.search.q) || '').trim().toLowerCase();
@@ -2951,7 +2957,8 @@ function createRelay(rootDir, deps) {
     // receipt itself and neither relay can alter what was said without
     // breaking it.
     if (forwarding[hash]) {
-      var answerPartner = forwarding[hash];
+      var carried = forwarding[hash];
+      var answerPartner = carried.answer;
       delete forwarding[hash];
       // WILL IT FIT GOING BACK? (cycle 2) The reply is about to become
       // this relay's own answer to its partner, wrapped whole. One that
@@ -2973,6 +2980,17 @@ function createRelay(rootDir, deps) {
           sig: sig,
         },
       });
+      // THE ROUTE BACK, TO THE MEMBER WHO ANSWERED AND NOBODY ELSE
+      // (cycle 3, NODE-AND-RELAY §9b). The request came from `from` through
+      // partner `at`; a fresh signature from the originator, carried by a
+      // minted partner, is the proof. Sent with this 200 on ANY signed
+      // reply — a reply has no status, and whether the member took the
+      // request in is in its text, which this relay never reads. The node
+      // keeps it only for a contact (learnRoute). Not broadcast to the
+      // other members: that is open in §9b.
+      if (carried.at && carried.from) {
+        presentNow.send(who.id, 'route', { key: carried.from, at: carried.at });
+      }
       return { ok: true, status: 200, delivered: true };
     }
 

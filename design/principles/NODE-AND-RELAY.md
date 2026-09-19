@@ -1757,7 +1757,14 @@ decided it; Grok should see it before it is built.
 - Whether a route not seen for a long time should stop being sent as a hint.
   No threshold is proposed; that is for measurement.
 
-**Scheduled** after cycle 3 Part B, as a small cycle of its own.
+**Built, the relay half:** cycle 3 Part A, R9. Andy: *"Now, because it
+should've been in the Part A cycle."* B sends the route to the member who
+answers, and the node applies it through the existing `learnRoute`. **Still
+to build:** `seen` and ordering hints by it, after Grok's review of the
+schema change.
+
+*This replaces "scheduled after cycle 3 Part B, as a small cycle of its
+own", written earlier the same day.*
 
 ### A warm partner row carries an outstanding-post count
 
@@ -2363,9 +2370,10 @@ shape.
 **Cycles 2–5 agreed "for now", cycle 2 locked in** (Andy, 2026-09-19).
 Cycle 2 closed the same day. Cycle 3 Part A (disc, RAM its client) is done;
 Part B (the owner's token) is next —
-[the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md). After it,
-a small cycle: **the member who answers learns the route back** (§9b), which
-completes cycle 2's route learning in the reverse direction.
+[the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md). Part A
+also carries **the member who answers learns the route back** (§9b, R9),
+which completes cycle 2's route learning in the reverse direction. `seen`
+waits for Grok's review.
 
 > **Andy (2026-09-19), on cycle 3:** *"Can we amend cycle 3 to demand that
 > storage is actually moved from RAM to DISC, and RAM must become a
