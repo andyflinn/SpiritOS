@@ -221,6 +221,22 @@ function theSweepPrunes() {
     test.fail('an unreachable relay emptied the book');
   }
 
+  // ── NOR DOES ONE THAT ANSWERED WITHOUT A ROSTER (2026-09-19) ─────────
+  //
+  // The regression this guards: the census went on 2026-09-18 and the
+  // probe no longer carries a roster, so an owned relay that answered
+  // perfectly well read as "nobody holds a seat" — and every probe
+  // cleared memberOf on every member contact. Absence from a list this
+  // node no longer receives proves nothing.
+  const said = hub.reconcileMembers({
+    rows: [{ url: MINE, owned: true, status: 200, census: { owner: 'me', relayKey: 'RK' } }],
+  });
+  if (said.pruned === 0 && contactBook.isMember(contactBook.byPublicKey(home, 'K-CRUELLA'))) {
+    test.check('nor does one that answered without a roster — no list, no conclusion');
+  } else {
+    test.fail('a roster-less answer pruned: ' + JSON.stringify(said));
+  }
+
   fs.rmSync(home, { recursive: true, force: true });
 }
 

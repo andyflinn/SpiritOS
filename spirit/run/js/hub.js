@@ -1620,6 +1620,22 @@ function createHub(rootDir) {
     // natterCheckBinding follows for bindings, for the same reason.
     if (!owned) return { adopted: 0, pruned: 0 };
 
+    // AND NO ROSTER, NO CONCLUSION — the same guard reconcileOrphans has.
+    // The census went on 2026-09-18 and ownerBadge no longer supplies a
+    // roster, so every roster here reads []. Without this, an owned relay
+    // that answered perfectly well was read as "nobody holds a seat", and
+    // every run (boot, claim events, every status probe) cleared memberOf
+    // on every member contact. Found 2026-09-19 tracing census.roster
+    // before cycle 4. Absence from a list this node no longer receives
+    // proves nothing ("completeness is a trap", NODE-AND-RELAY). What
+    // replaces the sweep — or whether a contact carries memberOf at all,
+    // since it is derived from a fleeting roll — is Andy's, planned with
+    // cycle 4.3.
+    var anyRoster = rows.some(function (row) {
+      return row && row.owned && ((row.census && row.census.roster) || []).length > 0;
+    });
+    if (!anyRoster) return { adopted: 0, pruned: 0 };
+
     var adopted = 0;
     Object.keys(seats).forEach(function (key) {
       var existing = null;
