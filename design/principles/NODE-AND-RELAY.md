@@ -2105,8 +2105,10 @@ measurement, not a guess.*
 
 **Known so far.** A roll walk, measured 2026-09-19 on the workstation: about
 5.5 µs per member, so 10,000 members take 40–90 ms and 100,000 about 550 ms.
-The walk is synchronous, so that relay handles nothing else while it runs.
-Localhost says nothing about real links: the measurement needs real relays
+Since cycle 3 the walk goes a page at a time, with the event loop between
+pages. The relay keeps serving while it runs, and the search takes its work
+time plus whatever it waits for. *(This replaces "the walk is synchronous, so
+that relay handles nothing else while it runs".)* Localhost says nothing about real links: the measurement needs real relays
 (spirit-3 and a second relay; lab never runs against spirit-3).
 
 **The measurement, when built.** A times each propagated search from start
@@ -2289,13 +2291,27 @@ extended, and it still goes once §5 is proven.
 utmost care** (Andy, 2026-09-19). Nothing is resident that current activity
 does not need.
 
+**RAM conservation takes priority: caching goes to the route users** (Andy,
+2026-09-19, ruled). Where a relay could hold something to help a member,
+such as a route, the member's node holds it instead (§9b).
+
+**Nothing on a relay blocks** (Andy, 2026-09-19): *"The nature of all wire
+comms is asynchronous. And blocking hurts the resources of relays."* No
+relay operation keeps the event loop for longer than a short, bounded turn.
+Work that grows with the roll, such as search, is done a page at a time with
+the event loop between pages. Cycle 3 made the search walk this way
+(`walkRoll`, `relayStore` `members.page`). A synchronous walk of the whole
+roll is for suites and tools only.
+
 **The owner does not duplicate member storage** (Andy, 2026-09-19). A
 relay's member roll and partner roll exist only on the relay; the owner's
 node holds counts and decisions from the report, never the rows (§2). On
 the relay, **DISC holds the full roll**, flushed automatically
 longest-inactive first; **RAM holds only the currently active members**.
-*Not true of the tree today:* `routingTable.json` is read whole at boot and
-the roll is resident (§4, §9b).
+*True since cycle 3:* the roll is in `relay.db` and RAM holds only the rows
+of connected members. *(This replaces "not true of the tree today:
+`routingTable.json` is read whole at boot and the roll is resident".)* The
+automatic flush, longest-inactive first, is not built yet.
 
 **The node accumulates; the relay forgets.** Every relay store is a rolling
 window. Its log already was — `trafficLog` writes nothing in relay mode —

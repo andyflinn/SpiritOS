@@ -98,139 +98,194 @@ function lastReply(bag) {
   catch (e) { return null; }
 }
 
+
+function replies(bag) {
+  return bag.filter(function (m) { return m.event === 'reply'; }).length;
+}
+
+function until(pred, ms) {
+  const end = Date.now() + ms;
+  return new Promise(function (resolve) {
+    (function poll() {
+      if (pred() || Date.now() > end) { resolve(pred()); return; }
+      setTimeout(poll, 5);
+    })();
+  });
+}
+
 // What the relay costs in heap once it is up and has answered a search.
-function relayCost(fixture) {
+// The search walks asynchronously (walkRoll), so the answer is awaited.
+async function relayCost(fixture) {
   const before = heap();
   const box = createRelay(fixture.home);
   const bag = [];
   box.streamOpen(fixture.owner.publicKey,
     auth.sign(fixture.owner.privateKey, auth.streamMessage(fixture.owner.publicKey)), sinkFor(bag));
   post(box, fixture.owner, box.relayPublicKey(), { search: { q: 'member0004' } });
+  await until(function () { return replies(bag) > 0; }, 10000);
   const after = heap();
   return { box: box, bag: bag, bytes: after - before };
 }
 
-test.startTest('RAM is a client of disc — a big roll costs no heap');
+test.startTest('RAM is a client of disc — a big roll costs no heap, and blocks nothing');
 
-const big = homeWith('big', BIG);
-const small = homeWith('small', SMALL);
+async function run() {
+  const big = homeWith('big', BIG);
+  const small = homeWith('small', SMALL);
 
-// Warm the code paths once, so the first relay built does not pay for
-// compiling what the second then gets free.
-relayCost(homeWith('warm', 3));
+  // Warm the code paths once, so the first relay built does not pay for
+  // compiling what the second then gets free.
+  await relayCost(homeWith('warm', 3));
 
-const S = relayCost(small);
-const B = relayCost(big);
+  const S = await relayCost(small);
+  const B = await relayCost(big);
 
-test.subHeading(BIG + ' members against ' + SMALL);
+  test.subHeading(BIG + ' members against ' + SMALL);
 
-const diff = B.bytes - S.bytes;
-if (diff < MARGIN) {
-  test.check('the relay over ' + BIG + ' members is within ' + Math.round(MARGIN / 1024) +
-    ' KB of the one over ' + SMALL + ': ' + Math.round(diff / 1024) + ' KB apart');
-} else {
-  test.fail('a big roll costs heap: ' + Math.round(B.bytes / 1024) + ' KB against ' +
-    Math.round(S.bytes / 1024) + ' KB — something holds the roll in RAM');
+  const diff = B.bytes - S.bytes;
+  if (diff < MARGIN) {
+    test.check('the relay over ' + BIG + ' members is within ' + Math.round(MARGIN / 1024) +
+      ' KB of the one over ' + SMALL + ': ' + Math.round(diff / 1024) + ' KB apart');
+  } else {
+    test.fail('a big roll costs heap: ' + Math.round(B.bytes / 1024) + ' KB against ' +
+      Math.round(S.bytes / 1024) + ' KB — something holds the roll in RAM');
+  }
+
+  test.subHeading('Search still sees all of them');
+
+  const answer = lastReply(B.bag);
+  const labels = ((answer && answer.matches) || []).map(function (m) { return m.publicLabel; });
+  if (answer && answer.ok && labels.length && labels.every(function (l) { return l.indexOf('member0004') === 0; })) {
+    test.check('a search over ' + BIG + ' rows answers from disc: ' + labels.length + ' ranked matches');
+  } else {
+    test.fail('search: ' + JSON.stringify(answer && { ok: answer.ok, n: labels.length, first: labels[0] }));
+  }
+
+  let n = replies(B.bag);
+  post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member09999' } });
+  await until(function () { return replies(B.bag) > n; }, 10000);
+  const exact = lastReply(B.bag);
+  const top = exact && exact.matches && exact.matches[0];
+  if (top && top.publicLabel === 'member09999') {
+    test.check('and the last row written is found first when asked for exactly');
+  } else {
+    test.fail('exact: ' + JSON.stringify(top));
+  }
+
+  test.subHeading('A search does not block the relay');
+
+  // Andy: "the nature of all wire comms is asynchronous. And blocking
+  // hurts the resources of relays." The walk reads a page, hands the event
+  // loop back, and reads the next (walkRoll). So a request that arrives
+  // while a big search is walking is answered before the search is.
+  const realSink = [];
+  B.box.streamOpen(big.real.publicKey,
+    auth.sign(big.real.privateKey, auth.streamMessage(big.real.publicKey)), sinkFor(realSink));
+  n = replies(B.bag);
+  post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member' } });
+  const searchStillWalking = replies(B.bag) === n;
+  await new Promise(function (r) { setImmediate(r); });   // one turn of the walk
+  post(B.box, big.real, B.box.relayPublicKey(), { partners: true });
+  const otherAnswered = replies(realSink) > 0;
+  const searchStillOpen = replies(B.bag) === n;
+  if (searchStillWalking && otherAnswered && searchStillOpen) {
+    test.check('a request arriving mid-search is answered while the ' + BIG + '-row walk is still going');
+  } else {
+    test.fail('walking=' + searchStillWalking + ' other=' + otherAnswered + ' open=' + searchStillOpen);
+  }
+  await until(function () { return replies(B.bag) > n; }, 10000);
+  if (replies(B.bag) > n && lastReply(B.bag).ok) {
+    test.check('and the search still answers when its walk ends');
+  } else {
+    test.fail('the search never answered');
+  }
+
+  test.subHeading('An unknown sender costs one read');
+
+  // Count every walk of the roll: a walk starts with the first page.
+  // relay.js reaches the store through relayStore.open(home), the same
+  // cached object this suite holds.
+  const members = relayStore.open(big.home).members;
+  const realPage = members.page;
+  let walks = 0;
+  members.page = function (after, limit) {
+    if (!after) walks += 1;
+    return realPage(after, limit);
+  };
+
+  const stranger = auth.generateIdentity('stranger');
+  const refused = post(B.box, stranger, B.box.relayPublicKey(), { partners: true });
+  if (refused && refused.ok === false && walks === 0) {
+    test.check('a key with no row is refused (' + refused.status + ') without walking the roll');
+  } else {
+    test.fail('stranger: ' + JSON.stringify(refused) + ' walks=' + walks);
+  }
+
+  // And the counter is awake: a search is exactly one walk.
+  n = replies(B.bag);
+  post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member' } });
+  await until(function () { return replies(B.bag) > n; }, 10000);
+  if (walks === 1) {
+    test.check('while a search is exactly one walk — the counter is not asleep');
+  } else {
+    test.fail('search walked ' + walks + ' time(s)');
+  }
+  members.page = realPage;
+
+  test.subHeading('A connected member is served from RAM');
+
+  // Andy, cycle 3: cache the rows of ACTIVE members, bounded by the
+  // connection allowance. A member holding a stream is resolved without a
+  // disc read; one who is not costs exactly one keyed read.
+  const realGet = members.get;
+  let reads = [];
+  members.get = function (k) { reads.push(k); return realGet(k); };
+
+  const before = replies(realSink);
+  reads = [];
+  post(B.box, big.real, B.box.relayPublicKey(), { partners: true });
+  const reply = replies(realSink) > before ? lastReply(realSink) : null;
+  if (reply && reply.ok && reads.indexOf(big.real.publicKey) === -1) {
+    test.check('a member with an open stream posts without its row being read from disc');
+  } else {
+    test.fail('reads=' + JSON.stringify(reads.map(function (k) { return String(k).slice(-6); })) +
+      ' reply=' + JSON.stringify(reply));
+  }
+
+  reads = [];
+  post(B.box, stranger, B.box.relayPublicKey(), { partners: true });
+  if (reads.filter(function (k) { return k === stranger.publicKey; }).length === 1) {
+    test.check('and a stranger costs one keyed read of the disc, success or fail');
+  } else {
+    test.fail('stranger reads: ' + reads.length);
+  }
+  members.get = realGet;
+
+  test.subHeading('Every operation is by key');
+
+  // Andy, cycle 3: labels serve search and display only. Before cycle 3 a
+  // sender or a target could be named by label and resolved by a scan.
+  const asLabel = post(B.box, { publicKey: 'real', privateKey: big.real.privateKey },
+    B.box.relayPublicKey(), { partners: true });
+  if (asLabel && asLabel.ok === false) {
+    test.check('a sender named by label is refused, even signing with the right key (' + asLabel.status + ')');
+  } else {
+    test.fail('label as sender: ' + JSON.stringify(asLabel));
+  }
+
+  const toLabel = post(B.box, big.real, 'owner', { ping: 1 });
+  if (toLabel && toLabel.ok === false) {
+    test.check('and a target named by label is not a peer (' + toLabel.status + ')');
+  } else {
+    test.fail('label as target: ' + JSON.stringify(toLabel));
+  }
+
+  relayStore.closeAll();
+  [big.home, small.home].forEach(function (h) {
+    try { fs.rmSync(h, { recursive: true, force: true }); } catch (e) { /* windows */ }
+  });
 }
 
-test.subHeading('Search still sees all of them');
-
-const answer = lastReply(B.bag);
-const labels = ((answer && answer.matches) || []).map(function (m) { return m.publicLabel; });
-if (answer && answer.ok && labels.length && labels.every(function (l) { return l.indexOf('member0004') === 0; })) {
-  test.check('a search over ' + BIG + ' rows answers from the cursor: ' + labels.length + ' ranked matches');
-} else {
-  test.fail('search: ' + JSON.stringify(answer && { ok: answer.ok, n: labels.length, first: labels[0] }));
-}
-
-post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member09999' } });
-const exact = lastReply(B.bag);
-const top = exact && exact.matches && exact.matches[0];
-if (top && top.publicLabel === 'member09999') {
-  test.check('and the last row written is found first when asked for exactly');
-} else {
-  test.fail('exact: ' + JSON.stringify(top));
-}
-
-test.subHeading('An unknown sender costs one read');
-
-// Count every walk of the roll. relay.js reaches the store through
-// relayStore.open(home), the same cached object this suite holds.
-const members = relayStore.open(big.home).members;
-const realEach = members.each;
-let walks = 0;
-members.each = function (fn) { walks += 1; return realEach(fn); };
-
-const stranger = auth.generateIdentity('stranger');
-const refused = post(B.box, stranger, B.box.relayPublicKey(), { partners: true });
-if (refused && refused.ok === false && walks === 0) {
-  test.check('a key with no row is refused (' + refused.status + ') without walking the roll');
-} else {
-  test.fail('stranger: ' + JSON.stringify(refused) + ' walks=' + walks);
-}
-
-// And the counter is awake: a search is exactly one walk.
-post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member' } });
-if (walks === 1) {
-  test.check('while a search is exactly one walk — the counter is not asleep');
-} else {
-  test.fail('search walked ' + walks + ' time(s)');
-}
-members.each = realEach;
-
-test.subHeading('A connected member is served from RAM');
-
-// Andy, cycle 3: cache the rows of ACTIVE members, bounded by the
-// connection allowance. A member holding a stream is resolved without a
-// disc read; one who is not costs exactly one keyed read.
-const realGet = members.get;
-let reads = [];
-members.get = function (k) { reads.push(k); return realGet(k); };
-
-const realSink = [];
-B.box.streamOpen(big.real.publicKey,
-  auth.sign(big.real.privateKey, auth.streamMessage(big.real.publicKey)), sinkFor(realSink));
-reads = [];
-post(B.box, big.real, B.box.relayPublicKey(), { partners: true });
-const reply = lastReply(realSink);
-if (reply && reply.ok && reads.indexOf(big.real.publicKey) === -1) {
-  test.check('a member with an open stream posts without its row being read from disc');
-} else {
-  test.fail('reads=' + JSON.stringify(reads.map(function (k) { return String(k).slice(-6); })) +
-    ' reply=' + JSON.stringify(reply));
-}
-
-reads = [];
-post(B.box, stranger, B.box.relayPublicKey(), { partners: true });
-if (reads.filter(function (k) { return k === stranger.publicKey; }).length === 1) {
-  test.check('and a stranger costs one keyed read of the disc, success or fail');
-} else {
-  test.fail('stranger reads: ' + reads.length);
-}
-members.get = realGet;
-
-test.subHeading('Every operation is by key');
-
-// Andy, cycle 3: labels serve search and display only. Before cycle 3 a
-// sender or a target could be named by label and resolved by a scan.
-const asLabel = post(B.box, { publicKey: 'real', privateKey: big.real.privateKey },
-  B.box.relayPublicKey(), { partners: true });
-if (asLabel && asLabel.ok === false) {
-  test.check('a sender named by label is refused, even signing with the right key (' + asLabel.status + ')');
-} else {
-  test.fail('label as sender: ' + JSON.stringify(asLabel));
-}
-
-const toLabel = post(B.box, big.real, 'owner', { ping: 1 });
-if (toLabel && toLabel.ok === false) {
-  test.check('and a target named by label is not a peer (' + toLabel.status + ')');
-} else {
-  test.fail('label as target: ' + JSON.stringify(toLabel));
-}
-
-relayStore.closeAll();
-[big.home, small.home].forEach(function (h) {
-  try { fs.rmSync(h, { recursive: true, force: true }); } catch (e) { /* windows */ }
-});
-
-test.reportSuccessFailureCount();
+run()
+  .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
+  .then(function () { test.reportSuccessFailureCount(); });

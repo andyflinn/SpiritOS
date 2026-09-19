@@ -126,6 +126,7 @@ function build(rootDir, db, key) {
     memberByKeys: null,
     memberCount: db.prepare('SELECT COUNT(*) AS n FROM members'),
     memberAll: db.prepare('SELECT * FROM members ORDER BY claimedAt'),
+    memberPage: db.prepare('SELECT * FROM members WHERE publicKey > ? ORDER BY publicKey LIMIT ?'),
     memberPut: db.prepare(`INSERT INTO members (publicKey, publicLabel, labelNorm, claimedAt, owner)
       VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(publicKey) DO UPDATE SET publicLabel = excluded.publicLabel,
@@ -184,9 +185,18 @@ function build(rootDir, db, key) {
           .filter(Boolean);
       },
       count: function () { return q.memberCount.get().n; },
-      // A cursor, not a list: rows are handed over one at a time, so a
-      // caller that keeps only the best few (search's bucket) holds only
-      // those in memory however large the roll is.
+      // ONE PAGE OF THE ROLL, by key: the rows after `afterKey`, at most
+      // `limit`. How the relay walks the roll — a page, then the event loop,
+      // then the next — because a walk in one go blocks every other request
+      // for as long as it takes (Andy: "the nature of all wire comms is
+      // asynchronous, and blocking hurts the resources of relays"). Keyed,
+      // not an open cursor, so nothing is held between pages.
+      page: function (afterKey, limit) {
+        return q.memberPage.all(String(afterKey || ''), limit).map(member);
+      },
+      // The whole roll in one go, row by row. For suites and tools only:
+      // it blocks for as long as the walk takes, so the relay never calls
+      // it (it walks by `page`).
       each: function (fn) {
         for (const row of q.memberAll.iterate()) {
           if (fn(member(row)) === false) break;

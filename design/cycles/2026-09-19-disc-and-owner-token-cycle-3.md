@@ -57,10 +57,20 @@ The only thing resident is **the rows of connected members** (Andy: cache
 active members, bounded by the connection allowance). The cache fills on
 stream open, empties on close and on eviction, and is refreshed on rename.
 
-**Verify:** `spirit/test/diskClient.js` — 10,000 members against 10: 40–50
-KB apart where a resident roll measured 2.1 MB; search ranks across all of
-them; a stranger is refused without walking the roll; a connected member
-posts without a disc read.
+**The walk does not block** (Andy: *"the nature of all wire comms is
+asynchronous, and blocking hurts the resources of relays"*). Search reads
+the roll a page at a time (`members.page`, `SEARCH_PAGE` = 1,000, about 5 ms
+a page), with the event loop between pages (`walkRoll`). Pages are keyed, so
+nothing is held between them. A roll smaller than one page still answers in
+the same turn. *This replaces the first version of this requirement, which
+walked the whole roll in one synchronous pass: RAM-flat, but a 100,000-member
+search stalled the relay for about 550 ms.*
+
+**Verify:** `spirit/test/diskClient.js` — 10,000 members against 10: well
+under 512 KB apart where a resident roll measured 2.1 MB; search ranks across
+all of them; a request arriving mid-search is answered while the walk is
+still going; a stranger is refused without walking the roll; a connected
+member posts without a disc read.
 
 **Status:** DONE
 
@@ -186,8 +196,8 @@ refuses to start, with the exit code, the unit setting, and `bash/restart` /
   minting cycle and the partner verbs are cycle 5's.
 - The active-row cache is bounded by the connection allowance and has no
   lever of its own; cycle 4's monitor can draw it.
-- Search walks the whole roll through the cursor. That is RAM-flat but not
-  disc-flat. An indexed prefix search is optimization, and is not needed
-  here. Measured: about 5.5 µs per member (100,000 in about 550 ms). The walk
-  is synchronous, so the relay stalls while it runs. It feeds the timeout
-  floor (NODE-AND-RELAY §10).
+- Search walks the whole roll, a page at a time. That is RAM-flat and
+  non-blocking, but not disc-flat. An indexed prefix search is optimization,
+  and is not needed here. Measured: about 5.5 µs per member (100,000 in about
+  550 ms of work, now spread over turns). It feeds the timeout floor
+  (NODE-AND-RELAY §10).

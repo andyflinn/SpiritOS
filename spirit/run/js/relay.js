@@ -56,6 +56,14 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 // other moves the worst case linearly.
 var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
 
+// How many members one turn of a search walk reads before handing the
+// event loop back (walkRoll). Measured 2026-09-19 on the workstation at
+// ~5.5 µs a row, so a page is ~5 ms: short enough that nothing waits
+// behind it, long enough that the turns are not all overhead. A guess to
+// be measured on the relay itself, like the timeout floor
+// (NODE-AND-RELAY §10).
+var SEARCH_PAGE = 1000;
+
 // How many rows a search answers with. Fixed, not measured — see the
 // note at the cap itself.
 //
@@ -2172,6 +2180,8 @@ function createRelay(rootDir, deps) {
     // Null for every other verb and for a partner-asked search, which is
     // how the one-hop rule is carried from the gate to the send.
     var pendingSearch = null;
+    // Set by the search branch: a roll walk to run before anything is sent.
+    var searching = null;
 
     // ── WHAT A PARTNER MAY ASK, WHICH IS ONE THING ────────────────────
     //
@@ -2322,29 +2332,21 @@ function createRelay(rootDir, deps) {
         //
         // What this file is no longer entitled to an opinion about: what
         // a good match is, what beats what, and how many fit.
-        // STREAMED FROM DISC (cycle 3). Rows come off a cursor one at a
-        // time and are offered to the bucket, which keeps only the best
-        // SLOTS — so memory is the bucket's size however large the roll,
-        // and the ranking is exactly what it was.
-        var bucket = peerSearch.open(q, peerSearch.SLOTS);
-        store.members.each(function (p) {
-          if (!p || !p.publicKey) return;
-          bucket.offer({
-            publicKey: p.publicKey,
-            publicLabel: labelOf(p),
-            claimedAt: p.claimedAt,
-            owner: !!p.owner,
-            // Off the public census, but a search reaches this line only
-            // from a member over a signed post — the authenticated
-            // channel that was always allowed to carry it.
-            present: presentNow.isPresent(p.publicKey),
-            via: null,
-          });
-        });
+        // THE WALK IS ASYNCHRONOUS (cycle 3). The roll is read a page at a
+        // time off disc, with the event loop between pages (walkRoll), so
+        // a search over a large roll never stalls every other request on
+        // this relay. The answer is composed when the walk ends —
+        // `searching` hands the rest of this function to it.
+        searching = { q: q, propagate: propagate };
+      }
+    }
 
+    // What the walk produced, turned into this relay's answer. Only the
+    // timing moved: this ran inline, straight after the walk, until the
+    // walk stopped blocking.
+    function composeSearch(found, q, propagate) {
         // ONE BUCKET, offered every row. Never a list of everyone — this
         // relay may hold a million members and `q` may be one letter.
-        var found = bucket.result();
         var matches = found.matches.map(function (row) {
           // `via` is the merger's field and means nothing in a reply that
           // had one source. It goes back on at the point a reply carries
@@ -2390,7 +2392,6 @@ function createRelay(rootDir, deps) {
           more: more || localCut,
           matches: localFit,
         };
-      }
     }
     if (body && body.partners) {
       out = {
@@ -2598,6 +2599,20 @@ function createRelay(rootDir, deps) {
     // A partner that is slow, down, or refuses contributes nothing and is
     // not an error. The member gets this relay's own answer either way,
     // which is what it would have got yesterday.
+    if (searching) {
+      walkRoll(searching.q, function (found) {
+        if (!found) {
+          out = { ok: false, status: 503, error: 'search failed' };
+        } else {
+          composeSearch(found, searching.q, searching.propagate);
+        }
+        finish();
+      });
+      return;
+    }
+    finish();
+
+    function finish() {
     if (pendingSearch) {
       var partnerList = askPartner ? (partners() || []) : [];
       if (!partnerList.length) {
@@ -2666,6 +2681,49 @@ function createRelay(rootDir, deps) {
     }
 
     sendAnswer(out);
+    }
+  }
+
+  // ── THE ROLL, WALKED WITHOUT BLOCKING (cycle 3) ──────────────────────
+  //
+  //   Andy: "the nature of all wire comms is asynchronous. And blocking
+  //   hurts the resources of relays."
+  //
+  // A page of SEARCH_PAGE rows off disc, offered to the bucket, then the
+  // event loop, then the next page — so a search over a million members
+  // is a long series of short turns, and every other request on this relay
+  // is served between them. The bucket keeps only the best SLOTS, so RAM
+  // is the bucket plus one page however large the roll. Pages are keyed
+  // (`publicKey > last`), not an open cursor: nothing is held between
+  // turns, and a row added or removed mid-walk is simply seen or not.
+  //
+  // `done(result)` gets peerSearch's result, or null if the store failed.
+  function walkRoll(q, done) {
+    var bucket = peerSearch.open(q, peerSearch.SLOTS);
+    var after = '';
+    (function step() {
+      var rows;
+      try { rows = store.members.page(after, SEARCH_PAGE); }
+      catch (e) { done(null); return; }
+      for (var i = 0; i < rows.length; i += 1) {
+        var p = rows[i];
+        if (!p || !p.publicKey) continue;
+        bucket.offer({
+          publicKey: p.publicKey,
+          publicLabel: labelOf(p),
+          claimedAt: p.claimedAt,
+          owner: !!p.owner,
+          // Off the public census, but a search reaches this line only
+          // from a member over a signed post — the authenticated
+          // channel that was always allowed to carry it.
+          present: presentNow.isPresent(p.publicKey),
+          via: null,
+        });
+      }
+      if (rows.length < SEARCH_PAGE) { done(bucket.result()); return; }
+      after = rows[rows.length - 1].publicKey;
+      setImmediate(step);
+    })();
   }
 
   // ── WHICH PARTNER, FROM THE SENDER'S HINTS (cycle 2) ─────────────────
