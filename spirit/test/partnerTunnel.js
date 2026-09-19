@@ -462,6 +462,9 @@ test.subHeading('And sonny’s answer reaches jazz');
   const mintB = B.box.mint('ownerb', 'dave', 7, '');
   B.box.claim('dave', auth.sign(D.people.dave.privateKey, auth.claimMessage('dave')),
     daveKey, null, mintB.invite.token, 'dave');
+  // Connected on B too: search answers the connected only (2026-09-19).
+  B.box.streamOpen(daveKey,
+    auth.sign(D.people.dave.privateKey, auth.streamMessage(daveKey)), sinkFor([]));
 
   post(A.box, A.people.jazz, A.key, { search: { q: 'dave' } });
   // A real turn of the loop, not a microtask: the fan-out is a Promise.all
@@ -519,6 +522,9 @@ test.subHeading('And sonny’s answer reaches jazz');
     const minted = relay.box.mint('owner' + tag, 'andy', 7, '');
     relay.box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')),
       andy.publicKey, 'client-andy-' + tag, minted.invite.token, 'andy');
+    // And connected on both: search answers the connected only.
+    relay.box.streamOpen(andy.publicKey,
+      auth.sign(andy.privateKey, auth.streamMessage(andy.publicKey)), sinkFor([]));
   });
 
   post(A.box, A.people.jazz, A.key, { search: { q: 'andy' } });

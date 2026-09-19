@@ -81,9 +81,17 @@ function createPresence(opts) {
   // present; ⚪ no relay mentions this key at all.
   //
   // White needs no entry: a key absent from this map is one no relay
-  // named, which is exactly "not known". That is why the relay's
-  // snapshot has to be the roster WITH STATES — if it listed only the
-  // connected, every away member would silently become white.
+  // named, which is exactly "not known".
+  //
+  // *This corrects an earlier note*, which said the relay's snapshot had
+  // to be the roster with states, "or every away member would silently
+  // become white". There is no roster (cycle 3), and search answers the
+  // connected only (2026-09-19), so a contact nobody has mentioned since
+  // this stream opened IS white, and that is the honest answer — Andy:
+  // "we won't be bothered with what we can't find or know." Red comes
+  // only from a relay saying so (a `present: false` broadcast); green from
+  // a broadcast. Deciding a contact is offline is the node's own
+  // conclusion from not finding them.
   function merge() {
     const out = Object.create(null);
     Object.keys(byRelay).forEach(function (url) {

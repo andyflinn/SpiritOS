@@ -175,64 +175,18 @@ test.subHeading('What counts as a badge');
 // route had no caller but this badge, and its signature was the only one
 // on this wire that could not expire.
 //
-// The question survives the mechanism: IS MY KEY THE ONE MARKED OWNER?
-// `ownedFrom` answers it off the public census, by key. So the impostor
-// cases change shape — there is no status code to lie with any more, and
-// what an impostor would have to forge is a peer row carrying somebody
-// else's key.
+// The question survives the mechanism: IS MY KEY THE OWNER'S? It was
+// answered off the public census by `ownedFrom` — "my key carrying
+// owner:true" — until the census went and then, on 2026-09-19, the mark
+// on the row ("a row in the roll doesn't know who the owner is"). The
+// relay names its owner's key at /api/relay/key, and `probe` compares:
+// runBadgeProbe below is where the badge is asserted now.
 {
-  const me = auth.generateIdentity('me');
-  const other = auth.generateIdentity('other');
-  const census = function (peers) {
-    return { status: 200, text: JSON.stringify({ peers: peers }) };
-  };
-  const row = function (key, owner) {
-    return { name: 'x', publicLabel: 'x', publicKey: key, owner: !!owner };
-  };
-
-  const good = ownerBadge.ownedFrom(
-    census([row(other.publicKey, false), row(me.publicKey, true)]), me.publicKey);
-  if (good) {
-    test.check('my key carrying owner:true in the census is the badge');
+  if (typeof ownerBadge.ownedFrom === 'undefined' && typeof ownerBadge.censusFacts === 'undefined' &&
+      typeof ownerBadge.claimedLabelFrom === 'undefined') {
+    test.check('no census parser is left in the badge');
   } else {
-    test.fail('an owned row did not read as owned');
-  }
-
-  // ON THE ROW, NOT ON THE BOX. Somebody else owning it is the ordinary
-  // case for a member, and it must not read as ours.
-  if (!ownerBadge.ownedFrom(
-    census([row(other.publicKey, true), row(me.publicKey, false)]), me.publicKey)) {
-    test.check('and another key owning it is not a badge, however green the box');
-  } else {
-    test.fail('somebody else\u2019s ownership read as ours');
-  }
-
-  // A row of ours with no owner flag is a MEMBER — claimed, not owned.
-  // This is the distinction that decides whether an Invite button is
-  // drawn, so it is the one worth being exact about.
-  if (!ownerBadge.ownedFrom(census([row(me.publicKey, false)]), me.publicKey)) {
-    test.check('holding a row is not owning one');
-  } else {
-    test.fail('a plain member row read as owned');
-  }
-
-  // NO KEY, NO ANSWER. A node that has not made an identity cannot own
-  // anything, and must not be told it does by a census full of rows.
-  if (!ownerBadge.ownedFrom(census([row(me.publicKey, true)]), '')) {
-    test.check('and a node with no key of its own owns nothing');
-  } else {
-    test.fail('a keyless node read as owned');
-  }
-
-  // Unreachable, unparseable, or not a census at all. Each used to be a
-  // status code; now they are all the same nothing.
-  const junk = [null, { status: 200, text: 'OK' },
-    { status: 200, text: JSON.stringify({ error: 'no' }) },
-    { status: 0, text: '' }];
-  if (junk.every(function (a) { return !ownerBadge.ownedFrom(a, me.publicKey); })) {
-    test.check('and nothing that is not a census is a badge \u2014 ' + junk.length + ' ways');
-  } else {
-    test.fail('junk read as a badge');
+    test.fail('a census parser is still exported');
   }
 
   // AND IT IS UNSIGNED. The point of R3: this question now costs no

@@ -21,8 +21,18 @@
 
 const path = require('path');
 const relayStore = require('./relayStore');
+const auth = require('./relayAuth');
 
 const LABEL_LIMIT = 10;
+
+// '' on a relay nobody has claimed, or with no readable allow.json.
+function ownerKeyOf(rootDir) {
+  try {
+    const allow = auth.loadAllow(rootDir);
+    const label = auth.ownerName(allow);
+    return (label && allow.byName && allow.byName[label]) || '';
+  } catch (e) { return ''; }
+}
 
 function short(key) {
   const s = String(key || '');
@@ -63,8 +73,11 @@ function run(rootDir, args, out) {
     if (verb === 'label' && args[1]) {
       const rows = store.members.byLabel(args[1], LABEL_LIMIT);
       if (!rows.length) { out('nobody holds that label'); return 1; }
+      // THE OWNER IS allow.json's ONE KEY, not a mark on a row (relayStore.js,
+      // 2026-09-19 — "a row in the roll doesn't know who the owner is").
+      const ownerKey = ownerKeyOf(rootDir);
       rows.forEach(function (m) {
-        out((m.owner ? 'owner  ' : 'member ') + m.publicLabel + '  ' + m.publicKey);
+        out((m.publicKey === ownerKey ? 'owner  ' : 'member ') + m.publicLabel + '  ' + m.publicKey);
       });
       if (rows.length === LABEL_LIMIT) out('(first ' + LABEL_LIMIT + ' shown)');
       return 0;

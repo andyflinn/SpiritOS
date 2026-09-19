@@ -17,9 +17,10 @@
 // other allocations the suite cannot control, and a margin wide enough for
 // that noise would be wide enough to hide a resident roll.
 //
-// And the two properties that make the heap flat without making the relay
-// wrong: search still ranks across all 10,000 (by cursor, keeping only the
-// best), and an unknown sender is refused by one keyed read, never a scan.
+// And the properties that make the heap flat without making the relay
+// wrong: search answers from the connected members' rows in RAM and reads
+// nothing off disc (since 2026-09-19 — it walked all 10,000 by cursor
+// before), and an unknown sender is refused by one keyed read, never a scan.
 
 const os = require('os');
 const fs = require('fs');
@@ -57,7 +58,7 @@ function homeWith(tag, n) {
   // One member with a real key, so something besides the owner can sign.
   const real = auth.generateIdentity('real');
   store.transaction(function () {
-    store.members.put({ publicKey: owner.publicKey, publicLabel: 'owner', claimedAt: '2026-01-01', owner: true });
+    store.members.put({ publicKey: owner.publicKey, publicLabel: 'owner', claimedAt: '2026-01-01' });
     store.members.put({ publicKey: real.publicKey, publicLabel: 'real', claimedAt: '2026-01-01' });
     for (let i = 0; i < n; i += 1) {
       const pad = String(i).padStart(5, '0');
@@ -151,86 +152,77 @@ async function run() {
       Math.round(S.bytes / 1024) + ' KB — something holds the roll in RAM');
   }
 
-  test.subHeading('Search still sees all of them');
+  test.subHeading('Search finds who is connected, and nobody else');
 
+  // Andy (2026-09-19): "Search should respond with active/online members
+  // only. A node can reconcile with its contact list to conclude that a
+  // contact is offline." Until then this section asserted the opposite —
+  // "search still sees all of them", a ranked walk of all 10,000 rows off
+  // disc, and that a request arriving mid-walk was answered first. The
+  // walk is over the connected members' rows in RAM now (relay.js
+  // walkRoll), bounded by the connection allowance, so neither the disc
+  // walk nor its stall exists to measure.
   const answer = lastReply(B.bag);
-  const labels = ((answer && answer.matches) || []).map(function (m) { return m.publicLabel; });
-  if (answer && answer.ok && labels.length && labels.every(function (l) { return l.indexOf('member0004') === 0; })) {
-    test.check('a search over ' + BIG + ' rows answers from disc: ' + labels.length + ' ranked matches');
+  if (answer && answer.ok && (answer.matches || []).length === 0) {
+    test.check(BIG + ' members on the roll and none connected: a search finds nobody');
   } else {
-    test.fail('search: ' + JSON.stringify(answer && { ok: answer.ok, n: labels.length, first: labels[0] }));
+    test.fail('search: ' + JSON.stringify(answer && { ok: answer.ok, n: (answer.matches || []).length }));
   }
 
-  let n = replies(B.bag);
-  post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member09999' } });
-  await until(function () { return replies(B.bag) > n; }, 10000);
-  const exact = lastReply(B.bag);
-  const top = exact && exact.matches && exact.matches[0];
-  if (top && top.publicLabel === 'member09999') {
-    test.check('and the last row written is found first when asked for exactly');
-  } else {
-    test.fail('exact: ' + JSON.stringify(top));
-  }
-
-  test.subHeading('A search does not block the relay');
-
-  // Andy: "the nature of all wire comms is asynchronous. And blocking
-  // hurts the resources of relays." The walk reads a page, hands the event
-  // loop back, and reads the next (walkRoll). So a request that arrives
-  // while a big search is walking is answered before the search is.
   const realSink = [];
   B.box.streamOpen(big.real.publicKey,
     auth.sign(big.real.privateKey, auth.streamMessage(big.real.publicKey)), sinkFor(realSink));
+  let n = replies(B.bag);
+  post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'real' } });
+  await until(function () { return replies(B.bag) > n; }, 10000);
+  const found = lastReply(B.bag);
+  const top = found && found.matches && found.matches[0];
+  if (top && top.publicLabel === 'real' && found.matches.length === 1) {
+    test.check('and once one of them connects, a search finds them');
+  } else {
+    test.fail('connected: ' + JSON.stringify(found));
+  }
+
+  // Nothing about a found row says whether they are here: they all are.
+  // Nor who owns the relay — a row does not know (2026-09-19).
+  if (top && !('present' in top) && !('owner' in top)) {
+    test.check('a found row carries neither present nor owner');
+  } else {
+    test.fail('row fields: ' + JSON.stringify(top));
+  }
+
+  test.subHeading('A search reads nothing off disc');
+
+  // Every read the store offers, counted. relay.js reaches the store
+  // through relayStore.open(home), the same cached object this suite holds.
+  const members = relayStore.open(big.home).members;
+  const readers = ['get', 'byLabel', 'byKeys', 'each', 'count'];
+  const real = {};
+  let discReads = 0;
+  readers.forEach(function (name) {
+    real[name] = members[name];
+    members[name] = function () { discReads += 1; return real[name].apply(members, arguments); };
+  });
+
   n = replies(B.bag);
   post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member' } });
-  const searchStillWalking = replies(B.bag) === n;
-  await new Promise(function (r) { setImmediate(r); });   // one turn of the walk
-  post(B.box, big.real, B.box.relayPublicKey(), { partners: true });
-  const otherAnswered = replies(realSink) > 0;
-  const searchStillOpen = replies(B.bag) === n;
-  if (searchStillWalking && otherAnswered && searchStillOpen) {
-    test.check('a request arriving mid-search is answered while the ' + BIG + '-row walk is still going');
-  } else {
-    test.fail('walking=' + searchStillWalking + ' other=' + otherAnswered + ' open=' + searchStillOpen);
-  }
   await until(function () { return replies(B.bag) > n; }, 10000);
-  if (replies(B.bag) > n && lastReply(B.bag).ok) {
-    test.check('and the search still answers when its walk ends');
+  if (replies(B.bag) > n && discReads === 0) {
+    test.check('a search over a relay holding ' + BIG + ' members answers without one disc read');
   } else {
-    test.fail('the search never answered');
+    test.fail('disc reads during a search: ' + discReads);
   }
 
-  test.subHeading('An unknown sender costs one read');
-
-  // Count every walk of the roll: a walk starts with the first page.
-  // relay.js reaches the store through relayStore.open(home), the same
-  // cached object this suite holds.
-  const members = relayStore.open(big.home).members;
-  const realPage = members.page;
-  let walks = 0;
-  members.page = function (after, limit) {
-    if (!after) walks += 1;
-    return realPage(after, limit);
-  };
+  test.subHeading('An unknown sender is refused');
 
   const stranger = auth.generateIdentity('stranger');
   const refused = post(B.box, stranger, B.box.relayPublicKey(), { partners: true });
-  if (refused && refused.ok === false && walks === 0) {
-    test.check('a key with no row is refused (' + refused.status + ') without walking the roll');
+  if (refused && refused.ok === false) {
+    test.check('a key with no row is refused (' + refused.status + ')');
   } else {
-    test.fail('stranger: ' + JSON.stringify(refused) + ' walks=' + walks);
+    test.fail('stranger: ' + JSON.stringify(refused));
   }
-
-  // And the counter is awake: a search is exactly one walk.
-  n = replies(B.bag);
-  post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'member' } });
-  await until(function () { return replies(B.bag) > n; }, 10000);
-  if (walks === 1) {
-    test.check('while a search is exactly one walk — the counter is not asleep');
-  } else {
-    test.fail('search walked ' + walks + ' time(s)');
-  }
-  members.page = realPage;
+  readers.forEach(function (name) { members[name] = real[name]; });
 
   test.subHeading('A connected member is served from RAM');
 

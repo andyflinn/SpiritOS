@@ -50,8 +50,10 @@ if (s.members.count() === 3) test.check('three keyed rows imported, the keyless 
 else test.fail('members: ' + s.members.count());
 
 const owner = s.members.get('OWNER');
-if (owner && owner.owner === true && owner.publicLabel === 'andy') {
-  test.check('the owner is still the owner');
+// The old file's `owner: true` is not carried: a row does not know who owns
+// the relay (relayStore.js, 2026-09-19) — allow.json does.
+if (owner && !('owner' in owner) && owner.publicLabel === 'andy') {
+  test.check('the owner’s row is imported, without the mark a row may not carry');
 } else {
   test.fail('owner: ' + JSON.stringify(owner));
 }

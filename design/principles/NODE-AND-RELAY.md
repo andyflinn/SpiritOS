@@ -2491,6 +2491,36 @@ contact's `acquiredVia` rank only rises (contacts.js `ACQUIRED_RANK`, with
 `member` at the top). It records how the person came, which is history, not
 a claim that they still hold a seat.
 
+**Ownership is one key, and no row knows it** (Andy, 2026-09-19): *"Only
+one thing determines ownership of a relay. First claim. No fleeting roll
+with automatic memory loss can mark a row as 'owner' … ownership is only
+determined by one identified key. The relay knows it. The owner, if not
+too forgetful, might know it too."* That key is `allow.json`'s, served at
+`GET /api/relay/key` (`ownerPublic`), and the node's badge is a comparison
+with its own key (`ownerBadge.probe`). The `members.owner` column went the
+same day, dropped from an existing relay.db when it opens; nothing on the
+wire marks a row as the owner's.
+
+**What you stay connected by: being active, or owning your relay** (Andy,
+2026-09-19). The consequence of the two rules above and of shedding: an
+inactive member is not found by search, and their seat eventually expires
+under the roll's disc bound; the owner's key is in `allow.json` and is
+never shed. It costs less than it sounds — anyone holding your key in
+their contacts still reaches you whenever you are online; what goes is
+being discoverable. *Stated, not yet built: seat expiry — nothing sheds a
+member row today (only `removePeer` deletes one), and no cycle piece
+carries it yet.*
+
+**Search answers live participants; the node concludes the rest** (Andy,
+2026-09-19): *"Search should respond with active/online members only. A
+node can reconcile with its contact list to conclude that a contact is
+offline (or dead, or currently rebooting…)."* The relay answers from the
+connected members' rows it holds in RAM, so every row it returns is
+present and none says so. What a node may conclude is bounded: not found
+means *not found here, at this moment* — they may be on another relay, or
+the answer may have been capped — so a contact goes stale rather than
+false, which is the passive half's job too (presence broadcasts).
+
 **spirit-3 is kept alive through every future cycle** (Andy, 2026-09-19:
 *"practice our care for our relays … latest by beta I want to start
 maintaining my spirit dataset on my work node, supported by my relay"*).
@@ -2689,7 +2719,11 @@ manageable pieces"), each its own commit:
   `requestTimeout1` (its bounds discussed at the start of 4.2); `levers.json`
   and clamping.
 - **4.3 no roll travels whole** — counts in the report; rolls answer bounded
-  questions; discovery searches live participants only.
+  questions. *Discovery searching live participants only was pulled out of
+  4.3 and done first, on 2026-09-19, as reconciliation (Andy: "I think of
+  this as reconciliation"): the search walk is over the connected members'
+  rows in RAM (relay.js `walkRoll`), rows carry no `present`, and the roll
+  is no longer paged off disc at all.*
 - **4.4 triage** — the cadence switch, `All`, the ranking module.
 - **4.5 dialogs** — `consequence`; the traffic dialog.
 - **4.6 deprecation** — D9 (natterDetails' monitor rows), D10 (the old

@@ -56,9 +56,11 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 // other moves the worst case linearly.
 var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
 
-// How many members one turn of a search walk reads before handing the
+// How many members one turn of a search walk offers before handing the
 // event loop back (walkRoll). Measured 2026-09-19 on the workstation at
-// ~5.5 µs a row, so a page is ~5 ms: short enough that nothing waits
+// ~5.5 µs a row off disc, when the walk read the roll; the walk is over
+// the connected members' rows in RAM now, so a page costs less than
+// that. ~5 ms at most: short enough that nothing waits
 // behind it, long enough that the turns are not all overhead. A guess to
 // be measured on the relay itself, like the timeout floor
 // (NODE-AND-RELAY §10).
@@ -560,7 +562,6 @@ function createRelay(rootDir, deps) {
         // characters of key — and it must never be rewritten, or the
         // ledger stops being one.
         claimedAt: p.claimedAt,
-        owner: !!p.owner,
       };
     }).sort(function (a, b) {
       return String(a.publicLabel).localeCompare(String(b.publicLabel));
@@ -635,10 +636,11 @@ function createRelay(rootDir, deps) {
 
   // ── WHO RUNS THIS BOX ────────────────────────────────────────────
   //
-  // Two fields, both already public: the owner's key and label are on
-  // every census row that carries `owner: true`. What changes is that
-  // they can now be ASKED FOR without asking for the membership they
-  // were buried in.
+  // Two fields, both public: the owner's key and label, from allow.json —
+  // the one place ownership lives. They were once also on every census row
+  // as `owner: true`; the census went, and on 2026-09-19 so did the mark on
+  // the row ("a row in the roll doesn't know who the owner is"). This is
+  // how they are ASKED FOR, without asking for any membership.
   //
   // This is the last thing `handlePartnerCheck` needed the census for.
   // A partner promotion has to be verifiable — "the key marked owner over
@@ -1169,7 +1171,9 @@ function createRelay(rootDir, deps) {
       // it says when this KEY joined, which stays true whatever the
       // label does later.
       claimedAt: new Date().toISOString(),
-      owner: firstOwner,
+      // `owner: firstOwner` STOOD HERE. A row does not know who owns the
+      // relay (relayStore.js, 2026-09-19): becomeOwner above wrote the one
+      // key that does into allow.json. The claim's ANSWER still says so.
     };
     // KEYED BY KEY, always, because a claim without one is refused
     // above. The map used to be `publicKey || n`, which is how a row
@@ -1334,9 +1338,9 @@ function createRelay(rootDir, deps) {
   // status() STOOD HERE — the owner-only report, pulled with a signature
   // over a NAME. Deleted 2026-09-15 (R3).
   //
-  // It existed for one caller, the owner badge, and the badge is gone:
-  // `owner: true|false` is on every census row already, so a node asks by
-  // KEY and signs nothing (ownerBadge.ownedFrom).
+  // It existed for one caller, the owner badge, which now asks by KEY and
+  // signs nothing: /api/relay/key names the owner's key, and the node
+  // compares it with its own (ownerBadge.probe).
   //
   // THE REPORT DID NOT GO ANYWHERE. statusToOwner pushes it down the
   // owner's own stream on every open and every presence change, to one
@@ -1707,7 +1711,7 @@ function createRelay(rootDir, deps) {
 
     var was = labelOf(row);
     store.members.put({
-      publicKey: row.publicKey, publicLabel: next, claimedAt: row.claimedAt, owner: row.owner,
+      publicKey: row.publicKey, publicLabel: next, claimedAt: row.claimedAt,
     });
     refreshActive(row.publicKey);
 
@@ -2324,12 +2328,12 @@ function createRelay(rootDir, deps) {
       // question — and with matches ordered by quality and capped by
       // what a packet holds, "a" answers perfectly well: the exact `a`
       // first if somebody claimed it, then everyone starting with it,
-      // present before absent, as many as fit, and `more`.
+      // as many as fit, and `more`.
       //
-      // An EMPTY query is not an error either. It matches everyone, so
-      // ordering puts the present first and the cap takes the top of
-      // that — which is "who is around", answered by the same verb
-      // rather than by a second one.
+      // An EMPTY query is not an error either. It matches everyone
+      // connected (walkRoll) and the cap takes the top of that — which is
+      // "who is around", answered by the same verb rather than by a
+      // second one.
       {
         // ── THE RANKING IS NOT THIS FILE'S ───────────────────────────
         //
@@ -2370,8 +2374,9 @@ function createRelay(rootDir, deps) {
             publicKey: row.publicKey,
             publicLabel: row.publicLabel,
             claimedAt: row.claimedAt,
-            owner: row.owner,
-            present: row.present,
+            // `owner` and `present` STOOD HERE (2026-09-19). A row does not
+            // know who owns the relay, and every row found is connected
+            // (walkRoll).
           };
         });
         var more = found.more;
@@ -2651,7 +2656,14 @@ function createRelay(rootDir, deps) {
             catch (e) { said = null; }
             var body = (said && said.body) || {};
             if (!body || body.ok !== true) return null;
-            return { via: p.relayKey, rows: body.matches || [] };
+            // A partner on an older release still answers its offline
+            // members, marked `present: false`. Online only is this relay's
+            // answer whoever else contributed (walkRoll), so those rows
+            // stop here; a row with no `present` is from a relay that
+            // only answers the connected.
+            var rows = (Array.isArray(body.matches) ? body.matches : [])
+              .filter(function (r) { return r && r.present !== false; });
+            return { via: p.relayKey, rows: rows };
           })
           .catch(function () { return null; });
       });
@@ -2678,8 +2690,6 @@ function createRelay(rootDir, deps) {
               publicKey: row.publicKey,
               publicLabel: row.publicLabel,
               claimedAt: row.claimedAt,
-              owner: row.owner,
-              present: row.present,
               // WHICH PARTNER SUPPLIED IT. Andy: "it must accompany the
               // found records with the partner ID supplying that result
               // record" -- the thread a node follows to record a route.
@@ -2706,44 +2716,49 @@ function createRelay(rootDir, deps) {
     }
   }
 
-  // ── THE ROLL, WALKED WITHOUT BLOCKING (cycle 3) ──────────────────────
+  // ── THE CONNECTED MEMBERS, WALKED WITHOUT BLOCKING ───────────────────
+  //
+  //   Andy (2026-09-19): "Search should respond with active/online members
+  //   only. A node can reconcile with its contact list to conclude that a
+  //   contact is offline (or dead, or currently rebooting...)."
+  //
+  // So the walk is over `activeRows` — the rows of members whose stream is
+  // open, cached at connect and dropped at close — and never the disc.
+  // Bounded by the connection allowance the Governor moves, so a search
+  // costs what connections cost and no more. Discovery serves active
+  // participants ("the most precious"); somebody offline is not found, and
+  // a node that already holds their key still posts to them by key.
+  //
+  // *This supersedes the cycle 3 walk, which paged the whole roll off disc
+  // (`store.members.page`) and ranked the present first. Every row found
+  // here is present, so rows carry no `present` and peerSearch weighs no
+  // presence signal.*
   //
   //   Andy: "the nature of all wire comms is asynchronous. And blocking
   //   hurts the resources of relays."
   //
-  // A page of SEARCH_PAGE rows off disc, offered to the bucket, then the
-  // event loop, then the next page — so a search over a million members
-  // is a long series of short turns, and every other request on this relay
-  // is served between them. The bucket keeps only the best SLOTS, so RAM
-  // is the bucket plus one page however large the roll. Pages are keyed
-  // (`publicKey > last`), not an open cursor: nothing is held between
-  // turns, and a row added or removed mid-walk is simply seen or not.
+  // Still paged, SEARCH_PAGE keys a turn with the event loop between, over
+  // a snapshot of the keys: a member arriving mid-walk is simply not seen,
+  // one leaving mid-walk is skipped when its row is gone.
   //
-  // `done(result)` gets peerSearch's result, or null if the store failed.
+  // `done(result)` gets peerSearch's result.
   function walkRoll(q, done) {
     var bucket = peerSearch.open(q, peerSearch.SLOTS);
-    var after = '';
+    var keys = Object.keys(activeRows);
+    var at = 0;
     (function step() {
-      var rows;
-      try { rows = store.members.page(after, SEARCH_PAGE); }
-      catch (e) { done(null); return; }
-      for (var i = 0; i < rows.length; i += 1) {
-        var p = rows[i];
+      var end = Math.min(at + SEARCH_PAGE, keys.length);
+      for (; at < end; at += 1) {
+        var p = activeRows[keys[at]];
         if (!p || !p.publicKey) continue;
         bucket.offer({
           publicKey: p.publicKey,
           publicLabel: labelOf(p),
           claimedAt: p.claimedAt,
-          owner: !!p.owner,
-          // Off the public census, but a search reaches this line only
-          // from a member over a signed post — the authenticated
-          // channel that was always allowed to carry it.
-          present: presentNow.isPresent(p.publicKey),
           via: null,
         });
       }
-      if (rows.length < SEARCH_PAGE) { done(bucket.result()); return; }
-      after = rows[rows.length - 1].publicKey;
+      if (at >= keys.length) { done(bucket.result()); return; }
       setImmediate(step);
     })();
   }

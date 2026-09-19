@@ -23,7 +23,7 @@ function rollOf(box) {
   catch (e) { relayStore = require('../run/js/relayStore'); }
   const rows = [];
   relayStore.open(home).members.each(function (p) {
-    rows.push({ publicLabel: p.publicLabel, publicKey: p.publicKey, claimedAt: p.claimedAt, owner: !!p.owner });
+    rows.push({ publicLabel: p.publicLabel, publicKey: p.publicKey, claimedAt: p.claimedAt });
   });
   return rows.sort(function (a, b) { return String(a.publicLabel).localeCompare(String(b.publicLabel)); });
 }

@@ -221,35 +221,16 @@ function ensureRelays(rootDir) {
 // owner-only report to decide whether this key owned the box. It went
 // with the route it read (R3).
 //
-// IS MY KEY THE ONE MARKED OWNER? Asked of the public census, which
-// publishes `owner: true|false` on every row
-// ([relay.js] `who()`), so this costs no signature, adds no endpoint, and
-// tells the relay nothing it did not publish.
+// ── FOUR CENSUS PARSERS STOOD HERE, DELETED 2026-09-19 ────────────────
 //
-// BY KEY, which is the whole point of the change. The route this
-// replaces asked by NAME and proved it with a signature over that name —
-// a label standing in for an identity, on a box where identity is a key
-// and labels duplicate by design.
-//
-// THE ONE THING THIS IS WEAKER AT, stated rather than discovered: the
-// census flag is written at claim time (`owner: firstOwner`) while
-// `allow.json` is the live authority `checkOwner` reads. They are
-// written together and can only diverge if somebody hand-edits
-// allow.json on the box — the documented break-glass path — so the flag
-// can go STALE, never false. A relay pushing `relay-status` reads
-// allow.json every time and has no such gap, which is why that is the
-// authoritative refresh and this is the opening answer.
-function ownedFrom(answer, myKey) {
-  if (!myKey || !answer) return false;
-  var parsed = null;
-  try { parsed = JSON.parse(answer.text); }
-  catch (e) { return false; }
-  var list = (parsed && parsed.peers) || [];
-  if (!Array.isArray(list)) return false;
-  return list.some(function (p) {
-    return p && p.publicKey === myKey && !!p.owner;
-  });
-}
+// ownedFrom ("is my key the one marked owner?"), claimedFrom,
+// claimedLabelFrom and censusFacts — each read a public census list
+// (`/api/relay/who` answering `peers`). The census went on 2026-09-18;
+// `probe` below had already stopped fetching it, and only suites still
+// called these. Andy: "nothing is allowed to return a roster", and a row
+// never says who owns the relay — "ownership is only determined by one
+// identified key. The relay knows it." That key is what /api/relay/key
+// answers, and `probe` compares it with this node's own.
 
 function summarize(rows) {
   var ownedUrls = rows.filter(function (r) { return r.owned; })
@@ -268,149 +249,6 @@ function summarize(rows) {
     // question; two do, and answering it by taking the first URL is the
     // habit this cycle exists to break.
     mustPick: ownedUrls.length > 1,
-  };
-}
-
-// request(url, method, pathname) -> Promise<{ status, text }>
-// Is one of this relay's rows ours? Asked of the PUBLIC census, which
-// hands every label and key to anyone — so this costs no signature, adds
-// no endpoint, and tells the relay nothing it did not publish.
-//
-// Only asked when the owner badge already said no: owning implies a row,
-// so the second request is skipped on the mailboxes that matter most.
-function claimedFrom(answer, myKey) {
-  if (!myKey || !answer) return false;
-  var parsed = null;
-  try { parsed = JSON.parse(answer.text); }
-  catch (e) { return false; }
-  var list = (parsed && parsed.peers) || [];
-  if (!Array.isArray(list)) return false;
-  return list.some(function (p) { return p && p.publicKey === myKey; });
-}
-
-// AND WHICH LABEL THAT ROW WEARS. The census already carries it and it
-// was being thrown away — `claimedFrom` above reads the same list and
-// answers only yes or no.
-//
-// It is here because Natter needs an answer to "is this label still
-// mine?" and used to get one by signing an inbox read: a 403 meant the
-// label had moved. R8 deleted that route on 2026-09-15, and the census
-// answers the question better than the read ever did — it is the same
-// fact, unsigned, off a route that is public by design, with no second
-// request and no endpoint added.
-//
-// BY KEY, ANSWERING A LABEL, which is the only direction that is safe.
-// Two peers may wear one label, so a label does not identify a row; a
-// key does. Asking "what is my row called here" cannot be ambiguous.
-// Asking "who is called andy" can.
-//
-// '' when this key holds no row — which is also what a relay that has
-// forgotten you says, and the two are the same answer to Natter.
-function claimedLabelFrom(answer, myKey) {
-  if (!myKey || !answer) return '';
-  var parsed = null;
-  try { parsed = JSON.parse(answer.text); }
-  catch (e) { return ''; }
-  var list = (parsed && parsed.peers) || [];
-  if (!Array.isArray(list)) return '';
-  var mine = null;
-  list.forEach(function (p) {
-    if (p && p.publicKey === myKey && !mine) mine = p;
-  });
-  return mine ? String(mine.publicLabel || '') : '';
-}
-
-// WHAT A MEMBER MAY SAY ABOUT A MAILBOX IT DOES NOT OWN.
-//
-// The census is already fetched to answer claimedFrom above, and was
-// then thrown away — so a member's panel had nothing to show but the
-// 403 from the owner-only status call, and opened onto the words "not
-// the owner". An error is the wrong thing to put in front of somebody in
-// the ordinary case of being a member.
-//
-// Only what /api/relay/who already hands to anyone who asks. No second
-// call, no signature, and nothing here the mailbox did not publish —
-// which is also why there is no question about a member reading it.
-//
-// Deliberately NOT the peer list itself: a wall of 48-character keys is
-// machine detail wearing a person's clothes (UI_DESIGN_STYLE.md §6), and
-// the count is what a person is actually asking.
-function censusFacts(answer, myKey) {
-  var parsed = null;
-  try { parsed = JSON.parse(answer && answer.text); }
-  catch (e) { return null; }
-  var list = (parsed && parsed.peers) || [];
-  if (!Array.isArray(list)) return null;
-
-  var owner = '';
-  var mine = '';
-  list.forEach(function (p) {
-    if (!p) return;
-    if (p.owner) owner = p.publicLabel || '';
-    // YOUR OWN LABEL ON THIS BOX, which is the fact that only exists
-    // once a node is on more than one. Nothing says two mailboxes gave
-    // you the same name, and with one browser now serving every relay
-    // this node holds, "who am I here" is a question with a per-relay
-    // answer.
-    if (p.publicKey === myKey) mine = p.publicLabel || '';
-  });
-
-  // ── THE RELAY'S OWN KEY, WHICH IS HOW A MEMBER ADDRESSES IT ───────
-  //
-  // Already in the census, already fetched, and thrown away until
-  // 2026-09-15 — the same shape `claimedLabel` was in before R8.
-  //
-  // It matters now because the post-path doors are closing: a client
-  // that used to name a URL and let the node pick the key must address
-  // the relay BY key, like any other peer. The owner could read it off
-  // the pushed report (`relayStatus.key`); a plain member is sent no
-  // report at all, and `rename` is an own-row verb every member has.
-  // Without this a member could rename itself only while a door existed
-  // to do it for them.
-  return {
-    owner: owner,
-    peers: list.length,
-    // ── AND THE ROWS THEMSELVES, WHICH WERE PARSED AND DROPPED ───────
-    //
-    // `peers` is a COUNT and was the only thing kept of a list this
-    // function had already read. The third time that pattern has cost
-    // something here: `claimedLabel` and `relayKey` were both in hand
-    // and thrown away before somebody needed them.
-    //
-    // The enrolment list an owner manages is this. It costs no request —
-    // the census is fetched once per relay to decide the badge — and no
-    // secret, because /api/relay/who is public by design (0010): anybody
-    // may read it, which is what makes it the bootstrap.
-    //
-    // NOT FILTERED TO OWNERS HERE. This module answers what the census
-    // said; who is allowed to act on it is the screen's question, and
-    // ndPeersHtml draws nothing unless the badge says owned.
-    roster: list.map(function (p) {
-      return {
-        publicKey: (p && p.publicKey) || '',
-        publicLabel: (p && p.publicLabel) || '',
-        // WHEN THIS KEY ENROLLED, and it is how a human tells two rows
-        // wearing one label apart.
-        //
-        //   Andy: "enrollment date is a good indicator of which jazz is
-        //   current... I know for a fact that the current jazz is
-        //   Jazzmin Thut because that labeling feature is really new."
-        //
-        // Already on every census row (relay.who) and never sent on.
-        // `last seen` would be the better indicator and is deliberately
-        // not asked for: it would make a relay write on every arrival,
-        // which is a cost on the relay for a convenience on one screen.
-        claimedAt: (p && p.claimedAt) || '',
-        owner: !!(p && p.owner),
-      };
-    }),
-    myLabel: mine,
-    relayKey: (parsed && parsed.relayPublicKey) || '',
-    // WHAT THE BOX CALLS ITSELF, as opposed to what this node's own
-    // relays.json calls it. Empty means nobody has named it — a relay
-    // must not invent a caption for itself, so the reader's own label
-    // stands until the owner says otherwise.
-    relayLabel: (parsed && parsed.relayLabel) || '',
   };
 }
 
@@ -559,7 +397,6 @@ function chooseUrl(urls, wanted) {
 // helper and draws no Remove at all, which is the safe way to be wrong.
 if (isNode) {
   module.exports = {
-    censusFacts: censusFacts,
     normalizeUrl: normalizeUrl,
     canRemoveRelay: canRemoveRelay,
     isPublicRelay: isPublicRelay,
@@ -569,13 +406,8 @@ if (isNode) {
     // The one row a node writes itself, exported so a test can assert the
     // default without repeating the string it is checking for.
     FIRST_RELAY: FIRST_RELAY,
-    // `statusPath` and `readBadge` STOOD HERE and went with the signed
-    // status GET (R3). `ownedFrom` is what answers the same question now,
-    // off the public census and by key.
-    ownedFrom: ownedFrom,
-    // Exported for the suite that drives it directly. Natter reads the
-    // answer off a `rows` entry, never by calling this.
-    claimedLabelFrom: claimedLabelFrom,
+    // `statusPath`, `readBadge`, `ownedFrom`, `claimedLabelFrom` and
+    // `censusFacts` STOOD HERE (R3, then 2026-09-19): see where they stood.
     summarize: summarize,
     probe: probe,
     chooseUrl: chooseUrl,

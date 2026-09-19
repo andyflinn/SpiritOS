@@ -177,6 +177,21 @@ test.subHeading('A stranger relay is refused');
 test.subHeading('A partner may search, and gets B members');
 
 {
+  // ONLINE ONLY (Andy, 2026-09-19: "search should respond with
+  // active/online members only"). Asked before anybody on B is connected,
+  // the answer is nobody; the same question once they are, names them.
+  postAsRelay(B.box, A.key, aIdentity.privateKey, B.key, { search: { q: 'be' } });
+  const before = lastReply(A.heard);
+  if (before && before.ok && (before.matches || []).length === 0) {
+    test.check('nobody offline is found — bella and bertrand are not connected yet');
+  } else {
+    test.fail('offline found: ' + JSON.stringify(before));
+  }
+  ['bella', 'bertrand'].forEach(function (name) {
+    const id = B.members[name];
+    B.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor([]));
+  });
+
   const sent = postAsRelay(B.box, A.key, aIdentity.privateKey, B.key,
     { search: { q: 'be' } });
   if (sent.ok) {

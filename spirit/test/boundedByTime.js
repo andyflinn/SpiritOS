@@ -51,7 +51,9 @@ const { createRelay } = require('../run/js/relay');
 //   presence   one event per member per presence change (a COUNT, not
 //              bytes — the fan-out is the cost, not the payload)
 const ALLOWANCE = {
-  census: 150,
+  // 150 until 2026-09-19, when `owner` came off every row ("a row in the
+  // roll doesn't know who the owner is") — the ratchet asked for this.
+  census: 136,
   presence: 1,
 };
 

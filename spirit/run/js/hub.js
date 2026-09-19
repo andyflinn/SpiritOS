@@ -167,22 +167,15 @@ function bytesHeldByPeer(rootDir) {
 // caption is this node's own (myLabel where it has one) and never
 // decides identity.
 //
-// The census is still walked, because it is what keeps a contact's
-// public caption and its routes current — but handshake only ever
-// updates, never promotes. Nobody enters the To list by appearing on a
-// mailbox.
-function buildPeople(rootDir, peers, relayUrl) {
-  var census = Object.create(null);
-  (Array.isArray(peers) ? peers : [])
-    .filter(function (p) { return p && p.publicKey; })
-    .forEach(function (p) {
-      contactBook.handshake(rootDir, {
-        publicKey: p.publicKey,
-        publicLabel: p.publicLabel || '',
-        relay: relayUrl,
-      });
-      census[p.publicKey] = p;
-    });
+// `peers` and `relayUrl` WERE ARGUMENTS, and a census list was walked
+// here to refresh captions (contactBook.handshake) and to mark each row
+// `onRelay` and `owner`. The census went on 2026-09-18 and the only
+// caller had passed [] since, so both marks were always false. Deleted
+// 2026-09-19 with the rest of the roster readers — Andy: "nothing is
+// allowed to return a roster." What a contact is doing now is the
+// presence table's (presenceNode.js), fed by broadcasts and searches;
+// who owns a relay is allow.json's, never a row's.
+function buildPeople(rootDir) {
 
   var id = auth.loadIdentity(rootDir);
   var myKey = (id && id.publicKey) || '';
@@ -198,7 +191,6 @@ function buildPeople(rootDir, peers, relayUrl) {
     // of people to write to that opens with yourself reads as a mistake.
     .filter(function (row) { return row.publicKey !== myKey; })
     .map(function (row) {
-      var seen = census[row.publicKey];
       var stats = peerStats.readSummary(rootDir, row.publicKey);
       return {
         publicKey: row.publicKey,
@@ -208,7 +200,7 @@ function buildPeople(rootDir, peers, relayUrl) {
         // must not carve its own out of the key: a fourth copy of "six
         // from the end" is a fourth thing to get wrong.
         tail: keyTail(row.publicKey),
-        publicLabel: (seen && seen.publicLabel) || row.publicLabel || '',
+        publicLabel: row.publicLabel || '',
         caption: contactBook.labelForKey(rootDir, row.publicKey, row.publicLabel || ''),
         // The raw one, beside the resolved caption: an editor has to
         // show what is stored, not what is shown, or clearing the field
@@ -226,11 +218,6 @@ function buildPeople(rootDir, peers, relayUrl) {
         // at the list they are the same fact.
         held: !contactBook.listens(row),
         blocked: contactBook.isBlocked(row),
-        // Whether this contact has a row on the relay this node is pointed at
-        // right now. A contact you acquired elsewhere is still a contact;
-        // it just has nowhere to be written to from here.
-        onRelay: !!seen,
-        owner: !!(seen && seen.owner),
         // Bytes this node is carrying for them, across every app that
         // keeps a file per peer. Always a number, 0 for somebody who has
         // cost nothing yet — an absent field would make the app decide
@@ -343,7 +330,6 @@ function handleMatches(rootDir, peers, handle) {
         // What this node already thinks of them, so the UI can say
         // "already a contact" instead of offering the same person twice.
         acquiredVia: row ? contactBook.acquiredVia(row) : null,
-        owner: !!p.owner,
       };
     });
 }
@@ -1238,10 +1224,8 @@ function createHub(rootDir) {
         relayPublicKey: relayKeys.pinned(rootDir, url) || null,
         selfPublicKey: (self && self.publicKey) || null,
         selfTail: self && self.publicKey ? keyTail(self.publicKey) : null,
-        // No census rows. `buildPeople` already took an empty list as a
-        // legitimate argument — chatPeople.js drives it that way
-        // throughout — because the book was never built out of the wire.
-        people: buildPeople(rootDir, [], url),
+        // No census rows: the book was never built out of the wire.
+        people: buildPeople(rootDir),
       }));
     });
   }
@@ -1819,6 +1803,10 @@ function createHub(rootDir) {
           (out.matches || []).forEach(function (p) {
             if (!p || !p.publicKey || p.publicKey === myKey) return;
             if (found[p.publicKey]) return;
+            // A relay on an older release still answers its offline
+            // members, marked `present: false`. Search is online only
+            // (relay.js walkRoll, 2026-09-19), whichever relay answered.
+            if (p.present === false) return;
             var row = contactBook.byPublicKey(rootDir, p.publicKey);
             found[p.publicKey] = {
               publicKey: p.publicKey,
@@ -1856,11 +1844,19 @@ function createHub(rootDir) {
               // has no stream to and can never answer for. The relay that
               // answered can, and this is it saying so.
               //
-              // A FILTER IS NOT BUILT ON IT YET, deliberately: hiding
-              // absent people would mean a search for somebody whose
-              // laptop is shut answers "nobody found", and acquiring a
-              // key has never required the person to be awake.
-              present: !!p.present,
+              // *Superseded 2026-09-19, marked in place.* This said a
+              // filter was deliberately not built — "hiding absent people
+              // would mean a search for somebody whose laptop is shut
+              // answers 'nobody found'". Andy ruled the other way: "search
+              // should respond with active/online members only. A node can
+              // reconcile with its contact list to conclude that a contact
+              // is offline." That cost is accepted: an offline person is
+              // not found, and a key already held still routes.
+              //
+              // So the relay answers the connected only and no longer
+              // marks rows; every row here is present at the relay that
+              // answered, and the field says so for the screen's dot.
+              present: true,
               via: p.via || null,
               viaPartner: !!p.via,
               acquiredVia: row ? contactBook.acquiredVia(row) : null,

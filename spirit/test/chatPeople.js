@@ -137,36 +137,29 @@ test.startTest('Contacts — the To list is who this node knows, not who exists'
 
 test.subHeading('A census is not an address book');
 
+// And since 2026-09-19 there is no census to walk: buildPeople took one
+// (`peers`) to refresh captions through contactBook.handshake and to mark
+// rows `onRelay` and `owner`, and was fed [] once the census went — so
+// both marks were always false. Deleted with the roster readers (Andy:
+// "nothing is allowed to return a roster").
 {
   const home = nodeHome(null, [RELAY_URL]);
-  const johnA = auth.generateIdentity('john').publicKey;
-  const johnB = auth.generateIdentity('john').publicKey;
-  const census = [peer('andy', 'KEY-ANDY', true), peer('john', johnA), peer('john', johnB)];
-
-  const people = buildPeople(home, census, RELAY_URL);
-  if (people.length === 0) {
-    test.check('three peers on the mailbox are nobody in the To list');
+  if (buildPeople.length === 1 && buildPeople(home).length === 0 &&
+      typeof contactBook.handshake === 'undefined') {
+    test.check('the To list is built from the book alone — no census argument, no census sync');
   } else {
-    test.fail('census leaked into To: ' + JSON.stringify(people));
-  }
-
-  // Walked, though: the census is what keeps a caption and its routes
-  // current. It is written down as census, which is the whole difference.
-  const book = contactBook.load(home);
-  if (book.length === 3 && book.every(function (row) { return contactBook.acquiredVia(row) === 'census'; })) {
-    test.check('but they are in contactBook, marked census');
-  } else {
-    test.fail('contactBook: ' + JSON.stringify(book.map(function (r) { return r.acquiredVia; })));
+    test.fail('buildPeople takes ' + buildPeople.length + ' arguments');
   }
 
   // A row written before the field existed is exactly what a census row
   // is, so that is how it reads — nothing has to be migrated.
+  const johnA = auth.generateIdentity('john').publicKey;
   const legacy = nodeHome(null, [RELAY_URL]);
   fs.mkdirSync(path.join(legacy, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(legacy, 'relay-state', 'who.json'), JSON.stringify([
-    { publicKey: johnA, publicLabel: 'john', myLabel: 'john', relays: [] },
+    { publicKey: johnA, publicLabel: 'john', myLabel: 'john', relays: [], onRelay: true, owner: true },
   ]));
-  if (contactBook.contacts(legacy).length === 0 && buildPeople(legacy, [], RELAY_URL).length === 0) {
+  if (contactBook.contacts(legacy).length === 0 && buildPeople(legacy).length === 0) {
     test.check('a row from before the field is a census row, and stays out of To');
   } else {
     test.fail('a legacy row was treated as a contact');
@@ -180,9 +173,9 @@ test.subHeading('A message is how a stranger becomes someone you can answer');
   const home = nodeHome(me, [RELAY_URL]);
   const johnA = auth.generateIdentity('john').publicKey;
   const johnB = auth.generateIdentity('john').publicKey;
-  const census = [peer('andy', me.publicKey, true), peer('john', johnA), peer('john', johnB)];
-
-  buildPeople(home, census, RELAY_URL); // the census, as any refresh would
+  // Rows a census sync left before 2026-09-19 — named, not contacts.
+  contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'census');
+  contactBook.acquire(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL }, 'census');
   // The policy is part of the fixture now rather than implied by calling
   // acquireFromInbox directly: the front door reads it, so a section
   // about strangers being let in has to be a node that lets them in.
@@ -192,7 +185,7 @@ test.subHeading('A message is how a stranger becomes someone you can answer');
     line(2, 'john', johnB, me.publicKey, 'also hello'),
   ], RELAY_URL);
 
-  const people = buildPeople(home, census, RELAY_URL);
+  const people = buildPeople(home);
   if (people.length === 2) {
     test.check('the two who wrote are contacts; the rest of the mailbox is not');
   } else {
@@ -225,7 +218,7 @@ test.subHeading('A message is how a stranger becomes someone you can answer');
 
   // A private caption wins, and never leaves this node.
   contactBook.setMyLabel(home, johnA, 'lovelyJohn');
-  const renamed = buildPeople(home, census, RELAY_URL);
+  const renamed = buildPeople(home);
   const lovely = renamed.filter(function (p) { return p.caption === 'lovelyJohn'; })[0];
   if (lovely && lovely.publicKey === johnA && lovely.publicLabel === 'john') {
     test.check('myLabel is the caption; the public label is untouched');
@@ -248,12 +241,13 @@ test.subHeading('Ranks never fall');
     test.fail('downgraded to: ' + contactBook.acquiredVia(contactBook.byPublicKey(home, bert)));
   }
 
-  // A census sync corrects the public caption of somebody you know, and
-  // does not turn them back into a stranger.
-  buildPeople(home, [peer('bertram', bert)], RELAY_URL);
+  // Seen again at a lower rank (a census row, as older code wrote), the
+  // public caption is corrected and the row is not turned back into a
+  // stranger.
+  contactBook.acquire(home, { publicKey: bert, publicLabel: 'bertram' }, 'census');
   const row = contactBook.byPublicKey(home, bert);
   if (contactBook.acquiredVia(row) === 'handle' && row.publicLabel === 'bertram') {
-    test.check('and a census sync updates the label without demoting the row');
+    test.check('and seeing them at a lower rank updates the label without demoting the row');
   } else {
     test.fail('after census: ' + JSON.stringify(row));
   }
@@ -350,8 +344,8 @@ test.subHeading('Confirming writes handle, and nothing else changes');
   const johnA = auth.generateIdentity('john').publicKey;
   const johnB = auth.generateIdentity('john').publicKey;
 
-  contactBook.handshake(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL });
-  contactBook.handshake(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL });
+  contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'census');
+  contactBook.acquire(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL }, 'census');
 
   // The upgrade a confirm performs: census to handle, in place, on one
   // key. Identity is the key, so the other john is untouched.
@@ -378,9 +372,8 @@ test.subHeading('Confirming writes handle, and nothing else changes');
     test.fail('handle was downgraded by a message');
   }
 
-  // To is still contacts only: the census that was walked to find the
-  // candidates does not follow them in.
-  const people = buildPeople(home, [peer('john', johnA), peer('john', johnB)], RELAY_URL);
+  // To is still contacts only: a census row does not follow a confirm in.
+  const people = buildPeople(home);
 
   // Every row carries its tail, not only the ambiguous ones. Contacts
   // puts it in the Handle column when the handle cannot identify a row —
@@ -780,7 +773,7 @@ function heldAndBlocked() {
 
   // And it is in the To list, marked, because a row nobody can see is a
   // person nobody can accept.
-  const people = buildPeople(home, [peer('carol', stranger.publicKey)], RELAY_URL);
+  const people = buildPeople(home);
   const carol = people.filter(function (p) { return p.publicKey === stranger.publicKey; })[0];
   if (carol && carol.held === true && carol.blocked === false) {
     test.check('and appears in To as somebody not added yet');
@@ -801,7 +794,7 @@ function heldAndBlocked() {
   }
 
   // A blocked contact is out of the listening set and still on screen.
-  const blockedPeople = buildPeople(home, [peer('carol', stranger.publicKey)], RELAY_URL);
+  const blockedPeople = buildPeople(home);
   const shown = blockedPeople.filter(function (p) { return p.publicKey === stranger.publicKey; })[0];
   if (partition(home, inbox).known.length === 0 && shown && shown.held && shown.blocked) {
     test.check('a blocked contact is silent, listed, and says which it is');
@@ -843,7 +836,7 @@ function heldAndBlocked() {
   const named = auth.generateIdentity('bert');
   contactBook.acquire(home, { publicKey: named.publicKey, publicLabel: 'bert' }, 'handle');
   contactBook.setMyLabel(home, named.publicKey, 'lovelyBert');
-  const relabelled = buildPeople(home, [peer('bert', named.publicKey)], RELAY_URL)
+  const relabelled = buildPeople(home)
     .filter(function (p) { return p.publicKey === named.publicKey; })[0];
   if (relabelled && relabelled.caption === 'lovelyBert' && relabelled.myLabel === 'lovelyBert' &&
       relabelled.publicLabel === 'bert') {
@@ -867,13 +860,11 @@ test.subHeading('What a contact costs in disk is counted, not remembered');
   const home = nodeHome(null, [RELAY_URL]);
   const bert = auth.generateIdentity('bert').publicKey;
   const carol = auth.generateIdentity('carol').publicKey;
-  contactBook.handshake(home, { publicKey: bert, publicLabel: 'bert', relay: RELAY_URL });
-  contactBook.handshake(home, { publicKey: carol, publicLabel: 'carol', relay: RELAY_URL });
   contactBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
   contactBook.acquire(home, { publicKey: carol, publicLabel: 'carol' }, 'message');
 
   const byKey = {};
-  buildPeople(home, [], RELAY_URL).forEach(function (p) { byKey[p.publicKey] = p; });
+  buildPeople(home).forEach(function (p) { byKey[p.publicKey] = p; });
   if (byKey[bert] && byKey[bert].bytesHeld === 0 && byKey[carol].bytesHeld === 0) {
     test.check('somebody who has cost nothing reads 0, not absent');
   } else {
@@ -899,7 +890,7 @@ test.subHeading('What a contact costs in disk is counted, not remembered');
   fs.writeFileSync(path.join(logs, peerFile.fileName(carol)), 'c'.repeat(120));
 
   const after = {};
-  buildPeople(home, [], RELAY_URL).forEach(function (p) { after[p.publicKey] = p; });
+  buildPeople(home).forEach(function (p) { after[p.publicKey] = p; });
   if (after[bert].bytesHeld === 1000 && after[carol].bytesHeld === 120) {
     test.check('two apps holding files for one key sum into one number, and nobody else\'s is added');
   } else {
@@ -910,7 +901,7 @@ test.subHeading('What a contact costs in disk is counted, not remembered');
   // what CHAT_LOG_CAP does at 500, and a stored counter would keep
   // reporting the bytes that trim just freed.
   fs.writeFileSync(path.join(logs, peerFile.fileName(bert)), 'x'.repeat(10));
-  const trimmed = buildPeople(home, [], RELAY_URL)
+  const trimmed = buildPeople(home)
     .filter(function (p) { return p.publicKey === bert; })[0];
   if (trimmed.bytesHeld === 710) {
     test.check('and a log that is trimmed makes the number fall, because it was never stored');
@@ -1187,7 +1178,7 @@ test.subHeading('What buildPeople hands the app');
   const bert = auth.generateIdentity('bert').publicKey;
   contactBook.acquire(home, { publicKey: bert, publicLabel: 'bert' }, 'message');
 
-  const fresh = buildPeople(home, [], RELAY_URL)[0];
+  const fresh = buildPeople(home)[0];
   if (fresh.unansweredInbound === 0 && fresh.inboundPerDay === 0 && fresh.outboundPerDay === 0) {
     test.check('a contact from before any of this counted reads zeros, not undefined');
   } else {
@@ -1200,7 +1191,7 @@ test.subHeading('What buildPeople hands the app');
   peerStats.noteIn(home, bert, 'm1');
   peerStats.noteIn(home, bert, 'm2');
   peerStats.noteOut(home, bert);
-  const counted = buildPeople(home, [], RELAY_URL)[0];
+  const counted = buildPeople(home)[0];
   if (counted.unansweredInbound === 0 && counted.inboundPerDay > 0 && counted.outboundPerDay > 0) {
     test.check('and once counted, the reply has cleared unanswered while both rates stand');
   } else {

@@ -89,8 +89,7 @@ function open(rootDir) {
       publicKey   TEXT PRIMARY KEY,
       publicLabel TEXT NOT NULL DEFAULT '',
       labelNorm   TEXT NOT NULL DEFAULT '',
-      claimedAt   TEXT NOT NULL DEFAULT '',
-      owner       INTEGER NOT NULL DEFAULT 0
+      claimedAt   TEXT NOT NULL DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS members_label ON members (labelNorm);
     CREATE TABLE IF NOT EXISTS invites (
@@ -110,6 +109,22 @@ function open(rootDir) {
     CREATE INDEX IF NOT EXISTS partners_owner ON partners (ownerKey);
   `);
 
+  // ── A ROW DOES NOT KNOW WHO OWNS THE RELAY (2026-09-19) ──────────────
+  //
+  //   Andy: "only one thing determines ownership of a relay. First claim.
+  //   No fleeting roll with automatic memory loss can mark a row as
+  //   'owner'." — "a row in the roll doesn't know who the owner is.
+  //   Ownership is only determined by one identified key. The relay knows
+  //   it."
+  //
+  // That key is allow.json's (auth.ownerName), served at /api/relay/key.
+  // Cycle 3 created `members` with an `owner` column copied from it at
+  // claim time; a relay.db that has one loses it here, once. Idempotent:
+  // asked of the table, not assumed.
+  const hasOwnerColumn = db.prepare('PRAGMA table_info(members)').all()
+    .some(function (c) { return c.name === 'owner'; });
+  if (hasOwnerColumn) db.exec('ALTER TABLE members DROP COLUMN owner');
+
   const store = build(rootDir, db, key);
   try { importLegacy(rootDir, store); }
   catch (e) { try { db.close(); } catch (e2) { /* closed */ } throw e; }
@@ -126,11 +141,10 @@ function build(rootDir, db, key) {
     memberByKeys: null,
     memberCount: db.prepare('SELECT COUNT(*) AS n FROM members'),
     memberAll: db.prepare('SELECT * FROM members ORDER BY claimedAt'),
-    memberPage: db.prepare('SELECT * FROM members WHERE publicKey > ? ORDER BY publicKey LIMIT ?'),
-    memberPut: db.prepare(`INSERT INTO members (publicKey, publicLabel, labelNorm, claimedAt, owner)
-      VALUES (?, ?, ?, ?, ?)
+    memberPut: db.prepare(`INSERT INTO members (publicKey, publicLabel, labelNorm, claimedAt)
+      VALUES (?, ?, ?, ?)
       ON CONFLICT(publicKey) DO UPDATE SET publicLabel = excluded.publicLabel,
-        labelNorm = excluded.labelNorm, claimedAt = excluded.claimedAt, owner = excluded.owner`),
+        labelNorm = excluded.labelNorm, claimedAt = excluded.claimedAt`),
     memberDel: db.prepare('DELETE FROM members WHERE publicKey = ?'),
     inviteAll: db.prepare('SELECT * FROM invites ORDER BY expiresAt'),
     inviteGet: db.prepare('SELECT * FROM invites WHERE token = ?'),
@@ -156,7 +170,6 @@ function build(rootDir, db, key) {
       publicKey: row.publicKey,
       publicLabel: row.publicLabel,
       claimedAt: row.claimedAt,
-      owner: !!row.owner,
     };
   }
 
@@ -185,18 +198,14 @@ function build(rootDir, db, key) {
           .filter(Boolean);
       },
       count: function () { return q.memberCount.get().n; },
-      // ONE PAGE OF THE ROLL, by key: the rows after `afterKey`, at most
-      // `limit`. How the relay walks the roll — a page, then the event loop,
-      // then the next — because a walk in one go blocks every other request
-      // for as long as it takes (Andy: "the nature of all wire comms is
-      // asynchronous, and blocking hurts the resources of relays"). Keyed,
-      // not an open cursor, so nothing is held between pages.
-      page: function (afterKey, limit) {
-        return q.memberPage.all(String(afterKey || ''), limit).map(member);
-      },
-      // The whole roll in one go, row by row. For suites and tools only:
-      // it blocks for as long as the walk takes, so the relay never calls
-      // it (it walks by `page`).
+      // `page` STOOD HERE: the roll a page at a time, which was how search
+      // walked it. Search answers from the connected members only
+      // (relay.js walkRoll, 2026-09-19), so nothing on the relay walks the
+      // roll, and an enumerator with no caller is an invitation.
+      //
+      // The whole roll in one go, row by row. For suites and tools only
+      // (relayDump): it blocks for as long as the walk takes, so the relay
+      // never calls it.
       each: function (fn) {
         for (const row of q.memberAll.iterate()) {
           if (fn(member(row)) === false) break;
@@ -204,7 +213,7 @@ function build(rootDir, db, key) {
       },
       put: function (row) {
         q.memberPut.run(String(row.publicKey), String(row.publicLabel || ''),
-          normLabel(row.publicLabel), String(row.claimedAt || ''), row.owner ? 1 : 0);
+          normLabel(row.publicLabel), String(row.claimedAt || ''));
         return member(q.memberGet.get(String(row.publicKey)));
       },
       remove: function (publicKey) {
@@ -312,7 +321,6 @@ function importLegacy(rootDir, store) {
         publicKey: key,
         publicLabel: String(row.publicLabel || row.name || ''),
         claimedAt: String(row.claimedAt || ''),
-        owner: !!row.owner,
       });
       counts.members += 1;
       if (row.partner && row.partner.relayKey) {

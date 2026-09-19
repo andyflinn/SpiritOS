@@ -31,9 +31,11 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('key collision on two generateIdentity(john)');
   }
 
-  contactBook.handshake(annie, { publicKey: johnA.publicKey, publicLabel: 'john' });
-  contactBook.handshake(annie, { publicKey: johnB.publicKey, publicLabel: 'john' });
-  contactBook.handshake(annie, { publicKey: jim.publicKey, publicLabel: 'jim' });
+  // contactBook.handshake (a census sync) wrote these until 2026-09-19;
+  // it went with the census readers. Known by handle is the same row.
+  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'john' }, 'handle');
+  contactBook.acquire(annie, { publicKey: johnB.publicKey, publicLabel: 'john' }, 'handle');
+  contactBook.acquire(annie, { publicKey: jim.publicKey, publicLabel: 'jim' }, 'handle');
 
   contactBook.setMyLabel(annie, johnA.publicKey, 'lovelyJohn');
   contactBook.setMyLabel(annie, johnB.publicKey, 'john-work');
@@ -60,7 +62,7 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('public johns: ' + publicJohns.length);
   }
 
-  contactBook.handshake(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan' });
+  contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'jonathan' }, 'handle');
   const afterRename = contactBook.byPublicKey(annie, johnA.publicKey);
   if (afterRename.publicLabel === 'jonathan' && afterRename.myLabel === 'lovelyJohn') {
     test.check('their public rename does not smash my caption');
@@ -85,14 +87,14 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('john B should start with no routes');
   }
 
-  contactBook.handshake(annie, {
+  contactBook.acquire(annie, {
     publicKey: johnA.publicKey,
     publicLabel: 'jonathan',
     relay: 'http://127.0.0.1:65411',
-  });
+  }, 'handle');
   const afterSeen = contactBook.byPublicKey(annie, johnA.publicKey);
   if (afterSeen.relays.length === 3 && afterSeen.myLabel === 'lovelyJohn') {
-    test.check('handshake appends a new route and keeps my caption');
+    test.check('seeing them again appends a new route and keeps my caption');
   } else {
     test.fail('after seen: ' + JSON.stringify(afterSeen));
   }
@@ -181,7 +183,8 @@ test.subHeading('Knowing somebody, and merely seeing them');
   const seen = auth.generateIdentity('stranger').publicKey;
   const wrote = auth.generateIdentity('bert').publicKey;
 
-  contactBook.handshake(annie2, { publicKey: seen, publicLabel: 'stranger' });
+  // A census row, as older code wrote one (nothing writes `census` now).
+  contactBook.acquire(annie2, { publicKey: seen, publicLabel: 'stranger' }, 'census');
   contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bert' }, 'message');
 
   const known = contactBook.contacts(annie2).map(function (r) { return r.publicKey; });
@@ -203,10 +206,10 @@ test.subHeading('Knowing somebody, and merely seeing them');
   // contact does not change what the mailbox calls them, and seeing them
   // again in a census does not unknow them.
   contactBook.setMyLabel(annie2, wrote, 'bertie');
-  contactBook.handshake(annie2, { publicKey: wrote, publicLabel: 'bertram' });
+  contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bertram' }, 'census');
   const row = contactBook.byPublicKey(annie2, wrote);
   if (row.myLabel === 'bertie' && row.publicLabel === 'bertram' && contactBook.acquiredVia(row) === 'message') {
-    test.check('a census sync corrects the public label and leaves the rest alone');
+    test.check('seeing them again at a lower rank corrects the public label and leaves the rest alone');
   } else {
     test.fail('after sync: ' + JSON.stringify(row));
   }

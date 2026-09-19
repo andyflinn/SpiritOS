@@ -205,6 +205,20 @@ async function run() {
       catch (e) { /* not an envelope this test understands */ }
     },
   });
+  // AND BERTRAND IS ON B, CONNECTED. Search answers the connected only
+  // (Andy, 2026-09-19: "search should respond with active/online members
+  // only"), so a bertrand with no stream would rightly not be found.
+  const bertOnB = sseClient.connect({
+    url: B.base + '/api/relay/stream?key=' +
+      encodeURIComponent(B.members.bertrand.publicKey),
+    headers: function () {
+      return {
+        'X-Spirit-Sig': auth.sign(B.members.bertrand.privateKey,
+          auth.streamMessage(B.members.bertrand.publicKey)),
+      };
+    },
+    onEvent: function () {},
+  });
   await sleep(400);
 
   // `bertrand` is a member of B and has never been heard of by A. If A can
@@ -237,23 +251,20 @@ async function run() {
     test.fail('via: ' + JSON.stringify(row));
   }
 
-  // ── AND WHETHER B SEES HIM CONNECTED ────────────────────────────────
+  // ── AND THAT B SEES HIM CONNECTED, BY FINDING HIM AT ALL ────────────
   //
-  // The field A could never answer for itself. `bertrand` is a member of
-  // B, and A holds no stream to him — so A's own presence table has no
-  // opinion and never will. B's does, and this is B's answer surviving
-  // the partner hop and the merge (peerSearch.rowsFrom copies the whole
-  // item, which is why nothing had to be taught to carry it).
-  //
-  // A BOOLEAN, not a truthy value, and not absent: `hub.handleSearch`
-  // hands it to the browser as `!!p.present`, and a browser that cannot
-  // tell "absent" from "nobody said" would draw the wrong dot for the one
-  // case this exists to cover.
-  if (row && typeof row.present === 'boolean') {
-    test.check('and whether B sees him connected, which A has no way to know itself');
+  // *This corrects an earlier check*, which required a boolean `present`
+  // on the row — B's answer to "is he connected", surviving the hop. Since
+  // 2026-09-19 a relay answers its connected members only, so being found
+  // IS the answer and the row carries no field for it (hub.handleSearch
+  // marks every row it hands the browser present). Asserted as the
+  // absence, so a field saying something every row says cannot creep back.
+  if (row && !('present' in row) && !('owner' in row)) {
+    test.check('and nothing on the row says whether he is connected — being found says it');
   } else {
-    test.fail('no presence on a partner row: ' + JSON.stringify(row));
+    test.fail('partner row fields: ' + JSON.stringify(row));
   }
+  bertOnB.close();
 
   test.subHeading('And A can add him, against the relay he actually lives on');
 

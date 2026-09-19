@@ -81,14 +81,22 @@ async function waitServing(timeoutMs) {
 // running relay and labMaster's cleanup never meet a handle of ours.
 // Answers the shape routingTable.json had — `peers` by key — plus the
 // database's table names, which is what "keeps nothing else" means now.
+// The owner's key as allow.json has it: the one place ownership lives.
+function ownerKeyOnDisk() {
+  try {
+    const allow = JSON.parse(fs.readFileSync(path.join(relayHome, 'relay-state', 'allow.json'), 'utf8'));
+    return (allow && Array.isArray(allow.keys) && allow.keys[0] && allow.keys[0].publicKey) || '';
+  } catch (e) { return ''; }
+}
+
 function routingTable() {
   let db = null;
   try {
     const { DatabaseSync } = require('node:sqlite');
     db = new DatabaseSync(path.join(relayHome, 'relay-state', 'relay.db'), { readOnly: true });
     const peers = {};
-    db.prepare('SELECT publicKey, publicLabel, owner FROM members').all().forEach(function (r) {
-      peers[r.publicKey] = { publicLabel: r.publicLabel, owner: !!r.owner };
+    db.prepare('SELECT publicKey, publicLabel FROM members').all().forEach(function (r) {
+      peers[r.publicKey] = { publicLabel: r.publicLabel };
     });
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all()
       .map(function (t) { return t.name; }).sort();
@@ -144,7 +152,9 @@ async function run() {
   // be the thing looked up by.
   const onDisk = routingTable();
   const row = onDisk && onDisk.peers && onDisk.peers[andy.publicKey];
-  if (row && row.owner === true && row.publicLabel === 'andy') {
+  // The row carries no owner mark (2026-09-19: "a row in the roll doesn't
+  // know who the owner is"); allow.json holds the one key that does.
+  if (row && row.publicLabel === 'andy' && ownerKeyOnDisk() === andy.publicKey) {
     test.check('and it is written down, under his KEY, before anything is asked to restart');
   } else {
     test.fail('relay.db after the claim: ' + JSON.stringify(onDisk));
@@ -203,7 +213,7 @@ async function run() {
   // served by a route is that plus a route.
   const reread = routingTable();
   const survived = reread && reread.peers && reread.peers[andy.publicKey];
-  if (survived && survived.owner === true) {
+  if (survived && ownerKeyOnDisk() === andy.publicKey) {
     test.check('andy still holds his row — by KEY, which is what a row is');
   } else {
     test.fail('relay.db after restart: ' +

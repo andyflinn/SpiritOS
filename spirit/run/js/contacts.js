@@ -94,7 +94,7 @@ const ACQUIRED_RANK = {
 const ACQUIRED_LISTENING = ['message', 'invite', 'handle', 'member'];
 
 // A row with no field predates the field, and what it was is a census
-// row: it was written by handshake from `who`.
+// row: it was written by handshake (deleted 2026-09-19) from `who`.
 function acquiredVia(row) {
   var via = row && row.acquiredVia;
   return Object.prototype.hasOwnProperty.call(ACQUIRED_RANK, via) ? via : ACQUIRED_CENSUS;
@@ -291,32 +291,12 @@ function byPublicKey(rootDir, publicKey) {
   return load(rootDir).find(function (r) { return r.publicKey === publicKey; }) || null;
 }
 
-// Seeing somebody in a census. This keeps a row's public caption and its
-// routes current and NOTHING else: it never promotes a stranger into the
-// address book, and it never touches how an existing row was acquired.
-function handshake(rootDir, peer) {
-  if (!peer || !peer.publicKey) throw new Error('handshake needs publicKey');
-  const publicLabel = peer.publicLabel || '';
-  const existing = byPublicKey(rootDir, peer.publicKey);
-  if (existing) {
-    existing.publicLabel = publicLabel || existing.publicLabel;
-    if (peer.relay) {
-      existing.relays = normalizeRelays((existing.relays || []).concat([peer.relay]));
-    }
-    const rows = load(rootDir).map(function (r) {
-      return r.publicKey === existing.publicKey ? existing : r;
-    });
-    save(rootDir, rows);
-    return existing;
-  }
-  return upsert(rootDir, {
-    publicKey: peer.publicKey,
-    publicLabel: publicLabel,
-    myLabel: publicLabel,
-    acquiredVia: ACQUIRED_CENSUS,
-    relays: peer.relay ? [peer.relay] : [],
-  });
-}
+// handshake STOOD HERE — "seeing somebody in a census": it refreshed a
+// row's public caption and relays from a census list, and wrote a
+// stranger in as `census`. Its one caller was hub.buildPeople's census
+// walk, fed [] since the census went (2026-09-18); both deleted
+// 2026-09-19 with the other roster readers. Old rows still read
+// `census` (acquiredVia above) — that is history, not a source.
 
 // Coming to know somebody: they wrote to you, they consumed an invite of
 // yours, or a human confirmed the key out of band. Upgrades a census row
@@ -492,7 +472,6 @@ module.exports = {
   setMyLabel: setMyLabel,
   byMyLabel: byMyLabel,
   byPublicKey: byPublicKey,
-  handshake: handshake,
   learnRoute: learnRoute,
   labelForKey: labelForKey,
   addRoute: addRoute,

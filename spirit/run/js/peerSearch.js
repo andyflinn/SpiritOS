@@ -55,19 +55,12 @@ function idOf(peer) {
 // These read `s.item`, which is the row the caller offered, untouched.
 // Everything about the label is gradedSearch's and is not repeated here.
 var PEER_SIGNALS = [
-  // IS THERE ANYBODY THERE. A relay stores nothing (0006), so an absent
-  // peer cannot be posted to at all — this is the difference between a row
-  // you can act on and a row you can only file, which is why it is worth a
-  // quarter of the match and not a tenth.
-  //
-  // Binary today. It is the obvious place for the first real measurement:
-  // a live PERCENTAGE over a window is the same number with more truth in
-  // it, and needs no change here beyond returning it.
-  {
-    name: 'present',
-    weight: 0.25,
-    quality: function (s) { return s.item && s.item.present ? 1.0 : 0.0; },
-  },
+  // `present` STOOD HERE, a quarter of the match: "is there anybody there".
+  // Moot since 2026-09-19 — a relay answers a search from its connected
+  // members only (Andy: "search should respond with active/online members
+  // only"), so every row offered is present and the signal told nothing
+  // apart. A live percentage over a window, the measurement it was waiting
+  // for, would come back here as a new signal with a new name.
 
   // HOW NEAR. `via` null means the caller's own members; anything else came
   // from a partner. Acquiring needs a census this node can reach, and the

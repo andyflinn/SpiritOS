@@ -185,27 +185,26 @@ test.subHeading('A better match comes first');
 }
 
 // ---------------------------------------------------------------------
-test.subHeading('Present beats absent, because absent cannot be posted to');
+test.subHeading('Presence is not a signal: every row a relay offers is connected');
 
 {
-  // A relay stores nothing (0006), so an absent peer is a row you can file
-  // and not a row you can act on. Same rank, so presence is what decides.
-  const rows = [row('zara', { present: false }), row('zeta', { present: true })];
-  const got = labelsOf(peerSearch.search(rows, 'z'));
-  if (got[0] === 'zeta') {
-    test.check('at equal rank the one who is here wins');
+  // It was, until 2026-09-19 — a quarter of the match, "absent cannot be
+  // posted to". Andy: "search should respond with active/online members
+  // only", so relay.js offers the connected only and the signal told
+  // nothing apart. A stray `present` on a row (an older partner's) must
+  // not move it either.
+  const names = peerSearch.SIGNALS.map(function (x) { return x.name; });
+  if (names.indexOf('present') === -1) {
+    test.check('no presence signal: ' + names.join(', '));
   } else {
-    test.fail('order: ' + got.join(', '));
+    test.fail('signals: ' + names.join(', '));
   }
-
-  // But NOT over rank. Being reachable does not make somebody the person
-  // who was asked for.
-  const mixed = [row('zebra', { present: false }), row('buzz', { present: true })];
-  const order = labelsOf(peerSearch.search(mixed, 'z'));
-  if (order[0] === 'zebra') {
-    test.check('and never over a better match — rank is asked first');
+  const a = peerSearch.explain({ publicKey: 'K1', publicLabel: 'zara', present: false, via: null }, 'z');
+  const b = peerSearch.explain({ publicKey: 'K2', publicLabel: 'zara', present: true, via: null }, 'z');
+  if (a.quality === b.quality) {
+    test.check('and a stray present field changes no score (' + a.quality.toFixed(3) + ')');
   } else {
-    test.fail('presence outranked the match: ' + order.join(', '));
+    test.fail(a.quality + ' vs ' + b.quality);
   }
 }
 
@@ -777,32 +776,33 @@ test.subHeading('A weight can be argued about with numbers');
 
 {
   // WHY explain() EXISTS. Quality-of-result is up in the air, so the
-  // question "should presence count for more" has to be answerable by
+  // question "should nearness count for more" has to be answerable by
   // looking at what a row actually scored rather than by reading the file.
   const near = peerSearch.explain(
-    { publicKey: 'K1', publicLabel: 'zebra', present: false, via: null }, 'z');
+    { publicKey: 'K1', publicLabel: 'zebra', via: 3 }, 'z');
   const live = peerSearch.explain(
-    { publicKey: 'K2', publicLabel: 'buzz', present: true, via: null }, 'z');
+    { publicKey: 'K2', publicLabel: 'buzz', via: null }, 'z');
 
   const byName = {};
   near.signals.forEach(function (sig) { byName[sig.name] = sig; });
 
-  if (byName.match && byName.match.contribution > byName.present.weight) {
-    test.check('the match outweighs presence entirely today — ' +
+  const nearSig = peerSearch.SIGNALS.filter(function (x) { return x.name === 'near'; })[0];
+  if (byName.match && nearSig && byName.match.contribution > nearSig.weight) {
+    test.check('the match outweighs nearness entirely today — ' +
       'a prefix contributes ' + byName.match.contribution.toFixed(2) +
-      ' against presence worth at most ' + byName.present.weight);
+      ' against nearness worth at most ' + nearSig.weight);
   } else {
     test.fail('match no longer dominates: ' + JSON.stringify(byName.match));
   }
 
-  // Which is what keeps the old precedence behaviour: a present weaker
-  // match does not overtake an absent stronger one. THE MOMENT A WEIGHT
+  // Which is what keeps the old precedence behaviour: a nearer weaker
+  // match does not overtake a farther stronger one. THE MOMENT A WEIGHT
   // MOVES this check is the one that will say so, which is the point.
   if (near.quality > live.quality) {
-    test.check('so an absent prefix still beats a present middle-match, ' +
+    test.check('so a partner’s prefix still beats my own middle-match, ' +
       near.quality.toFixed(3) + ' vs ' + live.quality.toFixed(3));
   } else {
-    test.fail('weights now let presence overtake the match: ' +
+    test.fail('weights now let nearness overtake the match: ' +
       near.quality + ' vs ' + live.quality);
   }
 

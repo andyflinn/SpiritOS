@@ -15,6 +15,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const relayStore = require('../run/js/relayStore');
 const relayDump = require('../run/js/relayDump');
+const auth = require('../run/js/relayAuth');
 
 function home() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-store-'));
@@ -32,8 +33,10 @@ s.members.put({ publicKey: 'K2', publicLabel: ' bert ', claimedAt: '2026-01-02' 
 s.members.put({ publicKey: 'K3', publicLabel: 'bert', claimedAt: '2026-01-03' });
 
 const k1 = s.members.get('K1');
-if (k1 && k1.publicLabel === 'andy' && k1.owner === true) {
-  test.check('a row goes in and comes back by key, owner flag and all');
+// `owner: true` is offered above, as a caller written before 2026-09-19
+// would, and does not stick: a row does not know who owns the relay.
+if (k1 && k1.publicLabel === 'andy' && !('owner' in k1)) {
+  test.check('a row goes in and comes back by key — and carries no owner flag, offered or not');
 } else {
   test.fail('get K1: ' + JSON.stringify(k1));
 }
@@ -126,7 +129,7 @@ else test.fail('open() made a second connection');
 
 relayStore.closeAll();
 const again = relayStore.open(H);
-if (again !== s && again.members.count() === 3 && again.members.get('K1').owner === true) {
+if (again !== s && again.members.count() === 3 && again.members.get('K1').publicLabel === 'andy') {
   test.check('closed and reopened, the rows are still there');
 } else {
   test.fail('after reopen: count=' + again.members.count());
@@ -159,9 +162,12 @@ if (byKey.code === 0 && byKey.text.indexOf('"bert"') !== -1 && byKey.text.indexO
   test.fail('key: ' + JSON.stringify(byKey));
 }
 
+// The owner is allow.json's one key, never a mark on the row.
+auth.writeAllowKeys(H, [{ name: 'andy', publicKey: 'K1' }]);
 const byLabel = dump(['label', 'andy']);
-if (byLabel.code === 0 && /owner\s+andy\s+K1/.test(byLabel.text)) {
-  test.check('a label lookup shows who holds it');
+const byBert = dump(['label', 'bert']);
+if (byLabel.code === 0 && /owner\s+andy\s+K1/.test(byLabel.text) && /member\s+bert\s+K3/.test(byBert.text)) {
+  test.check('a label lookup shows who holds it, the owner named from allow.json');
 } else {
   test.fail('label: ' + JSON.stringify(byLabel));
 }
@@ -181,6 +187,46 @@ if (relayStore.openReadOnly(empty) === null && !fs.existsSync(path.join(empty, '
   test.check('and dumping a box with no relay.db creates nothing');
 } else {
   test.fail('openReadOnly created state on an empty home');
+}
+
+test.subHeading('A relay.db from cycle 3 loses the owner column, once');
+
+// Cycle 3 created `members` with an `owner` column copied from allow.json
+// at claim time. Andy (2026-09-19): "a row in the roll doesn't know who the
+// owner is. Ownership is only determined by one identified key."
+{
+  const old = home();
+  fs.mkdirSync(path.join(old, 'relay-state'), { recursive: true });
+  const sqlite = require('node:sqlite');
+  const file = path.join(old, 'relay-state', 'relay.db');
+  const raw = new sqlite.DatabaseSync(file);
+  raw.exec(`CREATE TABLE members (publicKey TEXT PRIMARY KEY, publicLabel TEXT NOT NULL DEFAULT '',
+    labelNorm TEXT NOT NULL DEFAULT '', claimedAt TEXT NOT NULL DEFAULT '', owner INTEGER NOT NULL DEFAULT 0)`);
+  raw.exec("INSERT INTO members VALUES ('KO', 'andy', 'andy', '2026-09-01', 1), ('KM', 'bert', 'bert', '2026-09-02', 0)");
+  raw.close();
+
+  const cols = function () {
+    const db = new sqlite.DatabaseSync(file, { readOnly: true });
+    const names = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
+    db.close();
+    return names;
+  };
+  const st = relayStore.open(old);
+  if (cols().indexOf('owner') === -1 && st.members.count() === 2 && st.members.get('KO').publicLabel === 'andy') {
+    test.check('the column is gone and every row kept');
+  } else {
+    test.fail('columns ' + cols().join(',') + ' count ' + st.members.count());
+  }
+  st.members.put({ publicKey: 'KN', publicLabel: 'carol', claimedAt: '2026-09-03' });
+  relayStore.closeAll();
+  const back = relayStore.open(old);
+  if (back.members.count() === 3 && cols().indexOf('owner') === -1) {
+    test.check('and opening it again changes nothing — asked of the table, not assumed');
+  } else {
+    test.fail('second open: ' + back.members.count());
+  }
+  relayStore.closeAll();
+  try { fs.rmSync(old, { recursive: true, force: true }); } catch (e) { /* windows */ }
 }
 
 relayStore.closeAll();

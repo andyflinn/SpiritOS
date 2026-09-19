@@ -296,15 +296,17 @@ test.subHeading('The owner’s label lives in two places, and they move together
       ' monitor=' + JSON.stringify(mon.answer) + ' remove=' + JSON.stringify(rm.answer));
   }
 
-  // AND THE CENSUS AGREES. The badge is read off `owner` by key since
-  // R3, so a row whose flag disagreed with allow.json would be a second
-  // authority on who the owner is.
-  const ownerRows = rollOf(L.box).filter(function (p) { return p.owner; });
-  if (ownerRows.length === 1 && ownerRows[0].publicLabel === 'chief' &&
-      ownerRows[0].publicKey === L.owner.publicKey) {
-    test.check('with one owner row in the census, under the new label');
+  // AND THERE IS ONE AUTHORITY. This asserted "one owner row in the
+  // census" — a row flag that could disagree with allow.json. Since
+  // 2026-09-19 no row carries one (Andy: "a row in the roll doesn't know
+  // who the owner is"), so the relay's own answer is asserted instead.
+  const named = L.box.ownerPublic();
+  const ownRow = rollOf(L.box).filter(function (p) { return p.publicKey === L.owner.publicKey; })[0];
+  if (named.ownerKey === L.owner.publicKey && named.ownerLabel === 'chief' &&
+      ownRow && ownRow.publicLabel === 'chief' && !('owner' in ownRow)) {
+    test.check('the relay names the owner under the new label, and no row claims to');
   } else {
-    test.fail('owner rows: ' + JSON.stringify(ownerRows));
+    test.fail('ownerPublic ' + JSON.stringify(named) + ' row ' + JSON.stringify(ownRow));
   }
 }
 

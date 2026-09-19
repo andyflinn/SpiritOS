@@ -148,11 +148,18 @@ test.startTest('First invited claim is owner');
     test.fail('snapshot: ' + JSON.stringify(snap));
   }
 
-  const ownerRow = rollOf(box2).filter(function (p) { return p.owner; });
-  if (ownerRow.length === 1 && ownerRow[0].publicKey === id.publicKey) {
-    test.check('and the roll marks that key as owner');
+  // THE ROLL DOES NOT SAY SO, AND MUST NOT (2026-09-19). This asserted
+  // "the roll marks that key as owner". Andy: "only one thing determines
+  // ownership of a relay. First claim. No fleeting roll with automatic
+  // memory loss can mark a row as 'owner'." The one key is allow.json's,
+  // and ownerPublic() — what /api/relay/key serves — names it.
+  const rows = rollOf(box2);
+  const named = box2.ownerPublic();
+  const own = rows.filter(function (p) { return p.publicKey === id.publicKey; })[0];
+  if (named.ownerKey === id.publicKey && own && rows.every(function (p) { return !('owner' in p); })) {
+    test.check('the relay names that key as owner, and its row carries no mark');
   } else {
-    test.fail('roll owner rows: ' + JSON.stringify(ownerRow));
+    test.fail('ownerPublic ' + JSON.stringify(named) + ' rows ' + JSON.stringify(rows));
   }
 
   test.subHeading('Members but no owner is broken, not unclaimed');
