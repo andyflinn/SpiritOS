@@ -1,6 +1,8 @@
 # 2026-09-19 — the first Governor: one lever, one remedy, a reason each move
 
-**Status: OPEN.** Scoped in
+**Status: CLOSED as a checkpoint, 2026-09-19.** Five requirements done, two
+deferred by the build sequence (monitor → cycle 4, live run → optimization).
+Scoped in
 [NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md) (Decided — *cycle 1
 scope*, *proof of closing*). Cycle 0 (`4d32104`) came first: the relay is its
 own startup module, so what is measured here is a relay carrying no node code.
@@ -103,7 +105,10 @@ itself keeps no timer — `natterIntrinsic` guards that).
 **Verify:** `spirit/test/natterIntrinsic.js` (the panel keeps no timer) and
 `spirit/test/presenceNode.js`; the rest is Andy looking, in the live run (R7).
 
-**Status:** OPEN — drawn; not yet seen by Andy.
+**Status:** DEFERRED: the rows are drawn and the node nudges the page, but
+Andy has not looked yet; the owner's visual monitor is cycle 4 of the build
+sequence (NODE-AND-RELAY.md, *Build sequence*), where this panel is replaced
+by one that draws any lever generically.
 
 ### R6 — two relays, two owners, confirming each other
 
@@ -124,7 +129,10 @@ labMaster relays on the workstation (never spirit-3), a driver opening many
 member streams and posting, then going quiet; Andy watches heap and streams
 rise, a shed with its reason, heap fall back under the ceiling.
 
-**Status:** OPEN — the driver is not written. See *Open* below.
+**Status:** DEFERRED: moved to the optimization phase by the build sequence
+Andy set on 2026-09-19 (NODE-AND-RELAY.md, *Build sequence* — scaffolding
+before optimization). The live run should measure a relay that behaves like
+the finished thing; the driver is not written.
 
 ## Open
 

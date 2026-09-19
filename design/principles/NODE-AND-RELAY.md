@@ -410,6 +410,40 @@ The same holds for every ending: a relay that stops partnering stops
 answering, and the far side finds out by trying. Courtesy — telling anyone —
 is outside this design.
 
+### The first claim needs a token, from an installer
+
+> **Andy (2026-09-19):** *"Relay currently goes keys mode on first claim. I
+> think that first claim should be protected by a token as well."* —
+> *"Ideally there is an install.js console program that guides the
+> owner-on-ssh through defining first claim name with a sufficiently complex
+> token, which can be copied from the bash window and pasted into the
+> node-shell's claim interface."* — *"I don't think we want to publish lab
+> on VPS."*
+
+**Decided.** An open relay today belongs to whoever reaches it first (the
+startup warning says so). Instead:
+
+1. **An interactive `install.js`, on the VPS over SSH,** asks for the owner's
+   name and mints an **owner invite** with a long random token — the same
+   generator ordinary invites use — and prints name and token to copy.
+2. **The token is shown only in that SSH session,** never printed by the
+   relay at boot, where systemd's journal would keep it.
+3. **The owner pastes name and token into the node shell's claim screen**,
+   which already takes an invite name and token (`natter.js`). That claim
+   becomes the owner; the relay goes keys-mode as today.
+4. **An unclaimed relay refuses any claim without a valid invite.** This
+   amends [0003](../decisions/0003-first-claim-is-owner.md): *first invited
+   claim is owner*.
+5. **VPS only.** Lab and test relays stay on the workstation and mint their
+   owner invite in-process, as the harness already builds relays.
+
+It supersedes `install-public-relay.js`'s name reservation
+(`pending-owner.json`), which reserves a name with no secret behind it.
+Cycle 3, with the storage move — both touch claims and invites.
+
+**Open:** a relay deployed without SSH (the Procfile/Heroku path) has no way
+to run the installer.
+
 ### Relays need a partner interface, defined for self-management
 
 > **Andy (2026-09-19):** *"Relays need a partner interface. It must be
@@ -1828,6 +1862,47 @@ against a partner floor of 60 is a tenth, which is not a clean twelfth — so
 either the quantum or the numbers move. A question for whoever derives them
 from the ceiling (§8), not one to settle here.
 
+### Limits exist only where a resource runs out
+
+> **Andy (2026-09-19):** *"It's unnecessary usage ceilings that I think are
+> fascist."* — *"I see a reason for hard floors on levers: the
+> MINIMUM_RESIDENT_ROUTES_PER_LIVE_CONNECTION. I see no reason for hard
+> ceilings, not even per member count. The ceilings must be re-computed by
+> events, like: a third member joined, let's divide non-owner RAM by 3
+> now."* — *"Connected."* — *"Owner allotments must be fixed (super-user),
+> because there needs to be space for diagnosis and monitor captures, to
+> ship better code on the next deploy."*
+
+**Decided.** *This corrects "1 is the hard ceiling" below: the top of a
+lever is a moving share, not a fixed number.*
+
+- **Hard floors stay** — each is a guarantee somebody relies on.
+- **No hard ceilings on levers, not even per member.** The only fixed bound
+  is the configured one (box → configuration, §8).
+- **Shares are recomputed on events**, not on a clock: when a member
+  **connects** or **disconnects**, non-owner RAM is divided again among the
+  members connected now. Twelve members on an idle relay get the whole relay
+  between them; one member alone gets all of it.
+- **The owner's allotment is fixed** — a super-user reservation off the top,
+  for diagnosis and monitor captures, so the next deploy ships better code.
+  It is the same reservation §9 makes for monitoring, and it is never shed.
+
+**What it condemns in the tree** — fixed per-sender caps, due to become
+derived shares: `DEFAULT_PER_REQUESTER 16` and `DEFAULT_MAX 256`
+([router.js](../../spirit/run/js/router.js)), `MEMBER_PER_MIN 600`
+([relay.js](../../spirit/run/js/relay.js)). And cycle 1's connection
+allowance ceiling (`ramLimitMB × STREAMS_PER_MB`), which is still a fixed
+derivation rather than a share of what is left after the owner.
+
+**The use cases that forced it** (Andy): a relay giving 1,000 friends private,
+verified connectivity; a relay as the owner's own big pipe, reaching 1,000
+people bound to other relays; a small group of workstations syncing process
+status everyone-to-everyone in real time. All three are served by shares that
+grow when the relay is quiet. **Open:** the second and third also want a
+**group post** — one message, many recipients — which is a new way of
+speaking (0010) and Andy's to decide; and a partner relay counts as one
+sender today, so a partnership would share a single sender's budget.
+
 ### Every lever declares its floor and its ceiling, with the reason
 
 > **Andy (2026-09-19):** *"The levers available to the governor must have
@@ -1987,6 +2062,20 @@ tries hints in three tiers — live partners, then minted partners, then
 non-minted, which returns "minting incomplete" at once and starts the
 minting cycle with this relay's owner (§9b).
 
+**Scaffolding before optimization** (Andy, 2026-09-19): hints end to end,
+SQLite, the first-claim token and installer, the owner's visual monitor —
+then levers and tuning. See *Build sequence*.
+
+**The first claim needs an invite too** (Andy, 2026-09-19), minted by an
+interactive installer over SSH; amends 0003 to *first invited claim is
+owner* (§5).
+
+**Limits exist only where a resource runs out** (Andy, 2026-09-19). Hard
+floors stay; no hard ceilings on levers, not even per member. Shares are
+recomputed when a member connects or disconnects — non-owner RAM divided
+among those connected. The owner's allotment is fixed, a super-user
+reservation for diagnosis and monitor captures (§10).
+
 **Cheap measurements first** (Andy, 2026-09-19). The first build measures
 only what is cheap, which is enough to prove the design; the first Governor
 and the first monitor are simple; the rest is learned from the results.
@@ -2120,9 +2209,54 @@ written down. RAM binds first; disk is the backstop.
 
 **Stranger handling is the node's policy question**, not a relay shortfall.
 
+## Build sequence — scaffolding before optimization
+
+> **Andy (2026-09-19):** *"The migration of persistent datasets to SQLite
+> should happen early, since those things will change little before relay
+> ships as desired. So when we later mess with lever-inventions etc., a
+> stable infrastructure is already stable."* — *"Hints and the relay
+> broadcast streaming new connections to nodes must come early, so that
+> the current contacts files on the nodes slowly accumulate 'valid' data,
+> and so that the relay development can deal with a relatively complete
+> behaviour of nodes."* — *"So all the scaffolding comes before intense
+> relay optimization."* — *"The other scaffolding element is the visual
+> monitor for the owner. Then lever-integration pattern will become
+> routine."*
+
+**Decided: scaffolding first, optimization after.** Scaffolding is what every
+later cycle stands on — complete node behaviour on the wire, stable storage,
+a secure bootstrap, the owner's visual monitor. Optimization is levers,
+shares and Governor tuning, and it is only meaningful against the finished
+shape.
+
+| kind | cycle | what | status |
+|---|---|---|---|
+| done | 0 | node and relay as separate startup modules | done, `4d32104` |
+| done | 1 | configuration, connection allowance, one-lever Governor, monitor rows | checkpoint, `c67ab1e`; live run moved to optimization |
+| scaffolding | 2 | **route hints end to end** — the relay accepts the hint, the node sends it, contacts store relay IDs; route announcements fill contacts | **locked in — next** (Andy) |
+| scaffolding | 3 | **SQLite** for the roll and invites (identity, allow, config stay files); **the owner's first-claim token** and the installer | agreed (Andy) |
+| scaffolding | 4 | **the owner's visual monitor**, generic over levers — any lever in the report is drawn with position, floor, share and last move, so a new lever needs no UI work | agreed (Andy) |
+| scaffolding | 5 | **partner acquisition**, the §5 model; partner roll born in SQLite | agreed (Andy) |
+| optimization | 6 | **dynamic shares** — fixed owner reservation, shares recomputed on connect/disconnect, fixed caps converted (§10) | |
+| optimization | 7 | DISC allotments; cycle 1's live run; Governor learning | |
+| before separate shipping | — | version tolerance (§7) | |
+
+**Cycles 2–5 agreed "for now", cycle 2 locked in** (Andy, 2026-09-19).
+The optimization rows stay unordered until the scaffolding is done.
+
+**The lever-integration routine** that the monitor makes possible: declare
+the lever's floor and share (§10) → carry its position and last move in the
+report → the monitor draws it. Nothing else to build per lever.
+
+**Open:** "the relay broadcast streaming new connections" — route
+announcements (cost follows traffic; `contacts.learnRoute` already stashes
+them on existing rows) are clearly cycle 2. Presence broadcast to every
+member is `members × changes` (0013) and should be scoped to members who hold
+the connecting key as a contact before it is grown.
+
 ## Recommended, not decided
 
-**Build order.** *Superseded 2026-09-19 by the cycle 1 scope in Decided
+**Build order.** *Superseded by the build sequence above; kept as the record.* *Superseded 2026-09-19 by the cycle 1 scope in Decided
 (RAM limit, cheap counts, simple Governor, simple monitor). Kept as the
 record:*
 

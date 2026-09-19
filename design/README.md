@@ -15,11 +15,16 @@ This directory contains the vision, principles, and architecture decisions for *
   partner roll, and ends silently; the old peer-row model is deprecated.
   Routes are the node's, on contacts, as relay IDs — the relay keeps no route
   cache, and 0012's "never persisted" stands. The owner never duplicates
-  member storage. **Cycle 1 is scoped small:** a RAM ceiling in a config
-  file, cheap in-flight counts, a one-rule Governor and a simple monitor;
-  partner acquisition, DISC and allotments are deferred. Before it, cycle 0:
-  node and relay as separate startup modules. Open: version tolerance, what "capable of partnership" is
-  checked against, recoverable expiry, and the open lever bounds.
+  member storage. **Limits exist only where a resource runs out:** hard
+  floors, no hard ceilings, shares recomputed as members connect, a fixed
+  owner reservation. The first claim needs an invite, minted by an installer
+  over SSH. **Build sequence — scaffolding before optimization:** cycles 0
+  (startup split) and 1 (config, allowance, one-lever Governor) done; then
+  2 route hints end to end (**locked in, next**), 3 SQLite plus the owner
+  token and installer, 4 the owner's visual monitor, 5 partner acquisition;
+  shares, DISC and Governor tuning after. Open: version tolerance, what
+  "capable of partnership" is checked against, recoverable expiry, the
+  group post, and the open lever bounds.
 - [The requester is responsible for the question](principles/THE-REQUESTER-IS-RESPONSIBLE.md)
   — *"the more specific my question, the more precise the answer."* A vague
   question earns a bounded answer or none, never everything. The reason
@@ -80,12 +85,14 @@ This directory contains the vision, principles, and architecture decisions for *
   `statusMessage` and `checkOwner` went with it — which answers decision 0010's
   last open question by removal.
 - [2026-09-19 — the first Governor](cycles/2026-09-19-relay-governor-cycle-1.md)
-  — **OPEN.** 7 requirements, 5 done. The relay's first configuration (a RAM
+  — **CLOSED as a checkpoint.** 7 requirements: 5 done, 2 deferred by the
+  build sequence. The relay's first configuration (a RAM
   ceiling, bounded by the box), one lever (the connection allowance, owner as
   its floor), one remedy (close the longest-idle streams), each move reported
   with its reason on the existing owner report — no new word on the wire.
-  Proven on two relays with two owners confirming each other. Left: the live
-  run Andy watches, and the tooling to populate it.
+  Proven on two relays with two owners confirming each other. Deferred: the
+  panel Andy looks at (to cycle 4, the visual monitor) and the live run (to
+  optimization).
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 
