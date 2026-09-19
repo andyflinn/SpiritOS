@@ -354,3 +354,21 @@ owner) — and the file's absence, which `git ls-files Procfile` shows.
   and is not needed here. Measured: about 5.5 µs per member (100,000 in about
   550 ms of work, now spread over turns). It feeds the timeout floor
   (NODE-AND-RELAY §10).
+
+## Live: spirit-3 took it, 2026-09-19
+
+Released as tag `v-2026-09-19-17-00` (commit `6b6dffa`). spirit-3 had been
+on `v-2026-09-18-05-22`, so it took cycles 0 to 3 in one step. Andy ran the
+checks on the box:
+
+| check | result |
+|---|---|
+| `./bash/install-units` | unit reinstalled with `RestartPreventExitStatus=78`, systemd reloaded |
+| `./bash/restart` | `ok spirit-relay is running`: B4's startup check, first run on a real systemd |
+| process | `node js/server.js --relay --port 65430`, 22.5 MB |
+| import (R2, D8) | ran once: `relay.db` created; `routingTable.json.imported` and `invites.json.imported` kept |
+| `relayDump.js` (R7) | 5 members, 1 live invite, 1 partnership (`partnered`) |
+| owner | `Andy Flinn`, its key matching `allow.json`, flagged owner in the roll |
+
+Not yet exercised live: the refusal path (exit 78, and `check_started`
+printing the journal), which only a relay that fails to start would show.
