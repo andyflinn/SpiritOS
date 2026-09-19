@@ -2468,6 +2468,29 @@ those choices. Period. No planning for 'knowing it all'."*
 as correct behaviour, and a proposal to keep data "for later", or to grow a
 dataset without a disc bound, argues against this and usually loses.
 
+**"We design to do the best with what we find. We won't be bothered with
+what we can't find or know"** (Andy, 2026-09-19). Relays offer one way to
+find nodes or relays: **search**. What is not found does not influence
+decisions. *"Every internet/email user knows: email addresses change,
+contacts go stale. Deal with it."* Searches can still be improved. What does
+not change is that nothing waits for a list it cannot have. The first case:
+hub.js swept every contact against an owned relay's roster. After the census
+went on 2026-09-18, that roster read empty, and the sweep pruned every member
+contact. It was deleted rather than guarded, and so were the fields it wrote
+(`memberOf`, `missingSince`) and the UI drawn from them: the lock column, the
+padlock and the "dud" warning.
+
+**Nodes have two sources of knowledge: search (active) and broadcasts
+(passive)** (Andy, 2026-09-19). This is why relays broadcast what they know.
+A new member of a relay I own becomes a contact on the claim event itself
+(`hub.adoptClaim`, called from server.js `onOwnerEvent`), not from a sweep.
+
+**Membership can only expire, not be demoted** (Andy, 2026-09-19). On the
+relay, a member row is shed or removed and never lowered. On the node, a
+contact's `acquiredVia` rank only rises (contacts.js `ACQUIRED_RANK`, with
+`member` at the top). It records how the person came, which is history, not
+a claim that they still hold a seat.
+
 **spirit-3 is kept alive through every future cycle** (Andy, 2026-09-19:
 *"practice our care for our relays … latest by beta I want to start
 maintaining my spirit dataset on my work node, supported by my relay"*).

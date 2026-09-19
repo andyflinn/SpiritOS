@@ -943,20 +943,10 @@ common.refuseListenError(server, port, 'js/server.js');
   try { ownerBadge.ensureRelays(ROOT_DIR); }
   catch (e) { /* nor a relay list */ }
 
-  // ── AND EVERYBODY WITH A SEAT ON A RELAY THIS NODE OWNS ────────────
-  //
-  //   Andy: "i have to rummage two different peer lists for everything i
-  //   want to do."
-  //
-  // The catch-up half. The owner event above is the fast path and cannot
-  // stand alone: it reaches an open browser, nothing persists it, and
-  // every member who enrolled before this existed would never be seen.
-  //
-  // Not awaited — it probes every relay, and a node must not wait on
-  // another continent to finish booting. A node that owns no relay does
-  // nothing at all here.
-  try { hub.syncMembers(); }
-  catch (e) { /* a contact list is not a reason to fail a boot */ }
+  // THE BOOT-TIME ROSTER SWEEP STOOD HERE (hub.syncMembers). It read every
+  // owned relay's census roster, which no relay may return any more; see
+  // the note where reconcileMembers stood in hub.js. A new member becomes a
+  // contact on the claim event instead — onOwnerEvent, below.
 
   // The device window, if it was left open. The flag has always survived
   // a restart in relay-state/device.json; until now nothing read it at
@@ -1083,10 +1073,9 @@ common.refuseListenError(server, port, 'js/server.js');
     // on top of the sweep, never the only way a member is noticed.
     onRelayEvent: function (ev) {
       relayEvents.note(ev);
-      if (ev && ev.kind === 'claim') {
-        try { require('./hub').createHub(ROOT_DIR).syncMembers(); }
-        catch (e) { /* the sweep at boot and on every probe still runs */ }
-      }
+      // A `kind: 'claim'` branch stood here and never fired: claims arrive
+      // as `owner-event` (onOwnerEvent, below), not `relay-event`, since
+      // R2 split the two. Adoption lives there now.
     },
     // AND THE MEMBERSHIP HALF, WHICH IS KEPT (R2).
     //
@@ -1144,6 +1133,11 @@ common.refuseListenError(server, port, 'js/server.js');
           expiresAt: ev && ev.expiresAt,
         });
       } catch (e) { /* a witness must not break the stream it watches */ }
+
+      // A new member of a relay this node owns becomes a contact, on the
+      // event itself (hub.adoptClaim — it replaced a roster sweep that read
+      // a list no relay may return, 2026-09-19).
+      try { hub.adoptClaim(ev); } catch (e) { /* a contact list is not a reason to drop an event */ }
       return relayEvents.note(ev);
     },
     // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the

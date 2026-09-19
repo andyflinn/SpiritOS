@@ -110,91 +110,13 @@ function cdTitle() {
 // decision. There is no two-second repaint left to destroy the field
 // somebody is typing in — which is exactly what it used to do, and what
 // every table in the shell still needs a guard against.
-// ── AN OBVIOUS DUD, AND WHY ──────────────────────────────────────────
-//
-//   Andy: "show a warning bubble at the top of contact details if the
-//   contact is an obvious dud... the bubble will show the reason."
-//
-// The node decides it, on a sweep that already probes every relay this
-// node is on (hub.reconcileOrphans): a key that EVERY relay ANSWERED
-// about and none of them listed. A relay that did not answer says
-// nothing about anybody, which is why a rebooting box does not paint a
-// book full of warnings.
-//
-// AT THE TOP, before the facts, because it changes what the facts mean.
-// "Unanswered inbound: 0" reads as a quiet contact until you know there
-// is nobody on the other end of it.
-//
-// THE REASON, NOT THE VERDICT. "This contact is dead" is a claim this
-// screen cannot support; what it can support is the observation the
-// verdict was made from, and a person who knows their own network reads
-// far more out of it than a label would give them.
-//
-// "FIRST NOTICED", NEVER "WENT". Nothing watched before there was a
-// field to watch with, so the date is when this node first CONCLUDED the
-// key was missing — which for every row in an existing book is the day
-// this shipped. Saying "gone since" would be inventing a history.
-function cdDudBubble() {
-  var since = (cdPerson && cdPerson.missingSince) || '';
-  if (!since) return '';
-
-  var when = '';
-  try {
-    var d = new Date(since);
-    if (!isNaN(d.getTime())) when = d.toISOString().slice(0, 10);
-  } catch (e) { when = ''; }
-
-  return '<div class="stat-tile wide cd-dud">' +
-    '<div>' + cdIcon.WARNING + ' <strong>No relay you are on lists this key.</strong></div>' +
-    '<div class="job-manifest-note">' +
-      'Every relay you are on answered, and none of them has a row for this ' +
-      'contact — so this is not a connection problem. Either they left, or ' +
-      'the relay you met them on is gone.' +
-      (when ? ' First noticed ' + cdEscapeHtml(when) + '.' : '') +
-      ' Nothing has been deleted: the name you gave them is yours and is on ' +
-      'no relay to be recovered from, so Forget stays a decision you make.' +
-    '</div>' +
-    '</div>';
-}
-
-// ── WHAT THE LOCK IS, SPELLED OUT ────────────────────────────────────
-//
-//   Andy: "for those locked contacts display a foldable bubble containing
-//   a list of the relays that cause the locked status.... Title: Locked
-//   to relays I own." — and, on the mark for it: "ICON.INFO".
-//
-// INFO AND NOT A WARNING, which is the difference between this and the
-// bubble above it. A dud is something wrong; this is a fact about a box
-// you keep, and one you arranged on purpose. The two must not wear the
-// same face or the warning stops meaning anything.
-//
-// FOLDED SHUT, so it costs a line. The mark in the titlebar is the
-// question — "why does this screen have a padlock on it" — and this is
-// the answer, available without being in the way. Somebody who already
-// knows never opens it.
-//
-// THE RELAYS ARE THE CONTENT, because they are what Forget will have to
-// remove, one by one, and a person deciding whether to press it needs to
-// see how many that is.
-function cdLockedFold() {
-  var seats = cdSeats();
-  if (!seats.length) return '';
-
-  return '<details class="stat-tile wide cd-locked">' +
-    '<summary>' + cdIcon.INFO + ' Locked to relays I own</summary>' +
-    '<div class="job-manifest-note">' +
-      'They hold a seat on ' + (seats.length === 1 ? 'this relay' : 'these relays') +
-      ', so this contact was created for you and cannot simply be ' +
-      'forgotten. Forget removes the ' +
-      (seats.length === 1 ? 'seat' : 'seats') + ' as well, and says so before it does.' +
-    '</div>' +
-    '<ul class="cd-seat-list">' +
-      seats.map(function (url) {
-        return '<li>' + cdEscapeHtml(String(url).replace(/^https?:\/\//, '')) + '</li>';
-      }).join('') +
-    '</ul>' +
-    '</details>';
-}
+// THE "OBVIOUS DUD" BUBBLE AND THE "LOCKED TO RELAYS I OWN" FOLD STOOD
+// HERE (2026-09-19). Both were drawn from facts a roster sweep wrote —
+// `missingSince` (a key on no census) and `memberOf` (seats on relays I
+// own) — and no relay may return a roster any more. Andy: "relays only
+// provide one way to find nodes or relays: SEARCH. What is not found
+// cannot influence decisions." A contact that went stale is simply stale:
+// "email addresses change, contacts go stale. Deal with it."
 
 // ── PUTTING THE SCREEN BACK ──────────────────────────────────────────
 //
@@ -222,25 +144,10 @@ function cdRender() {
 
   if (cdApi) cdApi.setScreenTitle(cdTitle());
 
-  // ── AND A PADLOCK ON THE BAR ────────────────────────────────────────
-  //
-  //   Andy: "if contact has slot on any of my relays: after the label of
-  //   the contact in the title bar display a ICON.LOCKED in the same size
-  //   as the back and home icons."
-  //
-  // AFTER setScreenTitle, always: that call writes textContent, which
-  // wipes every child of the bar — so a mark set before it would be gone
-  // by the time anybody saw it.
-  //
-  // CLEARED WHEN THERE IS NO SEAT, and that is not tidiness: this screen
-  // is reused for every contact, so a mark left on would tell the truth
-  // about the last person and a lie about this one.
-  if (cdApi && cdApi.setScreenMark) {
-    cdApi.setScreenMark(
-      cdSeats().length ? cdIcon.LOCKED : '',
-      cdSeats().length ? cdSeatTitle() : ''
-    );
-  }
+  // THE PADLOCK ON THE BAR is gone with the seats it stood for. Cleared on
+  // every render all the same: this screen is reused for every contact,
+  // and a mark left by older code must not survive onto the next one.
+  if (cdApi && cdApi.setScreenMark) cdApi.setScreenMark('', '');
 
   if (!cdPerson) {
     // The row went away while this screen was open — blocked from
@@ -305,37 +212,19 @@ function cdRender() {
   // Two presses, for the same reason Block has two: it is at the end of a
   // row somebody may have been tabbing along, and it throws away what they
   // wrote — myLabel is theirs and is not on any relay to be recovered from.
-  // ── AND WHAT IT COSTS, WHEN THEY SIT ON A RELAY OF MINE ──────────
-  //
-  //   Andy: "undeletable until i agree to also remove their relay slots."
-  //
-  // Not a refusal with no way forward: the second press is the agreement.
-  // A member cannot be forgotten while they hold the seat, so Forget here
-  // means BOTH — evict, then forget — and the button has to say so before
-  // it is pressed rather than after.
-  //
-  // The relays are named. "Remove their seat" is not answerable without
-  // knowing from where, and one person may be seated on several of mine.
-  var seats = cdSeats();
+  // WHAT IT COSTS, SAID BEFORE THE SECOND PRESS. Forget also removes the
+  // key from every relay this node owns — it no longer knows in advance
+  // whether they hold a seat (the seats were a roster's, and no relay
+  // returns one), so it acts, and "no such peer" is simply the answer.
   buttons += '<button type="button" class="cancel-btn" id="cd-forget"' +
     (cdForgetArmed ? ' data-armed="yes"' : '') + '>' +
-    (cdForgetArmed
-      ? (seats.length
-        ? 'Remove their seat on ' + cdEscapeHtml(cdSeatNames()) + ' and forget — press again'
-        : 'Forget — press again')
-      : 'Forget') + '</button>';
+    (cdForgetArmed ? 'Forget, and remove any seat on relays you own — press again' : 'Forget') +
+    '</button>';
 
   var handle = cdPerson.publicLabel || '';
   var caption = handle ? 'Change My Label for ' + cdEscapeHtml(handle) : 'Change My Label';
 
   body.innerHTML =
-    // BEFORE THE PANEL, not inside it: the warning is about whether this
-    // screen is worth reading, so it is not one of the things on it.
-    cdDudBubble() +
-    // Then the lock, which is the same kind of statement — about the
-    // screen rather than on it — and is why the titlebar has a padlock.
-    // Under the warning, because a warning outranks an explanation.
-    cdLockedFold() +
     '<div class="stat-tile wide">' +
       facts +
       // The caption and its input take the width and the buttons fill the
@@ -361,30 +250,8 @@ function cdRender() {
 // itself a verb, so hub.js had to dispatch the field by hand. Now the
 // door does it, `cdPeerAction('block')` names `contact.block`, and the
 // only thing that changed on this screen is which string it says.
-// ── THE SEATS THIS PERSON HOLDS ON RELAYS I OWN ──────────────────────
-//
-// Sent on the row by the node (hub.buildPeople, `memberOf`) — a standing
-// fact rather than a lookup, so this screen never has to ask whether the
-// person can be forgotten. The node refuses that on the same field.
-function cdSeats() {
-  var list = cdPerson && cdPerson.memberOf;
-  return Array.isArray(list) ? list : [];
-}
-
-// What the padlock says when you hover it. The relays, because that is
-// what Forget will have to name.
-function cdSeatTitle() {
-  var on = cdSeatNames();
-  return cdSeats().length === 1
-    ? 'They hold a seat on ' + on + ', so Forget removes it too'
-    : 'They hold seats on ' + on + ', so Forget removes them too';
-}
-
-function cdSeatNames() {
-  return cdSeats().map(function (u) {
-    return String(u).replace(/^https?:\/\//, '');
-  }).join(', ');
-}
+// cdSeats, cdSeatTitle AND cdSeatNames STOOD HERE, reading `memberOf` off
+// the row — gone with it (2026-09-19).
 
 // ── GIVING UP THE SEATS, WHICH MUST HAPPEN FIRST ─────────────────────
 //
@@ -399,25 +266,26 @@ function cdSeatNames() {
 // happened and is true, but nothing is forgotten and the person can see
 // exactly where it got to.
 //
-// THE RELAY'S KEY COMES FROM relay.status, asked once and only here. A
-// relay is addressed by key like any other peer (removePeer rides the
-// ordinary post, natterDetails does the same), and the census carries the
-// key — so no new verb, and no cost at all for anybody who never presses
-// this.
+// WHICH RELAYS: EVERY ONE THIS NODE OWNS (2026-09-19). This read the
+// seats off `memberOf`, a roster's word; now it asks nothing in advance
+// and acts on what it finds: relay.status names the relays this node owns
+// and their keys, each is told to remove this key, and "no such peer" is
+// an answer, not a failure. A node that owns no relay removes nothing.
+// A relay is addressed by key like any other peer (removePeer rides the
+// ordinary post, natterDetails does the same) — no new verb.
 function cdReleaseSeats() {
-  var seats = cdSeats();
-  if (!seats.length) return Promise.resolve(true);
-
-  cdStatus('removing their seat\u2026');
   return cdPost('relay.status', {}).then(function (r) {
     var rows = (r.body && r.body.rows) || [];
     var keyFor = Object.create(null);
+    var seats = [];
     rows.forEach(function (row) {
-      if (row && row.url && row.census && row.census.relayKey) {
+      if (row && row.owned && row.url && row.census && row.census.relayKey) {
         keyFor[row.url] = row.census.relayKey;
+        seats.push(row.url);
       }
     });
-
+    if (!seats.length) return true;
+    cdStatus('removing them from your relays\u2026');
     return seats.reduce(function (chain, url) {
       return chain.then(function (carryOn) {
         if (!carryOn) return false;
@@ -507,10 +375,8 @@ spirit.shell.activateApp({
         // the person; this one removed them, so there is nobody left to
         // paint and staying would be a screen about a contact that is not
         // one. Back to the book, which is where the change is visible.
-        // Seats first, and the forget only if every one of them went.
-        // A member the node still believes is seated is refused by the
-        // node anyway (hub, contact.forget) — this is the agreement that
-        // makes the refusal answerable, not a way around it.
+        // Off every relay this node owns first, and the forget only if
+        // each of them answered — removed, or "no such peer".
         cdReleaseSeats().then(function (released) {
           if (!released) { cdRender(); return; }
           return cdPeerAction('forget').then(function (ok) {

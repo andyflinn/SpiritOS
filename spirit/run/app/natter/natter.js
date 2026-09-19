@@ -569,8 +569,9 @@ function natterOnClaim(api, event) {
   // newcomer, and it could only work while a browser was open on this
   // app — an owner who was not looking missed the contact entirely.
   //
-  // hub.syncMembers does it now: on the claim event as it arrives at the
-  // node, and again on every probe for anybody the first pass missed.
+  // The node does it now, on the claim event as it arrives (server.js,
+  // onOwnerEvent). It was hub.syncMembers, a roster sweep, until the roster
+  // could no longer be returned (2026-09-19).
   // Leaving this in would be a second writer of the same row at a lower
   // rank (`invite` under `member`), which changes nothing because ranks
   // never fall — a call that cannot have an effect.

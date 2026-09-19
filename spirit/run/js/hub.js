@@ -215,24 +215,11 @@ function buildPeople(rootDir, peers, relayUrl) {
         // would look like clearing the name.
         myLabel: row.myLabel || '',
         acquiredVia: contactBook.acquiredVia(row),
-        // ── SEATS ON RELAYS THIS NODE OWNS ─────────────────────────────
-        //
-        //   Andy: "as user it becomes very confusing to understand my
-        //   relationship with this peer (ID)."
-        //
-        // `acquiredVia` is HISTORY — how this row got here. This is a
-        // STANDING fact: they hold a seat on a box I keep, right now. The
-        // two are different questions and a screen that showed only the
-        // first could not explain why Forget refuses.
-        //
-        // A list, because one person may be seated on several of my
-        // relays, and empty for everybody else — which is every row on a
-        // node that owns nothing.
-        memberOf: contactBook.memberOf(row),
-        // WHEN THIS NODE FIRST FOUND THE KEY ON NO CENSUS, or ''. The
-        // warning a screen draws from it must say "first noticed", not
-        // "went": nothing watched before the conclusion was possible.
-        missingSince: contactBook.missingSince(row),
+        // `memberOf` and `missingSince` STOOD HERE: seats on relays this
+        // node owns, and when a key was first found on no census. Both were
+        // read off rosters, which no relay may return (2026-09-19, see the
+        // note where reconcileMembers stood). A row says what this node
+        // knows about a person, not what a vanished list once said.
         // One question the app asks about every row: may this be written
         // to? Held and blocked both answer no, and they are drawn the
         // same way — a × and no composer — because to the person looking
@@ -1357,32 +1344,11 @@ function createHub(rootDir) {
       // only downgrades it — deleting one would readmit the person the
       // moment they wrote, because the row IS the refusal.
       if (action === 'forget') {
-        // ── A SEAT ON MY OWN RELAY OUTRANKS A FORGET ──────────────────
-        //
-        //   Andy: "undeletable until i agree to also remove their relay
-        //   slots."
-        //
-        // Refused, and the refusal NAMES THE RELAYS — the caller cannot
-        // offer "remove their seat as well" without knowing which seats.
-        //
-        // ASKED OF A LOCAL FIELD, never of the network. A permission that
-        // probes is a permission that fails when the box is down, and
-        // ownerBadge.canRemoveRelay already argues at length why a live
-        // fact has no business in one: it would lock the door of the room
-        // it just set on fire. `memberOf` is written by the reconcile and
-        // read here, so this answers the same whether anything is
-        // reachable or not.
-        var held = contactBook.byPublicKey(rootDir, publicKey);
-        if (held && contactBook.isMember(held)) {
-          res.writeHead(409, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({
-            ok: false,
-            error: 'they hold a seat on a relay you own',
-            memberOf: contactBook.memberOf(held),
-          }));
-          return;
-        }
-
+        // A REFUSAL STOOD HERE: Forget answered 409 while `memberOf` named a
+        // relay this node owns. `memberOf` is gone (2026-09-19), and Forget
+        // no longer asks whether a seat exists: contactsDetails removes the
+        // key from every relay this node owns first, and "no such peer" is
+        // simply the answer. We act on what we find (Andy).
         var gone = contactBook.forget(rootDir, publicKey);
         if (!gone) { fail(res, 404, 'no row for that key'); return; }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -1555,235 +1521,50 @@ function createHub(rootDir) {
   // nothing about that state worth reporting because there is no other
   // state.
 
-  // ── EVERYBODY WITH A SEAT ON A RELAY I OWN IS A CONTACT ──────────────
+  // ── THE ROSTER SWEEP STOOD HERE, AND IS GONE (2026-09-19) ────────────
   //
-  //   Andy: "when someone binds to a peer i own, it's because i want them
-  //   in my network, so i want a contact auto-generated, and undeletable
-  //   until i agree to also remove their relay slots."
-  //   "then i have to rummage two different peer lists for everything i
-  //   want to do... and simply because as user it becomes very confusing
-  //   to understand my relationship with this peer (ID)."
+  // reconcileMembers, reconcileOrphans and syncMembers read every owned
+  // relay's census roster: whoever was on it became a contact with
+  // `memberOf`, whoever was on no roster lost it, and a key on no census
+  // at all was marked `missingSince`. The census went on 2026-09-18 and a
+  // roster may never be returned again — it is a member list, which 0012
+  // widened forbids, and it breaks PAYLOAD_MAX — so the sweep read []
+  // forever, and pruned every member contact on every probe until a guard
+  // stopped it.
   //
-  // Two lists were one subject. A relay owner's census and their address
-  // book overlap completely at the owner's end and were kept apart
-  // anyway, so Cruella and Jazzmin Thut held seats on Andy's relay and
-  // were not people he could write to without going to a second screen.
+  // Andy's rule, which is why it is deleted rather than guarded: "relays
+  // only provide one way to find nodes or relays: SEARCH. What is not found
+  // cannot influence decisions. We design to do the best with what we
+  // find; we won't be bothered with what we can't find or know." And:
+  // "email addresses change, contacts go stale. Deal with it."
   //
-  // ── IN THE NODE, NOT THE BROWSER ─────────────────────────────────────
+  // What remains: a new member becomes a contact on the claim event itself
+  // (server.js, onOwnerEvent), from the key and label it names. Forget no longer asks whether a seat exists — it acts
+  // (contactsDetails removes the key from every relay this node owns, and
+  // "no such peer" is simply the answer) and then forgets.
+
+  // ── A NEW MEMBER OF A RELAY I OWN BECOMES A CONTACT ────────────────
   //
-  // A contact that only exists while Contacts is open is not a contact.
-  // The owner EVENT (relay.js, ownerEvent('claim')) is the fast path and
-  // is not enough on its own: it reaches an open browser and nothing
-  // persists it, and every member who enrolled before this existed would
-  // never be seen at all.
+  //   Andy: "when someone binds to a peer i own, it's because i want
+  //   them as a contact."
   //
-  // ── WHOLE-LIST, SO IT PRUNES ─────────────────────────────────────────
-  //
-  // `memberOf` is rewritten from what the census just said rather than
-  // added to. A key that left a relay must lose that url — an add-only
-  // field would keep somebody undeletable for ever on the strength of a
-  // seat they no longer hold, which is the same class of bug as a cache
-  // that only grows.
-  //
-  // ONLY RELAYS THIS NODE OWNS. A member of somebody else's relay, or a
-  // peer seen across a partnership, is not this node's to adopt — Andy:
-  // "a peer who connects with me through a partner node behaves
-  // independently as contact, same as non-relay-owners experience all
-  // their contacts." A node that owns nothing does nothing here.
-  //
-  // NEVER THE OWNER'S OWN KEY. A node is on its own census and must not
-  // become its own contact.
-  function reconcileMembers(summary) {
+  // On the claim event itself, with what it names: the key, the label they
+  // chose, the relay it happened on. A broadcast the node receives
+  // passively — Andy: "nodes have two sources of knowledge, search
+  // (active) and broadcasts (passive)". Owner events reach only the owner
+  // of the relay they happened on, so every claim seen here is on a relay
+  // this node owns. The rank records HOW they came, which is history; it
+  // is not a claim that they still hold a seat. Never this node's own
+  // claim. Called by server.js on every owner event.
+  function adoptClaim(ev) {
+    if (!ev || ev.kind !== 'claim' || !ev.key || ev.owner) return null;
     var me = auth.loadIdentity(rootDir);
-    var myKey = (me && me.publicKey) || '';
-    var rows = (summary && summary.rows) || [];
-
-    // key -> [urls of my relays it holds a seat on]
-    var seats = Object.create(null);
-    var owned = 0;
-
-    rows.forEach(function (row) {
-      if (!row || !row.owned) return;
-      owned += 1;
-      var roster = (row.census && row.census.roster) || [];
-      roster.forEach(function (p) {
-        var key = (p && p.publicKey) || '';
-        if (!key || key === myKey) return;
-        (seats[key] = seats[key] || []).push(row.url);
-      });
-    });
-
-    // NOTHING ANSWERED, NOTHING CONCLUDED. An owned relay that did not
-    // reply carries no roster, and treating that as "nobody is enrolled"
-    // would empty every memberOf on this node and make a whole address
-    // book deletable because a box was rebooting. The same rule
-    // natterCheckBinding follows for bindings, for the same reason.
-    if (!owned) return { adopted: 0, pruned: 0 };
-
-    // AND NO ROSTER, NO CONCLUSION — the same guard reconcileOrphans has.
-    // The census went on 2026-09-18 and ownerBadge no longer supplies a
-    // roster, so every roster here reads []. Without this, an owned relay
-    // that answered perfectly well was read as "nobody holds a seat", and
-    // every run (boot, claim events, every status probe) cleared memberOf
-    // on every member contact. Found 2026-09-19 tracing census.roster
-    // before cycle 4. Absence from a list this node no longer receives
-    // proves nothing ("completeness is a trap", NODE-AND-RELAY). What
-    // replaces the sweep — or whether a contact carries memberOf at all,
-    // since it is derived from a fleeting roll — is Andy's, planned with
-    // cycle 4.3.
-    var anyRoster = rows.some(function (row) {
-      return row && row.owned && ((row.census && row.census.roster) || []).length > 0;
-    });
-    if (!anyRoster) return { adopted: 0, pruned: 0 };
-
-    var adopted = 0;
-    Object.keys(seats).forEach(function (key) {
-      var existing = null;
-      try { existing = contactBook.byPublicKey(rootDir, key); }
-      catch (e) { existing = null; }
-      var label = '';
-      rows.forEach(function (row) {
-        if (!row || !row.owned) return;
-        ((row.census && row.census.roster) || []).forEach(function (p) {
-          if (p && p.publicKey === key && p.publicLabel) label = p.publicLabel;
-        });
-      });
-      try {
-        contactBook.acquire(rootDir, {
-          publicKey: key, publicLabel: label, relay: seats[key][0],
-        }, contactBook.MEMBER);
-        contactBook.setMemberOf(rootDir, key, seats[key]);
-        if (!existing || !contactBook.isMember(existing)) adopted += 1;
-      } catch (e) { /* one bad row must not stop the sweep */ }
-    });
-
-    // AND THE ONES WHO LEFT. Anybody this node still believes holds a
-    // seat, who was not on any roster just read, loses it — which is what
-    // makes them an ordinary deletable contact again.
-    var pruned = 0;
-    var book = [];
-    try { book = contactBook.load(rootDir); } catch (e) { book = []; }
-    book.forEach(function (row) {
-      if (!row || !contactBook.isMember(row)) return;
-      if (seats[row.publicKey]) return;
-      try { contactBook.setMemberOf(rootDir, row.publicKey, []); pruned += 1; }
-      catch (e) { /* likewise */ }
-    });
-
-    return { adopted: adopted, pruned: pruned };
-  }
-
-
-  // ── AND WHO IS ON NO CENSUS AT ALL ───────────────────────────────────
-  //
-  //   Andy: "show a warning bubble at the top of contact details if the
-  //   contact is an obvious dud... the bubble will show the reason."
-  //
-  // An obvious dud is a key that EVERY relay this node is on answered
-  // about, and none of them listed. Andy's book has three today: bella
-  // and carlos, whose only relay was a loopback lab box that no longer
-  // exists, and rock, whose seat he removed by hand.
-  //
-  // ── THE RULE IS natterCheckBinding'S, AND IT HAS TO BE ───────────────
-  //
-  //   "UNREACHABLE IS STILL NOT THE SAME AS NOT OURS ... `status > 0` is
-  //    the test — NOT `!error`, because probe sets `error: 'no row here'`
-  //    on a relay that answered perfectly well."
-  //
-  // A relay that did not answer says NOTHING about anybody. Without that
-  // distinction a node whose relay was rebooting would mark its whole
-  // address book as dead — and this writes a warning onto a screen, so
-  // being wrong is loud.
-  //
-  // NEVER ACTS, ONLY MARKS. Nothing is deleted here and nothing will be:
-  // absence is not death, a node can be off for a month, and a row
-  // carries `myLabel` — a name its owner typed, which is on no relay to
-  // be recovered from. The mark is what lets a person decide; the
-  // deciding stays theirs.
-  //
-  // A DATE, NOT A FLAG, and the wording that reads it must be careful:
-  // this is when this node first CONCLUDED the key was missing, not when
-  // it went. Nothing watched before the conclusion was possible.
-  function reconcileOrphans(summary, now) {
-    var me = auth.loadIdentity(rootDir);
-    var myKey = (me && me.publicKey) || '';
-    var rows = (summary && summary.rows) || [];
-
-    // ANSWERED, not merely configured. `status > 0` is a reply of some
-    // kind; `error: 'no row here'` is a relay answering perfectly well
-    // that this node holds no seat, which is still an answer about
-    // everybody else on it.
-    var answered = rows.filter(function (row) { return row && Number(row.status) > 0; });
-    if (!answered.length) return { marked: 0, cleared: 0, asked: 0 };
-
-    var listed = Object.create(null);
-    answered.forEach(function (row) {
-      ((row.census && row.census.roster) || []).forEach(function (p) {
-        if (p && p.publicKey) listed[p.publicKey] = true;
-      });
-    });
-
-    // A ROSTER IS ONLY AS GOOD AS ITS RELAY. An older relay answers the
-    // census without a roster, and reading that as "lists nobody" would
-    // mark every contact on it. If not one answering relay produced a
-    // roster, this knows nothing and says so by doing nothing.
-    var anyRoster = answered.some(function (row) {
-      return ((row.census && row.census.roster) || []).length > 0;
-    });
-    if (!anyRoster) return { marked: 0, cleared: 0, asked: answered.length };
-
-    var stamp = (now instanceof Date ? now : new Date()).toISOString();
-    var marked = 0;
-    var cleared = 0;
-    var book = [];
-    try { book = contactBook.addressBook(rootDir); } catch (e) { book = []; }
-
-    book.forEach(function (row) {
-      if (!row || !row.publicKey || row.publicKey === myKey) return;
-
-      if (listed[row.publicKey]) {
-        // Back on a census, so the warning goes. A row that returned must
-        // not keep wearing one.
-        if (contactBook.missingSince(row)) {
-          try { contactBook.setMissing(rootDir, row.publicKey, ''); cleared += 1; }
-          catch (e) { /* one row must not stop the sweep */ }
-        }
-        return;
-      }
-
-      // ALREADY MARKED KEEPS ITS ORIGINAL DATE. The useful number is how
-      // long this has been true, and rewriting the stamp on every probe
-      // would make every dud look like it appeared minutes ago.
-      if (contactBook.missingSince(row)) return;
-      try { contactBook.setMissing(rootDir, row.publicKey, stamp); marked += 1; }
-      catch (e) { /* likewise */ }
-    });
-
-    return { marked: marked, cleared: cleared, asked: answered.length };
-  }
-
-  // The probe this node already makes, with the reconcile hung off it.
-  // Separate from statusFor so boot can run it without a browser asking,
-  // and so a suite can drive it directly.
-  function syncMembers() {
-    var me = auth.loadIdentity(rootDir);
-    if (!me || !me.publicKey) return Promise.resolve({ adopted: 0, pruned: 0 });
-    return ownerBadge.probe(rootDir, function (url, method, pathname) {
-      return relayRequest(url, method, pathname, null);
-    }, me.publicKey)
-      .then(function (summary) {
-        var seats = reconcileMembers(summary);
-        // THE SAME PROBE ANSWERS BOTH QUESTIONS. Who holds a seat on a
-        // relay I own, and who is on no census at all, are read from one
-        // set of censuses — a second sweep would be a second round of
-        // requests to say something about the same rows.
-        var orphans = reconcileOrphans(summary);
-        return {
-          adopted: seats.adopted, pruned: seats.pruned,
-          marked: orphans.marked, cleared: orphans.cleared,
-        };
-      })
-      .catch(function () { return { adopted: 0, pruned: 0, marked: 0, cleared: 0 }; });
+    if (me && me.publicKey === String(ev.key)) return null;
+    try {
+      return contactBook.acquire(rootDir, {
+        publicKey: String(ev.key), publicLabel: String(ev.label || ''), relay: ev.relay || '',
+      }, contactBook.MEMBER);
+    } catch (e) { return null; }
   }
 
   function handleDevice(req, res) {
@@ -2287,21 +2068,8 @@ function createHub(rootDir) {
       return relayRequest(url, method, pathname, null);
     }, me && me.publicKey)
       .then(function (summary) {
-        // ── THE SWEEP RIDES THIS PROBE ───────────────────────────────
-        //
-        // It was wired at boot and on a claim event, and the comment on
-        // reconcileMembers said "on every probe" — which it was not. The
-        // cost of that was exact and Andy hit it: he removed somebody's
-        // seat, `memberOf` still named the relay, so the row stayed
-        // locked and Forget went on trying to evict a seat that was
-        // already gone. Until a restart.
-        //
-        // THIS probe is the one the browser triggers, and it has already
-        // fetched every census — so reconciling here is free, and it
-        // happens at exactly the moment a screen is about to draw
-        // something from the answer.
-        try { reconcileMembers(summary); reconcileOrphans(summary); }
-        catch (e) { /* a status must answer even if the book will not */ }
+        // The roster sweep that rode this probe is gone (2026-09-19) — see
+        // the note where reconcileMembers stood.
 
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
@@ -2351,9 +2119,7 @@ function createHub(rootDir) {
     handleRotatePassword: handleRotatePassword,
     handleDevice: handleDevice,
     handleNodeCard: handleNodeCard,
-    syncMembers: syncMembers,
-    reconcileMembers: reconcileMembers,
-    reconcileOrphans: reconcileOrphans,
+    adoptClaim: adoptClaim,
     handleNodeName: handleNodeName,
     handleNodeDescription: handleNodeDescription,
   };

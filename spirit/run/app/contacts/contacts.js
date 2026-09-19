@@ -332,29 +332,9 @@ function contactsSeenMarkTitle(c) {
     : 'no relay you are connected to mentions this key';
 }
 
-// A seat on a relay this node owns — the standing fact, sent by the node
-// on every row (hub.buildPeople). Empty for everybody else, and for every
-// row on a node that owns no relay.
-function contactsMemberOf(person) {
-  var list = person && person.memberOf;
-  return Array.isArray(list) ? list : [];
-}
-
-function contactsIsMember(person) {
-  return contactsMemberOf(person).length > 0;
-}
-
-// WHICH relays, on the hover, because one person may be seated on several
-// of mine and "on your relay" does not say which — and that is exactly
-// what Forget has to name when it refuses.
-function contactsSeatTitle(person) {
-  var on = contactsMemberOf(person).map(function (u) {
-    return String(u).replace(/^https?:\/\//, '');
-  });
-  return on.length === 1
-    ? 'they hold a seat on ' + on[0]
-    : 'they hold seats on ' + on.join(', ');
-}
+// contactsMemberOf, contactsIsMember AND contactsSeatTitle STOOD HERE,
+// reading `memberOf` off the row — a roster's word, gone 2026-09-19 (see
+// hub.js where reconcileMembers stood).
 
 function contactsRowHtml(person) {
   var mark = '';
@@ -365,29 +345,10 @@ function contactsRowHtml(person) {
     '<td class="icon-cell" title="' +
       contactsEscapeHtml(contactsPresenceTitle(person.publicKey)) + '">' +
       contactsPresenceMark(person.publicKey) + '</td>' +
-    // ── LOCKED: THEY HOLD A SEAT ON A RELAY I OWN ────────────────────
-    //
-    //   Andy: "a column right after the status column, it contains an
-    //   ICON.LOCKED, if the contact has a slot on one or more of my
-    //   relays. the locked icon indicates that the ContactsDetails dialog
-    //   may look a bit different from other contact details."
-    //
-    // WHAT THE LOCK IS FOR, and it is not decoration: this row cannot be
-    // deleted the way the others can. Forget on it means removing their
-    // seat as well, and the dialog says so on its own button — so the
-    // mark is a promise that the screen behind it differs, made before
-    // anybody opens it and is surprised.
-    //
-    // Right after the status dot, where the eye already goes for the
-    // two things about a row that are true right now rather than
-    // historical: whether they are here, and whether they are mine to
-    // remove.
-    //
-    // WHICH relays, on the title, because one person may sit on several
-    // of mine and that is exactly what Forget has to name.
-    '<td class="icon-cell"' + (contactsIsMember(person)
-      ? ' title="' + contactsEscapeHtml(contactsSeatTitle(person)) + '">' + contactsIcon.LOCKED
-      : '>') + '</td>' +
+    // THE LOCK COLUMN STOOD HERE (ICON.LOCKED for a contact seated on a
+    // relay this node owns). The seats were a roster's and no relay returns
+    // one (2026-09-19), so the column went rather than stand empty for
+    // everyone (AGENT.md: no chrome that is not useful in this state).
     '<td class="icon-cell">' + mark + '</td>' +
     // THE COLUMN FITS THE LABEL, THE RELAY DOES NOT (2026-09-15).
     //
@@ -954,7 +915,6 @@ spirit.shell.activateApp({
       // word read on every pass to learn nothing. What each means rides on
       // its own cell's title, where the question is actually asked.
       '<table class="jobs-table"><thead><tr>' +
-        '<th class="icon-cell"></th>' +
         '<th class="icon-cell"></th>' +
         '<th class="icon-cell"></th>' +
         '<th>Label</th>' +

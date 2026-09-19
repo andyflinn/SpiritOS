@@ -701,7 +701,7 @@ function anArmedButtonResetsWhenAttentionMoves() {
     el(app, 'cd-body').fire('click', { target: button('cd-forget') });
 
     return settle().then(function () {
-      if (/Forget — press again/.test(el(app, 'cd-body').innerHTML)) {
+      if (/Forget, and remove any seat on relays you own — press again/.test(el(app, 'cd-body').innerHTML)) {
         test.check('the first press arms it');
       } else {
         test.fail('not armed: ' + el(app, 'cd-body').innerHTML.slice(0, 200));
@@ -776,7 +776,7 @@ function armingOneDisarmsTheOther() {
       return settle().then(function () {
         const out = el(app, 'cd-body').innerHTML;
         const armedCount = (out.match(/press again/g) || []).length;
-        if (armedCount === 1 && /Forget — press again/.test(out)) {
+        if (armedCount === 1 && /Forget, and remove any seat on relays you own — press again/.test(out)) {
           test.check('arming Forget takes Block back to plain Block');
         } else {
           test.fail(armedCount + ' armed buttons: ' + out.slice(0, 300));
@@ -786,132 +786,47 @@ function armingOneDisarmsTheOther() {
   });
 }
 
-// ── THE PADLOCK, AND WHAT IT STANDS FOR ──────────────────────────────
+// ── NOTHING DRAWN FROM A ROSTER (2026-09-19) ─────────────────────────
 //
-//   Andy: "contact details, titlebar: if contact has slot on any of my
-//   relays: after the label of the contact in the title bar display a
-//   ICON.LOCKED in the same size as the back and home icons.... for those
-//   locked contacts display a foldable bubble containing a list of the
-//   relays that cause the locked status.... Title: Locked to relays I
-//   own." — and, for its mark: "ICON.INFO".
-function aLockedContactIsMarkedAndExplained() {
-  test.subHeading('A contact seated on my relay is marked, and can say why');
+// The padlock on the title bar, the "Locked to relays I own" fold and the
+// "obvious dud" bubble were all drawn from fields a roster sweep wrote —
+// `memberOf` and `missingSince` — and no relay may return a roster any more
+// (0012 widened, PAYLOAD_MAX). Andy: "What is not found cannot influence
+// decisions … contacts go stale. Deal with it." — "kill the lock columns."
+// Asserted with a row older code left both fields on: a stale field must
+// draw nothing, and the bar is cleared rather than left to a mark.
+function nothingIsDrawnFromARoster() {
+  test.subHeading('Nothing on this screen is drawn from a roster');
 
   const app = mountDialog({
     key: 'KEY-CRUELLA',
     people: [{
       publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
       caption: 'Cruella', myLabel: '', acquiredVia: 'member',
-      memberOf: ['https://mine.example', 'https://also-mine.example'],
-      missingSince: '',
+      memberOf: ['https://mine.example'], missingSince: '2026-09-17T01:00:00.000Z',
       held: false, blocked: false, onRelay: true, bytesHeld: 0,
     }],
   });
 
   return settle().then(function () {
     const ICON = spirit.core.const.ICON;
-
-    // ── THE BAR ──────────────────────────────────────────────────────
     const mark = app.marks[app.marks.length - 1] || {};
-    if (mark.glyph === ICON.LOCKED) {
-      test.check('the titlebar carries the padlock');
+    if (!mark.glyph && app.marks.every(function (m) { return m.glyph !== ICON.LOCKED; })) {
+      test.check('no padlock on the bar, and the bar is cleared');
     } else {
       test.fail('marks: ' + JSON.stringify(app.marks));
     }
-
-    // AFTER THE TITLE, ALWAYS. setScreenTitle writes textContent and so
-    // wipes every child of the bar — a mark set before it would be gone
-    // by the time anybody saw it.
-    const titleAt = app.log.indexOf('title');
-    if (app.order.indexOf('title') !== -1 &&
-        app.order.indexOf('mark') > app.order.indexOf('title')) {
-      test.check('set after the title, which wipes the bar');
-    } else {
-      test.fail('order: ' + JSON.stringify(app.order));
-    }
-
-    // AND IT NAMES THE RELAYS, because that is what Forget will have to.
-    if (/mine\.example/.test(mark.title || '') && /Forget/.test(mark.title || '')) {
-      test.check('and says on hover which relays, and what Forget will do');
-    } else {
-      test.fail('mark title: ' + JSON.stringify(mark));
-    }
-
-    // ── THE FOLD ─────────────────────────────────────────────────────
     const out = el(app, 'cd-body').innerHTML;
-
-    if (/Locked to relays I own/.test(out)) {
-      test.check('and a fold answers the question the padlock raises');
+    if (!/Locked to relays I own/.test(out) && !/cd-locked/.test(out)) {
+      test.check('no lock fold');
     } else {
-      test.fail('no fold: ' + out.slice(0, 300));
+      test.fail('a fold was drawn: ' + out.slice(0, 300));
     }
-
-    // INFO, NOT A WARNING. A dud is something wrong; this is a fact about
-    // a box you keep and arranged on purpose. Sharing the warning's face
-    // would spend it on a state that is working correctly.
-    const fold = (/<details[^>]*cd-locked[\s\S]*?<\/details>/.exec(out) || [''])[0];
-    if (fold.indexOf(ICON.INFO) !== -1 && fold.indexOf(ICON.WARNING) === -1) {
-      test.check('marked info rather than warning, because nothing is wrong');
+    if (!/cd-dud/.test(out) && !/No relay you are on/.test(out)) {
+      test.check('and no dud warning, even with missingSince left on the row');
     } else {
-      test.fail('fold mark: ' + fold.slice(0, 200));
+      test.fail('a dud bubble was drawn: ' + out.slice(0, 300));
     }
-
-    // SHUT, so the whole thing costs one line until somebody asks.
-    if (fold.indexOf('<details') === 0 && !/<details[^>]*\sopen/.test(fold)) {
-      test.check('and starts folded, so it costs a line');
-    } else {
-      test.fail('the fold is open: ' + fold.slice(0, 120));
-    }
-
-    // BOTH RELAYS, because Forget will have to remove each one and the
-    // person deciding needs to see how many that is.
-    if (/mine\.example/.test(fold) && /also-mine\.example/.test(fold)) {
-      test.check('listing every relay that causes it');
-    } else {
-      test.fail('seats: ' + fold.slice(0, 300));
-    }
-  });
-}
-
-// ── AND THE MARK DOES NOT OUTLIVE THE ROW IT WAS ABOUT ───────────────
-//
-// This screen is reused for every contact. A padlock left on would tell
-// the truth about the last person and a lie about this one — which is
-// the failure mode a titlebar mark has and a panel does not, because the
-// panel is rebuilt and the bar is not.
-function theMarkIsClearedForSomebodyElse() {
-  test.subHeading('And the padlock does not follow you to the next contact');
-
-  const app = mountDialog({
-    key: 'KEY-CRUELLA',
-    people: [
-      { publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
-        caption: 'Cruella', myLabel: '', acquiredVia: 'member',
-        memberOf: ['https://mine.example'], missingSince: '',
-        held: false, blocked: false, onRelay: true, bytesHeld: 0 },
-      { publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
-        caption: 'sonny', myLabel: '', acquiredVia: 'handle',
-        memberOf: [], missingSince: '',
-        held: false, blocked: false, onRelay: true, bytesHeld: 0 },
-    ],
-  });
-
-  return settle().then(function () {
-    app.behavior.open({ key: 'KEY-SONNY' });
-    return settle().then(function () {
-      const mark = app.marks[app.marks.length - 1] || {};
-      if (!mark.glyph) {
-        test.check('opening an ordinary contact takes the padlock off');
-      } else {
-        test.fail('the mark survived: ' + JSON.stringify(app.marks));
-      }
-
-      if (!/Locked to relays I own/.test(el(app, 'cd-body').innerHTML)) {
-        test.check('and there is no fold to explain a lock that is not there');
-      } else {
-        test.fail('the fold survived');
-      }
-    });
   });
 }
 
@@ -952,116 +867,18 @@ function theMarkIsChromeSized() {
   }
 }
 
-// ── A CONTACT NOBODY HAS A ROW FOR ───────────────────────────────────
+// ── FORGETTING REMOVES THE KEY FROM EVERY RELAY I OWN FIRST ──────────
 //
-//   Andy: "show a warning bubble at the top of contact details if the
-//   contact is an obvious dud... the bubble will show the reason."
+//   Andy: "undeletable until i agree to also remove their relay slots."
 //
-// The node decides it on the sweep that already probes every relay
-// (hub.reconcileOrphans, asserted in relayOwnerContacts.js): a key every
-// relay ANSWERED about and none of them listed. This screen only reads
-// the answer — which is what keeps the warning off a book whose relay
-// was merely rebooting.
-function aDudSaysWhyAtTheTop() {
-  test.subHeading('A contact on no census is warned about, with the reason');
-
-  const app = mountDialog({
-    key: 'KEY-BELLA',
-    people: [{
-      publicKey: 'KEY-BELLA', tail: 'qgFs=', publicLabel: 'bella',
-      caption: 'bella', myLabel: 'bella from the lab', acquiredVia: 'handle',
-      memberOf: [], missingSince: '2026-09-17T01:00:00.000Z',
-      held: false, blocked: false, onRelay: false, bytesHeld: 0,
-    }],
-  });
-
-  return settle().then(function () {
-    const out = el(app, 'cd-body').innerHTML;
-
-    if (/cd-dud/.test(out)) {
-      test.check('the screen carries a warning');
-    } else {
-      test.fail('no bubble: ' + out.slice(0, 300));
-    }
-
-    // AT THE TOP, before the facts, because it changes what they mean:
-    // "Unanswered inbound: 0" reads as a quiet contact until you know
-    // there is nobody on the other end of it.
-    if (out.indexOf('cd-dud') < out.indexOf('fact-row')) {
-      test.check('above the facts, because it changes what they mean');
-    } else {
-      test.fail('the warning is below the reading it qualifies');
-    }
-
-    // THE REASON, NOT THE VERDICT. "This contact is dead" is a claim this
-    // screen cannot support; the observation it was made from is one a
-    // person who knows their own network reads far more out of.
-    if (/No relay you are on lists this key/.test(out) &&
-        /not a connection problem/.test(out)) {
-      test.check('and says what was observed, not a verdict it cannot support');
-    } else {
-      test.fail('reason: ' + out.slice(0, 400));
-    }
-
-    // "FIRST NOTICED", NEVER "GONE SINCE". Nothing watched before there
-    // was a field to watch with, so claiming a date of death would be
-    // inventing a history.
-    if (/First noticed 2026-09-17/.test(out) && !/gone since/i.test(out)) {
-      test.check('dated as when this node first noticed, which is all it can know');
-    } else {
-      test.fail('date: ' + out.slice(0, 400));
-    }
-
-    // AND IT SAYS NOTHING WAS DELETED, because the row holds a name its
-    // owner typed which is on no relay to be recovered from.
-    if (/Nothing has been deleted/.test(out)) {
-      test.check('and that nothing was acted on — the deciding stays theirs');
-    } else {
-      test.fail('no reassurance: ' + out.slice(0, 400));
-    }
-  });
-}
-
-// ── AND EVERYBODY ELSE IS UNMARKED ───────────────────────────────────
-//
-// The half that matters most, because a warning on every screen is a
-// warning on none — and because the sweep deliberately marks nothing when
-// a relay did not answer, a contact with no mark is the ordinary case.
-function anOrdinaryContactIsNotWarnedAbout() {
-  test.subHeading('While a contact somebody still lists is left alone');
-
-  const app = mountDialog({
-    key: 'KEY-SONNY',
-    people: [{
-      publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
-      caption: 'sonny', myLabel: '', acquiredVia: 'handle',
-      memberOf: [], missingSince: '',
-      held: false, blocked: false, onRelay: true, bytesHeld: 0,
-    }],
-  });
-
-  return settle().then(function () {
-    const out = el(app, 'cd-body').innerHTML;
-    if (!/cd-dud/.test(out) && !/No relay you are on/.test(out)) {
-      test.check('no warning, and no space held open for one');
-    } else {
-      test.fail('warned about a live contact: ' + out.slice(0, 300));
-    }
-  });
-}
-
-// ── FORGETTING SOMEBODY WHO SITS ON A RELAY I OWN ────────────────────
-//
-//   Andy: "when someone binds to a peer i own... i want a contact
-//   auto-generated, and undeletable until i agree to also remove their
-//   relay slots."
-//
-// The node refuses the forget outright while `memberOf` is non-empty
-// (hub, contact.forget — asserted in relayOwnerContacts.js). This is the
-// other half: the agreement that makes the refusal answerable, rather
-// than a screen that can only say no.
+// Since 2026-09-19 the screen does not know in advance whether they hold
+// a seat — that was `memberOf`, a roster's word, gone with the roster. So
+// Forget acts on what it finds: every relay relay.status says this node
+// owns is told to remove the key, "no such peer" is an answer, and the
+// forget follows. The second press is the agreement, and the armed button
+// says so.
 function forgettingAMemberTakesTheSeatFirst() {
-  test.subHeading('Forgetting a member removes their seat first, and says so');
+  test.subHeading('Forget removes the key from my relays first, and says so');
 
   const app = mountDialog({
     key: 'KEY-CRUELLA',
@@ -1084,8 +901,8 @@ function forgettingAMemberTakesTheSeatFirst() {
 
     return settle().then(function () {
       const armed = el(app, 'cd-body').innerHTML;
-      if (/Remove their seat on mine\.example and forget/.test(armed)) {
-        test.check('the armed button names the relay and both acts');
+      if (/Forget, and remove any seat on relays you own — press again/.test(armed)) {
+        test.check('the armed button says it removes any seat as well as forgetting');
       } else {
         test.fail('armed: ' + armed.slice(0, 400));
       }
@@ -1256,7 +1073,7 @@ function aSeatAlreadyGoneStillForgets() {
 //   independently as contact, same as non-relay-owners experience all
 //   their contacts."
 function anOrdinaryContactIsForgottenAsEver() {
-  test.subHeading('While an ordinary contact is forgotten as ever');
+  test.subHeading('A node that owns no relay forgets without asking any relay');
 
   const app = mountDialog({
     key: 'KEY-SONNY',
@@ -1272,8 +1089,8 @@ function anOrdinaryContactIsForgottenAsEver() {
     el(app, 'cd-body').fire('click', { target: button('cd-forget') });
     return settle().then(function () {
       const armed = el(app, 'cd-body').innerHTML;
-      if (/Forget — press again/.test(armed) && !/Remove their seat/.test(armed)) {
-        test.check('the button offers only to forget, with no seat to mention');
+      if (/Forget, and remove any seat on relays you own — press again/.test(armed) && !/Remove their seat/.test(armed)) {
+        test.check('the button says what Forget does, as for everyone');
       } else {
         test.fail('armed: ' + armed.slice(0, 300));
       }
@@ -1303,10 +1120,7 @@ readsTheRow()
   .then(aRefusedEvictionKeepsTheRow)
   .then(aSeatAlreadyGoneStillForgets)
   .then(anOrdinaryContactIsForgottenAsEver)
-  .then(aDudSaysWhyAtTheTop)
-  .then(anOrdinaryContactIsNotWarnedAbout)
-  .then(aLockedContactIsMarkedAndExplained)
-  .then(theMarkIsClearedForSomebodyElse)
+  .then(nothingIsDrawnFromARoster)
   .then(function () { theMarkIsChromeSized(); })
   .then(anArmedButtonResetsWhenAttentionMoves)
   .then(armingOneDisarmsTheOther)

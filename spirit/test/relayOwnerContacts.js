@@ -1,38 +1,36 @@
 'use strict';
 
 // spirit/test/relayOwnerContacts.js
-// A relay owner's members are contacts, and cannot be dropped by halves.
+// A relay owner's new members become contacts, and no contact knows about
+// seats.
 //
 //   Andy: "when someone binds to a peer i own, it's because i want them in
-//   my network, so i want a contact auto-generated, and undeletable until
-//   i agree to also remove their relay slots."
+//   my network, so i want a contact auto-generated."
 //
-//   "then i have to rummage two different peer lists for everything i want
-//   to do, including messaging all my relay clients about a short
-//   outage/restart at 02h UTC... and simply because as user it becomes
-//   very confusing to understand my relationship with this peer (ID)."
+// ── WHAT THIS SUITE ASSERTED UNTIL 2026-09-19 ────────────────────────
 //
-// Two lists were one subject. A relay owner's census and their address
-// book overlap completely at the owner's end and were kept apart anyway —
-// so on Andy's own relay, Cruella and Jazzmin Thut held seats and were
-// not people he could write to without going to a second screen.
+// A roster sweep (hub.reconcileMembers, reconcileOrphans, syncMembers):
+// everybody on an owned relay's census roster became a contact carrying
+// `memberOf`, everybody on no roster lost it, a key on no census was marked
+// `missingSince`, and Forget refused while `memberOf` named a relay. The
+// census went on 2026-09-18 and a roster may never be returned again — a
+// member list, which 0012 widened forbids, and one that breaks PAYLOAD_MAX.
+// The sweep then read [] for ever and pruned every member contact on every
+// probe, until it was found and deleted.
 //
-// ── THE BOUNDARY IS ONE FIELD ────────────────────────────────────────
+// Andy's rules for what replaced it:
 //
-// `memberOf` is the list of relays THIS NODE OWNS where that key holds a
-// seat (Andy: "i may acquire the same contact through multiple relays i
-// own"). Non-empty means auto-created and sticky; empty means an ordinary
-// contact.
+//   "Relays only provide one way to find nodes or relays: SEARCH. What is
+//   not found cannot influence decisions. We design to do the best with
+//   what we find; we won't be bothered with what we can't find or know."
+//   "Email addresses change, contacts go stale. Deal with it."
+//   "Nodes have two sources of knowledge: search (active) and broadcasts
+//   (passive)."
 //
-// Which carries the third rule for free —
-//
-//   Andy: "a peer who connects with me through a partner node behaves
-//   independently as contact, same as non-relay-owners experience all
-//   their contacts."
-//
-// — because a partner's member is not a member of anything this node
-// owns, so the list is empty and nothing here applies. A node that owns
-// no relay never has a non-empty one.
+// So a new member is adopted from the claim event itself (a broadcast the
+// owner's node receives), and Forget acts rather than asks — see
+// contactsDetails.js for the screen that removes the key from every owned
+// relay first.
 
 const os = require('os');
 const fs = require('fs');
@@ -42,7 +40,6 @@ const auth = require('../run/js/relayAuth');
 const contactBook = require('../run/js/contacts');
 
 const MINE = 'https://mine.example';
-const ALSO_MINE = 'https://also-mine.example';
 const THEIRS = 'https://theirs.example';
 
 function tmpHome(name) {
@@ -53,17 +50,6 @@ function tmpHome(name) {
 
 function hubFor(home) {
   return require('../run/js/hub').createHub(home);
-}
-
-// What ownerBadge.probe answers, in the shape reconcileMembers reads: one
-// row per configured relay, `owned` where this key holds the box, and the
-// census roster alongside it. The real probe already carries all of this
-// — see ownerBadge.censusFacts, which parses the roster to decide the
-// badge and used to throw it away.
-function roster(keys) {
-  return keys.map(function (k) {
-    return { publicKey: k, publicLabel: String(k).toLowerCase(), claimedAt: '2026-03-02T00:00:00.000Z' };
-  });
 }
 
 function fakeRes() {
@@ -92,358 +78,138 @@ function readBody(body) {
   return function () { return Promise.resolve(body); };
 }
 
-test.startTest('A relay owner’s members are contacts');
+test.startTest('A relay owner’s new members are contacts; no contact knows about seats');
 
-// ── 1. THE SWEEP ─────────────────────────────────────────────────────
+// ── 1. ADOPTED FROM THE CLAIM EVENT ──────────────────────────────────
 
-function theSweepAdopts() {
-  test.subHeading('Everybody with a seat on a relay I own becomes a contact');
-
-  const home = tmpHome();
-  const me = auth.loadIdentity(home).publicKey;
-  const hub = hubFor(home);
-
-  const summary = {
-    rows: [
-      { url: MINE, owned: true, claimed: true, status: 200,
-        census: { roster: roster([me, 'K-CRUELLA', 'K-JAZZ']) } },
-      // Somebody else's box. Its members are not this node's to adopt.
-      { url: THEIRS, owned: false, claimed: true, status: 200,
-        census: { roster: roster(['K-STRANGER']) } },
-    ],
-  };
-
-  const first = hub.reconcileMembers(summary);
-  if (first.adopted === 2) {
-    test.check('two members, two contacts, with nobody having pressed Add');
-  } else {
-    test.fail('adopted: ' + JSON.stringify(first));
-  }
-
-  const cruella = contactBook.byPublicKey(home, 'K-CRUELLA');
-  if (contactBook.isMember(cruella) && contactBook.memberOf(cruella)[0] === MINE) {
-    test.check('and each row names the relay of mine the seat is on');
-  } else {
-    test.fail('cruella: ' + JSON.stringify(cruella));
-  }
-
-  // THE RANK IS NOT DECORATION. ACQUIRED_LISTENING decides whether this
-  // node accepts somebody's mail at all, and a member added as `census`
-  // would be a contact it refuses to hear from — the opposite of the
-  // point, since the owner let them onto the box.
-  if (contactBook.acquiredVia(cruella) === contactBook.MEMBER && contactBook.listens(cruella)) {
-    test.check('and this node will hear from them, which is what the rank is for');
-  } else {
-    test.fail('rank: ' + contactBook.acquiredVia(cruella) + ' listens: ' + contactBook.listens(cruella));
-  }
-
-  // ── AND NOBODY ELSE ────────────────────────────────────────────────
-  if (!contactBook.byPublicKey(home, 'K-STRANGER')) {
-    test.check('a member of somebody else’s relay is not adopted');
-  } else {
-    test.fail('adopted a stranger from a relay this node does not own');
-  }
-
-  if (!contactBook.byPublicKey(home, me)) {
-    test.check('and this node does not become its own contact');
-  } else {
-    test.fail('the owner is in its own book');
-  }
-
-  // ── TWO OF MY RELAYS, ONE PERSON ───────────────────────────────────
-  //
-  //   Andy: "i may acquire the same contact through multiple relays i
-  //   own. the contact record must hold a LIST."
-  summary.rows.push({
-    url: ALSO_MINE, owned: true, claimed: true, status: 200,
-    census: { roster: roster([me, 'K-CRUELLA']) },
-  });
-  hub.reconcileMembers(summary);
-  const both = contactBook.memberOf(contactBook.byPublicKey(home, 'K-CRUELLA'));
-  if (both.length === 2 && both.indexOf(MINE) !== -1 && both.indexOf(ALSO_MINE) !== -1) {
-    test.check('somebody seated on two of my relays lists both');
-  } else {
-    test.fail('memberOf: ' + JSON.stringify(both));
-  }
-
-  fs.rmSync(home, { recursive: true, force: true });
-}
-
-// ── 2. AND IT PRUNES, WHICH IS WHAT MAKES THE LOCK RELEASE ───────────
-
-function theSweepPrunes() {
-  test.subHeading('And a seat that is given up releases the row');
+function aClaimAdopts() {
+  test.subHeading('A claim on a relay I own makes the claimer a contact');
 
   const home = tmpHome();
   const me = auth.loadIdentity(home).publicKey;
   const hub = hubFor(home);
 
-  const withJazz = {
-    rows: [{ url: MINE, owned: true, claimed: true, status: 200,
-      census: { roster: roster([me, 'K-CRUELLA', 'K-JAZZ']) } }],
-  };
-  hub.reconcileMembers(withJazz);
-
-  const withoutJazz = {
-    rows: [{ url: MINE, owned: true, claimed: true, status: 200,
-      census: { roster: roster([me, 'K-CRUELLA']) } }],
-  };
-  const pruned = hub.reconcileMembers(withoutJazz);
-
-  const jazz = contactBook.byPublicKey(home, 'K-JAZZ');
-  if (pruned.pruned === 1 && jazz && !contactBook.isMember(jazz)) {
-    test.check('somebody evicted is no longer a member');
+  // What presenceNode hands onOwnerEvent: the relay's row, with the relay
+  // it arrived from stamped on.
+  const row = hub.adoptClaim({ kind: 'claim', key: 'K-CRUELLA', label: 'Cruella',
+    invite: 'cruella', owner: false, relay: MINE });
+  const held = contactBook.byPublicKey(home, 'K-CRUELLA');
+  if (row && held && contactBook.acquiredVia(held) === contactBook.MEMBER) {
+    test.check('the claimer is a contact, acquired as a member — how they came, recorded');
   } else {
-    test.fail('after prune: ' + JSON.stringify(pruned) + ' ' + JSON.stringify(jazz));
+    test.fail('adopted: ' + JSON.stringify(held));
+  }
+  if (held && held.publicLabel === 'Cruella' && (held.relays || []).indexOf(MINE) !== -1) {
+    test.check('with the label they chose and the relay it happened on');
+  } else {
+    test.fail('row: ' + JSON.stringify(held));
+  }
+  if (contactBook.listens(held)) {
+    test.check('and this node listens to them — they can write to me');
+  } else {
+    test.fail('not listened to: ' + JSON.stringify(held));
   }
 
-  // THE ROW SURVIVES, and so does the rank. Ranks never fall, and this is
-  // the right answer: you did let them onto your relay once, so their
-  // mail is still welcome. What changed is that the row is now yours to
-  // delete.
-  if (jazz && contactBook.listens(jazz)) {
-    test.check('but they are still somebody this node hears — ranks never fall');
+  // Never this node's own claim, and never anything but a claim.
+  hub.adoptClaim({ kind: 'claim', key: me, label: 'owner', owner: true, relay: MINE });
+  hub.adoptClaim({ kind: 'claim', key: me, label: 'owner', owner: false, relay: MINE });
+  hub.adoptClaim({ kind: 'claim-refused', key: 'K-EVE', label: 'eve', relay: MINE });
+  hub.adoptClaim({ kind: 'mint', key: 'K-MALLORY', relay: MINE });
+  if (!contactBook.byPublicKey(home, me) && !contactBook.byPublicKey(home, 'K-EVE') &&
+      !contactBook.byPublicKey(home, 'K-MALLORY')) {
+    test.check('never this node itself, a refused claim, or any other event');
   } else {
-    test.fail('the rank fell: ' + JSON.stringify(jazz));
+    test.fail('adopted what it should not have');
   }
 
-  // ── A SILENT RELAY CONCLUDES NOTHING ───────────────────────────────
-  //
-  // The rule natterCheckBinding already follows, and the one that makes
-  // this safe to run on every probe: an owned relay that did not answer
-  // carries no roster, and treating that as "nobody is enrolled" would
-  // empty every memberOf on this node and make a whole address book
-  // deletable because a box was rebooting.
-  hub.reconcileMembers({ rows: [{ url: MINE, owned: false, status: 0 }] });
-  if (contactBook.isMember(contactBook.byPublicKey(home, 'K-CRUELLA'))) {
-    test.check('and a relay that did not answer takes nobody’s seat away');
+  // Andy: "membership can only expire, not be demoted." `member` is the
+  // top of the ladder (contacts.js ACQUIRED_RANK), so a member acquired
+  // again at a lower rank — found by handle, say — stays a member.
+  contactBook.acquire(home, { publicKey: 'K-CRUELLA', publicLabel: 'Cruella', relay: THEIRS }, 'handle');
+  if (contactBook.acquiredVia(contactBook.byPublicKey(home, 'K-CRUELLA')) === contactBook.MEMBER) {
+    test.check('and a member acquired again at a lower rank stays a member — ranks never fall');
   } else {
-    test.fail('an unreachable relay emptied the book');
-  }
-
-  // ── NOR DOES ONE THAT ANSWERED WITHOUT A ROSTER (2026-09-19) ─────────
-  //
-  // The regression this guards: the census went on 2026-09-18 and the
-  // probe no longer carries a roster, so an owned relay that answered
-  // perfectly well read as "nobody holds a seat" — and every probe
-  // cleared memberOf on every member contact. Absence from a list this
-  // node no longer receives proves nothing.
-  const said = hub.reconcileMembers({
-    rows: [{ url: MINE, owned: true, status: 200, census: { owner: 'me', relayKey: 'RK' } }],
-  });
-  if (said.pruned === 0 && contactBook.isMember(contactBook.byPublicKey(home, 'K-CRUELLA'))) {
-    test.check('nor does one that answered without a roster — no list, no conclusion');
-  } else {
-    test.fail('a roster-less answer pruned: ' + JSON.stringify(said));
+    test.fail('rank fell: ' + JSON.stringify(contactBook.byPublicKey(home, 'K-CRUELLA')));
   }
 
   fs.rmSync(home, { recursive: true, force: true });
 }
 
-// ── 3. FORGET, AND WHAT IT REFUSES ───────────────────────────────────
+// ── 2. FORGET DOES NOT ASK ABOUT SEATS ───────────────────────────────
 
-async function forgetRefusesAMember() {
-  test.subHeading('Forget refuses while they hold a seat, and says which');
-
-  const home = tmpHome();
-  const me = auth.loadIdentity(home).publicKey;
-  const hub = hubFor(home);
-
-  hub.reconcileMembers({
-    rows: [{ url: MINE, owned: true, claimed: true, status: 200,
-      census: { roster: roster([me, 'K-CRUELLA']) } }],
-  });
-  // An ordinary contact beside them, acquired the way anybody is.
-  contactBook.acquire(home, { publicKey: 'K-SONNY', publicLabel: 'sonny', relay: THEIRS }, 'handle');
-
-  const refused = fakeRes();
-  hub.handlePeer({}, refused, readBody({ publicKey: 'K-CRUELLA' }), 'forget');
-  await refused.wait();
-
-  if (refused.status === 409) {
-    test.check('a member cannot simply be forgotten');
-  } else {
-    test.fail('forget answered ' + refused.status + ': ' + refused.text);
-  }
-
-  // NAMED, because the caller cannot offer "remove their seat as well"
-  // without knowing which seats. A refusal that only says no leaves the
-  // person stuck with a row they cannot act on.
-  const said = refused.body() || {};
-  if ((said.memberOf || [])[0] === MINE) {
-    test.check('and the refusal names the relay, so the offer can be made');
-  } else {
-    test.fail('refusal: ' + refused.text);
-  }
-
-  if (contactBook.byPublicKey(home, 'K-CRUELLA')) {
-    test.check('and nothing was deleted');
-  } else {
-    test.fail('the row went anyway');
-  }
-
-  // ── AN ORDINARY CONTACT IS UNAFFECTED ──────────────────────────────
-  //
-  //   Andy: "a peer who connects with me through a partner node behaves
-  //   independently as contact, same as non-relay-owners experience all
-  //   their contacts."
-  const ok = fakeRes();
-  hub.handlePeer({}, ok, readBody({ publicKey: 'K-SONNY' }), 'forget');
-  await ok.wait();
-
-  if (ok.status === 200 && !contactBook.byPublicKey(home, 'K-SONNY')) {
-    test.check('while somebody who holds no seat of mine is forgotten as ever');
-  } else {
-    test.fail('ordinary forget: ' + ok.status + ' ' + ok.text);
-  }
-
-  // ── AND THE LOCK RELEASES WITH THE SEAT ────────────────────────────
-  //
-  // No special case: the sweep prunes the url and the ordinary refusal
-  // stops matching. That is why the guard reads a list rather than a flag.
-  hub.reconcileMembers({
-    rows: [{ url: MINE, owned: true, claimed: true, status: 200,
-      census: { roster: roster([me]) } }],
-  });
-  const after = fakeRes();
-  hub.handlePeer({}, after, readBody({ publicKey: 'K-CRUELLA' }), 'forget');
-  await after.wait();
-
-  if (after.status === 200 && !contactBook.byPublicKey(home, 'K-CRUELLA')) {
-    test.check('and once the seat is gone, so is the refusal');
-  } else {
-    test.fail('after eviction: ' + after.status + ' ' + after.text);
-  }
-
-  fs.rmSync(home, { recursive: true, force: true });
-}
-
-// ── 4. A NODE THAT OWNS NOTHING ──────────────────────────────────────
-
-function ownersOnly() {
-  test.subHeading('And none of this exists for somebody who owns no relay');
+async function forgetDoesNotAsk() {
+  test.subHeading('Forget forgets — it asks about no seat');
 
   const home = tmpHome();
   const hub = hubFor(home);
 
-  // Bound to two relays, owner of neither — which is every ordinary node.
-  const said = hub.reconcileMembers({
-    rows: [
-      { url: THEIRS, owned: false, claimed: true, status: 200,
-        census: { roster: roster(['K-A', 'K-B']) } },
-      { url: MINE, owned: false, claimed: true, status: 200,
-        census: { roster: roster(['K-C']) } },
-    ],
+  hub.adoptClaim({ kind: 'claim', key: 'K-CRUELLA', label: 'Cruella', owner: false, relay: MINE });
+  // A book written by older code, still carrying the sweep's fields.
+  const rows = JSON.parse(fs.readFileSync(path.join(home, 'relay-state', 'contacts.json'), 'utf8'));
+  rows.forEach(function (r) {
+    if (r.publicKey === 'K-CRUELLA') { r.memberOf = [MINE]; r.missingSince = '2026-09-17T01:00:00.000Z'; }
   });
+  fs.writeFileSync(path.join(home, 'relay-state', 'contacts.json'), JSON.stringify(rows));
 
-  if (said.adopted === 0 && contactBook.load(home).length === 0) {
-    test.check('nobody is adopted, and the book is untouched');
+  const res = fakeRes();
+  hub.handlePeer({}, res, readBody({ publicKey: 'K-CRUELLA' }), 'forget');
+  await res.wait();
+  if (res.status === 200 && !contactBook.byPublicKey(home, 'K-CRUELLA')) {
+    test.check('a member is forgotten like anybody — a stale memberOf decides nothing');
   } else {
-    test.fail('a non-owner adopted somebody: ' + JSON.stringify(said));
+    test.fail('forget answered ' + res.status + ': ' + res.text);
   }
 
   fs.rmSync(home, { recursive: true, force: true });
 }
 
-// ── 5. AND WHO IS ON NO CENSUS AT ALL ────────────────────────────────
-//
-//   Andy: "show a warning bubble at the top of contact details if the
-//   contact is an obvious dud... the bubble will show the reason."
-//
-// The same probe answers both questions, so this rides the same sweep.
-// Andy's book has three today: bella and carlos, whose only relay was a
-// loopback lab box that no longer exists, and rock, whose seat he removed
-// by hand.
-function theSweepMarksOrphans() {
-  test.subHeading('A key on no census is marked, and the mark keeps its date');
+// ── 3. THE OLD FIELDS FALL AWAY ──────────────────────────────────────
+
+function staleFieldsFallAway() {
+  test.subHeading('A row older code wrote loses memberOf and missingSince on its next write');
 
   const home = tmpHome();
-  const hub = hubFor(home);
+  contactBook.acquire(home, { publicKey: 'K-JAZZ', publicLabel: 'jazz', relay: MINE }, 'handle');
+  const file = path.join(home, 'relay-state', 'contacts.json');
+  const rows = JSON.parse(fs.readFileSync(file, 'utf8'));
+  rows[0].memberOf = [MINE];
+  rows[0].missingSince = '2026-09-17T01:00:00.000Z';
+  fs.writeFileSync(file, JSON.stringify(rows));
 
-  contactBook.acquire(home, { publicKey: 'K-LIVE', publicLabel: 'jim', relay: THEIRS }, 'handle');
-  contactBook.acquire(home, { publicKey: 'K-DUD', publicLabel: 'bella', relay: 'http://127.0.0.1:65425' }, 'handle');
-
-  // A relay this node is on but does NOT own — orphan-hunting is about
-  // every relay you are bound to, not only the ones you keep.
-  const up = { rows: [{ url: THEIRS, owned: false, claimed: true, status: 200,
-    census: { roster: roster(['K-LIVE']) } }] };
-
-  const first = hub.reconcileOrphans(up, new Date('2026-09-17T01:00:00.000Z'));
-  if (first.marked === 1 && contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD'))) {
-    test.check('somebody no relay lists is marked');
+  // Any write through the book — here, a label of my own.
+  contactBook.setMyLabel(home, 'K-JAZZ', 'Jazzmin');
+  contactBook.acquire(home, { publicKey: 'K-JAZZ', publicLabel: 'jazz', relay: MINE }, 'handle');
+  const after = JSON.parse(fs.readFileSync(file, 'utf8'))[0];
+  if (after && after.memberOf === undefined && after.missingSince === undefined) {
+    test.check('the next write through the book drops both — nothing reads them');
   } else {
-    test.fail('mark: ' + JSON.stringify(first));
-  }
-
-  if (!contactBook.missingSince(contactBook.byPublicKey(home, 'K-LIVE'))) {
-    test.check('and somebody a relay does list is not');
-  } else {
-    test.fail('marked a live contact');
-  }
-
-  // THE DATE IS THE USEFUL PART, so it must not move. A stamp rewritten
-  // on every probe would make a contact missing since March look like it
-  // vanished a minute ago — which is the one thing the date is for.
-  hub.reconcileOrphans(up, new Date('2026-09-30T01:00:00.000Z'));
-  if (contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD')).indexOf('2026-09-17') === 0) {
-    test.check('and a second sweep leaves the original date alone');
-  } else {
-    test.fail('the date moved: ' + contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD')));
-  }
-
-  // ── A RELAY THAT DID NOT ANSWER SAYS NOTHING ABOUT ANYBODY ─────────
-  //
-  // natterCheckBinding's rule, and the reason this is safe to run on
-  // every probe: without it a node whose relay was rebooting would paint
-  // a warning onto every row in its book.
-  const home2 = tmpHome();
-  const hub2 = hubFor(home2);
-  contactBook.acquire(home2, { publicKey: 'K-X', publicLabel: 'x', relay: THEIRS }, 'handle');
-  const silent = hub2.reconcileOrphans({ rows: [{ url: THEIRS, claimed: true, status: 0 }] });
-  if (silent.marked === 0 && !contactBook.missingSince(contactBook.byPublicKey(home2, 'K-X'))) {
-    test.check('a relay that did not answer marks nobody');
-  } else {
-    test.fail('an unreachable relay condemned the book: ' + JSON.stringify(silent));
-  }
-
-  // AND NEITHER DOES ONE THAT ANSWERED WITHOUT A ROSTER. An older relay
-  // replies to the census without one, and reading that as "lists
-  // nobody" would mark every contact on it.
-  const old = hub2.reconcileOrphans({
-    rows: [{ url: THEIRS, claimed: true, status: 200, census: { peers: 3 } }],
-  });
-  if (old.marked === 0 && !contactBook.missingSince(contactBook.byPublicKey(home2, 'K-X'))) {
-    test.check('nor one running older code that answered without a roster');
-  } else {
-    test.fail('a rosterless answer condemned the book: ' + JSON.stringify(old));
-  }
-
-  // ── AND A KEY THAT COMES BACK LOSES THE MARK ──────────────────────
-  const back = { rows: [{ url: THEIRS, owned: false, claimed: true, status: 200,
-    census: { roster: roster(['K-LIVE', 'K-DUD']) } }] };
-  const cleared = hub.reconcileOrphans(back);
-  if (cleared.cleared === 1 && !contactBook.missingSince(contactBook.byPublicKey(home, 'K-DUD'))) {
-    test.check('and somebody who turns up again stops being warned about');
-  } else {
-    test.fail('the mark stuck: ' + JSON.stringify(cleared));
-  }
-
-  // NOTHING WAS DELETED, at any point. Absence is not death, and the row
-  // holds a name its owner typed which is on no relay to be recovered
-  // from — so the sweep marks and the human decides.
-  if (contactBook.byPublicKey(home, 'K-DUD')) {
-    test.check('and nothing was ever deleted — the sweep marks, a person decides');
-  } else {
-    test.fail('the sweep deleted a row');
+    test.fail('still carried: ' + JSON.stringify(after));
   }
 
   fs.rmSync(home, { recursive: true, force: true });
-  fs.rmSync(home2, { recursive: true, force: true });
 }
 
-theSweepAdopts();
-theSweepPrunes();
-forgetRefusesAMember()
-  .then(function () { ownersOnly(); theSweepMarksOrphans(); })
+// ── 4. AND THE SWEEP IS GONE, NOT DORMANT ────────────────────────────
+
+function theSweepIsGone() {
+  test.subHeading('The roster sweep is gone, not dormant');
+
+  const hub = hubFor(tmpHome());
+  const gone = ['reconcileMembers', 'reconcileOrphans', 'syncMembers'].filter(function (n) {
+    return typeof hub[n] !== 'undefined';
+  });
+  const bookGone = ['memberOf', 'isMember', 'setMemberOf', 'missingSince', 'setMissing'].filter(function (n) {
+    return typeof contactBook[n] !== 'undefined';
+  });
+  if (!gone.length && !bookGone.length) {
+    test.check('no sweep in the hub and no seat fields in the book — nothing waits for a roster');
+  } else {
+    test.fail('still exported: ' + gone.concat(bookGone).join(', '));
+  }
+}
+
+aClaimAdopts();
+forgetDoesNotAsk()
+  .then(function () { staleFieldsFallAway(); theSweepIsGone(); })
   .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
   .then(function () { test.reportSuccessFailureCount(); });

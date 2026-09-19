@@ -561,11 +561,12 @@ function listsTheBook() {
     // That has been the cause three times in this repo now.
     const src = rawSrc.replace(/^\s*\/\/.*$/gm, '');
 
-    // THREE UNHEADED COLUMNS NOW, not two: the presence dot, the LOCK
-    // (Andy: "a column right after the status column, it contains an
-    // ICON.LOCKED"), and the mark. None of them has a word, and a
-    // one-word heading over a glyph is a word read on every pass to
-    // learn nothing.
+    // TWO UNHEADED COLUMNS AGAIN: the presence dot and the mark. There
+    // were three while the LOCK column stood (a contact seated on a relay
+    // I own); the seats were a roster's and no relay returns one, so the
+    // column went on 2026-09-19 (Andy: "kill the lock columns"). None of
+    // them has a word, and a one-word heading over a glyph is a word read
+    // on every pass to learn nothing.
     //
     // MATCHED ACROSS THE CONCATENATION, and against the whole file
     // rather than the first <thead> in it. Both bit: the header is built
@@ -576,8 +577,9 @@ function listsTheBook() {
     // So: drop whitespace and the string joins, then look for the run of
     // cells. What survives is the markup as the browser receives it.
     const flat = src.replace(/\s+/g, '').replace(/'\+'/g, '');
-    if (flat.indexOf('<thclass="icon-cell"></th><thclass="icon-cell"></th><thclass="icon-cell"></th><th>Label</th>') !== -1) {
-      test.check('the header is three fixed glyph columns and one name');
+    if (flat.indexOf('<thclass="icon-cell"></th><thclass="icon-cell"></th><th>Label</th>') !== -1 &&
+        flat.indexOf('<thclass="icon-cell"></th><thclass="icon-cell"></th><thclass="icon-cell"></th><th>Label</th>') === -1) {
+      test.check('the header is two fixed glyph columns and one name');
     } else {
       test.fail('header: ' + (/<tr>(<th[^>]*>[^<]*<\/th>)+<\/tr>/.exec(flat) || [''])[0]);
     }
@@ -1167,26 +1169,29 @@ function aFoundPersonCanBeAsked() {
 }
 
 
-// ── A SEAT ON MY OWN RELAY IS A STANDING FACT ────────────────────────
+// ── NO LOCK ANY MORE (2026-09-19) ────────────────────────────────────
 //
-//   Andy: "as user it becomes very confusing to understand my
-//   relationship with this peer (ID)."
+// This asserted that somebody seated on a relay I own carried ICON.LOCKED
+// in the column after the status dot, naming the relay on the hover. The
+// seats were `memberOf`, written by a roster sweep, and no relay may return
+// a roster (0012 widened, PAYLOAD_MAX) — Andy: "What is not found cannot
+// influence decisions … contacts go stale. Deal with it." — and then:
+// "kill the lock columns."
 //
-// `acquiredVia` is HISTORY — how the row got here. A seat on a relay I
-// own is what they ARE, now, and the reason Forget will refuse. A screen
-// that showed only the first could not explain the second.
+// What is asserted instead is the absence, including for a row older code
+// left `memberOf` on: a stale field must draw nothing.
 function aMemberSaysSoOnTheRow() {
-  test.subHeading('Somebody seated on a relay I own says so on their row');
+  test.subHeading('No row carries a lock — seats are not a thing a contact knows');
 
   const app = mountApp({
     people: [
       { publicKey: 'KEY-CRUELLA', tail: 'lrjo=', publicLabel: 'Cruella',
         caption: 'Cruella', myLabel: '', acquiredVia: 'member',
+        // Left by older code on a book written before 2026-09-19.
         memberOf: ['https://mine.example'],
         held: false, blocked: false, onRelay: true, bytesHeld: 0 },
       { publicKey: 'KEY-SONNY', tail: 'kEbk=', publicLabel: 'sonny',
         caption: 'sonny', myLabel: '', acquiredVia: 'handle',
-        memberOf: [],
         held: false, blocked: false, onRelay: false, bytesHeld: 0 },
     ],
   });
@@ -1197,55 +1202,27 @@ function aMemberSaysSoOnTheRow() {
       return out.split('<tr').filter(function (r) { return r.indexOf(name) !== -1; })[0] || '';
     };
 
-    //   Andy: "the locked icon indicates that the ContactsDetails dialog
-    //   may look a bit different from other contact details."
-    //
-    // The lock is a promise about the screen behind the row: Forget there
-    // means removing their seat as well. Made before somebody opens it
-    // and is surprised, which is the whole job of a mark on a row.
-    if (rowFor('Cruella').indexOf(spirit.core.const.ICON.LOCKED) !== -1) {
-      test.check('a member carries the lock');
+    if (out.indexOf(spirit.core.const.ICON.LOCKED) === -1) {
+      test.check('no row carries a lock, even one older code left memberOf on');
     } else {
-      test.fail('cruella: ' + rowFor('Cruella'));
+      test.fail('a lock was drawn: ' + rowFor('Cruella'));
     }
 
-    // WHICH relay, on the hover: one person may be seated on several of
-    // mine, and that is exactly what Forget has to name when it refuses.
-    if (/they hold a seat on mine\.example/.test(rowFor('Cruella'))) {
-      test.check('and the row names which relay, because Forget will have to');
+    // Three cells a row: the status dot, the mark, the name — matching
+    // the header's two glyph columns and one name.
+    const cells = rowFor('Cruella').split('<td').length - 1;
+    if (cells === 3 && !/hold a seat/.test(out)) {
+      test.check('three cells a row, and no seat is named anywhere');
     } else {
-      test.fail('no seat named: ' + rowFor('Cruella'));
+      test.fail('cells=' + cells + ' row: ' + rowFor('Cruella'));
     }
 
-    // AND IT SITS RIGHT AFTER THE STATUS DOT, which is where Andy put
-    // it and where the eye already goes for the two facts about a row
-    // that are true NOW rather than historical: whether they are here,
-    // and whether they are mine to remove.
-    const cells = rowFor('Cruella').split('<td');
-    if (cells.length > 2 && cells[2].indexOf(spirit.core.const.ICON.LOCKED) !== -1) {
-      test.check('in the column immediately after the status dot');
+    // The table still says nothing about provenance (Andy: "the how column
+    // can go, too"): that is the contact's own screen's.
+    if (rowFor('Cruella').indexOf('>member<') === -1 && /sonny/.test(rowFor('sonny'))) {
+      test.check('and the table says nothing more about the relationship — the screen does');
     } else {
-      test.fail('the lock is not the second cell: ' + rowFor('Cruella'));
-    }
-
-    // AND NOTHING ELSE. The How column went (Andy: "the how column can go,
-    // too"), so the lock is the whole of what the table says about the
-    // relationship — the rest is on the contact's own screen.
-    if (rowFor('Cruella').indexOf('>member<') === -1) {
-      test.check('and the table says nothing more about it — the screen does');
-    } else {
-      test.fail('provenance survived in the table: ' + rowFor('Cruella'));
-    }
-
-    // ── AND EVERYBODY ELSE IS UNTOUCHED ────────────────────────────
-    //
-    //   Andy: "a peer who connects with me through a partner node
-    //   behaves independently as contact."
-    if (rowFor('sonny').indexOf(spirit.core.const.ICON.LOCKED) === -1 &&
-        /sonny/.test(rowFor('sonny'))) {
-      test.check('while an ordinary contact is a name and no lock');
-    } else {
-      test.fail('sonny: ' + rowFor('sonny'));
+      test.fail('provenance in the table: ' + rowFor('Cruella'));
     }
   });
 }

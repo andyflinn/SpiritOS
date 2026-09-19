@@ -112,43 +112,14 @@ function isBlocked(row) {
   return !!(row && row.blocked);
 }
 
-// ── WHICH RELAYS OF MINE THIS KEY HOLDS A SEAT ON ────────────────────
-//
-//   Andy: "i may acquire the same contact through multiple relays i own.
-//   the contact record must hold a LIST of relays i own and the contact
-//   has a slot on them. the contactBook should have to reflect that."
-//
-// A LIST, for the reason he gives, and it is the whole boundary of this
-// feature in one field:
-//
-//   non-empty  auto-created, and Forget must evict the seats first
-//   empty      an ordinary contact, exactly as today
-//
-// So a peer reached through a PARTNER relay needs no special case: it is
-// not a member of anything this node owns, so the list is empty and it
-// behaves like every other contact —
-//
-//   Andy: "a peer who connects with me through a partner node behaves
-//   independently as contact, same as non-relay-owners experience all
-//   their contacts."
-//
-// And a node that owns no relay never has a non-empty one, so nothing in
-// this feature is reachable for anybody who is not a relay owner.
-//
-// NOT THE SAME FIELD AS `relays`, which is "mailboxes where this key has
-// been SEEN" and includes relays somebody else owns. This is a statement
-// about seats on boxes that are mine, and only the reconcile writes it.
-function memberOf(row) {
-  var list = row && row.memberOf;
-  return Array.isArray(list) ? list.slice() : [];
-}
-
-// Is this row here because of a seat I granted? The one question Forget
-// asks, and it asks it of a LOCAL field — no network inside a permission
-// check, which is the trap ownerBadge.canRemoveRelay documents at length.
-function isMember(row) {
-  return memberOf(row).length > 0;
-}
+// `memberOf` AND `isMember` STOOD HERE (2026-09-19): the seats a key held
+// on relays this node owns, written only by a roster sweep. No relay may
+// return a roster any more (0012 widened, PAYLOAD_MAX), so the field was a
+// belief about a list we no longer receive — and a contact records what
+// this node knows about a person, not what a vanished list once said.
+// Andy: "email addresses change, contacts go stale. Deal with it." A row
+// written by older code may still carry `memberOf`; nothing reads it, and
+// the next write drops it (normalize below keeps named fields only).
 
 // Whether this node listens to that row: acquired one of the ways that
 // count, and not blocked. The one question the inbox asks.
@@ -287,16 +258,9 @@ function upsert(rootDir, row) {
     // this node holds. Relay KEYS only; `relays` above holds URLs and is
     // left as it was.
     routes: normalizeRoutes(row.routes != null ? row.routes : prev.routes),
-    // Carried like `blocked`, and set by the reconcile alone. Unlike the
-    // rank above it CAN fall, and must: evicting somebody empties it, and
-    // that is what turns them back into an ordinary deletable contact.
-    memberOf: normalizeRelays(row.memberOf != null ? row.memberOf : prev.memberOf),
-    // Carried like the rest, and cleared by the sweep the moment the key
-    // turns up on a census again — a row that came back must not keep
-    // wearing a warning.
-    missingSince: String(
-      row.missingSince != null ? row.missingSince : (prev.missingSince || '')
-    ),
+    // `memberOf` and `missingSince` were carried here, both written by the
+    // roster sweep that went on 2026-09-19. Not carried any more, so a row
+    // written by older code loses them on its next write.
   };
   if (i === -1) rows.push(next);
   else rows[i] = next;
@@ -304,54 +268,10 @@ function upsert(rootDir, row) {
   return next;
 }
 
-// ── WHAT THE RECONCILE WRITES ────────────────────────────────────────
-//
-// The seats this key holds on relays I own, as the census last answered.
-// Whole-list, never additive: a key that left a relay must lose that url,
-// and an add-only field would keep somebody undeletable for ever on the
-// strength of a seat they no longer have.
-//
-// Returns the row, or null for a key not in the book — the caller
-// acquires first and sets this second, so a missing row is a bug rather
-// than a state to paper over.
-function setMemberOf(rootDir, publicKey, urls) {
-  const rows = load(rootDir);
-  const row = rows.find(function (r) { return r.publicKey === publicKey; });
-  if (!row) return null;
-  row.memberOf = normalizeRelays(urls);
-  save(rootDir, rows);
-  return row;
-}
-
-// ── WHEN THIS NODE FIRST FOUND THE KEY ON NO CENSUS ──────────────────
-//
-//   Andy: "show a warning bubble at the top of contact details if the
-//   contact is an obvious dud... the bubble will show the reason."
-//
-// An ISO stamp, or '' for a key that is on a census somewhere. It is the
-// date this node first CONCLUDED it was missing, not the date it went —
-// the difference matters and the wording that reads it has to say so,
-// because nothing here watched before the conclusion was possible.
-//
-// WHY A DATE AND NOT A FLAG. "Not on any census" is worth acting on in
-// proportion to how long it has been true: a key that vanished an hour
-// ago may be an owner mid-edit, and one that has been gone since March is
-// a lab node somebody wiped. A boolean cannot tell those apart, and the
-// person deciding whether to delete a row needs to.
-function setMissing(rootDir, publicKey, whenIso) {
-  const rows = load(rootDir);
-  const row = rows.find(function (r) { return r.publicKey === publicKey; });
-  if (!row) return null;
-  const next = String(whenIso || '');
-  if (String(row.missingSince || '') === next) return row;
-  row.missingSince = next;
-  save(rootDir, rows);
-  return row;
-}
-
-function missingSince(row) {
-  return String((row && row.missingSince) || '');
-}
+// setMemberOf, setMissing AND missingSince STOOD HERE — the roster
+// sweep's writers and the "on no census since" mark. Gone with the sweep
+// (2026-09-19): what is not found cannot influence decisions (Andy), and a
+// key's absence from a list no relay may return is not a finding.
 
 function setMyLabel(rootDir, publicKey, myLabel) {
   const rows = load(rootDir);
@@ -558,11 +478,6 @@ module.exports = {
   CENSUS: ACQUIRED_CENSUS,
   HOLD: ACQUIRED_HOLD,
   MEMBER: ACQUIRED_MEMBER,
-  memberOf: memberOf,
-  isMember: isMember,
-  setMemberOf: setMemberOf,
-  missingSince: missingSince,
-  setMissing: setMissing,
   load: load,
   contacts: contacts,
   addressBook: addressBook,
