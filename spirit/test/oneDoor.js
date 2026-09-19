@@ -81,6 +81,11 @@ const CENSUS = {
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
   'js/server.js': 2,
+  // THE RELAY'S OWN SERVER: http.createServer, moved out of server.js when
+  // node and relay became separate startup modules (cycle 0). A new line,
+  // and so an exception — GRANTED BY ANDY 2026-09-19 in the cycle 0 plan.
+  // The reach is the one the relay always had; it now lives in its own file.
+  'js/relayServer.js': 1,
 
   // AGENT.md: unused, do not assume it is loaded, do not delete.
   'js/client/browser.js': 1,

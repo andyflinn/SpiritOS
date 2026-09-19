@@ -86,10 +86,13 @@ if (offenders.length === 0) {
 
 test.subHeading('And the relay does not serve it');
 
-const server = codeOf(path.join('js', 'server.js'));
+// BOTH STARTUP MODULES. The relay's routes moved to relayServer.js with
+// cycle 0 (node and relay as separate startup modules); a census door
+// would have to be in one of the two.
+const server = codeOf(path.join('js', 'server.js')) + '\n' + codeOf(path.join('js', 'relayServer.js'));
 
 if (!/['"]\/api\/relay\/who['"]/.test(server)) {
-  test.check('server.js has no route for it, and no entry in the public-path list');
+  test.check('neither server.js nor relayServer.js has a route for it, or an entry in the public-path list');
 } else {
   test.fail('the route is still served');
 }

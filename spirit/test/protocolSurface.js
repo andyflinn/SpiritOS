@@ -61,7 +61,9 @@ MESSAGE_FILES.forEach(function (name) {
   });
 });
 
-const server = readOr(path.join(RUN, 'server.js'), '');
+// Both startup modules: the relay's routes moved to relayServer.js with
+// cycle 0, and a door the node still names must be counted too.
+const server = readOr(path.join(RUN, 'server.js'), '') + '\n' + readOr(path.join(RUN, 'relayServer.js'), '');
 (server.match(/'\/api\/relay\/[a-z-]+'/g) || []).forEach(function (q) {
   const r = q.replace(/'/g, '');
   if (inTree.routes.indexOf(r) === -1) inTree.routes.push(r);

@@ -2180,9 +2180,16 @@ none is mine to take.
   discipline; in two it is a fact. **First step decided (Andy, 2026-09-19):
   node and relay become separate startup modules** instead of one `server.js`
   with `--relay` — narrower than a repo split, and in line with reducing the
-  relay's RAM and disc footprint: a relay stops loading node code at all. The
-  shared core measured at `c3cd6d0` is `relayAuth.js`, `deviceAuth.js`,
-  `labelRule.js`, plus constants (`kernel.js`, `buildStamp.js`, `limits.js`).
+  relay's RAM and disc footprint: a relay stops loading node code at all.
+  **Built 2026-09-19 (cycle 0):** `js/relayServer.js` and `js/serveCommon.js`;
+  `node js/server.js --relay` hands off to the relay module before loading
+  anything. Measured by booting each mode and reading `require.cache`: relay
+  **30 → 22 modules**, node **32 → 26**. *This corrects the static count
+  that stood here, which named only `relayAuth`, `deviceAuth`, `labelRule`
+  and constants as shared:* the relay also loads `peerPost`, `partnerLink`,
+  `relayRequest`, `sseClient` — and, through `peerPost`, the node-side
+  `contacts.js` and `nodeCard.js`. That last pair is the next thing a
+  separation has to answer.
   One repo holding both products is the recommendation until either side
   gets its own release clock; repos are not decided.
 - **What a decision record looks like** — it cannot be designed before a

@@ -1,11 +1,26 @@
+// ── A RELAY IS NOT BOOTED HERE ANY MORE ──────────────────────────────
+//
+// Cycle 0 (design/principles/NODE-AND-RELAY.md, decided by Andy
+// 2026-09-19): node and relay are separate startup modules, so a relay
+// loads no node code. This file is the personal node. `--relay` is
+// handed to js/relayServer.js BEFORE anything below is required — that is
+// the whole point, since a require here is a module the relay would carry.
+//
+// Kept, not removed, because spirit-3's systemd unit, the Procfile and
+// install-public-relay.js all start `node js/server.js --relay`. Changing
+// those is a deploy decision (Andy's), not part of the split.
+if (process.argv.slice(2).includes('--relay')) {
+  require('./relayServer');
+  return;
+}
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const spirit = require('./kernel');
-const createRelay = require('./relay');
-// For keyFromUrl only — translating a URL segment back to the stored key
-// form. No secret reaches this side of the wire.
-const deviceAuth = require('./deviceAuth');
+// The helpers this node shares with the relay's startup module — body
+// reading, file sending, the 413 and malformed-path guards, /api/version.
+const common = require('./serveCommon');
 // What this node answers about itself, and the one thing it writes there
 // unasked — see the boot call in the personal-node block.
 const nodeCard = require('./nodeCard');
@@ -21,28 +36,8 @@ const ownerBadge = require('./ownerBadge');
 // again later would report whatever is on disk now, which is the lie
 // this is meant to catch.
 const buildStamp = require('./buildStamp');
-// How big a thing may be — one file, shared with the relay and the page.
-const limits = require('./limits.js');
 const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
-// HOW THIS RELAY ASKS A PARTNER, injected rather than reached for.
-//
-// LATE-BOUND on purpose: createRelay runs at module load and partnerRouter
-// is built after the server is listening, so this closes over the variable
-// rather than the value. A relay with no partnerRouter — a personal node,
-// or a relay still booting — answers from its own members and propagates
-// nothing, which is what it did yesterday.
-//
-// `post` is peerPost's, so the hash, the proof the partner read it, and
-// the dispatch of the answer back to this exact question are all the
-// interface's and none of relay.js's (AGENT.md, Comms).
-const relay = createRelay.createRelay(undefined, {
-  askPartner: function (url, relayKey, text) {
-    if (!partnerRouter) return Promise.resolve(null);
-    return partnerRouter.post(url, relayKey, text);
-  },
-});
-
 
 //console.log(JSON.stringify(spirit,null,2));
 
@@ -51,114 +46,45 @@ const relay = createRelay.createRelay(undefined, {
 // alongside every other startup mistake.
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(
-    'Usage: node js/server.js [--port <number>] [--relay]\n\n' +
+    'Usage: node js/server.js [--port <number>]\n\n' +
+    '  Runs a personal node: loopback HTTP only. A public relay is\n' +
+    '  js/relayServer.js (`node js/server.js --relay` still starts one).\n\n' +
     '  --port <number>   Listen on this port instead of the default (' + spirit.core.node.const.DEFAULT_SPIRIT_PORT + ').\n' +
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
-    '  --relay           Run as a public relay: serve relay.html at / and /index.html, answer\n' +
-    '                    only the relay routes (/api/relay/*) and 404 everything else —\n' +
-    '                    /api/spirit, /api/events and the desktop shell.\n' +
-    '                    Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is\n' +
-    '                    meant to be reached from the internet. Do NOT pass this to a personal\n' +
-    '                    node; those stay loopback-only.\n' +
     '  --help, -h        Show this message and exit.\n\n' +
     'Examples:\n' +
     '  node js/server.js\n' +
     '  node js/server.js --port 65431\n' +
-    '  node js/server.js --port 65430 --relay\n' +
     '  PORT=65431 node js/server.js\n\n' +
-    'Must be run from spirit/run/ (this directory\'s parent must be named "spirit") — see the startup check below if that fails.'
+    'Must be run from spirit/run/ (this directory\'s parent must be named "spirit") — see the startup check in serveCommon.js if that fails.'
   );
   process.exit(0);
 }
 
-// Job spawning (jobs.js's startProcessJob) passes relative script paths
-// like "process/js/lmStudioLoadModel/lmStudioLoadModel.js" straight to
-// child_process.spawn without ever setting an explicit cwd, so it
-// inherits whatever directory THIS process was started from. Every other
-// path in the app is resolved off ROOT_DIR (__dirname-relative, always
-// correct) — this is the one place actual process.cwd() matters, and
-// starting the server from the wrong place (e.g. `cd js && node
-// server.js` instead of `node js/server.js` from spirit/run) breaks job
-// spawning silently: scripts fail in well under a second with no useful
-// error, easy to mistake for a real bug in the spawned script itself.
-// Fail loud and immediately instead.
-(function verifyStartupCwd() {
-  var cwd = process.cwd();
-  var errors = [];
-
-  var REQUIRED_DIRS = ['app', 'js', 'process'];
-  var missing = REQUIRED_DIRS.filter(function (name) {
-    try { return !fs.statSync(path.join(cwd, name)).isDirectory(); }
-    catch (err) { return true; }
-  });
-  if (missing.length > 0) {
-    errors.push('expected ' + missing.join('/, ') + '/ under the current directory, but ' + (missing.length > 1 ? 'they weren\'t' : 'it wasn\'t') + ' found');
-  }
-
-  // Belt and suspenders: this project's own folder is always named
-  // "spirit", one level up from wherever the server actually runs
-  // (spirit/run) — catches starting from some unrelated folder that
-  // happens to also have app/js/process children.
-  if (path.basename(path.dirname(cwd)) !== 'spirit') {
-    errors.push('expected the current directory\'s parent to be named "spirit" (i.e. running from spirit/run), but it\'s "' + path.basename(path.dirname(cwd)) + '"');
-  }
-
-  if (errors.length > 0) {
-    console.error(
-      'Refusing to start: ' + errors.join('; ') + '. Current directory: ' + cwd + '\n' +
-      'Job spawning resolves script paths relative to wherever this process was started from — ' +
-      'run this as `node js/server.js` from spirit/run, not from inside js/.'
-    );
-    process.exit(1);
-  }
-})();
+common.verifyStartupCwd('js/server.js');
 
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
-const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
 const hub = require('./hub').createHub(ROOT_DIR);
 
+const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 
-// --port <n> / --port=<n> takes precedence over PORT, for running a
-// second instance ad hoc (e.g. an installer/reinstall test alongside a
-// dev instance already holding the default port) without having to set
-// an environment variable first.
-function portFromArgs(argv) {
-  const eqArg = argv.find((arg) => arg.startsWith('--port='));
-  if (eqArg) return Number(eqArg.slice('--port='.length));
-  const flagIndex = argv.indexOf('--port');
-  if (flagIndex !== -1 && argv[flagIndex + 1] !== undefined) return Number(argv[flagIndex + 1]);
-  return null;
-}
-
-const port = portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
-
-// First step toward the public relay/hub vision (server #3) — deliberately
-// just a routing switch for now. The actual relay protocol (signed-
-// challenge auth against an allowed-public-keys list, message delivery) is
-// separate, later work.
-//
-// This started as nothing but a routing switch for GET / — everything else
-// stayed reachable. It isn't that any more. Phase B narrowed a --relay
-// process to the relay routes plus the brochure (isRelayPublicPath,
-// below; labRelaySurface.js proves Jobs/fs/proxy/hub/the desktop all
-// 404), and Phase F takes the last step: a --relay process binds 0.0.0.0
-// and drops the loopback + Host gate, because it is meant to be reached
-// from the internet.
-//
-// So this one flag is now the whole difference between "a personal node,
-// unroutable from outside this machine" and "a public server". A personal
-// node must never be started with it.
-const relayMode = process.argv.slice(2).includes('--relay');
-const HOME_PAGE = relayMode ? 'relay.html' : 'index.html';
+// The desktop shell. A relay's brochure (relay.html) is served by
+// relayServer.js; this node serves it only by its literal path, as a
+// boot asset.
+const HOME_PAGE = 'index.html';
 
 // THE LOG, read as a table. One store for both directions, keyed by hash
 // and ordered by arrival — and the thing the arrivals seam hands rows to,
 // so a page that was closed can catch up from the same place a live page
 // is fed from.
+//
+// `relayMode: false` always, now: a relay no longer loads this module at
+// all (cycle 0), which turns trafficLog's own relay gate from a runtime
+// promise into an absence.
 const trafficLog = require('./trafficLog').createTrafficLog({
   rootDir: spirit.core.node.const.ROOT_DIR,
-  relayMode: relayMode,
+  relayMode: false,
 });
 
 // THE ROUTER'S ARRIVAL SEAM. Declared up here because the two halves sit
@@ -180,18 +106,8 @@ const arrivals = require('./arrivals').createArrivals({
 });
 
 
-// A relay is a party to conversations — the census reply comes FROM
-// it — and `relay` is the caption it answers to, not an identity. A node
-// that keeps one file per peer cannot file the relay anywhere without
-// a key, so the relay gets one: made once, on the first --relay boot,
-// into this process's own relay-state beside allow.json. It is handed
-// out through who and status (relay.mailboxPublicKey), and it is NOT the
-// owner's key — the owner is a peer who claimed, the relay is the box.
-// A personal node never reaches this line; its identity is made on its
-// first claim (hub.js).
-if (relayMode) {
-  require('./relayAuth').ensureIdentity(ROOT_DIR, 'relay');
-}
+// A relay's own identity is made in relayServer.js. A personal node's
+// identity is made on its first claim (hub.js).
 
 // The small, fixed set of paths the page needs to boot at all, served
 // unconditionally by the static route below, checked before fileServable —
@@ -207,13 +123,9 @@ const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
 
 // Held here rather than inside the boot block so a later shutdown path
-// has something to close. Null on a relay, which holds no streams.
+// has something to close.
 let presence = null;
 let peerRouter = null;
-// A relay's half: the peerPost it posts to partners from, and the streams
-// it holds to them. Null on a personal node, which has neither.
-let partnerRouter = null;
-let partnerLinks = null;
 
 // ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
 //
@@ -222,8 +134,7 @@ let partnerLinks = null;
 // why claiming beats a table, and why it happens after boot rather than
 // on require.
 //
-// Empty on a relay, and that is correct rather than incidental: a relay
-// answers only isRelayPublicPath, and /api/spirit is not on it.
+// A relay has no such door and does not load this module (relayServer.js).
 const loopbackVerbs = require('./verbTable').createVerbTable();
 // `pinnedRelayKey` STOOD HERE, DELETED 2026-09-17 — assigned at boot and
 // read by nothing.
@@ -241,113 +152,13 @@ const loopbackVerbs = require('./verbTable').createVerbTable();
 const requestCounters = { total: 0, byMethod: {}, byStatusClass: {} };
 jobs.startStatsJob({ requestCounters: requestCounters });
 
-function sendFile(res, filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  const type = MIME_TYPES[ext] || 'application/octet-stream';
-
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-      return;
-    }
-
-    res.writeHead(200, { 'Content-Type': type });
-    res.end(data);
-  });
-}
+// Moved to serveCommon.js (cycle 0) — the relay answers HTTP the same way,
+// and these carry the lessons both sides paid for: the body cap, the
+// once-read memo, the 404 on a missing file.
+const sendFile = common.sendFile;
+const readJsonBody = common.readJsonBody;
 
 const fsPath = spirit.core.node.util.fsPath;
-
-// ── READ ONCE, ANSWERABLE TWICE ──────────────────────────────────────
-//
-// A request body is a stream and a stream is consumed. That was fine
-// while a path chose the handler, because exactly one thing ever read
-// it.
-//
-// /api/spirit has to look at the body to know WHICH handler — the verb
-// is in there — and the handler it picks then reads the same body for
-// itself. So the promise is memoised on the request: the first caller
-// drains the stream, every later caller gets the same answer, and a
-// handler moving under the single door needs no change of its own.
-//
-// Memoised on `req` rather than in a table, because the lifetime is
-// exactly the request's and nothing has to remember to clean up.
-const BODY_PROMISE = Symbol('spiritJsonBody');
-
-// ── THE CAP THAT WAS MISSING, AND IT IS THE ONE THAT MATTERS ─────────
-//
-// This read `body += chunk` with no limit of any kind. The payload caps
-// in relay.js are checked AFTER the body is whole and parsed, so they
-// bounded what got ROUTED and never what got ACCEPTED — on a public box,
-// on every POST, /claim and /device included.
-//
-// So the memory arithmetic everybody reasoned from was an intention:
-//
-//   router: 256 concurrent, 16 per requester, no bodies held
-//   256 × 16 KB ≈ 4 MB in flight, ~12 MB peak through parse
-//
-// True of routed requests. Meanwhile real exposure was concurrent
-// sockets × whatever they cared to send, with `body += chunk` holding the
-// old string and the new one, and JSON.parse making a third copy.
-//
-// TWO CHECKS, BECAUSE Content-Length IS A CLAIM.
-//
-//   1. the header, when there is one — refuse before reading a byte
-//   2. the running total, always — because `Transfer-Encoding: chunked`
-//      carries no Content-Length at all, and a client that sends one can
-//      send more than it promised
-//
-// (1) alone is bypassed by omitting the header. (2) alone works and
-// wastes a cap's worth of reading on every abuser. Neither is redundant.
-//
-// The socket is DESTROYED rather than left to finish: a request refused
-// for size must not go on arriving, or the refusal costs what it was
-// refusing.
-function readJsonBody(req) {
-  if (req[BODY_PROMISE]) return req[BODY_PROMISE];
-  const reading = new Promise((resolve, reject) => {
-    const tooBig = () => {
-      const err = new Error('body too large');
-      err.statusCode = 413;
-      req.destroy();
-      reject(err);
-    };
-
-    const declared = Number(req.headers['content-length']);
-    if (Number.isFinite(declared) && declared > limits.BODY_MAX) {
-      tooBig();
-      return;
-    }
-
-    let body = '';
-    let seen = 0;
-    req.on('data', chunk => {
-      // Bytes, not characters — Content-Length is bytes, and a multi-byte
-      // body would otherwise be measured smaller than it arrives.
-      seen += Buffer.byteLength(chunk);
-      if (seen > limits.BODY_MAX) {
-        tooBig();
-        return;
-      }
-      body += chunk;
-    });
-    req.on('end', () => {
-      if (!body) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(JSON.parse(body));
-      } catch (err) {
-        reject(err);
-      }
-    });
-    req.on('error', reject);
-  });
-  req[BODY_PROMISE] = reading;
-  return reading;
-}
 
 // Which verb this is, for the one door that has to know before it can
 // choose. A body that will not parse is not a verb — the handler that
@@ -359,126 +170,9 @@ function peekVerb(req) {
     .catch(function () { return ''; });
 }
 
-// The connection's own address, used only as a rate-limiting bucket key —
-// never as authority for anything. Rate limits used to key on the name in
-// the request body, which the sender chooses, so rotating it reset the
-// budget; this is the one thing about a request the caller can't restate
-// at will.
-function clientKeyFor(req) {
-  return req.socket.remoteAddress || '';
-}
-
-// handleRelayInvite STOOD HERE. See hub.handleInvite for what a node
-// does instead: the browser's door is unchanged, the wire underneath it
-// is a post to the relay.
-
-// One answer for every way this can fail, and it says nothing.
-//
-// Wrong password, a node that is not connected, a node that took the
-// offer and went quiet — all of it comes back as `not now`. A form that
-// distinguished them would answer questions nobody standing at it is
-// entitled to ask: "is this the right password but the wrong moment" is
-// exactly what a caller with the wrong password wants to know.
-//
-// The STATUS still varies, and only for the rate limit — 429, which the
-// page waits out rather than gives up on. The STRING never varies
-// (DEVICE-CYCLE3.md).
-function deviceRefusal(res, status) {
-  res.writeHead(status || 403, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ error: 'not now' }));
-}
-
-// The browser's half. This request is HELD — the relay does not answer
-// until the personal node has been posted to and replied, or the wait
-// runs out. It used to be held past a poll; it is now held for a round
-// trip, which is under a second when the node is there.
-//
-// Nothing here reads the password: it is carried to the node and the node
-// compares it (DEVICE-CYCLE2.md).
-function handleDeviceOffer(req, res) {
-  readJsonBody(req).then(function (body) {
-    // The name may be absent, and is on the bare /device page: relay.js
-    // resolves an omitted one to the owner label, which is who that page
-    // enrols. A per-key page sends its own segment, which is decoded to
-    // the stored key form here — the one place that translation happens.
-    const asked = (body && body.name) || '';
-    const asKey = deviceAuth.keyFromUrl(asked);
-    return relay.deviceOffer(
-      asKey && relay.deviceIdentityPublic(asKey) ? asKey : asked,
-      body && body.password,
-      body && body.devicePublicKey
-    );
-  }).then(function (result) {
-    if (!result || !result.ok) {
-      deviceRefusal(res, result && result.status);
-      return;
-    }
-    // THE ENROLLED IDENTITY'S label goes back with the yes, because from
-    // here the page has to sign as somebody: every line it sends is
-    // `send\n<from>\nrelay\n<text>`, and `from` is whoever this device
-    // now belongs to.
-    //
-    // It said the relay's OWNER until 2026-09-12, and that was true
-    // when it was written — the bare /device page enrolled the owner and
-    // nobody else, so there was only one answer it could be. B2 gave
-    // every identity with a row its own /<key>/device page and its own
-    // slot, and this did not follow: every page on the box came back
-    // "signed in as andy", bella's included.
-    //
-    // Nothing is given away by saying it. The label is already public —
-    // /api/relay/who hands the whole peer list, names and keys, to anyone
-    // who asks — and this answer only ever follows a password the node
-    // itself accepted. An empty name simply leaves the page unable to
-    // sign, which is the honest outcome for an enrolment that named
-    // nobody.
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({
-      ok: true,
-      devicePublicKey: result.devicePublicKey,
-      // WHOEVER WAS ENROLLED, which is not the same as whoever owns this
-      // relay. It read `snapshot().owner` and therefore said "andy" to
-      // every page on the box, bella's included.
-      name: result.name || '',
-    }));
-  }).catch(function () {
-    deviceRefusal(res, 403);
-  });
-}
-
-// handleSetDevice STOOD HERE, and POST /api/relay/set-device with it.
-// Enrolment is a post now — relay.answerSelf, body.setDevice — because
-// installing a key on your own row was never an owner verb and so could
-// never have gone through a door only the owner may knock on.
-
-function handleRelayClaim(req, res) {
-  readJsonBody(req).then(function (body) {
-    const result = relay.claim(
-      body && body.name,
-      body && body.sig,
-      body && body.publicKey,
-      clientKeyFor(req),
-      body && body.invite,
-      // THE WORD ON THE INVITE, which is not the name being claimed.
-      // `name` is what this key wants to be called; `inviteLabel` is what
-      // the owner wrote down to identify the person they were inviting,
-      // and it is matched and then forgotten (R1, 2026-09-15). A caller
-      // that sends only `name` gets the old behaviour, where the two were
-      // one string.
-      body && body.inviteLabel
-    );
-    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-    // A 409 carries the peer that is already there so the caller can tell
-    // "that name is mine already" from "that name is someone else's". The
-    // key is public — /api/relay/who hands out the same thing.
-    var payload = result.ok
-      ? result.peer
-      : (result.peer ? { error: result.error, peer: result.peer } : { error: result.error });
-    res.end(JSON.stringify(payload));
-  }).catch(function () {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
-}
+// clientKeyFor, deviceRefusal, handleDeviceOffer and handleRelayClaim
+// STOOD HERE. They answer the relay routes, which a node no longer serves
+// (cycle 0, Andy 2026-09-19): they live in relayServer.js and serveCommon.js.
 
 // EVERY PAGE STREAM THIS PROCESS IS SERVING.
 //
@@ -880,121 +574,23 @@ function isLoopbackAddress(address) {
 // your own node" trust boundary already accepted for /api/jobs's spawn
 // capability. If that stronger claim is ever wanted, the next lock is
 // validating Origin/Referer, not this Host check.
-// `/<key>/device`, and nothing else beneath `/<key>/`. A CLOSED set of
-// surfaces, deliberately: if an arbitrary suffix resolved to a file, the
-// URL would be building a filesystem path out of input a stranger picked,
-// which is where directory traversal lives. Shared assets stay at the
-// root, where they are literals and belong to nobody.
-//
-// Returns the stored-form key, or '' — the caller still has to ask the
-// relay whether anybody owns it.
-const DEVICE_PAGE_PATH = /^\/([A-Za-z0-9_-]{16,512})\/device$/;
-function devicePageKey(pathname) {
-  const m = DEVICE_PAGE_PATH.exec(pathname || '');
-  if (!m) return '';
-  return deviceAuth.keyFromUrl(m[1]);
-}
-
 const VALID_HOSTS = ['localhost:' + port, '127.0.0.1:' + port, '[::1]:' + port];
 function isValidHost(hostHeader) {
   return !!hostHeader && VALID_HOSTS.indexOf(hostHeader.toLowerCase()) !== -1;
 }
 
-function isRelayPublicPath(method, pathname) {
-  if (pathname === '/' || pathname === '/index.html' || pathname === '/relay.html' || pathname === '/favicon.svg') {
-    return method === 'GET';
-  }
-  // The enroll page, and ONLY addressed by whose it is. The bare /device
-  // is gone from a relay (Andy, 2026-09-11: "should /device still work?
-  // I think not"): it meant "the owner" by implication, which is the one
-  // thing the key-addressed form removes. Two ways to reach one page is
-  // drift waiting to happen, and the implicit one names nobody.
-  //
-  // /device.html goes with it, for the same reason and by the same
-  // reasoning that made it public in the first place — it is the same
-  // page without an identity.
-  //
-  // Unlisted rather than hidden: nothing links to these, they carry
-  // noindex, and they are reachable by anyone who types one. What
-  // protects them is the password and the window, not obscurity. The key
-  // in the path is a LOCATOR — every one is already public at
-  // /api/relay/who, and holding one grants nothing.
-  if (method === 'GET' && devicePageKey(pathname)) return true;
-  // `who` alone. `/api/relay/status` was beside it until R3 deleted the
-  // badge that called it — and with it the last signed GET on this box
-  // apart from the stream.
-  // ── WHO THIS RELAY IS, AND NOTHING ELSE (2026-09-18) ───────────────
-  //
-  //   Andy: "the first two are easily replaced with GET /api/relay/key
-  //   or whatever."
-  //
-  // The two being the front door's "is this sender a relay?" and search's
-  // "which key do I address this box as" — both of which need a PIN, and
-  // the pin was being derived from the whole census, once per relay per
-  // boot. ~147 KB at a thousand members to learn 44 bytes.
-  //
-  // Fixed cost per request, with no membership term in it, which is what
-  // earns it the exemption the census is losing (0013, and 0010's
-  // granted-GET table).
-  if (method === 'GET' && pathname === '/api/relay/key') return true;
-  // The presence wire. Public in the same sense the rest is: reachable
-  // from the internet, and gated inside relay.streamOpen, which refuses
-  // an identity this box does not hold before it allocates anything.
-  if (method === 'GET' && pathname === '/api/relay/stream') return true;
-  // WHAT IS THIS BOX MADE OF. Public, deliberately: the question a
-  // deploy check asks must not need a private key, or the check cannot
-  // run from anywhere but the owner's own machine — and a relay you
-  // cannot identify is one you cannot harden. What it gives away is a
-  // commit id for code the repository already holds.
-  if (method === 'GET' && pathname === '/api/version') return true;
-  if (method === 'POST' && pathname === '/api/relay/device') return true;
-  if (method === 'POST' && pathname === '/api/relay/claim') return true;
-  // The router, and now the only way onto this box. Public in the sense
-  // the rest is: reachable from the internet, gated inside relay.js by a
-  // signature, and refused instantly if the peer is not there to receive
-  // it (decision 0006).
-  if (method === 'POST' && (pathname === '/api/relay/post' || pathname === '/api/relay/reply')) return true;
-  return false;
-}
-
 const server = http.createServer((req, res) => {
-  // Both halves of this gate are personal-node-only, and both have to be
-  // skipped together for a relay — fixing only the Host half would leave
-  // every external request dying on the loopback half instead, since
-  // remoteAddress is now a real client IP rather than 127.0.0.1. The Host
-  // half is equally meaningless there: VALID_HOSTS is built from
-  // localhost:<port>, but a deployed relay is reached as
-  // foo.herokuapp.com, and the platform assigns the internal port anyway.
-  //
-  // What stands in for this on a relay is not "nothing": isRelayPublicPath
-  // (below) reduces the answerable surface to the relay routes and the
-  // brochure, and the relay routes themselves are gated by the allow
-  // list and signature checks in relayAuth.js. The brochure does not hide
-  // those routes from curl and was never meant to — H/I/E are the gates.
-  if (!relayMode && (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host))) {
+  // Both halves of this gate are what make this a PERSONAL node: the
+  // connection must come from this machine, and name it. A relay has no
+  // such gate and is a different startup module (relayServer.js, cycle 0).
+  if (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host)) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden: this server only accepts connections from localhost');
     return;
   }
 
-  // ── TOO BIG IS ANSWERED ONCE, HERE, BEFORE ANY ROUTE ─────────────────
-  //
-  // One place for every POST, because /claim and /device were as
-  // unbounded as /post and none of them should each carry their own
-  // opinion about it. Declared size only — the running total is enforced
-  // in readJsonBody, which is what catches a chunked body or a client
-  // that sends more than it said.
-  //
-  // It answers before dispatch so the refusal is a clean 413 rather than
-  // the `400 Invalid JSON body` every route's catch would otherwise
-  // report — which would name the wrong fault, and the wrong fault is
-  // what somebody debugs at three in the morning.
-  const declaredLength = Number(req.headers['content-length']);
-  if (Number.isFinite(declaredLength) && declaredLength > limits.BODY_MAX) {
-    res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Body too large: ' + declaredLength + ' of ' + limits.BODY_MAX);
-    return;
-  }
+  // Too big is answered once, before any route — see serveCommon.js.
+  if (common.refuseTooBig(req, res)) return;
 
   requestCounters.total++;
   requestCounters.byMethod[req.method] = (requestCounters.byMethod[req.method] || 0) + 1;
@@ -1003,232 +599,18 @@ const server = http.createServer((req, res) => {
     requestCounters.byStatusClass[bucket] = (requestCounters.byStatusClass[bucket] || 0) + 1;
   });
 
-  // Both of these parse caller-controlled bytes, and both can throw:
-  // decodeURIComponent on a malformed escape ('/%zz', '/%'), and the URL
-  // constructor on a Host header it can't make an origin out of. An
-  // uncaught throw HERE is not a bad response, it's a dead process — the
-  // handler runs outside any try, so the exception unwinds straight out of
-  // http's 'request' emit and ends Node.
-  //
-  // That mattered most on a --relay, where this runs BEFORE
-  // isRelayPublicPath narrows anything: a single unauthenticated
-  // `GET /%zz` from the internet took the public relay down, and
-  // systemd's Restart=on-failure just made it a three-second outage per
-  // request rather than a permanent one. Answer 400 and stay up.
-  let url;
-  let pathname;
-  try {
-    url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    pathname = decodeURIComponent(url.pathname);
-  } catch (err) {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Bad request: malformed request path');
-    return;
-  }
+  // A malformed path is a 400, never a dead process — see serveCommon.js.
+  const parsed = common.parseRequestPath(req, res);
+  if (!parsed) return;
+  const pathname = parsed.pathname;
 
-  if (relayMode && !isRelayPublicPath(req.method, pathname)) {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
-    return;
-  }
+  // THE RELAY ROUTES STOOD HERE — /api/relay/key, the device page and
+  // /api/relay/stream, with the census and ring tombstones beside them.
+  // A node no longer answers any relay route (cycle 0, Andy 2026-09-19);
+  // they are relayServer.js.
 
-  if (relayMode && req.method === 'GET' && pathname === '/api/relay/key') {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    // KEY AND LABEL ARE A PAIR (Andy), the same pair the census envelope
-    // carries — so a caller that reads one reads both, and nothing has to
-    // learn a second shape. Null on a relay that has not been restarted
-    // since it grew a key of its own.
-    // AND WHO RUNS IT. Both fields are already public on the census row
-    // marked `owner` — what changes is that a caller can ask for them
-    // without asking for the membership they were buried in. It is what
-    // `relay.partnerCheck` needed the census for, and the last thing it
-    // needed it for.
-    var own = relay.ownerPublic();
-    res.end(JSON.stringify({
-      relayPublicKey: relay.relayPublicKey(),
-      relayLabel: relay.relayLabel(),
-      ownerKey: own.ownerKey,
-      ownerLabel: own.ownerLabel,
-    }));
-    return;
-  }
-
-  // ── GET /api/relay/who STOOD HERE — THE CENSUS, DELETED 2026-09-18 ──
-  //
-  //   Andy: "the census mechanism is a cheat." — "when a cheat is
-  //   identified, it must be eradicated." — "the eradication must be done
-  //   to eliminate temptation."
-  //
-  // A public, unsigned, unbounded read of every member of this relay: 151
-  // bytes a row, ~147 KB at a thousand, answerable by anyone as often as
-  // they liked. Named a cheat in 0010 on 2026-09-17 and gone the next day.
-  //
-  // EIGHT READERS, AND NOT ONE NEEDED A REPLACEMENT. peer.candidates,
-  // peer.find and relay.roster had no caller at all. The device page
-  // wanted a label for one sentence. peer.list was refreshing a fallback
-  // label — and handshaking every member of the relay into that node's own
-  // book while it was there. relay.partnerCheck wanted to know who runs a
-  // box. peer.acquire wanted a label the relay had already said in a
-  // search reply. ownerBadge.probe was asking each relay to remember what
-  // the node itself had done.
-  //
-  // WHAT REPLACED IT:
-  //
-  //   GET /api/relay/key    who this box is and who runs it — 97 bytes,
-  //                         flat, no membership term (0013)
-  //   relayKeys.seat        the node's own record of where it holds a
-  //                         seat, written when the claim is granted
-  //   peer.search           ask who matches; ranked, slot-bounded, and
-  //                         honest about what it dropped
-  //   the stream            presence and routes, pushed as they happen
-  //
-  // The rule that settles the general case is 0012, widened the same week:
-  // no party may ASK for an entire enrolment list — not a stranger, not a
-  // member, not the owner — and no bounded, paginated or owner-only
-  // version of one. A broadcast is not a list: what is refused is an
-  // unbounded PULL, not disclosure to members.
-
-  // GET /api/relay/inbox AND GET /api/hub/inbox STOOD HERE — the ring's
-  // read half on the relay and the node's proxy onto it. Both deleted by
-  // R8 on 2026-09-15. A packet arrives on the held stream now
-  // (arrivals.js), and what a page missed while it was shut comes off
-  // this node's own traffic log rather than off somebody else's box.
-
-  // GET /api/relay/status STOOD HERE and went with the owner badge that
-  // was its only caller (R3, 2026-09-15). The owner's report is pushed
-  // down the owner's own stream instead — relay.statusToOwner — and
-  // "am I the owner here?" is answered off the public census, by key,
-  // with no credential at all.
-
-  // One held connection per identity, carrying who is reachable. The
-  // signature is a HEADER for the same reason device-pending's is: a
-  // query string is written to every access log the request passes, and
-  // this one buys a STANDING grant rather than a single read. Same
-  // function enforces it, so there is one rule and not two.
-  //
-  // Headers, heartbeat and teardown are handleSseConnection's, because
-  // it is the same protocol and that handler has already paid for its
-  // lessons — especially the last one.
-  // THE DEVICE PAGE. One file for everybody: the key lives only in the
-  // URL, and the page reads it off its own address — nothing is templated
-  // and nothing is generated per person.
-  //
-  // An identity nobody holds is a 404 here rather than a working-looking
-  // form that can never succeed. It leaks nothing: /api/relay/who already
-  // hands out every key to anyone who asks.
-  //
-  // RESTORED 2026-09-12. It was deleted by accident in the same commit
-  // that removed the poll — the cut ran from the `device-pending` route to
-  // the next one and this sat between them, so every keyed device URL
-  // 404'd from that moment. Nothing caught it: no suite asks for the page,
-  // and relayProbe's surface list does not name it. Andy found it by
-  // clicking the link in natterDetails.
-  if (relayMode && req.method === 'GET' && devicePageKey(pathname)) {
-    if (!relay.deviceIdentityPublic(devicePageKey(pathname))) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('no such identity here');
-      return;
-    }
-    sendFile(res, path.join(ROOT_DIR, 'device.html'));
-    return;
-  }
-
-  if (relayMode && req.method === 'GET' && pathname === '/api/relay/stream') {
-    const from = createRelay.streamSignatureFrom(url.searchParams.get('sig'), req.headers);
-    if (!from.ok) {
-      deviceRefusal(res, from.status);
-      return;
-    }
-    const token = url.searchParams.get('key') || '';
-
-    // A sink, not a response: relay.js and presence.js hold this and
-    // neither knows what http is.
-    //
-    // THE HEAD IS WRITTEN LAZILY, on the first write, and that is not a
-    // micro-optimisation. It shipped the other way — head first, so the
-    // roster had somewhere to go — and a refusal then had to travel as
-    // an event inside a 200, because the status line was already spent.
-    // A client cannot see a status the server has committed to, so every
-    // refusal looked to it like a connection that opened and closed, it
-    // reset its backoff on that, and a stale credential became a
-    // one-per-second hammer against a relay that was refusing it.
-    //
-    // Written this way the gate answers first and a refusal is a 403 that
-    // says so.
-    let headed = false;
-    const sink = {
-      write: function (chunk) {
-        if (!headed) {
-          headed = true;
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-          });
-        }
-        res.write(chunk);
-      },
-      close: function () { try { res.end(); } catch (e) { /* gone */ } },
-    };
-
-    const opened = relay.streamOpen(token, from.sig, sink);
-    if (!opened || !opened.ok) {
-      // SAY HOW LONG, because this box is the only one that knows. A 429
-      // here is the connect allowance — six a minute, one per ten seconds
-      // — and a client left to guess will guess with a constant that has
-      // no idea what this relay allows.
-      //
-      // RFC 9110 Retry-After, in seconds. sseClient honours it over its
-      // own backoff, so the number that governs the retry is the number
-      // that governs the refusal.
-      if (opened && opened.status === 429) {
-        try { res.setHeader('Retry-After', String(Math.ceil(60 / relay.presence.perMin) + 5)); }
-        catch (e) { /* headers already sent */ }
-      }
-      deviceRefusal(res, opened && opened.status);
-      return;
-    }
-
-    const heartbeat = setInterval(() => {
-      try { res.write(':\n\n'); } catch (e) { /* teardown will follow */ }
-    }, 20000);
-
-    // Bound to 'error' as well as 'close', and once-guarded, exactly as
-    // the jobs stream is. The bug that comment records is worse here: a
-    // socket that dies without a clean close would leave a peer reading
-    // as PRESENT forever, which is the relay lying — and lying is the
-    // one thing this design cannot afford.
-    let torndown = false;
-    function teardown() {
-      if (torndown) return;
-      torndown = true;
-      clearInterval(heartbeat);
-      relay.streamClose(token, sink);
-    }
-    req.on('close', teardown);
-    req.on('error', teardown);
-    return;
-  }
-
-  // Answers in both modes and needs nothing. `startedAt` rides along
-  // because "which commit" and "since when" are the two halves of the
-  // same question: a matching commit with an old start time means the
-  // code landed and nothing picked it up.
   if (req.method === 'GET' && pathname === '/api/version') {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({
-      version: spirit.core.const.VERSION,
-      commit: BUILD.commit,
-      dirty: BUILD.dirty,
-      committedAt: BUILD.at,
-      source: BUILD.source,
-      // Only ever non-zero on a COPIED tree, and then it is a warning
-      // about this very process: files existed that a copy could not
-      // carry, so something it needs may simply not be here.
-      untracked: BUILD.untracked || 0,
-      startedAt: STARTED_AT,
-      relay: relayMode,
-    }));
+    common.sendVersion(res, BUILD, STARTED_AT, false);
     return;
   }
 
@@ -1324,43 +706,9 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST') {
     
 
-    if (pathname === '/api/relay/claim') {
-      handleRelayClaim(req, res);
-      return;
-    }
-
-    if (pathname === '/api/relay/post') {
-      readJsonBody(req).then(function (body) {
-        const result = relay.routePost(
-          body && body.from, body && body.to, body && body.text, body && body.sig
-        );
-        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(result.ok ? result : { error: result.error, inFlight: !!result.inFlight }));
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
-      return;
-    }
-
-    if (pathname === '/api/relay/reply') {
-      readJsonBody(req).then(function (body) {
-        const result = relay.routeReply(
-          body && body.from, body && body.hash, body && body.text, body && body.sig
-        );
-        res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(result.ok ? result : { error: result.error }));
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
-      return;
-    }
-
-    if (pathname === '/api/relay/device') {
-      handleDeviceOffer(req, res);
-      return;
-    }
+    // POST /api/relay/claim, /post, /reply AND /device STOOD HERE,
+    // answered on loopback by a node that was never a relay. Removed by
+    // cycle 0 (Andy, 2026-09-19): relay routes live only in relayServer.js.
 
     // ── ALL FOUR POST-PATH DOORS STOOD HERE. ALL FOUR ARE GONE. ──────
     //
@@ -1522,31 +870,12 @@ const server = http.createServer((req, res) => {
 // isLoopbackAddress and get rejected with a 403 — this just makes it fail
 // at the TCP level instead, with the same net result. That is the whole
 // reason a phone on the same wifi cannot reach :65432, and it stays true.
-//
-// A --relay process is the one case that genuinely needs to be reachable
-// from another machine, so it binds 0.0.0.0 — required by every platform
-// that health-checks the port it assigned (Heroku, Fly, a plain VPS).
-// Bind loopback there and the health check fails, the dyno is killed, and
-// it reads as "SpiritOS is broken" rather than as a bind mistake.
-const BIND_HOST = relayMode ? '0.0.0.0' : '127.0.0.1';
+// (A relay binds 0.0.0.0, in relayServer.js.)
+const BIND_HOST = '127.0.0.1';
 
-// Without the handler below, a failed listen() (most commonly EADDRINUSE — another
-// SpiritOS instance, or anything else, already on this port) surfaces as
-// a raw unhandled 'error' event and a Node internals stack trace, same
-// failure class verifyStartupCwd() above already fails loud and clear
-// for instead.
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(
-      `Refusing to start: port ${port} is already in use — probably another SpiritOS instance (or anything else) already listening there.\n\n` +
-      `Try a different port:\n` +
-      `    node js/server.js --port ${port + 1}`
-    );
-  } else {
-    console.error(`Refusing to start: ${err.message}`);
-  }
-  process.exit(1);
-});
+// A failed listen() — most commonly EADDRINUSE — answered loud and clear,
+// not as a Node internals stack trace. See serveCommon.js.
+common.refuseListenError(server, port, 'js/server.js');
 
 // A SIXTY-SECOND INBOX SWEEP STOOD HERE (packet 7) — the personal node
 // pulling its own mail off a relay without being asked, so that per-peer
@@ -1564,7 +893,9 @@ server.on('error', (err) => {
 // asking a relay to have kept something, and a relay keeps nothing
 // (decision 0006).
 
-if (!relayMode) {
+// THE PERSONAL NODE'S BOOT. It read `if (!relayMode)` until cycle 0; a
+// relay is booted by relayServer.js now, so this block always runs.
+{
   // ── A NODE THAT HAS NEVER BEEN DESCRIBED DESCRIBES ITSELF ──────────
   //
   //   Andy: "lots of empty node-descriptions right now ... on boot: the
@@ -1658,12 +989,12 @@ if (!relayMode) {
   //
   // Built HERE rather than inside peerPost so the gate is visible at the
   // one place that knows which kind of process this is. The block it
-  // sits in is already personal-mode only; `relayMode` is passed anyway,
-  // because the file it writes would hold everybody's messages on a
-  // relay — not metadata, the content — and that is the worst thing in
-  // the system, not a softer version of the ring 0006 deletes. A guard
-  // that only holds while the surrounding code stays where it is, is not
-  // a guard.
+  // sits in is personal-mode only, because the file it writes would hold
+  // everybody's messages on a relay — not metadata, the content — and that
+  // is the worst thing in the system, not a softer version of the ring
+  // 0006 deletes. A guard that only holds while the surrounding code stays
+  // where it is, is not a guard: which is why, since cycle 0, a relay is a
+  // different startup module that never loads trafficLog.js at all.
   // WHAT THIS NODE ANSWERS WHEN ITS RELAY ASKS.
   //
   // Almost everything on that stream is a peer's request and gets the
@@ -2079,16 +1410,8 @@ if (!relayMode) {
     // page costs no client code at all.
     try { told += require('./presence').sayGoingAway(Array.from(pageStreams), 3000); }
     catch (e) { /* no page open */ }
-    if (relayMode) {
-      try { told += relay.presence.goingAway(3000); }
-      catch (e) { /* nothing to tell, or already gone */ }
-      // The streams this relay HOLDS, as opposed to the ones it serves.
-      // Closed rather than left to the process exiting, so a partner sees
-      // a clean end and reconnects on its own clock instead of waiting out
-      // the idle watchdog.
-      try { if (partnerLinks) partnerLinks.stop(); }
-      catch (e) { /* already gone */ }
-    }
+    // The relay half of this goodbye — its members and partner streams —
+    // is relayServer.js since cycle 0. Same sayGoingAway, same three seconds.
     console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
     // The sockets are closed by sayGoingAway, so what is left is this
     // process. Exit rather than waiting for the default handler, which
@@ -2101,76 +1424,5 @@ if (!relayMode) {
 }
 
 server.listen(port, BIND_HOST, () => {
-  if (relayMode) {
-    console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
-    // relayAuth.loadAllow treats a missing or unreadable allow.json as
-    // mode 'open': any name claimable by anyone, any sender accepted, no
-    // signature required. That is the right default for a lab relay and
-    // the wrong one for a public box, and until now the two were
-    // indistinguishable from the console — an open relay looked exactly
-    // like a working one right up until someone else claimed your name.
-    // Say which one this is.
-    if (require('./relayAuth').loadAllow(ROOT_DIR).mode === 'open') {
-      console.warn(
-        // WHAT AN OPEN RELAY ACTUALLY RISKS, which is one thing now and
-        // was three. "send as anyone, and read any relay" went with the
-        // ring (R8): there is nothing to read and no way to send. What is
-        // left is the one that matters — the first claim takes the box.
-        '    WARNING: no relay-state/allow.json — this relay is OPEN. Anyone who can reach it\n' +
-        '    may take the first claim, and the first claim is the OWNER (decision 0003).\n' +
-        '    Run install-public-relay.js to reserve a name, or create relay-state/allow.json\n' +
-        '    (a { "keys": [...] } list) by hand.'
-      );
-    }
-
-    // THE HEARTBEAT STOOD HERE, and it was wrong from the day it shipped.
-    //
-    // R9 pushed a status report every ten seconds for ever, watched or
-    // not, so a relay with nobody looking at it spent cycles on telemetry
-    // for an empty room. A box that must survive and earn its keep (0007)
-    // has no business doing that, and the monitor verbs make it
-    // indefensible rather than merely wasteful.
-    //
-    // What replaced it: the owner POSTS to the relay — it is an
-    // addressable peer for them and nobody else — and the relay answers
-    // by hash on their own stream. The panel asks when it opens and again
-    // when it closes, and the whole thing dies on its own if that stream
-    // drops. A relay nobody is watching now does exactly nothing about
-    // being watched, and there is no verb here for it to do it with.
-
-    // -- AND IT DIALS ITS PARTNERS ------------------------------------
-    //
-    //   Andy: "Both partners must have the mutual sseClients alive in
-    //   this pass."
-    //
-    // Until now a relay's boot was ONE LINE — ensureIdentity — and it
-    // opened no outbound connection to anyone. Every partner gate built
-    // this afternoon was a door nobody would ever knock on.
-    //
-    // ONE STREAM EACH WAY, because the stream is the INBOUND half of the
-    // interface: B's answers to A land on the stream A holds, so if only
-    // one end dialled, the other could ask nothing. Both ends run this,
-    // so both ends can ask.
-    //
-    // Its own peerPost, signing as this relay's identity, with
-    // relayRequest injected — the same interface a node uses, which is why
-    // this needed no new transport and inherits the backoff, jitter, idle
-    // watchdog and `retry:` handling without a line of its own.
-    partnerRouter = require('./peerPost').createPeerPost({
-      rootDir: ROOT_DIR,
-      request: require('./relayRequest').relayRequest,
-      // NO TRAFFIC LOG. peerPost takes it injected precisely so a relay
-      // can omit it: that file is correct on a personal node and is "the
-      // worst thing in the system on a relay" (peerPost.js).
-    });
-    partnerLinks = require('./partnerLink').createPartnerLinks({
-      rootDir: ROOT_DIR,
-      relay: relay,
-      router: partnerRouter,
-    });
-    const dialled = partnerLinks.start();
-    if (dialled) console.log(`    holding ${dialled} partner stream(s)`);
-  } else {
-    console.log(`Server listening on http://localhost:${port}`);
-  }
+  console.log(`Server listening on http://localhost:${port}`);
 });
