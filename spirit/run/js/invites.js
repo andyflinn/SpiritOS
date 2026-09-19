@@ -121,6 +121,8 @@ function match(rootDir, token, label) {
   // there is no second state to distinguish.
   if (!row) return { ok: false, status: 403, error: 'invite not found' };
 
+  // DEPRECATED(D4, expires: alpha) — rows the old `consume` stamped.
+  // See design/DEPRECATIONS.md (decision 0014).
   // LEGACY ROWS FROM BEFORE SPENT MEANT GONE, and this line is load-
   // bearing on exactly one day: the day a running relay takes this code.
   //
@@ -201,6 +203,7 @@ function sweepExpired(rootDir, nowMs) {
   // function could not do its job: it protected exactly the rows that had
   // no reason left to exist.
   //
+  // DEPRECATED(D4, expires: alpha) — draining the stamped rows.
   // It is now the opposite — a stamped row is a LEGACY row, from before
   // spent meant gone, and it goes on sight whatever its expiry says. That
   // is the migration: a relay upgrading in place drains its old guestbook

@@ -175,6 +175,14 @@ This directory contains the vision, principles, and architecture decisions for *
   mechanism that answers routing and presence in one call, and the precise
   amendment 0012 needs.
 
+- [0014 — Deprecations expire at releases](decisions/0014-deprecations-expire-at-releases.md)
+  — code that only reads or converts an older format is marked with an
+  expiry release. At every official release each expired one gets a risk
+  assessment and is eliminated or kept, recorded; a release with an expired
+  deprecation and no decision does not ship. The register is
+  [DEPRECATIONS.md](DEPRECATIONS.md); `spirit/test/deprecations.js` keeps
+  markers and rows in step, and `--release <name>` is the gate.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.

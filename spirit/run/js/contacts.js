@@ -195,6 +195,8 @@ function bookPath(rootDir) {
 // It renames rather than copies, deliberately. Two files holding contacts
 // is the failure worth avoiding; losing somebody's book is the other, and
 // a rename risks neither.
+// DEPRECATED(D2, expires: alpha) — the book under its old name,
+// relay-state/who.json, renamed on first read. See design/DEPRECATIONS.md (decision 0014).
 function migrateOldName(rootDir) {
   const now = bookPath(rootDir);
   if (fs.existsSync(now)) return;
@@ -210,6 +212,7 @@ function load(rootDir) {
     const parsed = JSON.parse(fs.readFileSync(bookPath(rootDir), 'utf8'));
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
+    // DEPRECATED(D2, expires: alpha) — the fallback read of who.json.
     // THE OLD NAME, ONCE, only if the rename above could not run — a
     // read-only mount, a permission, a file held open. Not a fallback
     // anybody relies on: it exists so a migration that fails is still not

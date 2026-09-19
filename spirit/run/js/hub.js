@@ -425,6 +425,8 @@ var UNKNOWN_PREFS_FILE = ['preferences.json'];
 // that had chosen `acquire` does not silently fall back to `silent` on
 // the day this moved — the same courtesy routingTable.json paid
 // mailbox.json. Nothing writes this name again.
+// DEPRECATED(D3, expires: alpha) — the policy's old home,
+// app/contacts/prefs.json field `unknown`. See design/DEPRECATIONS.md (decision 0014).
 var LEGACY_UNKNOWN_PREFS_FILE = ['app', 'contacts', 'prefs.json'];
 
 // SETTING IT IS THE NODE'S JOB, not an app's. Contacts draws the radios

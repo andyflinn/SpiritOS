@@ -270,6 +270,9 @@
   //
   // Entries stay forever. The operator whose preferences.json still says
   // 'stats' may be opening this shell for the first time in a year.
+  // DEPRECATED(D7, expires: alpha) — preferences naming apps by their old
+  // bare ids, rewritten to app/… at load.
+  // See design/DEPRECATIONS.md (decision 0014).
   var APP_ID_RENAMES = {
     stats: 'app/stats',
     jobs: 'app/jobs',

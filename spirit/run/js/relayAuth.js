@@ -284,6 +284,9 @@ function loadAllow(rootDir) {
       });
       return { mode: 'keys', byName: byName };
     }
+    // DEPRECATED(D6, expires: alpha) — a names-mode allow.json falls
+    // through to open below.
+    // See design/DEPRECATIONS.md (decision 0014).
     // NAMES MODE STOOD HERE — `{ "names": [...] }`, a list of labels
     // allowed to claim with no key behind any of them. Deleted on
     // 2026-09-15.

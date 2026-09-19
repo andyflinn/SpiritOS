@@ -224,6 +224,9 @@ function stateFile(rootDir) {
 // boot. It stays unservable, and servableAssets.js still says so: a full
 // roster sitting in relay-state must not become readable just because
 // nothing reads it any more.
+// DEPRECATED(D1, expires: alpha) — reads a routingTable.json from older
+// code: `name` folded into `publicLabel`, the ring's `messages`/`nextId`
+// dropped. See design/DEPRECATIONS.md (decision 0014).
 function loadRoutingTable(rootDir) {
   try {
     var raw = fs.readFileSync(stateFile(rootDir), 'utf8');
