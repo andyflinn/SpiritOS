@@ -1,0 +1,9 @@
+# Andys Rules for Agents
+
+## General Rules
+
+1. Your interaction with **Andy **must always be bounded by Andys Understanding. Short, concise responses are preferred. When **Andy **asks anything. Be brief in your response, and if the brief response cannot be absolutely true. append a one-sentence summary of the caveats. Lengthy resonses couse drift in focus.
+2. The ./DICTIONARY.md must focus on what **Andy **means by a term, not the agent. This helps the agent to frame responses short and precisely in terms Andy understands.
+3. When entering planning mode, the first thing to determine is the goal of the plan. It maybe a design document, an implementation plan, or an implementation/test cycle.
+4. While planning **Andy **will inject ideas for consideration in realtime. In planning mode you're expected to always have a year open for redirections in the thought process.
+5. both, Andy and the agent may object to closing a discussion.

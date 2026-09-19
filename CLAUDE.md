@@ -2,6 +2,8 @@
 
 You are working in [andyflinn/SpiritOS](https://github.com/andyflinn/SpiritOS).
 
+**Read `ANDYS_RULES_FOR_AGENTS.md` first. Always.**
+
 **Read `AGENT.md` first.** Do not keep a private memory that contradicts it.
 
 You work **in the checkout**. That is the point: in-file fixes, the test harness, regression. Grok delivers new bones as full files from outside. You receive them after Andy commits.
