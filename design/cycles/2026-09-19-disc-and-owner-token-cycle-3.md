@@ -188,4 +188,6 @@ refuses to start, with the exit code, the unit setting, and `bash/restart` /
   lever of its own; cycle 4's monitor can draw it.
 - Search walks the whole roll through the cursor. That is RAM-flat but not
   disc-flat. An indexed prefix search is optimization, and is not needed
-  here.
+  here. Measured: about 5.5 µs per member (100,000 in about 550 ms). The walk
+  is synchronous, so the relay stalls while it runs. It feeds the timeout
+  floor (NODE-AND-RELAY §10).

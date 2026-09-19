@@ -2080,6 +2080,40 @@ after the asker has gone. **Open:**
   signed beside it like the hints. That is a wire decision, not needed until
   the lever moves.
 
+**How the floor is found (decided, Andy, 2026-09-19).**
+
+> *"While setting a fixed starting timeout of, let's say, 10 seconds, we then
+> measure the performance of a clueless search (no routes yet) to n partners,
+> which happens in parallel, and place the timeout floor in that
+> neighbourhood … the hardcoded floor must be that measurement plus 1 second,
+> or that measurement × 1.5 or so."*
+
+1. **Start generous.** N1 waits a fixed ~10 s, with every inner hop nested
+   below it, so no legitimate search is cut off while we learn.
+2. **Measure the worst ordinary case.** A search from N1 with no known routes,
+   which A fans out to all *n* partners in parallel (`Promise.all`,
+   [relay.js:2614](../../spirit/run/js/relay.js#L2614)). It takes A's own walk,
+   plus the slowest partner's walk, plus the trips. So it grows with *n* and
+   with the largest partner roll.
+3. **The hard-coded floor is that measurement + 1 s, or × 1.5**, whichever is
+   larger. + 1 s protects a short measurement against jitter; × 1.5 scales
+   with a long one.
+
+*This corrects a proposal the same day that picked the numbers directly (N1 at
+1–5 s starting at 3 s, the search assumed to take 2 s). The floor comes from
+measurement, not a guess.*
+
+**Known so far.** A roll walk, measured 2026-09-19 on the workstation: about
+5.5 µs per member, so 10,000 members take 40–90 ms and 100,000 about 550 ms.
+The walk is synchronous, so that relay handles nothing else while it runs.
+Localhost says nothing about real links: the measurement needs real relays
+(spirit-3 and a second relay; lab never runs against spirit-3).
+
+**The measurement, when built.** A times each propagated search from start
+to merged answer. It keeps the most recent value and the maximum, with *n*
+and how many partners answered. It rides the owner report that already
+exists, so nothing new goes on the wire, and cycle 4's monitor draws it.
+
 ---
 
 ## Approach: cheap measurements first, then learn
