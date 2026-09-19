@@ -159,11 +159,10 @@ function relayWith(tag, memberNames) {
   return { home, box, owner, people, inboxes, key: box.relayPublicKey() };
 }
 
-// `atRelayKey` is the fifth argument, and naming it here is the point:
-// **nothing on the wire supplies it.** The public route calls routePost
-// with four, so forwarding cannot be triggered by anybody until it is
-// decided how a node tells its relay where a peer lives — 0012 says the
-// node has the answer, and a post has no field to carry it.
+// `atRelayKey` is the fifth argument: a trusted partner key, the in-process
+// hook this suite drives forwarding through. From the wire the same slot
+// carries signed route hints instead (cycle 2) — see routeHints.js and
+// hintWire.js — which the relay verifies before choosing ONE partner.
 //
 // The first version needed no such argument because it BROADCAST to every
 // partner, which disclosed a member's packet to relays that had no
@@ -426,9 +425,9 @@ test.subHeading('And sonny’s answer reaches jazz');
     test.fail('something iterates the partner list: ' + body.slice(0, 200));
   }
 
-  // AND UNNAMED MEANS UNSENT. This is the state the public route is in:
-  // it calls routePost with four arguments, so a forward is unreachable
-  // from the wire until it is decided how a node names the target's relay.
+  // AND UNNAMED MEANS UNSENT. A post that names no partner — no key in
+  // process, no hints on the wire — is never guessed at. (Since cycle 2 a
+  // node names one with route hints; without them this still holds.)
   D.inboxes.dave.length = 0;
   const unnamed = post(A.box, A.people.jazz, D.people.dave.publicKey, { describe: true });
 

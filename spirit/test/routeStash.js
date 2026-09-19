@@ -33,7 +33,10 @@ function freshRoot() {
 
 const KNOWN = 'MCowBQYDK2VwAyEA' + 'k'.repeat(27) + '=';
 const STRANGER = 'MCowBQYDK2VwAyEA' + 's'.repeat(27) + '=';
-const AT = 'https://lab.example';
+// A RELAY KEY, not a URL (cycle 2): the relay announces `at` as the
+// partner's key, and it lands in `routes`, which holds keys only.
+const AT = 'MCowBQYDK2VwAyEA' + 'r'.repeat(27) + '=';
+const AT2 = 'MCowBQYDK2VwAyEA' + 'q'.repeat(27) + '=';
 
 test.startTest('A proven route lands on a row that already exists');
 
@@ -47,17 +50,25 @@ const before = contactBook.load(root).length;
 
 const updated = contactBook.learnRoute(root, KNOWN, AT);
 
-if (updated && (updated.relays || []).indexOf(AT) !== -1) {
+if (updated && (updated.routes || []).indexOf(AT) !== -1) {
   test.check('the route lands on the row, beside any already there');
 } else {
   test.fail('not stashed: ' + JSON.stringify(updated));
+}
+
+// AND NOT IN `relays`, which holds URLs. It used to land there, mixing
+// keys and URLs in one list so neither could be relied on (cycle 2).
+if (updated && (updated.relays || []).indexOf(AT) === -1) {
+  test.check('and not in `relays` — keys and URLs are kept apart');
+} else {
+  test.fail('the route key was written into relays[]');
 }
 
 // IT SURVIVES A RELOAD, because the point of learning a route is not
 // having to learn it again — and because a relay that reboots is
 // re-primed by its members, which only works if the members kept it.
 const reloaded = contactBook.byPublicKey(root, KNOWN);
-if (reloaded && (reloaded.relays || []).indexOf(AT) !== -1) {
+if (reloaded && (reloaded.routes || []).indexOf(AT) !== -1) {
   test.check('and it is on disk, which is what re-primes a relay that restarted');
 } else {
   test.fail('the route did not persist');
@@ -104,7 +115,7 @@ contactBook.learnRoute(root, KNOWN, AT);
 contactBook.learnRoute(root, KNOWN, AT);
 
 const row = contactBook.byPublicKey(root, KNOWN);
-const times = (row.relays || []).filter(function (u) { return u === AT; }).length;
+const times = (row.routes || []).filter(function (u) { return u === AT; }).length;
 
 if (times === 1) {
   test.check('the route is recorded once however often it is announced');
@@ -115,11 +126,11 @@ if (times === 1) {
 // A SECOND, DIFFERENT ROUTE IS KEPT, because a peer on two relays is the
 // ordinary case for anybody who owns one — and the second route is the
 // one that works when the first is down.
-contactBook.learnRoute(root, KNOWN, 'https://spirit.example');
-const both = contactBook.byPublicKey(root, KNOWN).relays || [];
+contactBook.learnRoute(root, KNOWN, AT2);
+const both = contactBook.byPublicKey(root, KNOWN).routes || [];
 
-if (both.length === 2 && both.indexOf('https://spirit.example') !== -1) {
-  test.check('and a different one is added beside it: ' + both.length + ' routes held');
+if (both.length === 2 && both[0] === AT2 && both[1] === AT) {
+  test.check('and a different one is added in front of it, newest first: ' + both.length + ' routes held');
 } else {
   test.fail('the second route was lost: ' + JSON.stringify(both));
 }

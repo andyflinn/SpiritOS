@@ -570,6 +570,13 @@ everything lives.
   delivered. Landing it earlier would shrink every search result by 512 bytes
   for a path nothing can take.
 - **Route hints are siblings of the packet, never contents of it.**
+  **Built 2026-09-19 (cycle 2,
+  [the cycle](../cycles/2026-09-19-route-hints-cycle-2.md))** as written
+  here: `{ from, to, text, sig, hints, hintSig }`, `hintSig` over the
+  packet's own `sig` (`relayAuth.hintMessage`), dropped at the first relay.
+  The tunnel predicate landed in the same commit as `limits.fitsWrapped`.
+  *Superseded in one detail: "the relay caches what it used" — the relay
+  keeps no route cache (NODE-AND-RELAY §9b, routes are the node's).*
 
   > **Andy:** *"routing hints in a peerPost() must be stripped before
   > routing, because they're useless on the other side, and would blow the

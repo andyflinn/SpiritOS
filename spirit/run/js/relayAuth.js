@@ -154,6 +154,27 @@ function postSignatureFor(publicKey, from, to, text, sig, atMs) {
   return '';
 }
 
+// ── ROUTE HINTS, SIGNED BESIDE THE PACKET (cycle 2) ──────────────────
+//
+// design/relay/SURFACE.md §8: hints are SIBLINGS of the signed packet —
+// `{ from, to, text, sig, hints, hintSig }` — consumed and dropped by the
+// first relay, so they can never sit inside the packet's signature. They
+// get their own, because a relay ACTS on them: an unsigned hint block is
+// a forgeable route claim (ROUTE-DISCOVERY.md's harvest vector).
+//
+// Bound to THIS packet by signing over its `sig`: a hint block lifted off
+// one post cannot be replayed onto another, and no clock is needed — the
+// packet's own signature already carries the minute.
+function hintMessage(postSig, hints) {
+  return 'hints\n' + String(postSig || '') + '\n' +
+    (Array.isArray(hints) ? hints.map(String).join('\n') : '');
+}
+
+function hintsSigned(publicKey, postSig, hints, hintSig) {
+  if (!publicKey || !postSig || !hintSig || !Array.isArray(hints) || !hints.length) return false;
+  return verify(publicKey, hintMessage(postSig, hints), hintSig);
+}
+
 // The name of a request, everywhere in the chain.
 function requestHash(message) {
   return crypto.createHash('sha256').update(String(message || ''), 'utf8').digest('hex');
@@ -458,6 +479,8 @@ module.exports = {
   streamMessage,
   streamSignatureOk,
   postMessage,
+  hintMessage,
+  hintsSigned,
   postSignatureFor,
   requestHash,
   receiptMessage,

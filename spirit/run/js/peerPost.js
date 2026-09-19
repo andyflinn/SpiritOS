@@ -22,6 +22,9 @@
 // is why the hash comes back even on the fast path.
 
 const auth = require('./relayAuth');
+// The hint bound and the tunnel predicate (cycle 2) — one file for the
+// relay, the node and the page, so all three agree what fits.
+const limits = require('./limits.js');
 // The address book, for one question only: may this key be COUNTED.
 // Admission is the front door's answer and arrives as `verdict`; whether
 // a sender's numbers move is a fact about the book — see the rules at the
@@ -85,6 +88,13 @@ function createPeerPost(opts) {
   var rootDir = opts.rootDir;
   var request = opts.request;
   var waitMs = opts.waitMs || DEFAULT_WAIT_MS;
+  // THE TUNNEL CHECK AT COMPOSE (cycle 2). A NODE cannot know whether a
+  // packet will be carried across a partnership, so it refuses up front
+  // one that would not fit once wrapped (limits.fitsWrapped) — on every
+  // route, because a signed packet cannot be trimmed at the far hop. Off
+  // for a relay's own peerPost: what a relay sends a partner IS the
+  // wrapper, addressed to the partner itself, and is never tunnelled again.
+  var checkTunnel = !!opts.checkTunnel;
   var setT = opts.setTimeoutImpl || setTimeout;
   var clearT = opts.clearTimeoutImpl || clearTimeout;
 
@@ -240,7 +250,12 @@ function createPeerPost(opts) {
   // thing that will match its answer exists. A reply that arrives before
   // the waiter does is a reply with nowhere to go, and the symptom is
   // silence rather than an error.
-  function post(relayUrl, toKey, text) {
+  //
+  // `hints` (cycle 2): the relays the recipient is enrolled at, by key,
+  // from the contact row — sent beside the packet and signed on their own
+  // (relayAuth.hintMessage), so the first relay can act on them and drop
+  // them. Absent for a recipient on a relay this node holds.
+  function post(relayUrl, toKey, text, hints) {
     var id = me();
     if (!id || !id.privateKey) {
       return Promise.resolve({ ok: false, status: 500, error: 'this node has no identity' });
@@ -253,6 +268,17 @@ function createPeerPost(opts) {
     var message = auth.postMessage(id.publicKey, toKey, text);
     var sig = auth.sign(id.privateKey, message);
     var hash = auth.requestHash(message);
+
+    if (checkTunnel && !limits.fitsWrapped(text, id.publicKey, toKey, sig)) {
+      return Promise.resolve({
+        ok: false, status: 413, hash: hash,
+        error: 'too big to tunnel — this packet would not fit if carried to a partner',
+      });
+    }
+
+    var hintList = Array.isArray(hints)
+      ? hints.filter(function (k) { return typeof k === 'string' && k; }).slice(0, limits.HINTS_PER_POST)
+      : [];
 
     var answered = new Promise(function (resolve) {
       waiting[hash] = {
@@ -285,9 +311,12 @@ function createPeerPost(opts) {
 
     return Promise.resolve()
       .then(function () {
-        return request(relayUrl, 'POST', '/api/relay/post', {
-          from: id.publicKey, to: toKey, text: text, sig: sig,
-        });
+        var body = { from: id.publicKey, to: toKey, text: text, sig: sig };
+        if (hintList.length) {
+          body.hints = hintList;
+          body.hintSig = auth.sign(id.privateKey, auth.hintMessage(sig, hintList));
+        }
+        return request(relayUrl, 'POST', '/api/relay/post', body);
       })
       .then(function (res) {
         var body = {};
@@ -602,6 +631,19 @@ function createPeerPost(opts) {
       .catch(function () { return ''; })
       .then(function (said) {
         var text = typeof said === 'string' ? said : '';
+        // THE TUNNEL CHECK, ON THE WAY BACK (cycle 2). This node cannot
+        // tell whether the request crossed a partnership — it arrives the
+        // same either way — so an answer that would not survive being
+        // wrapped for the return is not sent. The receipt still goes, with
+        // no text: "it arrived, no answer travelled", which is the honest
+        // reading of an empty reply. The log records why.
+        if (checkTunnel && text && !limits.fitsWrappedReply(text, id.publicKey, receipt)) {
+          note({
+            dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
+            hash: hash, outcome: 'reply too big to tunnel',
+          });
+          text = '';
+        }
         return request(relayUrl, 'POST', '/api/relay/reply', {
           from: id.publicKey, hash: hash, text: text, sig: receipt,
         }).then(function () {

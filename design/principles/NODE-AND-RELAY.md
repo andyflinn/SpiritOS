@@ -240,6 +240,42 @@ an observer of it. Anything below that reads as the owner adjusting a lever,
 a bound or the configuration at runtime is outside this design and marked
 where it appears.
 
+### Superseded later the same day: each lever declares whether it is live
+
+> **Andy (2026-09-19):** *"The partner-to-partner API and the lever
+> configuration API on the relay are scaffolding too, even if they change
+> shape later on."* — *"What it allows us to do: proof that ceilings can be
+> changed from 'dynamic' to fixed for max-connections. And it gives us the
+> vehicle to decide which levers can be real-time altered or not."* —
+> *"Bounded by 1) the box and 2) configured RAM limits. The scope of owner
+> control on levers cannot override configuration values that protect other
+> servers on the same box."* — *"Higher-order limits are read once, at
+> startup, and stay fixed."*
+
+**Decided.** *This supersedes the scope rule above in part: the owner may now
+move a lever at runtime — but only a lever that declares it.* Three layers,
+each bounded by the one above:
+
+| layer | changed while running? |
+|---|---|
+| **the box** | never — it is the fact |
+| **the configuration** — `ramLimitMB`, and any value protecting other servers on the same box | **never.** Read once at startup, fixed until restart; no owner command overrides it |
+| **levers** | only a lever that **declares itself live-changeable**, and only inside the two above |
+
+- **The lever configuration API** is an owner-signed post to the relay
+  itself, like the owner verbs that already exist (`relayLabel`, `monitor`)
+  — no new route. Refused for a lever not declared live.
+- **Its first job is a proof:** switch max connections from `"dynamic"` to a
+  fixed number while the relay runs, and watch the Governor respect it.
+- **Live settings persist to `relay-state/levers.json`**, never to
+  `config.json` — the file holding the protections is only ever written by a
+  person with a shell.
+- **Grants stay live** as before: injecting a partner, minting an invite.
+- **The Governor is still programming**; a live lever setting is a bound or a
+  pin inside which it works, not a second input it must arbitrate.
+- **Build sequence:** the configuration API is scaffolding, cycle 4 beside
+  the visual monitor — one shows a lever, the other moves it.
+
 **The allow-list is the vouching.** A partnership is a statement of trust —
 PARTNERS.md's *"mutual vouchery"* — so a relay choosing partners freely would
 be vouching on its owner's behalf for a box the owner never saw. An owner
@@ -607,7 +643,10 @@ optimisation. Each level may narrow the one above it and never widen it.
 
 **Configuration by verb, not by file — superseded 2026-09-19.** *The
 configuration is a file (the hierarchy above) and is not changed while the
-relay runs (§5, scope). Kept as the record of what was proposed:* A relay
+relay runs (§5, scope). Kept as the record of what was proposed.* *Revived in
+part later the same day: the configuration stays file-only and fixed, but
+levers that declare themselves live may be moved by an owner verb, persisted
+to `levers.json` (§5, "each lever declares whether it is live").* A relay
 is already addressable by its owner: `relayLabel`, `removePeer` and
 `partner` are owner verbs on `answerSelf`. Setting the ceiling that way
 mirrors §3 exactly — **diagnosis by report, configuration by verb, neither
@@ -1641,7 +1680,8 @@ ordering to the node and had the relay follow it.*
 `learnRoute` stashes a route a relay has proven onto an existing row and
 never creates one ([contacts.js:411](../../spirit/run/js/contacts.js#L411)).
 The divergence: the tree stores relay **URLs**; this decision says relay
-**IDs**.
+**IDs**. *Resolved by cycle 2: contact rows gain `routes`, relay keys only,
+and `learnRoute` writes there; `relays` (URLs) is left as it was.*
 
 ### A warm partner row carries an outstanding-post count
 
@@ -2200,9 +2240,12 @@ is proven (§6).
 human, inside the owner's candidate list (§5).
 
 **Scope** (Andy, 2026-09-19): the Governor is the result of programming. The
-owner's only real-time tool while node and relay run is injecting foreign
-partners; the owner's node observes, and never moves a lever, a bound or the
-configuration at runtime (§5).
+owner's real-time tools are signed grants and **levers that declare
+themselves live-changeable** — through the lever configuration API, persisted
+to `levers.json`. **Higher-order limits** — the box and the configuration,
+including anything protecting other servers on the box — are read once at
+startup and never changed by the owner at runtime (§5). *Corrected the same
+day: this first said the owner never moves a lever.*
 
 **The baseline is an entry-level VPS**, already assumed everywhere and never
 written down. RAM binds first; disk is the backstop.
@@ -2235,8 +2278,8 @@ shape.
 | done | 1 | configuration, connection allowance, one-lever Governor, monitor rows | checkpoint, `c67ab1e`; live run moved to optimization |
 | scaffolding | 2 | **route hints end to end** — the relay accepts the hint, the node sends it, contacts store relay IDs; route announcements fill contacts | **locked in — next** (Andy) |
 | scaffolding | 3 | **SQLite** for the roll and invites (identity, allow, config stay files); **the owner's first-claim token** and the installer | agreed (Andy) |
-| scaffolding | 4 | **the owner's visual monitor**, generic over levers — any lever in the report is drawn with position, floor, share and last move, so a new lever needs no UI work | agreed (Andy) |
-| scaffolding | 5 | **partner acquisition**, the §5 model; partner roll born in SQLite | agreed (Andy) |
+| scaffolding | 4 | **the owner's visual monitor**, generic over levers — any lever in the report is drawn with position, floor, share and last move, so a new lever needs no UI work — **and the lever configuration API** beside it (§5): the monitor shows a lever, the API moves one that declares itself live | agreed (Andy) |
+| scaffolding | 5 | **partner acquisition**, the §5 model, **with the partner-to-partner API** (describe, propose/consent, terms); partner roll born in SQLite | agreed (Andy) |
 | optimization | 6 | **dynamic shares** — fixed owner reservation, shares recomputed on connect/disconnect, fixed caps converted (§10) | |
 | optimization | 7 | DISC allotments; cycle 1's live run; Governor learning | |
 | before separate shipping | — | version tolerance (§7) | |
@@ -2295,16 +2338,14 @@ none is mine to take.
 
 - **Version tolerance** (§7) — the cost of the evolution split, and the one
   thing that gets harder the longer it is left.
-- **The route hint has no place on the wire** (found 2026-09-19). The relay
-  can forward to a partner — `routePost` takes `atRelayKey` — but no route
-  carries it and the node's `peerPost` does not send it, so partner
-  forwarding runs only in-process. Deferred with acquisition; recorded so the
-  discrepancy does not dangle unwritten.
-- **MAX_TEXT through a partner is untested.** A forward wraps the whole post
-  in a JSON envelope that becomes the text of a new post; near 16 KB the
-  escaping and extra fields likely push it past the partner's
-  `MAX_ROUTED_TEXT`. No test sends a large post across a partnership.
-  Deferred with acquisition.
+- ~~**The route hint has no place on the wire**~~ — **resolved by cycle 2**
+  ([the cycle](../cycles/2026-09-19-route-hints-cycle-2.md)): signed hints
+  beside the packet, the relay choosing one partner, the node sending them
+  from its contacts' `routes`.
+- ~~**MAX_TEXT through a partner is untested**~~ — **resolved for posts by
+  cycle 2** (`limits.fitsWrapped`, checked at compose and before carrying;
+  Andy's suspicion was right — a near-cap quote-dense packet would have
+  413'd at the far hop). **Still open for replies** crossing back.
 - **"Capable of partnership" has nothing on the wire to check** (§5). The
   census the old handshake used is gone; the answer is probably the same
   thing §7 needs — a box saying what it speaks.

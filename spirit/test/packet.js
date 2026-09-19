@@ -161,10 +161,13 @@ test.subHeading('One number, in one place');
   // THE CAP ON THE SOCKET IS DERIVED, not a third literal — it has to
   // move when the payload cap moves, or it is either strangling
   // legitimate traffic or leaving the hole it was written to close.
-  if (limits.BODY_MAX === limits.PAYLOAD_MAX + limits.WIRE_HEADROOM) {
-    test.check('and the socket cap is the payload cap plus headroom, derived');
+  //
+  // Plus the route hints' own room since cycle 2: they sit beside the
+  // packet, never inside PAYLOAD_MAX, so the socket accepts them on top.
+  if (limits.BODY_MAX === limits.PAYLOAD_MAX + limits.WIRE_HEADROOM + limits.HINTS_MAX) {
+    test.check('and the socket cap is the payload cap plus headroom plus the hints’ room, derived');
   } else {
-    test.fail('BODY_MAX ' + limits.BODY_MAX + ' is not PAYLOAD_MAX + WIRE_HEADROOM');
+    test.fail('BODY_MAX ' + limits.BODY_MAX + ' is not PAYLOAD_MAX + WIRE_HEADROOM + HINTS_MAX');
   }
 
   // Headroom over the MEASURED overhead, not under it. 246 was exact at

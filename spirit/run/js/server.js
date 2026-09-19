@@ -1019,6 +1019,9 @@ common.refuseListenError(server, port, 'js/server.js');
   peerRouter = require('./peerPost').createPeerPost({
     rootDir: ROOT_DIR,
     request: require('./hub').relayRequest,
+    // A node cannot know whether a packet will be tunnelled, so it refuses
+    // at compose one that would not fit once wrapped (cycle 2, SURFACE §8).
+    checkTunnel: true,
     answer: answerer.answer,
     // WHO THIS NODE WILL HEAR FROM. The same question listenSet has
     // always answered for the `inbox` read, asked on the path packets

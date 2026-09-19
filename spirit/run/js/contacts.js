@@ -229,6 +229,20 @@ function save(rootDir, rows) {
   fs.writeFileSync(bookPath(rootDir), JSON.stringify(rows, null, 2));
 }
 
+// A contact's routes: relay keys, newest first, no duplicates, and a
+// bounded few — a route is only worth keeping while it might be the one a
+// post needs, and the relay reads at most HINTS_PER_POST of them anyway.
+var ROUTES_KEPT = 8;
+function normalizeRoutes(list) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  list.forEach(function (key) {
+    const k = String(key || '').trim();
+    if (k && out.indexOf(k) === -1) out.push(k);
+  });
+  return out.slice(0, ROUTES_KEPT);
+}
+
 function normalizeRelays(list) {
   if (!Array.isArray(list)) return [];
   const out = [];
@@ -263,6 +277,13 @@ function upsert(rootDir, row) {
     // would do it if this were dropped on every upsert.
     blocked: row.blocked === undefined ? isBlocked(prev) : !!row.blocked,
     relays: normalizeRelays(row.relays != null ? row.relays : prev.relays),
+    // WHERE THIS CONTACT IS REACHED, by relay ID (cycle 2). Location, not
+    // identity: the key above says who they are, these say which relays
+    // they are enrolled at — Andy: "they are always the ID of the relay it
+    // is enrolled at." Sent as route hints when they are not on a relay
+    // this node holds. Relay KEYS only; `relays` above holds URLs and is
+    // left as it was.
+    routes: normalizeRoutes(row.routes != null ? row.routes : prev.routes),
     // Carried like `blocked`, and set by the reconcile alone. Unlike the
     // rank above it CAN fall, and must: evicting somebody empties it, and
     // that is what turns them back into an ordinary deletable contact.
@@ -408,19 +429,25 @@ function acquire(rootDir, peer, via) {
 //
 // Returns the row it updated, or null when there was nothing to update --
 // so a caller can tell "stashed" from "ignored" without asking twice.
-function learnRoute(rootDir, publicKey, relayUrl) {
+//
+// THE ROUTE IS A RELAY KEY (cycle 2). The relay announces `at` as the
+// partner's relay key, and it lands in `routes`, which holds keys only.
+// It used to be pushed into `relays`, which otherwise holds URLs — two
+// kinds of thing in one list, so nothing could use either reliably.
+// Newest first: a route just proven is the likeliest to work next.
+function learnRoute(rootDir, publicKey, relayKey) {
   var key = String(publicKey == null ? '' : publicKey).trim();
-  var url = String(relayUrl == null ? '' : relayUrl).trim();
-  if (!key || !url) return null;
+  var at = String(relayKey == null ? '' : relayKey).trim();
+  if (!key || !at) return null;
 
   var rows = load(rootDir);
   var row = rows.find(function (r) { return r.publicKey === key; });
   if (!row) return null;          // not a contact: not this node's business
 
-  var have = normalizeRelays(row.relays || []);
-  if (have.indexOf(url) !== -1) return row;   // already known, nothing to write
+  var have = normalizeRoutes(row.routes || []);
+  if (have[0] === at) return row;   // already the newest, nothing to write
 
-  row.relays = normalizeRelays(have.concat([url]));
+  row.routes = normalizeRoutes([at].concat(have));
   save(rootDir, rows);
   return row;
 }

@@ -944,6 +944,36 @@ function createHub(rootDir) {
       // so presence answers for it exactly as for any peer — which is why
       // the per-recipient roster was the right place for this and a
       // lookup table in this function was not.
+      // ── NOT ON A RELAY I HOLD: SEND IT WITH ROUTE HINTS (cycle 2) ─────
+      //
+      //   Andy: "the 'routes' associated with a node's foreign contacts
+      //   should be listed in the contacts of a node as relays; they are
+      //   always the ID of the relay it is enrolled at." — "the route
+      //   hints are actually more like an address-prefix, or 'location',
+      //   like a domain in DNS."
+      //
+      // The contact row's `routes` are relay keys. They go to a relay this
+      // node IS connected to, as signed hints beside the packet; that
+      // relay knows which of them it partners with and which are live, so
+      // it chooses (relay.partnerFromHints) — the node does not guess.
+      // The first connected relay, because which one partners with the
+      // hinted relay is the relays' knowledge, not this node's.
+      //
+      // Only when the named `via` was not asked for: a caller measuring one
+      // path must get that path or a refusal.
+      if (!where.length && !wanted) {
+        var row = contactBook.byPublicKey(rootDir, to);
+        var hints = (row && Array.isArray(row.routes)) ? row.routes : [];
+        var connected = Object.keys((presence.detail && presence.detail()) || {});
+        if (hints.length && connected.length) {
+          return sendPacket(router, connected[0], to, text, hints).then(function (answer) {
+            res.writeHead(answer.ok ? 200 : (answer.status || 502),
+              { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify(answer));
+          });
+        }
+      }
+
       if (!where.length) {
         // Truthfully, and at once. Presence is what makes this
         // answerable rather than a guess — and it is why that arc had
@@ -1901,8 +1931,8 @@ function createHub(rootDir) {
   // The rule is about paths, not about verbs — so a second CALLER shares
   // this function rather than reaching past it, and everything that
   // decides how a packet is shaped stays in one place.
-  function sendPacket(router, relayUrl, toKey, text) {
-    return router.post(relayUrl, toKey, text);
+  function sendPacket(router, relayUrl, toKey, text, hints) {
+    return router.post(relayUrl, toKey, text, hints);
   }
 
   // ── ASK EACH RELAY, DO NOT DOWNLOAD EACH RELAY ───────────────────────

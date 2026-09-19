@@ -97,13 +97,66 @@ var WIRE_HEADROOM = 512;
 // /reply are equally reachable and were equally unbounded. One shared
 // cap sized for the largest legitimate body is simpler than four, and
 // four numbers that must agree are four numbers that can drift.
-var BODY_MAX = PAYLOAD_MAX + WIRE_HEADROOM;
+// ── ROUTE HINTS SIT BESIDE THE PACKET, AND SO DOES THEIR BOUND (cycle 2)
+//
+//   Andy: "the MAX_PAYLOAD_SIZE excludes signatures, hashes and
+//   route-hints."
+//
+// Hints are siblings of the signed packet, dropped at the first relay
+// (design/relay/SURFACE.md §8), so they must never eat the payload. Their
+// room is added to what a socket accepts instead.
+//
+// HINTS_PER_POST is a declared number, not a measured one — Andy: "the
+// number is not vital". HINTS_MAX is measured: four 60-character keys and
+// an 88-character signature serialise to 364 bytes; 512 leaves headroom
+// for a format change without an incident.
+var HINTS_PER_POST = 4;
+var HINTS_MAX = 512;
+
+var BODY_MAX = PAYLOAD_MAX + WIRE_HEADROOM + HINTS_MAX;
+
+// ── WILL IT STILL FIT IF IT IS TUNNELLED? (cycle 2) ──────────────────
+//
+// A post forwarded to a partner is re-wrapped whole — `{from,to,text,sig}`
+// becomes the `text` of a new post — and escaped on the way, so a packet
+// that fits at the first hop can 413 at the far one, AFTER signing, where
+// nothing can trim it (SURFACE.md §8: "works locally, fails only across a
+// partnership, only for large payloads"). The cost is proportional to how
+// quote-dense the packet is, so the reservation cannot be a constant.
+//
+// Exact rather than estimated: build the wrapper the relay would build and
+// measure it. A node checks this at compose, on every route, because it
+// cannot know whether it will be tunnelled; the relay checks it again
+// before carrying.
+function fitsWrapped(text, from, to, sig) {
+  return JSON.stringify({
+    v: 1,
+    body: { forward: { from: String(from || ''), to: String(to || ''), text: String(text || ''), sig: String(sig || '') } },
+  }).length <= PAYLOAD_MAX;
+}
+
+// AND THE SAME ON THE WAY BACK. A reply to a tunnelled post is re-wrapped
+// too: the far relay hands it to its partner as its own answer,
+// `{ v, body: { ok, status, forwarded: { from, text, sig } } }`
+// (relay.js, routeReply → sendAnswer). So a reply that fits one hop can
+// fail on the return exactly as a post can on the way out — and the asker
+// hears nothing. Same discipline: build the wrapper, measure it.
+function fitsWrappedReply(text, from, sig) {
+  return JSON.stringify({
+    v: 1,
+    body: { ok: true, status: 200, forwarded: { from: String(from || ''), text: String(text || ''), sig: String(sig || '') } },
+  }).length <= PAYLOAD_MAX;
+}
 
 var limitsApi = {
   PAYLOAD_MAX: PAYLOAD_MAX,
   WIRE_OVERHEAD: WIRE_OVERHEAD,
   WIRE_HEADROOM: WIRE_HEADROOM,
+  HINTS_PER_POST: HINTS_PER_POST,
+  HINTS_MAX: HINTS_MAX,
   BODY_MAX: BODY_MAX,
+  fitsWrapped: fitsWrapped,
+  fitsWrappedReply: fitsWrappedReply,
 };
 
 // Dual target, the same idiom packet.js uses: this file is required by

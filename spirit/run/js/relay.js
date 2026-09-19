@@ -1996,15 +1996,13 @@ function createRelay(rootDir, deps) {
   //     have its forwards throttled by partners it had been filling with
   //     packets they could not use.
   //
-  // SO THIS FAILS CLOSED. A forward goes to ONE named partner or nowhere,
-  // and nothing on the wire can name one yet: a post carries `from`, `to`,
-  // `text` and `sig`, and has no field for where the target lives.
+  // SO THIS FAILS CLOSED. A forward goes to ONE named partner or nowhere.
   //
   // 0012 already said where the answer comes from — *"which partner comes
-  // from the node, which already has it: a search row carries the
-  // partner's URL"* — and that hint has nowhere to ride. Carrying it is a
-  // change to what a post is, which is a team-review line, so the door is
-  // left shut rather than propped open with a broadcast.
+  // from the node, which already has it"*. Until cycle 2 that hint had
+  // nowhere to ride and this door stayed shut. It rides now, as signed
+  // route hints beside the packet (routePost, partnerFromHints), and the
+  // relay picks ONE partner from them — still never a broadcast.
   //
   // Returns an answer to give the member now, or null when there is
   // nothing to try — in which case the caller falls through to its own
@@ -2017,6 +2015,17 @@ function createRelay(rootDir, deps) {
     // ONE, OR NONE. A named partner this box has actually promoted, or
     // the caller falls through to `no such peer` as it always did.
     if (list.length !== 1) return null;
+
+    // WILL IT FIT ONCE WRAPPED? Checked here, before anything is sent,
+    // because the wrapper below becomes the `text` of a post to the
+    // partner and is bounded there by MAX_ROUTED_TEXT. A packet that fits
+    // this hop but not the next would 413 at the far relay, after
+    // signing, where nothing can trim it (SURFACE.md §8). The sending node
+    // checks the same predicate at compose; this is the same rule, again,
+    // at the last place it can still be said honestly.
+    if (!limits.fitsWrapped(text, who.id, String(toToken), sig)) {
+      return { ok: false, status: 413, error: 'too big to tunnel' };
+    }
 
     var signed = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
     if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
@@ -2642,17 +2651,42 @@ function createRelay(rootDir, deps) {
     sendAnswer(out);
   }
 
-  // `atRelayKey` is the one thing this function takes that NOTHING ON THE
-  // WIRE SUPPLIES. It names which partner holds the target, and it exists
-  // as a parameter so the forwarding path is drivable and provable while
-  // the question of how a node tells a relay that stays open (0012 says
-  // the node has the answer; a post has no field for it).
+  // ── WHICH PARTNER, FROM THE SENDER'S HINTS (cycle 2) ─────────────────
   //
-  // So: the public route calls this with four arguments, `atRelayKey` is
-  // undefined, and `carryToPartner` returns null. **Forwarding is inert
-  // from the wire and cannot be triggered by anybody**, which is the
-  // correct state for a path whose target selection is undecided.
-  function routePost(fromToken, toToken, text, sig, atRelayKey) {
+  //   Andy: "1. live partners 2. minted partners 3. non-minted,
+  //   immediately returns error ('minting incomplete')."
+  //
+  // The hints are the sender's: the relays its contact is enrolled at,
+  // from the node's own contact row (0012 — the node has the answer). This
+  // relay knows which of them it partners with and which of those are
+  // live, so the ORDER is its call. It picks ONE — a forward goes to one
+  // named partner or nowhere (partnerTunnel.js, "never a broadcast") — and
+  // does not fall back to a second on failure: a refused forward is the
+  // sender's news, not a reason to disclose the packet to another relay.
+  //
+  // Live = the partner holds its own stream to this relay right now, which
+  // is what makes a reply deliverable without a dial.
+  function partnerFromHints(hints) {
+    var mine = (partners() || []).map(function (p) { return p.relayKey; });
+    var named = hints.filter(function (k) { return mine.indexOf(k) !== -1; });
+    var live = named.filter(function (k) { return presentNow.isPresent(k); });
+    return live[0] || named[0] || null;
+  }
+
+  // THE FIFTH ARGUMENT NAMES THE PARTNER, and it has two shapes:
+  //
+  //   a string       a partner key, trusted — the in-process hook the
+  //                  partner suites drive this path through
+  //   { hints, hintSig }   what the public route passes (cycle 2): the
+  //                  sender's route hints, signed beside the packet and
+  //                  verified here before this relay acts on them
+  //
+  // Until cycle 2 nothing on the wire supplied either, and forwarding was
+  // inert from outside. The hints are consumed here and never forwarded:
+  // the far hop receives `{from,to,text,sig}` byte for byte (SURFACE.md §8).
+  function routePost(fromToken, toToken, text, sig, route) {
+    var atRelayKey = typeof route === 'string' ? route : null;
+    var hints = route && typeof route === 'object' && Array.isArray(route.hints) ? route.hints : null;
     // A MEMBER, OR A PARTNER RELAY. In that order, because a member is the
     // ordinary case and a partner key can never also be a member row.
     //
@@ -2769,6 +2803,30 @@ function createRelay(rootDir, deps) {
     // that is the second hop, and the check is `!fromPartner` rather than
     // a counter, so there is no arithmetic anybody can get wrong.
     if (!target && !who.partner) {
+      // THE SENDER'S HINTS, CHECKED BEFORE THIS BOX ACTS ON THEM. Bounded,
+      // keys only, and signed by the sender over this packet's own
+      // signature — an unsigned or lifted hint block is a forged route
+      // claim, and a relay that followed one would carry a packet wherever
+      // a stranger pointed it.
+      if (hints && hints.length) {
+        if (hints.length > limits.HINTS_PER_POST ||
+            !hints.every(function (k) { return typeof k === 'string' && k && k.length <= 256; })) {
+          return { ok: false, status: 400, error: 'bad hints' };
+        }
+        if (!auth.hintsSigned(who.publicKey, sig, hints, route.hintSig)) {
+          return { ok: false, status: 403, error: 'bad hint signature' };
+        }
+        atRelayKey = partnerFromHints(hints);
+        // NONE OF THEM IS A PARTNER OF MINE. Refused at once, and said so,
+        // because the sender can do something about it and a silence
+        // cannot be told from a lost packet (Andy's third tier). STARTING
+        // the minting cycle with this relay's owner is cycle 5, with
+        // partner acquisition — here the refusal is the whole answer.
+        if (!atRelayKey) {
+          monitorEvent('refused', who.id, String(toToken), { why: 'minting incomplete' });
+          return { ok: false, status: 409, error: 'minting incomplete' };
+        }
+      }
       var carried = carryToPartner(who, toToken, text, sig, atRelayKey);
       if (carried) return carried;
     }
@@ -2879,6 +2937,17 @@ function createRelay(rootDir, deps) {
     if (forwarding[hash]) {
       var answerPartner = forwarding[hash];
       delete forwarding[hash];
+      // WILL IT FIT GOING BACK? (cycle 2) The reply is about to become
+      // this relay's own answer to its partner, wrapped whole. One that
+      // would not fit is refused HERE: the member learns its reply did not
+      // travel, and the partner RELAY is told why (limits.fitsWrappedReply).
+      // The partner's asking member is NOT told — carryToPartner acts only
+      // on a successful answer, and telling a member would need a new
+      // stream word (0010). Open in the cycle 2 document.
+      if (!limits.fitsWrappedReply(typeof text === 'string' ? text : '', who.id, sig)) {
+        answerPartner({ ok: false, status: 413, error: 'reply too big to tunnel' });
+        return { ok: false, status: 413, error: 'reply too big to tunnel' };
+      }
       answerPartner({
         ok: true, status: 200,
         forwarded: {

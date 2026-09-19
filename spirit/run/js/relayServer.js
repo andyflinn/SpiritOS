@@ -464,8 +464,16 @@ const server = http.createServer((req, res) => {
 
     if (pathname === '/api/relay/post') {
       readJsonBody(req).then(function (body) {
+        // ROUTE HINTS, when the sender gave any (cycle 2): the relays its
+        // contact is enrolled at, signed beside the packet. Passed as an
+        // object, never as a bare key — a key from the wire must be
+        // verified before this box acts on it, and relay.routePost only
+        // trusts a bare string from in-process callers.
+        const route = body && Array.isArray(body.hints) && body.hints.length
+          ? { hints: body.hints, hintSig: body.hintSig }
+          : undefined;
         const result = relay.routePost(
-          body && body.from, body && body.to, body && body.text, body && body.sig
+          body && body.from, body && body.to, body && body.text, body && body.sig, route
         );
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(result.ok ? result : { error: result.error, inFlight: !!result.inFlight }));
