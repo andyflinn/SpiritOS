@@ -2277,7 +2277,7 @@ shape.
 | done | 0 | node and relay as separate startup modules | done, `4d32104` |
 | done | 1 | configuration, connection allowance, one-lever Governor, monitor rows | checkpoint, `c67ab1e`; live run moved to optimization |
 | scaffolding | 2 | **route hints end to end** — the relay accepts the hint, the node sends it, contacts store relay IDs; route announcements fill contacts | **locked in — next** (Andy) |
-| scaffolding | 3 | **SQLite** for the roll and invites (identity, allow, config stay files); **the owner's first-claim token** and the installer | agreed (Andy) |
+| scaffolding | 3 | **SQLite** for the member roll, invites and **partner roll** (its own table in the §5 shape, today's partnerships imported as `partnered`; identity, allow, config stay files) — **and RAM becomes a client of disc** (amended, Andy): disc is the only copy; RAM holds only what current activity needs — connected members, rows a packet or query just touched, the monitoring reservation. The seven whole-roll reads in `relay.js` become queries, search the largest. Verified by a 10,000-member roll running at about the heap of a 10-member one. **The owner's first-claim token** and the installer | agreed (Andy) |
 | scaffolding | 4 | **the owner's visual monitor**, generic over levers — any lever in the report is drawn with position, floor, share and last move, so a new lever needs no UI work — **and the lever configuration API** beside it (§5): the monitor shows a lever, the API moves one that declares itself live | agreed (Andy) |
 | scaffolding | 5 | **partner acquisition**, the §5 model, **with the partner-to-partner API** (describe, propose/consent, terms); partner roll born in SQLite | agreed (Andy) |
 | optimization | 6 | **dynamic shares** — fixed owner reservation, shares recomputed on connect/disconnect, fixed caps converted (§10) | |
@@ -2285,6 +2285,24 @@ shape.
 | before separate shipping | — | version tolerance (§7) | |
 
 **Cycles 2–5 agreed "for now", cycle 2 locked in** (Andy, 2026-09-19).
+Cycle 2 closed the same day.
+
+> **Andy (2026-09-19), on cycle 3:** *"Can we amend cycle 3 to demand that
+> storage is actually moved from RAM to DISC, and RAM must become a
+> DISC-client?"*
+
+*Amended in place above.* Moving storage while keeping the whole roll
+resident would change the storage and not the RAM — the standing rule
+(RAM with utmost care) would not be met. Known constraints for the plan:
+`node:sqlite` is unflagged only from **Node 22.13** (22.5–22.12 need
+`--experimental-sqlite`), so spirit-3's version decides the floor — **spirit-3
+runs Node v25.9.0 at `/usr/bin/node`, Ubuntu 24.04.4 (Andy, 2026-09-19)**,
+past the floor; v25 is an odd, non-LTS line and the workstation runs 24 LTS,
+so moving spirit-3 to 24 is recommended but not required; a live
+database has side files (`-wal`, `-shm`) that a file-copy backup or a test
+fixture must not catch mid-write; the one-time import keeps the old JSON as
+a renamed backup; and until cycle 4's monitor, a read-only dump tool over
+SSH replaces `cat routingTable.json`.
 The optimization rows stay unordered until the scaffolding is done.
 
 **The lever-integration routine** that the monitor makes possible: declare

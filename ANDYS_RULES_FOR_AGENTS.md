@@ -7,3 +7,4 @@
 3. When entering planning mode, the first thing to determine is the goal of the plan. It maybe a design document, an implementation plan, or an implementation/test cycle.
 4. While planning **Andy **will inject ideas for consideration in realtime. In planning mode you're expected to always have a year open for redirections in the thought process.
 5. both, Andy and the agent may object to closing a discussion.
+6. Each cycle complies with the decided spec wherever it touches code, even where later cycles haven't built what it depends on. It leaves a marked seam for them instead of a temporary shape. Later cycles fill seams; they retrofit an earlier cycle only when Andy agrees that cycle failed in the design, and the retrofit is recorded as a supersession in that cycle's document. Where the spec is undecided, ask, don't guess.
