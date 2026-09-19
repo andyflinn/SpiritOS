@@ -2111,6 +2111,39 @@ time plus whatever it waits for. *(This replaces "the walk is synchronous, so
 that relay handles nothing else while it runs".)* Localhost says nothing about real links: the measurement needs real relays
 (spirit-3 and a second relay; lab never runs against spirit-3).
 
+**The fan-out: live partners only, and its own budget tier (decided, Andy,
+2026-09-19).**
+
+> *"Special fan-out-at relay level posts must be subject to a different
+> budget tier."* — *"… or the concept that peer acquisition for nodes
+> requires liveness of the partners; this would accelerate search
+> significantly."* — *"Search vs. census is already a loss in
+> completeness."*
+
+- **Live partners only.** A member's search is propagated only to partners
+  holding their stream here right now (`presentNow.isPresent(relayKey)`,
+  the same test hint routing uses). Today it asks every `partnered` row and
+  waits on all of them (`Promise.all`), so one partner that is down holds
+  every search for the full timeout. Relays dial their partners at boot,
+  so a healthy partner is normally live. What is left out is mostly the
+  partners that could not have answered in time. Leaving some members out
+  was already accepted when search replaced the census.
+- **Its own budget tier.** One member search becomes *n* partner posts.
+  Today it costs the member one post from the ordinary 600 a minute, and at
+  the partner it lands in the partner pool of 60 a minute, which every other
+  member's forwards share. So one member searching once a second uses up A's
+  allowance at every partner. Three levers:
+  - **per member at A:** propagated searches a minute, separate from
+    ordinary posts;
+  - **relay-wide at A:** propagated searches in flight at once, which
+    bounds RAM, since each one holds up to *n* entries;
+  - **per partner at B:** partner searches in a pool separate from partner
+    forwards, so a search flood cannot starve delivery.
+
+  Floors: a member can always search now and then, because search is how a
+  route is found when there is none yet. Ceilings: the partner pool and
+  relay RAM. **Numbers open**, measured like the timeout.
+
 **The measurement, when built.** A times each propagated search from start
 to merged answer. It keeps the most recent value and the maximum, with *n*
 and how many partners answered. It rides the owner report that already
